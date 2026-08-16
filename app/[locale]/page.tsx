@@ -1,6 +1,15 @@
-import { useTranslations } from "next-intl";
+"use client";
+
+import { HeroSection } from "@/components/sections/hero-section";
 
 export default function HomePage() {
-  const t = useTranslations("hero");
-  return <h1>{t("headline")}</h1>;
+  return (
+    <main>
+      <HeroSection
+        onCtaClick={() => {
+          document.getElementById("industry-select")?.scrollIntoView({ behavior: "smooth" });
+        }}
+      />
+    </main>
+  );
 }
