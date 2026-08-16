@@ -111,3 +111,17 @@ Chinese + English built into the routing/content architecture from the start (no
 ## 10. Tech Stack
 
 Next.js (App Router) + Tailwind CSS + shadcn/ui + Framer Motion + Supabase/Postgres + OpenAI API + Vercel hosting — as specified in Proposal §22.1, confirmed unchanged.
+
+## 11. Business Model Rationale (why §5–7 are non-negotiable, not nice-to-haves)
+
+The product's core differentiation is affordability: custom SME system development in Malaysia typically runs well above what this product charges via traditional agencies. The goal is a genuinely sustainable low Pilot price (~RM5,000 as a founding-phase anchor), not a "still expensive, just AI-branded" alternative — undercutting the market on price is the point of building this at all.
+
+That price is only sustainable if per-client build time falls as the product matures, via:
+- AI-generated business analysis and system design (§5) instead of manually customized-per-client work
+- A reusable, config-driven data model (§6 — `industries`, `reference_cases`) instead of bespoke one-off code per client
+
+This is why real LLM calls and structured, config-driven data are required for this subsystem specifically, not an implementation preference — they're the mechanism that makes the low-price strategy viable instead of being unpaid labor disguised as a business model.
+
+**Metric to track going forward (not part of this subsystem's build, noted for context):** hours spent per Pilot client should trend *down* as more industries/components join the reusable base — not price trending up toward market rate. If hours haven't dropped by client #5–8, that's a signal the AI/reuse architecture isn't doing its job, and the product direction needs revisiting — not the pricing.
+
+Pricing mechanics themselves (founding-rate structure, tiering, monthly SaaS fee) are a commercial-ops decision outside this subsystem's scope, recorded here only as the rationale for §5–7's architecture.
