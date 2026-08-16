@@ -3,5 +3,8 @@
     "headline": "Your business, actually simpler.",
     "subheadline": "The system designs your system. 2 minutes, see the change.",
     "cta": "See what your business could become"
+  },
+  "industrySelect": {
+    "title": "Which industry is your business in?"
   }
 }
