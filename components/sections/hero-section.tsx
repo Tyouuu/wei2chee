@@ -1,12 +1,28 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
 import { Button } from "@/components/ui/button";
 import { BRAND_NAME } from "@/lib/brand";
+import { GlitchText } from "@/components/effects/glitch-text";
+import { useTheme } from "@/lib/use-theme";
+
+// Shared fade/slide-up entrance used to stagger the Hero's text block on mount.
+// Scoped to the Hero only (see Step 4 of the Task 14 brief) — Sections 2-4 stay
+// exactly as fast/clean as already built and must NOT get this treatment.
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+};
+
+// Headline sizing shared by both render paths (plain <h1> and GlitchText) so the
+// "bolder default typography" upgrade applies to every theme, not just industrial.
+const HEADLINE_CLASSNAME = "max-w-2xl text-5xl font-bold tracking-tight sm:text-7xl";
 
 export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
   const t = useTranslations("hero");
+  const { theme } = useTheme();
 
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden text-center">
@@ -46,14 +62,46 @@ export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
         invisible). Text here is hardcoded to light/white regardless of the
         active color-mode, since it always sits on the same dark gradient.
       */}
-      <p className="mb-2 text-sm uppercase tracking-widest text-white/70">
+      <motion.p
+        initial={fadeUp.initial}
+        animate={fadeUp.animate}
+        transition={{ duration: 0.35, delay: 0, ease: "easeOut" }}
+        className="mb-2 text-sm uppercase tracking-widest text-white/70"
+      >
         {BRAND_NAME}
-      </p>
-      <h1 className="max-w-2xl text-4xl font-bold text-white sm:text-5xl">{t("headline")}</h1>
-      <p className="mt-4 max-w-xl text-lg text-white/80">{t("subheadline")}</p>
-      <Button size="lg" className="mt-8" onClick={onCtaClick}>
-        {t("cta")}
-      </Button>
+      </motion.p>
+      <motion.div
+        initial={fadeUp.initial}
+        animate={fadeUp.animate}
+        transition={{ duration: 0.35, delay: 0.08, ease: "easeOut" }}
+      >
+        {theme === "industrial" ? (
+          // React Bits-sourced effect (see components/effects/glitch-text.tsx for source/license).
+          // GlitchText renders its own <h1>, so it's wrapped in a motion.div here rather than
+          // converted into a motion.h1 itself, to keep the entrance stagger without reaching into
+          // the effect component's internals.
+          <GlitchText text={t("headline")} className={HEADLINE_CLASSNAME} />
+        ) : (
+          <h1 className={`${HEADLINE_CLASSNAME} text-white`}>{t("headline")}</h1>
+        )}
+      </motion.div>
+      <motion.p
+        initial={fadeUp.initial}
+        animate={fadeUp.animate}
+        transition={{ duration: 0.35, delay: 0.16, ease: "easeOut" }}
+        className="mt-4 max-w-xl text-lg text-white/80"
+      >
+        {t("subheadline")}
+      </motion.p>
+      <motion.div
+        initial={fadeUp.initial}
+        animate={fadeUp.animate}
+        transition={{ duration: 0.35, delay: 0.24, ease: "easeOut" }}
+      >
+        <Button size="lg" className="mt-8" onClick={onCtaClick}>
+          {t("cta")}
+        </Button>
+      </motion.div>
     </section>
   );
 }

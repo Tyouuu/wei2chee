@@ -117,6 +117,18 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+[data-theme="warm-professional"] {
+  --primary: oklch(0.55 0.12 50);
+  --background: oklch(0.98 0.01 80);
+  --radius: 0.5rem;
+}
+
+[data-theme="industrial"] {
+  --primary: oklch(0.4 0.02 260);
+  --background: oklch(0.95 0 0);
+  --radius: 0.125rem;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
