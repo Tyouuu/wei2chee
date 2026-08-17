@@ -76,6 +76,17 @@
      rather than inheriting white by default. */
   --color-on-primary: #ffffff;
 
+  /* Text/icon color for content rendered on any other sufficiently dark or
+     saturated fill that isn't --color-primary itself — --color-paper used
+     as a solid "current item" pill, or one of the status-bright/accent
+     colors used as an avatar-chip background. Same literal value as
+     --color-on-primary today (both are plain white), kept as a separate
+     token because the two answer different questions ("what's on the CTA
+     fill" vs "what's on some other dark fill") and could diverge in a
+     future token set where --color-primary is light enough that white
+     fails on it specifically while the darker neutrals still want white. */
+  --color-on-dark: #ffffff;
+
   /* status: pending / warning */
   --color-brass: #a8710a;
   --color-brass-bright: #8a5d08;
