@@ -7,6 +7,7 @@ import { IndustrySelect } from "@/components/sections/industry-select";
 import { PeerCaseGallery } from "@/components/sections/peer-case-gallery";
 import { OnboardingStepper } from "@/components/onboarding/stepper";
 import { AnalysisReveal } from "@/components/sections/analysis-reveal";
+import { Button } from "@/components/ui/button";
 import type { Industry } from "@/types/database";
 
 export default function HomePage() {
@@ -28,9 +29,9 @@ export default function HomePage() {
         <>
           <PeerCaseGallery industryId={selectedIndustry.id} />
           <div className="pb-24 text-center">
-            <button className="underline" onClick={() => setShowStepper(true)}>
+            <Button size="lg" onClick={() => setShowStepper(true)}>
               Start →
-            </button>
+            </Button>
           </div>
         </>
       )}

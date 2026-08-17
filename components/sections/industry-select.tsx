@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import { getIndustries } from "@/lib/industries";
 import type { Industry } from "@/types/database";
@@ -16,9 +17,23 @@ export function IndustrySelect({ onSelect }: { onSelect: (industry: Industry) =>
   }, []);
 
   return (
-    <section id="industry-select" className="min-h-screen px-6 py-24">
-      <h2 className="text-center text-2xl font-semibold">{t("title")}</h2>
-      <div className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-3">
+    <section id="industry-select" className="px-6 py-32">
+      <motion.h2
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="text-center font-serif text-3xl font-semibold"
+      >
+        {t("title")}
+      </motion.h2>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
+        className="mx-auto mt-10 flex max-w-2xl flex-wrap justify-center gap-3"
+      >
         {industries.map((industry) => (
           <Button
             key={industry.id}
@@ -29,7 +44,7 @@ export function IndustrySelect({ onSelect }: { onSelect: (industry: Industry) =>
             {locale === "zh" ? industry.name_zh : industry.name_en}
           </Button>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 }

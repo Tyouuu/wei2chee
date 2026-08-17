@@ -15,7 +15,7 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
 };
 
-const HEADLINE_CLASSNAME = "max-w-2xl text-5xl font-bold tracking-tight sm:text-7xl";
+const HEADLINE_CLASSNAME = "max-w-2xl font-serif text-5xl font-bold tracking-tight sm:text-7xl";
 
 export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
   const t = useTranslations("hero");
