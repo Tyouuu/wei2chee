@@ -10,5 +10,11 @@
   "peerCases": {
     "title": "Here's how we've helped businesses like yours.",
     "inferredLabel": "Industry-typical scenario"
+  },
+  "onboarding": {
+    "q1": { "title": "What do you currently use to manage customers and orders?", "opt1": "WhatsApp", "opt2": "Excel", "opt3": "Paper", "opt4": "Existing software", "opt5": "No system" },
+    "q2": { "title": "What do you spend the most time on day-to-day?", "opt1": "Chasing payments", "opt2": "Organizing orders", "opt3": "Scheduling staff", "opt4": "Making reports", "opt5": "Following up with customers" },
+    "q3": { "title": "Walk us through what happens when you take on a new customer.", "placeholder": "A sentence or two is fine" },
+    "next": "Next", "back": "Back", "submit": "Start my analysis"
   }
 }
