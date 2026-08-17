@@ -242,7 +242,7 @@ export function RailNav({
                       {item.icon}
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.badge != null && item.badge > 0 && (
-                        <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 text-[10px] [background-color:var(--color-clay)] [color:var(--color-on-dark)] [font-weight:var(--fw-semibold)]">
+                        <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 text-[10px] [background-color:var(--color-clay-bright)] [color:var(--color-on-dark)] [font-weight:var(--fw-semibold)]">
                           {item.badge}
                         </span>
                       )}
