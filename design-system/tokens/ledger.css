@@ -1,0 +1,209 @@
+@import "tailwindcss";
+
+/* Font stack declaration — a consuming app should supply its own font variables
+   matching the pattern here (--font-sans, --font-mono). Uncomment and customize
+   to wire up your project's @font-face or next/font imports:
+   @theme inline {
+     --font-sans: var(--font-your-sans);
+     --font-mono: var(--font-your-mono);
+   }
+*/
+
+/* Ledger — precision/high-density register for ops-heavy B2B businesses
+   (wholesale, distribution, accounting). Adopted from a proven pattern for
+   density-critical systems: sidebar rail + topbar shell, restrained accent
+   (focus rings, CTAs, high-importance states only — never decoratively),
+   light card-on-gray surface.
+
+   The accent is a restrained blue hue, not a brand primary: it appears on
+   focus rings, chart highlights, and intentional CTAs only — never decoratively.
+   This approach follows Linear's principle: "on the brand mark, focus rings,
+   and a few intentional CTAs — never decoratively." Every purely decorative
+   use in this design system (icon tiles beside headings that already name
+   themselves, accent rails on note strips, badge fills) are removed rather
+   than recoloured. Recolouring decoration keeps the decoration.
+
+   Status colors (jade=positive/verified, brass=pending/warning, clay=negative/flagged,
+   slate=neutral/instant) are independent of the accent and never reused for
+   categorical chart series. `info` (blue) is a spare categorical hue for
+   contexts needing a 3rd/4th distinct color (e.g. charts) — validated against
+   the dataviz skill's validate_palette.js.
+*/
+@theme {
+  /* The neutral family, tinted. Every value below carries the same slight
+     navy bias rather than being a pure grey, which is the single biggest
+     difference between precision/ops-heavy designs and unconsidered defaults.
+
+     Stripe — the closest reference, being a light-mode money product —
+     ships canvas #f6f9fc, hairline #e3e8ee, ink #0d253d, ink-mute #64748d
+     and even tints its shadows (#003770). Not one of those is neutral. A
+     pure mid-grey reads as unconsidered precisely because it is the value
+     you get by not choosing; a grey biased toward the ink hue reads as
+     picked. Mixing three unrelated greys (neutral canvas, neutral paper,
+     neutral shadows) breaks surface coherence no matter how the blocks are
+     arranged.
+
+     The canvas is intentionally light. A strong grey reads as a distinct
+     panel; this canvas is a tint you feel rather than see, which is what
+     lets tables sit directly on it without looking like they are on the
+     wrong surface. */
+  --color-canvas: #f6f8fb;
+  --color-ink-950: #eaeff5;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #f2f6fb;
+  --color-ink-800: #e4e9f0;
+  --color-ink-700: #d3dbe5;
+
+  /* Deep navy, not black. Stripe's ink is #0d253d; Linear, Vercel and
+     Mercury all likewise stop short of #000 in light mode. */
+  --color-paper: #14273d;
+  --color-paper-dim: #5b6d82;
+
+  /* Restrained accent: link blue from the same hue family as the navy ink
+     above, so the accent belongs to the neutrals rather than sitting on top
+     of them. 4.79:1 on white, so it is legible as text, not only as a fill.
+     Appears on: focus rings, intentional CTAs, high-importance states. Never
+     used decoratively. */
+  --color-primary: #0570de;
+  --color-primary-deep: #0356ab;
+  --color-primary-soft: #e7f0fb;
+
+  /* status: pending / warning */
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+
+  /* status: positive / verified */
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+
+  /* status: negative / flagged
+     Cooled and de-saturated from pure fire-engine red. Full-chroma reds at
+     hue 358 have no relationship to a navy-tinted palette, so next to these
+     surfaces they read as an alarm rather than as a state. This hue is pulled
+     to 354 and about 40% saturation, which is where the rest of the
+     palette's bias already sits. Still a real red — it has to mean
+     something — just one that belongs in this room.
+     Contrast on white: clay-bright 6.0:1, clay 4.1:1 (graphics only). */
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+
+  /* status: neutral / instant */
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+
+  /* spare categorical hue (donut 3rd slot, avatar variety) — validated
+     alongside jade/brass: #3b62d9,#1a9a4d,#a8710a passes CVD/contrast/chroma
+     on the white card surface. */
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+
+  /* The podium: gold, silver, bronze, on ranking surfaces and nowhere else.
+     Deliberately outside the status family above — every other colour here
+     answers "what state is this in", and a place on a ranking is not a
+     state. Reusing brass for gold would have put the pending/warning hue on
+     the best-performing entry.
+     Deliberately darkened from the literal metals, which cannot survive as a
+     14px icon on a white card — #ffd700, #c0c0c0 and #cd7f32 measure 1.40:1,
+     1.82:1 and 3.14:1. These three are 4.52:1, 4.30:1 and 4.58:1: legible in
+     their own right, and matched to each other so the three places differ by
+     hue only. Bronze required lightening — at 6.06:1 it was the darkest mark
+     of the three, so third place read as the heaviest. */
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+
+  /* Chart-fill aliases — jade/brass already pass the categorical checks
+     directly as chart marks on the white surface (validated with the
+     dataviz skill's validate_palette.js), so these are just aliases kept
+     around for existing chart components that reference the -chart names
+     explicitly. */
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+}
+
+/* Craft tokens taken from the shipped CSS of Linear, Vercel (Geist) and
+   Stripe — the three products chosen as the quality bar for precision/ops
+   register design.
+
+   The weight ceiling is the important one. Linear runs every title token from
+   17px to 72px at 590; Vercel caps at 600; Mercury, a bank, tops out at 480
+   and even remaps <b> down to it. Nothing here should exceed --fw-semibold.
+
+   Tracking scales negatively with size, which all three do and most apps do
+   not do at all: 0 tracking on a 26px heading is the single most obvious
+   difference when you put them side by side. */
+:root {
+  color-scheme: light;
+
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  --tracking-body: -0.011em; /* Linear --text-regular-letter-spacing */
+  --tracking-sm: -0.013em; /* Linear --text-small */
+  --tracking-title: -0.02em; /* Vercel .text-heading-14/16 */
+  --tracking-title-lg: -0.04em; /* Vercel .text-heading-24 (-0.96px) */
+
+  /* Alpha, not an opaque hex: composites correctly over white *and* over the
+     tinted surfaces this design uses. Vercel ships the same idea
+     as a ring: --ds-shadow-border-base: 0 0 0 1px #00000014. */
+  --border-subtle: rgba(13, 37, 61, 0.09);
+  --border-strong: rgba(13, 37, 61, 0.14);
+
+  /* Shadows are tinted too. Stripe ships --shadow-blue #003770 rather than
+     a black; a black shadow over a tinted canvas desaturates the surface
+     under it and is why cards on a coloured page can look dirty. */
+  --shadow-hue: 13, 37, 61;
+
+  /* Linear ships true half-pixel borders on 2x displays. */
+  --hairline: 1px;
+
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Linear --ease-out-quad */
+  --dur-fast: 120ms; /* Linear background transition */
+  --dur: 160ms; /* Linear button transition */
+}
+
+@media (min-resolution: 192dpi) {
+  :root {
+    --hairline: 0.5px;
+  }
+}
+
+html {
+  letter-spacing: var(--tracking-body);
+}
+
+/* The weight ceiling, enforced rather than only written down.
+   <b> and <strong> default to 700 — 900 in this stack — which is heavier than
+   anything the token block above allows, and heavier than Linear, Vercel or
+   Mercury use anywhere. Mercury remaps <b> for exactly this reason. */
+b,
+strong {
+  font-weight: var(--fw-semibold);
+}
+
+/* Tabular figures belong on numeric columns, not on running prose — in body
+   text they open awkward gaps around "1". Vercel scopes it to a utility
+   rather than setting it on html. .figure/.figure-money classes already opt in. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  background: var(--color-ink-950);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: none;
+  /* Two-layer ring: a surface-coloured gap then the accent, so the ring reads
+     cleanly on top of a row hover or a coloured fill. Vercel ships exactly
+     this shape as --ds-focus-ring. */
+  box-shadow:
+    0 0 0 2px var(--color-ink-900),
+    0 0 0 4px var(--color-primary);
+  border-radius: 4px;
+}
+
+/* Attribution: Ledger token set derived from vibe-dealer by Tyouuu — generalized
+   for the design-system shared token architecture. */
