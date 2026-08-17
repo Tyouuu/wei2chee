@@ -6,5 +6,9 @@
   },
   "industrySelect": {
     "title": "Which industry is your business in?"
+  },
+  "peerCases": {
+    "title": "Here's how we've helped businesses like yours.",
+    "inferredLabel": "Industry-typical scenario"
   }
 }

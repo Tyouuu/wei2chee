@@ -6,5 +6,9 @@
   },
   "industrySelect": {
     "title": "你的生意属于哪一行？"
+  },
+  "peerCases": {
+    "title": "跟你同行的公司，我们帮他们这样做。",
+    "inferredLabel": "行业典型场景"
   }
 }
