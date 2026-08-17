@@ -883,6 +883,107 @@ git commit -m "Add Peer case gallery with verified/inferred labeling"
 
 ---
 
+### Task 8a: Bilingual reference case content (follow-up)
+
+**Why this task exists:** Task 8's review found that `reference_cases` (unlike `industries`, which has `name_zh`/`name_en`) has no per-locale split for `anonymous_name`/`highlights` — an `/en` visitor sees Chinese case content inside an otherwise-English page. The user asked to fix this now rather than defer it.
+
+**Files:**
+- Create: `supabase/migrations/<timestamp>_reference_case_i18n.sql`
+- Modify: `types/database.ts`
+- Modify: `components/sections/peer-case-gallery.tsx`
+- Modify: `supabase/seed.sql` (for future re-seeds/documentation — the live data itself is updated by the migration's UPDATE statement, not by re-running this file)
+
+**Interfaces:**
+- Consumes: the live Supabase project (already linked), the Management API SQL-execution pattern already proven in Tasks 3/4 (no Docker available, `supabase db diff` doesn't work here).
+- Produces: `ReferenceCase` type gains `anonymous_name_zh`/`anonymous_name_en`/`highlights_zh`/`highlights_en`, loses `anonymous_name`/`highlights`. `PeerCaseGallery` picks the right field via `useLocale()`, same pattern already used in `components/sections/industry-select.tsx`.
+
+- [ ] **Step 1: Write the migration**
+
+Run: `supabase migration new reference_case_i18n` — creates `supabase/migrations/<timestamp>_reference_case_i18n.sql`. Contents:
+
+```sql
+alter table reference_cases
+  add column anonymous_name_zh text,
+  add column anonymous_name_en text,
+  add column highlights_zh jsonb,
+  add column highlights_en jsonb;
+
+update reference_cases set
+  anonymous_name_zh = '一家 12 人装修公司',
+  anonymous_name_en = 'A 12-person renovation company',
+  highlights_zh = '["每月追款时间从 8 小时降到 1 小时","漏单从每月 2-3 单降到接近 0"]'::jsonb,
+  highlights_en = '["Monthly payment follow-up time dropped from 8 hours to 1 hour","Missed orders dropped from 2-3/month to nearly zero"]'::jsonb
+where anonymous_name = '一家 12 人装修公司';
+
+update reference_cases set
+  anonymous_name_zh = '行业典型场景',
+  anonymous_name_en = 'Industry-typical scenario',
+  highlights_zh = '["典型场景，非真实客户案例"]'::jsonb,
+  highlights_en = '["Typical scenario, not a real client case"]'::jsonb
+where anonymous_name = '行业典型场景';
+
+alter table reference_cases
+  alter column anonymous_name_zh set not null,
+  alter column anonymous_name_en set not null,
+  alter column highlights_zh set not null,
+  alter column highlights_en set not null;
+
+alter table reference_cases
+  drop column anonymous_name,
+  drop column highlights;
+```
+
+- [ ] **Step 2: Apply it via the Management API** (same pattern as Tasks 3/4 — no Docker, no dashboard access)
+
+```bash
+curl -s -X POST "https://api.supabase.com/v1/projects/xtsnrnpcgknrvuslhhdu/database/query" \
+  -H "Authorization: Bearer <SUPABASE_ACCESS_TOKEN — ask the controller if you don't have it>" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "<the migration SQL as a JSON string>"}'
+```
+
+Verify afterward: `SELECT slug, anonymous_name_zh, anonymous_name_en FROM reference_cases JOIN industries ON industries.id = reference_cases.industry_id;` should return 2 rows, both `_zh`/`_en` columns populated, and `SELECT column_name FROM information_schema.columns WHERE table_name = 'reference_cases';` should no longer list `anonymous_name`/`highlights`.
+
+- [ ] **Step 3: Regenerate types**
+
+Run: `supabase gen types typescript --linked > types/database-generated.ts` (with the same `SUPABASE_ACCESS_TOKEN` prefix as Task 3 used). Then update the hand-written type:
+
+`types/database.ts` — replace the `ReferenceCase` interface's `anonymous_name: string;` and `highlights: string[];` lines with:
+```typescript
+  anonymous_name_zh: string;
+  anonymous_name_en: string;
+  highlights_zh: string[];
+  highlights_en: string[];
+```
+
+- [ ] **Step 4: Update the component**
+
+`components/sections/peer-case-gallery.tsx` — add `useLocale` to the `next-intl` import, and change the two field references:
+```tsx
+import { useLocale, useTranslations } from "next-intl";
+```
+```tsx
+const locale = useLocale();
+```
+Replace `<CardTitle>{c.anonymous_name}</CardTitle>` with `<CardTitle>{locale === "zh" ? c.anonymous_name_zh : c.anonymous_name_en}</CardTitle>`, and replace `{c.highlights.map((h, i) => (` with `{(locale === "zh" ? c.highlights_zh : c.highlights_en).map((h, i) => (`.
+
+- [ ] **Step 5: Update the seed file for future re-seeds**
+
+`supabase/seed.sql` — update both `insert into reference_cases` statements' column lists and values to use `anonymous_name_zh`/`anonymous_name_en`/`highlights_zh`/`highlights_en` instead of `anonymous_name`/`highlights`, using the same zh/en values as the migration's UPDATE statements above.
+
+- [ ] **Step 6: Manual verification**
+
+Run `npm run dev`. Select renovation on `/zh` — confirm Chinese case title/highlights. Select renovation on `/en` — confirm English case title/highlights (not Chinese). Repeat for F&B (inferred case) on both locales — confirm the badge still shows correctly (Task 8's behavior must still hold) and the content is in the right language.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add -A
+git commit -m "Add per-locale content to reference_cases (fixes /en showing Chinese case text)"
+```
+
+---
+
 ### Task 9: Onboarding stepper shell (Section 4)
 
 **Files:**
