@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { BRAND_NAME } from "@/lib/brand";
+import { SectionShell } from "@/components/section-shell";
 
 const WHATSAPP_NUMBER = "60123456789"; // TODO before real launch: replace with the real business WhatsApp number
 
@@ -25,31 +26,23 @@ export function ConversionCta({ summary }: { summary: string }) {
   )}`;
 
   return (
-    <motion.section
-      variants={container}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-100px" }}
-      className="border-t border-border"
-    >
-      <div className="mx-auto max-w-5xl px-6 py-32 sm:px-10">
-        <div className="grid gap-10 md:grid-cols-[7rem_1fr] md:gap-14">
-          <motion.div variants={item} className="md:pt-3">
-            <span className="annotation">04 / BUILD</span>
-          </motion.div>
-
+    <div className="border-t border-border">
+      {/* headingClassName keeps a wide measure: Chinese has no inter-word
+          spaces, and a narrow one forces breaks mid-word (设/计). */}
+      <SectionShell
+        index="04"
+        label="BUILD"
+        heading={t("title")}
+        headingClassName="text-[clamp(2rem,5vw,3.5rem)] leading-[1.15] !max-w-3xl"
+      >
+        <motion.div
+          variants={container}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-100px" }}
+        >
           <div>
-            <motion.h2
-              variants={item}
-              /* max-w-3xl, not xl: Chinese has no inter-word spaces, so a narrow
-                 measure forces the browser to break mid-word (设/计). A wider
-                 measure lets both locales wrap at sensible points. */
-              className="max-w-3xl font-serif text-[clamp(2rem,5vw,3.5rem)] leading-[1.15] tracking-[-0.025em] text-balance"
-            >
-              {t("title")}
-            </motion.h2>
-
-            <motion.div variants={item} className="mt-12 flex flex-wrap items-center gap-4">
+            <motion.div variants={item} className="flex flex-wrap items-center gap-4">
               {/* Primary: filled in signal cyan — the same colour used for the
                   proposed system in the diagram above, so the button reads as
                   "go there", continuing that thread rather than introducing a
@@ -87,8 +80,8 @@ export function ConversionCta({ summary }: { summary: string }) {
               )}
             </AnimatePresence>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </SectionShell>
 
       {/* Sheet footer — the title block that closes a drawing. */}
       <div className="border-t border-border">
@@ -97,6 +90,6 @@ export function ConversionCta({ summary }: { summary: string }) {
           <span className="annotation !text-muted-foreground/60">MALAYSIA</span>
         </div>
       </div>
-    </motion.section>
+    </div>
   );
 }

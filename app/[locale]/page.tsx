@@ -8,6 +8,7 @@ import { PeerCaseGallery } from "@/components/sections/peer-case-gallery";
 import { OnboardingStepper } from "@/components/onboarding/stepper";
 import { AnalysisReveal } from "@/components/sections/analysis-reveal";
 import { ConversionCta } from "@/components/sections/conversion-cta";
+import { AmbientBackdrop } from "@/components/ambient-backdrop";
 import type { Industry, AnalysisResult } from "@/types/database";
 
 export default function HomePage() {
@@ -20,6 +21,9 @@ export default function HomePage() {
 
   return (
     <main>
+      {/* One lit surface behind the whole page, so scrolling past the Hero
+          recedes the atmosphere instead of cutting to flat dark. */}
+      <AmbientBackdrop />
       <HeroSection
         onCtaClick={() => {
           document.getElementById("industry-select")?.scrollIntoView({ behavior: "smooth" });
@@ -30,7 +34,8 @@ export default function HomePage() {
         <>
           <PeerCaseGallery industryId={selectedIndustry.id} />
           <div className="mx-auto max-w-5xl px-6 pb-32 sm:px-10">
-            <div className="md:pl-[8.5rem]">
+            {/* Aligns to SectionShell's content column (8rem margin + 3.5rem gap). */}
+            <div className="md:pl-[11.5rem]">
               <button
                 onClick={() => setShowStepper(true)}
                 className="group relative border border-blueprint/50 px-8 py-4 font-mono text-[0.75rem] tracking-[0.14em] text-blueprint uppercase transition-colors duration-300 hover:border-blueprint focus-visible:ring-1 focus-visible:ring-blueprint focus-visible:outline-none"

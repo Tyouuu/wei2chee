@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import type { AnalysisResult } from "@/types/database";
+import { SectionShell } from "@/components/section-shell";
 
 const LOADING_STEPS = ["loadingStep1", "loadingStep2", "loadingStep3"] as const;
 
@@ -285,31 +286,21 @@ export function AnalysisReveal({
 
   return (
     <div ref={rootRef}>
-      <motion.section
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="mx-auto max-w-5xl px-6 pt-32 pb-24 sm:px-10"
+      {/* Runs through the shared SectionShell like every other section, so the
+          payoff sits in the same rhythm as the rest of the sheet. The verdict
+          itself IS the heading — it's the most important sentence the AI
+          produces, so it gets display treatment, not body-copy treatment. */}
+      <SectionShell
+        index="03"
+        label="FINDINGS"
+        heading={analysis!.summary}
+        headingClassName="text-[clamp(1.5rem,3.4vw,2.5rem)] leading-[1.15]"
       >
-        <div className="grid gap-10 md:grid-cols-[7rem_1fr] md:gap-14">
-          <motion.div variants={item} className="md:pt-3">
-            <span className="annotation">03 / FINDINGS</span>
-          </motion.div>
-
+        <motion.div variants={container} initial="hidden" animate="show">
           <div>
-            {/* The verdict, set at display scale — this sentence is the single
-                most important thing the AI produces, so it gets the treatment
-                the Hero headline gets, not body-copy treatment. */}
-            <motion.p
-              variants={item}
-              className="max-w-2xl font-serif text-[clamp(1.5rem,3.4vw,2.5rem)] leading-[1.15] tracking-[-0.02em] text-balance"
-            >
-              {analysis!.summary}
-            </motion.p>
-
             <motion.div
               variants={item}
-              className="mt-16 mb-8 flex items-center gap-4"
+              className="mb-8 flex items-center gap-4"
             >
               <h3 className="annotation !text-muted-foreground">
                 {t("bottlenecksTitle")}
@@ -377,8 +368,8 @@ export function AnalysisReveal({
               />
             </motion.div>
           </div>
-        </div>
-      </motion.section>
+        </motion.div>
+      </SectionShell>
     </div>
   );
 }
