@@ -11,7 +11,7 @@ export function evaluateRateLimit(
   const limit = opts.limit ?? DEFAULT_LIMIT;
   const windowMs = opts.windowMs ?? DEFAULT_WINDOW_MS;
   const inWindow = recentEventTimestamps.filter((t) => now - t < windowMs);
-  const remaining = Math.max(0, limit - inWindow.length - (inWindow.length > 0 ? 1 : 0));
+  const remaining = Math.max(0, limit - inWindow.length);
   return { allowed: inWindow.length < limit, remaining };
 }
 
