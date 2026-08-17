@@ -19,8 +19,13 @@
   },
   "analysis": {
     "loading": "系统正在分析你的业务...",
+    "loadingStep1": "正在阅读你的回答...",
+    "loadingStep2": "正在梳理你现在的流程...",
+    "loadingStep3": "正在设计你的专属系统...",
     "error": "分析生成失败，请重试。",
-    "before": "现在的流程",
-    "after": "建议的流程"
+    "bottlenecksTitle": "现在卡住你的地方",
+    "transformTitle": "会有什么改变",
+    "before": "现在",
+    "after": "用了 Formae 之后"
   }
 }

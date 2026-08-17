@@ -19,8 +19,13 @@
   },
   "analysis": {
     "loading": "Analyzing your business...",
+    "loadingStep1": "Reading your answers...",
+    "loadingStep2": "Mapping your current workflow...",
+    "loadingStep3": "Designing your system...",
     "error": "Analysis generation failed. Please try again.",
-    "before": "Current workflow",
-    "after": "Suggested workflow"
+    "bottlenecksTitle": "Where things are slowing you down",
+    "transformTitle": "What changes",
+    "before": "Today",
+    "after": "With Formae"
   }
 }

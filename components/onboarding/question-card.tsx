@@ -26,18 +26,22 @@ export function QuestionCard({
       transition={{ duration: 0.25 }}
       className="flex min-h-[50vh] flex-col items-center justify-center gap-6 text-center"
     >
-      <h3 className="max-w-lg text-2xl font-semibold">{t(question.titleKey)}</h3>
+      <h3 className="max-w-lg font-serif text-2xl font-semibold">{t(question.titleKey)}</h3>
       {question.type === "single" && question.optionsKey && (
         <div className="flex flex-wrap justify-center gap-3">
-          {question.optionsKey.map((key) => (
-            <Button
-              key={key}
-              variant={value === t(key) ? "default" : "outline"}
-              onClick={() => onChange(t(key))}
-            >
-              {t(key)}
-            </Button>
-          ))}
+          {question.optionsKey.map((key) => {
+            const selected = value === t(key);
+            return (
+              <Button
+                key={key}
+                variant="outline"
+                className={selected ? "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-600 hover:text-white" : ""}
+                onClick={() => onChange(t(key))}
+              >
+                {t(key)}
+              </Button>
+            );
+          })}
         </div>
       )}
       {question.type === "text" && (

@@ -40,7 +40,7 @@ export function PeerCaseGallery({ industryId }: { industryId: string }) {
             transition={{ duration: 0.4, delay: i * 0.08, ease: "easeOut" }}
           >
             <Card>
-              <CardHeader className="flex-row items-center justify-between">
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{locale === "zh" ? c.anonymous_name_zh : c.anonymous_name_en}</CardTitle>
                 {c.source === "inferred" && (
                   <Badge variant="secondary">{t("inferredLabel")}</Badge>
