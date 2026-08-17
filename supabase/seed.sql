@@ -32,20 +32,22 @@ insert into industries (slug, name_zh, name_en, has_verified_discovery, labels, 
   '["Customer","Quotation","Project","Payment"]',
   '["Customer","Project","Payment"]', 'minimal');
 
-insert into reference_cases (industry_id, is_verified, anonymous_name, pain_points, modules, workflow, highlights, source)
-select id, true, '一家 12 人装修公司',
+insert into reference_cases (industry_id, is_verified, anonymous_name_zh, anonymous_name_en, pain_points, modules, workflow, highlights_zh, highlights_en, source)
+select id, true, '一家 12 人装修公司', 'A 12-person renovation company',
   '["Customer information scattered across WhatsApp and Excel","Project updates depend on WhatsApp","Payment follow-up is manual"]',
   '["Customer Management","Quotation System","Project Management","Site Update","Payment Tracking","AI Assistant"]',
   '["Customer","Quotation","Approval","Deposit","Project","Milestone","Final Payment"]',
   '["每月追款时间从 8 小时降到 1 小时","漏单从每月 2-3 单降到接近 0"]',
+  '["Monthly payment follow-up time dropped from 8 hours to 1 hour","Missed orders dropped from 2-3/month to nearly zero"]',
   'internal'
 from industries where slug = 'renovation';
 
-insert into reference_cases (industry_id, is_verified, anonymous_name, pain_points, modules, workflow, highlights, source)
-select id, false, '行业典型场景',
+insert into reference_cases (industry_id, is_verified, anonymous_name_zh, anonymous_name_en, pain_points, modules, workflow, highlights_zh, highlights_en, source)
+select id, false, '行业典型场景', 'Industry-typical scenario',
   '["订单靠纸本记录","高峰期漏单","没有会员复购数据"]',
   '["Customer Management","Order Tracking","Payment"]',
   '["Customer","Order","Payment"]',
   '["典型场景，非真实客户案例"]',
+  '["Typical scenario, not a real client case"]',
   'inferred'
 from industries where slug = 'fnb';

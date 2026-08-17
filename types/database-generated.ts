@@ -174,9 +174,11 @@ export type Database = {
       }
       reference_cases: {
         Row: {
-          anonymous_name: string
+          anonymous_name_en: string
+          anonymous_name_zh: string
           created_at: string
-          highlights: Json
+          highlights_en: Json
+          highlights_zh: Json
           id: string
           industry_id: string
           is_verified: boolean
@@ -186,9 +188,11 @@ export type Database = {
           workflow: Json
         }
         Insert: {
-          anonymous_name: string
+          anonymous_name_en: string
+          anonymous_name_zh: string
           created_at?: string
-          highlights?: Json
+          highlights_en: Json
+          highlights_zh: Json
           id?: string
           industry_id: string
           is_verified?: boolean
@@ -198,9 +202,11 @@ export type Database = {
           workflow?: Json
         }
         Update: {
-          anonymous_name?: string
+          anonymous_name_en?: string
+          anonymous_name_zh?: string
           created_at?: string
-          highlights?: Json
+          highlights_en?: Json
+          highlights_zh?: Json
           id?: string
           industry_id?: string
           is_verified?: boolean

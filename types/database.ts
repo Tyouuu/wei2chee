@@ -14,11 +14,13 @@ export interface ReferenceCase {
   id: string;
   industry_id: string;
   is_verified: boolean;
-  anonymous_name: string;
+  anonymous_name_zh: string;
+  anonymous_name_en: string;
   pain_points: string[];
   modules: string[];
   workflow: string[];
-  highlights: string[];
+  highlights_zh: string[];
+  highlights_en: string[];
   source: "internal" | "inferred";
 }
 
