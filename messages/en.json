@@ -16,5 +16,11 @@
     "q2": { "title": "What do you spend the most time on day-to-day?", "opt1": "Chasing payments", "opt2": "Organizing orders", "opt3": "Scheduling staff", "opt4": "Making reports", "opt5": "Following up with customers" },
     "q3": { "title": "Walk us through what happens when you take on a new customer.", "placeholder": "A sentence or two is fine" },
     "next": "Next", "back": "Back", "submit": "Start my analysis"
+  },
+  "analysis": {
+    "loading": "Analyzing your business...",
+    "error": "Analysis generation failed. Please try again.",
+    "before": "Current workflow",
+    "after": "Suggested workflow"
   }
 }
