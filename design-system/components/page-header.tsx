@@ -35,7 +35,7 @@ export function PageHeader({
     action && typeof action === "object" && "href" in action ? (
       <Link
         href={action.href}
-        className="inline-flex shrink-0 items-center rounded-lg px-3.5 py-2 text-[13px] text-white transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
+        className="inline-flex shrink-0 items-center rounded-lg px-3.5 py-2 text-[13px] [color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
       >
         {action.label}
       </Link>

@@ -68,6 +68,14 @@
   --color-primary-deep: #0356ab;
   --color-primary-soft: #e7f0fb;
 
+  /* Text/icon color for content rendered on a --color-primary fill (CTA
+     buttons and links) — plain white, which passes comfortably against
+     #0570de. Revisit when Hearth/Blueprint are built: a different
+     --color-primary value in those sets could make plain white fail
+     contrast, and this token would then need its own per-register value
+     rather than inheriting white by default. */
+  --color-on-primary: #ffffff;
+
   /* status: pending / warning */
   --color-brass: #a8710a;
   --color-brass-bright: #8a5d08;

@@ -135,7 +135,7 @@ export function DataGrid({
       id={`grid-${id}`}
       ref={ref}
       {...(scrollable ? { role: "region", "aria-label": label, tabIndex: 0 } : {})}
-      className="relative overflow-auto rounded-xl border [border-color:var(--color-ink-800)]"
+      className="relative overflow-auto rounded-xl border [border-color:var(--color-ink-800)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--color-primary)]"
       style={{
         boxShadow:
           [
