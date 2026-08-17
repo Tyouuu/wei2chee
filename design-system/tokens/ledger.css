@@ -20,7 +20,7 @@
    This approach follows Linear's principle: "on the brand mark, focus rings,
    and a few intentional CTAs — never decoratively." Every purely decorative
    use in this design system (icon tiles beside headings that already name
-   themselves, accent rails on note strips, badge fills) are removed rather
+   themselves, accent rails on note strips, badge fills) is removed rather
    than recoloured. Recolouring decoration keeps the decoration.
 
    Status colors (jade=positive/verified, brass=pending/warning, clay=negative/flagged,
@@ -184,7 +184,8 @@ strong {
 
 /* Tabular figures belong on numeric columns, not on running prose — in body
    text they open awkward gaps around "1". Vercel scopes it to a utility
-   rather than setting it on html. .figure/.figure-money classes already opt in. */
+   rather than setting it on html. Component-layer classes (.figure,
+   .figure-money — added in a later component-porting task) opt into this. */
 .tnum {
   font-variant-numeric: tabular-nums;
 }
