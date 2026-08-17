@@ -1790,13 +1790,18 @@ git commit -m "Add Conversion CTA (Section 6) with WhatsApp deep link"
 
 ### Task 14: Style switching (2–3 themes)
 
+**Why this task also touches React Bits, not just CSS tokens:** spec §7 named React Bits specifically for per-style "wow" flourishes (e.g. a glitch/shimmer text effect for a more technical/industrial style), not just color-token swaps. Tasks 6-9 ended up using ShaderGradient (Task 6) and otherwise plain shadcn components — none of them pulled in a React Bits component. This task is where that gets addressed: the "industrial" theme gets a real React Bits-sourced animated text effect on the Hero headline, not just different CSS variables.
+
 **Files:**
 - Create: `app/globals.css` (modify — add theme token blocks)
+- Create: `lib/use-theme.ts` (shared theme state/hook)
 - Create: `components/style-switcher.tsx`
+- Create: `components/effects/glitch-text.tsx` (sourced/adapted from React Bits)
 - Modify: `app/[locale]/layout.tsx`
+- Modify: `components/sections/hero-section.tsx` (theme-aware headline rendering)
 
 **Interfaces:**
-- Produces: a `data-theme` attribute on `<html>`, switchable client-side, persisted to `localStorage`.
+- Produces: a `data-theme` attribute on `<html>`, switchable client-side, persisted to `localStorage`, readable via the shared `useTheme()` hook.
 
 - [ ] **Step 1: Add theme token blocks to `globals.css`**
 
@@ -1815,24 +1820,24 @@ Append to `app/globals.css` (after the existing shadcn-generated `:root` and `.d
 }
 ```
 
-- [ ] **Step 2: Build the switcher**
+- [ ] **Step 2: Extract a shared theme hook**
 
-`components/style-switcher.tsx`:
-```tsx
+`lib/use-theme.ts`:
+```typescript
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 
-const THEMES = ["default", "warm-professional", "industrial"] as const;
+export const THEMES = ["default", "warm-professional", "industrial"] as const;
+export type Theme = (typeof THEMES)[number];
 
-export function StyleSwitcher() {
-  const [theme, setTheme] = useState<(typeof THEMES)[number]>("default");
+export function useTheme() {
+  const [theme, setThemeState] = useState<Theme>("default");
 
   useEffect(() => {
     const stored = localStorage.getItem("formae-theme");
-    if (stored && THEMES.includes(stored as (typeof THEMES)[number])) {
-      setTheme(stored as (typeof THEMES)[number]);
+    if (stored && THEMES.includes(stored as Theme)) {
+      setThemeState(stored as Theme);
     }
   }, []);
 
@@ -1844,6 +1849,43 @@ export function StyleSwitcher() {
     }
     localStorage.setItem("formae-theme", theme);
   }, [theme]);
+
+  return { theme, setTheme: setThemeState };
+}
+```
+
+This replaces any theme state that would otherwise live directly inside the switcher component, so `HeroSection` can read the same state.
+
+- [ ] **Step 3: Source a text effect from React Bits**
+
+Fetch a suitable animated-text component from the React Bits repo (https://github.com/DavidHDev/react-bits — look under its text-animation components, e.g. a glitch/shiny/scramble-style effect meant for headlines) and adapt it into this project as `components/effects/glitch-text.tsx`. Requirements for the adaptation:
+- Must accept `text: string` and `className?: string` props, render the given text with the animated effect applied (component owns its own animation, e.g. via Framer Motion or CSS — match whatever the source component uses, translating to Tailwind/CSS-variable-friendly styling consistent with this project's theme tokens rather than hardcoded colors).
+- Keep the license comment: React Bits is MIT + Commons Clause — add a one-line code comment noting the source URL and license, consistent with using it inside our own product (not reselling the component library itself).
+- If the exact component you find needs extra dependencies beyond what's already installed (Framer Motion is already a dependency), keep it dependency-light — prefer a component that only needs what's already in `package.json`, or CSS-only effects, over one requiring new packages, unless a new package is clearly the only reasonable way to get a comparable effect.
+
+- [ ] **Step 4: Make the Hero headline theme-aware, and raise the default Hero's visual ambition**
+
+Two changes to `components/sections/hero-section.tsx`, both scoped to the Hero only — Sections 2-4 (industry picker, case gallery, onboarding stepper) must NOT get heavier motion or bigger type; they stay exactly as fast/clean as already built, since that's what the Section 4 conversion-rate research this project is built on depends on. Only the Hero and the AI-analysis-reveal (Task 12, not yet built) are the intended "wow" moments.
+
+1. **Theme-aware headline:** import `useTheme` from `@/lib/use-theme` and `GlitchText` from `@/components/effects/glitch-text`. When `theme === "industrial"`, render the headline via `<GlitchText text={t("headline")} className="max-w-2xl text-4xl font-bold sm:text-6xl" />` instead of the plain `<h1>{t("headline")}</h1>`; for all other themes, keep the plain `<h1>` but apply the typography/motion upgrade below.
+
+2. **Bolder default typography + entrance motion (applies to every theme, not just industrial):** increase the headline size from `text-4xl sm:text-5xl` to `text-5xl sm:text-7xl` and tighten tracking (`tracking-tight`), and wrap the Hero's text block (brand label, headline, subheadline, CTA button) in a `framer-motion` staggered entrance — each element fades/slides up into place on mount, roughly 80-100ms apart, using `motion.div`/`motion.h1`/`motion.p` with a shared `initial={{ opacity: 0, y: 20 }}` / `animate={{ opacity: 1, y: 0 }}` and staggered `transition={{ delay: ... }}`. Keep the total sequence under ~600ms so it reads as a confident reveal, not a slow tease.
+
+- [ ] **Step 4a: Manual verification of the Hero upgrade specifically**
+
+Reload `/zh` and `/en` a few times — confirm the headline/subheadline/CTA visibly stagger in on load (not all at once, not laggy), confirm the headline is noticeably bigger/bolder than before, and confirm this doesn't regress the ShaderGradient background from Task 6.
+
+- [ ] **Step 5: Build the switcher**
+
+`components/style-switcher.tsx`:
+```tsx
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { THEMES, useTheme } from "@/lib/use-theme";
+
+export function StyleSwitcher() {
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="fixed bottom-4 right-4 z-40 flex gap-2 rounded-full border bg-background p-2 shadow-lg">
@@ -1857,15 +1899,15 @@ export function StyleSwitcher() {
 }
 ```
 
-- [ ] **Step 3: Wire into the layout**
+- [ ] **Step 6: Wire into the layout**
 
 Add `<StyleSwitcher />` inside `app/[locale]/layout.tsx`'s `<body>`, alongside `{children}`.
 
-- [ ] **Step 4: Manual verification**
+- [ ] **Step 7: Manual verification**
 
-Click each theme button, confirm the background/primary color/border-radius visibly change across the whole page, and confirm the choice survives a page reload (localStorage persistence).
+Click each theme button, confirm the background/primary color/border-radius visibly change across the whole page, and confirm the choice survives a page reload (localStorage persistence). Specifically for "industrial": confirm the Hero headline now renders with the React Bits animated effect instead of plain text, and confirm switching away from "industrial" reverts it to the plain headline. Test both `/zh` and `/en`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add -A
