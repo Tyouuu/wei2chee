@@ -7,8 +7,9 @@ import { IndustrySelect } from "@/components/sections/industry-select";
 import { PeerCaseGallery } from "@/components/sections/peer-case-gallery";
 import { OnboardingStepper } from "@/components/onboarding/stepper";
 import { AnalysisReveal } from "@/components/sections/analysis-reveal";
+import { ConversionCta } from "@/components/sections/conversion-cta";
 import { Button } from "@/components/ui/button";
-import type { Industry } from "@/types/database";
+import type { Industry, AnalysisResult } from "@/types/database";
 
 export default function HomePage() {
   const locale = useLocale();
@@ -16,6 +17,7 @@ export default function HomePage() {
   const [showStepper, setShowStepper] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string> | null>(null);
   const [leadId, setLeadId] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
 
   return (
     <main>
@@ -49,9 +51,13 @@ export default function HomePage() {
           industryId={selectedIndustry.id}
           language={locale as "zh" | "en"}
           answers={answers}
-          onDone={setLeadId}
+          onDone={(leadId, result) => {
+            setLeadId(leadId);
+            setAnalysis(result);
+          }}
         />
       )}
+      {analysis && <ConversionCta summary={analysis.summary} />}
     </main>
   );
 }

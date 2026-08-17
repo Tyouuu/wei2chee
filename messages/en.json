@@ -27,5 +27,12 @@
     "transformTitle": "What changes",
     "before": "Today",
     "after": "With Formae"
+  },
+  "cta": {
+    "title": "Ready to simplify your business?",
+    "whatsapp": "Send analysis to WhatsApp",
+    "whatsappPrefill": "I just completed a business analysis, here's my result:",
+    "continue": "Continue designing my system",
+    "placeholderNotice": "This feature is still in development. We'll contact you shortly!"
   }
 }
