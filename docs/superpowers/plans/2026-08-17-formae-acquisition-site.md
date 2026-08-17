@@ -1517,6 +1517,7 @@ one-sentence summary. Respond in ${language === "zh" ? "Chinese" : "English"}.`;
   try {
     completion = await openai.chat.completions.create({
       model: "gpt-5.6-luna",
+      reasoning_effort: "high",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_schema", json_schema: analysisJsonSchema },
     });
