@@ -1,0 +1,367 @@
+@import "tailwindcss";
+
+/* Font stack declaration — a consuming app should supply its own font variables
+   matching the pattern here (--font-sans, --font-mono). Uncomment and customize
+   to wire up your project's @font-face or next/font imports:
+   @theme inline {
+     --font-sans: var(--font-your-sans);
+     --font-mono: var(--font-your-mono);
+   }
+*/
+
+/* Blueprint — precision/technical register for contractor and technical-services
+   SMEs (site management, job scheduling, materials tracking) whose own field
+   vocabulary is already "drafted, ruled, annotated." Adapted from this repo's own
+   `app/globals.css` — the Formae acquisition site's marketing palette — not
+   ported from an external product the way Ledger was.
+
+   THE LIGHT/DARK DECISION, made explicitly because the source file argues hard
+   for the opposite. `app/globals.css` commits to a single dark world and says why:
+   "the Hero's ShaderGradient is dark by nature, and a light variant would leave
+   the two halves of the page belonging to different products." That reasoning is
+   airtight for a marketing page with one Hero section — and it does not transfer
+   here. This file has no Hero, no ShaderGradient, no one-time atmospheric moment
+   to protect. What it has to serve instead is the brief's own framing: a screen
+   opened dozens of times a day, not once.
+
+   Real precedent exists on both sides and is worth stating rather than waved off.
+   Dark grounds are a legitimate, live choice for technical tools — CAD packages
+   and terminal-style ops dashboards keep them by default, and "blueprint" as a
+   word still evokes a dark sheet to most people. But the word's own history
+   argues the other way. A true cyanotype blueprint — white linework on a Prussian
+   blue ground — is genuinely difficult to read for long stretches and impossible
+   to annotate by hand, which is exactly why the drafting trade spent much of the
+   20th century moving off it: diazo "blueline" and whiteprint processes put blue
+   or black linework on a white or cream ground instead, specifically because
+   dark-ground prints don't survive being marked up, filed, and re-read all day at
+   a job site. What "blueprint" has actually meant in most working drawing sets
+   for decades is already a light-ground medium. Choosing light here is not a
+   retreat from the identity; it is the identity's own working form.
+
+   There is a second, more practical reason. Ledger and Hearth are both light —
+   built for a canvas that disappears under a table (Ledger) or holds a mostly
+   empty page without looking unfinished (Hearth). A dashboard opened dozens of
+   times a day, dense with schedules and line items, has the same daylight-reading
+   needs Ledger was built for, not the one-time-impression needs the source
+   Hero was built for. And this design system's own style picker puts all three
+   registers side by side as options a business owner chooses between, not
+   composes together — making Blueprint the one dark register among three peers
+   would make it read as an exception needing its own chrome rules (borders,
+   hovers, focus rings all re-derived for a dark ground) rather than a peer that
+   differs only in hue and texture. Decision: light.
+
+   THE HUE PROBLEM THIS CREATES, and how it's solved. `--ink` and `--blueprint`
+   both sit at OKLCH hue ~262-265 — which turns out to be almost exactly where
+   Ledger's own navy-tinted neutrals and link-blue already live (OKLCH hue
+   ~253-258). Porting the source hue literally, at Ledger-like chroma, would not
+   read as a second register; it would read as Ledger with a grid overlay. The
+   hue gap that's left, checked token-by-token against Ledger's matching role
+   (canvas-to-canvas 3.5°, primary-to-primary 6.0°, paper-to-paper 8.4°,
+   page-background-to-page-background 8.5°), tops out under 9° — real, but too
+   small to carry the differentiation on its own, and this file says so rather
+   than overclaiming it.
+
+   What actually separates Blueprint from Ledger is chroma and texture, not hue
+   angle. Every neutral step below carries roughly 1.8-2.3x Ledger's own neutral
+   chroma at the matching lightness step (canvas: 0.0103 vs Ledger's 0.0045;
+   page background: 0.0179 vs Ledger's 0.0097) — a cast you see, not the "tint you
+   feel" Ledger's own comment describes for itself. The accent runs hotter too:
+   0.2003 chroma against Ledger's 0.1878, a smaller but real difference. And this
+   file keeps — quieter, at low opacity, deferred to a later component-layer task
+   rather than built here (see the note below the @theme block) — the one thing
+   neither sibling has at all: the drafting grid, the sheet-marks registration
+   ticks, and the `.annotation` mono-label voice. Those, not the hue, are the
+   actual identity.
+
+   Semantic warm/cool split, inherited from the source and preserved in spirit:
+   `--rust` (warm, the visitor's unresolved/manual state) and `--signal` (cool,
+   the resolved/structured state) don't become new hues here — Task 5's rule
+   holds status meaning fixed across all three styles — but they decide which of
+   Ledger's five existing status hues carries each meaning in this file's
+   surrounding cooler, higher-chroma context. See the status block below for the
+   hue-distance numbers behind each choice.
+*/
+@theme {
+  /* The neutral family, blue-tinted — genuinely tinted, not a hint of one. Every
+     step below sits at OKLCH hue ~261-265, matching `--ink`'s own hue in the
+     source file, at roughly double the chroma Ledger uses for its navy cast
+     (see the file comment above for the exact multipliers). This is the "you see
+     it, not just feel it" end of the same principle Ledger and Hearth both use —
+     appropriate here because this register's whole claim is "graphic/technical,"
+     not "restrained."
+
+     Ordered by luminance the same way Ledger's and Hearth's ramps are: card
+     lightest, then canvas, then hover fill, then page background, then two
+     border steps. Measured: 1.000 / 0.9273 / 0.8854 / 0.8423 / 0.7256 / 0.5724 —
+     a wider spread than either sibling (Ledger: 1.000-0.7017, Hearth:
+     0.9779-0.6613), because the border steps are meant to read as ruled lines on
+     a drafting sheet, not just a soft edge. */
+  --color-canvas: #f3f7fe;
+  --color-ink-950: #e6edf9;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #edf2fc;
+  --color-ink-800: #d5deee;
+  --color-ink-700: #bdc8db;
+
+  /* The card is pure white, agreeing with Ledger's choice over Hearth's tinted
+     one — but for a different, more literal reason than Ledger's "dense table
+     needs maximum separation." A contractor's ops tool carries the same table-
+     and-schedule density Ledger was built for, so that argument applies here too;
+     but the stronger reason is the sheet metaphor itself. Diazo blueline prints —
+     the light-ground medium this file's opening comment argues "blueprint" has
+     actually meant for decades — are printed on white or cream stock. The card
+     is that sheet: the brightest, most literal "paper" in the file, sitting on a
+     canvas that's visibly cooler and more saturated than it is. That gap (card
+     1.000 to canvas 0.9273, versus Ledger's 1.000-to-0.9369 or Hearth's
+     0.9779-to-0.9370) is deliberately wider than either sibling's — the sheet
+     should look like it's sitting on the table, not merged into it. */
+
+  /* Deep ink, not black. OKLCH(0.211 0.0470 261.6) — chroma within 3% of
+     Ledger's own paper (0.0483), so this is the one neutral where Blueprint and
+     Ledger genuinely agree rather than differentiate; a near-black ink doesn't
+     need to prove its hue the way a light canvas does. 17.71:1 on the card. */
+  --color-paper: #0c182e;
+
+  /* Secondary text. 6.55:1 on the card, 6.09:1 on canvas, 5.83:1 on hover,
+     5.56:1 on the page background, 5.61:1 on primary-soft — clears AA as body
+     text on every surface this file defines, with more headroom than either
+     sibling needed because the darker border steps demanded a paper-dim that
+     stays legible against them too. */
+  --color-paper-dim: #515e75;
+
+  /* Restrained-but-hotter accent: hue 262, matching `--blueprint` and `--ink`
+     exactly, at chroma 0.2003 against Ledger's 0.1878 — the "accent runs hotter"
+     half of this file's differentiation argument. Appears on focus rings,
+     intentional CTAs and high-importance states only, never decoratively — the
+     accent-discipline rule both siblings already state and this file inherits
+     unchanged.
+
+     Tuned down from an initial L0.55 pass specifically to clear 4.5:1 on every
+     surface in the file, not only the card: 5.49:1 on card, 5.11:1 on canvas,
+     4.89:1 on hover, 4.67:1 on the page background, 4.71:1 on primary-soft. That
+     page-background number beats Ledger's own worst case for its primary
+     (4.15:1) outright — the extra chroma bought vividness without costing the
+     contrast floor Ledger itself didn't fully clear. */
+  --color-primary: #2261dd;
+
+  /* Hover/pressed. Darkened by essentially Ledger's own relative-luminance step
+     between primary and primary-deep — ratio 0.5727 here against Ledger's 0.5691
+     (0.0808 from 0.1411, versus Ledger's 0.096 from 0.169) — so the state change
+     carries the same weight it does in the other two files. 8.03:1 on the card. */
+  --color-primary-deep: #0b47b9;
+
+  /* Tinted fill for accent-soft surfaces. Relative luminance 0.8496, just above
+     the page background's 0.8423 — same relationship Ledger's and Hearth's own
+     primary-soft have to their page backgrounds — at chroma 0.0237 against the
+     page background's 0.0179, so a soft accent panel reads as the accent tinting
+     the page, not merely a lighter step of the same neutral. Both text colors
+     clear AA on it: paper-dim 5.61:1, primary 4.71:1. */
+  --color-primary-soft: #e5eefe;
+
+  /* Text/icon color for content rendered on a --color-primary fill (CTA buttons
+     and links). Plain white — and unlike Hearth, which had to prove that choice
+     against its own off-white card, here it needs no argument: this file's card
+     (--color-ink-900) is *also* plain white, so "on-primary is the lightest
+     surface color" and "on-primary is #ffffff" are the same fact, exactly as in
+     Ledger. 5.50:1 on --color-primary. */
+  --color-on-primary: #ffffff;
+
+  /* Text/icon color for any other sufficiently dark or saturated fill that isn't
+     --color-primary — --color-paper used as a solid pill, or a status-bright
+     color used as an avatar-chip background. Same value as --color-on-primary
+     for the same reason (the card is white, full stop), verified separately
+     against every fill it actually meets: --color-primary-deep 8.03:1,
+     --color-paper 17.71:1, jade-bright 5.41:1 ← worst case, brass-bright 5.75:1,
+     clay-bright 6.01:1, slate-bright 7.31:1, info-bright 7.65:1. All comfortably
+     clear AA. */
+  --color-on-dark: #ffffff;
+
+  /* The status family below is byte-identical to ledger.css and must stay that
+     way — a user who learns brass means "pending" in one style should not have
+     to relearn it in another. The rationale for each individual value lives in
+     ledger.css and is not restated here.
+
+     What this file adds is the mapping from the source page's own rust/signal
+     pair onto this fixed family, since neither survives as a new hue (per Task 5
+     Step 1's rule) but both inform which existing Ledger hue carries their
+     meaning here. Measured in OKLCH, the same space both files' source colors
+     are declared in:
+
+     --signal (oklch(0.8 0.13 195), the state AFTER Formae — structured,
+     resolved) sits 44.2° from jade (150.8°) and 71.3° from info (266.3°), the
+     next-closest candidates — not a close call. It also matches jade's own
+     meaning, positive/verified: a resolved, structured state is a positive one.
+     Signal's hue does not become a token; it confirms jade is where this file's
+     "after" state already lives in the shared family.
+
+     --rust (oklch(0.66 0.11 45), the visitor's CURRENT state — manual,
+     scattered, unresolved) is a near-tie by hue alone: 29.5° from brass (74.5°)
+     versus 29.9° from clay (15.1°), a 0.4° difference that hue distance cannot
+     decide. Meaning breaks the tie. Rust describes an unprocessed, not-yet-
+     structured condition — pending, not broken — which is brass's meaning
+     (pending/warning), not clay's (negative/flagged). A scattered manual process
+     is the "before" state Formae fixes, not a failure state; brass is the
+     honest read, and this file says so rather than picking the marginally closer
+     hue and calling it settled. */
+
+  /* status: pending / warning */
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+
+  /* status: positive / verified */
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+
+  /* status: negative / flagged */
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+
+  /* status: neutral / instant */
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+
+  /* spare categorical hue (donut 3rd slot, avatar variety) */
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+
+  /* The podium: gold, silver, bronze, on ranking surfaces and nowhere else —
+     unchanged from Ledger. On this file's white card they measure exactly what
+     they measure on Ledger's own white card: 4.52:1, 4.30:1, 4.58:1 — the one
+     place in the file where "same card, same numbers" needed no re-derivation. */
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+
+  /* Chart-fill aliases — kept for chart components that reference the -chart
+     names explicitly. Same values as the status hues they alias, per the rule
+     above that status meaning does not vary by style. */
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+}
+
+/* On the drafting grid, sheet-marks and .annotation vocabulary: kept, per the
+   brief, at much quieter presence than the marketing site — but not built here.
+   ledger.css and hearth.css are pure token files with no @layer utilities
+   component classes at all; adding `.annotation`, `.sheet-marks` and a grid
+   background to this file alone would make blueprint.css structurally different
+   from both siblings for a set of classes that, checked against this repo's own
+   components, are not yet referenced by anything Tasks 2-3 built (`sheet-marks`
+   and `.annotation` appear nowhere outside `app/globals.css` and one comment in
+   `app/[locale]/layout.tsx`). Building them speculatively now risks the same
+   problem raw hue-porting risked above: inventing Blueprint-only surface that
+   the "zero code changes across sets" contract can't actually honor, because
+   Ledger and Hearth would have nothing to swap in for a component that used it.
+   This vocabulary is real and worth building — as component-layer CSS, scoped to
+   whichever later task actually wires a grid background and corner ticks into a
+   consuming shell, the same way Ledger's `@layer components` grid and buttons
+   were explicitly deferred out of Task 1. Left as a note here rather than code,
+   so the next task finds the intent recorded, not silently dropped. */
+
+/* Craft tokens taken from the shipped CSS of Linear, Vercel (Geist) and Stripe.
+   These are copied from ledger.css/hearth.css unchanged and on purpose: a weight
+   ceiling, a tracking scale that moves with size, a half-pixel hairline and a
+   single easing curve are craft, not style. A design system in which the
+   headings get heavier when you switch visual register is not a design system
+   with three styles, it is three design systems.
+
+   The weight ceiling is the important one. Linear runs every title token from
+   17px to 72px at 590; Vercel caps at 600; Mercury, a bank, tops out at 480 and
+   even remaps <b> down to it. Nothing here should exceed --fw-semibold.
+
+   Tracking scales negatively with size, which all three do and most apps do not
+   do at all: 0 tracking on a 26px heading is the single most obvious difference
+   when you put them side by side. */
+:root {
+  color-scheme: light;
+
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  --tracking-body: -0.011em; /* Linear --text-regular-letter-spacing */
+  --tracking-sm: -0.013em; /* Linear --text-small */
+  --tracking-title: -0.02em; /* Vercel .text-heading-14/16 */
+  --tracking-title-lg: -0.04em; /* Vercel .text-heading-24 (-0.96px) */
+
+  /* Alpha, not an opaque hex: composites correctly over the card *and* over
+     the tinted surfaces this design uses. Vercel ships the same idea as a ring
+     token, --ds-shadow-border-base: 0 0 0 1px #00000014.
+
+     Keyed to Blueprint's own ink (12, 24, 46), not Ledger's navy or Hearth's
+     evergreen. A border is a surface darkened, and darkening this file's cooler,
+     higher-chroma canvas along either sibling's vector would pull it off-hue at
+     exactly the edges — ruled lines, corner ticks — where this register's
+     "drafted" identity is meant to read most clearly. */
+  --border-subtle: rgba(12, 24, 46, 0.09);
+  --border-strong: rgba(12, 24, 46, 0.14);
+
+  /* Shadows are tinted too, and for the same reason as the borders: Stripe ships
+     --shadow-blue #003770 rather than a black, because a black shadow over a
+     tinted canvas desaturates the surface under it. This is Blueprint's own ink
+     as a channel triple so components can compose it at their own alpha. */
+  --shadow-hue: 12, 24, 46;
+
+  /* Linear ships true half-pixel borders on 2x displays. */
+  --hairline: 1px;
+
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Linear --ease-out-quad */
+  --dur-fast: 120ms; /* Linear background transition */
+  --dur: 160ms; /* Linear button transition */
+}
+
+@media (min-resolution: 192dpi) {
+  :root {
+    --hairline: 0.5px;
+  }
+}
+
+html {
+  letter-spacing: var(--tracking-body);
+}
+
+/* The weight ceiling, enforced rather than only written down.
+   <b> and <strong> default to 700 — 900 in this stack — which is heavier than
+   anything the token block above allows, and heavier than Linear, Vercel or
+   Mercury use anywhere. Mercury remaps <b> for exactly this reason. */
+b,
+strong {
+  font-weight: var(--fw-semibold);
+}
+
+/* Tabular figures belong on numeric columns, not on running prose — in body
+   text they open awkward gaps around "1". Vercel scopes it to a utility rather
+   than setting it on html. Component-layer classes (.figure, .figure-money)
+   opt into this. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  background: var(--color-ink-950);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: none;
+  /* Two-layer ring: a surface-colored gap then the accent, so the ring reads
+     cleanly on top of a row hover or a colored fill. Vercel ships exactly this
+     shape as --ds-focus-ring. Both layers are keyed to Blueprint's own tokens —
+     the gap is this file's card color, the ring is this file's accent. */
+  box-shadow:
+    0 0 0 2px var(--color-ink-900),
+    0 0 0 4px var(--color-primary);
+  /* 3px, sharper than Ledger's 4px and Hearth's 6px. Hearth's brief asked for
+     generous radii to match a soft register; this file's brief is the opposite —
+     a drafting sheet is ruled, not rounded, and the one radius this token file
+     owns directly is where that bias belongs. Not zero: a hard 0px ring reads as
+     a broken corner rather than a drafted one at this weight. */
+  border-radius: 3px;
+}
+
+/* Blueprint is adapted from this repo's own app/globals.css (the Formae
+   acquisition site's marketing palette, live in production), not ported from an
+   external product — see the file comment above for the full argument on what
+   was kept, what was dropped, and why the register runs light against its
+   source's dark original. Every contrast ratio quoted above was computed with
+   the WCAG relative-luminance formula against the specific surface named, and
+   every OKLCH figure was computed from the actual authored color, not estimated. */
