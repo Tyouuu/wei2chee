@@ -3,7 +3,6 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { BRAND_NAME } from "@/lib/brand";
-import { StyleSwitcher } from "@/components/style-switcher";
 import "../globals.css";
 
 export const metadata: Metadata = {
@@ -30,7 +29,6 @@ export default async function LocaleLayout({
     <html lang={locale}>
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
-        <StyleSwitcher />
       </body>
     </html>
   );
