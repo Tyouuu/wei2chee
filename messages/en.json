@@ -9,7 +9,8 @@
   },
   "peerCases": {
     "title": "Here's how we've helped businesses like yours.",
-    "inferredLabel": "Industry-typical scenario"
+    "inferredLabel": "Industry-typical scenario",
+    "start": "Analyze my business"
   },
   "onboarding": {
     "q1": { "title": "What do you currently use to manage customers and orders?", "opt1": "WhatsApp", "opt2": "Excel", "opt3": "Paper", "opt4": "Existing software", "opt5": "No system" },
@@ -26,7 +27,8 @@
     "bottlenecksTitle": "Where things are slowing you down",
     "transformTitle": "What changes",
     "before": "Today",
-    "after": "With Formae"
+    "after": "With Formae",
+    "stepCount": "{count} steps"
   },
   "cta": {
     "title": "Ready to simplify your business?",

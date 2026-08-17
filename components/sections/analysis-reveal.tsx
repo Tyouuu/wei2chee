@@ -4,23 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import type { AnalysisResult } from "@/types/database";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 const LOADING_STEPS = ["loadingStep1", "loadingStep2", "loadingStep3"] as const;
 
-// Staggered reveal so the analysis narrates itself in beats (summary, then
-// bottlenecks, then the before/after transformation) instead of popping in
-// all at once — this is the AI-reveal moment, one of the two zones (with the
-// Hero) explicitly agreed to carry extra creative investment.
 const container: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+  show: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
 };
 
 const item: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  },
 };
 
 function LoadingState() {
@@ -30,57 +28,182 @@ function LoadingState() {
   useEffect(() => {
     const id = setInterval(() => {
       setStepIndex((i) => Math.min(i + 1, LOADING_STEPS.length - 1));
-    }, 1700);
+    }, 1900);
     return () => clearInterval(id);
   }, []);
 
   return (
-    <section className="flex min-h-screen flex-col items-center justify-center gap-5 px-6 text-center">
-      <div className="flex gap-1.5">
-        {[0, 1, 2].map((i) => (
-          <motion.span
-            key={i}
-            className="h-2 w-2 rounded-full bg-foreground"
-            animate={{ opacity: [0.2, 1, 0.2] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
-          />
-        ))}
+    <section className="flex min-h-screen flex-col items-center justify-center gap-9 px-6">
+      {/* A drafting compass sweeping: one arc rotating inside a static ring.
+          Reads as an instrument at work rather than a generic spinner. */}
+      <div className="relative h-16 w-16">
+        <div className="absolute inset-0 rounded-full border border-border" />
+        <motion.div
+          className="absolute inset-0 rounded-full border border-transparent border-t-blueprint"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blueprint"
+          animate={{ opacity: [0.35, 1, 0.35] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+        />
       </div>
-      <AnimatePresence mode="wait">
-        <motion.p
-          key={stepIndex}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.3 }}
-          className="font-serif text-xl text-muted-foreground"
-        >
-          {t(LOADING_STEPS[stepIndex])}
-        </motion.p>
-      </AnimatePresence>
+
+      <div className="flex flex-col items-center gap-4">
+        <span className="annotation">SYS.ANALYSIS</span>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={stepIndex}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.35 }}
+            className="font-serif text-2xl tracking-[-0.01em] text-foreground/80"
+          >
+            {t(LOADING_STEPS[stepIndex])}
+          </motion.p>
+        </AnimatePresence>
+      </div>
     </section>
   );
 }
 
-function WorkflowRow({ label, steps, tone }: { label: string; steps: string[]; tone: "muted" | "accent" }) {
+/*
+  The payoff graphic. The visitor's current process and the proposed system are
+  both drawn as vertical flow tracks, and the contrast between HOW they are drawn
+  carries the argument:
+
+    current  — rust, dashed connector, nodes stepped at irregular offsets
+    proposed — cyan, solid connector, nodes flush and numbered
+
+  The connector scales in from the top as the track enters the viewport, so each
+  track literally draws itself. Nodes are real HTML text (selectable, localized),
+  not SVG labels, and the connector is a transform on a div — so a workflow of
+  any length lays out correctly without hand-computed path coordinates.
+*/
+function WorkflowTrack({
+  label,
+  steps,
+  tone,
+}: {
+  label: string;
+  steps: string[];
+  tone: "current" | "proposed";
+}) {
+  const t = useTranslations("analysis");
+  const isProposed = tone === "proposed";
+  const lineColor = isProposed ? "bg-signal/60" : "bg-rust/45";
+  const dotColor = isProposed ? "bg-signal" : "bg-rust";
+  const textColor = isProposed ? "text-foreground" : "text-muted-foreground";
+
   return (
-    <div>
-      <h5 className="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</h5>
-      <div className="flex flex-wrap items-center gap-2">
-        {steps.map((step, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <span
-              className={cn(
-                "rounded-full px-3 py-1.5 text-sm font-medium",
-                tone === "accent" ? "bg-indigo-600 text-white" : "bg-muted text-muted-foreground",
-              )}
-            >
-              {step}
-            </span>
-            {i < steps.length - 1 && <span className="text-muted-foreground/60">→</span>}
-          </div>
-        ))}
+    /* flex-col + a pushed-down footer so both tracks close on a shared baseline
+       even when the two workflows differ in length — otherwise the shorter
+       column just trails off into empty space. */
+    <div className="flex h-full flex-col">
+      <div className="mb-7 flex items-center gap-3">
+        <span
+          className={`annotation ${isProposed ? "!text-signal" : "!text-rust"}`}
+        >
+          {label}
+        </span>
+        <span
+          className={`h-px flex-1 ${isProposed ? "bg-signal/25" : "bg-rust/20"}`}
+        />
       </div>
+
+      {/* flex-1 lives on this spacer wrapper, not on the connector's own parent,
+          so the line spans exactly the node list. Putting flex-1 directly on the
+          positioning context stretched the connector down past its last node. */}
+      <div className="flex-1">
+        <div className="relative pl-6">
+          {/* The connector. Origin-top scaleY so it draws downward. */}
+          <motion.span
+            aria-hidden="true"
+            initial={{ scaleY: 0 }}
+            whileInView={{ scaleY: 1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            className={`absolute top-2 bottom-2 left-[3px] w-px origin-top ${lineColor} ${
+              isProposed ? "" : "opacity-70"
+            }`}
+            style={
+              isProposed
+                ? undefined
+                : /* Dashed via a repeating gradient: the ad-hoc path. */
+                  {
+                    backgroundImage:
+                      "repeating-linear-gradient(to bottom, currentColor 0 4px, transparent 4px 9px)",
+                    backgroundColor: "transparent",
+                    color: "var(--rust)",
+                  }
+            }
+          />
+
+          <ul className="grid gap-5">
+            {steps.map((step, i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: -8 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{
+                  duration: 0.45,
+                  delay: 0.25 + i * 0.07,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="relative flex items-center gap-4"
+              >
+                {/* Node marker stays anchored ON the connector for both tracks, so
+                  the line always reads as one continuous path. Square nodes for
+                  the proposed system (drafted), round for the current one (ad hoc). */}
+                <span
+                  aria-hidden="true"
+                  className={`absolute -left-6 h-1.5 w-1.5 shrink-0 ${dotColor} ${
+                    isProposed ? "" : "rounded-full"
+                  }`}
+                />
+                {isProposed && (
+                  <span className="font-mono text-[0.625rem] tabular-nums text-signal/70">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                )}
+                {/* Only the LABEL goes ragged on the current-state track — an
+                  unplanned process doesn't line up. The proposed track is flush
+                  and numbered, and the eye reads that difference before the words. */}
+                <span
+                  className={`text-[0.9375rem] ${textColor}`}
+                  style={
+                    isProposed ? undefined : { marginLeft: `${(i % 3) * 12}px` }
+                  }
+                >
+                  {step}
+                </span>
+              </motion.li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Track footer: the step count, read straight off the data. Gives both
+          columns a shared closing baseline and states plainly how many hand-offs
+          each process actually has. */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className={`mt-8 border-t pt-4 ${isProposed ? "border-signal/20" : "border-rust/15"}`}
+      >
+        <span
+          className={`font-mono text-[0.625rem] tracking-[0.14em] tabular-nums uppercase ${
+            isProposed ? "text-signal/70" : "text-rust/60"
+          }`}
+        >
+          {t("stepCount", { count: steps.length })}
+        </span>
+      </motion.div>
     </div>
   );
 }
@@ -100,6 +223,12 @@ export function AnalysisReveal({
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const t = useTranslations("analysis");
   const rootRef = useRef<HTMLDivElement>(null);
+  // Dev-only guard: React StrictMode double-invokes effects on mount, which
+  // would otherwise fire this paid OpenAI call twice per real page load
+  // (confirmed happening — two rate_limit_events rows landed from a single
+  // manual QA pass). The ref survives the mount/unmount/remount StrictMode
+  // cycle within one component instance, so only the first invocation fetches.
+  const hasFetchedRef = useRef(false);
 
   // The stepper that leads here is a fixed full-screen overlay; when it closes,
   // the page falls back to whatever scroll position it had before the overlay
@@ -111,6 +240,9 @@ export function AnalysisReveal({
   }, []);
 
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
     fetch("/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -143,7 +275,8 @@ export function AnalysisReveal({
   if (state === "error") {
     return (
       <div ref={rootRef}>
-        <section className="flex min-h-screen items-center justify-center px-6 text-center">
+        <section className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+          <span className="annotation !text-destructive">SYS.ERROR</span>
           <p className="text-muted-foreground">{t("error")}</p>
         </section>
       </div>
@@ -156,45 +289,95 @@ export function AnalysisReveal({
         variants={container}
         initial="hidden"
         animate="show"
-        className="mx-auto max-w-2xl px-6 py-24"
+        className="mx-auto max-w-5xl px-6 pt-32 pb-24 sm:px-10"
       >
-        <motion.p variants={item} className="text-center font-serif text-2xl leading-snug font-semibold">
-          {analysis!.summary}
-        </motion.p>
+        <div className="grid gap-10 md:grid-cols-[7rem_1fr] md:gap-14">
+          <motion.div variants={item} className="md:pt-3">
+            <span className="annotation">03 / FINDINGS</span>
+          </motion.div>
 
-        <motion.h4 variants={item} className="mt-16 mb-5 font-serif text-lg font-semibold">
-          {t("bottlenecksTitle")}
-        </motion.h4>
-        <div className="grid gap-3">
-          {analysis!.bottlenecks.map((b, i) => (
-            <motion.div key={i} variants={item}>
-              <Card className="transition-shadow hover:shadow-md">
-                <CardHeader className="flex flex-row items-center gap-3">
-                  {b.icon && (
-                    <span
-                      aria-hidden="true"
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-lg leading-none"
-                    >
-                      {b.icon}
-                    </span>
-                  )}
-                  <CardTitle className="font-serif text-base">{b.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{b.description}</p>
-                </CardContent>
-              </Card>
+          <div>
+            {/* The verdict, set at display scale — this sentence is the single
+                most important thing the AI produces, so it gets the treatment
+                the Hero headline gets, not body-copy treatment. */}
+            <motion.p
+              variants={item}
+              className="max-w-2xl font-serif text-[clamp(1.5rem,3.4vw,2.5rem)] leading-[1.15] tracking-[-0.02em] text-balance"
+            >
+              {analysis!.summary}
+            </motion.p>
+
+            <motion.div
+              variants={item}
+              className="mt-16 mb-8 flex items-center gap-4"
+            >
+              <h3 className="annotation !text-muted-foreground">
+                {t("bottlenecksTitle")}
+              </h3>
+              <span className="h-px flex-1 bg-border" />
+              <span className="font-mono text-[0.625rem] tabular-nums text-muted-foreground">
+                {String(analysis!.bottlenecks.length).padStart(2, "0")}
+              </span>
             </motion.div>
-          ))}
-        </div>
 
-        <motion.h4 variants={item} className="mt-16 mb-5 font-serif text-lg font-semibold">
-          {t("transformTitle")}
-        </motion.h4>
-        <motion.div variants={item} className="grid gap-6">
-          <WorkflowRow label={t("before")} steps={analysis!.before_workflow} tone="muted" />
-          <WorkflowRow label={t("after")} steps={analysis!.after_workflow} tone="accent" />
-        </motion.div>
+            <div className="grid gap-px bg-border">
+              {analysis!.bottlenecks.map((b, i) => (
+                <motion.div
+                  key={i}
+                  variants={item}
+                  /* Hairline-separated rows on a shared background, not detached
+                     cards: findings on one drawing, in one schedule. The left
+                     rust bar on hover ties them to the current-state colour. */
+                  className="group relative bg-background p-7 transition-colors duration-500 hover:bg-white/[0.02]"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-0 bottom-0 left-0 w-px origin-top scale-y-0 bg-rust/60 transition-transform duration-500 group-hover:scale-y-100"
+                  />
+                  <div className="flex items-start gap-5">
+                    <span className="font-mono text-[0.625rem] tabular-nums text-rust/70">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div className="flex-1">
+                      <h4 className="font-serif text-xl tracking-[-0.01em]">
+                        {b.title}
+                      </h4>
+                      <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                        {b.description}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div
+              variants={item}
+              className="mt-20 mb-10 flex items-center gap-4"
+            >
+              <h3 className="annotation !text-muted-foreground">
+                {t("transformTitle")}
+              </h3>
+              <span className="h-px flex-1 bg-border" />
+            </motion.div>
+
+            <motion.div
+              variants={item}
+              className="grid items-stretch gap-14 sm:grid-cols-2 sm:gap-10"
+            >
+              <WorkflowTrack
+                label={t("before")}
+                steps={analysis!.before_workflow}
+                tone="current"
+              />
+              <WorkflowTrack
+                label={t("after")}
+                steps={analysis!.after_workflow}
+                tone="proposed"
+              />
+            </motion.div>
+          </div>
+        </div>
       </motion.section>
     </div>
   );

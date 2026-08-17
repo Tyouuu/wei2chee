@@ -5,8 +5,6 @@ import { motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import { getReferenceCases } from "@/lib/reference-cases";
 import type { ReferenceCase } from "@/types/database";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 export function PeerCaseGallery({ industryId }: { industryId: string }) {
   const [cases, setCases] = useState<ReferenceCase[]>([]);
@@ -20,42 +18,66 @@ export function PeerCaseGallery({ industryId }: { industryId: string }) {
   if (cases.length === 0) return null;
 
   return (
-    <section className="px-6 py-24">
-      <motion.h2
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="text-center font-serif text-3xl font-semibold"
-      >
-        {t("title")}
-      </motion.h2>
-      <div className="mx-auto mt-10 grid max-w-3xl gap-4">
-        {cases.map((c, i) => (
-          <motion.div
-            key={c.id}
-            initial={{ opacity: 0, y: 16 }}
+    <section className="mx-auto max-w-5xl px-6 py-24 sm:px-10">
+      <div className="grid gap-10 md:grid-cols-[7rem_1fr] md:gap-14">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.5 }}
+          className="md:pt-3"
+        >
+          <span className="annotation">02 / PRECEDENT</span>
+        </motion.div>
+
+        <div>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.4, delay: i * 0.08, ease: "easeOut" }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-xl font-serif text-[clamp(1.5rem,3vw,2.25rem)] leading-[1.1] tracking-[-0.02em] text-balance"
           >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{locale === "zh" ? c.anonymous_name_zh : c.anonymous_name_en}</CardTitle>
-                {c.source === "inferred" && (
-                  <Badge variant="secondary">{t("inferredLabel")}</Badge>
-                )}
-              </CardHeader>
-              <CardContent>
-                <ul className="list-disc pl-5 text-sm text-muted-foreground">
+            {t("title")}
+          </motion.h2>
+
+          <div className="mt-10 grid gap-5">
+            {cases.map((c, i) => (
+              <motion.article
+                key={c.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.55, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                /* sheet-marks puts registration ticks on opposing corners, so
+                   each case reads as its own small drawing rather than a card. */
+                className="sheet-marks relative border border-border bg-white/[0.02] p-7 transition-colors duration-500 hover:border-blueprint/35"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-3">
+                  <h3 className="font-serif text-xl tracking-[-0.01em]">
+                    {locale === "zh" ? c.anonymous_name_zh : c.anonymous_name_en}
+                  </h3>
+                  {c.source === "inferred" && (
+                    /* Honesty marker, held to the same annotation voice as the
+                       rest of the sheet — never dressed up to look like a
+                       verified client testimonial. */
+                    <span className="annotation border border-blueprint/30 px-2 py-1 !text-[0.625rem] !text-blueprint/80">
+                      {t("inferredLabel")}
+                    </span>
+                  )}
+                </div>
+                <ul className="mt-5 grid gap-3">
                   {(locale === "zh" ? c.highlights_zh : c.highlights_en).map((h, idx) => (
-                    <li key={idx}>{h}</li>
+                    <li key={idx} className="flex gap-3.5 text-sm leading-relaxed text-muted-foreground">
+                      <span aria-hidden="true" className="mt-2 h-px w-4 shrink-0 bg-blueprint/50" />
+                      <span>{h}</span>
+                    </li>
                   ))}
                 </ul>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+              </motion.article>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

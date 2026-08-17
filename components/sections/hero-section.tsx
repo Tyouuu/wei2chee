@@ -15,7 +15,11 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
 };
 
-const HEADLINE_CLASSNAME = "max-w-2xl font-serif text-5xl font-bold tracking-tight sm:text-7xl";
+// Instrument Serif carries its weight through stroke contrast, not mass — so
+// it is set at 400 (no font-bold) and allowed to get genuinely large. Negative
+// tracking at this scale is what makes it read as typeset rather than default.
+const HEADLINE_CLASSNAME =
+  "max-w-4xl font-serif text-[clamp(2.75rem,8.5vw,6.5rem)] leading-[0.95] tracking-[-0.03em] text-balance";
 
 export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
   const t = useTranslations("hero");
@@ -109,6 +113,26 @@ export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
           />
         </ShaderGradientCanvas>
       </motion.div>
+
+      {/*
+        Scrim. The waterPlane gradient sweeps to a very bright blue on one side,
+        and where it does, white body copy and the scroll cue drop below readable
+        contrast (verified via screenshot). Two stacked layers fix it without
+        touching the shader params: a center-biased radial that keeps the
+        headline area clear, and a vertical wash anchoring the bottom edge where
+        the scroll cue and the brightest part of the gradient collide.
+        `-z-10` keeps this above the canvas (also -z-10, earlier in the stack)
+        but still behind all content.
+      */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(120% 90% at 50% 45%, oklch(0.16 0.012 265 / 0.72) 0%, oklch(0.16 0.012 265 / 0.5) 45%, transparent 100%)," +
+            "linear-gradient(to bottom, oklch(0.16 0.012 265 / 0.55) 0%, transparent 25%, transparent 60%, oklch(0.16 0.012 265 / 0.8) 100%)",
+        }}
+      />
       {/*
         NOTE 3: the theme's default `--foreground` is near-black in light mode
         (see app/globals.css), which is unreadable over the dark waterPlane
@@ -116,46 +140,85 @@ export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
         invisible). Text here is hardcoded to light/white regardless of the
         active color-mode, since it always sits on the same dark gradient.
       */}
-      <motion.div style={{ scale: contentScale, opacity: contentOpacity }} className="flex flex-col items-center">
-        <motion.p
-          initial={fadeUp.initial}
-          animate={fadeUp.animate}
-          transition={{ duration: 0.35, delay: 0, ease: "easeOut" }}
-          className="mb-2 text-sm uppercase tracking-widest text-white/70"
-        >
-          {BRAND_NAME}
-        </motion.p>
+      {/* Sheet header — the title block of a drawing, top-left and top-right. */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.5 }}
+        className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between px-6 pt-6 sm:px-10 sm:pt-8"
+      >
+        <span className="annotation !text-white/55">{BRAND_NAME} / SYS.DESIGN</span>
+        <span className="annotation hidden !text-white/40 sm:block">SHEET 01 — MY</span>
+      </motion.div>
+
+      <motion.div
+        style={{ scale: contentScale, opacity: contentOpacity }}
+        className="relative flex flex-col items-center px-6"
+      >
+        {/* Hairline above the headline: a drawing's datum line. It draws itself
+            open from the center, so the first thing that happens on the page is
+            an instrument being laid down. */}
+        <motion.div
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, opacity: 1 }}
+          transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-10 h-px w-40 origin-center bg-gradient-to-r from-transparent via-white/45 to-transparent"
+        />
         <motion.div
           initial={fadeUp.initial}
           animate={fadeUp.animate}
-          transition={{ duration: 0.35, delay: 0.08, ease: "easeOut" }}
+          transition={{ duration: 0.7, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
         >
           <h1 className={`${HEADLINE_CLASSNAME} text-white`}>{t("headline")}</h1>
         </motion.div>
         <motion.p
           initial={fadeUp.initial}
           animate={fadeUp.animate}
-          transition={{ duration: 0.35, delay: 0.16, ease: "easeOut" }}
-          className="mt-4 max-w-xl text-lg text-white/80"
+          transition={{ duration: 0.7, delay: 0.42, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-7 max-w-md text-base leading-relaxed text-white/65"
         >
           {t("subheadline")}
         </motion.p>
         <motion.div
           initial={fadeUp.initial}
           animate={fadeUp.animate}
-          transition={{ duration: 0.35, delay: 0.24, ease: "easeOut" }}
+          transition={{ duration: 0.7, delay: 0.56, ease: [0.22, 1, 0.36, 1] }}
         >
           <motion.div
-            className="mt-8 inline-block"
+            className="mt-11 inline-block"
             style={{ x: ctaSpringX, y: ctaSpringY }}
             onPointerMove={handleCtaPointerMove}
             onPointerLeave={handleCtaPointerLeave}
           >
-            <Button size="lg" onClick={onCtaClick}>
-              {t("cta")}
-            </Button>
+            {/* Outlined, not filled: on a drawing surface a solid slab reads as
+                a sticker sitting on top. A hairline box with a hover fill reads
+                as part of the same drawing. */}
+            <button
+              onClick={onCtaClick}
+              className="group relative border border-white/35 bg-transparent px-8 py-4 font-mono text-[0.8125rem] tracking-[0.14em] text-white uppercase transition-colors duration-300 hover:border-white focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none"
+            >
+              <span className="absolute inset-0 origin-left scale-x-0 bg-white transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
+              <span className="relative transition-colors duration-300 group-hover:text-[oklch(0.16_0.012_265)]">
+                {t("cta")}
+              </span>
+            </button>
           </motion.div>
         </motion.div>
+      </motion.div>
+
+      {/* Scroll cue: a plumb line dropping off the bottom of the sheet. */}
+      <motion.div
+        style={{ opacity: contentOpacity }}
+        className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3"
+      >
+        <span className="annotation !text-white/35">SCROLL</span>
+        <div className="h-12 w-px overflow-hidden bg-white/15">
+          <motion.div
+            className="h-1/2 w-full bg-white/70"
+            animate={{ y: ["-100%", "200%"] }}
+            transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
       </motion.div>
     </section>
   );

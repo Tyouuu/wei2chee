@@ -9,7 +9,8 @@
   },
   "peerCases": {
     "title": "跟你同行的公司，我们帮他们这样做。",
-    "inferredLabel": "行业典型场景"
+    "inferredLabel": "行业典型场景",
+    "start": "开始分析我的生意"
   },
   "onboarding": {
     "q1": { "title": "你现在用什么管理客户和订单？", "opt1": "WhatsApp", "opt2": "Excel", "opt3": "纸本", "opt4": "现有软件", "opt5": "没有系统" },
@@ -26,7 +27,8 @@
     "bottlenecksTitle": "现在卡住你的地方",
     "transformTitle": "会有什么改变",
     "before": "现在",
-    "after": "用了 Formae 之后"
+    "after": "用了 Formae 之后",
+    "stepCount": "{count} 个环节"
   },
   "cta": {
     "title": "要不要继续设计你的系统？",
