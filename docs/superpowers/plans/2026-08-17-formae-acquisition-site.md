@@ -1250,7 +1250,7 @@ describe("evaluateRateLimit", () => {
     const recentEvents = [now - 1000, now - 2000]; // 2 events
     const result = evaluateRateLimit(recentEvents, now, { limit: 5, windowMs: 60_000 });
     expect(result.allowed).toBe(true);
-    expect(result.remaining).toBe(2);
+    expect(result.remaining).toBe(3);
   });
 
   it("blocks the request when at the limit", () => {
