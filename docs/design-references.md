@@ -31,11 +31,22 @@ backgrounds) · Claymorphism · Bento grids · Kinetic typography · Grain textu
 Commonly paired with: SaaS → glassmorphism / aurora / dark mode. E-commerce →
 bento / claymorphism / kinetic type. Agencies → brutalism / grain / Y2K.
 
-## Sites the founder has shared — TO BE FILLED IN
+## Sites the founder shared
 
-The founder has collected a set of UI/UX design sites over several sessions.
-Those were shared before a context compaction and are **not recoverable** from
-the transcript (the only URL ever pasted was one of our own artifacts). Paste the
-list once and it gets recorded here permanently.
+Recovered from the SDD ledger (`.superpowers/sdd/2026-08-17-formae-acquisition-site/progress.md`),
+which recorded them at the time of the design-quality pushback. This is the list
+to work from.
 
-- [ ] _(awaiting the founder's list)_
+| Site | Type | Used yet? |
+| --- | --- | --- |
+| [React Bits](https://reactbits.dev/) | Animated React components (text effects, backgrounds) | Yes — GlitchText was used in Task 14, then removed with the multi-theme cleanup |
+| [Aceternity UI](https://ui.aceternity.com/) | Tailwind + Framer Motion component library, heavy on hero/background effects | Not yet |
+| [21st.dev](https://21st.dev/) | shadcn-compatible community component registry | Not yet |
+| [GSAP](https://gsap.com/) | Scroll-driven animation library (ScrollTrigger) | No — the site uses Framer Motion `useScroll` instead |
+| [ShaderGradient](https://www.shadergradient.co/) | WebGL animated gradient meshes | Yes — `AmbientBackdrop` (site-wide fixed layer) |
+| MotionSites | Motion-design showcase gallery | Not yet |
+| [UIverse](https://uiverse.io/) | Community CSS component gallery (buttons, cards, loaders) | Not yet |
+| [Awwwards](https://www.awwwards.com/websites/) | Award-winner baseline | Yes — the continuity rework was derived from it |
+
+**Still unused: Aceternity, 21st.dev, GSAP, MotionSites, UIverse.** Check these
+before inventing anything from scratch, especially for 组件模板 / 卡片模板 work.
