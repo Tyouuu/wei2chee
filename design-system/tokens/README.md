@@ -54,3 +54,9 @@ Then use the tokens on any element:
 ## Design Rationale
 
 Each token file includes detailed comments explaining *why* values were chosen, not only what they are. The rationales are universal — navy-tinted neutrals avoid the visual incoherence of mixing unrelated greys; a weight ceiling stops buttons and headings from racing into 800–900; tinted shadows preserve surface color fidelity. Read the comments in each file for the full design story.
+
+## Reference Consumer: the Style Picker
+
+`app/[locale]/style-picker/` is the one place this design system mounts all three token sets on the same page at once, so a client can compare them side by side before choosing one. It's worth reading as a worked example of the "same custom-property names, different values" pattern in action — three complete registers rendering the identical component tree (`PageHeader`, `DataGrid`, `StatusDot`, `Field`, `FilterChips`, `EmptyState`), with only the wrapping token scope changing between them.
+
+It's also the one consumer that *doesn't* follow the "import exactly one token file" pattern above — a normal app only ever needs one register active, so a single `@theme`/`:root` import is exactly right for it. Mounting three registers simultaneously runs into a real constraint: `@theme` always compiles to `:root`, and `:root` cannot be scoped to a subtree, so importing `ledger.css`, `hearth.css` and `blueprint.css` directly into one page would have all three collide on every custom-property name, with the last import winning. `app/[locale]/style-picker/style-scope.module.css` works around this by rebinding each file's declarations to a `.ledger` / `.hearth` / `.blueprint` class instead of `:root` — see that file's header comment for the full reasoning and its sync-with-source-of-truth caveat.

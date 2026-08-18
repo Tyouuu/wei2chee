@@ -36,5 +36,84 @@
     "whatsappPrefill": "I just completed a business analysis, here's my result:",
     "continue": "Continue designing my system",
     "placeholderNotice": "This feature is still in development. We'll contact you shortly!"
+  },
+  "stylePicker": {
+    "title": "Pick your style",
+    "subtitle": "The same page, drawn three ways. Compare Ledger, Hearth and Blueprint side by side, then tell us which one to build your system in.",
+    "selectCta": "Choose this style",
+    "contractLinkLabel": "Why these aren't just three color swaps",
+    "whatsappPrefill": "I'd like the {style} style",
+    "styles": {
+      "ledger": {
+        "label": "Ledger",
+        "description": "Precision and density for ops-heavy businesses — wholesale, distribution, accounting. A light, navy-tinted canvas built for tables."
+      },
+      "hearth": {
+        "label": "Hearth",
+        "description": "Warmth and clarity for client-facing service businesses — salons, retail, service companies. A sage-tinted canvas built for a handful of large things."
+      },
+      "blueprint": {
+        "label": "Blueprint",
+        "description": "A drafted, technical register for contractors and field-service SMEs — site management, scheduling, materials. A cooler, higher-contrast canvas."
+      }
+    },
+    "sample": {
+      "pageHeaderTitle": "This Month",
+      "pageHeaderSubtitle": "6 records this month",
+      "fieldLabel": "Customer note",
+      "fieldHint": "Shown on the receipt, not sent to the customer.",
+      "fieldPlaceholder": "e.g. Pickup after 3pm",
+      "filterLabel": "Status",
+      "filterValue": "Pending",
+      "dataGridLabel": "This month's transactions",
+      "dataGridHeaders": {
+        "date": "Date",
+        "description": "Description",
+        "amount": "Amount",
+        "status": "Status"
+      },
+      "statusLabels": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "overdue": "Overdue"
+      },
+      "rows": [
+        { "date": "Aug 1", "description": "Invoice #1042", "amount": "RM 1,280.00", "status": "paid" },
+        { "date": "Aug 4", "description": "Monthly service fee", "amount": "RM 300.00", "status": "paid" },
+        { "date": "Aug 9", "description": "Equipment rental", "amount": "RM 450.00", "status": "pending" },
+        { "date": "Aug 12", "description": "Deposit received", "amount": "RM 600.00", "status": "paid" },
+        { "date": "Aug 15", "description": "Late payment fee", "amount": "RM 50.00", "status": "overdue" },
+        { "date": "Aug 18", "description": "Refund issued", "amount": "RM 120.00", "status": "pending" }
+      ],
+      "emptyStateLabel": "Empty state example",
+      "emptyStateTitle": "No records yet",
+      "emptyStateDescription": "Once you add your first transaction, it will show up here."
+    },
+    "contract": {
+      "heading": "Why these aren't just three color swaps",
+      "intro": "Every page built with this design system, in any of the three styles, follows the same generation contract.",
+      "pageRulesHeading": "Five page rules",
+      "pageRules": [
+        "The page states its answer. The one question the page exists to answer is the largest thing on it.",
+        "States are designed, not defaulted. Before data exists, the entry form is the page. After it exists, the input collapses to a summary with a Change affordance.",
+        "Explanation sits beside the thing it explains, never a permanent banner above everything.",
+        "Actions are named for what they do, and the label matches the heading above it.",
+        "Detail folds away. Supporting evidence opens automatically only when the verdict says something is wrong."
+      ],
+      "layoutRulesHeading": "Two layout rules",
+      "layoutRules": [
+        "Full width, left-aligned, like every other page — a centred narrow column just leaves a dead right-hand gutter.",
+        "Rows of cards don't stretch. Where two cards of different natural heights sit side by side, the shorter one doesn't grow to match."
+      ],
+      "componentRulesHeading": "Component rules, in all three styles",
+      "componentRules": [
+        "Weight ceiling: nothing exceeds semibold. No 700/800/900 weights, anywhere.",
+        "Tracking scales negatively with size — a large heading needs tighter tracking than body text.",
+        "Every control has a real associated label — never a placeholder standing in for one.",
+        "Numeric columns get tabular figures. Never running prose.",
+        "Status is never colour alone — every status colour is paired with a text label.",
+        "Disabled means a real disabled attribute, not faded opacity on a non-interactive element."
+      ]
+    }
   }
 }

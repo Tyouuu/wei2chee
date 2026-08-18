@@ -1,0 +1,229 @@
+/*
+ * Scoped copies of design-system/tokens/{ledger,hearth,blueprint}.css.
+ *
+ * WHY THIS FILE EXISTS: each of those three files declares its custom
+ * properties inside an `@theme { ... }` block (which Tailwind v4 always
+ * compiles to `:root`) plus a plain `:root { ... }` block of craft tokens
+ * (weights, tracking, border/shadow tints, easing). `:root` always means
+ * the document's root element — no CSS mechanism, including the `@scope`
+ * at-rule, can retarget it to something narrower than the whole document.
+ * A normal consuming app only ever imports ONE token file (see
+ * design-system/tokens/README.md), so that binding is never a problem.
+ *
+ * This page is the one deliberate exception in the whole design system:
+ * it has to mount all three registers on the same document at the same
+ * time so a client can compare them side by side. Importing the three
+ * token files directly would have every `@theme`/`:root` block collide on
+ * the exact same custom-property names — the last one imported would win
+ * for all of them, and every column would render identically.
+ *
+ * The declarations below are copied verbatim (same hex/rgba/em values, same
+ * property names) from the three token files, then rebound to `.ledger` /
+ * `.hearth` / `.blueprint` classes instead of `:root` / `@theme`, so a
+ * <StyleColumn> can scope one register to itself while its siblings scope
+ * the other two. Everything else in this design system — every ported
+ * component in design-system/components, and sample-content.tsx in this
+ * folder — reads these same custom-property names via `var(--color-*)`
+ * and has no idea whether the value came from `:root` or from one of the
+ * classes below.
+ *
+ * KEEPING THIS IN SYNC: this is the one place in the design system that
+ * duplicates token values on purpose. If a token file's values change,
+ * this file needs the matching edit — there is no build step that derives
+ * it automatically.
+ */
+
+.scope {
+  color: var(--color-paper);
+  background-color: var(--color-ink-950);
+  letter-spacing: var(--tracking-body);
+}
+
+.scope :global(b),
+.scope :global(strong) {
+  font-weight: var(--fw-semibold);
+}
+
+/* Matches each token file's own `.tnum` utility — numeric columns opt in
+   via a plain `className="tnum"`, same as the component rule requires. */
+.scope :global(.tnum) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Two-layer focus ring: a surface-coloured gap, then the accent — same
+   shape all three token files ship, each keyed to its own tokens. Only the
+   ring radius differs per style below (4px Ledger / 6px Hearth / 3px
+   Blueprint), matching each file's own :focus-visible rule exactly. */
+.scope :focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-ink-900),
+    0 0 0 4px var(--color-primary);
+}
+
+/* ---------------------------------------------------------------------- *
+ * Ledger — copied from design-system/tokens/ledger.css
+ * ---------------------------------------------------------------------- */
+.ledger {
+  --color-canvas: #f6f8fb;
+  --color-ink-950: #eaeff5;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #f2f6fb;
+  --color-ink-800: #e4e9f0;
+  --color-ink-700: #d3dbe5;
+  --color-paper: #14273d;
+  --color-paper-dim: #5b6d82;
+  --color-primary: #0570de;
+  --color-primary-deep: #0356ab;
+  --color-primary-soft: #e7f0fb;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --tracking-body: -0.011em;
+  --tracking-sm: -0.013em;
+  --tracking-title: -0.02em;
+  --tracking-title-lg: -0.04em;
+  --border-subtle: rgba(13, 37, 61, 0.09);
+  --border-strong: rgba(13, 37, 61, 0.14);
+  --shadow-hue: 13, 37, 61;
+  --hairline: 1px;
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 120ms;
+  --dur: 160ms;
+}
+
+.ledger :focus-visible {
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Hearth — copied from design-system/tokens/hearth.css
+ * ---------------------------------------------------------------------- */
+.hearth {
+  --color-canvas: #f4f9f7;
+  --color-ink-950: #e9f1ed;
+  --color-ink-900: #fbfdfc;
+  --color-ink-850: #f0f7f4;
+  --color-ink-800: #dee9e4;
+  --color-ink-700: #c9d8d1;
+  --color-paper: #153227;
+  --color-paper-dim: #536e63;
+  --color-primary: #237570;
+  --color-primary-deep: #165a55;
+  --color-primary-soft: #e1f4f3;
+  --color-on-primary: #fbfdfc;
+  --color-on-dark: #fbfdfc;
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --tracking-body: -0.011em;
+  --tracking-sm: -0.013em;
+  --tracking-title: -0.02em;
+  --tracking-title-lg: -0.04em;
+  --border-subtle: rgba(21, 50, 39, 0.09);
+  --border-strong: rgba(21, 50, 39, 0.14);
+  --shadow-hue: 21, 50, 39;
+  --hairline: 1px;
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 120ms;
+  --dur: 160ms;
+}
+
+.hearth :focus-visible {
+  border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Blueprint — copied from design-system/tokens/blueprint.css
+ * ---------------------------------------------------------------------- */
+.blueprint {
+  --color-canvas: #f3f7fe;
+  --color-ink-950: #e6edf9;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #edf2fc;
+  --color-ink-800: #d5deee;
+  --color-ink-700: #bdc8db;
+  --color-paper: #0c182e;
+  --color-paper-dim: #515e75;
+  --color-primary: #2261dd;
+  --color-primary-deep: #0b47b9;
+  --color-primary-soft: #e5eefe;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --tracking-body: -0.011em;
+  --tracking-sm: -0.013em;
+  --tracking-title: -0.02em;
+  --tracking-title-lg: -0.04em;
+  --border-subtle: rgba(12, 24, 46, 0.09);
+  --border-strong: rgba(12, 24, 46, 0.14);
+  --shadow-hue: 12, 24, 46;
+  --hairline: 1px;
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 120ms;
+  --dur: 160ms;
+}
+
+.blueprint :focus-visible {
+  border-radius: 3px;
+}
+
+@media (min-resolution: 192dpi) {
+  .ledger,
+  .hearth,
+  .blueprint {
+    --hairline: 0.5px;
+  }
+}

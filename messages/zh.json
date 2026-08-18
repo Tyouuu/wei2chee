@@ -36,5 +36,84 @@
     "whatsappPrefill": "我刚做了业务分析，结果是：",
     "continue": "继续设计我的系统",
     "placeholderNotice": "这个功能还在开发中，我们会尽快联系你！"
+  },
+  "stylePicker": {
+    "title": "选择你的风格",
+    "subtitle": "同一个页面，画成三种风格。并排比较 Ledger、Hearth 和 Blueprint，然后告诉我们要用哪一种来搭建你的系统。",
+    "selectCta": "选这个风格",
+    "contractLinkLabel": "为什么这不只是换个颜色",
+    "whatsappPrefill": "我选择 {style} 风格",
+    "styles": {
+      "ledger": {
+        "label": "Ledger",
+        "description": "为高密度运营型生意打造的精准风格——批发、经销、会计。浅色、带藏青色调的画布，专为表格设计。"
+      },
+      "hearth": {
+        "label": "Hearth",
+        "description": "为面向客户的服务型生意打造的温暖清晰风格——美容美发、零售门店、服务公司。带鼠尾草绿调的画布，适合承载少量大型内容。"
+      },
+      "blueprint": {
+        "label": "Blueprint",
+        "description": "为承包商与现场服务型中小企业打造的制图技术风格——工地管理、排班、物料追踪。更冷、对比更强的画布。"
+      }
+    },
+    "sample": {
+      "pageHeaderTitle": "本月概览",
+      "pageHeaderSubtitle": "本月共 6 笔记录",
+      "fieldLabel": "客户备注",
+      "fieldHint": "会显示在收据上，不会发送给客户。",
+      "fieldPlaceholder": "例如：下午3点后取货",
+      "filterLabel": "状态",
+      "filterValue": "待处理",
+      "dataGridLabel": "本月交易记录",
+      "dataGridHeaders": {
+        "date": "日期",
+        "description": "说明",
+        "amount": "金额",
+        "status": "状态"
+      },
+      "statusLabels": {
+        "paid": "已付款",
+        "pending": "待处理",
+        "overdue": "逾期"
+      },
+      "rows": [
+        { "date": "8月1日", "description": "发票 #1042", "amount": "RM 1,280.00", "status": "paid" },
+        { "date": "8月4日", "description": "月度服务费", "amount": "RM 300.00", "status": "paid" },
+        { "date": "8月9日", "description": "设备租赁", "amount": "RM 450.00", "status": "pending" },
+        { "date": "8月12日", "description": "收到订金", "amount": "RM 600.00", "status": "paid" },
+        { "date": "8月15日", "description": "逾期滞纳金", "amount": "RM 50.00", "status": "overdue" },
+        { "date": "8月18日", "description": "退款", "amount": "RM 120.00", "status": "pending" }
+      ],
+      "emptyStateLabel": "空状态示例",
+      "emptyStateTitle": "还没有记录",
+      "emptyStateDescription": "添加第一笔交易后，会显示在这里。"
+    },
+    "contract": {
+      "heading": "为什么这不只是换个颜色",
+      "intro": "用这套设计系统搭建的每一个页面，无论选择哪一种风格，都遵循同一份生成契约。",
+      "pageRulesHeading": "五条页面规则",
+      "pageRules": [
+        "页面陈述答案。找出这个页面存在的意义所要回答的那个问题，让它成为页面上最显眼的东西。",
+        "状态是被设计出来的，不是默认出来的。数据产生之前，录入表单本身就是这个页面；数据产生之后，输入区收起为摘要，并带有「修改」的入口。",
+        "解释紧挨着它所解释的东西，而不是页面最上方一条永久性的横幅。",
+        "操作的命名要说清楚它做了什么，并且和它上方的标题对应。",
+        "细节默认收起。只有在结论显示出问题时，支持性的证据才会自动展开。"
+      ],
+      "layoutRulesHeading": "两条布局规则",
+      "layoutRules": [
+        "全宽、左对齐，和其他所有页面一样——居中的窄栏只会把内容挤到中间，右边留出一条没用的空白。",
+        "并排的卡片不互相拉伸。两张高度不同的卡片并排时，矮的那张不会被拉高去凑齐另一张。"
+      ],
+      "componentRulesHeading": "组件规则（三种风格通用）",
+      "componentRules": [
+        "字重设有上限：不超过 semibold，任何地方都不会出现 700/800/900 的字重。",
+        "字距随字号增大而收紧——大标题需要比正文更紧的字距，而不是所有字号都用零字距。",
+        "每个输入控件都有真正关联的标签——绝不用占位符（placeholder）冒充标签。",
+        "数字列使用等宽数字（tabular figures），正文叙述不用。",
+        "状态绝不只靠颜色表达——每个状态颜色都配有文字标签。",
+        "禁用状态是真正的 disabled 属性，不是给非交互元素套一层低透明度。"
+      ]
+    }
   }
 }

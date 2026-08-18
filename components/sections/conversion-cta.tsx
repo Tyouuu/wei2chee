@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { BRAND_NAME } from "@/lib/brand";
+import { BRAND_NAME, WHATSAPP_NUMBER } from "@/lib/brand";
 import { SectionShell } from "@/components/section-shell";
-
-const WHATSAPP_NUMBER = "60123456789"; // TODO before real launch: replace with the real business WhatsApp number
 
 const container: Variants = {
   hidden: {},
