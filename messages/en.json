@@ -136,7 +136,9 @@
   "portal": {
     "styleSelect": {
       "title": "Choose your system style",
-      "subtitle": "This choice can't be changed afterwards, so compare carefully before deciding."
+      "subtitle": "This choice can't be changed afterwards, so compare carefully before deciding.",
+      "errorAlreadySet": "You've already chosen a style — this can't be changed.",
+      "errorGeneric": "Something went wrong, please try again."
     }
   }
 }

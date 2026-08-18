@@ -136,7 +136,9 @@
   "portal": {
     "styleSelect": {
       "title": "选择你的系统风格",
-      "subtitle": "这个选择之后不能更改，请仔细比较后再决定。"
+      "subtitle": "这个选择之后不能更改，请仔细比较后再决定。",
+      "errorAlreadySet": "风格已经选过了，不能再改。",
+      "errorGeneric": "出了点问题，请再试一次。"
     }
   }
 }

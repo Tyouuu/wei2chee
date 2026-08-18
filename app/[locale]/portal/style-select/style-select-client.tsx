@@ -19,13 +19,19 @@ const STYLES: StyleName[] = ["ledger", "hearth", "blueprint"];
  *
  * `set_project_style` (see supabase/migrations/20260818120000) enforces
  * one-time-only server-side: it only succeeds when the caller's project
- * still has `style is null`, and raises otherwise. That failure surfaces
- * here as `rpcError.message`, shown as plain text above the columns --
- * this page does not pre-check whether style is already set (that guard
- * belongs to the portal layout gate downstream, not this step).
+ * still has `style is null`, and raises otherwise. That failure is a raw
+ * Postgres exception message (English only, e.g. "style already set or
+ * project not found") -- never shown to the customer verbatim, since this
+ * page is bilingual. Mapped through `portal.styleSelect.error*` instead,
+ * the same way login-form.tsx / signup-form.tsx map their own Supabase
+ * error messages through `auth.error*` rather than displaying them raw.
+ * This page does not pre-check whether style is already set (that guard
+ * belongs to the portal layout gate downstream, not this step) -- the
+ * "already set" case is expected to reach here and gets its own message.
  */
 export function StyleSelectClient() {
   const t = useTranslations("stylePicker");
+  const tError = useTranslations("portal.styleSelect");
   const router = useRouter();
   const [pending, setPending] = useState<StyleName | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +45,9 @@ export function StyleSelectClient() {
 
     if (rpcError) {
       setPending(null);
-      setError(rpcError.message);
+      setError(
+        rpcError.message.includes("already set") ? tError("errorAlreadySet") : tError("errorGeneric"),
+      );
       return;
     }
 
