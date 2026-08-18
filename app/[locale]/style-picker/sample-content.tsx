@@ -53,6 +53,8 @@ export function SampleContent() {
       <FilterChips
         chips={[{ label: t("filterLabel"), value: t("filterValue"), removeHref: "#" }]}
         clearAllHref="#"
+        filteredByLabel={t("filteredBy")}
+        clearAllLabel={t("clearAll")}
       />
 
       <DataGrid id="style-picker-sample" label={t("dataGridLabel")}>

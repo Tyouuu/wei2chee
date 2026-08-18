@@ -41,7 +41,6 @@
     "title": "选择你的风格",
     "subtitle": "同一个页面，画成三种风格。并排比较 Ledger、Hearth 和 Blueprint，然后告诉我们要用哪一种来搭建你的系统。",
     "selectCta": "选这个风格",
-    "contractLinkLabel": "为什么这不只是换个颜色",
     "whatsappPrefill": "我选择 {style} 风格",
     "styles": {
       "ledger": {
@@ -63,6 +62,8 @@
       "fieldLabel": "客户备注",
       "fieldHint": "会显示在收据上，不会发送给客户。",
       "fieldPlaceholder": "例如：下午3点后取货",
+      "filteredBy": "筛选条件",
+      "clearAll": "清除全部",
       "filterLabel": "状态",
       "filterValue": "待处理",
       "dataGridLabel": "本月交易记录",

@@ -51,7 +51,14 @@ export function StyleColumn({
   return (
     <div
       data-style={styleName}
-      className={`${styles.scope} ${SCOPE_CLASS[styleName]} ${isBlueprint ? `relative ${styles.blueprintGrid} ${styles.blueprintSheetMarks}` : ""} flex flex-col gap-6 rounded-2xl border p-5 [border-color:var(--color-ink-800)] sm:p-6`}
+      className={[
+        styles.scope,
+        SCOPE_CLASS[styleName],
+        isBlueprint ? `relative ${styles.blueprintGrid} ${styles.blueprintSheetMarks}` : null,
+        "flex flex-col gap-6 rounded-2xl border p-5 [border-color:var(--color-ink-800)] sm:p-6",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       <div>
         <h2

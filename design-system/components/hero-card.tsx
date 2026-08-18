@@ -1,4 +1,4 @@
-﻿import Link from "next/link"
+import Link from "next/link"
 import type { ReactNode } from "react"
 
 // null means "no meaningful baseline" — callers must skip the change badge

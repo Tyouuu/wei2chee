@@ -41,7 +41,6 @@
     "title": "Pick your style",
     "subtitle": "The same page, drawn three ways. Compare Ledger, Hearth and Blueprint side by side, then tell us which one to build your system in.",
     "selectCta": "Choose this style",
-    "contractLinkLabel": "Why these aren't just three color swaps",
     "whatsappPrefill": "I'd like the {style} style",
     "styles": {
       "ledger": {
@@ -63,6 +62,8 @@
       "fieldLabel": "Customer note",
       "fieldHint": "Shown on the receipt, not sent to the customer.",
       "fieldPlaceholder": "e.g. Pickup after 3pm",
+      "filteredBy": "Filtered by",
+      "clearAll": "Clear all",
       "filterLabel": "Status",
       "filterValue": "Pending",
       "dataGridLabel": "This month's transactions",

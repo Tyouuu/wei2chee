@@ -56,10 +56,12 @@
    ~253-258). Porting the source hue literally, at Ledger-like chroma, would not
    read as a second register; it would read as Ledger with a grid overlay. The
    hue gap that's left, checked token-by-token against Ledger's matching role
-   (canvas-to-canvas 3.5°, primary-to-primary 6.0°, paper-to-paper 8.4°,
-   page-background-to-page-background 8.5°), tops out under 9° — real, but too
-   small to carry the differentiation on its own, and this file says so rather
-   than overclaiming it.
+   across all eleven relevant token pairs (four representative examples:
+   canvas-to-canvas 3.5°, primary-to-primary 6.0°, paper-to-paper 8.4°,
+   page-background-to-page-background 8.5°), tops out at 10.65° — the widest
+   gap, at `--color-ink-850` against Ledger's matching hover-fill neutral —
+   real, but still too small to carry the differentiation on its own, and
+   this file says so rather than overclaiming it.
 
    What actually separates Blueprint from Ledger is chroma and texture, not hue
    angle. Every neutral step below carries roughly 1.8-2.3x Ledger's own neutral
@@ -243,10 +245,11 @@
 /* Drafting grid, sheet-marks and .annotation vocabulary — the texture that
    actually differentiates this register from Ledger's, per the file comment
    above ("What actually separates Blueprint from Ledger is chroma and
-   texture, not hue angle"). This file's tokens alone measured under 9° of hue
-   distance from Ledger's matching roles; Task 6's review and Task 7's
-   rendered picker both confirmed the two were not reliably distinguishable
-   on real pixels without it. Deliberately left as a comment-only deferral in
+   texture, not hue angle"). This file's tokens alone measured up to 10.65° of
+   hue distance from Ledger's matching roles — real, but still not enough on
+   its own; Task 6's review and Task 7's rendered picker both confirmed the
+   two were not reliably distinguishable on real pixels without it.
+   Deliberately left as a comment-only deferral in
    the first pass (ledger.css and hearth.css are pure token files with no
    `@layer utilities` component classes, and this vocabulary wasn't yet
    referenced by any consuming component) — built here, in the task that

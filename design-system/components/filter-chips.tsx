@@ -24,13 +24,25 @@ export type FilterChip = {
  *
  * Ported and generalized from a real client codebase's `filter-chips.tsx`.
  */
-export function FilterChips({ chips, clearAllHref }: { chips: FilterChip[]; clearAllHref: string }) {
+export function FilterChips({
+  chips,
+  clearAllHref,
+  filteredByLabel = "Filtered by",
+  clearAllLabel = "Clear all",
+}: {
+  chips: FilterChip[]
+  clearAllHref: string
+  /** Overridable heading before the chip list. */
+  filteredByLabel?: string
+  /** Overridable label for the clear-all affordance. */
+  clearAllLabel?: string
+}) {
   if (!chips.length) return null
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
       <span className="text-[12px] uppercase tracking-wide text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">
-        Filtered by
+        {filteredByLabel}
       </span>
       {chips.map((chip) => (
         <Link
@@ -56,7 +68,7 @@ export function FilterChips({ chips, clearAllHref }: { chips: FilterChip[]; clea
           href={clearAllHref}
           className="ml-0.5 text-[12px] text-[color:var(--color-paper-dim)] underline-offset-2 [font-weight:var(--fw-medium)] hover:text-[color:var(--color-paper)] hover:underline"
         >
-          Clear all
+          {clearAllLabel}
         </Link>
       )}
     </div>

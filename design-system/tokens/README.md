@@ -6,9 +6,9 @@ This directory contains three visual registers for the Formae design system. Eac
 
 - **`ledger.css`** — Precision/high-density register for ops-heavy B2B businesses (wholesale, distribution, accounting). Navy-tinted neutrals, restrained blue accent, status-color family (jade, brass, clay, slate), intentionally light canvas for table-on-surface composition.
 
-- **`hearth.css`** (Task 5) — Warmth-forward register for admin/operator onboarding and customer success. To be ported with separate color strategy emphasizing approachability and guidance.
+- **`hearth.css`** — Warmth/clarity register for client-facing service businesses (salons, retail storefronts, service companies). Sage-biased neutral family under a muted teal accent, argued from first principles rather than ported from an existing palette — deliberately avoiding both the generic "warm cream + terracotta" and "beauty business, therefore pink" defaults.
 
-- **`blueprint.css`** (Task 6) — Dark register for brand/identity contexts. Drafted-surface aesthetic with blueprint-blue linework and monospace annotations. Deliberately a single committed visual world (no light/dark pair).
+- **`blueprint.css`** — Light-mode precision/technical register for contractor and field-service SMEs (site management, job scheduling, materials tracking). Adapted from this repo's own dark marketing palette (`app/globals.css`), but deliberately run light: a dashboard opened dozens of times a day needs the same daylight-reading legibility Ledger was built for, not the one-time atmospheric Hero moment the dark original was built to protect. Drafting-surface aesthetic with blueprint-blue linework, sheet registration ticks and monospace annotations.
 
 ## Token Pattern
 
