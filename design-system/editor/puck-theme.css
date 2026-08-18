@@ -1,0 +1,135 @@
+/* design-system/editor/puck-theme.css
+
+   The portal editor's own chrome is always Ledger, regardless of which
+   style the customer picked for their canvas content (see the design
+   spec §4 -- this distinction is deliberate: the toolbar/sidebar/canvas
+   frame is Formae's own tool interface, not something the customer is
+   designing). Every color value below is a var() reference into Ledger's
+   token names, never a literal color -- this file must stay token-driven
+   for the same reason every other file in design-system/ is.
+
+   TOKEN NAMES -- verified against the real, installed package, not
+   guessed from the brief:
+   Read node_modules/@puckeditor/core/dist/index.css directly (the
+   `styles/tokens.css` @layer block) and cross-checked against
+   https://puckeditor.com/docs/extending-puck/theming, which explicitly
+   documents overriding Puck's SEMANTIC layer (--puck-color-surface,
+   --puck-color-text, --puck-color-interactive, ...) as the supported
+   theming surface -- not the primitive color ramps
+   (--puck-color-grey-01..12, --puck-color-azure-01..12) those semantic
+   tokens are built from internally.
+
+   The plan's brief guessed grey-01..12 as the override target for
+   neutrals; the real, documented pattern is the semantic surface/
+   border/text tokens below, so this file targets those instead. Full
+   list of corrections is in task-5-report.md. The brief's
+   --puck-color-interactive* guesses were confirmed correct as-is (the
+   docs' own example overrides exactly those four names).
+
+   --color-* values below only resolve to real Ledger colors because the
+   `.ledger` class from app/[locale]/style-picker/style-scope.module.css
+   is applied on the same element as .portal-editor-scope (see
+   editor-client.tsx) -- design-system/tokens/ledger.css itself is never
+   @import-ed anywhere in this app (doing so would redefine --color-primary/
+   --color-paper/--color-border at :root, colliding with app/globals.css's
+   own same-named shadcn/Blueprint marketing-site tokens, sitewide). Reusing
+   the already-tested `.ledger` scope avoids adding a third hand-copied set
+   of Ledger's values to keep in sync -- style-scope.module.css is already
+   the codebase's one deliberate exception for exactly this reason, and
+   its sync with ledger.css is already covered by
+   style-picker/__tests__/style-scope.sync.test.ts.
+*/
+.portal-editor-scope {
+  /* Surfaces */
+  --puck-color-surface: var(--color-ink-900);
+  --puck-color-surface-muted: var(--color-ink-850);
+  --puck-color-surface-subtle: var(--color-canvas);
+  --puck-color-surface-inverse: var(--color-paper);
+
+  /* Borders */
+  --puck-color-border: var(--color-ink-800);
+  --puck-color-border-hover: var(--color-paper-dim);
+  --puck-color-border-muted: var(--color-ink-850);
+  --puck-color-border-inverse: var(--color-paper-dim);
+
+  /* Text */
+  --puck-color-text: var(--color-paper);
+  --puck-color-text-secondary: var(--color-paper-dim);
+  --puck-color-text-muted: var(--color-paper-dim);
+  --puck-color-text-subtle: var(--color-paper-dim);
+  --puck-color-text-inverse: var(--color-on-dark);
+  --puck-color-text-disabled: var(--color-paper-dim);
+  --puck-color-bg-disabled: var(--color-ink-800);
+
+  /* Interactive / accent -- confirmed against the docs' own example */
+  --puck-color-interactive: var(--color-primary);
+  --puck-color-interactive-hover: var(--color-primary-deep);
+  --puck-color-interactive-active: var(--color-primary-deep);
+  --puck-color-interactive-subtle: var(--color-primary-soft);
+  --puck-color-interactive-soft: var(--color-primary-soft);
+  --puck-color-interactive-soft-hover: var(--color-primary-soft);
+  --puck-color-interactive-neutral-hover: var(--color-ink-850);
+  /* Foreground color for interactive elements rendered on
+     --puck-color-surface-inverse (e.g. the floating action bar) --
+     Puck's own default gets *lighter* from hover to active for contrast
+     against a dark bg; mirrored here with primary -> primary-soft. */
+  --puck-color-interactive-inverse-hover: var(--color-primary);
+  --puck-color-interactive-inverse-active: var(--color-primary-soft);
+
+  /* Focus / selection / drag affordances */
+  --puck-color-focus-ring: var(--color-primary);
+  --puck-color-selection-bg: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  --puck-color-selection-border: var(--color-primary);
+  --puck-color-line-placeholder: var(--color-primary);
+
+  /* Typography -- inherit the page's own font stack (Geist Latin + CJK
+     system fallbacks, see app/globals.css) instead of Puck's bundled
+     Inter (which its CSS pulls from an external rsms.me stylesheet). */
+  --puck-font-family: inherit;
+  --puck-font-weight-medium: var(--fw-medium);
+  --puck-font-weight-semibold: var(--fw-semibold);
+  /* Ledger's weight ceiling (see ledger.css's own comment) is
+     --fw-semibold (600) -- nothing in this app should render heavier, so
+     Puck's bolder steps are capped down to the same value rather than
+     left at Puck's default 700/800. */
+  --puck-font-weight-bold: var(--fw-semibold);
+  --puck-font-weight-heavy: var(--fw-semibold);
+
+  /* Radius -- Ledger doesn't export its own radius scale (the app-wide
+     --radius-* Tailwind tokens in app/globals.css belong to the
+     marketing site's Blueprint theme, not Ledger), so these stay
+     literal, tuned to the same tight, restrained corner language
+     Ledger's own components use throughout design-system/components/. */
+  --puck-radius-s: 4px;
+  --puck-radius-m: 8px;
+  --puck-radius-l: 12px;
+
+  /* Border width -- reuse Ledger's own device-aware hairline (1px, 0.5px
+     on 2x displays) instead of Puck's fixed 0.5px default. */
+  --puck-border-width-hairline: var(--hairline);
+}
+
+/* Puck's drop canvas renders inside its own same-origin `srcdoc` iframe
+   (a separate DOM/CSSOM), and copies the parent page's full compiled
+   stylesheet into that iframe's <head> so dropped components keep their
+   real page styles. That copy includes app/globals.css's marketing-site
+   `body` rule (dark ground, blueprint drafting-grid background-image) --
+   .portal-editor-scope/.ledger above are classes on a div in the PARENT
+   document, so they cannot reach into the iframe's own <body> at all.
+   Without this override the canvas shows the marketing site's dark grid
+   instead of a plain Ledger canvas -- confirmed live (computed
+   background-image on the iframe's body matched globals.css's grid
+   gradients exactly before this rule was added).
+
+   This chunk of CSS is only ever loaded on the /portal/[pageKey] route
+   (it's imported solely by editor-client.tsx), so this `body` rule can't
+   leak into any other page. Literal hex fallbacks are used because
+   var(--color-canvas)/var(--color-paper) do not exist inside the
+   iframe's own document (no ancestor there carries .ledger) -- kept
+   byte-identical to ledger.css's own --color-canvas/--color-paper so a
+   future update to that file needs the matching edit here too. */
+body {
+  background-image: none !important;
+  background-color: var(--color-canvas, #f6f8fb);
+  color: var(--color-paper, #14273d);
+}
