@@ -16,7 +16,7 @@ export async function proxy(request: NextRequest) {
   // its response takes precedence for routing, but the auth cookie set
   // by Supabase must still be copied onto it.
   supabaseResponse.cookies.getAll().forEach((cookie) => {
-    intlResponse.cookies.set(cookie.name, cookie.value);
+    intlResponse.cookies.set(cookie);
   });
 
   return intlResponse;
