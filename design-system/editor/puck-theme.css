@@ -123,13 +123,36 @@
 
    This chunk of CSS is only ever loaded on the /portal/[pageKey] route
    (it's imported solely by editor-client.tsx), so this `body` rule can't
-   leak into any other page. Literal hex fallbacks are used because
-   var(--color-canvas)/var(--color-paper) do not exist inside the
-   iframe's own document (no ancestor there carries .ledger) -- kept
-   byte-identical to ledger.css's own --color-canvas/--color-paper so a
-   future update to that file needs the matching edit here too. */
+   leak into any other page.
+
+   --color-canvas and --color-paper needed DIFFERENT fixes here, not the
+   same one -- verified live via getComputedStyle inside the iframe,
+   because they fail differently:
+     - --color-canvas is genuinely absent inside the iframe (no ancestor
+       there carries .ledger, and app/globals.css never defines a
+       property by this name), so var(--color-canvas, #f6f8fb) correctly
+       falls back to the literal.
+     - --color-paper is NOT absent inside the iframe: app/globals.css's
+       own :root-level `--color-paper: var(--paper)` (the marketing
+       site's near-white tone) gets copied into the iframe along with
+       the rest of globals.css, so the property resolves -- just to the
+       wrong (near-white) value. A var() fallback only fires when a
+       property is absent, never when it resolves to an unwanted value,
+       so var(--color-paper, #14273d) silently kept the near-white
+       marketing value here (confirmed live: iframe body text computed
+       to near-white on the #f6f8fb canvas -- a real legibility bug,
+       fixed in "Fix round 1"). Hence the plain literal below instead of
+       a var() call for this one property.
+   Both literals are kept byte-identical to ledger.css's own
+   --color-canvas/--color-paper values so a future update to that file
+   needs the matching edit here too. */
 body {
   background-image: none !important;
   background-color: var(--color-canvas, #f6f8fb);
-  color: var(--color-paper, #14273d);
+  color: #14273d; /* Ledger's --color-paper value, hardcoded here deliberately:
+    var(--color-paper) resolves inside this iframe to app/globals.css's own
+    same-named marketing-site token (near-white), not Ledger's navy -- a
+    var() fallback can't help since the property isn't actually absent, just
+    wrong. See this block's header comment for why --color-canvas and
+    --color-paper needed different treatment. */
 }
