@@ -38,13 +38,29 @@ export function StyleColumn({
 }) {
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappPrefillText)}`;
 
+  // Blueprint is the one style whose differentiation from Ledger depends on
+  // texture, not just token values (see design-system/tokens/blueprint.css's
+  // own file comment — canvas/primary/paper hue distance from Ledger tops
+  // out under 9°, too small to carry the difference alone). The drafting
+  // grid and sheet-marks corner ticks go on this column's own container
+  // (the "sheet" itself); the annotation mono-label voice goes on the style
+  // label below, which is style-column.tsx's own content — never on
+  // <SampleContent />, which must render identically in all three columns.
+  const isBlueprint = styleName === "blueprint";
+
   return (
     <div
       data-style={styleName}
-      className={`${styles.scope} ${SCOPE_CLASS[styleName]} flex flex-col gap-6 rounded-2xl border p-5 [border-color:var(--color-ink-800)] sm:p-6`}
+      className={`${styles.scope} ${SCOPE_CLASS[styleName]} ${isBlueprint ? `relative ${styles.blueprintGrid} ${styles.blueprintSheetMarks}` : ""} flex flex-col gap-6 rounded-2xl border p-5 [border-color:var(--color-ink-800)] sm:p-6`}
     >
       <div>
-        <h2 className="text-[16px] tracking-[var(--tracking-title)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+        <h2
+          className={
+            isBlueprint
+              ? styles.blueprintAnnotation
+              : "text-[16px] tracking-[var(--tracking-title)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]"
+          }
+        >
           {label}
         </h2>
         <p className="mt-1 text-[13px] text-[color:var(--color-paper-dim)]">{description}</p>

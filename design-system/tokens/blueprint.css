@@ -240,23 +240,93 @@
   --color-brass-chart: #a8710a;
 }
 
-/* On the drafting grid, sheet-marks and .annotation vocabulary: kept, per the
-   brief, at much quieter presence than the marketing site — but not built here.
-   ledger.css and hearth.css are pure token files with no @layer utilities
-   component classes at all; adding `.annotation`, `.sheet-marks` and a grid
-   background to this file alone would make blueprint.css structurally different
-   from both siblings for a set of classes that, checked against this repo's own
-   components, are not yet referenced by anything Tasks 2-3 built (`sheet-marks`
-   and `.annotation` appear nowhere outside `app/globals.css` and one comment in
-   `app/[locale]/layout.tsx`). Building them speculatively now risks the same
-   problem raw hue-porting risked above: inventing Blueprint-only surface that
-   the "zero code changes across sets" contract can't actually honor, because
-   Ledger and Hearth would have nothing to swap in for a component that used it.
-   This vocabulary is real and worth building — as component-layer CSS, scoped to
-   whichever later task actually wires a grid background and corner ticks into a
-   consuming shell, the same way Ledger's `@layer components` grid and buttons
-   were explicitly deferred out of Task 1. Left as a note here rather than code,
-   so the next task finds the intent recorded, not silently dropped. */
+/* Drafting grid, sheet-marks and .annotation vocabulary — the texture that
+   actually differentiates this register from Ledger's, per the file comment
+   above ("What actually separates Blueprint from Ledger is chroma and
+   texture, not hue angle"). This file's tokens alone measured under 9° of hue
+   distance from Ledger's matching roles; Task 6's review and Task 7's
+   rendered picker both confirmed the two were not reliably distinguishable
+   on real pixels without it. Deliberately left as a comment-only deferral in
+   the first pass (ledger.css and hearth.css are pure token files with no
+   `@layer utilities` component classes, and this vocabulary wasn't yet
+   referenced by any consuming component) — built here, in the task that
+   actually wires it into a consuming shell, the same way Ledger's
+   `@layer components` grid and buttons were deferred out of Task 1 and built
+   later. Ported from `app/globals.css`'s `body` background-image rule,
+   `.sheet-marks::before/::after` and `.annotation`, re-keyed to this file's
+   own `--color-primary` and quieted for a light canvas read all day, not a
+   one-time dark Hero. */
+@layer utilities {
+  /* Two superimposed line sets, same 160px/32px structure as the source: a
+     fine working grid and a heavier major division. Alpha detuned hard from
+     the source's 0.045/0.025 (tuned for a dark ground) to 0.03/0.015 — quiet
+     enough to read as the sheet's own texture, not a foreground pattern, on
+     a canvas this light. `color-mix(in srgb, var(--color-primary) N%,
+     transparent)` composites at exactly alpha N/100 over whatever sits
+     underneath, the same pattern this design system already uses for
+     var()-based alpha elsewhere (see design-system/components/date-picker.tsx).
+     Fixed attachment, matching the source's own reasoning: the grid is the
+     surface the sheet sits on, not texture glued to one card. */
+  .blueprint-grid {
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--color-primary) 3%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 3%, transparent) 1px, transparent 1px),
+      linear-gradient(color-mix(in srgb, var(--color-primary) 1.5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 1.5%, transparent) 1px, transparent 1px);
+    background-size:
+      160px 160px,
+      160px 160px,
+      32px 32px,
+      32px 32px;
+    background-attachment: fixed;
+  }
+
+  /* Corner ticks — the registration marks on a drawing sheet. Unchanged
+     mechanism from the source (including the 0.45 alpha, which Step 2 of
+     this task's brief did not ask to detune the way the grid was); only the
+     color is re-keyed. Apply alongside a `relative` position on the same
+     element — the same pattern this repo's own
+     components/sections/peer-case-gallery.tsx already uses for the
+     identical class name in app/globals.css. */
+  .blueprint-sheet-marks::before,
+  .blueprint-sheet-marks::after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+    pointer-events: none;
+  }
+  .blueprint-sheet-marks::before {
+    top: -1px;
+    left: -1px;
+    border-top-width: 1px;
+    border-left-width: 1px;
+  }
+  .blueprint-sheet-marks::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom-width: 1px;
+    border-right-width: 1px;
+  }
+
+  /* Draughtsman's annotation: the small monospace label voice. Same
+     mechanism as the source's `.annotation` — font-family, font-size,
+     letter-spacing and text-transform port unchanged; only the color is
+     re-keyed to this file's own accent. `--font-mono` is supplied by the
+     consuming app (see this file's opening font-stack comment) rather than
+     declared here. Font-size and letter-spacing stay literal rather than
+     pulling from this file's `--tracking-*` tokens: every one of those is
+     negative, tuned for tightening large headings, not the wide positive
+     tracking a small uppercase label needs — the wrong shape to reuse. */
+  .blueprint-annotation {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+}
 
 /* Craft tokens taken from the shipped CSS of Linear, Vercel (Geist) and Stripe.
    These are copied from ledger.css/hearth.css unchanged and on purpose: a weight
