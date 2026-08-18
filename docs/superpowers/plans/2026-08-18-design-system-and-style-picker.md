@@ -380,6 +380,43 @@ git commit -m "Build the style-picker gallery page"
 
 ---
 
+### Task 7a: Blueprint distinguishing texture (inserted — Ledger/Blueprint were visually indistinguishable in Task 7's rendered picker)
+
+**Why this task exists:** Task 6's review found, via independently-recomputed OKLab perceptual-distance math, that Blueprint's and Ledger's largest-area surfaces (canvas, page background, hover, card) sit at or below the just-noticeable-difference threshold, and ruled that Blueprint's differentiation depended on the drafting-grid/`sheet-marks`/`.annotation` texture Task 6 deliberately deferred — calling that texture "load-bearing, not optional polish." Task 7 then rendered all three styles together for the first time and confirmed the risk on real pixels: `--color-ink-900` (card/table background) is literally `#ffffff` in both Ledger and Blueprint, and page background differs by single-digit RGB only. This task builds the deferred texture and re-verifies.
+
+**Files:**
+- Modify: `design-system/tokens/blueprint.css` (add an `@layer utilities` block — this file structurally diverging from Ledger/Hearth's pure-token-file shape is expected and was anticipated by Task 6's own report)
+- Modify: `app/[locale]/style-picker/style-column.tsx` (apply the new utilities conditionally when `styleName === "blueprint"`)
+
+**Interfaces:**
+- Produces: `.blueprint-grid` (or similarly named) background utility, `.blueprint-sheet-marks` corner-tick utility, `.blueprint-annotation` mono-label utility — all token-driven via `var(--color-primary)` etc., not hardcoded, consistent with every other file in `design-system/`.
+- Consumes: `design-system/tokens/blueprint.css`'s own tokens. Reference implementation to de-tune from: `app/globals.css`'s `body` background-image rule (the two-layer drafting grid), `.sheet-marks::before/::after`, and `.annotation` (all in that file's `@layer utilities` block) — this is the SAME source material Task 6 already read and partially adapted; this task finishes the job Task 6 explicitly deferred.
+
+- [ ] **Step 1: Port the grid background, quieter than the source**
+
+`app/globals.css`'s body grid uses two superimposed line sets at `0.045`/`0.025` alpha on a dark ground. On Blueprint's now-light canvas, port the same two-layer 160px/32px structure but at a much lower alpha appropriate to a light background used all day (start around `0.03`/`0.015` and adjust by eye — the source's opacity values were tuned for a dark ground, not a direct copy target). Apply via `background-image`/`background-size`/`background-attachment: fixed` on a `.blueprint-grid` class, using `var(--color-primary)` for the line color (not a literal hex).
+
+- [ ] **Step 2: Port `sheet-marks` and `.annotation`, unchanged in mechanism**
+
+Corner-tick pseudo-elements and the mono-label utility port essentially as-is from `app/globals.css`, re-keyed to `blueprint.css`'s own tokens (`var(--color-primary)` for both, `var(--fw-medium)`/tracking tokens for `.annotation` if applicable — check against this file's own craft-token names, do not invent new ones).
+
+- [ ] **Step 3: Apply in `style-column.tsx`, Blueprint only**
+
+`SampleContent` renders identically in all three columns per Task 7's design (the client compares style against style, not content against content) — do not add Blueprint-only elements inside `SampleContent`. Instead, in `style-column.tsx`: apply `.blueprint-grid` to the Blueprint column's outer container background, apply `.blueprint-sheet-marks` to that same container (corner ticks read as a property of the "sheet," i.e. the column itself), and apply `.blueprint-annotation` styling to the per-column style label/heading that `style-column.tsx` already renders for every style (this element is already style-column's own content, not `SampleContent`'s, so a Blueprint-specific treatment here doesn't break the "same JSX" principle).
+
+- [ ] **Step 4: Re-verify visual distinctiveness — this is the task's actual acceptance test**
+
+Run `npx tsc --noEmit` (clean). Start the dev server, use Playwright to screenshot `/zh/style-picker` at desktop width, same methodology as Task 7's report (full-page screenshot capturing all three columns together). Compare Ledger and Blueprint specifically: is the grid texture visible without zooming in, do the sheet-marks read at a glance, is Blueprint now recognizable as its own visual world rather than "Ledger with a different button color"? If it's still not clearly distinguishable, that's this task reporting DONE_WITH_CONCERNS with the evidence, not something to paper over — same standard Task 7 was held to.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add design-system/tokens/blueprint.css app/[locale]/style-picker/style-column.tsx
+git commit -m "Add Blueprint's drafting-grid, sheet-marks and annotation texture for visual distinctiveness"
+```
+
+---
+
 ### Task 8: Validate against Nadayu28 (branch only, no merge to its main)
 
 **Files:**
