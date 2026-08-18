@@ -116,5 +116,18 @@
         "Disabled means a real disabled attribute, not faded opacity on a non-interactive element."
       ]
     }
+  },
+  "auth": {
+    "signupTitle": "Create your account",
+    "signupEmailLabel": "Email",
+    "signupPasswordLabel": "Password",
+    "signupSubmit": "Sign up",
+    "signupSwitchToLogin": "Already have an account? Log in",
+    "loginTitle": "Log in",
+    "loginSubmit": "Log in",
+    "loginSwitchToSignup": "Don't have an account? Sign up",
+    "errorInvalidCredentials": "Incorrect email or password.",
+    "errorEmailTaken": "This email is already registered.",
+    "errorGeneric": "Something went wrong, please try again."
   }
 }

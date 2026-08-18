@@ -116,5 +116,18 @@
         "禁用状态是真正的 disabled 属性，不是给非交互元素套一层低透明度。"
       ]
     }
+  },
+  "auth": {
+    "signupTitle": "创建账号",
+    "signupEmailLabel": "邮箱",
+    "signupPasswordLabel": "密码",
+    "signupSubmit": "注册",
+    "signupSwitchToLogin": "已经有账号？登录",
+    "loginTitle": "登录",
+    "loginSubmit": "登录",
+    "loginSwitchToSignup": "还没有账号？注册",
+    "errorInvalidCredentials": "邮箱或密码不正确。",
+    "errorEmailTaken": "这个邮箱已经注册过了。",
+    "errorGeneric": "出了点问题，请再试一次。"
   }
 }
