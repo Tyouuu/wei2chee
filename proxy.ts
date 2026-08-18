@@ -23,5 +23,12 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  // `auth` is excluded alongside `api`/`_next`: app/auth/confirm/route.ts
+  // and app/auth/confirm-error/page.tsx live outside app/[locale]/ on
+  // purpose (Supabase's confirmation email link has no knowledge of
+  // next-intl locale routing), so this proxy -- next-intl's rewrite in
+  // particular -- must never touch /auth/*. Without this exclusion,
+  // next-intl 307-redirects /auth/confirm to /zh/auth/confirm, which has
+  // no matching route and breaks every real confirmation link.
+  matcher: ["/((?!api|_next|auth|.*\\..*).*)"],
 };

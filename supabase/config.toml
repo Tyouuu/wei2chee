@@ -155,12 +155,20 @@ max_indexes = 5
 [auth]
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
-# in emails.
-site_url = "http://127.0.0.1:3000"
+# in emails (including {{ .SiteURL }} in the confirmation template above).
+# NOT verified live -- config push is 403-blocked (see Task 2a report), so
+# this could not be confirmed against or pushed to the actual "Wei2Chee"
+# project. The human partner needs to check/set this by hand in the
+# dashboard (Authentication -> URL Configuration): Site URL should be the
+# real deployed origin, https://wei2chee.vercel.app.
+site_url = "https://wei2chee.vercel.app"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# http://localhost:3000 added for local dev testing (Task 2a's own verification
+# ran against localhost:3000, not 127.0.0.1) -- same "not verified live" caveat
+# as site_url above applies to this whole list.
+additional_redirect_urls = ["http://localhost:3000", "https://127.0.0.1:3000", "http://127.0.0.1:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -223,7 +231,15 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# NOTE: this was `false` here but the live "Wei2Chee" project actually has
+# it `true` (confirmed directly in Task 2 -- signInWithPassword against an
+# admin-created email_confirm:false user returned `email_not_confirmed`).
+# `config push` is blocked by a 403 for this project's current CLI login
+# (see Task 2a report), so this file was never the source of truth for the
+# live value; corrected here so it stops disagreeing with both the live
+# project and this repo's own auth flow (Task 2a builds real confirmation
+# handling specifically because this is `true` live).
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -242,6 +258,18 @@ otp_expiry = 3600
 # pass = "env(SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
+
+# Custom "Confirm signup" template pointing the confirmation link at
+# app/auth/confirm/route.ts instead of Supabase's default
+# {{ .ConfirmationURL }} implicit-flow link -- see Task 2a. NOT live yet:
+# `config push` is 403-blocked for this project's current CLI login, so
+# this section documents the intended state; the human partner needs to
+# paste supabase/templates/confirmation.html's content into the dashboard
+# directly (Authentication -> Email Templates -> Confirm signup) until
+# either push permissions are fixed or this is applied by hand.
+[auth.email.template.confirmation]
+subject = "确认你的 Formae 账号 / Confirm your Formae account"
+content_path = "./supabase/templates/confirmation.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

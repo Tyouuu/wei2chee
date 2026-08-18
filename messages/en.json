@@ -128,6 +128,9 @@
     "loginSwitchToSignup": "Don't have an account? Sign up",
     "errorInvalidCredentials": "Incorrect email or password.",
     "errorEmailTaken": "This email is already registered.",
-    "errorGeneric": "Something went wrong, please try again."
+    "errorGeneric": "Something went wrong, please try again.",
+    "confirmPendingTitle": "Confirm your email",
+    "confirmPendingBody": "We sent a confirmation link to your email. Click it to finish setting up your account.",
+    "confirmError": "This confirmation link is invalid or has expired. Please sign up again."
   }
 }

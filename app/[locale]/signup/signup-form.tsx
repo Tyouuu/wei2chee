@@ -17,6 +17,7 @@ export function SignupForm({ locale }: { locale: string }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [confirmPending, setConfirmPending] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +25,7 @@ export function SignupForm({ locale }: { locale: string }) {
     setError(null);
 
     const supabase = createBrowserSupabaseClient();
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -43,7 +44,25 @@ export function SignupForm({ locale }: { locale: string }) {
       return;
     }
 
+    if (!data.session) {
+      // "Confirm email" is enabled on this project -- signUp() succeeded but
+      // granted no session yet. The real session gets established when the
+      // visitor clicks the confirmation link, which lands on
+      // app/auth/confirm/route.ts.
+      setConfirmPending(true);
+      return;
+    }
+
     router.push("/portal");
+  }
+
+  if (confirmPending) {
+    return (
+      <div className="flex flex-col gap-2">
+        <h2 className="text-[15px] font-semibold">{t("confirmPendingTitle")}</h2>
+        <p className="text-[13px] text-muted-foreground">{t("confirmPendingBody")}</p>
+      </div>
+    );
   }
 
   return (
