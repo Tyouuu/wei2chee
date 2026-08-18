@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getSessionUser } from "@/lib/supabase/server-session";
+import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
 import { PortalEditor } from "./editor-client";
 
 const VALID_PAGE_KEYS = ["dashboard", "customers", "quotations", "projects", "payments"];
@@ -12,7 +11,12 @@ export default async function PortalEditorPage({ params }: { params: Promise<{ p
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  const supabase = createServerSupabaseClient();
+  // Session-aware client, not the service-role client: RLS's
+  // `projects_select_own`/`project_pages_select_own` policies are the real
+  // enforcement for both reads below, with the `.eq(...)` filters kept for
+  // explicitness -- the filters alone aren't a backstop against a future
+  // edit dropping or mistyping one.
+  const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
     .select("id, style")

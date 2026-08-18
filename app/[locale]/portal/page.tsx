@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getSessionUser } from "@/lib/supabase/server-session";
+import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
 
 /**
  * The `/portal` branch-router: no UI of its own, just decides where to send
@@ -14,11 +13,11 @@ export default async function PortalRootPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  // Service-role read here is fine and simpler than threading a
-  // session-aware server client through one more file for a single
-  // SELECT -- this route makes no decision based on data a customer
-  // shouldn't see, it only branches on their own project's style field.
-  const supabase = createServerSupabaseClient();
+  // Session-aware client, not the service-role client: RLS's
+  // `projects_select_own` policy is the real enforcement here, with the
+  // `.eq("account_id", user.id)` filter below kept for explicitness -- the
+  // filter alone isn't a backstop against a future edit dropping it.
+  const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
     .select("style")
