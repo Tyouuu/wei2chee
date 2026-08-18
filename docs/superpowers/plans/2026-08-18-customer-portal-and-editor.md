@@ -1312,6 +1312,48 @@ git commit -m "Re-skin Puck's editor chrome with Ledger tokens"
 
 ---
 
+### Task 5a: Fix canvas-content styling inside Puck's iframe (inserted — dragged components render broken)
+
+**Why this task exists:** Task 5's implementer found, and its review independently confirmed live, that Puck renders its canvas in a `srcdoc` iframe. The iframe copies the parent document's compiled stylesheet wholesale, but nothing inside the iframe's own DOM ever gets the `.ledger`/`.hearth`/`.blueprint` scope class applied to it — so the copied CSS rules that *define* the `--color-*` custom properties (`.ledger { --color-primary: ...; }` etc.) have no element to attach to inside the iframe, and every design-system component dragged onto the canvas renders with unresolved tokens (confirmed live: a dragged `HeroCard` showed near-invisible text on no background). Task 5 fixed this for chrome (by applying the scope class to the parent-document wrapper, which chrome lives in) and partially patched the worst canvas symptom (the leaked dark marketing-site body background), but explicitly did not fix component-level styling — that's this task.
+
+This also completes a design intent stated but not yet wired: canvas *content* should render in whichever style the customer picked in Task 3 (`projects.style`), not be hardcoded to Ledger — chrome stays Ledger regardless (Task 5's own design, confirmed correct by its review), only the canvas differs per customer.
+
+**Files:**
+- Modify: `app/[locale]/portal/[pageKey]/editor-client.tsx` (pass `style` through, apply it to the canvas)
+- Modify: `app/[locale]/portal/[pageKey]/page.tsx` (already reads `project.style` per Task 4 — thread it into `PortalEditor`'s props, it currently isn't)
+- Modify: `design-system/editor/puck-theme.css` (remove now-unnecessary iframe-leak workarounds if the iframe-disable approach in Step 1 makes them dead code — confirm before deleting, don't assume)
+
+**Interfaces:**
+- Consumes: `Puck`'s `iframe` prop (from `@puckeditor/core`), `style-scope.module.css`'s existing `.ledger`/`.hearth`/`.blueprint` classes (Task 5 already imports this file — reuse, don't duplicate).
+- Produces: canvas content that genuinely resolves `var(--color-*)` tokens to the customer's chosen style's real values, not Ledger's regardless of choice, not unresolved/invisible.
+
+- [ ] **Step 1: Try disabling Puck's iframe entirely — likely the cleanest fix**
+
+Puck supports `<Puck iframe={{ enabled: false }} config={...} data={...} ... />`, which renders the canvas directly in the parent document instead of a `srcdoc` iframe (confirmed via Puck's own docs, `puckeditor.com/docs/api-reference/overrides/iframe` and the "Puck 0.22: Theming & styling improvements" release notes — re-fetch these yourself before implementing, don't take this plan's summary as gospel this far downstream). If the canvas renders in the same document as the chrome, it can simply live inside the same `.ledger`/`.hearth`/`.blueprint`-scoped wrapper Task 5 already built for chrome (or a sibling wrapper scoped to the *canvas's* own style, separate from the chrome wrapper's fixed Ledger scope — see Step 2), and every CSS-boundary problem Task 5 had to hack around disappears, because there's no longer a boundary.
+
+**Known tradeoff, confirm it doesn't matter here:** disabling the iframe also disables Puck's viewport-switching feature (responsive preview at different widths). Nothing in this plan's scope (Tasks 1-7) asks for viewport switching — confirm this is genuinely unused before proceeding, and note in your report if you find otherwise.
+
+- [ ] **Step 2: Apply the customer's chosen style to canvas content, chrome stays Ledger**
+
+`app/[locale]/portal/[pageKey]/page.tsx` already reads `project.style` (Task 4) but currently never passes it to `PortalEditor`. Thread it through as a prop. Inside `editor-client.tsx`, the chrome wrapper (Task 5's `.portal-editor-scope` + `.ledger`) stays exactly as-is — do not change chrome to follow the customer's style, that's a deliberate, already-reviewed design decision. Wrap only the canvas region (or, if Step 1's iframe-disable means canvas and chrome now share one DOM tree, wrap just the canvas's rendered subtree) in a **second**, independent scope class matching `style-scope.module.css`'s `SCOPE_CLASS[project.style]` (the same lookup `style-column.tsx` already uses) — chrome and canvas can legitimately be two different registers at once (Ledger tool, Hearth content, say), and `style-scope.module.css`'s classes are designed to nest/coexist since that's exactly what the public `/style-picker` page already does with three side-by-side instances.
+
+- [ ] **Step 3: Verify Task 5's now-possibly-dead workarounds, remove if genuinely dead**
+
+If Step 1's iframe-disable eliminates the CSS boundary entirely, `puck-theme.css`'s iframe body-background override and the `--color-paper` literal-fallback fix (both added in Task 5, the second one in Task 5's own fix round) may now be unreachable dead code — there's no more iframe `body` to leak into or resolve tokens incorrectly inside. Confirm this precisely (don't assume) by checking whether Puck's rendered DOM still contains any element these rules could still match once `iframe.enabled: false`; if genuinely dead, remove them and say so in your report with the reasoning; if any part is still reachable for a reason you find, leave it and explain why.
+
+- [ ] **Step 4: Verify visually — this task's real acceptance test**
+
+Run `npx tsc --noEmit` (clean). Start the dev server, sign in as a test account with `style` set to something other than `ledger` (e.g. `hearth`, so chrome-vs-canvas divergence is visually obvious — chrome should stay Ledger blue/navy, canvas content should read as Hearth's sage/teal register), navigate to `/zh/portal/dashboard`, drag `HeroCard` onto the canvas, take a screenshot. Confirm: the dragged component's text and background now render with real, legible, correctly-resolved colors (not near-invisible), and the canvas's own colors visibly differ from the chrome's (proving the two-scope design from Step 2 actually took effect, not just "canvas happens to look okay by accident"). Clean up the test account, confirm deletion.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app/\[locale\]/portal/\[pageKey\]/editor-client.tsx app/\[locale\]/portal/\[pageKey\]/page.tsx design-system/editor/puck-theme.css
+git commit -m "Fix canvas-content styling inside Puck (disable iframe boundary, apply customer's chosen style to canvas)"
+```
+
+---
+
 ### Task 6: Save/paywall gating and the free-tier local draft safety net
 
 **Files:**
