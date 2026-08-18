@@ -132,5 +132,11 @@
     "confirmPendingTitle": "请确认你的邮箱",
     "confirmPendingBody": "我们发了一封确认邮件到你的邮箱，点击里面的链接完成注册。",
     "confirmError": "确认链接无效或已过期，请重新注册。"
+  },
+  "portal": {
+    "styleSelect": {
+      "title": "选择你的系统风格",
+      "subtitle": "这个选择之后不能更改，请仔细比较后再决定。"
+    }
   }
 }

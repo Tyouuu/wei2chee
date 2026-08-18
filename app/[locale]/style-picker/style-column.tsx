@@ -16,11 +16,18 @@ const SCOPE_CLASS: Record<StyleName, string> = {
  * for why that scoping needs its own CSS Module rather than importing the
  * token files directly), plus a heading and the "pick this one" action.
  *
- * The selection action follows the identical `wa.me` deep-link pattern
- * `components/sections/conversion-cta.tsx` already uses on the main
- * acquisition page — same `WHATSAPP_NUMBER` constant (now shared via
- * `lib/brand`), same `https://wa.me/<number>?text=<encoded prefill>` shape.
- * No new selection mechanism was introduced for this page.
+ * The selection action has two modes, chosen by which prop the caller
+ * passes:
+ *
+ * - No `onSelect`: the original public `/style-picker` page's behavior —
+ *   a `wa.me` deep link, the identical pattern
+ *   `components/sections/conversion-cta.tsx` uses on the main acquisition
+ *   page (same `WHATSAPP_NUMBER` constant, shared via `lib/brand`, same
+ *   `https://wa.me/<number>?text=<encoded prefill>` shape). Requires
+ *   `whatsappPrefillText`.
+ * - `onSelect` given: the portal's one-time style-selection step (Task 3)
+ *   — a real `<button>` that calls it directly instead of a WhatsApp
+ *   link. `whatsappPrefillText` isn't needed in this mode.
  */
 export function StyleColumn({
   styleName,
@@ -28,15 +35,20 @@ export function StyleColumn({
   description,
   selectCta,
   whatsappPrefillText,
+  onSelect,
 }: {
   styleName: StyleName;
   label: string;
   description: string;
   selectCta: string;
-  /** Already-localized prefill text, e.g. "I'd like the Ledger style". */
-  whatsappPrefillText: string;
+  /** Already-localized prefill text, e.g. "I'd like the Ledger style". Required when onSelect is not given. */
+  whatsappPrefillText?: string;
+  /** When given, renders a real button calling this instead of a WhatsApp link -- used by the portal's style-selection step, not the public comparison page. */
+  onSelect?: () => void;
 }) {
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappPrefillText)}`;
+  const whatsappHref = whatsappPrefillText
+    ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappPrefillText)}`
+    : undefined;
 
   // Blueprint is the one style whose differentiation from Ledger depends on
   // texture, not just token values (see design-system/tokens/blueprint.css's
@@ -75,15 +87,26 @@ export function StyleColumn({
 
       <SampleContent />
 
-      <a
-        href={whatsappHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        data-testid={`style-picker-select-${styleName}`}
-        className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-[13px] text-[color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
-      >
-        {selectCta}
-      </a>
+      {onSelect ? (
+        <button
+          type="button"
+          onClick={onSelect}
+          data-testid={`style-picker-select-${styleName}`}
+          className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-[13px] text-[color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
+        >
+          {selectCta}
+        </button>
+      ) : (
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid={`style-picker-select-${styleName}`}
+          className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-[13px] text-[color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
+        >
+          {selectCta}
+        </a>
+      )}
     </div>
   );
 }

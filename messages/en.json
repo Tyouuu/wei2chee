@@ -132,5 +132,11 @@
     "confirmPendingTitle": "Confirm your email",
     "confirmPendingBody": "We sent a confirmation link to your email. Click it to finish setting up your account.",
     "confirmError": "This confirmation link is invalid or has expired. Please sign up again."
+  },
+  "portal": {
+    "styleSelect": {
+      "title": "Choose your system style",
+      "subtitle": "This choice can't be changed afterwards, so compare carefully before deciding."
+    }
   }
 }
