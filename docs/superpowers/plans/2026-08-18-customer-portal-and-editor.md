@@ -625,6 +625,148 @@ git commit -m "Add Supabase-backed sign-up and login, migrate middleware.ts to p
 
 ---
 
+### Task 2a: Email confirmation flow (inserted — the human partner wants real email verification, not a shortcut)
+
+**Why this task exists:** Task 2's implementer found that this Supabase project has "Confirm email" enabled, which means a real `signUp()` returns no error but also no session until the visitor clicks the confirmation link in their inbox — Task 2's redirect-to-`/portal` logic only checked for an error, not for a session, so a real signup today would silently fail to land anyone in their account. The implementer's own suggestion was to disable email confirmation to sidestep this. The human partner explicitly rejected that: they want this to read as a real product, not a corner cut for lack of time, so this task builds the actual confirmation flow instead of turning the setting off.
+
+**Files:**
+- Modify: `app/[locale]/signup/signup-form.tsx` (detect the no-session-after-signup case, show a confirmation-pending state instead of redirecting)
+- Create: `app/auth/confirm/route.ts` (the callback Supabase's confirmation link hits — deliberately outside `app/[locale]/`, since Supabase's email link has no knowledge of next-intl locale routing)
+- Modify: `lib/supabase/server.ts` or create `lib/supabase/route-handler-client.ts` (a session-aware Supabase client with a **writable** cookie adapter — Task 2's `server-session.ts` has a deliberate no-op `setAll` because Server Components can't write cookies; a Route Handler can and must, to actually persist the session `verifyOtp` establishes)
+- Modify: `messages/en.json`, `messages/zh.json` (add `auth.confirmPendingTitle`/`auth.confirmPendingBody`, `auth.confirmError`)
+- Configuration (not a file in this repo): update the Supabase project's "Confirm Signup" email template and confirm the redirect/site URL — see Step 3.
+
+**Interfaces:**
+- Consumes: Task 2's `createBrowserSupabaseClient()` (unchanged), the existing `auth.*` i18n namespace.
+- Produces: `app/auth/confirm/route.ts`'s `GET` handler — the target Supabase's email link points at, not consumed by any other code in this repo.
+
+- [ ] **Step 1: Read the exact current Supabase pattern before writing anything**
+
+This plan was written after fetching Supabase's own current docs for this exact flow (`https://supabase.com/docs/guides/auth/server-side/email-based-auth-with-pkce-flow-for-ssr`) — re-fetch it yourself before implementing, since auth SDK patterns are exactly the kind of thing that drifts from training data. The confirmed-current shape at plan-writing time:
+
+```typescript
+// app/auth/confirm/route.ts
+import { type EmailOtpType } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
+import { type NextRequest } from "next/server";
+import { createRouteHandlerSupabaseClient } from "@/lib/supabase/route-handler-client";
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const token_hash = searchParams.get("token_hash");
+  const type = searchParams.get("type") as EmailOtpType | null;
+  const next = searchParams.get("next") ?? "/portal";
+
+  if (token_hash && type) {
+    const supabase = await createRouteHandlerSupabaseClient();
+    const { error } = await supabase.auth.verifyOtp({ type, token_hash });
+    if (!error) {
+      redirect(next);
+    }
+  }
+
+  redirect("/auth/confirm-error");
+}
+```
+
+- [ ] **Step 2: Build the writable Route-Handler Supabase client**
+
+Route Handlers, unlike Server Components, can write cookies (this repo's own `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/cookies.md` confirms: "`.set` ... must be used in a Server Function or Route Handler"). This needs a real `setAll`, not the no-op Task 2's `server-session.ts` uses:
+
+```typescript
+// lib/supabase/route-handler-client.ts
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+export async function createRouteHandlerSupabaseClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        },
+      },
+    },
+  );
+}
+```
+
+- [ ] **Step 3: Update the Supabase project's email template and redirect configuration**
+
+The default "Confirm Signup" template's `{{ .ConfirmationURL }}` needs to point at the new route instead. Attempt this via the Supabase CLI/Management API first (`supabase` CLI is linked and logged in to the correct project in this checkout); if it returns a 403 privilege error (this project's current CLI login has hit 403s on some config-level endpoints in Task 1's work — `migration list` and `config push` both did), that means this specific change needs the human partner to make it by hand in the dashboard (**Authentication → Email Templates → Confirm signup**, Supabase dashboard for the "Wei2Chee" project) — stop and ask for that if the API/CLI route is blocked, rather than leaving the email template silently unfixed. The template's confirmation link should read:
+
+```html
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/portal">Confirm email address</a>
+```
+
+Also confirm the project's configured **Site URL** and **Redirect URLs** (Authentication → URL Configuration) include this app's real deployed origin (`https://wei2chee.vercel.app`) and, for local testing, `http://localhost:3000` — Supabase rejects confirmation redirects to URLs not on this allowlist. Same escalation rule: try via CLI/API first, ask the human partner if blocked.
+
+- [ ] **Step 4: Update `signup-form.tsx` to handle the no-session case**
+
+```tsx
+// app/[locale]/signup/signup-form.tsx -- inside handleSubmit, replace the unconditional
+// router.push("/portal") with a session check
+const supabase = createBrowserSupabaseClient();
+const { data, error: signUpError } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    data: leadId ? { lead_id: leadId } : undefined,
+  },
+});
+
+setPending(false);
+
+if (signUpError) {
+  setError(/* unchanged */);
+  return;
+}
+
+if (!data.session) {
+  setConfirmPending(true); // new state, add `const [confirmPending, setConfirmPending] = useState(false)`
+  return;
+}
+
+router.push("/portal");
+```
+
+Add a rendered branch for `confirmPending` (replacing the form, matching this file's existing token-driven styling conventions) showing `t("confirmPendingTitle")`/`t("confirmPendingBody")` — something like "去邮箱确认" / "Check your inbox to confirm your account before continuing."
+
+- [ ] **Step 5: Add the i18n keys**
+
+```json
+"auth": {
+  "confirmPendingTitle": "请确认你的邮箱",
+  "confirmPendingBody": "我们发了一封确认邮件到你的邮箱，点击里面的链接完成注册。",
+  "confirmError": "确认链接无效或已过期，请重新注册。"
+}
+```
+(Plus English equivalents in `messages/en.json`, and a minimal `app/auth/confirm-error/page.tsx` rendering `confirmError` with a link back to `/login` — this route has no locale segment for the same reason `app/auth/confirm/route.ts` doesn't; keep its copy hardcoded bilingual or default to one language, this is a rare-path error page, not worth wiring into next-intl's locale routing.)
+
+- [ ] **Step 6: Verify end-to-end with a real email**
+
+This is the one part of this task that can't be faked with `admin.createUser({ email_confirm: true })`, since that flag skips confirmation entirely — the whole point here is testing the flow that requires it. Use a real, reachable throwaway inbox you control (not a disposable-domain address — this project already blocks those) to sign up through the actual `/zh/signup` UI, confirm the "check your inbox" state renders, retrieve the real confirmation email, click the link (or extract and visit the URL directly if driving a real inbox via Playwright isn't practical), confirm it lands on `/portal` with a real session, then delete the throwaway account via the service-role client afterward.
+
+If a real inbox isn't practically available in this environment, do the next-best verification: use `supabase.auth.admin.generateLink({ type: "signup", email, password })` with the service-role client to get a real `token_hash` without needing an actual email to arrive, hit `/auth/confirm?token_hash=<hash>&type=signup` directly, and confirm it establishes a session and redirects correctly — this exercises the route handler and `verifyOtp` call for real, just without the email-transport leg. State clearly in your report which verification method you used and why.
+
+Run `npx tsc --noEmit` (clean).
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add app/\[locale\]/signup/signup-form.tsx app/auth/confirm/route.ts app/auth/confirm-error lib/supabase/route-handler-client.ts messages/en.json messages/zh.json
+git commit -m "Add real email confirmation flow instead of disabling Supabase's Confirm Email setting"
+```
+
+---
+
 ### Task 3: Style-selection step inside the portal
 
 **Files:**
