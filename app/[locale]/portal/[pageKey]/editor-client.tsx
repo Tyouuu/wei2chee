@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Puck, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import "@/design-system/editor/puck-theme.css";
@@ -64,6 +64,28 @@ export function PortalEditor({
   const t = useTranslations("portal.editor");
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
+  // Fix round 1 (post-review): `readLocalDraft` short-circuits to `null`
+  // during SSR (local-draft.ts's own `typeof window === "undefined"`
+  // guard), but NOT during the client's first render -- `window` already
+  // exists by then, even before React's hydration diff against the
+  // server-rendered HTML has run. Reading the draft directly in the
+  // render body (as this file originally did) therefore made the
+  // client's first render disagree with the server's whenever a draft
+  // existed and differed from `initialData` -- exactly the free-tier
+  // reload scenario this file exists to support -- which is a real,
+  // deterministic React hydration error, not the "intermittent dev-tool
+  // noise" task-6-report.md originally (incorrectly) concluded.
+  //
+  // Fix: `hydrated` starts `false` on both the server and the client's
+  // first render, so `startingData` resolves to `initialData` on both --
+  // an identical first paint. Only this effect (client-only, and only
+  // after hydration has already completed) flips it, and only then does
+  // `startingData` start reading the local draft.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   // Free-tier customers have no server-side save (save_project_page's
   // payment-required check, supabase/migrations/20260818120000). The local
   // draft (local-draft.ts) is a passive mirror of every change written by
@@ -71,8 +93,13 @@ export function PortalEditor({
   // customer's latest in-progress edit -- not the last-saved server
   // snapshot -- both on a page reload and when toggling back from the
   // paywall interstitial (setSaveState("idle") below) after Puck has
-  // unmounted.
-  const startingData = (readLocalDraft(projectId, pageKey) as Data | null) ?? (initialData as Data);
+  // unmounted. Computed fresh on every render (once `hydrated`), not
+  // frozen into state once, so the paywall-toggle remount below still
+  // picks up whatever handleChange most recently wrote -- not just
+  // whatever the draft was at page-load time.
+  const startingData = hydrated
+    ? ((readLocalDraft(projectId, pageKey) as Data | null) ?? (initialData as Data))
+    : (initialData as Data);
 
   function handleChange(data: Data) {
     // Passive mirror on every change, independent of the explicit save
@@ -141,6 +168,22 @@ export function PortalEditor({
       ) : (
         <div className="flex-1">
           <Puck
+            // Forces exactly one clean remount at the ssr->hydrated
+            // transition above. Puck's own `data` prop is consumed only
+            // once, inside a lazy `useState(() => ...)` initializer deep
+            // in its `PuckProvider` (verified against the installed
+            // 0.23.0 bundle, node_modules/@puckeditor/core/dist/index.js)
+            // -- passing a new `data` value into an already-mounted
+            // `<Puck>` on a later render is a no-op from Puck's own
+            // perspective, so without this `key` change the local draft
+            // would never actually reach the canvas after hydration, even
+            // though `startingData` above is already correct by then.
+            // `hydrated` only flips once, so this only remounts once per
+            // page load -- the paywall interstitial's own conditional
+            // render (below) already remounts Puck independently on every
+            // paywall<->editor toggle, which is what keeps that path
+            // picking up the latest in-session edit.
+            key={hydrated ? "hydrated" : "ssr"}
             config={puckConfig}
             data={startingData}
             onChange={handleChange}
