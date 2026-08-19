@@ -5,9 +5,10 @@ import { StyleSelectClient } from "./style-select-client";
 
 /**
  * The one-time style-selection step a customer sees on first login, before
- * the editor unlocks. Auth guard follows Task 2's established
- * `getSessionUser()` pattern (see e.g. app/[locale]/login/page.tsx's own
- * usage) -- signed-out visitors bounce to /login.
+ * the editor unlocks. Auth guard follows the `getSessionUser()` pattern
+ * Task 2 established for server components (this is that helper's first
+ * real consumer -- login/page.tsx itself doesn't need it, it's the page
+ * that produces the session) -- signed-out visitors bounce to /login.
  *
  * This page's own chrome (heading, subtitle) deliberately uses the
  * acquisition site's own Tailwind theme (`text-foreground` /

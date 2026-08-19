@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Puck, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import "@/design-system/editor/puck-theme.css";
@@ -8,7 +9,7 @@ import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { puckConfig } from "@/design-system/editor/puck-config";
-import { readLocalDraft, writeLocalDraft } from "../local-draft";
+import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft";
 // Reused rather than re-declared: this is the same scoped Ledger token
 // class app/[locale]/portal/style-select's <StyleColumn> already applies,
 // kept in sync with design-system/tokens/ledger.css by
@@ -44,12 +45,20 @@ type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
 export function PortalEditor({
   pageKey,
   projectId,
+  accountEmail,
   paid,
   initialData,
   style,
 }: {
   pageKey: string;
   projectId: string;
+  /** accounts.email, threaded down from page.tsx's getSessionUser() -- the
+   * only identifying information in either WhatsApp handoff below. Flipping
+   * projects.paid in Supabase Studio is the whole payment mechanism in v1
+   * (spec's Global Constraint: no gateway), and WhatsApp contact is by phone
+   * with no link back to the signup email, so without this the founder gets
+   * an anonymous "I want to pay" message and no way to find the account. */
+  accountEmail: string;
   /** projects.paid (Task 1) -- save_project_page raises "payment required"
    * server-side for an unpaid project (the real enforcement), but the
    * paywall interstitial below is shown client-side off this prop so an
@@ -62,6 +71,7 @@ export function PortalEditor({
   style: StyleName;
 }) {
   const t = useTranslations("portal.editor");
+  const router = useRouter();
   const [saveState, setSaveState] = useState<SaveState>("idle");
   // Session-local tracking is sufficient for v1's deliberately narrow Deploy
   // definition (spec §6) -- true once a save has actually succeeded, not
@@ -92,19 +102,31 @@ export function PortalEditor({
   }, []);
 
   // Free-tier customers have no server-side save (save_project_page's
-  // payment-required check, supabase/migrations/20260818120000). The local
-  // draft (local-draft.ts) is a passive mirror of every change written by
-  // handleChange below, independent of paid status, so this picks up the
-  // customer's latest in-progress edit -- not the last-saved server
-  // snapshot -- both on a page reload and when toggling back from the
-  // paywall interstitial (setSaveState("idle") below) after Puck has
-  // unmounted. Computed fresh on every render (once `hydrated`), not
-  // frozen into state once, so the paywall-toggle remount below still
-  // picks up whatever handleChange most recently wrote -- not just
-  // whatever the draft was at page-load time.
-  const startingData = hydrated
-    ? ((readLocalDraft(projectId, pageKey) as Data | null) ?? (initialData as Data))
-    : (initialData as Data);
+  // payment-required check, supabase/migrations/20260818120000), so for
+  // them the local draft (local-draft.ts) -- a passive mirror of every
+  // change written by handleChange below -- is the only thing that survives
+  // a page reload, and it correctly wins over the empty server row.
+  //
+  // Fix round 2 (post-review): the `!paid` gate is load-bearing, not
+  // defensive. Without it, a PAID customer's local draft outranked their
+  // own server row on every device that had ever opened the editor: explore
+  // on device A (draft written to A's localStorage), do the real work and
+  // save on device B, come back to device A -- and A's stale, pre-payment
+  // draft would be what loaded, with the next Save silently overwriting the
+  // good server data with it. localStorage is per-device and never synced,
+  // so for a paid customer the server row is authoritative by definition;
+  // the draft is a free-tier mechanism only, exactly as local-draft.ts's
+  // own doc comment describes it.
+  //
+  // The `hydrated` gate is unchanged and still does its job: for an unpaid
+  // customer `hydrated && !paid` is false on the server and on the client's
+  // pre-effect first render (identical first paint), true only afterwards.
+  // For a paid customer it's false in every case, so `initialData` either
+  // way -- server and client still agree, no hydration mismatch.
+  const startingData =
+    hydrated && !paid
+      ? ((readLocalDraft(projectId, pageKey) as Data | null) ?? (initialData as Data))
+      : (initialData as Data);
 
   function handleChange(data: Data) {
     // Passive mirror on every change, independent of the explicit save
@@ -134,17 +156,39 @@ export function PortalEditor({
     if (!error) {
       setSaveState("saved");
       setHasSavedOnce(true);
+      // The server row is now authoritative and strictly fresher than
+      // anything in localStorage. Dropping the draft here keeps it from
+      // lingering as a stale landmine on this device if the `!paid` gate
+      // on `startingData` above ever stops applying to this
+      // project/pageKey (e.g. a refund, or a future free/paid toggle).
+      clearLocalDraft(projectId, pageKey);
     } else {
       setSaveState("error");
     }
   }
 
+  async function handleSignOut() {
+    const supabase = createBrowserSupabaseClient();
+    await supabase.auth.signOut();
+    // Same post-action navigation pattern as style-select-client.tsx. The
+    // real session teardown is signOut() clearing the Supabase auth cookies;
+    // /login is just where the customer lands afterwards.
+    router.push("/login");
+  }
+
+  // Identity for the two WhatsApp handoffs below. Signup is by email,
+  // WhatsApp is by phone, and nothing links the two -- so without this the
+  // founder receives an anonymous message and cannot tell which Supabase
+  // account to flip `paid` on. projectId is included as well because it's
+  // the exact value to search Supabase Studio by.
+  const identityLine = `\n\n账号邮箱: ${accountEmail}\n项目编号: ${projectId}`;
+
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    "我的设计已经准备好了，我想付款保存",
+    "我的设计已经准备好了，我想付款保存" + identityLine,
   )}`;
 
   const deployWhatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    "我的系统设计已经确定了，请开始帮我建系统",
+    "我的系统设计已经确定了，请开始帮我建系统" + identityLine,
   )}`;
 
   return (
@@ -168,31 +212,58 @@ export function PortalEditor({
               {t("deployCta")}
             </a>
           ) : null}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="underline [color:var(--color-paper-dim)]"
+          >
+            {t("signOut")}
+          </button>
         </div>
       </div>
 
-      {saveState === "paywall" ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <h2 className="text-[18px] [font-weight:var(--fw-semibold)]">{t("paywallTitle")}</h2>
-          <p className="text-[14px] [color:var(--color-paper-dim)]">{t("paywallBody")}</p>
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 rounded-lg px-4 py-2.5 text-[13px] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)]"
-          >
-            {t("paywallCta")}
-          </a>
-          <button
-            type="button"
-            onClick={() => setSaveState("idle")}
-            className="text-[13px] underline [color:var(--color-paper-dim)]"
-          >
-            {t("backToEditing")}
-          </button>
-        </div>
-      ) : (
-        <div className="flex-1">
+      {/* Fix round 2 (post-review): the paywall is an OVERLAY over a
+          still-mounted <Puck>, not a branch that replaces it. It used to be
+          `saveState === "paywall" ? <paywall/> : <Puck/>`, which unmounted
+          the canvas at exactly the moment a customer clicked Save -- so the
+          only thing standing between a free-tier customer and losing their
+          whole in-progress design was local-draft.ts, which is explicitly
+          best-effort and silently drops writes when localStorage is
+          unavailable (private browsing, quota exceeded). Keeping Puck
+          mounted means its own internal state holds the work regardless of
+          whether localStorage did anything at all.
+
+          Side effect worth noting: the `hydrated` remount below is now the
+          ONLY thing that ever remounts Puck in this file. "Back to editing"
+          no longer re-reads the local draft (it can't -- nothing remounts),
+          and doesn't need to: Puck still has the customer's latest edit. */}
+      <div className="relative flex-1">
+        {saveState === "paywall" ? (
+          // `absolute inset-0` + an opaque token background (--color-canvas
+          // resolves against this component's own `.ledger` chrome scope) --
+          // fully obscures the canvas rather than dimming it, and swallows
+          // every pointer event that would otherwise reach Puck underneath.
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center [background-color:var(--color-canvas)]">
+            <h2 className="text-[18px] [font-weight:var(--fw-semibold)]">{t("paywallTitle")}</h2>
+            <p className="text-[14px] [color:var(--color-paper-dim)]">{t("paywallBody")}</p>
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 rounded-lg px-4 py-2.5 text-[13px] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)]"
+            >
+              {t("paywallCta")}
+            </a>
+            <button
+              type="button"
+              onClick={() => setSaveState("idle")}
+              className="text-[13px] underline [color:var(--color-paper-dim)]"
+            >
+              {t("backToEditing")}
+            </button>
+          </div>
+        ) : null}
+        <div className="h-full">
           <Puck
             // Forces exactly one clean remount at the ssr->hydrated
             // transition above. Puck's own `data` prop is consumed only
@@ -241,7 +312,7 @@ export function PortalEditor({
             }}
           />
         </div>
-      )}
+      </div>
     </div>
   );
 }

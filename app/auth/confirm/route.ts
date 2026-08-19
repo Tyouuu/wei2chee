@@ -11,7 +11,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/portal";
+  const rawNext = searchParams.get("next") ?? "/portal";
+  // `next` is attacker-controllable (a hand-crafted confirmation link can
+  // set it to anything) -- without this guard, an absolute or
+  // protocol-relative URL would redirect off-site right after this route
+  // establishes a session. The shipped email template always sends
+  // next=/portal, so this never fires in the normal flow.
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/portal";
 
   if (token_hash && type) {
     const supabase = await createRouteHandlerSupabaseClient();

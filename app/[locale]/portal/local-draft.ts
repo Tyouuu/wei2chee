@@ -29,3 +29,20 @@ export function writeLocalDraft(projectId: string, pageKey: string, data: Record
     // the customer's editing.
   }
 }
+
+/**
+ * Drops the local draft for one project/page. Called after a successful
+ * paid save (editor-client.tsx's handleSaveClick), where the server row is
+ * now authoritative and a leftover draft would only ever be staler than it.
+ * Same best-effort contract as the two functions above: silent no-op when
+ * localStorage is unavailable.
+ */
+export function clearLocalDraft(projectId: string, pageKey: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(localDraftKey(projectId, pageKey));
+  } catch {
+    // Same best-effort contract as writeLocalDraft above -- a draft we
+    // couldn't remove is not worth interrupting the customer over.
+  }
+}

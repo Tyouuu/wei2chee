@@ -42,7 +42,7 @@ export default function HomePage() {
                 className="group relative border border-blueprint/50 px-8 py-4 font-mono text-[0.75rem] tracking-[0.14em] text-blueprint uppercase transition-colors duration-300 hover:border-blueprint focus-visible:ring-1 focus-visible:ring-blueprint focus-visible:outline-none"
               >
                 <span className="absolute inset-0 origin-left scale-x-0 bg-blueprint transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
-                <span className="relative transition-colors duration-300 group-hover:text-[oklch(0.16_0.012_265)]">
+                <span className="relative transition-colors duration-300 group-hover:text-[var(--ink)]">
                   {t("start")} →
                 </span>
               </button>

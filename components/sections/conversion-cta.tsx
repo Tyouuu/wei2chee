@@ -46,7 +46,7 @@ export function ConversionCta({ summary, leadId }: { summary: string; leadId: st
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative overflow-hidden border border-signal bg-signal px-8 py-4 font-mono text-[0.75rem] tracking-[0.14em] text-[oklch(0.16_0.012_265)] uppercase transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-signal/60 focus-visible:outline-none"
+              className="group relative overflow-hidden border border-signal bg-signal px-8 py-4 font-mono text-[0.75rem] tracking-[0.14em] text-[var(--ink)] uppercase transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-signal/60 focus-visible:outline-none"
             >
               <span className="relative">{t("whatsapp")} →</span>
             </a>

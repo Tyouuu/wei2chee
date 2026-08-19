@@ -129,8 +129,7 @@
     "errorEmailTaken": "这个邮箱已经注册过了。",
     "errorGeneric": "出了点问题，请再试一次。",
     "confirmPendingTitle": "请确认你的邮箱",
-    "confirmPendingBody": "我们发了一封确认邮件到你的邮箱，点击里面的链接完成注册。",
-    "confirmError": "确认链接无效或已过期，请重新注册。"
+    "confirmPendingBody": "我们发了一封确认邮件到你的邮箱，点击里面的链接完成注册。"
   },
   "portal": {
     "styleSelect": {
@@ -146,7 +145,8 @@
       "backToEditing": "返回编辑",
       "saveSuccess": "已保存",
       "saveError": "保存失败，请重试。",
-      "deployCta": "确认设计，交给我们建系统"
+      "deployCta": "确认设计，交给我们建系统",
+      "signOut": "登出"
     }
   }
 }

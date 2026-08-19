@@ -129,8 +129,7 @@
     "errorEmailTaken": "This email is already registered.",
     "errorGeneric": "Something went wrong, please try again.",
     "confirmPendingTitle": "Confirm your email",
-    "confirmPendingBody": "We sent a confirmation link to your email. Click it to finish setting up your account.",
-    "confirmError": "This confirmation link is invalid or has expired. Please sign up again."
+    "confirmPendingBody": "We sent a confirmation link to your email. Click it to finish setting up your account."
   },
   "portal": {
     "styleSelect": {
@@ -146,7 +145,8 @@
       "backToEditing": "Back to editing",
       "saveSuccess": "Saved",
       "saveError": "Save failed, please try again.",
-      "deployCta": "Confirm design, hand off to build"
+      "deployCta": "Confirm design, hand off to build",
+      "signOut": "Sign out"
     }
   }
 }

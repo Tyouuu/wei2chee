@@ -38,6 +38,7 @@ export default async function PortalEditorPage({ params }: { params: Promise<{ p
     <PortalEditor
       pageKey={pageKey}
       projectId={project.id}
+      accountEmail={user.email}
       // Untyped Supabase client (see createSessionSupabaseClient's own
       // comment) -- `paid` comes back as `any`, narrowed here the same way
       // this file already narrows `style`/`layout_json` below. Gates the
