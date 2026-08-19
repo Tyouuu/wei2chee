@@ -17,7 +17,16 @@ export async function GET(request: NextRequest) {
   // protocol-relative URL would redirect off-site right after this route
   // establishes a session. The shipped email template always sends
   // next=/portal, so this never fires in the normal flow.
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/portal";
+  //
+  // A plain `startsWith("/") && !startsWith("//")` check is NOT enough:
+  // browsers apply the WHATWG URL spec's backslash-to-slash normalization
+  // for http(s) URLs, so a value like "/\evil.com" starts with a single
+  // forward slash (passes both checks) but still resolves as a
+  // protocol-relative "//evil.com" once the browser parses it. This regex
+  // additionally rejects any backslash and any second slash immediately
+  // after the first, and rejects a colon so an embedded scheme
+  // ("/x:evil.com") can't sneak through either.
+  const next = /^\/(?!\/)[^\s\\:]*$/.test(rawNext) ? rawNext : "/portal";
 
   if (token_hash && type) {
     const supabase = await createRouteHandlerSupabaseClient();
