@@ -34,8 +34,7 @@
     "title": "要不要继续设计你的系统？",
     "whatsapp": "发送分析报告到 WhatsApp",
     "whatsappPrefill": "我刚做了业务分析，结果是：",
-    "continue": "继续设计我的系统",
-    "placeholderNotice": "这个功能还在开发中，我们会尽快联系你！"
+    "continue": "继续设计我的系统"
   },
   "stylePicker": {
     "title": "选择你的风格",
@@ -146,7 +145,8 @@
       "paywallCta": "联系我们付款",
       "backToEditing": "返回编辑",
       "saveSuccess": "已保存",
-      "saveError": "保存失败，请重试。"
+      "saveError": "保存失败，请重试。",
+      "deployCta": "确认设计，交给我们建系统"
     }
   }
 }

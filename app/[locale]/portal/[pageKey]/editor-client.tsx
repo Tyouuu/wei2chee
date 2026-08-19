@@ -63,6 +63,11 @@ export function PortalEditor({
 }) {
   const t = useTranslations("portal.editor");
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  // Session-local tracking is sufficient for v1's deliberately narrow Deploy
+  // definition (spec §6) -- true once a save has actually succeeded, not
+  // just on mount. Doesn't need to survive a reload: the Deploy button is a
+  // WhatsApp handoff a customer clicks once, right after saving.
+  const [hasSavedOnce, setHasSavedOnce] = useState(false);
 
   // Fix round 1 (post-review): `readLocalDraft` short-circuits to `null`
   // during SSR (local-draft.ts's own `typeof window === "undefined"`
@@ -126,23 +131,44 @@ export function PortalEditor({
     // already prevents the payment-required case from being reachable in
     // the normal flow, so a generic saveError message covers whatever's
     // left (network failure, unexpected server error, etc.).
-    setSaveState(error ? "error" : "saved");
+    if (!error) {
+      setSaveState("saved");
+      setHasSavedOnce(true);
+    } else {
+      setSaveState("error");
+    }
   }
 
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     "我的设计已经准备好了，我想付款保存",
   )}`;
 
+  const deployWhatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    "我的系统设计已经确定了，请开始帮我建系统",
+  )}`;
+
   return (
     <div className={`portal-editor-scope ${styles.ledger} flex h-screen flex-col`}>
       <div className="flex items-center justify-between border-b px-4 py-2 text-[13px] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
         <span>{PAGE_LABELS[pageKey] ?? pageKey}</span>
-        {saveState === "saved" ? (
-          <span className="[color:var(--color-jade-bright)]">{t("saveSuccess")}</span>
-        ) : null}
-        {saveState === "error" ? (
-          <span className="[color:var(--color-clay-bright)]">{t("saveError")}</span>
-        ) : null}
+        <div className="flex items-center gap-3">
+          {saveState === "saved" ? (
+            <span className="[color:var(--color-jade-bright)]">{t("saveSuccess")}</span>
+          ) : null}
+          {saveState === "error" ? (
+            <span className="[color:var(--color-clay-bright)]">{t("saveError")}</span>
+          ) : null}
+          {hasSavedOnce ? (
+            <a
+              href={deployWhatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md px-3 py-1.5 text-[12px] text-[color:var(--color-on-primary)] [background-color:var(--color-jade)] [font-weight:var(--fw-semibold)]"
+            >
+              {t("deployCta")}
+            </a>
+          ) : null}
+        </div>
       </div>
 
       {saveState === "paywall" ? (

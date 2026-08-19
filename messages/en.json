@@ -34,8 +34,7 @@
     "title": "Ready to simplify your business?",
     "whatsapp": "Send analysis to WhatsApp",
     "whatsappPrefill": "I just completed a business analysis, here's my result:",
-    "continue": "Continue designing my system",
-    "placeholderNotice": "This feature is still in development. We'll contact you shortly!"
+    "continue": "Continue designing my system"
   },
   "stylePicker": {
     "title": "Pick your style",
@@ -146,7 +145,8 @@
       "paywallCta": "Contact us to pay",
       "backToEditing": "Back to editing",
       "saveSuccess": "Saved",
-      "saveError": "Save failed, please try again."
+      "saveError": "Save failed, please try again.",
+      "deployCta": "Confirm design, hand off to build"
     }
   }
 }

@@ -18,6 +18,7 @@ export default function HomePage() {
   const [showStepper, setShowStepper] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string> | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [leadId, setLeadId] = useState<string | null>(null);
 
   return (
     <main>
@@ -63,16 +64,18 @@ export default function HomePage() {
           industryId={selectedIndustry.id}
           language={locale}
           answers={answers}
-          // leadId is intentionally ignored here — nothing downstream in this
-          // page reads it, ConversionCta only needs the summary. Kept mounted
-          // permanently once shown (no `!analysis` guard): unmounting on
-          // analysis completion would remove AnalysisReveal at the exact
-          // moment its staged reveal finishes, before the visitor ever sees
-          // the bottleneck cards / before-after workflow it just animated in.
-          onDone={(_leadId, result) => setAnalysis(result)}
+          // Kept mounted permanently once shown (no `!analysis` guard):
+          // unmounting on analysis completion would remove AnalysisReveal at
+          // the exact moment its staged reveal finishes, before the visitor
+          // ever sees the bottleneck cards / before-after workflow it just
+          // animated in.
+          onDone={(id, result) => {
+            setLeadId(id);
+            setAnalysis(result);
+          }}
         />
       )}
-      {analysis && <ConversionCta summary={analysis.summary} />}
+      {analysis && leadId && <ConversionCta summary={analysis.summary} leadId={leadId} />}
     </main>
   );
 }
