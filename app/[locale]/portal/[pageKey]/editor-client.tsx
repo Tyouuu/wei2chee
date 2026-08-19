@@ -14,6 +14,7 @@ import { puckConfig } from "@/design-system/editor/puck-config";
 // custom properties collide, at :root, with app/globals.css's own
 // same-named shadcn/Blueprint marketing-site tokens.
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
+import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 const PAGE_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
@@ -23,12 +24,27 @@ const PAGE_LABELS: Record<string, string> = {
   payments: "Payments",
 };
 
+// Same lookup app/[locale]/style-picker/style-column.tsx uses internally
+// (its own `SCOPE_CLASS` isn't exported, so this is a second, identical
+// binding rather than a shared import -- both read the same three classes
+// off style-scope.module.css, so there's nothing to drift out of sync).
+const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
+  ledger: styles.ledger,
+  hearth: styles.hearth,
+  blueprint: styles.blueprint,
+};
+
 export function PortalEditor({
   pageKey,
   initialData,
+  style,
 }: {
   pageKey: string;
   initialData: Record<string, unknown>;
+  /** The customer's own chosen style (projects.style, Task 3) -- applies to
+   * canvas CONTENT only. Chrome (this component's own wrapper below) stays
+   * Ledger regardless, per Task 5's own reviewed design. */
+  style: StyleName;
 }) {
   return (
     <div className={`portal-editor-scope ${styles.ledger} flex h-screen flex-col`}>
@@ -36,7 +52,36 @@ export function PortalEditor({
         {PAGE_LABELS[pageKey] ?? pageKey}
       </div>
       <div className="flex-1">
-        <Puck config={puckConfig} data={initialData} onPublish={() => {}} />
+        <Puck
+          config={puckConfig}
+          data={initialData}
+          onPublish={() => {}}
+          // Renders the canvas directly in this document instead of a
+          // `srcdoc` iframe -- see puck-theme.css's now-removed body-leak
+          // comment and task-5a-report.md for why: with the iframe gone,
+          // there's no separate DOM/CSSOM for the `.ledger`/`.hearth`/
+          // `.blueprint` scope classes to fail to reach into. Viewport
+          // switching (Puck's responsive-preview feature, which disabling
+          // the iframe also disables per Puck's own docs) is unused
+          // anywhere in this app -- confirmed via a repo-wide grep, task
+          // 5a's report has the details.
+          iframe={{ enabled: false }}
+          overrides={{
+            // The one supported override point for wrapping just the
+            // canvas's rendered subtree (Puck's own Preview component),
+            // independent of the chrome wrapper above -- reuses the exact
+            // `.scope` + per-style class pairing style-column.tsx already
+            // applies to each of its three comparison columns, so canvas
+            // content resolves var(--color-*) against the CUSTOMER's
+            // chosen style, not Ledger. `h-full` matters here: Puck's own
+            // Preview/frame elements are `height: 100%` all the way down,
+            // which needs an explicit height on this wrapper or the chain
+            // collapses to 0.
+            preview: ({ children }) => (
+              <div className={`${styles.scope} ${CANVAS_SCOPE_CLASS[style]} h-full`}>{children}</div>
+            ),
+          }}
+        />
       </div>
     </div>
   );

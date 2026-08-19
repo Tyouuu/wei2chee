@@ -109,50 +109,33 @@
   --puck-border-width-hairline: var(--hairline);
 }
 
-/* Puck's drop canvas renders inside its own same-origin `srcdoc` iframe
-   (a separate DOM/CSSOM), and copies the parent page's full compiled
-   stylesheet into that iframe's <head> so dropped components keep their
-   real page styles. That copy includes app/globals.css's marketing-site
-   `body` rule (dark ground, blueprint drafting-grid background-image) --
-   .portal-editor-scope/.ledger above are classes on a div in the PARENT
-   document, so they cannot reach into the iframe's own <body> at all.
-   Without this override the canvas shows the marketing site's dark grid
-   instead of a plain Ledger canvas -- confirmed live (computed
-   background-image on the iframe's body matched globals.css's grid
-   gradients exactly before this rule was added).
+/* Task 5a removed this file's `body { ... }` iframe-leak workaround (the
+   background-image/-color/color override Task 5 added to stop the
+   marketing site's dark grid from leaking into Puck's canvas). That rule
+   patched the `<body>` element INSIDE Puck's `srcdoc` iframe, which copied
+   the parent document's full compiled stylesheet (including
+   app/globals.css's marketing-site `body` rule) into its own separate
+   DOM/CSSOM -- see task-5a-report.md for the live verification.
 
-   This chunk of CSS is only ever loaded on the /portal/[pageKey] route
-   (it's imported solely by editor-client.tsx), so this `body` rule can't
-   leak into any other page.
+   Task 5a passes `iframe={{ enabled: false }}` to <Puck> (editor-client.tsx),
+   which makes Puck render its canvas directly in this document instead of a
+   `srcdoc` iframe. Confirmed dead, not just probably-dead, before deleting:
+   the installed @puckeditor/core (0.23.0) bundle creates a literal <iframe>
+   DOM element in exactly one place in its entire source
+   (node_modules/@puckeditor/core/dist/index.js, the AutoFrame component),
+   and that component only renders when iframe.enabled is true -- so with it
+   false, Puck's rendered DOM contains zero <iframe> elements, meaning zero
+   elements the removed rule's `body` selector could still match. The
+   real top-level document <body> was always a secondary, incidental match
+   for that selector (this stylesheet loads globally on the
+   /portal/[pageKey] route, not scoped to the iframe alone) but never
+   visibly mattered even before this change -- .portal-editor-scope's own
+   `flex h-screen` wrapper always covers the full viewport, so the real
+   body's background was never visible behind it.
 
-   --color-canvas and --color-paper needed DIFFERENT fixes here, not the
-   same one -- verified live via getComputedStyle inside the iframe,
-   because they fail differently:
-     - --color-canvas is genuinely absent inside the iframe (no ancestor
-       there carries .ledger, and app/globals.css never defines a
-       property by this name), so var(--color-canvas, #f6f8fb) correctly
-       falls back to the literal.
-     - --color-paper is NOT absent inside the iframe: app/globals.css's
-       own :root-level `--color-paper: var(--paper)` (the marketing
-       site's near-white tone) gets copied into the iframe along with
-       the rest of globals.css, so the property resolves -- just to the
-       wrong (near-white) value. A var() fallback only fires when a
-       property is absent, never when it resolves to an unwanted value,
-       so var(--color-paper, #14273d) silently kept the near-white
-       marketing value here (confirmed live: iframe body text computed
-       to near-white on the #f6f8fb canvas -- a real legibility bug,
-       fixed in "Fix round 1"). Hence the plain literal below instead of
-       a var() call for this one property.
-   Both literals are kept byte-identical to ledger.css's own
-   --color-canvas/--color-paper values so a future update to that file
-   needs the matching edit here too. */
-body {
-  background-image: none !important;
-  background-color: var(--color-canvas, #f6f8fb);
-  color: #14273d; /* Ledger's --color-paper value, hardcoded here deliberately:
-    var(--color-paper) resolves inside this iframe to app/globals.css's own
-    same-named marketing-site token (near-white), not Ledger's navy -- a
-    var() fallback can't help since the property isn't actually absent, just
-    wrong. See this block's header comment for why --color-canvas and
-    --color-paper needed different treatment. */
-}
+   The canvas's own background/text-color now come from editor-client.tsx's
+   `overrides.preview` wrapper (style-scope.module.css's `.scope` class,
+   paired with whichever of `.ledger`/`.hearth`/`.blueprint` matches the
+   customer's own chosen style) instead of this file's hardcoded Ledger
+   literals -- a correctly per-customer-scoped replacement, not just a
+   deletion. */
