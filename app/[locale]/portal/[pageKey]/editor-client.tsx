@@ -276,10 +276,11 @@ export function PortalEditor({
             // would never actually reach the canvas after hydration, even
             // though `startingData` above is already correct by then.
             // `hydrated` only flips once, so this only remounts once per
-            // page load -- the paywall interstitial's own conditional
-            // render (below) already remounts Puck independently on every
-            // paywall<->editor toggle, which is what keeps that path
-            // picking up the latest in-session edit.
+            // page load. Fix round 2: the paywall used to be a sibling
+            // branch that unmounted this <Puck> on every toggle -- that's
+            // gone now (the paywall is an overlay ABOVE this, always
+            // mounted, see the comment on the wrapping div), so this `key`
+            // is the ONLY thing that ever remounts Puck in this file.
             key={hydrated ? "hydrated" : "ssr"}
             config={puckConfig}
             data={startingData}
