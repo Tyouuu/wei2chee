@@ -1,0 +1,31 @@
+/**
+ * Passive, best-effort local safety net for free-tier customers, who have
+ * no server-side save (see save_project_page's payment-required check).
+ * Never a substitute for the real save -- it doesn't sync across devices
+ * and is silently dropped if localStorage is unavailable (private
+ * browsing, quota exceeded, etc.).
+ */
+export function localDraftKey(projectId: string, pageKey: string): string {
+  return `formae-portal-draft:${projectId}:${pageKey}`;
+}
+
+export function readLocalDraft(projectId: string, pageKey: string): Record<string, unknown> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(localDraftKey(projectId, pageKey));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeLocalDraft(projectId: string, pageKey: string, data: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(localDraftKey(projectId, pageKey), JSON.stringify(data));
+  } catch {
+    // localStorage full or unavailable -- this is a best-effort safety
+    // net, not a guarantee, so fail silently rather than interrupting
+    // the customer's editing.
+  }
+}

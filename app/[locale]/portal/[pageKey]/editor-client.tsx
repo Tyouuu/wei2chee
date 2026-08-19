@@ -1,9 +1,14 @@
 "use client";
 
-import { Puck } from "@puckeditor/core";
+import { useState } from "react";
+import { Puck, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import "@/design-system/editor/puck-theme.css";
+import { useTranslations } from "next-intl";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { readLocalDraft, writeLocalDraft } from "../local-draft";
 // Reused rather than re-declared: this is the same scoped Ledger token
 // class app/[locale]/portal/style-select's <StyleColumn> already applies,
 // kept in sync with design-system/tokens/ledger.css by
@@ -34,55 +39,140 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   blueprint: styles.blueprint,
 };
 
+type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
+
 export function PortalEditor({
   pageKey,
+  projectId,
+  paid,
   initialData,
   style,
 }: {
   pageKey: string;
+  projectId: string;
+  /** projects.paid (Task 1) -- save_project_page raises "payment required"
+   * server-side for an unpaid project (the real enforcement), but the
+   * paywall interstitial below is shown client-side off this prop so an
+   * unpaid customer sees a purpose-built CTA instead of a raw error. */
+  paid: boolean;
   initialData: Record<string, unknown>;
   /** The customer's own chosen style (projects.style, Task 3) -- applies to
    * canvas CONTENT only. Chrome (this component's own wrapper below) stays
    * Ledger regardless, per Task 5's own reviewed design. */
   style: StyleName;
 }) {
+  const t = useTranslations("portal.editor");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+
+  // Free-tier customers have no server-side save (save_project_page's
+  // payment-required check, supabase/migrations/20260818120000). The local
+  // draft (local-draft.ts) is a passive mirror of every change written by
+  // handleChange below, independent of paid status, so this picks up the
+  // customer's latest in-progress edit -- not the last-saved server
+  // snapshot -- both on a page reload and when toggling back from the
+  // paywall interstitial (setSaveState("idle") below) after Puck has
+  // unmounted.
+  const startingData = (readLocalDraft(projectId, pageKey) as Data | null) ?? (initialData as Data);
+
+  function handleChange(data: Data) {
+    // Passive mirror on every change, independent of the explicit save
+    // action below -- see local-draft.ts's own doc comment.
+    writeLocalDraft(projectId, pageKey, data as Record<string, unknown>);
+  }
+
+  async function handleSaveClick(data: Data) {
+    if (!paid) {
+      setSaveState("paywall");
+      return;
+    }
+
+    setSaveState("saving");
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase.rpc("save_project_page", {
+      target_page_key: pageKey,
+      new_layout: data,
+    });
+    // Never surface the RPC's raw Postgres error text (e.g. "payment
+    // required", "page not found: %") -- same discipline as
+    // style-select-client.tsx's set_project_style handling: map through
+    // t() instead of displaying rpcError.message. The `paid` gate above
+    // already prevents the payment-required case from being reachable in
+    // the normal flow, so a generic saveError message covers whatever's
+    // left (network failure, unexpected server error, etc.).
+    setSaveState(error ? "error" : "saved");
+  }
+
+  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    "我的设计已经准备好了，我想付款保存",
+  )}`;
+
   return (
     <div className={`portal-editor-scope ${styles.ledger} flex h-screen flex-col`}>
-      <div className="border-b px-4 py-2 text-[13px] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
-        {PAGE_LABELS[pageKey] ?? pageKey}
+      <div className="flex items-center justify-between border-b px-4 py-2 text-[13px] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
+        <span>{PAGE_LABELS[pageKey] ?? pageKey}</span>
+        {saveState === "saved" ? (
+          <span className="[color:var(--color-jade-bright)]">{t("saveSuccess")}</span>
+        ) : null}
+        {saveState === "error" ? (
+          <span className="[color:var(--color-clay-bright)]">{t("saveError")}</span>
+        ) : null}
       </div>
-      <div className="flex-1">
-        <Puck
-          config={puckConfig}
-          data={initialData}
-          onPublish={() => {}}
-          // Renders the canvas directly in this document instead of a
-          // `srcdoc` iframe -- see puck-theme.css's now-removed body-leak
-          // comment and task-5a-report.md for why: with the iframe gone,
-          // there's no separate DOM/CSSOM for the `.ledger`/`.hearth`/
-          // `.blueprint` scope classes to fail to reach into. Viewport
-          // switching (Puck's responsive-preview feature, which disabling
-          // the iframe also disables per Puck's own docs) is unused
-          // anywhere in this app -- confirmed via a repo-wide grep, task
-          // 5a's report has the details.
-          iframe={{ enabled: false }}
-          overrides={{
-            // The one supported override point for wrapping just the
-            // canvas's rendered subtree (Puck's own Preview component),
-            // independent of the chrome wrapper above -- reuses the exact
-            // `.scope` + per-style class pairing style-column.tsx already
-            // applies to each of its three comparison columns, so canvas
-            // content resolves var(--color-*) against the CUSTOMER's
-            // chosen style, not Ledger. `h-full` matters here: Puck's own
-            // Preview/frame elements are `height: 100%` all the way down,
-            // which needs an explicit height on this wrapper or the chain
-            // collapses to 0.
-            preview: ({ children }) => (
-              <div className={`${styles.scope} ${CANVAS_SCOPE_CLASS[style]} h-full`}>{children}</div>
-            ),
-          }}
-        />
-      </div>
+
+      {saveState === "paywall" ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <h2 className="text-[18px] [font-weight:var(--fw-semibold)]">{t("paywallTitle")}</h2>
+          <p className="text-[14px] [color:var(--color-paper-dim)]">{t("paywallBody")}</p>
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 rounded-lg px-4 py-2.5 text-[13px] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)]"
+          >
+            {t("paywallCta")}
+          </a>
+          <button
+            type="button"
+            onClick={() => setSaveState("idle")}
+            className="text-[13px] underline [color:var(--color-paper-dim)]"
+          >
+            {t("backToEditing")}
+          </button>
+        </div>
+      ) : (
+        <div className="flex-1">
+          <Puck
+            config={puckConfig}
+            data={startingData}
+            onChange={handleChange}
+            onPublish={handleSaveClick}
+            // Renders the canvas directly in this document instead of a
+            // `srcdoc` iframe -- see puck-theme.css's now-removed body-leak
+            // comment and task-5a-report.md for why: with the iframe gone,
+            // there's no separate DOM/CSSOM for the `.ledger`/`.hearth`/
+            // `.blueprint` scope classes to fail to reach into. Viewport
+            // switching (Puck's responsive-preview feature, which disabling
+            // the iframe also disables per Puck's own docs) is unused
+            // anywhere in this app -- confirmed via a repo-wide grep, task
+            // 5a's report has the details.
+            iframe={{ enabled: false }}
+            overrides={{
+              // The one supported override point for wrapping just the
+              // canvas's rendered subtree (Puck's own Preview component),
+              // independent of the chrome wrapper above -- reuses the exact
+              // `.scope` + per-style class pairing style-column.tsx already
+              // applies to each of its three comparison columns, so canvas
+              // content resolves var(--color-*) against the CUSTOMER's
+              // chosen style, not Ledger. `h-full` matters here: Puck's own
+              // Preview/frame elements are `height: 100%` all the way down,
+              // which needs an explicit height on this wrapper or the chain
+              // collapses to 0.
+              preview: ({ children }) => (
+                <div className={`${styles.scope} ${CANVAS_SCOPE_CLASS[style]} h-full`}>{children}</div>
+              ),
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

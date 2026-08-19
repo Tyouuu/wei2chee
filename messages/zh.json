@@ -139,6 +139,14 @@
       "subtitle": "这个选择之后不能更改，请仔细比较后再决定。",
       "errorAlreadySet": "风格已经选过了，不能再改。",
       "errorGeneric": "出了点问题，请再试一次。"
+    },
+    "editor": {
+      "paywallTitle": "你的设计已经准备好了",
+      "paywallBody": "付款后即可保存你的设计。",
+      "paywallCta": "联系我们付款",
+      "backToEditing": "返回编辑",
+      "saveSuccess": "已保存",
+      "saveError": "保存失败，请重试。"
     }
   }
 }

@@ -20,7 +20,7 @@ export default async function PortalEditorPage({ params }: { params: Promise<{ p
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style")
+    .select("id, style, paid")
     .eq("account_id", user.id)
     .single();
 
@@ -37,6 +37,14 @@ export default async function PortalEditorPage({ params }: { params: Promise<{ p
   return (
     <PortalEditor
       pageKey={pageKey}
+      projectId={project.id}
+      // Untyped Supabase client (see createSessionSupabaseClient's own
+      // comment) -- `paid` comes back as `any`, narrowed here the same way
+      // this file already narrows `style`/`layout_json` below. Gates the
+      // save/paywall state machine client-side (Task 6); the real
+      // enforcement is save_project_page's own server-side check
+      // (supabase/migrations/20260818120000_customer_portal_schema.sql).
+      paid={Boolean(project.paid)}
       initialData={(page?.layout_json as Record<string, unknown>) ?? {}}
       // Untyped Supabase client (see createSessionSupabaseClient's own
       // comment) -- `style` comes back as `any`, narrowed here the same

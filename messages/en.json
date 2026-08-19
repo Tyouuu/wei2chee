@@ -139,6 +139,14 @@
       "subtitle": "This choice can't be changed afterwards, so compare carefully before deciding.",
       "errorAlreadySet": "You've already chosen a style — this can't be changed.",
       "errorGeneric": "Something went wrong, please try again."
+    },
+    "editor": {
+      "paywallTitle": "Your design is ready",
+      "paywallBody": "Pay to save your design.",
+      "paywallCta": "Contact us to pay",
+      "backToEditing": "Back to editing",
+      "saveSuccess": "Saved",
+      "saveError": "Save failed, please try again."
     }
   }
 }
