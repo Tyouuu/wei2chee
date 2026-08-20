@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePuck, type Data } from "@puckeditor/core";
 import { useTranslations } from "next-intl";
 import { VersionHistoryDialog } from "./version-history";
+import { formatTime } from "@/lib/format-date";
 
 /**
  * Replaces Puck's built-in header.
@@ -149,12 +150,7 @@ export function EditorChrome({
                   // being true a minute after it was rendered and never
                   // updated, i.e. it asserted something false about the
                   // customer's data for as long as the tab stayed open.
-                  t("savedAtTime", {
-                    time: new Intl.DateTimeFormat(locale === "zh" ? "zh-MY" : "en-MY", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }).format(savedAt),
-                  })
+                  t("savedAtTime", { time: formatTime(savedAt, locale) })
                 : ""}
       </span>
 

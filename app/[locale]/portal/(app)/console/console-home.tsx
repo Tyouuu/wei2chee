@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { PageBar } from "../page-bar";
 import { STAGES, StageSelect, stageTone } from "./stage";
+import { formatDay } from "@/lib/format-date";
 
 type Customer = {
   project_id: string;
@@ -53,8 +54,7 @@ export function ConsoleHome({
     if (!error) router.refresh();
   }
 
-  const fmtDate = (iso: string | null) =>
-    iso ? new Intl.DateTimeFormat(locale === "zh" ? "zh-MY" : "en-MY", { month: "short", day: "numeric" }).format(new Date(iso)) : "—";
+  const fmtDate = (iso: string | null) => (iso ? formatDay(iso, locale) : "—");
 
   return (
     <>

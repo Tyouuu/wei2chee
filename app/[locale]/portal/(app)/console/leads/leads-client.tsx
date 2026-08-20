@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { PageBar } from "../../page-bar";
+import { formatDayTime } from "@/lib/format-date";
 
 type Lead = {
   id: string;
@@ -25,13 +26,6 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
 
   const shown = onlyUnconverted ? leads.filter((l) => !l.converted) : leads;
   const unconverted = leads.filter((l) => !l.converted).length;
-
-  const fmt = new Intl.DateTimeFormat(locale === "zh" ? "zh-MY" : "en-MY", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
   return (
     <>
@@ -116,7 +110,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                         dateTime={lead.created_at}
                         className="tabular-nums text-[12px] [color:var(--color-paper-dim)]"
                       >
-                        {fmt.format(new Date(lead.created_at))}
+                        {formatDayTime(lead.created_at, locale)}
                       </time>
                       <button
                         type="button"

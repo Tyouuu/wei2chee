@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { formatDayTime } from "@/lib/format-date";
 
 /**
  * The way back.
@@ -94,16 +95,6 @@ export function VersionHistoryDialog({
     onClose();
   }
 
-  // Intl rather than a message key: a date format is a locale fact, not a
-  // translation, and hand-writing one per language is how "2026/8/20" ends up
-  // in the English build.
-  const fmt = new Intl.DateTimeFormat(locale === "zh" ? "zh-MY" : "en-MY", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
   return (
     <dialog
       ref={ref}
@@ -146,7 +137,7 @@ export function VersionHistoryDialog({
                   dateTime={v.created_at}
                   className="flex-1 tabular-nums [color:var(--color-paper)] [font-size:var(--text-sm)]"
                 >
-                  {fmt.format(new Date(v.created_at))}
+                  {formatDayTime(v.created_at, locale)}
                 </time>
                 <button
                   type="button"
