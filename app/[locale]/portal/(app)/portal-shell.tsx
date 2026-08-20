@@ -265,12 +265,11 @@ export function PortalShell({
           {isFounder && (
             <>
               <SectionLabel>{t("founderSection")}</SectionLabel>
-              <NavRow
-                href={`${base}/console`}
-                active={pathname.startsWith(`${base}/console`)}
-                icon={<IconConsole />}
-              >
+              <NavRow href={`${base}/console`} active={is("/console")} icon={<IconConsole />}>
                 {t("console")}
+              </NavRow>
+              <NavRow href={`${base}/console/leads`} active={is("/console/leads")} icon={<IconSpec />}>
+                {t("leads")}
               </NavRow>
             </>
           )}
