@@ -51,7 +51,11 @@ export function StyleSelectClient({ recommended }: { recommended: StyleName | nu
       return;
     }
 
-    router.push(`/portal/dashboard`);
+    // The home, not the editor. Picking a style is the last step of setup, and
+    // what a customer wants immediately after it is to SEE the system in the
+    // style they just chose -- five pages side by side -- not to be dropped
+    // into an authoring canvas for one of them.
+    router.push(`/portal`);
   }
 
   return (

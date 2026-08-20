@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { SignupForm } from "./signup-form";
+import { AuthShell } from "@/components/auth-shell";
 
 export default async function SignupPage({
   params,
@@ -11,13 +12,10 @@ export default async function SignupPage({
   const t = await getTranslations("auth");
 
   return (
-    <main className="mx-auto max-w-sm px-6 py-16">
-      <h1 className="text-[20px] font-semibold">{t("signupTitle")}</h1>
-      <div className="mt-6">
-        <Suspense fallback={null}>
-          <SignupForm locale={locale} />
-        </Suspense>
-      </div>
-    </main>
+    <AuthShell locale={locale} title={t("signupTitle")} subtitle={t("signupSubtitle")}>
+      <Suspense fallback={null}>
+        <SignupForm locale={locale} />
+      </Suspense>
+    </AuthShell>
   );
 }

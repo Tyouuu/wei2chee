@@ -14,6 +14,7 @@ import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft
 import { EditorChrome } from "./editor-chrome";
 import { ComponentPreview } from "@/design-system/editor/component-preview";
 import { StyleSwitcher } from "./style-switcher";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 // Reused rather than re-declared: this is the same scoped Ledger token
 // class app/[locale]/portal/style-select's <StyleColumn> already applies,
 // kept in sync with design-system/tokens/ledger.css by
@@ -233,6 +234,20 @@ export function PortalEditor({
             way to open one was to type its URL. A customer designing a
             five-page system could only ever see the page they landed on, which
             made the product look like a one-page toy. */}
+        {/* Back to the home screen. The editor used to BE the landing surface
+            (/portal redirected straight here), so there was nowhere to go
+            back to; now that /portal is a real home, an authoring tool with
+            no exit is a trap. First item in the bar, before the page tabs,
+            because that is where a reader looks for "up". */}
+        <Link
+          href={`/${locale}/portal`}
+          className="mr-1 flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+        >
+          <span aria-hidden="true">←</span>
+          {t("backHome")}
+        </Link>
+        <span aria-hidden="true" className="h-5 w-px shrink-0 [background-color:var(--color-ink-800)]" />
+
         <nav className="flex items-center gap-1 overflow-x-auto" aria-label={t("pageNavLabel")}>
           {pageKeys.map((key) => {
             const active = key === pageKey;
@@ -283,6 +298,7 @@ export function PortalEditor({
             {t("specCta")}
           </Link>
           <StyleSwitcher style={activeStyle} onPreview={setActiveStyle} />
+          <LocaleSwitcher />
           <button
             type="button"
             onClick={handleSignOut}

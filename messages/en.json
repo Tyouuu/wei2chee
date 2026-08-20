@@ -178,7 +178,9 @@
     "errorEmailTaken": "This email is already registered.",
     "errorGeneric": "Something went wrong, please try again.",
     "confirmPendingTitle": "Confirm your email",
-    "confirmPendingBody": "We sent a confirmation link to your email. Click it to finish setting up your account."
+    "confirmPendingBody": "We sent a confirmation link to your email. Click it to finish setting up your account.",
+    "loginSubtitle": "Sign in to keep working on your system. Your changes save as you go.",
+    "signupSubtitle": "Signing up is free and asks for no card. Your system is built from your trade first — you edit from there."
   },
   "portal": {
     "styleSelect": {
@@ -221,7 +223,35 @@
       "aiNoChange": "Can't do that one. Try rephrasing, or drag a block in instead.",
       "styleLabel": "Style",
       "styleFailed": "Couldn't switch — try again",
-      "specCta": "System spec"
+      "specCta": "System spec",
+      "backHome": "My system"
+    },
+    "home": {
+      "eyebrow": "YOUR SYSTEM",
+      "title": "Your system is built. Change anything.",
+      "titleWithIndustry": "Your {industry} system is built.",
+      "pagesTitle": "System pages",
+      "pagesCount": "{count} pages",
+      "cardDraft": "Generated draft · not edited yet",
+      "cardEdited": "Edited and saved by you",
+      "cardCta": "Open and edit",
+      "styleTitle": "Style",
+      "styleBody": "One system, three treatments. Switch with a click and switch back any time — every page above changes with it.",
+      "styleTag": {
+        "ledger": "Dense · many rows, many tables",
+        "hearth": "Roomy · warm and readable",
+        "blueprint": "Drafted · precise and technical"
+      },
+      "styleCurrent": "In use",
+      "styleUse": "Use this one",
+      "nextTitle": "What's next",
+      "specTitle": "Read the specification",
+      "specBody": "Your finished design, written down: every page, every field, every stage of the workflow. Take it to any development shop and they will understand it.",
+      "specCta": "Open the specification",
+      "buildTitle": "Have us build it for real",
+      "buildBody": "Happy with the design? Tell us. A real team takes over and builds a system that issues real quotes and takes real payments.",
+      "buildBodyPaid": "You have paid. Once the design is settled, tell us and we start building.",
+      "buildCta": "Message on WhatsApp"
     }
   },
   "explainer": {

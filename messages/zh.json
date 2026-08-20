@@ -178,7 +178,9 @@
     "errorEmailTaken": "这个邮箱已经注册过了。",
     "errorGeneric": "出了点问题，请再试一次。",
     "confirmPendingTitle": "请确认你的邮箱",
-    "confirmPendingBody": "我们发了一封确认邮件到你的邮箱，点击里面的链接完成注册。"
+    "confirmPendingBody": "我们发了一封确认邮件到你的邮箱，点击里面的链接完成注册。",
+    "loginSubtitle": "登录之后可以继续设计你的系统。改动随时可以保存。",
+    "signupSubtitle": "注册是免费的，不用信用卡。系统会先按你的行业帮你建好一套，你再慢慢改。"
   },
   "portal": {
     "styleSelect": {
@@ -221,7 +223,35 @@
       "aiNoChange": "这个改不了，可以换个说法，或者直接拖组件。",
       "styleLabel": "风格",
       "styleFailed": "换不了，请重试",
-      "specCta": "系统需求书"
+      "specCta": "系统需求书",
+      "backHome": "我的系统"
+    },
+    "home": {
+      "eyebrow": "你的系统",
+      "title": "系统已经建好了，随时可以改。",
+      "titleWithIndustry": "你的{industry}系统已经建好了。",
+      "pagesTitle": "系统页面",
+      "pagesCount": "{count} 个页面",
+      "cardDraft": "自动生成的初稿 · 还没改过",
+      "cardEdited": "你改过并保存了",
+      "cardCta": "打开来改",
+      "styleTitle": "风格",
+      "styleBody": "同一套系统，三种做法。点一下就换，随时可以再换回来——上面每一页的样子会跟着一起变。",
+      "styleTag": {
+        "ledger": "紧凑 · 表格多、行数多",
+        "hearth": "宽松 · 温和、好读",
+        "blueprint": "制图 · 精准、技术感"
+      },
+      "styleCurrent": "使用中",
+      "styleUse": "换成这个",
+      "nextTitle": "接下来",
+      "specTitle": "看系统需求书",
+      "specBody": "把你设计好的系统写成一份文件：每一页有什么、每个栏位叫什么、流程怎么走。拿着它去问任何一家开发公司都看得懂。",
+      "specCta": "打开需求书",
+      "buildTitle": "交给我们建成真的",
+      "buildBody": "设计满意了就跟我们讲一声。真人团队接手，做成一套真的能开单、能收钱的系统。",
+      "buildBodyPaid": "你已经付款了。设计确定之后跟我们讲一声，我们就开始建。",
+      "buildCta": "WhatsApp 联系"
     }
   },
   "explainer": {

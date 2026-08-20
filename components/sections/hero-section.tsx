@@ -4,6 +4,7 @@ import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { motion, useMotionValue, useSpring, useScroll, useTransform } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { BRAND_NAME } from "@/lib/brand";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 
 // Instrument Serif carries its weight through stroke contrast, not mass — so it
 // is set at 400 (no font-bold) and allowed to get genuinely large. Negative
@@ -65,7 +66,15 @@ export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
         className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between px-6 pt-6 sm:px-10 sm:pt-8"
       >
         <span className="annotation !text-white/70">{BRAND_NAME} / SYS.DESIGN</span>
-        <span className="annotation hidden !text-white/50 sm:block">SHEET 01 — MY</span>
+        {/* `pointer-events-auto` because the wrapper turns them off for the
+            whole header strip — the annotations are decoration, this is the
+            one control in it. It sits here rather than in a nav bar the page
+            does not have: the sheet header is already the page's only
+            persistent chrome. */}
+        <span className="pointer-events-auto flex items-center gap-5">
+          <LocaleSwitcher tone="dark" />
+          <span className="annotation hidden !text-white/50 sm:block">SHEET 01 — MY</span>
+        </span>
       </motion.div>
 
       <motion.div
