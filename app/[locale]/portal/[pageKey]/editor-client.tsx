@@ -192,7 +192,20 @@ export function PortalEditor({
   )}`;
 
   return (
-    <div className={`portal-editor-scope ${styles.ledger} flex h-screen flex-col`}>
+    <div
+      // Regression fix: this wrapper (and the header bar inside it) never
+      // painted its own background -- it silently depended on
+      // portal/layout.tsx's shared `--color-canvas` fill, which got
+      // reverted for breaking /portal/style-select's contrast (that page
+      // deliberately keeps the acquisition site's dark theme; this one
+      // never should have shared a wrapper with it). Scoped here instead,
+      // to just this route, so it can't leak into style-select again.
+      // Without it, the header bar's dark-on-light text (--color-paper /
+      // --color-paper-dim, tuned for Ledger's light surfaces) rendered
+      // against the acquisition site's dark <body> showing through --
+      // barely legible, not just unstyled.
+      className={`portal-editor-scope ${styles.ledger} flex h-screen flex-col [background-color:var(--color-canvas)]`}
+    >
       <div className="flex items-center justify-between border-b px-4 py-2 text-[13px] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
         <span>{PAGE_LABELS[pageKey] ?? pageKey}</span>
         <div className="flex items-center gap-3">
