@@ -224,7 +224,23 @@
       "styleLabel": "风格",
       "styleFailed": "换不了，请重试",
       "specCta": "系统需求书",
-      "backHome": "我的系统"
+      "backHome": "我的系统",
+      "aiOpen": "AI 修改",
+      "aiPanelTitle": "AI 助手",
+      "aiClose": "关闭",
+      "aiEmptyBody": "用讲的就可以。想改什么，直接打出来——名称、栏位、流程步骤，它都能帮你改。",
+      "aiSuggestTitle": "可以这样问",
+      "aiSuggest1": "把「客户」改成「病人」",
+      "aiSuggest2": "加一个记录生日的地方",
+      "aiSuggest3": "表格加一列「负责的师傅」",
+      "aiApplied": "改了 {count} 处",
+      "aiRevert": "撤销这次修改",
+      "aiReverted": "已撤销",
+      "aiRateLimited": "今天问得有点多，等一下再试。",
+      "aiEnterHint": "Enter 发送 · Shift+Enter 换行",
+      "unsaved": "还没保存",
+      "savedJustNow": "已保存",
+      "saveShortcut": "保存设计（Ctrl/⌘+S）"
     },
     "home": {
       "eyebrow": "你的系统",
@@ -251,7 +267,22 @@
       "buildTitle": "交给我们建成真的",
       "buildBody": "设计满意了就跟我们讲一声。真人团队接手，做成一套真的能开单、能收钱的系统。",
       "buildBodyPaid": "你已经付款了。设计确定之后跟我们讲一声，我们就开始建。",
-      "buildCta": "WhatsApp 联系"
+      "buildCta": "WhatsApp 联系",
+      "settingsCta": "设置",
+      "namePrompt": "现在叫「{name}」——改成你公司真正的名字"
+    },
+    "settings": {
+      "title": "生意资料",
+      "body": "这两个名字会出现在你系统的每一页、需求书上，还有你找我们建系统时的对话里。",
+      "businessLabel": "公司名称",
+      "businessPlaceholder": "例如：兴发装修工程",
+      "businessHint": "留空的话，系统会按你的行业用一个通用名字。",
+      "ownerLabel": "你的名字",
+      "ownerPlaceholder": "例如：陈老板",
+      "save": "保存",
+      "saving": "保存中…",
+      "cancel": "取消",
+      "failed": "保存不了，请再试一次。"
     }
   },
   "explainer": {

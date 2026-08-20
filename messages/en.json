@@ -224,7 +224,23 @@
       "styleLabel": "Style",
       "styleFailed": "Couldn't switch — try again",
       "specCta": "System spec",
-      "backHome": "My system"
+      "backHome": "My system",
+      "aiOpen": "Ask AI",
+      "aiPanelTitle": "AI assistant",
+      "aiClose": "Close",
+      "aiEmptyBody": "Just say it. Names, columns, workflow stages — type what you want changed and it changes.",
+      "aiSuggestTitle": "Try asking",
+      "aiSuggest1": "Rename “customer” to “patient”",
+      "aiSuggest2": "Add somewhere to record birthdays",
+      "aiSuggest3": "Add a column for who is in charge",
+      "aiApplied": "{count} change(s) made",
+      "aiRevert": "Undo this change",
+      "aiReverted": "Undone",
+      "aiRateLimited": "That is a lot of questions today. Try again shortly.",
+      "aiEnterHint": "Enter to send · Shift+Enter for a new line",
+      "unsaved": "Unsaved changes",
+      "savedJustNow": "Saved",
+      "saveShortcut": "Save design (Ctrl/⌘+S)"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",
@@ -251,7 +267,22 @@
       "buildTitle": "Have us build it for real",
       "buildBody": "Happy with the design? Tell us. A real team takes over and builds a system that issues real quotes and takes real payments.",
       "buildBodyPaid": "You have paid. Once the design is settled, tell us and we start building.",
-      "buildCta": "Message on WhatsApp"
+      "buildCta": "Message on WhatsApp",
+      "settingsCta": "Settings",
+      "namePrompt": "Currently called “{name}” — set your real company name"
+    },
+    "settings": {
+      "title": "Business details",
+      "body": "These two names appear on every page of your system, in the specification, and in the conversation when you hand it to us to build.",
+      "businessLabel": "Company name",
+      "businessPlaceholder": "e.g. Hing Fatt Renovation",
+      "businessHint": "Leave it blank and the system uses a generic name for your trade.",
+      "ownerLabel": "Your name",
+      "ownerPlaceholder": "e.g. Mr. Tan",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "failed": "Could not save. Please try again."
     }
   },
   "explainer": {

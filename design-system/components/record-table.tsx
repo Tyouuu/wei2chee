@@ -65,7 +65,15 @@ export function RecordTable({
 
   return (
     <DataGrid id={gridId} label={caption}>
-      <table className="w-full min-w-[520px] border-collapse [font-size:var(--text-sm)]">
+      {/* 440, not 520. The floor has to be a width the table can actually get,
+          and the narrowest real case is now the editor with the AI assistant
+          open: a 1440px window gives the canvas 782, the customer's own rail
+          takes 228, and the shell's padding another 48 -- 458px for the table.
+          At 520 the status column was sliced in half, which is the same defect
+          that was fixed once already by widening the canvas and would simply
+          come back every time a panel opens. Four columns still read at 440;
+          below that the grid scrolls, which is what DataGrid is for. */}
+      <table className="w-full min-w-[440px] border-collapse [font-size:var(--text-sm)]">
         <thead>
           <tr className="sticky top-0 [background-color:var(--color-ink-900)]">
             <th className={headCell}>{primaryLabel}</th>

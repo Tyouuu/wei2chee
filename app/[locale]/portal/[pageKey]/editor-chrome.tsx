@@ -1,42 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePuck, type Data } from "@puckeditor/core";
 import { useTranslations } from "next-intl";
 
 /**
- * Replaces Puck's built-in header, and adds the conversational edit bar beside
- * it.
+ * Replaces Puck's built-in header.
  *
- * Two problems solved in one place, because they are the same place on screen.
- *
- * 1. Puck ships its own toolbar -- "Page", undo/redo, "Publish" -- in English
- *    and unstyled by this app's tokens. In a product sold to Malaysian-Chinese
- *    SME owners it was the loudest remaining seam: the one control a customer
- *    must press to keep their work was labelled in a language the rest of the
- *    product had stopped using, and it said "Publish", a web-publishing word
- *    for an action that means "save my design".
- *
- * 2. Drag-and-drop is not how most of these customers will actually edit. They
- *    were promised a system that understands their business; expecting them to
- *    discover that a table's columns live in a panel on the right is expecting
- *    them to learn a tool. The edit bar lets them say it instead -- "把'客户'改
- *    成'病人'" -- which is the path Durable and Framer both landed on: keep the
- *    visual editor, put a conversational route beside it, not instead of it.
+ * Puck ships its own toolbar — "Page", undo/redo, "Publish" — in English and
+ * unstyled by this app's tokens. In a product sold to Malaysian-Chinese SME
+ * owners it was the loudest remaining seam: the one control a customer must
+ * press to keep their work was labelled in a language the rest of the product
+ * had stopped using, and it said "Publish", a web-publishing word for an action
+ * that means "save my design".
  *
  * Rendered through `overrides.header`, so it sits inside Puck's own context and
  * drives real editor state through `usePuck` rather than shadowing it: undo and
- * redo are Puck's own history, the save button hands over Puck's live data
- * exactly as its Publish button did, and an AI edit is dispatched as a normal
- * `setData` with history recorded -- so the undo button undoes it like anything
- * else.
+ * redo are Puck's own history, and the save button hands over Puck's live data
+ * exactly as its Publish button did.
+ *
+ * The conversational editing that used to live here as a single text field is
+ * now a panel of its own — see ai-assistant.tsx for why a one-shot box was the
+ * feature stated rather than built. What remains here is the button that opens
+ * it, and the save state.
  */
 export function EditorChrome({
   saving,
   onSave,
+  dirty,
+  savedAt,
+  assistantOpen,
+  onToggleAssistant,
 }: {
   saving: boolean;
   onSave: (data: Data) => void;
+  /** Edited since the last successful save. Drives the indicator, and the
+   *  beforeunload guard in editor-client. */
+  dirty: boolean;
+  savedAt: number | null;
+  assistantOpen: boolean;
+  onToggleAssistant: () => void;
 }) {
   const t = useTranslations("portal.editor");
   const { appState, history, dispatch } = usePuck();
@@ -52,147 +55,94 @@ export function EditorChrome({
   // sliced down the middle. That reads as a broken product, and it was being
   // caused by an empty panel.
   //
-  // Selecting a block opens the panel; deselecting closes it. Puck already
-  // treats `itemSelector` as the selection, so this is following its own state
-  // rather than inventing a parallel one.
+  // The assistant occupies the same column, so opening it also closes the
+  // fields panel: two panels competing for one column is how an editor starts
+  // feeling arbitrary.
   const hasSelection = appState.ui.itemSelector != null;
   useEffect(() => {
-    dispatch({ type: "setUi", ui: { rightSideBarVisible: hasSelection } });
-  }, [hasSelection, dispatch]);
+    dispatch({ type: "setUi", ui: { rightSideBarVisible: hasSelection && !assistantOpen } });
+  }, [hasSelection, assistantOpen, dispatch]);
 
-  const [instruction, setInstruction] = useState("");
-  const [thinking, setThinking] = useState(false);
-  const [reply, setReply] = useState<{ tone: "ok" | "warn"; text: string } | null>(null);
-
-  async function handleAsk(e: React.FormEvent) {
-    e.preventDefault();
-    const text = instruction.trim();
-    if (!text || thinking) return;
-
-    setThinking(true);
-    setReply(null);
-    try {
-      const res = await fetch("/api/portal/edit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ layout: appState.data, instruction: text }),
-      });
-
-      if (!res.ok) {
-        setReply({ tone: "warn", text: t("aiFailed") });
-        return;
+  // Ctrl/Cmd+S. Every tool a customer already uses binds it, and a product
+  // that ignores it teaches people their reflex does not work here — which is
+  // worse than not binding it, because the browser's own "save page" dialog
+  // opens instead.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (!saving) onSave(appState.data as Data);
       }
-
-      const result = (await res.json()) as {
-        layout: Data;
-        explanation: string;
-        applied: number;
-        skipped: { reason: string }[];
-      };
-
-      if (result.applied > 0) {
-        // `recordHistory` is what puts the edit on the undo stack. Without it a
-        // customer who dislikes what the AI did has no way back, which would
-        // make the feature something to be afraid of rather than something to
-        // try.
-        dispatch({ type: "setData", data: result.layout, recordHistory: true });
-        setInstruction("");
-      }
-
-      // Partial application is reported honestly. Four changes landing and one
-      // being dropped is a normal outcome here, and a customer who is not told
-      // will assume the whole request was understood.
-      const skippedNote = result.skipped.length ? `（${result.skipped.length} 项没能改）` : "";
-      setReply({
-        tone: result.applied > 0 ? "ok" : "warn",
-        text: (result.explanation || t("aiNoChange")) + skippedNote,
-      });
-    } catch {
-      setReply({ tone: "warn", text: t("aiFailed") });
-    } finally {
-      setThinking(false);
     }
-  }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [appState.data, onSave, saving]);
 
   const iconButton =
     "flex h-8 w-8 items-center justify-center rounded-md text-[15px] transition-colors disabled:opacity-30 [color:var(--color-paper-dim)] enabled:hover:[background-color:var(--color-ink-850)] enabled:hover:[color:var(--color-paper)]";
 
   return (
-    // One row, not two. The first version stacked a row carrying the page name
-    // and the save controls on top of the edit bar -- and the page name was
-    // already spelled out, highlighted, in the page tabs directly above it. So
-    // the editor spent 45px of a 900px window restating something the customer
-    // was looking at, and pushed their own system further down for it. The
-    // controls moved down here; the duplicate row is gone.
-    <div className="border-b [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
-      <form onSubmit={handleAsk} className="flex flex-wrap items-center gap-2 px-4 py-2">
-        <span className="text-[12px] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
-          {t("aiLabel")}
+    <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+      <button
+        type="button"
+        onClick={onToggleAssistant}
+        aria-pressed={assistantOpen}
+        className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-[13px] transition-colors ${
+          assistantOpen
+            ? "[background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
+            : "border [border-color:var(--color-ink-800)] [color:var(--color-paper)] hover:[background-color:var(--color-ink-850)]"
+        }`}
+      >
+        <span
+          aria-hidden="true"
+          className="grid h-4.5 w-4.5 place-items-center rounded-full px-1 text-[9.5px] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]"
+        >
+          AI
         </span>
-        <input
-          value={instruction}
-          onChange={(e) => setInstruction(e.target.value)}
-          disabled={thinking}
-          maxLength={500}
-          placeholder={t("aiPlaceholder")}
-          aria-label={t("aiLabel")}
-          className="min-w-[220px] flex-1 rounded-md border px-3 py-1.5 text-[13px] outline-none disabled:opacity-60 [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
-        />
-        <button
-          type="submit"
-          disabled={thinking || !instruction.trim()}
-          className="rounded-md border px-3 py-1.5 text-[13px] transition-colors disabled:opacity-40 [border-color:var(--color-ink-800)] [color:var(--color-paper)] enabled:hover:[background-color:var(--color-ink-850)]"
-        >
-          {thinking ? t("aiThinking") : t("aiSubmit")}
-        </button>
+        {t("aiOpen")}
+      </button>
 
-        {/* A rule rather than a gap: undo/redo/save act on the whole page,
-            the field to their left acts through the AI. Same row, different
-            job, and the separator is what says so. */}
-        <span aria-hidden="true" className="mx-1 h-6 w-px [background-color:var(--color-ink-800)]" />
+      <span className="flex-1" />
 
-        <button
-          type="button"
-          onClick={history.back}
-          disabled={!history.hasPast}
-          aria-label={t("undo")}
-          title={t("undo")}
-          className={iconButton}
-        >
-          ↺
-        </button>
-        <button
-          type="button"
-          onClick={history.forward}
-          disabled={!history.hasFuture}
-          aria-label={t("redo")}
-          title={t("redo")}
-          className={iconButton}
-        >
-          ↻
-        </button>
-        <button
-          type="button"
-          onClick={() => onSave(appState.data)}
-          disabled={saving}
-          className="rounded-md px-3.5 py-1.5 text-[13px] transition-colors disabled:opacity-60 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
-        >
-          {saving ? t("saving") : t("saveCta")}
-        </button>
+      {/* Save STATE, not just a save button. A product that only ever shows a
+          button leaves the customer with no answer to "did that work" other
+          than pressing it again. */}
+      <span
+        role="status"
+        className={`text-[12px] ${dirty ? "[color:var(--color-brass-bright)]" : "[color:var(--color-paper-dim)]"}`}
+      >
+        {saving ? t("saving") : dirty ? t("unsaved") : savedAt ? t("savedJustNow") : ""}
+      </span>
 
-        {reply && (
-          <span
-            role="status"
-            className={
-              reply.tone === "ok"
-                ? "w-full text-[12px] [color:var(--color-jade-bright)]"
-                : "w-full text-[12px] [color:var(--color-brass-bright)]"
-            }
-          >
-            {reply.text}
-          </span>
-        )}
-      </form>
+      <button
+        type="button"
+        onClick={history.back}
+        disabled={!history.hasPast}
+        aria-label={t("undo")}
+        title={t("undo")}
+        className={iconButton}
+      >
+        ↺
+      </button>
+      <button
+        type="button"
+        onClick={history.forward}
+        disabled={!history.hasFuture}
+        aria-label={t("redo")}
+        title={t("redo")}
+        className={iconButton}
+      >
+        ↻
+      </button>
+      <button
+        type="button"
+        onClick={() => onSave(appState.data as Data)}
+        disabled={saving}
+        title={t("saveShortcut")}
+        className="rounded-md px-3.5 py-1.5 text-[13px] transition-colors disabled:opacity-60 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
+      >
+        {saving ? t("saving") : t("saveCta")}
+      </button>
     </div>
   );
 }

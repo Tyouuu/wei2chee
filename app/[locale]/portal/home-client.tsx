@@ -9,6 +9,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { PagePreview } from "./page-preview";
+import { SettingsDialog } from "./settings-dialog";
 import type { PageKey } from "@/lib/templates/industry-template";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
@@ -84,6 +85,9 @@ export function PortalHome({
   pages,
   summary,
   industryName,
+  businessName,
+  savedBusinessName,
+  savedOwnerName,
 }: {
   locale: string;
   accountEmail?: string;
@@ -92,6 +96,11 @@ export function PortalHome({
   pages: { pageKey: PageKey; isDraft: boolean; layout: Data }[];
   summary: string | null;
   industryName: string | null;
+  /** What the system currently calls itself — the customer's own answer if
+   *  they gave one, otherwise the per-trade placeholder. */
+  businessName: string;
+  savedBusinessName: string | null;
+  savedOwnerName: string | null;
 }) {
   const t = useTranslations("portal.home");
   const tEditor = useTranslations("portal.editor");
@@ -101,6 +110,16 @@ export function PortalHome({
   // page preview on this screen re-scope the moment a style is picked, because
   // seeing your own five pages in Hearth is the entire point of the control.
   const [activeStyle, setActiveStyle] = useState<StyleName>(style);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Held locally so the header updates the moment the dialog saves. The page
+  // layouts still carry the old name until the next server render, which is
+  // fine and honest: the previews are of saved pages, and the rail's brand is
+  // regenerated from `projects.business_name` on the next load.
+  const [identity, setIdentity] = useState({
+    businessName: savedBusinessName,
+    ownerName: savedOwnerName,
+  });
+  const shownName = identity.businessName ?? businessName;
   const [styleFailed, setStyleFailed] = useState(false);
   const [pendingStyle, setPendingStyle] = useState<StyleName | null>(null);
 
@@ -143,17 +162,28 @@ export function PortalHome({
           >
             F
           </span>
+          {/* The BUSINESS leads here, not the product. Durable's Home does the
+              same thing and it is the difference between "I am inside Formae"
+              and "I am inside my own system". Formae is named underneath, in
+              the place a tool names itself. */}
           <span className="leading-tight">
             <span className="block [color:var(--color-nav-fg)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
-              Formae
+              {shownName}
             </span>
             <span className="block [color:var(--color-nav-fg-dim)] [font-size:var(--text-micro)]">
-              {accountEmail}
+              Formae · {accountEmail}
             </span>
           </span>
         </div>
 
         <div className="flex items-center gap-4 [font-size:var(--text-sm)]">
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="[color:var(--color-nav-fg-dim)] hover:[color:var(--color-nav-fg)]"
+          >
+            {t("settingsCta")}
+          </button>
           <LocaleSwitcher tone="dark" />
           <button
             type="button"
@@ -176,6 +206,23 @@ export function PortalHome({
           {/* The AI's own sentence about this business, on the first screen
               after signing in. It is the clearest possible evidence that the
               questionnaire was not a form that went nowhere. */}
+          {/* Shown only while the name is still generated. It is the one piece of
+              setup the product cannot do for the customer, and asking for it
+              here — under a headline that just used the placeholder — is the
+              moment it is most obviously worth doing. */}
+          {!identity.businessName && (
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="mt-4 inline-flex items-center gap-2 [border-radius:var(--radius-control)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)] px-3.5 py-2 [color:var(--color-paper)] [font-size:var(--text-sm)] transition-colors hover:[border-color:var(--color-primary)]"
+            >
+              {t("namePrompt", { name: shownName })}
+              <span aria-hidden="true" className="[color:var(--color-primary)]">
+                →
+              </span>
+            </button>
+          )}
+
           {summary && (
             <p className="mt-4 max-w-2xl border-l-2 pl-4 [border-color:var(--color-primary)] [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
               {summary}
@@ -330,6 +377,14 @@ export function PortalHome({
           </div>
         </section>
       </main>
+
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        businessName={identity.businessName}
+        ownerName={identity.ownerName}
+        onSaved={setIdentity}
+      />
     </div>
   );
 }

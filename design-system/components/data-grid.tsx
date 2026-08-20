@@ -139,8 +139,12 @@ export function DataGrid({
       style={{
         boxShadow:
           [
-            !atStart ? "inset 8px 0 6px -6px rgba(var(--shadow-hue), 0.2)" : "",
-            !atEnd ? "inset -8px 0 6px -6px rgba(var(--shadow-hue), 0.2)" : "",
+            // Deepened from 0.2. When a panel narrows the canvas this shadow
+            // is the ONLY thing telling a customer their table continues past
+            // the edge rather than being broken, and at 0.2 over a white card
+            // it was not carrying that on its own.
+            !atStart ? "inset 10px 0 8px -6px rgba(var(--shadow-hue), 0.34)" : "",
+            !atEnd ? "inset -10px 0 8px -6px rgba(var(--shadow-hue), 0.34)" : "",
           ]
             .filter(Boolean)
             .join(", ") || undefined,

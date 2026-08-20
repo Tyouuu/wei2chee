@@ -58,9 +58,72 @@ const nunito = Nunito({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: BRAND_NAME,
-};
+/**
+ * Everything a link needs to survive being pasted somewhere.
+ *
+ * Before this the whole app declared `{ title: "Formae" }` and nothing else:
+ * no description, no Open Graph, no Twitter card, no image, no apple-touch
+ * icon. Pasted into WhatsApp — which is where this business is actually
+ * introduced in Malaysia, not email and not search — the link rendered as a
+ * bare grey URL with no title, no picture and no explanation.
+ *
+ * That is a distribution bug, not a polish item. The founder's plan is to send
+ * this link to contractors and shop owners; the preview card IS the pitch for
+ * the two seconds before anyone taps.
+ *
+ * `metadataBase` has to be absolute for og:image to resolve at all. Vercel
+ * supplies the deployment host at build time; the localhost fallback keeps
+ * `next build` working off-platform rather than silently emitting relative
+ * image URLs that no scraper can follow.
+ */
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
+  ? `https://${process.env.NEXT_PUBLIC_SITE_URL.replace(/^https?:\/\//, "")}`
+  : process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const zh = locale !== "en";
+
+  const title = zh ? "Formae — 先看到你的系统，再决定要不要做" : "Formae — see your system before you build it";
+  const description = zh
+    ? "回答几个关于生意的问题，当场看到一套照你流程做的系统：报价单、客户名单、收款记录，全部用你自己的说法。满意了我们再帮你做成真的。设计阶段免费。"
+    : "Answer a few questions about your business and see a working system built around your own workflow — quotations, customers, payments, in your own words. Designing it is free.";
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: { default: title, template: `%s · ${BRAND_NAME}` },
+    description,
+    applicationName: BRAND_NAME,
+    // Both locales point at each other, so a link shared in one language can be
+    // re-served in the other rather than being a dead end for half the market.
+    alternates: {
+      canonical: `/${locale}`,
+      languages: { "zh-Hans": "/zh", en: "/en" },
+    },
+    openGraph: {
+      type: "website",
+      siteName: BRAND_NAME,
+      url: `${SITE_URL}/${locale}`,
+      title,
+      description,
+      locale: zh ? "zh_CN" : "en_MY",
+    },
+    twitter: { card: "summary_large_image", title, description },
+    icons: {
+      icon: "/favicon.ico",
+      // WhatsApp and iOS home-screen bookmarks both reach for this one; without
+      // it iOS screenshots the page and uses that, which at this size is a
+      // grey smear.
+      apple: "/apple-icon.png",
+    },
+  };
+}
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

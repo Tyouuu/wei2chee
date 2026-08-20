@@ -5,6 +5,8 @@ import { PortalHome } from "./home-client";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import {
   buildPageLayout,
+  displayBusinessName,
+  displayOwnerName,
   isUngeneratedLayout,
   sortPageKeys,
   type BusinessContext,
@@ -73,7 +75,11 @@ export default async function PortalHomePage({
   // and nothing here can reach another customer's lead.
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
-  const brandName = user.email?.split("@")[0] || "我的生意";
+  // The account chip answers "who am I signed in as", so it wants the person's
+  // name. Until they set one in settings, the email's local part is the least
+  // bad stand-in -- better than the full address, which would put a customer's
+  // email into every screenshot of their own system.
+  const ownerName = displayOwnerName(businessContext, user.email?.split("@")[0] || "我");
 
   const pages = pageKeys.map((key) => {
     const row = (pageRows ?? []).find((r: { page_key: string }) => r.page_key === key);
@@ -83,7 +89,7 @@ export default async function PortalHomePage({
       pageKey: key,
       isDraft: generated,
       layout: (generated
-        ? buildPageLayout(key, businessContext, brandName, locale, pageKeys)
+        ? buildPageLayout(key, businessContext, ownerName, locale, pageKeys)
         : saved) as unknown as Data,
     };
   });
@@ -96,6 +102,12 @@ export default async function PortalHomePage({
       style={project.style as StyleName}
       pages={pages}
       summary={businessContext.analysis?.summary ?? null}
+      businessName={displayBusinessName(businessContext)}
+      /** null when the customer has not set one, so the settings dialog can
+       *  tell "we are showing you a placeholder" apart from "this is your
+       *  answer" and prompt accordingly. */
+      savedBusinessName={businessContext.identity?.business_name ?? null}
+      savedOwnerName={businessContext.identity?.owner_name ?? null}
       /**
        * Chinese only, on purpose.
        *

@@ -68,9 +68,18 @@ export type AnalysisContext = {
   bottlenecks?: { title: string; description: string }[] | null;
 };
 
+/** `projects.business_name` / `projects.owner_name` (migration 20260820180000).
+ *  Both optional forever: a customer who never opens settings still gets a
+ *  complete system, just one labelled with a placeholder. */
+export type BusinessIdentity = {
+  business_name?: string | null;
+  owner_name?: string | null;
+};
+
 export type BusinessContext = {
   industry?: IndustryContext | null;
   analysis?: AnalysisContext | null;
+  identity?: BusinessIdentity | null;
 };
 
 /**
@@ -184,6 +193,20 @@ const BRAND_PLACEHOLDER: Record<string, string> = {
 };
 
 const brandFor = (slug: string) => BRAND_PLACEHOLDER[slug] ?? "我的公司";
+
+/** The name the system calls itself. The customer's own answer wins over every
+ *  generated guess -- that is the entire point of asking for it. */
+export function displayBusinessName(ctx: BusinessContext): string {
+  const own = ctx.identity?.business_name?.trim();
+  if (own) return own;
+  return brandFor(ctx.industry?.slug ?? FALLBACK_INDUSTRY.slug);
+}
+
+/** Who is signed in. Falls back to the caller-supplied label (today the email's
+ *  local part) only until the customer tells us their name. */
+export function displayOwnerName(ctx: BusinessContext, fallback: string): string {
+  return ctx.identity?.owner_name?.trim() || fallback;
+}
 
 /** Used whenever a business has no lead, or its lead has no industry. */
 const FALLBACK_INDUSTRY: IndustryContext = {
@@ -469,7 +492,7 @@ const sampleFor = (slug: string) => SAMPLES[slug] ?? GENERIC_SAMPLE;
  */
 function railNav(
   labels: IndustryLabels,
-  industrySlug: string,
+  brandLabel: string,
   businessName: string,
   activePage: PageKey,
   locale: string,
@@ -484,7 +507,7 @@ function railNav(
   // The items come from the business's OWN page set, not a fixed five: a salon
   // whose account has no `quotations` page must not be shown a nav link to one.
   return node("RailNav", `${activePage}-rail`, {
-    brandLabel: brandFor(industrySlug),
+    brandLabel: brandLabel,
     brandHref: `/${locale}/portal/dashboard`,
     // `group` is required by RailItem and drives RailNav's collapsible
     // sections. One empty-named group keeps every item in a single uncollapsed
@@ -573,6 +596,7 @@ function workflowStrip(id: string, title: string, stages: string[], attentionAt 
 
 function buildDashboard(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
@@ -584,7 +608,7 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
     `${industry.name_zh}的日常运作总览 — 这是根据你的行业自动生成的起点，全部内容都可以改。`;
 
   return [
-    railNav(labels, industry.slug, name, "dashboard", locale, pageKeys),
+    railNav(labels, brand, name, "dashboard", locale, pageKeys),
     node("PageHeader", "dashboard-header", { title: "业务总览", subtitle }),
     node("HeroCard", "dashboard-hero", {
       label: sample.heroLabel,
@@ -610,11 +634,12 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
 
 function buildCustomers(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, industry.slug, name, "customers", locale, pageKeys),
+    railNav(labels, brand, name, "customers", locale, pageKeys),
     node("PageHeader", "customers-header", {
       title: `${labels.customer}名单`,
       subtitle: `所有${labels.customer}的联络方式和往来记录。`,
@@ -635,11 +660,12 @@ function buildCustomers(ctx: BusinessContext, name: string, locale: string, page
 
 function buildQuotations(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, industry.slug, name, "quotations", locale, pageKeys),
+    railNav(labels, brand, name, "quotations", locale, pageKeys),
     node("PageHeader", "quotations-header", {
       title: "报价单",
       subtitle: `发给${labels.customer}的报价，跟进哪些已确认、哪些还没回复。`,
@@ -661,11 +687,12 @@ function buildQuotations(ctx: BusinessContext, name: string, locale: string, pag
 
 function buildProjects(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, industry.slug, name, "projects", locale, pageKeys),
+    railNav(labels, brand, name, "projects", locale, pageKeys),
     node("PageHeader", "projects-header", {
       title: `${labels.order}进度`,
       // The bottleneck the AI actually identified, named on the page whose job
@@ -696,11 +723,12 @@ function buildProjects(ctx: BusinessContext, name: string, locale: string, pageK
 
 function buildPayments(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, industry.slug, name, "payments", locale, pageKeys),
+    railNav(labels, brand, name, "payments", locale, pageKeys),
     node("PageHeader", "payments-header", {
       title: "收款记录",
       subtitle: `哪些${labels.customer}已经付了、哪些还欠着，不用再翻 WhatsApp。`,
@@ -751,11 +779,12 @@ function buildBookings(
   pageKeys: PageKey[],
 ): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, industry.slug, name, "bookings", locale, pageKeys),
+    railNav(labels, brand, name, "bookings", locale, pageKeys),
     node("PageHeader", "bookings-header", {
       title: "预约",
       subtitle: `今天谁要来、哪个${labels.staff}接、做什么，一页看完。`,
@@ -795,11 +824,12 @@ function buildOrders(
   pageKeys: PageKey[],
 ): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, industry.slug, name, "orders", locale, pageKeys),
+    railNav(labels, brand, name, "orders", locale, pageKeys),
     node("PageHeader", "orders-header", {
       title: `${labels.order}列表`,
       subtitle: ctx.analysis?.bottlenecks?.[0]?.title

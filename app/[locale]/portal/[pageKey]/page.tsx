@@ -5,6 +5,7 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import {
   PAGE_KEYS,
   buildPageLayout,
+  displayOwnerName,
   isUngeneratedLayout,
   sortPageKeys,
   type BusinessContext,
@@ -83,11 +84,13 @@ export default async function PortalEditorPage({
     initialData = buildPageLayout(
       pageKey as PageKey,
       (context as BusinessContext | null) ?? {},
-      // The rail's brand label and account chip. The local-part of the signup
-      // email is a better placeholder than the full address (which would put
-      // the customer's own email into a screenshot of their system) and better
-      // than nothing.
-      user.email?.split("@")[0] || "我的生意",
+      // The account chip only -- the rail's BRAND label now comes from
+      // `projects.business_name` inside buildPageLayout. This is the person,
+      // and the email's local part is the stand-in until they set a name.
+      displayOwnerName(
+        (context as BusinessContext | null) ?? {},
+        user.email?.split("@")[0] || "我",
+      ),
       locale,
       pageKeys,
     ) as unknown as Record<string, unknown>;

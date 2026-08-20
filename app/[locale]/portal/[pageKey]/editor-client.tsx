@@ -14,6 +14,7 @@ import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft
 import { EditorChrome } from "./editor-chrome";
 import { ComponentPreview } from "@/design-system/editor/component-preview";
 import { StyleSwitcher } from "./style-switcher";
+import { AiAssistant, type Turn } from "./ai-assistant";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 // Reused rather than re-declared: this is the same scoped Ledger token
 // class app/[locale]/portal/style-select's <StyleColumn> already applies,
@@ -118,6 +119,34 @@ export function PortalEditor({
   // after hydration has already completed) flips it, and only then does
   // `startingData` start reading the local draft.
   const [hydrated, setHydrated] = useState(false);
+
+  // The assistant's column, and its conversation. Held HERE rather than inside
+  // AiAssistant because Puck re-creates `overrides` render functions as the
+  // editor re-renders -- and the assistant's own successful edit is one of the
+  // things that triggers that. State kept inside it would be wiped by its own
+  // results.
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [turns, setTurns] = useState<Turn[]>([]);
+  const [instruction, setInstruction] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+
+  // Edited since the last successful save. `handleChange` fires on every Puck
+  // mutation including the assistant's, so this is the honest answer to "is
+  // there work on screen that is not in the database".
+  const [dirty, setDirty] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  // The browser's own "leave site?" prompt, armed only while there is
+  // something to lose. A customer who has spent twenty minutes designing and
+  // then closes the tab should not lose it silently -- and for a FREE customer
+  // there is no server copy at all, only the local draft, which makes this the
+  // last line rather than a nicety.
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
   useEffect(() => {
     setHydrated(true);
   }, []);
@@ -153,6 +182,10 @@ export function PortalEditor({
     // Passive mirror on every change, independent of the explicit save
     // action below -- see local-draft.ts's own doc comment.
     writeLocalDraft(projectId, pageKey, data as Record<string, unknown>);
+    setDirty(true);
+    // A stale "已保存" beside a canvas the customer has just changed is worse
+    // than no indicator: it asserts something untrue about their data.
+    setSaveState((prev) => (prev === "saved" ? "idle" : prev));
   }
 
   async function handleSaveClick(data: Data) {
@@ -177,6 +210,8 @@ export function PortalEditor({
     if (!error) {
       setSaveState("saved");
       setHasSavedOnce(true);
+      setDirty(false);
+      setSavedAt(Date.now());
       // The server row is now authoritative and strictly fresher than
       // anything in localStorage. Dropping the draft here keeps it from
       // lingering as a stale landmine on this device if the `!paid` gate
@@ -417,6 +452,10 @@ export function PortalEditor({
                 <EditorChrome
                   saving={saveState === "saving"}
                   onSave={handleSaveClick}
+                  dirty={dirty}
+                  savedAt={savedAt}
+                  assistantOpen={assistantOpen}
+                  onToggleAssistant={() => setAssistantOpen((v) => !v)}
                 />
               ),
               // The one supported override point for wrapping just the
@@ -436,6 +475,27 @@ export function PortalEditor({
               // wrapper in the CUSTOMER's canvas colour -- it sits inside the
               // style scope, so `--color-canvas` is theirs, not Ledger's --
               // makes that strip continuous with the page above it.
+              // Wraps Puck's ENTIRE layout, which is the only override point
+              // that can put a column BESIDE the editor rather than inside one
+              // of its panels. That matters: as a flex sibling the assistant
+              // makes the canvas narrower, where a fixed overlay would simply
+              // cover the customer's own page while they talked about it.
+              puck: ({ children }) => (
+                <div className="flex h-full min-h-0 w-full">
+                  <div className="min-w-0 flex-1">{children}</div>
+                  {assistantOpen && (
+                    <AiAssistant
+                      turns={turns}
+                      setTurns={setTurns}
+                      instruction={instruction}
+                      setInstruction={setInstruction}
+                      busy={aiBusy}
+                      setBusy={setAiBusy}
+                      onClose={() => setAssistantOpen(false)}
+                    />
+                  )}
+                </div>
+              ),
               preview: ({ children }) => (
                 <div
                   className={`${styles.scope} ${CANVAS_SCOPE_CLASS[activeStyle]} h-full [background-color:var(--color-canvas)]`}
