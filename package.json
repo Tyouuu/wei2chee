@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:push": "node scripts/supabase-cli.mjs db push",
+    "db:status": "node scripts/supabase-cli.mjs migration list",
+    "check:isolation": "node scripts/check-tenant-isolation.mjs",
+    "build:tokens": "node scripts/build-style-scope.mjs"
   },
   "dependencies": {
     "@puckeditor/core": "^0.23.0",
