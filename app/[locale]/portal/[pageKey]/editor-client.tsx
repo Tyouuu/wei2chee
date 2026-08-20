@@ -13,6 +13,7 @@ import { puckConfig } from "@/design-system/editor/puck-config";
 import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft";
 import { EditorChrome } from "./editor-chrome";
 import { ComponentPreview } from "@/design-system/editor/component-preview";
+import { StyleSwitcher } from "./style-switcher";
 // Reused rather than re-declared: this is the same scoped Ledger token
 // class app/[locale]/portal/style-select's <StyleColumn> already applies,
 // kept in sync with design-system/tokens/ledger.css by
@@ -91,6 +92,12 @@ export function PortalEditor({
   // just on mount. Doesn't need to survive a reload: the Deploy button is a
   // WhatsApp handoff a customer clicks once, right after saving.
   const [hasSavedOnce, setHasSavedOnce] = useState(false);
+
+  // The style is editor STATE, not just a prop, because it is now changeable
+  // from inside the editor (see style-switcher.tsx). Seeded from the server's
+  // value; the switcher moves it optimistically so the canvas re-scopes on the
+  // same frame as the click, and rolls it back if the write fails.
+  const [activeStyle, setActiveStyle] = useState<StyleName>(style);
 
   // Fix round 1 (post-review): `readLocalDraft` short-circuits to `null`
   // during SSR (local-draft.ts's own `typeof window === "undefined"`
@@ -262,6 +269,7 @@ export function PortalEditor({
               {t("deployCta")}
             </a>
           ) : null}
+          <StyleSwitcher style={activeStyle} onPreview={setActiveStyle} />
           <button
             type="button"
             onClick={handleSignOut}
@@ -394,7 +402,7 @@ export function PortalEditor({
               // which needs an explicit height on this wrapper or the chain
               // collapses to 0.
               preview: ({ children }) => (
-                <div className={`${styles.scope} ${CANVAS_SCOPE_CLASS[style]} h-full`}>{children}</div>
+                <div className={`${styles.scope} ${CANVAS_SCOPE_CLASS[activeStyle]} h-full`}>{children}</div>
               ),
             }}
           />

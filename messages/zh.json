@@ -216,7 +216,9 @@
       "aiSubmit": "修改",
       "aiThinking": "思考中…",
       "aiFailed": "这次没听懂，换个说法再试一次。",
-      "aiNoChange": "这个改不了，可以换个说法，或者直接拖组件。"
+      "aiNoChange": "这个改不了，可以换个说法，或者直接拖组件。",
+      "styleLabel": "风格",
+      "styleFailed": "换不了，请重试"
     }
   }
 }

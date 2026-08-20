@@ -216,7 +216,9 @@
       "aiSubmit": "Change it",
       "aiThinking": "Thinking…",
       "aiFailed": "Didn't catch that — try rephrasing.",
-      "aiNoChange": "Can't do that one. Try rephrasing, or drag a block in instead."
+      "aiNoChange": "Can't do that one. Try rephrasing, or drag a block in instead.",
+      "styleLabel": "Style",
+      "styleFailed": "Couldn't switch — try again"
     }
   }
 }

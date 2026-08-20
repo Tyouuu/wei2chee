@@ -58,6 +58,18 @@ export function WorkflowStrip({
       <ol className="flex flex-wrap items-stretch [gap:var(--gap-inline)]">
         {stages.map((stage, i) => (
           <li key={`${stage.label}-${i}`} className="flex items-center [gap:var(--gap-inline)]">
+            {/* The connector LEADS each stage after the first, rather than
+                trailing each stage before the last. Both are correct on one
+                line; only this one survives a wrap. Trailing arrows left a "→"
+                dangling at the end of the first row, pointing at nothing, with
+                the wrapped stage below starting bare -- seen with a real
+                five-stage renovation pipeline in a narrow column. Leading
+                arrows make a wrapped row read as a continuation instead. */}
+            {i > 0 && (
+              <span aria-hidden className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                →
+              </span>
+            )}
             <div
               className="flex min-w-[92px] flex-col [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]"
               style={{
@@ -87,13 +99,6 @@ export function WorkflowStrip({
               )}
             </div>
 
-            {/* The connector belongs BETWEEN stages, so the last one doesn't
-                trail an arrow pointing at nothing. */}
-            {i < stages.length - 1 && (
-              <span aria-hidden className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
-                →
-              </span>
-            )}
           </li>
         ))}
       </ol>
