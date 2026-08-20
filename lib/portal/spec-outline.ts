@@ -24,6 +24,8 @@ export const PAGE_TITLES: Record<PageKey, string> = {
   quotations: "报价单",
   projects: "项目 / 订单",
   payments: "收款",
+  bookings: "预约",
+  orders: "订单",
 };
 
 export type PageSpec = {
@@ -128,8 +130,16 @@ function specForPage(pageKey: PageKey, layout: PuckLayout): PageSpec {
   };
 }
 
-export function buildSystemSpec(layouts: Record<PageKey, PuckLayout>): SystemSpec {
-  const pages = PAGE_KEYS.map((k) => specForPage(k, layouts[k]));
+export function buildSystemSpec(
+  layouts: Partial<Record<PageKey, PuckLayout>>,
+  /** The business's own page set. Defaults to every known page type only for
+   *  callers that genuinely have all of them -- specifying pages a business
+   *  does not have would put a 「预约」section into a contractor's build brief. */
+  pageKeys: readonly PageKey[] = PAGE_KEYS,
+): SystemSpec {
+  const pages = pageKeys
+    .filter((k) => layouts[k])
+    .map((k) => specForPage(k, layouts[k] as PuckLayout));
 
   // First-seen order, deduped. A Set preserves insertion order, which is what
   // makes the result the pipeline as the customer sequenced it rather than an

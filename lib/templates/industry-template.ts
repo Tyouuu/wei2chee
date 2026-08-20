@@ -73,14 +73,89 @@ export type BusinessContext = {
   analysis?: AnalysisContext | null;
 };
 
+/**
+ * Every page type the product knows how to build. A given business gets a
+ * SUBSET of these, chosen by its trade -- see PAGES_FOR_INDUSTRY below and its
+ * SQL twin `pages_for_industry()` (migration 20260820160000), which is what the
+ * signup trigger actually provisions from.
+ *
+ * The two lists must agree. `industry-template.test.ts` asserts they do, since
+ * a page the trigger creates but this module cannot build renders as an empty
+ * canvas -- the exact bug this whole file exists to prevent.
+ */
 export const PAGE_KEYS = [
   "dashboard",
   "customers",
   "quotations",
   "projects",
   "payments",
+  "bookings",
+  "orders",
 ] as const;
 export type PageKey = (typeof PAGE_KEYS)[number];
+
+/**
+ * Which pages each trade gets. Mirrors `pages_for_industry()` in migration
+ * 20260820160000 exactly.
+ *
+ * WHY THE SUBSET MATTERS: every account used to be provisioned with the same
+ * five pages regardless of trade, so a salon owner was handed a 「报价单」page
+ * they will never send and a 「项目」page for work they do not do, while
+ * 「预约」-- the thing their entire business runs on -- did not exist. Applying
+ * a customer's own vocabulary to someone else's structure is the most concrete
+ * way to contradict the promise that the product understands their business.
+ */
+export const PAGES_FOR_INDUSTRY: Record<string, PageKey[]> = {
+  beauty: ["dashboard", "customers", "bookings", "payments"],
+  education: ["dashboard", "customers", "bookings", "payments"],
+  fnb: ["dashboard", "customers", "orders", "payments"],
+  retail: ["dashboard", "customers", "orders", "payments"],
+  wholesale: ["dashboard", "customers", "quotations", "orders", "payments"],
+  renovation: ["dashboard", "customers", "quotations", "projects", "payments"],
+  services: ["dashboard", "customers", "quotations", "projects", "payments"],
+  other: ["dashboard", "customers", "quotations", "projects", "payments"],
+};
+
+/** The set used for a direct signup, or a trade we have no mapping for. */
+export const DEFAULT_PAGE_SET: PageKey[] = [
+  "dashboard",
+  "customers",
+  "quotations",
+  "projects",
+  "payments",
+];
+
+/** Canonical display order for a set of page keys. Uses PAGE_KEYS' own order
+ *  rather than a database column, so page ordering cannot depend on whether a
+ *  migration has landed yet -- and so a page set is ordered identically
+ *  wherever it is read. */
+export function sortPageKeys(keys: PageKey[]): PageKey[] {
+  return [...keys].sort((a, b) => PAGE_KEYS.indexOf(a) - PAGE_KEYS.indexOf(b));
+}
+
+export function pagesForIndustry(slug?: string | null): PageKey[] {
+  return (slug && PAGES_FOR_INDUSTRY[slug]) || DEFAULT_PAGE_SET;
+}
+
+/** The nav label for each page, in the business's own nouns where one applies. */
+export function pageNavLabel(key: PageKey, labels: IndustryLabels): string {
+  switch (key) {
+    case "dashboard":
+      return "总览";
+    case "customers":
+      return labels.customer;
+    case "quotations":
+      return "报价单";
+    case "projects":
+      return labels.order;
+    case "orders":
+      return labels.order;
+    case "bookings":
+      return "预约";
+    case "payments":
+      return "收款";
+  }
+}
 
 /** Used whenever a business has no lead, or its lead has no industry. */
 const FALLBACK_INDUSTRY: IndustryContext = {
@@ -300,29 +375,26 @@ function railNav(
   businessName: string,
   activePage: PageKey,
   locale: string,
+  pageKeys: PageKey[],
 ): PuckNode {
   // RailNav derives its own active state from `usePathname()` and each item's
   // href -- there is no `active` prop. The hrefs therefore have to match the
   // real route shape INCLUDING next-intl's locale prefix (`/zh/portal/...`),
   // or every page renders with nothing highlighted, which makes the nav read
   // as decoration rather than as the customer's own system.
-  const items = [
-    { label: "总览", key: "dashboard" },
-    { label: labels.customer, key: "customers" },
-    { label: "报价单", key: "quotations" },
-    { label: labels.order, key: "projects" },
-    { label: "收款", key: "payments" },
-  ];
+  //
+  // The items come from the business's OWN page set, not a fixed five: a salon
+  // whose account has no `quotations` page must not be shown a nav link to one.
   return node("RailNav", `${activePage}-rail`, {
     brandLabel: businessName,
     brandHref: `/${locale}/portal/dashboard`,
     // `group` is required by RailItem and drives RailNav's collapsible
-    // sections. One empty-named group keeps all five items in a single
-    // uncollapsed list, which is right for a five-item nav -- grouping five
-    // things into named sections is overhead, not organisation.
-    items: items.map((i) => ({
-      label: i.label,
-      href: `/${locale}/portal/${i.key}`,
+    // sections. One empty-named group keeps every item in a single uncollapsed
+    // list, which is right at this size -- grouping four or five things into
+    // named sections is overhead, not organisation.
+    items: pageKeys.map((key) => ({
+      label: pageNavLabel(key, labels),
+      href: `/${locale}/portal/${key}`,
       group: "",
     })),
     notificationsHref: `/${locale}/portal/dashboard`,
@@ -383,7 +455,7 @@ function workflowStrip(id: string, title: string, stages: string[], attentionAt 
 // The five page templates
 // ---------------------------------------------------------------------------
 
-function buildDashboard(ctx: BusinessContext, name: string, locale: string): PuckNode[] {
+function buildDashboard(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
@@ -396,7 +468,7 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string): Puc
     `${industry.name_zh}的日常运作总览 — 这是根据你的行业自动生成的起点，全部内容都可以改。`;
 
   return [
-    railNav(labels, name, "dashboard", locale),
+    railNav(labels, name, "dashboard", locale, pageKeys),
     node("PageHeader", "dashboard-header", { title: "业务总览", subtitle }),
     node("HeroCard", "dashboard-hero", {
       label: sample.heroLabel,
@@ -413,13 +485,13 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string): Puc
   ];
 }
 
-function buildCustomers(ctx: BusinessContext, name: string, locale: string): PuckNode[] {
+function buildCustomers(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "customers", locale),
+    railNav(labels, name, "customers", locale, pageKeys),
     node("PageHeader", "customers-header", {
       title: `${labels.customer}名单`,
       subtitle: `所有${labels.customer}的联络方式和往来记录。`,
@@ -438,13 +510,13 @@ function buildCustomers(ctx: BusinessContext, name: string, locale: string): Puc
   ];
 }
 
-function buildQuotations(ctx: BusinessContext, name: string, locale: string): PuckNode[] {
+function buildQuotations(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "quotations", locale),
+    railNav(labels, name, "quotations", locale, pageKeys),
     node("PageHeader", "quotations-header", {
       title: "报价单",
       subtitle: `发给${labels.customer}的报价，跟进哪些已确认、哪些还没回复。`,
@@ -464,13 +536,13 @@ function buildQuotations(ctx: BusinessContext, name: string, locale: string): Pu
   ];
 }
 
-function buildProjects(ctx: BusinessContext, name: string, locale: string): PuckNode[] {
+function buildProjects(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "projects", locale),
+    railNav(labels, name, "projects", locale, pageKeys),
     node("PageHeader", "projects-header", {
       title: `${labels.order}进度`,
       // The bottleneck the AI actually identified, named on the page whose job
@@ -499,13 +571,13 @@ function buildProjects(ctx: BusinessContext, name: string, locale: string): Puck
   ];
 }
 
-function buildPayments(ctx: BusinessContext, name: string, locale: string): PuckNode[] {
+function buildPayments(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "payments", locale),
+    railNav(labels, name, "payments", locale, pageKeys),
     node("PageHeader", "payments-header", {
       title: "收款记录",
       subtitle: `哪些${labels.customer}已经付了、哪些还欠着，不用再翻 WhatsApp。`,
@@ -537,15 +609,95 @@ function buildPayments(ctx: BusinessContext, name: string, locale: string): Puck
   ];
 }
 
+/**
+ * The appointment book. Beauty and education businesses run their whole day off
+ * this page, and neither of them has a quotation to send -- which is why they
+ * get this page instead of `quotations`, not as well as it.
+ */
+function buildBookings(
+  ctx: BusinessContext,
+  name: string,
+  locale: string,
+  pageKeys: PageKey[],
+): PuckNode[] {
+  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const { labels } = industry;
+  const sample = sampleFor(industry.slug);
+
+  return [
+    railNav(labels, name, "bookings", locale, pageKeys),
+    node("PageHeader", "bookings-header", {
+      title: "预约",
+      subtitle: `今天谁要来、哪个${labels.staff}接、做什么，一页看完。`,
+    }),
+    node("DatePicker", "bookings-date", {
+      name: "booking-date",
+      placeholder: "选择日期",
+      allowClear: true,
+    }),
+    node("Listbox", "bookings-staff", {
+      name: "booking-staff",
+      placeholder: `选择${labels.staff}`,
+      options: [
+        { label: `全部${labels.staff}`, value: "all" },
+        { label: `${labels.staff} A`, value: "a" },
+        { label: `${labels.staff} B`, value: "b" },
+      ],
+    }),
+    recordTable(
+      "bookings-list",
+      "今日预约",
+      { primary: "服务项目", secondary: `时间 / ${labels.staff}`, amount: "价钱", status: "状态" },
+      sample.records,
+    ),
+  ];
+}
+
+/**
+ * The order list. Retail, F&B and wholesale all run on many small transactions
+ * rather than quoted jobs, so this replaces `projects` for them (and sits
+ * alongside `quotations` for wholesale, which quotes first and then fulfils).
+ */
+function buildOrders(
+  ctx: BusinessContext,
+  name: string,
+  locale: string,
+  pageKeys: PageKey[],
+): PuckNode[] {
+  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const { labels } = industry;
+  const sample = sampleFor(industry.slug);
+
+  return [
+    railNav(labels, name, "orders", locale, pageKeys),
+    node("PageHeader", "orders-header", {
+      title: `${labels.order}列表`,
+      subtitle: ctx.analysis?.bottlenecks?.[0]?.title
+        ? `重点跟进：${ctx.analysis.bottlenecks[0].title}`
+        : `每一张${labels.order}处理到哪一步，不用问人。`,
+    }),
+    workflowStrip("orders-workflow", `${labels.order}流程`, workflowStages(ctx), 1),
+    filterChips("orders-filters", "状态", ["处理中"]),
+    recordTable(
+      "orders-list",
+      `${labels.order}明细`,
+      { primary: labels.order, secondary: labels.customer, amount: "金额", status: "状态" },
+      sample.records,
+    ),
+  ];
+}
+
 const BUILDERS: Record<
   PageKey,
-  (ctx: BusinessContext, name: string, locale: string) => PuckNode[]
+  (ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]) => PuckNode[]
 > = {
   dashboard: buildDashboard,
   customers: buildCustomers,
   quotations: buildQuotations,
   projects: buildProjects,
   payments: buildPayments,
+  bookings: buildBookings,
+  orders: buildOrders,
 };
 
 /**
@@ -561,8 +713,12 @@ export function buildPageLayout(
   ctx: BusinessContext,
   businessName = "我的生意",
   locale = "zh",
+  /** The business's actual page set, so the rail links only to pages it has.
+   *  Defaults to the trade's standard set when the caller does not know it. */
+  pageKeys?: PageKey[],
 ): Data {
-  const [rail, ...rest] = BUILDERS[pageKey](ctx, businessName, locale);
+  const keys = pageKeys ?? pagesForIndustry(ctx.industry?.slug);
+  const [rail, ...rest] = BUILDERS[pageKey](ctx, businessName, locale, keys);
 
   // The page is ONE SystemShell holding two slots, not a flat stack. Puck's
   // canvas stacks its `content` vertically, so a flat list put the full-height

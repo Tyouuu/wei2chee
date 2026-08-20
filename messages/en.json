@@ -203,7 +203,9 @@
         "customers": "Customers",
         "quotations": "Quotations",
         "projects": "Projects",
-        "payments": "Payments"
+        "payments": "Payments",
+        "bookings": "Bookings",
+        "orders": "Orders"
       },
       "draftBannerTitle": "This is a starting draft built from your business",
       "draftBannerBody": "Every label, column and sample record here is yours to change. Save once it looks right.",

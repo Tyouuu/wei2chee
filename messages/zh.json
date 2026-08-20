@@ -203,7 +203,9 @@
         "customers": "客户",
         "quotations": "报价单",
         "projects": "项目",
-        "payments": "收款"
+        "payments": "收款",
+        "bookings": "预约",
+        "orders": "订单"
       },
       "draftBannerTitle": "这是根据你的生意自动生成的初稿",
       "draftBannerBody": "里面的名称、栏位、示例记录全部可以改成你自己的。改完满意了再保存。",

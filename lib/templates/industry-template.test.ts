@@ -1,9 +1,14 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   PAGE_KEYS,
+  PAGES_FOR_INDUSTRY,
   buildPageLayout,
   isUngeneratedLayout,
+  pagesForIndustry,
   type BusinessContext,
+  type PageKey,
 } from "./industry-template";
 import { puckConfig } from "@/design-system/editor/puck-config";
 
@@ -153,5 +158,90 @@ describe("isUngeneratedLayout", () => {
   // their deletion on every reload.
   it("treats a deliberately emptied page as already generated", () => {
     expect(isUngeneratedLayout({ root: {}, content: [] })).toBe(false);
+  });
+});
+
+/**
+ * Pages are provisioned per industry by a SQL function the signup trigger calls
+ * (`pages_for_industry`, migration 20260820160000), while this module builds
+ * their CONTENT from a TypeScript copy of the same mapping. Two copies of one
+ * decision, in two languages, that nothing forces to agree.
+ *
+ * The failure is silent and bad: a page the trigger creates but this module
+ * cannot build renders as an empty canvas for a paying customer -- the exact
+ * bug the whole templates module exists to prevent. So the SQL is parsed and
+ * compared here.
+ */
+describe("per-industry page sets", () => {
+  const sql = readFileSync(
+    join(process.cwd(), "supabase", "migrations", "20260820160000_pages_per_industry.sql"),
+    "utf8",
+  );
+
+  /** Pulls `when 'slug' then array['a','b']` pairs out of the SQL function. */
+  function sqlMapping(): Record<string, string[]> {
+    const out: Record<string, string[]> = {};
+    const re = /when\s+'([a-z]+)'\s+then\s+array\[([^\]]+)\]/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(sql)) !== null) {
+      out[m[1]] = m[2].split(",").map((v) => v.trim().replace(/'/g, ""));
+    }
+    return out;
+  }
+
+  it("extracts a non-trivial mapping from the migration", () => {
+    // Guards the regex itself: if it ever stopped matching, the comparison
+    // below would pass vacuously against an empty object.
+    expect(Object.keys(sqlMapping()).length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("agrees with the SQL function the signup trigger actually uses", () => {
+    for (const [slug, keys] of Object.entries(sqlMapping())) {
+      expect(PAGES_FOR_INDUSTRY[slug], `mapping for ${slug}`).toEqual(keys);
+    }
+  });
+
+  it("falls back to the general set for an unknown or missing industry", () => {
+    expect(pagesForIndustry("no-such-trade")).toEqual(pagesForIndustry(null));
+    expect(pagesForIndustry(undefined)).toContain("dashboard");
+  });
+
+  it("can build every page it claims a trade should have", () => {
+    for (const [slug, keys] of Object.entries(PAGES_FOR_INDUSTRY)) {
+      for (const key of keys) {
+        expect(PAGE_KEYS, `${slug} wants unbuildable page ${key}`).toContain(key);
+        const built = buildPageLayout(key, { industry: { ...renovation.industry!, slug } });
+        const content = (built as unknown as { content: Node[] }).content;
+        expect(content.length, `${slug}/${key}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  // A salon shown a link to a 报价单 page its account does not have is a 404
+  // waiting to happen, and reads as the product not knowing its own shape.
+  it("never links the nav to a page the business does not have", () => {
+    for (const [slug, keys] of Object.entries(PAGES_FOR_INDUSTRY)) {
+      const ctx: BusinessContext = { industry: { ...renovation.industry!, slug } };
+      const rail = contentOf(ctx, keys[0]).find((n) => n.type === "RailNav");
+      const linked = (rail!.props.items as { href: string }[]).map(
+        (i) => i.href.split("/").pop() as PageKey,
+      );
+      expect(linked.sort(), slug).toEqual([...keys].sort());
+    }
+  });
+
+  it("gives appointment-led trades a bookings page and no quotations page", () => {
+    for (const slug of ["beauty", "education"]) {
+      expect(PAGES_FOR_INDUSTRY[slug]).toContain("bookings");
+      expect(PAGES_FOR_INDUSTRY[slug]).not.toContain("quotations");
+      expect(PAGES_FOR_INDUSTRY[slug]).not.toContain("projects");
+    }
+  });
+
+  it("gives transaction-led trades an orders page and no projects page", () => {
+    for (const slug of ["retail", "fnb"]) {
+      expect(PAGES_FOR_INDUSTRY[slug]).toContain("orders");
+      expect(PAGES_FOR_INDUSTRY[slug]).not.toContain("projects");
+    }
   });
 });

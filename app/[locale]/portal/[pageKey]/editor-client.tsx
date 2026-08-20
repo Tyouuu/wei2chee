@@ -26,12 +26,7 @@ import { StyleSwitcher } from "./style-switcher";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
-// The five pages, in the order a business actually works through them. Labels
-// come from next-intl (portal.editor.pages.*) rather than the hardcoded English
-// map this file used to carry -- a Malaysian-Chinese SME owner being told to
-// design their own system should not be reading "Quotations" in a product
-// whose every other word is Chinese.
-const PAGE_ORDER = ["dashboard", "customers", "quotations", "projects", "payments"] as const;
+
 
 // Same lookup app/[locale]/style-picker/style-column.tsx uses internally
 // (its own `SCOPE_CLASS` isn't exported, so this is a second, identical
@@ -53,6 +48,7 @@ export function PortalEditor({
   initialData,
   isGeneratedDraft,
   locale,
+  pageKeys,
   style,
 }: {
   pageKey: string;
@@ -77,8 +73,12 @@ export function PortalEditor({
    * difference between feeling understood and feeling misled. */
   isGeneratedDraft: boolean;
   /** next-intl's active locale. Needed because this component links between the
-   * five portal pages, and those routes are locale-prefixed. */
+   * portal pages, and those routes are locale-prefixed. */
   locale: string;
+  /** The pages THIS account has, in its own order. Pages are provisioned per
+   * industry (migration 20260820160000), so the nav cannot be a fixed list:
+   * a salon has no 报价单 and a restaurant has no 项目. */
+  pageKeys: string[];
   /** The customer's own chosen style (projects.style, Task 3) -- applies to
    * canvas CONTENT only. Chrome (this component's own wrapper below) stays
    * Ledger regardless, per Task 5's own reviewed design. */
@@ -234,7 +234,7 @@ export function PortalEditor({
             five-page system could only ever see the page they landed on, which
             made the product look like a one-page toy. */}
         <nav className="flex items-center gap-1 overflow-x-auto" aria-label={t("pageNavLabel")}>
-          {PAGE_ORDER.map((key) => {
+          {pageKeys.map((key) => {
             const active = key === pageKey;
             return (
               <Link

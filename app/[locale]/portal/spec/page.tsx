@@ -7,6 +7,7 @@ import {
   PAGE_KEYS,
   buildPageLayout,
   isUngeneratedLayout,
+  sortPageKeys,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
@@ -156,19 +157,33 @@ export default async function SystemSpecPage({
   // Unsaved pages are specified from what the customer WOULD see, using the
   // same generator the editor uses. A free-tier customer has saved nothing yet
   // and is exactly the person this document has to convince.
+  // The pages this account actually has, in its own order -- not every page
+  // type the product knows about. Pages are provisioned per industry
+  // (migration 20260820160000), so specifying all seven would put a 「预约」
+  // section into a contractor's build brief for a page they do not have.
+  const pageKeys = sortPageKeys(
+    (rows ?? []).map((r: { page_key: string }) => r.page_key as PageKey),
+  );
+
   const layouts = Object.fromEntries(
-    PAGE_KEYS.map((key) => {
+    pageKeys.map((key) => {
       const saved = (rows ?? []).find(
         (r: { page_key: string }) => r.page_key === key,
       )?.layout_json as Record<string, unknown> | undefined;
       const layout = isUngeneratedLayout(saved)
-        ? (buildPageLayout(key, businessContext, businessName, locale) as unknown as PuckLayout)
+        ? (buildPageLayout(
+            key,
+            businessContext,
+            businessName,
+            locale,
+            pageKeys,
+          ) as unknown as PuckLayout)
         : (saved as unknown as PuckLayout);
       return [key, layout];
     }),
   ) as Record<PageKey, PuckLayout>;
 
-  const spec = buildSystemSpec(layouts);
+  const spec = buildSystemSpec(layouts, pageKeys);
 
   // Every render of this page would otherwise be an LLM call: a reload, a
   // back-button, a share link opened twice. Capped per account, and going over

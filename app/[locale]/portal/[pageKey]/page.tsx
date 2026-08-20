@@ -6,6 +6,7 @@ import {
   PAGE_KEYS,
   buildPageLayout,
   isUngeneratedLayout,
+  sortPageKeys,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
@@ -16,6 +17,9 @@ export default async function PortalEditorPage({
   params: Promise<{ locale: string; pageKey: string }>;
 }) {
   const { locale, pageKey } = await params;
+  // Cheap shape check only. The REAL check is against the pages this account
+  // actually has, further down -- a business whose trade has no quotations
+  // must 404 on /portal/quotations rather than render an empty one.
   if (!PAGE_KEYS.includes(pageKey as PageKey)) notFound();
 
   const user = await getSessionUser();
@@ -36,14 +40,23 @@ export default async function PortalEditorPage({
   if (!project) redirect("/login");
   if (!project.style) redirect("/portal/style-select");
 
-  const { data: page } = await supabase
+  // Every page this account has, in its own order. Pages are now provisioned
+  // per industry (migration 20260820160000), so this is the only honest source
+  // for both "does this page exist for this customer" and the editor's nav --
+  // a hardcoded five-page list would 404 a salon's 预约 page and offer a
+  // contractor's 报价单 to a restaurant.
+  const { data: pageRows } = await supabase
     .from("project_pages")
-    .select("layout_json")
-    .eq("project_id", project.id)
-    .eq("page_key", pageKey)
-    .single();
+    .select("page_key, layout_json")
+    .eq("project_id", project.id);
 
-  const savedLayout = (page?.layout_json as Record<string, unknown>) ?? {};
+  const pageKeys = sortPageKeys(
+    (pageRows ?? []).map((r: { page_key: string }) => r.page_key as PageKey),
+  );
+  const page = (pageRows ?? []).find((r: { page_key: string }) => r.page_key === pageKey);
+  if (!page) notFound();
+
+  const savedLayout = (page.layout_json as Record<string, unknown>) ?? {};
 
   // THE FIX for the journey's worst break (docs/formae-product-direction.md
   // sections 2-4): the signup trigger creates all five project_pages rows with
@@ -76,6 +89,7 @@ export default async function PortalEditorPage({
       // than nothing.
       user.email?.split("@")[0] || "我的生意",
       locale,
+      pageKeys,
     ) as unknown as Record<string, unknown>;
   }
 
@@ -97,6 +111,7 @@ export default async function PortalEditorPage({
        * are real records. */
       isGeneratedDraft={isUngeneratedLayout(savedLayout)}
       locale={locale}
+      pageKeys={pageKeys}
       /** The customer's own chosen style (projects.style, Task 3) -- applies to
        * canvas CONTENT only. Chrome stays Ledger regardless, per Task 5's own
        * reviewed design. */
