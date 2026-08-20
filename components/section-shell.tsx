@@ -30,7 +30,13 @@ export function SectionShell({
   children,
   headingClassName = "text-[clamp(1.875rem,4vw,3rem)]",
 }: {
-  index: string;
+  /** The section's place in the visitor's flow. Omit for sections that are
+   *  reference material rather than a step -- pricing and FAQ are read in any
+   *  order and at any time, and numbering them would assert a sequence that
+   *  does not exist. It would also lie by omission: the flow's own sections
+   *  (02-05) only exist once a visitor picks a trade, so a numbered reference
+   *  section below them would read as 01, 06, 07 to everyone who hasn't. */
+  index?: string;
   label: string;
   heading: ReactNode;
   id?: string;
@@ -59,10 +65,12 @@ export function SectionShell({
           style={{ y: numeralY, opacity: numeralOpacity }}
           className="md:sticky md:top-32 md:h-fit"
         >
-          <div className="font-serif text-[clamp(3rem,7vw,5.5rem)] leading-none tracking-[-0.04em] text-blueprint/25 tabular-nums">
-            {index}
-          </div>
-          <div className="annotation mt-2">{label}</div>
+          {index && (
+            <div className="font-serif text-[clamp(3rem,7vw,5.5rem)] leading-none tracking-[-0.04em] text-blueprint/25 tabular-nums">
+              {index}
+            </div>
+          )}
+          <div className={index ? "annotation mt-2" : "annotation"}>{label}</div>
         </motion.div>
 
         <div>

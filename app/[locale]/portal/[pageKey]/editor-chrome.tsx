@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePuck, type Data } from "@puckeditor/core";
 import { useTranslations } from "next-intl";
 
@@ -32,17 +32,33 @@ import { useTranslations } from "next-intl";
  * else.
  */
 export function EditorChrome({
-  pageLabel,
   saving,
   onSave,
 }: {
-  /** Which of the five pages is open, already localised by the caller. */
-  pageLabel: string;
   saving: boolean;
   onSave: (data: Data) => void;
 }) {
   const t = useTranslations("portal.editor");
   const { appState, history, dispatch } = usePuck();
+
+  // The fields panel follows the selection instead of standing open.
+  //
+  // Measured, not assumed: at 1440px the panel is a permanent 290px column,
+  // and with nothing selected it holds a single heading ("整个页面") and no
+  // controls -- 20% of the window showing nothing. What it cost was on the
+  // other side of the screen: the canvas got 792px, the generated system's
+  // rail takes 220 of it, and RecordTable's own `min-w-[520px]` then overflows
+  // the remainder by 21px. So every table on every page had its 状态 column
+  // sliced down the middle. That reads as a broken product, and it was being
+  // caused by an empty panel.
+  //
+  // Selecting a block opens the panel; deselecting closes it. Puck already
+  // treats `itemSelector` as the selection, so this is following its own state
+  // rather than inventing a parallel one.
+  const hasSelection = appState.ui.itemSelector != null;
+  useEffect(() => {
+    dispatch({ type: "setUi", ui: { rightSideBarVisible: hasSelection } });
+  }, [hasSelection, dispatch]);
 
   const [instruction, setInstruction] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -102,49 +118,14 @@ export function EditorChrome({
     "flex h-8 w-8 items-center justify-center rounded-md text-[15px] transition-colors disabled:opacity-30 [color:var(--color-paper-dim)] enabled:hover:[background-color:var(--color-ink-850)] enabled:hover:[color:var(--color-paper)]";
 
   return (
+    // One row, not two. The first version stacked a row carrying the page name
+    // and the save controls on top of the edit bar -- and the page name was
+    // already spelled out, highlighted, in the page tabs directly above it. So
+    // the editor spent 45px of a 900px window restating something the customer
+    // was looking at, and pushed their own system further down for it. The
+    // controls moved down here; the duplicate row is gone.
     <div className="border-b [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
-      <div className="flex items-center justify-between gap-4 px-4 py-2">
-        <span className="truncate text-[13px] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
-          {pageLabel}
-        </span>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={history.back}
-            disabled={!history.hasPast}
-            aria-label={t("undo")}
-            title={t("undo")}
-            className={iconButton}
-          >
-            ↺
-          </button>
-          <button
-            type="button"
-            onClick={history.forward}
-            disabled={!history.hasFuture}
-            aria-label={t("redo")}
-            title={t("redo")}
-            className={iconButton}
-          >
-            ↻
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSave(appState.data)}
-            disabled={saving}
-            className="rounded-md px-3.5 py-1.5 text-[13px] transition-colors disabled:opacity-60 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
-          >
-            {saving ? t("saving") : t("saveCta")}
-          </button>
-        </div>
-      </div>
-
-      <form
-        onSubmit={handleAsk}
-        className="flex flex-wrap items-center gap-2 border-t px-4 py-2 [border-color:var(--color-ink-800)]"
-      >
+      <form onSubmit={handleAsk} className="flex flex-wrap items-center gap-2 px-4 py-2">
         <span className="text-[12px] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
           {t("aiLabel")}
         </span>
@@ -164,13 +145,48 @@ export function EditorChrome({
         >
           {thinking ? t("aiThinking") : t("aiSubmit")}
         </button>
+
+        {/* A rule rather than a gap: undo/redo/save act on the whole page,
+            the field to their left acts through the AI. Same row, different
+            job, and the separator is what says so. */}
+        <span aria-hidden="true" className="mx-1 h-6 w-px [background-color:var(--color-ink-800)]" />
+
+        <button
+          type="button"
+          onClick={history.back}
+          disabled={!history.hasPast}
+          aria-label={t("undo")}
+          title={t("undo")}
+          className={iconButton}
+        >
+          ↺
+        </button>
+        <button
+          type="button"
+          onClick={history.forward}
+          disabled={!history.hasFuture}
+          aria-label={t("redo")}
+          title={t("redo")}
+          className={iconButton}
+        >
+          ↻
+        </button>
+        <button
+          type="button"
+          onClick={() => onSave(appState.data)}
+          disabled={saving}
+          className="rounded-md px-3.5 py-1.5 text-[13px] transition-colors disabled:opacity-60 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
+        >
+          {saving ? t("saving") : t("saveCta")}
+        </button>
+
         {reply && (
           <span
             role="status"
             className={
               reply.tone === "ok"
-                ? "text-[12px] [color:var(--color-jade-bright)]"
-                : "text-[12px] [color:var(--color-brass-bright)]"
+                ? "w-full text-[12px] [color:var(--color-jade-bright)]"
+                : "w-full text-[12px] [color:var(--color-brass-bright)]"
             }
           >
             {reply.text}

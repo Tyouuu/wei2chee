@@ -24,14 +24,27 @@ import type { ReactNode } from "react";
  *     row of steps -- which is exactly what a schematic carries best
  */
 
-const BAR = "[background-color:var(--color-ink-800)]";
+// The three marks these diagrams are drawn with, and the contrast between them
+// is the whole point. The first pass drew everything in --color-ink-800
+// (#e4e9f0) on --color-ink-900 (#ffffff) -- a 1.11:1 difference. At 3px tall
+// that is not a faint diagram, it is no diagram: every tile in the palette read
+// as an empty grey rectangle, which made the column look like it had failed to
+// load rather than like a gallery.
+//
+// STRUCTURE is the mark that carries the shape (a heading, a table's header
+// rule, a figure) and is set in the ink itself. SUPPORT is everything the shape
+// needs to be legible but which is not the shape (body rows, secondary bars).
+// ACCENT marks the one element that is "current" or "active".
+const STRUCTURE = "[background-color:var(--color-paper-dim)]";
+const SUPPORT = "[background-color:var(--color-ink-700)]";
+const BAR = SUPPORT;
 const ACCENT = "[background-color:var(--color-primary)]";
-const MUTED = "[background-color:var(--color-ink-700)]";
+const MUTED = STRUCTURE;
 
 const Frame = ({ children }: { children: ReactNode }) => (
   <div
     aria-hidden
-    className="flex h-9 w-12 shrink-0 flex-col justify-center gap-[3px] overflow-hidden rounded-[3px] border p-[5px] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
+    className="flex h-9 w-12 shrink-0 flex-col justify-center gap-[3px] overflow-hidden rounded-[3px] border p-[5px] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-700)]"
   >
     {children}
   </div>

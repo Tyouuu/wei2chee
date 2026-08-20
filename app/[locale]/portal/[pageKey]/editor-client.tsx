@@ -399,7 +399,6 @@ export function PortalEditor({
               ),
               header: () => (
                 <EditorChrome
-                  pageLabel={t(`pages.${pageKey}`)}
                   saving={saveState === "saving"}
                   onSave={handleSaveClick}
                 />
@@ -414,8 +413,19 @@ export function PortalEditor({
               // Preview/frame elements are `height: 100%` all the way down,
               // which needs an explicit height on this wrapper or the chain
               // collapses to 0.
+              // `[background-color:var(--color-canvas)]` closes the second
+              // seam: SystemShell is as tall as its content, the canvas is as
+              // tall as the window, and the strip between them was Puck's own
+              // white showing through under the customer's page. Painting this
+              // wrapper in the CUSTOMER's canvas colour -- it sits inside the
+              // style scope, so `--color-canvas` is theirs, not Ledger's --
+              // makes that strip continuous with the page above it.
               preview: ({ children }) => (
-                <div className={`${styles.scope} ${CANVAS_SCOPE_CLASS[activeStyle]} h-full`}>{children}</div>
+                <div
+                  className={`${styles.scope} ${CANVAS_SCOPE_CLASS[activeStyle]} h-full [background-color:var(--color-canvas)]`}
+                >
+                  {children}
+                </div>
               ),
             }}
           />

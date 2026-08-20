@@ -29,8 +29,24 @@ export function SystemShell({
     <div className="flex min-h-full w-full items-stretch [background-color:var(--color-canvas)]">
       {/* `shrink-0` matters: RailNav sets its own width, and without this the
           flex row compresses it into an unreadable sliver as the main column's
-          table grows. */}
-      <div className="shrink-0">{sidebar}</div>
+          table grows.
+
+          THE GROUND IS PAINTED HERE, not only on the rail itself, and that is
+          deliberate. `items-stretch` gives this wrapper the shell's full
+          height, but the rail inside it cannot inherit that height when Puck is
+          driving: Puck inserts a drop zone AND a per-item wrapper between the
+          two, both `height: auto`, and a percentage height needs a definite
+          ancestor to resolve against. Measured on a real page: wrapper 661px,
+          rail 387px -- a dark column that stopped two thirds of the way down
+          with bare canvas below it.
+
+          Turning those wrappers into flex containers would fix the chain and
+          would also change the boxes Puck positions its own drag placeholders
+          against, to fix something the customer only ever sees as a colour. So
+          the colour is applied to the box that already has the right height,
+          and the rail keeps its own matching background for when it is used
+          outside this shell. Same token, so the join is invisible. */}
+      <div className="flex shrink-0 [background-color:var(--color-nav-bg)]">{sidebar}</div>
 
       {/* `min-w-0` is what lets the record tables inside scroll horizontally
           instead of forcing the whole shell wider than the viewport. */}

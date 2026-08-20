@@ -79,6 +79,27 @@
   --color-ink-800: #ece2d3;
   --color-ink-700: #dbcdb8;
 
+  /* ---- NAVIGATION GROUND --------------------------------------------------
+     See ledger.css's matching block for why this family exists at the token
+     layer at all. Same roles, this register's own hue: the ground is Hearth's
+     own --color-paper (#153227, the deep green its body text is set in), so
+     the rail reads as the same material as the page rather than a borrowed
+     dark chrome.
+
+     Measured: fg 12.41:1 on the ground / 8.72:1 on the active row, fg-dim
+     7.32:1 / 5.15:1, accent 7.02:1 / 4.93:1. The accent is Hearth's teal
+     (--color-primary #237570) lifted for a dark ground -- unlifted it measures
+     2.54:1 there. Same treatment as Ledger's: lightness raised (OKLCH L 0.7724
+     from 0.5129), hue held (187.7 against 189.2, a 1.5 degree drift). */
+  --color-nav-bg: #153227;
+  --color-nav-bg-deep: #0f2419;
+  --color-nav-fg: #eef4f0;
+  --color-nav-fg-dim: #aec1b7;
+  --color-nav-hover: #1e4334;
+  --color-nav-active: #224c38;
+  --color-nav-border: #2a4d3c;
+  --color-nav-accent: #63c9c0;
+
   /* Deep evergreen, not black — the same refusal as Ledger's navy ink, in this
      file's hue family. Hue 157 at 41% saturation sits between the neutrals
      (150–156) and the accent (176), so the darkest thing on the page and the

@@ -223,5 +223,57 @@
       "styleFailed": "Couldn't switch — try again",
       "specCta": "System spec"
     }
+  },
+  "explainer": {
+    "process": {
+      "title": "Three steps between here and a system you actually use.",
+      "s1": "Answer a few questions",
+      "s1d": "What you use to track customers today, where your time actually goes, and what happens when a new customer arrives.",
+      "s1n": "About 2 minutes. No signup, no card.",
+      "s2": "See your system, right there",
+      "s2d": "Not a report — a working interface you can click and edit. Page names, table columns, workflow stages: all changed into your own words.",
+      "s2n": "Or just type what you want changed: “rename ‘customer’ to ‘patient’”.",
+      "s3": "We build exactly what you designed",
+      "s3d": "A real team takes over and builds a system that issues real quotes, takes real payments and holds real records — not a prototype.",
+      "s3n": "Typically 3 to 6 weeks, depending on scope."
+    },
+    "scope": {
+      "title": "What you end up holding.",
+      "d1": "A system shaped like your business",
+      "d1d": "Not a generic template with your company name on it. Every page and every field is one you settled during the design step.",
+      "d2": "A written specification",
+      "d2d": "Every page, every field, every stage of the workflow, written down. Take it to any development shop and they will understand it.",
+      "d3": "Your data stays yours",
+      "d3d": "Export all of it, any time. If you ever want someone else to run it, you leave with the data."
+    },
+    "price": {
+      "title": "The price is on this page, not behind a form.",
+      "buildLabel": "Build · one time",
+      "buildAmount": "RM 5,000",
+      "buildNote": "From your finished design to a system in daily use. All of it.",
+      "hostLabel": "Hosting · monthly",
+      "hostAmount": "RM 100–300",
+      "hostNote": "By usage. Servers, backups and day-to-day maintenance included.",
+      "free": "Designing it costs nothing. Build the whole system, see exactly what it looks like, and only then decide whether to go ahead."
+    },
+    "faq": {
+      "title": "What you are probably wondering.",
+      "q1": "How is this different from hiring a web shop?",
+      "q1a": "They start by guessing from what you described, then rebuild when it is wrong. Here you design the system first and we build that. Changing a design is free; changing code is not.",
+      "q2": "I am not good with computers. Can I do this?",
+      "q2a": "The system drafts itself from your trade first, so you are editing words, not drawing screens. If you would rather not touch it at all, type one sentence and it edits itself.",
+      "q3": "How long does it take?",
+      "q3a": "The design appears in minutes. The build depends on scope — usually 3 to 6 weeks.",
+      "q4": "Is the data mine? Can I get locked in?",
+      "q4a": "It is yours, exportable in full at any time. If you want to buy the system outright and host it yourself, that is a conversation we will have.",
+      "q5": "Can I look before I commit?",
+      "q5a": "Yes. The design step costs nothing and asks for no card. If it is not for you, walk away."
+    }
+  },
+  "footer": {
+    "line": "See your system before you decide to build it.",
+    "place": "Malaysia · business systems for SMEs",
+    "wa": "Talk on WhatsApp",
+    "waMessage": "Hi, I saw Formae online and would like to know more."
   }
 }

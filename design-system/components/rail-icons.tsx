@@ -182,3 +182,35 @@ export function IconInbox({ className = "h-[18px] w-[18px]" }: IconProps) {
     </svg>
   )
 }
+
+/**
+ * Name → icon, for callers that can only carry a STRING rather than a node.
+ *
+ * WHY IT EXISTS: `RailItem.icon` is a `ReactNode`, which is the right shape
+ * for a hand-written app but is unrepresentable in Puck's field data — a
+ * generated system page stores its nav as plain JSON, so it can name an icon
+ * and nothing more. Without this the entire rail rendered as unadorned text
+ * links, which was the single loudest "this is a wireframe, not a product"
+ * signal in the editor (docs/portal-editor-known-issues.md, issue 4).
+ *
+ * Keys are this product's own page keys plus the two footer destinations, so
+ * `lib/templates/industry-template.ts` can name one directly. Unknown names
+ * resolve to `null` and the item renders text-only, exactly as before.
+ */
+export const RAIL_ICONS: Record<string, (p: IconProps) => React.JSX.Element> = {
+  dashboard: IconGrid,
+  customers: IconUsersRail,
+  quotations: IconReceipt,
+  projects: IconLayers,
+  payments: IconReconcile,
+  bookings: IconBadge,
+  orders: IconShoppingBag,
+  inbox: IconInbox,
+  settings: IconSettings,
+}
+
+export function railIcon(name: string | undefined, className?: string) {
+  if (!name) return null
+  const Icon = RAIL_ICONS[name]
+  return Icon ? <Icon className={className} /> : null
+}

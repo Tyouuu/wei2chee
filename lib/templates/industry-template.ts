@@ -157,6 +157,34 @@ export function pageNavLabel(key: PageKey, labels: IndustryLabels): string {
   }
 }
 
+/**
+ * The name the rail carries before the customer renames it.
+ *
+ * It used to be the local part of their signup email -- "tianyou.demo" -- set
+ * as both the system's name and the account chip, which is the single most
+ * telling detail in a screenshot of somebody's own business system. `industries`
+ * has no business-name column and the questionnaire never asks for one, so
+ * there is nothing real to put here; inventing one ("陈氏装修") would be worse,
+ * because a plausible fake name is one a customer might leave in place.
+ *
+ * A placeholder in their own trade's words is the honest middle: obviously not
+ * their company, obviously about their company, and one click from being
+ * corrected. The draft banner above the canvas already tells them everything
+ * here is theirs to change.
+ */
+const BRAND_PLACEHOLDER: Record<string, string> = {
+  renovation: "我的装修公司",
+  retail: "我的店",
+  beauty: "我的沙龙",
+  wholesale: "我的贸易公司",
+  services: "我的公司",
+  fnb: "我的餐厅",
+  education: "我的补习中心",
+  other: "我的公司",
+};
+
+const brandFor = (slug: string) => BRAND_PLACEHOLDER[slug] ?? "我的公司";
+
 /** Used whenever a business has no lead, or its lead has no industry. */
 const FALLBACK_INDUSTRY: IndustryContext = {
   slug: "other",
@@ -244,6 +272,19 @@ type SampleSet = {
   customers: { primary: string; secondary: string; tone: StatusTone; status: string }[];
   heroLabel: string;
   heroValue: string;
+  /** What the headline figure is measured against -- "vs 上个月", "vs 昨天". */
+  heroSuffix: string;
+  /** The three supporting figures under the headline. Three, not four, and
+   *  not equal-sized peers: see the HeroCard registration in puck-config.tsx
+   *  for why this product does not copy B12's row-of-tiles dashboard. Each is
+   *  chosen to be the number the trade ACTUALLY worries about -- for a
+   *  contractor that is money already spent and not yet billed, not a vanity
+   *  count of projects. */
+  heroStats: { label: string; value: string; tone?: "normal" | "caution" | "warn"; sub?: string }[];
+  /** Six periods, oldest first. A shape, not a chart -- HeroCard draws it
+   *  unlabelled and unaxised. All-zero series draw nothing, which is why no
+   *  trade below gets a placeholder run of zeros. */
+  heroSpark: number[];
 };
 
 const SAMPLES: Record<string, SampleSet> = {
@@ -260,6 +301,13 @@ const SAMPLES: Record<string, SampleSet> = {
     ],
     heroLabel: "本月已确认工程额",
     heroValue: "RM 71,300",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "进行中的工程", value: "4 个" },
+      { label: "等客户确认", value: "2 份报价", tone: "caution" },
+      { label: "已做未收", value: "RM 31,200", tone: "warn", sub: "超过 30 天" },
+    ],
+    heroSpark: [42000, 51000, 47500, 58000, 63000, 71300],
   },
   retail: {
     records: [
@@ -274,6 +322,13 @@ const SAMPLES: Record<string, SampleSet> = {
     ],
     heroLabel: "本月销售额",
     heroValue: "RM 18,940",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "今日订单", value: "23 单" },
+      { label: "待发货", value: "5 单", tone: "caution" },
+      { label: "库存告急", value: "3 项", tone: "warn", sub: "低于安全存量" },
+    ],
+    heroSpark: [14200, 15800, 17100, 16400, 18000, 18940],
   },
   beauty: {
     records: [
@@ -288,6 +343,13 @@ const SAMPLES: Record<string, SampleSet> = {
     ],
     heroLabel: "本月预约收入",
     heroValue: "RM 12,650",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "本周预约", value: "31 个" },
+      { label: "待确认", value: "4 个", tone: "caution" },
+      { label: "三个月没来", value: "18 位", tone: "warn", sub: "可以做回访" },
+    ],
+    heroSpark: [9800, 10400, 11200, 10900, 12100, 12650],
   },
   wholesale: {
     records: [
@@ -302,6 +364,13 @@ const SAMPLES: Record<string, SampleSet> = {
     ],
     heroLabel: "本月出货总额",
     heroValue: "RM 186,400",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "本月出货", value: "62 单" },
+      { label: "待付款", value: "RM 43,800", tone: "caution", sub: "月结未到期" },
+      { label: "已超期", value: "RM 12,400", tone: "warn", sub: "美佳超市 60 天" },
+    ],
+    heroSpark: [142000, 158000, 151000, 169000, 177000, 186400],
   },
   services: {
     records: [
@@ -316,6 +385,13 @@ const SAMPLES: Record<string, SampleSet> = {
     ],
     heroLabel: "本月已签约金额",
     heroValue: "RM 40,500",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "进行中项目", value: "6 个" },
+      { label: "提案等回复", value: "3 份", tone: "caution" },
+      { label: "已做未开票", value: "RM 18,000", tone: "warn" },
+    ],
+    heroSpark: [28000, 31000, 29500, 36000, 38000, 40500],
   },
   fnb: {
     records: [
@@ -330,6 +406,13 @@ const SAMPLES: Record<string, SampleSet> = {
     ],
     heroLabel: "今日营业额",
     heroValue: "RM 3,280",
+    heroSuffix: "vs 昨天",
+    heroStats: [
+      { label: "今日单数", value: "96 单" },
+      { label: "外送占比", value: "38%", sub: "Grab + Foodpanda" },
+      { label: "食材成本", value: "31%", tone: "caution", sub: "目标 28% 以下" },
+    ],
+    heroSpark: [2650, 2980, 3120, 2740, 3350, 3280],
   },
   education: {
     records: [
@@ -344,6 +427,13 @@ const SAMPLES: Record<string, SampleSet> = {
     ],
     heroLabel: "本月学费收入",
     heroValue: "RM 24,600",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "在读学生", value: "74 位" },
+      { label: "本月待缴费", value: "9 位", tone: "caution", sub: "RM 2,180" },
+      { label: "这个月没续班", value: "5 位", tone: "warn" },
+    ],
+    heroSpark: [19800, 21200, 22400, 23100, 23800, 24600],
   },
 };
 
@@ -360,6 +450,13 @@ const GENERIC_SAMPLE: SampleSet = {
   ],
   heroLabel: "本月总额",
   heroValue: "RM 5,450",
+  heroSuffix: "vs 上个月",
+  heroStats: [
+    { label: "进行中", value: "4 项" },
+    { label: "等处理", value: "2 项", tone: "caution" },
+    { label: "要跟进", value: "1 项", tone: "warn" },
+  ],
+  heroSpark: [3800, 4200, 4600, 4400, 5100, 5450],
 };
 
 const sampleFor = (slug: string) => SAMPLES[slug] ?? GENERIC_SAMPLE;
@@ -372,6 +469,7 @@ const sampleFor = (slug: string) => SAMPLES[slug] ?? GENERIC_SAMPLE;
  */
 function railNav(
   labels: IndustryLabels,
+  industrySlug: string,
   businessName: string,
   activePage: PageKey,
   locale: string,
@@ -386,19 +484,37 @@ function railNav(
   // The items come from the business's OWN page set, not a fixed five: a salon
   // whose account has no `quotations` page must not be shown a nav link to one.
   return node("RailNav", `${activePage}-rail`, {
-    brandLabel: businessName,
+    brandLabel: brandFor(industrySlug),
     brandHref: `/${locale}/portal/dashboard`,
     // `group` is required by RailItem and drives RailNav's collapsible
     // sections. One empty-named group keeps every item in a single uncollapsed
     // list, which is right at this size -- grouping four or five things into
     // named sections is overhead, not organisation.
+    // `iconName` is the page key itself: RAIL_ICONS (rail-icons.tsx) is keyed
+    // by these exact names, so a rail item and its icon can never drift apart,
+    // and a page type added here without an icon degrades to a text-only row
+    // rather than crashing.
     items: pageKeys.map((key) => ({
       label: pageNavLabel(key, labels),
       href: `/${locale}/portal/${key}`,
       group: "",
+      iconName: key,
     })),
-    notificationsHref: `/${locale}/portal/dashboard`,
-    accountHref: `/${locale}/portal/dashboard`,
+    // "#", not the dashboard route. RailNav marks an item as the current page
+    // by comparing its href against the live pathname, so pointing these two at
+    // /portal/dashboard lit up THREE items at once on the dashboard -- 总览,
+    // 通知 and 账号设置 all rendered as "you are here". It also promised a
+    // destination that does not exist and would have dumped the customer back
+    // where they started.
+    //
+    // These belong in the rail regardless: the customer is looking at a preview
+    // of the system they are designing, and a real one has notifications and
+    // account settings. Same "#" every other sample link in this file uses.
+    notificationsHref: "#",
+    accountHref: "#",
+    // The account chip identifies the PERSON, so the email local part belongs
+    // here and only here -- it is the one place in the system where "who am I
+    // signed in as" is the question being answered.
     userName: businessName,
     userRoleLabel: "老板",
   });
@@ -468,12 +584,19 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
     `${industry.name_zh}的日常运作总览 — 这是根据你的行业自动生成的起点，全部内容都可以改。`;
 
   return [
-    railNav(labels, name, "dashboard", locale, pageKeys),
+    railNav(labels, industry.slug, name, "dashboard", locale, pageKeys),
     node("PageHeader", "dashboard-header", { title: "业务总览", subtitle }),
     node("HeroCard", "dashboard-hero", {
       label: sample.heroLabel,
       value: sample.heroValue,
       href: `/${locale}/portal/payments`,
+      chgSuffix: sample.heroSuffix,
+      // Every supporting stat links back into the system rather than nowhere:
+      // the number a business owner reacts to ("RM 31,200 已做未收") should be
+      // the thing that takes them to the page where they act on it.
+      stats: sample.heroStats.map((st) => ({ ...st, href: `/${locale}/portal/payments` })),
+      spark: sample.heroSpark.map((n) => ({ n })),
+      sparkLabel: "最近六期",
     }),
     workflowStrip("dashboard-workflow", "你的业务流程", workflowStages(ctx)),
     recordTable(
@@ -491,7 +614,7 @@ function buildCustomers(ctx: BusinessContext, name: string, locale: string, page
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "customers", locale, pageKeys),
+    railNav(labels, industry.slug, name, "customers", locale, pageKeys),
     node("PageHeader", "customers-header", {
       title: `${labels.customer}名单`,
       subtitle: `所有${labels.customer}的联络方式和往来记录。`,
@@ -516,7 +639,7 @@ function buildQuotations(ctx: BusinessContext, name: string, locale: string, pag
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "quotations", locale, pageKeys),
+    railNav(labels, industry.slug, name, "quotations", locale, pageKeys),
     node("PageHeader", "quotations-header", {
       title: "报价单",
       subtitle: `发给${labels.customer}的报价，跟进哪些已确认、哪些还没回复。`,
@@ -542,7 +665,7 @@ function buildProjects(ctx: BusinessContext, name: string, locale: string, pageK
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "projects", locale, pageKeys),
+    railNav(labels, industry.slug, name, "projects", locale, pageKeys),
     node("PageHeader", "projects-header", {
       title: `${labels.order}进度`,
       // The bottleneck the AI actually identified, named on the page whose job
@@ -577,7 +700,7 @@ function buildPayments(ctx: BusinessContext, name: string, locale: string, pageK
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "payments", locale, pageKeys),
+    railNav(labels, industry.slug, name, "payments", locale, pageKeys),
     node("PageHeader", "payments-header", {
       title: "收款记录",
       subtitle: `哪些${labels.customer}已经付了、哪些还欠着，不用再翻 WhatsApp。`,
@@ -591,6 +714,13 @@ function buildPayments(ctx: BusinessContext, name: string, locale: string, pageK
       label: sample.heroLabel,
       value: sample.heroValue,
       href: `/${locale}/portal/payments`,
+      chgSuffix: sample.heroSuffix,
+      // Every supporting stat links back into the system rather than nowhere:
+      // the number a business owner reacts to ("RM 31,200 已做未收") should be
+      // the thing that takes them to the page where they act on it.
+      stats: sample.heroStats.map((st) => ({ ...st, href: `/${locale}/portal/payments` })),
+      spark: sample.heroSpark.map((n) => ({ n })),
+      sparkLabel: "最近六期",
     }),
     recordTable(
       "payments-list",
@@ -625,7 +755,7 @@ function buildBookings(
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "bookings", locale, pageKeys),
+    railNav(labels, industry.slug, name, "bookings", locale, pageKeys),
     node("PageHeader", "bookings-header", {
       title: "预约",
       subtitle: `今天谁要来、哪个${labels.staff}接、做什么，一页看完。`,
@@ -669,7 +799,7 @@ function buildOrders(
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, name, "orders", locale, pageKeys),
+    railNav(labels, industry.slug, name, "orders", locale, pageKeys),
     node("PageHeader", "orders-header", {
       title: `${labels.order}列表`,
       subtitle: ctx.analysis?.bottlenecks?.[0]?.title

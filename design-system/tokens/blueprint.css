@@ -105,6 +105,31 @@
   --color-ink-800: #d5deee;
   --color-ink-700: #bdc8db;
 
+  /* ---- NAVIGATION GROUND --------------------------------------------------
+     See ledger.css's matching block for why this family exists at the token
+     layer at all. Same roles, this register's own hue: the ground is
+     Blueprint's own --color-paper (#0c182e).
+
+     This is also the one place this register gets to keep the dark ground its
+     own file comment argues at length AGAINST for the working surface. That
+     argument holds and is not reopened -- a drafting sheet is read and marked
+     up all day and belongs on light stock. A navigation column is neither read
+     for long nor written on, so the objection does not reach it, and the deep
+     ground here is what a real cyanotype looked like.
+
+     Measured: fg 15.20:1 on the ground / 11.33:1 on the active row, fg-dim
+     7.62:1 / 5.68:1, accent 7.46:1 / 5.56:1. The accent is this file's own
+     --color-primary (#2261dd, 3.22:1 down there) lifted in lightness -- OKLCH
+     L 0.7343 from 0.5300, hue held at 262.8 against 262.0. */
+  --color-nav-bg: #0c182e;
+  --color-nav-bg-deep: #081020;
+  --color-nav-fg: #e8eef9;
+  --color-nav-fg-dim: #9cabc4;
+  --color-nav-hover: #152742;
+  --color-nav-active: #1a3053;
+  --color-nav-border: #213558;
+  --color-nav-accent: #7fa8f7;
+
   /* The card is pure white, agreeing with Ledger's choice over Hearth's tinted
      one — but for a different, more literal reason than Ledger's "dense table
      needs maximum separation." A contractor's ops tool carries the same table-

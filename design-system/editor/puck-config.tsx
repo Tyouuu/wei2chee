@@ -55,7 +55,15 @@ type Components = {
   PageHeader: { title: string; subtitle?: string };
   EmptyState: { variant: "empty" | "filtered" | "cleared"; title: string; description?: string };
   StatusDot: { tone: "positive" | "warning" | "negative" | "neutral"; label: string };
-  HeroCard: { label: string; value: string; href: string };
+  HeroCard: {
+    label: string;
+    value: string;
+    href: string;
+    chgSuffix?: string;
+    stats?: { label: string; value: string; href: string; tone?: "normal" | "caution" | "warn"; sub?: string }[];
+    spark?: { n: number }[];
+    sparkLabel?: string;
+  };
   Avatar: { name: string };
   WorkflowStrip: { title?: string; stages: WorkflowStage[] };
   RecordTable: {
@@ -193,13 +201,71 @@ export const puckConfig: Config<Components> = {
     },
     HeroCard: {
       label: "重点数字卡",
+      // The first registration exposed only label/value/href, so every
+      // generated dashboard opened on ONE lone figure floating in a wide empty
+      // card -- the component's supporting stats and trend line were built and
+      // then never reachable. That is what made the first screen read as a
+      // wireframe (docs/portal-editor-known-issues.md).
+      //
+      // Note what this deliberately does NOT do: B12's generated portals open
+      // on a ROW of four equal stat tiles, and copying that was the obvious
+      // move. hero-card.tsx argues against it in its own docstring, citing
+      // NN/g -- four tiles of identical size say four things matter equally
+      // and leave the reader to work out where to look. One headline figure
+      // with three supporting stats under it says the same amount and ranks
+      // it. Keeping the component's argument rather than the reference's
+      // layout.
       fields: {
         label: { label: "文字", type: "text" },
         value: { label: "数值", type: "text" },
         href: { label: "链接", type: "text" },
+        chgSuffix: { label: "对比说明", type: "text" },
+        stats: {
+          label: "旁边的小数字",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            value: { label: "数值", type: "text" },
+            href: { label: "链接", type: "text" },
+            sub: { label: "补充说明", type: "text" },
+            tone: {
+              label: "语气",
+              type: "select",
+              options: [
+                { label: "普通", value: "normal" },
+                { label: "留意", value: "caution" },
+                { label: "警示", value: "warn" },
+              ],
+            },
+          },
+          defaultItemProps: { label: "小数字", value: "0", href: "#", tone: "normal" },
+          getItemSummary: (item) => item.label || "小数字",
+        },
+        spark: {
+          label: "走势（由旧到新）",
+          type: "array",
+          arrayFields: { n: { label: "数值", type: "number" } },
+          defaultItemProps: { n: 0 },
+          getItemSummary: (item) => String(item.n ?? 0),
+        },
+        sparkLabel: { label: "走势说明", type: "text" },
       },
       defaultProps: { label: "本月营收", value: "RM 0", href: "#" },
-      render: ({ label, value, href }) => <HeroCard label={label} value={value} href={href} />,
+      render: ({ label, value, href, chgSuffix, stats, spark, sparkLabel }) => (
+        <HeroCard
+          label={label}
+          value={value}
+          href={href}
+          chgSuffix={chgSuffix}
+          stats={stats}
+          // HeroCard takes a plain number[]; Puck's array field can only hold
+          // objects, hence the unwrap. An empty array is passed as undefined
+          // so the component's own "no series yet, draw nothing" branch runs
+          // instead of it rendering a flat rule.
+          spark={spark?.length ? spark.map((s) => s.n) : undefined}
+          sparkLabel={sparkLabel}
+        />
+      ),
     },
     Avatar: {
       label: "头像",
@@ -461,6 +527,11 @@ export const puckConfig: Config<Components> = {
             label: { type: "text" },
             group: { type: "text" },
             badge: { type: "number" },
+            // A name, not a node: Puck field data is JSON, so this is the only
+            // way a generated nav can carry icons at all. Unknown names render
+            // text-only rather than failing (see rail-icons.tsx's RAIL_ICONS),
+            // which is why it is safe to expose as free text.
+            iconName: { label: "图标", type: "text" },
           },
           defaultItemProps: { href: "#", label: "菜单项", group: "" },
           getItemSummary: (item) => item.label || "菜单项",

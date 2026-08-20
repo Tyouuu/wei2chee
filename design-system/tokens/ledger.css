@@ -54,6 +54,42 @@
   --color-ink-800: #e4e9f0;
   --color-ink-700: #d3dbe5;
 
+  /* ---- NAVIGATION GROUND --------------------------------------------------
+     The one dark surface in an otherwise light register, and the only place in
+     these token files where colours exist to serve a single component.
+
+     WHY IT IS A TOKEN AND NOT A LITERAL IN rail-nav.tsx: the shell a business
+     owner opens every morning has to read as "a real system" within the first
+     second, and every product this design was actually measured against does
+     the same thing to earn that -- B12's generated client portals, Durable,
+     Linear, Notion all put a deep navigation column against a white working
+     area (docs/portal-editor-known-issues.md, the B12/Durable section, lists
+     it first among the borrowable rules). Hard-coding it in the component
+     would pin all three registers to one hue; declaring it here lets each keep
+     its own, which is the entire premise of having three registers.
+
+     The ground is this file's own --color-paper (#14273d) rather than a new
+     navy: the nav is the ink of the page made solid, so the register's darkest
+     value is already the right one, and using it means the rail can never
+     drift away from the text it sits beside.
+
+     Every pair below was measured with the WCAG relative-luminance formula,
+     not eyeballed: fg 12.98:1 on the ground / 9.55:1 on the active row,
+     fg-dim 7.18:1 / 5.28:1, accent 6.49:1 / 4.77:1. The accent is NOT
+     --color-primary -- Ledger's rust (#b8500f) measures 3.02:1 on this ground,
+     short of AA for the small text and thin rules it would carry. It is that
+     same rust lifted in lightness (OKLCH L 0.7488 from 0.5571) while holding
+     the hue (49.6 against the primary's 45.8, a 3.8 degree drift), so it still
+     reads as this register's accent rather than a second one. */
+  --color-nav-bg: #14273d;
+  --color-nav-bg-deep: #101d2e;
+  --color-nav-fg: #e9eef5;
+  --color-nav-fg-dim: #a6b4c6;
+  --color-nav-hover: #1e3450;
+  --color-nav-active: #243d59;
+  --color-nav-border: #26405d;
+  --color-nav-accent: #f39158;
+
   /* Deep navy, not black. Stripe's ink is #0d253d; Linear, Vercel and
      Mercury all likewise stop short of #000 in light mode. */
   --color-paper: #14273d;

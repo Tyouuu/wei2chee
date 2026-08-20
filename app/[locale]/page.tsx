@@ -9,6 +9,8 @@ import { OnboardingStepper } from "@/components/onboarding/stepper";
 import { AnalysisReveal } from "@/components/sections/analysis-reveal";
 import { ConversionCta } from "@/components/sections/conversion-cta";
 import { AmbientBackdrop } from "@/components/ambient-backdrop";
+import { HowItWorks, WhatYouGet, Pricing, Faq } from "@/components/sections/landing-explainer";
+import { SiteFooter } from "@/components/site-footer";
 import type { Industry, AnalysisResult } from "@/types/database";
 
 export default function HomePage() {
@@ -30,6 +32,11 @@ export default function HomePage() {
           document.getElementById("industry-select")?.scrollIntoView({ behavior: "smooth" });
         }}
       />
+      {/* Before the trade picker, not after: a visitor has to know what they
+          are being asked to pick a trade FOR. Everything below the picker is
+          conditional on having picked one, so this is the last thing an
+          undecided visitor reads if it sits underneath. */}
+      <HowItWorks />
       <IndustrySelect onSelect={setSelectedIndustry} />
       {selectedIndustry && !answers && (
         <>
@@ -76,6 +83,16 @@ export default function HomePage() {
         />
       )}
       {analysis && leadId && <ConversionCta summary={analysis.summary} leadId={leadId} />}
+
+      {/* Unconditional, unlike everything between the picker and here. A
+          visitor who scrolled past the trade list without clicking used to
+          reach the end of the document at this point -- no deliverable, no
+          price, no answer to "how is this different from a web shop", no way
+          to contact anyone. */}
+      <WhatYouGet />
+      <Pricing />
+      <Faq />
+      <SiteFooter />
     </main>
   );
 }
