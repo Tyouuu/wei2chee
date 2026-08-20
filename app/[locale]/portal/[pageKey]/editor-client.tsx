@@ -26,6 +26,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 // custom properties collide, at :root, with app/globals.css's own
 // same-named shadcn/Blueprint marketing-site tokens.
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
+import chrome from "../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 
@@ -260,7 +261,13 @@ export function PortalEditor({
       // --color-paper-dim, tuned for Ledger's light surfaces) rendered
       // against the acquisition site's dark <body> showing through --
       // barely legible, not just unstyled.
-      className={`portal-editor-scope ${styles.ledger} flex h-screen flex-col [background-color:var(--color-canvas)]`}
+      // Formae's own chrome, no longer Ledger's. The editor used to borrow the
+      // customer's lightest style for its toolbar, palette and panels, which is
+      // why signing in felt like leaving this product and entering a generic
+      // one -- see chrome.module.css for the full argument. `portal-editor-scope`
+      // stays: it maps Puck's own --puck-color-* variables onto whatever
+      // --color-* resolves to here, so Puck's chrome follows automatically.
+      className={`portal-editor-scope ${chrome.chrome} ${chrome.workbench} flex h-screen flex-col`}
     >
       <div className="flex items-center justify-between gap-4 border-b px-4 py-2 text-[13px] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
         {/* Page navigation. Before this the editor showed the current page's
@@ -496,9 +503,16 @@ export function PortalEditor({
                   )}
                 </div>
               ),
+              // The canvas is the one thing on this screen Formae does not
+              // own, so it is presented as an object rather than as the
+              // background: the customer's style scope re-resolves every token
+              // to their light register inside a frame that stays dark. The
+              // token cascade does this by itself -- custom properties inherit
+              // and the nearest defining ancestor wins -- which is why nothing
+              // inside the canvas needed changing.
               preview: ({ children }) => (
                 <div
-                  className={`${styles.scope} ${CANVAS_SCOPE_CLASS[activeStyle]} h-full [background-color:var(--color-canvas)]`}
+                  className={`${styles.scope} ${CANVAS_SCOPE_CLASS[activeStyle]} ${chrome.sheet} h-full [background-color:var(--color-canvas)]`}
                 >
                   {children}
                 </div>

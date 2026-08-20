@@ -12,6 +12,7 @@ import { PagePreview } from "./page-preview";
 import { SettingsDialog } from "./settings-dialog";
 import type { PageKey } from "@/lib/templates/industry-template";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
+import chrome from "./chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -151,10 +152,12 @@ export function PortalHome({
   )}`;
 
   return (
-    <div
-      className={`${styles.scope} ${SCOPE_CLASS[activeStyle]} min-h-screen [background-color:var(--color-canvas)]`}
-    >
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4 [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]">
+    // Formae's chrome, not the customer's style. The customer's style now
+    // appears only INSIDE the page previews and the style swatches, which is
+    // the point: their system is a lit sheet on Formae's workbench, the way
+    // 21st.dev shows components and Figma shows a file.
+    <div className={`${chrome.chrome} ${chrome.workbench} min-h-screen`}>
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-3.5 [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
@@ -197,10 +200,8 @@ export function PortalHome({
 
       <main className="mx-auto max-w-6xl px-6 py-12">
         <section>
-          <p className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
-            {t("eyebrow")}
-          </p>
-          <h1 className="mt-2 max-w-3xl text-balance [color:var(--color-paper)] [font-size:var(--text-hero)] [font-weight:var(--fw-display)] [letter-spacing:var(--tracking-title-lg)] [line-height:var(--leading-tight)]">
+          <p className={chrome.annotation}>{t("eyebrow")}</p>
+          <h1 className="mt-2.5 max-w-3xl text-balance [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-hero)] [font-weight:400] [letter-spacing:var(--tracking-title-lg)] [line-height:var(--leading-tight)]">
             {industryName ? t("titleWithIndustry", { industry: industryName }) : t("title")}
           </h1>
           {/* The AI's own sentence about this business, on the first screen
@@ -232,7 +233,7 @@ export function PortalHome({
 
         <section className="mt-14">
           <div className="flex items-baseline justify-between gap-4 border-b pb-3 [border-color:var(--color-ink-800)]">
-            <h2 className="[color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+            <h2 className="[color:var(--color-paper)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*1.35)] [font-weight:400] [letter-spacing:var(--tracking-title)]">
               {t("pagesTitle")}
             </h2>
             <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
@@ -255,9 +256,17 @@ export function PortalHome({
               // (Found by a browser test — the click resolved to six links.)
               <li
                 key={page.pageKey}
-                className="group relative overflow-hidden [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [box-shadow:var(--shadow-card)] [background-color:var(--color-ink-900)] transition-shadow hover:[box-shadow:var(--shadow-raised)]"
+                className={`group relative ${chrome.sheet} [background-color:var(--color-ink-900)] transition-transform duration-200 hover:-translate-y-0.5`}
               >
-                <div className="border-b [border-color:var(--color-ink-800)]">
+                {/* The one place the customer's own style is let out into the
+                    chrome: this div re-scopes every token to their light
+                    register, so a light page sits inside a dark frame exactly
+                    as it will on their screen. Custom properties inherit and
+                    the nearest definition wins, which is what keeps the frame
+                    dark and the sheet light with no other coordination. */}
+                <div
+                  className={`${styles.scope} ${SCOPE_CLASS[activeStyle]} border-b [border-color:var(--color-ink-800)]`}
+                >
                   <PagePreview data={page.layout} />
                 </div>
                 <div className="flex items-center justify-between gap-3 [padding:var(--pad-card)]">
@@ -283,7 +292,7 @@ export function PortalHome({
 
         <section className="mt-14">
           <div className="flex items-baseline justify-between gap-4 border-b pb-3 [border-color:var(--color-ink-800)]">
-            <h2 className="[color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+            <h2 className="[color:var(--color-paper)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*1.35)] [font-weight:400] [letter-spacing:var(--tracking-title)]">
               {t("styleTitle")}
             </h2>
             {styleFailed && (
@@ -306,10 +315,10 @@ export function PortalHome({
                     onClick={() => chooseStyle(name)}
                     disabled={Boolean(pendingStyle)}
                     aria-pressed={active}
-                    className={`w-full overflow-hidden text-left transition-shadow [border-radius:var(--radius-lg)] [background-color:var(--color-ink-900)] disabled:opacity-60 ${
+                    className={`w-full overflow-hidden text-left transition-colors [border-radius:var(--radius-lg)] [background-color:var(--color-ink-900)] disabled:opacity-60 ${
                       active
-                        ? "[border:2px_solid_var(--color-primary)] [box-shadow:var(--shadow-raised)]"
-                        : "[border:2px_solid_var(--color-ink-800)] enabled:hover:[border-color:var(--color-ink-700)]"
+                        ? "[border:1px_solid_var(--color-primary)]"
+                        : "[border:1px_solid_var(--color-ink-800)] enabled:hover:[border-color:var(--color-ink-700)]"
                     }`}
                   >
                     <StyleSwatch name={name} />
@@ -334,7 +343,7 @@ export function PortalHome({
 
         <section className="mt-14">
           <div className="border-b pb-3 [border-color:var(--color-ink-800)]">
-            <h2 className="[color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+            <h2 className="[color:var(--color-paper)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*1.35)] [font-weight:400] [letter-spacing:var(--tracking-title)]">
               {t("nextTitle")}
             </h2>
           </div>
@@ -345,7 +354,7 @@ export function PortalHome({
               // runs an LLM call while rendering — prefetch would bill a
               // generation for every hover, for a document nobody opened.
               prefetch={false}
-              className="group block [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [box-shadow:var(--shadow-card)] [background-color:var(--color-ink-900)] [padding:var(--pad-card-lg)] transition-shadow hover:[box-shadow:var(--shadow-raised)]"
+              className="group block [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)] [padding:var(--pad-card-lg)] transition-colors hover:[border-color:var(--color-primary)]"
             >
               <span className="block [color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
                 {t("specTitle")}
@@ -362,7 +371,7 @@ export function PortalHome({
               href={deployHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="group block [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [box-shadow:var(--shadow-card)] [background-color:var(--color-ink-900)] [padding:var(--pad-card-lg)] transition-shadow hover:[box-shadow:var(--shadow-raised)]"
+              className="group block [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)] [padding:var(--pad-card-lg)] transition-colors hover:[border-color:var(--color-primary)]"
             >
               <span className="block [color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
                 {t("buildTitle")}

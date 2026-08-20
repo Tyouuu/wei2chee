@@ -1,0 +1,248 @@
+/*
+ * FORMAE'S OWN CHROME.
+ *
+ * WHY THIS FILE EXISTS
+ *
+ * The founder has said three times, after three rounds of functional work,
+ * that the design still does not satisfy him. Each round found and fixed real
+ * defects. None of them was the thing he kept pointing at, and the reason is
+ * this: Formae had no visual identity of its own.
+ *
+ * The acquisition site has a strong one -- near-black navy ground, a deep blue
+ * ambient wash, Instrument Serif at display sizes, mono annotations, hairline
+ * rules. The portal had none. It wore whichever of the CUSTOMER's three styles
+ * was active, and all three are deliberately light, so the moment a visitor
+ * signed in they left Formae's world and landed in a generic light B2B SaaS.
+ * One journey, three products.
+ *
+ * His stated target resolves it exactly: "21st.dev 跟 Durable 的结合体".
+ * 21st.dev is a dark, characterful TOOL SHELL wrapped around light content
+ * previews; Durable supplies the business-app shape. So: the customer's page
+ * stays light and in their chosen style, and Formae's chrome around it does
+ * not. The page becomes a lit sheet on a dark workbench -- which is also how
+ * Figma, Framer and 21st.dev all present content they do not own.
+ *
+ * WHY IT IS A TOKEN SWAP AND NOT A REWRITE
+ *
+ * Every component in design-system/ already reads `var(--color-*)` rather than
+ * literals. Re-scoping the chrome therefore means redefining the same token
+ * NAMES with dark values on one wrapper class -- the identical mechanism
+ * style-scope.module.css uses, applied to a different question. Nothing that
+ * consumes these tokens changes.
+ *
+ * WHY IT IS NOT A FOURTH ENTRY IN style-scope.module.css
+ *
+ * That file and its generator answer "which style did the customer pick for
+ * their system". This is not one of those and must never appear in the style
+ * picker. Keeping it separate keeps that list honest at three.
+ *
+ * THE NESTING RULE THAT MAKES THIS WORK: custom properties inherit, and the
+ * nearest defining ancestor wins. The canvas carries the customer's own scope
+ * class INSIDE this one, so the sheet re-resolves every token to their light
+ * style while everything outside it stays dark. That is the whole trick, and
+ * it is why the canvas needed no changes at all.
+ *
+ * COLOURS ARE DERIVED, NOT INVENTED. Every value below comes from converting
+ * app/globals.css's own OKLCH marketing tokens (--ink 0.16/0.012/265,
+ * --ink-raised 0.21, --muted 0.26, --blueprint 0.66/0.17/262, --foreground
+ * 0.96) and lifting the ones that have to carry small text on a dark ground.
+ * Measured with the WCAG relative-luminance formula against this file's own
+ * surfaces, not estimated:
+ *
+ *   on --color-canvas (#0b0d13): paper 17.31, paper-dim 7.86, primary 7.67,
+ *     jade 10.25, brass 10.28, clay 7.39
+ *   on --color-ink-900 (#15181f): paper 15.83, paper-dim 7.19, primary 7.01,
+ *     jade 9.37, brass 9.40, clay 6.76
+ *   on --color-ink-850 (#20242c): paper 13.86, paper-dim 6.29, primary 6.14
+ *   on --color-primary-soft (#1d2d4c): paper 12.21, primary-deep 7.63
+ *   --color-canvas on --color-primary (button text): 7.67
+ *
+ * The accent is --blueprint lifted from OKLCH L 0.66 to 0.72, hue 262 held
+ * exactly. Stated honestly: this is NOT a contrast fix. Unlifted it measures
+ * 6.13:1 on the canvas and 5.61:1 on a panel, both of which clear AA on their
+ * own. The lift buys presence -- at the 11-13px this chrome is mostly made of,
+ * against a ground this dark, the marketing value reads as a slightly dull
+ * blue rather than as an accent. It stays the same hue so it is recognisably
+ * the same colour as the Hero's.
+ */
+
+.chrome {
+  color-scheme: dark;
+
+  /* ---- SURFACES ---------------------------------------------------------
+     Ordered the same way the three customer styles order theirs, so a
+     component that expects "ink-900 is the panel, ink-800 is the border"
+     behaves identically here -- inverted in lightness, identical in role. */
+  --color-canvas: #0b0d13;
+  --color-ink-950: #05070c;
+  --color-ink-900: #15181f;
+  --color-ink-850: #20242c;
+  --color-ink-800: #2c303a;
+  --color-ink-700: #484d58;
+
+  --color-paper: #f0f2f4;
+  --color-paper-dim: #a0a5af;
+
+  --color-primary: #6fa2ff;
+  --color-primary-deep: #99c4ff;
+  --color-primary-soft: #1d2d4c;
+  /* On a dark ground the readable thing on an accent fill is the GROUND, not
+     white: white on #6fa2ff measures 2.53:1 and fails outright, while the
+     canvas colour on it measures 7.67:1. */
+  --color-on-primary: #0b0d13;
+  --color-on-dark: #f0f2f4;
+
+  /* ---- STATUS -----------------------------------------------------------
+     Same four meanings as everywhere else in the product (jade positive,
+     brass pending, clay negative, slate neutral) at dark-ground lightness.
+     The customer's own StatusDots are NOT these -- those render inside the
+     sheet, under their own style's tokens. These are the chrome's: the save
+     indicator, AI applied/skipped counts, error text. */
+  --color-jade: #62d286;
+  --color-jade-bright: #62d286;
+  --color-brass: #e9b452;
+  --color-brass-bright: #e9b452;
+  --color-clay: #eb8182;
+  --color-clay-bright: #eb8182;
+  --color-clay-deep: #d76d6e;
+  --color-slate: #a1a5ac;
+  --color-slate-bright: #a1a5ac;
+  --color-info: #6fa2ff;
+  --color-info-bright: #99c4ff;
+  --color-medal-gold: #e9b452;
+  --color-medal-silver: #a1a5ac;
+  --color-medal-bronze: #d9a06a;
+  --color-jade-chart: #62d286;
+  --color-brass-chart: #e9b452;
+
+  /* ---- NAVIGATION -------------------------------------------------------
+     The one place the dark chrome has to differentiate from itself: a rail
+     against a dark workbench cannot use "darker" as its signal the way the
+     light styles do, so it goes slightly LIGHTER and leans on the border. */
+  --color-nav-bg: #10141c;
+  --color-nav-bg-deep: #080b11;
+  --color-nav-fg: #f0f2f4;
+  --color-nav-fg-dim: #a0a5af;
+  --color-nav-hover: #1c212b;
+  --color-nav-active: #232936;
+  --color-nav-border: #2c303a;
+  --color-nav-accent: #6fa2ff;
+
+  /* ---- TYPE -------------------------------------------------------------
+     The continuity signal. `--font-display` is Instrument Serif, the same
+     face the Hero is set in -- it is the single strongest thing tying the
+     signed-out and signed-in halves of this product into one company. UI text
+     stays on the neutral grotesque, because a serif at 12px in a toolbar is
+     costume rather than identity. */
+  --font-display: var(--font-serif-latin), "Songti SC", "SimSun", Georgia, serif;
+  --font-ui: var(--font-sans-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-mono: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-display: 600;
+
+  --tracking-body: -0.008em;
+  --tracking-sm: -0.01em;
+  --tracking-title: -0.02em;
+  --tracking-title-lg: -0.03em;
+  --tracking-label: 0.12em;
+  --label-transform: uppercase;
+
+  --text-micro: 10.5px;
+  --text-xs: 11.5px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-title: 20px;
+  --text-hero: 40px;
+  --leading-tight: 1.2;
+  --leading-body: 1.6;
+
+  /* ---- SHAPE ------------------------------------------------------------ */
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 11px;
+  --radius-control: 7px;
+  --radius-pill: 999px;
+
+  /* ---- DENSITY ---------------------------------------------------------- */
+  --pad-card: 18px;
+  --pad-card-lg: 24px;
+  --pad-control-x: 12px;
+  --pad-control-y: 7px;
+  --pad-cell-x: 12px;
+  --pad-cell-y: 10px;
+  --gap-stack: 14px;
+  --gap-inline: 10px;
+  --row-h: 40px;
+  --control-h: 34px;
+
+  /* ---- ELEVATION --------------------------------------------------------
+     Shadows do almost nothing on a near-black ground -- a dark blur over a
+     dark surface is invisible. So the border does the separating here, and
+     the shadows that remain are for things that genuinely float (the sheet,
+     dialogs), where a deep black is the only thing that reads. */
+  --border-card-width: 1px;
+  --shadow-card: none;
+  --shadow-raised: 0 2px 10px rgba(0, 0, 0, 0.55);
+  --shadow-overlay: 0 18px 50px -10px rgba(0, 0, 0, 0.75);
+
+  --border-subtle: rgba(240, 242, 244, 0.09);
+  --border-strong: rgba(240, 242, 244, 0.17);
+
+  --shadow-hue: 0, 0, 0;
+  --hairline: 1px;
+
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+
+  background-color: var(--color-canvas);
+  color: var(--color-paper);
+  font-family: var(--font-ui);
+  letter-spacing: var(--tracking-body);
+}
+
+@media (min-resolution: 192dpi) {
+  .chrome {
+    --hairline: 0.5px;
+  }
+}
+
+/* The mono label voice, ported from the acquisition site's own `.annotation`
+   so the two halves of the product annotate things the same way. */
+.annotation {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+/* The sheet: a customer's page presented as a lit object on the workbench.
+   The ring rather than a plain border is what makes it read as sitting ON the
+   surface instead of being a hole cut in it. */
+.sheet {
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 0 1px rgba(240, 242, 244, 0.08),
+    0 10px 34px -12px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+/* The ambient wash, the same move the Hero makes, at a fraction of the
+   intensity because this surface is worked on rather than looked at once.
+   `fixed` attachment so it belongs to the workbench and does not scroll with
+   the content sitting on it. */
+.workbench {
+  background-image: radial-gradient(
+    1100px 620px at 82% -10%,
+    rgba(111, 162, 255, 0.13),
+    rgba(11, 13, 19, 0) 68%
+  );
+  background-attachment: fixed;
+}

@@ -11,6 +11,7 @@ import {
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
+import { displayBusinessName } from "@/lib/templates/industry-template";
 import { buildSystemSpec, specToText, type SystemSpec } from "@/lib/portal/spec-outline";
 import type { PuckLayout } from "@/lib/portal/layout-ops";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
@@ -152,7 +153,11 @@ export default async function SystemSpecPage({
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
   const industryName = businessContext.industry?.name_zh ?? "一般生意";
-  const businessName = user.email?.split("@")[0] || "我的生意";
+  // The customer's own company name (projects.business_name, migration
+  // 20260820180000) rather than their email's local part. This document is the
+  // one a contractor is meant to hand to a developer, or read back to decide
+  // whether to spend RM5,000 -- and it was titled "tianyou.demo的系统".
+  const businessName = displayBusinessName(businessContext);
 
   // Unsaved pages are specified from what the customer WOULD see, using the
   // same generator the editor uses. A free-tier customer has saved nothing yet

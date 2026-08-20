@@ -101,7 +101,11 @@ export function SettingsDialog({
         // anything inside targets a descendant.
         if (e.target === ref.current) onClose();
       }}
-      className="w-[min(30rem,calc(100vw-2rem))] [border-radius:var(--radius-lg)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)] [box-shadow:var(--shadow-overlay)] [padding:var(--pad-card-lg)] backdrop:bg-black/40"
+      // `m-auto` is load-bearing. The UA stylesheet centres a modal <dialog>
+      // with `margin: auto`, and Tailwind's preflight resets `margin: 0` on
+      // every element -- so without this the dialog pins itself to the top-left
+      // corner of the viewport. Caught in a screenshot, not in review.
+      className="m-auto w-[min(30rem,calc(100vw-2rem))] [border-radius:var(--radius-lg)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)] [box-shadow:var(--shadow-overlay)] [padding:var(--pad-card-lg)] backdrop:bg-black/60"
     >
       <form onSubmit={handleSubmit}>
         <h2 className="[color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
