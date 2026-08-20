@@ -210,7 +210,13 @@
       "undo": "撤销",
       "redo": "重做",
       "saving": "保存中…",
-      "saveCta": "保存设计"
+      "saveCta": "保存设计",
+      "aiLabel": "AI 修改",
+      "aiPlaceholder": "用讲的就可以，例如：把「客户」改成「病人」、加一个记录生日的地方",
+      "aiSubmit": "修改",
+      "aiThinking": "思考中…",
+      "aiFailed": "这次没听懂，换个说法再试一次。",
+      "aiNoChange": "这个改不了，可以换个说法，或者直接拖组件。"
     }
   }
 }

@@ -210,7 +210,13 @@
       "undo": "Undo",
       "redo": "Redo",
       "saving": "Saving…",
-      "saveCta": "Save design"
+      "saveCta": "Save design",
+      "aiLabel": "Edit with AI",
+      "aiPlaceholder": "Just say it — e.g. rename \"Customer\" to \"Patient\", or add somewhere to record birthdays",
+      "aiSubmit": "Change it",
+      "aiThinking": "Thinking…",
+      "aiFailed": "Didn't catch that — try rephrasing.",
+      "aiNoChange": "Can't do that one. Try rephrasing, or drag a block in instead."
     }
   }
 }

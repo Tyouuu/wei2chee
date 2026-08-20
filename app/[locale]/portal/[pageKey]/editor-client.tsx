@@ -12,6 +12,7 @@ import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft";
 import { EditorChrome } from "./editor-chrome";
+import { ComponentPreview } from "@/design-system/editor/component-preview";
 // Reused rather than re-declared: this is the same scoped Ledger token
 // class app/[locale]/portal/style-select's <StyleColumn> already applies,
 // kept in sync with design-system/tokens/ledger.css by
@@ -366,6 +367,15 @@ export function PortalEditor({
             overrides={{
               // Puck's own toolbar is English and unstyled by this app's
               // tokens -- replaced wholesale. See editor-chrome.tsx.
+              // A miniature of each block beside its name, so the palette is
+              // browsed by sight rather than by reading fifteen nouns off
+              // identical white rectangles. See component-preview.tsx.
+              drawerItem: ({ children, name }) => (
+                <div className="flex items-center gap-2.5">
+                  <ComponentPreview name={name} />
+                  <div className="min-w-0 flex-1">{children}</div>
+                </div>
+              ),
               header: () => (
                 <EditorChrome
                   pageLabel={t(`pages.${pageKey}`)}
