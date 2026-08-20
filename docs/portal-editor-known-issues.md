@@ -1,0 +1,208 @@
+# 客户 Portal + 拖拽编辑器 —— 已知问题记录
+
+记录时间：2026-08-20
+背景：客户账号系统 + 拖拽编辑器整个计划（Task 1-7 + 最终修复轮）代码层面已完成、审查通过、上线。但审查全程只检查了"代码对不对"（token 有没有硬编码、状态机逻辑对不对、RLS 权限对不对），**没有一次是"这个东西作为产品看起来/用起来怎么样"**。founder 亲自用真实账号登录看过实际画面后，指出问题很大。本文档记录这次真人视觉审查发现的问题，供下一个计划（编辑器视觉/体验重做）参考。
+
+## 严重问题（按影响排序）
+
+### 1. 编辑器空画布状态，全程从未被真正看过/验证过
+所有测试和审查的流程都是"拖一个组件进去，看它显示对不对"——没有一次单纯打开编辑器、什么都不拖，看第一眼是什么样。但这恰恰是**每一个客户打开编辑器时最先看到的画面**：一个巨大的、纯色的蓝色虚线框，里面没有任何文字引导（比如"拖拽左侧组件到这里开始设计"）。对一个不懂技术的中小商家老板来说，这个画面很可能被理解成"页面坏了"，而不是"这里可以拖东西进来"。
+- 文件：`design-system/editor/puck-config.tsx`、`design-system/editor/puck-theme.css`
+- 需要确认：这是 Puck 的默认空状态样式，还是 token 换色过程中产生的非预期效果——从未被任何一轮审查截图确认过。
+
+### 2. "Publish" 按钮语义是错的，不只是没翻译
+这个按钮实际触发的是保存（付费客户存进数据库，免费客户弹出付费墙）——不是"发布"任何东西。写成英文 "Publish" 不只是本地化缺失，而是在告诉客户一件根本没发生的事。
+- 文件：`app/[locale]/portal/[pageKey]/editor-client.tsx`（`onPublish={handleSaveClick}`，Puck 自带按钮文案无法通过 props 直接改，需要用 `overrides.header` 或类似接口整块替换）
+
+### 3. 整个编辑器视觉上就是默认 Puck，只换了颜色，没有真正重新设计
+工具栏布局、侧边栏、图标、组件列表卡片——全部是 Puck 自带的默认结构。之前几轮任务的"换皮"范围一直被限定为"把 Puck 的主题变量指向 Ledger 的 token 值"，从未真正重新设计这个工具该长什么样。而且 Ledger 自己的主色 `#0570de` 本身就是一个很普通的"SaaS 蓝"，跟 Puck 默认主题蓝几乎没区别，所以即使换色技术上正确，视觉上也没换出高级感。
+- 文件：`design-system/editor/puck-theme.css`、`design-system/tokens/ledger.css`（`--color-primary: #0570de`）
+- 需要用 Puck 更深的定制接口（`overrides.header`、`overrides.componentItem` 等）才能真正改变外观，不能只靠 CSS 变量。
+
+### 4. 组件列表全英文、无图标，像开发者工具不像客户产品
+`PageHeader`、`EmptyState`、`StatusDot`、`HeroCard`、`Avatar`——纯文字卡片，无图标，无中文名。目标客户是马来西亚中文中小商家老板，这个列表现在读起来完全是给程序员看的。
+- 文件：`design-system/editor/puck-config.tsx`（组件的 `label` 目前用的是组件本身的英文名，Puck 的 `ComponentConfig`/字段都支持 `label` 覆盖，一直没用）
+
+### 5. 登录页完全没有品牌感，跟目标客户的信任需求不匹配
+一个纯黑网格背景，中间飘着一个没有 logo、没有任何视觉锚点的表单。这种"科技感/工程感"调性放在获客首页做差异化也许合适，但放在一个中小商家老板要反复登录、管理自己真实生意数据的地方，观感更像"黑客工具"，不像"可以信任的生意伙伴"。
+- 文件：`app/[locale]/login/login-form.tsx`、`app/[locale]/signup/signup-form.tsx`
+
+### 6. "客户自己设计系统"现在实际上是"客户自己设计一个页面"
+5 个系统页面（dashboard / customers / quotations / projects / payments）里 4 个完全没有导航入口，只能手动改网址才能到达。核心卖点（客户自主设计整个系统）目前体验上根本感受不到——客户只会觉得自己在一个空白页面上拖了几个方块。
+- 文件：`app/[locale]/portal/[pageKey]/editor-client.tsx`（`PAGE_LABELS` 只是静态文字，不是可点击导航）
+- 这是最终全局审查已经发现的 Important 级别缺口（当时定为"先上线，做成后续任务"）。
+
+### 7. 风格选择不可逆，但选择时完全看不到编辑器实际长相
+选风格那一页（Ledger / Hearth / Blueprint）本身做得不错——用示例数据表格对比、界面也比编辑器精致很多。但客户是在"这个选择之后不能更改"的前提下，只凭一段文字描述 + 一张示例发票表格做决定，完全没有预览到选完之后编辑器实际是什么样子。等于是拿一个好看的东西，让客户对一个还没让他看到的东西做出不可撤销的承诺。
+- 文件：`app/[locale]/portal/style-select/style-select-client.tsx`
+
+### 8. 编辑器外壳（chrome）固定用 Ledger 风格，不随客户选的风格变化
+客户选了 Hearth 或 Blueprint 之后，画布内容会应用对应风格，但编辑器自己的工具栏/侧边栏视觉上还是偏 Ledger 的浅色调——跟客户自己选的东西不完全一致，可能造成"我选的风格好像没生效"的困惑。
+- 这是 Task 5 当时的明确设计决定（"外壳永远是 Ledger，不管客户选什么"），当时有它的理由（工具是 Formae 自己的，不是客户设计的一部分），但值得重新评估是否该继续这样。
+
+## 之前全局审查已经记录、但还没处理的相关缺口
+（跟上面视觉问题高度相关，适合一起排进下一个计划）
+- 付费客户保存失败没有重试机制（spec 原本要求，计划阶段漏排了）
+- 完全没有自动化测试保护 RLS 这道核心安全边界
+
+## 建议
+下一个计划应该把"让编辑器真正好看、好用、有品牌感"当作独立目标，不要再用"接上 token 变量"这种浅层换皮方式。需要：
+1. 实际使用 Puck 的 `overrides` 接口重新设计工具栏、组件列表、空状态引导文案
+2. 中文化所有客户可见文字（组件名、字段名、按钮文案）
+3. 补上 4 个页面的导航入口
+4. 重新设计登录/注册页面的品牌呈现
+5. 每一轮审查除了检查代码正确性，必须包含真实截图 + 视觉走查这一环，不能只靠"拖一个组件测试通过"就算完成
+
+## 竞品/参考产品调研（2026-08-20）
+
+背景：founder 直接质问"有哪个成功的 AI SaaS 产品长得跟我们这样"，逼着做了一轮真实的竞品截图对比，而不是空谈。以下是发现和结论。
+
+### 市场竞品：XYSTEM TECH SOLUTIONS
+本地（KL·Cheras）传统定制开发团队，公开价格单：公司/个人网页 RM1,188 起、网页系统&后台 RM1,499 起、前端商城/网店 RM2,599 起、手机 App RM8,999 起。固定报价、分期付款（30/30/40）、真人本地团队。FB 帖子有 90 赞真实社交证明。
+**结论：** 论价格、作品数、已有客户信任，现在赢不了。差异化必须靠"客户自己参与设计"这个市面上没人做的概念，不能打价格战。
+
+### 通用设计标杆（Linear / Framer / Webflow）
+共同点，也是我们现在最大的差距：
+1. 界面是真正自己设计的，不是拿开源组件库换颜色
+2. 到处都是真实图标，不是纯文字列表
+3. 从不给用户看真正空白的页面——连"空状态"宣传图都是精心设计过的引导文案/插画
+4. 有信任信号（客户 logo、真实数据示例、评分）
+5. 有动效和细节反馈（发光、过渡、悬浮）
+
+### 最接近我们业务模式的参考：B12.io
+"Describe your idea. Launch in minutes." + AI 生成 + **真人团队**（设计+文案）二次打磨交付——跟我们"AI 分析 + 人工团队真正落地"的思路一致，只是他们做网站，我们做完整业务系统。
+
+实际生成出来的系统模板截图非常有参考价值：
+- **Studio Flow**（客户项目门户）：深藏青侧边栏 + 白色内容区，"Welcome back, Jane" 问候语，"5 个进行中项目 / 3 个待批准"数字卡片，项目卡片配真实图片 + 进度条
+- **AssetFlow**（资产管理系统）：同样深色侧边栏+白色内容区，"Good morning, Ava" 问候语，数字统计卡片 + 柱状图 + 饼图 + 最近动态列表
+
+**可直接借鉴的具体规律**（下次重做 dashboard 组件时的视觉目标）：
+1. 深色/彩色侧边栏 + 白色主内容区的经典组合
+2. 顶部一定有醒目的数字统计卡片，一眼看懂"这个系统在管理什么"
+3. 真人称呼的问候语（"Welcome back, [名字]"），立刻让工具感觉"是我的系统"
+4. 只用一个强调色贯穿全场（indigo/purple 或 navy），不是随便一个默认蓝
+5. 真实数据可视化（图表、进度条、列表），不是空白占位
+6. B12 展示的 AI 生成提示词原文非常具体（精确到强调色、字体、布局构图），说明好的输出需要给 AI 明确的视觉方向指令，不能只描述功能
+
+### 最接近我们产品形态的参考：Durable.com
+founder 亲自用自己的公司（Wei2Chee）注册体验过。侧边栏结构：Home / Website / SEO & GEO / Customers / Studio / Bookings / Agents（AI Partner / Blog / Website Leads / Google Reviews）——已经是一整套业务工具框架，跟我们 dashboard/customers/quotations/projects/payments 的思路很接近。
+
+**值得直接照抄的细节：**
+- 风格切换 UI：AI 生成后弹出"Here are some theme options"，几十个缩略图并排比较，客户看着实际效果选，而不是像我们现在这样凭文字描述做不可反悔的决定
+- Publish 按钮在这里语义是对的（真的在发布网站）——反衬出我们编辑器里"Publish"按钮实际是"保存"，语义错误
+- 侧边栏 icon+文字排列、Beta 标签、带倒计时的促销卡片
+
+**核心业务模式区别（重要，不能搞混方向）：**
+Durable 是纯 AI 自助——AI 生成完，客户自己编辑，编辑完**就是最终产品**，背后没有真人团队再做定制后端。它的 Customers/Bookings 等"系统"模块是所有客户共用的通用固定功能，客户没法设计这些页面长什么样，只是套上自己的品牌名。
+
+**技术上"几十种风格一秒切换"是怎么做到的：** 内容（文字/图片）和"风格"完全分开存。系统预先做好一批"配色方案 × 排版模板"的组合（比如 6 种配色 × 5 种排版 = 30 种视觉效果），客户点一个缩略图，只是把同一份内容套进不同的 CSS 变量/排版组件，不用重新调 AI，纯前端切换所以秒开。**我们现在的 Ledger/Hearth/Blueprint token 架构本质上就是同一个思路**，加一层"实时预览 + 允许反悔"是可以做的，不需要推倒重来。
+
+再进一步确认：Durable 那套"一秒换风格"的魔法，**只用在了 Website（营销落地页）模块上**，没有用在 Customers/Bookings 这些真正的系统功能上——每个客户的 CRM 界面长相都是 Durable 自己固定做好的。这再次证明"让客户自己设计真正的功能系统（不只是门面）"这件事市面上真的没人做，是真实的差异化。
+
+### 两阶段路线图（founder 确认，任务周期长，分阶段推进）
+
+**第一阶段（当前优先级，是产品能否成立的关键）：** 把"客户自己设计系统"这个核心概念做扎实——
+- 真正的业务组件（报价单表格、客户列表、状态流转），不是现在这几个装饰性方块（PageHeader/EmptyState/Avatar）
+- 每个业务组件要在 3 种风格（Ledger/Hearth/Blueprint）下都好看、都能用，尤其要保证状态标签、金额这些关键信息在任何配色下都清晰可辨
+- 在这之上，才是"实时预览 + 允许反悔选风格"这类体验优化（顺序反了会变成"换肤功能很炫，但里面没有真正能用的系统"）
+
+**Phase 1 具体起步方法（founder 确认，2026-08-20）：** 不从空白页面自己设计每个业务组件，而是两步走：
+1. 从 shadcn/ui 免费的 dashboard 组件块生态（表格、统计卡片、状态标签、侧边栏——这个库本项目里已经在用，如 `components/ui/button`）里，挑选最接近报价单表格/客户列表/统计卡片需求的现成组件作为起点，而不是从零设计
+2. 把这些组件的颜色变量，用 `design-system/editor/puck-theme.css` 已经验证成功的同一种做法（把外部库自己的语义 token 名对应到 Ledger/Hearth/Blueprint 的 token 名），对接进现有的三套风格系统
+
+这样"设计得好不好看"这一半用现成专业组件直接解决，真正要做的工程只剩"换肤对接"，而且这件事在本项目里已经有成功先例（Puck 工具栏的换肤就是这么做的），不是从头摸索的新技术。
+
+**第二阶段（未来扩展，不占用当前资源）：** 落地页构建器——
+- 技术上不是另开一个产品，是同一个 Puck 编辑器**多注册一批营销类组件**（Hero 区块、客户见证、价格表、联系表单）
+- 原材料很多已经现成：获客网站那个计划已经做出 `hero-section.tsx`、`ambient-backdrop`、Framer Motion 动效等素材，只是还没包装成 Puck 可拖拽组件
+- 原因是 founder 未来业务上也可能接落地页类的客户需求（对标 XYSTEM 的"公司/个人网页"这条产品线），但落地页是市面上一堆模板工具都能做的commodity，不是差异化，所以明确排在第一阶段之后，避免两头做成半成品
+
+---
+
+## UI/UX 组件库研究（2026-08-20，founder 指出 research 做得不够后补做）
+
+founder 的原话："我们还是没有做到很多 research 的工作，例如 21st.dev、motionsites、reactbits 这些网站，还有每个行业的风格。我们应该要怎么做出我们自己的 UI/UX 库出来，不能一上线什么都没有，至少要有真正的选择给到客户。"
+
+`docs/design-references.md` 里这三个站一直标着 "Still unused" —— 这轮真正去查了。以下是**实测**结果，不是推测。
+
+### 发现 1（最重要）：我们已经做好了 21 个组件，编辑器里只注册了 5 个
+
+`design-system/components/` 下实际有 21 个组件，`puck-config.tsx` 只注册了 5 个（PageHeader / EmptyState / StatusDot / HeroCard / Avatar，全是装饰性的）。**16 个已完成的组件躺着没接进编辑器**：
+
+| 未注册组件 | 是什么 | 为什么重要 |
+| --- | --- | --- |
+| `data-grid.tsx` (152行) | **真正的数据表格** | 这就是"报价单表格/客户列表"需要的东西，之前以为要从零做 |
+| `rail-nav.tsx` (333行) | **侧边栏导航** | 这就是问题 #6"4个页面没有导航"的现成解法 |
+| `filter-chips.tsx` | 筛选条件标签 | 表格配套 |
+| `date-picker` / `month-picker` | 日期选择 | 报价单/账单必备 |
+| `receipt-field.tsx` | 收据字段 | 直接对应 payments 页 |
+| `combobox` / `text-autocomplete` / `listbox` | 输入控件 | 表单必备 |
+| `modal` / `notification-toast` / `anchored-panel` | 弹窗/提示 | 交互反馈 |
+| `columns-menu` / `confirm-submit-button` / `mobile-nav` / `rail-icons` | 配套件 | — |
+
+**结论：Phase 1 的第一步不是"做新组件"，是"把已经做好的组件接进编辑器"。** 这部分几乎零设计工作量。
+
+### 发现 2：数据库里的行业风格，和我们实际做的风格完全对不上
+
+`industries` 表里 8 个行业各自推荐了风格，一共 **6 种命名**：
+
+| 行业 | 数据库推荐风格 | 我们实际有的 |
+| --- | --- | --- |
+| 装修/承包商 | `industrial` | ❌ 没有 |
+| 零售/门店 | `modern` | ❌ 没有 |
+| 美容/沙龙 | `warm-professional` | ❌ 没有 |
+| 教育/补习 | `warm-professional` | ❌ 没有 |
+| 批发/分销 | `professional` | ❌ 没有 |
+| 服务型公司 | `professional` | ❌ 没有 |
+| 餐饮/F&B | `playful` | ❌ 没有 |
+| 其他 | `minimal` | ❌ 没有 |
+
+我们只做了 Ledger / Hearth / Blueprint 三种，**跟这 6 个名字一个都对不上**。也就是说：获客站的 AI 分析告诉客户"你适合 industrial 风格"，客户进到 portal 却只能在三个名字完全不同的风格里选。这是一个横跨两个子系统的断裂，之前没有任何一轮审查发现（因为每轮只看单个任务的 diff）。
+
+### 发现 3：21st.dev 的主题库可以直接用，我们的代码已经"说同一种语言"
+
+- 21st.dev 有 **Themes 专区**，几十个现成 shadcn 主题：Vercel / Modern Minimal / Zen Linen / Claude Amber / Sage Garden / Supabase / Elegant Luxury / Vintage Paper / Solar Dusk / Candyland / Neo Brutalism / Ocean Breeze / Nature / Graphite / **Amber Hearth** / Mint Signal / Kodama Grove / Cyberpunk / Mono …
+- 每个主题**本质就是一组 CSS 变量**（`--background` / `--foreground` / `--primary` / `--card` / `--muted` / `--border` / `--ring` …）
+- **关键实测**：我们 `app/globals.css` 里**已经有完整的这套标准变量名**，且 `components/ui/` 下已在用 shadcn 组件（badge / button / card / progress / textarea）。所以这些主题是**粘贴即用**，不需要改任何组件代码。
+
+**这直接回答了"theme 转换怎样才不会很难"：不难，因为主题只是一组变量，而我们的地基已经是这套标准。** 从 3 种风格扩到 10+ 种，工作量是复制变量，不是重新设计组件。
+
+### 发现 4：三个参考站各自的正确用途
+
+| 站点 | 实测内容 | 用在哪 |
+| --- | --- | --- |
+| **21st.dev** | 12,000+ 组件 + 主题库。**每个组件都以 prompt 形式提供**，粘贴进 Claude Code 会"自动适配你的主题"。被 Google/Meta/Vercel/Shopify 等在用 | **Phase 1 主力**：主题库 + 补充业务组件 |
+| **reactbits.dev** | 165+ 动画组件/背景，**永久免费**，开源。ColorBends / Aurora / Beams / Grainient 等，参数全可调 | **Phase 2**：落地页的动效和背景 |
+| **motionsites.ai** | AI SaaS 网站设计画廊，每个作品可"Copy full prompt" | **Phase 2**：落地页整页设计参考 |
+
+### 由此确定的 Phase 1 执行顺序（按性价比排序）
+
+1. **把 16 个已有组件注册进编辑器**（尤其 `data-grid` 和 `rail-nav`）——零设计工作量，直接让客户从"5 个装饰方块"变成"有真表格、真导航的系统"，同时顺手解决问题 #6
+2. **从 21st.dev 主题库扩充风格集**，并让风格名对齐数据库里已有的 6 个行业推荐（industrial / modern / warm-professional / professional / playful / minimal）——修复发现 2 的断裂，客户拿到的选择从 3 个变成真正覆盖各行业
+3. **用 21st.dev 的 prompt 机制补齐缺的业务组件**（如果 21 个还不够）——不从零设计
+4. 在以上基础扎实之后，才做"实时预览 / 允许反悔切换风格"的体验优化
+
+---
+
+## 更正（2026-08-20，动手实现时发现）
+
+开始实际注册组件时发现，"发现 1"里对 `data-grid.tsx` 的判断是错的：
+**它不是一个表格组件，是一个"滚动视窗"包装器**——它接的是 `children: ReactNode`
+（一整个 `<table>`），本身不提供 columns/rows 这种 Puck 能理解的 props。
+"报价单表格已经做好了"这句话不成立，之前是看到 152 行代码没细看内部就下了结论。
+
+实测后 16 个组件的真实分类：
+
+- **可直接注册**（props 全是字符串/数字/数组，无 ReactNode）：
+  `date-picker`、`month-picker`、`receipt-field`（FileUploadField）、
+  `filter-chips`、`combobox`、`text-autocomplete`、`listbox`、
+  `rail-nav`/`mobile-nav`（省略掉图标/自定义面板等可选的 ReactNode props，
+  跟原来 HeroCard/EmptyState 的处理方式一样，是安全的子集不是错误）
+- **不是画布内容，是程序控制的界面基建，不该进 Puck 组件面板**：
+  `modal`、`anchored-panel`（靠 `open`/`onClose` 状态控制，不是拖上去的静态内容）、
+  `notification-toast`（本身是通知队列系统）、`columns-menu`（要接真实表格状态）、
+  `confirm-submit-button`（要在真实 `<form>` 里）、`field`（children 是 render-prop
+  函数，技术上无法用 Puck 数据表达）
+- **真正的"报价单表格"这类东西，需要新建**：用 `data-grid.tsx` 当滚动容器 +
+  自己的 `<table>`/`StatusDot` 组装成一个真正 Puck 友好的表格组件——
+  这是 Phase 1 真正的核心工作量，不是"已经做好躺在那"。

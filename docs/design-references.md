@@ -41,12 +41,16 @@ to work from.
 | --- | --- | --- |
 | [React Bits](https://reactbits.dev/) | Animated React components (text effects, backgrounds) | Yes — GlitchText was used in Task 14, then removed with the multi-theme cleanup |
 | [Aceternity UI](https://ui.aceternity.com/) | Tailwind + Framer Motion component library, heavy on hero/background effects | Not yet |
-| [21st.dev](https://21st.dev/) | shadcn-compatible community component registry | Not yet |
+| [21st.dev](https://21st.dev/) | shadcn-compatible community registry: 12,000+ components + **a Themes library** (Vercel/Zen Linen/Sage Garden/Amber Hearth/Neo Brutalism/Candyland/…). Every component ships as a copy-paste **prompt** that self-adapts to your theme. | **YES — researched 2026-08-20.** Themes are drop-in: our `app/globals.css` already declares the exact shadcn variable set they target. Primary source for Phase 1 style expansion. See docs/portal-editor-known-issues.md |
 | [GSAP](https://gsap.com/) | Scroll-driven animation library (ScrollTrigger) | No — the site uses Framer Motion `useScroll` instead |
 | [ShaderGradient](https://www.shadergradient.co/) | WebGL animated gradient meshes | Yes — `AmbientBackdrop` (site-wide fixed layer) |
-| MotionSites | Motion-design showcase gallery | Not yet |
+| [MotionSites](https://motionsites.ai/) | AI-SaaS site design gallery; each entry has "Copy full prompt" | Researched 2026-08-20 — earmarked for **Phase 2** (landing-page builder), not Phase 1 |
 | [UIverse](https://uiverse.io/) | Community CSS component gallery (buttons, cards, loaders) | Not yet |
 | [Awwwards](https://www.awwwards.com/websites/) | Award-winner baseline | Yes — the continuity rework was derived from it |
 
-**Still unused: Aceternity, 21st.dev, GSAP, MotionSites, UIverse.** Check these
-before inventing anything from scratch, especially for 组件模板 / 卡片模板 work.
+reactbits.dev re-checked 2026-08-20: **165+ components, free forever**, open source
+(ColorBends / Aurora / Beams / Grainient / DotField …), every value parameterised.
+Earmarked for **Phase 2** landing-page work.
+
+**Still unused: Aceternity, GSAP, UIverse.** Check these before inventing anything
+from scratch, especially for 组件模板 / 卡片模板 work.
