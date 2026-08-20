@@ -183,8 +183,8 @@
   "portal": {
     "styleSelect": {
       "title": "Choose your system style",
-      "subtitle": "This choice can't be changed afterwards, so compare carefully before deciding.",
-      "errorAlreadySet": "You've already chosen a style — this can't be changed.",
+      "subtitle": "Pick one to start with — you can switch any time inside the editor.",
+      "errorAlreadySet": "A style is already set. You can switch it inside the editor.",
       "errorGeneric": "Something went wrong, please try again.",
       "recommendedBadge": "Suits your industry"
     },

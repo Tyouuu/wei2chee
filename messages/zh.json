@@ -183,8 +183,8 @@
   "portal": {
     "styleSelect": {
       "title": "选择你的系统风格",
-      "subtitle": "这个选择之后不能更改，请仔细比较后再决定。",
-      "errorAlreadySet": "风格已经选过了，不能再改。",
+      "subtitle": "先挑一个开始，进去之后随时可以换。",
+      "errorAlreadySet": "风格已经选过了，可以进编辑器里换。",
       "errorGeneric": "出了点问题，请再试一次。",
       "recommendedBadge": "适合你的行业"
     },

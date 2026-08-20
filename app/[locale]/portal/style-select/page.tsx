@@ -42,7 +42,7 @@ export default async function StyleSelectPage() {
     : null;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-16">
+    <main className="mx-auto max-w-7xl px-6 py-16">
       <h1 className="text-[24px] font-semibold text-foreground">{t("title")}</h1>
       <p className="mt-2 text-[14px] text-muted-foreground">{t("subtitle")}</p>
       <div className="mt-10">

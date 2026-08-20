@@ -286,7 +286,13 @@
   --pad-card-lg: 28px;
   --pad-control-x: 18px;
   --pad-control-y: 10px;
-  --pad-cell-x: 16px;
+  /* 14px, not 16px: measured against the three-column style comparison, where
+     all three registers render the same four-column money table side by side at
+     ~340px each. At 16px Hearth was the only one that overflowed its own card
+     (347px of table in a 337px viewport), leaving the status column cut off on
+     the first screen a customer uses to choose a style. Still the roomiest of
+     the three by a clear margin (Ledger 10px, Blueprint 13px). */
+  --pad-cell-x: 14px;
   --pad-cell-y: 14px;
   --gap-stack: 18px;
   --gap-inline: 14px;
