@@ -96,7 +96,25 @@ export default async function PortalHomePage({
       style={project.style as StyleName}
       pages={pages}
       summary={businessContext.analysis?.summary ?? null}
-      industryName={businessContext.industry?.name_zh ?? null}
+      /**
+       * Chinese only, on purpose.
+       *
+       * `get_my_business_context` returns `name_zh` and nothing else, so the
+       * English headline read "Your 装修/承包商 system is built." — a mixed
+       * language sentence that reads as a missing translation rather than as a
+       * customer's own vocabulary.
+       *
+       * The industry name is dropped on `/en` instead of half-translated. That
+       * is honest about a real limit: a customer's SYSTEM is generated in
+       * Chinese throughout (page titles, column headings, sample records, the
+       * AI's summary), because that is the language their business runs in.
+       * Switching the interface to English does not, and should not silently
+       * pretend to, translate their own data. Making the generated system
+       * bilingual is a separate decision with a migration behind it
+       * (`industries.name_en` exists; the RPC does not return it, and the
+       * layouts have no locale dimension at all).
+       */
+      industryName={locale === "zh" ? (businessContext.industry?.name_zh ?? null) : null}
     />
   );
 }
