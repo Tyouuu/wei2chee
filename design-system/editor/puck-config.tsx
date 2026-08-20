@@ -17,6 +17,15 @@ import { Listbox, type ListboxOption } from "@/design-system/components/listbox"
 import { RailNav, type RailItem, type RailUtilityItem } from "@/design-system/components/rail-nav";
 import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
 import { SystemShell } from "@/design-system/components/system-shell";
+// STRAIGHT FROM THE shadcn REGISTRY, unmodified. They render in the customer's
+// chosen style because each token file now aliases the shadcn variable contract
+// onto its own tokens (design-system/tokens/ledger.css, "THE shadcn/ui
+// CONTRACT"). That aliasing is what makes the whole shadcn ecosystem -- and
+// every registry built on it, 21st.dev included -- usable inside a generated
+// system, instead of every block having to be hand-written against this
+// project's private vocabulary.
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 
 // Second pass (2026-08-20, see docs/portal-editor-known-issues.md): expands
 // the first pass's 5 decorative-only components with real business/form
@@ -93,6 +102,8 @@ type Components = {
     placeholder?: string;
   };
   Listbox: { name?: string; defaultValue?: string; options: ListboxOption[]; placeholder?: string };
+  Alert: { variant: "default" | "destructive"; title: string; description?: string };
+  Progress: { label?: string; value: number };
   RailNav: {
     brandLabel: string;
     brandHref: string;
@@ -124,7 +135,7 @@ export const puckConfig: Config<Components> = {
   categories: {
     content: {
       title: "内容展示",
-      components: ["PageHeader", "HeroCard", "RecordTable", "WorkflowStrip", "StatusDot", "Avatar", "EmptyState"],
+      components: ["PageHeader", "HeroCard", "RecordTable", "WorkflowStrip", "Progress", "StatusDot", "Alert", "Avatar", "EmptyState"],
       defaultExpanded: true,
     },
     input: {
@@ -495,6 +506,49 @@ export const puckConfig: Config<Components> = {
       defaultProps: { placeholder: "请选择…", options: [] },
       render: ({ name, defaultValue, options, placeholder }) => (
         <Listbox name={name} defaultValue={defaultValue} options={options} placeholder={placeholder} />
+      ),
+    },
+    Alert: {
+      label: "提醒条",
+      fields: {
+        title: { label: "标题", type: "text" },
+        description: { label: "说明", type: "textarea" },
+        variant: {
+          label: "语气",
+          type: "radio",
+          options: [
+            { label: "提示", value: "default" },
+            { label: "警告", value: "destructive" },
+          ],
+        },
+      },
+      defaultProps: { variant: "default", title: "提醒", description: "写你想提醒同事的事。" },
+      render: ({ variant, title, description }) => (
+        <Alert variant={variant}>
+          <AlertTitle>{title}</AlertTitle>
+          {description ? <AlertDescription>{description}</AlertDescription> : null}
+        </Alert>
+      ),
+    },
+    Progress: {
+      label: "进度条",
+      fields: {
+        label: { label: "标题", type: "text" },
+        value: { label: "百分比", type: "number", min: 0, max: 100 },
+      },
+      defaultProps: { label: "工程进度", value: 60 },
+      render: ({ label, value }) => (
+        <div className="flex flex-col [gap:var(--gap-inline)]">
+          {label ? (
+            <span className="flex items-baseline justify-between [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+              {label}
+              <span className="tabular-nums [color:var(--color-paper-dim)] [font-family:var(--font-numeric)]">
+                {value}%
+              </span>
+            </span>
+          ) : null}
+          <Progress value={value} />
+        </div>
       ),
     },
     RailNav: {

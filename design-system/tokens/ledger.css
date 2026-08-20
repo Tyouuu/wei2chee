@@ -297,6 +297,68 @@
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --dur-fast: 100ms;
   --dur: 130ms;
+
+  /* ---- THE shadcn/ui CONTRACT ---------------------------------------------
+     WHY THIS BLOCK IS HERE, AND WHY IT IS THE HIGHEST-LEVERAGE THING IN THE
+     TOKEN FILE.
+
+     This project already IS a shadcn project -- components.json exists and
+     app/globals.css declares the full shadcn variable contract. But that
+     contract lived ONLY at :root for the marketing site, and these three
+     customer styles declared none of it. The consequence was quiet and large:
+     any shadcn/ui component, any block from 21st.dev, any layout from the
+     wider ecosystem, dropped into a customer's page, rendered in the MARKETING
+     SITE's colours instead of the customer's chosen style. Which meant the
+     component library could only ever contain components hand-built against
+     this file's own vocabulary -- ten of them.
+
+     Mapping the contract onto the tokens that already exist changes that in one
+     block: every component written against shadcn's variables now re-themes
+     itself per customer style for free, because custom properties inherit and
+     the nearest defining ancestor wins. Ten blocks becomes an ecosystem.
+
+     These are ALIASES, not new colours. Nothing here invents a value -- each
+     line points at a token this file already defines, so the two vocabularies
+     cannot drift apart and a style is still edited in exactly one place. */
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-ink-900);
+  --card-foreground: var(--color-paper);
+  --popover: var(--color-ink-900);
+  --popover-foreground: var(--color-paper);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-ink-850);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-clay);
+  --destructive-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+  /* shadcn's chart palette. Mapped onto the four status colours this system
+     already uses plus two neutrals, so a chart pulled off any registry speaks
+     the same colour language as the StatusDots beside it. */
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-jade);
+  --chart-3: var(--color-brass);
+  --chart-4: var(--color-clay);
+  --chart-5: var(--color-slate);
+  /* shadcn's sidebar block -- pointed at the --color-nav-* family, which is
+     the same idea under a different name. This is what makes shadcn's
+     dashboard layouts land correctly inside a generated system. */
+  --sidebar: var(--color-nav-bg);
+  --sidebar-foreground: var(--color-nav-fg);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-bg);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-fg);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
 }
 
 @media (min-resolution: 192dpi) {

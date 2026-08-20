@@ -120,6 +120,13 @@ export const LIBRARY_SAMPLES: Record<string, Record<string, unknown>> = {
     accept: "image/*,.pdf",
   },
 
+  Alert: {
+    variant: "destructive",
+    title: "有 2 张报价单超过 7 天没回复",
+    description: "陈先生的 Taman Desa 三房翻新、王老板的 Cheras 店面装修。要不要今天跟一下？",
+  },
+  Progress: { label: "Taman Desa 三房翻新 · 工程进度", value: 72 },
+
   DatePicker: { name: "quote-date", placeholder: "报价日期", allowClear: true },
   MonthPicker: { name: "period", placeholder: "结算月份", allowClear: true },
   StatusDot: { tone: "warning", label: "等客户确认" },
