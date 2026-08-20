@@ -29,7 +29,7 @@ export function MobileNav({
   notificationsHref,
   hasUnread,
   accountHref,
-  accountLabel = "Account Settings",
+  accountLabel = "账号设置",
   extra,
   footer,
 }: {
@@ -65,17 +65,17 @@ export function MobileNav({
 
   const linkClass = (active: boolean) =>
     active
-      ? "rounded-lg px-3 py-2.5 text-sm [font-weight:var(--fw-semibold)] [background-color:var(--color-paper)] [color:var(--color-on-dark)]"
-      : "rounded-lg px-3 py-2.5 text-sm text-[color:var(--color-paper-dim)] transition-colors [font-weight:var(--fw-medium)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
+      ? "[border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-sm [font-weight:var(--fw-semibold)] [background-color:var(--color-paper)] [color:var(--color-on-dark)]"
+      : "[border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-sm text-[color:var(--color-paper-dim)] transition-colors [font-weight:var(--fw-medium)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
 
   return (
     <div className="lg:hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label={open ? "Close menu" : "Open menu"}
+        aria-label={open ? "关闭菜单" : "打开菜单"}
         aria-expanded={open}
-        className="relative grid h-8 w-8 place-items-center rounded-lg text-[color:var(--color-paper-dim)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
+        className="relative grid h-8 w-8 place-items-center [border-radius:var(--radius-md)] text-[color:var(--color-paper-dim)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
       >
         {open ? (
           <X aria-hidden="true" className="h-4 w-4" />
@@ -90,7 +90,7 @@ export function MobileNav({
       </button>
 
       {open && (
-        <div className="fixed inset-x-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-b px-4 py-3 shadow-2xl [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+        <div className="fixed inset-x-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-b px-4 py-3 [box-shadow:var(--shadow-overlay)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
           <nav className="flex flex-col gap-0.5">
             {items.map((item) => (
               <a key={item.href} href={item.href} aria-current={isActive(item.href) ? "page" : undefined} className={linkClass(isActive(item.href))}>

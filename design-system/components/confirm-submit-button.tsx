@@ -40,12 +40,12 @@ export function ConfirmSubmitButton({
         {children}
       </button>
       <Modal open={open} onClose={() => setOpen(false)}>
-        <p className="text-[14px] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{confirmMessage}</p>
+        <p className="[font-size:var(--text-base)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{confirmMessage}</p>
         <div className="mt-4 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="rounded-lg border px-3.5 py-2 text-[13px] text-[color:var(--color-paper)] transition-colors [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+            className="[border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
           >
             Cancel
           </button>

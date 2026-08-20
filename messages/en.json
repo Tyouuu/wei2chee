@@ -13,10 +13,29 @@
     "start": "Analyze my business"
   },
   "onboarding": {
-    "q1": { "title": "What do you currently use to manage customers and orders?", "opt1": "WhatsApp", "opt2": "Excel", "opt3": "Paper", "opt4": "Existing software", "opt5": "No system" },
-    "q2": { "title": "What do you spend the most time on day-to-day?", "opt1": "Chasing payments", "opt2": "Organizing orders", "opt3": "Scheduling staff", "opt4": "Making reports", "opt5": "Following up with customers" },
-    "q3": { "title": "Walk us through what happens when you take on a new customer.", "placeholder": "A sentence or two is fine" },
-    "next": "Next", "back": "Back", "submit": "Start my analysis"
+    "q1": {
+      "title": "What do you currently use to manage customers and orders?",
+      "opt1": "WhatsApp",
+      "opt2": "Excel",
+      "opt3": "Paper",
+      "opt4": "Existing software",
+      "opt5": "No system"
+    },
+    "q2": {
+      "title": "What do you spend the most time on day-to-day?",
+      "opt1": "Chasing payments",
+      "opt2": "Organizing orders",
+      "opt3": "Scheduling staff",
+      "opt4": "Making reports",
+      "opt5": "Following up with customers"
+    },
+    "q3": {
+      "title": "Walk us through what happens when you take on a new customer.",
+      "placeholder": "A sentence or two is fine"
+    },
+    "next": "Next",
+    "back": "Back",
+    "submit": "Start my analysis"
   },
   "analysis": {
     "loading": "Analyzing your business...",
@@ -78,12 +97,42 @@
         "overdue": "Overdue"
       },
       "rows": [
-        { "date": "Aug 1", "description": "Invoice #1042", "amount": "RM 1,280.00", "status": "paid" },
-        { "date": "Aug 4", "description": "Monthly service fee", "amount": "RM 300.00", "status": "paid" },
-        { "date": "Aug 9", "description": "Equipment rental", "amount": "RM 450.00", "status": "pending" },
-        { "date": "Aug 12", "description": "Deposit received", "amount": "RM 600.00", "status": "paid" },
-        { "date": "Aug 15", "description": "Late payment fee", "amount": "RM 50.00", "status": "overdue" },
-        { "date": "Aug 18", "description": "Refund issued", "amount": "RM 120.00", "status": "pending" }
+        {
+          "date": "Aug 1",
+          "description": "Invoice #1042",
+          "amount": "RM 1,280.00",
+          "status": "paid"
+        },
+        {
+          "date": "Aug 4",
+          "description": "Monthly service fee",
+          "amount": "RM 300.00",
+          "status": "paid"
+        },
+        {
+          "date": "Aug 9",
+          "description": "Equipment rental",
+          "amount": "RM 450.00",
+          "status": "pending"
+        },
+        {
+          "date": "Aug 12",
+          "description": "Deposit received",
+          "amount": "RM 600.00",
+          "status": "paid"
+        },
+        {
+          "date": "Aug 15",
+          "description": "Late payment fee",
+          "amount": "RM 50.00",
+          "status": "overdue"
+        },
+        {
+          "date": "Aug 18",
+          "description": "Refund issued",
+          "amount": "RM 120.00",
+          "status": "pending"
+        }
       ],
       "emptyStateLabel": "Empty state example",
       "emptyStateTitle": "No records yet",
@@ -136,7 +185,8 @@
       "title": "Choose your system style",
       "subtitle": "This choice can't be changed afterwards, so compare carefully before deciding.",
       "errorAlreadySet": "You've already chosen a style — this can't be changed.",
-      "errorGeneric": "Something went wrong, please try again."
+      "errorGeneric": "Something went wrong, please try again.",
+      "recommendedBadge": "Suits your industry"
     },
     "editor": {
       "paywallTitle": "Your design is ready",
@@ -146,7 +196,21 @@
       "saveSuccess": "Saved",
       "saveError": "Save failed, please try again.",
       "deployCta": "Confirm design, hand off to build",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "pageNavLabel": "System pages",
+      "pages": {
+        "dashboard": "Overview",
+        "customers": "Customers",
+        "quotations": "Quotations",
+        "projects": "Projects",
+        "payments": "Payments"
+      },
+      "draftBannerTitle": "This is a starting draft built from your business",
+      "draftBannerBody": "Every label, column and sample record here is yours to change. Save once it looks right.",
+      "undo": "Undo",
+      "redo": "Redo",
+      "saving": "Saving…",
+      "saveCta": "Save design"
     }
   }
 }

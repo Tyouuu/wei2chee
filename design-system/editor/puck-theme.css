@@ -139,3 +139,68 @@
    customer's own chosen style) instead of this file's hardcoded Ledger
    literals -- a correctly per-customer-scoped replacement, not just a
    deletion. */
+
+/* ---------------------------------------------------------------------------
+   Localising Puck's own sidebar tabs.
+
+   The editor is now Chinese everywhere it can be reached through Puck's public
+   API: component names and field labels come from puck-config.tsx's `label`
+   entries and `categories`, the root selection is named through `root.label`,
+   and the whole toolbar is replaced through `overrides.header` (see
+   editor-chrome.tsx). Puck's left rail tabs are the one remaining piece of
+   customer-facing English with no override key for it -- `overrideKeys` covers
+   header / headerActions / fields / fieldLabel / drawer / drawerItem /
+   componentOverlay / outline / puck / preview, and none of them reaches these
+   two labels.
+
+   So they are relabelled in CSS. The original text is collapsed with
+   `font-size: 0` (rather than `display: none`, which would take the layout box
+   with it) and the Chinese is drawn as a pseudo-element in its place.
+
+   FRAGILITY, STATED PLAINLY: this targets Puck's internal CSS-Module class
+   names by substring (`[class*="_Nav-list_"]`), because the full names carry a
+   build hash (`_NavItem_vll2r_39`) that changes between Puck versions. The
+   substring survives a hash change; it does NOT survive Puck renaming the
+   module or reordering the two tabs. Both are visible instantly on the screen
+   this rule affects, and the failure mode is an English label returning -- not
+   a broken editor. Worth re-checking on any @puckeditor/core upgrade.
+   --------------------------------------------------------------------------- */
+/* `:last-child` is load-bearing. The tab is a flex column of TWO spans -- an
+   icon wrapper and the text label -- and a bare `> span` selector hit both:
+   the icon span collapsed (its SVG is sized in `em`, so `font-size: 0` erased
+   it) and the replacement label was painted twice, stacked on top of itself.
+   Measured in the browser, which is the only way this was ever going to be
+   visible. */
+[class*="_Nav-list_"] > li [class*="_NavItem-link_"] > span:last-child {
+  font-size: 0;
+}
+
+[class*="_Nav-list_"] > li [class*="_NavItem-link_"] > span:last-child::after {
+  display: block;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+/* Tab 1: the component palette. */
+[class*="_Nav-list_"] > li:nth-child(1) [class*="_NavItem-link_"] > span:last-child::after {
+  content: "组件";
+}
+
+/* Tab 2: the page's structure tree. */
+[class*="_Nav-list_"] > li:nth-child(2) [class*="_NavItem-link_"] > span:last-child::after {
+  content: "结构";
+}
+
+/* The structure panel's own heading, which repeats the tab name. */
+[class*="_OutlineHeader_"] h2 {
+  font-size: 0;
+}
+
+[class*="_OutlineHeader_"] h2::after {
+  content: "页面结构";
+  display: block;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.3;
+}

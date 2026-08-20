@@ -102,14 +102,14 @@ export function HeroCard({
     <div
       className={
         flat
-          ? "flex flex-col justify-between gap-5"
-          : "flex flex-col justify-between gap-5 rounded-xl border p-5 shadow-sm [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
+          ? "flex flex-col justify-between ga[padding:var(--pad-card)]"
+          : "flex flex-col justify-between ga[padding:var(--pad-card)] [border-radius:var(--radius-lg)] border [padding:var(--pad-card)] [box-shadow:var(--shadow-card)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
       }
     >
       {header && <div className="border-b pb-5 [border-color:var(--color-ink-800)]">{header}</div>}
       <div>
         <Link href={href} className="group inline-flex items-center gap-1.5">
-          <span className="text-[13px] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)] group-hover:text-[color:var(--color-paper)]">
+          <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)] group-hover:text-[color:var(--color-paper)]">
             {label}
           </span>
         </Link>
@@ -131,17 +131,17 @@ export function HeroCard({
               // invisible byte inside a regex is a trap for whoever edits
               // this next.
               const m = /^([^\d.-]+)\u00a0(.+)$/.exec(value)
-              if (!m) return <span className="tnum text-[38px] font-semibold leading-none tracking-tight">{value}</span>
+              if (!m) return <span className="tnum [font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] leading-none tracking-tight">{value}</span>
               return (
                 <>
-                  <span className="text-[19px] leading-none text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">{m[1]}</span>
-                  <span className="tnum text-[38px] font-semibold leading-none tracking-tight">{m[2]}</span>
+                  <span className="[font-size:var(--text-lg)] leading-none text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">{m[1]}</span>
+                  <span className="tnum [font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] leading-none tracking-tight">{m[2]}</span>
                 </>
               )
             })()}
           </span>
           {chg != null && <Delta pct={chg} big />}
-          {chgSuffix && <span className="text-[12px] text-[color:var(--color-paper-dim)]">{chgSuffix}</span>}
+          {chgSuffix && <span className="[font-size:var(--text-xs)] text-[color:var(--color-paper-dim)]">{chgSuffix}</span>}
         </div>
       </div>
 
@@ -159,10 +159,10 @@ export function HeroCard({
             <div className="grid grid-cols-1 gap-3 border-t pt-4 [border-color:var(--color-ink-800)] sm:grid-cols-3">
               {stats.map((s) => (
                 <Link key={s.label} href={s.href} className="group min-w-0">
-                  <div className="truncate text-[12px] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">{s.label}</div>
+                  <div className="truncate [font-size:var(--text-xs)] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">{s.label}</div>
                   <div className="mt-0.5 flex items-baseline gap-1.5">
                     <span
-                      className={`tnum truncate whitespace-nowrap text-[14px] [font-weight:var(--fw-semibold)] group-hover:underline ${
+                      className={`tnum truncate whitespace-nowrap [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] group-hover:underline ${
                         s.tone === "warn"
                           ? "text-[color:var(--color-clay-bright)]"
                           : s.tone === "caution"
@@ -174,12 +174,12 @@ export function HeroCard({
                     </span>
                     {s.chg != null && <Delta pct={s.chg} />}
                   </div>
-                  {s.sub && <div className="mt-0.5 text-[12px] leading-snug text-[color:var(--color-paper-dim)]">{s.sub}</div>}
+                  {s.sub && <div className="mt-0.5 [font-size:var(--text-xs)] leading-snug text-[color:var(--color-paper-dim)]">{s.sub}</div>}
                 </Link>
               ))}
             </div>
           ) : null}
-          {footnote && <div className="mt-3 text-[12px] leading-relaxed text-[color:var(--color-paper-dim)]">{footnote}</div>}
+          {footnote && <div className="mt-3 [font-size:var(--text-xs)] leading-relaxed text-[color:var(--color-paper-dim)]">{footnote}</div>}
         </div>
       )}
 
@@ -197,7 +197,7 @@ function Delta({ pct, big = false }: { pct: number; big?: boolean }) {
   const r = Math.round(pct * 10) / 10
   const tone = r === 0 ? "[color:var(--color-brass-bright)]" : r > 0 ? "[color:var(--color-jade-bright)]" : "[color:var(--color-clay-bright)]"
   return (
-    <span className={`tnum ${tone} [font-weight:var(--fw-semibold)] ${big ? "" : "text-[12px]"}`}>
+    <span className={`tnum ${tone} [font-weight:var(--fw-semibold)] ${big ? "" : "[font-size:var(--text-xs)]"}`}>
       {r === 0 ? "→" : r > 0 ? "↑" : "↓"} {Math.abs(r).toFixed(1)}%
     </span>
   )
@@ -236,11 +236,11 @@ function Sparkline({ values, label }: { values: number[]; label?: string }) {
 
   return (
     <div className="mt-1">
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-10 w-full" role="img" aria-label={label ?? "Trend"}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-10 w-full" role="img" aria-label={label ?? "趋势"}>
         <polygon points={area} fill={stroke} opacity="0.10" />
         <polyline points={line} fill="none" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </svg>
-      {label && <p className="mt-1.5 text-[12px] text-[color:var(--color-paper-dim)]">{label}</p>}
+      {label && <p className="mt-1.5 [font-size:var(--text-xs)] text-[color:var(--color-paper-dim)]">{label}</p>}
     </div>
   )
 }

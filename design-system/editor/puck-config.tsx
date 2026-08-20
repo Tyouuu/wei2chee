@@ -1,4 +1,4 @@
-import type { Config } from "@puckeditor/core";
+import type { Config, Slot } from "@puckeditor/core";
 import { PageHeader } from "@/design-system/components/page-header";
 import { EmptyState } from "@/design-system/components/empty-state";
 import { StatusDot, type StatusTone } from "@/design-system/components/status-dot";
@@ -13,6 +13,8 @@ import { Combobox, type ComboboxOption } from "@/design-system/components/combob
 import { TextAutocomplete } from "@/design-system/components/text-autocomplete";
 import { Listbox, type ListboxOption } from "@/design-system/components/listbox";
 import { RailNav, type RailItem } from "@/design-system/components/rail-nav";
+import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
+import { SystemShell } from "@/design-system/components/system-shell";
 
 // Second pass (2026-08-20, see docs/portal-editor-known-issues.md): expands
 // the first pass's 5 decorative-only components with real business/form
@@ -49,11 +51,13 @@ import { RailNav, type RailItem } from "@/design-system/components/rail-nav";
 //     as separate draggable canvas components would be confusing rather
 //     than useful -- RailNav covers the navigation need this pass targets.
 type Components = {
+  SystemShell: { sidebar: Slot; main: Slot };
   PageHeader: { title: string; subtitle?: string };
   EmptyState: { variant: "empty" | "filtered" | "cleared"; title: string; description?: string };
   StatusDot: { tone: "positive" | "warning" | "negative" | "neutral"; label: string };
   HeroCard: { label: string; value: string; href: string };
   Avatar: { name: string };
+  WorkflowStrip: { title?: string; stages: WorkflowStage[] };
   RecordTable: {
     gridId: string;
     caption: string;
@@ -99,18 +103,70 @@ const STATUS_TONE_OPTIONS = [
 ];
 
 export const puckConfig: Config<Components> = {
+  // Puck labels the whole-page selection "Page" and, with no root config at
+  // all, offers a default `title` field that writes to nothing this product
+  // reads. Named in Chinese and emptied of fields: selecting the page should
+  // say what is selected, not present a control that does nothing.
+  root: { label: "整个页面", fields: {} },
+  // The palette a customer actually reads. Without categories Puck renders one
+  // flat alphabetical list of fifteen items, which for a business owner who was
+  // told "design your own system" is a wall of jargon. Grouped by what the
+  // customer is trying to DO -- show information, let someone fill something
+  // in, move around the system -- not by what kind of React component it is.
+  categories: {
+    content: {
+      title: "内容展示",
+      components: ["PageHeader", "HeroCard", "RecordTable", "WorkflowStrip", "StatusDot", "Avatar", "EmptyState"],
+      defaultExpanded: true,
+    },
+    input: {
+      title: "填写与筛选",
+      components: [
+        "DatePicker",
+        "MonthPicker",
+        "Listbox",
+        "Combobox",
+        "TextAutocomplete",
+        "FileUploadField",
+        "FilterChips",
+      ],
+      defaultExpanded: true,
+    },
+    layout: {
+      title: "页面框架",
+      components: ["SystemShell", "RailNav"],
+      defaultExpanded: false,
+    },
+  },
   components: {
-    PageHeader: {
+    // The page shell. Listed first because it is the frame every generated
+    // page is built inside -- see design-system/components/system-shell.tsx for
+    // why a sidebar could not simply be the first block in a flat stack.
+    SystemShell: {
+      label: "页面框架",
       fields: {
-        title: { type: "text" },
-        subtitle: { type: "text" },
+        sidebar: { label: "侧边栏", type: "slot" },
+        main: { label: "页面内容", type: "slot" },
+      },
+      defaultProps: { sidebar: [], main: [] },
+      render: ({ sidebar: Sidebar, main: Main }) => (
+        <SystemShell sidebar={<Sidebar />} main={<Main />} />
+      ),
+    },
+    PageHeader: {
+      label: "页面标题",
+      fields: {
+        title: { label: "标题", type: "text" },
+        subtitle: { label: "副标题", type: "text" },
       },
       defaultProps: { title: "标题" },
       render: ({ title, subtitle }) => <PageHeader title={title} subtitle={subtitle} />,
     },
     EmptyState: {
+      label: "空状态提示",
       fields: {
         variant: {
+          label: "样式",
           type: "select",
           options: [
             { label: "Empty", value: "empty" },
@@ -118,8 +174,8 @@ export const puckConfig: Config<Components> = {
             { label: "Cleared", value: "cleared" },
           ],
         },
-        title: { type: "text" },
-        description: { type: "textarea" },
+        title: { label: "标题", type: "text" },
+        description: { label: "说明文字", type: "textarea" },
       },
       defaultProps: { variant: "empty", title: "还没有内容" },
       render: ({ variant, title, description }) => (
@@ -127,38 +183,43 @@ export const puckConfig: Config<Components> = {
       ),
     },
     StatusDot: {
+      label: "状态标记",
       fields: {
-        tone: { type: "select", options: STATUS_TONE_OPTIONS },
-        label: { type: "text" },
+        tone: { label: "颜色语义", type: "select", options: STATUS_TONE_OPTIONS },
+        label: { label: "文字", type: "text" },
       },
       defaultProps: { tone: "neutral", label: "状态" },
       render: ({ tone, label }) => <StatusDot tone={tone} label={label} />,
     },
     HeroCard: {
+      label: "重点数字卡",
       fields: {
-        label: { type: "text" },
-        value: { type: "text" },
-        href: { type: "text" },
+        label: { label: "文字", type: "text" },
+        value: { label: "数值", type: "text" },
+        href: { label: "链接", type: "text" },
       },
       defaultProps: { label: "本月营收", value: "RM 0", href: "#" },
       render: ({ label, value, href }) => <HeroCard label={label} value={value} href={href} />,
     },
     Avatar: {
+      label: "头像",
       fields: {
-        name: { type: "text" },
+        name: { label: "字段名", type: "text" },
       },
       defaultProps: { name: "客户" },
       render: ({ name }) => <Avatar name={name} />,
     },
     RecordTable: {
+      label: "记录表格",
       fields: {
-        gridId: { type: "text" },
-        caption: { type: "text" },
-        primaryLabel: { type: "text" },
-        secondaryLabel: { type: "text" },
-        amountLabel: { type: "text" },
-        statusColumnLabel: { type: "text" },
+        gridId: { label: "表格编号", type: "text" },
+        caption: { label: "表格名称", type: "text" },
+        primaryLabel: { label: "第一列标题", type: "text" },
+        secondaryLabel: { label: "第二列标题", type: "text" },
+        amountLabel: { label: "金额列标题", type: "text" },
+        statusColumnLabel: { label: "状态列标题", type: "text" },
         rows: {
+          label: "表格内容",
           type: "array",
           arrayFields: {
             primary: { type: "text" },
@@ -204,11 +265,46 @@ export const puckConfig: Config<Components> = {
         />
       ),
     },
-    DatePicker: {
+    WorkflowStrip: {
+      label: "业务流程",
       fields: {
-        name: { type: "text" },
-        placeholder: { type: "text" },
+        title: { label: "标题", type: "text" },
+        stages: {
+          label: "流程步骤",
+          type: "array",
+          arrayFields: {
+            label: { type: "text" },
+            count: { type: "text" },
+            tone: {
+              type: "select",
+              options: [
+                { label: "普通", value: "normal" },
+                { label: "重点关注", value: "attention" },
+              ],
+            },
+          },
+          defaultItemProps: { label: "步骤", tone: "normal" as const },
+          getItemSummary: (item) => item.label || "步骤",
+        },
+      },
+      defaultProps: {
+        title: "业务流程",
+        stages: [
+          { label: "客户", tone: "normal" as const },
+          { label: "报价", tone: "normal" as const },
+          { label: "确认", tone: "normal" as const },
+          { label: "收款", tone: "normal" as const },
+        ],
+      },
+      render: ({ title, stages }) => <WorkflowStrip title={title} stages={stages} />,
+    },
+    DatePicker: {
+      label: "日期选择",
+      fields: {
+        name: { label: "字段名", type: "text" },
+        placeholder: { label: "提示文字", type: "text" },
         allowClear: {
+          label: "可以清空",
           type: "radio",
           options: [
             { label: "是", value: true },
@@ -216,6 +312,7 @@ export const puckConfig: Config<Components> = {
           ],
         },
         required: {
+          label: "必填",
           type: "radio",
           options: [
             { label: "是", value: true },
@@ -229,10 +326,12 @@ export const puckConfig: Config<Components> = {
       ),
     },
     MonthPicker: {
+      label: "月份选择",
       fields: {
-        name: { type: "text" },
-        placeholder: { type: "text" },
+        name: { label: "字段名", type: "text" },
+        placeholder: { label: "提示文字", type: "text" },
         allowClear: {
+          label: "可以清空",
           type: "radio",
           options: [
             { label: "是", value: true },
@@ -246,11 +345,12 @@ export const puckConfig: Config<Components> = {
       ),
     },
     FileUploadField: {
+      label: "文件上传",
       fields: {
-        label: { type: "text" },
-        hint: { type: "text" },
-        name: { type: "text" },
-        accept: { type: "text" },
+        label: { label: "文字", type: "text" },
+        hint: { label: "提示说明", type: "text" },
+        name: { label: "字段名", type: "text" },
+        accept: { label: "允许的文件类型", type: "text" },
       },
       defaultProps: { label: "上传附件", hint: "PDF 或图片，最大 10MB", name: "file" },
       render: ({ label, hint, name, accept }) => (
@@ -258,8 +358,10 @@ export const puckConfig: Config<Components> = {
       ),
     },
     FilterChips: {
+      label: "已选筛选",
       fields: {
         chips: {
+          label: "筛选条件",
           type: "array",
           arrayFields: {
             label: { type: "text" },
@@ -269,17 +371,19 @@ export const puckConfig: Config<Components> = {
           defaultItemProps: { label: "筛选条件", value: "", removeHref: "#" },
           getItemSummary: (item) => item.label || "筛选条件",
         },
-        clearAllHref: { type: "text" },
+        clearAllHref: { label: "清空全部链接", type: "text" },
       },
       defaultProps: { chips: [], clearAllHref: "#" },
       render: ({ chips, clearAllHref }) => <FilterChips chips={chips} clearAllHref={clearAllHref} />,
     },
     Combobox: {
+      label: "搜索下拉",
       fields: {
-        name: { type: "text" },
-        value: { type: "text" },
-        placeholder: { type: "text" },
+        name: { label: "字段名", type: "text" },
+        value: { label: "数值", type: "text" },
+        placeholder: { label: "提示文字", type: "text" },
         options: {
+          label: "选项",
           type: "array",
           arrayFields: {
             value: { type: "text" },
@@ -295,11 +399,13 @@ export const puckConfig: Config<Components> = {
       ),
     },
     TextAutocomplete: {
+      label: "输入建议",
       fields: {
-        name: { type: "text" },
-        defaultValue: { type: "text" },
-        placeholder: { type: "text" },
+        name: { label: "字段名", type: "text" },
+        defaultValue: { label: "默认值", type: "text" },
+        placeholder: { label: "提示文字", type: "text" },
         suggestions: {
+          label: "输入建议",
           type: "array",
           arrayFields: { value: { type: "text" } },
           defaultItemProps: { value: "" },
@@ -317,11 +423,13 @@ export const puckConfig: Config<Components> = {
       ),
     },
     Listbox: {
+      label: "下拉选择",
       fields: {
-        name: { type: "text" },
-        defaultValue: { type: "text" },
-        placeholder: { type: "text" },
+        name: { label: "字段名", type: "text" },
+        defaultValue: { label: "默认值", type: "text" },
+        placeholder: { label: "提示文字", type: "text" },
         options: {
+          label: "选项",
           type: "array",
           arrayFields: {
             value: { type: "text" },
@@ -337,14 +445,16 @@ export const puckConfig: Config<Components> = {
       ),
     },
     RailNav: {
+      label: "侧边导航",
       fields: {
-        brandLabel: { type: "text" },
-        brandHref: { type: "text" },
-        notificationsHref: { type: "text" },
-        accountHref: { type: "text" },
-        userName: { type: "text" },
-        userRoleLabel: { type: "text" },
+        brandLabel: { label: "系统名称", type: "text" },
+        brandHref: { label: "首页链接", type: "text" },
+        notificationsHref: { label: "通知链接", type: "text" },
+        accountHref: { label: "账号链接", type: "text" },
+        userName: { label: "用户名", type: "text" },
+        userRoleLabel: { label: "职位", type: "text" },
         items: {
+          label: "菜单项",
           type: "array",
           arrayFields: {
             href: { type: "text" },

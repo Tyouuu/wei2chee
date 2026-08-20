@@ -44,10 +44,10 @@ function initialsFor(name: string): string {
 export function Avatar({ name, size = 28 }: { name: string; size?: number }) {
   return (
     <span
-      // font-semibold, not heavier: the token block sets a hard ceiling of
+      // [font-weight:var(--fw-semibold)], not heavier: the token block sets a hard ceiling of
       // --fw-semibold because every reference product this design follows
       // stops at or below 600.
-      className="grid shrink-0 place-items-center rounded-[8px] text-[12px] [font-weight:var(--fw-semibold)] [color:var(--color-on-dark)]"
+      className="grid shrink-0 place-items-center rounded-[8px] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] [color:var(--color-on-dark)]"
       style={{ width: size, height: size, background: fillFor(name) }}
     >
       {initialsFor(name)}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
-import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
+import { Instrument_Serif, Geist, Geist_Mono, Archivo, Nunito } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { BRAND_NAME } from "@/lib/brand";
 import "../globals.css";
@@ -34,6 +34,30 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+// Per-style display faces. Until 2026-08-20 all three design-system styles
+// (design-system/tokens/{ledger,hearth,blueprint}.css) shared one font stack,
+// which is a large part of why they were indistinguishable to a customer
+// comparing them side by side -- see docs/formae-product-direction.md sec 9.
+// Each style now binds its own --font-ui; these are the Latin halves, composed
+// with the same system CJK fallbacks as --font-sans above.
+
+// Ledger's voice: a slightly condensed grotesque that carries real weight at
+// display sizes. Matches how construction/ops software actually looks
+// (Procore's heavy condensed headings) rather than a neutral SaaS sans.
+const archivo = Archivo({
+  subsets: ["latin"],
+  variable: "--font-industrial-latin",
+  display: "swap",
+});
+
+// Hearth's voice: rounded terminals, geometric skeleton, tall x-height -- the
+// friendly register beauty/salon/education software runs in (Fresha).
+const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-rounded-latin",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: BRAND_NAME,
 };
@@ -57,7 +81,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable}`}
+      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${archivo.variable} ${nunito.variable}`}
     >
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>

@@ -30,8 +30,8 @@ export function Combobox({
   onChange,
   options,
   placeholder,
-  searchPlaceholder = "Search…",
-  emptyMessage = "No results found.",
+  searchPlaceholder = "搜索…",
+  emptyMessage = "没有找到结果。",
 }: {
   name?: string
   value: string
@@ -84,7 +84,7 @@ export function Combobox({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => (open ? closePanel() : openPanel())}
-        className="flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-[13px] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+        className="flex w-full items-center gap-2 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         {selected?.icon}
         <span
@@ -100,8 +100,8 @@ export function Combobox({
         />
       </button>
       {open && (
-        <div className="absolute z-10 mt-1 w-full min-w-full overflow-hidden rounded-lg border shadow-lg [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
-          <div className="flex items-center gap-2 border-b px-3 py-2.5 [border-color:var(--color-ink-800)]">
+        <div className="absolute z-10 mt-1 w-full min-w-full overflow-hidden [border-radius:var(--radius-md)] border [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+          <div className="flex items-center gap-2 border-b [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [border-color:var(--color-ink-800)]">
             <Search aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-paper-dim)]" />
             <input
               ref={searchRef}
@@ -109,7 +109,7 @@ export function Combobox({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full bg-transparent text-[13px] text-[color:var(--color-paper)] outline-none placeholder:text-[color:var(--color-paper-dim)]"
+              className="w-full bg-transparent [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none placeholder:text-[color:var(--color-paper-dim)]"
             />
           </div>
           <div role="listbox" className="max-h-64 overflow-y-auto p-1.5">
@@ -124,17 +124,17 @@ export function Combobox({
                     onChange(o.value)
                     closePanel()
                   }}
-                  className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-primary-soft)] ${
+                  className={`flex w-full items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] px-2 py-2 text-left transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-primary-soft)] ${
                     value === o.value ? "[background-color:var(--color-primary-soft)]" : ""
                   }`}
                 >
                   {o.icon}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+                    <span className="block truncate [font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
                       {o.label}
                     </span>
                     {o.sublabel && (
-                      <span className="block truncate text-[12px] text-[color:var(--color-paper-dim)]">{o.sublabel}</span>
+                      <span className="block truncate [font-size:var(--text-xs)] text-[color:var(--color-paper-dim)]">{o.sublabel}</span>
                     )}
                   </span>
                   {value === o.value && (
@@ -143,7 +143,7 @@ export function Combobox({
                 </button>
               ))
             ) : (
-              <p className="px-3 py-6 text-center text-[13px] text-[color:var(--color-paper-dim)]">{emptyMessage}</p>
+              <p className="px-3 py-6 text-center [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)]">{emptyMessage}</p>
             )}
           </div>
         </div>

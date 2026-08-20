@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Puck, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
@@ -10,6 +11,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft";
+import { EditorChrome } from "./editor-chrome";
 // Reused rather than re-declared: this is the same scoped Ledger token
 // class app/[locale]/portal/style-select's <StyleColumn> already applies,
 // kept in sync with design-system/tokens/ledger.css by
@@ -22,13 +24,12 @@ import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
-const PAGE_LABELS: Record<string, string> = {
-  dashboard: "Dashboard",
-  customers: "Customers",
-  quotations: "Quotations",
-  projects: "Projects",
-  payments: "Payments",
-};
+// The five pages, in the order a business actually works through them. Labels
+// come from next-intl (portal.editor.pages.*) rather than the hardcoded English
+// map this file used to carry -- a Malaysian-Chinese SME owner being told to
+// design their own system should not be reading "Quotations" in a product
+// whose every other word is Chinese.
+const PAGE_ORDER = ["dashboard", "customers", "quotations", "projects", "payments"] as const;
 
 // Same lookup app/[locale]/style-picker/style-column.tsx uses internally
 // (its own `SCOPE_CLASS` isn't exported, so this is a second, identical
@@ -48,6 +49,8 @@ export function PortalEditor({
   accountEmail,
   paid,
   initialData,
+  isGeneratedDraft,
+  locale,
   style,
 }: {
   pageKey: string;
@@ -65,6 +68,15 @@ export function PortalEditor({
    * unpaid customer sees a purpose-built CTA instead of a raw error. */
   paid: boolean;
   initialData: Record<string, unknown>;
+  /** True when `initialData` is the system generated from the customer's own
+   * industry and AI analysis rather than something they saved themselves. Drives
+   * the banner below -- without it a customer cannot tell the difference between
+   * "we drafted this for you, change anything" and real saved data, which is the
+   * difference between feeling understood and feeling misled. */
+  isGeneratedDraft: boolean;
+  /** next-intl's active locale. Needed because this component links between the
+   * five portal pages, and those routes are locale-prefixed. */
+  locale: string;
   /** The customer's own chosen style (projects.style, Task 3) -- applies to
    * canvas CONTENT only. Chrome (this component's own wrapper below) stays
    * Ledger regardless, per Task 5's own reviewed design. */
@@ -206,9 +218,33 @@ export function PortalEditor({
       // barely legible, not just unstyled.
       className={`portal-editor-scope ${styles.ledger} flex h-screen flex-col [background-color:var(--color-canvas)]`}
     >
-      <div className="flex items-center justify-between border-b px-4 py-2 text-[13px] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
-        <span>{PAGE_LABELS[pageKey] ?? pageKey}</span>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-4 border-b px-4 py-2 text-[13px] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
+        {/* Page navigation. Before this the editor showed the current page's
+            name as plain text and offered no way to reach the other four --
+            they existed as routes and as rows in project_pages, but the only
+            way to open one was to type its URL. A customer designing a
+            five-page system could only ever see the page they landed on, which
+            made the product look like a one-page toy. */}
+        <nav className="flex items-center gap-1 overflow-x-auto" aria-label={t("pageNavLabel")}>
+          {PAGE_ORDER.map((key) => {
+            const active = key === pageKey;
+            return (
+              <Link
+                key={key}
+                href={`/${locale}/portal/${key}`}
+                aria-current={active ? "page" : undefined}
+                className={
+                  active
+                    ? "whitespace-nowrap rounded-md px-2.5 py-1 [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
+                    : "whitespace-nowrap rounded-md px-2.5 py-1 [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+                }
+              >
+                {t(`pages.${key}`)}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="flex shrink-0 items-center gap-3">
           {saveState === "saved" ? (
             <span className="[color:var(--color-jade-bright)]">{t("saveSuccess")}</span>
           ) : null}
@@ -234,6 +270,24 @@ export function PortalEditor({
           </button>
         </div>
       </div>
+
+      {/* The generated-draft banner. A customer who has just answered a
+          questionnaire about their business now opens the editor on a system
+          already built from those answers -- their own industry vocabulary,
+          their own workflow stages, their own summary line. That is only a good
+          experience if they are TOLD it is a draft: without this line, sample
+          rows like "Taman Desa 三房翻新" read either as real data the product
+          invented, or as a generic demo. With it, they read as an invitation to
+          edit. Disappears the moment they save, because from then on the canvas
+          is genuinely their own work. */}
+      {isGeneratedDraft ? (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b px-4 py-2 text-[13px] [background-color:var(--color-primary-soft)] [border-color:var(--color-ink-800)]">
+          <span className="[color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]">
+            {t("draftBannerTitle")}
+          </span>
+          <span className="[color:var(--color-paper-dim)]">{t("draftBannerBody")}</span>
+        </div>
+      ) : null}
 
       {/* Fix round 2 (post-review): the paywall is an OVERLAY over a
           still-mounted <Puck>, not a branch that replaces it. It used to be
@@ -310,6 +364,15 @@ export function PortalEditor({
             // 5a's report has the details.
             iframe={{ enabled: false }}
             overrides={{
+              // Puck's own toolbar is English and unstyled by this app's
+              // tokens -- replaced wholesale. See editor-chrome.tsx.
+              header: () => (
+                <EditorChrome
+                  pageLabel={t(`pages.${pageKey}`)}
+                  saving={saveState === "saving"}
+                  onSave={handleSaveClick}
+                />
+              ),
               // The one supported override point for wrapping just the
               // canvas's rendered subtree (Puck's own Preview component),
               // independent of the chrome wrapper above -- reuses the exact

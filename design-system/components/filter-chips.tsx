@@ -27,8 +27,8 @@ export type FilterChip = {
 export function FilterChips({
   chips,
   clearAllHref,
-  filteredByLabel = "Filtered by",
-  clearAllLabel = "Clear all",
+  filteredByLabel = "筛选条件",
+  clearAllLabel = "清空全部",
 }: {
   chips: FilterChip[]
   clearAllHref: string
@@ -41,7 +41,7 @@ export function FilterChips({
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
-      <span className="text-[12px] uppercase tracking-wide text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">
+      <span className="[font-size:var(--text-xs)] uppercase tracking-wide text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">
         {filteredByLabel}
       </span>
       {chips.map((chip) => (
@@ -52,7 +52,7 @@ export function FilterChips({
           // glyph is under every documented minimum touch size, and there's
           // nothing else a click on an active filter chip could sensibly
           // mean.
-          className="group inline-flex items-center gap-1.5 rounded-md border py-1 pl-2.5 pr-2 text-[12px] text-[color:var(--color-paper)] transition-colors [border-color:var(--color-ink-800)] [background-color:var(--color-ink-850)] [font-weight:var(--fw-medium)] [transition-duration:var(--dur-fast)] hover:[border-color:var(--color-ink-700)] hover:[background-color:var(--color-ink-800)]"
+          className="group inline-flex items-center gap-1.5 [border-radius:var(--radius-sm)] border py-1 pl-2.5 pr-2 [font-size:var(--text-xs)] text-[color:var(--color-paper)] transition-colors [border-color:var(--color-ink-800)] [background-color:var(--color-ink-850)] [font-weight:var(--fw-medium)] [transition-duration:var(--dur-fast)] hover:[border-color:var(--color-ink-700)] hover:[background-color:var(--color-ink-800)]"
           title={`Remove ${chip.label.toLowerCase()} filter`}
         >
           <span className="text-[color:var(--color-paper-dim)]">{chip.label}:</span>
@@ -66,7 +66,7 @@ export function FilterChips({
       {chips.length > 1 && (
         <Link
           href={clearAllHref}
-          className="ml-0.5 text-[12px] text-[color:var(--color-paper-dim)] underline-offset-2 [font-weight:var(--fw-medium)] hover:text-[color:var(--color-paper)] hover:underline"
+          className="ml-0.5 [font-size:var(--text-xs)] text-[color:var(--color-paper-dim)] underline-offset-2 [font-weight:var(--fw-medium)] hover:text-[color:var(--color-paper)] hover:underline"
         >
           {clearAllLabel}
         </Link>

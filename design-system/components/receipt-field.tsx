@@ -55,12 +55,12 @@ export function FileUploadField({
 
   return (
     <div>
-      <span className="block text-[13px] tracking-[var(--tracking-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
-        {label} <span className="text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">(optional)</span>
+      <span className="block [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
+        {label} <span className="text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">（可选）</span>
       </span>
-      <label className="mt-1.5 flex cursor-pointer items-center gap-2.5 rounded-lg border border-dashed px-3 py-2.5 text-[13px] text-[color:var(--color-paper-dim)] transition-colors [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]">
+      <label className="mt-1.5 flex cursor-pointer items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] border border-dashed [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)] transition-colors [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]">
         <Upload aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-        <span className={shownName ? "truncate" : "min-w-0 text-left"}>{shownName ?? "Attach a file or photo"}</span>
+        <span className={shownName ? "truncate" : "min-w-0 text-left"}>{shownName ?? "点击上传文件或照片"}</span>
         <input
           type="file"
           name={onUpload ? undefined : name}
@@ -73,7 +73,7 @@ export function FileUploadField({
           }}
         />
       </label>
-      <p className="mt-2 text-[12px] text-[color:var(--color-paper-dim)]">{hint}</p>
+      <p className="mt-2 [font-size:var(--text-xs)] text-[color:var(--color-paper-dim)]">{hint}</p>
     </div>
   )
 }

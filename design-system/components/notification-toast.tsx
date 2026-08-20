@@ -91,7 +91,7 @@ export function NotificationToast({ notifications }: { notifications: ToastNotif
   if (queue.length === 0) return null
 
   return (
-    <div className="pointer-events-none fixed bottom-4 left-4 z-50 flex w-[min(340px,calc(100vw-2rem))] flex-col-reverse gap-2.5">
+    <div className="pointer-events-none fixed bottom-4 left-4 z-50 flex w-[min(340px,calc(100vw-2rem))] flex-col-reverse [gap:var(--gap-inline)]">
       {queue.map((n) => (
         <Toast key={n.id} notification={n} onDismiss={() => dismiss(n.id)} />
       ))}
@@ -108,17 +108,17 @@ function Toast({ notification, onDismiss }: { notification: ToastNotification; o
 
   return (
     <div
-      className={`pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-xl border py-3 pl-4 pr-3 shadow-2xl [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] before:absolute before:inset-y-0 before:left-0 before:w-[3.5px] ${VARIANT_BAR[notification.variant]}`}
+      className={`pointer-events-auto relative flex items-start gap-3 overflow-hidden [border-radius:var(--radius-lg)] border py-3 pl-4 pr-3 [box-shadow:var(--shadow-overlay)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] before:absolute before:inset-y-0 before:left-0 before:w-[3.5px] ${VARIANT_BAR[notification.variant]}`}
     >
       <Link href={notification.href} onClick={onDismiss} className="flex-1 text-left">
-        <div className="text-[13px] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{notification.title}</div>
-        <div className="mt-0.5 text-[12px] text-[color:var(--color-paper-dim)]">{notification.subtitle}</div>
-        <div className="mt-1.5 text-[12px] text-[color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]">View →</div>
+        <div className="[font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{notification.title}</div>
+        <div className="mt-0.5 [font-size:var(--text-xs)] text-[color:var(--color-paper-dim)]">{notification.subtitle}</div>
+        <div className="mt-1.5 [font-size:var(--text-xs)] text-[color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]">查看 →</div>
       </Link>
       <button
         onClick={onDismiss}
-        aria-label="Dismiss"
-        className="shrink-0 rounded p-0.5 text-[color:color-mix(in_srgb,var(--color-paper-dim)_70%,transparent)] transition-colors hover:text-[color:var(--color-paper)]"
+        aria-label="关闭"
+        className="shrink-0 [border-radius:var(--radius-xs)] p-0.5 text-[color:color-mix(in_srgb,var(--color-paper-dim)_70%,transparent)] transition-colors hover:text-[color:var(--color-paper)]"
       >
         <X aria-hidden="true" className="h-3.5 w-3.5" />
       </button>

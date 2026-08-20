@@ -53,12 +53,12 @@ export function Modal({
   if (!open) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 [padding:var(--pad-card)]" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
-        className={`w-full max-w-sm rounded-2xl border p-5 shadow-2xl [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] ${className ?? ""}`}
+        className={`w-full max-w-sm [border-radius:var(--radius-lg)] border [padding:var(--pad-card)] [box-shadow:var(--shadow-overlay)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] ${className ?? ""}`}
       >
         {children}
       </div>

@@ -56,7 +56,7 @@ export function Field({
     <div>
       <label
         htmlFor={id}
-        className="block text-[13px] tracking-[var(--tracking-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-medium)]"
+        className="block [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-medium)]"
       >
         {label}
         {required && (
@@ -70,12 +70,12 @@ export function Field({
         <p
           id={`${id}-error`}
           role="alert"
-          className="mt-1 text-[12px] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]"
+          className="mt-1 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]"
         >
           {error}
         </p>
       ) : hint ? (
-        <span id={`${id}-hint`} className="mt-1 block text-[12px] text-[color:var(--color-paper-dim)]">
+        <span id={`${id}-hint`} className="mt-1 block [font-size:var(--text-xs)] text-[color:var(--color-paper-dim)]">
           {hint}
         </span>
       ) : null}

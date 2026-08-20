@@ -5,8 +5,8 @@ import { ChevronDown, ChevronLeft, ChevronRight, CalendarDays } from "lucide-rea
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"]
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "1月", "2月", "3月", "4月", "5月", "6月",
+  "7月", "8月", "9月", "10月", "11月", "12月",
 ]
 
 function parseISO(v: string | undefined): { y: number; m: number; d: number } | null {
@@ -62,7 +62,7 @@ export function DatePicker({
   onChange,
   min,
   max,
-  placeholder = "Select a date",
+  placeholder = "选择日期",
   allowClear = false,
   required,
   todayIso,
@@ -159,7 +159,7 @@ export function DatePicker({
         aria-haspopup="true"
         aria-expanded={open}
         onClick={openPanel}
-        className="flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-[13px] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+        className="flex w-full items-center gap-2 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         <CalendarDays aria-hidden="true" className="h-[15px] w-[15px] shrink-0 text-[color:var(--color-paper-dim)]" />
         <span className={current ? "" : "text-[color:var(--color-paper-dim)]"}>{current ? formatDisplay(current) : placeholder}</span>
@@ -169,23 +169,23 @@ export function DatePicker({
         />
       </button>
       {open && (
-        <div className="absolute z-10 mt-1 w-[280px] rounded-lg border p-0 shadow-lg [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
-          <div className="flex items-center justify-between px-3 py-2.5">
+        <div className="absolute z-10 mt-1 w-[280px] [border-radius:var(--radius-md)] border p-0 [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+          <div className="flex items-center justify-between [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]">
             <button
               type="button"
-              aria-label="Previous month"
-              className="grid h-6 w-6 place-items-center rounded-md border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
+              aria-label="上个月"
+              className="grid h-6 w-6 place-items-center [border-radius:var(--radius-sm)] border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
               onClick={() => changeMonth(-1)}
             >
               <ChevronLeft aria-hidden="true" className="h-3 w-3" />
             </button>
-            <span className="text-[13px] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+            <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
               {MONTHS[viewM]} {viewY}
             </span>
             <button
               type="button"
-              aria-label="Next month"
-              className="grid h-6 w-6 place-items-center rounded-md border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
+              aria-label="下个月"
+              className="grid h-6 w-6 place-items-center [border-radius:var(--radius-sm)] border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
               onClick={() => changeMonth(1)}
             >
               <ChevronRight aria-hidden="true" className="h-3 w-3" />
@@ -195,7 +195,7 @@ export function DatePicker({
             {WEEKDAYS.map((w, i) => (
               <span
                 key={i}
-                className="grid h-6 place-items-center text-[11px] uppercase [font-weight:var(--fw-semibold)] text-[color:color-mix(in_srgb,var(--color-paper-dim)_70%,transparent)]"
+                className="grid h-6 place-items-center [font-size:var(--text-micro)] uppercase [font-weight:var(--fw-semibold)] text-[color:color-mix(in_srgb,var(--color-paper-dim)_70%,transparent)]"
               >
                 {w}
               </span>
@@ -214,7 +214,7 @@ export function DatePicker({
                   key={i}
                   disabled={disabled}
                   onClick={() => pick(day)}
-                  className={`grid h-8 w-8 place-items-center rounded-lg text-[12px] [font-weight:var(--fw-semibold)] transition-colors [transition-duration:var(--dur-fast)] ${
+                  className={`grid h-8 w-8 place-items-center [border-radius:var(--radius-md)] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] transition-colors [transition-duration:var(--dur-fast)] ${
                     disabled
                       ? "cursor-not-allowed text-[color:color-mix(in_srgb,var(--color-paper-dim)_30%,transparent)]"
                       : isSelected
@@ -229,7 +229,7 @@ export function DatePicker({
               )
             })}
           </div>
-          <div className="flex items-center justify-between border-t px-3 py-2 text-xs [font-weight:var(--fw-semibold)] [border-color:var(--color-ink-800)]">
+          <div className="flex items-center justify-between border-t [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-xs [font-weight:var(--fw-semibold)] [border-color:var(--color-ink-800)]">
             {allowClear ? (
               <button
                 type="button"

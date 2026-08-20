@@ -29,7 +29,7 @@ const STYLES: StyleName[] = ["ledger", "hearth", "blueprint"];
  * belongs to the portal layout gate downstream, not this step) -- the
  * "already set" case is expected to reach here and gets its own message.
  */
-export function StyleSelectClient() {
+export function StyleSelectClient({ recommended }: { recommended: StyleName | null }) {
   const t = useTranslations("stylePicker");
   const tError = useTranslations("portal.styleSelect");
   const router = useRouter();
@@ -58,13 +58,16 @@ export function StyleSelectClient() {
     <>
       {error ? <p className="mb-4 text-[13px] text-destructive">{error}</p> : null}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-        {STYLES.map((style) => (
+        {[...STYLES]
+          .sort((a, b) => Number(b === recommended) - Number(a === recommended))
+          .map((style) => (
           <StyleColumn
             key={style}
             styleName={style}
             label={t(`styles.${style}.label`)}
             description={t(`styles.${style}.description`)}
             selectCta={pending === style ? "…" : t("selectCta")}
+            recommendedLabel={style === recommended ? tError("recommendedBadge") : undefined}
             onSelect={() => handleSelect(style)}
           />
         ))}

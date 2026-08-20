@@ -47,7 +47,7 @@
      panel; this canvas is a tint you feel rather than see, which is what
      lets tables sit directly on it without looking like they are on the
      wrong surface. */
-  --color-canvas: #f6f8fb;
+  --color-canvas: #f3f4f6;
   --color-ink-950: #eaeff5;
   --color-ink-900: #ffffff;
   --color-ink-850: #f2f6fb;
@@ -59,14 +59,26 @@
   --color-paper: #14273d;
   --color-paper-dim: #5b6d82;
 
-  /* Restrained accent: link blue from the same hue family as the navy ink
-     above, so the accent belongs to the neutrals rather than sitting on top
-     of them. 4.79:1 on white, so it is legible as text, not only as a fill.
-     Appears on: focus rings, intentional CTAs, high-importance states. Never
-     used decoratively. */
-  --color-primary: #0570de;
-  --color-primary-deep: #0356ab;
-  --color-primary-soft: #e7f0fb;
+  /* Rust orange, revised 2026-08-20 (was #0570de, a link blue from the navy
+     ink family above).  The blue was the correct choice for a design system
+     whose three registers were meant to share one identity -- and the wrong
+     one for this product, where it left Ledger and Blueprint reading as the
+     same product in two shades.  Construction and ops software is the one
+     category with a real, non-arbitrary accent convention: site-safety
+     orange, which Procore builds its whole identity on.  It is also the only
+     accent here that cannot be mistaken for a generic SaaS blue.
+
+     5.00:1 on white (WCAG relative-luminance formula against #ffffff), so it
+     stays legible as text and not only as a fill -- the same bar the previous
+     blue was held to.  White on this fill is the same 5.00:1.  The -deep
+     hover state is 7.39:1.
+
+     Usage discipline is unchanged and still the important part: focus rings,
+     intentional CTAs, high-importance states.  Never decorative.  An accent
+     this visible punishes decorative use harder than the blue did. */
+  --color-primary: #b8500f;
+  --color-primary-deep: #8f3d0a;
+  --color-primary-soft: #fdeee3;
 
   /* Text/icon color for content rendered on a --color-primary fill (CTA
      buttons and links) — plain white, which passes comfortably against
@@ -141,45 +153,114 @@
   --color-brass-chart: #a8710a;
 }
 
-/* Craft tokens taken from the shipped CSS of Linear, Vercel (Geist) and
-   Stripe — the three products chosen as the quality bar for precision/ops
-   register design.
+/* ============================================================================
+   LEDGER -- the industrial register.  Renovation / contractor, wholesale /
+   distribution, professional services.
 
-   The weight ceiling is the important one. Linear runs every title token from
-   17px to 72px at 590; Vercel caps at 600; Mercury, a bank, tops out at 480
-   and even remaps <b> down to it. Nothing here should exceed --fw-semibold.
+   REVISED 2026-08-20.  The previous version of this block was shared verbatim
+   with hearth.css and blueprint.css on purpose, on the argument that "a design
+   system in which the headings get heavier when you switch visual register is
+   not a design system with three styles, it is three design systems."  That
+   argument is right for a design system and wrong for this product.  These
+   three token files are not three registers of ONE product -- they are three
+   different businesses' systems, and a customer only ever sees the one they
+   picked.  Sharing every axis except hue is exactly why a customer comparing
+   the three side by side could not tell them apart (see
+   docs/formae-product-direction.md sec 9.1 for the measurement).
 
-   Tracking scales negatively with size, which all three do and most apps do
-   not do at all: 0 tracking on a 26px heading is the single most obvious
-   difference when you put them side by side. */
+   What differentiates real industry software is never hue alone.  Six axes do
+   the work -- font family, radius scale, density, accent role, background
+   temperature, and border/shadow language -- and this file now moves on all
+   six, keyed to how construction/ops software (Procore) actually looks:
+   condensed heavy type, near-square corners, tight rows, flat hard-edged
+   surfaces, and a single high-visibility site-safety accent.
+   ============================================================================ */
 :root {
   color-scheme: light;
 
+  /* ---- TYPE AXIS: condensed grotesque, heavy at display sizes -------------
+     Archivo is loaded in app/[locale]/layout.tsx.  The CJK fallbacks follow it
+     in the same composition rule globals.css --font-sans uses: Latin glyphs
+     render in Archivo, Chinese in the OS's own CJK face. */
+  --font-ui: var(--font-industrial-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Heavier than the other two registers by design: ops software is read at a
+     glance across a warehouse or a site office, not studied. */
+  --fw-regular: 400;
   --fw-medium: 500;
-  --fw-semibold: 600;
+  --fw-semibold: 650;
+  --fw-display: 750;
 
-  --tracking-body: -0.011em; /* Linear --text-regular-letter-spacing */
-  --tracking-sm: -0.013em; /* Linear --text-small */
-  --tracking-title: -0.02em; /* Vercel .text-heading-14/16 */
-  --tracking-title-lg: -0.04em; /* Vercel .text-heading-24 (-0.96px) */
+  --tracking-body: -0.006em;
+  --tracking-sm: -0.008em;
+  --tracking-title: -0.024em;
+  --tracking-title-lg: -0.036em;
+  /* The uppercase micro-label voice -- column heads, section indices, status
+     captions.  Ledger is the only register that uses it; Hearth and Blueprint
+     set --label-transform: none, so a component can apply these two tokens
+     unconditionally and still get the right answer in all three. */
+  --tracking-label: 0.09em;
+  --label-transform: uppercase;
 
-  /* Alpha, not an opaque hex: composites correctly over white *and* over the
-     tinted surfaces this design uses. Vercel ships the same idea
-     as a ring: --ds-shadow-border-base: 0 0 0 1px #00000014. */
-  --border-subtle: rgba(13, 37, 61, 0.09);
-  --border-strong: rgba(13, 37, 61, 0.14);
+  /* Type scale: compressed.  A dense ops screen fits more rows by running
+     everything about a pixel smaller than a comfortable register would. */
+  --text-micro: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-lg: 15px;
+  --text-title: 19px;
+  --text-hero: 34px;
+  --leading-tight: 1.2;
+  --leading-body: 1.45;
 
-  /* Shadows are tinted too. Stripe ships --shadow-blue #003770 rather than
-     a black; a black shadow over a tinted canvas desaturates the surface
-     under it and is why cards on a coloured page can look dirty. */
+  /* ---- SHAPE AXIS: near-square ------------------------------------------
+     2-3px, not 0.  A true 0px corner reads as an unstyled box; 2px reads as a
+     deliberately hard edge, which is the whole difference between "industrial"
+     and "unfinished". */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-control: 2px;
+  --radius-pill: 3px;
+
+  /* ---- DENSITY AXIS: compact -------------------------------------------- */
+  --pad-card: 14px;
+  --pad-card-lg: 18px;
+  --pad-control-x: 9px;
+  --pad-control-y: 5px;
+  --pad-cell-x: 10px;
+  --pad-cell-y: 7px;
+  --gap-stack: 10px;
+  --gap-inline: 8px;
+  --row-h: 32px;
+  --control-h: 30px;
+
+  /* ---- ELEVATION AXIS: flat, hard-edged ----------------------------------
+     Cards are defined by their border, not by a shadow.  --shadow-card is
+     deliberately `none`: a soft drop shadow is the single most "consumer app"
+     signal there is, and it is wrong for this register.  Overlays (menus,
+     modals) still get one, because they must read as floating above the sheet
+     rather than drawn on it. */
+  --border-card-width: 1px;
+  --shadow-card: none;
+  --shadow-raised: 0 1px 0 rgba(13, 37, 61, 0.10);
+  --shadow-overlay: 0 6px 16px rgba(13, 37, 61, 0.18);
+
+  /* Stronger than the other two registers: when a card has no shadow at all,
+     its border is the only thing separating it from the canvas, so it has to
+     carry more of the work. */
+  --border-subtle: rgba(13, 37, 61, 0.14);
+  --border-strong: rgba(13, 37, 61, 0.26);
+
   --shadow-hue: 13, 37, 61;
-
-  /* Linear ships true half-pixel borders on 2x displays. */
   --hairline: 1px;
 
-  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Linear --ease-out-quad */
-  --dur-fast: 120ms; /* Linear background transition */
-  --dur: 160ms; /* Linear button transition */
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 100ms;
+  --dur: 130ms;
 }
 
 @media (min-resolution: 192dpi) {
@@ -222,7 +303,7 @@ body {
   box-shadow:
     0 0 0 2px var(--color-ink-900),
     0 0 0 4px var(--color-primary);
-  border-radius: 4px;
+  border-radius: var(--radius-control);
 }
 
 /* Attribution: Ledger token set derived from vibe-dealer by Tyouuu — generalized

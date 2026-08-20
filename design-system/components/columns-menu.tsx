@@ -84,7 +84,7 @@ export function ColumnsMenu({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="true"
-        className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[13px] text-[color:var(--color-paper)] transition-colors [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+        className="inline-flex items-center gap-1.5 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         Columns
         <span className="tnum text-[color:var(--color-paper-dim)]">
@@ -94,14 +94,14 @@ export function ColumnsMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 z-30 mt-1.5 w-64 rounded-xl border p-2 shadow-lg [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
-          <p className="px-2 pb-1.5 pt-1 text-[11px] uppercase tracking-[0.07em] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+        <div className="absolute right-0 z-30 mt-1.5 w-64 [border-radius:var(--radius-lg)] border p-2 [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+          <p className="px-2 pb-1.5 pt-1 [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
             Show these columns
           </p>
           {columns.map((col) => (
             <label
               key={col.key}
-              className="flex cursor-pointer items-start gap-2.5 rounded-lg px-2 py-1.5 hover:[background-color:var(--color-ink-850)]"
+              className="flex cursor-pointer items-start [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] hover:[background-color:var(--color-ink-850)]"
             >
               <input
                 type="checkbox"
@@ -110,12 +110,12 @@ export function ColumnsMenu({
                 className="mt-[3px] h-3.5 w-3.5 [accent-color:var(--color-primary)]"
               />
               <span className="min-w-0">
-                <span className="block text-[13px] text-[color:var(--color-paper)] [font-weight:var(--fw-medium)]">{col.label}</span>
-                {col.hint && <span className="block text-[11px] leading-snug text-[color:var(--color-paper-dim)]">{col.hint}</span>}
+                <span className="block [font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-medium)]">{col.label}</span>
+                {col.hint && <span className="block [font-size:var(--text-micro)] leading-snug text-[color:var(--color-paper-dim)]">{col.hint}</span>}
               </span>
             </label>
           ))}
-          <p className="border-t px-2 pb-1 pt-2 text-[11px] leading-snug text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)]">
+          <p className="border-t px-2 pb-1 pt-2 [font-size:var(--text-micro)] leading-snug text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)]">
             {alwaysOn} always stay.{footnote ? ` ${footnote}` : ""}
           </p>
         </div>

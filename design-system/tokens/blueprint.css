@@ -331,55 +331,86 @@
   }
 }
 
-/* Craft tokens taken from the shipped CSS of Linear, Vercel (Geist) and Stripe.
-   These are copied from ledger.css/hearth.css unchanged and on purpose: a weight
-   ceiling, a tracking scale that moves with size, a half-pixel hairline and a
-   single easing curve are craft, not style. A design system in which the
-   headings get heavier when you switch visual register is not a design system
-   with three styles, it is three design systems.
+/* ============================================================================
+   BLUEPRINT -- the modern drafted register.  Retail / storefront, and the
+   default for any business that does not clearly belong to one of the other
+   two.  See ledger.css's matching block for why these three token files
+   stopped sharing one craft block on 2026-08-20.
 
-   The weight ceiling is the important one. Linear runs every title token from
-   17px to 72px at 590; Vercel caps at 600; Mercury, a bank, tops out at 480 and
-   even remaps <b> down to it. Nothing here should exceed --fw-semibold.
-
-   Tracking scales negatively with size, which all three do and most apps do not
-   do at all: 0 tracking on a 26px heading is the single most obvious difference
-   when you put them side by side. */
+   This register sits deliberately between its two siblings on every axis:
+   a neutral grotesque rather than condensed or rounded, medium radii,
+   comfortable density, and cards that carry BOTH a hairline border and a
+   subtle shadow -- the outlined-card language modern SaaS runs in.  It keeps
+   the drafting-grid and corner-tick texture layer above, which neither
+   sibling has.
+   ============================================================================ */
 :root {
   color-scheme: light;
 
+  /* ---- TYPE AXIS: neutral modern grotesque ------------------------------- */
+  --font-ui: var(--font-sans-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --fw-regular: 400;
   --fw-medium: 500;
   --fw-semibold: 600;
+  --fw-display: 700;
 
-  --tracking-body: -0.011em; /* Linear --text-regular-letter-spacing */
-  --tracking-sm: -0.013em; /* Linear --text-small */
-  --tracking-title: -0.02em; /* Vercel .text-heading-14/16 */
-  --tracking-title-lg: -0.04em; /* Vercel .text-heading-24 (-0.96px) */
+  --tracking-body: -0.011em;
+  --tracking-sm: -0.013em;
+  --tracking-title: -0.02em;
+  --tracking-title-lg: -0.032em;
+  /* Blueprint's own micro-label voice is the mono `.blueprint-annotation`
+     utility in the @layer utilities block above, not an uppercase transform on
+     ordinary UI text -- so this axis stays neutral here. */
+  --tracking-label: 0.02em;
+  --label-transform: none;
 
-  /* Alpha, not an opaque hex: composites correctly over the card *and* over
-     the tinted surfaces this design uses. Vercel ships the same idea as a ring
-     token, --ds-shadow-border-base: 0 0 0 1px #00000014.
+  --text-micro: 10.5px;
+  --text-xs: 11.5px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-title: 21px;
+  --text-hero: 38px;
+  --leading-tight: 1.25;
+  --leading-body: 1.55;
 
-     Keyed to Blueprint's own ink (12, 24, 46), not Ledger's navy or Hearth's
-     evergreen. A border is a surface darkened, and darkening this file's cooler,
-     higher-chroma canvas along either sibling's vector would pull it off-hue at
-     exactly the edges — ruled lines, corner ticks — where this register's
-     "drafted" identity is meant to read most clearly. */
+  /* ---- SHAPE AXIS: medium ------------------------------------------------- */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+
+  /* ---- DENSITY AXIS: comfortable ------------------------------------------ */
+  --pad-card: 18px;
+  --pad-card-lg: 24px;
+  --pad-control-x: 13px;
+  --pad-control-y: 8px;
+  --pad-cell-x: 13px;
+  --pad-cell-y: 11px;
+  --gap-stack: 14px;
+  --gap-inline: 10px;
+  --row-h: 42px;
+  --control-h: 36px;
+
+  /* ---- ELEVATION AXIS: outlined card + subtle lift ------------------------ */
+  --border-card-width: 1px;
+  --shadow-card: 0 1px 2px rgba(12, 24, 46, 0.05);
+  --shadow-raised: 0 2px 8px rgba(12, 24, 46, 0.09);
+  --shadow-overlay: 0 10px 30px -6px rgba(12, 24, 46, 0.20);
+
   --border-subtle: rgba(12, 24, 46, 0.09);
-  --border-strong: rgba(12, 24, 46, 0.14);
+  --border-strong: rgba(12, 24, 46, 0.16);
 
-  /* Shadows are tinted too, and for the same reason as the borders: Stripe ships
-     --shadow-blue #003770 rather than a black, because a black shadow over a
-     tinted canvas desaturates the surface under it. This is Blueprint's own ink
-     as a channel triple so components can compose it at their own alpha. */
   --shadow-hue: 12, 24, 46;
-
-  /* Linear ships true half-pixel borders on 2x displays. */
   --hairline: 1px;
 
-  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Linear --ease-out-quad */
-  --dur-fast: 120ms; /* Linear background transition */
-  --dur: 160ms; /* Linear button transition */
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 120ms;
+  --dur: 180ms;
 }
 
 @media (min-resolution: 192dpi) {
@@ -428,7 +459,7 @@ body {
      a drafting sheet is ruled, not rounded, and the one radius this token file
      owns directly is where that bias belongs. Not zero: a hard 0px ring reads as
      a broken corner rather than a drafted one at this weight. */
-  border-radius: 3px;
+  border-radius: var(--radius-control);
 }
 
 /* Blueprint is adapted from this repo's own app/globals.css (the Formae

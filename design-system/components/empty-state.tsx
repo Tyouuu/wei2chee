@@ -42,21 +42,21 @@ export function EmptyState({
     // silently swapping content out from under a screen reader.
     <div
       aria-live="polite"
-      className="flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-14 text-center [border-color:var(--color-ink-800)]"
+      className="flex flex-col items-center gap-2 [border-radius:var(--radius-lg)] border border-dashed px-6 py-14 text-center [border-color:var(--color-ink-800)]"
     >
       {icon && (
         <span className="mb-1 grid h-11 w-11 place-items-center rounded-full text-[color:var(--color-paper-dim)] [background-color:var(--color-ink-850)]">
           {icon}
         </span>
       )}
-      <p className="text-[14px] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{title}</p>
+      <p className="[font-size:var(--text-base)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{title}</p>
       {description && (
-        <p className="max-w-sm text-[13px] leading-relaxed text-[color:var(--color-paper-dim)]">{description}</p>
+        <p className="max-w-sm [font-size:var(--text-sm)] leading-relaxed text-[color:var(--color-paper-dim)]">{description}</p>
       )}
       {variant === "empty" && action && (
         <Link
           href={action.href}
-          className="mt-3 inline-flex items-center rounded-lg px-3.5 py-2 text-[13px] [color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
+          className="mt-3 inline-flex items-center [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] [color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
         >
           {action.label}
         </Link>
@@ -64,7 +64,7 @@ export function EmptyState({
       {variant === "filtered" && action && (
         <Link
           href={action.href}
-          className="mt-3 text-[12px] text-[color:var(--color-paper-dim)] transition-colors [font-weight:var(--fw-medium)] [transition-duration:var(--dur)] hover:text-[color:var(--color-paper)]"
+          className="mt-3 [font-size:var(--text-xs)] text-[color:var(--color-paper-dim)] transition-colors [font-weight:var(--fw-medium)] [transition-duration:var(--dur)] hover:text-[color:var(--color-paper)]"
         >
           {action.label}
         </Link>

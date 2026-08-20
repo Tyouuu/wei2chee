@@ -35,7 +35,14 @@ export function StatusDot({
   pulse?: boolean
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[13px] text-[color:var(--color-paper)]">
+    // `whitespace-nowrap`: a status is one token and must never break across
+    // lines. Without it the roomier registers (Hearth's 13.5px type and 16px
+    // cell padding, against the same column width Ledger fits 12px into) wrap
+    // two-character labels mid-word -- "已付 款", "待处 理" -- which reads as a
+    // rendering bug in the customer's own system. Caught in a real browser on
+    // the three-column style comparison, where all three run side by side at
+    // their narrowest.
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap [font-size:var(--text-sm)] text-[color:var(--color-paper)]">
       <span
         aria-hidden="true"
         className={`h-2 w-2 shrink-0 rounded-full ${pulse ? "animate-pulse" : ""}`}

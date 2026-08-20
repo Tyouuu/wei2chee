@@ -36,6 +36,7 @@ export function StyleColumn({
   selectCta,
   whatsappPrefillText,
   onSelect,
+  recommendedLabel,
 }: {
   styleName: StyleName;
   label: string;
@@ -45,6 +46,12 @@ export function StyleColumn({
   whatsappPrefillText?: string;
   /** When given, renders a real button calling this instead of a WhatsApp link -- used by the portal's style-selection step, not the public comparison page. */
   onSelect?: () => void;
+  /** Already-localized badge text, shown only on the one column recommended for
+   * this business (industries.style_recommendation). Omitted on the other two.
+   * Before this the customer was asked to make an irreversible choice between
+   * three unfamiliar names with no guidance at all -- the product already knew
+   * which one suits their industry and simply never said so. */
+  recommendedLabel?: string;
 }) {
   const whatsappHref = whatsappPrefillText
     ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappPrefillText)}`
@@ -67,7 +74,7 @@ export function StyleColumn({
         styles.scope,
         SCOPE_CLASS[styleName],
         isBlueprint ? `relative ${styles.blueprintGrid} ${styles.blueprintSheetMarks}` : null,
-        "flex flex-col gap-6 rounded-2xl border p-5 [border-color:var(--color-ink-800)] sm:p-6",
+        "flex flex-col [gap:var(--gap-stack)] [border-radius:var(--radius-lg)] [border-width:var(--border-card-width)] [border-style:solid] [box-shadow:var(--shadow-card)] [padding:var(--pad-card-lg)] [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -77,12 +84,17 @@ export function StyleColumn({
           className={
             isBlueprint
               ? styles.blueprintAnnotation
-              : "text-[16px] tracking-[var(--tracking-title)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]"
+              : "[font-size:var(--text-lg)] tracking-[var(--tracking-title)] text-[color:var(--color-paper)] [font-weight:var(--fw-display)]"
           }
         >
           {label}
         </h2>
-        <p className="mt-1 text-[13px] text-[color:var(--color-paper-dim)]">{description}</p>
+        {recommendedLabel ? (
+          <span className="mt-2 inline-flex items-center [border-radius:var(--radius-pill)] [padding-inline:var(--pad-control-x)] [padding-block:calc(var(--pad-control-y)/2)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+            {recommendedLabel}
+          </span>
+        ) : null}
+        <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)]">{description}</p>
       </div>
 
       <SampleContent />
@@ -92,7 +104,7 @@ export function StyleColumn({
           type="button"
           onClick={onSelect}
           data-testid={`style-picker-select-${styleName}`}
-          className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-[13px] text-[color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
+          className="inline-flex items-center justify-center [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
         >
           {selectCta}
         </button>
@@ -102,7 +114,7 @@ export function StyleColumn({
           target="_blank"
           rel="noopener noreferrer"
           data-testid={`style-picker-select-${styleName}`}
-          className="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-[13px] text-[color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
+          className="inline-flex items-center justify-center [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
         >
           {selectCta}
         </a>

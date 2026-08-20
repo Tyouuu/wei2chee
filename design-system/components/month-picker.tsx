@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { ChevronDown, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const MONTHS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
 
 function formatLabel(value: string): string {
   if (!value) return ""
@@ -36,7 +36,7 @@ function currentYearMonth(today?: string): [number, number] {
 export function MonthPicker({
   name,
   defaultValue,
-  placeholder = "Select a month…",
+  placeholder = "选择月份…",
   allowClear = false,
   today,
   submitOnPick = false,
@@ -96,7 +96,7 @@ export function MonthPicker({
         aria-haspopup="true"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-[13px] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+        className="flex w-full items-center gap-2 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         <CalendarDays aria-hidden="true" className="h-[15px] w-[15px] shrink-0 text-[color:var(--color-paper-dim)]" />
         <span className={value ? "" : "text-[color:var(--color-paper-dim)]"}>{value ? formatLabel(value) : placeholder}</span>
@@ -112,21 +112,21 @@ export function MonthPicker({
         // narrow right edge, pushing the panel's left edge off-screen.
         // Anchoring from the trigger's left edge keeps it on-screen
         // wherever this compact trigger is used.
-        <div className="absolute left-0 right-auto z-10 mt-1 w-[260px] rounded-lg border p-0 shadow-lg [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
-          <div className="flex items-center justify-between px-3 py-2.5">
+        <div className="absolute left-0 right-auto z-10 mt-1 w-[260px] [border-radius:var(--radius-md)] border p-0 [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+          <div className="flex items-center justify-between [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]">
             <button
               type="button"
-              aria-label="Previous year"
-              className="grid h-6 w-6 place-items-center rounded-md border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
+              aria-label="上一年"
+              className="grid h-6 w-6 place-items-center [border-radius:var(--radius-sm)] border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
               onClick={() => setViewYear((y) => y - 1)}
             >
               <ChevronLeft aria-hidden="true" className="h-3 w-3" />
             </button>
-            <span className="text-[13px] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{viewYear}</span>
+            <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{viewYear}</span>
             <button
               type="button"
-              aria-label="Next year"
-              className="grid h-6 w-6 place-items-center rounded-md border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
+              aria-label="下一年"
+              className="grid h-6 w-6 place-items-center [border-radius:var(--radius-sm)] border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
               onClick={() => setViewYear((y) => y + 1)}
             >
               <ChevronRight aria-hidden="true" className="h-3 w-3" />
@@ -141,7 +141,7 @@ export function MonthPicker({
                   type="button"
                   key={m}
                   onClick={() => pick(i)}
-                  className={`rounded-lg border-[1.5px] py-2 text-[12px] [font-weight:var(--fw-semibold)] transition-colors [transition-duration:var(--dur-fast)] ${
+                  className={`[border-radius:var(--radius-md)] border-[1.5px] py-2 [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] transition-colors [transition-duration:var(--dur-fast)] ${
                     isSelected
                       ? "[border-color:var(--color-primary)] [background-color:var(--color-primary)] [color:var(--color-on-primary)]"
                       : isToday
@@ -154,7 +154,7 @@ export function MonthPicker({
               )
             })}
           </div>
-          <div className="flex items-center justify-between border-t px-3 py-2 text-xs [font-weight:var(--fw-semibold)] [border-color:var(--color-ink-800)]">
+          <div className="flex items-center justify-between border-t [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-xs [font-weight:var(--fw-semibold)] [border-color:var(--color-ink-800)]">
             {allowClear ? (
               <button
                 type="button"

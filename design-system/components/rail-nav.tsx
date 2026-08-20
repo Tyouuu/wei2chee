@@ -85,7 +85,7 @@ export function RailNav({
   notificationsHref,
   hasUnread,
   accountHref,
-  accountLabel = "Account Settings",
+  accountLabel = "账号设置",
   user,
   profileMenu,
   topSlot,
@@ -169,11 +169,11 @@ export function RailNav({
     // Naming this one names the one that appears on every page, so a page
     // only ever has to label its own.
     <aside
-      className="flex h-screen w-[220px] shrink-0 flex-col border-r px-2 py-1.5 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
-      aria-label="Sidebar"
+      className="flex h-screen w-[220px] shrink-0 flex-col border-r [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
+      aria-label="侧边导航"
       ref={wrapRef}
     >
-      <Link href={brand.href} className="flex items-center gap-2.5 px-1.5 pb-3 pt-1.5">
+      <Link href={brand.href} className="flex items-center [gap:var(--gap-inline)] px-1.5 pb-3 pt-1.5">
         {brand.icon}
         <span className="overflow-hidden whitespace-nowrap text-base tracking-tight text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
           {brand.label}
@@ -202,7 +202,7 @@ export function RailNav({
               {collapsible ? (
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-[11px] uppercase tracking-[0.07em] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)] hover:text-[color:var(--color-paper)]"
+                  className="flex w-full items-center justify-between gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)] hover:text-[color:var(--color-paper)]"
                   aria-expanded={openGroup}
                   aria-controls={`rail-group-${group}`}
                   onClick={() => toggleGroup(group)}
@@ -215,7 +215,7 @@ export function RailNav({
                   />
                 </button>
               ) : (
-                <div className="px-2 py-1.5 text-[11px] uppercase tracking-[0.07em] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+                <div className="[padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
                   {group}
                 </div>
               )}
@@ -233,7 +233,7 @@ export function RailNav({
                       key={item.href}
                       href={item.href}
                       aria-current={active ? "page" : undefined}
-                      className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors [transition-duration:var(--dur-fast)] ${
+                      className={`flex items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)] ${
                         active
                           ? "text-[color:var(--color-paper)] [background-color:var(--color-ink-850)] [font-weight:var(--fw-semibold)]"
                           : "text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
@@ -242,7 +242,7 @@ export function RailNav({
                       {item.icon}
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.badge != null && item.badge > 0 && (
-                        <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 text-[10px] [background-color:var(--color-clay-bright)] [color:var(--color-on-dark)] [font-weight:var(--fw-semibold)]">
+                        <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 [font-size:var(--text-micro)] [background-color:var(--color-clay-bright)] [color:var(--color-on-dark)] [font-weight:var(--fw-semibold)]">
                           {item.badge}
                         </span>
                       )}
@@ -258,7 +258,7 @@ export function RailNav({
       <div className="shrink-0 border-t pt-2 [border-color:var(--color-ink-800)]">
         <Link
           href={notificationsHref}
-          className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors [transition-duration:var(--dur-fast)] ${
+          className={`flex items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)] ${
             pathname === notificationsHref
               ? "text-[color:var(--color-paper)] [background-color:var(--color-ink-850)] [font-weight:var(--fw-semibold)]"
               : "text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
@@ -270,12 +270,12 @@ export function RailNav({
               <span className="absolute -right-0.5 -top-0.5 h-[7px] w-[7px] rounded-full border-[1.5px] [border-color:var(--color-ink-900)] [background-color:var(--color-clay)]" />
             )}
           </span>
-          <span className="flex-1 truncate">Notifications</span>
+          <span className="flex-1 truncate">通知</span>
         </Link>
 
         <Link
           href={accountHref}
-          className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors [transition-duration:var(--dur-fast)] ${
+          className={`flex items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)] ${
             pathname === accountHref
               ? "text-[color:var(--color-paper)] [background-color:var(--color-ink-850)] [font-weight:var(--fw-semibold)]"
               : "text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
@@ -290,17 +290,17 @@ export function RailNav({
             <button
               ref={profileTriggerRef}
               type="button"
-              className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] text-[color:var(--color-paper-dim)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
+              className="flex w-full items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
               onClick={() => setOpen((p) => (p === "profile" ? null : "profile"))}
               aria-haspopup="true"
               aria-expanded={open === "profile"}
             >
-              <span className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-md text-[12px] text-[color:var(--color-paper)] [background-color:var(--color-ink-800)] [font-weight:var(--fw-semibold)]">
+              <span className="grid h-[22px] w-[22px] shrink-0 place-items-center [border-radius:var(--radius-sm)] [font-size:var(--text-xs)] text-[color:var(--color-paper)] [background-color:var(--color-ink-800)] [font-weight:var(--fw-semibold)]">
                 {initials}
               </span>
               <span className="min-w-0 flex-1 overflow-hidden text-left leading-tight">
                 <span className="block truncate">{user.name}</span>
-                {user.roleLabel && <span className="block text-[12px] normal-case text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">{user.roleLabel}</span>}
+                {user.roleLabel && <span className="block [font-size:var(--text-xs)] normal-case text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">{user.roleLabel}</span>}
               </span>
             </button>
             {open === "profile" && (
@@ -311,19 +311,19 @@ export function RailNav({
               // this design system's other components for the same gap) —
               // this reconstructs the same "small panel beside its
               // trigger" affordance from this file's own token classes.
-              <div className="absolute bottom-full left-0 z-20 mb-1.5 w-56 rounded-xl border p-1.5 shadow-lg [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+              <div className="absolute bottom-full left-0 z-20 mb-1.5 w-56 [border-radius:var(--radius-lg)] border p-1.5 [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
                 {profileMenu}
               </div>
             )}
           </div>
         ) : (
-          <div className="flex cursor-default items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">
-            <span className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-md text-[12px] text-[color:var(--color-paper)] [background-color:var(--color-ink-800)] [font-weight:var(--fw-semibold)]">
+          <div className="flex cursor-default items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">
+            <span className="grid h-[22px] w-[22px] shrink-0 place-items-center [border-radius:var(--radius-sm)] [font-size:var(--text-xs)] text-[color:var(--color-paper)] [background-color:var(--color-ink-800)] [font-weight:var(--fw-semibold)]">
               {initials}
             </span>
             <span className="min-w-0 flex-1 overflow-hidden text-left leading-tight">
               <span className="block truncate">{user.name}</span>
-              {user.roleLabel && <span className="block text-[12px] normal-case text-[color:var(--color-paper-dim)]">{user.roleLabel}</span>}
+              {user.roleLabel && <span className="block [font-size:var(--text-xs)] normal-case text-[color:var(--color-paper-dim)]">{user.roleLabel}</span>}
             </span>
           </div>
         )}

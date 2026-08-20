@@ -18,7 +18,11 @@ const STATUS_TONE: Record<RowStatus, StatusTone> = {
 };
 
 const thClass =
-  "sticky top-0 z-[1] border-b px-3 py-2 text-left text-[12px] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]";
+  // Column heads carry each register's own label voice: uppercase with wide
+  // tracking under Ledger, plain sentence case under Hearth and Blueprint.
+  // Applying both tokens unconditionally is correct -- each style's own value
+  // for --label-transform decides the outcome.
+  "sticky top-0 z-[1] whitespace-nowrap border-b text-left [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]";
 
 /**
  * One representative content set — a generic month-of-transactions view,
@@ -73,10 +77,10 @@ export function SampleContent() {
                 key={`${row.date}-${row.description}`}
                 className="border-b last:border-b-0 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
               >
-                <td className="px-3 py-2 [color:var(--color-paper-dim)]">{row.date}</td>
-                <td className="px-3 py-2 [color:var(--color-paper)]">{row.description}</td>
-                <td className="tnum px-3 py-2 text-right [color:var(--color-paper)]">{row.amount}</td>
-                <td className="px-3 py-2">
+                <td className="whitespace-nowrap [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)] [color:var(--color-paper-dim)]">{row.date}</td>
+                <td className="[padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)] [color:var(--color-paper)]">{row.description}</td>
+                <td className="tnum whitespace-nowrap text-right [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)] [color:var(--color-paper)] [font-family:var(--font-numeric)]">{row.amount}</td>
+                <td className="[padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)]">
                   <StatusDot tone={STATUS_TONE[row.status]} label={statusLabels[row.status]} />
                 </td>
               </tr>

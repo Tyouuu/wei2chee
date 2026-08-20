@@ -20,7 +20,7 @@ export function Listbox({
   defaultValue,
   onChange,
   options,
-  placeholder = "Select…",
+  placeholder = "请选择…",
 }: {
   name?: string
   value?: string
@@ -67,7 +67,7 @@ export function Listbox({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-[13px] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+        className="flex w-full items-center gap-2 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         {selected?.dotColor && (
           <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: selected.dotColor }} />
@@ -81,7 +81,7 @@ export function Listbox({
       {open && (
         <div
           role="listbox"
-          className="absolute z-10 mt-1 w-full min-w-full rounded-lg border p-1.5 shadow-lg [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
+          className="absolute z-10 mt-1 w-full min-w-full [border-radius:var(--radius-md)] border p-1.5 [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
         >
           {options.map((o) => (
             <button
@@ -90,7 +90,7 @@ export function Listbox({
               role="option"
               aria-selected={value === o.value}
               onClick={() => pick(o.value)}
-              className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] text-[color:var(--color-paper)] transition-colors [font-weight:var(--fw-semibold)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-primary-soft)] ${
+              className={`flex w-full items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] px-2.5 py-2 text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [font-weight:var(--fw-semibold)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-primary-soft)] ${
                 value === o.value ? "[background-color:var(--color-primary-soft)]" : ""
               }`}
             >

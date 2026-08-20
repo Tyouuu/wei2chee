@@ -2,9 +2,73 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { analysisSchema, analysisJsonSchema } from "@/lib/openai/analysis-schema";
+import {
+  analysisSchema,
+  analysisJsonSchema,
+  fallbackAnalysis,
+  type AnalysisPayload,
+} from "@/lib/openai/analysis-schema";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+/**
+ * The instruction that does not change between businesses. Splitting the
+ * unchanging rules out of the per-request prompt is the first thing that makes
+ * an LLM's output stable: the model sees the same constraints in the same
+ * position every time, and the only thing that varies is the data.
+ *
+ * The rules are written as hard limits with numbers, not as adjectives. "Keep
+ * it short" produces a different length every call; "under 12 characters"
+ * produces the same length every call.
+ */
+const SYSTEM_PROMPT = `You analyse small businesses in Malaysia and return structured findings.
+
+Hard rules, which override anything the business owner's answers imply:
+- Write in the requested language ONLY. Never mix languages inside one field.
+- Bottleneck titles: 6-12 characters. Name the problem, do not describe it.
+- Bottleneck descriptions: ONE sentence, under 40 characters.
+- Workflow stage names: 2-4 characters each. They are column headings in a
+  system, not sentences.
+- after_workflow must be a REAL improvement on before_workflow, not a rename.
+  If the workflow is already sound, return it unchanged rather than inventing
+  stages that add no value.
+- summary: ONE sentence, under 50 characters, about THIS business.
+- Never invent specifics (names, amounts, dates) the owner did not give you.`;
+
+/** Retried once, then the deterministic fallback. Two attempts is the right
+ *  number here: a transient failure almost always clears on the second call,
+ *  and a third attempt only adds latency to a visitor who is already waiting
+ *  on a screen that promised them an answer. */
+const MAX_ATTEMPTS = 2;
+
+type Industry = {
+  name_zh: string;
+  name_en: string;
+  default_workflow: string[];
+  suggested_modules: string[];
+  labels: { customer: string; order: string; staff: string };
+};
+
+function buildUserPrompt(
+  industry: Industry,
+  language: "zh" | "en",
+  answers: Record<string, string>,
+): string {
+  return `Business type: ${industry.name_en}
+This industry's own vocabulary: customer = "${industry.labels.customer}", order = "${industry.labels.order}", staff = "${industry.labels.staff}".
+Typical workflow for this industry: ${JSON.stringify(industry.default_workflow)}
+Modules this industry usually needs: ${JSON.stringify(industry.suggested_modules)}
+
+What the owner told us:
+${Object.entries(answers)
+  .map(([k, v]) => `- ${k}: ${v}`)
+  .join("\n")}
+
+Respond in ${language === "zh" ? "Chinese" : "English"}.
+Use the industry's own vocabulary above for stage names where it fits -- these
+stage names become the column headings in the system this owner will be shown
+next, so they must read like something they would write themselves.`;
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -44,43 +108,63 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "failed to save lead" }, { status: 500 });
   }
 
-  const prompt = `You are analyzing a ${industry.name_en} business in Malaysia.
-Default workflow for this industry: ${JSON.stringify(industry.default_workflow)}.
-Suggested modules: ${JSON.stringify(industry.suggested_modules)}.
-The business owner answered:
-${Object.entries(answers).map(([k, v]) => `- ${k}: ${v}`).join("\n")}
+  const userPrompt = buildUserPrompt(industry as Industry, language, answers);
 
-Identify 2-4 operational bottlenecks, describe their current (before) workflow
-and a recommended (after) workflow as short stage-name arrays, and write a
-one-sentence summary. Respond in ${language === "zh" ? "Chinese" : "English"}.`;
+  let parsed: AnalysisPayload | null = null;
+  let rawResponse: unknown = null;
+  let usedFallback = false;
 
-  let completion;
-  try {
-    completion = await openai.chat.completions.create({
-      model: "gpt-5.6-luna",
-      reasoning_effort: "high",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_schema", json_schema: analysisJsonSchema },
-    });
-  } catch (err) {
-    console.error("OpenAI call failed", err);
-    return NextResponse.json({ error: "analysis generation failed" }, { status: 502 });
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS && !parsed; attempt++) {
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5.6-luna",
+        reasoning_effort: "high",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+          // On the retry, the model is told what went wrong. A bare retry
+          // re-rolls the same dice; a retry carrying the failure is a
+          // different, better-informed call.
+          ...(attempt > 1
+            ? [
+                {
+                  role: "user" as const,
+                  content:
+                    "Your previous response did not satisfy the schema. Return ONLY valid JSON matching the schema exactly, obeying every character limit in the system message.",
+                },
+              ]
+            : []),
+        ],
+        response_format: { type: "json_schema", json_schema: analysisJsonSchema },
+      });
+
+      const raw = completion.choices[0]?.message?.content;
+      rawResponse = JSON.parse(raw ?? "{}");
+      parsed = analysisSchema.parse(rawResponse);
+    } catch (err) {
+      // Logged with the attempt number so a recurring failure at attempt 1
+      // that always clears at attempt 2 is distinguishable from a total
+      // outage -- they need different responses from us.
+      console.error(`analysis attempt ${attempt}/${MAX_ATTEMPTS} failed`, err);
+    }
   }
 
-  const raw = completion.choices[0]?.message?.content;
-  let parsed;
-  try {
-    parsed = analysisSchema.parse(JSON.parse(raw ?? "{}"));
-  } catch (err) {
-    console.error("LLM output failed schema validation", err, raw);
-    return NextResponse.json({ error: "analysis generation failed" }, { status: 502 });
+  if (!parsed) {
+    // Deliberately NOT a 502. See fallbackAnalysis's own comment: a visitor who
+    // has just answered a page of questions about their business is at the
+    // most expensive possible moment to show an error screen, and a model
+    // being briefly unavailable is a routine event. They get a real, honest,
+    // industry-accurate analysis built from the industries table instead.
+    parsed = fallbackAnalysis(industry as Industry, language);
+    rawResponse = { fallback: true };
+    usedFallback = true;
   }
 
   const { data: analysisRow, error: analysisError } = await supabase
     .from("analysis_results")
     .insert({
       lead_id: lead.id,
-      raw_llm_response: JSON.parse(raw ?? "{}"),
+      raw_llm_response: rawResponse,
       bottlenecks: parsed.bottlenecks,
       before_workflow: parsed.before_workflow,
       after_workflow: parsed.after_workflow,
@@ -92,5 +176,8 @@ one-sentence summary. Respond in ${language === "zh" ? "Chinese" : "English"}.`;
     return NextResponse.json({ error: "failed to save analysis" }, { status: 500 });
   }
 
-  return NextResponse.json({ leadId: lead.id, analysis: analysisRow });
+  // `usedFallback` is reported so the founder can tell, from logs or from the
+  // client, when a lead's analysis was generated rather than reasoned -- those
+  // leads are worth a closer look before a sales conversation.
+  return NextResponse.json({ leadId: lead.id, analysis: analysisRow, usedFallback });
 }
