@@ -218,7 +218,8 @@
       "aiFailed": "Didn't catch that — try rephrasing.",
       "aiNoChange": "Can't do that one. Try rephrasing, or drag a block in instead.",
       "styleLabel": "Style",
-      "styleFailed": "Couldn't switch — try again"
+      "styleFailed": "Couldn't switch — try again",
+      "specCta": "System spec"
     }
   }
 }

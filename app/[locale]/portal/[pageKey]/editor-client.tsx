@@ -269,6 +269,19 @@ export function PortalEditor({
               {t("deployCta")}
             </a>
           ) : null}
+          {/* The specification document. Reachable at any time, not only after
+              a save: a free-tier customer has saved nothing yet and is exactly
+              the person who needs to see what they would be paying for. */}
+          <Link
+            href={`/${locale}/portal/spec`}
+            // Next prefetches <Link> on hover in production, and this route
+            // runs an LLM call while rendering -- prefetch would bill a
+            // generation for every hover, for a document nobody opened.
+            prefetch={false}
+            className="rounded-md px-2.5 py-1 [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+          >
+            {t("specCta")}
+          </Link>
           <StyleSwitcher style={activeStyle} onPreview={setActiveStyle} />
           <button
             type="button"
