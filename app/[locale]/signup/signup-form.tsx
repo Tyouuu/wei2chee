@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { AuthField, authSubmitClass } from "@/components/auth-field";
+import { AuthDivider, GoogleButton } from "@/components/oauth-buttons";
 
 export function SignupForm({ locale }: { locale: string }) {
   const t = useTranslations("auth");
@@ -66,7 +67,11 @@ export function SignupForm({ locale }: { locale: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
+      <GoogleButton />
+      <AuthDivider />
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <AuthField
         id="signup-email"
         type="email"
@@ -103,6 +108,7 @@ export function SignupForm({ locale }: { locale: string }) {
           {t("signupSwitchToLogin")}
         </Link>
       </p>
-    </form>
+      </form>
+    </div>
   );
 }

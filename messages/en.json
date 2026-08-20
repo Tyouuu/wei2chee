@@ -192,7 +192,30 @@
     "proofStep1": "Answer a few questions about your business; the AI reads how you actually work today.",
     "proofStep2": "It builds you a first version — your trade's words, your workflow, your tables. Edit it directly, or just tell it what to change.",
     "proofStep3": "When it looks right, we build the real system from your design.",
-    "proofPrice": "RM5,000 to build, then RM100–300/month hosting. Designing costs nothing, and you can change it as many times as you like."
+    "proofPrice": "RM5,000 to build, then RM100–300/month hosting. Designing costs nothing, and you can change it as many times as you like.",
+    "googleCta": "Continue with Google",
+    "googlePending": "Redirecting…",
+    "googleFailed": "Google sign-in is not configured yet — use email for now.",
+    "or": "or",
+    "forgotCta": "Forgot password?",
+    "forgotTitle": "Reset your password",
+    "forgotSubtitle": "Enter your email and we will send you a reset link.",
+    "forgotSubmit": "Send reset link",
+    "forgotPending": "Sending…",
+    "forgotSentTitle": "Check your inbox",
+    "forgotSentBody": "If {email} has an account, a reset link is on its way. Check spam too.",
+    "forgotResend": "Try a different email",
+    "backToLogin": "Back to sign in",
+    "resetTitle": "Set a new password",
+    "resetSubtitle": "Once it is set you go straight into your system.",
+    "resetNewLabel": "New password",
+    "resetConfirmLabel": "Type it again",
+    "resetSubmit": "Save new password",
+    "resetPending": "Saving…",
+    "resetMismatch": "Those two do not match.",
+    "resetFailed": "Could not change it — the link may have expired.",
+    "resetExpiredTitle": "That link has expired",
+    "resetExpiredBody": "Reset links work once and only for a while. Just request a new one."
   },
   "portal": {
     "styleSelect": {
@@ -358,7 +381,8 @@
       "settings": "Business details",
       "planPaid": "Paid",
       "planFree": "Free trial",
-      "leads": "Leads"
+      "leads": "Leads",
+      "account": "My account"
     },
     "styles": {
       "title": "Styles",
@@ -452,6 +476,41 @@
       "save": "Save",
       "saved": "Saved",
       "whatsapp": "Message them on WhatsApp"
+    },
+    "account": {
+      "title": "My account",
+      "overview": "Overview",
+      "business": "Business",
+      "plan": "Status",
+      "pages": "Pages",
+      "since": "Member since",
+      "signInMethod": "Sign-in method",
+      "methodEmail": "Email + password",
+      "passwordTitle": "Password",
+      "passwordBody": "Set a new one. Other devices will need to sign in again.",
+      "passwordGoogle": "You sign in with Google, so there is no password here. Change it in your Google account.",
+      "newPassword": "New password",
+      "confirmPassword": "Type it again",
+      "changePassword": "Change password",
+      "emailTitle": "Email",
+      "emailBody": "We send a confirmation to the new address. It only takes effect once you click it.",
+      "newEmail": "New email",
+      "changeEmail": "Change email",
+      "exportTitle": "Export my data",
+      "exportBody": "Your design, your pages, your business details — all of it as one JSON file. Free, any time. That is the promise.",
+      "exportCta": "Download my data",
+      "exporting": "Preparing…",
+      "deleteTitle": "Delete account",
+      "deleteBody": "Your account, your system, every page you designed and its history — permanently deleted. This cannot be undone. Export first if you want a copy.",
+      "deletePlaceholder": "Type DELETE to confirm",
+      "deleteCta": "Permanently delete my account",
+      "saving": "Working…",
+      "pwSaved": "Password changed.",
+      "pwFailed": "Could not change it. Try again.",
+      "pwMismatch": "Those two do not match.",
+      "emailSent": "Confirmation sent to the new address — it takes effect once you click it.",
+      "emailFailed": "Could not change it. Try again.",
+      "deleteFailed": "Could not delete. Try again."
     }
   },
   "explainer": {
@@ -504,6 +563,95 @@
     "line": "See your system before you decide to build it.",
     "place": "Malaysia · business systems for SMEs",
     "wa": "Talk on WhatsApp",
-    "waMessage": "Hi, I saw Formae online and would like to know more."
+    "waMessage": "Hi, I saw Formae online and would like to know more.",
+    "signIn": "Sign in"
+  },
+  "system": {
+    "notFoundTitle": "This page does not exist.",
+    "notFoundBody": "The link may be wrong, or the page may have been deleted.",
+    "backToPortal": "Back to my system",
+    "errorLabel": "Error",
+    "errorTitle": "Something broke here.",
+    "errorBody": "Your data is fine — this page just failed to render. Trying again usually works.",
+    "errorRetry": "Try again"
+  },
+  "legal": {
+    "updated": "Last updated: August 2026",
+    "disclaimer": "These were written by the people who built the system and describe what it actually does. They are not a lawyer's template. Before a real launch, have a Malaysian lawyer read them. Anything unclear, just ask us.",
+    "contact": "Ask us on WhatsApp",
+    "privacyLink": "Privacy policy",
+    "termsLink": "Terms of service",
+    "cookie": {
+      "label": "Cookie notice",
+      "body": "We use one kind of cookie: the one that keeps you signed in. No ad tracking, no third-party analytics.",
+      "link": "See the privacy policy",
+      "dismiss": "Got it"
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "intro": "In short: we collect information about your business in order to design your system. We do not sell it, we do not advertise with it, and you can download all of it or delete all of it at any time.",
+      "sections": [
+        {
+          "heading": "What we collect",
+          "body": "From the questionnaire: your trade, how you work today, where things get stuck.\nAt signup: your email and password (the password is hashed — we cannot read it).\nWhile you use it: what you call your business, the pages you design, the style you pick.\nIf you use Google: the email and name Google gives us."
+        },
+        {
+          "heading": "What we use it for",
+          "body": "To analyse your business with AI and generate a first version of your system.\nTo let you sign in, save, and come back to it.\nTo build the real system from your design when you ask us to.\nThose three things. Nothing else."
+        },
+        {
+          "heading": "Where it lives",
+          "body": "In Supabase (Postgres), on servers in Singapore (ap-southeast-1).\nThe site runs on Vercel.\nWhat you type into the AI assistant is sent to OpenAI to process, and is not used for training.\nNo fourth party."
+        },
+        {
+          "heading": "Who can see it",
+          "body": "You.\nAnd Formae's founder — he has to see what you designed in order to build it. That is the service.\nNo other customer can see yours. That is enforced in the database itself (Row Level Security), not by application code remembering to check."
+        },
+        {
+          "heading": "How long we keep it",
+          "body": "As long as your account exists.\nDelete your account and your account, system, pages and history are permanently deleted.\nThe questionnaire record is kept (it no longer carries your identity once the account is gone) because it is our own business record."
+        },
+        {
+          "heading": "What you can do",
+          "body": "Download everything any time (My account → Export my data, JSON, free).\nDelete your account any time (My account → Delete account).\nChange your email or password on the same page.\nAsk us anything on WhatsApp."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of service",
+      "intro": "What each of us is responsible for. Designing is free and you can change it as often as you like; you pay when you decide to have it built.",
+      "sections": [
+        {
+          "heading": "What this service is",
+          "body": "You use Formae to design the business system you want — which pages, what goes on each, what the columns are called, how the workflow runs.\nThen our team builds a real, working system from that design.\nFormae itself is not that system. It is where you design and approve it."
+        },
+        {
+          "heading": "Fees",
+          "body": "Designing: free. Change it as often as you like.\nBuild fee: RM5,000 (if your needs are unusually large we will tell you and quote before starting).\nHosting: RM100–300 per month depending on usage.\nPayment is by bank transfer; we enable saving on your account once it arrives. There is no online payment yet."
+        },
+        {
+          "heading": "Your work is yours",
+          "body": "The system you design and the data you put in it are yours.\nYou can export all of it at any time, free.\nIf you later want to own the whole system outright (code and database), that is a separate conversation and a separate fee."
+        },
+        {
+          "heading": "What we are responsible for",
+          "body": "We will build what you approved.\nWe do not promise the system will make you more money — that depends on how you use it.\nWhile you are hosted with us, we keep it running. Stop hosting and it stops.\nIf we lose your data through our own fault, we restore it. What you delete yourself, we cannot."
+        },
+        {
+          "heading": "When we would close an account",
+          "body": "Using it for something illegal.\nUsing it to attack this system or anyone else's.\nHosting unpaid for a long time.\nOtherwise we will not close your account. If we ever have to, we tell you first and give you time to export."
+        },
+        {
+          "heading": "Changes",
+          "body": "If these terms change we will tell you at your next sign-in.\nPrice increases are not retroactive — a price already agreed is the price."
+        }
+      ]
+    }
+  },
+  "nav": {
+    "how": "How it works",
+    "pricing": "Pricing",
+    "signIn": "Sign in",
+    "start": "Start free"
   }
 }

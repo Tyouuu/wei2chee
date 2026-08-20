@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { AuthField, authSubmitClass } from "@/components/auth-field";
+import { AuthDivider, GoogleButton } from "@/components/oauth-buttons";
 
 export function LoginForm({ locale }: { locale: string }) {
   const t = useTranslations("auth");
@@ -35,7 +36,14 @@ export function LoginForm({ locale }: { locale: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
+      {/* Above the form, not below it: this is the path most people take, and
+          burying it under two fields they have already started filling in is
+          how you get both. */}
+      <GoogleButton />
+      <AuthDivider />
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <AuthField
         id="login-email"
         type="email"
@@ -45,15 +53,23 @@ export function LoginForm({ locale }: { locale: string }) {
         value={email}
         onChange={setEmail}
       />
-      <AuthField
-        id="login-password"
-        type="password"
-        label={t("signupPasswordLabel")}
-        placeholder={t("passwordPlaceholder")}
-        autoComplete="current-password"
-        value={password}
-        onChange={setPassword}
-      />
+      <div>
+        <AuthField
+          id="login-password"
+          type="password"
+          label={t("signupPasswordLabel")}
+          placeholder={t("passwordPlaceholder")}
+          autoComplete="current-password"
+          value={password}
+          onChange={setPassword}
+        />
+        <Link
+          href={`/${locale}/forgot-password`}
+          className="mt-2 inline-block text-[12.5px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          {t("forgotCta")}
+        </Link>
+      </div>
 
       {error ? (
         <p role="alert" className="text-[13px] text-destructive">
@@ -73,6 +89,7 @@ export function LoginForm({ locale }: { locale: string }) {
           {t("loginSwitchToSignup")}
         </Link>
       </p>
-    </form>
+      </form>
+    </div>
   );
 }

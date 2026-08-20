@@ -192,7 +192,30 @@
     "proofStep1": "回答几个关于你生意的问题，AI 读懂你现在怎么做事。",
     "proofStep2": "它先把系统建好一版给你——你的行业用词、你的流程、你的表格。你直接改，或者用讲的叫它改。",
     "proofStep3": "改到你满意，我们照着这份设计做出真的系统。",
-    "proofPrice": "开发费 RM5,000，之后每月 RM100–300 托管。设计阶段不收费，改多少次都可以。"
+    "proofPrice": "开发费 RM5,000，之后每月 RM100–300 托管。设计阶段不收费，改多少次都可以。",
+    "googleCta": "用 Google 继续",
+    "googlePending": "跳转中…",
+    "googleFailed": "Google 登入还没设定好，先用邮箱吧。",
+    "or": "或者",
+    "forgotCta": "忘记密码？",
+    "forgotTitle": "重设密码",
+    "forgotSubtitle": "填你的邮箱，我们发一条重设链接给你。",
+    "forgotSubmit": "发送重设链接",
+    "forgotPending": "发送中…",
+    "forgotSentTitle": "信已经发出去了",
+    "forgotSentBody": "如果 {email} 有账号，重设链接已经在路上了。检查一下收件箱和垃圾邮件。",
+    "forgotResend": "换个邮箱再试",
+    "backToLogin": "回去登录",
+    "resetTitle": "设一个新密码",
+    "resetSubtitle": "设好之后就直接进你的系统。",
+    "resetNewLabel": "新密码",
+    "resetConfirmLabel": "再打一次",
+    "resetSubmit": "保存新密码",
+    "resetPending": "保存中…",
+    "resetMismatch": "两次打的不一样。",
+    "resetFailed": "改不了，链接可能过期了。",
+    "resetExpiredTitle": "这条链接过期了",
+    "resetExpiredBody": "重设链接只能用一次，而且有时限。重新要一条就可以了。"
   },
   "portal": {
     "styleSelect": {
@@ -358,7 +381,8 @@
       "settings": "生意资料",
       "planPaid": "已付款",
       "planFree": "免费试用",
-      "leads": "线索"
+      "leads": "线索",
+      "account": "我的账号"
     },
     "styles": {
       "title": "风格",
@@ -452,6 +476,41 @@
       "save": "保存",
       "saved": "已保存",
       "whatsapp": "WhatsApp 联系他"
+    },
+    "account": {
+      "title": "我的账号",
+      "overview": "概况",
+      "business": "生意",
+      "plan": "状态",
+      "pages": "页面",
+      "since": "注册于",
+      "signInMethod": "登入方式",
+      "methodEmail": "邮箱 + 密码",
+      "passwordTitle": "密码",
+      "passwordBody": "换一个新密码。换了之后其他设备要重新登入。",
+      "passwordGoogle": "你是用 Google 登入的，没有密码要管。要改的话去 Google 账号那边改。",
+      "newPassword": "新密码",
+      "confirmPassword": "再打一次",
+      "changePassword": "换密码",
+      "emailTitle": "邮箱",
+      "emailBody": "改了之后，我们会发一封确认信到新邮箱。你点了才会生效。",
+      "newEmail": "新邮箱",
+      "changeEmail": "换邮箱",
+      "exportTitle": "导出我的资料",
+      "exportBody": "你的系统设计、页面、生意资料，全部下载成一个 JSON 文件。免费，随时可以拿走——这是我们讲过的。",
+      "exportCta": "下载我的资料",
+      "exporting": "准备中…",
+      "deleteTitle": "删掉账号",
+      "deleteBody": "你的账号、你的系统、你设计的每一页、版本历史，全部永久删除。删了拿不回来。要留底就先导出。",
+      "deletePlaceholder": "打 DELETE 确认",
+      "deleteCta": "永久删除我的账号",
+      "saving": "处理中…",
+      "pwSaved": "密码改好了。",
+      "pwFailed": "改不了，请再试一次。",
+      "pwMismatch": "两次打的不一样。",
+      "emailSent": "确认信发到新邮箱了，点了才会生效。",
+      "emailFailed": "改不了，请再试一次。",
+      "deleteFailed": "删不了，请再试一次。"
     }
   },
   "explainer": {
@@ -504,6 +563,95 @@
     "line": "先看到你的系统，再决定要不要做。",
     "place": "马来西亚 · 中小企业业务系统",
     "wa": "WhatsApp 聊一聊",
-    "waMessage": "你好，我在 Formae 网站看到你们的系统，想了解多一点。"
+    "waMessage": "你好，我在 Formae 网站看到你们的系统，想了解多一点。",
+    "signIn": "登录"
+  },
+  "system": {
+    "notFoundTitle": "这一页找不到。",
+    "notFoundBody": "可能是链接打错了，或者这一页已经被删掉了。",
+    "backToPortal": "回我的系统",
+    "errorLabel": "出错了",
+    "errorTitle": "这里坏掉了。",
+    "errorBody": "你的资料没事，是这一页没能显示出来。再试一次通常就好了。",
+    "errorRetry": "再试一次"
+  },
+  "legal": {
+    "updated": "最后更新：2026 年 8 月",
+    "disclaimer": "这两份文件是建这套系统的人自己写的，讲的都是产品实际在做的事，不是律师写的范本。正式营运前建议找马来西亚的律师过一次。有任何不清楚的，直接问我们。",
+    "contact": "WhatsApp 问我们",
+    "privacyLink": "隐私政策",
+    "termsLink": "服务条款",
+    "cookie": {
+      "label": "Cookie 说明",
+      "body": "我们只用一种 cookie：让你保持登入的那一个。没有广告追踪，没有第三方分析。",
+      "link": "详情看隐私政策",
+      "dismiss": "知道了"
+    },
+    "privacy": {
+      "title": "隐私政策",
+      "intro": "简单讲：我们收你生意的资料，是为了帮你设计系统。我们不卖你的资料，不拿去做广告，你随时可以全部下载走或者全部删掉。",
+      "sections": [
+        {
+          "heading": "我们收什么",
+          "body": "问卷里你填的：行业、你现在怎么做事、卡在哪里。\n注册的时候：邮箱、密码（密码是加密存的，我们看不到）。\n用产品的时候：你给生意起的名字、你设计的页面内容、你选的风格。\n如果你用 Google 登入：Google 给我们的邮箱和名字。"
+        },
+        {
+          "heading": "我们拿来做什么",
+          "body": "用 AI 分析你的生意，生成第一版系统给你改。\n让你登入、保存、回来继续改。\n你叫我们建系统的时候，我们照着你的设计建。\n就这三件事。没有别的用途。"
+        },
+        {
+          "heading": "资料放在哪里",
+          "body": "存在 Supabase（Postgres 数据库），服务器在新加坡（ap-southeast-1）。\n网站跑在 Vercel 上。\n你在 AI 助手里打的字，会送去 OpenAI 处理，用完不作训练用途。\n除了这三家技术服务商，没有第四方。"
+        },
+        {
+          "heading": "谁看得到你的资料",
+          "body": "你自己。\n还有 Formae 的负责人——他要看得到你设计成什么样，才能帮你建。这是这门生意本来就要做的事。\n其他客户绝对看不到你的。数据库层面（Row Level Security）就隔开了，不是靠程序自觉。"
+        },
+        {
+          "heading": "存多久",
+          "body": "你的账号还在，资料就在。\n你删账号，你的账号、系统、页面、版本历史全部永久删除。\n问卷那一条会留着（它上面已经没有你的身份了），因为那是我们的经营记录。"
+        },
+        {
+          "heading": "你可以做什么",
+          "body": "随时下载全部资料（我的账号 → 导出我的资料，JSON 格式，免费）。\n随时删掉账号（我的账号 → 删掉账号）。\n改邮箱、改密码，都在同一页。\n有问题直接 WhatsApp 问。"
+        }
+      ]
+    },
+    "terms": {
+      "title": "服务条款",
+      "intro": "讲清楚我们各自负责什么。设计阶段免费，改多少次都可以；决定要建了才收钱。",
+      "sections": [
+        {
+          "heading": "这个服务是什么",
+          "body": "你用 Formae 设计出你想要的生意系统——有哪些页面、每一页放什么、栏位叫什么、流程怎么走。\n设计完之后，我们的团队照着这份设计，帮你建一套真的能用的系统。\nFormae 本身不是那套系统。它是你用来设计和确认的地方。"
+        },
+        {
+          "heading": "收费",
+          "body": "设计阶段：免费。你可以一直改，改到满意为止。\n开发费：RM5,000（如果你的需求特别大，我们会先跟你讲清楚再报）。\n托管费：每月 RM100–300，看你的用量。\n付款方式是银行转账，我们收到之后在系统里帮你开通保存功能。目前没有线上支付。"
+        },
+        {
+          "heading": "你的东西是你的",
+          "body": "你设计出来的系统、你填进去的资料，都是你的。\n你随时可以全部导出，免费。\n如果你以后想要整套系统的所有权（代码、数据库），可以谈，那是另外一笔费用。"
+        },
+        {
+          "heading": "我们负责到哪里",
+          "body": "我们保证照着你确认的设计去建。\n我们不保证这套系统会让你赚更多钱——那取决于你怎么用它。\n托管期间我们负责让它跑得起来。停掉托管，系统就会停。\n如果我们这边出问题弄丢了你的资料，我们负责恢复；但你自己删掉的东西，我们恢复不了。"
+        },
+        {
+          "heading": "什么情况我们会停掉你的账号",
+          "body": "拿去做违法的事。\n拿去攻击这个系统或者别人的系统。\n托管费长期不付。\n除了这三种，我们不会无缘无故停掉你。真要停，会先通知你，给你时间导出资料。"
+        },
+        {
+          "heading": "改条款",
+          "body": "条款有改动，我们会在你下次登入的时候告诉你。\n涨价不会溯及既往——已经谈好的价格，就是那个价格。"
+        }
+      ]
+    }
+  },
+  "nav": {
+    "how": "怎么运作",
+    "pricing": "价钱",
+    "signIn": "登录",
+    "start": "免费开始"
   }
 }

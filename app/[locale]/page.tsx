@@ -11,6 +11,8 @@ import { ConversionCta } from "@/components/sections/conversion-cta";
 import { AmbientBackdrop } from "@/components/ambient-backdrop";
 import { HowItWorks, WhatYouGet, Pricing, Faq } from "@/components/sections/landing-explainer";
 import { SiteFooter } from "@/components/site-footer";
+import { CookieNotice } from "@/components/cookie-notice";
+import { SiteHeader } from "@/components/site-header";
 import type { Industry, AnalysisResult } from "@/types/database";
 
 export default function HomePage() {
@@ -27,6 +29,7 @@ export default function HomePage() {
       {/* One lit surface behind the whole page, so scrolling past the Hero
           recedes the atmosphere instead of cutting to flat dark. */}
       <AmbientBackdrop />
+      <SiteHeader />
       <HeroSection
         onCtaClick={() => {
           document.getElementById("industry-select")?.scrollIntoView({ behavior: "smooth" });
@@ -93,6 +96,7 @@ export default function HomePage() {
       <Pricing />
       <Faq />
       <SiteFooter />
+      <CookieNotice locale={locale} />
     </main>
   );
 }

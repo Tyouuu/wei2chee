@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { BRAND_NAME, WHATSAPP_NUMBER } from "@/lib/brand";
 
 /**
@@ -16,6 +17,8 @@ import { BRAND_NAME, WHATSAPP_NUMBER } from "@/lib/brand";
  */
 export function SiteFooter() {
   const t = useTranslations("footer");
+  const tLegal = useTranslations("legal");
+  const locale = useLocale();
   const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(t("waMessage"))}`;
 
   return (
@@ -40,6 +43,26 @@ export function SiteFooter() {
             {t("wa")} →
           </span>
         </a>
+      </div>
+
+      {/* The legal line. It had exactly one link on it before — WhatsApp — so
+          there was no route to a privacy policy or terms from anywhere on the
+          site, and no sign-in link either. Both are things a visitor looks for
+          in a footer before deciding a company is real. */}
+      <div className="border-t border-border">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-6 py-5 text-[12.5px] text-muted-foreground sm:px-10">
+          <span>© {new Date().getFullYear()} {BRAND_NAME}</span>
+          <Link href={`/${locale}/legal/privacy`} className="transition-colors hover:text-foreground">
+            {tLegal("privacyLink")}
+          </Link>
+          <Link href={`/${locale}/legal/terms`} className="transition-colors hover:text-foreground">
+            {tLegal("termsLink")}
+          </Link>
+          <span className="flex-1" />
+          <Link href={`/${locale}/login`} className="transition-colors hover:text-foreground">
+            {t("signIn")}
+          </Link>
+        </div>
       </div>
     </footer>
   );

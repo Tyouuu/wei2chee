@@ -67,7 +67,7 @@ function Rows({
 export function HowItWorks() {
   const t = useTranslations("explainer.process");
   return (
-    <SectionShell label="PROCESS" heading={t("title")}>
+    <SectionShell id="how" label="PROCESS" heading={t("title")}>
       <Rows
         items={[
           { term: t("s1"), detail: t("s1d"), note: t("s1n") },
@@ -97,7 +97,7 @@ export function WhatYouGet() {
 export function Pricing() {
   const t = useTranslations("explainer.price");
   return (
-    <SectionShell label="PRICE" heading={t("title")}>
+    <SectionShell id="pricing" label="PRICE" heading={t("title")}>
       {/* The two figures are the section, so they are set at figure scale
           rather than buried in a paragraph. The competitor this product is
           measured against (XYSTEM, RM1,499 起 for a web system) publishes a

@@ -276,6 +276,11 @@ export function PortalShell({
         </nav>
 
         <div className="shrink-0 border-t px-2 py-2 [border-color:var(--color-nav-border)]">
+          {/* Two different things, deliberately separate. 生意资料 is about the
+              BUSINESS (its name, the owner's name) and is a dialog because it
+              is two fields. 我的账号 is about the PERSON — password, email,
+              exporting their data, deleting it — and is a page because none of
+              that belongs in a popup. */}
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
@@ -286,6 +291,9 @@ export function PortalShell({
             </span>
             <span className="min-w-0 flex-1 truncate text-left">{t("settings")}</span>
           </button>
+          <NavRow href={`${base}/account`} active={is("/account")} icon={<IconPages />}>
+            {t("account")}
+          </NavRow>
 
           <div className="mt-1 flex items-center gap-2 rounded-[7px] px-2.5 py-2">
             <span
