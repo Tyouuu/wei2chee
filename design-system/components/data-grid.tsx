@@ -42,6 +42,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 export function DataGrid({
   id,
   label,
+  revealEndWhen,
   children,
 }: {
   /** Used to build the wrapper's DOM id (`grid-${id}`) — e.g. for an
@@ -50,6 +51,11 @@ export function DataGrid({
   /** Accessible name for the scroll region, exposed only once the grid is
       actually scrollable (see below). */
   label: string
+  /** Scrolls the viewport to its right edge whenever this value CHANGES —
+      never on mount. For a table whose columns are editable: a column added
+      beyond the right edge is a change the reader cannot see, which reads as
+      the control being broken rather than as content being off-screen. */
+  revealEndWhen?: number | string
   children: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -59,6 +65,19 @@ export function DataGrid({
   const [scrollable, setScrollable] = useState(false)
   const [atStart, setAtStart] = useState(true)
   const [atEnd, setAtEnd] = useState(true)
+
+  // Mount is not a change. Without this a wide table would jump to its right
+  // edge the first time anyone looked at it.
+  const settled = useRef(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || revealEndWhen === undefined) return
+    if (!settled.current) {
+      settled.current = true
+      return
+    }
+    el.scrollTo({ left: el.scrollWidth, behavior: "smooth" })
+  }, [revealEndWhen])
 
   useEffect(() => {
     const el = ref.current

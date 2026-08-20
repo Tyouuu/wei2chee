@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
 import { PortalEditor } from "./editor-client";
+import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import {
   PAGE_KEYS,
@@ -98,7 +99,11 @@ export default async function PortalEditorPage({
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
 
-  let initialData = savedLayout;
+  // Brought up to the current component shapes BEFORE Puck sees it. Puck's
+  // fields panel edits exactly the props it is handed, so a table left in the
+  // legacy four-prop shape would show the customer both the new column editor
+  // and a dead row editor -- see lib/portal/layout-upgrade.ts.
+  let initialData = upgradeLayout(savedLayout);
   if (isUngeneratedLayout(savedLayout)) {
     initialData = buildPageLayout(
       pageKey,

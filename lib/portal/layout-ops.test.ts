@@ -9,6 +9,7 @@ import {
   type PuckLayout,
 } from "./layout-ops";
 import { buildPageLayout } from "@/lib/templates/industry-template";
+import { normalizeTable } from "./table-model";
 
 const page = () =>
   buildPageLayout("dashboard", {
@@ -22,6 +23,9 @@ const page = () =>
   }) as unknown as PuckLayout;
 
 const ids = (l: PuckLayout) => walkNodes(l.content).map((n) => String(n.props.id));
+
+const tableOf = (l: PuckLayout, id: string) =>
+  normalizeTable(walkNodes(l.content).find((n) => n.props.id === id)!.props);
 
 describe("describeLayout", () => {
   it("reaches blocks nested inside the shell's slots", () => {
@@ -130,33 +134,131 @@ describe("applyLayoutOps", () => {
       {
         op: "add_table_row",
         target_id: "dashboard-recent",
-        primary: "新工程",
-        secondary: "陈先生",
-        amount: "RM 1,000",
-        status_label: "等确认",
+        cells: ["新工程", "陈先生", "RM 1,000", "等确认"],
         status_tone: "warning",
       },
     ]);
     expect(applied).toBe(1);
-    const table = walkNodes(layout.content).find((n) => n.props.id === "dashboard-recent")!;
-    const rows = table.props.rows as { primary: string }[];
-    expect(rows[rows.length - 1].primary).toBe("新工程");
+    const last = tableOf(layout, "dashboard-recent").rows.at(-1)!;
+    expect(last.cells.primary).toBe("新工程");
+    expect(last.cells.status).toBe("等确认");
+    expect(last.tones?.status).toBe("warning");
   });
 
   it("refuses to add a table row to something that is not a table", () => {
     const { applied, skipped } = applyLayoutOps(page(), [
-      {
-        op: "add_table_row",
-        target_id: "dashboard-hero",
-        primary: "x",
-        secondary: null,
-        amount: null,
-        status_label: "y",
-        status_tone: "neutral",
-      },
+      { op: "add_table_row", target_id: "dashboard-hero", cells: ["x"], status_tone: "neutral" },
     ]);
     expect(applied).toBe(0);
     expect(skipped[0].reason).toContain("不是记录表格");
+  });
+
+  // The three operations the assistant used to have to refuse. Each one is only
+  // possible because columns became data (lib/portal/table-model.ts).
+  it("adds a column and gives every existing row a cell for it", () => {
+    const { layout, applied } = applyLayoutOps(page(), [
+      {
+        op: "add_table_column",
+        target_id: "dashboard-recent",
+        column_label: "负责的师傅",
+        column_kind: "text",
+      },
+    ]);
+    expect(applied).toBe(1);
+    const table = tableOf(layout, "dashboard-recent");
+    const added = table.columns.at(-1)!;
+    expect(added.label).toBe("负责的师傅");
+    for (const row of table.rows) expect(row.cells).toHaveProperty(added.key);
+  });
+
+  it("renames a column by its key", () => {
+    const { layout, applied } = applyLayoutOps(page(), [
+      {
+        op: "set_table_column",
+        target_id: "dashboard-recent",
+        column_key: "primary",
+        column_label: "工程名称",
+        column_kind: null,
+      },
+    ]);
+    expect(applied).toBe(1);
+    expect(tableOf(layout, "dashboard-recent").columns[0].label).toBe("工程名称");
+  });
+
+  it("removes a column and the cells that belonged to it", () => {
+    const before = tableOf(page(), "dashboard-recent");
+    const { layout, applied } = applyLayoutOps(page(), [
+      { op: "remove_table_column", target_id: "dashboard-recent", column_key: "amount" },
+    ]);
+    expect(applied).toBe(1);
+    const after = tableOf(layout, "dashboard-recent");
+    expect(after.columns.map((c) => c.key)).not.toContain("amount");
+    expect(after.columns).toHaveLength(before.columns.length - 1);
+    for (const row of after.rows) expect(row.cells).not.toHaveProperty("amount");
+  });
+
+  it("refuses to remove a column that is not there", () => {
+    const { applied, skipped } = applyLayoutOps(page(), [
+      { op: "remove_table_column", target_id: "dashboard-recent", column_key: "c9" },
+    ]);
+    expect(applied).toBe(0);
+    expect(skipped[0].reason).toContain("没有");
+  });
+
+  // A table with no columns cannot render and cannot be recovered from -- there
+  // would be no header row left to add one back through.
+  it("refuses to remove the last remaining column", () => {
+    let layout = page();
+    const keys = tableOf(layout, "dashboard-recent").columns.map((c) => c.key);
+    for (const key of keys.slice(0, -1)) {
+      layout = applyLayoutOps(layout, [
+        { op: "remove_table_column", target_id: "dashboard-recent", column_key: key },
+      ]).layout;
+    }
+    const { applied, skipped } = applyLayoutOps(layout, [
+      { op: "remove_table_column", target_id: "dashboard-recent", column_key: keys.at(-1)! },
+    ]);
+    expect(applied).toBe(0);
+    expect(skipped[0].reason).toContain("至少");
+  });
+
+  // Saved layouts predate the array shape and are never rewritten in SQL, so an
+  // operation has to work on one that has never been re-saved.
+  it("operates on a table still saved in the old four-column shape", () => {
+    const legacy: PuckLayout = {
+      root: {},
+      content: [
+        {
+          type: "RecordTable",
+          props: {
+            id: "old-table",
+            gridId: "old-table",
+            caption: "报价单",
+            primaryLabel: "客户",
+            amountLabel: "金额",
+            statusColumnLabel: "状态",
+            rows: [{ primary: "陈先生", amount: "RM 500", statusTone: "warning", statusLabel: "待确认" }],
+          },
+        },
+      ],
+    };
+    const { layout, applied } = applyLayoutOps(legacy, [
+      {
+        op: "add_table_column",
+        target_id: "old-table",
+        column_label: "负责的师傅",
+        column_kind: "text",
+      },
+    ]);
+    expect(applied).toBe(1);
+    const table = tableOf(layout, "old-table");
+    expect(table.columns.map((c) => c.label)).toEqual(["客户", "金额", "状态", "负责的师傅"]);
+    expect(table.rows[0].cells.primary).toBe("陈先生");
+    // The legacy props are gone, so Puck's fields panel cannot show a second,
+    // dead editor for them.
+    const node = walkNodes(layout.content).find((n) => n.props.id === "old-table")!;
+    expect(node.props).not.toHaveProperty("primaryLabel");
+    expect(node.props).not.toHaveProperty("rows");
   });
 
   it("replaces a workflow's stages", () => {

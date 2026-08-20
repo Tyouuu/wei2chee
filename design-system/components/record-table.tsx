@@ -1,28 +1,27 @@
 import { DataGrid } from "./data-grid"
 import { StatusDot, type StatusTone } from "./status-dot"
+import { normalizeTable, type ColumnKind, type TableModel } from "@/lib/portal/table-model"
 
-export type RecordRow = {
-  primary: string
-  secondary?: string
-  amount?: string
-  statusTone: StatusTone
-  statusLabel: string
-}
+export type { TableModel }
 
 /**
  * A real, Puck-friendly data table for business records (quotations,
  * customers, payments) — sits on top of `DataGrid` (a scroll-viewport
  * wrapper, not a table itself) and `StatusDot` (already registered), rather
- * than reinventing either. Column labels are static per-instance (set once
- * when the component is placed), row DATA is the array a customer or the
- * industry template edits — the shape Puck's `array` field type can
- * represent (primitives only, no ReactNode), unlike `DataGrid` itself which
- * takes an arbitrary `<table>` as `children` and can't be driven by Puck's
- * field data directly.
+ * than reinventing either.
  *
- * `docs/portal-editor-known-issues.md`'s correction (2026-08-20): this is
- * the real "quotation table" component that was previously assumed to
- * already exist as `data-grid.tsx` -- it didn't, this is that component.
+ * COLUMNS ARE DATA, NOT PROPS. This component used to take four fixed label
+ * props, which made the column COUNT part of its type: a customer could rename
+ * 「金额」 and never add 「负责的师傅」, and the assistant had to refuse the
+ * request because no operation could express it. `table` is now
+ * `{ columns, rows }` and everything here is driven by that array — see
+ * lib/portal/table-model.ts for the shape and for why the old four props are
+ * still readable rather than migrated in SQL.
+ *
+ * The legacy props are accepted and normalised here as well as on load, so a
+ * layout that reaches this component through a path that forgot to upgrade it
+ * (a preview, a cached draft) still renders the customer's real data instead of
+ * an empty table.
  *
  * DENSITY: every measurement here comes from the style's own axis tokens
  * rather than a Tailwind literal, so the same table renders as a tight
@@ -30,25 +29,32 @@ export type RecordRow = {
  * table is where a register's density is most visible, so this is the one
  * component where getting it from tokens matters most.
  */
-export function RecordTable({
-  gridId,
-  caption,
-  primaryLabel,
-  secondaryLabel,
-  amountLabel,
-  statusColumnLabel,
-  rows,
-}: {
+
+/** Per-kind width contribution to the table's minimum. A name needs more room
+ *  than a status pill, and a table that has grown to seven columns must scroll
+ *  rather than compress every column into unreadability — which is what
+ *  DataGrid's scroll viewport and edge shadow exist for. */
+const KIND_MIN: Record<ColumnKind, number> = {
+  text: 130,
+  detail: 120,
+  amount: 95,
+  status: 95,
+}
+
+export function RecordTable(props: {
   gridId: string
   caption: string
-  primaryLabel: string
+  table?: TableModel
+  /** Legacy four-column shape. Still read (see table-model.ts) so no saved
+   *  layout can render blank; never written by anything current. */
+  primaryLabel?: string
   secondaryLabel?: string
   amountLabel?: string
   statusColumnLabel?: string
-  rows: RecordRow[]
+  rows?: unknown[]
 }) {
-  const hasSecondary = rows.some((r) => r.secondary !== undefined)
-  const hasAmount = rows.some((r) => r.amount !== undefined)
+  const { gridId, caption } = props
+  const { columns, rows } = normalizeTable(props as unknown as Record<string, unknown>)
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE
   // TRACKING under Ledger (--label-transform: uppercase), plain sentence case
@@ -63,23 +69,35 @@ export function RecordTable({
   const bodyCell =
     "align-middle [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)] [height:var(--row-h)]"
 
+  // Computed, not the old flat 440 — but tuned so the DEFAULT four columns
+  // still add up to exactly that. The narrowest real case is the editor with a
+  // side panel open: a 1440px window gives the canvas 782, the customer's own
+  // rail takes 228 and the shell's padding another 48, leaving ~460px for the
+  // table. Four columns fit that; a fifth the customer added cannot, and must
+  // widen the table and scroll — silently squeezing 状态 in half is the exact
+  // defect that has already been fixed twice by widening things.
+  const minWidth = columns.reduce((w, c) => w + KIND_MIN[c.kind], 0)
+
   return (
-    <DataGrid id={gridId} label={caption}>
-      {/* 440, not 520. The floor has to be a width the table can actually get,
-          and the narrowest real case is now the editor with the AI assistant
-          open: a 1440px window gives the canvas 782, the customer's own rail
-          takes 228, and the shell's padding another 48 -- 458px for the table.
-          At 520 the status column was sliced in half, which is the same defect
-          that was fixed once already by widening the canvas and would simply
-          come back every time a panel opens. Four columns still read at 440;
-          below that the grid scrolls, which is what DataGrid is for. */}
-      <table className="w-full min-w-[440px] border-collapse [font-size:var(--text-sm)]">
+    // `revealEndWhen`: adding a column in a 460px-wide canvas puts the new
+    // column past the right edge, so the customer's own action appeared to do
+    // nothing. The grid scrolls to show it. Measured, not assumed — this was
+    // visible in the first browser check of the column editor.
+    <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
+      <table
+        className="w-full border-collapse [font-size:var(--text-sm)]"
+        style={{ minWidth: `${minWidth}px` }}
+      >
         <thead>
           <tr className="sticky top-0 [background-color:var(--color-ink-900)]">
-            <th className={headCell}>{primaryLabel}</th>
-            {hasSecondary && <th className={headCell}>{secondaryLabel}</th>}
-            {hasAmount && <th className={`${headCell} !text-right`}>{amountLabel}</th>}
-            <th className={headCell}>{statusColumnLabel}</th>
+            {columns.map((col) => (
+              <th
+                key={col.key}
+                className={col.kind === "amount" ? `${headCell} !text-right` : headCell}
+              >
+                {col.label}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -88,26 +106,50 @@ export function RecordTable({
               key={i}
               className="[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
             >
-              <td className={`${bodyCell} [color:var(--color-paper)] [font-weight:var(--fw-medium)]`}>
-                {row.primary}
-              </td>
-              {hasSecondary && (
-                <td className={`${bodyCell} [color:var(--color-paper-dim)]`}>{row.secondary}</td>
-              )}
-              {hasAmount && (
-                // --font-numeric is a mono face under Ledger and Blueprint and
-                // the rounded UI face under Hearth, which deliberately has no
-                // mono anywhere: a monospaced figure is a precision signal, and
-                // precision is not that register's job.
-                <td
-                  className={`${bodyCell} text-right tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)]`}
-                >
-                  {row.amount}
-                </td>
-              )}
-              <td className={bodyCell}>
-                <StatusDot tone={row.statusTone} label={row.statusLabel} />
-              </td>
+              {columns.map((col) => {
+                const value = row.cells?.[col.key] ?? ""
+                if (col.kind === "status") {
+                  return (
+                    <td key={col.key} className={bodyCell}>
+                      {value ? (
+                        <StatusDot
+                          tone={(row.tones?.[col.key] as StatusTone) ?? "neutral"}
+                          label={value}
+                        />
+                      ) : null}
+                    </td>
+                  )
+                }
+                if (col.kind === "amount") {
+                  // --font-numeric is a mono face under Ledger and Blueprint and
+                  // the rounded UI face under Hearth, which deliberately has no
+                  // mono anywhere: a monospaced figure is a precision signal, and
+                  // precision is not that register's job.
+                  return (
+                    <td
+                      key={col.key}
+                      className={`${bodyCell} text-right tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)]`}
+                    >
+                      {value}
+                    </td>
+                  )
+                }
+                if (col.kind === "detail") {
+                  return (
+                    <td key={col.key} className={`${bodyCell} [color:var(--color-paper-dim)]`}>
+                      {value}
+                    </td>
+                  )
+                }
+                return (
+                  <td
+                    key={col.key}
+                    className={`${bodyCell} [color:var(--color-paper)] [font-weight:var(--fw-medium)]`}
+                  >
+                    {value}
+                  </td>
+                )
+              })}
             </tr>
           ))}
         </tbody>

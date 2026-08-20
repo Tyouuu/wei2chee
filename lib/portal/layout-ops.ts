@@ -1,5 +1,14 @@
 import { z } from "zod";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import {
+  COLUMN_KINDS,
+  KIND_LABELS,
+  blankRow,
+  newColumnKey,
+  normalizeTable,
+  upgradeRecordTableProps,
+  type TableModel,
+} from "./table-model";
 
 /**
  * The edit language an LLM is allowed to speak when a customer asks for a
@@ -61,10 +70,11 @@ export const EDITABLE_TEXT_FIELDS = [
   "caption",
   "placeholder",
   "hint",
-  "primaryLabel",
-  "secondaryLabel",
-  "amountLabel",
-  "statusColumnLabel",
+  // The four table-label fields are gone from this list, and deliberately: a
+  // table's columns are no longer props, and a `set_text` aimed at
+  // `primaryLabel` would now write a prop nothing renders -- an edit that
+  // reports success and changes nothing on screen. Renaming a column is
+  // `set_table_column`.
   "brandLabel",
   "userName",
   "userRoleLabel",
@@ -88,14 +98,41 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     op: z.literal("remove_component"),
     target_id: z.string().min(1),
   }),
+  // Cells are positional, aligned to the column list the model is shown, rather
+  // than a fixed primary/secondary/amount/status quartet -- a table can now have
+  // any columns at all, so there is no fixed set of names to key them by.
+  // Everything is nullable and back-filled on apply: a model that omits one cell
+  // should produce a row with one blank cell, not a 502 that loses the other
+  // eleven operations in the same response.
   z.object({
     op: z.literal("add_table_row"),
     target_id: z.string().min(1),
-    primary: z.string().min(1),
-    secondary: z.string().nullable(),
-    amount: z.string().nullable(),
-    status_label: z.string().min(1),
-    status_tone: z.enum(STATUS_TONES),
+    cells: z.array(z.string()).max(8).nullable(),
+    status_tone: z.enum(STATUS_TONES).nullable(),
+  }),
+  // THE THREE OPERATIONS THIS PRODUCT WAS MISSING. Until columns became an
+  // array (lib/portal/table-model.ts) the assistant had to answer「表格加一列
+  // 负责的师傅」with「现有操作不支持」-- not because the model was weak but
+  // because the component could not represent the result. These are what make
+  // "tell it what you want and the system changes" true of the most-used
+  // component in the product.
+  z.object({
+    op: z.literal("add_table_column"),
+    target_id: z.string().min(1),
+    column_label: z.string().min(1).max(16),
+    column_kind: z.enum(COLUMN_KINDS).nullable(),
+  }),
+  z.object({
+    op: z.literal("remove_table_column"),
+    target_id: z.string().min(1),
+    column_key: z.string().min(1),
+  }),
+  z.object({
+    op: z.literal("set_table_column"),
+    target_id: z.string().min(1),
+    column_key: z.string().min(1),
+    column_label: z.string().min(1).max(16),
+    column_kind: z.enum(COLUMN_KINDS).nullable(),
   }),
   z.object({
     op: z.literal("set_workflow"),
@@ -106,11 +143,40 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
 
 export type LayoutOp = z.infer<typeof layoutOpSchema>;
 
+/**
+ * A page-level change the assistant is offering to make, but has not made.
+ *
+ * WHY AN OFFER AND NOT AN OPERATION. Everything in `layoutOpSchema` edits the
+ * page in front of the customer and persists NOTHING -- the result goes into
+ * Puck's state exactly as a drag would, which is what keeps the paid gate on
+ * `save_project_page` meaningful and lets any AI edit be undone with the same
+ * button as everything else. Adding or removing a page is a database write
+ * (`add_project_page`), so routing it through the same channel would either
+ * break that contract or hide an unpaid write behind a chat box.
+ *
+ * So the assistant answers「帮我加一个员工排班的页面」with a button instead of a
+ * refusal. The customer presses it, the RPC runs with their own credentials,
+ * and the write is theirs. This is the same division Durable settled on: the
+ * conversation proposes structure, the customer confirms it.
+ */
+export const pageSuggestionSchema = z.object({
+  action: z.enum(["add_page", "remove_page", "none"]),
+  /** The customer's own name for a new page. */
+  page_title: z.string().max(24).nullable(),
+  /** A built-in type for `add_page` (so it arrives with real sample data), or
+   *  the key of an existing page for `remove_page`. Validated against reality
+   *  in the route -- the model is never trusted with a key. */
+  page_key: z.string().max(64).nullable(),
+});
+
+export type PageSuggestion = z.infer<typeof pageSuggestionSchema>;
+
 export const layoutOpsSchema = z.object({
   operations: z.array(layoutOpSchema).max(12),
   /** One sentence, in the customer's language, describing what was done. Shown
    *  back to them so an edit is never silent. */
   explanation: z.string(),
+  suggestion: pageSuggestionSchema.nullable().optional(),
 });
 
 export type PuckNode = { type: string; props: Record<string, unknown> };
@@ -146,7 +212,20 @@ export function describeLayout(layout: PuckLayout): string {
       )
         .map((f) => `${f}="${n.props[f]}"`)
         .join(" ");
-      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}`;
+
+      // A table's columns have to be listed, or the model cannot target one:
+      // `column_key` is a stable identifier ("primary", "c3") that appears
+      // nowhere on screen, so it can only come from here. Listed in display
+      // order, which is also the order `add_table_row`'s cells are read in.
+      let extra = "";
+      if (n.type === "RecordTable") {
+        const cols = normalizeTable(n.props ?? {})
+          .columns.map((c) => `${c.key}:"${c.label}"(${KIND_LABELS[c.kind]})`)
+          .join(" ");
+        extra = ` columns=[${cols}]`;
+      }
+
+      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${extra}`;
     })
     .join("\n");
 }
@@ -180,6 +259,21 @@ function removeNode(nodes: PuckNode[], id: string): boolean {
     }
   }
   return false;
+}
+
+/**
+ * The live `{columns, rows}` of a RecordTable, or null if the id is not one.
+ *
+ * Upgrades the node's props as a side effect, so an operation aimed at a table
+ * still saved in the legacy four-prop shape works on the same data the editor
+ * shows -- and hands back the SAME object that now sits in `props.table`, so
+ * the caller mutates the layout by mutating what it is given.
+ */
+function tableOf(layout: PuckLayout, id: string): TableModel | null {
+  const node = findNode(layout.content, id);
+  if (!node || node.type !== "RecordTable") return null;
+  node.props = upgradeRecordTableProps(node.props);
+  return node.props.table as TableModel;
 }
 
 /** The list a new block should join: the shell's main column when there is a
@@ -264,20 +358,88 @@ export function applyLayoutOps(input: PuckLayout, ops: LayoutOp[]): ApplyResult 
       }
 
       case "add_table_row": {
-        const node = findNode(layout.content, op.target_id);
-        if (!node || node.type !== "RecordTable") {
+        const table = tableOf(layout, op.target_id);
+        if (!table) {
           skipped.push({ op: op.op, reason: `${op.target_id} 不是记录表格` });
           break;
         }
-        const rows = Array.isArray(node.props.rows) ? (node.props.rows as unknown[]) : [];
-        rows.push({
-          primary: op.primary,
-          secondary: op.secondary ?? undefined,
-          amount: op.amount ?? undefined,
-          statusTone: op.status_tone,
-          statusLabel: op.status_label,
+        const row = blankRow(table.columns);
+        // Positional: cells[i] belongs to columns[i], which is the order the
+        // model was shown. Extra cells are dropped and missing ones stay blank
+        // rather than shifting every value one column left.
+        (op.cells ?? []).forEach((value, i) => {
+          const col = table.columns[i];
+          if (col) row.cells[col.key] = value;
         });
-        node.props.rows = rows;
+        for (const col of table.columns) {
+          if (col.kind === "status") {
+            row.tones = { ...(row.tones ?? {}), [col.key]: op.status_tone ?? "neutral" };
+          }
+        }
+        table.rows.push(row);
+        applied++;
+        break;
+      }
+
+      case "add_table_column": {
+        const table = tableOf(layout, op.target_id);
+        if (!table) {
+          skipped.push({ op: op.op, reason: `${op.target_id} 不是记录表格` });
+          break;
+        }
+        // Same ceiling the fields panel enforces (table-field.tsx). Stated in
+        // both places on purpose: the customer's own limit should not depend on
+        // which of the two ways they add a column.
+        if (table.columns.length >= 8) {
+          skipped.push({ op: op.op, reason: "表格最多八列" });
+          break;
+        }
+        const key = newColumnKey(table.columns);
+        table.columns.push({ key, label: op.column_label, kind: op.column_kind ?? "text" });
+        for (const row of table.rows) row.cells[key] = "";
+        applied++;
+        break;
+      }
+
+      case "remove_table_column": {
+        const table = tableOf(layout, op.target_id);
+        if (!table) {
+          skipped.push({ op: op.op, reason: `${op.target_id} 不是记录表格` });
+          break;
+        }
+        const at = table.columns.findIndex((c) => c.key === op.column_key);
+        if (at === -1) {
+          skipped.push({ op: op.op, reason: `表格里没有 ${op.column_key} 这一列` });
+          break;
+        }
+        // A table with no columns cannot be rendered and cannot be recovered
+        // from -- there would be no header to add one back through.
+        if (table.columns.length <= 1) {
+          skipped.push({ op: op.op, reason: "表格至少要有一列" });
+          break;
+        }
+        table.columns.splice(at, 1);
+        for (const row of table.rows) {
+          delete row.cells[op.column_key];
+          if (row.tones) delete row.tones[op.column_key];
+        }
+        applied++;
+        break;
+      }
+
+      case "set_table_column": {
+        const table = tableOf(layout, op.target_id);
+        if (!table) {
+          skipped.push({ op: op.op, reason: `${op.target_id} 不是记录表格` });
+          break;
+        }
+        const col = table.columns.find((c) => c.key === op.column_key);
+        if (!col) {
+          skipped.push({ op: op.op, reason: `表格里没有 ${op.column_key} 这一列` });
+          break;
+        }
+        col.label = op.column_label;
+        if (op.column_kind) col.kind = op.column_kind;
         applied++;
         break;
       }

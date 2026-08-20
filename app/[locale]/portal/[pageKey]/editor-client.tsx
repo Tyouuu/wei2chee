@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Puck, type Data } from "@puckeditor/core";
@@ -11,6 +11,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft";
+import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { EditorChrome } from "./editor-chrome";
 import { ComponentPreview } from "@/design-system/editor/component-preview";
 import { StyleSwitcher } from "./style-switcher";
@@ -131,6 +132,7 @@ export function PortalEditor({
   // things that triggers that. State kept inside it would be wiped by its own
   // results.
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [instruction, setInstruction] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
@@ -140,6 +142,17 @@ export function PortalEditor({
   // there work on screen that is not in the database".
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [autosaving, setAutosaving] = useState(false);
+  const autosaveTimer = useRef<number | null>(null);
+
+  // A pending autosave must not fire against an unmounted editor -- navigating
+  // between pages remounts this component, and the timer would otherwise write
+  // the page the customer just left.
+  useEffect(() => {
+    return () => {
+      if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
+    };
+  }, []);
 
   // The browser's own "leave site?" prompt, armed only while there is
   // something to lose. A customer who has spent twenty minutes designing and
@@ -178,10 +191,15 @@ export function PortalEditor({
   // pre-effect first render (identical first paint), true only afterwards.
   // For a paid customer it's false in every case, so `initialData` either
   // way -- server and client still agree, no hydration mismatch.
-  const startingData =
-    hydrated && !paid
-      ? ((readLocalDraft(projectId, pageKey) as Data | null) ?? (initialData as Data))
-      : (initialData as Data);
+  // Upgraded too: a draft is a mirror of whatever the layout looked like when it
+  // was written, so a free-tier customer returning after this change has a
+  // device-local copy in the old shape. The null test stays OUTSIDE the upgrade
+  // -- `upgradeLayout({})` returns `{}`, which is truthy, and would quietly turn
+  // "no draft on this device" into an empty canvas.
+  const localDraft = hydrated && !paid ? readLocalDraft(projectId, pageKey) : null;
+  const startingData = localDraft
+    ? (upgradeLayout(localDraft) as Data)
+    : (initialData as Data);
 
   function handleChange(data: Data) {
     // Passive mirror on every change, independent of the explicit save
@@ -191,20 +209,51 @@ export function PortalEditor({
     // A stale "已保存" beside a canvas the customer has just changed is worse
     // than no indicator: it asserts something untrue about their data.
     setSaveState((prev) => (prev === "saved" ? "idle" : prev));
+
+    // AUTOSAVE. Paid only, and not defensively: an unpaid customer has no
+    // server-side save at all (save_project_page raises "payment required"), so
+    // a background attempt would either throw on a timer or -- worse -- raise
+    // the paywall overlay over a canvas the customer is in the middle of
+    // editing, without them having pressed anything.
+    //
+    // 2.5s after the last change, not on an interval: an interval fires in the
+    // middle of a drag and mid-word while someone is typing a column heading.
+    // Debouncing means a save happens when the customer pauses, which is also
+    // when the state is worth keeping.
+    //
+    // Safe to have at all only because of the version history landing in the
+    // same change (migration 20260820220000) -- autosave over a single
+    // overwritten row is a faster way to lose work, not a safety net.
+    //
+    // AND NOT BEFORE THE FIRST DELIBERATE SAVE. Caught in a browser check: with
+    // autosave armed from the start, opening the generated system and nudging
+    // one thing wrote it to the database -- which flips `isGeneratedDraft`
+    // false on the next load and takes the 「这是根据你的生意自动生成的初稿」
+    // banner with it. The sample rows then read as real records the customer
+    // entered, which is precisely the misreading that banner exists to prevent.
+    // The first save is the moment a customer accepts the draft as their own;
+    // autosave protects work from then on, and does not manufacture that moment
+    // on their behalf.
+    if (!paid || (isGeneratedDraft && !hasSavedOnce)) return;
+    if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = window.setTimeout(() => {
+      autosaveTimer.current = null;
+      void persist(data, true);
+    }, 2500);
   }
 
-  async function handleSaveClick(data: Data) {
-    if (!paid) {
-      setSaveState("paywall");
-      return;
-    }
+  /** The write itself. Shared by the Save button, ⌘S and the autosave timer, so
+   *  there is one place that knows what a successful save means. */
+  async function persist(data: Data, auto: boolean) {
+    if (auto) setAutosaving(true);
+    else setSaveState("saving");
 
-    setSaveState("saving");
     const supabase = createBrowserSupabaseClient();
     const { error } = await supabase.rpc("save_project_page", {
       target_page_key: pageKey,
       new_layout: data,
     });
+    if (auto) setAutosaving(false);
     // Never surface the RPC's raw Postgres error text (e.g. "payment
     // required", "page not found: %") -- same discipline as
     // style-select-client.tsx's set_project_style handling: map through
@@ -213,7 +262,10 @@ export function PortalEditor({
     // the normal flow, so a generic saveError message covers whatever's
     // left (network failure, unexpected server error, etc.).
     if (!error) {
-      setSaveState("saved");
+      // An autosave leaves the indicator at the quieter "已保存 14:32" rather
+      // than flashing the explicit-save confirmation, which would read as a
+      // response to a press that never happened.
+      if (!auto) setSaveState("saved");
       setHasSavedOnce(true);
       setDirty(false);
       setSavedAt(Date.now());
@@ -223,9 +275,26 @@ export function PortalEditor({
       // on `startingData` above ever stops applying to this
       // project/pageKey (e.g. a refund, or a future free/paid toggle).
       clearLocalDraft(projectId, pageKey);
-    } else {
+    } else if (!auto) {
       setSaveState("error");
     }
+    // A failed AUTOSAVE stays silent and leaves `dirty` true. It was not asked
+    // for, the work is still on screen and still in the local draft, and the
+    // next pause tries again -- surfacing a red error for a background attempt
+    // would teach customers to distrust an editor that is working fine.
+  }
+
+  async function handleSaveClick(data: Data) {
+    if (!paid) {
+      setSaveState("paywall");
+      return;
+    }
+    // A queued autosave of an older snapshot must not land after this one.
+    if (autosaveTimer.current) {
+      window.clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = null;
+    }
+    await persist(data, false);
   }
 
   async function handleSignOut() {
@@ -462,11 +531,18 @@ export function PortalEditor({
               header: () => (
                 <EditorChrome
                   saving={saveState === "saving"}
+                  autosaving={autosaving}
                   onSave={handleSaveClick}
                   dirty={dirty}
                   savedAt={savedAt}
                   assistantOpen={assistantOpen}
                   onToggleAssistant={() => setAssistantOpen((v) => !v)}
+                  historyOpen={historyOpen}
+                  onOpenHistory={() => setHistoryOpen(true)}
+                  onCloseHistory={() => setHistoryOpen(false)}
+                  paid={paid}
+                  pageKey={pageKey}
+                  locale={locale}
                 />
               ),
               // The one supported override point for wrapping just the
@@ -503,6 +579,8 @@ export function PortalEditor({
                       busy={aiBusy}
                       setBusy={setAiBusy}
                       onClose={() => setAssistantOpen(false)}
+                      pages={navPages}
+                      locale={locale}
                     />
                   )}
                 </div>

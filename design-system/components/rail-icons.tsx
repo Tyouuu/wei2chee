@@ -183,6 +183,25 @@ export function IconInbox({ className = "h-[18px] w-[18px]" }: IconProps) {
   )
 }
 
+export function IconBell({ className = "h-[18px] w-[18px]" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M18 9a6 6 0 1 0-12 0c0 4.2-1.2 5.6-2 6.4h16c-.8-.8-2-2.2-2-6.4" />
+      <path d="M10.3 19a2 2 0 0 0 3.4 0" />
+    </svg>
+  )
+}
+
+export function IconLifebuoy({ className = "h-[18px] w-[18px]" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3.6" />
+      <path d="M5.6 5.6l3.9 3.9M14.5 14.5l3.9 3.9M18.4 5.6l-3.9 3.9M9.5 14.5l-3.9 3.9" />
+    </svg>
+  )
+}
+
 /**
  * Name → icon, for callers that can only carry a STRING rather than a node.
  *
@@ -207,6 +226,11 @@ export const RAIL_ICONS: Record<string, (p: IconProps) => React.JSX.Element> = {
   orders: IconShoppingBag,
   inbox: IconInbox,
   settings: IconSettings,
+  // Footer rows (RailUtilityItem). Named by what they ARE rather than by a
+  // route key, because unlike the nav items above these are not pages.
+  notifications: IconBell,
+  account: IconSettings,
+  support: IconLifebuoy,
 }
 
 export function railIcon(name: string | undefined, className?: string) {

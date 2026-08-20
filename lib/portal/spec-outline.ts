@@ -1,4 +1,5 @@
 import { walkNodes, type PuckLayout, type PuckNode } from "./layout-ops";
+import { normalizeTable } from "./table-model";
 import { PAGE_KEYS, isBuiltInPage, type PageId, type PageKey, type PageRef } from "@/lib/templates/industry-template";
 
 /**
@@ -74,20 +75,18 @@ function specForPage(pageKey: PageId, ownTitle: string | null, layout: PuckLayou
 
   const tables = nodes
     .filter((n) => n.type === "RecordTable")
-    .map((n) => ({
-      caption: str(n.props.caption) ?? "记录表",
-      // Only the columns the table actually shows. `secondaryLabel` and
-      // `amountLabel` are optional and RecordTable hides a column whose rows
-      // never carry a value, so listing a label that is set but unused would
-      // specify a column the customer cannot see.
-      columns: [
-        str(n.props.primaryLabel),
-        str(n.props.secondaryLabel),
-        str(n.props.amountLabel),
-        str(n.props.statusColumnLabel),
-      ].filter((c): c is string => Boolean(c)),
-      sampleRowCount: Array.isArray(n.props.rows) ? n.props.rows.length : 0,
-    }));
+    .map((n) => {
+      // Read through normalizeTable rather than off the props directly, so a
+      // page saved before columns became an array still specifies the right
+      // columns -- the spec is what the build team quotes from, and a table
+      // described with the wrong columns is a wrong quote.
+      const table = normalizeTable(n.props);
+      return {
+        caption: str(n.props.caption) ?? "记录表",
+        columns: table.columns.map((c) => c.label).filter(Boolean),
+        sampleRowCount: table.rows.length,
+      };
+    });
 
   const workflows = nodes
     .filter((n) => n.type === "WorkflowStrip")

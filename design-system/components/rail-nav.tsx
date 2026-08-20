@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { ChevronDown, Bell } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import { IconSettings, railIcon } from "./rail-icons"
 
 export type RailItem = {
@@ -17,6 +17,26 @@ export type RailItem = {
    *  hand-written app should keep using `icon`. `icon` wins if both are set. */
   iconName?: string
   badge?: number
+}
+
+/**
+ * A row in the rail's footer — notifications, settings, whatever else a
+ * particular business's system needs down there.
+ *
+ * `href` is optional on purpose. In the portal these rows are part of the
+ * system the customer is DESIGNING, and the screens behind them do not exist
+ * yet; the old code pointed both at "#", which rendered a real link that went
+ * nowhere. A row with no href renders as a non-interactive row instead, so it
+ * still shows what the built system will have without pretending to be
+ * clickable.
+ */
+export type RailUtilityItem = {
+  label: string
+  href?: string
+  /** Resolved through `RAIL_ICONS`, same as `RailItem.iconName`. */
+  iconName?: string
+  /** Draws the unread pip. Only meaningful on a notifications-style row. */
+  showUnreadDot?: boolean
 }
 
 type Panel = "profile" | null
@@ -86,6 +106,7 @@ function getCollapsedServerSnapshot(): string {
 export function RailNav({
   brand,
   items,
+  utilityItems,
   notificationsHref,
   hasUnread,
   accountHref,
@@ -96,9 +117,15 @@ export function RailNav({
 }: {
   brand: { href: string; label: string; icon?: ReactNode }
   items: RailItem[]
-  notificationsHref: string
+  /** The footer row. Supply this and it replaces the notifications/account
+   *  pair below entirely — which is the point: in a system the customer is
+   *  designing, "does this business need a notifications screen" is their call,
+   *  not the template's. Omit it and the legacy two are rendered, so every
+   *  existing caller keeps working. */
+  utilityItems?: RailUtilityItem[]
+  notificationsHref?: string
   hasUnread?: boolean
-  accountHref: string
+  accountHref?: string
   accountLabel?: string
   user: { name: string; roleLabel?: string }
   /** Dropdown content shown when the profile row is clicked — e.g. a role switcher, a sign-out link. Omit to render the profile row as a static, non-interactive summary. */
@@ -108,6 +135,14 @@ export function RailNav({
 }) {
   const pathname = usePathname()
   const [open, setOpen] = useState<Panel>(null)
+
+  // The legacy pair, expressed in the new shape. Keeping the old props working
+  // costs three lines and means this generalisation isn't a breaking change for
+  // any hand-written app that mounts this rail.
+  const utility: RailUtilityItem[] = utilityItems ?? [
+    { label: "通知", href: notificationsHref, iconName: "notifications", showUnreadDot: hasUnread },
+    { label: accountLabel, href: accountHref, iconName: "account" },
+  ]
 
   const collapsedRaw = useSyncExternalStore(subscribeToCollapsed, getCollapsedSnapshot, getCollapsedServerSnapshot)
   const collapsed = useMemo<string[]>(() => {
@@ -302,34 +337,54 @@ export function RailNav({
       </div>
 
       <div className="shrink-0 border-t pt-2 [border-color:var(--color-nav-border)]">
-        <Link
-          href={notificationsHref}
-          className={`flex items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)] ${
-            pathname === notificationsHref
-              ? "text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-hover)] [font-weight:var(--fw-semibold)]"
-              : "text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-nav-hover)] hover:text-[color:var(--color-nav-fg)]"
-          }`}
-        >
-          <span className="relative">
-            <Bell aria-hidden="true" className="h-[18px] w-[18px]" />
-            {hasUnread && (
-              <span className="absolute -right-0.5 -top-0.5 h-[7px] w-[7px] rounded-full border-[1.5px] [border-color:var(--color-nav-bg)] [background-color:var(--color-nav-accent)]" />
-            )}
-          </span>
-          <span className="flex-1 truncate">通知</span>
-        </Link>
+        {utility.map((util, i) => {
+          const icon = railIcon(util.iconName, "h-[18px] w-[18px]") ?? (
+            <IconSettings className="h-[18px] w-[18px]" />
+          )
+          const body = (
+            <>
+              <span className="relative">
+                {icon}
+                {util.showUnreadDot && (
+                  <span className="absolute -right-0.5 -top-0.5 h-[7px] w-[7px] rounded-full border-[1.5px] [border-color:var(--color-nav-bg)] [background-color:var(--color-nav-accent)]" />
+                )}
+              </span>
+              <span className="flex-1 truncate">{util.label}</span>
+            </>
+          )
+          const base =
+            "flex items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)]"
 
-        <Link
-          href={accountHref}
-          className={`flex items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)] ${
-            pathname === accountHref
-              ? "text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-hover)] [font-weight:var(--fw-semibold)]"
-              : "text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-nav-hover)] hover:text-[color:var(--color-nav-fg)]"
-          }`}
-        >
-          <IconSettings className="h-[18px] w-[18px]" />
-          <span className="flex-1 truncate">{accountLabel}</span>
-        </Link>
+          // No href, or the placeholder one: this row is part of the system
+          // being designed and has nowhere real to go yet. Rendered as a plain
+          // row rather than a <Link href="#">, which was a link that visibly
+          // did nothing when clicked.
+          if (!util.href || util.href === "#") {
+            return (
+              <div
+                key={`${util.label}-${i}`}
+                title="这是你系统里的功能，系统建好后会启用"
+                className={`${base} cursor-default text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)]`}
+              >
+                {body}
+              </div>
+            )
+          }
+
+          return (
+            <Link
+              key={`${util.label}-${i}`}
+              href={util.href}
+              className={`${base} ${
+                pathname === util.href
+                  ? "text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-hover)] [font-weight:var(--fw-semibold)]"
+                  : "text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-nav-hover)] hover:text-[color:var(--color-nav-fg)]"
+              }`}
+            >
+              {body}
+            </Link>
+          )
+        })}
 
         {profileMenu ? (
           <div className="relative" onKeyDown={(e) => e.key === "Escape" && closeProfilePanel()}>

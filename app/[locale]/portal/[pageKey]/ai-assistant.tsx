@@ -1,8 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { usePuck, type Data } from "@puckeditor/core";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+
+/** A page-level change the assistant offered and the customer can confirm.
+ *  See lib/portal/layout-ops.ts's pageSuggestionSchema for why this is an offer
+ *  with a button rather than another operation the route carries out. */
+export type PageOffer = {
+  action: "add_page" | "remove_page";
+  pageKey: string | null;
+  title: string;
+  label: string;
+};
 
 export type Turn = {
   id: string;
@@ -16,6 +29,11 @@ export type Turn = {
    *  the customer has kept working past it. */
   before?: Data;
   reverted?: boolean;
+  offer?: PageOffer;
+  /** Set once the offer's button has been pressed, so the transcript records
+   *  what the customer decided rather than silently swapping the button out. */
+  offerResult?: { ok: boolean; href?: string };
+  offerBusy?: boolean;
 };
 
 /**
@@ -52,6 +70,8 @@ export function AiAssistant({
   busy,
   setBusy,
   onClose,
+  pages,
+  locale,
 }: {
   /* The transcript and the draft message are owned by the EDITOR, not by this
    * component. Puck re-creates `overrides` render functions as the editor
@@ -65,12 +85,17 @@ export function AiAssistant({
   busy: boolean;
   setBusy: (value: boolean) => void;
   onClose: () => void;
+  /** The customer's own pages. Sent with each request so「把报价单删掉」can name
+   *  a real page, and used to build the link after one is added. */
+  pages: { key: string; label: string }[];
+  locale: string;
 }) {
   const t = useTranslations("portal.editor");
   // Read from Puck directly: this renders inside the `puck` override and
   // therefore inside the provider, so the layout it sends is always the live
   // canvas rather than a copy threaded down through props.
   const { appState, dispatch } = usePuck();
+  const router = useRouter();
   const data = appState.data as Data;
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -101,7 +126,7 @@ export function AiAssistant({
       const res = await fetch("/api/portal/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ layout: before, instruction: trimmed }),
+        body: JSON.stringify({ layout: before, instruction: trimmed, pages }),
       });
 
       if (!res.ok) {
@@ -114,6 +139,7 @@ export function AiAssistant({
         explanation: string;
         applied: number;
         skipped: { op: string; reason: string }[];
+        suggestion: PageOffer | null;
       };
 
       if (result.applied > 0) {
@@ -127,6 +153,7 @@ export function AiAssistant({
         explanation: result.explanation || t("aiNoChange"),
         applied: result.applied,
         skipped: result.skipped,
+        offer: result.suggestion ?? undefined,
       });
     } catch {
       settle({ state: "failed", explanation: t("aiFailed") });
@@ -141,6 +168,49 @@ export function AiAssistant({
     // revert is itself undoable.
     dispatch({ type: "setData", data: turn.before, recordHistory: true });
     setTurns((prev) => prev.map((x) => (x.id === turn.id ? { ...x, reverted: true } : x)));
+  }
+
+  /**
+   * Carries out a page offer, with the customer's own credentials.
+   *
+   * This is the one thing the assistant does that touches the database, and it
+   * happens on a press rather than on a sentence — see pageSuggestionSchema.
+   * The RPCs resolve the project from `auth.uid()` and enforce their own rules
+   * (the page cap, the un-removable dashboard), so this function does not need
+   * to and deliberately does not restate them.
+   */
+  async function confirmOffer(turn: Turn) {
+    const offer = turn.offer;
+    if (!offer || turn.offerBusy || turn.offerResult) return;
+
+    const patch = (p: Partial<Turn>) =>
+      setTurns((prev) => prev.map((x) => (x.id === turn.id ? { ...x, ...p } : x)));
+
+    patch({ offerBusy: true });
+    const supabase = createBrowserSupabaseClient();
+
+    if (offer.action === "add_page") {
+      const { data, error } = await supabase.rpc("add_project_page", {
+        requested_key: offer.pageKey,
+        new_title: offer.pageKey ? "" : offer.title,
+      });
+      patch({
+        offerBusy: false,
+        offerResult: error
+          ? { ok: false }
+          : { ok: true, href: `/${locale}/portal/${String(data)}` },
+      });
+    } else {
+      const { error } = await supabase.rpc("remove_project_page", {
+        target_page_key: offer.pageKey,
+      });
+      patch({ offerBusy: false, offerResult: { ok: !error } });
+    }
+
+    // The page tabs, the rail and the home gallery are all server-rendered from
+    // project_pages, so none of them know anything changed until the server
+    // renders again.
+    router.refresh();
   }
 
   const suggestions = [t("aiSuggest1"), t("aiSuggest2"), t("aiSuggest3")];
@@ -239,6 +309,48 @@ export function AiAssistant({
                         ))}
                       </ul>
                     ) : null}
+
+                    {/* The offer. Where the assistant used to answer「现有操作
+                        无法新增独立页面」and stop, it now proposes the page and
+                        the customer presses once. The write is theirs, so the
+                        paid gate and the undo model are both untouched. */}
+                    {turn.offer && !turn.offerResult && (
+                      <button
+                        type="button"
+                        onClick={() => confirmOffer(turn)}
+                        disabled={turn.offerBusy}
+                        className={`mt-0.5 self-start rounded-md px-3 py-1.5 text-[12px] transition-colors disabled:opacity-50 [font-weight:var(--fw-semibold)] ${
+                          turn.offer.action === "remove_page"
+                            ? "border [border-color:var(--color-clay-bright)] [color:var(--color-clay-bright)] enabled:hover:[background-color:var(--color-ink-850)]"
+                            : "[background-color:var(--color-primary)] [color:var(--color-on-primary)] enabled:hover:[background-color:var(--color-primary-deep)]"
+                        }`}
+                      >
+                        {turn.offerBusy
+                          ? t("aiOfferWorking")
+                          : turn.offer.action === "add_page"
+                            ? `${t("aiOfferAdd")}：${turn.offer.label}`
+                            : `${t("aiOfferRemove")}：${turn.offer.label}`}
+                      </button>
+                    )}
+
+                    {turn.offerResult?.ok && turn.offerResult.href && (
+                      <Link
+                        href={turn.offerResult.href}
+                        className="self-start text-[11.5px] underline [color:var(--color-jade-bright)]"
+                      >
+                        {t("aiPageAdded")}
+                      </Link>
+                    )}
+                    {turn.offerResult?.ok && !turn.offerResult.href && (
+                      <p className="text-[11.5px] [color:var(--color-jade-bright)]">
+                        {t("aiPageRemoved")}
+                      </p>
+                    )}
+                    {turn.offerResult && !turn.offerResult.ok && (
+                      <p role="alert" className="text-[11.5px] [color:var(--color-clay-bright)]">
+                        {t("aiOfferFailed")}
+                      </p>
+                    )}
 
                     {turn.state === "done" && (turn.applied ?? 0) > 0 && (
                       <button

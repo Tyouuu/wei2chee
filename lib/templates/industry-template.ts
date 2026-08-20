@@ -1,4 +1,5 @@
 import type { Data } from "@puckeditor/core";
+import type { TableColumn } from "@/lib/portal/table-model";
 
 /**
  * Turns a business's own context -- its industry, its questionnaire answers,
@@ -567,18 +568,18 @@ function railNav(
       group: "",
       iconName: page.key,
     })),
-    // "#", not the dashboard route. RailNav marks an item as the current page
-    // by comparing its href against the live pathname, so pointing these two at
-    // /portal/dashboard lit up THREE items at once on the dashboard -- 总览,
-    // 通知 and 账号设置 all rendered as "you are here". It also promised a
-    // destination that does not exist and would have dumped the customer back
-    // where they started.
-    //
-    // These belong in the rail regardless: the customer is looking at a preview
+    // These two used to be `notificationsHref: "#"` / `accountHref: "#"` --
+    // real links that went nowhere, and that the customer could neither rename
+    // nor remove. They belong in the rail (the customer is looking at a preview
     // of the system they are designing, and a real one has notifications and
-    // account settings. Same "#" every other sample link in this file uses.
-    notificationsHref: "#",
-    accountHref: "#",
+    // account settings), but as a LIST they own: a wholesaler who wants a 客服
+    // row adds one, a one-person business who does not want notifications
+    // deletes it. With no href, RailNav renders them as non-navigating rows
+    // instead of dead links.
+    utilityItems: [
+      { label: "通知", iconName: "notifications" },
+      { label: "账号设置", iconName: "account" },
+    ],
     // The account chip identifies the PERSON, so the email local part belongs
     // here and only here -- it is the one place in the system where "who am I
     // signed in as" is the question being answered.
@@ -593,20 +594,30 @@ function recordTable(
   labels: { primary: string; secondary?: string; amount?: string; status?: string },
   rows: { primary: string; secondary?: string; amount?: string; tone: StatusTone; status: string }[],
 ): PuckNode {
+  // Columns are an array, not four props -- see lib/portal/table-model.ts. The
+  // built-in keys are deliberately the old prop names, so a generated table and
+  // an upgraded saved one are the same object and nothing downstream has to
+  // know which it is looking at.
+  const columns: TableColumn[] = [{ key: "primary", label: labels.primary, kind: "text" }];
+  if (labels.secondary) columns.push({ key: "secondary", label: labels.secondary, kind: "detail" });
+  if (labels.amount) columns.push({ key: "amount", label: labels.amount, kind: "amount" });
+  columns.push({ key: "status", label: labels.status ?? "状态", kind: "status" });
+
   return node("RecordTable", id, {
     gridId: id,
     caption,
-    primaryLabel: labels.primary,
-    secondaryLabel: labels.secondary,
-    amountLabel: labels.amount,
-    statusColumnLabel: labels.status ?? "状态",
-    rows: rows.map((r) => ({
-      primary: r.primary,
-      secondary: r.secondary,
-      amount: r.amount,
-      statusTone: r.tone,
-      statusLabel: r.status,
-    })),
+    table: {
+      columns,
+      rows: rows.map((r) => ({
+        cells: {
+          primary: r.primary,
+          secondary: r.secondary ?? "",
+          amount: r.amount ?? "",
+          status: r.status,
+        },
+        tones: { status: r.tone },
+      })),
+    },
   });
 }
 

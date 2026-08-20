@@ -3,6 +3,7 @@ import type { Data } from "@puckeditor/core";
 import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
 import { PortalHome } from "./home-client";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import {
   buildPageLayout,
   displayBusinessName,
@@ -96,9 +97,13 @@ export default async function PortalHomePage({
       pageKey: key,
       title: ref.title ?? null,
       isDraft: generated,
+      // Upgraded on the way out, same as the editor does: a preview renders the
+      // real components, so a table still saved in the four-prop shape would
+      // otherwise be read by the legacy path on this screen and the new one in
+      // the editor. One reader, one shape. See lib/portal/layout-upgrade.ts.
       layout: (generated
         ? buildPageLayout(key, businessContext, ownerName, locale, pageRefs)
-        : saved) as unknown as Data,
+        : upgradeLayout(saved)) as unknown as Data,
     };
   });
 

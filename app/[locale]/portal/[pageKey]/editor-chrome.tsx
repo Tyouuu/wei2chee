@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePuck, type Data } from "@puckeditor/core";
 import { useTranslations } from "next-intl";
+import { VersionHistoryDialog } from "./version-history";
 
 /**
  * Replaces Puck's built-in header.
@@ -26,13 +27,24 @@ import { useTranslations } from "next-intl";
  */
 export function EditorChrome({
   saving,
+  autosaving,
   onSave,
   dirty,
   savedAt,
   assistantOpen,
   onToggleAssistant,
+  historyOpen,
+  onOpenHistory,
+  onCloseHistory,
+  paid,
+  pageKey,
+  locale,
 }: {
   saving: boolean;
+  /** A save the customer did not ask for, running in the background. Reported
+   *  differently from an explicit one: an owner who sees 「保存中…」 they did not
+   *  start assumes they pressed something. */
+  autosaving: boolean;
   onSave: (data: Data) => void;
   /** Edited since the last successful save. Drives the indicator, and the
    *  beforeunload guard in editor-client. */
@@ -40,6 +52,21 @@ export function EditorChrome({
   savedAt: number | null;
   assistantOpen: boolean;
   onToggleAssistant: () => void;
+  /** Owned by editor-client, not held here. Puck re-creates the `header`
+   *  override's render function on every editor render -- and restoring a
+   *  version IS an editor render -- so state kept in this component would be
+   *  wiped by its own result, closing the dialog before the customer saw the
+   *  confirmation. Same reason the assistant's transcript lives up there. */
+  historyOpen: boolean;
+  onOpenHistory: () => void;
+  onCloseHistory: () => void;
+  /** History is a paid-tier surface for the same reason saving is: a free
+   *  customer has no server-side copy of anything, so there is no history to
+   *  show and a button leading to a permanently empty list is a worse answer
+   *  than no button. */
+  paid: boolean;
+  pageKey: string;
+  locale: string;
 }) {
   const t = useTranslations("portal.editor");
   const { appState, history, dispatch } = usePuck();
@@ -109,10 +136,47 @@ export function EditorChrome({
           than pressing it again. */}
       <span
         role="status"
-        className={`text-[12px] ${dirty ? "[color:var(--color-brass-bright)]" : "[color:var(--color-paper-dim)]"}`}
+        className={`text-[12px] ${dirty && !autosaving ? "[color:var(--color-brass-bright)]" : "[color:var(--color-paper-dim)]"}`}
       >
-        {saving ? t("saving") : dirty ? t("unsaved") : savedAt ? t("savedJustNow") : ""}
+        {saving
+          ? t("saving")
+          : autosaving
+            ? t("autosaving")
+            : dirty
+              ? t("unsaved")
+              : savedAt
+                ? // The actual clock time, not "just now" -- which stopped
+                  // being true a minute after it was rendered and never
+                  // updated, i.e. it asserted something false about the
+                  // customer's data for as long as the tab stayed open.
+                  t("savedAtTime", {
+                    time: new Intl.DateTimeFormat(locale === "zh" ? "zh-MY" : "en-MY", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(savedAt),
+                  })
+                : ""}
       </span>
+
+      {paid ? (
+        <button
+          type="button"
+          onClick={onOpenHistory}
+          className="rounded-md px-2.5 py-1.5 text-[12.5px] transition-colors [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+        >
+          {t("historyCta")}
+        </button>
+      ) : null}
+
+      <VersionHistoryDialog
+        open={historyOpen}
+        onClose={onCloseHistory}
+        pageKey={pageKey}
+        locale={locale}
+        // Recorded on Puck's own history stack, so restoring the wrong version
+        // is undone with the same button as everything else.
+        onRestored={(layout) => dispatch({ type: "setData", data: layout, recordHistory: true })}
+      />
 
       <button
         type="button"

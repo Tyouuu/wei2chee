@@ -9,8 +9,10 @@ import {
   layoutOpsSchema,
   EDITABLE_TEXT_FIELDS,
   REGISTERED_COMPONENTS,
+  type PageSuggestion,
   type PuckLayout,
 } from "@/lib/portal/layout-ops";
+import { COLUMN_KINDS } from "@/lib/portal/table-model";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -47,21 +49,43 @@ Rules:
 - Only ever use an \`id\` that appears in the page listing. Never invent one.
 - Only ever name a component from the allowed list. Never invent one.
 - Prefer editing existing blocks over adding new ones. An owner asking to
-  "record customer birthdays" usually wants a column renamed or a field added,
-  not a second table.
+  "record customer birthdays" usually wants a column added to the existing
+  table, not a second table.
 - Make the smallest change that satisfies the request. Do not tidy, reword or
   improve anything you were not asked about.
 - Write all text in the same language the owner used.
-- If the request cannot be carried out with the available operations, return an
-  empty operations list and say so plainly in the explanation. Where the owner
-  CAN do the thing somewhere else in the product, say where, in one clause:
-    * adding or deleting a whole page -> tell them to use 「加一页」 on the home
-      screen (首页), which is where pages are managed.
-    * adding a NEW COLUMN to a record table -> the table has four fixed columns
-      (name, detail, amount, status). Say so, and offer to rename one of them
-      to what they asked for instead, since that is usually what they want.
-  Do not apologise and do not offer to do it later. Say what is possible now.
-- explanation: ONE sentence, in the owner's language, saying what you changed.`;
+- explanation: ONE sentence, in the owner's language, saying what you changed.
+
+Record tables:
+- Each table lists its columns as \`key:"label"(type)\`. Use the KEY to target a
+  column; it is an internal identifier the owner never sees.
+- add_table_column adds a column and gives every existing row a blank cell for
+  it. Pick column_kind by what the column holds: 文字 = text, 说明 = a longer
+  secondary description, 金额 = money (right-aligned), 状态 = a status with a
+  colour. Most new columns are 文字.
+- set_table_column renames a column (and can change its type).
+- remove_table_column deletes a column and its cells. A table must keep at
+  least one column.
+- add_table_row's \`cells\` is POSITIONAL: cells[0] is the first column listed,
+  cells[1] the second, and so on. Supply one string per column, in that order.
+
+Whole pages:
+- You cannot add or delete a page yourself, but you can OFFER to. When the
+  owner asks for one, return an empty operations list and set \`suggestion\`:
+    * adding -> action "add_page", page_title = the owner's own name for it.
+      Also set page_key if one of these built-in types is clearly what they
+      mean, so the page arrives with real sample data:
+      customers, quotations, projects, payments, bookings, orders.
+      Otherwise leave page_key null and a blank custom page is created.
+    * deleting -> action "remove_page", page_key = the key of an EXISTING page
+      from the page list you were given. Never the dashboard.
+  Write the explanation as an offer in the owner's language, e.g.
+  「我可以帮你加一页「员工排班」」. Do not tell them to go and do it themselves.
+- Set suggestion.action to "none" for every other request.
+
+If a request genuinely cannot be carried out, return an empty operations list
+and say so plainly in one sentence. Do not apologise and do not offer to do it
+later.`;
 
 export async function POST(req: NextRequest) {
   // Editing is a signed-in action. Not gated on `paid`: an unpaid customer is
@@ -89,9 +113,15 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { layout, instruction } = (body ?? {}) as {
+  const { layout, instruction, pages } = (body ?? {}) as {
     layout?: PuckLayout;
     instruction?: string;
+    /** The customer's own page list, so「把报价单那一页删掉」can name a real page
+     *  instead of being told the page does not exist. Sent by the client rather
+     *  than re-queried here because the editor already has it, and it is only
+     *  ever used to constrain a suggestion, never to authorise anything -- the
+     *  RPC the button calls resolves the project from auth.uid() itself. */
+    pages?: { key: string; label: string }[];
   };
 
   if (!layout || !Array.isArray(layout.content) || typeof instruction !== "string") {
@@ -106,11 +136,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "instruction too long" }, { status: 400 });
   }
 
+  const pageList = (Array.isArray(pages) ? pages : [])
+    .map((p) => `${p.key} ("${p.label}")`)
+    .join(", ");
+
   const userPrompt = `Blocks currently on this page:
 ${describeLayout(layout)}
 
 Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
 Text fields you may set: ${EDITABLE_TEXT_FIELDS.join(", ")}
+Pages in this system: ${pageList || "(unknown)"}
 
 The business owner asked:
 "${trimmed}"`;
@@ -142,7 +177,50 @@ The business owner asked:
     explanation: parsed.explanation,
     applied: result.applied,
     skipped: result.skipped,
+    suggestion: resolveSuggestion(parsed.suggestion, Array.isArray(pages) ? pages : []),
   });
+}
+
+/** Page types `add_project_page` knows how to build. Mirrors the same list in
+ *  the RPC and in add-page-dialog.tsx; `dashboard` is excluded because every
+ *  system already has one. */
+const KNOWN_PAGE_TYPES = ["customers", "quotations", "projects", "payments", "bookings", "orders"];
+
+/**
+ * Turns the model's proposal into something the button can act on, or into
+ * nothing.
+ *
+ * Everything here is a reality check, not a permission check -- the RPC behind
+ * the button resolves the project from `auth.uid()` and refuses to delete the
+ * dashboard on its own, so nothing below is what stops a bad write. What it
+ * stops is a BUTTON THAT FAILS: an offer to delete a page the customer does not
+ * have, or to add a page type that does not exist, is worse than no offer,
+ * because they have to press it to find out.
+ */
+function resolveSuggestion(
+  suggestion: PageSuggestion | null | undefined,
+  pages: { key: string; label: string }[],
+): { action: "add_page" | "remove_page"; pageKey: string | null; title: string; label: string } | null {
+  if (!suggestion || suggestion.action === "none") return null;
+
+  if (suggestion.action === "add_page") {
+    const key = suggestion.page_key && KNOWN_PAGE_TYPES.includes(suggestion.page_key)
+      ? suggestion.page_key
+      : null;
+    const title = (suggestion.page_title ?? "").trim().slice(0, 24);
+    // A custom page is created from its title, so without one there is nothing
+    // to create. A known type can carry an empty title -- it takes its label
+    // from the trade's own vocabulary, as it always has.
+    if (!key && !title) return null;
+    // Already there: adding it again is a no-op in the RPC, so offering it
+    // would be a button that visibly does nothing.
+    if (key && pages.some((p) => p.key === key)) return null;
+    return { action: "add_page", pageKey: key, title, label: title || "新页面" };
+  }
+
+  const target = pages.find((p) => p.key === suggestion.page_key);
+  if (!target || target.key === "dashboard") return null;
+  return { action: "remove_page", pageKey: target.key, title: target.label, label: target.label };
 }
 
 /**
@@ -171,6 +249,9 @@ const EDIT_JSON_SCHEMA = {
                 "add_component",
                 "remove_component",
                 "add_table_row",
+                "add_table_column",
+                "remove_table_column",
+                "set_table_column",
                 "set_workflow",
               ],
             },
@@ -180,10 +261,10 @@ const EDIT_JSON_SCHEMA = {
             component: { type: ["string", "null"], enum: [...REGISTERED_COMPONENTS, null] },
             after_id: { type: ["string", "null"] },
             title: { type: ["string", "null"] },
-            primary: { type: ["string", "null"] },
-            secondary: { type: ["string", "null"] },
-            amount: { type: ["string", "null"] },
-            status_label: { type: ["string", "null"] },
+            column_key: { type: ["string", "null"] },
+            column_label: { type: ["string", "null"] },
+            column_kind: { type: ["string", "null"], enum: [...COLUMN_KINDS, null] },
+            cells: { type: ["array", "null"], items: { type: "string" } },
             status_tone: {
               type: ["string", "null"],
               enum: ["positive", "warning", "negative", "neutral", null],
@@ -198,10 +279,10 @@ const EDIT_JSON_SCHEMA = {
             "component",
             "after_id",
             "title",
-            "primary",
-            "secondary",
-            "amount",
-            "status_label",
+            "column_key",
+            "column_label",
+            "column_kind",
+            "cells",
             "status_tone",
             "stages",
           ],
@@ -209,8 +290,22 @@ const EDIT_JSON_SCHEMA = {
         },
       },
       explanation: { type: "string" },
+      // Always present, usually "none". A separate field rather than another
+      // operation because it is a proposal the customer confirms, not a change
+      // this route makes -- see pageSuggestionSchema for why that line is where
+      // it is.
+      suggestion: {
+        type: "object",
+        properties: {
+          action: { type: "string", enum: ["add_page", "remove_page", "none"] },
+          page_title: { type: ["string", "null"] },
+          page_key: { type: ["string", "null"] },
+        },
+        required: ["action", "page_title", "page_key"],
+        additionalProperties: false,
+      },
     },
-    required: ["operations", "explanation"],
+    required: ["operations", "explanation", "suggestion"],
     additionalProperties: false,
   },
 } as const;

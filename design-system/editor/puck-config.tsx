@@ -4,7 +4,9 @@ import { EmptyState } from "@/design-system/components/empty-state";
 import { StatusDot, type StatusTone } from "@/design-system/components/status-dot";
 import { HeroCard } from "@/design-system/components/hero-card";
 import { Avatar } from "@/design-system/components/avatar";
-import { RecordTable, type RecordRow } from "@/design-system/components/record-table";
+import { RecordTable } from "@/design-system/components/record-table";
+import { TableFieldEditor } from "@/design-system/editor/table-field";
+import { type TableModel } from "@/lib/portal/table-model";
 import { DatePicker } from "@/design-system/components/date-picker";
 import { MonthPicker } from "@/design-system/components/month-picker";
 import { FileUploadField } from "@/design-system/components/receipt-field";
@@ -12,7 +14,7 @@ import { FilterChips, type FilterChip } from "@/design-system/components/filter-
 import { Combobox, type ComboboxOption } from "@/design-system/components/combobox";
 import { TextAutocomplete } from "@/design-system/components/text-autocomplete";
 import { Listbox, type ListboxOption } from "@/design-system/components/listbox";
-import { RailNav, type RailItem } from "@/design-system/components/rail-nav";
+import { RailNav, type RailItem, type RailUtilityItem } from "@/design-system/components/rail-nav";
 import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
 import { SystemShell } from "@/design-system/components/system-shell";
 
@@ -66,14 +68,13 @@ type Components = {
   };
   Avatar: { name: string };
   WorkflowStrip: { title?: string; stages: WorkflowStage[] };
+  // One prop, not six. Columns and rows have to agree with each other (adding a
+  // column grows every row), and Puck edits one prop per field -- so they are
+  // one prop with one editor. See design-system/editor/table-field.tsx.
   RecordTable: {
     gridId: string;
     caption: string;
-    primaryLabel: string;
-    secondaryLabel?: string;
-    amountLabel?: string;
-    statusColumnLabel: string;
-    rows: RecordRow[];
+    table: TableModel;
   };
   DatePicker: { name: string; placeholder?: string; allowClear?: boolean; required?: boolean };
   MonthPicker: { name: string; placeholder?: string; allowClear?: boolean };
@@ -96,8 +97,7 @@ type Components = {
     brandLabel: string;
     brandHref: string;
     items: RailItem[];
-    notificationsHref: string;
-    accountHref: string;
+    utilityItems: RailUtilityItem[];
     userName: string;
     userRoleLabel?: string;
   };
@@ -280,55 +280,42 @@ export const puckConfig: Config<Components> = {
       fields: {
         gridId: { label: "表格编号", type: "text" },
         caption: { label: "表格名称", type: "text" },
-        primaryLabel: { label: "第一列标题", type: "text" },
-        secondaryLabel: { label: "第二列标题", type: "text" },
-        amountLabel: { label: "金额列标题", type: "text" },
-        statusColumnLabel: { label: "状态列标题", type: "text" },
-        rows: {
-          label: "表格内容",
-          type: "array",
-          arrayFields: {
-            primary: { type: "text" },
-            secondary: { type: "text" },
-            amount: { type: "text" },
-            statusTone: { type: "select", options: STATUS_TONE_OPTIONS },
-            statusLabel: { type: "text" },
-          },
-          defaultItemProps: {
-            primary: "记录",
-            statusTone: "neutral" as StatusTone,
-            statusLabel: "待处理",
-          },
-          getItemSummary: (item) => item.primary || "记录",
+        // The one field that makes this component a system rather than a
+        // picture of one: columns are added, renamed, retyped, reordered and
+        // removed here, and every row follows automatically.
+        table: {
+          label: "栏位与内容",
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <TableFieldEditor value={value as TableModel} onChange={onChange} />
+          ),
         },
       },
       defaultProps: {
         gridId: "records",
         caption: "记录列表",
-        primaryLabel: "名称",
-        secondaryLabel: "说明",
-        amountLabel: "金额",
-        statusColumnLabel: "状态",
-        rows: [
-          {
-            primary: "示例记录 #1",
-            secondary: "示例说明",
-            amount: "RM 0.00",
-            statusTone: "neutral",
-            statusLabel: "待处理",
-          },
-        ],
+        table: {
+          columns: [
+            { key: "primary", label: "名称", kind: "text" },
+            { key: "secondary", label: "说明", kind: "detail" },
+            { key: "amount", label: "金额", kind: "amount" },
+            { key: "status", label: "状态", kind: "status" },
+          ],
+          rows: [
+            {
+              cells: {
+                primary: "示例记录 #1",
+                secondary: "示例说明",
+                amount: "RM 0.00",
+                status: "待处理",
+              },
+              tones: { status: "neutral" as StatusTone },
+            },
+          ],
+        },
       },
-      render: ({ gridId, caption, primaryLabel, secondaryLabel, amountLabel, statusColumnLabel, rows }) => (
-        <RecordTable
-          gridId={gridId}
-          caption={caption}
-          primaryLabel={primaryLabel}
-          secondaryLabel={secondaryLabel}
-          amountLabel={amountLabel}
-          statusColumnLabel={statusColumnLabel}
-          rows={rows}
-        />
+      render: ({ gridId, caption, table }) => (
+        <RecordTable gridId={gridId} caption={caption} table={table} />
       ),
     },
     WorkflowStrip: {
@@ -515,10 +502,31 @@ export const puckConfig: Config<Components> = {
       fields: {
         brandLabel: { label: "系统名称", type: "text" },
         brandHref: { label: "首页链接", type: "text" },
-        notificationsHref: { label: "通知链接", type: "text" },
-        accountHref: { label: "账号链接", type: "text" },
         userName: { label: "用户名", type: "text" },
         userRoleLabel: { label: "职位", type: "text" },
+        // Was two fixed `href` text fields pointing at "#". A customer could
+        // neither remove 通知 nor add 客服, and clicking either did nothing --
+        // the rail's footer was the one part of the system that was not theirs
+        // to design. Now it is a list like every other part of the page.
+        utilityItems: {
+          label: "底部功能",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            iconName: {
+              label: "图标",
+              type: "select",
+              options: [
+                { label: "通知", value: "notifications" },
+                { label: "设置", value: "account" },
+                { label: "客服", value: "support" },
+                { label: "收件箱", value: "inbox" },
+              ],
+            },
+          },
+          defaultItemProps: { label: "新功能", iconName: "account" },
+          getItemSummary: (item) => item.label || "功能",
+        },
         items: {
           label: "菜单项",
           type: "array",
@@ -540,17 +548,18 @@ export const puckConfig: Config<Components> = {
       defaultProps: {
         brandLabel: "我的系统",
         brandHref: "#",
-        notificationsHref: "#",
-        accountHref: "#",
         userName: "我",
         items: [{ href: "#", label: "总览", group: "" }],
+        utilityItems: [
+          { label: "通知", iconName: "notifications" },
+          { label: "账号设置", iconName: "account" },
+        ],
       },
-      render: ({ brandLabel, brandHref, items, notificationsHref, accountHref, userName, userRoleLabel }) => (
+      render: ({ brandLabel, brandHref, items, utilityItems, userName, userRoleLabel }) => (
         <RailNav
           brand={{ href: brandHref, label: brandLabel }}
           items={items}
-          notificationsHref={notificationsHref}
-          accountHref={accountHref}
+          utilityItems={utilityItems}
           user={{ name: userName, roleLabel: userRoleLabel }}
         />
       ),
