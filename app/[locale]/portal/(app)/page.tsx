@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import type { Data } from "@puckeditor/core";
 import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
-import { PortalHome } from "./home-client";
+import { PortalHome } from "../home-client";
+import { REGISTERED_COMPONENTS } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import {
@@ -114,14 +115,13 @@ export default async function PortalHomePage({
       paid={Boolean(project.paid)}
       style={project.style as StyleName}
       pages={pages}
-      industryLabels={(businessContext.industry ?? null)?.labels ?? null}
+      componentCount={REGISTERED_COMPONENTS.length}
       summary={businessContext.analysis?.summary ?? null}
       businessName={displayBusinessName(businessContext)}
       /** null when the customer has not set one, so the settings dialog can
        *  tell "we are showing you a placeholder" apart from "this is your
        *  answer" and prompt accordingly. */
       savedBusinessName={businessContext.identity?.business_name ?? null}
-      savedOwnerName={businessContext.identity?.owner_name ?? null}
       /**
        * Chinese only, on purpose.
        *

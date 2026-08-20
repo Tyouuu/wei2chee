@@ -46,6 +46,7 @@ type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
 
 export function PortalEditor({
   pageKey,
+  seededComponent,
   projectId,
   accountEmail,
   paid,
@@ -56,6 +57,8 @@ export function PortalEditor({
   style,
 }: {
   pageKey: string;
+  /** The component name that ?add= just inserted, or null. */
+  seededComponent?: string | null;
   projectId: string;
   /** accounts.email, threaded down from page.tsx's getSessionUser() -- the
    * only identifying information in either WhatsApp handoff below. Flipping
@@ -168,6 +171,21 @@ export function PortalEditor({
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  // Strip ?add= once it has been applied. `replace`, not `push`, so the back
+  // button does not walk into a URL that adds the block a second time — and
+  // `window.history` rather than the router, because a router navigation would
+  // re-render the server component and re-seed the very block being cleaned up.
+  useEffect(() => {
+    if (!seededComponent) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("add")) return;
+    url.searchParams.delete("add");
+    window.history.replaceState(null, "", url.pathname + url.search);
+    // The seeded block is an unsaved edit like any other, so the save state has
+    // to say so — otherwise the editor claims "已保存" over a page that has one.
+    setDirty(true);
+  }, [seededComponent]);
 
   // Free-tier customers have no server-side save (save_project_page's
   // payment-required check, supabase/migrations/20260818120000), so for

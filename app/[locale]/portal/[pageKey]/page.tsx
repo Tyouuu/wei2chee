@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
 import { PortalEditor } from "./editor-client";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
+import { applyLayoutOps, type PuckLayout } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import {
   PAGE_KEYS,
@@ -21,10 +22,13 @@ const FALLBACK_LABELS = { customer: "客户", order: "订单", staff: "员工" }
 
 export default async function PortalEditorPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; pageKey: string }>;
+  searchParams: Promise<{ add?: string }>;
 }) {
   const { locale, pageKey } = await params;
+  const { add } = await searchParams;
   // Cheap shape check only. The REAL check is against the pages this account
   // actually has, further down -- a business whose trade has no quotations
   // must 404 on /portal/quotations rather than render an empty one.
@@ -117,9 +121,25 @@ export default async function PortalEditorPage({
     ) as unknown as Record<string, unknown>;
   }
 
+  // 「去用它」 from the component library. Applied through the SAME
+  // add_component operation the AI assistant emits, so a block arrives in the
+  // main column exactly as a drag would: unsaved, on the undo stack, behind the
+  // same paid gate. The name is checked against the live registry inside
+  // applyLayoutOps, so a hand-typed `?add=DropTable` is a no-op rather than an
+  // empty block on someone's page.
+  if (add) {
+    initialData = applyLayoutOps(initialData as unknown as PuckLayout, [
+      { op: "add_component", component: add, after_id: null, title: null },
+    ]).layout as unknown as Record<string, unknown>;
+  }
+
   return (
     <PortalEditor
       pageKey={pageKey}
+      /** Set when the layout was seeded from ?add=, so the editor can strip the
+       *  parameter — leaving it in the URL would re-add the block on every
+       *  reload and on every back-navigation. */
+      seededComponent={add ?? null}
       projectId={project.id}
       accountEmail={user.email}
       /** projects.paid (Task 1) -- save_project_page raises "payment required"

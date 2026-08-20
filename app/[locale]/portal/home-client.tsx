@@ -7,11 +7,8 @@ import { useTranslations } from "next-intl";
 import type { Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
-import { LocaleSwitcher } from "@/components/locale-switcher";
 import { PagePreview } from "./page-preview";
-import { SettingsDialog } from "./settings-dialog";
-import { AddPageDialog } from "./add-page-dialog";
-import type { PageKey } from "@/lib/templates/industry-template";
+import { PageBar } from "./(app)/page-bar";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "./chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
@@ -21,8 +18,6 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   hearth: styles.hearth,
   blueprint: styles.blueprint,
 };
-
-const STYLE_ORDER: StyleName[] = ["ledger", "hearth", "blueprint"];
 
 /** Mirrors PAGE_KEYS. Kept as a plain array here rather than imported so this
  *  client component does not pull the whole template module into the browser
@@ -38,155 +33,76 @@ const BUILT_IN_PAGE_KEYS: string[] = [
 ];
 
 /**
- * The swatch shown on each style card.
+ * The customer's home.
  *
- * Modelled directly on 21st.dev's Themes grid, which is the clearest solution
- * to this exact problem anywhere: a panel painted in the theme's own surface
- * colour, a row of its palette as dots, and the name set INSIDE the panel in
- * the theme's own ink — so the card is a sample of the thing rather than a
- * label for it. Before this, the only way to choose a style in this product
- * was to read three paragraphs of prose about typefaces.
+ * REBUILT AS A DASHBOARD, NOT A LANDING PAGE. The previous version was a
+ * 1643px scroll: a serif display headline, an eyebrow, a centred narrow column,
+ * and four sections separated by 56px gaps — the layout language of a marketing
+ * page, applied to a signed-in product. It also owned the only navigation in
+ * the whole application (three text links in the top-right corner), and carried
+ * the style picker and the settings dialog because there was nowhere else to
+ * put them.
  *
- * Each swatch has to paint itself in a style OTHER than the page's current
- * one, so it carries its own scope class rather than inheriting. That is the
- * whole reason `style-scope.module.css` exists (Tailwind v4 compiles `@theme`
- * to `:root`, which cannot be narrowed to a subtree) and the reason all three
- * token sets can sit on one document at once.
+ * The shell (`(app)/portal-shell.tsx`) now owns navigation, settings and adding
+ * a page; the style picker has its own route. What is left here is what a home
+ * should be: what the system understood about this business, the state of it at
+ * a glance, the pages themselves, and the next action.
+ *
+ * THE GRID HOLE. Five cards in a three-column grid left the sixth cell empty,
+ * which reads as something failing to load. The 加一页 tile is the last grid
+ * item, so it fills whatever cell comes next at any page count — and it is a
+ * real control rather than a spacer.
+ *
+ * PREVIEW LEGIBILITY. At three columns a tile was 355px wide showing a 1180px
+ * page — a 0.30 scale that turned 13px body text into 4px of noise. Two columns
+ * on a normal laptop puts it near 0.47, where the shape of the page is
+ * readable, which is the entire job of a gallery tile.
  */
-function StyleSwatch({ name }: { name: StyleName }) {
-  return (
-    <div
-      className={`${styles.scope} ${SCOPE_CLASS[name]} flex h-28 flex-col justify-between overflow-hidden [border-radius:var(--radius-md)] [padding:var(--pad-card)] [background-color:var(--color-canvas)]`}
-    >
-      <div className="flex items-center gap-1.5">
-        {/* The palette, in the order a reader meets it on a real page: accent
-            first, then the two surfaces it sits on, then the ink. */}
-        {["var(--color-primary)", "var(--color-ink-900)", "var(--color-ink-800)", "var(--color-nav-bg)"].map(
-          (c) => (
-            <span
-              key={c}
-              className="h-4 w-4 shrink-0 rounded-full [border:1px_solid_var(--color-ink-800)]"
-              style={{ background: c }}
-            />
-          ),
-        )}
-      </div>
-      <div className="flex items-end justify-between gap-2">
-        <span className="[color:var(--color-paper)] [font-family:var(--font-ui)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-          {name === "ledger" ? "Ledger" : name === "hearth" ? "Hearth" : "Blueprint"}
-        </span>
-        {/* A miniature of this register's own table row — the single most
-            visible difference between the three (32px / 42px / 52px) and the
-            one a colour swatch alone cannot show. */}
-        <span className="flex flex-col gap-[3px]">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="block w-16 [background-color:var(--color-ink-700)]"
-              style={{ height: `calc(var(--row-h) / 7)` }}
-            />
-          ))}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 export function PortalHome({
   locale,
   accountEmail,
   paid,
   style,
   pages,
-  industryLabels,
   summary,
   industryName,
   businessName,
   savedBusinessName,
-  savedOwnerName,
+  componentCount,
 }: {
   locale: string;
   accountEmail?: string;
   paid: boolean;
   style: StyleName;
   pages: { pageKey: string; title: string | null; isDraft: boolean; layout: Data }[];
-  /** The trade's own nouns, for labelling built-in pages. Null for an account
-   *  with no lead. */
-  industryLabels: { customer: string; order: string; staff: string } | null;
   summary: string | null;
   industryName: string | null;
-  /** What the system currently calls itself — the customer's own answer if
-   *  they gave one, otherwise the per-trade placeholder. */
   businessName: string;
   savedBusinessName: string | null;
-  savedOwnerName: string | null;
+  /** How many blocks the customer can build with. On the home because it is the
+   *  honest scale of what they have been handed, and the entry point to the
+   *  library where they are browsed. */
+  componentCount: number;
 }) {
   const t = useTranslations("portal.home");
   const tEditor = useTranslations("portal.editor");
+  const tShell = useTranslations("portal.shell");
   const router = useRouter();
-
-  // Optimistic, exactly like the editor's own switcher: the swatches and every
-  // page preview on this screen re-scope the moment a style is picked, because
-  // seeing your own five pages in Hearth is the entire point of the control.
-  const [activeStyle, setActiveStyle] = useState<StyleName>(style);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [addPageOpen, setAddPageOpen] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
-  // Held locally so the header updates the moment the dialog saves. The page
-  // layouts still carry the old name until the next server render, which is
-  // fine and honest: the previews are of saved pages, and the rail's brand is
-  // regenerated from `projects.business_name` on the next load.
-  const [identity, setIdentity] = useState({
-    businessName: savedBusinessName,
-    ownerName: savedOwnerName,
-  });
-  const shownName = identity.businessName ?? businessName;
 
-  // A page the customer invented has no `portal.editor.pages.*` message and
-  // next-intl throws on a missing key rather than falling back, so the label
-  // has to come from their own title first.
   const labelFor = (page: { pageKey: string; title: string | null }) =>
     page.title?.trim() ||
     (BUILT_IN_PAGE_KEYS.includes(page.pageKey) ? tEditor(`pages.${page.pageKey}`) : t("customPage"));
-  const [styleFailed, setStyleFailed] = useState(false);
-  const [pendingStyle, setPendingStyle] = useState<StyleName | null>(null);
-
-  async function chooseStyle(next: StyleName) {
-    if (next === activeStyle || pendingStyle) return;
-    const previous = activeStyle;
-    setActiveStyle(next);
-    setPendingStyle(next);
-    setStyleFailed(false);
-
-    const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase.rpc("update_project_style", { new_style: next });
-    setPendingStyle(null);
-    if (error) {
-      setActiveStyle(previous);
-      setStyleFailed(true);
-    }
-  }
 
   async function removePage(pageKey: string, label: string) {
     if (removing) return;
-    // A page holds work the customer did. Losing it to a stray click on a card
-    // is not recoverable from this screen, so the confirm names the page rather
-    // than asking a generic "are you sure".
     if (!window.confirm(t("removeConfirm", { name: label }))) return;
-
     setRemoving(pageKey);
-    const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase.rpc("remove_project_page", {
+    const { error } = await createBrowserSupabaseClient().rpc("remove_project_page", {
       target_page_key: pageKey,
     });
     setRemoving(null);
     if (!error) router.refresh();
-  }
-
-  async function handleSignOut() {
-    const supabase = createBrowserSupabaseClient();
-    await supabase.auth.signOut();
-    router.push("/login");
   }
 
   const identityLine = accountEmail ? `（账号：${accountEmail}）` : "";
@@ -194,134 +110,101 @@ export function PortalHome({
     "我的系统设计已经确定了，请开始帮我建系统" + identityLine,
   )}`;
 
+  const draftCount = pages.filter((p) => p.isDraft).length;
+
   return (
-    // Formae's chrome, not the customer's style. The customer's style now
-    // appears only INSIDE the page previews and the style swatches, which is
-    // the point: their system is a lit sheet on Formae's workbench, the way
-    // 21st.dev shows components and Figma shows a file.
-    <div className={`${chrome.chrome} ${chrome.workbench} min-h-screen`}>
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-3.5 [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]">
-        <div className="flex items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className="grid h-8 w-8 shrink-0 place-items-center [background-color:var(--color-nav-accent)] [border-radius:var(--radius-sm)] [color:var(--color-nav-bg)] [font-size:var(--text-sm)] [font-weight:var(--fw-display)]"
-          >
-            F
-          </span>
-          {/* The BUSINESS leads here, not the product. Durable's Home does the
-              same thing and it is the difference between "I am inside Formae"
-              and "I am inside my own system". Formae is named underneath, in
-              the place a tool names itself. */}
-          <span className="leading-tight">
-            <span className="block [color:var(--color-nav-fg)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
-              {shownName}
-            </span>
-            <span className="block [color:var(--color-nav-fg-dim)] [font-size:var(--text-micro)]">
-              Formae · {accountEmail}
-            </span>
-          </span>
-        </div>
+    <>
+      <PageBar title={t("navTitle")}>
+        <Link
+          href={`/${locale}/portal/spec`}
+          prefetch={false}
+          className="rounded-[7px] px-3 py-1.5 text-[12.5px] [color:var(--color-paper-dim)] transition-colors hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+        >
+          {t("specTitle")}
+        </Link>
+        <a
+          href={deployHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-[7px] px-3 py-1.5 text-[12.5px] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-primary-deep)]"
+        >
+          {t("buildCta")}
+        </a>
+      </PageBar>
 
-        <div className="flex items-center gap-4 [font-size:var(--text-sm)]">
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            className="[color:var(--color-nav-fg-dim)] hover:[color:var(--color-nav-fg)]"
-          >
-            {t("settingsCta")}
-          </button>
-          <LocaleSwitcher tone="dark" />
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="underline [color:var(--color-nav-fg-dim)] hover:[color:var(--color-nav-fg)]"
-          >
-            {tEditor("signOut")}
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <section>
-          <p className={chrome.annotation}>{t("eyebrow")}</p>
-          <h1 className="mt-2.5 max-w-3xl text-balance [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-hero)] [font-weight:400] [letter-spacing:var(--tracking-title-lg)] [line-height:var(--leading-tight)]">
+      <div className="px-8 py-7">
+        <section className="max-w-3xl">
+          <h1 className="text-balance text-[26px] leading-[1.25] [color:var(--color-paper)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title-lg)]">
             {industryName ? t("titleWithIndustry", { industry: industryName }) : t("title")}
           </h1>
+
           {/* The AI's own sentence about this business, on the first screen
-              after signing in. It is the clearest possible evidence that the
-              questionnaire was not a form that went nowhere. */}
-          {/* Shown only while the name is still generated. It is the one piece of
-              setup the product cannot do for the customer, and asking for it
-              here — under a headline that just used the placeholder — is the
-              moment it is most obviously worth doing. */}
-          {!identity.businessName && (
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className="mt-4 inline-flex items-center gap-2 [border-radius:var(--radius-control)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)] px-3.5 py-2 [color:var(--color-paper)] [font-size:var(--text-sm)] transition-colors hover:[border-color:var(--color-primary)]"
-            >
-              {t("namePrompt", { name: shownName })}
-              <span aria-hidden="true" className="[color:var(--color-primary)]">
-                →
-              </span>
-            </button>
+              after signing in — the clearest evidence that the questionnaire
+              was not a form that went nowhere. */}
+          {summary && (
+            <p className="mt-3 border-l-2 pl-3.5 [border-color:var(--color-primary)] [color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
+              {summary}
+            </p>
           )}
 
-          {summary && (
-            <p className="mt-4 max-w-2xl border-l-2 pl-4 [border-color:var(--color-primary)] [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
-              {summary}
+          {!savedBusinessName && (
+            <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+              {t("namePrompt", { name: businessName })}
             </p>
           )}
         </section>
 
-        <section className="mt-14">
-          <div className="flex items-baseline justify-between gap-4 border-b pb-3 [border-color:var(--color-ink-800)]">
-            <h2 className="[color:var(--color-paper)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*1.35)] [font-weight:400] [letter-spacing:var(--tracking-title)]">
-              {t("pagesTitle")}
-            </h2>
-            <span className="flex items-center gap-4">
-              <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
-                {t("pagesCount", { count: pages.length })}
-              </span>
-              <button
-                type="button"
-                onClick={() => setAddPageOpen(true)}
-                className="[border-radius:var(--radius-control)] border [border-color:var(--color-ink-800)] px-3 py-1.5 [color:var(--color-paper)] [font-size:var(--text-sm)] transition-colors hover:[border-color:var(--color-primary)]"
-              >
-                {t("addPageCta")}
-              </button>
-            </span>
-          </div>
+        {/* THE STATUS STRIP. What turns a page into a dashboard: the state of
+            the thing, readable without scrolling or clicking. */}
+        <dl className="mt-7 grid gap-px overflow-hidden rounded-[9px] [background-color:var(--color-ink-800)] sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label={t("statPages")} value={String(pages.length)} note={t("statDrafts", { count: draftCount })} />
+          <Stat
+            label={t("statStyle")}
+            // The style's NAME, with its description as the note. The value slot
+            // is what a reader scans; "制图 · 精准、技术感" there answers a
+            // question nobody asked, and hides the one word that identifies it.
+            value={style === "ledger" ? "Ledger" : style === "hearth" ? "Hearth" : "Blueprint"}
+            note={t(`styleTag.${style}`)}
+            href={`/${locale}/portal/styles`}
+            cta={t("statChange")}
+          />
+          <Stat label={t("statBlocks")} value={String(componentCount)} note={t("statBlocksNote")} href={`/${locale}/portal/library`} cta={t("statBrowse")} />
+          <Stat
+            label={t("statPlan")}
+            value={paid ? tShell("planPaid") : tShell("planFree")}
+            note={paid ? t("statPlanPaidNote") : t("statPlanFreeNote")}
+            tone={paid ? "good" : "warn"}
+          />
+        </dl>
 
-          {/* The gallery. Each tile is a real render of that page, not a
-              placeholder — see page-preview.tsx for why that call was made
-              here and the opposite one made in the component palette. */}
-          <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="mt-9">
+          <h2 className="text-[13px] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+            {t("pagesTitle")}
+          </h2>
+
+          <ul className="mt-4 grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
             {pages.map((page) => (
               // The link does NOT wrap the card. A live preview renders the
               // page's own rail, which is a list of <a> elements, and an <a>
               // around those is invalid HTML — React reports it as a hydration
-              // error, and browsers recover by splitting the anchor, which
-              // breaks the card. So the anchor sits in the footer and is
-              // stretched over the card with a pseudo-element instead: one
-              // link, one accessible name, whole card clickable, no nesting.
-              // (Found by a browser test — the click resolved to six links.)
+              // error and browsers recover by splitting the anchor, which breaks
+              // the card. So the anchor sits in the footer and is stretched over
+              // the card with a pseudo-element instead. (Found by a browser
+              // test: the click resolved to six links.)
               <li
                 key={page.pageKey}
                 className={`group relative ${chrome.sheet} [background-color:var(--color-ink-900)] transition-transform duration-200 hover:-translate-y-0.5`}
               >
                 {/* The one place the customer's own style is let out into the
                     chrome: this div re-scopes every token to their light
-                    register, so a light page sits inside a dark frame exactly
-                    as it will on their screen. Custom properties inherit and
-                    the nearest definition wins, which is what keeps the frame
-                    dark and the sheet light with no other coordination. */}
+                    register, so a light page sits inside a dark frame exactly as
+                    it will on their screen. */}
                 <div
-                  className={`${styles.scope} ${SCOPE_CLASS[activeStyle]} border-b [border-color:var(--color-ink-800)]`}
+                  className={`${styles.scope} ${SCOPE_CLASS[style]} border-b [border-color:var(--color-ink-800)]`}
                 >
                   <PagePreview data={page.layout} />
                 </div>
-                <div className="flex items-center justify-between gap-3 [padding:var(--pad-card)]">
+                <div className="flex items-center justify-between gap-3 px-4 py-3">
                   <span className="min-w-0">
                     <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                       {labelFor(page)}
@@ -331,7 +214,7 @@ export function PortalHome({
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
-                    {/* The dashboard is not removable -- every page's rail links
+                    {/* The dashboard is not removable — every page's rail links
                         back to it and /portal sends people there. The database
                         refuses it too (migration 20260820200000), so this is the
                         affordance matching the rule, not the rule itself. */}
@@ -341,9 +224,9 @@ export function PortalHome({
                         onClick={() => removePage(page.pageKey, labelFor(page))}
                         disabled={removing === page.pageKey}
                         // `relative z-10`: the open link below stretches a
-                        // pseudo-element over the whole card, and without its
-                        // own stacking context this button sits underneath it
-                        // and can never be clicked.
+                        // pseudo-element over the whole card, and without its own
+                        // stacking context this button sits underneath it and can
+                        // never be clicked.
                         className="relative z-10 whitespace-nowrap [color:var(--color-paper-dim)] [font-size:var(--text-xs)] transition-colors hover:[color:var(--color-clay-bright)] disabled:opacity-50"
                       >
                         {t("removePage")}
@@ -359,119 +242,72 @@ export function PortalHome({
                 </div>
               </li>
             ))}
+
+            {/* Last grid item, so it fills whatever cell follows the pages at
+                any count — the fix for a gallery that showed a hole where a
+                sixth page would have been. */}
+            <li>
+              <Link
+                href={`/${locale}/portal/templates`}
+                className="flex h-full min-h-[220px] flex-col items-center justify-center gap-2 rounded-[11px] border border-dashed [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] transition-colors hover:[border-color:var(--color-primary)] hover:[color:var(--color-paper)]"
+              >
+                <span aria-hidden="true" className="text-[22px] leading-none">
+                  +
+                </span>
+                <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+                  {t("addPageCta")}
+                </span>
+                <span className="max-w-[16rem] text-center text-[11.5px] leading-snug">
+                  {t("addPageHint")}
+                </span>
+              </Link>
+            </li>
           </ul>
         </section>
+      </div>
+    </>
+  );
+}
 
-        <section className="mt-14">
-          <div className="flex items-baseline justify-between gap-4 border-b pb-3 [border-color:var(--color-ink-800)]">
-            <h2 className="[color:var(--color-paper)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*1.35)] [font-weight:400] [letter-spacing:var(--tracking-title)]">
-              {t("styleTitle")}
-            </h2>
-            {styleFailed && (
-              <span role="status" className="[color:var(--color-clay-bright)] [font-size:var(--text-sm)]">
-                {tEditor("styleFailed")}
-              </span>
-            )}
-          </div>
-          <p className="mt-3 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-            {t("styleBody")}
-          </p>
-
-          <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {STYLE_ORDER.map((name) => {
-              const active = name === activeStyle;
-              return (
-                <li key={name}>
-                  <button
-                    type="button"
-                    onClick={() => chooseStyle(name)}
-                    disabled={Boolean(pendingStyle)}
-                    aria-pressed={active}
-                    className={`w-full overflow-hidden text-left transition-colors [border-radius:var(--radius-lg)] [background-color:var(--color-ink-900)] disabled:opacity-60 ${
-                      active
-                        ? "[border:1px_solid_var(--color-primary)]"
-                        : "[border:1px_solid_var(--color-ink-800)] enabled:hover:[border-color:var(--color-ink-700)]"
-                    }`}
-                  >
-                    <StyleSwatch name={name} />
-                    <span className="flex items-center justify-between gap-2 [padding:var(--pad-card)]">
-                      <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
-                        {t(`styleTag.${name}`)}
-                      </span>
-                      <span
-                        className={`[font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] ${
-                          active ? "[color:var(--color-primary)]" : "[color:var(--color-paper-dim)]"
-                        }`}
-                      >
-                        {active ? t("styleCurrent") : t("styleUse")}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-
-        <section className="mt-14">
-          <div className="border-b pb-3 [border-color:var(--color-ink-800)]">
-            <h2 className="[color:var(--color-paper)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*1.35)] [font-weight:400] [letter-spacing:var(--tracking-title)]">
-              {t("nextTitle")}
-            </h2>
-          </div>
-          <div className="mt-6 grid gap-5 sm:grid-cols-2">
-            <Link
-              href={`/${locale}/portal/spec`}
-              // Next prefetches <Link> on hover in production, and this route
-              // runs an LLM call while rendering — prefetch would bill a
-              // generation for every hover, for a document nobody opened.
-              prefetch={false}
-              className="group block [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)] [padding:var(--pad-card-lg)] transition-colors hover:[border-color:var(--color-primary)]"
-            >
-              <span className="block [color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-                {t("specTitle")}
-              </span>
-              <span className="mt-2 block [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-                {t("specBody")}
-              </span>
-              <span className="mt-4 block [color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
-                {t("specCta")} →
-              </span>
-            </Link>
-
-            <a
-              href={deployHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)] [padding:var(--pad-card-lg)] transition-colors hover:[border-color:var(--color-primary)]"
-            >
-              <span className="block [color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-                {t("buildTitle")}
-              </span>
-              <span className="mt-2 block [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-                {paid ? t("buildBodyPaid") : t("buildBody")}
-              </span>
-              <span className="mt-4 block [color:var(--color-jade-bright)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
-                {t("buildCta")} →
-              </span>
-            </a>
-          </div>
-        </section>
-      </main>
-
-      <AddPageDialog
-        open={addPageOpen}
-        onClose={() => setAddPageOpen(false)}
-        existingKeys={pages.map((p) => p.pageKey)}
-      />
-
-      <SettingsDialog
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        businessName={identity.businessName}
-        ownerName={identity.ownerName}
-        onSaved={setIdentity}
-      />
+function Stat({
+  label,
+  value,
+  note,
+  href,
+  cta,
+  tone,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  href?: string;
+  cta?: string;
+  tone?: "good" | "warn";
+}) {
+  return (
+    <div className="[background-color:var(--color-ink-900)] px-4 py-3.5">
+      <dt className="text-[10.5px] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+        {label}
+      </dt>
+      <dd
+        className={`mt-1.5 text-[19px] leading-none [font-weight:var(--fw-semibold)] ${
+          tone === "good"
+            ? "[color:var(--color-jade-bright)]"
+            : tone === "warn"
+              ? "[color:var(--color-brass-bright)]"
+              : "[color:var(--color-paper)]"
+        }`}
+      >
+        {value}
+      </dd>
+      <div className="mt-2 flex items-center justify-between gap-2 text-[11.5px]">
+        <span className="[color:var(--color-paper-dim)]">{note}</span>
+        {href && cta && (
+          <Link href={href} className="shrink-0 [color:var(--color-primary)] hover:underline">
+            {cta} →
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
+import { AuthField, authSubmitClass } from "@/components/auth-field";
 
 export function LoginForm({ locale }: { locale: string }) {
   const t = useTranslations("auth");
@@ -35,39 +35,41 @@ export function LoginForm({ locale }: { locale: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div>
-        <label className="block text-[13px] font-medium" htmlFor="login-email">
-          {t("signupEmailLabel")}
-        </label>
-        <input
-          id="login-email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        />
-      </div>
-      <div>
-        <label className="block text-[13px] font-medium" htmlFor="login-password">
-          {t("signupPasswordLabel")}
-        </label>
-        <input
-          id="login-password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        />
-      </div>
-      {error ? <p className="text-[13px] text-destructive">{error}</p> : null}
-      <Button type="submit" disabled={pending} className="w-full">
-        {t("loginSubmit")}
-      </Button>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <AuthField
+        id="login-email"
+        type="email"
+        label={t("signupEmailLabel")}
+        placeholder={t("emailPlaceholder")}
+        autoComplete="email"
+        value={email}
+        onChange={setEmail}
+      />
+      <AuthField
+        id="login-password"
+        type="password"
+        label={t("signupPasswordLabel")}
+        placeholder={t("passwordPlaceholder")}
+        autoComplete="current-password"
+        value={password}
+        onChange={setPassword}
+      />
+
+      {error ? (
+        <p role="alert" className="text-[13px] text-destructive">
+          {error}
+        </p>
+      ) : null}
+
+      <button type="submit" disabled={pending} className={authSubmitClass}>
+        {pending ? t("loginPending") : t("loginSubmit")}
+      </button>
+
       <p className="text-[13px] text-muted-foreground">
-        <Link href={`/${locale}/signup`} className="text-primary underline-offset-4 hover:underline">
+        <Link
+          href={`/${locale}/signup`}
+          className="font-medium text-primary underline-offset-4 hover:underline"
+        >
           {t("loginSwitchToSignup")}
         </Link>
       </p>

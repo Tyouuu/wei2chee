@@ -180,7 +180,19 @@
     "confirmPendingTitle": "Confirm your email",
     "confirmPendingBody": "We sent a confirmation link to your email. Click it to finish setting up your account.",
     "loginSubtitle": "Sign in to keep working on your system. Your changes save as you go.",
-    "signupSubtitle": "Signing up is free and asks for no card. Your system is built from your trade first — you edit from there."
+    "signupSubtitle": "Signing up is free and asks for no card. Your system is built from your trade first — you edit from there.",
+    "emailPlaceholder": "you@company.com",
+    "passwordPlaceholder": "At least 8 characters",
+    "passwordHint": "At least 8 characters.",
+    "loginPending": "Signing in…",
+    "signupPending": "Creating…",
+    "backToSite": "Back to the site",
+    "proofEyebrow": "FORMAE / SYS.DESIGN",
+    "proofTitle": "You design the system. We build it for real.",
+    "proofStep1": "Answer a few questions about your business; the AI reads how you actually work today.",
+    "proofStep2": "It builds you a first version — your trade's words, your workflow, your tables. Edit it directly, or just tell it what to change.",
+    "proofStep3": "When it looks right, we build the real system from your design.",
+    "proofPrice": "RM5,000 to build, then RM100–300/month hosting. Designing costs nothing, and you can change it as many times as you like."
   },
   "portal": {
     "styleSelect": {
@@ -290,7 +302,20 @@
       "addPageCta": "+ Add a page",
       "removePage": "Remove",
       "customPage": "New page",
-      "removeConfirm": "Remove the “{name}” page? Everything designed on it goes with it."
+      "removeConfirm": "Remove the “{name}” page? Everything designed on it goes with it.",
+      "navTitle": "Home",
+      "statPages": "Pages",
+      "statDrafts": "{count} still a draft",
+      "statStyle": "Style",
+      "statStyleNote": "How the whole system looks",
+      "statChange": "Change",
+      "statBlocks": "Blocks",
+      "statBlocksNote": "Drag any of them onto a page",
+      "statBrowse": "Browse",
+      "statPlan": "Status",
+      "statPlanPaidNote": "Changes save automatically",
+      "statPlanFreeNote": "Edit freely; saving needs payment",
+      "addPageHint": "Pick one from the templates, or name your own."
     },
     "settings": {
       "title": "Business details",
@@ -316,6 +341,52 @@
       "done": "Close",
       "failed": "Could not add it. Please try again.",
       "failedLimit": "You have reached the page limit (12)."
+    },
+    "shell": {
+      "navLabel": "Main navigation",
+      "home": "Home",
+      "systemSection": "My system",
+      "librarySection": "Library",
+      "deliverSection": "Deliver",
+      "founderSection": "Console",
+      "library": "Components",
+      "templates": "Templates",
+      "styles": "Styles",
+      "spec": "Specification",
+      "handoff": "Get it built",
+      "console": "Console",
+      "settings": "Business details",
+      "planPaid": "Paid",
+      "planFree": "Free trial"
+    },
+    "styles": {
+      "title": "Styles",
+      "subtitle": "One system, three registers",
+      "moreComing": "Three for now. Next these split into layout × palette — layout sets density, type and corners; palette only changes colour. Together that is dozens of combinations."
+    },
+    "library": {
+      "title": "Components",
+      "subtitle": "{count} components",
+      "body": "Every block your system can use, rendered live in the style you picked — not screenshots, the actual thing you get.",
+      "searchPlaceholder": "Search components…",
+      "noResults": "Nothing matching “{query}”.",
+      "useIt": "Use it",
+      "moreComing": "This is everything currently registered in the editor. More real business blocks are coming: charts, schedules, stock, invoices, reconciliation, approvals.",
+      "structural": {
+        "SystemShell": "The page frame: navigation on the left, content on the right. Every page is built inside one.",
+        "RailNav": "Your system's sidebar. Pages appear here automatically as you add them."
+      }
+    },
+    "templates": {
+      "title": "Templates",
+      "subtitle": "Whole pages, ready to edit",
+      "body": "Every template is built with your trade's own words and your own workflow — what you see below is what you get when you add it.",
+      "pageCount": "{count} / {limit} pages",
+      "customTitle": "Name your own",
+      "customBody": "Add a page we have never heard of. Staff roster, material stock, aftercare — whatever your trade actually needs.",
+      "readyTitle": "Ready-made page types",
+      "readyBody": "They arrive with real sample records and your trade's vocabulary.",
+      "alwaysIncluded": "Always included"
     }
   },
   "explainer": {

@@ -180,7 +180,19 @@
     "confirmPendingTitle": "请确认你的邮箱",
     "confirmPendingBody": "我们发了一封确认邮件到你的邮箱，点击里面的链接完成注册。",
     "loginSubtitle": "登录之后可以继续设计你的系统。改动随时可以保存。",
-    "signupSubtitle": "注册是免费的，不用信用卡。系统会先按你的行业帮你建好一套，你再慢慢改。"
+    "signupSubtitle": "注册是免费的，不用信用卡。系统会先按你的行业帮你建好一套，你再慢慢改。",
+    "emailPlaceholder": "you@company.com",
+    "passwordPlaceholder": "至少 8 个字符",
+    "passwordHint": "至少 8 个字符。",
+    "loginPending": "登录中…",
+    "signupPending": "创建中…",
+    "backToSite": "回到首页",
+    "proofEyebrow": "FORMAE / SYS.DESIGN",
+    "proofTitle": "你自己把系统设计出来，我们照着建。",
+    "proofStep1": "回答几个关于你生意的问题，AI 读懂你现在怎么做事。",
+    "proofStep2": "它先把系统建好一版给你——你的行业用词、你的流程、你的表格。你直接改，或者用讲的叫它改。",
+    "proofStep3": "改到你满意，我们照着这份设计做出真的系统。",
+    "proofPrice": "开发费 RM5,000，之后每月 RM100–300 托管。设计阶段不收费，改多少次都可以。"
   },
   "portal": {
     "styleSelect": {
@@ -290,7 +302,20 @@
       "addPageCta": "＋ 加一页",
       "removePage": "删掉",
       "customPage": "新页面",
-      "removeConfirm": "确定要删掉「{name}」这一页吗？这一页上的设计会一起没了。"
+      "removeConfirm": "确定要删掉「{name}」这一页吗？这一页上的设计会一起没了。",
+      "navTitle": "首页",
+      "statPages": "页面",
+      "statDrafts": "{count} 页还是初稿",
+      "statStyle": "风格",
+      "statStyleNote": "整套系统的样子",
+      "statChange": "换",
+      "statBlocks": "可用组件",
+      "statBlocksNote": "拖进页面就能用",
+      "statBrowse": "看看",
+      "statPlan": "状态",
+      "statPlanPaidNote": "改动会自动保存",
+      "statPlanFreeNote": "可以随便改，保存要先付款",
+      "addPageHint": "从模板库挑一个，或者自己起个名字。"
     },
     "settings": {
       "title": "生意资料",
@@ -316,6 +341,52 @@
       "done": "关闭",
       "failed": "加不了，请再试一次。",
       "failedLimit": "页面数量到上限了（最多 12 页）。"
+    },
+    "shell": {
+      "navLabel": "主导航",
+      "home": "首页",
+      "systemSection": "我的系统",
+      "librarySection": "素材库",
+      "deliverSection": "交付",
+      "founderSection": "老板后台",
+      "library": "组件库",
+      "templates": "模板库",
+      "styles": "风格",
+      "spec": "系统需求书",
+      "handoff": "交给我们建",
+      "console": "控制台",
+      "settings": "生意资料",
+      "planPaid": "已付款",
+      "planFree": "免费试用"
+    },
+    "styles": {
+      "title": "风格",
+      "subtitle": "同一套系统，三种做法",
+      "moreComing": "现在是三种。接下来会拆成「版式 × 配色」两层——版式决定密度、字体、圆角，配色只换颜色，加起来会有几十种组合。"
+    },
+    "library": {
+      "title": "组件库",
+      "subtitle": "{count} 个组件",
+      "body": "你系统里能用的每一块，都用你自己选的风格真实渲染出来——不是截图，就是你会拿到的东西。",
+      "searchPlaceholder": "搜索组件…",
+      "noResults": "没有找到「{query}」。",
+      "useIt": "去用它",
+      "moreComing": "这是目前注册进编辑器的全部。接下来会补上更多真实做生意会用到的块：图表、日程、库存、发票、对账、审批。",
+      "structural": {
+        "SystemShell": "页面的框架：左边侧边栏，右边内容。每一页都建在它里面。",
+        "RailNav": "系统的侧边导航。页面加进来的时候会自动出现在这里。"
+      }
+    },
+    "templates": {
+      "title": "模板库",
+      "subtitle": "整页的做法，加进来就能改",
+      "body": "每一个模板都是用你自己生意的词、你自己的流程建出来的——下面看到的就是加进来之后的样子。",
+      "pageCount": "{count} / {limit} 页",
+      "customTitle": "自己起一个名字",
+      "customBody": "我们没听过的页面也能加。「员工排班」「材料库存」「售后跟进」——你这一行需要什么就叫什么。",
+      "readyTitle": "现成的页面类型",
+      "readyBody": "带真实示例记录和你这一行的用词，加进来直接改。",
+      "alwaysIncluded": "每个系统都有"
     }
   },
   "explainer": {
