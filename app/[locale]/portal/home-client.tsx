@@ -10,6 +10,7 @@ import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { PagePreview } from "./page-preview";
 import { SettingsDialog } from "./settings-dialog";
+import { AddPageDialog } from "./add-page-dialog";
 import type { PageKey } from "@/lib/templates/industry-template";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "./chrome.module.css";
@@ -22,6 +23,19 @@ const SCOPE_CLASS: Record<StyleName, string> = {
 };
 
 const STYLE_ORDER: StyleName[] = ["ledger", "hearth", "blueprint"];
+
+/** Mirrors PAGE_KEYS. Kept as a plain array here rather than imported so this
+ *  client component does not pull the whole template module into the browser
+ *  bundle for one membership test. */
+const BUILT_IN_PAGE_KEYS: string[] = [
+  "dashboard",
+  "customers",
+  "quotations",
+  "projects",
+  "payments",
+  "bookings",
+  "orders",
+];
 
 /**
  * The swatch shown on each style card.
@@ -84,6 +98,7 @@ export function PortalHome({
   paid,
   style,
   pages,
+  industryLabels,
   summary,
   industryName,
   businessName,
@@ -94,7 +109,10 @@ export function PortalHome({
   accountEmail?: string;
   paid: boolean;
   style: StyleName;
-  pages: { pageKey: PageKey; isDraft: boolean; layout: Data }[];
+  pages: { pageKey: string; title: string | null; isDraft: boolean; layout: Data }[];
+  /** The trade's own nouns, for labelling built-in pages. Null for an account
+   *  with no lead. */
+  industryLabels: { customer: string; order: string; staff: string } | null;
   summary: string | null;
   industryName: string | null;
   /** What the system currently calls itself — the customer's own answer if
@@ -112,6 +130,8 @@ export function PortalHome({
   // seeing your own five pages in Hearth is the entire point of the control.
   const [activeStyle, setActiveStyle] = useState<StyleName>(style);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [addPageOpen, setAddPageOpen] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
   // Held locally so the header updates the moment the dialog saves. The page
   // layouts still carry the old name until the next server render, which is
   // fine and honest: the previews are of saved pages, and the rail's brand is
@@ -121,6 +141,13 @@ export function PortalHome({
     ownerName: savedOwnerName,
   });
   const shownName = identity.businessName ?? businessName;
+
+  // A page the customer invented has no `portal.editor.pages.*` message and
+  // next-intl throws on a missing key rather than falling back, so the label
+  // has to come from their own title first.
+  const labelFor = (page: { pageKey: string; title: string | null }) =>
+    page.title?.trim() ||
+    (BUILT_IN_PAGE_KEYS.includes(page.pageKey) ? tEditor(`pages.${page.pageKey}`) : t("customPage"));
   const [styleFailed, setStyleFailed] = useState(false);
   const [pendingStyle, setPendingStyle] = useState<StyleName | null>(null);
 
@@ -138,6 +165,22 @@ export function PortalHome({
       setActiveStyle(previous);
       setStyleFailed(true);
     }
+  }
+
+  async function removePage(pageKey: string, label: string) {
+    if (removing) return;
+    // A page holds work the customer did. Losing it to a stray click on a card
+    // is not recoverable from this screen, so the confirm names the page rather
+    // than asking a generic "are you sure".
+    if (!window.confirm(t("removeConfirm", { name: label }))) return;
+
+    setRemoving(pageKey);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase.rpc("remove_project_page", {
+      target_page_key: pageKey,
+    });
+    setRemoving(null);
+    if (!error) router.refresh();
   }
 
   async function handleSignOut() {
@@ -236,8 +279,17 @@ export function PortalHome({
             <h2 className="[color:var(--color-paper)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*1.35)] [font-weight:400] [letter-spacing:var(--tracking-title)]">
               {t("pagesTitle")}
             </h2>
-            <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
-              {t("pagesCount", { count: pages.length })}
+            <span className="flex items-center gap-4">
+              <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                {t("pagesCount", { count: pages.length })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setAddPageOpen(true)}
+                className="[border-radius:var(--radius-control)] border [border-color:var(--color-ink-800)] px-3 py-1.5 [color:var(--color-paper)] [font-size:var(--text-sm)] transition-colors hover:[border-color:var(--color-primary)]"
+              >
+                {t("addPageCta")}
+              </button>
             </span>
           </div>
 
@@ -272,18 +324,38 @@ export function PortalHome({
                 <div className="flex items-center justify-between gap-3 [padding:var(--pad-card)]">
                   <span className="min-w-0">
                     <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
-                      {tEditor(`pages.${page.pageKey}`)}
+                      {labelFor(page)}
                     </span>
                     <span className="mt-0.5 block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
                       {page.isDraft ? t("cardDraft") : t("cardEdited")}
                     </span>
                   </span>
-                  <Link
-                    href={`/${locale}/portal/${page.pageKey}`}
-                    className="shrink-0 whitespace-nowrap [color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] transition-transform after:absolute after:inset-0 after:content-[''] group-hover:translate-x-0.5"
-                  >
-                    {t("cardCta")} →
-                  </Link>
+                  <span className="flex shrink-0 items-center gap-3">
+                    {/* The dashboard is not removable -- every page's rail links
+                        back to it and /portal sends people there. The database
+                        refuses it too (migration 20260820200000), so this is the
+                        affordance matching the rule, not the rule itself. */}
+                    {page.pageKey !== "dashboard" && (
+                      <button
+                        type="button"
+                        onClick={() => removePage(page.pageKey, labelFor(page))}
+                        disabled={removing === page.pageKey}
+                        // `relative z-10`: the open link below stretches a
+                        // pseudo-element over the whole card, and without its
+                        // own stacking context this button sits underneath it
+                        // and can never be clicked.
+                        className="relative z-10 whitespace-nowrap [color:var(--color-paper-dim)] [font-size:var(--text-xs)] transition-colors hover:[color:var(--color-clay-bright)] disabled:opacity-50"
+                      >
+                        {t("removePage")}
+                      </button>
+                    )}
+                    <Link
+                      href={`/${locale}/portal/${page.pageKey}`}
+                      className="whitespace-nowrap [color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] transition-transform after:absolute after:inset-0 after:content-[''] group-hover:translate-x-0.5"
+                    >
+                      {t("cardCta")} →
+                    </Link>
+                  </span>
                 </div>
               </li>
             ))}
@@ -386,6 +458,12 @@ export function PortalHome({
           </div>
         </section>
       </main>
+
+      <AddPageDialog
+        open={addPageOpen}
+        onClose={() => setAddPageOpen(false)}
+        existingKeys={pages.map((p) => p.pageKey)}
+      />
 
       <SettingsDialog
         open={settingsOpen}

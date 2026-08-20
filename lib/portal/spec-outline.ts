@@ -1,5 +1,5 @@
 import { walkNodes, type PuckLayout, type PuckNode } from "./layout-ops";
-import { PAGE_KEYS, type PageKey } from "@/lib/templates/industry-template";
+import { PAGE_KEYS, isBuiltInPage, type PageId, type PageKey, type PageRef } from "@/lib/templates/industry-template";
 
 /**
  * Reads a customer's finished design and states, factually, what system they
@@ -29,7 +29,7 @@ export const PAGE_TITLES: Record<PageKey, string> = {
 };
 
 export type PageSpec = {
-  pageKey: PageKey;
+  pageKey: PageId;
   title: string;
   /** The page's own heading, as the customer renamed it. */
   heading: string | null;
@@ -66,7 +66,7 @@ const INPUT_KINDS: Record<string, string> = {
   FilterChips: "筛选条件",
 };
 
-function specForPage(pageKey: PageKey, layout: PuckLayout): PageSpec {
+function specForPage(pageKey: PageId, ownTitle: string | null, layout: PuckLayout): PageSpec {
   const nodes = walkNodes(layout.content ?? []);
   const first = (type: string): PuckNode | undefined => nodes.find((n) => n.type === type);
 
@@ -120,7 +120,10 @@ function specForPage(pageKey: PageKey, layout: PuckLayout): PageSpec {
 
   return {
     pageKey,
-    title: PAGE_TITLES[pageKey],
+    // A page the customer invented has no entry in PAGE_TITLES, and its name is
+    // theirs -- falling back to the key would put "custom_a1b2c3d4e5f6" into a
+    // document a developer is meant to build from.
+    title: ownTitle?.trim() || (isBuiltInPage(pageKey) ? PAGE_TITLES[pageKey] : "自定页面"),
     heading: header ? str(header.props.title) : null,
     subtitle: header ? str(header.props.subtitle) : null,
     tables,
@@ -131,15 +134,15 @@ function specForPage(pageKey: PageKey, layout: PuckLayout): PageSpec {
 }
 
 export function buildSystemSpec(
-  layouts: Partial<Record<PageKey, PuckLayout>>,
+  layouts: Partial<Record<PageId, PuckLayout>>,
   /** The business's own page set. Defaults to every known page type only for
    *  callers that genuinely have all of them -- specifying pages a business
    *  does not have would put a 「预约」section into a contractor's build brief. */
-  pageKeys: readonly PageKey[] = PAGE_KEYS,
+  pageRefs: readonly PageRef[] = PAGE_KEYS.map((key) => ({ key })),
 ): SystemSpec {
-  const pages = pageKeys
-    .filter((k) => layouts[k])
-    .map((k) => specForPage(k, layouts[k] as PuckLayout));
+  const pages = pageRefs
+    .filter((ref) => layouts[ref.key])
+    .map((ref) => specForPage(ref.key, ref.title ?? null, layouts[ref.key] as PuckLayout));
 
   // First-seen order, deduped. A Set preserves insertion order, which is what
   // makes the result the pipeline as the customer sequenced it rather than an

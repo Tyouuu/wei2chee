@@ -8,7 +8,8 @@ import {
   displayBusinessName,
   displayOwnerName,
   isUngeneratedLayout,
-  sortPageKeys,
+  pageLabel,
+  sortPages,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
@@ -63,11 +64,16 @@ export default async function PortalHomePage({
 
   const { data: pageRows } = await supabase
     .from("project_pages")
-    .select("page_key, layout_json")
+    .select("page_key, title, layout_json")
     .eq("project_id", project.id);
 
-  const pageKeys = sortPageKeys(
-    (pageRows ?? []).map((r: { page_key: string }) => r.page_key as PageKey),
+  // PageRefs, not keys: a custom page carries the customer's own title, and
+  // every label in the rail and on this screen comes from it.
+  const pageRefs = sortPages(
+    (pageRows ?? []).map((r: { page_key: string; title: string | null }) => ({
+      key: r.page_key,
+      title: r.title,
+    })),
   );
 
   // One call, not one per page: `get_my_business_context` is `security definer`
@@ -81,15 +87,17 @@ export default async function PortalHomePage({
   // email into every screenshot of their own system.
   const ownerName = displayOwnerName(businessContext, user.email?.split("@")[0] || "我");
 
-  const pages = pageKeys.map((key) => {
+  const pages = pageRefs.map((ref) => {
+    const key = ref.key;
     const row = (pageRows ?? []).find((r: { page_key: string }) => r.page_key === key);
     const saved = (row?.layout_json as Record<string, unknown>) ?? {};
     const generated = isUngeneratedLayout(saved);
     return {
       pageKey: key,
+      title: ref.title ?? null,
       isDraft: generated,
       layout: (generated
-        ? buildPageLayout(key, businessContext, ownerName, locale, pageKeys)
+        ? buildPageLayout(key, businessContext, ownerName, locale, pageRefs)
         : saved) as unknown as Data,
     };
   });
@@ -101,6 +109,7 @@ export default async function PortalHomePage({
       paid={Boolean(project.paid)}
       style={project.style as StyleName}
       pages={pages}
+      industryLabels={(businessContext.industry ?? null)?.labels ?? null}
       summary={businessContext.analysis?.summary ?? null}
       businessName={displayBusinessName(businessContext)}
       /** null when the customer has not set one, so the settings dialog can

@@ -51,7 +51,7 @@ export function PortalEditor({
   initialData,
   isGeneratedDraft,
   locale,
-  pageKeys,
+  navPages,
   style,
 }: {
   pageKey: string;
@@ -81,7 +81,11 @@ export function PortalEditor({
   /** The pages THIS account has, in its own order. Pages are provisioned per
    * industry (migration 20260820160000), so the nav cannot be a fixed list:
    * a salon has no 报价单 and a restaurant has no 项目. */
-  pageKeys: string[];
+  /** Every page in this system with its display label, already resolved on the
+   *  server. Labels cannot be looked up here any more: a page the customer
+   *  invented has no `portal.editor.pages.*` message, and next-intl throws on a
+   *  missing key rather than falling back. */
+  navPages: { key: string; label: string }[];
   /** The customer's own chosen style (projects.style, Task 3) -- applies to
    * canvas CONTENT only. Chrome (this component's own wrapper below) stays
    * Ledger regardless, per Task 5's own reviewed design. */
@@ -291,7 +295,7 @@ export function PortalEditor({
         <span aria-hidden="true" className="h-5 w-px shrink-0 [background-color:var(--color-ink-800)]" />
 
         <nav className="flex items-center gap-1 overflow-x-auto" aria-label={t("pageNavLabel")}>
-          {pageKeys.map((key) => {
+          {navPages.map(({ key, label }) => {
             const active = key === pageKey;
             return (
               <Link
@@ -304,7 +308,7 @@ export function PortalEditor({
                     : "whitespace-nowrap rounded-md px-2.5 py-1 [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
                 }
               >
-                {t(`pages.${key}`)}
+                {label}
               </Link>
             );
           })}

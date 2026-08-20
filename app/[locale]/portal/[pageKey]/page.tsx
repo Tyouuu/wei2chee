@@ -6,11 +6,17 @@ import {
   PAGE_KEYS,
   buildPageLayout,
   displayOwnerName,
+  isBuiltInPage,
   isUngeneratedLayout,
-  sortPageKeys,
+  pageLabel,
+  sortPages,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
+
+/** Used when an account has no lead, so `industry.labels` is absent -- the same
+ *  generic vocabulary industry-template.ts falls back to. */
+const FALLBACK_LABELS = { customer: "客户", order: "订单", staff: "员工" };
 
 export default async function PortalEditorPage({
   params,
@@ -21,7 +27,11 @@ export default async function PortalEditorPage({
   // Cheap shape check only. The REAL check is against the pages this account
   // actually has, further down -- a business whose trade has no quotations
   // must 404 on /portal/quotations rather than render an empty one.
-  if (!PAGE_KEYS.includes(pageKey as PageKey)) notFound();
+  // Shape check only, and it now has to admit custom keys -- the real check is
+  // still `if (!page) notFound()` further down, against the pages this account
+  // actually has. Mirrors the database's own constraint (migration
+  // 20260820200000) rather than restating a different rule.
+  if (!isBuiltInPage(pageKey) && !/^custom_[a-z0-9]{8,32}$/.test(pageKey)) notFound();
 
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -48,11 +58,14 @@ export default async function PortalEditorPage({
   // contractor's 报价单 to a restaurant.
   const { data: pageRows } = await supabase
     .from("project_pages")
-    .select("page_key, layout_json")
+    .select("page_key, title, layout_json")
     .eq("project_id", project.id);
 
-  const pageKeys = sortPageKeys(
-    (pageRows ?? []).map((r: { page_key: string }) => r.page_key as PageKey),
+  const pageRefs = sortPages(
+    (pageRows ?? []).map((r: { page_key: string; title: string | null }) => ({
+      key: r.page_key,
+      title: r.title,
+    })),
   );
   const page = (pageRows ?? []).find((r: { page_key: string }) => r.page_key === pageKey);
   if (!page) notFound();
@@ -71,28 +84,31 @@ export default async function PortalEditorPage({
   // write path, respects the paid gate exactly as before (an unpaid customer
   // can explore and edit their generated system, they just cannot save it),
   // and re-runs harmlessly on every load until their first save.
+  // `get_my_business_context` (20260820120000) is security definer and resolves
+  // the lead from auth.uid() internally -- there is no id to pass and therefore
+  // no way for this call to reach another customer's lead. Returns null for an
+  // account that signed up without ever answering the questionnaire;
+  // buildPageLayout treats that as "no context" and still produces a complete
+  // generic system rather than a blank page.
+  //
+  // Fetched unconditionally, where it used to be fetched only when a page had
+  // to be generated: the page tabs now carry the trade's own vocabulary
+  // ("客户" vs "病人") and a customer's own titles for pages they added, so the
+  // labels need it on every load, not only on a first visit.
+  const { data: context } = await supabase.rpc("get_my_business_context");
+  const businessContext = (context as BusinessContext | null) ?? {};
+
   let initialData = savedLayout;
   if (isUngeneratedLayout(savedLayout)) {
-    // `get_my_business_context` (20260820120000) is security definer and
-    // resolves the lead from auth.uid() internally -- there is no id to pass
-    // and therefore no way for this call to reach another customer's lead.
-    // Returns null for an account that signed up without ever answering the
-    // questionnaire; buildPageLayout treats that as "no context" and still
-    // produces a complete generic system rather than a blank page.
-    const { data: context } = await supabase.rpc("get_my_business_context");
-
     initialData = buildPageLayout(
-      pageKey as PageKey,
-      (context as BusinessContext | null) ?? {},
+      pageKey,
+      businessContext,
       // The account chip only -- the rail's BRAND label now comes from
       // `projects.business_name` inside buildPageLayout. This is the person,
       // and the email's local part is the stand-in until they set a name.
-      displayOwnerName(
-        (context as BusinessContext | null) ?? {},
-        user.email?.split("@")[0] || "我",
-      ),
+      displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
       locale,
-      pageKeys,
+      pageRefs,
     ) as unknown as Record<string, unknown>;
   }
 
@@ -114,7 +130,10 @@ export default async function PortalEditorPage({
        * are real records. */
       isGeneratedDraft={isUngeneratedLayout(savedLayout)}
       locale={locale}
-      pageKeys={pageKeys}
+      navPages={pageRefs.map((ref) => ({
+        key: ref.key,
+        label: pageLabel(ref, businessContext.industry?.labels ?? FALLBACK_LABELS),
+      }))}
       /** The customer's own chosen style (projects.style, Task 3) -- applies to
        * canvas CONTENT only. Chrome stays Ledger regardless, per Task 5's own
        * reviewed design. */

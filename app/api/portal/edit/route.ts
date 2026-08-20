@@ -53,7 +53,14 @@ Rules:
   improve anything you were not asked about.
 - Write all text in the same language the owner used.
 - If the request cannot be carried out with the available operations, return an
-  empty operations list and say so plainly in the explanation.
+  empty operations list and say so plainly in the explanation. Where the owner
+  CAN do the thing somewhere else in the product, say where, in one clause:
+    * adding or deleting a whole page -> tell them to use 「加一页」 on the home
+      screen (首页), which is where pages are managed.
+    * adding a NEW COLUMN to a record table -> the table has four fixed columns
+      (name, detail, amount, status). Say so, and offer to rename one of them
+      to what they asked for instead, since that is usually what they want.
+  Do not apologise and do not offer to do it later. Say what is possible now.
 - explanation: ONE sentence, in the owner's language, saying what you changed.`;
 
 export async function POST(req: NextRequest) {

@@ -104,6 +104,22 @@ export const PAGE_KEYS = [
 export type PageKey = (typeof PAGE_KEYS)[number];
 
 /**
+ * Any page a customer's system can contain: one of the built-in types above,
+ * or a custom page they added themselves (`custom_<hex>`, see migration
+ * 20260820200000). Deliberately a plain string rather than a widened union --
+ * the whole point of a custom page is that this module has never heard of it.
+ */
+export type PageId = string;
+
+/** A page as the database holds it. `title` is the customer's own name and is
+ *  null for built-in types, which take their label from the trade vocabulary. */
+export type PageRef = { key: PageId; title?: string | null };
+
+export function isBuiltInPage(key: PageId): key is PageKey {
+  return (PAGE_KEYS as readonly string[]).includes(key);
+}
+
+/**
  * Which pages each trade gets. Mirrors `pages_for_industry()` in migration
  * 20260820160000 exactly.
  *
@@ -142,8 +158,33 @@ export function sortPageKeys(keys: PageKey[]): PageKey[] {
   return [...keys].sort((a, b) => PAGE_KEYS.indexOf(a) - PAGE_KEYS.indexOf(b));
 }
 
+/**
+ * Orders a mixed set: built-in pages first in their canonical order, then the
+ * customer's own pages in the order they added them.
+ *
+ * Custom pages go last rather than being interleaved because the built-in run
+ * is a designed sequence -- overview, then who you serve, then what you sell
+ * them, then the money -- and dropping a new page into the middle of it by
+ * accident of creation time would break a reading order the customer never
+ * chose. Their own additions accumulate after it, which is also where they
+ * expect to find the thing they just made.
+ */
+export function sortPages(pages: PageRef[]): PageRef[] {
+  const rank = (p: PageRef) =>
+    isBuiltInPage(p.key) ? PAGE_KEYS.indexOf(p.key) : PAGE_KEYS.length;
+  return [...pages].sort((a, b) => rank(a) - rank(b));
+}
+
 export function pagesForIndustry(slug?: string | null): PageKey[] {
   return (slug && PAGES_FOR_INDUSTRY[slug]) || DEFAULT_PAGE_SET;
+}
+
+/** The label for any page: the customer's own title when they set one (custom
+ *  pages always have one), otherwise the trade's own noun for a built-in type. */
+export function pageLabel(page: PageRef, labels: IndustryLabels): string {
+  const own = page.title?.trim();
+  if (own) return own;
+  return isBuiltInPage(page.key) ? pageNavLabel(page.key, labels) : "新页面";
 }
 
 /** The nav label for each page, in the business's own nouns where one applies. */
@@ -494,9 +535,9 @@ function railNav(
   labels: IndustryLabels,
   brandLabel: string,
   businessName: string,
-  activePage: PageKey,
+  activePage: PageId,
   locale: string,
-  pageKeys: PageKey[],
+  pages: PageRef[],
 ): PuckNode {
   // RailNav derives its own active state from `usePathname()` and each item's
   // href -- there is no `active` prop. The hrefs therefore have to match the
@@ -517,11 +558,14 @@ function railNav(
     // by these exact names, so a rail item and its icon can never drift apart,
     // and a page type added here without an icon degrades to a text-only row
     // rather than crashing.
-    items: pageKeys.map((key) => ({
-      label: pageNavLabel(key, labels),
-      href: `/${locale}/portal/${key}`,
+    // A custom page has no entry in RAIL_ICONS, so `railIcon` returns null and
+    // the row renders text-only -- the degradation the icon registry was built
+    // to have, now actually exercised.
+    items: pages.map((page) => ({
+      label: pageLabel(page, labels),
+      href: `/${locale}/portal/${page.key}`,
       group: "",
-      iconName: key,
+      iconName: page.key,
     })),
     // "#", not the dashboard route. RailNav marks an item as the current page
     // by comparing its href against the live pathname, so pointing these two at
@@ -594,7 +638,7 @@ function workflowStrip(id: string, title: string, stages: string[], attentionAt 
 // The five page templates
 // ---------------------------------------------------------------------------
 
-function buildDashboard(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
+function buildDashboard(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const { labels } = industry;
@@ -608,7 +652,7 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
     `${industry.name_zh}的日常运作总览 — 这是根据你的行业自动生成的起点，全部内容都可以改。`;
 
   return [
-    railNav(labels, brand, name, "dashboard", locale, pageKeys),
+    railNav(labels, brand, name, "dashboard", locale, pages),
     node("PageHeader", "dashboard-header", { title: "业务总览", subtitle }),
     node("HeroCard", "dashboard-hero", {
       label: sample.heroLabel,
@@ -632,14 +676,14 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
   ];
 }
 
-function buildCustomers(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
+function buildCustomers(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, brand, name, "customers", locale, pageKeys),
+    railNav(labels, brand, name, "customers", locale, pages),
     node("PageHeader", "customers-header", {
       title: `${labels.customer}名单`,
       subtitle: `所有${labels.customer}的联络方式和往来记录。`,
@@ -658,14 +702,14 @@ function buildCustomers(ctx: BusinessContext, name: string, locale: string, page
   ];
 }
 
-function buildQuotations(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
+function buildQuotations(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, brand, name, "quotations", locale, pageKeys),
+    railNav(labels, brand, name, "quotations", locale, pages),
     node("PageHeader", "quotations-header", {
       title: "报价单",
       subtitle: `发给${labels.customer}的报价，跟进哪些已确认、哪些还没回复。`,
@@ -685,14 +729,14 @@ function buildQuotations(ctx: BusinessContext, name: string, locale: string, pag
   ];
 }
 
-function buildProjects(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
+function buildProjects(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, brand, name, "projects", locale, pageKeys),
+    railNav(labels, brand, name, "projects", locale, pages),
     node("PageHeader", "projects-header", {
       title: `${labels.order}进度`,
       // The bottleneck the AI actually identified, named on the page whose job
@@ -721,14 +765,14 @@ function buildProjects(ctx: BusinessContext, name: string, locale: string, pageK
   ];
 }
 
-function buildPayments(ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]): PuckNode[] {
+function buildPayments(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const { labels } = industry;
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, brand, name, "payments", locale, pageKeys),
+    railNav(labels, brand, name, "payments", locale, pages),
     node("PageHeader", "payments-header", {
       title: "收款记录",
       subtitle: `哪些${labels.customer}已经付了、哪些还欠着，不用再翻 WhatsApp。`,
@@ -776,7 +820,7 @@ function buildBookings(
   ctx: BusinessContext,
   name: string,
   locale: string,
-  pageKeys: PageKey[],
+  pages: PageRef[],
 ): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
@@ -784,7 +828,7 @@ function buildBookings(
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, brand, name, "bookings", locale, pageKeys),
+    railNav(labels, brand, name, "bookings", locale, pages),
     node("PageHeader", "bookings-header", {
       title: "预约",
       subtitle: `今天谁要来、哪个${labels.staff}接、做什么，一页看完。`,
@@ -821,7 +865,7 @@ function buildOrders(
   ctx: BusinessContext,
   name: string,
   locale: string,
-  pageKeys: PageKey[],
+  pages: PageRef[],
 ): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
@@ -829,7 +873,7 @@ function buildOrders(
   const sample = sampleFor(industry.slug);
 
   return [
-    railNav(labels, brand, name, "orders", locale, pageKeys),
+    railNav(labels, brand, name, "orders", locale, pages),
     node("PageHeader", "orders-header", {
       title: `${labels.order}列表`,
       subtitle: ctx.analysis?.bottlenecks?.[0]?.title
@@ -849,7 +893,7 @@ function buildOrders(
 
 const BUILDERS: Record<
   PageKey,
-  (ctx: BusinessContext, name: string, locale: string, pageKeys: PageKey[]) => PuckNode[]
+  (ctx: BusinessContext, name: string, locale: string, pages: PageRef[]) => PuckNode[]
 > = {
   dashboard: buildDashboard,
   customers: buildCustomers,
@@ -868,17 +912,75 @@ const BUILDERS: Record<
  * chip), so an account with nothing better to use falls back to a neutral word
  * rather than showing a raw email address in the customer's own product.
  */
+/**
+ * A page the customer invented.
+ *
+ * It gets a real starting point rather than an empty canvas, for exactly the
+ * reason this whole file exists: a blank page handed to a business owner who
+ * was promised a system is the failure this module was written to repair, and
+ * it does not stop being that failure because THEY asked for the page.
+ *
+ * What it cannot do is guess the business meaning of "员工排班" -- so it lays
+ * out the shape every operational page in this product shares (a heading, a
+ * record table with four generic columns, three sample rows) using their own
+ * title, and leaves the naming to them or to the assistant. That is a page
+ * they edit, which is the whole workflow.
+ */
+function buildCustomPage(
+  title: string,
+  ctx: BusinessContext,
+  name: string,
+  locale: string,
+  pages: PageRef[],
+  pageId: PageId,
+): PuckNode[] {
+  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const { labels } = industry;
+  const brand = displayBusinessName(ctx);
+
+  return [
+    railNav(labels, brand, name, pageId, locale, pages),
+    node("PageHeader", `${pageId}-header`, {
+      title,
+      subtitle: `这一页是你自己加的。下面的名称和栏位全部可以改成你要的。`,
+    }),
+    recordTable(
+      `${pageId}-table`,
+      title,
+      { primary: "项目", secondary: "说明", amount: "金额", status: "状态" },
+      [
+        { primary: "记录 001", secondary: "示例内容", amount: "RM 0", tone: "positive", status: "已完成" },
+        { primary: "记录 002", secondary: "示例内容", amount: "RM 0", tone: "warning", status: "处理中" },
+        { primary: "记录 003", secondary: "示例内容", amount: "RM 0", tone: "neutral", status: "待处理" },
+      ],
+    ),
+  ];
+}
+
 export function buildPageLayout(
-  pageKey: PageKey,
+  pageKey: PageId,
   ctx: BusinessContext,
   businessName = "我的生意",
   locale = "zh",
   /** The business's actual page set, so the rail links only to pages it has.
    *  Defaults to the trade's standard set when the caller does not know it. */
-  pageKeys?: PageKey[],
+  pages?: PageRef[],
 ): Data {
-  const keys = pageKeys ?? pagesForIndustry(ctx.industry?.slug);
-  const [rail, ...rest] = BUILDERS[pageKey](ctx, businessName, locale, keys);
+  const refs: PageRef[] =
+    pages ?? pagesForIndustry(ctx.industry?.slug).map((key) => ({ key }));
+  const labels = (ctx.industry ?? FALLBACK_INDUSTRY).labels;
+  const self = refs.find((p) => p.key === pageKey);
+
+  const [rail, ...rest] = isBuiltInPage(pageKey)
+    ? BUILDERS[pageKey](ctx, businessName, locale, refs)
+    : buildCustomPage(
+        pageLabel(self ?? { key: pageKey }, labels),
+        ctx,
+        businessName,
+        locale,
+        refs,
+        pageKey,
+      );
 
   // The page is ONE SystemShell holding two slots, not a flat stack. Puck's
   // canvas stacks its `content` vertically, so a flat list put the full-height

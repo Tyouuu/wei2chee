@@ -11,7 +11,7 @@ import {
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
-import { displayBusinessName } from "@/lib/templates/industry-template";
+import { displayBusinessName, sortPages, type PageId } from "@/lib/templates/industry-template";
 import { buildSystemSpec, specToText, type SystemSpec } from "@/lib/portal/spec-outline";
 import type { PuckLayout } from "@/lib/portal/layout-ops";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
@@ -147,7 +147,7 @@ export default async function SystemSpecPage({
 
   const { data: rows } = await supabase
     .from("project_pages")
-    .select("page_key, layout_json")
+    .select("page_key, title, layout_json")
     .eq("project_id", project.id);
 
   const { data: context } = await supabase.rpc("get_my_business_context");
@@ -166,12 +166,15 @@ export default async function SystemSpecPage({
   // type the product knows about. Pages are provisioned per industry
   // (migration 20260820160000), so specifying all seven would put a 「预约」
   // section into a contractor's build brief for a page they do not have.
-  const pageKeys = sortPageKeys(
-    (rows ?? []).map((r: { page_key: string }) => r.page_key as PageKey),
+  const pageRefs = sortPages(
+    (rows ?? []).map((r: { page_key: string; title: string | null }) => ({
+      key: r.page_key,
+      title: r.title,
+    })),
   );
 
   const layouts = Object.fromEntries(
-    pageKeys.map((key) => {
+    pageRefs.map(({ key }) => {
       const saved = (rows ?? []).find(
         (r: { page_key: string }) => r.page_key === key,
       )?.layout_json as Record<string, unknown> | undefined;
@@ -181,14 +184,14 @@ export default async function SystemSpecPage({
             businessContext,
             businessName,
             locale,
-            pageKeys,
+            pageRefs,
           ) as unknown as PuckLayout)
         : (saved as unknown as PuckLayout);
       return [key, layout];
     }),
-  ) as Record<PageKey, PuckLayout>;
+  ) as Record<PageId, PuckLayout>;
 
-  const spec = buildSystemSpec(layouts, pageKeys);
+  const spec = buildSystemSpec(layouts, pageRefs);
 
   // Every render of this page would otherwise be an LLM call: a reload, a
   // back-button, a share link opened twice. Capped per account, and going over

@@ -232,7 +232,7 @@
       "aiSuggestTitle": "可以这样问",
       "aiSuggest1": "把「客户」改成「病人」",
       "aiSuggest2": "加一个记录生日的地方",
-      "aiSuggest3": "表格加一列「负责的师傅」",
+      "aiSuggest3": "把流程改成：询问 → 报价 → 施工 → 收款",
       "aiApplied": "改了 {count} 处",
       "aiRevert": "撤销这次修改",
       "aiReverted": "已撤销",
@@ -269,7 +269,11 @@
       "buildBodyPaid": "你已经付款了。设计确定之后跟我们讲一声，我们就开始建。",
       "buildCta": "WhatsApp 联系",
       "settingsCta": "设置",
-      "namePrompt": "现在叫「{name}」——改成你公司真正的名字"
+      "namePrompt": "现在叫「{name}」——改成你公司真正的名字",
+      "addPageCta": "＋ 加一页",
+      "removePage": "删掉",
+      "customPage": "新页面",
+      "removeConfirm": "确定要删掉「{name}」这一页吗？这一页上的设计会一起没了。"
     },
     "settings": {
       "title": "生意资料",
@@ -283,6 +287,18 @@
       "saving": "保存中…",
       "cancel": "取消",
       "failed": "保存不了，请再试一次。"
+    },
+    "addPage": {
+      "title": "加一页",
+      "body": "你的系统缺什么，就加什么。可以是我们已经会做的类型，也可以是只有你这一行才需要的东西。",
+      "nameLabel": "自己起一个名字",
+      "namePlaceholder": "例如：员工排班、材料库存",
+      "add": "加进来",
+      "knownTitle": "或者用现成的类型",
+      "alreadyAdded": "已经有了",
+      "done": "关闭",
+      "failed": "加不了，请再试一次。",
+      "failedLimit": "页面数量到上限了（最多 12 页）。"
     }
   },
   "explainer": {

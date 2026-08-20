@@ -232,7 +232,7 @@
       "aiSuggestTitle": "Try asking",
       "aiSuggest1": "Rename “customer” to “patient”",
       "aiSuggest2": "Add somewhere to record birthdays",
-      "aiSuggest3": "Add a column for who is in charge",
+      "aiSuggest3": "Change the workflow to: Enquiry, Quote, Build, Payment",
       "aiApplied": "{count} change(s) made",
       "aiRevert": "Undo this change",
       "aiReverted": "Undone",
@@ -269,7 +269,11 @@
       "buildBodyPaid": "You have paid. Once the design is settled, tell us and we start building.",
       "buildCta": "Message on WhatsApp",
       "settingsCta": "Settings",
-      "namePrompt": "Currently called “{name}” — set your real company name"
+      "namePrompt": "Currently called “{name}” — set your real company name",
+      "addPageCta": "+ Add a page",
+      "removePage": "Remove",
+      "customPage": "New page",
+      "removeConfirm": "Remove the “{name}” page? Everything designed on it goes with it."
     },
     "settings": {
       "title": "Business details",
@@ -283,6 +287,18 @@
       "saving": "Saving…",
       "cancel": "Cancel",
       "failed": "Could not save. Please try again."
+    },
+    "addPage": {
+      "title": "Add a page",
+      "body": "Add whatever your system is missing — one of the types we already build, or something only your trade needs.",
+      "nameLabel": "Name it yourself",
+      "namePlaceholder": "e.g. Staff roster, Material stock",
+      "add": "Add it",
+      "knownTitle": "Or use a ready-made type",
+      "alreadyAdded": "already added",
+      "done": "Close",
+      "failed": "Could not add it. Please try again.",
+      "failedLimit": "You have reached the page limit (12)."
     }
   },
   "explainer": {
