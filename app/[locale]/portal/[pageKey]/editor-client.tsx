@@ -47,6 +47,9 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   blueprint: styles.blueprint,
   bare: styles.bare,
   docket: styles.docket,
+  large: styles.large,
+  stamp: styles.stamp,
+  contract: styles.contract,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";

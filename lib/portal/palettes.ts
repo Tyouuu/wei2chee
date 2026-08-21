@@ -86,6 +86,9 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   blueprint: styles.blueprint,
   bare: styles.bare,
   docket: styles.docket,
+  large: styles.large,
+  stamp: styles.stamp,
+  contract: styles.contract,
 };
 
 /**

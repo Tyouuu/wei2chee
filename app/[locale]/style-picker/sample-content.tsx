@@ -22,7 +22,11 @@ const thClass =
   // tracking under Ledger, plain sentence case under Hearth and Blueprint.
   // Applying both tokens unconditionally is correct -- each style's own value
   // for --label-transform decides the outcome.
-  "sticky top-0 z-[1] whitespace-nowrap border-b text-left [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]";
+  // The head's two colours are tokens, not literals, for the same reason the
+  // real record-table.tsx reads them: 印头 fills this band with its accent and
+  // every other register leaves it card-coloured. Hard-coding them here made
+  // the gallery unable to show the one thing that register is FOR.
+  "sticky top-0 z-[1] whitespace-nowrap border-b text-left [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)] [background-color:var(--color-table-head-bg)] [border-color:var(--color-ink-800)] [color:var(--color-table-head-fg)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]";
 
 /**
  * One representative content set — a generic month-of-transactions view,
@@ -62,7 +66,16 @@ export function SampleContent() {
       />
 
       <DataGrid id="style-picker-sample" label={t("dataGridLabel")}>
-        <table className="w-full border-collapse text-[13px]">
+        {/* --text-sm, not a literal: 大字 runs its body at 15px here and 13px
+            hard-coded meant the one register whose entire axis is TYPE SIZE
+            rendered its table at everyone else's size. */}
+        <table
+          className="w-full border-collapse [font-size:var(--text-sm)]"
+          // Four columns of Chinese plus a right-aligned amount need this much
+          // before they start wrapping. DataGrid scrolls what overflows; the
+          // table simply never claimed the room, so 大字 crushed instead.
+          style={{ minWidth: 380 }}
+        >
           <thead>
             <tr>
               <th className={thClass}>{headers.date}</th>

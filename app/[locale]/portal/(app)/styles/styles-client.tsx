@@ -18,9 +18,12 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   blueprint: styles.blueprint,
   bare: styles.bare,
   docket: styles.docket,
+  large: styles.large,
+  stamp: styles.stamp,
+  contract: styles.contract,
 };
 
-const STYLE_ORDER: StyleName[] = ["ledger", "hearth", "blueprint", "bare", "docket"];
+const STYLE_ORDER: StyleName[] = ["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract"];
 
 /** The name a customer sees. Was two hardcoded ternaries in two files, which is
  *  why a fourth style would have rendered as "Blueprint" in both. */
@@ -30,6 +33,9 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   blueprint: "Blueprint",
   bare: "Bare",
   docket: "Docket",
+  large: "Large",
+  stamp: "Stamp",
+  contract: "Contract",
 };
 
 /**

@@ -85,6 +85,18 @@
         "label": "Bare",
         "description": "Nothing is boxed. No card borders, no shadows — sections are separated by space and a single rule, with larger type and roomier lines. For work with less on screen and more to read."
       },
+      "large": {
+        "label": "Large",
+        "description": "Built for the reader, not the page. 17px body, 56px rows, wide leading, nothing under 13px anywhere. For an owner in their sixties reading on a phone in a van."
+      },
+      "stamp": {
+        "label": "Stamp",
+        "description": "Looks like the POS and accounting software they already run: a solid accent band across every table header with white type in it."
+      },
+      "contract": {
+        "label": "Contract",
+        "description": "Serif for Latin and Chinese alike, wide leading, almost no radius. Reads as a printed agreement rather than as software."
+      },
       "docket": {
         "label": "Docket",
         "description": "A pad of carbon-copy forms. Square corners throughout, ruled in ink rather than hairlines, column headings stamped in uppercase, and no shadow anywhere. For a business that writes dockets and receipts all day."
@@ -327,6 +339,9 @@
         "hearth": "Roomy · warm and readable",
         "blueprint": "Drafted · precise and technical",
         "bare": "Bare — no boxes, space does the work",
+        "large": "Large — for readers who need it",
+        "stamp": "Stamp — filled headers, like a POS",
+        "contract": "Contract — serif, like a document",
         "docket": "Docket — hard edges, like a real form"
       },
       "styleCurrent": "In use",
@@ -418,7 +433,7 @@
     "styles": {
       "title": "Styles",
       "subtitle": "One system, five ways",
-      "moreComing": "Five layouts x eleven palettes. The layout decides whether it reads as a document or a board; the palette only changes colour. Switch any time, and switch back.",
+      "moreComing": "Eight layouts x eleven palettes. The layout decides whether it reads as a document or a board; the palette only changes colour. Switch any time, and switch back.",
       "paletteTitle": "Colours",
       "paletteBody": "The layout sets density, type and corners; the palette only changes colour. Together that is {count} combinations.",
       "paletteNative": "Native",

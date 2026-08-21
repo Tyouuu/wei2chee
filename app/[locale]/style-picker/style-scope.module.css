@@ -63,6 +63,8 @@
  * Ledger -- generated from design-system/tokens/ledger.css
  * ---------------------------------------------------------------------- */
 .ledger {
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper-dim);
   --color-canvas: #f3f4f6;
   --color-ink-950: #eaeff5;
   --color-ink-900: #ffffff;
@@ -191,6 +193,8 @@
  * Hearth -- generated from design-system/tokens/hearth.css
  * ---------------------------------------------------------------------- */
 .hearth {
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper-dim);
   --color-canvas: #faf6f0;
   --color-ink-950: #f3ebde;
   --color-ink-900: #fffdf9;
@@ -319,6 +323,8 @@
  * Blueprint -- generated from design-system/tokens/blueprint.css
  * ---------------------------------------------------------------------- */
 .blueprint {
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper-dim);
   --color-canvas: #f3f7fe;
   --color-ink-950: #e6edf9;
   --color-ink-900: #ffffff;
@@ -447,6 +453,8 @@
  * Bare -- generated from design-system/tokens/bare.css
  * ---------------------------------------------------------------------- */
 .bare {
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper-dim);
   --color-canvas: #fbfbfc;
   --color-ink-950: #e6edf9;
   --color-ink-900: #fbfbfc;
@@ -575,6 +583,8 @@
  * Docket -- generated from design-system/tokens/docket.css
  * ---------------------------------------------------------------------- */
 .docket {
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper-dim);
   --color-canvas: #eceae4;
   --color-ink-950: #eaeff5;
   --color-ink-900: #fffef9;
@@ -697,6 +707,396 @@
 
 .docket :focus-visible {
   border-radius: 0px;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Large -- generated from design-system/tokens/large.css
+ * ---------------------------------------------------------------------- */
+.large {
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper-dim);
+  --color-canvas: #f3f7fe;
+  --color-ink-950: #e6edf9;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #edf2fc;
+  --color-ink-800: #d5deee;
+  --color-ink-700: #bdc8db;
+  --color-nav-bg: #142744;
+  --color-nav-bg-deep: #0e1d35;
+  --color-nav-fg: #e8eef9;
+  --color-nav-fg-dim: #9cabc4;
+  --color-nav-hover: #1d3355;
+  --color-nav-active: #243c63;
+  --color-nav-border: #2c4569;
+  --color-nav-accent: #7fa8f7;
+  --color-paper: #0c182e;
+  --color-paper-dim: #515e75;
+  --color-primary: #1a3f8f;
+  --color-primary-deep: #122c66;
+  --color-primary-soft: #e5eefe;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+  --font-ui: var(--font-sans-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-display: 700;
+  --tracking-body: -0.011em;
+  --tracking-sm: -0.013em;
+  --tracking-title: -0.02em;
+  --tracking-title-lg: -0.032em;
+  --tracking-label: 0.02em;
+  --label-transform: none;
+  --text-micro: 13px;
+  --text-xs: 14px;
+  --text-sm: 15px;
+  --text-base: 17px;
+  --text-lg: 20px;
+  --text-title: 26px;
+  --text-hero: 44px;
+  --leading-tight: 1.25;
+  --leading-body: 1.75;
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+  --pad-card: 24px;
+  --pad-card-lg: 32px;
+  --pad-control-x: 16px;
+  --pad-control-y: 12px;
+  --pad-cell-x: 16px;
+  --pad-cell-y: 14px;
+  --gap-stack: 20px;
+  --gap-inline: 12px;
+  --row-h: 56px;
+  --control-h: 36px;
+  --border-card-width: 1px;
+  --shadow-card: 0 1px 2px rgba(12, 24, 46, 0.05);
+  --shadow-raised: 0 2px 8px rgba(12, 24, 46, 0.09);
+  --shadow-overlay: 0 10px 30px -6px rgba(12, 24, 46, 0.20);
+  --border-subtle: rgba(12, 24, 46, 0.09);
+  --border-strong: rgba(12, 24, 46, 0.16);
+  --shadow-hue: 12, 24, 46;
+  --hairline: 1px;
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-ink-900);
+  --card-foreground: var(--color-paper);
+  --popover: var(--color-ink-900);
+  --popover-foreground: var(--color-paper);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-ink-850);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-clay);
+  --destructive-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-jade);
+  --chart-3: var(--color-brass);
+  --chart-4: var(--color-clay);
+  --chart-5: var(--color-slate);
+  --sidebar: var(--color-nav-bg);
+  --sidebar-foreground: var(--color-nav-fg);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-bg);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-fg);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
+}
+
+.large :focus-visible {
+  border-radius: var(--radius-control);
+}
+
+/* ---------------------------------------------------------------------- *
+ * Stamp -- generated from design-system/tokens/stamp.css
+ * ---------------------------------------------------------------------- */
+.stamp {
+  --color-table-head-bg: var(--color-primary);
+  --color-table-head-fg: var(--color-on-primary);
+  --color-canvas: #f3f4f6;
+  --color-ink-950: #eaeff5;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #f2f6fb;
+  --color-ink-800: #e4e9f0;
+  --color-ink-700: #d3dbe5;
+  --color-nav-bg: #14273d;
+  --color-nav-bg-deep: #101d2e;
+  --color-nav-fg: #e9eef5;
+  --color-nav-fg-dim: #a6b4c6;
+  --color-nav-hover: #1e3450;
+  --color-nav-active: #243d59;
+  --color-nav-border: #26405d;
+  --color-nav-accent: #f39158;
+  --color-paper: #14273d;
+  --color-paper-dim: #5b6d82;
+  --color-primary: #1f4e5f;
+  --color-primary-deep: #163a48;
+  --color-primary-soft: #e4eef2;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+  --font-ui: var(--font-industrial-latin), var(--font-song-cjk), "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 650;
+  --fw-display: 750;
+  --tracking-body: -0.006em;
+  --tracking-sm: -0.008em;
+  --tracking-title: -0.024em;
+  --tracking-title-lg: -0.036em;
+  --tracking-label: 0.06em;
+  --label-transform: uppercase;
+  --text-micro: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-lg: 15px;
+  --text-title: 19px;
+  --text-hero: 34px;
+  --leading-tight: 1.2;
+  --leading-body: 1.45;
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 5px;
+  --radius-control: 2px;
+  --radius-pill: 3px;
+  --pad-card: 14px;
+  --pad-card-lg: 18px;
+  --pad-control-x: 9px;
+  --pad-control-y: 5px;
+  --pad-cell-x: 10px;
+  --pad-cell-y: 7px;
+  --gap-stack: 10px;
+  --gap-inline: 8px;
+  --row-h: 36px;
+  --control-h: 30px;
+  --border-card-width: 1px;
+  --shadow-card: none;
+  --shadow-raised: 0 1px 0 rgba(13, 37, 61, 0.10);
+  --shadow-overlay: 0 6px 16px rgba(13, 37, 61, 0.18);
+  --border-subtle: rgba(13, 37, 61, 0.14);
+  --border-strong: rgba(13, 37, 61, 0.26);
+  --shadow-hue: 13, 37, 61;
+  --hairline: 1px;
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 100ms;
+  --dur: 130ms;
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-ink-900);
+  --card-foreground: var(--color-paper);
+  --popover: var(--color-ink-900);
+  --popover-foreground: var(--color-paper);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-ink-850);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-clay);
+  --destructive-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-jade);
+  --chart-3: var(--color-brass);
+  --chart-4: var(--color-clay);
+  --chart-5: var(--color-slate);
+  --sidebar: var(--color-nav-bg);
+  --sidebar-foreground: var(--color-nav-fg);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-bg);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-fg);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
+}
+
+.stamp :focus-visible {
+  border-radius: var(--radius-control);
+}
+
+/* ---------------------------------------------------------------------- *
+ * Contract -- generated from design-system/tokens/contract.css
+ * ---------------------------------------------------------------------- */
+.contract {
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper-dim);
+  --color-canvas: #f3f4f6;
+  --color-ink-950: #eaeff5;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #f2f6fb;
+  --color-ink-800: #e4e9f0;
+  --color-ink-700: #d3dbe5;
+  --color-nav-bg: #14273d;
+  --color-nav-bg-deep: #101d2e;
+  --color-nav-fg: #e9eef5;
+  --color-nav-fg-dim: #a6b4c6;
+  --color-nav-hover: #1e3450;
+  --color-nav-active: #243d59;
+  --color-nav-border: #26405d;
+  --color-nav-accent: #f39158;
+  --color-paper: #14273d;
+  --color-paper-dim: #5b6d82;
+  --color-primary: #3f4a5a;
+  --color-primary-deep: #2b3341;
+  --color-primary-soft: #eceef1;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+  --font-ui: var(--font-serif-latin), var(--font-song-cjk), "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", Georgia, serif;
+  --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 650;
+  --fw-display: 750;
+  --tracking-body: -0.006em;
+  --tracking-sm: -0.008em;
+  --tracking-title: -0.024em;
+  --tracking-title-lg: -0.036em;
+  --tracking-label: 0.02em;
+  --label-transform: none;
+  --text-micro: 10px;
+  --text-xs: 11px;
+  --text-sm: 14px;
+  --text-base: 15px;
+  --text-lg: 15px;
+  --text-title: 19px;
+  --text-hero: 34px;
+  --leading-tight: 1.2;
+  --leading-body: 1.75;
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-control: 2px;
+  --radius-pill: 3px;
+  --pad-card: 20px;
+  --pad-card-lg: 18px;
+  --pad-control-x: 9px;
+  --pad-control-y: 5px;
+  --pad-cell-x: 10px;
+  --pad-cell-y: 10px;
+  --gap-stack: 10px;
+  --gap-inline: 8px;
+  --row-h: 40px;
+  --control-h: 30px;
+  --border-card-width: 1px;
+  --shadow-card: none;
+  --shadow-raised: 0 1px 0 rgba(13, 37, 61, 0.10);
+  --shadow-overlay: 0 6px 16px rgba(13, 37, 61, 0.18);
+  --border-subtle: rgba(13, 37, 61, 0.14);
+  --border-strong: rgba(13, 37, 61, 0.26);
+  --shadow-hue: 13, 37, 61;
+  --hairline: 1px;
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 100ms;
+  --dur: 130ms;
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-ink-900);
+  --card-foreground: var(--color-paper);
+  --popover: var(--color-ink-900);
+  --popover-foreground: var(--color-paper);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-ink-850);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-clay);
+  --destructive-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-jade);
+  --chart-3: var(--color-brass);
+  --chart-4: var(--color-clay);
+  --chart-5: var(--color-slate);
+  --sidebar: var(--color-nav-bg);
+  --sidebar-foreground: var(--color-nav-fg);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-bg);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-fg);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
+}
+
+.contract :focus-visible {
+  border-radius: var(--radius-control);
 }
 
 /* Blueprint's drafting-grid / sheet-marks / annotation texture, generated from

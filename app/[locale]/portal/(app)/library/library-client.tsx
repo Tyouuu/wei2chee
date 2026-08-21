@@ -18,6 +18,9 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   blueprint: styles.blueprint,
   bare: styles.bare,
   docket: styles.docket,
+  large: styles.large,
+  stamp: styles.stamp,
+  contract: styles.contract,
 };
 
 type Entry = { name: string; label: string; category: string; props: Record<string, unknown> };

@@ -30,6 +30,13 @@
    the dataviz skill's validate_palette.js.
 */
 @theme {
+
+  /* The column-head band. Seven of the eight registers draw a card-coloured
+     head with a hairline under it, which is what these two values are; 印头
+     fills it with the accent instead. Declared everywhere so record-table.tsx
+     never has to know which style it is inside. */
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper-dim);
   /* The neutral family, tinted. Every value below carries the same slight
      navy bias rather than being a pure grey, which is the single biggest
      difference between precision/ops-heavy designs and unconsidered defaults.

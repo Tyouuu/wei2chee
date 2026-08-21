@@ -69,7 +69,11 @@ export function RecordTable(props: {
   // unconditionally is correct — each style's own value decides the outcome.
   const headCell =
     "border-b text-left align-middle [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)] " +
-    "[border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] " +
+    // The head's colours come from tokens rather than from a hard-coded pair,
+    // so a register can fill the band instead of ruling it. Seven of the eight
+    // declare the same values this used to hard-code, so nothing moved; 印头
+    // fills it. See design-system/tokens/stamp.css.
+    "[border-color:var(--color-ink-800)] [color:var(--color-table-head-fg)] " +
     "[font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] " +
     "[letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]"
 
@@ -112,7 +116,7 @@ export function RecordTable(props: {
         }
       >
         <thead>
-          <tr className="sticky top-0 [background-color:var(--color-ink-900)]">
+          <tr className="sticky top-0 [background-color:var(--color-table-head-bg)]">
             {columns.map((col) => (
               <th
                 key={col.key}

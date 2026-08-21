@@ -2,7 +2,19 @@ import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { SampleContent } from "./sample-content";
 import styles from "./style-scope.module.css";
 
-export type StyleName = "ledger" | "hearth" | "blueprint" | "bare" | "docket";
+export type StyleName =
+  | "ledger"
+  | "hearth"
+  | "blueprint"
+  | "bare"
+  | "docket"
+  // 2026-08-22. Three axes the first five do not use: type SCALE (大字),
+  // header TREATMENT (印头), and a serif body (合约). See each token
+  // file's own header for why it is a register and not another notch on
+  // the density slider.
+  | "large"
+  | "stamp"
+  | "contract";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -10,6 +22,9 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   blueprint: styles.blueprint,
   bare: styles.bare,
   docket: styles.docket,
+  large: styles.large,
+  stamp: styles.stamp,
+  contract: styles.contract,
 };
 
 /**
@@ -42,6 +57,9 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   blueprint: styles.blueprint,
   bare: styles.bare,
   docket: styles.docket,
+  large: styles.large,
+  stamp: styles.stamp,
+  contract: styles.contract,
 };
 
 export function StyleColumn({
