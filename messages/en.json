@@ -47,7 +47,12 @@
     "transformTitle": "What changes",
     "before": "Today",
     "after": "With Formae",
-    "stepCount": "{count} steps"
+    "stepCount": "{count} steps",
+    "modulesTitle": "The system AI recommends",
+    "modulesLead": "Based on what you told us, this is what your system should be made of. Each one is a page, and all of it is editable.",
+    "modulesCount": "{count} modules",
+    "modulesPages": "{count} pages",
+    "modulesFree": "in every system"
   },
   "cta": {
     "title": "Ready to simplify your business?",

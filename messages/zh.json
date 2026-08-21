@@ -47,7 +47,12 @@
     "transformTitle": "会有什么改变",
     "before": "现在",
     "after": "用了 Formae 之后",
-    "stepCount": "{count} 个环节"
+    "stepCount": "{count} 个环节",
+    "modulesTitle": "AI 建议的系统",
+    "modulesLead": "根据你讲的，这套系统应该由这几块组成。每一块都是一页，全部可以改。",
+    "modulesCount": "{count} 个模块",
+    "modulesPages": "{count} 页",
+    "modulesFree": "每套都有"
   },
   "cta": {
     "title": "要不要继续设计你的系统？",

@@ -284,6 +284,12 @@ export function AnalysisReveal({
     );
   }
 
+  // `modules` is nullable in the database -- every analysis written before
+  // 2026-08-21 has none, and back-filling one would be inventing a
+  // recommendation that nothing made. An empty list hides the section rather
+  // than rendering an empty schedule.
+  const modules = analysis?.modules ?? [];
+
   return (
     <div ref={rootRef}>
       {/* Runs through the shared SectionShell like every other section, so the
@@ -341,6 +347,85 @@ export function AnalysisReveal({
                 </motion.div>
               ))}
             </div>
+
+            {/* THE ANSWER TO "所以我会拿到什么".
+                Everything above this point is diagnosis -- what is wrong, and
+                what the workflow should become. None of it told the visitor
+                what they would actually receive, and "how many modules, how
+                many pages" is the question a business owner is really asking
+                when they weigh RM5,000. Until 2026-08-21 the AI could not
+                answer it: its output schema had no field for modules or pages,
+                and the page count came from a SQL CASE over eight industry
+                slugs. See lib/portal/module-catalog.ts.
+
+                Rendered as a numbered schedule rather than a grid of cards,
+                because that is what it IS -- a bill of quantities for a system,
+                each line naming a thing and the reason it is there. Cards would
+                make eight peers of equal weight; a schedule reads top to bottom
+                and can be counted. */}
+            {modules.length > 0 && (
+              <>
+                <motion.div variants={item} className="mt-20 mb-4 flex items-center gap-4">
+                  <h3 className="annotation !text-muted-foreground">{t("modulesTitle")}</h3>
+                  <span className="h-px flex-1 bg-border" />
+                  {/* The count is the headline number of this whole section, so
+                      it is set as a figure rather than as a label with a number
+                      in it. Two figures, because "6 个模块" and "6 页" answer
+                      two different questions a customer asks in the same breath:
+                      how much system, and how much screen. */}
+                  <span className="font-mono text-[0.625rem] tabular-nums whitespace-nowrap text-muted-foreground">
+                    {t("modulesCount", { count: modules.length })} · {t("modulesPages", { count: modules.length })}
+                  </span>
+                </motion.div>
+
+                <motion.p
+                  variants={item}
+                  className="mb-8 max-w-xl text-sm leading-relaxed text-muted-foreground"
+                >
+                  {t("modulesLead")}
+                </motion.p>
+
+                <div className="grid gap-px bg-border">
+                  {modules.map((m, i) => (
+                    <motion.div
+                      key={m.key}
+                      variants={item}
+                      className="group relative flex items-baseline gap-5 bg-background p-6 transition-colors duration-500 hover:bg-white/[0.02]"
+                    >
+                      {/* --signal, not the --rust used on the bottleneck rows
+                          above. Those rows are the visitor's CURRENT state and
+                          these are the proposed one, which is exactly the
+                          distinction WorkflowTrack draws a few lines down with
+                          the same two colours (see globals.css: rust = manual
+                          and scattered, signal = the system). A third accent
+                          here would invent a meaning nothing else on the page
+                          uses. */}
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-0 bottom-0 left-0 w-px origin-top scale-y-0 bg-signal/60 transition-transform duration-500 group-hover:scale-y-100"
+                      />
+                      <span className="font-mono text-[0.625rem] tabular-nums text-signal/70">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <div className="flex flex-1 flex-wrap items-baseline gap-x-4 gap-y-1.5">
+                        <h4 className="font-serif text-lg tracking-[-0.01em]">{m.label}</h4>
+                        {/* A module with no reason is rendered as a plain name,
+                            deliberately. The fallback analysis -- the one that
+                            runs when the model could not be reached -- has no
+                            reason to give, and printing an invented one would
+                            be the single most damaging kind of fabrication this
+                            screen could contain. */}
+                        {m.why ? (
+                          <p className="text-sm leading-relaxed text-muted-foreground">{m.why}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground/60">{t("modulesFree")}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            )}
 
             <motion.div
               variants={item}

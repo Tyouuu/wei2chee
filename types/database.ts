@@ -40,5 +40,8 @@ export interface AnalysisResult {
   before_workflow: string[];
   after_workflow: string[];
   summary: string;
+  /** What the AI recommended this system be made of. NULL on analyses written
+   *  before 2026-08-21, when the model had no field for it at all. */
+  modules: { key: string; label: string; why: string }[] | null;
   generated_at: string;
 }

@@ -226,6 +226,21 @@ export const RAIL_ICONS: Record<string, (p: IconProps) => React.JSX.Element> = {
   orders: IconShoppingBag,
   inbox: IconInbox,
   settings: IconSettings,
+  // The module catalogue grew past the original seven page types
+  // (lib/portal/module-catalog.ts). These are aliases onto the existing set
+  // rather than nine new drawings: a rail is read by shape at 16px, and nine
+  // more one-off glyphs would make it harder to scan, not easier. Where two
+  // modules genuinely mean the same kind of thing to the eye -- a list of
+  // people, a stack of paper -- they should look the same.
+  tasks: IconLayers,
+  reconciliation: IconReconcile,
+  commission: IconReceipt,
+  expenses: IconReceipt,
+  reports: IconLayers,
+  ranking: IconBadge,
+  suppliers: IconUsersRail,
+  staff: IconUsersRail,
+  inventory: IconShoppingBag,
   // Footer rows (RailUtilityItem). Named by what they ARE rather than by a
   // route key, because unlike the nav items above these are not pages.
   notifications: IconBell,

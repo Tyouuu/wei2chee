@@ -8,6 +8,7 @@ import {
   fallbackAnalysis,
   type AnalysisPayload,
 } from "@/lib/openai/analysis-schema";
+import { catalogForPrompt, MAX_MODULES } from "@/lib/portal/module-catalog";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -33,7 +34,19 @@ Hard rules, which override anything the business owner's answers imply:
   If the workflow is already sound, return it unchanged rather than inventing
   stages that add no value.
 - summary: ONE sentence, under 50 characters, about THIS business.
-- Never invent specifics (names, amounts, dates) the owner did not give you.`;
+- Never invent specifics (names, amounts, dates) the owner did not give you.
+
+Choosing this business's modules -- the pages their system will be built from:
+- Choose ONLY keys from the catalogue in the user message. Never invent a key.
+- Choose what this business RUNS ON, not what would be nice. A business that
+  does not send quotations must not get 报价单; one whose whole month ends in a
+  reconciliation against an upstream statement must get 对账.
+- Fewer, correct modules beat more. ${MAX_MODULES} is the hard ceiling and most
+  businesses need five or six.
+- "label" is the business's OWN noun, 2-4 characters. A SIM-card master dealer's
+  customers are 经销商, a salon's are 顾客, a tuition centre's are 家长.
+- "why" must reference something the owner actually told you, under 24
+  characters. If you cannot tie it to their answers, do not choose that module.`;
 
 /** Retried once, then the deterministic fallback. Two attempts is the right
  *  number here: a transient failure almost always clears on the second call,
@@ -42,6 +55,7 @@ Hard rules, which override anything the business owner's answers imply:
 const MAX_ATTEMPTS = 2;
 
 type Industry = {
+  slug: string;
   name_zh: string;
   name_en: string;
   default_workflow: string[];
@@ -67,7 +81,10 @@ ${Object.entries(answers)
 Respond in ${language === "zh" ? "Chinese" : "English"}.
 Use the industry's own vocabulary above for stage names where it fits -- these
 stage names become the column headings in the system this owner will be shown
-next, so they must read like something they would write themselves.`;
+next, so they must read like something they would write themselves.
+
+MODULE CATALOGUE -- the only pages that can be built. Choose this business's set:
+${catalogForPrompt()}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -169,6 +186,7 @@ export async function POST(req: NextRequest) {
       before_workflow: parsed.before_workflow,
       after_workflow: parsed.after_workflow,
       summary: parsed.summary,
+      modules: parsed.modules,
     })
     .select()
     .single();

@@ -7,6 +7,12 @@ const validAnalysis = () => ({
   after_workflow: ["客户", "报价", "订单", "收款"],
   focus_stage_index: 1,
   summary: "你有 3 个环节可以自动化",
+  modules: [
+    { key: "dashboard", label: "总览", why: "每天要看的数字" },
+    { key: "customers", label: "客户", why: "名单散在 WhatsApp" },
+    { key: "quotations", label: "报价单", why: "报价出去没人跟" },
+    { key: "payments", label: "收款", why: "追款靠记性" },
+  ],
 });
 
 describe("analysisSchema", () => {

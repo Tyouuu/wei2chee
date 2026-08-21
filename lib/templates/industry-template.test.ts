@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   PAGE_KEYS,
@@ -173,10 +173,23 @@ describe("isUngeneratedLayout", () => {
  * compared here.
  */
 describe("per-industry page sets", () => {
-  const sql = readFileSync(
-    join(process.cwd(), "supabase", "migrations", "20260820160000_pages_per_industry.sql"),
-    "utf8",
-  );
+  // The NEWEST migration that declares the function, not a pinned filename.
+  // `pages_for_industry` has been re-declared twice now (20260820160000, then
+  // 20260821040000 when the module catalogue replaced the fixed seven page
+  // types), and a test pinned to the first one compares the app against SQL
+  // that Postgres has already replaced -- which is worse than no test, because
+  // it passes while the real mapping drifts.
+  const migrationsDir = join(process.cwd(), "supabase", "migrations");
+  const declaringFile = readdirSync(migrationsDir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .reverse()
+    .find((f) =>
+      readFileSync(join(migrationsDir, f), "utf8").includes(
+        "function public.pages_for_industry",
+      ),
+    );
+  const sql = readFileSync(join(migrationsDir, declaringFile!), "utf8");
 
   /** Pulls `when 'slug' then array['a','b']` pairs out of the SQL function. */
   function sqlMapping(): Record<string, string[]> {
