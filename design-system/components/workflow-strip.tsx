@@ -89,12 +89,20 @@ export function WorkflowStrip({
                   />
                 )}
               </div>
-              <div className={i < stages.length - 1 ? "pb-[var(--gap-stack)]" : ""}>
+              {/* One line per stage, spanning the card: ordinal and name on
+                  the left margin, count on the right. Stacking the three in a
+                  40px column made a timeline that ignored five sixths of the
+                  width it was given and read as a rendering fault. */}
+              <div
+                className={`flex min-w-0 flex-1 items-baseline [gap:var(--gap-inline)] ${
+                  i < stages.length - 1 ? "pb-[var(--gap-stack)]" : ""
+                }`}
+              >
                 <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <div
-                  className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
+                <span
+                  className="min-w-0 flex-1 truncate [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
                   style={{
                     color:
                       stage.tone === "attention"
@@ -103,11 +111,11 @@ export function WorkflowStrip({
                   }}
                 >
                   {stage.label}
-                </div>
+                </span>
                 {stage.count && (
-                  <div className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                  <span className="shrink-0 [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
                     {stage.count}
-                  </div>
+                  </span>
                 )}
               </div>
             </li>
@@ -145,9 +153,12 @@ export function WorkflowStrip({
           ))}
         </ol>
       ) : (
-      <ol className="flex flex-wrap items-stretch [gap:var(--gap-inline)]">
+      <ol
+        className="grid items-stretch [gap:var(--gap-inline)]"
+        style={{ gridTemplateColumns: "repeat(auto-fit, minmax(88px, 1fr))" }}
+      >
         {stages.map((stage, i) => (
-          <li key={`${stage.label}-${i}`} className="flex items-center [gap:var(--gap-inline)]">
+          <li key={`${stage.label}-${i}`} className="flex min-w-0 items-center [gap:var(--gap-inline)]">
             {/* The connector LEADS each stage after the first, rather than
                 trailing each stage before the last. Both are correct on one
                 line; only this one survives a wrap. Trailing arrows left a "→"
@@ -161,7 +172,7 @@ export function WorkflowStrip({
               </span>
             )}
             <div
-              className="flex min-w-[92px] flex-col [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]"
+              className="flex min-w-0 flex-1 flex-col [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]"
               style={{
                 backgroundColor:
                   stage.tone === "attention"
@@ -179,7 +190,7 @@ export function WorkflowStrip({
               <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+              <span className="truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
                 {stage.label}
               </span>
               {stage.count && (
