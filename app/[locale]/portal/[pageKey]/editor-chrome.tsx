@@ -107,7 +107,7 @@ export function EditorChrome({
   }, [appState.data, onSave, saving]);
 
   const iconButton =
-    "flex h-8 w-8 items-center justify-center rounded-md text-[15px] transition-colors disabled:opacity-30 [color:var(--color-paper-dim)] enabled:hover:[background-color:var(--color-ink-850)] enabled:hover:[color:var(--color-paper)]";
+    "flex h-8 w-8 items-center justify-center rounded-md [font-size:var(--text-base)] transition-colors disabled:opacity-30 [color:var(--color-paper-dim)] enabled:hover:[background-color:var(--color-ink-850)] enabled:hover:[color:var(--color-paper)]";
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
@@ -115,7 +115,7 @@ export function EditorChrome({
         type="button"
         onClick={onToggleAssistant}
         aria-pressed={assistantOpen}
-        className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-[13px] transition-colors ${
+        className={`flex items-center gap-2 rounded-md px-3 py-1.5 [font-size:var(--text-sm)] transition-colors ${
           assistantOpen
             ? "[background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
             : "border [border-color:var(--color-ink-800)] [color:var(--color-paper)] hover:[background-color:var(--color-ink-850)]"
@@ -123,7 +123,7 @@ export function EditorChrome({
       >
         <span
           aria-hidden="true"
-          className="grid h-4.5 w-4.5 place-items-center rounded-full px-1 text-[9.5px] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]"
+          className="grid h-4.5 w-4.5 place-items-center rounded-full px-1 [font-size:var(--text-micro)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]"
         >
           AI
         </span>
@@ -137,7 +137,7 @@ export function EditorChrome({
           than pressing it again. */}
       <span
         role="status"
-        className={`text-[12px] ${dirty && !autosaving ? "[color:var(--color-brass-bright)]" : "[color:var(--color-paper-dim)]"}`}
+        className={`[font-size:var(--text-xs)] ${dirty && !autosaving ? "[color:var(--color-brass-bright)]" : "[color:var(--color-paper-dim)]"}`}
       >
         {saving
           ? t("saving")
@@ -158,7 +158,7 @@ export function EditorChrome({
         <button
           type="button"
           onClick={onOpenHistory}
-          className="rounded-md px-2.5 py-1.5 text-[12.5px] transition-colors [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+          className="rounded-md px-2.5 py-1.5 [font-size:var(--text-xs)] transition-colors [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
         >
           {t("historyCta")}
         </button>
@@ -199,7 +199,7 @@ export function EditorChrome({
         onClick={() => onSave(appState.data as Data)}
         disabled={saving}
         title={t("saveShortcut")}
-        className="rounded-md px-3.5 py-1.5 text-[13px] transition-colors disabled:opacity-60 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
+        className="rounded-md px-3.5 py-1.5 [font-size:var(--text-sm)] transition-colors disabled:opacity-60 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
       >
         {saving ? t("saving") : t("saveCta")}
       </button>

@@ -62,7 +62,7 @@ export function StyleSwitcher({
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[12px] [color:var(--color-paper-dim)]">{t("styleLabel")}</span>
+      <span className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">{t("styleLabel")}</span>
       {STYLES.map((name) => {
         const active = name === style;
         return (
@@ -74,8 +74,8 @@ export function StyleSwitcher({
             aria-pressed={active}
             className={
               active
-                ? "rounded-md px-2 py-1 text-[12px] [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
-                : "rounded-md px-2 py-1 text-[12px] transition-colors disabled:opacity-50 [color:var(--color-paper-dim)] enabled:hover:[background-color:var(--color-ink-850)] enabled:hover:[color:var(--color-paper)]"
+                ? "rounded-md px-2 py-1 [font-size:var(--text-xs)] [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
+                : "rounded-md px-2 py-1 [font-size:var(--text-xs)] transition-colors disabled:opacity-50 [color:var(--color-paper-dim)] enabled:hover:[background-color:var(--color-ink-850)] enabled:hover:[color:var(--color-paper)]"
             }
           >
             {tStyles(`styles.${name}.label`)}
@@ -83,7 +83,7 @@ export function StyleSwitcher({
         );
       })}
       {failed && (
-        <span role="status" className="text-[12px] [color:var(--color-clay-bright)]">
+        <span role="status" className="[font-size:var(--text-xs)] [color:var(--color-clay-bright)]">
           {t("styleFailed")}
         </span>
       )}

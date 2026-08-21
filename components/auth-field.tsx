@@ -18,7 +18,7 @@
  */
 
 export const authSubmitClass =
-  "h-11 w-full rounded-lg bg-primary text-[14px] font-semibold text-primary-foreground transition-colors " +
+  "h-11 w-full rounded-lg bg-primary [font-size:var(--text-sm)] font-semibold text-primary-foreground transition-colors " +
   "enabled:hover:bg-primary/90 disabled:opacity-55 " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
@@ -45,7 +45,7 @@ export function AuthField({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-[13px] font-medium">
+      <label htmlFor={id} className="[font-size:var(--text-sm)] font-medium">
         {label}
       </label>
       <input
@@ -57,9 +57,9 @@ export function AuthField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 w-full rounded-lg border border-border bg-background/70 px-3.5 text-[14px] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
+        className="h-11 w-full rounded-lg border border-border bg-background/70 px-3.5 [font-size:var(--text-sm)] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
       />
-      {hint && <p className="text-[12px] leading-relaxed text-muted-foreground">{hint}</p>}
+      {hint && <p className="[font-size:var(--text-xs)] leading-relaxed text-muted-foreground">{hint}</p>}
     </div>
   );
 }

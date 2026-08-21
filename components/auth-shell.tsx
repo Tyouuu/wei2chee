@@ -58,15 +58,15 @@ export async function AuthShell({
                 is actually made of. */}
             <span
               aria-hidden="true"
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-[7px] bg-primary text-[14px] font-semibold text-primary-foreground"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--radius-md)] bg-primary [font-size:var(--text-sm)] font-semibold text-primary-foreground"
             >
               F
             </span>
             <span className="leading-tight">
-              <span className="block text-[15px] font-semibold tracking-[-0.01em]">
+              <span className="block [font-size:var(--text-base)] font-semibold tracking-[-0.01em]">
                 {BRAND_NAME}
               </span>
-              <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="block font-mono [font-size:var(--text-micro)] uppercase tracking-[0.16em] text-muted-foreground">
                 sys.design
               </span>
             </span>
@@ -79,15 +79,15 @@ export async function AuthShell({
             form takes the remaining space — which is what centres it against
             the panel beside it rather than against the whole viewport. */}
         <div className="my-auto w-full max-w-[26rem] py-12">
-          <h1 className="text-balance font-serif text-[2rem] leading-[1.15] tracking-[-0.025em]">
+          <h1 className="text-balance font-serif text-[2.75rem] leading-[1.05] tracking-[-0.03em]">
             {title}
           </h1>
-          <p className="mt-2.5 text-[14px] leading-relaxed text-muted-foreground">{subtitle}</p>
+          <p className="mt-2.5 [font-size:var(--text-sm)] leading-relaxed text-muted-foreground">{subtitle}</p>
           <div className="mt-8">{children}</div>
-          {footer && <div className="mt-6 text-[13px] text-muted-foreground">{footer}</div>}
+          {footer && <div className="mt-6 [font-size:var(--text-sm)] text-muted-foreground">{footer}</div>}
         </div>
 
-        <p className="w-full max-w-[26rem] text-[12px] text-muted-foreground">
+        <p className="w-full max-w-[26rem] [font-size:var(--text-xs)] text-muted-foreground">
           <Link href={`/${locale}`} className="transition-colors hover:text-foreground">
             ← {t("backToSite")}
           </Link>
@@ -111,17 +111,17 @@ export async function AuthShell({
           <ol className="mt-10 flex flex-col gap-5 border-t border-border pt-8">
             {steps.map((step) => (
               <li key={step.n} className="flex gap-4">
-                <span className="mt-[3px] shrink-0 font-mono text-[11px] tracking-[0.14em] text-primary">
+                <span className="mt-[3px] shrink-0 font-mono [font-size:var(--text-micro)] tracking-[0.14em] text-primary">
                   {step.n}
                 </span>
-                <span className="text-[14px] leading-relaxed text-muted-foreground">
+                <span className="[font-size:var(--text-sm)] leading-relaxed text-muted-foreground">
                   {step.label}
                 </span>
               </li>
             ))}
           </ol>
 
-          <p className="mt-10 border-t border-border pt-6 text-[13px] leading-relaxed text-muted-foreground">
+          <p className="mt-10 border-t border-border pt-6 [font-size:var(--text-sm)] leading-relaxed text-muted-foreground">
             {t("proofPrice")}
           </p>
         </div>

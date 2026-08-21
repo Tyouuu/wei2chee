@@ -96,7 +96,7 @@ export function LibraryClient({
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("searchPlaceholder")}
           aria-label={t("searchPlaceholder")}
-          className="w-52 rounded-[7px] border px-3 py-1.5 text-[12.5px] outline-none [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
+          className="w-52 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] outline-none [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
         />
       </PageBar>
 
@@ -113,7 +113,7 @@ export function LibraryClient({
 
         {[...grouped.entries()].map(([category, items]) => (
           <section key={category} className="mt-9">
-            <h2 className="text-[13px] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+            <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
               {categoryTitle(category)}
               <span className="ml-2 opacity-60">{items.length}</span>
             </h2>
@@ -122,7 +122,7 @@ export function LibraryClient({
               {items.map((entry) => (
                 <li
                   key={entry.name}
-                  className="overflow-hidden rounded-[11px] [border:1px_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)]"
+                  className="overflow-hidden rounded-[var(--radius-lg)] [border:1px_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)]"
                 >
                   {/* FIXED HEIGHT, CLIPPED. `transform: scale()` does not
                       change the layout box, so the wrapper below still occupies
@@ -158,7 +158,7 @@ export function LibraryClient({
                       <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                         {entry.label}
                       </span>
-                      <span className="block truncate text-[11px] [color:var(--color-paper-dim)] [font-family:var(--font-mono)]">
+                      <span className="block truncate [font-size:var(--text-micro)] [color:var(--color-paper-dim)] [font-family:var(--font-mono)]">
                         {entry.name}
                       </span>
                     </span>
@@ -172,7 +172,7 @@ export function LibraryClient({
                     {!STRUCTURAL.has(entry.name) && (
                       <Link
                         href={`/${locale}/portal/${firstPage}?add=${entry.name}`}
-                        className="shrink-0 rounded-[7px] border px-3 py-1.5 text-[12.5px] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
+                        className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
                       >
                         {t("useIt")}
                       </Link>
@@ -184,7 +184,7 @@ export function LibraryClient({
           </section>
         ))}
 
-        <p className="mt-10 max-w-2xl rounded-[9px] border border-dashed px-4 py-3 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+        <p className="mt-10 max-w-2xl rounded-[var(--radius-md)] border border-dashed px-4 py-3 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
           {t("moreComing")}
         </p>
       </div>

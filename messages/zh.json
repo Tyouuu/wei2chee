@@ -343,7 +343,16 @@
       "statPlan": "状态",
       "statPlanPaidNote": "改动会自动保存",
       "statPlanFreeNote": "可以随便改，保存要先付款",
-      "addPageHint": "从模板库挑一个，或者自己起个名字。"
+      "addPageHint": "从模板库挑一个，或者自己起个名字。",
+      "metaPages": "{count} 页系统",
+      "metaStyle": "风格",
+      "metaChange": "换一个",
+      "metaBlocks": "{count} 个组件可用",
+      "metaBrowse": "看看",
+      "metaDrafts": "{count} 页还是初稿",
+      "headlineFallback": "你的系统已经建好了。",
+      "addPageChips": "从模块库挑一个，或者自己起名字。",
+      "subline": "下面 {count} 页就是照着它建的初稿。名称、栏位、示例记录，全部可以改。"
     },
     "settings": {
       "title": "生意资料",

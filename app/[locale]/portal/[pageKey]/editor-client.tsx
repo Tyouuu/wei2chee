@@ -360,7 +360,7 @@ export function PortalEditor({
       // --color-* resolves to here, so Puck's chrome follows automatically.
       className={`portal-editor-scope ${chrome.chrome} ${chrome.workbench} flex h-screen flex-col`}
     >
-      <div className="flex items-center justify-between gap-4 border-b px-4 py-2 text-[13px] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
+      <div className="flex items-center justify-between gap-4 border-b px-4 py-2 [font-size:var(--text-sm)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
         {/* Page navigation. Before this the editor showed the current page's
             name as plain text and offered no way to reach the other four --
             they existed as routes and as rows in project_pages, but the only
@@ -412,7 +412,7 @@ export function PortalEditor({
               href={deployWhatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-md px-3 py-1.5 text-[12px] text-[color:var(--color-on-primary)] [background-color:var(--color-jade)] [font-weight:var(--fw-semibold)]"
+              className="rounded-md px-3 py-1.5 [font-size:var(--text-xs)] text-[color:var(--color-on-primary)] [background-color:var(--color-jade)] [font-weight:var(--fw-semibold)]"
             >
               {t("deployCta")}
             </a>
@@ -452,7 +452,7 @@ export function PortalEditor({
           edit. Disappears the moment they save, because from then on the canvas
           is genuinely their own work. */}
       {isGeneratedDraft ? (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b px-4 py-2 text-[13px] [background-color:var(--color-primary-soft)] [border-color:var(--color-ink-800)]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b px-4 py-2 [font-size:var(--text-sm)] [background-color:var(--color-primary-soft)] [border-color:var(--color-ink-800)]">
           <span className="[color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]">
             {t("draftBannerTitle")}
           </span>
@@ -482,20 +482,20 @@ export function PortalEditor({
           // fully obscures the canvas rather than dimming it, and swallows
           // every pointer event that would otherwise reach Puck underneath.
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center [background-color:var(--color-canvas)]">
-            <h2 className="text-[18px] [font-weight:var(--fw-semibold)]">{t("paywallTitle")}</h2>
-            <p className="text-[14px] [color:var(--color-paper-dim)]">{t("paywallBody")}</p>
+            <h2 className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">{t("paywallTitle")}</h2>
+            <p className="[font-size:var(--text-sm)] [color:var(--color-paper-dim)]">{t("paywallBody")}</p>
             <a
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 rounded-lg px-4 py-2.5 text-[13px] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)]"
+              className="mt-2 rounded-lg px-4 py-2.5 [font-size:var(--text-sm)] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)]"
             >
               {t("paywallCta")}
             </a>
             <button
               type="button"
               onClick={() => setSaveState("idle")}
-              className="text-[13px] underline [color:var(--color-paper-dim)]"
+              className="[font-size:var(--text-sm)] underline [color:var(--color-paper-dim)]"
             >
               {t("backToEditing")}
             </button>

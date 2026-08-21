@@ -8,10 +8,10 @@ import { PageBar } from "../page-bar";
 import { formatDay } from "@/lib/format-date";
 
 const input =
-  "w-full rounded-[7px] border px-3 py-2 text-[13px] outline-none [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]";
+  "w-full rounded-[var(--radius-md)] border px-3 py-2 [font-size:var(--text-sm)] outline-none [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]";
 
 const button =
-  "rounded-[7px] border px-3.5 py-2 text-[12.5px] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-50 enabled:hover:[border-color:var(--color-primary)]";
+  "rounded-[var(--radius-md)] border px-3.5 py-2 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-50 enabled:hover:[border-color:var(--color-primary)]";
 
 export function AccountClient({
   locale,
@@ -126,7 +126,7 @@ export function AccountClient({
         {msg && (
           <p
             role="status"
-            className={`mb-5 rounded-[7px] border px-3.5 py-2.5 text-[13px] ${
+            className={`mb-5 rounded-[var(--radius-md)] border px-3.5 py-2.5 [font-size:var(--text-sm)] ${
               msg.ok
                 ? "[border-color:var(--color-jade)] [color:var(--color-jade-bright)]"
                 : "[border-color:var(--color-clay)] [color:var(--color-clay-bright)]"
@@ -210,7 +210,7 @@ export function AccountClient({
         {/* Last, and visually separated. A destructive action placed among
             ordinary settings is a destructive action somebody will hit by
             accident. */}
-        <section className="mt-10 rounded-[9px] border p-5 [border-color:var(--color-clay-deep)]">
+        <section className="mt-10 rounded-[var(--radius-md)] border p-5 [border-color:var(--color-clay-deep)]">
           <h2 className="[color:var(--color-clay-bright)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
             {t("deleteTitle")}
           </h2>
@@ -231,7 +231,7 @@ export function AccountClient({
               // Typing the word is the confirmation. A dialog asking "are you
               // sure" is clicked through without reading; typing DELETE is not.
               disabled={deleteConfirm.trim().toUpperCase() !== "DELETE" || busy !== null}
-              className="self-start rounded-[7px] px-3.5 py-2 text-[12.5px] [background-color:var(--color-clay-deep)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)] disabled:opacity-40"
+              className="self-start rounded-[var(--radius-md)] px-3.5 py-2 [font-size:var(--text-xs)] [background-color:var(--color-clay-deep)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)] disabled:opacity-40"
             >
               {busy === "delete" ? t("saving") : t("deleteCta")}
             </button>

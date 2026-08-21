@@ -75,7 +75,7 @@ export function TemplatesClient({
   return (
     <>
       <PageBar title={t("title")} subtitle={t("subtitle")}>
-        <span className="text-[12px] [color:var(--color-paper-dim)]">
+        <span className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
           {t("pageCount", { count: pageCount, limit: PAGE_LIMIT })}
         </span>
       </PageBar>
@@ -100,7 +100,7 @@ export function TemplatesClient({
             e.preventDefault();
             if (customTitle.trim()) add(null, customTitle.trim());
           }}
-          className="mt-6 max-w-2xl rounded-[11px] [border:1px_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)] p-5"
+          className="mt-6 max-w-2xl rounded-[var(--radius-lg)] [border:1px_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)] p-5"
         >
           <h2 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
             {t("customTitle")}
@@ -115,12 +115,12 @@ export function TemplatesClient({
               maxLength={24}
               placeholder={tAdd("namePlaceholder")}
               aria-label={tAdd("nameLabel")}
-              className="min-w-0 flex-1 rounded-[7px] border px-3 py-2 text-[13px] outline-none [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
+              className="min-w-0 flex-1 rounded-[var(--radius-md)] border px-3 py-2 [font-size:var(--text-sm)] outline-none [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
             />
             <button
               type="submit"
               disabled={!customTitle.trim() || busy !== null || full}
-              className="shrink-0 rounded-[7px] px-4 py-2 text-[13px] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] disabled:opacity-40 enabled:hover:[background-color:var(--color-primary-deep)]"
+              className="shrink-0 rounded-[var(--radius-md)] px-4 py-2 [font-size:var(--text-sm)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] disabled:opacity-40 enabled:hover:[background-color:var(--color-primary-deep)]"
             >
               {busy === "__custom__" ? tEditor("saving") : tAdd("add")}
             </button>
@@ -128,7 +128,7 @@ export function TemplatesClient({
         </form>
 
         <section className="mt-10">
-          <h2 className="text-[13px] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+          <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
             {t("readyTitle")}
             <span className="ml-2 opacity-60">{templates.length}</span>
           </h2>
@@ -142,7 +142,7 @@ export function TemplatesClient({
               return (
                 <li
                   key={tpl.pageKey}
-                  className={`overflow-hidden rounded-[11px] [background-color:var(--color-ink-900)] ${
+                  className={`overflow-hidden rounded-[var(--radius-lg)] [background-color:var(--color-ink-900)] ${
                     tpl.alreadyAdded
                       ? "[border:1px_solid_var(--color-ink-850)] opacity-70"
                       : "[border:1px_solid_var(--color-ink-800)]"
@@ -161,13 +161,13 @@ export function TemplatesClient({
                       <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                         {tpl.label}
                       </span>
-                      <span className="block truncate text-[11px] [color:var(--color-paper-dim)] [font-family:var(--font-mono)]">
+                      <span className="block truncate [font-size:var(--text-micro)] [color:var(--color-paper-dim)] [font-family:var(--font-mono)]">
                         {tpl.pageKey}
                       </span>
                     </span>
 
                     {tpl.alreadyAdded ? (
-                      <span className="shrink-0 text-[12px] [color:var(--color-paper-dim)]">
+                      <span className="shrink-0 [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
                         {isDashboard ? t("alwaysIncluded") : tAdd("alreadyAdded")}
                       </span>
                     ) : (
@@ -176,7 +176,7 @@ export function TemplatesClient({
                         onClick={() => add(tpl.pageKey, "")}
                         disabled={busy !== null || full}
                         title={full ? tAdd("failedLimit") : undefined}
-                        className="shrink-0 rounded-[7px] border px-3 py-1.5 text-[12.5px] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-40 enabled:hover:[border-color:var(--color-primary)]"
+                        className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-40 enabled:hover:[border-color:var(--color-primary)]"
                       >
                         {busy === tpl.pageKey ? tEditor("saving") : tAdd("add")}
                       </button>

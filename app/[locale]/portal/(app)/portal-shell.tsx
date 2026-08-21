@@ -58,7 +58,7 @@ import {
 type NavPage = { key: string; label: string };
 
 const ROW =
-  "group relative flex items-center gap-2.5 rounded-[7px] px-2.5 py-[7px] text-[13px] transition-colors duration-100";
+  "group relative flex items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-[7px] [font-size:var(--text-sm)] transition-colors duration-100";
 
 function NavRow({
   href,
@@ -112,7 +112,7 @@ function NavRow({
 function SectionLabel({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2 px-2.5 pb-1 pt-5">
-      <span className="text-[10px] uppercase tracking-[0.13em] [color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)] opacity-70">
+      <span className="[font-size:var(--text-micro)] uppercase tracking-[0.13em] [color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)] opacity-70">
         {children}
       </span>
       {action}
@@ -192,15 +192,15 @@ export function PortalShell({
         >
           <span
             aria-hidden="true"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-[7px] [background-color:var(--color-nav-accent)] [color:var(--color-nav-bg)] text-[14px] [font-weight:var(--fw-display)]"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--radius-md)] [background-color:var(--color-nav-accent)] [color:var(--color-nav-bg)] [font-size:var(--text-sm)] [font-weight:var(--fw-display)]"
           >
             F
           </span>
           <span className="min-w-0 leading-tight">
-            <span className="block truncate text-[13.5px] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]">
+            <span className="block truncate [font-size:var(--text-sm)] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]">
               {shownName}
             </span>
-            <span className="block text-[10.5px] uppercase tracking-[0.14em] [color:var(--color-nav-fg-dim)] [font-family:var(--font-mono)]">
+            <span className="block [font-size:var(--text-micro)] uppercase tracking-[0.14em] [color:var(--color-nav-fg-dim)] [font-family:var(--font-mono)]">
               Formae
             </span>
           </span>
@@ -224,7 +224,7 @@ export function PortalShell({
                 onClick={() => setAddPageOpen(true)}
                 aria-label={tHome("addPageCta")}
                 title={tHome("addPageCta")}
-                className="grid h-5 w-5 place-items-center rounded-[5px] [color:var(--color-nav-fg-dim)] hover:[background-color:var(--color-nav-hover)] hover:[color:var(--color-nav-fg)]"
+                className="grid h-5 w-5 place-items-center rounded-[var(--radius-xs)] [color:var(--color-nav-fg-dim)] hover:[background-color:var(--color-nav-hover)] hover:[color:var(--color-nav-fg)]"
               >
                 <IconPlus className="h-[13px] w-[13px]" />
               </button>
@@ -295,24 +295,24 @@ export function PortalShell({
             {t("account")}
           </NavRow>
 
-          <div className="mt-1 flex items-center gap-2 rounded-[7px] px-2.5 py-2">
+          <div className="mt-1 flex items-center gap-2 rounded-[var(--radius-md)] px-2.5 py-2">
             <span
               aria-hidden="true"
-              className="grid h-6 w-6 shrink-0 place-items-center rounded-[5px] text-[10.5px] [background-color:var(--color-nav-border)] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]"
+              className="grid h-6 w-6 shrink-0 place-items-center rounded-[var(--radius-xs)] [font-size:var(--text-micro)] [background-color:var(--color-nav-border)] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]"
             >
               {ownerName.slice(0, 1)}
             </span>
             <span className="min-w-0 flex-1 leading-tight">
-              <span className="block truncate text-[12px] [color:var(--color-nav-fg)]">
+              <span className="block truncate [font-size:var(--text-xs)] [color:var(--color-nav-fg)]">
                 {ownerName}
               </span>
-              <span className="block truncate text-[10.5px] [color:var(--color-nav-fg-dim)]">
+              <span className="block truncate [font-size:var(--text-micro)] [color:var(--color-nav-fg-dim)]">
                 {paid ? t("planPaid") : t("planFree")}
               </span>
             </span>
           </div>
 
-          <div className="flex items-center justify-between gap-2 px-2.5 pb-0.5 pt-1 text-[11.5px]">
+          <div className="flex items-center justify-between gap-2 px-2.5 pb-0.5 pt-1 [font-size:var(--text-xs)]">
             <LocaleSwitcher tone="dark" />
             <button
               type="button"

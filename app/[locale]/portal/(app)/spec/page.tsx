@@ -213,7 +213,7 @@ export default async function SystemSpecPage({
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
           href={`/${locale}/portal/dashboard`}
-          className="text-[13px] text-muted-foreground underline underline-offset-4"
+          className="[font-size:var(--text-sm)] text-muted-foreground underline underline-offset-4"
         >
           ← 回到编辑器
         </Link>
@@ -221,25 +221,25 @@ export default async function SystemSpecPage({
           href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground"
+          className="rounded-lg bg-primary px-4 py-2 [font-size:var(--text-sm)] font-semibold text-primary-foreground"
         >
           交给我们建系统
         </a>
       </div>
 
       <header className="border-b pb-6">
-        <p className="text-[12px] tracking-[0.16em] text-muted-foreground uppercase">
+        <p className="[font-size:var(--text-xs)] tracking-[0.16em] text-muted-foreground uppercase">
           Formae · 系统需求书
         </p>
-        <h1 className="mt-2 text-[28px] font-semibold text-foreground">{businessName}的系统</h1>
-        <p className="mt-1 text-[14px] text-muted-foreground">
+        <h1 className="mt-2 [font-size:var(--text-title)] font-semibold text-foreground">{businessName}的系统</h1>
+        <p className="mt-1 [font-size:var(--text-sm)] text-muted-foreground">
           行业：{industryName} · 生成日期：{new Date().toISOString().slice(0, 10)}
         </p>
       </header>
 
       <section className="mt-8">
-        <h2 className="text-[17px] font-semibold text-foreground">一、这套系统是做什么的</h2>
-        <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
+        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">一、这套系统是做什么的</h2>
+        <p className="mt-2 [font-size:var(--text-sm)] leading-relaxed text-muted-foreground">
           {prose?.overview ??
             `这份文档由 ${businessName} 在 Formae 上亲自设计的界面直接生成，下面每一页、每一个栏位都是客户自己确认过的。`}
         </p>
@@ -247,9 +247,9 @@ export default async function SystemSpecPage({
 
       {spec.workflowStages.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-[17px] font-semibold text-foreground">二、业务流程</h2>
-          <p className="mt-2 text-[14px] text-foreground">{spec.workflowStages.join(" → ")}</p>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">二、业务流程</h2>
+          <p className="mt-2 [font-size:var(--text-sm)] text-foreground">{spec.workflowStages.join(" → ")}</p>
+          <p className="mt-1 [font-size:var(--text-sm)] text-muted-foreground">
             系统需要能记录每一笔业务当前走到哪一步，并能按步骤筛选。
           </p>
         </section>
@@ -257,10 +257,10 @@ export default async function SystemSpecPage({
 
       {prose?.modules?.length ? (
         <section className="mt-8">
-          <h2 className="text-[17px] font-semibold text-foreground">三、需要的模块</h2>
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">三、需要的模块</h2>
           <ul className="mt-2 space-y-1.5">
             {prose.modules.map((m) => (
-              <li key={m.name} className="text-[14px] text-muted-foreground">
+              <li key={m.name} className="[font-size:var(--text-sm)] text-muted-foreground">
                 <span className="font-semibold text-foreground">{m.name}</span> — {m.purpose}
               </li>
             ))}
@@ -269,17 +269,17 @@ export default async function SystemSpecPage({
       ) : null}
 
       <section className="mt-8">
-        <h2 className="text-[17px] font-semibold text-foreground">四、每一页的具体要求</h2>
+        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">四、每一页的具体要求</h2>
         {spec.pages.map((page) => (
           <div key={page.pageKey} className="mt-5 border-l-2 pl-4">
-            <h3 className="text-[15px] font-semibold text-foreground">
+            <h3 className="[font-size:var(--text-base)] font-semibold text-foreground">
               {page.heading ?? page.title}
             </h3>
             {page.subtitle && (
-              <p className="mt-0.5 text-[13px] text-muted-foreground">{page.subtitle}</p>
+              <p className="mt-0.5 [font-size:var(--text-sm)] text-muted-foreground">{page.subtitle}</p>
             )}
 
-            <ul className="mt-2 space-y-1 text-[13px] text-muted-foreground">
+            <ul className="mt-2 space-y-1 [font-size:var(--text-sm)] text-muted-foreground">
               {page.metrics.map((m, i) => (
                 <li key={`m${i}`}>
                   关键数字：<span className="text-foreground">{m.label}</span>
@@ -313,18 +313,18 @@ export default async function SystemSpecPage({
 
       {spec.vocabulary.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-[17px] font-semibold text-foreground">五、必须沿用的称呼</h2>
-          <p className="mt-2 text-[13px] text-muted-foreground">
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">五、必须沿用的称呼</h2>
+          <p className="mt-2 [font-size:var(--text-sm)] text-muted-foreground">
             系统里的用词要跟客户自己的叫法一致，不要换成通用词：
           </p>
-          <p className="mt-1.5 text-[14px] text-foreground">{spec.vocabulary.join(" · ")}</p>
+          <p className="mt-1.5 [font-size:var(--text-sm)] text-foreground">{spec.vocabulary.join(" · ")}</p>
         </section>
       )}
 
       {prose?.notes?.length ? (
         <section className="mt-8">
-          <h2 className="text-[17px] font-semibold text-foreground">六、建设注意事项</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-muted-foreground">
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">六、建设注意事项</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5 [font-size:var(--text-sm)] text-muted-foreground">
             {prose.notes.map((n, i) => (
               <li key={i}>{n}</li>
             ))}
@@ -332,7 +332,7 @@ export default async function SystemSpecPage({
         </section>
       ) : null}
 
-      <footer className="mt-10 border-t pt-4 text-[12px] text-muted-foreground">
+      <footer className="mt-10 border-t pt-4 [font-size:var(--text-xs)] text-muted-foreground">
         本文档由客户在 Formae 编辑器里的实际设计自动生成。页面、栏位、流程、称呼全部取自客户自己的设计，不是模板推测。
       </footer>
     </main>

@@ -25,11 +25,11 @@ export function PageBar({
   return (
     <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b px-8 py-3 [background-color:color-mix(in_srgb,var(--color-canvas)_88%,transparent)] [backdrop-filter:blur(8px)] [border-color:var(--color-ink-800)]">
       <div className="min-w-0">
-        <h1 className="truncate text-[14px] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+        <h1 className="truncate [font-size:var(--text-sm)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
           {title}
         </h1>
         {subtitle && (
-          <p className="truncate text-[11.5px] [color:var(--color-paper-dim)]">{subtitle}</p>
+          <p className="truncate [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">{subtitle}</p>
         )}
       </div>
       {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}

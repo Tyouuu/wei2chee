@@ -30,7 +30,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
   return (
     <>
       <PageBar title={t("leadsTitle")} subtitle={t("leadsSubtitle", { count: leads.length, unconverted })}>
-        <label className="flex items-center gap-2 text-[12.5px] [color:var(--color-paper-dim)]">
+        <label className="flex items-center gap-2 [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
           <input
             type="checkbox"
             checked={onlyUnconverted}
@@ -41,7 +41,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
         </label>
         <Link
           href={`/${locale}/portal/console`}
-          className="rounded-[7px] px-3 py-1.5 text-[12.5px] [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+          className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
         >
           ← {t("title")}
         </Link>
@@ -63,7 +63,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
               return (
                 <li
                   key={lead.id}
-                  className="rounded-[9px] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]"
+                  className="rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3 px-4 py-3.5">
                     <div className="min-w-0 flex-1">
@@ -71,15 +71,15 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                         <span className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                           {lead.industry_name ?? t("unknownIndustry")}
                         </span>
-                        <span className="rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[0.1em] [background-color:var(--color-ink-850)] [color:var(--color-paper-dim)]">
+                        <span className="rounded-full px-2 py-0.5 [font-size:var(--text-micro)] uppercase tracking-[0.1em] [background-color:var(--color-ink-850)] [color:var(--color-paper-dim)]">
                           {lead.language}
                         </span>
                         {lead.converted ? (
-                          <span className="rounded-full px-2 py-0.5 text-[11px] [background-color:var(--color-primary-soft)] [color:var(--color-jade-bright)] [font-weight:var(--fw-semibold)]">
+                          <span className="rounded-full px-2 py-0.5 [font-size:var(--text-micro)] [background-color:var(--color-primary-soft)] [color:var(--color-jade-bright)] [font-weight:var(--fw-semibold)]">
                             {t("converted")}
                           </span>
                         ) : (
-                          <span className="rounded-full px-2 py-0.5 text-[11px] [background-color:var(--color-ink-850)] [color:var(--color-brass-bright)]">
+                          <span className="rounded-full px-2 py-0.5 [font-size:var(--text-micro)] [background-color:var(--color-ink-850)] [color:var(--color-brass-bright)]">
                             {t("notConverted")}
                           </span>
                         )}
@@ -99,7 +99,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                       )}
 
                       {lead.account_email && (
-                        <p className="mt-2 text-[12px] [color:var(--color-paper-dim)] [font-family:var(--font-mono)]">
+                        <p className="mt-2 [font-size:var(--text-xs)] [color:var(--color-paper-dim)] [font-family:var(--font-mono)]">
                           {lead.account_email}
                         </p>
                       )}
@@ -108,7 +108,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                     <div className="flex shrink-0 flex-col items-end gap-2">
                       <time
                         dateTime={lead.created_at}
-                        className="tabular-nums text-[12px] [color:var(--color-paper-dim)]"
+                        className="tabular-nums [font-size:var(--text-xs)] [color:var(--color-paper-dim)]"
                       >
                         {formatDayTime(lead.created_at, locale)}
                       </time>
@@ -116,7 +116,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                         type="button"
                         onClick={() => setOpen(isOpen ? null : lead.id)}
                         aria-expanded={isOpen}
-                        className="rounded-[6px] border px-2.5 py-1 text-[12px] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] hover:[color:var(--color-paper)]"
+                        className="rounded-[var(--radius-sm)] border px-2.5 py-1 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] hover:[color:var(--color-paper)]"
                       >
                         {isOpen ? t("collapse") : t("expand")}
                       </button>
@@ -127,7 +127,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                     <div className="border-t px-4 py-4 [border-color:var(--color-ink-800)]">
                       {lead.bottlenecks?.length ? (
                         <>
-                          <h3 className="text-[10.5px] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+                          <h3 className="[font-size:var(--text-micro)] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
                             {t("bottlenecks")}
                           </h3>
                           <ul className="mt-2 flex flex-col gap-2">
@@ -145,7 +145,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                         </>
                       ) : null}
 
-                      <h3 className="mt-5 text-[10.5px] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+                      <h3 className="mt-5 [font-size:var(--text-micro)] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
                         {t("answers")}
                       </h3>
                       {answers.length === 0 ? (
@@ -156,7 +156,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                         <dl className="mt-2 grid gap-x-6 gap-y-2 sm:grid-cols-2">
                           {answers.map(([key, value]) => (
                             <div key={key} className="min-w-0">
-                              <dt className="text-[11.5px] [color:var(--color-paper-dim)] [font-family:var(--font-mono)]">
+                              <dt className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)] [font-family:var(--font-mono)]">
                                 {key}
                               </dt>
                               <dd className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">

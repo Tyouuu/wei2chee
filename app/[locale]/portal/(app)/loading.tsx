@@ -20,7 +20,7 @@ export default function Loading() {
         <div className="h-7 w-80 max-w-full rounded [background-color:var(--color-ink-850)]" />
         <div className="mt-3 h-4 w-1/2 rounded [background-color:var(--color-ink-900)]" />
 
-        <div className="mt-7 grid gap-px overflow-hidden rounded-[9px] [background-color:var(--color-ink-800)] sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-7 grid gap-px overflow-hidden rounded-[var(--radius-md)] [background-color:var(--color-ink-800)] sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="h-[92px] [background-color:var(--color-ink-900)]" />
           ))}
@@ -30,7 +30,7 @@ export default function Loading() {
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-[260px] rounded-[11px] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]"
+              className="h-[260px] rounded-[var(--radius-lg)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]"
             />
           ))}
         </div>

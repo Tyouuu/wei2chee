@@ -118,7 +118,7 @@ export function StylesClient({ locale, style }: { locale: string; style: StyleNa
             return (
               <li
                 key={name}
-                className={`overflow-hidden rounded-[11px] transition-colors ${
+                className={`overflow-hidden rounded-[var(--radius-lg)] transition-colors ${
                   isActive
                     ? "[border:1px_solid_var(--color-primary)]"
                     : "[border:1px_solid_var(--color-ink-800)]"
@@ -151,7 +151,7 @@ export function StylesClient({ locale, style }: { locale: string; style: StyleNa
                     </span>
                   </span>
                   {isActive ? (
-                    <span className="shrink-0 rounded-full px-2.5 py-1 text-[11.5px] [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]">
+                    <span className="shrink-0 rounded-full px-2.5 py-1 [font-size:var(--text-xs)] [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]">
                       {tHome("styleCurrent")}
                     </span>
                   ) : (
@@ -159,7 +159,7 @@ export function StylesClient({ locale, style }: { locale: string; style: StyleNa
                       type="button"
                       onClick={() => choose(name)}
                       disabled={Boolean(pending)}
-                      className="shrink-0 rounded-[7px] border px-3 py-1.5 text-[12.5px] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-50 enabled:hover:[border-color:var(--color-primary)]"
+                      className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-50 enabled:hover:[border-color:var(--color-primary)]"
                     >
                       {pending === name ? tEditor("saving") : tHome("styleUse")}
                     </button>
@@ -174,7 +174,7 @@ export function StylesClient({ locale, style }: { locale: string; style: StyleNa
             called a library, and the founder has asked for eight to ten; saying
             so here is more honest than letting the page imply this is all there
             will ever be. */}
-        <p className="mt-8 max-w-2xl rounded-[9px] border border-dashed px-4 py-3 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+        <p className="mt-8 max-w-2xl rounded-[var(--radius-md)] border border-dashed px-4 py-3 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
           {t("moreComing")}
         </p>
       </div>

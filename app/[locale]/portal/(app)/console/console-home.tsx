@@ -61,7 +61,7 @@ export function ConsoleHome({
       <PageBar title={t("title")} subtitle={t("subtitle")}>
         <Link
           href={`/${locale}/portal/console/leads`}
-          className="rounded-[7px] border px-3 py-1.5 text-[12.5px] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
+          className="rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
         >
           {t("leadsCta", { count: num("leads_total") })}
         </Link>
@@ -71,7 +71,7 @@ export function ConsoleHome({
         {/* MONEY FIRST. This screen answers "how is the business doing" before
             it answers anything else, and every other admin panel that buries
             revenue under a table gets skimmed instead of read. */}
-        <dl className="grid gap-px overflow-hidden rounded-[9px] [background-color:var(--color-ink-800)] sm:grid-cols-2 lg:grid-cols-5">
+        <dl className="grid gap-px overflow-hidden rounded-[var(--radius-md)] [background-color:var(--color-ink-800)] sm:grid-cols-2 lg:grid-cols-5">
           <Stat label={t("statLeads")} value={String(num("leads_total"))} note={t("statLeadsNote", { analyzed: num("leads_analyzed"), converted: num("leads_converted") })} />
           <Stat label={t("statCustomers")} value={String(num("customers_total"))} note={t("statCustomersNote", { paid: num("customers_paid") })} />
           <Stat label={t("statDevRevenue")} value={money(num("revenue_dev"))} note={t("statDevRevenueNote")} tone="good" />
@@ -87,18 +87,18 @@ export function ConsoleHome({
             card in it is theatre; this is the same information at the size the
             business actually is, and it stays readable at fifty. */}
         <section className="mt-8">
-          <h2 className="text-[13px] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+          <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
             {t("pipelineTitle")}
           </h2>
           <ol className="mt-3 flex flex-wrap items-stretch gap-2">
             {STAGES.map((stage, i) => (
               <li key={stage} className="flex items-center gap-2">
-                <div className="min-w-[104px] rounded-[9px] border px-3.5 py-2.5 [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]">
-                  <span className="block text-[10.5px] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+                <div className="min-w-[104px] rounded-[var(--radius-md)] border px-3.5 py-2.5 [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]">
+                  <span className="block [font-size:var(--text-micro)] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
                     {t(`stage.${stage}`)}
                   </span>
                   <span
-                    className={`mt-1 block text-[20px] leading-none [font-weight:var(--fw-semibold)] ${
+                    className={`mt-1 block [font-size:var(--text-title)] leading-none [font-weight:var(--fw-semibold)] ${
                       byStage[stage] ? stageTone(stage) : "[color:var(--color-ink-700)]"
                     }`}
                   >
@@ -116,7 +116,7 @@ export function ConsoleHome({
         </section>
 
         <section className="mt-9">
-          <h2 className="text-[13px] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+          <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
             {t("customersTitle")}
             <span className="ml-2 opacity-60">{customers.length}</span>
           </h2>
@@ -126,14 +126,14 @@ export function ConsoleHome({
               {t("noCustomers")}
             </p>
           ) : (
-            <div className="mt-4 overflow-x-auto rounded-[9px] border [border-color:var(--color-ink-800)]">
-              <table className="w-full min-w-[880px] border-collapse text-[13px]">
+            <div className="mt-4 overflow-x-auto rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)]">
+              <table className="w-full min-w-[880px] border-collapse [font-size:var(--text-sm)]">
                 <thead>
                   <tr className="[background-color:var(--color-ink-900)]">
                     {["colBusiness", "colIndustry", "colPages", "colStage", "colFees", "colUpdated"].map((k) => (
                       <th
                         key={k}
-                        className="border-b px-4 py-2.5 text-left text-[10.5px] uppercase tracking-[0.12em] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]"
+                        className="border-b px-4 py-2.5 text-left [font-size:var(--text-micro)] uppercase tracking-[0.12em] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]"
                       >
                         {t(k)}
                       </th>
@@ -150,7 +150,7 @@ export function ConsoleHome({
                         >
                           {c.business_name || t("unnamed")}
                         </Link>
-                        <span className="block text-[11.5px] [color:var(--color-paper-dim)]">{c.email}</span>
+                        <span className="block [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">{c.email}</span>
                       </td>
                       <td className="px-4 py-3 [color:var(--color-paper-dim)]">{c.industry_name ?? "—"}</td>
                       <td className="px-4 py-3 tabular-nums [color:var(--color-paper-dim)]">{c.page_count}</td>
@@ -194,17 +194,17 @@ function Stat({
 }) {
   return (
     <div className="[background-color:var(--color-ink-900)] px-4 py-3.5">
-      <dt className="text-[10.5px] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+      <dt className="[font-size:var(--text-micro)] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
         {label}
       </dt>
       <dd
-        className={`mt-1.5 text-[19px] leading-none tabular-nums [font-weight:var(--fw-semibold)] ${
+        className={`mt-1.5 [font-size:var(--text-title)] leading-none tabular-nums [font-weight:var(--fw-semibold)] ${
           tone === "good" ? "[color:var(--color-jade-bright)]" : "[color:var(--color-paper)]"
         }`}
       >
         {value}
       </dd>
-      {note && <p className="mt-2 text-[11.5px] [color:var(--color-paper-dim)]">{note}</p>}
+      {note && <p className="mt-2 [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">{note}</p>}
     </div>
   );
 }

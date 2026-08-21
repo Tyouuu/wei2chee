@@ -139,7 +139,7 @@ export function AddPageDialog({
         </div>
       </form>
 
-      <p className="mt-7 text-[11px] uppercase tracking-[0.1em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+      <p className="mt-7 [font-size:var(--text-micro)] uppercase tracking-[0.1em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
         {t("knownTitle")}
       </p>
       <div className="mt-2.5 flex flex-wrap gap-2">

@@ -60,7 +60,7 @@ export function StyleSelectClient({ recommended }: { recommended: StyleName | nu
 
   return (
     <>
-      {error ? <p className="mb-4 text-[13px] text-destructive">{error}</p> : null}
+      {error ? <p className="mb-4 [font-size:var(--text-sm)] text-destructive">{error}</p> : null}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
         {[...STYLES]
           .sort((a, b) => Number(b === recommended) - Number(a === recommended))

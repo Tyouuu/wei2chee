@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { OPTIONAL_MODULES } from "@/lib/portal/module-catalog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -90,6 +91,11 @@ export function PortalHome({
   const router = useRouter();
   const [removing, setRemoving] = useState<string | null>(null);
 
+  // Capped at six: the tile is one grid cell, and a wrapping wall of every
+  // remaining module turns an invitation back into a decision.
+  const have = new Set(pages.map((p) => p.pageKey));
+  const offerable = OPTIONAL_MODULES.filter((m) => !have.has(m.key)).slice(0, 6);
+
   const labelFor = (page: { pageKey: string; title: string | null }) =>
     page.title?.trim() ||
     (BUILT_IN_PAGE_KEYS.includes(page.pageKey) ? tEditor(`pages.${page.pageKey}`) : t("customPage"));
@@ -118,7 +124,7 @@ export function PortalHome({
         <Link
           href={`/${locale}/portal/spec`}
           prefetch={false}
-          className="rounded-[7px] px-3 py-1.5 text-[12.5px] [color:var(--color-paper-dim)] transition-colors hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+          className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [color:var(--color-paper-dim)] transition-colors hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
         >
           {t("specTitle")}
         </Link>
@@ -126,59 +132,117 @@ export function PortalHome({
           href={deployHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-[7px] px-3 py-1.5 text-[12.5px] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-primary-deep)]"
+          className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-primary-deep)]"
         >
           {t("buildCta")}
         </a>
       </PageBar>
 
-      <div className="px-8 py-7">
+      <div className="px-8 py-9">
+        {/* THE FOLD.
+            Three text elements, not thirty. Measured on durable.co: a 72px
+            display line, a two-line subhead, one input — and their type jumps
+            14 -> 72 where this page jumped 13 -> 26. The size of that jump IS
+            the hierarchy; adding intermediate steps never produced one.
+
+            The display line is the AI's own sentence about THIS business,
+            because that is the only sentence on the screen that could not have
+            been written about anybody else. It used to be a grey quote block
+            under a product headline reading 「你的其他系统已经建好了。」 —
+            which for a master dealer literally rendered the industry slug
+            "其他" as their trade. */}
         <section className="max-w-3xl">
-          <h1 className="text-balance text-[26px] leading-[1.25] [color:var(--color-paper)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title-lg)]">
-            {industryName ? t("titleWithIndustry", { industry: industryName }) : t("title")}
+          <h1 className="text-balance [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-hero)] [font-weight:var(--fw-regular)] [letter-spacing:var(--tracking-title-lg)] [line-height:1.08]">
+            {summary || (industryName ? t("titleWithIndustry", { industry: industryName }) : t("title"))}
           </h1>
 
-          {/* The AI's own sentence about this business, on the first screen
-              after signing in — the clearest evidence that the questionnaire
-              was not a form that went nowhere. */}
-          {summary && (
-            <p className="mt-3 border-l-2 pl-3.5 [border-color:var(--color-primary)] [color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
-              {summary}
-            </p>
-          )}
+          <p className="mt-5 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
+            {summary
+              ? t("subline", { count: pages.length })
+              : t("namePrompt", { name: businessName })}
+          </p>
 
-          {!savedBusinessName && (
-            <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+          {summary && !savedBusinessName && (
+            <p className="mt-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
               {t("namePrompt", { name: businessName })}
             </p>
           )}
         </section>
 
-        {/* THE STATUS STRIP. What turns a page into a dashboard: the state of
-            the thing, readable without scrolling or clicking. */}
-        <dl className="mt-7 grid gap-px overflow-hidden rounded-[9px] [background-color:var(--color-ink-800)] sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label={t("statPages")} value={String(pages.length)} note={t("statDrafts", { count: draftCount })} />
-          <Stat
-            label={t("statStyle")}
-            // The style's NAME, with its description as the note. The value slot
-            // is what a reader scans; "制图 · 精准、技术感" there answers a
-            // question nobody asked, and hides the one word that identifies it.
-            value={style === "ledger" ? "Ledger" : style === "hearth" ? "Hearth" : "Blueprint"}
-            note={t(`styleTag.${style}`)}
-            href={`/${locale}/portal/styles`}
-            cta={t("statChange")}
-          />
-          <Stat label={t("statBlocks")} value={String(componentCount)} note={t("statBlocksNote")} href={`/${locale}/portal/library`} cta={t("statBrowse")} />
-          <Stat
-            label={t("statPlan")}
-            value={paid ? tShell("planPaid") : tShell("planFree")}
-            note={paid ? t("statPlanPaidNote") : t("statPlanFreeNote")}
-            tone={paid ? "good" : "warn"}
-          />
-        </dl>
+        {/* WAS FOUR EQUAL CELLS WITH HAIRLINES BETWEEN THEM.
+            Four boxed cells of identical size state that four things matter
+            equally, and leave the reader to work out which to look at first —
+            so 「可用组件 19」 competed with the customer's own seven pages for
+            the same first look. 21st.dev sets its counts inline with the noun
+            they count ("2,100+ UI components:", "Backgrounds 365") rather than
+            as separate statistics, and that is what this is now: one quiet
+            line, scannable, with the two things that are actually actionable
+            carrying links. */}
+        <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+          <span>
+            <b className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-weight:var(--fw-semibold)] tabular-nums">
+              {pages.length}
+            </b>{" "}
+            {t("metaPages", { count: pages.length }).replace(/^\d+\s*/, "")}
+            {draftCount > 0 && (
+              <span className="[color:var(--color-brass-bright)]">
+                {" · "}
+                {t("metaDrafts", { count: draftCount })}
+              </span>
+            )}
+          </span>
+
+          <Dot />
+
+          <span>
+            {t("metaStyle")}{" "}
+            <b className="[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+              {style === "ledger" ? "Ledger" : style === "hearth" ? "Hearth" : "Blueprint"}
+            </b>{" "}
+            <Link
+              href={`/${locale}/portal/styles`}
+              className="[color:var(--color-primary)] hover:underline"
+            >
+              {t("metaChange")}
+            </Link>
+          </span>
+
+          <Dot />
+
+          <span>
+            <b className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-weight:var(--fw-semibold)] tabular-nums">
+              {componentCount}
+            </b>{" "}
+            {t("metaBlocks", { count: componentCount }).replace(/^\d+\s*/, "")}{" "}
+            <Link
+              href={`/${locale}/portal/library`}
+              className="[color:var(--color-primary)] hover:underline"
+            >
+              {t("metaBrowse")}
+            </Link>
+          </span>
+
+          <Dot />
+
+          {/* Plan keeps a pill rather than joining the run of plain text: it is
+              the one item here that is a STATE rather than a count, and a
+              customer scanning for "am I paid up" should not have to read a
+              sentence to find it. */}
+          <span
+            className={`rounded-[var(--radius-pill)] px-2.5 py-0.5 [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] ${
+              paid
+                ? "[background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)]"
+                : "[background-color:var(--color-ink-850)] [color:var(--color-brass-bright)]"
+            }`}
+          >
+            {paid ? tShell("planPaid") : tShell("planFree")}
+            {" · "}
+            {paid ? t("statPlanPaidNote") : t("statPlanFreeNote")}
+          </span>
+        </div>
 
         <section className="mt-9">
-          <h2 className="text-[13px] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+          <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
             {t("pagesTitle")}
           </h2>
 
@@ -209,7 +273,20 @@ export function PortalHome({
                     <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                       {labelFor(page)}
                     </span>
-                    <span className="mt-0.5 block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                    {/* Draft and edited finally look different. Every card
+                        used to carry this line in the same grey, so the one
+                        page the customer HAD worked on was indistinguishable
+                        from the six they had not — on the screen whose whole
+                        job is to show them where they left off. Brass is the
+                        product's existing "needs attention" tone; jade is its
+                        "done". */}
+                    <span
+                      className={`mt-1 inline-block rounded-[var(--radius-pill)] px-2 py-0.5 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] ${
+                        page.isDraft
+                          ? "[background-color:color-mix(in_oklab,var(--color-brass)_13%,transparent)] [color:var(--color-brass-bright)]"
+                          : "[background-color:color-mix(in_oklab,var(--color-jade)_13%,transparent)] [color:var(--color-jade-bright)]"
+                      }`}
+                    >
                       {page.isDraft ? t("cardDraft") : t("cardEdited")}
                     </span>
                   </span>
@@ -246,20 +323,37 @@ export function PortalHome({
             {/* Last grid item, so it fills whatever cell follows the pages at
                 any count — the fix for a gallery that showed a hole where a
                 sixth page would have been. */}
+            {/* WAS AN EMPTY DASHED BOX WITH A PLUS IN IT.
+                That asked the customer to think of a page; this shows them
+                what is on offer. The chips are the module catalogue
+                (lib/portal/module-catalog.ts) minus what they already have —
+                so a master dealer who has 对账 and 佣金 is offered 开销, 报表,
+                库存, and a salon is offered something else. Same move as
+                21st.dev putting a count beside every category: naming what is
+                available is what makes a library read as deep. */}
             <li>
               <Link
                 href={`/${locale}/portal/templates`}
-                className="flex h-full min-h-[220px] flex-col items-center justify-center gap-2 rounded-[11px] border border-dashed [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] transition-colors hover:[border-color:var(--color-primary)] hover:[color:var(--color-paper)]"
+                className="flex h-full min-h-[220px] flex-col justify-center gap-3 rounded-[var(--radius-lg)] border border-dashed p-7 [border-color:var(--color-ink-700)] transition-colors hover:[border-color:var(--color-primary)]"
               >
-                <span aria-hidden="true" className="text-[22px] leading-none">
-                  +
-                </span>
-                <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+                <span className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                   {t("addPageCta")}
                 </span>
-                <span className="max-w-[16rem] text-center text-[11.5px] leading-snug">
-                  {t("addPageHint")}
+                <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                  {t("addPageChips")}
                 </span>
+                {offerable.length > 0 && (
+                  <span className="mt-1 flex flex-wrap gap-2">
+                    {offerable.map((m) => (
+                      <span
+                        key={m.key}
+                        className="rounded-[var(--radius-pill)] border px-3 py-1 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]"
+                      >
+                        {m.label}
+                      </span>
+                    ))}
+                  </span>
+                )}
               </Link>
             </li>
           </ul>
@@ -269,45 +363,13 @@ export function PortalHome({
   );
 }
 
-function Stat({
-  label,
-  value,
-  note,
-  href,
-  cta,
-  tone,
-}: {
-  label: string;
-  value: string;
-  note?: string;
-  href?: string;
-  cta?: string;
-  tone?: "good" | "warn";
-}) {
+/** The separator between meta items. A dot rather than a pipe or a slash: at
+ *  14px a pipe reads as a table rule and a slash reads as part of a value. */
+function Dot() {
   return (
-    <div className="[background-color:var(--color-ink-900)] px-4 py-3.5">
-      <dt className="text-[10.5px] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
-        {label}
-      </dt>
-      <dd
-        className={`mt-1.5 text-[19px] leading-none [font-weight:var(--fw-semibold)] ${
-          tone === "good"
-            ? "[color:var(--color-jade-bright)]"
-            : tone === "warn"
-              ? "[color:var(--color-brass-bright)]"
-              : "[color:var(--color-paper)]"
-        }`}
-      >
-        {value}
-      </dd>
-      <div className="mt-2 flex items-center justify-between gap-2 text-[11.5px]">
-        <span className="[color:var(--color-paper-dim)]">{note}</span>
-        {href && cta && (
-          <Link href={href} className="shrink-0 [color:var(--color-primary)] hover:underline">
-            {cta} →
-          </Link>
-        )}
-      </div>
-    </div>
+    <span
+      aria-hidden="true"
+      className="h-[3px] w-[3px] rounded-[var(--radius-pill)] [background-color:var(--color-ink-700)]"
+    />
   );
 }

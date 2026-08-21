@@ -227,10 +227,10 @@ export function AiAssistant({
       aria-label={t("aiPanelTitle")}
     >
       <div className="flex shrink-0 items-center justify-between gap-2 border-b px-3.5 py-2.5 [border-color:var(--color-ink-800)]">
-        <span className="flex items-center gap-2 text-[13px] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+        <span className="flex items-center gap-2 [font-size:var(--text-sm)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
           <span
             aria-hidden="true"
-            className="grid h-5 w-5 place-items-center rounded-full text-[10px] [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
+            className="grid h-5 w-5 place-items-center rounded-full [font-size:var(--text-micro)] [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
           >
             AI
           </span>
@@ -240,7 +240,7 @@ export function AiAssistant({
           type="button"
           onClick={onClose}
           aria-label={t("aiClose")}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[15px] [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+          className="flex h-7 w-7 items-center justify-center rounded-md [font-size:var(--text-base)] [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
         >
           ×
         </button>
@@ -249,8 +249,8 @@ export function AiAssistant({
       <div ref={listRef} className="flex-1 overflow-y-auto px-3.5 py-3.5">
         {turns.length === 0 ? (
           <div>
-            <p className="text-[13px] leading-relaxed [color:var(--color-paper-dim)]">{t("aiEmptyBody")}</p>
-            <p className="mt-4 text-[11px] uppercase tracking-[0.08em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+            <p className="[font-size:var(--text-sm)] leading-relaxed [color:var(--color-paper-dim)]">{t("aiEmptyBody")}</p>
+            <p className="mt-4 [font-size:var(--text-micro)] uppercase tracking-[0.08em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
               {t("aiSuggestTitle")}
             </p>
             <div className="mt-2 flex flex-col gap-1.5">
@@ -259,7 +259,7 @@ export function AiAssistant({
                   key={sugg}
                   type="button"
                   onClick={() => ask(sugg)}
-                  className="rounded-md border px-3 py-2 text-left text-[12.5px] leading-snug transition-colors [border-color:var(--color-ink-800)] [color:var(--color-paper)] hover:[border-color:var(--color-primary)] hover:[background-color:var(--color-ink-850)]"
+                  className="rounded-md border px-3 py-2 text-left [font-size:var(--text-xs)] leading-snug transition-colors [border-color:var(--color-ink-800)] [color:var(--color-paper)] hover:[border-color:var(--color-primary)] hover:[background-color:var(--color-ink-850)]"
                 >
                   {sugg}
                 </button>
@@ -270,16 +270,16 @@ export function AiAssistant({
           <ol className="flex flex-col gap-4">
             {turns.map((turn) => (
               <li key={turn.id} className="flex flex-col gap-1.5">
-                <p className="self-end rounded-lg rounded-br-sm px-2.5 py-1.5 text-[12.5px] leading-snug [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)]">
+                <p className="self-end rounded-lg rounded-br-sm px-2.5 py-1.5 [font-size:var(--text-xs)] leading-snug [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)]">
                   {turn.question}
                 </p>
 
                 {turn.state === "thinking" ? (
-                  <p className="text-[12.5px] [color:var(--color-paper-dim)]">{t("aiThinking")}</p>
+                  <p className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">{t("aiThinking")}</p>
                 ) : (
                   <div className="flex flex-col gap-1.5">
                     <p
-                      className={`text-[12.5px] leading-snug ${
+                      className={`[font-size:var(--text-xs)] leading-snug ${
                         turn.state === "failed"
                           ? "[color:var(--color-clay-bright)]"
                           : "[color:var(--color-paper)]"
@@ -291,7 +291,7 @@ export function AiAssistant({
                     {/* Counted, not just narrated. "改了 3 处" is checkable
                         against the canvas; a sentence alone is not. */}
                     {turn.state === "done" && (turn.applied ?? 0) > 0 && (
-                      <p className="text-[11.5px] [color:var(--color-jade-bright)]">
+                      <p className="[font-size:var(--text-xs)] [color:var(--color-jade-bright)]">
                         {t("aiApplied", { count: turn.applied ?? 0 })}
                       </p>
                     )}
@@ -303,7 +303,7 @@ export function AiAssistant({
                     {turn.skipped?.length ? (
                       <ul className="flex flex-col gap-0.5">
                         {turn.skipped.map((s, i) => (
-                          <li key={i} className="text-[11.5px] [color:var(--color-brass-bright)]">
+                          <li key={i} className="[font-size:var(--text-xs)] [color:var(--color-brass-bright)]">
                             · {s.reason}
                           </li>
                         ))}
@@ -319,7 +319,7 @@ export function AiAssistant({
                         type="button"
                         onClick={() => confirmOffer(turn)}
                         disabled={turn.offerBusy}
-                        className={`mt-0.5 self-start rounded-md px-3 py-1.5 text-[12px] transition-colors disabled:opacity-50 [font-weight:var(--fw-semibold)] ${
+                        className={`mt-0.5 self-start rounded-md px-3 py-1.5 [font-size:var(--text-xs)] transition-colors disabled:opacity-50 [font-weight:var(--fw-semibold)] ${
                           turn.offer.action === "remove_page"
                             ? "border [border-color:var(--color-clay-bright)] [color:var(--color-clay-bright)] enabled:hover:[background-color:var(--color-ink-850)]"
                             : "[background-color:var(--color-primary)] [color:var(--color-on-primary)] enabled:hover:[background-color:var(--color-primary-deep)]"
@@ -336,18 +336,18 @@ export function AiAssistant({
                     {turn.offerResult?.ok && turn.offerResult.href && (
                       <Link
                         href={turn.offerResult.href}
-                        className="self-start text-[11.5px] underline [color:var(--color-jade-bright)]"
+                        className="self-start [font-size:var(--text-xs)] underline [color:var(--color-jade-bright)]"
                       >
                         {t("aiPageAdded")}
                       </Link>
                     )}
                     {turn.offerResult?.ok && !turn.offerResult.href && (
-                      <p className="text-[11.5px] [color:var(--color-jade-bright)]">
+                      <p className="[font-size:var(--text-xs)] [color:var(--color-jade-bright)]">
                         {t("aiPageRemoved")}
                       </p>
                     )}
                     {turn.offerResult && !turn.offerResult.ok && (
-                      <p role="alert" className="text-[11.5px] [color:var(--color-clay-bright)]">
+                      <p role="alert" className="[font-size:var(--text-xs)] [color:var(--color-clay-bright)]">
                         {t("aiOfferFailed")}
                       </p>
                     )}
@@ -357,7 +357,7 @@ export function AiAssistant({
                         type="button"
                         onClick={() => revert(turn)}
                         disabled={turn.reverted}
-                        className="self-start text-[11.5px] underline disabled:no-underline disabled:opacity-60 [color:var(--color-paper-dim)] enabled:hover:[color:var(--color-paper)]"
+                        className="self-start [font-size:var(--text-xs)] underline disabled:no-underline disabled:opacity-60 [color:var(--color-paper-dim)] enabled:hover:[color:var(--color-paper)]"
                       >
                         {turn.reverted ? t("aiReverted") : t("aiRevert")}
                       </button>
@@ -394,14 +394,14 @@ export function AiAssistant({
           disabled={busy}
           placeholder={t("aiPlaceholder")}
           aria-label={t("aiLabel")}
-          className="w-full resize-none rounded-md border px-2.5 py-2 text-[12.5px] leading-snug outline-none disabled:opacity-60 [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
+          className="w-full resize-none rounded-md border px-2.5 py-2 [font-size:var(--text-xs)] leading-snug outline-none disabled:opacity-60 [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
         />
         <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="text-[11px] [color:var(--color-paper-dim)]">{t("aiEnterHint")}</span>
+          <span className="[font-size:var(--text-micro)] [color:var(--color-paper-dim)]">{t("aiEnterHint")}</span>
           <button
             type="submit"
             disabled={busy || !instruction.trim()}
-            className="rounded-md px-3 py-1.5 text-[12.5px] transition-colors disabled:opacity-40 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
+            className="rounded-md px-3 py-1.5 [font-size:var(--text-xs)] transition-colors disabled:opacity-40 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
           >
             {busy ? t("aiThinking") : t("aiSubmit")}
           </button>

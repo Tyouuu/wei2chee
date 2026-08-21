@@ -343,7 +343,16 @@
       "statPlan": "Status",
       "statPlanPaidNote": "Changes save automatically",
       "statPlanFreeNote": "Edit freely; saving needs payment",
-      "addPageHint": "Pick one from the templates, or name your own."
+      "addPageHint": "Pick one from the templates, or name your own.",
+      "metaPages": "{count}-page system",
+      "metaStyle": "Style",
+      "metaChange": "change",
+      "metaBlocks": "{count} components available",
+      "metaBrowse": "browse",
+      "metaDrafts": "{count} still drafts",
+      "headlineFallback": "Your system is built.",
+      "addPageChips": "Pick one from the module library, or name your own.",
+      "subline": "The {count} pages below are the draft built from it. Every name, column and sample row is yours to change."
     },
     "settings": {
       "title": "Business details",

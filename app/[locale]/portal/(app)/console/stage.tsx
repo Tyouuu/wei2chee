@@ -49,7 +49,7 @@ export function StageSelect({
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       aria-label={t("colStage")}
-      className={`rounded-[6px] border px-2 py-1 text-[12.5px] [border-color:var(--color-ink-800)] [background-color:var(--color-ink-850)] disabled:opacity-50 ${stageTone(value)}`}
+      className={`rounded-[var(--radius-sm)] border px-2 py-1 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [background-color:var(--color-ink-850)] disabled:opacity-50 ${stageTone(value)}`}
     >
       {STAGES.map((s) => (
         <option key={s} value={s}>
