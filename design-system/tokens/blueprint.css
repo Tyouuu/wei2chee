@@ -397,7 +397,11 @@
   color-scheme: light;
 
   /* ---- TYPE AXIS: neutral modern grotesque ------------------------------- */
-  --font-ui: var(--font-sans-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  /* Geist over Noto Sans SC: two geometric, even-width faces, which is the
+     drawing-office register this style is for. Contrast this with Ledger's
+     宋体 -- the two used to be the same Chinese font, which is why nobody
+     could tell these styles apart. */
+  --font-ui: var(--font-sans-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --fw-regular: 400;

@@ -100,7 +100,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
-  --font-ui: var(--font-industrial-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-ui: var(--font-industrial-latin), var(--font-song-cjk), "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --fw-regular: 400;
   --fw-medium: 500;
@@ -356,7 +356,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
-  --font-ui: var(--font-sans-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-ui: var(--font-sans-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --fw-regular: 400;
   --fw-medium: 500;

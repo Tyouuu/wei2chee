@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
-import { Instrument_Serif, Geist, Geist_Mono, Archivo, Nunito } from "next/font/google";
+import { Instrument_Serif, Geist, Geist_Mono, Archivo, Nunito, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { BRAND_NAME } from "@/lib/brand";
 import "../globals.css";
@@ -56,6 +56,45 @@ const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-rounded-latin",
   display: "swap",
+});
+
+// CJK, and why this file's original "Latin-only webfonts" rule now has two
+// exceptions.
+//
+// That rule was right about the cost and wrong about the consequence. Every
+// style bound its own LATIN face -- Archivo, Nunito, Geist -- and none of them
+// has a single Chinese glyph, so all three fell back to the same
+// "PingFang SC", "Microsoft YaHei". A customer's system is about ninety per
+// cent Chinese: 报价单, 客户, 金额, 已确认. The style layer was differentiating
+// the ten per cent that is Latin and leaving the ninety identical, which is
+// the whole reason Ledger and Blueprint were indistinguishable side by side.
+//
+// The cost is not what "multi-MB CJK webfont" suggests. Google serves these
+// split by unicode-range into ~100 files; a browser downloads only the blocks
+// whose characters are on the page, and caches them across the whole site.
+// `preload: false` is essential -- with preloading on, Next injects a link tag
+// for every block in the declared subset, which IS the multi-MB download the
+// original rule feared.
+//
+// Only two, deliberately. Hearth stays on the system font because that is the
+// coherent answer for the register it is in: 「宽松·温和、好读」 is best served
+// by the face the customer's own machine already renders everything else in.
+const notoSerifSC = Noto_Serif_SC({
+  // No `subsets`. Next's generated types only name the Latin-script subsets for
+  // these families, because Google delivers the CJK blocks through
+  // unicode-range rather than as a named subset. `subsets` controls PRELOADING
+  // only, and preloading is exactly what must not happen here.
+  weight: ["400", "600"],
+  variable: "--font-song-cjk",
+  display: "swap",
+  preload: false,
+});
+
+const notoSansSC = Noto_Sans_SC({
+  weight: ["400", "500", "700"],
+  variable: "--font-hei-cjk",
+  display: "swap",
+  preload: false,
 });
 
 /**
@@ -144,7 +183,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${archivo.variable} ${nunito.variable}`}
+      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${archivo.variable} ${nunito.variable} ${notoSerifSC.variable} ${notoSansSC.variable}`}
     >
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>

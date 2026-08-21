@@ -218,7 +218,12 @@
      Archivo is loaded in app/[locale]/layout.tsx.  The CJK fallbacks follow it
      in the same composition rule globals.css --font-sans uses: Latin glyphs
      render in Archivo, Chinese in the OS's own CJK face. */
-  --font-ui: var(--font-industrial-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  /* Latin then CJK, in that order, so each script is rendered by the face
+     chosen for it. Ledger's Chinese is 宋体 -- what a Malaysian invoice,
+     receipt or 报价单 is actually printed in. That is not decoration: it is the
+     single change that makes this style distinguishable from the other two on
+     a page that is ninety per cent Chinese. */
+  --font-ui: var(--font-industrial-latin), var(--font-song-cjk), "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* Heavier than the other two registers by design: ops software is read at a

@@ -261,6 +261,12 @@
      Nunito is loaded in app/[locale]/layout.tsx.  Rounded terminals and a tall
      x-height are what make a booking screen read as friendly rather than
      administrative. */
+  /* Deliberately NOT a webfont for CJK. 「宽松·温和、好读」 is best served by
+     the face the customer's own machine already renders everything else in --
+     PingFang on a Mac or phone, 微软雅黑 on Windows. Both are humanist and
+     soft, which is the register, and it costs no download. The other two
+     styles depart from this; this one is the familiar ground they depart
+     from. */
   --font-ui: var(--font-rounded-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   /* No mono anywhere in this register: a monospaced figure is a precision
      signal, and precision is Ledger's job, not this one's. */
