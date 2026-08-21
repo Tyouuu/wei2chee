@@ -129,7 +129,16 @@ type Components = {
     oneLabel: string; twoLabel: string; threeLabel: string;
     one: Slot; two: Slot; three: Slot;
   };
-  SystemShell: { sidebar: Slot; main: Slot; nav: "side" | "top"; navTone: "dark" | "light" };
+  SystemShell: {
+    sidebar: Slot;
+    main: Slot;
+    // Optional because the 换个款式 picker owns them and Puck demands a
+    // registered field for every REQUIRED prop.
+    nav?: "side" | "top";
+    // `deep` is the only one of the three that is reliably dark -- see the
+    // navTone note in design-system/components/system-shell.tsx.
+    navTone?: "dark" | "light" | "deep";
+  };
   PageHeader: { title: string; subtitle?: string };
   EmptyState: { variant: "empty" | "filtered" | "cleared"; title: string; description?: string };
   StatusDot: { tone: "positive" | "warning" | "negative" | "neutral"; label: string };
@@ -141,9 +150,16 @@ type Components = {
     stats?: { label: string; value: string; href: string; tone?: "normal" | "caution" | "warn"; sub?: string }[];
     spark?: { n: number }[];
     sparkLabel?: string;
+    // Set by the 换个款式 picker, not by a field -- see variants.ts.
+    layout?: "full" | "solo" | "trend" | "stats";
+    flat?: boolean;
   };
   Avatar: { name: string };
-  WorkflowStrip: { title?: string; stages: WorkflowStage[] };
+  WorkflowStrip: {
+    title?: string;
+    stages: WorkflowStage[];
+    layout?: "row" | "timeline" | "numbered";
+  };
   // One prop, not six. Columns and rows have to agree with each other (adding a
   // column grows every row), and Puck edits one prop per field -- so they are
   // one prop with one editor. See design-system/editor/table-field.tsx.
@@ -151,6 +167,8 @@ type Components = {
     gridId: string;
     caption: string;
     table: TableModel;
+    // Set by the 换个款式 picker, not by a field. See variants.ts.
+    look?: "plain" | "compact" | "zebra" | "grid";
   };
   DatePicker: { name: string; placeholder?: string; allowClear?: boolean; required?: boolean };
   MonthPicker: { name: string; placeholder?: string; allowClear?: boolean };
@@ -240,28 +258,22 @@ export const puckConfig: Config<Components> = {
         // on the rail because it is a fact about the page — where the
         // navigation sits — and the shell is what has to become a column
         // instead of a row.
-        nav: {
-          label: "导航位置",
-          type: "radio",
-          options: [
-            { label: "左侧", value: "side" },
-            { label: "顶部", value: "top" },
-          ],
-        },
-        navTone: {
-          label: "导航底色",
-          type: "radio",
-          options: [
-            { label: "深色", value: "dark" },
-            { label: "浅色", value: "light" },
-          ],
-        },
+        // `nav` and `navTone` used to be two radio groups here. They are the
+        // 换个款式 picker's six tiles now, and leaving the radios in place
+        // would be the same control twice -- with the worse half on top, since
+        // reading 「顶部 / 浅色」 and imagining the result is exactly what the
+        // pictures exist to replace.
         sidebar: { label: "侧边栏", type: "slot" },
         main: { label: "页面内容", type: "slot" },
       },
-      defaultProps: { sidebar: [], main: [], nav: "side", navTone: "dark" },
+      defaultProps: { sidebar: [], main: [], nav: "side", navTone: "dark" as const },
       render: ({ sidebar: Sidebar, main: Main, nav, navTone }) => (
-        <SystemShell nav={nav} navTone={navTone} sidebar={<Sidebar />} main={<Main />} />
+        <SystemShell
+          nav={nav ?? "side"}
+          navTone={navTone ?? "dark"}
+          sidebar={<Sidebar />}
+          main={<Main />}
+        />
       ),
     },
     // The block that stops every page being one vertical stack.
@@ -655,9 +667,11 @@ export const puckConfig: Config<Components> = {
         },
         sparkLabel: { label: "走势说明", type: "text" },
       },
-      defaultProps: { label: "本月营收", value: "RM 0", href: "#" },
-      render: ({ label, value, href, chgSuffix, stats, spark, sparkLabel }) => (
+      defaultProps: { label: "本月营收", value: "RM 0", href: "#", layout: "full" },
+      render: ({ label, value, href, chgSuffix, stats, spark, sparkLabel, layout, flat }) => (
         <HeroCard
+          layout={layout ?? "full"}
+          flat={flat}
           label={label}
           value={value}
           href={href}
@@ -697,6 +711,10 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: {
+        // Named here so the 换个款式 picker can light the right tile on a table
+        // saved before the axis existed -- activeVariant resolves an absent
+        // prop through defaultProps.
+        look: "plain" as const,
         gridId: "records",
         caption: "记录列表",
         table: {
@@ -719,8 +737,8 @@ export const puckConfig: Config<Components> = {
           ],
         },
       },
-      render: ({ gridId, caption, table }) => (
-        <RecordTable gridId={gridId} caption={caption} table={table} />
+      render: ({ gridId, caption, table, look }) => (
+        <RecordTable gridId={gridId} caption={caption} table={table} look={look ?? "plain"} />
       ),
     },
     WorkflowStrip: {
@@ -753,8 +771,11 @@ export const puckConfig: Config<Components> = {
           { label: "确认", tone: "normal" as const },
           { label: "收款", tone: "normal" as const },
         ],
+        layout: "row" as const,
       },
-      render: ({ title, stages }) => <WorkflowStrip title={title} stages={stages} />,
+      render: ({ title, stages, layout }) => (
+        <WorkflowStrip title={title} stages={stages} layout={layout ?? "row"} />
+      ),
     },
     DatePicker: {
       label: "日期选择",

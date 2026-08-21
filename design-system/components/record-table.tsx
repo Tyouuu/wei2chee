@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react"
 import { DataGrid } from "./data-grid"
 import { StatusDot, type StatusTone } from "./status-dot"
 import { normalizeTable, type ColumnKind, type TableModel } from "@/lib/portal/table-model"
@@ -52,8 +53,14 @@ export function RecordTable(props: {
   amountLabel?: string
   statusColumnLabel?: string
   rows?: unknown[]
+  /** Set by the 换个款式 picker. `plain` is a rule between rows; `compact`
+   *  is the same table at three-quarter height for a page that has to show
+   *  twenty jobs rather than five; `zebra` is the banded look every business
+   *  owner already reads in Excel; `grid` rules the columns as well, for a
+   *  table that is being copied from or checked against paper. */
+  look?: "plain" | "compact" | "zebra" | "grid"
 }) {
-  const { gridId, caption } = props
+  const { gridId, caption, look = "plain" } = props
   const { columns, rows } = normalizeTable(props as unknown as Record<string, unknown>)
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE
@@ -67,7 +74,11 @@ export function RecordTable(props: {
     "[letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]"
 
   const bodyCell =
-    "align-middle [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)] [height:var(--row-h)]"
+    "align-middle [padding-inline:var(--pad-cell-x)] " +
+    "[padding-block:var(--row-pad-y,var(--pad-cell-y))] [height:var(--row-height,var(--row-h))]" +
+    // Column rules stop before the last cell, or the table grows a right-hand
+    // border that does not line up with the card edge behind it.
+    (look === "grid" ? " [&:not(:last-child)]:border-r [&:not(:last-child)]:[border-color:var(--color-ink-800)]" : "")
 
   // Computed, not the old flat 440 — but tuned so the DEFAULT four columns
   // still add up to exactly that. The narrowest real case is the editor with a
@@ -86,7 +97,19 @@ export function RecordTable(props: {
     <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
       <table
         className="w-full border-collapse [font-size:var(--text-sm)]"
-        style={{ minWidth: `${minWidth}px` }}
+        style={
+          look === "compact"
+            ? ({
+                minWidth: `${minWidth}px`,
+                // Multipliers, not pixels -- see this component's `look` note.
+                // Distinct names: a property that reads itself is a cycle and
+                // CSS discards the whole declaration, which would have left
+                // 紧凑 silently identical to 正常.
+                "--row-height": "calc(var(--row-h) * 0.72)",
+                "--row-pad-y": "calc(var(--pad-cell-y) * 0.5)",
+              } as CSSProperties)
+            : { minWidth: `${minWidth}px` }
+        }
       >
         <thead>
           <tr className="sticky top-0 [background-color:var(--color-ink-900)]">
@@ -104,7 +127,15 @@ export function RecordTable(props: {
           {rows.map((row, i) => (
             <tr
               key={i}
-              className="[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
+              className={
+                // Bands and rules are alternatives, not additions: a zebra
+                // table with a rule under every row is two separators doing
+                // one job, and reads as noise at the row heights these tables
+                // actually run at.
+                look === "zebra"
+                  ? "even:[background-color:var(--color-ink-850)]"
+                  : "[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
+              }
             >
               {columns.map((col) => {
                 const value = row.cells?.[col.key] ?? ""

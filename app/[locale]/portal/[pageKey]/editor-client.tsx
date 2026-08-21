@@ -16,6 +16,7 @@ import { EditorChrome } from "./editor-chrome";
 import { ComponentPreview } from "@/design-system/editor/component-preview";
 import { ClickToAdd } from "./drawer-add";
 import { LivePreview } from "@/design-system/editor/live-preview";
+import { FieldsPanel } from "@/design-system/editor/fields-panel";
 import { StyleSwitcher } from "./style-switcher";
 import { AiAssistant, type Turn } from "./ai-assistant";
 import { MobileEditor } from "./mobile-editor";
@@ -725,10 +726,25 @@ export function PortalEditor({
               // push the assistant off the bottom of the screen entirely, and
               // an assistant you have to scroll a properties panel to reach is
               // the buried toolbar button again with extra steps.
+              // PICTURES FIRST, THEN THE FIELDS THAT FINE-TUNE THEM.
+              //
+              // The founder selected 重点数字卡, looked at what appeared, and
+              // said he wanted Durable's version: 「我看到图片 就是我可以替换的
+              // 别的款式 然后我点击就可以替换了」. What was there was 文字 /
+              // 数值 / 链接 / 对比说明 — four inputs that change the CONTENT of
+              // a card whose SHAPE was not offered at all.
+              //
+              // So the picker sits above the fields, outside their scroll area,
+              // and stays put: choosing the shape comes before filling it in,
+              // and it is the choice that has to be visible without scrolling.
+              // It draws nothing at all for a block with no alternatives, which
+              // is most of them — an empty 换个款式 heading on 头像 would be a
+              // worse panel than no heading.
               fields: ({ children }) => (
-                <div className="flex h-full min-h-0 flex-col [background-color:var(--color-ink-900)]">
-                  <div className="min-h-0 max-h-[50%] shrink overflow-y-auto">{children}</div>
-                  <div className="flex min-h-0 flex-1 flex-col border-t [border-color:var(--color-ink-800)]">
+                <FieldsPanel
+                  style={activeStyle}
+                  palette={palette}
+                  assistant={
                     <AiAssistant
                       turns={turns}
                       setTurns={setTurns}
@@ -739,8 +755,10 @@ export function PortalEditor({
                       pages={navPages}
                       locale={locale}
                     />
-                  </div>
-                </div>
+                  }
+                >
+                  {children}
+                </FieldsPanel>
               ),
               // The canvas is the one thing on this screen Formae does not
               // own, so it is presented as an object rather than as the

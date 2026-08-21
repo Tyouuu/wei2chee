@@ -50,6 +50,7 @@ export function HeroCard({
   footnote,
   header,
   flat,
+  layout = "full",
   href,
 }: {
   /** What the headline number is. Kept short — the number is the message. */
@@ -94,10 +95,19 @@ export function HeroCard({
   footnote?: ReactNode
   /** Identity that belongs above the figure — who or what these numbers are about, when that isn't already established by the page around the card. */
   header?: ReactNode
+  /** Which parts of the card are drawn. Every part stays in the DATA
+      whichever value this takes -- the customer's three supporting figures
+      survive a trip through 只有数字 and come back when they pick 全部 again.
+      That is the whole reason this is a display prop and not four separate
+      "delete the stats" presets. */
+  layout?: "full" | "solo" | "trend" | "stats"
   /** Drop the card treatment and sit directly on the page canvas as a plain band — for a hero that's the only thing on a dense dashboard, where four stacked bordered panels would be the actual problem. */
   flat?: boolean
   href: string
 }) {
+  const showTrend = layout === "full" || layout === "trend"
+  const showStats = layout === "full" || layout === "stats"
+
   return (
     <div
       className={
@@ -149,13 +159,15 @@ export function HeroCard({
           chart doesn't belong in this same slot — it belongs below the
           stats that support the headline figure, not wedged between the
           figure and them, splitting one thought in half. */}
-      {!chart && spark && spark.length > 1 && <Sparkline values={spark} label={sparkLabel} />}
+      {showTrend && !chart && spark && spark.length > 1 && (
+        <Sparkline values={spark} label={sparkLabel} />
+      )}
 
       {/* No stats, no rule and no row — an empty grid under a hairline is a
           card that looks like it failed to load its second half. */}
-      {(stats?.length || footnote) && (
+      {((showStats && stats?.length) || footnote) && (
         <div>
-          {stats?.length ? (
+          {showStats && stats?.length ? (
             <div className="grid grid-cols-1 gap-3 border-t pt-4 [border-color:var(--color-ink-800)] sm:grid-cols-3">
               {stats.map((s) => (
                 <Link key={s.label} href={s.href} className="group min-w-0">

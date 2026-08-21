@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, useEffect, useState, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { scopeClasses } from "@/lib/portal/palettes";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
@@ -53,6 +53,54 @@ function SlotStand() {
   );
 }
 
+/** Shaped stand-ins for the slots where a generic dashed bar says nothing.
+ *  Keyed by component then by slot name; anything not listed here falls back
+ *  to SlotStand above, which is correct for most blocks. */
+const SLOT_FILL: Record<string, Record<string, () => ReactNode>> = {
+  SystemShell: {
+    sidebar: function NavStand() {
+      return (
+        <div aria-hidden className="flex flex-col gap-2 p-3">
+          <div className="bg-primary/80 mb-1 size-6 rounded-[var(--radius-sm)]" />
+          {[64, 52, 58, 46, 60].map((w, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="bg-muted-foreground/40 size-3 rounded-[var(--radius-sm)]" />
+              <div
+                className={
+                  i === 0
+                    ? "bg-primary/50 h-2.5 rounded-full"
+                    : "bg-muted-foreground/25 h-2.5 rounded-full"
+                }
+                style={{ width: w }}
+              />
+            </div>
+          ))}
+        </div>
+      );
+    },
+    main: function PageStand() {
+      return (
+        <div aria-hidden className="flex flex-col gap-3 p-4">
+          <div className="bg-foreground/70 h-3 w-40 rounded-full" />
+          <div className="bg-card [border-color:var(--border)] rounded-[var(--radius-lg)] border p-4">
+            <div className="bg-muted-foreground/25 mb-2 h-2 w-24 rounded-full" />
+            <div className="bg-foreground/70 h-5 w-36 rounded-[var(--radius-sm)]" />
+          </div>
+          <div className="bg-card [border-color:var(--border)] rounded-[var(--radius-lg)] border p-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3 py-1.5">
+                <div className="bg-muted-foreground/25 h-2 flex-1 rounded-full" />
+                <div className="bg-muted-foreground/20 h-2 w-12 rounded-full" />
+                <div className="bg-primary/40 h-2 w-8 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    },
+  },
+};
+
 /** Blocks that own the whole page. A 64px-tall miniature of a full app shell
  *  is a grey rectangle whatever we do, so these keep the schematic. */
 const PAGE_SIZED = new Set(["SystemShell", "RailNav"]);
@@ -77,18 +125,39 @@ export function LivePreview({
   style,
   palette,
   fallback,
+  props: override,
   /** Rendered width before scaling. Wide enough that a table reads as a table
    *  and a workflow reads as a row of steps; the transform brings it back to
    *  the drawer's width. */
   width = 560,
   height = 64,
+  srcHeight = 120,
+  scale: forcedScale,
+  renderPageSized = false,
 }: {
   name: string;
   style: StyleName;
   palette: string | null;
   fallback: ReactNode;
+  /** Merged over the component's `defaultProps`. Slot props are still replaced
+   *  by the stand-in below whatever is passed here -- a slot arrives from Puck
+   *  as an ARRAY of child component data, and handing that to a render that
+   *  expects a component throws. */
+  props?: Record<string, unknown>;
   width?: number;
   height?: number;
+  /** Height of the un-scaled source box. Raise it for blocks that are taller
+   *  than they are identifiable — a 数字卡 with three supporting figures and a
+   *  trend line needs ~220 before the interesting half stops being clipped. */
+  srcHeight?: number;
+  /** Scale factor, when the caller has measured the space it has. Overrides
+   *  the drawer's fixed-height arithmetic; the tile then takes whatever height
+   *  the whole block comes to. */
+  scale?: number;
+  /** Draw 页面框架 / 侧边导航 anyway. Off by default because a full app shell
+   *  at 64px is a grey rectangle; on for the variant picker, where the shell's
+   *  arrangement IS the thing being chosen. */
+  renderPageSized?: boolean;
 }) {
   // AFTER THE FIRST PAINT ONLY, and not as an optimisation.
   //
@@ -103,16 +172,36 @@ export function LivePreview({
   // work to do twice.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // Fit-to-content, and it has to be measured rather than declared: the same
+  // block is four different heights across its own variants. Only used in
+  // picker mode -- the drawer wants every tile the same height so the palette
+  // scans as a grid, and there "as tall as it happens to be" is the wrong
+  // answer. `mounted` is in the deps because the ref's element does not exist
+  // during the pre-mount render that returns the fallback.
+  const innerRef = useRef<HTMLDivElement | null>(null);
+  const [natural, setNatural] = useState(0);
+  useEffect(() => {
+    const el = innerRef.current;
+    if (!el || !forcedScale) return;
+    const ro = new ResizeObserver(([e]) => setNatural(e.contentRect.height));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [forcedScale, name, mounted]);
+
   if (!mounted) return <>{fallback}</>;
 
   const entry = (puckConfig.components as Record<
     string,
     { render?: unknown; defaultProps?: unknown; fields?: Record<string, { type?: string }> }
   >)[name];
-  if (!entry?.render || PAGE_SIZED.has(name)) return <>{fallback}</>;
+  if (!entry?.render || (PAGE_SIZED.has(name) && !renderPageSized)) return <>{fallback}</>;
 
   const Render = entry.render as (props: Record<string, unknown>) => ReactNode;
-  const props: Record<string, unknown> = { ...(entry.defaultProps as object | undefined) };
+  const props: Record<string, unknown> = {
+    ...(entry.defaultProps as object | undefined),
+    ...override,
+  };
 
   // Ask the CONFIG which props are slots. The first version of this inferred
   // it — "an empty array must be a slot" — and broke three components on the
@@ -122,16 +211,17 @@ export function LivePreview({
   // a function`. The error boundary below caught them, which is exactly why
   // the console had to be read rather than the palette merely looked at.
   for (const [k, field] of Object.entries(entry.fields ?? {})) {
-    if (field?.type === "slot") props[k] = SlotStand;
+    if (field?.type === "slot") props[k] = SLOT_FILL[name]?.[k] ?? SlotStand;
   }
   props.puck = { renderDropZone: () => null, isEditing: false, dragRef: null };
 
-  const scale = height / 120;
+  const scale = forcedScale ?? height / srcHeight;
+  const tileHeight = forcedScale ? (natural || srcHeight) * forcedScale : height;
 
   return (
     <div
       className="pointer-events-none relative overflow-hidden rounded-[var(--radius-md)]"
-      style={{ height, width: "100%" }}
+      style={{ height: tileHeight, width: "100%" }}
       aria-hidden
     >
       <div
@@ -151,10 +241,18 @@ export function LivePreview({
             empty rectangle, which reads as "failed to load" rather than as a
             small component. */}
         <div
-          className="bg-background text-foreground grid place-content-center px-3"
-          style={{ minHeight: 120, width }}
+          ref={innerRef}
+          className={
+            forcedScale
+              ? // Picker mode: no centring and no floor. Both exist to make a
+                // SHORT block look deliberate inside a fixed strip, and here
+                // there is no fixed strip to look deliberate inside.
+                "bg-background text-foreground px-4 py-3"
+              : "bg-background text-foreground grid place-content-center px-3"
+          }
+          style={forcedScale ? { width } : { minHeight: srcHeight, width }}
         >
-          <Guard fallback={<div style={{ height: 120 }} />}>
+          <Guard fallback={<div style={{ height: srcHeight }} />}>
             <Render {...props} />
           </Guard>
         </div>

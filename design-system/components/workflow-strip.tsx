@@ -30,9 +30,16 @@ export type WorkflowStage = {
 export function WorkflowStrip({
   title,
   stages,
+  layout = "row",
 }: {
   title?: string
   stages: WorkflowStage[]
+  /** `row` is the whiteboard drawing: left to right, arrows between stages.
+      `timeline` is the same pipeline turned down the page, which is the only
+      one of the three that survives a 390px screen -- five stages wrap the row
+      into three ragged lines. `numbered` drops the boxes entirely, for a
+      freshly drafted pipeline that has no counts in it yet. */
+  layout?: "row" | "timeline" | "numbered"
 }) {
   if (stages.length === 0) return null
 
@@ -55,6 +62,89 @@ export function WorkflowStrip({
         </h2>
       )}
 
+      {layout === "timeline" ? (
+        <ol className="flex flex-col">
+          {stages.map((stage, i) => (
+            <li key={`${stage.label}-${i}`} className="flex [gap:var(--gap-inline)]">
+              {/* The rail is one column: a dot per stage, and the segment of
+                  rule that connects it to the next one. Drawing the rule as a
+                  flex-grow child rather than as a border on the <li> keeps it
+                  from running past the last dot into empty space. */}
+              <div className="flex flex-col items-center">
+                <span
+                  aria-hidden
+                  className="mt-1.5 size-2.5 shrink-0 rounded-full"
+                  style={{
+                    backgroundColor:
+                      stage.tone === "attention"
+                        ? "var(--color-primary)"
+                        : "var(--color-paper-dim)",
+                  }}
+                />
+                {i < stages.length - 1 && (
+                  <span
+                    aria-hidden
+                    className="w-px flex-1"
+                    style={{ backgroundColor: "var(--border-subtle)", minHeight: 18 }}
+                  />
+                )}
+              </div>
+              <div className={i < stages.length - 1 ? "pb-[var(--gap-stack)]" : ""}>
+                <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div
+                  className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
+                  style={{
+                    color:
+                      stage.tone === "attention"
+                        ? "var(--color-primary)"
+                        : "var(--color-paper)",
+                  }}
+                >
+                  {stage.label}
+                </div>
+                {stage.count && (
+                  <div className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                    {stage.count}
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : layout === "numbered" ? (
+        <ol className="flex flex-wrap [gap:var(--gap-section)]">
+          {stages.map((stage, i) => (
+            <li key={`${stage.label}-${i}`} className="min-w-[84px]">
+              {/* No box, no arrow. The numeral is set at hero scale and dimmed
+                  so it reads as an ordinal rather than as a figure the reader
+                  is supposed to add up -- these are step numbers, and a
+                  business owner scanning a dashboard should never mistake one
+                  for money. */}
+              <span
+                className="tnum block leading-none [font-family:var(--font-numeric)] [font-size:var(--text-2xl)] [font-weight:var(--fw-semibold)]"
+                style={{
+                  color:
+                    stage.tone === "attention"
+                      ? "var(--color-primary)"
+                      : "var(--border-subtle)",
+                }}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div className="mt-1.5 [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+                {stage.label}
+              </div>
+              {stage.count && (
+                <div className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                  {stage.count}
+                </div>
+              )}
+            </li>
+          ))}
+        </ol>
+      ) : (
       <ol className="flex flex-wrap items-stretch [gap:var(--gap-inline)]">
         {stages.map((stage, i) => (
           <li key={`${stage.label}-${i}`} className="flex items-center [gap:var(--gap-inline)]">
@@ -102,6 +192,7 @@ export function WorkflowStrip({
           </li>
         ))}
       </ol>
+      )}
     </section>
   )
 }

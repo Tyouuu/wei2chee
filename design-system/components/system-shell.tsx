@@ -41,7 +41,7 @@ export function SystemShell({
   /** What the navigation's ground is made of. `"dark"` is the register's own
    *  nav ground; `"light"` runs the navigation on the same paper as the page,
    *  separated by a hairline instead of by a colour. */
-  navTone?: "dark" | "light"
+  navTone?: "dark" | "light" | "deep"
 }) {
   const isTop = nav === "top"
 
@@ -66,7 +66,29 @@ export function SystemShell({
    * Ledger it is #f39158 on #14273d, which on #ffffff drops to 2.2:1.
    */
   const navVars =
-    navTone === "light"
+    navTone === "deep"
+      ? ({
+          // Inverted from the customer's OWN ink, not from the style's nav
+          // tokens -- the palette has already replaced those. --color-paper is
+          // the text colour in a customer scope (L≈16 under every palette), so
+          // it is the one value guaranteed to be dark whatever they picked.
+          backgroundColor: "var(--color-paper)",
+          "--color-nav-bg": "var(--color-paper)",
+          "--color-nav-bg-deep": "var(--color-paper)",
+          "--color-nav-fg": "var(--color-ink-900)",
+          "--color-nav-fg-dim":
+            "color-mix(in oklab, var(--color-ink-900) 66%, var(--color-paper))",
+          "--color-nav-hover": "color-mix(in oklab, var(--color-paper) 88%, var(--color-ink-900))",
+          "--color-nav-active": "color-mix(in oklab, var(--color-paper) 78%, var(--color-ink-900))",
+          "--color-nav-border": "color-mix(in oklab, var(--color-paper) 84%, var(--color-ink-900))",
+          // The palette's primary is tuned to sit on paper; on this ground it
+          // is too dark to read, so it is lifted toward the rail's own
+          // foreground rather than replaced by it -- the hue is the customer's
+          // and should survive.
+          "--color-nav-accent":
+            "color-mix(in oklab, var(--color-primary) 55%, var(--color-ink-900))",
+        } as React.CSSProperties)
+      : navTone === "light"
       ? ({
           backgroundColor: "var(--color-ink-900)",
           "--color-nav-bg": "var(--color-ink-900)",
