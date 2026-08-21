@@ -28,6 +28,47 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { TrendChart, type TrendKind, type TrendPoint } from "@/design-system/components/trend-chart";
 
+// Third pass (2026-08-22). Two sources, one reason: a customer told to
+// "design your own system" could not put a BUTTON on a page, could not put a
+// text field on a page, and could not put two things side by side. Nineteen
+// blocks and not one of them was something you fill in or press.
+//
+//   * `components/ui/*` -- eight shadcn primitives already in this repo,
+//     already token-aware, and imported by exactly zero files. Installed once
+//     and never wired. Nothing new was written to register them.
+//   * `@ilinxa/properties-form` -- pulled from a public registry (MIT,
+//     measured 99.6% token purity across the pull, then verified in a real
+//     browser across four palettes before being registered here). One block
+//     covers six field types: text, number, date, select, yes/no, long text.
+//
+// `Columns` is the one thing written rather than taken -- see its own file for
+// why the registry's 22-file resizable workspace was the wrong answer.
+import { Button as UiButton } from "@/components/ui/button";
+import { Badge as UiBadge } from "@/components/ui/badge";
+import { Separator as UiSeparator } from "@/components/ui/separator";
+import { Textarea as UiTextarea } from "@/components/ui/textarea";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Columns, type ColumnsLayout } from "@/design-system/components/columns";
+import { PropertiesForm, type PropertiesFormField } from "@/components/properties-form";
+// Fourth pass, same day: three Kibo UI blocks (kibo-ui.com, MIT, 3.9k stars,
+// measured 100% token purity). They are headless and compound, so each is
+// wrapped in board-blocks.tsx to turn its render-function API into fields a
+// contractor can fill in -- the same thing record-table.tsx does over
+// data-grid.tsx.
+import { TaskBoard, BeforeAfter, Stars, type BoardCard } from "@/design-system/components/board-blocks";
+
+/** The option list typed into one box, split into what PropertiesForm wants.
+ *  Chinese and Latin commas both, because a customer typing on a phone gets
+ *  whichever one the IME hands them. */
+function splitChoices(raw?: string): { value: string; label: string }[] {
+  return (raw != null ? raw : "")
+    .split(/[,\u3001\uff0c]/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map((x) => ({ value: x, label: x }));
+}
+
 // Second pass (2026-08-20, see docs/portal-editor-known-issues.md): expands
 // the first pass's 5 decorative-only components with real business/form
 // components, using the same "safe subset" rule the first pass established
@@ -62,7 +103,32 @@ import { TrendChart, type TrendKind, type TrendPoint } from "@/design-system/com
 //   - MobileNav: same responsive-drawer role as RailNav; registering both
 //     as separate draggable canvas components would be confusing rather
 //     than useful -- RailNav covers the navigation need this pass targets.
+type FormFieldRow = {
+  label: string;
+  kind: "string" | "number" | "date" | "select" | "boolean" | "textarea";
+  choices?: string;
+  required: "yes" | "no";
+};
+
 type Components = {
+  TaskBoard: { stages: { name: string }[]; cards: BoardCard[] };
+  BeforeAfter: { beforeLabel: string; afterLabel: string; beforeSrc?: string; afterSrc?: string };
+  Stars: { value: number; outOf: number; caption?: string };
+  Columns: { layout: ColumnsLayout; a: Slot; b: Slot; c: Slot };
+  FormFields: { rows: FormFieldRow[]; submitLabel: string; cancelLabel: string };
+  ActionButton: {
+    label: string;
+    variant: "default" | "secondary" | "outline" | "ghost" | "destructive";
+    size: "sm" | "default" | "lg";
+  };
+  Tag: { label: string; variant: "default" | "secondary" | "outline" | "destructive" };
+  Divider: { spacing: "tight" | "normal" | "loose" };
+  NoteField: { label: string; placeholder: string };
+  Panel: { title: string; description?: string; body: Slot };
+  TabbedPanel: {
+    oneLabel: string; twoLabel: string; threeLabel: string;
+    one: Slot; two: Slot; three: Slot;
+  };
   SystemShell: { sidebar: Slot; main: Slot; nav: "side" | "top"; navTone: "dark" | "light" };
   PageHeader: { title: string; subtitle?: string };
   EmptyState: { variant: "empty" | "filtered" | "cleared"; title: string; description?: string };
@@ -138,7 +204,7 @@ export const puckConfig: Config<Components> = {
   categories: {
     content: {
       title: "内容展示",
-      components: ["PageHeader", "HeroCard", "RecordTable", "WorkflowStrip", "TrendChart", "Progress", "StatusDot", "Alert", "Avatar", "EmptyState"],
+      components: ["PageHeader", "HeroCard", "RecordTable", "TaskBoard", "WorkflowStrip", "TrendChart", "Progress", "StatusDot", "Tag", "BeforeAfter", "Stars", "Alert", "Avatar", "EmptyState"],
       defaultExpanded: true,
     },
     input: {
@@ -151,12 +217,15 @@ export const puckConfig: Config<Components> = {
         "TextAutocomplete",
         "FileUploadField",
         "FilterChips",
+        "FormFields",
+        "NoteField",
+        "ActionButton",
       ],
       defaultExpanded: true,
     },
     layout: {
       title: "页面框架",
-      components: ["SystemShell", "RailNav"],
+      components: ["SystemShell", "RailNav", "Columns", "Panel", "TabbedPanel", "Divider"],
       defaultExpanded: false,
     },
   },
@@ -193,6 +262,308 @@ export const puckConfig: Config<Components> = {
       defaultProps: { sidebar: [], main: [], nav: "side", navTone: "dark" },
       render: ({ sidebar: Sidebar, main: Main, nav, navTone }) => (
         <SystemShell nav={nav} navTone={navTone} sidebar={<Sidebar />} main={<Main />} />
+      ),
+    },
+    // The block that stops every page being one vertical stack.
+    Columns: {
+      label: "分栏",
+      fields: {
+        layout: {
+          label: "分法",
+          type: "radio",
+          options: [
+            { label: "对半", value: "half" },
+            { label: "左宽", value: "wide-left" },
+            { label: "右宽", value: "wide-right" },
+            { label: "三栏", value: "thirds" },
+          ],
+        },
+        a: { label: "第一栏", type: "slot" },
+        b: { label: "第二栏", type: "slot" },
+        c: { label: "第三栏（选三栏才显示）", type: "slot" },
+      },
+      defaultProps: { layout: "half", a: [], b: [], c: [] },
+      render: ({ layout, a: A, b: B, c: C }) => (
+        <Columns layout={layout} a={<A />} b={<B />} c={<C />} />
+      ),
+    },
+    // Six field types in one block. Nothing is persisted, because this is a
+    // design OF a system and not the system. `onChange` is a deliberate no-op
+    // rather than omitted: the component warns in the console when an editable
+    // form has no handler, and a warning that fires on every render trains
+    // people to stop reading the console.
+    FormFields: {
+      label: "填写表单",
+      fields: {
+        rows: {
+          label: "栏位",
+          type: "array",
+          getItemSummary: (item: FormFieldRow) => (item && item.label) || "栏位",
+          arrayFields: {
+            label: { label: "栏位名", type: "text" },
+            kind: {
+              label: "填什么",
+              type: "select",
+              options: [
+                { label: "文字", value: "string" },
+                { label: "数字", value: "number" },
+                { label: "日期", value: "date" },
+                { label: "选一个", value: "select" },
+                { label: "是 / 否", value: "boolean" },
+                { label: "长文字", value: "textarea" },
+              ],
+            },
+            choices: { label: "选项（用、分开）", type: "text" },
+            required: {
+              label: "一定要填",
+              type: "radio",
+              options: [
+                { label: "不用", value: "no" },
+                { label: "要", value: "yes" },
+              ],
+            },
+          },
+        },
+        submitLabel: { label: "确定按钮", type: "text" },
+        cancelLabel: { label: "取消按钮", type: "text" },
+      },
+      defaultProps: {
+        submitLabel: "保存",
+        cancelLabel: "取消",
+        rows: [
+          { label: "客户", kind: "string", required: "yes" },
+          { label: "金额", kind: "number", required: "no" },
+          { label: "日期", kind: "date", required: "no" },
+          { label: "备注", kind: "textarea", required: "no" },
+        ],
+      },
+      render: ({ rows, submitLabel, cancelLabel }) => {
+        const schema: PropertiesFormField[] = (rows ?? []).map((r, i) => ({
+          key: `f${i}`,
+          type: r.kind,
+          label: r.label,
+          required: r.required === "yes",
+          options: r.kind === "select" ? splitChoices(r.choices) : undefined,
+        }));
+        const values = Object.fromEntries(
+          schema.map((f) => [f.key, f.type === "boolean" ? false : ""]),
+        );
+        return (
+          <PropertiesForm
+            schema={schema}
+            values={values}
+            mode="edit"
+            onChange={() => {}}
+            showSubmitActions
+            submitLabel={submitLabel}
+            cancelLabel={cancelLabel}
+          />
+        );
+      },
+    },
+    ActionButton: {
+      label: "按钮",
+      fields: {
+        label: { label: "按钮上的字", type: "text" },
+        variant: {
+          label: "轻重",
+          type: "select",
+          options: [
+            { label: "主要（实心）", value: "default" },
+            { label: "次要", value: "secondary" },
+            { label: "描边", value: "outline" },
+            { label: "很淡", value: "ghost" },
+            { label: "危险（删除）", value: "destructive" },
+          ],
+        },
+        size: {
+          label: "大小",
+          type: "radio",
+          options: [
+            { label: "小", value: "sm" },
+            { label: "正常", value: "default" },
+            { label: "大", value: "lg" },
+          ],
+        },
+      },
+      defaultProps: { label: "新增", variant: "default", size: "default" },
+      render: ({ label, variant, size }) => (
+        <UiButton variant={variant} size={size}>{label}</UiButton>
+      ),
+    },
+    NoteField: {
+      label: "多行填写",
+      fields: {
+        label: { label: "栏位名", type: "text" },
+        placeholder: { label: "灰字提示", type: "text" },
+      },
+      defaultProps: { label: "备注", placeholder: "写给自己看的" },
+      render: ({ label, placeholder }) => (
+        <label className="flex flex-col [gap:var(--gap-inline)]">
+          <span className="[font-size:var(--text-sm)] [color:var(--color-paper-dim)]">{label}</span>
+          <UiTextarea placeholder={placeholder} rows={3} />
+        </label>
+      ),
+    },
+    Tag: {
+      label: "标记",
+      fields: {
+        label: { label: "字", type: "text" },
+        variant: {
+          label: "轻重",
+          type: "select",
+          options: [
+            { label: "实心", value: "default" },
+            { label: "次要", value: "secondary" },
+            { label: "描边", value: "outline" },
+            { label: "红色", value: "destructive" },
+          ],
+        },
+      },
+      defaultProps: { label: "新客户", variant: "secondary" },
+      render: ({ label, variant }) => <UiBadge variant={variant}>{label}</UiBadge>,
+    },
+    Divider: {
+      label: "分隔线",
+      fields: {
+        spacing: {
+          label: "上下留白",
+          type: "radio",
+          options: [
+            { label: "窄", value: "tight" },
+            { label: "正常", value: "normal" },
+            { label: "宽", value: "loose" },
+          ],
+        },
+      },
+      defaultProps: { spacing: "normal" },
+      render: ({ spacing }) => (
+        <div className={spacing === "tight" ? "py-1.5" : spacing === "loose" ? "py-7" : "py-4"}>
+          <UiSeparator />
+        </div>
+      ),
+    },
+    Panel: {
+      label: "卡片分区",
+      fields: {
+        title: { label: "标题", type: "text" },
+        description: { label: "说明", type: "text" },
+        body: { label: "里面放什么", type: "slot" },
+      },
+      defaultProps: { title: "这一区", description: "", body: [] },
+      render: ({ title, description, body: Body }) => (
+        <Card>
+          <CardHeader>
+            <CardTitle>{title}</CardTitle>
+            {description ? <CardDescription>{description}</CardDescription> : null}
+          </CardHeader>
+          <CardContent>
+            <Body />
+          </CardContent>
+        </Card>
+      ),
+    },
+    // Three tabs, fixed. Puck slots are declared statically, so a variable
+    // number of tabs would mean a variable number of slot FIELDS, which the
+    // config format cannot express. Three covers the shape every one of these
+    // actually takes.
+    TabbedPanel: {
+      label: "标签页",
+      fields: {
+        oneLabel: { label: "第一页名称", type: "text" },
+        twoLabel: { label: "第二页名称", type: "text" },
+        threeLabel: { label: "第三页名称（留空就只有两页）", type: "text" },
+        one: { label: "第一页内容", type: "slot" },
+        two: { label: "第二页内容", type: "slot" },
+        three: { label: "第三页内容", type: "slot" },
+      },
+      defaultProps: {
+        oneLabel: "全部", twoLabel: "进行中", threeLabel: "完成",
+        one: [], two: [], three: [],
+      },
+      render: ({ oneLabel, twoLabel, threeLabel, one: One, two: Two, three: Three }) => (
+        <Tabs defaultValue="one">
+          <TabsList>
+            <TabsTrigger value="one">{oneLabel}</TabsTrigger>
+            <TabsTrigger value="two">{twoLabel}</TabsTrigger>
+            {threeLabel ? <TabsTrigger value="three">{threeLabel}</TabsTrigger> : null}
+          </TabsList>
+          <TabsContent value="one"><One /></TabsContent>
+          <TabsContent value="two"><Two /></TabsContent>
+          {threeLabel ? <TabsContent value="three"><Three /></TabsContent> : null}
+        </Tabs>
+      ),
+    },
+    // 看板 -- the same set of jobs the record table lists, arranged by which
+    // step they are stuck at. A contractor reads 「三张卡堆在收尾」 off a board
+    // faster than off a status column.
+    TaskBoard: {
+      label: "看板",
+      fields: {
+        stages: {
+          label: "阶段",
+          type: "array",
+          getItemSummary: (item: { name: string }) => (item && item.name) || "阶段",
+          arrayFields: { name: { label: "阶段名", type: "text" } },
+        },
+        cards: {
+          label: "卡片",
+          type: "array",
+          getItemSummary: (item: BoardCard) => (item && item.title) || "卡片",
+          arrayFields: {
+            title: { label: "标题", type: "text" },
+            stage: { label: "在哪个阶段", type: "text" },
+            note: { label: "小字", type: "text" },
+          },
+        },
+      },
+      defaultProps: {
+        stages: [{ name: "报价中" }, { name: "施工中" }, { name: "收尾" }],
+        cards: [
+          { title: "Taman Desa 三房翻新", stage: "施工中", note: "陈先生 · RM 48,500" },
+          { title: "Bukit Jalil 厨房改造", stage: "报价中", note: "李太太 · RM 22,800" },
+          { title: "Cheras 店面装修", stage: "收尾", note: "王老板 · RM 96,000" },
+        ],
+      },
+      render: ({ stages, cards }) => <TaskBoard stages={stages} cards={cards} />,
+    },
+    // 前后对比 -- a renovation company's single most persuasive artefact, and
+    // one this library had no way to show. Left and right are labelled panels
+    // until real photos exist, because this is a design of a system and the
+    // photos arrive when the system is built.
+    BeforeAfter: {
+      label: "前后对比",
+      fields: {
+        beforeLabel: { label: "左边写什么", type: "text" },
+        afterLabel: { label: "右边写什么", type: "text" },
+        beforeSrc: { label: "左边图片网址（可留空）", type: "text" },
+        afterSrc: { label: "右边图片网址（可留空）", type: "text" },
+      },
+      defaultProps: { beforeLabel: "施工前", afterLabel: "完工后", beforeSrc: "", afterSrc: "" },
+      render: ({ beforeLabel, afterLabel, beforeSrc, afterSrc }) => (
+        <BeforeAfter
+          beforeLabel={beforeLabel}
+          afterLabel={afterLabel}
+          beforeSrc={beforeSrc}
+          afterSrc={afterSrc}
+        />
+      ),
+    },
+    Stars: {
+      label: "评分",
+      fields: {
+        value: { label: "几颗", type: "number", min: 0, max: 10 },
+        outOf: { label: "总共几颗", type: "number", min: 1, max: 10 },
+        caption: { label: "旁边的字", type: "text" },
+      },
+      defaultProps: { value: 4, outOf: 5, caption: "12 位客户评过" },
+      render: ({ value, outOf, caption }) => (
+        <div className="flex items-center [gap:var(--gap-inline)]">
+          <Stars value={value} outOf={outOf} />
+          {caption ? (
+            <span className="[font-size:var(--text-sm)] text-muted-foreground">{caption}</span>
+          ) : null}
+        </div>
       ),
     },
     PageHeader: {

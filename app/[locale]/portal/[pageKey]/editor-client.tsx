@@ -14,6 +14,7 @@ import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { EditorChrome } from "./editor-chrome";
 import { ComponentPreview } from "@/design-system/editor/component-preview";
+import { ClickToAdd } from "./drawer-add";
 import { StyleSwitcher } from "./style-switcher";
 import { AiAssistant, type Turn } from "./ai-assistant";
 import { MobileEditor } from "./mobile-editor";
@@ -596,10 +597,10 @@ export function PortalEditor({
               // browsed by sight rather than by reading fifteen nouns off
               // identical white rectangles. See component-preview.tsx.
               drawerItem: ({ children, name }) => (
-                <div className="flex items-center gap-2.5">
+                <ClickToAdd name={name}>
                   <ComponentPreview name={name} />
                   <div className="min-w-0 flex-1">{children}</div>
-                </div>
+                </ClickToAdd>
               ),
               header: () => (
                 <EditorChrome

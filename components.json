@@ -27,6 +27,8 @@
     "@magicui": "https://magicui.design/r/{name}",
     "@kokonutui": "https://kokonutui.com/r/{name}.json",
     "@cult-ui": "https://cult-ui.com/r/{name}.json",
-    "@motion-primitives": "https://motion-primitives.com/c/{name}.json"
+    "@motion-primitives": "https://motion-primitives.com/c/{name}.json",
+    "@kibo": "https://www.kibo-ui.com/r/{name}.json",
+    "@7ovr": "https://7ovr.com/r/{name}.json"
   }
 }
