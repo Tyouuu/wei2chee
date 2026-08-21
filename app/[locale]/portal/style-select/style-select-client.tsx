@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { StyleColumn, type StyleName } from "@/app/[locale]/style-picker/style-column";
 
-const STYLES: StyleName[] = ["ledger", "hearth", "blueprint"];
+const STYLES: StyleName[] = ["ledger", "hearth", "blueprint", "bare", "docket"];
 
 /**
  * The portal's one-time style-selection step. Reuses the public

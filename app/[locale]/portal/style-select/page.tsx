@@ -35,7 +35,7 @@ export default async function StyleSelectPage() {
   const { data: context } = await supabase.rpc("get_my_business_context");
   const recommendation = (context as { industry?: { style_recommendation?: string } } | null)
     ?.industry?.style_recommendation;
-  const recommended = (["ledger", "hearth", "blueprint"] as const).includes(
+  const recommended = (["ledger", "hearth", "blueprint", "bare", "docket"] as const).includes(
     recommendation as StyleName,
   )
     ? (recommendation as StyleName)

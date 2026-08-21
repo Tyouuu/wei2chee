@@ -2,12 +2,14 @@ import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { SampleContent } from "./sample-content";
 import styles from "./style-scope.module.css";
 
-export type StyleName = "ledger" | "hearth" | "blueprint";
+export type StyleName = "ledger" | "hearth" | "blueprint" | "bare" | "docket";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
+  bare: styles.bare,
+  docket: styles.docket,
 };
 
 /**
@@ -38,6 +40,8 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
+  bare: styles.bare,
+  docket: styles.docket,
 };
 
 export function StyleColumn({

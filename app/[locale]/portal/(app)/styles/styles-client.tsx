@@ -15,9 +15,21 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
+  bare: styles.bare,
+  docket: styles.docket,
 };
 
-const STYLE_ORDER: StyleName[] = ["ledger", "hearth", "blueprint"];
+const STYLE_ORDER: StyleName[] = ["ledger", "hearth", "blueprint", "bare", "docket"];
+
+/** The name a customer sees. Was two hardcoded ternaries in two files, which is
+ *  why a fourth style would have rendered as "Blueprint" in both. */
+export const STYLE_LABEL: Record<StyleName, string> = {
+  ledger: "Ledger",
+  hearth: "Hearth",
+  blueprint: "Blueprint",
+  bare: "Bare",
+  docket: "Docket",
+};
 
 /** Each 版式's own colours, for the 「原本的配色」 card. Read off the three
  *  token files rather than invented, so the swatch and the system agree. */
@@ -25,6 +37,8 @@ const NATIVE_DOTS: Record<StyleName, [string, string, string, string]> = {
   ledger: ["#f3f4f6", "#b8500f", "#d3dbe5", "#e4e9f0"],
   hearth: ["#faf6f0", "#237570", "#ded5c8", "#efe9e0"],
   blueprint: ["#f3f7fe", "#2261dd", "#b9c6dc", "#e2e9f6"],
+  bare: ["#fbfbfc", "#2261dd", "#d5deee", "#edf2fc"],
+  docket: ["#eceae4", "#b8500f", "#e4e9f0", "#f2f6fb"],
 };
 
 /**
@@ -185,7 +199,7 @@ export function StylesClient({
                 <div className="flex items-center justify-between gap-3 border-t px-3 py-3 [border-color:var(--color-ink-800)]">
                   <span className="min-w-0">
                     <span className="block [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
-                      {name === "ledger" ? "Ledger" : name === "hearth" ? "Hearth" : "Blueprint"}
+                      {STYLE_LABEL[name]}
                     </span>
                     <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
                       {tHome(`styleTag.${name}`)}

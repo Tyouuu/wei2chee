@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
-const STYLES: StyleName[] = ["ledger", "hearth", "blueprint"];
+const STYLES: StyleName[] = ["ledger", "hearth", "blueprint", "bare", "docket"];
 
 /**
  * Switches the customer's system between the three visual styles, live, from

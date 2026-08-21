@@ -43,6 +43,8 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
+  bare: styles.bare,
+  docket: styles.docket,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";

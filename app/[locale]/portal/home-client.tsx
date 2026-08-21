@@ -9,6 +9,7 @@ import type { Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { PagePreview } from "./page-preview";
+import { STYLE_LABEL } from "./(app)/styles/styles-client";
 import { PageBar } from "./(app)/page-bar";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "./chrome.module.css";
@@ -19,6 +20,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
+  bare: styles.bare,
+  docket: styles.docket,
 };
 
 /** Mirrors PAGE_KEYS. Kept as a plain array here rather than imported so this
@@ -203,7 +206,7 @@ export function PortalHome({
           <span>
             {t("metaStyle")}{" "}
             <b className="[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
-              {style === "ledger" ? "Ledger" : style === "hearth" ? "Hearth" : "Blueprint"}
+              {STYLE_LABEL[style]}
             </b>{" "}
             <Link
               href={`/${locale}/portal/styles`}

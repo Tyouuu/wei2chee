@@ -105,7 +105,13 @@ describe("the SQL mirror", () => {
     .filter((f) => f.endsWith(".sql"))
     .sort()
     .reverse()
-    .find((f) => readFileSync(join(dir, f), "utf8").includes("projects_palette_check"))!;
+    // `add constraint`, not a bare mention: a later migration that merely
+    // NAMES this constraint in a comment used to win the .reverse() race and
+    // get asserted against instead of the file that defines it. That is how
+    // 20260822010000 broke this test the day it was written.
+    .find((f) =>
+      /add\s+constraint\s+projects_palette_check/i.test(readFileSync(join(dir, f), "utf8")),
+    )!;
   const sql = readFileSync(join(dir, file), "utf8");
 
   it("accepts every palette the app can produce", () => {

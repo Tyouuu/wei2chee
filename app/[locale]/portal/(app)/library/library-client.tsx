@@ -16,6 +16,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
+  bare: styles.bare,
+  docket: styles.docket,
 };
 
 type Entry = { name: string; label: string; category: string; props: Record<string, unknown> };

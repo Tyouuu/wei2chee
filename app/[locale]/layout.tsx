@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
-import { Instrument_Serif, Geist, Geist_Mono, Archivo, Nunito, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
+import { Instrument_Serif, Geist, Geist_Mono, Archivo, Nunito, Manrope, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { BRAND_NAME } from "@/lib/brand";
 import "../globals.css";
@@ -55,6 +55,28 @@ const archivo = Archivo({
 const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-rounded-latin",
+  display: "swap",
+});
+
+// Bare's voice: geometric skeleton with humanist proportions and slightly
+// quirky terminals. Chosen for a style that has taken every box away -- with
+// no card, no border and no shadow doing any work, the typeface is the design,
+// so a neutral grotesque would leave the page looking unfinished rather than
+// spare.
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-bare-latin",
+  display: "swap",
+});
+
+// Docket's voice: IBM Plex Sans was drawn for IBM's own business documents --
+// forms, invoices, technical paperwork -- which is precisely the object this
+// style is imitating. Its slab-ish terminals and squared bowls read as printed
+// rather than rendered.
+const plexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-docket-latin",
   display: "swap",
 });
 
@@ -183,7 +205,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${archivo.variable} ${nunito.variable} ${notoSerifSC.variable} ${notoSansSC.variable}`}
+      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${archivo.variable} ${nunito.variable} ${manrope.variable} ${plexSans.variable} ${notoSerifSC.variable} ${notoSansSC.variable}`}
     >
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>

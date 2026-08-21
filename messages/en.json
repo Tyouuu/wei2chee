@@ -80,6 +80,14 @@
       "blueprint": {
         "label": "Blueprint",
         "description": "A drafted, technical register for contractors and field-service SMEs — site management, scheduling, materials. A cooler, higher-contrast canvas."
+      },
+      "bare": {
+        "label": "Bare",
+        "description": "Nothing is boxed. No card borders, no shadows — sections are separated by space and a single rule, with larger type and roomier lines. For work with less on screen and more to read."
+      },
+      "docket": {
+        "label": "Docket",
+        "description": "A pad of carbon-copy forms. Square corners throughout, ruled in ink rather than hairlines, column headings stamped in uppercase, and no shadow anywhere. For a business that writes dockets and receipts all day."
       }
     },
     "sample": {
@@ -317,7 +325,9 @@
       "styleTag": {
         "ledger": "Dense · many rows, many tables",
         "hearth": "Roomy · warm and readable",
-        "blueprint": "Drafted · precise and technical"
+        "blueprint": "Drafted · precise and technical",
+        "bare": "Bare — no boxes, space does the work",
+        "docket": "Docket — hard edges, like a real form"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",
@@ -407,8 +417,8 @@
     },
     "styles": {
       "title": "Styles",
-      "subtitle": "One system, three registers",
-      "moreComing": "Three for now. Next these split into layout × palette — layout sets density, type and corners; palette only changes colour. Together that is dozens of combinations.",
+      "subtitle": "One system, five ways",
+      "moreComing": "Five layouts x eleven palettes. The layout decides whether it reads as a document or a board; the palette only changes colour. Switch any time, and switch back.",
       "paletteTitle": "Colours",
       "paletteBody": "The layout sets density, type and corners; the palette only changes colour. Together that is {count} combinations.",
       "paletteNative": "Native",
