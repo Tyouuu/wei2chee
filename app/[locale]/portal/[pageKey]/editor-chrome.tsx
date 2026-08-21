@@ -67,6 +67,10 @@ export function EditorChrome({
 }) {
   const t = useTranslations("portal.editor");
   const { appState, history, dispatch } = usePuck();
+  // Read, never assumed: the drawer can also be closed by Puck's own chrome,
+  // and a toggle that tracks its own boolean instead of the real one ends up
+  // labelled 「关起来」 over an already-closed drawer.
+  const drawerOpen = appState.ui.leftSideBarVisible;
 
   // The fields panel follows the selection instead of standing open.
   //
@@ -119,6 +123,24 @@ export function EditorChrome({
           opened a panel, which meant most customers never met it at all. It is
           now a permanent column on the right instead of a thing you have to
           know to press. */}
+
+      {/* The block drawer's switch. It sits FIRST, is labelled in Chinese, and
+          says what it does -- which is what separates it from the buried Ask AI
+          button that earned the complaint above. Pressed state is real: the
+          drawer is open or it is not, and the button shows which. */}
+      <button
+        type="button"
+        aria-pressed={drawerOpen}
+        onClick={() => dispatch({ type: "setUi", ui: { leftSideBarVisible: !drawerOpen } })}
+        className="rounded-md px-3 py-1.5 [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] transition-colors"
+        style={{
+          backgroundColor: drawerOpen ? "var(--color-ink-800)" : "transparent",
+          color: drawerOpen ? "var(--color-paper)" : "var(--color-paper-dim)",
+        }}
+      >
+        {drawerOpen ? t("blocksClose") : t("blocksOpen")}
+      </button>
+
       <span className="flex-1" />
 
       {/* Save STATE, not just a save button. A product that only ever shows a

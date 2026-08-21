@@ -310,6 +310,8 @@
       "aiPageAdded": "已经加好了，去看看 →",
       "aiPageRemoved": "已经删掉了。",
       "aiOfferFailed": "做不了，请再试一次。",
+      "blocksOpen": "+ 加东西",
+      "blocksClose": "收起来",
       "historyCta": "历史",
       "historyTitle": "版本历史",
       "historyBody": "每次保存之前的样子都留在这里，最多 20 个。恢复之后还可以再恢复回来。",

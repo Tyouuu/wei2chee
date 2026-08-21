@@ -91,18 +91,30 @@ export function FieldsPanel({
 
       {/* Whichever half is showing gets the room. `flex-[3]` against the
           assistant's `flex-[2]` is a 60/40 split that leaves the composer
-          reachable without scrolling a properties panel to find it. */}
-      <div className="min-h-0 flex-[3] overflow-y-auto">
-        {hasVariants && tab === "design" ? (
-          <VariantPicker style={style} palette={palette} />
-        ) : (
-          children
-        )}
-      </div>
+          reachable without scrolling a properties panel to find it.
 
-      <div className="flex min-h-0 flex-[2] flex-col border-t [border-color:var(--color-ink-800)]">
-        {assistant}
-      </div>
+          With NOTHING selected the top half is dropped entirely rather than
+          shrunk: there are no fields, Puck's own title above this override
+          still reads 「整个页面」, and four hundred pixels of empty ink under
+          that heading reads as a panel that failed to load. Nothing to edit by
+          hand is precisely when the thing you edit by describing should have
+          the column. */}
+      {selectedItem ? (
+        <>
+          <div className="min-h-0 flex-[3] overflow-y-auto">
+            {hasVariants && tab === "design" ? (
+              <VariantPicker style={style} palette={palette} />
+            ) : (
+              children
+            )}
+          </div>
+          <div className="flex min-h-0 flex-[2] flex-col border-t [border-color:var(--color-ink-800)]">
+            {assistant}
+          </div>
+        </>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col">{assistant}</div>
+      )}
     </div>
   );
 }

@@ -310,6 +310,8 @@
       "aiPageAdded": "Added — open it →",
       "aiPageRemoved": "Deleted.",
       "aiOfferFailed": "That did not work. Please try again.",
+      "blocksOpen": "+ Add blocks",
+      "blocksClose": "Close blocks",
       "historyCta": "History",
       "historyTitle": "Version history",
       "historyBody": "The state before each save is kept here — the last 20. Restoring is itself undoable.",

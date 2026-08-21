@@ -583,6 +583,14 @@ export function PortalEditor({
             // mounted, see the comment on the wrapping div), so this `key`
             // is the ONLY thing that ever remounts Puck in this file.
             key={hydrated ? "hydrated" : "ssr"}
+            // THE BLOCK DRAWER STARTS CLOSED, and the canvas is ~300px wider
+            // for it. Adding a block is the occasional action -- most editing
+            // is retyping a label or asking the assistant -- and a permanent
+            // 54-item list is most of why this screen reads as busier than
+            // Durable's. 「+ 加东西」 in the toolbar opens it; see
+            // editor-chrome.tsx for why that is not the buried-button mistake
+            // again.
+            ui={{ leftSideBarVisible: false }}
             config={puckConfig}
             data={startingData}
             onChange={handleChange}
