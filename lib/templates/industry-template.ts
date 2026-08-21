@@ -651,7 +651,7 @@ function workflowStrip(id: string, title: string, stages: string[], attentionAt 
 function buildDashboard(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
-  const { labels } = industry;
+  const labels = labelsFromPages(industry.labels, pages);
   const sample = sampleFor(industry.slug);
 
   // The AI's own one-line summary of this business, on the first screen the
@@ -689,7 +689,7 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
 function buildCustomers(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
-  const { labels } = industry;
+  const labels = labelsFromPages(industry.labels, pages);
   const sample = sampleFor(industry.slug);
 
   return [
@@ -715,7 +715,7 @@ function buildCustomers(ctx: BusinessContext, name: string, locale: string, page
 function buildQuotations(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
-  const { labels } = industry;
+  const labels = labelsFromPages(industry.labels, pages);
   const sample = sampleFor(industry.slug);
 
   return [
@@ -742,7 +742,7 @@ function buildQuotations(ctx: BusinessContext, name: string, locale: string, pag
 function buildProjects(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
-  const { labels } = industry;
+  const labels = labelsFromPages(industry.labels, pages);
   const sample = sampleFor(industry.slug);
 
   return [
@@ -778,7 +778,7 @@ function buildProjects(ctx: BusinessContext, name: string, locale: string, pages
 function buildPayments(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
-  const { labels } = industry;
+  const labels = labelsFromPages(industry.labels, pages);
   const sample = sampleFor(industry.slug);
 
   return [
@@ -834,7 +834,7 @@ function buildBookings(
 ): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
-  const { labels } = industry;
+  const labels = labelsFromPages(industry.labels, pages);
   const sample = sampleFor(industry.slug);
 
   return [
@@ -879,7 +879,7 @@ function buildOrders(
 ): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
-  const { labels } = industry;
+  const labels = labelsFromPages(industry.labels, pages);
   const sample = sampleFor(industry.slug);
 
   return [
@@ -1215,7 +1215,7 @@ function buildFromShape(
   ownTitle?: string | null,
 ): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
-  const { labels } = industry;
+  const labels = labelsFromPages(industry.labels, pages);
   const brand = displayBusinessName(ctx);
   const copy = moduleCopy(pageKey, labels);
   // The customer's own noun wins over the archetype's default: the AI renames
@@ -1372,7 +1372,7 @@ function buildCustomPage(
   pageId: PageId,
 ): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
-  const { labels } = industry;
+  const labels = labelsFromPages(industry.labels, pages);
   const brand = displayBusinessName(ctx);
 
   return [
@@ -1394,6 +1394,36 @@ function buildCustomPage(
   ];
 }
 
+/**
+ * The trade's three nouns, overridden by what THIS business calls them.
+ *
+ * The AI now returns a label per module (lib/portal/module-catalog.ts) and the
+ * signup trigger stores it as `project_pages.title`, so a SIM-card master
+ * dealer's customers page is titled 经销商. Without this, that rename reached
+ * the rail and the page heading and stopped there: the ranking table two pages
+ * over was still headed 客户, because `moduleCopy` read the industry row.
+ *
+ * Caught in a real browser rather than reasoned about -- the rail said 经销商
+ * and the table under it said 客户 A / 客户 B, in the same screenshot. A system
+ * that calls the same thing two names in two places is one a business owner
+ * stops trusting, and it is the exact failure the trade-vocabulary work exists
+ * to prevent.
+ *
+ * Only the three nouns that ARE vocabulary get overridden. 对账 and 佣金 are
+ * page names, not nouns other pages refer to, so a rename there changes that
+ * page's heading and nothing else -- which is right.
+ */
+function labelsFromPages(base: IndustryLabels, refs: PageRef[]): IndustryLabels {
+  const titleOf = (key: string) => refs.find((p) => p.key === key)?.title?.trim() || undefined;
+  return {
+    customer: titleOf("customers") ?? base.customer,
+    staff: titleOf("staff") ?? base.staff,
+    // Whichever of the two order-shaped pages this business actually has. A
+    // wholesaler has both; `orders` wins because it is the one their day runs on.
+    order: titleOf("orders") ?? titleOf("projects") ?? base.order,
+  };
+}
+
 export function buildPageLayout(
   pageKey: PageId,
   ctx: BusinessContext,
@@ -1405,7 +1435,7 @@ export function buildPageLayout(
 ): Data {
   const refs: PageRef[] =
     pages ?? pagesForIndustry(ctx.industry?.slug).map((key) => ({ key }));
-  const labels = (ctx.industry ?? FALLBACK_INDUSTRY).labels;
+  const labels = labelsFromPages((ctx.industry ?? FALLBACK_INDUSTRY).labels, refs);
   const self = refs.find((p) => p.key === pageKey);
 
   // Three ways a page gets built, in order of how much is known about it:

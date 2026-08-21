@@ -174,3 +174,34 @@ describe("the SQL mirror", () => {
     for (const key of MODULE_KEYS) expect(add, `cannot re-add ${key}`).toContain(`'${key}'`);
   });
 });
+
+/**
+ * The rename has to travel. The AI names a master dealer's counterparties
+ * 经销商; the signup trigger stores that on the customers page. If it stops
+ * there, the rail says 经销商 and the ranking table two pages over says 客户 --
+ * which is what a real browser showed before `labelsFromPages` existed.
+ */
+describe("the business's own noun reaches every page", () => {
+  const refs = [
+    { key: "customers", title: "经销商" },
+    { key: "ranking", title: null },
+    { key: "staff", title: "师傅" },
+  ];
+
+  it("uses the renamed noun in a page that only refers to it", () => {
+    const built = buildPageLayout("ranking", {}, "我的生意", "zh", refs);
+    const json = JSON.stringify(built);
+    expect(json).toContain("经销商");
+    expect(json).not.toContain("客户 A");
+  });
+
+  it("does the same for the staff noun", () => {
+    const built = buildPageLayout("tasks", {}, "我的生意", "zh", [...refs, { key: "tasks", title: null }]);
+    expect(JSON.stringify(built)).toContain("师傅");
+  });
+
+  it("leaves the trade default alone when nothing was renamed", () => {
+    const built = buildPageLayout("ranking", {}, "我的生意", "zh", [{ key: "ranking" }]);
+    expect(JSON.stringify(built)).toContain("客户");
+  });
+});
