@@ -10,7 +10,6 @@ import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { PALETTES, scopeClasses } from "@/lib/portal/palettes";
-import { StatusDot } from "@/design-system/components/status-dot";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -49,13 +48,11 @@ export const STYLE_LABEL: Record<StyleName, string> = {
  * 21st.dev Themes-grid argument taken one step further: show the thing, not a
  * label for the thing.
  */
-const SAMPLE = {
+/** The table alone. The heading and the button above it are drawn by hand so
+ *  they can be a TYPE SPECIMEN rather than page content -- see the card. */
+const TABLE_ONLY = {
   root: {},
   content: [
-    {
-      type: "PageHeader",
-      props: { id: "s-h", title: "报价单", subtitle: "发给客户的报价，跟进哪些已确认。" },
-    },
     {
       type: "RecordTable",
       props: {
@@ -182,12 +179,31 @@ export function StylesClient({
                     left a large void under the shorter registers and stretched
                     every card to the height of Hearth's. */}
                 <div className={`${chrome.mount} m-3 h-[268px]`}>
+                  {/* NULL, not activePalette. A palette replaces colour and
+                      only colour, so rendering all eight registers inside the
+                      customer's palette paints all eight the same and leaves
+                      radius alone to carry the comparison. Their own colours
+                      here; the customer's 配色 has its own grid below. */}
                   <div
-                    className={`${scopeClasses(name, activePalette)} [background-color:var(--color-canvas)]`}
+                    className={`${scopeClasses(name, null)} h-full [background-color:var(--color-canvas)]`}
                   >
-                    <div className="pointer-events-none origin-top-left [width:150%] [transform:scale(0.6667)]">
-                      <div className="[padding:var(--pad-card-lg)]">
-                        <Render config={puckConfig} data={SAMPLE as never} />
+                    {/* THE TYPE SPECIMEN. The register's name set in the
+                        register's own face, next to a filled control carrying
+                        its own accent, radius and label case -- the four things
+                        that differ most and that a 13px table at 0.67 scale
+                        cannot show. Durable's Fonts card does exactly this:
+                        「Playfair Display」 set in Playfair. */}
+                    <div className="flex items-center justify-between gap-3 [padding-inline:var(--pad-card)] [padding-block:var(--pad-card)]">
+                      <span className="min-w-0 truncate [color:var(--color-paper)] [font-family:var(--font-ui)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)]">
+                        {STYLE_LABEL[name]}　报价单
+                      </span>
+                      <span className="shrink-0 rounded-[var(--radius-md)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-family:var(--font-ui)] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] [text-transform:var(--label-transform)]">
+                        新增
+                      </span>
+                    </div>
+                    <div className="pointer-events-none origin-top-left [width:143%] [transform:scale(0.7)]">
+                      <div className="[padding-inline:var(--pad-card-lg)]">
+                        <Render config={puckConfig} data={TABLE_ONLY as never} />
                       </div>
                     </div>
                   </div>
@@ -247,7 +263,10 @@ export function StylesClient({
             {t("paletteBody", { count: STYLE_ORDER.length * (PALETTES.length + 1) })}
           </p>
 
-          <ul className="mt-5 grid gap-x-4 gap-y-6 sm:grid-cols-3 xl:grid-cols-5">
+          {/* Two to four, not three to five: 21st.dev's cards are wide, and
+              the width is doing the work -- a ground colour has to be a FIELD
+              to read as one. */}
+          <ul className="mt-5 grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {/* The native pairing first, and as a real option rather than a
                 "none". Ledger's rust, Hearth's teal and Blueprint's blue were
                 each chosen with their layout; "no palette" is the designed
@@ -331,7 +350,7 @@ function PaletteCard({
         }`}
       >
         <span className={`${scopeClasses(styleName, paletteKey)} block`}>
-          <PaletteSample />
+          <PaletteSample label={label} />
         </span>
       </button>
       <span className="mt-2.5 flex items-baseline gap-2">
@@ -356,39 +375,33 @@ function PaletteCard({
  *  real size rather than scaled, because a palette is judged on colour and
  *  colour survives being small; the layouts above are the ones that need
  *  room. */
-function PaletteSample() {
-  const row = (name: string, amount: string, tone: "positive" | "warning" | "negative", label: string) => (
-    <span className="flex items-center gap-2 border-t [border-color:var(--border)] px-3 py-1.5 [font-size:var(--text-xs)]">
-      <span className="min-w-0 flex-1 truncate [color:var(--foreground)]">{name}</span>
-      <span className="[font-family:var(--font-numeric)] [color:var(--foreground)]" style={{ fontVariantNumeric: "tabular-nums" }}>
-        {amount}
-      </span>
-      <span className="flex shrink-0 items-center gap-1 [color:var(--muted-foreground)]">
-        <StatusDot tone={tone} label={label} />
-      </span>
-    </span>
+/** One palette, the way 21st.dev draws a theme: the card IS the canvas
+ *  colour, four dots for the accent and the neutral ramp, and the name set
+ *  inside it in the palette's own foreground. */
+function PaletteSample({ label }: { label: string }) {
+  const dot = (v: string) => (
+    <span
+      className="block size-5 rounded-full"
+      style={{ backgroundColor: v, boxShadow: "0 0 0 1px rgba(0,0,0,0.06)" }}
+    />
   );
-
   return (
-    <span className="block bg-background">
-      <span className="flex items-end justify-between gap-2 px-3 pt-3 pb-2">
-        <span className="block">
-          <span
-            className="block [color:var(--muted-foreground)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]"
-            style={{ textTransform: "var(--label-transform)" as never }}
-          >
-            本月已确认
-          </span>
-          <span className="block [color:var(--foreground)] [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-weight:var(--fw-display)]">
-            RM 71,300
-          </span>
-        </span>
-        <span className="shrink-0 rounded-[var(--radius-control)] [background-color:var(--primary)] [color:var(--primary-foreground)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] px-2 py-1">
-          新增
-        </span>
+    <span
+      className="relative block w-full [background-color:var(--color-canvas)]"
+      style={{ aspectRatio: "4 / 3" }}
+    >
+      {/* Accent first, then the neutral ramp lightest-last -- the same order
+          and the same count 21st.dev uses, which is what makes two palettes
+          comparable at a glance instead of merely both being colourful. */}
+      <span className="absolute left-4 top-4 flex gap-2">
+        {dot("var(--color-primary)")}
+        {dot("var(--color-ink-800)")}
+        {dot("var(--color-ink-850)")}
+        {dot("var(--color-ink-900)")}
       </span>
-      {row("Taman Desa 三房翻新", "48,500", "positive", "已确认")}
-      {row("Cheras 店面装修", "96,000", "negative", "已逾期")}
+      <span className="absolute bottom-4 left-4 right-4 truncate [color:var(--foreground)] [font-family:var(--font-ui)] [font-size:var(--text-base)]">
+        {label}
+      </span>
     </span>
   );
 }
