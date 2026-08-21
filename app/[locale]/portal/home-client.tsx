@@ -266,15 +266,21 @@ export function PortalHome({
                 className={`group relative ${chrome.sheet} [background-color:var(--color-ink-900)] transition-transform duration-200 hover:-translate-y-0.5`}
               >
                 {/* The one place the customer's own style is let out into the
-                    chrome: this div re-scopes every token to their light
-                    register, so a light page sits inside a dark frame exactly as
-                    it will on their screen. */}
-                <div
-                  className={`${scopeClasses(style, palette)} border-b [border-color:var(--color-ink-800)]`}
-                >
-                  <PagePreview data={page.layout} />
+                    chrome: the inner div re-scopes every token to their own
+                    register, so their page sits inside Formae's frame exactly
+                    as it will on their screen.
+
+                    The mount is what keeps that legible. Without it the
+                    customer's page bleeds to the card's own edge and the two
+                    grounds meet directly -- which is survivable while this
+                    chrome is light and is exactly what sinks a dark rail once
+                    it is not. See `--mount-*` in chrome.module.css. */}
+                <div className={`${chrome.mount} m-3 mb-0`}>
+                  <div className={scopeClasses(style, palette)}>
+                    <PagePreview data={page.layout} />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="flex items-center justify-between gap-3 px-3 pb-3 pt-2.5">
                   <span className="min-w-0">
                     <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                       {labelFor(page)}

@@ -32,8 +32,6 @@ export function EditorChrome({
   onSave,
   dirty,
   savedAt,
-  assistantOpen,
-  onToggleAssistant,
   historyOpen,
   onOpenHistory,
   onCloseHistory,
@@ -51,8 +49,6 @@ export function EditorChrome({
    *  beforeunload guard in editor-client. */
   dirty: boolean;
   savedAt: number | null;
-  assistantOpen: boolean;
-  onToggleAssistant: () => void;
   /** Owned by editor-client, not held here. Puck re-creates the `header`
    *  override's render function on every editor render -- and restoring a
    *  version IS an editor render -- so state kept in this component would be
@@ -83,13 +79,19 @@ export function EditorChrome({
   // sliced down the middle. That reads as a broken product, and it was being
   // caused by an empty panel.
   //
-  // The assistant occupies the same column, so opening it also closes the
-  // fields panel: two panels competing for one column is how an editor starts
-  // feeling arbitrary.
-  const hasSelection = appState.ui.itemSelector != null;
+  // ALWAYS VISIBLE NOW. This used to read
+  // `rightSideBarVisible: hasSelection && !assistantOpen`, because the column
+  // held the block's fields and the assistant was a fourth column that
+  // appeared beside everything. Two things competed for one slot and the
+  // assistant hid the fields when it opened.
+  //
+  // The assistant lives INSIDE that column now, above the fields, so the
+  // column is never empty and never has to be hidden: with nothing selected
+  // it is the assistant, and selecting a block adds the block's own fields
+  // beneath it. See the `fields` override in editor-client.tsx.
   useEffect(() => {
-    dispatch({ type: "setUi", ui: { rightSideBarVisible: hasSelection && !assistantOpen } });
-  }, [hasSelection, assistantOpen, dispatch]);
+    dispatch({ type: "setUi", ui: { rightSideBarVisible: true } });
+  }, [dispatch]);
 
   // Ctrl/Cmd+S. Every tool a customer already uses binds it, and a product
   // that ignores it teaches people their reflex does not work here — which is
@@ -111,25 +113,12 @@ export function EditorChrome({
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
-      <button
-        type="button"
-        onClick={onToggleAssistant}
-        aria-pressed={assistantOpen}
-        className={`flex items-center gap-2 rounded-md px-3 py-1.5 [font-size:var(--text-sm)] transition-colors ${
-          assistantOpen
-            ? "[background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
-            : "border [border-color:var(--color-ink-800)] [color:var(--color-paper)] hover:[background-color:var(--color-ink-850)]"
-        }`}
-      >
-        <span
-          aria-hidden="true"
-          className="grid h-4.5 w-4.5 place-items-center rounded-full px-1 [font-size:var(--text-micro)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]"
-        >
-          AI
-        </span>
-        {t("aiOpen")}
-      </button>
-
+      {/* THE 「Ask AI」 BUTTON IS GONE.
+          The founder's objection was 「把这个AI修改放在这里谁会去按啦」 — the
+          product's single most valuable feature was a toolbar button that
+          opened a panel, which meant most customers never met it at all. It is
+          now a permanent column on the right instead of a thing you have to
+          know to press. */}
       <span className="flex-1" />
 
       {/* Save STATE, not just a save button. A product that only ever shows a

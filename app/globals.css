@@ -199,3 +199,37 @@
     }
   }
 }
+
+/* ---------------------------------------------------------------------------
+   THE HANDOVER'S ONE EXCEPTION.
+
+   components/handover.tsx interpolates the page's tokens from Formae's dark
+   ground to white paper as the visitor scrolls past the showroom. `.handover-
+   fixed` opts a subtree out of that entirely, by re-declaring every token it
+   moves at the value globals.css gives it.
+
+   It exists for exactly one thing: the customer's own system. That panel is
+   light at the top of a dark page and identically light at the bottom of a
+   white one, which is the whole argument the colour change is making — the
+   room changes, the exhibit does not. If the exhibit moved with the room, the
+   transition would collapse into a gradient.
+
+   Re-declared rather than `all: revert`, because these are inherited custom
+   properties: the interpolated values are set on the document root, so they
+   reach here by inheritance and only a nearer definition beats them.
+   --------------------------------------------------------------------------- */
+.handover-fixed {
+  --background: oklch(0.16 0.012 265);
+  --ink: oklch(0.16 0.012 265);
+  --ink-raised: oklch(0.21 0.014 265);
+  --foreground: oklch(0.96 0.004 265);
+  --muted-foreground: oklch(0.68 0.015 265);
+  --card: oklch(0.21 0.014 265);
+  --popover: oklch(0.21 0.014 265);
+  --muted: oklch(0.26 0.014 265);
+  --secondary: oklch(0.26 0.014 265);
+  --accent: oklch(0.28 0.03 262);
+  --blueprint: oklch(0.66 0.17 262);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 14%);
+}

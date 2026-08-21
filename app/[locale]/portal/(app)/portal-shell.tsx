@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
-import { LocaleSwitcher } from "@/components/locale-switcher";
 import { SettingsDialog } from "../settings-dialog";
 import { AddPageDialog } from "../add-page-dialog";
 import chrome from "../chrome.module.css";
@@ -150,10 +148,11 @@ export function PortalShell({
 }) {
   const t = useTranslations("portal.shell");
   const tHome = useTranslations("portal.home");
-  const tEditor = useTranslations("portal.editor");
   const pathname = usePathname();
-  const router = useRouter();
 
+  // The rail is a drawer below `lg`. Closed by default, and closed again by
+  // any navigation — see the effect below.
+  const [navOpen, setNavOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addPageOpen, setAddPageOpen] = useState(false);
   const [identity, setIdentity] = useState({
@@ -162,15 +161,17 @@ export function PortalShell({
   });
   const shownName = identity.businessName ?? businessName;
 
+  // Any navigation closes the drawer. The shell persists across route changes
+  // rather than remounting, so without this a customer taps a page, the page
+  // loads behind the drawer, and the drawer is still covering it.
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
+
   const base = `/${locale}/portal`;
   // `endsWith` rather than `===`: next-intl's pathname carries the locale
   // prefix, and the home route has no trailing segment to compare against.
   const is = (suffix: string) => pathname === `${base}${suffix}`;
-
-  async function handleSignOut() {
-    await createBrowserSupabaseClient().auth.signOut();
-    router.push("/login");
-  }
 
   const handoffHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     `我的系统设计已经确定了，请开始帮我建系统（账号：${accountEmail}）`,
@@ -178,9 +179,29 @@ export function PortalShell({
 
   return (
     <div className={`${chrome.chrome} ${chrome.workbench} flex min-h-screen`}>
+      {/* THE RAIL IS A DRAWER ON A PHONE.
+          It was a fixed 236px column with no breakpoint on it, so at 390px it
+          took 60% of the screen and pushed the working area off the right edge:
+          tested with a hit-test sweep rather than measured, and「Read the
+          specification」,「Message on WhatsApp」and every「Open and edit →」
+          landed outside the viewport — present in the DOM, unreachable with a
+          thumb, and not scrollable to because the shell is a flex row.
+
+          Below `lg` it slides in over the page instead. Above it, nothing about
+          the rail changes. */}
+      {navOpen && (
+        <button
+          type="button"
+          aria-label={t("navClose")}
+          onClick={() => setNavOpen(false)}
+          className="fixed inset-0 z-40 bg-black/55 lg:hidden"
+        />
+      )}
       <aside
         aria-label={t("navLabel")}
-        className="sticky top-0 flex h-screen w-[236px] shrink-0 flex-col border-r [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]"
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[236px] shrink-0 flex-col border-r transition-transform duration-200 [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)] lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 ${
+          navOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         {/* The workspace block. The BUSINESS is named first and Formae second,
             in the place a tool names itself — the same call Durable's Home
@@ -291,43 +312,80 @@ export function PortalShell({
             </span>
             <span className="min-w-0 flex-1 truncate text-left">{t("settings")}</span>
           </button>
-          <NavRow href={`${base}/account`} active={is("/account")} icon={<IconPages />}>
-            {t("account")}
-          </NavRow>
+          {/* THE ACCOUNT BLOCK.
+              This replaces three separate things that used to sit stacked in
+              this corner: a 「我的账号」 nav row, a non-interactive name/plan
+              card under it, and — loose beneath both — a bare language
+              switcher and an underlined "Sign out".
 
-          <div className="mt-1 flex items-center gap-2 rounded-[var(--radius-md)] px-2.5 py-2">
+              The founder's objection was exact: 「语言切换就那么简单的躺在下面
+              sign out也是」. Two unstyled controls lying in the corner of the
+              rail is what a weekend build looks like, and this is the screen a
+              Malaysian SME owner is on while deciding whether there is a
+              company behind the URL.
+
+              So it is one block, and it is a link. Avatar, who you are, what
+              you are paying — the pattern every product of this shape uses.
+              Language and Sign out are rows on the page it opens, alongside
+              password, email and export, which is where settings belong. */}
+          <Link
+            href={`${base}/account`}
+            aria-label={t("accountRow")}
+            className={`mt-1 flex items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-2 transition-colors ${
+              is("/account")
+                ? "[background-color:var(--color-nav-active)]"
+                : "hover:[background-color:var(--color-nav-hover)]"
+            }`}
+          >
             <span
               aria-hidden="true"
-              className="grid h-6 w-6 shrink-0 place-items-center rounded-[var(--radius-xs)] [font-size:var(--text-micro)] [background-color:var(--color-nav-border)] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-[var(--radius-pill)] [font-size:var(--text-micro)] [background-color:var(--color-nav-border)] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]"
             >
               {ownerName.slice(0, 1)}
             </span>
             <span className="min-w-0 flex-1 leading-tight">
-              <span className="block truncate [font-size:var(--text-xs)] [color:var(--color-nav-fg)]">
+              <span className="block truncate [font-size:var(--text-xs)] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]">
                 {ownerName}
               </span>
               <span className="block truncate [font-size:var(--text-micro)] [color:var(--color-nav-fg-dim)]">
-                {paid ? t("planPaid") : t("planFree")}
+                {accountEmail}
               </span>
             </span>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 px-2.5 pb-0.5 pt-1 [font-size:var(--text-xs)]">
-            <LocaleSwitcher tone="dark" />
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="[color:var(--color-nav-fg-dim)] hover:[color:var(--color-nav-fg)] hover:underline"
+            <span
+              aria-hidden="true"
+              className="shrink-0 rounded-[var(--radius-xs)] border px-1.5 py-0.5 [border-color:var(--color-nav-border)] [color:var(--color-nav-fg-dim)] [font-size:var(--text-micro)]"
             >
-              {tEditor("signOut")}
-            </button>
-          </div>
+              {paid ? t("planPaid") : t("planFree")}
+            </span>
+          </Link>
         </div>
       </aside>
 
       {/* min-w-0 so a wide table inside a page scrolls itself instead of
           stretching the flex row and pushing the rail off-screen. */}
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* The only way back to the navigation once it is a drawer. It carries
+            the business name for the same reason the rail's brand block does:
+            on a phone this is the only place the customer is told whose system
+            they are looking at. */}
+        <div className="flex items-center gap-3 border-b px-4 py-2.5 [border-color:var(--color-ink-800)] lg:hidden">
+          <button
+            type="button"
+            onClick={() => setNavOpen(true)}
+            aria-label={t("navOpen")}
+            aria-expanded={navOpen}
+            className="-ml-1.5 grid h-9 w-9 shrink-0 place-items-center rounded-[var(--radius-md)] [color:var(--color-paper)] hover:[background-color:var(--color-ink-850)]"
+          >
+            <svg viewBox="0 0 20 20" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+              <path d="M3 5.5h14M3 10h14M3 14.5h14" strokeLinecap="round" />
+            </svg>
+          </button>
+          <span className="min-w-0 flex-1 truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+            {shownName}
+          </span>
+        </div>
+        {children}
+      </div>
 
       <AddPageDialog
         open={addPageOpen}

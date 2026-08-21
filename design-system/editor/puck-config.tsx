@@ -14,7 +14,7 @@ import { FilterChips, type FilterChip } from "@/design-system/components/filter-
 import { Combobox, type ComboboxOption } from "@/design-system/components/combobox";
 import { TextAutocomplete } from "@/design-system/components/text-autocomplete";
 import { Listbox, type ListboxOption } from "@/design-system/components/listbox";
-import { RailNav, type RailItem, type RailUtilityItem } from "@/design-system/components/rail-nav";
+import { RailNav, type RailItem, type RailUtilityItem, type RailVariant } from "@/design-system/components/rail-nav";
 import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
 import { SystemShell } from "@/design-system/components/system-shell";
 // STRAIGHT FROM THE shadcn REGISTRY, unmodified. They render in the customer's
@@ -63,7 +63,7 @@ import { TrendChart, type TrendKind, type TrendPoint } from "@/design-system/com
 //     as separate draggable canvas components would be confusing rather
 //     than useful -- RailNav covers the navigation need this pass targets.
 type Components = {
-  SystemShell: { sidebar: Slot; main: Slot };
+  SystemShell: { sidebar: Slot; main: Slot; nav: "side" | "top"; navTone: "dark" | "light" };
   PageHeader: { title: string; subtitle?: string };
   EmptyState: { variant: "empty" | "filtered" | "cleared"; title: string; description?: string };
   StatusDot: { tone: "positive" | "warning" | "negative" | "neutral"; label: string };
@@ -107,6 +107,7 @@ type Components = {
   Progress: { label?: string; value: number };
   TrendChart: { title?: string; caption?: string; kind: TrendKind; unit?: string; points: TrendPoint[] };
   RailNav: {
+    variant: RailVariant;
     brandLabel: string;
     brandHref: string;
     items: RailItem[];
@@ -166,12 +167,32 @@ export const puckConfig: Config<Components> = {
     SystemShell: {
       label: "页面框架",
       fields: {
+        // Paired with RailNav's 「顶部」 variant. Kept on the SHELL rather than
+        // on the rail because it is a fact about the page — where the
+        // navigation sits — and the shell is what has to become a column
+        // instead of a row.
+        nav: {
+          label: "导航位置",
+          type: "radio",
+          options: [
+            { label: "左侧", value: "side" },
+            { label: "顶部", value: "top" },
+          ],
+        },
+        navTone: {
+          label: "导航底色",
+          type: "radio",
+          options: [
+            { label: "深色", value: "dark" },
+            { label: "浅色", value: "light" },
+          ],
+        },
         sidebar: { label: "侧边栏", type: "slot" },
         main: { label: "页面内容", type: "slot" },
       },
-      defaultProps: { sidebar: [], main: [] },
-      render: ({ sidebar: Sidebar, main: Main }) => (
-        <SystemShell sidebar={<Sidebar />} main={<Main />} />
+      defaultProps: { sidebar: [], main: [], nav: "side", navTone: "dark" },
+      render: ({ sidebar: Sidebar, main: Main, nav, navTone }) => (
+        <SystemShell nav={nav} navTone={navTone} sidebar={<Sidebar />} main={<Main />} />
       ),
     },
     PageHeader: {
@@ -606,6 +627,28 @@ export const puckConfig: Config<Components> = {
     RailNav: {
       label: "侧边导航",
       fields: {
+        // THE FIRST REAL DESIGN CHOICE IN THIS EDITOR.
+        //
+        // Counted on 2026-08-21: of nineteen registered blocks, seventy-two
+        // fields were text or array and ten were radio/select — and nine of
+        // those ten were semantic (a status tone, a required flag), not
+        // visual. Exactly ONE block let a customer change how anything looked
+        // (TrendChart's bar/line/area). The founder pressed the sidebar
+        // expecting to be shown another sidebar and there was not one:
+        // 「我按这个sidebar 就是我要换那个sidebar啦 可是我现在没有别的sidebar给客户换啊」
+        //
+        // A radio rather than a select because four options that a customer is
+        // choosing BETWEEN should all be visible at once. See RailVariant in
+        // rail-nav.tsx for what each one is for.
+        variant: {
+          label: "导航样式",
+          type: "radio",
+          options: [
+            { label: "完整", value: "full" },
+            { label: "窄栏", value: "compact" },
+            { label: "极简", value: "quiet" },
+          ],
+        },
         brandLabel: { label: "系统名称", type: "text" },
         brandHref: { label: "首页链接", type: "text" },
         userName: { label: "用户名", type: "text" },
@@ -652,6 +695,7 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: {
+        variant: "full",
         brandLabel: "我的系统",
         brandHref: "#",
         userName: "我",
@@ -661,8 +705,9 @@ export const puckConfig: Config<Components> = {
           { label: "账号设置", iconName: "account" },
         ],
       },
-      render: ({ brandLabel, brandHref, items, utilityItems, userName, userRoleLabel }) => (
+      render: ({ variant, brandLabel, brandHref, items, utilityItems, userName, userRoleLabel }) => (
         <RailNav
+          variant={variant}
           brand={{ href: brandHref, label: brandLabel }}
           items={items}
           utilityItems={utilityItems}

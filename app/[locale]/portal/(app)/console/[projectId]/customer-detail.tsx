@@ -140,10 +140,12 @@ export function CustomerDetail({
                     key={page.pageKey}
                     className={`overflow-hidden rounded-[var(--radius-lg)] [background-color:var(--color-ink-900)] [border:1px_solid_var(--color-ink-800)]`}
                   >
-                    <div className={`${scopeClasses(style, palette)} border-b [border-color:var(--color-ink-800)]`}>
-                      <PagePreview data={page.layout} />
+                    <div className={`${chrome.mount} m-3 mb-0`}>
+                      <div className={scopeClasses(style, palette)}>
+                        <PagePreview data={page.layout} />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 px-3 pb-3 pt-2.5">
                       <span className="min-w-0">
                         <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                           {page.label}

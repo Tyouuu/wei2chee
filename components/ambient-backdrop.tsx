@@ -58,11 +58,18 @@ export function AmbientBackdrop() {
   return (
     <>
       {/* Pointer listener spans the viewport but must never swallow clicks. */}
+      {/* Fades out across the handover. This is the atmosphere of Formae's
+          dark room; on the white half of the page it would read as a smudge on
+          paper. `--handover-t` is published to the document root by
+          components/handover.tsx, so a fixed element can follow it without
+          being wired to anything. It defaults to 0, which is the right value
+          on every page that has no handover at all. */}
       <div
         ref={hostRef}
         aria-hidden="true"
         onPointerMove={handlePointerMove}
         className="pointer-events-none fixed inset-0 -z-20"
+        style={{ opacity: "calc(1 - var(--handover-t, 0))" }}
       >
         <motion.div
           className="absolute inset-0 scale-125"

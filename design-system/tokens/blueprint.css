@@ -107,8 +107,7 @@
 
   /* ---- NAVIGATION GROUND --------------------------------------------------
      See ledger.css's matching block for why this family exists at the token
-     layer at all. Same roles, this register's own hue: the ground is
-     Blueprint's own --color-paper (#0c182e).
+     layer at all. Same roles, this register's own hue.
 
      This is also the one place this register gets to keep the dark ground its
      own file comment argues at length AGAINST for the working surface. That
@@ -117,17 +116,42 @@
      for long nor written on, so the objection does not reach it, and the deep
      ground here is what a real cyanotype looked like.
 
-     Measured: fg 15.20:1 on the ground / 11.33:1 on the active row, fg-dim
-     7.62:1 / 5.68:1, accent 7.46:1 / 5.56:1. The accent is this file's own
-     --color-primary (#2261dd, 3.22:1 down there) lifted in lightness -- OKLCH
-     L 0.7343 from 0.5300, hue held at 262.8 against 262.0. */
-  --color-nav-bg: #0c182e;
-  --color-nav-bg-deep: #081020;
+     WHY THE WHOLE LADDER LIFTED, 2026-08-21. This ground used to be Blueprint's
+     own --color-paper (#0c182e) reused verbatim. Measured in CIE L* against the
+     ground Formae's chrome is moving back to (#0b0d13, L* 4.0), the three
+     registers' rails sit at:
+
+       Ledger    #14273d   L* 15.2   clears by 11.2
+       Hearth    #153227   L* 18.3   clears by 14.3
+       Blueprint #0c182e   L*  8.4   clears by  4.4   <- and by 0.7 against a
+                                                         #16171a panel
+
+     Two of three read as an object standing on a surface. This one dissolved
+     into it. That is not a Formae problem to solve on Formae's side: Blueprint
+     is the register whose blue was borrowed to build the chrome in the first
+     place (commit 6db2a6c), so it is the one closest in BOTH lightness and hue
+     to the ground it now has to stand on, from a single shared cause.
+
+     So the ground moves to #142744 -- L* 15.6, level with Ledger, hue held --
+     and hover / active / border / deep move with it to keep the same steps.
+     Nothing about this register's character changes; it stops being able to
+     disappear. A customer already on Blueprint sees their rail get slightly
+     lighter and nothing else. It is also, deliberately, the ONLY customer
+     token the chrome plan touches.
+
+     Re-measured on the new ground: fg 12.85:1 on the ground / 9.48:1 on the
+     active row, fg-dim 6.44:1 / 4.75:1, accent 6.30:1 / 4.65:1. Every one
+     still clears AA at every size; the tightest is the accent on an active row
+     at 4.65:1. The accent is this file's own --color-primary (#2261dd, 3.22:1
+     down there) lifted in lightness -- OKLCH L 0.7343 from 0.5300, hue held at
+     262.8 against 262.0. */
+  --color-nav-bg: #142744;
+  --color-nav-bg-deep: #0e1d35;
   --color-nav-fg: #e8eef9;
   --color-nav-fg-dim: #9cabc4;
-  --color-nav-hover: #152742;
-  --color-nav-active: #1a3053;
-  --color-nav-border: #213558;
+  --color-nav-hover: #1d3355;
+  --color-nav-active: #243c63;
+  --color-nav-border: #2c4569;
   --color-nav-accent: #7fa8f7;
 
   /* The card is pure white, agreeing with Ledger's choice over Hearth's tinted

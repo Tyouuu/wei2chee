@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { PageBar } from "../page-bar";
 import { formatDay } from "@/lib/format-date";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 
 const input =
   "w-full rounded-[var(--radius-md)] border px-3 py-2 [font-size:var(--text-sm)] outline-none [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]";
@@ -46,6 +47,15 @@ export function AccountClient({
   const [deleteConfirm, setDeleteConfirm] = useState("");
 
   const supabase = () => createBrowserSupabaseClient();
+
+  async function signOut() {
+    setBusy("signout");
+    await supabase().auth.signOut();
+    // A hard navigation rather than router.push: signing out has to clear the
+    // client cache as well as the session, and a soft push leaves the previous
+    // account's pages sitting in memory behind the login screen.
+    window.location.href = `/${locale}/login`;
+  }
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -204,6 +214,26 @@ export function AccountClient({
         <Section title={t("exportTitle")} body={t("exportBody")}>
           <button type="button" onClick={exportData} disabled={exporting} className={button}>
             {exporting ? t("exporting") : t("exportCta")}
+          </button>
+        </Section>
+
+        {/* LANGUAGE AND SIGN OUT LIVE HERE NOW.
+            They used to be two naked controls in the bottom corner of the
+            navigation rail — a switcher and an underlined link, lying loose
+            under the last nav item with nothing around them. On the one screen
+            where a Malaysian SME owner is deciding whether there is a company
+            behind the URL, that reads as a weekend build.
+
+            Every product of this shape puts them behind the account row, so
+            the rail now carries one account block that leads here, and these
+            are rows in a settings page like everything else. */}
+        <Section title={t("languageTitle")} body={t("languageBody")}>
+          <LocaleSwitcher />
+        </Section>
+
+        <Section title={t("signOutTitle")} body={t("signOutBody")}>
+          <button type="button" onClick={signOut} disabled={busy !== null} className={button}>
+            {busy === "signout" ? t("saving") : t("signOutCta")}
           </button>
         </Section>
 

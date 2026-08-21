@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { BRAND_NAME, WHATSAPP_NUMBER } from "@/lib/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import chrome from "@/app/[locale]/portal/chrome.module.css";
 
 /**
  * Privacy policy and terms of service.
@@ -45,8 +46,25 @@ export default async function LegalPage({
   const sections = t.raw("sections") as { heading: string; body: string }[];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col px-6 py-10">
-      <div className="flex items-center justify-between gap-4">
+    /*
+     * WHITE PAPER, ON THE DARK GROUND. Terms and privacy are documents, not
+     * app screens: they get read slowly, quoted back, and printed. The rule
+     * this product now runs on is that Formae's own surfaces are the dark
+     * room, the customer's system is the lit object in it, and the customer's
+     * PAPERWORK is white -- and a terms page is paperwork in every sense.
+     *
+     * `chrome.paper` re-declares the surface tokens so everything inside
+     * resolves against white without a single colour being hardcoded here,
+     * and `chrome.paperSheet` gives it the edge and the shadow that make it a
+     * sheet lying on the desk rather than a hole cut in the page. Both drop
+     * away under `print:`. Same class the specification uses, deliberately:
+     * these two are the only documents in the product and they should look
+     * like the same stationery.
+     */
+    <main
+      className={`${chrome.paper} ${chrome.paperSheet} mx-auto my-10 flex max-w-2xl flex-col px-10 py-12 print:my-0 print:max-w-none print:px-0 print:py-0`}
+    >
+      <div className="flex items-center justify-between gap-4 print:hidden">
         <Link href={`/${locale}`} className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
@@ -56,7 +74,7 @@ export default async function LegalPage({
           </span>
           <span className="text-[14px] font-semibold">{BRAND_NAME}</span>
         </Link>
-        <LocaleSwitcher tone="dark" />
+        <LocaleSwitcher tone="light" />
       </div>
 
       <article className="mt-12">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Puck, type Data } from "@puckeditor/core";
@@ -16,6 +16,7 @@ import { EditorChrome } from "./editor-chrome";
 import { ComponentPreview } from "@/design-system/editor/component-preview";
 import { StyleSwitcher } from "./style-switcher";
 import { AiAssistant, type Turn } from "./ai-assistant";
+import { MobileEditor } from "./mobile-editor";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 // Reused rather than re-declared: this is the same scoped Ledger token
 // class app/[locale]/portal/style-select's <StyleColumn> already applies,
@@ -44,6 +45,32 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
+
+/**
+ * Is this a phone-sized window?
+ *
+ * `useSyncExternalStore` rather than a `useState` + `useEffect` pair, because
+ * the server has no viewport and has to answer something: the server snapshot
+ * is always `false`, so both the server and the client's FIRST render agree on
+ * the desktop layout and React's hydration diff passes. The subscription then
+ * corrects it on the next frame. A `window.matchMedia` read during render is
+ * the classic way to produce a hydration error here — this file has already
+ * been bitten by exactly that shape once, with the local draft.
+ *
+ * 1024px is Puck's own floor, not a guess: below it the three columns compress
+ * rather than fold, and the canvas drops under what a five-column record table
+ * needs to render without clipping.
+ */
+const NARROW = "(max-width: 1023px)";
+
+function subscribeNarrow(onChange: () => void) {
+  const mq = window.matchMedia(NARROW);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+const getNarrow = () => window.matchMedia(NARROW).matches;
+const getNarrowServer = () => false;
 
 export function PortalEditor({
   pageKey,
@@ -135,13 +162,14 @@ export function PortalEditor({
   // `startingData` start reading the local draft.
   const [hydrated, setHydrated] = useState(false);
 
-  // The assistant's column, and its conversation. Held HERE rather than inside
-  // AiAssistant because Puck re-creates `overrides` render functions as the
-  // editor re-renders -- and the assistant's own successful edit is one of the
-  // things that triggers that. State kept inside it would be wiped by its own
-  // results.
-  const [assistantOpen, setAssistantOpen] = useState(false);
+  // The assistant's conversation. Held HERE rather than inside AiAssistant
+  // because Puck re-creates `overrides` render functions as the editor
+  // re-renders -- and the assistant's own successful edit is one of the things
+  // that triggers that. State kept inside it would be wiped by its own results.
+  // (There is no `assistantOpen` any more: the assistant is not a thing that
+  // opens. See the `fields` override below.)
   const [historyOpen, setHistoryOpen] = useState(false);
+  const narrow = useSyncExternalStore(subscribeNarrow, getNarrow, getNarrowServer);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [instruction, setInstruction] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
@@ -366,7 +394,13 @@ export function PortalEditor({
       // --color-* resolves to here, so Puck's chrome follows automatically.
       className={`portal-editor-scope ${chrome.chrome} ${chrome.workbench} flex h-screen flex-col`}
     >
-      <div className="flex items-center justify-between gap-4 border-b px-4 py-2 [font-size:var(--text-sm)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
+      {/* `flex-wrap` and a scrolling page list, because this bar is the one
+          thing on the editor that a phone still has to show in full. Measured
+          at 390px: the right-hand cluster alone is 493px wide and pushed the
+          document to 671px, so the whole editor scrolled sideways under a
+          fixed-height layout — the worst combination there is. It wraps to a
+          second line instead. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b px-4 py-2 [font-size:var(--text-sm)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
         {/* Page navigation. Before this the editor showed the current page's
             name as plain text and offered no way to reach the other four --
             they existed as routes and as rows in project_pages, but the only
@@ -406,7 +440,7 @@ export function PortalEditor({
             );
           })}
         </nav>
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
           {saveState === "saved" ? (
             <span className="[color:var(--color-jade-bright)]">{t("saveSuccess")}</span>
           ) : null}
@@ -481,7 +515,7 @@ export function PortalEditor({
           ONLY thing that ever remounts Puck in this file. "Back to editing"
           no longer re-reads the local draft (it can't -- nothing remounts),
           and doesn't need to: Puck still has the customer's latest edit. */}
-      <div className="relative flex-1">
+      <div className="relative min-h-0 flex-1">
         {saveState === "paywall" ? (
           // `absolute inset-0` + an opaque token background (--color-canvas
           // resolves against this component's own `.ledger` chrome scope) --
@@ -507,6 +541,21 @@ export function PortalEditor({
             </button>
           </div>
         ) : null}
+        {/* THE 84px THE EDITOR WAS TOO TALL.
+            Measured: `.Puck` computed to 950px at top 84 in a 950px viewport
+            — a 1034px document — because Puck's root is 100vh and it sits
+            under Formae's own page tabs and draft banner.
+
+            Invisible while the right column scrolled its own overflow. It
+            stopped being invisible when the assistant moved to the bottom of
+            that column: the composer, the one control the whole feature exists
+            for, sat 80px below the fold on first load.
+
+            Three parts, and all three are needed. The wrapper above takes
+            `min-h-0` so it can shrink to the 866px actually left; this div
+            takes `h-full` (NOT `flex-1` — its parent is `display: block`, so
+            a flex property on it is inert) to inherit that definite height;
+            and puck-theme.css overrides `.Puck` from 100vh to 100%. */}
         <div className="h-full">
           <Puck
             // Forces exactly one clean remount at the ssr->hydrated
@@ -559,8 +608,6 @@ export function PortalEditor({
                   onSave={handleSaveClick}
                   dirty={dirty}
                   savedAt={savedAt}
-                  assistantOpen={assistantOpen}
-                  onToggleAssistant={() => setAssistantOpen((v) => !v)}
                   historyOpen={historyOpen}
                   onOpenHistory={() => setHistoryOpen(true)}
                   onCloseHistory={() => setHistoryOpen(false)}
@@ -586,15 +633,75 @@ export function PortalEditor({
               // wrapper in the CUSTOMER's canvas colour -- it sits inside the
               // style scope, so `--color-canvas` is theirs, not Ledger's --
               // makes that strip continuous with the page above it.
-              // Wraps Puck's ENTIRE layout, which is the only override point
-              // that can put a column BESIDE the editor rather than inside one
-              // of its panels. That matters: as a flex sibling the assistant
-              // makes the canvas narrower, where a fixed overlay would simply
-              // cover the customer's own page while they talked about it.
-              puck: ({ children }) => (
-                <div className="flex h-full min-h-0 w-full">
-                  <div className="min-w-0 flex-1">{children}</div>
-                  {assistantOpen && (
+              // THE ASSISTANT IS THE RIGHT COLUMN, PERMANENTLY.
+              //
+              // It used to wrap Puck's ENTIRE layout via the `puck` override,
+              // as a flex sibling of everything — which made it a FOURTH
+              // column, and that is precisely why it could not default to
+              // open: four fixed columns at 1440px leave the canvas around
+              // 550px, below what a five-column record table renders without
+              // clipping. So it hid behind a toolbar button, and the founder's
+              // objection followed: 「把这个AI修改放在这里谁会去按啦」.
+              //
+              // Wrapping `fields` instead puts it inside the column Puck
+              // already has. Still three columns. The assistant is simply
+              // always there, and the block's own fields sit underneath it
+              // when something is selected — which is also the honest reading
+              // of what the two are: one edits the page by describing it, the
+              // other edits one block by hand, and they are the same job at
+              // two levels of zoom rather than two modes.
+              //
+              // PUCK'S WHOLE LAYOUT, REPLACED ON A PHONE.
+              //
+              // This override was removed when the assistant moved into the
+              // fields column; it is back for the one thing it is actually the
+              // right tool for. Below 1024px Puck's three columns do not fold,
+              // they compress, and the canvas ends up too narrow to render a
+              // record table at all — so on a phone the whole layout is
+              // replaced rather than squeezed. See mobile-editor.tsx for what
+              // it is replaced WITH, and why that is a split rather than a
+              // fallback.
+              //
+              // Inside the provider, so the assistant is the same assistant
+              // editing the same live canvas on the same undo stack.
+              puck: ({ children }) =>
+                narrow ? (
+                  <MobileEditor
+                    style={activeStyle}
+                    palette={palette}
+                    locale={locale}
+                    navPages={navPages}
+                    turns={turns}
+                    setTurns={setTurns}
+                    instruction={instruction}
+                    setInstruction={setInstruction}
+                    aiBusy={aiBusy}
+                    setAiBusy={setAiBusy}
+                  />
+                ) : (
+                  // Wrapped rather than returned bare: Puck's RenderFunc is
+                  // typed to a single element, and `children` is ReactNode.
+                  <>{children}</>
+                ),
+              // FIELDS ON TOP, ASSISTANT UNDERNEATH, and the order is forced
+              // rather than chosen. Puck renders this column's title bar --
+              // 「整个页面」, or the selected block's name and its breadcrumb --
+              // OUTSIDE this override, permanently above whatever it returns.
+              // Putting the assistant first therefore files it under a heading
+              // that describes the fields, which reads as a mislabelled panel.
+              //
+              // It also lands the composer at the bottom of the column, which
+              // is where every assistant a customer has already used puts it.
+              //
+              // The fields half is capped at half the column and scrolls its
+              // own overflow: a RecordTable's column editor is long enough to
+              // push the assistant off the bottom of the screen entirely, and
+              // an assistant you have to scroll a properties panel to reach is
+              // the buried toolbar button again with extra steps.
+              fields: ({ children }) => (
+                <div className="flex h-full min-h-0 flex-col [background-color:var(--color-ink-900)]">
+                  <div className="min-h-0 max-h-[50%] shrink overflow-y-auto">{children}</div>
+                  <div className="flex min-h-0 flex-1 flex-col border-t [border-color:var(--color-ink-800)]">
                     <AiAssistant
                       turns={turns}
                       setTurns={setTurns}
@@ -602,25 +709,31 @@ export function PortalEditor({
                       setInstruction={setInstruction}
                       busy={aiBusy}
                       setBusy={setAiBusy}
-                      onClose={() => setAssistantOpen(false)}
                       pages={navPages}
                       locale={locale}
                     />
-                  )}
+                  </div>
                 </div>
               ),
               // The canvas is the one thing on this screen Formae does not
               // own, so it is presented as an object rather than as the
               // background: the customer's style scope re-resolves every token
-              // to their light register inside a frame that stays dark. The
+              // to their own register inside a frame that stays Formae's. The
               // token cascade does this by itself -- custom properties inherit
               // and the nearest defining ancestor wins -- which is why nothing
               // inside the canvas needed changing.
+              //
+              // The mount is the white plinth it stands on. This is the single
+              // most important of the seven: it is the surface the customer
+              // spends the most time looking at, and the one where their own
+              // dark rail comes closest to Formae's frame.
               preview: ({ children }) => (
-                <div
-                  className={`${scopeClasses(activeStyle, palette)} ${chrome.sheet} h-full [background-color:var(--color-canvas)]`}
-                >
-                  {children}
+                <div className={`${chrome.mount} h-full`}>
+                  <div
+                    className={`${scopeClasses(activeStyle, palette)} h-full [background-color:var(--color-canvas)]`}
+                  >
+                    {children}
+                  </div>
                 </div>
               ),
             }}

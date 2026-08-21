@@ -13,6 +13,8 @@ import { HowItWorks, WhatYouGet, Pricing, Faq } from "@/components/sections/land
 import { SiteFooter } from "@/components/site-footer";
 import { CookieNotice } from "@/components/cookie-notice";
 import { SiteHeader } from "@/components/site-header";
+import { Handover } from "@/components/handover";
+import { Showroom } from "@/components/sections/showroom";
 import type { Industry, AnalysisResult } from "@/types/database";
 
 export default function HomePage() {
@@ -30,6 +32,9 @@ export default function HomePage() {
       {/* One lit surface behind the whole page, so scrolling past the Hero
           recedes the atmosphere instead of cutting to flat dark. */}
       <AmbientBackdrop />
+      {/* Drives the page's tokens from Formae's dark ground to white paper
+          across <Showroom>. Renders nothing; see components/handover.tsx. */}
+      <Handover />
       <SiteHeader />
       <HeroSection
         onStart={(brief) => {
@@ -47,6 +52,13 @@ export default function HomePage() {
           conditional on having picked one, so this is the last thing an
           undecided visitor reads if it sits underneath. */}
       <HowItWorks />
+
+      {/* THE FOLD THIS PAGE DID NOT HAVE. Measured: 249 elements and not one
+          rendered system, on a site whose promise is that you see your system
+          before you pay. It also carries `id="handover"` — the ground turns
+          white across it, because from here down the page is about the
+          visitor's business rather than about us. */}
+      <Showroom />
       <IndustrySelect onSelect={setSelectedIndustry} />
       {selectedIndustry && !answers && (
         <>

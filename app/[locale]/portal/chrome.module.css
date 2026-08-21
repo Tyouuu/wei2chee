@@ -9,26 +9,34 @@
  * three products. This file is the chrome that is Formae's regardless of what
  * the customer picked for their own system.
  *
- * WHY IT IS LIGHT, HAVING BEEN DARK (revised 2026-08-21)
+ * THE ONE RULE (settled 2026-08-21, after three reversals)
  *
- * The first version of this file reasoned from the founder's stated target --
- * "21st.dev 跟 Durable 的结合体" -- that 21st.dev is a dark tool shell wrapped
- * around light content previews, and built a near-black workbench from that.
+ *     DARK IS FORMAE'S.  LIGHT IS THE CUSTOMER'S.  THE SEAM IS ALWAYS VISIBLE.
  *
- * That was generalised from their marketing page, and measuring the actual
- * product contradicted it. On 2026-08-21, every visible element on
- * 21st.dev/components, /s/card and /themes was read back with Playwright:
- * all three run a near-white rail on a flat light-grey ground (oklch 0.939),
- * weight 500 on 462 of 468 and 584 of 588 text nodes respectively, and two to
- * four font sizes per page. Durable's product is flat white throughout. Their
- * dark page is the one selling the thing; the one you work in is not.
+ * This file went dark, then light, then dark again, because the decision was
+ * being made per page instead of from a principle. There is only one, and any
+ * screen can be checked against it by asking: whose surface is this?
  *
- * It matters more here than it does for them. Each customer style gives its
- * own system a DARK navigation rail (Ledger #14273d, Blueprint #0c182e), so
- * against a dark chrome those previews sank into the background -- a dark
- * frame around a dark picture. Against this one they read as the object on
- * the table, which is the entire job of this product: it holds up somebody
- * else's system for them to look at.
+ *   Formae's chrome ...... #0b0d13, neutral near-black, no hue at all.
+ *                          Landing, sign-in, portal shell, editor shell,
+ *                          console. Never carries the customer's content.
+ *   The customer's system  Their own two colours -- a tinted rail and a light
+ *                          page -- always MOUNTED in white, with a radius and
+ *                          an edge. Never bleeds to Formae's ground.
+ *   The customer's papers  White. Specification, terms, print view. They get
+ *                          printed and shown to a spouse; they are documents,
+ *                          not app screens, and they leave this shell.
+ *
+ * The middle line is what the two previous versions were missing, and it is
+ * why this one is not a fourth swing of the same pendulum. 195e9e3 relit the
+ * whole product because ONE customer register's dark rail dissolved against a
+ * dark chrome. That was a real defect with a local fix -- put the exhibit on
+ * a plinth -- and instead the building moved. See `.mount` below, and the
+ * NAVIGATION block for the measurements.
+ *
+ * A visitor now meets one world: app/globals.css calls the landing page "a
+ * drafting surface at night" and this file is the same room, lit the same
+ * way. Signing in stops being a change of product.
  *
  * WHY IT IS A TOKEN SWAP AND NOT A REWRITE
  *
@@ -52,94 +60,173 @@
  * is why the canvas needed no changes in either direction.
  */
 .chrome {
-  color-scheme: light;
+  color-scheme: dark;
 
   /* ---- SURFACES ---------------------------------------------------------
      Ordered exactly as the three customer styles order theirs -- ink-900 is
      the panel, ink-800 is the border -- so every component that already reads
-     these names behaves identically here. Only the values moved.
+     these names behaves identically here. Only the values move.
 
-     The ground is a WARM neutral (#f4f4f2), not a blue-grey. It has to sit
-     under Ledger's cool grey, Hearth's cream AND Blueprint's cold white
-     without tinting any of them, which is the same reason a photo studio
-     paints its walls one specific neutral rather than a pleasant colour. */
-  --color-canvas: #f4f4f2;
-  --color-ink-950: #eaeae7;
-  --color-ink-900: #ffffff;
-  --color-ink-850: #faf9f7;
-  --color-ink-800: #e4e4e0;
-  --color-ink-700: #d2d2cc;
+     THE GROUND IS THE ACQUISITION SITE'S GROUND. #0b0d13 is not a new colour
+     and was not picked by eye: it is app/globals.css's --ink, oklch(0.16
+     0.012 265), the value the landing page has always been. Read the history
+     and the decision was already made once and then reversed:
 
-  --color-paper: #16171a;
-  --color-paper-dim: #63666e;
+       d9558c0  "Give Formae a visual identity of its own"
+                chrome canvas set to #0b0d13 -- the same value as the landing.
+                Marketing and product were one world.
 
-  /* Blueprint's own blue, already in the product. Not a new brand colour --
-     the chrome had a lifted #6fa2ff that existed only because a dark ground
-     needed it, and on a light ground that value measures 2.1:1 and fails
-     outright. */
-  --color-primary: #2261dd;
-  --color-primary-deep: #1a4cae;
-  --color-primary-soft: #e8eef9;
-  --color-on-primary: #ffffff;
+       195e9e3  "Relight Formae's chrome"
+                canvas to #f4f4f2, rail to white, for one measured reason
+                quoted in the navigation block below. The observation was
+                right and the fix was wrong.
+
+       89d7bdf  "Put the sign-in pages on the product's own design system"
+                auth joined the light chrome -- correct in itself, and it
+                moved the seam one click EARLIER. A visitor read a dark
+                drafting-night site, clicked Sign in, and landed in a white
+                admin panel.
+
+     So this reverts the ground of 195e9e3 and keeps everything else it got
+     right -- the radius scale, the type scale, the weight floor, the density
+     -- all of which are ground-independent and all of which fixed real
+     problems. The objection that caused the flip is answered by `.mount`,
+     not by relighting the product.
+
+     The neutral is what it always was: barely blue (channel spread 8), so it
+     sits under Ledger's cool grey, Hearth's cream AND Blueprint's cold white
+     without tinting any of them. Same reason a photo studio paints its walls
+     one specific neutral rather than a pleasant colour -- the difference is
+     only that the studio is now dark, which is what a studio actually is. */
+  --color-canvas: #0b0d13;
+  --color-ink-950: #05070c;
+  --color-ink-900: #15181f;
+  --color-ink-850: #20242c;
+  --color-ink-800: #2c303a;
+  --color-ink-700: #484d58;
+
+  --color-paper: #f0f2f4;
+  --color-paper-dim: #a0a5af;
+
+  /* ---- FORMAE HAS NO ACCENT ---------------------------------------------
+     This was #2261dd, and the comment that shipped with it said the quiet
+     part out loud: "Blueprint's own blue, already in the product. Not a new
+     brand colour." It was a CUSTOMER TEMPLATE'S COLOUR, borrowed by the
+     platform -- which is exactly why it never felt like Formae's. Before that
+     it was #6fa2ff, the same hue lifted for a dark ground. The platform has
+     never had a colour of its own; it has had two loans from Blueprint.
+
+     On a neutral near-black chrome an accent has no job left to do. The
+     ground carries the identity, and the only colour on any screen should be
+     the customer's own system plus the four status hues below. So the hue is
+     gone and the ROLE survives: --color-primary is now the ink.
+
+     The token keeps its name rather than being deleted because "primary"
+     names a role -- the emphasised control, the focus ring, the active
+     border -- and 99 call sites plus the whole shadcn contract already speak
+     it. Measured across those call sites the roles are 19 border-color, 13
+     background-color, 8 color; the ink is correct in all three. What changes
+     is that a primary button is now white-on-near-black rather than blue,
+     which is also what the references do: hierarchy carried by ink and
+     position, never by a brand hue. Same argument as --fw-regular: 500.
+
+     Formae's colour is the absence of one. */
+  --color-primary: #f0f2f4;
+  --color-primary-deep: #ffffff;
+  --color-primary-soft: #20242c;
+  --color-on-primary: #0b0d13;
   --color-on-dark: #f0f2f4;
 
   /* ---- STATUS -----------------------------------------------------------
-     Same four meanings as everywhere else (jade positive, brass pending, clay
-     negative, slate neutral) at light-ground lightness. Measured with the WCAG
-     relative-luminance formula against this file's own four surfaces --
-     canvas #f4f4f2, panel #ffffff, raised #faf9f7, soft #e8eef9 -- rather than
-     estimated:
+     The four meanings, and now the ONLY colour Formae's own chrome contains:
+     jade positive, brass pending, clay negative, slate neutral. With the
+     accent gone these are not "the other colours" -- they are the colours,
+     which is why they are allowed to be legible rather than tasteful.
 
-       paper      16.28 / 17.92 / 17.04 / 15.39
-       paper-dim   5.22 /  5.74 /  5.46 /  4.93
-       primary     4.99 /  5.49 /  5.22 /  4.72
-       jade        4.95 /  5.45 /  5.18 /  4.68
-       brass       5.37 /  5.92 /  5.63 /  5.08
-       clay        5.94 /  6.54 /  6.21 /  5.61
-       slate       5.72 /  6.30 /  5.99 /  5.41
-       on-primary (#fff on #2261dd) 5.49
+     --color-info is slate rather than a blue, for the same reason there is no
+     accent: a neutral notice is neutral, and reaching for a blue here would
+     quietly reintroduce Blueprint's hue through the side door.
 
-     Every one clears AA at every size on every surface. */
-  --color-jade: #237570;
-  --color-jade-bright: #1b5d59;
-  --color-brass: #8a5a0b;
-  --color-brass-bright: #6f4809;
-  --color-clay: #b3261e;
-  --color-clay-bright: #8f1e18;
-  --color-clay-deep: #7a1a15;
-  --color-slate: #5c6069;
-  --color-slate-bright: #494d55;
-  --color-info: #2261dd;
-  --color-info-bright: #1a4cae;
-  --color-medal-gold: #8a5a0b;
-  --color-medal-silver: #5c6069;
-  --color-medal-bronze: #8a4b23;
-  --color-jade-chart: #237570;
-  --color-brass-chart: #8a5a0b;
+     Re-measured with the WCAG relative-luminance formula against this file's
+     own four surfaces -- canvas #0b0d13, panel #15181f, raised #20242c, soft
+     #20242c -- rather than carried over. Every number in the previous version
+     of this block was computed against the light surfaces and none of them
+     survived the flip; these are computed, not estimated:
+
+       paper      17.31 / 15.83 / 13.86 / 13.86
+       paper-dim   7.86 /  7.19 /  6.29 /  6.29
+       primary    17.31 / 15.83 / 13.86 / 13.86   (the ink)
+       jade       10.25 /  9.37 /  8.21 /  8.21
+       brass      10.28 /  9.40 /  8.23 /  8.23
+       clay        7.39 /  6.76 /  5.92 /  5.92
+       slate       7.86 /  7.18 /  6.29 /  6.29
+       on-primary (#0b0d13 on #f0f2f4) 17.31
+
+     Every one clears AA at every size on every surface, with far more room
+     than the light set had -- the tightest there was 4.68:1, the tightest
+     here is 5.92:1.
+
+     The -bright variants now mean LIGHTER, where on the light ground they
+     meant darker. They are used as text on a faint tint of their own hue
+     (home-client's draft/edited pills), so the direction has to follow the
+     ground or the pill becomes unreadable at exactly the moment it matters. */
+  --color-jade: #62d286;
+  --color-jade-bright: #8ee0a8;
+  --color-brass: #e9b452;
+  --color-brass-bright: #f2c877;
+  --color-clay: #eb8182;
+  --color-clay-bright: #f3a1a2;
+  --color-clay-deep: #d76d6e;
+  --color-slate: #a1a5ac;
+  --color-slate-bright: #c2c6cc;
+  --color-info: #a1a5ac;
+  --color-info-bright: #c2c6cc;
+  --color-medal-gold: #e9b452;
+  --color-medal-silver: #a1a5ac;
+  --color-medal-bronze: #c58a5c;
+  --color-jade-chart: #62d286;
+  --color-brass-chart: #e9b452;
 
   /* ---- NAVIGATION -------------------------------------------------------
-     Formae's own rail is now WHITE, and this is the change the whole file
-     turns on.
+     THE OBJECTION THAT RELIT THIS FILE, AND WHY IT NO LONGER HOLDS.
 
-     The previous version reasoned that 21st.dev is "a dark tool shell wrapped
-     around light content previews" and built the chrome from that. Measured on
-     2026-08-21, that is true of their MARKETING page and false of their
-     product: /components, /s/card and /themes all run a near-white rail on a
-     light grey ground (oklch 0.939), and every scrap of colour on the screen
-     belongs to the thing being shown. Durable's app is white throughout.
+     195e9e3 turned this rail white for one reason, and it is worth quoting
+     its own words because the observation was correct: "Each of the three
+     customer styles gives its own system a DARK navigation rail (Ledger
+     #14273d, Blueprint #0c182e). Against a dark chrome those previews sank
+     into the background."
 
-     It matters here more than it does for them. Each of the three customer
-     styles gives its own system a DARK navigation rail (Ledger #14273d,
-     Blueprint #0c182e). Against a dark chrome those previews sank into the
-     background; against this one they read as the object on the table. */
-  --color-nav-bg: #ffffff;
-  --color-nav-bg-deep: #f4f4f2;
-  --color-nav-fg: #16171a;
-  --color-nav-fg-dim: #63666e;
-  --color-nav-hover: #f4f4f2;
-  --color-nav-active: #ebebe8;
-  --color-nav-border: #e4e4e0;
-  --color-nav-accent: #2261dd;
+     Measured again on 2026-08-21 in CIE L*, that is two-thirds wrong and
+     one-third right:
+
+       Formae ground   #0b0d13   L*  4.0
+       Ledger rail     #14273d   L* 15.2   clears by 11.2   reads fine
+       Hearth rail     #153227   L* 18.3   clears by 14.3   reads fine
+       Blueprint rail  #0c182e   L*  8.4   clears by  4.4   dissolves
+
+     One exhibit was hard to see, and the response was to move the entire
+     building. Two things fix it properly and neither of them is the ground:
+
+       1. `.mount` -- the customer's system never touches Formae's ground. It
+          arrives on a white plinth, so a dark rail and a dark ground never
+          meet directly. See --mount-* below.
+       2. design-system/tokens/blueprint.css -- that one rail lifts to
+          #142744, L* 15.6, level with Ledger, hue unchanged. It is the only
+          customer token this plan touches, and Blueprint is the register
+          whose blue was borrowed to build this chrome in the first place, so
+          the collision and the accent trace to one cause.
+
+     What remains true from 195e9e3 is the part about colour: every scrap of
+     it on screen should belong to the thing being shown. That is why
+     --color-nav-accent is the ink here and not a hue. */
+  --color-nav-bg: #10141c;
+  --color-nav-bg-deep: #080b11;
+  --color-nav-fg: #f0f2f4;
+  --color-nav-fg-dim: #a0a5af;
+  --color-nav-hover: #1c212b;
+  --color-nav-active: #232936;
+  --color-nav-border: #2c303a;
+  --color-nav-accent: #f0f2f4;
 
   /* ---- TYPE -------------------------------------------------------------
      `--font-display` stays Instrument Serif, the same face the Hero is set in
@@ -214,21 +301,73 @@
   --control-h: 36px;
 
   /* ---- ELEVATION --------------------------------------------------------
-     The opposite trade from the dark version. On a near-black ground a dark
-     blur over a dark surface is invisible, so borders did all the separating
-     and shadows were switched off. On a light ground a soft shadow finally
-     works, and it is what lets a white panel sit on a near-white canvas
-     without needing a hard border to prove it is there. */
+     A stated cost of the ground flip, not an oversight.
+
+     On a near-black ground a dark blur over a dark surface is invisible. The
+     light version of this file leaned on a three-step shadow ladder to lift a
+     white panel off a near-white canvas; none of that survives the move, so
+     card and raised are switched OFF and hairline borders do all the
+     separating again. A `none` in a single-token box-shadow is valid CSS and
+     already an idiom here -- see workflow-strip.tsx, which notes that Ledger
+     sets --shadow-card to none for its own reasons.
+
+     The two places that COMPOSED a ring with var(--shadow-raised) had to be
+     rewritten, because `0 0 0 1px x, none` is invalid and drops the whole
+     declaration, leaving the element with no edge at all: `.sheet` below, and
+     auth-shell.tsx's panel.
+
+     Two shadows still earn their keep and both are physically honest:
+
+       --shadow-overlay   a modal or popover genuinely floats above the page,
+                          and a deep black blur under a #15181f panel on an
+                          #0b0d13 ground does read.
+       --mount-shadow     a WHITE object casting onto a near-black ground.
+                          The one place a big soft blur is doing real work
+                          rather than decorating. */
   --border-card-width: 1px;
-  --shadow-card: 0 1px 2px rgba(22, 23, 26, 0.04);
-  --shadow-raised: 0 1px 2px rgba(22, 23, 26, 0.05), 0 6px 16px -8px rgba(22, 23, 26, 0.12);
-  --shadow-overlay: 0 2px 4px rgba(22, 23, 26, 0.06), 0 24px 56px -16px rgba(22, 23, 26, 0.22);
+  --shadow-card: none;
+  --shadow-raised: none;
+  --shadow-overlay: 0 24px 64px -12px rgba(0, 0, 0, 0.72);
 
-  --border-subtle: rgba(22, 23, 26, 0.07);
-  --border-strong: rgba(22, 23, 26, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
 
-  --shadow-hue: 22, 23, 26;
+  --shadow-hue: 0, 0, 0;
   --hairline: 1px;
+
+  /* ---- THE MOUNT --------------------------------------------------------
+     A white plinth. The customer's system NEVER touches Formae's ground --
+     it arrives inside one of these, with a gutter, a radius and an edge, so
+     the seam between us and them is drawn rather than guessed at.
+
+     WHY IT EXISTS AT ALL. 195e9e3 relit this whole chrome for one measured
+     reason, quoted from its own comment: each of the three customer styles
+     gives its own system a dark navigation rail, and "against a dark chrome
+     those previews sank into the background". Measured again 2026-08-21 in
+     CIE L*: Formae's ground sits at 4.0, Ledger's rail at 15.2 and Hearth's
+     at 18.3 -- both clear -- but Blueprint's at 8.4, which against a #16171a
+     panel is a gap of 0.7 and genuinely does dissolve.
+
+     That observation was right and the fix was wrong. It moved the entire
+     building because one exhibit was hard to see, instead of putting the
+     exhibit on a plinth. This is the plinth. With it, a dark rail on a dark
+     ground is no longer two darks meeting: there is a white gutter between
+     them, and the boundary is stated rather than inferred.
+
+     IT SHIPPED ONE COMMIT BEFORE THE GROUND MOVED, deliberately. A white
+     plinth on a #f4f4f2 canvas is a hairline and a whisper of lift -- nearly
+     invisible, entirely harmless -- which meant that when the ground flipped,
+     all seven previews in the product were already wrapped. There is no
+     revision of this codebase in which previews have sunk.
+
+     Now that the ground is dark the shadow is doing real work: a white object
+     casting onto near-black. It is the only large blur left in this file, and
+     the only one that is physically correct. */
+  --mount-bg: #ffffff;
+  --mount-pad: 6px;
+  --mount-radius: var(--radius-lg);
+  --mount-radius-inner: 11px;
+  --mount-shadow: 0 22px 50px -22px rgba(0, 0, 0, 0.75);
 
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --dur-fast: 120ms;
@@ -288,41 +427,172 @@
 }
 
 /* The mono label voice, ported from the acquisition site's own `.annotation`
-   so the two halves of the product annotate things the same way. */
+   so the two halves of the product annotate things the same way -- and as of
+   the ground flip they genuinely are two halves of one thing, rather than two
+   palettes either side of a click.
+
+   It used to draw in --color-primary, which was the blue. With the accent
+   gone that would render it in full ink, and a mono uppercase label at 11px
+   competing with the heading it sits above is not a label. Dim is the
+   register a margin note belongs in. */
 .annotation {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-primary);
+  color: var(--color-paper-dim);
 }
 
-/* The sheet: a customer's page presented as an object on the table.
+/* The sheet: FORMAE's card. Not the same object as `.mount` below, and the
+   two must not be merged -- see that class for the distinction.
 
-   On the dark version this was a white ring at 8% plus a near-black blur --
-   both invisible now, one because white-on-light is nothing and the other
-   because an 0.8 black shadow on a light ground reads as a bruise. A light
-   ground gets the opposite treatment: a real hairline that states the edge,
-   and a soft shadow that lifts the sheet a few millimetres off the canvas.
-   That lift is doing the job the dark ground used to do for free. */
+   The composed ring-plus-shadow this used to carry could not survive the
+   ground flip. --shadow-raised is `none` on a dark ground, and
+   `0 0 0 1px x, none` is invalid, which drops the entire declaration and
+   leaves the card with no edge whatsoever. So the edge is stated on its own.
+
+   A hairline at 8% white is what separates a #15181f card from an #0b0d13
+   ground, and it is enough. That is the trade a dark ground makes, and it is
+   the same one all three customer registers already make for their rails. */
 .sheet {
   border-radius: var(--radius-lg);
-  box-shadow:
-    0 0 0 1px var(--border-subtle),
-    var(--shadow-raised);
+  box-shadow: 0 0 0 1px var(--border-subtle);
   overflow: hidden;
 }
 
-/* The workbench: deliberately FLAT.
+/* The mount. See --mount-* above for why this class exists rather than more
+   ring-and-shadow on `.sheet`.
 
-   This used to carry a radial blue wash, ported from the Hero. On a near-black
-   ground that reads as atmosphere; on a light one it reads as a rendering
-   artefact -- a faint blue smear behind the customer's own pages, competing
-   with the only colour on the screen that is supposed to mean something.
+   `.sheet` and `.mount` are not the same object and must not be merged. A
+   sheet is FORMAE's card -- it may hold a preview, a footer, a price, a
+   button, and it is made of chrome tokens. A mount holds exactly one thing,
+   the customer's own system, and it is made of white. Where a card contains a
+   preview, both appear: the sheet is the card, the mount is the plinth inside
+   it.
+
+   The flex column is what lets one child fill a fixed-height parent (the
+   editor canvas, the styles page's 268px frame) without every call site
+   repeating `h-full` on two elements. */
+.mount {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--mount-bg);
+  border-radius: var(--mount-radius);
+  padding: var(--mount-pad);
+  box-shadow: var(--mount-shadow);
+}
+
+.mount > * {
+  flex: 1;
+  min-height: 0;
+  border-radius: var(--mount-radius-inner);
+  overflow: hidden;
+}
+
+/* PAPER. The third surface in the rule at the top of this file.
+
+   The specification is the RM 5,000 deliverable. It gets read slowly, printed,
+   and shown to a spouse or a business partner before anyone agrees to pay --
+   which makes it a DOCUMENT, and a document is white regardless of what the
+   application around it is doing. Before this class existed the ground flip
+   turned it into a black page, which is wrong twice over: nobody reads a
+   contract off a black screen, and `print:` on a near-black page produces
+   either a wasted cartridge or a browser silently dropping the background and
+   rendering near-white ink on white stock.
+
+   It re-declares the surface tokens rather than hardcoding colours, so
+   everything inside -- every component, every var(--text-*), the whole density
+   ladder -- keeps working and simply resolves against paper. Exactly the
+   nesting trick `.mount` uses for the customer's system, applied to the
+   customer's paperwork.
+
+   Durable's rules, measured: 12 / 16 / 24 radius, ZERO shadows anywhere on
+   the page (their maxBlur is 0), depth carried by flat grey steps. A document
+   has no elevation. */
+.paper {
+  color-scheme: light;
+
+  --color-canvas: #ffffff;
+  --color-ink-950: #ffffff;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #faf9f7;
+  --color-ink-800: #e6e6e2;
+  --color-ink-700: #cfcfc9;
+
+  --color-paper: #16171a;
+  --color-paper-dim: #63666e;
+
+  --color-primary: #16171a;
+  --color-primary-deep: #000000;
+  --color-primary-soft: #f1f1ee;
+  --color-on-primary: #ffffff;
+
+  /* Ink, not the dark ground's lifted hues -- these are printed. Measured on
+     white: jade 4.95:1, brass 5.37:1, clay 5.94:1, slate 5.72:1. */
+  --color-jade: #237570;
+  --color-jade-bright: #1b5d59;
+  --color-brass: #8a5a0b;
+  --color-brass-bright: #6f4809;
+  --color-clay: #b3261e;
+  --color-clay-bright: #8f1e18;
+  --color-slate: #5c6069;
+  --color-slate-bright: #494d55;
+  --color-info: #5c6069;
+  --color-info-bright: #494d55;
+
+  --border-subtle: rgba(22, 23, 26, 0.08);
+  --border-strong: rgba(22, 23, 26, 0.16);
+  --shadow-card: none;
+  --shadow-raised: none;
+  --shadow-overlay: none;
+
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-ink-900);
+  --card-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+
+  background-color: var(--color-canvas);
+  color: var(--color-paper);
+}
+
+/* The sheet the paper is printed on, as a physical object in the dark room --
+   same picture as `.mount`, because it is the same idea: this belongs to the
+   customer, so it is white and it has an edge.
+
+   `print:` strips the object back to bare paper. A shadow and a rounded corner
+   are how a screen says "sheet"; on actual stock they are just a grey smudge
+   in the margin. */
+.paperSheet {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--mount-shadow);
+}
+
+@media print {
+  .paperSheet {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* The workbench: deliberately FLAT, and staying flat.
+
+   An earlier dark version of this file carried a radial blue wash ported from
+   the Hero, and the obvious move now that the ground is dark again is to
+   bring it back -- on near-black it genuinely does read as atmosphere rather
+   than as a smear. It is not coming back, for the same reason the accent is
+   gone: that wash was Blueprint's blue, and a faint blue field behind the
+   customer's own pages competes with the only colour on the screen that is
+   supposed to mean something.
 
    Both references land in the same place, measured: 21st.dev's product pages
-   are a single flat oklch(0.939) and Durable's are flat white. The colour
-   belongs to the content. */
+   are a single flat ground and Durable's are flat white. Neither has weather.
+   The colour belongs to the content. */
 .workbench {
   background-color: var(--color-canvas);
 }

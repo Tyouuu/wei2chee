@@ -149,14 +149,16 @@ export function TemplatesClient({
                   }`}
                 >
                   {/* A real render of the page this customer would get — their
-                      trade's words, their workflow, their sample records. */}
-                  <div
-                    className={`${scopeClasses(style, palette)} ${chrome.sheet} m-3 border-b-0`}
-                  >
-                    <PagePreview data={tpl.layout} />
+                      trade's words, their workflow, their sample records —
+                      on a white mount, so it reads as an object on the card
+                      rather than as the card's own background. */}
+                  <div className={`${chrome.mount} m-3`}>
+                    <div className={scopeClasses(style, palette)}>
+                      <PagePreview data={tpl.layout} />
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 border-t px-4 py-3 [border-color:var(--color-ink-800)]">
+                  <div className="flex items-center justify-between gap-3 border-t px-3 py-3 [border-color:var(--color-ink-800)]">
                     <span className="min-w-0">
                       <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                         {tpl.label}

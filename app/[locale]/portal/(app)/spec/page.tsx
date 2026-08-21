@@ -17,6 +17,7 @@ import type { PuckLayout } from "@/lib/portal/layout-ops";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import chrome from "../../chrome.module.css";
 
 /**
  * 系统需求书 -- the specification document a customer reads before paying, and
@@ -208,8 +209,44 @@ export default async function SystemSpecPage({
     `我的系统需求书已经生成了，想谈下一步\n\n账号邮箱: ${user.email}\n项目编号: ${project.id}`,
   )}`;
 
+  /*
+   * SECTION NUMBERS ARE COUNTED, NOT TYPED.
+   *
+   * Four of this document's six sections are conditional -- 业务流程 needs
+   * workflow stages, 需要的模块 and 建设注意事项 need the AI prose, 必须沿用的称呼
+   * needs vocabulary -- and the headings used to hardcode 一 through 六
+   * regardless.
+   *
+   * That is not a cosmetic bug. `writeProse` sits behind checkRateLimit at 10
+   * calls an hour, so the eleventh view of the day returns null and the
+   * customer opens the document they are being asked to pay RM 5,000 against
+   * and reads "一、二、四、五". The only available conclusion is that two
+   * sections went missing -- on the single artefact whose entire job is to
+   * prove nothing was lost in translation.
+   *
+   * Counting them makes the document always read 一二三四, however many of
+   * them there are.
+   */
+  const CN = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+  const hasFlow = spec.workflowStages.length > 0;
+  const hasModules = Boolean(prose?.modules?.length);
+  const hasVocab = spec.vocabulary.length > 0;
+  const hasNotes = Boolean(prose?.notes?.length);
+  let seq = 0;
+  const nextNo = () => CN[seq++] ?? String(seq);
+  // Assigned in document order; a section that is not rendered never takes a
+  // number, and every one after it moves up.
+  const noPurpose = nextNo();
+  const noFlow = hasFlow ? nextNo() : null;
+  const noModules = hasModules ? nextNo() : null;
+  const noPages = nextNo();
+  const noVocab = hasVocab ? nextNo() : null;
+  const noNotes = hasNotes ? nextNo() : null;
+
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10 print:py-0">
+    <main
+      className={`${chrome.paper} ${chrome.paperSheet} mx-auto my-8 max-w-3xl px-10 py-12 print:my-0 print:max-w-none print:px-0 print:py-0`}
+    >
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
           href={`/${locale}/portal/dashboard`}
@@ -238,16 +275,16 @@ export default async function SystemSpecPage({
       </header>
 
       <section className="mt-8">
-        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">一、这套系统是做什么的</h2>
+        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noPurpose}、这套系统是做什么的</h2>
         <p className="mt-2 [font-size:var(--text-sm)] leading-relaxed text-muted-foreground">
           {prose?.overview ??
             `这份文档由 ${businessName} 在 Formae 上亲自设计的界面直接生成，下面每一页、每一个栏位都是客户自己确认过的。`}
         </p>
       </section>
 
-      {spec.workflowStages.length > 0 && (
+      {hasFlow && (
         <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">二、业务流程</h2>
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noFlow}、业务流程</h2>
           <p className="mt-2 [font-size:var(--text-sm)] text-foreground">{spec.workflowStages.join(" → ")}</p>
           <p className="mt-1 [font-size:var(--text-sm)] text-muted-foreground">
             系统需要能记录每一笔业务当前走到哪一步，并能按步骤筛选。
@@ -255,9 +292,9 @@ export default async function SystemSpecPage({
         </section>
       )}
 
-      {prose?.modules?.length ? (
+      {hasModules && prose ? (
         <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">三、需要的模块</h2>
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noModules}、需要的模块</h2>
           <ul className="mt-2 space-y-1.5">
             {prose.modules.map((m) => (
               <li key={m.name} className="[font-size:var(--text-sm)] text-muted-foreground">
@@ -269,7 +306,7 @@ export default async function SystemSpecPage({
       ) : null}
 
       <section className="mt-8">
-        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">四、每一页的具体要求</h2>
+        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noPages}、每一页的具体要求</h2>
         {spec.pages.map((page) => (
           <div key={page.pageKey} className="mt-5 border-l-2 pl-4">
             <h3 className="[font-size:var(--text-base)] font-semibold text-foreground">
@@ -311,9 +348,9 @@ export default async function SystemSpecPage({
         ))}
       </section>
 
-      {spec.vocabulary.length > 0 && (
+      {hasVocab && (
         <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">五、必须沿用的称呼</h2>
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noVocab}、必须沿用的称呼</h2>
           <p className="mt-2 [font-size:var(--text-sm)] text-muted-foreground">
             系统里的用词要跟客户自己的叫法一致，不要换成通用词：
           </p>
@@ -321,9 +358,9 @@ export default async function SystemSpecPage({
         </section>
       )}
 
-      {prose?.notes?.length ? (
+      {hasNotes && prose ? (
         <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">六、建设注意事项</h2>
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noNotes}、建设注意事项</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 [font-size:var(--text-sm)] text-muted-foreground">
             {prose.notes.map((n, i) => (
               <li key={i}>{n}</li>

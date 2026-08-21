@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
+import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import { IconSettings, railIcon } from "./rail-icons"
+import { NavAxisContext } from "./nav-axis"
 
 export type RailItem = {
   href: string
@@ -38,6 +39,35 @@ export type RailUtilityItem = {
   /** Draws the unread pip. Only meaningful on a notifications-style row. */
   showUnreadDot?: boolean
 }
+
+/**
+ * HOW DENSE THE NAVIGATION IS. Three of them, and they are genuinely three
+ * designs rather than one design with a colour picker on it.
+ *
+ * They compose with SystemShell's `nav` axis and `navTone`, so three densities
+ * x two axes x two grounds is twelve navigations from three orthogonal
+ * choices — rather than twelve variants to write and maintain.
+ *
+ * WHY THIS EXISTS: the founder pressed the sidebar in the editor, expected to
+ * be offered another one, and there was nothing to offer —
+ * 「我按这个sidebar 就是我要换那个sidebar啦 可是我现在没有别的sidebar给客户换啊」.
+ * Measured at the time: of nineteen registered blocks, ONE had a genuine look
+ * option (TrendChart's bar/line/area). Every other field was content. A system
+ * designer that cannot change how anything looks is a form, not a designer.
+ *
+ * The four are chosen to answer four different businesses, not four moods:
+ *
+ *   full     The default. 228px, grouped sections, icon + label, a monogram
+ *            tile. Right for a system with eight or more pages in real groups.
+ *   compact  64px, icons only, label on hover. Buys ~165px back for the working
+ *            area, which is the difference between a seven-column table fitting
+ *            and not. Right for table-heavy operations.
+ *   quiet    220px, no icons and no monogram — type, hairlines and one active
+ *            rule. Right for a business whose pages have no natural icons
+ *            (「三房翻新」has no glyph) and where a row of generic squares reads
+ *            as decoration.
+ */
+export type RailVariant = "full" | "compact" | "quiet"
 
 type Panel = "profile" | null
 
@@ -114,6 +144,7 @@ export function RailNav({
   user,
   profileMenu,
   topSlot,
+  variant = "full",
 }: {
   brand: { href: string; label: string; icon?: ReactNode }
   items: RailItem[]
@@ -132,6 +163,8 @@ export function RailNav({
   profileMenu?: ReactNode
   /** Rendered under the brand mark — a place for one glanceable, app-specific summary (a plan tier, a balance, a status). Omit if there's nothing that belongs there. */
   topSlot?: ReactNode
+  /** Which of the four navigations to draw. See `RailVariant`. */
+  variant?: RailVariant
 }) {
   const pathname = usePathname()
   const [open, setOpen] = useState<Panel>(null)
@@ -144,6 +177,7 @@ export function RailNav({
     { label: accountLabel, href: accountHref, iconName: "account" },
   ]
 
+  const axis = useContext(NavAxisContext)
   const collapsedRaw = useSyncExternalStore(subscribeToCollapsed, getCollapsedSnapshot, getCollapsedServerSnapshot)
   const collapsed = useMemo<string[]>(() => {
     try {
@@ -201,6 +235,24 @@ export function RailNav({
 
   const initials = user.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?"
 
+  // The four variants expressed as data rather than as four copies of the
+  // markup. Everything below reads from here, so a fifth variant is a row in
+  // this object plus whatever it genuinely draws differently -- not another
+  // 200-line branch of the same tree.
+  // Read, not chosen. See NavAxisContext in system-shell.tsx for why putting
+  // this on the rail as a fourth variant was a trap rather than an option.
+  const isTop = axis === "top"
+  const isCompact = variant === "compact"
+  const isQuiet = variant === "quiet"
+  const showIcons = !isQuiet
+  const showLabels = !isCompact
+
+  const shell = isTop
+    ? "flex w-full shrink-0 items-center gap-3 border-b [padding-inline:14px] [padding-block:8px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]"
+    : `flex h-full min-h-full shrink-0 flex-col border-r [padding-block:10px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)] ${
+        isCompact ? "w-[64px] [padding-inline:8px]" : isQuiet ? "w-[220px] [padding-inline:12px]" : "w-[228px] [padding-inline:10px]"
+      }`
+
   return (
     // aria-label because a page can hold more than one <aside> (a detail
     // page might put its own summary column in one), and two unlabelled
@@ -213,34 +265,50 @@ export function RailNav({
     // the old `h-screen`: inside Puck's canvas iframe the two coincide, but on
     // a page taller than the viewport `h-screen` stops the rail partway down
     // and leaves a bright strip under it.
-    <aside
-      className="flex h-full min-h-full w-[228px] shrink-0 flex-col border-r [padding-inline:10px] [padding-block:10px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]"
-      aria-label="侧边导航"
-      ref={wrapRef}
-    >
+    <aside className={shell} aria-label={isTop ? "顶部导航" : "侧边导航"} ref={wrapRef}>
       {/* The brand block. A monogram tile carrying the register's own nav
           accent gives the rail one saturated anchor point — without it a dark
           column of grey text reads as unfinished rather than as chrome. */}
       <Link
         href={brand.href}
-        className="mb-2 flex items-center gap-2.5 [border-radius:var(--radius-md)] px-2 py-2.5 transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-nav-hover)]"
+        title={isCompact ? brand.label : undefined}
+        className={`flex items-center gap-2.5 [border-radius:var(--radius-md)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-nav-hover)] ${
+          isTop ? "shrink-0 px-2 py-1.5" : isCompact ? "mb-2 justify-center px-1 py-2" : "mb-2 px-2 py-2.5"
+        }`}
       >
-        {brand.icon ?? (
-          <span
-            aria-hidden="true"
-            className="grid h-7 w-7 shrink-0 place-items-center [border-radius:var(--radius-sm)] [background-color:var(--color-nav-accent)] [color:var(--color-nav-bg)] [font-size:var(--text-sm)] [font-weight:var(--fw-display)]"
-          >
-            {brand.label.trim().charAt(0) || "·"}
+        {/* QUIET DROPS THE MONOGRAM TILE. It is the rail's one saturated
+            anchor, which is exactly what that variant is for a business that
+            does not want. The name is set in the display face instead, so the
+            block still reads as a brand rather than as a first nav item. */}
+        {isQuiet ? null : (
+          brand.icon ?? (
+            <span
+              aria-hidden="true"
+              className="grid h-7 w-7 shrink-0 place-items-center [border-radius:var(--radius-sm)] [background-color:var(--color-nav-accent)] [color:var(--color-nav-bg)] [font-size:var(--text-sm)] [font-weight:var(--fw-display)]"
+            >
+              {brand.label.trim().charAt(0) || "·"}
+            </span>
+          )
+        )}
+        {showLabels && (
+          <span className="min-w-0 flex-1 leading-tight">
+            <span
+              className={`block truncate text-[color:var(--color-nav-fg)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] ${
+                isQuiet ? "[font-family:var(--font-display)] [letter-spacing:var(--tracking-title)]" : ""
+              }`}
+            >
+              {brand.label}
+            </span>
+            {/* Not on the topbar: a two-line brand block in a 40px-tall bar is
+                what sets that bar's height, and it doubles it to say a word
+                the customer already knows. */}
+            {!isTop && !isQuiet && (
+              <span className="block truncate text-[color:var(--color-nav-fg-dim)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]">
+                营运系统
+              </span>
+            )}
           </span>
         )}
-        <span className="min-w-0 flex-1 leading-tight">
-          <span className="block truncate text-[color:var(--color-nav-fg)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
-            {brand.label}
-          </span>
-          <span className="block truncate text-[color:var(--color-nav-fg-dim)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]">
-            营运系统
-          </span>
-        </span>
       </Link>
 
       {topSlot}
@@ -252,7 +320,7 @@ export function RailNav({
           it. This section scrolls on its own when it needs to, while the
           footer (notifications, account, profile) stays pinned and always
           reachable. */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={isTop ? "flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" : "flex-1 overflow-y-auto"}>
         {[...groups.entries()].map(([group, groupItems]) => {
           // A group of one is not worth a disclosure — the chevron would be
           // the only thing it hides.
@@ -265,9 +333,12 @@ export function RailNav({
           // five links, where a section header would be organising nothing.
           // Rendering the label anyway drew an empty uppercase row with a lone
           // chevron beside it, which read as a broken control.
-          const named = group.trim().length > 0
+          // A 64px column and a 40px bar have nowhere to put an uppercase
+          // section label, and on the topbar the groups run inline anyway, so
+          // a heading between them would read as another nav item.
+          const named = group.trim().length > 0 && !isCompact && !isTop
           return (
-            <div key={group}>
+            <div key={group} className={isTop ? "flex shrink-0 items-center gap-1" : undefined}>
               {!named ? null : collapsible ? (
                 <button
                   type="button"
@@ -288,7 +359,11 @@ export function RailNav({
                   {group}
                 </div>
               )}
-              <div id={`rail-group-${group}`} hidden={!openGroup}>
+              <div
+                id={`rail-group-${group}`}
+                hidden={!openGroup}
+                className={isTop ? "flex items-center gap-1" : undefined}
+              >
                 {groupItems.map((item) => {
                   // Longest match wins. A prefix test alone would light up
                   // both a parent item and a child item on the child's own
@@ -302,28 +377,61 @@ export function RailNav({
                       key={item.href}
                       href={item.href}
                       aria-current={active ? "page" : undefined}
-                      className={`relative flex items-center gap-2.5 [border-radius:var(--radius-md)] py-2 pl-2.5 pr-2 [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)] ${
+                      // The label has to survive somewhere when it is not
+                      // drawn. On the 64px rail the icon is the only thing
+                      // left, and an icon whose meaning you have to guess is
+                      // worse than a word you cannot fit.
+                      title={isCompact ? item.label : undefined}
+                      className={`relative flex items-center [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)] ${
+                        isCompact
+                          ? "h-10 w-10 justify-center [border-radius:var(--radius-md)]"
+                          : isTop
+                            ? "shrink-0 gap-2 [border-radius:var(--radius-md)] px-2.5 py-1.5"
+                            : isQuiet
+                              ? "gap-2.5 py-[7px] pl-3 pr-2"
+                              : "gap-2.5 [border-radius:var(--radius-md)] py-2 pl-2.5 pr-2"
+                      } ${
                         active
-                          ? "text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-active)] [font-weight:var(--fw-semibold)]"
+                          ? // QUIET STATES THE ACTIVE ROW WITH INK AND A RULE,
+                            // not a filled pill. A filled row is the loudest
+                            // thing on a rail; the whole point of this variant
+                            // is that nothing on it is loud.
+                            isQuiet
+                            ? "text-[color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]"
+                            : "text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-active)] [font-weight:var(--fw-semibold)]"
                           : "text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-nav-hover)] hover:text-[color:var(--color-nav-fg)]"
                       }`}
                     >
                       {/* Colour alone carried the active state before, which on
-                          a dark ground is a small step between two greys. The
-                          accent bar is a second, non-colour channel for the
-                          same fact. */}
+                          a dark ground is a small step between two greys. This
+                          is a second, non-colour channel for the same fact —
+                          a bar down the left of a column, a rule under the tab
+                          on a horizontal bar, which is where each of those
+                          shapes conventionally puts it. */}
                       {active && (
                         <span
                           aria-hidden="true"
-                          className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full [background-color:var(--color-nav-accent)]"
+                          className={
+                            isTop
+                              ? "absolute inset-x-2 -bottom-[9px] h-[2px] rounded-full [background-color:var(--color-nav-accent)]"
+                              : isCompact
+                                ? "absolute -left-2 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full [background-color:var(--color-nav-accent)]"
+                                : "absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full [background-color:var(--color-nav-accent)]"
+                          }
                         />
                       )}
-                      <span className="shrink-0 opacity-90">
-                        {item.icon ?? railIcon(item.iconName, "h-[17px] w-[17px]")}
-                      </span>
-                      <span className="flex-1 truncate">{item.label}</span>
+                      {showIcons && (
+                        <span className="shrink-0 opacity-90">
+                          {item.icon ?? railIcon(item.iconName, isCompact ? "h-5 w-5" : "h-[17px] w-[17px]")}
+                        </span>
+                      )}
+                      {showLabels && <span className={isTop ? "truncate" : "flex-1 truncate"}>{item.label}</span>}
                       {item.badge != null && item.badge > 0 && (
-                        <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 [font-size:var(--text-micro)] [background-color:var(--color-clay-bright)] [color:var(--color-on-dark)] [font-weight:var(--fw-semibold)]">
+                        <span
+                          className={`grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 [font-size:var(--text-micro)] [background-color:var(--color-clay-bright)] [color:var(--color-on-dark)] [font-weight:var(--fw-semibold)] ${
+                            isCompact ? "absolute -right-0.5 -top-0.5" : ""
+                          }`}
+                        >
                           {item.badge}
                         </span>
                       )}
@@ -336,7 +444,13 @@ export function RailNav({
         })}
       </div>
 
-      <div className="shrink-0 border-t pt-2 [border-color:var(--color-nav-border)]">
+      <div
+        className={
+          isTop
+            ? "flex shrink-0 items-center gap-1 border-l pl-3 [border-color:var(--color-nav-border)]"
+            : "shrink-0 border-t pt-2 [border-color:var(--color-nav-border)]"
+        }
+      >
         {utility.map((util, i) => {
           const icon = railIcon(util.iconName, "h-[18px] w-[18px]") ?? (
             <IconSettings className="h-[18px] w-[18px]" />
@@ -349,11 +463,18 @@ export function RailNav({
                   <span className="absolute -right-0.5 -top-0.5 h-[7px] w-[7px] rounded-full border-[1.5px] [border-color:var(--color-nav-bg)] [background-color:var(--color-nav-accent)]" />
                 )}
               </span>
-              <span className="flex-1 truncate">{util.label}</span>
+              {showLabels && !isTop && <span className="flex-1 truncate">{util.label}</span>}
             </>
           )
-          const base =
-            "flex items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)]"
+          // The compact rail and the topbar both drop the label here, so the
+          // row has to stop being a row: a full-width control holding one
+          // 18px glyph reads as a mis-rendered button. Square, centred, and
+          // the label moves to `title`.
+          const base = `flex items-center transition-colors [transition-duration:var(--dur-fast)] [font-size:var(--text-sm)] [border-radius:var(--radius-md)] ${
+            isCompact || isTop
+              ? "h-9 w-9 shrink-0 justify-center"
+              : "[gap:var(--gap-inline)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]"
+          }`
 
           // No href, or the placeholder one: this row is part of the system
           // being designed and has nowhere real to go yet. Rendered as a plain
@@ -363,7 +484,11 @@ export function RailNav({
             return (
               <div
                 key={`${util.label}-${i}`}
-                title="这是你系统里的功能，系统建好后会启用"
+                title={
+                  isCompact || isTop
+                    ? `${util.label} — 这是你系统里的功能，系统建好后会启用`
+                    : "这是你系统里的功能，系统建好后会启用"
+                }
                 className={`${base} cursor-default text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)]`}
               >
                 {body}
@@ -375,6 +500,7 @@ export function RailNav({
             <Link
               key={`${util.label}-${i}`}
               href={util.href}
+              title={isCompact || isTop ? util.label : undefined}
               className={`${base} ${
                 pathname === util.href
                   ? "text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-hover)] [font-weight:var(--fw-semibold)]"
@@ -391,7 +517,12 @@ export function RailNav({
             <button
               ref={profileTriggerRef}
               type="button"
-              className="flex w-full items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-nav-fg-dim)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-nav-hover)] hover:text-[color:var(--color-nav-fg)]"
+              title={showLabels ? undefined : user.name}
+              className={`flex items-center [border-radius:var(--radius-md)] [font-size:var(--text-sm)] text-[color:var(--color-nav-fg-dim)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-nav-hover)] hover:text-[color:var(--color-nav-fg)] ${
+                isCompact || isTop
+                  ? "h-9 w-9 shrink-0 justify-center"
+                  : "w-full [gap:var(--gap-inline)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]"
+              }`}
               onClick={() => setOpen((p) => (p === "profile" ? null : "profile"))}
               aria-haspopup="true"
               aria-expanded={open === "profile"}
@@ -399,10 +530,12 @@ export function RailNav({
               <span className="grid h-[22px] w-[22px] shrink-0 place-items-center [border-radius:var(--radius-sm)] [font-size:var(--text-xs)] text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-border)] [font-weight:var(--fw-semibold)]">
                 {initials}
               </span>
-              <span className="min-w-0 flex-1 overflow-hidden text-left leading-tight">
-                <span className="block truncate">{user.name}</span>
-                {user.roleLabel && <span className="block [font-size:var(--text-xs)] normal-case text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)]">{user.roleLabel}</span>}
-              </span>
+              {showLabels && !isTop && (
+                <span className="min-w-0 flex-1 overflow-hidden text-left leading-tight">
+                  <span className="block truncate">{user.name}</span>
+                  {user.roleLabel && <span className="block [font-size:var(--text-xs)] normal-case text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)]">{user.roleLabel}</span>}
+                </span>
+              )}
             </button>
             {open === "profile" && (
               // Approximate positioning: opens upward from a footer item,
@@ -412,20 +545,36 @@ export function RailNav({
               // this design system's other components for the same gap) —
               // this reconstructs the same "small panel beside its
               // trigger" affordance from this file's own token classes.
-              <div className="absolute bottom-full left-0 z-20 mb-1.5 w-56 [border-radius:var(--radius-lg)] border p-1.5 [box-shadow:var(--shadow-raised)] [background-color:var(--color-nav-bg-deep)] [border-color:var(--color-nav-border)]">
+              <div
+                className={`absolute z-20 w-56 [border-radius:var(--radius-lg)] border p-1.5 [box-shadow:var(--shadow-overlay)] [background-color:var(--color-nav-bg-deep)] [border-color:var(--color-nav-border)] ${
+                  // Upward from a pinned footer, downward from a bar at the
+                  // top of the page. Opening upward on the topbar would put
+                  // the panel off the top of the window.
+                  isTop ? "right-0 top-full mt-1.5" : "bottom-full left-0 mb-1.5"
+                }`}
+              >
                 {profileMenu}
               </div>
             )}
           </div>
         ) : (
-          <div className="flex cursor-default items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)]">
+          <div
+            title={showLabels ? undefined : user.name}
+            className={`flex cursor-default items-center [border-radius:var(--radius-md)] [font-size:var(--text-sm)] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)] ${
+              isCompact || isTop
+                ? "h-9 w-9 shrink-0 justify-center"
+                : "[gap:var(--gap-inline)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]"
+            }`}
+          >
             <span className="grid h-[22px] w-[22px] shrink-0 place-items-center [border-radius:var(--radius-sm)] [font-size:var(--text-xs)] text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-border)] [font-weight:var(--fw-semibold)]">
               {initials}
             </span>
-            <span className="min-w-0 flex-1 overflow-hidden text-left leading-tight">
-              <span className="block truncate">{user.name}</span>
-              {user.roleLabel && <span className="block [font-size:var(--text-xs)] normal-case text-[color:var(--color-nav-fg-dim)]">{user.roleLabel}</span>}
-            </span>
+            {showLabels && !isTop && (
+              <span className="min-w-0 flex-1 overflow-hidden text-left leading-tight">
+                <span className="block truncate">{user.name}</span>
+                {user.roleLabel && <span className="block [font-size:var(--text-xs)] normal-case text-[color:var(--color-nav-fg-dim)]">{user.roleLabel}</span>}
+              </span>
+            )}
           </div>
         )}
       </div>

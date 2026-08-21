@@ -7,6 +7,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { AuthSettle } from "@/components/auth-settle";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { scopeClasses } from "@/lib/portal/palettes";
+import { sampleSystem } from "@/lib/portal/sample-system";
 import chrome from "@/app/[locale]/portal/chrome.module.css";
 
 /**
@@ -49,49 +50,6 @@ import chrome from "@/app/[locale]/portal/chrome.module.css";
  * decided.
  */
 
-/** One page of a contractor's system, cut down to what reads at this size.
- *  Deliberately the same sample the styles page uses so the two agree — a
- *  visitor who signs in and goes looking for it finds the same thing. */
-const SAMPLE = {
-  root: {},
-  content: [
-    {
-      type: "PageHeader",
-      props: { id: "a-h", title: "报价单", subtitle: "发给客户的报价，跟进哪些已确认。" },
-    },
-    {
-      type: "RecordTable",
-      props: {
-        id: "a-t",
-        gridId: "a-t",
-        caption: "报价单列表",
-        table: {
-          columns: [
-            { key: "primary", label: "报价内容", kind: "text" },
-            { key: "secondary", label: "客户", kind: "detail" },
-            { key: "amount", label: "金额", kind: "amount" },
-            { key: "status", label: "状态", kind: "status" },
-          ],
-          rows: [
-            {
-              cells: { primary: "Taman Desa 三房翻新", secondary: "陈先生", amount: "RM 48,500", status: "已确认" },
-              tones: { status: "positive" },
-            },
-            {
-              cells: { primary: "Bukit Jalil 厨房改造", secondary: "李太太", amount: "RM 22,800", status: "等确认" },
-              tones: { status: "warning" },
-            },
-            {
-              cells: { primary: "Cheras 店面装修", secondary: "王老板", amount: "RM 96,000", status: "报价中" },
-              tones: { status: "neutral" },
-            },
-          ],
-        },
-      },
-    },
-  ],
-};
-
 export async function AuthShell({
   locale,
   title,
@@ -106,6 +64,11 @@ export async function AuthShell({
   footer?: ReactNode;
 }) {
   const t = await getTranslations("auth");
+  // Was a hardcoded Chinese copy of the landing page's sample, which meant
+  // /en/login argued for the product in the wrong language on the exact
+  // screen where somebody decides whether to trust it. Shared with the
+  // showroom so a visitor who signs up finds what they were shown.
+  const sample = sampleSystem(locale, "auth");
 
   const steps = [
     { n: "01", label: t("proofStep1") },
@@ -155,7 +118,12 @@ export async function AuthShell({
           {/* The form is a real card now. It measured zero shadows before —
               every element on one plane — which is most of why the page read as
               flat next to the product behind it. */}
-          <div className="mt-8 rounded-[var(--radius-lg)] [background-color:var(--color-ink-900)] [box-shadow:0_0_0_1px_var(--border-subtle),var(--shadow-raised)] [padding:var(--pad-card-lg)]">
+          {/* The ring is stated on its own rather than composed with
+              var(--shadow-raised). On the dark ground that token is `none`,
+              and `0 0 0 1px x, none` is invalid CSS — the browser drops the
+              whole declaration and the panel loses its edge entirely. Same
+              rewrite as `.sheet` in chrome.module.css, same reason. */}
+          <div className="mt-8 rounded-[var(--radius-lg)] [background-color:var(--color-ink-900)] [box-shadow:0_0_0_1px_var(--border-subtle)] [padding:var(--pad-card-lg)]">
             {children}
           </div>
 
@@ -197,13 +165,14 @@ export async function AuthShell({
               at two heights is the cheapest honest depth there is, and it is
               what the product's own home screen does with its page previews —
               so the door and the room are built the same way. */}
-          <AuthSettle
-            delay={0.12}
-            className={`${scopeClasses("blueprint")} mt-9 overflow-hidden rounded-[var(--radius-lg)] [background-color:var(--color-canvas)] [box-shadow:0_0_0_1px_var(--border-subtle),var(--shadow-overlay)]`}
-          >
-            <div className="pointer-events-none origin-top-left [width:125%] [transform:scale(0.8)]">
-              <div className="[padding:var(--pad-card-lg)]">
-                <Render config={puckConfig} data={SAMPLE as never} />
+          <AuthSettle delay={0.12} className={`${chrome.mount} mt-9`}>
+            <div
+              className={`${scopeClasses("blueprint")} [background-color:var(--color-canvas)]`}
+            >
+              <div className="pointer-events-none origin-top-left [width:125%] [transform:scale(0.8)]">
+                <div className="[padding:var(--pad-card-lg)]">
+                  <Render config={puckConfig} data={sample as never} />
+                </div>
               </div>
             </div>
           </AuthSettle>

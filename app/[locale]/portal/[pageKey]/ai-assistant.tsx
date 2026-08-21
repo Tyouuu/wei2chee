@@ -58,9 +58,17 @@ export type Turn = {
  *      turn carries the layout from before it ran, so one edit can be dropped
  *      without losing the rest.
  *
- * The panel takes the right-hand column, which the fields panel vacates when
- * nothing is selected. They are mutually exclusive on purpose: two competing
- * panels in one column is how an editor starts feeling crowded and arbitrary.
+ * WHERE IT LIVES, AND WHY THAT CHANGED (2026-08-21). It used to be a fourth
+ * column that appeared beside Puck's entire layout when a toolbar button was
+ * pressed, and the fields panel was hidden while it was open. The founder's
+ * objection was the whole problem in one line: 「把这个AI修改放在这里谁会去按啦」.
+ * A feature that is the product's central pitch cannot be behind a button most
+ * customers never press.
+ *
+ * It is now permanently the lower half of Puck's existing right-hand column,
+ * under the selected block's own fields. Still three columns; nothing to open.
+ * The two halves are not rivals — one edits the page by describing it, the
+ * other edits one block by hand, which is the same job at two levels of zoom.
  */
 export function AiAssistant({
   turns,
@@ -69,9 +77,9 @@ export function AiAssistant({
   setInstruction,
   busy,
   setBusy,
-  onClose,
   pages,
   locale,
+  compact = false,
 }: {
   /* The transcript and the draft message are owned by the EDITOR, not by this
    * component. Puck re-creates `overrides` render functions as the editor
@@ -84,14 +92,17 @@ export function AiAssistant({
   setInstruction: (value: string) => void;
   busy: boolean;
   setBusy: (value: boolean) => void;
-  onClose: () => void;
   /** The customer's own pages. Sent with each request so「把报价单删掉」can name
    *  a real page, and used to build the link after one is added. */
   pages: { key: string; label: string }[];
   locale: string;
+  /** The phone layout, where this panel is about half a small screen. Not a
+   *  density preference — see the empty state below for what it changes and
+   *  why the vertical version does not fit. */
+  compact?: boolean;
 }) {
   const t = useTranslations("portal.editor");
-  // Read from Puck directly: this renders inside the `puck` override and
+  // Read from Puck directly: this renders inside the `fields` override and
   // therefore inside the provider, so the layout it sends is always the live
   // canvas rather than a copy threaded down through props.
   const { appState, dispatch } = usePuck();
@@ -104,8 +115,14 @@ export function AiAssistant({
     inputRef.current?.focus();
   }, []);
 
-  // Follow the transcript as it grows, the way any chat surface does.
+  // Follow the transcript as it grows, the way any chat surface does — but not
+  // before there is one. On a phone the panel is 46% of the screen, the empty
+  // state (an explanation plus three suggestions) is taller than that, and
+  // scrolling it to the bottom on mount hid its own first line under the
+  // header. Found by a hit-test sweep, which reported the first suggestion as
+  // covered by the panel's own title bar.
   useEffect(() => {
+    if (turns.length === 0) return;
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [turns]);
 
@@ -223,10 +240,22 @@ export function AiAssistant({
       // silently reads the wrong one -- which is exactly what happened the
       // first time this panel was verified.
       data-panel="ai"
-      className="flex h-full w-[300px] shrink-0 flex-col border-l [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]"
+      // FILLS ITS COLUMN RATHER THAN BEING ONE.
+      //
+      // This used to be `w-[300px] shrink-0 border-l`, because it WAS a column
+      // -- a fourth one, appearing beside Puck's entire layout when a toolbar
+      // button was pressed. That is why it could not simply default to open:
+      // four fixed columns at 1440px leaves the canvas around 550px, below
+      // what a five-column record table renders without clipping.
+      //
+      // It now lives inside the fields override, i.e. inside Puck's existing
+      // right column, above the selected block's own fields. Same three
+      // columns as before, and the assistant is always there. The width
+      // belongs to the column now, so this element only has to fill it.
+      className="flex h-full w-full min-h-0 flex-col [background-color:var(--color-ink-900)]"
       aria-label={t("aiPanelTitle")}
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b px-3.5 py-2.5 [border-color:var(--color-ink-800)]">
+      <div className="flex shrink-0 items-center gap-2 border-b px-3.5 py-2.5 [border-color:var(--color-ink-800)]">
         <span className="flex items-center gap-2 [font-size:var(--text-sm)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
           <span
             aria-hidden="true"
@@ -236,30 +265,50 @@ export function AiAssistant({
           </span>
           {t("aiPanelTitle")}
         </span>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t("aiClose")}
-          className="flex h-7 w-7 items-center justify-center rounded-md [font-size:var(--text-base)] [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
-        >
-          ×
-        </button>
       </div>
 
-      <div ref={listRef} className="flex-1 overflow-y-auto px-3.5 py-3.5">
+      {/* `min-h-0` is load-bearing, not tidiness. A flex child defaults to
+          `min-height: auto`, which means it refuses to shrink below its
+          content — so on a phone, where this panel is 46% of the screen and
+          the empty state is taller than that, the list grew past its container
+          and the composer underneath it ended up ON TOP of the suggestions.
+          Found by a hit-test sweep: three suggestion buttons reported as
+          covered by the textarea. */}
+      <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-3.5 py-3.5">
         {turns.length === 0 ? (
+          /* THE EMPTY STATE IS THE ON-RAMP, so it has to be visible without
+             scrolling — a blank box asking a business owner to phrase a
+             request to an AI is the blank-canvas problem this product has
+             already been caught by once.
+             On a phone this panel is roughly 390px tall and the desktop
+             version of this block is about 300px: the explanation and the
+             three stacked suggestions pushed each other out of the scroll
+             viewport, so a hit-test sweep reported all three suggestions as
+             unreachable. Compact drops the explanation (the placeholder in
+             the composer says the same thing) and lays the suggestions out as
+             a swipeable row, which is ~110px instead of ~300px. */
           <div>
-            <p className="[font-size:var(--text-sm)] leading-relaxed [color:var(--color-paper-dim)]">{t("aiEmptyBody")}</p>
-            <p className="mt-4 [font-size:var(--text-micro)] uppercase tracking-[0.08em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+            {!compact && (
+              <p className="[font-size:var(--text-sm)] leading-relaxed [color:var(--color-paper-dim)]">{t("aiEmptyBody")}</p>
+            )}
+            <p className={`[font-size:var(--text-micro)] uppercase tracking-[0.08em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)] ${compact ? "" : "mt-4"}`}>
               {t("aiSuggestTitle")}
             </p>
-            <div className="mt-2 flex flex-col gap-1.5">
+            <div
+              className={
+                compact
+                  ? "-mx-3.5 mt-2 flex snap-x gap-2 overflow-x-auto px-3.5 pb-1"
+                  : "mt-2 flex flex-col gap-1.5"
+              }
+            >
               {suggestions.map((sugg) => (
                 <button
                   key={sugg}
                   type="button"
                   onClick={() => ask(sugg)}
-                  className="rounded-md border px-3 py-2 text-left [font-size:var(--text-xs)] leading-snug transition-colors [border-color:var(--color-ink-800)] [color:var(--color-paper)] hover:[border-color:var(--color-primary)] hover:[background-color:var(--color-ink-850)]"
+                  className={`rounded-md border px-3 py-2 text-left [font-size:var(--text-xs)] leading-snug transition-colors [border-color:var(--color-ink-800)] [color:var(--color-paper)] hover:[border-color:var(--color-primary)] hover:[background-color:var(--color-ink-850)] ${
+                    compact ? "w-[220px] shrink-0 snap-start" : ""
+                  }`}
                 >
                   {sugg}
                 </button>
@@ -370,13 +419,17 @@ export function AiAssistant({
         )}
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          ask(instruction);
-        }}
-        className="shrink-0 border-t px-3.5 py-3 [border-color:var(--color-ink-800)]"
-      >
+      {/* A DIV, NOT A FORM, and this is not a style preference.
+          Puck renders its fields panel inside a <form>, and this panel now
+          lives in that panel (see the `fields` override in editor-client.tsx).
+          A nested <form> is invalid HTML: React reports it, the server and
+          client markup disagree, and the whole editor subtree gets thrown away
+          and re-rendered on hydration. Caught in the browser console, not in
+          review — tsc and the unit tests were both green.
+
+          Nothing is lost. Enter already submitted via onKeyDown below, and the
+          button calls the same function directly. */}
+      <div className="shrink-0 border-t px-3.5 py-3 [border-color:var(--color-ink-800)]">
         <textarea
           ref={inputRef}
           value={instruction}
@@ -389,7 +442,11 @@ export function AiAssistant({
               ask(instruction);
             }
           }}
-          rows={2}
+          // Three, not two. The placeholder is a full worked example and at
+          // two rows it was visibly clipped mid-sentence in the column this
+          // panel now lives in -- an instruction to the customer that they
+          // cannot finish reading.
+          rows={3}
           maxLength={500}
           disabled={busy}
           placeholder={t("aiPlaceholder")}
@@ -399,14 +456,15 @@ export function AiAssistant({
         <div className="mt-2 flex items-center justify-between gap-2">
           <span className="[font-size:var(--text-micro)] [color:var(--color-paper-dim)]">{t("aiEnterHint")}</span>
           <button
-            type="submit"
+            type="button"
+            onClick={() => ask(instruction)}
             disabled={busy || !instruction.trim()}
-            className="rounded-md px-3 py-1.5 [font-size:var(--text-xs)] transition-colors disabled:opacity-40 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
+            className="shrink-0 rounded-md px-3 py-1.5 [font-size:var(--text-xs)] transition-colors disabled:opacity-40 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
           >
             {busy ? t("aiThinking") : t("aiSubmit")}
           </button>
         </div>
-      </form>
+      </div>
     </aside>
   );
 }

@@ -11,7 +11,8 @@
     "db:push": "node scripts/supabase-cli.mjs db push",
     "db:status": "node scripts/supabase-cli.mjs migration list",
     "check:isolation": "node scripts/check-tenant-isolation.mjs",
-    "build:tokens": "node scripts/build-style-scope.mjs"
+    "build:tokens": "node scripts/build-style-scope.mjs",
+    "check:reachable": "python scripts/check-reachable.py"
   },
   "dependencies": {
     "@puckeditor/core": "^0.23.0",

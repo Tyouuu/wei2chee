@@ -27,7 +27,7 @@ const LABELS: Record<string, string> = { zh: "中文", en: "EN" };
  * when it matches an item's href against the live path. So switching is a
  * swap of the first segment, and the visitor keeps their page.
  */
-export function LocaleSwitcher({ tone = "light" }: { tone?: "light" | "dark" }) {
+export function LocaleSwitcher({ tone = "light" }: { tone?: "light" | "dark" | "page" }) {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
@@ -50,14 +50,26 @@ export function LocaleSwitcher({ tone = "light" }: { tone?: "light" | "dark" }) 
   // custom property leaves `color` at its inherited value, which on the dark
   // Hero is near-black text on a near-black ground — invisible, and invisible
   // in exactly the place a visitor most needs to find it.
+  // A THIRD TONE, for the one surface that is both. The landing page turns
+  // from Formae's dark ground to white paper as you scroll past the showroom
+  // (components/handover.tsx), so neither fixed tone works there: `dark`
+  // renders white-on-white below the handover, which is what the header's own
+  // switcher did — measured as an invisible 「中文 / EN」 with only the slash
+  // showing. `page` reads the marketing palette's own tokens, which the
+  // handover is already interpolating, so it inverts along with everything
+  // else and needs no fallback of its own.
   const base =
     tone === "dark"
       ? "text-[color:var(--color-nav-fg-dim,rgba(255,255,255,0.62))] hover:text-[color:var(--color-nav-fg,#ffffff)]"
-      : "text-[color:var(--color-paper-dim,#5b6d82)] hover:text-[color:var(--color-paper,#14273d)]";
+      : tone === "page"
+        ? "text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"
+        : "text-[color:var(--color-paper-dim,#5b6d82)] hover:text-[color:var(--color-paper,#14273d)]";
   const activeTone =
     tone === "dark"
       ? "text-[color:var(--color-nav-fg,#ffffff)] [font-weight:var(--fw-semibold,600)]"
-      : "text-[color:var(--color-paper,#14273d)] [font-weight:var(--fw-semibold,600)]";
+      : tone === "page"
+        ? "text-[color:var(--foreground)] [font-weight:var(--fw-semibold,600)]"
+        : "text-[color:var(--color-paper,#14273d)] [font-weight:var(--fw-semibold,600)]";
 
   return (
     <div

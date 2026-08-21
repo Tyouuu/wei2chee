@@ -300,7 +300,8 @@
       "historyLoading": "读取中…",
       "historyClose": "关闭",
       "autosaving": "自动保存中…",
-      "savedAtTime": "已保存 {time}"
+      "savedAtTime": "已保存 {time}",
+      "mobileHint": "手机上可以看系统，也可以直接跟 AI 说要改什么。拖拽编辑需要大一点的屏幕。"
     },
     "home": {
       "eyebrow": "你的系统",
@@ -399,7 +400,10 @@
       "planPaid": "已付款",
       "planFree": "免费试用",
       "leads": "线索",
-      "account": "我的账号"
+      "account": "我的账号",
+      "accountRow": "账号与设置",
+      "navOpen": "打开导航",
+      "navClose": "关闭导航"
     },
     "styles": {
       "title": "风格",
@@ -532,7 +536,12 @@
       "pwMismatch": "两次打的不一样。",
       "emailSent": "确认信发到新邮箱了，点了才会生效。",
       "emailFailed": "改不了，请再试一次。",
-      "deleteFailed": "删不了，请再试一次。"
+      "deleteFailed": "删不了，请再试一次。",
+      "languageTitle": "语言",
+      "languageBody": "只影响 Formae 本身。你自己系统里的字，还是你写的那些。",
+      "signOutTitle": "登出",
+      "signOutBody": "你的设计已经存好了。下次登入回到原来的地方。",
+      "signOutCta": "登出"
     }
   },
   "explainer": {
@@ -675,5 +684,11 @@
     "pricing": "价钱",
     "signIn": "登录",
     "start": "免费开始"
+  },
+  "showroom": {
+    "eyebrow": "三分钟后",
+    "heading": "这就是那句话生成的系统。",
+    "body": "五页、四张表、十七个栏位 —— 用你行业自己的说法，跟你自己的流程，每一处都可以改。不是截图，就是你会拿到的那个。",
+    "rule": "从这里开始，都是你的"
   }
 }

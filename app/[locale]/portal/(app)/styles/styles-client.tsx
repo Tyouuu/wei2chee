@@ -170,17 +170,19 @@ export function StylesClient({
                     a scale transform keeps its pre-scale layout height, which
                     left a large void under the shorter registers and stretched
                     every card to the height of Hearth's. */}
-                <div
-                  className={`${scopeClasses(name, activePalette)} ${chrome.sheet} m-3 h-[268px] overflow-hidden [background-color:var(--color-canvas)]`}
-                >
-                  <div className="pointer-events-none origin-top-left [width:150%] [transform:scale(0.6667)]">
-                    <div className="[padding:var(--pad-card-lg)]">
-                      <Render config={puckConfig} data={SAMPLE as never} />
+                <div className={`${chrome.mount} m-3 h-[268px]`}>
+                  <div
+                    className={`${scopeClasses(name, activePalette)} [background-color:var(--color-canvas)]`}
+                  >
+                    <div className="pointer-events-none origin-top-left [width:150%] [transform:scale(0.6667)]">
+                      <div className="[padding:var(--pad-card-lg)]">
+                        <Render config={puckConfig} data={SAMPLE as never} />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 border-t px-4 py-3 [border-color:var(--color-ink-800)]">
+                <div className="flex items-center justify-between gap-3 border-t px-3 py-3 [border-color:var(--color-ink-800)]">
                   <span className="min-w-0">
                     <span className="block [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
                       {name === "ledger" ? "Ledger" : name === "hearth" ? "Hearth" : "Blueprint"}

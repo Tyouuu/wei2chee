@@ -204,3 +204,77 @@
   font-size: 12px;
   line-height: 1.3;
 }
+
+/* ---------------------------------------------------------------------------
+   Giving the fields column a definite height.
+
+   The assistant now lives inside this column, below the selected block's own
+   fields (see `overrides.fields` in editor-client.tsx). For it to hold a
+   share of the column rather than being pushed off the bottom by a long
+   properties list, something in the chain has to have a real height to divide.
+
+   Measured in the browser, Puck's chain does not. `_Sidebar--right` is a
+   900px `overflow-y: auto` scroller, and EVERY element between it and the
+   override -- `_SidebarSection-content`, the `_PuckFields` form -- is
+   `display: block` at `height: auto`. So the override's own `h-full` resolved
+   against an auto-height ancestor and silently became auto too: the fields
+   grew to their natural height (measured 1694px inside a 900px column), the
+   sidebar scrolled, and the assistant sat below the fold. Exactly the
+   buried-toolbar-button problem it was moved here to solve, arriving by a
+   different route.
+
+   The rules below hand the column's real height down the chain: the sidebar
+   clips instead of scrolling, and each element between it and the override
+   becomes a flex child that fills its parent. Scrolling moves inward, to the
+   two halves, each of which can now scroll on its own.
+
+   SAME FRAGILITY AS THE TAB LABELS ABOVE, stated for the same reason: these
+   target Puck's internal CSS-Module names by substring because the full names
+   carry a build hash. A Puck upgrade that renames the module makes the
+   assistant fall below the fold again -- visible immediately on the screen it
+   affects, not silent. Worth re-checking on any @puckeditor/core upgrade.
+   --------------------------------------------------------------------------- */
+[class*="_Sidebar--right_"] {
+  overflow: hidden;
+}
+
+[class*="_Sidebar--right_"] > [class*="_SidebarSection_"] {
+  min-height: 0;
+}
+
+[class*="_Sidebar--right_"] [class*="_SidebarSection-content_"] {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+[class*="_Sidebar--right_"] form[class*="_PuckFields_"] {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+/* Puck's root is 100vh. That is right for a full-screen editor and wrong for
+   this one: it sits under Formae's own page tabs and draft banner, so a
+   viewport-height root makes the editor exactly that much taller than the
+   window and the whole thing scrolls.
+
+   Measured: `.Puck` computed to 950px at top 84 in a 950px viewport, i.e. a
+   1034px document. Harmless while the right column scrolled its own overflow;
+   not harmless once the assistant's composer moved to the bottom of that
+   column, where 84px of overflow puts the product's most important control
+   below the fold on first load.
+
+   `100%` instead, all the way down: `.Puck` alone is not enough, because
+   `_PuckLayout` and `_PuckLayout-inner` are viewport-height too and simply
+   overflowed the corrected root instead (measured: 950px inside an 866px
+   `.Puck`, which then scrolled). Paired with `min-h-0` on the wrapper in
+   editor-client.tsx so 100% resolves against what is actually left. */
+.portal-editor-scope .Puck,
+.portal-editor-scope [class*="_PuckLayout_"],
+.portal-editor-scope [class*="_PuckLayout-inner_"] {
+  height: 100%;
+}

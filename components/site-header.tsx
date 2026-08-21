@@ -73,7 +73,7 @@ export function SiteHeader() {
           >
             {t("pricing")}
           </a>
-          <LocaleSwitcher tone="dark" />
+          <LocaleSwitcher tone="page" />
           <Link
             href={`/${locale}/login`}
             className="rounded-lg px-2.5 py-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"

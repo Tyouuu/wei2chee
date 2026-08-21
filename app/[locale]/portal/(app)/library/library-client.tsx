@@ -205,40 +205,56 @@ export function LibraryClient({
                 component squeezed into what was left. */}
             <ul className="mt-4 grid items-start gap-x-5 gap-y-7 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {items.map((entry) => (
-                <li key={entry.name} className="group">
+                // `min-w-0`: a grid track is `minmax(auto, 1fr)` by default, so
+                // it refuses to go below its content's min-width — and the
+                // preview inside is deliberately composed at 154% and scaled
+                // down, which the track reads as a 490px minimum. On a 390px
+                // phone that pushed every tile off the right edge. Found by a
+                // hit-test sweep, not by looking.
+                <li key={entry.name} className="group min-w-0">
                   {/* FIXED HEIGHT, CLIPPED. `transform: scale()` does not
                       change the layout box, so the wrapper below still occupies
                       its full pre-scale height -- which showed up as a large
                       dead gap under short components and made every card in a
                       row stretch to the tallest one. A fixed frame gives
                       uniform tiles and clips what does not fit, which is what a
-                      gallery thumbnail is supposed to do. */}
+                      gallery thumbnail is supposed to do.
+
+                      The frame is now a mount: the clipping is done by
+                      `.mount > *` rather than by this element, and the hover
+                      affordance is a lift rather than a coloured ring, because
+                      the ring was drawn in --color-primary and Formae no
+                      longer has an accent to draw it in. */}
                   <div
-                    className={`${scopeClasses(style, palette)} h-[168px] overflow-hidden rounded-[var(--radius-sm)] transition-shadow [background-color:var(--color-canvas)] [box-shadow:0_0_0_1px_var(--border-subtle)] group-hover:[box-shadow:0_0_0_1px_var(--color-primary)]`}
+                    className={`${chrome.mount} h-[168px] transition-transform duration-200 group-hover:-translate-y-0.5`}
                   >
-                    {STRUCTURAL.has(entry.name) ? (
-                      <p className="[padding:var(--pad-card)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
-                        {t(`structural.${entry.name}`)}
-                      </p>
-                    ) : (
-                      // `pointer-events-none`: these are samples, not controls.
-                      // A customer clicking a date picker here would open a
-                      // calendar that writes to nothing.
-                      <div
-                        className={`pointer-events-none origin-top-left [width:154%] [transform:scale(0.65)] ${
-                          SINGLE_CONTROL.has(entry.name)
-                            ? `flex h-[258px] items-center ${TINY.has(entry.name) ? "justify-center" : ""}`
-                            : ""
-                        }`}
-                      >
-                        <div className="w-full [padding:var(--pad-card)]">
-                          <Render
-                            config={puckConfig}
-                            data={{ root: {}, content: [{ type: entry.name, props: entry.props }] } as never}
-                          />
+                    <div
+                      className={`${scopeClasses(style, palette)} [background-color:var(--color-canvas)]`}
+                    >
+                      {STRUCTURAL.has(entry.name) ? (
+                        <p className="[padding:var(--pad-card)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
+                          {t(`structural.${entry.name}`)}
+                        </p>
+                      ) : (
+                        // `pointer-events-none`: these are samples, not controls.
+                        // A customer clicking a date picker here would open a
+                        // calendar that writes to nothing.
+                        <div
+                          className={`pointer-events-none origin-top-left [width:154%] [transform:scale(0.65)] ${
+                            SINGLE_CONTROL.has(entry.name)
+                              ? `flex h-[258px] items-center ${TINY.has(entry.name) ? "justify-center" : ""}`
+                              : ""
+                          }`}
+                        >
+                          <div className="w-full [padding:var(--pad-card)]">
+                            <Render
+                              config={puckConfig}
+                              data={{ root: {}, content: [{ type: entry.name, props: entry.props }] } as never}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* Outside the card, on the page ground. Two sizes, two inks,

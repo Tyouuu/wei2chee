@@ -300,7 +300,8 @@
       "historyLoading": "Loading…",
       "historyClose": "Close",
       "autosaving": "Autosaving…",
-      "savedAtTime": "Saved {time}"
+      "savedAtTime": "Saved {time}",
+      "mobileHint": "On a phone you can read your system and change it by saying what you want. Drag-and-drop editing needs a bigger screen."
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",
@@ -399,7 +400,10 @@
       "planPaid": "Paid",
       "planFree": "Free trial",
       "leads": "Leads",
-      "account": "My account"
+      "account": "My account",
+      "accountRow": "Account and settings",
+      "navOpen": "Open navigation",
+      "navClose": "Close navigation"
     },
     "styles": {
       "title": "Styles",
@@ -532,7 +536,12 @@
       "pwMismatch": "Those two do not match.",
       "emailSent": "Confirmation sent to the new address — it takes effect once you click it.",
       "emailFailed": "Could not change it. Try again.",
-      "deleteFailed": "Could not delete. Try again."
+      "deleteFailed": "Could not delete. Try again.",
+      "languageTitle": "Language",
+      "languageBody": "Applies to Formae itself. Your own system keeps whatever words you wrote in it.",
+      "signOutTitle": "Sign out",
+      "signOutBody": "Your design is saved. Signing back in puts you where you left off.",
+      "signOutCta": "Sign out"
     }
   },
   "explainer": {
@@ -675,5 +684,11 @@
     "pricing": "Pricing",
     "signIn": "Sign in",
     "start": "Start free"
+  },
+  "showroom": {
+    "eyebrow": "THREE MINUTES LATER",
+    "heading": "This is the system that sentence produced.",
+    "body": "Five pages, four tables, seventeen fields — in your trade’s own words, with your workflow, and every part of it editable. Not a screenshot: the actual thing you get.",
+    "rule": "FROM HERE DOWN, IT IS YOURS"
   }
 }
