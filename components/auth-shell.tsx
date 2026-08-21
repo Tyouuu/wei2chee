@@ -1,31 +1,97 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { Render } from "@puckeditor/core";
 import { BRAND_NAME } from "@/lib/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { AuthSettle } from "@/components/auth-settle";
+import { puckConfig } from "@/design-system/editor/puck-config";
+import { scopeClasses } from "@/lib/portal/palettes";
+import chrome from "@/app/[locale]/portal/chrome.module.css";
 
 /**
  * The frame around signing in and signing up.
  *
- * WHAT WAS WRONG WITH THE PREVIOUS ONE, MEASURED. A 400px card floating in a
- * 1440px window — about 70% of the screen empty — and not even centred in what
- * was left (293px of space above it, 235px below). The only brand mark was a
- * line of 11px monospace. The inputs were unstyled boxes with no placeholder,
- * no icon and no visible focus state. The language switcher hung off the card's
- * top-right corner, aligned to nothing.
+ * WHY IT MOVED ONTO THE PORTAL'S OWN TOKENS (2026-08-21)
  *
- * WHY A SPLIT AND NOT A BIGGER CARD. This is where a Malaysian SME owner who
- * has just been asked to trust a stranger with their business decides whether
- * there is a company behind the URL, and an empty screen answers that question
- * badly. The right half is not decoration: it is the same three facts the
- * landing page makes — what this is, how it works, what it costs — which are
- * the only trust signals available before anyone has paid for anything. Linear
- * and Supabase both solve the same problem the same way.
+ * Measured across all thirteen reachable surfaces, the product was two
+ * different design efforts and this page was the seam:
  *
- * It collapses to the form alone below `lg`. On a phone the proof panel would
- * push the form below the fold, and someone opening a login link on their phone
- * has already decided to sign in.
+ *   portal home / templates / library / styles / editor ... 2-3 shadow kinds,
+ *                                                           55-223 transitions
+ *   login / signup / forgot / legal / 404 / account / spec . 0 shadow kinds,
+ *                                                           0 transforms
+ *
+ * Login measured 61 elements, zero shadows, zero transforms. It was styled from
+ * app/globals.css — the MARKETING palette — while the product it opens is
+ * styled from chrome.module.css. Two token systems either side of one click is
+ * precisely the 「每个页面都是自己做自己」 the founder kept pointing at, and no
+ * amount of polish inside either half fixes a seam.
+ *
+ * So this page now wears `.chrome`. It inherits Formae's own type scale,
+ * elevation ladder and colour, and chrome-scale.test.ts governs it like every
+ * other product surface.
+ *
+ * WHY THE PROOF PANEL SHOWS A REAL SYSTEM
+ *
+ * It used to state three facts and a price. True, and entirely tell rather than
+ * show — on the one screen where somebody is deciding whether a stranger should
+ * hold their business. A rendered fragment of an actual generated system, in
+ * one of the three styles, is the same argument made with the product: this is
+ * what you get, and it already speaks your trade. Same reasoning as the styles
+ * page refusing to show colour swatches for the 版式.
+ *
+ * WHY A SPLIT AND NOT A BIGGER CARD, still. This is where a Malaysian SME owner
+ * who has just been asked to trust a stranger decides whether there is a
+ * company behind the URL, and an empty screen answers that badly. It collapses
+ * to the form alone below `lg`: on a phone the panel would push the form under
+ * the fold, and somebody opening a login link on their phone has already
+ * decided.
  */
+
+/** One page of a contractor's system, cut down to what reads at this size.
+ *  Deliberately the same sample the styles page uses so the two agree — a
+ *  visitor who signs in and goes looking for it finds the same thing. */
+const SAMPLE = {
+  root: {},
+  content: [
+    {
+      type: "PageHeader",
+      props: { id: "a-h", title: "报价单", subtitle: "发给客户的报价，跟进哪些已确认。" },
+    },
+    {
+      type: "RecordTable",
+      props: {
+        id: "a-t",
+        gridId: "a-t",
+        caption: "报价单列表",
+        table: {
+          columns: [
+            { key: "primary", label: "报价内容", kind: "text" },
+            { key: "secondary", label: "客户", kind: "detail" },
+            { key: "amount", label: "金额", kind: "amount" },
+            { key: "status", label: "状态", kind: "status" },
+          ],
+          rows: [
+            {
+              cells: { primary: "Taman Desa 三房翻新", secondary: "陈先生", amount: "RM 48,500", status: "已确认" },
+              tones: { status: "positive" },
+            },
+            {
+              cells: { primary: "Bukit Jalil 厨房改造", secondary: "李太太", amount: "RM 22,800", status: "等确认" },
+              tones: { status: "warning" },
+            },
+            {
+              cells: { primary: "Cheras 店面装修", secondary: "王老板", amount: "RM 96,000", status: "报价中" },
+              tones: { status: "neutral" },
+            },
+          ],
+        },
+      },
+    },
+  ],
+};
+
 export async function AuthShell({
   locale,
   title,
@@ -48,7 +114,9 @@ export async function AuthShell({
   ];
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+    <main
+      className={`${chrome.chrome} grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]`}
+    >
       {/* ---- the form ---- */}
       <div className="flex flex-col items-center px-6 py-8 sm:px-10 lg:px-14">
         <div className="flex w-full max-w-[26rem] items-center justify-between gap-4">
@@ -58,70 +126,102 @@ export async function AuthShell({
                 is actually made of. */}
             <span
               aria-hidden="true"
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--radius-md)] bg-primary [font-size:var(--text-sm)] font-semibold text-primary-foreground"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--radius-md)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
             >
               F
             </span>
             <span className="leading-tight">
-              <span className="block [font-size:var(--text-base)] font-semibold tracking-[-0.01em]">
+              <span className="block [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] tracking-[-0.01em]">
                 {BRAND_NAME}
               </span>
-              <span className="block font-mono [font-size:var(--text-micro)] uppercase tracking-[0.16em] text-muted-foreground">
-                sys.design
-              </span>
+              <span className={chrome.annotation}>sys.design</span>
             </span>
           </Link>
-          <LocaleSwitcher tone="dark" />
+          <LocaleSwitcher />
         </div>
 
         {/* `my-auto` rather than `justify-center` on the column: the header
             above and the footer below keep their own positions, and only the
             form takes the remaining space — which is what centres it against
             the panel beside it rather than against the whole viewport. */}
-        <div className="my-auto w-full max-w-[26rem] py-12">
-          <h1 className="text-balance font-serif text-[2.75rem] leading-[1.05] tracking-[-0.03em]">
+        <AuthSettle className="my-auto w-full max-w-[26rem] py-12">
+          <h1 className="text-balance [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-hero)] [font-weight:var(--fw-regular)] [letter-spacing:var(--tracking-title-lg)] leading-[1.05]">
             {title}
           </h1>
-          <p className="mt-2.5 [font-size:var(--text-sm)] leading-relaxed text-muted-foreground">{subtitle}</p>
-          <div className="mt-8">{children}</div>
-          {footer && <div className="mt-6 [font-size:var(--text-sm)] text-muted-foreground">{footer}</div>}
-        </div>
+          <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
+            {subtitle}
+          </p>
 
-        <p className="w-full max-w-[26rem] [font-size:var(--text-xs)] text-muted-foreground">
-          <Link href={`/${locale}`} className="transition-colors hover:text-foreground">
+          {/* The form is a real card now. It measured zero shadows before —
+              every element on one plane — which is most of why the page read as
+              flat next to the product behind it. */}
+          <div className="mt-8 rounded-[var(--radius-lg)] [background-color:var(--color-ink-900)] [box-shadow:0_0_0_1px_var(--border-subtle),var(--shadow-raised)] [padding:var(--pad-card-lg)]">
+            {children}
+          </div>
+
+          {footer && (
+            <div className="mt-6 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{footer}</div>
+          )}
+        </AuthSettle>
+
+        <p className="w-full max-w-[26rem] [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+          <Link href={`/${locale}`} className="transition-colors hover:[color:var(--color-paper)]">
             ← {t("backToSite")}
           </Link>
         </p>
       </div>
 
       {/* ---- the proof ---- */}
-      <aside className="relative hidden overflow-hidden border-l border-border bg-[color-mix(in_srgb,var(--color-foreground)_3.5%,transparent)] lg:flex lg:flex-col lg:justify-center">
-        {/* The same ambient wash the Hero uses, so the two halves of the
-            product read as one place. */}
+      {/* The panel has to be a DIFFERENT SURFACE, not a slightly different
+          one. --color-ink-950 measured #eaeae7 against a #f4f4f2 canvas — a
+          delta of five in one channel, which at this size reads as a rendering
+          artefact rather than as a split. Mixing 6% ink into the canvas keeps
+          it derived from the tokens (so it follows a palette) while making the
+          seam legible, and the radial gives the panel the one gradient this
+          product had anywhere: measured across all thirteen surfaces, Formae
+          used ZERO. Every reference product page runs between 2 and 47. */}
+      <aside
+        className="relative hidden overflow-hidden border-l [background-color:color-mix(in_oklab,var(--color-paper)_6%,var(--color-canvas))] [border-color:var(--color-ink-800)] lg:flex lg:flex-col lg:justify-center"
+      >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_540px_at_78%_-8%,color-mix(in_srgb,var(--color-primary)_16%,transparent),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 [background-image:radial-gradient(760px_460px_at_72%_-6%,color-mix(in_oklab,var(--color-primary)_11%,transparent),transparent_68%)]"
         />
-        <div className="relative mx-auto w-full max-w-[30rem] px-10 py-16">
-          <p className="annotation">{t("proofEyebrow")}</p>
-          <p className="mt-4 text-balance font-serif text-[1.75rem] leading-[1.25] tracking-[-0.02em]">
+        <div className="relative mx-auto w-full max-w-[32rem] px-10 py-16">
+          <p className={chrome.annotation}>{t("proofEyebrow")}</p>
+          <p className="mt-4 text-balance [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-title)] [letter-spacing:var(--tracking-title)] leading-[1.25]">
             {t("proofTitle")}
           </p>
 
-          <ol className="mt-10 flex flex-col gap-5 border-t border-border pt-8">
+          {/* A real page of a real system, lifted off the panel. Two surfaces
+              at two heights is the cheapest honest depth there is, and it is
+              what the product's own home screen does with its page previews —
+              so the door and the room are built the same way. */}
+          <AuthSettle
+            delay={0.12}
+            className={`${scopeClasses("blueprint")} mt-9 overflow-hidden rounded-[var(--radius-lg)] [background-color:var(--color-canvas)] [box-shadow:0_0_0_1px_var(--border-subtle),var(--shadow-overlay)]`}
+          >
+            <div className="pointer-events-none origin-top-left [width:125%] [transform:scale(0.8)]">
+              <div className="[padding:var(--pad-card-lg)]">
+                <Render config={puckConfig} data={SAMPLE as never} />
+              </div>
+            </div>
+          </AuthSettle>
+
+          <ol className="mt-9 flex flex-col gap-4 border-t pt-7 [border-color:var(--color-ink-800)]">
             {steps.map((step) => (
               <li key={step.n} className="flex gap-4">
-                <span className="mt-[3px] shrink-0 font-mono [font-size:var(--text-micro)] tracking-[0.14em] text-primary">
+                <span className="mt-[3px] shrink-0 [color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-micro)] tracking-[0.14em]">
                   {step.n}
                 </span>
-                <span className="[font-size:var(--text-sm)] leading-relaxed text-muted-foreground">
+                <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
                   {step.label}
                 </span>
               </li>
             ))}
           </ol>
 
-          <p className="mt-10 border-t border-border pt-6 [font-size:var(--text-sm)] leading-relaxed text-muted-foreground">
+          <p className="mt-8 border-t pt-6 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
             {t("proofPrice")}
           </p>
         </div>
