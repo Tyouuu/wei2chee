@@ -32,7 +32,7 @@ export default async function LibraryPage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style")
+    .select("id, style, palette")
     .eq("account_id", user.id)
     .single();
 
@@ -50,6 +50,7 @@ export default async function LibraryPage({
     <LibraryClient
       locale={locale}
       style={(project?.style as StyleName) ?? "blueprint"}
+      palette={(project?.palette as string | null) ?? null}
       firstPage={ordered[0]?.key ?? "dashboard"}
     />
   );

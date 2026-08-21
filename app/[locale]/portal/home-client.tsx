@@ -13,6 +13,7 @@ import { PageBar } from "./(app)/page-bar";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "./chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { scopeClasses } from "@/lib/portal/palettes";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -64,6 +65,7 @@ export function PortalHome({
   accountEmail,
   paid,
   style,
+  palette,
   pages,
   summary,
   industryName,
@@ -75,6 +77,10 @@ export function PortalHome({
   accountEmail?: string;
   paid: boolean;
   style: StyleName;
+  /** The customer's 配色 layer, or null for this layout's native colours.
+   *  Threaded from the server rather than fetched again: the same projects row
+   *  supplies `style`, and a second query would be a second source of truth. */
+  palette: string | null;
   pages: { pageKey: string; title: string | null; isDraft: boolean; layout: Data }[];
   summary: string | null;
   industryName: string | null;
@@ -264,7 +270,7 @@ export function PortalHome({
                     register, so a light page sits inside a dark frame exactly as
                     it will on their screen. */}
                 <div
-                  className={`${styles.scope} ${SCOPE_CLASS[style]} border-b [border-color:var(--color-ink-800)]`}
+                  className={`${scopeClasses(style, palette)} border-b [border-color:var(--color-ink-800)]`}
                 >
                   <PagePreview data={page.layout} />
                 </div>

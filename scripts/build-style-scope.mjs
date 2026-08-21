@@ -23,7 +23,7 @@
 //
 // Run it after editing any token file, then run the sync test.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -191,6 +191,39 @@ ${dedented}
 `;
 }
 
+/**
+ * The 配色 layer, appended AFTER the three 版式 blocks.
+ *
+ * Source order is doing real work here and it is worth stating why. A palette
+ * class and a layout class are both single class selectors, so they carry
+ * identical specificity -- which means whichever appears LAST in the stylesheet
+ * wins for the tokens they both declare. Palettes must therefore come after
+ * layouts, and the layout keeps everything the palette does not mention: type
+ * scale, weights, tracking, radii, density, shadows.
+ *
+ * That is the whole 3 x N mechanism. `.ledger .paletteSupabase` is Ledger's
+ * tight rows and 3px corners wearing Supabase's greens, and neither file knows
+ * about the other.
+ *
+ * Files come from scripts/build-palettes.mjs, which pulls them from tweakcn
+ * (Apache-2.0) and repairs any contrast pair that fails AA by moving lightness
+ * only. Read that generator before touching anything here.
+ */
+function paletteBlocks() {
+  const dir = join(ROOT, "design-system", "palettes");
+  if (!existsSync(dir)) return "";
+  const files = readdirSync(dir).filter((f) => f.endsWith(".css")).sort();
+  return files
+    .map((f) => {
+      const css = readFileSync(join(dir, f), "utf8").trim();
+      return `
+/* ---- palette: ${f.replace(/\.css$/, "")} ---- */
+${css}
+`;
+    })
+    .join("");
+}
+
 const FOOTER = `
 /* Each token file ships the same 2x-display hairline override on its own
    \`:root\`; scoped here to all three classes at once. */
@@ -204,7 +237,7 @@ const FOOTER = `
 `;
 
 const output =
-  HEADER + STYLES.map(styleBlock).join("") + blueprintTexture() + FOOTER;
+  HEADER + STYLES.map(styleBlock).join("") + blueprintTexture() + paletteBlocks() + FOOTER;
 
 if (process.argv.includes("--check")) {
   const current = readFileSync(OUT, "utf8");

@@ -275,11 +275,21 @@ describe("style-scope.module.css stays in sync with blueprint.css's texture laye
   if (moduleTextureStart === -1) {
     throw new Error('Could not find ".blueprintGrid" in style-scope.module.css');
   }
-  const moduleMediaStart = moduleCssClean.indexOf("@media (min-resolution", moduleTextureStart);
-  const moduleTextureBody = moduleCssClean.slice(
-    moduleTextureStart,
-    moduleMediaStart === -1 ? moduleCssClean.length : moduleMediaStart,
+  // The texture block ends at whichever comes first: the hairline media query
+  // that has always closed the file, or the 配色 layer that now sits between
+  // them (migration 20260821050000, scripts/build-palettes.mjs). Slicing to the
+  // media query alone swept ten palette classes into this comparison and failed
+  // a test about Blueprint's drafting grid — a real signal, pointed at the
+  // wrong thing. Anything appended after the textures needs an entry here.
+  const moduleEnd = Math.min(
+    ...[
+      moduleCssClean.indexOf("@media (min-resolution", moduleTextureStart),
+      moduleCssClean.indexOf(".palette", moduleTextureStart),
+    ]
+      .filter((i) => i !== -1)
+      .concat(moduleCssClean.length),
   );
+  const moduleTextureBody = moduleCssClean.slice(moduleTextureStart, moduleEnd);
   const moduleRules = parseFlatRules(moduleTextureBody);
 
   const sourceByKey = keyRulesBySelector(sourceRules);

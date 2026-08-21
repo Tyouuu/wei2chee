@@ -10,6 +10,7 @@ import { LIBRARY_SAMPLES } from "./samples";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { scopeClasses } from "@/lib/portal/palettes";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -65,10 +66,13 @@ const TINY = new Set(["StatusDot", "Avatar"]);
 export function LibraryClient({
   locale,
   style,
+  palette,
   firstPage,
 }: {
   locale: string;
   style: StyleName;
+  /** The customer's 配色 layer, or null for this layout's native colours. */
+  palette: string | null;
   /** Where 「去用它」 sends the block. The customer's own first page, not a
    *  hardcoded `dashboard` — a business whose trade has no dashboard route
    *  would have been sent to a 404. */
@@ -210,7 +214,7 @@ export function LibraryClient({
                       uniform tiles and clips what does not fit, which is what a
                       gallery thumbnail is supposed to do. */}
                   <div
-                    className={`${styles.scope} ${SCOPE_CLASS[style]} h-[168px] overflow-hidden rounded-[var(--radius-sm)] transition-shadow [background-color:var(--color-canvas)] [box-shadow:0_0_0_1px_var(--border-subtle)] group-hover:[box-shadow:0_0_0_1px_var(--color-primary)]`}
+                    className={`${scopeClasses(style, palette)} h-[168px] overflow-hidden rounded-[var(--radius-sm)] transition-shadow [background-color:var(--color-canvas)] [box-shadow:0_0_0_1px_var(--border-subtle)] group-hover:[box-shadow:0_0_0_1px_var(--color-primary)]`}
                   >
                     {STRUCTURAL.has(entry.name) ? (
                       <p className="[padding:var(--pad-card)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">

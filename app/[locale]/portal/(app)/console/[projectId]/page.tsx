@@ -123,6 +123,7 @@ export default async function ConsoleCustomerPage({
       industryName={(payload.industry?.name_zh as string) ?? null}
       summary={(payload.analysis?.summary as string) ?? null}
       style={((payload.project.style as StyleName) ?? "blueprint") as StyleName}
+      palette={(payload.project.palette as string | null) ?? null}
       stage={(payload.project.stage as string) ?? "designing"}
       devFee={Number(payload.project.dev_fee_myr ?? 5000)}
       monthlyFee={Number(payload.project.monthly_fee_myr ?? 150)}

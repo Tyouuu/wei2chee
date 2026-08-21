@@ -13,12 +13,7 @@ import { StageSelect } from "../stage";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../../../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-
-const SCOPE_CLASS: Record<StyleName, string> = {
-  ledger: styles.ledger,
-  hearth: styles.hearth,
-  blueprint: styles.blueprint,
-};
+import { scopeClasses } from "@/lib/portal/palettes";
 
 type Page = {
   pageKey: string;
@@ -37,6 +32,7 @@ export function CustomerDetail({
   industryName,
   summary,
   style,
+  palette,
   stage,
   devFee,
   monthlyFee,
@@ -52,6 +48,10 @@ export function CustomerDetail({
   industryName: string | null;
   summary: string | null;
   style: StyleName;
+  /** The customer's 配色 layer, or null for this layout's native colours.
+   *  Threaded from the server rather than fetched again: the same projects row
+   *  supplies `style`, and a second query would be a second source of truth. */
+  palette: string | null;
   stage: string;
   devFee: number;
   monthlyFee: number;
@@ -140,7 +140,7 @@ export function CustomerDetail({
                     key={page.pageKey}
                     className={`overflow-hidden rounded-[var(--radius-lg)] [background-color:var(--color-ink-900)] [border:1px_solid_var(--color-ink-800)]`}
                   >
-                    <div className={`${styles.scope} ${SCOPE_CLASS[style]} border-b [border-color:var(--color-ink-800)]`}>
+                    <div className={`${scopeClasses(style, palette)} border-b [border-color:var(--color-ink-800)]`}>
                       <PagePreview data={page.layout} />
                     </div>
                     <div className="flex items-center justify-between gap-3 px-4 py-3">

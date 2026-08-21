@@ -25,12 +25,18 @@ export default async function StylesPage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style")
+    .select("id, style, palette")
     .eq("account_id", user.id)
     .single();
 
   if (!project) redirect("/login");
   if (!project.style) redirect("/portal/style-select");
 
-  return <StylesClient locale={locale} style={project.style as StyleName} />;
+  return (
+    <StylesClient
+      locale={locale}
+      style={project.style as StyleName}
+      palette={(project.palette as string | null) ?? null}
+    />
+  );
 }

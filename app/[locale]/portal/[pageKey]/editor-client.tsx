@@ -29,6 +29,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { scopeClasses } from "@/lib/portal/palettes";
 
 
 
@@ -55,6 +56,7 @@ export function PortalEditor({
   locale,
   navPages,
   style,
+  palette,
 }: {
   pageKey: string;
   /** The component name that ?add= just inserted, or null. */
@@ -94,6 +96,10 @@ export function PortalEditor({
    * canvas CONTENT only. Chrome (this component's own wrapper below) stays
    * Ledger regardless, per Task 5's own reviewed design. */
   style: StyleName;
+  /** The customer's 配色 layer, or null for this layout's native colours.
+   *  Threaded from the server rather than fetched again: the same projects row
+   *  supplies `style`, and a second query would be a second source of truth. */
+  palette: string | null;
 }) {
   const t = useTranslations("portal.editor");
   const router = useRouter();
@@ -612,7 +618,7 @@ export function PortalEditor({
               // inside the canvas needed changing.
               preview: ({ children }) => (
                 <div
-                  className={`${styles.scope} ${CANVAS_SCOPE_CLASS[activeStyle]} ${chrome.sheet} h-full [background-color:var(--color-canvas)]`}
+                  className={`${scopeClasses(activeStyle, palette)} ${chrome.sheet} h-full [background-color:var(--color-canvas)]`}
                 >
                   {children}
                 </div>

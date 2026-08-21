@@ -404,7 +404,11 @@
     "styles": {
       "title": "Styles",
       "subtitle": "One system, three registers",
-      "moreComing": "Three for now. Next these split into layout × palette — layout sets density, type and corners; palette only changes colour. Together that is dozens of combinations."
+      "moreComing": "Three for now. Next these split into layout × palette — layout sets density, type and corners; palette only changes colour. Together that is dozens of combinations.",
+      "paletteTitle": "Colours",
+      "paletteBody": "The layout sets density, type and corners; the palette only changes colour. Together that is {count} combinations.",
+      "paletteNative": "Native",
+      "paletteNativeBlurb": "this layout's own colours"
     },
     "library": {
       "title": "Components",

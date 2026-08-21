@@ -10,12 +10,7 @@ import { PageBar } from "../page-bar";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-
-const SCOPE_CLASS: Record<StyleName, string> = {
-  ledger: styles.ledger,
-  hearth: styles.hearth,
-  blueprint: styles.blueprint,
-};
+import { scopeClasses } from "@/lib/portal/palettes";
 
 /** Mirrors add_project_page's own ceiling (migration 20260820200000). Stated in
  *  both places on purpose: the customer should meet the limit as a disabled
@@ -32,11 +27,16 @@ type Template = {
 export function TemplatesClient({
   locale,
   style,
+  palette,
   templates,
   pageCount,
 }: {
   locale: string;
   style: StyleName;
+  /** The customer's 配色 layer, or null for this layout's native colours.
+   *  Threaded from the server rather than fetched again: the same projects row
+   *  supplies `style`, and a second query would be a second source of truth. */
+  palette: string | null;
   templates: Template[];
   pageCount: number;
 }) {
@@ -151,7 +151,7 @@ export function TemplatesClient({
                   {/* A real render of the page this customer would get — their
                       trade's words, their workflow, their sample records. */}
                   <div
-                    className={`${styles.scope} ${SCOPE_CLASS[style]} ${chrome.sheet} m-3 border-b-0`}
+                    className={`${scopeClasses(style, palette)} ${chrome.sheet} m-3 border-b-0`}
                   >
                     <PagePreview data={tpl.layout} />
                   </div>

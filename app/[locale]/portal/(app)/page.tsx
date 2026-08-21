@@ -57,7 +57,7 @@ export default async function PortalHomePage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style, paid")
+    .select("id, style, palette, paid")
     .eq("account_id", user.id)
     .single();
 
@@ -114,6 +114,7 @@ export default async function PortalHomePage({
       accountEmail={user.email}
       paid={Boolean(project.paid)}
       style={project.style as StyleName}
+      palette={(project.palette as string | null) ?? null}
       pages={pages}
       componentCount={REGISTERED_COMPONENTS.length}
       summary={businessContext.analysis?.summary ?? null}

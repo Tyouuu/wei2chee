@@ -49,7 +49,7 @@ export default async function PortalEditorPage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style, paid")
+    .select("id, style, palette, paid")
     .eq("account_id", user.id)
     .single();
 
@@ -163,6 +163,7 @@ export default async function PortalEditorPage({
        * canvas CONTENT only. Chrome stays Ledger regardless, per Task 5's own
        * reviewed design. */
       style={project.style as StyleName}
+      palette={(project.palette as string | null) ?? null}
     />
   );
 }

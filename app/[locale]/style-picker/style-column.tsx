@@ -29,6 +29,17 @@ const SCOPE_CLASS: Record<StyleName, string> = {
  *   — a real `<button>` that calls it directly instead of a WhatsApp
  *   link. `whatsappPrefillText` isn't needed in this mode.
  */
+/** The three 版式 as their designers paired them. This picker is on the
+ *  acquisition site and exists to show what the three ARE; the 配色 layer is a
+ *  choice a customer makes later, inside their own system, and offering thirty
+ *  combinations to somebody who has not signed up yet is a longer decision, not
+ *  a better one. */
+const LAYOUT_CLASS: Record<StyleName, string> = {
+  ledger: styles.ledger,
+  hearth: styles.hearth,
+  blueprint: styles.blueprint,
+};
+
 export function StyleColumn({
   styleName,
   label,
@@ -72,7 +83,7 @@ export function StyleColumn({
       data-style={styleName}
       className={[
         styles.scope,
-        SCOPE_CLASS[styleName],
+        LAYOUT_CLASS[styleName],
         isBlueprint ? `relative ${styles.blueprintGrid} ${styles.blueprintSheetMarks}` : null,
         "flex flex-col [gap:var(--gap-stack)] [border-radius:var(--radius-lg)] [border-width:var(--border-card-width)] [border-style:solid] [box-shadow:var(--shadow-card)] [padding:var(--pad-card-lg)] [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]",
       ]
