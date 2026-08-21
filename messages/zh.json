@@ -449,7 +449,9 @@
       "customBody": "我们没听过的页面也能加。「员工排班」「材料库存」「售后跟进」——你这一行需要什么就叫什么。",
       "readyTitle": "现成的页面类型",
       "readyBody": "带真实示例记录和你这一行的用词，加进来直接改。",
-      "alwaysIncluded": "每个系统都有"
+      "alwaysIncluded": "每个系统都有",
+      "zoom": "放大看 {name}",
+      "close": "关掉"
     },
     "console": {
       "title": "控制台",

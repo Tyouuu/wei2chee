@@ -449,7 +449,9 @@
       "customBody": "Add a page we have never heard of. Staff roster, material stock, aftercare — whatever your trade actually needs.",
       "readyTitle": "Ready-made page types",
       "readyBody": "They arrive with real sample records and your trade's vocabulary.",
-      "alwaysIncluded": "Always included"
+      "alwaysIncluded": "Always included",
+      "zoom": "See {name} full size",
+      "close": "Close"
     },
     "console": {
       "title": "Console",

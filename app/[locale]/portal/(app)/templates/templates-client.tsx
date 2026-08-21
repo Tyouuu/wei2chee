@@ -48,6 +48,9 @@ export function TemplatesClient({
   const [busy, setBusy] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [customTitle, setCustomTitle] = useState("");
+  // Which template is open at full size. A quarter-card render proves a page
+  // exists; it cannot be read, and reading it is the decision.
+  const [zoomed, setZoomed] = useState<(typeof templates)[number] | null>(null);
 
   const full = pageCount >= PAGE_LIMIT;
 
@@ -152,7 +155,19 @@ export function TemplatesClient({
                       trade's words, their workflow, their sample records —
                       on a white mount, so it reads as an object on the card
                       rather than as the card's own background. */}
-                  <div className={`${chrome.mount} m-3`}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setZoomed(tpl)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setZoomed(tpl);
+                      }
+                    }}
+                    aria-label={t("zoom", { name: tpl.label })}
+                    className={`${chrome.mount} m-3 cursor-zoom-in`}
+                  >
                     <div className={scopeClasses(style, palette)}>
                       <PagePreview data={tpl.layout} />
                     </div>
@@ -190,6 +205,46 @@ export function TemplatesClient({
           </ul>
         </section>
       </div>
+      {/* Full width, the customer's own style, their own words. Same shape as
+          the component library's zoom so the two galleries behave alike —
+          they were inconsistent for exactly as long as it took to notice. */}
+      {zoomed && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={zoomed.label}
+          className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 sm:p-8"
+          onClick={() => setZoomed(null)}
+        >
+          <div
+            className="flex max-h-full w-full max-w-6xl flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-baseline gap-3">
+              <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                {zoomed.label}
+              </span>
+              <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                {zoomed.pageKey}
+              </span>
+              <span className="flex-1" />
+              <button
+                type="button"
+                onClick={() => setZoomed(null)}
+                aria-label={t("close")}
+                className="rounded-[var(--radius-md)] [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] px-3 py-1.5"
+              >
+                ✕
+              </button>
+            </div>
+            <div className={`${chrome.mount} min-h-0 overflow-auto`}>
+              <div className={scopeClasses(style, palette)}>
+                <PagePreview data={zoomed.layout} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
