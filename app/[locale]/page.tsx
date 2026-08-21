@@ -23,6 +23,7 @@ export default function HomePage() {
   const [answers, setAnswers] = useState<Record<string, string> | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [leadId, setLeadId] = useState<string | null>(null);
+  const [heroBrief, setHeroBrief] = useState("");
 
   return (
     <main>
@@ -31,7 +32,13 @@ export default function HomePage() {
       <AmbientBackdrop />
       <SiteHeader />
       <HeroSection
-        onCtaClick={() => {
+        onStart={(brief) => {
+          // Kept rather than consumed. The Hero asks the same thing the
+          // questionnaire's one free-text question asks, so a visitor who has
+          // already described their business must not be asked to describe it
+          // again two screens later — that reads as the site not having
+          // listened, on the exact surface whose promise is that it did.
+          setHeroBrief(brief);
           document.getElementById("industry-select")?.scrollIntoView({ behavior: "smooth" });
         }}
       />
@@ -62,6 +69,7 @@ export default function HomePage() {
       )}
       {showStepper && selectedIndustry && (
         <OnboardingStepper
+          initialAnswers={heroBrief ? { new_customer_flow: heroBrief } : undefined}
           industry={selectedIndustry}
           onComplete={(a) => {
             setAnswers(a);

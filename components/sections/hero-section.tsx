@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, type PointerEvent as ReactPointerEvent } from "react";
-import { motion, useMotionValue, useSpring, useScroll, useTransform } from "framer-motion";
+import { useRef, useState } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { BRAND_NAME } from "@/lib/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -17,8 +17,9 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
 };
 
-export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
+export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
   const t = useTranslations("hero");
+  const [brief, setBrief] = useState("");
   const sectionRef = useRef<HTMLElement>(null);
 
   // The shader surface itself now lives in AmbientBackdrop, fixed behind the
@@ -34,24 +35,6 @@ export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
   const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "-18%"]);
   const contentScale = useTransform(scrollYProgress, [0, 1], [1, 0.94]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
-
-  // Magnetic CTA: drifts toward the cursor within its own bounds, springs back.
-  const ctaX = useMotionValue(0);
-  const ctaY = useMotionValue(0);
-  const ctaSpring = { stiffness: 200, damping: 15, mass: 0.3 };
-  const ctaSpringX = useSpring(ctaX, ctaSpring);
-  const ctaSpringY = useSpring(ctaY, ctaSpring);
-
-  function handleCtaPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    ctaX.set((e.clientX - (rect.left + rect.width / 2)) * 0.3);
-    ctaY.set((e.clientY - (rect.top + rect.height / 2)) * 0.3);
-  }
-
-  function handleCtaPointerLeave() {
-    ctaX.set(0);
-    ctaY.set(0);
-  }
 
   return (
     <section
@@ -115,31 +98,68 @@ export function HeroSection({ onCtaClick }: { onCtaClick: () => void }) {
         >
           {t("subheadline")}
         </motion.p>
-        <motion.div
+        {/* THE PRODUCT'S FIRST QUESTION, ON THE FOLD.
+            This replaced an outlined ghost button whose only job was to scroll
+            down to a trade picker — the lightest-weight element on a fold whose
+            entire purpose was to get somebody to start.
+
+            Straight from durable.co, measured on 2026-08-21: their fold is a
+            72px display line, a two-line subhead, and one big rounded box
+            reading "What type of business are you building?" with the CTA
+            inside it. You do not read about the product and then begin; you are
+            already using it while you read. Their proof line sits directly
+            under it — ★4.8 on Trustpilot, trusted by 3 million business owners
+            — where a visitor is deciding, not in a testimonial section eight
+            screens down.
+
+            What is typed here is not thrown away. It is carried into the
+            questionnaire as the answer to `new_customer_flow`, which is the one
+            free-text question the whole analysis leans on. A visitor who
+            describes their business in their own words at the moment of highest
+            intent gives the model far more than the three-question form ever
+            collected — and they only have to say it once. */}
+        <motion.form
           initial={fadeUp.initial}
           animate={fadeUp.animate}
           transition={{ duration: 0.7, delay: 0.56, ease: [0.22, 1, 0.36, 1] }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            onStart(brief.trim());
+          }}
+          className="mt-10 w-full max-w-2xl text-left"
         >
-          <motion.div
-            className="mt-11 inline-block"
-            style={{ x: ctaSpringX, y: ctaSpringY }}
-            onPointerMove={handleCtaPointerMove}
-            onPointerLeave={handleCtaPointerLeave}
-          >
-            {/* Outlined, not filled: on a lit surface a solid slab reads as a
-                sticker on top. A hairline box that floods on hover reads as
-                part of the same drawing. */}
-            <button
-              onClick={onCtaClick}
-              className="group relative overflow-hidden border border-white/45 bg-white/[0.06] px-8 py-4 font-mono text-[0.8125rem] tracking-[0.14em] text-white uppercase backdrop-blur-sm transition-colors duration-300 hover:border-white focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none"
-            >
-              <span className="absolute inset-0 origin-left scale-x-0 bg-white transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
-              <span className="relative transition-colors duration-300 group-hover:text-[oklch(0.16_0.012_265)]">
-                {t("cta")}
-              </span>
-            </button>
-          </motion.div>
-        </motion.div>
+          <div className="rounded-3xl border border-white/20 bg-white/[0.07] p-3 backdrop-blur-md transition-colors focus-within:border-white/45">
+            <textarea
+              value={brief}
+              onChange={(e) => setBrief(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter submits, Shift+Enter breaks the line. A one-line
+                // business description is the common case and reaching for a
+                // button to send it is friction at exactly the wrong moment.
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  onStart(brief.trim());
+                }
+              }}
+              rows={3}
+              placeholder={t("askPlaceholder")}
+              aria-label={t("askPlaceholder")}
+              className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-[0.9375rem] leading-relaxed text-white placeholder:text-white/45 focus:outline-none"
+            />
+            <div className="flex items-center justify-end px-1 pb-1">
+              <button
+                type="submit"
+                className="rounded-full bg-white px-6 py-2.5 text-[0.875rem] font-semibold text-[oklch(0.16_0.012_265)] transition-transform duration-200 hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none"
+              >
+                {t("askCta")} →
+              </button>
+            </div>
+          </div>
+
+          <p className="mt-5 text-center text-[0.8125rem] leading-relaxed text-white/60">
+            {t("proof")}
+          </p>
+        </motion.form>
       </motion.div>
 
       {/* Scroll cue: a plumb line dropping off the bottom of the sheet. */}

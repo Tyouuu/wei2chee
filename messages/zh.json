@@ -2,7 +2,10 @@
   "hero": {
     "headline": "你的生意，其实可以更简单。",
     "subheadline": "系统帮你设计专属系统。2 分钟，看到改变。",
-    "cta": "看看你的生意会变成怎样"
+    "cta": "看看你的生意会变成怎样",
+    "askPlaceholder": "你做的是什么生意？例：我是电话卡的 Master Dealer，下面有 40 个经销商，每个月要对账、算 2% 佣金…",
+    "askCta": "开始",
+    "proof": "开发费 RM 5,000 一口价 · 设计阶段不收费 · 资料随时免费导出"
   },
   "industrySelect": {
     "title": "你的生意属于哪一行？"
@@ -414,7 +417,8 @@
       "structural": {
         "SystemShell": "页面的框架：左边侧边栏，右边内容。每一页都建在它里面。",
         "RailNav": "系统的侧边导航。页面加进来的时候会自动出现在这里。"
-      }
+      },
+      "filterAll": "全部"
     },
     "templates": {
       "title": "模板库",

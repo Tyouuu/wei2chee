@@ -2,7 +2,10 @@
   "hero": {
     "headline": "Your business, actually simpler.",
     "subheadline": "The system designs your system. 2 minutes, see the change.",
-    "cta": "See what your business could become"
+    "cta": "See what your business could become",
+    "askPlaceholder": "What kind of business do you run? e.g. I am a SIM-card master dealer with 40 dealers; every month I reconcile and work out 2% commission…",
+    "askCta": "Start",
+    "proof": "RM 5,000 flat build fee · nothing to pay while you design · export your data any time"
   },
   "industrySelect": {
     "title": "Which industry is your business in?"
@@ -414,7 +417,8 @@
       "structural": {
         "SystemShell": "The page frame: navigation on the left, content on the right. Every page is built inside one.",
         "RailNav": "Your system's sidebar. Pages appear here automatically as you add them."
-      }
+      },
+      "filterAll": "All"
     },
     "templates": {
       "title": "Templates",

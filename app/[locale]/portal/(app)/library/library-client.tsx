@@ -28,6 +28,40 @@ type Entry = { name: string; label: string; category: string; props: Record<stri
  */
 const STRUCTURAL = new Set(["SystemShell", "RailNav"]);
 
+/**
+ * Components that are ONE CONTROL rather than a page section.
+ *
+ * They need centring, not because it looks tidier but because top-aligning a
+ * 24px status dot in a 168px frame renders a card that is 85% empty ground --
+ * which reads as a component that failed to load, not as a specimen of a
+ * status dot. 21st.dev never hits this: everything in their gallery is a
+ * full-width marketing block that fills its own tile.
+ *
+ * A set rather than a measurement because the height is only knowable after
+ * render, and a layout that reflows once it has measured itself is a worse
+ * problem than a list that has to be kept current.
+ */
+const SINGLE_CONTROL = new Set([
+  "StatusDot",
+  "Avatar",
+  "Progress",
+  "Alert",
+  "DatePicker",
+  "MonthPicker",
+  "Listbox",
+  "Combobox",
+  "TextAutocomplete",
+  "FilterChips",
+  "FileUploadField",
+  "EmptyState",
+]);
+
+/** The two that are not just short but NARROW. A status dot and an avatar are
+ *  a few dozen pixels wide, so left-aligning them leaves the specimen pinned to
+ *  one corner of an otherwise empty card. Everything else in SINGLE_CONTROL is
+ *  full-width and belongs on the left margin like real page content. */
+const TINY = new Set(["StatusDot", "Avatar"]);
+
 export function LibraryClient({
   locale,
   style,
@@ -42,6 +76,7 @@ export function LibraryClient({
 }) {
   const t = useTranslations("portal.library");
   const [query, setQuery] = useState("");
+  const [active, setActive] = useState<string | null>(null);
 
   const entries = useMemo<Entry[]>(() => {
     const categories = puckConfig.categories ?? {};
@@ -69,11 +104,22 @@ export function LibraryClient({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return entries;
-    return entries.filter(
-      (e) => e.label.toLowerCase().includes(q) || e.name.toLowerCase().includes(q),
-    );
-  }, [entries, query]);
+    return entries.filter((e) => {
+      if (active && e.category !== active) return false;
+      if (!q) return true;
+      return e.label.toLowerCase().includes(q) || e.name.toLowerCase().includes(q);
+    });
+  }, [entries, query, active]);
+
+  // Counts come off the UNFILTERED set on purpose. A facet whose number drops
+  // to 0 the moment you pick another facet is telling you about the filter,
+  // not about the library -- and the whole reason the number is there is to say
+  // how much is in the library.
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const e of entries) map.set(e.category, (map.get(e.category) ?? 0) + 1);
+    return map;
+  }, [entries]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Entry[]>();
@@ -105,6 +151,31 @@ export function LibraryClient({
           {t("body")}
         </p>
 
+        {/* FACETED FILTERING, WITH THE COUNTS ON THE FACETS.
+            This is the one thing on 21st.dev that a solo founder can actually
+            copy. Their rail reads Backgrounds 365, Calls to Action 501,
+            Heroes 1152 -- the count lives beside the category name, 11px and
+            grey, never as a separate statistic. It is what makes a finite
+            library read as a deep one, and it is why their 12,000 components
+            feel browsable while a flat list of nineteen does not.
+            Nineteen is nineteen. Saying so, per category, is free. */}
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <Chip active={active === null} onClick={() => setActive(null)}>
+            {t("filterAll")}
+            <Count n={entries.length} />
+          </Chip>
+          {[...counts.entries()].map(([category, n]) => (
+            <Chip
+              key={category}
+              active={active === category}
+              onClick={() => setActive(active === category ? null : category)}
+            >
+              {categoryTitle(category)}
+              <Count n={n} />
+            </Chip>
+          ))}
+        </div>
+
         {filtered.length === 0 && (
           <p className="mt-8 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
             {t("noResults", { query })}
@@ -113,37 +184,50 @@ export function LibraryClient({
 
         {[...grouped.entries()].map(([category, items]) => (
           <section key={category} className="mt-9">
-            <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+            <h2 className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
               {categoryTitle(category)}
-              <span className="ml-2 opacity-60">{items.length}</span>
+              <span className="ml-2 [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] opacity-60">
+                {items.length}
+              </span>
             </h2>
 
-            <ul className="mt-4 grid items-start gap-5 xl:grid-cols-2 2xl:grid-cols-3">
+            {/* Four across, up from two.
+                Measured on 21st.dev/s/card: a four-column grid of borderless
+                previews with the name and byline printed BELOW each one, on the
+                page ground, and 584 of 588 text nodes at weight 500. The card
+                gives no pixels to labels at all. This gallery was doing the
+                opposite -- a bordered box whose lower third held a Chinese
+                name, an English component name and a button, with the actual
+                component squeezed into what was left. */}
+            <ul className="mt-4 grid items-start gap-x-5 gap-y-7 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {items.map((entry) => (
-                <li
-                  key={entry.name}
-                  className="overflow-hidden rounded-[var(--radius-lg)] [border:1px_solid_var(--color-ink-800)] [background-color:var(--color-ink-900)]"
-                >
+                <li key={entry.name} className="group">
                   {/* FIXED HEIGHT, CLIPPED. `transform: scale()` does not
                       change the layout box, so the wrapper below still occupies
-                      its full pre-scale height — which showed up as a large
+                      its full pre-scale height -- which showed up as a large
                       dead gap under short components and made every card in a
                       row stretch to the tallest one. A fixed frame gives
                       uniform tiles and clips what does not fit, which is what a
                       gallery thumbnail is supposed to do. */}
                   <div
-                    className={`${styles.scope} ${SCOPE_CLASS[style]} ${chrome.sheet} m-3 h-[190px] overflow-hidden [background-color:var(--color-canvas)]`}
+                    className={`${styles.scope} ${SCOPE_CLASS[style]} h-[168px] overflow-hidden rounded-[var(--radius-sm)] transition-shadow [background-color:var(--color-canvas)] [box-shadow:0_0_0_1px_var(--border-subtle)] group-hover:[box-shadow:0_0_0_1px_var(--color-primary)]`}
                   >
                     {STRUCTURAL.has(entry.name) ? (
-                      <p className="[padding:var(--pad-card-lg)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                      <p className="[padding:var(--pad-card)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
                         {t(`structural.${entry.name}`)}
                       </p>
                     ) : (
                       // `pointer-events-none`: these are samples, not controls.
                       // A customer clicking a date picker here would open a
                       // calendar that writes to nothing.
-                      <div className="pointer-events-none origin-top-left [width:133.33%] [transform:scale(0.75)]">
-                        <div className="[padding:var(--pad-card)]">
+                      <div
+                        className={`pointer-events-none origin-top-left [width:154%] [transform:scale(0.65)] ${
+                          SINGLE_CONTROL.has(entry.name)
+                            ? `flex h-[258px] items-center ${TINY.has(entry.name) ? "justify-center" : ""}`
+                            : ""
+                        }`}
+                      >
+                        <div className="w-full [padding:var(--pad-card)]">
                           <Render
                             config={puckConfig}
                             data={{ root: {}, content: [{ type: entry.name, props: entry.props }] } as never}
@@ -153,28 +237,39 @@ export function LibraryClient({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 border-t px-4 py-3 [border-color:var(--color-ink-800)]">
-                    <span className="min-w-0">
-                      <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
-                        {entry.label}
-                      </span>
-                      <span className="block truncate [font-size:var(--text-micro)] [color:var(--color-paper-dim)] [font-family:var(--font-mono)]">
-                        {entry.name}
-                      </span>
-                    </span>
-                    {/* A real action, not a link to the editor's front door.
-                        `?add=` is read server-side in [pageKey]/page.tsx and
-                        applied through the SAME add_component operation the AI
-                        assistant uses, so the block lands in the main column
-                        exactly as a drag would — unsaved, undoable, and behind
-                        the same paid gate. Without this the library is a
-                        brochure. */}
-                    {!STRUCTURAL.has(entry.name) && (
+                  {/* Outside the card, on the page ground. Two sizes, two inks,
+                      no button -- 「去用它」 was a control competing with the
+                      thing it described, on every one of nineteen cards. The
+                      whole tile is the link now, which is also what a customer
+                      tries first. */}
+                  <div className="mt-3">
+                    {STRUCTURAL.has(entry.name) ? (
+                      <>
+                        <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+                          {entry.label}
+                        </span>
+                        <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                          {entry.name}
+                        </span>
+                      </>
+                    ) : (
+                      // A real action, not a link to the editor's front door.
+                      // `?add=` is read server-side in [pageKey]/page.tsx and
+                      // applied through the SAME add_component operation the AI
+                      // assistant uses, so the block lands in the main column
+                      // exactly as a drag would -- unsaved, undoable, and behind
+                      // the same paid gate. Without this the library is a
+                      // brochure.
                       <Link
                         href={`/${locale}/portal/${firstPage}?add=${entry.name}`}
-                        className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
+                        className="block"
                       >
-                        {t("useIt")}
+                        <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] group-hover:[color:var(--color-primary)]">
+                          {entry.label}
+                        </span>
+                        <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                          {entry.name}
+                        </span>
                       </Link>
                     )}
                   </div>
@@ -184,10 +279,47 @@ export function LibraryClient({
           </section>
         ))}
 
-        <p className="mt-10 max-w-2xl rounded-[var(--radius-md)] border border-dashed px-4 py-3 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+        <p className="mt-12 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
           {t("moreComing")}
         </p>
       </div>
     </>
+  );
+}
+
+/** A filter facet. Pill-shaped and quiet until selected, because on this page
+ *  nineteen of them would otherwise out-shout the components they filter. */
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-[var(--radius-pill)] border px-3.5 py-1.5 [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] transition-colors ${
+        active
+          ? "[background-color:var(--color-paper)] [border-color:var(--color-paper)] [color:var(--color-ink-900)]"
+          : "[background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] hover:[border-color:var(--color-paper-dim)] hover:[color:var(--color-paper)]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** The count that rides along with a facet's name. Tabular so a row of chips
+ *  does not jitter, and always dimmer than the label -- it is a qualifier, not
+ *  the thing being named. */
+function Count({ n }: { n: number }) {
+  return (
+    <span className="ml-2 [font-family:var(--font-numeric)] [font-size:var(--text-xs)] tabular-nums opacity-55">
+      {n}
+    </span>
   );
 }

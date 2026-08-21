@@ -10,12 +10,18 @@ import type { Industry } from "@/types/database";
 export function OnboardingStepper({
   industry,
   onComplete,
+  /** Answers the visitor already gave before reaching this form. The Hero asks
+   *  the same question `new_customer_flow` does, so anything typed there
+   *  arrives here already filled in — asking again would read as the site not
+   *  having listened. They can still edit it. */
+  initialAnswers,
 }: {
   industry: Industry;
   onComplete: (answers: Record<string, string>) => void;
+  initialAnswers?: Record<string, string>;
 }) {
   const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers ?? {});
   const t = useTranslations("onboarding");
 
   const currentQuestion = QUESTIONS[stepIndex];
