@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { VARIANTS, activeVariant } from "@/design-system/editor/variants";
 import {
   COLUMN_KINDS,
   KIND_LABELS,
@@ -139,6 +140,14 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     target_id: z.string().min(1),
     stages: z.array(z.string().min(1)).min(2).max(6),
   }),
+  // 换个款式, spoken. The variant ids are listed per block in describeLayout,
+  // so the model picks from what that block actually offers rather than
+  // guessing a name.
+  z.object({
+    op: z.literal("set_variant"),
+    target_id: z.string().min(1),
+    variant_id: z.string().min(1),
+  }),
 ]);
 
 export type LayoutOp = z.infer<typeof layoutOpSchema>;
@@ -217,6 +226,19 @@ export function describeLayout(layout: PuckLayout): string {
       // `column_key` is a stable identifier ("primary", "c3") that appears
       // nowhere on screen, so it can only come from here. Listed in display
       // order, which is also the order `add_table_row`'s cells are read in.
+      // Which 款式 this block is on, and what else it could be. Without this
+      // the model can be told the customer is on Docket and still have no name
+      // to put in a set_variant -- and no way to notice a block is already
+      // where it should be.
+      let variants = "";
+      const list = VARIANTS[n.type];
+      if (list?.length) {
+        const defaults = COMPONENT_CONFIGS[n.type]?.defaultProps ?? {};
+        const now = activeVariant(n.type, n.props ?? {}, defaults);
+        variants =
+          ` variant=${now?.id ?? "?"} options=[${list.map((v) => `${v.id}:"${v.label}"`).join(" ")}]`;
+      }
+
       let extra = "";
       if (n.type === "RecordTable") {
         const cols = normalizeTable(n.props ?? {})
@@ -225,7 +247,7 @@ export function describeLayout(layout: PuckLayout): string {
         extra = ` columns=[${cols}]`;
       }
 
-      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${extra}`;
+      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${variants}${extra}`;
     })
     .join("\n");
 }
@@ -294,7 +316,14 @@ export type ApplyResult = {
   skipped: { op: string; reason: string }[];
 };
 
-export function applyLayoutOps(input: PuckLayout, ops: LayoutOp[]): ApplyResult {
+export function applyLayoutOps(
+  input: PuckLayout,
+  ops: LayoutOp[],
+  /** Which 款式 a newly added block of each type should arrive on, from the
+   *  customer's 版式. Omitted in tests and anywhere without a project, where
+   *  the component's own defaults are the right answer. */
+  prefer?: Record<string, string>,
+): ApplyResult {
   const layout = clone(input);
   const skipped: ApplyResult["skipped"] = [];
   let applied = 0;
@@ -326,9 +355,21 @@ export function applyLayoutOps(input: PuckLayout, ops: LayoutOp[]): ApplyResult 
           break;
         }
         const config = COMPONENT_CONFIGS[op.component];
+        // The 款式 this customer's 版式 calls for, merged over the component's
+        // own defaults. A Docket page gets 有格线 tables and a Hearth page gets
+        // 隔行底色 ones, without either the model or the owner having to say so
+        // -- which is the whole point of them having chosen a 版式.
+        const preferId = prefer?.[op.component];
+        const preferProps = preferId
+          ? VARIANTS[op.component]?.find((v) => v.id === preferId)?.props
+          : undefined;
         const node: PuckNode = {
           type: op.component,
-          props: { ...clone(config.defaultProps ?? {}), id: newId(op.component) },
+          props: {
+            ...clone(config.defaultProps ?? {}),
+            ...(preferProps ?? {}),
+            id: newId(op.component),
+          },
         };
         if (op.title && typeof node.props.title === "string") node.props.title = op.title;
 
@@ -440,6 +481,27 @@ export function applyLayoutOps(input: PuckLayout, ops: LayoutOp[]): ApplyResult 
         }
         col.label = op.column_label;
         if (op.column_kind) col.kind = op.column_kind;
+        applied++;
+        break;
+      }
+
+      case "set_variant": {
+        const node = findNode(layout.content, op.target_id);
+        if (!node) {
+          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          break;
+        }
+        const list = VARIANTS[node.type];
+        const variant = list?.find((v) => v.id === op.variant_id);
+        if (!variant) {
+          skipped.push({ op: op.op, reason: `${node.type} 没有「${op.variant_id}」这个款式` });
+          break;
+        }
+        // The variant's own props, not the model's. Same object the picker
+        // merges, so 用讲的 and 用点的 cannot drift apart -- and because every
+        // variant only ever sets APPEARANCE props, an AI edit here can never
+        // delete something the customer typed.
+        Object.assign(node.props, variant.props);
         applied++;
         break;
       }

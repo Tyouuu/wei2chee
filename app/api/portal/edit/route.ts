@@ -13,6 +13,7 @@ import {
   type PuckLayout,
 } from "@/lib/portal/layout-ops";
 import { COLUMN_KINDS } from "@/lib/portal/table-model";
+import { buildDesignDoc, preferredVariants } from "@/lib/portal/design-doc";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -55,6 +56,15 @@ Rules:
   improve anything you were not asked about.
 - Write all text in the same language the owner used.
 - explanation: ONE sentence, in the owner's language, saying what you changed.
+
+Look (款式):
+- Some blocks list \`variant=<id> options=[id:"name" ...]\`. That is the block's
+  current look and the looks it can be switched to. set_variant changes it.
+- Blocks you ADD already arrive in this customer's style. Do not follow an
+  add_component with a set_variant; you have no id for a block you just made.
+- Do not restyle blocks the owner did not ask about.
+- When the owner asks for a look ("表格太挤了", "改成隔行底色"), set_variant is
+  the operation, not add/remove.
 
 Record tables:
 - Each table lists its columns as \`key:"label"(type)\`. Use the KEY to target a
@@ -136,6 +146,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "instruction too long" }, { status: 400 });
   }
 
+  // The customer's own 版式 and 配色, resolved from their session rather than
+  // sent by the browser. Absent for a project that has not reached 风格选择 --
+  // buildDesignDoc returns null and the prompt simply carries no brief, which
+  // is the behaviour every call had before this existed.
+  const { data: project } = await supabase
+    .from("projects")
+    .select("style, palette")
+    .eq("account_id", user.id)
+    .single();
+  const designDoc = buildDesignDoc(project?.style, project?.palette);
+
   const pageList = (Array.isArray(pages) ? pages : [])
     .map((p) => `${p.key} ("${p.label}")`)
     .join(", ");
@@ -147,6 +168,9 @@ Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
 Text fields you may set: ${EDITABLE_TEXT_FIELDS.join(", ")}
 Pages in this system: ${pageList || "(unknown)"}
 
+${designDoc ? `
+${designDoc}
+` : ""}
 The business owner asked:
 "${trimmed}"`;
 
@@ -170,7 +194,7 @@ The business owner asked:
     return NextResponse.json({ error: "edit failed" }, { status: 502 });
   }
 
-  const result = applyLayoutOps(layout, parsed.operations);
+  const result = applyLayoutOps(layout, parsed.operations, preferredVariants(project?.style));
 
   return NextResponse.json({
     layout: result.layout,
@@ -253,6 +277,7 @@ const EDIT_JSON_SCHEMA = {
                 "remove_table_column",
                 "set_table_column",
                 "set_workflow",
+                "set_variant",
               ],
             },
             target_id: { type: ["string", "null"] },
@@ -270,6 +295,11 @@ const EDIT_JSON_SCHEMA = {
               enum: ["positive", "warning", "negative", "neutral", null],
             },
             stages: { type: ["array", "null"], items: { type: "string" } },
+            // Not enum-constrained: the valid ids depend on the block being
+            // targeted, which the model reads off that block's own
+            // options=[...] listing. A wrong id is dropped by set_variant with
+            // a reason, never applied to the wrong block.
+            variant_id: { type: ["string", "null"] },
           },
           required: [
             "op",
@@ -285,6 +315,7 @@ const EDIT_JSON_SCHEMA = {
             "cells",
             "status_tone",
             "stages",
+            "variant_id",
           ],
           additionalProperties: false,
         },

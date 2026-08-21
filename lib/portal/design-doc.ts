@@ -1,0 +1,169 @@
+import { PALETTE_BY_KEY } from "./palettes";
+import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+
+/**
+ * The customer's design language, written down for the AI assistant.
+ *
+ * WHY THIS EXISTS. The assistant could already add blocks, rename columns and
+ * rewrite text, and it did all of it blind: `/api/portal/edit`'s system prompt
+ * describes the page's BLOCKS and says nothing whatsoever about the customer's
+ * 版式 or 配色. So an owner on Docket — square corners, 2px rules, uppercase
+ * labels, a paper-form register — who asked for a new table got the same
+ * default 「一行一条」 as an owner on Hearth, whose whole page is 20px radii and
+ * soft shadows. Five style sets exist precisely so those two systems do not
+ * look alike, and the one part of the product that generates layout could not
+ * see them.
+ *
+ * THE FORMAT IS BORROWED; THE CONTENT IS NOT. VoltAgent's awesome-design-md
+ * (MIT, 109k stars) collects 73 DESIGN.md files — one per famous brand — for
+ * exactly this purpose: a plain-text design brief an agent reads before it
+ * writes UI. Its section skeleton is good and is followed loosely here. Its
+ * CONTENT is Stripe's and Linear's trade dress and is not usable: the MIT
+ * licence covers the repository's text, not the brands it describes.
+ *
+ * AND IT IS NOT A NEW STYLE. The founder's first question on hearing this was
+ * 「不是有很多个风格了？」 — no. There are still five 版式 and eleven 配色. This
+ * file adds no axis and invents no value; every fact below is read off the
+ * token files, and every recommendation is a choice among variants that already
+ * exist in design-system/editor/variants.ts. It is a translation of a decision
+ * the customer already made, into a form the model can act on.
+ *
+ * KEPT SHORT ON PURPOSE. A dump of 120 tokens would cost more than it earns —
+ * the model does not emit colours or pixel values, it emits operations. What
+ * changes its output is knowing which VARIANT belongs in this register, so
+ * that is what most of the document is.
+ */
+
+type StyleBrief = {
+  /** One line the model can reason from. */
+  mood: string;
+  /** Measured off design-system/tokens/<style>.css. Present so the model can
+   *  tell "this is a tight register" from "this is a roomy one" without being
+   *  told in adjectives it might over-apply. */
+  facts: string;
+  /** The variant that belongs in this register, per block. Ids come from
+   *  variants.ts; a wrong one is dropped by set_variant rather than applied. */
+  prefer: Record<string, string>;
+  avoid: string[];
+};
+
+const STYLES: Record<StyleName, StyleBrief> = {
+  ledger: {
+    mood: "一本账簿。密、准、没有装饰。给每天要看几十条记录的人。",
+    facts: "圆角 4px · 边框 1px · 无阴影 · 行高 32px · 正文 13px · 标签全大写",
+    prefer: {
+      RecordTable: "compact",
+      HeroCard: "stats",
+      WorkflowStrip: "row",
+      ActionButton: "outline",
+      Tag: "outline",
+      Divider: "tight",
+      TrendChart: "line",
+    },
+    avoid: ["大圆角的卡片", "大段留白", "把一页只放一两块东西"],
+  },
+  hearth: {
+    mood: "一间店的前台。圆、暖、宽松。给客人会看到的页面。",
+    facts: "圆角 20px · 无边框、靠阴影分层 · 行高 52px · 正文 15px · 标签不大写",
+    prefer: {
+      RecordTable: "zebra",
+      HeroCard: "full",
+      WorkflowStrip: "numbered",
+      ActionButton: "default",
+      Tag: "secondary",
+      Divider: "loose",
+      TrendChart: "area",
+    },
+    avoid: ["硬边框", "把行挤到 32px", "全大写的标签"],
+  },
+  blueprint: {
+    mood: "一份图纸。中性、清楚、不抢眼。什么生意都不会出错的那一套。",
+    facts: "圆角 12px · 边框 1px · 淡阴影 · 行高 42px · 正文 14px · 标签不大写",
+    prefer: {
+      RecordTable: "plain",
+      HeroCard: "full",
+      WorkflowStrip: "row",
+      ActionButton: "default",
+      Tag: "default",
+      Divider: "normal",
+      TrendChart: "bar",
+    },
+    avoid: ["极端的密或极端的松"],
+  },
+  bare: {
+    mood: "没有框。靠空白和一条线分区,不靠盒子。给东西少、要显得贵的页面。",
+    facts: "无边框 · 无阴影 · 卡片没有内距 · 行高 48px · 行距 1.7 · 标签全大写",
+    prefer: {
+      RecordTable: "plain",
+      HeroCard: "flat",
+      WorkflowStrip: "numbered",
+      ActionButton: "ghost",
+      Tag: "outline",
+      Divider: "loose",
+      TrendChart: "line",
+    },
+    avoid: ["加边框", "加阴影", "用实心按钮", "把东西装进盒子里"],
+  },
+  docket: {
+    mood: "一张真的表格。直角、硬线、像印出来要签名的单据。",
+    facts: "圆角 0 · 边框 2px · 无阴影 · 行高 32px · 正文 13px · 标签全大写、字距 0.14em",
+    prefer: {
+      RecordTable: "grid",
+      HeroCard: "stats",
+      WorkflowStrip: "row",
+      ActionButton: "outline",
+      Tag: "outline",
+      Divider: "tight",
+      TrendChart: "bar",
+    },
+    avoid: ["圆角", "阴影", "柔和的淡色块"],
+  },
+};
+
+/**
+ * The same preferences the brief describes, for code rather than for the model.
+ *
+ * `add_component` applies these directly (see layout-ops.ts) because the model
+ * cannot target a block it has just created -- the id is minted inside that
+ * module. The brief still names them so the model can EXPLAIN a look when
+ * asked, and so it does not fight a default it cannot see.
+ */
+export function preferredVariants(style: string | null | undefined): Record<string, string> {
+  return STYLES[style as StyleName]?.prefer ?? {};
+}
+
+/**
+ * Builds the brief. Returns null for a project with no style yet — a customer
+ * who has not reached 风格选择 has no design language to describe, and an
+ * invented one would be worse than none.
+ */
+export function buildDesignDoc(
+  style: string | null | undefined,
+  palette: string | null | undefined,
+): string | null {
+  const brief = STYLES[style as StyleName];
+  if (!brief) return null;
+
+  const p = palette ? PALETTE_BY_KEY[palette] : undefined;
+  const prefer = Object.entries(brief.prefer)
+    .map(([type, id]) => `${type}=${id}`)
+    .join(" ");
+
+  return `## 这个客户的设计语言
+
+版式：${style}　—　${brief.mood}
+量出来的：${brief.facts}
+配色：${p ? `${p.label}（${p.blurb}）` : "还没选，用版式自己的颜色"}
+
+### 这个版式的默认款式（你不用动手，加进去就是这样）
+${prefer}
+
+### 不要做
+${brief.avoid.map((a) => `- ${a}`).join("\n")}
+
+### 规矩
+- 版式和配色是老板自己选的。**不要主动去改**，除非他明确要求。
+- 上面那一行是新块自动带的款式，你不需要再去设一次，也不要把整页重新排。
+- 老板明确要求换某一块的款式时，才用 set_variant，目标要是页面上已经有的 id。
+- 页面上已经有的字就是老板的用词。跟着它写，不要换成你觉得更标准的说法。`;
+}
