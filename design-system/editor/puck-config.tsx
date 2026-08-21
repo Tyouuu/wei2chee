@@ -26,6 +26,7 @@ import { SystemShell } from "@/design-system/components/system-shell";
 // project's private vocabulary.
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { TrendChart, type TrendKind, type TrendPoint } from "@/design-system/components/trend-chart";
 
 // Second pass (2026-08-20, see docs/portal-editor-known-issues.md): expands
 // the first pass's 5 decorative-only components with real business/form
@@ -104,6 +105,7 @@ type Components = {
   Listbox: { name?: string; defaultValue?: string; options: ListboxOption[]; placeholder?: string };
   Alert: { variant: "default" | "destructive"; title: string; description?: string };
   Progress: { label?: string; value: number };
+  TrendChart: { title?: string; caption?: string; kind: TrendKind; unit?: string; points: TrendPoint[] };
   RailNav: {
     brandLabel: string;
     brandHref: string;
@@ -135,7 +137,7 @@ export const puckConfig: Config<Components> = {
   categories: {
     content: {
       title: "内容展示",
-      components: ["PageHeader", "HeroCard", "RecordTable", "WorkflowStrip", "Progress", "StatusDot", "Alert", "Avatar", "EmptyState"],
+      components: ["PageHeader", "HeroCard", "RecordTable", "WorkflowStrip", "TrendChart", "Progress", "StatusDot", "Alert", "Avatar", "EmptyState"],
       defaultExpanded: true,
     },
     input: {
@@ -528,6 +530,56 @@ export const puckConfig: Config<Components> = {
           <AlertTitle>{title}</AlertTitle>
           {description ? <AlertDescription>{description}</AlertDescription> : null}
         </Alert>
+      ),
+    },
+    // The first component in this library taken from a public registry rather
+    // than written here: the chart primitive underneath is shadcn's own
+    // components/ui/chart.tsx, pulled unmodified with `npx shadcn add chart`.
+    // The wrapper above it exists to turn its developer API (a ChartConfig
+    // object, a Recharts child tree) into two questions a contractor can answer
+    // -- what shape, and what are the numbers.
+    TrendChart: {
+      label: "趋势图",
+      fields: {
+        title: { label: "标题", type: "text" },
+        caption: { label: "说明", type: "text" },
+        kind: {
+          label: "图表样式",
+          type: "radio",
+          options: [
+            { label: "柱状", value: "bar" },
+            { label: "折线", value: "line" },
+            { label: "面积", value: "area" },
+          ],
+        },
+        unit: { label: "单位", type: "text" },
+        points: {
+          label: "数据",
+          type: "array",
+          arrayFields: {
+            label: { label: "时间", type: "text" },
+            value: { label: "数值", type: "number" },
+          },
+          defaultItemProps: { label: "月份", value: 0 },
+          getItemSummary: (item) => `${item.label || "月份"} · ${item.value ?? 0}`,
+        },
+      },
+      defaultProps: {
+        title: "每月收款",
+        caption: "已经收到的工程款，按月看。",
+        kind: "bar" as const,
+        unit: "RM",
+        points: [
+          { label: "3月", value: 42000 },
+          { label: "4月", value: 51000 },
+          { label: "5月", value: 47000 },
+          { label: "6月", value: 63000 },
+          { label: "7月", value: 58000 },
+          { label: "8月", value: 71300 },
+        ],
+      },
+      render: ({ title, caption, kind, unit, points }) => (
+        <TrendChart title={title} caption={caption} kind={kind} unit={unit} points={points} />
       ),
     },
     Progress: {

@@ -120,6 +120,21 @@ export const LIBRARY_SAMPLES: Record<string, Record<string, unknown>> = {
     accept: "image/*,.pdf",
   },
 
+  TrendChart: {
+    title: "每月收款",
+    caption: "已经收到的工程款，按月看。",
+    kind: "bar",
+    unit: "RM",
+    points: [
+      { label: "3月", value: 42000 },
+      { label: "4月", value: 51000 },
+      { label: "5月", value: 47000 },
+      { label: "6月", value: 63000 },
+      { label: "7月", value: 58000 },
+      { label: "8月", value: 71300 },
+    ],
+  },
+
   Alert: {
     variant: "destructive",
     title: "有 2 张报价单超过 7 天没回复",
