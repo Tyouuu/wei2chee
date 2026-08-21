@@ -60,8 +60,23 @@ export function StyleSwitcher({
     }
   }
 
+  // DESKTOP ONLY, and the breakpoint is editor-client.tsx's own NARROW rather
+  // than a new one: below 1024px that file swaps the whole editor for
+  // mobile-editor.tsx, so this row was rendering into a screen it was never
+  // laid out for. Measured on a 390px iPhone viewport: eight names plus the
+  // label came to 490px, which was the single biggest contributor to 116px of
+  // horizontal scroll on the editor's first paint -- Stamp and Contract sat
+  // off the right edge entirely, and every button was 26px tall against the
+  // 44px a thumb needs.
+  //
+  // Hidden rather than deleted: on a desktop this is still the fastest way to
+  // compare registers against real content, and /portal/styles is a page away.
+  // Whether it belongs in a customer's top bar at all is a separate question
+  // (it reads as a debug control, and Durable keeps the equivalent behind a
+  // "Themes" button) -- that one is not settled yet, so this change only fixes
+  // the screen where it was actively broken.
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="hidden items-center gap-1.5 lg:flex">
       <span className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">{t("styleLabel")}</span>
       {STYLES.map((name) => {
         const active = name === style;

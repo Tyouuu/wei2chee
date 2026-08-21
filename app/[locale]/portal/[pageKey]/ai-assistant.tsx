@@ -454,12 +454,25 @@ export function AiAssistant({
           className="w-full resize-none rounded-md border px-2.5 py-2 [font-size:var(--text-xs)] leading-snug outline-none disabled:opacity-60 [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
         />
         <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="[font-size:var(--text-micro)] [color:var(--color-paper-dim)]">{t("aiEnterHint")}</span>
+          {/* A phone has no Shift+Enter, so this hint was instructing a
+              keystroke that cannot be typed on the device showing it. Same
+              1024px line as the rest of the editor's desktop/mobile split:
+              below it, mobile-editor.tsx renders this assistant as the whole
+              interface, and the send button beside it is the real affordance
+              there. */}
+          <span className="hidden [font-size:var(--text-micro)] [color:var(--color-paper-dim)] lg:inline">{t("aiEnterHint")}</span>
           <button
             type="button"
             onClick={() => ask(instruction)}
             disabled={busy || !instruction.trim()}
-            className="shrink-0 rounded-md px-3 py-1.5 [font-size:var(--text-xs)] transition-colors disabled:opacity-40 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
+            // Full width and 44px tall below 1024px, unchanged above it.
+            // Measured at 30px on a 390px viewport, which is under the 44px a
+            // thumb needs -- and this is the send button of the assistant that
+            // mobile-editor.tsx makes the ENTIRE phone interface, so it is the
+            // one control on that screen that cannot be fiddly. It also has the
+            // row to itself down there now that the Enter hint beside it is
+            // desktop-only, so widening costs nothing.
+            className="min-h-11 w-full shrink-0 rounded-md px-3 py-1.5 [font-size:var(--text-xs)] transition-colors disabled:opacity-40 lg:min-h-0 lg:w-auto [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
           >
             {busy ? t("aiThinking") : t("aiSubmit")}
           </button>

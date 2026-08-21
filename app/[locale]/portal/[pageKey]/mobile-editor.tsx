@@ -82,17 +82,40 @@ export function MobileEditor({
           something and does not is worse than one that visibly cannot. */}
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         <div className={chrome.mount}>
-          <div className={`${scopeClasses(style, palette)} overflow-x-auto [background-color:var(--color-canvas)]`}>
-            {/* COMPOSED AT A DESKTOP WIDTH AND SWIPED, not reflowed and not
-                scaled. Reflowing puts a five-column table and a 180px rail
-                into 366px, which is not what their system looks like — the
-                first thing they would see is a version of their own page that
-                will never exist. Scaling it to fit makes it honest and
-                unreadable. Swiping keeps both the proportions and the type
-                size, which is how every phone preview of a desktop layout
-                works. */}
-            <div className="pointer-events-none w-[900px]">
-              <Render config={puckConfig} data={appState.data as Data} />
+          {/* THE SCROLLER IS A GRANDCHILD OF .mount, NOT ITS CHILD, and that
+              nesting is the whole point of this div.
+
+              chrome.module.css declares `.mount > * { overflow: hidden }` so the
+              customer's system is clipped to the plinth's inner radius. That
+              selector and Tailwind's `.overflow-x-auto` have the SAME
+              specificity (0,1,0), so the one that wins is decided by source
+              order -- and the CSS module lands after the utilities. The
+              swipeable container below therefore computed to `overflow-x:
+              hidden` and the swipe silently did nothing.
+
+              Measured on a 390px iPhone viewport before this fix: scrollWidth
+              900, clientWidth 354, and a drag moved scrollLeft by 0. A customer
+              on a phone could see the left third of their own system and had no
+              way to reach the rest of it -- while the comment directly below
+              promised the opposite. Setting scrollLeft from script still
+              worked, which is why nothing about it looked broken in code.
+
+              Keeping the clip on this outer div preserves the rounded corners
+              the mount exists for; the scroll moves one level in, where nothing
+              overrides it. */}
+          <div className={`${scopeClasses(style, palette)} [background-color:var(--color-canvas)]`}>
+            <div className="h-full overflow-x-auto">
+              {/* COMPOSED AT A DESKTOP WIDTH AND SWIPED, not reflowed and not
+                  scaled. Reflowing puts a five-column table and a 180px rail
+                  into 366px, which is not what their system looks like — the
+                  first thing they would see is a version of their own page that
+                  will never exist. Scaling it to fit makes it honest and
+                  unreadable. Swiping keeps both the proportions and the type
+                  size, which is how every phone preview of a desktop layout
+                  works. */}
+              <div className="pointer-events-none w-[900px]">
+                <Render config={puckConfig} data={appState.data as Data} />
+              </div>
             </div>
           </div>
         </div>
