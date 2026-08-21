@@ -431,7 +431,7 @@
       "searchPlaceholder": "Search components…",
       "noResults": "Nothing matching “{query}”.",
       "useIt": "Use it",
-      "moreComing": "This is everything currently registered in the editor. More real business blocks are coming: charts, schedules, stock, invoices, reconciliation, approvals.",
+      "moreComing": "This is everything currently registered in the editor, and every one of them drops straight into your page. Still to come: stock, invoices, reconciliation, approvals.",
       "structural": {
         "SystemShell": "The page frame: navigation on the left, content on the right. Every page is built inside one.",
         "RailNav": "Your system's sidebar. Pages appear here automatically as you add them."

@@ -16,6 +16,43 @@ import { TextAutocomplete } from "@/design-system/components/text-autocomplete";
 import { Listbox, type ListboxOption } from "@/design-system/components/listbox";
 import { RailNav, type RailItem, type RailUtilityItem, type RailVariant } from "@/design-system/components/rail-nav";
 import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
+// The second registry wave. See the header comments in both files for what was
+// taken, what was left on the shelf, and why the count was never the point.
+import {
+  InfoRows,
+  DaySchedule,
+  DateProgress,
+  PeopleBoard,
+  FaceRow,
+  PriceTable,
+  SmallStat,
+  LongText,
+  NoticePill,
+  NoticeBanner,
+  CopyValue,
+  PayQr,
+  ActivitySquares,
+  type InfoRow,
+  type ScheduleRow,
+  type PersonRow,
+  type PriceTier,
+} from "@/design-system/components/trade-blocks";
+import {
+  CheckRow,
+  ChoiceRow,
+  SwitchRow,
+  SliderRow,
+  FoldSection,
+  PageNumbers,
+  UploadBox,
+  TagPicker,
+  PackagePicker,
+  WeekStrip,
+  ZoomPhoto,
+  type ChoiceOption,
+  type FoldRow,
+  type PackageOption,
+} from "@/design-system/components/input-blocks";
 import { SystemShell } from "@/design-system/components/system-shell";
 // STRAIGHT FROM THE shadcn REGISTRY, unmodified. They render in the customer's
 // chosen style because each token file now aliases the shadcn variable contract
@@ -190,6 +227,62 @@ type Components = {
   Alert: { variant: "default" | "destructive"; title: string; description?: string };
   Progress: { label?: string; value: number };
   TrendChart: { title?: string; caption?: string; kind: TrendKind; unit?: string; points: TrendPoint[] };
+  // ---- 生意零件 ----
+  InfoRows: {
+    heading?: string;
+    rows: InfoRow[];
+    variant?: "comfortable" | "compact";
+    framed?: boolean;
+  };
+  DaySchedule: { heading?: string; rows: ScheduleRow[]; framed?: boolean };
+  DateProgress: { heading?: string; start: string; end: string; framed?: boolean };
+  PeopleBoard: { heading?: string; people: PersonRow[]; columns?: 2 | 3 | 4 | 5 };
+  FaceRow: { people: PersonRow[]; max?: number };
+  PriceTable: {
+    heading?: string;
+    layout?: "cards" | "table";
+    currency?: string;
+    tiers: PriceTier[];
+  };
+  SmallStat: {
+    label: string;
+    value: string;
+    delta?: number;
+    period?: string;
+    variant?: "default" | "compact" | "detailed";
+  };
+  CopyValue: { label?: string; value: string };
+  PayQr: { data: string; size?: number };
+  ActivitySquares: { label?: string };
+  // ---- 版面零件 ----
+  LongText: { content: string; maxLines?: number };
+  NoticePill: { tag?: string; text: string; themed?: boolean };
+  // "yes" / "no", not booleans: Puck's radio writes its option value.
+  NoticeBanner: { text: string; closable?: "yes" | "no" };
+  FoldSection: { rows: FoldRow[]; openFirst?: boolean };
+  PageNumbers: { pages?: number; current?: number };
+  ZoomPhoto: { src: string; alt?: string; height?: number };
+  // ---- 填写 ----
+  CheckRow: { label: string; hint?: string; defaultChecked?: "yes" | "no" };
+  ChoiceRow: {
+    label?: string;
+    options: ChoiceOption[];
+    defaultValue?: string;
+    inline?: "yes" | "no";
+  };
+  SwitchRow: { label: string; hint?: string; defaultOn?: "yes" | "no" };
+  SliderRow: {
+    label?: string;
+    min?: number;
+    max?: number;
+    step?: number;
+    defaultValue?: number;
+    suffix?: string;
+  };
+  UploadBox: { title?: string; hint?: string; maxFiles?: number };
+  TagPicker: { label?: string; options: ChoiceOption[]; placeholder?: string };
+  PackagePicker: { options: PackageOption[]; defaultValue?: string };
+  WeekStrip: { days?: number };
   RailNav: {
     variant: RailVariant;
     brandLabel: string;
@@ -200,6 +293,11 @@ type Components = {
     userRoleLabel?: string;
   };
 };
+
+const YES_NO = [
+  { label: "不要", value: "no" },
+  { label: "要", value: "yes" },
+];
 
 const STATUS_TONE_OPTIONS = [
   { label: "Positive", value: "positive" },
@@ -222,7 +320,7 @@ export const puckConfig: Config<Components> = {
   categories: {
     content: {
       title: "内容展示",
-      components: ["PageHeader", "HeroCard", "RecordTable", "TaskBoard", "WorkflowStrip", "TrendChart", "Progress", "StatusDot", "Tag", "BeforeAfter", "Stars", "Alert", "Avatar", "EmptyState"],
+      components: ["PageHeader", "HeroCard", "SmallStat", "RecordTable", "TaskBoard", "WorkflowStrip", "DateProgress", "TrendChart", "Progress", "InfoRows", "StatusDot", "Tag", "BeforeAfter", "Stars", "Alert", "Avatar", "FaceRow", "ZoomPhoto", "EmptyState"],
       defaultExpanded: true,
     },
     input: {
@@ -237,9 +335,40 @@ export const puckConfig: Config<Components> = {
         "FilterChips",
         "FormFields",
         "NoteField",
+        "CheckRow",
+        "ChoiceRow",
+        "SwitchRow",
+        "SliderRow",
+        "TagPicker",
+        "PackagePicker",
+        "UploadBox",
+        "WeekStrip",
         "ActionButton",
       ],
       defaultExpanded: true,
+    },
+    // Blocks that exist only because this is a BUSINESS system rather than a
+    // page builder. Nothing here would appear in a website tool, and every one
+    // of them answers a question a Malaysian SME already has: what do I charge,
+    // who is where today, how do they pay me, who turned up.
+    trade: {
+      title: "生意零件",
+      components: [
+        "PriceTable",
+        "DaySchedule",
+        "PeopleBoard",
+        "PayQr",
+        "CopyValue",
+        "ActivitySquares",
+      ],
+      defaultExpanded: true,
+    },
+    // Page furniture: neither what the page says nor what it collects, but what
+    // holds the two apart.
+    chrome: {
+      title: "版面零件",
+      components: ["NoticeBanner", "NoticePill", "FoldSection", "LongText", "PageNumbers"],
+      defaultExpanded: false,
     },
     layout: {
       title: "页面框架",
@@ -248,6 +377,478 @@ export const puckConfig: Config<Components> = {
     },
   },
   components: {
+    // ============================================================ 生意零件
+    InfoRows: {
+      label: "资料列表",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        rows: {
+          label: "每一行",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            value: { label: "内容", type: "text" },
+            icon: {
+              label: "图案",
+              type: "select",
+              options: [
+                { label: "人", value: "person" },
+                { label: "电话", value: "phone" },
+                { label: "地点", value: "place" },
+                { label: "时间", value: "time" },
+                { label: "钱", value: "money" },
+                { label: "文件", value: "file" },
+                { label: "标签", value: "tag" },
+                { label: "公司", value: "company" },
+                { label: "工程", value: "work" },
+                { label: "日期", value: "date" },
+              ],
+            },
+          },
+          defaultItemProps: { label: "名称", value: "内容", icon: "file" },
+          getItemSummary: (item) => item.label || "一行",
+        },
+      },
+      defaultProps: {
+        heading: "客户资料",
+        variant: "comfortable",
+        framed: true,
+        rows: [
+          { label: "联络人", value: "陈先生", icon: "person" },
+          { label: "电话", value: "012-345 6789", icon: "phone" },
+          { label: "地址", value: "Taman Desa, KL", icon: "place" },
+        ],
+      },
+      render: ({ heading, rows, variant, framed }) => (
+        <InfoRows heading={heading} rows={rows} variant={variant} framed={framed} />
+      ),
+    },
+    DaySchedule: {
+      label: "排班表",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        rows: {
+          label: "时间表",
+          type: "array",
+          arrayFields: {
+            time: { label: "几点", type: "text" },
+            endTime: { label: "到几点", type: "text" },
+            title: { label: "做什么", type: "text" },
+            description: { label: "说明", type: "text" },
+          },
+          defaultItemProps: { time: "09:00", title: "安排" },
+          getItemSummary: (item) => `${item.time || ""} ${item.title || ""}`.trim() || "一项",
+        },
+      },
+      defaultProps: {
+        heading: "今天的安排",
+        framed: true,
+        rows: [
+          { time: "09:00", endTime: "11:00", title: "Taman Desa 量尺", description: "陈先生" },
+          { time: "14:00", endTime: "16:30", title: "Bukit Jalil 施工", description: "泥水" },
+        ],
+      },
+      render: ({ heading, rows, framed }) => (
+        <DaySchedule heading={heading} rows={rows} framed={framed} />
+      ),
+    },
+    DateProgress: {
+      label: "进度（看日期）",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        start: { label: "开工日期", type: "text" },
+        end: { label: "完成日期", type: "text" },
+      },
+      defaultProps: {
+        heading: "工程进度",
+        start: "2026-08-01",
+        end: "2026-10-15",
+        framed: true,
+      },
+      render: ({ heading, start, end, framed }) => (
+        <DateProgress heading={heading} start={start} end={end} framed={framed} />
+      ),
+    },
+    PeopleBoard: {
+      label: "员工 / 师傅",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        columns: {
+          label: "一行几个",
+          type: "radio",
+          options: [
+            { label: "2", value: 2 },
+            { label: "3", value: 3 },
+            { label: "4", value: 4 },
+          ],
+        },
+        people: {
+          label: "人",
+          type: "array",
+          arrayFields: {
+            name: { label: "名字", type: "text" },
+            title: { label: "职位", type: "text" },
+            image: { label: "照片网址", type: "text" },
+          },
+          defaultItemProps: { name: "名字", title: "职位" },
+          getItemSummary: (item) => item.name || "一个人",
+        },
+      },
+      defaultProps: {
+        heading: "我们的师傅",
+        columns: 3,
+        people: [
+          { name: "陈师傅", title: "泥水" },
+          { name: "林师傅", title: "水电" },
+          { name: "黄师傅", title: "木工" },
+        ],
+      },
+      render: ({ heading, people, columns }) => (
+        <PeopleBoard heading={heading} people={people} columns={columns} />
+      ),
+    },
+    FaceRow: {
+      label: "多人头像",
+      fields: {
+        max: { label: "最多显示几个", type: "number" },
+        people: {
+          label: "人",
+          type: "array",
+          arrayFields: {
+            name: { label: "名字", type: "text" },
+            image: { label: "照片网址", type: "text" },
+          },
+          defaultItemProps: { name: "名字" },
+          getItemSummary: (item) => item.name || "一个人",
+        },
+      },
+      defaultProps: {
+        max: 4,
+        people: [{ name: "陈师傅" }, { name: "林师傅" }, { name: "黄师傅" }],
+      },
+      render: ({ people, max }) => <FaceRow people={people} max={max} />,
+    },
+    PriceTable: {
+      label: "价目表",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        currency: { label: "货币", type: "text" },
+        layout: {
+          label: "怎么排",
+          type: "radio",
+          options: [
+            { label: "卡片", value: "cards" },
+            { label: "表格", value: "table" },
+          ],
+        },
+        tiers: {
+          label: "配套",
+          type: "array",
+          arrayFields: {
+            name: { label: "配套名", type: "text" },
+            description: { label: "一句话说明", type: "text" },
+            price: { label: "价钱", type: "number" },
+            period: { label: "单位（每月 / 每次）", type: "text" },
+            features: { label: "包含什么（用、分开）", type: "text" },
+            cta: { label: "按钮上的字", type: "text" },
+            highlighted: { label: "推荐这个", type: "radio", options: YES_NO },
+          },
+          defaultItemProps: { name: "配套", price: 0, highlighted: "no" as const },
+          getItemSummary: (item) => item.name || "配套",
+        },
+      },
+      defaultProps: {
+        heading: "收费",
+        currency: "MYR",
+        layout: "cards",
+        tiers: [
+          {
+            name: "基本",
+            description: "小工程",
+            price: 1500,
+            period: "起",
+            features: "免费上门量尺、报价单、一次修改",
+            cta: "问详情",
+            highlighted: "no",
+          },
+          {
+            name: "全屋",
+            description: "整间屋翻新",
+            price: 8800,
+            period: "起",
+            features: "免费上门量尺、3D 图、无限次修改、一年保修",
+            cta: "问详情",
+            highlighted: "yes",
+          },
+        ],
+      },
+      render: ({ heading, layout, currency, tiers }) => (
+        <PriceTable heading={heading} layout={layout} currency={currency} tiers={tiers} />
+      ),
+    },
+    SmallStat: {
+      label: "小数字卡",
+      fields: {
+        label: { label: "名称", type: "text" },
+        value: { label: "数值", type: "text" },
+        delta: { label: "比上期（%）", type: "number" },
+        period: { label: "比什么", type: "text" },
+        variant: {
+          label: "款式",
+          type: "radio",
+          options: [
+            { label: "正常", value: "default" },
+            { label: "紧凑", value: "compact" },
+            { label: "详细", value: "detailed" },
+          ],
+        },
+      },
+      defaultProps: {
+        label: "本月新客户",
+        value: "12",
+        delta: 8,
+        period: "vs 上个月",
+        variant: "default",
+      },
+      render: ({ label, value, delta, period, variant }) => (
+        <SmallStat label={label} value={value} delta={delta} period={period} variant={variant} />
+      ),
+    },
+    CopyValue: {
+      label: "单号（可复制）",
+      fields: {
+        label: { label: "名称", type: "text" },
+        value: { label: "内容", type: "text" },
+      },
+      defaultProps: { label: "报价单号", value: "QT-2026-0142" },
+      render: ({ label, value }) => <CopyValue label={label} value={value} />,
+    },
+    PayQr: {
+      label: "收款二维码",
+      fields: {
+        data: { label: "扫了去哪里（网址 / DuitNow）", type: "text" },
+        size: { label: "大小", type: "number" },
+      },
+      defaultProps: { data: "https://formae.my/pay/demo", size: 180 },
+      render: ({ data, size }) => <PayQr data={data} size={size} />,
+    },
+    ActivitySquares: {
+      label: "出勤格",
+      fields: { label: { label: "说明", type: "text" } },
+      defaultProps: { label: "今年出勤" },
+      render: ({ label }) => <ActivitySquares label={label} />,
+    },
+
+    // ============================================================ 版面零件
+    NoticeBanner: {
+      label: "顶部通知条",
+      fields: {
+        text: { label: "写什么", type: "text" },
+        closable: { label: "可以关掉", type: "radio", options: YES_NO },
+      },
+      defaultProps: { text: "本月佣金已经出了,记得去看。", closable: "yes" },
+      render: ({ text, closable }) => (
+        <NoticeBanner text={text} closable={closable !== "no"} />
+      ),
+    },
+    NoticePill: {
+      label: "公告",
+      fields: {
+        tag: { label: "前面的小字", type: "text" },
+        text: { label: "写什么", type: "text" },
+      },
+      defaultProps: { tag: "新", text: "报价单可以直接 WhatsApp 出去了" },
+      render: ({ tag, text }) => <NoticePill tag={tag} text={text} />,
+    },
+    FoldSection: {
+      label: "收合区块",
+      fields: {
+        rows: {
+          label: "每一段",
+          type: "array",
+          arrayFields: {
+            title: { label: "标题", type: "text" },
+            body: { label: "内容", type: "textarea" },
+          },
+          defaultItemProps: { title: "标题", body: "内容" },
+          getItemSummary: (item) => item.title || "一段",
+        },
+      },
+      defaultProps: {
+        openFirst: true,
+        rows: [
+          { title: "付款方式", body: "订金 50%,施工完成后付清尾款。" },
+          { title: "保修", body: "水电一年保修,木工六个月。" },
+        ],
+      },
+      render: ({ rows, openFirst }) => <FoldSection rows={rows} openFirst={openFirst} />,
+    },
+    LongText: {
+      label: "长文（可收起）",
+      fields: {
+        content: { label: "内容", type: "textarea" },
+        maxLines: { label: "先显示几行", type: "number" },
+      },
+      defaultProps: {
+        maxLines: 3,
+        content:
+          "施工范围包括拆除旧橱柜、水电改位、防水、贴砖、天花板与油漆。不包括家具、电器与窗帘。工期以实际现场情况为准,如遇管理层批准延误,完工日期顺延。",
+      },
+      render: ({ content, maxLines }) => <LongText content={content} maxLines={maxLines} />,
+    },
+    PageNumbers: {
+      label: "分页",
+      fields: {
+        pages: { label: "总共几页", type: "number" },
+        current: { label: "现在第几页", type: "number" },
+      },
+      defaultProps: { pages: 5, current: 1 },
+      render: ({ pages, current }) => <PageNumbers pages={pages} current={current} />,
+    },
+    ZoomPhoto: {
+      label: "照片（可放大）",
+      fields: {
+        src: { label: "照片网址", type: "text" },
+        alt: { label: "说明", type: "text" },
+        height: { label: "高度", type: "number" },
+      },
+      defaultProps: { src: "", alt: "施工照片", height: 220 },
+      render: ({ src, alt, height }) => <ZoomPhoto src={src} alt={alt} height={height} />,
+    },
+
+    // ============================================================ 填写
+    CheckRow: {
+      label: "勾选",
+      fields: {
+        label: { label: "写什么", type: "text" },
+        hint: { label: "下面的小字", type: "text" },
+        defaultChecked: { label: "预设勾着", type: "radio", options: YES_NO },
+      },
+      defaultProps: { label: "含材料", hint: "不勾就是只算工钱", defaultChecked: "no" },
+      render: ({ label, hint, defaultChecked }) => (
+        <CheckRow label={label} hint={hint} defaultChecked={defaultChecked === "yes"} />
+      ),
+    },
+    ChoiceRow: {
+      label: "单选一项",
+      fields: {
+        label: { label: "问什么", type: "text" },
+        inline: { label: "排成一行", type: "radio", options: YES_NO },
+        options: {
+          label: "选项",
+          type: "array",
+          arrayFields: { label: { label: "选项", type: "text" } },
+          defaultItemProps: { label: "选项" },
+          getItemSummary: (item) => item.label || "选项",
+        },
+      },
+      defaultProps: {
+        label: "付款方式",
+        inline: "yes",
+        options: [{ label: "现金" }, { label: "转账" }, { label: "支票" }],
+      },
+      render: ({ label, options, inline }) => (
+        <ChoiceRow label={label} options={options} inline={inline === "yes"} />
+      ),
+    },
+    SwitchRow: {
+      label: "开关",
+      fields: {
+        label: { label: "写什么", type: "text" },
+        hint: { label: "下面的小字", type: "text" },
+        defaultOn: { label: "预设开着", type: "radio", options: YES_NO },
+      },
+      defaultProps: { label: "自动发提醒", hint: "尾款到期前三天", defaultOn: "yes" },
+      render: ({ label, hint, defaultOn }) => (
+        <SwitchRow label={label} hint={hint} defaultOn={defaultOn === "yes"} />
+      ),
+    },
+    SliderRow: {
+      label: "拉杆",
+      fields: {
+        label: { label: "写什么", type: "text" },
+        min: { label: "最小", type: "number" },
+        max: { label: "最大", type: "number" },
+        step: { label: "一次跳多少", type: "number" },
+        defaultValue: { label: "预设", type: "number" },
+        suffix: { label: "单位", type: "text" },
+      },
+      defaultProps: { label: "完成度", min: 0, max: 100, step: 5, defaultValue: 60, suffix: "%" },
+      render: ({ label, min, max, step, defaultValue, suffix }) => (
+        <SliderRow
+          label={label}
+          min={min}
+          max={max}
+          step={step}
+          defaultValue={defaultValue}
+          suffix={suffix}
+        />
+      ),
+    },
+    UploadBox: {
+      label: "上传照片 / 文件",
+      fields: {
+        title: { label: "写什么", type: "text" },
+        hint: { label: "下面的小字", type: "text" },
+        maxFiles: { label: "最多几个", type: "number" },
+      },
+      defaultProps: { title: "拖施工照片进来,或者点一下选", hint: "最多 6 张", maxFiles: 6 },
+      render: ({ title, hint, maxFiles }) => (
+        <UploadBox title={title} hint={hint} maxFiles={maxFiles} />
+      ),
+    },
+    TagPicker: {
+      label: "标签",
+      fields: {
+        label: { label: "写什么", type: "text" },
+        placeholder: { label: "搜索框的提示", type: "text" },
+        options: {
+          label: "可以选的标签",
+          type: "array",
+          arrayFields: { label: { label: "标签", type: "text" } },
+          defaultItemProps: { label: "标签" },
+          getItemSummary: (item) => item.label || "标签",
+        },
+      },
+      defaultProps: {
+        label: "客户标签",
+        placeholder: "找标签…",
+        options: [{ label: "熟客" }, { label: "介绍来的" }, { label: "拖数" }, { label: "急单" }],
+      },
+      render: ({ label, options, placeholder }) => (
+        <TagPicker label={label} options={options} placeholder={placeholder} />
+      ),
+    },
+    PackagePicker: {
+      label: "选配套",
+      fields: {
+        options: {
+          label: "配套",
+          type: "array",
+          arrayFields: {
+            title: { label: "配套名", type: "text" },
+            subtitle: { label: "旁边的小字", type: "text" },
+            description: { label: "说明", type: "text" },
+          },
+          defaultItemProps: { title: "配套" },
+          getItemSummary: (item) => item.title || "配套",
+        },
+      },
+      defaultProps: {
+        options: [
+          { title: "一次过", subtitle: "RM 1,500", description: "做完一次付清" },
+          { title: "分三期", subtitle: "RM 550 × 3", description: "订金、施工中、完工" },
+        ],
+      },
+      render: ({ options }) => <PackagePicker options={options} />,
+    },
+    WeekStrip: {
+      label: "一周日期",
+      fields: { days: { label: "显示几天", type: "number" } },
+      defaultProps: { days: 5 },
+      render: ({ days }) => <WeekStrip days={days} />,
+    },
+
     // The page shell. Listed first because it is the frame every generated
     // page is built inside -- see design-system/components/system-shell.tsx for
     // why a sidebar could not simply be the first block in a flat stack.

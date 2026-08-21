@@ -62,13 +62,34 @@ const SINGLE_CONTROL = new Set([
   "FilterChips",
   "FileUploadField",
   "EmptyState",
+  // Second wave.
+  "CheckRow",
+  "SwitchRow",
+  "SliderRow",
+  "ChoiceRow",
+  "TagPicker",
+  "WeekStrip",
+  "PageNumbers",
+  "CopyValue",
+  "NoticePill",
+  "SmallStat",
+  "FaceRow",
 ]);
 
 /** The two that are not just short but NARROW. A status dot and an avatar are
  *  a few dozen pixels wide, so left-aligning them leaves the specimen pinned to
  *  one corner of an otherwise empty card. Everything else in SINGLE_CONTROL is
  *  full-width and belongs on the left margin like real page content. */
-const TINY = new Set(["StatusDot", "Avatar", "Tag", "ActionButton", "Stars", "Divider"]);
+const TINY = new Set([
+  "StatusDot",
+  "Avatar",
+  "Tag",
+  "ActionButton",
+  "Stars",
+  "Divider",
+  "FaceRow",
+  "PayQr",
+]);
 
 export function LibraryClient({
   locale,
