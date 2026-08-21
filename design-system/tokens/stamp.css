@@ -50,12 +50,12 @@
      panel; this canvas is a tint you feel rather than see, which is what
      lets tables sit directly on it without looking like they are on the
      wrong surface. */
-  --color-canvas: #f3f4f6;
-  --color-ink-950: #eaeff5;
+  --color-canvas: #f6f3f5;
+  --color-ink-950: #f2edf0;
   --color-ink-900: #ffffff;
-  --color-ink-850: #f2f6fb;
-  --color-ink-800: #e4e9f0;
-  --color-ink-700: #d3dbe5;
+  --color-ink-850: #f8f5f7;
+  --color-ink-800: #eee6eb;
+  --color-ink-700: #e2d6de;
 
   /* ---- NAVIGATION GROUND --------------------------------------------------
      The one dark surface in an otherwise light register, and the only place in
@@ -84,47 +84,41 @@
      same rust lifted in lightness (OKLCH L 0.7488 from 0.5571) while holding
      the hue (49.6 against the primary's 45.8, a 3.8 degree drift), so it still
      reads as this register's accent rather than a second one. */
-  --color-nav-bg: #14273d;
-  --color-nav-bg-deep: #101d2e;
-  --color-nav-fg: #e9eef5;
-  --color-nav-fg-dim: #a6b4c6;
-  --color-nav-hover: #1e3450;
-  --color-nav-active: #243d59;
-  --color-nav-border: #26405d;
-  --color-nav-accent: #f39158;
+  --color-nav-bg: #39182d;
+  --color-nav-bg-deep: #2b1322;
+  --color-nav-fg: #f2ecf0;
+  --color-nav-fg-dim: #c3a9ba;
+  --color-nav-hover: #4d213d;
+  --color-nav-active: #572645;
+  --color-nav-border: #5c2748;
+  --color-nav-accent: #d081ad;
 
-  /* Deep navy, not black. Stripe's ink is #0d253d; Linear, Vercel and
-     Mercury all likewise stop short of #000 in light mode. */
-  --color-paper: #14273d;
-  --color-paper-dim: #5b6d82;
+  /* This register's ink, tinted plum rather than the donor's navy, so the
+     neutral family belongs to the band it sits under. */
+  --color-paper: #39182d;
+  --color-paper-dim: #825b74;
 
-  /* Rust orange, revised 2026-08-20 (was #0570de, a link blue from the navy
-     ink family above).  The blue was the correct choice for a design system
-     whose three registers were meant to share one identity -- and the wrong
-     one for this product, where it left Ledger and Blueprint reading as the
-     same product in two shades.  Construction and ops software is the one
-     category with a real, non-arbitrary accent convention: site-safety
-     orange, which Procore builds its whole identity on.  It is also the only
-     accent here that cannot be mistaken for a generic SaaS blue.
+  /* Plum, set 2026-08-22.  Was #1f4e5f, a slate-cyan inherited from ledger.css
+     along with that file's entire navy neutral family AND its rust
+     --color-nav-accent (#f39158), which had no relationship to this register's
+     own primary at all.
 
-     5.00:1 on white (WCAG relative-luminance formula against #ffffff), so it
-     stays legible as text and not only as a fill -- the same bar the previous
-     blue was held to.  White on this fill is the same 5.00:1.  The -deep
-     hover state is 7.39:1.
+     Hue was rotated and LIGHTNESS HELD, so the donor's measured ratios survive:
+     9.09:1 on white, and white on this fill is the same 9.09:1.
 
-     Usage discipline is unchanged and still the important part: focus rings,
-     intentional CTAs, high-importance states.  Never decorative.  An accent
-     this visible punishes decorative use harder than the blue did. */
-  --color-primary: #1f4e5f;
-  --color-primary-deep: #163a48;
-  --color-primary-soft: #e4eef2;
+     Plum rather than red: 印头's whole identity is --color-table-head-bg being
+     filled with --color-primary (see the top of this file), so this value is
+     not a small accent -- it is a solid band across every table.  Red at that
+     size reads as an alarm.  The light neutrals are capped at 0.18 saturation
+     for the same reason: with a band this strong, a tinted page as well made
+     the whole register read pink, which is wrong for 单据 software. */
+  --color-primary: #7a2b57;
+  --color-primary-deep: #581f3f;
+  --color-primary-soft: #f7e9f0;
 
   /* Text/icon color for content rendered on a --color-primary fill (CTA
-     buttons and links) — plain white, which passes comfortably against
-     #0570de. Revisit when Hearth/Blueprint are built: a different
-     --color-primary value in those sets could make plain white fail
-     contrast, and this token would then need its own per-register value
-     rather than inheriting white by default. */
+     buttons and links) — plain white, re-verified against this file's own
+     primary after the 2026-08-22 retint rather than inherited. */
   --color-on-primary: #ffffff;
 
   /* Text/icon color for content rendered on any other sufficiently dark or
@@ -290,16 +284,16 @@
      rather than drawn on it. */
   --border-card-width: 1px;
   --shadow-card: none;
-  --shadow-raised: 0 1px 0 rgba(13, 37, 61, 0.10);
-  --shadow-overlay: 0 6px 16px rgba(13, 37, 61, 0.18);
+  --shadow-raised: 0 1px 0 rgba(57, 24, 45, 0.10);
+  --shadow-overlay: 0 6px 16px rgba(57, 24, 45, 0.18);
 
   /* Stronger than the other two registers: when a card has no shadow at all,
      its border is the only thing separating it from the canvas, so it has to
      carry more of the work. */
-  --border-subtle: rgba(13, 37, 61, 0.14);
-  --border-strong: rgba(13, 37, 61, 0.26);
+  --border-subtle: rgba(57, 24, 45, 0.14);
+  --border-strong: rgba(57, 24, 45, 0.26);
 
-  --shadow-hue: 13, 37, 61;
+  --shadow-hue: 57, 24, 45;
   --hairline: 1px;
 
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);

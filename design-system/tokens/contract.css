@@ -19,9 +19,11 @@
    律师's engagement letter, an accountant's statement, a notary's receipt —
    trades whose customers expect the thing they sign to look like a document.
 
-   The accent is almost withdrawn. #3f4a5a is a stated ink, not a brand colour:
-   on a page meant to read as an agreement, a saturated call-to-action is the
-   one thing that gives away that it is a web app.
+   The accent is almost withdrawn -- a stated ink, not a brand colour: on a page
+   meant to read as an agreement, a saturated call-to-action is the one thing
+   that gives away that it is a web app. Since 2026-08-22 that ink is indigo
+   (#4b3a8f) rather than the blue-grey it started as, which was four degrees
+   from blueprint.css and read as a third blue register.
 
    Derived from ledger.css for its density and its 宋体, with the Latin face
    moved to match. */
@@ -50,12 +52,12 @@
      panel; this canvas is a tint you feel rather than see, which is what
      lets tables sit directly on it without looking like they are on the
      wrong surface. */
-  --color-canvas: #f3f4f6;
-  --color-ink-950: #eaeff5;
+  --color-canvas: #f4f3f6;
+  --color-ink-950: #eeedf2;
   --color-ink-900: #ffffff;
-  --color-ink-850: #f2f6fb;
-  --color-ink-800: #e4e9f0;
-  --color-ink-700: #d3dbe5;
+  --color-ink-850: #f6f5f8;
+  --color-ink-800: #e8e6ee;
+  --color-ink-700: #d9d6e2;
 
   /* ---- NAVIGATION GROUND --------------------------------------------------
      The one dark surface in an otherwise light register, and the only place in
@@ -84,47 +86,35 @@
      same rust lifted in lightness (OKLCH L 0.7488 from 0.5571) while holding
      the hue (49.6 against the primary's 45.8, a 3.8 degree drift), so it still
      reads as this register's accent rather than a second one. */
-  --color-nav-bg: #14273d;
-  --color-nav-bg-deep: #101d2e;
-  --color-nav-fg: #e9eef5;
-  --color-nav-fg-dim: #a6b4c6;
-  --color-nav-hover: #1e3450;
-  --color-nav-active: #243d59;
-  --color-nav-border: #26405d;
-  --color-nav-accent: #f39158;
+  --color-nav-bg: #201839;
+  --color-nav-bg-deep: #19132b;
+  --color-nav-fg: #eeecf2;
+  --color-nav-fg-dim: #afa9c3;
+  --color-nav-hover: #2c214d;
+  --color-nav-active: #322657;
+  --color-nav-border: #34275c;
+  --color-nav-accent: #9385cb;
 
-  /* Deep navy, not black. Stripe's ink is #0d253d; Linear, Vercel and
-     Mercury all likewise stop short of #000 in light mode. */
-  --color-paper: #14273d;
-  --color-paper-dim: #5b6d82;
+  /* This register's ink, tinted indigo rather than the donor's navy. */
+  --color-paper: #201839;
+  --color-paper-dim: #655b82;
 
-  /* Rust orange, revised 2026-08-20 (was #0570de, a link blue from the navy
-     ink family above).  The blue was the correct choice for a design system
-     whose three registers were meant to share one identity -- and the wrong
-     one for this product, where it left Ledger and Blueprint reading as the
-     same product in two shades.  Construction and ops software is the one
-     category with a real, non-arbitrary accent convention: site-safety
-     orange, which Procore builds its whole identity on.  It is also the only
-     accent here that cannot be mistaken for a generic SaaS blue.
+  /* Ink indigo, set 2026-08-22.  Was #3f4a5a -- a blue-grey four degrees from
+     blueprint.css's #2261dd, on a canvas byte-identical to ledger.css's.  The
+     intent below (an accent almost withdrawn, so the page reads as an agreement
+     rather than a web app) was right; the value was just a third blue.
 
-     5.00:1 on white (WCAG relative-luminance formula against #ffffff), so it
-     stays legible as text and not only as a fill -- the same bar the previous
-     blue was held to.  White on this fill is the same 5.00:1.  The -deep
-     hover state is 7.39:1.
-
-     Usage discipline is unchanged and still the important part: focus rings,
-     intentional CTAs, high-importance states.  Never decorative.  An accent
-     this visible punishes decorative use harder than the blue did. */
-  --color-primary: #3f4a5a;
-  --color-primary-deep: #2b3341;
-  --color-primary-soft: #eceef1;
+     Hue was rotated and LIGHTNESS HELD: 9.13:1 on white, and white on this fill
+     is the same 9.13:1.  Indigo keeps the withdrawn quality -- it is fountain-pen
+     ink, which is what a document is signed in -- while being 35 degrees clear
+     of the nearest other register. */
+  --color-primary: #4b3a8f;
+  --color-primary-deep: #362a67;
+  --color-primary-soft: #ece9f6;
 
   /* Text/icon color for content rendered on a --color-primary fill (CTA
-     buttons and links) — plain white, which passes comfortably against
-     #0570de. Revisit when Hearth/Blueprint are built: a different
-     --color-primary value in those sets could make plain white fail
-     contrast, and this token would then need its own per-register value
-     rather than inheriting white by default. */
+     buttons and links) — plain white, re-verified against this file's own
+     primary after the 2026-08-22 retint rather than inherited. */
   --color-on-primary: #ffffff;
 
   /* Text/icon color for content rendered on any other sufficiently dark or
@@ -290,16 +280,16 @@
      rather than drawn on it. */
   --border-card-width: 1px;
   --shadow-card: none;
-  --shadow-raised: 0 1px 0 rgba(13, 37, 61, 0.10);
-  --shadow-overlay: 0 6px 16px rgba(13, 37, 61, 0.18);
+  --shadow-raised: 0 1px 0 rgba(32, 24, 57, 0.10);
+  --shadow-overlay: 0 6px 16px rgba(32, 24, 57, 0.18);
 
   /* Stronger than the other two registers: when a card has no shadow at all,
      its border is the only thing separating it from the canvas, so it has to
      carry more of the work. */
-  --border-subtle: rgba(13, 37, 61, 0.14);
-  --border-strong: rgba(13, 37, 61, 0.26);
+  --border-subtle: rgba(32, 24, 57, 0.14);
+  --border-strong: rgba(32, 24, 57, 0.26);
 
-  --shadow-hue: 13, 37, 61;
+  --shadow-hue: 32, 24, 57;
   --hairline: 1px;
 
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);

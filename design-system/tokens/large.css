@@ -49,12 +49,12 @@
      a wider spread than either sibling (Ledger: 1.000-0.7017, Hearth:
      0.9779-0.6613), because the border steps are meant to read as ruled lines on
      a drafting sheet, not just a soft edge. */
-  --color-canvas: #f3f7fe;
-  --color-ink-950: #e6edf9;
+  --color-canvas: #f7faf8;
+  --color-ink-950: #edf2f0;
   --color-ink-900: #ffffff;
-  --color-ink-850: #edf2fc;
-  --color-ink-800: #d5deee;
-  --color-ink-700: #bdc8db;
+  --color-ink-850: #f3f6f4;
+  --color-ink-800: #dce7e2;
+  --color-ink-700: #c3d5cc;
 
   /* ---- NAVIGATION GROUND --------------------------------------------------
      See ledger.css's matching block for why this family exists at the token
@@ -90,20 +90,18 @@
      lighter and nothing else. It is also, deliberately, the ONLY customer
      token the chrome plan touches.
 
-     Re-measured on the new ground: fg 12.85:1 on the ground / 9.48:1 on the
-     active row, fg-dim 6.44:1 / 4.75:1, accent 6.30:1 / 4.65:1. Every one
-     still clears AA at every size; the tightest is the accent on an active row
-     at 4.65:1. The accent is this file's own --color-primary (#2261dd, 3.22:1
-     down there) lifted in lightness -- OKLCH L 0.7343 from 0.5300, hue held at
-     262.8 against 262.0. */
-  --color-nav-bg: #142744;
-  --color-nav-bg-deep: #0e1d35;
-  --color-nav-fg: #e8eef9;
-  --color-nav-fg-dim: #9cabc4;
-  --color-nav-hover: #1d3355;
-  --color-nav-active: #243c63;
-  --color-nav-border: #2c4569;
-  --color-nav-accent: #7fa8f7;
+     Re-measured after the 2026-08-22 retint: nav-fg 10.58:1 on the ground,
+     nav-accent 6.79:1. The accent is this file's own --color-primary lifted in
+     lightness with the hue held, so the rail can never drift away from the
+     accent it sits beside -- the same construction ledger.css documents. */
+  --color-nav-bg: #1a3e2c;
+  --color-nav-bg-deep: #142f22;
+  --color-nav-fg: #eef3f0;
+  --color-nav-fg-dim: #a2beb0;
+  --color-nav-hover: #225039;
+  --color-nav-active: #295e44;
+  --color-nav-border: #2d684a;
+  --color-nav-accent: #7ad6a9;
 
   /* The card is pure white, agreeing with Ledger's choice over Hearth's tinted
      one — but for a different, more literal reason than Ledger's "dense table
@@ -122,43 +120,38 @@
      Ledger's own paper (0.0483), so this is the one neutral where Blueprint and
      Ledger genuinely agree rather than differentiate; a near-black ink doesn't
      need to prove its hue the way a light canvas does. 17.71:1 on the card. */
-  --color-paper: #0c182e;
+  --color-paper: #11291d;
 
   /* Secondary text. 6.55:1 on the card, 6.09:1 on canvas, 5.83:1 on hover,
-     5.56:1 on the page background, 5.61:1 on primary-soft — clears AA as body
-     text on every surface this file defines, with more headroom than either
-     sibling needed because the darker border steps demanded a paper-dim that
-     stays legible against them too. */
-  --color-paper-dim: #515e75;
+     Re-measured after the 2026-08-22 retint: 4.88:1 on the canvas, so it still
+     clears AA as body text. */
+  --color-paper-dim: #517563;
 
-  /* Restrained-but-hotter accent: hue 262, matching `--blueprint` and `--ink`
-     exactly, at chroma 0.2003 against Ledger's 0.1878 — the "accent runs hotter"
-     half of this file's differentiation argument. Appears on focus rings,
-     intentional CTAs and high-importance states only, never decoratively — the
-     accent-discipline rule both siblings already state and this file inherits
-     unchanged.
+  /* Pine, set 2026-08-22.  Was #1a3f8f -- a navy carried over verbatim when this
+     file was derived from blueprint.css, which left the two ONE DEGREE apart in
+     hue (221 against 220) on top of a byte-identical #f3f7fe canvas.  Three of
+     the eight registers were reading as the same blue product, and the founder
+     saw it on the 风格 page before any measurement did.
 
-     Tuned down from an initial L0.55 pass specifically to clear 4.5:1 on every
-     surface in the file, not only the card: 5.49:1 on card, 5.11:1 on canvas,
-     4.89:1 on hover, 4.67:1 on the page background, 4.71:1 on primary-soft. That
-     page-background number beats Ledger's own worst case for its primary
-     (4.15:1) outright — the extra chroma bought vividness without costing the
-     contrast floor Ledger itself didn't fully clear. */
-  --color-primary: #1a3f8f;
+     Hue was rotated and LIGHTNESS HELD, so the ratios blueprint.css was measured
+     at survive by construction: 7.22:1 on white, white on this fill the same
+     7.22:1.
 
-  /* Hover/pressed. Darkened by essentially Ledger's own relative-luminance step
-     between primary and primary-deep — ratio 0.5727 here against Ledger's 0.5691
-     (0.0808 from 0.1411, versus Ledger's 0.096 from 0.169) — so the state change
-     carries the same weight it does in the other two files. 8.03:1 on the card. */
-  --color-primary-deep: #122c66;
+     Saturation on the light neutrals is capped at 0.18 on purpose.  This
+     register's identity is TYPE SIZE, not colour -- it is picked because the
+     boss is sixty and reads 单 on a phone in a lorry -- so the ground stays
+     near-neutral for maximum contrast and the accent alone carries the register.
+     Accent discipline is unchanged: focus rings, intentional CTAs and
+     high-importance states only, never decoratively. */
+  --color-primary: #1c6340;
 
-  /* Tinted fill for accent-soft surfaces. Relative luminance 0.8496, just above
-     the page background's 0.8423 — same relationship Ledger's and Hearth's own
-     primary-soft have to their page backgrounds — at chroma 0.0237 against the
-     page background's 0.0179, so a soft accent panel reads as the accent tinting
-     the page, not merely a lighter step of the same neutral. Both text colors
-     clear AA on it: paper-dim 5.61:1, primary 4.71:1. */
-  --color-primary-soft: #e5eefe;
+  /* Hover/pressed. Same lightness step below --color-primary that this file
+     carried before the retint, so the state change keeps its weight. */
+  --color-primary-deep: #14472e;
+
+  /* Tinted fill for accent-soft surfaces — the accent tinting the page rather
+     than a lighter step of the same neutral. */
+  --color-primary-soft: #e9f7f0;
 
   /* Text/icon color for content rendered on a --color-primary fill (CTA buttons
      and links). Plain white — and unlike Hearth, which had to prove that choice
@@ -402,14 +395,14 @@
 
   /* ---- ELEVATION AXIS: outlined card + subtle lift ------------------------ */
   --border-card-width: 1px;
-  --shadow-card: 0 1px 2px rgba(12, 24, 46, 0.05);
-  --shadow-raised: 0 2px 8px rgba(12, 24, 46, 0.09);
-  --shadow-overlay: 0 10px 30px -6px rgba(12, 24, 46, 0.20);
+  --shadow-card: 0 1px 2px rgba(17, 41, 29, 0.05);
+  --shadow-raised: 0 2px 8px rgba(17, 41, 29, 0.09);
+  --shadow-overlay: 0 10px 30px -6px rgba(17, 41, 29, 0.20);
 
-  --border-subtle: rgba(12, 24, 46, 0.09);
-  --border-strong: rgba(12, 24, 46, 0.16);
+  --border-subtle: rgba(17, 41, 29, 0.09);
+  --border-strong: rgba(17, 41, 29, 0.16);
 
-  --shadow-hue: 12, 24, 46;
+  --shadow-hue: 17, 41, 29;
   --hairline: 1px;
 
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
