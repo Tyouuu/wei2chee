@@ -47,6 +47,11 @@ const STRUCTURAL = new Set(["SystemShell", "RailNav"]);
 const SINGLE_CONTROL = new Set([
   "StatusDot",
   "Avatar",
+  "Tag",
+  "ActionButton",
+  "Stars",
+  "Divider",
+  "NoteField",
   "Progress",
   "Alert",
   "DatePicker",
@@ -63,7 +68,7 @@ const SINGLE_CONTROL = new Set([
  *  a few dozen pixels wide, so left-aligning them leaves the specimen pinned to
  *  one corner of an otherwise empty card. Everything else in SINGLE_CONTROL is
  *  full-width and belongs on the left margin like real page content. */
-const TINY = new Set(["StatusDot", "Avatar"]);
+const TINY = new Set(["StatusDot", "Avatar", "Tag", "ActionButton", "Stars", "Divider"]);
 
 export function LibraryClient({
   locale,
@@ -83,6 +88,10 @@ export function LibraryClient({
   const t = useTranslations("portal.library");
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<string | null>(null);
+  // Which block is open at full size. A thumbnail answers "which one is the
+  // table"; it cannot answer "what will this actually look like on my page",
+  // and that second question is the one a customer has before committing.
+  const [zoomed, setZoomed] = useState<Entry | null>(null);
 
   const entries = useMemo<Entry[]>(() => {
     const categories = puckConfig.categories ?? {};
@@ -227,8 +236,24 @@ export function LibraryClient({
                       affordance is a lift rather than a coloured ring, because
                       the ring was drawn in --color-primary and Formae no
                       longer has an accent to draw it in. */}
+                  {/* The frame is the zoom control. 21st.dev opens a full
+                      preview on click and that is the step this gallery was
+                      missing: a 168px thumbnail answers "which one is the
+                      table", never "what will this look like on my page".
+                      The NAME underneath is still the add link, so the two
+                      actions never fight — look here, take it there. */}
                   <div
-                    className={`${chrome.mount} h-[168px] transition-transform duration-200 group-hover:-translate-y-0.5`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setZoomed(entry)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setZoomed(entry);
+                      }
+                    }}
+                    aria-label={t("zoom", { name: entry.label })}
+                    className={`${chrome.mount} block h-[168px] w-full cursor-zoom-in transition-transform duration-200 group-hover:-translate-y-0.5`}
                   >
                     <div
                       className={`${scopeClasses(style, palette)} [background-color:var(--color-canvas)]`}
@@ -305,6 +330,61 @@ export function LibraryClient({
           {t("moreComing")}
         </p>
       </div>
+      {/* Rendered at real size in the customer's own style, on their own
+          ground — the same tokens the editor canvas uses, so what is shown here
+          is what lands on the page. Native <dialog> rather than a portal: it
+          gets the top layer, Escape and the backdrop for free, and this file
+          already has no modal machinery. */}
+      {zoomed && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={zoomed.label}
+          className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 sm:p-8"
+          onClick={() => setZoomed(null)}
+        >
+          <div
+            className="flex max-h-full w-full max-w-4xl flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-baseline gap-3">
+              <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                {zoomed.label}
+              </span>
+              <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                {zoomed.name}
+              </span>
+              <span className="flex-1" />
+              <Link
+                href={`/${locale}/portal/${firstPage}?add=${zoomed.name}`}
+                className="rounded-[var(--radius-md)] [background-color:var(--color-paper)] [color:var(--color-canvas)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] px-3 py-1.5"
+              >
+                {t("useIt")}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setZoomed(null)}
+                aria-label={t("close")}
+                className="rounded-[var(--radius-md)] [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] px-3 py-1.5"
+              >
+                ✕
+              </button>
+            </div>
+            <div className={`${chrome.mount} min-h-0 overflow-auto`}>
+              <div
+                className={`${scopeClasses(style, palette)} [background-color:var(--color-canvas)]`}
+              >
+                <div className="[padding:var(--pad-card-lg)]">
+                  <Render
+                    config={puckConfig}
+                    data={{ root: {}, content: [{ type: zoomed.name, props: zoomed.props }] } as never}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

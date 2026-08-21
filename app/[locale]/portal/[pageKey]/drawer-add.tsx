@@ -77,17 +77,9 @@ export function ClickToAdd({ name, children }: { name: string; children: ReactNo
           add();
         }
       }}
-      className="group/add flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--radius-md)] focus-visible:outline focus-visible:outline-2 focus-visible:[outline-color:var(--color-paper-dim)]"
+      className="group/add flex w-full cursor-pointer flex-col gap-1.5 rounded-[var(--radius-md)] focus-visible:outline focus-visible:outline-2 focus-visible:[outline-color:var(--color-paper-dim)]"
     >
       {children}
-      {/* The affordance. Without it nobody discovers that clicking works —
-          they were told to drag by every other builder they have ever seen. */}
-      <span
-        aria-hidden
-        className="mr-1 shrink-0 opacity-0 transition-opacity [color:var(--color-paper-dim)] [font-size:var(--text-xs)] group-hover/add:opacity-100"
-      >
-        + 加
-      </span>
     </div>
   );
 }

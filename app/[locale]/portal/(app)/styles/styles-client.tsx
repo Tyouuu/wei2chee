@@ -10,6 +10,7 @@ import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { PALETTES, scopeClasses } from "@/lib/portal/palettes";
+import { StatusDot } from "@/design-system/components/status-dot";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -29,16 +30,6 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   blueprint: "Blueprint",
   bare: "Bare",
   docket: "Docket",
-};
-
-/** Each 版式's own colours, for the 「原本的配色」 card. Read off the three
- *  token files rather than invented, so the swatch and the system agree. */
-const NATIVE_DOTS: Record<StyleName, [string, string, string, string]> = {
-  ledger: ["#f3f4f6", "#b8500f", "#d3dbe5", "#e4e9f0"],
-  hearth: ["#faf6f0", "#237570", "#ded5c8", "#efe9e0"],
-  blueprint: ["#f3f7fe", "#2261dd", "#b9c6dc", "#e2e9f6"],
-  bare: ["#fbfbfc", "#2261dd", "#d5deee", "#edf2fc"],
-  docket: ["#eceae4", "#b8500f", "#e4e9f0", "#f2f6fb"],
 };
 
 /**
@@ -258,7 +249,8 @@ export function StylesClient({
             <PaletteCard
               label={t("paletteNative")}
               blurb={t("paletteNativeBlurb")}
-              dots={NATIVE_DOTS[active]}
+              styleName={active}
+              paletteKey={null}
               current={activePalette === null}
               pending={palettePending === "__native__"}
               onPick={() => pickPalette(null)}
@@ -269,7 +261,8 @@ export function StylesClient({
                 key={p.key}
                 label={p.label}
                 blurb={p.blurb}
-                dots={p.dots}
+                styleName={active}
+                paletteKey={p.key}
                 current={activePalette === p.key}
                 pending={palettePending === p.key}
                 onPick={() => pickPalette(p.key)}
@@ -284,14 +277,26 @@ export function StylesClient({
   );
 }
 
-/** One palette, shown as what it is: four colours and a name.
- *  Deliberately not a rendered sample — a palette changes only colour, so a
- *  swatch is a complete description of it, and eleven rendered samples on one
- *  page would take longer to scan than the decision deserves. */
+/** THE PALETTE IS SHOWN AS THE SYSTEM WEARING IT, NOT AS FOUR DOTS.
+ *
+ *  This used to be a swatch, and the reasoning written here was that "a
+ *  palette changes only colour, so a swatch is a complete description of it".
+ *  It is not. Four circles do not tell a contractor where the accent lands, how
+ *  「已确认」 reads against 「已逾期」, or whether the ground is warm enough to
+ *  live on all day. What the swatch actually described was the palette FILE.
+ *
+ *  It was also the largest single reason the founder said 「还不能preview 什么都
+ *  可以」: five layouts times eleven palettes is fifty-five looks, and exactly
+ *  five of them — one per layout card — were visible. Rendering the fragment
+ *  makes eleven visible at a time, and switching layout shows the next eleven.
+ *
+ *  The fragment is deliberately tiny: one figure, two rows with statuses, one
+ *  button. That is every place a palette shows itself, and nothing else. */
 function PaletteCard({
   label,
   blurb,
-  dots,
+  styleName,
+  paletteKey,
   current,
   pending,
   disabled,
@@ -299,7 +304,8 @@ function PaletteCard({
 }: {
   label: string;
   blurb: string;
-  dots: [string, string, string, string];
+  styleName: StyleName;
+  paletteKey: string | null;
   current: boolean;
   pending: boolean;
   disabled: boolean;
@@ -312,22 +318,14 @@ function PaletteCard({
         onClick={onPick}
         disabled={disabled || current}
         aria-current={current}
-        className={`block w-full overflow-hidden rounded-[var(--radius-md)] p-4 text-left transition-colors disabled:cursor-default ${
+        className={`block w-full overflow-hidden rounded-[var(--radius-md)] text-left transition-colors disabled:cursor-default ${
           current
             ? "[border:2px_solid_var(--color-primary)]"
             : "[border:1px_solid_var(--color-ink-800)] enabled:hover:[border-color:var(--color-paper-dim)]"
         }`}
-        style={{ backgroundColor: dots[0] }}
       >
-        <span className="flex gap-1.5">
-          {dots.map((c, i) => (
-            <span
-              key={i}
-              aria-hidden="true"
-              className="h-5 w-5 rounded-[var(--radius-pill)] [border:1px_solid_rgba(0,0,0,0.08)]"
-              style={{ backgroundColor: c }}
-            />
-          ))}
+        <span className={`${scopeClasses(styleName, paletteKey)} block`}>
+          <PaletteSample />
         </span>
       </button>
       <span className="mt-2.5 flex items-baseline gap-2">
@@ -343,5 +341,48 @@ function PaletteCard({
       </span>
       <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{blurb}</span>
     </li>
+  );
+}
+
+/** The smallest fragment that shows everything a palette decides: the ground,
+ *  the accent on a figure and on a button, and the three status tones a
+ *  business system actually leans on — confirmed, waiting, overdue. Rendered at
+ *  real size rather than scaled, because a palette is judged on colour and
+ *  colour survives being small; the layouts above are the ones that need
+ *  room. */
+function PaletteSample() {
+  const row = (name: string, amount: string, tone: "positive" | "warning" | "negative", label: string) => (
+    <span className="flex items-center gap-2 border-t [border-color:var(--border)] px-3 py-1.5 [font-size:var(--text-xs)]">
+      <span className="min-w-0 flex-1 truncate [color:var(--foreground)]">{name}</span>
+      <span className="[font-family:var(--font-numeric)] [color:var(--foreground)]" style={{ fontVariantNumeric: "tabular-nums" }}>
+        {amount}
+      </span>
+      <span className="flex shrink-0 items-center gap-1 [color:var(--muted-foreground)]">
+        <StatusDot tone={tone} label={label} />
+      </span>
+    </span>
+  );
+
+  return (
+    <span className="block bg-background">
+      <span className="flex items-end justify-between gap-2 px-3 pt-3 pb-2">
+        <span className="block">
+          <span
+            className="block [color:var(--muted-foreground)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]"
+            style={{ textTransform: "var(--label-transform)" as never }}
+          >
+            本月已确认
+          </span>
+          <span className="block [color:var(--foreground)] [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-weight:var(--fw-display)]">
+            RM 71,300
+          </span>
+        </span>
+        <span className="shrink-0 rounded-[var(--radius-control)] [background-color:var(--primary)] [color:var(--primary-foreground)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] px-2 py-1">
+          新增
+        </span>
+      </span>
+      {row("Taman Desa 三房翻新", "48,500", "positive", "已确认")}
+      {row("Cheras 店面装修", "96,000", "negative", "已逾期")}
+    </span>
   );
 }

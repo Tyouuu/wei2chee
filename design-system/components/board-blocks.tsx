@@ -19,7 +19,7 @@
  * customer's 配色 like everything else.
  */
 
-import { Fragment } from "react";
+import { useId } from "react";
 import {
   KanbanBoard,
   KanbanCard,
@@ -43,6 +43,7 @@ export function TaskBoard({
   stages: { name: string }[];
   cards: BoardCard[];
 }) {
+  const boardId = useId();
   const columns = (stages ?? [])
     .filter((s) => s?.name)
     .map((s, i) => ({ id: `col${i}`, name: s.name }));
@@ -63,7 +64,15 @@ export function TaskBoard({
   if (!columns.length) return null;
 
   return (
-    <KanbanProvider columns={columns} data={data} onDataChange={() => {}}>
+    // A STABLE id, not dnd-kit's default.
+    //
+    // DndContext hands every sortable an `aria-describedby="DndDescribedBy-N"`
+    // off a module-level counter that starts fresh in each environment, so the
+    // server said `-6` and the browser said `-0` and React threw away the whole
+    // subtree it was hydrating — once in the editor palette and again on the
+    // component library page. `useId` is the exact tool for this: React
+    // guarantees the same value on both sides of the render.
+    <KanbanProvider id={boardId} columns={columns} data={data} onDataChange={() => {}}>
       {(column) => (
         <KanbanBoard id={column.id} key={column.id}>
           <KanbanHeader>{column.name}</KanbanHeader>
@@ -127,12 +136,14 @@ export function BeforeAfter({
 
 export function Stars({ value, outOf }: { value: number; outOf: number }) {
   const total = Math.max(1, Math.min(10, Math.round(outOf || 5)));
+  // `key` goes on RatingButton itself, not on a Fragment around it: Rating
+  // clones each child to inject `index`, and a Fragment wrapper swallowed the
+  // clone — React then warned `Invalid prop index supplied to React.Fragment`
+  // once per star, five times per preview.
   return (
     <Rating value={Math.max(0, Math.min(total, value))} readOnly>
       {Array.from({ length: total }).map((_, i) => (
-        <Fragment key={i}>
-          <RatingButton />
-        </Fragment>
+        <RatingButton key={i} />
       ))}
     </Rating>
   );

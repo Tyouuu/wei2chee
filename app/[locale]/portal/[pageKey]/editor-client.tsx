@@ -15,6 +15,7 @@ import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { EditorChrome } from "./editor-chrome";
 import { ComponentPreview } from "@/design-system/editor/component-preview";
 import { ClickToAdd } from "./drawer-add";
+import { LivePreview } from "@/design-system/editor/live-preview";
 import { StyleSwitcher } from "./style-switcher";
 import { AiAssistant, type Turn } from "./ai-assistant";
 import { MobileEditor } from "./mobile-editor";
@@ -598,10 +599,33 @@ export function PortalEditor({
               // A miniature of each block beside its name, so the palette is
               // browsed by sight rather than by reading fifteen nouns off
               // identical white rectangles. See component-preview.tsx.
+              // A gallery tile, not a list row: the block renders itself, at
+              // the size it is, in the customer's OWN style -- so 趋势图 is a
+              // chart and 记录表格 is a table, instead of both being two grey
+              // bars. See live-preview.tsx for why the schematics had to go.
               drawerItem: ({ children, name }) => (
                 <ClickToAdd name={name}>
-                  <ComponentPreview name={name} />
-                  <div className="min-w-0 flex-1">{children}</div>
+                  <div className="w-full overflow-hidden rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-950)] transition-colors group-hover/add:[border-color:var(--color-ink-700)]">
+                    <LivePreview
+                      name={name}
+                      style={activeStyle}
+                      palette={palette}
+                      fallback={
+                        <div className="grid h-16 place-items-center">
+                          <ComponentPreview name={name} />
+                        </div>
+                      }
+                    />
+                  </div>
+                  <div className="flex w-full items-center justify-between gap-2 px-0.5">
+                    <div className="min-w-0 flex-1">{children}</div>
+                    <span
+                      aria-hidden
+                      className="shrink-0 opacity-0 transition-opacity [color:var(--color-paper-dim)] [font-size:var(--text-xs)] group-hover/add:opacity-100"
+                    >
+                      + 加
+                    </span>
+                  </div>
                 </ClickToAdd>
               ),
               header: () => (

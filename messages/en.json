@@ -65,7 +65,7 @@
   },
   "stylePicker": {
     "title": "Pick your style",
-    "subtitle": "The same page, drawn three ways. Compare Ledger, Hearth and Blueprint side by side, then tell us which one to build your system in.",
+    "subtitle": "The same page, drawn five ways. Compare Ledger, Hearth, Blueprint, Bare and Docket side by side, then tell us which one to build your system in.",
     "selectCta": "Choose this style",
     "whatsappPrefill": "I'd like the {style} style",
     "styles": {
@@ -156,7 +156,7 @@
     },
     "contract": {
       "heading": "Why these aren't just three color swaps",
-      "intro": "Every page built with this design system, in any of the three styles, follows the same generation contract.",
+      "intro": "Every page built with this design system, in any of the five styles, follows the same generation contract.",
       "pageRulesHeading": "Five page rules",
       "pageRules": [
         "The page states its answer. The one question the page exists to answer is the largest thing on it.",
@@ -170,7 +170,7 @@
         "Full width, left-aligned, like every other page — a centred narrow column just leaves a dead right-hand gutter.",
         "Rows of cards don't stretch. Where two cards of different natural heights sit side by side, the shorter one doesn't grow to match."
       ],
-      "componentRulesHeading": "Component rules, in all three styles",
+      "componentRulesHeading": "Component rules, in all five styles",
       "componentRules": [
         "Weight ceiling: nothing exceeds semibold. No 700/800/900 weights, anywhere.",
         "Tracking scales negatively with size — a large heading needs tighter tracking than body text.",
@@ -436,7 +436,9 @@
         "SystemShell": "The page frame: navigation on the left, content on the right. Every page is built inside one.",
         "RailNav": "Your system's sidebar. Pages appear here automatically as you add them."
       },
-      "filterAll": "All"
+      "filterAll": "All",
+      "zoom": "See {name} full size",
+      "close": "Close"
     },
     "templates": {
       "title": "Templates",
