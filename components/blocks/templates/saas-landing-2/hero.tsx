@@ -10,7 +10,28 @@ const avatars = [
   { src: "https://i.pravatar.cc/80?img=27", name: "Hannah", initials: "H" },
 ]
 
-export default function Hero() {
+/**
+ * EVERY WORD THIS SECTION SHOWS, IN ONE OBJECT.
+ *
+ * The section was pulled from the @7Ovr registry with its own copy baked in as
+ * module-level consts. That made it un-editable: the editor's AI writes into
+ * PROPS (`set_text` in lib/portal/layout-ops.ts), and a block whose words live
+ * in its source has no prop to write into. Selecting one and pressing 改文字
+ * opened a panel with a single dropdown -- change the whole section, or nothing.
+ *
+ * Lifting the consts here changes nothing on screen: the component falls back
+ * to exactly these values when no `copy` is passed. What it adds is a surface
+ * the AI can reach, so a customer can say "put my own prices in" and get their
+ * own prices rather than Acme's.
+ *
+ * GENERATED. Re-run the opener rather than editing this block by hand.
+ */
+export const copy = { avatars }
+export type Copy = typeof copy
+
+
+export default function Hero({ copy: override }: { copy?: Partial<Copy> } = {}) {
+  const { avatars } = { ...copy, ...override }
   return (
     <section className="flex w-full items-center justify-center px-6 py-16 sm:py-24">
       <div className="mx-auto flex max-w-2xl flex-col items-center text-center">

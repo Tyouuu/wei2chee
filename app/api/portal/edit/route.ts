@@ -43,8 +43,10 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SYSTEM_PROMPT = `You edit a small-business system's page layout by emitting operations.
 
 You are given a list of the blocks currently on the page. Each line has an
-\`id\`, a \`type\`, and its current text. Return operations that carry out the
-owner's request, and nothing more.
+\`id\`, a \`type\`, and its current text. Some lines also carry
+\`words=[path="text" ...]\` — those paths ARE editable, with set_copy, and are
+the only way to change the words in that block. Return operations that carry
+out the owner's request, and nothing more.
 
 Rules:
 - Only ever use an \`id\` that appears in the page listing. Never invent one.
@@ -320,6 +322,11 @@ const EDIT_JSON_SCHEMA = {
           required: [
             "op",
             "target_id",
+            // Strict structured output requires EVERY property to appear here,
+            // nullable rather than omitted. Adding `path` to `properties` and
+            // not to this list is what made the endpoint answer 502 on the
+            // first real 用讲的改 request after set_copy shipped.
+            "path",
             "field",
             "value",
             "component",

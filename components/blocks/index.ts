@@ -912,6 +912,28 @@ import { copy as C_table_3 } from "@/components/blocks/table-3";
 import { copy as C_team_1 } from "@/components/blocks/team-1";
 import { copy as C_team_2 } from "@/components/blocks/team-2";
 import { copy as C_team_3 } from "@/components/blocks/team-3";
+import { copy as C_templates_dashboard_charts } from "@/components/blocks/templates/dashboard/charts";
+import { copy as C_templates_dashboard_dashboard } from "@/components/blocks/templates/dashboard/dashboard";
+import { copy as C_templates_dashboard_table } from "@/components/blocks/templates/dashboard/table";
+import { copy as C_templates_saas_landing_2_comparison } from "@/components/blocks/templates/saas-landing-2/comparison";
+import { copy as C_templates_saas_landing_2_faqs } from "@/components/blocks/templates/saas-landing-2/faqs";
+import { copy as C_templates_saas_landing_2_footer } from "@/components/blocks/templates/saas-landing-2/footer";
+import { copy as C_templates_saas_landing_2_gallery } from "@/components/blocks/templates/saas-landing-2/gallery";
+import { copy as C_templates_saas_landing_2_header } from "@/components/blocks/templates/saas-landing-2/header";
+import { copy as C_templates_saas_landing_2_hero } from "@/components/blocks/templates/saas-landing-2/hero";
+import { copy as C_templates_saas_landing_2_pricing } from "@/components/blocks/templates/saas-landing-2/pricing";
+import { copy as C_templates_saas_landing_2_stats } from "@/components/blocks/templates/saas-landing-2/stats";
+import { copy as C_templates_saas_landing_2_testimonials } from "@/components/blocks/templates/saas-landing-2/testimonials";
+import { copy as C_templates_saas_landing_faqs } from "@/components/blocks/templates/saas-landing/faqs";
+import { copy as C_templates_saas_landing_footer } from "@/components/blocks/templates/saas-landing/footer";
+import { copy as C_templates_saas_landing_header } from "@/components/blocks/templates/saas-landing/header";
+import { copy as C_templates_saas_landing_hero } from "@/components/blocks/templates/saas-landing/hero";
+import { copy as C_templates_saas_landing_pricing } from "@/components/blocks/templates/saas-landing/pricing";
+import { copy as C_templates_saas_landing_testimonials } from "@/components/blocks/templates/saas-landing/testimonials";
+import { copy as C_templates_startup_footer } from "@/components/blocks/templates/startup/footer";
+import { copy as C_templates_startup_header } from "@/components/blocks/templates/startup/header";
+import { copy as C_templates_startup_stats } from "@/components/blocks/templates/startup/stats";
+import { copy as C_templates_startup_testimonials } from "@/components/blocks/templates/startup/testimonials";
 import { copy as C_testimonials_1 } from "@/components/blocks/testimonials-1";
 import { copy as C_testimonials_2 } from "@/components/blocks/testimonials-2";
 import { copy as C_testimonials_3 } from "@/components/blocks/testimonials-3";
@@ -921,14 +943,18 @@ import { copy as C_timeline_2 } from "@/components/blocks/timeline-2";
 /**
  * WHAT EACH SECTION SAYS BY DEFAULT, KEYED BY SECTION NAME.
  *
- * The shape the editor's `set_copy` validates a path against. It walks THESE
- * defaults rather than whatever is already saved, so a path the section does
- * not have changes nothing instead of adding a key nothing renders -- which is
- * the whole guard, since the field whitelist that protects `set_text` cannot
- * apply here (the keys belong to whichever section was pulled).
+ * The shape `set_copy` validates a path against. It walks THESE defaults
+ * rather than whatever is already saved, so a path the section does not have
+ * changes nothing instead of adding a key nothing renders -- the whole guard,
+ * since the field whitelist that protects `set_text` cannot apply here (the
+ * keys belong to whichever section was pulled).
  *
- * 133 of the 216 sections are in here. The rest keep their words inline in
- * JSX rather than in a module-level const, and are a later batch.
+ * 155 of the 252 sections, INCLUDING the ones inside the four whole-page
+ * templates -- keyed "saas-landing/pricing" the same way BLOCKS keys them. The
+ * first real 用讲的改 request after set_copy shipped asked to rewrite a price
+ * list on a page built from 完整介绍, and the model answered 「当前页面列表没有
+ * 提供价目段的可编辑路径」: it was right, because the opener had only walked the
+ * flat directory. The rest keep their words inline in JSX.
  *
  * GENERATED.
  */
@@ -1061,6 +1087,28 @@ export const BLOCK_COPY: Record<string, Record<string, unknown>> = {
   "team-1": C_team_1,
   "team-2": C_team_2,
   "team-3": C_team_3,
+  "dashboard/charts": C_templates_dashboard_charts,
+  "dashboard/dashboard": C_templates_dashboard_dashboard,
+  "dashboard/table": C_templates_dashboard_table,
+  "saas-landing-2/comparison": C_templates_saas_landing_2_comparison,
+  "saas-landing-2/faqs": C_templates_saas_landing_2_faqs,
+  "saas-landing-2/footer": C_templates_saas_landing_2_footer,
+  "saas-landing-2/gallery": C_templates_saas_landing_2_gallery,
+  "saas-landing-2/header": C_templates_saas_landing_2_header,
+  "saas-landing-2/hero": C_templates_saas_landing_2_hero,
+  "saas-landing-2/pricing": C_templates_saas_landing_2_pricing,
+  "saas-landing-2/stats": C_templates_saas_landing_2_stats,
+  "saas-landing-2/testimonials": C_templates_saas_landing_2_testimonials,
+  "saas-landing/faqs": C_templates_saas_landing_faqs,
+  "saas-landing/footer": C_templates_saas_landing_footer,
+  "saas-landing/header": C_templates_saas_landing_header,
+  "saas-landing/hero": C_templates_saas_landing_hero,
+  "saas-landing/pricing": C_templates_saas_landing_pricing,
+  "saas-landing/testimonials": C_templates_saas_landing_testimonials,
+  "startup/footer": C_templates_startup_footer,
+  "startup/header": C_templates_startup_header,
+  "startup/stats": C_templates_startup_stats,
+  "startup/testimonials": C_templates_startup_testimonials,
   "testimonials-1": C_testimonials_1,
   "testimonials-2": C_testimonials_2,
   "testimonials-3": C_testimonials_3,

@@ -96,6 +96,11 @@ export function useDockable() {
 }
 
 type EditorUi = {
+  /** The assistant's manual open/close, or null to follow the selection.
+   *  Held here rather than inside AiDock, which Puck remounts -- see the
+   *  measurement beside the useState below. */
+  dockOpen: boolean | null;
+  setDockOpen: (v: boolean | null) => void;
   sheet: Sheet;
   openSheet: (s: NonNullable<Sheet>, anchor?: HTMLElement | null) => void;
   closeSheet: () => void;
@@ -123,6 +128,15 @@ export function EditorUiProvider({ children }: { children: ReactNode }) {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  // THE ASSISTANT'S OPEN STATE LIVES HERE, NOT INSIDE AiDock.
+  //
+  // It was a useState in AiDock, which sits inside Puck's `preview` override --
+  // a subtree React remounts whenever editor-client re-renders, because the
+  // `overrides` object literal gives it new function identities. Measured on
+  // 2026-08-23: one keystroke in 用讲的改 reset it to null, the dock collapsed
+  // to 0x0, focus went to <body>, and the next keystroke went nowhere. This
+  // provider is mounted above <Puck> and survives.
+  const [dockOpen, setDockOpen] = useState<boolean | null>(null);
 
   const dockable = useDockable();
 
@@ -150,8 +164,8 @@ export function EditorUiProvider({ children }: { children: ReactNode }) {
   const gutter = dockable && sheet ? SHEET_GUTTER : 0;
 
   const value = useMemo(
-    () => ({ sheet, openSheet, closeSheet, host, setHost, anchor, gutter }),
-    [sheet, openSheet, closeSheet, host, anchor, gutter],
+    () => ({ sheet, openSheet, closeSheet, host, setHost, anchor, gutter, dockOpen, setDockOpen }),
+    [sheet, openSheet, closeSheet, host, anchor, gutter, dockOpen],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -181,6 +195,8 @@ export function SheetHost() {
 export function useEditorUi(): EditorUi {
   return (
     useContext(Ctx) ?? {
+      dockOpen: null,
+      setDockOpen: () => {},
       sheet: null,
       openSheet: () => {},
       closeSheet: () => {},

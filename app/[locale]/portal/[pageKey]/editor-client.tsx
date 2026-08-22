@@ -35,6 +35,7 @@ import type { SystemLang } from "@/lib/system-lang";
 import { InlineEditing } from "@/design-system/editor/inline-editing";
 import { CanvasGutter } from "@/design-system/editor/canvas-gutter";
 import { AiAssistant, type Turn } from "./ai-assistant";
+import { AssistantProvider, useAssistant } from "./assistant-state";
 import { MobileEditor } from "./mobile-editor";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 // Reused rather than re-declared: this is the same scoped Ledger token
@@ -264,9 +265,17 @@ export function PortalEditor({
     getNarrow,
     getNarrowServer,
   );
-  const [turns, setTurns] = useState<Turn[]>([]);
-  const [instruction, setInstruction] = useState("");
-  const [aiBusy, setAiBusy] = useState(false);
+  // turns / instruction / aiBusy USED TO LIVE HERE, and that was the bug.
+  //
+  // The comment above is right that Puck re-creates the `overrides` render
+  // functions -- but lifting the state into THIS component could not fix it,
+  // because setting state here is what causes the re-render that re-creates
+  // them. Measured: one keystroke in 用讲的改 moved focus to <body> and
+  // collapsed the dock to 0x0, and the second keystroke went nowhere.
+  //
+  // They live in <AssistantProvider> now, mounted above <Puck>, so typing
+  // re-renders the assistant panel and never this component. See
+  // assistant-state.tsx.
 
   // Edited since the last successful save. `handleChange` fires on every Puck
   // mutation including the assistant's, so this is the honest answer to "is
@@ -716,6 +725,11 @@ export function PortalEditor({
             takes `h-full` (NOT `flex-1` — its parent is `display: block`, so
             a flex property on it is inert) to inherit that definite height;
             and puck-theme.css overrides `.Puck` from 100vh to 100%. */}
+          {/* ABOVE <Puck>, so the assistant's own state changes cannot
+            re-render this component and re-create `overrides`. That identity
+            is what React uses to decide whether to remount the `preview`
+            subtree -- which is the canvas AND the assistant. */}
+          <AssistantProvider>
           <div className="h-full">
             <Puck
               // Forces exactly one clean remount at the ssr->hydrated
@@ -902,12 +916,6 @@ export function PortalEditor({
                       palette={palette}
                       locale={locale}
                       navPages={navPages}
-                      turns={turns}
-                      setTurns={setTurns}
-                      instruction={instruction}
-                      setInstruction={setInstruction}
-                      aiBusy={aiBusy}
-                      setAiBusy={setAiBusy}
                     />
                   ) : (
                     // Wrapped rather than returned bare: Puck's RenderFunc is
@@ -1053,12 +1061,6 @@ export function PortalEditor({
                       confusion chrome.module.css exists to prevent. */}
                     <AiDock>
                       <AiAssistant
-                        turns={turns}
-                        setTurns={setTurns}
-                        instruction={instruction}
-                        setInstruction={setInstruction}
-                        busy={aiBusy}
-                        setBusy={setAiBusy}
                         pages={navPages}
                         locale={locale}
                         // Not a phone here -- but `compact` is the same request
@@ -1075,6 +1077,7 @@ export function PortalEditor({
               }}
             />
           </div>
+          </AssistantProvider>
         </div>
         {/* Every sheet lands here: inside this component's scoped chrome, so the
           --color-* tokens they read are Formae's, and after Puck so nothing in

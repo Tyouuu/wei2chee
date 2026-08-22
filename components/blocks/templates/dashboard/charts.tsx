@@ -77,6 +77,26 @@ const series = [
   { key: "signups", label: "Signups" },
 ] as const
 
+/**
+ * EVERY WORD THIS SECTION SHOWS, IN ONE OBJECT.
+ *
+ * The section was pulled from the @7Ovr registry with its own copy baked in as
+ * module-level consts. That made it un-editable: the editor's AI writes into
+ * PROPS (`set_text` in lib/portal/layout-ops.ts), and a block whose words live
+ * in its source has no prop to write into. Selecting one and pressing 改文字
+ * opened a panel with a single dropdown -- change the whole section, or nothing.
+ *
+ * Lifting the consts here changes nothing on screen: the component falls back
+ * to exactly these values when no `copy` is passed. What it adds is a surface
+ * the AI can reach, so a customer can say "put my own prices in" and get their
+ * own prices rather than Acme's.
+ *
+ * GENERATED. Re-run the opener rather than editing this block by hand.
+ */
+export const copy = { ranges, chartConfig, series }
+export type Copy = typeof copy
+
+
 function formatTick(value: number | string): string {
   const n = Number(value)
   if (n >= 10_000) return `${Math.round(n / 1000)}k`
@@ -92,7 +112,8 @@ function summarize(data: DataPoint[], key: keyof Omit<DataPoint, "label">) {
   return { total, deltaPct, up: deltaPct >= 0 }
 }
 
-export default function Charts() {
+export default function Charts({ copy: override }: { copy?: Partial<Copy> } = {}) {
+  const { ranges, chartConfig, series } = { ...copy, ...override }
   const [range, setRange] = React.useState<RangeKey>("30d")
   const data = datasets[range]
 

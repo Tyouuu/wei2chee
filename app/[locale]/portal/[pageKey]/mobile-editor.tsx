@@ -47,23 +47,11 @@ export function MobileEditor({
   palette,
   locale,
   navPages,
-  turns,
-  setTurns,
-  instruction,
-  setInstruction,
-  aiBusy,
-  setAiBusy,
 }: {
   style: StyleName;
   palette: string | null;
   locale: string;
   navPages: { key: string; label: string }[];
-  turns: Turn[];
-  setTurns: React.Dispatch<React.SetStateAction<Turn[]>>;
-  instruction: string;
-  setInstruction: (v: string) => void;
-  aiBusy: boolean;
-  setAiBusy: (v: boolean) => void;
 }) {
   const t = useTranslations("portal.editor");
   // The live canvas, not a copy threaded down: this component renders inside
@@ -141,12 +129,6 @@ export function MobileEditor({
           it. */}
       <div className="flex h-[52%] shrink-0 flex-col border-t [border-color:var(--color-ink-800)] sm:h-[38%] md:h-[32%]">
         <AiAssistant
-          turns={turns}
-          setTurns={setTurns}
-          instruction={instruction}
-          setInstruction={setInstruction}
-          busy={aiBusy}
-          setBusy={setAiBusy}
           pages={navPages}
           locale={locale}
           compact

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useAssistant } from "./assistant-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -72,27 +73,10 @@ export type Turn = {
  * other edits one block by hand, which is the same job at two levels of zoom.
  */
 export function AiAssistant({
-  turns,
-  setTurns,
-  instruction,
-  setInstruction,
-  busy,
-  setBusy,
   pages,
   locale,
   compact = false,
 }: {
-  /* The transcript and the draft message are owned by the EDITOR, not by this
-   * component. Puck re-creates `overrides` render functions as the editor
-   * re-renders, so anything held in state here would be lost the moment the
-   * canvas changed -- which is every time the assistant successfully edits
-   * something. Lifting it means a conversation survives its own results. */
-  turns: Turn[];
-  setTurns: React.Dispatch<React.SetStateAction<Turn[]>>;
-  instruction: string;
-  setInstruction: (value: string) => void;
-  busy: boolean;
-  setBusy: (value: boolean) => void;
   /** The customer's own pages. Sent with each request so「把报价单删掉」can name
    *  a real page, and used to build the link after one is added. */
   pages: { key: string; label: string }[];
@@ -102,6 +86,13 @@ export function AiAssistant({
    *  why the vertical version does not fit. */
   compact?: boolean;
 }) {
+  /* The transcript and the draft message live in <AssistantProvider>, above
+   * <Puck>. They used to be props from editor-client, which held them in its
+   * own state -- and setting state there re-created Puck's `overrides`, which
+   * remounted this panel on every keystroke. Reading them from a provider that
+   * editor-client does not re-render is what makes typing possible at all.
+   * See assistant-state.tsx for the measurement. */
+  const { turns, setTurns, instruction, setInstruction, busy, setBusy } = useAssistant();
   const t = useTranslations("portal.editor");
   // Read from Puck directly: this renders inside the `fields` override and
   // therefore inside the provider, so the layout it sends is always the live

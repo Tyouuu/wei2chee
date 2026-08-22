@@ -44,10 +44,9 @@ import { useEditorUi } from "@/design-system/editor/editor-ui";
  * turning into a preference the customer has to unset later.
  */
 export function AiDock({ children }: { children: ReactNode }) {
-  const [manual, setManual] = useState<boolean | null>(null);
   const { previewing } = usePreviewMode();
   const { selectedItem } = usePuck();
-  const { gutter, sheet } = useEditorUi();
+  const { gutter, sheet, dockOpen: manual, setDockOpen: setManual } = useEditorUi();
   const blockId =
     typeof selectedItem?.props?.id === "string" ? selectedItem.props.id : null;
   // AND IT CLOSES WHILE A PANEL IS OPEN. The selection rule above is right for
