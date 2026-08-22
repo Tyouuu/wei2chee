@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { VARIANTS, activeVariant } from "@/design-system/editor/variants";
-import { BLOCK_COPY } from "@/components/blocks";
+// Straight from the generated data module, not through components/blocks --
+// the barrel imports 250 client components, and this file runs on the server.
+import { BLOCK_COPY } from "@/components/blocks/copy.generated";
 import {
   COLUMN_KINDS,
   KIND_LABELS,
