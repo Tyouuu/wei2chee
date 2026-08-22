@@ -46,6 +46,7 @@ export function EditorChrome({
   nav,
   tools,
   finish,
+  publish,
   overflow,
 }: {
   saving: boolean;
@@ -84,6 +85,11 @@ export function EditorChrome({
    *  far LEFT, which was harmless while it only appeared after the first save
    *  and odd once it was there from the start. */
   finish?: ReactNode;
+  /** 发布 -- the 官网's public address, on the website page only. Sits before
+   *  the handoff and the save so the bar still reads left to right as the
+   *  order things happen in: make it, put it online, then hand the system
+   *  over. Durable keeps its Publish in exactly this corner. */
+  publish?: ReactNode;
   /** The editor's page navigation, style link, locale switcher and sign-out —
    *  everything that used to be a second bar above this one. Passed as a node
    *  rather than moved as markup because it is built in editor-client, outside
@@ -243,6 +249,7 @@ export function EditorChrome({
       >
         ↻
       </button>
+      {publish}
       {finish}
 
       <button

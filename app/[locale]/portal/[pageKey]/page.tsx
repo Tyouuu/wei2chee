@@ -56,7 +56,7 @@ export default async function PortalEditorPage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style, palette, paid")
+    .select("id, style, palette, paid, site_slug, site_published")
     .eq("account_id", user.id)
     .single();
 
@@ -198,6 +198,13 @@ export default async function PortalEditorPage({
       style={project.style as StyleName}
       palette={(project.palette as string | null) ?? null}
       systemLang={systemLangOf(businessContext)}
+      /** The 官网's public address and whether it answers -- read here rather
+       *  than fetched again in the editor, because the same projects row
+       *  already supplies style and palette and a second query would be a
+       *  second source of truth. Both are meaningless on the other pages; the
+       *  editor mounts the control for `website` only. */
+      siteSlug={(project.site_slug as string | null) ?? null}
+      sitePublished={Boolean(project.site_published)}
     />
   );
 }

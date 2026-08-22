@@ -30,5 +30,11 @@ export const config = {
   // particular -- must never touch /auth/*. Without this exclusion,
   // next-intl 307-redirects /auth/confirm to /zh/auth/confirm, which has
   // no matching route and breaks every real confirmation link.
-  matcher: ["/((?!api|_next|auth|.*\\..*).*)"],
+  // `s/` joins them for the same reason, one layer out: /s/<slug> is a
+  // customer's own published website, read by strangers who have never heard
+  // of Formae. next-intl would 307 it to /zh/s/<slug>, putting our locale
+  // prefix in a URL that business prints on a name card -- and there is no
+  // locale to choose anyway, because the page speaks whatever language that
+  // business's system speaks.
+  matcher: ["/((?!api|_next|auth|s/|.*\\..*).*)"],
 };

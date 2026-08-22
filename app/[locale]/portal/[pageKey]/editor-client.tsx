@@ -22,6 +22,7 @@ import { ClickToAdd } from "./drawer-add";
 import { LivePreview } from "@/design-system/editor/live-preview";
 import { EditorUiProvider, SheetHost } from "@/design-system/editor/editor-ui";
 import { BarMenu, barMenuItem } from "@/design-system/editor/bar-menu";
+import { PublishSite } from "./publish-site";
 import { ExitPreview } from "@/design-system/editor/preview-toggle";
 import { DraftNotice } from "@/design-system/editor/draft-notice";
 import { BlockToolbar } from "@/design-system/editor/block-toolbar";
@@ -117,6 +118,8 @@ export function PortalEditor({
   style,
   palette,
   systemLang,
+  siteSlug,
+  sitePublished,
 }: {
   pageKey: string;
   /** The component name that ?add= just inserted, or null. */
@@ -168,6 +171,13 @@ export function PortalEditor({
    *  down so the canvas can be wrapped in it: the blocks inside are the
    *  customer's system, the chrome around them is Formae's. */
   systemLang: SystemLang;
+  /** projects.site_slug -- the 官网's public address, or null before one is
+   *  claimed. Only the website page does anything with it. */
+  siteSlug: string | null;
+  /** projects.site_published -- whether that address answers. Separate from the
+   *  slug on purpose: taking a site down must not release the address, or a
+   *  business loses a URL it has already printed. */
+  sitePublished: boolean;
 }) {
   const t = useTranslations("portal.editor");
   // The eight one-line tags ('紧凑 · 表格多、行数多') already exist under
@@ -793,6 +803,18 @@ export function PortalEditor({
                   <EditorChrome
                     nav={topNav}
                     tools={<StyleButton label={t("styleLabel")} />}
+                    publish={
+                      // Website only. 收款 and 客户 are the business's own
+                      // working pages -- there is nothing to publish, and a
+                      // greyed-out 发布 on five pages teaches the customer that
+                      // the button is decorative.
+                      pageKey === "website" ? (
+                        <PublishSite
+                          initialSlug={siteSlug}
+                          initialPublished={sitePublished}
+                        />
+                      ) : null
+                    }
                     finish={finishCta}
                     overflow={overflowMenu}
                     saving={saveState === "saving"}

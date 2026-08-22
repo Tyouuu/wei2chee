@@ -201,6 +201,14 @@ type Components = {
     fields?: { label: string; placeholder?: string; kind?: "text" | "phone" | "long" }[];
     submitLabel?: string;
     landsIn?: string;
+    /** The three pieces of the arrow sentence around `landsIn`. In the DATA, not
+     *  in the component, because the component is server-rendered and cannot
+     *  read the system-language context -- see enquiry-form.tsx. They were
+     *  already being written into every landing template and silently dropped
+     *  here, which is why an English website showed one Chinese line. */
+    landsInBadge?: string;
+    landsInBefore?: string;
+    landsInAfter?: string;
     note?: string;
     look?: "card" | "plain" | "split";
   };
@@ -1308,7 +1316,19 @@ export const puckConfig: Config<Components> = {
         submitLabel: "送出",
         landsIn: "报价单",
       },
-      render: ({ id, heading, blurb, fields, submitLabel, landsIn, note, look }) => (
+      render: ({
+        id,
+        heading,
+        blurb,
+        fields,
+        submitLabel,
+        landsIn,
+        landsInBadge,
+        landsInBefore,
+        landsInAfter,
+        note,
+        look,
+      }) => (
         <EnquiryForm
           look={look ?? "card"}
           heading={
@@ -1326,6 +1346,9 @@ export const puckConfig: Config<Components> = {
           fields={fields}
           submitLabel={submitLabel}
           landsIn={landsIn}
+          landsInBadge={landsInBadge}
+          landsInBefore={landsInBefore}
+          landsInAfter={landsInAfter}
           note={note}
         />
       ),
