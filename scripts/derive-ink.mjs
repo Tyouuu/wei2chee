@@ -137,7 +137,14 @@ const MOVES = {
 };
 
 for (const [token, value] of Object.entries(MOVES)) {
-  const re = new RegExp(`(^\\s*\\${token}\\s*:\\s*)([^;]+)(;)`, "m");
+  // Exactly TWO spaces of indent, and the value may span lines.
+  //
+  // `^s*` used to match the prose inside the surface-token comment box
+  // first: those lines read `     --surface-blur: backdrop-filter for the
+  // card`, which is indistinguishable from a declaration to a regex. The
+  // derive reported 21 tokens moved and had rewritten a sentence inside a
+  // comment. The comment lines were renamed too, so this is the second lock.
+  const re = new RegExp(`(^  ${token}\s*:\s*)([^;]+)(;)`, "m");
   if (!re.test(css)) throw new Error(`token not found in ${SRC}: ${token}`);
   css = css.replace(re, `$1${value}$3`);
 }

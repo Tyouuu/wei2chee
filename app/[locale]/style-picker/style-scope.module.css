@@ -736,6 +736,148 @@
 }
 
 /* ---------------------------------------------------------------------- *
+ * Glass -- generated from design-system/tokens/glass.css
+ * ---------------------------------------------------------------------- */
+.glass {
+  --color-table-head-bg: var(--color-canvas);
+  --color-table-head-fg: var(--color-paper-dim);
+  --color-canvas: #eaeefb;
+  --color-ink-950: rgba(255, 255, 255, 0.38);
+  --color-ink-900: rgba(255, 255, 255, 0.55);
+  --color-ink-850: rgba(255, 255, 255, 0.72);
+  --color-ink-800: rgba(255, 255, 255, 0.70);
+  --color-ink-700: rgba(255, 255, 255, 0.45);
+  --color-nav-bg: #171a2e;
+  --color-nav-bg-deep: #101223;
+  --color-nav-fg: #eef4f0;
+  --color-nav-fg-dim: #aec1b7;
+  --color-nav-hover: #1e4334;
+  --color-nav-active: #224c38;
+  --color-nav-border: rgba(255, 255, 255, 0.10);
+  --color-nav-accent: #63c9c0;
+  --color-paper: #1c2233;
+  --color-paper-dim: #5a6379;
+  --color-primary: #4f46e5;
+  --color-primary-deep: #3f37c9;
+  --color-primary-soft: rgba(79, 70, 229, 0.12);
+  --color-on-primary: #ffffff;
+  --color-on-dark: #fffdf9;
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+  --font-ui: var(--font-soft-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-numeric: var(--font-rounded-latin), "PingFang SC", system-ui, sans-serif;
+  --fw-regular: 400;
+  --fw-medium: 600;
+  --fw-semibold: 700;
+  --fw-display: 800;
+  --tracking-body: 0em;
+  --tracking-sm: 0.004em;
+  --tracking-title: -0.012em;
+  --tracking-title-lg: -0.018em;
+  --tracking-label: 0.01em;
+  --label-transform: none;
+  --text-micro: 11px;
+  --text-xs: 12px;
+  --text-sm: 13.5px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-title: 23px;
+  --text-hero: 40px;
+  --leading-tight: 1.3;
+  --leading-body: 1.6;
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-control: 999px;
+  --radius-pill: 999px;
+  --pad-card: 24px;
+  --pad-card-lg: 32px;
+  --pad-control-x: 18px;
+  --pad-control-y: 10px;
+  --pad-cell-x: 14px;
+  --pad-cell-y: 14px;
+  --gap-stack: 18px;
+  --gap-inline: 14px;
+  --row-h: 54px;
+  --control-h: 42px;
+  --border-card-width: 1px;
+  --shadow-card: 0 8px 32px rgba(31, 38, 100, 0.12);
+  --shadow-raised: 0 12px 40px rgba(31, 38, 100, 0.18);
+  --shadow-overlay: 0 24px 64px rgba(31, 38, 100, 0.28);
+  --surface-image: none;
+  --surface-blur: blur(20px) saturate(180%);
+  --surface-border-style: solid;
+  --canvas-image: radial-gradient(60rem 40rem at 12% 8%, rgba(120, 140, 255, 0.28), transparent 60%), radial-gradient(50rem 36rem at 88% 22%, rgba(255, 140, 200, 0.22), transparent 60%), radial-gradient(56rem 40rem at 60% 96%, rgba(120, 220, 220, 0.24), transparent 62%);
+  --border-subtle: rgba(43, 51, 69, 0.05);
+  --border-strong: rgba(43, 51, 69, 0.10);
+  --shadow-hue: 43, 51, 69;
+  --hairline: 1px;
+  --ease-out-quad: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 160ms;
+  --dur: 200ms;
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-ink-900);
+  --card-foreground: var(--color-paper);
+  --popover: var(--color-ink-900);
+  --popover-foreground: var(--color-paper);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-ink-850);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-clay);
+  --destructive-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-jade);
+  --chart-3: var(--color-brass);
+  --chart-4: var(--color-clay);
+  --chart-5: var(--color-slate);
+  --sidebar: var(--color-nav-bg);
+  --sidebar-foreground: var(--color-nav-fg);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-bg);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-fg);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
+}
+
+.glass :focus-visible {
+  border-radius: var(--radius-control);
+}
+
+/* glass's structural colours, re-declared under a doubled class so they
+ * outrank the palette layer. See styleBlock() in the generator for why. */
+.glass.glass {
+  --color-ink-900: rgba(255, 255, 255, 0.55);
+  --color-ink-800: rgba(255, 255, 255, 0.70);
+  --canvas-image: radial-gradient(60rem 40rem at 12% 8%, rgba(120, 140, 255, 0.28), transparent 60%), radial-gradient(50rem 36rem at 88% 22%, rgba(255, 140, 200, 0.22), transparent 60%), radial-gradient(56rem 40rem at 60% 96%, rgba(120, 220, 220, 0.24), transparent 62%);
+}
+
+/* ---------------------------------------------------------------------- *
  * Hearth -- generated from design-system/tokens/hearth.css
  * ---------------------------------------------------------------------- */
 .hearth {
@@ -1354,7 +1496,8 @@
   --border-card-width: 0px;
   --shadow-card: 6px 6px 14px rgba(43, 51, 69, 0.10), -6px -6px 14px rgba(255, 255, 255, 0.92);
   --shadow-raised: 9px 9px 20px rgba(43, 51, 69, 0.14), -9px -9px 20px rgba(255, 255, 255, 0.95);
-  --shadow-overlay: 14px 14px 34px rgba(43, 51, 69, 0.20), --surface-image: none;
+  --shadow-overlay: 14px 14px 34px rgba(43, 51, 69, 0.20), -10px -10px 26px rgba(255, 255, 255, 0.85);
+  --surface-image: none;
   --surface-blur: none;
   --surface-border-style: solid;
   --canvas-image: none;

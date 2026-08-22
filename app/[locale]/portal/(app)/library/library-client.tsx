@@ -284,7 +284,7 @@ export function LibraryClient({
                     <StyleScope
                       register={style}
                       palette={palette}
-                      className="grid place-items-center [background-color:var(--color-canvas)]"
+                      className="ds-ground grid place-items-center [background-color:var(--color-canvas)]"
                     >
                       <p className="max-w-[26ch] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)] [padding:var(--pad-card)]">
                         {t(`structural.${entry.name}`)}
@@ -379,7 +379,7 @@ export function LibraryClient({
             </div>
             <div className={`${chrome.mount} min-h-0 overflow-auto`}>
               <StyleScope
-                register={style} palette={palette} className="[background-color:var(--color-canvas)]"
+                register={style} palette={palette} className="ds-ground [background-color:var(--color-canvas)]"
               >
                 <div className="[padding:var(--pad-card-lg)]">
                   <Render

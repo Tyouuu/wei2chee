@@ -72,6 +72,7 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   soft: styles.soft,
   brut: styles.brut,
   ink: styles.ink,
+  glass: styles.glass,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
@@ -674,7 +675,7 @@ export function PortalEditor({
             // resolves against this component's own `.ledger` chrome scope) --
             // fully obscures the canvas rather than dimming it, and swallows
             // every pointer event that would otherwise reach Puck underneath.
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center [background-color:var(--color-canvas)]">
+            <div className="ds-ground absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center [background-color:var(--color-canvas)]">
               <h2 className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
                 {t("paywallTitle")}
               </h2>
@@ -1009,7 +1010,7 @@ export function PortalEditor({
                       there, so the block being edited reflows beside the panel
                       instead of underneath it. See canvas-gutter.tsx. */}
                     <CanvasGutter
-                      className={`${scopeClasses(activeStyle, palette)} h-full [background-color:var(--color-canvas)]`}
+                      className={`ds-ground ${scopeClasses(activeStyle, palette)} h-full [background-color:var(--color-canvas)]`}
                     >
                       {/* Everything inside the canvas is the CUSTOMER'S system
                         and speaks their system language; everything outside it

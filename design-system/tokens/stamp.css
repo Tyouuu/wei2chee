@@ -288,10 +288,10 @@
   --shadow-overlay: 0 6px 16px rgba(57, 24, 45, 0.18);
 
   /* ── SURFACE ────────────────────────────────────────────────────────
-     --surface-image: A layer painted over a card's own colour: grain, a gradient wash, a hairline grid. `none` for every register that shipped before this line existed.
-     --surface-blur: backdrop-filter for the card. The whole of Glassmorphism lives here, and it needs the surface colour to be translucent to show.
-     --surface-border-style: solid / dashed / double. A dashed card is a different object from a solid one at the same border width.
-     --canvas-image: The same idea for the page ground rather than the card: a mesh, a grid, a paper texture.
+     · surface-image — A layer painted over a card's own colour: grain, a gradient wash, a hairline grid. `none` for every register that shipped before this line existed.
+     · surface-blur — backdrop-filter for the card. The whole of Glassmorphism lives here, and it needs the surface colour to be translucent to show.
+     · surface-border-style — solid / dashed / double. A dashed card is a different object from a solid one at the same border width.
+     · canvas-image — The same idea for the page ground rather than the card: a mesh, a grid, a paper texture.
 
      All four are inert here. A register that wants glass, grain or a
      dashed edge overrides them; everything else keeps the flat rectangle

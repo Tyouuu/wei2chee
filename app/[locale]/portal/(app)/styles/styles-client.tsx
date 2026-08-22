@@ -28,6 +28,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   soft: styles.soft,
   brut: styles.brut,
   ink: styles.ink,
+  glass: styles.glass,
 };
 
 
@@ -46,6 +47,7 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   soft: "Soft",
   brut: "Brut",
   ink: "Ink",
+  glass: "Glass",
 };
 
 /**
@@ -196,7 +198,7 @@ export function StylesClient({
                       radius alone to carry the comparison. Their own colours
                       here; the customer's 配色 has its own grid below. */}
                   <StyleScope
-                    register={name} className="h-full [background-color:var(--color-canvas)]"
+                    register={name} className="ds-ground h-full [background-color:var(--color-canvas)]"
                   >
                     {/* THE TYPE SPECIMEN. The register's name set in the
                         register's own face, next to a filled control carrying
@@ -398,7 +400,7 @@ function PaletteSample({ label }: { label: string }) {
   );
   return (
     <span
-      className="relative block w-full [background-color:var(--color-canvas)]"
+      className="ds-ground relative block w-full [background-color:var(--color-canvas)]"
       style={{ aspectRatio: "4 / 3" }}
     >
       {/* Accent first, then the neutral ramp lightest-last -- the same order

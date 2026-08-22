@@ -210,6 +210,26 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
   },
+  glass: {
+    mood: "看得穿的那一个。卡片是半透明的白,底下是三团很淡的颜色,卡片会把底下糊掉——像一块真的玻璃压在纸上。",
+    facts: "卡片白 55% 透明 · 背后模糊 20px · 底色三团渐层 · 圆角 18px · 1px 白色亮边 · 阴影往下散不往右偏 · 强调色靛蓝 #4f46e5",
+    prefer: {
+      // Rules would be a second edge competing with the pane's own lit border,
+      // and at 55% white a gridline reads as dirt on the glass.
+      RecordTable: "plain",
+      // Two panes overlapping is what says "glass"; one number on one pane
+      // does not. 数字卡 keeps its supporting figures for that reason.
+      HeroCard: "full",
+      WorkflowStrip: "row",
+      // A filled button on a translucent card is the one solid object in the
+      // frame, which is exactly the contrast this register is built on.
+      ActionButton: "solid",
+      Tag: "soft",
+      Divider: "loose",
+      TrendChart: "area",
+    },
+    avoid: ["实心的深色大色块", "照片当底", "把两块玻璃叠在同一个位置", "细到 1px 的正文"],
+  },
   docket: {
     mood: "一张真的表格。直角、硬线、像印出来要签名的单据。",
     facts: "圆角 0 · 边框 2px · 无阴影 · 行高 32px · 正文 13px · 标签全大写、字距 0.14em",

@@ -116,6 +116,10 @@
       "ink": {
         "label": "Ink",
         "description": "The spacious one. A sheet of Xuan paper, ink for the words, one vermilion seal. 40px padding and 76px rows — half again looser than anything else here, so there is less on the page and every piece stands apart. Serif, square corners, no shadow. The only register in the set drawn from a Chinese brief: for a long-established shop, a tea merchant, a TCM clinic, a calligrapher — a business that sells trust rather than noise. A high-volume business will find it shows too few rows at a time."
+      },
+      "glass": {
+        "label": "Glass",
+        "description": "The one you can see through. Cards are white at 55% and genuinely blur what is behind them, over a ground of three soft colour fields — so what you see is not a card but a pane resting on paper. It is the first register here that is not a flat rectangle: the twelve before it had only colour, radius, border and typeface to work with, and this one uses blur. For businesses that sell how something looks — design, photography, events, fitness, beauty. Wrong for a business staring at rows of paperwork for eight hours."
       }
     },
     "sample": {
@@ -398,7 +402,8 @@
         "swiss": "Swiss · black, white, one red",
         "soft": "Soft · no edges, only relief",
         "brut": "Brut · Thick black, hard shadow",
-        "ink": "Ink · Space, serif, vermilion"
+        "ink": "Ink · Space, serif, vermilion",
+        "glass": "Glass · translucent, blurred behind, indigo"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",

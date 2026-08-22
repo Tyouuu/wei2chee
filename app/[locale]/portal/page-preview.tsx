@@ -74,7 +74,7 @@ export function PagePreview({ data }: { data: Data }) {
     <div
       ref={boxRef}
       inert
-      className="pointer-events-none relative w-full select-none overflow-hidden [background-color:var(--color-canvas)]"
+      className="ds-ground pointer-events-none relative w-full select-none overflow-hidden [background-color:var(--color-canvas)]"
       style={{ aspectRatio: `${COMPOSE_W} / ${COMPOSE_H}` }}
     >
       {/* `[&>*]:h-full` gives Puck's `Render` root a definite height. Measured:

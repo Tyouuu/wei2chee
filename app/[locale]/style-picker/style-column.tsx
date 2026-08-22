@@ -33,7 +33,11 @@ export type StyleName =
   // normal-density business tool. This one is 40 and 76. It is also the only
   // register in the set drawn from a Chinese brief, for a product whose
   // customers are Chinese. See design-system/tokens/ink.css.
-  | "ink";
+  | "ink"
+  // The first register that is not a flat rectangle: translucent cards,
+  // a real backdrop blur, and a ground with something to see through them.
+  // See design-system/tokens/glass.css.
+  | "glass";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -64,6 +68,7 @@ export const STYLE_ORDER: StyleName[] = [
   "soft",
   "brut",
   "ink",
+  "glass",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -79,6 +84,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   soft: styles.soft,
   brut: styles.brut,
   ink: styles.ink,
+  glass: styles.glass,
 };
 
 /**
@@ -118,6 +124,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   soft: styles.soft,
   brut: styles.brut,
   ink: styles.ink,
+  glass: styles.glass,
 };
 
 export function StyleColumn({

@@ -104,7 +104,7 @@ export function SystemShell({
 
   return (
     <div
-      className={`flex min-h-full w-full [background-color:var(--color-canvas)] ${
+      className={`ds-ground flex min-h-full w-full [background-color:var(--color-canvas)] ${
         isTop ? "flex-col" : "items-stretch"
       }`}
     >

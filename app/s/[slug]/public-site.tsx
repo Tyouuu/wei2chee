@@ -42,7 +42,7 @@ export function PublicSite({
     <StyleScope
       register={style}
       palette={palette}
-      className="min-h-screen [background-color:var(--color-canvas)]"
+      className="ds-ground min-h-screen [background-color:var(--color-canvas)]"
     >
       <SystemLangProvider lang={lang}>
         <Render config={puckConfig} data={data} />
