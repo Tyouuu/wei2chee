@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { usePreviewMode } from "@/design-system/editor/preview-toggle";
 
 /**
  * The assistant, floating at the foot of the canvas instead of squeezed into
@@ -23,6 +24,14 @@ import { useState, type ReactNode } from "react";
  */
 export function AiDock({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(true);
+  const { previewing } = usePreviewMode();
+
+  // Preview means nothing of Formae's on the screen -- a floating assistant
+  // over a page the customer is trying to judge defeats the point of the mode.
+  // Returning null here loses the draft in the composer, which is the right
+  // trade: preview is a deliberate detour, and the transcript itself lives in
+  // editor-client's state and survives.
+  if (previewing) return null;
 
   return (
     <div

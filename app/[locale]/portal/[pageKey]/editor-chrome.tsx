@@ -4,6 +4,8 @@ import { useEffect, type ReactNode } from "react";
 import { usePuck, type Data } from "@puckeditor/core";
 import { useTranslations } from "next-intl";
 import { VersionHistoryDialog } from "./version-history";
+import { BarMenu, barMenuItem } from "@/design-system/editor/bar-menu";
+import { PreviewButton, usePreviewMode } from "@/design-system/editor/preview-toggle";
 import { formatTime } from "@/lib/format-date";
 
 /**
@@ -39,6 +41,7 @@ export function EditorChrome({
   pageKey,
   locale,
   nav,
+  overflow,
 }: {
   saving: boolean;
   /** A save the customer did not ask for, running in the background. Reported
@@ -71,9 +74,14 @@ export function EditorChrome({
    *  Puck's provider, and this component is inside it. See the `topNav` comment
    *  there for why the merge had to happen this way round. */
   nav?: ReactNode;
+  /** The 更多 menu: everything that used to sit in the open on the right and
+   *  did not need to. Built in editor-client because its entries are links and
+   *  a sign-out handler that live there. */
+  overflow?: ReactNode;
 }) {
   const t = useTranslations("portal.editor");
   const { appState, history, dispatch } = usePuck();
+  const { previewing } = usePreviewMode();
 
   // BOTH COLUMNS STAY COLLAPSED, and this effect is what keeps them that way.
   //
@@ -119,7 +127,14 @@ export function EditorChrome({
     // are what let this hold both halves on a narrow window: it wraps to a
     // second line rather than pushing the document wider than the viewport,
     // which is the failure this bar has already had once at 390px.
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-4 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
+    <div
+      className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-4 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]"
+      // PREVIEW REALLY MEANS NOTHING OF OURS ON THE SCREEN. Hidden rather than
+      // unmounted: this component owns the Ctrl+S binding and the version
+      // dialog, and unmounting would drop both for as long as the customer was
+      // looking at their page.
+      style={previewing ? { display: "none" } : undefined}
+    >
       {nav}
       {/* THE 「Ask AI」 BUTTON IS STILL GONE, and stays gone.
           The founder's objection was 「把这个AI修改放在这里谁会去按啦」 — the
@@ -163,6 +178,10 @@ export function EditorChrome({
                   t("savedAtTime", { time: formatTime(savedAt, locale) })
                 : ""}
       </span>
+
+      <PreviewButton label={t("previewCta")} />
+
+      {overflow}
 
       {paid ? (
         <button

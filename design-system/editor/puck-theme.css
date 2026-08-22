@@ -135,6 +135,54 @@
   /* Border width -- reuse Ledger's own device-aware hairline (1px, 0.5px
      on 2x displays) instead of Puck's fixed 0.5px default. */
   --puck-border-width-hairline: var(--hairline);
+
+}
+
+/* ---------------------------------------------------------------------------
+   THE 68px ICON RAIL, REMOVED.
+
+   It was written up twice as the one thing that could not go, on the grounds
+   that hiding it meant CSS against `_Sidebar-resizeHandle_16oed_51` -- a hashed
+   class that breaks on the next Puck release. That was the wrong place to look.
+   Puck lays the shell out with `grid-template-columns: var(--puck-pluginbar-width)
+   ...` and the width is a plain custom property.
+
+   It cannot be set from `.portal-editor-scope` above, though, and that is worth
+   recording because it is the sort of thing that looks like it works: Puck
+   declares `--puck-pluginbar-width: 68px` ON `._PuckLayout-inner_` itself, and
+   a declaration on the element always beats one inherited from an ancestor, no
+   matter how specific the ancestor's selector is. Custom properties do not
+   cascade the way people expect here. Measured after trying it: the rail was
+   still 68px and the canvas still started at x=68.
+
+   So the override has to land on the same element. Two classes (0,2,0) beat
+   Puck's one (0,1,0), and the attribute selector matches the STABLE PREFIX
+   rather than the hash -- `_PuckLayout-inner` survives a Puck build,
+   `_PuckLayout-inner_tzaxg_40` does not. If Puck ever renames the part, this
+   stops matching and the rail comes back: a visible 68px column, not a broken
+   layout.
+
+   Safe to remove because it is empty. Its two entries opened the block drawer
+   and the layer outline; both columns are permanently collapsed now (see
+   editor-client.tsx's `ui` prop), so it was 68px of chrome whose buttons no
+   longer led anywhere -- verified by clicking them.
+
+   Puck's own header indents itself by the same 67px and draws a border where
+   the rail met it. Both go with it. */
+.portal-editor-scope [class*="_PuckLayout-inner"] {
+  --puck-pluginbar-width: 0px;
+}
+
+.portal-editor-scope [class*="_PuckLayout-nav"] {
+  border-right: 0;
+}
+
+.portal-editor-scope [class*="_PuckHeader_"] {
+  padding-left: 0;
+}
+
+.portal-editor-scope [class*="_PuckHeader-inner"] {
+  border-left: none;
 }
 
 /* Task 5a removed this file's `body { ... }` iframe-leak workaround (the

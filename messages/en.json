@@ -323,7 +323,11 @@
       "historyClose": "Close",
       "autosaving": "Autosaving…",
       "savedAtTime": "Saved {time}",
-      "mobileHint": "On a phone you can read your system and change it by saying what you want. Drag-and-drop editing needs a bigger screen."
+      "mobileHint": "On a phone you can read your system and change it by saying what you want. Drag-and-drop editing needs a bigger screen.",
+      "previewCta": "Preview",
+      "exitPreview": "Exit preview",
+      "moreMenu": "More",
+      "draftDismiss": "Got it, hide this"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

@@ -17,6 +17,9 @@ import { ComponentPreview } from "@/design-system/editor/component-preview";
 import { ClickToAdd } from "./drawer-add";
 import { LivePreview } from "@/design-system/editor/live-preview";
 import { EditorUiProvider, SheetHost } from "@/design-system/editor/editor-ui";
+import { BarMenu, barMenuItem } from "@/design-system/editor/bar-menu";
+import { ExitPreview } from "@/design-system/editor/preview-toggle";
+import { DraftNotice } from "@/design-system/editor/draft-notice";
 import { BlockToolbar } from "@/design-system/editor/block-toolbar";
 import { InsertAffordance } from "@/design-system/editor/insert-affordance";
 import { BlockSheets, InsertSheet } from "@/design-system/editor/editor-sheets";
@@ -399,106 +402,96 @@ export function PortalEditor({
   // component is outside Puck's provider. Passing the content down as a node
   // puts both halves in one flex row without either side changing what it
   // knows.
+  // THE BAR, CUT FROM FIFTEEN CONTROLS TO FOUR.
+  //
+  // Measured before this change: ← 我的系统 · 总览 · 客户 · 收款 · 报价单 · 项目 ·
+  // 系统需求书 · 风格 · 中文 · EN · 登出 · 历史 · ↺ · ↻ · 保存设计 -- fifteen pieces
+  // of Chinese text in a 50px strip. Durable's carries about seven, mostly
+  // icons, and switches page through a single 「Page: Home ▾」. The founder's
+  // 「感觉还是跟durable的有点差距」 is mostly this bar: everything else had already
+  // stopped being docked, but the top was still a list to read.
+  //
+  // What stays in the open is what a customer touches while designing: which
+  // page, and the handoff once they have saved. Everything else -- the other
+  // pages' entry point, the spec, the style gallery, language, sign-out -- is
+  // one press away in 更多, which is where Durable keeps the same class of thing.
   const topNav = (
     <>
-        {/* Page navigation. Before this the editor showed the current page's
-            name as plain text and offered no way to reach the other four --
-            they existed as routes and as rows in project_pages, but the only
-            way to open one was to type its URL. A customer designing a
-            five-page system could only ever see the page they landed on, which
-            made the product look like a one-page toy. */}
-        {/* Back to the home screen. The editor used to BE the landing surface
-            (/portal redirected straight here), so there was nowhere to go
-            back to; now that /portal is a real home, an authoring tool with
-            no exit is a trap. First item in the bar, before the page tabs,
-            because that is where a reader looks for "up". */}
-        <Link
-          href={`/${locale}/portal`}
-          className="mr-1 flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+      <BarMenu
+        label={
+          <span className="[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+            {navPages.find((p) => p.key === pageKey)?.label ?? pageKey}
+          </span>
+        }
+      >
+        {navPages.map(({ key, label }) => (
+          <Link
+            key={key}
+            href={`/${locale}/portal/${key}`}
+            aria-current={key === pageKey ? "page" : undefined}
+            className={barMenuItem}
+            style={
+              key === pageKey
+                ? { color: "var(--color-paper)", backgroundColor: "var(--color-ink-850)" }
+                : undefined
+            }
+          >
+            {label}
+          </Link>
+        ))}
+      </BarMenu>
+
+      {/* The one thing that must never be behind a menu: it only appears after
+          a successful save, it is the moment the customer hands the design over
+          to be built, and it is how the founder gets told. */}
+      {hasSavedOnce ? (
+        <a
+          href={deployWhatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-md px-3 py-1.5 [font-size:var(--text-xs)] text-[color:var(--color-on-primary)] [background-color:var(--color-jade)] [font-weight:var(--fw-semibold)]"
         >
-          <span aria-hidden="true">←</span>
-          {t("backHome")}
-        </Link>
-        <span aria-hidden="true" className="h-5 w-px shrink-0 [background-color:var(--color-ink-800)]" />
+          {t("deployCta")}
+        </a>
+      ) : null}
 
-        <nav className="flex items-center gap-1 overflow-x-auto" aria-label={t("pageNavLabel")}>
-          {navPages.map(({ key, label }) => {
-            const active = key === pageKey;
-            return (
-              <Link
-                key={key}
-                href={`/${locale}/portal/${key}`}
-                aria-current={active ? "page" : undefined}
-                className={
-                  active
-                    ? "whitespace-nowrap rounded-md px-2.5 py-1 [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
-                    : "whitespace-nowrap rounded-md px-2.5 py-1 [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
-                }
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
-          {saveState === "saved" ? (
-            <span className="[color:var(--color-jade-bright)]">{t("saveSuccess")}</span>
-          ) : null}
-          {saveState === "error" ? (
-            <span className="[color:var(--color-clay-bright)]">{t("saveError")}</span>
-          ) : null}
-          {hasSavedOnce ? (
-            <a
-              href={deployWhatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md px-3 py-1.5 [font-size:var(--text-xs)] text-[color:var(--color-on-primary)] [background-color:var(--color-jade)] [font-weight:var(--fw-semibold)]"
-            >
-              {t("deployCta")}
-            </a>
-          ) : null}
-          {/* The specification document. Reachable at any time, not only after
-              a save: a free-tier customer has saved nothing yet and is exactly
-              the person who needs to see what they would be paying for. */}
-          <Link
-            href={`/${locale}/portal/spec`}
-            // Next prefetches <Link> on hover in production, and this route
-            // runs an LLM call while rendering -- prefetch would bill a
-            // generation for every hover, for a document nobody opened.
-            prefetch={false}
-            className="rounded-md px-2.5 py-1 [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
-          >
-            {t("specCta")}
-          </Link>
-          {/* THE EIGHT STYLE NAMES ARE GONE FROM THIS BAR.
-              They were a debug control that shipped: eight buttons reading
-              Ledger / Hearth / Blueprint / Bare / Docket / Large / Stamp /
-              Contract, in Latin, in a product whose customers are choosing a
-              look and not a token file. Durable keeps the equivalent behind one
-              「Themes」 button, and this product already has a whole page for it
-              that shows each register rendered with real content -- which is a
-              better answer than a row of names in any case.
-
-              It was also breaking the phone: measured at 390px the row came to
-              490px, pushed the document 116px wide, and put Stamp and Contract
-              off the right edge at 26px tall. That was patched by hiding it
-              below lg; this removes the reason for the patch. */}
-          <Link
-            href={`/${locale}/portal/styles`}
-            className="rounded-md px-2.5 py-1 [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
-          >
-            {t("styleLabel")}
-          </Link>
-          <LocaleSwitcher />
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="underline [color:var(--color-paper-dim)]"
-          >
-            {t("signOut")}
-          </button>
-        </div>
+      {saveState === "saved" ? (
+        <span className="[color:var(--color-jade-bright)]">{t("saveSuccess")}</span>
+      ) : null}
+      {saveState === "error" ? (
+        <span className="[color:var(--color-clay-bright)]">{t("saveError")}</span>
+      ) : null}
     </>
+  );
+
+  // Everything that used to sit in the open on the right-hand side. Rendered by
+  // EditorChrome inside its own bar so undo/redo/save stay beside it.
+  const overflowMenu = (
+    <BarMenu label={<span>{t("moreMenu")}</span>} align="end">
+      <Link href={`/${locale}/portal`} className={barMenuItem}>
+        <span aria-hidden="true">←</span>
+        {t("backHome")}
+      </Link>
+      <Link
+        href={`/${locale}/portal/spec`}
+        // Next prefetches <Link> on hover in production, and this route runs an
+        // LLM call while rendering -- prefetch would bill a generation for every
+        // hover, for a document nobody opened.
+        prefetch={false}
+        className={barMenuItem}
+      >
+        {t("specCta")}
+      </Link>
+      <Link href={`/${locale}/portal/styles`} className={barMenuItem}>
+        {t("styleLabel")}
+      </Link>
+      <div className={barMenuItem}>
+        <LocaleSwitcher />
+      </div>
+      <button type="button" onClick={handleSignOut} className={barMenuItem}>
+        {t("signOut")}
+      </button>
+    </BarMenu>
   );
 
   return (
@@ -539,14 +532,6 @@ export function PortalEditor({
           invented, or as a generic demo. With it, they read as an invitation to
           edit. Disappears the moment they save, because from then on the canvas
           is genuinely their own work. */}
-      {isGeneratedDraft ? (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b px-4 py-2 [font-size:var(--text-sm)] [background-color:var(--color-primary-soft)] [border-color:var(--color-ink-800)]">
-          <span className="[color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]">
-            {t("draftBannerTitle")}
-          </span>
-          <span className="[color:var(--color-paper-dim)]">{t("draftBannerBody")}</span>
-        </div>
-      ) : null}
 
       {/* Fix round 2 (post-review): the paywall is an OVERLAY over a
           still-mounted <Puck>, not a branch that replaces it. It used to be
@@ -694,6 +679,7 @@ export function PortalEditor({
               header: () => (
                 <EditorChrome
                   nav={topNav}
+                  overflow={overflowMenu}
                   saving={saveState === "saving"}
                   autosaving={autosaving}
                   onSave={handleSaveClick}
@@ -861,6 +847,17 @@ export function PortalEditor({
                   >
                     {children}
                   </div>
+                  {/* The draft note now rides the canvas instead of being a
+                      band above it -- see draft-notice.tsx for the measurement
+                      that motivated the move. */}
+                  {isGeneratedDraft ? (
+                    <DraftNotice
+                      title={t("draftBannerTitle")}
+                      body={t("draftBannerBody")}
+                      dismiss={t("draftDismiss")}
+                    />
+                  ) : null}
+                  <ExitPreview label={t("exitPreview")} />
                   {/* OUTSIDE the style scope on purpose. The assistant is
                       Formae's, not the customer's -- scoping it would repaint
                       it in whichever register they picked, which is the exact

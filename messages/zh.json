@@ -323,7 +323,11 @@
       "historyClose": "关闭",
       "autosaving": "自动保存中…",
       "savedAtTime": "已保存 {time}",
-      "mobileHint": "手机上可以看系统，也可以直接跟 AI 说要改什么。拖拽编辑需要大一点的屏幕。"
+      "mobileHint": "手机上可以看系统，也可以直接跟 AI 说要改什么。拖拽编辑需要大一点的屏幕。",
+      "previewCta": "预览",
+      "exitPreview": "退出预览 · 回去改",
+      "moreMenu": "更多",
+      "draftDismiss": "知道了,不用再提"
     },
     "home": {
       "eyebrow": "你的系统",
