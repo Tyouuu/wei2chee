@@ -12,7 +12,8 @@ import {
   STYLE_ORDER,
   type StyleName,
 } from "@/app/[locale]/style-picker/style-column";
-import { PALETTES, scopeClasses } from "@/lib/portal/palettes";
+import { PALETTES } from "@/lib/portal/palettes";
+import { StyleScope } from "@/design-system/editor/style-scope";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -192,8 +193,8 @@ export function StylesClient({
                       customer's palette paints all eight the same and leaves
                       radius alone to carry the comparison. Their own colours
                       here; the customer's 配色 has its own grid below. */}
-                  <div
-                    className={`${scopeClasses(name, null)} h-full [background-color:var(--color-canvas)]`}
+                  <StyleScope
+                    register={name} className="h-full [background-color:var(--color-canvas)]"
                   >
                     {/* THE TYPE SPECIMEN. The register's name set in the
                         register's own face, next to a filled control carrying
@@ -214,7 +215,7 @@ export function StylesClient({
                         <Render config={puckConfig} data={TABLE_ONLY as never} />
                       </div>
                     </div>
-                  </div>
+                  </StyleScope>
                 </div>
 
                 <div className="flex items-center justify-between gap-3 border-t px-3 py-3 [border-color:var(--color-ink-800)]">
@@ -357,9 +358,9 @@ function PaletteCard({
             : "[border:1px_solid_var(--color-ink-800)] enabled:hover:[border-color:var(--color-paper-dim)]"
         }`}
       >
-        <span className={`${scopeClasses(styleName, paletteKey)} block`}>
+        <StyleScope register={styleName} palette={paletteKey} className="block">
           <PaletteSample label={label} />
-        </span>
+        </StyleScope>
       </button>
       <span className="mt-2.5 flex items-baseline gap-2">
         <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">

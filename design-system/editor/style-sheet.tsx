@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Sheet } from "@/design-system/editor/sheet";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
 import { scopeClasses } from "@/lib/portal/palettes";
+import { StyleScope } from "@/design-system/editor/style-scope";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 /**
@@ -106,9 +107,9 @@ export function StyleSheet({
                       : "[border:1px_solid_var(--color-ink-800)] hover:[border-color:var(--color-paper-dim)]"
                   }`}
                 >
-                  <span className={`${scopeClasses(name, palette)} block`}>
+                  <StyleScope register={name} palette={palette} className="block">
                     <StyleSample />
-                  </span>
+                  </StyleScope>
                 </button>
                 <span className="mt-1.5 flex items-baseline gap-2">
                   <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">

@@ -13,7 +13,8 @@ import { StageSelect } from "../stage";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../../../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-import { scopeClasses } from "@/lib/portal/palettes";
+
+import { StyleScope } from "@/design-system/editor/style-scope";
 
 type Page = {
   pageKey: string;
@@ -141,9 +142,9 @@ export function CustomerDetail({
                     className={`overflow-hidden rounded-[var(--radius-lg)] [background-color:var(--color-ink-900)] [border:1px_solid_var(--color-ink-800)]`}
                   >
                     <div className={`${chrome.mount} m-3 mb-0`}>
-                      <div className={scopeClasses(style, palette)}>
+                      <StyleScope register={style} palette={palette}>
                         <PagePreview data={page.layout} />
-                      </div>
+                      </StyleScope>
                     </div>
                     <div className="flex items-center justify-between gap-3 px-3 pb-3 pt-2.5">
                       <span className="min-w-0">

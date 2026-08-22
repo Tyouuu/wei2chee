@@ -1434,10 +1434,10 @@ export const puckConfig: Config<Components> = {
         },
         sparkLabel: { label: "走势说明", type: "text" },
       },
-      defaultProps: { label: "本月营收", value: "RM 0", href: "#", layout: "full" },
+      defaultProps: { label: "本月营收", value: "RM 0", href: "#" },
       render: ({ id, label, value, href, chgSuffix, stats, spark, sparkLabel, layout, flat }) => (
         <HeroCard
-          layout={layout ?? "full"}
+          layout={layout}
           flat={flat}
           label={
             <Inline id={id} field="label">
@@ -1482,10 +1482,11 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: {
-        // Named here so the 换个款式 picker can light the right tile on a table
-        // saved before the axis existed -- activeVariant resolves an absent
-        // prop through defaultProps.
-        look: "plain" as const,
+        // NO `look` HERE, and that is the point. An absent variant prop means
+        // "follow the register" (design-system/editor/style-scope.tsx); writing
+        // a default into every new block would make 版式 unable to ever choose,
+        // because the customer's prop always wins. The 换个款式 picker resolves
+        // the lit tile through the register instead -- see variant-picker.tsx.
         gridId: "records",
         caption: "记录列表",
         table: {
@@ -1513,7 +1514,7 @@ export const puckConfig: Config<Components> = {
       // the grid scrolls). A ReactNode there renders "[object Object]" to a
       // screen reader.
       render: ({ gridId, caption, table, look }) => (
-        <RecordTable gridId={gridId} caption={caption} table={table} look={look ?? "plain"} />
+        <RecordTable gridId={gridId} caption={caption} table={table} look={look} />
       ),
     },
     WorkflowStrip: {
@@ -1546,7 +1547,6 @@ export const puckConfig: Config<Components> = {
           { label: "确认", tone: "normal" as const },
           { label: "收款", tone: "normal" as const },
         ],
-        layout: "row" as const,
       },
       render: ({ id, title, stages, layout }) => (
         <WorkflowStrip
@@ -1558,7 +1558,7 @@ export const puckConfig: Config<Components> = {
             ) : undefined
           }
           stages={stages}
-          layout={layout ?? "row"}
+          layout={layout}
         />
       ),
     },

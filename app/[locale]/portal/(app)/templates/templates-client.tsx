@@ -11,7 +11,8 @@ import { PageBar } from "../page-bar";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-import { scopeClasses } from "@/lib/portal/palettes";
+
+import { StyleScope } from "@/design-system/editor/style-scope";
 
 /** Mirrors add_project_page's own ceiling (migration 20260820200000). Stated in
  *  both places on purpose: the customer should meet the limit as a disabled
@@ -195,9 +196,9 @@ export function TemplatesClient({
                   aria-label={t("zoom", { name: lp.label })}
                   className={`${chrome.mount} m-3 cursor-zoom-in`}
                 >
-                  <div className={scopeClasses(style, palette)}>
+                  <StyleScope register={style} palette={palette}>
                     <PagePreview data={lp.layout} />
-                  </div>
+                  </StyleScope>
                 </div>
 
                 <div className="flex items-start justify-between gap-3 border-t px-3 py-3 [border-color:var(--color-ink-800)]">
@@ -271,9 +272,9 @@ export function TemplatesClient({
                     aria-label={t("zoom", { name: tpl.label })}
                     className={`${chrome.mount} m-3 cursor-zoom-in`}
                   >
-                    <div className={scopeClasses(style, palette)}>
+                    <StyleScope register={style} palette={palette}>
                       <PagePreview data={tpl.layout} />
-                    </div>
+                    </StyleScope>
                   </div>
 
                   <div className="flex items-center justify-between gap-3 border-t px-3 py-3 [border-color:var(--color-ink-800)]">
@@ -343,9 +344,9 @@ export function TemplatesClient({
               </button>
             </div>
             <div className={`${chrome.mount} min-h-0 overflow-auto`}>
-              <div className={scopeClasses(style, palette)}>
+              <StyleScope register={style} palette={palette}>
                 <PagePreview data={zoomed.layout} />
-              </div>
+              </StyleScope>
             </div>
           </div>
         </div>
@@ -393,9 +394,9 @@ export function TemplatesClient({
               </button>
             </div>
             <div className={`${chrome.mount} min-h-0 overflow-auto`}>
-              <div className={scopeClasses(style, palette)}>
+              <StyleScope register={style} palette={palette}>
                 <PagePreview data={zoomedLanding.layout} />
-              </div>
+              </StyleScope>
             </div>
           </div>
         </div>

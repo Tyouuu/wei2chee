@@ -3,6 +3,7 @@
 import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { scopeClasses } from "@/lib/portal/palettes";
+import { StyleScope } from "@/design-system/editor/style-scope";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 /**
@@ -224,8 +225,8 @@ export function LivePreview({
       style={{ height: tileHeight, width: "100%" }}
       aria-hidden
     >
-      <div
-        className={scopeClasses(style, palette)}
+      <StyleScope
+        register={style} palette={palette}
         style={{
           position: "absolute",
           top: 0,
@@ -256,7 +257,7 @@ export function LivePreview({
             <Render {...props} />
           </Guard>
         </div>
-      </div>
+      </StyleScope>
     </div>
   );
 }

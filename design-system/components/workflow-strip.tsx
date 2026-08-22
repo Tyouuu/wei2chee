@@ -1,4 +1,13 @@
+// "use client" BECAUSE THIS COMPONENT NOW READS THE REGISTER. An absent variant
+// prop means "follow the 版式", which is a React context lookup, and a context
+// cannot be read from a server component. The portal's page route renders Puck's
+// <Render> on the SERVER -- the editor is a client tree, but the saved page is
+// not -- so without this the first paint of every customer page threw. Nothing
+// else here needs the client; the props are all serialisable data.
+"use client"
+
 import type { ReactNode } from "react"
+import { useRegisterProp } from "@/design-system/editor/style-scope"
 
 export type WorkflowStage = {
   /** The stage's name in the business's own words — "报价", "订金", "施工". */
@@ -32,7 +41,7 @@ export type WorkflowStage = {
 export function WorkflowStrip({
   title,
   stages,
-  layout = "row",
+  layout,
 }: {
   /** ReactNode so the editor can make it editable in place. */
   title?: ReactNode
@@ -44,6 +53,9 @@ export function WorkflowStrip({
       freshly drafted pipeline that has no counts in it yet. */
   layout?: "row" | "timeline" | "numbered"
 }) {
+  // Absent means "follow the register", not "row" -- see style-scope.tsx.
+  const lay =
+    layout ?? useRegisterProp<"row" | "timeline" | "numbered">("WorkflowStrip", "layout") ?? "row"
   if (stages.length === 0) return null
 
   return (
@@ -65,7 +77,7 @@ export function WorkflowStrip({
         </h2>
       )}
 
-      {layout === "timeline" ? (
+      {lay === "timeline" ? (
         <ol className="flex flex-col">
           {stages.map((stage, i) => (
             <li key={`${stage.label}-${i}`} className="flex [gap:var(--gap-inline)]">
@@ -124,7 +136,7 @@ export function WorkflowStrip({
             </li>
           ))}
         </ol>
-      ) : layout === "numbered" ? (
+      ) : lay === "numbered" ? (
         <ol className="flex flex-wrap [gap:var(--gap-section)]">
           {stages.map((stage, i) => (
             <li key={`${stage.label}-${i}`} className="min-w-[84px]">

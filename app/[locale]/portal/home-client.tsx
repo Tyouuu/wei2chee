@@ -14,7 +14,8 @@ import { PageBar } from "./(app)/page-bar";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "./chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-import { scopeClasses } from "@/lib/portal/palettes";
+
+import { StyleScope } from "@/design-system/editor/style-scope";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -285,9 +286,9 @@ export function PortalHome({
                     chrome is light and is exactly what sinks a dark rail once
                     it is not. See `--mount-*` in chrome.module.css. */}
                 <div className={`${chrome.mount} m-3 mb-0`}>
-                  <div className={scopeClasses(style, palette)}>
+                  <StyleScope register={style} palette={palette}>
                     <PagePreview data={page.layout} />
-                  </div>
+                  </StyleScope>
                 </div>
                 <div className="flex items-center justify-between gap-3 px-3 pb-3 pt-2.5">
                   <span className="min-w-0">

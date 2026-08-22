@@ -3,7 +3,8 @@
 import { Render, usePuck, type Data } from "@puckeditor/core";
 import { useTranslations } from "next-intl";
 import { puckConfig } from "@/design-system/editor/puck-config";
-import { scopeClasses } from "@/lib/portal/palettes";
+
+import { StyleScope } from "@/design-system/editor/style-scope";
 import { AiAssistant, type Turn } from "./ai-assistant";
 import chrome from "../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
@@ -103,7 +104,7 @@ export function MobileEditor({
               Keeping the clip on this outer div preserves the rounded corners
               the mount exists for; the scroll moves one level in, where nothing
               overrides it. */}
-          <div className={`${scopeClasses(style, palette)} [background-color:var(--color-canvas)]`}>
+          <StyleScope register={style} palette={palette} className="[background-color:var(--color-canvas)]">
             <div className="h-full overflow-x-auto">
               {/* COMPOSED AT A DESKTOP WIDTH AND SWIPED, not reflowed and not
                   scaled. Reflowing puts a five-column table and a 180px rail
@@ -117,7 +118,7 @@ export function MobileEditor({
                 <Render config={puckConfig} data={appState.data as Data} />
               </div>
             </div>
-          </div>
+          </StyleScope>
         </div>
       </div>
 

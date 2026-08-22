@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePuck } from "@puckeditor/core";
 import { LivePreview } from "@/design-system/editor/live-preview";
 import { VARIANTS, activeVariant, type Variant } from "@/design-system/editor/variants";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { preferredVariants } from "@/lib/portal/design-doc";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 /**
@@ -75,15 +76,34 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
     return () => ro.disconnect();
   }, [selectedItem?.type]);
 
-  if (!selectedItem) return null;
-  const list = VARIANTS[selectedItem.type];
-  if (!list?.length) return null;
+  const list = selectedItem ? VARIANTS[selectedItem.type] : null;
+
+  /** The props the register would have drawn this block with. Hoisted above the
+   *  early return because it is a hook; empty when the register names no
+   *  preference for this component, which is the same as "Puck's default". */
+  const registerDefaults = useMemo(() => {
+    const type = selectedItem?.type;
+    if (!type) return {};
+    const wanted = preferredVariants(style)[type];
+    return (VARIANTS[type] ?? []).find((v) => v.id === wanted)?.props ?? {};
+  }, [style, selectedItem?.type]);
+
+  if (!selectedItem || !list?.length) return null;
 
   const props = selectedItem.props as Record<string, unknown>;
-  const defaults =
-    ((puckConfig.components as Record<string, { defaultProps?: Record<string, unknown> }>)[
+  // WHAT AN UNTOUCHED BLOCK IS SHOWING. Three layers, in the same order the
+  // component itself resolves them: Puck's defaults underneath, then the
+  // register's preference on top of those, and the customer's own props last
+  // (applied inside activeVariant). A block nobody has touched carries no
+  // variant key at all, so what it RENDERS as is the register's choice -- and
+  // that is the tile that has to be lit, or the picker tells the customer
+  // 「一行一条」 while the page in front of them is drawn with gridlines.
+  const defaults = {
+    ...((puckConfig.components as Record<string, { defaultProps?: Record<string, unknown> }>)[
       selectedItem.type
-    ]?.defaultProps ?? {});
+    ]?.defaultProps ?? {}),
+    ...registerDefaults,
+  };
   const active = activeVariant(selectedItem.type, props, defaults);
   const frame = FRAME[selectedItem.type] ?? DEFAULT_FRAME;
   const scale = cell ? cell / frame.w : 0;

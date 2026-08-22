@@ -10,7 +10,8 @@ import { LIBRARY_SAMPLES } from "./samples";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-import { scopeClasses } from "@/lib/portal/palettes";
+
+import { StyleScope } from "@/design-system/editor/style-scope";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -282,8 +283,8 @@ export function LibraryClient({
                     aria-label={t("zoom", { name: entry.label })}
                     className={`${chrome.mount} block h-[168px] w-full cursor-zoom-in transition-transform duration-200 group-hover:-translate-y-0.5`}
                   >
-                    <div
-                      className={`${scopeClasses(style, palette)} [background-color:var(--color-canvas)]`}
+                    <StyleScope
+                      register={style} palette={palette} className="[background-color:var(--color-canvas)]"
                     >
                       {STRUCTURAL.has(entry.name) ? (
                         <p className="[padding:var(--pad-card)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
@@ -308,7 +309,7 @@ export function LibraryClient({
                           </div>
                         </div>
                       )}
-                    </div>
+                    </StyleScope>
                   </div>
 
                   {/* Outside the card, on the page ground. Two sizes, two inks,
@@ -398,8 +399,8 @@ export function LibraryClient({
               </button>
             </div>
             <div className={`${chrome.mount} min-h-0 overflow-auto`}>
-              <div
-                className={`${scopeClasses(style, palette)} [background-color:var(--color-canvas)]`}
+              <StyleScope
+                register={style} palette={palette} className="[background-color:var(--color-canvas)]"
               >
                 <div className="[padding:var(--pad-card-lg)]">
                   <Render
@@ -407,7 +408,7 @@ export function LibraryClient({
                     data={{ root: {}, content: [{ type: zoomed.name, props: zoomed.props }] } as never}
                   />
                 </div>
-              </div>
+              </StyleScope>
             </div>
           </div>
         </div>

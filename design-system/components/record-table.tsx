@@ -1,4 +1,13 @@
+// "use client" BECAUSE THIS COMPONENT NOW READS THE REGISTER. An absent variant
+// prop means "follow the 版式", which is a React context lookup, and a context
+// cannot be read from a server component. The portal's page route renders Puck's
+// <Render> on the SERVER -- the editor is a client tree, but the saved page is
+// not -- so without this the first paint of every customer page threw. Nothing
+// else here needs the client; the props are all serialisable data.
+"use client"
+
 import type { CSSProperties } from "react"
+import { useRegisterProp } from "@/design-system/editor/style-scope"
 import { DataGrid } from "./data-grid"
 import { StatusDot, type StatusTone } from "./status-dot"
 import { normalizeTable, type ColumnKind, type TableModel } from "@/lib/portal/table-model"
@@ -60,7 +69,9 @@ export function RecordTable(props: {
    *  table that is being copied from or checked against paper. */
   look?: "plain" | "compact" | "zebra" | "grid"
 }) {
-  const { gridId, caption, look = "plain" } = props
+  const { gridId, caption, look } = props
+  // Absent means "follow the register", not "plain" -- see style-scope.tsx.
+  const shown = look ?? useRegisterProp<"plain" | "compact" | "zebra" | "grid">("RecordTable", "look") ?? "plain"
   const { columns, rows } = normalizeTable(props as unknown as Record<string, unknown>)
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE
@@ -82,7 +93,7 @@ export function RecordTable(props: {
     "[padding-block:var(--row-pad-y,var(--pad-cell-y))] [height:var(--row-height,var(--row-h))]" +
     // Column rules stop before the last cell, or the table grows a right-hand
     // border that does not line up with the card edge behind it.
-    (look === "grid" ? " [&:not(:last-child)]:border-r [&:not(:last-child)]:[border-color:var(--color-ink-800)]" : "")
+    (shown === "grid" ? " [&:not(:last-child)]:border-r [&:not(:last-child)]:[border-color:var(--color-ink-800)]" : "")
 
   // Computed, not the old flat 440 — but tuned so the DEFAULT four columns
   // still add up to exactly that. The narrowest real case is the editor with a
@@ -102,7 +113,7 @@ export function RecordTable(props: {
       <table
         className="w-full border-collapse [font-size:var(--text-sm)]"
         style={
-          look === "compact"
+          shown === "compact"
             ? ({
                 minWidth: `${minWidth}px`,
                 // Multipliers, not pixels -- see this component's `look` note.
@@ -136,7 +147,7 @@ export function RecordTable(props: {
                 // table with a rule under every row is two separators doing
                 // one job, and reads as noise at the row heights these tables
                 // actually run at.
-                look === "zebra"
+                shown === "zebra"
                   ? "even:[background-color:var(--color-ink-850)]"
                   : "[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
               }

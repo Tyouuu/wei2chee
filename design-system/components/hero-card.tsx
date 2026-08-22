@@ -1,4 +1,13 @@
+// "use client" BECAUSE THIS COMPONENT NOW READS THE REGISTER. An absent variant
+// prop means "follow the 版式", which is a React context lookup, and a context
+// cannot be read from a server component. The portal's page route renders Puck's
+// <Render> on the SERVER -- the editor is a client tree, but the saved page is
+// not -- so without this the first paint of every customer page threw. Nothing
+// else here needs the client; the props are all serialisable data.
+"use client"
+
 import Link from "next/link"
+import { useRegisterProp } from "@/design-system/editor/style-scope"
 import type { ReactNode } from "react"
 
 // null means "no meaningful baseline" — callers must skip the change badge
@@ -50,7 +59,7 @@ export function HeroCard({
   footnote,
   header,
   flat,
-  layout = "full",
+  layout,
   href,
 }: {
   /** What the headline number is. Kept short — the number is the message.
@@ -109,8 +118,11 @@ export function HeroCard({
   flat?: boolean
   href: string
 }) {
-  const showTrend = layout === "full" || layout === "trend"
-  const showStats = layout === "full" || layout === "stats"
+  // Absent means "follow the register", not "full" -- see style-scope.tsx.
+  const lay =
+    layout ?? useRegisterProp<"full" | "solo" | "trend" | "stats">("HeroCard", "layout") ?? "full"
+  const showTrend = lay === "full" || lay === "trend"
+  const showStats = lay === "full" || lay === "stats"
 
   return (
     <div

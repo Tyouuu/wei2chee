@@ -52,6 +52,7 @@ import {
   type StyleName,
 } from "@/app/[locale]/style-picker/style-column";
 import { scopeClasses } from "@/lib/portal/palettes";
+import { RegisterProvider } from "@/design-system/editor/style-scope";
 
 // Same lookup app/[locale]/style-picker/style-column.tsx uses internally
 // (its own `SCOPE_CLASS` isn't exported, so this is a second, identical
@@ -978,10 +979,17 @@ export function PortalEditor({
                         and speaks their system language; everything outside it
                         is Formae and speaks the owner's. The provider sits at
                         exactly that boundary, one layer inside the style scope
-                        it mirrors. */}
-                      <SystemLangProvider lang={systemLang}>
-                        {children}
-                      </SystemLangProvider>
+                        it mirrors. RegisterProvider is beside it for the same
+                        reason: the canvas paints in `activeStyle`, so the blocks
+                        inside it must also take their SHAPE from `activeStyle`.
+                        Announcing it here rather than in StyleScope is what makes
+                        换个款式 relayout the page on the same click that repaints
+                        it -- CanvasGutter needs the classes on itself. */}
+                      <RegisterProvider style={activeStyle}>
+                        <SystemLangProvider lang={systemLang}>
+                          {children}
+                        </SystemLangProvider>
+                      </RegisterProvider>
                     </CanvasGutter>
                     {/* Type on the page instead of in a panel. Renders nothing;
                       it turns the <Inline> spans puck-config leaves in the

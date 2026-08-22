@@ -2,7 +2,8 @@
 
 import { Render } from "@puckeditor/core";
 import { puckConfig } from "@/design-system/editor/puck-config";
-import { scopeClasses } from "@/lib/portal/palettes";
+
+import { StyleScope } from "@/design-system/editor/style-scope";
 import chrome from "@/app/[locale]/portal/chrome.module.css";
 import { useLocale, useTranslations } from "next-intl";
 import { sampleSystem } from "@/lib/portal/sample-system";
@@ -69,11 +70,11 @@ export function Showroom() {
         frame they will meet it in for the rest of the product.
       */}
       <div className={`handover-fixed ${chrome.mount} mt-12`}>
-        <div className={`${scopeClasses("ledger")} [background-color:var(--color-canvas)]`}>
+        <StyleScope register="ledger" className="[background-color:var(--color-canvas)]">
           <div className="pointer-events-none [padding:var(--pad-card-lg)]">
             <Render config={puckConfig} data={sample as never} />
           </div>
-        </div>
+        </StyleScope>
       </div>
 
       {/* The rule that names what just happened. Without it the colour change
