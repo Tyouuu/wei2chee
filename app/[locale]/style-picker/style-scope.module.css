@@ -480,6 +480,144 @@
 }
 
 /* ---------------------------------------------------------------------- *
+ * Code -- generated from design-system/tokens/code.css
+ * ---------------------------------------------------------------------- */
+.code {
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-bg: transparent;
+  --color-table-head-fg: var(--color-paper-dim);
+  --color-canvas: #f4f6f7;
+  --color-ink-950: #e9edef;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #f2f5f6;
+  --color-ink-800: #dde3e6;
+  --color-ink-700: #c3ccd1;
+  --color-nav-bg: #15202a;
+  --color-nav-bg-deep: #0e1720;
+  --color-nav-fg: #e9eef5;
+  --color-nav-fg-dim: #a6b4c6;
+  --color-nav-hover: #1e3450;
+  --color-nav-active: #243d59;
+  --color-nav-border: #26405d;
+  --color-nav-accent: #4aa8dd;
+  --color-paper: #15202a;
+  --color-paper-dim: #5b6b76;
+  --color-on-canvas: var(--color-paper);
+  --color-on-canvas-dim: var(--color-paper-dim);
+  --color-primary: #0f6fa8;
+  --color-primary-deep: #0b5580;
+  --color-primary-soft: #e2f0f8;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+  --font-ui: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", monospace;
+  --font-display: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", monospace;
+  --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 650;
+  --fw-display: 750;
+  --tracking-body: -0.006em;
+  --tracking-sm: -0.008em;
+  --tracking-title: -0.024em;
+  --tracking-title-lg: -0.036em;
+  --tracking-label: 0.08em;
+  --label-transform: uppercase;
+  --text-micro: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-lg: 15px;
+  --text-title: 19px;
+  --text-hero: 34px;
+  --leading-tight: 1.2;
+  --leading-body: 1.5;
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-control: 2px;
+  --radius-pill: 3px;
+  --pad-card: 14px;
+  --pad-card-lg: 18px;
+  --pad-control-x: 9px;
+  --pad-control-y: 5px;
+  --pad-cell-x: 10px;
+  --pad-cell-y: 7px;
+  --gap-stack: 10px;
+  --gap-inline: 8px;
+  --row-h: 32px;
+  --control-h: 30px;
+  --border-card-width: 1px;
+  --shadow-card: none;
+  --shadow-raised: 0 1px 0 rgba(13, 37, 61, 0.10);
+  --shadow-overlay: 0 6px 16px rgba(13, 37, 61, 0.18);
+  --surface-image: none;
+  --surface-blur: none;
+  --surface-border-style: solid;
+  --canvas-image: none;
+  --border-subtle: rgba(13, 37, 61, 0.14);
+  --border-strong: rgba(13, 37, 61, 0.26);
+  --shadow-hue: 13, 37, 61;
+  --hairline: 1px;
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 100ms;
+  --dur: 130ms;
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-ink-900);
+  --card-foreground: var(--color-paper);
+  --popover: var(--color-ink-900);
+  --popover-foreground: var(--color-paper);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-ink-850);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-clay);
+  --destructive-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-jade);
+  --chart-3: var(--color-brass);
+  --chart-4: var(--color-clay);
+  --chart-5: var(--color-slate);
+  --sidebar: var(--color-nav-bg);
+  --sidebar-foreground: var(--color-nav-fg);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-bg);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-fg);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
+}
+
+.code :focus-visible {
+  border-radius: var(--radius-control);
+}
+
+/* ---------------------------------------------------------------------- *
  * Contract -- generated from design-system/tokens/contract.css
  * ---------------------------------------------------------------------- */
 .contract {

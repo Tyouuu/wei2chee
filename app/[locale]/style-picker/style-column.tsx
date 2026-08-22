@@ -56,7 +56,10 @@ export type StyleName =
   // The first register whose GROUND is a colour. Surface saturation across
   // the other seventeen ran 0.00-0.19 while accents ran 0.11-1.00: colour had
   // only ever been allowed on a button. See tokens/lacquer.css.
-  | "lacquer";
+  | "lacquer"
+  // Every character the same width. Nine body faces across the other
+  // eighteen and all of them proportional. See tokens/code.css.
+  | "code";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -93,6 +96,7 @@ export const STYLE_ORDER: StyleName[] = [
   "kraft",
   "signboard",
   "lacquer",
+  "code",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -114,6 +118,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   kraft: styles.kraft,
   signboard: styles.signboard,
   lacquer: styles.lacquer,
+  code: styles.code,
 };
 
 /**
@@ -159,6 +164,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   kraft: styles.kraft,
   signboard: styles.signboard,
   lacquer: styles.lacquer,
+  code: styles.code,
 };
 
 export function StyleColumn({

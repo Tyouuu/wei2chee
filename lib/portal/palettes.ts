@@ -99,6 +99,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   kraft: styles.kraft,
   signboard: styles.signboard,
   lacquer: styles.lacquer,
+  code: styles.code,
 };
 
 /**

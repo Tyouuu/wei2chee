@@ -140,6 +140,10 @@
       "lacquer": {
         "label": "Lacquer",
         "description": "A coloured ground. The page is deep oxblood, the panels are ivory and float on it, and gold is only ever a line. Measured: across the other seventeen registers, surface saturation ran 0.00 to 0.19 while accents ran 0.11 to 1.00 — colour had only ever been allowed on the smallest thing on screen. This is the first register where the page carries it. The panels stay pale on purpose: the surface the text sits on never changes contrast, which is what makes it usable for a working day. For restaurants, tea houses, bakeries, gold and jewellery, wedding and temple supply."
+      },
+      "code": {
+        "label": "Code",
+        "description": "Every character the same width. Part numbers, barcodes, quantities and job numbers line up without anybody formatting them. Measured: the other eighteen registers use nine body faces and every one is proportional — monospace changes the texture of a screen more completely than any colour does. For spare parts, phone and computer repair, printing, courier and logistics: trades whose day is codes. Not for long prose. The CJK half needs no second font — 黑体 is already fixed-width for Han characters."
       }
     },
     "sample": {
@@ -428,7 +432,8 @@
         "grain": "Grain · textured, one flat blue",
         "kraft": "Kraft · mid-tone board, double rule",
         "signboard": "Signboard · heavy condensed headline, sign red",
-        "lacquer": "Lacquer · oxblood ground, ivory panels, gold line"
+        "lacquer": "Lacquer · oxblood ground, ivory panels, gold line",
+        "code": "Code · monospace throughout, printer's blue"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",

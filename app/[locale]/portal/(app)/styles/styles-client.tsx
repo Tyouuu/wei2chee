@@ -34,6 +34,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   kraft: styles.kraft,
   signboard: styles.signboard,
   lacquer: styles.lacquer,
+  code: styles.code,
 };
 
 
@@ -58,6 +59,7 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   kraft: "Kraft",
   signboard: "Signboard",
   lacquer: "Lacquer",
+  code: "Code",
 };
 
 /**

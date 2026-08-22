@@ -210,6 +210,20 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
   },
+  code: {
+    mood: "每一个字一样宽。整页等宽字,型号、条码、数量自己就对齐了,不用谁去排。密度跟台账一样紧,颜色是印刷蓝。",
+    facts: "内文等宽 13px 行高 32px · 标题也是等宽 · 圆角 2px · 边框 1px · 强调色 #0f6fa8 · 冷灰底 #f4f6f7",
+    prefer: {
+      RecordTable: "grid",
+      HeroCard: "stats",
+      WorkflowStrip: "row",
+      ActionButton: "outline",
+      Tag: "outline",
+      Divider: "tight",
+      TrendChart: "bar",
+    },
+    avoid: ["圆角", "阴影", "长段落的正文", "比例字体的标题"],
+  },
   lacquer: {
     mood: "有颜色的地。整页是深牛血漆红,卡片是象牙白的板浮在上面,金色只走线不做面。整套十八个版式,只有这一个把颜色放在「地」上——其他每一个都是白纸配一颗有色的按钮。",
     facts: "底色 #6e2019(饱和 0.72) · 卡片象牙 #fdfaf4 · 阴影更深更暖 · 圆角 6px · 无边框 · 按钮同色系 #8c2a20 · 金 #c8952f 只用在线",

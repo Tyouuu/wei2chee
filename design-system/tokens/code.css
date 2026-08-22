@@ -1,0 +1,491 @@
+@import "tailwindcss";
+
+/* Font stack declaration — a consuming app should supply its own font variables
+   matching the pattern here (--font-sans, --font-mono). Uncomment and customize
+   to wire up your project's @font-face or next/font imports:
+   @theme inline {
+     --font-sans: var(--font-your-sans);
+     --font-mono: var(--font-your-mono);
+   }
+*/
+
+/* 码 (Code) — the register where every character is the same width.
+
+   WHY IT EXISTS, MEASURED. Body faces across the eighteen registers on
+   2026-08-23:
+
+     bare · brut · docket ×2 · industrial ×3 · rounded ×2 · sans ×2
+     serif ×2 · soft ×2 · swiss ×3
+
+   Nine families, and every one of them PROPORTIONAL. --font-numeric has been
+   monospace on all eighteen since the beginning, so the product already knows
+   the difference matters — it just never let a register make that difference
+   the whole page. Monospace changes the texture of a screen more completely
+   than any colour does, and it was the last untouched thing about type after
+   招牌 took the display face.
+
+   IT IS NOT A DEVELOPER THEME. The businesses this is for spend their day
+   looking at codes: spare parts and their part numbers, phone and IT repair,
+   printing with job numbers, courier with tracking codes, anything with a
+   model column. Set a table of those in a proportional face and every column
+   is ragged; set it in monospace and the digits line up without anybody
+   asking. That is the argument, and it is why the density stays 台账's —
+   13px on 32px rows, because this is a register for reading a lot of short
+   strings rather than any prose.
+
+   AND IT IS HONEST ABOUT THE CJK HALF. There is no Han monospace here: 黑体 is
+   already fixed-width for Han characters, so a Chinese line comes out aligned
+   whatever face it is in, and the Latin half is the part that needed fixing.
+   Shipping a Han "mono" webfont would cost megabytes to solve a problem that
+   does not exist.
+
+   THE MOVES, and there are only three:
+
+     1. THE BODY IS MONOSPACE.  --font-ui and --font-display both. A heading in
+        a proportional face over a monospace table reads as two systems.
+
+     2. THE ACCENT IS PRINTER'S BLUE.  #0f6fa8. 台账's burnt orange is the one
+        thing about it that reads as a ledger book, and this is not one.
+
+     3. SQUARE AND COOL.  Radius 3 -> 2, and the warm grey ground goes cool.
+        A monospace page with rounded corners reads as a code sandbox.
+
+   Everything else — density, borders, elevation, the uppercase labels — stays
+   台账's exactly. One move, said clearly. */
+@theme {
+
+  /* The column-head band. Seven of the eight registers draw a card-coloured
+     head with a hairline under it, which is what these two values are; 印头
+     fills it with the accent instead. Declared everywhere so record-table.tsx
+     never has to know which style it is inside. */
+  --color-table-head-bg: var(--color-ink-900);
+
+  /* ── TABLE SURFACE ──────────────────────────────────────────────────
+     What a record table's BODY sits on. `transparent` in every register
+     that shipped before 漆, because for all of them the canvas and the card
+     are within a few percent of each other and a transparent table looked
+     like a table on paper.
+
+     漆 broke that by making the ground a colour: the header row has
+     --color-table-head-bg and stayed ivory, and every data row showed
+     oxblood through near-black text. Found by looking at a screenshot, not
+     by any test. A register whose ground is not near-white must set this. */
+  --color-table-bg: transparent;
+  --color-table-head-fg: var(--color-paper-dim);
+  /* The neutral family, tinted. Every value below carries the same slight
+     navy bias rather than being a pure grey, which is the single biggest
+     difference between precision/ops-heavy designs and unconsidered defaults.
+
+     Stripe — the closest reference, being a light-mode money product —
+     ships canvas #f6f9fc, hairline #e3e8ee, ink #0d253d, ink-mute #64748d
+     and even tints its shadows (#003770). Not one of those is neutral. A
+     pure mid-grey reads as unconsidered precisely because it is the value
+     you get by not choosing; a grey biased toward the ink hue reads as
+     picked. Mixing three unrelated greys (neutral canvas, neutral paper,
+     neutral shadows) breaks surface coherence no matter how the blocks are
+     arranged.
+
+     The canvas is intentionally light. A strong grey reads as a distinct
+     panel; this canvas is a tint you feel rather than see, which is what
+     lets tables sit directly on it without looking like they are on the
+     wrong surface. */
+  --color-canvas: #f4f6f7;
+  --color-ink-950: #e9edef;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #f2f5f6;
+  --color-ink-800: #dde3e6;
+  --color-ink-700: #c3ccd1;
+
+  /* ---- NAVIGATION GROUND --------------------------------------------------
+     The one dark surface in an otherwise light register, and the only place in
+     these token files where colours exist to serve a single component.
+
+     WHY IT IS A TOKEN AND NOT A LITERAL IN rail-nav.tsx: the shell a business
+     owner opens every morning has to read as "a real system" within the first
+     second, and every product this design was actually measured against does
+     the same thing to earn that -- B12's generated client portals, Durable,
+     Linear, Notion all put a deep navigation column against a white working
+     area (docs/portal-editor-known-issues.md, the B12/Durable section, lists
+     it first among the borrowable rules). Hard-coding it in the component
+     would pin all three registers to one hue; declaring it here lets each keep
+     its own, which is the entire premise of having three registers.
+
+     The ground is this file's own --color-paper (#14273d) rather than a new
+     navy: the nav is the ink of the page made solid, so the register's darkest
+     value is already the right one, and using it means the rail can never
+     drift away from the text it sits beside.
+
+     Every pair below was measured with the WCAG relative-luminance formula,
+     not eyeballed: fg 12.98:1 on the ground / 9.55:1 on the active row,
+     fg-dim 7.18:1 / 5.28:1, accent 6.49:1 / 4.77:1. The accent is NOT
+     --color-primary -- Ledger's rust (#b8500f) measures 3.02:1 on this ground,
+     short of AA for the small text and thin rules it would carry. It is that
+     same rust lifted in lightness (OKLCH L 0.7488 from 0.5571) while holding
+     the hue (49.6 against the primary's 45.8, a 3.8 degree drift), so it still
+     reads as this register's accent rather than a second one. */
+  --color-nav-bg: #15202a;
+  --color-nav-bg-deep: #0e1720;
+  --color-nav-fg: #e9eef5;
+  --color-nav-fg-dim: #a6b4c6;
+  --color-nav-hover: #1e3450;
+  --color-nav-active: #243d59;
+  --color-nav-border: #26405d;
+  --color-nav-accent: #4aa8dd;
+
+  /* Deep navy, not black. Stripe's ink is #0d253d; Linear, Vercel and
+     Mercury all likewise stop short of #000 in light mode. */
+  --color-paper: #15202a;
+  --color-paper-dim: #5b6b76;
+
+  /* ── INK ON THE GROUND ──────────────────────────────────────────────
+     Text that sits directly on the canvas rather than inside a card: a page
+     title, a section heading. Defaults to --color-paper, which is correct
+     for every register whose ground and panels are the same value.
+
+     漆 is the first where they are OPPOSITE — an oxblood ground under ivory
+     panels — so its page title was near-black on near-black. 夜 avoids the
+     problem by being dark everywhere, panels included. A register with two
+     dominant surfaces of opposite value needs two inks. */
+  --color-on-canvas: var(--color-paper);
+  --color-on-canvas-dim: var(--color-paper-dim);
+
+  /* Rust orange, revised 2026-08-20 (was #0570de, a link blue from the navy
+     ink family above).  The blue was the correct choice for a design system
+     whose three registers were meant to share one identity -- and the wrong
+     one for this product, where it left Ledger and Blueprint reading as the
+     same product in two shades.  Construction and ops software is the one
+     category with a real, non-arbitrary accent convention: site-safety
+     orange, which Procore builds its whole identity on.  It is also the only
+     accent here that cannot be mistaken for a generic SaaS blue.
+
+     5.00:1 on white (WCAG relative-luminance formula against #ffffff), so it
+     stays legible as text and not only as a fill -- the same bar the previous
+     blue was held to.  White on this fill is the same 5.00:1.  The -deep
+     hover state is 7.39:1.
+
+     Usage discipline is unchanged and still the important part: focus rings,
+     intentional CTAs, high-importance states.  Never decorative.  An accent
+     this visible punishes decorative use harder than the blue did. */
+  --color-primary: #0f6fa8;
+  --color-primary-deep: #0b5580;
+  --color-primary-soft: #e2f0f8;
+
+  /* Text/icon color for content rendered on a --color-primary fill (CTA
+     buttons and links) — plain white, which passes comfortably against
+     #0570de. Revisit when Hearth/Blueprint are built: a different
+     --color-primary value in those sets could make plain white fail
+     contrast, and this token would then need its own per-register value
+     rather than inheriting white by default. */
+  --color-on-primary: #ffffff;
+
+  /* Text/icon color for content rendered on any other sufficiently dark or
+     saturated fill that isn't --color-primary itself — --color-paper used
+     as a solid "current item" pill, or one of the status-bright/accent
+     colors used as an avatar-chip background. Same literal value as
+     --color-on-primary today (both are plain white), kept as a separate
+     token because the two answer different questions ("what's on the CTA
+     fill" vs "what's on some other dark fill") and could diverge in a
+     future token set where --color-primary is light enough that white
+     fails on it specifically while the darker neutrals still want white. */
+  --color-on-dark: #ffffff;
+
+  /* status: pending / warning */
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+
+  /* status: positive / verified */
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+
+  /* status: negative / flagged
+     Cooled and de-saturated from pure fire-engine red. Full-chroma reds at
+     hue 358 have no relationship to a navy-tinted palette, so next to these
+     surfaces they read as an alarm rather than as a state. This hue is pulled
+     to 354 and about 40% saturation, which is where the rest of the
+     palette's bias already sits. Still a real red — it has to mean
+     something — just one that belongs in this room.
+     Contrast on white: clay-bright 6.0:1, clay 4.1:1 (graphics only). */
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+
+  /* status: neutral / instant */
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+
+  /* spare categorical hue (donut 3rd slot, avatar variety) — validated
+     alongside jade/brass: #3b62d9,#1a9a4d,#a8710a passes CVD/contrast/chroma
+     on the white card surface. */
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+
+  /* The podium: gold, silver, bronze, on ranking surfaces and nowhere else.
+     Deliberately outside the status family above — every other colour here
+     answers "what state is this in", and a place on a ranking is not a
+     state. Reusing brass for gold would have put the pending/warning hue on
+     the best-performing entry.
+     Deliberately darkened from the literal metals, which cannot survive as a
+     14px icon on a white card — #ffd700, #c0c0c0 and #cd7f32 measure 1.40:1,
+     1.82:1 and 3.14:1. These three are 4.52:1, 4.30:1 and 4.58:1: legible in
+     their own right, and matched to each other so the three places differ by
+     hue only. Bronze required lightening — at 6.06:1 it was the darkest mark
+     of the three, so third place read as the heaviest. */
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+
+  /* Chart-fill aliases — jade/brass already pass the categorical checks
+     directly as chart marks on the white surface (validated with the
+     dataviz skill's validate_palette.js), so these are just aliases kept
+     around for existing chart components that reference the -chart names
+     explicitly. */
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+}
+
+/* ============================================================================
+   LEDGER -- the industrial register.  Renovation / contractor, wholesale /
+   distribution, professional services.
+
+   REVISED 2026-08-20.  The previous version of this block was shared verbatim
+   with hearth.css and blueprint.css on purpose, on the argument that "a design
+   system in which the headings get heavier when you switch visual register is
+   not a design system with three styles, it is three design systems."  That
+   argument is right for a design system and wrong for this product.  These
+   three token files are not three registers of ONE product -- they are three
+   different businesses' systems, and a customer only ever sees the one they
+   picked.  Sharing every axis except hue is exactly why a customer comparing
+   the three side by side could not tell them apart (see
+   docs/formae-product-direction.md sec 9.1 for the measurement).
+
+   What differentiates real industry software is never hue alone.  Six axes do
+   the work -- font family, radius scale, density, accent role, background
+   temperature, and border/shadow language -- and this file now moves on all
+   six, keyed to how construction/ops software (Procore) actually looks:
+   condensed heavy type, near-square corners, tight rows, flat hard-edged
+   surfaces, and a single high-visibility site-safety accent.
+   ============================================================================ */
+:root {
+  color-scheme: light;
+
+  /* ---- TYPE AXIS: condensed grotesque, heavy at display sizes -------------
+     Archivo is loaded in app/[locale]/layout.tsx.  The CJK fallbacks follow it
+     in the same composition rule globals.css --font-sans uses: Latin glyphs
+     render in Archivo, Chinese in the OS's own CJK face. */
+  /* Latin then CJK, in that order, so each script is rendered by the face
+     chosen for it. Ledger's Chinese is 宋体 -- what a Malaysian invoice,
+     receipt or 报价单 is actually printed in. That is not decoration: it is the
+     single change that makes this style distinguishable from the other two on
+     a page that is ninety per cent Chinese. */
+  --font-ui: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", monospace;
+
+  /* ── DISPLAY FACE ───────────────────────────────────────────────────
+     What headings are set in, when a register wants them set in something
+     else. Defaults to --font-ui, so this is inert here.
+
+     Added 2026-08-23 because type CONTRAST was the last flat axis: all
+     sixteen registers set a heading and a table cell in the same face.
+     rail-nav.tsx was already reading this token and finding nothing. */
+  --font-display: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", monospace;
+  --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Heavier than the other two registers by design: ops software is read at a
+     glance across a warehouse or a site office, not studied. */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 650;
+  --fw-display: 750;
+
+  --tracking-body: -0.006em;
+  --tracking-sm: -0.008em;
+  --tracking-title: -0.024em;
+  --tracking-title-lg: -0.036em;
+  /* The uppercase micro-label voice -- column heads, section indices, status
+     captions.  Ledger is the only register that uses it; Hearth and Blueprint
+     set --label-transform: none, so a component can apply these two tokens
+     unconditionally and still get the right answer in all three. */
+  --tracking-label: 0.08em;
+  --label-transform: uppercase;
+
+  /* Type scale: compressed.  A dense ops screen fits more rows by running
+     everything about a pixel smaller than a comfortable register would. */
+  --text-micro: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-lg: 15px;
+  --text-title: 19px;
+  --text-hero: 34px;
+  --leading-tight: 1.2;
+  --leading-body: 1.5;
+
+  /* ---- SHAPE AXIS: near-square ------------------------------------------
+     2-3px, not 0.  A true 0px corner reads as an unstyled box; 2px reads as a
+     deliberately hard edge, which is the whole difference between "industrial"
+     and "unfinished". */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-control: 2px;
+  --radius-pill: 3px;
+
+  /* ---- DENSITY AXIS: compact -------------------------------------------- */
+  --pad-card: 14px;
+  --pad-card-lg: 18px;
+  --pad-control-x: 9px;
+  --pad-control-y: 5px;
+  --pad-cell-x: 10px;
+  --pad-cell-y: 7px;
+  --gap-stack: 10px;
+  --gap-inline: 8px;
+  --row-h: 32px;
+  --control-h: 30px;
+
+  /* ---- ELEVATION AXIS: flat, hard-edged ----------------------------------
+     Cards are defined by their border, not by a shadow.  --shadow-card is
+     deliberately `none`: a soft drop shadow is the single most "consumer app"
+     signal there is, and it is wrong for this register.  Overlays (menus,
+     modals) still get one, because they must read as floating above the sheet
+     rather than drawn on it. */
+  --border-card-width: 1px;
+  --shadow-card: none;
+  --shadow-raised: 0 1px 0 rgba(13, 37, 61, 0.10);
+  --shadow-overlay: 0 6px 16px rgba(13, 37, 61, 0.18);
+
+  /* ── SURFACE ────────────────────────────────────────────────────────
+     · surface-image — A layer painted over a card's own colour: grain, a gradient wash, a hairline grid. `none` for every register that shipped before this line existed.
+     · surface-blur — backdrop-filter for the card. The whole of Glassmorphism lives here, and it needs the surface colour to be translucent to show.
+     · surface-border-style — solid / dashed / double. A dashed card is a different object from a solid one at the same border width.
+     · canvas-image — The same idea for the page ground rather than the card: a mesh, a grid, a paper texture.
+
+     All four are inert here. A register that wants glass, grain or a
+     dashed edge overrides them; everything else keeps the flat rectangle
+     it already had. Consumed by .ds-card / .ds-raised / .ds-overlay in
+     app/globals.css, so one line here reaches every component. */
+  --surface-image: none;
+  --surface-blur: none;
+  --surface-border-style: solid;
+  --canvas-image: none;
+
+  /* Stronger than the other two registers: when a card has no shadow at all,
+     its border is the only thing separating it from the canvas, so it has to
+     carry more of the work. */
+  --border-subtle: rgba(13, 37, 61, 0.14);
+  --border-strong: rgba(13, 37, 61, 0.26);
+
+  --shadow-hue: 13, 37, 61;
+  --hairline: 1px;
+
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 100ms;
+  --dur: 130ms;
+
+  /* ---- THE shadcn/ui CONTRACT ---------------------------------------------
+     WHY THIS BLOCK IS HERE, AND WHY IT IS THE HIGHEST-LEVERAGE THING IN THE
+     TOKEN FILE.
+
+     This project already IS a shadcn project -- components.json exists and
+     app/globals.css declares the full shadcn variable contract. But that
+     contract lived ONLY at :root for the marketing site, and these three
+     customer styles declared none of it. The consequence was quiet and large:
+     any shadcn/ui component, any block from 21st.dev, any layout from the
+     wider ecosystem, dropped into a customer's page, rendered in the MARKETING
+     SITE's colours instead of the customer's chosen style. Which meant the
+     component library could only ever contain components hand-built against
+     this file's own vocabulary -- ten of them.
+
+     Mapping the contract onto the tokens that already exist changes that in one
+     block: every component written against shadcn's variables now re-themes
+     itself per customer style for free, because custom properties inherit and
+     the nearest defining ancestor wins. Ten blocks becomes an ecosystem.
+
+     These are ALIASES, not new colours. Nothing here invents a value -- each
+     line points at a token this file already defines, so the two vocabularies
+     cannot drift apart and a style is still edited in exactly one place. */
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-ink-900);
+  --card-foreground: var(--color-paper);
+  --popover: var(--color-ink-900);
+  --popover-foreground: var(--color-paper);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-ink-850);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-clay);
+  --destructive-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+  /* shadcn's chart palette. Mapped onto the four status colours this system
+     already uses plus two neutrals, so a chart pulled off any registry speaks
+     the same colour language as the StatusDots beside it. */
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-jade);
+  --chart-3: var(--color-brass);
+  --chart-4: var(--color-clay);
+  --chart-5: var(--color-slate);
+  /* shadcn's sidebar block -- pointed at the --color-nav-* family, which is
+     the same idea under a different name. This is what makes shadcn's
+     dashboard layouts land correctly inside a generated system. */
+  --sidebar: var(--color-nav-bg);
+  --sidebar-foreground: var(--color-nav-fg);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-bg);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-fg);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
+}
+
+@media (min-resolution: 192dpi) {
+  :root {
+    --hairline: 0.5px;
+  }
+}
+
+html {
+  letter-spacing: var(--tracking-body);
+}
+
+/* The weight ceiling, enforced rather than only written down.
+   <b> and <strong> default to 700 — 900 in this stack — which is heavier than
+   anything the token block above allows, and heavier than Linear, Vercel or
+   Mercury use anywhere. Mercury remaps <b> for exactly this reason. */
+b,
+strong {
+  font-weight: var(--fw-semibold);
+}
+
+/* Tabular figures belong on numeric columns, not on running prose — in body
+   text they open awkward gaps around "1". Vercel scopes it to a utility
+   rather than setting it on html. Component-layer classes (.figure,
+   .figure-money — added in a later component-porting task) opt into this. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  background: var(--color-ink-950);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: none;
+  /* Two-layer ring: a surface-coloured gap then the accent, so the ring reads
+     cleanly on top of a row hover or a coloured fill. Vercel ships exactly
+     this shape as --ds-focus-ring. */
+  box-shadow:
+    0 0 0 2px var(--color-ink-900),
+    0 0 0 4px var(--color-primary);
+  border-radius: var(--radius-control);
+}
+
+/* Attribution: Ledger token set derived from vibe-dealer by Tyouuu — generalized
+   for the design-system shared token architecture. */

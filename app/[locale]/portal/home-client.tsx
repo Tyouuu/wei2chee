@@ -36,6 +36,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   kraft: styles.kraft,
   signboard: styles.signboard,
   lacquer: styles.lacquer,
+  code: styles.code,
 };
 
 /** Mirrors PAGE_KEYS. Kept as a plain array here rather than imported so this
