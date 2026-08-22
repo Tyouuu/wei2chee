@@ -121,10 +121,24 @@ export function MobileEditor({
         </div>
       </div>
 
-      {/* Half the screen, and pinned. On a phone the assistant is not a panel
-          beside the work — it IS the work, so it gets a fixed share rather than
-          whatever is left over. */}
-      <div className="flex h-[52%] shrink-0 flex-col border-t [border-color:var(--color-ink-800)]">
+      {/* Half the phone screen, and pinned: on a phone the assistant is not a
+          panel beside the work — it IS the work, so it gets a fixed share
+          rather than whatever is left over.
+
+          A TABLET IS NOT A TALL PHONE, and this is where that stopped being
+          true. Puck's own floor is 1024px, so everything from 768 to 1023 --
+          every iPad in portrait, every Android tablet -- lands in this layout.
+          Screenshotted at 768: the customer's page got the top 45% and the
+          assistant got 55% of a 1024px-tall screen, most of it empty space
+          under three example chips. Half a tablet, spent on nothing.
+
+          So the share is now a range rather than a number. On a phone it stays
+          at 52%; from 640px up the assistant takes a third and the page takes
+          the rest, which on a 768x1024 screen is about 640px of the customer's
+          own system instead of 440. The composer stays pinned to the bottom in
+          both, because that is where every assistant a customer has used puts
+          it. */}
+      <div className="flex h-[52%] shrink-0 flex-col border-t [border-color:var(--color-ink-800)] sm:h-[38%] md:h-[32%]">
         <AiAssistant
           turns={turns}
           setTurns={setTurns}
