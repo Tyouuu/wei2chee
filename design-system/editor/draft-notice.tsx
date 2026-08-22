@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePuck } from "@puckeditor/core";
 import { usePreviewMode } from "@/design-system/editor/preview-toggle";
 
 /**
@@ -25,6 +26,17 @@ import { usePreviewMode } from "@/design-system/editor/preview-toggle";
  *   it on the laptop where they actually design.
  *
  *   IT DISAPPEARS IN PREVIEW, along with everything else of ours.
+ *
+ *   IT GETS OUT OF THE WAY THE MOMENT A BLOCK IS SELECTED. Puck floats a
+ *   block's toolbar at the top-right corner of that block, which for the first
+ *   block on the page is exactly where this note sits: measured at 1440, the
+ *   note covered x 956-1396 / y 90-177 and 换款式 sat at x 1141-1199 / y
+ *   135-169, so elementFromPoint on the button's own centre returned the note.
+ *   The top block of every page -- the page title, the first thing anyone
+ *   clicks -- had an unpressable toolbar on first visit. Two changes fix it:
+ *   the note stops rendering once anything is selected, and its body no longer
+ *   takes pointer events at all, so a click aimed at the block underneath
+ *   reaches the block instead of being eaten by a sentence.
  */
 export function DraftNotice({
   title,
@@ -37,7 +49,18 @@ export function DraftNotice({
 }) {
   const [gone, setGone] = useState(false);
   const { previewing } = usePreviewMode();
-  if (gone || previewing) return null;
+  const { selectedItem } = usePuck();
+  const started = Boolean(selectedItem);
+
+  // Selecting a block means the customer has started -- the note has said its
+  // piece. Retiring it for good rather than only while the selection lasts:
+  // a chip that flicks back in every time you click empty canvas is worse
+  // than one that leaves once.
+  useEffect(() => {
+    if (started) setGone(true);
+  }, [started]);
+
+  if (gone || started || previewing) return null;
 
   return (
     // TOP-RIGHT, not top-centre. Centred, it landed square on the page's own
@@ -47,7 +70,7 @@ export function DraftNotice({
     // this goes, and it still costs zero bands of chrome.
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-end px-5 pt-4">
       <div
-        className="pointer-events-auto flex max-w-[440px] flex-wrap items-center gap-x-2 gap-y-1 rounded-[var(--radius-lg)] border px-3.5 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
+        className="flex max-w-[440px] flex-wrap items-center gap-x-2 gap-y-1 rounded-[var(--radius-lg)] border px-3.5 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
         style={{ boxShadow: "var(--shadow-overlay, 0 10px 26px rgba(6,14,26,.34))" }}
       >
         <span className="[color:var(--color-paper)] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]">
@@ -57,7 +80,7 @@ export function DraftNotice({
         <button
           type="button"
           onClick={() => setGone(true)}
-          className="ml-auto shrink-0 rounded-md px-2 py-1 [font-size:var(--text-micro)] [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+          className="pointer-events-auto ml-auto shrink-0 rounded-md px-2 py-1 [font-size:var(--text-micro)] [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
         >
           {dismiss}
         </button>
