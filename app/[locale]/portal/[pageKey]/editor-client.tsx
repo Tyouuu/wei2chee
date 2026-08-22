@@ -794,9 +794,9 @@ export function PortalEditor({
                         // half, which is what makes a table read as a table and
                         // a workflow as a row of steps -- the whole argument for
                         // live tiles over drawings.
-                        width={900}
-                        srcHeight={230}
-                        height={96}
+                        width={620}
+                        srcHeight={168}
+                        height={78}
                         fallback={
                           <div className="grid h-16 place-items-center">
                             <ComponentPreview name={name} />

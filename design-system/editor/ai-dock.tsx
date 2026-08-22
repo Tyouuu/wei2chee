@@ -47,10 +47,20 @@ export function AiDock({ children }: { children: ReactNode }) {
   const [manual, setManual] = useState<boolean | null>(null);
   const { previewing } = usePreviewMode();
   const { selectedItem } = usePuck();
-  const { gutter } = useEditorUi();
+  const { gutter, sheet } = useEditorUi();
   const blockId =
     typeof selectedItem?.props?.id === "string" ? selectedItem.props.id : null;
-  const open = manual ?? Boolean(blockId);
+  // AND IT CLOSES WHILE A PANEL IS OPEN. The selection rule above is right for
+  // a resting editor and wrong the moment the customer opens 加一段 or 换款式:
+  // the block is still selected, so the dock stayed expanded and the screen had
+  // the palette on the right, the block's toolbar over the table, and a 340px
+  // assistant card across the middle. 「整体很乱」 was the founder's word for
+  // that screenshot, and it was three panels rather than any one of them.
+  //
+  // A sheet means the customer is doing something else. The dock goes back to
+  // its slim line -- still there, still one press away -- and comes back on its
+  // own when the sheet closes.
+  const open = sheet ? false : (manual ?? Boolean(blockId));
 
   // A different block is a different question -- drop the override so the new
   // selection gets the same treatment the last one did before it was toggled.

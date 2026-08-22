@@ -135,12 +135,19 @@ export function EditorUiProvider({ children }: { children: ReactNode }) {
   );
   const closeSheet = useCallback(() => setSheet(null), []);
 
-  // The insert sheet is the one exception: it is a gallery of blocks to add,
-  // not an editor for a block already on the page, so there is nothing
-  // underneath it the customer needs to keep watching. Making the canvas
-  // narrower for it would reflow the whole page for no reason.
-  const gutter =
-    dockable && sheet && sheet.kind !== "insert" ? SHEET_GUTTER : 0;
+  // EVERY SHEET DOCKS, 加一段 INCLUDED.
+  //
+  // It used to be the one exception, on the argument that a gallery of blocks
+  // to add has nothing underneath it worth watching. That argument was about
+  // the customer's PAGE and forgot the editor's own furniture: floating, the
+  // palette landed on top of the selected block's toolbar AND the AI dock, so
+  // pressing ＋ put three dark panels on the screen at overlapping depths. The
+  // founder's word for the screenshot was 「整体很乱」, and he is right — Durable
+  // never has two panels open over each other.
+  //
+  // Docked, there is exactly one panel, always at the same edge, and the page
+  // reflows beside it like it does for 换款式 and 改文字.
+  const gutter = dockable && sheet ? SHEET_GUTTER : 0;
 
   const value = useMemo(
     () => ({ sheet, openSheet, closeSheet, host, setHost, anchor, gutter }),

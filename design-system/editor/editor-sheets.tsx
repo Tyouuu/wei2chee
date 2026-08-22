@@ -154,10 +154,12 @@ export function InsertSheet({ children }: { children: ReactNode }) {
       open={sheet?.kind === "insert"}
       onClose={closeSheet}
       anchor={anchor}
-      width={520}
       title="加一段"
     >
-      <div className="px-3 py-3">{children}</div>
+      {/* One column, tight. The gallery that browses all 56 at leisure is
+          组件库 (/portal/library); this is the one you reach for mid-edit, so
+          it is a list you scan rather than a grid you shop. */}
+      <div className="px-2.5 py-2">{children}</div>
     </Sheet>
   );
 }

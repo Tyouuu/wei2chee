@@ -419,3 +419,24 @@
   --puck-drawer-item-color-bg: transparent;
   --puck-drawer-item-font-size: var(--text-sm);
 }
+
+/* The drag handle comes off the palette tiles.
+
+   Puck's DrawerItem draws a six-dot grip on the right of every name. It is
+   telling the truth -- these ARE draggable -- but the affordance this editor
+   actually teaches is「按一下就加进去」(ClickToAdd), and 56 grips down one
+   column is 56 pieces of furniture in a panel whose whole job is to show
+   pictures of blocks. Hidden rather than removed: the drag still works for
+   anyone who tries it.
+
+   `[class*=]` because Puck ships CSS modules with hashed names; the stable
+   half of the name is the part before the hash. */
+.portal-editor-scope [class*="DragIcon"] {
+  display: none;
+}
+
+/* The name row itself sits inside our card (see the --puck-drawer-item-*
+   block above), so it needs the padding of a caption rather than of a button. */
+.portal-editor-scope [class*="DrawerItem-draggable"] {
+  padding: 9px 12px;
+}
