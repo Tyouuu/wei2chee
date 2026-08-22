@@ -41,6 +41,9 @@ export type SystemWords = {
   account: string;
   topNav: string;
   sideNav: string;
+  /** Carries its own brackets, because the brackets are part of the language:
+   *  an English page set 「（optional）」 in fullwidth CJK parentheses, which is
+   *  the kind of half-translation that reads as a machine wrote the page. */
   optional: string;
   uploadPrompt: string;
   dropPrompt: string;
@@ -118,7 +121,7 @@ const EN: SystemWords = {
   account: "Account settings",
   topNav: "Top navigation",
   sideNav: "Side navigation",
-  optional: "optional",
+  optional: "(optional)",
   uploadPrompt: "Click to upload a file or photo",
   dropPrompt: "Drop photos here, or click to choose",
   atMost: (n) => `Up to ${n}`,
@@ -198,7 +201,7 @@ const ZH: SystemWords = {
   account: "账号设置",
   topNav: "顶部导航",
   sideNav: "侧边导航",
-  optional: "可选",
+  optional: "（可选）",
   uploadPrompt: "点击上传文件或照片",
   dropPrompt: "拖照片进来，或者点一下选",
   atMost: (n) => `最多 ${n} 张`,

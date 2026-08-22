@@ -58,7 +58,7 @@ export function FileUploadField({
   return (
     <div>
       <span className="block [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
-        {label} <span className="text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">（{w.optional}）</span>
+        {label} <span className="text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">{w.optional}</span>
       </span>
       <label className="mt-1.5 flex cursor-pointer items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] border border-dashed [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)] transition-colors [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]">
         <Upload aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />

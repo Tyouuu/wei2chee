@@ -184,11 +184,29 @@ export function LivePreview({
   const [natural, setNatural] = useState(0);
   useEffect(() => {
     const el = innerRef.current;
-    if (!el || !forcedScale) return;
+    if (!el) return;
     const ro = new ResizeObserver(([e]) => setNatural(e.contentRect.height));
     ro.observe(el);
     return () => ro.disconnect();
   }, [forcedScale, name, mounted]);
+
+  // THE TILE'S OWN WIDTH, MEASURED. The scale used to come from `height /
+  // srcHeight` alone, which fixes the drawn width at `width * scale` and takes
+  // no account of the box it lands in. That was right while the palette was a
+  // ~300px docked column and silently wrong the day it became a 520px sheet:
+  // 560 x (64/120) = 299px of painted preview inside a 470px tile, so every
+  // block in 加一段 was drawn on the left half of its card with the panel's
+  // dark background showing through the right. Found by opening the picker and
+  // looking at it -- nothing about it throws, and every test stayed green.
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const [boxW, setBoxW] = useState(0);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el || forcedScale) return;
+    const ro = new ResizeObserver(([e]) => setBoxW(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [forcedScale, mounted]);
 
   if (!mounted) return <>{fallback}</>;
 
@@ -216,17 +234,42 @@ export function LivePreview({
   }
   props.puck = { renderDropZone: () => null, isEditing: false, dragRef: null };
 
-  const scale = forcedScale ?? height / srcHeight;
-  const tileHeight = forcedScale ? (natural || srcHeight) * forcedScale : height;
+  // Fill the tile, then let the height follow. `height` survives as the floor
+  // for the frame before the observer has fired -- a tile that starts at 0 and
+  // jumps is worse than one that starts a little short.
+  const fitScale = boxW ? boxW / width : height / srcHeight;
+  const scale = forcedScale ?? fitScale;
+
+  // HOW MUCH OF THE BLOCK THE TILE SHOWS, in source pixels.
+  //
+  // Not a constant, and the reason is that the palette holds both 标记 (one
+  // pill, ~40px) and 记录表格 (a header and four rows, ~300px). A fixed window
+  // gives one of them a mostly empty card and crops the other before its first
+  // row. Clamped rather than free so the grid still scans as a grid.
+  //
+  // `natural` is measured on a box with NO minimum height, which is what keeps
+  // this from oscillating: the measurement cannot depend on the number derived
+  // from it.
+  const SHORTEST = 104;
+  const srcShown = forcedScale
+    ? natural || srcHeight
+    : Math.min(srcHeight, Math.max(natural || srcHeight, SHORTEST));
+  const tileHeight = srcShown * scale;
+  // Centred while it fits, top-aligned once it does not: a short block in the
+  // corner of an empty rectangle reads as a failed load, and a tall one that
+  // loses its own first row loses the thing that says what it is.
+  const offset = forcedScale ? 0 : Math.max(0, (srcShown - (natural || 0)) / 2);
 
   return (
     <div
+      ref={boxRef}
       className="pointer-events-none relative overflow-hidden rounded-[var(--radius-md)]"
       style={{ height: tileHeight, width: "100%" }}
       aria-hidden
     >
       <StyleScope
-        register={style} palette={palette}
+        register={style}
+        palette={palette}
         style={{
           position: "absolute",
           top: 0,
@@ -236,24 +279,12 @@ export function LivePreview({
           transformOrigin: "top left",
         }}
       >
-        {/* A fixed source box with the content centred in it. Without this
-            every block renders flush to the top-left of the tile and anything
-            short — 状态标记, 标记, 评分, 按钮 — sits in the corner of a mostly
-            empty rectangle, which reads as "failed to load" rather than as a
-            small component. */}
         <div
           ref={innerRef}
-          className={
-            forcedScale
-              ? // Picker mode: no centring and no floor. Both exist to make a
-                // SHORT block look deliberate inside a fixed strip, and here
-                // there is no fixed strip to look deliberate inside.
-                "bg-background text-foreground px-4 py-3"
-              : "bg-background text-foreground grid place-content-center px-3"
-          }
-          style={forcedScale ? { width } : { minHeight: srcHeight, width }}
+          className="bg-background text-foreground grid justify-center px-4 py-3"
+          style={{ width, marginTop: offset }}
         >
-          <Guard fallback={<div style={{ height: srcHeight }} />}>
+          <Guard fallback={<div style={{ height: SHORTEST }} />}>
             <Render {...props} />
           </Guard>
         </div>

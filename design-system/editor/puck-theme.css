@@ -397,3 +397,25 @@
   background-color: color-mix(in oklch, var(--color-primary) 14%, transparent);
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-primary) 55%, transparent);
 }
+
+/* ---------------------------------------------------------------------------
+   加一段's tiles are ONE card each, not a picture with a caption under it.
+
+   Puck's DrawerItem draws its own bordered, rounded, filled box around the
+   block's name, and editor-client's `drawerItem` override puts the live preview
+   in a second bordered box above it. Two bordered boxes with a gap between them
+   read as two things — a screenshot of the palette showed exactly that: a white
+   preview floating above an unrelated dark pill with a drag handle in it.
+
+   21st.dev's gallery, which is the reference the founder named for this
+   surface, is one card: the component, then its name along the bottom edge,
+   inside the same border. These four variables are Puck's own supported hooks
+   for that, so the name row can sit flush inside our card without touching
+   Puck's markup or its drag behaviour.
+   --------------------------------------------------------------------------- */
+.portal-editor-scope {
+  --puck-drawer-item-border-width: 0px;
+  --puck-drawer-item-radius: 0px;
+  --puck-drawer-item-color-bg: transparent;
+  --puck-drawer-item-font-size: var(--text-sm);
+}

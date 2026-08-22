@@ -776,26 +776,41 @@ export function PortalEditor({
                 // bars. See live-preview.tsx for why the schematics had to go.
                 drawerItem: ({ children, name }) => (
                   <ClickToAdd name={name}>
+                    {/* ONE CARD: the block, then its name along the bottom edge,
+                        inside the same border. Two boxes with a gap between them
+                        read as a picture and an unrelated pill -- see the
+                        --puck-drawer-item-* block in puck-theme.css. */}
                     <div className="w-full overflow-hidden rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-950)] transition-colors group-hover/add:[border-color:var(--color-ink-700)]">
                       <LivePreview
                         name={name}
                         style={activeStyle}
                         palette={palette}
+                        // COMPOSED WIDE AND SCALED DOWN, not rendered small.
+                        // 加一段 is a 520px sheet now, not the ~300px docked
+                        // column these numbers were chosen for; at the old 560
+                        // the block drew at 84% and a table lost everything
+                        // below its second row. 900 puts the scale back near a
+                        // half, which is what makes a table read as a table and
+                        // a workflow as a row of steps -- the whole argument for
+                        // live tiles over drawings.
+                        width={900}
+                        srcHeight={230}
+                        height={96}
                         fallback={
                           <div className="grid h-16 place-items-center">
                             <ComponentPreview name={name} />
                           </div>
                         }
                       />
-                    </div>
-                    <div className="flex w-full items-center justify-between gap-2 px-0.5">
-                      <div className="min-w-0 flex-1">{children}</div>
-                      <span
-                        aria-hidden
-                        className="shrink-0 opacity-0 transition-opacity [color:var(--color-paper-dim)] [font-size:var(--text-xs)] group-hover/add:opacity-100"
-                      >
-                        + 加
-                      </span>
+                      <div className="flex w-full items-center justify-between gap-2 border-t [border-color:var(--color-ink-800)] pr-3 [background-color:var(--color-ink-900)]">
+                        <div className="min-w-0 flex-1">{children}</div>
+                        <span
+                          aria-hidden
+                          className="shrink-0 opacity-0 transition-opacity [color:var(--color-paper-dim)] [font-size:var(--text-xs)] group-hover/add:opacity-100"
+                        >
+                          + 加
+                        </span>
+                      </div>
                     </div>
                   </ClickToAdd>
                 ),

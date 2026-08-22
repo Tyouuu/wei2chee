@@ -90,6 +90,17 @@ export function Sheet({
       const w = Math.min(width, vw - 24);
       const h = el.offsetHeight || 320;
 
+      // The same floor for both arrangements: the top of the canvas, never the
+      // top of the window. A sheet that clears 12px sits ON the editor's own
+      // bar -- over 保存设计, 发布 and the handoff -- and 加一段 opened from a
+      // block near the top of a short page did exactly that. Seen in a
+      // screenshot; there is no measurement that would have caught it, because
+      // the arithmetic was right about the WINDOW and wrong about the product.
+      const canvasTop =
+        document.querySelector("[data-editor-canvas]")?.getBoundingClientRect()
+          .top ?? 12;
+      const floor = Math.max(12, canvasTop + 8);
+
       if (docked) {
         // Pinned to the right edge, in the gutter the canvas is holding open.
         // Vertically it still follows the block -- a panel that always started
@@ -100,10 +111,6 @@ export function Sheet({
         // is opened from a button in the editor's own bar, so its anchor sits
         // at y≈24 and the panel was landing on top of 保存设计 and the handoff
         // button -- caught in a screenshot, not in a measurement.
-        const canvas = document
-          .querySelector("[data-editor-canvas]")
-          ?.getBoundingClientRect();
-        const floor = canvas ? canvas.top + 8 : 12;
         const a = anchor?.getBoundingClientRect();
         const wanted = a && a.width > 0 ? a.top : floor;
         el.style.width = `${w}px`;
@@ -114,7 +121,7 @@ export function Sheet({
       }
 
       let left = (vw - w) / 2;
-      let top = Math.max(12, (vh - h) / 2);
+      let top = Math.max(floor, (vh - h) / 2);
 
       const a = anchor?.getBoundingClientRect();
       if (a && a.width > 0) {
@@ -122,12 +129,16 @@ export function Sheet({
         // Under the block if it fits, above it if not, and never off either
         // edge of the window.
         top = a.bottom + 46;
-        if (top + h > vh - 12) top = Math.max(12, a.top - h - 14);
-        if (top + h > vh - 12) top = Math.max(12, vh - h - 12);
+        if (top + h > vh - 12) top = Math.max(floor, a.top - h - 14);
+        if (top + h > vh - 12) top = Math.max(floor, vh - h - 12);
       }
       el.style.width = `${w}px`;
       el.style.left = `${Math.max(12, Math.min(left, vw - w - 12))}px`;
       el.style.top = `${top}px`;
+      // A tall palette must scroll inside itself rather than run off the top of
+      // the screen -- 加一段 lists every registered block, and on a 900px window
+      // that is taller than the canvas.
+      el.style.maxHeight = `${Math.max(220, vh - floor - 16)}px`;
     };
 
     place();
