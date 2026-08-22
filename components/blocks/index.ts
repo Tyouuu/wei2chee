@@ -49,6 +49,7 @@
  * after adding blocks; do not hand-edit the three maps below.
  */
 
+import { TEMPLATE_BLOCKS } from "@/components/blocks/templates";
 import B_about_1 from "@/components/blocks/about-1";
 import B_about_2 from "@/components/blocks/about-2";
 import B_about_3 from "@/components/blocks/about-3";
@@ -266,8 +267,13 @@ import B_testimonials_4 from "@/components/blocks/testimonials-4";
 import B_timeline_1 from "@/components/blocks/timeline-1";
 import B_timeline_2 from "@/components/blocks/timeline-2";
 
-/** Component by registry name. */
+/** Component by registry name.
+ *
+ *  The four whole-page templates contribute their sections here too, keyed
+ *  "<template>/<file>" -- so SiteBlock renders one without needing to know
+ *  whether it came from the section catalogue or from a page. */
 export const BLOCKS: Record<string, React.ComponentType> = {
+  ...TEMPLATE_BLOCKS,
   "about-1": B_about_1,
   "about-2": B_about_2,
   "about-3": B_about_3,
