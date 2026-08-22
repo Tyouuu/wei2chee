@@ -9,7 +9,7 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { SECTION_SHELVES, orderShelves } from "./shelves";
 
 /**
- * 版段库 — the 164 whole page sections pulled from the @7Ovr registry (MIT-0).
+ * 版段库 — the 216 whole page sections pulled from the @7Ovr registry (MIT-0).
  *
  * ── WHY IT IS A SEPARATE PAGE FROM 组件库 ──────────────────────────────────
  *
