@@ -78,6 +78,7 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   grain: styles.grain,
   kraft: styles.kraft,
   signboard: styles.signboard,
+  lacquer: styles.lacquer,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";

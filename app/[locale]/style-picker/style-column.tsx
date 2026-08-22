@@ -52,7 +52,11 @@ export type StyleName =
   // The first register whose headings are set in a different face from its
   // body -- all sixteen before it declared one family for both. See
   // tokens/signboard.css.
-  | "signboard";
+  | "signboard"
+  // The first register whose GROUND is a colour. Surface saturation across
+  // the other seventeen ran 0.00-0.19 while accents ran 0.11-1.00: colour had
+  // only ever been allowed on a button. See tokens/lacquer.css.
+  | "lacquer";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -88,6 +92,7 @@ export const STYLE_ORDER: StyleName[] = [
   "grain",
   "kraft",
   "signboard",
+  "lacquer",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -108,6 +113,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   grain: styles.grain,
   kraft: styles.kraft,
   signboard: styles.signboard,
+  lacquer: styles.lacquer,
 };
 
 /**
@@ -152,6 +158,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   grain: styles.grain,
   kraft: styles.kraft,
   signboard: styles.signboard,
+  lacquer: styles.lacquer,
 };
 
 export function StyleColumn({

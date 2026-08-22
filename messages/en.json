@@ -136,6 +136,10 @@
       "signboard": {
         "label": "Signboard",
         "description": "A shoplot sign and the price list beneath it. The name is set in a heavy condensed face at 46px with the tracking pulled in; everything under it is a plain 15px sans. It is the first of seventeen registers whose headings use a different face from its body — every one before it declared a single family, so a page heading and a table cell looked the same. The contrast is the register, not the colour. For F&B, retail, shopfronts, events, gyms: businesses whose customers see them in passing."
+      },
+      "lacquer": {
+        "label": "Lacquer",
+        "description": "A coloured ground. The page is deep oxblood, the panels are ivory and float on it, and gold is only ever a line. Measured: across the other seventeen registers, surface saturation ran 0.00 to 0.19 while accents ran 0.11 to 1.00 — colour had only ever been allowed on the smallest thing on screen. This is the first register where the page carries it. The panels stay pale on purpose: the surface the text sits on never changes contrast, which is what makes it usable for a working day. For restaurants, tea houses, bakeries, gold and jewellery, wedding and temple supply."
       }
     },
     "sample": {
@@ -423,7 +427,8 @@
         "night": "Night · near-black, lit orange",
         "grain": "Grain · textured, one flat blue",
         "kraft": "Kraft · mid-tone board, double rule",
-        "signboard": "Signboard · heavy condensed headline, sign red"
+        "signboard": "Signboard · heavy condensed headline, sign red",
+        "lacquer": "Lacquer · oxblood ground, ivory panels, gold line"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",

@@ -111,7 +111,7 @@ export function RecordTable(props: {
     // visible in the first browser check of the column editor.
     <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
       <table
-        className="w-full border-collapse [font-size:var(--text-sm)]"
+        className="w-full border-collapse [background-color:var(--color-table-bg)] [font-size:var(--text-sm)]"
         style={
           shown === "compact"
             ? ({

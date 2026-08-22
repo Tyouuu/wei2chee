@@ -210,6 +210,20 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
   },
+  lacquer: {
+    mood: "有颜色的地。整页是深牛血漆红,卡片是象牙白的板浮在上面,金色只走线不做面。整套十八个版式,只有这一个把颜色放在「地」上——其他每一个都是白纸配一颗有色的按钮。",
+    facts: "底色 #6e2019(饱和 0.72) · 卡片象牙 #fdfaf4 · 阴影更深更暖 · 圆角 6px · 无边框 · 按钮同色系 #8c2a20 · 金 #c8952f 只用在线",
+    prefer: {
+      RecordTable: "plain",
+      HeroCard: "solo",
+      WorkflowStrip: "timeline",
+      ActionButton: "solid",
+      Tag: "soft",
+      Divider: "loose",
+      TrendChart: "area",
+    },
+    avoid: ["第二个强调色", "把卡片也染成深色", "金色的大色块", "细到看不见的字"],
+  },
   signboard: {
     mood: "招牌那一个。店名用又窄又粗的字排到 46px、字距收紧,下面的价目跟内文是普通的 15px。整套里第一个「标题跟内文不同一个字体」的版式——差别就在这个对比,不在颜色。",
     facts: "标题字 Archivo Narrow 46px 字距 -0.03em · 内文 15px · 招牌红 #c8102e · 暖白底 #f7f4ef · 圆角 0 · 无阴影 · 标签全大写",

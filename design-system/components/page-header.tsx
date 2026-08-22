@@ -49,12 +49,12 @@ export function PageHeader({
   return (
     <div className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
       <div className="min-w-0">
-        <h1 className="ds-display flex items-center [gap:var(--gap-inline)] [font-size:var(--text-title)] tracking-[var(--tracking-title)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+        <h1 className="ds-display flex items-center [gap:var(--gap-inline)] [font-size:var(--text-title)] tracking-[var(--tracking-title)] text-[color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]">
           {title}
           {meta}
         </h1>
         {subtitle && (
-          <p className="mt-0.5 [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)]">{subtitle}</p>
+          <p className="mt-0.5 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">{subtitle}</p>
         )}
       </div>
       {actionNode}

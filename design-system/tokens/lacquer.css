@@ -1,0 +1,551 @@
+@import "tailwindcss";
+
+/* Font stack declaration — a consuming app should supply its own font variables
+   matching the pattern here (--font-sans, --font-mono). Uncomment and customize
+   to wire up your project's @font-face or next/font imports:
+   @theme inline {
+     --font-sans: var(--font-your-sans);
+     --font-mono: var(--font-your-mono);
+   }
+*/
+
+/* 漆 (Lacquer) — the first register whose GROUND is a colour.
+
+   WHY IT EXISTS, MEASURED. Saturation of every register's three surfaces on
+   2026-08-23, as (max-min)/max on the hex:
+
+     accent   0.11 … 1.00   — the whole range is used
+     canvas   0.00 … 0.19   — except 夜 at 0.435, which is a near-black blue
+     card     0.00 … 0.16     grey at 0.005 luminance, so not a colour either
+
+   Seventeen registers, and every one of them is a NEUTRAL PAGE WITH A COLOURED
+   BUTTON. Colour has only ever been allowed on the smallest thing on screen.
+   That is a whole kind of difference the set did not have, and it is the one a
+   customer names first when they say a system looks like theirs.
+
+   WHY THE GROUND AND NOT THE CARD. A saturated card is a saturated reading
+   surface, and this is a system somebody sits in front of for a working day.
+   The panels stay near-white; the PAGE they sit on carries the colour. That is
+   how a lacquered board with enamel panels works, and it is why the register
+   is readable at all — the contrast where the text is never changes.
+
+   WHICH TRADES. Restaurants, tea houses, bakeries, gold and jewellery,
+   wedding, funeral and temple supply — Malaysian-Chinese businesses whose own
+   shopfront is already a colour, and for whom a white page with a coloured
+   button looks like somebody else's software.
+
+   THE MOVES:
+
+     1. THE GROUND IS OXBLOOD.  #6e2019 at 0.72 saturation and 0.09 luminance.
+        Saturated but not bright: a strong colour behind pale panels reads as
+        material, and the same colour at full brightness reads as an alert.
+
+     2. THE PANELS STAY IVORY.  #fdfaf4, and the shadow gets deeper and warmer
+        so a pale panel on a dark ground still reads as lifted rather than as a
+        hole cut in it. Hearth's shadow is tuned for a card on cream.
+
+     3. THE ACCENT IS THE GROUND.  Buttons are the same oxblood, deepened.
+        A second hue on a page that already has a strong one is where this kind
+        of register turns into a mess; the brand colour IS the page.
+
+     4. GOLD IS A HAIRLINE, NEVER A FILL.  #c8952f on rules and on the nav's
+        active mark. Gold as a surface is a casino; gold as a line is lacquer.
+
+   Derived from Hearth for its shadow-not-border card and its 22px padding —
+   panels need to float and need room. Radius comes in from 14 to 6: a lacquer
+   panel is inlaid, not a rounded plastic tile.
+
+   @structural --color-canvas, --color-ink-900, --color-ink-850, --color-ink-950, --color-paper, --color-paper-dim
+
+   The whole register is the relationship between a coloured ground and pale
+   panels. A palette that repaints the ground pale deletes it, and one that
+   repaints the panels leaves white text on white. Same argument 夜 and 牛皮
+   make. The ACCENT still follows the palette, so 漆 + 青绿 is a jade lacquer
+   rather than an oxblood one — which is exactly the variation this register
+   should have. */
+@theme {
+
+  /* The column-head band. Seven of the eight registers draw a card-coloured
+     head with a hairline under it, which is what these two values are; 印头
+     fills it with the accent instead. Declared everywhere so record-table.tsx
+     never has to know which style it is inside. */
+  --color-table-head-bg: var(--color-ink-900);
+
+  /* ── TABLE SURFACE ──────────────────────────────────────────────────
+     What a record table's BODY sits on. `transparent` in every register
+     that shipped before 漆, because for all of them the canvas and the card
+     are within a few percent of each other and a transparent table looked
+     like a table on paper.
+
+     漆 broke that by making the ground a colour: the header row has
+     --color-table-head-bg and stayed ivory, and every data row showed
+     oxblood through near-black text. Found by looking at a screenshot, not
+     by any test. A register whose ground is not near-white must set this. */
+  --color-table-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper-dim);
+  /* The neutral family, sage-biased. Same principle as Ledger's navy tint,
+     rotated into this register's hue: every value carries a slight green cast
+     (hue 150–156 at 16–33% saturation) rather than being a pure grey, which is
+     the difference between surfaces that read as chosen and surfaces that read
+     as skipped.
+
+     The bias is green-with-a-cool-lean, deliberately not yellow-green. Sage at
+     its literal paint-chip hue (~86) turns into a beige once you take it to
+     95% lightness, which lands on exactly the cream this register exists to
+     avoid. Pulling the hue to ~152 keeps the tint unmistakably green at the
+     light end: in #e9f1ed the green channel leads red by 8 and blue trails
+     green by 4 — a eucalyptus, not a cream and not a mint.
+
+     Ordered by luminance the same way Ledger's ramp is: card lightest, then
+     canvas, then the hover fill, then the page background, then two border
+     steps. Components rely on that ordering, not on the numbers in the names.
+     Measured: 0.978 / 0.937 / 0.916 / 0.863 / 0.794 / 0.661. */
+  --color-canvas: #6e2019;
+  --color-ink-950: #5a1712;
+
+  /* The card surface. Ledger puts a pure #ffffff here; Hearth does not, and
+     this is the one place the two files disagree about a neutral rather than
+     about a hue.
+
+     Ledger's own argument is that a pure value "reads as unconsidered
+     precisely because it is the value you get by not choosing" — and then it
+     makes an exception for the card, because a dense table needs maximum
+     separation from the surface under it. Hearth has no dense table. Its cards
+     are large and mostly empty, which makes a paper-white panel the brightest
+     object on a quiet page, and it would leave #ffffff as the only untinted
+     value in a file where every other neutral carries the sage cast: the exact
+     incoherence Ledger warns about, reintroduced at the largest surface.
+
+     #fbfdfc is a 2/255 deviation — not visible as a color, visible as the
+     absence of glare. It is not free: every dark mark in this file loses about
+     2% of its contrast ratio against the card compared to pure white. That
+     cost is uniform, it is stated at each color below, and every value used as
+     text still clears 4.5:1 with margin after paying it. */
+  --color-ink-900: #fdfaf4;
+  --color-ink-850: #f6efe3;
+  --color-ink-800: #e6d9c6;
+  --color-ink-700: #cbb99f;
+
+  /* ---- NAVIGATION GROUND --------------------------------------------------
+     See ledger.css's matching block for why this family exists at the token
+     layer at all. Same roles, this register's own hue: the ground is Hearth's
+     own --color-paper (#153227, the deep green its body text is set in), so
+     the rail reads as the same material as the page rather than a borrowed
+     dark chrome.
+
+     Measured: fg 12.41:1 on the ground / 8.72:1 on the active row, fg-dim
+     7.32:1 / 5.15:1, accent 7.02:1 / 4.93:1. The accent is Hearth's teal
+     (--color-primary #237570) lifted for a dark ground -- unlifted it measures
+     2.54:1 there. Same treatment as Ledger's: lightness raised (OKLCH L 0.7724
+     from 0.5129), hue held (187.7 against 189.2, a 1.5 degree drift). */
+  --color-nav-bg: #3f0f0b;
+  --color-nav-bg-deep: #2c0a07;
+  --color-nav-fg: #f6e8d8;
+  --color-nav-fg-dim: #c0a08c;
+  --color-nav-hover: #521712;
+  --color-nav-active: #651d16;
+  --color-nav-border: #7a3128;
+  --color-nav-accent: #c8952f;
+
+  /* Deep evergreen, not black — the same refusal as Ledger's navy ink, in this
+     file's hue family. Hue 157 at 41% saturation sits between the neutrals
+     (150–156) and the accent (176), so the darkest thing on the page and the
+     most saturated thing on the page belong to one another. 13.55:1 on the
+     card. */
+  --color-paper: #24140f;
+
+  /* Secondary text: the same ink lifted and desaturated. 5.44:1 on the card,
+     5.22:1 on the canvas, 5.11:1 on the hover fill and 4.84:1 on the page
+     background — it clears AA as body text on every surface this file defines,
+     not only on the lightest one. */
+  --color-paper-dim: #6b5348;
+
+  /* ── INK ON THE GROUND ──────────────────────────────────────────────
+     Text that sits directly on the canvas rather than inside a card: a page
+     title, a section heading. Defaults to --color-paper, which is correct
+     for every register whose ground and panels are the same value.
+
+     漆 is the first where they are OPPOSITE — an oxblood ground under ivory
+     panels — so its page title was near-black on near-black. 夜 avoids the
+     problem by being dark everywhere, panels included. A register with two
+     dominant surfaces of opposite value needs two inks. */
+  --color-on-canvas: #fbeee4;
+  --color-on-canvas-dim: #d8b9a6;
+
+  /* Restrained accent: a muted teal, one step past the neutrals in the
+     direction they already lean (neutrals ~152, accent 176), so the accent
+     belongs to the palette rather than sitting on top of it. That is the
+     property that makes Ledger's blue work against its navy, and it is the
+     reason the accent is a teal rather than the clay the brief also allowed:
+     a clay accent would be a second warm red in a file that already spends
+     that hue on --color-clay, the negative/flagged status. A primary CTA in
+     the same hue family as "flagged" is a semantic collision no amount of
+     lightness separation fixes.
+
+     "Muted" is load-bearing here, not decorative language. Tailwind's stock
+     teals run 74–79% saturation and #0f766e is the value every generated
+     dashboard ships. This is 54%: enough chroma to read as a color on a CTA,
+     not enough to read as a highlighter on a page with four things on it.
+
+     Hue 176 also has to survive next to two colors it could be confused with.
+     --color-jade, the positive/verified status, is hue 144 — 32 degrees away,
+     and at 71% saturation against this accent's 54%, so a CTA never reads as
+     a success state. --color-info is hue 225, far enough that the two never
+     pair up.
+
+     Contrast, calculated: 5.34:1 on the card, 5.13:1 on the canvas, 5.02:1 on
+     the hover fill, 4.75:1 on the page background. Ledger's blue was held to
+     4.79:1 on its card and lands at 4.15:1 on its own page background; this
+     clears 4.5:1 as text on every surface in the file, which is the stricter
+     bar and the right one for a register where the accent is more often a
+     standalone link than a chart mark. */
+  --color-primary: #8c2a20;
+
+  /* Hover/pressed. Darkened by the same relative step Ledger uses between its
+     primary and primary-deep — relative luminance x0.57 (0.081 from 0.142,
+     against Ledger's 0.096 from 0.169) — so the state change carries the same
+     weight in both files instead of being eyeballed per set. 7.82:1 on the
+     card. */
+  --color-primary-deep: #6e2019;
+
+  /* Tinted fill for accent-soft surfaces. Sits just above the page background
+     in luminance (0.872 against 0.863), the same relationship Ledger's
+     primary-soft has to its own page background, so a soft accent panel reads
+     as a tint of the page rather than as a separate surface. Both text colors
+     still clear AA on it: paper-dim 4.88:1, primary 4.79:1. */
+  --color-primary-soft: #f7e6e2;
+
+  /* Text/icon color for content rendered on a --color-primary fill (CTA
+     buttons and links). Not #ffffff: the same off-white as --color-ink-900,
+     so the lightest thing on a CTA is the same lightest thing as everywhere
+     else in the file. Ledger sets this to #ffffff and its --color-ink-900 is
+     also #ffffff, so what that file actually encodes is "on-primary is the
+     lightest surface color" — under Hearth that value is #fbfdfc, and
+     following the principle rather than the literal hex is the point of
+     having a separate token.
+
+     Checked rather than assumed, because Ledger's comment asks for exactly
+     this check: #fbfdfc on #237570 measures 5.34:1, against 5.45:1 for pure
+     white. Both pass AA comfortably; the 0.11 difference buys surface
+     coherence and costs nothing legible. */
+  --color-on-primary: #fdfaf4;
+
+  /* Text/icon color for content rendered on any other sufficiently dark or
+     saturated fill that isn't --color-primary itself — --color-paper used as
+     a solid "current item" pill, or one of the status-bright colors used as an
+     avatar-chip background. Same value as --color-on-primary for the same
+     reason, and verified separately because it lands on a different set of
+     fills.
+
+     Worst case across every fill it actually meets is jade-bright, the
+     lightest of them: #fbfdfc on #147a3c is 5.30:1. The rest are further
+     clear — brass-bright 5.63:1, clay-bright 5.88:1, slate-bright 7.15:1,
+     info-bright 7.49:1, primary-deep 7.82:1, paper 13.55:1. Pure white would
+     add 0.11–0.29 to each of those and change nothing about whether they
+     pass. */
+  --color-on-dark: #fffdf9;
+
+  /* The status family below is byte-identical to ledger.css and must stay that
+     way. A user who learns that brass means "pending" in one style should not
+     have to relearn it in another; the style is the neutrals and the accent,
+     never the meaning. The rationale for each individual value lives in
+     ledger.css and is deliberately not restated here — a copied argument is
+     how two files start disagreeing.
+
+     What does change per style is the surface these are measured against.
+     Re-measured on Hearth's card (#fbfdfc) instead of Ledger's white, the
+     text-grade variants are: jade-bright 5.30:1, brass-bright 5.63:1,
+     clay-bright 5.88:1, clay-deep 4.96:1, slate 5.05:1, slate-bright 7.15:1,
+     info 5.22:1, info-bright 7.49:1. The non-bright variants remain
+     graphics-only exactly as in Ledger: jade 3.56:1, brass 4.09:1, clay
+     4.05:1 — all still above the 3:1 non-text minimum. */
+
+  /* status: pending / warning */
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+
+  /* status: positive / verified */
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+
+  /* status: negative / flagged */
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+
+  /* status: neutral / instant */
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+
+  /* spare categorical hue (donut 3rd slot, avatar variety) */
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+
+  /* The podium: gold, silver, bronze, on ranking surfaces and nowhere else —
+     unchanged from Ledger, and outside the status family for the reason stated
+     there (a place on a ranking is not a state).
+
+     On Hearth's tinted card these measure 4.42:1, 4.21:1 and 4.48:1, down from
+     4.52:1, 4.30:1 and 4.58:1 on Ledger's white — the uniform ~2% cost of the
+     off-white card, paid here rather than hidden. They are 14px icons on a
+     ranking row, where the applicable bar is the 3:1 non-text minimum, and the
+     property Ledger's tuning actually protected — the three being matched to
+     each other so the places differ by hue and not by weight — survives
+     exactly, because all three shifted by the same factor. */
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+
+  /* Chart-fill aliases — kept for chart components that reference the -chart
+     names explicitly. Same values as the status hues they alias, per the rule
+     above that status meaning does not vary by style. */
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+}
+
+/* ============================================================================
+   HEARTH -- the warm studio register.  Beauty / salon, education / tuition,
+   F&B.  See ledger.css's matching block for why these three token files stopped
+   sharing one craft block on 2026-08-20.
+
+   Keyed to how people-facing booking software actually looks (Fresha): rounded
+   geometric type, full-pill controls, generous whitespace, soft shadows in
+   place of borders, and a warm off-white ground rather than a cool clinical
+   one.  Every axis below is the deliberate opposite of Ledger's.
+   ============================================================================ */
+:root {
+  color-scheme: light;
+
+  /* ---- TYPE AXIS: rounded geometric --------------------------------------
+     Nunito is loaded in app/[locale]/layout.tsx.  Rounded terminals and a tall
+     x-height are what make a booking screen read as friendly rather than
+     administrative. */
+  /* Deliberately NOT a webfont for CJK. 「宽松·温和、好读」 is best served by
+     the face the customer's own machine already renders everything else in --
+     PingFang on a Mac or phone, 微软雅黑 on Windows. Both are humanist and
+     soft, which is the register, and it costs no download. The other two
+     styles depart from this; this one is the familiar ground they depart
+     from. */
+  --font-ui: var(--font-rounded-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+
+  /* ── DISPLAY FACE ───────────────────────────────────────────────────
+     What headings are set in, when a register wants them set in something
+     else. Defaults to --font-ui, so this is inert here.
+
+     Added 2026-08-23 because type CONTRAST was the last flat axis: all
+     sixteen registers set a heading and a table cell in the same face.
+     rail-nav.tsx was already reading this token and finding nothing. */
+  --font-display: var(--font-ui);
+  /* No mono anywhere in this register: a monospaced figure is a precision
+     signal, and precision is Ledger's job, not this one's. */
+  --font-numeric: var(--font-rounded-latin), "PingFang SC", system-ui, sans-serif;
+
+  /* Rounded faces read lighter than a grotesque at the same nominal weight, so
+     every step sits above Ledger's to land at the same PERCEIVED weight. */
+  --fw-regular: 400;
+  --fw-medium: 600;
+  --fw-semibold: 700;
+  --fw-display: 800;
+
+  /* Positive, not negative.  Tight tracking is a precision signal; a warm
+     register wants its letters to breathe. */
+  --tracking-body: 0em;
+  --tracking-sm: 0.004em;
+  --tracking-title: -0.012em;
+  --tracking-title-lg: -0.018em;
+  --tracking-label: 0.01em;
+  --label-transform: none;
+
+  /* Type scale: a step larger than Ledger's at every size.  Fewer things on
+     screen, each one readable across a salon counter. */
+  --text-micro: 11px;
+  --text-xs: 12px;
+  --text-sm: 13.5px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-title: 23px;
+  --text-hero: 40px;
+  --leading-tight: 1.3;
+  --leading-body: 1.6;
+
+  /* ---- SHAPE AXIS: soft, with true pills ---------------------------------- */
+  --radius-xs: 6px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-control: 999px;
+  --radius-pill: 999px;
+
+  /* ---- DENSITY AXIS: airy ------------------------------------------------- */
+  --pad-card: 22px;
+  --pad-card-lg: 28px;
+  --pad-control-x: 18px;
+  --pad-control-y: 10px;
+  /* 14px, not 16px: measured against the three-column style comparison, where
+     all three registers render the same four-column money table side by side at
+     ~340px each. At 16px Hearth was the only one that overflowed its own card
+     (347px of table in a 337px viewport), leaving the status column cut off on
+     the first screen a customer uses to choose a style. Still the roomiest of
+     the three by a clear margin (Ledger 10px, Blueprint 13px). */
+  --pad-cell-x: 14px;
+  --pad-cell-y: 14px;
+  --gap-stack: 18px;
+  --gap-inline: 14px;
+  --row-h: 52px;
+  --control-h: 42px;
+
+  /* ---- ELEVATION AXIS: soft shadow, no border ----------------------------
+     The inverse of Ledger.  A Hearth card is separated from the canvas by a
+     diffuse shadow and carries no border at all (--border-card-width: 0),
+     which is what makes a screen of them read as soft objects resting on a
+     surface rather than as ruled compartments cut into one. */
+  --border-card-width: 0px;
+  --shadow-card: 0 2px 4px rgba(30, 8, 6, 0.28), 0 10px 26px rgba(30, 8, 6, 0.22);
+  --shadow-raised: 0 4px 10px rgba(30, 8, 6, 0.32), 0 16px 36px rgba(30, 8, 6, 0.28);
+  --shadow-overlay: 0 24px 60px rgba(30, 8, 6, 0.48);
+
+  /* ── SURFACE ────────────────────────────────────────────────────────
+     · surface-image — A layer painted over a card's own colour: grain, a gradient wash, a hairline grid. `none` for every register that shipped before this line existed.
+     · surface-blur — backdrop-filter for the card. The whole of Glassmorphism lives here, and it needs the surface colour to be translucent to show.
+     · surface-border-style — solid / dashed / double. A dashed card is a different object from a solid one at the same border width.
+     · canvas-image — The same idea for the page ground rather than the card: a mesh, a grid, a paper texture.
+
+     All four are inert here. A register that wants glass, grain or a
+     dashed edge overrides them; everything else keeps the flat rectangle
+     it already had. Consumed by .ds-card / .ds-raised / .ds-overlay in
+     app/globals.css, so one line here reaches every component. */
+  --surface-image: none;
+  --surface-blur: none;
+  --surface-border-style: solid;
+  --canvas-image: none;
+
+  --border-subtle: rgba(21, 50, 39, 0.07);
+  --border-strong: rgba(21, 50, 39, 0.12);
+
+  --shadow-hue: 21, 50, 39;
+  --hairline: 1px;
+
+  /* Slower and softer than Ledger's snap: an unhurried register. */
+  --ease-out-quad: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 160ms;
+  --dur: 240ms;
+
+  /* ---- THE shadcn/ui CONTRACT ---------------------------------------------
+     WHY THIS BLOCK IS HERE, AND WHY IT IS THE HIGHEST-LEVERAGE THING IN THE
+     TOKEN FILE.
+
+     This project already IS a shadcn project -- components.json exists and
+     app/globals.css declares the full shadcn variable contract. But that
+     contract lived ONLY at :root for the marketing site, and these three
+     customer styles declared none of it. The consequence was quiet and large:
+     any shadcn/ui component, any block from 21st.dev, any layout from the
+     wider ecosystem, dropped into a customer's page, rendered in the MARKETING
+     SITE's colours instead of the customer's chosen style. Which meant the
+     component library could only ever contain components hand-built against
+     this file's own vocabulary -- ten of them.
+
+     Mapping the contract onto the tokens that already exist changes that in one
+     block: every component written against shadcn's variables now re-themes
+     itself per customer style for free, because custom properties inherit and
+     the nearest defining ancestor wins. Ten blocks becomes an ecosystem.
+
+     These are ALIASES, not new colours. Nothing here invents a value -- each
+     line points at a token this file already defines, so the two vocabularies
+     cannot drift apart and a style is still edited in exactly one place. */
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-ink-900);
+  --card-foreground: var(--color-paper);
+  --popover: var(--color-ink-900);
+  --popover-foreground: var(--color-paper);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-ink-850);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-clay);
+  --destructive-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+  /* shadcn's chart palette. Mapped onto the four status colours this system
+     already uses plus two neutrals, so a chart pulled off any registry speaks
+     the same colour language as the StatusDots beside it. */
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-jade);
+  --chart-3: var(--color-brass);
+  --chart-4: var(--color-clay);
+  --chart-5: var(--color-slate);
+  /* shadcn's sidebar block -- pointed at the --color-nav-* family, which is
+     the same idea under a different name. This is what makes shadcn's
+     dashboard layouts land correctly inside a generated system. */
+  --sidebar: var(--color-nav-bg);
+  --sidebar-foreground: var(--color-nav-fg);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-bg);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-fg);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
+}
+
+@media (min-resolution: 192dpi) {
+  :root {
+    --hairline: 0.5px;
+  }
+}
+
+html {
+  letter-spacing: var(--tracking-body);
+}
+
+/* The weight ceiling, enforced rather than only written down.
+   <b> and <strong> default to 700 — 900 in this stack — which is heavier than
+   anything the token block above allows, and heavier than Linear, Vercel or
+   Mercury use anywhere. Mercury remaps <b> for exactly this reason. */
+b,
+strong {
+  font-weight: var(--fw-semibold);
+}
+
+/* Tabular figures belong on numeric columns, not on running prose — in body
+   text they open awkward gaps around "1". Vercel scopes it to a utility rather
+   than setting it on html. Component-layer classes (.figure, .figure-money)
+   opt into this. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  background: var(--color-ink-950);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: none;
+  /* Two-layer ring: a surface-colored gap then the accent, so the ring reads
+     cleanly on top of a row hover or a colored fill. Vercel ships exactly this
+     shape as --ds-focus-ring. Both layers are keyed to Hearth's own tokens —
+     the gap is this file's card color, the ring is this file's teal — because
+     a ring carrying another set's navy would be the one blue object on a green
+     page. */
+  box-shadow:
+    0 0 0 2px var(--color-ink-900),
+    0 0 0 4px var(--color-primary);
+  /* 6px where Ledger uses 4px. This register's radii run more generous
+     throughout, and the focus ring is the one radius this token file owns
+     directly, so it carries that bias rather than declaring a radius token
+     that only exists in one of the three sets — a token the other sets do not
+     define is a token components cannot safely use. */
+  border-radius: var(--radius-control);
+}
+
+/* Hearth is an original design for this design system, not a port: there is no
+   upstream palette to attribute. Values were chosen against the brief for
+   client-facing service businesses and every contrast ratio quoted above was
+   computed with the WCAG relative-luminance formula against the specific
+   surface named, not carried over from another file's measurements. */

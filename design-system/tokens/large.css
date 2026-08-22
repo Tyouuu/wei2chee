@@ -34,6 +34,18 @@
      fills it with the accent instead. Declared everywhere so record-table.tsx
      never has to know which style it is inside. */
   --color-table-head-bg: var(--color-ink-900);
+
+  /* ── TABLE SURFACE ──────────────────────────────────────────────────
+     What a record table's BODY sits on. `transparent` in every register
+     that shipped before 漆, because for all of them the canvas and the card
+     are within a few percent of each other and a transparent table looked
+     like a table on paper.
+
+     漆 broke that by making the ground a colour: the header row has
+     --color-table-head-bg and stayed ivory, and every data row showed
+     oxblood through near-black text. Found by looking at a screenshot, not
+     by any test. A register whose ground is not near-white must set this. */
+  --color-table-bg: transparent;
   --color-table-head-fg: var(--color-paper-dim);
   /* The neutral family, blue-tinted — genuinely tinted, not a hint of one. Every
      step below sits at OKLCH hue ~261-265, matching `--ink`'s own hue in the
@@ -126,6 +138,18 @@
      Re-measured after the 2026-08-22 retint: 4.88:1 on the canvas, so it still
      clears AA as body text. */
   --color-paper-dim: #517563;
+
+  /* ── INK ON THE GROUND ──────────────────────────────────────────────
+     Text that sits directly on the canvas rather than inside a card: a page
+     title, a section heading. Defaults to --color-paper, which is correct
+     for every register whose ground and panels are the same value.
+
+     漆 is the first where they are OPPOSITE — an oxblood ground under ivory
+     panels — so its page title was near-black on near-black. 夜 avoids the
+     problem by being dark everywhere, panels included. A register with two
+     dominant surfaces of opposite value needs two inks. */
+  --color-on-canvas: var(--color-paper);
+  --color-on-canvas-dim: var(--color-paper-dim);
 
   /* Pine, set 2026-08-22.  Was #1a3f8f -- a navy carried over verbatim when this
      file was derived from blueprint.css, which left the two ONE DEGREE apart in
