@@ -32,6 +32,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
+  grain: styles.grain,
 };
 
 /** Mirrors PAGE_KEYS. Kept as a plain array here rather than imported so this

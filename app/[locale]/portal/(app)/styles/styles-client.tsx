@@ -30,6 +30,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
+  grain: styles.grain,
 };
 
 
@@ -50,6 +51,7 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   ink: "Ink",
   glass: "Glass",
   night: "Night",
+  grain: "Grain",
 };
 
 /**

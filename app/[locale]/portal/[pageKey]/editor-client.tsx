@@ -74,6 +74,7 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
+  grain: styles.grain,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";

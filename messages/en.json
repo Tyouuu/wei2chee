@@ -124,6 +124,10 @@
       "night": {
         "label": "Night",
         "description": "The one with the lights off. A near-black page, cards a step lighter than it, borders at 8% white, and one orange accent that reads as lit rather than painted. Across the other thirteen registers canvas luminance ran 0.82 to 0.97 — every page this product could build was a white page. This is the first that is not. For workshops, studios, gyms, bars, events, print shops: trades whose customers judge them on how things look. Wrong for paperwork that gets printed and signed."
+      },
+      "grain": {
+        "label": "Grain",
+        "description": "The one you can feel. Real noise on the page and slightly more of it on each card, so a card reads as a separate sheet laid on top rather than a hole cut in it. One flat blue, no gradients, no shadows, square corners. Of fourteen registers thirteen are flat and one is glass; this is the first with a texture. It shares paper with 印 and 墨 but those are serif — a form and a page — and this is sans, a printed thing. For design, craft, coffee, independent brands, print shops."
       }
     },
     "sample": {
@@ -408,7 +412,8 @@
         "brut": "Brut · Thick black, hard shadow",
         "ink": "Ink · Space, serif, vermilion",
         "glass": "Glass · translucent, blurred behind, indigo",
-        "night": "Night · near-black, lit orange"
+        "night": "Night · near-black, lit orange",
+        "grain": "Grain · textured, one flat blue"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",

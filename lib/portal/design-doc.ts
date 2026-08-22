@@ -210,6 +210,24 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
   },
+  grain: {
+    mood: "摸得到的那一个。纸有颗粒,卡片的颗粒比底还重一点,像一张压在纸上的印刷品。一个平的蓝,不做渐层。",
+    facts: "底色暖白 #eeebe3 带噪点 · 卡片 #faf8f2 噪点更重 · 无阴影 · 圆角 0 · 边框 1px · 正文 15px 无衬线 · 一个平色 #2b4bd6",
+    prefer: {
+      // Rules, because a printed sheet separates columns with rules. A zebra
+      // band on a textured ground reads as a smudge.
+      RecordTable: "grid",
+      HeroCard: "full",
+      WorkflowStrip: "numbered",
+      // A flat spot colour is either printed or it is not -- so the button is
+      // filled, never outlined and never gradient.
+      ActionButton: "solid",
+      Tag: "solid",
+      Divider: "tight",
+      TrendChart: "bar",
+    },
+    avoid: ["阴影", "渐层", "圆角", "第二个强调色", "纯黑的字"],
+  },
   night: {
     mood: "关了灯的那一个。整页近黑,卡片比页面亮一点点,左上角一小片很淡的蓝光。强调色是会发亮的橘。",
     facts: "底色 #0d1117 · 卡片 #161b22 · 边框白色 8% · 正文 #e8edf4 13px · 行高 32px · 圆角 3px · 强调色 #ff7a45",

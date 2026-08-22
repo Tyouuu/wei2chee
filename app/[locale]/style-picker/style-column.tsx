@@ -41,7 +41,10 @@ export type StyleName =
   // The one that is not a white page. Canvas luminance across the other
   // thirteen ran 0.82-0.97 with nothing below it; a workshop, a studio or a
   // gym had no register that looked like them. See tokens/night.css.
-  | "night";
+  | "night"
+  // The one you can feel. Thirteen registers were flat and 玻璃 was glass;
+  // --surface-image had no register using it. See tokens/grain.css.
+  | "grain";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -74,6 +77,7 @@ export const STYLE_ORDER: StyleName[] = [
   "ink",
   "glass",
   "night",
+  "grain",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -91,6 +95,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
+  grain: styles.grain,
 };
 
 /**
@@ -132,6 +137,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
+  grain: styles.grain,
 };
 
 export function StyleColumn({
