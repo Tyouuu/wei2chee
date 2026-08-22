@@ -53,8 +53,12 @@ describe("the catalogue itself", () => {
     expect(b).toContain("佣金");
   });
 
-  it("names the always-on three and no others", () => {
-    expect(ALWAYS_MODULES).toEqual(["dashboard", "customers", "payments"]);
+  it("names the always-on modules and no others", () => {
+    // 官网 joined them on 2026-08-22. It is free for the same reason the other
+    // three are: a system with no page the business's own customers can see is
+    // missing the half of the product the founder can actually demonstrate,
+    // and it is not a choice the model should be spending a slot on.
+    expect(ALWAYS_MODULES).toEqual(["dashboard", "customers", "payments", "website"]);
   });
 
   it("puts both the free and the choosable modules in the prompt", () => {
@@ -66,9 +70,9 @@ describe("the catalogue itself", () => {
 });
 
 describe("normalizeModules", () => {
-  it("always returns the three every system gets, even from an empty answer", () => {
+  it("always returns the modules every system gets, even from an empty answer", () => {
     const out = normalizeModules([]);
-    expect(out.map((m) => m.key)).toEqual(["dashboard", "customers", "payments"]);
+    expect(out.map((m) => m.key)).toEqual(["dashboard", "customers", "payments", "website"]);
   });
 
   it("drops keys that are not in the catalogue", () => {

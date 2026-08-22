@@ -52,7 +52,11 @@ export type ModuleShape =
   | "reconcile"
   | "leaderboard"
   | "catalog"
-  | "report";
+  | "report"
+  /** The page the business's own CUSTOMERS see. Not a shell page: no rail, no
+   *  in-app chrome, and the one place in the product where a stranger is the
+   *  reader. See buildWebsite in industry-template.ts. */
+  | "landing";
 
 export type ModuleArchetype = {
   /** Stable identifier. Becomes `project_pages.page_key`, so it can never
@@ -180,6 +184,21 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
     blurb: "还有多少货、什么快没了、什么压太久。",
     shape: "catalog",
   },
+
+  // --- The one page that faces OUTWARD ----------------------------------
+  // Last on purpose. Every key above is somewhere the OWNER works; this is the
+  // only one a stranger reads, so it sits at the end of the rail rather than
+  // in the middle of the day's work -- and appending it leaves the reading
+  // order of every system built before today exactly as it was (`sortPages`
+  // sorts by this array's own index).
+  {
+    key: "website",
+    label: "官网",
+    blurb:
+      "客人在外面看到的那一页：你做什么、做过什么、怎么找你。上面的询价表格填了，直接变成系统里的一张单。",
+    shape: "landing",
+    always: true,
+  },
 ];
 
 /** Fast lookup by key. */
@@ -230,14 +249,14 @@ export function catalogForPrompt(): string {
  * ceiling.
  */
 export const DEFAULT_MODULES_FOR_INDUSTRY: Record<string, string[]> = {
-  beauty: ["dashboard", "customers", "bookings", "payments"],
-  education: ["dashboard", "customers", "bookings", "payments"],
-  fnb: ["dashboard", "customers", "orders", "payments"],
-  retail: ["dashboard", "customers", "orders", "inventory", "payments"],
-  wholesale: ["dashboard", "customers", "quotations", "orders", "inventory", "payments"],
-  renovation: ["dashboard", "customers", "quotations", "projects", "payments"],
-  services: ["dashboard", "customers", "quotations", "projects", "payments"],
-  other: ["dashboard", "customers", "quotations", "projects", "payments"],
+  beauty: ["dashboard", "customers", "bookings", "payments", "website"],
+  education: ["dashboard", "customers", "bookings", "payments", "website"],
+  fnb: ["dashboard", "customers", "orders", "payments", "website"],
+  retail: ["dashboard", "customers", "orders", "inventory", "payments", "website"],
+  wholesale: ["dashboard", "customers", "quotations", "orders", "inventory", "payments", "website"],
+  renovation: ["dashboard", "customers", "quotations", "projects", "payments", "website"],
+  services: ["dashboard", "customers", "quotations", "projects", "payments", "website"],
+  other: ["dashboard", "customers", "quotations", "projects", "payments", "website"],
 };
 
 export const DEFAULT_MODULE_SET = DEFAULT_MODULES_FOR_INDUSTRY.other;

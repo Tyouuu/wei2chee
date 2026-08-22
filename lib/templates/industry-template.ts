@@ -686,6 +686,186 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
   ];
 }
 
+/**
+ * 官网 — the only page in the system whose reader is a stranger.
+ *
+ * WHY IT IS PART OF THE SYSTEM AND NOT A SEPARATE PRODUCT.
+ *
+ * The founder's own next step was 「官网表格 → 系统出单」, and his own reaction
+ * to the phrase was 「这个我一直不懂是什么来的」 -- which is the correct reaction,
+ * because nothing on either side of that arrow shows it. A form is a form and a
+ * row is a row; the arrow is invisible.
+ *
+ * Building the website as one more page of the same system, in the same editor,
+ * in the same eight registers, is what makes the arrow visible: the customer
+ * changes a heading on their website with the same press they use on their
+ * dashboard, and the enquiry block says out loud which of THEIR pages a
+ * submission becomes a record in.
+ *
+ * NO RAIL, AND THAT IS THE WHOLE DIFFERENCE IN THE LAYOUT. Every other page is
+ * a SystemShell with a navigation column, because the reader is the owner
+ * moving around their own system. Nobody navigates a small business's website
+ * with a sidebar of internal modules -- 收款 and 对账 are not things a customer
+ * should ever see. So this shape returns a flat stack and buildPageLayout skips
+ * the shell for it.
+ *
+ * FIVE BLOCKS, IN THE ORDER A STRANGER READS.
+ *   1. What you do and how to reach you       (SiteHero)
+ *   2. What you actually sell                 (InfoRows)
+ *   3. What happens after they message         (WorkflowStrip -- their own
+ *      workflow, which the analysis already produced, so the website and the
+ *      系统 describe one business rather than two)
+ *   4. The form that becomes a record          (EnquiryForm)
+ *   5. How to find you                         (InfoRows)
+ *
+ * It is short on purpose. A landing page for a Malaysian SME competes with a
+ * Facebook page, and the thing that wins is answering "what do you do, and how
+ * do I ask you" above the fold.
+ */
+function buildWebsite(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
+  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const labels = labelsFromPages(industry.labels, pages);
+  const brand = displayBusinessName(ctx);
+  const stages = workflowStages(ctx);
+
+  // Which of THEIR pages an enquiry becomes. The sell-side page the business
+  // actually has, in the business's own word for it -- a salon's enquiry is a
+  // 预约, a wholesaler's is a 订单, a contractor's is a 报价单. Falls back to
+  // the customer list, which every system has, rather than to a page the
+  // business does not own.
+  const sellSide = ["quotations", "bookings", "orders", "projects"].find((k) =>
+    pages.some((p) => p.key === k),
+  );
+  const landsIn = sellSide
+    ? pageLabel(pages.find((p) => p.key === sellSide) ?? { key: sellSide }, labels)
+    : labels.customer;
+
+  // NOT ctx.analysis.summary, and this is the one thing about this page that
+  // is easy to get wrong. That line is the AI's diagnosis of what is BROKEN in
+  // the business -- 「你的报价发出去之后没人跟，钱卡在确认这一步」 -- which is
+  // exactly right on the dashboard and a disaster on a page strangers read. The
+  // first draft shipped it to the public page; caught by looking at the render,
+  // not by any test, because it was correct code carrying the wrong audience's
+  // words.
+  //
+  // What a stranger needs instead is what the business SELLS, so the pitch is
+  // built from the same three services listed below it, plus one line of the
+  // trade's own promise. Every word of it is meant to be retyped by the owner.
+  const services = SERVICE_HINTS[industry.slug] ?? SERVICE_HINTS.other;
+  const pitch = `${services.map((x) => x.label).join("、")}。${
+    TRADE_PROMISE[industry.slug] ?? TRADE_PROMISE.other
+  }`;
+
+  return [
+    node("SiteHero", "website-hero", {
+      // The trade name only, no slash: several of them are stored as
+      // 「装修/承包商」 and an eyebrow reading 「马来西亚 · 装修/承包商」 reads
+      // like a database field, not like a business.
+      eyebrow: `马来西亚 · ${industry.name_zh.split("/")[0].trim()}`,
+      headline: brand,
+      sub: pitch,
+      primaryLabel: "WhatsApp 问价",
+      primaryHref: "#",
+      secondaryLabel: "看我们做过什么",
+      secondaryHref: "#",
+      proof: [
+        { value: "10 年", label: "做这一行" },
+        { value: "24 小时", label: "内回复" },
+        { value: "巴生谷", label: "服务范围" },
+      ],
+    }),
+    node("InfoRows", "website-services", {
+      heading: "我们做什么",
+      framed: true,
+      rows: services.map((r) => ({ label: r.label, value: r.value, icon: r.icon })),
+    }),
+    workflowStrip("website-flow", "找我们之后会怎么走", stages),
+    node("EnquiryForm", "website-form", {
+      heading: `留个电话，我们回你`,
+      blurb: "填三格就好。我们看到会直接 WhatsApp 你，不会打推销电话。",
+      fields: [
+        { label: "怎么称呼", placeholder: "陈先生", kind: "text" },
+        { label: "电话 / WhatsApp", placeholder: "012-345 6789", kind: "phone" },
+        { label: "想做什么", placeholder: "三房翻新，想问大概多少", kind: "long" },
+      ],
+      submitLabel: "送出",
+      landsIn,
+      note: "通常一天内回。",
+    }),
+    node("InfoRows", "website-contact", {
+      heading: "怎么找我们",
+      framed: true,
+      rows: [
+        { label: "WhatsApp", value: "012-345 6789", icon: "phone" },
+        { label: "地址", value: "Taman Desa, Kuala Lumpur", icon: "place" },
+        { label: "营业时间", value: "星期一至六 9am–6pm", icon: "time" },
+      ],
+    }),
+  ];
+}
+
+/** One line of what the business promises, written the way a Malaysian SME
+ *  actually talks: a concrete commitment, not an adjective. 「专业可靠」 says
+ *  nothing; 「报价前先上门看，做完才收尾款」 is something a customer can hold
+ *  them to, which is what makes a stranger message. */
+const TRADE_PROMISE: Record<string, string> = {
+  renovation: "报价前先上门看，做完才收尾款。",
+  beauty: "先讲清楚做什么、多少钱，才动手。",
+  fnb: "WhatsApp 落单，做好通知你来拿。",
+  retail: "现货当天拿，没货的可以订。",
+  wholesale: "整箱整板都有，量大另外报价。",
+  education: "第一堂可以先试，不合适不用继续。",
+  services: "先报价，你同意了才开工。",
+  other: "先讲清楚，再开工。",
+};
+
+/** What each trade sells, in three lines. Deliberately concrete: a stranger
+ *  scanning a page decides from nouns ("三房翻新"), not from adjectives
+ *  ("专业可靠"). Every one of these is meant to be rewritten by the owner --
+ *  the point is that the page is never blank and never generic-agency. */
+const SERVICE_HINTS: Record<string, { label: string; value: string; icon: string }[]> = {
+  renovation: [
+    { label: "住宅翻新", value: "三房、店屋、旧屋翻新", icon: "work" },
+    { label: "厨房 / 浴室", value: "拆旧、防水、瓷砖、橱柜", icon: "work" },
+    { label: "商业装修", value: "店面、办公室、餐厅", icon: "company" },
+  ],
+  beauty: [
+    { label: "剪发 / 染发", value: "剪、染、护理", icon: "person" },
+    { label: "美容护理", value: "脸部、身体护理", icon: "person" },
+    { label: "新娘造型", value: "试妆 + 当天跟妆", icon: "tag" },
+  ],
+  fnb: [
+    { label: "堂食", value: "招牌菜、套餐", icon: "company" },
+    { label: "外带 / 外送", value: "WhatsApp 落单", icon: "phone" },
+    { label: "包场 / 到会", value: "生日、公司活动", icon: "date" },
+  ],
+  retail: [
+    { label: "现货", value: "店里拿得到的货", icon: "tag" },
+    { label: "订货", value: "没货的可以订", icon: "file" },
+    { label: "批发价", value: "量大另外报价", icon: "money" },
+  ],
+  wholesale: [
+    { label: "批发供货", value: "整箱、整板", icon: "company" },
+    { label: "账期", value: "熟客可谈月结", icon: "money" },
+    { label: "送货", value: "巴生谷内自家车队", icon: "place" },
+  ],
+  education: [
+    { label: "补习班", value: "小班 / 一对一", icon: "person" },
+    { label: "课程", value: "按科目、按年级", icon: "file" },
+    { label: "试堂", value: "第一堂可以先试", icon: "date" },
+  ],
+  services: [
+    { label: "上门服务", value: "预约时间上门", icon: "place" },
+    { label: "维修 / 保养", value: "报价后才动工", icon: "work" },
+    { label: "长期合约", value: "按月、按年", icon: "file" },
+  ],
+  other: [
+    { label: "主要服务", value: "改成你做的第一件事", icon: "work" },
+    { label: "第二项", value: "改成第二件", icon: "file" },
+    { label: "第三项", value: "改成第三件", icon: "tag" },
+  ],
+};
+
 function buildCustomers(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
@@ -1339,7 +1519,12 @@ const BUILDERS: Record<
   payments: buildPayments,
   bookings: buildBookings,
   orders: buildOrders,
+  website: buildWebsite,
 };
+
+/** Pages that are NOT wrapped in the app shell. Today that is exactly one: the
+ *  page a business's own customers read. See buildWebsite for why. */
+const SHELL_LESS = new Set(["website"]);
 
 /**
  * The one entry point. Returns a complete Puck `Data` for one page of one
@@ -1464,6 +1649,14 @@ export function buildPageLayout(
           refs,
           pageKey,
         );
+
+  // 官网 is not a shell page. `buildWebsite` returns no rail at all, so what
+  // came back as `rail` above is its first real block -- putting that in a
+  // sidebar slot would file the hero into a 240px navigation column. A
+  // business's website does not have 收款 and 对账 down the side of it.
+  if (SHELL_LESS.has(pageKey)) {
+    return { root: {}, content: [rail, ...rest] } as unknown as Data;
+  }
 
   // The page is ONE SystemShell holding two slots, not a flat stack. Puck's
   // canvas stacks its `content` vertically, so a flat list put the full-height

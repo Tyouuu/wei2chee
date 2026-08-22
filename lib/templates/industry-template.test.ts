@@ -47,8 +47,20 @@ const layoutOf = (ctx: BusinessContext, key: (typeof PAGE_KEYS)[number], locale?
 const contentOf = (ctx: BusinessContext, key: (typeof PAGE_KEYS)[number], locale?: string) =>
   flatten(layoutOf(ctx, key, locale).content);
 
+/**
+ * The pages the OWNER works in -- everything except 官网.
+ *
+ * 官网 is the page a business's own customers read, so three of the guarantees
+ * below deliberately do not hold for it: it has no navigation rail (nobody
+ * browses a shop's website by its internal modules), it is not wrapped in the
+ * app shell, and it has no RecordTable (a stranger is not shown the ledger).
+ * Kept as an explicit exception list rather than softening the assertions, so
+ * a SECOND page that quietly stopped having a rail would still fail here.
+ */
+const SHELL_PAGES = PAGE_KEYS.filter((k) => k !== "website");
+
 describe("buildPageLayout", () => {
-  it("builds every one of the five pages with real content", () => {
+  it("builds every one of the pages with real content", () => {
     for (const key of PAGE_KEYS) {
       const content = contentOf(renovation, key);
       expect(content.length, `${key} should not be empty`).toBeGreaterThan(2);
@@ -109,18 +121,47 @@ describe("buildPageLayout", () => {
   // signed up without ever answering the questionnaire must still get a
   // working system, never a blank canvas.
   it("still produces a complete system with no context at all", () => {
-    for (const key of PAGE_KEYS) {
+    for (const key of SHELL_PAGES) {
       const content = contentOf({}, key);
       expect(content.length, `${key} should not be empty`).toBeGreaterThan(2);
       expect(content.some((n) => n.type === "RecordTable")).toBe(true);
     }
   });
 
+  // 官网 with nothing known about the business still has to be a real page:
+  // a headline, something it sells, what happens next, and the form that is
+  // the whole reason the page exists.
+  it("builds a website out of nothing but the fallback trade", () => {
+    const content = contentOf({}, "website");
+    expect(content.map((n) => n.type)).toEqual([
+      "SiteHero",
+      "InfoRows",
+      "WorkflowStrip",
+      "EnquiryForm",
+      "InfoRows",
+    ]);
+  });
+
+  // The arrow the whole page exists to draw. An enquiry has to say which of
+  // THIS business's pages it becomes -- and it has to be a page they own.
+  it("points the enquiry form at a page the business actually has", () => {
+    const form = contentOf(renovation, "website").find((n) => n.type === "EnquiryForm");
+    expect(form!.props.landsIn).toBe("报价单");
+
+    const salon = contentOf(renovation, "website", "zh");
+    expect(salon.length).toBeGreaterThan(0);
+  });
+
   it("gives every page the same navigation, so the five read as one system", () => {
-    for (const key of PAGE_KEYS) {
+    for (const key of SHELL_PAGES) {
       const rail = contentOf(renovation, key).find((n) => n.type === "RailNav");
       expect(rail, `${key} has no RailNav`).toBeDefined();
-      expect((rail!.props.items as unknown[]).length).toBe(5);
+      // One entry per page the business actually has, rather than a magic
+      // number: the set grew from five to six the day 官网 was added, and a
+      // hardcoded count fails for the right reason but says the wrong thing.
+      expect((rail!.props.items as unknown[]).length, key).toBe(
+        PAGES_FOR_INDUSTRY.renovation.length,
+      );
     }
   });
 
@@ -136,7 +177,7 @@ describe("buildPageLayout", () => {
   // in the same vertical stack as the page content pushes that content a whole
   // screen below the fold.
   it("wraps every page in one shell, with the nav in the sidebar slot", () => {
-    for (const key of PAGE_KEYS) {
+    for (const key of SHELL_PAGES) {
       const top = layoutOf(renovation, key).content;
       expect(top, key).toHaveLength(1);
       expect(top[0].type).toBe("SystemShell");
@@ -144,6 +185,14 @@ describe("buildPageLayout", () => {
       expect(sidebar.map((n) => n.type), key).toEqual(["RailNav"]);
       expect((top[0].props.main as Node[]).some((n) => n.type === "RailNav")).toBe(false);
     }
+  });
+
+  // ...and 官网 is the one page that is NOT wrapped, which is the whole
+  // difference between a page the owner works in and a page a stranger reads.
+  it("leaves the website out of the shell, with no rail anywhere in it", () => {
+    const top = layoutOf(renovation, "website").content;
+    expect(top.some((n) => n.type === "SystemShell")).toBe(false);
+    expect(contentOf(renovation, "website").some((n) => n.type === "RailNav")).toBe(false);
   });
 });
 

@@ -6,6 +6,8 @@ import { HeroCard } from "@/design-system/components/hero-card";
 import { Avatar } from "@/design-system/components/avatar";
 import { RecordTable } from "@/design-system/components/record-table";
 import { Inline } from "@/design-system/editor/inline-text";
+import { SiteHero } from "@/design-system/components/site-hero";
+import { EnquiryForm } from "@/design-system/components/enquiry-form";
 import { TableFieldEditor } from "@/design-system/editor/table-field";
 import { type TableModel } from "@/lib/portal/table-model";
 import { DatePicker } from "@/design-system/components/date-picker";
@@ -178,6 +180,27 @@ type Components = {
     navTone?: "dark" | "light" | "deep";
   };
   PageHeader: { title: string; subtitle?: string };
+  // --- 官网 (shape: "landing") ------------------------------------------
+  // The only two components in the catalogue whose reader is a STRANGER
+  // rather than the owner. See site-hero.tsx and enquiry-form.tsx.
+  SiteHero: {
+    eyebrow?: string;
+    headline: string;
+    sub?: string;
+    primaryLabel?: string;
+    primaryHref?: string;
+    secondaryLabel?: string;
+    secondaryHref?: string;
+    proof?: { value: string; label: string }[];
+  };
+  EnquiryForm: {
+    heading: string;
+    blurb?: string;
+    fields?: { label: string; placeholder?: string; kind?: "text" | "phone" | "long" }[];
+    submitLabel?: string;
+    landsIn?: string;
+    note?: string;
+  };
   EmptyState: { variant: "empty" | "filtered" | "cleared"; title: string; description?: string };
   StatusDot: { tone: "positive" | "warning" | "negative" | "neutral"; label: string };
   HeroCard: {
@@ -319,6 +342,11 @@ export const puckConfig: Config<Components> = {
   // customer is trying to DO -- show information, let someone fill something
   // in, move around the system -- not by what kind of React component it is.
   categories: {
+    site: {
+      title: "官网(客人看的)",
+      components: ["SiteHero", "EnquiryForm"],
+      defaultExpanded: true,
+    },
     content: {
       title: "内容展示",
       components: ["PageHeader", "HeroCard", "SmallStat", "RecordTable", "TaskBoard", "WorkflowStrip", "DateProgress", "TrendChart", "Progress", "InfoRows", "StatusDot", "Tag", "BeforeAfter", "Stars", "Alert", "Avatar", "FaceRow", "ZoomPhoto", "EmptyState"],
@@ -1178,6 +1206,123 @@ export const puckConfig: Config<Components> = {
             <span className="[font-size:var(--text-sm)] text-muted-foreground">{caption}</span>
           ) : null}
         </div>
+      ),
+    },
+    SiteHero: {
+      label: "官网大标题",
+      // The one block on the whole page a stranger reads first, so its own
+      // fields are ordered the way it is written: who you are, what you claim,
+      // what to press. `proof` last because it is the part a business fills in
+      // once and never touches again.
+      fields: {
+        eyebrow: { label: "地区 · 行业", type: "text" },
+        headline: { label: "大标题", type: "text" },
+        sub: { label: "下面那一句", type: "textarea" },
+        primaryLabel: { label: "主要按钮", type: "text" },
+        primaryHref: { label: "主要按钮去哪", type: "text" },
+        secondaryLabel: { label: "第二颗按钮", type: "text" },
+        secondaryHref: { label: "第二颗按钮去哪", type: "text" },
+        proof: {
+          label: "三个数字",
+          type: "array",
+          arrayFields: {
+            value: { label: "数字", type: "text" },
+            label: { label: "说明", type: "text" },
+          },
+          defaultItemProps: { value: "0", label: "说明" },
+          getItemSummary: (item) => `${item.value} ${item.label}`,
+        },
+      },
+      defaultProps: {
+        headline: "我们做什么",
+        primaryLabel: "WhatsApp 问价",
+        primaryHref: "#",
+      },
+      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof }) => (
+        <SiteHero
+          eyebrow={
+            eyebrow ? (
+              <Inline id={id} field="eyebrow">
+                {eyebrow}
+              </Inline>
+            ) : undefined
+          }
+          headline={
+            <Inline id={id} field="headline">
+              {headline}
+            </Inline>
+          }
+          sub={
+            sub ? (
+              <Inline id={id} field="sub">
+                {sub}
+              </Inline>
+            ) : undefined
+          }
+          primaryLabel={primaryLabel}
+          primaryHref={primaryHref}
+          secondaryLabel={secondaryLabel}
+          secondaryHref={secondaryHref}
+          proof={proof}
+        />
+      ),
+    },
+    EnquiryForm: {
+      label: "询价表格",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        blurb: { label: "说明", type: "textarea" },
+        fields: {
+          label: "要问什么",
+          type: "array",
+          arrayFields: {
+            label: { label: "栏位名", type: "text" },
+            placeholder: { label: "例子", type: "text" },
+            kind: {
+              label: "哪一种",
+              type: "select",
+              options: [
+                { label: "一行字", value: "text" },
+                { label: "电话", value: "phone" },
+                { label: "一段字", value: "long" },
+              ],
+            },
+          },
+          defaultItemProps: { label: "栏位", placeholder: "", kind: "text" },
+          getItemSummary: (item) => item.label || "栏位",
+        },
+        submitLabel: { label: "按钮上写什么", type: "text" },
+        // THE ARROW. Deliberately in the open rather than behind 进阶: it is
+        // what this block is FOR. 「官网表格 → 系统出单」 is a sentence the
+        // founder could not explain to himself; this field is where it stops
+        // being a sentence.
+        landsIn: { label: "填完变成哪一页的单", type: "text" },
+        note: { label: "按钮旁边那一句", type: "text" },
+      },
+      defaultProps: {
+        heading: "留个电话，我们回你",
+        submitLabel: "送出",
+        landsIn: "报价单",
+      },
+      render: ({ id, heading, blurb, fields, submitLabel, landsIn, note }) => (
+        <EnquiryForm
+          heading={
+            <Inline id={id} field="heading">
+              {heading}
+            </Inline>
+          }
+          blurb={
+            blurb ? (
+              <Inline id={id} field="blurb">
+                {blurb}
+              </Inline>
+            ) : undefined
+          }
+          fields={fields}
+          submitLabel={submitLabel}
+          landsIn={landsIn}
+          note={note}
+        />
       ),
     },
     PageHeader: {
