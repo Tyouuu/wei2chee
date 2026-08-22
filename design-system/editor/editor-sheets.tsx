@@ -156,10 +156,13 @@ export function InsertSheet({ children }: { children: ReactNode }) {
       anchor={anchor}
       title="加一段"
     >
-      {/* One column, tight. The gallery that browses all 56 at leisure is
-          组件库 (/portal/library); this is the one you reach for mid-edit, so
-          it is a list you scan rather than a grid you shop. */}
-      <div className="px-2.5 py-2">{children}</div>
+      {/* TWO COLUMNS, TWELVE SHELVES, TEN OF THEM CLOSED.
+          The grid itself is set in puck-theme.css against Puck's own
+          ComponentList-content container -- Puck owns the element between this
+          div and the tiles, so the columns cannot be declared here. `data-`
+          attribute rather than a class because that stylesheet is global and
+          this is the only palette that should be two across. */}
+      <div data-insert-palette className="px-2.5 py-2">{children}</div>
     </Sheet>
   );
 }

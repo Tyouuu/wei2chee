@@ -440,3 +440,47 @@
 .portal-editor-scope [class*="DrawerItem-draggable"] {
   padding: 9px 12px;
 }
+
+/* ── 加一段: TWO ACROSS, AND SHELVES THAT READ AS SHELVES ──────────────────
+
+   Scoped to [data-insert-palette] (editor-sheets.tsx) rather than to the
+   drawer generally: this is the only palette in the product that wants two
+   columns, and the variant picker uses the same Puck internals.
+
+   The grid goes on `_Drawer_`, NOT on `_ComponentList-content_`. Dumped the
+   live DOM to find out: content holds exactly one child, the Drawer, which
+   holds the tiles -- so a grid on content laid out one item across two
+   columns and left the right half of the panel empty. Looked exactly like a
+   working two-column grid with half its tiles missing.
+
+   Class matched by substring because Puck ships CSS-modules hashes
+   (_Drawer_1n90m_1) that change between versions. The trailing underscore in
+   `Drawer_` is load-bearing: without it the selector also catches
+   _DrawerItem_ and every tile becomes a grid of its own. Verified against
+   @puckeditor/core 0.23.0. */
+
+[data-insert-palette] [class*="Drawer_"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-bottom: 10px;
+}
+
+/* The shelf heading. It was a plain row of text the same size and weight as
+   the block names under it, which is why twelve of them did not read as an
+   index. Sticky so the shelf you are inside stays named while you scroll it. */
+[data-insert-palette] [class*="ComponentList-title"] {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--color-ink-950);
+  color: var(--color-paper-dim);
+  font-size: var(--text-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.02em;
+  padding: 7px 4px;
+}
+
+[data-insert-palette] [class*="ComponentList-title"]:hover {
+  color: var(--color-paper);
+}

@@ -4,6 +4,7 @@ import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { scopeClasses } from "@/lib/portal/palettes";
 import { StyleScope } from "@/design-system/editor/style-scope";
+import { NARROW } from "@/design-system/editor/specimen";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 /**
@@ -135,6 +136,7 @@ export function LivePreview({
   srcHeight = 120,
   scale: forcedScale,
   renderPageSized = false,
+  frameHeight,
 }: {
   name: string;
   style: StyleName;
@@ -159,6 +161,17 @@ export function LivePreview({
    *  at 64px is a grey rectangle; on for the variant picker, where the shell's
    *  arrangement IS the thing being chosen. */
   renderPageSized?: boolean;
+  /** FIT MODE. A fixed frame height; the block is scaled to fit ENTIRELY
+   *  inside it and centred, never cropped and never stranded in a corner.
+   *
+   *  The mode below it -- window-onto-a-tall-block -- is what 加一段 shipped
+   *  with, and screenshotting it on 2026-08-23 is what ended it: 官网大标题
+   *  showed a headline and the top third of its button, 重点数字卡 lost its
+   *  supporting figures, 头像 was a 24px speck in an empty rectangle. Same
+   *  arithmetic as design-system/editor/specimen.tsx, same reason; the two
+   *  surfaces cannot use one component because this one must NOT mount a
+   *  nested <Render> inside the live editor tree. */
+  frameHeight?: number;
 }) {
   // AFTER THE FIRST PAINT ONLY, and not as an optimisation.
   //
@@ -182,10 +195,14 @@ export function LivePreview({
   // during the pre-mount render that returns the fallback.
   const innerRef = useRef<HTMLDivElement | null>(null);
   const [natural, setNatural] = useState(0);
+  const [naturalW, setNaturalW] = useState(0);
   useEffect(() => {
     const el = innerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setNatural(e.contentRect.height));
+    const ro = new ResizeObserver(([e]) => {
+      setNatural(e.contentRect.height);
+      setNaturalW(e.contentRect.width);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, [forcedScale, name, mounted]);
@@ -259,6 +276,48 @@ export function LivePreview({
   // corner of an empty rectangle reads as a failed load, and a tall one that
   // loses its own first row loses the thing that says what it is.
   const offset = forcedScale ? 0 : Math.max(0, (srcShown - (natural || 0)) / 2);
+
+  // ── FIT MODE ─────────────────────────────────────────────────────────────
+  // Scale about the CENTRE of a fixed frame, capped at 1. Capped because a
+  // 24px status dot blown up to fill a 120px tile is a different lie from a
+  // cropped table: it stays its own size, centred, with quiet ground around
+  // it, which is what a specimen is. Scaling about the centre is also what
+  // removes the offset arithmetic the window mode below still needs -- an
+  // unscaled box centred by grid stays centred at any scale.
+  if (frameHeight) {
+    const fit =
+      boxW && naturalW && natural
+        ? Math.min(boxW / naturalW, frameHeight / natural, 1)
+        : 1;
+    return (
+      <div
+        ref={boxRef}
+        className="pointer-events-none relative overflow-hidden"
+        style={{ height: frameHeight, width: "100%" }}
+        aria-hidden
+      >
+        <StyleScope
+          register={style}
+          palette={palette}
+          // flex rather than grid: an oversized grid item is clamped to the
+          // start edge by Chromium's safe alignment, which paints every block
+          // off-centre and clips its right edge. See specimen.tsx.
+          className="bg-background text-foreground absolute inset-0 flex items-center justify-center"
+        >
+          <div style={{ transform: `scale(${fit})`, transformOrigin: "center" }}>
+            <div
+              ref={innerRef}
+              style={NARROW.has(name) ? { width: "max-content" } : { width }}
+            >
+              <Guard fallback={<div style={{ width: 120, height: 40 }} />}>
+                <Render {...props} />
+              </Guard>
+            </div>
+          </div>
+        </StyleScope>
+      </div>
+    );
+  }
 
   return (
     <div

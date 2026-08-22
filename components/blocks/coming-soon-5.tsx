@@ -1,0 +1,101 @@
+"use client"
+
+import { useState } from "react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
+import { IconPlaceholder } from "@/components/blocks/_icon-placeholder"
+
+const milestones = [
+  { label: "Design", done: true },
+  { label: "Beta", done: true },
+  { label: "Launch", done: false },
+]
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export default function ComingSoonBlock() {
+  const [email, setEmail] = useState("")
+  const [joined, setJoined] = useState(false)
+
+  return (
+    <section className="flex min-h-svh w-full items-center justify-center bg-background px-6 py-16 text-foreground">
+      <div className="mx-auto flex w-full max-w-md flex-col items-center text-center">
+        <span className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+          Coming soon
+        </span>
+        <h1 className="mt-3 font-heading text-3xl font-bold tracking-tight sm:text-4xl">
+          We&apos;re almost ready
+        </h1>
+        <p className="mt-3 text-sm text-pretty text-muted-foreground">
+          Acme is putting the finishing touches on launch. Join the waitlist and
+          we&apos;ll let you know the moment it&apos;s live.
+        </p>
+
+        <div className="mt-8 w-full">
+          <Progress value={68} className="h-1.5" />
+          <div className="mt-3 flex justify-between">
+            {milestones.map((milestone) => (
+              <span
+                key={milestone.label}
+                className={cn(
+                  "flex items-center gap-1 text-xs",
+                  milestone.done ? "text-foreground" : "text-muted-foreground"
+                )}
+              >
+                {milestone.done && (
+                  <IconPlaceholder
+                    lucide="Check"
+                    tabler="IconCheck"
+                    hugeicons="Tick02Icon"
+                    phosphor="Check"
+                    remixicon="RiCheckLine"
+                    className="size-3.5"
+                    aria-hidden="true"
+                  />
+                )}
+                {milestone.label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {joined ? (
+          <p className="mt-8 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+            <IconPlaceholder
+              lucide="Check"
+              tabler="IconCheck"
+              hugeicons="Tick02Icon"
+              phosphor="Check"
+              remixicon="RiCheckLine"
+              className="size-4"
+              aria-hidden="true"
+            />
+            You&apos;re on the list. We&apos;ll be in touch soon.
+          </p>
+        ) : (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (emailPattern.test(email)) setJoined(true)
+            }}
+            className="mt-8 flex w-full flex-col gap-2 sm:flex-row"
+            noValidate
+          >
+            <Input
+              type="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              aria-label="Email address"
+              className="flex-1"
+            />
+            <Button type="submit">Notify me</Button>
+          </form>
+        )}
+      </div>
+    </section>
+  )
+}

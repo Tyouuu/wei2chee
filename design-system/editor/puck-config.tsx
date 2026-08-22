@@ -347,67 +347,88 @@ export const puckConfig: Config<Components> = {
   // reads. Named in Chinese and emptied of fields: selecting the page should
   // say what is selected, not present a control that does nothing.
   root: { label: "整个页面", fields: {} },
-  // The palette a customer actually reads. Without categories Puck renders one
-  // flat alphabetical list of fifteen items, which for a business owner who was
-  // told "design your own system" is a wall of jargon. Grouped by what the
-  // customer is trying to DO -- show information, let someone fill something
-  // in, move around the system -- not by what kind of React component it is.
+  // TWELVE SHELVES, NONE OF THEM A JUNK DRAWER.
+  //
+  // There were six, and two of them held 37 of the 56 blocks: 「内容展示」 19
+  // and 「填写与筛选」 18. A shelf with nineteen unrelated things on it is not a
+  // shelf, it is the pile the shelves were supposed to replace -- which is what
+  // the founder saw when he said 「不可能全部东西丢在一起」.
+  //
+  // Measured against the reference he named: 21st.dev does not run six coarse
+  // buckets, it runs about thirty fine ones -- Buttons, Inputs, Cards, Tables,
+  // Heroes, Pricing, Footers -- each small enough to hold in your head. The
+  // number that matters is not how many categories there are, it is how many
+  // things are in the one you opened. Theirs answer "what am I looking for" in
+  // one word. Ours now do too, and nothing here holds more than seven.
+  //
+  // Still grouped by what the customer is TRYING TO DO, not by React type --
+  // that part of the old comment was right and is kept.
+  // OPENED OR CLOSED IS A DECISION ABOUT THE EDITOR, NOT THE GALLERY.
+  //
+  // 加一段 renders these as collapsible shelves. With six shelves open it was
+  // 27 tiles deep before the first heading a customer had not already scrolled
+  // past -- the pile again, in a 440px panel. Ten now start closed, so the
+  // panel opens as an INDEX of twelve named shelves and you open the one you
+  // want, which is what Durable's 「Add section」 does and what 21st's rail
+  // does. 数字与图表 and 表格与看板 stay open because they are what a business
+  // page is actually made of, and a panel that opens showing nothing at all
+  // teaches you it is empty.
+  //
+  // 组件库 ignores this field entirely -- it keeps its own rail state.
   categories: {
     site: {
       title: "官网(客人看的)",
       components: ["SiteHero", "EnquiryForm"],
+      defaultExpanded: false,
+    },
+    words: {
+      title: "标题与文字",
+      components: ["PageHeader", "LongText", "FoldSection", "InfoRows"],
+      defaultExpanded: false,
+    },
+    numbers: {
+      title: "数字与图表",
+      components: ["HeroCard", "SmallStat", "TrendChart", "Progress", "DateProgress", "ActivitySquares"],
       defaultExpanded: true,
     },
-    content: {
-      title: "内容展示",
-      components: ["PageHeader", "HeroCard", "SmallStat", "RecordTable", "TaskBoard", "WorkflowStrip", "DateProgress", "TrendChart", "Progress", "InfoRows", "StatusDot", "Tag", "BeforeAfter", "Stars", "Alert", "Avatar", "FaceRow", "ZoomPhoto", "EmptyState"],
+    tables: {
+      title: "表格与看板",
+      components: ["RecordTable", "TaskBoard", "PriceTable", "DaySchedule", "PeopleBoard"],
       defaultExpanded: true,
     },
-    input: {
-      title: "填写与筛选",
-      components: [
-        "DatePicker",
-        "MonthPicker",
-        "Listbox",
-        "Combobox",
-        "TextAutocomplete",
-        "FileUploadField",
-        "FilterChips",
-        "FormFields",
-        "NoteField",
-        "CheckRow",
-        "ChoiceRow",
-        "SwitchRow",
-        "SliderRow",
-        "TagPicker",
-        "PackagePicker",
-        "UploadBox",
-        "WeekStrip",
-        "ActionButton",
-      ],
-      defaultExpanded: true,
+    flow: {
+      title: "流程与状态",
+      components: ["WorkflowStrip", "StatusDot", "Tag", "NoticePill", "Stars"],
+      defaultExpanded: false,
     },
-    // Blocks that exist only because this is a BUSINESS system rather than a
-    // page builder. Nothing here would appear in a website tool, and every one
-    // of them answers a question a Malaysian SME already has: what do I charge,
-    // who is where today, how do they pay me, who turned up.
-    trade: {
-      title: "生意零件",
-      components: [
-        "PriceTable",
-        "DaySchedule",
-        "PeopleBoard",
-        "PayQr",
-        "CopyValue",
-        "ActivitySquares",
-      ],
-      defaultExpanded: true,
+    notices: {
+      title: "提示与空白",
+      components: ["Alert", "NoticeBanner", "EmptyState"],
+      defaultExpanded: false,
     },
-    // Page furniture: neither what the page says nor what it collects, but what
-    // holds the two apart.
-    chrome: {
-      title: "版面零件",
-      components: ["NoticeBanner", "NoticePill", "FoldSection", "LongText", "PageNumbers"],
+    people: {
+      title: "照片与人",
+      components: ["Avatar", "FaceRow", "ZoomPhoto", "BeforeAfter"],
+      defaultExpanded: false,
+    },
+    fill: {
+      title: "填写",
+      components: ["FormFields", "NoteField", "TextAutocomplete", "UploadBox", "FileUploadField"],
+      defaultExpanded: false,
+    },
+    pick: {
+      title: "选择",
+      components: ["DatePicker", "MonthPicker", "WeekStrip", "Listbox", "Combobox", "TagPicker", "PackagePicker"],
+      defaultExpanded: false,
+    },
+    toggles: {
+      title: "勾选与开关",
+      components: ["CheckRow", "ChoiceRow", "SwitchRow", "SliderRow"],
+      defaultExpanded: false,
+    },
+    actions: {
+      title: "按钮与筛选",
+      components: ["ActionButton", "FilterChips", "CopyValue", "PayQr", "PageNumbers"],
       defaultExpanded: false,
     },
     layout: {
