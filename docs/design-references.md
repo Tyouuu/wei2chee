@@ -54,3 +54,33 @@ Earmarked for **Phase 2** landing-page work.
 
 **Still unused: Aceternity, GSAP, UIverse.** Check these before inventing anything
 from scratch, especially for 组件模板 / 卡片模板 work.
+
+## 2026-08-22 — what each of these actually yielded
+
+Checked every site on this page with Playwright (all returned 200; the 403 note
+above applies to plain fetching, not to a real browser).
+
+| Site | Publishes a prompt? | Verdict |
+| --- | --- | --- |
+| [uiprompt.site/styles](https://www.uiprompt.site/styles) | **Yes — 73 of them, free, with a copy button** | **The richest source we have.** Each is a written design brief (Role / Scene / Visual philosophy / Material / Interaction / Mood), 300–3700 chars. Harvested to `docs/style-briefs/`. Two already shipped as registers: `swiss.css`, `soft.css`. |
+| [21st.dev](https://21st.dev/) | Yes — an AI-ready prompt per component, plus an official MCP | Component-level. Useful, but a component lands with hardcoded colours; see below. |
+| [motionsites.ai](https://motionsites.ai/) | Not visible to a scraper | Loads, but the "Copy full prompt" is behind interaction. Re-check by hand. |
+| [landinghero.ai/library](https://www.landinghero.ai/library) | Not visible to a scraper | Loads; ~1900 chars of shell text only. Re-check by hand. |
+| [ui.aceternity.com](https://ui.aceternity.com/components) | No | Component source, MIT-ish. Still unused. |
+| [uiverse.io](https://uiverse.io/) | No | CSS components. Still unused. |
+
+### The rule this settled
+
+**Take STYLES, not components.** A component arrives with its colours written
+in, so it becomes the one block on the page that does not change when the
+customer changes register — the exact thing the ten-register promise cannot
+survive. A style brief lands in the token layer and every one of the 54
+components we already have inherits it for free.
+
+Cost per register, measured on Swiss and Soft: one token file (derive from the
+closest existing one), one Latin face in `app/[locale]/layout.tsx`, the
+`STYLES` array in `scripts/build-style-scope.mjs`, the `StyleName` union and
+five `Record<StyleName, …>` maps (TypeScript names every one of them), two
+message files, and one migration mirroring the value into
+`projects_style_check`, `industries_style_recommendation_is_real`,
+`update_project_style` and `set_project_style`. About an hour.
