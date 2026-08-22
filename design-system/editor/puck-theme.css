@@ -44,20 +44,46 @@
   --puck-color-surface: var(--color-ink-900);
   --puck-color-surface-muted: var(--color-ink-850);
   --puck-color-surface-subtle: var(--color-canvas);
-  --puck-color-surface-inverse: var(--color-paper);
+  /* THE FLOATING ACTION BAR'S GROUND, and the one place the alias pattern used
+     everywhere else in this block breaks down.
+
+     Puck's "inverse" family means "a floating surface that is the opposite of
+     the page". That mapped correctly while the editor chrome was Ledger, whose
+     --color-paper is a deep navy (#14273d). The chrome then moved to Formae's
+     own dark scope (chrome.module.css), where --color-paper is the LIGHT
+     foreground of a dark panel -- #f0f2f4 -- and so are --color-on-dark and
+     --color-primary. All three aliases below collapsed onto the same value, and
+     the action bar became a near-white pill with near-white text and a
+     near-white hover state: measured at rgb(240,242,244) on rgb(240,242,244).
+
+     It was invisible before the toolbar carried labels too; icons in the same
+     colour as their own background simply read as an empty lozenge, which is
+     what the selected block had floating over it. Now that 换款式 and 改文字 live
+     there (block-toolbar.tsx) it is load-bearing.
+
+     Pointed at literal ends of this scope's own ramp rather than at the aliases,
+     because the aliases are exactly what is degenerate here. The bar floats over
+     the CUSTOMER's light canvas, so a near-black pill with light text is both
+     legible and correctly Formae's rather than theirs. */
+  --puck-color-surface-inverse: var(--color-canvas);
 
   /* Borders */
   --puck-color-border: var(--color-ink-800);
   --puck-color-border-hover: var(--color-paper-dim);
   --puck-color-border-muted: var(--color-ink-850);
-  --puck-color-border-inverse: var(--color-paper-dim);
+  /* Separator inside the action bar. --color-paper-dim (#a0a5af) sat at
+     1.1:1 against the old near-white ground; on the dark pill above it is
+     the hairline it was meant to be. */
+  --puck-color-border-inverse: var(--color-ink-800);
 
   /* Text */
   --puck-color-text: var(--color-paper);
   --puck-color-text-secondary: var(--color-paper-dim);
   --puck-color-text-muted: var(--color-paper-dim);
   --puck-color-text-subtle: var(--color-paper-dim);
-  --puck-color-text-inverse: var(--color-on-dark);
+  /* NOT --color-on-dark: in this scope that resolves to #f0f2f4, the same
+     value as the pill it would be drawn on. See the surface-inverse note. */
+  --puck-color-text-inverse: var(--color-paper);
   --puck-color-text-disabled: var(--color-paper-dim);
   --puck-color-bg-disabled: var(--color-ink-800);
 
@@ -69,12 +95,14 @@
   --puck-color-interactive-soft: var(--color-primary-soft);
   --puck-color-interactive-soft-hover: var(--color-primary-soft);
   --puck-color-interactive-neutral-hover: var(--color-ink-850);
-  /* Foreground color for interactive elements rendered on
-     --puck-color-surface-inverse (e.g. the floating action bar) --
-     Puck's own default gets *lighter* from hover to active for contrast
-     against a dark bg; mirrored here with primary -> primary-soft. */
-  --puck-color-interactive-inverse-hover: var(--color-primary);
-  --puck-color-interactive-inverse-active: var(--color-primary-soft);
+  /* Formae's chrome is deliberately monochrome -- it has no accent hue, so
+     --color-primary here is #f0f2f4, the same light as the text. Hover and
+     active therefore separate by LIGHTNESS against the dark pill rather than by
+     hue: dimmed at rest, pure white on hover. The pressed state of 换款式 /
+     改文字 is drawn by the buttons themselves (block-toolbar.tsx), because two
+     lightness steps cannot also carry "this sheet is open". */
+  --puck-color-interactive-inverse-hover: #ffffff;
+  --puck-color-interactive-inverse-active: #ffffff;
 
   /* Focus / selection / drag affordances */
   --puck-color-focus-ring: var(--color-primary);

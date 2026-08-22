@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { usePuck, type Data } from "@puckeditor/core";
 import { useTranslations } from "next-intl";
 import { VersionHistoryDialog } from "./version-history";
@@ -38,6 +38,7 @@ export function EditorChrome({
   paid,
   pageKey,
   locale,
+  nav,
 }: {
   saving: boolean;
   /** A save the customer did not ask for, running in the background. Reported
@@ -64,37 +65,35 @@ export function EditorChrome({
   paid: boolean;
   pageKey: string;
   locale: string;
+  /** The editor's page navigation, style link, locale switcher and sign-out —
+   *  everything that used to be a second bar above this one. Passed as a node
+   *  rather than moved as markup because it is built in editor-client, outside
+   *  Puck's provider, and this component is inside it. See the `topNav` comment
+   *  there for why the merge had to happen this way round. */
+  nav?: ReactNode;
 }) {
   const t = useTranslations("portal.editor");
   const { appState, history, dispatch } = usePuck();
-  // Read, never assumed: the drawer can also be closed by Puck's own chrome,
-  // and a toggle that tracks its own boolean instead of the real one ends up
-  // labelled 「关起来」 over an already-closed drawer.
-  const drawerOpen = appState.ui.leftSideBarVisible;
 
-  // The fields panel follows the selection instead of standing open.
+  // BOTH COLUMNS STAY COLLAPSED, and this effect is what keeps them that way.
   //
-  // Measured, not assumed: at 1440px the panel is a permanent 290px column,
-  // and with nothing selected it holds a single heading ("整个页面") and no
-  // controls -- 20% of the window showing nothing. What it cost was on the
-  // other side of the screen: the canvas got 792px, the generated system's
-  // rail takes 220 of it, and RecordTable's own `min-w-[520px]` then overflows
-  // the remainder by 21px. So every table on every page had its 状态 column
-  // sliced down the middle. That reads as a broken product, and it was being
-  // caused by an empty panel.
+  // The history of this line is the history of the panel: it started as
+  // `rightSideBarVisible: hasSelection && !assistantOpen`, became
+  // unconditionally `true` when the assistant moved inside the column, and is
+  // now unconditionally `false` because the column is gone as a column. Its
+  // contents float -- see editor-client.tsx's `fields`, `drawer` and `actionBar`
+  // overrides, and design-system/editor/sheet.tsx.
   //
-  // ALWAYS VISIBLE NOW. This used to read
-  // `rightSideBarVisible: hasSelection && !assistantOpen`, because the column
-  // held the block's fields and the assistant was a fourth column that
-  // appeared beside everything. Two things competed for one slot and the
-  // assistant hid the fields when it opened.
-  //
-  // The assistant lives INSIDE that column now, above the fields, so the
-  // column is never empty and never has to be hidden: with nothing selected
-  // it is the assistant, and selecting a block adds the block's own fields
-  // beneath it. See the `fields` override in editor-client.tsx.
+  // It has to be an effect rather than only the `ui` prop on <Puck>: Puck's own
+  // chrome can still dispatch `setUi` (its layer tree and its keyboard
+  // shortcuts both do), and a single stray toggle would slide a 400px column
+  // back over the canvas with no way for the customer to close it, because the
+  // button that used to do that is gone.
   useEffect(() => {
-    dispatch({ type: "setUi", ui: { rightSideBarVisible: true } });
+    dispatch({
+      type: "setUi",
+      ui: { rightSideBarVisible: false, leftSideBarVisible: false },
+    });
   }, [dispatch]);
 
   // Ctrl/Cmd+S. Every tool a customer already uses binds it, and a product
@@ -116,31 +115,31 @@ export function EditorChrome({
     "flex h-8 w-8 items-center justify-center rounded-md [font-size:var(--text-base)] transition-colors disabled:opacity-30 [color:var(--color-paper-dim)] enabled:hover:[background-color:var(--color-ink-850)] enabled:hover:[color:var(--color-paper)]";
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
-      {/* THE 「Ask AI」 BUTTON IS GONE.
+    // ONE BAND, not three. `flex-wrap` and the scrolling page list inside `nav`
+    // are what let this hold both halves on a narrow window: it wraps to a
+    // second line rather than pushing the document wider than the viewport,
+    // which is the failure this bar has already had once at 390px.
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-4 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
+      {nav}
+      {/* THE 「Ask AI」 BUTTON IS STILL GONE, and stays gone.
           The founder's objection was 「把这个AI修改放在这里谁会去按啦」 — the
           product's single most valuable feature was a toolbar button that
-          opened a panel, which meant most customers never met it at all. It is
-          now a permanent column on the right instead of a thing you have to
+          opened a panel, so most customers never met it. It spent a while as a
+          permanent right-hand column; it now floats at the foot of the canvas
+          with its composer already typeable (design-system/editor/ai-dock.tsx).
+          What has not changed is the rule: it is never something you have to
           know to press. */}
 
-      {/* The block drawer's switch. It sits FIRST, is labelled in Chinese, and
-          says what it does -- which is what separates it from the buried Ask AI
-          button that earned the complaint above. Pressed state is real: the
-          drawer is open or it is not, and the button shows which. */}
-      <button
-        type="button"
-        aria-pressed={drawerOpen}
-        onClick={() => dispatch({ type: "setUi", ui: { leftSideBarVisible: !drawerOpen } })}
-        className="rounded-md px-3 py-1.5 [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] transition-colors"
-        style={{
-          backgroundColor: drawerOpen ? "var(--color-ink-800)" : "transparent",
-          color: drawerOpen ? "var(--color-paper)" : "var(--color-paper-dim)",
-        }}
-      >
-        {drawerOpen ? t("blocksClose") : t("blocksOpen")}
-      </button>
+      {/* THE 「+ 加东西」 BUTTON IS GONE TOO, and for the opposite reason to the
+          AI one above. That button was fine; what it opened was the problem --
+          a 54-tile column down the side of the canvas, and a block that landed
+          at the END of the page wherever you were actually looking.
 
+          Adding is now the ＋ 加一段 that appears in the gap between two blocks
+          (design-system/editor/insert-affordance.tsx). It opens the same
+          palette, in a sheet, and inserts AT that gap. That is strictly more
+          discoverable than a toolbar button: it appears where the customer is
+          already pointing, rather than needing to be found first. */}
       <span className="flex-1" />
 
       {/* Save STATE, not just a save button. A product that only ever shows a

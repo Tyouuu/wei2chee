@@ -2,6 +2,7 @@
 
 import { useRef, type ReactNode } from "react";
 import { usePuck } from "@puckeditor/core";
+import { useEditorUi } from "@/design-system/editor/editor-ui";
 
 /**
  * CLICK A BLOCK TO ADD IT.
@@ -22,6 +23,7 @@ import { usePuck } from "@puckeditor/core";
  */
 export function ClickToAdd({ name, children }: { name: string; children: ReactNode }) {
   const { dispatch, appState } = usePuck();
+  const { sheet, closeSheet } = useEditorUi();
   const down = useRef<{ x: number; y: number } | null>(null);
 
   /** Where a new block should land: inside the shell's main slot, at the end.
@@ -29,8 +31,15 @@ export function ClickToAdd({ name, children }: { name: string; children: ReactNo
    *  a `main` slot (see lib/templates/industry-template.ts), so appending to
    *  the ROOT would put the block beside the shell rather than inside the
    *  page — visually off the bottom of the canvas, which reads as "nothing
-   *  happened". Falls back to the root zone for a page that has no shell. */
+   *  happened". Falls back to the root zone for a page that has no shell.
+   *
+   *  UNLESS THE ＋ SAID OTHERWISE. When this palette was opened from the ＋ in
+   *  the gap between two blocks (insert-affordance.tsx), that gap is the
+   *  destination and appending to the end would be wrong — it is the entire
+   *  reason the affordance exists. The end-of-main fallback below is still what
+   *  happens when the palette is opened without a target. */
   const destination = () => {
+    if (sheet?.kind === "insert") return { zone: sheet.zone, index: sheet.index };
     const root = appState.data.content?.[0];
     const id = root?.props?.id;
     if (!root || typeof id !== "string") {
@@ -51,6 +60,9 @@ export function ClickToAdd({ name, children }: { name: string; children: ReactNo
       destinationIndex: index,
       destinationZone: zone,
     });
+    // The sheet has done its job. Leaving it open over the block that just
+    // appeared hides the result of the press.
+    if (sheet?.kind === "insert") closeSheet();
   };
 
   return (

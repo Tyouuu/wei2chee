@@ -255,17 +255,24 @@ export function AiAssistant({
       className="flex h-full w-full min-h-0 flex-col [background-color:var(--color-ink-900)]"
       aria-label={t("aiPanelTitle")}
     >
-      <div className="flex shrink-0 items-center gap-2 border-b px-3.5 py-2.5 [border-color:var(--color-ink-800)]">
-        <span className="flex items-center gap-2 [font-size:var(--text-sm)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
-          <span
-            aria-hidden="true"
-            className="grid h-5 w-5 place-items-center rounded-full [font-size:var(--text-micro)] [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
-          >
-            AI
+      {/* Suppressed in the two places that already draw a header of their own:
+          the floating dock at the foot of the canvas (ai-dock.tsx) and the
+          phone layout. Rendering both put 「用讲的改」 directly above 「AI 助手」,
+          two headings saying the same thing and 44px of the panel's height
+          spent on the repetition. */}
+      {!compact && (
+        <div className="flex shrink-0 items-center gap-2 border-b px-3.5 py-2.5 [border-color:var(--color-ink-800)]">
+          <span className="flex items-center gap-2 [font-size:var(--text-sm)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+            <span
+              aria-hidden="true"
+              className="grid h-5 w-5 place-items-center rounded-full [font-size:var(--text-micro)] [background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]"
+            >
+              AI
+            </span>
+            {t("aiPanelTitle")}
           </span>
-          {t("aiPanelTitle")}
-        </span>
-      </div>
+        </div>
+      )}
 
       {/* `min-h-0` is load-bearing, not tidiness. A flex child defaults to
           `min-height: auto`, which means it refuses to shrink below its
