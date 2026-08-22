@@ -398,6 +398,15 @@
      could tell these styles apart. */
   --font-ui: var(--font-brut-latin), var(--font-hei-cjk), "PingFang SC",
     "Microsoft YaHei", system-ui, sans-serif;
+
+  /* ── DISPLAY FACE ───────────────────────────────────────────────────
+     What headings are set in, when a register wants them set in something
+     else. Defaults to --font-ui, so this is inert here.
+
+     Added 2026-08-23 because type CONTRAST was the last flat axis: all
+     sixteen registers set a heading and a table cell in the same face.
+     rail-nav.tsx was already reading this token and finding nothing. */
+  --font-display: var(--font-ui);
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --fw-regular: 400;

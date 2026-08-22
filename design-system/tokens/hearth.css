@@ -275,6 +275,15 @@
      styles depart from this; this one is the familiar ground they depart
      from. */
   --font-ui: var(--font-rounded-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+
+  /* ── DISPLAY FACE ───────────────────────────────────────────────────
+     What headings are set in, when a register wants them set in something
+     else. Defaults to --font-ui, so this is inert here.
+
+     Added 2026-08-23 because type CONTRAST was the last flat axis: all
+     sixteen registers set a heading and a table cell in the same face.
+     rail-nav.tsx was already reading this token and finding nothing. */
+  --font-display: var(--font-ui);
   /* No mono anywhere in this register: a monospaced figure is a precision
      signal, and precision is Ledger's job, not this one's. */
   --font-numeric: var(--font-rounded-latin), "PingFang SC", system-ui, sans-serif;

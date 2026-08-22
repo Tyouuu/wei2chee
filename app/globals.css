@@ -312,3 +312,23 @@
 .ds-ground {
   background-image: var(--canvas-image, none);
 }
+
+/* ── THE DISPLAY FACE ────────────────────────────────────────────────────────
+
+   `--font-display` was added to all sixteen registers on 2026-08-23 and is
+   inert by default (it resolves to --font-ui). This class is what gives it
+   somewhere to land: the headings a register might want set in something other
+   than its body face.
+
+   WHY THE AXIS WAS WORTH ADDING. Every register set a page heading and a table
+   cell in the same family. Type CONTRAST -- the difference between a shop sign
+   and the price list under it -- could not be expressed at all, which is a
+   whole kind of difference the set had no word for. It was also a live bug:
+   rail-nav.tsx has been reading var(--font-display) and finding nothing.
+
+   A CLASS RATHER THAN A TOKEN ON EACH SITE, for the same reason .ds-card
+   exists: a register that wants a display face should say it once, not have
+   somebody edit four components. */
+.ds-display {
+  font-family: var(--font-display, var(--font-ui));
+}

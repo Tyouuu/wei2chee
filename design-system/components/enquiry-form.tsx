@@ -94,7 +94,7 @@ export function EnquiryForm({
             children of a plain block and nothing about their spacing changes.
             In split mode this becomes the left column. */}
         <div className={split ? "" : "contents"}>
-          <h2 className="[color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+          <h2 className="ds-display [color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
             {heading}
           </h2>
           {blurb && (
