@@ -108,6 +108,10 @@
       "soft": {
         "label": "Soft",
         "description": "Cards are the same colour as the page and are lifted by a pair of light and dark shadows instead of a border. Large radii, pill buttons. For trades whose customers choose on feel."
+      },
+      "brut": {
+        "label": "Brut",
+        "description": "The one with weight. 3px solid black borders, a hard offset shadow with no blur — like a second impression stamped on — type up to 900, and hot pink for the accent. For businesses whose customers are young and whose competition is an Instagram page. A 40-year-old trading company would look like it was joking."
       }
     },
     "sample": {
@@ -366,7 +370,8 @@
         "contract": "Contract — serif, like a document",
         "docket": "Docket — hard edges, like a real form",
         "swiss": "Swiss · black, white, one red",
-        "soft": "Soft · no edges, only relief"
+        "soft": "Soft · no edges, only relief",
+        "brut": "Brut · Thick black, hard shadow"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",

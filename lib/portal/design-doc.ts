@@ -176,6 +176,20 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["硬边框", "直角", "高对比的分隔线"],
   },
+  brut: {
+    mood: "有重量。3px 的黑框、不带模糊的偏移阴影,像盖上去的第二层印。响,但整齐。",
+    facts: "圆角 12px · 边框 3px 纯黑 · 阴影 4px 4px 0(不模糊) · 字重 800/900 · 行高 50px · 强调色桃红",
+    prefer: {
+      RecordTable: "grid",
+      HeroCard: "stats",
+      WorkflowStrip: "numbered",
+      ActionButton: "default",
+      Tag: "default",
+      Divider: "normal",
+      TrendChart: "bar",
+    },
+    avoid: ["细线", "柔和的阴影", "低对比的灰", "渐变"],
+  },
   docket: {
     mood: "一张真的表格。直角、硬线、像印出来要签名的单据。",
     facts: "圆角 0 · 边框 2px · 无阴影 · 行高 32px · 正文 13px · 标签全大写、字距 0.14em",

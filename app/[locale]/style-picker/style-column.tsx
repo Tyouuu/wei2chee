@@ -21,7 +21,13 @@ export type StyleName =
   // brief's own words and for what makes it a register rather than a
   // repaint of one we already had.
   | "swiss"
-  | "soft";
+  | "soft"
+  // 2026-08-22, and the first one added because a MEASUREMENT said the set was
+  // missing something rather than because a brief looked good. The ten
+  // registers covered density, colour, radius and type and did not cover
+  // WEIGHT: nothing had a border over 2px or a shadow visible from across the
+  // room. See design-system/tokens/brut.css for the numbers.
+  | "brut";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -50,6 +56,7 @@ export const STYLE_ORDER: StyleName[] = [
   "contract",
   "swiss",
   "soft",
+  "brut",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -63,6 +70,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   contract: styles.contract,
   swiss: styles.swiss,
   soft: styles.soft,
+  brut: styles.brut,
 };
 
 /**
@@ -100,6 +108,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   contract: styles.contract,
   swiss: styles.swiss,
   soft: styles.soft,
+  brut: styles.brut,
 };
 
 export function StyleColumn({

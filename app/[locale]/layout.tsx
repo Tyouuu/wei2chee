@@ -7,6 +7,7 @@ import {
   Geist_Mono,
   IBM_Plex_Sans,
   Instrument_Serif,
+  Bricolage_Grotesque,
   Manrope,
   Noto_Sans_SC,
   Noto_Serif_SC,
@@ -110,6 +111,21 @@ const publicSans = Public_Sans({
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-soft-latin",
+  display: "swap",
+});
+
+// 粗野's voice. Bricolage Grotesque is the face this look is actually drawn in
+// -- irregular widths, a slightly wrong-on-purpose skeleton, and real 800/900
+// weights, which no other face here has. The other nine registers all top out
+// at 700, and a 3px black stroke around 600-weight type reads as a mistake
+// rather than as a decision.
+//
+// Deliberately not Space Grotesk, which is the face every generated "brutalist"
+// page reaches for and would make this register look copied rather than
+// chosen.
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-brut-latin",
   display: "swap",
 });
 
@@ -238,7 +254,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${archivo.variable} ${nunito.variable} ${manrope.variable} ${plexSans.variable} ${publicSans.variable} ${jakarta.variable} ${notoSerifSC.variable} ${notoSansSC.variable}`}
+      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${archivo.variable} ${nunito.variable} ${manrope.variable} ${plexSans.variable} ${publicSans.variable} ${jakarta.variable} ${bricolage.variable} ${notoSerifSC.variable} ${notoSansSC.variable}`}
     >
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>

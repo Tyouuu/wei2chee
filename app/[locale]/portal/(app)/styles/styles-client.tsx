@@ -25,6 +25,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   contract: styles.contract,
   swiss: styles.swiss,
   soft: styles.soft,
+  brut: styles.brut,
 };
 
 
@@ -41,6 +42,7 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   contract: "Contract",
   swiss: "Swiss",
   soft: "Soft",
+  brut: "Brut",
 };
 
 /**

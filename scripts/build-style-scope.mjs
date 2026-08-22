@@ -28,7 +28,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const STYLES = ["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract", "swiss", "soft"];
+const STYLES = ["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract", "swiss", "soft", "brut"];
 const OUT = join(ROOT, "app", "[locale]", "style-picker", "style-scope.module.css");
 
 const sourcePath = (style) => join(ROOT, "design-system", "tokens", `${style}.css`);
@@ -150,6 +150,50 @@ function styleBlock(style) {
 
   const lines = [...merged].map(([p, v]) => `  ${p}: ${v};`).join("\n");
   const bar = "-".repeat(70);
+
+  // A register may declare that some of its colours are STRUCTURE rather than
+  // decoration, and those survive a palette.
+  //
+  // WHY THIS EXISTS. The 配色 layer is applied after the 版式 class, on purpose:
+  // 版式 decides density, type and radius; 配色 decides colour. For the ten
+  // registers that shipped before 粗野 that division was exactly right, because
+  // their borders are all light greys and repainting one is a repaint.
+  //
+  // 粗野's border is a 3px black stroke, and at 3px the colour IS the
+  // structure. Measured on the real page: with 石板灰 applied, the border width
+  // (3px), the hard offset shadow, the 800 weights and the 50px rows all
+  // survived -- and `--color-ink-800` came back a light grey, which turned the
+  // loudest register in the set back into a polite card. The customer had
+  // chosen it BECAUSE it was loud.
+  //
+  // So a token file may carry `@structural --a, --b` in its header comment, and
+  // the generator emits those a second time under a doubled class, which
+  // outranks a single-class palette selector. Everything not listed still
+  // follows the palette, which is what makes 粗野 + 石板灰 a grey-and-black
+  // brutalist system rather than either a grey one or a disobedient one.
+  const structural = /@structural\s+([^*\n]+)/.exec(raw);
+  let override = "";
+  if (structural) {
+    const names = structural[1]
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    const missing = names.filter((n) => !merged.has(n));
+    if (missing.length) {
+      throw new Error(
+        `${style}: @structural names ${missing.join(", ")}, which it does not declare`,
+      );
+    }
+    const kept = names.map((n) => `  ${n}: ${merged.get(n)};`).join("\n");
+    override = `
+/* ${style}'s structural colours, re-declared under a doubled class so they
+ * outrank the palette layer. See styleBlock() in the generator for why. */
+.${style}.${style} {
+${kept}
+}
+`;
+  }
+
   return `
 /* ${bar} *
  * ${style[0].toUpperCase()}${style.slice(1)} -- generated from design-system/tokens/${style}.css
@@ -161,7 +205,7 @@ ${lines}
 .${style} :focus-visible {
   border-radius: ${focusRadius(clean)};
 }
-`;
+${override}`;
 }
 
 /** Blueprint's texture layer: background-image and ::before/::after rules that
