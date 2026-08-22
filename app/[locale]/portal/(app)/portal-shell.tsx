@@ -278,6 +278,9 @@ export function PortalShell({
           <NavRow href={`${base}/templates`} active={is("/templates")} icon={<IconTemplates />}>
             {t("templates")}
           </NavRow>
+          <NavRow href={`${base}/sections`} active={is("/sections")} icon={<IconTemplates />}>
+            {t("sections")}
+          </NavRow>
           <NavRow href={`${base}/styles`} active={is("/styles")} icon={<IconStyles />}>
             {t("styles")}
           </NavRow>

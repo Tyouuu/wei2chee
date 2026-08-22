@@ -7,6 +7,7 @@ import { Avatar } from "@/design-system/components/avatar";
 import { RecordTable } from "@/design-system/components/record-table";
 import { Inline } from "@/design-system/editor/inline-text";
 import { SiteHero } from "@/design-system/components/site-hero";
+import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
 import { EnquiryForm } from "@/design-system/components/enquiry-form";
 import { TableFieldEditor } from "@/design-system/editor/table-field";
 import { type TableModel } from "@/lib/portal/table-model";
@@ -180,6 +181,10 @@ type Components = {
     navTone?: "dark" | "light" | "deep";
   };
   PageHeader: { title: string; subtitle?: string };
+  /** One of the 164 sections pulled from the @7ovr registry. Template side of
+   *  the line the founder drew: the SECTION is chosen, its words are not
+   *  edited. See design-system/editor/site-block.tsx. */
+  SiteBlock: { block?: string };
   // --- 官网 (shape: "landing") ------------------------------------------
   // The only two components in the catalogue whose reader is a STRANGER
   // rather than the owner. See site-hero.tsx and enquiry-form.tsx.
@@ -379,6 +384,14 @@ export const puckConfig: Config<Components> = {
     site: {
       title: "官网(客人看的)",
       components: ["SiteHero", "EnquiryForm"],
+      defaultExpanded: false,
+    },
+    // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
+    // 164 shelf lines would bury the two blocks above that a customer actually
+    // edits. Browsing the 164 happens in 模板库, where whole pages are chosen.
+    sections: {
+      title: "官网版段(整段套用)",
+      components: ["SiteBlock"],
       defaultExpanded: false,
     },
     words: {
@@ -1239,6 +1252,22 @@ export const puckConfig: Config<Components> = {
           ) : null}
         </div>
       ),
+    },
+    SiteBlock: {
+      label: "官网版段",
+      fields: {
+        block: {
+          label: "选一段",
+          type: "select",
+          options: SITE_BLOCK_OPTIONS,
+        },
+      },
+      defaultProps: { block: "hero-1" },
+      // No Inline wrappers and no text fields, on purpose. These sections are
+      // the template half of 「模板是不可以改的 风格是可以改的」 -- what a
+      // customer changes here is WHICH section, and what changes how it looks
+      // is the register, which it reads through tokens like everything else.
+      render: ({ block }) => <SiteBlock block={block} />,
     },
     SiteHero: {
       label: "官网大标题",

@@ -485,6 +485,7 @@
       "founderSection": "Console",
       "library": "Components",
       "templates": "Templates",
+      "sections": "Sections",
       "styles": "Styles",
       "spec": "Specification",
       "handoff": "Get it built",
