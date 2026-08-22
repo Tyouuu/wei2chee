@@ -74,10 +74,10 @@ export function TextAutocomplete({
         placeholder={placeholder}
         required={required}
         autoComplete="off"
-        className="w-full [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] placeholder:text-[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)]"
+        className="ds-control w-full [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none transition-colors [transition-duration:var(--dur-fast)] placeholder:text-[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)]"
       />
       {open && filtered.length > 0 && (
-        <div className="absolute left-0 right-auto z-10 mt-1 max-h-56 w-full min-w-full overflow-y-auto [border-radius:var(--radius-md)] border p-1.5 [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+        <div className="ds-raised absolute left-0 right-auto z-10 mt-1 max-h-56 w-full min-w-full overflow-y-auto [border-radius:var(--radius-md)] p-1.5">
           {filtered.map((s) => (
             <button
               key={s}

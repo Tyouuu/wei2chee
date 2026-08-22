@@ -105,7 +105,12 @@ export function StyleScope({
   children: ReactNode;
 } & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`${scopeClasses(register, palette)} ${className}`.trim()} {...rest}>
+    // `ds-ground` carries --canvas-image, so a register whose identity is a
+    // texture rather than a colour -- a grid, a paper grain, a mesh -- paints it
+    // everywhere a scope is mounted: the editor canvas, every gallery tile, and
+    // a published site. Inert (`none`) for the twelve that shipped before the
+    // surface vocabulary existed.
+    <div className={`ds-ground ${scopeClasses(register, palette)} ${className}`.trim()} {...rest}>
       <RegisterProvider style={register}>{children}</RegisterProvider>
     </div>
   );

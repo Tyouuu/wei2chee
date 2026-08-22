@@ -99,7 +99,7 @@ export function MonthPicker({
         aria-haspopup="true"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+        className="ds-control flex w-full items-center gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         <CalendarDays aria-hidden="true" className="h-[15px] w-[15px] shrink-0 text-[color:var(--color-paper-dim)]" />
         <span className={value ? "" : "text-[color:var(--color-paper-dim)]"}>{value ? formatLabel(value, w.months) : (placeholder ?? w.pickMonth)}</span>
@@ -115,7 +115,7 @@ export function MonthPicker({
         // narrow right edge, pushing the panel's left edge off-screen.
         // Anchoring from the trigger's left edge keeps it on-screen
         // wherever this compact trigger is used.
-        <div className="absolute left-0 right-auto z-10 mt-1 w-[260px] [border-radius:var(--radius-md)] border p-0 [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+        <div className="ds-raised absolute left-0 right-auto z-10 mt-1 w-[260px] [border-radius:var(--radius-md)] p-0">
           <div className="flex items-center justify-between [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]">
             <button
               type="button"

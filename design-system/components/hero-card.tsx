@@ -129,7 +129,7 @@ export function HeroCard({
       className={
         flat
           ? "flex flex-col justify-between gap-5"
-          : "flex flex-col justify-between gap-5 [border-radius:var(--radius-lg)] border [padding:var(--pad-card)] [box-shadow:var(--shadow-card)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
+          : "ds-card flex flex-col justify-between gap-5 [padding:var(--pad-card)]"
       }
     >
       {header && <div className="border-b pb-5 [border-color:var(--color-ink-800)]">{header}</div>}

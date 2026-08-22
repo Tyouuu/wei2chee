@@ -92,7 +92,7 @@ export function MobileNav({
       </button>
 
       {open && (
-        <div className="fixed inset-x-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-b px-4 py-3 [box-shadow:var(--shadow-overlay)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+        <div className="ds-overlay fixed inset-x-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-b px-4 py-3">
           <nav className="flex flex-col gap-0.5">
             {items.map((item) => (
               <a key={item.href} href={item.href} aria-current={isActive(item.href) ? "page" : undefined} className={linkClass(isActive(item.href))}>

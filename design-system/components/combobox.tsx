@@ -86,7 +86,7 @@ export function Combobox({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => (open ? closePanel() : openPanel())}
-        className="flex w-full items-center gap-2 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+        className="ds-control flex w-full items-center gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         {selected?.icon}
         <span
@@ -102,7 +102,7 @@ export function Combobox({
         />
       </button>
       {open && (
-        <div className="absolute z-10 mt-1 w-full min-w-full overflow-hidden [border-radius:var(--radius-md)] border [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+        <div className="ds-raised absolute z-10 mt-1 w-full min-w-full overflow-hidden [border-radius:var(--radius-md)]">
           <div className="flex items-center gap-2 border-b [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [border-color:var(--color-ink-800)]">
             <Search aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-paper-dim)]" />
             <input

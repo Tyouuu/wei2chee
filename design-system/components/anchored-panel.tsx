@@ -115,7 +115,7 @@ export function AnchoredPanel({
       aria-label={label}
       // Hidden until placed, rather than rendered at the origin and moved.
       style={{ position: "fixed", top: pos?.top ?? -9999, left: pos?.left ?? -9999, width }}
-      className="z-[60] [border-radius:var(--radius-lg)] border p-3 [box-shadow:var(--shadow-overlay)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
+      className="ds-overlay z-[60] p-3"
     >
       {children}
     </div>,

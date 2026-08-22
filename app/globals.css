@@ -233,3 +233,82 @@
   --border: oklch(1 0 0 / 11%);
   --input: oklch(1 0 0 / 14%);
 }
+
+/* ===========================================================================
+   THE FOUR SURFACES
+   ===========================================================================
+
+   WHY THIS EXISTS. Thirteen components in design-system/components each wrote
+   out the same recipe inline:
+
+     [border-radius:var(--radius-lg)] border [box-shadow:var(--shadow-card)]
+     [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]
+
+   Which worked, and cost nothing, right up until the question became "why do
+   the twelve registers look like variations of each other". Measured on
+   2026-08-23: across all twelve, backdrop-filter 0, radial gradient 0, noise 0,
+   animation 0, text-shadow 0, dashed border 0, outline 0. Every register was a
+   flat rectangle with a colour, a radius, a border width and a font. Four
+   words. Adding a fifth meant editing thirteen files by hand, so nobody did,
+   so every new register was another colour scheme.
+
+   One shared class per ROLE fixes that: a register now says "my cards are
+   glass" once, and every component wearing .ds-card becomes glass.
+
+   FOUR ROLES, NOT ONE, and the difference is what casts the shadow:
+
+     .ds-card     a sheet the page sits ON      --shadow-card
+     .ds-raised   a list that opened ABOVE it   --shadow-raised
+     .ds-overlay  a thing floating OVER it      --shadow-overlay
+     .ds-control  something you type or press   --radius-md, control padding
+
+   They were already three different shadow tokens before this file; the
+   classes only give the distinction a name.
+
+   PADDING IS NOT HERE. A card's padding is the component's business -- 数字卡
+   pads differently from 询价表格 -- and folding it in would make these classes
+   un-overridable without !important. Surface only.
+   --------------------------------------------------------------------------- */
+
+.ds-card,
+.ds-raised,
+.ds-overlay {
+  background-color: var(--color-ink-900);
+  background-image: var(--surface-image, none);
+  border-width: var(--border-card-width, 1px);
+  border-style: var(--surface-border-style, solid);
+  border-color: var(--color-ink-800);
+  border-radius: var(--radius-lg);
+  backdrop-filter: var(--surface-blur, none);
+}
+
+.ds-card {
+  box-shadow: var(--shadow-card);
+}
+.ds-raised {
+  box-shadow: var(--shadow-raised);
+}
+.ds-overlay {
+  box-shadow: var(--shadow-overlay);
+}
+
+/* A control is a smaller radius and no elevation of its own -- it sits IN the
+   sheet rather than on it. It still takes the surface image and blur, so a
+   glass register's inputs are glass too rather than the one opaque rectangle
+   in the middle of the page. */
+.ds-control {
+  background-color: var(--color-ink-900);
+  background-image: var(--surface-image, none);
+  border-width: var(--border-card-width, 1px);
+  border-style: var(--surface-border-style, solid);
+  border-color: var(--color-ink-800);
+  border-radius: var(--radius-md);
+  backdrop-filter: var(--surface-blur, none);
+}
+
+/* The page ground, for registers whose identity is a texture rather than a
+   colour -- a grid, a paper grain, a mesh. Applied by StyleScope so it reaches
+   the editor canvas, the gallery tiles and a published site alike. */
+.ds-ground {
+  background-image: var(--canvas-image, none);
+}

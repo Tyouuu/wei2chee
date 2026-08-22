@@ -85,7 +85,7 @@ export function EnquiryForm({
       <div
         className={[
           boxed
-            ? "[background-color:var(--color-ink-900)] [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [padding:var(--pad-card-lg)]"
+            ? "ds-card [padding:var(--pad-card-lg)]"
             : "",
           split ? "grid items-start gap-x-10 gap-y-6 md:grid-cols-2" : "",
         ].join(" ")}

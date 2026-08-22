@@ -94,7 +94,7 @@ export function ColumnsMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 z-30 mt-1.5 w-64 [border-radius:var(--radius-lg)] border p-2 [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+        <div className="ds-raised absolute right-0 z-30 mt-1.5 w-64 p-2">
           <p className="px-2 pb-1.5 pt-1 [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
             Show these columns
           </p>

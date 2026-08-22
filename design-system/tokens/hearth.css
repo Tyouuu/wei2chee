@@ -343,6 +343,21 @@
   --shadow-raised: 0 2px 6px rgba(21, 50, 39, 0.09), 0 12px 28px -10px rgba(21, 50, 39, 0.16);
   --shadow-overlay: 0 12px 40px -8px rgba(21, 50, 39, 0.22);
 
+  /* ── SURFACE ────────────────────────────────────────────────────────
+     --surface-image: A layer painted over a card's own colour: grain, a gradient wash, a hairline grid. `none` for every register that shipped before this line existed.
+     --surface-blur: backdrop-filter for the card. The whole of Glassmorphism lives here, and it needs the surface colour to be translucent to show.
+     --surface-border-style: solid / dashed / double. A dashed card is a different object from a solid one at the same border width.
+     --canvas-image: The same idea for the page ground rather than the card: a mesh, a grid, a paper texture.
+
+     All four are inert here. A register that wants glass, grain or a
+     dashed edge overrides them; everything else keeps the flat rectangle
+     it already had. Consumed by .ds-card / .ds-raised / .ds-overlay in
+     app/globals.css, so one line here reaches every component. */
+  --surface-image: none;
+  --surface-blur: none;
+  --surface-border-style: solid;
+  --canvas-image: none;
+
   --border-subtle: rgba(21, 50, 39, 0.07);
   --border-strong: rgba(21, 50, 39, 0.12);
 

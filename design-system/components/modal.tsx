@@ -58,7 +58,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
-        className={`w-full max-w-sm [border-radius:var(--radius-lg)] border [padding:var(--pad-card)] [box-shadow:var(--shadow-overlay)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] ${className ?? ""}`}
+        className={`ds-overlay w-full max-w-sm [padding:var(--pad-card)] ${className ?? ""}`}
       >
         {children}
       </div>

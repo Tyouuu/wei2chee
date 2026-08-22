@@ -159,7 +159,7 @@ export function DatePicker({
         aria-haspopup="true"
         aria-expanded={open}
         onClick={openPanel}
-        className="flex w-full items-center gap-2 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+        className="ds-control flex w-full items-center gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         <CalendarDays aria-hidden="true" className="h-[15px] w-[15px] shrink-0 text-[color:var(--color-paper-dim)]" />
         <span className={current ? "" : "text-[color:var(--color-paper-dim)]"}>{current ? formatDisplay(current) : (placeholder ?? w.pickDate)}</span>
@@ -169,7 +169,7 @@ export function DatePicker({
         />
       </button>
       {open && (
-        <div className="absolute z-10 mt-1 w-[280px] [border-radius:var(--radius-md)] border p-0 [box-shadow:var(--shadow-raised)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]">
+        <div className="ds-raised absolute z-10 mt-1 w-[280px] [border-radius:var(--radius-md)] p-0">
           <div className="flex items-center justify-between [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]">
             <button
               type="button"

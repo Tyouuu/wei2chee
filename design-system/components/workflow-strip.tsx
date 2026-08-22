@@ -60,7 +60,7 @@ export function WorkflowStrip({
 
   return (
     <section
-      className="w-full [border-radius:var(--radius-lg)] [box-shadow:var(--shadow-card)] [padding:var(--pad-card)] [background-color:var(--color-ink-900)]"
+      className="ds-card w-full [padding:var(--pad-card)]"
       style={{
         // Hearth sets --border-card-width to 0 and separates cards by shadow
         // alone; Ledger sets --shadow-card to none and separates them by a

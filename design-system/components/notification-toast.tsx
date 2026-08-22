@@ -110,7 +110,7 @@ function Toast({ notification, onDismiss }: { notification: ToastNotification; o
 
   return (
     <div
-      className={`pointer-events-auto relative flex items-start gap-3 overflow-hidden [border-radius:var(--radius-lg)] border py-3 pl-4 pr-3 [box-shadow:var(--shadow-overlay)] [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] before:absolute before:inset-y-0 before:left-0 before:w-[3.5px] ${VARIANT_BAR[notification.variant]}`}
+      className={`ds-overlay pointer-events-auto relative flex items-start gap-3 overflow-hidden py-3 pl-4 pr-3 before:absolute before:inset-y-0 before:left-0 before:w-[3.5px] ${VARIANT_BAR[notification.variant]}`}
     >
       <Link href={notification.href} onClick={onDismiss} className="flex-1 text-left">
         <div className="[font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{notification.title}</div>
