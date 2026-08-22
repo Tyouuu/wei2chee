@@ -62,8 +62,16 @@ export const analysisSchema = z
     // is clamped below.
     before_workflow: z.array(z.string().min(1)).min(1).max(8),
     after_workflow: z.array(z.string().min(1)).min(1).max(6),
+    // The same two fields again, in English. NOT decoration: the system
+    // this business gets is BUILT in English by default while the owner
+    // answers and reads in Chinese (migration 20260822060000), so without
+    // these the tailored workflow and the one-line summary -- the two
+    // things that make a first screen read as "it understood my business"
+    // -- are the exact parts that get thrown away.
+    after_workflow_en: z.array(z.string().min(1)).min(1).max(6),
     focus_stage_index: z.number().int(),
     summary: z.string().min(1),
+    summary_en: z.string().min(1),
     // What the system should be MADE of. Until 2026-08-21 the model had no
     // field for this at all: it analysed the business in detail and then had
     // no say in what was built, because page count came from a SQL CASE over
@@ -73,6 +81,13 @@ export const analysisSchema = z
         z.object({
           key: z.enum(MODULE_KEYS as [string, ...string[]]),
           label: z.string().min(1),
+          // The business's own noun in English -- what the page is headed
+          // in the default system. A master dealer's customers are Dealers,
+          // not Customers. Snake_case here because this is the WIRE shape the
+          // model returns, matching `label_en` in analysisJsonSchema below;
+          // normalizeModules is what turns it into the camelCase field the
+          // rest of the codebase reads.
+          label_en: z.string().min(1),
           // Required of the MODEL (the JSON schema below lists it in
           // `required` and says what it must reference), but allowed to be
           // empty HERE -- because the fallback path legitimately has no reason
@@ -96,6 +111,11 @@ export const analysisSchema = z
       ...value,
       before_workflow: value.before_workflow.map(stage),
       after_workflow,
+      // English words are longer than Chinese ones for the same idea, so
+      // the character cap that keeps a Chinese stage from becoming a
+      // sentence would truncate ordinary English mid-word. These are
+      // capped by the schema's own maxItems and left alone here.
+      after_workflow_en: value.after_workflow_en.map((s) => s.trim()),
       focus_stage_index: Math.min(
         Math.max(0, value.focus_stage_index),
         after_workflow.length - 1,
@@ -142,12 +162,25 @@ export const analysisJsonSchema = {
         maxItems: 6,
         items: { type: "string", description: "A stage name, 2-4 characters." },
       },
+      after_workflow_en: {
+        type: "array",
+        minItems: 1,
+        maxItems: 6,
+        description:
+          "after_workflow again in English, same stages in the same order. One or two words each -- these are column headings in a system, not sentences.",
+        items: { type: "string", description: "A stage name, 1-2 words." },
+      },
       focus_stage_index: {
         type: "integer",
         description:
           "0-based index into after_workflow naming the stage this business should fix first.",
       },
       summary: { type: "string", description: "One sentence, under 50 characters." },
+      summary_en: {
+        type: "string",
+        description:
+          "summary again in English, about the same business. One sentence, under 90 characters.",
+      },
       modules: {
         type: "array",
         minItems: 4,
@@ -167,13 +200,18 @@ export const analysisJsonSchema = {
               description:
                 "What THIS business calls it, 2-4 characters. A SIM-card master dealer calls customers 经销商, a salon calls them 顾客. Use the catalogue's own label when the business has no special word.",
             },
+            label_en: {
+              type: "string",
+              description:
+                "The same noun in English, one or two words. A master dealer's customers are Dealers; a salon's are Clients; a tuition centre's are Parents. Use the catalogue's own English label when the business has no special word.",
+            },
             why: {
               type: "string",
               description:
                 "One line, under 24 characters, on why this business specifically needs it. Reference something the owner actually told you.",
             },
           },
-          required: ["key", "label", "why"],
+          required: ["key", "label", "label_en", "why"],
           additionalProperties: false,
         },
       },
@@ -182,8 +220,10 @@ export const analysisJsonSchema = {
       "bottlenecks",
       "before_workflow",
       "after_workflow",
+      "after_workflow_en",
       "focus_stage_index",
       "summary",
+      "summary_en",
       "modules",
     ],
     additionalProperties: false,
@@ -238,8 +278,12 @@ export function fallbackAnalysis(
       ],
       before_workflow: stages,
       after_workflow: stages,
+      // `industries.default_workflow` is stored in English already, so the
+      // fallback needs no second list -- the stages ARE the English ones.
+      after_workflow_en: stages,
       focus_stage_index: 0,
       summary: `${industry.name_zh}的日常运作大多还靠人记，把记录集中起来是第一步。`,
+      summary_en: `Most of this ${industry.name_en} business still runs on memory; centralising records is step one.`,
       modules,
     };
   }
@@ -264,8 +308,10 @@ export function fallbackAnalysis(
     ],
     before_workflow: stages,
     after_workflow: stages,
+    after_workflow_en: stages,
     focus_stage_index: 0,
     summary: `Most of this ${industry.name_en} business still runs on memory; centralising records is step one.`,
+    summary_en: `Most of this ${industry.name_en} business still runs on memory; centralising records is step one.`,
     modules,
   };
 }

@@ -17,13 +17,14 @@ import {
   isUngeneratedLayout,
   pageLabel,
   sortPages,
+  systemLangOf,
+  tradeLabels,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
 
 /** Used when an account has no lead, so `industry.labels` is absent -- the same
  *  generic vocabulary industry-template.ts falls back to. */
-const FALLBACK_LABELS = { customer: "客户", order: "订单", staff: "员工" };
 
 export default async function PortalEditorPage({
   params,
@@ -187,7 +188,8 @@ export default async function PortalEditorPage({
         key: ref.key,
         label: pageLabel(
           ref,
-          businessContext.industry?.labels ?? FALLBACK_LABELS,
+          tradeLabels(businessContext, pageRefs),
+          systemLangOf(businessContext),
         ),
       }))}
       /** The customer's own chosen style (projects.style, Task 3) -- applies to
@@ -195,6 +197,7 @@ export default async function PortalEditorPage({
        * reviewed design. */
       style={project.style as StyleName}
       palette={(project.palette as string | null) ?? null}
+      systemLang={systemLangOf(businessContext)}
     />
   );
 }

@@ -1,0 +1,465 @@
+import type { SampleSet } from "./types";
+
+/**
+ * Sample rows in Chinese -- for the owner who chooses 中文 for their own system
+ * (`projects.system_language = 'zh'`). The English table in `samples.en.ts` is
+ * the DEFAULT; see lib/system-lang.ts for why.
+ *
+ * Malaysian-market specifics are deliberate on both sides: RM amounts, Klang
+ * Valley place names, and the kind of record each trade actually keeps.
+ */
+export const SAMPLES_ZH: Record<string, SampleSet> = {
+  renovation: {
+    records: [
+      {
+        primary: "Taman Desa 三房翻新",
+        secondary: "陈先生",
+        amount: "RM 48,500",
+        tone: "positive",
+        status: "已确认",
+      },
+      {
+        primary: "Bukit Jalil 厨房改造",
+        secondary: "李太太",
+        amount: "RM 22,800",
+        tone: "warning",
+        status: "等确认",
+      },
+      {
+        primary: "Cheras 店面装修",
+        secondary: "王老板",
+        amount: "RM 96,000",
+        tone: "neutral",
+        status: "报价中",
+      },
+    ],
+    customers: [
+      {
+        primary: "陈先生",
+        secondary: "Taman Desa · 013-2xx xxxx",
+        tone: "positive",
+        status: "施工中",
+      },
+      {
+        primary: "李太太",
+        secondary: "Bukit Jalil · 012-3xx xxxx",
+        tone: "warning",
+        status: "待跟进",
+      },
+      {
+        primary: "王老板",
+        secondary: "Cheras · 016-8xx xxxx",
+        tone: "neutral",
+        status: "新客户",
+      },
+    ],
+    heroLabel: "本月已确认工程额",
+    heroValue: "RM 71,300",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "进行中的工程", value: "4 个" },
+      { label: "等客户确认", value: "2 份报价", tone: "caution" },
+      {
+        label: "已做未收",
+        value: "RM 31,200",
+        tone: "warn",
+        sub: "超过 30 天",
+      },
+    ],
+    heroSpark: [42000, 51000, 47500, 58000, 63000, 71300],
+  },
+  retail: {
+    records: [
+      {
+        primary: "订单 #10238",
+        secondary: "门店自取",
+        amount: "RM 356",
+        tone: "positive",
+        status: "已付款",
+      },
+      {
+        primary: "订单 #10239",
+        secondary: "送货 · Puchong",
+        amount: "RM 1,240",
+        tone: "warning",
+        status: "待发货",
+      },
+      {
+        primary: "订单 #10240",
+        secondary: "门店自取",
+        amount: "RM 89",
+        tone: "neutral",
+        status: "新订单",
+      },
+    ],
+    customers: [
+      {
+        primary: "Siti binti Ahmad",
+        secondary: "会员 · 累计 RM 3,420",
+        tone: "positive",
+        status: "活跃",
+      },
+      {
+        primary: "陈志明",
+        secondary: "会员 · 累计 RM 780",
+        tone: "neutral",
+        status: "一般",
+      },
+      {
+        primary: "Kumar A/L Raj",
+        secondary: "新会员",
+        tone: "warning",
+        status: "待跟进",
+      },
+    ],
+    heroLabel: "本月销售额",
+    heroValue: "RM 18,940",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "今日订单", value: "23 单" },
+      { label: "待发货", value: "5 单", tone: "caution" },
+      { label: "库存告急", value: "3 项", tone: "warn", sub: "低于安全存量" },
+    ],
+    heroSpark: [14200, 15800, 17100, 16400, 18000, 18940],
+  },
+  beauty: {
+    records: [
+      {
+        primary: "面部护理 · 90分钟",
+        secondary: "今天 2:00 PM · Amy",
+        amount: "RM 180",
+        tone: "positive",
+        status: "已确认",
+      },
+      {
+        primary: "染发 + 护理",
+        secondary: "今天 4:30 PM · Jasmine",
+        amount: "RM 320",
+        tone: "warning",
+        status: "待确认",
+      },
+      {
+        primary: "美甲",
+        secondary: "明天 11:00 AM · Amy",
+        amount: "RM 95",
+        tone: "neutral",
+        status: "已预约",
+      },
+    ],
+    customers: [
+      {
+        primary: "林小姐",
+        secondary: "熟客 · 来过 14 次",
+        tone: "positive",
+        status: "会员",
+      },
+      {
+        primary: "Nurul",
+        secondary: "来过 3 次",
+        tone: "neutral",
+        status: "一般",
+      },
+      {
+        primary: "张太太",
+        secondary: "第一次到访",
+        tone: "warning",
+        status: "新客",
+      },
+    ],
+    heroLabel: "本月预约收入",
+    heroValue: "RM 12,650",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "本周预约", value: "31 个" },
+      { label: "待确认", value: "4 个", tone: "caution" },
+      { label: "三个月没来", value: "18 位", tone: "warn", sub: "可以做回访" },
+    ],
+    heroSpark: [9800, 10400, 11200, 10900, 12100, 12650],
+  },
+  wholesale: {
+    records: [
+      {
+        primary: "PO-2026-0412",
+        secondary: "隆兴贸易",
+        amount: "RM 24,600",
+        tone: "positive",
+        status: "已出货",
+      },
+      {
+        primary: "PO-2026-0413",
+        secondary: "美佳超市",
+        amount: "RM 8,150",
+        tone: "warning",
+        status: "待付款",
+      },
+      {
+        primary: "PO-2026-0414",
+        secondary: "新丰商行",
+        amount: "RM 41,900",
+        tone: "neutral",
+        status: "备货中",
+      },
+    ],
+    customers: [
+      {
+        primary: "隆兴贸易",
+        secondary: "月结 30 天 · 业务员 Ah Seng",
+        tone: "positive",
+        status: "正常",
+      },
+      {
+        primary: "美佳超市",
+        secondary: "月结 60 天 · 业务员 Mei",
+        tone: "negative",
+        status: "超期",
+      },
+      {
+        primary: "新丰商行",
+        secondary: "现金交易",
+        tone: "neutral",
+        status: "正常",
+      },
+    ],
+    heroLabel: "本月出货总额",
+    heroValue: "RM 186,400",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "本月出货", value: "62 单" },
+      {
+        label: "待付款",
+        value: "RM 43,800",
+        tone: "caution",
+        sub: "月结未到期",
+      },
+      {
+        label: "已超期",
+        value: "RM 12,400",
+        tone: "warn",
+        sub: "美佳超市 60 天",
+      },
+    ],
+    heroSpark: [142000, 158000, 151000, 169000, 177000, 186400],
+  },
+  services: {
+    records: [
+      {
+        primary: "品牌顾问项目",
+        secondary: "Alpha Sdn Bhd",
+        amount: "RM 32,000",
+        tone: "positive",
+        status: "进行中",
+      },
+      {
+        primary: "系统评估",
+        secondary: "Beta Enterprise",
+        amount: "RM 8,500",
+        tone: "warning",
+        status: "等签约",
+      },
+      {
+        primary: "年度维护合约",
+        secondary: "Gamma Holdings",
+        amount: "RM 60,000",
+        tone: "neutral",
+        status: "提案中",
+      },
+    ],
+    customers: [
+      {
+        primary: "Alpha Sdn Bhd",
+        secondary: "顾问 · Kevin",
+        tone: "positive",
+        status: "合作中",
+      },
+      {
+        primary: "Beta Enterprise",
+        secondary: "顾问 · Kevin",
+        tone: "warning",
+        status: "跟进中",
+      },
+      {
+        primary: "Gamma Holdings",
+        secondary: "顾问 · Shirley",
+        tone: "neutral",
+        status: "潜在",
+      },
+    ],
+    heroLabel: "本月已签约金额",
+    heroValue: "RM 40,500",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "进行中项目", value: "6 个" },
+      { label: "提案等回复", value: "3 份", tone: "caution" },
+      { label: "已做未开票", value: "RM 18,000", tone: "warn" },
+    ],
+    heroSpark: [28000, 31000, 29500, 36000, 38000, 40500],
+  },
+  fnb: {
+    records: [
+      {
+        primary: "3号桌",
+        secondary: "堂食 · 4 位",
+        amount: "RM 128",
+        tone: "positive",
+        status: "已结账",
+      },
+      {
+        primary: "外卖 #88",
+        secondary: "Grab · Bangsar",
+        amount: "RM 46",
+        tone: "warning",
+        status: "制作中",
+      },
+      {
+        primary: "7号桌",
+        secondary: "堂食 · 2 位",
+        amount: "RM 72",
+        tone: "neutral",
+        status: "点单中",
+      },
+    ],
+    customers: [
+      {
+        primary: "常客 · 陈生",
+        secondary: "每周三固定订位",
+        tone: "positive",
+        status: "熟客",
+      },
+      {
+        primary: "Grab Food",
+        secondary: "外送平台",
+        tone: "neutral",
+        status: "渠道",
+      },
+      {
+        primary: "公司团餐 · Delta",
+        secondary: "每月一次",
+        tone: "warning",
+        status: "待确认",
+      },
+    ],
+    heroLabel: "今日营业额",
+    heroValue: "RM 3,280",
+    heroSuffix: "vs 昨天",
+    heroStats: [
+      { label: "今日单数", value: "96 单" },
+      { label: "外送占比", value: "38%", sub: "Grab + Foodpanda" },
+      {
+        label: "食材成本",
+        value: "31%",
+        tone: "caution",
+        sub: "目标 28% 以下",
+      },
+    ],
+    heroSpark: [2650, 2980, 3120, 2740, 3350, 3280],
+  },
+  education: {
+    records: [
+      {
+        primary: "中三数学 · 周二班",
+        secondary: "18 位学生 · 陈老师",
+        amount: "RM 220/月",
+        tone: "positive",
+        status: "开课中",
+      },
+      {
+        primary: "小六国文 · 周六班",
+        secondary: "12 位学生 · 林老师",
+        amount: "RM 180/月",
+        tone: "warning",
+        status: "招生中",
+      },
+      {
+        primary: "SPM 冲刺班",
+        secondary: "8 位学生 · 黄老师",
+        amount: "RM 400/月",
+        tone: "neutral",
+        status: "筹备中",
+      },
+    ],
+    customers: [
+      {
+        primary: "陈家长 (陈小明)",
+        secondary: "中三 · 数学",
+        tone: "positive",
+        status: "已缴费",
+      },
+      {
+        primary: "Puan Aminah (Aiman)",
+        secondary: "小六 · 国文",
+        tone: "warning",
+        status: "待缴费",
+      },
+      {
+        primary: "李家长 (李美琪)",
+        secondary: "SPM 冲刺",
+        tone: "neutral",
+        status: "新报名",
+      },
+    ],
+    heroLabel: "本月学费收入",
+    heroValue: "RM 24,600",
+    heroSuffix: "vs 上个月",
+    heroStats: [
+      { label: "在读学生", value: "74 位" },
+      { label: "本月待缴费", value: "9 位", tone: "caution", sub: "RM 2,180" },
+      { label: "这个月没续班", value: "5 位", tone: "warn" },
+    ],
+    heroSpark: [19800, 21200, 22400, 23100, 23800, 24600],
+  },
+};
+
+export const GENERIC_SAMPLE_ZH: SampleSet = {
+  records: [
+    {
+      primary: "记录 001",
+      secondary: "示例内容",
+      amount: "RM 1,200",
+      tone: "positive",
+      status: "已完成",
+    },
+    {
+      primary: "记录 002",
+      secondary: "示例内容",
+      amount: "RM 850",
+      tone: "warning",
+      status: "处理中",
+    },
+    {
+      primary: "记录 003",
+      secondary: "示例内容",
+      amount: "RM 3,400",
+      tone: "neutral",
+      status: "待处理",
+    },
+  ],
+  customers: [
+    {
+      primary: "客户 A",
+      secondary: "示例联络方式",
+      tone: "positive",
+      status: "活跃",
+    },
+    {
+      primary: "客户 B",
+      secondary: "示例联络方式",
+      tone: "warning",
+      status: "待跟进",
+    },
+    {
+      primary: "客户 C",
+      secondary: "示例联络方式",
+      tone: "neutral",
+      status: "新客户",
+    },
+  ],
+  heroLabel: "本月总额",
+  heroValue: "RM 5,450",
+  heroSuffix: "vs 上个月",
+  heroStats: [
+    { label: "进行中", value: "4 项" },
+    { label: "等处理", value: "2 项", tone: "caution" },
+    { label: "要跟进", value: "1 项", tone: "warn" },
+  ],
+  heroSpark: [3800, 4200, 4600, 4400, 5100, 5450],
+};

@@ -22,10 +22,17 @@ const renovation: BusinessContext = {
   },
   analysis: {
     summary: "你的报价到收订金之间拖太久了。",
+    summary_en: "Too long a gap between your quote and the deposit.",
     after_workflow: ["客户", "报价", "订金", "施工", "尾款"],
+    after_workflow_en: ["Client", "Quote", "Deposit", "Build", "Balance"],
     bottlenecks: [{ title: "报价追不动", description: "发出去就没下文" }],
   },
 };
+
+/** The same business with its system built in Chinese. English is the
+ *  default (lib/system-lang.ts), so every assertion about Chinese output
+ *  has to ask for it explicitly -- which is the point of asserting both. */
+const renovationZh: BusinessContext = { ...renovation, lang: "zh" };
 
 type Node = { type: string; props: Record<string, unknown> };
 
@@ -91,30 +98,78 @@ describe("buildPageLayout", () => {
   });
 
   it("uses the business's own vocabulary rather than generic nouns", () => {
-    const json = JSON.stringify(contentOf(renovation, "projects"));
     // "项目" and "师傅" are this industry's words for order and staff; a
     // template still saying "订单"/"员工" here would mean labels never reached
     // the layout at all.
-    expect(json).toContain("项目");
-    expect(json).toContain("师傅");
+    const zh = JSON.stringify(contentOf(renovationZh, "projects"));
+    expect(zh).toContain("项目");
+    expect(zh).toContain("师傅");
+
+    // The same guarantee in the DEFAULT language. A contractor's order is a
+    // Project and their people are the Crew -- not the catalogue's generic
+    // Order and Staff, which is what a missing INDUSTRY_LABELS_EN row would
+    // silently produce.
+    const en = JSON.stringify(contentOf(renovation, "projects"));
+    expect(en).toContain("Project");
+    expect(en).toContain("Crew");
+    expect(en).not.toContain("项目");
   });
 
   it("puts the AI's own summary on the first screen the customer sees", () => {
-    const header = contentOf(renovation, "dashboard").find((n) => n.type === "PageHeader");
-    expect(header?.props.subtitle).toBe("你的报价到收订金之间拖太久了。");
+    const zh = contentOf(renovationZh, "dashboard").find((n) => n.type === "PageHeader");
+    expect(zh?.props.subtitle).toBe("你的报价到收订金之间拖太久了。");
+
+    // The default pairing: the owner read their analysis in Chinese and the
+    // system is built in English, so the summary has to come from the
+    // model's English field rather than being dropped for a generic line.
+    const en = contentOf(renovation, "dashboard").find((n) => n.type === "PageHeader");
+    expect(en?.props.subtitle).toBe(
+      "Too long a gap between your quote and the deposit.",
+    );
   });
 
   it("puts the AI's recommended workflow into the pipeline component", () => {
-    const strip = contentOf(renovation, "dashboard").find((n) => n.type === "WorkflowStrip");
-    const stages = (strip?.props.stages as { label: string }[]).map((s) => s.label);
-    expect(stages).toEqual(["客户", "报价", "订金", "施工", "尾款"]);
+    const stagesOf = (ctx: BusinessContext) => {
+      const strip = contentOf(ctx, "dashboard").find((n) => n.type === "WorkflowStrip");
+      return (strip?.props.stages as { label: string }[]).map((s) => s.label);
+    };
+    expect(stagesOf(renovationZh)).toEqual(["客户", "报价", "订金", "施工", "尾款"]);
+
+    // Not a translation of the line above -- the model returns a tailored
+    // workflow per language, and an English system that fell back to the
+    // industry default here would silently throw away the analysis.
+    expect(stagesOf(renovation)).toEqual([
+      "Client",
+      "Quote",
+      "Deposit",
+      "Build",
+      "Balance",
+    ]);
   });
 
   it("falls back to the industry's own workflow, translated, with no analysis", () => {
-    const noAnalysis: BusinessContext = { industry: renovation.industry, analysis: null };
-    const strip = contentOf(noAnalysis, "dashboard").find((n) => n.type === "WorkflowStrip");
-    const stages = (strip?.props.stages as { label: string }[]).map((s) => s.label);
-    expect(stages).toEqual(["客户", "报价", "确认", "订金", "施工", "尾款"]);
+    const stagesOf = (ctx: BusinessContext) => {
+      const strip = contentOf(ctx, "dashboard").find((n) => n.type === "WorkflowStrip");
+      return (strip?.props.stages as { label: string }[]).map((s) => s.label);
+    };
+    expect(
+      stagesOf({ industry: renovation.industry, analysis: null, lang: "zh" }),
+    ).toEqual(["客户", "报价", "确认", "订金", "施工", "尾款"]);
+
+    // `industries.default_workflow` is stored in English, but it is the
+    // FOUNDER'S English -- the vocabulary shared with reference_cases and the
+    // analysis prompt. Passing it through untranslated printed "Customer" as
+    // the first thing that happens after a stranger calls a contractor, which
+    // reads as a database enum because it is one. Both languages now map it to
+    // the words the person on the other side would use.
+    expect(stagesOf({ industry: renovation.industry, analysis: null })).toEqual([
+      "Enquiry",
+      "Quote",
+      "Approved",
+      "Deposit",
+      "Build",
+      "Balance",
+    ]);
   });
 
   // The case that matters most for not repeating the original bug: someone who
@@ -145,11 +200,15 @@ describe("buildPageLayout", () => {
   // The arrow the whole page exists to draw. An enquiry has to say which of
   // THIS business's pages it becomes -- and it has to be a page they own.
   it("points the enquiry form at a page the business actually has", () => {
-    const form = contentOf(renovation, "website").find((n) => n.type === "EnquiryForm");
-    expect(form!.props.landsIn).toBe("报价单");
+    const landsIn = (ctx: BusinessContext) =>
+      contentOf(ctx, "website").find((n) => n.type === "EnquiryForm")!.props
+        .landsIn;
+    expect(landsIn(renovationZh)).toBe("报价单");
 
-    const salon = contentOf(renovation, "website", "zh");
-    expect(salon.length).toBeGreaterThan(0);
+    // The arrow has to survive the language change: an English website
+    // promising a record in 「报价单」 names a page that system does not
+    // have under that name.
+    expect(landsIn(renovation)).toBe("Quotations");
   });
 
   it("gives every page the same navigation, so the five read as one system", () => {

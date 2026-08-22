@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState } from "react"
 import { ChevronDown, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
+import { useSystemWords } from "@/design-system/system-lang-context"
 
-const MONTHS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
-
-function formatLabel(value: string): string {
+// Month names follow the system language, so a system switched to English
+// does not still say 「3月」 the moment anyone opens the picker.
+// See design-system/system-words.ts.
+function formatLabel(value: string, months: string[]): string {
   if (!value) return ""
   const [y, m] = value.split("-").map(Number)
-  return `${MONTHS[m - 1]} ${y}`
+  return `${months[m - 1]} ${y}`
 }
 
 // `today` is "YYYY-MM", the same shape this component's own value already
@@ -36,7 +38,7 @@ function currentYearMonth(today?: string): [number, number] {
 export function MonthPicker({
   name,
   defaultValue,
-  placeholder = "选择月份…",
+  placeholder,
   allowClear = false,
   today,
   submitOnPick = false,
@@ -54,6 +56,7 @@ export function MonthPicker({
    */
   submitOnPick?: boolean
 }) {
+  const w = useSystemWords()
   const [value, setValue] = useState(defaultValue ?? "")
   const [open, setOpen] = useState(false)
   const [viewYear, setViewYear] = useState(() => (defaultValue ? Number(defaultValue.split("-")[0]) : currentYearMonth(today)[0]))
@@ -99,7 +102,7 @@ export function MonthPicker({
         className="flex w-full items-center gap-2 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         <CalendarDays aria-hidden="true" className="h-[15px] w-[15px] shrink-0 text-[color:var(--color-paper-dim)]" />
-        <span className={value ? "" : "text-[color:var(--color-paper-dim)]"}>{value ? formatLabel(value) : placeholder}</span>
+        <span className={value ? "" : "text-[color:var(--color-paper-dim)]"}>{value ? formatLabel(value, w.months) : (placeholder ?? w.pickMonth)}</span>
         <ChevronDown
           aria-hidden="true"
           className={`ml-auto h-3.5 w-3.5 shrink-0 text-[color:var(--color-paper-dim)] transition-transform [transition-duration:var(--dur-fast)] ${open ? "rotate-180" : ""}`}
@@ -116,7 +119,7 @@ export function MonthPicker({
           <div className="flex items-center justify-between [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]">
             <button
               type="button"
-              aria-label="上一年"
+              aria-label={w.prevYear}
               className="grid h-6 w-6 place-items-center [border-radius:var(--radius-sm)] border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
               onClick={() => setViewYear((y) => y - 1)}
             >
@@ -125,7 +128,7 @@ export function MonthPicker({
             <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{viewYear}</span>
             <button
               type="button"
-              aria-label="下一年"
+              aria-label={w.nextYear}
               className="grid h-6 w-6 place-items-center [border-radius:var(--radius-sm)] border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
               onClick={() => setViewYear((y) => y + 1)}
             >
@@ -133,7 +136,7 @@ export function MonthPicker({
             </button>
           </div>
           <div className="grid grid-cols-3 gap-1.5 px-3 pb-3">
-            {MONTHS.map((m, i) => {
+            {w.months.map((m, i) => {
               const isToday = viewYear === todayY && i === todayM
               const isSelected = viewYear === selY && i === selM
               return (

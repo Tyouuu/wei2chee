@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { X } from "lucide-react"
+import { useSystemWords } from "@/design-system/system-lang-context"
 
 export type ToastVariant = "warning" | "negative" | "info" | "neutral"
 
@@ -100,6 +101,7 @@ export function NotificationToast({ notifications }: { notifications: ToastNotif
 }
 
 function Toast({ notification, onDismiss }: { notification: ToastNotification; onDismiss: () => void }) {
+  const w = useSystemWords()
   useEffect(() => {
     const timer = setTimeout(onDismiss, AUTO_DISMISS_MS)
     return () => clearTimeout(timer)
@@ -113,11 +115,11 @@ function Toast({ notification, onDismiss }: { notification: ToastNotification; o
       <Link href={notification.href} onClick={onDismiss} className="flex-1 text-left">
         <div className="[font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{notification.title}</div>
         <div className="mt-0.5 [font-size:var(--text-xs)] text-[color:var(--color-paper-dim)]">{notification.subtitle}</div>
-        <div className="mt-1.5 [font-size:var(--text-xs)] text-[color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]">查看 →</div>
+        <div className="mt-1.5 [font-size:var(--text-xs)] text-[color:var(--color-primary-deep)] [font-weight:var(--fw-semibold)]">{w.view}</div>
       </Link>
       <button
         onClick={onDismiss}
-        aria-label="关闭"
+        aria-label={w.close}
         className="shrink-0 [border-radius:var(--radius-xs)] p-0.5 text-[color:color-mix(in_srgb,var(--color-paper-dim)_70%,transparent)] transition-colors hover:text-[color:var(--color-paper)]"
       >
         <X aria-hidden="true" className="h-3.5 w-3.5" />

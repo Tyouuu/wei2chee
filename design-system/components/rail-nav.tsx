@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import { IconSettings, railIcon } from "./rail-icons"
 import { NavAxisContext } from "./nav-axis"
+import { useSystemWords } from "@/design-system/system-lang-context"
 
 export type RailItem = {
   href: string
@@ -140,7 +141,7 @@ export function RailNav({
   notificationsHref,
   hasUnread,
   accountHref,
-  accountLabel = "账号设置",
+  accountLabel,
   user,
   profileMenu,
   topSlot,
@@ -166,6 +167,7 @@ export function RailNav({
   /** Which of the four navigations to draw. See `RailVariant`. */
   variant?: RailVariant
 }) {
+  const w = useSystemWords()
   const pathname = usePathname()
   const [open, setOpen] = useState<Panel>(null)
 
@@ -173,8 +175,8 @@ export function RailNav({
   // costs three lines and means this generalisation isn't a breaking change for
   // any hand-written app that mounts this rail.
   const utility: RailUtilityItem[] = utilityItems ?? [
-    { label: "通知", href: notificationsHref, iconName: "notifications", showUnreadDot: hasUnread },
-    { label: accountLabel, href: accountHref, iconName: "account" },
+    { label: w.notifications, href: notificationsHref, iconName: "notifications", showUnreadDot: hasUnread },
+    { label: accountLabel ?? w.account, href: accountHref, iconName: "account" },
   ]
 
   const axis = useContext(NavAxisContext)
@@ -265,7 +267,7 @@ export function RailNav({
     // the old `h-screen`: inside Puck's canvas iframe the two coincide, but on
     // a page taller than the viewport `h-screen` stops the rail partway down
     // and leaves a bright strip under it.
-    <aside className={shell} aria-label={isTop ? "顶部导航" : "侧边导航"} ref={wrapRef}>
+    <aside className={shell} aria-label={isTop ? w.topNav : w.sideNav} ref={wrapRef}>
       {/* The brand block. A monogram tile carrying the register's own nav
           accent gives the rail one saturated anchor point — without it a dark
           column of grey text reads as unfinished rather than as chrome. */}
@@ -304,7 +306,7 @@ export function RailNav({
                 the customer already knows. */}
             {!isTop && !isQuiet && (
               <span className="block truncate text-[color:var(--color-nav-fg-dim)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]">
-                营运系统
+                {w.operationsSystem}
               </span>
             )}
           </span>
@@ -486,8 +488,8 @@ export function RailNav({
                 key={`${util.label}-${i}`}
                 title={
                   isCompact || isTop
-                    ? `${util.label} — 这是你系统里的功能，系统建好后会启用`
-                    : "这是你系统里的功能，系统建好后会启用"
+                    ? w.notYetLive(util.label)
+                    : w.notYetLive()
                 }
                 className={`${base} cursor-default text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)]`}
               >

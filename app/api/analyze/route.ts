@@ -45,6 +45,10 @@ Choosing this business's modules -- the pages their system will be built from:
   businesses need five or six.
 - "label" is the business's OWN noun, 2-4 characters. A SIM-card master dealer's
   customers are 经销商, a salon's are 顾客, a tuition centre's are 家长.
+- "label_en" is that same noun in English, one or two words: Dealers, Clients,
+  Parents. It is what the page is actually HEADED, because the system is built
+  in English by default -- so a lazy "Customers" here costs the business its
+  own vocabulary on every screen.
 - "why" must reference something the owner actually told you, under 24
   characters. If you cannot tie it to their answers, do not choose that module.`;
 
@@ -79,6 +83,11 @@ ${Object.entries(answers)
   .join("\n")}
 
 Respond in ${language === "zh" ? "Chinese" : "English"}.
+The three _en fields (summary_en, after_workflow_en, label_en) are ALWAYS in
+English regardless of the language above. They are not a translation exercise:
+the owner reads the analysis in their language, and the SYSTEM those fields
+build is read by their staff, their customers and LHDN. Write them as Malaysian
+business English -- the words this owner's own quotation would use.
 Use the industry's own vocabulary above for stage names where it fits -- these
 stage names become the column headings in the system this owner will be shown
 next, so they must read like something they would write themselves.
@@ -185,7 +194,14 @@ export async function POST(req: NextRequest) {
       bottlenecks: parsed.bottlenecks,
       before_workflow: parsed.before_workflow,
       after_workflow: parsed.after_workflow,
+      // The English twins of the two tailored fields. The system this owner is
+      // about to be shown is BUILT in English by default while they answered
+      // in Chinese (migration 20260822060000), so without these the workflow
+      // and the summary -- the two things that prove the questionnaire was
+      // read -- are exactly what gets dropped on the way in.
+      after_workflow_en: parsed.after_workflow_en,
       summary: parsed.summary,
+      summary_en: parsed.summary_en,
       modules: parsed.modules,
     })
     .select()

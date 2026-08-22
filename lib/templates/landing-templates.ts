@@ -1,4 +1,5 @@
 import type { PuckNode } from "@/lib/templates/puck-node";
+import type { LandingCopy } from "@/lib/templates/copy/landing";
 
 /**
  * 官网版面 — the shapes a small business's own page can take.
@@ -81,6 +82,11 @@ export type LandingContent = {
   /** Three checkable facts. */
   proof: { value: string; label: string }[];
   contact: { label: string; value: string; icon: string }[];
+  /** The words this page is written in, already resolved from the project's
+   *  `system_language`. On the bag rather than reached for, for the same
+   *  reason everything else here is: a template that could pick its own
+   *  language is a template that can disagree with the rest of the system. */
+  words: LandingCopy["page"];
 };
 
 const node = (
@@ -102,9 +108,9 @@ const hero = (
     eyebrow: c.eyebrow,
     headline: c.brand,
     sub: c.pitch,
-    primaryLabel: "WhatsApp 问价",
+    primaryLabel: c.words.whatsapp,
     primaryHref: "#",
-    secondaryLabel: "看我们做过什么",
+    secondaryLabel: c.words.seeWork,
     secondaryHref: "#",
     proof: c.proof,
     ...extra,
@@ -124,37 +130,35 @@ const flow = (c: LandingContent, title: string, layout = "row") =>
     stages: c.stages.map((label) => ({ label, tone: "normal" })),
   });
 
-const form = (
-  c: LandingContent,
-  heading: string,
-  blurb: string,
-  look: string,
-  submit = "送出",
-) =>
-  node("EnquiryForm", "website-form", {
+const form = (c: LandingContent, key: string, look: string) => {
+  const t = c.words.byTemplate[key] ?? c.words.byTemplate.quote;
+  return node("EnquiryForm", "website-form", {
     look,
-    heading,
-    blurb,
-    fields: [
-      { label: "怎么称呼", placeholder: "陈先生", kind: "text" },
-      { label: "电话 / WhatsApp", placeholder: "012-345 6789", kind: "phone" },
-      {
-        label: "想做什么",
-        placeholder: "三房翻新，想问大概多少",
-        kind: "long",
-      },
-    ],
-    submitLabel: submit,
+    heading: t.formHeading,
+    blurb: t.formBlurb,
+    fields: c.words.fields,
+    submitLabel: t.submit,
     landsIn: c.landsIn,
-    note: "通常一天内回。",
+    // EnquiryForm is server-rendered and cannot read a language context, so the
+    // three pieces of the arrow line are passed. They also land in the saved
+    // layout, which makes them the customer's to rewrite like any other text.
+    landsInBadge: c.words.arrowBadge,
+    landsInBefore: c.words.arrowBefore,
+    landsInAfter: c.words.arrowAfter,
+    note: c.words.replyNote,
   });
+};
 
 const contact = (c: LandingContent, framed = true) =>
   node("InfoRows", "website-contact", {
-    heading: "怎么找我们",
+    heading: c.words.contactHeading,
     framed,
     rows: c.contact,
   });
+
+/** The section headings for one template, in the page's own language. */
+const sect = (c: LandingContent, key: string) =>
+  c.words.byTemplate[key] ?? c.words.byTemplate.quote;
 
 export const LANDING_TEMPLATES: LandingTemplate[] = [
   {
@@ -164,14 +168,9 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     trades: ["renovation", "services", "other"],
     build: (c) => [
       hero(c, "left"),
-      services(c, "我们做什么"),
-      flow(c, "找我们之后会怎么走"),
-      form(
-        c,
-        "留个电话，我们回你",
-        "填三格就好。我们看到会直接 WhatsApp 你，不会打推销电话。",
-        "card",
-      ),
+      services(c, sect(c, "quote").services),
+      flow(c, sect(c, "quote").flow ?? ""),
+      form(c, "quote", "card"),
       contact(c),
     ],
   },
@@ -182,17 +181,11 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     trades: ["beauty", "education"],
     build: (c) => [
       hero(c, "center"),
-      services(c, "可以做什么"),
+      services(c, sect(c, "booking").services),
       // Numbered, not arrows: someone booking a slot is reading "what do I do
       // first", which is a list of steps rather than a pipeline.
-      flow(c, "怎么预约", "numbered"),
-      form(
-        c,
-        "想约什么时候？",
-        "留个电话跟想约的时间，我们确认了回你。",
-        "split",
-        "预约",
-      ),
+      flow(c, sect(c, "booking").flow ?? "", "numbered"),
+      form(c, "booking", "split"),
       contact(c),
     ],
   },
@@ -205,8 +198,8 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       // The band is the shopfront: for a business whose page IS the shop, the
       // first screen should feel like walking past it.
       hero(c, "band"),
-      services(c, "有什么"),
-      form(c, "要订什么？", "写下来，我们看到就准备。", "split", "落单"),
+      services(c, sect(c, "order").services),
+      form(c, "order", "split"),
       contact(c, false),
     ],
   },
@@ -217,15 +210,9 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     trades: ["wholesale"],
     build: (c) => [
       hero(c, "left"),
-      services(c, "供什么货"),
-      flow(c, "怎么合作", "timeline"),
-      form(
-        c,
-        "要报价？",
-        "讲一下要什么、大概多少量，我们报价给你。",
-        "card",
-        "要报价",
-      ),
+      services(c, sect(c, "wholesale").services),
+      flow(c, sect(c, "wholesale").flow ?? "", "timeline"),
+      form(c, "wholesale", "card"),
       contact(c),
     ],
   },
@@ -238,9 +225,9 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hero(c, "center"),
       // Services first and unframed: on a page whose job is "look at this",
       // boxes around every section fight the looking.
-      services(c, "做过什么", false),
-      flow(c, "合作流程", "timeline"),
-      form(c, "有想做的？", "讲一下想做什么，我们回你。", "plain"),
+      services(c, sect(c, "portfolio").services, false),
+      flow(c, sect(c, "portfolio").flow ?? "", "timeline"),
+      form(c, "portfolio", "plain"),
       contact(c, false),
     ],
   },
@@ -251,7 +238,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     trades: [],
     build: (c) => [
       hero(c, "plain"),
-      services(c, "我们做什么", false),
+      services(c, sect(c, "card").services, false),
       contact(c),
     ],
   },

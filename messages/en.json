@@ -418,7 +418,19 @@
       "save": "Save",
       "saving": "Saving…",
       "cancel": "Cancel",
-      "failed": "Could not save. Please try again."
+      "failed": "Could not save. Please try again.",
+      "langLabel": "Language of your system",
+      "langHint": "The language your system is written in — for your staff, your customers, your quotations and invoices. Separate from the language you read Formae in. Pages you have never edited are rebuilt; pages you have edited are left alone.",
+      "lang": {
+        "en": {
+          "name": "English",
+          "hint": "The standard for business here. Quotations, invoices and LHDN all use it"
+        },
+        "zh": {
+          "name": "中文",
+          "hint": "Pick this only if your customers and staff all read Chinese"
+        }
+      }
     },
     "addPage": {
       "title": "Add a page",

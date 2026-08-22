@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { SystemLang } from "@/lib/system-lang";
 import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -29,6 +31,7 @@ export function SettingsDialog({
   onClose,
   businessName,
   ownerName,
+  systemLang,
   onSaved,
 }: {
   open: boolean;
@@ -38,12 +41,21 @@ export function SettingsDialog({
    *  a guess the customer would then have to notice was not theirs. */
   businessName: string | null;
   ownerName: string | null;
-  onSaved: (next: { businessName: string | null; ownerName: string | null }) => void;
+  /** `projects.system_language`. The language the BUILT SYSTEM speaks, which is
+   *  not the language this dialog is written in -- see lib/system-lang.ts. */
+  systemLang: SystemLang;
+  onSaved: (next: {
+    businessName: string | null;
+    ownerName: string | null;
+    systemLang: SystemLang;
+  }) => void;
 }) {
   const t = useTranslations("portal.settings");
+  const router = useRouter();
   const ref = useRef<HTMLDialogElement>(null);
   const [business, setBusiness] = useState(businessName ?? "");
   const [owner, setOwner] = useState(ownerName ?? "");
+  const [lang, setLang] = useState<SystemLang>(systemLang);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -55,12 +67,13 @@ export function SettingsDialog({
       // saved values again rather than the abandoned edit.
       setBusiness(businessName ?? "");
       setOwner(ownerName ?? "");
+      setLang(systemLang);
       setFailed(false);
       el.showModal();
     } else if (!open && el.open) {
       el.close();
     }
-  }, [open, businessName, ownerName]);
+  }, [open, businessName, ownerName, systemLang]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,17 +86,36 @@ export function SettingsDialog({
       new_business_name: business,
       new_owner_name: owner,
     });
+
+    // Only when it actually changed. The RPC returns the pages that have never
+    // been saved, so a language change can regenerate exactly those and leave
+    // every page the customer has touched alone -- their edits are theirs, in
+    // whatever language they made them.
+    let langError = null;
+    if (!error && lang !== systemLang) {
+      const res = await supabase.rpc("update_project_system_language", {
+        new_language: lang,
+      });
+      langError = res.error;
+    }
     setSaving(false);
 
-    if (error) {
+    if (error || langError) {
       setFailed(true);
       return;
     }
     // Empty means "clear it" on the server (it stores NULL), so the parent is
     // told null rather than "" — otherwise the UI would show an empty name
     // where the database will next serve the placeholder.
-    onSaved({ businessName: business.trim() || null, ownerName: owner.trim() || null });
+    onSaved({
+      businessName: business.trim() || null,
+      ownerName: owner.trim() || null,
+      systemLang: lang,
+    });
     onClose();
+    // A language change rewrites every page that was still a draft, and those
+    // are rendered on the server. Nothing short of a refresh shows it.
+    if (lang !== systemLang) router.refresh();
   }
 
   const field =
@@ -150,6 +182,41 @@ export function SettingsDialog({
             placeholder={t("ownerPlaceholder")}
             className={field}
           />
+        </div>
+
+        <div className="mt-5">
+          <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+            {t("langLabel")}
+          </span>
+          {/* Two buttons rather than a dropdown. There are exactly two answers,
+            and a select would hide the one not chosen behind a click -- for a
+            setting most owners will look at once and never touch, seeing both
+            options is the whole interaction. */}
+          <div className="mt-2 flex gap-2">
+            {(["en", "zh"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setLang(option)}
+                aria-pressed={lang === option}
+                className={`flex-1 [border-radius:var(--radius-control)] border px-3 py-2 text-left [font-size:var(--text-sm)] ${
+                  lang === option
+                    ? "[border-color:var(--color-primary)] [background-color:var(--color-ink-850)] [color:var(--color-paper)]"
+                    : "[border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] hover:[color:var(--color-paper)]"
+                }`}
+              >
+                <span className="block [font-weight:var(--fw-medium)]">
+                  {t(`lang.${option}.name`)}
+                </span>
+                <span className="mt-0.5 block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                  {t(`lang.${option}.hint`)}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
+            {t("langHint")}
+          </p>
         </div>
 
         {failed && (

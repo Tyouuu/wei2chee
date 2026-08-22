@@ -5,13 +5,20 @@ const validAnalysis = () => ({
   bottlenecks: [{ title: "追款慢", description: "手工追踪付款", severity: "high" }],
   before_workflow: ["客户", "订单"],
   after_workflow: ["客户", "报价", "订单", "收款"],
+  // The English side is REQUIRED, not optional. The system this analysis
+  // builds is English by default while the owner answers in Chinese, so a
+  // model that returns only the Chinese fields has not done the job -- and
+  // making that a parse failure is what sends it to the retry rather than to
+  // a customer with a half-generic first screen.
+  after_workflow_en: ["Client", "Quote", "Order", "Payment"],
   focus_stage_index: 1,
   summary: "你有 3 个环节可以自动化",
+  summary_en: "Three steps here can run themselves",
   modules: [
-    { key: "dashboard", label: "总览", why: "每天要看的数字" },
-    { key: "customers", label: "客户", why: "名单散在 WhatsApp" },
-    { key: "quotations", label: "报价单", why: "报价出去没人跟" },
-    { key: "payments", label: "收款", why: "追款靠记性" },
+    { key: "dashboard", label: "总览", label_en: "Overview", why: "每天要看的数字" },
+    { key: "customers", label: "客户", label_en: "Customers", why: "名单散在 WhatsApp" },
+    { key: "quotations", label: "报价单", label_en: "Quotations", why: "报价出去没人跟" },
+    { key: "payments", label: "收款", label_en: "Payments", why: "追款靠记性" },
   ],
 });
 

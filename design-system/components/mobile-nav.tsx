@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
+import { useSystemWords } from "@/design-system/system-lang-context"
 
 export type MobileNavItem = { href: string; label: string }
 
@@ -29,7 +30,7 @@ export function MobileNav({
   notificationsHref,
   hasUnread,
   accountHref,
-  accountLabel = "账号设置",
+  accountLabel,
   extra,
   footer,
 }: {
@@ -43,6 +44,7 @@ export function MobileNav({
   /** Rendered at the very bottom of the panel — e.g. the signed-in user's identity and a sign-out control. */
   footer?: ReactNode
 }) {
+  const w = useSystemWords()
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -73,7 +75,7 @@ export function MobileNav({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label={open ? "关闭菜单" : "打开菜单"}
+        aria-label={open ? w.closeMenu : w.openMenu}
         aria-expanded={open}
         className="relative grid h-8 w-8 place-items-center [border-radius:var(--radius-md)] text-[color:var(--color-paper-dim)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
       >
@@ -105,7 +107,7 @@ export function MobileNav({
               {hasUnread && <span className="h-[7px] w-[7px] shrink-0 rounded-full [background-color:var(--color-clay)]" />}
             </a>
             <a href={accountHref} className={linkClass(isActive(accountHref))}>
-              {accountLabel}
+              {accountLabel ?? w.account}
             </a>
           </nav>
 

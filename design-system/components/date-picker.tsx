@@ -2,12 +2,11 @@
 
 import { useEffect, useRef, useState } from "react"
 import { ChevronDown, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
+import { useSystemWords } from "@/design-system/system-lang-context"
 
-const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"]
-const MONTHS = [
-  "1月", "2月", "3月", "4月", "5月", "6月",
-  "7月", "8月", "9月", "10月", "11月", "12月",
-]
+// Weekday initials and month names follow the system language --
+// design-system/system-words.ts. A picker that still says 「3月」 inside an
+// English system is the most visible half of a half-done translation.
 
 function parseISO(v: string | undefined): { y: number; m: number; d: number } | null {
   if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null
@@ -62,7 +61,7 @@ export function DatePicker({
   onChange,
   min,
   max,
-  placeholder = "选择日期",
+  placeholder,
   allowClear = false,
   required,
   todayIso,
@@ -79,6 +78,7 @@ export function DatePicker({
   todayIso?: string
 }) {
   const isControlled = value !== undefined
+  const w = useSystemWords()
   const [internal, setInternal] = useState(defaultValue ?? "")
   const current = isControlled ? (value ?? "") : internal
   const [open, setOpen] = useState(false)
@@ -162,7 +162,7 @@ export function DatePicker({
         className="flex w-full items-center gap-2 [border-radius:var(--radius-md)] border [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
       >
         <CalendarDays aria-hidden="true" className="h-[15px] w-[15px] shrink-0 text-[color:var(--color-paper-dim)]" />
-        <span className={current ? "" : "text-[color:var(--color-paper-dim)]"}>{current ? formatDisplay(current) : placeholder}</span>
+        <span className={current ? "" : "text-[color:var(--color-paper-dim)]"}>{current ? formatDisplay(current) : (placeholder ?? w.pickDate)}</span>
         <ChevronDown
           aria-hidden="true"
           className={`ml-auto h-3.5 w-3.5 shrink-0 text-[color:var(--color-paper-dim)] transition-transform [transition-duration:var(--dur-fast)] ${open ? "rotate-180" : ""}`}
@@ -173,18 +173,18 @@ export function DatePicker({
           <div className="flex items-center justify-between [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)]">
             <button
               type="button"
-              aria-label="上个月"
+              aria-label={w.prevMonth}
               className="grid h-6 w-6 place-items-center [border-radius:var(--radius-sm)] border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
               onClick={() => changeMonth(-1)}
             >
               <ChevronLeft aria-hidden="true" className="h-3 w-3" />
             </button>
             <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
-              {MONTHS[viewM]} {viewY}
+              {w.months[viewM]} {viewY}
             </span>
             <button
               type="button"
-              aria-label="下个月"
+              aria-label={w.nextMonth}
               className="grid h-6 w-6 place-items-center [border-radius:var(--radius-sm)] border text-[color:var(--color-paper-dim)] [border-color:var(--color-ink-800)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]"
               onClick={() => changeMonth(1)}
             >
@@ -192,12 +192,12 @@ export function DatePicker({
             </button>
           </div>
           <div className="grid grid-cols-7 gap-y-1 px-3">
-            {WEEKDAYS.map((w, i) => (
+            {w.weekdays.map((day, i) => (
               <span
                 key={i}
                 className="grid h-6 place-items-center [font-size:var(--text-micro)] uppercase [font-weight:var(--fw-semibold)] text-[color:color-mix(in_srgb,var(--color-paper-dim)_70%,transparent)]"
               >
-                {w}
+                {day}
               </span>
             ))}
           </div>

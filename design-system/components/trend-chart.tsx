@@ -17,6 +17,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { useSystemWords } from "@/design-system/system-lang-context"
 
 export type TrendKind = "bar" | "line" | "area"
 
@@ -104,6 +105,7 @@ function useStyleRadius(ref: React.RefObject<HTMLElement | null>, fallback: numb
  * magnitudes comparable, which is the part the axis was actually for.
  */
 export function TrendChart({ title, caption, kind, unit = "", points }: TrendChartProps) {
+  const w = useSystemWords()
   const hostRef = useRef<HTMLElement>(null)
   const barRadius = useStyleRadius(hostRef, 4)
 
@@ -113,7 +115,7 @@ export function TrendChart({ title, caption, kind, unit = "", points }: TrendCha
   // …). A key like "revenue" is safe today and collides the day someone adds a
   // token by that name; a one-letter key cannot.
   const config = {
-    v: { label: title || "数值", color: "var(--chart-1)" },
+    v: { label: title || w.value, color: "var(--chart-1)" },
   } satisfies ChartConfig
 
   const data = points.map((p) => ({ label: p.label, v: Number(p.value) || 0 }))

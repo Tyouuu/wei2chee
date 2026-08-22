@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
 import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
 import { PortalShell } from "./portal-shell";
+import { SystemLangProvider } from "@/design-system/system-lang-context";
 import {
   displayBusinessName,
   displayOwnerName,
   pageLabel,
   sortPages,
+  systemLangOf,
+  tradeLabels,
   type BusinessContext,
 } from "@/lib/templates/industry-template";
 
@@ -27,7 +30,6 @@ import {
  * in it.
  */
 
-const FALLBACK_LABELS = { customer: "客户", order: "订单", staff: "员工" };
 
 export default async function PortalAppLayout({
   children,
@@ -83,15 +85,27 @@ export default async function PortalAppLayout({
       businessName={displayBusinessName(businessContext)}
       savedBusinessName={businessContext.identity?.business_name ?? null}
       savedOwnerName={businessContext.identity?.owner_name ?? null}
+      systemLang={systemLangOf(businessContext)}
       ownerName={displayOwnerName(businessContext, user.email?.split("@")[0] || "我")}
       pages={pageRefs.map((ref) => ({
         key: ref.key,
-        label: pageLabel(ref, businessContext.industry?.labels ?? FALLBACK_LABELS),
+        label: pageLabel(
+          ref,
+          tradeLabels(businessContext, pageRefs),
+          systemLangOf(businessContext),
+        ),
       }))}
       paid={Boolean(project?.paid)}
       isFounder={isFounder}
     >
-      {children}
+      {/* Inside the shell, not around it. PortalShell is FORMAE -- dark chrome,
+          the founder's own product, always in the owner's language. Everything
+          it wraps is the CUSTOMER'S system, which speaks whatever
+          `projects.system_language` says. Putting the provider here is what
+          keeps that line visible in the code as well as on the screen. */}
+      <SystemLangProvider lang={systemLangOf(businessContext)}>
+        {children}
+      </SystemLangProvider>
     </PortalShell>
   );
 }

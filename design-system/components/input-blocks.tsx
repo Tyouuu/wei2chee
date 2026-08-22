@@ -1,5 +1,7 @@
 "use client";
 
+import { useSystemWords } from "@/design-system/system-lang-context";
+
 import { useEffect, useId, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -271,14 +273,15 @@ export function UploadBox({
   hint?: string;
   maxFiles?: number;
 }) {
+  const w = useSystemWords();
   const [files, setFiles] = useState<File[] | undefined>();
   return (
     <Dropzone maxFiles={maxFiles} src={files} onDrop={setFiles} onError={() => {}}>
       <DropzoneEmptyState>
         <div className="flex flex-col items-center justify-center gap-1 p-6 text-center">
-          <p className="text-sm font-medium">{title || "拖照片进来,或者点一下选"}</p>
+          <p className="text-sm font-medium">{title || w.dropPrompt}</p>
           <p className="text-muted-foreground text-xs">
-            {hint || `最多 ${maxFiles} 张`}
+            {hint || w.atMost(maxFiles)}
           </p>
         </div>
       </DropzoneEmptyState>
@@ -301,6 +304,7 @@ export function TagPicker({
   options: ChoiceOption[];
   placeholder?: string;
 }) {
+  const w = useSystemWords();
   const [picked, setPicked] = useState<string[]>([]);
   const opts = (options ?? []).map((o, i) => ({
     label: o.label,
@@ -320,7 +324,7 @@ export function TagPicker({
           ))}
         </TagsTrigger>
         <TagsContent>
-          <TagsInput placeholder={placeholder || "找标签…"} />
+          <TagsInput placeholder={placeholder || w.findTag} />
           <TagsList>
             {opts.map((o) => (
               <TagsItem key={o.value} value={o.value} onSelect={() => toggle(o.value)}>
@@ -407,12 +411,13 @@ export function ZoomPhoto({
   alt?: string;
   height?: number;
 }) {
+  const w = useSystemWords();
   return (
     <ImageZoom>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src || "https://placehold.co/800x500/e5e7eb/6b7280?text=%20"}
-        alt={alt || "照片"}
+        alt={alt || w.photo}
         style={{ height, width: "100%", objectFit: "cover" }}
         className="rounded-[var(--radius-md)]"
       />

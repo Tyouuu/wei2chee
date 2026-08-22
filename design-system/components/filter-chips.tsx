@@ -27,6 +27,10 @@ export type FilterChip = {
 export function FilterChips({
   chips,
   clearAllHref,
+  // Defaults stay Chinese and stay HERE rather than following a context:
+  // this is a server component, so it cannot read one. The page builder passes
+  // both in the system language (see `filterChips` in industry-template.ts);
+  // the defaults are what a layout saved before that existed still renders.
   filteredByLabel = "筛选条件",
   clearAllLabel = "清空全部",
 }: {

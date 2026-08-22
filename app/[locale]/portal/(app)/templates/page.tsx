@@ -14,6 +14,8 @@ import {
   displayOwnerName,
   pageLabel,
   sortPages,
+  systemLangOf,
+  tradeLabels,
   type BusinessContext,
 } from "@/lib/templates/industry-template";
 
@@ -37,7 +39,6 @@ import {
  * data already fetched, no LLM call and no write.
  */
 
-const FALLBACK_LABELS = { customer: "客户", order: "订单", staff: "员工" };
 
 export default async function TemplatesPage({
   params,
@@ -77,11 +78,11 @@ export default async function TemplatesPage({
     businessContext,
     user.email?.split("@")[0] || "我",
   );
-  const labels = businessContext.industry?.labels ?? FALLBACK_LABELS;
+  const labels = tradeLabels(businessContext);
 
   const templates = PAGE_KEYS.map((key) => ({
     pageKey: key,
-    label: pageLabel({ key }, labels),
+    label: pageLabel({ key }, labels, systemLangOf(businessContext)),
     // `dashboard` is excluded from the "add" action rather than from the
     // gallery: every system already has one, and seeing it here is how a
     // customer understands the set is complete.

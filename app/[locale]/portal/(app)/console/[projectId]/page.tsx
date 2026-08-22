@@ -6,12 +6,15 @@ import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { buildSystemSpec, specToText } from "@/lib/portal/spec-outline";
 import type { PuckLayout } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { toSystemLang } from "@/lib/system-lang";
 import {
   buildPageLayout,
   displayOwnerName,
   isUngeneratedLayout,
   pageLabel,
   sortPages,
+  systemLangOf,
+  tradeLabels,
   type BusinessContext,
 } from "@/lib/templates/industry-template";
 
@@ -38,7 +41,6 @@ import {
  * does it, and marked as a draft.
  */
 
-const FALLBACK_LABELS = { customer: "客户", order: "订单", staff: "员工" };
 
 type PageRow = {
   page_key: string;
@@ -85,13 +87,17 @@ export default async function ConsoleCustomerPage({
       business_name: (payload.project.business_name as string) ?? null,
       owner_name: (payload.project.owner_name as string) ?? null,
     },
+    // The console renders the customer's OWN system, so it has to be built in
+    // the customer's system language, not the founder's. `project` here is the
+    // whole projects row (`to_jsonb(p)`), so the column arrives for free.
+    lang: toSystemLang(payload.project.system_language),
   };
-  const labels = businessContext.industry?.labels ?? FALLBACK_LABELS;
   const ownerName = displayOwnerName(businessContext, payload.email.split("@")[0]);
 
   const pageRefs = sortPages(
     (payload.pages ?? []).map((p) => ({ key: p.page_key, title: p.title })),
   );
+  const labels = tradeLabels(businessContext, pageRefs);
 
   const pages = pageRefs.map((ref) => {
     const row = (payload.pages ?? []).find((p) => p.page_key === ref.key);
@@ -99,7 +105,7 @@ export default async function ConsoleCustomerPage({
     const isDraft = isUngeneratedLayout(saved);
     return {
       pageKey: ref.key,
-      label: pageLabel(ref, labels),
+      label: pageLabel(ref, labels, systemLangOf(businessContext)),
       isDraft,
       updatedAt: row?.updated_at ?? null,
       layout: (isDraft

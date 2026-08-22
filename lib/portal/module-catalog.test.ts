@@ -38,19 +38,32 @@ describe("the catalogue itself", () => {
    */
   it("can build a real page for every key in the catalogue", () => {
     for (const key of MODULE_KEYS) {
-      const built = buildPageLayout(key, {}, "我的生意", "zh", [{ key }]);
-      expect(content(built).length, `${key} built nothing`).toBeGreaterThan(0);
+      for (const lang of ["en", "zh"] as const) {
+        const built = buildPageLayout(key, { lang }, "我的生意", "zh", [{ key }]);
+        expect(
+          content(built).length,
+          `${key} built nothing in ${lang}`,
+        ).toBeGreaterThan(0);
+      }
     }
   });
 
   it("builds pages that are not all the same generic table", () => {
     // Two different money modules must not produce identical layouts -- if they
     // do, `moduleCopy` is missing an arm and the shape is showing through.
-    const a = JSON.stringify(buildPageLayout("reconciliation", {}, "x", "zh", [{ key: "reconciliation" }]));
-    const b = JSON.stringify(buildPageLayout("commission", {}, "x", "zh", [{ key: "commission" }]));
-    expect(a).not.toEqual(b);
-    expect(a).toContain("对账");
-    expect(b).toContain("佣金");
+    // Checked in BOTH languages: a copy table that gained an arm on one side
+    // and not the other is exactly the drift the split into
+    // module-copy.en.ts / module-copy.zh.ts makes possible.
+    const built = (key: string, lang: "en" | "zh") =>
+      JSON.stringify(buildPageLayout(key, { lang }, "x", "zh", [{ key }]));
+
+    expect(built("reconciliation", "zh")).not.toEqual(built("commission", "zh"));
+    expect(built("reconciliation", "zh")).toContain("对账");
+    expect(built("commission", "zh")).toContain("佣金");
+
+    expect(built("reconciliation", "en")).not.toEqual(built("commission", "en"));
+    expect(built("reconciliation", "en")).toContain("reconciliation");
+    expect(built("commission", "en")).toContain("Commission");
   });
 
   it("names the always-on modules and no others", () => {
@@ -205,7 +218,14 @@ describe("the business's own noun reaches every page", () => {
   });
 
   it("leaves the trade default alone when nothing was renamed", () => {
-    const built = buildPageLayout("ranking", {}, "我的生意", "zh", [{ key: "ranking" }]);
-    expect(JSON.stringify(built)).toContain("客户");
+    const zh = buildPageLayout("ranking", { lang: "zh" }, "我的生意", "zh", [
+      { key: "ranking" },
+    ]);
+    expect(JSON.stringify(zh)).toContain("客户");
+
+    const en = buildPageLayout("ranking", {}, "My business", "zh", [
+      { key: "ranking" },
+    ]);
+    expect(JSON.stringify(en)).toContain("Customer");
   });
 });

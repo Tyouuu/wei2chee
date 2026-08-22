@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { SettingsDialog } from "../settings-dialog";
+import type { SystemLang } from "@/lib/system-lang";
 import { AddPageDialog } from "../add-page-dialog";
 import chrome from "../chrome.module.css";
 import {
@@ -125,6 +126,7 @@ export function PortalShell({
   businessName,
   savedBusinessName,
   savedOwnerName,
+  systemLang,
   ownerName,
   pages,
   paid,
@@ -138,6 +140,10 @@ export function PortalShell({
   businessName: string;
   savedBusinessName: string | null;
   savedOwnerName: string | null;
+  /** `projects.system_language` -- the language the customer's SYSTEM is built
+   *  in, which this shell only passes through to the settings dialog. The
+   *  shell itself is Formae and is always in the owner's locale. */
+  systemLang: SystemLang;
   ownerName: string;
   pages: NavPage[];
   paid: boolean;
@@ -158,6 +164,7 @@ export function PortalShell({
   const [identity, setIdentity] = useState({
     businessName: savedBusinessName,
     ownerName: savedOwnerName,
+    systemLang,
   });
   const shownName = identity.businessName ?? businessName;
 
@@ -397,6 +404,7 @@ export function PortalShell({
         onClose={() => setSettingsOpen(false)}
         businessName={identity.businessName}
         ownerName={identity.ownerName}
+        systemLang={identity.systemLang}
         onSaved={setIdentity}
       />
     </div>

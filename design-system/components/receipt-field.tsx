@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Upload } from "lucide-react"
+import { useSystemWords } from "@/design-system/system-lang-context"
 
 /**
  * A file-attachment box: click (or tap) anywhere in it to open the file
@@ -50,17 +51,18 @@ export function FileUploadField({
   onUpload?: (file: File | null) => void
   uploadedName?: string | null
 }) {
+  const w = useSystemWords()
   const [ownName, setOwnName] = useState<string | null>(null)
   const shownName = onUpload ? (uploadedName ?? null) : ownName
 
   return (
     <div>
       <span className="block [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
-        {label} <span className="text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">（可选）</span>
+        {label} <span className="text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">（{w.optional}）</span>
       </span>
       <label className="mt-1.5 flex cursor-pointer items-center [gap:var(--gap-inline)] [border-radius:var(--radius-md)] border border-dashed [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)] transition-colors [border-color:var(--color-ink-800)] [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] hover:text-[color:var(--color-paper)]">
         <Upload aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-        <span className={shownName ? "truncate" : "min-w-0 text-left"}>{shownName ?? "点击上传文件或照片"}</span>
+        <span className={shownName ? "truncate" : "min-w-0 text-left"}>{shownName ?? w.uploadPrompt}</span>
         <input
           type="file"
           name={onUpload ? undefined : name}

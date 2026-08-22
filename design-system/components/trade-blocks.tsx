@@ -1,5 +1,7 @@
 "use client";
 
+import { useSystemWords } from "@/design-system/system-lang-context";
+
 import { useEffect, useState } from "react";
 
 import {
@@ -129,6 +131,7 @@ export function InfoRows({
   variant?: "comfortable" | "compact";
   framed?: boolean;
 }) {
+  const w = useSystemWords();
   return (
     <InfoList
       heading={heading}
@@ -140,7 +143,7 @@ export function InfoRows({
         primary: r.label,
         secondary: r.value,
       }))}
-      labels={{ emptyText: "还没有资料" }}
+      labels={{ emptyText: w.empty }}
     />
   );
 }
@@ -164,6 +167,7 @@ export function DaySchedule({
   rows: ScheduleRow[];
   framed?: boolean;
 }) {
+  const w = useSystemWords();
   return (
     <ScheduleList
       heading={heading}
@@ -175,7 +179,7 @@ export function DaySchedule({
         title: r.title,
         description: r.description || undefined,
       }))}
-      labels={{ emptyText: "今天没有安排", timeRangeSeparator: " – " }}
+      labels={{ emptyText: w.emptyToday, timeRangeSeparator: " – " }}
     />
   );
 }
@@ -196,6 +200,7 @@ export function DateProgress({
   end: string;
   framed?: boolean;
 }) {
+  const w = useSystemWords();
   const mounted = useMounted();
   return (
     <ProgressTimeline
@@ -208,12 +213,12 @@ export function DateProgress({
       // arrives on the next paint.
       now={mounted ? undefined : new Date(start)}
       labels={{
-        startLabel: "开始",
-        endLabel: "完成",
-        beforeText: "还没开工",
-        activeText: "进行中",
-        afterText: "已完成",
-        ariaLabel: "进度",
+        startLabel: w.start,
+        endLabel: w.finish,
+        beforeText: w.notStarted,
+        activeText: w.inProgress,
+        afterText: w.done,
+        ariaLabel: w.progress,
       }}
     />
   );
@@ -233,6 +238,7 @@ export function PeopleBoard({
   people: PersonRow[];
   columns?: 2 | 3 | 4 | 5;
 }) {
+  const w = useSystemWords();
   return (
     <PeopleGrid
       heading={heading}
@@ -243,7 +249,7 @@ export function PeopleBoard({
         title: p.title || undefined,
         image: p.image || undefined,
       }))}
-      labels={{ emptyText: "还没有加人" }}
+      labels={{ emptyText: w.emptyPeople }}
     />
   );
 }
@@ -293,6 +299,7 @@ export function PriceTable({
   currency?: string;
   tiers: PriceTier[];
 }) {
+  const w = useSystemWords();
   return (
     <PricingTable
       heading={heading}
@@ -310,13 +317,13 @@ export function PriceTable({
           .map((f) => f.trim())
           .filter(Boolean)
           .map((label) => ({ label, included: true })),
-        cta: { label: t.cta || "选这个", href: "#" },
+        cta: { label: t.cta || w.choose, href: "#" },
       }))}
       labels={{
-        popularBadge: "最多人选",
-        featureIncluded: "包含",
-        featureExcluded: "不包含",
-        freeLabel: "免费",
+        popularBadge: w.mostPopular,
+        featureIncluded: w.included,
+        featureExcluded: w.notIncluded,
+        freeLabel: w.free,
       }}
     />
   );
@@ -340,6 +347,7 @@ export function SmallStat({
   period?: string;
   variant?: "default" | "compact" | "detailed";
 }) {
+  const w = useSystemWords();
   const d = Number(delta);
   return (
     <StatCard
@@ -351,7 +359,7 @@ export function SmallStat({
           ? undefined
           : { value: d, period: period || undefined }
       }
-      labels={{ increaseLabel: "升", decreaseLabel: "跌" }}
+      labels={{ increaseLabel: w.up, decreaseLabel: w.down }}
     />
   );
 }
@@ -361,11 +369,12 @@ export function SmallStat({
 /** 备注、条款、施工说明 — text that has to be ON the page but must not push
  *  everything else off the first screen. */
 export function LongText({ content, maxLines = 3 }: { content: string; maxLines?: number }) {
+  const w = useSystemWords();
   return (
     <ExpandableText
       content={content}
       maxLines={maxLines}
-      labels={{ showMore: "看全部", showLess: "收起来" }}
+      labels={{ showMore: w.showMore, showLess: w.showLess }}
     />
   );
 }
@@ -406,10 +415,11 @@ export function NoticeBanner({ text, closable = true }: { text: string; closable
 /** 报价单号、发票号、追踪号 — a value whose whole purpose is to be copied and
  *  pasted into WhatsApp, with the copy button already attached. */
 export function CopyValue({ label, value }: { label?: string; value: string }) {
+  const w = useSystemWords();
   return (
     <Snippet defaultValue="v">
       <SnippetHeader>
-        <span className="text-muted-foreground px-4 text-sm">{label || "编号"}</span>
+        <span className="text-muted-foreground px-4 text-sm">{label || w.reference}</span>
         <SnippetCopyButton value={value} />
       </SnippetHeader>
       <SnippetTabsContent value="v">{value}</SnippetTabsContent>
@@ -438,7 +448,8 @@ export function PayQr({ data, size = 180 }: { data: string; size?: number }) {
  *  about what is being chosen here: 364 rows is not something an owner fills in
  *  by hand, and in the built system it comes from the records. What they are
  *  deciding in the editor is that the page HAS one. */
-export function ActivitySquares({ label = "今年出勤" }: { label?: string }) {
+export function ActivitySquares({ label }: { label?: string }) {
+  const w = useSystemWords();
   const mounted = useMounted();
   const start = new Date(new Date().getFullYear(), 0, 1);
   const data = Array.from({ length: 364 }, (_, i) => {
@@ -457,9 +468,9 @@ export function ActivitySquares({ label = "今年出勤" }: { label?: string }) 
       data={data}
       blockSize={11}
       labels={{
-        months: ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"],
-        weekdays: ["日", "一", "二", "三", "四", "五", "六"],
-        legend: { less: "少", more: "多" },
+        months: w.monthsShort,
+        weekdays: w.weekdays,
+        legend: { less: w.less, more: w.more },
       }}
     >
       <ContributionGraphCalendar>

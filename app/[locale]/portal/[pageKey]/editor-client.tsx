@@ -29,6 +29,8 @@ import { InsertAffordance } from "@/design-system/editor/insert-affordance";
 import { BlockSheets, InsertSheet } from "@/design-system/editor/editor-sheets";
 import { AiDock } from "@/design-system/editor/ai-dock";
 import { StyleButton, StyleSheet } from "@/design-system/editor/style-sheet";
+import { SystemLangProvider } from "@/design-system/system-lang-context";
+import type { SystemLang } from "@/lib/system-lang";
 import { InlineEditing } from "@/design-system/editor/inline-editing";
 import { CanvasGutter } from "@/design-system/editor/canvas-gutter";
 import { AiAssistant, type Turn } from "./ai-assistant";
@@ -122,6 +124,7 @@ export function PortalEditor({
   navPages,
   style,
   palette,
+  systemLang,
 }: {
   pageKey: string;
   /** The component name that ?add= just inserted, or null. */
@@ -167,6 +170,12 @@ export function PortalEditor({
    *  Threaded from the server rather than fetched again: the same projects row
    *  supplies `style`, and a second query would be a second source of truth. */
   palette: string | null;
+  /** The language the customer's SYSTEM is written in
+   *  (`projects.system_language`, default English). Not `locale`, which is the
+   *  language the OWNER reads Formae in -- see lib/system-lang.ts. Threaded
+   *  down so the canvas can be wrapped in it: the blocks inside are the
+   *  customer's system, the chrome around them is Formae's. */
+  systemLang: SystemLang;
 }) {
   const t = useTranslations("portal.editor");
   // The eight one-line tags ('紧凑 · 表格多、行数多') already exist under
@@ -974,7 +983,14 @@ export function PortalEditor({
                     <CanvasGutter
                       className={`${scopeClasses(activeStyle, palette)} h-full [background-color:var(--color-canvas)]`}
                     >
-                      {children}
+                      {/* Everything inside the canvas is the CUSTOMER'S system
+                        and speaks their system language; everything outside it
+                        is Formae and speaks the owner's. The provider sits at
+                        exactly that boundary, one layer inside the style scope
+                        it mirrors. */}
+                      <SystemLangProvider lang={systemLang}>
+                        {children}
+                      </SystemLangProvider>
                     </CanvasGutter>
                     {/* Type on the page instead of in a panel. Renders nothing;
                       it turns the <Inline> spans puck-config leaves in the

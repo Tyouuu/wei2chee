@@ -7,10 +7,28 @@ import type { Data } from "@puckeditor/core";
 import type { TableColumn } from "@/lib/portal/table-model";
 import {
   MODULE_BY_KEY,
+  moduleLabel,
   MODULE_KEYS,
   defaultModulesForIndustry,
   type ModuleShape,
 } from "@/lib/portal/module-catalog";
+import { DEFAULT_SYSTEM_LANG, type SystemLang } from "@/lib/system-lang";
+import {
+  chrome,
+  moduleCopy,
+  sampleFor,
+  translateStage,
+  pluralise,
+  INDUSTRY_LABELS_EN,
+  landingCopy,
+  type IndustryLabels,
+  type ModuleCopy,
+  type StatusTone,
+} from "@/lib/templates/copy";
+
+/** Re-exported so callers keep importing the trade vocabulary from the module
+ *  that builds pages with it, not from the copy tables underneath. */
+export type { IndustryLabels };
 
 /**
  * Turns a business's own context -- its industry, its questionnaire answers,
@@ -57,13 +75,6 @@ import {
  * defaults -- never a blank canvas, which is the whole point.
  */
 
-/** `industries.labels` -- the business's own words for its three core nouns. */
-export type IndustryLabels = {
-  customer: string;
-  order: string;
-  staff: string;
-};
-
 /** The subset of a row from `public.industries` this module needs. */
 export type IndustryContext = {
   slug: string;
@@ -77,6 +88,12 @@ export type IndustryContext = {
 export type AnalysisContext = {
   summary?: string | null;
   after_workflow?: string[] | null;
+  /** The same workflow in English, for a system built in English while the
+   *  owner reads their analysis in Chinese -- which is the DEFAULT pairing.
+   *  Absent on every analysis written before migration 20260822060000. */
+  after_workflow_en?: string[] | null;
+  /** The AI's one-line summary in English, for the same reason. */
+  summary_en?: string | null;
   bottlenecks?: { title: string; description: string }[] | null;
 };
 
@@ -92,7 +109,48 @@ export type BusinessContext = {
   industry?: IndustryContext | null;
   analysis?: AnalysisContext | null;
   identity?: BusinessIdentity | null;
+  /**
+   * The language the BUILT SYSTEM speaks -- `projects.system_language`,
+   * default English. NOT the locale the owner reads Formae in; see
+   * lib/system-lang.ts for why those are two different things.
+   *
+   * It rides on the context rather than on a seventh positional parameter
+   * because every builder in this file already receives the context, and a
+   * builder that forgot to pass the language down would produce a page half
+   * in each language -- the one failure mode worse than the wrong language.
+   */
+  lang?: SystemLang;
 };
+
+/** Every builder reads the language through this, so a context assembled
+ *  before `system_language` existed still produces a complete system. */
+const langOf = (ctx: BusinessContext): SystemLang =>
+  ctx.lang ?? DEFAULT_SYSTEM_LANG;
+
+/** The language this business's system is built in. Exported so a page that
+ *  only needs to LABEL something does not have to reach for `ctx.lang` and get
+ *  the fallback wrong. */
+export const systemLangOf = langOf;
+
+/**
+ * The trade's three nouns for this business, in the system's language, with the
+ * customer's own page titles layered on top when the caller knows them.
+ *
+ * Exported because four separate pages were each keeping their own
+ * `FALLBACK_LABELS = { customer: "客户", ... }` next to
+ * `businessContext.industry?.labels` -- four copies of one rule, all of them
+ * hard-wired to Chinese, and every one of them a place the rail could disagree
+ * with the page under it. One function, and the language question is answered
+ * in the module that knows the answer.
+ */
+export function tradeLabels(
+  ctx: BusinessContext,
+  pages?: PageRef[],
+): IndustryLabels {
+  const lang = langOf(ctx);
+  const base = industryLabels(ctx.industry ?? fallbackIndustry(lang), lang);
+  return pages ? labelsFromPages(base, pages) : base;
+}
 
 /**
  * Every page type the product knows how to build. A given business gets a
@@ -185,10 +243,16 @@ export function pagesForIndustry(slug?: string | null): PageKey[] {
 
 /** The label for any page: the customer's own title when they set one (custom
  *  pages always have one), otherwise the trade's own noun for a built-in type. */
-export function pageLabel(page: PageRef, labels: IndustryLabels): string {
+export function pageLabel(
+  page: PageRef,
+  labels: IndustryLabels,
+  lang: SystemLang = DEFAULT_SYSTEM_LANG,
+): string {
   const own = page.title?.trim();
   if (own) return own;
-  return isBuiltInPage(page.key) ? pageNavLabel(page.key, labels) : "新页面";
+  return isBuiltInPage(page.key)
+    ? pageNavLabel(page.key, labels, lang)
+    : chrome(lang).newPage;
 }
 
 /**
@@ -198,17 +262,29 @@ export function pageLabel(page: PageRef, labels: IndustryLabels): string {
  * is headed 顾客, a tuition centre's 家长. Everything else takes the
  * catalogue's own default, which is the single place those words are written.
  */
-export function pageNavLabel(key: PageKey, labels: IndustryLabels): string {
+export function pageNavLabel(
+  key: PageKey,
+  labels: IndustryLabels,
+  lang: SystemLang = DEFAULT_SYSTEM_LANG,
+): string {
+  // Pluralised, because every one of these names a LIST. Chinese does not
+  // inflect so this is a no-op there; in English a rail reading "Client" beside
+  // a table of three clients is the kind of small wrongness that makes software
+  // feel translated. See `pluralise` for why it is not just + "s".
   switch (key) {
     case "customers":
-      return labels.customer;
+      return pluralise(labels.customer, lang);
     case "projects":
     case "orders":
-      return labels.order;
+      return pluralise(labels.order, lang);
     case "staff":
-      return labels.staff;
-    default:
-      return MODULE_BY_KEY[key]?.label ?? "新页面";
+      return pluralise(labels.staff, lang);
+    default: {
+      const archetype = MODULE_BY_KEY[key];
+      return archetype
+        ? moduleLabel(archetype, lang)
+        : chrome(lang).newPage;
+    }
   }
 }
 
@@ -227,25 +303,17 @@ export function pageNavLabel(key: PageKey, labels: IndustryLabels): string {
  * corrected. The draft banner above the canvas already tells them everything
  * here is theirs to change.
  */
-const BRAND_PLACEHOLDER: Record<string, string> = {
-  renovation: "我的装修公司",
-  retail: "我的店",
-  beauty: "我的沙龙",
-  wholesale: "我的贸易公司",
-  services: "我的公司",
-  fnb: "我的餐厅",
-  education: "我的补习中心",
-  other: "我的公司",
+const brandFor = (slug: string, lang: SystemLang) => {
+  const c = chrome(lang);
+  return c.brand[slug] ?? c.brandFallback;
 };
-
-const brandFor = (slug: string) => BRAND_PLACEHOLDER[slug] ?? "我的公司";
 
 /** The name the system calls itself. The customer's own answer wins over every
  *  generated guess -- that is the entire point of asking for it. */
 export function displayBusinessName(ctx: BusinessContext): string {
   const own = ctx.identity?.business_name?.trim();
   if (own) return own;
-  return brandFor(ctx.industry?.slug ?? FALLBACK_INDUSTRY.slug);
+  return brandFor(ctx.industry?.slug ?? "other", langOf(ctx));
 }
 
 /** Who is signed in. Falls back to the caller-supplied label (today the email's
@@ -257,42 +325,50 @@ export function displayOwnerName(
   return ctx.identity?.owner_name?.trim() || fallback;
 }
 
-/** Used whenever a business has no lead, or its lead has no industry. */
-const FALLBACK_INDUSTRY: IndustryContext = {
+/** Used whenever a business has no lead, or its lead has no industry. The
+ *  nouns come from the language table, so a fallback system is not the one
+ *  place that stays Chinese when everything around it is English. */
+const fallbackIndustry = (lang: SystemLang): IndustryContext => ({
   slug: "other",
-  name_zh: "生意",
-  labels: { customer: "客户", order: "订单", staff: "员工" },
+  name_zh: chrome(lang).fallbackIndustryName,
+  labels: chrome(lang).fallbackLabels,
   default_workflow: ["Customer", "Quotation", "Project", "Payment"],
   suggested_modules: ["Customer", "Project", "Payment"],
-};
+});
 
 /**
- * `industries.default_workflow` is stored in English (it is the founder's own
- * internal vocabulary, shared with `reference_cases.workflow`). The customer
- * only ever sees Chinese, so stage names are translated here rather than in
- * the database -- keeping the English keys means the seed data, the reference
- * cases and the analysis prompt all still line up on one vocabulary.
+ * The trade's three nouns, in the system's language.
  *
- * A stage with no entry falls through to itself rather than being dropped: an
- * untranslated stage name is a small wart, a missing workflow step is a wrong
- * system.
+ * `industries.labels` is Chinese-only in the database, so an English system
+ * takes its nouns from INDUSTRY_LABELS_EN keyed on the same slug. The
+ * customer's own page titles still win over both -- see `labelsFromPages`,
+ * which layers them on top of whatever this returns.
  */
-const STAGE_ZH: Record<string, string> = {
-  Customer: "客户",
-  Quotation: "报价",
-  Approval: "确认",
-  Deposit: "订金",
-  Project: "施工",
-  Milestone: "进度",
-  "Final Payment": "尾款",
-  Order: "订单",
-  Payment: "收款",
-  Booking: "预约",
-  Service: "服务",
-  Enrollment: "报名",
-};
+/** The trade as it reads inside a sentence. `industries.name_zh` is right
+ *  for Chinese; English needs its own noun, because "Renovation /
+ *  Contractor runs on..." does not parse. */
+function industryName(industry: IndustryContext, lang: SystemLang): string {
+  if (lang === "zh") return industry.name_zh;
+  const t = landingCopy("en");
+  return t.tradeNoun[industry.slug] ?? t.tradeNounFallback;
+}
 
-const translateStage = (stage: string) => STAGE_ZH[stage] ?? stage;
+/** The trade as a LABEL -- for the eyebrow over the website headline.
+ *  Several trades are stored as 「装修/承包商」 and an eyebrow reading the
+ *  whole field looks like a database column, not like a business. */
+function tradeLabel(industry: IndustryContext, lang: SystemLang): string {
+  if (lang === "zh") return industry.name_zh.split("/")[0].trim();
+  const t = landingCopy("en");
+  return t.eyebrowTrade[industry.slug] ?? t.eyebrowTradeFallback;
+}
+
+function industryLabels(
+  industry: IndustryContext,
+  lang: SystemLang,
+): IndustryLabels {
+  if (lang === "zh") return industry.labels;
+  return INDUSTRY_LABELS_EN[industry.slug] ?? chrome("en").fallbackLabels;
+}
 
 /**
  * The workflow the customer's board columns are built from. The AI's
@@ -305,15 +381,26 @@ const translateStage = (stage: string) => STAGE_ZH[stage] ?? stage;
  * stops reading as a pipeline.
  */
 function workflowStages(ctx: BusinessContext): string[] {
-  const fromAnalysis = ctx.analysis?.after_workflow;
+  const lang = langOf(ctx);
+  // The AI returns the tailored workflow in BOTH languages
+  // (lib/openai/analysis-schema.ts), so an English system still gets THIS
+  // business's pipeline rather than the generic one. `after_workflow_en` is
+  // absent on every analysis written before that field existed, which is
+  // exactly when the industry default below is the right answer.
+  const fromAnalysis =
+    lang === "en"
+      ? ctx.analysis?.after_workflow_en
+      : ctx.analysis?.after_workflow;
   if (fromAnalysis && fromAnalysis.length > 0) {
     return fromAnalysis
       .slice(0, 6)
       .map((s) => s.trim())
       .filter(Boolean);
   }
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
-  return industry.default_workflow.slice(0, 6).map(translateStage);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
+  return industry.default_workflow
+    .slice(0, 6)
+    .map((st) => translateStage(st, lang));
 }
 
 // ---------------------------------------------------------------------------
@@ -336,507 +423,11 @@ const node = (
   props: { id, ...props },
 });
 
-type StatusTone = "positive" | "warning" | "negative" | "neutral";
-
-/**
- * Sample rows are the part that has to feel like the customer's own business
- * rather than a generic CRM demo. Malaysian-market specifics are deliberate:
- * RM amounts, local naming conventions, and the kind of record each trade
- * actually keeps.
- */
-type SampleSet = {
-  records: {
-    primary: string;
-    secondary: string;
-    amount: string;
-    tone: StatusTone;
-    status: string;
-  }[];
-  customers: {
-    primary: string;
-    secondary: string;
-    tone: StatusTone;
-    status: string;
-  }[];
-  heroLabel: string;
-  heroValue: string;
-  /** What the headline figure is measured against -- "vs 上个月", "vs 昨天". */
-  heroSuffix: string;
-  /** The three supporting figures under the headline. Three, not four, and
-   *  not equal-sized peers: see the HeroCard registration in puck-config.tsx
-   *  for why this product does not copy B12's row-of-tiles dashboard. Each is
-   *  chosen to be the number the trade ACTUALLY worries about -- for a
-   *  contractor that is money already spent and not yet billed, not a vanity
-   *  count of projects. */
-  heroStats: {
-    label: string;
-    value: string;
-    tone?: "normal" | "caution" | "warn";
-    sub?: string;
-  }[];
-  /** Six periods, oldest first. A shape, not a chart -- HeroCard draws it
-   *  unlabelled and unaxised. All-zero series draw nothing, which is why no
-   *  trade below gets a placeholder run of zeros. */
-  heroSpark: number[];
-};
-
-const SAMPLES: Record<string, SampleSet> = {
-  renovation: {
-    records: [
-      {
-        primary: "Taman Desa 三房翻新",
-        secondary: "陈先生",
-        amount: "RM 48,500",
-        tone: "positive",
-        status: "已确认",
-      },
-      {
-        primary: "Bukit Jalil 厨房改造",
-        secondary: "李太太",
-        amount: "RM 22,800",
-        tone: "warning",
-        status: "等确认",
-      },
-      {
-        primary: "Cheras 店面装修",
-        secondary: "王老板",
-        amount: "RM 96,000",
-        tone: "neutral",
-        status: "报价中",
-      },
-    ],
-    customers: [
-      {
-        primary: "陈先生",
-        secondary: "Taman Desa · 013-2xx xxxx",
-        tone: "positive",
-        status: "施工中",
-      },
-      {
-        primary: "李太太",
-        secondary: "Bukit Jalil · 012-3xx xxxx",
-        tone: "warning",
-        status: "待跟进",
-      },
-      {
-        primary: "王老板",
-        secondary: "Cheras · 016-8xx xxxx",
-        tone: "neutral",
-        status: "新客户",
-      },
-    ],
-    heroLabel: "本月已确认工程额",
-    heroValue: "RM 71,300",
-    heroSuffix: "vs 上个月",
-    heroStats: [
-      { label: "进行中的工程", value: "4 个" },
-      { label: "等客户确认", value: "2 份报价", tone: "caution" },
-      {
-        label: "已做未收",
-        value: "RM 31,200",
-        tone: "warn",
-        sub: "超过 30 天",
-      },
-    ],
-    heroSpark: [42000, 51000, 47500, 58000, 63000, 71300],
-  },
-  retail: {
-    records: [
-      {
-        primary: "订单 #10238",
-        secondary: "门店自取",
-        amount: "RM 356",
-        tone: "positive",
-        status: "已付款",
-      },
-      {
-        primary: "订单 #10239",
-        secondary: "送货 · Puchong",
-        amount: "RM 1,240",
-        tone: "warning",
-        status: "待发货",
-      },
-      {
-        primary: "订单 #10240",
-        secondary: "门店自取",
-        amount: "RM 89",
-        tone: "neutral",
-        status: "新订单",
-      },
-    ],
-    customers: [
-      {
-        primary: "Siti binti Ahmad",
-        secondary: "会员 · 累计 RM 3,420",
-        tone: "positive",
-        status: "活跃",
-      },
-      {
-        primary: "陈志明",
-        secondary: "会员 · 累计 RM 780",
-        tone: "neutral",
-        status: "一般",
-      },
-      {
-        primary: "Kumar A/L Raj",
-        secondary: "新会员",
-        tone: "warning",
-        status: "待跟进",
-      },
-    ],
-    heroLabel: "本月销售额",
-    heroValue: "RM 18,940",
-    heroSuffix: "vs 上个月",
-    heroStats: [
-      { label: "今日订单", value: "23 单" },
-      { label: "待发货", value: "5 单", tone: "caution" },
-      { label: "库存告急", value: "3 项", tone: "warn", sub: "低于安全存量" },
-    ],
-    heroSpark: [14200, 15800, 17100, 16400, 18000, 18940],
-  },
-  beauty: {
-    records: [
-      {
-        primary: "面部护理 · 90分钟",
-        secondary: "今天 2:00 PM · Amy",
-        amount: "RM 180",
-        tone: "positive",
-        status: "已确认",
-      },
-      {
-        primary: "染发 + 护理",
-        secondary: "今天 4:30 PM · Jasmine",
-        amount: "RM 320",
-        tone: "warning",
-        status: "待确认",
-      },
-      {
-        primary: "美甲",
-        secondary: "明天 11:00 AM · Amy",
-        amount: "RM 95",
-        tone: "neutral",
-        status: "已预约",
-      },
-    ],
-    customers: [
-      {
-        primary: "林小姐",
-        secondary: "熟客 · 来过 14 次",
-        tone: "positive",
-        status: "会员",
-      },
-      {
-        primary: "Nurul",
-        secondary: "来过 3 次",
-        tone: "neutral",
-        status: "一般",
-      },
-      {
-        primary: "张太太",
-        secondary: "第一次到访",
-        tone: "warning",
-        status: "新客",
-      },
-    ],
-    heroLabel: "本月预约收入",
-    heroValue: "RM 12,650",
-    heroSuffix: "vs 上个月",
-    heroStats: [
-      { label: "本周预约", value: "31 个" },
-      { label: "待确认", value: "4 个", tone: "caution" },
-      { label: "三个月没来", value: "18 位", tone: "warn", sub: "可以做回访" },
-    ],
-    heroSpark: [9800, 10400, 11200, 10900, 12100, 12650],
-  },
-  wholesale: {
-    records: [
-      {
-        primary: "PO-2026-0412",
-        secondary: "隆兴贸易",
-        amount: "RM 24,600",
-        tone: "positive",
-        status: "已出货",
-      },
-      {
-        primary: "PO-2026-0413",
-        secondary: "美佳超市",
-        amount: "RM 8,150",
-        tone: "warning",
-        status: "待付款",
-      },
-      {
-        primary: "PO-2026-0414",
-        secondary: "新丰商行",
-        amount: "RM 41,900",
-        tone: "neutral",
-        status: "备货中",
-      },
-    ],
-    customers: [
-      {
-        primary: "隆兴贸易",
-        secondary: "月结 30 天 · 业务员 Ah Seng",
-        tone: "positive",
-        status: "正常",
-      },
-      {
-        primary: "美佳超市",
-        secondary: "月结 60 天 · 业务员 Mei",
-        tone: "negative",
-        status: "超期",
-      },
-      {
-        primary: "新丰商行",
-        secondary: "现金交易",
-        tone: "neutral",
-        status: "正常",
-      },
-    ],
-    heroLabel: "本月出货总额",
-    heroValue: "RM 186,400",
-    heroSuffix: "vs 上个月",
-    heroStats: [
-      { label: "本月出货", value: "62 单" },
-      {
-        label: "待付款",
-        value: "RM 43,800",
-        tone: "caution",
-        sub: "月结未到期",
-      },
-      {
-        label: "已超期",
-        value: "RM 12,400",
-        tone: "warn",
-        sub: "美佳超市 60 天",
-      },
-    ],
-    heroSpark: [142000, 158000, 151000, 169000, 177000, 186400],
-  },
-  services: {
-    records: [
-      {
-        primary: "品牌顾问项目",
-        secondary: "Alpha Sdn Bhd",
-        amount: "RM 32,000",
-        tone: "positive",
-        status: "进行中",
-      },
-      {
-        primary: "系统评估",
-        secondary: "Beta Enterprise",
-        amount: "RM 8,500",
-        tone: "warning",
-        status: "等签约",
-      },
-      {
-        primary: "年度维护合约",
-        secondary: "Gamma Holdings",
-        amount: "RM 60,000",
-        tone: "neutral",
-        status: "提案中",
-      },
-    ],
-    customers: [
-      {
-        primary: "Alpha Sdn Bhd",
-        secondary: "顾问 · Kevin",
-        tone: "positive",
-        status: "合作中",
-      },
-      {
-        primary: "Beta Enterprise",
-        secondary: "顾问 · Kevin",
-        tone: "warning",
-        status: "跟进中",
-      },
-      {
-        primary: "Gamma Holdings",
-        secondary: "顾问 · Shirley",
-        tone: "neutral",
-        status: "潜在",
-      },
-    ],
-    heroLabel: "本月已签约金额",
-    heroValue: "RM 40,500",
-    heroSuffix: "vs 上个月",
-    heroStats: [
-      { label: "进行中项目", value: "6 个" },
-      { label: "提案等回复", value: "3 份", tone: "caution" },
-      { label: "已做未开票", value: "RM 18,000", tone: "warn" },
-    ],
-    heroSpark: [28000, 31000, 29500, 36000, 38000, 40500],
-  },
-  fnb: {
-    records: [
-      {
-        primary: "3号桌",
-        secondary: "堂食 · 4 位",
-        amount: "RM 128",
-        tone: "positive",
-        status: "已结账",
-      },
-      {
-        primary: "外卖 #88",
-        secondary: "Grab · Bangsar",
-        amount: "RM 46",
-        tone: "warning",
-        status: "制作中",
-      },
-      {
-        primary: "7号桌",
-        secondary: "堂食 · 2 位",
-        amount: "RM 72",
-        tone: "neutral",
-        status: "点单中",
-      },
-    ],
-    customers: [
-      {
-        primary: "常客 · 陈生",
-        secondary: "每周三固定订位",
-        tone: "positive",
-        status: "熟客",
-      },
-      {
-        primary: "Grab Food",
-        secondary: "外送平台",
-        tone: "neutral",
-        status: "渠道",
-      },
-      {
-        primary: "公司团餐 · Delta",
-        secondary: "每月一次",
-        tone: "warning",
-        status: "待确认",
-      },
-    ],
-    heroLabel: "今日营业额",
-    heroValue: "RM 3,280",
-    heroSuffix: "vs 昨天",
-    heroStats: [
-      { label: "今日单数", value: "96 单" },
-      { label: "外送占比", value: "38%", sub: "Grab + Foodpanda" },
-      {
-        label: "食材成本",
-        value: "31%",
-        tone: "caution",
-        sub: "目标 28% 以下",
-      },
-    ],
-    heroSpark: [2650, 2980, 3120, 2740, 3350, 3280],
-  },
-  education: {
-    records: [
-      {
-        primary: "中三数学 · 周二班",
-        secondary: "18 位学生 · 陈老师",
-        amount: "RM 220/月",
-        tone: "positive",
-        status: "开课中",
-      },
-      {
-        primary: "小六国文 · 周六班",
-        secondary: "12 位学生 · 林老师",
-        amount: "RM 180/月",
-        tone: "warning",
-        status: "招生中",
-      },
-      {
-        primary: "SPM 冲刺班",
-        secondary: "8 位学生 · 黄老师",
-        amount: "RM 400/月",
-        tone: "neutral",
-        status: "筹备中",
-      },
-    ],
-    customers: [
-      {
-        primary: "陈家长 (陈小明)",
-        secondary: "中三 · 数学",
-        tone: "positive",
-        status: "已缴费",
-      },
-      {
-        primary: "Puan Aminah (Aiman)",
-        secondary: "小六 · 国文",
-        tone: "warning",
-        status: "待缴费",
-      },
-      {
-        primary: "李家长 (李美琪)",
-        secondary: "SPM 冲刺",
-        tone: "neutral",
-        status: "新报名",
-      },
-    ],
-    heroLabel: "本月学费收入",
-    heroValue: "RM 24,600",
-    heroSuffix: "vs 上个月",
-    heroStats: [
-      { label: "在读学生", value: "74 位" },
-      { label: "本月待缴费", value: "9 位", tone: "caution", sub: "RM 2,180" },
-      { label: "这个月没续班", value: "5 位", tone: "warn" },
-    ],
-    heroSpark: [19800, 21200, 22400, 23100, 23800, 24600],
-  },
-};
-
-const GENERIC_SAMPLE: SampleSet = {
-  records: [
-    {
-      primary: "记录 001",
-      secondary: "示例内容",
-      amount: "RM 1,200",
-      tone: "positive",
-      status: "已完成",
-    },
-    {
-      primary: "记录 002",
-      secondary: "示例内容",
-      amount: "RM 850",
-      tone: "warning",
-      status: "处理中",
-    },
-    {
-      primary: "记录 003",
-      secondary: "示例内容",
-      amount: "RM 3,400",
-      tone: "neutral",
-      status: "待处理",
-    },
-  ],
-  customers: [
-    {
-      primary: "客户 A",
-      secondary: "示例联络方式",
-      tone: "positive",
-      status: "活跃",
-    },
-    {
-      primary: "客户 B",
-      secondary: "示例联络方式",
-      tone: "warning",
-      status: "待跟进",
-    },
-    {
-      primary: "客户 C",
-      secondary: "示例联络方式",
-      tone: "neutral",
-      status: "新客户",
-    },
-  ],
-  heroLabel: "本月总额",
-  heroValue: "RM 5,450",
-  heroSuffix: "vs 上个月",
-  heroStats: [
-    { label: "进行中", value: "4 项" },
-    { label: "等处理", value: "2 项", tone: "caution" },
-    { label: "要跟进", value: "1 项", tone: "warn" },
-  ],
-  heroSpark: [3800, 4200, 4600, 4400, 5100, 5450],
-};
-
-const sampleFor = (slug: string) => SAMPLES[slug] ?? GENERIC_SAMPLE;
+// The sample rows and the per-module vocabulary moved to
+// lib/templates/copy/ when the system gained a second language: one shape
+// (copy/types.ts), one table per language, one dispatch (copy/index.ts).
+// They were ~900 lines of Chinese string literals sitting in the middle of
+// the layout logic, and doubling them in place would have buried it.
 
 /**
  * The left rail. Identical across all five pages on purpose: it is the one
@@ -851,7 +442,9 @@ function railNav(
   activePage: PageId,
   locale: string,
   pages: PageRef[],
+  lang: SystemLang,
 ): PuckNode {
+  const c = chrome(lang);
   // RailNav derives its own active state from `usePathname()` and each item's
   // href -- there is no `active` prop. The hrefs therefore have to match the
   // real route shape INCLUDING next-intl's locale prefix (`/zh/portal/...`),
@@ -875,7 +468,7 @@ function railNav(
     // the row renders text-only -- the degradation the icon registry was built
     // to have, now actually exercised.
     items: pages.map((page) => ({
-      label: pageLabel(page, labels),
+      label: pageLabel(page, labels, lang),
       href: `/${locale}/portal/${page.key}`,
       group: "",
       iconName: page.key,
@@ -889,14 +482,14 @@ function railNav(
     // deletes it. With no href, RailNav renders them as non-navigating rows
     // instead of dead links.
     utilityItems: [
-      { label: "通知", iconName: "notifications" },
-      { label: "账号设置", iconName: "account" },
+      { label: c.rail.notifications, iconName: "notifications" },
+      { label: c.rail.account, iconName: "account" },
     ],
     // The account chip identifies the PERSON, so the email local part belongs
     // here and only here -- it is the one place in the system where "who am I
     // signed in as" is the question being answered.
     userName: businessName,
-    userRoleLabel: "老板",
+    userRoleLabel: c.rail.ownerRole,
   });
 }
 
@@ -930,7 +523,7 @@ function recordTable(
     columns.push({ key: "amount", label: labels.amount, kind: "amount" });
   columns.push({
     key: "status",
-    label: labels.status ?? "状态",
+    label: labels.status ?? "Status",
     kind: "status",
   });
 
@@ -952,14 +545,26 @@ function recordTable(
   });
 }
 
-function filterChips(id: string, kind: string, values: string[]): PuckNode {
+function filterChips(
+  id: string,
+  kind: string,
+  values: string[],
+  lang: SystemLang,
+): PuckNode {
   // FilterChip is {label, value, removeHref}: it shows what is CURRENTLY
   // narrowing a list, each chip removable. That is a different thing from a
   // pipeline -- workflow stages go to WorkflowStrip below, not here, because
   // six stages rendered as six removable chips read as six applied filters.
+  // FilterChips is a server component and cannot read the language context, so
+  // its two chrome strings are passed rather than defaulted. They land in the
+  // saved layout, which also makes them editable -- a customer who wants
+  // 「已套用」 instead of 「筛选条件」 changes it like any other text.
+  const c = chrome(lang);
   return node("FilterChips", id, {
     chips: values.map((value) => ({ label: kind, value, removeHref: "#" })),
     clearAllHref: "#",
+    filteredByLabel: c.filter.filteredBy,
+    clearAllLabel: c.filter.clearAll,
   });
 }
 
@@ -991,21 +596,37 @@ function buildDashboard(
   locale: string,
   pages: PageRef[],
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const lang = langOf(ctx);
+  const c = chrome(lang);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
   const brand = displayBusinessName(ctx);
-  const labels = labelsFromPages(industry.labels, pages);
-  const sample = sampleFor(industry.slug);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
+  const sample = sampleFor(industry.slug, lang);
 
   // The AI's own one-line summary of this business, on the first screen the
   // customer sees after signing up. This single line is the clearest possible
   // signal that the questionnaire was not a form that went nowhere.
-  const subtitle =
-    ctx.analysis?.summary?.trim() ||
-    `${industry.name_zh}的日常运作总览 — 这是根据你的行业自动生成的起点，全部内容都可以改。`;
+  // The AI writes the summary in both languages so an English system still
+  // opens on THIS business rather than on a generic line about its trade.
+  //
+  // NO CROSS-LANGUAGE FALLBACK, and this is the correction the first English
+  // render forced. Falling back to `summary` when `summary_en` was missing --
+  // which it is on every analysis written before 2026-08-22 -- put one Chinese
+  // sentence under an English heading, on the first screen of the system. A
+  // generic English line loses this business's own words; a Chinese line in an
+  // English page loses the reader. The generic line wins.
+  const ownSummary =
+    lang === "en"
+      ? ctx.analysis?.summary_en?.trim()
+      : ctx.analysis?.summary?.trim();
+  const subtitle = ownSummary || c.dashboard.subtitle(industryName(industry, lang));
 
   return [
-    railNav(labels, brand, name, "dashboard", locale, pages),
-    node("PageHeader", "dashboard-header", { title: "业务总览", subtitle }),
+    railNav(labels, brand, name, "dashboard", locale, pages, lang),
+    node("PageHeader", "dashboard-header", {
+      title: c.dashboard.title,
+      subtitle,
+    }),
     node("HeroCard", "dashboard-hero", {
       label: sample.heroLabel,
       value: sample.heroValue,
@@ -1019,17 +640,21 @@ function buildDashboard(
         href: `/${locale}/portal/payments`,
       })),
       spark: sample.heroSpark.map((n) => ({ n })),
-      sparkLabel: "最近六期",
+      sparkLabel: c.dashboard.sparkLabel,
     }),
-    workflowStrip("dashboard-workflow", "你的业务流程", workflowStages(ctx)),
+    workflowStrip(
+      "dashboard-workflow",
+      c.dashboard.workflowTitle,
+      workflowStages(ctx),
+    ),
     recordTable(
       "dashboard-recent",
-      `最近的${labels.order}`,
+      c.dashboard.recent(labels.order),
       {
         primary: labels.order,
         secondary: labels.customer,
-        amount: "金额",
-        status: "状态",
+        amount: c.col.amount,
+        status: c.col.status,
       },
       sample.records,
     ),
@@ -1084,8 +709,9 @@ export function landingContentFor(
   ctx: BusinessContext,
   pages: PageRef[],
 ): LandingContent {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
-  const labels = labelsFromPages(industry.labels, pages);
+  const lang = langOf(ctx);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
   const brand = displayBusinessName(ctx);
 
   // Which of THEIR pages an enquiry becomes. The sell-side page the business
@@ -1100,6 +726,7 @@ export function landingContentFor(
     ? pageLabel(
         pages.find((p) => p.key === sellSide) ?? { key: sellSide },
         labels,
+        lang,
       )
     : labels.customer;
 
@@ -1114,31 +741,27 @@ export function landingContentFor(
   // What a stranger needs instead is what the business SELLS, so the pitch is
   // built from the same three services listed below it, plus one line of the
   // trade's own promise. Every word of it is meant to be retyped by the owner.
-  const services = SERVICE_HINTS[industry.slug] ?? SERVICE_HINTS.other;
-  const pitch = `${services.map((x) => x.label).join("、")}。${
-    TRADE_PROMISE[industry.slug] ?? TRADE_PROMISE.other
-  }`;
+  const t = landingCopy(lang);
+  const services = t.services[industry.slug] ?? t.services.other;
+  const promise = t.promise[industry.slug] ?? t.promise.other;
+  const pitch =
+    lang === "zh"
+      ? `${t.joinServices(services.map((x) => x.label))}。${promise}`
+      : `${t.joinServices(services.map((x) => x.label))}. ${promise}`;
 
   return {
     brand,
     // The trade name only, no slash: several of them are stored as
     // 「装修/承包商」 and an eyebrow reading 「马来西亚 · 装修/承包商」 reads like
     // a database field, not like a business.
-    eyebrow: `马来西亚 · ${industry.name_zh.split("/")[0].trim()}`,
+    eyebrow: `${t.eyebrowPrefix} · ${tradeLabel(industry, lang)}`,
     pitch,
     services,
     stages: workflowStages(ctx),
     landsIn,
-    proof: [
-      { value: "10 年", label: "做这一行" },
-      { value: "24 小时", label: "内回复" },
-      { value: "巴生谷", label: "服务范围" },
-    ],
-    contact: [
-      { label: "WhatsApp", value: "012-345 6789", icon: "phone" },
-      { label: "地址", value: "Taman Desa, Kuala Lumpur", icon: "place" },
-      { label: "营业时间", value: "星期一至六 9am–6pm", icon: "time" },
-    ],
+    proof: t.proof,
+    contact: t.contact,
+    words: t.page,
   };
 }
 
@@ -1167,74 +790,11 @@ function buildWebsite(
   locale: string,
   pages: PageRef[],
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
-  return landingTemplateFor(industry.slug).build(landingContentFor(ctx, pages));
+  const industry = ctx.industry ?? fallbackIndustry(langOf(ctx));
+  return landingTemplateFor(industry.slug).build(
+    landingContentFor(ctx, pages),
+  );
 }
-
-/** One line of what the business promises, written the way a Malaysian SME
- *  actually talks: a concrete commitment, not an adjective. 「专业可靠」 says
- *  nothing; 「报价前先上门看，做完才收尾款」 is something a customer can hold
- *  them to, which is what makes a stranger message. */
-const TRADE_PROMISE: Record<string, string> = {
-  renovation: "报价前先上门看，做完才收尾款。",
-  beauty: "先讲清楚做什么、多少钱，才动手。",
-  fnb: "WhatsApp 落单，做好通知你来拿。",
-  retail: "现货当天拿，没货的可以订。",
-  wholesale: "整箱整板都有，量大另外报价。",
-  education: "第一堂可以先试，不合适不用继续。",
-  services: "先报价，你同意了才开工。",
-  other: "先讲清楚，再开工。",
-};
-
-/** What each trade sells, in three lines. Deliberately concrete: a stranger
- *  scanning a page decides from nouns ("三房翻新"), not from adjectives
- *  ("专业可靠"). Every one of these is meant to be rewritten by the owner --
- *  the point is that the page is never blank and never generic-agency. */
-const SERVICE_HINTS: Record<
-  string,
-  { label: string; value: string; icon: string }[]
-> = {
-  renovation: [
-    { label: "住宅翻新", value: "三房、店屋、旧屋翻新", icon: "work" },
-    { label: "厨房 / 浴室", value: "拆旧、防水、瓷砖、橱柜", icon: "work" },
-    { label: "商业装修", value: "店面、办公室、餐厅", icon: "company" },
-  ],
-  beauty: [
-    { label: "剪发 / 染发", value: "剪、染、护理", icon: "person" },
-    { label: "美容护理", value: "脸部、身体护理", icon: "person" },
-    { label: "新娘造型", value: "试妆 + 当天跟妆", icon: "tag" },
-  ],
-  fnb: [
-    { label: "堂食", value: "招牌菜、套餐", icon: "company" },
-    { label: "外带 / 外送", value: "WhatsApp 落单", icon: "phone" },
-    { label: "包场 / 到会", value: "生日、公司活动", icon: "date" },
-  ],
-  retail: [
-    { label: "现货", value: "店里拿得到的货", icon: "tag" },
-    { label: "订货", value: "没货的可以订", icon: "file" },
-    { label: "批发价", value: "量大另外报价", icon: "money" },
-  ],
-  wholesale: [
-    { label: "批发供货", value: "整箱、整板", icon: "company" },
-    { label: "账期", value: "熟客可谈月结", icon: "money" },
-    { label: "送货", value: "巴生谷内自家车队", icon: "place" },
-  ],
-  education: [
-    { label: "补习班", value: "小班 / 一对一", icon: "person" },
-    { label: "课程", value: "按科目、按年级", icon: "file" },
-    { label: "试堂", value: "第一堂可以先试", icon: "date" },
-  ],
-  services: [
-    { label: "上门服务", value: "预约时间上门", icon: "place" },
-    { label: "维修 / 保养", value: "报价后才动工", icon: "work" },
-    { label: "长期合约", value: "按月、按年", icon: "file" },
-  ],
-  other: [
-    { label: "主要服务", value: "改成你做的第一件事", icon: "work" },
-    { label: "第二项", value: "改成第二件", icon: "file" },
-    { label: "第三项", value: "改成第三件", icon: "tag" },
-  ],
-};
 
 function buildCustomers(
   ctx: BusinessContext,
@@ -1242,29 +802,31 @@ function buildCustomers(
   locale: string,
   pages: PageRef[],
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const lang = langOf(ctx);
+  const c = chrome(lang);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
   const brand = displayBusinessName(ctx);
-  const labels = labelsFromPages(industry.labels, pages);
-  const sample = sampleFor(industry.slug);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
+  const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "customers", locale, pages),
+    railNav(labels, brand, name, "customers", locale, pages, lang),
     node("PageHeader", "customers-header", {
-      title: `${labels.customer}名单`,
-      subtitle: `所有${labels.customer}的联络方式和往来记录。`,
+      title: c.customers.title(labels.customer),
+      subtitle: c.customers.subtitle(labels.customer),
     }),
     node("TextAutocomplete", "customers-search", {
       name: "customer-search",
-      placeholder: `搜索${labels.customer}姓名或电话`,
-      suggestions: sample.customers.map((c) => ({ value: c.primary })),
+      placeholder: c.customers.search(labels.customer),
+      suggestions: sample.customers.map((row) => ({ value: row.primary })),
     }),
     recordTable(
       "customers-list",
-      `${labels.customer}列表`,
+      c.customers.caption(labels.customer),
       {
         primary: labels.customer,
-        secondary: "联络方式 / 备注",
-        status: "状态",
+        secondary: c.col.contact,
+        status: c.col.status,
       },
       sample.customers,
     ),
@@ -1277,31 +839,38 @@ function buildQuotations(
   locale: string,
   pages: PageRef[],
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const lang = langOf(ctx);
+  const c = chrome(lang);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
   const brand = displayBusinessName(ctx);
-  const labels = labelsFromPages(industry.labels, pages);
-  const sample = sampleFor(industry.slug);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
+  const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "quotations", locale, pages),
+    railNav(labels, brand, name, "quotations", locale, pages, lang),
     node("PageHeader", "quotations-header", {
-      title: "报价单",
-      subtitle: `发给${labels.customer}的报价，跟进哪些已确认、哪些还没回复。`,
+      title: c.quotations.title,
+      subtitle: c.quotations.subtitle(labels.customer),
     }),
-    filterChips("quotations-filters", "状态", ["等确认"]),
+    filterChips(
+      "quotations-filters",
+      c.quotations.filterKind,
+      [c.quotations.filterValue],
+      lang,
+    ),
     node("DatePicker", "quotations-date", {
       name: "quotation-date",
-      placeholder: "报价日期",
+      placeholder: c.quotations.datePlaceholder,
       allowClear: true,
     }),
     recordTable(
       "quotations-list",
-      "报价单列表",
+      c.quotations.caption,
       {
-        primary: "报价内容",
+        primary: c.quotations.itemColumn,
         secondary: labels.customer,
-        amount: "报价金额",
-        status: "状态",
+        amount: c.quotations.amountColumn,
+        status: c.col.status,
       },
       sample.records,
     ),
@@ -1314,45 +883,47 @@ function buildProjects(
   locale: string,
   pages: PageRef[],
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const lang = langOf(ctx);
+  const c = chrome(lang);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
   const brand = displayBusinessName(ctx);
-  const labels = labelsFromPages(industry.labels, pages);
-  const sample = sampleFor(industry.slug);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
+  const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "projects", locale, pages),
+    railNav(labels, brand, name, "projects", locale, pages, lang),
     node("PageHeader", "projects-header", {
-      title: `${labels.order}进度`,
+      title: c.projects.title(labels.order),
       // The bottleneck the AI actually identified, named on the page whose job
       // is to fix it -- so the analysis shows up as working software rather
       // than as a paragraph the visitor read once and closed.
       subtitle: ctx.analysis?.bottlenecks?.[0]?.title
-        ? `重点跟进：${ctx.analysis.bottlenecks[0].title}`
-        : `每一个${labels.order}走到哪一步，一眼看完。`,
+        ? c.projects.focus(ctx.analysis.bottlenecks[0].title)
+        : c.projects.subtitle(labels.order),
     }),
     workflowStrip(
       "projects-workflow",
-      `${labels.order}流程`,
+      c.projects.workflow(labels.order),
       workflowStages(ctx),
       1,
     ),
     node("Listbox", "projects-staff", {
       name: "assigned-staff",
-      placeholder: `负责${labels.staff}`,
+      placeholder: c.projects.staffPlaceholder(labels.staff),
       options: [
-        { label: `全部${labels.staff}`, value: "all" },
+        { label: c.projects.allStaff(labels.staff), value: "all" },
         { label: `${labels.staff} A`, value: "a" },
         { label: `${labels.staff} B`, value: "b" },
       ],
     }),
     recordTable(
       "projects-list",
-      `${labels.order}列表`,
+      c.projects.caption(labels.order),
       {
         primary: labels.order,
         secondary: labels.customer,
-        amount: "金额",
-        status: "进度",
+        amount: c.col.amount,
+        status: c.col.progress,
       },
       sample.records,
     ),
@@ -1365,20 +936,22 @@ function buildPayments(
   locale: string,
   pages: PageRef[],
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const lang = langOf(ctx);
+  const c = chrome(lang);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
   const brand = displayBusinessName(ctx);
-  const labels = labelsFromPages(industry.labels, pages);
-  const sample = sampleFor(industry.slug);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
+  const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "payments", locale, pages),
+    railNav(labels, brand, name, "payments", locale, pages, lang),
     node("PageHeader", "payments-header", {
-      title: "收款记录",
-      subtitle: `哪些${labels.customer}已经付了、哪些还欠着，不用再翻 WhatsApp。`,
+      title: c.payments.title,
+      subtitle: c.payments.subtitle(labels.customer),
     }),
     node("MonthPicker", "payments-month", {
       name: "payment-month",
-      placeholder: "选择月份",
+      placeholder: c.payments.monthPlaceholder,
       allowClear: true,
     }),
     node("HeroCard", "payments-hero", {
@@ -1394,24 +967,24 @@ function buildPayments(
         href: `/${locale}/portal/payments`,
       })),
       spark: sample.heroSpark.map((n) => ({ n })),
-      sparkLabel: "最近六期",
+      sparkLabel: c.dashboard.sparkLabel,
     }),
     recordTable(
       "payments-list",
-      "收款明细",
+      c.payments.caption,
       {
-        primary: "收款项目",
+        primary: c.payments.itemColumn,
         secondary: labels.customer,
-        amount: "金额",
-        status: "状态",
+        amount: c.col.amount,
+        status: c.col.status,
       },
       sample.records,
     ),
     // Receipt upload is the single most-requested thing from Malaysian SMEs
     // that currently run payment tracking through WhatsApp screenshots.
     node("FileUploadField", "payments-receipt", {
-      label: "付款凭证",
-      hint: "上传银行转账截图或收据（JPG / PNG / PDF）",
+      label: c.payments.uploadLabel,
+      hint: c.payments.uploadHint,
       name: "receipt",
       accept: "image/*,application/pdf",
     }),
@@ -1429,39 +1002,41 @@ function buildBookings(
   locale: string,
   pages: PageRef[],
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const lang = langOf(ctx);
+  const c = chrome(lang);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
   const brand = displayBusinessName(ctx);
-  const labels = labelsFromPages(industry.labels, pages);
-  const sample = sampleFor(industry.slug);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
+  const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "bookings", locale, pages),
+    railNav(labels, brand, name, "bookings", locale, pages, lang),
     node("PageHeader", "bookings-header", {
-      title: "预约",
-      subtitle: `今天谁要来、哪个${labels.staff}接、做什么，一页看完。`,
+      title: c.bookings.title,
+      subtitle: c.bookings.subtitle(labels.staff),
     }),
     node("DatePicker", "bookings-date", {
       name: "booking-date",
-      placeholder: "选择日期",
+      placeholder: c.bookings.datePlaceholder,
       allowClear: true,
     }),
     node("Listbox", "bookings-staff", {
       name: "booking-staff",
-      placeholder: `选择${labels.staff}`,
+      placeholder: c.bookings.staffPlaceholder(labels.staff),
       options: [
-        { label: `全部${labels.staff}`, value: "all" },
+        { label: c.bookings.allStaff(labels.staff), value: "all" },
         { label: `${labels.staff} A`, value: "a" },
         { label: `${labels.staff} B`, value: "b" },
       ],
     }),
     recordTable(
       "bookings-list",
-      "今日预约",
+      c.bookings.caption,
       {
-        primary: "服务项目",
-        secondary: `时间 / ${labels.staff}`,
-        amount: "价钱",
-        status: "状态",
+        primary: c.bookings.serviceColumn,
+        secondary: c.bookings.whenColumn(labels.staff),
+        amount: c.bookings.priceColumn,
+        status: c.col.status,
       },
       sample.records,
     ),
@@ -1479,34 +1054,36 @@ function buildOrders(
   locale: string,
   pages: PageRef[],
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  const lang = langOf(ctx);
+  const c = chrome(lang);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
   const brand = displayBusinessName(ctx);
-  const labels = labelsFromPages(industry.labels, pages);
-  const sample = sampleFor(industry.slug);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
+  const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "orders", locale, pages),
+    railNav(labels, brand, name, "orders", locale, pages, lang),
     node("PageHeader", "orders-header", {
-      title: `${labels.order}列表`,
+      title: c.orders.title(labels.order),
       subtitle: ctx.analysis?.bottlenecks?.[0]?.title
-        ? `重点跟进：${ctx.analysis.bottlenecks[0].title}`
-        : `每一张${labels.order}处理到哪一步，不用问人。`,
+        ? c.orders.focus(ctx.analysis.bottlenecks[0].title)
+        : c.orders.subtitle(labels.order),
     }),
     workflowStrip(
       "orders-workflow",
-      `${labels.order}流程`,
+      c.orders.workflow(labels.order),
       workflowStages(ctx),
       1,
     ),
-    filterChips("orders-filters", "状态", ["处理中"]),
+    filterChips("orders-filters", c.orders.filterKind, [c.orders.filterValue], lang),
     recordTable(
       "orders-list",
-      `${labels.order}明细`,
+      c.orders.caption(labels.order),
       {
         primary: labels.order,
         secondary: labels.customer,
-        amount: "金额",
-        status: "状态",
+        amount: c.col.amount,
+        status: c.col.status,
       },
       sample.records,
     ),
@@ -1530,509 +1107,6 @@ function buildOrders(
 // left exactly as they were: they are the pages every customer sees first, they
 // have per-trade sample data the generic path cannot reproduce, and rewriting
 // working templates to prove a point is how a refactor breaks a product.
-
-/** The words one module is written in. Everything a shape needs to stop
- *  reading as a generic table with a different heading on it. */
-type ModuleCopy = {
-  title: string;
-  subtitle: string;
-  /** Column headings, in this module's own nouns. */
-  columns: {
-    primary: string;
-    secondary?: string;
-    amount?: string;
-    status?: string;
-  };
-  /** Three rows. Sample data is what makes a first screen legible -- an empty
-   *  table teaches a customer nothing about what the page is for. */
-  rows: {
-    primary: string;
-    secondary?: string;
-    amount?: string;
-    tone: StatusTone;
-    status: string;
-  }[];
-  /** Ledger / report / reconcile shapes only. */
-  hero?: {
-    label: string;
-    value: string;
-    suffix: string;
-    stats: {
-      label: string;
-      value: string;
-      tone?: "normal" | "caution" | "warn";
-      sub?: string;
-    }[];
-  };
-  /** Report / leaderboard shapes only. Six periods, oldest first. */
-  trend?: {
-    title: string;
-    caption: string;
-    unit: string;
-    points: { label: string; value: number }[];
-  };
-  /** Directory / catalog shapes: what the search box says. */
-  searchPlaceholder?: string;
-  /** Catalog / leaderboard / pipeline shapes: the filter already applied. */
-  filter?: { kind: string; value: string };
-  /** Ledger shape: what the upload field is for. Omitted where a module has no
-   *  paperwork -- 佣金 is calculated, not evidenced. */
-  upload?: { label: string; hint: string };
-  /** Reconcile shape: the line that states the variance. */
-  variance?: { title: string; description: string };
-};
-
-/**
- * The vocabulary for each archetype the shape builders serve.
- *
- * Written in the trade's own words -- 尾款, 师傅, 上游, 账期 -- because the whole
- * claim this product makes is that the system arrives already speaking the
- * customer's language. A table headed "Item / Value / Status" is a demo; one
- * headed 「上游对账单 / 系统总额 / 差异」 is their month-end.
- *
- * `labels` carries the trade's three nouns, so a module reads correctly whether
- * the business calls its counterparties 客户, 顾客 or 经销商.
- */
-function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
-  switch (key) {
-    case "reconciliation":
-      return {
-        title: "月度对账",
-        subtitle:
-          "上游给的总数，对系统里逐笔加起来的总数。差多少，差在哪一笔。",
-        columns: {
-          primary: "对账项目",
-          secondary: "参考号",
-          amount: "金额",
-          status: "结果",
-        },
-        rows: [
-          {
-            primary: "系统逐笔总额",
-            secondary: "本月 128 笔",
-            amount: "RM 246,800",
-            tone: "positive",
-            status: "已核对",
-          },
-          {
-            primary: "上游对账单总额",
-            secondary: "对方出的数字",
-            amount: "RM 246,800",
-            tone: "positive",
-            status: "对得上",
-          },
-          {
-            primary: "待查差异",
-            secondary: "REF-2026-0817",
-            amount: "RM 0",
-            tone: "neutral",
-            status: "无差异",
-          },
-        ],
-        hero: {
-          label: "本月差异",
-          value: "RM 0",
-          suffix: "系统 vs 上游",
-          stats: [
-            { label: "系统总额", value: "RM 246,800", sub: "128 笔" },
-            { label: "上游总额", value: "RM 246,800", sub: "对方出" },
-            { label: "待查", value: "0 笔" },
-          ],
-        },
-        variance: {
-          title: "这个月对得上",
-          description:
-            "系统总额和上游对账单一致。有差异的时候，这里会列出要查的那几笔参考号。",
-        },
-      };
-
-    case "commission":
-      return {
-        title: "佣金结算",
-        subtitle: "这个月该拿多少，系统按每一笔自动算出来，不用再开 Excel。",
-        columns: {
-          primary: "结算对象",
-          secondary: "计算方式",
-          amount: "佣金",
-          status: "状态",
-        },
-        rows: [
-          {
-            primary: `${labels.customer} A`,
-            secondary: "成交额 × 2%",
-            amount: "RM 1,240",
-            tone: "positive",
-            status: "已结",
-          },
-          {
-            primary: `${labels.customer} B`,
-            secondary: "成交额 × 2%",
-            amount: "RM 860",
-            tone: "warning",
-            status: "待结",
-          },
-          {
-            primary: `${labels.customer} C`,
-            secondary: "成交额 × 2%",
-            amount: "RM 415",
-            tone: "neutral",
-            status: "计算中",
-          },
-        ],
-        hero: {
-          label: "本月佣金",
-          value: "RM 2,515",
-          suffix: "比上个月",
-          stats: [
-            { label: "已结", value: "RM 1,240" },
-            { label: "待结", value: "RM 860", tone: "caution" },
-            { label: "计算中", value: "RM 415" },
-          ],
-        },
-      };
-
-    case "expenses":
-      return {
-        title: "开销记录",
-        subtitle: "钱花去哪里了，每一笔附单据。跟收款对起来才知道真正赚多少。",
-        columns: {
-          primary: "开销项目",
-          secondary: "付给谁",
-          amount: "金额",
-          status: "状态",
-        },
-        rows: [
-          {
-            primary: "材料采购",
-            secondary: "建材行",
-            amount: "RM 8,400",
-            tone: "positive",
-            status: "已付",
-          },
-          {
-            primary: `${labels.staff}工资`,
-            secondary: "本月",
-            amount: "RM 12,000",
-            tone: "positive",
-            status: "已付",
-          },
-          {
-            primary: "车油 / 过路费",
-            secondary: "待报销",
-            amount: "RM 640",
-            tone: "warning",
-            status: "待付",
-          },
-        ],
-        hero: {
-          label: "本月开销",
-          value: "RM 21,040",
-          suffix: "比上个月",
-          stats: [
-            { label: "已付", value: "RM 20,400" },
-            { label: "待付", value: "RM 640", tone: "caution" },
-            { label: "没单据", value: "1 笔", tone: "warn" },
-          ],
-        },
-        upload: {
-          label: "单据 / 发票",
-          hint: "拍张照片或上传 PDF，这笔开销就有凭证了",
-        },
-      };
-
-    case "reports":
-      return {
-        title: "月度报表",
-        subtitle: "按月看趋势。要给会计、给银行、给自己看，都从这里导出。",
-        columns: {
-          primary: "月份",
-          secondary: "笔数",
-          amount: "营业额",
-          status: "对比上月",
-        },
-        rows: [
-          {
-            primary: "2026 年 8 月",
-            secondary: "128 笔",
-            amount: "RM 71,300",
-            tone: "positive",
-            status: "增长",
-          },
-          {
-            primary: "2026 年 7 月",
-            secondary: "104 笔",
-            amount: "RM 58,000",
-            tone: "warning",
-            status: "下滑",
-          },
-          {
-            primary: "2026 年 6 月",
-            secondary: "117 笔",
-            amount: "RM 63,000",
-            tone: "positive",
-            status: "增长",
-          },
-        ],
-        hero: {
-          label: "本月营业额",
-          value: "RM 71,300",
-          suffix: "比上个月",
-          stats: [
-            { label: "笔数", value: "128 笔" },
-            { label: "平均单价", value: "RM 557" },
-            { label: "增长", value: "23%" },
-          ],
-        },
-        trend: {
-          title: "近六个月营业额",
-          caption: "每一根是一个月的总额。",
-          unit: "RM",
-          points: [
-            { label: "3月", value: 42000 },
-            { label: "4月", value: 51000 },
-            { label: "5月", value: 47000 },
-            { label: "6月", value: 63000 },
-            { label: "7月", value: 58000 },
-            { label: "8月", value: 71300 },
-          ],
-        },
-      };
-
-    case "ranking":
-      return {
-        title: "活跃度排名",
-        subtitle:
-          "谁最努力、谁在退步。按金额、频率、最近有没有动，自动排等级。",
-        columns: {
-          primary: labels.customer,
-          secondary: "最近一次",
-          amount: "近 90 天",
-          status: "等级",
-        },
-        rows: [
-          {
-            primary: `${labels.customer} A`,
-            secondary: "2 天前",
-            amount: "RM 48,500",
-            tone: "positive",
-            status: "顶级",
-          },
-          {
-            primary: `${labels.customer} B`,
-            secondary: "9 天前",
-            amount: "RM 22,800",
-            tone: "positive",
-            status: "活跃",
-          },
-          {
-            primary: `${labels.customer} C`,
-            secondary: "41 天前",
-            amount: "RM 3,200",
-            tone: "warning",
-            status: "退步中",
-          },
-        ],
-        filter: { kind: "时间窗口", value: "近 90 天" },
-        trend: {
-          title: "活跃人数变化",
-          caption: "顶级和活跃加起来的人数，按月看。",
-          unit: "",
-          points: [
-            { label: "3月", value: 12 },
-            { label: "4月", value: 14 },
-            { label: "5月", value: 13 },
-            { label: "6月", value: 17 },
-            { label: "7月", value: 19 },
-            { label: "8月", value: 23 },
-          ],
-        },
-      };
-
-    case "suppliers":
-      return {
-        title: "供应商",
-        subtitle: "向谁进货、账期多久、这家还欠着多少。",
-        columns: {
-          primary: "供应商",
-          secondary: "联络方式 / 账期",
-          amount: "未付",
-          status: "状态",
-        },
-        rows: [
-          {
-            primary: "建材行 A",
-            secondary: "016-2xx xxxx · 30 天",
-            amount: "RM 8,400",
-            tone: "warning",
-            status: "有欠款",
-          },
-          {
-            primary: "五金店 B",
-            secondary: "012-3xx xxxx · 现金",
-            amount: "RM 0",
-            tone: "positive",
-            status: "已结清",
-          },
-          {
-            primary: "云石厂 C",
-            secondary: "018-8xx xxxx · 60 天",
-            amount: "RM 15,200",
-            tone: "neutral",
-            status: "未到期",
-          },
-        ],
-        searchPlaceholder: "搜索供应商",
-      };
-
-    case "staff":
-      return {
-        title: labels.staff,
-        subtitle: "谁在做什么、这个月做了多少、工资怎么算。",
-        columns: {
-          primary: labels.staff,
-          secondary: "负责",
-          amount: "本月业绩",
-          status: "状态",
-        },
-        rows: [
-          {
-            primary: `${labels.staff} A`,
-            secondary: "3 单在做",
-            amount: "RM 48,500",
-            tone: "positive",
-            status: "在职",
-          },
-          {
-            primary: `${labels.staff} B`,
-            secondary: "1 单在做",
-            amount: "RM 22,800",
-            tone: "positive",
-            status: "在职",
-          },
-          {
-            primary: `${labels.staff} C`,
-            secondary: "休假中",
-            amount: "RM 0",
-            tone: "neutral",
-            status: "请假",
-          },
-        ],
-        searchPlaceholder: `搜索${labels.staff}`,
-      };
-
-    case "inventory":
-      return {
-        title: "库存",
-        subtitle: "还有多少货、什么快没了、什么压太久没动。",
-        columns: {
-          primary: "货品",
-          secondary: "位置 / 单位",
-          amount: "数量",
-          status: "状态",
-        },
-        rows: [
-          {
-            primary: "货品 A",
-            secondary: "仓库一 · 箱",
-            amount: "128",
-            tone: "positive",
-            status: "充足",
-          },
-          {
-            primary: "货品 B",
-            secondary: "仓库一 · 件",
-            amount: "9",
-            tone: "warning",
-            status: "快没了",
-          },
-          {
-            primary: "货品 C",
-            secondary: "仓库二 · 箱",
-            amount: "340",
-            tone: "neutral",
-            status: "压太久",
-          },
-        ],
-        searchPlaceholder: "搜索货品名称或编号",
-        filter: { kind: "状态", value: "快没了" },
-      };
-
-    case "tasks":
-      return {
-        title: "任务",
-        subtitle: "谁负责什么、什么时候要交、做完没有。",
-        columns: {
-          primary: "任务",
-          secondary: `负责${labels.staff}`,
-          amount: "限期",
-          status: "状态",
-        },
-        rows: [
-          {
-            primary: "上门量尺寸",
-            secondary: `${labels.staff} A`,
-            amount: "8月22",
-            tone: "warning",
-            status: "今天",
-          },
-          {
-            primary: "出报价单",
-            secondary: `${labels.staff} B`,
-            amount: "8月24",
-            tone: "neutral",
-            status: "待办",
-          },
-          {
-            primary: "订材料",
-            secondary: `${labels.staff} A`,
-            amount: "8月19",
-            tone: "positive",
-            status: "已完成",
-          },
-        ],
-        filter: { kind: "状态", value: "待办" },
-      };
-
-    default:
-      // Unreachable for catalogue keys -- every one of them is cased above and
-      // industry-template.test.ts asserts it. Kept as a working page rather than
-      // a throw: a customer's own system is the wrong place to discover a
-      // missing switch arm.
-      return {
-        title: "新模块",
-        subtitle: "下面的名称和栏位全部可以改成你要的。",
-        columns: {
-          primary: "项目",
-          secondary: "说明",
-          amount: "金额",
-          status: "状态",
-        },
-        rows: [
-          {
-            primary: "记录 001",
-            secondary: "示例内容",
-            amount: "RM 0",
-            tone: "positive",
-            status: "已完成",
-          },
-          {
-            primary: "记录 002",
-            secondary: "示例内容",
-            amount: "RM 0",
-            tone: "warning",
-            status: "处理中",
-          },
-          {
-            primary: "记录 003",
-            secondary: "示例内容",
-            amount: "RM 0",
-            tone: "neutral",
-            status: "待处理",
-          },
-        ],
-      };
-  }
-}
 
 function heroNode(id: string, locale: string, copy: ModuleCopy): PuckNode[] {
   if (!copy.hero) return [];
@@ -2086,17 +1160,19 @@ function buildFromShape(
   pages: PageRef[],
   ownTitle?: string | null,
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
-  const labels = labelsFromPages(industry.labels, pages);
+  const lang = langOf(ctx);
+  const c = chrome(lang);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
   const brand = displayBusinessName(ctx);
-  const copy = moduleCopy(pageKey, labels);
+  const copy = moduleCopy(pageKey, labels, lang);
   // The customer's own noun wins over the archetype's default: the AI renames
   // `customers` to 经销商 for a master dealer, and the page heading has to agree
   // with the rail or the system reads as two products bolted together.
   const title = ownTitle?.trim() || copy.title;
 
   const head: PuckNode[] = [
-    railNav(labels, brand, name, pageKey, locale, pages),
+    railNav(labels, brand, name, pageKey, locale, pages, lang),
     node("PageHeader", `${pageKey}-header`, { title, subtitle: copy.subtitle }),
   ];
 
@@ -2115,13 +1191,20 @@ function buildFromShape(
     : [];
 
   const filter = copy.filter
-    ? [filterChips(`${pageKey}-filters`, copy.filter.kind, [copy.filter.value])]
+    ? [
+        filterChips(
+          `${pageKey}-filters`,
+          copy.filter.kind,
+          [copy.filter.value],
+          lang,
+        ),
+      ]
     : [];
 
   const month = [
     node("MonthPicker", `${pageKey}-month`, {
       name: `${pageKey}-month`,
-      placeholder: "选择月份",
+      placeholder: c.shape.monthPlaceholder,
       allowClear: true,
     }),
   ];
@@ -2153,7 +1236,7 @@ function buildFromShape(
         ...head,
         workflowStrip(
           `${pageKey}-workflow`,
-          `${title}流程`,
+          c.shape.workflow(title),
           workflowStages(ctx),
           1,
         ),
@@ -2269,43 +1352,27 @@ function buildCustomPage(
   pages: PageRef[],
   pageId: PageId,
 ): PuckNode[] {
-  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
-  const labels = labelsFromPages(industry.labels, pages);
+  const lang = langOf(ctx);
+  const c = chrome(lang);
+  const industry = ctx.industry ?? fallbackIndustry(lang);
+  const labels = labelsFromPages(industryLabels(industry, lang), pages);
   const brand = displayBusinessName(ctx);
 
   return [
-    railNav(labels, brand, name, pageId, locale, pages),
+    railNav(labels, brand, name, pageId, locale, pages, lang),
     node("PageHeader", `${pageId}-header`, {
       title,
-      subtitle: `这一页是你自己加的。下面的名称和栏位全部可以改成你要的。`,
+      subtitle: c.custom.subtitle,
     }),
     recordTable(
       `${pageId}-table`,
       title,
-      { primary: "项目", secondary: "说明", amount: "金额", status: "状态" },
-      [
-        {
-          primary: "记录 001",
-          secondary: "示例内容",
-          amount: "RM 0",
-          tone: "positive",
-          status: "已完成",
-        },
-        {
-          primary: "记录 002",
-          secondary: "示例内容",
-          amount: "RM 0",
-          tone: "warning",
-          status: "处理中",
-        },
-        {
-          primary: "记录 003",
-          secondary: "示例内容",
-          amount: "RM 0",
-          tone: "neutral",
-          status: "待处理",
-        },
-      ],
+      c.custom.columns,
+      c.custom.rows.map((row, i) => ({
+        ...row,
+        amount: "RM 0",
+        tone: (["positive", "warning", "neutral"] as const)[i] ?? "neutral",
+      })),
     ),
   ];
 }
@@ -2347,16 +1414,19 @@ function labelsFromPages(
 export function buildPageLayout(
   pageKey: PageId,
   ctx: BusinessContext,
-  businessName = "我的生意",
+  /** Who is signed in, for the account chip. Defaults to a placeholder in
+   *  the SYSTEM language, not the site language. */
+  businessName = chrome(ctx.lang ?? DEFAULT_SYSTEM_LANG).defaultBusinessName,
   locale = "zh",
   /** The business's actual page set, so the rail links only to pages it has.
    *  Defaults to the trade's standard set when the caller does not know it. */
   pages?: PageRef[],
 ): Data {
+  const lang = langOf(ctx);
   const refs: PageRef[] =
     pages ?? pagesForIndustry(ctx.industry?.slug).map((key) => ({ key }));
   const labels = labelsFromPages(
-    (ctx.industry ?? FALLBACK_INDUSTRY).labels,
+    industryLabels(ctx.industry ?? fallbackIndustry(lang), lang),
     refs,
   );
   const self = refs.find((p) => p.key === pageKey);
@@ -2380,7 +1450,7 @@ export function buildPageLayout(
           self?.title,
         )
       : buildCustomPage(
-          pageLabel(self ?? { key: pageKey }, labels),
+          pageLabel(self ?? { key: pageKey }, labels, lang),
           ctx,
           businessName,
           locale,

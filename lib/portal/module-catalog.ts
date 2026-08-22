@@ -1,3 +1,5 @@
+import type { SystemLang } from "@/lib/system-lang";
+
 /**
  * Every kind of page a business's system can be made of.
  *
@@ -65,6 +67,13 @@ export type ModuleArchetype = {
   /** The default Chinese noun. The model may override it with the business's
    *  own word -- a Master Dealer says 经销商, a salon says 顾客. */
   label: string;
+  /** The same noun in English, which is what a system built in English is
+   *  headed with. NOT a translation of `label` at render time: 库存 is "Stock"
+   *  on a Malaysian shop floor and "Inventory" only in a textbook, and the
+   *  difference is the whole reason this product does not read like imported
+   *  software. The model may override this too -- see `label_en` in
+   *  lib/openai/analysis-schema.ts. */
+  labelEn: string;
   /** What this module is for, in one line. Shown to the model when it chooses,
    *  and to the founder in the console. Written for a business owner, not a
    *  developer. */
@@ -75,11 +84,22 @@ export type ModuleArchetype = {
   always?: true;
 };
 
+/** The archetype's noun in the system's own language. Falls back to the
+ *  Chinese label rather than to the key, because a rail item reading
+ *  "reconciliation" is worse than one reading 对账. */
+export function moduleLabel(
+  archetype: Pick<ModuleArchetype, "label" | "labelEn">,
+  lang: SystemLang,
+): string {
+  return lang === "en" ? archetype.labelEn || archetype.label : archetype.label;
+}
+
 export const MODULE_CATALOG: ModuleArchetype[] = [
   // --- The spine every business has -------------------------------------
   {
     key: "dashboard",
     label: "总览",
+    labelEn: "Overview",
     blurb: "一页看完今天的生意：关键数字、流程走到哪、要跟进什么。",
     shape: "overview",
     always: true,
@@ -87,6 +107,7 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
   {
     key: "customers",
     label: "客户",
+    labelEn: "Customers",
     blurb: "所有客户的名单和联络方式，点进去看这个客户的历史。",
     shape: "directory",
     always: true,
@@ -94,6 +115,7 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
   {
     key: "payments",
     label: "收款",
+    labelEn: "Payments",
     blurb: "谁付了、谁还欠着、这个月收了多少，附收据凭证。",
     shape: "ledger",
     always: true,
@@ -103,30 +125,35 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
   {
     key: "quotations",
     label: "报价单",
+    labelEn: "Quotations",
     blurb: "发出去的报价，跟进哪些确认了、哪些还没回。适合先报价再做的生意。",
     shape: "pipeline",
   },
   {
     key: "orders",
     label: "订单",
+    labelEn: "Orders",
     blurb: "一张张的订单从下单到出货。适合成交量大、不用逐单报价的生意。",
     shape: "pipeline",
   },
   {
     key: "bookings",
     label: "预约",
+    labelEn: "Bookings",
     blurb: "今天谁要来、几点、谁接。适合按时间排班接客的生意。",
     shape: "calendar",
   },
   {
     key: "projects",
     label: "项目",
+    labelEn: "Projects",
     blurb: "一单工程/案子做到哪一步，进度和里程碑。适合一单做很久的生意。",
     shape: "pipeline",
   },
   {
     key: "tasks",
     label: "任务",
+    labelEn: "Tasks",
     blurb: "谁负责什么、什么时候要交、做完没有。",
     shape: "pipeline",
   },
@@ -135,24 +162,28 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
   {
     key: "reconciliation",
     label: "对账",
+    labelEn: "Reconciliation",
     blurb: "拿上游/银行/平台出的总数，对系统里的逐笔总额，差多少一眼看到。",
     shape: "reconcile",
   },
   {
     key: "commission",
     label: "佣金",
+    labelEn: "Commission",
     blurb: "抽成、分佣、业绩提成，每月自动算出来该拿多少。",
     shape: "ledger",
   },
   {
     key: "expenses",
     label: "开销",
+    labelEn: "Expenses",
     blurb: "钱花去哪里了，附单据。跟收款对起来才知道真正赚多少。",
     shape: "ledger",
   },
   {
     key: "reports",
     label: "报表",
+    labelEn: "Reports",
     blurb: "按月看趋势：营业额、笔数、增长，可以导出给会计或银行。",
     shape: "report",
   },
@@ -161,18 +192,21 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
   {
     key: "ranking",
     label: "排名",
+    labelEn: "Ranking",
     blurb: "谁最活跃、谁在退步，按金额和频率排出等级。适合有下线、代理、业务员的生意。",
     shape: "leaderboard",
   },
   {
     key: "suppliers",
     label: "供应商",
+    labelEn: "Suppliers",
     blurb: "向谁进货、账期多久、这家欠着多少。",
     shape: "directory",
   },
   {
     key: "staff",
     label: "员工",
+    labelEn: "Staff",
     blurb: "谁在做什么、业绩多少、薪水怎么算。",
     shape: "directory",
   },
@@ -181,6 +215,7 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
   {
     key: "inventory",
     label: "库存",
+    labelEn: "Stock",
     blurb: "还有多少货、什么快没了、什么压太久。",
     shape: "catalog",
   },
@@ -194,6 +229,7 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
   {
     key: "website",
     label: "官网",
+    labelEn: "Website",
     blurb:
       "客人在外面看到的那一页：你做什么、做过什么、怎么找你。上面的询价表格填了，直接变成系统里的一张单。",
     shape: "landing",
@@ -271,6 +307,7 @@ export function defaultRecommendations(slug?: string | null): RecommendedModule[
   return defaultModulesForIndustry(slug).map((key) => ({
     key,
     label: MODULE_BY_KEY[key]?.label ?? key,
+    label_en: MODULE_BY_KEY[key]?.labelEn ?? key,
     why: "",
   }));
 }
@@ -280,6 +317,16 @@ export type RecommendedModule = {
   key: string;
   /** The business's own word for it, e.g. 经销商 rather than 客户. */
   label: string;
+  /** The same word in English, e.g. Dealers rather than Customers. This is
+   *  what the page is actually HEADED in a system built in English, which is
+   *  the default -- so a missing one costs the business its own vocabulary on
+   *  every page. Falls back to the archetype label.
+   *
+   *  Snake_case, unlike `ModuleArchetype.labelEn` next to it, and deliberately:
+   *  this type is the WIRE shape -- what the model returns and what lands in
+   *  `analysis_results.modules` -- and the rest of that payload is snake_case.
+   *  The catalogue is ours and reads as TypeScript; this is theirs. */
+  label_en: string;
   /** One line, in the owner's language, on why THIS business needs it. */
   why: string;
 };
@@ -302,13 +349,19 @@ export function normalizeModules(raw: unknown): RecommendedModule[] {
   const seen = new Set<string>();
   const out: RecommendedModule[] = [];
 
-  const push = (key: string, label?: string, why?: string) => {
+  const push = (
+    key: string,
+    label?: string,
+    labelEn?: string,
+    why?: string,
+  ) => {
     const archetype = MODULE_BY_KEY[key];
     if (!archetype || seen.has(key)) return;
     seen.add(key);
     out.push({
       key,
       label: (label || "").trim() || archetype.label,
+      label_en: (labelEn || "").trim() || archetype.labelEn,
       why: (why || "").trim(),
     });
   };
@@ -318,16 +371,17 @@ export function normalizeModules(raw: unknown): RecommendedModule[] {
   // that rename is one of the most convincing details in the whole first screen.
   for (const key of ALWAYS_MODULES) {
     const match = list.find(
-      (m): m is RecommendedModule => !!m && typeof m === "object" && (m as RecommendedModule).key === key,
+      (m): m is RecommendedModule =>
+        !!m && typeof m === "object" && (m as RecommendedModule).key === key,
     );
-    push(key, match?.label, match?.why);
+    push(key, match?.label, match?.label_en, match?.why);
   }
 
   for (const m of list) {
     if (out.length >= MAX_MODULES) break;
     if (!m || typeof m !== "object") continue;
-    const { key, label, why } = m as RecommendedModule;
-    if (typeof key === "string") push(key, label, why);
+    const { key, label, label_en, why } = m as RecommendedModule;
+    if (typeof key === "string") push(key, label, label_en, why);
   }
 
   return out.sort((a, b) => MODULE_KEYS.indexOf(a.key) - MODULE_KEYS.indexOf(b.key));

@@ -1,0 +1,110 @@
+/**
+ * The shapes every copy table in this directory fills in.
+ *
+ * Lifted out of industry-template.ts when the system gained a second language:
+ * one type, two tables (`*.zh.ts` and `*.en.ts`), so a phrase that exists in
+ * one language and not the other is a compile error rather than a page that
+ * renders half in English.
+ */
+
+/** `industries.labels` -- the business's own words for its three core nouns.
+ *  Chinese comes from the database row; English comes from INDUSTRY_LABELS_EN
+ *  in chrome.ts. */
+export type IndustryLabels = {
+  customer: string;
+  order: string;
+  staff: string;
+};
+
+export type StatusTone = "positive" | "warning" | "negative" | "neutral";
+
+/**
+ * Sample rows are the part that has to feel like the customer's own business
+ * rather than a generic CRM demo. Malaysian-market specifics are deliberate:
+ * RM amounts, local naming conventions, and the kind of record each trade
+ * actually keeps.
+ */
+export type SampleSet = {
+  records: {
+    primary: string;
+    secondary: string;
+    amount: string;
+    tone: StatusTone;
+    status: string;
+  }[];
+  customers: {
+    primary: string;
+    secondary: string;
+    tone: StatusTone;
+    status: string;
+  }[];
+  heroLabel: string;
+  heroValue: string;
+  /** What the headline figure is measured against -- "vs 上个月", "vs 昨天". */
+  heroSuffix: string;
+  /** The three supporting figures under the headline. Three, not four, and
+   *  not equal-sized peers: see the HeroCard registration in puck-config.tsx
+   *  for why this product does not copy B12's row-of-tiles dashboard. Each is
+   *  chosen to be the number the trade ACTUALLY worries about -- for a
+   *  contractor that is money already spent and not yet billed, not a vanity
+   *  count of projects. */
+  heroStats: {
+    label: string;
+    value: string;
+    tone?: "normal" | "caution" | "warn";
+    sub?: string;
+  }[];
+  /** Six periods, oldest first. A shape, not a chart -- HeroCard draws it
+   *  unlabelled and unaxised. All-zero series draw nothing, which is why no
+   *  trade below gets a placeholder run of zeros. */
+  heroSpark: number[];
+};
+
+export type ModuleCopy = {
+  title: string;
+  subtitle: string;
+  /** Column headings, in this module's own nouns. */
+  columns: {
+    primary: string;
+    secondary?: string;
+    amount?: string;
+    status?: string;
+  };
+  /** Three rows. Sample data is what makes a first screen legible -- an empty
+   *  table teaches a customer nothing about what the page is for. */
+  rows: {
+    primary: string;
+    secondary?: string;
+    amount?: string;
+    tone: StatusTone;
+    status: string;
+  }[];
+  /** Ledger / report / reconcile shapes only. */
+  hero?: {
+    label: string;
+    value: string;
+    suffix: string;
+    stats: {
+      label: string;
+      value: string;
+      tone?: "normal" | "caution" | "warn";
+      sub?: string;
+    }[];
+  };
+  /** Report / leaderboard shapes only. Six periods, oldest first. */
+  trend?: {
+    title: string;
+    caption: string;
+    unit: string;
+    points: { label: string; value: number }[];
+  };
+  /** Directory / catalog shapes: what the search box says. */
+  searchPlaceholder?: string;
+  /** Catalog / leaderboard / pipeline shapes: the filter already applied. */
+  filter?: { kind: string; value: string };
+  /** Ledger shape: what the upload field is for. Omitted where a module has no
+   *  paperwork -- 佣金 is calculated, not evidenced. */
+  upload?: { label: string; hint: string };
+  /** Reconcile shape: the line that states the variance. */
+  variance?: { title: string; description: string };
+};

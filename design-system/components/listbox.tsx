@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Check, ChevronDown } from "lucide-react"
+import { useSystemWords } from "@/design-system/system-lang-context"
 
 export type ListboxOption = { value: string; label: string; dotColor?: string }
 
@@ -20,7 +21,7 @@ export function Listbox({
   defaultValue,
   onChange,
   options,
-  placeholder = "请选择…",
+  placeholder,
 }: {
   name?: string
   value?: string
@@ -30,6 +31,7 @@ export function Listbox({
   /** Shown when nothing is selected. */
   placeholder?: string
 }) {
+  const w = useSystemWords()
   const isControlled = controlledValue !== undefined
   const [internalValue, setInternalValue] = useState(defaultValue ?? options[0]?.value ?? "")
   const value = isControlled ? controlledValue : internalValue
@@ -72,7 +74,7 @@ export function Listbox({
         {selected?.dotColor && (
           <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: selected.dotColor }} />
         )}
-        <span className="flex-1 truncate">{selected?.label ?? placeholder}</span>
+        <span className="flex-1 truncate">{selected?.label ?? placeholder ?? w.pickOne}</span>
         <ChevronDown
           aria-hidden="true"
           className={`ml-auto h-3.5 w-3.5 shrink-0 text-[color:var(--color-paper-dim)] transition-transform [transition-duration:var(--dur-fast)] ${open ? "rotate-180" : ""}`}

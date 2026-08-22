@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { Check, ChevronDown, Search } from "lucide-react"
+import { useSystemWords } from "@/design-system/system-lang-context"
 
 export type ComboboxOption = {
   value: string
@@ -30,8 +31,8 @@ export function Combobox({
   onChange,
   options,
   placeholder,
-  searchPlaceholder = "搜索…",
-  emptyMessage = "没有找到结果。",
+  searchPlaceholder,
+  emptyMessage,
 }: {
   name?: string
   value: string
@@ -42,6 +43,7 @@ export function Combobox({
   /** Shown when the search query matches nothing. */
   emptyMessage?: string
 }) {
+  const w = useSystemWords()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const ref = useRef<HTMLDivElement>(null)
@@ -108,7 +110,7 @@ export function Combobox({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder ?? w.search}
               className="w-full bg-transparent [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none placeholder:text-[color:var(--color-paper-dim)]"
             />
           </div>
@@ -143,7 +145,7 @@ export function Combobox({
                 </button>
               ))
             ) : (
-              <p className="px-3 py-6 text-center [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)]">{emptyMessage}</p>
+              <p className="px-3 py-6 text-center [font-size:var(--text-sm)] text-[color:var(--color-paper-dim)]">{emptyMessage ?? w.noResults}</p>
             )}
           </div>
         </div>

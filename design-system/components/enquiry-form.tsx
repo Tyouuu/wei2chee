@@ -36,6 +36,9 @@ export function EnquiryForm({
   fields,
   submitLabel,
   landsIn,
+  landsInBadge = "自动",
+  landsInBefore = "填完送出 → 你的系统会开一张",
+  landsInAfter = "，不用有人转抄。",
   note,
   look = "card",
 }: {
@@ -52,6 +55,14 @@ export function EnquiryForm({
   /** The page a submission becomes a record in, in the customer's own word for
    *  it: 报价单, 预约, 订单. This is the arrow. */
   landsIn?: string;
+  /** The three pieces of the arrow line around `landsIn`. Props rather than a
+   *  language context because this is a server component -- the page builder
+   *  passes them in the system language (see landing-templates.ts). The
+   *  defaults are Chinese so a 官网 saved before this existed still reads as
+   *  it did. */
+  landsInBadge?: string;
+  landsInBefore?: string;
+  landsInAfter?: string;
   /** One line under the button, e.g. opening hours or how fast they reply. */
   note?: ReactNode;
   /**
@@ -153,14 +164,14 @@ export function EnquiryForm({
               aria-hidden
               className="[background-color:var(--color-primary-soft)] [border-radius:var(--radius-pill)] [color:var(--color-primary)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [padding-block:2px] [padding-inline:8px]"
             >
-              自动
+              {landsInBadge}
             </span>
             <span>
-              填完送出 → 你的系统会开一张
+              {landsInBefore}
               <b className="[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
                 「{landsIn}」
               </b>
-              ，不用有人转抄。
+              {landsInAfter}
             </span>
           </p>
         )}
