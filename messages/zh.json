@@ -333,7 +333,9 @@
       "aiVerbLonger": "讲清楚一点",
       "aiVerbPlain": "白话一点",
       "aiVerbFormal": "正式一点",
-      "aiVerbPrompt": "把 id={id} 那一块（{block}）里面的文字{verb}，意思不要变，别的块一个字都不要动。"
+      "aiVerbPrompt": "把 id={id} 那一块（{block}）里面的文字{verb}，意思不要变，别的块一个字都不要动。",
+      "deployNeedsSave": "先保存设计,保存好了这颗就会把你的系统交给我们",
+      "styleMore": "更多风格设定 · 配色 →"
     },
     "home": {
       "eyebrow": "你的系统",

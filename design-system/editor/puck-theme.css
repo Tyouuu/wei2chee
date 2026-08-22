@@ -354,3 +354,46 @@
 .portal-editor-scope [class*="_PuckLayout-inner_"] {
   height: 100%;
 }
+
+/* ── TYPE ON THE PAGE ─────────────────────────────────────────────────────
+
+   `<Inline>` (design-system/editor/inline-text.tsx) leaves a bare span around
+   the pieces of a block's text the customer is allowed to retype. It has no
+   styling of its own on purpose: the same render functions produce the block
+   palette's previews and the customer's real system, and neither of those
+   should look like an editor.
+
+   The affordance is switched on by `data-inline-on`, which inline-editing.tsx
+   puts on this scope only while the editor is in edit mode -- so preview mode
+   shows the page with nothing of ours drawn on it, including this.
+
+   A dotted underline rather than a box or a highlight: it has to say "these
+   words can be retyped" inside a heading whose weight and colour are the
+   CUSTOMER's, in eight different registers, without becoming the loudest thing
+   in the block. `currentColor` at 40% opacity keeps it legible on every one of
+   them without naming a colour that only works in some.
+
+   `text-decoration` rather than a border: a border-bottom on an inline span
+   breaks across a wrapped line at the wrong place, and these are headings that
+   wrap. */
+.portal-editor-scope[data-inline-on] [data-inline-field] {
+  cursor: text;
+  border-radius: 3px;
+  transition: background-color var(--dur, 140ms) var(--ease-out-quad, ease-out);
+}
+
+.portal-editor-scope[data-inline-on] [data-inline-field]:hover {
+  text-decoration: underline dotted color-mix(in oklch, currentColor 40%, transparent);
+  text-underline-offset: 4px;
+}
+
+/* Being edited. The ring is drawn with a shadow rather than an outline so it
+   hugs the words on every line of a wrapped heading, and the caret is forced to
+   the text colour because a contenteditable span inherits the page's caret,
+   which on a dark rail is invisible. */
+.portal-editor-scope[data-inline-on] [data-inline-field][contenteditable] {
+  outline: none;
+  caret-color: currentColor;
+  background-color: color-mix(in oklch, var(--color-primary) 14%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-primary) 55%, transparent);
+}

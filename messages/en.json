@@ -333,7 +333,9 @@
       "aiVerbLonger": "Say more",
       "aiVerbPlain": "Plainer",
       "aiVerbFormal": "More formal",
-      "aiVerbPrompt": "Rewrite the text inside the block with id={id} ({block}) to be {verb}. Keep the meaning. Do not touch any other block."
+      "aiVerbPrompt": "Rewrite the text inside the block with id={id} ({block}) to be {verb}. Keep the meaning. Do not touch any other block.",
+      "deployNeedsSave": "Save your design first — once it's saved, this hands it to us",
+      "styleMore": "More style settings · colours →"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

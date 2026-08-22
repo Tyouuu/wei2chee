@@ -5,7 +5,10 @@ import { usePuck, type Data } from "@puckeditor/core";
 import { useTranslations } from "next-intl";
 import { VersionHistoryDialog } from "./version-history";
 import { BarMenu, barMenuItem } from "@/design-system/editor/bar-menu";
-import { PreviewButton, usePreviewMode } from "@/design-system/editor/preview-toggle";
+import {
+  PreviewButton,
+  usePreviewMode,
+} from "@/design-system/editor/preview-toggle";
 import { formatTime } from "@/lib/format-date";
 
 /**
@@ -41,6 +44,8 @@ export function EditorChrome({
   pageKey,
   locale,
   nav,
+  tools,
+  finish,
   overflow,
 }: {
   saving: boolean;
@@ -68,6 +73,17 @@ export function EditorChrome({
   paid: boolean;
   pageKey: string;
   locale: string;
+  /** Controls that act on the whole page rather than on one block -- 风格 today.
+   *  Sits beside 预览 because that is the pair Durable keeps in the open
+   *  (Themes / Customize / Preview) and the pair a customer reaches for while
+   *  looking at the page rather than at a block. */
+  tools?: ReactNode;
+  /** The handoff -- 「确认设计,交给我们建系统」. Rendered immediately before 保存
+   *  设计 so the bar reads left to right as the two steps it is: save what you
+   *  made, then give it to us. It used to sit beside the page switcher on the
+   *  far LEFT, which was harmless while it only appeared after the first save
+   *  and odd once it was there from the start. */
+  finish?: ReactNode;
   /** The editor's page navigation, style link, locale switcher and sign-out —
    *  everything that used to be a second bar above this one. Passed as a node
    *  rather than moved as markup because it is built in editor-client, outside
@@ -179,6 +195,8 @@ export function EditorChrome({
                 : ""}
       </span>
 
+      {tools}
+
       <PreviewButton label={t("previewCta")} />
 
       {overflow}
@@ -200,7 +218,9 @@ export function EditorChrome({
         locale={locale}
         // Recorded on Puck's own history stack, so restoring the wrong version
         // is undone with the same button as everything else.
-        onRestored={(layout) => dispatch({ type: "setData", data: layout, recordHistory: true })}
+        onRestored={(layout) =>
+          dispatch({ type: "setData", data: layout, recordHistory: true })
+        }
       />
 
       <button
@@ -223,6 +243,8 @@ export function EditorChrome({
       >
         ↻
       </button>
+      {finish}
+
       <button
         type="button"
         onClick={() => onSave(appState.data as Data)}

@@ -5,6 +5,7 @@ import { StatusDot, type StatusTone } from "@/design-system/components/status-do
 import { HeroCard } from "@/design-system/components/hero-card";
 import { Avatar } from "@/design-system/components/avatar";
 import { RecordTable } from "@/design-system/components/record-table";
+import { Inline } from "@/design-system/editor/inline-text";
 import { TableFieldEditor } from "@/design-system/editor/table-field";
 import { type TableModel } from "@/lib/portal/table-model";
 import { DatePicker } from "@/design-system/components/date-picker";
@@ -1186,7 +1187,22 @@ export const puckConfig: Config<Components> = {
         subtitle: { label: "副标题", type: "text" },
       },
       defaultProps: { title: "标题" },
-      render: ({ title, subtitle }) => <PageHeader title={title} subtitle={subtitle} />,
+      render: ({ id, title, subtitle }) => (
+        <PageHeader
+          title={
+            <Inline id={id} field="title">
+              {title}
+            </Inline>
+          }
+          subtitle={
+            subtitle ? (
+              <Inline id={id} field="subtitle">
+                {subtitle}
+              </Inline>
+            ) : undefined
+          }
+        />
+      ),
     },
     EmptyState: {
       label: "空状态提示",
@@ -1269,11 +1285,15 @@ export const puckConfig: Config<Components> = {
         sparkLabel: { label: "走势说明", type: "text" },
       },
       defaultProps: { label: "本月营收", value: "RM 0", href: "#", layout: "full" },
-      render: ({ label, value, href, chgSuffix, stats, spark, sparkLabel, layout, flat }) => (
+      render: ({ id, label, value, href, chgSuffix, stats, spark, sparkLabel, layout, flat }) => (
         <HeroCard
           layout={layout ?? "full"}
           flat={flat}
-          label={label}
+          label={
+            <Inline id={id} field="label">
+              {label}
+            </Inline>
+          }
           value={value}
           href={href}
           chgSuffix={chgSuffix}
@@ -1338,6 +1358,10 @@ export const puckConfig: Config<Components> = {
           ],
         },
       },
+      // NOT inline-editable, deliberately: `caption` is not text on the page,
+      // it is the table's accessible name (DataGrid puts it in aria-label when
+      // the grid scrolls). A ReactNode there renders "[object Object]" to a
+      // screen reader.
       render: ({ gridId, caption, table, look }) => (
         <RecordTable gridId={gridId} caption={caption} table={table} look={look ?? "plain"} />
       ),
@@ -1374,8 +1398,18 @@ export const puckConfig: Config<Components> = {
         ],
         layout: "row" as const,
       },
-      render: ({ title, stages, layout }) => (
-        <WorkflowStrip title={title} stages={stages} layout={layout ?? "row"} />
+      render: ({ id, title, stages, layout }) => (
+        <WorkflowStrip
+          title={
+            title ? (
+              <Inline id={id} field="title">
+                {title}
+              </Inline>
+            ) : undefined
+          }
+          stages={stages}
+          layout={layout ?? "row"}
+        />
       ),
     },
     DatePicker: {

@@ -22,9 +22,12 @@ export function PageHeader({
   meta,
   action,
 }: {
-  title: string
+  /** ReactNode, not string, so the editor can wrap it in an <Inline> marker
+   *  and let the customer retype it on the page. Every existing caller passes
+   *  a string, which is a ReactNode. */
+  title: ReactNode
   /** One line on the scale of what's below, e.g. "249 records · 44 regions". */
-  subtitle?: string
+  subtitle?: ReactNode
   /** Small trailing element beside the title, e.g. a read-only badge. */
   meta?: ReactNode
   /** Either a link-style primary action (rendered as a styled link) or any

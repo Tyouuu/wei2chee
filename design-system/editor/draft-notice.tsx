@@ -71,12 +71,16 @@ export function DraftNotice({
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-end px-5 pt-4">
       <div
         className="flex max-w-[440px] flex-wrap items-center gap-x-2 gap-y-1 rounded-[var(--radius-lg)] border px-3.5 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
-        style={{ boxShadow: "var(--shadow-overlay, 0 10px 26px rgba(6,14,26,.34))" }}
+        style={{
+          boxShadow: "var(--shadow-overlay, 0 10px 26px rgba(6,14,26,.34))",
+        }}
       >
         <span className="[color:var(--color-paper)] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]">
           {title}
         </span>
-        <span className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{body}</span>
+        <span className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+          {body}
+        </span>
         <button
           type="button"
           onClick={() => setGone(true)}

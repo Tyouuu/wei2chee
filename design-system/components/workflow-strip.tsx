@@ -1,3 +1,5 @@
+import type { ReactNode } from "react"
+
 export type WorkflowStage = {
   /** The stage's name in the business's own words — "报价", "订金", "施工". */
   label: string
@@ -32,7 +34,8 @@ export function WorkflowStrip({
   stages,
   layout = "row",
 }: {
-  title?: string
+  /** ReactNode so the editor can make it editable in place. */
+  title?: ReactNode
   stages: WorkflowStage[]
   /** `row` is the whiteboard drawing: left to right, arrows between stages.
       `timeline` is the same pipeline turned down the page, which is the only

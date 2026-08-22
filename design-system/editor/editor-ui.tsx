@@ -6,6 +6,7 @@ import {
   useContext,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -44,11 +45,55 @@ import {
 export type Sheet =
   | { kind: "variant" }
   | { kind: "fields" }
+  /** The whole page's register — 风格. Opened from the top bar, not from a
+   *  block, so it has no anchor and docks like the others. */
+  | { kind: "style" }
   /** Opened from the ＋ affordance between two blocks, so it carries where the
    *  new block should land rather than appending to the end like the toolbar's
    *  drawer did. */
   | { kind: "insert"; zone: string; index: number }
   | null;
+
+/**
+ * How wide a sheet is, and how much room the canvas gives up for it.
+ *
+ * ONE WIDTH FOR EVERY SHEET, on purpose. They used to be 470 (换款式) and 420
+ * (改文字), which meant the panel jumped sideways every time the customer
+ * switched between the two buttons on the same block.
+ *
+ * The gutter is the width plus the two margins around it. The canvas takes it
+ * as padding while a sheet is open, so the block being edited reflows into the
+ * room that is left instead of sitting underneath the panel that edits it.
+ */
+export const SHEET_WIDTH = 440;
+export const SHEET_GUTTER = SHEET_WIDTH + 32;
+
+/**
+ * Is the window wide enough to give up 472px and still show a system?
+ *
+ * Below this the sheet keeps its old centred placement and the canvas keeps
+ * all of its width — a 1100px window minus the gutter leaves 628px, which is
+ * under what a five-column record table renders without clipping, so docking
+ * there would trade one covered block for a broken one.
+ *
+ * `useSyncExternalStore` rather than useState+useEffect for the same reason
+ * editor-client's `narrow` uses it: the server has no viewport, so it answers
+ * false and the client's first render agrees.
+ */
+const DOCKABLE = "(min-width: 1180px)";
+const subscribeDockable = (onChange: () => void) => {
+  const mq = window.matchMedia(DOCKABLE);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+};
+
+export function useDockable() {
+  return useSyncExternalStore(
+    subscribeDockable,
+    () => window.matchMedia(DOCKABLE).matches,
+    () => false,
+  );
+}
 
 type EditorUi = {
   sheet: Sheet;
@@ -67,6 +112,9 @@ type EditorUi = {
    *  the button IS the right anchor. Querying `[data-puck-component]` by id
    *  would re-derive, less reliably, a position the DOM already holds. */
   anchor: HTMLElement | null;
+  /** Pixels the canvas should hold clear on its right while a sheet is open.
+   *  0 when nothing is open, or when the window is too narrow to spare it. */
+  gutter: number;
 };
 
 const Ctx = createContext<EditorUi | null>(null);
@@ -76,15 +124,27 @@ export function EditorUiProvider({ children }: { children: ReactNode }) {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
-  const openSheet = useCallback((s: NonNullable<Sheet>, el?: HTMLElement | null) => {
-    setAnchor(el ?? null);
-    setSheet(s);
-  }, []);
+  const dockable = useDockable();
+
+  const openSheet = useCallback(
+    (s: NonNullable<Sheet>, el?: HTMLElement | null) => {
+      setAnchor(el ?? null);
+      setSheet(s);
+    },
+    [],
+  );
   const closeSheet = useCallback(() => setSheet(null), []);
 
+  // The insert sheet is the one exception: it is a gallery of blocks to add,
+  // not an editor for a block already on the page, so there is nothing
+  // underneath it the customer needs to keep watching. Making the canvas
+  // narrower for it would reflow the whole page for no reason.
+  const gutter =
+    dockable && sheet && sheet.kind !== "insert" ? SHEET_GUTTER : 0;
+
   const value = useMemo(
-    () => ({ sheet, openSheet, closeSheet, host, setHost, anchor }),
-    [sheet, openSheet, closeSheet, host, anchor],
+    () => ({ sheet, openSheet, closeSheet, host, setHost, anchor, gutter }),
+    [sheet, openSheet, closeSheet, host, anchor, gutter],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -120,6 +180,7 @@ export function useEditorUi(): EditorUi {
       host: null,
       setHost: () => {},
       anchor: null,
+      gutter: 0,
     }
   );
 }

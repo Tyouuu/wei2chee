@@ -53,8 +53,12 @@ export function HeroCard({
   layout = "full",
   href,
 }: {
-  /** What the headline number is. Kept short — the number is the message. */
-  label: string
+  /** What the headline number is. Kept short — the number is the message.
+   *  ReactNode, not string, so the editor can wrap it in an <Inline> marker and
+   *  let the customer retype it on the page -- see
+   *  design-system/editor/inline-text.tsx. Every existing caller passes a
+   *  string, which is a ReactNode. */
+  label: ReactNode
   value: string
   /** Percent change vs the previous period. null = no meaningful baseline. */
   chg?: number | null

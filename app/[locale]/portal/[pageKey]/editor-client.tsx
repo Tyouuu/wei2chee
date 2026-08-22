@@ -10,7 +10,11 @@ import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { puckConfig } from "@/design-system/editor/puck-config";
-import { clearLocalDraft, readLocalDraft, writeLocalDraft } from "../local-draft";
+import {
+  clearLocalDraft,
+  readLocalDraft,
+  writeLocalDraft,
+} from "../local-draft";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { EditorChrome } from "./editor-chrome";
 import { ComponentPreview } from "@/design-system/editor/component-preview";
@@ -24,6 +28,9 @@ import { BlockToolbar } from "@/design-system/editor/block-toolbar";
 import { InsertAffordance } from "@/design-system/editor/insert-affordance";
 import { BlockSheets, InsertSheet } from "@/design-system/editor/editor-sheets";
 import { AiDock } from "@/design-system/editor/ai-dock";
+import { StyleButton, StyleSheet } from "@/design-system/editor/style-sheet";
+import { InlineEditing } from "@/design-system/editor/inline-editing";
+import { CanvasGutter } from "@/design-system/editor/canvas-gutter";
 import { AiAssistant, type Turn } from "./ai-assistant";
 import { MobileEditor } from "./mobile-editor";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -41,8 +48,6 @@ import chrome from "../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { scopeClasses } from "@/lib/portal/palettes";
 
-
-
 // Same lookup app/[locale]/style-picker/style-column.tsx uses internally
 // (its own `SCOPE_CLASS` isn't exported, so this is a second, identical
 // binding rather than a shared import -- both read the same three classes
@@ -59,6 +64,20 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
+
+/** The order the eight registers are offered in, oldest and plainest first --
+ *  the same order /portal/styles uses, so a customer who has seen that page
+ *  finds them where they left them. */
+const STYLE_ORDER: StyleName[] = [
+  "ledger",
+  "hearth",
+  "blueprint",
+  "bare",
+  "docket",
+  "large",
+  "stamp",
+  "contract",
+];
 
 /**
  * Is this a phone-sized window?
@@ -143,6 +162,10 @@ export function PortalEditor({
   palette: string | null;
 }) {
   const t = useTranslations("portal.editor");
+  // The eight one-line tags ('紧凑 · 表格多、行数多') already exist under
+  // portal.home for the style gallery. Read from there rather than copied, so
+  // the sheet and the gallery cannot describe the same register differently.
+  const tHome = useTranslations("portal.home");
   const router = useRouter();
   const [saveState, setSaveState] = useState<SaveState>("idle");
   // Session-local tracking is sufficient for v1's deliberately narrow Deploy
@@ -151,14 +174,42 @@ export function PortalEditor({
   // WhatsApp handoff a customer clicks once, right after saving.
   const [hasSavedOnce, setHasSavedOnce] = useState(false);
 
-  // Still state rather than the prop used directly, even though the in-editor
-  // switcher that used to move it has been removed from the top bar (the
-  // customer changes style on /portal/styles now, which reloads this route with
-  // a new `style` prop anyway). Kept because everything downstream -- the
-  // canvas scope, the drawer previews, the variant tiles -- reads one value,
-  // and collapsing that to a bare prop would be a second change riding along
-  // with a layout one.
-  const [activeStyle] = useState<StyleName>(style);
+  // THE STYLE IS CHANGED HERE AGAIN, AND WITHOUT LEAVING THE PAGE.
+  //
+  // It moved to /portal/styles when the bar was cut from fifteen controls to
+  // four, which was right about the bar and wrong about the choice: picking a
+  // register meant leaving your own system, comparing eight samples of somebody
+  // else's invoice, and coming back to find out whether you were right.
+  // Durable's Themes is one press in the top bar and the site changes under
+  // you. Everything downstream already reads this one value -- the canvas
+  // scope, the drawer previews, the variant tiles -- so setting it repaints the
+  // customer's REAL page, with their words in it, on the same frame.
+  //
+  // Optimistic, and rolled back if the database refuses, for the same reason
+  // the styles page is: what the round trip confirms is persistence, not
+  // appearance.
+  const [activeStyle, setActiveStyle] = useState<StyleName>(style);
+  const [stylePending, setStylePending] = useState<StyleName | null>(null);
+  const [styleFailed, setStyleFailed] = useState(false);
+
+  async function pickStyle(next: StyleName) {
+    if (next === activeStyle || stylePending) return;
+    const previous = activeStyle;
+    setActiveStyle(next);
+    setStylePending(next);
+    setStyleFailed(false);
+    const { error } = await createBrowserSupabaseClient().rpc(
+      "update_project_style",
+      {
+        new_style: next,
+      },
+    );
+    setStylePending(null);
+    if (error) {
+      setActiveStyle(previous);
+      setStyleFailed(true);
+    }
+  }
 
   // Fix round 1 (post-review): `readLocalDraft` short-circuits to `null`
   // during SSR (local-draft.ts's own `typeof window === "undefined"`
@@ -186,7 +237,11 @@ export function PortalEditor({
   // (There is no `assistantOpen` any more: the assistant is not a thing that
   // opens. See the `fields` override below.)
   const [historyOpen, setHistoryOpen] = useState(false);
-  const narrow = useSyncExternalStore(subscribeNarrow, getNarrow, getNarrowServer);
+  const narrow = useSyncExternalStore(
+    subscribeNarrow,
+    getNarrow,
+    getNarrowServer,
+  );
   const [turns, setTurns] = useState<Turn[]>([]);
   const [instruction, setInstruction] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
@@ -195,6 +250,7 @@ export function PortalEditor({
   // mutation including the assistant's, so this is the honest answer to "is
   // there work on screen that is not in the database".
   const [dirty, setDirty] = useState(false);
+  const latestData = useRef<Data | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [autosaving, setAutosaving] = useState(false);
   const autosaveTimer = useRef<number | null>(null);
@@ -265,12 +321,18 @@ export function PortalEditor({
   // device-local copy in the old shape. The null test stays OUTSIDE the upgrade
   // -- `upgradeLayout({})` returns `{}`, which is truthy, and would quietly turn
   // "no draft on this device" into an empty canvas.
-  const localDraft = hydrated && !paid ? readLocalDraft(projectId, pageKey) : null;
+  const localDraft =
+    hydrated && !paid ? readLocalDraft(projectId, pageKey) : null;
   const startingData = localDraft
     ? (upgradeLayout(localDraft) as Data)
     : (initialData as Data);
 
   function handleChange(data: Data) {
+    // The last thing Puck rendered, for the two controls that live in this
+    // scope rather than inside Puck's provider and so cannot ask for it: the
+    // pre-save handoff button below, and nothing else yet. Everything inside
+    // Puck reads its own state.
+    latestData.current = data;
     // Passive mirror on every change, independent of the explicit save
     // action below -- see local-draft.ts's own doc comment.
     writeLocalDraft(projectId, pageKey, data as Record<string, unknown>);
@@ -432,7 +494,10 @@ export function PortalEditor({
             className={barMenuItem}
             style={
               key === pageKey
-                ? { color: "var(--color-paper)", backgroundColor: "var(--color-ink-850)" }
+                ? {
+                    color: "var(--color-paper)",
+                    backgroundColor: "var(--color-ink-850)",
+                  }
                 : undefined
             }
           >
@@ -444,6 +509,29 @@ export function PortalEditor({
       {/* The one thing that must never be behind a menu: it only appears after
           a successful save, it is the moment the customer hands the design over
           to be built, and it is how the founder gets told. */}
+      {saveState === "saved" ? (
+        <span className="[color:var(--color-jade-bright)]">
+          {t("saveSuccess")}
+        </span>
+      ) : null}
+      {saveState === "error" ? (
+        <span className="[color:var(--color-clay-bright)]">
+          {t("saveError")}
+        </span>
+      ) : null}
+    </>
+  );
+
+  const finishCta = (
+    <>
+      {/* ALWAYS ON SCREEN, NOT ONLY AFTER THE FIRST SAVE.
+        It used to appear only once `hasSavedOnce`, which meant a customer
+        opening their system for the first time could not see where any of
+        this was going. Durable's Publish is lit from the first second, and
+        that is most of what makes its editor feel like it has an end.
+        Before the first save it is the same button in a quieter treatment
+        and it does the step that has to come first -- it saves -- rather
+        than being disabled, which would answer the question with nothing. */}
       {hasSavedOnce ? (
         <a
           href={deployWhatsappHref}
@@ -453,14 +541,18 @@ export function PortalEditor({
         >
           {t("deployCta")}
         </a>
-      ) : null}
-
-      {saveState === "saved" ? (
-        <span className="[color:var(--color-jade-bright)]">{t("saveSuccess")}</span>
-      ) : null}
-      {saveState === "error" ? (
-        <span className="[color:var(--color-clay-bright)]">{t("saveError")}</span>
-      ) : null}
+      ) : (
+        <button
+          type="button"
+          onClick={() =>
+            void handleSaveClick(latestData.current ?? (startingData as Data))
+          }
+          title={t("deployNeedsSave")}
+          className="rounded-md border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-jade)] [color:var(--color-jade-bright)] [font-weight:var(--fw-semibold)] hover:[background-color:var(--color-ink-850)]"
+        >
+          {t("deployCta")}
+        </button>
+      )}
     </>
   );
 
@@ -482,9 +574,6 @@ export function PortalEditor({
       >
         {t("specCta")}
       </Link>
-      <Link href={`/${locale}/portal/styles`} className={barMenuItem}>
-        {t("styleLabel")}
-      </Link>
       <div className={barMenuItem}>
         <LocaleSwitcher />
       </div>
@@ -496,34 +585,34 @@ export function PortalEditor({
 
   return (
     <EditorUiProvider>
-    <div
-      // Regression fix: this wrapper (and the header bar inside it) never
-      // painted its own background -- it silently depended on
-      // portal/layout.tsx's shared `--color-canvas` fill, which got
-      // reverted for breaking /portal/style-select's contrast (that page
-      // deliberately keeps the acquisition site's dark theme; this one
-      // never should have shared a wrapper with it). Scoped here instead,
-      // to just this route, so it can't leak into style-select again.
-      // Without it, the header bar's dark-on-light text (--color-paper /
-      // --color-paper-dim, tuned for Ledger's light surfaces) rendered
-      // against the acquisition site's dark <body> showing through --
-      // barely legible, not just unstyled.
-      // Formae's own chrome, no longer Ledger's. The editor used to borrow the
-      // customer's lightest style for its toolbar, palette and panels, which is
-      // why signing in felt like leaving this product and entering a generic
-      // one -- see chrome.module.css for the full argument. `portal-editor-scope`
-      // stays: it maps Puck's own --puck-color-* variables onto whatever
-      // --color-* resolves to here, so Puck's chrome follows automatically.
-      className={`portal-editor-scope ${chrome.chrome} ${chrome.workbench} flex h-screen flex-col`}
-    >
-      {/* `flex-wrap` and a scrolling page list, because this bar is the one
+      <div
+        // Regression fix: this wrapper (and the header bar inside it) never
+        // painted its own background -- it silently depended on
+        // portal/layout.tsx's shared `--color-canvas` fill, which got
+        // reverted for breaking /portal/style-select's contrast (that page
+        // deliberately keeps the acquisition site's dark theme; this one
+        // never should have shared a wrapper with it). Scoped here instead,
+        // to just this route, so it can't leak into style-select again.
+        // Without it, the header bar's dark-on-light text (--color-paper /
+        // --color-paper-dim, tuned for Ledger's light surfaces) rendered
+        // against the acquisition site's dark <body> showing through --
+        // barely legible, not just unstyled.
+        // Formae's own chrome, no longer Ledger's. The editor used to borrow the
+        // customer's lightest style for its toolbar, palette and panels, which is
+        // why signing in felt like leaving this product and entering a generic
+        // one -- see chrome.module.css for the full argument. `portal-editor-scope`
+        // stays: it maps Puck's own --puck-color-* variables onto whatever
+        // --color-* resolves to here, so Puck's chrome follows automatically.
+        className={`portal-editor-scope ${chrome.chrome} ${chrome.workbench} flex h-screen flex-col`}
+      >
+        {/* `flex-wrap` and a scrolling page list, because this bar is the one
           thing on the editor that a phone still has to show in full. Measured
           at 390px: the right-hand cluster alone is 493px wide and pushed the
           document to 671px, so the whole editor scrolled sideways under a
           fixed-height layout — the worst combination there is. It wraps to a
           second line instead. */}
 
-      {/* The generated-draft banner. A customer who has just answered a
+        {/* The generated-draft banner. A customer who has just answered a
           questionnaire about their business now opens the editor on a system
           already built from those answers -- their own industry vocabulary,
           their own workflow stages, their own summary line. That is only a good
@@ -533,7 +622,7 @@ export function PortalEditor({
           edit. Disappears the moment they save, because from then on the canvas
           is genuinely their own work. */}
 
-      {/* Fix round 2 (post-review): the paywall is an OVERLAY over a
+        {/* Fix round 2 (post-review): the paywall is an OVERLAY over a
           still-mounted <Puck>, not a branch that replaces it. It used to be
           `saveState === "paywall" ? <paywall/> : <Puck/>`, which unmounted
           the canvas at exactly the moment a customer clicked Save -- so the
@@ -548,33 +637,37 @@ export function PortalEditor({
           ONLY thing that ever remounts Puck in this file. "Back to editing"
           no longer re-reads the local draft (it can't -- nothing remounts),
           and doesn't need to: Puck still has the customer's latest edit. */}
-      <div className="relative min-h-0 flex-1">
-        {saveState === "paywall" ? (
-          // `absolute inset-0` + an opaque token background (--color-canvas
-          // resolves against this component's own `.ledger` chrome scope) --
-          // fully obscures the canvas rather than dimming it, and swallows
-          // every pointer event that would otherwise reach Puck underneath.
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center [background-color:var(--color-canvas)]">
-            <h2 className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">{t("paywallTitle")}</h2>
-            <p className="[font-size:var(--text-sm)] [color:var(--color-paper-dim)]">{t("paywallBody")}</p>
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 rounded-lg px-4 py-2.5 [font-size:var(--text-sm)] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)]"
-            >
-              {t("paywallCta")}
-            </a>
-            <button
-              type="button"
-              onClick={() => setSaveState("idle")}
-              className="[font-size:var(--text-sm)] underline [color:var(--color-paper-dim)]"
-            >
-              {t("backToEditing")}
-            </button>
-          </div>
-        ) : null}
-        {/* THE 84px THE EDITOR WAS TOO TALL.
+        <div className="relative min-h-0 flex-1">
+          {saveState === "paywall" ? (
+            // `absolute inset-0` + an opaque token background (--color-canvas
+            // resolves against this component's own `.ledger` chrome scope) --
+            // fully obscures the canvas rather than dimming it, and swallows
+            // every pointer event that would otherwise reach Puck underneath.
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center [background-color:var(--color-canvas)]">
+              <h2 className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                {t("paywallTitle")}
+              </h2>
+              <p className="[font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
+                {t("paywallBody")}
+              </p>
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 rounded-lg px-4 py-2.5 [font-size:var(--text-sm)] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)]"
+              >
+                {t("paywallCta")}
+              </a>
+              <button
+                type="button"
+                onClick={() => setSaveState("idle")}
+                className="[font-size:var(--text-sm)] underline [color:var(--color-paper-dim)]"
+              >
+                {t("backToEditing")}
+              </button>
+            </div>
+          ) : null}
+          {/* THE 84px THE EDITOR WAS TOO TALL.
             Measured: `.Puck` computed to 950px at top 84 in a 950px viewport
             — a 1034px document — because Puck's root is 100vh and it sits
             under Formae's own page tabs and draft banner.
@@ -589,309 +682,350 @@ export function PortalEditor({
             takes `h-full` (NOT `flex-1` — its parent is `display: block`, so
             a flex property on it is inert) to inherit that definite height;
             and puck-theme.css overrides `.Puck` from 100vh to 100%. */}
-        <div className="h-full">
-          <Puck
-            // Forces exactly one clean remount at the ssr->hydrated
-            // transition above. Puck's own `data` prop is consumed only
-            // once, inside a lazy `useState(() => ...)` initializer deep
-            // in its `PuckProvider` (verified against the installed
-            // 0.23.0 bundle, node_modules/@puckeditor/core/dist/index.js)
-            // -- passing a new `data` value into an already-mounted
-            // `<Puck>` on a later render is a no-op from Puck's own
-            // perspective, so without this `key` change the local draft
-            // would never actually reach the canvas after hydration, even
-            // though `startingData` above is already correct by then.
-            // `hydrated` only flips once, so this only remounts once per
-            // page load. Fix round 2: the paywall used to be a sibling
-            // branch that unmounted this <Puck> on every toggle -- that's
-            // gone now (the paywall is an overlay ABOVE this, always
-            // mounted, see the comment on the wrapping div), so this `key`
-            // is the ONLY thing that ever remounts Puck in this file.
-            key={hydrated ? "hydrated" : "ssr"}
-            // NOTHING IS DOCKED. Both of Puck's side columns are collapsed for
-            // the life of the editor, and neither ever reopens in place.
-            //
-            // The founder put four Durable screenshots beside this editor and
-            // said 「我还是觉得durable的好看更简单操作一点」. Counting what is on
-            // screen at rest explains it: Durable shows one bar; this showed a
-            // nav row, a style row, a draft banner, a toolbar, a 58px icon rail
-            // and a 400px properties column, with the customer's own system
-            // sixth. Measured at 1600px, the canvas was 1212px of it.
-            //
-            // The two columns still RENDER -- `leftSideBarVisible` and
-            // `rightSideBarVisible` only set their grid column to 0 (see
-            // `_PuckLayout--rightSideBarVisible_` in @puckeditor/core's
-            // index.css), the subtrees are untouched. That is what makes this
-            // possible without re-implementing anything: the `fields` and
-            // `drawer` overrides below still receive Puck's own field editors
-            // and its own palette, and portal them into sheets that float over
-            // the canvas only while they are being used.
-            ui={{ leftSideBarVisible: false, rightSideBarVisible: false }}
-            config={puckConfig}
-            data={startingData}
-            onChange={handleChange}
-            onPublish={handleSaveClick}
-            // Renders the canvas directly in this document instead of a
-            // `srcdoc` iframe -- see puck-theme.css's now-removed body-leak
-            // comment and task-5a-report.md for why: with the iframe gone,
-            // there's no separate DOM/CSSOM for the `.ledger`/`.hearth`/
-            // `.blueprint` scope classes to fail to reach into. Viewport
-            // switching (Puck's responsive-preview feature, which disabling
-            // the iframe also disables per Puck's own docs) is unused
-            // anywhere in this app -- confirmed via a repo-wide grep, task
-            // 5a's report has the details.
-            iframe={{ enabled: false }}
-            overrides={{
-              // Puck's own toolbar is English and unstyled by this app's
-              // tokens -- replaced wholesale. See editor-chrome.tsx.
-              // A miniature of each block beside its name, so the palette is
-              // browsed by sight rather than by reading fifteen nouns off
-              // identical white rectangles. See component-preview.tsx.
-              // A gallery tile, not a list row: the block renders itself, at
-              // the size it is, in the customer's OWN style -- so 趋势图 is a
-              // chart and 记录表格 is a table, instead of both being two grey
-              // bars. See live-preview.tsx for why the schematics had to go.
-              drawerItem: ({ children, name }) => (
-                <ClickToAdd name={name}>
-                  <div className="w-full overflow-hidden rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-950)] transition-colors group-hover/add:[border-color:var(--color-ink-700)]">
-                    <LivePreview
-                      name={name}
+          <div className="h-full">
+            <Puck
+              // Forces exactly one clean remount at the ssr->hydrated
+              // transition above. Puck's own `data` prop is consumed only
+              // once, inside a lazy `useState(() => ...)` initializer deep
+              // in its `PuckProvider` (verified against the installed
+              // 0.23.0 bundle, node_modules/@puckeditor/core/dist/index.js)
+              // -- passing a new `data` value into an already-mounted
+              // `<Puck>` on a later render is a no-op from Puck's own
+              // perspective, so without this `key` change the local draft
+              // would never actually reach the canvas after hydration, even
+              // though `startingData` above is already correct by then.
+              // `hydrated` only flips once, so this only remounts once per
+              // page load. Fix round 2: the paywall used to be a sibling
+              // branch that unmounted this <Puck> on every toggle -- that's
+              // gone now (the paywall is an overlay ABOVE this, always
+              // mounted, see the comment on the wrapping div), so this `key`
+              // is the ONLY thing that ever remounts Puck in this file.
+              key={hydrated ? "hydrated" : "ssr"}
+              // NOTHING IS DOCKED. Both of Puck's side columns are collapsed for
+              // the life of the editor, and neither ever reopens in place.
+              //
+              // The founder put four Durable screenshots beside this editor and
+              // said 「我还是觉得durable的好看更简单操作一点」. Counting what is on
+              // screen at rest explains it: Durable shows one bar; this showed a
+              // nav row, a style row, a draft banner, a toolbar, a 58px icon rail
+              // and a 400px properties column, with the customer's own system
+              // sixth. Measured at 1600px, the canvas was 1212px of it.
+              //
+              // The two columns still RENDER -- `leftSideBarVisible` and
+              // `rightSideBarVisible` only set their grid column to 0 (see
+              // `_PuckLayout--rightSideBarVisible_` in @puckeditor/core's
+              // index.css), the subtrees are untouched. That is what makes this
+              // possible without re-implementing anything: the `fields` and
+              // `drawer` overrides below still receive Puck's own field editors
+              // and its own palette, and portal them into sheets that float over
+              // the canvas only while they are being used.
+              ui={{ leftSideBarVisible: false, rightSideBarVisible: false }}
+              config={puckConfig}
+              data={startingData}
+              onChange={handleChange}
+              onPublish={handleSaveClick}
+              // Renders the canvas directly in this document instead of a
+              // `srcdoc` iframe -- see puck-theme.css's now-removed body-leak
+              // comment and task-5a-report.md for why: with the iframe gone,
+              // there's no separate DOM/CSSOM for the `.ledger`/`.hearth`/
+              // `.blueprint` scope classes to fail to reach into. Viewport
+              // switching (Puck's responsive-preview feature, which disabling
+              // the iframe also disables per Puck's own docs) is unused
+              // anywhere in this app -- confirmed via a repo-wide grep, task
+              // 5a's report has the details.
+              iframe={{ enabled: false }}
+              overrides={{
+                // Puck's own toolbar is English and unstyled by this app's
+                // tokens -- replaced wholesale. See editor-chrome.tsx.
+                // A miniature of each block beside its name, so the palette is
+                // browsed by sight rather than by reading fifteen nouns off
+                // identical white rectangles. See component-preview.tsx.
+                // A gallery tile, not a list row: the block renders itself, at
+                // the size it is, in the customer's OWN style -- so 趋势图 is a
+                // chart and 记录表格 is a table, instead of both being two grey
+                // bars. See live-preview.tsx for why the schematics had to go.
+                drawerItem: ({ children, name }) => (
+                  <ClickToAdd name={name}>
+                    <div className="w-full overflow-hidden rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-950)] transition-colors group-hover/add:[border-color:var(--color-ink-700)]">
+                      <LivePreview
+                        name={name}
+                        style={activeStyle}
+                        palette={palette}
+                        fallback={
+                          <div className="grid h-16 place-items-center">
+                            <ComponentPreview name={name} />
+                          </div>
+                        }
+                      />
+                    </div>
+                    <div className="flex w-full items-center justify-between gap-2 px-0.5">
+                      <div className="min-w-0 flex-1">{children}</div>
+                      <span
+                        aria-hidden
+                        className="shrink-0 opacity-0 transition-opacity [color:var(--color-paper-dim)] [font-size:var(--text-xs)] group-hover/add:opacity-100"
+                      >
+                        + 加
+                      </span>
+                    </div>
+                  </ClickToAdd>
+                ),
+                header: () => (
+                  <EditorChrome
+                    nav={topNav}
+                    tools={<StyleButton label={t("styleLabel")} />}
+                    finish={finishCta}
+                    overflow={overflowMenu}
+                    saving={saveState === "saving"}
+                    autosaving={autosaving}
+                    onSave={handleSaveClick}
+                    dirty={dirty}
+                    savedAt={savedAt}
+                    historyOpen={historyOpen}
+                    onOpenHistory={() => setHistoryOpen(true)}
+                    onCloseHistory={() => setHistoryOpen(false)}
+                    paid={paid}
+                    pageKey={pageKey}
+                    locale={locale}
+                  />
+                ),
+                // The one supported override point for wrapping just the
+                // canvas's rendered subtree (Puck's own Preview component),
+                // independent of the chrome wrapper above -- reuses the exact
+                // `.scope` + per-style class pairing style-column.tsx already
+                // applies to each of its three comparison columns, so canvas
+                // content resolves var(--color-*) against the CUSTOMER's
+                // chosen style, not Ledger. `h-full` matters here: Puck's own
+                // Preview/frame elements are `height: 100%` all the way down,
+                // which needs an explicit height on this wrapper or the chain
+                // collapses to 0.
+                // `[background-color:var(--color-canvas)]` closes the second
+                // seam: SystemShell is as tall as its content, the canvas is as
+                // tall as the window, and the strip between them was Puck's own
+                // white showing through under the customer's page. Painting this
+                // wrapper in the CUSTOMER's canvas colour -- it sits inside the
+                // style scope, so `--color-canvas` is theirs, not Ledger's --
+                // makes that strip continuous with the page above it.
+                // THE ASSISTANT IS THE RIGHT COLUMN, PERMANENTLY.
+                //
+                // It used to wrap Puck's ENTIRE layout via the `puck` override,
+                // as a flex sibling of everything — which made it a FOURTH
+                // column, and that is precisely why it could not default to
+                // open: four fixed columns at 1440px leave the canvas around
+                // 550px, below what a five-column record table renders without
+                // clipping. So it hid behind a toolbar button, and the founder's
+                // objection followed: 「把这个AI修改放在这里谁会去按啦」.
+                //
+                // Wrapping `fields` instead puts it inside the column Puck
+                // already has. Still three columns. The assistant is simply
+                // always there, and the block's own fields sit underneath it
+                // when something is selected — which is also the honest reading
+                // of what the two are: one edits the page by describing it, the
+                // other edits one block by hand, and they are the same job at
+                // two levels of zoom rather than two modes.
+                //
+                // PUCK'S WHOLE LAYOUT, REPLACED ON A PHONE.
+                //
+                // This override was removed when the assistant moved into the
+                // fields column; it is back for the one thing it is actually the
+                // right tool for. Below 1024px Puck's three columns do not fold,
+                // they compress, and the canvas ends up too narrow to render a
+                // record table at all — so on a phone the whole layout is
+                // replaced rather than squeezed. See mobile-editor.tsx for what
+                // it is replaced WITH, and why that is a split rather than a
+                // fallback.
+                //
+                // Inside the provider, so the assistant is the same assistant
+                // editing the same live canvas on the same undo stack.
+                puck: ({ children }) =>
+                  narrow ? (
+                    <MobileEditor
                       style={activeStyle}
                       palette={palette}
-                      fallback={
-                        <div className="grid h-16 place-items-center">
-                          <ComponentPreview name={name} />
-                        </div>
-                      }
-                    />
-                  </div>
-                  <div className="flex w-full items-center justify-between gap-2 px-0.5">
-                    <div className="min-w-0 flex-1">{children}</div>
-                    <span
-                      aria-hidden
-                      className="shrink-0 opacity-0 transition-opacity [color:var(--color-paper-dim)] [font-size:var(--text-xs)] group-hover/add:opacity-100"
-                    >
-                      + 加
-                    </span>
-                  </div>
-                </ClickToAdd>
-              ),
-              header: () => (
-                <EditorChrome
-                  nav={topNav}
-                  overflow={overflowMenu}
-                  saving={saveState === "saving"}
-                  autosaving={autosaving}
-                  onSave={handleSaveClick}
-                  dirty={dirty}
-                  savedAt={savedAt}
-                  historyOpen={historyOpen}
-                  onOpenHistory={() => setHistoryOpen(true)}
-                  onCloseHistory={() => setHistoryOpen(false)}
-                  paid={paid}
-                  pageKey={pageKey}
-                  locale={locale}
-                />
-              ),
-              // The one supported override point for wrapping just the
-              // canvas's rendered subtree (Puck's own Preview component),
-              // independent of the chrome wrapper above -- reuses the exact
-              // `.scope` + per-style class pairing style-column.tsx already
-              // applies to each of its three comparison columns, so canvas
-              // content resolves var(--color-*) against the CUSTOMER's
-              // chosen style, not Ledger. `h-full` matters here: Puck's own
-              // Preview/frame elements are `height: 100%` all the way down,
-              // which needs an explicit height on this wrapper or the chain
-              // collapses to 0.
-              // `[background-color:var(--color-canvas)]` closes the second
-              // seam: SystemShell is as tall as its content, the canvas is as
-              // tall as the window, and the strip between them was Puck's own
-              // white showing through under the customer's page. Painting this
-              // wrapper in the CUSTOMER's canvas colour -- it sits inside the
-              // style scope, so `--color-canvas` is theirs, not Ledger's --
-              // makes that strip continuous with the page above it.
-              // THE ASSISTANT IS THE RIGHT COLUMN, PERMANENTLY.
-              //
-              // It used to wrap Puck's ENTIRE layout via the `puck` override,
-              // as a flex sibling of everything — which made it a FOURTH
-              // column, and that is precisely why it could not default to
-              // open: four fixed columns at 1440px leave the canvas around
-              // 550px, below what a five-column record table renders without
-              // clipping. So it hid behind a toolbar button, and the founder's
-              // objection followed: 「把这个AI修改放在这里谁会去按啦」.
-              //
-              // Wrapping `fields` instead puts it inside the column Puck
-              // already has. Still three columns. The assistant is simply
-              // always there, and the block's own fields sit underneath it
-              // when something is selected — which is also the honest reading
-              // of what the two are: one edits the page by describing it, the
-              // other edits one block by hand, and they are the same job at
-              // two levels of zoom rather than two modes.
-              //
-              // PUCK'S WHOLE LAYOUT, REPLACED ON A PHONE.
-              //
-              // This override was removed when the assistant moved into the
-              // fields column; it is back for the one thing it is actually the
-              // right tool for. Below 1024px Puck's three columns do not fold,
-              // they compress, and the canvas ends up too narrow to render a
-              // record table at all — so on a phone the whole layout is
-              // replaced rather than squeezed. See mobile-editor.tsx for what
-              // it is replaced WITH, and why that is a split rather than a
-              // fallback.
-              //
-              // Inside the provider, so the assistant is the same assistant
-              // editing the same live canvas on the same undo stack.
-              puck: ({ children }) =>
-                narrow ? (
-                  <MobileEditor
-                    style={activeStyle}
-                    palette={palette}
-                    locale={locale}
-                    navPages={navPages}
-                    turns={turns}
-                    setTurns={setTurns}
-                    instruction={instruction}
-                    setInstruction={setInstruction}
-                    aiBusy={aiBusy}
-                    setAiBusy={setAiBusy}
-                  />
-                ) : (
-                  // Wrapped rather than returned bare: Puck's RenderFunc is
-                  // typed to a single element, and `children` is ReactNode.
-                  <>{children}</>
-                ),
-              // FIELDS ON TOP, ASSISTANT UNDERNEATH, and the order is forced
-              // rather than chosen. Puck renders this column's title bar --
-              // 「整个页面」, or the selected block's name and its breadcrumb --
-              // OUTSIDE this override, permanently above whatever it returns.
-              // Putting the assistant first therefore files it under a heading
-              // that describes the fields, which reads as a mislabelled panel.
-              //
-              // It also lands the composer at the bottom of the column, which
-              // is where every assistant a customer has already used puts it.
-              //
-              // The fields half is capped at half the column and scrolls its
-              // own overflow: a RecordTable's column editor is long enough to
-              // push the assistant off the bottom of the screen entirely, and
-              // an assistant you have to scroll a properties panel to reach is
-              // the buried toolbar button again with extra steps.
-              // PICTURES FIRST, THEN THE FIELDS THAT FINE-TUNE THEM.
-              //
-              // The founder selected 重点数字卡, looked at what appeared, and
-              // said he wanted Durable's version: 「我看到图片 就是我可以替换的
-              // 别的款式 然后我点击就可以替换了」. What was there was 文字 /
-              // 数值 / 链接 / 对比说明 — four inputs that change the CONTENT of
-              // a card whose SHAPE was not offered at all.
-              //
-              // So the picker sits above the fields, outside their scroll area,
-              // and stays put: choosing the shape comes before filling it in,
-              // and it is the choice that has to be visible without scrolling.
-              // It draws nothing at all for a block with no alternatives, which
-              // is most of them — an empty 换个款式 heading on 头像 would be a
-              // worse panel than no heading.
-              // PUCK'S FIELDS, FLOATED. The override still runs with the right
-              // column collapsed to 0px, so `children` is the real field tree
-              // for the selected block -- every field type, every resolver,
-              // unchanged. BlockSheets portals it into the 改文字 sheet and
-              // renders the 换款式 sheet beside it.
-              //
-              // The assistant is no longer passed down here: it used to share
-              // this column 60/40 with the fields, which is what made an empty
-              // 「整个页面」 heading sit above 400px of nothing whenever no block
-              // was selected. It floats at the foot of the canvas now -- see
-              // the `preview` override below.
-              fields: ({ children }) => (
-                <BlockSheets style={activeStyle} palette={palette}>
-                  {children}
-                </BlockSheets>
-              ),
-              // THE FLOATING TOOLBAR under the selected block: 换款式 · 改文字,
-              // then Puck's own move/duplicate/delete. Durable's Design / Edit
-              // content pill, which is the third screenshot the founder sent.
-              actionBar: ({ label, children, parentAction }) => (
-                <BlockToolbar label={label} parentAction={parentAction}>
-                  {children}
-                </BlockToolbar>
-              ),
-              // ＋ 加一段 in the gap under each block, carrying the position it
-              // will insert at -- so adding no longer means opening a 54-tile
-              // drawer and then dragging the result up from the bottom.
-              componentOverlay: ({ children, hover, isSelected, componentId }) => (
-                <InsertAffordance hover={hover} isSelected={isSelected} componentId={componentId}>
-                  {children}
-                </InsertAffordance>
-              ),
-              // The palette, in a sheet instead of a column. Same tiles, same
-              // live previews, same click-to-add: only the docking is gone.
-              drawer: ({ children }) => <InsertSheet>{children}</InsertSheet>,
-              // The canvas is the one thing on this screen Formae does not
-              // own, so it is presented as an object rather than as the
-              // background: the customer's style scope re-resolves every token
-              // to their own register inside a frame that stays Formae's. The
-              // token cascade does this by itself -- custom properties inherit
-              // and the nearest defining ancestor wins -- which is why nothing
-              // inside the canvas needed changing.
-              //
-              // The mount is the white plinth it stands on. This is the single
-              // most important of the seven: it is the surface the customer
-              // spends the most time looking at, and the one where their own
-              // dark rail comes closest to Formae's frame.
-              preview: ({ children }) => (
-                // `relative` so the assistant can be positioned against the
-                // canvas rather than the window: it has to sit at the foot of
-                // the customer's page, not the foot of the screen, or it covers
-                // the browser's own chrome on a short window.
-                <div className={`${chrome.mount} relative h-full`}>
-                  <div
-                    className={`${scopeClasses(activeStyle, palette)} h-full [background-color:var(--color-canvas)]`}
-                  >
-                    {children}
-                  </div>
-                  {/* The draft note now rides the canvas instead of being a
-                      band above it -- see draft-notice.tsx for the measurement
-                      that motivated the move. */}
-                  {isGeneratedDraft ? (
-                    <DraftNotice
-                      title={t("draftBannerTitle")}
-                      body={t("draftBannerBody")}
-                      dismiss={t("draftDismiss")}
-                    />
-                  ) : null}
-                  <ExitPreview label={t("exitPreview")} />
-                  {/* OUTSIDE the style scope on purpose. The assistant is
-                      Formae's, not the customer's -- scoping it would repaint
-                      it in whichever register they picked, which is the exact
-                      confusion chrome.module.css exists to prevent. */}
-                  <AiDock>
-                    <AiAssistant
+                      locale={locale}
+                      navPages={navPages}
                       turns={turns}
                       setTurns={setTurns}
                       instruction={instruction}
                       setInstruction={setInstruction}
-                      busy={aiBusy}
-                      setBusy={setAiBusy}
-                      pages={navPages}
-                      locale={locale}
-                      // Not a phone here -- but `compact` is the same request
-                      // either way: drop the duplicate header and lay the three
-                      // examples out as a swipeable row rather than a stack.
-                      // Measured docked and non-compact: 385px of the canvas,
-                      // most of it the explanation the composer's placeholder
-                      // already gives.
-                      compact
+                      aiBusy={aiBusy}
+                      setAiBusy={setAiBusy}
                     />
-                  </AiDock>
-                </div>
-              ),
-            }}
-          />
+                  ) : (
+                    // Wrapped rather than returned bare: Puck's RenderFunc is
+                    // typed to a single element, and `children` is ReactNode.
+                    <>{children}</>
+                  ),
+                // FIELDS ON TOP, ASSISTANT UNDERNEATH, and the order is forced
+                // rather than chosen. Puck renders this column's title bar --
+                // 「整个页面」, or the selected block's name and its breadcrumb --
+                // OUTSIDE this override, permanently above whatever it returns.
+                // Putting the assistant first therefore files it under a heading
+                // that describes the fields, which reads as a mislabelled panel.
+                //
+                // It also lands the composer at the bottom of the column, which
+                // is where every assistant a customer has already used puts it.
+                //
+                // The fields half is capped at half the column and scrolls its
+                // own overflow: a RecordTable's column editor is long enough to
+                // push the assistant off the bottom of the screen entirely, and
+                // an assistant you have to scroll a properties panel to reach is
+                // the buried toolbar button again with extra steps.
+                // PICTURES FIRST, THEN THE FIELDS THAT FINE-TUNE THEM.
+                //
+                // The founder selected 重点数字卡, looked at what appeared, and
+                // said he wanted Durable's version: 「我看到图片 就是我可以替换的
+                // 别的款式 然后我点击就可以替换了」. What was there was 文字 /
+                // 数值 / 链接 / 对比说明 — four inputs that change the CONTENT of
+                // a card whose SHAPE was not offered at all.
+                //
+                // So the picker sits above the fields, outside their scroll area,
+                // and stays put: choosing the shape comes before filling it in,
+                // and it is the choice that has to be visible without scrolling.
+                // It draws nothing at all for a block with no alternatives, which
+                // is most of them — an empty 换个款式 heading on 头像 would be a
+                // worse panel than no heading.
+                // PUCK'S FIELDS, FLOATED. The override still runs with the right
+                // column collapsed to 0px, so `children` is the real field tree
+                // for the selected block -- every field type, every resolver,
+                // unchanged. BlockSheets portals it into the 改文字 sheet and
+                // renders the 换款式 sheet beside it.
+                //
+                // The assistant is no longer passed down here: it used to share
+                // this column 60/40 with the fields, which is what made an empty
+                // 「整个页面」 heading sit above 400px of nothing whenever no block
+                // was selected. It floats at the foot of the canvas now -- see
+                // the `preview` override below.
+                fields: ({ children }) => (
+                  <BlockSheets style={activeStyle} palette={palette}>
+                    {children}
+                  </BlockSheets>
+                ),
+                // THE FLOATING TOOLBAR under the selected block: 换款式 · 改文字,
+                // then Puck's own move/duplicate/delete. Durable's Design / Edit
+                // content pill, which is the third screenshot the founder sent.
+                actionBar: ({ label, children, parentAction }) => (
+                  <BlockToolbar label={label} parentAction={parentAction}>
+                    {children}
+                  </BlockToolbar>
+                ),
+                // ＋ 加一段 in the gap under each block, carrying the position it
+                // will insert at -- so adding no longer means opening a 54-tile
+                // drawer and then dragging the result up from the bottom.
+                componentOverlay: ({
+                  children,
+                  hover,
+                  isSelected,
+                  componentId,
+                }) => (
+                  <InsertAffordance
+                    hover={hover}
+                    isSelected={isSelected}
+                    componentId={componentId}
+                  >
+                    {children}
+                  </InsertAffordance>
+                ),
+                // The palette, in a sheet instead of a column. Same tiles, same
+                // live previews, same click-to-add: only the docking is gone.
+                drawer: ({ children }) => <InsertSheet>{children}</InsertSheet>,
+                // The canvas is the one thing on this screen Formae does not
+                // own, so it is presented as an object rather than as the
+                // background: the customer's style scope re-resolves every token
+                // to their own register inside a frame that stays Formae's. The
+                // token cascade does this by itself -- custom properties inherit
+                // and the nearest defining ancestor wins -- which is why nothing
+                // inside the canvas needed changing.
+                //
+                // The mount is the white plinth it stands on. This is the single
+                // most important of the seven: it is the surface the customer
+                // spends the most time looking at, and the one where their own
+                // dark rail comes closest to Formae's frame.
+                preview: ({ children }) => (
+                  // `relative` so the assistant can be positioned against the
+                  // canvas rather than the window: it has to sit at the foot of
+                  // the customer's page, not the foot of the screen, or it covers
+                  // the browser's own chrome on a short window.
+                  <div
+                  data-editor-canvas
+                  className={`${chrome.mount} relative h-full`}
+                >
+                    {/* Holds a strip clear on the right while a sheet is docked
+                      there, so the block being edited reflows beside the panel
+                      instead of underneath it. See canvas-gutter.tsx. */}
+                    <CanvasGutter
+                      className={`${scopeClasses(activeStyle, palette)} h-full [background-color:var(--color-canvas)]`}
+                    >
+                      {children}
+                    </CanvasGutter>
+                    {/* Type on the page instead of in a panel. Renders nothing;
+                      it turns the <Inline> spans puck-config leaves in the
+                      canvas into editable text. Inside Puck's provider because
+                      it dispatches, and inside the preview override because
+                      that is the only place that is true. */}
+                    <InlineEditing />
+                    {/* The draft note now rides the canvas instead of being a
+                      band above it -- see draft-notice.tsx for the measurement
+                      that motivated the move. */}
+                    {isGeneratedDraft ? (
+                      <DraftNotice
+                        title={t("draftBannerTitle")}
+                        body={t("draftBannerBody")}
+                        dismiss={t("draftDismiss")}
+                      />
+                    ) : null}
+                    <ExitPreview label={t("exitPreview")} />
+                    {/* OUTSIDE the style scope on purpose. The assistant is
+                      Formae's, not the customer's -- scoping it would repaint
+                      it in whichever register they picked, which is the exact
+                      confusion chrome.module.css exists to prevent. */}
+                    <AiDock>
+                      <AiAssistant
+                        turns={turns}
+                        setTurns={setTurns}
+                        instruction={instruction}
+                        setInstruction={setInstruction}
+                        busy={aiBusy}
+                        setBusy={setAiBusy}
+                        pages={navPages}
+                        locale={locale}
+                        // Not a phone here -- but `compact` is the same request
+                        // either way: drop the duplicate header and lay the three
+                        // examples out as a swipeable row rather than a stack.
+                        // Measured docked and non-compact: 385px of the canvas,
+                        // most of it the explanation the composer's placeholder
+                        // already gives.
+                        compact
+                      />
+                    </AiDock>
+                  </div>
+                ),
+              }}
+            />
+          </div>
         </div>
-      </div>
-      {/* Every sheet lands here: inside this component's scoped chrome, so the
+        {/* Every sheet lands here: inside this component's scoped chrome, so the
           --color-* tokens they read are Formae's, and after Puck so nothing in
           its layout can clip them. Renders nothing by itself. */}
-      <SheetHost />
-    </div>
+        <SheetHost />
+        <StyleSheet
+          active={activeStyle}
+          palette={palette}
+          pending={stylePending}
+          failed={styleFailed}
+          onPick={pickStyle}
+          locale={locale}
+          styles={STYLE_ORDER.map((name) => ({
+            name,
+            tag: tHome(`styleTag.${name}`),
+          }))}
+          labels={{
+            title: t("styleLabel"),
+            current: tHome("styleCurrent"),
+            failed: t("styleFailed"),
+            more: t("styleMore"),
+          }}
+        />
+      </div>
     </EditorUiProvider>
   );
 }
