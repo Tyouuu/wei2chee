@@ -96,6 +96,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   glass: styles.glass,
   night: styles.night,
   grain: styles.grain,
+  kraft: styles.kraft,
 };
 
 /**

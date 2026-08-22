@@ -210,6 +210,20 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
   },
+  kraft: {
+    mood: "牛皮纸板。整页是中间调的土黄,不是白纸也不是黑屏;卡片用双线框,像货箱上的标签。字全大写、拉开,像印上去的。",
+    facts: "底色牛皮 #c9bca2(亮度 0.55) · 卡片 #dbd0b9 · 双线边框 3px · 圆角 0 · 无阴影 · 正文 13px 行高 32px · 标签全大写字距 0.16em · 强调色 #8c3a1e",
+    prefer: {
+      RecordTable: "grid",
+      HeroCard: "stats",
+      WorkflowStrip: "numbered",
+      ActionButton: "solid",
+      Tag: "solid",
+      Divider: "tight",
+      TrendChart: "bar",
+    },
+    avoid: ["圆角", "阴影", "白色的大色块", "细字", "第二个强调色"],
+  },
   grain: {
     mood: "摸得到的那一个。纸有颗粒,卡片的颗粒比底还重一点,像一张压在纸上的印刷品。一个平的蓝,不做渐层。",
     facts: "底色暖白 #eeebe3 带噪点 · 卡片 #faf8f2 噪点更重 · 无阴影 · 圆角 0 · 边框 1px · 正文 15px 无衬线 · 一个平色 #2b4bd6",
