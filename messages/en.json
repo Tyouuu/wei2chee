@@ -132,6 +132,10 @@
       "kraft": {
         "label": "Kraft",
         "description": "Board, not paper. A mid-tone ground at 0.55 luminance — neither the white page fourteen of these registers are nor the near-black one. Measured: one register at 0.005 and the rest above 0.82, with the entire middle empty. Cards carry a double rule, the way a shipping label does, and labels are stencilled uppercase so the type reads as printed onto a surface rather than typeset for a page. For trades that sell a material: hardware, timber, leather, coffee roasting, produce, packaging, furniture."
+      },
+      "signboard": {
+        "label": "Signboard",
+        "description": "A shoplot sign and the price list beneath it. The name is set in a heavy condensed face at 46px with the tracking pulled in; everything under it is a plain 15px sans. It is the first of seventeen registers whose headings use a different face from its body — every one before it declared a single family, so a page heading and a table cell looked the same. The contrast is the register, not the colour. For F&B, retail, shopfronts, events, gyms: businesses whose customers see them in passing."
       }
     },
     "sample": {
@@ -418,7 +422,8 @@
         "glass": "Glass · translucent, blurred behind, indigo",
         "night": "Night · near-black, lit orange",
         "grain": "Grain · textured, one flat blue",
-        "kraft": "Kraft · mid-tone board, double rule"
+        "kraft": "Kraft · mid-tone board, double rule",
+        "signboard": "Signboard · heavy condensed headline, sign red"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",

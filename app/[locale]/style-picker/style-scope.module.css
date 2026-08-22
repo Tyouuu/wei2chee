@@ -1861,6 +1861,147 @@
 }
 
 /* ---------------------------------------------------------------------- *
+ * Signboard -- generated from design-system/tokens/signboard.css
+ * ---------------------------------------------------------------------- */
+.signboard {
+  --color-table-head-bg: var(--color-ink-900);
+  --color-table-head-fg: var(--color-paper);
+  --color-canvas: #f7f4ef;
+  --color-ink-950: #e4e4e7;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #f2eee7;
+  --color-ink-800: #ddd7cc;
+  --color-ink-700: #a1a1aa;
+  --color-nav-bg: #161412;
+  --color-nav-bg-deep: #0d0c0b;
+  --color-nav-fg: #e8eef9;
+  --color-nav-fg-dim: #9cabc4;
+  --color-nav-hover: #f4f4f6;
+  --color-nav-active: #ececef;
+  --color-nav-border: #2c4569;
+  --color-nav-accent: #ff5c47;
+  --color-paper: #161412;
+  --color-paper-dim: #52525b;
+  --color-primary: #c8102e;
+  --color-primary-deep: #9d0c24;
+  --color-primary-soft: #fbe8ea;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-brass: #a8710a;
+  --color-brass-bright: #8a5d08;
+  --color-jade: #1a9a4d;
+  --color-jade-bright: #147a3c;
+  --color-clay: #bd616a;
+  --color-clay-bright: #a3444e;
+  --color-clay-deep: #b0505c;
+  --color-slate: #6b6d76;
+  --color-slate-bright: #54565f;
+  --color-info: #3b62d9;
+  --color-info-bright: #2d4bb0;
+  --color-medal-gold: #9a6f06;
+  --color-medal-silver: #6f7b8c;
+  --color-medal-bronze: #a56732;
+  --color-jade-chart: #1a9a4d;
+  --color-brass-chart: #a8710a;
+  --font-ui: var(--font-swiss-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: var(--font-signboard-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 700;
+  --fw-display: 700;
+  --tracking-body: -0.011em;
+  --tracking-sm: -0.013em;
+  --tracking-title: -0.03em;
+  --tracking-title-lg: -0.032em;
+  --tracking-label: 0.12em;
+  --label-transform: uppercase;
+  --text-micro: 10.5px;
+  --text-xs: 11.5px;
+  --text-sm: 14px;
+  --text-base: 15px;
+  --text-lg: 16px;
+  --text-title: 26px;
+  --text-hero: 46px;
+  --leading-tight: 1.02;
+  --leading-body: 1.7;
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-control: 0px;
+  --radius-pill: 0px;
+  --pad-card: 18px;
+  --pad-card-lg: 26px;
+  --pad-control-x: 13px;
+  --pad-control-y: 8px;
+  --pad-cell-x: 13px;
+  --pad-cell-y: 12px;
+  --gap-stack: 20px;
+  --gap-inline: 10px;
+  --row-h: 46px;
+  --control-h: 36px;
+  --border-card-width: 1px;
+  --shadow-card: none;
+  --shadow-raised: none;
+  --shadow-overlay: 0 8px 28px -8px rgba(24, 24, 27, 0.24);
+  --surface-image: none;
+  --surface-blur: none;
+  --surface-border-style: solid;
+  --canvas-image: none;
+  --border-subtle: rgba(24, 24, 27, 0.10);
+  --border-strong: rgba(24, 24, 27, 0.22);
+  --shadow-hue: 24, 24, 27;
+  --hairline: 1px;
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur-fast: 120ms;
+  --dur: 140ms;
+  --background: var(--color-canvas);
+  --foreground: var(--color-paper);
+  --card: var(--color-canvas);
+  --card-foreground: var(--color-paper);
+  --popover: var(--color-ink-900);
+  --popover-foreground: var(--color-paper);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-on-primary);
+  --secondary: var(--color-ink-850);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-ink-850);
+  --muted-foreground: var(--color-paper-dim);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary-deep);
+  --destructive: var(--color-clay);
+  --destructive-foreground: var(--color-on-primary);
+  --border: var(--color-ink-800);
+  --input: var(--color-ink-800);
+  --ring: var(--color-primary);
+  --radius: var(--radius-md);
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-jade);
+  --chart-3: var(--color-brass);
+  --chart-4: var(--color-clay);
+  --chart-5: var(--color-slate);
+  --sidebar: var(--color-nav-bg);
+  --sidebar-foreground: var(--color-nav-fg);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-bg);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-fg);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
+}
+
+.signboard :focus-visible {
+  border-radius: 6px;
+}
+
+/* signboard's structural colours, re-declared under a doubled class so they
+ * outrank the palette layer. See styleBlock() in the generator for why. */
+.signboard.signboard {
+  --font-display: var(--font-signboard-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+/* ---------------------------------------------------------------------- *
  * Soft -- generated from design-system/tokens/soft.css
  * ---------------------------------------------------------------------- */
 .soft {

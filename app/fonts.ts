@@ -15,6 +15,7 @@
  */
 import {
   Archivo,
+  Archivo_Narrow,
   Geist,
   Geist_Mono,
   IBM_Plex_Sans,
@@ -69,6 +70,25 @@ const geistMono = Geist_Mono({
 const archivo = Archivo({
   subsets: ["latin"],
   variable: "--font-industrial-latin",
+  display: "swap",
+});
+
+// THE FIRST DISPLAY FACE, and the first font in this file that is not a body
+// face.
+//
+// --font-display was added to every register on 2026-08-23 and defaulted to
+// --font-ui, because nothing had a second face to point it at: all sixteen
+// registers set a page heading and a table cell in the same family. 招牌 is the
+// register that needed one.
+//
+// Archivo Narrow rather than Oswald, which is the condensed face every
+// generated "bold headline" page reaches for. It is also the same superfamily
+// as the Archivo already bound to --font-industrial-latin, so a register can
+// pair them without the pairing looking accidental.
+const archivoNarrow = Archivo_Narrow({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-signboard-latin",
   display: "swap",
 });
 
@@ -184,6 +204,7 @@ export const fontVariables = [
   geist.variable,
   geistMono.variable,
   archivo.variable,
+  archivoNarrow.variable,
   nunito.variable,
   manrope.variable,
   plexSans.variable,

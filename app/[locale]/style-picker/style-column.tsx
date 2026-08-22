@@ -48,7 +48,11 @@ export type StyleName =
   // Neither a white page nor a dark one. Luminance across the other fifteen
   // was 0.005 then a jump to 0.82 -- the whole middle was empty, and no
   // register had ever set --surface-border-style. See tokens/kraft.css.
-  | "kraft";
+  | "kraft"
+  // The first register whose headings are set in a different face from its
+  // body -- all sixteen before it declared one family for both. See
+  // tokens/signboard.css.
+  | "signboard";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -83,6 +87,7 @@ export const STYLE_ORDER: StyleName[] = [
   "night",
   "grain",
   "kraft",
+  "signboard",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -102,6 +107,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   night: styles.night,
   grain: styles.grain,
   kraft: styles.kraft,
+  signboard: styles.signboard,
 };
 
 /**
@@ -145,6 +151,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   night: styles.night,
   grain: styles.grain,
   kraft: styles.kraft,
+  signboard: styles.signboard,
 };
 
 export function StyleColumn({

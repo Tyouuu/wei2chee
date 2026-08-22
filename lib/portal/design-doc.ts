@@ -210,6 +210,20 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
   },
+  signboard: {
+    mood: "招牌那一个。店名用又窄又粗的字排到 46px、字距收紧,下面的价目跟内文是普通的 15px。整套里第一个「标题跟内文不同一个字体」的版式——差别就在这个对比,不在颜色。",
+    facts: "标题字 Archivo Narrow 46px 字距 -0.03em · 内文 15px · 招牌红 #c8102e · 暖白底 #f7f4ef · 圆角 0 · 无阴影 · 标签全大写",
+    prefer: {
+      RecordTable: "grid",
+      HeroCard: "solo",
+      WorkflowStrip: "row",
+      ActionButton: "solid",
+      Tag: "solid",
+      Divider: "tight",
+      TrendChart: "bar",
+    },
+    avoid: ["圆角", "阴影", "细字的标题", "第二个强调色", "把标题缩到跟内文一样大"],
+  },
   kraft: {
     mood: "牛皮纸板。整页是中间调的土黄,不是白纸也不是黑屏;卡片用双线框,像货箱上的标签。字全大写、拉开,像印上去的。",
     facts: "底色牛皮 #c9bca2(亮度 0.55) · 卡片 #dbd0b9 · 双线边框 3px · 圆角 0 · 无阴影 · 正文 13px 行高 32px · 标签全大写字距 0.16em · 强调色 #8c3a1e",

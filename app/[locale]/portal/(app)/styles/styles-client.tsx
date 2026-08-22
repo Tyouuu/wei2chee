@@ -32,6 +32,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   night: styles.night,
   grain: styles.grain,
   kraft: styles.kraft,
+  signboard: styles.signboard,
 };
 
 
@@ -54,6 +55,7 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   night: "Night",
   grain: "Grain",
   kraft: "Kraft",
+  signboard: "Signboard",
 };
 
 /**
