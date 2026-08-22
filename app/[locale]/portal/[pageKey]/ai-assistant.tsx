@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { usePuck, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { puckConfig } from "@/design-system/editor/puck-config";
 
 /** A page-level change the assistant offered and the customer can confirm.
  *  See lib/portal/layout-ops.ts's pageSuggestionSchema for why this is an offer
@@ -105,7 +106,7 @@ export function AiAssistant({
   // Read from Puck directly: this renders inside the `fields` override and
   // therefore inside the provider, so the layout it sends is always the live
   // canvas rather than a copy threaded down through props.
-  const { appState, dispatch } = usePuck();
+  const { appState, dispatch, selectedItem } = usePuck();
   const router = useRouter();
   const data = appState.data as Data;
   const listRef = useRef<HTMLDivElement>(null);
@@ -232,6 +233,39 @@ export function AiAssistant({
 
   const suggestions = [t("aiSuggest1"), t("aiSuggest2"), t("aiSuggest3")];
 
+  /**
+   * ONE PRESS, ON THE THING THAT IS SELECTED — the part of Durable that this
+   * product had copied the shape of and not the substance.
+   *
+   * Durable's assistant bar reads 「Ask Durable to re-write YOUR TEXT」 and
+   * carries four buttons: Make Longer, Make Shorter, More casual, More
+   * professional. Nothing is typed. This editor had a chat box and three
+   * example sentences, which look similar in a screenshot and are not the same
+   * thing at all: an example is still a sentence the customer has to decide to
+   * send, and the blank composer underneath is still a blank composer. The
+   * founder's 「你抄不到精髓」 is this gap — verbs versus a place to type.
+   *
+   * The bar is a renovation contractor in his fifties. "Press 短一点" and
+   * "compose a request to an AI" are not the same task.
+   *
+   * Each verb becomes an instruction naming the block BY ID, because the model
+   * sees ids in describeLayout()'s outline and a label alone would be ambiguous
+   * the moment a page has two 重点数字卡. It then travels the identical path a
+   * typed request does — same endpoint, same ops, same transcript entry, same
+   * per-turn revert — so nothing here is a second way for the layout to change.
+   */
+  const blockId = typeof selectedItem?.props?.id === "string" ? selectedItem.props.id : null;
+  const blockLabel = selectedItem
+    ? ((puckConfig.components as Record<string, { label?: string }>)[selectedItem.type]?.label ??
+      selectedItem.type)
+    : null;
+  const verbs: { label: string; verb: string }[] = [
+    { label: t("aiVerbShorter"), verb: t("aiVerbShorter") },
+    { label: t("aiVerbLonger"), verb: t("aiVerbLonger") },
+    { label: t("aiVerbPlain"), verb: t("aiVerbPlain") },
+    { label: t("aiVerbFormal"), verb: t("aiVerbFormal") },
+  ];
+
   return (
     <aside
       // A stable hook for end-to-end checks. The page ALSO contains the
@@ -294,7 +328,14 @@ export function AiAssistant({
              unreachable. Compact drops the explanation (the placeholder in
              the composer says the same thing) and lays the suggestions out as
              a swipeable row, which is ~110px instead of ~300px. */
-          <div>
+          // WITH A BLOCK SELECTED, THE PAGE-LEVEL EXAMPLES GO AWAY. They are
+          // about the whole page (「把流程改成…」) and the verb row below is
+          // about the block in hand; showing both put two competing lists of
+          // suggestions on top of each other, and made the customer choose
+          // between a sentence to send and a button to press for what is
+          // usually the same intent. Durable shows one row, and it is the
+          // contextual one.
+          <div style={blockId ? { display: "none" } : undefined}>
             {!compact && (
               <p className="[font-size:var(--text-sm)] leading-relaxed [color:var(--color-paper-dim)]">{t("aiEmptyBody")}</p>
             )}
@@ -436,6 +477,36 @@ export function AiAssistant({
 
           Nothing is lost. Enter already submitted via onKeyDown below, and the
           button calls the same function directly. */}
+      {/* THE VERB ROW — always on while something is selected, not only on the
+          empty state the way the page-level examples are. Durable's chips do
+          not disappear once you have asked it something, and neither should
+          these: 短一点 is the sort of thing pressed three times in a row while
+          the customer watches the block shrink. */}
+      {blockId ? (
+        <div className="shrink-0 border-t px-3.5 pb-2 pt-2.5 [border-color:var(--color-ink-800)]">
+          <p className="[font-size:var(--text-micro)] uppercase tracking-[0.08em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+            {t("aiBlockTitle")} · {blockLabel}
+          </p>
+          <div className="-mx-3.5 mt-2 flex snap-x gap-2 overflow-x-auto px-3.5 pb-0.5">
+            {verbs.map((v) => (
+              <button
+                key={v.label}
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  ask(t("aiVerbPrompt", { id: blockId, block: blockLabel ?? "", verb: v.verb }))
+                }
+                // 44px on a phone, where mobile-editor.tsx makes this assistant the whole
+                // interface and these four buttons are most of what it is for.
+                className="min-h-11 shrink-0 snap-start rounded-full border px-3.5 py-1.5 [font-size:var(--text-xs)] transition-colors disabled:opacity-40 lg:min-h-9 [border-color:var(--color-ink-800)] [color:var(--color-paper)] enabled:hover:[border-color:var(--color-primary)] enabled:hover:[background-color:var(--color-ink-850)]"
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="shrink-0 border-t px-3.5 py-3 [border-color:var(--color-ink-800)]">
         <textarea
           ref={inputRef}

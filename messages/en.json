@@ -327,7 +327,13 @@
       "previewCta": "Preview",
       "exitPreview": "Exit preview",
       "moreMenu": "More",
-      "draftDismiss": "Got it, hide this"
+      "draftDismiss": "Got it, hide this",
+      "aiBlockTitle": "Change this block",
+      "aiVerbShorter": "Shorter",
+      "aiVerbLonger": "Say more",
+      "aiVerbPlain": "Plainer",
+      "aiVerbFormal": "More formal",
+      "aiVerbPrompt": "Rewrite the text inside the block with id={id} ({block}) to be {verb}. Keep the meaning. Do not touch any other block."
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

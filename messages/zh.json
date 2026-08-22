@@ -327,7 +327,13 @@
       "previewCta": "预览",
       "exitPreview": "退出预览 · 回去改",
       "moreMenu": "更多",
-      "draftDismiss": "知道了,不用再提"
+      "draftDismiss": "知道了,不用再提",
+      "aiBlockTitle": "改这一块",
+      "aiVerbShorter": "短一点",
+      "aiVerbLonger": "讲清楚一点",
+      "aiVerbPlain": "白话一点",
+      "aiVerbFormal": "正式一点",
+      "aiVerbPrompt": "把 id={id} 那一块（{block}）里面的文字{verb}，意思不要变，别的块一个字都不要动。"
     },
     "home": {
       "eyebrow": "你的系统",
