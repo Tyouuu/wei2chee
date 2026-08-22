@@ -120,6 +120,10 @@
       "glass": {
         "label": "Glass",
         "description": "The one you can see through. Cards are white at 55% and genuinely blur what is behind them, over a ground of three soft colour fields — so what you see is not a card but a pane resting on paper. It is the first register here that is not a flat rectangle: the twelve before it had only colour, radius, border and typeface to work with, and this one uses blur. For businesses that sell how something looks — design, photography, events, fitness, beauty. Wrong for a business staring at rows of paperwork for eight hours."
+      },
+      "night": {
+        "label": "Night",
+        "description": "The one with the lights off. A near-black page, cards a step lighter than it, borders at 8% white, and one orange accent that reads as lit rather than painted. Across the other thirteen registers canvas luminance ran 0.82 to 0.97 — every page this product could build was a white page. This is the first that is not. For workshops, studios, gyms, bars, events, print shops: trades whose customers judge them on how things look. Wrong for paperwork that gets printed and signed."
       }
     },
     "sample": {
@@ -403,7 +407,8 @@
         "soft": "Soft · no edges, only relief",
         "brut": "Brut · Thick black, hard shadow",
         "ink": "Ink · Space, serif, vermilion",
-        "glass": "Glass · translucent, blurred behind, indigo"
+        "glass": "Glass · translucent, blurred behind, indigo",
+        "night": "Night · near-black, lit orange"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",

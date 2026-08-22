@@ -37,7 +37,11 @@ export type StyleName =
   // The first register that is not a flat rectangle: translucent cards,
   // a real backdrop blur, and a ground with something to see through them.
   // See design-system/tokens/glass.css.
-  | "glass";
+  | "glass"
+  // The one that is not a white page. Canvas luminance across the other
+  // thirteen ran 0.82-0.97 with nothing below it; a workshop, a studio or a
+  // gym had no register that looked like them. See tokens/night.css.
+  | "night";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -69,6 +73,7 @@ export const STYLE_ORDER: StyleName[] = [
   "brut",
   "ink",
   "glass",
+  "night",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -85,6 +90,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   brut: styles.brut,
   ink: styles.ink,
   glass: styles.glass,
+  night: styles.night,
 };
 
 /**
@@ -125,6 +131,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   brut: styles.brut,
   ink: styles.ink,
   glass: styles.glass,
+  night: styles.night,
 };
 
 export function StyleColumn({

@@ -210,6 +210,24 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
   },
+  night: {
+    mood: "关了灯的那一个。整页近黑,卡片比页面亮一点点,左上角一小片很淡的蓝光。强调色是会发亮的橘。",
+    facts: "底色 #0d1117 · 卡片 #161b22 · 边框白色 8% · 正文 #e8edf4 13px · 行高 32px · 圆角 3px · 强调色 #ff7a45",
+    prefer: {
+      // Borders do the separating here exactly as they do in 台账 — on a dark
+      // ground a zebra band is a smear, and a shadow has nothing to fall on.
+      RecordTable: "grid",
+      HeroCard: "stats",
+      WorkflowStrip: "row",
+      // Outline, because a filled orange button at this luminance is the
+      // brightest object on the page and pulls the eye off the work.
+      ActionButton: "outline",
+      Tag: "outline",
+      Divider: "tight",
+      TrendChart: "line",
+    },
+    avoid: ["大面积的浅色块", "纯白的字", "柔和的淡色阴影", "第二个会发亮的颜色"],
+  },
   glass: {
     mood: "看得穿的那一个。卡片是半透明的白,底下是三团很淡的颜色,卡片会把底下糊掉——像一块真的玻璃压在纸上。",
     facts: "卡片白 55% 透明 · 背后模糊 20px · 底色三团渐层 · 圆角 18px · 1px 白色亮边 · 阴影往下散不往右偏 · 强调色靛蓝 #4f46e5",

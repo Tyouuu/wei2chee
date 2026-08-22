@@ -29,6 +29,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   brut: styles.brut,
   ink: styles.ink,
   glass: styles.glass,
+  night: styles.night,
 };
 
 
@@ -48,6 +49,7 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   brut: "Brut",
   ink: "Ink",
   glass: "Glass",
+  night: "Night",
 };
 
 /**
