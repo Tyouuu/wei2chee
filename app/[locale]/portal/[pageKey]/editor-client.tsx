@@ -71,6 +71,7 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
+  ink: styles.ink,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";

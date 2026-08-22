@@ -27,7 +27,13 @@ export type StyleName =
   // registers covered density, colour, radius and type and did not cover
   // WEIGHT: nothing had a border over 2px or a shadow visible from across the
   // room. See design-system/tokens/brut.css for the numbers.
-  | "brut";
+  | "brut"
+  // 墨 (Ink) -- the SPACE axis. Measured 2026-08-23: nothing in the set had a
+  // pad-card above 24 or a row height above 56, so every register was a
+  // normal-density business tool. This one is 40 and 76. It is also the only
+  // register in the set drawn from a Chinese brief, for a product whose
+  // customers are Chinese. See design-system/tokens/ink.css.
+  | "ink";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -57,6 +63,7 @@ export const STYLE_ORDER: StyleName[] = [
   "swiss",
   "soft",
   "brut",
+  "ink",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -71,6 +78,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
+  ink: styles.ink,
 };
 
 /**
@@ -109,6 +117,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
+  ink: styles.ink,
 };
 
 export function StyleColumn({

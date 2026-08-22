@@ -92,6 +92,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
+  ink: styles.ink,
 };
 
 /**

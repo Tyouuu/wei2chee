@@ -190,6 +190,26 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["细线", "柔和的阴影", "低对比的灰", "渐变"],
   },
+  ink: {
+    mood: "留白。一张宣纸,墨色的字,一枚朱红的印。东西不多,每一样都站得开。",
+    facts: "内距 40px · 行高 76px · 正文 17px · 圆角 0 · 无阴影 · 宋体 · 强调色朱红 #c41e3a · 底色宣纸 #f5f1e8",
+    prefer: {
+      // Nothing boxed, nothing banded: at this much padding a gridline is a
+      // second structure competing with the space itself.
+      RecordTable: "plain",
+      // The number alone. A card that already has 40px of air around it does
+      // not also need three supporting figures inside it.
+      HeroCard: "solo",
+      // 竖排, which is both the only workflow layout that survives a narrow
+      // column and the one that reads as a scroll rather than as a pipeline.
+      WorkflowStrip: "timeline",
+      ActionButton: "outline",
+      Tag: "outline",
+      Divider: "loose",
+      TrendChart: "line",
+    },
+    avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
+  },
   docket: {
     mood: "一张真的表格。直角、硬线、像印出来要签名的单据。",
     facts: "圆角 0 · 边框 2px · 无阴影 · 行高 32px · 正文 13px · 标签全大写、字距 0.14em",

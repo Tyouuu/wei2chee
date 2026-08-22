@@ -28,7 +28,24 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const STYLES = ["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract", "swiss", "soft", "brut"];
+/**
+ * READ OFF DISK, NOT TYPED OUT.
+ *
+ * This was a hand-written array of eleven names, and it is exactly the kind of
+ * second list `app/[locale]/style-picker/__tests__/style-order.test.ts` exists
+ * to forbid -- that test scans app/, lib/ and design-system/ and does not look
+ * in scripts/, so this one hid from it. Adding 墨 wired the register through
+ * nine typed maps that TypeScript named one by one, applied the migration, and
+ * then rendered a page with none of its tokens on it: the scoped copy the
+ * picker mounts had simply never been generated, because this array had not
+ * been edited.
+ *
+ * The token directory is the register list. Nothing to keep in sync.
+ */
+const STYLES = readdirSync(join(ROOT, "design-system", "tokens"))
+  .filter((f) => f.endsWith(".css"))
+  .map((f) => f.replace(/\.css$/, ""))
+  .sort();
 const OUT = join(ROOT, "app", "[locale]", "style-picker", "style-scope.module.css");
 
 const sourcePath = (style) => join(ROOT, "design-system", "tokens", `${style}.css`);

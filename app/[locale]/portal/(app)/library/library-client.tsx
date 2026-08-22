@@ -25,6 +25,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
+  ink: styles.ink,
 };
 
 type Entry = { name: string; label: string; category: string; props: Record<string, unknown> };

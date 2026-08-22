@@ -32,10 +32,17 @@ describe("every register that exists can be chosen", () => {
   });
 
   it("is the only copy of the list", () => {
-    // A second hand-written array of style names anywhere under app/ or lib/ is
-    // the bug returning. Matched loosely on purpose -- any array literal that
-    // names three or more registers in a row is one.
-    const roots = ["app", "lib", "design-system"];
+    // A second hand-written array of style names anywhere in the source is the
+    // bug returning. Matched loosely on purpose -- any array literal that names
+    // three or more registers in a row is one.
+    //
+    // `scripts` is in this list because it was NOT, and one hid there:
+    // build-style-scope.mjs held its own eleven names, so adding 墨 wired the
+    // register through nine typed maps and a migration and then rendered a page
+    // with none of its tokens on it -- the scoped copy the picker mounts had
+    // never been generated. TypeScript names every map it can see; it cannot
+    // see a build script, which is exactly why this test has to.
+    const roots = ["app", "lib", "design-system", "scripts"];
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -45,7 +52,7 @@ describe("every register that exists can be chosen", () => {
           walk(p);
           continue;
         }
-        if (!/\.tsx?$/.test(entry.name)) continue;
+        if (!/\.(tsx?|mjs)$/.test(entry.name)) continue;
         if (p.endsWith(join("style-picker", "style-column.tsx"))) continue;
         const src = readFileSync(p, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
         // Three or more quoted register names separated only by commas.
