@@ -1571,7 +1571,7 @@
   --ease-out-quad: cubic-bezier(0.22, 0.61, 0.36, 1);
   --dur-fast: 160ms;
   --dur: 240ms;
-  --background: var(--color-canvas);
+  --background: var(--color-ink-900);
   --foreground: var(--color-paper);
   --card: var(--color-ink-900);
   --card-foreground: var(--color-paper);

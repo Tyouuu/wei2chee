@@ -106,6 +106,20 @@ const MOVES = {
   // body sits on the panel colour like everything else the customer reads.
   "--color-table-bg": "var(--color-ink-900)",
 
+  // --background IS THE SURFACE CONTENT SITS ON, not the page ground.
+  //
+  // shadcn pairs --background with --foreground, and every pulled section
+  // renders `bg-background text-foreground`. Mapping it to --color-canvas is
+  // right for seventeen registers whose ground and panels are the same value;
+  // here it put near-black text on oxblood, and a contrast audit of the
+  // customer's own website page found 95 nodes below 4.5:1.
+  //
+  // Pointing it at the panel instead is not a workaround -- it is what this
+  // register means. Content sits on ivory; the oxblood is the board AROUND the
+  // panels, which SystemShell paints from --color-canvas directly and which is
+  // therefore untouched.
+  "--background": "var(--color-ink-900)",
+
   // ── 3. the accent is the ground ─────────────────────────────────────────
   "--color-primary": "#8c2a20",
   "--color-primary-deep": "#6e2019",
