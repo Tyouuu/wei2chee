@@ -29,11 +29,30 @@ const AUDIT = () => {
     const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b2);
   };
+  // LET THE BROWSER DO THE COLOUR MATH.
+  //
+  // The first version parsed `rgba(...)` with a regex and returned null for
+  // anything else -- so every Tailwind v4 opacity modifier, which computes to
+  // `oklab(0.98 0.0008 0.008 / 0.8)`, was invisible to it. The walker then
+  // skipped past a perfectly good 80%-ivory header and reported the text as
+  // sitting on the page ground four ancestors up. That produced 92 phantom
+  // failures on the website page and sent me looking for a bug that was in
+  // this file.
+  //
+  // A 1x1 canvas accepts every colour space the browser does and hands back
+  // sRGB bytes, which is the thing being compared anyway.
+  const probe = document.createElement("canvas");
+  probe.width = probe.height = 1;
+  const ctx = probe.getContext("2d", { willReadFrequently: true });
   const parse = (s) => {
-    const m = /rgba?\(([^)]+)\)/.exec(s);
-    if (!m) return null;
-    const n = m[1].split(",").map((x) => parseFloat(x));
-    return { r: n[0], g: n[1], b: n[2], a: n.length > 3 ? n[3] : 1 };
+    if (!s || s === "transparent") return { r: 0, g: 0, b: 0, a: 0 };
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.fillStyle = "#000";
+    ctx.fillStyle = s;
+    ctx.globalCompositeOperation = "copy";
+    ctx.fillRect(0, 0, 1, 1);
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    return { r: d[0], g: d[1], b: d[2], a: d[3] / 255 };
   };
   /** The first ancestor that actually paints something opaque. */
   const bgOf = (el) => {

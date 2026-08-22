@@ -281,7 +281,23 @@ export function SiteBlock({
       </div>
     );
   }
-  return <Block copy={copy} />;
+  // THE SECTION SITS ON THE PAGE'S CONTENT SURFACE, NOT ON WHATEVER IS BEHIND IT.
+  //
+  // Most pulled sections paint no background of their own -- a logo wall, a
+  // stats band, a FAQ list are all transparent, because upstream they sit on a
+  // page body that is already `bg-background`. Here they sat on whatever the
+  // editor canvas or the published page happened to paint.
+  //
+  // Invisible for seventeen registers, where the ground and the content
+  // surface are the same colour. 漆 puts an oxblood ground under ivory panels,
+  // and `npm run check:contrast` found 86 text nodes below 4.5:1 on the
+  // customer's own website page -- near-black type on oxblood, on the one page
+  // strangers read.
+  return (
+    <div className="bg-background text-foreground">
+      <Block copy={copy} />
+    </div>
+  );
 }
 
 /** What the gallery and the sheet title print above a chosen section. */

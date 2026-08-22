@@ -45,7 +45,12 @@ export function FilterChips({
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
-      <span className="[font-size:var(--text-xs)] uppercase tracking-wide text-[color:var(--color-paper-dim)] [font-weight:var(--fw-medium)]">
+      {/* The row's own label sits on the GROUND, not inside a chip -- the chips
+        below it each paint their own surface. --color-on-canvas-dim defaults to
+        --color-paper-dim, so this is a no-op on every register whose ground and
+        panels are the same value, and the difference between 1.57:1 and legible
+        on 漆. Found by `npm run check:contrast`. */}
+      <span className="[font-size:var(--text-xs)] uppercase tracking-wide text-[color:var(--color-on-canvas-dim)] [font-weight:var(--fw-medium)]">
         {filteredByLabel}
       </span>
       {chips.map((chip) => (
