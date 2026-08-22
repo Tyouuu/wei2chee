@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Data } from "@puckeditor/core";
@@ -24,11 +25,21 @@ type Template = {
   layout: Data;
 };
 
+/** One SHAPE for the website page, as opposed to one KIND of page. */
+type Landing = {
+  key: string;
+  label: string;
+  blurb: string;
+  layout: Data;
+};
+
 export function TemplatesClient({
   locale,
   style,
   palette,
   templates,
+  landings,
+  hasWebsite,
   pageCount,
 }: {
   locale: string;
@@ -38,6 +49,11 @@ export function TemplatesClient({
    *  supplies `style`, and a second query would be a second source of truth. */
   palette: string | null;
   templates: Template[];
+  /** The six 官网 shapes, already built with this business's own words. */
+  landings: Landing[];
+  /** False only for an account whose website page was deleted -- the section
+   *  then offers to add it back rather than linking to a page that is gone. */
+  hasWebsite: boolean;
   pageCount: number;
 }) {
   const t = useTranslations("portal.templates");
@@ -51,6 +67,7 @@ export function TemplatesClient({
   // Which template is open at full size. A quarter-card render proves a page
   // exists; it cannot be read, and reading it is the decision.
   const [zoomed, setZoomed] = useState<(typeof templates)[number] | null>(null);
+  const [zoomedLanding, setZoomedLanding] = useState<Landing | null>(null);
 
   const full = pageCount >= PAGE_LIMIT;
 
@@ -59,14 +76,19 @@ export function TemplatesClient({
     setBusy(requestedKey ?? "__custom__");
     setFailed(null);
 
-    const { data, error } = await createBrowserSupabaseClient().rpc("add_project_page", {
-      requested_key: requestedKey,
-      new_title: title,
-    });
+    const { data, error } = await createBrowserSupabaseClient().rpc(
+      "add_project_page",
+      {
+        requested_key: requestedKey,
+        new_title: title,
+      },
+    );
     setBusy(null);
 
     if (error) {
-      setFailed(error.message.includes("limit") ? tAdd("failedLimit") : tAdd("failed"));
+      setFailed(
+        error.message.includes("limit") ? tAdd("failedLimit") : tAdd("failed"),
+      );
       return;
     }
     // Straight into the editor for the page that was just created. Adding a
@@ -89,7 +111,10 @@ export function TemplatesClient({
         </p>
 
         {failed && (
-          <p role="alert" className="mt-4 [color:var(--color-clay-bright)] [font-size:var(--text-sm)]">
+          <p
+            role="alert"
+            className="mt-4 [color:var(--color-clay-bright)] [font-size:var(--text-sm)]"
+          >
             {failed}
           </p>
         )}
@@ -129,6 +154,84 @@ export function TemplatesClient({
             </button>
           </div>
         </form>
+
+        {/* 官网版面 — THE ONE GALLERY IN THIS PRODUCT THAT IS ABOUT LOOKS.
+            Everywhere else a customer picks WHAT a page is; here they pick what
+            it LOOKS like, which is the thing 21st.dev does and nothing here
+            did. Six shapes rather than eight, because they are keyed on how the
+            business closes a sale rather than on its trade -- a contractor and
+            an aircon servicer are different trades that sell the same way. See
+            lib/templates/landing-templates.ts. */}
+        <section className="mt-10">
+          <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+            官网版面
+            <span className="ml-2 opacity-60">{landings.length}</span>
+          </h2>
+          <p className="mt-2 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+            同一间公司，六种做法。下面每一张都是用你自己的行业、公司名、流程画出来的
+            —— 按「换成这个」会带你进编辑器，
+            <b className="[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
+              还没保存
+            </b>
+            ，不喜欢按撤销就回去了。
+          </p>
+
+          <ul className="mt-5 grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
+            {landings.map((lp) => (
+              <li
+                key={lp.key}
+                className="overflow-hidden rounded-[var(--radius-lg)] [background-color:var(--color-ink-900)] [border:1px_solid_var(--color-ink-800)]"
+              >
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setZoomedLanding(lp)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setZoomedLanding(lp);
+                    }
+                  }}
+                  aria-label={t("zoom", { name: lp.label })}
+                  className={`${chrome.mount} m-3 cursor-zoom-in`}
+                >
+                  <div className={scopeClasses(style, palette)}>
+                    <PagePreview data={lp.layout} />
+                  </div>
+                </div>
+
+                <div className="flex items-start justify-between gap-3 border-t px-3 py-3 [border-color:var(--color-ink-800)]">
+                  <span className="min-w-0">
+                    <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
+                      {lp.label}
+                    </span>
+                    <span className="mt-0.5 block [font-size:var(--text-xs)] [color:var(--color-paper-dim)] [line-height:var(--leading-body)]">
+                      {lp.blurb}
+                    </span>
+                  </span>
+
+                  {hasWebsite ? (
+                    <Link
+                      href={`/${locale}/portal/website?tpl=${lp.key}`}
+                      className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
+                    >
+                      换成这个
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => add("website", "")}
+                      disabled={busy !== null || full}
+                      className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-40 enabled:hover:[border-color:var(--color-primary)]"
+                    >
+                      {tAdd("add")}
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         <section className="mt-10">
           <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
@@ -185,7 +288,9 @@ export function TemplatesClient({
 
                     {tpl.alreadyAdded ? (
                       <span className="shrink-0 [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
-                        {isDashboard ? t("alwaysIncluded") : tAdd("alreadyAdded")}
+                        {isDashboard
+                          ? t("alwaysIncluded")
+                          : tAdd("alreadyAdded")}
                       </span>
                     ) : (
                       <button
@@ -240,6 +345,56 @@ export function TemplatesClient({
             <div className={`${chrome.mount} min-h-0 overflow-auto`}>
               <div className={scopeClasses(style, palette)}>
                 <PagePreview data={zoomed.layout} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Same dialog for a 官网版面. A quarter-card render proves a shape
+          exists; it cannot be read, and reading it is the decision -- which is
+          more true here than in the gallery above, because these six differ
+          in exactly the details a thumbnail loses. */}
+      {zoomedLanding && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={zoomedLanding.label}
+          className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 sm:p-8"
+          onClick={() => setZoomedLanding(null)}
+        >
+          <div
+            className="flex max-h-full w-full max-w-6xl flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-baseline gap-3">
+              <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                {zoomedLanding.label}
+              </span>
+              <span className="min-w-0 truncate [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                {zoomedLanding.blurb}
+              </span>
+              <span className="flex-1" />
+              {hasWebsite && (
+                <Link
+                  href={`/${locale}/portal/website?tpl=${zoomedLanding.key}`}
+                  className="rounded-[var(--radius-md)] px-3 py-1.5 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
+                >
+                  换成这个
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={() => setZoomedLanding(null)}
+                aria-label={t("close")}
+                className="rounded-[var(--radius-md)] [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] px-3 py-1.5"
+              >
+                ✕
+              </button>
+            </div>
+            <div className={`${chrome.mount} min-h-0 overflow-auto`}>
+              <div className={scopeClasses(style, palette)}>
+                <PagePreview data={zoomedLanding.layout} />
               </div>
             </div>
           </div>

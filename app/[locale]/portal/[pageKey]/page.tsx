@@ -1,10 +1,15 @@
 import { notFound, redirect } from "next/navigation";
-import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
+import {
+  createSessionSupabaseClient,
+  getSessionUser,
+} from "@/lib/supabase/server-session";
 import { PortalEditor } from "./editor-client";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { applyLayoutOps, type PuckLayout } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { LANDING_BY_KEY } from "@/lib/templates/landing-templates";
 import {
+  landingContentFor,
   PAGE_KEYS,
   buildPageLayout,
   displayOwnerName,
@@ -25,10 +30,10 @@ export default async function PortalEditorPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; pageKey: string }>;
-  searchParams: Promise<{ add?: string }>;
+  searchParams: Promise<{ add?: string; tpl?: string }>;
 }) {
   const { locale, pageKey } = await params;
-  const { add } = await searchParams;
+  const { add, tpl } = await searchParams;
   // Cheap shape check only. The REAL check is against the pages this account
   // actually has, further down -- a business whose trade has no quotations
   // must 404 on /portal/quotations rather than render an empty one.
@@ -36,7 +41,8 @@ export default async function PortalEditorPage({
   // still `if (!page) notFound()` further down, against the pages this account
   // actually has. Mirrors the database's own constraint (migration
   // 20260820200000) rather than restating a different rule.
-  if (!isBuiltInPage(pageKey) && !/^custom_[a-z0-9]{8,32}$/.test(pageKey)) notFound();
+  if (!isBuiltInPage(pageKey) && !/^custom_[a-z0-9]{8,32}$/.test(pageKey))
+    notFound();
 
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -72,7 +78,9 @@ export default async function PortalEditorPage({
       title: r.title,
     })),
   );
-  const page = (pageRows ?? []).find((r: { page_key: string }) => r.page_key === pageKey);
+  const page = (pageRows ?? []).find(
+    (r: { page_key: string }) => r.page_key === pageKey,
+  );
   if (!page) notFound();
 
   const savedLayout = (page.layout_json as Record<string, unknown>) ?? {};
@@ -127,6 +135,23 @@ export default async function PortalEditorPage({
   // same paid gate. The name is checked against the live registry inside
   // applyLayoutOps, so a hand-typed `?add=DropTable` is a no-op rather than an
   // empty block on someone's page.
+  // 「换成这个」 from 模板库's 官网版面 gallery. Replaces the whole page rather
+  // than adding to it -- that is what choosing a layout means -- and only for
+  // the website page, so a hand-typed ?tpl= on 收款 does nothing.
+  //
+  // NOT written to the database here. It arrives in the editor as an UNSAVED
+  // change, on the undo stack, behind the same paid gate as every other edit:
+  // a customer who presses a template and does not like it presses 撤销, and a
+  // free customer can try all six without a server-side save existing at all.
+  const landing =
+    pageKey === "website" && tpl ? LANDING_BY_KEY[tpl] : undefined;
+  if (landing) {
+    initialData = {
+      root: {},
+      content: landing.build(landingContentFor(businessContext, pageRefs)),
+    } as unknown as Record<string, unknown>;
+  }
+
   if (add) {
     initialData = applyLayoutOps(initialData as unknown as PuckLayout, [
       { op: "add_component", component: add, after_id: null, title: null },
@@ -140,6 +165,9 @@ export default async function PortalEditorPage({
        *  parameter — leaving it in the URL would re-add the block on every
        *  reload and on every back-navigation. */
       seededComponent={add ?? null}
+      /** Set when ?tpl= replaced the layout, so the editor strips the
+       *  parameter and marks the page unsaved -- same reason as ?add=. */
+      seededTemplate={landing ? landing.key : null}
       projectId={project.id}
       accountEmail={user.email}
       /** projects.paid (Task 1) -- save_project_page raises "payment required"
@@ -157,7 +185,10 @@ export default async function PortalEditorPage({
       locale={locale}
       navPages={pageRefs.map((ref) => ({
         key: ref.key,
-        label: pageLabel(ref, businessContext.industry?.labels ?? FALLBACK_LABELS),
+        label: pageLabel(
+          ref,
+          businessContext.industry?.labels ?? FALLBACK_LABELS,
+        ),
       }))}
       /** The customer's own chosen style (projects.style, Task 3) -- applies to
        * canvas CONTENT only. Chrome stays Ledger regardless, per Task 5's own

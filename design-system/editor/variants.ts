@@ -86,6 +86,24 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "flat", label: "不要框", props: { layout: "full", flat: true } },
   ],
 
+  // ---------------------------------------------------------------- 官网大标题
+  // The most consequential picker on the whole website page: it is the first
+  // screen, and these four are genuinely different pages rather than four
+  // spacings of the same one.
+  SiteHero: [
+    { id: "left", label: "左对齐", props: { layout: "left" } },
+    { id: "band", label: "整片底色", props: { layout: "band" } },
+    { id: "center", label: "置中", props: { layout: "center" } },
+    { id: "plain", label: "只有一句话", props: { layout: "plain" } },
+  ],
+
+  // ---------------------------------------------------------------- 询价表格
+  EnquiryForm: [
+    { id: "card", label: "一个框", props: { look: "card" } },
+    { id: "plain", label: "不要框", props: { look: "plain" } },
+    { id: "split", label: "左右分", props: { look: "split" } },
+  ],
+
   // ---------------------------------------------------------------- 业务流程
   // 竖排 is the one that matters and it is a phone fix: five renovation stages
   // wrap the horizontal strip into three ragged rows on a 390px screen.

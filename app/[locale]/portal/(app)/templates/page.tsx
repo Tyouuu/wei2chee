@@ -1,9 +1,14 @@
 import { redirect } from "next/navigation";
 import type { Data } from "@puckeditor/core";
-import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
+import {
+  createSessionSupabaseClient,
+  getSessionUser,
+} from "@/lib/supabase/server-session";
 import { TemplatesClient } from "./templates-client";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { LANDING_TEMPLATES } from "@/lib/templates/landing-templates";
 import {
+  landingContentFor,
   PAGE_KEYS,
   buildPageLayout,
   displayOwnerName,
@@ -68,7 +73,10 @@ export default async function TemplatesPage({
 
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
-  const ownerName = displayOwnerName(businessContext, user.email?.split("@")[0] || "我");
+  const ownerName = displayOwnerName(
+    businessContext,
+    user.email?.split("@")[0] || "我",
+  );
   const labels = businessContext.industry?.labels ?? FALLBACK_LABELS;
 
   const templates = PAGE_KEYS.map((key) => ({
@@ -78,12 +86,37 @@ export default async function TemplatesPage({
     // gallery: every system already has one, and seeing it here is how a
     // customer understands the set is complete.
     alreadyAdded: existing.includes(key),
-    layout: buildPageLayout(key, businessContext, ownerName, locale, pageRefs) as unknown as Data,
+    layout: buildPageLayout(
+      key,
+      businessContext,
+      ownerName,
+      locale,
+      pageRefs,
+    ) as unknown as Data,
+  }));
+
+  // 官网版面 — six SHAPES for the one page a business's own customers read,
+  // as opposed to the gallery above, which is one shape per KIND of page.
+  // The distinction is the whole reason this section exists: everywhere else
+  // in this product a customer picks WHAT the page is; here they pick what it
+  // LOOKS like, which is the thing 21st.dev does and nothing here did.
+  //
+  // Built with this business's own words, like everything else on this page, so
+  // a contractor comparing 现货落单 against 上门报价 is comparing two versions
+  // of their own website rather than two mockups.
+  const landingContent = landingContentFor(businessContext, pageRefs);
+  const landings = LANDING_TEMPLATES.map((t) => ({
+    key: t.key,
+    label: t.label,
+    blurb: t.blurb,
+    layout: { root: {}, content: t.build(landingContent) } as unknown as Data,
   }));
 
   return (
     <TemplatesClient
       locale={locale}
+      landings={landings}
+      hasWebsite={existing.includes("website")}
       style={project.style as StyleName}
       palette={(project.palette as string | null) ?? null}
       templates={templates}

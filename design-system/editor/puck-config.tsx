@@ -192,6 +192,8 @@ type Components = {
     secondaryLabel?: string;
     secondaryHref?: string;
     proof?: { value: string; label: string }[];
+    // Set by the 换款式 picker, not by a field -- see variants.ts.
+    layout?: "left" | "band" | "center" | "plain";
   };
   EnquiryForm: {
     heading: string;
@@ -200,6 +202,7 @@ type Components = {
     submitLabel?: string;
     landsIn?: string;
     note?: string;
+    look?: "card" | "plain" | "split";
   };
   EmptyState: { variant: "empty" | "filtered" | "cleared"; title: string; description?: string };
   StatusDot: { tone: "positive" | "warning" | "negative" | "neutral"; label: string };
@@ -1238,8 +1241,9 @@ export const puckConfig: Config<Components> = {
         primaryLabel: "WhatsApp 问价",
         primaryHref: "#",
       },
-      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof }) => (
+      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout }) => (
         <SiteHero
+          layout={layout ?? "left"}
           eyebrow={
             eyebrow ? (
               <Inline id={id} field="eyebrow">
@@ -1304,8 +1308,9 @@ export const puckConfig: Config<Components> = {
         submitLabel: "送出",
         landsIn: "报价单",
       },
-      render: ({ id, heading, blurb, fields, submitLabel, landsIn, note }) => (
+      render: ({ id, heading, blurb, fields, submitLabel, landsIn, note, look }) => (
         <EnquiryForm
+          look={look ?? "card"}
           heading={
             <Inline id={id} field="heading">
               {heading}

@@ -1,3 +1,8 @@
+import type { PuckNode } from "@/lib/templates/puck-node";
+import {
+  landingTemplateFor,
+  type LandingContent,
+} from "@/lib/templates/landing-templates";
 import type { Data } from "@puckeditor/core";
 import type { TableColumn } from "@/lib/portal/table-model";
 import {
@@ -245,7 +250,10 @@ export function displayBusinessName(ctx: BusinessContext): string {
 
 /** Who is signed in. Falls back to the caller-supplied label (today the email's
  *  local part) only until the customer tells us their name. */
-export function displayOwnerName(ctx: BusinessContext, fallback: string): string {
+export function displayOwnerName(
+  ctx: BusinessContext,
+  fallback: string,
+): string {
   return ctx.identity?.owner_name?.trim() || fallback;
 }
 
@@ -299,7 +307,10 @@ const translateStage = (stage: string) => STAGE_ZH[stage] ?? stage;
 function workflowStages(ctx: BusinessContext): string[] {
   const fromAnalysis = ctx.analysis?.after_workflow;
   if (fromAnalysis && fromAnalysis.length > 0) {
-    return fromAnalysis.slice(0, 6).map((s) => s.trim()).filter(Boolean);
+    return fromAnalysis
+      .slice(0, 6)
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   return industry.default_workflow.slice(0, 6).map(translateStage);
@@ -316,9 +327,11 @@ function workflowStages(ctx: BusinessContext): string[] {
 // customer's "unsaved changes" state honest across reloads.
 // ---------------------------------------------------------------------------
 
-type PuckNode = { type: string; props: Record<string, unknown> };
-
-const node = (type: string, id: string, props: Record<string, unknown>): PuckNode => ({
+const node = (
+  type: string,
+  id: string,
+  props: Record<string, unknown>,
+): PuckNode => ({
   type,
   props: { id, ...props },
 });
@@ -332,8 +345,19 @@ type StatusTone = "positive" | "warning" | "negative" | "neutral";
  * actually keeps.
  */
 type SampleSet = {
-  records: { primary: string; secondary: string; amount: string; tone: StatusTone; status: string }[];
-  customers: { primary: string; secondary: string; tone: StatusTone; status: string }[];
+  records: {
+    primary: string;
+    secondary: string;
+    amount: string;
+    tone: StatusTone;
+    status: string;
+  }[];
+  customers: {
+    primary: string;
+    secondary: string;
+    tone: StatusTone;
+    status: string;
+  }[];
   heroLabel: string;
   heroValue: string;
   /** What the headline figure is measured against -- "vs 上个月", "vs 昨天". */
@@ -344,7 +368,12 @@ type SampleSet = {
    *  chosen to be the number the trade ACTUALLY worries about -- for a
    *  contractor that is money already spent and not yet billed, not a vanity
    *  count of projects. */
-  heroStats: { label: string; value: string; tone?: "normal" | "caution" | "warn"; sub?: string }[];
+  heroStats: {
+    label: string;
+    value: string;
+    tone?: "normal" | "caution" | "warn";
+    sub?: string;
+  }[];
   /** Six periods, oldest first. A shape, not a chart -- HeroCard draws it
    *  unlabelled and unaxised. All-zero series draw nothing, which is why no
    *  trade below gets a placeholder run of zeros. */
@@ -354,14 +383,47 @@ type SampleSet = {
 const SAMPLES: Record<string, SampleSet> = {
   renovation: {
     records: [
-      { primary: "Taman Desa 三房翻新", secondary: "陈先生", amount: "RM 48,500", tone: "positive", status: "已确认" },
-      { primary: "Bukit Jalil 厨房改造", secondary: "李太太", amount: "RM 22,800", tone: "warning", status: "等确认" },
-      { primary: "Cheras 店面装修", secondary: "王老板", amount: "RM 96,000", tone: "neutral", status: "报价中" },
+      {
+        primary: "Taman Desa 三房翻新",
+        secondary: "陈先生",
+        amount: "RM 48,500",
+        tone: "positive",
+        status: "已确认",
+      },
+      {
+        primary: "Bukit Jalil 厨房改造",
+        secondary: "李太太",
+        amount: "RM 22,800",
+        tone: "warning",
+        status: "等确认",
+      },
+      {
+        primary: "Cheras 店面装修",
+        secondary: "王老板",
+        amount: "RM 96,000",
+        tone: "neutral",
+        status: "报价中",
+      },
     ],
     customers: [
-      { primary: "陈先生", secondary: "Taman Desa · 013-2xx xxxx", tone: "positive", status: "施工中" },
-      { primary: "李太太", secondary: "Bukit Jalil · 012-3xx xxxx", tone: "warning", status: "待跟进" },
-      { primary: "王老板", secondary: "Cheras · 016-8xx xxxx", tone: "neutral", status: "新客户" },
+      {
+        primary: "陈先生",
+        secondary: "Taman Desa · 013-2xx xxxx",
+        tone: "positive",
+        status: "施工中",
+      },
+      {
+        primary: "李太太",
+        secondary: "Bukit Jalil · 012-3xx xxxx",
+        tone: "warning",
+        status: "待跟进",
+      },
+      {
+        primary: "王老板",
+        secondary: "Cheras · 016-8xx xxxx",
+        tone: "neutral",
+        status: "新客户",
+      },
     ],
     heroLabel: "本月已确认工程额",
     heroValue: "RM 71,300",
@@ -369,20 +431,58 @@ const SAMPLES: Record<string, SampleSet> = {
     heroStats: [
       { label: "进行中的工程", value: "4 个" },
       { label: "等客户确认", value: "2 份报价", tone: "caution" },
-      { label: "已做未收", value: "RM 31,200", tone: "warn", sub: "超过 30 天" },
+      {
+        label: "已做未收",
+        value: "RM 31,200",
+        tone: "warn",
+        sub: "超过 30 天",
+      },
     ],
     heroSpark: [42000, 51000, 47500, 58000, 63000, 71300],
   },
   retail: {
     records: [
-      { primary: "订单 #10238", secondary: "门店自取", amount: "RM 356", tone: "positive", status: "已付款" },
-      { primary: "订单 #10239", secondary: "送货 · Puchong", amount: "RM 1,240", tone: "warning", status: "待发货" },
-      { primary: "订单 #10240", secondary: "门店自取", amount: "RM 89", tone: "neutral", status: "新订单" },
+      {
+        primary: "订单 #10238",
+        secondary: "门店自取",
+        amount: "RM 356",
+        tone: "positive",
+        status: "已付款",
+      },
+      {
+        primary: "订单 #10239",
+        secondary: "送货 · Puchong",
+        amount: "RM 1,240",
+        tone: "warning",
+        status: "待发货",
+      },
+      {
+        primary: "订单 #10240",
+        secondary: "门店自取",
+        amount: "RM 89",
+        tone: "neutral",
+        status: "新订单",
+      },
     ],
     customers: [
-      { primary: "Siti binti Ahmad", secondary: "会员 · 累计 RM 3,420", tone: "positive", status: "活跃" },
-      { primary: "陈志明", secondary: "会员 · 累计 RM 780", tone: "neutral", status: "一般" },
-      { primary: "Kumar A/L Raj", secondary: "新会员", tone: "warning", status: "待跟进" },
+      {
+        primary: "Siti binti Ahmad",
+        secondary: "会员 · 累计 RM 3,420",
+        tone: "positive",
+        status: "活跃",
+      },
+      {
+        primary: "陈志明",
+        secondary: "会员 · 累计 RM 780",
+        tone: "neutral",
+        status: "一般",
+      },
+      {
+        primary: "Kumar A/L Raj",
+        secondary: "新会员",
+        tone: "warning",
+        status: "待跟进",
+      },
     ],
     heroLabel: "本月销售额",
     heroValue: "RM 18,940",
@@ -396,14 +496,47 @@ const SAMPLES: Record<string, SampleSet> = {
   },
   beauty: {
     records: [
-      { primary: "面部护理 · 90分钟", secondary: "今天 2:00 PM · Amy", amount: "RM 180", tone: "positive", status: "已确认" },
-      { primary: "染发 + 护理", secondary: "今天 4:30 PM · Jasmine", amount: "RM 320", tone: "warning", status: "待确认" },
-      { primary: "美甲", secondary: "明天 11:00 AM · Amy", amount: "RM 95", tone: "neutral", status: "已预约" },
+      {
+        primary: "面部护理 · 90分钟",
+        secondary: "今天 2:00 PM · Amy",
+        amount: "RM 180",
+        tone: "positive",
+        status: "已确认",
+      },
+      {
+        primary: "染发 + 护理",
+        secondary: "今天 4:30 PM · Jasmine",
+        amount: "RM 320",
+        tone: "warning",
+        status: "待确认",
+      },
+      {
+        primary: "美甲",
+        secondary: "明天 11:00 AM · Amy",
+        amount: "RM 95",
+        tone: "neutral",
+        status: "已预约",
+      },
     ],
     customers: [
-      { primary: "林小姐", secondary: "熟客 · 来过 14 次", tone: "positive", status: "会员" },
-      { primary: "Nurul", secondary: "来过 3 次", tone: "neutral", status: "一般" },
-      { primary: "张太太", secondary: "第一次到访", tone: "warning", status: "新客" },
+      {
+        primary: "林小姐",
+        secondary: "熟客 · 来过 14 次",
+        tone: "positive",
+        status: "会员",
+      },
+      {
+        primary: "Nurul",
+        secondary: "来过 3 次",
+        tone: "neutral",
+        status: "一般",
+      },
+      {
+        primary: "张太太",
+        secondary: "第一次到访",
+        tone: "warning",
+        status: "新客",
+      },
     ],
     heroLabel: "本月预约收入",
     heroValue: "RM 12,650",
@@ -417,35 +550,111 @@ const SAMPLES: Record<string, SampleSet> = {
   },
   wholesale: {
     records: [
-      { primary: "PO-2026-0412", secondary: "隆兴贸易", amount: "RM 24,600", tone: "positive", status: "已出货" },
-      { primary: "PO-2026-0413", secondary: "美佳超市", amount: "RM 8,150", tone: "warning", status: "待付款" },
-      { primary: "PO-2026-0414", secondary: "新丰商行", amount: "RM 41,900", tone: "neutral", status: "备货中" },
+      {
+        primary: "PO-2026-0412",
+        secondary: "隆兴贸易",
+        amount: "RM 24,600",
+        tone: "positive",
+        status: "已出货",
+      },
+      {
+        primary: "PO-2026-0413",
+        secondary: "美佳超市",
+        amount: "RM 8,150",
+        tone: "warning",
+        status: "待付款",
+      },
+      {
+        primary: "PO-2026-0414",
+        secondary: "新丰商行",
+        amount: "RM 41,900",
+        tone: "neutral",
+        status: "备货中",
+      },
     ],
     customers: [
-      { primary: "隆兴贸易", secondary: "月结 30 天 · 业务员 Ah Seng", tone: "positive", status: "正常" },
-      { primary: "美佳超市", secondary: "月结 60 天 · 业务员 Mei", tone: "negative", status: "超期" },
-      { primary: "新丰商行", secondary: "现金交易", tone: "neutral", status: "正常" },
+      {
+        primary: "隆兴贸易",
+        secondary: "月结 30 天 · 业务员 Ah Seng",
+        tone: "positive",
+        status: "正常",
+      },
+      {
+        primary: "美佳超市",
+        secondary: "月结 60 天 · 业务员 Mei",
+        tone: "negative",
+        status: "超期",
+      },
+      {
+        primary: "新丰商行",
+        secondary: "现金交易",
+        tone: "neutral",
+        status: "正常",
+      },
     ],
     heroLabel: "本月出货总额",
     heroValue: "RM 186,400",
     heroSuffix: "vs 上个月",
     heroStats: [
       { label: "本月出货", value: "62 单" },
-      { label: "待付款", value: "RM 43,800", tone: "caution", sub: "月结未到期" },
-      { label: "已超期", value: "RM 12,400", tone: "warn", sub: "美佳超市 60 天" },
+      {
+        label: "待付款",
+        value: "RM 43,800",
+        tone: "caution",
+        sub: "月结未到期",
+      },
+      {
+        label: "已超期",
+        value: "RM 12,400",
+        tone: "warn",
+        sub: "美佳超市 60 天",
+      },
     ],
     heroSpark: [142000, 158000, 151000, 169000, 177000, 186400],
   },
   services: {
     records: [
-      { primary: "品牌顾问项目", secondary: "Alpha Sdn Bhd", amount: "RM 32,000", tone: "positive", status: "进行中" },
-      { primary: "系统评估", secondary: "Beta Enterprise", amount: "RM 8,500", tone: "warning", status: "等签约" },
-      { primary: "年度维护合约", secondary: "Gamma Holdings", amount: "RM 60,000", tone: "neutral", status: "提案中" },
+      {
+        primary: "品牌顾问项目",
+        secondary: "Alpha Sdn Bhd",
+        amount: "RM 32,000",
+        tone: "positive",
+        status: "进行中",
+      },
+      {
+        primary: "系统评估",
+        secondary: "Beta Enterprise",
+        amount: "RM 8,500",
+        tone: "warning",
+        status: "等签约",
+      },
+      {
+        primary: "年度维护合约",
+        secondary: "Gamma Holdings",
+        amount: "RM 60,000",
+        tone: "neutral",
+        status: "提案中",
+      },
     ],
     customers: [
-      { primary: "Alpha Sdn Bhd", secondary: "顾问 · Kevin", tone: "positive", status: "合作中" },
-      { primary: "Beta Enterprise", secondary: "顾问 · Kevin", tone: "warning", status: "跟进中" },
-      { primary: "Gamma Holdings", secondary: "顾问 · Shirley", tone: "neutral", status: "潜在" },
+      {
+        primary: "Alpha Sdn Bhd",
+        secondary: "顾问 · Kevin",
+        tone: "positive",
+        status: "合作中",
+      },
+      {
+        primary: "Beta Enterprise",
+        secondary: "顾问 · Kevin",
+        tone: "warning",
+        status: "跟进中",
+      },
+      {
+        primary: "Gamma Holdings",
+        secondary: "顾问 · Shirley",
+        tone: "neutral",
+        status: "潜在",
+      },
     ],
     heroLabel: "本月已签约金额",
     heroValue: "RM 40,500",
@@ -459,14 +668,47 @@ const SAMPLES: Record<string, SampleSet> = {
   },
   fnb: {
     records: [
-      { primary: "3号桌", secondary: "堂食 · 4 位", amount: "RM 128", tone: "positive", status: "已结账" },
-      { primary: "外卖 #88", secondary: "Grab · Bangsar", amount: "RM 46", tone: "warning", status: "制作中" },
-      { primary: "7号桌", secondary: "堂食 · 2 位", amount: "RM 72", tone: "neutral", status: "点单中" },
+      {
+        primary: "3号桌",
+        secondary: "堂食 · 4 位",
+        amount: "RM 128",
+        tone: "positive",
+        status: "已结账",
+      },
+      {
+        primary: "外卖 #88",
+        secondary: "Grab · Bangsar",
+        amount: "RM 46",
+        tone: "warning",
+        status: "制作中",
+      },
+      {
+        primary: "7号桌",
+        secondary: "堂食 · 2 位",
+        amount: "RM 72",
+        tone: "neutral",
+        status: "点单中",
+      },
     ],
     customers: [
-      { primary: "常客 · 陈生", secondary: "每周三固定订位", tone: "positive", status: "熟客" },
-      { primary: "Grab Food", secondary: "外送平台", tone: "neutral", status: "渠道" },
-      { primary: "公司团餐 · Delta", secondary: "每月一次", tone: "warning", status: "待确认" },
+      {
+        primary: "常客 · 陈生",
+        secondary: "每周三固定订位",
+        tone: "positive",
+        status: "熟客",
+      },
+      {
+        primary: "Grab Food",
+        secondary: "外送平台",
+        tone: "neutral",
+        status: "渠道",
+      },
+      {
+        primary: "公司团餐 · Delta",
+        secondary: "每月一次",
+        tone: "warning",
+        status: "待确认",
+      },
     ],
     heroLabel: "今日营业额",
     heroValue: "RM 3,280",
@@ -474,20 +716,58 @@ const SAMPLES: Record<string, SampleSet> = {
     heroStats: [
       { label: "今日单数", value: "96 单" },
       { label: "外送占比", value: "38%", sub: "Grab + Foodpanda" },
-      { label: "食材成本", value: "31%", tone: "caution", sub: "目标 28% 以下" },
+      {
+        label: "食材成本",
+        value: "31%",
+        tone: "caution",
+        sub: "目标 28% 以下",
+      },
     ],
     heroSpark: [2650, 2980, 3120, 2740, 3350, 3280],
   },
   education: {
     records: [
-      { primary: "中三数学 · 周二班", secondary: "18 位学生 · 陈老师", amount: "RM 220/月", tone: "positive", status: "开课中" },
-      { primary: "小六国文 · 周六班", secondary: "12 位学生 · 林老师", amount: "RM 180/月", tone: "warning", status: "招生中" },
-      { primary: "SPM 冲刺班", secondary: "8 位学生 · 黄老师", amount: "RM 400/月", tone: "neutral", status: "筹备中" },
+      {
+        primary: "中三数学 · 周二班",
+        secondary: "18 位学生 · 陈老师",
+        amount: "RM 220/月",
+        tone: "positive",
+        status: "开课中",
+      },
+      {
+        primary: "小六国文 · 周六班",
+        secondary: "12 位学生 · 林老师",
+        amount: "RM 180/月",
+        tone: "warning",
+        status: "招生中",
+      },
+      {
+        primary: "SPM 冲刺班",
+        secondary: "8 位学生 · 黄老师",
+        amount: "RM 400/月",
+        tone: "neutral",
+        status: "筹备中",
+      },
     ],
     customers: [
-      { primary: "陈家长 (陈小明)", secondary: "中三 · 数学", tone: "positive", status: "已缴费" },
-      { primary: "Puan Aminah (Aiman)", secondary: "小六 · 国文", tone: "warning", status: "待缴费" },
-      { primary: "李家长 (李美琪)", secondary: "SPM 冲刺", tone: "neutral", status: "新报名" },
+      {
+        primary: "陈家长 (陈小明)",
+        secondary: "中三 · 数学",
+        tone: "positive",
+        status: "已缴费",
+      },
+      {
+        primary: "Puan Aminah (Aiman)",
+        secondary: "小六 · 国文",
+        tone: "warning",
+        status: "待缴费",
+      },
+      {
+        primary: "李家长 (李美琪)",
+        secondary: "SPM 冲刺",
+        tone: "neutral",
+        status: "新报名",
+      },
     ],
     heroLabel: "本月学费收入",
     heroValue: "RM 24,600",
@@ -503,14 +783,47 @@ const SAMPLES: Record<string, SampleSet> = {
 
 const GENERIC_SAMPLE: SampleSet = {
   records: [
-    { primary: "记录 001", secondary: "示例内容", amount: "RM 1,200", tone: "positive", status: "已完成" },
-    { primary: "记录 002", secondary: "示例内容", amount: "RM 850", tone: "warning", status: "处理中" },
-    { primary: "记录 003", secondary: "示例内容", amount: "RM 3,400", tone: "neutral", status: "待处理" },
+    {
+      primary: "记录 001",
+      secondary: "示例内容",
+      amount: "RM 1,200",
+      tone: "positive",
+      status: "已完成",
+    },
+    {
+      primary: "记录 002",
+      secondary: "示例内容",
+      amount: "RM 850",
+      tone: "warning",
+      status: "处理中",
+    },
+    {
+      primary: "记录 003",
+      secondary: "示例内容",
+      amount: "RM 3,400",
+      tone: "neutral",
+      status: "待处理",
+    },
   ],
   customers: [
-    { primary: "客户 A", secondary: "示例联络方式", tone: "positive", status: "活跃" },
-    { primary: "客户 B", secondary: "示例联络方式", tone: "warning", status: "待跟进" },
-    { primary: "客户 C", secondary: "示例联络方式", tone: "neutral", status: "新客户" },
+    {
+      primary: "客户 A",
+      secondary: "示例联络方式",
+      tone: "positive",
+      status: "活跃",
+    },
+    {
+      primary: "客户 B",
+      secondary: "示例联络方式",
+      tone: "warning",
+      status: "待跟进",
+    },
+    {
+      primary: "客户 C",
+      secondary: "示例联络方式",
+      tone: "neutral",
+      status: "新客户",
+    },
   ],
   heroLabel: "本月总额",
   heroValue: "RM 5,450",
@@ -590,17 +903,36 @@ function railNav(
 function recordTable(
   id: string,
   caption: string,
-  labels: { primary: string; secondary?: string; amount?: string; status?: string },
-  rows: { primary: string; secondary?: string; amount?: string; tone: StatusTone; status: string }[],
+  labels: {
+    primary: string;
+    secondary?: string;
+    amount?: string;
+    status?: string;
+  },
+  rows: {
+    primary: string;
+    secondary?: string;
+    amount?: string;
+    tone: StatusTone;
+    status: string;
+  }[],
 ): PuckNode {
   // Columns are an array, not four props -- see lib/portal/table-model.ts. The
   // built-in keys are deliberately the old prop names, so a generated table and
   // an upgraded saved one are the same object and nothing downstream has to
   // know which it is looking at.
-  const columns: TableColumn[] = [{ key: "primary", label: labels.primary, kind: "text" }];
-  if (labels.secondary) columns.push({ key: "secondary", label: labels.secondary, kind: "detail" });
-  if (labels.amount) columns.push({ key: "amount", label: labels.amount, kind: "amount" });
-  columns.push({ key: "status", label: labels.status ?? "状态", kind: "status" });
+  const columns: TableColumn[] = [
+    { key: "primary", label: labels.primary, kind: "text" },
+  ];
+  if (labels.secondary)
+    columns.push({ key: "secondary", label: labels.secondary, kind: "detail" });
+  if (labels.amount)
+    columns.push({ key: "amount", label: labels.amount, kind: "amount" });
+  columns.push({
+    key: "status",
+    label: labels.status ?? "状态",
+    kind: "status",
+  });
 
   return node("RecordTable", id, {
     gridId: id,
@@ -631,7 +963,12 @@ function filterChips(id: string, kind: string, values: string[]): PuckNode {
   });
 }
 
-function workflowStrip(id: string, title: string, stages: string[], attentionAt = 0): PuckNode {
+function workflowStrip(
+  id: string,
+  title: string,
+  stages: string[],
+  attentionAt = 0,
+): PuckNode {
   return node("WorkflowStrip", id, {
     title,
     stages: stages.map((label, i) => ({
@@ -648,7 +985,12 @@ function workflowStrip(id: string, title: string, stages: string[], attentionAt 
 // The five page templates
 // ---------------------------------------------------------------------------
 
-function buildDashboard(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
+function buildDashboard(
+  ctx: BusinessContext,
+  name: string,
+  locale: string,
+  pages: PageRef[],
+): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const labels = labelsFromPages(industry.labels, pages);
@@ -672,7 +1014,10 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
       // Every supporting stat links back into the system rather than nowhere:
       // the number a business owner reacts to ("RM 31,200 已做未收") should be
       // the thing that takes them to the page where they act on it.
-      stats: sample.heroStats.map((st) => ({ ...st, href: `/${locale}/portal/payments` })),
+      stats: sample.heroStats.map((st) => ({
+        ...st,
+        href: `/${locale}/portal/payments`,
+      })),
       spark: sample.heroSpark.map((n) => ({ n })),
       sparkLabel: "最近六期",
     }),
@@ -680,7 +1025,12 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
     recordTable(
       "dashboard-recent",
       `最近的${labels.order}`,
-      { primary: labels.order, secondary: labels.customer, amount: "金额", status: "状态" },
+      {
+        primary: labels.order,
+        secondary: labels.customer,
+        amount: "金额",
+        status: "状态",
+      },
       sample.records,
     ),
   ];
@@ -722,11 +1072,21 @@ function buildDashboard(ctx: BusinessContext, name: string, locale: string, page
  * Facebook page, and the thing that wins is answering "what do you do, and how
  * do I ask you" above the fold.
  */
-function buildWebsite(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
+/**
+ * Everything the 官网 templates need, resolved from one business.
+ *
+ * Exported because two callers need the same values: buildWebsite, which picks
+ * the trade's opening template, and the editor's own page, which applies a
+ * DIFFERENT template when the customer chooses one in 模板库. Deriving it twice
+ * would be two places for the pitch to drift.
+ */
+export function landingContentFor(
+  ctx: BusinessContext,
+  pages: PageRef[],
+): LandingContent {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const labels = labelsFromPages(industry.labels, pages);
   const brand = displayBusinessName(ctx);
-  const stages = workflowStages(ctx);
 
   // Which of THEIR pages an enquiry becomes. The sell-side page the business
   // actually has, in the business's own word for it -- a salon's enquiry is a
@@ -737,7 +1097,10 @@ function buildWebsite(ctx: BusinessContext, name: string, locale: string, pages:
     pages.some((p) => p.key === k),
   );
   const landsIn = sellSide
-    ? pageLabel(pages.find((p) => p.key === sellSide) ?? { key: sellSide }, labels)
+    ? pageLabel(
+        pages.find((p) => p.key === sellSide) ?? { key: sellSide },
+        labels,
+      )
     : labels.customer;
 
   // NOT ctx.analysis.summary, and this is the one thing about this page that
@@ -756,52 +1119,56 @@ function buildWebsite(ctx: BusinessContext, name: string, locale: string, pages:
     TRADE_PROMISE[industry.slug] ?? TRADE_PROMISE.other
   }`;
 
-  return [
-    node("SiteHero", "website-hero", {
-      // The trade name only, no slash: several of them are stored as
-      // 「装修/承包商」 and an eyebrow reading 「马来西亚 · 装修/承包商」 reads
-      // like a database field, not like a business.
-      eyebrow: `马来西亚 · ${industry.name_zh.split("/")[0].trim()}`,
-      headline: brand,
-      sub: pitch,
-      primaryLabel: "WhatsApp 问价",
-      primaryHref: "#",
-      secondaryLabel: "看我们做过什么",
-      secondaryHref: "#",
-      proof: [
-        { value: "10 年", label: "做这一行" },
-        { value: "24 小时", label: "内回复" },
-        { value: "巴生谷", label: "服务范围" },
-      ],
-    }),
-    node("InfoRows", "website-services", {
-      heading: "我们做什么",
-      framed: true,
-      rows: services.map((r) => ({ label: r.label, value: r.value, icon: r.icon })),
-    }),
-    workflowStrip("website-flow", "找我们之后会怎么走", stages),
-    node("EnquiryForm", "website-form", {
-      heading: `留个电话，我们回你`,
-      blurb: "填三格就好。我们看到会直接 WhatsApp 你，不会打推销电话。",
-      fields: [
-        { label: "怎么称呼", placeholder: "陈先生", kind: "text" },
-        { label: "电话 / WhatsApp", placeholder: "012-345 6789", kind: "phone" },
-        { label: "想做什么", placeholder: "三房翻新，想问大概多少", kind: "long" },
-      ],
-      submitLabel: "送出",
-      landsIn,
-      note: "通常一天内回。",
-    }),
-    node("InfoRows", "website-contact", {
-      heading: "怎么找我们",
-      framed: true,
-      rows: [
-        { label: "WhatsApp", value: "012-345 6789", icon: "phone" },
-        { label: "地址", value: "Taman Desa, Kuala Lumpur", icon: "place" },
-        { label: "营业时间", value: "星期一至六 9am–6pm", icon: "time" },
-      ],
-    }),
-  ];
+  return {
+    brand,
+    // The trade name only, no slash: several of them are stored as
+    // 「装修/承包商」 and an eyebrow reading 「马来西亚 · 装修/承包商」 reads like
+    // a database field, not like a business.
+    eyebrow: `马来西亚 · ${industry.name_zh.split("/")[0].trim()}`,
+    pitch,
+    services,
+    stages: workflowStages(ctx),
+    landsIn,
+    proof: [
+      { value: "10 年", label: "做这一行" },
+      { value: "24 小时", label: "内回复" },
+      { value: "巴生谷", label: "服务范围" },
+    ],
+    contact: [
+      { label: "WhatsApp", value: "012-345 6789", icon: "phone" },
+      { label: "地址", value: "Taman Desa, Kuala Lumpur", icon: "place" },
+      { label: "营业时间", value: "星期一至六 9am–6pm", icon: "time" },
+    ],
+  };
+}
+
+/**
+ * 官网 — the only page in the system whose reader is a stranger.
+ *
+ * WHY IT IS PART OF THE SYSTEM AND NOT A SEPARATE PRODUCT: the founder's own
+ * next step was 「官网表格 → 系统出单」, and his own reaction to the phrase was
+ * 「这个我一直不懂是什么来的」 -- which is the correct reaction, because nothing
+ * on either side of that arrow shows it. Building the website as one more page
+ * of the same system, in the same editor, in the same eight registers, is what
+ * makes the arrow visible.
+ *
+ * NO RAIL, and that is the whole difference in the layout: nobody navigates a
+ * small business's website with a sidebar of internal modules. buildPageLayout
+ * skips the shell for this one shape.
+ *
+ * WHICH SHAPE: the trade picks the opening template -- a salon opens on 预约
+ * 时段, a shop on 现货落单 -- and the customer can swap to any of the six in
+ * 模板库 afterwards. Keyed on how the business CLOSES A SALE rather than on its
+ * industry; see landing-templates.ts for why that is the right axis.
+ */
+function buildWebsite(
+  ctx: BusinessContext,
+  name: string,
+  locale: string,
+  pages: PageRef[],
+): PuckNode[] {
+  const industry = ctx.industry ?? FALLBACK_INDUSTRY;
+  return landingTemplateFor(industry.slug).build(landingContentFor(ctx, pages));
 }
 
 /** One line of what the business promises, written the way a Malaysian SME
@@ -823,7 +1190,10 @@ const TRADE_PROMISE: Record<string, string> = {
  *  scanning a page decides from nouns ("三房翻新"), not from adjectives
  *  ("专业可靠"). Every one of these is meant to be rewritten by the owner --
  *  the point is that the page is never blank and never generic-agency. */
-const SERVICE_HINTS: Record<string, { label: string; value: string; icon: string }[]> = {
+const SERVICE_HINTS: Record<
+  string,
+  { label: string; value: string; icon: string }[]
+> = {
   renovation: [
     { label: "住宅翻新", value: "三房、店屋、旧屋翻新", icon: "work" },
     { label: "厨房 / 浴室", value: "拆旧、防水、瓷砖、橱柜", icon: "work" },
@@ -866,7 +1236,12 @@ const SERVICE_HINTS: Record<string, { label: string; value: string; icon: string
   ],
 };
 
-function buildCustomers(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
+function buildCustomers(
+  ctx: BusinessContext,
+  name: string,
+  locale: string,
+  pages: PageRef[],
+): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const labels = labelsFromPages(industry.labels, pages);
@@ -886,13 +1261,22 @@ function buildCustomers(ctx: BusinessContext, name: string, locale: string, page
     recordTable(
       "customers-list",
       `${labels.customer}列表`,
-      { primary: labels.customer, secondary: "联络方式 / 备注", status: "状态" },
+      {
+        primary: labels.customer,
+        secondary: "联络方式 / 备注",
+        status: "状态",
+      },
       sample.customers,
     ),
   ];
 }
 
-function buildQuotations(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
+function buildQuotations(
+  ctx: BusinessContext,
+  name: string,
+  locale: string,
+  pages: PageRef[],
+): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const labels = labelsFromPages(industry.labels, pages);
@@ -913,13 +1297,23 @@ function buildQuotations(ctx: BusinessContext, name: string, locale: string, pag
     recordTable(
       "quotations-list",
       "报价单列表",
-      { primary: "报价内容", secondary: labels.customer, amount: "报价金额", status: "状态" },
+      {
+        primary: "报价内容",
+        secondary: labels.customer,
+        amount: "报价金额",
+        status: "状态",
+      },
       sample.records,
     ),
   ];
 }
 
-function buildProjects(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
+function buildProjects(
+  ctx: BusinessContext,
+  name: string,
+  locale: string,
+  pages: PageRef[],
+): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const labels = labelsFromPages(industry.labels, pages);
@@ -936,7 +1330,12 @@ function buildProjects(ctx: BusinessContext, name: string, locale: string, pages
         ? `重点跟进：${ctx.analysis.bottlenecks[0].title}`
         : `每一个${labels.order}走到哪一步，一眼看完。`,
     }),
-    workflowStrip("projects-workflow", `${labels.order}流程`, workflowStages(ctx), 1),
+    workflowStrip(
+      "projects-workflow",
+      `${labels.order}流程`,
+      workflowStages(ctx),
+      1,
+    ),
     node("Listbox", "projects-staff", {
       name: "assigned-staff",
       placeholder: `负责${labels.staff}`,
@@ -949,13 +1348,23 @@ function buildProjects(ctx: BusinessContext, name: string, locale: string, pages
     recordTable(
       "projects-list",
       `${labels.order}列表`,
-      { primary: labels.order, secondary: labels.customer, amount: "金额", status: "进度" },
+      {
+        primary: labels.order,
+        secondary: labels.customer,
+        amount: "金额",
+        status: "进度",
+      },
       sample.records,
     ),
   ];
 }
 
-function buildPayments(ctx: BusinessContext, name: string, locale: string, pages: PageRef[]): PuckNode[] {
+function buildPayments(
+  ctx: BusinessContext,
+  name: string,
+  locale: string,
+  pages: PageRef[],
+): PuckNode[] {
   const industry = ctx.industry ?? FALLBACK_INDUSTRY;
   const brand = displayBusinessName(ctx);
   const labels = labelsFromPages(industry.labels, pages);
@@ -980,14 +1389,22 @@ function buildPayments(ctx: BusinessContext, name: string, locale: string, pages
       // Every supporting stat links back into the system rather than nowhere:
       // the number a business owner reacts to ("RM 31,200 已做未收") should be
       // the thing that takes them to the page where they act on it.
-      stats: sample.heroStats.map((st) => ({ ...st, href: `/${locale}/portal/payments` })),
+      stats: sample.heroStats.map((st) => ({
+        ...st,
+        href: `/${locale}/portal/payments`,
+      })),
       spark: sample.heroSpark.map((n) => ({ n })),
       sparkLabel: "最近六期",
     }),
     recordTable(
       "payments-list",
       "收款明细",
-      { primary: "收款项目", secondary: labels.customer, amount: "金额", status: "状态" },
+      {
+        primary: "收款项目",
+        secondary: labels.customer,
+        amount: "金额",
+        status: "状态",
+      },
       sample.records,
     ),
     // Receipt upload is the single most-requested thing from Malaysian SMEs
@@ -1040,7 +1457,12 @@ function buildBookings(
     recordTable(
       "bookings-list",
       "今日预约",
-      { primary: "服务项目", secondary: `时间 / ${labels.staff}`, amount: "价钱", status: "状态" },
+      {
+        primary: "服务项目",
+        secondary: `时间 / ${labels.staff}`,
+        amount: "价钱",
+        status: "状态",
+      },
       sample.records,
     ),
   ];
@@ -1070,12 +1492,22 @@ function buildOrders(
         ? `重点跟进：${ctx.analysis.bottlenecks[0].title}`
         : `每一张${labels.order}处理到哪一步，不用问人。`,
     }),
-    workflowStrip("orders-workflow", `${labels.order}流程`, workflowStages(ctx), 1),
+    workflowStrip(
+      "orders-workflow",
+      `${labels.order}流程`,
+      workflowStages(ctx),
+      1,
+    ),
     filterChips("orders-filters", "状态", ["处理中"]),
     recordTable(
       "orders-list",
       `${labels.order}明细`,
-      { primary: labels.order, secondary: labels.customer, amount: "金额", status: "状态" },
+      {
+        primary: labels.order,
+        secondary: labels.customer,
+        amount: "金额",
+        status: "状态",
+      },
       sample.records,
     ),
   ];
@@ -1105,19 +1537,40 @@ type ModuleCopy = {
   title: string;
   subtitle: string;
   /** Column headings, in this module's own nouns. */
-  columns: { primary: string; secondary?: string; amount?: string; status?: string };
+  columns: {
+    primary: string;
+    secondary?: string;
+    amount?: string;
+    status?: string;
+  };
   /** Three rows. Sample data is what makes a first screen legible -- an empty
    *  table teaches a customer nothing about what the page is for. */
-  rows: { primary: string; secondary?: string; amount?: string; tone: StatusTone; status: string }[];
+  rows: {
+    primary: string;
+    secondary?: string;
+    amount?: string;
+    tone: StatusTone;
+    status: string;
+  }[];
   /** Ledger / report / reconcile shapes only. */
   hero?: {
     label: string;
     value: string;
     suffix: string;
-    stats: { label: string; value: string; tone?: "normal" | "caution" | "warn"; sub?: string }[];
+    stats: {
+      label: string;
+      value: string;
+      tone?: "normal" | "caution" | "warn";
+      sub?: string;
+    }[];
   };
   /** Report / leaderboard shapes only. Six periods, oldest first. */
-  trend?: { title: string; caption: string; unit: string; points: { label: string; value: number }[] };
+  trend?: {
+    title: string;
+    caption: string;
+    unit: string;
+    points: { label: string; value: number }[];
+  };
   /** Directory / catalog shapes: what the search box says. */
   searchPlaceholder?: string;
   /** Catalog / leaderboard / pipeline shapes: the filter already applied. */
@@ -1145,12 +1598,36 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
     case "reconciliation":
       return {
         title: "月度对账",
-        subtitle: "上游给的总数，对系统里逐笔加起来的总数。差多少，差在哪一笔。",
-        columns: { primary: "对账项目", secondary: "参考号", amount: "金额", status: "结果" },
+        subtitle:
+          "上游给的总数，对系统里逐笔加起来的总数。差多少，差在哪一笔。",
+        columns: {
+          primary: "对账项目",
+          secondary: "参考号",
+          amount: "金额",
+          status: "结果",
+        },
         rows: [
-          { primary: "系统逐笔总额", secondary: "本月 128 笔", amount: "RM 246,800", tone: "positive", status: "已核对" },
-          { primary: "上游对账单总额", secondary: "对方出的数字", amount: "RM 246,800", tone: "positive", status: "对得上" },
-          { primary: "待查差异", secondary: "REF-2026-0817", amount: "RM 0", tone: "neutral", status: "无差异" },
+          {
+            primary: "系统逐笔总额",
+            secondary: "本月 128 笔",
+            amount: "RM 246,800",
+            tone: "positive",
+            status: "已核对",
+          },
+          {
+            primary: "上游对账单总额",
+            secondary: "对方出的数字",
+            amount: "RM 246,800",
+            tone: "positive",
+            status: "对得上",
+          },
+          {
+            primary: "待查差异",
+            secondary: "REF-2026-0817",
+            amount: "RM 0",
+            tone: "neutral",
+            status: "无差异",
+          },
         ],
         hero: {
           label: "本月差异",
@@ -1164,7 +1641,8 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
         },
         variance: {
           title: "这个月对得上",
-          description: "系统总额和上游对账单一致。有差异的时候，这里会列出要查的那几笔参考号。",
+          description:
+            "系统总额和上游对账单一致。有差异的时候，这里会列出要查的那几笔参考号。",
         },
       };
 
@@ -1172,11 +1650,34 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
       return {
         title: "佣金结算",
         subtitle: "这个月该拿多少，系统按每一笔自动算出来，不用再开 Excel。",
-        columns: { primary: "结算对象", secondary: "计算方式", amount: "佣金", status: "状态" },
+        columns: {
+          primary: "结算对象",
+          secondary: "计算方式",
+          amount: "佣金",
+          status: "状态",
+        },
         rows: [
-          { primary: `${labels.customer} A`, secondary: "成交额 × 2%", amount: "RM 1,240", tone: "positive", status: "已结" },
-          { primary: `${labels.customer} B`, secondary: "成交额 × 2%", amount: "RM 860", tone: "warning", status: "待结" },
-          { primary: `${labels.customer} C`, secondary: "成交额 × 2%", amount: "RM 415", tone: "neutral", status: "计算中" },
+          {
+            primary: `${labels.customer} A`,
+            secondary: "成交额 × 2%",
+            amount: "RM 1,240",
+            tone: "positive",
+            status: "已结",
+          },
+          {
+            primary: `${labels.customer} B`,
+            secondary: "成交额 × 2%",
+            amount: "RM 860",
+            tone: "warning",
+            status: "待结",
+          },
+          {
+            primary: `${labels.customer} C`,
+            secondary: "成交额 × 2%",
+            amount: "RM 415",
+            tone: "neutral",
+            status: "计算中",
+          },
         ],
         hero: {
           label: "本月佣金",
@@ -1194,11 +1695,34 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
       return {
         title: "开销记录",
         subtitle: "钱花去哪里了，每一笔附单据。跟收款对起来才知道真正赚多少。",
-        columns: { primary: "开销项目", secondary: "付给谁", amount: "金额", status: "状态" },
+        columns: {
+          primary: "开销项目",
+          secondary: "付给谁",
+          amount: "金额",
+          status: "状态",
+        },
         rows: [
-          { primary: "材料采购", secondary: "建材行", amount: "RM 8,400", tone: "positive", status: "已付" },
-          { primary: `${labels.staff}工资`, secondary: "本月", amount: "RM 12,000", tone: "positive", status: "已付" },
-          { primary: "车油 / 过路费", secondary: "待报销", amount: "RM 640", tone: "warning", status: "待付" },
+          {
+            primary: "材料采购",
+            secondary: "建材行",
+            amount: "RM 8,400",
+            tone: "positive",
+            status: "已付",
+          },
+          {
+            primary: `${labels.staff}工资`,
+            secondary: "本月",
+            amount: "RM 12,000",
+            tone: "positive",
+            status: "已付",
+          },
+          {
+            primary: "车油 / 过路费",
+            secondary: "待报销",
+            amount: "RM 640",
+            tone: "warning",
+            status: "待付",
+          },
         ],
         hero: {
           label: "本月开销",
@@ -1210,18 +1734,44 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
             { label: "没单据", value: "1 笔", tone: "warn" },
           ],
         },
-        upload: { label: "单据 / 发票", hint: "拍张照片或上传 PDF，这笔开销就有凭证了" },
+        upload: {
+          label: "单据 / 发票",
+          hint: "拍张照片或上传 PDF，这笔开销就有凭证了",
+        },
       };
 
     case "reports":
       return {
         title: "月度报表",
         subtitle: "按月看趋势。要给会计、给银行、给自己看，都从这里导出。",
-        columns: { primary: "月份", secondary: "笔数", amount: "营业额", status: "对比上月" },
+        columns: {
+          primary: "月份",
+          secondary: "笔数",
+          amount: "营业额",
+          status: "对比上月",
+        },
         rows: [
-          { primary: "2026 年 8 月", secondary: "128 笔", amount: "RM 71,300", tone: "positive", status: "增长" },
-          { primary: "2026 年 7 月", secondary: "104 笔", amount: "RM 58,000", tone: "warning", status: "下滑" },
-          { primary: "2026 年 6 月", secondary: "117 笔", amount: "RM 63,000", tone: "positive", status: "增长" },
+          {
+            primary: "2026 年 8 月",
+            secondary: "128 笔",
+            amount: "RM 71,300",
+            tone: "positive",
+            status: "增长",
+          },
+          {
+            primary: "2026 年 7 月",
+            secondary: "104 笔",
+            amount: "RM 58,000",
+            tone: "warning",
+            status: "下滑",
+          },
+          {
+            primary: "2026 年 6 月",
+            secondary: "117 笔",
+            amount: "RM 63,000",
+            tone: "positive",
+            status: "增长",
+          },
         ],
         hero: {
           label: "本月营业额",
@@ -1251,12 +1801,36 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
     case "ranking":
       return {
         title: "活跃度排名",
-        subtitle: "谁最努力、谁在退步。按金额、频率、最近有没有动，自动排等级。",
-        columns: { primary: labels.customer, secondary: "最近一次", amount: "近 90 天", status: "等级" },
+        subtitle:
+          "谁最努力、谁在退步。按金额、频率、最近有没有动，自动排等级。",
+        columns: {
+          primary: labels.customer,
+          secondary: "最近一次",
+          amount: "近 90 天",
+          status: "等级",
+        },
         rows: [
-          { primary: `${labels.customer} A`, secondary: "2 天前", amount: "RM 48,500", tone: "positive", status: "顶级" },
-          { primary: `${labels.customer} B`, secondary: "9 天前", amount: "RM 22,800", tone: "positive", status: "活跃" },
-          { primary: `${labels.customer} C`, secondary: "41 天前", amount: "RM 3,200", tone: "warning", status: "退步中" },
+          {
+            primary: `${labels.customer} A`,
+            secondary: "2 天前",
+            amount: "RM 48,500",
+            tone: "positive",
+            status: "顶级",
+          },
+          {
+            primary: `${labels.customer} B`,
+            secondary: "9 天前",
+            amount: "RM 22,800",
+            tone: "positive",
+            status: "活跃",
+          },
+          {
+            primary: `${labels.customer} C`,
+            secondary: "41 天前",
+            amount: "RM 3,200",
+            tone: "warning",
+            status: "退步中",
+          },
         ],
         filter: { kind: "时间窗口", value: "近 90 天" },
         trend: {
@@ -1278,11 +1852,34 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
       return {
         title: "供应商",
         subtitle: "向谁进货、账期多久、这家还欠着多少。",
-        columns: { primary: "供应商", secondary: "联络方式 / 账期", amount: "未付", status: "状态" },
+        columns: {
+          primary: "供应商",
+          secondary: "联络方式 / 账期",
+          amount: "未付",
+          status: "状态",
+        },
         rows: [
-          { primary: "建材行 A", secondary: "016-2xx xxxx · 30 天", amount: "RM 8,400", tone: "warning", status: "有欠款" },
-          { primary: "五金店 B", secondary: "012-3xx xxxx · 现金", amount: "RM 0", tone: "positive", status: "已结清" },
-          { primary: "云石厂 C", secondary: "018-8xx xxxx · 60 天", amount: "RM 15,200", tone: "neutral", status: "未到期" },
+          {
+            primary: "建材行 A",
+            secondary: "016-2xx xxxx · 30 天",
+            amount: "RM 8,400",
+            tone: "warning",
+            status: "有欠款",
+          },
+          {
+            primary: "五金店 B",
+            secondary: "012-3xx xxxx · 现金",
+            amount: "RM 0",
+            tone: "positive",
+            status: "已结清",
+          },
+          {
+            primary: "云石厂 C",
+            secondary: "018-8xx xxxx · 60 天",
+            amount: "RM 15,200",
+            tone: "neutral",
+            status: "未到期",
+          },
         ],
         searchPlaceholder: "搜索供应商",
       };
@@ -1291,11 +1888,34 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
       return {
         title: labels.staff,
         subtitle: "谁在做什么、这个月做了多少、工资怎么算。",
-        columns: { primary: labels.staff, secondary: "负责", amount: "本月业绩", status: "状态" },
+        columns: {
+          primary: labels.staff,
+          secondary: "负责",
+          amount: "本月业绩",
+          status: "状态",
+        },
         rows: [
-          { primary: `${labels.staff} A`, secondary: "3 单在做", amount: "RM 48,500", tone: "positive", status: "在职" },
-          { primary: `${labels.staff} B`, secondary: "1 单在做", amount: "RM 22,800", tone: "positive", status: "在职" },
-          { primary: `${labels.staff} C`, secondary: "休假中", amount: "RM 0", tone: "neutral", status: "请假" },
+          {
+            primary: `${labels.staff} A`,
+            secondary: "3 单在做",
+            amount: "RM 48,500",
+            tone: "positive",
+            status: "在职",
+          },
+          {
+            primary: `${labels.staff} B`,
+            secondary: "1 单在做",
+            amount: "RM 22,800",
+            tone: "positive",
+            status: "在职",
+          },
+          {
+            primary: `${labels.staff} C`,
+            secondary: "休假中",
+            amount: "RM 0",
+            tone: "neutral",
+            status: "请假",
+          },
         ],
         searchPlaceholder: `搜索${labels.staff}`,
       };
@@ -1304,11 +1924,34 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
       return {
         title: "库存",
         subtitle: "还有多少货、什么快没了、什么压太久没动。",
-        columns: { primary: "货品", secondary: "位置 / 单位", amount: "数量", status: "状态" },
+        columns: {
+          primary: "货品",
+          secondary: "位置 / 单位",
+          amount: "数量",
+          status: "状态",
+        },
         rows: [
-          { primary: "货品 A", secondary: "仓库一 · 箱", amount: "128", tone: "positive", status: "充足" },
-          { primary: "货品 B", secondary: "仓库一 · 件", amount: "9", tone: "warning", status: "快没了" },
-          { primary: "货品 C", secondary: "仓库二 · 箱", amount: "340", tone: "neutral", status: "压太久" },
+          {
+            primary: "货品 A",
+            secondary: "仓库一 · 箱",
+            amount: "128",
+            tone: "positive",
+            status: "充足",
+          },
+          {
+            primary: "货品 B",
+            secondary: "仓库一 · 件",
+            amount: "9",
+            tone: "warning",
+            status: "快没了",
+          },
+          {
+            primary: "货品 C",
+            secondary: "仓库二 · 箱",
+            amount: "340",
+            tone: "neutral",
+            status: "压太久",
+          },
         ],
         searchPlaceholder: "搜索货品名称或编号",
         filter: { kind: "状态", value: "快没了" },
@@ -1318,11 +1961,34 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
       return {
         title: "任务",
         subtitle: "谁负责什么、什么时候要交、做完没有。",
-        columns: { primary: "任务", secondary: `负责${labels.staff}`, amount: "限期", status: "状态" },
+        columns: {
+          primary: "任务",
+          secondary: `负责${labels.staff}`,
+          amount: "限期",
+          status: "状态",
+        },
         rows: [
-          { primary: "上门量尺寸", secondary: `${labels.staff} A`, amount: "8月22", tone: "warning", status: "今天" },
-          { primary: "出报价单", secondary: `${labels.staff} B`, amount: "8月24", tone: "neutral", status: "待办" },
-          { primary: "订材料", secondary: `${labels.staff} A`, amount: "8月19", tone: "positive", status: "已完成" },
+          {
+            primary: "上门量尺寸",
+            secondary: `${labels.staff} A`,
+            amount: "8月22",
+            tone: "warning",
+            status: "今天",
+          },
+          {
+            primary: "出报价单",
+            secondary: `${labels.staff} B`,
+            amount: "8月24",
+            tone: "neutral",
+            status: "待办",
+          },
+          {
+            primary: "订材料",
+            secondary: `${labels.staff} A`,
+            amount: "8月19",
+            tone: "positive",
+            status: "已完成",
+          },
         ],
         filter: { kind: "状态", value: "待办" },
       };
@@ -1335,11 +2001,34 @@ function moduleCopy(key: PageId, labels: IndustryLabels): ModuleCopy {
       return {
         title: "新模块",
         subtitle: "下面的名称和栏位全部可以改成你要的。",
-        columns: { primary: "项目", secondary: "说明", amount: "金额", status: "状态" },
+        columns: {
+          primary: "项目",
+          secondary: "说明",
+          amount: "金额",
+          status: "状态",
+        },
         rows: [
-          { primary: "记录 001", secondary: "示例内容", amount: "RM 0", tone: "positive", status: "已完成" },
-          { primary: "记录 002", secondary: "示例内容", amount: "RM 0", tone: "warning", status: "处理中" },
-          { primary: "记录 003", secondary: "示例内容", amount: "RM 0", tone: "neutral", status: "待处理" },
+          {
+            primary: "记录 001",
+            secondary: "示例内容",
+            amount: "RM 0",
+            tone: "positive",
+            status: "已完成",
+          },
+          {
+            primary: "记录 002",
+            secondary: "示例内容",
+            amount: "RM 0",
+            tone: "warning",
+            status: "处理中",
+          },
+          {
+            primary: "记录 003",
+            secondary: "示例内容",
+            amount: "RM 0",
+            tone: "neutral",
+            status: "待处理",
+          },
         ],
       };
   }
@@ -1353,7 +2042,10 @@ function heroNode(id: string, locale: string, copy: ModuleCopy): PuckNode[] {
       value: copy.hero.value,
       href: `/${locale}/portal/dashboard`,
       chgSuffix: copy.hero.suffix,
-      stats: copy.hero.stats.map((st) => ({ ...st, href: `/${locale}/portal/dashboard` })),
+      stats: copy.hero.stats.map((st) => ({
+        ...st,
+        href: `/${locale}/portal/dashboard`,
+      })),
       // No sparkline: HeroCard draws an all-zero series as nothing, and these
       // modules carry their trend in a real chart below rather than as a shape
       // behind the number.
@@ -1414,7 +2106,10 @@ function buildFromShape(
           name: `${pageKey}-search`,
           value: "",
           placeholder: copy.searchPlaceholder,
-          options: copy.rows.map((r, i) => ({ label: r.primary, value: `row-${i}` })),
+          options: copy.rows.map((r, i) => ({
+            label: r.primary,
+            value: `row-${i}`,
+          })),
         }),
       ]
     : [];
@@ -1431,7 +2126,9 @@ function buildFromShape(
     }),
   ];
 
-  const table = [recordTable(`${pageKey}-table`, title, copy.columns, copy.rows)];
+  const table = [
+    recordTable(`${pageKey}-table`, title, copy.columns, copy.rows),
+  ];
 
   const upload = copy.upload
     ? [
@@ -1454,13 +2151,24 @@ function buildFromShape(
     case "pipeline":
       return [
         ...head,
-        workflowStrip(`${pageKey}-workflow`, `${title}流程`, workflowStages(ctx), 1),
+        workflowStrip(
+          `${pageKey}-workflow`,
+          `${title}流程`,
+          workflowStages(ctx),
+          1,
+        ),
         ...filter,
         ...table,
       ];
 
     case "ledger":
-      return [...head, ...month, ...heroNode(pageKey, locale, copy), ...table, ...upload];
+      return [
+        ...head,
+        ...month,
+        ...heroNode(pageKey, locale, copy),
+        ...table,
+        ...upload,
+      ];
 
     case "report":
       return [
@@ -1510,7 +2218,12 @@ function buildFromShape(
  */
 const BUILDERS: Record<
   string,
-  (ctx: BusinessContext, name: string, locale: string, pages: PageRef[]) => PuckNode[]
+  (
+    ctx: BusinessContext,
+    name: string,
+    locale: string,
+    pages: PageRef[],
+  ) => PuckNode[]
 > = {
   dashboard: buildDashboard,
   customers: buildCustomers,
@@ -1571,9 +2284,27 @@ function buildCustomPage(
       title,
       { primary: "项目", secondary: "说明", amount: "金额", status: "状态" },
       [
-        { primary: "记录 001", secondary: "示例内容", amount: "RM 0", tone: "positive", status: "已完成" },
-        { primary: "记录 002", secondary: "示例内容", amount: "RM 0", tone: "warning", status: "处理中" },
-        { primary: "记录 003", secondary: "示例内容", amount: "RM 0", tone: "neutral", status: "待处理" },
+        {
+          primary: "记录 001",
+          secondary: "示例内容",
+          amount: "RM 0",
+          tone: "positive",
+          status: "已完成",
+        },
+        {
+          primary: "记录 002",
+          secondary: "示例内容",
+          amount: "RM 0",
+          tone: "warning",
+          status: "处理中",
+        },
+        {
+          primary: "记录 003",
+          secondary: "示例内容",
+          amount: "RM 0",
+          tone: "neutral",
+          status: "待处理",
+        },
       ],
     ),
   ];
@@ -1598,8 +2329,12 @@ function buildCustomPage(
  * page names, not nouns other pages refer to, so a rename there changes that
  * page's heading and nothing else -- which is right.
  */
-function labelsFromPages(base: IndustryLabels, refs: PageRef[]): IndustryLabels {
-  const titleOf = (key: string) => refs.find((p) => p.key === key)?.title?.trim() || undefined;
+function labelsFromPages(
+  base: IndustryLabels,
+  refs: PageRef[],
+): IndustryLabels {
+  const titleOf = (key: string) =>
+    refs.find((p) => p.key === key)?.title?.trim() || undefined;
   return {
     customer: titleOf("customers") ?? base.customer,
     staff: titleOf("staff") ?? base.staff,
@@ -1620,7 +2355,10 @@ export function buildPageLayout(
 ): Data {
   const refs: PageRef[] =
     pages ?? pagesForIndustry(ctx.industry?.slug).map((key) => ({ key }));
-  const labels = labelsFromPages((ctx.industry ?? FALLBACK_INDUSTRY).labels, refs);
+  const labels = labelsFromPages(
+    (ctx.industry ?? FALLBACK_INDUSTRY).labels,
+    refs,
+  );
   const self = refs.find((p) => p.key === pageKey);
 
   // Three ways a page gets built, in order of how much is known about it:

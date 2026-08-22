@@ -108,6 +108,7 @@ const getNarrowServer = () => false;
 export function PortalEditor({
   pageKey,
   seededComponent,
+  seededTemplate,
   projectId,
   accountEmail,
   paid,
@@ -121,6 +122,8 @@ export function PortalEditor({
   pageKey: string;
   /** The component name that ?add= just inserted, or null. */
   seededComponent?: string | null;
+  /** The 官网版面 that ?tpl= just applied, or null. */
+  seededTemplate?: string | null;
   projectId: string;
   /** accounts.email, threaded down from page.tsx's getSessionUser() -- the
    * only identifying information in either WhatsApp handoff below. Flipping
@@ -293,6 +296,18 @@ export function PortalEditor({
     // to say so — otherwise the editor claims "已保存" over a page that has one.
     setDirty(true);
   }, [seededComponent]);
+
+  // Same for a 官网版面 arriving from 模板库. Left in the URL it would re-apply
+  // the template on every reload, which would quietly discard whatever the
+  // customer changed after choosing it.
+  useEffect(() => {
+    if (!seededTemplate) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("tpl")) return;
+    url.searchParams.delete("tpl");
+    window.history.replaceState(null, "", url.pathname + url.search);
+    setDirty(true);
+  }, [seededTemplate]);
 
   // Free-tier customers have no server-side save (save_project_page's
   // payment-required check, supabase/migrations/20260818120000), so for

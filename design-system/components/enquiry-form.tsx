@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react"
+import { useId, type ReactNode } from "react";
 
 /**
  * 官网表格 → 系统出单. The one component in this product where the outside and
@@ -37,39 +37,69 @@ export function EnquiryForm({
   submitLabel,
   landsIn,
   note,
+  look = "card",
 }: {
-  heading: ReactNode
-  blurb?: ReactNode
+  heading: ReactNode;
+  blurb?: ReactNode;
   /** What the business asks for. Kept short on purpose — every extra field on
    *  a landing-page form costs replies. */
-  fields?: { label: string; placeholder?: string; kind?: "text" | "phone" | "long" }[]
-  submitLabel?: string
+  fields?: {
+    label: string;
+    placeholder?: string;
+    kind?: "text" | "phone" | "long";
+  }[];
+  submitLabel?: string;
   /** The page a submission becomes a record in, in the customer's own word for
    *  it: 报价单, 预约, 订单. This is the arrow. */
-  landsIn?: string
+  landsIn?: string;
   /** One line under the button, e.g. opening hours or how fast they reply. */
-  note?: ReactNode
+  note?: ReactNode;
+  /**
+   *   card   boxed, the way a form is on most business sites.
+   *   plain  no box: the form sits on the page itself, which reads quieter and
+   *          suits a page that is already one card after another.
+   *   split  the ask on the left, the fields on the right. The most
+   *          website-looking of the three, and the one that stops a long page
+   *          ending in a tall stack of inputs.
+   */
+  look?: "card" | "plain" | "split";
 }) {
-  const base = useId()
-  const rows = fields && fields.length > 0 ? fields : DEFAULT_FIELDS
+  const base = useId();
+  const rows = fields && fields.length > 0 ? fields : DEFAULT_FIELDS;
+  const split = look === "split";
+  const boxed = look === "card";
 
   return (
     <section className="[padding-block:var(--pad-card-lg)] [padding-inline:var(--pad-card-lg)]">
-      <div className="[background-color:var(--color-ink-900)] [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [padding:var(--pad-card-lg)]">
-        <h2 className="[color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
-          {heading}
-        </h2>
-        {blurb && (
-          <p className="mt-2 max-w-[52ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-            {blurb}
-          </p>
-        )}
+      <div
+        className={[
+          boxed
+            ? "[background-color:var(--color-ink-900)] [border-radius:var(--radius-lg)] [border:var(--border-card-width)_solid_var(--color-ink-800)] [padding:var(--pad-card-lg)]"
+            : "",
+          split ? "grid items-start gap-x-10 gap-y-6 md:grid-cols-2" : "",
+        ].join(" ")}
+      >
+        {/* `contents` when not split, so the heading and blurb stay direct
+            children of a plain block and nothing about their spacing changes.
+            In split mode this becomes the left column. */}
+        <div className={split ? "" : "contents"}>
+          <h2 className="[color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+            {heading}
+          </h2>
+          {blurb && (
+            <p className="mt-2 max-w-[52ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+              {blurb}
+            </p>
+          )}
+        </div>
 
         {/* Capped at a readable measure rather than the page being capped --
             the contract's layout rule: cap fields, not pages. */}
-        <div className="mt-6 flex max-w-[34rem] flex-col [gap:var(--gap-stack)]">
+        <div
+          className={`${split ? "" : "mt-6 "}flex max-w-[34rem] flex-col [gap:var(--gap-stack)]`}
+        >
           {rows.map((f, i) => {
-            const id = `${base}-${i}`
+            const id = `${base}-${i}`;
             return (
               <div key={f.label}>
                 <label
@@ -95,7 +125,7 @@ export function EnquiryForm({
                   />
                 )}
               </div>
-            )
+            );
           })}
 
           <div className="mt-1 flex flex-wrap items-center [gap:var(--gap-inline)]">
@@ -116,7 +146,9 @@ export function EnquiryForm({
         {/* THE ARROW. Not decoration and not an aside: this line is the only
             place on the page where the product's own claim is visible. */}
         {landsIn && (
-          <p className="mt-6 flex flex-wrap items-center [gap:var(--gap-inline)] [border-top:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [padding-top:var(--pad-card)]">
+          <p
+            className={`${split ? "md:col-span-2 " : ""}mt-6 flex flex-wrap items-center [gap:var(--gap-inline)] [border-top:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [padding-top:var(--pad-card)]`}
+          >
             <span
               aria-hidden
               className="[background-color:var(--color-primary-soft)] [border-radius:var(--radius-pill)] [color:var(--color-primary)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [padding-block:2px] [padding-inline:8px]"
@@ -134,13 +166,21 @@ export function EnquiryForm({
         )}
       </div>
     </section>
-  )
+  );
 }
 
 /** Name, phone, what they want. Three fields, because a fourth costs replies
  *  and a business that needs more asks for it in the chat that follows. */
 const DEFAULT_FIELDS = [
   { label: "怎么称呼", placeholder: "陈先生", kind: "text" as const },
-  { label: "电话 / WhatsApp", placeholder: "012-345 6789", kind: "phone" as const },
-  { label: "想做什么", placeholder: "三房翻新，想问大概多少", kind: "long" as const },
-]
+  {
+    label: "电话 / WhatsApp",
+    placeholder: "012-345 6789",
+    kind: "phone" as const,
+  },
+  {
+    label: "想做什么",
+    placeholder: "三房翻新，想问大概多少",
+    kind: "long" as const,
+  },
+];
