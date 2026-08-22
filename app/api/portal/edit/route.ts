@@ -66,6 +66,17 @@ Look (款式):
 - When the owner asks for a look ("表格太挤了", "改成隔行底色"), set_variant is
   the operation, not add/remove.
 
+官网版段 (SiteBlock):
+- A block listed as \`官网版段\` is a whole page section taken from a library:
+  a priced panel, an FAQ list, a wall of reviews. Its words are NOT props, so
+  set_text does nothing to it. set_copy is the operation.
+- set_copy takes a \`path\` into that section's own words, like
+  \`tiers.0.name\` or \`faqs.2.a\`, and one string \`value\`. The listing for
+  each 官网版段 shows the paths it has.
+- One path per operation. To rewrite a whole price list, send several.
+- A path the section does not have is dropped, so do not guess: only use paths
+  that appear in that block's listing.
+
 Record tables:
 - Each table lists its columns as \`key:"label"(type)\`. Use the KEY to target a
   column; it is an internal identifier the owner never sees.
@@ -278,9 +289,14 @@ const EDIT_JSON_SCHEMA = {
                 "set_table_column",
                 "set_workflow",
                 "set_variant",
+                "set_copy",
               ],
             },
             target_id: { type: ["string", "null"] },
+            // set_copy only. A dot path inside a pulled section's own copy
+            // object; not enum-constrained because the keys belong to whichever
+            // section was pulled. A wrong path is dropped with a reason.
+            path: { type: ["string", "null"] },
             field: { type: ["string", "null"], enum: [...EDITABLE_TEXT_FIELDS, null] },
             value: { type: ["string", "null"] },
             component: { type: ["string", "null"], enum: [...REGISTERED_COMPONENTS, null] },

@@ -272,7 +272,22 @@ import B_timeline_2 from "@/components/blocks/timeline-2";
  *  The four whole-page templates contribute their sections here too, keyed
  *  "<template>/<file>" -- so SiteBlock renders one without needing to know
  *  whether it came from the section catalogue or from a page. */
-export const BLOCKS: Record<string, React.ComponentType> = {
+/** A pulled section, and the one prop it takes.
+ *
+ *  `copy` is the object lifted out of each section's own module-level consts
+ *  on 2026-08-23 -- see the generated block at the top of any of them. Omitted,
+ *  the section renders exactly the words it shipped with; supplied, it renders
+ *  the customer's. That prop is the whole reason the editor's AI can reach
+ *  these sections at all. */
+export type BlockComponent = React.ComponentType<{
+  copy?: Record<string, unknown>;
+  // One pulled section (a cookie banner) takes `children` instead of copy --
+  // it has nothing of its own to say. Optional here so the map stays one type
+  // rather than a union nobody can index.
+  children?: React.ReactNode;
+}>;
+
+export const BLOCKS: Record<string, BlockComponent> = {
   ...TEMPLATE_BLOCKS,
   "about-1": B_about_1,
   "about-2": B_about_2,
@@ -767,4 +782,288 @@ export const BLOCK_CATEGORIES: Record<string, string[]> = {
   "team": ["team-1", "team-2", "team-3"],
   "testimonials": ["testimonials-1", "testimonials-2", "testimonials-3", "testimonials-4"],
   "timeline": ["timeline-1", "timeline-2"],
+};
+
+import { copy as C_about_1 } from "@/components/blocks/about-1";
+import { copy as C_about_2 } from "@/components/blocks/about-2";
+import { copy as C_activity_1 } from "@/components/blocks/activity-1";
+import { copy as C_activity_4 } from "@/components/blocks/activity-4";
+import { copy as C_announcement_2 } from "@/components/blocks/announcement-2";
+import { copy as C_app_shell_1 } from "@/components/blocks/app-shell-1";
+import { copy as C_app_shell_2 } from "@/components/blocks/app-shell-2";
+import { copy as C_article_1 } from "@/components/blocks/article-1";
+import { copy as C_article_2 } from "@/components/blocks/article-2";
+import { copy as C_article_4 } from "@/components/blocks/article-4";
+import { copy as C_article_5 } from "@/components/blocks/article-5";
+import { copy as C_auth_2 } from "@/components/blocks/auth-2";
+import { copy as C_auth_3 } from "@/components/blocks/auth-3";
+import { copy as C_bento_3 } from "@/components/blocks/bento-3";
+import { copy as C_billing_1 } from "@/components/blocks/billing-1";
+import { copy as C_billing_2 } from "@/components/blocks/billing-2";
+import { copy as C_billing_3 } from "@/components/blocks/billing-3";
+import { copy as C_billing_4 } from "@/components/blocks/billing-4";
+import { copy as C_billing_5 } from "@/components/blocks/billing-5";
+import { copy as C_blog_1 } from "@/components/blocks/blog-1";
+import { copy as C_blog_2 } from "@/components/blocks/blog-2";
+import { copy as C_blog_3 } from "@/components/blocks/blog-3";
+import { copy as C_blog_4 } from "@/components/blocks/blog-4";
+import { copy as C_blog_5 } from "@/components/blocks/blog-5";
+import { copy as C_calendar_1 } from "@/components/blocks/calendar-1";
+import { copy as C_calendar_2 } from "@/components/blocks/calendar-2";
+import { copy as C_calendar_3 } from "@/components/blocks/calendar-3";
+import { copy as C_careers_1 } from "@/components/blocks/careers-1";
+import { copy as C_careers_2 } from "@/components/blocks/careers-2";
+import { copy as C_careers_3 } from "@/components/blocks/careers-3";
+import { copy as C_careers_4 } from "@/components/blocks/careers-4";
+import { copy as C_changelog_1 } from "@/components/blocks/changelog-1";
+import { copy as C_changelog_2 } from "@/components/blocks/changelog-2";
+import { copy as C_changelog_4 } from "@/components/blocks/changelog-4";
+import { copy as C_changelog_5 } from "@/components/blocks/changelog-5";
+import { copy as C_charts_1 } from "@/components/blocks/charts-1";
+import { copy as C_charts_2 } from "@/components/blocks/charts-2";
+import { copy as C_charts_3 } from "@/components/blocks/charts-3";
+import { copy as C_charts_4 } from "@/components/blocks/charts-4";
+import { copy as C_charts_5 } from "@/components/blocks/charts-5";
+import { copy as C_coming_soon_1 } from "@/components/blocks/coming-soon-1";
+import { copy as C_coming_soon_3 } from "@/components/blocks/coming-soon-3";
+import { copy as C_coming_soon_5 } from "@/components/blocks/coming-soon-5";
+import { copy as C_command_palette_3 } from "@/components/blocks/command-palette-3";
+import { copy as C_command_palette_4 } from "@/components/blocks/command-palette-4";
+import { copy as C_comparison_1 } from "@/components/blocks/comparison-1";
+import { copy as C_comparison_2 } from "@/components/blocks/comparison-2";
+import { copy as C_comparison_3 } from "@/components/blocks/comparison-3";
+import { copy as C_comparison_4 } from "@/components/blocks/comparison-4";
+import { copy as C_contact_1 } from "@/components/blocks/contact-1";
+import { copy as C_contact_2 } from "@/components/blocks/contact-2";
+import { copy as C_contact_3 } from "@/components/blocks/contact-3";
+import { copy as C_cookie_consent_5 } from "@/components/blocks/cookie-consent-5";
+import { copy as C_dashboard_1 } from "@/components/blocks/dashboard-1";
+import { copy as C_dashboard_2 } from "@/components/blocks/dashboard-2";
+import { copy as C_dashboard_3 } from "@/components/blocks/dashboard-3";
+import { copy as C_dashboard_4 } from "@/components/blocks/dashboard-4";
+import { copy as C_error_2 } from "@/components/blocks/error-2";
+import { copy as C_faqs_1 } from "@/components/blocks/faqs-1";
+import { copy as C_faqs_2 } from "@/components/blocks/faqs-2";
+import { copy as C_faqs_3 } from "@/components/blocks/faqs-3";
+import { copy as C_faqs_4 } from "@/components/blocks/faqs-4";
+import { copy as C_features_3 } from "@/components/blocks/features-3";
+import { copy as C_features_5 } from "@/components/blocks/features-5";
+import { copy as C_file_upload_4 } from "@/components/blocks/file-upload-4";
+import { copy as C_footer_1 } from "@/components/blocks/footer-1";
+import { copy as C_footer_2 } from "@/components/blocks/footer-2";
+import { copy as C_footer_3 } from "@/components/blocks/footer-3";
+import { copy as C_footer_5 } from "@/components/blocks/footer-5";
+import { copy as C_gallery_1 } from "@/components/blocks/gallery-1";
+import { copy as C_gallery_2 } from "@/components/blocks/gallery-2";
+import { copy as C_gallery_3 } from "@/components/blocks/gallery-3";
+import { copy as C_gallery_4 } from "@/components/blocks/gallery-4";
+import { copy as C_header_1 } from "@/components/blocks/header-1";
+import { copy as C_header_14 } from "@/components/blocks/header-14";
+import { copy as C_header_2 } from "@/components/blocks/header-2";
+import { copy as C_header_3 } from "@/components/blocks/header-3";
+import { copy as C_header_4 } from "@/components/blocks/header-4";
+import { copy as C_hero_1 } from "@/components/blocks/hero-1";
+import { copy as C_hero_2 } from "@/components/blocks/hero-2";
+import { copy as C_hero_6 } from "@/components/blocks/hero-6";
+import { copy as C_integrations_3 } from "@/components/blocks/integrations-3";
+import { copy as C_kanban_1 } from "@/components/blocks/kanban-1";
+import { copy as C_kanban_2 } from "@/components/blocks/kanban-2";
+import { copy as C_kanban_3 } from "@/components/blocks/kanban-3";
+import { copy as C_kanban_4 } from "@/components/blocks/kanban-4";
+import { copy as C_logo_cloud_2 } from "@/components/blocks/logo-cloud-2";
+import { copy as C_logo_cloud_5 } from "@/components/blocks/logo-cloud-5";
+import { copy as C_newsletter_5 } from "@/components/blocks/newsletter-5";
+import { copy as C_notifications_3 } from "@/components/blocks/notifications-3";
+import { copy as C_notifications_4 } from "@/components/blocks/notifications-4";
+import { copy as C_onboarding_6 } from "@/components/blocks/onboarding-6";
+import { copy as C_page_header_4 } from "@/components/blocks/page-header-4";
+import { copy as C_page_header_6 } from "@/components/blocks/page-header-6";
+import { copy as C_pricing_1 } from "@/components/blocks/pricing-1";
+import { copy as C_pricing_2 } from "@/components/blocks/pricing-2";
+import { copy as C_pricing_3 } from "@/components/blocks/pricing-3";
+import { copy as C_pricing_4 } from "@/components/blocks/pricing-4";
+import { copy as C_pricing_5 } from "@/components/blocks/pricing-5";
+import { copy as C_profile_1 } from "@/components/blocks/profile-1";
+import { copy as C_profile_2 } from "@/components/blocks/profile-2";
+import { copy as C_profile_3 } from "@/components/blocks/profile-3";
+import { copy as C_roadmap_1 } from "@/components/blocks/roadmap-1";
+import { copy as C_roadmap_2 } from "@/components/blocks/roadmap-2";
+import { copy as C_roadmap_3 } from "@/components/blocks/roadmap-3";
+import { copy as C_roadmap_4 } from "@/components/blocks/roadmap-4";
+import { copy as C_search_1 } from "@/components/blocks/search-1";
+import { copy as C_search_2 } from "@/components/blocks/search-2";
+import { copy as C_search_4 } from "@/components/blocks/search-4";
+import { copy as C_settings_1 } from "@/components/blocks/settings-1";
+import { copy as C_settings_2 } from "@/components/blocks/settings-2";
+import { copy as C_settings_3 } from "@/components/blocks/settings-3";
+import { copy as C_sidebar_1 } from "@/components/blocks/sidebar-1";
+import { copy as C_sidebar_2 } from "@/components/blocks/sidebar-2";
+import { copy as C_stats_1 } from "@/components/blocks/stats-1";
+import { copy as C_stats_2 } from "@/components/blocks/stats-2";
+import { copy as C_stats_5 } from "@/components/blocks/stats-5";
+import { copy as C_status_1 } from "@/components/blocks/status-1";
+import { copy as C_status_3 } from "@/components/blocks/status-3";
+import { copy as C_steps_1 } from "@/components/blocks/steps-1";
+import { copy as C_steps_2 } from "@/components/blocks/steps-2";
+import { copy as C_steps_3 } from "@/components/blocks/steps-3";
+import { copy as C_table_1 } from "@/components/blocks/table-1";
+import { copy as C_table_2 } from "@/components/blocks/table-2";
+import { copy as C_table_3 } from "@/components/blocks/table-3";
+import { copy as C_team_1 } from "@/components/blocks/team-1";
+import { copy as C_team_2 } from "@/components/blocks/team-2";
+import { copy as C_team_3 } from "@/components/blocks/team-3";
+import { copy as C_testimonials_1 } from "@/components/blocks/testimonials-1";
+import { copy as C_testimonials_2 } from "@/components/blocks/testimonials-2";
+import { copy as C_testimonials_3 } from "@/components/blocks/testimonials-3";
+import { copy as C_testimonials_4 } from "@/components/blocks/testimonials-4";
+import { copy as C_timeline_2 } from "@/components/blocks/timeline-2";
+
+/**
+ * WHAT EACH SECTION SAYS BY DEFAULT, KEYED BY SECTION NAME.
+ *
+ * The shape the editor's `set_copy` validates a path against. It walks THESE
+ * defaults rather than whatever is already saved, so a path the section does
+ * not have changes nothing instead of adding a key nothing renders -- which is
+ * the whole guard, since the field whitelist that protects `set_text` cannot
+ * apply here (the keys belong to whichever section was pulled).
+ *
+ * 133 of the 216 sections are in here. The rest keep their words inline in
+ * JSX rather than in a module-level const, and are a later batch.
+ *
+ * GENERATED.
+ */
+export const BLOCK_COPY: Record<string, Record<string, unknown>> = {
+  "about-1": C_about_1,
+  "about-2": C_about_2,
+  "activity-1": C_activity_1,
+  "activity-4": C_activity_4,
+  "announcement-2": C_announcement_2,
+  "app-shell-1": C_app_shell_1,
+  "app-shell-2": C_app_shell_2,
+  "article-1": C_article_1,
+  "article-2": C_article_2,
+  "article-4": C_article_4,
+  "article-5": C_article_5,
+  "auth-2": C_auth_2,
+  "auth-3": C_auth_3,
+  "bento-3": C_bento_3,
+  "billing-1": C_billing_1,
+  "billing-2": C_billing_2,
+  "billing-3": C_billing_3,
+  "billing-4": C_billing_4,
+  "billing-5": C_billing_5,
+  "blog-1": C_blog_1,
+  "blog-2": C_blog_2,
+  "blog-3": C_blog_3,
+  "blog-4": C_blog_4,
+  "blog-5": C_blog_5,
+  "calendar-1": C_calendar_1,
+  "calendar-2": C_calendar_2,
+  "calendar-3": C_calendar_3,
+  "careers-1": C_careers_1,
+  "careers-2": C_careers_2,
+  "careers-3": C_careers_3,
+  "careers-4": C_careers_4,
+  "changelog-1": C_changelog_1,
+  "changelog-2": C_changelog_2,
+  "changelog-4": C_changelog_4,
+  "changelog-5": C_changelog_5,
+  "charts-1": C_charts_1,
+  "charts-2": C_charts_2,
+  "charts-3": C_charts_3,
+  "charts-4": C_charts_4,
+  "charts-5": C_charts_5,
+  "coming-soon-1": C_coming_soon_1,
+  "coming-soon-3": C_coming_soon_3,
+  "coming-soon-5": C_coming_soon_5,
+  "command-palette-3": C_command_palette_3,
+  "command-palette-4": C_command_palette_4,
+  "comparison-1": C_comparison_1,
+  "comparison-2": C_comparison_2,
+  "comparison-3": C_comparison_3,
+  "comparison-4": C_comparison_4,
+  "contact-1": C_contact_1,
+  "contact-2": C_contact_2,
+  "contact-3": C_contact_3,
+  "cookie-consent-5": C_cookie_consent_5,
+  "dashboard-1": C_dashboard_1,
+  "dashboard-2": C_dashboard_2,
+  "dashboard-3": C_dashboard_3,
+  "dashboard-4": C_dashboard_4,
+  "error-2": C_error_2,
+  "faqs-1": C_faqs_1,
+  "faqs-2": C_faqs_2,
+  "faqs-3": C_faqs_3,
+  "faqs-4": C_faqs_4,
+  "features-3": C_features_3,
+  "features-5": C_features_5,
+  "file-upload-4": C_file_upload_4,
+  "footer-1": C_footer_1,
+  "footer-2": C_footer_2,
+  "footer-3": C_footer_3,
+  "footer-5": C_footer_5,
+  "gallery-1": C_gallery_1,
+  "gallery-2": C_gallery_2,
+  "gallery-3": C_gallery_3,
+  "gallery-4": C_gallery_4,
+  "header-1": C_header_1,
+  "header-14": C_header_14,
+  "header-2": C_header_2,
+  "header-3": C_header_3,
+  "header-4": C_header_4,
+  "hero-1": C_hero_1,
+  "hero-2": C_hero_2,
+  "hero-6": C_hero_6,
+  "integrations-3": C_integrations_3,
+  "kanban-1": C_kanban_1,
+  "kanban-2": C_kanban_2,
+  "kanban-3": C_kanban_3,
+  "kanban-4": C_kanban_4,
+  "logo-cloud-2": C_logo_cloud_2,
+  "logo-cloud-5": C_logo_cloud_5,
+  "newsletter-5": C_newsletter_5,
+  "notifications-3": C_notifications_3,
+  "notifications-4": C_notifications_4,
+  "onboarding-6": C_onboarding_6,
+  "page-header-4": C_page_header_4,
+  "page-header-6": C_page_header_6,
+  "pricing-1": C_pricing_1,
+  "pricing-2": C_pricing_2,
+  "pricing-3": C_pricing_3,
+  "pricing-4": C_pricing_4,
+  "pricing-5": C_pricing_5,
+  "profile-1": C_profile_1,
+  "profile-2": C_profile_2,
+  "profile-3": C_profile_3,
+  "roadmap-1": C_roadmap_1,
+  "roadmap-2": C_roadmap_2,
+  "roadmap-3": C_roadmap_3,
+  "roadmap-4": C_roadmap_4,
+  "search-1": C_search_1,
+  "search-2": C_search_2,
+  "search-4": C_search_4,
+  "settings-1": C_settings_1,
+  "settings-2": C_settings_2,
+  "settings-3": C_settings_3,
+  "sidebar-1": C_sidebar_1,
+  "sidebar-2": C_sidebar_2,
+  "stats-1": C_stats_1,
+  "stats-2": C_stats_2,
+  "stats-5": C_stats_5,
+  "status-1": C_status_1,
+  "status-3": C_status_3,
+  "steps-1": C_steps_1,
+  "steps-2": C_steps_2,
+  "steps-3": C_steps_3,
+  "table-1": C_table_1,
+  "table-2": C_table_2,
+  "table-3": C_table_3,
+  "team-1": C_team_1,
+  "team-2": C_team_2,
+  "team-3": C_team_3,
+  "testimonials-1": C_testimonials_1,
+  "testimonials-2": C_testimonials_2,
+  "testimonials-3": C_testimonials_3,
+  "testimonials-4": C_testimonials_4,
+  "timeline-2": C_timeline_2,
 };

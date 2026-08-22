@@ -86,7 +86,28 @@ const STATUS_VARIANT: Record<
   Failed: "destructive",
 }
 
-export default function BillingBlock() {
+/**
+ * EVERY WORD THIS SECTION SHOWS, IN ONE OBJECT.
+ *
+ * The section was pulled from the @7Ovr registry with its own copy baked in as
+ * module-level consts. That made it un-editable: the editor's AI writes into
+ * PROPS (`set_text` in lib/portal/layout-ops.ts), and a block whose words live
+ * in its source has no prop to write into. Selecting one and pressing 改文字
+ * opened a panel with a single dropdown -- change the whole section, or nothing.
+ *
+ * Lifting the consts here changes nothing on screen: the component falls back
+ * to exactly these values when no `copy` is passed. What it adds is a surface
+ * the AI can reach, so a customer can say "put my own prices in" and get their
+ * own prices rather than Acme's.
+ *
+ * GENERATED. Re-run the opener rather than editing this block by hand.
+ */
+export const copy = { INVOICES, STATUS_VARIANT }
+export type Copy = typeof copy
+
+
+export default function BillingBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
+  const { INVOICES, STATUS_VARIANT } = { ...copy, ...override }
   const [selected, setSelected] = React.useState<Record<string, boolean>>({})
 
   const selectedIds = INVOICES.filter((i) => selected[i.id]).map((i) => i.id)

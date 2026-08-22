@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { VARIANTS, activeVariant } from "@/design-system/editor/variants";
+import { BLOCK_COPY } from "@/components/blocks";
 import {
   COLUMN_KINDS,
   KIND_LABELS,
@@ -148,6 +149,30 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     target_id: z.string().min(1),
     variant_id: z.string().min(1),
   }),
+  // ── THE WORDS INSIDE A PULLED SECTION ─────────────────────────────────────
+  //
+  // `set_text` writes ONE named prop from a fixed whitelist, which is right for
+  // this repo's own blocks: 官网大标题 has `headline`, `sub`, `primaryLabel`.
+  // The 216 sections pulled from @7Ovr do not work that way. Their words are an
+  // object -- `tiers`, `faqs`, `stats` -- lifted out of the file on 2026-08-23
+  // so that they COULD be reached at all. Before that, selecting one and
+  // pressing 改文字 opened a panel with a single dropdown and no text field
+  // anywhere: the AI was working, the block had nothing to write into.
+  //
+  // A PATH rather than a field name, because that is the shape of the thing:
+  // `tiers.0.name`, `faqs.2.a`. The field whitelist that guards `set_text`
+  // cannot apply -- the keys belong to whichever section was pulled -- so the
+  // guard here is different and stricter: it only ever writes into `copy`, it
+  // only ever writes a STRING, and it refuses to create a key that the
+  // section's own defaults do not already have. A hallucinated path changes
+  // nothing instead of adding a field nothing renders.
+  z.object({
+    op: z.literal("set_copy"),
+    target_id: z.string().min(1),
+    /** Dot path inside the section's own copy object: `tiers.0.name`. */
+    path: z.string().min(1),
+    value: z.string().min(1),
+  }),
 ]);
 
 export type LayoutOp = z.infer<typeof layoutOpSchema>;
@@ -240,6 +265,40 @@ export function describeLayout(layout: PuckLayout): string {
       }
 
       let extra = "";
+      // A pulled section's words are an object, not props, so the model has no
+      // way to name one unless the paths are listed. Without this it can be
+      // told to change the price list and have nothing to aim at -- the same
+      // failure `columns=[...]` exists to prevent for tables.
+      //
+      // Only STRING leaves, because only strings are writable, and capped
+      // because a section with a forty-row comparison table would otherwise
+      // fill the whole prompt on its own.
+      if (n.type === "SiteBlock") {
+        const block = typeof n.props?.block === "string" ? n.props.block : null;
+        const defaults = block ? BLOCK_COPY[block] : undefined;
+        if (defaults) {
+          const paths: string[] = [];
+          const walk = (value: unknown, prefix: string) => {
+            if (paths.length >= 40) return;
+            if (typeof value === "string") {
+              paths.push(`${prefix}="${value.length > 48 ? value.slice(0, 48) + "…" : value}"`);
+              return;
+            }
+            if (Array.isArray(value)) {
+              value.forEach((v, i) => walk(v, `${prefix}${prefix ? "." : ""}${i}`));
+              return;
+            }
+            if (value && typeof value === "object") {
+              for (const [k, v] of Object.entries(value)) {
+                walk(v, `${prefix}${prefix ? "." : ""}${k}`);
+              }
+            }
+          };
+          // What is on the page: the customer's overrides over the defaults.
+          walk({ ...defaults, ...((n.props?.copy ?? {}) as object) }, "");
+          extra = ` section=${block} words=[${paths.join(" ")}]`;
+        }
+      }
       if (n.type === "RecordTable") {
         const cols = normalizeTable(n.props ?? {})
           .columns.map((c) => `${c.key}:"${c.label}"(${KIND_LABELS[c.kind]})`)
@@ -502,6 +561,52 @@ export function applyLayoutOps(
         // variant only ever sets APPEARANCE props, an AI edit here can never
         // delete something the customer typed.
         Object.assign(node.props, variant.props);
+        applied++;
+        break;
+      }
+
+      case "set_copy": {
+        const node = findNode(layout.content, op.target_id);
+        if (!node) {
+          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          break;
+        }
+        if (node.type !== "SiteBlock") {
+          skipped.push({ op: op.op, reason: `${node.type} 不是官网版段` });
+          break;
+        }
+        const block = typeof node.props.block === "string" ? node.props.block : null;
+        const defaults = block ? BLOCK_COPY[block] : undefined;
+        if (!defaults) {
+          skipped.push({ op: op.op, reason: `这一段没有可改的字` });
+          break;
+        }
+        // Walk the DEFAULTS, not the override: the shape a section actually
+        // has is the shape it shipped with, and refusing to invent a key is
+        // what keeps a wrong path harmless.
+        const parts = op.path.split(".");
+        let shape: unknown = defaults;
+        for (const part of parts) {
+          if (shape === null || typeof shape !== "object") { shape = undefined; break; }
+          shape = (shape as Record<string, unknown>)[part];
+        }
+        if (typeof shape !== "string") {
+          skipped.push({ op: op.op, reason: `这一段没有「${op.path}」这个位置` });
+          break;
+        }
+        // Copy-on-write down the path so a section that has never been edited
+        // does not start sharing its defaults object with the saved layout.
+        const existing = (node.props.copy ?? {}) as Record<string, unknown>;
+        const merged: Record<string, unknown> = { ...defaults, ...existing };
+        let cursor: Record<string, unknown> = merged;
+        for (let i = 0; i < parts.length - 1; i++) {
+          const key = parts[i];
+          const next = cursor[key];
+          cursor[key] = Array.isArray(next) ? [...next] : { ...(next as object) };
+          cursor = cursor[key] as Record<string, unknown>;
+        }
+        cursor[parts[parts.length - 1]] = op.value;
+        node.props.copy = merged;
         applied++;
         break;
       }

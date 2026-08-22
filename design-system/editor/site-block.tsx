@@ -258,7 +258,17 @@ export const SITE_BLOCK_OPTIONS: { label: string; value: string }[] = [
   { label: "页首 · Sticky Header With Sign In", value: "header-3" },
 ];
 
-export function SiteBlock({ block }: { block?: string }) {
+export function SiteBlock({
+  block,
+  copy,
+}: {
+  block?: string;
+  /** The customer's own words for this section, written by the editor's AI
+   *  through `set_copy`. Absent, the section shows the words it was pulled
+   *  with -- which is the right default for a gallery and the wrong one for a
+   *  page somebody publishes. */
+  copy?: Record<string, unknown>;
+}) {
   const Block = block ? BLOCKS[block] : undefined;
   if (!Block) {
     // A layout can outlive the block it names — a section pulled today can be
@@ -271,7 +281,7 @@ export function SiteBlock({ block }: { block?: string }) {
       </div>
     );
   }
-  return <Block />;
+  return <Block copy={copy} />;
 }
 
 /** What the gallery and the sheet title print above a chosen section. */

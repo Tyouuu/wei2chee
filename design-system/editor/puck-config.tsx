@@ -184,7 +184,13 @@ type Components = {
   /** One of the 164 sections pulled from the @7ovr registry. Template side of
    *  the line the founder drew: the SECTION is chosen, its words are not
    *  edited. See design-system/editor/site-block.tsx. */
-  SiteBlock: { block?: string };
+  SiteBlock: {
+    block?: string;
+    /** The customer's own words for the chosen section. Written by the AI
+     *  through `set_copy`, not by a field -- a shop owner editing a nested
+     *  JSON object is not an interface. */
+    copy?: Record<string, unknown>;
+  };
   // --- 官网 (shape: "landing") ------------------------------------------
   // The only two components in the catalogue whose reader is a STRANGER
   // rather than the owner. See site-hero.tsx and enquiry-form.tsx.
@@ -1267,7 +1273,7 @@ export const puckConfig: Config<Components> = {
       // the template half of 「模板是不可以改的 风格是可以改的」 -- what a
       // customer changes here is WHICH section, and what changes how it looks
       // is the register, which it reads through tokens like everything else.
-      render: ({ block }) => <SiteBlock block={block} />,
+      render: ({ block, copy }) => <SiteBlock block={block} copy={copy} />,
     },
     SiteHero: {
       label: "官网大标题",

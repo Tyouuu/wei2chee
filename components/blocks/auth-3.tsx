@@ -42,6 +42,26 @@ const PLANS = [
   },
 ]
 
+/**
+ * EVERY WORD THIS SECTION SHOWS, IN ONE OBJECT.
+ *
+ * The section was pulled from the @7Ovr registry with its own copy baked in as
+ * module-level consts. That made it un-editable: the editor's AI writes into
+ * PROPS (`set_text` in lib/portal/layout-ops.ts), and a block whose words live
+ * in its source has no prop to write into. Selecting one and pressing 改文字
+ * opened a panel with a single dropdown -- change the whole section, or nothing.
+ *
+ * Lifting the consts here changes nothing on screen: the component falls back
+ * to exactly these values when no `copy` is passed. What it adds is a surface
+ * the AI can reach, so a customer can say "put my own prices in" and get their
+ * own prices rather than Acme's.
+ *
+ * GENERATED. Re-run the opener rather than editing this block by hand.
+ */
+export const copy = { PLANS }
+export type Copy = typeof copy
+
+
 const signUpSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -55,7 +75,8 @@ const signUpSchema = z.object({
     .regex(/[0-9]/, "Include at least one number"),
 })
 
-export default function AuthBlock() {
+export default function AuthBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
+  const { PLANS } = { ...copy, ...override }
   const [agreed, setAgreed] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 

@@ -67,7 +67,7 @@ import T_dashboard_table from "@/components/blocks/templates/dashboard/table";
 
 /** Section component by "<template>/<file>" key. Merged into BLOCKS so
  *  SiteBlock can render one without knowing where it came from. */
-export const TEMPLATE_BLOCKS: Record<string, ComponentType> = {
+export const TEMPLATE_BLOCKS: Record<string, ComponentType<{ copy?: Record<string, unknown> }>> = {
   "startup/header": T_startup_header,
   "startup/hero": T_startup_hero,
   "startup/stats": T_startup_stats,

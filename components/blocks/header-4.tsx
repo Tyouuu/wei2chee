@@ -26,6 +26,26 @@ const productLinks = [
 
 const navLinks = ["Docs", "Pricing", "Customers"]
 
+/**
+ * EVERY WORD THIS SECTION SHOWS, IN ONE OBJECT.
+ *
+ * The section was pulled from the @7Ovr registry with its own copy baked in as
+ * module-level consts. That made it un-editable: the editor's AI writes into
+ * PROPS (`set_text` in lib/portal/layout-ops.ts), and a block whose words live
+ * in its source has no prop to write into. Selecting one and pressing 改文字
+ * opened a panel with a single dropdown -- change the whole section, or nothing.
+ *
+ * Lifting the consts here changes nothing on screen: the component falls back
+ * to exactly these values when no `copy` is passed. What it adds is a surface
+ * the AI can reach, so a customer can say "put my own prices in" and get their
+ * own prices rather than Acme's.
+ *
+ * GENERATED. Re-run the opener rather than editing this block by hand.
+ */
+export const copy = { productLinks, navLinks }
+export type Copy = typeof copy
+
+
 function Logo({ className }: { className?: string }) {
   return (
     <svg
@@ -42,7 +62,8 @@ function Logo({ className }: { className?: string }) {
   )
 }
 
-export default function HeaderBlock() {
+export default function HeaderBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
+  const { productLinks, navLinks } = { ...copy, ...override }
   return (
     <header className="sticky top-0 z-50 flex h-16 w-full items-center gap-6 border-b border-border bg-background/85 px-4 text-foreground backdrop-blur sm:px-6">
       <a href="#" className="flex items-center gap-2">

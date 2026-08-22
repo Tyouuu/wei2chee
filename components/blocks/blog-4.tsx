@@ -62,6 +62,26 @@ const posts: Post[] = [
   },
 ]
 
+/**
+ * EVERY WORD THIS SECTION SHOWS, IN ONE OBJECT.
+ *
+ * The section was pulled from the @7Ovr registry with its own copy baked in as
+ * module-level consts. That made it un-editable: the editor's AI writes into
+ * PROPS (`set_text` in lib/portal/layout-ops.ts), and a block whose words live
+ * in its source has no prop to write into. Selecting one and pressing 改文字
+ * opened a panel with a single dropdown -- change the whole section, or nothing.
+ *
+ * Lifting the consts here changes nothing on screen: the component falls back
+ * to exactly these values when no `copy` is passed. What it adds is a surface
+ * the AI can reach, so a customer can say "put my own prices in" and get their
+ * own prices rather than Acme's.
+ *
+ * GENERATED. Re-run the opener rather than editing this block by hand.
+ */
+export const copy = { posts }
+export type Copy = typeof copy
+
+
 function PostRow({ post }: { post: Post }) {
   return (
     <Card className="flex-row gap-0 overflow-hidden py-0 transition-colors hover:ring-foreground/25">
@@ -115,7 +135,8 @@ function PostRow({ post }: { post: Post }) {
   )
 }
 
-export default function BlogBlock() {
+export default function BlogBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
+  const { posts } = { ...copy, ...override }
   return (
     <section className="flex min-h-svh w-full justify-center bg-background px-6 py-16 text-foreground">
       <div className="w-full max-w-3xl">

@@ -170,6 +170,26 @@ const priorityConfig: Record<
   Low: { variant: "outline" },
 }
 
+/**
+ * EVERY WORD THIS SECTION SHOWS, IN ONE OBJECT.
+ *
+ * The section was pulled from the @7Ovr registry with its own copy baked in as
+ * module-level consts. That made it un-editable: the editor's AI writes into
+ * PROPS (`set_text` in lib/portal/layout-ops.ts), and a block whose words live
+ * in its source has no prop to write into. Selecting one and pressing 改文字
+ * opened a panel with a single dropdown -- change the whole section, or nothing.
+ *
+ * Lifting the consts here changes nothing on screen: the component falls back
+ * to exactly these values when no `copy` is passed. What it adds is a surface
+ * the AI can reach, so a customer can say "put my own prices in" and get their
+ * own prices rather than Acme's.
+ *
+ * GENERATED. Re-run the opener rather than editing this block by hand.
+ */
+export const copy = { members, projects, tasks, activity, statusConfig, priorityConfig }
+export type Copy = typeof copy
+
+
 const activityIcon: Record<string, React.ReactNode> = {
   merge: (
     <IconPlaceholder
@@ -299,7 +319,8 @@ const actionCommands = [
   },
 ]
 
-export default function AppShellBlock() {
+export default function AppShellBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
+  const { members, projects, tasks, activity, statusConfig, priorityConfig } = { ...copy, ...override }
   const [commandOpen, setCommandOpen] = React.useState(false)
   const [taskList, setTaskList] = React.useState(tasks)
 
