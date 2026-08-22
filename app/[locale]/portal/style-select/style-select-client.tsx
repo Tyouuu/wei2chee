@@ -4,9 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { StyleColumn, type StyleName } from "@/app/[locale]/style-picker/style-column";
+import {
+  StyleColumn,
+  STYLE_ORDER,
+  type StyleName,
+} from "@/app/[locale]/style-picker/style-column";
 
-const STYLES: StyleName[] = ["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract"];
 
 /**
  * The portal's one-time style-selection step. Reuses the public
@@ -62,7 +65,7 @@ export function StyleSelectClient({ recommended }: { recommended: StyleName | nu
     <>
       {error ? <p className="mb-4 [font-size:var(--text-sm)] text-destructive">{error}</p> : null}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
-        {[...STYLES]
+        {[...STYLE_ORDER]
           .sort((a, b) => Number(b === recommended) - Number(a === recommended))
           .map((style) => (
           <StyleColumn

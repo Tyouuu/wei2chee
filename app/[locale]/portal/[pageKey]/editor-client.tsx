@@ -47,7 +47,10 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 // same-named shadcn/Blueprint marketing-site tokens.
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../chrome.module.css";
-import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import {
+  STYLE_ORDER,
+  type StyleName,
+} from "@/app/[locale]/style-picker/style-column";
 import { scopeClasses } from "@/lib/portal/palettes";
 
 // Same lookup app/[locale]/style-picker/style-column.tsx uses internally
@@ -72,19 +75,6 @@ type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
 /** The order the eight registers are offered in, oldest and plainest first --
  *  the same order /portal/styles uses, so a customer who has seen that page
  *  finds them where they left them. */
-const STYLE_ORDER: StyleName[] = [
-  "ledger",
-  "hearth",
-  "blueprint",
-  "bare",
-  "docket",
-  "large",
-  "stamp",
-  "contract",
-  "swiss",
-  "soft",
-];
-
 /**
  * Is this a phone-sized window?
  *

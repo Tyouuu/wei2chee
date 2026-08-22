@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { BRAND_NAME } from "@/lib/brand";
-import { StyleColumn, type StyleName } from "./style-column";
+import { StyleColumn, STYLE_ORDER } from "./style-column";
 
-const STYLE_ORDER: StyleName[] = ["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract"];
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("stylePicker");

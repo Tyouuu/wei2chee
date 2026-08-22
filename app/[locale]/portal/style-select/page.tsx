@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
 import { StyleSelectClient } from "./style-select-client";
-import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import {
+  STYLE_ORDER,
+  type StyleName,
+} from "@/app/[locale]/style-picker/style-column";
 
 /**
  * The one-time style-selection step a customer sees on first login, before
@@ -35,9 +38,10 @@ export default async function StyleSelectPage() {
   const { data: context } = await supabase.rpc("get_my_business_context");
   const recommendation = (context as { industry?: { style_recommendation?: string } } | null)
     ?.industry?.style_recommendation;
-  const recommended = (["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract", "swiss", "soft"] as const).includes(
-    recommendation as StyleName,
-  )
+  // Validated against THE list rather than a copy of it. A recommendation the
+  // picker cannot render is worse than none: the card would be missing from the
+  // grid it is supposed to be highlighted in.
+  const recommended = STYLE_ORDER.includes(recommendation as StyleName)
     ? (recommendation as StyleName)
     : null;
 

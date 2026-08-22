@@ -8,7 +8,10 @@ import { puckConfig } from "@/design-system/editor/puck-config";
 import { PageBar } from "../page-bar";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "../../chrome.module.css";
-import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import {
+  STYLE_ORDER,
+  type StyleName,
+} from "@/app/[locale]/style-picker/style-column";
 import { PALETTES, scopeClasses } from "@/lib/portal/palettes";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -24,7 +27,6 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   soft: styles.soft,
 };
 
-const STYLE_ORDER: StyleName[] = ["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract", "swiss", "soft"];
 
 /** The name a customer sees. Was two hardcoded ternaries in two files, which is
  *  why a fourth style would have rendered as "Blueprint" in both. */

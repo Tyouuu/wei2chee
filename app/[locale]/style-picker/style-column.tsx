@@ -23,6 +23,35 @@ export type StyleName =
   | "swiss"
   | "soft";
 
+/**
+ * Every register, in the order they are shown. THE list -- four separate copies
+ * of it existed until 2026-08-22, and two of them were stale.
+ *
+ * The cost was not theoretical. `style-select`, the page a customer lands on
+ * immediately after signing up to choose their register, offered eight. Swiss
+ * and Soft had shipped, had token files, had a migration widening the database
+ * constraint, appeared in the editor's own switcher and on the styles page --
+ * and no new customer could pick either one, because this array was written out
+ * by hand in five places and two of them were not updated. Found by looking at
+ * the rendered picker, not by any test.
+ *
+ * `style-order.test.ts` now asserts this matches design-system/tokens/*.css on
+ * disk, so a register whose file exists but which nobody can choose is a
+ * failing test rather than a silent absence.
+ */
+export const STYLE_ORDER: StyleName[] = [
+  "ledger",
+  "hearth",
+  "blueprint",
+  "bare",
+  "docket",
+  "large",
+  "stamp",
+  "contract",
+  "swiss",
+  "soft",
+];
+
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
