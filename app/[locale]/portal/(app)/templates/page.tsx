@@ -6,7 +6,7 @@ import {
 } from "@/lib/supabase/server-session";
 import { TemplatesClient } from "./templates-client";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-import { LANDING_TEMPLATES } from "@/lib/templates/landing-templates";
+import { ALL_LANDINGS } from "@/lib/templates/all-landings";
 import {
   landingContentFor,
   PAGE_KEYS,
@@ -106,7 +106,7 @@ export default async function TemplatesPage({
   // a contractor comparing 现货落单 against 上门报价 is comparing two versions
   // of their own website rather than two mockups.
   const landingContent = landingContentFor(businessContext, pageRefs);
-  const landings = LANDING_TEMPLATES.map((t) => ({
+  const landings = ALL_LANDINGS.map((t) => ({
     key: t.key,
     label: t.label,
     blurb: t.blurb,

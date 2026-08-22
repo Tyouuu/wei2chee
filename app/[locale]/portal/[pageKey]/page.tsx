@@ -7,7 +7,7 @@ import { PortalEditor } from "./editor-client";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { applyLayoutOps, type PuckLayout } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-import { LANDING_BY_KEY } from "@/lib/templates/landing-templates";
+import { ALL_LANDING_BY_KEY } from "@/lib/templates/all-landings";
 import {
   landingContentFor,
   PAGE_KEYS,
@@ -143,9 +143,9 @@ export default async function PortalEditorPage({
   // NOT written to the database here. It arrives in the editor as an UNSAVED
   // change, on the undo stack, behind the same paid gate as every other edit:
   // a customer who presses a template and does not like it presses 撤销, and a
-  // free customer can try all six without a server-side save existing at all.
+  // free customer can try all nine without a server-side save existing at all.
   const landing =
-    pageKey === "website" && tpl ? LANDING_BY_KEY[tpl] : undefined;
+    pageKey === "website" && tpl ? ALL_LANDING_BY_KEY[tpl] : undefined;
   if (landing) {
     initialData = {
       root: {},
