@@ -28,7 +28,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const STYLES = ["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract"];
+const STYLES = ["ledger", "hearth", "blueprint", "bare", "docket", "large", "stamp", "contract", "swiss", "soft"];
 const OUT = join(ROOT, "app", "[locale]", "style-picker", "style-scope.module.css");
 
 const sourcePath = (style) => join(ROOT, "design-system", "tokens", `${style}.css`);

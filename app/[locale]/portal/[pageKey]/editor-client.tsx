@@ -61,6 +61,8 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   large: styles.large,
   stamp: styles.stamp,
   contract: styles.contract,
+  swiss: styles.swiss,
+  soft: styles.soft,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
@@ -77,6 +79,8 @@ const STYLE_ORDER: StyleName[] = [
   "large",
   "stamp",
   "contract",
+  "swiss",
+  "soft",
 ];
 
 /**

@@ -21,6 +21,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   large: styles.large,
   stamp: styles.stamp,
   contract: styles.contract,
+  swiss: styles.swiss,
+  soft: styles.soft,
 };
 
 type Entry = { name: string; label: string; category: string; props: Record<string, unknown> };

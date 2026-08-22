@@ -146,6 +146,36 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["鲜艳的按钮", "圆角卡片", "把文字挤在一起"],
   },
+  // The two that came from a published brief rather than from this file's own
+  // hand -- see design-system/tokens/{swiss,soft}.css for where each came from.
+  swiss: {
+    mood: "像一张印出来的资料表。黑白为主,只有一个红,用在必须被找到的地方。",
+    facts: "全直角 · 边框 1px · 无阴影 · 标签全大写字距 0.12em · 强调色瑞士红",
+    prefer: {
+      RecordTable: "grid",
+      HeroCard: "stats",
+      WorkflowStrip: "numbered",
+      ActionButton: "outline",
+      Tag: "outline",
+      Divider: "normal",
+      TrendChart: "bar",
+    },
+    avoid: ["圆角", "阴影", "第二种强调色", "装饰性的图案"],
+  },
+  soft: {
+    mood: "没有边,只有浮起来。卡片跟页面同一个颜色,靠一对阴影分开。摸起来软的那种。",
+    facts: "圆角 18–26px · 无边框 · 一对明暗阴影 · 按钮全圆 · 动画 200ms",
+    prefer: {
+      RecordTable: "plain",
+      HeroCard: "trend",
+      WorkflowStrip: "row",
+      ActionButton: "default",
+      Tag: "secondary",
+      Divider: "loose",
+      TrendChart: "area",
+    },
+    avoid: ["硬边框", "直角", "高对比的分隔线"],
+  },
   docket: {
     mood: "一张真的表格。直角、硬线、像印出来要签名的单据。",
     facts: "圆角 0 · 边框 2px · 无阴影 · 行高 32px · 正文 13px · 标签全大写、字距 0.14em",

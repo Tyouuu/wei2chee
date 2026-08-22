@@ -14,7 +14,14 @@ export type StyleName =
   // the density slider.
   | "large"
   | "stamp"
-  | "contract";
+  | "contract"
+  // 2026-08-22, and the first two that were not designed here: both are
+  // uiprompt.site's own published briefs for Swiss Design and Soft UI,
+  // rendered into the token layer. See each token file's header for the
+  // brief's own words and for what makes it a register rather than a
+  // repaint of one we already had.
+  | "swiss"
+  | "soft";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -25,6 +32,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   large: styles.large,
   stamp: styles.stamp,
   contract: styles.contract,
+  swiss: styles.swiss,
+  soft: styles.soft,
 };
 
 /**
@@ -60,6 +69,8 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   large: styles.large,
   stamp: styles.stamp,
   contract: styles.contract,
+  swiss: styles.swiss,
+  soft: styles.soft,
 };
 
 export function StyleColumn({

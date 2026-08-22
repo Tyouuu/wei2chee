@@ -25,6 +25,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   large: styles.large,
   stamp: styles.stamp,
   contract: styles.contract,
+  swiss: styles.swiss,
+  soft: styles.soft,
 };
 
 /** Mirrors PAGE_KEYS. Kept as a plain array here rather than imported so this

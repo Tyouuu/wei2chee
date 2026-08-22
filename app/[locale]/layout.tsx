@@ -1,7 +1,19 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
-import { Instrument_Serif, Geist, Geist_Mono, Archivo, Nunito, Manrope, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
+import {
+  Archivo,
+  Geist,
+  Geist_Mono,
+  IBM_Plex_Sans,
+  Instrument_Serif,
+  Manrope,
+  Noto_Sans_SC,
+  Noto_Serif_SC,
+  Nunito,
+  Plus_Jakarta_Sans,
+  Public_Sans,
+} from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { BRAND_NAME } from "@/lib/brand";
 import "../globals.css";
@@ -77,6 +89,27 @@ const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-docket-latin",
+  display: "swap",
+});
+
+// Swiss's voice: a neo-grotesque in the Helvetica/Univers line, which is the
+// face the International Typographic Style was actually set in. Public Sans is
+// the closest one Google serves -- drawn for US government forms, so it is
+// built for exactly the job this register does: dense factual information that
+// has to be unambiguous. Deliberately not Inter, which is the face every
+// generated design reaches for first.
+const publicSans = Public_Sans({
+  subsets: ["latin"],
+  variable: "--font-swiss-latin",
+  display: "swap",
+});
+
+// Soft's voice: geometric with softened terminals and a tall x-height. Nunito
+// is already Hearth's, and putting the two rounded registers on the same face
+// would undo the only reason to have both.
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-soft-latin",
   display: "swap",
 });
 
@@ -205,7 +238,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${archivo.variable} ${nunito.variable} ${manrope.variable} ${plexSans.variable} ${notoSerifSC.variable} ${notoSansSC.variable}`}
+      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${archivo.variable} ${nunito.variable} ${manrope.variable} ${plexSans.variable} ${publicSans.variable} ${jakarta.variable} ${notoSerifSC.variable} ${notoSansSC.variable}`}
     >
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>

@@ -100,6 +100,14 @@
       "docket": {
         "label": "Docket",
         "description": "A pad of carbon-copy forms. Square corners throughout, ruled in ink rather than hairlines, column headings stamped in uppercase, and no shadow anywhere. For a business that writes dockets and receipts all day."
+      },
+      "swiss": {
+        "label": "Swiss",
+        "description": "International Typographic Style: a strict grid, generous white space, black and white with a single red used only where something must be found. Every corner square; hierarchy from type scale and spacing, not decoration."
+      },
+      "soft": {
+        "label": "Soft",
+        "description": "Cards are the same colour as the page and are lifted by a pair of light and dark shadows instead of a border. Large radii, pill buttons. For trades whose customers choose on feel."
       }
     },
     "sample": {
@@ -356,7 +364,9 @@
         "large": "Large — for readers who need it",
         "stamp": "Stamp — filled headers, like a POS",
         "contract": "Contract — serif, like a document",
-        "docket": "Docket — hard edges, like a real form"
+        "docket": "Docket — hard edges, like a real form",
+        "swiss": "Swiss · black, white, one red",
+        "soft": "Soft · no edges, only relief"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",
