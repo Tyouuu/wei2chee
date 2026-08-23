@@ -2,7 +2,10 @@
 
 import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { Render } from "@puckeditor/core";
-import { puckConfig } from "@/design-system/editor/puck-config";
+// Renders through the register-aware config, so a block nobody has
+// touched takes the shape THIS register prefers. See
+// design-system/editor/puck-config-client.tsx.
+import { registerAwarePuckConfig as puckConfig } from "@/design-system/editor/puck-config-client";
 import { StyleScope } from "@/design-system/editor/style-scope";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 

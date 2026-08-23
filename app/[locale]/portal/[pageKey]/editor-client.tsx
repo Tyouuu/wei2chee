@@ -9,7 +9,10 @@ import "@/design-system/editor/puck-theme.css";
 import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
-import { puckConfig } from "@/design-system/editor/puck-config";
+// Renders through the register-aware config, so a block nobody has
+// touched takes the shape THIS register prefers. See
+// design-system/editor/puck-config-client.tsx.
+import { registerAwarePuckConfig as puckConfig } from "@/design-system/editor/puck-config-client";
 import {
   clearLocalDraft,
   readLocalDraft,

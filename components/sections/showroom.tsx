@@ -1,7 +1,10 @@
 "use client";
 
 import { Render } from "@puckeditor/core";
-import { puckConfig } from "@/design-system/editor/puck-config";
+// Renders through the register-aware config, so a block nobody has
+// touched takes the shape THIS register prefers. See
+// design-system/editor/puck-config-client.tsx.
+import { registerAwarePuckConfig as puckConfig } from "@/design-system/editor/puck-config-client";
 
 import { StyleScope } from "@/design-system/editor/style-scope";
 import chrome from "@/app/[locale]/portal/chrome.module.css";

@@ -159,10 +159,13 @@ type Components = {
   FormFields: { rows: FormFieldRow[]; submitLabel: string; cancelLabel: string };
   ActionButton: {
     label: string;
-    variant: "default" | "secondary" | "outline" | "ghost" | "destructive";
+    // OPTIONAL, and that is the whole precedence rule. A required appearance
+    // prop cannot be absent, and "absent" is the only signal that means
+    // "follow the register". See puck-config-client.tsx.
+    variant?: "default" | "secondary" | "outline" | "ghost" | "destructive";
     size: "sm" | "default" | "lg";
   };
-  Tag: { label: string; variant: "default" | "secondary" | "outline" | "destructive" };
+  Tag: { label: string; variant?: "default" | "secondary" | "outline" | "destructive" };
   Divider: { spacing: "tight" | "normal" | "loose" };
   NoteField: { label: string; placeholder: string };
   Panel: { title: string; description?: string; body: Slot };
@@ -344,7 +347,7 @@ type Components = {
   PackagePicker: { options: PackageOption[]; defaultValue?: string };
   WeekStrip: { days?: number };
   RailNav: {
-    variant: RailVariant;
+    variant?: RailVariant;
     brandLabel: string;
     brandHref: string;
     items: RailItem[];
@@ -505,8 +508,6 @@ export const puckConfig: Config<Components> = {
       },
       defaultProps: {
         heading: "客户资料",
-        variant: "comfortable",
-        framed: true,
         rows: [
           { label: "联络人", value: "陈先生", icon: "person" },
           { label: "电话", value: "012-345 6789", icon: "phone" },
@@ -536,7 +537,6 @@ export const puckConfig: Config<Components> = {
       },
       defaultProps: {
         heading: "今天的安排",
-        framed: true,
         rows: [
           { time: "09:00", endTime: "11:00", title: "Taman Desa 量尺", description: "陈先生" },
           { time: "14:00", endTime: "16:30", title: "Bukit Jalil 施工", description: "泥水" },
@@ -557,7 +557,6 @@ export const puckConfig: Config<Components> = {
         heading: "工程进度",
         start: "2026-08-01",
         end: "2026-10-15",
-        framed: true,
       },
       render: ({ heading, start, end, framed }) => (
         <DateProgress heading={heading} start={start} end={end} framed={framed} />
@@ -590,7 +589,6 @@ export const puckConfig: Config<Components> = {
       },
       defaultProps: {
         heading: "我们的师傅",
-        columns: 3,
         people: [
           { name: "陈师傅", title: "泥水" },
           { name: "林师傅", title: "水电" },
@@ -654,7 +652,6 @@ export const puckConfig: Config<Components> = {
       defaultProps: {
         heading: "收费",
         currency: "MYR",
-        layout: "cards",
         tiers: [
           {
             name: "基本",
@@ -702,7 +699,6 @@ export const puckConfig: Config<Components> = {
         value: "12",
         delta: 8,
         period: "vs 上个月",
-        variant: "default",
       },
       render: ({ label, value, delta, period, variant }) => (
         <SmallStat label={label} value={value} delta={delta} period={period} variant={variant} />
@@ -961,7 +957,12 @@ export const puckConfig: Config<Components> = {
         sidebar: { label: "侧边栏", type: "slot" },
         main: { label: "页面内容", type: "slot" },
       },
-      defaultProps: { sidebar: [], main: [], nav: "side", navTone: "dark" as const },
+      // NO `nav` OR `navTone` HERE, for the reason RecordTable states a
+      // thousand lines below: an absent appearance prop is the ONLY way to
+      // say "follow the register". These two carried "side" / "dark" and
+      // therefore overrode all twenty-one registers' preferences forever --
+      // measured, three registers rendered a byte-identical rail.
+      defaultProps: { sidebar: [], main: [] },
       render: ({ sidebar: Sidebar, main: Main, nav, navTone }) => (
         <SystemShell
           nav={nav ?? "side"}
@@ -1093,7 +1094,7 @@ export const puckConfig: Config<Components> = {
           ],
         },
       },
-      defaultProps: { label: "新增", variant: "default", size: "default" },
+      defaultProps: { label: "新增", size: "default" },
       render: ({ label, variant, size }) => (
         <UiButton variant={variant} size={size}>{label}</UiButton>
       ),
@@ -1967,7 +1968,6 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: {
-        variant: "full",
         brandLabel: "我的系统",
         brandHref: "#",
         userName: "我",

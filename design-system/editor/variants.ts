@@ -149,6 +149,74 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "top-light", label: "顶部 · 白底", props: { nav: "top", navTone: "light" } },
   ],
 
+  // ------------------------------------------------- 已经有轴、却接不到的六个
+  //
+  // None of these needed a line of component code. Every one already carried an
+  // appearance prop -- InfoRows has had `variant` and `framed` since it was
+  // written, PriceTable has had `layout`, PeopleBoard has had `columns` -- and
+  // none of them was in this file, so none of them appeared in 换个款式 and no
+  // register could express a preference for one.
+  //
+  // Measured before this: 14 of 57 components had a variant axis here and 7 had
+  // a register preference. The capability-to-reachability gap was the whole
+  // problem, not a shortage of capability.
+  InfoRows: [
+    { id: "comfortable", label: "宽松 · 有框", props: { variant: "comfortable", framed: true } },
+    { id: "comfortable-bare", label: "宽松 · 不要框", props: { variant: "comfortable", framed: false } },
+    { id: "compact", label: "紧凑 · 有框", props: { variant: "compact", framed: true } },
+    { id: "compact-bare", label: "紧凑 · 不要框", props: { variant: "compact", framed: false } },
+  ],
+
+  DaySchedule: [
+    { id: "framed", label: "有框", props: { framed: true } },
+    { id: "bare", label: "不要框", props: { framed: false } },
+  ],
+
+  DateProgress: [
+    { id: "framed", label: "有框", props: { framed: true } },
+    { id: "bare", label: "不要框", props: { framed: false } },
+  ],
+
+  PeopleBoard: [
+    { id: "two", label: "两栏（大头像）", props: { columns: 2 } },
+    { id: "three", label: "三栏", props: { columns: 3 } },
+    { id: "four", label: "四栏", props: { columns: 4 } },
+    { id: "five", label: "五栏（人多）", props: { columns: 5 } },
+  ],
+
+  PriceTable: [
+    { id: "cards", label: "一个方案一张卡", props: { layout: "cards" } },
+    { id: "table", label: "并排比较表", props: { layout: "table" } },
+  ],
+
+  SmallStat: [
+    { id: "default", label: "一般", props: { variant: "default" } },
+    { id: "compact", label: "紧凑", props: { variant: "compact" } },
+    { id: "detailed", label: "带说明", props: { variant: "detailed" } },
+  ],
+
+  // ---------------------------------------------------------------- 侧栏
+  //
+  // WHY THIS WAS MISSING, AND WHY IT IS THE MOST EXPENSIVE THING THAT WAS.
+  //
+  // Measured 2026-08-23: of the 57 components in 组件库, 14 had a variant axis
+  // and 7 had a register preference. The other 43 had no alternative look at
+  // all -- and that 43 included RailNav and Panel, which are the two largest
+  // surfaces on every single page. So a customer switching between 21 registers
+  // watched the small things change (tags, dividers, charts) while the sidebar
+  // and the panels stayed identical, which is exactly why it read as 「还是
+  // 一样的东西」.
+  //
+  // RailNav had carried three real densities since it was written. They were
+  // reachable only by editing the prop by hand: not in this file, so not in
+  // 换个款式, and not in any register's `prefer`. The capability existed and
+  // nothing could reach it.
+  RailNav: [
+    { id: "full", label: "完整（图标 + 分组）", props: { variant: "full" } },
+    { id: "compact", label: "只有图标", props: { variant: "compact" } },
+    { id: "quiet", label: "只有文字", props: { variant: "quiet" } },
+  ],
+
   // ---------------------------------------------------------------- 按钮
   ActionButton: [
     { id: "default", label: "主要", props: { variant: "default" } },
