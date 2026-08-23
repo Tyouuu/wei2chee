@@ -47,23 +47,42 @@ const AUDIT = () => {
   }).length;
 
   // Dark fills: anything painting a ground darker than mid grey is toner.
+  //
+  // LET THE BROWSER DO THE COLOUR MATH -- the same lesson check-contrast.mjs
+  // learned and this file did not inherit. The first version pulled the numbers
+  // out of the string with a regex and treated the first three as r,g,b. The
+  // palette layer emits oklch, which COMPUTES to `lab(95.82 0.49 14.97)` -- a
+  // near-white cream -- and the regex read it as rgb(96, 0, 15) and reported
+  // the customer's page ground as 682,584px2 of solid toner. The page was
+  // white; the audit was wrong. A 1x1 canvas resolves any colour space the
+  // browser can paint, which is the only definition that matters here.
+  const probe = document.createElement("canvas");
+  probe.width = probe.height = 1;
+  const ctx = probe.getContext("2d", { willReadFrequently: true });
   const lum = (s) => {
-    const m = s.match(/\d+(\.\d+)?/g);
-    if (!m || m.length < 3) return 1;
-    const [r, g, b] = m.map(Number);
-    const a = m.length > 3 ? Number(m[3]) : 1;
-    if (a < 0.5) return 1;
+    if (!s || s === "transparent") return 1;
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.fillStyle = "#000";
+    ctx.fillStyle = s;
+    ctx.globalCompositeOperation = "copy";
+    ctx.fillRect(0, 0, 1, 1);
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    if (d[3] / 255 < 0.5) return 1;
     const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
-    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    return 0.2126 * f(d[0]) + 0.7152 * f(d[1]) + 0.0722 * f(d[2]);
   };
+
   let darkFill = 0, shadow = 0, biggest = 0;
+  const darkest = [];
   for (const el of document.querySelectorAll("*")) {
     if (!vis(el)) continue;
     const cs = getComputedStyle(el);
     if (lum(cs.backgroundColor) < 0.35) {
       darkFill++;
       const r = el.getBoundingClientRect();
-      biggest = Math.max(biggest, Math.round(r.width * r.height));
+      const a = Math.round(r.width * r.height);
+      biggest = Math.max(biggest, a);
+      darkest.push({ a, cls: (el.className || "").toString().slice(0, 50), bg: cs.backgroundColor, tag: el.tagName });
     }
     if (cs.boxShadow && cs.boxShadow !== "none") shadow++;
   }
@@ -76,6 +95,7 @@ const AUDIT = () => {
     darkFill,
     biggestDarkPx: biggest,
     shadow,
+    darkest: darkest.sort((x, y) => y.a - x.a).slice(0, 3),
   };
 };
 
@@ -99,6 +119,7 @@ for (const [tag, url] of [["quotations", "/zh/portal/quotations"], ["dashboard",
   console.log(`  data rows                     : ${r.rows}   rows that avoid the fold: ${r.rowsAvoid}`);
   console.log(`  dark fills (toner)            : ${r.darkFill}   largest: ${r.biggestDarkPx.toLocaleString()}px2`);
   console.log(`  shadows                       : ${r.shadow}`);
+  for (const d of r.darkest) console.log(`    dark ${String(d.a).padStart(9)}px2  ${d.tag}.${d.cls}  ${d.bg}`);
   await p.pdf({ path: `.print-audit-${tag}.pdf`, format: "A4", printBackground: true });
   await p.emulateMedia({ media: "screen" });
 }
