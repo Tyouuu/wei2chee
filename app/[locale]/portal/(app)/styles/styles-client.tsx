@@ -36,6 +36,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   lacquer: styles.lacquer,
   code: styles.code,
   tile: styles.tile,
+  clear: styles.clear,
 };
 
 
@@ -62,6 +63,7 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   lacquer: "Lacquer",
   code: "Code",
   tile: "Tile",
+  clear: "Clear",
 };
 
 /**

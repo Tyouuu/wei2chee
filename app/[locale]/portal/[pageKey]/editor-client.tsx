@@ -81,6 +81,7 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   lacquer: styles.lacquer,
   code: styles.code,
   tile: styles.tile,
+  clear: styles.clear,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";

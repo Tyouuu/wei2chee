@@ -63,7 +63,11 @@ export type StyleName =
   // The first register whose ground is a repeating FIGURE rather than a
   // wash. --canvas-image had been set twice and both were gradients. See
   // tokens/tile.css.
-  | "tile";
+  | "tile"
+  // For an owner who cannot read the others. Nothing in the set was above
+  // 17px type, above a 41px touch target, or reached 7:1 on secondary text
+  // more than four times out of twenty. See tokens/clear.css.
+  | "clear";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -102,6 +106,7 @@ export const STYLE_ORDER: StyleName[] = [
   "lacquer",
   "code",
   "tile",
+  "clear",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -125,6 +130,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   lacquer: styles.lacquer,
   code: styles.code,
   tile: styles.tile,
+  clear: styles.clear,
 };
 
 /**
@@ -172,6 +178,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   lacquer: styles.lacquer,
   code: styles.code,
   tile: styles.tile,
+  clear: styles.clear,
 };
 
 export function StyleColumn({

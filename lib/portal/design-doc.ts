@@ -210,6 +210,20 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
   },
+  clear: {
+    mood: "看得清那一个。正文 20px、按钮高 52px、灰字也做到 7.4:1——不是为了好看大,是为了看得到。没有阴影、没有装饰,一个蓝色。",
+    facts: "正文 20px · 行高 64px · 控件内距 16px(触控约 52px) · 灰字对比 7.4:1 · 圆角 4px · 无阴影 · 强调色 #1d4ed8",
+    prefer: {
+      RecordTable: "plain",
+      HeroCard: "solo",
+      WorkflowStrip: "numbered",
+      ActionButton: "solid",
+      Tag: "solid",
+      Divider: "loose",
+      TrendChart: "bar",
+    },
+    avoid: ["浅灰的字", "小于 16px 的字", "细边框", "阴影", "一屏塞很多东西"],
+  },
   tile: {
     mood: "地上铺花砖。娘惹砖那种四瓣花加角上的小圆点,水泥色的地。卡片一律平的奶白——图案在地上,不在字底下。",
     facts: "地上 48px 花砖图 · 底色水泥 #f0e9dd · 卡片平奶白 #fffdf8 · 圆角 6px · 釉绿 #14837a · 角点砖红",

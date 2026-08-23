@@ -101,6 +101,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   lacquer: styles.lacquer,
   code: styles.code,
   tile: styles.tile,
+  clear: styles.clear,
 };
 
 /**

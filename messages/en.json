@@ -148,6 +148,10 @@
       "tile": {
         "label": "Tile",
         "description": "A patterned floor. The four-petal figure and corner dots of the Peranakan tiles in every old kopitiam and shophouse in Malacca and Penang, on a cement-coloured ground. Measured: --canvas-image had been set by exactly two registers and both were gradient washes — this is the first with a repeating figure. The pattern is on the GROUND; every card is flat cream, so the contrast where the words are never changes. For kopitiam, bakeries, kaya toast, heritage cafés, herbal shops and tea merchants: businesses whose premises already have this floor."
+      },
+      "clear": {
+        "label": "Clear",
+        "description": "For an owner who cannot read the others. 20px body text, touch targets around 52px, and secondary text at 7.4:1. Measured across the other twenty registers: nothing above 17px type, nothing above a 41px target, and only four reaching 7:1 on secondary text — the worst of them below AA on its own card, since fixed. It is not another Large: 大字 and 墨 are about air, this is about being able to read it, so the row height is deliberately shorter than 墨's. Showing four rows instead of eight helps nobody who is squinting."
       }
     },
     "sample": {
@@ -438,7 +442,8 @@
         "signboard": "Signboard · heavy condensed headline, sign red",
         "lacquer": "Lacquer · oxblood ground, ivory panels, gold line",
         "code": "Code · monospace throughout, printer's blue",
-        "tile": "Tile · patterned floor, glaze teal"
+        "tile": "Tile · patterned floor, glaze teal",
+        "clear": "Clear · 20px body, large targets, no faint text"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",

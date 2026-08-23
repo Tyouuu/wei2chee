@@ -133,7 +133,13 @@
      5.22:1 on the canvas, 5.11:1 on the hover fill and 4.84:1 on the page
      background — it clears AA as body text on every surface this file defines,
      not only on the lightest one. */
-  --color-paper-dim: #6d7789;
+  /* Was #6d7789, which is 3.89:1 against this register's own card -- below AA
+     for its own secondary text, and the worst of the twenty. Measured on
+     2026-08-23 while auditing the dim-text contrast of the whole set, which
+     ran 3.89 to 7.73. #5b6478 is 5.11:1 and keeps the cool cast Soft is built
+     on; going darker would have turned the secondary text into a second
+     primary. */
+  --color-paper-dim: #5b6478;
 
   /* ── INK ON THE GROUND ──────────────────────────────────────────────
      Text that sits directly on the canvas rather than inside a card: a page
