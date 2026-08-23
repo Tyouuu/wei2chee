@@ -90,7 +90,10 @@ const ICONS: Record<string, LucideIcon> = {
   work: Hammer,
   date: CalendarDays,
 };
-const icon = (k?: string) => ICONS[k ?? "file"] ?? FileText;
+/** Exported because shelf-blocks.tsx builds its own lists from the same icon
+ *  registry, and two copies of a name->component map is two chances for a
+ *  block to render a different icon for the same word. */
+export const icon = (k?: string) => ICONS[k ?? "file"] ?? FileText;
 
 /** True only after the browser has taken over.
  *

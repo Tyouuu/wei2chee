@@ -195,6 +195,45 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "detailed", label: "带说明", props: { variant: "detailed" } },
   ],
 
+  // ---------------------------------------------- 从别人的 dashboard 组出来的
+  //
+  // Registered WITH an axis on day one, deliberately. 43 of the previous 57
+  // components had none, which is why twenty-two registers still read as one
+  // design -- a register can only differ where a component offers it a choice.
+  ShelfList: [
+    { id: "boxed", label: "每项一个框", props: { size: "default", separated: false } },
+    { id: "boxed-sm", label: "每项一个框 · 紧凑", props: { size: "sm", separated: false } },
+    { id: "ruled", label: "一条线分开", props: { size: "default", separated: true } },
+    { id: "ruled-sm", label: "一条线分开 · 紧凑", props: { size: "sm", separated: true } },
+  ],
+
+  AttachmentList: [
+    { id: "row", label: "一行一个", props: { orientation: "horizontal" } },
+    { id: "tile", label: "并排小方块", props: { orientation: "vertical" } },
+  ],
+
+  MarkList: [
+    { id: "plain", label: "只有字", props: { rule: "default" } },
+    { id: "ruled", label: "每条下面一条线", props: { rule: "border" } },
+    { id: "spread", label: "线拉到两边", props: { rule: "separator" } },
+  ],
+
+  PhotoFrame: [
+    { id: "photo", label: "相片 4:3", props: { ratio: "photo" } },
+    { id: "wide", label: "宽 16:9", props: { ratio: "wide" } },
+    { id: "square", label: "正方", props: { ratio: "square" } },
+  ],
+
+  ActionRow: [
+    { id: "row", label: "横排", props: { orientation: "horizontal" } },
+    { id: "column", label: "直排（手机）", props: { orientation: "vertical" } },
+  ],
+
+  ChoiceSelect: [
+    { id: "default", label: "一般", props: { size: "default" } },
+    { id: "sm", label: "紧凑", props: { size: "sm" } },
+  ],
+
   // ---------------------------------------------------------------- 侧栏
   //
   // WHY THIS WAS MISSING, AND WHY IT IS THE MOST EXPENSIVE THING THAT WAS.

@@ -1,5 +1,13 @@
 import type { Config, Slot } from "@puckeditor/core";
 import { PageHeader } from "@/design-system/components/page-header";
+import {
+  ShelfList,
+  AttachmentList,
+  MarkList,
+  PhotoFrame,
+  ActionRow,
+  ChoiceSelect,
+} from "@/design-system/components/shelf-blocks";
 import { EmptyState } from "@/design-system/components/empty-state";
 import { StatusDot, type StatusTone } from "@/design-system/components/status-dot";
 import { HeroCard } from "@/design-system/components/hero-card";
@@ -346,6 +354,39 @@ type Components = {
   TagPicker: { label?: string; options: ChoiceOption[]; placeholder?: string };
   PackagePicker: { options: PackageOption[]; defaultValue?: string };
   WeekStrip: { days?: number };
+  ShelfList: {
+    heading?: string;
+    items: { title: string; description?: string; icon?: string; action?: string }[];
+    // Optional on purpose: absent is the only way to say "follow the register".
+    size?: "default" | "sm";
+    separated?: boolean;
+  };
+  AttachmentList: {
+    heading?: string;
+    files: { name: string; meta?: string }[];
+    orientation?: "horizontal" | "vertical";
+  };
+  MarkList: {
+    heading?: string;
+    marks: { text: string; tone?: "good" | "warn" | "bad"; icon?: string }[];
+    rule?: "default" | "border" | "separator";
+  };
+  PhotoFrame: {
+    src?: string;
+    alt?: string;
+    caption?: string;
+    ratio?: "wide" | "photo" | "square";
+  };
+  ActionRow: {
+    actions: { label: string; tone?: "default" | "outline" | "secondary" | "ghost" }[];
+    orientation?: "horizontal" | "vertical";
+  };
+  ChoiceSelect: {
+    label?: string;
+    name?: string;
+    options: { label: string }[];
+    size?: "default" | "sm";
+  };
   RailNav: {
     variant?: RailVariant;
     brandLabel: string;
@@ -434,17 +475,17 @@ export const puckConfig: Config<Components> = {
     },
     flow: {
       title: "流程与状态",
-      components: ["WorkflowStrip", "StatusDot", "Tag", "NoticePill", "Stars"],
+      components: ["WorkflowStrip", "StatusDot", "Tag", "NoticePill", "Stars", "ShelfList"],
       defaultExpanded: false,
     },
     notices: {
       title: "提示与空白",
-      components: ["Alert", "NoticeBanner", "EmptyState"],
+      components: ["Alert", "NoticeBanner", "EmptyState", "MarkList"],
       defaultExpanded: false,
     },
     people: {
       title: "照片与人",
-      components: ["Avatar", "FaceRow", "ZoomPhoto", "BeforeAfter"],
+      components: ["Avatar", "FaceRow", "ZoomPhoto", "BeforeAfter", "PhotoFrame", "AttachmentList"],
       defaultExpanded: false,
     },
     fill: {
@@ -454,7 +495,7 @@ export const puckConfig: Config<Components> = {
     },
     pick: {
       title: "选择",
-      components: ["DatePicker", "MonthPicker", "WeekStrip", "Listbox", "Combobox", "TagPicker", "PackagePicker"],
+      components: ["DatePicker", "MonthPicker", "WeekStrip", "Listbox", "Combobox", "TagPicker", "PackagePicker", "ChoiceSelect"],
       defaultExpanded: false,
     },
     toggles: {
@@ -464,7 +505,7 @@ export const puckConfig: Config<Components> = {
     },
     actions: {
       title: "按钮与筛选",
-      components: ["ActionButton", "FilterChips", "CopyValue", "PayQr", "PageNumbers"],
+      components: ["ActionButton", "FilterChips", "CopyValue", "PayQr", "PageNumbers", "ActionRow"],
       defaultExpanded: false,
     },
     layout: {
@@ -1897,6 +1938,203 @@ export const puckConfig: Config<Components> = {
         </div>
       ),
     },
+    // ── 从 arhamkhnz/next-shadcn-admin-dashboard (MIT) 的元件组出来的六块 ──
+    //
+    // Composed rather than registered raw: Item / Attachment / Marker are
+    // COMPOUND primitives, and a customer dragging in an `ItemMedia` has been
+    // handed a part rather than a thing. See shelf-blocks.tsx.
+    //
+    // NO APPEARANCE DEFAULTS in any defaultProps below. An absent prop is the
+    // only signal that means "follow the register" -- ten of them were set here
+    // once and overrode every register's preference forever.
+    ShelfList: {
+      label: "项目清单",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        items: {
+          label: "每一项",
+          type: "array",
+          arrayFields: {
+            title: { label: "名称", type: "text" },
+            description: { label: "说明", type: "text" },
+            icon: { label: "图案", type: "select", options: [
+                { label: "人", value: "person" },
+                { label: "电话", value: "phone" },
+                { label: "地点", value: "place" },
+                { label: "时间", value: "time" },
+                { label: "钱", value: "money" },
+                { label: "文件", value: "file" },
+                { label: "标签", value: "tag" },
+                { label: "公司", value: "company" },
+                { label: "工程", value: "work" },
+                { label: "日期", value: "date" },
+              ] },
+            action: { label: "按钮字（留空就没有）", type: "text" },
+          },
+          defaultItemProps: { title: "一项", description: "", icon: "file", action: "" },
+          getItemSummary: (item) => item.title || "一项",
+        },
+      },
+      defaultProps: {
+        heading: "今天要跟的",
+        items: [
+          { title: "陈先生 · 三房翻新", description: "报价已发,等回复", icon: "work", action: "跟进" },
+          { title: "李太太 · 厨房", description: "订金未收", icon: "money", action: "催款" },
+          { title: "黄先生 · 店面", description: "还没上门量尺", icon: "place", action: "排期" },
+        ],
+      },
+      render: ({ heading, items, size, separated }) => (
+        <ShelfList heading={heading} items={items} size={size} separated={separated} />
+      ),
+    },
+
+    AttachmentList: {
+      label: "附件清单",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        files: {
+          label: "每个档案",
+          type: "array",
+          arrayFields: {
+            name: { label: "档名", type: "text" },
+            meta: { label: "说明（大小、日期）", type: "text" },
+          },
+          defaultItemProps: { name: "档案.pdf", meta: "" },
+          getItemSummary: (item) => item.name || "档案",
+        },
+      },
+      defaultProps: {
+        heading: "这一单的文件",
+        files: [
+          { name: "报价单 QT-2026-0142.pdf", meta: "2.1 MB · 8月18日" },
+          { name: "工地照片.zip", meta: "14 张 · 8月20日" },
+          { name: "订金收据.pdf", meta: "480 KB · 8月21日" },
+        ],
+      },
+      render: ({ heading, files, orientation }) => (
+        <AttachmentList heading={heading} files={files} orientation={orientation} />
+      ),
+    },
+
+    MarkList: {
+      label: "标注清单",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        marks: {
+          label: "每一条",
+          type: "array",
+          arrayFields: {
+            text: { label: "内容", type: "text" },
+            tone: {
+              label: "意思",
+              type: "select",
+              options: [
+                { label: "好 / 包含", value: "good" },
+                { label: "留意", value: "warn" },
+                { label: "不包含", value: "bad" },
+              ],
+            },
+            icon: { label: "图案", type: "select", options: [
+                { label: "人", value: "person" },
+                { label: "电话", value: "phone" },
+                { label: "地点", value: "place" },
+                { label: "时间", value: "time" },
+                { label: "钱", value: "money" },
+                { label: "文件", value: "file" },
+                { label: "标签", value: "tag" },
+                { label: "公司", value: "company" },
+                { label: "工程", value: "work" },
+                { label: "日期", value: "date" },
+              ] },
+          },
+          defaultItemProps: { text: "一条", tone: "good", icon: "file" },
+          getItemSummary: (item) => item.text || "一条",
+        },
+      },
+      defaultProps: {
+        heading: "报价包含什么",
+        marks: [
+          { text: "拆除与清运", tone: "good", icon: "work" },
+          { text: "水电改位（另计）", tone: "warn", icon: "money" },
+          { text: "家具与电器", tone: "bad", icon: "tag" },
+        ],
+      },
+      render: ({ heading, marks, rule }) => (
+        <MarkList heading={heading} marks={marks} rule={rule} />
+      ),
+    },
+
+    PhotoFrame: {
+      label: "照片框",
+      fields: {
+        src: { label: "照片网址（留空就是空框）", type: "text" },
+        alt: { label: "照片说明（给看不到的人）", type: "text" },
+        caption: { label: "图说", type: "text" },
+      },
+      defaultProps: { caption: "放一张工地照片" },
+      render: ({ src, alt, caption, ratio }) => (
+        <PhotoFrame src={src} alt={alt} caption={caption} ratio={ratio} />
+      ),
+    },
+
+    ActionRow: {
+      label: "按钮组",
+      fields: {
+        actions: {
+          label: "每一颗",
+          type: "array",
+          arrayFields: {
+            label: { label: "字", type: "text" },
+            tone: {
+              label: "轻重",
+              type: "select",
+              options: [
+                { label: "主要", value: "default" },
+                { label: "描边", value: "outline" },
+                { label: "次要", value: "secondary" },
+                { label: "很淡", value: "ghost" },
+              ],
+            },
+          },
+          defaultItemProps: { label: "按钮", tone: "outline" },
+          getItemSummary: (item) => item.label || "按钮",
+        },
+      },
+      defaultProps: {
+        actions: [
+          { label: "发出报价", tone: "default" },
+          { label: "存草稿", tone: "outline" },
+          { label: "删掉", tone: "ghost" },
+        ],
+      },
+      render: ({ actions, orientation }) => (
+        <ActionRow actions={actions} orientation={orientation} />
+      ),
+    },
+
+    ChoiceSelect: {
+      label: "下拉选择",
+      fields: {
+        label: { label: "问题", type: "text" },
+        name: { label: "栏位名（存资料用）", type: "text" },
+        options: {
+          label: "选项",
+          type: "array",
+          arrayFields: { label: { label: "选项", type: "text" } },
+          defaultItemProps: { label: "选项" },
+          getItemSummary: (item) => item.label || "选项",
+        },
+      },
+      defaultProps: {
+        label: "这一单的状态",
+        name: "status",
+        options: [{ label: "询价中" }, { label: "已报价" }, { label: "已确认" }, { label: "施工中" }, { label: "已完工" }],
+      },
+      render: ({ label, name, options, size }) => (
+        <ChoiceSelect label={label} name={name} options={options} size={size} />
+      ),
+    },
+
     RailNav: {
       label: "侧边导航",
       fields: {
