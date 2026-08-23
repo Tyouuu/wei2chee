@@ -176,7 +176,7 @@ type Components = {
   Tag: { label: string; variant?: "default" | "secondary" | "outline" | "destructive" };
   Divider: { spacing: "tight" | "normal" | "loose" };
   NoteField: { label: string; placeholder: string };
-  Panel: { title: string; description?: string; body: Slot };
+  Panel: { title: string; description?: string; body: Slot; look?: "card" | "tinted" | "plain" | "ruled" };
   TabbedPanel: {
     oneLabel: string; twoLabel: string; threeLabel: string;
     one: Slot; two: Slot; three: Slot;
@@ -191,7 +191,8 @@ type Components = {
     // navTone note in design-system/components/system-shell.tsx.
     navTone?: "dark" | "light" | "deep";
   };
-  PageHeader: { title: string; subtitle?: string };
+  PageHeader: {
+    layout?: "split" | "stacked" | "centred" | "ruled"; title: string; subtitle?: string };
   /** One of the 164 sections pulled from the @7ovr registry. Template side of
    *  the line the founder drew: the SECTION is chosen, its words are not
    *  edited. See design-system/editor/site-block.tsx. */
@@ -1200,17 +1201,44 @@ export const puckConfig: Config<Components> = {
         body: { label: "里面放什么", type: "slot" },
       },
       defaultProps: { title: "这一区", description: "", body: [] },
-      render: ({ title, description, body: Body }) => (
-        <Card>
-          <CardHeader>
+      // FOUR LOOKS, and this is the second-largest surface on a page after the
+      // rail. It had none until 2026-08-23, which is a large part of why
+      // twenty-two registers rendered the same page: whatever the register
+      // said, every section was a shadcn Card with a header.
+      render: ({ title, description, body: Body, look }) => {
+        const head = (
+          <>
             <CardTitle>{title}</CardTitle>
             {description ? <CardDescription>{description}</CardDescription> : null}
-          </CardHeader>
-          <CardContent>
-            <Body />
-          </CardContent>
-        </Card>
-      ),
+          </>
+        );
+        if (look === "plain" || look === "ruled") {
+          return (
+            <section className="flex flex-col [gap:var(--gap-stack)]">
+              <div
+                className={
+                  look === "ruled"
+                    ? "[border-bottom:var(--hairline)_solid_var(--color-ink-800)] [padding-bottom:calc(var(--gap-stack)*0.6)]"
+                    : ""
+                }
+              >
+                {head}
+              </div>
+              <Body />
+            </section>
+          );
+        }
+        return (
+          <Card>
+            <CardHeader className={look === "tinted" ? "[background-color:var(--color-ink-850)] [border-bottom:var(--hairline)_solid_var(--color-ink-800)] [border-top-left-radius:inherit] [border-top-right-radius:inherit]" : undefined}>
+              {head}
+            </CardHeader>
+            <CardContent>
+              <Body />
+            </CardContent>
+          </Card>
+        );
+      },
     },
     // Three tabs, fixed. Puck slots are declared statically, so a variable
     // number of tabs would mean a variable number of slot FIELDS, which the
@@ -1474,8 +1502,9 @@ export const puckConfig: Config<Components> = {
         subtitle: { label: "副标题", type: "text" },
       },
       defaultProps: { title: "标题" },
-      render: ({ id, title, subtitle }) => (
+      render: ({ id, title, subtitle, layout }) => (
         <PageHeader
+          layout={layout}
           title={
             <Inline id={id} field="title">
               {title}

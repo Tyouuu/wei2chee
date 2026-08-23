@@ -195,6 +195,27 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "detailed", label: "带说明", props: { variant: "detailed" } },
   ],
 
+  // ------------------------------------------------ 页面标题 · 卡片分区
+  //
+  // The first thing on every page, and the container everything else sits in.
+  // Both had no alternative look until 2026-08-23 -- so whatever a register
+  // said, every page opened with the same left/right heading and every section
+  // was the same shadcn Card with a header. Between them they are most of the
+  // reason twenty-two registers still read as one design.
+  PageHeader: [
+    { id: "split", label: "标题左 · 按钮右", props: { layout: "split" } },
+    { id: "stacked", label: "按钮放下面", props: { layout: "stacked" } },
+    { id: "centred", label: "置中", props: { layout: "centred" } },
+    { id: "ruled", label: "下面一条线", props: { layout: "ruled" } },
+  ],
+
+  Panel: [
+    { id: "card", label: "一张卡", props: { look: "card" } },
+    { id: "tinted", label: "标题带底色", props: { look: "tinted" } },
+    { id: "plain", label: "不要框", props: { look: "plain" } },
+    { id: "ruled", label: "标题下一条线", props: { look: "ruled" } },
+  ],
+
   // ---------------------------------------------- 从别人的 dashboard 组出来的
   //
   // Registered WITH an axis on day one, deliberately. 43 of the previous 57
