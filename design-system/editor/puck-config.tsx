@@ -204,7 +204,21 @@ type Components = {
     secondaryHref?: string;
     proof?: { value: string; label: string }[];
     // Set by the 换款式 picker, not by a field -- see variants.ts.
-    layout?: "left" | "band" | "center" | "plain";
+    layout?: "left" | "band" | "center" | "plain" | "split";
+    /** What the `split` 款式 draws on the right: the document this business
+     *  sends. Written by the template, not offered as a field -- picking
+     *  「价目表」 for a salon is a choice nobody should have to get right, and
+     *  the templates already know how each trade closes a sale. */
+    figure?: "quote" | "booking" | "order" | "pricelist" | "grid" | "card";
+    figureData?: {
+      brand?: string;
+      services?: { label: string; value: string }[];
+      stages?: string[];
+      landsIn?: string;
+      note?: string;
+      askLabel?: string;
+      sampleLabel?: string;
+    };
   };
   EnquiryForm: {
     heading: string;
@@ -1305,9 +1319,11 @@ export const puckConfig: Config<Components> = {
         primaryLabel: "WhatsApp 问价",
         primaryHref: "#",
       },
-      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout }) => (
+      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData }) => (
         <SiteHero
           layout={layout ?? "left"}
+          figure={figure}
+          figureData={figureData}
           eyebrow={
             eyebrow ? (
               <Inline id={id} field="eyebrow">

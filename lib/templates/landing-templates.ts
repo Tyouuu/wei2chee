@@ -98,9 +98,31 @@ const node = (
   props: { id, ...props },
 });
 
+/**
+ * `figure` is what goes on the RIGHT of the first screen, and it is the reason
+ * these six stopped being one page six times.
+ *
+ * Counted on 2026-08-23, before this: four component types across all six
+ * templates, two of the five slots the same component twice, and zero images
+ * anywhere -- while 216 pulled sections and 46 ilinxa components sat unused.
+ * Every 款式 of SiteHero was an ALIGNMENT of the same single column.
+ *
+ * The figure is the document this business sends, drawn from data the page
+ * already carries. Each sale ends in a different piece of paper, so each
+ * template gets a different object rather than a different alignment:
+ *
+ *     上门报价  quotation      现货落单  order
+ *     预约时段  booking slip   批发询价  price list
+ *     先看东西  work grid      一页名片  card
+ *
+ * See design-system/components/hero-figure.tsx for why it is not a photograph
+ * -- and for why "no stock photos", which this file already argued and was
+ * right about, never meant "nothing visual at all".
+ */
 const hero = (
   c: LandingContent,
   layout: string,
+  figure?: string,
   extra: Record<string, unknown> = {},
 ) =>
   node("SiteHero", "website-hero", {
@@ -113,6 +135,24 @@ const hero = (
     secondaryLabel: c.words.seeWork,
     secondaryHref: "#",
     proof: c.proof,
+    ...(figure
+      ? {
+          figure,
+          figureData: {
+            brand: c.brand,
+            services: c.services.map((s) => ({ label: s.label, value: s.value })),
+            stages: c.stages,
+            landsIn: c.landsIn,
+            // Both already exist in the page's own language: the reply note is
+            // what the enquiry form says under its button, and 问价 is the
+            // WhatsApp button's own word. Reusing them keeps the figure inside
+            // the vocabulary the rest of the page already established.
+            note: c.words.replyNote,
+            askLabel: c.words.askShort,
+            sampleLabel: c.words.sampleLabel,
+          },
+        }
+      : {}),
     ...extra,
   });
 
@@ -167,7 +207,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurb: "客人先问，你上门看了才报价。装修、维修、承包这一类。",
     trades: ["renovation", "services", "other"],
     build: (c) => [
-      hero(c, "left"),
+      hero(c, "split", "quote"),
       services(c, sect(c, "quote").services),
       flow(c, sect(c, "quote").flow ?? ""),
       form(c, "quote", "card"),
@@ -180,7 +220,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurb: "客人要订一个时间。美容、补习、诊所这一类。",
     trades: ["beauty", "education"],
     build: (c) => [
-      hero(c, "center"),
+      hero(c, "split", "booking"),
       services(c, sect(c, "booking").services),
       // Numbered, not arrows: someone booking a slot is reading "what do I do
       // first", which is a list of steps rather than a pipeline.
@@ -197,7 +237,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     build: (c) => [
       // The band is the shopfront: for a business whose page IS the shop, the
       // first screen should feel like walking past it.
-      hero(c, "band"),
+      hero(c, "split", "order"),
       services(c, sect(c, "order").services),
       form(c, "order", "split"),
       contact(c, false),
@@ -209,7 +249,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurb: "买的人是生意人，要的是条件：账期、送货、量大多少钱。",
     trades: ["wholesale"],
     build: (c) => [
-      hero(c, "left"),
+      hero(c, "split", "pricelist"),
       services(c, sect(c, "wholesale").services),
       flow(c, sect(c, "wholesale").flow ?? "", "timeline"),
       form(c, "wholesale", "card"),
@@ -222,7 +262,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurb: "客人是看了作品才决定的。设计、摄影、装修都可以用这个。",
     trades: [],
     build: (c) => [
-      hero(c, "center"),
+      hero(c, "split", "grid"),
       // Services first and unframed: on a page whose job is "look at this",
       // boxes around every section fight the looking.
       services(c, sect(c, "portfolio").services, false),
@@ -237,7 +277,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurb: "最简单的一页：你是谁、做什么、怎么找你。没有表格。",
     trades: [],
     build: (c) => [
-      hero(c, "plain"),
+      hero(c, "split", "card"),
       services(c, sect(c, "card").services, false),
       contact(c),
     ],

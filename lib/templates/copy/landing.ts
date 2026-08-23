@@ -60,6 +60,16 @@ export type LandingCopy = {
   page: {
     /** The two hero actions. WhatsApp is primary because in this market it is
      *  the channel a stranger actually uses. */
+    /** One word marking the hero figure as an example. The figure draws the
+     *  document this business sends -- with a total on it -- on a page a
+     *  stranger reads, so it has to say out loud that it is a picture of the
+     *  paperwork and not a real quotation. */
+    /** Two or three characters for a CHIP, not a sentence for a button.
+     *  The hero figure's price chips first reused `whatsapp` and came out
+     *  reading 「Ask on WhatsApp」 inside a 60px pill. A label and a call to
+     *  action are different lengths of the same idea and need separate words. */
+    askShort: string;
+    sampleLabel: string;
     whatsapp: string;
     seeWork: string;
     contactHeading: string;
@@ -185,6 +195,8 @@ const EN: LandingCopy = {
   },
 
   page: {
+    askShort: "Ask price",
+    sampleLabel: "Example",
     whatsapp: "Ask on WhatsApp",
     seeWork: "See our work",
     contactHeading: "How to reach us",
@@ -335,6 +347,8 @@ const ZH: LandingCopy = {
   ],
   joinServices: (labels) => labels.join("、"),
   page: {
+    askShort: "问价",
+    sampleLabel: "示例",
     whatsapp: "WhatsApp 问价",
     seeWork: "看我们做过什么",
     contactHeading: "怎么找我们",

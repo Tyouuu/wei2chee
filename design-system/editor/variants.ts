@@ -95,6 +95,10 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "band", label: "整片底色", props: { layout: "band" } },
     { id: "center", label: "置中", props: { layout: "center" } },
     { id: "plain", label: "只有一句话", props: { layout: "plain" } },
+    // The one that puts a FIGURE on the right. It is listed last because
+    // switching TO it needs a `figure` prop to have something to draw --
+    // without one it renders exactly like 左对齐 rather than breaking.
+    { id: "split", label: "左字右图", props: { layout: "split" } },
   ],
 
   // ---------------------------------------------------------------- 询价表格
