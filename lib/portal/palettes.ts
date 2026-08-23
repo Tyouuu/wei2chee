@@ -1,5 +1,6 @@
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { PALETTE_ROWS, type PaletteRow } from "./palettes.generated";
 
 /**
  * The 配色 layer: a customer's colours, chosen separately from their 版式.
@@ -11,9 +12,10 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
  * styles and not thirty. Colour is data.
  *
  * So Ledger / Hearth / Blueprint keep their meaning and become the 版式, and
- * this is the other half. Three layouts times ten palettes is thirty looks, and
- * the ten came from tweakcn (Apache-2.0) via scripts/build-palettes.mjs rather
- * than from a designer.
+ * this is the other half. Twenty-one layouts times twenty-five palettes is
+ * five hundred and twenty-five looks; twenty-two of the twenty-five came from
+ * tweakcn (Apache-2.0) via scripts/build-palettes.mjs and three are written in
+ * that generator by hand, for hue bands their forty themes do not occupy.
  *
  * HOW IT WORKS, AND THE ONE THING THAT MAKES IT WORK. A palette class and a
  * layout class are both single class selectors, so they carry identical
@@ -31,49 +33,33 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
  * bridge was built to let shadcn components IN; this is the same door used the
  * other way.
  */
-export type PaletteName =
-  | "supabase"
-  | "vercel"
-  | "claude"
-  | "amber-minimal"
-  | "nature"
-  | "ocean-breeze"
-  | "vintage-paper"
-  | "clean-slate"
-  | "mocha-mousse"
-  | "graphite";
+/**
+ * WHY THIS IS DERIVED AND NOT WRITTEN OUT.
+ *
+ * This union and the PALETTES array below used to be typed by hand: ten keys,
+ * ten labels and forty swatch values, kept in step with a directory of
+ * generated CSS by nothing but attention. When the set grew to twenty-five the
+ * generator started emitting the list instead -- and the reason is not the
+ * arithmetic, it is that two of the ten hand-written labels described the wrong
+ * colour. tweakcn's `ocean-breeze` has a GREEN primary at hue 150 and shipped
+ * here for months as 海蓝, sea blue; `clean-slate` is a saturated indigo at
+ * chroma 0.204, not the 石板灰 it was called. No test could have caught either,
+ * because the hand-written list was the only statement of what the colour was.
+ *
+ * Now the file that computes the colours writes the list, and the swatches are
+ * read out of the palette rather than picked to resemble it.
+ */
+export type PaletteName = (typeof PALETTE_ROWS)[number]["key"];
 
-export type Palette = {
-  key: PaletteName;
-  /** What the customer sees. Their word, not tweakcn's. */
-  label: string;
-  blurb: string;
-  /** Four values for the swatch row, in the order canvas / primary / a mid /
-   *  a light. Hand-picked from the generated file so a card can show the
-   *  palette without mounting a whole rendered sample -- which is what
-   *  21st.dev's Themes grid does, and the only part of their approach that
-   *  fits a page listing thirty options. */
-  dots: [string, string, string, string];
-};
+export type Palette = PaletteRow;
 
 /**
  * Mirrors the filenames in design-system/palettes/ and the check constraint in
- * migration 20260821050000. All three must agree: a name here with no CSS class
+ * migration 20260823120000. All three must agree: a name here with no CSS class
  * renders the layout's native colours and reports nothing, which is a silently
  * wrong system rather than a broken one. style-scope.sync.test.ts checks it.
  */
-export const PALETTES: Palette[] = [
-  { key: "supabase", label: "青绿", blurb: "干净的绿，像后台工具", dots: ["#fcfcfc", "#1c7c54", "#d9e5df", "#f0f4f2"] },
-  { key: "vercel", label: "极简黑", blurb: "黑白灰，没有多余颜色", dots: ["#fcfcfc", "#000000", "#d4d4d4", "#efefef"] },
-  { key: "claude", label: "陶土", blurb: "暖橙陶土，柔和不刺眼", dots: ["#faf9f7", "#a8532b", "#e0d5c8", "#f0e9e0"] },
-  { key: "amber-minimal", label: "琥珀", blurb: "琥珀黄，账本和单据的感觉", dots: ["#fefefe", "#8a5a0b", "#e8d5a8", "#f5ecd8"] },
-  { key: "nature", label: "森绿", blurb: "深绿配米白，沉稳", dots: ["#f8f7f2", "#3d5a3d", "#c8d4c0", "#e5ebe0"] },
-  { key: "ocean-breeze", label: "海蓝", blurb: "浅海蓝，清爽", dots: ["#f7fafc", "#1a6b8a", "#c4dae5", "#e2eef4"] },
-  { key: "vintage-paper", label: "旧纸", blurb: "泛黄纸张，老字号的味道", dots: ["#f5f0e4", "#8a6a3a", "#ddd0b8", "#ebe3d2"] },
-  { key: "clean-slate", label: "石板灰", blurb: "冷灰蓝，中性专业", dots: ["#f8fafc", "#4a5568", "#cbd5e0", "#e2e8f0"] },
-  { key: "mocha-mousse", label: "可可", blurb: "深棕奶咖，温暖厚重", dots: ["#f2e8e0", "#7a4a35", "#d6bfae", "#e6d5c8"] },
-  { key: "graphite", label: "石墨", blurb: "纯灰阶，让数据自己说话", dots: ["#fafafa", "#3f3f3f", "#c9c9c9", "#e4e4e4"] },
-];
+export const PALETTES: Palette[] = PALETTE_ROWS;
 
 export const PALETTE_BY_KEY: Record<string, Palette> = Object.fromEntries(
   PALETTES.map((p) => [p.key, p]),

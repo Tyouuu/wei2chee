@@ -54,35 +54,193 @@ const OUT_DIR = join(HERE, "..", "design-system", "palettes");
 /**
  * The palettes offered, and why each one earns a slot.
  *
- * Not all 36 that tweakcn publishes. A style picker is a decision a business
- * owner makes in under a minute, and thirty-six swatches is not a wider choice
- * than nine, it is the same choice made harder. These are chosen to be
- * genuinely far apart from each other and from the three native palettes --
- * and to be plausible for a Malaysian SME rather than for a developer's side
- * project, which rules out doom-64, cyberpunk and retro-arcade however good
- * they look.
+ * WHY THERE ARE NOW TWENTY-SIX AND NOT TEN. The first ten were picked to be
+ * far apart from each other, and by their own measure they were -- but the
+ * measure was never taken. Run on 2026-08-23, the ten primaries land on these
+ * oklch hues:
+ *
+ *     achromatic x2 · 39 · 44 · 65 · 70 · 144 · 149 · 160 · 277
+ *
+ * Eight chromatic palettes, six of them inside a 30-degree band of
+ * orange-to-amber and a 16-degree band of green. NO RED. No pink. No cyan. One
+ * blue-violet standing in for the entire cool half of the wheel. A customer
+ * opening the picker saw ten cards that were, colorimetrically, four choices.
+ *
+ * RED IS THE ONE THAT MATTERS MOST HERE. It is on the signboard of most
+ * Chinese-Malaysian businesses, on every CNY promotion, and on the shopfront of
+ * the 茶餐室 and 中药行 and 婚宴 caterers this product is for. Having none was
+ * not restraint, it was an oversight the set could not see because nothing
+ * measured it.
+ *
+ * The sixteen added below are chosen by that gap map -- each one is the best
+ * available occupant of a hue band the set did not have. tweakcn publishes
+ * forty; the fourteen not taken are either within 15 degrees of something
+ * already here at similar chroma (cosmic-night, bold-tech, violet-bloom and
+ * claymorphism all sit on clean-slate's violet) or are a look no Malaysian SME
+ * would put in front of a customer (doom-64, cyberpunk, retro-arcade).
+ *
+ * The pairwise hue spread is now reported by the generator, so the next person
+ * adding one can see whether it is a new colour or a fifth orange. It earned
+ * its keep on the first run: of the twenty-six candidates it flagged four that
+ * were another palette in a different name, and they are not in this list --
+ *
+ *     sunset-horizon  H 35 C 0.164   against tangerine       H 36 C 0.172
+ *     solar-dusk      H 49 C 0.145   against claude          H 39 C 0.138
+ *     ocean-breeze    H150 C 0.192   against northern-lights H150 C 0.154
+ *     midnight-bloom  H283 C 0.202   against clean-slate     H277 C 0.204
+ *
+ * and it caught two names that were simply false. tweakcn's `ocean-breeze` has
+ * a GREEN primary at hue 150; it shipped here for months labelled 海蓝, sea
+ * blue. `clean-slate` is a saturated indigo at C 0.204, not the 石板灰 it was
+ * called. A customer choosing 海蓝 for a boat business got a green system.
+ *
+ * WHAT tweakcn CANNOT SUPPLY. After the pruning three bands are still empty --
+ * around hue 180 (true teal), 90 (olive gold) and 320 (plum) -- and no theme in
+ * their forty occupies any of them. Those three are written by hand in NATIVE
+ * below and go through this same pipeline: same repairs, same gates, same
+ * derived navigation. A public registry covers what a public registry covers;
+ * the gaps are the part that has to be designed.
  */
 const WANTED = [
-  ["supabase", "青绿", "干净的绿，像 Supabase 后台"],
-  ["vercel", "极简黑", "黑白灰，没有一点多余颜色"],
-  ["claude", "陶土", "暖橙陶土色，柔和不刺眼"],
-  ["amber-minimal", "琥珀", "琥珀黄，账本和单据的感觉"],
-  ["nature", "森绿", "深绿配米白，沉稳"],
-  ["ocean-breeze", "海蓝", "浅海蓝，清爽"],
-  ["vintage-paper", "旧纸", "泛黄纸张，老字号的味道"],
-  ["clean-slate", "石板灰", "冷灰蓝，中性专业"],
-  ["mocha-mousse", "可可", "深棕奶咖，温暖厚重"],
-  ["graphite", "石墨", "纯灰阶，让数据自己说话"],
+  // ── warm: red, the band that was completely empty ───────────────────────
+  ["elegant-luxury", "朱红", "深红配奶油底,老字号的正式红", "餐饮·中药行·婚宴·礼品"],
+  ["neo-brutalism", "正红", "干净的大红配白,响亮直接", "快餐·零售·促销·体育"],
+  ["t3-chat", "胭脂", "带粉的玫瑰红,柔一点的红", "服饰·写真·花店"],
+  ["bubblegum", "桃粉", "桃粉色,轻快", "美甲·蛋糕·童装·宠物"],
+
+  // ── warm: orange through brown ──────────────────────────────────────────
+  ["tangerine", "橘", "饱和的橘色,看得远", "物流·搬运·五金·工程"],
+  ["claude", "陶土", "暖橙陶土,柔和不刺眼", "设计·工作室·手作"],
+  ["mocha-mousse", "可可", "深棕奶咖,温暖厚重", "咖啡·甜品·家具"],
+  ["caffeine", "咖啡", "低彩度的深褐,安静", "书店·文具·会计"],
+  ["amber-minimal", "琥珀", "琥珀黄,账本和单据的感觉", "会计·当铺·金行"],
+  ["vintage-paper", "旧纸", "泛黄纸张,老字号的味道", "茶行·药材·古董"],
+
+  // ── green, split into four that are actually four ───────────────────────
+  ["gold-grain", "金稻", "熟稻的金黄,不刺眼的贵气", "金行·当铺·米粮·土产·传统食品"],
+  ["kodama-grove", "苔", "带黄的橄榄绿,土气", "农产·园艺·有机·苗圃"],
+  ["nature", "森绿", "深绿配米白,沉稳", "环保·林业·户外"],
+  ["northern-lights", "新绿", "亮一点的绿,干净", "诊所·健康·健身"],
+  ["supabase", "青绿", "干净的绿,像后台工具", "科技·软件·电商"],
+
+  // ── cool: the entire half that had one occupant ─────────────────────────
+  ["turquoise-stone", "松石", "正的湖绿青,凉而干净", "冷气·水电·泳池·洗车·海鲜"],
+  ["perpetuity", "湖水", "偏青的水绿,凉", "冷气·水电·泳池·洗车"],
+  ["twitter", "天蓝", "明亮的天蓝,最好懂", "一般服务·教育·中介"],
+  ["modern-minimal", "标准蓝", "最常见的软件蓝,不会出错", "任何行业·拿不定主意时"],
+  ["starry-night", "靛", "深蓝近墨,正式", "律师·会计·保险·公证"],
+  ["clean-slate", "群青", "饱和的蓝紫,现代", "顾问·工程·设计·活动"],
+  ["amethyst-haze", "紫晶", "淡雾紫,轻", "美容·花店·婚纱"],
+
+  ["rosewood", "紫檀", "沉的梅紫,不是粉红", "美容·婚纱·花艺·精品·养生"],
+
+  // ── no colour at all ────────────────────────────────────────────────────
+  ["vercel", "极简黑", "黑白灰,没有一点多余颜色", "建筑·摄影·精品"],
+  ["graphite", "石墨", "纯灰阶,让数据自己说话", "批发·仓储·数据重的生意"],
 ];
+
+
+/**
+ * THE THREE tweakcn HAS NO ANSWER FOR.
+ *
+ * After pruning, the hues that remain leave three real holes -- around 90
+ * (olive gold), 186 (true teal) and 325 (plum). None of tweakcn's forty themes
+ * occupies any of them: their set is built by and for people shipping developer
+ * tools, and it is heavy on indigo and light on the colours a goldsmith, an
+ * air-conditioning contractor or a bridal shop would recognise as theirs.
+ *
+ * These are written in the same shape a tweakcn theme arrives in, so they go
+ * through the identical pipeline below -- same contrast repairs, same status
+ * gate, same derived navigation. There is one code path, not two.
+ *
+ * Each one's chart ramp is chosen so the three statuses are FAR apart on
+ * purpose, which is the thing a single-accent theme cannot do: positive stays
+ * green, waiting stays amber, stopped stays red, whatever the accent is.
+ */
+const NATIVE = {
+  "gold-grain": {
+    background: "oklch(0.9800 0.0120 95)",
+    card: "oklch(0.9960 0.0050 95)",
+    muted: "oklch(0.9450 0.0200 95)",
+    accent: "oklch(0.9050 0.0420 95)",
+    border: "oklch(0.8700 0.0300 95)",
+    input: "oklch(0.8700 0.0300 95)",
+    foreground: "oklch(0.2700 0.0280 80)",
+    "muted-foreground": "oklch(0.4700 0.0300 85)",
+    primary: "oklch(0.5100 0.0950 95)",
+    ring: "oklch(0.4300 0.0850 95)",
+    "primary-foreground": "oklch(1 0 0)",
+    "sidebar-foreground": "oklch(0.2700 0.0280 80)",
+    destructive: "oklch(0.5300 0.1900 27)",
+    "chart-1": "oklch(0.5100 0.0950 95)",
+    "chart-2": "oklch(0.5000 0.1200 155)",
+    "chart-3": "oklch(0.5900 0.1350 65)",
+    "chart-4": "oklch(0.4800 0.1000 250)",
+    "chart-5": "oklch(0.4200 0.0200 90)",
+  },
+  "turquoise-stone": {
+    background: "oklch(0.9820 0.0060 190)",
+    card: "oklch(1 0 0)",
+    muted: "oklch(0.9560 0.0090 190)",
+    accent: "oklch(0.9200 0.0280 188)",
+    border: "oklch(0.8900 0.0180 190)",
+    input: "oklch(0.8900 0.0180 190)",
+    foreground: "oklch(0.2600 0.0300 200)",
+    "muted-foreground": "oklch(0.4900 0.0280 200)",
+    primary: "oklch(0.5200 0.1050 186)",
+    ring: "oklch(0.4400 0.0950 186)",
+    "primary-foreground": "oklch(1 0 0)",
+    "sidebar-foreground": "oklch(0.2600 0.0300 200)",
+    destructive: "oklch(0.5300 0.1900 27)",
+    "chart-1": "oklch(0.5200 0.1050 186)",
+    "chart-2": "oklch(0.5300 0.1300 150)",
+    "chart-3": "oklch(0.6100 0.1300 75)",
+    "chart-4": "oklch(0.5000 0.0900 300)",
+    "chart-5": "oklch(0.4200 0.0250 220)",
+  },
+  "rosewood": {
+    background: "oklch(0.9790 0.0080 325)",
+    card: "oklch(1 0 0)",
+    muted: "oklch(0.9520 0.0140 325)",
+    accent: "oklch(0.9150 0.0320 325)",
+    border: "oklch(0.8850 0.0220 325)",
+    input: "oklch(0.8850 0.0220 325)",
+    foreground: "oklch(0.2500 0.0350 320)",
+    "muted-foreground": "oklch(0.4700 0.0330 320)",
+    primary: "oklch(0.4700 0.1350 325)",
+    ring: "oklch(0.4000 0.1250 325)",
+    "primary-foreground": "oklch(1 0 0)",
+    "sidebar-foreground": "oklch(0.2500 0.0350 320)",
+    destructive: "oklch(0.5300 0.1900 27)",
+    "chart-1": "oklch(0.4700 0.1350 325)",
+    "chart-2": "oklch(0.5100 0.1250 152)",
+    "chart-3": "oklch(0.6000 0.1300 68)",
+    "chart-4": "oklch(0.5000 0.1000 265)",
+    "chart-5": "oklch(0.4200 0.0250 320)",
+  },
+};
 
 /** How a tweakcn theme's shadcn variables become this design system's colour
  *  tokens. The inverse of the bridge in design-system/tokens/*.css -- read that
  *  file's "THE shadcn/ui CONTRACT" block alongside this. */
 const MAP = {
   "--color-canvas": "background",
-  "--color-ink-950": "muted",
+  // A LIST IS A FALLBACK CHAIN, first key present wins.
+  //
+  // --color-ink-850 USED TO MAP TO `accent`, AND THAT WAS WRONG. In this design
+  // system the ink ramp is NEUTRAL: measured across the registers, ink-850 is
+  // #eef1f4 on 清, #edf2fc on 素, #f2f6fb on 台账 -- a near-white subtle fill,
+  // used for a hover surface and for alternating table rows. shadcn's `accent`
+  // is not that; it is a COLOURED hover, and in several themes it is fully
+  // saturated. So 桃粉's accent, a strong yellow, painted a yellow band across
+  // the middle row of every table, and the 待回复 label on top of it became
+  // unreadable. Seen in the palette cards the moment they showed a real table
+  // instead of four dots.
+  //
+  // `muted` is the neutral one, and it is what ink-850 has always meant.
+  "--color-ink-950": ["secondary", "muted"],
   "--color-ink-900": "card",
-  "--color-ink-850": "accent",
+  "--color-ink-850": ["muted", "secondary"],
   "--color-ink-800": "border",
   "--color-ink-700": "input",
 
@@ -115,15 +273,114 @@ const MAP = {
   "--color-medal-silver": "chart-5",
   "--color-medal-bronze": "chart-4",
 
-  "--color-nav-bg": "sidebar",
-  "--color-nav-bg-deep": "sidebar",
-  "--color-nav-fg": "sidebar-foreground",
-  "--color-nav-fg-dim": "sidebar-foreground",
-  "--color-nav-hover": "sidebar-accent",
-  "--color-nav-active": "sidebar-accent",
-  "--color-nav-border": "sidebar-border",
-  "--color-nav-accent": "sidebar-primary",
+  // THE NAVIGATION IS NOT IN THIS MAP ANY MORE. See deriveNav below.
 };
+
+/**
+ * THE NAVIGATION GROUND, DERIVED RATHER THAN COPIED.
+ *
+ * WHAT WAS MEASURED. All twenty-one registers set a dark navigation: oklch
+ * lightness 0.00 to 0.04, and ledger.css says in so many words that the rail is
+ * the one dark surface in every register. All ten palettes then overrode it
+ * from tweakcn's `sidebar`, whose lightness across the ten is 0.89 to 0.99.
+ *
+ * So every palette silently repainted the one structural surface the registers
+ * agreed on. Verified in a browser, not reasoned about: with 森绿 applied, the
+ * rail's --color-nav-bg computed to L 92.7% and painted the same cream as the
+ * page. The register said near-black. That is the palette layer overruling the
+ * 版式 layer, which is exactly what it is not supposed to be able to do -- and
+ * it is why twenty-one registers times eleven palettes still looked like one
+ * light-sidebar app.
+ *
+ * WHY DERIVE INSTEAD OF DROP. Dropping the nav tokens would give every palette
+ * the register's own dark rail, which is correct but identical twenty-six
+ * times. Deriving keeps the register's VALUE (dark, because that is structure)
+ * and takes the palette's HUE (because that is colour). 森绿 gets a dark green
+ * rail, 靛 a near-black navy, 极简黑 a neutral graphite. The layer split holds
+ * and the variety goes UP.
+ *
+ * An achromatic primary stays achromatic: chroma is scaled, never invented.
+ */
+function deriveNav(resolved) {
+  const p = readOklch(resolved["--color-primary"]) ?? { L: 0.5, C: 0, H: 0 };
+  const H = p.H;
+  // A ground carries far less chroma than a foreground of the same hue, or it
+  // reads as a coloured block rather than as a dark surface.
+  const groundC = Math.min(p.C * 0.42, 0.055);
+  const at = (L, C) => fmtOklch({ L, C, H });
+
+  const bg = at(0.215, groundC);
+  const nav = {
+    "--color-nav-bg": bg,
+    "--color-nav-bg-deep": at(0.145, groundC),
+    "--color-nav-fg": at(0.962, Math.min(p.C * 0.1, 0.014)),
+    "--color-nav-hover": at(0.295, groundC),
+    "--color-nav-active": at(0.345, groundC),
+    "--color-nav-border": at(0.325, groundC),
+  };
+  // The accent has to be READ on that ground, so it is the palette's own
+  // primary walked up in lightness until it clears AA there -- the same repair
+  // used everywhere else in this file, never a different colour.
+  const lifted = fitContrast(resolved["--color-primary"], bg, 4.5);
+  nav["--color-nav-accent"] = lifted?.value ?? at(0.78, Math.min(p.C, 0.14));
+  nav["--color-nav-fg-dim"] =
+    `color-mix(in oklab, ${nav["--color-nav-fg"]} 68%, ${bg})`;
+  return nav;
+}
+
+/**
+ * THE THREE STATUS COLOURS HAVE TO MEAN WHAT THEY SAY.
+ *
+ * A tweakcn theme is designed around ONE accent, and its chart ramp is a
+ * decorative sequence rather than a set of meanings. Mapped onto 已确认 /
+ * 待回复 / 停滞 it produces nonsense, and the first version of this gate --
+ * "are the three at least 32 degrees apart?" -- let the nonsense through,
+ * because being far apart is not the same as being right:
+ *
+ *     正红   已确认 at hue 110 (yellow-green), 待回复 at hue 261 (blue),
+ *            停滞 pure black.       All three far apart. All three wrong.
+ *     桃粉   已确认 at hue 212 (blue).
+ *     咖啡   待回复 at chroma 0.000, which is a grey.
+ *
+ * Seen the moment the palette cards started showing a real table instead of
+ * four dots: a row marked 已确认 in blue and one marked 待回复 in yellow, side
+ * by side, in a product whose whole job is telling a business owner which
+ * quotations still need chasing.
+ *
+ * So the gate is now about NEIGHBOURHOOD, not distance. Positive lands in the
+ * greens, waiting in the ambers, stopped in the reds, or the palette does not
+ * get to repaint them and the register's own three show through. That is the
+ * right fallback and not a concession: 已确认 should look the same kind of
+ * green in all twenty-five, because it means the same thing in all twenty-five.
+ * A palette repaints the page; it does not get to redefine what finished means.
+ *
+ * The variety a palette provides is its ground, its ink and its accent -- which
+ * is plenty, and is the half that is genuinely a matter of taste.
+ */
+const STATUS_TOKENS = [
+  "--color-jade", "--color-jade-bright", "--color-jade-chart",
+  "--color-brass", "--color-brass-bright", "--color-brass-chart",
+  "--color-clay", "--color-clay-bright", "--color-clay-deep",
+];
+
+/** hue windows, inclusive, wrapping at 360. */
+const MEANINGS = [
+  ["--color-jade", "已确认", 120, 190],
+  ["--color-brass", "待回复", 40, 105],
+  ["--color-clay", "停滞", 340, 40],
+];
+
+function statusesMeanWhatTheySay(resolved) {
+  const bad = [];
+  for (const [token, what, lo, hi] of MEANINGS) {
+    const c = readOklch(resolved[token]);
+    if (!c) { bad.push(`${what} not expressible in oklch`); continue; }
+    if (c.C < 0.05) { bad.push(`${what} is a grey (chroma ${c.C.toFixed(3)})`); continue; }
+    const inWindow = lo <= hi ? c.H >= lo && c.H <= hi : c.H >= lo || c.H <= hi;
+    if (!inWindow) bad.push(`${what} at hue ${Math.round(c.H)}, outside ${lo}-${hi}`);
+  }
+  return bad.length ? { ok: false, why: bad.join("; ") } : { ok: true };
+}
 
 /** Foregrounds that must be legible, and the surfaces they sit on. */
 const CONTRAST_PAIRS = [
@@ -133,7 +390,7 @@ const CONTRAST_PAIRS = [
   ["--color-paper-dim", "--color-ink-900", 4.5],
   ["--color-primary", "--color-ink-900", 3.0],
   ["--color-on-primary", "--color-primary", 4.5],
-  ["--color-nav-fg", "--color-nav-bg", 4.5],
+  // The navigation pair is checked against the DERIVED values, not these.
 ];
 
 // --- colour maths ----------------------------------------------------------
@@ -249,6 +506,7 @@ function bestOn(fill, candidates) {
 // --- generation ------------------------------------------------------------
 
 async function fetchTheme(name) {
+  if (NATIVE[name]) return NATIVE[name];
   const res = await fetch(`https://tweakcn.com/r/themes/${name}.json`);
   if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`);
   const json = await res.json();
@@ -265,21 +523,17 @@ function className(name) {
   return "palette" + name.split("-").map((p) => p[0].toUpperCase() + p.slice(1)).join("");
 }
 
-function toCss(name, zh, blurb, vars, resolved, fixes) {
+function toCss(name, zh, blurb, who, resolved, nav, statusNote) {
   const lines = [];
   for (const token of Object.keys(MAP)) {
     const v = resolved[token];
     if (v) lines.push(`  ${token}: ${v};`);
   }
-  // nav-fg-dim has no counterpart -- sidebar-foreground at 68% is what every
-  // hand-written style uses for the same job, and color-mix keeps it tied to
-  // the palette rather than freezing a value.
-  if (vars["sidebar-foreground"]) {
-    lines.push(
-      `  --color-nav-fg-dim: color-mix(in oklab, ${vars["sidebar-foreground"]} 68%, ${vars["sidebar"] ?? vars["background"]});`,
-    );
-  }
+  lines.push("");
+  lines.push("  /* Derived, not copied -- see deriveNav in the generator. */");
+  for (const [token, v] of Object.entries(nav)) lines.push(`  ${token}: ${v};`);
   return `/* ${zh} (${name}) -- ${blurb}
+ * 适合: ${who}
  *
  * GENERATED by scripts/build-palettes.mjs. Do not edit by hand.
  * Source: https://tweakcn.com/r/themes/${name}.json
@@ -287,8 +541,13 @@ function toCss(name, zh, blurb, vars, resolved, fixes) {
  * system's token names -- see the MAP in the generator for the correspondence.
  *
  * Colour ONLY. Type scale, weights, radii, density and shadows all stay with
- * whichever 版式 class this is combined with, which is what makes 3 x N work.
- *${fixes.length ? "\n * CONTRAST REPAIRS (lightness only, hue and chroma held exactly):\n *   " + fixes.join("\n *   ") : "\n * No contrast repairs needed: every pair cleared AA as published."}
+ * whichever 版式 class this is combined with, which is what makes 21 x N work.
+ *
+ * The navigation ground is DARK here, in this palette's own hue, because every
+ * one of the twenty-one registers makes the rail its one dark surface -- and a
+ * palette repaints colour, not structure. It is derived, not taken from
+ * tweakcn's own sidebar value, which is near-white in all forty of their themes.
+ *${statusNote}
  */
 .${className(name)} {
 ${lines.join("\n")}
@@ -301,7 +560,8 @@ async function main() {
   if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 
   const kept = [], dropped = [], repaired = [];
-  for (const [name, zh, blurb] of WANTED) {
+  const flattened = [];
+  for (const [name, zh, blurb, who] of WANTED) {
     let vars;
     try {
       vars = await fetchTheme(name);
@@ -311,7 +571,15 @@ async function main() {
     }
 
     const resolved = {};
-    for (const [token, key] of Object.entries(MAP)) if (vars[key]) resolved[token] = vars[key];
+    for (const [token, key] of Object.entries(MAP)) {
+      const from = Array.isArray(key) ? key.find((k) => vars[k]) : key;
+      if (from && vars[from]) resolved[token] = vars[from];
+    }
+
+    // The navigation is derived from this palette rather than copied from the
+    // theme's own near-white sidebar -- see deriveNav. Derived before the
+    // repairs below because it reads --color-primary, which they may move.
+    const nav = deriveNav(resolved);
 
     // REPAIR BEFORE JUDGING.
     // Three mechanical failures show up across tweakcn's set, and every one of
@@ -337,7 +605,16 @@ async function main() {
     repairable &&= repair("--color-primary-deep", "--color-ink-900", 4.5, "primary-deep");
     repairable &&= repair("--color-paper-dim", "--color-canvas", 4.5, "paper-dim/canvas");
     repairable &&= repair("--color-paper-dim", "--color-ink-900", 4.5, "paper-dim/card");
-    repairable &&= repair("--color-nav-fg", "--color-nav-bg", 4.5, "nav-fg");
+    // THE STATUS COLOURS ARE TEXT. 已确认 / 待回复 / 停滞 are rendered as a word
+    // in the tone, not only as a dot, and nothing here had ever measured them:
+    // 正红's 已确认 came out yellow-on-white and 桃粉's 待回复 was invisible.
+    // A status that cannot be read is worse than no status, because the row
+    // still looks answered.
+    for (const t of ["--color-jade", "--color-brass", "--color-clay", "--color-info", "--color-slate"]) {
+      if (resolved[t]) repairable &&= repair(t, "--color-ink-900", 4.5, t.replace("--color-", ""));
+    }
+    // The navigation is DERIVED (deriveNav), not copied, so it is not repaired
+    // here -- it is constructed to clear AA and then checked below.
 
     // The fill label is CHOSEN from the palette's own extremes rather than
     // nudged, because a button label wants to be one of the two ends, not a
@@ -362,10 +639,33 @@ async function main() {
       if (r === null) { fails.push(`${fg} on ${bg}: unparseable`); continue; }
       if (r < min) fails.push(`${fg} on ${bg}: ${r.toFixed(2)} < ${min}`);
     }
+    const navRatio = contrast(nav["--color-nav-fg"], nav["--color-nav-bg"]);
+    if (!(navRatio >= 4.5)) fails.push(`derived nav-fg on nav-bg: ${navRatio?.toFixed(2) ?? "?"} < 4.5`);
+    const accentRatio = contrast(nav["--color-nav-accent"], nav["--color-nav-bg"]);
+    if (!(accentRatio >= 4.5)) fails.push(`derived nav-accent on nav-bg: ${accentRatio?.toFixed(2) ?? "?"} < 4.5`);
     if (fails.length) { dropped.push([name, fails.join("; ")]); continue; }
     if (fixes.length) repaired.push([name, fixes.join(", ")]);
 
-    const css = toCss(name, zh, blurb, vars, resolved, fixes);
+
+    // The three status colours only survive if they are still three colours.
+    const sep = statusesMeanWhatTheySay(resolved);
+    let statusNote;
+    if (sep.ok) {
+      statusNote = `\n * Status colours come from this palette: 已确认 / 待回复 / 停滞 each`
+        + ` land in the right neighbourhood of the wheel.`;
+    } else {
+      for (const t of STATUS_TOKENS) delete resolved[t];
+      flattened.push([name, sep.why]);
+      statusNote = `\n * Status colours are NOT taken from this palette (${sep.why}), so`
+        + ` 已确认 / 待回复 / 停滞 stay the register's own three. A status colour is the`
+        + ` only thing on a row that says what to do next; it does not get to`
+        + ` collapse into one accent.`;
+    }
+    if (fixes.length) statusNote += `\n *
+ * CONTRAST REPAIRS (lightness only, hue and chroma held exactly):
+ *   ${fixes.join("\n *   ")}`;
+
+    const css = toCss(name, zh, blurb, who, resolved, nav, statusNote);
     const path = join(OUT_DIR, `${name}.css`);
     if (check) {
       const existing = existsSync(path) ? readFileSync(path, "utf8") : "";
@@ -376,10 +676,77 @@ async function main() {
     } else {
       writeFileSync(path, css);
     }
-    kept.push([name, zh]);
+    kept.push([name, zh, blurb, who, [resolved["--color-canvas"], resolved["--color-primary"], resolved["--color-ink-800"], resolved["--color-ink-850"]]]);
   }
 
   console.log(`kept ${kept.length}: ${kept.map(([n, z]) => `${z}(${n})`).join(", ")}`);
+
+  // ── THE REGISTRY, EMITTED ────────────────────────────────────────────────
+  //
+  // lib/portal/palettes.ts used to carry this list by hand: twenty-five keys,
+  // twenty-five labels and a hundred hand-picked swatch values, kept in step
+  // with a directory of generated files by nothing but attention. Two of the
+  // ten hand-written labels turned out to describe the wrong colour -- 海蓝
+  // over a green and 石板灰 over a saturated indigo -- and neither could have
+  // been caught by a test, because the list was the only statement of what the
+  // colours were supposed to be.
+  //
+  // Now the file that computes the colours writes the list, and the swatches
+  // are read out of the palette rather than chosen to look like it.
+  const registry = kept.map(([n, zh, blurb, who, dots]) =>
+    `  { key: ${JSON.stringify(n)}, label: ${JSON.stringify(zh)}, blurb: ${JSON.stringify(blurb)}, who: ${JSON.stringify(who)},\n    dots: [${dots.map((d) => JSON.stringify(d)).join(", ")}] },`,
+  ).join("\n");
+  const ts = `// GENERATED by scripts/build-palettes.mjs. Do not edit by hand.
+//
+// The 配色 layer's contents. Mirrors design-system/palettes/*.css exactly,
+// because the same run wrote both -- see the note above the emitter.
+
+export type PaletteRow = {
+  key: string;
+  /** What the customer sees. Their word, not tweakcn's. */
+  label: string;
+  blurb: string;
+  /** Which trades this one is for. Shown under the name in the picker. */
+  who: string;
+  /** ground / accent / line / fill, read straight out of the palette. */
+  dots: [string, string, string, string];
+};
+
+export const PALETTE_ROWS: PaletteRow[] = [
+${registry}
+];
+`;
+  const tsPath = join(HERE, "..", "lib", "portal", "palettes.generated.ts");
+  if (check) {
+    const existing = existsSync(tsPath) ? readFileSync(tsPath, "utf8") : "";
+    if (existing !== ts) { console.error("STALE: lib/portal/palettes.generated.ts"); process.exit(1); }
+  } else {
+    writeFileSync(tsPath, ts);
+  }
+
+  // THE SPREAD REPORT. The first ten palettes were "chosen to be genuinely far
+  // apart" and nothing ever checked. Six of the eight chromatic ones turned out
+  // to sit inside two narrow bands. This prints the wheel so the next person
+  // adding one can see at a glance whether it is a new colour or a fifth orange.
+  const hues = kept.map(([n]) => {
+    const css = readFileSync(join(OUT_DIR, `${n}.css`), "utf8");
+    const m = css.match(/^  --color-primary:\s*([^;]+);/m);
+    const c = m ? readOklch(m[1]) : null;
+    return { n, H: c && c.C > 0.03 ? c.H : null, C: c ? c.C : 0 };
+  });
+  const chromatic = hues.filter((h) => h.H !== null).sort((a, b) => a.H - b.H);
+  console.log(`\nhue spread (${chromatic.length} chromatic, ${hues.length - chromatic.length} achromatic):`);
+  for (let i = 0; i < chromatic.length; i++) {
+    const prev = chromatic[(i - 1 + chromatic.length) % chromatic.length];
+    let gap = chromatic[i].H - prev.H;
+    if (gap < 0) gap += 360;
+    const flag = gap < 12 ? "   <-- within 12 deg of the one before it" : "";
+    console.log(`  ${String(Math.round(chromatic[i].H)).padStart(3)}  ${chromatic[i].n.padEnd(16)} +${String(Math.round(gap)).padStart(3)}${flag}`);
+  }
+  if (flattened.length) {
+    console.log(`\nstatus colours left to the register in ${flattened.length}:`);
+    for (const [n, why] of flattened) console.log(`  ${n} -- ${why}`);
+  }
   if (repaired.length) {
     console.log(`repaired ${repaired.length}:`);
     for (const [n, what] of repaired) console.log(`  ${n} -- ${what}`);

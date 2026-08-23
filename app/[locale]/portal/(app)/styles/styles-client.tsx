@@ -315,6 +315,7 @@ export function StylesClient({
                 key={p.key}
                 label={p.label}
                 blurb={p.blurb}
+                who={p.who}
                 styleName={active}
                 paletteKey={p.key}
                 current={activePalette === p.key}
@@ -349,6 +350,7 @@ export function StylesClient({
 function PaletteCard({
   label,
   blurb,
+  who,
   styleName,
   paletteKey,
   current,
@@ -358,6 +360,9 @@ function PaletteCard({
 }: {
   label: string;
   blurb: string;
+  /** Which trades this colour belongs to. Absent on the native pairing, which
+   *  belongs to the register rather than to a trade. */
+  who?: string;
   styleName: StyleName;
   paletteKey: string | null;
   current: boolean;
@@ -394,6 +399,15 @@ function PaletteCard({
         )}
       </span>
       <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{blurb}</span>
+      {/* WHO IT IS FOR, under the description. Twenty-five colours is a longer
+          list than anybody wants to compare one by one, and a business owner
+          does not choose a hue -- he recognises his own trade. This is the
+          line that turns a wall of swatches into a shortlist of two. */}
+      {who && (
+        <span className="mt-0.5 block [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [opacity:0.8]">
+          {who}
+        </span>
+      )}
     </li>
   );
 }
@@ -408,28 +422,94 @@ function PaletteCard({
  *  colour, four dots for the accent and the neutral ramp, and the name set
  *  inside it in the palette's own foreground. */
 function PaletteSample({ label }: { label: string }) {
-  const dot = (v: string) => (
-    <span
-      className="block size-5 rounded-full"
-      style={{ backgroundColor: v, boxShadow: "0 0 0 1px rgba(0,0,0,0.06)" }}
-    />
+  /* WHAT THIS USED TO BE, AND WHY IT CHANGED.
+     The comment above this function has said since it was written that the
+     fragment is "one figure, two rows with statuses, one button". It was not.
+     It was four dots and a word on an empty field -- 25 cards each showing a
+     large rectangle of ground colour with a row of circles in the corner, which
+     is the least informative thing a palette card can be and reads as
+     unfinished. Screenshotted at 1440 before this was replaced.
+
+     A palette shows itself in four places and nowhere else: the ground it
+     paints, the accent on a fill, the three status tones, and the ink on a
+     panel. So the fragment now contains exactly those four and nothing more --
+     small enough to sit twenty-five to a page, complete enough that choosing
+     between two of them is a real comparison rather than a guess. */
+  const row = (name: string, amount: string, tone: string, state: string) => (
+    <span className="flex items-center gap-2 [padding:6px_10px]">
+      <span className="min-w-0 flex-1 truncate [color:var(--color-paper)] [font-size:var(--text-xs)]">
+        {name}
+      </span>
+      <span className="tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+        {amount}
+      </span>
+      <span
+        className="flex shrink-0 items-center gap-1 [font-size:var(--text-micro)]"
+        style={{ color: tone }}
+      >
+        <span className="block size-1.5 rounded-full" style={{ backgroundColor: tone }} />
+        {state}
+      </span>
+    </span>
   );
+
   return (
     <span
-      className="ds-ground relative block w-full [background-color:var(--color-canvas)]"
+      className="ds-ground relative block w-full overflow-hidden [background-color:var(--color-canvas)] [padding:12px]"
       style={{ aspectRatio: "4 / 3" }}
     >
-      {/* Accent first, then the neutral ramp lightest-last -- the same order
-          and the same count 21st.dev uses, which is what makes two palettes
-          comparable at a glance instead of merely both being colourful. */}
-      <span className="absolute left-4 top-4 flex gap-2">
-        {dot("var(--color-primary)")}
-        {dot("var(--color-ink-800)")}
-        {dot("var(--color-ink-850)")}
-        {dot("var(--color-ink-900)")}
-      </span>
-      <span className="absolute bottom-4 left-4 right-4 truncate [color:var(--foreground)] [font-family:var(--font-ui)] [font-size:var(--text-base)]">
-        {label}
+      <span className="flex h-full flex-col gap-2">
+        {/* The panel: ink on a card, the accent as a number, and the chart ramp
+            as a figure. Five bars because five is what the ramp has. */}
+        <span className="ds-card block [padding:10px_12px]">
+          <span className="flex items-end justify-between">
+            <span className="block">
+              <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+                本月收款
+              </span>
+              <span className="block tabular-nums [color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                RM 48,500
+              </span>
+            </span>
+            <span className="flex h-7 items-end gap-[3px]">
+              {[
+                ["var(--color-jade-chart)", 10],
+                ["var(--color-brass-chart)", 18],
+                ["var(--color-info)", 13],
+                ["var(--color-primary)", 26],
+                ["var(--color-slate)", 16],
+              ].map(([c, h], i) => (
+                <span
+                  key={i}
+                  className="block w-[5px] [border-radius:var(--radius-xs)]"
+                  style={{ backgroundColor: c as string, height: `${h as number}px` }}
+                />
+              ))}
+            </span>
+          </span>
+        </span>
+
+        {/* The three status tones, which is the one thing four dots could never
+            show: whether 已确认 / 待回复 / 停滞 are still three colours in this
+            palette, or have collapsed into one accent. */}
+        <span className="ds-card block flex-1 divide-y [border-color:var(--color-ink-800)] [divide-color:var(--color-ink-800)]">
+          {row("陈先生 · 三房翻新", "48,500", "var(--color-jade)", "已确认")}
+          {row("李太太 · 厨房", "22,800", "var(--color-brass)", "待回复")}
+          {row("黄先生 · 店面", "96,000", "var(--color-clay)", "停滞")}
+        </span>
+
+        {/* The accent as a FILL, with its own label colour on it -- the pair
+            that fails most often, and the only place it shows. */}
+        <span className="flex items-center justify-between gap-2">
+          <span className="truncate [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+            {label}
+          </span>
+          <span
+            className="shrink-0 [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-micro)] [padding:5px_12px]"
+          >
+            发出报价
+          </span>
+        </span>
       </span>
     </span>
   );

@@ -85,12 +85,34 @@ describe("the palette layer agrees with itself", () => {
     }
   });
 
-  it("gives every palette a label, a blurb and four swatch colours", () => {
+  it("gives every palette a label, a blurb, the trades it is for, and four swatches", () => {
     for (const p of PALETTES) {
       expect(p.label.length, p.key).toBeGreaterThan(0);
       expect(p.blurb.length, p.key).toBeGreaterThan(4);
+      expect(p.who.length, p.key).toBeGreaterThan(1);
       expect(p.dots, p.key).toHaveLength(4);
-      for (const d of p.dots) expect(d, `${p.key} swatch`).toMatch(/^#[0-9a-f]{6}$/i);
+    }
+  });
+
+  /**
+   * THE SWATCHES ARE THE PALETTE, NOT A LIKENESS OF IT.
+   *
+   * The old version of this test asserted the four dots were six-digit hex and
+   * stopped there -- which passed happily while two of the ten palettes were
+   * labelled the wrong colour entirely (海蓝 over a green primary at hue 150,
+   * 石板灰 over a saturated indigo). Format was never the risk; DRIFT was, and
+   * a format check cannot see drift.
+   *
+   * Both sides are now written by the same run of build-palettes.mjs, and this
+   * is what holds them to it: every dot must be a value that literally appears
+   * in that palette's own CSS file.
+   */
+  it("reads every swatch straight out of the palette it describes", () => {
+    for (const p of PALETTES) {
+      const css = readFileSync(join(PALETTE_DIR, `${p.key}.css`), "utf8");
+      for (const d of p.dots) {
+        expect(css, `${p.key} swatch ${d}`).toContain(d);
+      }
     }
   });
 
