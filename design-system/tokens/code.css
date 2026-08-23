@@ -442,6 +442,29 @@
   --sidebar-accent-foreground: var(--color-nav-fg);
   --sidebar-border: var(--color-nav-border);
   --sidebar-ring: var(--color-nav-accent);
+  /* ---- THE SHADOW SCALE, WHICH THE CONTRACT WAS MISSING -------------------
+     Measured 2026-08-23: no register defined any of shadcn's shadow steps, and
+     they are used 59 times in code a register is supposed to dress -- 44 in the
+     216 pulled sections (shadow-sm x27, shadow-md x10, shadow-lg x7) and 15 in
+     our own shadcn primitives (dropdowns, popovers, tooltips, sheets).
+
+     So every one of those 59 places rendered Tailwind's DEFAULT shadow in all
+     twenty-one registers. 粗野's hard offset, 玻璃's blur and 墨's deliberate
+     flatness were identical the moment a pulled section or a popover appeared,
+     which is a large part of why the registers still read as one thing wearing
+     different paint.
+
+     Mapped onto the three this file already declares rather than invented:
+     small steps are the card, mid steps are a raised list, the big ones are an
+     overlay. A register that says "no shadow" now says it everywhere. */
+  --shadow-2xs: var(--shadow-card);
+  --shadow-xs: var(--shadow-card);
+  --shadow-sm: var(--shadow-card);
+  --shadow: var(--shadow-card);
+  --shadow-md: var(--shadow-raised);
+  --shadow-lg: var(--shadow-raised);
+  --shadow-xl: var(--shadow-overlay);
+  --shadow-2xl: var(--shadow-overlay);
 }
 
 @media (min-resolution: 192dpi) {

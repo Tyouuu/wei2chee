@@ -67,7 +67,12 @@ export type StyleName =
   // For an owner who cannot read the others. Nothing in the set was above
   // 17px type, above a 41px touch target, or reached 7:1 on secondary text
   // more than four times out of twenty. See tokens/clear.css.
-  | "clear";
+  | "clear"
+  // Taken from arhamkhnz/next-shadcn-admin-dashboard's soft-pop preset
+  // (MIT) over tweakcn colours: big radius AND a hard black edge, and three
+  // saturated colours used as decoration rather than as meaning. See
+  // tokens/pop.css.
+  | "pop";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -107,6 +112,7 @@ export const STYLE_ORDER: StyleName[] = [
   "code",
   "tile",
   "clear",
+  "pop",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -131,6 +137,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   code: styles.code,
   tile: styles.tile,
   clear: styles.clear,
+  pop: styles.pop,
 };
 
 /**
@@ -179,6 +186,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   code: styles.code,
   tile: styles.tile,
   clear: styles.clear,
+  pop: styles.pop,
 };
 
 export function StyleColumn({

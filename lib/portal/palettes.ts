@@ -88,6 +88,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   code: styles.code,
   tile: styles.tile,
   clear: styles.clear,
+  pop: styles.pop,
 };
 
 /**

@@ -152,6 +152,10 @@
       "clear": {
         "label": "Clear",
         "description": "For an owner who cannot read the others. 20px body text, touch targets around 52px, and secondary text at 7.4:1. Measured across the other twenty registers: nothing above 17px type, nothing above a 41px target, and only four reaching 7:1 on secondary text — the worst of them below AA on its own card, since fixed. It is not another Large: 大字 and 墨 are about air, this is about being able to read it, so the row height is deliberately shorter than 墨's. Showing four rows instead of eight helps nobody who is squinting."
+      },
+      "pop": {
+        "label": "Pop",
+        "description": "The sticker one. 26px corners with a 2px pure-black edge, and a hard offset shadow rather than a blur. Three saturated colours at once — indigo, teal, amber — colour as decoration, not only as meaning. Every one of the other twenty-one registers has a single accent. For businesses whose customer chooses with their eyes and is under forty."
       }
     },
     "sample": {
@@ -443,7 +447,8 @@
         "lacquer": "Lacquer · oxblood ground, ivory panels, gold line",
         "code": "Code · monospace throughout, printer's blue",
         "tile": "Tile · patterned floor, glaze teal",
-        "clear": "Clear · 20px body, large targets, no faint text"
+        "clear": "Clear · 20px body, large targets, no faint text",
+        "pop": "Pop · big radius, black edge, three colours"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",
