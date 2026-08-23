@@ -195,6 +195,17 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "detailed", label: "带说明", props: { variant: "detailed" } },
   ],
 
+  // ---------------------------------------------------------------- 标签页
+  //
+  // A tab strip is one of the few controls a customer reads as "this software's
+  // house style" before reading any content, and it had exactly one look.
+  TabbedPanel: [
+    { id: "pill", label: "药丸", props: { look: "pill" } },
+    { id: "underline", label: "底线", props: { look: "underline" } },
+    { id: "segment", label: "分段控制", props: { look: "segment" } },
+    { id: "plain", label: "只有字", props: { look: "plain" } },
+  ],
+
   // ------------------------------------------------ 页面标题 · 卡片分区
   //
   // The first thing on every page, and the container everything else sits in.

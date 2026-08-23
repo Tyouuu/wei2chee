@@ -178,6 +178,7 @@ type Components = {
   NoteField: { label: string; placeholder: string };
   Panel: { title: string; description?: string; body: Slot; look?: "card" | "tinted" | "plain" | "ruled" };
   TabbedPanel: {
+    look?: "pill" | "underline" | "segment" | "plain";
     oneLabel: string; twoLabel: string; threeLabel: string;
     one: Slot; two: Slot; three: Slot;
   };
@@ -1258,9 +1259,29 @@ export const puckConfig: Config<Components> = {
         oneLabel: "全部", twoLabel: "进行中", threeLabel: "完成",
         one: [], two: [], three: [],
       },
-      render: ({ oneLabel, twoLabel, threeLabel, one: One, two: Two, three: Three }) => (
-        <Tabs defaultValue="one">
-          <TabsList>
+      // FOUR TAB LOOKS. A tab strip is one of the few controls a customer reads
+      // as "this software's house style" before reading any content, and it had
+      // exactly one until 2026-08-23.
+      //
+      //   pill      shadcn's own filled pill. The default.
+      //   underline the tab is a word with a rule under the live one -- what a
+      //             register built on hairlines (台账, 单据, 码) wants.
+      //   segment   one enclosed control, iOS-style, for the rounded family.
+      //   plain     words only, the live one just bolder. For 墨 and 素, where
+      //             a control with its own box is a second structure.
+      render: ({ oneLabel, twoLabel, threeLabel, one: One, two: Two, three: Three, look }) => (
+        <Tabs defaultValue="one" className={look === "plain" ? "[--tab-plain:1]" : undefined}>
+          <TabsList
+            className={
+              look === "underline"
+                ? "h-auto w-full justify-start gap-4 rounded-none bg-transparent p-0 [border-bottom:var(--hairline)_solid_var(--color-ink-800)] [&>*]:rounded-none [&>*]:border-0 [&>*]:bg-transparent [&>*]:px-0 [&>*]:pb-2 [&>*[data-state=active]]:[border-bottom:2px_solid_var(--color-primary)] [&>*[data-state=active]]:[color:var(--color-primary)] [&>*[data-state=active]]:shadow-none"
+                : look === "plain"
+                  ? "h-auto w-full justify-start gap-5 rounded-none bg-transparent p-0 [&>*]:rounded-none [&>*]:bg-transparent [&>*]:px-0 [&>*]:shadow-none [&>*[data-state=active]]:[font-weight:var(--fw-semibold)] [&>*[data-state=active]]:[color:var(--color-paper)]"
+                  : look === "segment"
+                    ? "[background-color:var(--color-ink-850)] [border:var(--hairline)_solid_var(--color-ink-800)] [border-radius:var(--radius-pill)] [&>*]:[border-radius:var(--radius-pill)]"
+                    : undefined
+            }
+          >
             <TabsTrigger value="one">{oneLabel}</TabsTrigger>
             <TabsTrigger value="two">{twoLabel}</TabsTrigger>
             {threeLabel ? <TabsTrigger value="three">{threeLabel}</TabsTrigger> : null}

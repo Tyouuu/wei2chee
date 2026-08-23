@@ -14,7 +14,8 @@
     "build:tokens": "node scripts/build-style-scope.mjs",
     "check:reachable": "python scripts/check-reachable.py",
     "check:contrast": "node scripts/check-contrast.mjs",
-    "check:print": "node scripts/check-print.mjs"
+    "check:print": "node scripts/check-print.mjs",
+    "check:registers": "node scripts/check-registers.mjs Ledger Hearth Blueprint Bare Docket Large Stamp Contract Swiss Soft Brut Ink Glass Night Grain Kraft Signboard Lacquer Code Tile Clear Pop"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
