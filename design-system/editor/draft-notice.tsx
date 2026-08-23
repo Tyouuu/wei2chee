@@ -68,7 +68,12 @@ export function DraftNotice({
     // covered by a note telling them it was a draft. Every generated page puts
     // its title top-left and leaves the opposite corner empty, so that is where
     // this goes, and it still costs zero bands of chrome.
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-end px-5 pt-4">
+    // `data-chrome` marks this as Formae talking to the owner rather than part
+    // of the page he is designing. It sits INSIDE the editor canvas, so the
+    // print layer's "everything off the path to the canvas is gone" rule does
+    // not reach it -- rendered on A4 this notice printed as a box on top of
+    // the page's own subtitle. See PAPER in app/globals.css.
+    <div data-chrome="formae" className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-end px-5 pt-4">
       <div
         className="flex max-w-[440px] flex-wrap items-center gap-x-2 gap-y-1 rounded-[var(--radius-lg)] border px-3.5 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
         style={{

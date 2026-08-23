@@ -76,6 +76,9 @@ export function AiDock({ children }: { children: ReactNode }) {
 
   return (
     <div
+      // Formae's own control, inside the customer's canvas -- see draft-notice
+      // for why that needs saying out loud, and PAPER in app/globals.css.
+      data-chrome="formae"
       className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-end pb-4 pl-4"
       // The canvas scrolls under this. Only the card itself takes pointer
       // events, so the page behind stays clickable everywhere the card is not.

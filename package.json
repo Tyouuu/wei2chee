@@ -13,7 +13,8 @@
     "check:isolation": "node scripts/check-tenant-isolation.mjs",
     "build:tokens": "node scripts/build-style-scope.mjs",
     "check:reachable": "python scripts/check-reachable.py",
-    "check:contrast": "node scripts/check-contrast.mjs"
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "check:print": "node scripts/check-print.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

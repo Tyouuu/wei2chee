@@ -267,7 +267,11 @@ export function RailNav({
     // the old `h-screen`: inside Puck's canvas iframe the two coincide, but on
     // a page taller than the viewport `h-screen` stops the rail partway down
     // and leaves a bright strip under it.
-    <aside className={shell} aria-label={isTop ? w.topNav : w.sideNav} ref={wrapRef}>
+    // `data-nav` is what the print layer selects on (app/globals.css, PAPER).
+    // It states the fact -- this element is the navigation -- rather than
+    // relying on `aside`, which a detail page may legitimately use for its own
+    // summary column and which must still print.
+    <aside data-nav={isTop ? "top" : "side"} className={shell} aria-label={isTop ? w.topNav : w.sideNav} ref={wrapRef}>
       {/* The brand block. A monogram tile carrying the register's own nav
           accent gives the rail one saturated anchor point — without it a dark
           column of grey text reads as unfinished rather than as chrome. */}

@@ -332,3 +332,177 @@
 .ds-display {
   font-family: var(--font-display, var(--font-ui));
 }
+
+/* ── PAPER ───────────────────────────────────────────────────────────────────
+
+   WHAT WAS MEASURED. `grep -rn "@media print"` across the whole product on
+   2026-08-23 returned exactly one hit: four lines in the portal chrome that
+   flatten the paper mount. Twenty-one registers for the screen, nothing at all
+   for the sheet. Rendered under print media, a customer's quotation came out
+   carrying Formae's own toolbar (风格 · 预览 · 保存设计), the dark navigation
+   column, the AI dock, and the onboarding tooltip -- which printed as a black
+   box sitting ON TOP OF the page's own subtitle. Two thirds of the A4 was the
+   dark workbench: one full sheet of toner, from a shop printer that is usually
+   mono and usually low.
+
+   This matters more here than in most products. A Malaysian SME runs on paper
+   it hands to somebody: 报价单, 送货单, 收据, 发票 -- and from 2026 an LHDN
+   e-Invoice with a QR on it. The register decides what the system looks like;
+   until now nothing decided what comes out of the printer.
+
+   ── 1. ONLY THE CUSTOMER'S PAGE PRINTS ───────────────────────────────────
+
+   Written against `[data-editor-canvas]` and `:has()` rather than against a
+   list of chrome classes. The canvas sits twelve levels down a chain of
+   CSS-module and Puck-generated class names; any rule naming those is wrong
+   the next time either package publishes. `:has()` states the actual fact --
+   "an element on the path to the canvas" -- so the rule survives.
+
+   The two selectors are recursive by construction: at every level of the
+   chain, siblings that are not on the path are removed, and the path itself is
+   unclipped. Nothing has to know how deep the canvas is. */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+
+  /* Off the path: gone. Catches the toolbar, the dock, the tooltips and every
+     portal appended to <body>, without naming any of them. */
+  :has([data-editor-canvas]) > *:not(:has([data-editor-canvas])):not([data-editor-canvas]) {
+    display: none !important;
+  }
+
+  /* On the path: unclipped, unpainted, unpadded. The editor is a stack of
+     h-screen / overflow-hidden panes, and left alone they clip the sheet to
+     one viewport -- a five-page quotation printed as one page and a fold. */
+  html:has([data-editor-canvas]),
+  body:has([data-editor-canvas]),
+  :has([data-editor-canvas]) {
+    display: block !important;
+    position: static !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    width: auto !important;
+    max-width: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    transform: none !important;
+  }
+
+  [data-editor-canvas] {
+    height: auto !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Formae's own UI that lives INSIDE the customer's canvas: the draft notice
+     and the AI dock. The path rule above cannot reach these -- they are not
+     siblings of the canvas, they are in it. On A4 the notice printed as a box
+     sitting on top of the page's own subtitle and the dock printed across the
+     last row of the table. */
+  [data-editor-canvas] [data-chrome] {
+    display: none !important;
+  }
+
+  /* ── 2. THE REGISTER SURVIVES; THE SCREEN DOES NOT ──────────────────────
+
+     A token remap, the same move `SystemShell`'s light navTone already makes:
+     re-point the family on the one wrapper that owns the ground, and every
+     component inside reads the new values without knowing anything happened.
+
+     WHAT GOES: ground colour, panel colour, every shadow, the blur, the
+     surface figure, the floor figure. Those are all statements about a
+     backlit screen and none of them survives a laser printer -- 夜's near-black
+     page is a solid black sheet, 玻璃's blur is a grey smear, 砖's floor tile
+     prints through the numbers.
+
+     WHAT STAYS: the type (face, size, leading, tracking), the geometry
+     (radius, padding, row height) and the accent. So 招牌 still prints in its
+     condensed face, 码 still prints monospace with its columns aligned, 墨
+     still prints with its air, 清 still prints at 20px for the owner who
+     needed 20px. The register is still legible on the page -- what changed is
+     that the page is now paper.
+
+     #999 rather than a light hairline because a 1px line under #ccc is a line
+     most office lasers drop entirely.
+
+     ON EVERY ELEMENT, not just the canvas. The register's token file is
+     applied by StyleScope on a div INSIDE the canvas, so a remap on the canvas
+     alone loses to it on specificity of depth -- measured: --color-canvas came
+     out #f2f4f6 two levels down while the canvas itself said #fff, and the
+     sheet printed grey. Declaring on the whole subtree means nothing deeper
+     can re-declare, because there is nothing deeper. It costs a custom-property
+     recalculation per element, under print media only. */
+  [data-editor-canvas],
+  [data-editor-canvas] * {
+    --color-canvas: #ffffff;
+    --color-ink-950: #ffffff;
+    --color-ink-900: #ffffff;
+    --color-ink-850: #ffffff;
+    --color-ink-800: #999999;
+    --color-ink-700: #666666;
+    --color-table-bg: #ffffff;
+    --color-table-head-bg: #ffffff;
+    --color-table-head-fg: #000000;
+    --color-paper: #000000;
+    --color-paper-dim: #444444;
+    --color-on-canvas: #000000;
+    --color-on-canvas-dim: #444444;
+    --canvas-image: none;
+    --surface-image: none;
+    --surface-blur: none;
+    --shadow-card: none;
+    --shadow-raised: none;
+    --shadow-overlay: none;
+  }
+
+  /* Belt and braces: a component that hard-codes a shadow rather than reading
+     the token still must not print one. A shadow on stock is a grey smudge. */
+  [data-editor-canvas] * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* ── 3. THE NAVIGATION IS A CONTROL ─────────────────────────────────────
+
+     Not content. Nobody holding a printed quotation can click 概览 or 客户,
+     and the column costs a third of the sheet's width. */
+  [data-editor-canvas] [data-nav] {
+    display: none !important;
+  }
+
+  /* ── 4. A TABLE THAT RUNS PAST ONE SHEET ────────────────────────────────
+
+     `table-header-group` is already the browser default, so page two of a long
+     list does get its column names -- but only while nothing overrides it, and
+     a row splitting across the fold is NOT the default. Measured on the
+     quotations page: 0 of 5 rows avoided the break. */
+  [data-editor-canvas] thead {
+    display: table-header-group;
+  }
+  [data-editor-canvas] tr,
+  [data-editor-canvas] tfoot {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  [data-editor-canvas] table {
+    width: 100% !important;
+  }
+  /* A heading should not be the last thing on a sheet. */
+  [data-editor-canvas] h1,
+  [data-editor-canvas] h2,
+  [data-editor-canvas] h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}
