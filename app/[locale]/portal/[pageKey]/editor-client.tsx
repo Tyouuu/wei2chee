@@ -80,6 +80,7 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   signboard: styles.signboard,
   lacquer: styles.lacquer,
   code: styles.code,
+  tile: styles.tile,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";

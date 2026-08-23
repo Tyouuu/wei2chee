@@ -100,6 +100,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   signboard: styles.signboard,
   lacquer: styles.lacquer,
   code: styles.code,
+  tile: styles.tile,
 };
 
 /**

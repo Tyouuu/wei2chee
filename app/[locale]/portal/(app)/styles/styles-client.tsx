@@ -35,6 +35,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   signboard: styles.signboard,
   lacquer: styles.lacquer,
   code: styles.code,
+  tile: styles.tile,
 };
 
 
@@ -60,6 +61,7 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   signboard: "Signboard",
   lacquer: "Lacquer",
   code: "Code",
+  tile: "Tile",
 };
 
 /**

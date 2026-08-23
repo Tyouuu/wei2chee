@@ -59,7 +59,11 @@ export type StyleName =
   | "lacquer"
   // Every character the same width. Nine body faces across the other
   // eighteen and all of them proportional. See tokens/code.css.
-  | "code";
+  | "code"
+  // The first register whose ground is a repeating FIGURE rather than a
+  // wash. --canvas-image had been set twice and both were gradients. See
+  // tokens/tile.css.
+  | "tile";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -97,6 +101,7 @@ export const STYLE_ORDER: StyleName[] = [
   "signboard",
   "lacquer",
   "code",
+  "tile",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -119,6 +124,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   signboard: styles.signboard,
   lacquer: styles.lacquer,
   code: styles.code,
+  tile: styles.tile,
 };
 
 /**
@@ -165,6 +171,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   signboard: styles.signboard,
   lacquer: styles.lacquer,
   code: styles.code,
+  tile: styles.tile,
 };
 
 export function StyleColumn({

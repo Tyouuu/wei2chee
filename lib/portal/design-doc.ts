@@ -210,6 +210,20 @@ const STYLES: Record<StyleName, StyleBrief> = {
     },
     avoid: ["满版的色块", "圆角", "阴影", "把东西挤在一起", "多过一个强调色"],
   },
+  tile: {
+    mood: "地上铺花砖。娘惹砖那种四瓣花加角上的小圆点,水泥色的地。卡片一律平的奶白——图案在地上,不在字底下。",
+    facts: "地上 48px 花砖图 · 底色水泥 #f0e9dd · 卡片平奶白 #fffdf8 · 圆角 6px · 釉绿 #14837a · 角点砖红",
+    prefer: {
+      RecordTable: "plain",
+      HeroCard: "full",
+      WorkflowStrip: "numbered",
+      ActionButton: "solid",
+      Tag: "soft",
+      Divider: "loose",
+      TrendChart: "bar",
+    },
+    avoid: ["把图案铺到卡片上", "第二个图案", "深色的大色块", "细到压在花纹上的字"],
+  },
   code: {
     mood: "每一个字一样宽。整页等宽字,型号、条码、数量自己就对齐了,不用谁去排。密度跟台账一样紧,颜色是印刷蓝。",
     facts: "内文等宽 13px 行高 32px · 标题也是等宽 · 圆角 2px · 边框 1px · 强调色 #0f6fa8 · 冷灰底 #f4f6f7",

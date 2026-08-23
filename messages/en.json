@@ -144,6 +144,10 @@
       "code": {
         "label": "Code",
         "description": "Every character the same width. Part numbers, barcodes, quantities and job numbers line up without anybody formatting them. Measured: the other eighteen registers use nine body faces and every one is proportional — monospace changes the texture of a screen more completely than any colour does. For spare parts, phone and computer repair, printing, courier and logistics: trades whose day is codes. Not for long prose. The CJK half needs no second font — 黑体 is already fixed-width for Han characters."
+      },
+      "tile": {
+        "label": "Tile",
+        "description": "A patterned floor. The four-petal figure and corner dots of the Peranakan tiles in every old kopitiam and shophouse in Malacca and Penang, on a cement-coloured ground. Measured: --canvas-image had been set by exactly two registers and both were gradient washes — this is the first with a repeating figure. The pattern is on the GROUND; every card is flat cream, so the contrast where the words are never changes. For kopitiam, bakeries, kaya toast, heritage cafés, herbal shops and tea merchants: businesses whose premises already have this floor."
       }
     },
     "sample": {
@@ -433,7 +437,8 @@
         "kraft": "Kraft · mid-tone board, double rule",
         "signboard": "Signboard · heavy condensed headline, sign red",
         "lacquer": "Lacquer · oxblood ground, ivory panels, gold line",
-        "code": "Code · monospace throughout, printer's blue"
+        "code": "Code · monospace throughout, printer's blue",
+        "tile": "Tile · patterned floor, glaze teal"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",
