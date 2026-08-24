@@ -25,7 +25,7 @@
 // Emulates print media, then measures the DOM under that emulation, because
 // print styles that only exist in a stylesheet nobody applied are not styles.
 
-import { chromium } from "file:///C:/Users/tiany/AppData/Local/npm-cache/_npx/420ff84f11983ee5/node_modules/playwright/index.mjs";
+import { chromium } from "playwright";
 
 const AUDIT = () => {
   const vis = (el) => {

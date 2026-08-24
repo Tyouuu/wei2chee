@@ -27,7 +27,7 @@
 //
 // Needs `npm run dev` on :3000 and the renovation demo account.
 
-import { chromium } from "file:///C:/Users/tiany/AppData/Local/npm-cache/_npx/420ff84f11983ee5/node_modules/playwright/index.mjs";
+import { chromium } from "playwright";
 
 const AUDIT = () => {
   // LET THE BROWSER DO THE COLOUR MATH.

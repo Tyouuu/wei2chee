@@ -81,10 +81,6 @@
         "label": "Blueprint",
         "description": "A drafted, technical register for contractors and field-service SMEs — site management, scheduling, materials. A cooler, higher-contrast canvas."
       },
-      "bare": {
-        "label": "Bare",
-        "description": "Nothing is boxed. No card borders, no shadows — sections are separated by space and a single rule, with larger type and roomier lines. For work with less on screen and more to read."
-      },
       "large": {
         "label": "Large",
         "description": "Built for the reader, not the page. 17px body, 56px rows, wide leading, nothing under 13px anywhere. For an owner in their sixties reading on a phone in a van."
@@ -92,14 +88,6 @@
       "stamp": {
         "label": "Stamp",
         "description": "Looks like the POS and accounting software they already run: a solid accent band across every table header with white type in it."
-      },
-      "contract": {
-        "label": "Contract",
-        "description": "Serif for Latin and Chinese alike, wide leading, almost no radius. Reads as a printed agreement rather than as software."
-      },
-      "docket": {
-        "label": "Docket",
-        "description": "A pad of carbon-copy forms. Square corners throughout, ruled in ink rather than hairlines, column headings stamped in uppercase, and no shadow anywhere. For a business that writes dockets and receipts all day."
       },
       "swiss": {
         "label": "Swiss",
@@ -125,14 +113,6 @@
         "label": "Night",
         "description": "The one with the lights off. A near-black page, cards a step lighter than it, borders at 8% white, and one orange accent that reads as lit rather than painted. Across the other thirteen registers canvas luminance ran 0.82 to 0.97 — every page this product could build was a white page. This is the first that is not. For workshops, studios, gyms, bars, events, print shops: trades whose customers judge them on how things look. Wrong for paperwork that gets printed and signed."
       },
-      "grain": {
-        "label": "Grain",
-        "description": "The one you can feel. Real noise on the page and slightly more of it on each card, so a card reads as a separate sheet laid on top rather than a hole cut in it. One flat blue, no gradients, no shadows, square corners. Of fourteen registers thirteen are flat and one is glass; this is the first with a texture. It shares paper with 印 and 墨 but those are serif — a form and a page — and this is sans, a printed thing. For design, craft, coffee, independent brands, print shops."
-      },
-      "kraft": {
-        "label": "Kraft",
-        "description": "Board, not paper. A mid-tone ground at 0.55 luminance — neither the white page fourteen of these registers are nor the near-black one. Measured: one register at 0.005 and the rest above 0.82, with the entire middle empty. Cards carry a double rule, the way a shipping label does, and labels are stencilled uppercase so the type reads as printed onto a surface rather than typeset for a page. For trades that sell a material: hardware, timber, leather, coffee roasting, produce, packaging, furniture."
-      },
       "signboard": {
         "label": "Signboard",
         "description": "A shoplot sign and the price list beneath it. The name is set in a heavy condensed face at 46px with the tracking pulled in; everything under it is a plain 15px sans. It is the first of seventeen registers whose headings use a different face from its body — every one before it declared a single family, so a page heading and a table cell looked the same. The contrast is the register, not the colour. For F&B, retail, shopfronts, events, gyms: businesses whose customers see them in passing."
@@ -148,10 +128,6 @@
       "tile": {
         "label": "Tile",
         "description": "A patterned floor. The four-petal figure and corner dots of the Peranakan tiles in every old kopitiam and shophouse in Malacca and Penang, on a cement-coloured ground. Measured: --canvas-image had been set by exactly two registers and both were gradient washes — this is the first with a repeating figure. The pattern is on the GROUND; every card is flat cream, so the contrast where the words are never changes. For kopitiam, bakeries, kaya toast, heritage cafés, herbal shops and tea merchants: businesses whose premises already have this floor."
-      },
-      "clear": {
-        "label": "Clear",
-        "description": "For an owner who cannot read the others. 20px body text, touch targets around 52px, and secondary text at 7.4:1. Measured across the other twenty registers: nothing above 17px type, nothing above a 41px target, and only four reaching 7:1 on secondary text — the worst of them below AA on its own card, since fixed. It is not another Large: 大字 and 墨 are about air, this is about being able to read it, so the row height is deliberately shorter than 墨's. Showing four rows instead of eight helps nobody who is squinting."
       },
       "pop": {
         "label": "Pop",

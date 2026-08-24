@@ -105,22 +105,11 @@ const nunito = Nunito({
 // no card, no border and no shadow doing any work, the typeface is the design,
 // so a neutral grotesque would leave the page looking unfinished rather than
 // spare.
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-bare-latin",
-  display: "swap",
-});
 
 // Docket's voice: IBM Plex Sans was drawn for IBM's own business documents --
 // forms, invoices, technical paperwork -- which is precisely the object this
 // style is imitating. Its slab-ish terminals and squared bowls read as printed
 // rather than rendered.
-const plexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-docket-latin",
-  display: "swap",
-});
 
 // Swiss's voice: a neo-grotesque in the Helvetica/Univers line, which is the
 // face the International Typographic Style was actually set in. Public Sans is
@@ -206,8 +195,6 @@ export const fontVariables = [
   archivo.variable,
   archivoNarrow.variable,
   nunito.variable,
-  manrope.variable,
-  plexSans.variable,
   publicSans.variable,
   jakarta.variable,
   bricolage.variable,

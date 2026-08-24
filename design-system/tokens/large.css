@@ -19,6 +19,26 @@
    against 1.55, and a primary dark enough to clear 7:1 on white rather than
    the 4.5:1 the others settle for.
 
+
+   WHAT 清 (Clear) LEFT HERE, 2026-08-25. Clear was withdrawn in the cull to
+   sixteen because it did this register's job more extremely and therefore
+   twice -- 20px body against this one's 17. It was not deleted without being
+   read first, and it was carrying two things this register did not have:
+
+     * A 7:1 FLOOR ON SECONDARY TEXT, not just on primary. Measured before the
+       merge: clear's dim ran 6.9:1, this one's #517563 ran 4.9:1 -- under the
+       4.5:1 WCAG AA floor is not where it was, but a register whose entire
+       reason for existing is 「给看不清楚的人」 cannot ship its captions at
+       half the contrast of its headings. #3f5c4d is the same green hue,
+       darkened until it reads 7.01:1 on this canvas.
+     * ~52px TOUCH TARGETS. control-h is 36px in both; clear reached the target
+       through control padding (16/20) where this one used 12/16 and landed
+       near 44. On a phone in a van the difference is real.
+
+   Both are now this register's numbers. Nothing else of clear's survives, and
+   nothing needed to: 20px body on a dense records page pushes the third row
+   off the first screen, which is the opposite of readable.
+
    IT IS NOT A DENSITY SETTING, and the distinction is the same one bare.css
    argues at length: Blueprint already sits on the arithmetic midpoint of
    Ledger and Hearth, so a fourth position on that slider would be invisible.
@@ -137,7 +157,7 @@
   /* Secondary text. 6.55:1 on the card, 6.09:1 on canvas, 5.83:1 on hover,
      Re-measured after the 2026-08-22 retint: 4.88:1 on the canvas, so it still
      clears AA as body text. */
-  --color-paper-dim: #517563;
+  --color-paper-dim: #3f5c4d;
 
   /* ── INK ON THE GROUND ──────────────────────────────────────────────
      Text that sits directly on the canvas rather than inside a card: a page
@@ -417,8 +437,8 @@
   /* ---- DENSITY AXIS: comfortable ------------------------------------------ */
   --pad-card: 24px;
   --pad-card-lg: 32px;
-  --pad-control-x: 16px;
-  --pad-control-y: 12px;
+  --pad-control-x: 20px;
+  --pad-control-y: 16px;
   --pad-cell-x: 16px;
   --pad-cell-y: 14px;
   --gap-stack: 20px;

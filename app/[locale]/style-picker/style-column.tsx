@@ -6,15 +6,12 @@ export type StyleName =
   | "ledger"
   | "hearth"
   | "blueprint"
-  | "bare"
-  | "docket"
   // 2026-08-22. Three axes the first five do not use: type SCALE (大字),
   // header TREATMENT (印头), and a serif body (合约). See each token
   // file's own header for why it is a register and not another notch on
   // the density slider.
   | "large"
   | "stamp"
-  | "contract"
   // 2026-08-22, and the first two that were not designed here: both are
   // uiprompt.site's own published briefs for Swiss Design and Soft UI,
   // rendered into the token layer. See each token file's header for the
@@ -42,13 +39,6 @@ export type StyleName =
   // thirteen ran 0.82-0.97 with nothing below it; a workshop, a studio or a
   // gym had no register that looked like them. See tokens/night.css.
   | "night"
-  // The one you can feel. Thirteen registers were flat and 玻璃 was glass;
-  // --surface-image had no register using it. See tokens/grain.css.
-  | "grain"
-  // Neither a white page nor a dark one. Luminance across the other fifteen
-  // was 0.005 then a jump to 0.82 -- the whole middle was empty, and no
-  // register had ever set --surface-border-style. See tokens/kraft.css.
-  | "kraft"
   // The first register whose headings are set in a different face from its
   // body -- all sixteen before it declared one family for both. See
   // tokens/signboard.css.
@@ -64,10 +54,6 @@ export type StyleName =
   // wash. --canvas-image had been set twice and both were gradients. See
   // tokens/tile.css.
   | "tile"
-  // For an owner who cannot read the others. Nothing in the set was above
-  // 17px type, above a 41px touch target, or reached 7:1 on secondary text
-  // more than four times out of twenty. See tokens/clear.css.
-  | "clear"
   // Taken from arhamkhnz/next-shadcn-admin-dashboard's soft-pop preset
   // (MIT) over tweakcn colours: big radius AND a hard black edge, and three
   // saturated colours used as decoration rather than as meaning. See
@@ -94,24 +80,18 @@ export const STYLE_ORDER: StyleName[] = [
   "ledger",
   "hearth",
   "blueprint",
-  "bare",
-  "docket",
   "large",
   "stamp",
-  "contract",
   "swiss",
   "soft",
   "brut",
   "ink",
   "glass",
   "night",
-  "grain",
-  "kraft",
   "signboard",
   "lacquer",
   "code",
   "tile",
-  "clear",
   "pop",
 ];
 
@@ -119,24 +99,18 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
-  bare: styles.bare,
-  docket: styles.docket,
   large: styles.large,
   stamp: styles.stamp,
-  contract: styles.contract,
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
   ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
-  grain: styles.grain,
-  kraft: styles.kraft,
   signboard: styles.signboard,
   lacquer: styles.lacquer,
   code: styles.code,
   tile: styles.tile,
-  clear: styles.clear,
   pop: styles.pop,
 };
 
@@ -168,24 +142,18 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
-  bare: styles.bare,
-  docket: styles.docket,
   large: styles.large,
   stamp: styles.stamp,
-  contract: styles.contract,
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
   ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
-  grain: styles.grain,
-  kraft: styles.kraft,
   signboard: styles.signboard,
   lacquer: styles.lacquer,
   code: styles.code,
   tile: styles.tile,
-  clear: styles.clear,
   pop: styles.pop,
 };
 
