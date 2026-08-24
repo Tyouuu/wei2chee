@@ -15,6 +15,7 @@ import {
 import { DEFAULT_SYSTEM_LANG, type SystemLang } from "@/lib/system-lang";
 import {
   chrome,
+  type Chrome,
   moduleCopy,
   sampleFor,
   translateStage,
@@ -470,7 +471,7 @@ function railNav(
     items: pages.map((page) => ({
       label: pageLabel(page, labels, lang),
       href: `/${locale}/portal/${page.key}`,
-      group: "",
+      group: navGroup(page.key, pages.length, c),
       iconName: page.key,
     })),
     // These two used to be `notificationsHref: "#"` / `accountHref: "#"` --
@@ -493,6 +494,61 @@ function railNav(
   });
 }
 
+/**
+ * Which section of the navigation a page belongs in.
+ *
+ * WHY THIS IS CONDITIONAL AND NOT ALWAYS ON. rail-nav.tsx's own note argued
+ * that one unnamed group is right 「at this size -- grouping four or five things
+ * into named sections is overhead, not organisation」, and that was correct for
+ * a five-page system. It stopped being correct once the module catalogue let a
+ * business have twelve. Eleven competitors' dashboards were photographed on
+ * 2026-08-25 and every one of them sections its navigation; ours was a flat
+ * list of six words, which was one of the six differences visible to the naked
+ * eye between their first screen and ours.
+ *
+ * So both readings hold, on either side of a line: under six pages there is
+ * nothing to organise and the sections would be three headings over one item
+ * each; at six and above the headings are the only thing that stops the list
+ * being scanned from the top every time.
+ *
+ * THE SECTIONS ARE THE OWNER'S DAY, not the data model. 报价单 sits with 客户 and
+ * 收款 because that is one morning's work; 对账 and 佣金 sit together because
+ * that is the end of the month; 官网 is alone because it is the only page whose
+ * reader is a stranger.
+ */
+function navGroup(key: string, pageCount: number, c: Chrome): string {
+  if (pageCount < 6) return "";
+  const g = c.rail.groups;
+  switch (key) {
+    case "dashboard":
+    case "customers":
+    case "quotations":
+    case "bookings":
+    case "orders":
+    case "payments":
+      return g.daily;
+    case "projects":
+    case "inventory":
+    case "suppliers":
+    case "staff":
+      return g.work;
+    case "reconciliation":
+    case "commission":
+    case "expenses":
+      return g.books;
+    case "reports":
+    case "ranking":
+      return g.reports;
+    case "website":
+      return g.publicFacing;
+    default:
+      // A page the AI named itself. It belongs with the daily work rather than
+      // in a section of its own -- a heading over one custom row reads as a
+      // mistake, and this is the section an owner opens first anyway.
+      return g.daily;
+  }
+}
+
 function recordTable(
   id: string,
   caption: string,
@@ -509,6 +565,10 @@ function recordTable(
     tone: StatusTone;
     status: string;
   }[],
+  /** Segment labels above the table. Only the dashboard passes them: on a page
+   *  whose whole content IS this table the segments duplicate the page's own
+   *  filter row, and two filter controls that do not agree is worse than one. */
+  filters?: string[],
 ): PuckNode {
   // Columns are an array, not four props -- see lib/portal/table-model.ts. The
   // built-in keys are deliberately the old prop names, so a generated table and
@@ -530,6 +590,7 @@ function recordTable(
   return node("RecordTable", id, {
     gridId: id,
     caption,
+    ...(filters?.length ? { filters: filters.map((label) => ({ label })) } : {}),
     table: {
       columns,
       rows: rows.map((r) => ({
@@ -659,6 +720,28 @@ function buildDashboard(
     node("PageHeader", "dashboard-header", {
       title: c.dashboard.title,
       subtitle,
+      // WHY A BUTTON AND NOT A TOP BAR. The plan for this screen said 「顶栏：
+      // 面包屑 + 搜索 ⌘K + 通知红点 + 头像」, copied from the competitors. Three
+      // of those four are already in the rail, and the fourth -- a search box
+      // that finds nothing until the system is actually built -- is the one
+      // kind of thing this preview must never contain. What the competitors'
+      // top bar really contributes at this size is a PRIMARY ACTION, so that
+      // is what gets built: the single thing an owner opens their system to
+      // do, pointing at their own sell-side page.
+      actionLabel: c.dashboard.primaryAction(
+        pageLabel(
+          pages.find((p) =>
+            ["quotations", "bookings", "orders", "projects"].includes(p.key),
+          ) ?? { key: "customers" },
+          labels,
+          lang,
+        ),
+      ),
+      actionHref: `/${locale}/portal/${
+        pages.find((p) =>
+          ["quotations", "bookings", "orders", "projects"].includes(p.key),
+        )?.key ?? "customers"
+      }`,
     }),
     node("StatRow", "dashboard-stats", {
       // The headline figure leads, then the three supporting counts -- the same
@@ -719,6 +802,7 @@ function buildDashboard(
         status: c.col.status,
       },
       sample.records,
+      c.dashboard.recentFilters,
     ),
   ];
 }

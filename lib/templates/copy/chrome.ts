@@ -22,6 +22,16 @@ export type Chrome = {
     account: string;
     /** The role under the account chip. The owner is the owner. */
     ownerRole: string;
+    /** Section headings for the navigation, used only once a business has
+     *  enough pages for sections to be organisation rather than overhead --
+     *  see railNav() in industry-template.ts for where that line is drawn. */
+    groups: {
+      daily: string;
+      work: string;
+      books: string;
+      reports: string;
+      publicFacing: string;
+    };
   };
 
   /** The two chrome strings on a FilterChips block. Passed rather than
@@ -69,6 +79,12 @@ export type Chrome = {
     /** The short list of things to act on today, beside the chart. */
     todoTitle: string;
     todoAction: string;
+    /** The segments above the recent-records table. "All" is added by the
+     *  component itself, in the system's language. */
+    recentFilters: [string, string];
+    /** The one action an owner opens the system to take. A real link into
+     *  their own sell-side page -- see buildDashboard. */
+    primaryAction: (sellSide: string) => string;
   };
 
   customers: {
@@ -152,6 +168,13 @@ const EN: Chrome = {
     notifications: "Notifications",
     account: "Account settings",
     ownerRole: "Owner",
+    groups: {
+      daily: "Day to day",
+      work: "The work",
+      books: "The books",
+      reports: "Numbers",
+      publicFacing: "Public",
+    },
   },
   col: {
     status: "Status",
@@ -187,6 +210,8 @@ const EN: Chrome = {
     periods: ["−5", "−4", "−3", "−2", "Last", "Now"],
     todoTitle: "To follow up today",
     todoAction: "Open",
+    recentFilters: ["In progress", "Awaiting payment"],
+    primaryAction: (sellSide) => `New ${sellSide.toLowerCase()}`,
   },
 
   customers: {
@@ -281,6 +306,13 @@ const ZH: Chrome = {
     notifications: "通知",
     account: "账号设置",
     ownerRole: "老板",
+    groups: {
+      daily: "日常",
+      work: "工程",
+      books: "账目",
+      reports: "看数",
+      publicFacing: "对外",
+    },
   },
   col: {
     status: "状态",
@@ -316,6 +348,8 @@ const ZH: Chrome = {
     periods: ["−5", "−4", "−3", "−2", "上期", "本期"],
     todoTitle: "今天要跟的",
     todoAction: "打开",
+    recentFilters: ["进行中", "待收款"],
+    primaryAction: (sellSide) => `新增${sellSide}`,
   },
 
   customers: {

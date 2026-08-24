@@ -9,6 +9,7 @@
 import type { CSSProperties } from "react"
 import { useRegisterProp } from "@/design-system/editor/style-scope"
 import { DataGrid } from "./data-grid"
+import { useSystemWords } from "@/design-system/system-lang-context"
 import { StatusDot, type StatusTone } from "./status-dot"
 import { normalizeTable, type ColumnKind, type TableModel } from "@/lib/portal/table-model"
 
@@ -68,8 +69,14 @@ export function RecordTable(props: {
    *  owner already reads in Excel; `grid` rules the columns as well, for a
    *  table that is being copied from or checked against paper. */
   look?: "plain" | "compact" | "zebra" | "grid"
+  /** Segment labels shown above the table, after an "All" the component adds
+   *  itself. Inert in the preview — the finished system wires them to queries.
+   *  Empty or absent means no segment row, which is right for a table that is
+   *  already the whole of its page. */
+  filters?: string[]
 }) {
-  const { gridId, caption, look } = props
+  const { gridId, caption, look, filters } = props
+  const w = useSystemWords()
   // Absent means "follow the register", not "plain" -- see style-scope.tsx.
   const shown = look ?? useRegisterProp<"plain" | "compact" | "zebra" | "grid">("RecordTable", "look") ?? "plain"
   const { columns, rows } = normalizeTable(props as unknown as Record<string, unknown>)
@@ -105,11 +112,50 @@ export function RecordTable(props: {
   const minWidth = columns.reduce((w, c) => w + KIND_MIN[c.kind], 0)
 
   return (
-    // `revealEndWhen`: adding a column in a 460px-wide canvas puts the new
-    // column past the right edge, so the customer's own action appeared to do
-    // nothing. The grid scrolls to show it. Measured, not assumed — this was
-    // visible in the first browser check of the column editor.
-    <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
+    <div className="flex flex-col [gap:var(--gap-inline)]">
+      {/* THE TABLE'S HEADING, WHICH UNTIL 2026-08-25 NOBODY COULD SEE.
+          `caption` was passed straight into DataGrid as an accessible name and
+          rendered nowhere, so every table in every register shipped with no
+          title, no count and no filters — while all eleven competitors
+          photographed that day carry a heading, a total and a segment row
+          above theirs. It was the cheapest missing thing on the page: the
+          string was already being computed and already being passed in.
+
+          The count is derived, never given: a caller who passes a number and a
+          list can disagree with itself, and it is the list that is on screen. */}
+      <div className="flex flex-wrap items-center [gap:var(--gap-inline)]">
+        <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+          {caption}
+        </span>
+        <span className="tnum [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+          {w.rowCount(rows.length)}
+        </span>
+        {filters?.length ? (
+          <div
+            className="ms-auto flex overflow-hidden [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-control)]"
+            role="group"
+          >
+            {[w.filterAll, ...filters].map((f, i) => (
+              <span
+                key={f}
+                className={`whitespace-nowrap [font-size:var(--text-xs)] [padding-block:2px] [padding-inline:var(--pad-control-x)] ${
+                  i === 0
+                    ? "[background:var(--color-primary-soft)] [color:var(--color-primary)] [font-weight:var(--fw-medium)]"
+                    : "[color:var(--color-paper-dim)]"
+                }`}
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {/* `revealEndWhen`: adding a column in a 460px-wide canvas puts the new
+          column past the right edge, so the customer's own action appeared to do
+          nothing. The grid scrolls to show it. Measured, not assumed — this was
+          visible in the first browser check of the column editor. */}
+      <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
       <table
         className="w-full border-collapse [background-color:var(--color-table-bg)] [font-size:var(--text-sm)]"
         style={
@@ -201,5 +247,6 @@ export function RecordTable(props: {
         </tbody>
       </table>
     </DataGrid>
+    </div>
   )
 }

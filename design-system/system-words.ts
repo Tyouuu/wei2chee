@@ -58,6 +58,14 @@ export type SystemWords = {
    *  in the preview. Named because it is the one place the product admits, in
    *  the customer's own system, that this is a preview. */
   notYetLive: (feature?: string) => string;
+  /** The row count beside a table's heading: 「共 21 条」 / "21 records". The
+   *  table's caption used to be an aria-label only -- invisible on screen --
+   *  so every table in every register shipped with no heading and no count
+   *  while all eleven competitors photographed on 2026-08-25 carry both. */
+  rowCount: (n: number) => string;
+  /** The filter segments above a table. Only the first is active in a preview;
+   *  the finished system wires them to real queries. */
+  filterAll: string;
   empty: string;
   emptyToday: string;
   emptyPeople: string;
@@ -135,6 +143,8 @@ const EN: SystemWords = {
     feature
       ? `${feature} — part of your system. It switches on once the system is built.`
       : "Part of your system. It switches on once the system is built.",
+  rowCount: (n) => `${n} record${n === 1 ? "" : "s"}`,
+  filterAll: "All",
   empty: "Nothing here yet",
   emptyToday: "Nothing booked today",
   emptyPeople: "Nobody added yet",
@@ -215,6 +225,8 @@ const ZH: SystemWords = {
     feature
       ? `${feature} — 这是你系统里的功能，系统建好后会启用`
       : "这是你系统里的功能，系统建好后会启用",
+  rowCount: (n) => `共 ${n} 条`,
+  filterAll: "全部",
   empty: "还没有资料",
   emptyToday: "今天没有安排",
   emptyPeople: "还没有加人",

@@ -195,7 +195,17 @@ type Components = {
     navTone?: "dark" | "light" | "deep";
   };
   PageHeader: {
-    layout?: "split" | "stacked" | "centred" | "ruled"; title: string; subtitle?: string };
+    layout?: "split" | "stacked" | "centred" | "ruled";
+    title: string;
+    subtitle?: string;
+    /** The one thing an owner opens this page to DO. A real link into their own
+     *  system, not a decorative button -- see buildDashboard for why this
+     *  carries the density a fake search box was going to carry. */
+    actionLabel?: string;
+    actionHref?: string;
+    /** Small trailing note beside the title: 「更新于 09:30」. */
+    meta?: string;
+  };
   /** One of the 164 sections pulled from the @7ovr registry. Template side of
    *  the line the founder drew: the SECTION is chosen, its words are not
    *  edited. See design-system/editor/site-block.tsx. */
@@ -281,6 +291,9 @@ type Components = {
     table: TableModel;
     // Set by the 换个款式 picker, not by a field. See variants.ts.
     look?: "plain" | "compact" | "zebra" | "grid";
+    // Objects rather than bare strings: Puck's array field edits item PROPS,
+    // so a list of strings has nothing for its editor to bind to.
+    filters?: { label: string }[];
   };
   DatePicker: { name: string; placeholder?: string; allowClear?: boolean; required?: boolean };
   MonthPicker: { name: string; placeholder?: string; allowClear?: boolean };
@@ -1592,11 +1605,16 @@ export const puckConfig: Config<Components> = {
       fields: {
         title: { label: "标题", type: "text" },
         subtitle: { label: "副标题", type: "text" },
+        meta: { label: "标题旁边的小字", type: "text" },
+        actionLabel: { label: "按钮字（留空就没有按钮）", type: "text" },
+        actionHref: { label: "按钮去哪", type: "text" },
       },
       defaultProps: { title: "标题" },
-      render: ({ id, title, subtitle, layout }) => (
+      render: ({ id, title, subtitle, layout, meta, actionLabel, actionHref }) => (
         <PageHeader
           layout={layout}
+          meta={meta}
+          action={actionLabel ? { href: actionHref || "#", label: actionLabel } : undefined}
           title={
             <Inline id={id} field="title">
               {title}
@@ -1728,6 +1746,13 @@ export const puckConfig: Config<Components> = {
       fields: {
         gridId: { label: "表格编号", type: "text" },
         caption: { label: "表格名称", type: "text" },
+        filters: {
+          label: "上面的筛选（留空就没有）",
+          type: "array",
+          arrayFields: { label: { label: "一个", type: "text" } },
+          defaultItemProps: { label: "一个" },
+          getItemSummary: (item) => item.label || "一个",
+        },
         // The one field that makes this component a system rather than a
         // picture of one: columns are added, renamed, retyped, reordered and
         // removed here, and every row follows automatically.
@@ -1767,12 +1792,15 @@ export const puckConfig: Config<Components> = {
           ],
         },
       },
-      // NOT inline-editable, deliberately: `caption` is not text on the page,
-      // it is the table's accessible name (DataGrid puts it in aria-label when
-      // the grid scrolls). A ReactNode there renders "[object Object]" to a
-      // screen reader.
-      render: ({ gridId, caption, table, look }) => (
-        <RecordTable gridId={gridId} caption={caption} table={table} look={look} />
+      // STILL NOT inline-editable, and now for a sharper reason than before.
+      // Until 2026-08-25 `caption` was only the table's accessible name, which
+      // was the whole argument: a ReactNode in an aria-label renders
+      // "[object Object]" to a screen reader. It is now ALSO the visible
+      // heading above the table -- so it is read twice, by two different
+      // readers, from one string. That makes it more important that it stays a
+      // string, not less. It is edited in the fields panel.
+      render: ({ gridId, caption, table, look, filters }) => (
+        <RecordTable gridId={gridId} caption={caption} table={table} look={look} filters={filters?.map((f) => f.label)} />
       ),
     },
     WorkflowStrip: {
