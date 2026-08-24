@@ -5,7 +5,9 @@
     "cta": "See what your business could become",
     "askPlaceholder": "What kind of business do you run? e.g. I am a SIM-card master dealer with 40 dealers; every month I reconcile and work out 2% commission…",
     "askCta": "Start",
-    "proof": "RM 5,000 flat build fee · nothing to pay while you design · export your data any time"
+    "proof": "RM 5,000 flat build fee · nothing to pay while you design · export your data any time",
+    "shotAlt": "A generated system overview: four figures, a revenue chart, today's follow-ups and a recent-jobs table",
+    "shotCaption": "Not a mockup. A real account, built by the same generator — describe your business and this is the page you get."
   },
   "industrySelect": {
     "title": "Which industry is your business in?"
