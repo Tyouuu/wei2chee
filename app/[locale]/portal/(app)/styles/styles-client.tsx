@@ -32,6 +32,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   code: styles.code,
   tile: styles.tile,
   pop: styles.pop,
+  console: styles.console,
+  counter: styles.counter,
 };
 
 
@@ -54,6 +56,8 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   code: "Code",
   tile: "Tile",
   pop: "Pop",
+  console: "Console",
+  counter: "Counter",
 };
 
 /**

@@ -47,7 +47,10 @@ type StyleBrief = {
   avoid: string[];
 };
 
-const STYLES: Record<StyleName, StyleBrief> = {
+/** Exported for design-doc.test.ts, which asserts that every preference in here
+ *  names a variant that exists. `prefer` is a Record<string, string>, so a
+ *  typo is invisible to TypeScript and silently means "no opinion". */
+export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
   ledger: {
     mood: "一本账簿。密、准、没有装饰。给每天要看几十条记录的人。",
     facts: "圆角 4px · 边框 1px · 无阴影 · 行高 32px · 正文 13px · 标签全大写",
@@ -143,6 +146,70 @@ const STYLES: Record<StyleName, StyleBrief> = {
       TabbedPanel: "pill",
     },
     avoid: ["极端的密或极端的松"],
+  },
+  console: {
+    mood: "一整面数字。白侧栏、浅灰地、方角、指标一排排。给每天开系统是为了看数的老板。",
+    facts: "圆角 4px · 边框 1px · 极淡阴影 · 行高 38px · 正文 14px · 标签全大写字距 0.06em · 白侧栏蓝高亮",
+    prefer: {
+      StatRow: "tinted",
+      RecordTable: "compact",
+      HeroCard: "stats",
+      WorkflowStrip: "row",
+      ActionButton: "default",
+      Tag: "default",
+      Divider: "tight",
+      TrendChart: "bar",
+      SystemShell: "side-light",
+      RailNav: "full",
+      InfoRows: "compact",
+      DaySchedule: "framed",
+      DateProgress: "framed",
+      PeopleBoard: "four",
+      PriceTable: "table",
+      SmallStat: "compact",
+      ShelfList: "boxed-sm",
+      AttachmentList: "row",
+      MarkList: "ruled",
+      PhotoFrame: "wide",
+      ActionRow: "row",
+      ChoiceSelect: "default",
+      PageHeader: "split",
+      Panel: "card",
+      TabbedPanel: "segment",
+    },
+    avoid: ["给客人看的页面 —— 这是后台，长得就像后台"],
+  },
+  counter: {
+    mood: "深蓝侧栏、灰地、2px 直角、没有阴影。他们本来就在用的那种系统。给一天要开二十张单的生意。",
+    facts: "圆角 2px · 边框 1px · 无阴影 · 行高 34px · 正文 13px · 深蓝 #001529 侧栏 · 选中的一行整条填蓝",
+    prefer: {
+      StatRow: "boxed",
+      RecordTable: "compact",
+      HeroCard: "stats",
+      WorkflowStrip: "row",
+      ActionButton: "default",
+      Tag: "outline",
+      Divider: "tight",
+      TrendChart: "area",
+      SystemShell: "side-deep",
+      RailNav: "full",
+      InfoRows: "compact",
+      DaySchedule: "framed",
+      DateProgress: "framed",
+      PeopleBoard: "five",
+      PriceTable: "table",
+      SmallStat: "compact",
+      ShelfList: "ruled-sm",
+      AttachmentList: "row",
+      MarkList: "ruled",
+      PhotoFrame: "wide",
+      ActionRow: "row",
+      ChoiceSelect: "default",
+      PageHeader: "ruled",
+      Panel: "card",
+      TabbedPanel: "underline",
+    },
+    avoid: ["给客人看的页面", "要有温度的生意"],
   },
   large: {
     mood: "给看不清楚的人。字大、行高、对比强。老板五六十岁、在车上用手机看的时候就选这个。",
@@ -353,7 +420,12 @@ const STYLES: Record<StyleName, StyleBrief> = {
       HeroCard: "full",
       WorkflowStrip: "numbered",
       ActionButton: "default",
-      Tag: "solid",
+      // Was "solid" from the day this register shipped, which is not one of
+      // Tag's ids (default / secondary / outline / destructive) -- so 波普 has
+      // been quietly getting the default tag ever since. Caught by
+      // design-doc.test.ts on 2026-08-25, the third form of this same silent
+      // failure. "default" IS the filled one, which is what it wanted.
+      Tag: "default",
       Divider: "normal",
       TrendChart: "bar",
       SystemShell: "top-light",
@@ -384,8 +456,8 @@ const STYLES: Record<StyleName, StyleBrief> = {
       RecordTable: "plain",
       HeroCard: "full",
       WorkflowStrip: "numbered",
-      ActionButton: "solid",
-      Tag: "soft",
+      ActionButton: "default",
+      Tag: "default",
       Divider: "loose",
       TrendChart: "bar",
       SystemShell: "side-dark",
@@ -448,8 +520,8 @@ const STYLES: Record<StyleName, StyleBrief> = {
       RecordTable: "plain",
       HeroCard: "solo",
       WorkflowStrip: "timeline",
-      ActionButton: "solid",
-      Tag: "soft",
+      ActionButton: "default",
+      Tag: "default",
       Divider: "loose",
       TrendChart: "area",
       SystemShell: "side-deep",
@@ -480,8 +552,8 @@ const STYLES: Record<StyleName, StyleBrief> = {
       RecordTable: "grid",
       HeroCard: "solo",
       WorkflowStrip: "row",
-      ActionButton: "solid",
-      Tag: "solid",
+      ActionButton: "default",
+      Tag: "default",
       Divider: "tight",
       TrendChart: "bar",
       SystemShell: "top-dark",
@@ -554,8 +626,8 @@ const STYLES: Record<StyleName, StyleBrief> = {
       WorkflowStrip: "row",
       // A filled button on a translucent card is the one solid object in the
       // frame, which is exactly the contrast this register is built on.
-      ActionButton: "solid",
-      Tag: "soft",
+      ActionButton: "default",
+      Tag: "default",
       Divider: "loose",
       TrendChart: "area",
       SystemShell: "top-dark",
@@ -589,7 +661,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
  * asked, and so it does not fight a default it cannot see.
  */
 export function preferredVariants(style: string | null | undefined): Record<string, string> {
-  return STYLES[style as StyleName]?.prefer ?? {};
+  return STYLE_BRIEFS[style as StyleName]?.prefer ?? {};
 }
 
 /**
@@ -601,7 +673,7 @@ export function buildDesignDoc(
   style: string | null | undefined,
   palette: string | null | undefined,
 ): string | null {
-  const brief = STYLES[style as StyleName];
+  const brief = STYLE_BRIEFS[style as StyleName];
   if (!brief) return null;
 
   const p = palette ? PALETTE_BY_KEY[palette] : undefined;

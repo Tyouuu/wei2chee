@@ -83,6 +83,8 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   code: styles.code,
   tile: styles.tile,
   pop: styles.pop,
+  console: styles.console,
+  counter: styles.counter,
 };
 
 /**

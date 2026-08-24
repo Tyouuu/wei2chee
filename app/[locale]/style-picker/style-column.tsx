@@ -58,7 +58,16 @@ export type StyleName =
   // (MIT) over tweakcn colours: big radius AND a hard black edge, and three
   // saturated colours used as decoration rather than as meaning. See
   // tokens/pop.css.
-  | "pop";
+  | "pop"
+  // 2026-08-25, and the first two taken from a MEASUREMENT of the market rather
+  // than from a brief: eleven competitors' dashboards were photographed beside
+  // our own sixteen, and two whole families had no register here. 仪表盘 is the
+  // Tabler / AdminLTE / ngx-admin shape (white sidebar, slate ground, 4px, small
+  // caps); 中台 is the Ant Design Pro / vue-element-admin shape (deep navy
+  // chrome, 2px, no shadow, the densest body in the set) -- which is also what
+  // most Chinese-speaking Malaysian SMEs have already used.
+  | "console"
+  | "counter";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -93,6 +102,8 @@ export const STYLE_ORDER: StyleName[] = [
   "code",
   "tile",
   "pop",
+  "console",
+  "counter",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -112,6 +123,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   code: styles.code,
   tile: styles.tile,
   pop: styles.pop,
+  console: styles.console,
+  counter: styles.counter,
 };
 
 /**
@@ -155,6 +168,8 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   code: styles.code,
   tile: styles.tile,
   pop: styles.pop,
+  console: styles.console,
+  counter: styles.counter,
 };
 
 export function StyleColumn({

@@ -132,6 +132,14 @@
       "pop": {
         "label": "Pop",
         "description": "The sticker one. 26px corners with a 2px pure-black edge, and a hard offset shadow rather than a blur. Three saturated colours at once — indigo, teal, amber — colour as decoration, not only as meaning. Every one of the other twenty-one registers has a single accent. For businesses whose customer chooses with their eyes and is under forty."
+      },
+      "console": {
+        "label": "Console",
+        "description": "A wall of numbers. White sidebar, slate ground, 4px corners, tiles in rows. Measured against the other sixteen: nine put a dark column on the left, four a bar across the top, and the three that stay light are typographic registers with no fill anywhere — a light sidebar with a tinted active row appeared nowhere. For an owner who opens the system to read counts."
+      },
+      "counter": {
+        "label": "Counter",
+        "description": "Deep navy chrome, grey ground, 2px corners, no shadow anywhere, and the active row filled solid. This is the shape of the software these businesses have already used — and the densest register in the set: 34px rows, 13px body. For a day that is a list: wholesalers, dealer networks, workshops, parts shops."
       }
     },
     "sample": {

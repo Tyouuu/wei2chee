@@ -15,7 +15,7 @@
     "check:reachable": "python scripts/check-reachable.py",
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:print": "node scripts/check-print.mjs",
-    "check:registers": "node scripts/check-registers.mjs Ledger Hearth Blueprint Large Stamp Swiss Soft Brut Ink Glass Night Signboard Lacquer Code Tile Pop",
+    "check:registers": "node scripts/check-registers.mjs Ledger Hearth Blueprint Large Stamp Swiss Soft Brut Ink Glass Night Signboard Lacquer Code Tile Pop Console Counter",
     "shoot:registers": "node scripts/shoot-registers.mjs",
     "eval:analysis": "tsx scripts/eval-analysis.mjs"
   },

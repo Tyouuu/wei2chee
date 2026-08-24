@@ -34,6 +34,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   code: styles.code,
   tile: styles.tile,
   pop: styles.pop,
+  console: styles.console,
+  counter: styles.counter,
 };
 
 /** Mirrors PAGE_KEYS. Kept as a plain array here rather than imported so this

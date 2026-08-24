@@ -81,6 +81,8 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   tile: styles.tile,
 
   pop: styles.pop,
+  console: styles.console,
+  counter: styles.counter,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
