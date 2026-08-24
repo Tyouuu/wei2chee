@@ -12,6 +12,7 @@ const CONTENT: LandingContent = {
   services: [{ label: "Home renovation", value: "3-room, shoplot", icon: "wrench" }],
   stages: ["Enquiry", "Quote", "Build"],
   landsIn: "Quotations",
+  enquiryFields: [],
   proof: [{ value: "10 years", label: "In this trade" }],
   contact: [{ label: "WhatsApp", value: "012-345 6789", icon: "phone" }],
   words: {

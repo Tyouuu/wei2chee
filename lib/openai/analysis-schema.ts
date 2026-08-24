@@ -99,6 +99,54 @@ export const analysisSchema = z
         }),
       )
       .min(1),
+
+    /**
+     * WHERE A WEBSITE ENQUIRY BECOMES A RECORD, AND WHAT IT ASKS.
+     *
+     * The founder, on being told an enquiry becomes a 报价单: 「你应该想到更多
+     * 方面就是可能别的行业是不用这个报价单的呢？我不是只做一个行业呢？」. He was
+     * right about more than he said. Three things were wrong at once:
+     *
+     *   1. WHICH PAGE was decided by the ORDER of a hard-coded array
+     *      (`["quotations","bookings","orders","projects"].find`). A wholesaler
+     *      has both quotations and orders, so it always landed in quotations --
+     *      but a wholesaler doing repeat business off its own site is taking
+     *      ORDERS. An array's order was answering a question about a business.
+     *   2. SOME TRADES TAKE NO ENQUIRIES AT ALL. A kopitiam, a grocery, a car
+     *      wash: customers walk in. Promising them 「你的询价会变成一张单」 buys
+     *      an inbox that stays empty for a month, which does not read as "no
+     *      enquiries yet" -- it reads as a product that is broken. Hence
+     *      "none", and a shopfront page instead of a form.
+     *   3. WHAT THE FORM ASKED was identical across all eight industries, under
+     *      a placeholder reading "3-room renovation, roughly how much?" -- shown
+     *      to salons, clinics and workshops. That one is the most damaging,
+     *      because it contradicts the only thing this product claims.
+     *
+     * The model is the only thing in the pipeline that knows the answer: it has
+     * already read the business and already chosen its modules. It picks from a
+     * closed list, exactly like `modules` -- see the note at the top of
+     * lib/portal/module-catalog.ts for why this product never lets an LLM
+     * invent a key.
+     */
+    enquiry: z.object({
+      /** A module key this analysis actually chose, or "none". Validated
+       *  against the chosen modules in the transform below, because a key that
+       *  is real but absent from THIS system is a link to a page that does not
+       *  exist. */
+      lands_in: z.string(),
+      /** What the form asks. Capped at four: every extra field on a
+       *  landing-page form costs replies, which is enquiry-form.tsx's own
+       *  note and the reason this is not "as many as you like". */
+      fields: z
+        .array(
+          z.object({
+            label: z.string().min(1),
+            label_en: z.string().min(1),
+            kind: z.enum(["text", "phone", "email", "date", "long"]),
+          }),
+        )
+        .max(4),
+    }),
   })
   // Clamped rather than rejected. An index one past the end is a trivially
   // recoverable mistake, and throwing away an otherwise-good analysis over it
@@ -121,8 +169,48 @@ export const analysisSchema = z
         after_workflow.length - 1,
       ),
       modules: normalizeModules(value.modules),
+      enquiry: normalizeEnquiry(value.enquiry, normalizeModules(value.modules)),
     };
   });
+
+/** Page types an enquiry can honestly become. A stranger filling in a form on a
+ *  business's website is starting a job, a booking, an order or a conversation
+ *  -- never a payment record or a stock count, and a model that says so is
+ *  corrected rather than believed. */
+const ENQUIRY_TARGETS = ["quotations", "bookings", "orders", "projects", "customers"];
+
+/**
+ * Keeps the model's answer inside what this system can actually deliver.
+ *
+ * Three corrections, each for a failure that would reach a paying customer:
+ *
+ *   - A target this business does not HAVE is a link to a page that does not
+ *     exist. Falls back to the first target it does have, in the order above --
+ *     the same order as before, but now only as a LAST resort rather than as
+ *     the whole decision.
+ *   - No usable target at all means no arrow. "none" is a real answer here, not
+ *     a failure: see the note on the schema field.
+ *   - No fields means the generic three, because a form with no questions is
+ *     worse than a form with ordinary ones.
+ */
+function normalizeEnquiry(
+  raw: { lands_in: string; fields: { label: string; label_en: string; kind: string }[] },
+  modules: ReturnType<typeof normalizeModules>,
+) {
+  const has = new Set(modules.map((m) => m.key));
+  const asked = raw.lands_in?.trim();
+  const landsIn =
+    asked === "none"
+      ? "none"
+      : asked && ENQUIRY_TARGETS.includes(asked) && has.has(asked)
+        ? asked
+        : (ENQUIRY_TARGETS.find((k) => has.has(k)) ?? "none");
+
+  return {
+    lands_in: landsIn,
+    fields: raw.fields?.length ? raw.fields.slice(0, 4) : [],
+  };
+}
 
 export type AnalysisPayload = z.infer<typeof analysisSchema>;
 
@@ -215,6 +303,43 @@ export const analysisJsonSchema = {
           additionalProperties: false,
         },
       },
+      enquiry: {
+        type: "object",
+        description:
+          "What happens when a stranger fills in the form on this business's own website.",
+        properties: {
+          lands_in: {
+            type: "string",
+            enum: [...ENQUIRY_TARGETS, "none"],
+            description:
+              "Which page of THIS system a website enquiry becomes a row in. It must be one of the modules you chose above. Choose by how this trade actually wins work: a renovation contractor quotes, so quotations; a salon or clinic books a time, so bookings; a shop or wholesaler taking repeat orders from its own site, so orders. Answer \"none\" when this trade does not take enquiries through a website at all -- a kopitiam, a grocery, a car wash, anywhere customers simply walk in. \"none\" is a real answer and is better than an inbox that never fills.",
+          },
+          fields: {
+            type: "array",
+            minItems: 0,
+            maxItems: 4,
+            description:
+              "What the form asks, in the order it asks. Name and phone are almost always the first two. The rest must be what THIS trade needs to reply with a price or a time: a workshop needs the car and the problem, a clinic needs the service and a preferred time, a wholesaler needs the company and what goods. Empty when lands_in is \"none\".",
+            items: {
+              type: "object",
+              properties: {
+                label: { type: "string", description: "The question, in Chinese, 2-6 characters." },
+                label_en: { type: "string", description: "The same question in English, 1-4 words." },
+                kind: {
+                  type: "string",
+                  enum: ["text", "phone", "email", "date", "long"],
+                  description:
+                    "How it is typed. `long` is a multi-line box, for the one question that needs a sentence.",
+                },
+              },
+              required: ["label", "label_en", "kind"],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ["lands_in", "fields"],
+        additionalProperties: false,
+      },
     },
     required: [
       "bottlenecks",
@@ -225,6 +350,7 @@ export const analysisJsonSchema = {
       "summary",
       "summary_en",
       "modules",
+      "enquiry",
     ],
     additionalProperties: false,
   },
@@ -254,6 +380,21 @@ export function fallbackAnalysis(
   // would be the one kind of fabrication this fallback exists to avoid. The
   // reveal renders a module with no reason as a plain name, which is honest.
   const modules = defaultRecommendations(industry.slug);
+  // The fallback cannot know this trade's real questions -- nothing analysed it
+  // -- so it asks the three every business asks and lands them in the first
+  // sell-side page the trade actually has. Generic but never WRONG, which is
+  // the standard the rest of this fallback holds itself to. It never answers
+  // "none": refusing a business its enquiry form on no evidence would be a
+  // fabrication in the other direction.
+  const enquiry = {
+    lands_in:
+      ENQUIRY_TARGETS.find((k) => modules.some((m) => m.key === k)) ?? "none",
+    fields: [
+      { label: "称呼", label_en: "Your name", kind: "text" as const },
+      { label: "电话", label_en: "Phone / WhatsApp", kind: "phone" as const },
+      { label: "想做什么", label_en: "What do you need?", kind: "long" as const },
+    ],
+  };
   const stages =
     industry.default_workflow.length > 0 ? industry.default_workflow.slice(0, 6) : ["Customer", "Payment"];
 
@@ -285,6 +426,7 @@ export function fallbackAnalysis(
       summary: `${industry.name_zh}的日常运作大多还靠人记，把记录集中起来是第一步。`,
       summary_en: `Most of this ${industry.name_en} business still runs on memory; centralising records is step one.`,
       modules,
+      enquiry,
     };
   }
 
@@ -313,5 +455,6 @@ export function fallbackAnalysis(
     summary: `Most of this ${industry.name_en} business still runs on memory; centralising records is step one.`,
     summary_en: `Most of this ${industry.name_en} business still runs on memory; centralising records is step one.`,
     modules,
+    enquiry,
   };
 }

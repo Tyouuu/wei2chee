@@ -203,6 +203,10 @@ export async function POST(req: NextRequest) {
       summary: parsed.summary,
       summary_en: parsed.summary_en,
       modules: parsed.modules,
+      // Which page an enquiry on this business own website becomes a row in,
+      // and what that form asks. See migration 20260825020000 for why an array
+      // order was answering this until 2026-08-25.
+      enquiry: parsed.enquiry,
     })
     .select()
     .single();

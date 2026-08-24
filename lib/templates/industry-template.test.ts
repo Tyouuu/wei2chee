@@ -211,6 +211,79 @@ describe("buildPageLayout", () => {
     expect(landsIn(renovation)).toBe("Quotations");
   });
 
+  // 2026-08-25. 「你应该想到更多方面就是可能别的行业是不用这个报价单的呢？我不是
+  // 只做一个行业呢？」 -- three separate ways the old hard-coded array got this
+  // wrong for a business that is not a renovation contractor.
+  describe("the enquiry follows the trade, not an array's order", () => {
+    const websiteBlocks = (ctx: BusinessContext) =>
+      contentOf(ctx, "website").map((n) => n.type);
+    const formOf = (ctx: BusinessContext) =>
+      contentOf(ctx, "website").find((n) => n.type === "EnquiryForm");
+
+    it("lands where the ANALYSIS says, not where the array says first", () => {
+      // A wholesaler has quotations AND orders. The array put quotations
+      // first, so every wholesaler landed there -- but one taking repeat
+      // business off its own site is taking ORDERS.
+      const wholesaler: BusinessContext = {
+        ...renovationZh,
+        industry: {
+          ...renovationZh.industry!,
+          slug: "wholesale",
+          // Its own nouns, so the assertion below is about WHERE the enquiry
+          // landed and not about which word the renovation fixture happens to
+          // use for an order.
+          labels: { customer: "经销商", order: "订单", staff: "员工" },
+        },
+        analysis: {
+          ...renovationZh.analysis!,
+          enquiry: { lands_in: "orders", fields: [] },
+        },
+      };
+      expect(formOf(wholesaler)!.props.landsIn).toBe("订单");
+    });
+
+    it("gives a walk-in trade no form at all rather than an inbox that never fills", () => {
+      const kopitiam: BusinessContext = {
+        ...renovationZh,
+        industry: { ...renovationZh.industry!, slug: "fnb" },
+        analysis: {
+          ...renovationZh.analysis!,
+          enquiry: { lands_in: "none", fields: [] },
+        },
+      };
+      expect(websiteBlocks(kopitiam)).not.toContain("EnquiryForm");
+      // Still a real page: who you are, what you do, how to find you.
+      expect(websiteBlocks(kopitiam)).toContain("InfoRows");
+    });
+
+    it("asks the questions this trade needs, not the renovation ones", () => {
+      const workshop: BusinessContext = {
+        ...renovationZh,
+        analysis: {
+          ...renovationZh.analysis!,
+          enquiry: {
+            lands_in: "quotations",
+            fields: [
+              { label: "称呼", label_en: "Your name", kind: "text" },
+              { label: "车型", label_en: "Car model", kind: "text" },
+              { label: "什么问题", label_en: "What is wrong?", kind: "long" },
+            ],
+          },
+        },
+      };
+      const asked = (formOf(workshop)!.props.fields as { label: string }[]).map(
+        (f) => f.label,
+      );
+      expect(asked).toEqual(["称呼", "车型", "什么问题"]);
+    });
+
+    it("still builds a form the old way for an analysis written before this existed", () => {
+      // renovationZh has no `enquiry` at all -- every system provisioned
+      // before 2026-08-25 is in this state, and none of them may change shape.
+      expect(formOf(renovationZh)!.props.landsIn).toBe("报价单");
+    });
+  });
+
   it("gives every page the same navigation, so the five read as one system", () => {
     for (const key of SHELL_PAGES) {
       const rail = contentOf(renovation, key).find((n) => n.type === "RailNav");

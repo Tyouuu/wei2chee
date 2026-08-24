@@ -20,6 +20,14 @@ const validAnalysis = () => ({
     { key: "quotations", label: "报价单", label_en: "Quotations", why: "报价出去没人跟" },
     { key: "payments", label: "收款", label_en: "Payments", why: "追款靠记性" },
   ],
+  enquiry: {
+    lands_in: "quotations",
+    fields: [
+      { label: "称呼", label_en: "Your name", kind: "text" },
+      { label: "电话", label_en: "Phone", kind: "phone" },
+      { label: "想做什么", label_en: "What do you need?", kind: "long" },
+    ],
+  },
 });
 
 describe("analysisSchema", () => {
@@ -29,6 +37,48 @@ describe("analysisSchema", () => {
 
   it("rejects an object missing required fields", () => {
     expect(() => analysisSchema.parse({ bottlenecks: [] })).toThrow();
+  });
+
+  // 「你应该想到更多方面就是可能别的行业是不用这个报价单的呢？」 -- three separate
+  // ways an enquiry could land somewhere this business cannot show it.
+  it("moves an enquiry off a page this business does not have", () => {
+    const parsed = analysisSchema.parse({
+      ...validAnalysis(),
+      enquiry: { ...validAnalysis().enquiry, lands_in: "bookings" },
+    });
+    // No bookings module in this analysis, so it falls back to the first
+    // sell-side page that IS present rather than linking nowhere.
+    expect(parsed.enquiry.lands_in).toBe("quotations");
+  });
+
+  it("keeps \"none\" when the trade takes no enquiries", () => {
+    const parsed = analysisSchema.parse({
+      ...validAnalysis(),
+      enquiry: { lands_in: "none", fields: [] },
+    });
+    expect(parsed.enquiry.lands_in).toBe("none");
+    expect(parsed.enquiry.fields).toEqual([]);
+  });
+
+  it("refuses to land an enquiry somewhere it cannot honestly become a record", () => {
+    const parsed = analysisSchema.parse({
+      ...validAnalysis(),
+      // A real module key, and a nonsense destination for a stranger's first
+      // message. Corrected rather than believed.
+      enquiry: { ...validAnalysis().enquiry, lands_in: "payments" },
+    });
+    expect(parsed.enquiry.lands_in).toBe("quotations");
+  });
+
+  it("caps the form at four questions", () => {
+    const six = Array.from({ length: 6 }, (_, i) => ({
+      label: `问${i}`,
+      label_en: `Q${i}`,
+      kind: "text" as const,
+    }));
+    expect(() =>
+      analysisSchema.parse({ ...validAnalysis(), enquiry: { lands_in: "quotations", fields: six } }),
+    ).toThrow();
   });
 
   it("rejects an empty bottlenecks array", () => {

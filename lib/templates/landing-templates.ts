@@ -77,8 +77,28 @@ export type LandingContent = {
   services: { label: string; value: string; icon: string }[];
   /** Their own workflow stages, from the analysis. */
   stages: string[];
-  /** The page an enquiry becomes: 报价单 / 预约 / 订单. */
-  landsIn: string;
+  /**
+   * The page an enquiry becomes: 报价单 / 预约 / 订单 — or NULL for a trade that
+   * takes no enquiries through a website at all.
+   *
+   * Null is a real answer, not a missing one. A kopitiam, a grocery, a car
+   * wash: their customers walk in. Giving them a form promises an inbox that
+   * stays empty for a month, and an empty inbox does not read as "nobody has
+   * written yet", it reads as software that does not work. A template seeing
+   * null builds a shopfront instead — hours, where you are, and a WhatsApp
+   * button that goes straight to a chat.
+   */
+  landsIn: string | null;
+  /**
+   * What the form asks, in the order it asks, already in this system's
+   * language. Empty means the template falls back to its own three questions.
+   *
+   * It exists because the three were the SAME for all eight industries, under
+   * a placeholder reading "3-room renovation, roughly how much?" that salons,
+   * clinics and workshops all saw on their own website. That single line
+   * contradicted the only thing this product claims.
+   */
+  enquiryFields: { label: string; kind: string }[];
   /** Three checkable facts. */
   proof: { value: string; label: string }[];
   contact: { label: string; value: string; icon: string }[];
@@ -172,13 +192,38 @@ const flow = (c: LandingContent, title: string, layout = "row") =>
 
 const form = (c: LandingContent, key: string, look: string) => {
   const t = c.words.byTemplate[key] ?? c.words.byTemplate.quote;
+
+  // THE QUESTIONS THIS TRADE ACTUALLY NEEDS ANSWERED, 2026-08-25.
+  //
+  // `c.words.fields` is one list shared by all eight industries, and its third
+  // question carried the placeholder "3-room renovation, roughly how much?" --
+  // which salons, clinics, workshops and wholesalers all saw on their own
+  // website. It is the single line that most directly contradicts what this
+  // product sells, because it is the customer's own page telling them it was
+  // written for somebody else.
+  //
+  // The analysis now names them (see lib/openai/analysis-schema.ts). The shared
+  // list stays as the fallback for every system built before that and for the
+  // path where no model ran: generic, but never addressed to another trade.
+  //
+  // Placeholders are dropped rather than invented. A label the model wrote for
+  // this business is better unaccompanied than paired with an example from a
+  // different one.
+  const fields = c.enquiryFields.length
+    ? c.enquiryFields.map((f) => ({ label: f.label, placeholder: "", kind: f.kind }))
+    : c.words.fields;
+
   return node("EnquiryForm", "website-form", {
     look,
     heading: t.formHeading,
     blurb: t.formBlurb,
-    fields: c.words.fields,
+    fields,
     submitLabel: t.submit,
-    landsIn: c.landsIn,
+    // Null means this trade takes no enquiries; EnquiryForm renders the form
+    // without the arrow line rather than promising a record that will never
+    // appear. buildWebsite drops the block entirely for those trades -- this is
+    // the second guard, for a customer who adds the block back by hand.
+    landsIn: c.landsIn ?? "",
     // EnquiryForm is server-rendered and cannot read a language context, so the
     // three pieces of the arrow line are passed. They also land in the saved
     // layout, which makes them the customer's to rewrite like any other text.

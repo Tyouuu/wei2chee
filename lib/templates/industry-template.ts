@@ -1,6 +1,7 @@
 import type { PuckNode } from "@/lib/templates/puck-node";
 import {
   landingTemplateFor,
+  LANDING_BY_KEY,
   type LandingContent,
 } from "@/lib/templates/landing-templates";
 import type { Data } from "@puckeditor/core";
@@ -96,6 +97,20 @@ export type AnalysisContext = {
   /** The AI's one-line summary in English, for the same reason. */
   summary_en?: string | null;
   bottlenecks?: { title: string; description: string }[] | null;
+  /**
+   * What a website enquiry becomes for THIS business, decided by the analysis
+   * rather than by the order of an array. `lands_in` is a module key this
+   * business actually has, or "none" for a trade whose customers walk in.
+   *
+   * Absent on every analysis written before 2026-08-25 and on the fallback
+   * path, which is why the resolver below still carries the old ordering as a
+   * last resort -- no existing system changes shape on deploy. See migration
+   * 20260825020000.
+   */
+  enquiry?: {
+    lands_in?: string | null;
+    fields?: { label: string; label_en: string; kind: string }[] | null;
+  } | null;
 };
 
 /** `projects.business_name` / `projects.owner_name` (migration 20260820180000).
@@ -865,16 +880,46 @@ export function landingContentFor(
   // 预约, a wholesaler's is a 订单, a contractor's is a 报价单. Falls back to
   // the customer list, which every system has, rather than to a page the
   // business does not own.
-  const sellSide = ["quotations", "bookings", "orders", "projects"].find((k) =>
-    pages.some((p) => p.key === k),
-  );
-  const landsIn = sellSide
-    ? pageLabel(
-        pages.find((p) => p.key === sellSide) ?? { key: sellSide },
-        labels,
-        lang,
-      )
-    : labels.customer;
+  // 2026-08-25: the ANALYSIS decides this now, not the order of the array
+  // below. The founder: 「你应该想到更多方面就是可能别的行业是不用这个报价单的
+  // 呢？我不是只做一个行业呢？」 — and a wholesaler, who has both quotations and
+  // orders, always landed in quotations purely because that string came first.
+  //
+  // The array survives as the LAST resort, for every analysis written before
+  // that date and for the fallback path, so no existing system changes shape on
+  // deploy. See migration 20260825020000 and lib/openai/analysis-schema.ts,
+  // which corrects the model's answer against the modules this business has.
+  const decided = ctx.analysis?.enquiry?.lands_in?.trim();
+  const sellSide =
+    decided === "none"
+      ? null
+      : decided && pages.some((p) => p.key === decided)
+        ? decided
+        : (["quotations", "bookings", "orders", "projects"].find((k) =>
+            pages.some((p) => p.key === k),
+          ) ?? null);
+
+  const landsIn =
+    decided === "none"
+      ? null
+      : sellSide
+        ? pageLabel(
+            pages.find((p) => p.key === sellSide) ?? { key: sellSide },
+            labels,
+            lang,
+          )
+        : labels.customer;
+
+  // The questions this trade actually needs answered. The model writes both
+  // languages; the system's own language picks one, with no cross-language
+  // fallback -- a Chinese question under an English heading on a page a
+  // stranger reads is worse than a generic English one.
+  const enquiryFields = (ctx.analysis?.enquiry?.fields ?? [])
+    .map((f) => ({
+      label: (lang === "en" ? f.label_en : f.label)?.trim() ?? "",
+      kind: f.kind,
+    }))
+    .filter((f) => f.label);
 
   // NOT ctx.analysis.summary, and this is the one thing about this page that
   // is easy to get wrong. That line is the AI's diagnosis of what is BROKEN in
@@ -905,6 +950,7 @@ export function landingContentFor(
     services,
     stages: workflowStages(ctx),
     landsIn,
+    enquiryFields,
     proof: t.proof,
     contact: t.contact,
     words: t.page,
@@ -937,9 +983,27 @@ function buildWebsite(
   pages: PageRef[],
 ): PuckNode[] {
   const industry = ctx.industry ?? fallbackIndustry(langOf(ctx));
-  return landingTemplateFor(industry.slug).build(
-    landingContentFor(ctx, pages),
-  );
+  const content = landingContentFor(ctx, pages);
+
+  // A TRADE WHOSE CUSTOMERS WALK IN GETS NO FORM, 2026-08-25.
+  //
+  // 「你应该想到更多方面就是可能别的行业是不用这个报价单的呢？」 -- and past the
+  // question of WHICH page an enquiry becomes lies the one this product had
+  // never asked: whether this business takes enquiries at all. A kopitiam, a
+  // grocery, a car wash do not. Handing them a form promises an inbox that
+  // stays empty for a month, and an empty inbox does not read as "nobody has
+  // written yet" -- it reads as software that does not work.
+  //
+  // 一页名片 is already exactly the right page for them and was already built:
+  // who you are, what you do, how to find you, no form. It simply had no way
+  // of being chosen, because the trade slug picked the template and no slug
+  // means "walk-in". The analysis answers that now.
+  const template =
+    content.landsIn === null
+      ? LANDING_BY_KEY.card
+      : landingTemplateFor(industry.slug);
+
+  return template.build(content);
 }
 
 function buildCustomers(
