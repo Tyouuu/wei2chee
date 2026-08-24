@@ -27,6 +27,18 @@ const CONTENT: LandingContent = {
     byTemplate: {
       quote: { services: "What we do", flow: "After you call", formHeading: "Leave a number", formBlurb: "Three fields.", submit: "Send" },
     },
+    // The six sections a Malaysian SME page needs, added 2026-08-25. Present
+    // here because every template now reads them, and a fixture that omits
+    // them is testing a page no customer will ever be shown.
+    sections: {
+      work: { heading: "Our work", hint: "Your own photos", shots: ["Add a photo", "Add a photo", "Add a photo"] },
+      areas: { heading: "Where we cover", note: "Ask anyway", list: ["Kuala Lumpur", "Klang"] },
+      prices: { heading: "What it costs", note: "A guide", askLabel: "Ask", blank: "RM —" },
+      reviews: { heading: "What customers say", note: "Replace these", quotes: [{ text: "On time.", who: "A customer" }] },
+      faq: { heading: "Questions", rows: [{ title: "How long?", body: "A day." }] },
+      hours: { heading: "When we are open", rows: [{ label: "Mon – Fri", value: "9 – 6" }] },
+      promiseList: { heading: "What you get", marks: ["A written quote"] },
+    },
   } as unknown as LandingContent["words"],
 };
 

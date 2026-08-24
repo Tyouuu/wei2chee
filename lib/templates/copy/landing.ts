@@ -94,6 +94,35 @@ export type LandingCopy = {
         submit: string;
       }
     >;
+    /**
+     * THE SIX SECTIONS A MALAYSIAN SME PAGE NEEDS AND THIS ONE DID NOT HAVE.
+     *
+     * The founder's own list, written before any of this was built: 「下一个真正
+     * 的洞是版段太少 —— 一页只有 hero/服务/流程/表单/联络五种。缺的是口碑、价目、
+     * 覆盖范围、常见问题、营业时间、保证。」
+     *
+     * Every one of them is a question a stranger asks before they message, and
+     * a page that does not answer them sends the stranger to WhatsApp to ask --
+     * which is one more reason not to bother. They are also, all six, things the
+     * imported American SaaS templates do not have, because a US software
+     * company is not asked 「你们做不做 Cheras」.
+     *
+     * WHAT IS DELIBERATELY BLANK. Prices are 「RM —」 and the photo frames are
+     * empty. A page that invents a price is a page that lies to a stranger, and
+     * a page filled with stock photos of somebody else's kitchen announces that
+     * nobody designed it. Both render as an obvious, sized, labelled gap that
+     * the owner fills -- which is the same standard the rest of this file holds:
+     * never blank, never generic-agency, never WRONG.
+     */
+    sections: {
+      work: { heading: string; hint: string; shots: string[] };
+      areas: { heading: string; note: string; list: string[] };
+      prices: { heading: string; note: string; askLabel: string; blank: string };
+      reviews: { heading: string; note: string; quotes: { text: string; who: string }[] };
+      faq: { heading: string; rows: { title: string; body: string }[] };
+      hours: { heading: string; rows: { label: string; value: string }[] };
+      promiseList: { heading: string; marks: string[] };
+    };
   };
 };
 
@@ -256,6 +285,59 @@ const EN: LandingCopy = {
         submit: "Send",
       },
     },
+    sections: {
+      work: {
+        heading: "Our work",
+        hint: "Put your own photos here — three of your best jobs.",
+        shots: ["Add a photo", "Add a photo", "Add a photo"],
+      },
+      areas: {
+        heading: "Where we cover",
+        note: "Outside these? Message us anyway — we travel for the right job.",
+        list: ["Kuala Lumpur", "Petaling Jaya", "Subang / USJ", "Shah Alam", "Puchong", "Cheras", "Klang", "Ampang"],
+      },
+      prices: {
+        heading: "What it costs",
+        note: "A guide, not a quote. The real number comes after we look.",
+        askLabel: "Ask",
+        blank: "RM —",
+      },
+      reviews: {
+        heading: "What customers say",
+        note: "Replace these with your own — a screenshot of a Google review works too.",
+        quotes: [
+          { text: "Came when they said they would, and the price did not move.", who: "A customer" },
+          { text: "Explained what could wait and what could not. Saved us money.", who: "A customer" },
+        ],
+      },
+      faq: {
+        heading: "Questions we get",
+        rows: [
+          { title: "How long before you reply?", body: "Within a day, usually the same afternoon." },
+          { title: "Do you charge to come and look?", body: "No. We look, then we quote." },
+          { title: "How do payments work?", body: "A deposit to start, the balance when the work is done and you are happy with it." },
+          { title: "Can you give a price over WhatsApp?", body: "A rough range, yes. The real number needs a look." },
+        ],
+      },
+      hours: {
+        heading: "When we are open",
+        rows: [
+          { label: "Mon – Fri", value: "9:00am – 6:00pm" },
+          { label: "Saturday", value: "9:00am – 1:00pm" },
+          { label: "Sunday & public holidays", value: "Closed" },
+          { label: "WhatsApp", value: "Any time — we reply in working hours" },
+        ],
+      },
+      promiseList: {
+        heading: "What you get from us",
+        marks: [
+          "A written quote before anything starts",
+          "One person you deal with from start to finish",
+          "No charge for coming to look",
+          "We tell you before anything costs more",
+        ],
+      },
+    },
   },
 };
 
@@ -401,6 +483,59 @@ const ZH: LandingCopy = {
         formHeading: "联络我们",
         formBlurb: "",
         submit: "送出",
+      },
+    },
+    sections: {
+      work: {
+        heading: "做过的工",
+        hint: "换成你自己的照片 —— 挑三张最好的。",
+        shots: ["放一张照片", "放一张照片", "放一张照片"],
+      },
+      areas: {
+        heading: "服务范围",
+        note: "不在这几区？也可以问 —— 值得做的工我们会跑。",
+        list: ["吉隆坡", "八打灵再也", "梳邦 / USJ", "莎阿南", "蒲种", "蕉赖", "巴生", "安邦"],
+      },
+      prices: {
+        heading: "大概多少钱",
+        note: "这是参考，不是报价。真正的数目要看过才算得准。",
+        askLabel: "问一下",
+        blank: "RM —",
+      },
+      reviews: {
+        heading: "客人怎么说",
+        note: "换成你自己的 —— 截一张 Google 评论贴上来也可以。",
+        quotes: [
+          { text: "讲几时来就几时来，价钱也没有变过。", who: "一位客人" },
+          { text: "哪些要现在做、哪些可以等，讲得清楚，省了我们钱。", who: "一位客人" },
+        ],
+      },
+      faq: {
+        heading: "客人常问的",
+        rows: [
+          { title: "多久会回？", body: "一天内，通常当天下午就回。" },
+          { title: "上门看要收钱吗？", body: "不用。先看，再报价。" },
+          { title: "怎么给钱？", body: "先付订金开工，做好了、你满意了才收尾款。" },
+          { title: "可以 WhatsApp 报价吗？", body: "大概的范围可以，准确的数目要看过。" },
+        ],
+      },
+      hours: {
+        heading: "营业时间",
+        rows: [
+          { label: "星期一至五", value: "早上 9 点 – 傍晚 6 点" },
+          { label: "星期六", value: "早上 9 点 – 下午 1 点" },
+          { label: "星期日、公共假期", value: "休息" },
+          { label: "WhatsApp", value: "随时留言，上班时间回你" },
+        ],
+      },
+      promiseList: {
+        heading: "我们答应你的",
+        marks: [
+          "动工前一定先给你一张写清楚的报价",
+          "从头到尾同一个人跟你",
+          "上门看不收钱",
+          "会加钱的事，加之前先跟你讲",
+        ],
       },
     },
   },

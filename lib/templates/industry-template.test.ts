@@ -183,17 +183,27 @@ describe("buildPageLayout", () => {
     }
   });
 
-  // 官网 with nothing known about the business still has to be a real page:
-  // a headline, something it sells, what happens next, and the form that is
-  // the whole reason the page exists.
+  // 官网 with nothing known about the business still has to be a real page.
+  //
+  // It got considerably longer on 2026-08-25, and the reason is the founder's
+  // own list of what a Malaysian SME page was missing: 「缺的是口碑、价目、覆盖
+  // 范围、常见问题、营业时间、保证」. Every one of those is a question a stranger
+  // asks before messaging, and a page that does not answer them sends the
+  // stranger to WhatsApp to ask -- which is one more reason not to bother.
   it("builds a website out of nothing but the fallback trade", () => {
     const content = contentOf({}, "website");
     expect(content.map((n) => n.type)).toEqual([
       "SiteHero",
-      "InfoRows",
-      "WorkflowStrip",
+      "InfoRows",      // what we do
+      "Columns",       // work photos, three empty frames the owner fills
+      "InfoRows",      // a price guide, never a price
+      "WorkflowStrip", // what happens after you call
+      "ShelfList",     // what customers say
+      "InfoRows",      // where we cover
+      "FoldSection",   // questions we get
+      "MarkList",      // what you get from us
       "EnquiryForm",
-      "InfoRows",
+      "InfoRows",      // how to reach us
     ]);
   });
 

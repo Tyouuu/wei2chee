@@ -35,11 +35,24 @@ import type { LandingCopy } from "@/lib/templates/copy/landing";
  *
  * ── WHAT IS DELIBERATELY NOT HERE ─────────────────────────────────────────
  *
- * Photographs. A renovation page without work photos is missing something real,
- * and the fix is the customer's own photos, not stock. Filling six templates
- * with the same library images is exactly how a generated site announces that
- * nobody designed it -- and it would make all six look identical, undoing the
- * only thing this file is for.
+ * STOCK photographs, and the distinction sharpened on 2026-08-25 rather than
+ * reversing. The original argument stands: filling six templates with the same
+ * library images is how a generated site announces that nobody designed it, and
+ * it would make all six look identical, undoing the only thing this file is for.
+ *
+ * What that argument was taken to mean, wrongly, was NO PHOTO SLOT AT ALL --
+ * so a renovation contractor's page had nowhere for the three photos that are
+ * the entire reason a stranger believes them. `work()` below places three EMPTY
+ * frames, sized, captioned 「放一张照片」, and obviously the owner's to fill. A
+ * labelled gap is honest; a stranger's kitchen is not.
+ *
+ * ── THE SIX SECTIONS ADDED THE SAME DAY ───────────────────────────────────
+ *
+ * 口碑、价目、覆盖范围、常见问题、营业时间、保证 -- the founder's own list of
+ * what these pages were missing. Every component they use already existed in
+ * the palette with its register variants; nothing here is new capability. What
+ * was missing was a template that put them on a page, which is the same shape
+ * of gap the dashboard had: a library full of blocks and a screen with three.
  */
 
 export type LandingTemplate = {
@@ -234,6 +247,126 @@ const form = (c: LandingContent, key: string, look: string) => {
   });
 };
 
+/**
+ * THE SIX SECTIONS A MALAYSIAN SME PAGE NEEDS.
+ *
+ * The founder's own list: 「下一个真正的洞是版段太少 —— 一页只有 hero/服务/流程/
+ * 表单/联络五种。缺的是口碑、价目、覆盖范围、常见问题、营业时间、保证。」
+ *
+ * Every component below already existed — PhotoFrame, Stars, PriceTable,
+ * FoldSection, InfoRows, MarkList are all in the palette and all carry their
+ * register variants. Nothing here is new capability. What was missing was any
+ * template that PUT them on a page, which is the same shape of gap as the
+ * dashboard's: a library full of blocks and a first screen with three.
+ *
+ * They are also the six things an imported American SaaS template does not
+ * have, because a US software company is never asked 「你们做不做 Cheras」.
+ */
+
+/** Work photos. Empty frames on purpose — a renovation page filled with stock
+ *  photos of somebody else's kitchen announces that nobody designed it, and
+ *  the fix is the owner's own three photos, which is a two-minute job with an
+ *  obvious, sized, labelled slot to drop them into. */
+const work = (c: LandingContent) =>
+  node("Columns", "website-work", {
+    layout: "thirds",
+    a: [node("PhotoFrame", "website-work-1", { caption: c.words.sections.work.shots[0], ratio: "photo" })],
+    b: [node("PhotoFrame", "website-work-2", { caption: c.words.sections.work.shots[1], ratio: "photo" })],
+    c: [node("PhotoFrame", "website-work-3", { caption: c.words.sections.work.shots[2], ratio: "photo" })],
+  });
+
+/**
+ * Where they cover. The single most-asked question in this market and the one a
+ * stranger will not message to find out -- they will just close the page.
+ *
+ * ONE ROW, NOT EIGHT. The first version gave each area its own MarkList line
+ * and the render was the argument against it: eight rules across the page for
+ * eight place names, taller than the services section above it, for a fact a
+ * reader takes in at a glance. Place names are a phrase, not a checklist.
+ */
+const areas = (c: LandingContent) =>
+  node("InfoRows", "website-areas", {
+    heading: c.words.sections.areas.heading,
+    framed: true,
+    rows: [
+      {
+        label: c.words.sections.areas.heading,
+        value: c.words.sections.areas.list.join(" · "),
+        icon: "place",
+      },
+      { label: "", value: c.words.sections.areas.note, icon: "tag" },
+    ],
+  });
+
+/**
+ * A price GUIDE, never a price.
+ *
+ * NOT PriceTable, and the reason is worth writing down: its `price` field is a
+ * NUMBER. There is no way to say 「RM —」 in it, and the nearest thing it can
+ * say is 0 -- a page telling a stranger the job costs nothing. A component that
+ * cannot express "we have not filled this in yet" is the wrong component for a
+ * page that ships before the owner has filled it in.
+ *
+ * So the three services this business already listed, each with a blank beside
+ * it and a note saying it is a guide. A page that invents a number lies to a
+ * stranger; a page with no number at all sends them to WhatsApp to ask, which
+ * is one more reason not to bother.
+ */
+const prices = (c: LandingContent) =>
+  node("InfoRows", "website-prices", {
+    heading: c.words.sections.prices.heading,
+    framed: true,
+    rows: c.services.map((s) => ({
+      label: s.label,
+      value: c.words.sections.prices.blank,
+      icon: "money",
+    })),
+  });
+
+/** Word of mouth, which in this market is the whole sale. Two placeholder
+ *  lines that read like a real customer rather than like marketing, with the
+ *  instruction to replace them sitting on the page where the owner will see
+ *  it. */
+const reviews = (c: LandingContent) =>
+  node("ShelfList", "website-reviews", {
+    heading: c.words.sections.reviews.heading,
+    items: c.words.sections.reviews.quotes.map((q) => ({
+      title: q.text,
+      description: q.who,
+      icon: "person",
+      action: "",
+    })),
+  });
+
+/** The four questions that otherwise arrive one at a time on WhatsApp. */
+const faq = (c: LandingContent) =>
+  node("FoldSection", "website-faq", {
+    rows: c.words.sections.faq.rows,
+    openFirst: true,
+  });
+
+/** Opening hours. The one section a walk-in trade needs more than a form. */
+const hours = (c: LandingContent) =>
+  node("InfoRows", "website-hours", {
+    heading: c.words.sections.hours.heading,
+    framed: true,
+    rows: c.words.sections.hours.rows.map((r) => ({ ...r, icon: "time" })),
+  });
+
+/** What the business commits to. Concrete promises a stranger can hold them
+ *  to, which is what makes a stranger message rather than an adjective. */
+const promiseList = (c: LandingContent) =>
+  node("MarkList", "website-promise", {
+    heading: c.words.sections.promiseList.heading,
+    // The template names the rule rather than leaving it to the register, for
+    // the same reason it names 「numbered」 on a booking page's flow: four
+    // commitments read as a list under any register, and the 「separator」
+    // treatment some of them prefer pushes each line to the right of a
+    // full-width rule -- which reads as a layout bug rather than as a promise.
+    rule: "border",
+    marks: c.words.sections.promiseList.marks.map((text) => ({ text, tone: "good", icon: "file" })),
+  });
+
 const contact = (c: LandingContent, framed = true) =>
   node("InfoRows", "website-contact", {
     heading: c.words.contactHeading,
@@ -254,7 +387,13 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     build: (c) => [
       hero(c, "split", "quote"),
       services(c, sect(c, "quote").services),
+      work(c),
+      prices(c),
       flow(c, sect(c, "quote").flow ?? ""),
+      reviews(c),
+      areas(c),
+      faq(c),
+      promiseList(c),
       form(c, "quote", "card"),
       contact(c),
     ],
@@ -270,6 +409,11 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       // Numbered, not arrows: someone booking a slot is reading "what do I do
       // first", which is a list of steps rather than a pipeline.
       flow(c, sect(c, "booking").flow ?? "", "numbered"),
+      work(c),
+      prices(c),
+      reviews(c),
+      hours(c),
+      faq(c),
       form(c, "booking", "split"),
       contact(c),
     ],
@@ -284,6 +428,11 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       // first screen should feel like walking past it.
       hero(c, "split", "order"),
       services(c, sect(c, "order").services),
+      work(c),
+      prices(c),
+      hours(c),
+      areas(c),
+      reviews(c),
       form(c, "order", "split"),
       contact(c, false),
     ],
@@ -297,6 +446,10 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hero(c, "split", "pricelist"),
       services(c, sect(c, "wholesale").services),
       flow(c, sect(c, "wholesale").flow ?? "", "timeline"),
+      prices(c),
+      areas(c),
+      promiseList(c),
+      faq(c),
       form(c, "wholesale", "card"),
       contact(c),
     ],
@@ -310,8 +463,11 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hero(c, "split", "grid"),
       // Services first and unframed: on a page whose job is "look at this",
       // boxes around every section fight the looking.
+      work(c),
       services(c, sect(c, "portfolio").services, false),
+      reviews(c),
       flow(c, sect(c, "portfolio").flow ?? "", "timeline"),
+      faq(c),
       form(c, "portfolio", "plain"),
       contact(c, false),
     ],
@@ -324,6 +480,9 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     build: (c) => [
       hero(c, "split", "card"),
       services(c, sect(c, "card").services, false),
+      hours(c),
+      areas(c),
+      reviews(c),
       contact(c),
     ],
   },
