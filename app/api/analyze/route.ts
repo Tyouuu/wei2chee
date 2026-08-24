@@ -22,7 +22,9 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
  * it short" produces a different length every call; "under 12 characters"
  * produces the same length every call.
  */
-const SYSTEM_PROMPT = `You analyse small businesses in Malaysia and return structured findings.
+/** Exported so scripts/eval-analysis.mjs runs the SAME prompt. An eval that
+ *  measures a copy of the prompt measures the copy. */
+export const SYSTEM_PROMPT = `You analyse small businesses in Malaysia and return structured findings.
 
 Hard rules, which override anything the business owner's answers imply:
 - Write in the requested language ONLY. Never mix languages inside one field.
@@ -58,7 +60,7 @@ Choosing this business's modules -- the pages their system will be built from:
  *  on a screen that promised them an answer. */
 const MAX_ATTEMPTS = 2;
 
-type Industry = {
+export type Industry = {
   slug: string;
   name_zh: string;
   name_en: string;
@@ -67,7 +69,7 @@ type Industry = {
   labels: { customer: string; order: string; staff: string };
 };
 
-function buildUserPrompt(
+export function buildUserPrompt(
   industry: Industry,
   language: "zh" | "en",
   answers: Record<string, string>,
