@@ -1,4 +1,12 @@
-import { useId, type ReactNode } from "react";
+// "use client" SINCE 2026-08-25, and it is the whole point of the change. This
+// component's own header used to read WHY IT IS INERT HERE. Nothing submits --
+// which was the honest thing to say while there was nowhere for an enquiry to
+// go. There is now (migration 20260825040000), so the form posts, and a
+// component that posts needs state.
+"use client";
+
+import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useSystemWords } from "@/design-system/system-lang-context";
 
 /**
  * 官网表格 → 系统出单. The one component in this product where the outside and
@@ -17,13 +25,17 @@ import { useId, type ReactNode } from "react";
  * asserted in marketing copy, and it is the reason this is a purpose-built
  * component and not three Field blocks stacked in the palette.
  *
- * WHY IT IS INERT HERE. Nothing submits. This is a design mock the customer
- * approves before a human team builds the real backend — the whole business
- * model (RM 5,000 flat, then hosting) rests on that order. A form that appeared
- * to accept a real enquiry and dropped it would be the worst possible thing to
- * ship on a page a stranger reads. So the fields are real, labelled and
- * keyboard-reachable, and the button says what will happen rather than pretends
- * it already did.
+ * IT SUBMITS NOW, and only where submitting is honest. Until 2026-08-25 this
+ * header said 「Nothing submits」 and was right to: there was no table for a
+ * customer's enquiries, so a form that appeared to accept one and dropped it
+ * would have been the worst possible thing to ship on a page a stranger reads.
+ *
+ * The table exists (migration 20260825040000), so the arrow is now a behaviour
+ * rather than a sentence. The rule that replaced the old one: it posts ONLY
+ * from a published page, where the slug is in the address bar. In the editor's
+ * preview there is no slug and the form says so out loud —— 「这是预览，没有真的
+ * 送出」 —— because a preview that pretends to accept an enquiry is the same
+ * dishonesty in a different place.
  *
  * WHY EVERY FIELD HAS A REAL <label>. The contract's own rule, and it matters
  * more here than anywhere else in the system: the reader is a stranger on a
@@ -76,9 +88,67 @@ export function EnquiryForm({
   look?: "card" | "plain" | "split";
 }) {
   const base = useId();
+  const w = useSystemWords();
   const rows = fields && fields.length > 0 ? fields : DEFAULT_FIELDS;
   const split = look === "split";
   const boxed = look === "card";
+  const [values, setValues] = useState<Record<number, string>>({});
+  const [state, setState] = useState<"idle" | "sending" | string>("idle");
+
+  /** The published address is the only thing that says which business this
+   *  form belongs to, and it is already in the reader's address bar. Reading
+   *  it here rather than threading a prop keeps the page builder out of a
+   *  decision it cannot make -- the same layout is rendered in the editor,
+   *  where there is no slug and there should be no submission. */
+  const slugFromUrl = () => {
+    if (typeof window === "undefined") return "";
+    const m = /^\/s\/([^/?#]+)/.exec(window.location.pathname);
+    return m ? decodeURIComponent(m[1]) : "";
+  };
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const slug = slugFromUrl();
+    if (!slug) {
+      setState(w.sendPreviewOnly);
+      return;
+    }
+    // The first two fields are the name and the way to reach them in every
+    // trade's question set -- the schema says so, and the analysis is told so.
+    // Everything else is this trade's own and rides along as answers.
+    const name = (values[0] ?? "").trim();
+    const contact = (values[1] ?? "").trim();
+    if (!name || !contact) {
+      setState(w.sendIncomplete);
+      return;
+    }
+    const answers: Record<string, string> = {};
+    rows.forEach((f, i) => {
+      if (i > 1 && (values[i] ?? "").trim()) answers[f.label] = values[i].trim();
+    });
+
+    setState("sending");
+    try {
+      const res = await fetch("/api/site/enquiry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug, name, contact, answers, website: "" }),
+      });
+      const { result } = (await res.json()) as { result?: string };
+      setState(
+        result === "ok"
+          ? w.sent
+          : result === "too_many"
+            ? w.sendTooMany
+            : result === "incomplete"
+              ? w.sendIncomplete
+              : w.sendFailed,
+      );
+      if (result === "ok") setValues({});
+    } catch {
+      setState(w.sendFailed);
+    }
+  }
 
   return (
     <section className="[padding-block:var(--pad-card-lg)] [padding-inline:var(--pad-card-lg)]">
@@ -106,9 +176,21 @@ export function EnquiryForm({
 
         {/* Capped at a readable measure rather than the page being capped --
             the contract's layout rule: cap fields, not pages. */}
-        <div
+        <form
+          onSubmit={onSubmit}
           className={`${split ? "" : "mt-6 "}flex max-w-[34rem] flex-col [gap:var(--gap-stack)]`}
         >
+          {/* Nobody sees this and nobody fills it. A bot fills every input it
+              finds, which is what makes it the cheapest honest filter there
+              is -- no puzzle for a real person to solve. */}
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute h-0 w-0 overflow-hidden opacity-0"
+          />
           {rows.map((f, i) => {
             const id = `${base}-${i}`;
             return (
@@ -123,6 +205,8 @@ export function EnquiryForm({
                   <textarea
                     id={id}
                     rows={3}
+                    value={values[i] ?? ""}
+                    onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
                     placeholder={f.placeholder}
                     className="w-full resize-y [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-base)] [line-height:var(--leading-body)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
                   />
@@ -131,6 +215,8 @@ export function EnquiryForm({
                     id={id}
                     type={f.kind === "phone" ? "tel" : "text"}
                     inputMode={f.kind === "phone" ? "tel" : undefined}
+                    value={values[i] ?? ""}
+                    onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
                     placeholder={f.placeholder}
                     className="min-h-11 w-full [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-base)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
                   />
@@ -141,8 +227,9 @@ export function EnquiryForm({
 
           <div className="mt-1 flex flex-wrap items-center [gap:var(--gap-inline)]">
             <button
-              type="button"
-              className="inline-flex min-h-11 items-center [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.6)] [transition-duration:var(--dur)] [transition-property:background-color] hover:[background-color:var(--color-primary-deep)]"
+              type="submit"
+              disabled={state === "sending"}
+              className="inline-flex min-h-11 items-center disabled:opacity-60 [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.6)] [transition-duration:var(--dur)] [transition-property:background-color] hover:[background-color:var(--color-primary-deep)]"
             >
               {submitLabel || "送出"}
             </button>
@@ -152,7 +239,19 @@ export function EnquiryForm({
               </span>
             )}
           </div>
-        </div>
+
+          {/* One line, in the reader's own language, saying what happened.
+              `aria-live` because a stranger who pressed a button and saw
+              nothing change assumes it is broken. */}
+          {state !== "idle" && state !== "sending" && (
+            <p
+              aria-live="polite"
+              className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]"
+            >
+              {state}
+            </p>
+          )}
+        </form>
 
         {/* THE ARROW. Not decoration and not an aside: this line is the only
             place on the page where the product's own claim is visible. */}

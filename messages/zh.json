@@ -533,7 +533,8 @@
       "account": "我的账号",
       "accountRow": "账号与设置",
       "navOpen": "打开导航",
-      "navClose": "关闭导航"
+      "navClose": "关闭导航",
+      "enquiries": "官网来的询价"
     },
     "styles": {
       "title": "风格",
@@ -676,7 +677,11 @@
       "signOutTitle": "登出",
       "signOutBody": "你的设计已经存好了。下次登入回到原来的地方。",
       "signOutCta": "登出"
-    }
+    },
+    "enquiries": "官网来的询价",
+    "enquiriesBlurb": "客人在你的官网填表送出的，会直接落在这里 —— 不用有人转抄。系统正式交付之后，这些会直接进你自己的那一页。",
+    "enquiriesEmpty": "还没有人来问。官网上线之后，第一条会出现在这里。",
+    "enquiriesLandsIn": "交付后会进：{page}"
   },
   "explainer": {
     "process": {

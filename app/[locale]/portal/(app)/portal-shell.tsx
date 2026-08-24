@@ -286,6 +286,12 @@ export function PortalShell({
           </NavRow>
 
           <SectionLabel>{t("deliverSection")}</SectionLabel>
+          {/* The other end of 官网表格 → 系统出单. It sits in 交付 rather than in
+              the system's own pages because these rows are real today and the
+              generated pages are still a draft -- see the page's own note. */}
+          <NavRow href={`${base}/enquiries`} active={is("/enquiries")} icon={<IconSpec />}>
+            {t("enquiries")}
+          </NavRow>
           <NavRow href={`${base}/spec`} active={is("/spec")} icon={<IconSpec />}>
             {t("spec")}
           </NavRow>

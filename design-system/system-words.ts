@@ -62,6 +62,16 @@ export type SystemWords = {
    *  table's caption used to be an aria-label only -- invisible on screen --
    *  so every table in every register shipped with no heading and no count
    *  while all eleven competitors photographed on 2026-08-25 carry both. */
+  /** What the 官网 enquiry form says after the button is pressed. Four
+   *  outcomes, all of them things a stranger on a phone has to read. */
+  sent: string;
+  sendIncomplete: string;
+  sendTooMany: string;
+  sendFailed: string;
+  /** The form is real but this is not the published page, so nothing was
+   *  sent. Said out loud rather than faked -- a preview that pretends to
+   *  accept an enquiry is the worst thing this product could ship. */
+  sendPreviewOnly: string;
   rowCount: (n: number) => string;
   /** The filter segments above a table. Only the first is active in a preview;
    *  the finished system wires them to real queries. */
@@ -143,6 +153,11 @@ const EN: SystemWords = {
     feature
       ? `${feature} — part of your system. It switches on once the system is built.`
       : "Part of your system. It switches on once the system is built.",
+  sent: "Got it — we will come back to you.",
+  sendIncomplete: "A name and a way to reach you, please.",
+  sendTooMany: "A lot has come in just now. Try again in a minute.",
+  sendFailed: "That did not go through. Try again, or message us directly.",
+  sendPreviewOnly: "This is the preview — nothing was sent. On your live site it becomes a row in your system.",
   rowCount: (n) => `${n} record${n === 1 ? "" : "s"}`,
   filterAll: "All",
   empty: "Nothing here yet",
@@ -225,6 +240,11 @@ const ZH: SystemWords = {
     feature
       ? `${feature} — 这是你系统里的功能，系统建好后会启用`
       : "这是你系统里的功能，系统建好后会启用",
+  sent: "收到了 —— 我们会回你。",
+  sendIncomplete: "留个称呼和联络方式就可以。",
+  sendTooMany: "刚才进来的有点多，等一分钟再试。",
+  sendFailed: "没送出去。再试一次，或者直接找我们。",
+  sendPreviewOnly: "这是预览 —— 没有真的送出。上线之后，这一按会在你的系统里开一行。",
   rowCount: (n) => `共 ${n} 条`,
   filterAll: "全部",
   empty: "还没有资料",

@@ -533,7 +533,8 @@
       "account": "My account",
       "accountRow": "Account and settings",
       "navOpen": "Open navigation",
-      "navClose": "Close navigation"
+      "navClose": "Close navigation",
+      "enquiries": "Website enquiries"
     },
     "styles": {
       "title": "Styles",
@@ -676,7 +677,11 @@
       "signOutTitle": "Sign out",
       "signOutBody": "Your design is saved. Signing back in puts you where you left off.",
       "signOutCta": "Sign out"
-    }
+    },
+    "enquiries": "Enquiries from your website",
+    "enquiriesBlurb": "What visitors send from your own site lands here — nobody has to retype it. Once the system is delivered these go straight into your own page.",
+    "enquiriesEmpty": "Nobody has written yet. The first one appears here once your site is live.",
+    "enquiriesLandsIn": "After delivery this becomes a row in: {page}"
   },
   "explainer": {
     "process": {
