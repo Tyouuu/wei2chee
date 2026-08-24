@@ -48,3 +48,4 @@ next-env.d.ts
 
 .print-audit-*.pdf
 .screenshots/
+.prospects/

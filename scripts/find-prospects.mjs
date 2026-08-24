@@ -117,11 +117,18 @@ const CHAINS =
 const q = TRADES.map(
   ([t]) => `node["${t}"](${bbox.join(",")});way["${t}"](${bbox.join(",")});`,
 ).join("");
-const query = `[out:json][timeout:90];(${q});out center tags;`;
+const query = `[out:json][timeout:90];(${q});out center;`;
 
 process.stdout.write(`查 ${area.toUpperCase()} · ${TRADES.length} 个行业 … `);
+// A User-Agent is not optional here: Overpass answers 406 to an anonymous
+// client, and 406 reads like a bad query rather than like a missing header --
+// which cost the first run.
 const res = await fetch("https://overpass-api.de/api/interpreter", {
   method: "POST",
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
+    "user-agent": "formae-prospect/1.0 (Malaysian SME lead research; contact via formae.my)",
+  },
   body: new URLSearchParams({ data: query }),
 });
 if (!res.ok) {
