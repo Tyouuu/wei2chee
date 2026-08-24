@@ -1,0 +1,115 @@
+{
+  "_why": "Where every borrowed thing came from, what we took, and the upstream commit we took it at. The founder: 「借鉴别人的github要去时常检查看看有没有新的更新 我们才可以一直跟上市场跟他们的脚步」. `npm run check:upstream` diffs this against the live repos. Update `takenAt` in the same commit that takes something new.",
+  "sources": [
+    {
+      "repo": "arhamkhnz/next-shadcn-admin-dashboard",
+      "licence": "MIT",
+      "kind": "code",
+      "took": "15 shadcn primitives, 6 draggable blocks, and the soft-pop theme preset that became 波普",
+      "where": "components/ui/, components/blocks/, design-system/tokens/pop.css",
+      "takenAt": "64e77583",
+      "takenOn": "2026-08-23",
+      "note": "Same stack: Next.js 16, Tailwind v4, shadcn on Radix. Its 25 screens are still unmined."
+    },
+    {
+      "repo": "jnsahaj/tweakcn",
+      "licence": "Apache-2.0",
+      "kind": "code",
+      "took": "25 palettes (配色 layer) and soft-pop's colour values",
+      "where": "design-system/palettes/, lib/portal/palettes.generated.ts",
+      "takenAt": "d21c8e3d",
+      "takenOn": "2026-08-23",
+      "note": "Attribution is in every generated palette file."
+    },
+    {
+      "repo": "satnaing/shadcn-admin",
+      "licence": "MIT",
+      "kind": "identified, not yet taken",
+      "took": "nothing yet — KPI rows, grouped sidebar and table toolbars were REBUILT here rather than copied",
+      "where": "-",
+      "takenAt": "e16c87f2",
+      "takenOn": "2026-08-25",
+      "note": "React + Vite + shadcn + Tailwind v4, 14.0k stars. The nearest same-stack source if more blocks are wanted."
+    },
+    {
+      "repo": "tabler/tabler",
+      "licence": "MIT",
+      "kind": "look only",
+      "took": "the shape of 仪表盘 — white sidebar, slate ground, 4px corners, small-caps labels",
+      "where": "design-system/tokens/console.css",
+      "takenAt": "-",
+      "takenOn": "2026-08-25",
+      "note": "Bootstrap. Nothing is copied; the register was measured off a screenshot."
+    },
+    {
+      "repo": "ColorlibHQ/AdminLTE",
+      "licence": "MIT",
+      "kind": "look only",
+      "took": "colour-tiled KPI conventions, folded into 仪表盘",
+      "where": "design-system/tokens/console.css",
+      "takenAt": "-",
+      "takenOn": "2026-08-25",
+      "note": "Bootstrap 5."
+    },
+    {
+      "repo": "akveo/ngx-admin",
+      "licence": "MIT",
+      "kind": "look only",
+      "took": "Eva chart palette conventions, folded into 仪表盘",
+      "where": "design-system/tokens/console.css",
+      "takenAt": "-",
+      "takenOn": "2026-08-25",
+      "note": "Angular."
+    },
+    {
+      "repo": "ant-design/ant-design-pro",
+      "licence": "MIT",
+      "kind": "look only",
+      "took": "the shape of 中台 — #001529 chrome, filled active row, 2px corners, no shadow",
+      "where": "design-system/tokens/counter.css",
+      "takenAt": "-",
+      "takenOn": "2026-08-25",
+      "note": "React + antd, which conflicts with our Radix. Look only, permanently."
+    },
+    {
+      "repo": "PanJiaChen/vue-element-admin",
+      "licence": "MIT",
+      "kind": "look only",
+      "took": "density conventions folded into 中台",
+      "where": "design-system/tokens/counter.css",
+      "takenAt": "-",
+      "takenOn": "2026-08-25",
+      "note": "Vue 2, unmaintained. Kept in the list because it is what this market has already used."
+    },
+    {
+      "repo": "Daymychen/art-design-pro",
+      "licence": "MIT",
+      "kind": "look only",
+      "took": "nothing yet — reviewed against 柔和 on 2026-08-25 and 柔和 was judged already right",
+      "where": "-",
+      "takenAt": "-",
+      "takenOn": "2026-08-25",
+      "note": "The best-looking of the batch. Revisit if 柔和 ever needs work."
+    },
+    {
+      "repo": "pure-admin/vue-pure-admin",
+      "licence": "MIT",
+      "kind": "look only",
+      "took": "nothing yet — its four layout modes (vertical / horizontal / mixed / double-column) are worth copying structurally",
+      "where": "-",
+      "takenAt": "-",
+      "takenOn": "2026-08-25",
+      "note": "The double-column sidebar is a shape SystemShell does not have."
+    },
+    {
+      "repo": "vbenjs/vue-vben-admin",
+      "licence": "MIT",
+      "kind": "theme variables only",
+      "took": "nothing yet",
+      "where": "-",
+      "takenAt": "-",
+      "takenOn": "2026-08-25",
+      "note": "Vue, but built on Shadcn UI — its CSS-variable themes speak our language even though its components cannot."
+    }
+  ]
+}

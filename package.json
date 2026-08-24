@@ -17,7 +17,8 @@
     "check:print": "node scripts/check-print.mjs",
     "check:registers": "node scripts/check-registers.mjs Ledger Hearth Blueprint Large Stamp Swiss Soft Brut Ink Glass Night Signboard Lacquer Code Tile Pop Console Counter",
     "shoot:registers": "node scripts/shoot-registers.mjs",
-    "eval:analysis": "tsx scripts/eval-analysis.mjs"
+    "eval:analysis": "tsx scripts/eval-analysis.mjs",
+    "check:upstream": "node scripts/check-upstream.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

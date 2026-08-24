@@ -94,16 +94,18 @@
 - [ ] 等他说可以，再跑一次出名单
 - [ ] 跑完要做成 demo：抓一批吉隆坡的装修/车行/手机店出来给他看
 
-### 9. 上游检查 `npm run check:upstream`
-- [ ] 清单记住：从哪个 repo、拿了什么、拿的是哪个 commit、什么许可
-- [ ] 脚本比对上游有没有新 release / 新 commit
-
 ### 10. 官网第一屏加产品截图
 外面六个里六个都有（Linear / Attio / Stripe / Resend / Raycast / Polar），我们没有。
 
 ---
 
 ## 已完成
+
+- **2026-08-25** — **`npm run check:upstream` 做好了。** `design-system/upstream.json` 记住 11 个来源：
+  从哪个 repo、什么许可、拿了什么、拿的是哪个 commit。脚本去 GitHub 比对落后几个 commit、
+  有没有新 release、**许可有没有变**（只拿长相的来源只查许可 —— 我们没抄代码，但对方改许可是我们的事）。
+  第一次跑：0 个许可变了，两个代码来源都在 head。
+  **它不会自动拉** —— 上游动了是一个决定，不是一个 merge。
 
 - **2026-08-25** — **新增两套风格：仪表盘 Console、中台 Counter，共 18 套。**
   两套都是从**实拍量出来**的，不是从简介写出来的：仪表盘取 Tabler 41.5k / AdminLTE 45.6k /
