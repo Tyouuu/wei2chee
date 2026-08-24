@@ -52,6 +52,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "一本账簿。密、准、没有装饰。给每天要看几十条记录的人。",
     facts: "圆角 4px · 边框 1px · 无阴影 · 行高 32px · 正文 13px · 标签全大写",
     prefer: {
+      StatRow: "boxed",
       RecordTable: "compact",
       HeroCard: "stats",
       WorkflowStrip: "row",
@@ -83,6 +84,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "一间店的前台。圆、暖、宽松。给客人会看到的页面。",
     facts: "圆角 20px · 无边框、靠阴影分层 · 行高 52px · 正文 15px · 标签不大写",
     prefer: {
+      StatRow: "tinted",
       RecordTable: "zebra",
       HeroCard: "full",
       WorkflowStrip: "numbered",
@@ -114,6 +116,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "一份图纸。中性、清楚、不抢眼。什么生意都不会出错的那一套。",
     facts: "圆角 12px · 边框 1px · 淡阴影 · 行高 42px · 正文 14px · 标签不大写",
     prefer: {
+      StatRow: "lead",
       RecordTable: "plain",
       HeroCard: "full",
       WorkflowStrip: "row",
@@ -145,6 +148,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "给看不清楚的人。字大、行高、对比强。老板五六十岁、在车上用手机看的时候就选这个。",
     facts: "正文 17px · 行高 56px · 行距 1.75 · 最小的字也有 13px · 强调色对比 7.4:1",
     prefer: {
+      StatRow: "rule",
       RecordTable: "plain",
       HeroCard: "solo",
       WorkflowStrip: "numbered",
@@ -176,6 +180,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "像他们本来就在用的 POS / 会计软件。表头是一条实心色带、白字。",
     facts: "表头实心 · 圆角 4px · 边框 1px · 行高 36px · 标签全大写",
     prefer: {
+      StatRow: "boxed",
       RecordTable: "grid",
       HeroCard: "stats",
       WorkflowStrip: "row",
@@ -209,6 +214,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "像一张印出来的资料表。黑白为主,只有一个红,用在必须被找到的地方。",
     facts: "全直角 · 边框 1px · 无阴影 · 标签全大写字距 0.12em · 强调色瑞士红",
     prefer: {
+      StatRow: "rule",
       RecordTable: "plain",
       HeroCard: "stats",
       WorkflowStrip: "numbered",
@@ -240,6 +246,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "没有边,只有浮起来。卡片跟页面同一个颜色,靠一对阴影分开。摸起来软的那种。",
     facts: "圆角 18–26px · 无边框 · 一对明暗阴影 · 按钮全圆 · 动画 200ms",
     prefer: {
+      StatRow: "tinted",
       RecordTable: "plain",
       HeroCard: "trend",
       WorkflowStrip: "row",
@@ -271,6 +278,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "有重量。3px 的黑框、不带模糊的偏移阴影,像盖上去的第二层印。响,但整齐。",
     facts: "圆角 12px · 边框 3px 纯黑 · 阴影 4px 4px 0(不模糊) · 字重 800/900 · 行高 50px · 强调色桃红",
     prefer: {
+      StatRow: "boxed",
       RecordTable: "grid",
       HeroCard: "stats",
       WorkflowStrip: "numbered",
@@ -302,6 +310,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "留白。一张宣纸,墨色的字,一枚朱红的印。东西不多,每一样都站得开。",
     facts: "内距 40px · 行高 76px · 正文 17px · 圆角 0 · 无阴影 · 宋体 · 强调色朱红 #c41e3a · 底色宣纸 #f5f1e8",
     prefer: {
+      StatRow: "rule",
       // Nothing boxed, nothing banded: at this much padding a gridline is a
       // second structure competing with the space itself.
       RecordTable: "plain",
@@ -339,6 +348,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "贴纸那一个。26px 大圆角配 2px 纯黑边,阴影是硬的偏移不是模糊。三个饱和色一起用——靛蓝、青绿、琥珀——颜色是装饰,不只是意思。底色是很淡的薄荷绿。",
     facts: "圆角 26px · 边框 2px 纯黑 · 硬偏移阴影 3px · 字重 800 · 正文 15px · 行高 54px · 三个强调色 · 画布 #f3f8ee",
     prefer: {
+      StatRow: "tinted",
       RecordTable: "zebra",
       HeroCard: "full",
       WorkflowStrip: "numbered",
@@ -370,6 +380,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "地上铺花砖。娘惹砖那种四瓣花加角上的小圆点,水泥色的地。卡片一律平的奶白——图案在地上,不在字底下。",
     facts: "地上 48px 花砖图 · 底色水泥 #f0e9dd · 卡片平奶白 #fffdf8 · 圆角 6px · 釉绿 #14837a · 角点砖红",
     prefer: {
+      StatRow: "boxed",
       RecordTable: "plain",
       HeroCard: "full",
       WorkflowStrip: "numbered",
@@ -401,6 +412,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "每一个字一样宽。整页等宽字,型号、条码、数量自己就对齐了,不用谁去排。密度跟台账一样紧,颜色是印刷蓝。",
     facts: "内文等宽 13px 行高 32px · 标题也是等宽 · 圆角 2px · 边框 1px · 强调色 #0f6fa8 · 冷灰底 #f4f6f7",
     prefer: {
+      StatRow: "boxed",
       RecordTable: "grid",
       HeroCard: "stats",
       WorkflowStrip: "row",
@@ -432,6 +444,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "有颜色的地。整页是深牛血漆红,卡片是象牙白的板浮在上面,金色只走线不做面。整套十八个版式,只有这一个把颜色放在「地」上——其他每一个都是白纸配一颗有色的按钮。",
     facts: "底色 #6e2019(饱和 0.72) · 卡片象牙 #fdfaf4 · 阴影更深更暖 · 圆角 6px · 无边框 · 按钮同色系 #8c2a20 · 金 #c8952f 只用在线",
     prefer: {
+      StatRow: "tinted",
       RecordTable: "plain",
       HeroCard: "solo",
       WorkflowStrip: "timeline",
@@ -463,6 +476,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "招牌那一个。店名用又窄又粗的字排到 46px、字距收紧,下面的价目跟内文是普通的 15px。整套里第一个「标题跟内文不同一个字体」的版式——差别就在这个对比,不在颜色。",
     facts: "标题字 Archivo Narrow 46px 字距 -0.03em · 内文 15px · 招牌红 #c8102e · 暖白底 #f7f4ef · 圆角 0 · 无阴影 · 标签全大写",
     prefer: {
+      StatRow: "boxed",
       RecordTable: "grid",
       HeroCard: "solo",
       WorkflowStrip: "row",
@@ -494,6 +508,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "关了灯的那一个。整页近黑,卡片比页面亮一点点,左上角一小片很淡的蓝光。强调色是会发亮的橘。",
     facts: "底色 #0d1117 · 卡片 #161b22 · 边框白色 8% · 正文 #e8edf4 13px · 行高 32px · 圆角 3px · 强调色 #ff7a45",
     prefer: {
+      StatRow: "lead",
       // Borders do the separating here exactly as they do in 台账 — on a dark
       // ground a zebra band is a smear, and a shadow has nothing to fall on.
       RecordTable: "grid",
@@ -529,6 +544,7 @@ const STYLES: Record<StyleName, StyleBrief> = {
     mood: "看得穿的那一个。卡片是半透明的白,底下是三团很淡的颜色,卡片会把底下糊掉——像一块真的玻璃压在纸上。",
     facts: "卡片白 55% 透明 · 背后模糊 20px · 底色三团渐层 · 圆角 18px · 1px 白色亮边 · 阴影往下散不往右偏 · 强调色靛蓝 #4f46e5",
     prefer: {
+      StatRow: "tinted",
       // Rules would be a second edge competing with the pane's own lit border,
       // and at 55% white a gridline reads as dirt on the glass.
       RecordTable: "plain",

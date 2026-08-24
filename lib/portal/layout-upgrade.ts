@@ -29,9 +29,92 @@ const isNode = (v: unknown): v is Node =>
 
 /** Any prop whose value is an array of nodes is a slot — SystemShell's
  *  `sidebar`/`main` today, and whatever a future component adds without this
- *  file needing to hear about it. */
+ *  file needing to hear about it.
+ *
+ *  flatMap rather than map since 2026-08-25: one upgrade turns a single node
+ *  into two. See splitHeroCard. */
 function upgradeNodeList(nodes: unknown[]): unknown[] {
-  return nodes.map((n) => (isNode(n) ? upgradeNode(n) : n));
+  return nodes.flatMap((n) => (isNode(n) ? splitHeroCard(upgradeNode(n)) : [n]));
+}
+
+type HeroStat = { label?: string; value?: string; tone?: string; sub?: string; href?: string };
+
+/**
+ * A saved dashboard's HeroCard becomes a StatRow and a TrendChart.
+ *
+ * WHY A SAVED PAGE HAS TO CHANGE AND NOT JUST THE SEED. buildDashboard stopped
+ * emitting HeroCard on 2026-08-25, for reasons written out at that call site:
+ * the first screen was three blocks and no chart where eleven competitors'
+ * open with ten to fourteen and two to four, and that screen is the entire
+ * pitch. But `project_pages.layout_json` is a saved tree. Changing the builder
+ * alone would give the new look to people who sign up tomorrow and leave every
+ * system that already exists -- including the founder's own preview accounts,
+ * the thing he actually looks at -- on the thin page for ever.
+ *
+ * WHY IT IS SAFE, WHICH IS THE ONLY REASON IT IS ALLOWED IN THIS FILE. Nothing
+ * is invented and nothing is dropped: every figure moves across, the tones move
+ * across, the links move across, and the sparkline the customer could barely
+ * see becomes the chart it was always a miniature of. It only fires on a node
+ * that still has HeroCard's exact shape, so it is idempotent -- a second pass
+ * finds a StatRow and does nothing.
+ *
+ * WHAT IT DELIBERATELY DOES NOT DO. The seed also emits a ShelfList of today's
+ * follow-ups, and this does not add one. That block needs records this node
+ * does not carry, and inventing three plausible rows inside somebody's saved
+ * system is exactly the kind of assumption the header of this file refuses to
+ * make.
+ */
+function splitHeroCard(node: Node): Node[] {
+  if (node.type !== "HeroCard") return [node];
+  const p = node.props ?? {};
+  const value = typeof p.value === "string" ? p.value : null;
+  if (!value) return [node];
+
+  const stats = Array.isArray(p.stats) ? (p.stats as HeroStat[]) : [];
+  const spark = Array.isArray(p.spark)
+    ? (p.spark as { n?: number }[]).map((s) => s?.n).filter((n): n is number => typeof n === "number")
+    : [];
+
+  const out: Node[] = [
+    {
+      type: "StatRow",
+      props: {
+        tiles: [
+          {
+            label: p.label ?? "",
+            value,
+            deltaLabel: p.chgSuffix ?? "",
+            tone: "good",
+            iconName: "payments",
+            href: p.href ?? "",
+          },
+          // HeroCard's vocabulary is "caution" / "warn"; StatRow reads the
+          // figure rather than the direction. Same mapping the builder uses.
+          ...stats.slice(0, 3).map((st, i) => ({
+            label: st.label ?? "",
+            value: st.value ?? "",
+            deltaLabel: st.sub ?? "",
+            tone: st.tone === "warn" ? "bad" : st.tone === "caution" ? "warn" : "normal",
+            iconName: ["projects", "quotations", "reconciliation"][i] ?? "dashboard",
+            href: st.href ?? "",
+          })),
+        ],
+      },
+    },
+  ];
+
+  if (spark.length > 1) {
+    out.push({
+      type: "TrendChart",
+      props: {
+        title: typeof p.sparkLabel === "string" && p.sparkLabel ? p.sparkLabel : "走势",
+        unit: "RM",
+        points: spark.map((v, i) => ({ label: `${i + 1}`, value: v })),
+      },
+    });
+  }
+
+  return out;
 }
 
 function upgradeNode(node: Node): Node {

@@ -27,9 +27,15 @@ export type TrendPoint = {
   value: number
 }
 
+/** Where the chart lives: a raised card, a plain outlined one, or nothing at
+ *  all. No default anywhere in the chain — `undefined` is how the register wins.
+ *  See puck-config-client.tsx. */
+export type TrendFrame = "card" | "outline" | "bare"
+
 export type TrendChartProps = {
   title?: string
   caption?: string
+  frame?: TrendFrame
   kind: TrendKind
   /** Prefixed to the tooltip figure. "RM" for money, "" for counts. */
   unit?: string
@@ -104,7 +110,7 @@ function useStyleRadius(ref: React.RefObject<HTMLElement | null>, fallback: numb
  * the trend is what the customer is choosing between. The grid lines keep the
  * magnitudes comparable, which is the part the axis was actually for.
  */
-export function TrendChart({ title, caption, kind, unit = "", points }: TrendChartProps) {
+export function TrendChart({ title, caption, frame, kind, unit = "", points }: TrendChartProps) {
   const w = useSystemWords()
   const hostRef = useRef<HTMLElement>(null)
   const barRadius = useStyleRadius(hostRef, 4)
@@ -134,8 +140,29 @@ export function TrendChart({ title, caption, kind, unit = "", points }: TrendCha
     </>
   )
 
+  // WHY THIS SITS IN A CARD SINCE 2026-08-25. It used to be a bare <section>:
+  // a heading, a caption and a chart floating directly on the page ground. On
+  // the first screen that shipped it beside StatRow, ShelfList, WorkflowStrip
+  // and RecordTable -- every one of which is in a card -- it was the single
+  // block with no container, and it read as something that had failed to load
+  // its frame rather than as a deliberate absence. All eleven competitors
+  // photographed the same day card their charts.
+  //
+  // `frame` is an axis and not a constant because two registers genuinely have
+  // no card to put it in: 墨 and 瑞士 separate with space and a rule, and a
+  // shadowed box in either of them is the wrong object. Those ask for "bare",
+  // which is what this component always was.
   return (
-    <section ref={hostRef} className="flex flex-col [gap:var(--gap-inline)]">
+    <section
+      ref={hostRef}
+      className={`flex flex-col [gap:var(--gap-inline)] ${
+        frame === "bare"
+          ? ""
+          : frame === "outline"
+            ? "[background:var(--card)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius)] [padding:var(--pad-card)]"
+            : "[background:var(--card)] [border:var(--border-card-width)_solid_var(--border-subtle)] [border-radius:var(--radius)] [padding:var(--pad-card)] [box-shadow:var(--shadow-card)]"
+      }`}
+    >
       {title ? (
         <header className="flex flex-col [gap:var(--gap-tight,4px)]">
           <h3 className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">

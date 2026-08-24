@@ -621,26 +621,88 @@ function buildDashboard(
       : ctx.analysis?.summary?.trim();
   const subtitle = ownSummary || c.dashboard.subtitle(industryName(industry, lang));
 
+  // WHY THE HERO CARD IS NO LONGER HERE, 2026-08-25.
+  //
+  // This page opened with one HeroCard carrying a headline figure, three
+  // supporting numbers set as small text along its bottom edge, and a sparkline
+  // thin enough to be invisible in a screenshot. Below it, a workflow strip and
+  // a table. Three blocks, no chart, and on the wider registers a quarter of a
+  // screen of empty ground underneath.
+  //
+  // Eleven competitors' dashboards were photographed at the same viewport on
+  // the same day -- Tabler, AdminLTE, Ant Design Pro, Art Design Pro,
+  // vue-element-admin, ngx-admin, shadcn-admin and the rest. Every one of them
+  // opens with ten to fourteen blocks and two to four charts. The founder,
+  // looking at the pair: 「我们的风格跟模板都比外面那些人自己创建的差很多」.
+  //
+  // The diagnosis was not the paint. Sixteen registers are tuned to a tenth of
+  // a point and every one of them was rendering a page with nothing on it. And
+  // it matters more here than anywhere else in the product, because this screen
+  // IS the pitch -- 「先看到你的系统，再决定要不要做」 is answered by this exact
+  // viewport, once, before any money changes hands.
+  //
+  // So the same numbers are now spent differently:
+  //
+  //   HeroCard        →  StatRow, four tiles with icons, deltas and a reading
+  //                      (「好消息 / 要注意 / 坏消息」) instead of three lines of
+  //                      grey text. The one-figure hierarchy HeroCard argued
+  //                      for is not lost -- it is the `lead` variant, and 蓝图
+  //                      and 夜 ask for it. HeroCard stays in the palette.
+  //   its sparkline   →  TrendChart, a real chart with axes and a shape.
+  //   nothing         →  ShelfList, the three things to act on today, built
+  //                      from the same records the table below already shows,
+  //                      so it costs no new invented data.
+  const followHref = `/${locale}/portal/${pages.find((p) => p.key === "customers")?.key ?? "dashboard"}`;
+
   return [
     railNav(labels, brand, name, "dashboard", locale, pages, lang),
     node("PageHeader", "dashboard-header", {
       title: c.dashboard.title,
       subtitle,
     }),
-    node("HeroCard", "dashboard-hero", {
-      label: sample.heroLabel,
-      value: sample.heroValue,
-      href: `/${locale}/portal/payments`,
-      chgSuffix: sample.heroSuffix,
-      // Every supporting stat links back into the system rather than nowhere:
-      // the number a business owner reacts to ("RM 31,200 已做未收") should be
-      // the thing that takes them to the page where they act on it.
-      stats: sample.heroStats.map((st) => ({
-        ...st,
-        href: `/${locale}/portal/payments`,
+    node("StatRow", "dashboard-stats", {
+      // The headline figure leads, then the three supporting counts -- the same
+      // four numbers the hero card carried, at sizes a reader can rank.
+      tiles: [
+        {
+          label: sample.heroLabel,
+          value: sample.heroValue,
+          deltaLabel: sample.heroSuffix,
+          tone: "good",
+          iconName: "payments",
+          href: `/${locale}/portal/payments`,
+        },
+        ...sample.heroStats.map((st, i) => ({
+          label: st.label,
+          value: st.value,
+          deltaLabel: st.sub ?? "",
+          // The sample files speak HeroCard's vocabulary ("caution" / "warn");
+          // this one reads the figure rather than the direction. Mapped rather
+          // than renamed, so nothing else that consumes the samples moves.
+          tone: st.tone === "warn" ? "bad" : st.tone === "caution" ? "warn" : "normal",
+          iconName: ["projects", "quotations", "reconciliation"][i] ?? "dashboard",
+          href: `/${locale}/portal/payments`,
+        })),
+      ],
+    }),
+    node("TrendChart", "dashboard-trend", {
+      title: c.dashboard.trendTitle,
+      caption: c.dashboard.trendCaption,
+      unit: "RM",
+      points: sample.heroSpark.map((value, i) => ({
+        label: c.dashboard.periods[i] ?? "",
+        value,
       })),
-      spark: sample.heroSpark.map((n) => ({ n })),
-      sparkLabel: c.dashboard.sparkLabel,
+    }),
+    node("ShelfList", "dashboard-today", {
+      heading: c.dashboard.todoTitle,
+      items: sample.records.slice(0, 3).map((r) => ({
+        title: r.primary,
+        description: r.status,
+        icon: "work",
+        action: c.dashboard.todoAction,
+        href: followHref,
+      })),
     }),
     workflowStrip(
       "dashboard-workflow",

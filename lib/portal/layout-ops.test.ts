@@ -113,10 +113,10 @@ describe("applyLayoutOps", () => {
 
   it("removes a block by id", () => {
     const { layout, applied } = applyLayoutOps(page(), [
-      { op: "remove_component", target_id: "dashboard-hero" },
+      { op: "remove_component", target_id: "dashboard-stats" },
     ]);
     expect(applied).toBe(1);
-    expect(ids(layout)).not.toContain("dashboard-hero");
+    expect(ids(layout)).not.toContain("dashboard-stats");
   });
 
   // Removing the shell would strand everything inside its two slots.
@@ -147,7 +147,7 @@ describe("applyLayoutOps", () => {
 
   it("refuses to add a table row to something that is not a table", () => {
     const { applied, skipped } = applyLayoutOps(page(), [
-      { op: "add_table_row", target_id: "dashboard-hero", cells: ["x"], status_tone: "neutral" },
+      { op: "add_table_row", target_id: "dashboard-stats", cells: ["x"], status_tone: "neutral" },
     ]);
     expect(applied).toBe(0);
     expect(skipped[0].reason).toContain("不是记录表格");

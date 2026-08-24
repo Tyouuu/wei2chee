@@ -189,6 +189,19 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "table", label: "并排比较表", props: { layout: "table" } },
   ],
 
+  // ------------------------------------------------------------- 指标排
+  //
+  // The axis is the CONTAINER, not the content. A register with no shadows must
+  // not be handed a raised tile and one with no borders must not be handed a
+  // boxed one -- which is why 「没有盒子」 is a real choice here rather than a
+  // weaker version of 「有框」.
+  StatRow: [
+    { id: "tinted", label: "有底色图案", props: { layout: "tinted" } },
+    { id: "boxed", label: "有框", props: { layout: "boxed" } },
+    { id: "rule", label: "没有盒子", props: { layout: "rule" } },
+    { id: "lead", label: "第一个最大", props: { layout: "lead" } },
+  ],
+
   SmallStat: [
     { id: "default", label: "一般", props: { variant: "default" } },
     { id: "compact", label: "紧凑", props: { variant: "compact" } },

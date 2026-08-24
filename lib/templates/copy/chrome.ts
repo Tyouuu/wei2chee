@@ -56,6 +56,19 @@ export type Chrome = {
     workflowTitle: string;
     recent: (order: string) => string;
     sparkLabel: string;
+    /** The chart block that replaced the hero card's sparkline on 2026-08-25.
+     *  A first screen with no chart on it was the most visible of the six
+     *  differences between ours and eleven competitors' -- see
+     *  design-system/components/stat-row.tsx for what was measured. */
+    trendTitle: string;
+    trendCaption: string;
+    /** Six period labels for that chart's x-axis, oldest first, matching
+     *  `heroSpark` in the sample files. Relative rather than named months so
+     *  they never contradict the date the customer signed up. */
+    periods: [string, string, string, string, string, string];
+    /** The short list of things to act on today, beside the chart. */
+    todoTitle: string;
+    todoAction: string;
   };
 
   customers: {
@@ -169,6 +182,11 @@ const EN: Chrome = {
     workflowTitle: "Your workflow",
     recent: (order) => `Recent ${plural(order).toLowerCase()}`,
     sparkLabel: "Last six periods",
+    trendTitle: "Revenue trend",
+    trendCaption: "Last six periods",
+    periods: ["−5", "−4", "−3", "−2", "Last", "Now"],
+    todoTitle: "To follow up today",
+    todoAction: "Open",
   },
 
   customers: {
@@ -293,6 +311,11 @@ const ZH: Chrome = {
     workflowTitle: "你的业务流程",
     recent: (order) => `最近的${order}`,
     sparkLabel: "最近六期",
+    trendTitle: "收入走势",
+    trendCaption: "最近六期",
+    periods: ["−5", "−4", "−3", "−2", "上期", "本期"],
+    todoTitle: "今天要跟的",
+    todoAction: "打开",
   },
 
   customers: {

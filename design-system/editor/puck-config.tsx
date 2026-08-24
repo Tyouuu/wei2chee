@@ -27,6 +27,8 @@ import { Combobox, type ComboboxOption } from "@/design-system/components/combob
 import { TextAutocomplete } from "@/design-system/components/text-autocomplete";
 import { Listbox, type ListboxOption } from "@/design-system/components/listbox";
 import { RailNav, type RailItem, type RailUtilityItem, type RailVariant } from "@/design-system/components/rail-nav";
+import { StatRow, type StatTile, type StatRowLayout } from "@/design-system/components/stat-row";
+import type { TrendFrame } from "@/design-system/components/trend-chart";
 import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
 // The second registry wave. See the header comments in both files for what was
 // taken, what was left on the shelf, and why the count was never the point.
@@ -299,7 +301,7 @@ type Components = {
   Listbox: { name?: string; defaultValue?: string; options: ListboxOption[]; placeholder?: string };
   Alert: { variant: "default" | "destructive"; title: string; description?: string };
   Progress: { label?: string; value: number };
-  TrendChart: { title?: string; caption?: string; kind: TrendKind; unit?: string; points: TrendPoint[] };
+  TrendChart: { title?: string; caption?: string; frame?: TrendFrame; kind: TrendKind; unit?: string; points: TrendPoint[] };
   // ---- 生意零件 ----
   InfoRows: {
     heading?: string;
@@ -324,6 +326,7 @@ type Components = {
     period?: string;
     variant?: "default" | "compact" | "detailed";
   };
+  StatRow: { tiles: StatTile[]; layout?: StatRowLayout };
   CopyValue: { label?: string; value: string };
   PayQr: { data: string; size?: number };
   ActivitySquares: { label?: string };
@@ -467,7 +470,7 @@ export const puckConfig: Config<Components> = {
     },
     numbers: {
       title: "数字与图表",
-      components: ["HeroCard", "SmallStat", "TrendChart", "Progress", "DateProgress", "ActivitySquares"],
+      components: ["StatRow", "HeroCard", "SmallStat", "TrendChart", "Progress", "DateProgress", "ActivitySquares"],
       defaultExpanded: true,
     },
     tables: {
@@ -720,6 +723,74 @@ export const puckConfig: Config<Components> = {
         <PriceTable heading={heading} layout={layout} currency={currency} tiers={tiers} />
       ),
     },
+    StatRow: {
+      label: "指标排",
+      fields: {
+        tiles: {
+          label: "每一格",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            value: { label: "数值", type: "text" },
+            delta: { label: "比上期（%）", type: "number" },
+            deltaLabel: { label: "比什么", type: "text" },
+            tone: {
+              label: "读法",
+              type: "select",
+              options: [
+                { label: "一般", value: "normal" },
+                { label: "好消息", value: "good" },
+                { label: "要注意", value: "warn" },
+                { label: "坏消息", value: "bad" },
+              ],
+            },
+            iconName: {
+              label: "图案",
+              type: "select",
+              options: [
+                { label: "无", value: "" },
+                { label: "总览", value: "dashboard" },
+                { label: "客户", value: "customers" },
+                { label: "报价单", value: "quotations" },
+                { label: "工程", value: "projects" },
+                { label: "收款", value: "payments" },
+                { label: "预约", value: "bookings" },
+                { label: "订单", value: "orders" },
+                { label: "对账", value: "reconciliation" },
+                { label: "佣金", value: "commission" },
+                { label: "报表", value: "reports" },
+                { label: "排名", value: "ranking" },
+                { label: "库存", value: "inventory" },
+              ],
+            },
+            href: { label: "点了去哪（留空就不能点）", type: "text" },
+          },
+          defaultItemProps: {
+            label: "一个数字",
+            value: "0",
+            deltaLabel: "",
+            tone: "normal",
+            iconName: "dashboard",
+            href: "",
+          },
+          getItemSummary: (item) => item.label || "一格",
+        },
+      },
+      // NO `layout` HERE, and that is deliberate. Puck writes defaultProps into
+      // the saved node, so a default would make "the customer never chose"
+      // indistinguishable from "chose, and it equals the default" -- and the
+      // register could never win. See puck-config-client.tsx.
+      defaultProps: {
+        tiles: [
+          { label: "已确认工程", value: "RM 71,300", delta: 20, deltaLabel: "比上月", tone: "good", iconName: "payments", href: "" },
+          { label: "进行中", value: "4", deltaLabel: "本周新开 1 单", tone: "normal", iconName: "projects", href: "" },
+          { label: "待回复报价", value: "2", deltaLabel: "最久一张 3 天", tone: "warn", iconName: "quotations", href: "" },
+          { label: "做完未收款", value: "RM 31,200", deltaLabel: "超过 30 天", tone: "bad", iconName: "reconciliation", href: "" },
+        ],
+      },
+      render: ({ tiles, layout }) => <StatRow tiles={tiles} layout={layout} />,
+    },
+
     SmallStat: {
       label: "小数字卡",
       fields: {
@@ -1926,6 +1997,15 @@ export const puckConfig: Config<Components> = {
     TrendChart: {
       label: "趋势图",
       fields: {
+        frame: {
+          label: "盒子",
+          type: "radio",
+          options: [
+            { label: "有卡片", value: "card" },
+            { label: "只有框", value: "outline" },
+            { label: "没有盒子", value: "bare" },
+          ],
+        },
         title: { label: "标题", type: "text" },
         caption: { label: "说明", type: "text" },
         kind: {
@@ -1963,8 +2043,8 @@ export const puckConfig: Config<Components> = {
           { label: "8月", value: 71300 },
         ],
       },
-      render: ({ title, caption, kind, unit, points }) => (
-        <TrendChart title={title} caption={caption} kind={kind} unit={unit} points={points} />
+      render: ({ title, caption, frame, kind, unit, points }) => (
+        <TrendChart title={title} caption={caption} frame={frame} kind={kind} unit={unit} points={points} />
       ),
     },
     Progress: {

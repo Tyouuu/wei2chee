@@ -14,16 +14,16 @@
 
 ### 2. 补「一屏能放的东西」（六件差别里最要紧的）
 这五类是所有风格共用的，补一次全部变厚。
-- [ ] **KPI 卡排** StatRow（图标底块 + 大数字 + 涨跌 + 对比说明）
-- [ ] **图表卡**（TrendChart 升级成真正的卡：标题、分段控制、网格、端点）
+- [x] **KPI 卡排** StatRow（四种形状：有底色图案 / 有框 / 没有盒子 / 第一个最大；16 套各自指定）
+- [x] **图表卡**（TrendChart 现在有卡片了 —— 它本来是整页唯一一个没有容器的区块）
 - [ ] **分组侧栏**（分组标题 + 图标 + 徽章 + 底部用户卡）—— RailNav 已支持，是种子没用
 - [ ] **表格工具条**（筛选分段 + 计数）
 - [ ] **顶栏 TopBar**（面包屑 + 搜索 ⌘K + 通知红点 + 头像）
 - [ ] 每一个都要接 useRegisterVariant，且**不可以设 Puck defaultProps**（那会让风格永远抢不到）
 
-### 3. 首页种子 3 个区块 → ≥ 8 个
-`buildDashboard` 现在只吐 rail + PageHeader + HeroCard + WorkflowStrip + RecordTable。
-- [ ] 第一屏不许留空
+### 3. ~~首页种子 3 个区块 → ≥ 8 个~~ 做完
+现在是 rail + PageHeader + **StatRow(4格)** + **TrendChart** + **ShelfList(今天要跟的)** + WorkflowStrip + RecordTable。
+已存在的页面也会自动升级（layout-upgrade 把 HeroCard 拆成 StatRow + TrendChart，一个数字都不丢）。
 
 ### 4. 新增两套风格
 - [ ] **仪表盘**（Tabler 41.5k / AdminLTE 45.6k / ngx-admin 25.7k 方向）
