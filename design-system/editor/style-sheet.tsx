@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Sheet } from "@/design-system/editor/sheet";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
+import type { Data } from "@puckeditor/core";
+import { PagePreview } from "@/app/[locale]/portal/page-preview";
 import { scopeClasses } from "@/lib/portal/palettes";
 import { CornerSlider } from "@/design-system/editor/corners";
 import { StyleScope } from "@/design-system/editor/style-scope";
@@ -67,6 +69,7 @@ export function StyleSheet({
   onCorners,
   layout,
   onLayout,
+  page,
   locale,
   styles,
   labels,
@@ -85,6 +88,8 @@ export function StyleSheet({
   /** 排法 — a named arrangement, or null to follow the register. */
   layout: string | null;
   onLayout: (next: string | null) => void;
+  /** The page the customer is looking at, drawn inside every tile. */
+  page: Data;
   locale: string;
   /** [name, one-line tag] in the order they are offered. */
   styles: { name: StyleName; tag: string }[];
@@ -216,8 +221,27 @@ export function StyleSheet({
                       : "[border:1px_solid_var(--color-ink-800)] hover:[border-color:var(--color-paper-dim)]"
                   }`}
                 >
+                  {/*
+                    THE CUSTOMER'S OWN PAGE, IN THAT REGISTER.
+
+                    It was a hand-built quotation table -- three rows of
+                    「Taman Desa 三房翻新 · RM 48,500」 -- and the founder's
+                    reaction on seeing it was the right one: 「为什么要做报价单
+                    到底是谁教你做报价单的 不能是从dashboard第一页开始」. A person
+                    choosing a register is deciding what their WHOLE SYSTEM will
+                    look like, and the tile was showing them one artefact from
+                    one page, drawn by hand, that no longer even matched what
+                    the register would produce -- the compositions landed on
+                    2026-08-25 and this sample never knew about them.
+
+                    `PagePreview` has done this correctly for the home screen's
+                    page cards since it was written: compose at desktop width,
+                    scale down, render live through the register-aware config.
+                    Its own docblock says the tile IS the product. It just was
+                    not being used here.
+                  */}
                   <StyleScope register={name} palette={palette} className="block">
-                    <StyleSample />
+                    <PagePreview data={page} />
                   </StyleScope>
                 </button>
                 <span className="mt-1.5 flex items-baseline gap-2">
@@ -251,56 +275,5 @@ export function StyleSheet({
         </Link>
       </div>
     </Sheet>
-  );
-}
-
-/**
- * The smallest thing that shows what a LAYOUT decides.
- *
- * Not a palette swatch — these eight differ in density, type, rules and radius,
- * and four coloured dots would make them look identical, which is exactly the
- * complaint that started the retint (「看起来真的没什么区别」). So it is a table
- * with a heading, a header row and three rows: the one artefact every one of
- * these businesses recognises, and the one place where 紧凑 and 大字 and 合约
- * cannot possibly look the same.
- *
- * Every value here is a token, so the fragment re-resolves entirely inside
- * whichever `scopeClasses` wraps it.
- */
-function StyleSample() {
-  const rows = [
-    ["Taman Desa 三房翻新", "RM 48,500"],
-    ["Bukit Jalil 厨房改造", "RM 22,800"],
-    ["Cheras 店面装修", "RM 96,000"],
-  ];
-  return (
-    <span className="block w-full [background-color:var(--color-canvas)] [padding:var(--pad-card)]">
-      <span className="mb-2 block [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
-        报价单
-      </span>
-      <span className="block overflow-hidden [background-color:var(--color-ink-900)] [border-radius:var(--radius-md)] [border:var(--hairline)_solid_var(--color-ink-800)]">
-        <span className="flex items-center justify-between [background-color:var(--color-table-head-bg)] px-2.5 py-1.5">
-          <span className="[color:var(--color-table-head-fg)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
-            报价内容
-          </span>
-          <span className="[color:var(--color-table-head-fg)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
-            金额
-          </span>
-        </span>
-        {rows.map(([what, amount]) => (
-          <span
-            key={what}
-            className="flex items-center justify-between gap-2 border-t px-2.5 py-1.5 [border-color:var(--color-ink-800)]"
-          >
-            <span className="min-w-0 truncate [color:var(--color-paper)] [font-size:var(--text-xs)]">
-              {what}
-            </span>
-            <span className="shrink-0 [color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
-              {amount}
-            </span>
-          </span>
-        ))}
-      </span>
-    </span>
   );
 }

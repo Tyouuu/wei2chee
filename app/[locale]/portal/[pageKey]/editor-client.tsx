@@ -1317,6 +1317,12 @@ export function PortalEditor({
           onCorners={pickCorners}
           layout={activeLayout}
           onLayout={pickLayout}
+          // The page they are looking at, so every tile answers 「我的这一页
+          // 在这套风格里长什么样」 rather than showing a quotation nobody asked
+          // about. `startingData` rather than live edits: the sheet is
+          // outside Puck's provider, and a tile that re-rendered on every
+          // keystroke would make seventeen scaled pages redraw as you type.
+          page={startingData as unknown as Data}
           locale={locale}
           styles={STYLE_ORDER.map((name) => ({
             name,

@@ -477,7 +477,9 @@
         "code": "Code · monospace throughout, printer's blue",
         "tile": "Tile · patterned floor, glaze teal",
         "clear": "Clear · 20px body, large targets, no faint text",
-        "pop": "Pop · big radius, black edge, three colours"
+        "pop": "Pop · big radius, black edge, three colours",
+        "console": "White rail · four tiles + chart · dense",
+        "counter": "Navy rail · table first · densest"
       },
       "styleCurrent": "In use",
       "styleUse": "Use this one",

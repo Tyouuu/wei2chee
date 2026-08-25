@@ -103,6 +103,20 @@ export function SystemShell({
       : ({ backgroundColor: "var(--color-nav-bg)" } as React.CSSProperties)
 
   return (
+    /*
+      THE CONTAINER IS THIS WRAPPER, NOT THE SHELL ITSELF.
+
+      `@container` and `@3xl:` were on the same element, and an element cannot
+      query its own container: `container-type: inline-size` makes a box
+      queryable BY ITS DESCENDANTS, so every `@3xl:` variant on the shell
+      silently never matched. The shell stayed `flex-col` at every width, which
+      put the navigation rail on TOP of the page instead of beside it -- on
+      every register with a side rail, live, from the moment the container
+      queries landed. Caught by measuring the page's own geometry (the heading
+      sat 633px below the top of the canvas with the rail above it, not beside
+      it), not by reading the CSS.
+    */
+    <div className="@container flex min-h-full w-full">
     <div
       /**
        * THE SYSTEM MEASURES ITSELF, NOT THE WINDOW.
@@ -123,7 +137,7 @@ export function SystemShell({
        * The variants below are container sizes, not viewport ones -- `@3xl` is
        * 48rem/768px, which is the same number `md:` used to mean.
        */
-      className={`ds-ground @container flex min-h-full w-full [background-color:var(--color-canvas)] ${
+      className={`ds-ground flex min-h-full w-full [background-color:var(--color-canvas)] ${
         isTop ? "flex-col" : "flex-col @3xl:flex-row @3xl:items-stretch"
       }`}
     >
@@ -166,6 +180,7 @@ export function SystemShell({
       <div className="flex min-w-0 flex-1 flex-col [gap:var(--gap-stack)] [padding:var(--pad-card-lg)]">
         {main}
       </div>
+    </div>
     </div>
   )
 }
