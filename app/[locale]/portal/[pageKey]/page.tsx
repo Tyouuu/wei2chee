@@ -4,6 +4,7 @@ import {
   getSessionUser,
 } from "@/lib/supabase/server-session";
 import { PortalEditor } from "./editor-client";
+import type { Data } from "@puckeditor/core";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { applyLayoutOps, type PuckLayout } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
@@ -168,6 +169,43 @@ export default async function PortalEditorPage({
     ]).layout as unknown as Record<string, unknown>;
   }
 
+  /*
+    EVERY PAGE, FOR THE STYLE TILES.
+
+    「做成可以preview 好像一个video 这样的 客户就可以看到dashboard页面啊 其他的页面啊
+    然后客户就会去选」. A register is a decision about a SYSTEM, and a tile showing
+    one page can only answer "what does this page look like" -- so the tile
+    plays through them.
+
+    Built exactly as `initialData` is a few lines below, including the
+    generate-on-read fallback, so a page the customer has never opened still
+    appears in the reel rather than as a gap. Capped at four: the reel is a
+    glance, not the whole system, and seventeen tiles times seven pages is a
+    hundred and nineteen scaled page renders in one sheet.
+  */
+  const previewPages = pageRefs.slice(0, 4).map((ref) => {
+    const row = (pageRows ?? []).find(
+      (r: { page_key: string }) => r.page_key === ref.key,
+    );
+    const saved = (row?.layout_json as Record<string, unknown>) ?? {};
+    const data = isUngeneratedLayout(saved)
+      ? (buildPageLayout(
+          ref.key as PageKey,
+          businessContext,
+          displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
+          locale,
+          pageRefs,
+          project.style,
+          (project.layout as string | null) ?? null,
+        ) as unknown as Record<string, unknown>)
+      : upgradeLayout(saved);
+    return {
+      key: ref.key,
+      label: pageLabel(ref, tradeLabels(businessContext, pageRefs), systemLangOf(businessContext)),
+      data,
+    };
+  });
+
   return (
     <PortalEditor
       pageKey={pageKey}
@@ -212,6 +250,7 @@ export default async function PortalEditorPage({
       palette={(project.palette as string | null) ?? null}
       corners={Number(project.corners ?? 1)}
       layout={(project.layout as string | null) ?? null}
+      previewPages={previewPages as unknown as { key: string; label: string; data: Data }[]}
       systemLang={systemLangOf(businessContext)}
       /** The 官网's public address and whether it answers -- read here rather
        *  than fetched again in the editor, because the same projects row

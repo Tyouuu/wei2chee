@@ -138,6 +138,7 @@ export function PortalEditor({
   palette,
   corners,
   layout,
+  previewPages,
   systemLang,
   siteSlug,
   sitePublished,
@@ -197,6 +198,9 @@ export function PortalEditor({
   corners: number;
   /** projects.layout — a named arrangement, or null to follow the register. */
   layout: string | null;
+  /** Up to four of the customer's pages, for the style tiles to play
+   *  through. See the note where they are built. */
+  previewPages: { key: string; label: string; data: Data }[];
   /** The language the customer's SYSTEM is written in
    *  (`projects.system_language`, default English). Not `locale`, which is the
    *  language the OWNER reads Formae in -- see lib/system-lang.ts. Threaded
@@ -1317,12 +1321,9 @@ export function PortalEditor({
           onCorners={pickCorners}
           layout={activeLayout}
           onLayout={pickLayout}
-          // The page they are looking at, so every tile answers 「我的这一页
-          // 在这套风格里长什么样」 rather than showing a quotation nobody asked
-          // about. `startingData` rather than live edits: the sheet is
-          // outside Puck's provider, and a tile that re-rendered on every
-          // keystroke would make seventeen scaled pages redraw as you type.
-          page={startingData as unknown as Data}
+          // Their own pages, played through. See the note on previewPages in
+          // page.tsx for why it is four and not all of them.
+          pages_={previewPages}
           locale={locale}
           styles={STYLE_ORDER.map((name) => ({
             name,

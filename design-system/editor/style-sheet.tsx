@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Sheet } from "@/design-system/editor/sheet";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
@@ -69,7 +70,7 @@ export function StyleSheet({
   onCorners,
   layout,
   onLayout,
-  page,
+  pages_,
   locale,
   styles,
   labels,
@@ -88,8 +89,8 @@ export function StyleSheet({
   /** 排法 — a named arrangement, or null to follow the register. */
   layout: string | null;
   onLayout: (next: string | null) => void;
-  /** The page the customer is looking at, drawn inside every tile. */
-  page: Data;
+  /** Up to four of the customer's own pages. Every tile plays through them. */
+  pages_: { key: string; label: string; data: Data }[];
   locale: string;
   /** [name, one-line tag] in the order they are offered. */
   styles: { name: StyleName; tag: string }[];
@@ -241,7 +242,7 @@ export function StyleSheet({
                     not being used here.
                   */}
                   <StyleScope register={name} palette={palette} className="block">
-                    <PagePreview data={page} />
+                    <PageReel pages={pages_} />
                   </StyleScope>
                 </button>
                 <span className="mt-1.5 flex items-baseline gap-2">
@@ -275,5 +276,63 @@ export function StyleSheet({
         </Link>
       </div>
     </Sheet>
+  );
+}
+
+/**
+ * The tile, playing.
+ *
+ * 「做成可以preview 好像一个video 这样的 客户就可以看到dashboard页面啊 其他的页面啊
+ * 然后客户就会去选」 — 2026-08-25.
+ *
+ * A register is a decision about a SYSTEM. A tile showing one page can only
+ * answer 「这一页长什么样」, and the customer is being asked something bigger. So
+ * the tile cycles: their overview, their clients, their payments, their
+ * quotations, each for two and a half seconds, in that register.
+ *
+ * ── WHY IT SAYS WHICH PAGE ───────────────────────────────────────────────
+ *
+ * A miniature that changes every 2.5 seconds with no label is a tile that
+ * flickers. The page's own name in the corner turns the same motion into
+ * information: you are watching a system, and this is the payments page of it.
+ *
+ * ── WHY ONE TIMER FOR THE WHOLE SHEET ────────────────────────────────────
+ *
+ * Seventeen tiles each with their own interval would drift apart within a
+ * minute and the sheet would look like seventeen slot machines. One index,
+ * held by the sheet, means every tile turns the page at the same moment and
+ * the column reads as one comparison — which is what a register picker is for:
+ * the SAME page, in seventeen designs, side by side.
+ *
+ * ── WHY IT STOPS WHEN THE TAB IS HIDDEN ──────────────────────────────────
+ *
+ * Each turn re-renders seventeen scaled page trees. Doing that to a tab
+ * nobody is looking at is a laptop fan and nothing else.
+ */
+function PageReel({ pages }: { pages: { key: string; label: string; data: Data }[] }) {
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    if (pages.length < 2) return;
+    const tick = () => {
+      if (document.visibilityState === "hidden") return;
+      setI((n: number) => (n + 1) % pages.length);
+    };
+    const id = setInterval(tick, 2500);
+    return () => clearInterval(id);
+  }, [pages.length]);
+
+  const page = pages[Math.min(i, pages.length - 1)];
+  if (!page) return null;
+
+  return (
+    <span className="relative block">
+      <PagePreview key={page.key} data={page.data} />
+      {pages.length > 1 ? (
+        <span className="pointer-events-none absolute right-1.5 bottom-1.5 rounded-[var(--radius-pill)] px-2 py-0.5 [background-color:oklch(0.16_0.012_265/0.72)] [color:#fff] [font-size:10px]">
+          {page.label}
+        </span>
+      ) : null}
+    </span>
   );
 }
