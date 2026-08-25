@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Sheet } from "@/design-system/editor/sheet";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
@@ -280,59 +280,41 @@ export function StyleSheet({
 }
 
 /**
- * The tile, playing.
+ * The tile, moving.
  *
- * 「做成可以preview 好像一个video 这样的 客户就可以看到dashboard页面啊 其他的页面啊
- * 然后客户就会去选」 — 2026-08-25.
+ * ── WHAT THIS WAS, AND WHY IT WAS WRONG ──────────────────────────────────
  *
- * A register is a decision about a SYSTEM. A tile showing one page can only
- * answer 「这一页长什么样」, and the customer is being asked something bigger. So
- * the tile cycles: their overview, their clients, their payments, their
- * quotations, each for two and a half seconds, in that register.
+ * It cycled: the customer's overview, their clients, their payments, their
+ * quotations, a different one every 2.5 seconds. The founder's verdict on
+ * 2026-08-26 was one sentence and it was correct — 「哪里有人的preview是一张一张
+ * 照片跳的 你去真正的去研究21st.dev是怎样去弄的」.
  *
- * ── WHY IT SAYS WHICH PAGE ───────────────────────────────────────────────
+ * So I went and opened it with a browser instead of remembering it. On
+ * 21st.dev/community/components every card is a `<video loop muted>`; 7 of 95
+ * had a src attached — exactly the ones in the viewport — and all 7 were
+ * already playing, mid-clip. Their category pages use a single still per card
+ * and no video at all. Nothing on that site cuts between frames.
  *
- * A miniature that changes every 2.5 seconds with no label is a tile that
- * flickers. The page's own name in the corner turns the same motion into
- * information: you are watching a system, and this is the payments page of it.
+ * A tile is a STILL, or it is CONTINUOUS MOTION. A slideshow is the third
+ * thing, and it is the worst of the three: every cut makes the eye start
+ * reading over again, so 2.5 seconds of a page is 2.5 seconds of never
+ * finishing it. Seventeen of them cutting in unison is a wall of flicker.
  *
- * ── WHY ONE TIMER FOR THE WHOLE SHEET ────────────────────────────────────
+ * ── WHAT IT IS NOW ───────────────────────────────────────────────────────
  *
- * Seventeen tiles each with their own interval would drift apart within a
- * minute and the sheet would look like seventeen slot machines. One index,
- * held by the sheet, means every tile turns the page at the same moment and
- * the column reads as one comparison — which is what a register picker is for:
- * the SAME page, in seventeen designs, side by side.
+ * One page — 「不能是从报价单开始 要从dashboard第一页开始」, so the first one —
+ * rendered at its full natural height and travelling slowly down and back,
+ * with a hold at the top and at the bottom. That is what their video shows: a
+ * component being looked at, not a channel being flipped.
  *
- * ── WHY IT STOPS WHEN THE TAB IS HIDDEN ──────────────────────────────────
- *
- * Each turn re-renders seventeen scaled page trees. Doing that to a tab
- * nobody is looking at is a laptop fan and nothing else.
+ * The other pages did not go away; they moved to where a question about them
+ * gets answered. See the row of page names under the tile.
  */
 function PageReel({ pages }: { pages: { key: string; label: string; data: Data }[] }) {
-  const [i, setI] = useState(0);
-
-  useEffect(() => {
-    if (pages.length < 2) return;
-    const tick = () => {
-      if (document.visibilityState === "hidden") return;
-      setI((n: number) => (n + 1) % pages.length);
-    };
-    const id = setInterval(tick, 2500);
-    return () => clearInterval(id);
-  }, [pages.length]);
-
-  const page = pages[Math.min(i, pages.length - 1)];
-  if (!page) return null;
-
+  if (!pages.length) return null;
   return (
-    <span className="relative block">
-      <PagePreview key={page.key} data={page.data} />
-      {pages.length > 1 ? (
-        <span className="pointer-events-none absolute right-1.5 bottom-1.5 rounded-[var(--radius-pill)] px-2 py-0.5 [background-color:oklch(0.16_0.012_265/0.72)] [color:#fff] [font-size:10px]">
-          {page.label}
-        </span>
-      ) : null}
+    <span className="block">
+      <PagePreview data={pages[0].data} strip={pages.slice(1).map((p) => p.data)} />
     </span>
   );
 }

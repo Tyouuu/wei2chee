@@ -32,6 +32,16 @@ import { RankList, type RankRow, type RankShape } from "@/design-system/componen
 import { ShareChart, type ShareSlice, type ShareShape } from "@/design-system/components/share-chart";
 import { Bento } from "@/design-system/components/bento";
 import { Overlap } from "@/design-system/components/overlap";
+import {
+  IntakeForm,
+  PersonCard,
+  JobCard,
+  TermsBlock,
+  MonthSummary,
+  type IntakeField,
+  type CardRow,
+  type SummaryFigure,
+} from "@/design-system/components/assembled";
 import type { TrendFrame } from "@/design-system/components/trend-chart";
 import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
 // The second registry wave. See the header comments in both files for what was
@@ -401,6 +411,32 @@ type Components = {
   };
   Bento: { lead: Slot; a: Slot; b: Slot };
   Overlap: { band: Slot; body: Slot };
+  IntakeForm: {
+    heading: string;
+    note?: string;
+    fields: IntakeField[];
+    submitLabel: string;
+    cancelLabel?: string;
+  };
+  PersonCard: {
+    name: string;
+    role?: string;
+    tag?: string;
+    rows: CardRow[];
+    actionLabel?: string;
+  };
+  JobCard: {
+    title: string;
+    client?: string;
+    status?: string;
+    tone?: "normal" | "good" | "warn" | "bad";
+    amount?: string;
+    amountLabel?: string;
+    percent?: number;
+    stageLabel?: string;
+  };
+  TermsBlock: { heading: string; body: string; signLabel?: string; dateLabel?: string };
+  MonthSummary: { heading: string; figures: SummaryFigure[]; footNote?: string };
   ShareChart: {
     title?: string;
     caption?: string;
@@ -483,6 +519,16 @@ export const puckConfig: Config<Components> = {
   //
   // 组件库 ignores this field entirely -- it keeps its own rail state.
   categories: {
+    assembled: {
+      title: "整段成品",
+      components: [
+        "IntakeForm",
+        "PersonCard",
+        "JobCard",
+        "TermsBlock",
+        "MonthSummary",
+      ],
+    },
     site: {
       title: "官网(客人看的)",
       components: ["SiteHero", "EnquiryForm"],
@@ -2220,6 +2266,220 @@ export const puckConfig: Config<Components> = {
     // Columns with a Columns inside it.
     // 层叠 -- see design-system/components/overlap.tsx for why it is a band and
     // an overlap rather than cards scattered over each other.
+    /*
+      整段成品 — see design-system/components/assembled.tsx.
+
+      Five entries that add no new capability and exist because of what the
+      gallery looked like beside 21st.dev's: their "Card" is a whole form, ours
+      was Field, ActionButton and Panel as three separate tiles. These are the
+      assemblies, so a tile is full and an owner adds a finished thing.
+    */
+    IntakeForm: {
+      label: "登记表",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        note: { label: "下面一句", type: "text" },
+        fields: {
+          label: "每一栏",
+          type: "array",
+          arrayFields: {
+            label: { label: "栏位名", type: "text" },
+            placeholder: { label: "提示文字", type: "text" },
+            wide: {
+              label: "占整行",
+              type: "select",
+              options: [
+                { label: "不要", value: "no" },
+                { label: "要", value: "yes" },
+              ],
+            },
+          },
+          defaultItemProps: { label: "栏位", placeholder: "", wide: "no" },
+          getItemSummary: (item) => item.label || "一栏",
+        },
+        submitLabel: { label: "主要按钮", type: "text" },
+        cancelLabel: { label: "次要按钮", type: "text" },
+      },
+      defaultProps: {
+        heading: "新客户登记",
+        note: "填一次,以后开单、发报价都用得上。",
+        fields: [
+          { label: "客户名字", placeholder: "陈先生", wide: "no" },
+          { label: "电话 / WhatsApp", placeholder: "012-345 6789", wide: "no" },
+          { label: "地址", placeholder: "Taman Desa, KL", wide: "yes" },
+          { label: "怎么找到我们", placeholder: "介绍来的", wide: "no" },
+          { label: "要做什么", placeholder: "三房翻新", wide: "no" },
+        ],
+        submitLabel: "加进来",
+        cancelLabel: "取消",
+      },
+      render: ({ heading, note, fields, submitLabel, cancelLabel }) => (
+        <IntakeForm
+          heading={heading}
+          note={note}
+          fields={fields}
+          submitLabel={submitLabel}
+          cancelLabel={cancelLabel}
+        />
+      ),
+    },
+
+    PersonCard: {
+      label: "客户资料卡",
+      fields: {
+        name: { label: "名字", type: "text" },
+        role: { label: "下面一行", type: "text" },
+        tag: { label: "标签", type: "text" },
+        rows: {
+          label: "每一行",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            value: { label: "内容", type: "text" },
+            icon: {
+              label: "图案",
+              type: "select",
+              options: [
+                { label: "电话", value: "phone" },
+                { label: "地点", value: "place" },
+                { label: "人", value: "person" },
+                { label: "工程", value: "work" },
+                { label: "钱", value: "money" },
+                { label: "日期", value: "date" },
+              ],
+            },
+          },
+          defaultItemProps: { label: "名称", value: "内容", icon: "person" },
+          getItemSummary: (item) => item.label || "一行",
+        },
+        actionLabel: { label: "按钮上的字", type: "text" },
+      },
+      defaultProps: {
+        name: "陈先生",
+        role: "Taman Desa 三房翻新",
+        tag: "熟客",
+        rows: [
+          { label: "电话", value: "012-345 6789", icon: "phone" },
+          { label: "地址", value: "Taman Desa, KL", icon: "place" },
+          { label: "这一单", value: "RM 48,500 · 已确认", icon: "money" },
+          { label: "上门量尺", value: "8月18日 · 已完成", icon: "date" },
+        ],
+        actionLabel: "WhatsApp 联络",
+      },
+      render: ({ name, role, tag, rows, actionLabel }) => (
+        <PersonCard name={name} role={role} tag={tag} rows={rows} actionLabel={actionLabel} />
+      ),
+    },
+
+    JobCard: {
+      label: "工程卡片",
+      fields: {
+        title: { label: "工程名", type: "text" },
+        client: { label: "客户", type: "text" },
+        status: { label: "状态", type: "text" },
+        tone: {
+          label: "意思",
+          type: "select",
+          options: [
+            { label: "正常", value: "normal" },
+            { label: "好", value: "good" },
+            { label: "留意", value: "warn" },
+            { label: "不好", value: "bad" },
+          ],
+        },
+        amount: { label: "金额", type: "text" },
+        amountLabel: { label: "金额旁边的字", type: "text" },
+        percent: { label: "完成度", type: "number" },
+        stageLabel: { label: "现在做到哪", type: "text" },
+      },
+      defaultProps: {
+        title: "Taman Desa 三房翻新",
+        client: "陈先生 · 012-345 6789",
+        status: "施工中",
+        tone: "warn",
+        amount: "RM 48,500",
+        amountLabel: "订金已收 50%",
+        percent: 62,
+        stageLabel: "木工进场",
+      },
+      render: ({ title, client, status, tone, amount, amountLabel, percent, stageLabel }) => (
+        <JobCard
+          title={title}
+          client={client}
+          status={status}
+          tone={tone}
+          amount={amount}
+          amountLabel={amountLabel}
+          percent={percent}
+          stageLabel={stageLabel}
+        />
+      ),
+    },
+
+    TermsBlock: {
+      label: "条款与签名",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        body: { label: "条款内容", type: "textarea" },
+        signLabel: { label: "签名栏", type: "text" },
+        dateLabel: { label: "日期栏", type: "text" },
+      },
+      defaultProps: {
+        heading: "报价条款",
+        body:
+          "施工范围包括拆除旧橱柜、水电改位、防水、贴砖、天花板与油漆。不包括家具、电器与窗帘。" +
+          "订金 50%,施工完成后付清尾款。水电一年保修,木工六个月。" +
+          "工期以实际现场情况为准,如遇管理层批准延误,完工日期顺延。",
+        signLabel: "客户签名",
+        dateLabel: "日期",
+      },
+      render: ({ heading, body, signLabel, dateLabel }) => (
+        <TermsBlock heading={heading} body={body} signLabel={signLabel} dateLabel={dateLabel} />
+      ),
+    },
+
+    MonthSummary: {
+      label: "本月对账",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        figures: {
+          label: "每一格",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            value: { label: "数字", type: "text" },
+            note: { label: "下面的小字", type: "text" },
+            tone: {
+              label: "意思",
+              type: "select",
+              options: [
+                { label: "正常", value: "" },
+                { label: "好", value: "good" },
+                { label: "留意", value: "warn" },
+                { label: "不好", value: "bad" },
+              ],
+            },
+          },
+          defaultItemProps: { label: "名称", value: "0", note: "", tone: "" },
+          getItemSummary: (item) => item.label || "一格",
+        },
+        footNote: { label: "最下面一句", type: "text" },
+      },
+      defaultProps: {
+        heading: "本月对账",
+        figures: [
+          { label: "已确认工程", value: "RM 71,300", note: "比上月 +13.2%", tone: "good" },
+          { label: "施工中", value: "4", note: "3 单本周收尾", tone: "" },
+          { label: "待回复报价", value: "2", note: "最久一张 3 天", tone: "warn" },
+          { label: "做完未收款", value: "RM 31,200", note: "超过 30 天", tone: "bad" },
+        ],
+        footNote: "数字来自你自己的记录,改一笔这里就跟着变。",
+      },
+      render: ({ heading, figures, footNote }) => (
+        <MonthSummary heading={heading} figures={figures} footNote={footNote} />
+      ),
+    },
+
     Overlap: {
       label: "压在色带上",
       fields: {

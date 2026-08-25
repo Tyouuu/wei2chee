@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Render, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -209,23 +209,13 @@ export function StylesClient({
                       customer's palette paints all eight the same and leaves
                       radius alone to carry the comparison. Their own colours
                       here; the customer's 配色 has its own grid below. */}
-                  <StyleScope
-                    register={name} className="ds-ground h-full [background-color:var(--color-canvas)]"
-                  >
-                    {/* THE TYPE SPECIMEN. The register's name set in the
-                        register's own face, next to a filled control carrying
-                        its own accent, radius and label case -- the four things
-                        that differ most and that a 13px table at 0.67 scale
-                        cannot show. Durable's Fonts card does exactly this:
-                        「Playfair Display」 set in Playfair. */}
-                    {/* THE CUSTOMER'S OWN PAGES, PLAYED THROUGH.
-                        It was the register's name typed beside the word 报价单
-                        over a hand-built three-row table — one artefact, from
-                        one page, drawn by hand, shown to somebody deciding what
-                        their WHOLE SYSTEM will look like. 「为什么要做报价单 到底
-                        是谁教你做报价单的 不能是从dashboard第一页开始」. */}
-                    <PageReel pages={previewPages} />
-                  </StyleScope>
+                  {/* THE CUSTOMER'S OWN DASHBOARD, TRAVELLING.
+                      It was the register's name typed beside the word 报价单
+                      over a hand-built three-row table — one artefact, from
+                      one page, drawn by hand, shown to somebody deciding what
+                      their WHOLE SYSTEM will look like. 「为什么要做报价单 到底
+                      是谁教你做报价单的 不能是从dashboard第一页开始」. */}
+                  <PageReel register={name} pages={previewPages} />
                 </div>
 
                 <div className="flex items-center justify-between gap-3 border-t px-3 py-3 [border-color:var(--color-ink-800)]">
@@ -282,10 +272,11 @@ export function StylesClient({
             {t("paletteBody", { count: STYLE_ORDER.length * (PALETTES.length + 1) })}
           </p>
 
-          {/* Two to four, not three to five: 21st.dev's cards are wide, and
-              the width is doing the work -- a ground colour has to be a FIELD
-              to read as one. */}
-          <ul className="mt-5 grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          {/* FOUR ACROSS AT 1440, matching 21st.dev's Themes grid exactly --
+              measured, four columns of 332px with a 32/24 gap. It was three
+              across, and at three the accent band is a 380px wall of one colour
+              that shouts down its neighbours; at four you compare them. */}
+          <ul className="mt-5 grid gap-x-5 gap-y-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {/* The native pairing first, and as a real option rather than a
                 "none". Ledger's rust, Hearth's teal and Blueprint's blue were
                 each chosen with their layout; "no palette" is the designed
@@ -306,6 +297,7 @@ export function StylesClient({
                 label={p.label}
                 blurb={p.blurb}
                 who={p.who}
+                dots={p.dots}
                 styleName={active}
                 paletteKey={p.key}
                 current={activePalette === p.key}
@@ -341,6 +333,7 @@ function PaletteCard({
   label,
   blurb,
   who,
+  dots,
   styleName,
   paletteKey,
   current,
@@ -350,6 +343,9 @@ function PaletteCard({
 }: {
   label: string;
   blurb: string;
+  /** ground / accent / line / fill. Absent on the native pairing, whose colours
+   *  belong to the register rather than to a palette row. */
+  dots?: readonly string[];
   /** Which trades this colour belongs to. Absent on the native pairing, which
    *  belongs to the register rather than to a trade. */
   who?: string;
@@ -374,7 +370,7 @@ function PaletteCard({
         }`}
       >
         <StyleScope register={styleName} palette={paletteKey} className="block">
-          <PaletteSample label={label} />
+          <PaletteSample label={label} dots={dots} />
         </StyleScope>
       </button>
       <span className="mt-2.5 flex items-baseline gap-2">
@@ -402,102 +398,81 @@ function PaletteCard({
   );
 }
 
-/** The smallest fragment that shows everything a palette decides: the ground,
- *  the accent on a figure and on a button, and the three status tones a
- *  business system actually leans on — confirmed, waiting, overdue. Rendered at
- *  real size rather than scaled, because a palette is judged on colour and
- *  colour survives being small; the layouts above are the ones that need
- *  room. */
-/** One palette, the way 21st.dev draws a theme: the card IS the canvas
- *  colour, four dots for the accent and the neutral ramp, and the name set
- *  inside it in the palette's own foreground. */
-function PaletteSample({ label }: { label: string }) {
-  /* WHAT THIS USED TO BE, AND WHY IT CHANGED.
-     The comment above this function has said since it was written that the
-     fragment is "one figure, two rows with statuses, one button". It was not.
-     It was four dots and a word on an empty field -- 25 cards each showing a
-     large rectangle of ground colour with a row of circles in the corner, which
-     is the least informative thing a palette card can be and reads as
-     unfinished. Screenshotted at 1440 before this was replaced.
-
-     A palette shows itself in four places and nowhere else: the ground it
-     paints, the accent on a fill, the three status tones, and the ink on a
-     panel. So the fragment now contains exactly those four and nothing more --
-     small enough to sit twenty-five to a page, complete enough that choosing
-     between two of them is a real comparison rather than a guess. */
-  const row = (name: string, amount: string, tone: string, state: string) => (
-    <span className="flex items-center gap-2 [padding:6px_10px]">
-      <span className="min-w-0 flex-1 truncate [color:var(--color-paper)] [font-size:var(--text-xs)]">
-        {name}
-      </span>
-      <span className="tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
-        {amount}
-      </span>
-      <span
-        className="flex shrink-0 items-center gap-1 [font-size:var(--text-micro)]"
-        style={{ color: tone }}
-      >
-        <span className="block size-1.5 rounded-full" style={{ backgroundColor: tone }} />
-        {state}
-      </span>
-    </span>
-  );
-
+/**
+ * ONE PALETTE, DRAWN 21ST.DEV'S WAY — WHICH IS NOT 21ST.DEV'S PICTURE.
+ *
+ * Their Themes grid was opened with a browser on 2026-08-26 and measured: four
+ * across at 332px, and each card is a plain rectangle painted in that theme's
+ * own background, four colour dots in the top-left, the theme's name inside it
+ * at the bottom-left in the theme's own foreground. Zen Linen's card is linen,
+ * Catppuccin's is lavender, Vercel's is white. The card IS the colour, at field
+ * size, and that is why their grid reads instantly.
+ *
+ * COPYING THAT PICTURE HERE WOULD MAKE THIS PAGE WORSE, and the numbers say so
+ * rather than an opinion. Across our 25 palettes the ground runs oklch L
+ * 0.880–1.000 at chroma 0.000–0.053: TWENTY-FOUR OF TWENTY-FIVE are near-white.
+ * The accent runs L 0.000–0.589 at chroma up to 0.237. A field of ground colour
+ * would be twenty-five identical white rectangles with a dot in the corner —
+ * which is exactly what this card was before, and exactly why it read as
+ * unfinished.
+ *
+ * So the METHOD transfers and the picture does not. Their method is: give the
+ * field to the axis that carries the identity. Theirs is the ground. Ours is
+ * the accent. Hence a full-bleed band of the palette's own accent with its name
+ * on it — which is also the pairing that fails most often (--color-on-primary
+ * against --color-primary), so the card proves its own contrast — over the
+ * ground, carrying their four dots and the three status tones.
+ *
+ * The status tones stay because they are the one thing four dots cannot say:
+ * whether 已确认 / 待回复 / 停滞 are still three distinguishable colours in this
+ * palette or have collapsed into the accent. Measured on 2026-08-23: 21 of 25
+ * cannot carry status meaning in the accent alone.
+ */
+function PaletteSample({ label, dots }: { label: string; dots?: readonly string[] }) {
   return (
     <span
-      className="ds-ground relative block w-full overflow-hidden [background-color:var(--color-canvas)] [padding:12px]"
-      style={{ aspectRatio: "4 / 3" }}
+      className="ds-ground relative block w-full overflow-hidden [background-color:var(--color-canvas)]"
+      /* 3:2, not their 4:3. The accent needs a field, not a canvas: at 4:3 the
+         card became a block of colour with a strip of information under it. */
+      style={{ aspectRatio: "3 / 2" }}
     >
-      <span className="flex h-full flex-col gap-2">
-        {/* The panel: ink on a card, the accent as a number, and the chart ramp
-            as a figure. Five bars because five is what the ramp has. */}
-        <span className="ds-card block [padding:10px_12px]">
-          <span className="flex items-end justify-between">
-            <span className="block">
-              <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
-                本月收款
-              </span>
-              <span className="block tabular-nums [color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-                RM 48,500
-              </span>
-            </span>
-            <span className="flex h-7 items-end gap-[3px]">
-              {[
-                ["var(--color-jade-chart)", 10],
-                ["var(--color-brass-chart)", 18],
-                ["var(--color-info)", 13],
-                ["var(--color-primary)", 26],
-                ["var(--color-slate)", 16],
-              ].map(([c, h], i) => (
-                <span
-                  key={i}
-                  className="block w-[5px] [border-radius:var(--radius-xs)]"
-                  style={{ backgroundColor: c as string, height: `${h as number}px` }}
-                />
-              ))}
-            </span>
-          </span>
-        </span>
-
-        {/* The three status tones, which is the one thing four dots could never
-            show: whether 已确认 / 待回复 / 停滞 are still three colours in this
-            palette, or have collapsed into one accent. */}
-        <span className="ds-card block flex-1 divide-y [border-color:var(--color-ink-800)] [divide-color:var(--color-ink-800)]">
-          {row("陈先生 · 三房翻新", "48,500", "var(--color-jade)", "已确认")}
-          {row("李太太 · 厨房", "22,800", "var(--color-brass)", "待回复")}
-          {row("黄先生 · 店面", "96,000", "var(--color-clay)", "停滞")}
-        </span>
-
-        {/* The accent as a FILL, with its own label colour on it -- the pair
-            that fails most often, and the only place it shows. */}
-        <span className="flex items-center justify-between gap-2">
-          <span className="truncate [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+      <span className="flex h-full flex-col">
+        {/* THE ACCENT AS A FIELD. Not a dot, not a button — the thing being
+            chosen, at the size it is chosen at. */}
+        <span className="flex flex-1 items-end [background-color:var(--color-primary)] [padding:12px_14px]">
+          <span className="truncate [color:var(--color-on-primary)] [font-family:var(--font-display)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
             {label}
           </span>
-          <span
-            className="shrink-0 [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-micro)] [padding:5px_12px]"
-          >
-            发出报价
+        </span>
+
+        <span className="flex shrink-0 items-center justify-between gap-3 [padding:11px_14px]">
+          {/* Their four dots, unchanged: ground, accent, line, fill. Read out
+              of the palette by the generator, never picked to resemble it. */}
+          <span className="flex items-center gap-1.5">
+            {(dots ?? []).map((c, i) => (
+              <span
+                key={i}
+                className="block size-[15px] rounded-full [box-shadow:inset_0_0_0_1px_rgb(0_0_0/0.08)]"
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </span>
+
+          <span className="flex items-center gap-2">
+            {[
+              ["var(--color-jade)", "已确认"],
+              ["var(--color-brass)", "待回复"],
+              ["var(--color-clay)", "停滞"],
+            ].map(([c, w]) => (
+              <span
+                key={w}
+                className="flex items-center gap-1 [font-size:var(--text-micro)]"
+                style={{ color: c }}
+              >
+                <span className="block size-1.5 rounded-full" style={{ backgroundColor: c }} />
+                {w}
+              </span>
+            ))}
           </span>
         </span>
       </span>
@@ -506,31 +481,34 @@ function PaletteSample({ label }: { label: string }) {
 }
 
 /**
- * The tile, playing. Same behaviour as the editor's style sheet (see
- * design-system/editor/style-sheet.tsx for the full argument): one timer for
- * the whole grid so every tile turns together, the page's own name in the
- * corner so a change reads as information rather than as a flicker, and
- * stopped while the tab is hidden.
+ * The tile, moving. Same behaviour as the editor's style sheet, and see
+ * design-system/editor/style-sheet.tsx for the whole argument: measured on
+ * 21st.dev on 2026-08-26, a gallery tile is a still or it is continuous
+ * motion, and never a slideshow. This one travels down the dashboard and back;
+ * the other pages are a click away under it rather than a cut every 2.5s.
  */
-function PageReel({ pages }: { pages: { key: string; label: string; data: Data }[] }) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    if (pages.length < 2) return;
-    const id = setInterval(() => {
-      if (document.visibilityState === "hidden") return;
-      setI((n: number) => (n + 1) % pages.length);
-    }, 2500);
-    return () => clearInterval(id);
-  }, [pages.length]);
-
-  const page = pages[Math.min(i, pages.length - 1)];
-  if (!page) return null;
+function PageReel({
+  register,
+  pages,
+}: {
+  register: StyleName;
+  pages: { key: string; label: string; data: Data }[];
+}) {
+  if (!pages.length) return null;
   return (
-    <div className="relative h-full">
-      <PagePreview key={page.key} data={page.data} />
+    /* The register's own scope covers the picture and stops there -- a light
+       register's near-black --color-paper would print the caption below it
+       black on the portal's dark card. */
+    <div className="flex h-full flex-col">
+      <StyleScope
+        register={register}
+        className="ds-ground min-h-0 flex-1 overflow-hidden [background-color:var(--color-canvas)]"
+      >
+        <PagePreview data={pages[0].data} strip={pages.slice(1).map((p) => p.data)} />
+      </StyleScope>
       {pages.length > 1 ? (
-        <span className="pointer-events-none absolute right-2 bottom-2 rounded-[var(--radius-pill)] px-2 py-0.5 [background-color:oklch(0.16_0.012_265/0.72)] [color:#fff] [font-size:11px]">
-          {page.label}
+        <span className="shrink-0 pt-2 [color:var(--color-paper-dim)] [font-size:11px]">
+          {pages.map((p) => p.label).join(" · ")}
         </span>
       ) : null}
     </div>

@@ -313,6 +313,60 @@
   background-image: var(--canvas-image, none);
 }
 
+/* ── THE TILE THAT MOVES ─────────────────────────────────────────────────────
+
+   WHAT 21ST.DEV ACTUALLY DOES, measured on 2026-08-26 with a browser rather
+   than recalled: their gallery cards carry no iframe at all. Every card is a
+   `<video loop muted playsinline>`; on /community/components 7 of 95 had a src
+   attached (exactly the ones in the viewport) and every one of those was
+   already playing, at currentTime 4.4s, 9.9s, 0.7s -- continuously, not on
+   hover. The category pages, /community/components/s/card among them, drop the
+   video entirely and use one still image per card.
+
+   So the model is: A TILE IS A STILL OR IT IS CONTINUOUS MOTION. It is never a
+   slideshow. The founder put that better on the same day: 「哪里有人的preview是
+   一张一张照片跳的」. Our style tiles were turning the page every 2.5 seconds,
+   which is the third thing -- and the worst of the three, because a jump cut
+   makes the eye start over instead of read.
+
+   We cannot ship an mp4: the tile is a live render of the customer's OWN page
+   in the register being chosen, and that page does not exist until they
+   describe their business. What we can do is what the video shows -- one page,
+   travelling. Hence this: a slow pan down the composed page and back, holding
+   at both ends so the top and the bottom each get a beat.
+
+   IT IS CSS AND NOT A TIMER on purpose. The old reel drove a `setInterval`
+   through React state, so every turn re-rendered seventeen scaled page trees.
+   This animates one transform on one already-composited layer; seventeen tiles
+   cost the compositor and nothing else, and they stay in step for free because
+   they start together and never resync. */
+@keyframes ds-pan {
+  0%,
+  14% {
+    transform: translateY(0);
+  }
+  86%,
+  100% {
+    transform: translateY(var(--pan-to, 0px));
+  }
+}
+
+.ds-pan {
+  animation-name: ds-pan;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  /* Duration and play state come from the element: both depend on how far
+     there is to travel, which only a measurement knows. */
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-pan {
+    animation: none;
+  }
+}
+
 /* ── THE DISPLAY FACE ────────────────────────────────────────────────────────
 
    `--font-display` was added to all sixteen registers on 2026-08-23 and is
