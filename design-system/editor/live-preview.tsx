@@ -2,6 +2,7 @@
 
 import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { sampleProps } from "@/design-system/editor/sample-en";
 import { scopeClasses } from "@/lib/portal/palettes";
 import { StyleScope } from "@/design-system/editor/style-scope";
 import { NARROW } from "@/design-system/editor/specimen";
@@ -135,6 +136,11 @@ export function LivePreview({
   height = 64,
   srcHeight = 120,
   scale: forcedScale,
+  /** The language the CUSTOMER's system is written in. The tile renders
+   *  their content, so it follows their system and not the editor -- see
+   *  sample-en.ts. Defaults to the config's own language so the call sites
+   *  outside the editor (the showroom, the specimen sheet) are unaffected. */
+  systemLang = "zh",
   renderPageSized = false,
   frameHeight,
 }: {
@@ -157,6 +163,7 @@ export function LivePreview({
    *  the drawer's fixed-height arithmetic; the tile then takes whatever height
    *  the whole block comes to. */
   scale?: number;
+  systemLang?: string;
   /** Draw 页面框架 / 侧边导航 anyway. Off by default because a full app shell
    *  at 64px is a grey rectangle; on for the variant picker, where the shell's
    *  arrangement IS the thing being chosen. */
@@ -235,7 +242,10 @@ export function LivePreview({
 
   const Render = entry.render as (props: Record<string, unknown>) => ReactNode;
   const props: Record<string, unknown> = {
-    ...(entry.defaultProps as object | undefined),
+    // The tile shows the block as it will ARRIVE, so its sample content has to
+    // be in the system's language. Reported on 2026-08-25 with a screenshot of
+    // an English system offering 「本月新客户」 in the 加一段 gallery.
+    ...(sampleProps(entry.defaultProps, systemLang) as object | undefined),
     ...override,
   };
 

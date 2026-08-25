@@ -945,7 +945,7 @@ export function PortalEditor({
               // itself; anything else gets the projection built in
               // puck-config-client.tsx. Memoised there, so this is a stable
               // identity and does not remount Puck.
-              config={localisedPuckConfig(locale)}
+              config={localisedPuckConfig(locale, systemLang)}
               data={startingData}
               onChange={handleChange}
               onPublish={handleSaveClick}
@@ -985,6 +985,10 @@ export function PortalEditor({
                         name={name}
                         style={activeStyle}
                         palette={activePalette}
+                        // The tile shows the block as it will ARRIVE, so its
+                        // sample content follows the CUSTOMER'S system language
+                        // rather than the owner's interface. See sample-en.ts.
+                        systemLang={systemLang}
                         // Composed at 620 and scaled to fit. Two per row now,
                         // so a shelf of six is one screen instead of six.
                         width={620}

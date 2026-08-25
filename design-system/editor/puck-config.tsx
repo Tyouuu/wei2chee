@@ -841,7 +841,11 @@ export const puckConfig: Config<Components> = {
         label: "本月新客户",
         value: "12",
         delta: 8,
-        period: "vs 上个月",
+        // NOT "vs 上个月": StatCard already prints `labels.deltaPrefix` in
+        // front of this, so the default was rendering 「vs vs 上个月」. Been
+        // there since the block was written and only visible once the
+        // English projection put two Latin "vs" next to each other.
+        period: "上个月",
       },
       render: ({ label, value, delta, period, variant }) => (
         <SmallStat label={label} value={value} delta={delta} period={period} variant={variant} />

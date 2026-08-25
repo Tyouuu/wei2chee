@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import type { Config } from "@puckeditor/core";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { LABELS_EN } from "@/design-system/editor/labels-en";
+import { sampleProps } from "@/design-system/editor/sample-en";
 import { useRegisterVariant } from "@/design-system/editor/style-scope";
 import { toneLayers, type BlockTone } from "@/design-system/editor/block-tone";
 
@@ -196,12 +197,39 @@ function localiseFields(fields: unknown): unknown {
   return out;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   THE SAMPLE CONTENT FOLLOWS THE SYSTEM, NOT THE INTERFACE.
+
+   Reported with a screenshot on 2026-08-25: an English system whose 加一段
+   gallery offered 「本月新客户」 and 「工程进度」. Those are not Formae's words --
+   they are the CUSTOMER'S content, the text that lands on their page when the
+   block does, and their page speaks `projects.system_language`.
+
+   So there are two projections over one Chinese config, keyed off two
+   different settings, and keeping them apart is the whole of founder-points
+   13: an owner reading the editor in English who runs a Chinese-language shop
+   must get 「本月收款」 in the block; an owner reading it in Chinese who runs an
+   English-language one must get "Paid this month". One setting for both would
+   be the cross-language fallback that rule forbids.
+
+   ONLY STRINGS WITH CJK IN THEM. `defaultProps` also carries ids, hrefs, icon
+   names, colour tokens and variant keys -- `iconName: "person"`,
+   `color: "var(--chart-1)"` -- and running those through a translation table
+   is how a working block becomes a broken one. Every content string has a
+   Chinese character in it and no structural one does.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/** Two keys, because the two projections are independent: an owner can read
+ *  the editor in one language and build a system in the other. */
 const cache = new Map<string, Config>();
 
-export function localisedPuckConfig(locale: string): Config {
-  // Chinese is the config's own language, so there is nothing to project.
-  if (locale === "zh") return registerAwarePuckConfig;
-  const hit = cache.get(locale);
+export function localisedPuckConfig(locale: string, systemLang: string = "en"): Config {
+  const chromeEn = locale !== "zh";
+  const contentEn = systemLang !== "zh";
+  // Chinese on both sides is the config's own language: nothing to project.
+  if (!chromeEn && !contentEn) return registerAwarePuckConfig;
+  const key = `${chromeEn ? "en" : "zh"}:${contentEn ? "en" : "zh"}`;
+  const hit = cache.get(key);
   if (hit) return hit;
 
   const base = registerAwarePuckConfig as unknown as {
@@ -215,17 +243,23 @@ export function localisedPuckConfig(locale: string): Config {
     components: Object.fromEntries(
       Object.entries(base.components).map(([name, c]) => [
         name,
-        { ...c, label: tr(c.label), fields: localiseFields(c.fields) },
+        {
+          ...c,
+          label: chromeEn ? tr(c.label) : c.label,
+          fields: chromeEn ? localiseFields(c.fields) : c.fields,
+          defaultProps: sampleProps(c.defaultProps, contentEn ? "en" : "zh"),
+        },
       ]),
     ),
-    categories: base.categories
-      ? Object.fromEntries(
-          Object.entries(base.categories).map(([k, c]) => [k, { ...c, title: tr(c.title) }]),
-        )
-      : base.categories,
-    root: base.root ? { ...base.root, label: tr(base.root.label) } : base.root,
+    categories:
+      base.categories && chromeEn
+        ? Object.fromEntries(
+            Object.entries(base.categories).map(([k, c]) => [k, { ...c, title: tr(c.title) }]),
+          )
+        : base.categories,
+    root: base.root && chromeEn ? { ...base.root, label: tr(base.root.label) } : base.root,
   } as unknown as Config;
 
-  cache.set(locale, built);
+  cache.set(key, built);
   return built;
 }
