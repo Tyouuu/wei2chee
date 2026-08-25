@@ -751,7 +751,21 @@ function buildDashboard(
           {
             label: sample.heroLabel,
             value: sample.heroValue,
+            // THE NUMBER THE LABEL WAS ALREADY PROMISING. The tile said
+            // 「vs last month」 and showed no change beside it -- a caption for
+            // a figure that was not there. Every reference dashboard puts the
+            // percentage next to the total (「+20.1% from last month」,
+            // 「周同比 12% ▲」), and stat-row.tsx has drawn both a delta and a
+            // 52px sparkline since the day it was written. Neither was ever
+            // passed. Fourth time in this repo that a capability existed and
+            // the wire to it did not.
+            //
+            // Derived from heroSpark rather than invented: it is the change
+            // between the last two of the six periods the chart below is
+            // already drawing, so the tile and the chart cannot disagree.
+            delta: headlineDelta(sample.heroSpark),
             deltaLabel: sample.heroSuffix,
+            spark: sample.heroSpark,
             tone: "good",
             iconName: "payments",
             href: `/${locale}/portal/payments`,
@@ -777,7 +791,9 @@ function buildDashboard(
           {
             label: sample.heroLabel,
             value: sample.heroValue,
+            delta: headlineDelta(sample.heroSpark),
             deltaLabel: sample.heroSuffix,
+            spark: sample.heroSpark,
             tone: "good",
             iconName: "payments",
             href: `/${locale}/portal/payments`,
@@ -886,17 +902,71 @@ function buildDashboard(
       });
     },
 
-    /** Who is worth the most. A ranked list, not a chart. */
+    /**
+     * Who is worth the most.
+     *
+     * WAS A MarkList, WHICH WAS THE WRONG OBJECT. It drew one line of text per
+     * name -- 「1. Mr Tan · RM 48,500」 -- and a column of figures joined to
+     * their labels by a middle dot cannot be scanned. Both dashboards the
+     * founder sent on 2026-08-25 flush the number to the right edge, because
+     * that is what makes nine rows readable as a ranking rather than as nine
+     * sentences. See design-system/components/rank-list.tsx.
+     *
+     * The shape is the register's to choose and this deliberately does not
+     * name one: 台账 gets a numbered line, 仪表盘 a medal badge, 柔和 a person
+     * with an avatar -- three different objects, which is the only kind of
+     * difference a palette cannot flatten.
+     */
     ranking: () =>
-      node("MarkList", "dashboard-ranking", {
+      node("RankList", "dashboard-ranking", {
         heading: c.dashboard.rankingTitle,
-        rule: "border",
-        marks: sample.records.map((r, i) => ({
-          text: `${i + 1}. ${r.secondary ?? r.primary}${r.amount ? ` · ${r.amount}` : ""}`,
-          tone: i === 0 ? "good" : "warn",
-          icon: "person",
+        rows: sample.records.map((r) => ({
+          name: r.secondary ?? r.primary,
+          sub: r.secondary ? r.primary : r.status,
+          amount: r.amount ?? "",
+          href: followHref,
         })),
       }),
+
+    /**
+     * WHERE THE MONEY IS SITTING, by stage.
+     *
+     * A different question from `trend`, which is why it is a different block
+     * rather than a fourth TrendChart kind: trend answers "how much, over
+     * time"; this answers "how does the whole split up". Ant Design Pro runs
+     * both on one screen for that reason.
+     *
+     * Derived from the same records the table below is already showing, so the
+     * two can never disagree, and grouped by STATUS because that is the split
+     * an owner acts on -- 「多少钱卡在报价阶段」 is a question with a next step
+     * attached, unlike a split by month.
+     *
+     * Colours come from --chart-1..3, which every token file defines, so a
+     * register with no jade in its palette still resolves to its own hues.
+     */
+    share: () => {
+      const byStatus = new Map<string, number>();
+      for (const r of sample.records) {
+        // "RM 48,500" -> 48500. A record with no amount contributes nothing
+        // rather than a zero slice, which would draw an empty wedge with a
+        // label on it.
+        const n = Number(String(r.amount ?? "").replace(/[^0-9.]/g, ""));
+        if (!n) continue;
+        const key = r.status || c.col.status;
+        byStatus.set(key, (byStatus.get(key) ?? 0) + n);
+      }
+      const slices = [...byStatus.entries()].map(([label, value], i) => ({
+        label,
+        value,
+        color: `var(--chart-${(i % 5) + 1})`,
+      }));
+      return node("ShareChart", "dashboard-share", {
+        title: c.dashboard.shareTitle,
+        caption: "",
+        unit: "RM",
+        slices,
+      });
+    },
 
     flow: () =>
       workflowStrip(
@@ -1078,65 +1148,78 @@ function buildDashboard(
  * Every composition below was chosen from the register's own argument, not
  * shuffled for variety:
  */
+/**
+ * The change between the last two periods, as a percentage.
+ *
+ * Returns null rather than a number in the two cases where a percentage would
+ * be a lie: fewer than two periods to compare, and a previous period of zero
+ * (every increase from nothing is infinite, and printing 「↑ 100%」 for a
+ * business's first month of takings is worse than printing nothing).
+ */
+function headlineDelta(spark: number[] | undefined): number | null {
+  if (!spark || spark.length < 2) return null;
+  const prev = spark[spark.length - 2];
+  const curr = spark[spark.length - 1];
+  if (!prev) return null;
+  return ((curr - prev) / Math.abs(prev)) * 100;
+}
+
 const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // A ledger is a table. It opens on one, and the figures come after -- which
   // is the order a person who reads forty rows a day actually wants. The split
   // is at the BOTTOM, where two small things belong beside each other rather
   // than as two more full-width bands under a table that is already long.
-  ledger: ["table", "stats4", "activity|flow@half"],
+  ledger: ["table", "stats4", "activity|share@half", "flow"],
   // A shopfront: what is happening today, with the money beside it rather than
   // under it -- the owner glances right, not down.
-  hearth: ["todo|stats2", "trend", "table"],
+  hearth: ["todo|stats2", "trend|share@wide-left", "table"],
   // The neutral one, and the only one that should read as "a bit of
   // everything". Chart left, the day's list beside it: the most ordinary
   // arrangement there is, which is the point of this register.
-  blueprint: ["stats4", "trend|todo", "flow", "table"],
+  blueprint: ["stats4", "trend|todo", "share|flow@wide-right", "table"],
   // For an owner who cannot read the others. Two figures at 17px base, no
   // chart -- and NO SPLIT: half of 1400 at this type size is four words a
   // line. Single column is the register's whole argument.
-  large: ["stats2", "todo", "table"],
+  large: ["stats2", "share", "todo", "table"],
   // Looks like the POS they already run: the filled table head is the object,
   // so the table leads, then the month's progress with the figures beside it.
-  stamp: ["table", "progress|stats4@wide-right", "flow"],
+  stamp: ["table", "progress|stats4@wide-right", "share|flow@half"],
   // Black, white and one red on a PRINTED SHEET. A printed sheet is one
   // column. No split -- this is the register where restraint is the design.
-  swiss: ["stats4", "trend", "table", "flow"],
+  swiss: ["stats4", "trend|share@wide-left", "table", "flow"],
   // Friendly and rounded. One figure with its own supporting numbers, the
   // day's list beside it, then the money.
-  soft: ["hero|todo@half", "trend", "table"],
+  soft: ["hero|todo@half", "trend|share@wide-left", "table"],
   // Weight. Two enormous figures and the work, in slabs. No chart, no split --
   // a slab that is half a page wide stops being a slab.
-  brut: ["stats2", "board", "table"],
-  // Space. One figure, a great deal of air, and the work. Nothing beside
-  // anything: a column of air is the register.
-  ink: ["hero", "flow", "table"],
+  brut: ["stats2", "board", "table", "share"],
   // Translucent panels want something behind them to see through, and two
   // panels side by side show more edges than one.
-  glass: ["stats4", "trend|board", "table"],
+  glass: ["stats4", "trend|share@wide-left", "board", "table"],
   // Lights off. An ops console: the figure and its chart side by side at the
   // top, then the queue.
-  night: ["hero|trend@wide-right", "table", "todo"],
+  night: ["hero|trend@wide-right", "table", "share|todo@half"],
   // A shop sign. The name and the number are the sign; the rest is small and
   // under it. A sign does not have two halves.
   signboard: ["hero", "table", "flow"],
   // A coloured ground with ivory panels floating on it -- panels want to be
   // few and LARGE, so one figure beside one chart, then one table.
-  lacquer: ["hero|trend@wide-right", "table"],
+  lacquer: ["hero|trend@wide-right", "share|table@wide-right"],
   // Every character the same width. Squares and a ranking are both grids of
   // fixed cells, so they sit beside each other without either one reflowing.
-  code: ["stats4", "activity|ranking", "table"],
+  code: ["stats4", "activity|ranking", "share|table@wide-right"],
   // A patterned floor wants flat cards above it, in a rhythm -- and a rhythm
   // needs a row of two, not a column of one.
-  tile: ["stats4", "todo|trend@wide-right", "table"],
+  tile: ["stats4", "todo|trend@wide-right", "share|table@wide-right"],
   // The sticker. Big, playful, board-shaped, with the chart squeezed beside it.
-  pop: ["stats4", "board|trend@wide-left", "table"],
+  pop: ["stats4", "board|trend@wide-left", "share|table@wide-right"],
   // Tabler / AdminLTE, and now actually shaped like them: four tiles, then the
   // chart with the ranking BESIDE it -- which is the arrangement every one of
   // those templates uses and the one we did not have.
-  console: ["stats4", "trend|ranking", "table", "todo"],
+  console: ["stats4", "trend|ranking", "share|table@wide-right", "todo"],
   // Ant Design Pro: the list is the day, so the table is first-class and
   // early. Then the same chart-and-ranking pair their own dashboard opens on.
-  counter: ["stats4", "table", "trend|ranking", "flow"],
+  counter: ["stats4", "table", "trend|ranking", "share|flow@wide-right"],
 };
 
 

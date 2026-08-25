@@ -28,6 +28,8 @@ import { TextAutocomplete } from "@/design-system/components/text-autocomplete";
 import { Listbox, type ListboxOption } from "@/design-system/components/listbox";
 import { RailNav, type RailItem, type RailUtilityItem, type RailVariant } from "@/design-system/components/rail-nav";
 import { StatRow, type StatTile, type StatRowLayout } from "@/design-system/components/stat-row";
+import { RankList, type RankRow, type RankShape } from "@/design-system/components/rank-list";
+import { ShareChart, type ShareSlice, type ShareShape } from "@/design-system/components/share-chart";
 import type { TrendFrame } from "@/design-system/components/trend-chart";
 import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
 // The second registry wave. See the header comments in both files for what was
@@ -291,6 +293,7 @@ type Components = {
     table: TableModel;
     // Set by the 换个款式 picker, not by a field. See variants.ts.
     look?: "plain" | "compact" | "zebra" | "grid";
+    row?: "plain" | "pill" | "avatar";
     // Objects rather than bare strings: Puck's array field edits item PROPS,
     // so a list of strings has nothing for its editor to bind to.
     filters?: { label: string }[];
@@ -388,6 +391,19 @@ type Components = {
     heading?: string;
     marks: { text: string; tone?: "good" | "warn" | "bad"; icon?: string }[];
     rule?: "default" | "border" | "separator";
+  };
+  RankList: {
+    heading?: string;
+    rows: RankRow[];
+    shape?: RankShape;
+  };
+  ShareChart: {
+    title?: string;
+    caption?: string;
+    unit?: string;
+    slices: ShareSlice[];
+    shape?: ShareShape;
+    frame?: "card" | "outline" | "bare";
   };
   PhotoFrame: {
     src?: string;
@@ -1812,8 +1828,8 @@ export const puckConfig: Config<Components> = {
       // heading above the table -- so it is read twice, by two different
       // readers, from one string. That makes it more important that it stays a
       // string, not less. It is edited in the fields panel.
-      render: ({ gridId, caption, table, look, filters }) => (
-        <RecordTable gridId={gridId} caption={caption} table={table} look={look} filters={filters?.map((f) => f.label)} />
+      render: ({ gridId, caption, table, look, row, filters }) => (
+        <RecordTable gridId={gridId} caption={caption} table={table} look={look} row={row} filters={filters?.map((f) => f.label)} />
       ),
     },
     WorkflowStrip: {
@@ -2184,6 +2200,80 @@ export const puckConfig: Config<Components> = {
       },
       render: ({ heading, files, orientation }) => (
         <AttachmentList heading={heading} files={files} orientation={orientation} />
+      ),
+    },
+
+    // 排行 -- see design-system/components/rank-list.tsx for why this is a
+    // component and not a MarkList variant. Short version: a mark has one end,
+    // and every leaderboard worth copying has two.
+    // 占比 -- a different QUESTION from TrendChart, so a different object.
+    // See design-system/components/share-chart.tsx.
+    ShareChart: {
+      label: "占比",
+      fields: {
+        title: { label: "标题", type: "text" },
+        caption: { label: "说明", type: "text" },
+        unit: { label: "单位", type: "text" },
+        slices: {
+          label: "每一块",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            value: { label: "数值", type: "number" },
+            color: { label: "颜色", type: "text" },
+          },
+          defaultItemProps: { label: "一块", value: 1, color: "var(--chart-1)" },
+          getItemSummary: (item) => item.label || "一块",
+        },
+      },
+      defaultProps: {
+        title: "钱卡在哪一段",
+        caption: "",
+        unit: "RM",
+        slices: [
+          { label: "已确认", value: 48500, color: "var(--chart-1)" },
+          { label: "等回复", value: 22800, color: "var(--chart-2)" },
+          { label: "报价中", value: 96000, color: "var(--chart-3)" },
+        ],
+      },
+      render: ({ title, caption, unit, slices, shape, frame }) => (
+        <ShareChart
+          title={title}
+          caption={caption}
+          unit={unit}
+          slices={slices}
+          shape={shape}
+          frame={frame}
+        />
+      ),
+    },
+
+    RankList: {
+      label: "排行",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        rows: {
+          label: "每一名",
+          type: "array",
+          arrayFields: {
+            name: { label: "名字", type: "text" },
+            sub: { label: "下面一行", type: "text" },
+            amount: { label: "金额 / 数量", type: "text" },
+          },
+          defaultItemProps: { name: "陈先生", sub: "", amount: "RM 0" },
+          getItemSummary: (item) => item.name || "一名",
+        },
+      },
+      defaultProps: {
+        heading: "谁最有价值",
+        rows: [
+          { name: "陈先生", sub: "Taman Desa 三房翻新", amount: "RM 48,500" },
+          { name: "李太太", sub: "Bukit Jalil 厨房改造", amount: "RM 22,800" },
+          { name: "黄先生", sub: "Cheras 店面装修", amount: "RM 96,000" },
+        ],
+      },
+      render: ({ heading, rows, shape }) => (
+        <RankList heading={heading} rows={rows} shape={shape} />
       ),
     },
 

@@ -26,7 +26,6 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
-  ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
   signboard: styles.signboard,

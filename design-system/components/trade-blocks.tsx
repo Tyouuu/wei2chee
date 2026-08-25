@@ -467,6 +467,16 @@ export function ActivitySquares({ label }: { label?: string }) {
   // year it is depends on the reader's timezone for eight hours a day.
   if (!mounted) return <div style={{ height: 120 }} aria-hidden />;
   return (
+    // A YEAR OF SQUARES HAS A MINIMUM WIDTH: 53 weeks at 11px plus gaps is
+    // about 740px, and no amount of CSS makes it smaller without making the
+    // squares unreadable. Before this it simply overflowed -- put in a half
+    // column by 台账 and 码 on 2026-08-25, the months ran out past the edge and
+    // the "Less / More" legend landed on top of the block beside it.
+    //
+    // Scrolling the block rather than the page is the answer the rest of this
+    // codebase already uses for wide tables: the page never scrolls sideways,
+    // and the reader can still see December.
+    <div className="w-full overflow-x-auto">
     <ContributionGraph
       data={data}
       blockSize={11}
@@ -496,5 +506,6 @@ export function ActivitySquares({ label }: { label?: string }) {
         <ContributionGraphLegend />
       </ContributionGraphFooter>
     </ContributionGraph>
+    </div>
   );
 }

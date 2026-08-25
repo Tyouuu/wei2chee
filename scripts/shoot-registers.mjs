@@ -24,7 +24,7 @@ import { join } from "node:path";
 
 const ALL = [
   "Ledger", "Hearth", "Blueprint", "Large", "Stamp", "Swiss", "Soft", "Brut",
-  "Ink", "Glass", "Night", "Signboard", "Lacquer", "Code", "Tile", "Pop",
+  "Glass", "Night", "Signboard", "Lacquer", "Code", "Tile", "Pop",
   "Console", "Counter",
 ];
 const REGISTERS = process.argv.slice(2).length ? process.argv.slice(2) : ALL;

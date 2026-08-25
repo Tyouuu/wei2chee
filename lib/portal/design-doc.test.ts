@@ -50,4 +50,80 @@ describe("every register's preferences point at something real", () => {
       expect(STYLE_BRIEFS[style], `${style} has no brief`).toBeDefined();
     }
   });
+
+  /**
+   * NO TWO REGISTERS MAY BE THE SAME DESIGN IN TWO COLOURS.
+   *
+   * The founder's own test, 2026-08-25: 「你那些什么牛皮 什么啊 什么啊 只是你再调
+   * 那个颜色而已？那为什么不要放在配色？」 and 「就是至少是没有重复性的」. It is the
+   * right test. A register that survives a repaint is a register; one that does
+   * not should have been a 配色.
+   *
+   * The ten axes below are exactly the ones a palette CANNOT touch -- a palette
+   * gives the rail its hue, never its value, and it cannot turn a ranking into
+   * a row of faces or a table's status into a filled pill. Sharing all ten
+   * means two registers differ only in colour and typeface, which is the defect
+   * this measures.
+   *
+   * WHY SIX AND NOT THREE. This is a VETO, not a design tool, and the
+   * difference is not academic: a solver run against a threshold of three on
+   * 2026-08-25 reached zero violations by putting 瑞士 on a dark top bar, giving
+   * 墨 a grid table and taking the cards away from 仪表盘 -- a perfect number and
+   * three broken registers. The same failure as check:registers wearing a new
+   * coat. So the bar is set where it catches genuine twins (瑞士/墨 shared
+   * EIGHT, five of them locked) and leaves the judgement to the eye, which is
+   * the only thing that can pass a design.
+   *
+   * A register's dashboard COMPOSITION is a further difference this does not
+   * count, so two registers at six here are still further apart than the number
+   * suggests.
+   */
+  it("has no two registers that are one design in two colours", () => {
+    const AXES = [
+      "SystemShell",
+      "RailNav",
+      "RecordTable",
+      "RecordTableRow",
+      "StatRow",
+      "Panel",
+      "TrendChart",
+      "ShareChart",
+      "RankList",
+      "PageHeader",
+    ] as const;
+    const MAX_SHARED = 6;
+
+    const styles = [...STYLE_ORDER];
+    for (let i = 0; i < styles.length; i++) {
+      for (let j = i + 1; j < styles.length; j++) {
+        const a = STYLE_BRIEFS[styles[i]]?.prefer ?? {};
+        const b = STYLE_BRIEFS[styles[j]]?.prefer ?? {};
+        const same = AXES.filter((ax) => a[ax] !== undefined && a[ax] === b[ax]);
+        expect(
+          same.length,
+          `${styles[i]} and ${styles[j]} share ${same.length} of ${AXES.length} axes ` +
+            `(${same.join(", ")}). Give one of them a different OBJECT, not a different colour.`,
+        ).toBeLessThanOrEqual(MAX_SHARED);
+      }
+    }
+  });
+
+  /**
+   * Every register must have an opinion on every axis.
+   *
+   * An axis a register says nothing about falls back to the component default,
+   * so the register that added the axis is the only one it changes anything
+   * for -- which is how RailNav and Panel sat unreachable for months.
+   */
+  it("gives every register an opinion on every axis", () => {
+    const AXES = ["RecordTableRow", "ShareChart", "RankList"];
+    for (const style of STYLE_ORDER) {
+      for (const ax of AXES) {
+        expect(
+          STYLE_BRIEFS[style]?.prefer?.[ax],
+          `${style} has no preference for ${ax}`,
+        ).toBeDefined();
+      }
+    }
+  });
 });

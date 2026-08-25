@@ -10,6 +10,7 @@ import type { CSSProperties } from "react"
 import { useRegisterProp } from "@/design-system/editor/style-scope"
 import { DataGrid } from "./data-grid"
 import { useSystemWords } from "@/design-system/system-lang-context"
+import { Avatar } from "@/design-system/components/avatar"
 import { StatusDot, type StatusTone } from "./status-dot"
 import { normalizeTable, type ColumnKind, type TableModel } from "@/lib/portal/table-model"
 
@@ -69,16 +70,39 @@ export function RecordTable(props: {
    *  owner already reads in Excel; `grid` rules the columns as well, for a
    *  table that is being copied from or checked against paper. */
   look?: "plain" | "compact" | "zebra" | "grid"
+  /**
+   * WHAT A ROW CONTAINS -- a second, independent axis.
+   *
+   * `look` says how rows are SEPARATED (a rule, a band, column lines, less
+   * height). Measured on 2026-08-25, eight of eighteen registers chose `plain`
+   * on it, because separation is a small question and most briefs have no
+   * opinion. This axis asks a different one and gets different answers: a
+   * status can be a dot with a word beside it or a filled pill, and a person
+   * can be a name or a name with a face.
+   *
+   * Both of the dashboards the founder sent that day differ from us here and
+   * not on separation -- shadcn-admin puts an initials circle on every row of
+   * Recent Sales, Ant Design Pro puts a filled badge on every status.
+   */
+  row?: "plain" | "pill" | "avatar"
   /** Segment labels shown above the table, after an "All" the component adds
    *  itself. Inert in the preview — the finished system wires them to queries.
    *  Empty or absent means no segment row, which is right for a table that is
    *  already the whole of its page. */
   filters?: string[]
 }) {
-  const { gridId, caption, look, filters } = props
+  const { gridId, caption, look, row, filters } = props
   const w = useSystemWords()
   // Absent means "follow the register", not "plain" -- see style-scope.tsx.
   const shown = look ?? useRegisterProp<"plain" | "compact" | "zebra" | "grid">("RecordTable", "look") ?? "plain"
+  // "RecordTableRow", NOT "RecordTable". A register's preference is a VARIANT
+  // ID, and the id is looked up in VARIANTS under the same key -- so two axes
+  // on one component need two keys, or the second silently reads the first
+  // one's props and finds nothing. This is the same class of failure as the
+  // 315 preferences that reached nothing before 2026-08-23, and it is silent
+  // in exactly the same way: the table renders, it just renders the default.
+  const rowShape =
+    row ?? useRegisterProp<"plain" | "pill" | "avatar">("RecordTableRow", "row") ?? "plain"
   const { columns, rows } = normalizeTable(props as unknown as Record<string, unknown>)
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE
@@ -201,13 +225,15 @@ export function RecordTable(props: {
               {columns.map((col) => {
                 const value = row.cells?.[col.key] ?? ""
                 if (col.kind === "status") {
+                  const tone = (row.tones?.[col.key] as StatusTone) ?? "neutral"
                   return (
                     <td key={col.key} className={bodyCell}>
                       {value ? (
-                        <StatusDot
-                          tone={(row.tones?.[col.key] as StatusTone) ?? "neutral"}
-                          label={value}
-                        />
+                        rowShape === "pill" ? (
+                          <Pill tone={tone} label={value} />
+                        ) : (
+                          <StatusDot tone={tone} label={value} />
+                        )
                       ) : null}
                     </td>
                   )
@@ -229,7 +255,14 @@ export function RecordTable(props: {
                 if (col.kind === "detail") {
                   return (
                     <td key={col.key} className={`${bodyCell} [color:var(--color-paper-dim)]`}>
-                      {value}
+                      {rowShape === "avatar" && value ? (
+                        <span className="flex items-center [gap:var(--gap-inline)]">
+                          <Avatar name={String(value)} size={24} />
+                          <span className="truncate">{value}</span>
+                        </span>
+                      ) : (
+                        value
+                      )}
                     </td>
                   )
                 }
@@ -248,5 +281,37 @@ export function RecordTable(props: {
       </table>
     </DataGrid>
     </div>
+  )
+}
+
+/**
+ * A filled status, for the registers whose briefs are loud enough to carry one.
+ *
+ * WHY NOT REUSE Tag. Tag is a label the customer writes -- 「加急」, 「熟客」 --
+ * and its tones are chosen by hand. This one reads the row's own status tone,
+ * so a table can never show a green pill on a row the dot would have shown red
+ * on. Same tones, one source.
+ *
+ * The fill is the status colour at low opacity rather than a second token per
+ * tone: every register already defines these four, and a --*-soft for each
+ * would be sixteen new declarations to keep in step with four that already
+ * exist.
+ */
+const PILL_TONE: Record<string, string> = {
+  positive: "var(--color-jade-bright)",
+  warning: "var(--color-brass-bright)",
+  negative: "var(--color-clay-bright)",
+  neutral: "var(--color-slate-bright)",
+}
+
+function Pill({ tone, label }: { tone: StatusTone; label: string }) {
+  const c = PILL_TONE[tone] ?? PILL_TONE.neutral
+  return (
+    <span
+      className="inline-flex max-w-full items-center truncate whitespace-nowrap [border-radius:var(--radius-control)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [padding-block:2px] [padding-inline:var(--pad-control-x)]"
+      style={{ color: c, background: `color-mix(in oklab, ${c} 14%, transparent)`, border: `var(--hairline) solid color-mix(in oklab, ${c} 32%, transparent)` }}
+    >
+      {label}
+    </span>
   )
 }

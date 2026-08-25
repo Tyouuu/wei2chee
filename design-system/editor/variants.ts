@@ -127,6 +127,17 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "grid", label: "有格线", props: { look: "grid" } },
   ],
 
+  // A SECOND AXIS ON THE SAME COMPONENT, and deliberately so. `RecordTable`
+  // above says how rows are SEPARATED; this says what a row CONTAINS. Eight of
+  // eighteen registers picked `plain` up there because separation is a small
+  // question -- this one gets three different answers because a face and a
+  // filled pill are objects, not paint.
+  RecordTableRow: [
+    { id: "plain", label: "圆点 + 文字", props: { row: "plain" } },
+    { id: "pill", label: "状态做成药丸", props: { row: "pill" } },
+    { id: "avatar", label: "客户带头像", props: { row: "avatar" } },
+  ],
+
   // ---------------------------------------------------------------- 分栏
   Columns: [
     { id: "half", label: "对半分", props: { layout: "half" } },
@@ -255,6 +266,26 @@ export const VARIANTS: Record<string, Variant[]> = {
   AttachmentList: [
     { id: "row", label: "一行一个", props: { orientation: "horizontal" } },
     { id: "tile", label: "并排小方块", props: { orientation: "vertical" } },
+  ],
+
+  // A NEW AXIS, not a new coat of paint. Three different objects: a numbered
+  // sentence, a badge-and-figure row, a two-line person with an avatar. This
+  // is the kind of axis that answers 「换个配色它还是不是另一个设计」 with yes.
+  // Ten of eighteen registers picked TrendChart's `bar`, which is what happens
+  // when an axis has one broadly usable option. This is a second axis rather
+  // than a fourth option on that one: a ring, a solid pie and a row of
+  // proportion bars are three objects, and 台账 / 码 / 瑞士 have nowhere to put
+  // a circle.
+  ShareChart: [
+    { id: "donut", label: "圆环", props: { shape: "donut" } },
+    { id: "pie", label: "实心圆", props: { shape: "pie" } },
+    { id: "bars", label: "比例条", props: { shape: "bars" } },
+  ],
+
+  RankList: [
+    { id: "plain", label: "编号 + 一行字", props: { shape: "plain" } },
+    { id: "badge", label: "奖牌编号 · 金额靠右", props: { shape: "badge" } },
+    { id: "person", label: "头像 + 两行 · 金额靠右", props: { shape: "person" } },
   ],
 
   MarkList: [

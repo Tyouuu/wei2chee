@@ -25,12 +25,18 @@ export type StyleName =
   // WEIGHT: nothing had a border over 2px or a shadow visible from across the
   // room. See design-system/tokens/brut.css for the numbers.
   | "brut"
-  // 墨 (Ink) -- the SPACE axis. Measured 2026-08-23: nothing in the set had a
-  // pad-card above 24 or a row height above 56, so every register was a
-  // normal-density business tool. This one is 40 and 76. It is also the only
-  // register in the set drawn from a Chinese brief, for a product whose
-  // customers are Chinese. See design-system/tokens/ink.css.
-  | "ink"
+  // 墨 (Ink) WAS HERE, and was withdrawn on 2026-08-25. Measured across the
+  // ten axes a palette cannot repaint, it shared EIGHT with 瑞士 -- and five of
+  // those eight were locked on both sides, meaning neither could move without
+  // ceasing to be itself. Two registers that cannot be told apart without
+  // reading the typeface are one register and a font. The founder's own test:
+  // 「只是你再调那个颜色而已？那为什么不要放在配色？」
+  //
+  // Its space axis is not lost. 墨's pad-card 40 / row-height 76 were the widest
+  // in the set, and nothing else reaches them -- but a register whose entire
+  // first screen is one figure and air also fails the founder's most load-
+  // bearing rule, 「第一屏就是产品」. Accounts on it move to 瑞士 (migration
+  // 20260825060000), which is the same argument with something on the page.
   // The first register that is not a flat rectangle: translucent cards,
   // a real backdrop blur, and a ground with something to see through them.
   // See design-system/tokens/glass.css.
@@ -94,7 +100,6 @@ export const STYLE_ORDER: StyleName[] = [
   "swiss",
   "soft",
   "brut",
-  "ink",
   "glass",
   "night",
   "signboard",
@@ -115,7 +120,6 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
-  ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
   signboard: styles.signboard,
@@ -160,7 +164,6 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
-  ink: styles.ink,
   glass: styles.glass,
   night: styles.night,
   signboard: styles.signboard,

@@ -88,6 +88,8 @@ export type Chrome = {
     /** The heading over the ranked list some registers open with instead of a
      *  chart. Ranked by value this year, from the same records. */
     rankingTitle: string;
+    /** 占比块的标题 —— 问的是「钱卡在哪一段」,不是「这个月多少」。 */
+    shareTitle: string;
   };
 
   customers: {
@@ -216,6 +218,7 @@ const EN: Chrome = {
     recentFilters: ["In progress", "Awaiting payment"],
     primaryAction: (sellSide) => `New ${sellSide.toLowerCase()}`,
     rankingTitle: "Who is worth the most",
+    shareTitle: "Where the money is sitting",
   },
 
   customers: {
@@ -355,6 +358,7 @@ const ZH: Chrome = {
     recentFilters: ["进行中", "待收款"],
     primaryAction: (sellSide) => `新增${sellSide}`,
     rankingTitle: "最大的几个客户",
+    shareTitle: "钱卡在哪一段",
   },
 
   customers: {
