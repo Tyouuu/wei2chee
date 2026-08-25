@@ -10,6 +10,7 @@ import {
   Line,
   LineChart,
   XAxis,
+  YAxis,
 } from "recharts"
 import {
   ChartContainer,
@@ -126,10 +127,35 @@ export function TrendChart({ title, caption, frame, kind, unit = "", points }: T
 
   const data = points.map((p) => ({ label: p.label, v: Number(p.value) || 0 }))
 
+  /** 12,340 -> "12.3k". A money axis at full length ("RM 12,340") is four
+   *  times the width of the tick it labels and pushes the plot into a third of
+   *  the card. Every reference dashboard shortens it; none of them omits it. */
+  const tick = (n: number) =>
+    Math.abs(n) >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n)
+
   const axis = (
     <>
       <CartesianGrid vertical={false} strokeDasharray="3 3" />
       <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
+      {/* A SCALE DOWN THE LEFT.
+          Every admin dashboard the founder sent has one -- shadcn-admin reads
+          $0 / $1500 / $3000 / $4500 / $6000, Ant Design Pro reads 0 to 1200 in
+          two-hundreds -- and ours had none, so the bars floated with nothing to
+          measure them against. It is the difference between a chart and a
+          picture of a chart, and it was the first thing that read as unfinished
+          when the two were put side by side.
+
+          `width={44}` rather than auto: Recharts measures the widest tick and
+          reserves that, so a month with a five-figure total silently indents
+          the whole plot. A fixed gutter keeps every register's chart starting
+          at the same x. */}
+      <YAxis
+        tickLine={false}
+        axisLine={false}
+        width={44}
+        tickMargin={6}
+        tickFormatter={(v) => tick(Number(v))}
+      />
       <ChartTooltip
         content={
           <ChartTooltipContent
@@ -181,12 +207,22 @@ export function TrendChart({ title, caption, frame, kind, unit = "", points }: T
           widths. */}
       <ChartContainer config={config} className="aspect-auto h-[200px] w-full">
         {kind === "bar" ? (
-          <BarChart data={data} margin={{ left: 4, right: 4, top: 4 }}>
+          <BarChart data={data} margin={{ left: 0, right: 4, top: 4 }}>
             {axis}
-            <Bar dataKey="v" fill="var(--color-v)" radius={[barRadius, barRadius, 0, 0]} />
+            {/* maxBarSize: six periods across a full-width card gave 90px
+                slabs -- Recharts divides the plot between however many points
+                there are, so fewer points means fatter bars, which is exactly
+                backwards. The references run about 40px with air between them,
+                and a bar wider than its own label has stopped being a bar. */}
+            <Bar
+              dataKey="v"
+              fill="var(--color-v)"
+              radius={[barRadius, barRadius, 0, 0]}
+              maxBarSize={46}
+            />
           </BarChart>
         ) : kind === "line" ? (
-          <LineChart data={data} margin={{ left: 4, right: 8, top: 4 }}>
+          <LineChart data={data} margin={{ left: 0, right: 8, top: 4 }}>
             {axis}
             <Line
               dataKey="v"
@@ -197,7 +233,7 @@ export function TrendChart({ title, caption, frame, kind, unit = "", points }: T
             />
           </LineChart>
         ) : (
-          <AreaChart data={data} margin={{ left: 4, right: 4, top: 4 }}>
+          <AreaChart data={data} margin={{ left: 0, right: 4, top: 4 }}>
             {axis}
             <Area
               dataKey="v"

@@ -1291,15 +1291,23 @@ export const puckConfig: Config<Components> = {
       // twenty-two registers rendered the same page: whatever the register
       // said, every section was a shadcn Card with a header.
       render: ({ title, description, body: Body, look }) => {
+        // A SECTION WITH NO TITLE IS A SECTION, NOT A SECTION WITH AN EMPTY
+        // TITLE. Some blocks carry their own heading -- RecordTable draws one
+        // with a row count and filter segments beside it -- and wrapping those
+        // in a titled Panel prints the heading twice. Rendering an empty
+        // CardTitle instead leaves a blank line and the header's padding above
+        // every table on the page, which reads as a mistake because it is one.
+        const titled = Boolean(title) || Boolean(description);
         const head = (
           <>
-            <CardTitle>{title}</CardTitle>
+            {title ? <CardTitle>{title}</CardTitle> : null}
             {description ? <CardDescription>{description}</CardDescription> : null}
           </>
         );
         if (look === "plain" || look === "ruled") {
+          if (!titled) return <section className="h-full"><Body /></section>;
           return (
-            <section className="flex flex-col [gap:var(--gap-stack)]">
+            <section className="flex flex-col h-full [gap:var(--gap-stack)]">
               <div
                 className={
                   look === "ruled"
@@ -1314,11 +1322,16 @@ export const puckConfig: Config<Components> = {
           );
         }
         return (
-          <Card>
-            <CardHeader className={look === "tinted" ? "[background-color:var(--color-ink-850)] [border-bottom:var(--hairline)_solid_var(--color-ink-800)] [border-top-left-radius:inherit] [border-top-right-radius:inherit]" : undefined}>
-              {head}
-            </CardHeader>
-            <CardContent>
+          // h-full: inert on its own (the parent has no height), load-bearing
+          // inside a Columns cell, where a three-row ranking beside a chart
+          // otherwise draws a short card with bare ground under it.
+          <Card className="h-full">
+            {titled ? (
+              <CardHeader className={look === "tinted" ? "[background-color:var(--color-ink-850)] [border-bottom:var(--hairline)_solid_var(--color-ink-800)] [border-top-left-radius:inherit] [border-top-right-radius:inherit]" : undefined}>
+                {head}
+              </CardHeader>
+            ) : null}
+            <CardContent className={titled ? undefined : "[padding-top:var(--pad-card)]"}>
               <Body />
             </CardContent>
           </Card>

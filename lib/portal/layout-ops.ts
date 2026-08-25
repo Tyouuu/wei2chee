@@ -54,7 +54,11 @@ import {
  *  a REGISTERED_COMPONENTS membership check or a null test. */
 const COMPONENT_CONFIGS = puckConfig.components as Record<
   string,
-  { label?: string; defaultProps?: Record<string, unknown> }
+  {
+    label?: string;
+    defaultProps?: Record<string, unknown>;
+    fields?: Record<string, { type?: string }>;
+  }
 >;
 
 export const REGISTERED_COMPONENTS = Object.keys(COMPONENT_CONFIGS);
@@ -218,9 +222,33 @@ export const layoutOpsSchema = z.object({
 export type PuckNode = { type: string; props: Record<string, unknown> };
 export type PuckLayout = { root: Record<string, unknown>; content: PuckNode[] };
 
-const SLOT_KEYS = ["sidebar", "main"] as const;
+/**
+ * Which props of a component hold other components, READ OFF THE CONFIG.
+ *
+ * This used to be the literal `["sidebar", "main"]` -- SystemShell's two slots,
+ * correct on the day it was written and wrong the moment anything else nested.
+ * On 2026-08-25 the dashboard started wrapping its blocks in `Panel` (slot
+ * `body`) and putting pairs side by side in `Columns` (slots `a`/`b`/`c`), and
+ * every one of those blocks went INVISIBLE to this file: `describeLayout` gave
+ * the model a page whose table, workflow and ranking did not exist, and
+ * `applyLayoutOps` could not target them. Ten tests caught it; nothing on
+ * screen would have.
+ *
+ * Deriving it from the config means a component is walkable BY BEING
+ * REGISTERED. The same argument as puck-config-client.tsx: a list maintained
+ * by hand beside a list that grows is a list that is already wrong.
+ */
+const SLOT_KEYS: string[] = Array.from(
+  new Set(
+    Object.values(COMPONENT_CONFIGS).flatMap((c) =>
+      Object.entries(c.fields ?? {})
+        .filter(([, f]) => f?.type === "slot")
+        .map(([k]) => k),
+    ),
+  ),
+);
 
-/** Every node on the page, including the ones inside SystemShell's two slots. */
+/** Every node on the page, including the ones inside any component's slots. */
 export function walkNodes(nodes: PuckNode[]): PuckNode[] {
   return nodes.flatMap((n) => [
     n,

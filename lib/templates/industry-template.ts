@@ -810,16 +810,36 @@ function buildDashboard(
         sparkLabel: c.dashboard.sparkLabel,
       }),
 
-    trend: () =>
-      node("TrendChart", "dashboard-trend", {
+    trend: () => {
+      // THE AXIS SAYS WHICH MONTHS, NOT HOW MANY BACK.
+      //
+      // It used to read −5 −4 −3 −2 Last Now, from copy/chrome.ts. That is
+      // defensible in the abstract -- the chart is a shape, and a generated
+      // system has no real dates yet -- but put it beside Ant Design Pro's own
+      // dashboard, whose axis reads 1月 2月 3月, and ours is the one that looks
+      // like a placeholder somebody forgot to fill in. It is also less true:
+      // the caption already promises the last six periods, and the last six
+      // periods have names.
+      //
+      // Derived from today rather than stored, so it is right in December and
+      // right next year, and it says the same thing the caption says.
+      const now = new Date();
+      const months = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+        return lang === "zh"
+          ? `${d.getMonth() + 1}月`
+          : d.toLocaleDateString("en-US", { month: "short" });
+      });
+      return node("TrendChart", "dashboard-trend", {
         title: c.dashboard.trendTitle,
         caption: c.dashboard.trendCaption,
         unit: "RM",
         points: sample.heroSpark.map((value, i) => ({
-          label: c.dashboard.periods[i] ?? "",
+          label: months[i] ?? "",
           value,
         })),
-      }),
+      });
+    },
 
     /** A year of activity as squares. No axis and no figures -- texture where
      *  another register wants a chart. */
@@ -927,6 +947,92 @@ function buildDashboard(
    * moment the page is built, and changing register re-lays-out the page on the
    * same click that repaints it -- which is what 换风格 was always meant to do.
    */
+  /**
+   * WHICH BLOCKS NEED SOMETHING TO SIT IN.
+   *
+   * Measured, not guessed. Sampling reg-Console.png on 2026-08-25: the page
+   * ground is #f1f5f9 and the stat tiles are #ffffff -- so the register's
+   * card/ground step EXISTS and works. But the pixel under the ranking is
+   * #f1f5f9 and so is the pixel under the workflow: those blocks were drawn
+   * straight onto the ground with nothing around them. Half the page was
+   * cards on slate and half was ink on slate.
+   *
+   * That is the honest answer to 「为什么我们的平台就做不到呢」. Ant Design Pro
+   * is not better-looking block by block; every one of its blocks is a white
+   * card on a grey ground, and ours were cards only where the block happened
+   * to draw its own. The missing thing was never inside a block.
+   *
+   * WHY Panel AND NOT A CARD PROP ON EACH. Panel already has four looks --
+   * card, tinted, ruled, plain -- and every register already declares which
+   * one it wants (design-doc.ts). Until now the dashboard emitted no Panel at
+   * all, so eighteen registers each had a section preference that reached
+   * nothing. Wrapping here connects a wire that was already drawn: 玻璃 gets
+   * translucent cards, 瑞士 gets a hairline over each section, 墨 gets nothing
+   * at all -- which is 墨's entire argument and must stay possible.
+   *
+   * HEADERLESS ON PURPOSE. Each of these blocks already draws its own heading
+   * -- RecordTable's has a row count and filter segments beside it -- so the
+   * Panel is a surface, not a second title. Panel renders no header when it
+   * has no title (puck-config.tsx).
+   */
+  const NEEDS_SECTION = new Set([
+    "activity",
+    "progress",
+    "todo",
+    "board",
+    "ranking",
+    "flow",
+    "table",
+  ]);
+
+  let seq = 0;
+  const build = (role: string): PuckNode | null => {
+    const make = blocks[role];
+    if (!make) return null;
+    const inner = make();
+    if (!NEEDS_SECTION.has(role)) return inner;
+    // `look` is deliberately absent: puck-config-client fills it from the
+    // register's preference, and a value here would out-rank the register.
+    return node("Panel", `dashboard-section-${role}-${(seq += 1)}`, {
+      title: "",
+      description: "",
+      body: [inner],
+    });
+  };
+
+  /**
+   * 排法 -- the axis above composition.
+   *
+   * A composition entry is either one role ("table"), or two side by side
+   * ("trend|ranking"), with an optional proportion ("todo|stats2@half").
+   * Everything used to be one column stacked downwards no matter which
+   * register it was, which is why eighteen genuinely different compositions
+   * still produced eighteen pages of the same SHAPE. A console puts its
+   * ranking beside its chart; a ledger does not. That is a layout decision and
+   * it belongs to the register, like the composition itself.
+   *
+   * Below `md` Columns collapses to one column on its own, so a split costs
+   * nothing on a phone.
+   */
+  const compose = (entry: string): PuckNode | null => {
+    const [roles, proportion] = entry.split("@");
+    const parts = roles.split("|");
+    if (parts.length === 1) return build(parts[0]);
+
+    const a = build(parts[0]);
+    const b = build(parts[1]);
+    // A split whose other half could not be built is a split of one. Falling
+    // back to the single block beats rendering an empty column beside it.
+    if (!a || !b) return a ?? b;
+
+    return node("Columns", `dashboard-split-${parts.join("-")}`, {
+      layout: proportion || "wide-left",
+      a: [a],
+      b: [b],
+      c: [],
+    });
+  };
+
   const plan = dashboardComposition(style);
 
   return [
@@ -955,9 +1061,7 @@ function buildDashboard(
     }),
     // An unknown role is skipped rather than thrown: a composition naming a
     // block this page cannot build should cost that block, not the page.
-    ...plan
-      .map((role) => blocks[role]?.())
-      .filter((n): n is PuckNode => Boolean(n)),
+    ...plan.map(compose).filter((n): n is PuckNode => Boolean(n)),
   ];
 }
 
@@ -976,53 +1080,65 @@ function buildDashboard(
  */
 const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // A ledger is a table. It opens on one, and the figures come after -- which
-  // is the order a person who reads forty rows a day actually wants.
-  ledger: ["table", "stats4", "activity", "flow"],
-  // A shopfront: what is happening today first, warmly, then the money.
-  hearth: ["todo", "stats2", "trend", "table"],
-  // The neutral one, and the only one that should read as "a bit of everything".
-  blueprint: ["stats4", "trend", "todo", "flow", "table"],
+  // is the order a person who reads forty rows a day actually wants. The split
+  // is at the BOTTOM, where two small things belong beside each other rather
+  // than as two more full-width bands under a table that is already long.
+  ledger: ["table", "stats4", "activity|flow@half"],
+  // A shopfront: what is happening today, with the money beside it rather than
+  // under it -- the owner glances right, not down.
+  hearth: ["todo|stats2", "trend", "table"],
+  // The neutral one, and the only one that should read as "a bit of
+  // everything". Chart left, the day's list beside it: the most ordinary
+  // arrangement there is, which is the point of this register.
+  blueprint: ["stats4", "trend|todo", "flow", "table"],
   // For an owner who cannot read the others. Two figures at 17px base, no
-  // chart -- a chart at this type size is decoration they cannot use.
+  // chart -- and NO SPLIT: half of 1400 at this type size is four words a
+  // line. Single column is the register's whole argument.
   large: ["stats2", "todo", "table"],
   // Looks like the POS they already run: the filled table head is the object,
-  // so the table leads and a progress bar carries the month.
-  stamp: ["table", "progress", "stats4", "flow"],
-  // Black, white and one red on a printed sheet. A line, not bars; a rule, not
-  // a card; no board and no squares.
+  // so the table leads, then the month's progress with the figures beside it.
+  stamp: ["table", "progress|stats4@wide-right", "flow"],
+  // Black, white and one red on a PRINTED SHEET. A printed sheet is one
+  // column. No split -- this is the register where restraint is the design.
   swiss: ["stats4", "trend", "table", "flow"],
-  // Friendly and rounded. The day first, then one figure with its own
-  // supporting numbers rather than a row of equals.
-  soft: ["hero", "todo", "trend", "table"],
-  // Weight. Two enormous figures and the work, in slabs. No chart -- 3px
-  // borders around a line chart is a frame around a wisp.
+  // Friendly and rounded. One figure with its own supporting numbers, the
+  // day's list beside it, then the money.
+  soft: ["hero|todo@half", "trend", "table"],
+  // Weight. Two enormous figures and the work, in slabs. No chart, no split --
+  // a slab that is half a page wide stops being a slab.
   brut: ["stats2", "board", "table"],
-  // Space. One figure, a great deal of air, and the work. Nothing else.
+  // Space. One figure, a great deal of air, and the work. Nothing beside
+  // anything: a column of air is the register.
   ink: ["hero", "flow", "table"],
-  // Translucent panels want something behind them to see through: a chart and
-  // a board, layered, rather than a stack of opaque rows.
-  glass: ["stats4", "trend", "board", "table"],
-  // Lights off. An ops console: the figure, the chart, the queue.
-  night: ["hero", "trend", "table", "todo"],
-  // A shop sign. The name and the number are the sign; the rest is small.
+  // Translucent panels want something behind them to see through, and two
+  // panels side by side show more edges than one.
+  glass: ["stats4", "trend|board", "table"],
+  // Lights off. An ops console: the figure and its chart side by side at the
+  // top, then the queue.
+  night: ["hero|trend@wide-right", "table", "todo"],
+  // A shop sign. The name and the number are the sign; the rest is small and
+  // under it. A sign does not have two halves.
   signboard: ["hero", "table", "flow"],
   // A coloured ground with ivory panels floating on it -- panels want to be
-  // few and large, so: one figure, one chart, one table.
-  lacquer: ["hero", "trend", "table"],
-  // Every character the same width. Squares and a table are what monospace is
-  // for; a curved chart fights it.
-  code: ["stats4", "activity", "table", "ranking"],
-  // A patterned floor wants flat cards above it, in a rhythm.
-  tile: ["stats4", "todo", "trend", "table"],
-  // The sticker. Big, playful, board-shaped.
-  pop: ["stats4", "board", "trend", "table"],
-  // Tabler / AdminLTE: four tiles and a chart above the fold, then the ranking
-  // beside the table. This is what a console IS.
-  console: ["stats4", "trend", "ranking", "table", "todo"],
-  // Ant Design Pro: the list is the day. Table first-class, figures small,
-  // a ranking, and the flow last.
-  counter: ["stats4", "table", "ranking", "trend", "flow"],
+  // few and LARGE, so one figure beside one chart, then one table.
+  lacquer: ["hero|trend@wide-right", "table"],
+  // Every character the same width. Squares and a ranking are both grids of
+  // fixed cells, so they sit beside each other without either one reflowing.
+  code: ["stats4", "activity|ranking", "table"],
+  // A patterned floor wants flat cards above it, in a rhythm -- and a rhythm
+  // needs a row of two, not a column of one.
+  tile: ["stats4", "todo|trend@wide-right", "table"],
+  // The sticker. Big, playful, board-shaped, with the chart squeezed beside it.
+  pop: ["stats4", "board|trend@wide-left", "table"],
+  // Tabler / AdminLTE, and now actually shaped like them: four tiles, then the
+  // chart with the ranking BESIDE it -- which is the arrangement every one of
+  // those templates uses and the one we did not have.
+  console: ["stats4", "trend|ranking", "table", "todo"],
+  // Ant Design Pro: the list is the day, so the table is first-class and
+  // early. Then the same chart-and-ranking pair their own dashboard opens on.
+  counter: ["stats4", "table", "trend|ranking", "flow"],
 };
+
 
 /** The neutral composition, for a register with no entry and for the paths that
  *  build a page without knowing the style (the spec document, the founder

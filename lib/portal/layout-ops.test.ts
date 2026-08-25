@@ -7,6 +7,7 @@ import {
   REGISTERED_COMPONENTS,
   type LayoutOp,
   type PuckLayout,
+  type PuckNode,
 } from "./layout-ops";
 import { buildPageLayout } from "@/lib/templates/industry-template";
 import { normalizeTable } from "./table-model";
@@ -98,7 +99,12 @@ describe("applyLayoutOps", () => {
     ]);
     expect(applied).toBe(1);
     const shell = layout.content.find((n) => n.type === "SystemShell")!;
-    expect((shell.props.main as { type: string }[]).filter((n) => n.type === "RecordTable")).toHaveLength(2);
+    // Counted THROUGH the slots, not across the top of `main`: the dashboard's
+    // own table lives inside a Panel now, so a flat filter here would see the
+    // newly added one, miss the one already there, and pass just as happily if
+    // the op had dropped it in the wrong place.
+    const inMain = walkNodes(shell.props.main as PuckNode[]);
+    expect(inMain.filter((n) => n.type === "RecordTable")).toHaveLength(2);
     expect((shell.props.sidebar as { type: string }[]).map((n) => n.type)).toEqual(["RailNav"]);
   });
 

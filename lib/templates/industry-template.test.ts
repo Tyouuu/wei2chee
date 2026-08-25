@@ -11,6 +11,7 @@ import {
   type PageKey,
 } from "./industry-template";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { walkNodes, type PuckNode } from "@/lib/portal/layout-ops";
 
 const renovation: BusinessContext = {
   industry: {
@@ -36,17 +37,19 @@ const renovationZh: BusinessContext = { ...renovation, lang: "zh" };
 
 type Node = { type: string; props: Record<string, unknown> };
 
-/** A page is one SystemShell wrapping two slots (see buildPageLayout). These
- *  assertions are about what the customer ends up looking at, so they walk into
- *  the slots rather than stopping at the shell. */
-function flatten(nodes: Node[]): Node[] {
-  return nodes.flatMap((n) => {
-    const nested = ["sidebar", "main"].flatMap((slot) =>
-      Array.isArray(n.props[slot]) ? flatten(n.props[slot] as Node[]) : [],
-    );
-    return [n, ...nested];
-  });
-}
+/** A page is one SystemShell wrapping two slots, and since 2026-08-25 the
+ *  blocks inside `main` are themselves nested -- in a `Panel` that gives the
+ *  section a surface, or in a `Columns` that puts two of them side by side.
+ *  These assertions are about what the customer ends up LOOKING AT, so they
+ *  have to reach all the way down.
+ *
+ *  WHY IT BORROWS walkNodes RATHER THAN LISTING SLOTS AGAIN. This helper used
+ *  to carry its own `["sidebar", "main"]`, a second copy of the list in
+ *  layout-ops.ts, and when the dashboard started nesting, both copies were
+ *  wrong in the same way on the same day. That one derives its slot names from
+ *  the Puck config now; this uses that one. */
+const flatten = (nodes: Node[]): Node[] =>
+  walkNodes(nodes as unknown as PuckNode[]) as unknown as Node[];
 
 const layoutOf = (ctx: BusinessContext, key: (typeof PAGE_KEYS)[number], locale?: string) =>
   buildPageLayout(key, ctx, "我的生意", locale) as unknown as { content: Node[] };
@@ -196,6 +199,13 @@ describe("buildPageLayout", () => {
       "SiteHero",
       "InfoRows",      // what we do
       "Columns",       // work photos, three empty frames the owner fills
+      // The three frames INSIDE that Columns. They were always there; this
+      // list could not see them until `flatten` started walking every slot
+      // rather than the shell's two -- which is the same blindness that hid
+      // the dashboard's own table from the AI.
+      "PhotoFrame",
+      "PhotoFrame",
+      "PhotoFrame",
       "InfoRows",      // a price guide, never a price
       "WorkflowStrip", // what happens after you call
       "ShelfList",     // what customers say
