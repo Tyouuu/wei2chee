@@ -742,7 +742,16 @@
     "enquiries": "官网来的询价",
     "enquiriesBlurb": "客人在你的官网填表送出的，会直接落在这里 —— 不用有人转抄。系统正式交付之后，这些会直接进你自己的那一页。",
     "enquiriesEmpty": "还没有人来问。官网上线之后，第一条会出现在这里。",
-    "enquiriesLandsIn": "交付后会进：{page}"
+    "enquiriesLandsIn": "交付后会进：{page}",
+    "sections": {
+      "title": "版段库",
+      "subtitle": "{n} 段 · 可以直接放进官网",
+      "search": "搜索版段…",
+      "all": "全部",
+      "allN": "全部 {n} →",
+      "body": "整段套用，里面的字是版段自己的；穿的是你选的风格。在编辑器里用「官网版段」放进页面。",
+      "none": "没有找到「{query}」。"
+    }
   },
   "explainer": {
     "process": {

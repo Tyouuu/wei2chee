@@ -6,7 +6,8 @@ import { PageBar } from "../page-bar";
 import chrome from "../../chrome.module.css";
 import { Specimen } from "@/design-system/editor/specimen";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-import { SECTION_SHELVES, orderShelves } from "./shelves";
+import { SECTION_SHELVES, shelfNames, orderShelves } from "./shelves";
+import { useTranslations } from "next-intl";
 
 /**
  * 版段库 — the 216 whole page sections pulled from the @7Ovr registry (MIT-0).
@@ -81,12 +82,19 @@ function SectionTile({
 const ROW = 3;
 
 export function SectionsClient({
+  locale,
   style,
   palette,
 }: {
+  locale: string;
   style: StyleName;
   palette: string | null;
 }) {
+  const t = useTranslations("portal.sections");
+  // Chrome, so it follows the interface locale. The SEARCH still reads the
+  // Chinese names as well -- an owner who has been using this page in Chinese
+  // and switches should not lose the word he was about to type.
+  const names = shelfNames(locale);
   const [query, setQuery] = useState("");
   /* null = the sectioned front door. See the grid below, and 组件库's own
      note: 21st.dev opens on rows, not on one shelf and not on everything. */
@@ -107,7 +115,8 @@ export function SectionsClient({
           ([name, m]) =>
             name.toLowerCase().includes(q) ||
             m.title.toLowerCase().includes(q) ||
-            (SECTION_SHELVES[m.cats.split("/")[0]] ?? "").includes(q),
+            (SECTION_SHELVES[m.cats.split("/")[0]] ?? "").includes(q) ||
+            (names[m.cats.split("/")[0]] ?? "").toLowerCase().includes(q),
         )
         .map(([name]) => name);
     }
@@ -116,11 +125,11 @@ export function SectionsClient({
     return active ? (BLOCK_CATEGORIES[active] ?? []) : [];
   }, [query, active]);
 
-  const shelfName = (k: string) => SECTION_SHELVES[k] ?? k;
+  const shelfName = (k: string) => names[k] ?? SECTION_SHELVES[k] ?? k;
 
   return (
     <>
-      <PageBar title="版段库" subtitle={`${total} 段 · 可以直接放进官网`} />
+      <PageBar title={t("title")} subtitle={t("subtitle", { n: total })} />
 
       <div className="flex items-start gap-8 px-8 py-7">
         <nav className="sticky top-4 hidden w-[190px] shrink-0 lg:block">
@@ -128,8 +137,8 @@ export function SectionsClient({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索版段…"
-            aria-label="搜索版段"
+            placeholder={t("search")}
+            aria-label={t("search")}
             className="mb-4 w-full rounded-[var(--radius-md)] border px-3 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-xs)] outline-none focus-visible:[border-color:var(--color-paper-dim)]"
           />
           <ul className="flex flex-col gap-px">
@@ -150,7 +159,7 @@ export function SectionsClient({
                     : "[color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-900)] hover:[color:var(--color-paper)]"
                 }`}
               >
-                <span className="min-w-0 flex-1 truncate">全部</span>
+                <span className="min-w-0 flex-1 truncate">{t("all")}</span>
                 <span className="[font-family:var(--font-numeric)] tabular-nums opacity-55">
                   {total}
                 </span>
@@ -190,8 +199,8 @@ export function SectionsClient({
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="搜索版段…"
-              aria-label="搜索版段"
+              placeholder={t("search")}
+              aria-label={t("search")}
               className="w-40 shrink-0 rounded-[var(--radius-pill)] border px-3 py-1.5 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-xs)] outline-none"
             />
             {shelves.map((key) => (
@@ -218,19 +227,19 @@ export function SectionsClient({
 
           <div className="flex items-baseline gap-3">
             <h2 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-              {searching ? query.trim() : active ? shelfName(active) : "全部"}
+              {searching ? query.trim() : active ? shelfName(active) : t("all")}
             </h2>
             <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)] tabular-nums">
               {shown.length}
             </span>
           </div>
           <p className="mt-1.5 max-w-xl [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
-            整段套用，里面的字是版段自己的；穿的是你选的风格。在编辑器里用「官网版段」放进页面。
+            {t("body")}
           </p>
 
           {shown.length === 0 && (
             <p className="mt-10 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
-              没有找到「{query}」。
+              {t("none", { query })}
             </p>
           )}
 
@@ -261,7 +270,7 @@ export function SectionsClient({
                         onClick={() => setActive(key)}
                         className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)]"
                       >
-                        全部 {BLOCK_CATEGORIES[key].length} →
+                        {t("allN", { n: BLOCK_CATEGORIES[key].length })}
                       </button>
                     )}
                   </div>

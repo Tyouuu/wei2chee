@@ -10,7 +10,13 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
  * to render honestly: what is on screen must be the customer's own style, not
  * a screenshot of somebody else's.
  */
-export default async function SectionsPage() {
+export default async function SectionsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
@@ -23,6 +29,7 @@ export default async function SectionsPage() {
 
   return (
     <SectionsClient
+      locale={locale}
       style={(project?.style as StyleName) ?? "blueprint"}
       palette={(project?.palette as string | null) ?? null}
     />

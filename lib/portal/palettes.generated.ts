@@ -10,27 +10,57 @@ export type PaletteRow = {
   blurb: string;
   /** Which trades this one is for. Shown under the name in the picker. */
   who: string;
+  /**
+   * The same three, for the English portal.
+   *
+   * Written out rather than machine-translated: 「深红配奶油底,老字号的正式红」
+   * is not 「dark red with cream base, the formal red of an old brand」, it is
+   * 「Deep red on cream. The formal red of an old shop.」 -- and 老字号 has no
+   * one-word English equivalent at all. A palette a business owner is choosing
+   * by feel is exactly the wrong place for a translation that reads translated.
+   */
+  labelEn: string;
+  blurbEn: string;
+  whoEn: string;
   /** ground / accent / line / fill, read straight out of the palette. */
   dots: [string, string, string, string];
 };
 
 export const PALETTE_ROWS: PaletteRow[] = [
-  { key: "vercel", label: "极简黑", blurb: "黑白灰,没有一点多余颜色", who: "任何行业·最稳的一套",
+  { key: "vercel",
+    label: "极简黑", blurb: "黑白灰,没有一点多余颜色", who: "任何行业·最稳的一套",
+    labelEn: "Ink", blurbEn: "Black, white, grey. Not one colour more.", whoEn: "Any trade · the safe one",
     dots: ["oklch(0.9900 0 0)", "oklch(0 0 0)", "oklch(0.9200 0 0)", "oklch(0.9700 0 0)"] },
-  { key: "modern-minimal", label: "标准蓝", blurb: "最常见的软件蓝,不会出错", who: "一般服务·教育·中介·科技·水电冷气",
+  { key: "modern-minimal",
+    label: "标准蓝", blurb: "最常见的软件蓝,不会出错", who: "一般服务·教育·中介·科技·水电冷气",
+    labelEn: "Standard Blue", blurbEn: "The blue most business software uses. Hard to get wrong.", whoEn: "Services · education · agencies · tech · aircon & plumbing",
     dots: ["oklch(1.0000 0 0)", "oklch(0.5731 0.1880 259.81)", "oklch(0.9276 0.0058 264.5313)", "oklch(0.9846 0.0017 247.8389)"] },
-  { key: "clean-slate", label: "群青", blurb: "饱和的蓝紫,现代", who: "顾问·工程·设计·活动·律师·会计",
+  { key: "clean-slate",
+    label: "群青", blurb: "饱和的蓝紫,现代", who: "顾问·工程·设计·活动·律师·会计",
+    labelEn: "Ultramarine", blurbEn: "Saturated blue-violet. Modern.", whoEn: "Consulting · engineering · design · events · law · accounting",
     dots: ["oklch(0.9842 0.0034 247.8575)", "oklch(0.5754 0.2041 277.12)", "oklch(0.8717 0.0093 258.3382)", "oklch(0.9670 0.0029 264.5419)"] },
-  { key: "elegant-luxury", label: "朱红", blurb: "深红配奶油底,老字号的正式红", who: "餐饮·中药行·婚宴·礼品·零售",
+  { key: "elegant-luxury",
+    label: "朱红", blurb: "深红配奶油底,老字号的正式红", who: "餐饮·中药行·婚宴·礼品·零售",
+    labelEn: "Vermilion", blurbEn: "Deep red on cream. The formal red of an old shop.", whoEn: "F&B · herbal medicine · weddings · gifts · retail",
     dots: ["oklch(0.9779 0.0042 56.3756)", "oklch(0.4650 0.1470 24.9381)", "oklch(0.9355 0.0324 80.9937)", "oklch(0.9431 0.0068 53.4442)"] },
-  { key: "tangerine", label: "橘", blurb: "饱和的橘色,看得远", who: "物流·搬运·五金·工程·装修",
+  { key: "tangerine",
+    label: "橘", blurb: "饱和的橘色,看得远", who: "物流·搬运·五金·工程·装修",
+    labelEn: "Tangerine", blurbEn: "Saturated orange. Visible from far away.", whoEn: "Logistics · movers · hardware · trades · renovation",
     dots: ["oklch(0.9383 0.0042 236.4993)", "oklch(0.5797 0.1720 36.44)", "oklch(0.9022 0.0052 247.8822)", "oklch(0.9846 0.0017 247.8389)"] },
-  { key: "amber-minimal", label: "琥珀", blurb: "琥珀黄,账本和单据的感觉", who: "会计·当铺·金行·米粮·土产",
+  { key: "amber-minimal",
+    label: "琥珀", blurb: "琥珀黄,账本和单据的感觉", who: "会计·当铺·金行·米粮·土产",
+    labelEn: "Amber", blurbEn: "Amber yellow. Ledgers and receipts.", whoEn: "Accounting · pawnshops · goldsmiths · grain · local produce",
     dots: ["oklch(1.0000 0 0)", "oklch(0.5686 0.1647 70.08)", "oklch(0.9276 0.0058 264.5313)", "oklch(0.9846 0.0017 247.8389)"] },
-  { key: "nature", label: "森绿", blurb: "深绿配米白,沉稳", who: "环保·林业·户外·农产·诊所·健康",
+  { key: "nature",
+    label: "森绿", blurb: "深绿配米白,沉稳", who: "环保·林业·户外·农产·诊所·健康",
+    labelEn: "Forest", blurbEn: "Deep green on off-white. Steady.", whoEn: "Environment · forestry · outdoors · farming · clinics · wellness",
     dots: ["oklch(0.9711 0.0074 80.7211)", "oklch(0.5234 0.1347 144.1672)", "oklch(0.8805 0.0208 74.6428)", "oklch(0.9370 0.0142 74.4218)"] },
-  { key: "rosewood", label: "紫檀", blurb: "沉的梅紫,不是粉红", who: "美容·婚纱·花艺·精品·养生",
+  { key: "rosewood",
+    label: "紫檀", blurb: "沉的梅紫,不是粉红", who: "美容·婚纱·花艺·精品·养生",
+    labelEn: "Rosewood", blurbEn: "A deep plum. Not pink.", whoEn: "Beauty · bridal · florists · boutiques · wellness",
     dots: ["oklch(0.9790 0.0080 325)", "oklch(0.4700 0.1350 325)", "oklch(0.8850 0.0220 325)", "oklch(0.9520 0.0140 325)"] },
-  { key: "zen", label: "宣纸", blurb: "暖纸底配墨黑,唯一一套不是白底的", who: "茶行·药材·古董·手作·咖啡·民宿",
+  { key: "zen",
+    label: "宣纸", blurb: "暖纸底配墨黑,唯一一套不是白底的", who: "茶行·药材·古董·手作·咖啡·民宿",
+    labelEn: "Rice Paper", blurbEn: "Ink on warm paper. The only one that is not white.", whoEn: "Tea · herbs · antiques · craft · coffee · guesthouses",
     dots: ["oklch(0.9380 0.0130 85)", "oklch(0.2450 0.0080 85)", "oklch(0.8400 0.0160 85)", "oklch(0.9050 0.0150 85)"] },
 ];

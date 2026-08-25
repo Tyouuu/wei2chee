@@ -127,6 +127,7 @@ export function StylesClient({
   const [active, setActive] = useState<StyleName>(style);
   const [pending, setPending] = useState<StyleName | null>(null);
   const [failed, setFailed] = useState(false);
+  const zh = locale === "zh";
   const [activePalette, setActivePalette] = useState<string | null>(palette);
   const [palettePending, setPalettePending] = useState<string | null>(null);
 
@@ -294,9 +295,13 @@ export function StylesClient({
             {PALETTES.map((p) => (
               <PaletteCard
                 key={p.key}
-                label={p.label}
-                blurb={p.blurb}
-                who={p.who}
+                // Chrome, so it follows the interface locale. See PaletteRow:
+                // the English is written out rather than translated, because
+                // 「深红配奶油底,老字号的正式红」 has no faithful machine rendering
+                // and 老字号 has no one-word English equivalent at all.
+                label={zh ? p.label : p.labelEn}
+                blurb={zh ? p.blurb : p.blurbEn}
+                who={zh ? p.who : p.whoEn}
                 dots={p.dots}
                 styleName={active}
                 paletteKey={p.key}

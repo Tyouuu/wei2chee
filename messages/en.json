@@ -742,7 +742,16 @@
     "enquiries": "Enquiries from your website",
     "enquiriesBlurb": "What visitors send from your own site lands here — nobody has to retype it. Once the system is delivered these go straight into your own page.",
     "enquiriesEmpty": "Nobody has written yet. The first one appears here once your site is live.",
-    "enquiriesLandsIn": "After delivery this becomes a row in: {page}"
+    "enquiriesLandsIn": "After delivery this becomes a row in: {page}",
+    "sections": {
+      "title": "Sections",
+      "subtitle": "{n} sections · drop straight into your site",
+      "search": "Search sections…",
+      "all": "All",
+      "allN": "All {n} →",
+      "body": "A whole section at a time. The words are the section's own; the look is the style you picked. In the editor, add it with 「Site section」.",
+      "none": "Nothing matches “{query}”."
+    }
   },
   "explainer": {
     "process": {

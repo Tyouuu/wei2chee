@@ -74,6 +74,80 @@ export const SECTION_SHELVES: Record<string, string> = {
   "command-palette": "命令面板"
 };
 
+/**
+ * The same shelves, for the English portal.
+ *
+ * 「不是這個英文 是我的平台裡面用英文」 -- 2026-08-26. Measured on /en/portal, this
+ * page carried 58 Chinese strings, second only to 组件库, and most of them were
+ * the shelf rail above.
+ *
+ * NOT the registry's own slugs, which is the lazy answer available for free:
+ * they read logo-cloud, how-it-works, cookie-consent, empty-states. Those are
+ * developer keys, and the note above this file explains why they were not used
+ * in Chinese either -- the shelf name is the difference between a shelf an
+ * owner opens and one he skips.
+ */
+export const SECTION_SHELVES_EN: Record<string, string> = {
+  "hero": "Hero",
+  "features": "Features",
+  "pricing": "Pricing",
+  "faqs": "FAQs",
+  "cta": "Call to action",
+  "testimonials": "Testimonials",
+  "stats": "Numbers",
+  "footer": "Footer",
+  "header": "Header",
+  "logo-cloud": "Logos",
+  "how-it-works": "How it works",
+  "gallery": "Work",
+  "about": "About us",
+  "team": "Team",
+  "contact": "Contact",
+  "newsletter": "Subscribe",
+  "integrations": "Integrations",
+  "comparison": "Comparison",
+  "bento": "Bento",
+  "blog": "Blog",
+  "article": "Article",
+  "careers": "Careers",
+  "changelog": "Changelog",
+  "coming-soon": "Coming soon",
+  "cookie-consent": "Cookie notice",
+  "dashboard": "Dashboard",
+  "charts": "Charts",
+  "kanban": "Board",
+  "calendar": "Calendar",
+  "timeline": "Timeline",
+  "roadmap": "Roadmap",
+  "activity": "Activity",
+  "notifications": "Notifications",
+  "onboarding": "Onboarding",
+  "billing": "Billing",
+  "profile": "Profile",
+  "settings": "Settings",
+  "search": "Search",
+  "table": "Table",
+  "steps": "Steps",
+  "status": "Status",
+  "error": "Error page",
+  "page-header": "Page header",
+  "file-upload": "Upload",
+  "auth": "Sign in",
+  "empty-states": "Empty states",
+  "survey": "Survey",
+  "announcement": "Announcement",
+  "app-shell": "App shell",
+  "sidebar": "Sidebar",
+  "chat": "Chat",
+  "ai-chat": "AI chat",
+  "command-palette": "Command palette",
+};
+
+/** Whichever the interface is speaking. */
+export function shelfNames(locale: string): Record<string, string> {
+  return locale === "zh" ? SECTION_SHELVES : SECTION_SHELVES_EN;
+}
+
 /** Website shelves, in assembly order. Everything not listed follows, in the
  *  registry's own order. */
 export const SITE_SHELF_ORDER: string[] = [
