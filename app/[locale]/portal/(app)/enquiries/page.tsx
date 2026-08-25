@@ -33,7 +33,7 @@ export default async function EnquiriesPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-10">
-      <h1 className="text-[1.35rem] font-semibold [color:var(--color-nav-fg,inherit)]">
+      <h1 className="[font-size:var(--text-title)] font-semibold">
         {t("enquiries")}
       </h1>
       <p className="mt-2 max-w-[62ch] text-sm opacity-70">{t("enquiriesBlurb")}</p>

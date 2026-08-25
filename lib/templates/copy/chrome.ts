@@ -85,6 +85,9 @@ export type Chrome = {
     /** The one action an owner opens the system to take. A real link into
      *  their own sell-side page -- see buildDashboard. */
     primaryAction: (sellSide: string) => string;
+    /** The heading over the ranked list some registers open with instead of a
+     *  chart. Ranked by value this year, from the same records. */
+    rankingTitle: string;
   };
 
   customers: {
@@ -212,6 +215,7 @@ const EN: Chrome = {
     todoAction: "Open",
     recentFilters: ["In progress", "Awaiting payment"],
     primaryAction: (sellSide) => `New ${sellSide.toLowerCase()}`,
+    rankingTitle: "Who is worth the most",
   },
 
   customers: {
@@ -350,6 +354,7 @@ const ZH: Chrome = {
     todoAction: "打开",
     recentFilters: ["进行中", "待收款"],
     primaryAction: (sellSide) => `新增${sellSide}`,
+    rankingTitle: "最大的几个客户",
   },
 
   customers: {

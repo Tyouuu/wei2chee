@@ -671,6 +671,11 @@ function buildDashboard(
   name: string,
   locale: string,
   pages: PageRef[],
+  /** The register this page will be rendered in. It decides which blocks the
+   *  page is MADE OF -- see dashboardComposition below. Optional because two
+   *  callers build a page without a customer attached (the spec document, the
+   *  founder console); those get the neutral composition. */
+  style?: string | null,
 ): PuckNode[] {
   const lang = langOf(ctx);
   const c = chrome(lang);
@@ -730,19 +735,209 @@ function buildDashboard(
   //                      so it costs no new invented data.
   const followHref = `/${locale}/portal/${pages.find((p) => p.key === "customers")?.key ?? "dashboard"}`;
 
+  /**
+   * EVERY BLOCK THIS PAGE KNOWS HOW TO BUILD, keyed by the JOB it does.
+   *
+   * A register picks a subset and an order (`compose`, below). Two registers
+   * that both want "the headline figure" get a different OBJECT for it -- a
+   * four-tile row, a single hero card, or two oversized numbers -- because they
+   * are different designs, not one design in two colours.
+   */
+  const blocks: Record<string, () => PuckNode> = {
+    /** Four tiles across. The console answer: everything visible at once. */
+    stats4: () =>
+      node("StatRow", "dashboard-stats", {
+        tiles: [
+          {
+            label: sample.heroLabel,
+            value: sample.heroValue,
+            deltaLabel: sample.heroSuffix,
+            tone: "good",
+            iconName: "payments",
+            href: `/${locale}/portal/payments`,
+          },
+          ...sample.heroStats.map((st, i) => ({
+            label: st.label,
+            value: st.value,
+            deltaLabel: st.sub ?? "",
+            // The sample files speak HeroCard's vocabulary ("caution"/"warn");
+            // StatRow reads the FIGURE rather than the direction.
+            tone: st.tone === "warn" ? "bad" : st.tone === "caution" ? "warn" : "normal",
+            iconName: ["projects", "quotations", "reconciliation"][i] ?? "dashboard",
+            href: `/${locale}/portal/payments`,
+          })),
+        ],
+      }),
+
+    /** Two tiles. For a register whose type is too large for four across --
+     *  大字 at 17px base truncates every label at four. */
+    stats2: () =>
+      node("StatRow", "dashboard-stats", {
+        tiles: [
+          {
+            label: sample.heroLabel,
+            value: sample.heroValue,
+            deltaLabel: sample.heroSuffix,
+            tone: "good",
+            iconName: "payments",
+            href: `/${locale}/portal/payments`,
+          },
+          {
+            label: sample.heroStats[2]?.label ?? sample.heroStats[0].label,
+            value: sample.heroStats[2]?.value ?? sample.heroStats[0].value,
+            deltaLabel: sample.heroStats[2]?.sub ?? "",
+            tone: "bad",
+            iconName: "reconciliation",
+            href: `/${locale}/portal/payments`,
+          },
+        ],
+      }),
+
+    /** ONE figure with its supporting numbers beneath it -- the argument
+     *  hero-card.tsx makes in its own header, given to the registers that
+     *  agree with it. A different object from a tile row, not a restyled one. */
+    hero: () =>
+      node("HeroCard", "dashboard-hero", {
+        label: sample.heroLabel,
+        value: sample.heroValue,
+        href: `/${locale}/portal/payments`,
+        chgSuffix: sample.heroSuffix,
+        stats: sample.heroStats.map((st) => ({
+          ...st,
+          href: `/${locale}/portal/payments`,
+        })),
+        spark: sample.heroSpark.map((n) => ({ n })),
+        sparkLabel: c.dashboard.sparkLabel,
+      }),
+
+    trend: () =>
+      node("TrendChart", "dashboard-trend", {
+        title: c.dashboard.trendTitle,
+        caption: c.dashboard.trendCaption,
+        unit: "RM",
+        points: sample.heroSpark.map((value, i) => ({
+          label: c.dashboard.periods[i] ?? "",
+          value,
+        })),
+      }),
+
+    /** A year of activity as squares. No axis and no figures -- texture where
+     *  another register wants a chart. */
+    activity: () =>
+      node("ActivitySquares", "dashboard-activity", {
+        label: c.dashboard.trendCaption,
+      }),
+
+    /** How far through the month the money is. One bar, one number. */
+    progress: () =>
+      node("Progress", "dashboard-progress", {
+        label: sample.heroLabel,
+        value: 68,
+      }),
+
+    todo: () =>
+      node("ShelfList", "dashboard-today", {
+        heading: c.dashboard.todoTitle,
+        items: sample.records.slice(0, 3).map((r) => ({
+          title: r.primary,
+          description: r.status,
+          icon: "work",
+          action: c.dashboard.todoAction,
+          href: followHref,
+        })),
+      }),
+
+    /** The same day as a BOARD rather than a list: columns by stage.
+     *
+     *  TaskBoard takes stages and cards as TWO flat arrays, not stages that
+     *  contain their cards -- a card names its column by string. The first
+     *  version nested them and the block rendered as nothing at all, which is
+     *  the honest failure mode for a board with no columns but invisible in
+     *  every test. Caught by looking at 粗野 and seeing an empty half-page. */
+    board: () => {
+      const stages = workflowStages(ctx).slice(0, 3);
+      return node("TaskBoard", "dashboard-board", {
+        stages: stages.map((name) => ({ name })),
+        cards: sample.records.slice(0, 3).map((r, i) => ({
+          title: r.primary,
+          stage: stages[i % stages.length],
+          note: [r.secondary, r.amount].filter(Boolean).join(" · "),
+        })),
+      });
+    },
+
+    /** Who is worth the most. A ranked list, not a chart. */
+    ranking: () =>
+      node("MarkList", "dashboard-ranking", {
+        heading: c.dashboard.rankingTitle,
+        rule: "border",
+        marks: sample.records.map((r, i) => ({
+          text: `${i + 1}. ${r.secondary ?? r.primary}${r.amount ? ` · ${r.amount}` : ""}`,
+          tone: i === 0 ? "good" : "warn",
+          icon: "person",
+        })),
+      }),
+
+    flow: () =>
+      workflowStrip(
+        "dashboard-workflow",
+        c.dashboard.workflowTitle,
+        workflowStages(ctx),
+      ),
+
+    table: () =>
+      recordTable(
+        "dashboard-recent",
+        c.dashboard.recent(labels.order),
+        {
+          primary: labels.order,
+          secondary: labels.customer,
+          amount: c.col.amount,
+          status: c.col.status,
+        },
+        sample.records,
+        c.dashboard.recentFilters,
+      ),
+  };
+
+  /**
+   * THE REGISTER PICKS THE PAGE, NOT JUST THE PAINT.
+   *
+   * The founder, on 2026-08-25, looking at eighteen registers side by side:
+   * 「怎么全部看起来又一样呢？不是说要用不同的元件 去设计不同的风格吗 为什么每次
+   * 都讲不听」. He was right, and the number that told me otherwise was worthless.
+   * `check:registers` hashes structural CSS classes, so an 8px difference in
+   * rail width made two identical pages "distinct" -- it answered "are any two
+   * byte-identical", never "do these look like different designs".
+   *
+   * The cause was right here. buildDashboard returned ONE array for all
+   * eighteen -- rail, header, StatRow, TrendChart, ShelfList, WorkflowStrip,
+   * RecordTable -- and the entire variant layer could only change how each of
+   * those seven was PAINTED. Three hundred preferences over one skeleton.
+   *
+   * A composition is the skeleton. 台账 opens on its table, because a ledger IS
+   * a table. 墨 opens on one figure and a great deal of air. 仪表盘 puts four
+   * tiles and a chart above the fold because that is what a console is. 大字
+   * gets two oversized figures and no chart at all, because a chart at that
+   * type size is unreadable to the person the register exists for.
+   *
+   * WHY IT COSTS NO MIGRATION: this function runs on READ. A generated page is
+   * a read-side default until the customer's first save (see the note in
+   * app/[locale]/portal/[pageKey]/page.tsx), so the style is known at the
+   * moment the page is built, and changing register re-lays-out the page on the
+   * same click that repaints it -- which is what 换风格 was always meant to do.
+   */
+  const plan = dashboardComposition(style);
+
   return [
     railNav(labels, brand, name, "dashboard", locale, pages, lang),
     node("PageHeader", "dashboard-header", {
       title: c.dashboard.title,
       subtitle,
-      // WHY A BUTTON AND NOT A TOP BAR. The plan for this screen said 「顶栏：
-      // 面包屑 + 搜索 ⌘K + 通知红点 + 头像」, copied from the competitors. Three
-      // of those four are already in the rail, and the fourth -- a search box
-      // that finds nothing until the system is actually built -- is the one
-      // kind of thing this preview must never contain. What the competitors'
-      // top bar really contributes at this size is a PRIMARY ACTION, so that
-      // is what gets built: the single thing an owner opens their system to
-      // do, pointing at their own sell-side page.
+      // WHY A BUTTON AND NOT A TOP BAR: three of the four things a competitor's
+      // top bar carries are already in the rail, and the fourth is a search box
+      // that finds nothing until the system is really built. What their top bar
+      // actually contributes at this width is a PRIMARY ACTION.
       actionLabel: c.dashboard.primaryAction(
         pageLabel(
           pages.find((p) =>
@@ -758,68 +953,83 @@ function buildDashboard(
         )?.key ?? "customers"
       }`,
     }),
-    node("StatRow", "dashboard-stats", {
-      // The headline figure leads, then the three supporting counts -- the same
-      // four numbers the hero card carried, at sizes a reader can rank.
-      tiles: [
-        {
-          label: sample.heroLabel,
-          value: sample.heroValue,
-          deltaLabel: sample.heroSuffix,
-          tone: "good",
-          iconName: "payments",
-          href: `/${locale}/portal/payments`,
-        },
-        ...sample.heroStats.map((st, i) => ({
-          label: st.label,
-          value: st.value,
-          deltaLabel: st.sub ?? "",
-          // The sample files speak HeroCard's vocabulary ("caution" / "warn");
-          // this one reads the figure rather than the direction. Mapped rather
-          // than renamed, so nothing else that consumes the samples moves.
-          tone: st.tone === "warn" ? "bad" : st.tone === "caution" ? "warn" : "normal",
-          iconName: ["projects", "quotations", "reconciliation"][i] ?? "dashboard",
-          href: `/${locale}/portal/payments`,
-        })),
-      ],
-    }),
-    node("TrendChart", "dashboard-trend", {
-      title: c.dashboard.trendTitle,
-      caption: c.dashboard.trendCaption,
-      unit: "RM",
-      points: sample.heroSpark.map((value, i) => ({
-        label: c.dashboard.periods[i] ?? "",
-        value,
-      })),
-    }),
-    node("ShelfList", "dashboard-today", {
-      heading: c.dashboard.todoTitle,
-      items: sample.records.slice(0, 3).map((r) => ({
-        title: r.primary,
-        description: r.status,
-        icon: "work",
-        action: c.dashboard.todoAction,
-        href: followHref,
-      })),
-    }),
-    workflowStrip(
-      "dashboard-workflow",
-      c.dashboard.workflowTitle,
-      workflowStages(ctx),
-    ),
-    recordTable(
-      "dashboard-recent",
-      c.dashboard.recent(labels.order),
-      {
-        primary: labels.order,
-        secondary: labels.customer,
-        amount: c.col.amount,
-        status: c.col.status,
-      },
-      sample.records,
-      c.dashboard.recentFilters,
-    ),
+    // An unknown role is skipped rather than thrown: a composition naming a
+    // block this page cannot build should cost that block, not the page.
+    ...plan
+      .map((role) => blocks[role]?.())
+      .filter((n): n is PuckNode => Boolean(n)),
   ];
+}
+
+/**
+ * Which blocks each register's dashboard is made of, and in what order.
+ *
+ * WHY IT LIVES HERE AND NOT IN design-doc.ts. That file holds the register's
+ * BRIEF -- its mood, its measurements, and which variant of each component it
+ * prefers. This is a different kind of statement: it names blocks that only
+ * this builder can build, and putting it there would make design-doc.ts import
+ * a vocabulary it has no other use for. The brief says how a register looks;
+ * this says what its dashboard IS.
+ *
+ * Every composition below was chosen from the register's own argument, not
+ * shuffled for variety:
+ */
+const DASHBOARD_COMPOSITION: Record<string, string[]> = {
+  // A ledger is a table. It opens on one, and the figures come after -- which
+  // is the order a person who reads forty rows a day actually wants.
+  ledger: ["table", "stats4", "activity", "flow"],
+  // A shopfront: what is happening today first, warmly, then the money.
+  hearth: ["todo", "stats2", "trend", "table"],
+  // The neutral one, and the only one that should read as "a bit of everything".
+  blueprint: ["stats4", "trend", "todo", "flow", "table"],
+  // For an owner who cannot read the others. Two figures at 17px base, no
+  // chart -- a chart at this type size is decoration they cannot use.
+  large: ["stats2", "todo", "table"],
+  // Looks like the POS they already run: the filled table head is the object,
+  // so the table leads and a progress bar carries the month.
+  stamp: ["table", "progress", "stats4", "flow"],
+  // Black, white and one red on a printed sheet. A line, not bars; a rule, not
+  // a card; no board and no squares.
+  swiss: ["stats4", "trend", "table", "flow"],
+  // Friendly and rounded. The day first, then one figure with its own
+  // supporting numbers rather than a row of equals.
+  soft: ["hero", "todo", "trend", "table"],
+  // Weight. Two enormous figures and the work, in slabs. No chart -- 3px
+  // borders around a line chart is a frame around a wisp.
+  brut: ["stats2", "board", "table"],
+  // Space. One figure, a great deal of air, and the work. Nothing else.
+  ink: ["hero", "flow", "table"],
+  // Translucent panels want something behind them to see through: a chart and
+  // a board, layered, rather than a stack of opaque rows.
+  glass: ["stats4", "trend", "board", "table"],
+  // Lights off. An ops console: the figure, the chart, the queue.
+  night: ["hero", "trend", "table", "todo"],
+  // A shop sign. The name and the number are the sign; the rest is small.
+  signboard: ["hero", "table", "flow"],
+  // A coloured ground with ivory panels floating on it -- panels want to be
+  // few and large, so: one figure, one chart, one table.
+  lacquer: ["hero", "trend", "table"],
+  // Every character the same width. Squares and a table are what monospace is
+  // for; a curved chart fights it.
+  code: ["stats4", "activity", "table", "ranking"],
+  // A patterned floor wants flat cards above it, in a rhythm.
+  tile: ["stats4", "todo", "trend", "table"],
+  // The sticker. Big, playful, board-shaped.
+  pop: ["stats4", "board", "trend", "table"],
+  // Tabler / AdminLTE: four tiles and a chart above the fold, then the ranking
+  // beside the table. This is what a console IS.
+  console: ["stats4", "trend", "ranking", "table", "todo"],
+  // Ant Design Pro: the list is the day. Table first-class, figures small,
+  // a ranking, and the flow last.
+  counter: ["stats4", "table", "ranking", "trend", "flow"],
+};
+
+/** The neutral composition, for a register with no entry and for the paths that
+ *  build a page without knowing the style (the spec document, the founder
+ *  console). Deliberately 蓝图's -- the register whose whole argument is that it
+ *  is safe for any trade. */
+export function dashboardComposition(style?: string | null): string[] {
+  return (style && DASHBOARD_COMPOSITION[style]) || DASHBOARD_COMPOSITION.blueprint;
 }
 
 /**
@@ -1516,6 +1726,7 @@ const BUILDERS: Record<
     name: string,
     locale: string,
     pages: PageRef[],
+    style?: string | null,
   ) => PuckNode[]
 > = {
   dashboard: buildDashboard,
@@ -1631,6 +1842,11 @@ export function buildPageLayout(
   /** The business's actual page set, so the rail links only to pages it has.
    *  Defaults to the trade's standard set when the caller does not know it. */
   pages?: PageRef[],
+  /** projects.style. Passed through to the dashboard builder, which uses it to
+   *  choose the page's BLOCKS -- not only their paint. Safe to omit: an unknown
+   *  register gets 蓝图's composition, the one whose argument is that it suits
+   *  any trade. */
+  style?: string | null,
 ): Data {
   const lang = langOf(ctx);
   const refs: PageRef[] =
@@ -1648,7 +1864,7 @@ export function buildPageLayout(
   // file.
   const archetype = MODULE_BY_KEY[pageKey];
   const [rail, ...rest] = BUILDERS[pageKey]
-    ? BUILDERS[pageKey](ctx, businessName, locale, refs)
+    ? BUILDERS[pageKey](ctx, businessName, locale, refs, style)
     : archetype
       ? buildFromShape(
           archetype.shape as ModuleShape,

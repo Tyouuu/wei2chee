@@ -127,6 +127,11 @@ export default async function PortalEditorPage({
       displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
       locale,
       pageRefs,
+      // THE REGISTER CHOOSES THE PAGE'S BLOCKS, not only their paint. Generation
+      // is a read-side default until the customer's first save, so the style is
+      // known right here -- which is what lets 换风格 re-lay-out the page on the
+      // same click that repaints it. See dashboardComposition().
+      project.style,
     ) as unknown as Record<string, unknown>;
   }
 
