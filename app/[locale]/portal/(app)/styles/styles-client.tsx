@@ -399,55 +399,42 @@ function PaletteCard({
 }
 
 /**
- * ONE PALETTE, DRAWN 21ST.DEV'S WAY — WHICH IS NOT 21ST.DEV'S PICTURE.
+ * ONE PALETTE — THEIR ARRANGEMENT, NOT THEIR FILL.
  *
- * Their Themes grid was opened with a browser on 2026-08-26 and measured: four
- * across at 332px, and each card is a plain rectangle painted in that theme's
- * own background, four colour dots in the top-left, the theme's name inside it
- * at the bottom-left in the theme's own foreground. Zen Linen's card is linen,
- * Catppuccin's is lavender, Vercel's is white. The card IS the colour, at field
- * size, and that is why their grid reads instantly.
+ * Two galleries were opened with a browser on 2026-08-26 and measured rather
+ * than recalled: 21st.dev's Themes grid (four across at 332px) and tweakcn's
+ * community grid. They run the same card, and the founder's read of it was
+ * right — 「他的好像擺放的比較好看」. It is ONE clean field, the name large at the
+ * bottom-left, a row of tall colour bars in the corner, and the metadata
+ * outside underneath.
  *
- * COPYING THAT PICTURE HERE WOULD MAKE THIS PAGE WORSE, and the numbers say so
- * rather than an opinion. Across our 25 palettes the ground runs oklch L
- * 0.880–1.000 at chroma 0.000–0.053: TWENTY-FOUR OF TWENTY-FIVE are near-white.
- * The accent runs L 0.000–0.589 at chroma up to 0.237. A field of ground colour
- * would be twenty-five identical white rectangles with a dot in the corner —
- * which is exactly what this card was before, and exactly why it read as
- * unfinished.
+ * This card had the name inside AND a dense two-part strip below it — four
+ * circles plus three labelled status words. That strip was the clutter, and
+ * that is the part their layout fixes. Six bars, primary tallest and the
+ * neutrals stepping down, carry the same information in less room: four circles
+ * read as decoration where a ramp reads as a scale.
  *
- * So the METHOD transfers and the picture does not. Their method is: give the
- * field to the axis that carries the identity. Theirs is the ground. Ours is
- * the accent. Hence a full-bleed band of the palette's own accent with its name
- * on it — which is also the pairing that fails most often (--color-on-primary
- * against --color-primary), so the card proves its own contrast — over the
- * ground, carrying their four dots and the three status tones.
+ * THE FILL IS THE PART THAT DOES NOT TRANSFER, and the only way I learned it
+ * was to build both and look. Their card is painted in the theme's GROUND, and
+ * it works because their grounds genuinely differ — cream, linen, white, grey.
+ * Ours do not: measured, 9 of our 10 sit at oklch L 0.880–1.000, so a
+ * ground-filled grid is nine near-white rectangles. Filling with the ACCENT
+ * instead says what 朱红 is at a glance and makes a wall of ten saturated
+ * blocks.
  *
- * The status tones stay because they are the one thing four dots cannot say:
- * whether 已确认 / 待回复 / 停滞 are still three distinguishable colours in this
- * palette or have collapsed into the accent. Measured on 2026-08-23: 21 of 25
- * cannot carry status meaning in the accent alone.
+ * Theirs is a gallery to browse. This is a picker: ten of them, once, by an
+ * owner answering 「我的系统要什么颜色」. So the card is split — the upper two
+ * thirds is the ground with the ramp on it, the lower third is the accent with
+ * the name on it. Both axes at the size each is actually used, and it is the
+ * first version in which 宣纸's warm linen reads as different from 极简黑's white
+ * without being told.
+ *
+ * The three status tones stay because they are the one thing a row of neutrals
+ * cannot say: whether 已确认 / 待回复 / 停滞 are still three distinguishable
+ * colours in this palette or have collapsed into the accent. Measured
+ * 2026-08-23: 21 of 25 could not carry status meaning in the accent alone.
  */
 function PaletteSample({ label, dots }: { label: string; dots?: readonly string[] }) {
-  /*
-    WHICH AXIS GETS THE FIELD, PER PALETTE.
-
-    The rule above -- give the field to the axis that carries the identity --
-    was applied once, to the set: our accents vary and our grounds do not, so
-    the accent got the field. 宣纸 broke that the moment it landed, and the
-    screenshot said so immediately: a near-black accent on warm paper drew as a
-    black rectangle, indistinguishable from 极简黑, with the one thing that
-    makes it itself squeezed into the strip underneath.
-
-    So the rule applies per palette instead. An accent with almost no chroma is
-    not the statement; the ground it sits on is. Read from the palette's own
-    accent dot rather than hard-coded by name, so a future near-neutral gets the
-    same treatment without anybody remembering to add it to a list.
-  */
-  const accent = dots?.[1] ?? "";
-  const chroma = Number(/oklch\(\s*[\d.]+\s+([\d.]+)/.exec(accent)?.[1] ?? "1");
-  const groundLeads = chroma < 0.03;
-
   return (
     <span
       className="ds-ground relative flex w-full flex-col overflow-hidden [background-color:var(--color-canvas)]"
