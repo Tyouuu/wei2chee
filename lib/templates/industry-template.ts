@@ -1235,10 +1235,10 @@ const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // is the order a person who reads forty rows a day actually wants. The split
   // is at the BOTTOM, where two small things belong beside each other rather
   // than as two more full-width bands under a table that is already long.
-  ledger: ["table", "stats4", "activity|share@half", "flow"],
+  ledger: ["table", "stats4", "activity|flow@half"],
   // A shopfront: what is happening today, with the money beside it rather than
   // under it -- the owner glances right, not down.
-  hearth: ["todo|stats2", "trend|share@wide-left", "table"],
+  hearth: ["todo|stats2", "trend", "table"],
   // The neutral one, and the only one that should read as "a bit of
   // everything". Chart left, the day's list beside it: the most ordinary
   // arrangement there is, which is the point of this register.
@@ -1246,7 +1246,7 @@ const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // For an owner who cannot read the others. Two figures at 17px base, no
   // chart -- and NO SPLIT: half of 1400 at this type size is four words a
   // line. Single column is the register's whole argument.
-  large: ["stats2", "share", "todo", "table"],
+  large: ["stats2", "todo", "table"],
   // Looks like the POS they already run: the filled table head is the object,
   // so the table leads, then the month's progress with the figures beside it.
   stamp: ["table", "progress|stats4@wide-right", "share|flow@half"],
@@ -1258,7 +1258,7 @@ const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   soft: ["hero|todo@half", "trend|share@wide-left", "table"],
   // Weight. Two enormous figures and the work, in slabs. No chart, no split --
   // a slab that is half a page wide stops being a slab.
-  brut: ["stats2", "board", "table", "share"],
+  brut: ["stats2", "board", "table"],
   // Translucent panels want something behind them to see through, and two
   // panels side by side show more edges than one.
   glass: ["stats4", "trend|share|ranking", "board", "table"],
@@ -1273,7 +1273,7 @@ const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   lacquer: ["hero@over", "trend|share@wide-left", "table"],
   // Every character the same width. Squares and a ranking are both grids of
   // fixed cells, so they sit beside each other without either one reflowing.
-  code: ["stats4", "activity|ranking", "share|table@wide-right"],
+  code: ["stats4", "activity|ranking", "table"],
   // A patterned floor wants flat cards above it, in a rhythm -- and a rhythm
   // needs a row of two, not a column of one.
   tile: ["stats4", "trend|todo|share", "table"],

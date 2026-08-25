@@ -43,14 +43,22 @@ const shot = [];
 for (const reg of REGISTERS) {
   await p.goto("http://localhost:3000/zh/portal/styles", { waitUntil: "networkidle", timeout: 120000 });
   await p.waitForTimeout(4000);
+  // MATCH ON THE WHOLE CARD'S TEXT, NOT ON ITS FIRST <span>.
+  //
+  // The old version read `li.querySelector("span")` and assumed the first span
+  // was the register's name. On 2026-08-25 the tile gained a page reel with a
+  // label chip inside it, that chip became the first span, and every register
+  // reported NOT FOUND -- a screenshot script that silently shot nothing. The
+  // name is still the only place a register's own word appears in the card, so
+  // matching the card's text and then pressing its 换成这个 is stable against
+  // whatever else the tile grows.
   const hit = await p.evaluate((w) => {
     for (const li of document.querySelectorAll("li")) {
-      const n = li.querySelector("span")?.textContent?.trim();
-      if (n && n.startsWith(w)) {
-        const btn = li.querySelector("button");
-        if (btn) { btn.click(); return "ok"; }
-        return "active";
-      }
+      const text = (li.textContent || "").trim();
+      if (!text.includes(w)) continue;
+      const btn = [...li.querySelectorAll("button")].pop();
+      if (btn) { btn.click(); return "ok"; }
+      return "active";
     }
     return "miss";
   }, reg);
