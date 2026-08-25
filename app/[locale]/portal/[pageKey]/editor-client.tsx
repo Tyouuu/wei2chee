@@ -12,7 +12,7 @@ import { WHATSAPP_NUMBER } from "@/lib/brand";
 // Renders through the register-aware config, so a block nobody has
 // touched takes the shape THIS register prefers. See
 // design-system/editor/puck-config-client.tsx.
-import { registerAwarePuckConfig as puckConfig } from "@/design-system/editor/puck-config-client";
+import { localisedPuckConfig } from "@/design-system/editor/puck-config-client";
 import {
   clearLocalDraft,
   readLocalDraft,
@@ -785,7 +785,11 @@ export function PortalEditor({
               // and its own palette, and portal them into sheets that float over
               // the canvas only while they are being used.
               ui={{ leftSideBarVisible: false, rightSideBarVisible: false }}
-              config={puckConfig}
+              // The config in the OWNER's language. Chinese returns the config
+              // itself; anything else gets the projection built in
+              // puck-config-client.tsx. Memoised there, so this is a stable
+              // identity and does not remount Puck.
+              config={localisedPuckConfig(locale)}
               data={startingData}
               onChange={handleChange}
               onPublish={handleSaveClick}

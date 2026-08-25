@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { usePuck } from "@puckeditor/core";
 import { usePreviewMode } from "@/design-system/editor/preview-toggle";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
+import { useTranslations } from "next-intl";
 
 /**
  * The assistant, floating at the foot of the canvas instead of squeezed into
@@ -44,6 +45,7 @@ import { useEditorUi } from "@/design-system/editor/editor-ui";
  * turning into a preference the customer has to unset later.
  */
 export function AiDock({ children }: { children: ReactNode }) {
+  const t = useTranslations("portal.editor");
   const { previewing } = usePreviewMode();
   const { selectedItem } = usePuck();
   const { gutter, sheet, dockOpen: manual, setDockOpen: setManual } = useEditorUi();
@@ -111,10 +113,10 @@ export function AiDock({ children }: { children: ReactNode }) {
             AI
           </span>
           <span className="whitespace-nowrap [color:var(--color-paper)] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]">
-            用讲的改
+            {t("aiDockTitle")}
           </span>
           <span className="ml-auto whitespace-nowrap pl-2 [font-size:var(--text-xs)]">
-            {open ? "收起" : "打开"}
+            {open ? t("collapse") : t("expand")}
           </span>
         </button>
         {/* Kept mounted when collapsed: the transcript of what the assistant

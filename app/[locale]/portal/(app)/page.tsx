@@ -131,15 +131,22 @@ export default async function PortalHomePage({
        * `get_my_business_context` has returned it since migration
        * 20260825020000. Nothing was missing; nothing read it.
        *
-       * Falls back to the Chinese one rather than to nothing: an analysis
-       * written before `summary_en` existed still has something to say, and a
-       * sentence in the wrong language beats an empty headline on the page that
-       * is supposed to prove the system understood the business.
+       * AND NO CROSS-LANGUAGE FALLBACK. `summary_en` is null on every analysis
+       * generated before the column existed -- verified against the live table
+       * on 2026-08-25, all three most recent rows -- and falling back to the
+       * Chinese there would reproduce exactly the screenshot he sent. Null
+       * instead, which makes PortalHome use its own translated headline: a
+       * generic English sentence is a worse sentence and a better page than a
+       * tailored one nobody on /en asked to read in Chinese.
+       *
+       * (Backfilling the old rows is a separate job -- founder-tasks task 8 --
+       * because it means putting the model back over stored analyses, which is
+       * a data write and not a rendering decision.)
        */
       summary={
         (locale === "zh"
           ? businessContext.analysis?.summary
-          : (businessContext.analysis?.summary_en ?? businessContext.analysis?.summary)) ?? null
+          : businessContext.analysis?.summary_en) ?? null
       }
       businessName={displayBusinessName(businessContext)}
       /** null when the customer has not set one, so the settings dialog can

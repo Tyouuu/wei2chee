@@ -401,7 +401,14 @@
       "publishErrNotSaved": "先按「保存设计」，保存过的版本才能公开。",
       "publishErrFailed": "出了点问题，等一下再试。",
       "deviceDesktop": "桌面",
-      "devicePhone": "手机"
+      "devicePhone": "手机",
+      "addBlock": "加一段",
+      "addBlockCta": "＋ 加一段",
+      "changeVariant": "换款式",
+      "editText": "改文字",
+      "aiDockTitle": "用讲的改",
+      "collapse": "收起",
+      "expand": "打开"
     },
     "home": {
       "eyebrow": "你的系统",

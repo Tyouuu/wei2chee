@@ -4,6 +4,7 @@ import { useRef, type ReactNode } from "react";
 import { ActionBar, usePuck } from "@puckeditor/core";
 import { VARIANTS } from "@/design-system/editor/variants";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
+import { useTranslations } from "next-intl";
 
 /**
  * THE FLOATING TOOLBAR UNDER THE SELECTED BLOCK — Durable's `Design / Edit
@@ -36,6 +37,7 @@ export function BlockToolbar({
   children: ReactNode;
   parentAction: ReactNode;
 }) {
+  const t = useTranslations("portal.editor");
   const { selectedItem } = usePuck();
   const { openSheet, sheet } = useEditorUi();
   const ref = useRef<HTMLDivElement | null>(null);
@@ -78,17 +80,17 @@ export function BlockToolbar({
             <ActionBar.Action
               onClick={() => openSheet({ kind: "variant" }, anchorEl())}
               active={sheet?.kind === "variant"}
-              label="换款式"
+              label={t("changeVariant")}
             >
-              <span className={pill(sheet?.kind === "variant")}>换款式</span>
+              <span className={pill(sheet?.kind === "variant")}>{t("changeVariant")}</span>
             </ActionBar.Action>
           ) : null}
           <ActionBar.Action
             onClick={() => openSheet({ kind: "fields" }, anchorEl())}
             active={sheet?.kind === "fields"}
-            label="改文字"
+            label={t("editText")}
           >
-            <span className={pill(sheet?.kind === "fields")}>改文字</span>
+            <span className={pill(sheet?.kind === "fields")}>{t("editText")}</span>
           </ActionBar.Action>
         </ActionBar.Group>
         <ActionBar.Separator />

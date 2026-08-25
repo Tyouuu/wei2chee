@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import type { Config } from "@puckeditor/core";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { LABELS_EN } from "@/design-system/editor/labels-en";
 import { useRegisterVariant } from "@/design-system/editor/style-scope";
 
 /**
@@ -106,3 +107,93 @@ export const registerAwarePuckConfig: Config = {
     ),
   ),
 } as unknown as Config;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   THE SAME CONFIG, IN THE OWNER'S LANGUAGE.
+
+   「明明选择了英文 作为language 为什么还是有那么多华语字的呢」 -- 2026-08-25, with
+   a screenshot of ＋ 加一段 on an otherwise English page.
+
+   The top bar was already translated (next-intl), and nothing else was: every
+   block name, category heading, field label and 换个款式 option in
+   puck-config.tsx is a Chinese string literal, and a literal cannot follow a
+   locale. See labels-en.ts for why the fix is a projection of the Chinese
+   config rather than 489 next-intl keys.
+
+   WHAT IS TRANSLATED: `label` on a component, `title` on a category, `label`
+   on every field including the ones nested inside `arrayFields` and `objectFields`,
+   and the `label` of every select option. Those are the four places the owner
+   reads a word Formae wrote.
+
+   WHAT IS NOT: `defaultProps`. That is the sample content a new block arrives
+   with, which belongs to the CUSTOMER'S system and follows its language, not
+   the owner's interface -- see labels-en.ts.
+
+   Memoised per locale because a new config object identity remounts Puck's
+   whole tree, and this is read on every render of the editor.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function tr(value: unknown): unknown {
+  return typeof value === "string" ? (LABELS_EN[value] ?? value) : value;
+}
+
+/** Fields nest: an `array` field has `arrayFields`, an `object` field has
+ *  `objectFields`, and both hold more fields. Written as a recursion rather
+ *  than two loops because the depth is a property of the config, not a
+ *  constant -- and a config that grows a third level should not silently ship
+ *  half-translated. */
+function localiseFields(fields: unknown): unknown {
+  if (!fields || typeof fields !== "object") return fields;
+  const out: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(fields as Record<string, unknown>)) {
+    if (!raw || typeof raw !== "object") {
+      out[key] = raw;
+      continue;
+    }
+    const f = { ...(raw as Record<string, unknown>) };
+    if (f.label !== undefined) f.label = tr(f.label);
+    if (Array.isArray(f.options)) {
+      f.options = (f.options as Record<string, unknown>[]).map((o) =>
+        o && typeof o === "object" ? { ...o, label: tr(o.label) } : o,
+      );
+    }
+    if (f.arrayFields) f.arrayFields = localiseFields(f.arrayFields);
+    if (f.objectFields) f.objectFields = localiseFields(f.objectFields);
+    out[key] = f;
+  }
+  return out;
+}
+
+const cache = new Map<string, Config>();
+
+export function localisedPuckConfig(locale: string): Config {
+  // Chinese is the config's own language, so there is nothing to project.
+  if (locale === "zh") return registerAwarePuckConfig;
+  const hit = cache.get(locale);
+  if (hit) return hit;
+
+  const base = registerAwarePuckConfig as unknown as {
+    components: Record<string, Record<string, unknown>>;
+    categories?: Record<string, Record<string, unknown>>;
+    root?: Record<string, unknown>;
+  };
+
+  const built = {
+    ...registerAwarePuckConfig,
+    components: Object.fromEntries(
+      Object.entries(base.components).map(([name, c]) => [
+        name,
+        { ...c, label: tr(c.label), fields: localiseFields(c.fields) },
+      ]),
+    ),
+    categories: base.categories
+      ? Object.fromEntries(
+          Object.entries(base.categories).map(([k, c]) => [k, { ...c, title: tr(c.title) }]),
+        )
+      : base.categories,
+    root: base.root ? { ...base.root, label: tr(base.root.label) } : base.root,
+  } as unknown as Config;
+
+  cache.set(locale, built);
+  return built;
+}

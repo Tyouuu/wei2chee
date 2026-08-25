@@ -3,6 +3,7 @@
 import { useRef, type ReactNode } from "react";
 import { usePuck } from "@puckeditor/core";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
+import { useTranslations } from "next-intl";
 
 /**
  * ＋ 加一段 — the blue line that appears in the gap under a block when the
@@ -33,6 +34,7 @@ export function InsertAffordance({
   isSelected: boolean;
   componentId: string;
 }) {
+  const t = useTranslations("portal.editor");
   const { getSelectorForId } = usePuck();
   const { openSheet, sheet } = useEditorUi();
   const ref = useRef<HTMLButtonElement | null>(null);
@@ -76,7 +78,7 @@ export function InsertAffordance({
             color: "var(--color-on-primary)",
           }}
         >
-          ＋ 加一段
+          {t("addBlockCta")}
         </button>
       </div>
     </>

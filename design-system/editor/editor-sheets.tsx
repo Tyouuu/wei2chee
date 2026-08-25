@@ -7,6 +7,7 @@ import { VariantPicker } from "@/design-system/editor/variant-picker";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { useTranslations } from "next-intl";
 
 /**
  * Fields a shop owner should never be shown first.
@@ -79,6 +80,7 @@ export function BlockSheets({
   /** Puck's own fields for the selected block. */
   children: ReactNode;
 }) {
+  const t = useTranslations("portal.editor");
   const { selectedItem } = usePuck();
   const { sheet, closeSheet, anchor } = useEditorUi();
   const name = blockLabel(selectedItem?.type);
@@ -103,7 +105,7 @@ export function BlockSheets({
         open={sheet?.kind === "variant"}
         onClose={closeSheet}
         anchor={anchor}
-        title={`${name} · 换款式`}
+        title={`${name} · ${t("changeVariant")}`}
       >
         <VariantPicker style={style} palette={palette} />
       </Sheet>
@@ -148,13 +150,14 @@ export function BlockSheets({
  * beside a canvas he was trying to look at; the tiles were never the problem.
  */
 export function InsertSheet({ children }: { children: ReactNode }) {
+  const t = useTranslations("portal.editor");
   const { sheet, closeSheet, anchor } = useEditorUi();
   return (
     <Sheet
       open={sheet?.kind === "insert"}
       onClose={closeSheet}
       anchor={anchor}
-      title="加一段"
+      title={t("addBlock")}
     >
       {/* TWO COLUMNS, TWELVE SHELVES, TEN OF THEM CLOSED.
           The grid itself is set in puck-theme.css against Puck's own
