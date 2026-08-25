@@ -101,42 +101,83 @@ const OUT_DIR = join(HERE, "..", "design-system", "palettes");
  * derived navigation. A public registry covers what a public registry covers;
  * the gaps are the part that has to be designed.
  */
+/*
+  EIGHT, NOT TWENTY-FIVE — AND THE MEASUREMENT THAT DECIDED IT.
+
+  The founder, 2026-08-26: 「风格配色的部分我反而觉得不会有人会选很花哨的颜色 你看
+  大多数的system都是白色跟黑色居多 不会出现红色啊 绿色啊 然后主题配色的选择也是要选
+  几套多人会选的 就好了」.
+
+  The rule that settles it is his own point 12: the library exists to SAVE HIM
+  TIME. A palette nobody picks is not one more choice, it is one more thing to
+  scroll past — twenty-five times, on the screen where an owner is deciding
+  whether to pay.
+
+  SO I WENT AND MEASURED WHAT REAL BUSINESS SOFTWARE ACTUALLY USES. Nine
+  systems opened with a browser on 2026-08-26, ground and primary read off the
+  live page (.screenshots/colours/):
+
+    Linear         near-black ground   #5E6AD2  indigo   H~275
+    Stripe         white               #533AFD  violet   H~285
+    Xero           white               #1F65D6  blue     H~260
+    Notion         white               #0075DE  blue     H~250
+    monday         white               #6161FF  indigo   H~278
+    SQL Account    white               #6632FF  violet   H~285   (Malaysia)
+    AutoCount      white               #00A8E6  cyan     H~230   (Malaysia)
+    FreshBooks     white               #038A06  green    H~145
+    Zoho Books     white               #F5BA31  amber    H~85
+
+  NINE OF NINE grounds are neutral — white, or Linear's near-black. Not one is
+  tinted. He is exactly right about that, and our set already agrees: 24 of our
+  25 grounds sit at oklch L 0.880–1.000, C 0.000–0.053.
+
+  NINE OF NINE accents are a saturated colour. Not one is grey or black. So the
+  half of his sentence that says 不会出现红色啊 绿色啊 is about the GROUND, not
+  the accent — and I have to say so rather than quietly agree, because acting on
+  the wrong half would produce twenty-five identical white rectangles.
+
+  SEVEN OF NINE accents fall in hue 230–290, blue through violet — including
+  BOTH Malaysian systems, which is the market this product sells into. Our 25
+  spread evenly around the whole hue circle. That is a paint chart, not a set of
+  system palettes, and it is the actual defect.
+
+  WHAT SURVIVES, and the one reason each one does. Every dropped trade lands on
+  a survivor; see the migration for the map.
+
+    极简黑    the neutral default, and what 7 of 9 grounds plus a black accent
+              already look like. This is the one most owners should end on.
+    标准蓝    the single most common accent in real business software. Xero,
+              Notion, monday and Linear all live within 25° of it.
+    群青      the violet end of that same band — Stripe, monday, SQL Account.
+    朱红      the one the market data does NOT explain and the market itself
+              does: a Malaysian 老字号 signboard is red and gold. 中药行, 餐饮,
+              婚宴 recognise it as theirs.
+    橘        a trade signboard colour: 五金, 物流, 工程.
+    森绿      FreshBooks is green; 环保, 健康, 农产 read it immediately.
+    琥珀      Zoho Books is amber; 会计, 当铺, 金行.
+    紫檀      the one soft-trade cluster that genuinely exists here — 美容,
+              婚纱, 花艺. Kept as ONE entry rather than the four it was.
+
+  WHAT GOES, AND WHY IT IS NOT A LOSS. 石墨 is a second neutral next to 极简黑.
+  正红 sits 2° from 朱红. 陶土 sits 3° from 橘. 天蓝 and 靛 sit between 标准蓝 and
+  群青. 松石 and 湖水 are 17° apart from each other. 桃粉, 胭脂, 紫晶 are three
+  readings of one pink. Nobody choosing a system for a renovation company picks
+  桃粉 — and every minute spent not picking it is a minute the library cost him.
+*/
 const WANTED = [
-  // ── warm: red, the band that was completely empty ───────────────────────
-  ["elegant-luxury", "朱红", "深红配奶油底,老字号的正式红", "餐饮·中药行·婚宴·礼品"],
-  ["neo-brutalism", "正红", "干净的大红配白,响亮直接", "快餐·零售·促销·体育"],
-  ["t3-chat", "胭脂", "带粉的玫瑰红,柔一点的红", "服饰·写真·花店"],
-  ["bubblegum", "桃粉", "桃粉色,轻快", "美甲·蛋糕·童装·宠物"],
+  // ── neutral: the default ────────────────────────────────────────────────
+  ["vercel", "极简黑", "黑白灰,没有一点多余颜色", "任何行业·最稳的一套"],
 
-  // ── warm: orange through brown ──────────────────────────────────────────
-  ["tangerine", "橘", "饱和的橘色,看得远", "物流·搬运·五金·工程"],
-  ["claude", "陶土", "暖橙陶土,柔和不刺眼", "设计·工作室·手作"],
-  ["mocha-mousse", "可可", "深棕奶咖,温暖厚重", "咖啡·甜品·家具"],
-  ["caffeine", "咖啡", "低彩度的深褐,安静", "书店·文具·会计"],
-  ["amber-minimal", "琥珀", "琥珀黄,账本和单据的感觉", "会计·当铺·金行"],
-  ["vintage-paper", "旧纸", "泛黄纸张,老字号的味道", "茶行·药材·古董"],
+  // ── the band real business software actually occupies ───────────────────
+  ["modern-minimal", "标准蓝", "最常见的软件蓝,不会出错", "一般服务·教育·中介·科技·水电冷气"],
+  ["clean-slate", "群青", "饱和的蓝紫,现代", "顾问·工程·设计·活动·律师·会计"],
 
-  // ── green, split into four that are actually four ───────────────────────
-  ["gold-grain", "金稻", "熟稻的金黄,不刺眼的贵气", "金行·当铺·米粮·土产·传统食品"],
-  ["kodama-grove", "苔", "带黄的橄榄绿,土气", "农产·园艺·有机·苗圃"],
-  ["nature", "森绿", "深绿配米白,沉稳", "环保·林业·户外"],
-  ["northern-lights", "新绿", "亮一点的绿,干净", "诊所·健康·健身"],
-  ["supabase", "青绿", "干净的绿,像后台工具", "科技·软件·电商"],
-
-  // ── cool: the entire half that had one occupant ─────────────────────────
-  ["turquoise-stone", "松石", "正的湖绿青,凉而干净", "冷气·水电·泳池·洗车·海鲜"],
-  ["perpetuity", "湖水", "偏青的水绿,凉", "冷气·水电·泳池·洗车"],
-  ["twitter", "天蓝", "明亮的天蓝,最好懂", "一般服务·教育·中介"],
-  ["modern-minimal", "标准蓝", "最常见的软件蓝,不会出错", "任何行业·拿不定主意时"],
-  ["starry-night", "靛", "深蓝近墨,正式", "律师·会计·保险·公证"],
-  ["clean-slate", "群青", "饱和的蓝紫,现代", "顾问·工程·设计·活动"],
-  ["amethyst-haze", "紫晶", "淡雾紫,轻", "美容·花店·婚纱"],
-
+  // ── the signboard colours, which are this market and not Silicon Valley ─
+  ["elegant-luxury", "朱红", "深红配奶油底,老字号的正式红", "餐饮·中药行·婚宴·礼品·零售"],
+  ["tangerine", "橘", "饱和的橘色,看得远", "物流·搬运·五金·工程·装修"],
+  ["amber-minimal", "琥珀", "琥珀黄,账本和单据的感觉", "会计·当铺·金行·米粮·土产"],
+  ["nature", "森绿", "深绿配米白,沉稳", "环保·林业·户外·农产·诊所·健康"],
   ["rosewood", "紫檀", "沉的梅紫,不是粉红", "美容·婚纱·花艺·精品·养生"],
-
-  // ── no colour at all ────────────────────────────────────────────────────
-  ["vercel", "极简黑", "黑白灰,没有一点多余颜色", "建筑·摄影·精品"],
-  ["graphite", "石墨", "纯灰阶,让数据自己说话", "批发·仓储·数据重的生意"],
 ];
 
 
