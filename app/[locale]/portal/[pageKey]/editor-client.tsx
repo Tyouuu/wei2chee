@@ -39,6 +39,8 @@ import { BlockSheets, InsertSheet } from "@/design-system/editor/editor-sheets";
 import { AiDock } from "@/design-system/editor/ai-dock";
 import { StyleButton, StyleSheet } from "@/design-system/editor/style-sheet";
 import { cornerApply, cornerCapture } from "@/design-system/editor/corners";
+import { PagesButton, PagesSheet } from "@/design-system/editor/pages-sheet";
+import { RailSync, announcePages } from "@/design-system/editor/rail-sync";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
 import type { SystemLang } from "@/lib/system-lang";
 import { InlineEditing } from "@/design-system/editor/inline-editing";
@@ -174,7 +176,14 @@ export function PortalEditor({
    *  server. Labels cannot be looked up here any more: a page the customer
    *  invented has no `portal.editor.pages.*` message, and next-intl throws on a
    *  missing key rather than falling back. */
-  navPages: { key: string; label: string }[];
+  navPages: {
+    key: string;
+    label: string;
+    /** The customer's own name, or null when the label is the trade's own
+     *  noun. The rename field needs the two apart: an empty box has to mean
+     *  「用回原来的词」 rather than 「叫做空白」. */
+    title?: string | null;
+  }[];
   /** The customer's own chosen style (projects.style, Task 3) -- applies to
    * canvas CONTENT only. Chrome (this component's own wrapper below) stays
    * Ledger regardless, per Task 5's own reviewed design. */
@@ -233,6 +242,57 @@ export function PortalEditor({
   // Optimistic like the two axes above it. A slider that waited for a round
   // trip on every step would report the database's opinion of a drag.
   const [activeCorners, setActiveCorners] = useState<number>(corners);
+  // The page list is optimistic like the three axes above it: a rename and
+  // a drag both have to land on the press, and both roll back if refused.
+  const [editablePages, setEditablePages] = useState(navPages);
+  const [pagesBusy, setPagesBusy] = useState(false);
+
+  async function renamePage(key: string, title: string) {
+    const previous = editablePages;
+    // The label falls back to what it is called NOW when the box is cleared,
+    // which is right in the sheet and wrong on the rail -- the rail should go
+    // back to the trade's own noun, and only the server knows what that is. So
+    // a clear announces nothing and leans on router.refresh() instead.
+    const next = editablePages.map((p) =>
+      p.key === key ? { ...p, label: title || p.label, title: title || null } : p,
+    );
+    setEditablePages(next);
+    setPagesBusy(true);
+    const { error } = await createBrowserSupabaseClient().rpc("rename_project_page", {
+      target_key: key,
+      new_title: title,
+    });
+    setPagesBusy(false);
+    // A rename changes what the RAIL says, and the rail is generated on the
+    // server from project_pages -- so the canvas is only correct again after
+    // a refresh. Optimism covers the sheet; this covers the page behind it.
+    if (error) {
+      setEditablePages(previous);
+    } else {
+      // The server components pick it up from the database; the canvas cannot,
+      // so it is told. See rail-sync.tsx.
+      announcePages(next.map((p) => ({ key: p.key, label: p.label })));
+      router.refresh();
+    }
+  }
+
+  async function reorderPages(keys: string[]) {
+    const previous = editablePages;
+    const byKey = new Map(editablePages.map((p) => [p.key, p]));
+    const ordered = keys.map((k) => byKey.get(k)!).filter(Boolean);
+    setEditablePages(ordered);
+    setPagesBusy(true);
+    const { error } = await createBrowserSupabaseClient().rpc("reorder_project_pages", {
+      ordered_keys: keys,
+    });
+    setPagesBusy(false);
+    if (error) {
+      setEditablePages(previous);
+    } else {
+      announcePages(ordered.map((p) => ({ key: p.key, label: p.label })));
+      router.refresh();
+    }
+  }
   const cornerSave = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** Repaints on every step, writes once the hand stops. A range input
@@ -621,6 +681,14 @@ export function PortalEditor({
             {label}
           </Link>
         ))}
+
+        {/* 页面 sits at the FOOT of the page list, which is where Durable keeps
+            「+ Add page」 and for the same reason: a person who has just read the
+            list of pages is the person who wants to change it. Putting it in 更多
+            would file it with the spec and the style gallery, which are places
+            you go, not things you do to what is in front of you. */}
+        <div className="my-1 h-px [background-color:var(--color-ink-800)]" />
+        <PagesButton label={`${t("pagesLabel")}…`} className={barMenuItem} />
       </BarMenu>
 
       {/* The one thing that must never be behind a menu: it only appears after
@@ -1149,6 +1217,8 @@ export function PortalEditor({
                       it dispatches, and inside the preview override because
                       that is the only place that is true. */}
                     <InlineEditing />
+                    {/* Hears 页面's renames and reorders. Renders nothing. */}
+                    <RailSync />
                     {/* The draft note now rides the canvas instead of being a
                       band above it -- see draft-notice.tsx for the measurement
                       that motivated the move. */}
@@ -1189,6 +1259,23 @@ export function PortalEditor({
           --color-* tokens they read are Formae's, and after Puck so nothing in
           its layout can clip them. Renders nothing by itself. */}
         <SheetHost />
+        <PagesSheet
+          pages={editablePages.map((p) => ({
+            key: p.key,
+            label: p.label,
+            title: p.title ?? null,
+          }))}
+          onRename={renamePage}
+          onReorder={reorderPages}
+          busy={pagesBusy}
+          labels={{
+            title: t("pagesLabel"),
+            note: t("pagesNote"),
+            rename: t("pagesRename"),
+            up: t("pagesUp"),
+            down: t("pagesDown"),
+          }}
+        />
         <StyleSheet
           active={activeStyle}
           palette={activePalette}

@@ -66,15 +66,16 @@ export default async function PortalHomePage({
 
   const { data: pageRows } = await supabase
     .from("project_pages")
-    .select("page_key, title, layout_json")
+    .select("page_key, title, sort_order, layout_json")
     .eq("project_id", project.id);
 
   // PageRefs, not keys: a custom page carries the customer's own title, and
   // every label in the rail and on this screen comes from it.
   const pageRefs = sortPages(
-    (pageRows ?? []).map((r: { page_key: string; title: string | null }) => ({
+    (pageRows ?? []).map((r: { page_key: string; title: string | null; sort_order: number | null }) => ({
       key: r.page_key,
       title: r.title,
+      sortOrder: r.sort_order,
     })),
   );
 

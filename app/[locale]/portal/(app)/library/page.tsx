@@ -37,12 +37,13 @@ export default async function LibraryPage({
     .single();
 
   const { data: pageRows } = project
-    ? await supabase.from("project_pages").select("page_key, title").eq("project_id", project.id)
+    ? await supabase.from("project_pages").select("page_key, title, sort_order").eq("project_id", project.id)
     : { data: [] };
   const ordered = sortPages(
-    (pageRows ?? []).map((r: { page_key: string; title: string | null }) => ({
+    (pageRows ?? []).map((r: { page_key: string; title: string | null; sort_order: number | null }) => ({
       key: r.page_key,
       title: r.title,
+      sortOrder: r.sort_order,
     })),
   );
 

@@ -70,13 +70,14 @@ export default async function PortalEditorPage({
   // contractor's 报价单 to a restaurant.
   const { data: pageRows } = await supabase
     .from("project_pages")
-    .select("page_key, title, layout_json")
+    .select("page_key, title, sort_order, layout_json")
     .eq("project_id", project.id);
 
   const pageRefs = sortPages(
-    (pageRows ?? []).map((r: { page_key: string; title: string | null }) => ({
+    (pageRows ?? []).map((r: { page_key: string; title: string | null; sort_order: number | null }) => ({
       key: r.page_key,
       title: r.title,
+      sortOrder: r.sort_order,
     })),
   );
   const page = (pageRows ?? []).find(
@@ -196,6 +197,10 @@ export default async function PortalEditorPage({
           tradeLabels(businessContext, pageRefs),
           systemLangOf(businessContext),
         ),
+        // The customer's own name, kept apart from the resolved label: 页面's
+        // rename box shows the label as a PLACEHOLDER and this as the value, so
+        // clearing it visibly means "go back to the trade's own word".
+        title: ref.title ?? null,
       }))}
       /** The customer's own chosen style (projects.style, Task 3) -- applies to
        * canvas CONTENT only. Chrome stays Ledger regardless, per Task 5's own

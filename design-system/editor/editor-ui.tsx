@@ -48,6 +48,9 @@ export type Sheet =
   /** The whole page's register — 风格. Opened from the top bar, not from a
    *  block, so it has no anchor and docks like the others. */
   | { kind: "style" }
+  /** 页面 — rename and reorder. A decision about the whole system rather
+   *  than about the block under the cursor, so it docks like 风格 does. */
+  | { kind: "pages" }
   /** Opened from the ＋ affordance between two blocks, so it carries where the
    *  new block should land rather than appending to the end like the toolbar's
    *  drawer did. */

@@ -44,7 +44,7 @@ export default async function AccountPage({
     .single();
 
   const { data: pageRows } = project
-    ? await supabase.from("project_pages").select("page_key, title").eq("project_id", project.id)
+    ? await supabase.from("project_pages").select("page_key, title, sort_order").eq("project_id", project.id)
     : { data: [] };
 
   const { data: context } = await supabase.rpc("get_my_business_context");

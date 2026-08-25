@@ -64,14 +64,15 @@ export default async function PortalAppLayout({
   const { data: pageRows } = project
     ? await supabase
         .from("project_pages")
-        .select("page_key, title")
+        .select("page_key, title, sort_order")
         .eq("project_id", project.id)
     : { data: [] };
 
   const pageRefs = sortPages(
-    (pageRows ?? []).map((r: { page_key: string; title: string | null }) => ({
+    (pageRows ?? []).map((r: { page_key: string; title: string | null; sort_order: number | null }) => ({
       key: r.page_key,
       title: r.title,
+      sortOrder: r.sort_order,
     })),
   );
 

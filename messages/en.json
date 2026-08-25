@@ -427,7 +427,12 @@
       },
       "shuffle": "Shuffle",
       "shuffleNote": "Try a different one",
-      "corners": "Corners"
+      "corners": "Corners",
+      "pagesLabel": "Pages",
+      "pagesNote": "Call them what you call them. Drag ⠿ to reorder. Leave a name empty to go back to the default.",
+      "pagesRename": "Click to rename",
+      "pagesUp": "Move up",
+      "pagesDown": "Move down"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

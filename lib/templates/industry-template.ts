@@ -197,7 +197,13 @@ export type PageId = string;
 
 /** A page as the database holds it. `title` is the customer's own name and is
  *  null for built-in types, which take their label from the trade vocabulary. */
-export type PageRef = { key: PageId; title?: string | null };
+export type PageRef = {
+  key: PageId;
+  title?: string | null;
+  /** The customer's own position, or null/undefined when they have never
+   *  reordered. See migration 20260825080000 for why the two are different. */
+  sortOrder?: number | null;
+};
 
 export function isBuiltInPage(key: PageId): key is PageKey {
   return (PAGE_KEYS as readonly string[]).includes(key);
@@ -248,6 +254,21 @@ export function sortPageKeys(keys: PageKey[]): PageKey[] {
  * expect to find the thing they just made.
  */
 export function sortPages(pages: PageRef[]): PageRef[] {
+  // THE CUSTOMER'S ORDER WINS, WHOLE OR NOT AT ALL.
+  //
+  // If ANY page carries a sortOrder the customer has dragged something, and
+  // from that moment the list is theirs -- mixing their numbers with the
+  // designed rank would put a page they explicitly moved back where they moved
+  // it from, which is the one outcome a drag must never have. Pages with no
+  // number (one they added after reordering) fall to the end rather than to a
+  // guessed position.
+  const touched = pages.some((p) => typeof p.sortOrder === "number");
+  if (touched) {
+    return [...pages].sort(
+      (a, b) =>
+        (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER),
+    );
+  }
   const rank = (p: PageRef) =>
     isBuiltInPage(p.key) ? PAGE_KEYS.indexOf(p.key) : PAGE_KEYS.length;
   return [...pages].sort((a, b) => rank(a) - rank(b));
