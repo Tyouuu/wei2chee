@@ -168,7 +168,7 @@ export function SectionsClient({
               pricing panel, not a specimen of one. Two columns at 1440 gives
               ~560, which fits at about a half — the same ratio 21st.dev's own
               hero thumbnails run at. */}
-          <ul className="mt-6 grid grid-cols-1 items-start gap-x-5 gap-y-8 xl:grid-cols-2">
+          <ul className="mt-6 grid grid-cols-1 items-start gap-x-4 gap-y-7 md:grid-cols-2 xl:grid-cols-3">
             {shown.map((name) => (
               <li key={name} className="group min-w-0">
                 <div

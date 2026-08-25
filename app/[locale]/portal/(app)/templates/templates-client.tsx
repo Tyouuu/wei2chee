@@ -177,7 +177,7 @@ export function TemplatesClient({
             ，不喜欢按撤销就回去了。
           </p>
 
-          <ul className="mt-5 grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
+          <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {landings.map((lp) => (
               <li
                 key={lp.key}
@@ -243,7 +243,7 @@ export function TemplatesClient({
             {t("readyBody")}
           </p>
 
-          <ul className="mt-5 grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
+          <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {templates.map((tpl) => {
               const isDashboard = tpl.pageKey === "dashboard";
               return (

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Render } from "@puckeditor/core";
+import { Render, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { PageBar } from "../page-bar";
@@ -14,6 +14,7 @@ import {
 } from "@/app/[locale]/style-picker/style-column";
 import { PALETTES } from "@/lib/portal/palettes";
 import { StyleScope } from "@/design-system/editor/style-scope";
+import { PagePreview } from "@/app/[locale]/portal/page-preview";
 
 const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
@@ -111,10 +112,13 @@ export function StylesClient({
   locale,
   style,
   palette,
+  previewPages,
 }: {
   locale: string;
   style: StyleName;
   palette: string | null;
+  /** The customer's own pages, for the tiles to play through. */
+  previewPages: { key: string; label: string; data: Data }[];
 }) {
   const t = useTranslations("portal.styles");
   const tHome = useTranslations("portal.home");
@@ -180,7 +184,7 @@ export function StylesClient({
           {tHome("styleBody")}
         </p>
 
-        <ul className="mt-6 grid items-start gap-6 xl:grid-cols-2 2xl:grid-cols-3">
+        <ul className="mt-6 grid items-start gap-5 lg:grid-cols-2 2xl:grid-cols-3">
           {STYLE_ORDER.map((name) => {
             const isActive = name === active;
             return (
@@ -214,19 +218,13 @@ export function StylesClient({
                         that differ most and that a 13px table at 0.67 scale
                         cannot show. Durable's Fonts card does exactly this:
                         「Playfair Display」 set in Playfair. */}
-                    <div className="flex items-center justify-between gap-3 [padding-inline:var(--pad-card)] [padding-block:var(--pad-card)]">
-                      <span className="min-w-0 truncate [color:var(--color-paper)] [font-family:var(--font-ui)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)]">
-                        {STYLE_LABEL[name]}　报价单
-                      </span>
-                      <span className="shrink-0 rounded-[var(--radius-md)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-family:var(--font-ui)] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] [text-transform:var(--label-transform)]">
-                        新增
-                      </span>
-                    </div>
-                    <div className="pointer-events-none origin-top-left [width:143%] [transform:scale(0.7)]">
-                      <div className="[padding-inline:var(--pad-card-lg)]">
-                        <Render config={puckConfig} data={TABLE_ONLY as never} />
-                      </div>
-                    </div>
+                    {/* THE CUSTOMER'S OWN PAGES, PLAYED THROUGH.
+                        It was the register's name typed beside the word 报价单
+                        over a hand-built three-row table — one artefact, from
+                        one page, drawn by hand, shown to somebody deciding what
+                        their WHOLE SYSTEM will look like. 「为什么要做报价单 到底
+                        是谁教你做报价单的 不能是从dashboard第一页开始」. */}
+                    <PageReel pages={previewPages} />
                   </StyleScope>
                 </div>
 
@@ -504,5 +502,37 @@ function PaletteSample({ label }: { label: string }) {
         </span>
       </span>
     </span>
+  );
+}
+
+/**
+ * The tile, playing. Same behaviour as the editor's style sheet (see
+ * design-system/editor/style-sheet.tsx for the full argument): one timer for
+ * the whole grid so every tile turns together, the page's own name in the
+ * corner so a change reads as information rather than as a flicker, and
+ * stopped while the tab is hidden.
+ */
+function PageReel({ pages }: { pages: { key: string; label: string; data: Data }[] }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (pages.length < 2) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      setI((n: number) => (n + 1) % pages.length);
+    }, 2500);
+    return () => clearInterval(id);
+  }, [pages.length]);
+
+  const page = pages[Math.min(i, pages.length - 1)];
+  if (!page) return null;
+  return (
+    <div className="relative h-full">
+      <PagePreview key={page.key} data={page.data} />
+      {pages.length > 1 ? (
+        <span className="pointer-events-none absolute right-2 bottom-2 rounded-[var(--radius-pill)] px-2 py-0.5 [background-color:oklch(0.16_0.012_265/0.72)] [color:#fff] [font-size:11px]">
+          {page.label}
+        </span>
+      ) : null}
+    </div>
   );
 }

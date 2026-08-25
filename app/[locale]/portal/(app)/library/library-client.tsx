@@ -261,7 +261,21 @@ export function LibraryClient({
               without it the composed-then-scaled specimen inside reports a
               ~620px minimum and pushes the last column off a phone. Found by
               a hit-test sweep, not by looking. */}
-          <ul className="mt-6 grid grid-cols-1 items-start gap-x-5 gap-y-7 sm:grid-cols-2 2xl:grid-cols-3">
+          {/*
+            FOUR ACROSS, NOT TWO — 21st.dev, photographed 2026-08-25.
+
+            Their Card category runs four to a row on a 1440px window and every
+            tile is the component at the size it will be used. Ours ran two,
+            which made each card 440px wide: a Tag rendered at 440px is not a
+            bigger picture of a Tag, it is a Tag with three hundred pixels of
+            empty card beside it, and six of them filled a screen that should
+            have held twenty.
+
+            The founder has said this one more than once and it is written down
+            now (founder-points 7e): the library pages copy 21st.dev, and it is
+            not up for discussion any more.
+          */}
+          <ul className="mt-6 grid grid-cols-1 items-start gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {shown.map((entry) => (
               <li key={entry.name} className="group min-w-0">
                 {/* The frame is the zoom control; the NAME underneath is the
@@ -278,7 +292,7 @@ export function LibraryClient({
                     }
                   }}
                   aria-label={t("zoom", { name: entry.label })}
-                  className={`${chrome.mount} block w-full cursor-zoom-in transition-transform duration-200 group-hover:-translate-y-0.5 ${short ? "h-[164px]" : "h-[248px] 2xl:h-[276px]"}`}
+                  className={`${chrome.mount} block w-full cursor-zoom-in transition-transform duration-200 group-hover:-translate-y-0.5 ${short ? "h-[140px]" : "h-[208px]"}`}
                 >
                   {PAGE_SIZED.has(entry.name) ? (
                     <StyleScope
