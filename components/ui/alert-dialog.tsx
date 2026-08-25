@@ -1,5 +1,6 @@
 "use client"
 
+import { usePortalHost } from "@/design-system/editor/portal-host"
 import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 
@@ -21,10 +22,23 @@ function AlertDialogTrigger({
 }
 
 function AlertDialogPortal({
+  container,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
+  // A gallery tile supplies a container so an open dialog stays inside its own
+  // thumbnail; everywhere else this is null and Radix uses `body` exactly as
+  // before. See design-system/editor/portal-host.tsx.
+  //
+  // `container` is destructured out of props rather than left in the spread:
+  // spreading it afterwards would put `container: undefined` back on top of the
+  // one from context whenever a caller passed the prop explicitly as undefined.
+  const host = usePortalHost()
   return (
-    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+    <AlertDialogPrimitive.Portal
+      data-slot="alert-dialog-portal"
+      container={container ?? host ?? undefined}
+      {...props}
+    />
   )
 }
 

@@ -119,7 +119,7 @@ function Tile({
           }
         }}
         aria-label={t("zoom", { name: entry.label })}
-        className={`${chrome.mount} block w-full cursor-zoom-in transition-transform duration-200 group-hover:-translate-y-0.5 ${short ? "h-[140px]" : "h-[208px]"}`}
+        className={`${chrome.exhibit} block w-full cursor-zoom-in transition-transform duration-200 group-hover:-translate-y-0.5 ${short ? "h-[140px]" : "h-[208px]"}`}
       >
         {PAGE_SIZED.has(entry.name) ? (
           <StyleScope

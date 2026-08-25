@@ -489,6 +489,47 @@
   overflow: hidden;
 }
 
+/* THE EXHIBIT. A gallery tile with no plinth under it.
+
+   WHY THIS IS NOT JUST `.mount` WITH THE PADDING REMOVED. The plinth above
+   earns its 6px white gutter when the exhibit is a whole PAGE: the customer's
+   system carries its own dark navigation rail, and measured in CIE L* Formae's
+   ground sits at 4.0 against Blueprint's rail at 8.4 -- a gap of 0.7, which
+   genuinely dissolves. The gutter states that boundary instead of leaving it to
+   be inferred. Nothing about that changed.
+
+   A COMPONENT GALLERY TILE IS NOT A PAGE. It holds one block -- a form, a
+   card, a table -- rendered on the customer's own --color-canvas, which for 24
+   of our 25 palettes is near-white. So the plinth was drawing a white 6px
+   border around a white object: a台子 under something that already had a
+   ground of its own, six times to a row.
+
+   21st.dev, opened and measured 2026-08-26: their cards have NO frame at all.
+   The tile is the component's own background -- white where the component is
+   light, black where it is dark -- and the name sits outside, on the page. It
+   reads instantly because the grid has real rhythm instead of sixteen
+   identical plinths.
+
+   We cannot copy that last step exactly, because their page ground is light
+   and ours is near-black by the rule this file is built on: dark is Formae,
+   light is the customer. A dark register's specimen on a near-black page would
+   dissolve for the same reason the rail did. So the plinth becomes a HAIRLINE
+   -- the same --border-subtle that does all the other separating in this file
+   since the ground flipped switched the shadow ladder off. An edge, not a
+   plinth. */
+.exhibit {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--mount-radius);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.exhibit > * {
+  flex: 1;
+  min-height: 0;
+}
+
 /* PAPER. The third surface in the rule at the top of this file.
 
    The specification is the RM 5,000 deliverable. It gets read slowly, printed,

@@ -197,7 +197,9 @@ export function TemplatesClient({
                   className={`${chrome.mount} m-3 cursor-zoom-in`}
                 >
                   <StyleScope register={style} palette={palette}>
-                    <PagePreview data={lp.layout} />
+                    {/* Travelling, not cropped: all six landing templates share a
+                        masthead and differ below it. See the note on the prop. */}
+                    <PagePreview data={lp.layout} travel />
                   </StyleScope>
                 </div>
 
@@ -273,7 +275,7 @@ export function TemplatesClient({
                     className={`${chrome.mount} m-3 cursor-zoom-in`}
                   >
                     <StyleScope register={style} palette={palette}>
-                      <PagePreview data={tpl.layout} />
+                      <PagePreview data={tpl.layout} travel />
                     </StyleScope>
                   </div>
 

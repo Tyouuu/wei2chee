@@ -1,5 +1,6 @@
 "use client"
 
+import { usePortalHost } from "@/design-system/editor/portal-host"
 import * as React from "react"
 import { Dialog as SheetPrimitive } from "radix-ui"
 
@@ -24,9 +25,24 @@ function SheetClose({
 }
 
 function SheetPortal({
+  container,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Portal>) {
-  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
+  // A gallery tile supplies a container so an open dialog stays inside its own
+  // thumbnail; everywhere else this is null and Radix uses `body` exactly as
+  // before. See design-system/editor/portal-host.tsx.
+  //
+  // `container` is destructured out of props rather than left in the spread:
+  // spreading it afterwards would put `container: undefined` back on top of the
+  // one from context whenever a caller passed the prop explicitly as undefined.
+  const host = usePortalHost()
+  return (
+    <SheetPrimitive.Portal
+      data-slot="sheet-portal"
+      container={container ?? host ?? undefined}
+      {...props}
+    />
+  )
 }
 
 function SheetOverlay({

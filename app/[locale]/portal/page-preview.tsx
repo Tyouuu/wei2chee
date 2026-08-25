@@ -94,9 +94,19 @@ const PAN_EPOCH = typeof performance !== "undefined" ? performance.now() : 0;
 export function PagePreview({
   data,
   strip,
+  travel: travelProp = false,
 }: {
   data: Data;
   strip?: Data[];
+  /**
+   * Scroll a SINGLE page rather than sit still. For 模板库, where the six
+   * landing-page templates share a header and differ below it — six tiles
+   * cropped at the same 720px were six pictures of the same masthead.
+   *
+   * Safe to pass on a page that turns out to be shorter than the crop: the
+   * measured overhang is 0 and the animation is left paused.
+   */
+  travel?: boolean;
 }) {
   /*
     WHY THERE IS A STRIP AT ALL, AND WHY IT IS NOT ONE PAGE PANNING.
@@ -119,7 +129,7 @@ export function PagePreview({
     it is the right way: every page appears, the dashboard is first, and nothing
     ever cuts.
   */
-  const travel = !!strip && strip.length > 0;
+  const travel = travelProp || (!!strip && strip.length > 0);
   const boxRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   // 0 until measured. Rendering at scale 0 rather than at 1 avoids a single

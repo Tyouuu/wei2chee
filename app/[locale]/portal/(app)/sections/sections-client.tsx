@@ -35,6 +35,51 @@ import { SECTION_SHELVES, orderShelves } from "./shelves";
  * differently is two things to learn.
  */
 
+/** One 版段 tile. Hoisted for the same reason 组件库's is — a component
+ *  declared inside the render function is a new type every render, and each of
+ *  these mounts a composed-then-scaled specimen with its own ResizeObserver. */
+function SectionTile({
+  name,
+  style,
+  palette,
+}: {
+  name: string;
+  style: StyleName;
+  palette: string | null;
+}) {
+  return (
+      <li className="group min-w-0">
+        <div
+          className={`${chrome.exhibit} block h-[300px] w-full transition-transform duration-200 group-hover:-translate-y-0.5`}
+        >
+          <Specimen
+            name="SiteBlock"
+            props={{ id: `sec-${name}`, block: name }}
+            style={style}
+            palette={palette}
+            // Composed at the width a marketing section is designed
+            // for. At 620 (the component library's width) a three-tier
+            // pricing grid stacks into one column and stops being the
+            // thing it is.
+            width={1200}
+          />
+        </div>
+        <div className="mt-2.5">
+          <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+            {BLOCK_META[name]?.title ?? name}
+          </span>
+          <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+            {name}
+          </span>
+        </div>
+      </li>
+  );
+}
+
+/** Tiles per front-door row. Three, because a 版段 is a whole page section
+ *  and this grid runs three across where 组件库 runs four. */
+const ROW = 3;
+
 export function SectionsClient({
   style,
   palette,
@@ -43,7 +88,9 @@ export function SectionsClient({
   palette: string | null;
 }) {
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState<string>("hero");
+  /* null = the sectioned front door. See the grid below, and 组件库's own
+     note: 21st.dev opens on rows, not on one shelf and not on everything. */
+  const [active, setActive] = useState<string | null>(null);
 
   const shelves = useMemo(() => orderShelves(Object.keys(BLOCK_CATEGORIES)), []);
   const total = useMemo(
@@ -52,7 +99,7 @@ export function SectionsClient({
   );
 
   const searching = query.trim().length > 0;
-  const shown = useMemo(() => {
+  const shown = useMemo<string[]>(() => {
     const q = query.trim().toLowerCase();
     if (q) {
       return Object.entries(BLOCK_META)
@@ -64,7 +111,9 @@ export function SectionsClient({
         )
         .map(([name]) => name);
     }
-    return BLOCK_CATEGORIES[active] ?? [];
+    // null is the sectioned front door, which builds its own rows; this
+    // list is only what the flat grid shows.
+    return active ? (BLOCK_CATEGORIES[active] ?? []) : [];
   }, [query, active]);
 
   const shelfName = (k: string) => SECTION_SHELVES[k] ?? k;
@@ -84,6 +133,29 @@ export function SectionsClient({
             className="mb-4 w-full rounded-[var(--radius-md)] border px-3 py-2 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-xs)] outline-none focus-visible:[border-color:var(--color-paper-dim)]"
           />
           <ul className="flex flex-col gap-px">
+            {/* 全部 sits at the top and goes back to the sectioned front
+                door. Without it the rail is one way: you can enter a shelf and
+                never get back out to the overview. */}
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setActive(null);
+                }}
+                aria-current={!searching && active === null ? "true" : undefined}
+                className={`flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2.5 py-1.5 text-left transition-colors [font-size:var(--text-xs)] ${
+                  !searching && active === null
+                    ? "[background-color:var(--color-ink-850)] [color:var(--color-paper)] [font-weight:var(--fw-medium)]"
+                    : "[color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-900)] hover:[color:var(--color-paper)]"
+                }`}
+              >
+                <span className="min-w-0 flex-1 truncate">全部</span>
+                <span className="[font-family:var(--font-numeric)] tabular-nums opacity-55">
+                  {total}
+                </span>
+              </button>
+            </li>
             {shelves.map((key) => {
               const on = !searching && active === key;
               return (
@@ -146,7 +218,7 @@ export function SectionsClient({
 
           <div className="flex items-baseline gap-3">
             <h2 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-              {searching ? query.trim() : shelfName(active)}
+              {searching ? query.trim() : active ? shelfName(active) : "全部"}
             </h2>
             <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)] tabular-nums">
               {shown.length}
@@ -168,35 +240,46 @@ export function SectionsClient({
               pricing panel, not a specimen of one. Two columns at 1440 gives
               ~560, which fits at about a half — the same ratio 21st.dev's own
               hero thumbnails run at. */}
-          <ul className="mt-6 grid grid-cols-1 items-start gap-x-4 gap-y-7 md:grid-cols-2 xl:grid-cols-3">
-            {shown.map((name) => (
-              <li key={name} className="group min-w-0">
-                <div
-                  className={`${chrome.mount} block h-[300px] w-full transition-transform duration-200 group-hover:-translate-y-0.5`}
-                >
-                  <Specimen
-                    name="SiteBlock"
-                    props={{ id: `sec-${name}`, block: name }}
-                    style={style}
-                    palette={palette}
-                    // Composed at the width a marketing section is designed
-                    // for. At 620 (the component library's width) a three-tier
-                    // pricing grid stacks into one column and stops being the
-                    // thing it is.
-                    width={1200}
-                  />
-                </div>
-                <div className="mt-2.5">
-                  <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
-                    {BLOCK_META[name]?.title ?? name}
-                  </span>
-                  <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
-                    {name}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {/* THE SECTIONED FRONT DOOR, same as 组件库's — 21st.dev's
+              /components opens on rows, not on one shelf. This page opened on
+              「hero」, so the entrance to 216 sections was one shelf. */}
+          {!searching && active === null ? (
+            <div className="mt-6 flex flex-col gap-10">
+              {shelves.map((key) => (
+                <section key={key}>
+                  <div className="mb-3 flex items-baseline gap-3">
+                    <h3 className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
+                      {shelfName(key)}
+                    </h3>
+                    <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)] tabular-nums">
+                      {BLOCK_CATEGORIES[key].length}
+                    </span>
+                    <span className="flex-1" />
+                    {BLOCK_CATEGORIES[key].length > ROW && (
+                      <button
+                        type="button"
+                        onClick={() => setActive(key)}
+                        className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)]"
+                      >
+                        全部 {BLOCK_CATEGORIES[key].length} →
+                      </button>
+                    )}
+                  </div>
+                  <ul className="grid grid-cols-1 items-start gap-x-4 gap-y-7 md:grid-cols-2 xl:grid-cols-3">
+                    {BLOCK_CATEGORIES[key].slice(0, ROW).map((name) => (
+                      <SectionTile key={name} name={name} style={style} palette={palette} />
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <ul className="mt-6 grid grid-cols-1 items-start gap-x-4 gap-y-7 md:grid-cols-2 xl:grid-cols-3">
+              {shown.map((name) => (
+                <SectionTile key={name} name={name} style={style} palette={palette} />
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </>

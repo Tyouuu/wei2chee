@@ -6,6 +6,7 @@ import { Render } from "@puckeditor/core";
 // touched takes the shape THIS register prefers. See
 // design-system/editor/puck-config-client.tsx.
 import { registerAwarePuckConfig as puckConfig } from "@/design-system/editor/puck-config-client";
+import { PortalBoundary } from "./portal-host";
 import { StyleScope } from "@/design-system/editor/style-scope";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
@@ -172,7 +173,19 @@ export function Specimen({
       : 1;
 
   return (
-    <div ref={frameRef} className={`relative overflow-hidden ${className}`}>
+    /*
+      PORTALLED OVERLAYS STAY IN THE TILE.
+
+      Three of the 216 版段 are an OPEN dialog or drawer, and Radix renders
+      those onto `document.body` at `fixed; inset: 0`. `overflow: hidden` here
+      cannot contain a node that is not a descendant, and the scale() below --
+      which does make a containing block for fixed DESCENDANTS -- never sees
+      them either. Screenshotted at 1440: the 版段库 was a notifications drawer
+      down the right of the whole page, a command palette across the middle and
+      a scrim over everything else. See portal-host.tsx.
+    */
+    <PortalBoundary className={`overflow-hidden ${className}`}>
+      <div ref={frameRef} className="absolute inset-0">
       <StyleScope
         register={style}
         palette={palette}
@@ -213,6 +226,7 @@ export function Specimen({
           </div>
         </div>
       </StyleScope>
-    </div>
+      </div>
+    </PortalBoundary>
   );
 }
