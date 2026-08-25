@@ -60,6 +60,8 @@ export function StyleSheet({
   pending,
   failed,
   onPick,
+  onShuffle,
+  shuffling,
   locale,
   styles,
   labels,
@@ -69,10 +71,20 @@ export function StyleSheet({
   pending: StyleName | null;
   failed: boolean;
   onPick: (next: StyleName) => void;
+  /** Press once, get a different register AND a different palette. */
+  onShuffle: () => void;
+  shuffling: boolean;
   locale: string;
   /** [name, one-line tag] in the order they are offered. */
   styles: { name: StyleName; tag: string }[];
-  labels: { title: string; current: string; failed: string; more: string };
+  labels: {
+    title: string;
+    current: string;
+    failed: string;
+    more: string;
+    shuffle: string;
+    shuffleNote: string;
+  };
 }) {
   const { sheet, closeSheet } = useEditorUi();
 
@@ -83,6 +95,49 @@ export function StyleSheet({
       title={labels.title}
     >
       <div className="px-3 py-3">
+        {/*
+          重掷 — Durable's Shuffle, and the founder marked it 拿 on 2026-08-25.
+
+          WHY IT IS WORTH A BUTTON. Seventeen registers times twenty-six
+          palettes is four hundred and forty-two combinations, and an owner who
+          cannot say what he wants — which is most of them, and is the whole
+          reason this product exists — will scroll a list of seventeen, pick the
+          third, and never see the other four hundred. One press that lands
+          somewhere he did not choose is how a person discovers a preference
+          they could not have described. It costs nothing here: both axes
+          already persist, so this is two random draws and the RPC that was
+          already being called.
+
+          It never repeats what is on screen. A shuffle that gives you the same
+          page back reads as a broken button rather than as a coincidence.
+        */}
+        <button
+          type="button"
+          onClick={onShuffle}
+          disabled={shuffling}
+          className="mb-3 flex w-full items-center justify-center gap-2 rounded-[var(--radius-md)] px-3 py-2.5 [background-color:var(--color-ink-850)] [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-ink-800)] disabled:opacity-50"
+        >
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <path
+              d="M2 4h2.2c1 0 1.9.5 2.4 1.3l2.8 4.4c.5.8 1.4 1.3 2.4 1.3H14M2 12h2.2c1 0 1.9-.5 2.4-1.3l.6-1M14 4h-1.6c-1 0-1.9.5-2.4 1.3l-.3.5"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+            />
+            <path
+              d="M12.4 2.4 14 4l-1.6 1.6M12.4 9.4 14 11l-1.6 1.6"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {labels.shuffle}
+          <span className="[color:var(--color-paper-dim)] [font-weight:var(--fw-regular)]">
+            · {labels.shuffleNote}
+          </span>
+        </button>
+
         {failed ? (
           <p
             role="status"

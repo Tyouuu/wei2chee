@@ -61,7 +61,7 @@ import {
   STYLE_ORDER,
   type StyleName,
 } from "@/app/[locale]/style-picker/style-column";
-import { scopeClasses } from "@/lib/portal/palettes";
+import { scopeClasses, PALETTES } from "@/lib/portal/palettes";
 import { RegisterProvider } from "@/design-system/editor/style-scope";
 
 // Same lookup app/[locale]/style-picker/style-column.tsx uses internally
@@ -223,8 +223,50 @@ export function PortalEditor({
   // the styles page is: what the round trip confirms is persistence, not
   // appearance.
   const [activeStyle, setActiveStyle] = useState<StyleName>(style);
+  // Optimistic like the register beside it: 重掷 moves BOTH axes and the
+  // canvas has to repaint on the press, not on the round trip.
+  const [activePalette, setActivePalette] = useState<string | null>(palette);
   const [stylePending, setStylePending] = useState<StyleName | null>(null);
   const [styleFailed, setStyleFailed] = useState(false);
+  const [shuffling, setShuffling] = useState(false);
+
+  /**
+   * 重掷 — a different register AND a different palette, in one press.
+   *
+   * Both axes move together on purpose. Shuffling only the layout gives back
+   * seventeen variations of the same colours, which is the smaller half of what
+   * is on offer: with twenty-six palettes the library is four hundred and
+   * forty-two pages, and an owner who cannot describe what he wants will never
+   * reach the other four hundred and twenty-five by scrolling.
+   *
+   * Neither draw is allowed to return what is already on screen -- a shuffle
+   * that changes nothing reads as a broken button.
+   */
+  async function shuffleStyle() {
+    if (shuffling || stylePending) return;
+    const otherStyles = STYLE_ORDER.filter((s) => s !== activeStyle);
+    const otherPalettes = PALETTES.map((p) => p.key).filter((k) => k !== activePalette);
+    const nextStyle = otherStyles[Math.floor(Math.random() * otherStyles.length)];
+    const nextPalette = otherPalettes[Math.floor(Math.random() * otherPalettes.length)];
+
+    const previousStyle = activeStyle;
+    const previousPalette = activePalette;
+    setShuffling(true);
+    setStyleFailed(false);
+    setActiveStyle(nextStyle);
+    setActivePalette(nextPalette);
+
+    const { error } = await createBrowserSupabaseClient().rpc("set_project_style", {
+      new_style: nextStyle,
+      new_palette: nextPalette,
+    });
+    setShuffling(false);
+    if (error) {
+      setActiveStyle(previousStyle);
+      setActivePalette(previousPalette);
+      setStyleFailed(true);
+    }
+  }
 
   async function pickStyle(next: StyleName) {
     if (next === activeStyle || stylePending) return;
@@ -828,7 +870,7 @@ export function PortalEditor({
                       <LivePreview
                         name={name}
                         style={activeStyle}
-                        palette={palette}
+                        palette={activePalette}
                         // Composed at 620 and scaled to fit. Two per row now,
                         // so a shelf of six is one screen instead of six.
                         width={620}
@@ -942,7 +984,7 @@ export function PortalEditor({
                   narrow ? (
                     <MobileEditor
                       style={activeStyle}
-                      palette={palette}
+                      palette={activePalette}
                       locale={locale}
                       navPages={navPages}
                     />
@@ -992,7 +1034,7 @@ export function PortalEditor({
                 // was selected. It floats at the foot of the canvas now -- see
                 // the `preview` override below.
                 fields: ({ children }) => (
-                  <BlockSheets style={activeStyle} palette={palette}>
+                  <BlockSheets style={activeStyle} palette={activePalette}>
                     {children}
                   </BlockSheets>
                 ),
@@ -1052,7 +1094,7 @@ export function PortalEditor({
                       label={navPages.find((p) => p.key === pageKey)?.label ?? pageKey}
                     >
                     <CanvasGutter
-                      className={`ds-ground ${scopeClasses(activeStyle, palette)} h-full [background-color:var(--color-canvas)]`}
+                      className={`ds-ground ${scopeClasses(activeStyle, activePalette)} h-full [background-color:var(--color-canvas)]`}
                     >
                       {/* Everything inside the canvas is the CUSTOMER'S system
                         and speaks their system language; everything outside it
@@ -1119,10 +1161,12 @@ export function PortalEditor({
         <SheetHost />
         <StyleSheet
           active={activeStyle}
-          palette={palette}
+          palette={activePalette}
           pending={stylePending}
           failed={styleFailed}
           onPick={pickStyle}
+          onShuffle={shuffleStyle}
+          shuffling={shuffling}
           locale={locale}
           styles={STYLE_ORDER.map((name) => ({
             name,
@@ -1133,6 +1177,8 @@ export function PortalEditor({
             current: tHome("styleCurrent"),
             failed: t("styleFailed"),
             more: t("styleMore"),
+            shuffle: t("shuffle"),
+            shuffleNote: t("shuffleNote"),
           }}
         />
       </div>

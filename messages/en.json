@@ -424,7 +424,9 @@
         "ink": "Inverted",
         "tint": "Tinted",
         "paper": "White"
-      }
+      },
+      "shuffle": "Shuffle",
+      "shuffleNote": "Try a different one"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",
