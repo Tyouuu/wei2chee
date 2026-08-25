@@ -423,7 +423,7 @@
       "eyebrow": "YOUR SYSTEM",
       "title": "Your system is built. Change anything.",
       "titleWithIndustry": "Your {industry} system is built.",
-      "pagesTitle": "System pages",
+      "pagesTitle": "Your own system",
       "pagesCount": "{count} pages",
       "cardDraft": "Generated draft · not edited yet",
       "cardEdited": "Edited and saved by you",
@@ -491,7 +491,18 @@
       "metaDrafts": "{count} still drafts",
       "headlineFallback": "Your system is built.",
       "addPageChips": "Pick one from the module library, or name your own.",
-      "subline": "The {count} pages below are the draft built from it. Every name, column and sample row is yours to change."
+      "subline": "The {count} pages below are the draft built from it. Every name, column and sample row is yours to change.",
+      "pagesNote": "Only you and your people can see these.",
+      "siteTitle": "Your public website",
+      "siteNote": "The one strangers see. An enquiry filled in here lands straight in your system.",
+      "siteLive": "Live",
+      "siteDraft": "Not published yet",
+      "siteNoAddress": "No address yet",
+      "siteOpen": "Edit the website",
+      "siteView": "View the live page",
+      "siteEnquiries": "{n} enquiries so far",
+      "siteEnquiriesNone": "No enquiries yet",
+      "siteEnquiriesLink": "Open"
     },
     "settings": {
       "title": "Business details",

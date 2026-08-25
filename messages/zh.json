@@ -423,7 +423,7 @@
       "eyebrow": "你的系统",
       "title": "系统已经建好了，随时可以改。",
       "titleWithIndustry": "你的{industry}系统已经建好了。",
-      "pagesTitle": "系统页面",
+      "pagesTitle": "你自己用的系统",
       "pagesCount": "{count} 个页面",
       "cardDraft": "自动生成的初稿 · 还没改过",
       "cardEdited": "你改过并保存了",
@@ -491,7 +491,18 @@
       "metaDrafts": "{count} 页还是初稿",
       "headlineFallback": "你的系统已经建好了。",
       "addPageChips": "从模块库挑一个，或者自己起名字。",
-      "subline": "下面 {count} 页就是照着它建的初稿。名称、栏位、示例记录，全部可以改。"
+      "subline": "下面 {count} 页就是照着它建的初稿。名称、栏位、示例记录，全部可以改。",
+      "pagesNote": "只有你跟你的人看得到。",
+      "siteTitle": "给客人看的官网",
+      "siteNote": "外人看得到的那一个。填了表格的询价会直接进你的系统。",
+      "siteLive": "已上线",
+      "siteDraft": "还没上线",
+      "siteNoAddress": "还没有网址",
+      "siteOpen": "编辑官网",
+      "siteView": "看真的页面",
+      "siteEnquiries": "收到 {n} 条询价",
+      "siteEnquiriesNone": "还没有询价进来",
+      "siteEnquiriesLink": "去看"
     },
     "settings": {
       "title": "生意资料",

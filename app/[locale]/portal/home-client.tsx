@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { OPTIONAL_MODULES } from "@/lib/portal/module-catalog";
+import { OPTIONAL_MODULES, moduleLabel } from "@/lib/portal/module-catalog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -85,6 +85,9 @@ export function PortalHome({
   pages,
   summary,
   industryName,
+  siteSlug,
+  sitePublished,
+  enquiryCount,
   businessName,
   savedBusinessName,
   componentCount,
@@ -98,6 +101,10 @@ export function PortalHome({
    *  supplies `style`, and a second query would be a second source of truth. */
   palette: string | null;
   pages: { pageKey: string; title: string | null; isDraft: boolean; layout: Data }[];
+  /** The address the site answers on, or null before the owner claims one. */
+  siteSlug: string | null;
+  sitePublished: boolean;
+  enquiryCount: number;
   summary: string | null;
   industryName: string | null;
   businessName: string;
@@ -116,6 +123,10 @@ export function PortalHome({
   // Capped at six: the tile is one grid cell, and a wrapping wall of every
   // remaining module turns an invitation back into a decision.
   const have = new Set(pages.map((p) => p.pageKey));
+  // 官网 is matched by key rather than by position: it is the last page in the
+  // sort order today and would silently rejoin the grid the day that changes.
+  const sitePage = pages.find((p) => p.pageKey === "website") ?? null;
+  const systemPages = pages.filter((p) => p.pageKey !== "website");
   const offerable = OPTIONAL_MODULES.filter((m) => !have.has(m.key)).slice(0, 6);
 
   const labelFor = (page: { pageKey: string; title: string | null }) =>
@@ -263,13 +274,39 @@ export function PortalHome({
           </span>
         </div>
 
+        {/*
+          TWO KINDS OF THING, TWO PLACES.
+
+          「客户的system页面 跟客户的landing pages跟website应该是要分开放的」 --
+          2026-08-25, and he is right about the kind, not just the placement.
+          The five internal pages are one object repeated: the owner's own desk,
+          each one a draft or an edited draft, all reached the same way. 官网 is
+          a different object with three facts none of the others has -- an
+          address, a published state, and strangers posting into it -- and as
+          the sixth tile in that grid there was nowhere for any of them to
+          appear. The card could only say "generated draft".
+
+          The precedent is not subtle: Shopify splits Online Store from the
+          admin, Webflow and Framer split the Site from the CMS, and Vercel
+          gives Production its own panel carrying the domain and the deploy
+          state rather than a card in a list of branches. Every one of them
+          separates "what the public sees" from "what you work in".
+
+          It also brings this screen in line with the rail the customer already
+          navigates by, which has said DAY TO DAY / THE WORK / PUBLIC since the
+          groups landed. The home screen was the last place still pretending
+          they were all the same.
+        */}
         <section className="mt-9">
           <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
             {t("pagesTitle")}
           </h2>
+          <p className="mt-1.5 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+            {t("pagesNote")}
+          </p>
 
           <ul className="mt-4 grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
-            {pages.map((page) => (
+            {systemPages.map((page) => (
               // The link does NOT wrap the card. A live preview renders the
               // page's own rail, which is a list of <a> elements, and an <a>
               // around those is invalid HTML — React reports it as a hydration
@@ -377,7 +414,15 @@ export function PortalHome({
                         key={m.key}
                         className="rounded-[var(--radius-pill)] border px-3 py-1 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]"
                       >
-                        {m.label}
+                        {/* `labelEn` has existed on every archetype since the
+                            catalogue was written and nothing read it, so the
+                            English home screen offered 订单 · 预约 · 任务 · 对账
+                            to a reader who had chosen English -- the same class
+                            of gap as the editor's 489 literals, one file over.
+                            Page names on this screen follow the INTERFACE (see
+                            `labelFor` above, which reads portal.editor.pages),
+                            so these follow it too. */}
+                        {moduleLabel(m, locale === "zh" ? "zh" : "en")}
                       </span>
                     ))}
                   </span>
@@ -386,6 +431,108 @@ export function PortalHome({
             </li>
           </ul>
         </section>
+
+        {/*
+          THE PUBLIC SITE, AS ITS OWN THING.
+
+          Wider than a card and shaped differently on purpose: this is the one
+          surface on the account that a stranger reaches, so the three facts a
+          grid tile could never carry are the whole point of it -- the address
+          it answers on, whether it is live, and how many people have written in
+          through it. All three existed already; none of them appeared on this
+          screen, because the site was rendering as tile six of six.
+
+          The preview keeps the customer's own register, exactly like the tiles
+          above, because the register is the product and this is the page it
+          matters most on.
+        */}
+        {sitePage && (
+          <section className="mt-12">
+            <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+              {t("siteTitle")}
+            </h2>
+            <p className="mt-1.5 max-w-xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+              {t("siteNote")}
+            </p>
+
+            <div
+              className={`mt-4 grid gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] ${chrome.sheet} [background-color:var(--color-ink-900)]`}
+            >
+              <div className={`${chrome.mount} m-3 lg:mr-0`}>
+                <StyleScope register={style} palette={palette}>
+                  <PagePreview data={sitePage.layout} />
+                </StyleScope>
+              </div>
+
+              <div className="flex flex-col justify-center gap-5 p-6 lg:p-8">
+                {/* THE ADDRESS. A website with no address is not a website, and
+                    「还没有网址」 is a more useful thing to read than a blank. */}
+                <div>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span
+                      className={`rounded-[var(--radius-pill)] px-2.5 py-0.5 [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] ${
+                        sitePublished
+                          ? "[background-color:color-mix(in_oklab,var(--color-jade)_15%,transparent)] [color:var(--color-jade-bright)]"
+                          : "[background-color:color-mix(in_oklab,var(--color-brass)_14%,transparent)] [color:var(--color-brass-bright)]"
+                      }`}
+                    >
+                      {sitePublished ? t("siteLive") : t("siteDraft")}
+                    </span>
+                  </div>
+                  <p className="mt-2.5 truncate [color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)]">
+                    {siteSlug ? `/s/${siteSlug}` : t("siteNoAddress")}
+                  </p>
+                </div>
+
+                {/* THE ARROW, COUNTED. This is the one number on the account
+                    that says the website did its job -- see the 2026-08-25 note
+                    on submit_site_enquiry. Reading it here rather than only on
+                    /portal/enquiries is the difference between a feature and a
+                    result. */}
+                <div className="[border-top:var(--hairline)_solid_var(--color-ink-800)] pt-4">
+                  <p className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                    {enquiryCount > 0
+                      ? t("siteEnquiries", { n: enquiryCount })
+                      : t("siteEnquiriesNone")}
+                    {enquiryCount > 0 && (
+                      <>
+                        {" · "}
+                        <Link
+                          href={`/${locale}/portal/enquiries`}
+                          className="[color:var(--color-primary)] [font-weight:var(--fw-medium)] hover:underline"
+                        >
+                          {t("siteEnquiriesLink")}
+                        </Link>
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/${locale}/portal/website`}
+                    className="rounded-[var(--radius-control)] px-4 py-2 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] transition-opacity hover:opacity-90"
+                  >
+                    {t("siteOpen")}
+                  </Link>
+                  {/* Only when there is something to open. A "view the live
+                      page" link on an unpublished site is a 404 with a friendly
+                      label on it. */}
+                  {sitePublished && siteSlug && (
+                    <a
+                      href={`/s/${siteSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] transition-colors hover:[color:var(--color-paper)]"
+                    >
+                      {t("siteView")} ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
       </div>
     </>
   );

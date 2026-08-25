@@ -57,7 +57,7 @@ export default async function PortalHomePage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style, palette, paid")
+    .select("id, style, palette, paid, site_slug, site_published")
     .eq("account_id", user.id)
     .single();
 
@@ -107,6 +107,13 @@ export default async function PortalHomePage({
         : upgradeLayout(saved)) as unknown as Data,
     };
   });
+
+  // A head-only count: the rows themselves live on /portal/enquiries and the
+  // home screen only needs to know whether any arrived.
+  const { count: enquiryCount } = await supabase
+    .from("site_enquiries")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", project.id);
 
   return (
     <PortalHome
@@ -172,6 +179,20 @@ export default async function PortalHomePage({
        * layouts have no locale dimension at all).
        */
       industryName={locale === "zh" ? (businessContext.industry?.name_zh ?? null) : null}
+      /**
+       * THE PUBLIC SITE IS NOT A PAGE LIKE THE OTHERS.
+       *
+       * 「客户的system页面 跟客户的landing pages跟website应该是要分开放的」 --
+       * 2026-08-25, and it is a structural point rather than a layout one. The
+       * five internal pages are the owner's own desk. 官网 is a different
+       * object: it has an address, it is either live or it is not, and
+       * strangers post into it. None of those three facts had anywhere to
+       * appear on this screen, because the site was rendering as the sixth
+       * tile in a grid whose cards can only say "draft / edited".
+       */
+      siteSlug={(project.site_slug as string | null) ?? null}
+      sitePublished={Boolean(project.site_published)}
+      enquiryCount={enquiryCount ?? 0}
     />
   );
 }
