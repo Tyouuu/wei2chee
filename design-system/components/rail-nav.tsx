@@ -68,7 +68,7 @@ export type RailUtilityItem = {
  *            (「三房翻新」has no glyph) and where a row of generic squares reads
  *            as decoration.
  */
-export type RailVariant = "full" | "compact" | "quiet"
+export type RailVariant = "full" | "compact" | "quiet" | "tree"
 
 type Panel = "profile" | null
 
@@ -246,13 +246,33 @@ export function RailNav({
   const isTop = axis === "top"
   const isCompact = variant === "compact"
   const isQuiet = variant === "quiet"
+  /**
+   * 树 -- Ant Design Pro's rail, and the shape a Chinese-speaking SME owner
+   * has already been using for years (Autocount, 进销存, 车行系统 all draw it).
+   *
+   * The difference from `full` is not density, it is what a GROUP is. In
+   * `full` a group is an uppercase micro label -- a caption over a list. Here
+   * it is a row you press, set in the same size as its items, with the chevron
+   * on the right and the items indented under a guide line. One reads as a
+   * section heading; the other reads as a folder. That is a structural
+   * difference a palette cannot repaint, which is the whole reason this axis
+   * gained a fourth option on 2026-08-25.
+   */
+  const isTree = variant === "tree"
   const showIcons = !isQuiet
   const showLabels = !isCompact
 
   const shell = isTop
     ? "flex w-full shrink-0 items-center gap-3 border-b [padding-inline:14px] [padding-block:8px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]"
     : `flex h-full min-h-full shrink-0 flex-col border-r [padding-block:10px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)] ${
-        isCompact ? "w-[64px] [padding-inline:8px]" : isQuiet ? "w-[220px] [padding-inline:12px]" : "w-[228px] [padding-inline:10px]"
+        isCompact
+          ? "w-[64px] [padding-inline:8px]"
+          : isQuiet
+            ? "w-[220px] [padding-inline:12px]"
+            // A tree spends 18px on the indent, so it needs them back.
+            : isTree
+              ? "w-[240px] [padding-inline:8px]"
+              : "w-[228px] [padding-inline:10px]"
       }`
 
   return (
@@ -348,7 +368,11 @@ export function RailNav({
               {!named ? null : collapsible ? (
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)] hover:text-[color:var(--color-nav-fg)]"
+                  className={
+                    isTree
+                      ? "flex w-full items-center justify-between gap-2 [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:calc(var(--pad-control-y)*1.4)] [font-size:var(--text-sm)] text-[color:var(--color-nav-fg)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-nav-hover)]"
+                      : "flex w-full items-center justify-between gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)] hover:text-[color:var(--color-nav-fg)]"
+                  }
                   aria-expanded={openGroup}
                   aria-controls={`rail-group-${group}`}
                   onClick={() => toggleGroup(group)}
@@ -361,14 +385,30 @@ export function RailNav({
                   />
                 </button>
               ) : (
-                <div className="[padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)]">
+                <div
+                  className={
+                    isTree
+                      ? "[padding-inline:var(--pad-control-x)] [padding-block:calc(var(--pad-control-y)*1.4)] [font-size:var(--text-sm)] text-[color:var(--color-nav-fg)] [font-weight:var(--fw-medium)]"
+                      : "[padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)]"
+                  }
+                >
                   {group}
                 </div>
               )}
               <div
                 id={`rail-group-${group}`}
                 hidden={!openGroup}
-                className={isTop ? "flex items-center gap-1" : undefined}
+                className={
+                  isTop
+                    ? "flex items-center gap-1"
+                    : // The guide line is what makes an indent read as
+                      // CONTAINMENT rather than as a margin somebody got wrong.
+                      // Only under a named group: indenting items that hang off
+                      // nothing would be an indent with no parent.
+                      isTree && named
+                      ? "ms-[13px] ps-[9px] [border-inline-start:var(--hairline)_solid_var(--color-nav-border)]"
+                      : undefined
+                }
               >
                 {groupItems.map((item) => {
                   // Longest match wins. A prefix test alone would light up

@@ -330,6 +330,9 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "full", label: "完整（图标 + 分组）", props: { variant: "full" } },
     { id: "compact", label: "只有图标", props: { variant: "compact" } },
     { id: "quiet", label: "只有文字", props: { variant: "quiet" } },
+    // Ant Design Pro / vue-element-admin: a group is a folder you press, not a
+    // caption over a list. The shape Chinese-speaking SMEs already run.
+    { id: "tree", label: "可展开的分组树", props: { variant: "tree" } },
   ],
 
   // ---------------------------------------------------------------- 按钮
