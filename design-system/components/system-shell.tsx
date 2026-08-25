@@ -104,8 +104,27 @@ export function SystemShell({
 
   return (
     <div
-      className={`ds-ground flex min-h-full w-full [background-color:var(--color-canvas)] ${
-        isTop ? "flex-col" : "items-stretch"
+      /**
+       * THE SYSTEM MEASURES ITSELF, NOT THE WINDOW.
+       *
+       * Every responsive decision inside this shell used to key off the
+       * VIEWPORT: `sm:grid-cols-2` fires at a 640px window whatever width the
+       * page itself has. That was wrong in two places long before anyone
+       * noticed, and the phone preview added on 2026-08-25 made both visible in
+       * one screenshot. The canvas is not the window -- it is the window minus
+       * the editor's chrome, and minus another 472px whenever a sheet is
+       * docked. And a phone preview is a 390px box inside a 1440px window, so
+       * a page that asks the window "am I narrow?" is told no.
+       *
+       * `@container` makes this element the thing its own contents measure
+       * against, so the answer is the truth in all three cases: a real 390px
+       * phone, a 390px preview, and a canvas squeezed by a panel.
+       *
+       * The variants below are container sizes, not viewport ones -- `@3xl` is
+       * 48rem/768px, which is the same number `md:` used to mean.
+       */
+      className={`ds-ground @container flex min-h-full w-full [background-color:var(--color-canvas)] ${
+        isTop ? "flex-col" : "flex-col @3xl:flex-row @3xl:items-stretch"
       }`}
     >
       {/* `shrink-0` matters: RailNav sets its own width, and without this the
@@ -134,7 +153,10 @@ export function SystemShell({
       {/* The axis is published here rather than set on the rail — see
           nav-axis.tsx for the trap that avoids. */}
       <NavAxisProvider value={nav}>
-        <div className={isTop ? "flex w-full shrink-0" : "flex shrink-0"} style={navVars}>
+        <div
+          className={isTop ? "flex w-full shrink-0" : "flex w-full shrink-0 @3xl:w-auto"}
+          style={navVars}
+        >
           {sidebar}
         </div>
       </NavAxisProvider>

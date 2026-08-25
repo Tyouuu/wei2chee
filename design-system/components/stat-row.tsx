@@ -105,12 +105,12 @@ export function StatRow({
   // leaves the fourth tile stranded on a row of its own. Five units: 2 + 1+1+1.
   const cols =
     look === "lead"
-      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+      ? "grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-5"
       : tiles.length >= 4
-        ? "grid-cols-2 lg:grid-cols-4"
+        ? "grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-4"
         : tiles.length === 3
-          ? "grid-cols-1 sm:grid-cols-3"
-          : "grid-cols-1 sm:grid-cols-2"
+          ? "grid-cols-1 @2xl:grid-cols-3"
+          : "grid-cols-1 @2xl:grid-cols-2"
 
   const gap = look === "rule" ? "gap-0" : "[gap:var(--gap-stack)]"
 
@@ -147,12 +147,12 @@ function Tile({
   // with no borders must not be handed a boxed one.
   const shell =
     look === "rule"
-      ? `[padding:var(--pad-card)] ${first ? "" : "sm:[border-left:var(--hairline)] sm:[border-color:var(--border-subtle)]"}`
+      ? `[padding:var(--pad-card)] ${first ? "" : "@2xl:[border-left:var(--hairline)] @2xl:[border-color:var(--border-subtle)]"}`
       : look === "boxed"
         ? "[background:var(--card)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius)] [padding:var(--pad-card)]"
         : "[background:var(--card)] [border-radius:var(--radius)] [padding:var(--pad-card)] [box-shadow:var(--shadow-card)] [border:var(--border-card-width)_solid_var(--border-subtle)]"
 
-  const span = lead ? "sm:col-span-2 lg:col-span-2" : ""
+  const span = lead ? "@2xl:col-span-2 @5xl:col-span-2" : ""
   const valueSize = lead ? "var(--text-hero)" : "var(--text-title)"
 
   return (

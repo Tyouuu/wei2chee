@@ -399,7 +399,9 @@
       "publishErrReserved": "That address is reserved. Try another.",
       "publishErrNoSlug": "Give it an address first.",
       "publishErrNotSaved": "Press “Save design” first — only a saved version can go public.",
-      "publishErrFailed": "Something went wrong. Try again in a moment."
+      "publishErrFailed": "Something went wrong. Try again in a moment.",
+      "deviceDesktop": "Desktop",
+      "devicePhone": "Phone"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

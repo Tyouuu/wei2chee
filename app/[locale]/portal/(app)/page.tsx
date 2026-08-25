@@ -117,7 +117,30 @@ export default async function PortalHomePage({
       palette={(project.palette as string | null) ?? null}
       pages={pages}
       componentCount={REGISTERED_COMPONENTS.length}
-      summary={businessContext.analysis?.summary ?? null}
+      /**
+       * THE SENTENCE FOLLOWS THE INTERFACE, and until 2026-08-25 it did not.
+       *
+       * This passed `analysis.summary` unconditionally -- the Chinese one --
+       * so an owner on /en opened their portal to an English sidebar, an
+       * English sub-line, and a 44px Chinese serif headline between them.
+       * Reported with a screenshot: 「明明选择了英文 作为language 为什么还是有那么
+       * 多华语字的呢」.
+       *
+       * `summary_en` has existed on every analysis since the schema was written
+       * (lib/openai/analysis-schema.ts asks the model for both in one call) and
+       * `get_my_business_context` has returned it since migration
+       * 20260825020000. Nothing was missing; nothing read it.
+       *
+       * Falls back to the Chinese one rather than to nothing: an analysis
+       * written before `summary_en` existed still has something to say, and a
+       * sentence in the wrong language beats an empty headline on the page that
+       * is supposed to prove the system understood the business.
+       */
+      summary={
+        (locale === "zh"
+          ? businessContext.analysis?.summary
+          : (businessContext.analysis?.summary_en ?? businessContext.analysis?.summary)) ?? null
+      }
       businessName={displayBusinessName(businessContext)}
       /** null when the customer has not set one, so the settings dialog can
        *  tell "we are showing you a placeholder" apart from "this is your

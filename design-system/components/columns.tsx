@@ -69,7 +69,7 @@ export function Columns({
     // than a date field — the split stops being a layout and becomes a
     // squeeze. Stacking is what the customer would have drawn anyway.
     <div
-      className="grid [gap:var(--gap-section)] md:[grid-template-columns:var(--cols)]"
+      className="grid [gap:var(--gap-section)] @3xl:[grid-template-columns:var(--cols)]"
       style={{ ["--cols" as string]: TEMPLATE[layout] }}
     >
       {/* min-w-0 on every cell: a wide table inside a grid track reports its

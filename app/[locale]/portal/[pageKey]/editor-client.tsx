@@ -27,6 +27,11 @@ import { EditorUiProvider, SheetHost } from "@/design-system/editor/editor-ui";
 import { BarMenu, barMenuItem } from "@/design-system/editor/bar-menu";
 import { PublishSite } from "./publish-site";
 import { ExitPreview } from "@/design-system/editor/preview-toggle";
+import {
+  DeviceProvider,
+  DeviceToggle,
+  CanvasFrame,
+} from "@/design-system/editor/device-toggle";
 import { DraftNotice } from "@/design-system/editor/draft-notice";
 import { BlockToolbar } from "@/design-system/editor/block-toolbar";
 import { InsertAffordance } from "@/design-system/editor/insert-affordance";
@@ -735,6 +740,12 @@ export function PortalEditor({
             re-render this component and re-create `overrides`. That identity
             is what React uses to decide whether to remount the `preview`
             subtree -- which is the canvas AND the assistant. */}
+          {/* ABOVE <Puck> for the same reason AssistantProvider is: the
+            device is read by the toggle in the top bar (an `header`
+            override) and by the frame around the canvas (a `preview`
+            override), and those two are rendered by Puck in different
+            places with no common ancestor inside it. */}
+          <DeviceProvider>
           <AssistantProvider>
           <div className="h-full">
             <Puck
@@ -839,7 +850,15 @@ export function PortalEditor({
                 header: () => (
                   <EditorChrome
                     nav={topNav}
-                    tools={<StyleButton label={t("styleLabel")} />}
+                    tools={
+                      <>
+                        <DeviceToggle
+                          desktopLabel={t("deviceDesktop")}
+                          phoneLabel={t("devicePhone")}
+                        />
+                        <StyleButton label={t("styleLabel")} />
+                      </>
+                    }
                     publish={
                       // Website only. 收款 and 客户 are the business's own
                       // working pages -- there is nothing to publish, and a
@@ -1025,6 +1044,9 @@ export function PortalEditor({
                     {/* Holds a strip clear on the right while a sheet is docked
                       there, so the block being edited reflows beside the panel
                       instead of underneath it. See canvas-gutter.tsx. */}
+                    <CanvasFrame
+                      label={navPages.find((p) => p.key === pageKey)?.label ?? pageKey}
+                    >
                     <CanvasGutter
                       className={`ds-ground ${scopeClasses(activeStyle, palette)} h-full [background-color:var(--color-canvas)]`}
                     >
@@ -1044,6 +1066,7 @@ export function PortalEditor({
                         </SystemLangProvider>
                       </RegisterProvider>
                     </CanvasGutter>
+                    </CanvasFrame>
                     {/* Type on the page instead of in a panel. Renders nothing;
                       it turns the <Inline> spans puck-config leaves in the
                       canvas into editable text. Inside Puck's provider because
@@ -1084,6 +1107,7 @@ export function PortalEditor({
             />
           </div>
           </AssistantProvider>
+          </DeviceProvider>
         </div>
         {/* Every sheet lands here: inside this component's scoped chrome, so the
           --color-* tokens they read are Formae's, and after Puck so nothing in

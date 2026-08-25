@@ -68,14 +68,21 @@ export function DataGrid({
 
   // Mount is not a change. Without this a wide table would jump to its right
   // edge the first time anyone looked at it.
-  const settled = useRef(false)
+  //
+  // COMPARE THE VALUE, DO NOT COUNT THE RUNS. This was a boolean -- "have I run
+  // once yet" -- and a boolean is wrong under React's development double-invoke:
+  // the first pass set it, the second pass saw it set and scrolled, so every
+  // wide table opened at its right edge, which is exactly what the flag existed
+  // to prevent. Invisible at 1440px, where the four default columns fit; found
+  // on 2026-08-25 the first time the phone preview rendered the same table at
+  // 390px and the customer's first column was off the left edge. Measured
+  // rather than guessed: scrollLeft 116 of a 440px table in a 324px box.
+  const seen = useRef(revealEndWhen)
   useEffect(() => {
     const el = ref.current
     if (!el || revealEndWhen === undefined) return
-    if (!settled.current) {
-      settled.current = true
-      return
-    }
+    if (seen.current === revealEndWhen) return
+    seen.current = revealEndWhen
     el.scrollTo({ left: el.scrollWidth, behavior: "smooth" })
   }, [revealEndWhen])
 

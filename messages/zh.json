@@ -399,7 +399,9 @@
       "publishErrReserved": "这个网址是系统保留的，换一个。",
       "publishErrNoSlug": "先填一个网址再发布。",
       "publishErrNotSaved": "先按「保存设计」，保存过的版本才能公开。",
-      "publishErrFailed": "出了点问题，等一下再试。"
+      "publishErrFailed": "出了点问题，等一下再试。",
+      "deviceDesktop": "桌面",
+      "devicePhone": "手机"
     },
     "home": {
       "eyebrow": "你的系统",

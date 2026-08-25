@@ -264,15 +264,15 @@ export function RailNav({
 
   const shell = isTop
     ? "flex w-full shrink-0 items-center gap-3 border-b [padding-inline:14px] [padding-block:8px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]"
-    : `flex h-full min-h-full shrink-0 flex-col border-r [padding-block:10px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)] ${
+    : `flex shrink-0 border-r [padding-block:10px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)] w-full flex-row items-center gap-1 overflow-x-auto border-b border-r-0 @3xl:h-full @3xl:min-h-full @3xl:flex-col @3xl:items-stretch @3xl:overflow-x-visible @3xl:border-r @3xl:border-b-0 ${
         isCompact
-          ? "w-[64px] [padding-inline:8px]"
+          ? "@3xl:w-[64px] [padding-inline:8px]"
           : isQuiet
-            ? "w-[220px] [padding-inline:12px]"
+            ? "@3xl:w-[220px] [padding-inline:12px]"
             // A tree spends 18px on the indent, so it needs them back.
             : isTree
-              ? "w-[240px] [padding-inline:8px]"
-              : "w-[228px] [padding-inline:10px]"
+              ? "@3xl:w-[240px] [padding-inline:8px]"
+              : "@3xl:w-[228px] [padding-inline:10px]"
       }`
 
   return (
@@ -346,7 +346,7 @@ export function RailNav({
           it. This section scrolls on its own when it needs to, while the
           footer (notifications, account, profile) stays pinned and always
           reachable. */}
-      <div className={isTop ? "flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" : "flex-1 overflow-y-auto"}>
+      <div className={isTop ? "flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" : "flex min-w-0 flex-1 items-center gap-1 overflow-x-auto @3xl:block @3xl:overflow-y-auto"}>
         {[...groups.entries()].map(([group, groupItems]) => {
           // A group of one is not worth a disclosure — the chevron would be
           // the only thing it hides.
@@ -364,7 +364,7 @@ export function RailNav({
           // a heading between them would read as another nav item.
           const named = group.trim().length > 0 && !isCompact && !isTop
           return (
-            <div key={group} className={isTop ? "flex shrink-0 items-center gap-1" : undefined}>
+            <div key={group} className={isTop ? "flex shrink-0 items-center gap-1" : "flex shrink-0 items-center gap-1 @3xl:block"}>
               {!named ? null : collapsible ? (
                 <button
                   type="button"
