@@ -110,7 +110,7 @@ export function ShareChart({
         })}
       </div>
     ) : (
-      <div className="flex flex-wrap items-center [gap:var(--gap-stack)]">
+      <div className="flex flex-1 flex-wrap items-center [gap:var(--gap-stack)]">
         <ChartContainer config={config} className="aspect-auto h-[168px] w-[168px] flex-none">
           <PieChart>
             <ChartTooltip

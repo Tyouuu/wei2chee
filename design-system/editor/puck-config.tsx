@@ -30,6 +30,7 @@ import { RailNav, type RailItem, type RailUtilityItem, type RailVariant } from "
 import { StatRow, type StatTile, type StatRowLayout } from "@/design-system/components/stat-row";
 import { RankList, type RankRow, type RankShape } from "@/design-system/components/rank-list";
 import { ShareChart, type ShareSlice, type ShareShape } from "@/design-system/components/share-chart";
+import { Bento } from "@/design-system/components/bento";
 import type { TrendFrame } from "@/design-system/components/trend-chart";
 import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
 // The second registry wave. See the header comments in both files for what was
@@ -397,6 +398,7 @@ type Components = {
     rows: RankRow[];
     shape?: RankShape;
   };
+  Bento: { lead: Slot; a: Slot; b: Slot };
   ShareChart: {
     title?: string;
     caption?: string;
@@ -2212,6 +2214,21 @@ export const puckConfig: Config<Components> = {
     // and every leaderboard worth copying has two.
     // 占比 -- a different QUESTION from TrendChart, so a different object.
     // See design-system/components/share-chart.tsx.
+    // 一大两小 -- see design-system/components/bento.tsx for why it is not a
+    // Columns with a Columns inside it.
+    Bento: {
+      label: "一大两小",
+      fields: {
+        lead: { label: "大的那一块", type: "slot" },
+        a: { label: "小的 · 上", type: "slot" },
+        b: { label: "小的 · 下", type: "slot" },
+      },
+      defaultProps: { lead: [], a: [], b: [] },
+      render: ({ lead: Lead, a: A, b: B }) => (
+        <Bento lead={<Lead />} a={<A />} b={<B />} />
+      ),
+    },
+
     ShareChart: {
       label: "占比",
       fields: {

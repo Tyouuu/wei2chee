@@ -205,7 +205,14 @@ export function TrendChart({ title, caption, frame, kind, unit = "", points }: T
           stop being readable, while on a full-width page it would grow past the
           fold. A fixed height is the only one of the three that holds at both
           widths. */}
-      <ChartContainer config={config} className="aspect-auto h-[200px] w-full">
+      {/* h-full + min-h + flex-1, not a fixed 200. The height was a constant
+          because nothing above it ever had one; a bento cell does -- the
+          chart is the tall block in a grid whose row heights are decided by
+          the layout -- and a 200px chart in a 600px cell leaves four hundred
+          pixels of card under it. Outside a stretched cell the section has
+          no definite height, so h-full resolves to auto and the min holds
+          the old behaviour exactly. */}
+      <ChartContainer config={config} className="aspect-auto h-full min-h-[200px] w-full flex-1">
         {kind === "bar" ? (
           <BarChart data={data} margin={{ left: 0, right: 4, top: 4 }}>
             {axis}

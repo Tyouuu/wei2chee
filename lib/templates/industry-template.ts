@@ -1113,6 +1113,23 @@ function buildDashboard(
     const parts = roles.split("|");
     if (parts.length === 1) return build(parts[0]);
 
+    // THREE PARTS IS A BENTO: the first gets the room, the other two sit
+    // beside it, and the three cells are cut from ONE rectangle so the tall
+    // one is exactly as tall as the two short ones plus the gap. Two parts is
+    // still a plain split -- see the note on 排法 above.
+    if (parts.length >= 3) {
+      const cells = parts.slice(0, 3).map(build);
+      // A bento missing a cell is not a bento. Falling back to whatever was
+      // built beats rendering a grid with a hole in it.
+      const made = cells.filter((n): n is PuckNode => Boolean(n));
+      if (made.length < 3) return made[0] ?? null;
+      return node("Bento", `dashboard-bento-${parts.slice(0, 3).join("-")}`, {
+        lead: [made[0]],
+        a: [made[1]],
+        b: [made[2]],
+      });
+    }
+
     const a = build(parts[0]);
     const b = build(parts[1]);
     // A split whose other half could not be built is a split of one. Falling
@@ -1219,7 +1236,7 @@ const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   brut: ["stats2", "board", "table", "share"],
   // Translucent panels want something behind them to see through, and two
   // panels side by side show more edges than one.
-  glass: ["stats4", "trend|share@wide-left", "board", "table"],
+  glass: ["stats4", "trend|share|ranking", "board", "table"],
   // Lights off. An ops console: the figure and its chart side by side at the
   // top, then the queue.
   night: ["hero|trend@wide-right", "table", "share|todo@half"],
@@ -1234,13 +1251,13 @@ const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   code: ["stats4", "activity|ranking", "share|table@wide-right"],
   // A patterned floor wants flat cards above it, in a rhythm -- and a rhythm
   // needs a row of two, not a column of one.
-  tile: ["stats4", "todo|trend@wide-right", "share|table@wide-right"],
+  tile: ["stats4", "trend|todo|share", "table"],
   // The sticker. Big, playful, board-shaped, with the chart squeezed beside it.
   pop: ["stats4", "board|trend@wide-left", "share|table@wide-right"],
   // Tabler / AdminLTE, and now actually shaped like them: four tiles, then the
   // chart with the ranking BESIDE it -- which is the arrangement every one of
   // those templates uses and the one we did not have.
-  console: ["stats4", "trend|ranking", "share|table@wide-right", "todo"],
+  console: ["stats4", "trend|ranking|share", "table", "todo"],
   // Ant Design Pro: the list is the day, so the table is first-class and
   // early. Then the same chart-and-ranking pair their own dashboard opens on.
   counter: ["stats4", "table", "trend|ranking", "share|flow@wide-right"],
