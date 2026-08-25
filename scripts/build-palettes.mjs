@@ -178,6 +178,9 @@ const WANTED = [
   ["amber-minimal", "琥珀", "琥珀黄,账本和单据的感觉", "会计·当铺·金行·米粮·土产"],
   ["nature", "森绿", "深绿配米白,沉稳", "环保·林业·户外·农产·诊所·健康"],
   ["rosewood", "紫檀", "沉的梅紫,不是粉红", "美容·婚纱·花艺·精品·养生"],
+
+  // ── the one the popularity data added; see NATIVE.zen for the numbers ───
+  ["zen", "宣纸", "暖纸底配墨黑,唯一一套不是白底的", "茶行·药材·古董·手作·咖啡·民宿"],
 ];
 
 
@@ -199,6 +202,72 @@ const WANTED = [
  * green, waiting stays amber, stopped stays red, whatever the accent is.
  */
 const NATIVE = {
+  /*
+    宣纸 — THE ONE GAP THE POPULARITY DATA FOUND, and the only addition the
+    cull down to eight did not already cover.
+
+    tweakcn's community gallery publishes a real signal: Popular / All Time,
+    with like counts. Read on 2026-08-26 (.screenshots/themes/):
+
+      Claude +          300   terracotta on cream
+      Light Green       243   lime
+      Zen Inspired      231   NEAR-BLACK ON LINEN
+      AstroVista        185   orange + navy
+      Tiesen            180   blue
+      qrafthive         172   orange + slate
+      Minimal Neutral   170   black on white
+      designbyte        164   mint
+      claude blu 2      133   sky blue
+      Sage Green        128   sage
+      Whatsapp          123   green
+      VTRON             118   blue + navy
+      Porfolio          106   tan
+      autoblog          102   orange-red
+      Enterprise Mod 2  101   corporate blue
+      Deep Purple        95   purple
+
+    THIRTEEN OF THE SIXTEEN land on one of the eight we kept. That is the
+    strongest thing this list says: the cull was right. The three that do not
+    are Light Green and designbyte -- lime and mint, exactly the 花哨 the
+    founder said nobody picks -- and Zen.
+
+    ZEN IS THE GAP. Every one of our eight puts its accent on a WHITE ground;
+    Zen puts a near-black accent on a warm linen one. Two independent galleries
+    put it near the top: third by all-time likes here, and third card on
+    21st.dev's own Themes page as 「Zen Linen」. It is also the closest thing in
+    the whole list to what he actually asked for -- 「白色跟黑色居多」 -- just
+    with the white warmed.
+
+    WRITTEN BY HAND rather than pulled, like 金稻 / 松石 / 紫檀 before it: the
+    community themes are not in tweakcn's registry, only its fourteen built-in
+    presets are, and none of those fourteen occupies this corner. `notebook` and
+    `mono` come closest and are not palettes at all -- their identity is a
+    handwriting font and a zero radius, which is the 版式 layer's job.
+
+    THE ACCENT CARRIES ALMOST NO CHROMA ON PURPOSE (C 0.008). The ground is the
+    statement here; an accent with colour in it would fight the paper and turn
+    this into a second 陶土.
+  */
+  "zen": {
+    background: "oklch(0.9380 0.0130 85)",
+    card: "oklch(0.9660 0.0090 85)",
+    muted: "oklch(0.9050 0.0150 85)",
+    accent: "oklch(0.8720 0.0190 85)",
+    border: "oklch(0.8400 0.0160 85)",
+    input: "oklch(0.8400 0.0160 85)",
+    foreground: "oklch(0.2200 0.0080 85)",
+    "muted-foreground": "oklch(0.4500 0.0110 85)",
+    primary: "oklch(0.2450 0.0080 85)",
+    ring: "oklch(0.2450 0.0080 85)",
+    "primary-foreground": "oklch(0.9660 0.0090 85)",
+    "sidebar-foreground": "oklch(0.2200 0.0080 85)",
+    destructive: "oklch(0.4900 0.1600 27)",
+    "chart-1": "oklch(0.2450 0.0080 85)",
+    "chart-2": "oklch(0.4600 0.0700 145)",
+    "chart-3": "oklch(0.5600 0.1050 65)",
+    "chart-4": "oklch(0.4600 0.0700 250)",
+    "chart-5": "oklch(0.6200 0.0200 85)",
+  },
   "gold-grain": {
     background: "oklch(0.9800 0.0120 95)",
     card: "oklch(0.9960 0.0050 95)",

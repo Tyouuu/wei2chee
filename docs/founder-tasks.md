@@ -261,7 +261,7 @@ Payments、Quotations、Project progress，然后第六张是**官网**。前五
 
 ---
 
-### 16. ~~配色砍到「真的有人会选」的几套~~ 做完 2026-08-26（25 → 8）
+### 16. ~~配色砍到「真的有人会选」的几套~~ 做完 2026-08-26（25 → 8，再加回 1 = 9）
 > `风格配色的部分我反而觉得不会有人会选很花哨的颜色 你看大多数的system都是白色跟黑色居多
 > 不会出现红色啊 绿色啊 然后主题配色的选择也是要选几套多人会选的 就好了`
 
@@ -291,6 +291,29 @@ Payments、Quotations、Project progress，然后第六张是**官网**。前五
       都是**蓝**，不是红。红金是**招牌**的颜色，不是**系统**的颜色。
       所以 `朱红` 留下来了，但它的理由从「马来西亚系统都是红的」改成
       「中药行/餐饮/婚宴认得这是自己的颜色」—— 弱一点，但还是站得住
+
+#### 16b. 又去找了热门配色（`還有沒有一些熱門的主題配色可以用的`）
+tweakcn 的 community 有**真的按赞数**（截图 `.screenshots/themes/tweakcn-community.png`）。
+Popular / All Time 前 16：Claude+ 300 · Light Green 243 · **Zen Inspired 231** ·
+AstroVista 185 · Tiesen 180 · qrafthive 172 · Minimal Neutral 170 · designbyte 164 ·
+claude blu 2 133 · Sage Green 128 · Whatsapp 123 · VTRON 118 · Porfolio 106 ·
+autoblog 102 · Enterprise Mod 2 101 · Deep Purple 95。
+
+**16 个里有 13 个落在我们刚留下的 8 套上。** 这才是这张榜最重要的一句 ——
+**砍对了。** 落不到的三个：Light Green 跟 designbyte（青柠、薄荷，正是他说的「花哨」），
+还有 Zen。
+
+- [x] **加了一套：宣纸**（`zen`，migration `20260826020000`）。
+      八套的主色全部踩在**白底**上；宣纸是**暖纸底配墨黑**，两个独立的库都把它排在第三
+      （tweakcn 按赞第三、21st.dev Themes 页第三张，那边叫 Zen Linen）。
+      而且它是整张榜里**最贴近他那句「白色跟黑色居多」**的一套，只是把白暖了一点
+- [x] tweakcn 官方 registry 里没有别的过关：`notebook` 跟 `mono` 的特点是
+      **手写字体跟零圆角**，那是**版式层**的事，不是配色层
+- [x] 顺手修了配色卡：宣纸一放进去，卡片画出来跟极简黑一模一样 ——
+      因为卡片把整个画面让给主色，而**宣纸的主角是底色**。
+      现在改成**按每一套自己判**：主色彩度 < 0.03 就让底色当主角，主色缩成一个小方块
+- 标签数也讲同一件事：minimal 267 · professional 223 · colorful 148 · playful 69 ·
+  pastel 32 · candy 5
 
 ### 17. 每一套风格要有自己的特点、深度、设计感（2026-08-26）
 > `风格那边就是我们要想办法做的每一套都是不同的 有深度一点`

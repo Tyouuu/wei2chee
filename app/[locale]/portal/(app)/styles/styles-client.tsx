@@ -429,6 +429,25 @@ function PaletteCard({
  * cannot carry status meaning in the accent alone.
  */
 function PaletteSample({ label, dots }: { label: string; dots?: readonly string[] }) {
+  /*
+    WHICH AXIS GETS THE FIELD, PER PALETTE.
+
+    The rule above -- give the field to the axis that carries the identity --
+    was applied once, to the set: our accents vary and our grounds do not, so
+    the accent got the field. 宣纸 broke that the moment it landed, and the
+    screenshot said so immediately: a near-black accent on warm paper drew as a
+    black rectangle, indistinguishable from 极简黑, with the one thing that
+    makes it itself squeezed into the strip underneath.
+
+    So the rule applies per palette instead. An accent with almost no chroma is
+    not the statement; the ground it sits on is. Read from the palette's own
+    accent dot rather than hard-coded by name, so a future near-neutral gets the
+    same treatment without anybody remembering to add it to a list.
+  */
+  const accent = dots?.[1] ?? "";
+  const chroma = Number(/oklch\(\s*[\d.]+\s+([\d.]+)/.exec(accent)?.[1] ?? "1");
+  const groundLeads = chroma < 0.03;
+
   return (
     <span
       className="ds-ground relative block w-full overflow-hidden [background-color:var(--color-canvas)]"
@@ -437,10 +456,31 @@ function PaletteSample({ label, dots }: { label: string; dots?: readonly string[
       style={{ aspectRatio: "3 / 2" }}
     >
       <span className="flex h-full flex-col">
-        {/* THE ACCENT AS A FIELD. Not a dot, not a button — the thing being
-            chosen, at the size it is chosen at. */}
-        <span className="flex flex-1 items-end [background-color:var(--color-primary)] [padding:12px_14px]">
-          <span className="truncate [color:var(--color-on-primary)] [font-family:var(--font-display)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+        {/* THE FIELD. Not a dot, not a button — the thing being chosen, at the
+            size it is chosen at. Which colour fills it is decided above. */}
+        <span
+          className="flex flex-1 items-end [padding:12px_14px]"
+          style={{
+            backgroundColor: groundLeads
+              ? "var(--color-canvas)"
+              : "var(--color-primary)",
+          }}
+        >
+          {/* A near-neutral accent still has to be visible, and on its own
+              ground it is the ink rather than the paint: shown as the swatch
+              the name sits beside. */}
+          {groundLeads ? (
+            <span
+              className="mr-2.5 block size-[18px] shrink-0 [border-radius:var(--radius-xs)] [background-color:var(--color-primary)]"
+              aria-hidden
+            />
+          ) : null}
+          <span
+            className="truncate [font-family:var(--font-display)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]"
+            style={{
+              color: groundLeads ? "var(--color-paper)" : "var(--color-on-primary)",
+            }}
+          >
             {label}
           </span>
         </span>
