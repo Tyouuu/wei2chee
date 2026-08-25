@@ -450,70 +450,79 @@ function PaletteSample({ label, dots }: { label: string; dots?: readonly string[
 
   return (
     <span
-      className="ds-ground relative block w-full overflow-hidden [background-color:var(--color-canvas)]"
-      /* 3:2, not their 4:3. The accent needs a field, not a canvas: at 4:3 the
-         card became a block of colour with a strip of information under it. */
+      className="ds-ground relative flex w-full flex-col overflow-hidden [background-color:var(--color-canvas)]"
+      /* 3:2, not 21st.dev's 4:3. The accent needs a field, not a canvas. */
       style={{ aspectRatio: "3 / 2" }}
     >
-      <span className="flex h-full flex-col">
-        {/* THE FIELD. Not a dot, not a button — the thing being chosen, at the
-            size it is chosen at. Which colour fills it is decided above. */}
-        <span
-          className="flex flex-1 items-end [padding:12px_14px]"
-          style={{
-            backgroundColor: groundLeads
-              ? "var(--color-canvas)"
-              : "var(--color-primary)",
-          }}
-        >
-          {/* A near-neutral accent still has to be visible, and on its own
-              ground it is the ink rather than the paint: shown as the swatch
-              the name sits beside. */}
-          {groundLeads ? (
+      {/*
+        BOTH AXES AT FIELD SIZE — the third answer, arrived at by building the
+        other two and looking.
+
+        Filling the whole card with the ACCENT tells you instantly what 朱红 is
+        and makes a grid of ten saturated blocks.
+
+        Filling it with the GROUND is tweakcn's own layout and reads calmer and
+        more professional — and produces nine near-white rectangles here,
+        because their grounds genuinely differ (cream, linen, white, grey) and
+        ours do not: measured, 9 of our 10 sit at oklch L 0.88–1.00.
+
+        Theirs is a gallery to browse. This is a picker: ten of them, once,
+        by an owner answering 「我的系统要什么颜色」. So the card gives the upper
+        two-thirds to the ground with the ramp on it, and the lower third to the
+        accent with the name on it. You can read the ground AND the accent at
+        the size each is actually used, which is what the question needs.
+      */}
+      <span className="relative flex flex-[1.6] [background-color:var(--color-canvas)]">
+        {/*
+          THE RAMP, TOP-RIGHT — 21st.dev's card layout, and tweakcn's, both of
+          which do the same thing: 「他的好像擺放的比較好看」, 2026-08-26.
+
+          Measured against ours: theirs is ONE clean field with the name large
+          at the bottom-left and a row of tall colour bars in the corner. Ours
+          had the name inside and then a dense two-part strip underneath — four
+          circles AND three labelled status words — which is where the clutter
+          was. The bars carry more information in less room: six of them show
+          the whole scale at a glance, where four circles read as decoration.
+
+          Ours holds the three status tones as well as the neutrals, because
+          those are the one thing a set of neutrals cannot say — whether
+          已确认 / 待回复 / 停滞 are still three distinguishable colours in this
+          palette or have collapsed into the accent. Measured 2026-08-23: 21 of
+          25 could not carry status meaning in the accent alone.
+        */}
+        <span className="absolute right-4 top-4 flex items-start gap-[5px]" aria-hidden>
+          {[
+            // The primary leads the ramp: the bars sit on the GROUND half, so
+            // it is never painted on its own colour.
+            "var(--color-primary)",
+            "var(--color-jade)",
+            "var(--color-brass)",
+            "var(--color-clay)",
+            ...(dots ?? []).slice(2),
+          ].map((c, i) => (
             <span
-              className="mr-2.5 block size-[18px] shrink-0 [border-radius:var(--radius-xs)] [background-color:var(--color-primary)]"
-              aria-hidden
+              key={i}
+              className="block w-[9px] rounded-full"
+              style={{
+                backgroundColor: c,
+                // A ramp, not a row: the accent is the tallest and the
+                // neutrals step down, so the eye reads an order rather than a
+                // set of equals.
+                height: `${34 - i * 4}px`,
+                boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.08)",
+              }}
             />
-          ) : null}
-          <span
-            className="truncate [font-family:var(--font-display)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]"
-            style={{
-              color: groundLeads ? "var(--color-paper)" : "var(--color-on-primary)",
-            }}
-          >
-            {label}
-          </span>
+          ))}
         </span>
 
-        <span className="flex shrink-0 items-center justify-between gap-3 [padding:11px_14px]">
-          {/* Their four dots, unchanged: ground, accent, line, fill. Read out
-              of the palette by the generator, never picked to resemble it. */}
-          <span className="flex items-center gap-1.5">
-            {(dots ?? []).map((c, i) => (
-              <span
-                key={i}
-                className="block size-[15px] rounded-full [box-shadow:inset_0_0_0_1px_rgb(0_0_0/0.08)]"
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </span>
+      </span>
 
-          <span className="flex items-center gap-2">
-            {[
-              ["var(--color-jade)", "已确认"],
-              ["var(--color-brass)", "待回复"],
-              ["var(--color-clay)", "停滞"],
-            ].map(([c, w]) => (
-              <span
-                key={w}
-                className="flex items-center gap-1 [font-size:var(--text-micro)]"
-                style={{ color: c }}
-              >
-                <span className="block size-1.5 rounded-full" style={{ backgroundColor: c }} />
-                {w}
-              </span>
-            ))}
-          </span>
+      {/* THE ACCENT BAND, with the name on it — which also makes the card prove
+          the pairing that fails most often, --color-on-primary against
+          --color-primary. */}
+      <span className="flex flex-1 items-center [background-color:var(--color-primary)] [padding:0_16px]">
+        <span className="truncate [color:var(--color-on-primary)] [font-family:var(--font-display)] [font-size:var(--text-xl)] [font-weight:var(--fw-semibold)]">
+          {label}
         </span>
       </span>
     </span>
