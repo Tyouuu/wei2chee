@@ -65,6 +65,8 @@ export function StyleSheet({
   shuffling,
   corners,
   onCorners,
+  layout,
+  onLayout,
   locale,
   styles,
   labels,
@@ -80,6 +82,9 @@ export function StyleSheet({
   /** The register's radius ladder, scaled. 1 is the register as designed. */
   corners: number;
   onCorners: (next: number) => void;
+  /** 排法 — a named arrangement, or null to follow the register. */
+  layout: string | null;
+  onLayout: (next: string | null) => void;
   locale: string;
   /** [name, one-line tag] in the order they are offered. */
   styles: { name: StyleName; tag: string }[];
@@ -91,6 +96,8 @@ export function StyleSheet({
     shuffle: string;
     shuffleNote: string;
     corners: string;
+    layout: string;
+    layoutOptions: { key: string | null; label: string }[];
   };
 }) {
   const { sheet, closeSheet } = useEditorUi();
@@ -144,6 +151,44 @@ export function StyleSheet({
             · {labels.shuffleNote}
           </span>
         </button>
+
+        {/*
+          排法 — Durable's 「Try a different layout set」, and the half of
+          DASHBOARD_COMPOSITION that was missing. The compositions have existed
+          since the morning of 2026-08-25 and were welded to the register, so
+          the only way to read 台账's table-first page was to become 台账 and give
+          up your own colours, type and density.
+
+          FIVE, NAMED BY WHAT THEY ARE. There is one composition per register
+          but they are not seventeen ideas -- they are five, each held by three
+          or four registers. 「表格先行」 is a sentence about an owner's own day;
+          「用台账的排法」 is a question about a register he may never have opened.
+        */}
+        <div className="mb-3 rounded-[var(--radius-md)] px-3 py-2.5 [background-color:var(--color-ink-850)]">
+          <div className="mb-2 [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+            {labels.layout}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {labels.layoutOptions.map((opt) => {
+              const on = (layout ?? null) === opt.key;
+              return (
+                <button
+                  key={opt.key ?? "follow"}
+                  type="button"
+                  onClick={() => onLayout(opt.key)}
+                  aria-pressed={on}
+                  className={`rounded-[var(--radius-pill)] px-3 py-1 [font-size:var(--text-xs)] transition-colors ${
+                    on
+                      ? "[background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]"
+                      : "[background-color:var(--color-ink-900)] [color:var(--color-paper-dim)] hover:[color:var(--color-paper)]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <CornerSlider value={corners} onChange={onCorners} label={labels.corners} />
 

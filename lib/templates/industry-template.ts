@@ -697,6 +697,9 @@ function buildDashboard(
    *  callers build a page without a customer attached (the spec document, the
    *  founder console); those get the neutral composition. */
   style?: string | null,
+  /** projects.layout — a NAMED arrangement that overrides the register's own.
+   *  Null follows the register, which is what most accounts do. */
+  layout?: string | null,
 ): PuckNode[] {
   const lang = langOf(ctx);
   const c = chrome(lang);
@@ -1124,7 +1127,7 @@ function buildDashboard(
     });
   };
 
-  const plan = dashboardComposition(style);
+  const plan = dashboardComposition(style, layout);
 
   return [
     railNav(labels, brand, name, "dashboard", locale, pages, lang),
@@ -1248,8 +1251,49 @@ const DASHBOARD_COMPOSITION: Record<string, string[]> = {
  *  build a page without knowing the style (the spec document, the founder
  *  console). Deliberately 蓝图's -- the register whose whole argument is that it
  *  is safe for any trade. */
-export function dashboardComposition(style?: string | null): string[] {
-  return (style && DASHBOARD_COMPOSITION[style]) || DASHBOARD_COMPOSITION.blueprint;
+/**
+ * THE FIVE ARRANGEMENTS, NAMED BY WHAT THEY ARE.
+ *
+ * There is one composition per register above, but they are not seventeen
+ * different ideas — they are five, each held by three or four registers. Naming
+ * the five is what makes 排法 a choice a business owner can make: 「表格先行」 is
+ * a sentence about his own day, 「用台账的排法」 is a question about a register he
+ * may never have looked at.
+ *
+ * Each one points at an existing composition rather than defining a new array,
+ * so a change to 仪表盘's page is a change to the 四格 arrangement and the two
+ * can never drift into disagreeing about the same shape.
+ */
+export const LAYOUT_SETS = {
+  /** A ledger is a table, and a person who reads forty rows a day wants rows. */
+  table: "ledger",
+  /** Tabler / AdminLTE: four figures and a chart above the fold. */
+  console: "console",
+  /** One figure and a great deal of air, then the work. */
+  hero: "signboard",
+  /** What is happening today first, the money after it. */
+  today: "hearth",
+  /** The day as columns rather than as a list. */
+  board: "pop",
+} as const;
+
+export type LayoutSet = keyof typeof LAYOUT_SETS;
+
+/**
+ * Which blocks this page is made of, in order.
+ *
+ * `layout` wins over `style` when the customer has named one — that is the
+ * whole point of the axis: 「我要这一套的样子，但照台账那样排」. NULL means follow
+ * the register, which is what every account had before 2026-08-25 and what
+ * most should keep.
+ */
+export function dashboardComposition(
+  style?: string | null,
+  layout?: string | null,
+): string[] {
+  const named = layout && LAYOUT_SETS[layout as LayoutSet];
+  const key = named || style;
+  return (key && DASHBOARD_COMPOSITION[key]) || DASHBOARD_COMPOSITION.blueprint;
 }
 
 /**
@@ -1947,6 +1991,9 @@ const BUILDERS: Record<
     locale: string,
     pages: PageRef[],
     style?: string | null,
+    /** Only the dashboard reads it -- it is the only page whose composition is
+     *  a choice. The others take it and ignore it so the map stays one shape. */
+    layout?: string | null,
   ) => PuckNode[]
 > = {
   dashboard: buildDashboard,
@@ -2067,6 +2114,8 @@ export function buildPageLayout(
    *  register gets 蓝图's composition, the one whose argument is that it suits
    *  any trade. */
   style?: string | null,
+  /** projects.layout — 换排法不换风格. See dashboardComposition(). */
+  layout?: string | null,
 ): Data {
   const lang = langOf(ctx);
   const refs: PageRef[] =
@@ -2084,7 +2133,7 @@ export function buildPageLayout(
   // file.
   const archetype = MODULE_BY_KEY[pageKey];
   const [rail, ...rest] = BUILDERS[pageKey]
-    ? BUILDERS[pageKey](ctx, businessName, locale, refs, style)
+    ? BUILDERS[pageKey](ctx, businessName, locale, refs, style, layout)
     : archetype
       ? buildFromShape(
           archetype.shape as ModuleShape,

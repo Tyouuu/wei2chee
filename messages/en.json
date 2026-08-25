@@ -435,7 +435,14 @@
       "pagesDown": "Move down",
       "tabContent": "Content",
       "tabDesign": "Design",
-      "advanced": "Advanced"
+      "advanced": "Advanced",
+      "layoutLabel": "Arrangement",
+      "layoutFollow": "Follow the style",
+      "layoutTable": "Table first",
+      "layoutConsole": "Four tiles + chart",
+      "layoutHero": "One big figure",
+      "layoutToday": "Today's work first",
+      "layoutBoard": "Board"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

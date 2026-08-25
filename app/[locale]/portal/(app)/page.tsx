@@ -57,7 +57,7 @@ export default async function PortalHomePage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style, palette, paid, site_slug, site_published")
+    .select("id, style, palette, paid, site_slug, site_published, layout")
     .eq("account_id", user.id)
     .single();
 
@@ -104,7 +104,15 @@ export default async function PortalHomePage({
       // otherwise be read by the legacy path on this screen and the new one in
       // the editor. One reader, one shape. See lib/portal/layout-upgrade.ts.
       layout: (generated
-        ? buildPageLayout(key, businessContext, ownerName, locale, pageRefs)
+        ? buildPageLayout(
+            key,
+            businessContext,
+            ownerName,
+            locale,
+            pageRefs,
+            project.style as string,
+            (project.layout as string | null) ?? null,
+          )
         : upgradeLayout(saved)) as unknown as Data,
     };
   });

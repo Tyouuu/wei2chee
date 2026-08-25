@@ -56,7 +56,7 @@ export default async function PortalEditorPage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style, palette, paid, site_slug, site_published, corners")
+    .select("id, style, palette, paid, site_slug, site_published, corners, layout")
     .eq("account_id", user.id)
     .single();
 
@@ -133,6 +133,9 @@ export default async function PortalEditorPage({
       // known right here -- which is what lets 换风格 re-lay-out the page on the
       // same click that repaints it. See dashboardComposition().
       project.style,
+      // 排法 — a NAMED arrangement that overrides the register's own, so an
+      // owner can keep 柔和's colours and read 台账's table-first page.
+      (project.layout as string | null) ?? null,
     ) as unknown as Record<string, unknown>;
   }
 
@@ -208,6 +211,7 @@ export default async function PortalEditorPage({
       style={project.style as StyleName}
       palette={(project.palette as string | null) ?? null}
       corners={Number(project.corners ?? 1)}
+      layout={(project.layout as string | null) ?? null}
       systemLang={systemLangOf(businessContext)}
       /** The 官网's public address and whether it answers -- read here rather
        *  than fetched again in the editor, because the same projects row

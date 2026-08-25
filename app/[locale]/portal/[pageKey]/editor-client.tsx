@@ -137,6 +137,7 @@ export function PortalEditor({
   style,
   palette,
   corners,
+  layout,
   systemLang,
   siteSlug,
   sitePublished,
@@ -194,6 +195,8 @@ export function PortalEditor({
   palette: string | null;
   /** The register's radius ladder, scaled. See design-system/editor/corners.tsx. */
   corners: number;
+  /** projects.layout — a named arrangement, or null to follow the register. */
+  layout: string | null;
   /** The language the customer's SYSTEM is written in
    *  (`projects.system_language`, default English). Not `locale`, which is the
    *  language the OWNER reads Formae in -- see lib/system-lang.ts. Threaded
@@ -294,6 +297,28 @@ export function PortalEditor({
     }
   }
   const cornerSave = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [activeLayout, setActiveLayout] = useState<string | null>(layout);
+
+  /**
+   * 排法 changes which BLOCKS the page is made of, and the page in the canvas
+   * was generated before the change. Unlike a rename there is nothing to
+   * patch — the block list itself is different — so this reloads rather than
+   * refreshes. Only ever reached from a page that has never been saved: once
+   * the customer saves, the arrangement is theirs and generation stops.
+   */
+  async function pickLayout(next: string | null) {
+    const previous = activeLayout;
+    setActiveLayout(next);
+    const { error } = await createBrowserSupabaseClient().rpc("set_project_layout", {
+      new_layout: next,
+    });
+    if (error) {
+      setActiveLayout(previous);
+      return;
+    }
+    if (isGeneratedDraft) window.location.reload();
+    else router.refresh();
+  }
 
   /** Repaints on every step, writes once the hand stops. A range input
    *  fires on each pixel of the drag; persisting each one would be forty
@@ -1286,6 +1311,8 @@ export function PortalEditor({
           shuffling={shuffling}
           corners={activeCorners}
           onCorners={pickCorners}
+          layout={activeLayout}
+          onLayout={pickLayout}
           locale={locale}
           styles={STYLE_ORDER.map((name) => ({
             name,
@@ -1299,6 +1326,15 @@ export function PortalEditor({
             shuffle: t("shuffle"),
             shuffleNote: t("shuffleNote"),
             corners: t("corners"),
+            layout: t("layoutLabel"),
+            layoutOptions: [
+              { key: null, label: t("layoutFollow") },
+              { key: "table", label: t("layoutTable") },
+              { key: "console", label: t("layoutConsole") },
+              { key: "hero", label: t("layoutHero") },
+              { key: "today", label: t("layoutToday") },
+              { key: "board", label: t("layoutBoard") },
+            ],
           }}
         />
       </div>

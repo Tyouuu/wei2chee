@@ -435,7 +435,14 @@
       "pagesDown": "往下",
       "tabContent": "内容",
       "tabDesign": "样子",
-      "advanced": "进阶"
+      "advanced": "进阶",
+      "layoutLabel": "排法",
+      "layoutFollow": "跟风格走",
+      "layoutTable": "表格先行",
+      "layoutConsole": "四格 + 图表",
+      "layoutHero": "一个大数字",
+      "layoutToday": "今天要做的",
+      "layoutBoard": "看板"
     },
     "home": {
       "eyebrow": "你的系统",
