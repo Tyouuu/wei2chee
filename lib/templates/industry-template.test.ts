@@ -9,6 +9,9 @@ import {
   pagesForIndustry,
   type BusinessContext,
   type PageKey,
+  DASHBOARD_COMPOSITION,
+  COMPOSITION_ROLES,
+  SPLIT_REGISTERS,
 } from "./industry-template";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { walkNodes, type PuckNode } from "@/lib/portal/layout-ops";
@@ -456,6 +459,48 @@ describe("per-industry page sets", () => {
     for (const slug of ["retail", "fnb"]) {
       expect(PAGES_FOR_INDUSTRY[slug]).toContain("orders");
       expect(PAGES_FOR_INDUSTRY[slug]).not.toContain("projects");
+    }
+  });
+});
+
+describe("DASHBOARD_COMPOSITION", () => {
+  /*
+    THE TEST THAT WOULD HAVE CAUGHT IT.
+
+    compose() ignores a role it does not know, which is correct at runtime -- a
+    typo must never blank a customer's page -- and invisible at authoring time.
+    On 2026-08-26 台账 and 中台 were written with a lead block called "today"
+    when the builder is called "todo", and both rendered with an empty second
+    column. Nothing failed; a screenshot found it.
+
+    Third time this repo has been bitten by a Record<string, string> that
+    TypeScript cannot check: design-doc.test.ts was written for the same reason
+    and found nine dead variant preferences on its first run.
+  */
+  it("every role in every register's composition is a real one", () => {
+    const bad: string[] = [];
+    for (const [style, entries] of Object.entries(DASHBOARD_COMPOSITION)) {
+      for (const entry of entries) {
+        // "a|b@wide-left" -> ["a", "b"]; "role@over" -> ["role"]
+        for (const role of entry.split("@")[0].split("|")) {
+          if (!COMPOSITION_ROLES.has(role)) bad.push(`${style}: ${role}`);
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("every split register leads with a block the aside can actually take", () => {
+    // A split shell whose composition has no narrow block renders as an
+    // ordinary side shell, and the third skeleton silently never appears.
+    const NARROW_ROLES = new Set(["todo", "ranking", "share"]);
+    for (const style of SPLIT_REGISTERS) {
+      const entries = DASHBOARD_COMPOSITION[style] ?? [];
+      const roles = entries.flatMap((e) => e.split("@")[0].split("|"));
+      expect(
+        roles.some((r) => NARROW_ROLES.has(r)),
+        `${style} is on the split shell with nothing narrow to put in the second column`,
+      ).toBe(true);
     }
   });
 });

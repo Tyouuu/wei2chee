@@ -158,6 +158,19 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "top-dark", label: "顶部 · 跟配色", props: { nav: "top", navTone: "dark" } },
     { id: "top-deep", label: "顶部 · 深色", props: { nav: "top", navTone: "deep" } },
     { id: "top-light", label: "顶部 · 白底", props: { nav: "top", navTone: "light" } },
+    /*
+      THE THIRD SHELL. A side rail plus a persistent second column -- Tailwind
+      Plus's Multi-Column, and the layout Attio, Linear and Superhuman all run.
+      Researched 2026-08-26; before it, seventeen registers were built on two
+      shells, because side-deep against side-dark is how dark and not how
+      arranged.
+
+      The column fills itself from the page's own narrow blocks -- see
+      SPLIT_REGISTERS in industry-template.ts -- so a register that switches to
+      it does not need new content, and one that switches away loses nothing.
+    */
+    { id: "split-deep", label: "左边 · 两栏 · 深色", props: { nav: "split", navTone: "deep" } },
+    { id: "split-light", label: "左边 · 两栏 · 白底", props: { nav: "split", navTone: "light" } },
   ],
 
   // ------------------------------------------------- 已经有轴、却接不到的六个

@@ -1230,12 +1230,21 @@ function headlineDelta(spark: number[] | undefined): number | null {
   return ((curr - prev) / Math.abs(prev)) * 100;
 }
 
-const DASHBOARD_COMPOSITION: Record<string, string[]> = {
+export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // A ledger is a table. It opens on one, and the figures come after -- which
   // is the order a person who reads forty rows a day actually wants. The split
   // is at the BOTTOM, where two small things belong beside each other rather
   // than as two more full-width bands under a table that is already long.
-  ledger: ["table", "stats4", "activity|flow@half"],
+  /*
+    THE TWO SPLIT REGISTERS LEAD WITH A NARROW BLOCK, and that is not
+    decoration -- it is what fills the second column. See SPLIT_REGISTERS and
+    the shell note in system-shell.tsx: the aside takes narrow blocks off the
+    front of the stack, so a composition with none of them renders as an
+    ordinary side shell and the third skeleton quietly never appears.
+
+    台账: the list you scan pinned left, the ledger itself on the right.
+  */
+  ledger: ["todo", "ranking", "table", "stats4", "activity|flow@half"],
   // A shopfront: what is happening today, with the money beside it rather than
   // under it -- the owner glances right, not down.
   hearth: ["todo|stats2", "trend", "table"],
@@ -1285,9 +1294,30 @@ const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   console: ["stats4", "trend|ranking|share", "table", "todo"],
   // Ant Design Pro: the list is the day, so the table is first-class and
   // early. Then the same chart-and-ranking pair their own dashboard opens on.
-  counter: ["stats4", "table", "trend|ranking", "share|flow@wide-right"],
+  // 中台: Ant Design Pro's list pages all carry a second column. Share first,
+  // because 「钱卡在哪一段」 is the question this register is opened with.
+  counter: ["share", "todo", "stats4", "table", "trend|flow@wide-right"],
 };
 
+
+/**
+ * EVERY ROLE NAME A COMPOSITION MAY USE.
+ *
+ * `compose()` skips a role it does not recognise, silently -- which is the
+ * right runtime behaviour (a typo must not blank a customer's page) and a trap
+ * at authoring time. Caught the hard way on 2026-08-26: 台账 and 中台 were given
+ * a lead block called 「today」, the builder is called 「todo」, and the two
+ * registers rendered with an EMPTY second column. The screenshot showed it; no
+ * error did.
+ *
+ * industry-template.test.ts asserts every entry in DASHBOARD_COMPOSITION is in
+ * here. Same class as design-doc.test.ts, which found nine dead variant
+ * preferences the day it was written.
+ */
+export const COMPOSITION_ROLES = new Set([
+  "table", "stats4", "stats2", "trend", "todo", "ranking", "share",
+  "flow", "activity", "progress", "board", "hero",
+]);
 
 /** The neutral composition, for a register with no entry and for the paths that
  *  build a page without knowing the style (the spec document, the founder
@@ -2209,16 +2239,101 @@ export function buildPageLayout(
   // the fold -- confirmed in a real browser, not reasoned about (see
   // system-shell.tsx for the measurements). Both slots stay editable: a
   // customer can still drag blocks into either column.
+  /*
+    THE SPLIT SHELL FILLS ITS SECOND COLUMN FROM THE PAGE'S OWN BLOCKS.
+
+    A register on `nav: "split"` (see SPLIT_REGISTERS) gets a persistent column
+    between the rail and the page. Nothing new is invented to put in it -- the
+    first one or two blocks of the page move there, which is exactly the move
+    Attio and Linear make: the thing you scan is pinned on the left and the
+    thing you work on fills the right.
+
+    Blocks that must NOT go there are the ones that need width: a record table
+    in a 19rem column is a record table with one visible column. So the split
+    takes from the front of the stack only while the block is a narrow one.
+  */
+  const split = SPLIT_REGISTERS.has(style ?? "");
+  let aside: unknown[] = [];
+  let body = rest;
+  if (split) {
+    /*
+      PageHeader IS NOT IN HERE, and the first screenshot is why. It is the
+      first block on every page, so it was the first thing taken -- and the
+      page's own title ended up in a 19rem column with the table beside it
+      unlabelled. Attio pins the LIST on the left and keeps the record's name
+      over the record. The heading belongs to the thing being worked on.
+
+      StatRow is out for the opposite reason: four figures across is what it
+      is, and four figures stacked in a 19rem column is a different component.
+    */
+    const NARROW = new Set(["ShelfList", "RankList", "ShareChart"]);
+    /*
+      WHAT A BLOCK ACTUALLY IS, through its wrapper.
+
+      Every composed block arrives inside a `Panel` -- that is what gives a
+      section its surface and its heading -- so a check against the top-level
+      type matched nothing and the second column rendered EMPTY. Printed the
+      tree to find it: `main: [PageHeader, Panel, Panel, Panel, StatRow,
+      Columns]`. The screenshot showed an empty column; nothing failed.
+
+      Only one level down, and only through Panel: a Columns or an Overlap is a
+      LAYOUT decision the composition already made, and reaching inside those
+      to move half of one into a 19rem column would take the arrangement apart.
+    */
+    const inner = (n: unknown): string => {
+      const t = (n as { type?: string })?.type ?? "";
+      if (t !== "Panel") return t;
+      const kids = ((n as { props?: { body?: unknown[] } })?.props?.body ?? []) as unknown[];
+      return (kids[0] as { type?: string })?.type ?? "";
+    };
+
+    const take: unknown[] = [];
+    // Start past the heading, which always leads and always stays.
+    let i = body.length && ((body[0] as { type?: string })?.type === "PageHeader") ? 1 : 0;
+    const head = body.slice(0, i);
+    while (i < body.length && take.length < 3) {
+      if (!NARROW.has(inner(body[i]))) break;
+      take.push(body[i]);
+      i += 1;
+    }
+    // Never leave the main column with nothing: a split shell whose page moved
+    // wholesale into the aside is a 19rem system with a hole beside it.
+    if (take.length && i < body.length) {
+      aside = take;
+      body = [...head, ...body.slice(i)];
+    }
+  }
+
   return {
     root: {},
     content: [
       node("SystemShell", `${pageKey}-shell`, {
         sidebar: [rail],
-        main: rest,
+        aside,
+        main: body,
       }),
     ],
   } as unknown as Data;
 }
+
+/**
+ * THE REGISTERS BUILT ON THE THIRD SHELL.
+ *
+ * Researched 2026-08-26 on shipped products rather than templates. Tailwind
+ * Plus publishes three application shells -- Stacked, Sidebar, Multi-Column --
+ * and Attio, Linear and Superhuman all run the third. Measured against ours the
+ * same day: twelve of seventeen registers had a side rail and five had a top
+ * bar, and that was the whole structural range. side-deep against side-dark is
+ * HOW DARK, which the palette layer owns.
+ *
+ * Two to start, both of which already wanted it and could not say so:
+ *
+ *   台账 ledger   a ledger is a list you scan and a record you open. It was
+ *                 the densest table in the set with nothing beside it.
+ *   中台 counter  the Ant-Design-Pro lineage this was measured from ships a
+ *                 second column in every one of its list pages.
+ */
+export const SPLIT_REGISTERS = new Set(["ledger", "counter"]);
 
 /**
  * True when a `project_pages.layout_json` has never been written to -- the

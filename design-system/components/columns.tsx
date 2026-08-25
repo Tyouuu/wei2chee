@@ -25,11 +25,28 @@ import type { ReactNode } from "react"
 
 export type ColumnsLayout = "half" | "wide-left" | "wide-right" | "thirds"
 
+/*
+  minmax(0, …) AND NOT PLAIN fr.
+
+  A `1fr` track is `minmax(auto, 1fr)`, and `auto` as a minimum means the track
+  refuses to shrink below its content -- so a wide block does not scroll inside
+  its half, it makes its half wider and pushes the other one off.
+
+  ActivitySquares is 53 weeks of 11px squares, about 740px. It has carried
+  `w-full overflow-x-auto` since 2026-08-25 with a comment saying it was put
+  there for exactly this, and that scroller could never fire. Screenshotted on
+  台账 three times: the heatmap ran past its edge and painted over the workflow
+  strip beside it, and `min-w-0` on the cell and then on the Panel each fixed
+  one more box in a chain whose FIRST link was this line.
+
+  Every box between a scroller and its container has to agree to shrink. The
+  track is a box.
+*/
 const TEMPLATE: Record<ColumnsLayout, string> = {
-  half: "1fr 1fr",
-  "wide-left": "2fr 1fr",
-  "wide-right": "1fr 2fr",
-  thirds: "1fr 1fr 1fr",
+  half: "minmax(0, 1fr) minmax(0, 1fr)",
+  "wide-left": "minmax(0, 2fr) minmax(0, 1fr)",
+  "wide-right": "minmax(0, 1fr) minmax(0, 2fr)",
+  thirds: "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)",
 }
 
 /**

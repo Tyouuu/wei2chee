@@ -200,10 +200,12 @@ type Components = {
   };
   SystemShell: {
     sidebar: Slot;
+    /** The split shell's second column. See system-shell.tsx. */
+    aside: Slot;
     main: Slot;
     // Optional because the 换个款式 picker owns them and Puck demands a
     // registered field for every REQUIRED prop.
-    nav?: "side" | "top";
+    nav?: "side" | "top" | "split";
     // `deep` is the only one of the three that is reliably dark -- see the
     // navTone note in design-system/components/system-shell.tsx.
     navTone?: "dark" | "light" | "deep";
@@ -1152,6 +1154,10 @@ export const puckConfig: Config<Components> = {
         // reading 「顶部 / 浅色」 and imagining the result is exactly what the
         // pictures exist to replace.
         sidebar: { label: "侧边栏", type: "slot" },
+        // The split shell's second column. Empty on every register that does
+        // not ask for one, and an empty slot renders nothing -- so the other
+        // fourteen are untouched.
+        aside: { label: "第二栏", type: "slot" },
         main: { label: "页面内容", type: "slot" },
       },
       // NO `nav` OR `navTone` HERE, for the reason RecordTable states a
@@ -1159,12 +1165,13 @@ export const puckConfig: Config<Components> = {
       // say "follow the register". These two carried "side" / "dark" and
       // therefore overrode all twenty-one registers' preferences forever --
       // measured, three registers rendered a byte-identical rail.
-      defaultProps: { sidebar: [], main: [] },
-      render: ({ sidebar: Sidebar, main: Main, nav, navTone }) => (
+      defaultProps: { sidebar: [], aside: [], main: [] },
+      render: ({ sidebar: Sidebar, aside: Aside, main: Main, nav, navTone }) => (
         <SystemShell
           nav={nav ?? "side"}
           navTone={navTone ?? "dark"}
           sidebar={<Sidebar />}
+          aside={<Aside />}
           main={<Main />}
         />
       ),
@@ -1367,6 +1374,22 @@ export const puckConfig: Config<Components> = {
         // in a titled Panel prints the heading twice. Rendering an empty
         // CardTitle instead leaves a blank line and the header's padding above
         // every table on the page, which reads as a mistake because it is one.
+        /*
+          `min-w-0` ON EVERY SHAPE THIS RETURNS.
+
+          A grid or flex CHILD defaults to `min-width: auto`, which means it
+          refuses to shrink below its content. ActivitySquares is 53 weeks of
+          11px squares -- about 740px -- and it already carries `w-full
+          overflow-x-auto` for exactly this, with a comment saying so. That
+          scroller could never fire, because this wrapper sat between it and the
+          Columns cell and would not shrink, so the heatmap pushed its half of
+          the row wider and painted over the workflow strip beside it.
+          Screenshotted at 1440 on 台账, twice, a day apart.
+
+          The Columns cell has carried `min-w-0` since it was written. It is not
+          enough on its own: every box in the chain has to agree to shrink, and
+          this was the one that did not.
+        */
         const titled = Boolean(title) || Boolean(description);
         const head = (
           <>
@@ -1375,9 +1398,9 @@ export const puckConfig: Config<Components> = {
           </>
         );
         if (look === "plain" || look === "ruled") {
-          if (!titled) return <section className="h-full"><Body /></section>;
+          if (!titled) return <section className="h-full min-w-0"><Body /></section>;
           return (
-            <section className="flex flex-col h-full [gap:var(--gap-stack)]">
+            <section className="flex min-w-0 flex-col h-full [gap:var(--gap-stack)]">
               <div
                 className={
                   look === "ruled"
@@ -1395,7 +1418,7 @@ export const puckConfig: Config<Components> = {
           // h-full: inert on its own (the parent has no height), load-bearing
           // inside a Columns cell, where a three-row ranking beside a chart
           // otherwise draws a short card with bare ground under it.
-          <Card className="h-full">
+          <Card className="h-full min-w-0">
             {titled ? (
               <CardHeader className={look === "tinted" ? "[background-color:var(--color-ink-850)] [border-bottom:var(--hairline)_solid_var(--color-ink-800)] [border-top-left-radius:inherit] [border-top-right-radius:inherit]" : undefined}>
                 {head}

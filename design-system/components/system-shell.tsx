@@ -29,21 +29,52 @@ import { NavAxisProvider } from "./nav-axis"
  */
 export function SystemShell({
   sidebar,
+  aside,
   main,
   nav = "side",
   navTone = "dark",
 }: {
   sidebar: ReactNode
+  /**
+   * A PERSISTENT SECOND COLUMN, between the rail and the page.
+   *
+   * ── WHY THIS EXISTS ──────────────────────────────────────────────────
+   *
+   * Researched 2026-08-26, on shipped products rather than templates:
+   * 「就是先去研究其他的人的設計 是怎樣的」. Tailwind Plus publishes exactly three
+   * application shells -- Stacked (9 variants), Sidebar (8), Multi-Column (6)
+   * -- and Attio, Linear and Superhuman all run the third one.
+   *
+   * Measured against ours the same day, straight out of design-doc.ts: five
+   * registers on side-deep, five on side-dark, two on side-light, three on
+   * top-light, two on top-dark. side-deep and side-dark differ by HOW DARK,
+   * which is colour and not structure. So seventeen registers were built on
+   * TWO shells -- twelve with a side rail, five with a top bar -- and the
+   * founder's 「每一套的設計要不一樣」 was being answered below the level where
+   * the difference is first seen.
+   *
+   * This is the third shell. It is not exotic: a list on the left and the one
+   * you picked on the right is how every CRM in the world is laid out, which
+   * is exactly the bar he set -- 「要做一個大部分都會用到的 只是每一套的設計要不一樣」.
+   *
+   * Undefined on every register that does not ask for it, so nothing changes
+   * for the other fourteen.
+   */
+  aside?: ReactNode
   main: ReactNode
   /** Where the navigation sits. Pair `"top"` with RailNav's `variant="topbar"`;
-   *  the two are a matched set and neither reads right without the other. */
-  nav?: "side" | "top"
+   *  the two are a matched set and neither reads right without the other.
+   *  `"split"` is a side rail plus the `aside` column above. */
+  nav?: "side" | "top" | "split"
   /** What the navigation's ground is made of. `"dark"` is the register's own
    *  nav ground; `"light"` runs the navigation on the same paper as the page,
    *  separated by a hairline instead of by a colour. */
   navTone?: "dark" | "light" | "deep"
 }) {
   const isTop = nav === "top"
+  // A split shell is a side rail that happens to have a column beside it.
+  // Everything below that asks `isTop` must keep answering no.
+  const isSplit = nav === "split" && Boolean(aside)
 
   /*
    * THE LIGHT NAVIGATION IS A TOKEN REMAP, NOT A SECOND RAIL.
@@ -166,7 +197,9 @@ export function SystemShell({
           variable chosen at runtime. */}
       {/* The axis is published here rather than set on the rail — see
           nav-axis.tsx for the trap that avoids. */}
-      <NavAxisProvider value={nav}>
+      {/* A split shell IS a side shell as far as the rail is concerned -- the
+          extra column sits beside the page, not inside the navigation. */}
+      <NavAxisProvider value={isTop ? "top" : "side"}>
         <div
           className={isTop ? "flex w-full shrink-0" : "flex w-full shrink-0 @3xl:w-auto"}
           style={navVars}
@@ -174,6 +207,21 @@ export function SystemShell({
           {sidebar}
         </div>
       </NavAxisProvider>
+
+      {/*
+        THE SECOND COLUMN. Fixed width at desktop, full width and first below
+        @3xl -- on a phone a list and a detail cannot sit side by side, and the
+        list is the thing you navigate FROM, so it goes on top.
+
+        It carries the page's own ground and a hairline, not a second nav
+        ground: two dark columns beside each other stops being a shell and
+        becomes a wall.
+      */}
+      {isSplit ? (
+        <div className="flex w-full shrink-0 flex-col [gap:var(--gap-stack)] [padding:var(--pad-card-lg)] @3xl:w-[19rem] @3xl:[border-right:var(--hairline)_solid_var(--border-subtle)]">
+          {aside}
+        </div>
+      ) : null}
 
       {/* `min-w-0` is what lets the record tables inside scroll horizontally
           instead of forcing the whole shell wider than the viewport. */}
