@@ -108,9 +108,22 @@ export function Specimen({
   props,
   style,
   palette,
-  /** The width the block is composed at before it is scaled down. Wide enough
-   *  that a table reads as a table; the fit brings it back to the frame. */
-  width = 620,
+  /**
+   * The width the block is composed at before it is scaled down.
+   *
+   * IT WAS 620, AND THAT IS WHY THE GALLERY WAS UNREADABLE. The tile is 218px
+   * wide at four across, so `min(frameW/naturalW, ...)` came out at 0.35 and
+   * the block's own 13px table text painted at 4.6px — a picture of a table
+   * rather than a table you can read. Composing narrower raises the fit for
+   * free: at 440 the same tile scales 0.50 and the text lands near 7px, which
+   * is what 21st.dev's own cards measure at 272px wide.
+   *
+   * 440 rather than narrower because every block here is container-responsive,
+   * and below roughly 420 the wide ones start switching to their stacked
+   * phone layout — at which point the tile is honest about a layout the
+   * customer will not see on a desktop page.
+   */
+  width = 440,
   className = "",
 }: {
   name: string;

@@ -222,6 +222,35 @@ export const SAMPLE_EN: Record<string, string> = {
   "6月": "Jun",
   "7月": "Jul",
   "8月": "Aug",
+
+  // ── 整段成品 (design-system/components/assembled.tsx) ─────────────────
+  // Content, not chrome: these follow projects.system_language, because they
+  // are what the block SAYS on the customer's page.
+  新客户登记: "New client",
+  "填一次,以后开单、发报价都用得上。": "Fill this in once — quotes and invoices reuse it.",
+  客户名字: "Client name",
+  "电话 / WhatsApp": "Phone / WhatsApp",
+  怎么找到我们: "How they found us",
+  要做什么: "What they need",
+  三房翻新: "3-room renovation",
+  加进来: "Add client",
+  "这一单": "This job",
+  "RM 48,500 · 已确认": "RM 48,500 · confirmed",
+  上门量尺: "Site measure",
+  "8月18日 · 已完成": "18 Aug · done",
+  "WhatsApp 联络": "WhatsApp them",
+  "陈先生 · 012-345 6789": "Mr Tan · 012-345 6789",
+  "订金已收 50%": "50% deposit received",
+  木工进场: "Carpentry started",
+  报价条款: "Quotation terms",
+  "施工范围包括拆除旧橱柜、水电改位、防水、贴砖、天花板与油漆。不包括家具、电器与窗帘。订金 50%,施工完成后付清尾款。水电一年保修,木工六个月。工期以实际现场情况为准,如遇管理层批准延误,完工日期顺延。":
+    "Scope covers stripping the old cabinetry, relocating wiring and plumbing, waterproofing, tiling, ceiling and paint. Furniture, appliances and curtains are not included. 50% deposit, balance on completion. One year on wiring and plumbing, six months on carpentry. Timeline follows site conditions; approved delays push the completion date back accordingly.",
+  客户签名: "Client signature",
+  本月对账: "This month",
+  "比上月 +13.2%": "+13.2% vs last month",
+  "3 单本周收尾": "3 finishing this week",
+  "数字来自你自己的记录,改一笔这里就跟着变。":
+    "These come from your own records — change one and this follows."
 };
 
 /**

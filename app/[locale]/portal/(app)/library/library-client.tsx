@@ -70,6 +70,110 @@ type Entry = { name: string; label: string; category: string; props: Record<stri
  */
 const CONTROL_SHELVES = new Set(["pick", "toggles", "actions"]);
 
+/** How many tiles a front-door row shows. Four, because that is what the
+ *  grid holds at 1440 and because a row that wraps stops being a row. */
+const ROW = 4;
+
+/**
+ * One gallery tile.
+ *
+ * HOISTED OUT OF `LibraryClient` ON PURPOSE. It was declared inside it, which
+ * makes a NEW component type on every render: React cannot match the old tree
+ * to the new one, so every tile unmounts and remounts on every keystroke in
+ * the search box — and each tile mounts a composed-then-scaled specimen with
+ * its own ResizeObserver. Same class of bug as the reel that re-rendered
+ * seventeen page trees per tick, arrived at from the other direction.
+ */
+function Tile({
+  entry,
+  short,
+  style,
+  palette,
+  locale,
+  firstPage,
+  t,
+  onZoom,
+}: {
+  entry: Entry;
+  short: boolean;
+  style: StyleName;
+  palette: string | null;
+  locale: string;
+  firstPage: string;
+  t: (key: string, values?: Record<string, string>) => string;
+  onZoom: (entry: Entry) => void;
+}) {
+  return (
+    <li className="group min-w-0">
+      {/* The frame is the zoom control; the NAME underneath is the
+          add link. Two actions that never fight — look here, take it
+          there. */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onZoom(entry)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onZoom(entry);
+          }
+        }}
+        aria-label={t("zoom", { name: entry.label })}
+        className={`${chrome.mount} block w-full cursor-zoom-in transition-transform duration-200 group-hover:-translate-y-0.5 ${short ? "h-[140px]" : "h-[208px]"}`}
+      >
+        {PAGE_SIZED.has(entry.name) ? (
+          <StyleScope
+            register={style}
+            palette={palette}
+            className="ds-ground grid place-items-center [background-color:var(--color-canvas)]"
+          >
+            <p className="max-w-[26ch] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)] [padding:var(--pad-card)]">
+              {t(`structural.${entry.name}`)}
+            </p>
+          </StyleScope>
+        ) : (
+          <Specimen
+            name={entry.name}
+            props={entry.props}
+            style={style}
+            palette={palette}
+          />
+        )}
+      </div>
+
+      {/* Outside the card, on the page ground. Two sizes, two inks,
+          no button — 「去用它」 was a control competing with the thing
+          it described, on every one of fifty-six cards. The whole
+          name is the link now, which is what a customer tries first.
+          `?add=` is read server-side in [pageKey]/page.tsx and goes
+          through the SAME add_component operation the AI assistant
+          uses, so the block lands unsaved, undoable, and behind the
+          same paid gate. Without it the library is a brochure. */}
+      <div className="mt-2.5">
+        {PAGE_SIZED.has(entry.name) ? (
+          <>
+            <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+              {entry.label}
+            </span>
+            <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+              {entry.name}
+            </span>
+          </>
+        ) : (
+          <Link href={`/${locale}/portal/${firstPage}?add=${entry.name}`} className="block">
+            <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] group-hover:underline">
+              {entry.label}
+            </span>
+            <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+              {entry.name}
+            </span>
+          </Link>
+        )}
+      </div>
+    </li>
+  );
+}
+
 export function LibraryClient({
   locale,
   style,
@@ -87,10 +191,29 @@ export function LibraryClient({
 }) {
   const t = useTranslations("portal.library");
   const [query, setQuery] = useState("");
-  // Which shelf is open. Starts on the first one rather than on 「全部」,
-  // because 全部 IS the pile — it stays as an entry for whoever wants to
-  // scroll everything, not as the front door.
-  const [active, setActive] = useState<string | null>("site");
+  /*
+    WHICH SHELF IS OPEN, AND WHY null IS THE FRONT DOOR NOW.
+
+    It opened on 「官网」, a shelf with two blocks in it, which meant the front
+    door of a 69-block library was two tiles and a screen of empty ground. The
+    note that used to sit here argued 全部 is the pile and should not be the
+    entrance. That was right about 全部 and wrong about the conclusion, because
+    21st.dev has a third answer and I had not gone and looked at it.
+
+    Measured on 2026-08-26: their /components does not open on a category and
+    does not open on everything. It opens on SECTIONED ROWS -- Newest, Popular,
+    Shaders -- each one a horizontal strip of four with a 「View all →」 on the
+    right, and their landing page does the same with chips. You see the range
+    of the library in one screen, and you enter through whichever row looks
+    like your problem.
+
+    So null now means the sectioned front door, and the rail still takes you to
+    one shelf at a time. I had recommended against building this. He said
+    「我要你完完全全的去抄他们的做法」, and having actually opened the page I think
+    he is right: a two-tile front door is the worst possible answer to
+    「这个库存里有什么」.
+  */
+  const [active, setActive] = useState<string | null>(null);
   // Which block is open at full size. A thumbnail answers "which one is the
   // table"; it cannot answer "what will this actually look like on my page",
   // and that second question is the one a customer has before committing.
@@ -135,6 +258,15 @@ export function LibraryClient({
     return active ? entries.filter((e) => e.category === active) : entries;
   }, [entries, query, active]);
 
+  /** The front door's rows: every shelf, in the order puck-config declares
+   *  them, each cut to what fits one row. */
+  const sections = useMemo(() => {
+    const cats = Object.keys(puckConfig.categories ?? {});
+    return cats
+      .map((key) => ({ key, items: entries.filter((e) => e.category === key) }))
+      .filter((s) => s.items.length > 0);
+  }, [entries]);
+
   const counts = useMemo(() => {
     const map = new Map<string, number>();
     for (const e of entries) map.set(e.category, (map.get(e.category) ?? 0) + 1);
@@ -143,6 +275,7 @@ export function LibraryClient({
 
   const categoryTitle = (key: string) =>
     ((puckConfig.categories ?? {}) as Record<string, { title?: string }>)[key]?.title ?? key;
+
 
   const heading = searching ? query.trim() : active ? categoryTitle(active) : t("filterAll");
   // 全部 and a search across everything both mix sections with controls, so
@@ -275,77 +408,71 @@ export function LibraryClient({
             now (founder-points 7e): the library pages copy 21st.dev, and it is
             not up for discussion any more.
           */}
-          <ul className="mt-6 grid grid-cols-1 items-start gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {shown.map((entry) => (
-              <li key={entry.name} className="group min-w-0">
-                {/* The frame is the zoom control; the NAME underneath is the
-                    add link. Two actions that never fight — look here, take it
-                    there. */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setZoomed(entry)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setZoomed(entry);
-                    }
-                  }}
-                  aria-label={t("zoom", { name: entry.label })}
-                  className={`${chrome.mount} block w-full cursor-zoom-in transition-transform duration-200 group-hover:-translate-y-0.5 ${short ? "h-[140px]" : "h-[208px]"}`}
-                >
-                  {PAGE_SIZED.has(entry.name) ? (
-                    <StyleScope
-                      register={style}
-                      palette={palette}
-                      className="ds-ground grid place-items-center [background-color:var(--color-canvas)]"
-                    >
-                      <p className="max-w-[26ch] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)] [padding:var(--pad-card)]">
-                        {t(`structural.${entry.name}`)}
-                      </p>
-                    </StyleScope>
-                  ) : (
-                    <Specimen
-                      name={entry.name}
-                      props={entry.props}
-                      style={style}
-                      palette={palette}
-                    />
-                  )}
-                </div>
-
-                {/* Outside the card, on the page ground. Two sizes, two inks,
-                    no button — 「去用它」 was a control competing with the thing
-                    it described, on every one of fifty-six cards. The whole
-                    name is the link now, which is what a customer tries first.
-                    `?add=` is read server-side in [pageKey]/page.tsx and goes
-                    through the SAME add_component operation the AI assistant
-                    uses, so the block lands unsaved, undoable, and behind the
-                    same paid gate. Without it the library is a brochure. */}
-                <div className="mt-2.5">
-                  {PAGE_SIZED.has(entry.name) ? (
-                    <>
-                      <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
-                        {entry.label}
-                      </span>
-                      <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
-                        {entry.name}
-                      </span>
-                    </>
-                  ) : (
-                    <Link href={`/${locale}/portal/${firstPage}?add=${entry.name}`} className="block">
-                      <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] group-hover:underline">
-                        {entry.label}
-                      </span>
-                      <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
-                        {entry.name}
-                      </span>
-                    </Link>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {/* ── THE FRONT DOOR, SECTIONED ────────────────────────────────
+              21st.dev's /components, measured 2026-08-26: rows titled Newest /
+              Popular / Shaders, four tiles each, a 「View all →」 on the right of
+              every row. No category page, no everything page. See the note on
+              `active` for why this replaced a two-tile front door. */}
+          {!searching && active === null ? (
+            <div className="mt-6 flex flex-col gap-10">
+              {sections.map((sec) => (
+                <section key={sec.key}>
+                  <div className="mb-3 flex items-baseline gap-3">
+                    <h3 className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
+                      {categoryTitle(sec.key)}
+                    </h3>
+                    <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                      {sec.items.length}
+                    </span>
+                    <span className="flex-1" />
+                    {/* Only where there is something the row is not showing --
+                        a 「看全部」 next to a row that already IS all of it is a
+                        control that does nothing. */}
+                    {sec.items.length > ROW && (
+                      <button
+                        type="button"
+                        onClick={() => setActive(sec.key)}
+                        className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)]"
+                      >
+                        {t("filterAll")} {sec.items.length} →
+                      </button>
+                    )}
+                  </div>
+                  <ul className="grid grid-cols-1 items-start gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {sec.items.slice(0, ROW).map((entry) => (
+                      <Tile
+                        key={entry.name}
+                        entry={entry}
+                        short={CONTROL_SHELVES.has(sec.key)}
+                        style={style}
+                        palette={palette}
+                        locale={locale}
+                        firstPage={firstPage}
+                        t={t}
+                        onZoom={setZoomed}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <ul className="mt-6 grid grid-cols-1 items-start gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {shown.map((entry) => (
+                <Tile
+                  key={entry.name}
+                  entry={entry}
+                  short={short}
+                  style={style}
+                  palette={palette}
+                  locale={locale}
+                  firstPage={firstPage}
+                  t={t}
+                  onZoom={setZoomed}
+                />
+              ))}
+            </ul>
+          )}
 
           <p className="mt-12 max-w-xl [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
             {t("moreComing")}
