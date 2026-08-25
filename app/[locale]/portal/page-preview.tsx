@@ -58,6 +58,23 @@ const COMPOSE_H = 720;
  */
 const PAN_MS = 14000;
 
+/**
+ * READING SPEED, for a single page travelling on its own.
+ *
+ * The constant above exists so seventeen register tiles stay in step, which is
+ * the whole point of a comparison grid. It is the wrong rule for 模板库, where
+ * the six templates are different pages of wildly different lengths: measured,
+ * 5048px, 4826px, 4613px, 2262px, 1243px. Fourteen seconds for the tallest is
+ * 309 pixels a second, which is a blur.
+ *
+ * 190px/s is roughly a window every four seconds, the pace 21st.dev's own clips
+ * run at. Clamped at both ends so a page with 200px of overhang does not finish
+ * before the eye arrives and a very tall one does not become a screensaver.
+ */
+const PAN_PX_PER_S = 190;
+const PAN_SINGLE_MIN_MS = 6000;
+const PAN_SINGLE_MAX_MS = 30000;
+
 /** How many of the customer's pages a travelling tile threads together. Three
  *  is roughly 1440 composed pixels of travel, which at PAN_MS is a page every
  *  4.7 seconds — the reading speed measured off 21st.dev's clips. Four made the
@@ -129,7 +146,19 @@ export function PagePreview({
     it is the right way: every page appears, the dashboard is first, and nothing
     ever cuts.
   */
-  const travel = travelProp || (!!strip && strip.length > 0);
+  /*
+    TWO SHAPES OF TRAVEL, and they need opposite height rules.
+
+    STACKED (the register grid): several of the customer's pages threaded into
+    one strip. Each page is exactly one window tall and clips, so the strip
+    advances a page at a time and nothing from page one paints onto page two.
+
+    SINGLE (模板库, the 官网 panel): one page, taller than the window, scrolled
+    through. Here the page must be allowed its natural height -- pinning it to
+    the window is what a crop is, and a crop is the thing being fixed.
+  */
+  const stacked = !!strip && strip.length > 0;
+  const travel = travelProp || stacked;
   const boxRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   // 0 until measured. Rendering at scale 0 rather than at 1 avoids a single
@@ -171,11 +200,19 @@ export function PagePreview({
     const measure = () => setOver(Math.max(0, el.offsetHeight - COMPOSE_H));
     measure();
     // See PAN_EPOCH. Negative, so it seeks into the loop rather than waiting.
-    el.style.animationDelay = `-${(performance.now() - PAN_EPOCH) % PAN_MS}ms`;
+    //
+    // Only for a stacked strip. Phase-locking is what makes seventeen tiles a
+    // comparison rather than seventeen slot machines; six templates of
+    // different heights run at different durations by design, and seeking them
+    // by a constant that is not their own period would just start each one at
+    // an arbitrary point.
+    if (stacked) {
+      el.style.animationDelay = `-${(performance.now() - PAN_EPOCH) % PAN_MS}ms`;
+    }
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [travel, data]);
+  }, [travel, stacked, data]);
 
 
   return (
@@ -228,19 +265,35 @@ export function PagePreview({
           className={
             travel
               /*
-                THE FLOOR IS ON THE FIRST PAGE ONLY.
+                EVERY PAGE IN THE STRIP IS EXACTLY ONE WINDOW TALL, AND CLIPS.
 
-                It was on every child, and the first screenshot of the strip
-                showed why that is wrong: each page was padded out to a full
-                720px window, so a page whose content runs 400px contributed
-                320px of blank canvas and the strip scrolled through white
-                bands. The first page keeps the floor because it is the one
-                seen at rest, and because SystemShell's `min-h-full` needs
-                something definite to be tall against; the threaded ones run at
-                their natural height and butt up against each other, which is
-                what makes the travel read as continuous.
+                Two wrong answers came before this one, both caught by looking.
+
+                First it was `min-h` on every child. A page whose content runs
+                400px was padded to 720 and contributed 320px of blank canvas,
+                so the strip scrolled through white bands.
+
+                Then it was `min-h` on the first child only, and the founder
+                photographed what that does: a pie chart and a bar chart from
+                the dashboard painted on top of the next page's header.
+                Measured — page one's box is 766px and its scrollHeight is
+                1338, so 572px of it was drawn over whatever came next. The
+                cause is that the customer's pages are built to FILL a screen:
+                SystemShell hands its blocks `h-full`, and against a parent
+                sized only by `min-height` those sections resolve short and
+                spill. They always did. The old single-page preview simply
+                clipped the spill at the frame and nobody could see it.
+
+                A definite height fixes both at once: `h-full` now resolves
+                against a real 720, so the shell stretches and the rail runs the
+                full way down instead of overflowing, and `overflow-hidden`
+                catches anything that still does not fit. This is precisely how
+                the non-travel preview has always rendered — one window of the
+                page — repeated three times.
               */
-              ? "ds-pan [&>*:first-child]:min-h-[var(--pan-floor)]"
+              ? stacked
+                ? "ds-pan [&>*]:h-[var(--pan-floor)] [&>*]:overflow-hidden [&>*>*]:h-full"
+                : "ds-pan"
               : "h-full [&>*]:h-full"
           }
           style={
@@ -248,7 +301,14 @@ export function PagePreview({
               ? ({
                   "--pan-floor": `${COMPOSE_H}px`,
                   "--pan-to": `${-over}px`,
-                  animationDuration: `${PAN_MS}ms`,
+                  animationDuration: `${
+                    stacked
+                      ? PAN_MS
+                      : Math.min(
+                          PAN_SINGLE_MAX_MS,
+                          Math.max(PAN_SINGLE_MIN_MS, (over / PAN_PX_PER_S) * 1000),
+                        )
+                  }ms`,
                   // A page with nothing below the crop must not animate at
                   // all: `translateY(0)` for nine seconds is a composite layer
                   // and a repaint budget spent on standing still.
@@ -257,7 +317,12 @@ export function PagePreview({
               : undefined
           }
         >
-          <Render config={puckConfig} data={data} />
+          {/* Every page wrapped the same way, the first one included: the
+              selectors above address `> *`, so an unwrapped <Render> root would
+              be the one child that neither gets the height nor clips. */}
+          <div>
+            <Render config={puckConfig} data={data} />
+          </div>
           {/* A hairline where one page ends and the next begins, so the seam
               reads as a page break rather than as a glitch in one long page.
               The register's own border token, so it is the same line the page
