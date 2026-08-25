@@ -432,7 +432,10 @@
       "pagesNote": "改成你自己的叫法 —— 你不叫 Quotations，你叫「报价单」。拖着 ⠿ 换顺序。留空就用回原来的词。",
       "pagesRename": "点一下改名",
       "pagesUp": "往上",
-      "pagesDown": "往下"
+      "pagesDown": "往下",
+      "tabContent": "内容",
+      "tabDesign": "样子",
+      "advanced": "进阶"
     },
     "home": {
       "eyebrow": "你的系统",

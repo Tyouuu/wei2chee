@@ -82,7 +82,7 @@ export function BlockSheets({
 }) {
   const t = useTranslations("portal.editor");
   const { selectedItem } = usePuck();
-  const { sheet, closeSheet, anchor } = useEditorUi();
+  const { sheet, closeSheet, openSheet, anchor } = useEditorUi();
   const name = blockLabel(selectedItem?.type);
   const { plain, advanced } = splitFields(children);
 
@@ -92,34 +92,70 @@ export function BlockSheets({
   // panel floating over a page with nothing selected, editing whatever had
   // been selected before.
   useEffect(() => {
-    if (
-      !selectedItem &&
-      (sheet?.kind === "variant" || sheet?.kind === "fields")
-    )
-      closeSheet();
+    if (!selectedItem && sheet?.kind === "block") closeSheet();
   }, [selectedItem, sheet, closeSheet]);
 
-  return (
-    <>
-      <Sheet
-        open={sheet?.kind === "variant"}
-        onClose={closeSheet}
-        anchor={anchor}
-        title={`${name} · ${t("changeVariant")}`}
-      >
-        <VariantPicker style={style} palette={palette} />
-      </Sheet>
+  /*
+    ONE SHEET, TWO TABS — 2026-08-25.
 
-      {/* ALWAYS MOUNTED, even closed. `children` is Puck's live field tree; a
-          sheet that unmounted it on close would throw away the focus and
-          caret of anyone who clicked the canvas mid-word. Sheet toggles
-          display, never the children. */}
-      <Sheet
-        open={sheet?.kind === "fields"}
-        onClose={closeSheet}
-        anchor={anchor}
-        title={`${name} · 改文字`}
+    There were two: 换款式 opened one panel and 改文字 opened another, both
+    anchored to the same block, each with its own title bar, and switching
+    between them meant closing one thing and opening another over the same
+    words. Durable's is one sheet on the block with Content and Design across
+    the top (screenshots d5 and d6), and the founder marked it 拿 with the
+    plainest reason available: 「同一块东西有两个地方」.
+
+    WHY THE TWO TOOLBAR BUTTONS SURVIVE. They open the same sheet on different
+    tabs. Collapsing them into one button would make 换款式 -- the control that
+    changes what a block IS, and the one this whole product is built on --
+    something you find by opening a panel and reading a tab, rather than
+    something you press.
+
+    WHY THE FIELDS STAY MOUNTED WHILE THE DESIGN TAB IS SHOWING. `children` is
+    Puck's live field tree; unmounting it throws away the caret and the focus
+    of anyone who was mid-word when they went to look at the shapes. The tab
+    hides it, exactly as Sheet hides the whole thing when closed.
+  */
+  const tab = sheet?.kind === "block" ? sheet.tab : "content";
+  const setTab = (next: "content" | "design") =>
+    openSheet({ kind: "block", tab: next }, anchor ?? undefined);
+
+  return (
+    <Sheet
+      open={sheet?.kind === "block"}
+      onClose={closeSheet}
+      anchor={anchor}
+      title={name}
+    >
+      <div
+        role="tablist"
+        className="flex gap-1 border-b px-2 pt-1 [border-color:var(--color-ink-800)]"
       >
+        {(
+          [
+            ["content", t("tabContent")],
+            ["design", t("tabDesign")],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`rounded-t-[var(--radius-sm)] px-3 py-2 [font-size:var(--text-sm)] transition-colors ${
+              tab === key
+                ? "[color:var(--color-paper)] [font-weight:var(--fw-semibold)] [box-shadow:inset_0_-2px_0_var(--color-primary)]"
+                : "[color:var(--color-paper-dim)] hover:[color:var(--color-paper)]"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* `hidden` rather than a branch — see the note above on the caret. */}
+      <div hidden={tab !== "content"}>
         <div className="px-1 py-1">
           {plain}
           {advanced.length > 0 ? (
@@ -130,14 +166,18 @@ export function BlockSheets({
             // keeps its own open state in the DOM.
             <details className="mt-2 border-t pt-2 [border-color:var(--color-ink-800)]">
               <summary className="cursor-pointer list-none rounded-[var(--radius-sm)] px-2 py-1.5 [color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]">
-                进阶 · {advanced.length} 项（链接、走势这些)
+                {t("advanced")} · {advanced.length}
               </summary>
               <div className="pt-1">{advanced}</div>
             </details>
           ) : null}
         </div>
-      </Sheet>
-    </>
+      </div>
+
+      <div hidden={tab !== "design"}>
+        <VariantPicker style={style} palette={palette} />
+      </div>
+    </Sheet>
   );
 }
 

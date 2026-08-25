@@ -432,7 +432,10 @@
       "pagesNote": "Call them what you call them. Drag ⠿ to reorder. Leave a name empty to go back to the default.",
       "pagesRename": "Click to rename",
       "pagesUp": "Move up",
-      "pagesDown": "Move down"
+      "pagesDown": "Move down",
+      "tabContent": "Content",
+      "tabDesign": "Design",
+      "advanced": "Advanced"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

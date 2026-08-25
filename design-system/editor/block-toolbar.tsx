@@ -76,21 +76,30 @@ export function BlockToolbar({
     <div ref={ref}>
       <ActionBar label={label}>
         <ActionBar.Group>
+          {/* BOTH BUTTONS SURVIVED THE MERGE, on purpose. They open the same
+              sheet on different tabs (editor-sheets.tsx). One button would make
+              换款式 -- the control that changes what a block IS, and the thing
+              this product is built on -- something you find by opening a panel
+              and reading a tab rather than something you press. */}
           {hasVariants ? (
             <ActionBar.Action
-              onClick={() => openSheet({ kind: "variant" }, anchorEl())}
-              active={sheet?.kind === "variant"}
+              onClick={() => openSheet({ kind: "block", tab: "design" }, anchorEl())}
+              active={sheet?.kind === "block" && sheet.tab === "design"}
               label={t("changeVariant")}
             >
-              <span className={pill(sheet?.kind === "variant")}>{t("changeVariant")}</span>
+              <span className={pill(sheet?.kind === "block" && sheet.tab === "design")}>
+                {t("changeVariant")}
+              </span>
             </ActionBar.Action>
           ) : null}
           <ActionBar.Action
-            onClick={() => openSheet({ kind: "fields" }, anchorEl())}
-            active={sheet?.kind === "fields"}
+            onClick={() => openSheet({ kind: "block", tab: "content" }, anchorEl())}
+            active={sheet?.kind === "block" && sheet.tab === "content"}
             label={t("editText")}
           >
-            <span className={pill(sheet?.kind === "fields")}>{t("editText")}</span>
+            <span className={pill(sheet?.kind === "block" && sheet.tab === "content")}>
+              {t("editText")}
+            </span>
           </ActionBar.Action>
         </ActionBar.Group>
         <ActionBar.Separator />

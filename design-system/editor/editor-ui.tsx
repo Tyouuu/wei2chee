@@ -43,8 +43,10 @@ import {
  */
 
 export type Sheet =
-  | { kind: "variant" }
-  | { kind: "fields" }
+  /** One block, two tabs. Was two sheets -- 换款式 and 改文字 -- anchored to the
+   *  same block with a title bar each; see editor-sheets.tsx for why they
+   *  merged and why the two toolbar buttons did not. */
+  | { kind: "block"; tab: "content" | "design" }
   /** The whole page's register — 风格. Opened from the top bar, not from a
    *  block, so it has no anchor and docks like the others. */
   | { kind: "style" }
