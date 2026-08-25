@@ -38,6 +38,7 @@ import { InsertAffordance } from "@/design-system/editor/insert-affordance";
 import { BlockSheets, InsertSheet } from "@/design-system/editor/editor-sheets";
 import { AiDock } from "@/design-system/editor/ai-dock";
 import { StyleButton, StyleSheet } from "@/design-system/editor/style-sheet";
+import { cornerApply, cornerCapture } from "@/design-system/editor/corners";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
 import type { SystemLang } from "@/lib/system-lang";
 import { InlineEditing } from "@/design-system/editor/inline-editing";
@@ -133,6 +134,7 @@ export function PortalEditor({
   navPages,
   style,
   palette,
+  corners,
   systemLang,
   siteSlug,
   sitePublished,
@@ -181,6 +183,8 @@ export function PortalEditor({
    *  Threaded from the server rather than fetched again: the same projects row
    *  supplies `style`, and a second query would be a second source of truth. */
   palette: string | null;
+  /** The register's radius ladder, scaled. See design-system/editor/corners.tsx. */
+  corners: number;
   /** The language the customer's SYSTEM is written in
    *  (`projects.system_language`, default English). Not `locale`, which is the
    *  language the OWNER reads Formae in -- see lib/system-lang.ts. Threaded
@@ -226,6 +230,23 @@ export function PortalEditor({
   // Optimistic like the register beside it: 重掷 moves BOTH axes and the
   // canvas has to repaint on the press, not on the round trip.
   const [activePalette, setActivePalette] = useState<string | null>(palette);
+  // Optimistic like the two axes above it. A slider that waited for a round
+  // trip on every step would report the database's opinion of a drag.
+  const [activeCorners, setActiveCorners] = useState<number>(corners);
+  const cornerSave = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Repaints on every step, writes once the hand stops. A range input
+   *  fires on each pixel of the drag; persisting each one would be forty
+   *  RPCs for one decision. */
+  function pickCorners(next: number) {
+    setActiveCorners(next);
+    if (cornerSave.current) clearTimeout(cornerSave.current);
+    cornerSave.current = setTimeout(() => {
+      void createBrowserSupabaseClient().rpc("set_project_corners", {
+        new_corners: next,
+      });
+    }, 450);
+  }
   const [stylePending, setStylePending] = useState<StyleName | null>(null);
   const [styleFailed, setStyleFailed] = useState(false);
   const [shuffling, setShuffling] = useState(false);
@@ -1096,6 +1117,13 @@ export function PortalEditor({
                     <CanvasGutter
                       className={`ds-ground ${scopeClasses(activeStyle, activePalette)} h-full [background-color:var(--color-canvas)]`}
                     >
+                    {/* Two layers: the outer freezes the register's own radius
+                        ladder under private names, the inner multiplies them.
+                        One element cannot do both -- a custom property that
+                        reads itself is a cycle and CSS drops the lot. Third
+                        time in this codebase; see corners.tsx. */}
+                    <div className="h-full" style={cornerCapture}>
+                    <div className="h-full" style={cornerApply(activeCorners)}>
                       {/* Everything inside the canvas is the CUSTOMER'S system
                         and speaks their system language; everything outside it
                         is Formae and speaks the owner's. The provider sits at
@@ -1111,6 +1139,8 @@ export function PortalEditor({
                           {children}
                         </SystemLangProvider>
                       </RegisterProvider>
+                    </div>
+                    </div>
                     </CanvasGutter>
                     </CanvasFrame>
                     {/* Type on the page instead of in a panel. Renders nothing;
@@ -1167,6 +1197,8 @@ export function PortalEditor({
           onPick={pickStyle}
           onShuffle={shuffleStyle}
           shuffling={shuffling}
+          corners={activeCorners}
+          onCorners={pickCorners}
           locale={locale}
           styles={STYLE_ORDER.map((name) => ({
             name,
@@ -1179,6 +1211,7 @@ export function PortalEditor({
             more: t("styleMore"),
             shuffle: t("shuffle"),
             shuffleNote: t("shuffleNote"),
+            corners: t("corners"),
           }}
         />
       </div>

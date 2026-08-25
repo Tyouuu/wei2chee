@@ -426,7 +426,8 @@
         "paper": "白纸"
       },
       "shuffle": "重掷",
-      "shuffleNote": "随便换一套看看"
+      "shuffleNote": "随便换一套看看",
+      "corners": "圆角"
     },
     "home": {
       "eyebrow": "你的系统",

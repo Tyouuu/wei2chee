@@ -56,7 +56,7 @@ export default async function PortalEditorPage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style, palette, paid, site_slug, site_published")
+    .select("id, style, palette, paid, site_slug, site_published, corners")
     .eq("account_id", user.id)
     .single();
 
@@ -202,6 +202,7 @@ export default async function PortalEditorPage({
        * reviewed design. */
       style={project.style as StyleName}
       palette={(project.palette as string | null) ?? null}
+      corners={Number(project.corners ?? 1)}
       systemLang={systemLangOf(businessContext)}
       /** The 官网's public address and whether it answers -- read here rather
        *  than fetched again in the editor, because the same projects row

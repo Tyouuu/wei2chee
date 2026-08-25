@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Sheet } from "@/design-system/editor/sheet";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
 import { scopeClasses } from "@/lib/portal/palettes";
+import { CornerSlider } from "@/design-system/editor/corners";
 import { StyleScope } from "@/design-system/editor/style-scope";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
@@ -62,6 +63,8 @@ export function StyleSheet({
   onPick,
   onShuffle,
   shuffling,
+  corners,
+  onCorners,
   locale,
   styles,
   labels,
@@ -74,6 +77,9 @@ export function StyleSheet({
   /** Press once, get a different register AND a different palette. */
   onShuffle: () => void;
   shuffling: boolean;
+  /** The register's radius ladder, scaled. 1 is the register as designed. */
+  corners: number;
+  onCorners: (next: number) => void;
   locale: string;
   /** [name, one-line tag] in the order they are offered. */
   styles: { name: StyleName; tag: string }[];
@@ -84,6 +90,7 @@ export function StyleSheet({
     more: string;
     shuffle: string;
     shuffleNote: string;
+    corners: string;
   };
 }) {
   const { sheet, closeSheet } = useEditorUi();
@@ -137,6 +144,8 @@ export function StyleSheet({
             · {labels.shuffleNote}
           </span>
         </button>
+
+        <CornerSlider value={corners} onChange={onCorners} label={labels.corners} />
 
         {failed ? (
           <p

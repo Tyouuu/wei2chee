@@ -426,7 +426,8 @@
         "paper": "White"
       },
       "shuffle": "Shuffle",
-      "shuffleNote": "Try a different one"
+      "shuffleNote": "Try a different one",
+      "corners": "Corners"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",
