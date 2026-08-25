@@ -163,6 +163,29 @@ Payments、Quotations、Project progress，然后第六张是**官网**。前五
       Vercel：Production 那一块单独一张带网址和状态的面板）
 - [ ] 侧栏已经分了组（DAY TO DAY / THE WORK / PUBLIC），首页没跟上 —— 两边要一致
 
+### 11. 🔴 官网上两个最重要的按钮，打不通（2026-08-25 查出来的）
+
+**`lib/brand.ts` 第 6 行：`WHATSAPP_NUMBER = "60123456789"`** —— 占位符，不是真号码。
+它被用在：
+- `components/site-footer.tsx` —— 页脚那颗「WHATSAPP 聊一聊」
+- `components/sections/conversion-cta.tsx` —— **整个官网的主转换按钮**
+- 付款墙那一版的联络入口（见 spec）
+
+**结果：一个老板看完整页、决定要联络我们，按下去打给一个不存在的号码。**
+这不是设计问题，是这条路根本没通。
+
+- [ ] 换成真的 WhatsApp Business 号码
+- [ ] 换完真的用手机点一次（不是看代码）
+
+### 12. 🔴 收不了钱
+
+全仓库**零个支付网关** —— 没有 Stripe、没有 Billplz、没有 toyyibPay、没有 senangPay。
+官网现在写着「规格书 RM 500」，客户说「好，我要」的时候，**没有按钮可以付**。
+
+- [ ] 选一家（马来西亚本地：Billplz / toyyibPay 支持 FPX 银行转账，
+      本地中小企业老板最习惯的付款方式；Stripe 要公司注册）
+- [ ] 只做第一步：RM 500 规格书的收款。开发费按模块计价，那个要人谈，不用先做
+
 ---
 
 ## 已完成
