@@ -83,6 +83,7 @@ export function HowItWorks() {
 
 export function WhatYouGet() {
   const t = useTranslations("explainer.scope");
+  const locale = useLocale();
   return (
     // The one dark band. 交付什么 is the section where the reader stops
     // browsing and starts checking whether this is real, so it is the one
@@ -95,6 +96,31 @@ export function WhatYouGet() {
           { term: t("d3"), detail: t("d3d") },
         ]}
       />
+
+      {/*
+        THE MIDDLE OF THE PAGE HAD NOTHING TO PRESS.
+
+        Counted on 2026-08-25: this page offered an action in the hero and again
+        in the footer, and across the five thousand pixels between them, none.
+        Linear, Attio, Stripe and Polar all repeat theirs three or four times,
+        for the plain reason that a reader is not persuaded on a schedule -- the
+        one who is ready at 「你最后拿到的是这些东西」 should not have to scroll
+        past two more sections to act on it.
+
+        Here rather than anywhere else because this is the section that answers
+        "is it real", and a white button on the one ink band is the strongest
+        object the page has to offer at that moment.
+      */}
+      <div className="mt-12 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-6">
+        <Link
+          href={`/${locale}#ask`}
+          className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[oklch(0.16_0.012_265)] transition-transform duration-200 hover:scale-[1.02]"
+        >
+          {t("cta")}
+          <span aria-hidden>&rarr;</span>
+        </Link>
+        <span className="text-sm text-[var(--muted-foreground)]">{t("ctaNote")}</span>
+      </div>
     </SectionShell>
   );
 }

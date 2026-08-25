@@ -29,13 +29,42 @@ export function CookieNotice({ locale }: { locale: string }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    let seen = true;
     try {
-      if (!window.localStorage.getItem(KEY)) setShow(true);
+      seen = Boolean(window.localStorage.getItem(KEY));
     } catch {
       // A blocked localStorage must not take the page with it. Not showing the
       // notice is the right failure: it is informational, and the alternative
       // is showing it on every single navigation.
+      return;
     }
+    if (seen) return;
+
+    /*
+      NOT ON THE FIRST SCREEN.
+
+      This is `position: fixed`, and the landing page's first screen is a
+      full-viewport composition ending in the product screenshot -- so wherever
+      the notice sat, it sat on top of the one object the page exists to show.
+      Photographed at 1440 on 2026-08-25: a 384px card across the bottom-left
+      corner of the dashboard shot, in every screenshot of the fold.
+
+      Waiting for the reader to leave the fold costs nothing. There is no
+      script to gate (see the note above -- one session cookie, set at login,
+      which nobody on the landing page has reached yet), so showing the notice
+      four hundred pixels later is not a compliance difference. It is the
+      difference between a first impression with a grey box on it and one
+      without.
+    */
+    const reveal = () => {
+      if (window.scrollY > window.innerHeight * 0.6) {
+        setShow(true);
+        window.removeEventListener("scroll", reveal);
+      }
+    };
+    reveal();
+    window.addEventListener("scroll", reveal, { passive: true });
+    return () => window.removeEventListener("scroll", reveal);
   }, []);
 
   function dismiss() {
