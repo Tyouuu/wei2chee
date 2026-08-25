@@ -250,7 +250,50 @@ export const SAMPLE_EN: Record<string, string> = {
   "比上月 +13.2%": "+13.2% vs last month",
   "3 单本周收尾": "3 finishing this week",
   "数字来自你自己的记录,改一笔这里就跟着变。":
-    "These come from your own records — change one and this follows."
+    "These come from your own records — change one and this follows.",
+
+  // ── 组件库's own samples (app/[locale]/portal/(app)/library/samples.ts) ──
+  // Content, so these follow system_language. Found by walking LIBRARY_SAMPLES
+  // for CJK strings with no entry here rather than by reading the screenshot:
+  // the audit reports only the first eighteen per page.
+  报价单列表: "Quotations",
+  报价内容: "What was quoted",
+  等确认: "Awaiting confirmation",
+  本月待收工程款: "Owed to you this month",
+  比上个月: "vs last month",
+  近六个月: "Last six months",
+  "3 个": "3",
+  "2 个": "2",
+  装修工程流程: "Job workflow",
+  询问: "Enquiry",
+  上门量: "Site measure",
+  施工: "Build",
+  收尾款: "Final payment",
+  "发给客户的报价，跟进哪些已确认、哪些还没回复。":
+    "Quotes you have sent — which are confirmed, and which have gone quiet.",
+  还没有报价单: "No quotations yet",
+  "第一次上门量了尺寸之后，从这里开一张。":
+    "After the first site measure, start one here.",
+  选择状态: "Status",
+  搜索客户: "Search clients",
+  "陈先生 · Taman Desa": "Mr Tan · Taman Desa",
+  "李太太 · Bukit Jalil": "Mrs Lee · Bukit Jalil",
+  "王老板 · Cheras": "Mr Wong · Cheras",
+  输入材料名称: "Material name",
+  石膏板: "Plasterboard",
+  防水漆: "Waterproof paint",
+  云石台面: "Marble countertop",
+  "收据 / 单据": "Receipt / invoice",
+  "拍张照片或上传 PDF，付款记录会连着这一笔。":
+    "Snap a photo or upload a PDF — the payment record links to it.",
+  "有 2 张报价单超过 7 天没回复": "2 quotations have gone 7 days without a reply",
+  "陈先生的 Taman Desa 三房翻新、王老板的 Cheras 店面装修。要不要今天跟一下？":
+    "Mr Tan's Taman Desa 3-room reno and Mr Wong's Cheras shoplot fitout. Follow up today?",
+  "Taman Desa 三房翻新 · 工程进度": "Taman Desa 3-room reno · progress",
+  报价日期: "Quote date",
+  结算月份: "Month",
+  等客户确认: "Awaiting the client",
+  陈老板: "Mr Tan"
 };
 
 /**

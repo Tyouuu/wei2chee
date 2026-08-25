@@ -7,6 +7,7 @@
 
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { useSystemWords } from "@/design-system/system-lang-context";
+import type { SystemWords } from "@/design-system/system-words";
 
 /**
  * 官网表格 → 系统出单. The one component in this product where the outside and
@@ -48,9 +49,24 @@ export function EnquiryForm({
   fields,
   submitLabel,
   landsIn,
-  landsInBadge = "自动",
-  landsInBefore = "填完送出 → 你的系统会开一张",
-  landsInAfter = "，不用有人转抄。",
+  /*
+    NO CHINESE DEFAULTS HERE ANY MORE.
+
+    These read 「自动」 / 「填完送出 → 你的系统会开一张」 / 「，不用有人转抄。」 as
+    parameter defaults, so an English system printed them in Chinese on its own
+    public page -- to a stranger, on the one screen that decides whether an
+    enquiry ever arrives. SYSTEM_WORDS.enquiry has carried both languages since
+    the words file was written, and this component already calls
+    useSystemWords() eleven lines down. Another capability built with the wire
+    never connected.
+
+    A parameter default cannot read a hook, so the fallback moves into the body
+    where `w` exists. `undefined` and not a string, so an explicitly-set prop
+    still wins.
+  */
+  landsInBadge,
+  landsInBefore,
+  landsInAfter,
   note,
   look = "card",
 }: {
@@ -89,7 +105,13 @@ export function EnquiryForm({
 }) {
   const base = useId();
   const w = useSystemWords();
-  const rows = fields && fields.length > 0 ? fields : DEFAULT_FIELDS;
+  const rows = fields && fields.length > 0 ? fields : defaultFields(w);
+  // The arrow block only renders when `landsIn` is set, so the empty string
+  // here is never read -- it exists so the tuple can be destructured once.
+  const [arrowBefore, arrowAfter] = w.enquiry.arrow(landsIn ?? "");
+  const badge = landsInBadge ?? w.enquiry.auto;
+  const before = landsInBefore ?? arrowBefore;
+  const after = landsInAfter ?? arrowAfter;
   const split = look === "split";
   const boxed = look === "card";
   const [values, setValues] = useState<Record<number, string>>({});
@@ -263,14 +285,14 @@ export function EnquiryForm({
               aria-hidden
               className="[background-color:var(--color-primary-soft)] [border-radius:var(--radius-pill)] [color:var(--color-primary)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [padding-block:2px] [padding-inline:8px]"
             >
-              {landsInBadge}
+              {badge}
             </span>
             <span>
-              {landsInBefore}
+              {before}
               <b className="[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
                 「{landsIn}」
               </b>
-              {landsInAfter}
+              {after}
             </span>
           </p>
         )}
@@ -279,18 +301,18 @@ export function EnquiryForm({
   );
 }
 
-/** Name, phone, what they want. Three fields, because a fourth costs replies
- *  and a business that needs more asks for it in the chat that follows. */
-const DEFAULT_FIELDS = [
-  { label: "怎么称呼", placeholder: "陈先生", kind: "text" as const },
-  {
-    label: "电话 / WhatsApp",
-    placeholder: "012-345 6789",
-    kind: "phone" as const,
-  },
-  {
-    label: "想做什么",
-    placeholder: "三房翻新，想问大概多少",
-    kind: "long" as const,
-  },
-];
+/**
+ * Name, phone, what they want. Three fields, because a fourth costs replies
+ * and a business that needs more asks for it in the chat that follows.
+ *
+ * A FUNCTION OF THE WORDS, not a constant. It was a module-level array of
+ * Chinese literals, so an English system's public page asked a stranger
+ * 「怎么称呼」. SYSTEM_WORDS.enquiry has held both languages all along.
+ */
+function defaultFields(w: SystemWords) {
+  return [
+    { label: w.enquiry.name.label, placeholder: w.enquiry.name.placeholder, kind: "text" as const },
+    { label: w.enquiry.phone.label, placeholder: w.enquiry.phone.placeholder, kind: "phone" as const },
+    { label: w.enquiry.detail.label, placeholder: w.enquiry.detail.placeholder, kind: "long" as const },
+  ];
+}
