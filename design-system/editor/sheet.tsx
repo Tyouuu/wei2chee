@@ -120,25 +120,36 @@ export function Sheet({
         return;
       }
 
-      let left = (vw - w) / 2;
-      let top = Math.max(floor, (vh - h) / 2);
+      /*
+        NOT DOCKABLE — SO IT RISES FROM THE BOTTOM.
 
-      const a = anchor?.getBoundingClientRect();
-      if (a && a.width > 0) {
-        left = a.left + a.width / 2 - w / 2;
-        // Under the block if it fits, above it if not, and never off either
-        // edge of the window.
-        top = a.bottom + 46;
-        if (top + h > vh - 12) top = Math.max(floor, a.top - h - 14);
-        if (top + h > vh - 12) top = Math.max(floor, vh - h - 12);
-      }
-      el.style.width = `${w}px`;
-      el.style.left = `${Math.max(12, Math.min(left, vw - w - 12))}px`;
-      el.style.top = `${top}px`;
-      // A tall palette must scroll inside itself rather than run off the top of
-      // the screen -- 加一段 lists every registered block, and on a 900px window
-      // that is taller than the canvas.
-      el.style.maxHeight = `${Math.max(220, vh - floor - 16)}px`;
+        This is Durable's shape, and it is taken for the half of their argument
+        that is actually better than ours rather than for the whole of it.
+
+        On a wide window our arrangement wins and stays: the sheet pins right
+        and the canvas gives up the same width as padding, so the block being
+        edited reflows and stays completely visible beside the panel editing it.
+        Durable's bottom sheet covers the foot of their canvas, which is exactly
+        the defect the docked version was written to fix (see the note at the
+        top of this file: 换款式 on 重点数字卡 used to cover the card).
+
+        On a NARROW window there is no width to give up, and what was here
+        before was the panel floating over the block — the same covering
+        problem, on the screen with the least room to spare. A bottom sheet is
+        the right object there: full width, anchored to an edge instead of to a
+        block, and it is the shape every phone the owner has ever used puts a
+        panel in.
+
+        So: docked when there is room, a bottom sheet when there is not, and
+        never a card floating over the thing it edits.
+      */
+      el.style.width = `${vw}px`;
+      el.style.left = "0px";
+      // 68vh leaves a third of the canvas visible above it, which is the least
+      // that still reads as "a panel over my page" rather than "a new screen".
+      const sheetH = Math.min(el.scrollHeight + 8, Math.round(vh * 0.68));
+      el.style.top = `${vh - sheetH}px`;
+      el.style.maxHeight = `${sheetH}px`;
     };
 
     place();
@@ -180,16 +191,35 @@ export function Sheet({
         role="dialog"
         aria-modal="false"
         aria-label={typeof title === "string" ? title : undefined}
-        className="fixed z-[60] flex flex-col overflow-hidden rounded-[var(--radius-lg)] border [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
+        // A bottom sheet is not a card that happens to be at the bottom: it is
+        // square where it meets the edge and round where it rises, with no
+        // border on the three sides that are off-screen. Rounding all four
+        // corners of a full-width panel flush to the bottom leaves two little
+        // gaps of canvas under it, which reads as a misplaced card.
+        className={`fixed z-[60] flex flex-col overflow-hidden [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)] ${
+          docked
+            ? "rounded-[var(--radius-lg)] border"
+            : "rounded-t-[var(--radius-lg)] border-t border-x-0 border-b-0 border-t"
+        }`}
         style={{
           display: open ? "flex" : "none",
           // Docked it can use the whole window height, because nothing is
           // underneath it any more.
-          // Docked, the real cap is set in `place()` from the canvas top.
-          maxHeight: docked ? undefined : "74vh",
-          boxShadow: "var(--shadow-overlay, 0 18px 46px rgba(6,14,26,.5))",
+          // Docked, the real cap is set in `place()` from the canvas top; as a
+          // bottom sheet it is set there too, from 68vh.
+          boxShadow: docked
+            ? "var(--shadow-overlay, 0 18px 46px rgba(6,14,26,.5))"
+            : "0 -14px 40px rgba(6,14,26,.45)",
         }}
       >
+        {/* The handle. Every bottom sheet the owner has ever seen has one, and
+            it is the only thing that says "this rose from the edge" rather than
+            "this is a panel that happens to be down here". */}
+        {docked ? null : (
+          <div className="flex shrink-0 justify-center pt-2" aria-hidden>
+            <span className="h-1 w-9 rounded-full [background-color:var(--color-ink-700)]" />
+          </div>
+        )}
         <div className="flex shrink-0 items-center gap-2 border-b px-3.5 py-2.5 [border-color:var(--color-ink-800)]">
           <span className="truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
             {title}

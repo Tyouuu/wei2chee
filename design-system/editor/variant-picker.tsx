@@ -56,10 +56,24 @@ const FRAME: Record<string, { w: number; h: number }> = {
 };
 const DEFAULT_FRAME = { w: 470, h: 150 };
 
-// One per row. Wide enough that the difference between 数字+走势 and
+// ONE PER ROW UNTIL THERE IS ROOM FOR MORE.
+//
+// A single column is right in the docked sheet (440px), where one tile at full
+// width is exactly wide enough that the difference between 数字+走势 and
 // 数字+细项 is a thing you see rather than a thing you read off a label.
-const COLS = 1;
+//
+// It is wrong in the bottom sheet, which is the full width of the window: the
+// first screenshot after that landed showed one variant tile filling a 1024px
+// screen, a table rendered at four times the size it will ever be seen at.
+// Columns are computed from the measured width instead, capped so a tile never
+// grows past the size it was framed for (see FRAME above).
+const MAX_TILE = 460;
 const GAP = 12;
+
+function columnsFor(width: number) {
+  if (!width) return 1;
+  return Math.max(1, Math.min(3, Math.floor((width + GAP) / (MAX_TILE + GAP))));
+}
 
 export function VariantPicker({ style, palette }: { style: StyleName; palette: string | null }) {
   const t = useTranslations("portal.editor");
@@ -70,16 +84,16 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
   // Puck's side bar happens to be — it is user-resizable. Measuring beats
   // hard-coding a width that is right until someone drags the divider.
   const gridRef = useRef<HTMLDivElement | null>(null);
-  const [cell, setCell] = useState(0);
+  const [box, setBox] = useState(0);
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => {
-      setCell(Math.max(0, (e.contentRect.width - GAP * (COLS - 1)) / COLS));
-    });
+    const ro = new ResizeObserver(([e]) => setBox(Math.max(0, e.contentRect.width)));
     ro.observe(el);
     return () => ro.disconnect();
   }, [selectedItem?.type]);
+  const cols = columnsFor(box);
+  const cell = box ? (box - GAP * (cols - 1)) / cols : 0;
 
   const list = selectedItem ? VARIANTS[selectedItem.type] : null;
 
@@ -234,7 +248,7 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
       <div
         ref={gridRef}
         className="grid"
-        style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`, gap: GAP }}
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: GAP }}
       >
         {list.map((v) => {
           const on = active?.id === v.id;
