@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
+
 import { motion } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { SectionShell } from "@/components/section-shell";
 
 /**
@@ -82,7 +84,10 @@ export function HowItWorks() {
 export function WhatYouGet() {
   const t = useTranslations("explainer.scope");
   return (
-    <SectionShell label="SCOPE" heading={t("title")}>
+    // The one dark band. 交付什么 is the section where the reader stops
+    // browsing and starts checking whether this is real, so it is the one
+    // worth stopping the page for.
+    <SectionShell label="SCOPE" heading={t("title")} ground="ink">
       <Rows
         items={[
           { term: t("d1"), detail: t("d1d") },
@@ -96,30 +101,68 @@ export function WhatYouGet() {
 
 export function Pricing() {
   const t = useTranslations("explainer.price");
+  const locale = useLocale();
+  // `t.raw` rather than three flat keys: the steps are a LIST, and a list in
+  // the message file is one edit when it becomes four steps instead of three.
+  const steps = t.raw("steps") as { label: string; amount: string; note: string }[];
+
   return (
     <SectionShell id="pricing" label="PRICE" heading={t("title")}>
-      {/* The two figures are the section, so they are set at figure scale
-          rather than buried in a paragraph. The competitor this product is
-          measured against (XYSTEM, RM1,499 起 for a web system) publishes a
-          price list; being vaguer than them about money would be a real
-          disadvantage, not a negotiating position. */}
-      <div className="grid gap-px border border-border bg-border sm:grid-cols-2">
-        {[
-          { amount: t("buildAmount"), label: t("buildLabel"), note: t("buildNote") },
-          { amount: t("hostAmount"), label: t("hostLabel"), note: t("hostNote") },
-        ].map((cell) => (
-          <div key={cell.label} className="bg-background p-8">
-            <div className="annotation">{cell.label}</div>
-            <div className="mt-3 font-serif text-[clamp(1.75rem,3.5vw,2.5rem)] leading-none tracking-[-0.02em] tabular-nums">
-              {cell.amount}
+      {/*
+        THREE STEPS, NOT TWO FIGURES.
+        Confirmed by the founder on 2026-08-25 after he said the page had it
+        wrong: RM 500 for the spec, the build priced by module, RM 199 a month
+        to host. The old copy said 「开发费 RM 5,000 一口价」, which was neither
+        the agreed price nor the agreed SHAPE -- a flat fee hides the one thing
+        that makes this affordable to a Malaysian SME, which is that they pay
+        for the modules they actually want.
+
+        The competitor this is measured against (XYSTEM, RM1,499 起) publishes
+        a price list; being vaguer than them about money would be a real
+        disadvantage rather than a negotiating position.
+
+        A rail down the left rather than three boxed cards: these are STEPS in
+        an order, and three equal cards say "pick one", which is exactly the
+        wrong reading. The number is the object -- set at figure scale, with
+        the step's name above it in the annotation face.
+      */}
+      <ol className="border-t border-border">
+        {steps.map((step, i) => (
+          <motion.li
+            key={step.label}
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+            className="grid gap-x-10 gap-y-3 border-b border-border py-8 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]"
+          >
+            <div>
+              <div className="annotation">{step.label}</div>
+              <div className="mt-2 font-serif text-[clamp(1.75rem,3.2vw,2.35rem)] leading-none tracking-[-0.02em] tabular-nums">
+                {step.amount}
+              </div>
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{cell.note}</p>
-          </div>
+            <p className="max-w-[46ch] self-center text-sm leading-relaxed text-muted-foreground">
+              {step.note}
+            </p>
+          </motion.li>
         ))}
+      </ol>
+
+      {/* A SECTION ABOUT MONEY WITH NOTHING TO PRESS. Every reference page
+          photographed on 2026-08-25 -- Linear, Attio, Stripe, Polar -- ends its
+          pricing with an action. This one ended with a paragraph, so the reader
+          most ready to act was handed nothing and had to scroll on. */}
+      <div className="mt-10 flex flex-col gap-6 border-l-2 border-blueprint/50 pl-5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="max-w-[52ch] leading-relaxed text-foreground/80">{t("free")}</p>
+        <Link
+          href={`/${locale}#ask`}
+          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+        >
+          {t("cta")}
+          <span aria-hidden>&rarr;</span>
+        </Link>
       </div>
-      <p className="mt-8 border-l-2 border-blueprint/50 pl-5 leading-relaxed text-foreground/80">
-        {t("free")}
-      </p>
     </SectionShell>
   );
 }

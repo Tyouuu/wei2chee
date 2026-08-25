@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
 /*
@@ -29,6 +29,7 @@ export function SectionShell({
   id,
   children,
   headingClassName = "text-[clamp(1.875rem,4vw,3rem)]",
+  ground = "paper",
 }: {
   /** The section's place in the visitor's flow. Omit for sections that are
    *  reference material rather than a step -- pricing and FAQ are read in any
@@ -42,6 +43,21 @@ export function SectionShell({
   id?: string;
   children: ReactNode;
   headingClassName?: string;
+  /**
+   * A GROUND OF ITS OWN.
+   *
+   * Below the hero the page ran one continuous near-white with a faint grid for
+   * five thousand pixels, which is what the founder was describing when he said
+   * 「整体还是不够好看」 and then 「我要看到提升设计感」. Every reference page
+   * photographed on 2026-08-25 breaks that: Stripe alternates white and tinted
+   * bands, Polar drops a row of near-black cards, Attio washes from white into
+   * lavender. A page with one ground has no rhythm to read by, and the reader
+   * loses their place in it.
+   *
+   * Deliberately ONE section, not alternating every other one. Two grounds is
+   * a spine; four is a striped page.
+   */
+  ground?: "paper" | "ink";
 }) {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
@@ -56,13 +72,62 @@ export function SectionShell({
   const headingY = useTransform(scrollYProgress, [0, 1], ["8%", "-8%"]);
 
   return (
-    <section ref={ref} id={id} className="mx-auto max-w-5xl px-6 py-28 sm:px-10">
-      <div className="grid gap-10 md:grid-cols-[8rem_1fr] md:gap-14">
+    /* py-28 was 224px of air between every pair of sections, on top of the
+       48px under each heading. Measured against the pages photographed on
+       2026-08-25 -- Linear, Attio, Stripe, Polar -- which run 96 to 128. Ours
+       read as a page with gaps in it rather than as a page with rhythm, and
+       the founder's word for the whole thing was 「整体还是不够好看」. */
+    <section
+      ref={ref}
+      id={id}
+      data-ground={ground}
+      /*
+        A TOKEN REMAP, NOT A TEXT COLOUR.
+        The first version set `text-white` on the band and the body copy inside
+        it stayed dark: `Rows` styles itself with --foreground and
+        --muted-foreground, and those still resolved to the page's light-surface
+        values, so the section rendered a white heading over three rows of
+        near-invisible grey. Exactly the mistake SystemShell's own navTone note
+        warns about and the same fix: re-point the surface family on the one
+        wrapper that owns the ground, and everything inside reads the new values
+        without knowing anything happened.
+      */
+      style={
+        ground === "ink"
+          ? ({
+              "--background": "oklch(0.16 0.012 265)",
+              "--foreground": "oklch(0.97 0.004 265)",
+              "--muted-foreground": "oklch(0.74 0.015 265)",
+              "--border": "oklch(1 0 0 / 14%)",
+              "--color-border": "oklch(1 0 0 / 14%)",
+            } as CSSProperties)
+          : undefined
+      }
+      className={
+        ground === "ink"
+          ? // Full-bleed on the outside, the same 5xl column on the inside: the
+            // band has to reach both edges or it reads as a very large card.
+            "w-full bg-[var(--background)] text-[var(--foreground)]"
+          : "mx-auto max-w-5xl px-6 py-20 sm:px-10 sm:py-24"
+      }
+    >
+      <div
+        className={`grid gap-10 md:grid-cols-[8rem_1fr] md:gap-14 ${
+          ground === "ink" ? "mx-auto max-w-5xl px-6 py-24 sm:px-10 sm:py-28" : ""
+        }`}
+      >
         {/* Sticky margin column. h-fit is required for position:sticky to work
             inside a grid item — without it the item stretches to the row height
             and there is nothing left to stick within. */}
+        {/* PARALLAX ONLY WHERE THERE IS SOMETHING TO PARALLAX.
+            The drift is ±16%, which on a 5.5rem ghost numeral reads as motion
+            and on a lone 11px uppercase label reads as a label that is not
+            lined up with its own heading -- and PRICE and QUESTIONS have no
+            numeral. Screenshotted at 1440 on 2026-08-25: PRICE sat 40px below
+            the baseline of the heading it labels, which is the kind of thing
+            nobody can name and everybody can see. */}
         <motion.div
-          style={{ y: numeralY, opacity: numeralOpacity }}
+          style={index ? { y: numeralY, opacity: numeralOpacity } : undefined}
           className="md:sticky md:top-32 md:h-fit"
         >
           {index && (
@@ -70,7 +135,13 @@ export function SectionShell({
               {index}
             </div>
           )}
-          <div className={index ? "annotation mt-2" : "annotation"}>{label}</div>
+          <div
+            className={`${index ? "annotation mt-2" : "annotation"} ${
+              ground === "ink" ? "!text-white/50" : ""
+            }`}
+          >
+            {label}
+          </div>
         </motion.div>
 
         <div>
@@ -80,7 +151,7 @@ export function SectionShell({
           >
             {heading}
           </motion.h2>
-          <div className="mt-12">{children}</div>
+          <div className="mt-10">{children}</div>
         </div>
       </div>
     </section>

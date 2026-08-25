@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { BRAND_NAME, WHATSAPP_NUMBER } from "@/lib/brand";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 
 /**
  * The page's last line. It existed nowhere before — the document simply
@@ -59,6 +60,16 @@ export function SiteFooter() {
             {tLegal("termsLink")}
           </Link>
           <span className="flex-1" />
+          {/* WHERE THE LANGUAGE CONTROL LIVES NOW, 2026-08-25.
+              It used to be in two places at once -- a mono annotation row over
+              the hero and again in the scrolled nav -- in two type systems,
+              which is what the founder was actually seeing when he said it hurt
+              the page. Photographed the same afternoon: Linear and Attio show
+              no language control at all; Stripe and Vercel put theirs in the
+              footer. Choosing a language is not a decision anyone makes in
+              their first second on a page, and a control for it in the top bar
+              says otherwise. */}
+          <LocaleSwitcher />
           <Link href={`/${locale}/login`} className="transition-colors hover:text-foreground">
             {t("signIn")}
           </Link>

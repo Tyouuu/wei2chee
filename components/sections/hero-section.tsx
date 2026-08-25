@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { BRAND_NAME } from "@/lib/brand";
-import { LocaleSwitcher } from "@/components/locale-switcher";
 
 // Instrument Serif carries its weight through stroke contrast, not mass — so it
 // is set at 400 (no font-bold) and allowed to get genuinely large. Negative
@@ -48,21 +47,24 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
         transition={{ duration: 0.6, delay: 0.5 }}
         className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between px-6 pt-6 sm:px-10 sm:pt-8"
       >
-        <span className="annotation !text-white/70">{BRAND_NAME} / SYS.DESIGN</span>
-        {/* `pointer-events-auto` because the wrapper turns them off for the
-            whole header strip — the annotations are decoration, this is the
-            one control in it. It sits here rather than in a nav bar the page
-            does not have: the sheet header is already the page's only
-            persistent chrome. */}
-        <span className="pointer-events-auto flex items-center gap-5">
-          <LocaleSwitcher tone="dark" />
-          <span className="annotation hidden !text-white/50 sm:block">SHEET 01 — MY</span>
-        </span>
+        {/* THIS ROW IS EMPTY ON PURPOSE, AND STAYS FOR THE SPACING.
+            It held the brand mark, the language switcher and a SHEET 01 — MY
+            annotation. SiteHeader is present from the first pixel now and
+            carries the mark and the navigation; the language control moved to
+            the footer. The annotation went last and for the plainest reason:
+            with the nav bar above it, it sat outside the bar's own max-w-5xl
+            column, level with nothing, and read as a label somebody forgot to
+            delete. Two marks in one corner is one mark too many even when the
+            second one is only three words of mono. */}
       </motion.div>
 
       <motion.div
         style={{ y: contentY, scale: contentScale, opacity: contentOpacity }}
-        className="relative flex flex-col items-center px-6"
+        // pt-28: SiteHeader is present from the first pixel now and is 55px
+        // tall. Without this the announcement pill rendered UNDER it and the
+        // nav links cut its right end off -- visible in the first screenshot
+        // taken after the pill landed, invisible in any test.
+        className="relative flex flex-col items-center px-6 pt-28 pb-16 sm:pt-32"
       >
         {/*
           Local readability panel. The gradient is deliberately left vivid (the
@@ -75,13 +77,53 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
           className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[oklch(0.16_0.012_265/0.5)] blur-3xl"
         />
 
+        {/*
+          THE ANNOUNCEMENT PILL.
+
+          Every reference page photographed on 2026-08-25 opens with one --
+          Resend 「Join us at Resend Forward ›」, Attio 「GTM lessons from Elena
+          Verna ›」, Polar a full-width 「Introducing the Polar Startup Program
+          →」 bar. Ours opened with a decorative hairline: an instrument being
+          laid down, which is atmosphere, and atmosphere is what a page has
+          instead of news.
+
+          WHAT GOES IN IT IS THE POINT. Not a product announcement -- we have
+          no launches to trumpet and a fake one would be worse than none. The
+          LHDN e-Invoice mandate is the strongest thing this business has to
+          say to a Malaysian SME owner and it is genuinely news to most of
+          them: already compulsory above RM1m turnover, fines from 2028. A
+          visitor who reads that line and nothing else has been given something
+          worth the visit, which is the only honest reason to put a pill there.
+
+          The datum rule stays -- underneath, thinner -- because the drawn-open
+          line is the page's opening gesture and the pill is information.
+        */}
+        <motion.a
+          href="#pricing"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+          className="group mb-7 inline-flex max-w-full items-center gap-2.5 rounded-full border border-white/20 bg-white/[0.06] py-1.5 pr-3 pl-2 text-left backdrop-blur-md transition-colors hover:border-white/40 hover:bg-white/[0.1]"
+        >
+          <span className="rounded-full bg-white/90 px-2 py-0.5 text-[0.6875rem] font-semibold tracking-[0.04em] text-[oklch(0.16_0.012_265)]">
+            LHDN
+          </span>
+          <span className="min-w-0 truncate text-[0.8125rem] text-white/85">{t("pill")}</span>
+          <span
+            aria-hidden
+            className="shrink-0 text-white/45 transition-transform group-hover:translate-x-0.5"
+          >
+            &rarr;
+          </span>
+        </motion.a>
+
         {/* Datum line: draws open from the centre, so the page opens with an
             instrument being laid down. */}
         <motion.div
           initial={{ scaleX: 0, opacity: 0 }}
           animate={{ scaleX: 1, opacity: 1 }}
           transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-10 h-px w-40 origin-center bg-gradient-to-r from-transparent via-white/55 to-transparent"
+          className="mb-9 h-px w-40 origin-center bg-gradient-to-r from-transparent via-white/55 to-transparent"
         />
         <motion.div
           initial={fadeUp.initial}
@@ -186,9 +228,35 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.78, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-12 w-full max-w-4xl"
+          className="relative mt-14 w-full max-w-4xl"
         >
-          <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)]">
+          {/* THE LIGHT THE WINDOW STANDS IN.
+              Attio's product shot floats out of a soft wash; Resend's object is
+              lit from below by a single band. Ours sat flat on the gradient
+              with a drop shadow and read as a picture pasted onto a background
+              rather than as a thing in a space. One blurred ellipse behind the
+              top edge is the whole trick, and it costs one div. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-x-16 -top-10 -z-10 h-40 rounded-[50%] bg-[oklch(0.62_0.14_262/0.35)] blur-3xl"
+          />
+          <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] shadow-[0_40px_100px_-30px_rgba(0,0,0,0.9)]">
+            {/* A WINDOW, NOT A CROP. The same 26px strip the editor's canvas
+                gained on 2026-08-25 -- three dots and a centred name -- so the
+                one motif appears in both places and a visitor who signs up
+                recognises the frame they were shown. Wix does this and Durable
+                does not, which is the difference the founder pointed at. */}
+            <div className="flex h-[30px] items-center gap-2 border-b border-white/10 bg-white/[0.06] px-3.5">
+              <span className="flex gap-1.5" aria-hidden>
+                <span className="h-[7px] w-[7px] rounded-full bg-white/25" />
+                <span className="h-[7px] w-[7px] rounded-full bg-white/25" />
+                <span className="h-[7px] w-[7px] rounded-full bg-white/25" />
+              </span>
+              <span className="flex-1 text-center text-[0.6875rem] tracking-[0.02em] text-white/45">
+                {t("shotWindow")}
+              </span>
+              <span className="w-[42px]" aria-hidden />
+            </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/hero-system.jpg"
@@ -203,6 +271,47 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
             {t("shotCaption")}
           </figcaption>
         </motion.figure>
+
+        {/*
+          THE PROOF BAND.
+
+          Stripe runs a logo row directly under its fold; Attio runs one under
+          its product shot. We have no customer logos and inventing them is out
+          of the question -- so this states three numbers that are true and
+          checkable in the product itself: the registers, the blocks, the two
+          minutes. It does the same job the logo row does, which is to say "this
+          is real and it is bigger than one screenshot", without claiming
+          anybody's name.
+
+          The numbers are set in the display face at figure scale because they
+          are the content, not a caption on it.
+        */}
+        <motion.dl
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.95, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-14 grid w-full max-w-3xl grid-cols-1 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10 sm:grid-cols-3"
+        >
+          {(
+            [
+              [t("proofA"), t("proofALabel")],
+              [t("proofB"), t("proofBLabel")],
+              [t("proofC"), t("proofCLabel")],
+            ] as const
+          ).map(([value, label]) => (
+            <div key={label} className="bg-[oklch(0.16_0.012_265/0.55)] px-6 py-6 backdrop-blur-md">
+              <dt className="sr-only">{label}</dt>
+              <dd>
+                <span className="block font-serif text-[1.875rem] leading-none tracking-[-0.02em] text-white tabular-nums">
+                  {value}
+                </span>
+                <span className="mt-2.5 block text-[0.8125rem] leading-snug text-white/60">
+                  {label}
+                </span>
+              </dd>
+            </div>
+          ))}
+        </motion.dl>
       </motion.div>
 
       {/* Scroll cue: a plumb line dropping off the bottom of the sheet. */}

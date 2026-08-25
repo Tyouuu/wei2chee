@@ -53,7 +53,11 @@ export function CookieNotice({ locale }: { locale: string }) {
     <div
       role="region"
       aria-label={t("label")}
-      className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-lg rounded-xl border border-border bg-background/95 p-4 shadow-lg backdrop-blur-sm sm:left-6 sm:right-auto"
+      // Smaller, further in from the corner, and rounder. It used to be a
+      // 512px slab pinned 16px off the corner, so on the hero it landed
+      // across the product screenshot -- the one object on the fold the
+      // page exists to show. max-w-sm and bottom-6/left-6 keep it clear.
+      className="fixed right-4 bottom-6 left-4 z-50 mx-auto max-w-sm rounded-2xl border border-border/80 bg-background/95 p-4 shadow-[0_18px_50px_-18px_rgba(0,0,0,0.6)] backdrop-blur-md sm:left-6 sm:right-auto"
     >
       <p className="text-[13px] leading-relaxed text-muted-foreground">
         {t("body")}{" "}

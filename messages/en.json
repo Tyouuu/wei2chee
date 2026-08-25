@@ -5,9 +5,18 @@
     "cta": "See what your business could become",
     "askPlaceholder": "What kind of business do you run? e.g. I am a SIM-card master dealer with 40 dealers; every month I reconcile and work out 2% commission…",
     "askCta": "Start",
-    "proof": "RM 5,000 flat build fee · nothing to pay while you design · export your data any time",
+    "proof": "Spec RM 500 · build priced by module · hosting RM 199/mo · designing is free",
     "shotAlt": "A generated system overview: four figures, a revenue chart, today's follow-ups and a recent-jobs table",
-    "shotCaption": "Not a mockup. A real account, built by the same generator — describe your business and this is the page you get."
+    "shotCaption": "Not a mockup. A real account, built by the same generator — describe your business and this is the page you get.",
+    "pill": "LHDN e-Invoice: mandatory above RM1m turnover, fines from 2028",
+    "pillCta": "See what you need",
+    "proofA": "17",
+    "proofALabel": "registers, each built from different components",
+    "proofB": "66",
+    "proofBLabel": "blocks, every one of them yours to swap",
+    "proofC": "2 min",
+    "proofCLabel": "describe your business, see your system",
+    "shotWindow": "Xing Fa Renovation · Overview"
   },
   "industrySelect": {
     "title": "Which industry is your business in?"
@@ -716,13 +725,25 @@
     },
     "price": {
       "title": "The price is on this page, not behind a form.",
-      "buildLabel": "Build · one time",
-      "buildAmount": "RM 5,000",
-      "buildNote": "From your finished design to a system in daily use. All of it.",
-      "hostLabel": "Hosting · monthly",
-      "hostAmount": "RM 100–300",
-      "hostNote": "By usage. Servers, backups and day-to-day maintenance included.",
-      "free": "Designing it costs nothing. Build the whole system, see exactly what it looks like, and only then decide whether to go ahead."
+      "steps": [
+        {
+          "label": "Step one · the spec",
+          "amount": "RM 500",
+          "note": "Your business written up as a document you can take to any developer for a quote: which modules, what each costs, how long. Yours to keep even if you build it elsewhere."
+        },
+        {
+          "label": "Step two · the build",
+          "amount": "Priced by module",
+          "note": "You pay for the modules you want, not a flat fee. Every module's price is in the spec, so you see it before you decide."
+        },
+        {
+          "label": "After · hosting",
+          "amount": "RM 199 / month",
+          "note": "Servers, backups, day-to-day maintenance and the LHDN e-Invoice updates. Export your data free, any time."
+        }
+      ],
+      "free": "Designing it costs nothing. Build the whole system, see exactly what it looks like, and only then decide whether to pay the RM 500.",
+      "cta": "Design one free and see"
     },
     "faq": {
       "title": "What you are probably wondering.",
