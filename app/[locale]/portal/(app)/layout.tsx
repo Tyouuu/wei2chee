@@ -49,7 +49,7 @@ export default async function PortalAppLayout({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, paid")
+    .select("id, paid, site_published")
     .eq("account_id", user.id)
     .single();
 
@@ -76,6 +76,29 @@ export default async function PortalAppLayout({
     })),
   );
 
+  /*
+    THE PUBLIC SIDE, IN THE RAIL.
+
+    「客户的system页面 跟客户的landing pages跟website应该是要分开放的」. The home
+    screen was split on 2026-08-25; the rail was not, so 官网 still sat sixth in
+    「我的系统」 next to 报价单 and 客户 as though it were another internal page. It
+    is not: it has a public address, it is either live or it is not, and
+    strangers post into it. Those three facts are the whole difference, and a
+    rail that hides all three is the reason the split had to be explained on the
+    home screen at all.
+
+    A head-only count, the same one the home screen takes: 「有没有新的询价」 is
+    the one thing an owner opens this product to find out, and it belongs where
+    it can be seen from every screen rather than only on the one screen he has
+    to navigate to.
+  */
+  const { count: enquiryCount } = project
+    ? await supabase
+        .from("site_enquiries")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", project.id)
+    : { count: 0 };
+
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
 
@@ -96,6 +119,8 @@ export default async function PortalAppLayout({
           systemLangOf(businessContext),
         ),
       }))}
+      sitePublished={Boolean(project?.site_published)}
+      enquiryCount={enquiryCount ?? 0}
       paid={Boolean(project?.paid)}
       isFounder={isFounder}
     >

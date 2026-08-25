@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OPTIONAL_MODULES, moduleLabel } from "@/lib/portal/module-catalog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -125,8 +125,13 @@ export function PortalHome({
   const have = new Set(pages.map((p) => p.pageKey));
   // 官网 is matched by key rather than by position: it is the last page in the
   // sort order today and would silently rejoin the grid the day that changes.
+  /** The public origin, known only in the browser. See CopyLink. */
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+
   const sitePage = pages.find((p) => p.pageKey === "website") ?? null;
   const systemPages = pages.filter((p) => p.pageKey !== "website");
+  const siteUrl = siteSlug ? `${origin}/s/${siteSlug}` : "";
   const offerable = OPTIONAL_MODULES.filter((m) => !have.has(m.key)).slice(0, 6);
 
   const labelFor = (page: { pageKey: string; title: string | null }) =>
@@ -460,7 +465,11 @@ export function PortalHome({
             >
               <div className={`${chrome.mount} m-3 lg:mr-0`}>
                 <StyleScope register={style} palette={palette}>
-                  <PagePreview data={sitePage.layout} />
+                  {/* Travelling. A landing page is four or five screens long
+                      and every one of them shares the same masthead, so a
+                      720px crop of it is a picture of a header. The owner is
+                      being shown 「外人看得到的那一个」 -- all of it. */}
+                  <PagePreview data={sitePage.layout} travel />
                 </StyleScope>
               </div>
 
@@ -479,9 +488,23 @@ export function PortalHome({
                       {sitePublished ? t("siteLive") : t("siteDraft")}
                     </span>
                   </div>
-                  <p className="mt-2.5 truncate [color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)]">
-                    {siteSlug ? `/s/${siteSlug}` : t("siteNoAddress")}
-                  </p>
+                  {/* THE WHOLE ADDRESS, AND A WAY TO TAKE IT.
+
+                      It read 「/s/xingfa-reno」. That is not something an owner
+                      can paste into WhatsApp, into a Facebook page or onto a
+                      name card, and pasting it somewhere is the entire job he
+                      has with this page. The origin is read after mount --
+                      right on localhost, on a preview deploy and on the real
+                      domain without a variable anyone has to remember to set
+                      -- so the row renders the path until it knows better
+                      rather than flashing a wrong host. */}
+                  {siteSlug ? (
+                    <CopyLink url={siteUrl} label={t("siteCopy")} done={t("siteCopied")} />
+                  ) : (
+                    <p className="mt-2.5 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                      {t("siteNoAddress")}
+                    </p>
+                  )}
                 </div>
 
                 {/* THE ARROW, COUNTED. This is the one number on the account
@@ -546,5 +569,46 @@ function Dot() {
       aria-hidden="true"
       className="h-[3px] w-[3px] rounded-[var(--radius-pill)] [background-color:var(--color-ink-700)]"
     />
+  );
+}
+
+/**
+ * The public address, with a button that puts it on the clipboard.
+ *
+ * An owner's whole job with his own website is to SEND it to people. Showing
+ * the path 「/s/xingfa-reno」 and nothing else meant the only way to get a
+ * sendable link was to open the page and copy the browser's address bar.
+ */
+function CopyLink({ url, label, done }: { url: string; label: string; done: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // An insecure origin or a denied permission. Say nothing and leave the
+      // text selectable -- a failed copy that claims success is worse than a
+      // button that quietly does not fire.
+    }
+  }
+
+  return (
+    <div className="mt-2.5 flex items-center gap-2">
+      <span className="min-w-0 flex-1 truncate [color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)]">
+        {/* Until the origin is known this is just the path, which is true
+            rather than wrong. */}
+        {url || "…"}
+      </span>
+      <button
+        type="button"
+        onClick={copy}
+        disabled={!url}
+        className="shrink-0 rounded-[var(--radius-control)] px-2.5 py-1 [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] transition-colors hover:[color:var(--color-paper)] disabled:opacity-40"
+      >
+        {copied ? done : label}
+      </button>
+    </div>
   );
 }

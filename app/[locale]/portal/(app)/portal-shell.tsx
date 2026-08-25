@@ -65,12 +65,17 @@ function NavRow({
   icon,
   children,
   external,
+  trailing,
 }: {
   href: string;
   active?: boolean;
   icon: ReactNode;
   children: ReactNode;
   external?: boolean;
+  /** A badge or dot at the right end. Used by the 官网 group, where the two
+   *  facts an owner opens this product for -- is it live, has anything come in
+   *  -- have to be visible without navigating to find out. */
+  trailing?: ReactNode;
 }) {
   const className = `${ROW} ${
     active
@@ -91,6 +96,7 @@ function NavRow({
       )}
       <span className="shrink-0">{icon}</span>
       <span className="min-w-0 flex-1 truncate">{children}</span>
+      {trailing}
     </>
   );
 
@@ -105,6 +111,23 @@ function NavRow({
     <Link href={href} className={className}>
       {body}
     </Link>
+  );
+}
+
+/** The public side's icon. A page icon on 官网 was part of the problem: it
+ *  said "another one of your pages" about the only thing on this rail a
+ *  stranger can reach. */
+function IconGlobe() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]" aria-hidden="true">
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M2.4 6.4h11.2M2.4 9.6h11.2" stroke="currentColor" strokeWidth="1.3" />
+      <path
+        d="M8 2c1.7 1.7 2.5 3.7 2.5 6S9.7 12.3 8 14c-1.7-1.7-2.5-3.7-2.5-6S6.3 3.7 8 2Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+    </svg>
   );
 }
 
@@ -129,6 +152,8 @@ export function PortalShell({
   systemLang,
   ownerName,
   pages,
+  sitePublished,
+  enquiryCount,
   paid,
   isFounder,
 }: {
@@ -146,6 +171,10 @@ export function PortalShell({
   systemLang: SystemLang;
   ownerName: string;
   pages: NavPage[];
+  /** Whether /s/<slug> is actually reachable by a stranger today. */
+  sitePublished: boolean;
+  /** Enquiries posted through the public site. */
+  enquiryCount: number;
   paid: boolean;
   /** Shows the founder's console entry. Never a security boundary — the console
    *  routes and their RPCs check the role themselves. This only decides whether
@@ -153,6 +182,15 @@ export function PortalShell({
   isFounder: boolean;
 }) {
   const t = useTranslations("portal.shell");
+
+  /*
+    THE ONE PAGE THAT IS NOT AN INTERNAL PAGE. Matched on `page_key`, which is
+    the same key the home screen splits on and the same one the public route
+    /s/<slug> renders -- not on the label, which the owner can rename to
+    anything (「我的网站」, "Shopfront") without changing what it is.
+  */
+  const sitePage = pages.find((p) => p.key === "website") ?? null;
+  const systemPages = pages.filter((p) => p.key !== "website");
   const tHome = useTranslations("portal.home");
   const pathname = usePathname();
 
@@ -260,7 +298,7 @@ export function PortalShell({
           >
             {t("systemSection")}
           </SectionLabel>
-          {pages.map((page) => (
+          {systemPages.map((page) => (
             <NavRow
               key={page.key}
               href={`${base}/${page.key}`}
@@ -270,6 +308,63 @@ export function PortalShell({
               {page.label}
             </NavRow>
           ))}
+
+          {/* ── THE PUBLIC SIDE ──────────────────────────────────────────
+              「客户的system页面 跟客户的landing pages跟website应该是要分开放的」.
+
+              官网 was the sixth row of 我的系统, between 客户 and nothing, drawn
+              with the same page icon as the others. It is not another internal
+              page: it has an address a stranger can type, it is either live or
+              it is not, and enquiries arrive through it. The home screen was
+              split on 2026-08-25 and the rail was not, which left the product
+              saying two different things about the same six pages.
+
+              This is Shopify's Online Store sitting apart from the admin, and
+              Vercel putting Production in its own panel with the URL and the
+              state on it rather than as one more item in a list.
+
+              询价 moves here from 交付 with it. The note that put it there
+              argued the generated pages were still a draft while these rows
+              are real -- true, and beside the point: an enquiry is what the
+              官网 produces, and the two belong to each other more than either
+              belongs to a list of deliverables. */}
+          {sitePage && (
+            <>
+              <SectionLabel>{t("publicSection")}</SectionLabel>
+              <NavRow
+                href={`${base}/${sitePage.key}`}
+                active={is(`/${sitePage.key}`)}
+                icon={<IconGlobe />}
+                trailing={
+                  <span
+                    aria-hidden="true"
+                    title={sitePublished ? t("siteLive") : t("siteDraft")}
+                    className={`h-[6px] w-[6px] shrink-0 rounded-full ${
+                      sitePublished
+                        ? "[background-color:var(--color-jade-bright)]"
+                        : "[background-color:var(--color-nav-fg-dim)] opacity-60"
+                    }`}
+                  />
+                }
+              >
+                {sitePage.label}
+              </NavRow>
+              <NavRow
+                href={`${base}/enquiries`}
+                active={is("/enquiries")}
+                icon={<IconSpec />}
+                trailing={
+                  enquiryCount > 0 ? (
+                    <span className="shrink-0 rounded-full px-1.5 [background-color:var(--color-nav-accent)] [color:var(--color-nav-bg)] [font-family:var(--font-numeric)] [font-size:10px] [font-weight:var(--fw-semibold)]">
+                      {enquiryCount}
+                    </span>
+                  ) : null
+                }
+              >
+                {t("enquiries")}
+              </NavRow>
+            </>
+          )}
 
           <SectionLabel>{t("librarySection")}</SectionLabel>
           <NavRow href={`${base}/library`} active={is("/library")} icon={<IconBlocks />}>
@@ -286,12 +381,6 @@ export function PortalShell({
           </NavRow>
 
           <SectionLabel>{t("deliverSection")}</SectionLabel>
-          {/* The other end of 官网表格 → 系统出单. It sits in 交付 rather than in
-              the system's own pages because these rows are real today and the
-              generated pages are still a draft -- see the page's own note. */}
-          <NavRow href={`${base}/enquiries`} active={is("/enquiries")} icon={<IconSpec />}>
-            {t("enquiries")}
-          </NavRow>
           <NavRow href={`${base}/spec`} active={is("/spec")} icon={<IconSpec />}>
             {t("spec")}
           </NavRow>
