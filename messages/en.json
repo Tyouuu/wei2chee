@@ -417,7 +417,14 @@
       "editText": "Edit text",
       "aiDockTitle": "Change it by telling me",
       "collapse": "Hide",
-      "expand": "Open"
+      "expand": "Open",
+      "blockTone": {
+        "label": "Ground",
+        "page": "Same as the page",
+        "ink": "Inverted",
+        "tint": "Tinted",
+        "paper": "White"
+      }
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

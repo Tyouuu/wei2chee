@@ -417,7 +417,14 @@
       "editText": "改文字",
       "aiDockTitle": "用讲的改",
       "collapse": "收起",
-      "expand": "打开"
+      "expand": "打开",
+      "blockTone": {
+        "label": "底色",
+        "page": "跟页面一样",
+        "ink": "反过来（深底浅字）",
+        "tint": "淡底（风格主色）",
+        "paper": "白纸"
+      }
     },
     "home": {
       "eyebrow": "你的系统",

@@ -5,6 +5,7 @@ import type { Config } from "@puckeditor/core";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { LABELS_EN } from "@/design-system/editor/labels-en";
 import { useRegisterVariant } from "@/design-system/editor/style-scope";
+import { toneLayers, type BlockTone } from "@/design-system/editor/block-tone";
 
 /**
  * The register's preferences, actually delivered.
@@ -79,7 +80,38 @@ function RegisterResolved({
   for (const [key, value] of Object.entries(preferred)) {
     if (merged[key] === undefined) merged[key] = value;
   }
-  return render(merged as never);
+
+  /*
+    这一块自己的颜色, applied HERE and nowhere else.
+
+    `tone` is not declared on any of the sixty-six components and does not need
+    to be: Puck stores whatever props an item carries, the 换款式 picker writes
+    it the same way it writes every other appearance prop, and this is the one
+    place every component's render already passes through. Declaring it
+    component by component would be sixty-six edits and sixty-six chances for
+    the sixty-seventh to be added without it -- the failure this file's own
+    header comment exists to describe.
+
+    See block-tone.ts for why it re-points variables instead of setting a
+    background.
+  */
+  const layers = toneLayers(merged.tone as BlockTone | undefined);
+  const drawn = render(merged as never);
+  if (!layers) return drawn;
+  // The ground goes in the STYLE object, not in a Tailwind class. Measured:
+  // the arbitrary-property version compiled to nothing and the wrapper rendered
+  // with `background-color: rgba(0,0,0,0)` -- the variables were all correctly
+  // re-pointed on an element that then painted none of them. This file had
+  // never carried a class before, so there was nothing to notice it by.
+  return (
+    <div style={layers.capture as React.CSSProperties}>
+      <div
+        style={{ ...layers.apply, backgroundColor: "var(--color-canvas)" } as React.CSSProperties}
+      >
+        {drawn}
+      </div>
+    </div>
+  );
 }
 
 type AnyComponent = { render: (props: never) => ReactElement | null };

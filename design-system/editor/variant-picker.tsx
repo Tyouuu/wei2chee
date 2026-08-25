@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { usePuck } from "@puckeditor/core";
 import { LivePreview } from "@/design-system/editor/live-preview";
+import { scopeClasses } from "@/lib/portal/palettes";
 import { VARIANTS, activeVariant, type Variant } from "@/design-system/editor/variants";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { preferredVariants } from "@/lib/portal/design-doc";
+import { BLOCK_TONES, TONE_SWATCH, type BlockTone } from "@/design-system/editor/block-tone";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 /**
@@ -59,6 +62,8 @@ const COLS = 1;
 const GAP = 12;
 
 export function VariantPicker({ style, palette }: { style: StyleName; palette: string | null }) {
+  const t = useTranslations("portal.editor");
+  const toneLabel = t("blockTone.label");
   const { selectedItem, dispatch, getSelectorForId } = usePuck();
 
   // The tiles are scaled to the column they land in, and the column is whatever
@@ -128,8 +133,104 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
     });
   };
 
+  /** Writes one appearance prop without touching the rest. Same replace as
+   *  `pick`, same reason for keeping the id and the selection. */
+  const setTone = (tone: BlockTone) => {
+    const id = props.id;
+    if (typeof id !== "string") return;
+    const sel = getSelectorForId(id);
+    if (!sel) return;
+    dispatch({
+      type: "replace",
+      destinationIndex: sel.index,
+      destinationZone: sel.zone,
+      // "page" is stored as undefined rather than as the string: an absent
+      // prop is what "the customer never chose" means everywhere else in this
+      // system, and storing the default would make the two indistinguishable.
+      data: {
+        ...selectedItem,
+        props: { ...props, tone: tone === "page" ? undefined : tone, id },
+      },
+      ui: { itemSelector: sel },
+    });
+  };
+  const tone = (props.tone as BlockTone | undefined) ?? "page";
+
   return (
     <section className="px-3 py-3">
+      {/* THE COLOUR ROW, ABOVE THE SHAPES.
+          Durable puts it at the top of the block's Design tab and it belongs
+          there: which ground a block sits on is a smaller decision than which
+          shape it takes, and a smaller decision goes above so it does not
+          interrupt the row of pictures below. Four discs rather than a
+          dropdown -- the whole point of this panel is that nothing here is
+          read, it is seen. */}
+      <div className="mb-3 flex items-center gap-2">
+        <span className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+          {toneLabel}
+        </span>
+        {/* SCOPED TO THE CUSTOMER'S REGISTER, NOT THE EDITOR'S CHROME.
+            The first version resolved --color-paper and --color-primary-soft
+            where the swatches are DRAWN, which is Formae's own dark chrome --
+            so all three coloured discs came out white and the row said nothing.
+            Photographed before it was ever shown to anyone. The swatches have
+            to be painted in the register the block lives in, which is what this
+            wrapper does and what LivePreview below has always done. */}
+        <span className={`flex items-center gap-1.5 ${scopeClasses(style, palette)}`}>
+          {BLOCK_TONES.map((tn) => {
+            const sw = TONE_SWATCH[tn];
+            const on = tone === tn;
+            return (
+              <button
+                key={tn}
+                type="button"
+                onClick={() => setTone(tn)}
+                aria-pressed={on}
+                title={t(`blockTone.${tn}`)}
+                className="grid h-6 w-6 place-items-center rounded-full transition-transform hover:scale-110"
+                style={{
+                  background: sw.bg,
+                  boxShadow: on
+                    ? `0 0 0 2px var(--color-ink-900), 0 0 0 3.5px ${sw.ring}`
+                    : `0 0 0 1px var(--color-ink-700)`,
+                }}
+              >
+                {/* A SLASH, NOT A DOT, AND NOT A COLOUR.
+                    The first version drew 「跟页面一样」 as a grey disc with a
+                    dot in it, and the founder's first reaction on seeing the
+                    row was 「等等什么颜色 那个灰色的？」 -- which is the whole
+                    answer. Four discs in a row is four colours to choose from,
+                    so the one that means "do not choose a colour" was read as
+                    a fifth grey. Durable's row has the same fault and it got
+                    copied along with the good half.
+
+                    A slash through an empty circle is the universal mark for
+                    「无」 and it is the only one of the four that is not a
+                    surface, which is exactly what it is trying to say. */}
+                {tn === "page" ? (
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 24 24"
+                    className="h-full w-full"
+                    style={{ color: sw.fg }}
+                  >
+                    <line
+                      x1="5.5"
+                      y1="18.5"
+                      x2="18.5"
+                      y2="5.5"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                ) : null}
+              </button>
+            );
+          })}
+        </span>
+      </div>
+
       <div
         ref={gridRef}
         className="grid"
