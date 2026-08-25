@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Render } from "@puckeditor/core";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { localisedPuckConfig } from "@/design-system/editor/puck-config-client";
+import { useSystemLang } from "@/design-system/system-lang-context";
+import { sampleProps } from "@/design-system/editor/sample-en";
 import { PageBar } from "../page-bar";
 import { LIBRARY_SAMPLES } from "./samples";
 import chrome from "../../chrome.module.css";
@@ -190,6 +193,34 @@ export function LibraryClient({
   firstPage: string;
 }) {
   const t = useTranslations("portal.library");
+  /*
+    THE LIBRARY SPEAKS THE INTERFACE'S LANGUAGE.
+
+    「不是這個英文 是我的平台裡面用英文」 -- 2026-08-26. Measured the same day by
+    logging into /en/portal and counting the CJK text nodes on every page: this
+    one had 203, more than the other seven put together. Every category heading
+    (整段成品, 标题与文字, 表格与看板) and every block name under them was Chinese
+    on the English portal.
+
+    None of that needed writing. `localisedPuckConfig(locale, systemLang)` has
+    projected the whole config -- labels, categories, field names, option
+    labels, sample content -- since task 8 landed on 2026-08-25. The editor uses
+    it. This page went on importing the raw config, so the projection existed
+    and reached nothing. That is the fifth time in this repo that the capability
+    was built and the wire was never connected; the previous four are noted in
+    founder-tasks.
+
+    TWO LANGUAGES, TWO SOURCES, on purpose. The chrome follows `locale` -- what
+    Formae calls things. The sample content inside each specimen follows
+    `system_language` -- what the CUSTOMER'S system says on their own page. A
+    Chinese-language system previewed inside an English portal is correct and
+    must not be flattened.
+  */
+  const systemLang = useSystemLang();
+  const config = useMemo(
+    () => localisedPuckConfig(locale, systemLang),
+    [locale, systemLang],
+  );
   const [query, setQuery] = useState("");
   /*
     WHICH SHELF IS OPEN, AND WHY null IS THE FRONT DOOR NOW.
@@ -220,15 +251,15 @@ export function LibraryClient({
   const [zoomed, setZoomed] = useState<Entry | null>(null);
 
   const entries = useMemo<Entry[]>(() => {
-    const categories = puckConfig.categories ?? {};
+    const categories = config.categories ?? {};
     const out: Entry[] = [];
     for (const [key, cat] of Object.entries(categories)) {
       for (const name of (cat as { components?: string[] }).components ?? []) {
-        const config = (puckConfig.components as Record<string, { label?: string; defaultProps?: Record<string, unknown> }>)[name];
-        if (!config) continue;
+        const c = (config.components as Record<string, { label?: string; defaultProps?: Record<string, unknown> }>)[name];
+        if (!c) continue;
         out.push({
           name,
-          label: config.label ?? name,
+          label: c.label ?? name,
           category: key,
           // The library's own sample where one exists, otherwise the same
           // defaults a drag produces. Defaults are tuned to be a sane STARTING
@@ -236,12 +267,22 @@ export function LibraryClient({
           // which is the right call in the editor and the wrong one in a
           // gallery — a table with a single "示例记录 #1" row does not show
           // what a table is for. See samples.ts.
-          props: { ...(config.defaultProps ?? {}), ...(LIBRARY_SAMPLES[name] ?? {}), id: `lib-${name}` },
+          // LIBRARY_SAMPLES goes through the same projection as the
+          // defaults. It is spread AFTER them, so raw Chinese here silently
+          // overwrote content the config had already translated -- which is
+          // why 49 Chinese strings survived localising the config: 「怎么称呼」,
+          // 「电话 / WhatsApp」, 「填完送出 → 你的系统会开一张报价单」. Content, so
+          // it follows systemLang, not the interface locale.
+          props: {
+            ...(c.defaultProps ?? {}),
+            ...(sampleProps(LIBRARY_SAMPLES[name] ?? {}, systemLang) as Record<string, unknown>),
+            id: `lib-${name}`,
+          },
         });
       }
     }
     return out;
-  }, []);
+  }, [config, systemLang]);
 
   const searching = query.trim().length > 0;
 
@@ -261,7 +302,7 @@ export function LibraryClient({
   /** The front door's rows: every shelf, in the order puck-config declares
    *  them, each cut to what fits one row. */
   const sections = useMemo(() => {
-    const cats = Object.keys(puckConfig.categories ?? {});
+    const cats = Object.keys(config.categories ?? {});
     return cats
       .map((key) => ({ key, items: entries.filter((e) => e.category === key) }))
       .filter((s) => s.items.length > 0);
@@ -274,7 +315,7 @@ export function LibraryClient({
   }, [entries]);
 
   const categoryTitle = (key: string) =>
-    ((puckConfig.categories ?? {}) as Record<string, { title?: string }>)[key]?.title ?? key;
+    ((config.categories ?? {}) as Record<string, { title?: string }>)[key]?.title ?? key;
 
 
   const heading = searching ? query.trim() : active ? categoryTitle(active) : t("filterAll");
@@ -524,7 +565,7 @@ export function LibraryClient({
               >
                 <div className="[padding:var(--pad-card-lg)]">
                   <Render
-                    config={puckConfig}
+                    config={config}
                     data={{ root: {}, content: [{ type: zoomed.name, props: zoomed.props }] } as never}
                   />
                 </div>
