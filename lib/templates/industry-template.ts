@@ -1111,6 +1111,7 @@ function buildDashboard(
   const compose = (entry: string): PuckNode | null => {
     const [roles, proportion] = entry.split("@");
     const parts = roles.split("|");
+
     if (parts.length === 1) return build(parts[0]);
 
     // THREE PARTS IS A BENTO: the first gets the room, the other two sit
@@ -1146,7 +1147,7 @@ function buildDashboard(
 
   const plan = dashboardComposition(style, layout);
 
-  return [
+  return layerFirst([
     railNav(labels, brand, name, "dashboard", locale, pages, lang),
     node("PageHeader", "dashboard-header", {
       title: c.dashboard.title,
@@ -1173,6 +1174,30 @@ function buildDashboard(
     // An unknown role is skipped rather than thrown: a composition naming a
     // block this page cannot build should cost that block, not the page.
     ...plan.map(compose).filter((n): n is PuckNode => Boolean(n)),
+  ], plan);
+}
+
+/**
+ * 层叠 — the page's heading on a band, with the first block riding on its edge.
+ *
+ * WHY IT IS APPLIED HERE AND NOT INSIDE compose(). The band has to contain the
+ * PageHeader, and the header is not part of the composition -- it is emitted
+ * before the plan, on every page, whatever the register. compose() can only
+ * see the roles.
+ *
+ * WHY ONLY THE FIRST BLOCK. A band halfway down a page is a stripe. This is
+ * the top of the page or it is nothing.
+ */
+function layerFirst(nodes: PuckNode[], plan: string[]): PuckNode[] {
+  if (!plan[0]?.endsWith("@over")) return nodes;
+  // [rail, header, first, ...rest] -- the rail stays outside, it is the shell's
+  // sidebar and has no business inside a band.
+  const [rail, header, first, ...rest] = nodes;
+  if (!header || !first) return nodes;
+  return [
+    rail,
+    node("Overlap", "dashboard-overlap", { band: [header], body: [first] }),
+    ...rest,
   ];
 }
 
@@ -1239,13 +1264,13 @@ const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   glass: ["stats4", "trend|share|ranking", "board", "table"],
   // Lights off. An ops console: the figure and its chart side by side at the
   // top, then the queue.
-  night: ["hero|trend@wide-right", "table", "share|todo@half"],
+  night: ["hero@over", "trend|table@wide-right", "share|todo@half"],
   // A shop sign. The name and the number are the sign; the rest is small and
   // under it. A sign does not have two halves.
-  signboard: ["hero", "table", "flow"],
+  signboard: ["hero@over", "table", "flow"],
   // A coloured ground with ivory panels floating on it -- panels want to be
   // few and LARGE, so one figure beside one chart, then one table.
-  lacquer: ["hero|trend@wide-right", "share|table@wide-right"],
+  lacquer: ["hero@over", "trend|share@wide-left", "table"],
   // Every character the same width. Squares and a ranking are both grids of
   // fixed cells, so they sit beside each other without either one reflowing.
   code: ["stats4", "activity|ranking", "share|table@wide-right"],

@@ -31,6 +31,7 @@ import { StatRow, type StatTile, type StatRowLayout } from "@/design-system/comp
 import { RankList, type RankRow, type RankShape } from "@/design-system/components/rank-list";
 import { ShareChart, type ShareSlice, type ShareShape } from "@/design-system/components/share-chart";
 import { Bento } from "@/design-system/components/bento";
+import { Overlap } from "@/design-system/components/overlap";
 import type { TrendFrame } from "@/design-system/components/trend-chart";
 import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/workflow-strip";
 // The second registry wave. See the header comments in both files for what was
@@ -399,6 +400,7 @@ type Components = {
     shape?: RankShape;
   };
   Bento: { lead: Slot; a: Slot; b: Slot };
+  Overlap: { band: Slot; body: Slot };
   ShareChart: {
     title?: string;
     caption?: string;
@@ -2216,6 +2218,22 @@ export const puckConfig: Config<Components> = {
     // See design-system/components/share-chart.tsx.
     // 一大两小 -- see design-system/components/bento.tsx for why it is not a
     // Columns with a Columns inside it.
+    // 层叠 -- see design-system/components/overlap.tsx for why it is a band and
+    // an overlap rather than cards scattered over each other.
+    Overlap: {
+      label: "压在色带上",
+      fields: {
+        band: { label: "色带里放什么", type: "slot" },
+        body: { label: "压上去的那一块", type: "slot" },
+      },
+      defaultProps: { band: [], body: [] },
+      render: ({ band: Band, body: Body }) => (
+        <Overlap band={<Band />}>
+          <Body />
+        </Overlap>
+      ),
+    },
+
     Bento: {
       label: "一大两小",
       fields: {
