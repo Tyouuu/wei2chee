@@ -319,6 +319,65 @@ const CASES = [
     suggest: "add_page",
     note: "客户是内建类型，该带 page_key 让它有真的示例资料",
   },
+  /*
+    ── 看得懂照片吗 ───────────────────────────────────────────────────────
+
+    「能不能分析照片 可能客戶要我們去抄去借鑒別人的設計」. A shop owner explaining
+    what he wants points at something. He screenshots a competitor, or
+    photographs the paper job sheet he has used for fifteen years -- which is
+    the most accurate description of his business anybody will ever hand us.
+
+    The picture is a real Malaysian aircon company's homepage, shot on
+    2026-08-26. Its first screen is a price list: GENERAL SERVICE RM 60,
+    CHEMICAL CLEANING RM 130.
+  */
+  {
+    name: "照片 · 照这张的做法",
+    ask: "我看到别人这样做，价钱排在最上面。我也要这样",
+    image: ".screenshots/landing/my-aircon-small.jpg",
+    // Any structural answer counts. What must NOT happen is RM 60 and RM 130
+    // appearing on this contractor's page -- see the 图片 rules in the prompt.
+    accept: ["move_component", "add_component", "set_variant", "set_text"],
+    forbidText: ["RM 60", "RM 130", "Smart Home Aircond"],
+  },
+  {
+    name: "照片 · 不该抄别人的字",
+    ask: "帮我照这张改",
+    image: ".screenshots/landing/my-aircon-small.jpg",
+    accept: [
+      "move_component", "add_component", "set_variant", "set_text",
+      "add_table_column", "add_table_row", "set_workflow",
+    ],
+    forbidText: ["RM 60", "RM 130", "Smart Home", "0168001631"],
+  },
+
+  /*
+    ── 语言 ───────────────────────────────────────────────────────────────
+
+    「語言切換那些 全部都要做好」. The prompt says 「Write all text in the same
+    language the owner used」 and nothing has ever checked it. A Malaysian SME
+    owner switches between three languages inside one sentence, and the answer
+    has to come back in the one he opened with -- not in the one the system
+    language happens to be set to.
+  */
+  {
+    name: "语言 · 英文问",
+    ask: "Change the page title to \"Jobs this week\"",
+    expect: ["set_text"],
+    replyIn: "en",
+  },
+  {
+    name: "语言 · 马来文问",
+    ask: "Tukar tajuk kepada \"Kerja minggu ini\"",
+    expect: ["set_text"],
+    replyIn: "ms",
+  },
+  {
+    name: "语言 · 中英夹杂",
+    ask: "那个 table 加一个 column 写 remark",
+    expect: ["add_table_column"],
+  },
+
   {
     name: "含糊 · 只说了一半",
     ask: "那个金额的地方怪怪的",
@@ -356,13 +415,34 @@ if (DRY) {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-async function once(ask) {
+/**
+ * A local file as a data URL.
+ *
+ * The eval calls OpenAI directly, so it does not go through the route's
+ * host allowlist -- which is right: the allowlist is the route's job and is
+ * tested separately. What this has to answer is the question the allowlist
+ * cannot, which is whether the MODEL reads a picture at all.
+ */
+function dataUrl(path) {
+  return `data:image/jpeg;base64,${readFileSync(path).toString("base64")}`;
+}
+
+async function once(ask, image) {
+  const text = promptFor(ask);
   const completion = await openai.chat.completions.create({
     model: "gpt-5.6-luna",
     reasoning_effort: "high",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: promptFor(ask) },
+      {
+        role: "user",
+        content: image
+          ? [
+              { type: "text", text },
+              { type: "image_url", image_url: { url: dataUrl(image) } },
+            ]
+          : text,
+      },
     ],
     response_format: { type: "json_schema", json_schema: EDIT_JSON_SCHEMA },
   });
@@ -372,6 +452,11 @@ async function once(ask) {
   const result = applyLayoutOps(PAGE(), parsed.operations, preferredVariants("ledger"));
   return {
     ops: parsed.operations.map((o) => o.op),
+    // Every string the model wrote, so a case can assert on CONTENT and not
+    // only on which operation was chosen.
+    values: parsed.operations.flatMap((o) =>
+      Object.values(o).filter((v) => typeof v === "string"),
+    ),
     applied: result.applied,
     skipped: [...parsed.rejected, ...result.skipped],
     explanation: parsed.explanation,
@@ -388,13 +473,20 @@ for (const c of chosen) {
   const runs = [];
   for (let i = 0; i < N; i++) {
     try {
-      runs.push(await once(c.ask));
+      runs.push(await once(c.ask, c.image));
     } catch (e) {
       runs.push({ ops: [], applied: 0, skipped: [{ op: "-", reason: String(e.message).replace(/\s+/g, " ").slice(0, 300) }], explanation: "" });
     }
   }
 
   const understood = runs.filter((r) => {
+    // A picture must not put somebody else's words on this page. Checked on
+    // every value the model wrote, not only on the operation names.
+    if (c.forbidText?.some((t) => JSON.stringify(r.values ?? []).includes(t))) return false;
+    // 「Write all text in the same language the owner used」 -- the prompt has
+    // said this from the start and nothing ever checked it.
+    if (c.replyIn === "en" && /[一-鿿]/.test(r.explanation)) return false;
+    if (c.replyIn === "ms" && /[一-鿿]/.test(r.explanation)) return false;
     if (c.suggest) return r.suggestion === c.suggest && r.ops.length === 0;
     if (c.accept) return r.ops.some((op) => c.accept.includes(op));
     if (!(c.expect?.length ?? 0)) return r.ops.length === 0 && r.suggestion === "none";

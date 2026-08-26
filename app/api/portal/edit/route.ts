@@ -130,6 +130,19 @@ Whole pages:
   「我可以帮你加一页「员工排班」」. Do not tell them to go and do it themselves.
 - Set suggestion.action to "none" for every other request.
 
+图片 (when the owner attaches one):
+- The picture is a REFERENCE, never a source of truth about their business. It
+  is usually a screenshot of somebody else's page, a photo of the paper form
+  they use today, or a shot of their own screen with something circled.
+- Read it for LAYOUT and for WORDS THAT ARE THEIRS. A photo of their own
+  handwritten job sheet tells you what columns their table should have; a
+  screenshot of a competitor tells you an arrangement, and nothing else.
+- NEVER copy a competitor's text, prices, business name, logo or customer
+  names onto this page. Take the shape, not the contents. If the owner asks you
+  to copy a page wholesale, do the layout and leave their own words in place.
+- If the picture does not say anything you can act on, say so in one sentence
+  and change nothing. A guess dressed as an edit is worse than a question.
+
 If a request genuinely cannot be carried out, return an empty operations list
 and say so plainly in one sentence. Do not apologise and do not offer to do it
 later.`;
@@ -160,9 +173,26 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { layout, instruction, pages } = (body ?? {}) as {
+  const { layout, instruction, pages, imageUrl } = (body ?? {}) as {
     layout?: PuckLayout;
     instruction?: string;
+    /**
+     * A picture the owner attached, as a URL in OUR OWN bucket.
+     *
+     * 「可能客戶要我們去抄去借鑒別人的設計」 -- a shop owner explaining what he wants
+     * points at something. He screenshots a competitor, or photographs the
+     * paper job sheet he has used for fifteen years, which is the single most
+     * accurate description of his business anybody will ever hand us.
+     *
+     * A URL and not a data URL: a phone photo is 3-5MB, and a base64 data URL
+     * is a third larger again, on a JSON request body, on a Malaysian mobile
+     * connection. The picker already uploads to site-photos with the owner's
+     * own session, so the file is on our storage before this route is called.
+     *
+     * ONLY OUR OWN HOST IS ACCEPTED. A caller-supplied URL that we then hand to
+     * OpenAI is a request forger's tool pointed at somebody else's bill.
+     */
+    imageUrl?: string;
     /** The customer's own page list, so「把报价单那一页删掉」can name a real page
      *  instead of being told the page does not exist. Sent by the client rather
      *  than re-queried here because the editor already has it, and it is only
@@ -211,6 +241,29 @@ ${designDoc}
 The business owner asked:
 "${trimmed}"`;
 
+  /*
+    THE ONLY HOST WE FORWARD.
+
+    `imageUrl` arrives from the browser and is handed to OpenAI, so an
+    unchecked value is a request forger's tool aimed at our own bill -- and at
+    anything reachable from OpenAI's fetchers. It must be a file in our own
+    Supabase storage, matched on HOSTNAME rather than prefix, because
+    「<ref>.supabase.co.evil.test」 starts with the right letters.
+  */
+  const safeImage = (() => {
+    if (!imageUrl) return null;
+    try {
+      const u = new URL(imageUrl);
+      const base = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+      if (u.protocol !== "https:") return null;
+      if (u.hostname.toLowerCase() !== base.hostname.toLowerCase()) return null;
+      if (!u.pathname.includes("/site-photos/")) return null;
+      return u.toString();
+    } catch {
+      return null;
+    }
+  })();
+
   let parsed;
   try {
     const completion = await openai.chat.completions.create({
@@ -218,7 +271,19 @@ The business owner asked:
       reasoning_effort: "high",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userPrompt },
+        {
+          role: "user",
+          // A picture only when the owner attached one AND it is ours. See the
+          // note on `imageUrl`: this URL is forwarded to OpenAI, so accepting
+          // an arbitrary host would let a caller point our account's bandwidth
+          // at anything on the internet.
+          content: safeImage
+            ? [
+                { type: "text" as const, text: userPrompt },
+                { type: "image_url" as const, image_url: { url: safeImage } },
+              ]
+            : userPrompt,
+        },
       ],
       response_format: { type: "json_schema", json_schema: EDIT_JSON_SCHEMA },
     });
