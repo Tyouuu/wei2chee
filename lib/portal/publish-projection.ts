@@ -85,6 +85,55 @@ function isEmptyOnPublish(node: PuckNode): boolean {
   return false;
 }
 
+/*
+  PLACEHOLDER ROWS NEVER REACH A STRANGER.
+
+  The worst thing found on the live site, and it is not a design defect. A real
+  business's published page was printing:
+
+      WhatsApp   012-345 6789
+      Address    Taman Desa, Kuala Lumpur
+
+  Neither is theirs. A homeowner reading that page will message a phone number
+  that belongs to somebody else, and drive to an address that is not where the
+  business is. The price list has the same shape: every row reads 「RM —」,
+  which does not say 「not filled in yet」 to a visitor, it says 「this business
+  will not tell you what it costs」.
+
+  The seed copy is meant to be retyped -- that is the whole design of
+  landing.ts, and it is right. It is right FOR THE EDITOR. So the rows carry
+  `placeholder: true`, and they stop here.
+
+  Marked rather than pattern-matched: 「RM —」 and 「012-345 6789」 are strings in
+  two languages that anyone could reasonably edit, and a projection that
+  guessed at content would eventually delete something a customer wrote on
+  purpose. A flag is a statement by the person who wrote the placeholder.
+*/
+type Row = Record<string, unknown>;
+const isPlaceholderRow = (r: unknown): boolean =>
+  typeof r === "object" && r !== null && (r as Row).placeholder === true;
+
+/** Strips placeholder rows from every array prop this node carries. Returns the
+ *  same object when there was nothing to strip. */
+function withoutPlaceholders(node: PuckNode): PuckNode {
+  let props = node.props;
+  for (const [k, v] of Object.entries(node.props)) {
+    if (!Array.isArray(v) || !v.some(isPlaceholderRow)) continue;
+    if (props === node.props) props = { ...node.props };
+    props[k] = v.filter((r) => !isPlaceholderRow(r));
+  }
+  return props === node.props ? node : { ...node, props };
+}
+
+/** True when stripping placeholders emptied the only list this node had. */
+function isAllPlaceholder(node: PuckNode): boolean {
+  const lists = Object.entries(node.props).filter(
+    ([k, v]) => Array.isArray(v) && !SLOT_KEYS.includes(k),
+  );
+  if (!lists.length) return false;
+  return lists.every(([, v]) => (v as unknown[]).every(isPlaceholderRow));
+}
+
 /** True when every slot this node has is empty. */
 function hasNothingLeft(node: PuckNode): boolean {
   const slots = SLOT_KEYS.filter((k) => Array.isArray(node.props[k]));
@@ -93,8 +142,9 @@ function hasNothingLeft(node: PuckNode): boolean {
 }
 
 function project(node: PuckNode): PuckNode {
-  const drop = DESIGN_TIME_PROPS[node.type];
-  let props = node.props;
+  const stripped = withoutPlaceholders(node);
+  const drop = DESIGN_TIME_PROPS[stripped.type];
+  let props = stripped.props;
 
   if (drop?.some((k) => k in props)) {
     props = { ...props };
@@ -107,7 +157,7 @@ function project(node: PuckNode): PuckNode {
     const slot = props[k];
     if (Array.isArray(slot)) {
       const next = (slot as PuckNode[])
-        .filter((n) => !isEmptyOnPublish(n))
+        .filter((n) => !isEmptyOnPublish(n) && !isAllPlaceholder(n))
         .map(project)
         .filter((n) => !hasNothingLeft(n));
       if (next.length !== slot.length || next.some((n, i) => n !== slot[i])) {
@@ -116,7 +166,7 @@ function project(node: PuckNode): PuckNode {
     }
   }
 
-  return props === node.props ? node : { ...node, props };
+  return props === stripped.props ? stripped : { ...stripped, props };
 }
 
 /** The saved layout with every owner-facing annotation removed. */
@@ -124,7 +174,7 @@ export function forPublication(layout: PuckLayout): PuckLayout {
   return {
     ...layout,
     content: (layout.content ?? [])
-      .filter((n) => !isEmptyOnPublish(n))
+      .filter((n) => !isEmptyOnPublish(n) && !isAllPlaceholder(n))
       .map(project)
       .filter((n) => !hasNothingLeft(n)),
   };

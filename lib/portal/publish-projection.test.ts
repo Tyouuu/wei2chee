@@ -140,3 +140,65 @@ describe("forPublication", () => {
     expect(main.props.heading).toBe("Hi");
   });
 });
+
+describe("a placeholder never reaches a stranger", () => {
+  /*
+    The worst thing the live site was doing, and it is not a design defect. A
+    real business's published page printed 「WhatsApp 012-345 6789」 and
+    「Taman Desa, Kuala Lumpur」 -- neither of which is theirs. A homeowner
+    reading it messages somebody else's phone and drives to the wrong address.
+  */
+  it("drops rows marked placeholder and keeps the ones the owner wrote", () => {
+    const built: PuckLayout = {
+      root: {},
+      content: [
+        {
+          type: "InfoRows",
+          props: {
+            id: "contact",
+            heading: "How to reach us",
+            rows: [
+              { label: "WhatsApp", value: "012-345 6789", placeholder: true },
+              { label: "Address", value: "Taman Desa", placeholder: true },
+              { label: "Parking", value: "Behind the shop" },
+            ],
+          },
+        },
+      ] as PuckNode[],
+    };
+    const rows = (forPublication(built).content[0] as PuckNode).props.rows as Record<string, unknown>[];
+    expect(rows.map((r) => r.label)).toEqual(["Parking"]);
+  });
+
+  it("drops the whole block when every row was a placeholder", () => {
+    const built: PuckLayout = {
+      root: {},
+      content: [
+        {
+          type: "InfoRows",
+          props: {
+            id: "prices",
+            heading: "Prices",
+            rows: [
+              { label: "Home renovation", value: "RM —", placeholder: true },
+              { label: "Kitchen", value: "RM —", placeholder: true },
+            ],
+          },
+        },
+      ] as PuckNode[],
+    };
+    // A price list where every price reads 「RM —」 does not say 「not filled in
+    // yet」 to a visitor. It says this business will not tell you what it costs.
+    expect(forPublication(built).content).toEqual([]);
+  });
+
+  it("does not mutate the rows it was given", () => {
+    const rows = [{ label: "WhatsApp", value: "012-345 6789", placeholder: true }];
+    const built: PuckLayout = {
+      root: {},
+      content: [{ type: "InfoRows", props: { id: "c", rows } }] as PuckNode[],
+    };
+    forPublication(built);
+    expect(rows).toHaveLength(1);
+  });
+});

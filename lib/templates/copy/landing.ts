@@ -43,7 +43,18 @@ export type LandingCopy = {
   /** The three figures under the headline. Placeholders that are obviously
    *  placeholders, in the units this trade would actually use. */
   proof: { value: string; label: string }[];
-  contact: { label: string; value: string; icon: string }[];
+  /**
+   * Contact rows, EVERY ONE OF WHICH IS A PLACEHOLDER.
+   *
+   * `placeholder: true` is not documentation. publish-projection.ts drops any
+   * row carrying it, so these reach the owner in the editor and never reach a
+   * stranger. Found on the live site: a real business's public page was
+   * printing 「WhatsApp 012-345 6789」 and 「Taman Desa, Kuala Lumpur」 -- a phone
+   * number that is not theirs and may well be somebody else's, and an address
+   * that is not where they are. That is not a design defect; it is publishing
+   * false contact details for a real business.
+   */
+  contact: { label: string; value: string; icon: string; placeholder?: boolean }[];
   /** Joins the three service labels into the pitch line. Chinese uses the
    *  enumeration comma; English uses a serial list. */
   joinServices: (labels: string[]) => string;
@@ -208,9 +219,9 @@ const EN: LandingCopy = {
     { value: "Klang Valley", label: "We cover" },
   ],
   contact: [
-    { label: "WhatsApp", value: "012-345 6789", icon: "phone" },
-    { label: "Address", value: "Taman Desa, Kuala Lumpur", icon: "place" },
-    { label: "Opening hours", value: "Mon–Sat 9am–6pm", icon: "time" },
+    { label: "WhatsApp", value: "012-345 6789", icon: "phone", placeholder: true },
+    { label: "Address", value: "Taman Desa, Kuala Lumpur", icon: "place", placeholder: true },
+    { label: "Opening hours", value: "Mon–Sat 9am–6pm", icon: "time", placeholder: true },
   ],
   // Only the first item keeps its capital. These are section LABELS being reused
   // inside a sentence, and "Home renovation, Kitchen / bathroom and Commercial
@@ -423,9 +434,9 @@ const ZH: LandingCopy = {
     { value: "巴生谷", label: "服务范围" },
   ],
   contact: [
-    { label: "WhatsApp", value: "012-345 6789", icon: "phone" },
-    { label: "地址", value: "Taman Desa, Kuala Lumpur", icon: "place" },
-    { label: "营业时间", value: "星期一至六 9am–6pm", icon: "time" },
+    { label: "WhatsApp", value: "012-345 6789", icon: "phone", placeholder: true },
+    { label: "地址", value: "Taman Desa, Kuala Lumpur", icon: "place", placeholder: true },
+    { label: "营业时间", value: "星期一至六 9am–6pm", icon: "time", placeholder: true },
   ],
   joinServices: (labels) => labels.join("、"),
   page: {
