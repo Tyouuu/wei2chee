@@ -278,8 +278,25 @@ function Sparkline({ values, label }: { values: number[]; label?: string }) {
   const stroke = rising ? "var(--color-jade)" : "var(--color-clay)"
 
   return (
-    <div className="mt-1">
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-10 w-full" role="img" aria-label={label ?? "趋势"}>
+    /*
+      THE SPARK TAKES THE SLACK.
+
+      This wrapper was `mt-1` with a 40px svg, and the card above chose
+      `justify-start` so that a stretched cell would leave its empty space at
+      the BOTTOM rather than pushed between the figure and its trend. That was
+      the right call about WHERE the space goes and the wrong one about whether
+      it should exist: photographed on 柔和, 2026-08-26, the hero card is 310px
+      tall with 120px of nothing under a 40px line.
+
+      A sparkline is the one thing in this card that is a SHAPE rather than a
+      value, so it is the one thing that can absorb height without lying. It
+      grows into whatever the row gives it and floors at the old 40px, so a
+      card standing alone is unchanged. Unlike TrendChart this needs no
+      measuring: preserveAspectRatio="none" means the svg scales rather than
+      measures, so there is no first-layout reading to get wrong.
+    */
+    <div className="mt-1 flex min-h-10 flex-1 flex-col">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-full min-h-10 w-full flex-1" role="img" aria-label={label ?? "趋势"}>
         <polygon points={area} fill={stroke} opacity="0.10" />
         <polyline points={line} fill="none" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </svg>
