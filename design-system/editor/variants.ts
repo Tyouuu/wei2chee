@@ -171,6 +171,40 @@ export const VARIANTS: Record<string, Variant[]> = {
     */
     { id: "split-deep", label: "左边 · 两栏 · 深色", props: { nav: "split", navTone: "deep" } },
     { id: "split-light", label: "左边 · 两栏 · 白底", props: { nav: "split", navTone: "light" } },
+
+    /*
+      THE FRAME AXIS -- GEOMETRY, NOT PAINT.
+
+      Added 2026-08-26. The founder looked at fourteen registers side by side
+      and said 「這個只是一個設計風格罷了」, and he was right: every one of them
+      was a rail hard against the edge with the page filling the rest, and the
+      only shell difference on offer was how dark the rail was.
+
+      Measured the same day off a shipped product: they separate the shell on
+      flush / inset / floating, and again on full-width / centred. None of the
+      six can be taken away by a palette, which is the test (重点 7c).
+
+        贴边   the rail ends and the page begins. The dense registers.
+        内嵌   the page is a rounded panel in a gutter of the rail's own ground.
+               A document held in a frame.
+        浮起   the rail is a detached card with air on all four sides, over one
+               continuous ground. A tool laid on a desk.
+
+      Crossed with 置中, which caps the page at 96 CHARACTERS -- not pixels, so
+      a 13px register and a 15px one both get the same measure rather than the
+      same width.
+    */
+    { id: "side-inset", label: "左边 · 页面内嵌", props: { nav: "side", navTone: "dark", frame: "inset" } },
+    { id: "side-inset-light", label: "左边 · 白底 · 页面内嵌", props: { nav: "side", navTone: "light", frame: "inset" } },
+    { id: "side-float", label: "左边 · 侧栏浮起", props: { nav: "side", navTone: "dark", frame: "floating" } },
+    { id: "side-float-light", label: "左边 · 白底 · 侧栏浮起", props: { nav: "side", navTone: "light", frame: "floating" } },
+    { id: "side-centred", label: "左边 · 内容置中", props: { nav: "side", navTone: "dark", width: "centred" } },
+    { id: "side-light-centred", label: "左边 · 白底 · 内容置中", props: { nav: "side", navTone: "light", width: "centred" } },
+    { id: "side-inset-centred", label: "左边 · 内嵌 · 置中", props: { nav: "side", navTone: "deep", frame: "inset", width: "centred" } },
+    { id: "top-centred", label: "顶部 · 内容置中", props: { nav: "top", navTone: "dark", width: "centred" } },
+    { id: "top-light-centred", label: "顶部 · 白底 · 内容置中", props: { nav: "top", navTone: "light", width: "centred" } },
+    { id: "split-inset", label: "左边 · 两栏 · 页面内嵌", props: { nav: "split", navTone: "deep", frame: "inset" } },
+    { id: "side-float-light-centred", label: "左边 · 白底 · 浮起 · 置中", props: { nav: "side", navTone: "light", frame: "floating", width: "centred" } },
   ],
 
   // ------------------------------------------------- 已经有轴、却接不到的六个

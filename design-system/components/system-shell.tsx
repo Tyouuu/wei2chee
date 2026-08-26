@@ -33,6 +33,8 @@ export function SystemShell({
   main,
   nav = "side",
   navTone = "dark",
+  frame = "flush",
+  width = "wide",
 }: {
   sidebar: ReactNode
   /**
@@ -70,11 +72,52 @@ export function SystemShell({
    *  nav ground; `"light"` runs the navigation on the same paper as the page,
    *  separated by a hairline instead of by a colour. */
   navTone?: "dark" | "light" | "deep"
+  /**
+   * HOW THE PAGE SITS AGAINST THE NAVIGATION. This is geometry, and it is the
+   * axis that was missing.
+   *
+   * ── WHY IT EXISTS ────────────────────────────────────────────────────
+   *
+   * The founder looked at fourteen registers photographed side by side and
+   * said 「這個只是一個設計風格罷了」. He was right, and the reason was already
+   * written down and not acted on. Measured on 2026-08-26 against a shipped
+   * product (arhamkhnz/next-shadcn-admin-dashboard): they separate the shell on
+   * `sidebar_variant` -- flush / inset / floating -- and on `content_layout` --
+   * centred / full-width. Ours separated it on `navTone`, which is dark, light
+   * or darker. Fourteen registers, one page frame, repainted fourteen ways.
+   *
+   *   flush     the rail is hard against the edge and the page begins where it
+   *             ends. What every register here did, and still the right answer
+   *             for the dense ones.
+   *   inset     the rail is flush, and the PAGE is a rounded panel floating in
+   *             a gutter of the navigation's own ground. Reads as a document
+   *             held in a frame rather than as a screen filled to the edges.
+   *   floating  the rail itself is a detached card with air on all four sides,
+   *             over one continuous ground. Reads as a tool laid on a desk.
+   *
+   * A palette cannot take any of the three away, which is the test (重点 7c).
+   */
+  frame?: "flush" | "inset" | "floating"
+  /**
+   * Whether the page runs to the edge or is capped and centred.
+   *
+   * The second half of the same finding. A capped column at 1100px on a 1440px
+   * screen is a different object from a table that runs the full width, and no
+   * amount of radius or colour makes one read as the other. Centred suits the
+   * registers whose case is calm and roomy; wide suits the ones whose case is
+   * that everything fits on one screen.
+   */
+  width?: "wide" | "centred"
 }) {
   const isTop = nav === "top"
   // A split shell is a side rail that happens to have a column beside it.
   // Everything below that asks `isTop` must keep answering no.
   const isSplit = nav === "split" && Boolean(aside)
+  // `floating` only means anything beside a rail: a top bar detached from the
+  // top of the window is a floating toolbar, which is a different idea and not
+  // this one.
+  const floating = frame === "floating" && !isTop
+  const inset = frame === "inset" && !isTop
 
   /*
    * THE LIGHT NAVIGATION IS A TOKEN REMAP, NOT A SECOND RAIL.
@@ -168,7 +211,24 @@ export function SystemShell({
        * The variants below are container sizes, not viewport ones -- `@3xl` is
        * 48rem/768px, which is the same number `md:` used to mean.
        */
-      className={`ds-ground flex min-h-full w-full [background-color:var(--color-canvas)] ${
+      /*
+        THE GROUND BEHIND EVERYTHING.
+
+        `flush` paints the page's own canvas here, as it always did. The other
+        two paint the NAVIGATION's ground, because in both of them something is
+        floating and the thing it floats on has to be a different surface from
+        the thing floating. Doing it on this element rather than on a wrapper
+        keeps the rail and the gutter one continuous colour, which is what makes
+        an inset page read as held rather than as misaligned.
+      */
+      style={
+        frame === "flush"
+          ? undefined
+          : { backgroundColor: "var(--color-nav-bg)" }
+      }
+      className={`ds-ground flex min-h-full w-full ${
+        frame === "flush" ? "[background-color:var(--color-canvas)]" : ""
+      } ${floating ? "@3xl:gap-0 @3xl:p-3" : ""} ${
         isTop ? "flex-col" : "flex-col @3xl:flex-row @3xl:items-stretch"
       }`}
     >
@@ -201,7 +261,13 @@ export function SystemShell({
           extra column sits beside the page, not inside the navigation. */}
       <NavAxisProvider value={isTop ? "top" : "side"}>
         <div
-          className={isTop ? "flex w-full shrink-0" : "flex w-full shrink-0 @3xl:w-auto"}
+          className={`${
+            isTop ? "flex w-full shrink-0" : "flex w-full shrink-0 @3xl:w-auto"
+          } ${
+            floating
+              ? "@3xl:overflow-hidden @3xl:[border-radius:var(--radius-lg)] @3xl:[box-shadow:var(--shadow-card)]"
+              : ""
+          }`}
           style={navVars}
         >
           {sidebar}
@@ -225,8 +291,42 @@ export function SystemShell({
 
       {/* `min-w-0` is what lets the record tables inside scroll horizontally
           instead of forcing the whole shell wider than the viewport. */}
-      <div className="flex min-w-0 flex-1 flex-col [gap:var(--gap-stack)] [padding:var(--pad-card-lg)]">
-        {main}
+      {/*
+        THE PAGE COLUMN.
+
+        `inset` turns it into a rounded panel on the navigation's ground -- the
+        page held in a frame rather than filling the screen to its edges. It
+        carries its own canvas colour, which the outer element gave up so that
+        the gutter could show.
+
+        `centred` caps and centres the content inside whichever of the three
+        frames is on. The cap is in `ch` rather than px on purpose: a register
+        that sets 13px body text (台账) and one that sets 15px (炉) do not want
+        the same number of pixels, they want the same number of characters, and
+        that is what makes a capped column read as a decision instead of as a
+        window that failed to maximise.
+      */}
+      <div
+        className={`flex min-w-0 flex-1 flex-col ${
+          inset
+            ? "@3xl:my-3 @3xl:mr-3 @3xl:[border-radius:var(--radius-lg)] @3xl:[box-shadow:var(--shadow-card)]"
+            : floating
+              ? "@3xl:ml-3 @3xl:[border-radius:var(--radius-lg)]"
+              : ""
+        }`}
+        style={
+          frame === "flush"
+            ? undefined
+            : { backgroundColor: "var(--color-canvas)" }
+        }
+      >
+        <div
+          className={`flex min-w-0 flex-1 flex-col [gap:var(--gap-stack)] [padding:var(--pad-card-lg)] ${
+            width === "centred" ? "mx-auto w-full [max-width:96ch]" : ""
+          }`}
+        >
+          {main}
+        </div>
       </div>
     </div>
     </div>

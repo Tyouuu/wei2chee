@@ -207,6 +207,8 @@ type Components = {
     // Optional because the 换个款式 picker owns them and Puck demands a
     // registered field for every REQUIRED prop.
     nav?: "side" | "top" | "split";
+    frame?: "flush" | "inset" | "floating";
+    width?: "wide" | "centred";
     // `deep` is the only one of the three that is reliably dark -- see the
     // navTone note in design-system/components/system-shell.tsx.
     navTone?: "dark" | "light" | "deep";
@@ -1187,10 +1189,12 @@ export const puckConfig: Config<Components> = {
       // therefore overrode all twenty-one registers' preferences forever --
       // measured, three registers rendered a byte-identical rail.
       defaultProps: { sidebar: [], aside: [], main: [] },
-      render: ({ sidebar: Sidebar, aside: Aside, main: Main, nav, navTone }) => (
+      render: ({ sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
         <SystemShell
           nav={nav ?? "side"}
           navTone={navTone ?? "dark"}
+          frame={frame ?? "flush"}
+          width={width ?? "wide"}
           sidebar={<Sidebar />}
           aside={<Aside />}
           main={<Main />}
