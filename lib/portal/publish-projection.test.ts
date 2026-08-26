@@ -85,15 +85,27 @@ describe("forPublication", () => {
       BUILDING the page. It has nothing to say to the person reading it. So the
       prompt stays where it is a prompt and goes where it is not.
     */
+    /*
+      What survives is what the OWNER wrote. What goes is what the template
+      wrote for them to replace: the three empty photo frames, the Columns that
+      held only those, and the price list whose every row still reads 「RM —」.
+
+      Asserted by naming what must remain rather than by diffing against the
+      built page -- the built page contains the prompts by design, so a diff
+      would only ever restate the filter.
+    */
     const kept = nodesOf(published).map((n) => n.type);
-    const expected = nodesOf(built)
-      .filter((n) => n.type !== "PhotoFrame")
-      .map((n) => n.type)
-      // The Columns that held only the three empty frames goes with them: an
-      // empty three-column row is a 200px gap that reads as a broken page.
-      .filter((n) => n !== "Columns");
-    expect(kept.filter((t) => t !== "Columns")).toEqual(expected);
     expect(kept).not.toContain("PhotoFrame");
+    expect(kept).toContain("SiteHero");
+    expect(kept).toContain("EnquiryForm");
+    expect(kept).toContain("WorkflowStrip");
+    expect(kept).toContain("FoldSection");
+
+    // The price list is one of several InfoRows, so count instead: services,
+    // areas and contact stay; prices goes.
+    const infoRows = nodesOf(built).filter((n) => n.type === "InfoRows").length;
+    const keptRows = kept.filter((t) => t === "InfoRows").length;
+    expect(keptRows).toBe(infoRows - 1);
   });
 
   it("keeps a photo frame that has a photo in it", () => {

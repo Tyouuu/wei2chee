@@ -316,10 +316,22 @@ const prices = (c: LandingContent) =>
   node("InfoRows", "website-prices", {
     heading: c.words.sections.prices.heading,
     framed: true,
+    /*
+      EVERY ROW IS A PLACEHOLDER UNTIL THE OWNER TYPES A PRICE, and it is
+      marked so that publish-projection drops it.
+
+      Seen on the live site: 「What it costs」 over three service names each
+      reading 「RM —」. To a homeowner that does not say 「not filled in yet」. It
+      says this business will not tell you what it costs -- which is the
+      opposite of what the section is for, and worse than not having it. The
+      local trade sites this was measured against lead with the price:
+      「GENERAL SERVICE RM 60」 is the first thing on that page.
+    */
     rows: c.services.map((s) => ({
       label: s.label,
       value: c.words.sections.prices.blank,
       icon: "money",
+      placeholder: true,
     })),
   });
 
