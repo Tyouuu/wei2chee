@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAssistant } from "./assistant-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -93,6 +93,47 @@ export function AiAssistant({
    * editor-client does not re-render is what makes typing possible at all.
    * See assistant-state.tsx for the measurement. */
   const { turns, setTurns, instruction, setInstruction, busy, setBusy } = useAssistant();
+
+  /*
+    A PICTURE THE OWNER POINTED AT.
+
+    「可能客戶要我們去抄去借鑒別人的設計」. A shop owner explaining what he wants
+    points at something -- a competitor's page, or the paper job sheet he has
+    used for fifteen years, which is the most accurate description of his
+    business anybody will ever hand us.
+
+    Uploaded to our own bucket first, not sent as a data URL. A phone photo is
+    3-5MB and base64 is a third larger again; and the route only forwards URLs
+    on our own host, because a caller-supplied URL handed to OpenAI is a
+    request forger's tool aimed at our own bill.
+  */
+  const [image, setImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const imageRef = useRef<HTMLInputElement>(null);
+
+  async function attach(file: File) {
+    setUploading(true);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+      const { data: project } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("account_id", auth.user.id)
+        .single();
+      if (!project) return;
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
+      const path = `${project.id}/ask-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("site-photos")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (error) return;
+      setImage(supabase.storage.from("site-photos").getPublicUrl(path).data.publicUrl);
+    } finally {
+      setUploading(false);
+    }
+  }
   const t = useTranslations("portal.editor");
   // Read from Puck directly: this renders inside the `fields` override and
   // therefore inside the provider, so the layout it sends is always the live
@@ -126,6 +167,9 @@ export function AiAssistant({
     const before = data;
     setTurns((prev) => [...prev, { id, question: trimmed, state: "thinking", before }]);
     setInstruction("");
+    // Cleared with the question it belonged to: a picture that stayed attached
+    // would silently ride along on the next, unrelated request.
+    setImage(null);
     setBusy(true);
 
     const settle = (patch: Partial<Turn>) =>
@@ -135,7 +179,7 @@ export function AiAssistant({
       const res = await fetch("/api/portal/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ layout: before, instruction: trimmed, pages }),
+        body: JSON.stringify({ layout: before, instruction: trimmed, pages, imageUrl: image }),
       });
 
       if (!res.ok) {
@@ -499,6 +543,19 @@ export function AiAssistant({
       ) : null}
 
       <div className="shrink-0 border-t px-3.5 py-3 [border-color:var(--color-ink-800)]">
+        {image ? (
+          <div className="mb-2 flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={image} alt="" className="h-10 w-14 rounded-[var(--radius-xs)] object-cover" />
+            <button
+              type="button"
+              onClick={() => setImage(null)}
+              className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)] hover:[color:var(--color-paper)]"
+            >
+              {t("aiImageRemove")}
+            </button>
+          </div>
+        ) : null}
         <textarea
           ref={inputRef}
           value={instruction}
@@ -530,6 +587,30 @@ export function AiAssistant({
               interface, and the send button beside it is the real affordance
               there. */}
           <span className="hidden [font-size:var(--text-micro)] [color:var(--color-paper-dim)] lg:inline">{t("aiEnterHint")}</span>
+          <input
+            ref={imageRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void attach(f);
+              e.target.value = "";
+            }}
+          />
+          {/* Beside the send button rather than inside the textarea: on a phone
+              this assistant IS the whole editor (mobile-editor.tsx), and an
+              icon tucked into a text field at that size is a target a thumb
+              misses. */}
+          <button
+            type="button"
+            onClick={() => imageRef.current?.click()}
+            disabled={busy || uploading}
+            title={t("aiImageAdd")}
+            className="min-h-11 shrink-0 rounded-md px-3 [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)] disabled:opacity-40 lg:min-h-0 lg:py-1.5"
+          >
+            {uploading ? "…" : t("aiImageAdd")}
+          </button>
           <button
             type="button"
             onClick={() => ask(instruction)}

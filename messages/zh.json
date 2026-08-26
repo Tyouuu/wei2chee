@@ -438,7 +438,9 @@
       "layoutConsole": "四格 + 图表",
       "layoutHero": "一个大数字",
       "layoutToday": "今天要做的",
-      "layoutBoard": "看板"
+      "layoutBoard": "看板",
+      "aiImageAdd": "加一张图",
+      "aiImageRemove": "拿掉"
     },
     "home": {
       "eyebrow": "你的系统",

@@ -438,7 +438,9 @@
       "layoutConsole": "Four tiles + chart",
       "layoutHero": "One big figure",
       "layoutToday": "Today's work first",
-      "layoutBoard": "Board"
+      "layoutBoard": "Board",
+      "aiImageAdd": "Add a picture",
+      "aiImageRemove": "Remove"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",
