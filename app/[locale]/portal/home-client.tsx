@@ -21,7 +21,6 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
-  large: styles.large,
   stamp: styles.stamp,
   swiss: styles.swiss,
   soft: styles.soft,

@@ -10,7 +10,6 @@ export type StyleName =
   // header TREATMENT (印头), and a serif body (合约). See each token
   // file's own header for why it is a register and not another notch on
   // the density slider.
-  | "large"
   | "stamp"
   // 2026-08-22, and the first two that were not designed here: both are
   // uiprompt.site's own published briefs for Swiss Design and Soft UI,
@@ -95,7 +94,6 @@ export const STYLE_ORDER: StyleName[] = [
   "ledger",
   "hearth",
   "blueprint",
-  "large",
   "stamp",
   "swiss",
   "soft",
@@ -115,7 +113,6 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
-  large: styles.large,
   stamp: styles.stamp,
   swiss: styles.swiss,
   soft: styles.soft,
@@ -159,7 +156,6 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
-  large: styles.large,
   stamp: styles.stamp,
   swiss: styles.swiss,
   soft: styles.soft,

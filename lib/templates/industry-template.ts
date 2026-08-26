@@ -841,6 +841,19 @@ function buildDashboard(
         label: sample.heroLabel,
         value: sample.heroValue,
         href: `/${locale}/portal/payments`,
+        /*
+          THE CHANGE, WHICH WAS MISSING.
+
+          StatRow has printed 「↑13.2% vs last month」 since headlineDelta was
+          written; HeroCard passed only the suffix, so 招牌 and 柔和 -- the two
+          registers whose whole dashboard leads with ONE number -- printed
+          「RM 71,300  vs last month」 with nothing between. A comparison word
+          with no comparison in it. Screenshotted on both, 2026-08-26.
+
+          Same source as the stat tiles, so the two can never disagree about
+          the same month.
+        */
+        chg: headlineDelta(sample.heroSpark),
         chgSuffix: sample.heroSuffix,
         stats: sample.heroStats.map((st) => ({
           ...st,
@@ -1255,7 +1268,6 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // For an owner who cannot read the others. Two figures at 17px base, no
   // chart -- and NO SPLIT: half of 1400 at this type size is four words a
   // line. Single column is the register's whole argument.
-  large: ["stats2", "todo", "table"],
   // Looks like the POS they already run: the filled table head is the object,
   // so the table leads, then the month's progress with the figures beside it.
   stamp: ["table", "progress|stats4@wide-right", "share|flow@half"],

@@ -92,10 +92,6 @@
         "label": "Blueprint",
         "description": "A drafted, technical register for contractors and field-service SMEs — site management, scheduling, materials. A cooler, higher-contrast canvas."
       },
-      "large": {
-        "label": "Large",
-        "description": "Built for the reader, not the page. 17px body, 56px rows, wide leading, nothing under 13px anywhere. For an owner in their sixties reading on a phone in a van."
-      },
       "stamp": {
         "label": "Stamp",
         "description": "Looks like the POS and accounting software they already run: a solid accent band across every table header with white type in it."
@@ -460,7 +456,6 @@
         "hearth": "Roomy · warm and readable",
         "blueprint": "Drafted · precise and technical",
         "bare": "Bare — no boxes, space does the work",
-        "large": "Large — for readers who need it",
         "stamp": "Stamp — filled headers, like a POS",
         "contract": "Contract — serif, like a document",
         "docket": "Docket — hard edges, like a real form",
