@@ -128,8 +128,23 @@ export function HeroCard({
     <div
       className={
         flat
-          ? "flex flex-col justify-between gap-5"
-          : "ds-card flex flex-col justify-between gap-5 [padding:var(--pad-card)]"
+          /*
+            `justify-start`, NOT `justify-between`.
+
+            A Columns cell stretches its child to the row's height, so this card
+            is as tall as whatever sits beside it -- and `justify-between` then
+            pushed the sparkline to the floor and opened 200px of nothing under
+            the figure. Screenshotted on 柔和, where the hero sits next to a
+            three-item list: the biggest card on the dashboard, nine tenths
+            empty. Same shape as 炉's squeezed stat tiles, from the other
+            direction.
+
+            The number, its change and its spark are one statement and belong
+            together. Trailing space under them is the card being tall, which is
+            the row's business and not this component's.
+          */
+          ? "flex flex-col justify-start gap-5"
+          : "ds-card flex flex-col justify-start gap-5 [padding:var(--pad-card)]"
       }
     >
       {header && <div className="border-b pb-5 [border-color:var(--color-ink-800)]">{header}</div>}

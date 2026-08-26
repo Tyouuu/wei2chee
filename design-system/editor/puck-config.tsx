@@ -284,6 +284,16 @@ type Components = {
     label: string;
     value: string;
     href: string;
+    /**
+     * The change on the headline figure.
+     *
+     * It was missing from this type and from the render's destructure, so the
+     * generator could pass it and the card would never see it -- 招牌 and 柔和,
+     * the two registers whose whole dashboard leads with ONE number, printed
+     * 「RM 71,300  vs last month」: a comparison word with nothing to compare.
+     * HeroCard has rendered `chg` since it was written; the wire stopped here.
+     */
+    chg?: number | null;
     chgSuffix?: string;
     stats?: { label: string; value: string; href: string; tone?: "normal" | "caution" | "warn"; sub?: string }[];
     spark?: { n: number }[];
@@ -1817,7 +1827,7 @@ export const puckConfig: Config<Components> = {
         sparkLabel: { label: "走势说明", type: "text" },
       },
       defaultProps: { label: "本月营收", value: "RM 0", href: "#" },
-      render: ({ id, label, value, href, chgSuffix, stats, spark, sparkLabel, layout, flat }) => (
+      render: ({ id, label, value, href, chg, chgSuffix, stats, spark, sparkLabel, layout, flat }) => (
         <HeroCard
           layout={layout}
           flat={flat}
@@ -1828,6 +1838,7 @@ export const puckConfig: Config<Components> = {
           }
           value={value}
           href={href}
+          chg={chg}
           chgSuffix={chgSuffix}
           stats={stats}
           // HeroCard takes a plain number[]; Puck's array field can only hold
