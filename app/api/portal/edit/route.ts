@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import {
   applyLayoutOps,
   describeLayout,
-  layoutOpsSchema,
+  parseLayoutOps,
   EDITABLE_TEXT_FIELDS,
   REGISTERED_COMPONENTS,
   type PageSuggestion,
@@ -40,7 +40,16 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
  * undoes everything else.
  */
 
-const SYSTEM_PROMPT = `You edit a small-business system's page layout by emitting operations.
+/*
+  EXPORTED SO THE EVAL MEASURES THE REAL ONE.
+
+  scripts/eval-editor.mjs imports this prompt and this schema rather than
+  keeping a copy. An eval that measures a copy of the prompt measures the copy
+  -- the same reason eval-analysis.mjs imports from /api/analyze instead of
+  restating it. The moment they can drift, they will, and the score stops
+  meaning anything on the day nobody notices.
+*/
+export const SYSTEM_PROMPT = `You edit a small-business system's page layout by emitting operations.
 
 You are given a list of the blocks currently on the page. Each line has an
 \`id\`, a \`type\`, and its current text. Some lines also carry
@@ -81,6 +90,18 @@ Look (款式):
 - One path per operation. To rewrite a whole price list, send several.
 - A path the section does not have is dropped, so do not guess: only use paths
   that appear in that block's listing.
+
+业务流程 (WorkflowStrip):
+- A \`WorkflowStrip\` is the row of stages a job passes through: 询问 → 报价 →
+  订金 → 施工. set_workflow is the only way to change it.
+- \`stages\` REPLACES the whole list, so send every stage you want to end up
+  with, in order — including the ones that are not changing. Sending only the
+  new stage deletes the rest.
+- Two to six stages. A seventh is dropped.
+- Use it whenever the owner talks about the steps of their work: adding one,
+  removing one, renaming one, or reordering them. 「订金后面加一个验收」 is a
+  set_workflow with the existing stages plus 验收 in that position — not an
+  add_component, and not a refusal.
 
 Record tables:
 - Each table lists its columns as \`key:"label"(type)\`. Use the KEY to target a
@@ -201,7 +222,10 @@ The business owner asked:
       ],
       response_format: { type: "json_schema", json_schema: EDIT_JSON_SCHEMA },
     });
-    parsed = layoutOpsSchema.parse(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
+    // parseLayoutOps, not layoutOpsSchema.parse: one malformed operation used
+    // to reject the whole answer, so a batch of five good edits and one bad one
+    // came back as a 502 with nothing changed. See its note in layout-ops.ts.
+    parsed = parseLayoutOps(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
   } catch (err) {
     console.error("layout edit failed", err);
     // No fallback here, unlike /api/analyze. Guessing at an edit nobody asked
@@ -211,6 +235,10 @@ The business owner asked:
   }
 
   const result = applyLayoutOps(layout, parsed.operations, preferredVariants(project?.style));
+  // Whatever the schema turned away is reported beside whatever the applier
+  // turned away: to the customer they are the same thing -- something they
+  // asked for that did not happen -- and both belong in the same list.
+  result.skipped = [...parsed.rejected, ...result.skipped];
 
   return NextResponse.json({
     layout: result.layout,
@@ -270,7 +298,7 @@ function resolveSuggestion(
  * that silently drops a constraint is exactly the failure this endpoint is
  * built to avoid.
  */
-const EDIT_JSON_SCHEMA = {
+export const EDIT_JSON_SCHEMA = {
   name: "layout_edit",
   strict: true,
   schema: {

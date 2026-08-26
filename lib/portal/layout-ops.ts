@@ -93,7 +93,20 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     op: z.literal("set_text"),
     target_id: z.string().min(1),
     field: z.enum(EDITABLE_TEXT_FIELDS),
-    value: z.string().min(1),
+    /*
+      EMPTY IS ALLOWED, and it was `min(1)`.
+
+      Measured by scripts/eval-editor.mjs: 「打开来第一眼太多字了，看不到重点」
+      made the model emit set_text with an empty value four times out of six --
+      it wanted to CLEAR the subtitle, which is exactly what was asked for and
+      exactly what the owner can already do by hand in the side panel. The AI
+      has no business being more restricted than the field it is driving.
+
+      It was also worse than a refusal: the whole response failed validation,
+      so every OTHER operation in the same batch died with it and the endpoint
+      answered 502. See parseLayoutOps below for that half.
+    */
+    value: z.string(),
   }),
   z.object({
     op: z.literal("add_component"),
@@ -239,6 +252,64 @@ export const layoutOpsSchema = z.object({
   explanation: z.string(),
   suggestion: pageSuggestionSchema.nullable().optional(),
 });
+
+/**
+ * The model's answer, with unusable operations set aside instead of thrown.
+ *
+ * `layoutOpsSchema.parse` is all-or-nothing: one operation that does not fit
+ * the schema rejects the whole object, so a batch of five good edits and one
+ * malformed one produced a 502 and the customer saw 「改不动」 with nothing
+ * changed. Measured at four failures in six runs on a single ordinary sentence
+ * before `set_text` stopped requiring a non-empty value -- and that fix removes
+ * one cause, not the class.
+ *
+ * This is the same rule applyLayoutOps already lives by, moved one step
+ * earlier: an operation that cannot be carried out is reported with a reason,
+ * and the ones that can are still carried out. The customer gets four of their
+ * five edits and a line saying what the fifth was.
+ */
+export function parseLayoutOps(raw: unknown): {
+  operations: LayoutOp[];
+  explanation: string;
+  suggestion?: PageSuggestion | null;
+  rejected: { op: string; reason: string }[];
+} {
+  const outer = z
+    .object({
+      // Parsed loosely here so a single bad member cannot reject the array.
+      operations: z.array(z.unknown()).max(12).optional(),
+      explanation: z.string().optional(),
+      suggestion: pageSuggestionSchema.nullable().optional(),
+    })
+    .parse(raw);
+
+  const operations: LayoutOp[] = [];
+  const rejected: { op: string; reason: string }[] = [];
+  for (const candidate of outer.operations ?? []) {
+    const one = layoutOpSchema.safeParse(candidate);
+    if (one.success) {
+      operations.push(one.data);
+      continue;
+    }
+    const name =
+      typeof candidate === "object" && candidate !== null && "op" in candidate
+        ? String((candidate as { op: unknown }).op)
+        : "?";
+    // The first issue only. A customer reads one reason; a Zod tree is for us.
+    const issue = one.error.issues[0];
+    rejected.push({
+      op: name,
+      reason: issue ? `${issue.path.join(".") || "?"}: ${issue.message}` : "格式不对",
+    });
+  }
+
+  return {
+    operations,
+    explanation: outer.explanation ?? "",
+    suggestion: outer.suggestion ?? null,
+    rejected,
+  };
+}
 
 export type PuckNode = { type: string; props: Record<string, unknown> };
 export type PuckLayout = { root: Record<string, unknown>; content: PuckNode[] };

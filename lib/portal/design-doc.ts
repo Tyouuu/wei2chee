@@ -1,4 +1,18 @@
-import { PALETTE_BY_KEY } from "./palettes";
+/*
+  FROM THE GENERATED DATA, NOT FROM palettes.ts.
+
+  This module turns a register and a palette into a paragraph of ENGLISH for
+  the assistant to read. It needs the palette's name and nothing else -- yet it
+  was importing from palettes.ts, which builds a class-name map at module scope
+  out of a CSS module, so a text file dragged the whole stylesheet chain behind
+  it. Any script without a bundler died on `styles.ledger` before reaching a
+  single line of this file, which is how scripts/eval-editor.mjs found it.
+
+  The generated rows are the same data one hop earlier and carry no CSS.
+*/
+import { PALETTE_ROWS } from "./palettes.generated";
+
+const PALETTE_BY_KEY = Object.fromEntries(PALETTE_ROWS.map((p) => [p.key, p]));
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 /**
