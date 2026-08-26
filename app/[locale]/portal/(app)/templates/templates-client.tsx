@@ -165,16 +165,21 @@ export function TemplatesClient({
             lib/templates/landing-templates.ts. */}
         <section className="mt-10">
           <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
-            官网版面
+            {t("landingTitle")}
             <span className="ml-2 opacity-60">{landings.length}</span>
           </h2>
+          {/* The 「not saved yet」 clause is the load-bearing half of this
+              sentence -- it is what makes trying one feel free -- so it is a
+              placeholder rather than a separate string, and stays bold in both
+              languages. */}
           <p className="mt-2 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-            同一间公司，六种做法。下面每一张都是用你自己的行业、公司名、流程画出来的
-            —— 按「换成这个」会带你进编辑器，
-            <b className="[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
-              还没保存
-            </b>
-            ，不喜欢按撤销就回去了。
+            {t.rich("landingBody", {
+              unsaved: (chunks) => (
+                <b className="[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
+                  {chunks}
+                </b>
+              ),
+            })}
           </p>
 
           <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -218,7 +223,7 @@ export function TemplatesClient({
                       href={`/${locale}/portal/website?tpl=${lp.key}`}
                       className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
                     >
-                      换成这个
+                      {t("use")}
                     </Link>
                   ) : (
                     <button
@@ -383,7 +388,7 @@ export function TemplatesClient({
                   href={`/${locale}/portal/website?tpl=${zoomedLanding.key}`}
                   className="rounded-[var(--radius-md)] px-3 py-1.5 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
                 >
-                  换成这个
+                  {t("use")}
                 </Link>
               )}
               <button

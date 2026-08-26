@@ -96,7 +96,7 @@ export type AnalysisContext = {
   after_workflow_en?: string[] | null;
   /** The AI's one-line summary in English, for the same reason. */
   summary_en?: string | null;
-  bottlenecks?: { title: string; description: string }[] | null;
+  bottlenecks?: { title: string; title_en?: string | null; description: string }[] | null;
   /**
    * What a website enquiry becomes for THIS business, decided by the analysis
    * rather than by the order of an array. `lands_in` is a module key this
@@ -393,7 +393,14 @@ function industryName(industry: IndustryContext, lang: SystemLang): string {
 /** The trade as a LABEL -- for the eyebrow over the website headline.
  *  Several trades are stored as 「装修/承包商」 and an eyebrow reading the
  *  whole field looks like a database column, not like a business. */
-function tradeLabel(industry: IndustryContext, lang: SystemLang): string {
+/**
+ * The trade's name, in one language.
+ *
+ * Exported since 2026-08-26: the specification document needs it too, and was
+ * printing `industry.name_zh` -- 「Trade: 装修/承包商」 sitting under an English
+ * heading in the document a developer builds from.
+ */
+export function tradeLabel(industry: IndustryContext, lang: SystemLang): string {
   if (lang === "zh") return industry.name_zh.split("/")[0].trim();
   const t = landingCopy("en");
   return t.eyebrowTrade[industry.slug] ?? t.eyebrowTradeFallback;
@@ -663,6 +670,27 @@ function filterChips(
     filteredByLabel: c.filter.filteredBy,
     clearAllLabel: c.filter.clearAll,
   });
+}
+
+
+/**
+ * The bottleneck's name in the system's language, or nothing.
+ *
+ * The AI names the bottleneck in the language the owner answered the
+ * questionnaire in, and that name is printed on the page whose job is to fix
+ * it. Under an English system that produced 「Watch this: 报价追不动」 -- an
+ * English prefix welded to a Chinese phrase, on the customer's own screen.
+ *
+ * Same rule as `summary_en` a few hundred lines up, and the same reason:
+ * a generic English subtitle loses this business's own words; a Chinese
+ * subtitle under an English heading loses the reader. The generic line wins,
+ * so this returns null and the caller falls back to it.
+ */
+function focusTitle(ctx: BusinessContext, lang: SystemLang): string | null {
+  const b = ctx.analysis?.bottlenecks?.[0];
+  if (!b) return null;
+  const own = lang === "en" ? b.title_en : b.title;
+  return own?.trim() || null;
 }
 
 function workflowStrip(
@@ -1693,9 +1721,10 @@ function buildProjects(
       // The bottleneck the AI actually identified, named on the page whose job
       // is to fix it -- so the analysis shows up as working software rather
       // than as a paragraph the visitor read once and closed.
-      subtitle: ctx.analysis?.bottlenecks?.[0]?.title
-        ? c.projects.focus(ctx.analysis.bottlenecks[0].title)
-        : c.projects.subtitle(labels.order),
+      subtitle: (() => {
+        const focus = focusTitle(ctx, lang);
+        return focus ? c.projects.focus(focus) : c.projects.subtitle(labels.order);
+      })(),
     }),
     workflowStrip(
       "projects-workflow",
@@ -1861,9 +1890,10 @@ function buildOrders(
     railNav(labels, brand, name, "orders", locale, pages, lang),
     node("PageHeader", "orders-header", {
       title: c.orders.title(labels.order),
-      subtitle: ctx.analysis?.bottlenecks?.[0]?.title
-        ? c.orders.focus(ctx.analysis.bottlenecks[0].title)
-        : c.orders.subtitle(labels.order),
+      subtitle: (() => {
+        const focus = focusTitle(ctx, lang);
+        return focus ? c.orders.focus(focus) : c.orders.subtitle(labels.order);
+      })(),
     }),
     workflowStrip(
       "orders-workflow",

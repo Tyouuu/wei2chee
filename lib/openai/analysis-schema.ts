@@ -46,6 +46,14 @@ export const analysisSchema = z
       .array(
         z.object({
           title: z.string().min(1),
+          /* The same name in English, for the same reason `summary_en` exists:
+             the first bottleneck's TITLE is printed on the customer's own
+             projects page as its subtitle, and the default system is English
+             while the owner answers in Chinese. Without this the page read
+             「Watch this: 报价追不动」 -- measured on the live English portal,
+             2026-08-26. The DESCRIPTION has no English twin because it is only
+             ever read by the owner, in the analysis report, in their language. */
+          title_en: z.string().min(1),
           description: z.string().min(1),
           severity: z.enum(SEVERITIES),
         }),
@@ -228,13 +236,17 @@ export const analysisJsonSchema = {
           type: "object",
           properties: {
             title: { type: "string", description: "6-12 characters. The problem, named." },
+            title_en: {
+              type: "string",
+              description: "The same problem named in English, 2-5 words. Printed in the built system.",
+            },
             description: {
               type: "string",
               description: "One sentence, under 40 characters. What it costs the business.",
             },
             severity: { type: "string", enum: [...SEVERITIES] },
           },
-          required: ["title", "description", "severity"],
+          required: ["title", "title_en", "description", "severity"],
           additionalProperties: false,
         },
       },
@@ -403,16 +415,19 @@ export function fallbackAnalysis(
       bottlenecks: [
         {
           title: "记录分散",
+          title_en: "Scattered records",
           description: "订单和客户资料散在 WhatsApp、excel 和纸本，找一次要翻很久。",
           severity: "high",
         },
         {
           title: "追款靠记性",
+          title_en: "Payment chasing by memory",
           description: "谁付了、谁还欠着，没有一个地方能一眼看完。",
           severity: "high",
         },
         {
           title: "进度看不到",
+          title_en: "Invisible progress",
           description: "客户问进度要打电话问员工，员工也要再确认。",
           severity: "medium",
         },
@@ -434,16 +449,19 @@ export function fallbackAnalysis(
     bottlenecks: [
       {
         title: "Scattered records",
+        title_en: "Scattered records",
         description: "Orders and customer details live across WhatsApp, Excel and paper.",
         severity: "high",
       },
       {
         title: "Payment chasing by memory",
+        title_en: "Payment chasing by memory",
         description: "No single place shows who has paid and who still owes.",
         severity: "high",
       },
       {
         title: "Invisible progress",
+        title_en: "Invisible progress",
         description: "Answering 'where is my job' means calling a staff member first.",
         severity: "medium",
       },

@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { analysisSchema, fallbackAnalysis } from "./analysis-schema";
 
 const validAnalysis = () => ({
-  bottlenecks: [{ title: "追款慢", description: "手工追踪付款", severity: "high" }],
+  bottlenecks: [
+    { title: "追款慢", title_en: "Slow payment chasing", description: "手工追踪付款", severity: "high" },
+  ],
   before_workflow: ["客户", "订单"],
   after_workflow: ["客户", "报价", "订单", "收款"],
   // The English side is REQUIRED, not optional. The system this analysis

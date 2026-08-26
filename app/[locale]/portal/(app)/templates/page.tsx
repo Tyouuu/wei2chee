@@ -106,10 +106,15 @@ export default async function TemplatesPage({
   // a contractor comparing 现货落单 against 上门报价 is comparing two versions
   // of their own website rather than two mockups.
   const landingContent = landingContentFor(businessContext, pageRefs);
+  // Chrome, so the names follow the INTERFACE locale rather than the system
+  // language: this is Formae's gallery, not the customer's page. The English is
+  // written out on each template -- see the note on labelEn in
+  // lib/templates/landing-templates.ts for why it is not machine-translated.
+  const zh = locale === "zh";
   const landings = ALL_LANDINGS.map((t) => ({
     key: t.key,
-    label: t.label,
-    blurb: t.blurb,
+    label: zh ? t.label : t.labelEn,
+    blurb: zh ? t.blurb : t.blurbEn,
     layout: { root: {}, content: t.build(landingContent) } as unknown as Data,
   }));
 

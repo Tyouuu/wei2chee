@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import OpenAI from "openai";
 import { z } from "zod";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/templates/industry-template";
 import { displayBusinessName, sortPages, type PageId } from "@/lib/templates/industry-template";
 import { buildSystemSpec, specToText, type SystemSpec } from "@/lib/portal/spec-outline";
+import { tradeLabel } from "@/lib/templates/industry-template";
 import type { PuckLayout } from "@/lib/portal/layout-ops";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -54,42 +56,84 @@ const proseSchema = z.object({
 
 type Prose = z.infer<typeof proseSchema>;
 
-const PROSE_JSON_SCHEMA = {
-  name: "system_spec_prose",
-  strict: true,
-  schema: {
-    type: "object",
-    properties: {
-      overview: {
-        type: "string",
-        description: "2-3 sentences describing what this system is for. Chinese.",
-      },
-      modules: {
-        type: "array",
-        minItems: 1,
-        maxItems: 6,
-        items: {
-          type: "object",
-          properties: {
-            name: { type: "string", description: "Module name, 2-6 characters." },
-            purpose: { type: "string", description: "One sentence, under 40 characters." },
+/*
+  THE SCHEMA NAMES THE LANGUAGE, SO THE SCHEMA HAS TO BE A FUNCTION OF IT.
+
+  This was a constant whose first field description ended in the word
+  「Chinese.」 and whose lengths -- "2-6 characters", "under 40 characters" --
+  were counts of Chinese characters. The system prompt above it said 「Write in
+  English」. Measured on 2026-08-26: the prose came back Chinese every time,
+  which is exactly right of the model. It was handed one line saying English and
+  a schema saying Chinese, and a field description sits closer to the field than
+  a paragraph of preamble does.
+
+  A length is a language fact too. "2-6 characters" is 收款管理; the same module
+  in English is "Payments and collections", and holding it to six would produce
+  an abbreviation nobody uses.
+*/
+const proseJsonSchema = (lang: "zh" | "en") =>
+  ({
+    name: "system_spec_prose",
+    strict: true,
+    schema: {
+      type: "object",
+      properties: {
+        overview: {
+          type: "string",
+          description: `2-3 sentences describing what this system is for. ${
+            lang === "zh" ? "Chinese." : "English."
+          }`,
+        },
+        modules: {
+          type: "array",
+          minItems: 1,
+          maxItems: 6,
+          items: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
+                description:
+                  lang === "zh" ? "Module name, 2-6 characters." : "Module name, 1-3 words.",
+              },
+              purpose: {
+                type: "string",
+                description:
+                  lang === "zh"
+                    ? "One sentence, under 40 characters."
+                    : "One sentence, under 90 characters.",
+              },
+            },
+            required: ["name", "purpose"],
+            additionalProperties: false,
           },
-          required: ["name", "purpose"],
-          additionalProperties: false,
+        },
+        notes: {
+          type: "array",
+          maxItems: 5,
+          items: { type: "string", description: "One build consideration, one sentence." },
         },
       },
-      notes: {
-        type: "array",
-        maxItems: 5,
-        items: { type: "string", description: "One build consideration, one sentence." },
-      },
+      required: ["overview", "modules", "notes"],
+      additionalProperties: false,
     },
-    required: ["overview", "modules", "notes"],
-    additionalProperties: false,
-  },
-} as const;
+  }) as const;
 
-async function writeProse(spec: SystemSpec, industryName: string): Promise<Prose | null> {
+async function writeProse(
+  spec: SystemSpec,
+  industryName: string,
+  /** The document's language, so the prose matches the headings around it. A
+   *  specification whose section titles are English and whose paragraphs are
+   *  Chinese reads as two documents stapled together.
+   *
+   *  It also names the language of the FACTS below. Measured 2026-08-26: this
+   *  was a one-line instruction sitting on top of forty lines of Chinese
+   *  structure (「业务流程」「关键数字」「数据表…栏位」), and the prose came back
+   *  Chinese every time. The model was not ignoring the instruction -- it was
+   *  following the language of what it was shown. Naming one language while
+   *  showing the other is a contradiction, not an instruction. */
+  lang: "zh" | "en",
+): Promise<Prose | null> {
   if (!process.env.OPENAI_API_KEY) return null;
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -108,17 +152,26 @@ facts.
 Hard rules:
 - Never mention a page, table, column or stage that is not in the structure.
 - Never invent a feature. If the design has no reporting, do not describe any.
-- Write in Chinese, in the owner's own vocabulary as it appears in the structure.
+- Write in ${lang === "zh" ? "Chinese" : "English"}, in the owner's own vocabulary as it appears in the structure.
+  Keep the owner's OWN words exactly as given -- page headings, column names
+  and workflow stages are quoted, never translated. The prose around them is
+  what changes language.
 - Modules must correspond to what is actually in the design.
 - notes: real build considerations a developer would want flagged, drawn from
   what the design implies. Empty array if there is nothing worth saying.`,
         },
         {
           role: "user",
-          content: `行业：${industryName}\n\n客户设计出来的系统结构：\n\n${specToText(spec)}`,
+          content:
+
+            lang === "zh"
+
+              ? `行业：${industryName}\n\n客户设计出来的系统结构：\n\n${specToText(spec, "zh")}`
+
+              : `Industry: ${industryName}\n\nThe system this owner designed:\n\n${specToText(spec, "en")}`,
         },
       ],
-      response_format: { type: "json_schema", json_schema: PROSE_JSON_SCHEMA },
+      response_format: { type: "json_schema", json_schema: proseJsonSchema(lang) },
     });
     return proseSchema.parse(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
   } catch (err) {
@@ -134,6 +187,18 @@ export default async function SystemSpecPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  /*
+    THE DOCUMENT FOLLOWS THE INTERFACE LOCALE, not the system language.
+
+    It is Formae's document ABOUT the customer's system, read by the customer
+    before paying and by whoever builds it afterwards. What stays in the
+    customer's own words is the CONTENT it quotes -- their page headings, their
+    column names, their workflow stages -- because that is the whole argument
+    of the thing: 「系统里的用词要跟客户自己的叫法一致」.
+  */
+  const t = await getTranslations({ locale, namespace: "portal.spec" });
+  const zh = locale === "zh";
+
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
@@ -153,7 +218,12 @@ export default async function SystemSpecPage({
 
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
-  const industryName = businessContext.industry?.name_zh ?? "一般生意";
+  // Not `name_zh`: it is stored as 「装修/承包商」 and this document is read in
+  // whichever language its headings are in. tradeLabel already answers that
+  // question for the landing pages.
+  const industryName = businessContext.industry
+    ? tradeLabel(businessContext.industry, zh ? "zh" : "en")
+    : t("genericTrade");
   // The customer's own company name (projects.business_name, migration
   // 20260820180000) rather than their email's local part. This document is the
   // one a contractor is meant to hand to a developer, or read back to decide
@@ -192,7 +262,7 @@ export default async function SystemSpecPage({
     }),
   ) as Record<PageId, PuckLayout>;
 
-  const spec = buildSystemSpec(layouts, pageRefs);
+  const spec = buildSystemSpec(layouts, pageRefs, zh ? "zh" : "en");
 
   // Every render of this page would otherwise be an LLM call: a reload, a
   // back-button, a share link opened twice. Capped per account, and going over
@@ -203,7 +273,9 @@ export default async function SystemSpecPage({
     limit: 10,
     windowMs: 60 * 60 * 1000,
   });
-  const prose = rate.allowed ? await writeProse(spec, industryName) : null;
+  const prose = rate.allowed
+    ? await writeProse(spec, industryName, zh ? "zh" : "en")
+    : null;
 
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     `我的系统需求书已经生成了，想谈下一步\n\n账号邮箱: ${user.email}\n项目编号: ${project.id}`,
@@ -227,7 +299,18 @@ export default async function SystemSpecPage({
    * Counting them makes the document always read 一二三四, however many of
    * them there are.
    */
-  const CN = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+  /*
+    THE NUMERALS FOLLOW THE DOCUMENT'S LANGUAGE.
+
+    「一、二、三」 in an English specification reads as a rendering fault to the
+    developer who has to build from it -- and this document's whole job is to
+    prove nothing was lost between what the customer designed and what gets
+    built.
+  */
+  const CN = zh
+    ? ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+    : ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+  const sep = zh ? "、" : ". ";
   const hasFlow = spec.workflowStages.length > 0;
   const hasModules = Boolean(prose?.modules?.length);
   const hasVocab = spec.vocabulary.length > 0;
@@ -252,7 +335,7 @@ export default async function SystemSpecPage({
           href={`/${locale}/portal/dashboard`}
           className="[font-size:var(--text-sm)] text-muted-foreground underline underline-offset-4"
         >
-          ← 回到编辑器
+          {t("back")}
         </Link>
         <a
           href={whatsappHref}
@@ -260,41 +343,41 @@ export default async function SystemSpecPage({
           rel="noopener noreferrer"
           className="rounded-lg bg-primary px-4 py-2 [font-size:var(--text-sm)] font-semibold text-primary-foreground"
         >
-          交给我们建系统
+          {t("handoff")}
         </a>
       </div>
 
       <header className="border-b pb-6">
         <p className="[font-size:var(--text-xs)] tracking-[0.16em] text-muted-foreground uppercase">
-          Formae · 系统需求书
+          {t("brand")}
         </p>
-        <h1 className="mt-2 [font-size:var(--text-title)] font-semibold text-foreground">{businessName}的系统</h1>
+        <h1 className="mt-2 [font-size:var(--text-title)] font-semibold text-foreground">{t("titleOf", { business: businessName })}</h1>
         <p className="mt-1 [font-size:var(--text-sm)] text-muted-foreground">
-          行业：{industryName} · 生成日期：{new Date().toISOString().slice(0, 10)}
+          {t("meta", { industry: industryName, date: new Date().toISOString().slice(0, 10) })}
         </p>
       </header>
 
       <section className="mt-8">
-        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noPurpose}、这套系统是做什么的</h2>
+        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noPurpose}{sep}{t("secPurpose")}</h2>
         <p className="mt-2 [font-size:var(--text-sm)] leading-relaxed text-muted-foreground">
           {prose?.overview ??
-            `这份文档由 ${businessName} 在 Formae 上亲自设计的界面直接生成，下面每一页、每一个栏位都是客户自己确认过的。`}
+            t("overviewFallback", { business: businessName })}
         </p>
       </section>
 
       {hasFlow && (
         <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noFlow}、业务流程</h2>
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noFlow}{sep}{t("secFlow")}</h2>
           <p className="mt-2 [font-size:var(--text-sm)] text-foreground">{spec.workflowStages.join(" → ")}</p>
           <p className="mt-1 [font-size:var(--text-sm)] text-muted-foreground">
-            系统需要能记录每一笔业务当前走到哪一步，并能按步骤筛选。
+            {t("flowNote")}
           </p>
         </section>
       )}
 
       {hasModules && prose ? (
         <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noModules}、需要的模块</h2>
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noModules}{sep}{t("secModules")}</h2>
           <ul className="mt-2 space-y-1.5">
             {prose.modules.map((m) => (
               <li key={m.name} className="[font-size:var(--text-sm)] text-muted-foreground">
@@ -306,7 +389,7 @@ export default async function SystemSpecPage({
       ) : null}
 
       <section className="mt-8">
-        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noPages}、每一页的具体要求</h2>
+        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noPages}{sep}{t("secPages")}</h2>
         {spec.pages.map((page) => (
           <div key={page.pageKey} className="mt-5 border-l-2 pl-4">
             <h3 className="[font-size:var(--text-base)] font-semibold text-foreground">
@@ -319,30 +402,35 @@ export default async function SystemSpecPage({
             <ul className="mt-2 space-y-1 [font-size:var(--text-sm)] text-muted-foreground">
               {page.metrics.map((m, i) => (
                 <li key={`m${i}`}>
-                  关键数字：<span className="text-foreground">{m.label}</span>
-                  {m.sample ? `（示例 ${m.sample}）` : ""}
+                  {t("metric")}: <span className="text-foreground">{m.label}</span>
+                  {m.sample ? ` (${t("sample", { v: m.sample })})` : ""}
                 </li>
               ))}
-              {page.tables.map((t, i) => (
+              {/* `tbl`, not `t` -- the map parameter was shadowing the
+                  translator, which the compiler caught the moment this section
+                  started calling t(). */}
+              {page.tables.map((tbl, i) => (
                 <li key={`t${i}`}>
-                  数据表「<span className="text-foreground">{t.caption}</span>」，栏位：
-                  <span className="text-foreground">{t.columns.join(" / ")}</span>
+                  {t("tablePrefix")}
+                  <span className="text-foreground">{tbl.caption}</span>
+                  {t("tableSuffix")}{" "}
+                  <span className="text-foreground">{tbl.columns.join(" / ")}</span>
                 </li>
               ))}
               {page.workflows.map((w, i) =>
                 w.stages.length ? (
                   <li key={`w${i}`}>
-                    流程：<span className="text-foreground">{w.stages.join(" → ")}</span>
+                    {t("flowPrefix")}<span className="text-foreground">{w.stages.join(" → ")}</span>
                   </li>
                 ) : null,
               )}
               {page.inputs.map((inp, i) => (
                 <li key={`i${i}`}>
-                  输入项：<span className="text-foreground">{inp.label}</span>（{inp.kind}）
+                  {t("inputPrefix")}<span className="text-foreground">{inp.label}</span> ({inp.kind})
                 </li>
               ))}
               {page.metrics.length + page.tables.length + page.workflows.length + page.inputs.length ===
-                0 && <li>这一页客户暂时留空。</li>}
+                0 && <li>{t("emptyPage")}</li>}
             </ul>
           </div>
         ))}
@@ -350,9 +438,9 @@ export default async function SystemSpecPage({
 
       {hasVocab && (
         <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noVocab}、必须沿用的称呼</h2>
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noVocab}{sep}{t("secVocab")}</h2>
           <p className="mt-2 [font-size:var(--text-sm)] text-muted-foreground">
-            系统里的用词要跟客户自己的叫法一致，不要换成通用词：
+            {t("vocabNote")}
           </p>
           <p className="mt-1.5 [font-size:var(--text-sm)] text-foreground">{spec.vocabulary.join(" · ")}</p>
         </section>
@@ -360,7 +448,7 @@ export default async function SystemSpecPage({
 
       {hasNotes && prose ? (
         <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noNotes}、建设注意事项</h2>
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noNotes}{sep}{t("secNotes")}</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 [font-size:var(--text-sm)] text-muted-foreground">
             {prose.notes.map((n, i) => (
               <li key={i}>{n}</li>
@@ -370,7 +458,7 @@ export default async function SystemSpecPage({
       ) : null}
 
       <footer className="mt-10 border-t pt-4 [font-size:var(--text-xs)] text-muted-foreground">
-        本文档由客户在 Formae 编辑器里的实际设计自动生成。页面、栏位、流程、称呼全部取自客户自己的设计，不是模板推测。
+        {t("footer")}
       </footer>
     </main>
   );

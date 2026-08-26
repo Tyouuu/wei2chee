@@ -118,7 +118,7 @@ export default async function PortalEditorPage({
   // fields panel edits exactly the props it is handed, so a table left in the
   // legacy four-prop shape would show the customer both the new column editor
   // and a dead row editor -- see lib/portal/layout-upgrade.ts.
-  let initialData = upgradeLayout(savedLayout);
+  let initialData = upgradeLayout(savedLayout, systemLangOf(businessContext));
   if (isUngeneratedLayout(savedLayout)) {
     initialData = buildPageLayout(
       pageKey,
@@ -198,7 +198,7 @@ export default async function PortalEditorPage({
           project.style,
           (project.layout as string | null) ?? null,
         ) as unknown as Record<string, unknown>)
-      : upgradeLayout(saved);
+      : upgradeLayout(saved, systemLangOf(businessContext));
     return {
       key: ref.key,
       label: pageLabel(ref, tradeLabels(businessContext, pageRefs), systemLangOf(businessContext)),

@@ -40,18 +40,27 @@ import { PAGE_TEMPLATES } from "@/components/blocks/templates/manifest";
 
 /** Titles and blurbs in the founder's own register: what the shape IS, and how
  *  much page it is, because length is the thing that distinguishes them. */
-const ZH: Record<string, { label: string; blurb: string }> = {
+const ZH: Record<string, { label: string; blurb: string; labelEn: string; blurbEn: string }> = {
   startup: {
     label: "一页说清楚",
     blurb: "八段。大标题、数字、卖点、流程、客户评价、留邮箱、页尾。最短的一套，适合先上线再补。",
+    labelEn: "Said in one page",
+    blurbEn:
+      "Eight sections. Headline, numbers, what you do, how it works, a review, an email box, footer. The shortest one — put it up now, fill it in later.",
   },
   "saas-landing": {
     label: "完整介绍",
     blurb: "十一段。多了合作标志墙、格子墙、价目表、常见问题——客人想问的都在页面上答完。",
+    labelEn: "The full story",
+    blurbEn:
+      "Eleven sections. Adds logos, a bento wall, prices and FAQs — everything they would have asked is answered on the page.",
   },
   "saas-landing-2": {
     label: "边看边懂",
     blurb: "十三段。作品廊、分页卖点、流程步骤、对比表。最长的一套，东西多的时候用。",
+    labelEn: "Show as you go",
+    blurbEn:
+      "Thirteen sections. A gallery, tabbed features, numbered steps, a comparison table. The longest one — use it when you have a lot to show.",
   },
 };
 
@@ -63,6 +72,8 @@ export const BLOCK_LANDINGS: LandingTemplate[] = PAGE_TEMPLATES.filter(
   key: `blk-${t.key}`,
   label: ZH[t.key].label,
   blurb: ZH[t.key].blurb,
+  labelEn: ZH[t.key].labelEn,
+  blurbEn: ZH[t.key].blurbEn,
   // No trade opens on one of these by default. They are a choice a customer
   // makes after seeing them, not an industry guess -- the six built from the
   // business's own words are the better default in every trade.

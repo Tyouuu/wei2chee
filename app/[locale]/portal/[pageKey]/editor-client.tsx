@@ -529,7 +529,7 @@ export function PortalEditor({
   const localDraft =
     hydrated && !paid ? readLocalDraft(projectId, pageKey) : null;
   const startingData = localDraft
-    ? (upgradeLayout(localDraft) as Data)
+    ? (upgradeLayout(localDraft, systemLang) as Data)
     : (initialData as Data);
 
   function handleChange(data: Data) {

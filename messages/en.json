@@ -630,7 +630,10 @@
       "readyBody": "They arrive with real sample records and your trade's vocabulary.",
       "alwaysIncluded": "Always included",
       "zoom": "See {name} full size",
-      "close": "Close"
+      "close": "Close",
+      "landingTitle": "Site layouts",
+      "landingBody": "One business, six ways. Every one below is drawn from your own trade, your own name and your own workflow — 「Use this one」 opens it in the editor, <unsaved>not saved yet</unsaved>, and undo puts it back.",
+      "use": "Use this one"
     },
     "console": {
       "title": "Console",
@@ -748,6 +751,31 @@
       "allN": "All {n} →",
       "body": "A whole section at a time. The words are the section's own; the look is the style you picked. In the editor, add it with 「Site section」.",
       "none": "Nothing matches “{query}”."
+    },
+    "spec": {
+      "back": "← Back to the editor",
+      "handoff": "Hand it to us to build",
+      "brand": "Formae · System specification",
+      "titleOf": "{business}'s system",
+      "meta": "Trade: {industry} · Generated {date}",
+      "overviewFallback": "{business} designed this on Formae. Every page, every column and every workflow step below was arranged by them.",
+      "secPurpose": "What this system is for",
+      "secFlow": "The workflow",
+      "secModules": "Modules needed",
+      "secPages": "What each page requires",
+      "secVocab": "Words that must be kept",
+      "secNotes": "Notes for the build",
+      "flowNote": "The system has to record which step each job is at, and filter by step.",
+      "vocabNote": "Use the customer's own words, not generic ones:",
+      "metric": "Key figure",
+      "sample": "e.g. {v}",
+      "tablePrefix": "Table 「",
+      "tableSuffix": "」, columns:",
+      "flowPrefix": "Workflow: ",
+      "inputPrefix": "Input: ",
+      "emptyPage": "The customer has left this page empty for now.",
+      "footer": "Generated from what the customer actually built in the Formae editor. Every page, column, workflow step and word here comes from their own design, not from a template's guess.",
+      "genericTrade": "General business"
     }
   },
   "explainer": {

@@ -84,7 +84,7 @@ export default async function StylesPage({
           project.style as string,
           (project.layout as string | null) ?? null,
         ) as unknown as Record<string, unknown>)
-      : upgradeLayout(saved);
+      : upgradeLayout(saved, systemLangOf(businessContext));
     return {
       key: ref.key,
       label: pageLabel(ref, tradeLabels(businessContext, pageRefs), systemLangOf(businessContext)),

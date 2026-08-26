@@ -83,6 +83,12 @@ export const LIBRARY_SAMPLES: Record<string, Record<string, unknown>> = {
       { label: "客户", value: "陈先生", removeHref: "#" },
     ],
     clearAllHref: "#",
+    /* Spelled out rather than left to the component's defaults, because
+       `sampleProps` translates the strings it is GIVEN -- a prop that is absent
+       has nothing to project, and the component's own fallback is Chinese. That
+       is how 「筛选条件」 stayed on the English library page. */
+    filteredByLabel: "筛选条件",
+    clearAllLabel: "清空全部",
   },
 
   Listbox: {

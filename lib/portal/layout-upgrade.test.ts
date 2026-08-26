@@ -92,13 +92,41 @@ describe("upgradeLayout", () => {
   });
 
   it("turns the rail's two hardcoded links into a list the customer owns", () => {
-    const out = upgradeLayout(saved) as typeof saved;
+    const out = upgradeLayout(saved, "zh") as typeof saved;
     const rail = (out.content[0].props.sidebar as { props: Record<string, unknown> }[])[0].props;
     expect(rail.utilityItems).toEqual([
       { label: "通知", iconName: "notifications" },
       { label: "账号设置", iconName: "account" },
     ]);
     expect(rail).not.toHaveProperty("notificationsHref");
+  });
+
+  // The words the upgrade INVENTS have to be in the system's language, not in
+  // whichever one they were first written in. This is the assertion that would
+  // have caught 「筛选条件」 sitting on four pages of an English system --
+  // measured on 2026-08-26, on a portal already called localised twice.
+  it("writes the chrome it invents in the system's own language", () => {
+    const en = upgradeLayout(saved, "en") as typeof saved;
+    const rail = (en.content[0].props.sidebar as { props: Record<string, unknown> }[])[0].props;
+    expect(rail.utilityItems).toEqual([
+      { label: "Notifications", iconName: "notifications" },
+      { label: "Account", iconName: "account" },
+    ]);
+  });
+
+  it("fills a saved FilterChips' missing labels, and never overwrites the owner's", () => {
+    const page = {
+      content: [
+        { type: "FilterChips", props: { chips: [], clearAllHref: "#" } },
+        { type: "FilterChips", props: { chips: [], clearAllHref: "#", filteredByLabel: "Showing" } },
+      ],
+    };
+    const out = upgradeLayout(page, "en") as typeof page;
+    expect(out.content[0].props).toMatchObject({
+      filteredByLabel: "Filtered by",
+      clearAllLabel: "Clear all",
+    });
+    expect(out.content[1].props.filteredByLabel).toBe("Showing");
   });
 
   it("leaves the input untouched", () => {

@@ -1,4 +1,5 @@
 import { upgradeRecordTableProps } from "./table-model";
+import { DEFAULT_SYSTEM_LANG, type SystemLang } from "@/lib/system-lang";
 
 /**
  * Brings a saved layout up to the current component shapes, on load.
@@ -33,9 +34,33 @@ const isNode = (v: unknown): v is Node =>
  *
  *  flatMap rather than map since 2026-08-25: one upgrade turns a single node
  *  into two. See splitHeroCard. */
-function upgradeNodeList(nodes: unknown[]): unknown[] {
-  return nodes.flatMap((n) => (isNode(n) ? splitHeroCard(upgradeNode(n)) : [n]));
+function upgradeNodeList(nodes: unknown[], lang: SystemLang): unknown[] {
+  return nodes.flatMap((n) => (isNode(n) ? splitHeroCard(upgradeNode(n, lang), lang) : [n]));
 }
+
+/*
+  CHROME THE SAVED TREE NEVER CARRIED.
+
+  Two blocks render words that are not the customer's: FilterChips' 「Filtered
+  by」/「Clear all」 and RailNav's footer. Both were once hardcoded Chinese inside
+  the component, and both were later given props that industry-template.ts fills
+  from the system-language copy table -- so a system generated today is right in
+  both languages.
+
+  A system saved BEFORE that is not. The props are absent, the component falls
+  back to its own default, and that default is Chinese. Measured on 2026-08-26
+  by walking /en/portal: 「筛选条件」 on four pages of an English system, on a
+  portal I had already called localised twice. Nothing failed. It just sat
+  there, because a missing prop is not an error.
+
+  So the same read-time upgrade that reshapes old tables fills these in. It only
+  writes a prop that is ABSENT -- a customer who renamed 「Filtered by」 to
+  「Showing」 keeps it, which is the rule the whole file runs on.
+*/
+const CHROME: Record<SystemLang, { filteredBy: string; clearAll: string; notifications: string; account: string }> = {
+  en: { filteredBy: "Filtered by", clearAll: "Clear all", notifications: "Notifications", account: "Account" },
+  zh: { filteredBy: "筛选条件", clearAll: "清空全部", notifications: "通知", account: "账号设置" },
+};
 
 type HeroStat = { label?: string; value?: string; tone?: string; sub?: string; href?: string };
 
@@ -64,7 +89,7 @@ type HeroStat = { label?: string; value?: string; tone?: string; sub?: string; h
  * system is exactly the kind of assumption the header of this file refuses to
  * make.
  */
-function splitHeroCard(node: Node): Node[] {
+function splitHeroCard(node: Node, lang: SystemLang): Node[] {
   if (node.type !== "HeroCard") return [node];
   const p = node.props ?? {};
   const value = typeof p.value === "string" ? p.value : null;
@@ -107,7 +132,14 @@ function splitHeroCard(node: Node): Node[] {
     out.push({
       type: "TrendChart",
       props: {
-        title: typeof p.sparkLabel === "string" && p.sparkLabel ? p.sparkLabel : "走势",
+        // The customer's own label if they gave the sparkline one; otherwise a
+        // word in their system's language, not in ours.
+        title:
+          typeof p.sparkLabel === "string" && p.sparkLabel
+            ? p.sparkLabel
+            : lang === "zh"
+              ? "走势"
+              : "Trend",
         unit: "RM",
         points: spark.map((v, i) => ({ label: `${i + 1}`, value: v })),
       },
@@ -117,15 +149,20 @@ function splitHeroCard(node: Node): Node[] {
   return out;
 }
 
-function upgradeNode(node: Node): Node {
+function upgradeNode(node: Node, lang: SystemLang): Node {
   let props: Record<string, unknown> = { ...(node.props ?? {}) };
 
   for (const [key, value] of Object.entries(props)) {
-    if (Array.isArray(value) && value.some(isNode)) props[key] = upgradeNodeList(value);
+    if (Array.isArray(value) && value.some(isNode)) props[key] = upgradeNodeList(value, lang);
   }
 
   if (node.type === "RecordTable") {
     props = upgradeRecordTableProps(props);
+  }
+
+  if (node.type === "FilterChips") {
+    if (typeof props.filteredByLabel !== "string") props.filteredByLabel = CHROME[lang].filteredBy;
+    if (typeof props.clearAllLabel !== "string") props.clearAllLabel = CHROME[lang].clearAll;
   }
 
   if (node.type === "RailNav" && !Array.isArray(props.utilityItems)) {
@@ -133,8 +170,8 @@ function upgradeNode(node: Node): Node {
     // list it should always have been, preserving whatever the customer had:
     // an account link they had renamed stays renamed.
     props.utilityItems = [
-      { label: "通知", iconName: "notifications" },
-      { label: "账号设置", iconName: "account" },
+      { label: CHROME[lang].notifications, iconName: "notifications" },
+      { label: CHROME[lang].account, iconName: "account" },
     ];
     delete props.notificationsHref;
     delete props.accountHref;
@@ -143,7 +180,14 @@ function upgradeNode(node: Node): Node {
   return { ...node, props };
 }
 
-export function upgradeLayout<T extends { content?: unknown }>(layout: T): T {
+export function upgradeLayout<T extends { content?: unknown }>(
+  layout: T,
+  /** `projects.system_language` -- the language the customer's SYSTEM speaks,
+   *  not the locale their portal is in. Defaults to the same value every other
+   *  reader defaults to, so a caller that has not got it to hand degrades to
+   *  what the system would have said anyway. */
+  lang: SystemLang = DEFAULT_SYSTEM_LANG,
+): T {
   if (!layout || !Array.isArray(layout.content)) return layout;
-  return { ...layout, content: upgradeNodeList(layout.content) };
+  return { ...layout, content: upgradeNodeList(layout.content, lang) };
 }

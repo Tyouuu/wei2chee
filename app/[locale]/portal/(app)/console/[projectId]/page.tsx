@@ -110,13 +110,16 @@ export default async function ConsoleCustomerPage({
       updatedAt: row?.updated_at ?? null,
       layout: (isDraft
         ? buildPageLayout(ref.key, businessContext, ownerName, locale, pageRefs)
-        : upgradeLayout(saved)) as unknown as Data,
+        : upgradeLayout(saved, systemLangOf(businessContext))) as unknown as Data,
     };
   });
 
   const spec = buildSystemSpec(
     Object.fromEntries(pages.map((p) => [p.pageKey, p.layout as unknown as PuckLayout])),
     pageRefs,
+    // The console is OUR desk, not the customer's. It follows the locale we are
+    // reading it in, which is the same rule every other page here follows.
+    locale === "zh" ? "zh" : "en",
   );
 
   return (
@@ -135,7 +138,7 @@ export default async function ConsoleCustomerPage({
       monthlyFee={Number(payload.project.monthly_fee_myr ?? 150)}
       note={(payload.project.founder_note as string) ?? null}
       pages={pages}
-      specText={specToText(spec)}
+      specText={specToText(spec, locale === "zh" ? "zh" : "en")}
     />
   );
 }

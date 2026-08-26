@@ -12,6 +12,7 @@ import {
   isUngeneratedLayout,
   pageLabel,
   sortPages,
+  systemLangOf,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
@@ -113,7 +114,7 @@ export default async function PortalHomePage({
             project.style as string,
             (project.layout as string | null) ?? null,
           )
-        : upgradeLayout(saved)) as unknown as Data,
+        : upgradeLayout(saved, systemLangOf(businessContext))) as unknown as Data,
     };
   });
 

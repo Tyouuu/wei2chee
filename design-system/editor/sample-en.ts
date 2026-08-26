@@ -293,7 +293,9 @@ export const SAMPLE_EN: Record<string, string> = {
   报价日期: "Quote date",
   结算月份: "Month",
   等客户确认: "Awaiting the client",
-  陈老板: "Mr Tan"
+  陈老板: "Mr Tan",
+  筛选条件: "Filtered by",
+  清空全部: "Clear all",
 };
 
 /**

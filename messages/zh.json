@@ -630,7 +630,10 @@
       "readyBody": "带真实示例记录和你这一行的用词，加进来直接改。",
       "alwaysIncluded": "每个系统都有",
       "zoom": "放大看 {name}",
-      "close": "关掉"
+      "close": "关掉",
+      "landingTitle": "官网版面",
+      "landingBody": "同一间公司，六种做法。下面每一张都是用你自己的行业、公司名、流程画出来的 —— 按「换成这个」会带你进编辑器，<unsaved>还没保存</unsaved>，不喜欢按撤销就回去了。",
+      "use": "换成这个"
     },
     "console": {
       "title": "控制台",
@@ -748,6 +751,31 @@
       "allN": "全部 {n} →",
       "body": "整段套用，里面的字是版段自己的；穿的是你选的风格。在编辑器里用「官网版段」放进页面。",
       "none": "没有找到「{query}」。"
+    },
+    "spec": {
+      "back": "← 回到编辑器",
+      "handoff": "交给我们建系统",
+      "brand": "Formae · 系统需求书",
+      "titleOf": "{business}的系统",
+      "meta": "行业：{industry} · 生成日期：{date}",
+      "overviewFallback": "这份文档由 {business} 在 Formae 上亲自设计，下面每一页、每一栏、每一个流程步骤，都是他自己排出来的。",
+      "secPurpose": "这套系统是做什么的",
+      "secFlow": "业务流程",
+      "secModules": "需要的模块",
+      "secPages": "每一页的具体要求",
+      "secVocab": "必须沿用的称呼",
+      "secNotes": "建设注意事项",
+      "flowNote": "系统需要能记录每一笔业务当前走到哪一步，并能按步骤筛选。",
+      "vocabNote": "系统里的用词要跟客户自己的叫法一致，不要换成通用词：",
+      "metric": "关键数字",
+      "sample": "示例 {v}",
+      "tablePrefix": "数据表「",
+      "tableSuffix": "」，栏位：",
+      "flowPrefix": "流程：",
+      "inputPrefix": "输入项：",
+      "emptyPage": "这一页客户暂时留空。",
+      "footer": "本文档由客户在 Formae 编辑器里的实际设计自动生成。页面、栏位、流程、称呼全部取自客户自己的设计，不是模板推测。",
+      "genericTrade": "一般生意"
     }
   },
   "explainer": {

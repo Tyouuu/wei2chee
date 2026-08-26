@@ -29,6 +29,16 @@ export const PAGE_TITLES: Record<PageKey, string> = {
   orders: "订单",
 };
 
+export const PAGE_TITLES_EN: Record<PageKey, string> = {
+  dashboard: "Overview",
+  customers: "Customers",
+  quotations: "Quotations",
+  projects: "Projects / Orders",
+  payments: "Payments",
+  bookings: "Bookings",
+  orders: "Orders",
+};
+
 export type PageSpec = {
   pageKey: PageId;
   title: string;
@@ -67,7 +77,25 @@ const INPUT_KINDS: Record<string, string> = {
   FilterChips: "筛选条件",
 };
 
-function specForPage(pageKey: PageId, ownTitle: string | null, layout: PuckLayout): PageSpec {
+/* The same seven, in the language the document is being written in. The
+   customer's own words are never in this table -- only the names of the
+   controls, which are ours. */
+const INPUT_KINDS_EN: Record<string, string> = {
+  DatePicker: "date",
+  MonthPicker: "month",
+  FileUploadField: "file upload",
+  Listbox: "dropdown",
+  Combobox: "searchable select",
+  TextAutocomplete: "text with suggestions",
+  FilterChips: "filters",
+};
+
+function specForPage(
+  pageKey: PageId,
+  ownTitle: string | null,
+  layout: PuckLayout,
+  lang: "zh" | "en",
+): PageSpec {
   const nodes = walkNodes(layout.content ?? []);
   const first = (type: string): PuckNode | undefined => nodes.find((n) => n.type === type);
 
@@ -102,12 +130,12 @@ function specForPage(pageKey: PageId, ownTitle: string | null, layout: PuckLayou
   const inputs = nodes
     .filter((n) => n.type in INPUT_KINDS)
     .map((n) => ({
-      kind: INPUT_KINDS[n.type],
+      kind: (lang === "zh" ? INPUT_KINDS : INPUT_KINDS_EN)[n.type],
       label:
         str(n.props.label) ??
         str(n.props.placeholder) ??
         str(n.props.hint) ??
-        INPUT_KINDS[n.type],
+        (lang === "zh" ? INPUT_KINDS : INPUT_KINDS_EN)[n.type],
     }));
 
   const metrics = nodes
@@ -122,7 +150,11 @@ function specForPage(pageKey: PageId, ownTitle: string | null, layout: PuckLayou
     // A page the customer invented has no entry in PAGE_TITLES, and its name is
     // theirs -- falling back to the key would put "custom_a1b2c3d4e5f6" into a
     // document a developer is meant to build from.
-    title: ownTitle?.trim() || (isBuiltInPage(pageKey) ? PAGE_TITLES[pageKey] : "自定页面"),
+    title:
+      ownTitle?.trim() ||
+      (isBuiltInPage(pageKey)
+        ? (lang === "zh" ? PAGE_TITLES : PAGE_TITLES_EN)[pageKey]
+        : lang === "zh" ? "自定页面" : "Custom page"),
     heading: header ? str(header.props.title) : null,
     subtitle: header ? str(header.props.subtitle) : null,
     tables,
@@ -138,10 +170,14 @@ export function buildSystemSpec(
    *  callers that genuinely have all of them -- specifying pages a business
    *  does not have would put a 「预约」section into a contractor's build brief. */
   pageRefs: readonly PageRef[] = PAGE_KEYS.map((key) => ({ key })),
+  /** The document's language. Names the STRUCTURE -- page titles, control
+   *  names, section labels -- and never the customer's own words, which stay
+   *  exactly as they typed them in both languages. */
+  lang: "zh" | "en" = "zh",
 ): SystemSpec {
   const pages = pageRefs
     .filter((ref) => layouts[ref.key])
-    .map((ref) => specForPage(ref.key, ref.title ?? null, layouts[ref.key] as PuckLayout));
+    .map((ref) => specForPage(ref.key, ref.title ?? null, layouts[ref.key] as PuckLayout, lang));
 
   // First-seen order, deduped. A Set preserves insertion order, which is what
   // makes the result the pipeline as the customer sequenced it rather than an
@@ -165,29 +201,68 @@ export function buildSystemSpec(
  * founder to read directly if the model is unavailable. Deliberately readable
  * on its own: this is the fallback document, not scaffolding for one.
  */
-export function specToText(spec: SystemSpec): string {
+export function specToText(spec: SystemSpec, lang: "zh" | "en" = "zh"): string {
+  /*
+    THE STRUCTURE IS DESCRIBED IN THE DOCUMENT'S OWN LANGUAGE.
+
+    This text is two things at once: the fallback document a founder reads when
+    the model is unavailable, and the INPUT the model is given to write prose
+    around. The second job is why the language matters more than it looks.
+
+    Measured on 2026-08-26: the prompt said 「Write in English」 and the prose
+    came back in Chinese every time. The prompt was not being ignored -- the
+    model was following the language of the FACTS it was handed, which read
+    「业务流程」, 「关键数字」, 「数据表…栏位」, 「输入项」. Naming the language in one
+    line while showing the opposite in forty is not an instruction, it is a
+    contradiction.
+
+    What never changes language is the customer's OWN words -- their page
+    headings, their column names, their workflow stages. Those are quoted, and
+    it is the whole argument of the document: 「系统里的用词要跟客户自己的叫法一致」.
+  */
+  const w =
+    lang === "zh"
+      ? {
+          flow: "业务流程：",
+          metric: "关键数字：",
+          eg: (v: string) => `（例：${v}）`,
+          table: (c: string) => `数据表「${c}」，栏位：`,
+          stage: "流程：",
+          input: "输入项：",
+          of: (k: string) => `（${k}）`,
+        }
+      : {
+          flow: "Workflow: ",
+          metric: "Key figure: ",
+          eg: (v: string) => ` (e.g. ${v})`,
+          table: (c: string) => `Table 「${c}」, columns: `,
+          stage: "Workflow: ",
+          input: "Input: ",
+          of: (k: string) => ` (${k})`,
+        };
+
   const lines: string[] = [];
 
   if (spec.workflowStages.length) {
-    lines.push(`业务流程：${spec.workflowStages.join(" → ")}`);
+    lines.push(`${w.flow}${spec.workflowStages.join(" → ")}`);
     lines.push("");
   }
 
   for (const page of spec.pages) {
-    lines.push(`## ${page.heading ?? page.title}（${page.pageKey}）`);
+    lines.push(`## ${page.heading ?? page.title} (${page.pageKey})`);
     if (page.subtitle) lines.push(page.subtitle);
 
     for (const m of page.metrics) {
-      lines.push(`- 关键数字：${m.label}${m.sample ? `（例：${m.sample}）` : ""}`);
+      lines.push(`- ${w.metric}${m.label}${m.sample ? w.eg(m.sample) : ""}`);
     }
     for (const t of page.tables) {
-      lines.push(`- 数据表「${t.caption}」，栏位：${t.columns.join(" / ")}`);
+      lines.push(`- ${w.table(t.caption)}${t.columns.join(" / ")}`);
     }
-    for (const w of page.workflows) {
-      if (w.stages.length) lines.push(`- 流程：${w.stages.join(" → ")}`);
+    for (const wf of page.workflows) {
+      if (wf.stages.length) lines.push(`- ${w.stage}${wf.stages.join(" → ")}`);
     }
     for (const i of page.inputs) {
-      lines.push(`- 输入项：${i.label}（${i.kind}）`);
+      lines.push(`- ${w.input}${i.label}${w.of(i.kind)}`);
     }
     lines.push("");
   }

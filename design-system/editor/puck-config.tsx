@@ -326,7 +326,15 @@ type Components = {
   DatePicker: { name: string; placeholder?: string; allowClear?: boolean; required?: boolean };
   MonthPicker: { name: string; placeholder?: string; allowClear?: boolean };
   FileUploadField: { label?: string; hint: string; name?: string; accept?: string };
-  FilterChips: { chips: FilterChip[]; clearAllHref: string };
+  FilterChips: {
+    chips: FilterChip[];
+    clearAllHref: string;
+    /* Written by the page builder in the system's language, and by
+       layout-upgrade into any tree saved before they existed. Optional because
+       an old saved node genuinely does not have them. */
+    filteredByLabel?: string;
+    clearAllLabel?: string;
+  };
   Combobox: {
     name?: string;
     value: string;
@@ -2040,9 +2048,30 @@ export const puckConfig: Config<Components> = {
           getItemSummary: (item) => item.label || "筛选条件",
         },
         clearAllHref: { label: "清空全部链接", type: "text" },
+        filteredByLabel: { label: "前面那句", type: "text" },
+        clearAllLabel: { label: "清空按钮的字", type: "text" },
       },
+      /* No defaults for the two labels, deliberately: the right word depends on
+         `system_language`, which a config object cannot see. The page builder
+         writes them (industry-template.ts) and layout-upgrade backfills them,
+         both of which know the language. */
       defaultProps: { chips: [], clearAllHref: "#" },
-      render: ({ chips, clearAllHref }) => <FilterChips chips={chips} clearAllHref={clearAllHref} />,
+      /* PASS THEM. This render read only `chips` and `clearAllHref`, so the two
+         labels were written into every generated layout by a builder that had
+         gone to the trouble of asking for the system language -- and then
+         dropped here, one line before the component that wanted them. The
+         component fell back to its own Chinese defaults, which is why 「筛选条件」
+         was still on four pages of an English system on 2026-08-26. Seventh
+         time in this repo that a capability was built and the wire never
+         connected. */
+      render: ({ chips, clearAllHref, filteredByLabel, clearAllLabel }) => (
+        <FilterChips
+          chips={chips}
+          clearAllHref={clearAllHref}
+          filteredByLabel={filteredByLabel || undefined}
+          clearAllLabel={clearAllLabel || undefined}
+        />
+      ),
     },
     Combobox: {
       label: "搜索下拉",

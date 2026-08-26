@@ -67,6 +67,17 @@ export type LandingTemplate = {
   /** Trades whose default this is. First match wins; anything unmapped falls
    *  back to `quote`. */
   trades: string[];
+  /**
+   * The same two, for the English portal.
+   *
+   * Written out rather than machine-translated. 「客人先问，你上门看了才报价」 is
+   * not 「the customer asks first, you go and look then quote」 -- it is 「They
+   * ask, you go and look, then you quote」, which is how a contractor would say
+   * it. A gallery a business owner is choosing from by feel is the wrong place
+   * for copy that reads translated.
+   */
+  labelEn: string;
+  blurbEn: string;
   build: (ctx: LandingContent) => PuckNode[];
 };
 
@@ -395,6 +406,8 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     key: "quote",
     label: "上门报价",
     blurb: "客人先问，你上门看了才报价。装修、维修、承包这一类。",
+    labelEn: "Quote after a visit",
+    blurbEn: "They ask, you go and look, then you quote. Renovation, repairs, contracting.",
     trades: ["renovation", "services", "other"],
     build: (c) => [
       hero(c, "split", "quote"),
@@ -414,6 +427,8 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     key: "booking",
     label: "预约时段",
     blurb: "客人要订一个时间。美容、补习、诊所这一类。",
+    labelEn: "Book a time",
+    blurbEn: "They need a slot. Salons, tuition, clinics.",
     trades: ["beauty", "education"],
     build: (c) => [
       hero(c, "split", "booking"),
@@ -434,6 +449,8 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     key: "order",
     label: "现货落单",
     blurb: "客人看了直接下单。餐饮、零售这一类。",
+    labelEn: "Order off the shelf",
+    blurbEn: "They see it and order. F&B, retail.",
     trades: ["fnb", "retail"],
     build: (c) => [
       // The band is the shopfront: for a business whose page IS the shop, the
@@ -453,6 +470,8 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     key: "wholesale",
     label: "批发询价",
     blurb: "买的人是生意人，要的是条件：账期、送货、量大多少钱。",
+    labelEn: "Trade enquiry",
+    blurbEn: "The buyer is a business. They want terms: credit, delivery, price at volume.",
     trades: ["wholesale"],
     build: (c) => [
       hero(c, "split", "pricelist"),
@@ -470,6 +489,8 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     key: "portfolio",
     label: "先看东西",
     blurb: "客人是看了作品才决定的。设计、摄影、装修都可以用这个。",
+    labelEn: "Work first",
+    blurbEn: "They decide after seeing what you have made. Design, photography, renovation.",
     trades: [],
     build: (c) => [
       hero(c, "split", "grid"),
@@ -488,6 +509,8 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     key: "card",
     label: "一页名片",
     blurb: "最简单的一页：你是谁、做什么、怎么找你。没有表格。",
+    labelEn: "One-page card",
+    blurbEn: "The simplest page: who you are, what you do, how to reach you. No form.",
     trades: [],
     build: (c) => [
       hero(c, "split", "card"),
