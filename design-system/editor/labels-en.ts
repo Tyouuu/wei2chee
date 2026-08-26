@@ -90,6 +90,7 @@ export const LABELS_EN: Record<string, string> = {
   空状态提示: "Empty state",
   状态标记: "Status dot",
   标记: "Tag",
+  "价钱（第一屏）": "Prices (first screen)",
   "浮动 WhatsApp": "Floating WhatsApp",
   "WhatsApp 号码": "WhatsApp number",
   "预先填好的第一句": "Pre-filled first message",

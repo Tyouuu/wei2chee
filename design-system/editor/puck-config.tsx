@@ -258,6 +258,9 @@ type Components = {
        object, because Puck's fields are flat and the owner has to be able to
        type their real number into one box. `phonePlaceholder` is what stops
        「012-345 6789」 reaching a stranger -- see publish-projection.ts. */
+    /* Prices in the first screen. An empty `value` renders nothing, which is
+       how a row the owner has not priced yet stays off a stranger's page. */
+    priceRows?: { label: string; value: string }[];
     phoneLabel?: string;
     phoneNumber?: string;
     phonePlaceholder?: boolean;
@@ -1645,6 +1648,16 @@ export const puckConfig: Config<Components> = {
            contact details, because on both Malaysian sites this was measured
            against it IS the headline's other half. An owner who opens this
            panel should hit the number before they hit anything optional. */
+        priceRows: {
+          label: "价钱（第一屏）",
+          type: "array",
+          arrayFields: {
+            label: { label: "项目", type: "text" },
+            value: { label: "价钱", type: "text" },
+          },
+          defaultItemProps: { label: "服务项目", value: "" },
+          getItemSummary: (item) => `${item.label}${item.value ? ` · ${item.value}` : ""}`,
+        },
         phoneLabel: { label: "号码前面那个字", type: "text" },
         phoneNumber: { label: "电话 / WhatsApp 号码", type: "text" },
         strip: { label: "最上面那条（营业时间）", type: "text" },
@@ -1668,12 +1681,13 @@ export const puckConfig: Config<Components> = {
         primaryLabel: "WhatsApp 问价",
         primaryHref: "#",
       },
-      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip }) => (
+      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip, priceRows }) => (
         <SiteHero
           layout={layout ?? "left"}
           figure={figure}
           figureData={figureData}
           phone={phoneNumber ? { label: phoneLabel, number: phoneNumber } : undefined}
+          priceRows={priceRows}
           strip={strip || undefined}
           eyebrow={
             eyebrow ? (

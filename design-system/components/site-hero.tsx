@@ -39,6 +39,7 @@ export function SiteHero({
   secondaryHref,
   proof,
   phone,
+  priceRows,
   strip,
   layout = "left",
   figure,
@@ -116,6 +117,23 @@ export function SiteHero({
    * up, in publish-projection.ts, not here.
    */
   phone?: { label?: string; number: string; href?: string }
+  /**
+   * PRICES, IN THE FIRST SCREEN.
+   *
+   * 「GENERAL SERVICE — RM 60」 and 「CHEMICAL CLEANING — RM 130」 are the two
+   * biggest things on the aircon company's page, above everything except their
+   * own promo headline. That is not a design flourish, it is why the phone
+   * rings: a homeowner comparing three contractors is comparing numbers, and a
+   * page that makes them ask has already lost to the one that did not.
+   *
+   * Ours had the same rows five screens down under 「What it costs」, each one
+   * reading 「RM —」.
+   *
+   * A row with no price does not render at all. To a stranger 「RM —」 does not
+   * say 「the owner has not filled this in」, it says 「this business will not
+   * tell you what it costs」, which is worse than having no prices on the page.
+   */
+  priceRows?: { label: string; value: string }[]
   /**
    * One line above everything: when they are open, or what they promise.
    *
@@ -244,6 +262,35 @@ export function SiteHero({
           )}
         </div>
       )}
+
+      {/* The prices, between the words and the buttons -- read before the
+          decision to press anything, which is the order the reference page
+          puts them in. A row whose price is still blank is dropped here rather
+          than filtered upstream, so a template that hands over three rows and
+          two prices shows two. */}
+      {priceRows && priceRows.some((r) => r.value?.trim()) ? (
+        <ul
+          className={`mt-7 flex flex-col [gap:var(--gap-inline)] ${
+            centred ? "mx-auto max-w-[42ch]" : "max-w-[42ch]"
+          }`}
+        >
+          {priceRows
+            .filter((r) => r.value?.trim())
+            .map((r) => (
+              <li
+                key={r.label}
+                className="flex items-center justify-between [background-color:var(--card)] [border:var(--border-card-width)_solid_var(--border-subtle)] [border-radius:var(--radius-control)] [gap:var(--gap-inline)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]"
+              >
+                <span className="min-w-0 [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
+                  {r.label}
+                </span>
+                <span className="tnum shrink-0 [background-color:var(--color-primary)] [border-radius:var(--radius-pill)] [color:var(--color-on-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [padding-block:2px] [padding-inline:calc(var(--pad-control-x)*0.8)]">
+                  {r.value}
+                </span>
+              </li>
+            ))}
+        </ul>
+      ) : null}
 
       {/*
         THE NUMBER, SET LARGE, BESIDE THE BUTTON RATHER THAN INSTEAD OF IT.

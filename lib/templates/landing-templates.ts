@@ -194,6 +194,18 @@ const hero = (
       const phone = c.contact.find((r) => r.icon === "phone");
       const hours = c.contact.find((r) => r.icon === "time");
       return {
+        /*
+          THE SAME ROWS THE PRICE SECTION HAS, IN THE FIRST SCREEN.
+
+          Empty values, not the 「RM —」 the section below prints: a blank row
+          renders nothing at all here (site-hero.tsx), so an owner who has not
+          set prices gets a first screen with no price block rather than a first
+          screen advertising three dashes. The rows are still handed over so
+          that typing one price puts it in the opening immediately -- which is
+          what the aircon company's page does with 「GENERAL SERVICE RM 60」, and
+          the reason it is the first thing you see.
+        */
+        priceRows: c.services.map((svc) => ({ label: svc.label, value: "" })),
         ...(phone
           ? {
               phoneLabel: c.words.callUs,
