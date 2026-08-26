@@ -125,7 +125,9 @@ export type LandingContent = {
   enquiryFields: { label: string; kind: string }[];
   /** Three checkable facts. */
   proof: { value: string; label: string }[];
-  contact: { label: string; value: string; icon: string }[];
+  /** `placeholder` marks a row still holding the seeded value -- it is what
+   *  keeps 「012-345 6789」 off a published page. See publish-projection.ts. */
+  contact: { label: string; value: string; icon: string; placeholder?: boolean }[];
   /** The words this page is written in, already resolved from the project's
    *  `system_language`. On the bag rather than reached for, for the same
    *  reason everything else here is: a template that could pick its own
@@ -174,6 +176,36 @@ const hero = (
     eyebrow: c.eyebrow,
     headline: c.brand,
     sub: c.pitch,
+    /*
+      THE NUMBER AND THE HOURS, TAKEN FROM WHAT THE PAGE ALREADY CARRIES.
+
+      Both come out of `c.contact`, which every template already renders at the
+      BOTTOM of the page. Photographed against two real Malaysian SME sites on
+      2026-08-26: on both of them the number is in the FIRST screen, set large,
+      and the hours are a strip across the very top. Ours had the number in a
+      list under the FAQ, five screens down, in 13px.
+
+      `placeholder` rides along so the projection can drop exactly these two
+      fields on publish while keeping the rest of the hero -- an unfilled phone
+      number must never reach a stranger, and a headline is not an unfilled
+      phone number. See publish-projection.ts.
+    */
+    ...(() => {
+      const phone = c.contact.find((r) => r.icon === "phone");
+      const hours = c.contact.find((r) => r.icon === "time");
+      return {
+        ...(phone
+          ? {
+              phoneLabel: c.words.callUs,
+              phoneNumber: phone.value,
+              phonePlaceholder: phone.placeholder === true,
+            }
+          : {}),
+        ...(hours
+          ? { strip: `${hours.label} · ${hours.value}`, stripPlaceholder: hours.placeholder === true }
+          : {}),
+      };
+    })(),
     primaryLabel: c.words.whatsapp,
     primaryHref: "#",
     secondaryLabel: c.words.seeWork,
@@ -390,6 +422,28 @@ const promiseList = (c: LandingContent) =>
     marks: c.words.sections.promiseList.marks.map((text) => ({ text, tone: "good", icon: "file" })),
   });
 
+/*
+  跟着页面走的 WhatsApp 按钮.
+
+  Last in every template's list, so it is the last node on the page and its
+  `fixed` positioning has nothing after it to fight. Only for trades that take
+  an enquiry at all: a kopitiam whose customers walk in gets `landsIn: null`
+  and no chat button, which is the same judgement the enquiry form already
+  makes. See floating-contact.tsx.
+*/
+const floating = (c: LandingContent) => {
+  const phone = c.contact.find((r) => r.icon === "phone");
+  if (!phone) return [];
+  return [
+    node("FloatingContact", "website-floating", {
+      number: phone.value,
+      label: c.words.whatsappShort,
+      message: c.words.whatsappFirstLine,
+      placeholder: phone.placeholder === true,
+    }),
+  ];
+};
+
 const contact = (c: LandingContent, framed = true) =>
   node("InfoRows", "website-contact", {
     heading: c.words.contactHeading,
@@ -421,6 +475,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       promiseList(c),
       form(c, "quote", "card"),
       contact(c),
+      ...floating(c),
     ],
   },
   {
@@ -443,6 +498,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       faq(c),
       form(c, "booking", "split"),
       contact(c),
+      ...floating(c),
     ],
   },
   {
@@ -464,6 +520,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       reviews(c),
       form(c, "order", "split"),
       contact(c, false),
+      ...floating(c),
     ],
   },
   {
@@ -483,6 +540,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       faq(c),
       form(c, "wholesale", "card"),
       contact(c),
+      ...floating(c),
     ],
   },
   {
@@ -503,6 +561,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       faq(c),
       form(c, "portfolio", "plain"),
       contact(c, false),
+      ...floating(c),
     ],
   },
   {
@@ -519,6 +578,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       areas(c),
       reviews(c),
       contact(c),
+      ...floating(c),
     ],
   },
 ];

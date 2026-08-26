@@ -81,7 +81,20 @@ export function AiDock({ children }: { children: ReactNode }) {
       // Formae's own control, inside the customer's canvas -- see draft-notice
       // for why that needs saying out loud, and PAPER in app/globals.css.
       data-chrome="formae"
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-end pb-4 pl-4"
+      /*
+        z-50, ABOVE THE CUSTOMER'S PAGE AND EVERYTHING ON IT.
+
+        It was z-40, the same layer a page block can reach. On 2026-08-26 the
+        customer's own floating WhatsApp button arrived at z-40 bottom-right --
+        the corner every product in this market puts one in, and the corner this
+        dock sits in -- and the two drew on top of each other.
+
+        Ours moves, not theirs. This is Formae's control inside somebody else's
+        page: their button belongs where their visitors expect it, and a piece
+        of our chrome that a page can cover is a piece of chrome the owner
+        cannot reach to undo whatever covered it.
+      */
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-50 flex justify-end pb-4 pl-4"
       // The canvas scrolls under this. Only the card itself takes pointer
       // events, so the page behind stays clickable everywhere the card is not.
       // The right padding tracks the sheet gutter: with a panel docked on the

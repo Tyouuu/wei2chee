@@ -38,6 +38,8 @@ export function SiteHero({
   secondaryLabel,
   secondaryHref,
   proof,
+  phone,
+  strip,
   layout = "left",
   figure,
   figureData,
@@ -81,6 +83,48 @@ export function SiteHero({
    * that existed before this prop is byte-identical.
    */
   figure?: HeroFigureKind
+  /**
+   * THE PHONE NUMBER, PRINTED.
+   *
+   * ── WHAT THE MARKET ACTUALLY DOES ────────────────────────────────────
+   *
+   * Two real Malaysian SME sites were photographed on 2026-08-26 (an aircon
+   * service and a dental clinic, `.screenshots/landing/`) because the founder's
+   * rule is 一切以市场为准. Both open the same way, and neither of them opens
+   * the way we did:
+   *
+   *   a thin bar across the top with the opening hours
+   *   the prices, in the first screen, as numbers
+   *   NO HIDDEN CHARGE · SAME DAY SERVICE
+   *   「Call Now 016-800 1631」 — the NUMBER, set large, not a button that says
+   *   「contact us」
+   *   a photograph of the crew in uniform
+   *   a floating WhatsApp button bottom-right
+   *
+   * We had a headline, a button reading 「Ask on WhatsApp」, and three grey
+   * boxes reading 「Add a photo」.
+   *
+   * The number is the difference that matters most. A button hides it; a
+   * printed number is read, remembered, and dialled from a phone that is
+   * already in the visitor's hand. Every shop sign in the country prints it.
+   *
+   * ── AND IT IS NEVER A PLACEHOLDER ────────────────────────────────────
+   *
+   * `012-345 6789` must not reach a published page: a stranger will call it.
+   * That is not a design rule, it is the rule this whole module already runs on
+   * -- 编辑器负责催，公开的页面永远不出现「催」 -- and it is enforced one layer
+   * up, in publish-projection.ts, not here.
+   */
+  phone?: { label?: string; number: string; href?: string }
+  /**
+   * One line above everything: when they are open, or what they promise.
+   *
+   * The black hours strip both local sites open with. Kept as a prop on the
+   * hero rather than as its own block because it IS the top of the first
+   * screen: a separate block could be dragged away from it, leaving a strip of
+   * opening hours floating above a price list halfway down the page.
+   */
+  strip?: string
   /** Passed through to the figure; see hero-figure.tsx. */
   figureData?: {
     /** The business's own name, as a STRING.
@@ -128,6 +172,16 @@ export function SiteHero({
         centred ? "text-center" : "",
       ].join(" ")}
     >
+      {/* THE HOURS STRIP. Full-bleed, because a strip that stops where the
+          text column stops is a caption, and both sites this is taken from run
+          it edge to edge. `-mx` undoes the section's own inline padding rather
+          than the section giving it up, so nothing else on the page moves. */}
+      {strip ? (
+        <p className="-mt-[calc(var(--pad-card-lg)*2)] mb-[calc(var(--pad-card-lg)*1.5)] [background-color:var(--color-paper)] [color:var(--color-canvas)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [margin-inline:calc(var(--pad-card-lg)*-1)] [padding-block:calc(var(--pad-control-y)*0.9)] [padding-inline:var(--pad-card-lg)] [text-align:center]">
+          {strip}
+        </p>
+      ) : null}
+
       {/* THE GRID EXISTS ONLY WHEN THERE IS A SECOND THING.
           `display: grid` with one child is not free -- it re-parents the whole
           opening and any max-width inside it starts resolving against a track
@@ -190,6 +244,35 @@ export function SiteHero({
           )}
         </div>
       )}
+
+      {/*
+        THE NUMBER, SET LARGE, BESIDE THE BUTTON RATHER THAN INSTEAD OF IT.
+
+        Beside: the button is for somebody on a laptop who would rather type
+        than talk, the number is for somebody standing in their kitchen with a
+        phone in their hand. Both local references carry both.
+
+        `tel:` so a tap dials. The number keeps the owner's own spacing --
+        「012-345 6789」 is how it is written on every van in the country, and
+        normalising it to +60123456789 makes it read as a database field.
+      */}
+      {phone?.number ? (
+        <a
+          href={phone.href || `tel:${phone.number.replace(/[^\d+]/g, "")}`}
+          className={`mt-6 inline-flex flex-wrap items-baseline [gap:var(--gap-inline)] ${
+            centred ? "justify-center" : ""
+          }`}
+        >
+          {phone.label ? (
+            <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+              {phone.label}
+            </span>
+          ) : null}
+          <span className="tnum [color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+            {phone.number}
+          </span>
+        </a>
+      ) : null}
 
       {showProof && (
         <dl

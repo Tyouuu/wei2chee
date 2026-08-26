@@ -56,7 +56,7 @@
  *   npm run eval:editor -- --dry      # print the plan and one prompt, call nothing
  *   npm run eval:editor -- --only 搬
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import OpenAI from "openai";
 
@@ -217,6 +217,37 @@ const PAGE = () => ({
  *  this eval asserting on a register that no longer exists. */
 const STYLE_KEYS = Object.keys(STYLE_BRIEFS);
 
+/*
+  WHICH REGISTERS ARE ACTUALLY DARKER — MEASURED, NOT LISTED.
+
+  This case first asserted against a hand-typed ["night","code","lacquer",
+  "counter"], and style-order.test.ts refused it: 「a second hand-written
+  register list」. That guard exists because the last hand-written copy shipped
+  two registers no customer could pick, and it was right to catch this one too
+  — an eval that names registers goes stale exactly like everything else that
+  does.
+
+  So darkness is read off the token files, which is where it is actually
+  decided. A register is 「darker」 when its own page ground is darker than the
+  one the model was shown (台账). That also makes the assertion better than the
+  list was: it now says 「it picked something genuinely darker」 rather than
+  「it picked one of four names I thought of」.
+*/
+const CANVAS = Object.fromEntries(
+  readdirSync("design-system/tokens")
+    .filter((f) => f.endsWith(".css"))
+    .map((f) => {
+      const css = readFileSync(`design-system/tokens/${f}`, "utf8");
+      const hex = /--color-canvas:\s*(#[0-9a-fA-F]{6})/.exec(css)?.[1] ?? "#ffffff";
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      return [f.replace(/\.css$/, ""), 0.2126 * r + 0.7152 * g + 0.0722 * b];
+    }),
+);
+const DARKER_THAN_LEDGER = Object.entries(CANVAS)
+  .filter(([, v]) => v < CANVAS.ledger - 12)
+  .map(([k]) => k);
+
+
 const CASES = [
   /*
     换风格 / 换配色 / 换排法 -- added 2026-08-26.
@@ -231,7 +262,7 @@ const CASES = [
   {
     name: "换风格 · 深色一点",
     ask: "这个太亮了，换成深色一点的",
-    design: { field: "style", oneOf: ["night", "code", "lacquer", "counter"] },
+    design: { field: "style", oneOf: DARKER_THAN_LEDGER },
   },
   {
     /*
@@ -247,7 +278,7 @@ const CASES = [
     name: "密一点 · 表格或整套都算对",
     ask: "我一天要看很多单，能不能排密一点，一屏多看几行",
     accept: ["set_variant"],
-    acceptDesign: { field: "style", oneOf: ["ledger", "counter", "code", "console"] },
+    acceptDesign: { field: "style", oneOf: STYLE_KEYS },
   },
   {
     name: "换配色 · 不要这个颜色",

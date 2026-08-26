@@ -82,7 +82,47 @@ const SLOT_KEYS: string[] = Object.values(
 */
 function isEmptyOnPublish(node: PuckNode): boolean {
   if (node.type === "PhotoFrame") return !String(node.props.src ?? "").trim();
+  /*
+    A CHAT BUTTON WITH NOBODY BEHIND IT IS WORSE THAN NO CHAT BUTTON.
+
+    FloatingContact follows the visitor down the whole page, so it is the most
+    pressed thing on it. Published with the seeded 012-345 6789 it would open a
+    WhatsApp chat to a number that is not the business -- the same failure this
+    module was built for, in the one place it would happen most.
+  */
+  if (node.type === "FloatingContact") {
+    return !String(node.props.number ?? "").trim() || node.props.placeholder === true;
+  }
   return false;
+}
+
+/*
+  THE HERO KEEPS ITS HEADLINE AND LOSES ITS PLACEHOLDERS.
+
+  Different from the rule above, and the difference matters: an unfilled
+  FloatingContact should not exist on the published page at all, but a hero with
+  an unfilled phone number is still the page's opening -- the headline, the
+  claim and the buttons are all real. So the block survives and the two fields
+  that are still seeded are removed.
+
+  Marked by the page builder with `phonePlaceholder` / `stripPlaceholder`, so an
+  owner who typed their own number over the seed keeps it: the flag is written
+  once, at generation, and any edit through the panel clears it.
+*/
+function withoutPlaceholderFields(node: PuckNode): PuckNode {
+  if (node.type !== "SiteHero") return node;
+  if (node.props.phonePlaceholder !== true && node.props.stripPlaceholder !== true) return node;
+  const props = { ...node.props };
+  if (props.phonePlaceholder === true) {
+    delete props.phoneNumber;
+    delete props.phoneLabel;
+    delete props.phonePlaceholder;
+  }
+  if (props.stripPlaceholder === true) {
+    delete props.strip;
+    delete props.stripPlaceholder;
+  }
+  return { ...node, props };
 }
 
 /*
@@ -142,7 +182,7 @@ function hasNothingLeft(node: PuckNode): boolean {
 }
 
 function project(node: PuckNode): PuckNode {
-  const stripped = withoutPlaceholders(node);
+  const stripped = withoutPlaceholderFields(withoutPlaceholders(node));
   const drop = DESIGN_TIME_PROPS[stripped.type];
   let props = stripped.props;
 

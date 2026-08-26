@@ -217,6 +217,9 @@ describe("buildPageLayout", () => {
       "MarkList",      // what you get from us
       "EnquiryForm",
       "InfoRows",      // how to reach us
+      // The floating WhatsApp button, last so its fixed position has nothing
+      // after it to fight. Added 2026-08-26; see floating-contact.tsx.
+      "FloatingContact",
     ]);
   });
 

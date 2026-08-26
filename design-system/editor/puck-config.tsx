@@ -15,6 +15,7 @@ import { Avatar } from "@/design-system/components/avatar";
 import { RecordTable } from "@/design-system/components/record-table";
 import { Inline } from "@/design-system/editor/inline-text";
 import { SiteHero } from "@/design-system/components/site-hero";
+import { FloatingContact } from "@/design-system/components/floating-contact";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
 import { EnquiryForm } from "@/design-system/components/enquiry-form";
 import { TableFieldEditor } from "@/design-system/editor/table-field";
@@ -238,6 +239,12 @@ type Components = {
   // --- 官网 (shape: "landing") ------------------------------------------
   // The only two components in the catalogue whose reader is a STRANGER
   // rather than the owner. See site-hero.tsx and enquiry-form.tsx.
+  FloatingContact: {
+    number?: string;
+    label?: string;
+    message?: string;
+    placeholder?: boolean;
+  };
   SiteHero: {
     eyebrow?: string;
     headline: string;
@@ -247,6 +254,15 @@ type Components = {
     secondaryLabel?: string;
     secondaryHref?: string;
     proof?: { value: string; label: string }[];
+    /* The printed phone number and the hours strip. Flat props rather than an
+       object, because Puck's fields are flat and the owner has to be able to
+       type their real number into one box. `phonePlaceholder` is what stops
+       「012-345 6789」 reaching a stranger -- see publish-projection.ts. */
+    phoneLabel?: string;
+    phoneNumber?: string;
+    phonePlaceholder?: boolean;
+    strip?: string;
+    stripPlaceholder?: boolean;
     // Set by the 换款式 picker, not by a field -- see variants.ts.
     layout?: "left" | "band" | "center" | "plain" | "split";
     /** What the `split` 款式 draws on the right: the document this business
@@ -556,7 +572,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteHero", "EnquiryForm"],
+      components: ["SiteHero", "EnquiryForm", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1595,6 +1611,26 @@ export const puckConfig: Config<Components> = {
       // is the register, which it reads through tokens like everything else.
       render: ({ block, copy }) => <SiteBlock block={block} copy={copy} />,
     },
+    /*
+      跟着页面走的 WhatsApp 按钮 — see floating-contact.tsx for why every local
+      business site in this market has one and ours did not.
+    */
+    FloatingContact: {
+      label: "浮动 WhatsApp",
+      fields: {
+        number: { label: "WhatsApp 号码", type: "text" },
+        label: { label: "按钮上的字", type: "text" },
+        message: { label: "预先填好的第一句", type: "textarea" },
+      },
+      defaultProps: { label: "WhatsApp" },
+      // The component already refuses an empty number; returning its own
+      // <></> keeps Puck's render type happy without a second guard that could
+      // drift from the first.
+      render: ({ number, label, message }) => (
+        <FloatingContact number={number ?? ""} label={label} message={message} />
+      ),
+    },
+
     SiteHero: {
       label: "官网大标题",
       // The one block on the whole page a stranger reads first, so its own
@@ -1605,6 +1641,13 @@ export const puckConfig: Config<Components> = {
         eyebrow: { label: "地区 · 行业", type: "text" },
         headline: { label: "大标题", type: "text" },
         sub: { label: "下面那一句", type: "textarea" },
+        /* Directly under the headline, not at the bottom with the rest of the
+           contact details, because on both Malaysian sites this was measured
+           against it IS the headline's other half. An owner who opens this
+           panel should hit the number before they hit anything optional. */
+        phoneLabel: { label: "号码前面那个字", type: "text" },
+        phoneNumber: { label: "电话 / WhatsApp 号码", type: "text" },
+        strip: { label: "最上面那条（营业时间）", type: "text" },
         primaryLabel: { label: "主要按钮", type: "text" },
         primaryHref: { label: "主要按钮去哪", type: "text" },
         secondaryLabel: { label: "第二颗按钮", type: "text" },
@@ -1625,11 +1668,13 @@ export const puckConfig: Config<Components> = {
         primaryLabel: "WhatsApp 问价",
         primaryHref: "#",
       },
-      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData }) => (
+      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip }) => (
         <SiteHero
           layout={layout ?? "left"}
           figure={figure}
           figureData={figureData}
+          phone={phoneNumber ? { label: phoneLabel, number: phoneNumber } : undefined}
+          strip={strip || undefined}
           eyebrow={
             eyebrow ? (
               <Inline id={id} field="eyebrow">

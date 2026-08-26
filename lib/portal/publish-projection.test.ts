@@ -213,4 +213,72 @@ describe("a placeholder never reaches a stranger", () => {
     forPublication(built);
     expect(rows).toHaveLength(1);
   });
+
+  /*
+    THE FIRST SCREEN'S NEW HALF, AND THE RULE IT HAS TO OBEY.
+
+    Added 2026-08-26 with the printed phone number, the hours strip and the
+    floating WhatsApp button -- the three things both real Malaysian SME sites
+    open with and ours did not. All three carry a seeded value until the owner
+    types theirs, and a seeded phone number reaching a stranger is the worst
+    thing this module exists to stop.
+  */
+  it("drops the hero's seeded number and hours but keeps the hero", () => {
+    const page = {
+      root: {},
+      content: [
+        {
+          type: "SiteHero",
+          props: {
+            headline: "兴发装修工程",
+            phoneLabel: "打给我们",
+            phoneNumber: "012-345 6789",
+            phonePlaceholder: true,
+            strip: "Opening hours · Mon–Sat 9am–6pm",
+            stripPlaceholder: true,
+          },
+        },
+      ],
+    };
+    const out = forPublication(page as never) as typeof page;
+    expect(out.content).toHaveLength(1);
+    expect(out.content[0].props.headline).toBe("兴发装修工程");
+    expect(out.content[0].props).not.toHaveProperty("phoneNumber");
+    expect(out.content[0].props).not.toHaveProperty("strip");
+  });
+
+  it("keeps a number the owner actually typed", () => {
+    const page = {
+      root: {},
+      content: [
+        {
+          type: "SiteHero",
+          props: { headline: "兴发", phoneNumber: "016-800 1631", phonePlaceholder: false },
+        },
+      ],
+    };
+    const out = forPublication(page as never) as typeof page;
+    expect(out.content[0].props.phoneNumber).toBe("016-800 1631");
+  });
+
+  it("removes a floating WhatsApp button that would open a chat to nobody", () => {
+    const page = {
+      root: {},
+      content: [
+        { type: "SiteHero", props: { headline: "兴发" } },
+        { type: "FloatingContact", props: { number: "012-345 6789", placeholder: true } },
+      ],
+    };
+    const out = forPublication(page as never) as typeof page;
+    expect(out.content.map((n) => n.type)).toEqual(["SiteHero"]);
+  });
+
+  it("keeps a floating button with the business's own number", () => {
+    const page = {
+      root: {},
+      content: [{ type: "FloatingContact", props: { number: "016-800 1631" } }],
+    };
+    const out = forPublication(page as never) as typeof page;
+    expect(out.content).toHaveLength(1);
+  });
 });

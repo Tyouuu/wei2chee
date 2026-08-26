@@ -82,6 +82,13 @@ export type LandingCopy = {
     askShort: string;
     sampleLabel: string;
     whatsapp: string;
+    /** In front of the printed number in the hero. Two or three characters --
+     *  it sits on the same line as a 21px figure. */
+    callUs: string;
+    /** One word, beside the floating button's icon. */
+    whatsappShort: string;
+    /** Pre-filled into the chat, so the owner is not opening a blank thread. */
+    whatsappFirstLine: string;
     seeWork: string;
     contactHeading: string;
     /** Under the submit button. A promise about response time, so it has to be
@@ -238,6 +245,12 @@ const EN: LandingCopy = {
     askShort: "Ask price",
     sampleLabel: "Example",
     whatsapp: "Ask on WhatsApp",
+    /* The three words the FIRST SCREEN needs, added 2026-08-26 with the printed
+       number and the floating button. Short on purpose: 「Call us」 sits in front
+       of a number, and the floating pill has room for one word beside its icon. */
+    callUs: "Call us",
+    whatsappShort: "WhatsApp",
+    whatsappFirstLine: "Hi, I saw your website and I would like to ask about",
     seeWork: "See our work",
     contactHeading: "How to reach us",
     replyNote: "Usually answered within a day.",
@@ -443,6 +456,9 @@ const ZH: LandingCopy = {
     askShort: "问价",
     sampleLabel: "示例",
     whatsapp: "WhatsApp 问价",
+    callUs: "打给我们",
+    whatsappShort: "WhatsApp",
+    whatsappFirstLine: "你好，我看到你们的网站，想问一下",
     seeWork: "看我们做过什么",
     contactHeading: "怎么找我们",
     replyNote: "通常一天内回。",
