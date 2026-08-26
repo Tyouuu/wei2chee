@@ -446,6 +446,31 @@ Google Business，加上**两个真的马来西亚 SME 官网**（冷气、牙�
 我们本来就在跟他讲话，多问一句「传一张你最满意的工程照片」。
 **第一眼看到的就已经是他自己的照片。Durable 永远做不到这件，因为 Durable 不跟你讲话。**
 
+#### 别人怎么解这个问题（2026-08-26 实查，`其他類似網站是怎麼解決這個問題的呢`）
+
+**市场上只有四种做法：**
+| 做法 | 谁在用 | 代价 |
+|---|---|---|
+| 接第三方图库 | Durable · Wix · Framer · Webflow | 授权 + CDN 依赖 + 不是他的照片 |
+| **自己养一个图库** | **Shopify Burst**（自己拍、自己养、按品类分、商用免费）| 前期要投，之后全部是自己的 |
+| AI 生图 | Hostinger（`AI will generate product titles, descriptions, and images`）· B12 · Durable 的付费额度 | 要钱、慢、还是不是他的 |
+| 直接卖图 | Squarespace 卖 Getty，一张 USD 10 | 客人要再掏钱 |
+
+**没有人做的那一件：把老板本来就有的照片抓进来。**
+查了 GoDaddy Airo · Durable · Wix ADI · Hostinger AI · Squarespace Blueprint AI ——
+**没有一家提到从 Google Business Profile 或 Facebook 汇入。**
+
+而 Google 自己写给商家的照片规范是：
+> *「the image should represent reality」*
+
+**Openverse 试过了，直接出局**（不用 key 就能查）：搜 home renovation 的前五张是
+「装修主题的杯子蛋糕」跟三张保加利亚军事演习，授权是 `by-2.0` / `by-sa-2.0` ——
+**全部要署名，`by-sa` 还要同样方式分享**。客户的商业网站底下要挂 CC 声明，不能用。
+
+**所以后备该走 Shopify Burst 那条，不是 Durable 那条**：
+六个行业 × 五张 ≈ 30 张，**我们自己拍或买断一次**，之后没有 CDN 依赖、没有授权风险、
+没有速率上限，而且可以调成跟我们 16 套风格搭得起来的样子。
+
 - [ ] 问卷加一步：要一张照片（要他点头）
 - [ ] 没照片时的第一屏做成**设计过的**样子（现在那张报价单版面就是，它带着他的公司名、
       服务、流程），**不是**空灰盒子
