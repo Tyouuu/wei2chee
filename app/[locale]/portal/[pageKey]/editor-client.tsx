@@ -1267,6 +1267,7 @@ export function PortalEditor({
                       <AiAssistant
                         pages={navPages}
                         locale={locale}
+                        activeStyle={activeStyle}
                         // Not a phone here -- but `compact` is the same request
                         // either way: drop the duplicate header and lay the three
                         // examples out as a swipeable row rather than a stack.

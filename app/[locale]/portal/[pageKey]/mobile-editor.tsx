@@ -134,6 +134,7 @@ export function MobileEditor({
         <AiAssistant
           pages={navPages}
           locale={locale}
+          activeStyle={style}
           compact
         />
       </div>

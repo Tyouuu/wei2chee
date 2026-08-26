@@ -13,7 +13,10 @@ import {
   type PuckLayout,
 } from "@/lib/portal/layout-ops";
 import { COLUMN_KINDS } from "@/lib/portal/table-model";
-import { buildDesignDoc, preferredVariants } from "@/lib/portal/design-doc";
+import { buildDesignDoc, preferredVariants, STYLE_BRIEFS } from "@/lib/portal/design-doc";
+import { PALETTE_ROWS } from "@/lib/portal/palettes.generated";
+import { LAYOUT_SETS } from "@/lib/templates/industry-template";
+import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -142,6 +145,33 @@ Whole pages:
   to copy a page wholesale, do the layout and leave their own words in place.
 - If the picture does not say anything you can act on, say so in one sentence
   and change nothing. A guess dressed as an edit is worse than a question.
+
+换风格 / 换配色 / 换排法 (the \`design\` field, not an operation):
+- These three are NOT blocks and NOT operations. They are settings on the whole
+  system, and they are how you answer 「换成深色一点的」, 「太花了」, 「用回蓝色」,
+  「表格放前面」 — the first things an owner actually says.
+- \`style\` is the 风格: the whole skeleton and its density. Pick one whose
+  purpose matches what they said, not one whose colour does. The list, with
+  what each one is FOR, is in the design document above.
+- \`palette\` is only the colours. \`"none"\` returns them to the register's own.
+  If they only dislike a colour, change the palette and leave the style alone —
+  changing the style to fix a colour throws away a layout they may like.
+- \`layout\` is the arrangement of the dashboard, without changing the style:
+  table (表格先行) · console (四格＋图表) · hero (一个大数字) · today (今天要做的) ·
+  board (看板).
+- ALL THREE NULL IS THE NORMAL ANSWER, and this is the important half. Fill
+  \`design\` ONLY when the owner said something about how the system LOOKS as a
+  whole — darker, brighter, too colourful, too plain, denser, roomier, this
+  arrangement instead of that one. Changing words, columns, rows, a block, or
+  one block's 款式 is NEVER a design change, and reaching for one turns a small
+  edit into 「it changed my whole system」.
+- Change AT MOST ONE of the three in a turn, and say which you changed and why
+  in one short sentence.
+- Prefer the smaller answer. 「密一点」 about one table is set_variant on that
+  table; 「密一点」 about the whole system is a style. If they named a block,
+  it is the block.
+- A design change and layout operations can go together, but usually should not:
+  if somebody asked to change the look, change the look.
 
 页面框架:
 - The \`SystemShell\` is the page's frame, not a block. It is NEVER the target
@@ -327,7 +357,40 @@ The business owner asked:
     applied: result.applied,
     skipped: result.skipped,
     suggestion: resolveSuggestion(parsed.suggestion, Array.isArray(pages) ? pages : []),
+    design: validDesign((parsed as { design?: unknown }).design),
   });
+}
+
+
+/**
+ * The model asked for a register, a palette or an arrangement. Is it one?
+ *
+ * Every name is checked against the list the PRODUCT renders from, not against
+ * a copy: a register cut yesterday is gone from STYLE_ORDER, so an assistant
+ * that still remembers 「玻璃」 gets a null and says so, rather than writing a
+ * value the database's CHECK will then refuse in front of the customer.
+ *
+ * Returns only what is both present AND real. `null` for a field the customer
+ * did not ask about is the normal case and not an error.
+ */
+function validDesign(raw: unknown): { style?: string; palette?: string | null; layout?: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const d = raw as Record<string, unknown>;
+  const out: { style?: string; palette?: string | null; layout?: string } = {};
+
+  const style = typeof d.style === "string" ? d.style.trim() : "";
+  if (style && (STYLE_ORDER as readonly string[]).includes(style)) out.style = style;
+
+  const palette = typeof d.palette === "string" ? d.palette.trim() : "";
+  // 「拿掉配色」 is a real request and its answer is null, which is why this
+  // distinguishes the empty string from the absent field.
+  if (palette === "none") out.palette = null;
+  else if (palette && PALETTE_ROWS.some((p) => p.key === palette)) out.palette = palette;
+
+  const layout = typeof d.layout === "string" ? d.layout.trim() : "";
+  if (layout && Object.keys(LAYOUT_SETS).includes(layout)) out.layout = layout;
+
+  return Object.keys(out).length ? out : null;
 }
 
 /** Page types `add_project_page` knows how to build. Mirrors the same list in
@@ -467,6 +530,31 @@ export const EDIT_JSON_SCHEMA = {
       // operation because it is a proposal the customer confirms, not a change
       // this route makes -- see pageSuggestionSchema for why that line is where
       // it is.
+      /*
+        THE THREE THINGS THAT ARE NOT IN THE LAYOUT.
+
+        Every operation above edits the page's own tree. 风格, 配色 and 排法 are
+        not in that tree -- they are columns on `projects`, read at render time,
+        which is exactly what makes 换风格 instant. So the assistant could
+        rewrite a table's columns and could not answer 「换成深色一点的」, which
+        is one of the first things anybody says to it.
+
+        Returned beside the operations rather than as one of them, because it
+        is applied differently: the browser calls set_project_style, the same
+        RPC the style picker calls, so it goes through the same paid gate and
+        the same validation. Three nulls means the customer asked for nothing
+        of the kind, which is almost every turn.
+      */
+      design: {
+        type: "object",
+        properties: {
+          style: { type: ["string", "null"] },
+          palette: { type: ["string", "null"] },
+          layout: { type: ["string", "null"] },
+        },
+        required: ["style", "palette", "layout"],
+        additionalProperties: false,
+      },
       suggestion: {
         type: "object",
         properties: {
@@ -478,7 +566,7 @@ export const EDIT_JSON_SCHEMA = {
         additionalProperties: false,
       },
     },
-    required: ["operations", "explanation", "suggestion"],
+    required: ["operations", "explanation", "design", "suggestion"],
     additionalProperties: false,
   },
 } as const;

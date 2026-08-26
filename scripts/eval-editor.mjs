@@ -124,7 +124,7 @@ const {
   REGISTERED_COMPONENTS,
   EDITABLE_TEXT_FIELDS,
 } = await import("../lib/portal/layout-ops.ts");
-const { buildDesignDoc, preferredVariants } = await import("../lib/portal/design-doc.ts");
+const { buildDesignDoc, preferredVariants, STYLE_BRIEFS } = await import("../lib/portal/design-doc.ts");
 
 /**
  * One renovation contractor's dashboard, in the shape the generator produces.
@@ -213,7 +213,58 @@ const PAGE = () => ({
  * point of the eval is whether the agent understands a person, and a case list
  * written in the vocabulary of the schema tests nothing.
  */
+/** Every register the product has, read off the briefs so a cull cannot leave
+ *  this eval asserting on a register that no longer exists. */
+const STYLE_KEYS = Object.keys(STYLE_BRIEFS);
+
 const CASES = [
+  /*
+    换风格 / 换配色 / 换排法 -- added 2026-08-26.
+
+    These are the first things a customer says to an assistant that is sitting
+    beside their design, and until this date the answer was always 「我做不到」:
+    the three live on `projects`, not in the page tree, so there was no
+    operation that could reach them. Every case here asserts the design field
+    AND that no block was touched -- a model that rewrites the page to make it
+    darker has misread the request, not carried it out.
+  */
+  {
+    name: "换风格 · 深色一点",
+    ask: "这个太亮了，换成深色一点的",
+    design: { field: "style", oneOf: ["night", "code", "lacquer", "counter"] },
+  },
+  {
+    /*
+      DELIBERATELY ACCEPTS EITHER ANSWER.
+
+      「排密一点」 has two right answers and the prompt says to prefer the smaller
+      one: a denser TABLE (set_variant compact) if that is all they meant, or a
+      denser SYSTEM (a style) if they meant the whole thing. Measured on
+      2026-08-26 the model reached for set_variant, which is the smaller change
+      and defensible. Scoring only the style would have taught this eval to
+      punish the better behaviour.
+    */
+    name: "密一点 · 表格或整套都算对",
+    ask: "我一天要看很多单，能不能排密一点，一屏多看几行",
+    accept: ["set_variant"],
+    acceptDesign: { field: "style", oneOf: ["ledger", "counter", "code", "console"] },
+  },
+  {
+    name: "换配色 · 不要这个颜色",
+    ask: "颜色我不喜欢，帮我换个蓝色的",
+    design: { field: "palette" },
+  },
+  {
+    name: "换排法 · 表格放前面",
+    ask: "我要一进来就先看到表格，不要先看数字",
+    design: { field: "layout", oneOf: ["table"] },
+  },
+  {
+    name: "不要乱换 · 只是改字",
+    ask: "把标题改成「今天要跟的」",
+    expect: ["set_text"],
+    noDesign: true,
+  },
   {
     name: "搬 · 表格搬到上面",
     ask: "把那个表格搬到上面，我要先看到工程",
@@ -398,9 +449,20 @@ const CASES = [
   {
     name: "求助 · 不是指令是求救",
     ask: "这个我不会用，你帮我弄好看一点",
-    // Vague but actionable. Doing nothing is a worse answer than one tasteful
-    // change — but inventing text is not on.
+    /*
+      A DESIGN CHANGE COUNTS HERE, AND SINCE 2026-08-26 IT IS THE BEST ANSWER.
+
+      「你帮我弄好看一点」 is a request about how the whole thing looks, and until
+      the assistant could reach 风格 and 配色 the only actionable replies were
+      nudging one block's 款式 or moving something. Now the honest answer is
+      「我给你换了一套更好看的版式，不喜欢的话讲一声就换回来」. Doing nothing is
+      still the wrong answer; inventing text still is not on.
+    */
     accept: ["set_variant", "move_component", "remove_component"],
+    // A palette change is as good an answer as a style change, and on
+    // 2026-08-26 it is what the model actually reached for: 「我先换成清爽的
+    // 标准蓝配色…之后也可以换回去」. Either counts.
+    acceptDesign: { field: "any" },
   },
   {
     name: "问问题 · 不是要改",
@@ -529,6 +591,27 @@ async function once(ask, image) {
     // understood rather than as 「emitted nothing」.
     suggestion: parsed.suggestion?.action ?? "none",
     suggestedTitle: parsed.suggestion?.page_title ?? null,
+    // 风格 / 配色 / 排法 are settings on the whole system, not operations, so
+    // they come back beside the operations and are scored separately. Without
+    // this a case like 「换成深色一点的」 would look like 「emitted nothing」.
+    /*
+      NULLS STRIPPED, THE SAME WAY THE ROUTE STRIPS THEM.
+
+      The schema makes all three fields REQUIRED, so a model that changed
+      nothing still returns {style:null, palette:null, layout:null}. Reading
+      that object's key count as 「it changed the design」 marked a perfectly
+      correct text edit as a failure on 2026-08-26. `validDesign` in the route
+      drops nulls before deciding; so does this, or the eval is measuring a
+      different thing from the product.
+    */
+    design: (() => {
+      const d = parsed.design ?? null;
+      if (!d || typeof d !== "object") return null;
+      const kept = Object.fromEntries(
+        Object.entries(d).filter(([, v]) => typeof v === "string" && v.trim()),
+      );
+      return Object.keys(kept).length ? kept : null;
+    })(),
   };
 }
 
@@ -538,6 +621,7 @@ for (const c of chosen) {
   for (let i = 0; i < N; i++) {
     try {
       runs.push(await once(c.ask, c.image));
+      if (process.env.EVAL_VERBOSE) console.log("   ", c.name, JSON.stringify({ ops: runs[runs.length-1].ops, design: runs[runs.length-1].design, exp: runs[runs.length-1].explanation.slice(0,90) }));
     } catch (e) {
       runs.push({ ops: [], applied: 0, skipped: [{ op: "-", reason: String(e.message).replace(/\s+/g, " ").slice(0, 300) }], explanation: "" });
     }
@@ -561,6 +645,30 @@ for (const c of chosen) {
     // said this from the start and nothing ever checked it.
     if (c.replyIn === "en" && /[一-鿿]/.test(r.explanation)) return false;
     if (c.replyIn === "ms" && /[一-鿿]/.test(r.explanation)) return false;
+    /*
+      A DESIGN CASE IS SCORED ON THE FIELD, NOT ON THE OPERATIONS.
+
+      `design` names 风格 / 配色 / 排法, and the right answer to 「换成深色一点的」
+      is a design change and NO operations -- a model that starts rewriting
+      blocks to make the page darker has misunderstood what it was asked.
+    */
+    if (c.noDesign && r.design && Object.keys(r.design).length) return false;
+    // Either the operation OR the design counts. See the case's own note.
+    if (c.acceptDesign) {
+      const d = r.design ?? {};
+      const byDesign =
+        c.acceptDesign.field === "any"
+          ? Object.keys(d).length > 0
+          : (c.acceptDesign.oneOf ?? []).includes(d[c.acceptDesign.field]);
+      const byOp = (c.accept ?? []).some((op) => r.ops.includes(op));
+      return byDesign || byOp;
+    }
+    if (c.design) {
+      const d = r.design ?? {};
+      const got = c.design.field === "palette" ? d.palette : d[c.design.field];
+      const ok = c.design.oneOf ? c.design.oneOf.includes(got) : got != null;
+      return ok && r.ops.length === 0;
+    }
     if (c.suggest) return r.suggestion === c.suggest && r.ops.length === 0;
     if (c.accept) return r.ops.some((op) => c.accept.includes(op));
     if (!(c.expect?.length ?? 0)) return r.ops.length === 0 && r.suggestion === "none";
@@ -569,13 +677,25 @@ for (const c of chosen) {
     return hasAll && !hasBanned;
   }).length;
 
-  // An expectation of zero operations is satisfied by applying nothing, so
-  // 改到了 is scored against whether anything the model DID emit stuck.
-  const landed = runs.filter((r) =>
-    ((c.expect?.length ?? 0) > 0 || c.accept) && !c.suggest
+  /*
+    改到了 -- did what the model emitted actually land.
+
+    An expectation of zero operations is satisfied by applying nothing, so this
+    is scored against whether anything the model DID emit stuck.
+
+    A DESIGN CHANGE COUNTS AS LANDING. Added 2026-08-26 with the 风格/配色/排法
+    field: those are settings on `projects`, applied by an RPC and not by
+    applyLayoutOps, so `applied` is zero for them by construction. Without this
+    line 「你帮我弄好看一点」 -> 「我先换成清爽的标准蓝配色…之后也可以换回去」
+    scored 听得懂 100% and 改到了 0%, which is the ruler describing its own
+    blind spot rather than the assistant.
+  */
+  const landed = runs.filter((r) => {
+    if (r.design && Object.keys(r.design).length) return r.skipped.length === 0;
+    return ((c.expect?.length ?? 0) > 0 || c.accept) && !c.suggest
       ? r.applied > 0 && r.skipped.length === 0
-      : r.applied === 0,
-  ).length;
+      : r.applied === 0;
+  }).length;
 
   const shapes = runs.map(
     (r) =>

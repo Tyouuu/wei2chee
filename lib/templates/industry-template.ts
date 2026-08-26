@@ -1463,7 +1463,7 @@ export const LAYOUT_SETS = {
   /** What is happening today first, the money after it. */
   today: "hearth",
   /** The day as columns rather than as a list. */
-  board: "pop",
+  board: "brut",
 } as const;
 
 export type LayoutSet = keyof typeof LAYOUT_SETS;

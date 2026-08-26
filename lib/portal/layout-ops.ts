@@ -272,6 +272,9 @@ export function parseLayoutOps(raw: unknown): {
   operations: LayoutOp[];
   explanation: string;
   suggestion?: PageSuggestion | null;
+  /** 风格 / 配色 / 排法 -- not layout, so it passes through untouched and the
+   *  route validates it against the lists the product renders from. */
+  design?: unknown;
   rejected: { op: string; reason: string }[];
 } {
   const outer = z
@@ -280,6 +283,7 @@ export function parseLayoutOps(raw: unknown): {
       operations: z.array(z.unknown()).max(12).optional(),
       explanation: z.string().optional(),
       suggestion: pageSuggestionSchema.nullable().optional(),
+      design: z.unknown().optional(),
     })
     .parse(raw);
 
@@ -307,6 +311,7 @@ export function parseLayoutOps(raw: unknown): {
     operations,
     explanation: outer.explanation ?? "",
     suggestion: outer.suggestion ?? null,
+    design: outer.design,
     rejected,
   };
 }

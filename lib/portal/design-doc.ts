@@ -588,6 +588,11 @@ export function preferredVariants(style: string | null | undefined): Record<stri
  * who has not reached 风格选择 has no design language to describe, and an
  * invented one would be worse than none.
  */
+/** Every register the product currently has, read off the briefs rather than
+ *  listed again -- one more copy of this list is one more chance for the
+ *  assistant to offer a register that was cut yesterday. */
+const STYLE_ORDER_FOR_DOC = Object.keys(STYLE_BRIEFS) as StyleName[];
+
 export function buildDesignDoc(
   style: string | null | undefined,
   palette: string | null | undefined,
@@ -616,5 +621,11 @@ ${brief.avoid.map((a) => `- ${a}`).join("\n")}
 - 版式和配色是老板自己选的。**不要主动去改**，除非他明确要求。
 - 上面那一行是新块自动带的款式，你不需要再去设一次，也不要把整页重新排。
 - 老板明确要求换某一块的款式时，才用 set_variant，目标要是页面上已经有的 id。
-- 页面上已经有的字就是老板的用词。跟着它写，不要换成你觉得更标准的说法。`;
+- 页面上已经有的字就是老板的用词。跟着它写，不要换成你觉得更标准的说法。
+
+### 可以换成哪一套（老板明确讲要换的时候，填 \`design.style\`，不是发操作）
+${STYLE_ORDER_FOR_DOC.map((k) => `- \`${k}\` ${STYLE_BRIEFS[k].mood}`).join("\n")}
+
+### 可以换成哪一个配色（填 \`design.palette\`；\`none\` ＝ 用回版式自己的颜色）
+${PALETTE_ROWS.map((p) => `- \`${p.key}\` ${p.label}：${p.blurb}`).join("\n")}`;
 }

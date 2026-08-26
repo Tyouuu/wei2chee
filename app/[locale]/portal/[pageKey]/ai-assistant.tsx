@@ -75,12 +75,17 @@ export type Turn = {
 export function AiAssistant({
   pages,
   locale,
+  activeStyle,
   compact = false,
 }: {
   /** The customer's own pages. Sent with each request so「把报价单删掉」can name
    *  a real page, and used to build the link after one is added. */
   pages: { key: string; label: string }[];
   locale: string;
+  /** The register the system is on right now. Sent to `set_project_style` when
+   *  the customer asked only for a palette change -- that RPC takes both, and
+   *  passing the current one is how 「换个颜色」 leaves the register alone. */
+  activeStyle: string;
   /** The phone layout, where this panel is about half a small screen. Not a
    *  density preference — see the empty state below for what it changes and
    *  why the vertical version does not fit. */
@@ -193,6 +198,9 @@ export function AiAssistant({
         applied: number;
         skipped: { op: string; reason: string }[];
         suggestion: PageOffer | null;
+        /* 风格 / 配色 / 排法 -- not layout, so it is not in `result.layout`
+           and is applied through the same RPC the style picker calls. */
+        design: { style?: string; palette?: string | null; layout?: string } | null;
       };
 
       if (result.applied > 0) {
@@ -201,6 +209,29 @@ export function AiAssistant({
         // the feature something to be afraid of rather than something to try.
         dispatch({ type: "setData", data: result.layout, recordHistory: true });
       }
+      /*
+        A DESIGN CHANGE GOES THROUGH THE SAME DOOR THE PICKER USES.
+
+        `set_project_style` is the RPC /portal/styles calls, so this inherits
+        its validation and its paid gate rather than opening a second way in.
+        Then a refresh, because the register is read at render time -- the whole
+        reason 换风格 is instant is that it is not baked into the saved layout.
+
+        NOT on the undo stack, deliberately: Puck's history holds page trees,
+        and a register is not one. Undoing an AI text edit must not silently
+        change the customer's register back with it. Saying it in the reply is
+        the honest affordance -- they change it back the same way they changed
+        it, by saying so.
+      */
+      if (result.design) {
+        const { error } = await createBrowserSupabaseClient().rpc("set_project_style", {
+          new_style: result.design.style ?? activeStyle,
+          new_palette: result.design.palette ?? null,
+          clear_palette: result.design.palette === null,
+        });
+        if (!error) router.refresh();
+      }
+
       settle({
         state: "done",
         explanation: result.explanation || t("aiNoChange"),
