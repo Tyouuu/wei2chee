@@ -101,6 +101,17 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "split", label: "左字右图", props: { layout: "split" } },
   ],
 
+  /* 别人给的证明. Three genuinely different objects, not three alignments:
+     a LINE of facts, a GRID of ticked cards, and a SCORE with the facts small
+     underneath. Which one suits depends on what the business has -- a salon
+     has a Google score, a windscreen shop has a licence -- so the register
+     chooses and the owner can overrule. */
+  SiteCreds: [
+    { id: "strip", label: "一行字", props: { shape: "strip" } },
+    { id: "badges", label: "打勾卡", props: { shape: "badges" } },
+    { id: "rating", label: "评分", props: { shape: "rating" } },
+  ],
+
   // ---------------------------------------------------------------- 询价表格
   EnquiryForm: [
     { id: "card", label: "一个框", props: { look: "card" } },

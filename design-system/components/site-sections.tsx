@@ -1,4 +1,4 @@
-import { Star } from "lucide-react"
+import { Check, Star } from "lucide-react"
 import { railIcon } from "./rail-icons"
 
 /**
@@ -200,6 +200,171 @@ export function SiteCta({
           ) : null}
         </div>
       ) : null}
+    </section>
+  )
+}
+
+/**
+ * 别人给的证明 —— 执照、代理的牌子、客人打的分。
+ *
+ * ── WHERE THIS CAME FROM ──────────────────────────────────────────────────
+ *
+ * The founder, 2026-08-27: 「我说看看如何融合 随便也去看看国外的landing pages是
+ * 怎么去做的」. Measured the same day (npm run shoot:kits): a LOGO WALL is the
+ * one section kind that appears across the open-source kits and the products
+ * they imitate -- tailark, magicui, framer twice -- and is the one kind this
+ * product had no block for at all.
+ *
+ * ── WHY IT IS NOT A LOGO WALL ─────────────────────────────────────────────
+ *
+ * A logo wall says 「these companies use us」, and a Kuala Lumpur contractor has
+ * no customer logos to show. What this market shows instead, photographed on
+ * the same day across 19 trading SME sites: 「JKKP-Certified Technicians」,
+ * 「30-Day Service Warranty」, an authorised-dealer badge, and a Google rating
+ * with a review count. Same job -- somebody ELSE vouching for you -- in the
+ * currency this market actually holds.
+ *
+ * ── WHY IT SHIPS EMPTY ────────────────────────────────────────────────────
+ *
+ * Every field here is a claim about the world, and a claim we invented is a
+ * claim that is false: we do not know whether this business is JKKP-certified
+ * or what its Google score is. So it starts as an obvious labelled gap, and
+ * publish-projection.ts drops the whole section while it is still one --
+ * 编辑器负责催，公开的页面永远不出现「催」. That rule is the reason the previous
+ * round of this work reached a stranger's screen with 「WhatsApp 012-345 6789」
+ * and must not do it again with 「ISO 9001」.
+ *
+ * ── WHY IT IS NOT A STATS BAND ────────────────────────────────────────────
+ *
+ * A stats band was the other thing the kits have and we do not, and it is
+ * DELIBERATELY not built: SiteHero already prints three figures (10 years · 24
+ * hours · Klang Valley). 印 was cut from the register library on 2026-08-26 for
+ * printing one number twice on one page; adding a section to do it again would
+ * be shipping the thing we culled a register over.
+ */
+export function SiteCreds({
+  heading,
+  hint,
+  shape = "strip",
+  rating,
+  items,
+}: {
+  heading?: string
+  /** What the OWNER is asked for while this is still empty. It is never
+   *  published: publish-projection.ts drops the whole block while nothing is
+   *  filled, which is the rule the whole module runs on -- 编辑器负责催，公开的
+   *  页面永远不出现「催」. */
+  hint?: string
+  /** 换款式. `strip` a single dotted line, `badges` ticked pills, `rating` the
+   *  review score with the credentials small underneath. The register picks it;
+   *  see design-doc.ts. */
+  shape?: "strip" | "badges" | "rating"
+  rating?: { score?: string; count?: string; source?: string; placeholder?: boolean }
+  items?: { label: string; note?: string; placeholder?: boolean }[]
+}) {
+  const real = (items ?? []).filter((i) => i.label?.trim())
+  const hasRating = Boolean(rating?.score?.trim())
+
+  /* EMPTY IS A PROMPT, NOT NOTHING.
+     Returning null here would have been the seventh time in this repo that a
+     capability shipped with its wire unconnected: the owner would never see
+     the section, so they would never fill it, so it would never publish. A
+     labelled gap is how PhotoFrame already asks for the photograph. */
+  if (!real.length && !hasRating) {
+    if (!hint) return null
+    return (
+      <section
+        data-prompt=""
+        className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
+      >
+        {heading ? (
+          <h2 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+            {heading}
+          </h2>
+        ) : null}
+        <p className="mt-2 max-w-[52ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+          {hint}
+        </p>
+      </section>
+    )
+  }
+
+  const showRating = shape === "rating" && hasRating
+
+  return (
+    <section className="@container">
+      {heading && shape !== "strip" ? (
+        <h2 className="ds-display mb-8 [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+      ) : null}
+
+      {showRating ? (
+        <div className="mb-6 flex flex-wrap items-baseline [gap:var(--gap-inline)]">
+          <span
+            aria-hidden
+            className="flex [gap:2px] self-center"
+          >
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star
+                key={i}
+                className="h-5 w-5"
+                style={{ fill: "var(--color-brass)", stroke: "var(--color-brass)" }}
+              />
+            ))}
+          </span>
+          <span className="[color:var(--color-paper)] [font-size:var(--text-2xl)] [font-weight:var(--fw-semibold)] [font-variant-numeric:tabular-nums]">
+            {rating!.score}
+          </span>
+          {rating?.count ? (
+            <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+              {rating.count}
+              {rating.source ? ` · ${rating.source}` : ""}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      {shape === "strip" ? (
+        /* One line, small caps, dot-separated -- the shape the aircond and
+           windscreen sites use across the top of their first screen. It is a
+           line of facts, not a grid of cards, and giving it a card each would
+           make four short phrases take a whole screen. */
+        <p className="flex flex-wrap items-center [gap:calc(var(--gap-inline)*1.2)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] uppercase [letter-spacing:0.09em]">
+          {real.map((c, i) => (
+            <span key={c.label} className="flex items-center [gap:calc(var(--gap-inline)*1.2)]">
+              {i > 0 ? (
+                <span aria-hidden className="[color:var(--border-strong)]">
+                  ·
+                </span>
+              ) : null}
+              {c.label}
+            </span>
+          ))}
+        </p>
+      ) : (
+        <ul className={`grid [gap:var(--gap-inline)] ${shape === "rating" ? "@2xl:grid-cols-4" : "@2xl:grid-cols-2"}`}>
+          {real.map((c) => (
+            <li
+              key={c.label}
+              className="flex items-start [gap:var(--gap-inline)] [border:var(--hairline)_solid_var(--border-subtle)] [border-radius:var(--radius-md)] [padding:var(--pad-card)]"
+            >
+              <span
+                aria-hidden
+                className="mt-[2px] grid h-5 w-5 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)]"
+              >
+                <Check className="h-3 w-3" strokeWidth={3} />
+              </span>
+              <span className="min-w-0">
+                <span className="block [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+                  {c.label}
+                </span>
+                {c.note ? (
+                  <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{c.note}</span>
+                ) : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

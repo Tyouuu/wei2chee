@@ -41,6 +41,14 @@ const CONTENT: LandingContent = {
       faq: { heading: "Questions", rows: [{ title: "How long?", body: "A day." }] },
       hours: { heading: "When we are open", rows: [{ label: "Mon – Fri", value: "9 – 6" }] },
       promiseList: { heading: "What you get", marks: ["A written quote"] },
+      // 别人给的证明, added 2026-08-27. Ships empty on purpose -- see below for
+      // the assertion that an empty one never reaches a stranger.
+      creds: {
+        heading: "Certified, and what people scored us",
+        hint: "Your licence, the brands you carry, your Google score.",
+        rating: { score: "", count: "", source: "Google reviews" },
+        items: [{ label: "", note: "A licence or certification" }],
+      },
     },
   } as unknown as LandingContent["words"],
 };
@@ -50,6 +58,38 @@ function nodesOf(layout: PuckLayout): PuckNode[] {
 }
 
 describe("forPublication", () => {
+  /*
+    AN UNFILLED CERTIFICATION IS A FABRICATED ONE.
+
+    SiteCreds asks the owner for a licence, an authorised-brand badge and a
+    review score. Everything it asks for is a claim about the world that only
+    they can make, so the prompt has to stay a prompt: the section reaches the
+    editor and never the visitor until something real is typed into it. This is
+    the same rule the seeded phone number failed on 2026-08-26, when
+    「WhatsApp 012-345 6789」 went out on a live page.
+  */
+  it("never publishes a credential nobody has filled in", () => {
+    for (const tpl of LANDING_TEMPLATES) {
+      const built: PuckLayout = { root: {}, content: tpl.build(CONTENT) as PuckNode[] };
+      expect(nodesOf(built).some((n) => n.type === "SiteCreds"), tpl.key).toBe(true);
+      expect(nodesOf(forPublication(built)).some((n) => n.type === "SiteCreds"), tpl.key).toBe(false);
+    }
+  });
+
+  it("publishes it as soon as one is real", () => {
+    const tpl = LANDING_TEMPLATES[0];
+    const built: PuckLayout = { root: {}, content: tpl.build(CONTENT) as PuckNode[] };
+    const withOne = {
+      ...built,
+      content: nodesOf(built).map((n) =>
+        n.type === "SiteCreds"
+          ? { ...n, props: { ...n.props, items: [{ label: "JKKP certified", note: "" }] } }
+          : n,
+      ),
+    };
+    expect(nodesOf(forPublication(withOne)).some((n) => n.type === "SiteCreds")).toBe(true);
+  });
+
   it("removes the owner-facing arrow note from every landing template", () => {
     for (const tpl of LANDING_TEMPLATES) {
       const built: PuckLayout = { root: {}, content: tpl.build(CONTENT) as PuckNode[] };

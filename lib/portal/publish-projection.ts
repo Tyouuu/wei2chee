@@ -93,6 +93,22 @@ function isEmptyOnPublish(node: PuckNode): boolean {
   if (node.type === "FloatingContact") {
     return !String(node.props.number ?? "").trim() || node.props.placeholder === true;
   }
+  /*
+    AN UNFILLED CREDENTIAL IS A FABRICATED ONE.
+
+    SiteCreds carries a licence, an authorised-brand badge and a review score --
+    every one of them a claim about the world that only the owner can make. It
+    ships as an obvious labelled gap and asks for them (site-sections.tsx), and
+    that prompt must never become a stranger's evidence. Stricter than the hero
+    rule on purpose: the hero keeps its headline because the headline is true,
+    and there is no true half of an empty certification.
+  */
+  if (node.type === "SiteCreds") {
+    const items = Array.isArray(node.props.items) ? (node.props.items as Row[]) : [];
+    const filled = items.some((i) => String((i as { label?: string }).label ?? "").trim());
+    const rating = node.props.rating as { score?: string } | undefined;
+    return !filled && !String(rating?.score ?? "").trim();
+  }
   return false;
 }
 

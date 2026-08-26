@@ -144,6 +144,16 @@ export type LandingCopy = {
       faq: { heading: string; rows: { title: string; body: string }[] };
       hours: { heading: string; rows: { label: string; value: string }[] };
       promiseList: { heading: string; marks: string[] };
+      /** 别人给的证明 -- a licence, a brand you are authorised for, the score
+       *  your customers gave you. Every field of it is a claim about the world,
+       *  so every field of it ships as a labelled gap: we do not know whether
+       *  this business is JKKP-certified. See site-sections.tsx. */
+      creds: {
+        heading: string;
+        hint: string;
+        rating: { score: string; count: string; source: string };
+        items: { label: string; note: string }[];
+      };
     };
   };
 };
@@ -369,6 +379,17 @@ const EN: LandingCopy = {
           "We tell you before anything costs more",
         ],
       },
+      creds: {
+        heading: "Certified, and what people scored us",
+        hint: "Your licence, the brands you carry, your Google score. Fill these in and they go on the page; leave them and nobody sees this section.",
+        rating: { score: "", count: "", source: "Google reviews" },
+        items: [
+          { label: "", note: "A licence or certification" },
+          { label: "", note: "A brand you are authorised for" },
+          { label: "", note: "A warranty you give" },
+          { label: "", note: "An association you belong to" },
+        ],
+      },
     },
   },
 };
@@ -574,6 +595,17 @@ const ZH: LandingCopy = {
           "从头到尾同一个人跟你",
           "上门看不收钱",
           "会加钱的事，加之前先跟你讲",
+        ],
+      },
+      creds: {
+        heading: "别人给的证明",
+        hint: "执照、代理的牌子、Google 打的分。填了才会出现在客人看到的页面上，不填这一段整个不会上线。",
+        rating: { score: "", count: "", source: "Google 评价" },
+        items: [
+          { label: "", note: "执照或认证" },
+          { label: "", note: "你代理的牌子" },
+          { label: "", note: "你给的保固" },
+          { label: "", note: "你参加的公会" },
         ],
       },
     },

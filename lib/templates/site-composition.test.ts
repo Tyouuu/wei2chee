@@ -31,6 +31,7 @@ const MOVABLE = [
   "faq",
   "promise",
   "hours",
+  "creds",
 ];
 
 const renovation: BusinessContext = {
@@ -63,7 +64,7 @@ describe("SITE_COMPOSITION", () => {
     }
   });
 
-  it("orders all ten movable sections exactly once", () => {
+  it("orders every movable section exactly once", () => {
     // Partial orders are legal to the composer -- unlisted sections fall back
     // to the template's own position -- but a partial order means the register
     // has NO OPINION about part of its own page, and two registers with no

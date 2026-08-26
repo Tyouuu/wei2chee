@@ -568,4 +568,14 @@ export const LABELS_EN: Record<string, string> = {
   签名栏: "Signature line",
   日期栏: "Date line",
   "最下面一句": "Footnote",
+
+  /* 别人给的证明 -- the credential strip taken from the kits' logo wall
+     on 2026-08-27. See site-sections.tsx for why it is not a logo wall. */
+  "别人给的证明": "Proof from others",
+  "打勾卡": "Ticked cards",
+  "客人打的分": "Customer score",
+  "几分": "Score",
+  "几个人评": "How many reviews",
+  "哪里的评价": "Where from",
+  "还没填": "Not filled in",
 };

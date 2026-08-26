@@ -232,6 +232,13 @@ describe("buildPageLayout", () => {
       // 「title, description, action」 shelf row.
       "SiteTestimonials",
       // The middle ask. No template had one; every reference does.
+      // 别人给的证明 -- a licence, a brand, a review score. Taken from the one
+      // section kind every landing kit has and this product had no block for
+      // (npm run shoot:kits, 2026-08-27). It is here in the EDITOR and never on
+      // the published page until the owner fills it; see publish-projection.
+      // 蓝图 puts it straight under what customers said: both are somebody
+      // else vouching, and they read as one argument.
+      "SiteCreds",
       "SiteCta",
       "FoldSection",   // questions we get
       "InfoRows",      // where we cover

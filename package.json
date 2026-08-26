@@ -25,7 +25,8 @@
     "check:en": "node scripts/check-en.mjs",
     "shoot:site": "node scripts/shoot-site.mjs",
     "shoot:market": "node scripts/shoot-market.mjs",
-    "shoot:skeletons": "node scripts/shoot-skeletons.mjs"
+    "shoot:skeletons": "node scripts/shoot-skeletons.mjs",
+    "shoot:kits": "node scripts/shoot-kits.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

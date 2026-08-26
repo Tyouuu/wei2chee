@@ -60,6 +60,12 @@ const MOVABLE = [
   "faq",
   "promise",
   "hours",
+  /* 别人给的证明, added 2026-08-27 from the landing kits' logo wall. Eleventh
+     movable section, so every register below states where somebody else's
+     vouching sits in ITS argument -- 台账 puts it under the price list because
+     a licence is another line of fact, 炉 puts it under the photographs
+     because a salon's proof is the score its customers gave it. */
+  "creds",
 ] as const;
 
 export type SiteSection = (typeof MOVABLE)[number];
@@ -86,7 +92,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   ledger: {
     hero: "left",
     opens: "价目表",
-    order: ["prices", "services", "flow", "work", "promise", "areas", "faq", "reviews", "hours", "cta"],
+    order: ["prices", "creds", "services", "flow", "work", "promise", "areas", "faq", "reviews", "hours", "cta"],
   },
   // 炉: the salon, where the front desk IS the shop. What a stranger buys is
   // the look of the last customer who walked out, so the photographs lead and
@@ -94,14 +100,14 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   hearth: {
     hero: "split",
     opens: "照片墙",
-    order: ["work", "reviews", "services", "hours", "prices", "areas", "cta", "faq", "flow", "promise"],
+    order: ["work", "reviews", "creds", "services", "hours", "prices", "areas", "cta", "faq", "flow", "promise"],
   },
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.
   blueprint: {
     hero: "split",
     opens: "做什么",
-    order: ["services", "work", "flow", "prices", "reviews", "cta", "faq", "areas", "promise", "hours"],
+    order: ["services", "work", "flow", "prices", "reviews", "creds", "cta", "faq", "areas", "promise", "hours"],
   },
   // 仪表盘: for the owner who opens a system to check four numbers. Its website
   // leads with the claims a stranger checks the same way -- 保证、覆盖、常见问题
@@ -109,7 +115,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   console: {
     hero: "center",
     opens: "保证",
-    order: ["promise", "services", "prices", "areas", "work", "flow", "faq", "reviews", "cta", "hours"],
+    order: ["promise", "creds", "services", "prices", "areas", "work", "flow", "faq", "reviews", "cta", "hours"],
   },
   // 中台: the wholesaler's register, the densest in the library. Its buyer is
   // another business, and a business asks for terms before it asks for a look:
@@ -117,7 +123,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   counter: {
     hero: "plain",
     opens: "条件",
-    order: ["prices", "promise", "areas", "services", "flow", "faq", "work", "reviews", "cta", "hours"],
+    order: ["prices", "promise", "creds", "areas", "services", "flow", "faq", "work", "reviews", "cta", "hours"],
   },
   // 瑞士: black, white, one red, no cards. It is the register that prints, and
   // a page that reads like a document leads with words -- what we do, how it
@@ -125,7 +131,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   swiss: {
     hero: "plain",
     opens: "说明",
-    order: ["services", "flow", "promise", "faq", "prices", "areas", "reviews", "work", "cta", "hours"],
+    order: ["services", "flow", "promise", "creds", "faq", "prices", "areas", "reviews", "work", "cta", "hours"],
   },
   // 柔和: the tuition centre, where the person reading is often nervous. It
   // opens on a coloured band and answers the worry before the sell -- what
@@ -133,7 +139,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   soft: {
     hero: "band",
     opens: "怎么开始",
-    order: ["services", "flow", "hours", "reviews", "faq", "prices", "work", "areas", "cta", "promise"],
+    order: ["services", "flow", "hours", "reviews", "creds", "faq", "prices", "work", "areas", "cta", "promise"],
   },
   // 粗野: gyms, barbers, tuning shops -- businesses that are loud on purpose.
   // The work first at full volume, then the ask, immediately. This is the only
@@ -141,7 +147,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   brut: {
     hero: "band",
     opens: "作品 + 马上问",
-    order: ["work", "cta", "services", "prices", "reviews", "hours", "areas", "faq", "flow", "promise"],
+    order: ["work", "cta", "services", "prices", "reviews", "creds", "hours", "areas", "faq", "flow", "promise"],
   },
   // 瓷: the kopitiam and the nyonya kitchen, in a shophouse. For them the price
   // list IS the menu and the menu IS the page -- then when you are open, then
@@ -149,7 +155,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   tile: {
     hero: "split",
     opens: "菜单",
-    order: ["prices", "work", "hours", "areas", "services", "reviews", "faq", "cta", "flow", "promise"],
+    order: ["prices", "work", "hours", "creds", "areas", "services", "reviews", "faq", "cta", "flow", "promise"],
   },
   // 码: parts, model numbers, quantities. A catalogue -- the list and its
   // prices, then whether you deliver here. Monospace all the way down, so no
@@ -157,7 +163,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   code: {
     hero: "plain",
     opens: "货单",
-    order: ["prices", "services", "areas", "promise", "faq", "flow", "work", "reviews", "cta", "hours"],
+    order: ["prices", "services", "areas", "promise", "creds", "faq", "flow", "work", "reviews", "cta", "hours"],
   },
   // 漆: 中药行、婚宴、礼品. The only register that puts colour on the GROUND, so
   // the band hero is not decoration -- it is the register itself. What it sells
@@ -165,7 +171,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   lacquer: {
     hero: "band",
     opens: "招牌 + 口碑",
-    order: ["services", "work", "reviews", "hours", "areas", "prices", "cta", "faq", "flow", "promise"],
+    order: ["services", "work", "reviews", "creds", "hours", "areas", "prices", "cta", "faq", "flow", "promise"],
   },
   // 招牌: shophouse retail with a physical sign outside. The centred hero IS a
   // signboard. Then the two things somebody standing on the street needs:
@@ -173,14 +179,14 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   signboard: {
     hero: "center",
     opens: "店名 + 找得到",
-    order: ["hours", "areas", "services", "work", "prices", "reviews", "cta", "faq", "flow", "promise"],
+    order: ["hours", "areas", "services", "creds", "work", "prices", "reviews", "cta", "faq", "flow", "promise"],
   },
   // 夜: the dark one -- shift work, monitoring, late openings. Its website
   // leads with the fact that makes it dark: we are open when others are not.
   night: {
     hero: "band",
     opens: "还开着",
-    order: ["hours", "services", "areas", "flow", "promise", "prices", "faq", "work", "cta", "reviews"],
+    order: ["hours", "services", "areas", "flow", "promise", "creds", "prices", "faq", "work", "cta", "reviews"],
   },
   // 工作室: consultants and agencies, the register where nothing sits side by
   // side. A quiet centred opening, the work, then who said what -- and the
@@ -188,7 +194,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   studio: {
     hero: "center",
     opens: "作品 · 安静",
-    order: ["work", "services", "reviews", "flow", "faq", "promise", "prices", "areas", "cta", "hours"],
+    order: ["work", "services", "reviews", "creds", "flow", "faq", "promise", "prices", "areas", "cta", "hours"],
   },
 };
 

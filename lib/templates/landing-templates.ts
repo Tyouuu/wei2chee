@@ -543,6 +543,27 @@ const floating = (c: LandingContent) => {
   ];
 };
 
+/*
+  别人给的证明 — 执照、代理的牌子、Google 打的分。
+
+  Taken from the one section kind the landing kits all have and this product
+  had no block for (npm run shoot:kits, 2026-08-27: a logo wall on tailark,
+  magicui and framer twice), rebuilt as what THIS market shows instead --
+  「JKKP-Certified Technicians」, an authorised-dealer badge, a Google score.
+
+  IT SHIPS EMPTY AND THAT IS THE POINT. Every field is a claim about the world;
+  inventing one would be inventing a certification. `placeholder: true` on all
+  of them keeps the whole section off the published page until the owner types
+  something real -- the same wire the phone number and the price rows use.
+*/
+const creds = (c: LandingContent) =>
+  node("SiteCreds", "website-creds", {
+    heading: c.words.sections.creds.heading,
+    hint: c.words.sections.creds.hint,
+    rating: { ...c.words.sections.creds.rating, placeholder: true },
+    items: c.words.sections.creds.items.map((i) => ({ ...i, placeholder: true })),
+  });
+
 const contact = (c: LandingContent, framed = true) =>
   node("InfoRows", "website-contact", {
     heading: c.words.contactHeading,
@@ -570,6 +591,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       prices(c),
       flow(c, sect(c, "quote").flow ?? ""),
       reviews(c),
+      creds(c),
       cta(c),
       areas(c),
       faq(c),
@@ -597,6 +619,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       work(c),
       prices(c),
       reviews(c),
+      creds(c),
       cta(c),
       hours(c),
       faq(c),
@@ -624,6 +647,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hours(c),
       areas(c),
       reviews(c),
+      creds(c),
       cta(c),
       form(c, "order", "split"),
       contact(c, false),
@@ -645,6 +669,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       flow(c, sect(c, "wholesale").flow ?? "", "timeline"),
       prices(c),
       areas(c),
+      creds(c),
       promiseList(c),
       faq(c),
       form(c, "wholesale", "card"),
@@ -668,6 +693,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       work(c),
       services(c, sect(c, "portfolio").services, false),
       reviews(c),
+      creds(c),
       cta(c),
       flow(c, sect(c, "portfolio").flow ?? "", "timeline"),
       faq(c),
@@ -691,6 +717,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hours(c),
       areas(c),
       reviews(c),
+      creds(c),
       cta(c),
       contact(c),
       foot(c),

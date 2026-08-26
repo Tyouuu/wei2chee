@@ -32,8 +32,22 @@ import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 
-const DEFAULT = ["ledger", "hearth", "counter", "tile", "signboard", "studio"];
-const WANTED = process.argv.slice(2).length ? process.argv.slice(2) : DEFAULT;
+/* THE LIST IS READ, NOT KEPT -- style-order.test.ts fails the build over a
+   second hand-written copy of it, and it is right to: shoot:registers once held
+   its own array, kept naming a register that had been cut, and photographed
+   fifteen things while reporting sixteen. Six is a default SAMPLE of that list,
+   not a list of its own. */
+const ALL = (() => {
+  const src = readFileSync("app/[locale]/style-picker/style-column.tsx", "utf8");
+  const block = src.match(/export const STYLE_ORDER[^=]*=\s*\[([^\]]*)\]/);
+  if (!block) throw new Error("STYLE_ORDER not found -- did style-column.tsx move?");
+  return [...block[1].matchAll(/"([a-z]+)"/g)].map((m) => m[1]);
+})();
+/* Every third one, so the sample spreads across the library rather than
+   photographing whichever six happen to sit at the front of it. */
+const WANTED = process.argv.slice(2).length
+  ? process.argv.slice(2)
+  : ALL.filter((_, i) => i % Math.max(1, Math.round(ALL.length / 6)) === 0).slice(0, 6);
 const OUT = ".screenshots/skeletons";
 const RESTORE = `${OUT}/restore.json`;
 const SLUG = "xingfa-reno";

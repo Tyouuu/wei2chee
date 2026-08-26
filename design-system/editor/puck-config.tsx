@@ -17,7 +17,7 @@ import { Inline } from "@/design-system/editor/inline-text";
 import { SiteHero } from "@/design-system/components/site-hero";
 import { FloatingContact } from "@/design-system/components/floating-contact";
 import { SiteBar, SiteFoot } from "@/design-system/components/site-chrome";
-import { SiteFeatures, SiteTestimonials, SiteCta } from "@/design-system/components/site-sections";
+import { SiteFeatures, SiteTestimonials, SiteCta, SiteCreds } from "@/design-system/components/site-sections";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
 import { EnquiryForm } from "@/design-system/components/enquiry-form";
 import { TableFieldEditor } from "@/design-system/editor/table-field";
@@ -249,6 +249,13 @@ type Components = {
   SiteTestimonials: {
     heading?: string;
     items: { quote: string; who: string; role?: string; stars?: number }[];
+  };
+  SiteCreds: {
+    heading?: string;
+    hint?: string;
+    shape?: "strip" | "badges" | "rating";
+    rating?: { score?: string; count?: string; source?: string; placeholder?: boolean };
+    items?: { label: string; note?: string; placeholder?: boolean }[];
   };
   SiteCta: {
     heading: string;
@@ -606,7 +613,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteBar", "SiteHero", "SiteFeatures", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1691,6 +1698,46 @@ export const puckConfig: Config<Components> = {
       },
       defaultProps: { items: [] },
       render: ({ heading, items }) => <SiteTestimonials heading={heading} items={items} />,
+    },
+
+    SiteCreds: {
+      label: "别人给的证明",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        hint: { label: "还没填的时候讲什么", type: "textarea" },
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "一行字", value: "strip" },
+            { label: "打勾卡", value: "badges" },
+            { label: "评分", value: "rating" },
+          ],
+        },
+        rating: {
+          label: "客人打的分",
+          type: "object",
+          objectFields: {
+            score: { label: "几分", type: "text" },
+            count: { label: "几个人评", type: "text" },
+            source: { label: "哪里的评价", type: "text" },
+          },
+        },
+        items: {
+          label: "每一项",
+          type: "array",
+          arrayFields: {
+            label: { label: "写什么", type: "text" },
+            note: { label: "下面一行", type: "text" },
+          },
+          defaultItemProps: { label: "", note: "" },
+          getItemSummary: (item) => item.label || item.note || "还没填",
+        },
+      },
+      defaultProps: { shape: "strip", items: [] },
+      render: ({ heading, hint, shape, rating, items }) => (
+        <SiteCreds heading={heading} hint={hint} shape={shape} rating={rating} items={items} />
+      ),
     },
 
     SiteCta: {

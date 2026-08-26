@@ -546,7 +546,21 @@ bag-ui · bigspring · convertfast · creativetim · launch-ui · startup · tai
 那份档案记着 11 个后台来源、许可、拿了哪个 commit，唯独这七个不在里面，
 所以 `npm run check:upstream` 从来没有替它们查过。
 
-- [ ] 七个全部 clone 起来跑，照[任务 24](#24) 那四步：跑起来 → 量 → 列出我们不如人的地方 → 修
+- [x] **挖完了**（2026-08-27）。`npm run shoot:kits` 打开五个还活着的 kit
+      （tailark · launch-ui · bigspring · shadcn-landing · magicui）**加三个国外的正牌**
+      （Linear · Stripe · Framer），逐段数出一页由哪些区段组成 + 字级 + 行宽。
+      **七张里有两张是 Vercel 的 404 页** —— bag-ui 跟 convertfast 的部署没了，
+      我当初把「部署没了」那张图当 kit 存了
+- [x] **拿了一样：`SiteCreds` 别人给的证明**。八个来源里出现最多、而我们**一个块都没有**的
+      是 logo 墙。但装修承包商没有客户 logo 可以摆 —— 这个市场摆的是
+      「JKKP-Certified Technicians」、代理牌子、Google 分数。同一件事（**别人替你背书**），
+      换成这里的货币。三种款式（一行字 / 打勾卡 / 评分），14 套风格各挑一种
+- [x] **有一样故意不拿：stats 数字带**。`SiteHero` 已经在印三个数字（10 years · 24 hours ·
+      Klang Valley）。**印那一套就是因为同一行印两次同一个数字被砍掉的** ——
+      再加一段做同一件事，等於把砍掉的东西装回去
+- [x] ⚠️ **它整段不上线，直到老板填了真的东西。**它问的每一格都是**关於世界的宣称** ——
+      我们不知道这家有没有 JKKP 执照。编造一个就是伪造认证。
+      编辑器看得到虚线框跟一句「填了才会上线」，公开页面看不到
 - [ ] 记进 `upstream.json`，让 `check:upstream` 管得到
 - [ ] **国外的 landing page 也再看一轮** —— `scratchpad/L-*.png` 已经有 16 张
       （Linear / Attio / Stripe / Resend / Raycast / Polar / Vercel / Supabase / Clerk /
