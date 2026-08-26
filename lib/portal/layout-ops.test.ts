@@ -328,3 +328,79 @@ describe("REGISTERED_COMPONENTS", () => {
     expect(REGISTERED_COMPONENTS).not.toContain("CalendarWidget");
   });
 });
+
+describe("move_component", () => {
+  /*
+    The operation the assistant did not have, audited on 2026-08-26 against
+    「很方便可以調整完一切的東西 用Ai Agent的輔助」. Ten operations, none of which
+    moved anything -- so 「把表格搬到上面」 could only be answered by deleting the
+    block and adding a new one, which throws away every edit the owner had made
+    to it, silently.
+  */
+  const page = () =>
+    ({
+      root: {},
+      content: [
+        {
+          type: "SystemShell",
+          props: {
+            id: "shell",
+            sidebar: [{ type: "RailNav", props: { id: "rail" } }],
+            main: [
+              { type: "PageHeader", props: { id: "head", title: "Overview" } },
+              { type: "StatRow", props: { id: "stats" } },
+              { type: "RecordTable", props: { id: "table" } },
+            ],
+          },
+        },
+      ],
+    }) as unknown as PuckLayout;
+
+  const mainIds = (l: PuckLayout) =>
+    (((l.content[0] as unknown as { props: { main?: { props: { id: string } }[] } }).props
+      .main ?? [])).map((n) => n.props.id);
+
+  it("puts a block in front of another one", () => {
+    const out = applyLayoutOps(page(), [
+      { op: "move_component", target_id: "table", before_id: "stats" },
+    ]);
+    expect(out.applied).toBe(1);
+    expect(mainIds(out.layout)).toEqual(["head", "table", "stats"]);
+  });
+
+  it("sends it to the end when before_id is null", () => {
+    const out = applyLayoutOps(page(), [
+      { op: "move_component", target_id: "head", before_id: null },
+    ]);
+    expect(mainIds(out.layout)).toEqual(["stats", "table", "head"]);
+  });
+
+  it("lands in the right place when moving DOWN the column", () => {
+    /*
+      The case that catches lift-then-place done in the wrong order. Removing
+      the node shifts every index behind it, so a destination computed BEFORE
+      the removal is one place off for every downward move -- and only for
+      downward moves, which is why it survives a test that only moves up.
+    */
+    const out = applyLayoutOps(page(), [
+      { op: "move_component", target_id: "head", before_id: "table" },
+    ]);
+    expect(mainIds(out.layout)).toEqual(["stats", "head", "table"]);
+  });
+
+  it("refuses to move the page frame", () => {
+    const out = applyLayoutOps(page(), [
+      { op: "move_component", target_id: "shell", before_id: null },
+    ]);
+    expect(out.applied).toBe(0);
+    expect(out.skipped[0].reason).toContain("页面框架");
+  });
+
+  it("drops an id that is not on the page instead of emptying the column", () => {
+    const out = applyLayoutOps(page(), [
+      { op: "move_component", target_id: "nope", before_id: "stats" },
+    ]);
+    expect(out.applied).toBe(0);
+    expect(mainIds(out.layout)).toEqual(["head", "stats", "table"]);
+  });
+});

@@ -56,6 +56,9 @@ Rules:
   table, not a second table.
 - Make the smallest change that satisfies the request. Do not tidy, reword or
   improve anything you were not asked about.
+- To reorder, use move_component. NEVER remove a block and add it back: the
+  block the owner has been editing carries their words, their columns and their
+  rows, and adding a fresh one throws all of it away without saying so.
 - Write all text in the same language the owner used.
 - explanation: ONE sentence, in the owner's language, saying what you changed.
 
@@ -285,6 +288,7 @@ const EDIT_JSON_SCHEMA = {
                 "set_text",
                 "add_component",
                 "remove_component",
+                "move_component",
                 "add_table_row",
                 "add_table_column",
                 "remove_table_column",
@@ -303,6 +307,11 @@ const EDIT_JSON_SCHEMA = {
             value: { type: ["string", "null"] },
             component: { type: ["string", "null"], enum: [...REGISTERED_COMPONENTS, null] },
             after_id: { type: ["string", "null"] },
+            // move_component only. The block this one lands in FRONT of; null
+            // sends it to the end. An id rather than an index, because an index
+            // is a number the model has to count to from a list that has just
+            // changed under it.
+            before_id: { type: ["string", "null"] },
             title: { type: ["string", "null"] },
             column_key: { type: ["string", "null"] },
             column_label: { type: ["string", "null"] },
@@ -331,6 +340,7 @@ const EDIT_JSON_SCHEMA = {
             "value",
             "component",
             "after_id",
+            "before_id",
             "title",
             "column_key",
             "column_label",

@@ -106,6 +106,27 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     op: z.literal("remove_component"),
     target_id: z.string().min(1),
   }),
+  /*
+    THE OPERATION THAT WAS MISSING, AND IT IS THE FIRST THING ANYONE ASKS FOR.
+
+    The founder's direction, 2026-08-26: 「很方便可以調整完一切的東西 用Ai Agent
+    的輔助」. Audited against it, the assistant had ten operations and not one of
+    them moved anything. It could add a block and delete a block, so 「把表格搬到
+    上面」 was answerable only as delete-then-add -- which loses every edit the
+    customer had already made to that block, silently, and reads to them as the
+    assistant destroying their work.
+
+    `before_id` rather than an index. An index is a number the model has to
+    count to, and it counts from a list it was shown a moment ago that may have
+    changed; an id is a thing it can see. Null means the end of the column,
+    which is the same convention `add_component` already uses.
+  */
+  z.object({
+    op: z.literal("move_component"),
+    target_id: z.string().min(1),
+    /** Placed immediately BEFORE this id. Null puts it last. */
+    before_id: z.string().nullable(),
+  }),
   // Cells are positional, aligned to the column list the model is shown, rather
   // than a fixed primary/secondary/amount/status quartet -- a table can now have
   // any columns at all, so there is no fixed set of names to key them by.
@@ -483,6 +504,46 @@ export function applyLayoutOps(
           skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
           break;
         }
+        applied++;
+        break;
+      }
+
+      /*
+        MOVE IS LIFT-THEN-PLACE, and the order matters.
+
+        The node is detached first and its target looked up AFTER, because
+        removing it shifts every index behind it -- computing the destination
+        first and splicing second puts the block one place off whenever it
+        moves downward. Found by writing the test before the code.
+
+        Everything lands in the MAIN column, which is where a page's blocks
+        live. A model asked to move something has no business posting it into
+        the navigation rail, and 「把表格搬到侧栏」 is not a request anybody makes.
+      */
+      case "move_component": {
+        const node = findNode(layout.content, op.target_id);
+        if (!node) {
+          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          break;
+        }
+        if (node.type === "SystemShell") {
+          skipped.push({ op: op.op, reason: "页面框架不能搬动" });
+          break;
+        }
+        if (op.before_id === op.target_id) {
+          skipped.push({ op: op.op, reason: "搬到自己前面" });
+          break;
+        }
+        if (!removeNode(layout.content, op.target_id)) {
+          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          break;
+        }
+        const col = mainColumn(layout);
+        const at = op.before_id
+          ? col.findIndex((n) => String(n.props?.id) === op.before_id)
+          : -1;
+        if (at === -1) col.push(node);
+        else col.splice(at, 0, node);
         applied++;
         break;
       }
