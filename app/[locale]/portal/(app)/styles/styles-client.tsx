@@ -170,7 +170,11 @@ export function StylesClient({
 
   return (
     <>
-      <PageBar title={t("title")} subtitle={t("subtitle")}>
+      {/* COUNTED, NOT TYPED. It read 「同一套系统,十种做法」 while the set held
+          seventeen, and the English said 「five ways」 -- both were written when
+          the number was true and neither moved when it changed. Three culls have
+          gone past those two strings. */}
+      <PageBar title={t("title")} subtitle={t("subtitle", { n: STYLE_ORDER.length })}>
         {failed && (
           <span role="status" className="[color:var(--color-clay-bright)] [font-size:var(--text-sm)]">
             {tEditor("styleFailed")}
@@ -180,7 +184,7 @@ export function StylesClient({
 
       <div className="px-8 py-7">
         <p className="max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-          {tHome("styleBody")}
+          {tHome("styleBody", { n: STYLE_ORDER.length })}
         </p>
 
         <ul className="mt-6 grid items-start gap-5 lg:grid-cols-2 2xl:grid-cols-3">
@@ -269,6 +273,13 @@ export function StylesClient({
           </div>
           <p className="mt-2 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
             {t("paletteBody", { count: STYLE_ORDER.length * (PALETTES.length + 1) })}
+          </p>
+          {/* `portal.styles.moreComing` existed and nothing rendered it -- the
+              library page reads its own key of the same name. It said 「十种版式
+              × 十一种配色」 and had gone past three culls without moving, which is
+              what a string nobody draws does. Counted now, and drawn. */}
+          <p className="mt-1.5 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
+            {t("moreComing", { styles: STYLE_ORDER.length, palettes: PALETTES.length + 1 })}
           </p>
 
           {/* FOUR ACROSS AT 1440, matching 21st.dev's Themes grid exactly --

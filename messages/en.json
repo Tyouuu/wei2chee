@@ -76,7 +76,7 @@
   },
   "stylePicker": {
     "title": "Pick your style",
-    "subtitle": "The same page, drawn five ways. Compare Ledger, Hearth, Blueprint, Bare and Docket side by side, then tell us which one to build your system in.",
+    "subtitle": "The same page, drawn {n} ways. Compare them side by side, then tell us which one to build your system in.",
     "selectCta": "Choose this style",
     "whatsappPrefill": "I'd like the {style} style",
     "styles": {
@@ -229,7 +229,7 @@
         "Full width, left-aligned, like every other page — a centred narrow column just leaves a dead right-hand gutter.",
         "Rows of cards don't stretch. Where two cards of different natural heights sit side by side, the shorter one doesn't grow to match."
       ],
-      "componentRulesHeading": "Component rules, in all five styles",
+      "componentRulesHeading": "Component rules (all {n} styles)",
       "componentRules": [
         "Weight ceiling: nothing exceeds semibold. No 700/800/900 weights, anywhere.",
         "Tracking scales negatively with size — a large heading needs tighter tracking than body text.",
@@ -450,7 +450,7 @@
       "cardEdited": "Edited and saved by you",
       "cardCta": "Open and edit",
       "styleTitle": "Style",
-      "styleBody": "One system, three treatments. Switch with a click and switch back any time — every page above changes with it.",
+      "styleBody": "One system, {n} ways. Switch with a click and switch back any time — every page above changes with it.",
       "styleTag": {
         "ledger": "Dense · many rows, many tables",
         "hearth": "Roomy · warm and readable",
@@ -594,8 +594,8 @@
     },
     "styles": {
       "title": "Styles",
-      "subtitle": "One system, five ways",
-      "moreComing": "Eight layouts x eleven palettes. The layout decides whether it reads as a document or a board; the palette only changes colour. Switch any time, and switch back.",
+      "subtitle": "One system, {n} ways",
+      "moreComing": "{styles} layouts × {palettes} palettes. The layout decides whether it is a document or a board; the palette only changes colour — switch any time, and switch back.",
       "paletteTitle": "Colours",
       "paletteBody": "The layout sets density, type and corners; the palette only changes colour. Together that is {count} combinations.",
       "paletteNative": "Native",

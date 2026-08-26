@@ -35,7 +35,7 @@ export default async function StylePickerPage() {
             {BRAND_NAME} / STYLE PICKER
           </p>
           <h1 className="mt-3 font-serif text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.15]">{t("title")}</h1>
-          <p className="mt-4 text-muted-foreground">{t("subtitle")}</p>
+          <p className="mt-4 text-muted-foreground">{t("subtitle", { n: STYLE_ORDER.length })}</p>
         </header>
 
         {/* Rows of cards don't stretch — CONTRACT.md's own layout rule,
@@ -90,7 +90,7 @@ export default async function StylePickerPage() {
               </ul>
 
               <h3 className="mt-6 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                {t("contract.componentRulesHeading")}
+                {t("contract.componentRulesHeading", { n: STYLE_ORDER.length })}
               </h3>
               <ul className="mt-3 space-y-2 text-sm">
                 {componentRules.map((rule, i) => (
