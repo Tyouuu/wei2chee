@@ -175,9 +175,22 @@ function Tile({
         </span>
       </div>
 
-      <div className="mt-2 flex items-baseline [gap:var(--gap-inline)]">
+      {/*
+        THE FIGURE IS THE ONE THING ON THIS TILE THAT MAY NOT BE CUT.
+
+        It read `truncate`, and in a narrow tile it did exactly that.
+        Screenshotted on 炉 at 1440 and then measured: the value box was 64px
+        holding 117px of text inside a 130px tile, so the dashboard's headline
+        number printed as 「RM …」. A stat card whose statistic is an ellipsis is
+        worse than no stat card.
+
+        `flex-wrap` and `shrink-0` together are the fix: the number keeps its
+        width and the sparkline drops to the next line when there is not enough
+        room for both. The spark is the decoration; the figure is the point.
+      */}
+      <div className="mt-2 flex flex-wrap items-baseline [gap:var(--gap-inline)]">
         <span
-          className={`tnum truncate leading-none [font-weight:var(--fw-semibold)] ${TONE_FG[tile.tone ?? "normal"]}`}
+          className={`tnum shrink-0 leading-none [font-weight:var(--fw-semibold)] ${TONE_FG[tile.tone ?? "normal"]}`}
           style={{ fontSize: valueSize }}
         >
           {tile.value}

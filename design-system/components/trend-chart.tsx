@@ -212,7 +212,23 @@ export function TrendChart({ title, caption, frame, kind, unit = "", points }: T
           pixels of card under it. Outside a stretched cell the section has
           no definite height, so h-full resolves to auto and the min holds
           the old behaviour exactly. */}
-      <ChartContainer config={config} className="aspect-auto h-full min-h-[200px] w-full flex-1">
+      {/*
+        A DEFINITE HEIGHT, NOT `h-full flex-1`.
+
+        `flex-basis: 0` in a column makes this box zero at first layout, and
+        recharts' ResponsiveContainer decides what to draw from the size it
+        measures then. Inside a Columns cell an `h-full` chain gave it a real
+        number in time; standing alone at full width it did not, and the chart
+        rendered NOTHING -- measured on 炉: a 1052x200 container with no
+        `.recharts-surface` inside it at all. A card with a title and 200px of
+        blank under it, on the register whose dashboard is meant to lead with
+        its trend.
+
+        `min-h` cannot fix that: it sets the floor for LAYOUT, and layout was
+        already right. What was wrong is that the first measurement happened
+        before the floor applied. A plain height is true at first paint.
+      */}
+      <ChartContainer config={config} className="aspect-auto h-[220px] w-full">
         {kind === "bar" ? (
           <BarChart data={data} margin={{ left: 0, right: 4, top: 4 }}>
             {axis}
