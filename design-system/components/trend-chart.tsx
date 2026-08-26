@@ -111,10 +111,90 @@ function useStyleRadius(ref: React.RefObject<HTMLElement | null>, fallback: numb
  * the trend is what the customer is choosing between. The grid lines keep the
  * magnitudes comparable, which is the part the axis was actually for.
  */
+
+/**
+ * How tall the plot should be: 220, or whatever is left in a card the layout
+ * has already made taller.
+ *
+ * THE PROBLEM THIS SOLVES, MEASURED 2026-08-26 across all sixteen registers.
+ * Nine of them showed a chart card with a hundred to three hundred pixels of
+ * bare card under the plot. `Columns` deliberately makes a side-by-side pair
+ * the same height -- that is right, and every admin template does it -- but
+ * the chart inside kept a fixed 220, so the emptiness did not disappear, it
+ * moved INSIDE the card. Two cards of different heights read as one card and
+ * one mistake; one stretched card with a hole in it reads as unfinished, which
+ * is worse.
+ *
+ * WHY NOT `h-full flex-1`, WHICH IS THE OBVIOUS ANSWER AND WAS TRIED. A flex
+ * child in a column starts at `flex-basis: 0`, and recharts' ResponsiveContainer
+ * decides what to draw from the size it measures at first layout. Standing
+ * alone at full width that measurement was zero and the chart rendered NOTHING
+ * -- a titled card with 200px of blank under it. `min-h` does not help: it sets
+ * the floor for LAYOUT, and the bad measurement happens before layout settles.
+ *
+ * So the height stays DEFINITE at every paint. It starts at 220, which is what
+ * it always was, and a ResizeObserver raises it once the card's own height is
+ * known. The fixed point is stable in both directions: standing alone the card
+ * is header + gap + 220, so the sum comes back to 220 and nothing moves; in a
+ * stretched cell the card's height is imposed by the grid, so the plot takes
+ * whatever the header leaves.
+ */
+const PLOT_MIN = 220
+/*
+  AND A CEILING, because filling the card is not the goal -- the goal is that
+  the card has no hole in it. 瓷 pairs a single chart against a cell holding TWO
+  stacked blocks, and letting the plot take all of that gave a 590px slab of six
+  bars: the hole was gone and the chart had stopped being a chart. Past about
+  420 a bar chart of six periods gains no readability, it just gets taller, and
+  every reference photographed on 2026-08-26 -- Tabler, Ant Design Pro, the
+  admin dashboard this repo already borrows from -- keeps its plot inside that.
+
+  A pair that is still uneven after the cap is a COMPOSITION problem: one block
+  facing two. That is fixed per register in DASHBOARD_COMPOSITION, not here.
+*/
+const PLOT_MAX = 420
+
+function usePlotHeight(host: React.RefObject<HTMLElement | null>) {
+  const [h, setH] = useState(PLOT_MIN)
+
+  useEffect(() => {
+    const el = host.current
+    if (!el || typeof ResizeObserver === "undefined") return
+
+    const measure = () => {
+      // Everything in the card that is not the plot: the header, and the gap
+      // between it and the plot. Read off the box rather than assumed, because
+      // both are register tokens and both differ by a factor of three between
+      // 台账 and 炉.
+      let used = 0
+      for (const child of Array.from(el.children)) {
+        if (child.getAttribute("data-plot") === "") continue
+        used += (child as HTMLElement).offsetHeight
+      }
+      const gap = parseFloat(getComputedStyle(el).rowGap) || 0
+      const gaps = Math.max(0, el.children.length - 1) * gap
+      const pad =
+        parseFloat(getComputedStyle(el).paddingTop) +
+        parseFloat(getComputedStyle(el).paddingBottom)
+      const room = el.clientHeight - pad - used - gaps
+      const want = Number.isFinite(room) ? Math.round(room) : PLOT_MIN
+      setH(Math.min(PLOT_MAX, Math.max(PLOT_MIN, want)))
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [host])
+
+  return h
+}
+
 export function TrendChart({ title, caption, frame, kind, unit = "", points }: TrendChartProps) {
   const w = useSystemWords()
   const hostRef = useRef<HTMLElement>(null)
   const barRadius = useStyleRadius(hostRef, 4)
+  const plotHeight = usePlotHeight(hostRef)
 
   // `v` rather than a descriptive key on purpose: ChartContainer emits the
   // series colour as `--color-<key>`, and this design system already owns the
@@ -228,7 +308,12 @@ export function TrendChart({ title, caption, frame, kind, unit = "", points }: T
         already right. What was wrong is that the first measurement happened
         before the floor applied. A plain height is true at first paint.
       */}
-      <ChartContainer config={config} className="aspect-auto h-[220px] w-full">
+      <ChartContainer
+        config={config}
+        data-plot=""
+        className="aspect-auto w-full"
+        style={{ height: plotHeight }}
+      >
         {kind === "bar" ? (
           <BarChart data={data} margin={{ left: 0, right: 4, top: 4 }}>
             {axis}

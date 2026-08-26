@@ -19,14 +19,29 @@
  * check-registers.mjs -- the two are meant to be run back to back.
  */
 import { chromium } from "playwright";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const ALL = [
-  "Ledger", "Hearth", "Blueprint", "Large", "Stamp", "Swiss", "Soft", "Brut",
-  "Glass", "Night", "Signboard", "Lacquer", "Code", "Tile", "Pop",
-  "Console", "Counter",
-];
+/*
+  THE LIST IS READ, NOT KEPT.
+
+  It used to be a literal array here, and on 2026-08-26 it still named 「Large」
+  -- a register cut the day before -- while missing nothing else only by luck.
+  A contact sheet that silently skips a register is worse than no contact sheet,
+  because you look at fifteen pictures and believe you have seen sixteen.
+
+  STYLE_ORDER is the one list the product itself renders from, so it is the one
+  list this reads. Regex rather than an import because this is a .mjs run by
+  plain node and that file is TSX behind a CSS module.
+*/
+const ALL = (() => {
+  const src = readFileSync("app/[locale]/style-picker/style-column.tsx", "utf8");
+  const block = src.match(/export const STYLE_ORDER[^=]*=\s*\[([^\]]*)\]/);
+  if (!block) throw new Error("STYLE_ORDER not found -- did style-column.tsx move?");
+  return [...block[1].matchAll(/"([a-z]+)"/g)].map(
+    (m) => m[1][0].toUpperCase() + m[1].slice(1),
+  );
+})();
 const REGISTERS = process.argv.slice(2).length ? process.argv.slice(2) : ALL;
 const OUT = ".screenshots";
 mkdirSync(OUT, { recursive: true });
