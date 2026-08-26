@@ -378,6 +378,70 @@ const CASES = [
     expect: ["add_table_column"],
   },
 
+  /*
+    ── 真人老板会遇到的 ───────────────────────────────────────────────────
+
+    「你還要假設更多的真人老闆使用我們平台這個ai agent會遇到的問題 ai agent應該要
+    怎麼去回答」.
+
+    Everything above is a request. Most of what a person actually types is not:
+    it is a complaint, a question, three things at once, a word they picked up
+    from somewhere else, or an instruction with no object. The assistant has to
+    survive all of it, and — the part that is easy to forget — has to ANSWER
+    well when it cannot act.
+  */
+  {
+    name: "多件事 · 一次讲三个",
+    ask: "标题改成「本周工程」，表格加一列备注，然后流程条拿掉",
+    expect: ["set_text", "add_table_column", "remove_component"],
+  },
+  {
+    name: "求助 · 不是指令是求救",
+    ask: "这个我不会用，你帮我弄好看一点",
+    // Vague but actionable. Doing nothing is a worse answer than one tasteful
+    // change — but inventing text is not on.
+    accept: ["set_variant", "move_component", "remove_component"],
+  },
+  {
+    name: "问问题 · 不是要改",
+    ask: "为什么我这一页跟别人的不一样？",
+    expect: [],
+    note: "该回答，不该动手",
+  },
+  {
+    name: "情绪 · 抱怨",
+    ask: "很难用啊这个，看不懂",
+    expect: [],
+    note: "该好好回一句，不该乱改",
+  },
+  {
+    name: "指代不明 · 那个删掉",
+    ask: "把那个删掉",
+    expect: [],
+    note: "没说哪一个，该问清楚，不该猜一个删",
+  },
+  {
+    name: "危险 · 全部删掉",
+    ask: "整页清空，全部不要了",
+    // The shell must survive whatever else happens: everything on the page
+    // lives inside its slots.
+    forbid: ["remove_component"],
+    forbidText: ["dashboard-shell"],
+    accept: ["remove_component"],
+    danger: true,
+  },
+  {
+    name: "口语 · 打字很随便",
+    ask: "table 那边 客户 改成 联络人 谢谢",
+    accept: ["set_table_column", "set_text"],
+  },
+  {
+    name: "撤销 · 我讲错了",
+    ask: "刚才那个不要了，改回去",
+    expect: [],
+    note: "撤销是编辑器的按钮，不是它的操作 —— 该讲清楚在哪里按",
+  },
+
   {
     name: "含糊 · 只说了一半",
     ask: "那个金额的地方怪怪的",
@@ -480,6 +544,16 @@ for (const c of chosen) {
   }
 
   const understood = runs.filter((r) => {
+    /*
+      THE PAGE FRAME IS NEVER A TARGET.
+
+      「整页清空」 is a legitimate request and the honest answer is to empty the
+      main column — but a remove_component aimed at the SystemShell strands
+      everything in its slots, which is why applyLayoutOps refuses it. The
+      model should not be sending it in the first place: a refusal the customer
+      never sees is still a wasted turn.
+    */
+    if (c.danger && (r.values ?? []).includes("dashboard-shell")) return false;
     // A picture must not put somebody else's words on this page. Checked on
     // every value the model wrote, not only on the operation names.
     if (c.forbidText?.some((t) => JSON.stringify(r.values ?? []).includes(t))) return false;
@@ -532,6 +606,14 @@ console.log(
 // The reasons are the actionable half: 改到了 below 听得懂 always means one of
 // OUR checks rejected an operation the model got right.
 const reasons = rows.flatMap((r) => r.runs.flatMap((x) => x.skipped)).map((s) => `${s.op}: ${s.reason}`);
+if (process.env.SAY) {
+  console.log('\n' + '它是怎么回答的:');
+  for (const r of rows) {
+    console.log('  ' + r.name);
+    for (const x of r.runs) console.log('      ' + (x.explanation || '(没讲话)'));
+  }
+}
+
 if (reasons.length) {
   console.log("\n被挡下来的（这些是我们这边的问题，不是模型的）:");
   for (const [k, n] of Object.entries(
