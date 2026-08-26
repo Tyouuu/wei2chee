@@ -313,6 +313,116 @@
   background-image: var(--canvas-image, none);
 }
 
+
+/* ── A PUBLIC WEBSITE IS NOT A DASHBOARD ────────────────────────────────────
+
+   MEASURED, 2026-08-27, after the founder said 「為什麼我看到我們的設計出來的官網
+   跟別人的差別那麼大的」. He was right, and three numbers are the whole answer.
+
+   Against nobruf/shadcn-landing-page (MIT, 1.3k stars, Next + shadcn + Tailwind
+   -- our own stack), read with getComputedStyle:
+
+                        theirs      ours
+     section padding    128px       0
+     content container  1280px      none — text began at x=25 of a 1400px page
+     section heading    36–60px     15px, the same size as body text
+
+   Everything else people call 「设计感」 on a landing page is downstream of those
+   three. A dashboard is right to run edge to edge and to have no rhythm: it is
+   a working surface and every pixel is a row. A website is read, once, by a
+   stranger who is deciding whether to call -- and it is the one page in this
+   product whose blocks came from the dashboard's own component set.
+
+   So the website gets a page frame that the system pages do not. It is applied
+   to the CHILDREN rather than baked into each block, because the blocks are
+   shared with the system and must keep behaving there.
+
+   `[data-bleed]` opts a block out: the hero paints its own ground and its
+   hours strip runs edge to edge, so it takes the frame internally instead. */
+/* GRANDCHILDREN, NOT CHILDREN. Puck's <Render> puts every block inside ONE
+   wrapper div, so `.ds-site > *` is that wrapper -- measured on the live page:
+   childCount 1. Styling it gave the page a container and no rhythm at all,
+   which looked almost right and was the wrong element. */
+.ds-site > * > * {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 68rem;
+  padding-inline: 1.5rem;
+}
+
+.ds-site > * > * + * {
+  margin-top: 4.5rem;
+}
+
+@media (min-width: 48rem) {
+  .ds-site > * > * + * {
+    margin-top: 6.5rem;
+  }
+}
+
+.ds-site > * > [data-bleed] {
+  max-width: none;
+  padding-inline: 0;
+}
+
+/* The bar sits above the first block and the foot below the last, so neither
+   takes the rhythm: a sticky header pushed down 4.5rem is a header that starts
+   halfway down the first screen. */
+.ds-site > * > [data-chrome-top],
+.ds-site > * > [data-chrome-foot] {
+  margin: 0;
+  max-width: none;
+  padding-inline: 0;
+}
+
+/* The last block needs room under it, unless the last block IS the foot. */
+.ds-site > * > :last-child:not([data-chrome-foot]) {
+  margin-bottom: 4.5rem;
+}
+
+/* A fixed block is not in the flow and must not take the frame or the rhythm --
+   it would be centred inside a 68rem box and pushed down by a margin it cannot
+   use. */
+.ds-site > * > .fixed {
+  margin: 0;
+  max-width: none;
+  padding-inline: 0;
+  width: auto;
+}
+
+
+/* ── A WEBSITE'S TYPE SCALE IS NOT A DASHBOARD'S ────────────────────────────
+
+   The third of the three measurements. Section headings on the reference run
+   36px and its hero runs 60px; ours ran 15px and 34px, because every one of
+   these blocks was built for a system page where a heading is a panel caption
+   over a table and MUST stay small -- a 36px 「Recent projects」 above four rows
+   would be shouting at the person who works there all day.
+
+   A stranger reading a website once is the opposite case. So the scale is
+   redefined for this context rather than in the components, which keeps both
+   right: the same ShelfList is a caption in the system and a section heading on
+   the site.
+
+   Redefined as TOKENS, so a register's own display face, tracking and weight
+   still apply -- 招牌 keeps its condensed display type, 瑞士 keeps its
+   restraint. Only the size changes. */
+.ds-site {
+  --text-hero: clamp(2.25rem, 5.5vw, 3.5rem);
+}
+
+.ds-site :is(h2, h3):not([data-chrome-top] *):not([data-chrome-foot] *) {
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  letter-spacing: var(--tracking-title);
+  line-height: var(--leading-tight);
+}
+
+/* The hero's own headline is an h1 and already carries --text-hero; its
+   supporting line grows with it or the pair stops looking like a pair. */
+.ds-site [data-bleed] p {
+  font-size: var(--text-lg);
+}
+
 /* ── THE TILE THAT MOVES ─────────────────────────────────────────────────────
 
    WHAT 21ST.DEV ACTUALLY DOES, measured on 2026-08-26 with a browser rather

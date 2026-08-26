@@ -168,6 +168,10 @@ export function SiteHero({
 
   return (
     <section
+      /* The hero paints the page's ground and its hours strip runs edge to
+         edge, so it opts out of `.ds-site`'s frame and applies the same measure
+         to its own contents instead. */
+      data-bleed=""
       className={[
         // A CONTAINER, NOT A VIEWPORT.
         //
@@ -200,6 +204,10 @@ export function SiteHero({
         </p>
       ) : null}
 
+      {/* THE SAME MEASURE `.ds-site` gives every other block, applied here by
+          hand because the hero opts out of it -- its ground and its strip need
+          the full width, its words do not. */}
+      <div className="mx-auto w-full max-w-[68rem]">
       {/* THE GRID EXISTS ONLY WHEN THERE IS A SECOND THING.
           `display: grid` with one child is not free -- it re-parents the whole
           opening and any max-width inside it starts resolving against a track
@@ -358,6 +366,7 @@ export function SiteHero({
           />
         </div>
       )}
+      </div>
       </div>
     </section>
   )

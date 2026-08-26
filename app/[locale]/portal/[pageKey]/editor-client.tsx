@@ -1212,7 +1212,16 @@ export function PortalEditor({
                       label={navPages.find((p) => p.key === pageKey)?.label ?? pageKey}
                     >
                     <CanvasGutter
-                      className={`ds-ground ${scopeClasses(activeStyle, activePalette)} h-full [background-color:var(--color-canvas)]`}
+                      /* THE WEBSITE GETS ITS PAGE FRAME HERE TOO.
+
+                         Without this the owner edits a page that publishes
+                         differently from what they were looking at -- no
+                         container, no rhythm, dashboard-sized headings -- and
+                         the whole promise of this editor is 看到的就是拿到的.
+                         See `.ds-site` in app/globals.css. */
+                      className={`ds-ground ${scopeClasses(activeStyle, activePalette)} ${
+                        pageKey === "website" ? "ds-site" : ""
+                      } h-full [background-color:var(--color-canvas)]`}
                     >
                     {/* Two layers: the outer freezes the register's own radius
                         ladder under private names, the inner multiplies them.

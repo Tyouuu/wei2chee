@@ -1,0 +1,143 @@
+import Link from "next/link"
+import type { ReactNode } from "react"
+
+/**
+ * The top bar and the foot of a customer's public website.
+ *
+ * ── WHY THESE DID NOT EXIST ──────────────────────────────────────────────
+ *
+ * Because the website was built out of the DASHBOARD's component set, and a
+ * dashboard has neither: its navigation is the rail, and it has no foot because
+ * it never ends. The founder photographed the result and asked why our
+ * generated site looked so different from everyone else's. Measured the same
+ * day against nobruf/shadcn-landing-page (MIT, our stack) and two real
+ * Malaysian SME sites: all three open with a bar carrying the name and a few
+ * links, and all three close with a foot carrying the contact details again.
+ *
+ * We opened cold on a headline and ended on a form.
+ *
+ * ── WHY THE FOOT REPEATS WHAT THE PAGE ALREADY SAID ──────────────────────
+ *
+ * Because that is what a foot is for. A visitor who has read to the bottom has
+ * decided; making them scroll back up to find the number is where the decision
+ * gets lost. Every reference does it, including the two local ones.
+ */
+
+export function SiteBar({
+  brand,
+  links,
+  actionLabel,
+  actionHref,
+}: {
+  brand: ReactNode
+  /** The page's own sections. Three or four; a small business does not have
+   *  eight, and a bar with eight links on it reads as a company that does. */
+  links?: { label: string; href: string }[]
+  actionLabel?: string
+  actionHref?: string
+}) {
+  return (
+    <header
+      /* Sticky, and on the page's own ground with a hairline under it rather
+         than a shadow: a shadow on a register whose ground is a texture (瓷's
+         floor tile) reads as a smudge, and every register here has a hairline. */
+      data-chrome-top=""
+      /* `@container`, not a viewport breakpoint: the editor canvas is narrower
+         than the window and a phone preview is a 390px box inside a 1440px one.
+         Same trap site-hero.tsx documents at length. */
+      className="@container sticky top-0 z-30 w-full [background-color:var(--color-canvas)] [border-bottom:var(--hairline)_solid_var(--border-subtle)]"
+    >
+      <div className="mx-auto flex w-full max-w-[68rem] items-center justify-between [gap:var(--gap-stack)] [padding-block:calc(var(--pad-control-y)*1.1)] [padding-inline:1.5rem]">
+        <span className="min-w-0 truncate [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+          {brand}
+        </span>
+
+        {links?.length ? (
+          // Hidden on a phone rather than folded into a burger: these are
+          // anchors to sections of the SAME page, and on a phone scrolling is
+          // the navigation. A burger that opens four in-page anchors is a
+          // control that exists to be closed again.
+          <nav className="hidden items-center [gap:calc(var(--gap-stack)*1.2)] @2xl:flex">
+            {links.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [transition-duration:var(--dur)] [transition-property:color] hover:[color:var(--color-paper)]"
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+        ) : null}
+
+        {actionLabel ? (
+          <a
+            href={actionHref || "#"}
+            className="inline-flex min-h-9 shrink-0 items-center [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [padding-block:calc(var(--pad-control-y)*0.7)] [padding-inline:var(--pad-control-x)]"
+          >
+            {actionLabel}
+          </a>
+        ) : null}
+      </div>
+    </header>
+  )
+}
+
+export function SiteFoot({
+  brand,
+  tagline,
+  rows,
+  note,
+}: {
+  brand: ReactNode
+  tagline?: string
+  /** The contact details again — number, address, hours. Rows the owner has
+   *  not filled are dropped upstream, so an unfilled foot is a name and a line
+   *  rather than a column of dashes. */
+  rows?: { label: string; value: string }[]
+  /** The one line at the very bottom. Not a copyright notice by default: a
+   *  renovation contractor does not need one, and it is the only line on the
+   *  page that would be about lawyers rather than about work. */
+  note?: string
+}) {
+  const filled = (rows ?? []).filter((r) => r.value?.trim())
+  return (
+    <footer
+      data-chrome-foot=""
+      className="@container w-full [background-color:var(--color-ink-850)] [border-top:var(--hairline)_solid_var(--border-subtle)]"
+    >
+      <div className="mx-auto flex w-full max-w-[68rem] flex-col [gap:var(--gap-stack)] [padding-block:calc(var(--pad-card-lg)*1.8)] [padding-inline:1.5rem]">
+        <div className="flex flex-wrap items-baseline [gap:var(--gap-inline)]">
+          <span className="[color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+            {brand}
+          </span>
+          {tagline ? (
+            <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{tagline}</span>
+          ) : null}
+        </div>
+
+        {filled.length ? (
+          <dl className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
+            {filled.map((r) => (
+              <div key={r.label}>
+                <dt className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+                  {r.label}
+                </dt>
+                <dd className="mt-1 [color:var(--color-paper)] [font-size:var(--text-base)]">{r.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+
+        {note ? (
+          <p className="[border-top:var(--hairline)_solid_var(--border-subtle)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [padding-top:var(--gap-stack)]">
+            {note}
+          </p>
+        ) : null}
+      </div>
+    </footer>
+  )
+}
+
+/** Kept so a hand-written page can still link out; unused by the generator. */
+export const SiteLink = Link

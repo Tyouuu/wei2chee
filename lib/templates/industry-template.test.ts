@@ -199,6 +199,10 @@ describe("buildPageLayout", () => {
   it("builds a website out of nothing but the fallback trade", () => {
     const content = contentOf({}, "website");
     expect(content.map((n) => n.type)).toEqual([
+      // The bar and the foot arrived 2026-08-27: a website has both and a
+      // dashboard has neither, which is why the page built out of dashboard
+      // blocks had neither either. See site-chrome.tsx.
+      "SiteBar",
       "SiteHero",
       "InfoRows",      // what we do
       "Columns",       // work photos, three empty frames the owner fills
@@ -217,6 +221,7 @@ describe("buildPageLayout", () => {
       "MarkList",      // what you get from us
       "EnquiryForm",
       "InfoRows",      // how to reach us
+      "SiteFoot",
       // The floating WhatsApp button, last so its fixed position has nothing
       // after it to fight. Added 2026-08-26; see floating-contact.tsx.
       "FloatingContact",

@@ -48,7 +48,13 @@ export function PublicSite({
       className="ds-ground min-h-screen [background-color:var(--color-canvas)]"
     >
       <SystemLangProvider lang={lang}>
-        <Render config={puckConfig} data={data} />
+        {/* THE PAGE FRAME. See `.ds-site` in app/globals.css for the three
+            measurements that made it necessary. It wraps rather than being
+            baked into the blocks because those blocks are shared with the
+            owner's system pages, where edge-to-edge is right. */}
+        <div className="ds-site flex flex-col">
+          <Render config={puckConfig} data={data} />
+        </div>
       </SystemLangProvider>
     </StyleScope>
   );

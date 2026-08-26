@@ -435,6 +435,52 @@ const promiseList = (c: LandingContent) =>
   });
 
 /*
+  THE TOP BAR AND THE FOOT.
+
+  Neither existed until 2026-08-27, and the reason they did not is the reason
+  the founder could see at a glance that our site was not like anyone else's:
+  the website was built out of the DASHBOARD's component set, and a dashboard
+  has no top bar (its navigation is the rail) and no foot (it never ends).
+
+  The bar's links are anchors to sections of this same page, built from the
+  sections this template actually emitted -- not a fixed four, which would give
+  a one-page card the same nav as a full site.
+*/
+/*
+  THE BAR'S LINKS ARE THIS PAGE'S OWN SECTIONS.
+
+  Three, not four or five: a renovation contractor has three things a stranger
+  wants to jump to, and a bar carrying eight links reads as a company that has
+  eight departments. Every template emits the services list, a price section and
+  the form, so those three are the ones every bar can honestly point at.
+*/
+const anchors = (c: LandingContent) => [
+  { label: c.words.sections.work.heading, href: "#website-services" },
+  { label: c.words.sections.prices.heading, href: "#website-prices" },
+  { label: c.words.contactHeading, href: "#website-form" },
+];
+
+const bar = (c: LandingContent, links: { label: string; href: string }[]) => {
+  const phone = c.contact.find((r) => r.icon === "phone");
+  return node("SiteBar", "website-bar", {
+    brand: c.brand,
+    links,
+    actionLabel: c.words.askShort,
+    actionHref: phone && phone.placeholder !== true ? `tel:${phone.value}` : "#enquiry",
+  });
+};
+
+const foot = (c: LandingContent) =>
+  node("SiteFoot", "website-foot", {
+    brand: c.brand,
+    tagline: c.eyebrow,
+    // The same rows the contact section carries, and the same placeholder flag
+    // -- a foot that prints 「WhatsApp 012-345 6789」 is the exact failure this
+    // module was built to stop, one screen further down.
+    rows: c.contact.map((r) => ({ label: r.label, value: r.value, placeholder: r.placeholder })),
+  });
+
+/*
   跟着页面走的 WhatsApp 按钮.
 
   Last in every template's list, so it is the last node on the page and its
@@ -476,6 +522,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurbEn: "They ask, you go and look, then you quote. Renovation, repairs, contracting.",
     trades: ["renovation", "services", "other"],
     build: (c) => [
+      bar(c, anchors(c)),
       hero(c, "split", "quote"),
       services(c, sect(c, "quote").services),
       work(c),
@@ -487,6 +534,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       promiseList(c),
       form(c, "quote", "card"),
       contact(c),
+      foot(c),
       ...floating(c),
     ],
   },
@@ -498,6 +546,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurbEn: "They need a slot. Salons, tuition, clinics.",
     trades: ["beauty", "education"],
     build: (c) => [
+      bar(c, anchors(c)),
       hero(c, "split", "booking"),
       services(c, sect(c, "booking").services),
       // Numbered, not arrows: someone booking a slot is reading "what do I do
@@ -510,6 +559,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       faq(c),
       form(c, "booking", "split"),
       contact(c),
+      foot(c),
       ...floating(c),
     ],
   },
@@ -521,6 +571,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurbEn: "They see it and order. F&B, retail.",
     trades: ["fnb", "retail"],
     build: (c) => [
+      bar(c, anchors(c)),
       // The band is the shopfront: for a business whose page IS the shop, the
       // first screen should feel like walking past it.
       hero(c, "split", "order"),
@@ -532,6 +583,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       reviews(c),
       form(c, "order", "split"),
       contact(c, false),
+      foot(c),
       ...floating(c),
     ],
   },
@@ -543,6 +595,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurbEn: "The buyer is a business. They want terms: credit, delivery, price at volume.",
     trades: ["wholesale"],
     build: (c) => [
+      bar(c, anchors(c)),
       hero(c, "split", "pricelist"),
       services(c, sect(c, "wholesale").services),
       flow(c, sect(c, "wholesale").flow ?? "", "timeline"),
@@ -552,6 +605,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       faq(c),
       form(c, "wholesale", "card"),
       contact(c),
+      foot(c),
       ...floating(c),
     ],
   },
@@ -563,6 +617,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurbEn: "They decide after seeing what you have made. Design, photography, renovation.",
     trades: [],
     build: (c) => [
+      bar(c, anchors(c)),
       hero(c, "split", "grid"),
       // Services first and unframed: on a page whose job is "look at this",
       // boxes around every section fight the looking.
@@ -573,6 +628,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       faq(c),
       form(c, "portfolio", "plain"),
       contact(c, false),
+      foot(c),
       ...floating(c),
     ],
   },
@@ -584,12 +640,14 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurbEn: "The simplest page: who you are, what you do, how to reach you. No form.",
     trades: [],
     build: (c) => [
+      bar(c, anchors(c)),
       hero(c, "split", "card"),
       services(c, sect(c, "card").services, false),
       hours(c),
       areas(c),
       reviews(c),
       contact(c),
+      foot(c),
       ...floating(c),
     ],
   },

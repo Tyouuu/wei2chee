@@ -16,6 +16,7 @@ import { RecordTable } from "@/design-system/components/record-table";
 import { Inline } from "@/design-system/editor/inline-text";
 import { SiteHero } from "@/design-system/components/site-hero";
 import { FloatingContact } from "@/design-system/components/floating-contact";
+import { SiteBar, SiteFoot } from "@/design-system/components/site-chrome";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
 import { EnquiryForm } from "@/design-system/components/enquiry-form";
 import { TableFieldEditor } from "@/design-system/editor/table-field";
@@ -239,6 +240,18 @@ type Components = {
   // --- 官网 (shape: "landing") ------------------------------------------
   // The only two components in the catalogue whose reader is a STRANGER
   // rather than the owner. See site-hero.tsx and enquiry-form.tsx.
+  SiteBar: {
+    brand: string;
+    links?: { label: string; href: string }[];
+    actionLabel?: string;
+    actionHref?: string;
+  };
+  SiteFoot: {
+    brand: string;
+    tagline?: string;
+    rows?: { label: string; value: string }[];
+    note?: string;
+  };
   FloatingContact: {
     number?: string;
     label?: string;
@@ -575,7 +588,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteHero", "EnquiryForm", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1614,6 +1627,56 @@ export const puckConfig: Config<Components> = {
       // is the register, which it reads through tokens like everything else.
       render: ({ block, copy }) => <SiteBlock block={block} copy={copy} />,
     },
+    /*
+      顶栏跟页脚 — the two blocks a website has and a dashboard does not.
+      See site-chrome.tsx.
+    */
+    SiteBar: {
+      label: "官网顶栏",
+      fields: {
+        brand: { label: "公司名", type: "text" },
+        links: {
+          label: "链接",
+          type: "array",
+          arrayFields: {
+            label: { label: "字", type: "text" },
+            href: { label: "去哪", type: "text" },
+          },
+          defaultItemProps: { label: "区块", href: "#" },
+          getItemSummary: (item) => item.label || "链接",
+        },
+        actionLabel: { label: "按钮上的字", type: "text" },
+        actionHref: { label: "按钮去哪", type: "text" },
+      },
+      defaultProps: { brand: "我的公司" },
+      render: ({ brand, links, actionLabel, actionHref }) => (
+        <SiteBar brand={brand} links={links} actionLabel={actionLabel} actionHref={actionHref} />
+      ),
+    },
+
+    SiteFoot: {
+      label: "官网页脚",
+      fields: {
+        brand: { label: "公司名", type: "text" },
+        tagline: { label: "旁边一句", type: "text" },
+        rows: {
+          label: "联络方式",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            value: { label: "内容", type: "text" },
+          },
+          defaultItemProps: { label: "名称", value: "" },
+          getItemSummary: (item) => item.label || "一项",
+        },
+        note: { label: "最底下那一句", type: "text" },
+      },
+      defaultProps: { brand: "我的公司" },
+      render: ({ brand, tagline, rows, note }) => (
+        <SiteFoot brand={brand} tagline={tagline} rows={rows} note={note} />
+      ),
+    },
+
     /*
       跟着页面走的 WhatsApp 按钮 — see floating-contact.tsx for why every local
       business site in this market has one and ours did not.
