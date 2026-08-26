@@ -163,7 +163,7 @@ export function TemplatesClient({
             business closes a sale rather than on its trade -- a contractor and
             an aircon servicer are different trades that sell the same way. See
             lib/templates/landing-templates.ts. */}
-        <section className="mt-10">
+        <section className="mt-10" data-landing-gallery>
           <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
             {t("landingTitle")}
             <span className="ml-2 opacity-60">{landings.length}</span>

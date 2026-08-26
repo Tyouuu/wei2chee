@@ -23,7 +23,9 @@
     "backfill:analysis-en": "node scripts/backfill-analysis-en.mjs",
     "eval:editor": "tsx scripts/eval-editor.mjs",
     "check:en": "node scripts/check-en.mjs",
-    "shoot:site": "node scripts/shoot-site.mjs"
+    "shoot:site": "node scripts/shoot-site.mjs",
+    "shoot:market": "node scripts/shoot-market.mjs",
+    "shoot:skeletons": "node scripts/shoot-skeletons.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

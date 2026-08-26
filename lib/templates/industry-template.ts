@@ -1,4 +1,5 @@
 import type { PuckNode } from "@/lib/templates/puck-node";
+import { composeSite } from "@/lib/templates/site-composition";
 import {
   landingTemplateFor,
   LANDING_BY_KEY,
@@ -1644,6 +1645,13 @@ function buildWebsite(
   name: string,
   locale: string,
   pages: PageRef[],
+  /** projects.style. The 风格 chooses the website's SKELETON here exactly as it
+   *  chooses the dashboard's -- see site-composition.ts. Before 2026-08-27 this
+   *  builder ignored it entirely, so fourteen registers reached a customer's
+   *  website as fourteen coats of paint on one page. */
+  style?: string | null,
+  /** projects.layout — 换排法不换风格, the same override the dashboard takes. */
+  layout?: string | null,
 ): PuckNode[] {
   const industry = ctx.industry ?? fallbackIndustry(langOf(ctx));
   const content = landingContentFor(ctx, pages);
@@ -1666,7 +1674,17 @@ function buildWebsite(
       ? LANDING_BY_KEY.card
       : landingTemplateFor(industry.slug);
 
-  return template.build(content);
+  /*
+    THE TEMPLATE SAYS WHICH SECTIONS; THE REGISTER SAYS WHAT IT OPENS ON.
+
+    `layout` wins over `style` for the same reason it does on the dashboard --
+    「我要这一套的样子，但照台账那样排」 -- and LAYOUT_SETS maps a named 排法 back
+    onto the register whose skeleton it is.
+  */
+  return composeSite(
+    template.build(content),
+    (layout && LAYOUT_SETS[layout as LayoutSet]) || style,
+  );
 }
 
 function buildCustomers(

@@ -1,0 +1,25 @@
+{
+  "_why": "REAL Malaysian SME websites, used as the yardstick for the customer's 官网. Not template galleries -- businesses that are trading today. Every entry must carry evidence of RECENCY, because the founder caught me judging this market off two screenshots that were years old: 「你上次找的那两张 你自己都承认已经是很久远了 几年前的 我想要更准确的判断 不然很容易误判」 (2026-08-27). `copyright` is the newest year printed on the page itself; `stack` is what the page is actually built with. Re-check with `npm run shoot:market`.",
+  "_sources": "The OSM half comes out of .prospects/kl.csv (npm run find:prospects, 2135 KL businesses, 191 with a website) probed for the newest year they print. The trades OSM does not tag -- renovation, aircond -- were found by search, because those two are the personas the product opens on.",
+  "sites": [
+    { "trade": "装修", "name": "Space Reno", "url": "https://spacereno.com/", "why": "装修承包商 -- 第一号人物" },
+    { "trade": "装修", "name": "TF Renovation", "url": "https://tfrenovation.com.my/renovation-contractor-kuala-lumpur/", "why": "装修，KL/PJ/Shah Alam" },
+    { "trade": "装修", "name": "My Renovation Contractor", "url": "https://myrenovationcontractor.com.my/kuala-lumpur/", "why": "装修，主打价钱" },
+    { "trade": "装修", "name": "House Renovations Malaysia", "url": "https://houserenovationsmalaysia.com/", "why": "装修，免费上门" },
+    { "trade": "冷气", "name": "ACService.my", "url": "https://www.acservice.my/aircond-service-price/", "why": "冷气，价目表在页面上" },
+    { "trade": "冷气", "name": "AircondCare", "url": "https://www.aircondcare.my/aircond-service-price/", "why": "冷气，KL/雪兰莪" },
+    { "trade": "冷气", "name": "ACFix", "url": "https://www.acfix.my/aircond-service-price/", "why": "冷气，透明价钱" },
+    { "trade": "牙科", "name": "iCare Dental", "url": "https://www.icaredental.com.my/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "牙科", "name": "AERIS Dental", "url": "https://aerisdental.my/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "牙科", "name": "KL International Dental Centre", "url": "https://www.klidc.com.my/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "美容", "name": "360 Medi-Skin", "url": "https://360mediskin.com/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "美容", "name": "Posh Nail Spa", "url": "https://poshnailspa.my/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "美容", "name": "Wax Candy", "url": "https://www.waxcandy.com.my/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "家具", "name": "D Touch", "url": "https://d-touch.com.my/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "家具", "name": "Wood Story", "url": "https://woodstory.com.my/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "家具", "name": "Chai & Chai Trading", "url": "https://www.chaitradings.com.my/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "车厂", "name": "Doktor Cermin", "url": "https://drcermin.com/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "汽车配件", "name": "TukarBateri", "url": "https://www.tukarbateri.com.my/", "copyright": 2026, "stack": "WordPress+Elementor", "why": "OSM 实录，© 2026" },
+    { "trade": "五金建材", "name": "Fo Sin Aluminium (New Way)", "url": "https://www.newwaykl.com/", "copyright": 2025, "stack": "WordPress", "why": "OSM 实录，© 2025" }
+  ]
+}

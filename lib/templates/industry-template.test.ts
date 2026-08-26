@@ -204,6 +204,17 @@ describe("buildPageLayout", () => {
       // blocks had neither either. See site-chrome.tsx.
       "SiteBar",
       "SiteHero",
+      /*
+        THE MIDDLE IS IN 图纸's ORDER, NOT THE TEMPLATE'S, SINCE 2026-08-27.
+
+        A website with no register named falls to 蓝图 exactly as a dashboard
+        does, and 蓝图's website skeleton is the most ordinary order there is:
+        what we do, what it looks like, what happens next. The order itself is
+        asserted against SITE_COMPOSITION in site-composition.test.ts rather
+        than spelled twice; what this list is still for is the CONTENTS -- the
+        founder's own list of what a Malaysian SME page was missing:
+        「缺的是口碑、价目、覆盖范围、常见问题、营业时间、保证」.
+      */
       // Cards, not rows: what a business SELLS is a card grid on every
       // reference, and rows are for what it merely lists. 2026-08-27.
       "SiteFeatures",      // what we do
@@ -215,15 +226,15 @@ describe("buildPageLayout", () => {
       "PhotoFrame",
       "PhotoFrame",
       "PhotoFrame",
-      "InfoRows",      // a price guide, never a price
       "WorkflowStrip", // what happens after you call
+      "InfoRows",      // a price guide, never a price
       // A review has a rating, the words and a face -- not the dashboard's
       // 「title, description, action」 shelf row.
       "SiteTestimonials",
       // The middle ask. No template had one; every reference does.
-      "SiteCta",     // what customers say
-      "InfoRows",      // where we cover
+      "SiteCta",
       "FoldSection",   // questions we get
+      "InfoRows",      // where we cover
       "MarkList",      // what you get from us
       "EnquiryForm",
       "InfoRows",      // how to reach us
@@ -232,6 +243,23 @@ describe("buildPageLayout", () => {
       // after it to fight. Added 2026-08-26; see floating-contact.tsx.
       "FloatingContact",
     ]);
+  });
+
+  // 换风格 changes the page's SKELETON, not its paint -- the same thing the
+  // dashboard's composition does, wired to the website on 2026-08-27. This
+  // asserts the wire from the outside; site-composition.test.ts covers the
+  // table itself.
+  it("gives two registers two different websites", () => {
+    const sectionsOf = (style: string) =>
+      (
+        buildPageLayout("website", renovation, "我的生意", "zh", undefined, style) as unknown as {
+          content: Node[];
+        }
+      ).content.map((n) => String(n.props.id));
+    expect(sectionsOf("ledger")).not.toEqual(sectionsOf("hearth"));
+    // 台账 opens on the price list, 炉 opens on the photographs.
+    expect(sectionsOf("ledger")[2]).toBe("website-prices");
+    expect(sectionsOf("hearth")[2]).toBe("website-work");
   });
 
   // The arrow the whole page exists to draw. An enquiry has to say which of

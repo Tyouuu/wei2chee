@@ -535,6 +535,48 @@ Google Business，加上**两个真的马来西亚 SME 官网**（冷气、牙�
 - [ ] AI 生图当成**收费、限量**的备案，留给真的没东西可拍的生意（批发、记帐）——
       跟 Durable 一样卡额度。OpenAI 的 key 我们已经有了
 
+### 25. 那七个 landing kit 我截了图没有挖（2026-08-27 他点破的）
+> `我不是给你了很多github 做landing pages 的skills了吗 还是开源项目 你忘记了吗
+> 我是说看看如何融合 随便也去看看国外的landing pgaes是怎么去做的`
+
+**他讲对了，而且我可以把数字讲出来：`.screenshots/kits/` 里有七张 ——
+bag-ui · bigspring · convertfast · creativetim · launch-ui · startup · tailark。
+我只挖了 tailark 一个**（加一个 nobruf/shadcn-landing-page），
+剩下五个截了图就放着。而且 **`design-system/upstream.json` 里一个 landing kit 都没有记** ——
+那份档案记着 11 个后台来源、许可、拿了哪个 commit，唯独这七个不在里面，
+所以 `npm run check:upstream` 从来没有替它们查过。
+
+- [ ] 七个全部 clone 起来跑，照[任务 24](#24) 那四步：跑起来 → 量 → 列出我们不如人的地方 → 修
+- [ ] 记进 `upstream.json`，让 `check:upstream` 管得到
+- [ ] **国外的 landing page 也再看一轮** —— `scratchpad/L-*.png` 已经有 16 张
+      （Linear / Attio / Stripe / Resend / Raycast / Polar / Vercel / Supabase / Clerk /
+      Framer / Cal / Dub / Lovable / Mintlify / shadcn / Tailwind），同样是**只看不挖**
+- [ ] ⚠️ **拿的时候要分边**（2026-08-27 实测的教训）：
+      **开源 kit 给的是「有哪些区段」，市场给的是「多大、多宽、多密」。**
+      我上一轮两边都拿了 GitHub 的 —— 大标题 56px、区块间距 104px，
+      那是 SaaS 官网的比例；[19 家马来西亚 SME 量出来是 38px / 574px 行宽](#26)
+
+### 26. 市场实测：19 家今天还在营业的马来西亚 SME（2026-08-27 做完）
+> `你看看能不能找到近期马来西亚SME的 因为你上次找的那两张 你自己都承认已经是很久远了
+> 几年前的 我想要更准确的判断 不然很容易误判`
+
+**他抓到我拿两张几年前的截图在判整个市场。** 重做了：
+名单 `docs/market-references.json`，实拍 `.screenshots/market/`，
+`npm run shoot:market` 随时重跑。来源是我们自己的 `find:prospects`
+（吉隆坡 2135 家 / 191 家有官网 / **41 家页面上印着 © 2026**），
+装修跟冷气 OSM 没有标签，另外搜的。
+
+- [x] **19 家实拍实量**：15/19 第一屏就给 WhatsApp · 14/19 第一屏有照片（中位数占 59%）·
+      7/19 顶上一条 · **0/19 价钱在第一屏** · 大标题桌面 38px / 手机 32px · 正文行宽 574px
+- [x] ⚠️ **我上次讲错的那一件**：我根据那张旧的冷气截图讲「价钱要放第一屏」，还照做了
+      （`SiteHero` 的 `priceRows`）。**19 家里 0 家这样做** —— 连三家冷气公司都没有，
+      它们第一屏放的是「Transparent Pricing · No Hidden Charges」这句**主张**。
+      我拿一个促销特例当成了规律
+- [x] **尺子自己错了两次，都是看拼图才发现的**：浮动按钮报 0/19（外挂把 `fixed` 放在
+      铺满全屏的包装上，问包装「你在哪」答案是「整个屏幕」）· 电话号码报 2/19
+      （正则不准国码后面有空格，而这个国家写的是 `+60 17-873 0408`）
+- [ ] **还欠**：19 家全部是吉隆坡跟雪兰莪，槟城 / 柔佛 / 东马没有取样
+
 ### 20. 🔴 平台「四不像」（2026-08-26 他讲的）
 > `感覺我的平台有點四不像`
 

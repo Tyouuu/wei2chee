@@ -6,6 +6,7 @@ import {
 } from "@/lib/supabase/server-session";
 import { TemplatesClient } from "./templates-client";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { composeSite } from "@/lib/templates/site-composition";
 import { ALL_LANDINGS } from "@/lib/templates/all-landings";
 import {
   landingContentFor,
@@ -115,7 +116,20 @@ export default async function TemplatesPage({
     key: t.key,
     label: zh ? t.label : t.labelEn,
     blurb: zh ? t.blurb : t.blurbEn,
-    layout: { root: {}, content: t.build(landingContent) } as unknown as Data,
+    /*
+      COMPOSED, NOT RAW -- the same call buildWebsite makes.
+
+      Without this the gallery would show six pages in the TEMPLATE's order
+      while the page the customer actually gets comes back in the REGISTER's
+      order (site-composition.ts, 2026-08-27). A gallery that shows a different
+      page from the one it hands over is worse than no gallery: it is the
+      product lying about its own output, and the customer finds out after
+      choosing.
+    */
+    layout: {
+      root: {},
+      content: composeSite(t.build(landingContent), project.style as string | null),
+    } as unknown as Data,
   }));
 
   return (

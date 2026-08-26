@@ -165,7 +165,12 @@ export function StylesClient({
   }
 
   return (
-    <>
+    /* WHICH ONE IS ON, stated rather than inferred. shoot:skeletons has to put
+       the register back when it is done, and 「the card with no 换成这个 button」
+       is the kind of inference that quietly starts matching the wrong element
+       -- which is exactly how shoot:registers came to photograph 台账 and file
+       it as 工作室. See the note on data-register below. */
+    <div data-register-current={style} className="contents">
       {/* COUNTED, NOT TYPED. It read 「同一套系统,十种做法」 while the set held
           seventeen, and the English said 「five ways」 -- both were written when
           the number was true and neither moved when it changed. Three culls have
@@ -339,7 +344,7 @@ export function StylesClient({
         </section>
 
       </div>
-    </>
+    </div>
   );
 }
 
