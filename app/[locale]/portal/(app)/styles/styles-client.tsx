@@ -33,6 +33,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   pop: styles.pop,
   console: styles.console,
   counter: styles.counter,
+  studio: styles.studio,
 };
 
 
@@ -55,6 +56,7 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   pop: "Pop",
   console: "Console",
   counter: "Counter",
+  studio: "Studio",
 };
 
 /**
@@ -193,6 +195,24 @@ export function StylesClient({
             return (
               <li
                 key={name}
+                /*
+                  A HOOK FOR THE TWO RULERS THAT JUDGE THIS PAGE.
+
+                  check:registers and shoot:registers both used to find a card
+                  by looking for the register's NAME in an <li>. That worked
+                  while a card was a name over a hand-drawn table. Since the
+                  cards became live travelling previews of the customer's own
+                  pages, every card contains hundreds of <li>s of somebody
+                  else's content, and both scripts started matching the wrong
+                  element -- shoot:registers photographed 台账 and filed it as
+                  工作室, and check:registers reported 「0 / 0, every register is
+                  structurally distinct」, which is true and worthless.
+
+                  A ruler that passes by finding nothing is worse than no ruler.
+                  So the card carries its own name in an attribute that no copy
+                  change and no preview can imitate.
+                */
+                data-register={name}
                 className={`overflow-hidden rounded-[var(--radius-lg)] transition-colors ${
                   isActive
                     ? "[border:1px_solid_var(--color-primary)]"
@@ -238,6 +258,7 @@ export function StylesClient({
                     <button
                       type="button"
                       onClick={() => choose(name)}
+                      data-register-use={name}
                       disabled={Boolean(pending)}
                       className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-50 enabled:hover:[border-color:var(--color-primary)]"
                     >

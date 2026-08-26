@@ -67,15 +67,30 @@ for (const reg of REGISTERS) {
   // name is still the only place a register's own word appears in the card, so
   // matching the card's text and then pressing its 换成这个 is stable against
   // whatever else the tile grows.
+  /*
+    MATCH ON THE CARD'S OWN ATTRIBUTE, NOT ON ITS TEXT.
+
+    This read `for (const li of document.querySelectorAll("li"))` and took the
+    first whose text contained the register's name. That was right while a card
+    was a name over a small hand-drawn table. Since the cards became live
+    travelling previews of the customer's real pages, each one contains
+    hundreds of <li>s of somebody else's content -- and on 2026-08-26 this
+    photographed 台账's dashboard and filed it as reg-Studio.png. A screenshot
+    script that files the wrong picture under the right name is worse than one
+    that crashes.
+
+    styles-client.tsx now stamps data-register on the card and
+    data-register-use on its button. Neither can be imitated by a preview and
+    neither moves when the copy does.
+  */
   const hit = await p.evaluate((w) => {
-    for (const li of document.querySelectorAll("li")) {
-      const text = (li.textContent || "").trim();
-      if (!text.includes(w)) continue;
-      const btn = [...li.querySelectorAll("button")].pop();
-      if (btn) { btn.click(); return "ok"; }
-      return "active";
-    }
-    return "miss";
+    const key = w.toLowerCase();
+    const card = document.querySelector(`li[data-register="${key}"]`);
+    if (!card) return "miss";
+    const btn = card.querySelector(`button[data-register-use="${key}"]`);
+    if (!btn) return "active";
+    btn.click();
+    return "ok";
   }, reg);
   if (hit === "miss") { console.log(reg.padEnd(11), "NOT FOUND"); continue; }
   await p.waitForTimeout(3500);

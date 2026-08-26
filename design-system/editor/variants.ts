@@ -224,6 +224,9 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "boxed", label: "有框", props: { layout: "boxed" } },
     { id: "rule", label: "没有盒子", props: { layout: "rule" } },
     { id: "lead", label: "第一个最大", props: { layout: "lead" } },
+    // The change rides BESIDE the figure as a filled pill, and the sentence
+    // explaining it drops to its own quieter line. See StatRow's DeltaPill.
+    { id: "chip", label: "涨跌做成药丸", props: { layout: "chip" } },
   ],
 
   SmallStat: [
@@ -346,6 +349,9 @@ export const VARIANTS: Record<string, Variant[]> = {
     // Ant Design Pro / vue-element-admin: a group is a folder you press, not a
     // caption over a list. The shape Chinese-speaking SMEs already run.
     { id: "tree", label: "可展开的分组树", props: { variant: "tree" } },
+    // The fifth: a full navigation with the business's main action filled in
+    // above it. See RailNav's `actionLabel` for why the POSITION is the point.
+    { id: "action", label: "上面带一颗主要按钮", props: { variant: "action" } },
   ],
 
   // ---------------------------------------------------------------- 按钮

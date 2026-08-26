@@ -148,8 +148,29 @@
   --color-nav-bg-deep: #000c17;
   --color-nav-fg: #b7c3d1;
   --color-nav-fg-dim: #5c6b7e;
-  --color-nav-hover: #0b2136;
-  --color-nav-active: #1677ff;
+  /*
+     THE ACTIVE AND HOVER GROUNDS BELONG TO THE RAIL'S GROUND.
+
+     Measured across all seventeen registers on 2026-08-26, after the founder
+     set a shipped product as the yardstick: four rails painted a LIGHT active
+     or hover surface under LIGHT text, because those two values were written
+     as if the rail were paper while --color-nav-bg says it is ink. 粗野 was
+     the visible one -- white 「Overview」 on #ffe1ef, 1.17:1, the row whose
+     entire job is to say where you are. 瑞士 and 招牌 only failed on hover, so
+     nothing showed it in a screenshot at all.
+
+     They are now mixed FROM the rail's own ground toward its own text, so the
+     pair can never disagree again: whatever a register makes its rail out of,
+     the row you are on is a step off it in the direction of the words.
+
+     中台 gave up Ant blue on the active row and this is the honest reason: the
+     rail's own text is #b7c3d1, and #b7c3d1 on #1677ff is 2.29:1. Ant Design
+     Pro draws that row in WHITE, which our rail cannot do without a second
+     foreground token that only one register would use. A step off the navy
+     keeps the density and the fill and loses nothing a customer can name.
+  */
+  --color-nav-hover: #162a3d;
+  --color-nav-active: #2c3f51;
   --color-nav-border: #0b2136;
   --color-nav-accent: #ffffff;
 

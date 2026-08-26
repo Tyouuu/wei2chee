@@ -529,6 +529,34 @@ function railNav(
       { label: c.rail.notifications, iconName: "notifications" },
       { label: c.rail.account, iconName: "account" },
     ],
+    /*
+      THE BUSINESS'S MAIN ACTION, WRITTEN INTO EVERY RAIL AND DRAWN BY ONE.
+
+      Only the `action` variant renders it (工作室 -- see rail-nav.tsx), and it
+      is written unconditionally anyway, for the same reason FilterChips' two
+      labels are: a register is a choice about APPEARANCE, and switching to one
+      that does not draw this button must not delete what the button said.
+      Switch to 工作室, rename it, switch to 台账 and back -- the name is still
+      there, because it was never the register's to hold.
+
+      It is the SAME action PageHeader already offers, deliberately. Studio
+      Admin's rail leads with 「Quick Create」 and their pages carry their own
+      buttons too; the rail's copy is the standing offer, the page's is the one
+      for the page you are on.
+    */
+    actionLabel: c.dashboard.primaryAction(
+      pageLabel(
+        pages.find((p) => ["quotations", "bookings", "orders", "projects"].includes(p.key)) ?? {
+          key: "customers",
+        },
+        labels,
+        lang,
+      ),
+    ),
+    actionHref: `/${locale}/portal/${
+      pages.find((p) => ["quotations", "bookings", "orders", "projects"].includes(p.key))?.key ??
+      "customers"
+    }`,
     // The account chip identifies the PERSON, so the email local part belongs
     // here and only here -- it is the one place in the system where "who am I
     // signed in as" is the question being answered.
@@ -1365,6 +1393,21 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // 中台: Ant Design Pro's list pages all carry a second column. Share first,
   // because 「钱卡在哪一段」 is the question this register is opened with.
   counter: ["share", "todo", "stats4", "table", "trend|flow@wide-right"],
+  /*
+    工作室 IS THE ONLY REGISTER THAT PAIRS NOTHING.
+
+    Read off arhamkhnz/next-shadcn-admin-dashboard's own default dashboard on
+    2026-08-26: MetricCards, then one full-width chart, then one full-width
+    table. Three objects, each the width of the page, with a lot of air between
+    them. Every other register here squeezes two things into a row somewhere.
+
+    That is the composition matching the token file rather than decorating it.
+    A register whose whole argument is 52px rows and 28px padding cannot then
+    put a chart in half a page -- the roominess would stop at the first pair.
+    It is also the cost: four blocks stacked is more scrolling than 台账's
+    six, which is the trade named in tokens/studio.css.
+  */
+  studio: ["stats4", "trend", "table", "todo"],
 };
 
 

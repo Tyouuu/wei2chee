@@ -68,7 +68,7 @@ export type RailUtilityItem = {
  *            (「三房翻新」has no glyph) and where a row of generic squares reads
  *            as decoration.
  */
-export type RailVariant = "full" | "compact" | "quiet" | "tree"
+export type RailVariant = "full" | "compact" | "quiet" | "tree" | "action"
 
 type Panel = "profile" | null
 
@@ -136,6 +136,8 @@ function getCollapsedServerSnapshot(): string {
  */
 export function RailNav({
   brand,
+  actionLabel,
+  actionHref,
   items,
   utilityItems,
   notificationsHref,
@@ -164,8 +166,26 @@ export function RailNav({
   profileMenu?: ReactNode
   /** Rendered under the brand mark — a place for one glanceable, app-specific summary (a plan tier, a balance, a status). Omit if there's nothing that belongs there. */
   topSlot?: ReactNode
-  /** Which of the four navigations to draw. See `RailVariant`. */
+  /** Which of the five navigations to draw. See `RailVariant`. */
   variant?: RailVariant
+  /**
+   * The one thing this business does most, as a filled button at the TOP of the
+   * rail -- above the navigation, not inside it.
+   *
+   * Only `action` draws it, and the reason it is a rail variant rather than a
+   * block the customer could drop on the page is that its position is the whole
+   * idea: measured on arhamkhnz/next-shadcn-admin-dashboard (2026-08-26), the
+   * first thing under the brand is a black full-width 「Quick Create」, before
+   * any destination. A navigation is a list of places; this says the system
+   * expects you to have come to DO something, and it says it before offering
+   * anywhere to go.
+   *
+   * Ignored by the other four variants on purpose: on `compact` there is no
+   * width for a word, and on `quiet` a filled block is the one object that
+   * variant exists to not have.
+   */
+  actionLabel?: string
+  actionHref?: string
 }) {
   const w = useSystemWords()
   const pathname = usePathname()
@@ -259,6 +279,7 @@ export function RailNav({
    * gained a fourth option on 2026-08-25.
    */
   const isTree = variant === "tree"
+  const isAction = variant === "action"
   const showIcons = !isQuiet
   const showLabels = !isCompact
 
@@ -266,7 +287,7 @@ export function RailNav({
     ? "flex w-full shrink-0 items-center gap-3 border-b [padding-inline:14px] [padding-block:8px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]"
     : `flex shrink-0 border-r [padding-block:10px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)] w-full flex-row items-center gap-1 overflow-x-auto border-b border-r-0 @3xl:h-full @3xl:min-h-full @3xl:flex-col @3xl:items-stretch @3xl:overflow-x-visible @3xl:border-r @3xl:border-b-0 ${
         isCompact
-          ? "@3xl:w-[64px] [padding-inline:8px]"
+          ? "@3xl:w-[76px] [padding-inline:6px]"
           : isQuiet
             ? "@3xl:w-[220px] [padding-inline:12px]"
             // A tree spends 18px on the indent, so it needs them back.
@@ -336,6 +357,30 @@ export function RailNav({
           </span>
         )}
       </Link>
+
+      {/*
+        THE PRIMARY ACTION, IF THIS RAIL HAS ONE. See `actionLabel`.
+
+        Not on the topbar: a full-width filled block in a 40px-tall bar is the
+        bar. On a top axis the same intent is already carried by PageHeader's
+        own action button, which sits where the eye is.
+      */}
+      {isAction && actionLabel && !isTop ? (
+        <Link
+          href={actionHref || "#"}
+          className="mb-3 flex items-center justify-center gap-1.5 [border-radius:var(--radius-control)] px-3 [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] transition-opacity [transition-duration:var(--dur-fast)] hover:opacity-90"
+          style={{
+            height: "var(--control-h)",
+            backgroundColor: "var(--color-nav-accent)",
+            color: "var(--color-nav-bg)",
+          }}
+        >
+          <span aria-hidden className="[font-size:var(--text-base)] leading-none">
+            +
+          </span>
+          <span className="truncate">{actionLabel}</span>
+        </Link>
+      ) : null}
 
       {topSlot}
 
@@ -423,14 +468,29 @@ export function RailNav({
                       key={item.href}
                       href={item.href}
                       aria-current={active ? "page" : undefined}
-                      // The label has to survive somewhere when it is not
-                      // drawn. On the 64px rail the icon is the only thing
-                      // left, and an icon whose meaning you have to guess is
-                      // worse than a word you cannot fit.
+                      /*
+                        THE WORD IS DRAWN, NOT PUT IN A TOOLTIP.
+
+                        This rail used to be icons and a `title` attribute, and
+                        the founder's own rejection list already said why that
+                        is wrong -- when we judged Durable's icon-only rail on
+                        2026-08-25 the verdict was 「给五十岁的车厂老板，没有字的
+                        图标＝死掉的按钮」. Then three of our own registers (台账,
+                        夜, 玻璃) shipped exactly that. Photographed side by side
+                        with the benchmark on 2026-08-26 it is the first thing
+                        that reads as unfinished: six grey glyphs and no way to
+                        know which one is 报价单.
+
+                        A tooltip is not the answer. It needs a mouse, it needs
+                        a second of hovering, and the person this product is for
+                        is on a phone half the time. So the label goes under the
+                        icon in micro type. The rail grows from 64 to 76px --
+                        five per cent of the page -- and stops being a puzzle.
+                      */
                       title={isCompact ? item.label : undefined}
                       className={`relative flex items-center [font-size:var(--text-sm)] transition-colors [transition-duration:var(--dur-fast)] ${
                         isCompact
-                          ? "h-10 w-10 justify-center [border-radius:var(--radius-md)]"
+                          ? "h-auto w-full flex-col justify-center gap-1 py-1.5 [border-radius:var(--radius-md)]"
                           : isTop
                             ? "shrink-0 gap-2 [border-radius:var(--radius-md)] px-2.5 py-1.5"
                             : isQuiet
@@ -472,6 +532,11 @@ export function RailNav({
                         </span>
                       )}
                       {showLabels && <span className={isTop ? "truncate" : "flex-1 truncate"}>{item.label}</span>}
+                      {isCompact && (
+                        <span className="w-full truncate text-center [font-size:var(--text-micro)] [line-height:1.1]">
+                          {item.label}
+                        </span>
+                      )}
                       {item.badge != null && item.badge > 0 && (
                         <span
                           className={`grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 [font-size:var(--text-micro)] [background-color:var(--color-clay-bright)] [color:var(--color-on-dark)] [font-weight:var(--fw-semibold)] ${

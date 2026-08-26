@@ -74,7 +74,7 @@ export type StatTile = {
   spark?: number[]
 }
 
-export type StatRowLayout = "tinted" | "boxed" | "rule" | "lead"
+export type StatRowLayout = "tinted" | "boxed" | "rule" | "lead" | "chip"
 
 // The VALUE only takes a colour when the colour is a reading of the figure and
 // not a decoration. A headline total painted green says "up" -- which nothing
@@ -170,7 +170,21 @@ function Tile({
             {icon}
           </span>
         ) : null}
-        <span className="min-w-0 truncate [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)] text-[color:var(--color-on-canvas-dim)]">
+        {/*
+          IT WRAPS, IT DOES NOT TRUNCATE.
+
+          Screenshotted across all sixteen registers on 2026-08-26: the
+          uppercase registers printed 「CONFIRMED JOBS TH…」 and 「QUOTES
+          AWAITING R…」 on 印 and 仪表盘. A KPI whose label is an ellipsis has
+          stopped telling you what the number is, which is the only job the
+          label has. Small caps make the same words about a fifth wider, so it
+          is exactly the registers that dress the label up that cut it off.
+
+          Two lines and then it clips -- `line-clamp` rather than free wrapping,
+          because a four-line label in a 130px tile pushes the figure out of the
+          row and the figure is the point.
+        */}
+        <span className="line-clamp-2 min-w-0 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)] text-[color:var(--color-on-canvas-dim)]">
           {tile.label}
         </span>
       </div>
@@ -195,14 +209,32 @@ function Tile({
         >
           {tile.value}
         </span>
-        {tile.spark && tile.spark.length > 1 ? <Spark values={tile.spark} /> : null}
+        {look === "chip" && tile.delta != null ? (
+          <DeltaPill pct={tile.delta} />
+        ) : tile.spark && tile.spark.length > 1 ? (
+          <Spark values={tile.spark} />
+        ) : null}
       </div>
 
-      {(tile.delta != null || tile.deltaLabel) && (
+      {/*
+        `chip` puts the change BESIDE the figure as a pill and leaves the words
+        underneath on their own. Measured on
+        arhamkhnz/next-shadcn-admin-dashboard on 2026-08-26: that is the whole
+        difference between their KPI and everyone else's -- the number and its
+        direction read as one object, and the sentence explaining it is a
+        separate, quieter line. The other four layouts stack all three, which
+        makes the direction a footnote to the figure rather than part of it.
+      */}
+      {(tile.delta != null || tile.deltaLabel) && look !== "chip" && (
         <div className="mt-1.5 flex items-center [gap:var(--gap-inline)] [font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
           {tile.delta != null && <Delta pct={tile.delta} />}
           {tile.deltaLabel && <span className="truncate">{tile.deltaLabel}</span>}
         </div>
+      )}
+      {look === "chip" && tile.deltaLabel && (
+        <p className="mt-1.5 [font-size:var(--text-xs)] [line-height:var(--leading-body)] text-[color:var(--color-on-canvas-dim)]">
+          {tile.deltaLabel}
+        </p>
       )}
     </Wrap>
   )
@@ -240,6 +272,37 @@ function Delta({ pct }: { pct: number }) {
   return (
     <span className={`tnum whitespace-nowrap [font-weight:var(--fw-semibold)] ${tone}`}>
       {r === 0 ? "→" : r > 0 ? "↑" : "↓"} {Math.abs(r).toFixed(1)}%
+    </span>
+  )
+}
+
+/**
+ * The same reading, worn as a pill.
+ *
+ * `chip` is the only layout that fills the tone rather than colouring the text,
+ * and it is the reason the register it belongs to can keep its chrome in plain
+ * black ink: with the primary set to #141414, this pill is the ONLY colour on
+ * the page, so it is also the only thing colour is saying anything about.
+ *
+ * Soft fill, not solid: a saturated green block beside a 30px figure competes
+ * with the figure. Measured off the source at 2026-08-26 -- theirs is a tinted
+ * capsule at roughly 12% of the hue.
+ */
+function DeltaPill({ pct }: { pct: number }) {
+  const r = Math.round(pct * 10) / 10
+  const [fg, bg] =
+    r === 0
+      ? ["var(--color-brass-bright)", "color-mix(in oklab, var(--color-brass-bright) 12%, transparent)"]
+      : r > 0
+        ? ["var(--color-jade-bright)", "color-mix(in oklab, var(--color-jade-bright) 12%, transparent)"]
+        : ["var(--color-clay-bright)", "color-mix(in oklab, var(--color-clay-bright) 12%, transparent)"]
+  return (
+    <span
+      className="tnum inline-flex shrink-0 items-center gap-1 whitespace-nowrap [border-radius:var(--radius-pill)] px-2 py-0.5 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)]"
+      style={{ color: fg, backgroundColor: bg }}
+    >
+      {r === 0 ? "→" : r > 0 ? "↗" : "↘"} {r > 0 ? "+" : ""}
+      {r.toFixed(1)}%
     </span>
   )
 }

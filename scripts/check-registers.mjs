@@ -22,13 +22,26 @@
 
 import { chromium } from "playwright";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 /* Renders the same page under every register and hashes what came out.
    Two registers that produce the same STRUCTURE hash are two registers that
    look the same, whatever their tokens say. Colour is deliberately excluded --
    we already know the paint differs; the question is whether the SHAPE does. */
 
-const REGISTERS = process.argv.slice(2).filter((a) => a !== "x");
+/*
+  READ, NOT LISTED. The npm script used to name the registers by hand and on
+  2026-08-26 it still said 「Large」 and 「Ink」, both cut days earlier, while
+  missing 工作室 entirely. STYLE_ORDER is the list the product itself renders
+  from, so it is the list this gate measures.
+*/
+const ALL = (() => {
+  const src = readFileSync("app/[locale]/style-picker/style-column.tsx", "utf8");
+  const block = src.match(/export const STYLE_ORDER[^=]*=\s*\[([^\]]*)\]/);
+  if (!block) throw new Error("STYLE_ORDER not found -- did style-column.tsx move?");
+  return [...block[1].matchAll(/"([a-z]+)"/g)].map((x) => x[1][0].toUpperCase() + x[1].slice(1));
+})();
+const REGISTERS = process.argv.slice(2).length ? process.argv.slice(2) : ALL;
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1400, height: 950 } });
 await p.goto("http://localhost:3000/zh/login", { waitUntil: "networkidle" });
@@ -38,17 +51,27 @@ await p.click('button[type="submit"]');
 await p.waitForURL(/portal/, { timeout: 60000 });
 
 const rows = [];
+const missing = [];
 for (const reg of REGISTERS) {
   await p.goto("http://localhost:3000/zh/portal/styles", { waitUntil: "networkidle", timeout: 120000 });
   await p.waitForTimeout(4000);
+  // data-register, not the card's text. See the same note in
+  // shoot-registers.mjs: the cards became live previews of the customer's own
+  // pages, so `li > span` is now a line of somebody's dashboard. On 2026-08-26
+  // this reported 「0 / 0 -- every register is structurally distinct」, which
+  // was true of the empty set and told nobody anything.
   const hit = await p.evaluate((w) => {
-    for (const li of document.querySelectorAll("li")) {
-      const n = li.querySelector("span")?.textContent?.trim();
-      if (n && n.startsWith(w)) { const btn = li.querySelector("button"); if (btn) { btn.click(); return "ok"; } return "active"; }
-    }
-    return "miss";
+    const key = w.toLowerCase();
+    const card = document.querySelector(`li[data-register="${key}"]`);
+    if (!card) return "miss";
+    const btn = card.querySelector(`button[data-register-use="${key}"]`);
+    if (!btn) return "active";
+    btn.click();
+    return "ok";
   }, reg);
-  if (hit === "miss") { console.log(reg, "NOT FOUND"); continue; }
+  // A register the page does not offer is a FAILURE, not a line of output. The
+  // whole point of this gate is that it cannot pass by measuring nothing.
+  if (hit === "miss") { console.log(reg, "NOT FOUND"); missing.push(reg); continue; }
   await p.waitForTimeout(3500);
   await p.goto("http://localhost:3000/zh/portal/dashboard", { waitUntil: "networkidle", timeout: 120000 });
   await p.waitForTimeout(6500);
@@ -94,3 +117,17 @@ if (dupes.length) {
   console.log("每一套的结构都不同");
 }
 await b.close();
+
+/*
+  A GATE THAT CANNOT PASS BY MEASURING NOTHING.
+
+  Until 2026-08-26 a register the page did not offer printed 「NOT FOUND」 and
+  the run carried on. When the matcher broke, all sixteen printed it and the
+  script finished with 「0 / 0, every register is structurally distinct」 and
+  exit 0. Both halves have to be true now: every register was actually reached,
+  and no two of them hashed the same.
+*/
+if (missing.length) {
+  console.log("\n没找到:", missing.join(" "), "-- 这个门本身坏了，不是风格坏了");
+}
+process.exit(missing.length || dupes.length ? 1 : 0);

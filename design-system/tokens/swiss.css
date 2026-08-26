@@ -121,8 +121,23 @@
   --color-nav-bg-deep: #0e1d35;
   --color-nav-fg: #e8eef9;
   --color-nav-fg-dim: #9cabc4;
-  --color-nav-hover: #f4f4f6;
-  --color-nav-active: #ececef;
+  /*
+     THE ACTIVE AND HOVER GROUNDS BELONG TO THE RAIL'S GROUND.
+
+     Measured across all seventeen registers on 2026-08-26, after the founder
+     set a shipped product as the yardstick: four rails painted a LIGHT active
+     or hover surface under LIGHT text, because those two values were written
+     as if the rail were paper while --color-nav-bg says it is ink. 粗野 was
+     the visible one -- white 「Overview」 on #ffe1ef, 1.17:1, the row whose
+     entire job is to say where you are. 瑞士 and 招牌 only failed on hover, so
+     nothing showed it in a screenshot at all.
+
+     They are now mixed FROM the rail's own ground toward its own text, so the
+     pair can never disagree again: whatever a register makes its rail out of,
+     the row you are on is a step off it in the direction of the words.
+  */
+  --color-nav-hover: #2d3f5a;
+  --color-nav-active: #47576f;
   --color-nav-border: #2c4569;
   --color-nav-accent: #18181b;
 

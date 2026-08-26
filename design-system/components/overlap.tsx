@@ -60,7 +60,34 @@ export function Overlap({
           className="absolute inset-x-0 top-0 bottom-0 -mx-[var(--pad-card-lg)] -mt-[var(--pad-card-lg)] [background:var(--color-primary-soft)]"
           style={{ bottom: -rise }}
         />
-        <div className="relative">{band}</div>
+        {/*
+          THE BAND CARRIES THE PANEL'S INK, NOT THE PAGE'S.
+
+          Photographed on 漆, 2026-08-26: the page title 「Overview」 was pale
+          pink on a pale pink band -- the single most important line on the
+          screen, invisible. Nothing was broken; two correct decisions simply
+          met. 漆's canvas is a dark lacquer red, so PageHeader draws its title
+          in --color-on-canvas, which is light and right for that ground. The
+          band is --color-primary-soft, which every register tunes to sit one
+          step off its own PANEL. Light ink, light band.
+
+          --color-primary-soft is a panel-lightness surface in all seventeen
+          registers -- pale in sixteen, and on 夜 a translucent warm tint over a
+          dark ground -- and --color-paper is by definition the ink that reads
+          on a panel. So the band re-points the on-canvas family at it, the same
+          token remap SystemShell's light navTone already makes on the rail.
+          Nothing in PageHeader has to know: custom properties inherit, and the
+          nearest definition wins.
+        */}
+        <div
+          className="relative"
+          style={{
+            ["--color-on-canvas" as string]: "var(--color-paper)",
+            ["--color-on-canvas-dim" as string]: "var(--color-paper-dim)",
+          }}
+        >
+          {band}
+        </div>
       </div>
       {/* `relative` so it draws above the band without a z-index arms race. */}
       <div className="relative">{children}</div>

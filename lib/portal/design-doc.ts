@@ -601,11 +601,60 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     },
     avoid: ["大面积的浅色块", "纯白的字", "柔和的淡色阴影", "第二个会发亮的颜色"],
   },
+  studio: {
+    mood: "白纸上一圈细线。宽、静、没有色块。给一个打开系统主要是「看一眼」的老板。",
+    facts: "圆角 10-14px · 无边框、靠 1px 细环分层 · 行高 52px · 正文 14px · 标签不大写 · 主色是黑",
+    prefer: {
+      StatRow: "chip",
+      RecordTable: "plain",
+      HeroCard: "stats",
+      WorkflowStrip: "row",
+      ActionButton: "default",
+      Tag: "secondary",
+      Divider: "loose",
+      TrendChart: "area",
+      SystemShell: "side-light",
+      RailNav: "action",
+      InfoRows: "comfortable",
+      DaySchedule: "framed",
+      DateProgress: "bare",
+      PeopleBoard: "three",
+      PriceTable: "cards",
+      SmallStat: "detailed",
+      ShelfList: "boxed",
+      AttachmentList: "row",
+      MarkList: "plain",
+      RankList: "person",
+      ShareChart: "donut",
+      RecordTableRow: "avatar",
+      PhotoFrame: "photo",
+      ActionRow: "row",
+      ChoiceSelect: "default",
+      PageHeader: "split",
+      Panel: "card",
+      TabbedPanel: "underline",
+    },
+    avoid: ["把行挤到 40px 以下", "全大写的标签", "给标题加底色", "把主色换成有颜色的"],
+  },
   glass: {
     mood: "看得穿的那一个。卡片是半透明的白,底下是三团很淡的颜色,卡片会把底下糊掉——像一块真的玻璃压在纸上。",
     facts: "卡片白 55% 透明 · 背后模糊 20px · 底色三团渐层 · 圆角 18px · 1px 白色亮边 · 阴影往下散不往右偏 · 强调色靛蓝 #4f46e5",
     prefer: {
-      StatRow: "tinted",
+      /*
+        玻璃 lost its icon-only navigation on 2026-08-26 -- six unlabelled
+        circles across the top of a page, which is the exact thing this project
+        wrote down as 「不拿」 when it judged Durable. Giving it words brought it
+        to seven of ten axes shared with 柔和, and design-doc.test.ts refused it,
+        correctly: two registers that agree on seven objects are one design in
+        two colours.
+
+        So two objects change, and both suit what this register actually is.
+        A frosted panel wants ONE figure floating large rather than four equal
+        tiles, and a ranking on glass reads better as a medal than as a row of
+        faces -- an avatar is an opaque object on a surface whose whole idea is
+        that you can see through it.
+      */
+      StatRow: "lead",
       // Rules would be a second edge competing with the pane's own lit border,
       // and at 55% white a gridline reads as dirt on the glass.
       RecordTable: "plain",
@@ -620,7 +669,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       Divider: "loose",
       TrendChart: "area",
       SystemShell: "top-dark",
-      RailNav: "compact",
+      RailNav: "full",
       InfoRows: "comfortable-bare",
       DaySchedule: "bare",
       DateProgress: "framed",
@@ -630,14 +679,23 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       ShelfList: "boxed",
       AttachmentList: "tile",
       MarkList: "plain",
-      RankList: "person",
+      RankList: "badge",
       ShareChart: "donut",
       RecordTableRow: "pill",
       PhotoFrame: "wide",
       ActionRow: "row",
       ChoiceSelect: "default",
       PageHeader: "centred",
-      Panel: "card",
+      /*
+        NO CARD. 玻璃's panels are frosted -- a translucent surface with the
+        page showing through it -- and drawing a card border and a shadow on
+        that is a box around a box. This is the object change that separates it
+        from 蓝图 and 漆, and it is the one that is right by eye rather than the
+        one that satisfies the counter: the number wanted ShareChart turned into
+        bars and the heading moved left, which would have made 玻璃 a worse
+        design that scored better. See 重点 7c.
+      */
+      Panel: "plain",
       TabbedPanel: "segment",
     },
     avoid: ["实心的深色大色块", "照片当底", "把两块玻璃叠在同一个位置", "细到 1px 的正文"],

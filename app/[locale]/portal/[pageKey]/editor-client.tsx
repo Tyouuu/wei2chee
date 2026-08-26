@@ -89,6 +89,7 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   pop: styles.pop,
   console: styles.console,
   counter: styles.counter,
+  studio: styles.studio,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";

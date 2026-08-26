@@ -72,7 +72,14 @@ export type StyleName =
   // chrome, 2px, no shadow, the densest body in the set) -- which is also what
   // most Chinese-speaking Malaysian SMEs have already used.
   | "console"
-  | "counter";
+  | "counter"
+  // 2026-08-26, and the first register built under the founder's rule
+  // 「一个 link = 一套风格」: measured with getComputedStyle off
+  // arhamkhnz/next-shadcn-admin-dashboard running locally, not read off a
+  // screenshot. Ground and card are the SAME white and a 1px ring separates
+  // them; the primary is black and all the colour is on the delta pills; the
+  // table head is neither dimmed nor tracked. See tokens/studio.css.
+  | "studio";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -107,6 +114,7 @@ export const STYLE_ORDER: StyleName[] = [
   "pop",
   "console",
   "counter",
+  "studio",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -126,6 +134,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   pop: styles.pop,
   console: styles.console,
   counter: styles.counter,
+  studio: styles.studio,
 };
 
 /**
@@ -169,6 +178,7 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   pop: styles.pop,
   console: styles.console,
   counter: styles.counter,
+  studio: styles.studio,
 };
 
 export function StyleColumn({
