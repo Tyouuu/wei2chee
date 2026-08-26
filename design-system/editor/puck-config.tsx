@@ -32,6 +32,7 @@ import { RankList, type RankRow, type RankShape } from "@/design-system/componen
 import { ShareChart, type ShareSlice, type ShareShape } from "@/design-system/components/share-chart";
 import { Bento } from "@/design-system/components/bento";
 import { Overlap } from "@/design-system/components/overlap";
+import { PhotoField } from "@/design-system/editor/photo-field";
 import {
   IntakeForm,
   PersonCard,
@@ -2661,7 +2662,26 @@ export const puckConfig: Config<Components> = {
     PhotoFrame: {
       label: "照片框",
       fields: {
-        src: { label: "照片网址（留空就是空框）", type: "text" },
+        /*
+          A PICKER, NOT A URL FIELD.
+
+          It read 「照片网址（留空就是空框）」. A renovation contractor does not
+          have a photo URL -- he has a photo, on his phone, of the kitchen he
+          finished last week, which is the most persuasive thing that could be
+          on his website. The product was asking him to paste a link to it, and
+          the founder found what that produces: three grey boxes reading
+          「Add a photo」 on the live published site, one per phone screen.
+
+          See design-system/editor/photo-field.tsx for the three sources and
+          the order they are offered in.
+        */
+        src: {
+          label: "照片",
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <PhotoField value={value as string} onChange={onChange} />
+          ),
+        },
         alt: { label: "照片说明（给看不到的人）", type: "text" },
         caption: { label: "图说", type: "text" },
       },
