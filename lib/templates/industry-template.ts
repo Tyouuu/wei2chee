@@ -1257,10 +1257,21 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
 
     台账: the list you scan pinned left, the ledger itself on the right.
   */
-  ledger: ["todo", "ranking", "table", "stats4", "activity|flow@half"],
+  ledger: ["todo", "ranking", "table", "stats4", "trend|flow@half"],
   // A shopfront: what is happening today, with the money beside it rather than
   // under it -- the owner glances right, not down.
-  hearth: ["todo|stats2", "trend", "table"],
+  /*
+    炉 REBALANCED. It was ["todo|stats2", "trend", "table"] -- a three-item list
+    beside two stat cards in the other half, and because a Columns cell
+    stretches its child to the row's height, the two cards came out tall,
+    empty, and narrow enough that 「RM 71,300」 printed as 「RM …」. Screenshotted
+    2026-08-26.
+
+    The money goes across the top where two wide cards read at a glance, and
+    the list gets a full half beside the trend. Same argument -- 「今天要跟的，
+    钱在旁边」 -- laid out so both halves are worth looking at.
+  */
+  hearth: ["stats2", "todo|trend@half", "table"],
   // The neutral one, and the only one that should read as "a bit of
   // everything". Chart left, the day's list beside it: the most ordinary
   // arrangement there is, which is the point of this register.
@@ -1288,13 +1299,30 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   night: ["hero@over", "trend|table@wide-right", "share|todo@half"],
   // A shop sign. The name and the number are the sign; the rest is small and
   // under it. A sign does not have two halves.
-  signboard: ["hero@over", "table", "flow"],
+  // 招牌 was three blocks and most of the first screen was white. The share
+  // and the workflow pair up instead of the workflow standing alone at the
+  // bottom, which is what left the page looking unfinished rather than bold.
+  signboard: ["hero@over", "share|flow@half", "table"],
   // A coloured ground with ivory panels floating on it -- panels want to be
   // few and LARGE, so one figure beside one chart, then one table.
   lacquer: ["hero@over", "trend|share@wide-left", "table"],
   // Every character the same width. Squares and a ranking are both grids of
   // fixed cells, so they sit beside each other without either one reflowing.
-  code: ["stats4", "activity|ranking", "table"],
+  /*
+    码 LOSES THE HEATMAP, and so does 台账 below.
+
+    ActivitySquares is a contribution graph -- 364 small squares, a GitHub
+    idiom. On the contact sheet it renders as a grey mush, and the honest
+    question is not whether it is pretty: 「好不好看 才是重點啊 就是市場實用度
+    也是一個很重要的重點」. A renovation contractor cannot read it. He cannot
+    even tell what a square means.
+
+    码's identity is the monospace, the ruled grid table and the quiet rail --
+    none of which the heatmap was carrying. It keeps all of that and gains a
+    chart somebody can read. The block stays in the library for anyone who
+    wants it; no register leads with it any more.
+  */
+  code: ["stats4", "trend|ranking@wide-left", "table"],
   // A patterned floor wants flat cards above it, in a rhythm -- and a rhythm
   // needs a row of two, not a column of one.
   tile: ["stats4", "trend|todo|share", "table"],
