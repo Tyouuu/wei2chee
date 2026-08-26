@@ -1337,7 +1337,6 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // line. Single column is the register's whole argument.
   // Looks like the POS they already run: the filled table head is the object,
   // so the table leads, then the month's progress with the figures beside it.
-  stamp: ["table", "progress|stats4@wide-right", "share|flow@half"],
   // Black, white and one red on a PRINTED SHEET. A printed sheet is one
   // column. No split -- this is the register where restraint is the design.
   swiss: ["stats4", "trend|share@wide-left", "table", "flow"],
@@ -1349,7 +1348,6 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   brut: ["stats2", "board", "table"],
   // Translucent panels want something behind them to see through, and two
   // panels side by side show more edges than one.
-  glass: ["stats4", "trend|share|ranking", "board", "table"],
   // Lights off. An ops console: the figure and its chart side by side at the
   // top, then the queue.
   night: ["hero@over", "trend|table@wide-right", "share|todo@half"],
@@ -1378,12 +1376,20 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
     chart somebody can read. The block stays in the library for anyone who
     wants it; no register leads with it any more.
   */
-  code: ["stats4", "trend|ranking@wide-left", "table"],
+  /*
+    码 PAIRS THE CHART WITH THE PIPELINE, NOT WITH THE RANKING.
+
+    Photographed 2026-08-26: the ranking is three rows and the chart is 420,
+    so the right-hand cell ran 170px of bare ground under a list that had
+    nothing more to say. A pair only works when both sides have comparable
+    content; a top-three list never will against a chart. The workflow is six
+    stages and wraps to two rows, which is the same order of height.
+  */
+  code: ["stats4", "trend|flow@wide-left", "ranking", "table"],
   // A patterned floor wants flat cards above it, in a rhythm -- and a rhythm
   // needs a row of two, not a column of one.
   tile: ["stats4", "trend|todo|share", "table"],
   // The sticker. Big, playful, board-shaped, with the chart squeezed beside it.
-  pop: ["stats4", "board|trend@wide-left", "share|table@wide-right"],
   // Tabler / AdminLTE, and now actually shaped like them: four tiles, then the
   // chart with the ranking BESIDE it -- which is the arrangement every one of
   // those templates uses and the one we did not have.

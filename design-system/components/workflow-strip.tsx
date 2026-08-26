@@ -117,7 +117,7 @@ export function WorkflowStrip({
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span
-                  className="min-w-0 flex-1 truncate [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
+                  className="min-w-0 flex-1 [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
                   style={{
                     color:
                       stage.tone === "attention"
@@ -205,7 +205,20 @@ export function WorkflowStrip({
               <span className="[color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <span className="truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+              {/*
+                THE STAGE NAME IS THE CUSTOMER'S OWN WORD. IT DOES NOT GET CUT.
+
+                Photographed 2026-08-26 on 蓝图, 招牌, 中台 and 印: six stages in
+                one row printed 「Appro…」 「Depo…」 「Progr…」. These are the words
+                the business gave us for its own pipeline -- the single thing on
+                this page that says the system understood their trade -- and
+                three of the six were an ellipsis.
+
+                Same rule the KPI label got: a chip is allowed to be as wide as
+                its word. The row already wraps, so a long stage pushes the next
+                one to a second line instead of shortening itself.
+              */}
+              <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
                 {stage.label}
               </span>
               {stage.count && (

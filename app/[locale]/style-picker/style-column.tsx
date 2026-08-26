@@ -10,7 +10,6 @@ export type StyleName =
   // header TREATMENT (印头), and a serif body (合约). See each token
   // file's own header for why it is a register and not another notch on
   // the density slider.
-  | "stamp"
   // 2026-08-22, and the first two that were not designed here: both are
   // uiprompt.site's own published briefs for Swiss Design and Soft UI,
   // rendered into the token layer. See each token file's header for the
@@ -39,7 +38,6 @@ export type StyleName =
   // The first register that is not a flat rectangle: translucent cards,
   // a real backdrop blur, and a ground with something to see through them.
   // See design-system/tokens/glass.css.
-  | "glass"
   // The one that is not a white page. Canvas luminance across the other
   // thirteen ran 0.82-0.97 with nothing below it; a workshop, a studio or a
   // gym had no register that looked like them. See tokens/night.css.
@@ -63,7 +61,6 @@ export type StyleName =
   // (MIT) over tweakcn colours: big radius AND a hard black edge, and three
   // saturated colours used as decoration rather than as meaning. See
   // tokens/pop.css.
-  | "pop"
   // 2026-08-25, and the first two taken from a MEASUREMENT of the market rather
   // than from a brief: eleven competitors' dashboards were photographed beside
   // our own sixteen, and two whole families had no register here. 仪表盘 is the
@@ -101,17 +98,14 @@ export const STYLE_ORDER: StyleName[] = [
   "ledger",
   "hearth",
   "blueprint",
-  "stamp",
   "swiss",
   "soft",
   "brut",
-  "glass",
   "night",
   "signboard",
   "lacquer",
   "code",
   "tile",
-  "pop",
   "console",
   "counter",
   "studio",
@@ -121,17 +115,14 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
-  stamp: styles.stamp,
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
-  glass: styles.glass,
   night: styles.night,
   signboard: styles.signboard,
   lacquer: styles.lacquer,
   code: styles.code,
   tile: styles.tile,
-  pop: styles.pop,
   console: styles.console,
   counter: styles.counter,
   studio: styles.studio,
@@ -165,17 +156,14 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   ledger: styles.ledger,
   hearth: styles.hearth,
   blueprint: styles.blueprint,
-  stamp: styles.stamp,
   swiss: styles.swiss,
   soft: styles.soft,
   brut: styles.brut,
-  glass: styles.glass,
   night: styles.night,
   signboard: styles.signboard,
   lacquer: styles.lacquer,
   code: styles.code,
   tile: styles.tile,
-  pop: styles.pop,
   console: styles.console,
   counter: styles.counter,
   studio: styles.studio,
