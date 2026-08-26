@@ -34,6 +34,9 @@ const CONTENT: LandingContent = {
       work: { heading: "Our work", hint: "Your own photos", shots: ["Add a photo", "Add a photo", "Add a photo"] },
       areas: { heading: "Where we cover", note: "Ask anyway", list: ["Kuala Lumpur", "Klang"] },
       prices: { heading: "What it costs", note: "A guide", askLabel: "Ask", blank: "RM —" },
+      // The middle ask, added 2026-08-27. Every reference has one and no
+      // template did; a fixture without it tests a page nobody will be shown.
+      cta: { heading: "Tell us what you need", note: "No charge for the visit." },
       reviews: { heading: "What customers say", note: "Replace these", quotes: [{ text: "On time.", who: "A customer" }] },
       faq: { heading: "Questions", rows: [{ title: "How long?", body: "A day." }] },
       hours: { heading: "When we are open", rows: [{ label: "Mon – Fri", value: "9 – 6" }] },

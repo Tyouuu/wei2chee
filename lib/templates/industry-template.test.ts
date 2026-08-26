@@ -204,7 +204,9 @@ describe("buildPageLayout", () => {
       // blocks had neither either. See site-chrome.tsx.
       "SiteBar",
       "SiteHero",
-      "InfoRows",      // what we do
+      // Cards, not rows: what a business SELLS is a card grid on every
+      // reference, and rows are for what it merely lists. 2026-08-27.
+      "SiteFeatures",      // what we do
       "Columns",       // work photos, three empty frames the owner fills
       // The three frames INSIDE that Columns. They were always there; this
       // list could not see them until `flatten` started walking every slot
@@ -215,7 +217,11 @@ describe("buildPageLayout", () => {
       "PhotoFrame",
       "InfoRows",      // a price guide, never a price
       "WorkflowStrip", // what happens after you call
-      "ShelfList",     // what customers say
+      // A review has a rating, the words and a face -- not the dashboard's
+      // 「title, description, action」 shelf row.
+      "SiteTestimonials",
+      // The middle ask. No template had one; every reference does.
+      "SiteCta",     // what customers say
       "InfoRows",      // where we cover
       "FoldSection",   // questions we get
       "MarkList",      // what you get from us

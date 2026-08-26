@@ -136,6 +136,10 @@ export type LandingCopy = {
       work: { heading: string; hint: string; shots: string[] };
       areas: { heading: string; note: string; list: string[] };
       prices: { heading: string; note: string; askLabel: string; blank: string };
+      /** The middle ask. Its own words, not the price note's -- the first
+       *  version of this block borrowed 「A guide, not a quote」 and asked
+       *  nobody anything. */
+      cta: { heading: string; note: string };
       reviews: { heading: string; note: string; quotes: { text: string; who: string }[] };
       faq: { heading: string; rows: { title: string; body: string }[] };
       hours: { heading: string; rows: { label: string; value: string }[] };
@@ -319,6 +323,10 @@ const EN: LandingCopy = {
         heading: "Where we cover",
         note: "Outside these? Message us anyway — we travel for the right job.",
         list: ["Kuala Lumpur", "Petaling Jaya", "Subang / USJ", "Shah Alam", "Puchong", "Cheras", "Klang", "Ampang"],
+      },
+      cta: {
+        heading: "Tell us what you need and we will come and look",
+        note: "No charge for the visit, and no obligation after it.",
       },
       prices: {
         heading: "What it costs",
@@ -522,6 +530,10 @@ const ZH: LandingCopy = {
         heading: "服务范围",
         note: "不在这几区？也可以问 —— 值得做的工我们会跑。",
         list: ["吉隆坡", "八打灵再也", "梳邦 / USJ", "莎阿南", "蒲种", "蕉赖", "巴生", "安邦"],
+      },
+      cta: {
+        heading: "讲一下你要做什么，我们上门看",
+        note: "上门看不收钱，看完也不一定要做。",
       },
       prices: {
         heading: "大概多少钱",

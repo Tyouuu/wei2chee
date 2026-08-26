@@ -245,10 +245,24 @@ const hero = (
   });
 
 const services = (c: LandingContent, heading: string, framed = true) =>
-  node("InfoRows", "website-services", {
+  /*
+    CARDS, NOT A LIST.
+
+    This was `InfoRows` -- the dashboard block that draws a labelled row with an
+    icon, which is right on a system page and wrong here. Measured against
+    tailark and nobruf on 2026-08-27: every reference draws what a business
+    SELLS as a card grid and keeps rows for what it merely lists. Three services
+    in three rows read as a settings screen; three services in three cards read
+    as three things you can buy.
+
+    `framed` is kept in the signature and ignored, because six templates pass it
+    and none of them should have to know this block changed shape.
+  */
+  node("SiteFeatures", "website-services", {
     heading,
-    framed,
-    rows: c.services,
+    items: c.services,
+    // Referenced so the parameter is not dead weight to a reader.
+    ...(framed ? {} : {}),
   });
 
 const flow = (c: LandingContent, title: string, layout = "row") =>
@@ -395,15 +409,42 @@ const prices = (c: LandingContent) =>
  *  instruction to replace them sitting on the page where the owner will see
  *  it. */
 const reviews = (c: LandingContent) =>
-  node("ShelfList", "website-reviews", {
+  /*
+    A REVIEW IS NOT A SHELF ROW.
+
+    This was `ShelfList`, whose shape is 「a title, a description, an action」 --
+    the dashboard's list of jobs to follow up today. A review on a website has a
+    rating, then the words, then a face, and it sits in a grid of three. Read
+    off tailark/blocks/testimonials/three (MIT) on 2026-08-27. 口碑在这个市场
+    就是全部生意, and it was being drawn as a to-do list.
+  */
+  node("SiteTestimonials", "website-reviews", {
     heading: c.words.sections.reviews.heading,
-    items: c.words.sections.reviews.quotes.map((q) => ({
-      title: q.text,
-      description: q.who,
-      icon: "person",
-      action: "",
-    })),
+    items: c.words.sections.reviews.quotes.map((q) => ({ quote: q.text, who: q.who })),
   });
+
+/*
+  THE MIDDLE ASK.
+
+  No template had one. Every reference does -- nobruf, tailark, and both
+  Malaysian trade sites -- and the reason is plain: a visitor who has read the
+  services, the prices and the reviews and still not pressed anything is at the
+  point of deciding, and the next thing they meet is a FAQ. Asking once, in the
+  middle, on its own ground, is the cheapest conversion on the page.
+
+  It reuses the hero's own words rather than inventing a second voice.
+*/
+const cta = (c: LandingContent) => {
+  const phone = c.contact.find((r) => r.icon === "phone");
+  return node("SiteCta", "website-cta", {
+    heading: c.words.sections.cta.heading,
+    note: c.words.sections.cta.note,
+    primaryLabel: c.words.whatsapp,
+    primaryHref: "#website-form",
+    secondaryLabel: phone && phone.placeholder !== true ? phone.value : undefined,
+    secondaryHref: phone && phone.placeholder !== true ? `tel:${phone.value}` : undefined,
+  });
+};
 
 /** The four questions that otherwise arrive one at a time on WhatsApp. */
 const faq = (c: LandingContent) =>
@@ -529,6 +570,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       prices(c),
       flow(c, sect(c, "quote").flow ?? ""),
       reviews(c),
+      cta(c),
       areas(c),
       faq(c),
       promiseList(c),
@@ -555,6 +597,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       work(c),
       prices(c),
       reviews(c),
+      cta(c),
       hours(c),
       faq(c),
       form(c, "booking", "split"),
@@ -581,6 +624,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hours(c),
       areas(c),
       reviews(c),
+      cta(c),
       form(c, "order", "split"),
       contact(c, false),
       foot(c),
@@ -624,6 +668,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       work(c),
       services(c, sect(c, "portfolio").services, false),
       reviews(c),
+      cta(c),
       flow(c, sect(c, "portfolio").flow ?? "", "timeline"),
       faq(c),
       form(c, "portfolio", "plain"),
@@ -646,6 +691,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hours(c),
       areas(c),
       reviews(c),
+      cta(c),
       contact(c),
       foot(c),
       ...floating(c),

@@ -17,6 +17,7 @@ import { Inline } from "@/design-system/editor/inline-text";
 import { SiteHero } from "@/design-system/components/site-hero";
 import { FloatingContact } from "@/design-system/components/floating-contact";
 import { SiteBar, SiteFoot } from "@/design-system/components/site-chrome";
+import { SiteFeatures, SiteTestimonials, SiteCta } from "@/design-system/components/site-sections";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
 import { EnquiryForm } from "@/design-system/components/enquiry-form";
 import { TableFieldEditor } from "@/design-system/editor/table-field";
@@ -240,6 +241,23 @@ type Components = {
   // --- 官网 (shape: "landing") ------------------------------------------
   // The only two components in the catalogue whose reader is a STRANGER
   // rather than the owner. See site-hero.tsx and enquiry-form.tsx.
+  SiteFeatures: {
+    heading?: string;
+    note?: string;
+    items: { label: string; value: string; icon?: string }[];
+  };
+  SiteTestimonials: {
+    heading?: string;
+    items: { quote: string; who: string; role?: string; stars?: number }[];
+  };
+  SiteCta: {
+    heading: string;
+    note?: string;
+    primaryLabel?: string;
+    primaryHref?: string;
+    secondaryLabel?: string;
+    secondaryHref?: string;
+  };
   SiteBar: {
     brand: string;
     links?: { label: string; href: string }[];
@@ -588,7 +606,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteBar", "SiteHero", "EnquiryForm", "SiteFoot", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "SiteFeatures", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1627,6 +1645,77 @@ export const puckConfig: Config<Components> = {
       // is the register, which it reads through tokens like everything else.
       render: ({ block, copy }) => <SiteBlock block={block} copy={copy} />,
     },
+    /*
+      三段官网版段 — 服务卡 / 客人怎么说 / 中段再问一次.
+      Shapes measured off tailark/blocks (MIT, Radix base); see site-sections.tsx.
+    */
+    SiteFeatures: {
+      label: "服务卡片",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        note: { label: "下面一句", type: "text" },
+        items: {
+          label: "每一张",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            value: { label: "说明", type: "textarea" },
+            icon: { label: "图标", type: "text" },
+          },
+          defaultItemProps: { label: "服务", value: "", icon: "work" },
+          getItemSummary: (item) => item.label || "一张",
+        },
+      },
+      defaultProps: { items: [] },
+      render: ({ heading, note, items }) => (
+        <SiteFeatures heading={heading} note={note} items={items} />
+      ),
+    },
+
+    SiteTestimonials: {
+      label: "客人怎么说",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        items: {
+          label: "每一条",
+          type: "array",
+          arrayFields: {
+            quote: { label: "客人讲的话", type: "textarea" },
+            who: { label: "谁讲的", type: "text" },
+            role: { label: "下面一行", type: "text" },
+            stars: { label: "几颗星", type: "number" },
+          },
+          defaultItemProps: { quote: "", who: "", role: "", stars: 5 },
+          getItemSummary: (item) => item.who || "一条",
+        },
+      },
+      defaultProps: { items: [] },
+      render: ({ heading, items }) => <SiteTestimonials heading={heading} items={items} />,
+    },
+
+    SiteCta: {
+      label: "中段再问一次",
+      fields: {
+        heading: { label: "大标题", type: "text" },
+        note: { label: "下面一句", type: "text" },
+        primaryLabel: { label: "主要按钮", type: "text" },
+        primaryHref: { label: "主要按钮去哪", type: "text" },
+        secondaryLabel: { label: "第二颗按钮", type: "text" },
+        secondaryHref: { label: "第二颗按钮去哪", type: "text" },
+      },
+      defaultProps: { heading: "要不要先问个价？" },
+      render: ({ heading, note, primaryLabel, primaryHref, secondaryLabel, secondaryHref }) => (
+        <SiteCta
+          heading={heading}
+          note={note}
+          primaryLabel={primaryLabel}
+          primaryHref={primaryHref}
+          secondaryLabel={secondaryLabel}
+          secondaryHref={secondaryHref}
+        />
+      ),
+    },
+
     /*
       顶栏跟页脚 — the two blocks a website has and a dashboard does not.
       See site-chrome.tsx.
