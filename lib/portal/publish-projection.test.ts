@@ -71,10 +71,43 @@ describe("forPublication", () => {
     expect(form?.props.submitLabel).toBeTruthy();
     expect(form?.props.fields).toBeTruthy();
 
-    // Same blocks, same order -- a projection, not a filter.
-    expect(nodesOf(published).map((n) => n.type)).toEqual(
-      nodesOf(built).map((n) => n.type),
-    );
+    /*
+      SAME BLOCKS, SAME ORDER -- EXCEPT THE ONES THAT ARE EMPTY.
+
+      This asserted 「a projection, not a filter」 and the rule changed on
+      2026-08-26, deliberately. The founder opened the real published site on
+      his phone and got three 4:3 grey boxes, one per screen, each saying
+      「Add a photo」 with the same words repeated underneath as a caption. A
+      homeowner scrolling that learns one thing: nobody finished this page.
+
+      The frames are empty ON PURPOSE in the editor -- see the note on `work`
+      in landing-templates.ts -- and that argument is addressed to the person
+      BUILDING the page. It has nothing to say to the person reading it. So the
+      prompt stays where it is a prompt and goes where it is not.
+    */
+    const kept = nodesOf(published).map((n) => n.type);
+    const expected = nodesOf(built)
+      .filter((n) => n.type !== "PhotoFrame")
+      .map((n) => n.type)
+      // The Columns that held only the three empty frames goes with them: an
+      // empty three-column row is a 200px gap that reads as a broken page.
+      .filter((n) => n !== "Columns");
+    expect(kept.filter((t) => t !== "Columns")).toEqual(expected);
+    expect(kept).not.toContain("PhotoFrame");
+  });
+
+  it("keeps a photo frame that has a photo in it", () => {
+    // The rule is about EMPTY, not about photos. A frame the owner has filled
+    // is the whole point of the section.
+    const built: PuckLayout = {
+      root: {},
+      content: [
+        { type: "PhotoFrame", props: { id: "a", caption: "Add a photo" } },
+        { type: "PhotoFrame", props: { id: "b", src: "/x.jpg", caption: "Taman Desa" } },
+      ] as PuckNode[],
+    };
+    const kept = nodesOf(forPublication(built));
+    expect(kept.map((n) => n.props.id)).toEqual(["b"]);
   });
 
   it("does not mutate the layout it was given", () => {

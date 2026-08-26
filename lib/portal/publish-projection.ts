@@ -1,4 +1,5 @@
 import type { PuckLayout, PuckNode } from "@/lib/portal/layout-ops";
+import { puckConfig } from "@/design-system/editor/puck-config";
 
 /**
  * What a stranger sees, from what the owner designed.
@@ -42,7 +43,54 @@ const DESIGN_TIME_PROPS: Record<string, readonly string[]> = {
   EnquiryForm: ["landsIn", "landsInBadge", "landsInBefore", "landsInAfter"],
 };
 
-const SLOT_KEYS = ["sidebar", "main"] as const;
+/*
+  DERIVED, NOT LISTED.
+
+  This was `["sidebar", "main"]`, and a website page is built out of `Columns`,
+  whose slots are `a`, `b` and `c`. So the projection walked past every nested
+  node on the public site and did nothing to it -- an EnquiryForm inside a
+  Columns kept the owner-facing 「填完送出 → 你的系统会开一张…」 line on a
+  stranger's screen, which is the exact sentence this file exists to remove.
+
+  layout-ops.ts had the identical two-item list and was fixed the same way on
+  2026-08-25, for the identical reason. Two hand-kept copies of one list is two
+  lists that drift, and the drift is silent.
+*/
+const SLOT_KEYS: string[] = Object.values(
+  (puckConfig.components ?? {}) as Record<string, { fields?: Record<string, { type?: string }> }>,
+).flatMap((c) => Object.entries(c.fields ?? {}).filter(([, f]) => f?.type === "slot").map(([k]) => k))
+  .filter((k, i, a) => a.indexOf(k) === i);
+
+/*
+  BLOCKS A STRANGER MUST NOT BE SHOWN EMPTY.
+
+  Found on a phone, on the real published site: three 4:3 grey boxes each
+  saying 「Add a photo」, one per screen, with the words repeated as a caption
+  underneath. A homeowner scrolling that learns one thing -- nobody finished
+  this page.
+
+  The frames are deliberately empty IN THE EDITOR: a renovation page filled
+  with stock photos of somebody else's kitchen announces that nobody designed
+  it either, and an obvious, sized, labelled slot is a two-minute job for the
+  owner. That argument is right for the person building the page and has
+  nothing to say to the person reading it.
+
+  So the prompt stays where it is a prompt and goes where it is not. A frame
+  with no `src` is dropped from the published page, and a Columns left holding
+  nothing goes with it -- an empty three-column row is a 200px gap that reads
+  as a rendering failure.
+*/
+function isEmptyOnPublish(node: PuckNode): boolean {
+  if (node.type === "PhotoFrame") return !String(node.props.src ?? "").trim();
+  return false;
+}
+
+/** True when every slot this node has is empty. */
+function hasNothingLeft(node: PuckNode): boolean {
+  const slots = SLOT_KEYS.filter((k) => Array.isArray(node.props[k]));
+  if (!slots.length) return false;
+  return slots.every((k) => (node.props[k] as PuckNode[]).length === 0);
+}
 
 function project(node: PuckNode): PuckNode {
   const drop = DESIGN_TIME_PROPS[node.type];
@@ -58,8 +106,11 @@ function project(node: PuckNode): PuckNode {
   for (const k of SLOT_KEYS) {
     const slot = props[k];
     if (Array.isArray(slot)) {
-      const next = (slot as PuckNode[]).map(project);
-      if (next.some((n, i) => n !== slot[i])) {
+      const next = (slot as PuckNode[])
+        .filter((n) => !isEmptyOnPublish(n))
+        .map(project)
+        .filter((n) => !hasNothingLeft(n));
+      if (next.length !== slot.length || next.some((n, i) => n !== slot[i])) {
         props = { ...props, [k]: next };
       }
     }
@@ -70,5 +121,11 @@ function project(node: PuckNode): PuckNode {
 
 /** The saved layout with every owner-facing annotation removed. */
 export function forPublication(layout: PuckLayout): PuckLayout {
-  return { ...layout, content: (layout.content ?? []).map(project) };
+  return {
+    ...layout,
+    content: (layout.content ?? [])
+      .filter((n) => !isEmptyOnPublish(n))
+      .map(project)
+      .filter((n) => !hasNothingLeft(n)),
+  };
 }
