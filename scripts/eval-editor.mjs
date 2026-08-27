@@ -124,7 +124,7 @@ const {
   REGISTERED_COMPONENTS,
   EDITABLE_TEXT_FIELDS,
 } = await import("../lib/portal/layout-ops.ts");
-const { buildDesignDoc, preferredVariants, STYLE_BRIEFS } = await import("../lib/portal/design-doc.ts");
+const { buildDesignDoc, preferredVariants, STYLE_BRIEFS, darkPalettes } = await import("../lib/portal/design-doc.ts");
 const { renderBlockRules } = await import("../lib/portal/block-rules.ts");
 const { PALETTE_ROWS } = await import("../lib/portal/palettes.generated.ts");
 
@@ -250,24 +250,13 @@ const DARKER_THAN_LEDGER = Object.entries(CANVAS)
   .map(([k]) => k);
 
 /*
-  A DARK PALETTE WOULD ALSO ANSWER 「太亮了」. TODAY THERE ARE NONE.
-
-  Measured 2026-08-27, all twelve palettes, ground lightness in oklch:
-  0.938 zen … 1.000 amber-minimal. Every single one is near-white, including
-  the three added that morning -- 藏青 is a white page with a deep blue accent,
-  not a dark page. 「配色层缺一个明度轴」 is in the task list and is still true.
-
-  So this list is empty right now and that is correct, not a bug. It is derived
-  rather than deleted so that the day somebody ships a genuinely dark palette,
-  this case starts accepting it without anyone remembering to come back here.
-
-  Parsed as oklch because that is what `dots` holds. Reading those strings as
-  hex is how the first version of this passed 1 run in 3 on nonsense.
+  Derived by the PRODUCT, not here. This block used to compute it itself, which
+  is the mistake this whole file keeps catching elsewhere: the ruler and the
+  thing it measures each holding their own copy of a fact. `darkPalettes()`
+  lives in design-doc.ts and the route's prompt is built from the same call, so
+  a palette added tomorrow reaches both at once.
 */
-const DARK_PALETTES = PALETTE_ROWS.filter((row) => {
-  const l = /oklch\(\s*([0-9.]+)/.exec(row.dots?.[0] ?? "")?.[1];
-  return l !== undefined && parseFloat(l) < 0.5;
-}).map((row) => row.key);
+const DARK_PALETTES = darkPalettes();
 
 
 const CASES = [
@@ -894,7 +883,7 @@ This page: ${saved
   ? "ALREADY SAVED by the customer -- 排法 (layout) CANNOT take effect on it. Reorder with move_component."
   : "never saved -- 排法 (layout) will re-generate it, so it is available"}
 
-${designDoc ? `${designDoc}\n` : ""}
+${designDoc ? `${designDoc}\n` : ""}${darkPalettes().length ? `明暗（从配色量出来的）: 深底的配色只有 ${darkPalettes().join("、")}。\n「太亮了」「暗一点」用它回答，不要换风格。\n其他每一套配色的底都是近白的。\n` : ""}
 ${renderHistory(history) ? `
 刚才这段对话里发生过的事（最新的在最下面）:
 ${renderHistory(history)}

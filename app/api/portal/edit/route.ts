@@ -13,7 +13,7 @@ import {
   type PuckLayout,
 } from "@/lib/portal/layout-ops";
 import { COLUMN_KINDS } from "@/lib/portal/table-model";
-import { buildDesignDoc, preferredVariants, STYLE_BRIEFS } from "@/lib/portal/design-doc";
+import { buildDesignDoc, preferredVariants, STYLE_BRIEFS, darkPalettes } from "@/lib/portal/design-doc";
 import { renderBlockRules } from "@/lib/portal/block-rules";
 import { PALETTE_ROWS } from "@/lib/portal/palettes.generated";
 import { LAYOUT_SETS } from "@/lib/templates/industry-template";
@@ -173,12 +173,12 @@ Whole pages:
   purpose matches what they said, not one whose colour does. The list, with
   what each one is FOR, is in the design document above.
 - \`palette\` is only the colours. \`"none"\` returns them to the register's own.
-- A PALETTE DOES NOT CHANGE HOW BRIGHT THE PAGE IS. Measured across all twelve:
-  every ground sits between oklch L 0.938 and 1.000 — near-white, every one.
-  藏青 is a white page with a deep blue accent, not a dark page. So 「太亮了」,
-  「晚上看刺眼」, 「暗一点」 are answered with a darker REGISTER, never with a
-  palette. Answering those with a palette promises a change he will not see,
-  which is the same failure as claiming an edit that did not happen.
+- 明暗 — WHERE BRIGHTNESS LIVES, read from the palettes themselves rather than
+  stated here, because a sentence about the data outlives the data. This line
+  said the opposite for three hours: at the time every ground measured oklch
+  L 0.938–1.000 and 「换成藏青，整体暗一点」 promised a change he would never
+  see. Then a dark palette shipped and the sentence started refusing the right
+  answer. See the list injected below.
   If they only dislike a colour, change the palette and leave the style alone —
   changing the style to fix a colour throws away a layout they may like.
 - \`layout\` is the arrangement of the dashboard, without changing the style:
@@ -410,7 +410,15 @@ This page: ${generated
 
 ${designDoc ? `
 ${designDoc}
-` : ""}
+` : ""}${
+  darkPalettes().length
+    ? `明暗（从配色量出来的）: 深底的配色只有 ${darkPalettes().join("、")}。
+「太亮了」「晚上看刺眼」「暗一点」用它回答，不要换风格 ——
+一套深底配色套在任何一套风格上都是深色页面，而换风格会丢掉他可能喜欢的版面。
+其他每一套配色的底都是近白的，拿它们回答「太亮」等于承诺一个他看不到的变化。
+` : `明暗（从配色量出来的）: 现在没有任何一套配色是深底的，每一套的底都近白。
+「太亮了」只能用更暗的风格回答，拿配色回答等于承诺一个他看不到的变化。
+`}
 ${recent ? `\n刚才这段对话里发生过的事（最新的在最下面）:\n${recent}\n` : ""}
 The business owner asked:
 "${trimmed}"`;

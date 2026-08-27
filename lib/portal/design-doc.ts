@@ -13,6 +13,31 @@
 import { PALETTE_ROWS } from "./palettes.generated";
 
 const PALETTE_BY_KEY = Object.fromEntries(PALETTE_ROWS.map((p) => [p.key, p]));
+
+/**
+ * Palettes whose GROUND is dark, derived rather than listed.
+ *
+ * WHY THIS IS A FUNCTION AND NOT A SENTENCE IN THE PROMPT.
+ *
+ * The prompt said 「亮度属于风格，永远不属于配色」 for about three hours, and it
+ * was true when it was written: measured across all twelve palettes the ground
+ * ran oklch L 0.938 to 1.000, every one near-white, so 「换成藏青，整体暗一点」
+ * promised a change the owner would never see. Then 深夜 shipped at L 0.18 and
+ * that sentence started refusing the right answer instead.
+ *
+ * A hard-coded fact about the data outlives the data. This repo has now paid
+ * for that five times in one day -- variant preferences pointing at renamed
+ * variants, a register list three days stale, 45 preferences defaultProps was
+ * beating, a screenshot script's own copy of the register names, and that
+ * sentence. Derived from `dots[0]` at call time, tomorrow's dark palette is
+ * simply in the answer, and nobody has to remember this file exists.
+ */
+export function darkPalettes(): string[] {
+  return PALETTE_ROWS.filter((p) => {
+    const l = /oklch\(\s*([0-9.]+)/.exec(p.dots?.[0] ?? "")?.[1];
+    return l !== undefined && parseFloat(l) < 0.5;
+  }).map((p) => p.key);
+}
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 /**
