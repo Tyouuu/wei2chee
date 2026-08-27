@@ -123,29 +123,7 @@ const publicSans = Public_Sans({
   display: "swap",
 });
 
-// Soft's voice: geometric with softened terminals and a tall x-height. Nunito
-// is already Hearth's, and putting the two rounded registers on the same face
-// would undo the only reason to have both.
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-soft-latin",
-  display: "swap",
-});
 
-// 粗野's voice. Bricolage Grotesque is the face this look is actually drawn in
-// -- irregular widths, a slightly wrong-on-purpose skeleton, and real 800/900
-// weights, which no other face here has. The other nine registers all top out
-// at 700, and a 3px black stroke around 600-weight type reads as a mistake
-// rather than as a decision.
-//
-// Deliberately not Space Grotesk, which is the face every generated "brutalist"
-// page reaches for and would make this register look copied rather than
-// chosen.
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  variable: "--font-brut-latin",
-  display: "swap",
-});
 
 // CJK, and why this file's original "Latin-only webfonts" rule now has two
 // exceptions.
@@ -187,6 +165,12 @@ const notoSansSC = Noto_Sans_SC({
 });
 
 
+/* TWO FACES LEFT WITH THEIR REGISTERS, 2026-08-27. 柔和 and 粗野 were culled
+   and their Latin faces went with them -- a font declared here is downloaded on
+   every page whether or not any surviving register asks for it, and the people
+   loading these pages are on 4G. Checked by grepping --font-* out of the six
+   surviving token files rather than by reading this list. */
+
 /** Every font variable, ready for a root layout's <html className>. */
 export const fontVariables = [
   instrumentSerif.variable,
@@ -196,8 +180,6 @@ export const fontVariables = [
   archivoNarrow.variable,
   nunito.variable,
   publicSans.variable,
-  jakarta.variable,
-  bricolage.variable,
   notoSerifSC.variable,
   notoSansSC.variable,
 ].join(" ");

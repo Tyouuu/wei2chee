@@ -52,12 +52,26 @@ describe("the role map stays honest", () => {
   });
 
   it("names ids the builder actually produces", () => {
-    const produced = new Set(ids(saved("blueprint")));
+    /* THE WHOLE TREE, NOT THE MAIN COLUMN, and the cull is what exposed it.
+
+       `ids()` walks mainColumn because the ORDER assertions below are about
+       the main column. This question is different -- 「does the builder ever
+       emit this id」 -- and 台账 is a SPLIT register whose aside takes the
+       narrow blocks off the front of the stack, so `dashboard-ranking` is
+       built and lives outside the column this helper reads.
+
+       It passed for months because some non-split register also emitted
+       ranking. On 2026-08-27 the library went from fourteen registers to six,
+       台账 became the only one that orders it, and the ruler started reporting
+       that nothing builds a block it builds on every renovation dashboard. */
+    const anywhere = (style: string) =>
+      walkNodes((saved(style).content ?? []) as never).map((n) => String(n.props?.id ?? ""));
+    const produced = new Set(anywhere("blueprint"));
     // Not every register's page contains every block, so this asserts the
     // reverse: nothing in the map is a name the builder never emits.
     const built = new Set<string>();
     for (const style of ALL_STYLES) {
-      for (const id of ids(saved(style))) built.add(id);
+      for (const id of anywhere(style)) built.add(id);
     }
     expect(produced.size).toBeGreaterThan(2);
     /* Only the roles a composition actually USES. `activity` is in

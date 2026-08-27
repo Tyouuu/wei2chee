@@ -249,15 +249,6 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     opens: "做什么",
     order: ["services", "work", "story", "team", "flow", "prices", "reviews", "creds", "cta", "faq", "areas", "promise", "hours"],
   },
-  // 仪表盘: for the owner who opens a system to check four numbers. Its website
-  // leads with the claims a stranger checks the same way -- 保证、覆盖、常见问题
-  // -- before anything is sold.
-  console: {
-    tones: { creds: "tint" },
-    hero: "center",
-    opens: "保证",
-    order: ["promise", "creds", "services", "story", "prices", "areas", "work", "flow", "faq", "reviews", "team", "cta", "hours"],
-  },
   // 中台: the wholesaler's register, the densest in the library. Its buyer is
   // another business, and a business asks for terms before it asks for a look:
   // price, then delivery, then what the arrangement actually is.
@@ -284,63 +275,6 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     opens: "一句话",
     order: ["services", "story", "team", "flow", "promise", "creds", "faq", "prices", "areas", "reviews", "work", "cta", "hours"],
   },
-  // 柔和: the tuition centre, where the person reading is often nervous. It
-  // opens on a coloured band and answers the worry before the sell -- what
-  // happens, when you are open, what other parents said.
-  soft: {
-    tones: { flow: "tint", faq: "paper" },
-    statement: "quote",
-    hero: "band",
-    /* 柔和 reads the sentence as reassurance, so it is set as a quotation --
-       something a person said, not a claim a company printed. The tuition
-       centre's parent is the reader this whole register is aimed at. */
-    opens: "一句话",
-    order: ["services", "story", "team", "flow", "hours", "reviews", "creds", "faq", "prices", "work", "areas", "cta", "promise"],
-  },
-  // 粗野: gyms, barbers, tuning shops -- businesses that are loud on purpose.
-  // The work first at full volume, then the ask, immediately. This is the only
-  // skeleton that puts the mid-page CTA in the top third.
-  brut: {
-    tones: { work: "ink", reviews: "tint" },
-    measure: "wide",
-    ground: "ink",
-    hero: "band",
-    opens: "作品 + 马上问",
-    order: ["work", "cta", "services", "story", "team", "prices", "reviews", "creds", "hours", "areas", "faq", "flow", "promise"],
-  },
-  // 瓷: the kopitiam and the nyonya kitchen, in a shophouse. For them the price
-  // list IS the menu and the menu IS the page -- then when you are open, then
-  // where you are. Nobody reads a coffee shop's process diagram.
-  tile: {
-    tones: { prices: "ink", hours: "tint" },
-    ground: "ink",
-    hero: "split",
-    opens: "菜单",
-    order: ["prices", "work", "story", "hours", "creds", "areas", "services", "reviews", "team", "faq", "cta", "flow", "promise"],
-  },
-  // 码: parts, model numbers, quantities. A catalogue -- the list and its
-  // prices, then whether you deliver here. Monospace all the way down, so no
-  // long-prose section gets to lead.
-  code: {
-    tones: { prices: "ink" },
-    measure: "wide",
-    pattern: "dots",
-    ground: "ink",
-    hero: "plain",
-    opens: "货单",
-    order: ["prices", "services", "story", "areas", "promise", "creds", "faq", "flow", "work", "reviews", "team", "cta", "hours"],
-  },
-  // 漆: 中药行、婚宴、礼品. The only register that puts colour on the GROUND, so
-  // the band hero is not decoration -- it is the register itself. What it sells
-  // is trust built over years, so the work and the word-of-mouth lead.
-  lacquer: {
-    tones: { work: "tint", cta: "paper" },
-    measure: "narrow",
-    ground: "ink",
-    hero: "band",
-    opens: "招牌 + 口碑",
-    order: ["services", "work", "story", "team", "reviews", "creds", "hours", "areas", "prices", "cta", "faq", "flow", "promise"],
-  },
   // 招牌: shophouse retail with a physical sign outside. The centred hero IS a
   // signboard. Then the two things somebody standing on the street needs:
   // when are you open, and where exactly are you.
@@ -351,28 +285,6 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     hero: "center",
     opens: "店名 + 找得到",
     order: ["hours", "areas", "services", "creds", "work", "story", "team", "prices", "reviews", "cta", "faq", "flow", "promise"],
-  },
-  // 夜: the dark one -- shift work, monitoring, late openings. Its website
-  // leads with the fact that makes it dark: we are open when others are not.
-  night: {
-    tones: { hours: "ink", services: "tint" },
-    hero: "stage",
-    opens: "还开着",
-    order: ["hours", "services", "story", "team", "areas", "flow", "promise", "creds", "prices", "faq", "work", "cta", "reviews"],
-  },
-  // 工作室: consultants and agencies, the register where nothing sits side by
-  // side. A quiet centred opening, the work, then who said what -- and the
-  // enquiry is the only thing that ever asks anything.
-  studio: {
-    tones: { story: "paper" },
-    statement: "centre",
-    measure: "narrow",
-    hero: "stage",
-    /* 工作室 is the register where nothing sits beside anything, so the plain
-       centred band -- the shape all five real pages on lapa's contact sheet
-       use -- belongs to it before it belongs to anyone. */
-    opens: "一句话",
-    order: ["story", "team", "work", "services", "reviews", "creds", "flow", "faq", "promise", "prices", "areas", "cta", "hours"],
   },
 };
 

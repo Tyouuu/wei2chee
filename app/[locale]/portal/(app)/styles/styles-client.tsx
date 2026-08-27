@@ -21,16 +21,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   hearth: styles.hearth,
   blueprint: styles.blueprint,
   swiss: styles.swiss,
-  soft: styles.soft,
-  brut: styles.brut,
-  night: styles.night,
   signboard: styles.signboard,
-  lacquer: styles.lacquer,
-  code: styles.code,
-  tile: styles.tile,
-  console: styles.console,
   counter: styles.counter,
-  studio: styles.studio,
 };
 
 
@@ -41,16 +33,8 @@ export const STYLE_LABEL: Record<StyleName, string> = {
   hearth: "Hearth",
   blueprint: "Blueprint",
   swiss: "Swiss",
-  soft: "Soft",
-  brut: "Brut",
-  night: "Night",
   signboard: "Signboard",
-  lacquer: "Lacquer",
-  code: "Code",
-  tile: "Tile",
-  console: "Console",
   counter: "Counter",
-  studio: "Studio",
 };
 
 /**

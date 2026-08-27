@@ -16,67 +16,11 @@ export type StyleName =
   // brief's own words and for what makes it a register rather than a
   // repaint of one we already had.
   | "swiss"
-  | "soft"
-  // 2026-08-22, and the first one added because a MEASUREMENT said the set was
-  // missing something rather than because a brief looked good. The ten
-  // registers covered density, colour, radius and type and did not cover
-  // WEIGHT: nothing had a border over 2px or a shadow visible from across the
-  // room. See design-system/tokens/brut.css for the numbers.
-  | "brut"
-  // 墨 (Ink) WAS HERE, and was withdrawn on 2026-08-25. Measured across the
-  // ten axes a palette cannot repaint, it shared EIGHT with 瑞士 -- and five of
-  // those eight were locked on both sides, meaning neither could move without
-  // ceasing to be itself. Two registers that cannot be told apart without
-  // reading the typeface are one register and a font. The founder's own test:
-  // 「只是你再调那个颜色而已？那为什么不要放在配色？」
-  //
-  // Its space axis is not lost. 墨's pad-card 40 / row-height 76 were the widest
-  // in the set, and nothing else reaches them -- but a register whose entire
-  // first screen is one figure and air also fails the founder's most load-
-  // bearing rule, 「第一屏就是产品」. Accounts on it move to 瑞士 (migration
-  // 20260825060000), which is the same argument with something on the page.
-  // The first register that is not a flat rectangle: translucent cards,
-  // a real backdrop blur, and a ground with something to see through them.
-  // See design-system/tokens/glass.css.
-  // The one that is not a white page. Canvas luminance across the other
-  // thirteen ran 0.82-0.97 with nothing below it; a workshop, a studio or a
-  // gym had no register that looked like them. See tokens/night.css.
-  | "night"
   // The first register whose headings are set in a different face from its
   // body -- all sixteen before it declared one family for both. See
   // tokens/signboard.css.
   | "signboard"
-  // The first register whose GROUND is a colour. Surface saturation across
-  // the other seventeen ran 0.00-0.19 while accents ran 0.11-1.00: colour had
-  // only ever been allowed on a button. See tokens/lacquer.css.
-  | "lacquer"
-  // Every character the same width. Nine body faces across the other
-  // eighteen and all of them proportional. See tokens/code.css.
-  | "code"
-  // The first register whose ground is a repeating FIGURE rather than a
-  // wash. --canvas-image had been set twice and both were gradients. See
-  // tokens/tile.css.
-  | "tile"
-  // Taken from arhamkhnz/next-shadcn-admin-dashboard's soft-pop preset
-  // (MIT) over tweakcn colours: big radius AND a hard black edge, and three
-  // saturated colours used as decoration rather than as meaning. See
-  // tokens/pop.css.
-  // 2026-08-25, and the first two taken from a MEASUREMENT of the market rather
-  // than from a brief: eleven competitors' dashboards were photographed beside
-  // our own sixteen, and two whole families had no register here. 仪表盘 is the
-  // Tabler / AdminLTE / ngx-admin shape (white sidebar, slate ground, 4px, small
-  // caps); 中台 is the Ant Design Pro / vue-element-admin shape (deep navy
-  // chrome, 2px, no shadow, the densest body in the set) -- which is also what
-  // most Chinese-speaking Malaysian SMEs have already used.
-  | "console"
-  | "counter"
-  // 2026-08-26, and the first register built under the founder's rule
-  // 「一个 link = 一套风格」: measured with getComputedStyle off
-  // arhamkhnz/next-shadcn-admin-dashboard running locally, not read off a
-  // screenshot. Ground and card are the SAME white and a 1px ring separates
-  // them; the primary is black and all the colour is on the delta pills; the
-  // table head is neither dimmed nor tracked. See tokens/studio.css.
-  | "studio";
+  | "counter";
 
 /**
  * Every register, in the order they are shown. THE list -- four separate copies
@@ -99,16 +43,8 @@ export const STYLE_ORDER: StyleName[] = [
   "hearth",
   "blueprint",
   "swiss",
-  "soft",
-  "brut",
-  "night",
   "signboard",
-  "lacquer",
-  "code",
-  "tile",
-  "console",
   "counter",
-  "studio",
 ];
 
 const SCOPE_CLASS: Record<StyleName, string> = {
@@ -116,16 +52,8 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   hearth: styles.hearth,
   blueprint: styles.blueprint,
   swiss: styles.swiss,
-  soft: styles.soft,
-  brut: styles.brut,
-  night: styles.night,
   signboard: styles.signboard,
-  lacquer: styles.lacquer,
-  code: styles.code,
-  tile: styles.tile,
-  console: styles.console,
   counter: styles.counter,
-  studio: styles.studio,
 };
 
 /**
@@ -157,16 +85,8 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   hearth: styles.hearth,
   blueprint: styles.blueprint,
   swiss: styles.swiss,
-  soft: styles.soft,
-  brut: styles.brut,
-  night: styles.night,
   signboard: styles.signboard,
-  lacquer: styles.lacquer,
-  code: styles.code,
-  tile: styles.tile,
-  console: styles.console,
   counter: styles.counter,
-  studio: styles.studio,
 };
 
 export function StyleColumn({

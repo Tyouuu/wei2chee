@@ -79,16 +79,8 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   hearth: styles.hearth,
   blueprint: styles.blueprint,
   swiss: styles.swiss,
-  soft: styles.soft,
-  brut: styles.brut,
-  night: styles.night,
   signboard: styles.signboard,
-  lacquer: styles.lacquer,
-  code: styles.code,
-  tile: styles.tile,
-  console: styles.console,
   counter: styles.counter,
-  studio: styles.studio,
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
@@ -1393,11 +1385,15 @@ export function PortalEditor({
             layout: t("layoutLabel"),
             layoutOptions: [
               { key: null, label: t("layoutFollow") },
+              /* THREE, NOT FIVE. 仪表盘 and 看板 named the shapes of 仪表盘 and
+                 粗野, and both registers were culled on 2026-08-27. A button
+                 that stays on the toolbar after the shape behind it is gone
+                 lights up, writes the column, and leaves the page exactly as
+                 it was -- which is the defect this file spent the week fixing
+                 on the other 排法 buttons. See LAYOUT_SETS. */
               { key: "table", label: t("layoutTable") },
-              { key: "console", label: t("layoutConsole") },
               { key: "hero", label: t("layoutHero") },
               { key: "today", label: t("layoutToday") },
-              { key: "board", label: t("layoutBoard") },
             ],
           }}
         />

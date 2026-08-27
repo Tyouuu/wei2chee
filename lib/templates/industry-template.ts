@@ -1361,15 +1361,12 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   swiss: ["stats4", "trend|share@wide-left", "table", "flow"],
   // Friendly and rounded. One figure with its own supporting numbers, the
   // day's list beside it, then the money.
-  soft: ["hero|todo@half", "trend|share@wide-left", "table"],
   // Weight. Two enormous figures and the work, in slabs. No chart, no split --
   // a slab that is half a page wide stops being a slab.
-  brut: ["stats2", "board", "table"],
   // Translucent panels want something behind them to see through, and two
   // panels side by side show more edges than one.
   // Lights off. An ops console: the figure and its chart side by side at the
   // top, then the queue.
-  night: ["hero@over", "trend|table@wide-right", "share|todo@half"],
   // A shop sign. The name and the number are the sign; the rest is small and
   // under it. A sign does not have two halves.
   // 招牌 was three blocks and most of the first screen was white. The share
@@ -1378,7 +1375,6 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   signboard: ["hero@over", "share|flow@half", "table"],
   // A coloured ground with ivory panels floating on it -- panels want to be
   // few and LARGE, so one figure beside one chart, then one table.
-  lacquer: ["hero@over", "trend|share@wide-left", "table"],
   // Every character the same width. Squares and a ranking are both grids of
   // fixed cells, so they sit beside each other without either one reflowing.
   /*
@@ -1404,15 +1400,12 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
     content; a top-three list never will against a chart. The workflow is six
     stages and wraps to two rows, which is the same order of height.
   */
-  code: ["stats4", "trend|flow@wide-left", "ranking", "table"],
   // A patterned floor wants flat cards above it, in a rhythm -- and a rhythm
   // needs a row of two, not a column of one.
-  tile: ["stats4", "trend|todo|share", "table"],
   // The sticker. Big, playful, board-shaped, with the chart squeezed beside it.
   // Tabler / AdminLTE, and now actually shaped like them: four tiles, then the
   // chart with the ranking BESIDE it -- which is the arrangement every one of
   // those templates uses and the one we did not have.
-  console: ["stats4", "trend|ranking|share", "table", "todo"],
   // Ant Design Pro: the list is the day, so the table is first-class and
   // early. Then the same chart-and-ranking pair their own dashboard opens on.
   // 中台: Ant Design Pro's list pages all carry a second column. Share first,
@@ -1432,7 +1425,6 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
     It is also the cost: four blocks stacked is more scrolling than 台账's
     six, which is the trade named in tokens/studio.css.
   */
-  studio: ["stats4", "trend", "table", "todo"],
 };
 
 
@@ -1475,14 +1467,17 @@ export const COMPOSITION_ROLES = new Set([
 export const LAYOUT_SETS = {
   /** A ledger is a table, and a person who reads forty rows a day wants rows. */
   table: "ledger",
-  /** Tabler / AdminLTE: four figures and a chart above the fold. */
-  console: "console",
   /** One figure and a great deal of air, then the work. */
   hero: "signboard",
   /** What is happening today first, the money after it. */
   today: "hearth",
-  /** The day as columns rather than as a list. */
-  board: "brut",
+  /* 看板 IS GONE, and deliberately rather than by omission.
+     It named 粗野's shape -- the day as columns rather than as a list -- and
+     粗野 was culled on 2026-08-27. Pointing it at a survivor would have left a
+     button labelled 看板 that produces 图纸's layout, which is the same lying
+     control this repo has spent the week removing. A 排法 is a promise about
+     what the page will look like; when the shape behind it stops existing, the
+     promise has to go with it. */
 } as const;
 
 export type LayoutSet = keyof typeof LAYOUT_SETS;

@@ -71,16 +71,8 @@ const LAYOUT_CLASS: Record<StyleName, string> = {
   hearth: styles.hearth,
   blueprint: styles.blueprint,
   swiss: styles.swiss,
-  soft: styles.soft,
-  brut: styles.brut,
-  night: styles.night,
   signboard: styles.signboard,
-  lacquer: styles.lacquer,
-  code: styles.code,
-  tile: styles.tile,
-  console: styles.console,
   counter: styles.counter,
-  studio: styles.studio,
 };
 
 /**

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
 import { SITE_COMPOSITION, composeSite, siteSkeleton } from "./site-composition";
 import { LANDING_TEMPLATES } from "./landing-templates";
 import {
@@ -182,7 +183,12 @@ describe("the website a real business gets", () => {
       shapes.set(style, sectionsOf(websiteFor(style)));
     }
     const distinct = new Set([...shapes.values()].map((s) => s.join(">")));
-    expect(distinct.size).toBeGreaterThanOrEqual(10);
+    /* SIX, AND ALL SIX. The number was 10 when the library held fourteen
+       registers -- a floor, not a target, because four collisions out of
+       fourteen was tolerable. After the cull of 2026-08-27 there are six, and
+       the honest assertion is that EVERY one is a distinct skeleton: a library
+       of six with two that match is a library of five pretending. */
+    expect(distinct.size).toBe(STYLE_ORDER.length);
   });
 
   it("opens on what the register says it opens on", () => {
