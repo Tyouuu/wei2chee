@@ -114,6 +114,39 @@ export type SiteSkeleton = {
    */
   statement?: "centre" | "rule" | "quote";
   /**
+   * 哪几段坐在自己的地上。
+   *
+   * ── THE MEASUREMENT THAT MADE THIS NECESSARY ────────────────────────────
+   *
+   * Our eight pages beside four Wix templates, whole pages at one scale
+   * (.screenshots/motionreel/versus.jpg, 2026-08-27). Counted:
+   *
+   *   我们        1 ground per page, plus one coloured CTA band
+   *   Wix 装修    yellow at the top, yellow again mid-page, yellow footer
+   *   Wix 油漆    terracotta, mint, pink, cream -- four
+   *   Wix 律师    cream, sage, terracotta, ochre -- four
+   *
+   * That is the difference the founder keeps pointing at and I kept answering
+   * with more section SHAPES. A page with one ground reads as one long column
+   * however the blocks inside it are arranged; a page with three or four reads
+   * as chapters. It is also the same number my own OKLab pass turned up
+   * earlier and I misread: 底色种类 我们 2, 他们 3-5.
+   *
+   * ── AND WHY IT COSTS ALMOST NOTHING ─────────────────────────────────────
+   *
+   * block-tone.ts has done this since 2026-08-25 -- four tones, a proper
+   * two-layer token remap so a table's head and its hairlines follow the
+   * ground instead of resolving against the page. puck-config-client already
+   * reads `tone` off any block and paints it. Nothing ever WROTE that prop for
+   * a website. Eleventh time in this repo that the capability was finished and
+   * the wire was never connected.
+   *
+   * An empty map is a real answer, not a missing one: 瑞士's whole argument is
+   * that a hairline and a measure are enough, and a register that paints bands
+   * is not 瑞士 any more.
+   */
+  tones?: Partial<Record<SiteSection, "ink" | "tint" | "paper">>;
+  /**
    * 开场的地 —— what the first screen is painted on. `page` follows the
    * register's own ground; `ink` is a near-black carrying a HINT of the
    * register's own navigation hue.
@@ -179,6 +212,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // a table, so its website opens on the one table a stranger wants -- what it
   // costs. No figure: this register's whole argument is that it is not pretty.
   ledger: {
+    tones: { flow: "tint", creds: "paper" },
     measure: "wide",
     hero: "left",
     opens: "价目表",
@@ -188,6 +222,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // the look of the last customer who walked out, so the photographs lead and
   // the reviews come straight after them.
   hearth: {
+    tones: { story: "tint", reviews: "paper" },
     /* THE ONLY REGISTER THAT OPENS ON A PHOTOGRAPH AS ITS GROUND, and one is
        the right number.
 
@@ -208,6 +243,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.
   blueprint: {
+    tones: { flow: "tint" },
     pattern: "grid",
     hero: "stage",
     opens: "做什么",
@@ -217,6 +253,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // leads with the claims a stranger checks the same way -- 保证、覆盖、常见问题
   // -- before anything is sold.
   console: {
+    tones: { creds: "tint" },
     hero: "center",
     opens: "保证",
     order: ["promise", "creds", "services", "story", "prices", "areas", "work", "flow", "faq", "reviews", "team", "cta", "hours"],
@@ -225,6 +262,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // another business, and a business asks for terms before it asks for a look:
   // price, then delivery, then what the arrangement actually is.
   counter: {
+    tones: { promise: "paper" },
     measure: "wide",
     ground: "ink",
     hero: "plain",
@@ -250,6 +288,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // opens on a coloured band and answers the worry before the sell -- what
   // happens, when you are open, what other parents said.
   soft: {
+    tones: { flow: "tint", faq: "paper" },
     statement: "quote",
     hero: "band",
     /* 柔和 reads the sentence as reassurance, so it is set as a quotation --
@@ -262,6 +301,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // The work first at full volume, then the ask, immediately. This is the only
   // skeleton that puts the mid-page CTA in the top third.
   brut: {
+    tones: { work: "ink", reviews: "tint" },
     measure: "wide",
     ground: "ink",
     hero: "band",
@@ -272,6 +312,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // list IS the menu and the menu IS the page -- then when you are open, then
   // where you are. Nobody reads a coffee shop's process diagram.
   tile: {
+    tones: { prices: "ink", hours: "tint" },
     ground: "ink",
     hero: "split",
     opens: "菜单",
@@ -281,6 +322,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // prices, then whether you deliver here. Monospace all the way down, so no
   // long-prose section gets to lead.
   code: {
+    tones: { prices: "ink" },
     measure: "wide",
     pattern: "dots",
     ground: "ink",
@@ -292,6 +334,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // the band hero is not decoration -- it is the register itself. What it sells
   // is trust built over years, so the work and the word-of-mouth lead.
   lacquer: {
+    tones: { work: "tint", cta: "paper" },
     measure: "narrow",
     ground: "ink",
     hero: "band",
@@ -302,6 +345,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // signboard. Then the two things somebody standing on the street needs:
   // when are you open, and where exactly are you.
   signboard: {
+    tones: { prices: "ink", promise: "paper", areas: "tint" },
     pattern: "diamond",
     ground: "ink",
     hero: "center",
@@ -311,6 +355,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // 夜: the dark one -- shift work, monitoring, late openings. Its website
   // leads with the fact that makes it dark: we are open when others are not.
   night: {
+    tones: { hours: "ink", services: "tint" },
     hero: "stage",
     opens: "还开着",
     order: ["hours", "services", "story", "team", "areas", "flow", "promise", "creds", "prices", "faq", "work", "cta", "reviews"],
@@ -319,6 +364,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // side. A quiet centred opening, the work, then who said what -- and the
   // enquiry is the only thing that ever asks anything.
   studio: {
+    tones: { story: "paper" },
     statement: "centre",
     measure: "narrow",
     hero: "stage",
@@ -389,7 +435,8 @@ export function composeSite(nodes: PuckNode[], style?: string | null): PuckNode[
 
   return [...head, ...ordered, ...tail]
     .map((n) => heroFor(n, skeleton))
-    .map((n) => statementFor(n, skeleton));
+    .map((n) => statementFor(n, skeleton))
+    .map((n) => tonedFor(n, skeleton));
 }
 
 /**
@@ -412,6 +459,24 @@ export function composeSite(nodes: PuckNode[], style?: string | null): PuckNode[
  * prompt: on those eleven registers the sentence is not missing, it is on the
  * screen above.
  */
+/**
+ * The ground a section sits on, when its register asks for one.
+ *
+ * Written as a prop rather than a class because that is where the renderer
+ * already looks: puck-config-client calls `toneLayers(merged.tone)` on every
+ * block. So this is the missing half of a wire, not a new mechanism.
+ *
+ * It writes ONLY where the register names a section, and never `page` -- an
+ * absent prop is how everything else in this system says 「follow the
+ * register」, and writing "page" explicitly would take that answer away from a
+ * customer who later moves the block.
+ */
+function tonedFor(node: PuckNode, skeleton: SiteSkeleton): PuckNode {
+  const tone = skeleton.tones?.[sectionOf(node) as SiteSection];
+  if (!tone) return node;
+  return { ...node, props: { ...node.props, tone } };
+}
+
 function statementFor(node: PuckNode, skeleton: SiteSkeleton): PuckNode {
   if (idOf(node) !== "website-statement") return node;
   const props = { ...node.props };
