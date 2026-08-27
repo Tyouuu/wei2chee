@@ -48,9 +48,17 @@
  *
  * ── COST AND SAFETY ───────────────────────────────────────────────────────
  *
- * Real model calls, one per case. NOTHING IS SAVED: an AI edit lives in Puck's
- * own state until somebody presses 保存设计, and this never does. The editor is
- * reloaded between cases, which is also what makes each case independent.
+ * Real model calls, one per case.
+ *
+ * ⚠️ IT DOES WRITE TO THE DATABASE, which this file claimed for a day that it
+ * did not. THE EDITOR AUTOSAVES -- 2.5s after any change, on any page the
+ * customer has already saved once (editor-client). So an AI edit made here is
+ * a real edit to the demo account's real pages, and the first version of this
+ * ruler quietly rewrote the founder's public site headline and left it there.
+ *
+ * So it snapshots what it can break and puts it back: every page's layout, and
+ * the project's style/palette/layout. A ruler the founder has to clean up
+ * after is a ruler that costs more than it is worth.
  *
  *   npm run dev            (in another terminal)
  *   npm run eval:browser
@@ -86,6 +94,28 @@ const dbHead = { apikey: KEY, Authorization: `Bearer ${KEY}`, "Content-Type": "a
 
 const readDesign = async () =>
   await (await fetch(`${DB}/rest/v1/projects?select=id,layout,style,palette`, { headers: dbHead })).json();
+
+/* The pages themselves. See the autosave note at the top: an AI edit made by
+   this ruler is written to the customer's real page within seconds. */
+const readPages = async () =>
+  await (await fetch(`${DB}/rest/v1/project_pages?select=id,page_key,layout_json`, { headers: dbHead })).json();
+
+async function restorePages(before) {
+  const after = await readPages();
+  let put = 0;
+  for (const b of before) {
+    const a = after.find((x) => x.id === b.id);
+    if (!a) continue;
+    if (JSON.stringify(a.layout_json) === JSON.stringify(b.layout_json)) continue;
+    await fetch(`${DB}/rest/v1/project_pages?id=eq.${b.id}`, {
+      method: "PATCH",
+      headers: dbHead,
+      body: JSON.stringify({ layout_json: b.layout_json }),
+    });
+    put += 1;
+  }
+  if (put) console.log(`放回去了 ${put} 页的版面`);
+}
 
 async function restoreDesign(before) {
   const after = await readDesign();
@@ -149,6 +179,44 @@ const CASES = [
     reorders: true,
   },
   {
+    /*
+      THE OTHER PAGE. Everything above is the dashboard -- the system the owner
+      uses. This is his PUBLIC SITE, the thing he actually sends to people, and
+      until now no ruler in this repo had ever asked the assistant about it in
+      a browser. Its blocks are a different shape too: a 官网版段 keeps its words
+      in its own content and not in props, so set_copy is the operation and
+      set_text does nothing at all -- a distinction that is invisible from the
+      route's JSON and obvious in rendered text.
+    */
+    name: "官网 · 第一屏的字",
+    page: "website",
+    ask: "把第一屏那句大标题改成「二十年装修经验」",
+    changed: true,
+    gains: ["二十年装修经验"],
+  },
+  {
+    /*
+      THE BUTTON NOBODY HAD EVER PRESSED.
+
+      `pick_photo` is an OFFER, not an edit: the assistant does not choose a
+      picture -- 「一张图库照片是整页唯一不属于他的东西」 -- it takes him to the
+      slot and opens the picker with this trade's own words. The route side had
+      unit tests from the day it shipped. The BROWSER side had none, and was
+      written from how two other dispatches in this repo look. It has never
+      been pressed by anybody, which is the same standing as a feature that
+      does not work.
+
+      So this presses it, and checks the two things that make it real: the
+      offer appears, and pressing it opens the picker.
+    */
+    name: "官网 · 照片，按下那颗按钮",
+    page: "website",
+    ask: "第一屏换一张工地的照片",
+    changed: false,
+    offers: "去挑照片",
+    opens: "从图库找",
+  },
+  {
     name: "拒绝 · 页面不能说谎",
     /*
       THE MIRROR. 「帮我发 whatsapp 给客人」 was once answered by adding a button
@@ -182,8 +250,8 @@ async function readCanvas(p) {
   };
 }
 
-async function openEditor(p) {
-  await p.goto(`${BASE}/zh/portal/dashboard`, { waitUntil: "networkidle", timeout: 180000 });
+async function openEditor(p, page = "dashboard") {
+  await p.goto(`${BASE}/zh/portal/${page}`, { waitUntil: "networkidle", timeout: 180000 });
   await p.waitForSelector(CANVAS, { timeout: 60000 });
   // The canvas renders progressively; a read taken too early diffs against a
   // half-drawn page and every case "changes".
@@ -197,6 +265,7 @@ async function openEditor(p) {
 }
 
 const designBefore = await readDesign();
+const pagesBefore = await readPages();
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1500, height: 1000 } });
 const rows = [];
@@ -211,7 +280,7 @@ try {
   for (const c of chosen) {
     // Reloaded per case: an AI edit stays in Puck's state, so without this the
     // second case would be asked about a page the first one already changed.
-    const box = await openEditor(p);
+    const box = await openEditor(p, c.page ?? "dashboard");
     const before = await readCanvas(p);
 
     await box.fill(c.ask);
@@ -262,11 +331,41 @@ try {
       why.push("字变了但顺序没变 —— 排法要的是顺序");
     }
 
+    /*
+      AN OFFER IS PRESSED, NOT JUST COUNTED.
+
+      A button that appears and does nothing is the exact failure this repo
+      keeps writing rules against -- 「一颗接不到东西的按钮，告诉他一个永远不会
+      来的功能」 -- and a check that only asserts the button EXISTS would have
+      passed on one. So the offer is clicked and the thing it promises has to
+      show up on screen.
+    */
+    if (ok && c.offers) {
+      const btn = p.getByRole("button", { name: new RegExp(c.offers) });
+      if ((await btn.count()) === 0) {
+        ok = false;
+        why.push(`没有出现「${c.offers}」那颗按钮`);
+      } else {
+        await btn.first().click();
+        await p.waitForTimeout(2500);
+        if (c.opens) {
+          const opened = await p.getByText(c.opens, { exact: false }).count();
+          if (!opened) {
+            ok = false;
+            why.push(`按了「${c.offers}」，但「${c.opens}」没有打开`);
+          }
+        }
+      }
+    }
+
     rows.push({ name: c.name, ok, said, why: why.join(" · "), before, after });
     console.log(`${ok ? "ok  " : "FAIL"}  ${c.name}`);
   }
 } finally {
   await b.close();
+  /* Pages first: the design columns decide how a page is GENERATED, so putting
+     them back before the pages exist in their old shape is the wrong order. */
+  await restorePages(pagesBefore);
   await restoreDesign(designBefore);
 }
 

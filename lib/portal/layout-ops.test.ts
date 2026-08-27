@@ -556,3 +556,43 @@ describe("move_component into a wrapped page", () => {
     expect(out.skipped.length).toBe(1);
   });
 });
+
+describe("set_text only writes fields the block actually has", () => {
+  /*
+    THE ELEVENTH 「说了没做」.
+
+    EDITABLE_TEXT_FIELDS is one global list; the fields are per component. So
+    「把第一屏那句大标题改成 X」 wrote `title` onto a SiteHero -- a prop that
+    component does not declare and nothing renders -- and came back 「改了 1 处」.
+    Found by pressing it in a browser on 2026-08-27; every unit test here
+    passed throughout, because they were written against blocks whose text
+    really is in `title`.
+  */
+  it("refuses a field the component does not declare, and says so", () => {
+    const layout = {
+      content: [{ type: "SiteHero", props: { id: "hero", headline: "兴发装修" } }],
+      root: {},
+    } as unknown as PuckLayout;
+    const r = applyLayoutOps(layout, [
+      { op: "set_text", target_id: "hero", field: "title", value: "二十年" },
+    ] as never);
+    expect(r.applied).toBe(0);
+    expect(r.skipped).toHaveLength(1);
+    // The refusal has to reach the customer -- a silent drop is what this was
+    // already doing, and is indistinguishable from the bug.
+    expect(r.skipped[0].reason).toContain("title");
+  });
+
+  it("still writes the field the block really has", () => {
+    const layout = {
+      content: [{ type: "SiteHero", props: { id: "hero", headline: "兴发装修" } }],
+      root: {},
+    } as unknown as PuckLayout;
+    const r = applyLayoutOps(layout, [
+      { op: "set_text", target_id: "hero", field: "headline", value: "二十年装修经验" },
+    ] as never);
+    expect(r.applied).toBe(1);
+    const hero = (r.layout.content as { props: Record<string, unknown> }[])[0];
+    expect(hero.props.headline).toBe("二十年装修经验");
+  });
+});

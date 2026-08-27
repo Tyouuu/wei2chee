@@ -110,6 +110,15 @@ export const EDITABLE_TEXT_FIELDS = [
   "brandLabel",
   "userName",
   "userRoleLabel",
+  /*
+    THE PUBLIC SITE'S OWN WORDS. `headline` is the h1 on the page the owner
+    actually sends to people, and `sub` is the line under it -- neither was on
+    this list, so 「把第一屏那句大标题改成…」 had NO field it could legally use.
+    The model reached for `title` instead, which SiteHero does not declare;
+    see the guard in the set_text case for what that produced.
+  */
+  "headline",
+  "sub",
 ] as const;
 
 export const layoutOpSchema = z.discriminatedUnion("op", [
@@ -642,6 +651,29 @@ export function applyLayoutOps(
         const node = findNode(layout.content, op.target_id);
         if (!node) {
           skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          break;
+        }
+        /*
+          A FIELD THE BLOCK DOES NOT HAVE IS NOT AN EDIT.
+
+          EDITABLE_TEXT_FIELDS is one global list and the fields are PER
+          COMPONENT, so nothing stopped a `set_text` writing `title` onto a
+          block whose text lives in `headline`. Measured in a browser on
+          2026-08-27: 「把第一屏那句大标题改成「二十年装修经验」」 answered
+          「改了 1 处」, wrote a prop SiteHero does not even declare, and left
+          the page exactly as it was. Eleventh 「说了没做」 in this repo, and the
+          comment on that list had already described this exact failure for the
+          table-label fields -- one instance was fixed, the shape was not.
+
+          Refused rather than written, and the refusal reaches the customer in
+          `skipped`. Silently dropping it is what this was already doing.
+        */
+        const declared = COMPONENT_CONFIGS[String(node.type ?? "")]?.fields;
+        if (declared && !Object.prototype.hasOwnProperty.call(declared, op.field)) {
+          skipped.push({
+            op: op.op,
+            reason: `${String(node.type ?? "")} 没有「${op.field}」这个字段`,
+          });
           break;
         }
         node.props[op.field] = op.value;

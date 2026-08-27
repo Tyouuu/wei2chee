@@ -128,7 +128,7 @@ export function AiAssistant({
      also carries a dockOpen/setDockOpen pair and NOTHING READS IT --
      two providers each claiming in a comment to be where this lives.
      The one AiDock consults is this one. */
-  const { setDockOpen } = useEditorUi();
+  const { setDockOpen, openSheet } = useEditorUi();
 
   /*
     A PICTURE THE OWNER POINTED AT.
@@ -178,6 +178,29 @@ export function AiAssistant({
   // therefore inside the provider, so the layout it sends is always the live
   // canvas rather than a copy threaded down through props.
   const { appState, dispatch, selectedItem } = usePuck();
+
+  /*
+    THE OFFER PROMISES A PICKER, SO A PICKER HAS TO OPEN.
+
+    Selecting is not opening: the photo field lives in the block's content
+    sheet, which the customer normally reaches from the toolbar. Pressing
+    「去挑照片」 used to select the block and stop, which is an offer that
+    describes an outcome and produces an outline.
+
+    Opened HERE rather than beside the dispatch because editor-sheets closes
+    any block sheet it sees while nothing is selected -- rightly; otherwise
+    clicking the background leaves a panel editing a block that is gone. Asking
+    for both in one tick loses that race. This waits until Puck reports the
+    block actually selected.
+  */
+  const wantsPicker = useRef<string | null>(null);
+  useEffect(() => {
+    if (!wantsPicker.current) return;
+    if (String(selectedItem?.props?.id ?? "") !== wantsPicker.current) return;
+    wantsPicker.current = null;
+    // The same sheet the toolbar's 改文字 opens -- the customer's own route.
+    openSheet({ kind: "block", tab: "content" });
+  }, [selectedItem, openSheet]);
   const router = useRouter();
   const data = appState.data as Data;
   const listRef = useRef<HTMLDivElement>(null);
@@ -453,7 +476,26 @@ export function AiAssistant({
       const sel = offer.blockId
         ? findSelector((appState.data as unknown as PuckLayout).content ?? [], offer.blockId)
         : null;
-      if (sel) dispatch({ type: "setUi", ui: { itemSelector: sel } });
+      if (sel) {
+        /*
+          THE CLICK THAT ASKS FOR THE PICKER WAS UNDOING THE SELECTION.
+
+          Measured on 2026-08-27, the first time anybody pressed this button in
+          a browser: dispatching here selected the block and something cleared
+          it again before the frame painted -- `selectedItem` read back null,
+          the toolbar never appeared, and the picker had nothing to open onto.
+          This offer button sits INSIDE the canvas (the dock is drawn over the
+          customer's page), so the same click goes on to be handled as a click
+          on the canvas, which deselects.
+
+          One frame later the click is over and the selection sticks. Same
+          reason inline-editing waits a frame before attaching its caret.
+        */
+        requestAnimationFrame(() => {
+          dispatch({ type: "setUi", ui: { itemSelector: sel } });
+          wantsPicker.current = offer.blockId ?? null;
+        });
+      }
       patch({ offerBusy: false, offerResult: { ok: Boolean(sel) } });
       return;
     }
@@ -694,7 +736,19 @@ export function AiAssistant({
                         {t("aiPageAdded")}
                       </Link>
                     )}
-                    {turn.offerResult?.ok && !turn.offerResult.href && (
+                    {/*
+                      ONLY A DELETED PAGE SAYS A PAGE WAS DELETED.
+
+                      This branch was 「success with no link」, written when the
+                      only two offers were add-a-page and remove-a-page. 照片
+                      arrived as a third action and fell straight into it, so
+                      pressing 「去挑照片」 answered 「已经删掉了。」 -- measured in a
+                      browser on 2026-08-27, and about as alarming a sentence as
+                      this panel could produce.
+                    */}
+                    {turn.offerResult?.ok
+                      && !turn.offerResult.href
+                      && turn.offer?.action === "remove_page" && (
                       <p className="[font-size:var(--text-xs)] [color:var(--color-jade-bright)]">
                         {t("aiPageRemoved")}
                       </p>
