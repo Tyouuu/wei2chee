@@ -91,6 +91,8 @@ export function SiteFoot({
   links,
   askLabel,
   askHref,
+  small,
+  copyright,
 }: {
   brand: ReactNode
   tagline?: string
@@ -120,9 +122,15 @@ export function SiteFoot({
   links?: { label: string; href: string }[]
   askLabel?: string
   askHref?: string
+  /** 社交 / 条款 —— their footer's two small link columns under the rule. */
+  small?: { label: string; href: string }[]
+  /** © 2026 名字. Always true, never a claim about the world, and the one line
+   *  that stops the page ending on nothing. */
+  copyright?: string
 }) {
   const filled = (rows ?? []).filter((r) => r.value?.trim())
   const jumps = (links ?? []).filter((l) => l.label?.trim())
+  const minor = (small ?? []).filter((l) => l.label?.trim())
   return (
     /*
       THE FOOT WEARS THE REGISTER'S NAVIGATION COLOURS.
@@ -192,17 +200,48 @@ export function SiteFoot({
           </div>
         ) : null}
 
-        {filled.length ? (
-          <dl className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
-            {filled.map((r) => (
-              <div key={r.label}>
-                <dt className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
-                  {r.label}
-                </dt>
-                <dd className="mt-1 [color:var(--color-nav-fg)] [font-size:var(--text-base)]">{r.value}</dd>
-              </div>
-            ))}
-          </dl>
+        {/*
+          THE BOTTOM BAND.
+
+          Founder, 2026-08-27, on a crop of our foot next to theirs: 「还是抄的
+          不完全」. Theirs does not stop at the nav -- under a hairline it runs
+          three columns: the address, the phone and email, and the copyright.
+          Ours stopped at the nav, which is why the page still ended abruptly.
+
+          What is NOT copied is the half of theirs that is noise: a San
+          Francisco address that belongs to nobody and 「Powered and secured by
+          Wix」. The columns that carry something go in; the columns that carry
+          somebody else's advertising do not.
+
+          The contact column is empty on a page whose owner has not typed their
+          own number, and that is correct -- 假联络资料不再上线. The copyright is
+          always there, because it is the one line that is true on every page.
+        */}
+        {filled.length || minor.length || copyright ? (
+          <div className="grid [border-top:var(--hairline)_solid_var(--color-nav-border)] [gap:var(--gap-stack)] [padding-top:var(--gap-stack)] @2xl:grid-cols-3">
+            <dl>
+              {filled.map((r) => (
+                <div key={r.label} className="mb-2">
+                  <dt className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-xs)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+                    {r.label}
+                  </dt>
+                  <dd className="[color:var(--color-nav-fg)] [font-size:var(--text-sm)]">{r.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <ul className="flex flex-col [gap:.35rem]">
+              {minor.map((l) => (
+                <li key={l.href + l.label}>
+                  <a href={l.href} className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)] hover:underline">
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            {copyright ? (
+              <p className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">{copyright}</p>
+            ) : null}
+          </div>
         ) : null}
 
         {note ? (

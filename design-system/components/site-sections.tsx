@@ -67,7 +67,7 @@ export function SiteFeatures({
    * So a register may now say what a service looks like, and the three
    * answers are genuinely different objects rather than one object restyled.
    */
-  shape?: "cards" | "panel" | "bands" | "stated"
+  shape?: "cards" | "panel" | "bands" | "stated" | "dotted"
 }) {
   if (!items?.length) return null
 
@@ -107,6 +107,59 @@ export function SiteFeatures({
               ].join(" ")}
             >
               <span className="ds-display [color:var(--color-paper)] [font-size:var(--text-xl)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
+                {f.label}
+              </span>
+              <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                {f.value}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  if (shape === "dotted") {
+    /*
+      ── 左大右小两个标题 + 三张带点的框卡 ──────────────────────────────────
+
+      Section four of the page 満図 copies whole (Wix a-reynolds, 2026-08-27:
+      479px, no photographs). Two things in it that no other shape here does:
+
+        the heading is a PAIR -- 「Our Specializations」 large on the left and
+        「Where We Excel」 small on the right with one line under it. One
+        heading announces a section; two of them frame it, and the right-hand
+        one is where the sentence goes that would otherwise crowd the left.
+
+        each card carries a small solid DOT above its title, in the register's
+        own primary. It is the only mark on the card and it is what stops
+        three bordered rectangles reading as a table.
+
+      Why this rather than switching 満図 to `cards`: `cards` is already worn
+      by two other registers, and the whole point of the shape layer is that
+      no two wear the same one (重点 7c). This is the reference's section, not
+      a restyling of somebody else's.
+    */
+    return (
+      <section className="@container" data-wide="">
+        <div className="mb-10 grid [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] @3xl:items-end">
+          {heading ? (
+            <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+          ) : null}
+          {note ? (
+            <p className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+              {note}
+            </p>
+          ) : null}
+        </div>
+        <ul className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
+          {items.map((f) => (
+            <li
+              key={f.label}
+              className="flex flex-col [background:color-mix(in_oklab,var(--color-primary)_5%,var(--color-canvas))] [border:var(--hairline)_solid_var(--border-subtle)] [border-radius:var(--radius-lg)] [gap:calc(var(--gap-inline)*0.7)] [padding:calc(var(--pad-card-lg)*1.05)]"
+            >
+              <span aria-hidden className="mb-1 block size-2 rounded-full [background:var(--color-primary)]" />
+              <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
                 {f.label}
               </span>
               <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
@@ -247,14 +300,59 @@ export function SiteFeatures({
 export function SiteTestimonials({
   heading,
   items,
+  shape = "cards",
 }: {
   heading?: string
   /** `stars` is optional and defaults to five: a business putting a review on
    *  its own page is not publishing a three-star one, and an explicit 5 on
    *  every row is data nobody typed. */
   items: { quote: string; who: string; role?: string; stars?: number }[]
+  /**
+   * `cards` stars, then the quote, then the face -- read off tailark.
+   * `ruled` the face first, then the name, then the quote, under a hairline
+   *         and with no rating at all.
+   *
+   * The second is measured off the page 満図 copies whole (Wix a-reynolds,
+   * 2026-08-27, section seven: 289px, three photographs). It has no stars.
+   * That is not an omission -- a five-star row on every quote is a rating
+   * nobody typed, and their section leads with a FACE instead, which is the
+   * thing a stranger actually checks. 口碑在这个市场就是全部生意, and the two
+   * shapes make two different arguments about how it is shown.
+   */
+  shape?: "cards" | "ruled"
 }) {
   if (!items?.length) return null
+
+  if (shape === "ruled") {
+    return (
+      <section className="@container">
+        {heading ? (
+          <h2 className="ds-display mb-8 [border-top:var(--hairline)_solid_var(--border-subtle)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)] [padding-top:calc(var(--pad-card-lg)*1.1)]">
+            {heading}
+          </h2>
+        ) : null}
+        <ul className="grid [gap:calc(var(--gap-stack)*1.5)] @2xl:grid-cols-3">
+          {items.map((t, i) => (
+            <li key={i} className="flex flex-col">
+              <span
+                aria-hidden
+                className="mb-3 grid h-11 w-11 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]"
+              >
+                {t.who.trim().charAt(0) || "·"}
+              </span>
+              <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+                {t.who}
+              </span>
+              <p className="mt-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                {t.quote}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
   return (
     <section className="@container">
       {heading ? (

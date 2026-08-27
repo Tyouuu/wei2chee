@@ -264,6 +264,20 @@ const services = (c: LandingContent, heading: string, framed = true) =>
   */
   node("SiteFeatures", "website-services", {
     heading,
+    /*
+      THE SECOND HEADING'S LINE.
+
+      两个标题三张点卡 frames the section with a large heading on the left and a
+      small one with a sentence on the right -- section four of the page 満図
+      copies whole. Their sentence is template filler (「Explore where we can
+      provide our exceptional security solutions」); ours has to be true, and
+      the true thing a stranger wants beside 「what we offer」 in this market is
+      WHERE. 服务范围 is already asked in the questionnaire, and on the
+      registers that decline the 服务范围 section it was going unread.
+
+      Every other shape ignores `note`, so this costs them nothing.
+    */
+    note: c.words.sections.areas.list.slice(0, 4).join(" · "),
     items: c.services,
     // Referenced so the parameter is not dead weight to a reader.
     ...(framed ? {} : {}),
@@ -618,6 +632,15 @@ const foot = (c: LandingContent, links: { label: string; href: string }[]) => {
     // -- a foot that prints 「WhatsApp 012-345 6789」 is the exact failure this
     // module was built to stop, one screen further down.
     rows: c.contact.map((r) => ({ label: r.label, value: r.value, placeholder: r.placeholder })),
+    /* 社交 ships empty and labelled rather than seeded: a Facebook link we
+       invented goes to somebody else's page, which is the same failure as a
+       seeded phone number. The editor shows the field; the page shows nothing
+       until the owner pastes theirs. */
+    small: [],
+    /* THE ONE LINE THAT IS TRUE ON EVERY PAGE. Their foot pads this row with a
+       San Francisco address and 「Powered and secured by Wix」; we take the half
+       that says something. */
+    copyright: `© ${new Date().getFullYear()} ${c.brand}`,
   });
 };
 

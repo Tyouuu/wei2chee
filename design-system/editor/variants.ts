@@ -131,6 +131,13 @@ export const VARIANTS: Record<string, Variant[]> = {
      2026-08-27 after counting painted areas per page against three Wix
      templates -- theirs 20-27, ours 1-10, and ours were `ds-card`, the
      dashboard's own card class. */
+  /* 口碑 —— which one a register picks is an argument about what a stranger
+     checks first: the rating, or the face. 頭像在上 is measured off the page
+     満図 copies whole, whose review section carries no rating at all. */
+  SiteTestimonials: [
+    { id: "cards", label: "评分在上", props: { shape: "cards" } },
+    { id: "ruled", label: "头像在上", props: { shape: "ruled" } },
+  ],
   SiteFeatures: [
     { id: "cards", label: "三张卡片", props: { shape: "cards" } },
     { id: "panel", label: "一整块色面", props: { shape: "panel" } },
@@ -138,6 +145,8 @@ export const VARIANTS: Record<string, Variant[]> = {
     /* 左标签右大字 — the current wave's section rhythm, copied off Polar,
        Linear, Vercel and Attio rather than off a 2023 template. */
     { id: "stated", label: "左标签右大字", props: { shape: "stated" } },
+    /* 两个标题三张点卡 — section four of the page 満図 copies whole. */
+    { id: "dotted", label: "两个标题三张点卡", props: { shape: "dotted" } },
   ],
 
   SiteCta: [

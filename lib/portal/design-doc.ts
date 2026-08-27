@@ -134,8 +134,12 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给美容院、沙龙这种前台就是店面的生意，开系统是在客人面前。52px 的行、20px 的圆角、靠阴影分层。牺牲的是密度 —— 一屏少放三分之一的行，换一个客人看到不会皱眉的画面。",
     facts: "圆角 20px · 无边框、靠阴影分层 · 行高 52px · 正文 15px · 标签不大写",
     prefer: {
-      SiteFeatures: "panel",
+      SiteFeatures: "dotted",
       SiteCta: "panel",
+      /* 头像在上, no rating -- the shape the page this register copies whole
+         uses for its seventh section. 満図 is the register whose argument is
+         the picture, so its reviews lead with a face. */
+      SiteTestimonials: "ruled",
       SiteTeam: "cards",
       SiteGallery: "bento",
       SiteStory: "side",

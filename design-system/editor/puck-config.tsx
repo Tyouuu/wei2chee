@@ -257,11 +257,12 @@ type Components = {
     heading?: string;
     note?: string;
     items: { label: string; value: string; icon?: string }[];
-      shape?: "cards" | "panel" | "bands" | "stated";
+      shape?: "cards" | "panel" | "bands" | "stated" | "dotted";
 };
   SiteTestimonials: {
     heading?: string;
     items: { quote: string; who: string; role?: string; stars?: number }[];
+    shape?: "cards" | "ruled";
   };
   SiteGallery: {
     heading?: string;
@@ -334,6 +335,8 @@ type Components = {
   };
   SiteFoot: {
     links?: { label: string; href: string }[];
+    small?: { label: string; href: string }[];
+    copyright?: string;
     askLabel?: string;
     askHref?: string;
     brand: string;
@@ -1747,6 +1750,7 @@ export const puckConfig: Config<Components> = {
             { label: "一整块色面", value: "panel" },
             { label: "一条一条", value: "bands" },
             { label: "左标签右大字", value: "stated" },
+            { label: "两个标题三张点卡", value: "dotted" },
           ],
         },
         heading: { label: "标题", type: "text" },
@@ -1773,6 +1777,14 @@ export const puckConfig: Config<Components> = {
     SiteTestimonials: {
       label: "客人怎么说",
       fields: {
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "评分在上", value: "cards" },
+            { label: "头像在上", value: "ruled" },
+          ],
+        },
         heading: { label: "标题", type: "text" },
         items: {
           label: "每一条",
@@ -1788,7 +1800,7 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { items: [] },
-      render: ({ heading, items }) => <SiteTestimonials heading={heading} items={items} />,
+      render: ({ heading, items , shape}) => <SiteTestimonials heading={heading} items={items} shape={shape} />,
     },
 
     SiteGallery: {
@@ -2168,10 +2180,23 @@ export const puckConfig: Config<Components> = {
         },
         askLabel: { label: "按钮上的字", type: "text" },
         askHref: { label: "按钮去哪", type: "text" },
+        small: {
+          label: "社交 / 条款",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            href: { label: "去哪", type: "text" },
+          },
+          defaultItemProps: { label: "", href: "" },
+          getItemSummary: (item) => item.label || "一项",
+        },
+        copyright: { label: "版权那一行", type: "text" },
       },
       defaultProps: { brand: "我的公司" },
-      render: ({ brand, tagline, rows, note, links, askLabel, askHref }) => (
+      render: ({ brand, tagline, rows, note, links, askLabel, askHref, small, copyright }) => (
         <SiteFoot
+          small={small}
+          copyright={copyright}
           brand={brand}
           tagline={tagline}
           rows={rows}

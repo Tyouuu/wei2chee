@@ -298,7 +298,11 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   /* 照片墙 carries this register, so the two sections that are lists of
      words go. A portfolio does not print its own terms and conditions. */
     omit: ["work", "story", "team", "prices", "flow", "faq", "promise", "areas", "hours", "creds"],
-    tones: { story: "tint", reviews: "paper" },
+    /* 口碑 SITS ON THE PAGE, NOT ON A CARD. It was `paper`, which drew a white
+       rectangle under the quotes; the page this register copies rules its
+       reviews off the ground with a hairline and no box at all. A card there
+       makes the reviews look like a widget somebody embedded. */
+    tones: { story: "tint" },
     /* THE ONLY REGISTER THAT OPENS ON A PHOTOGRAPH AS ITS GROUND, and one is
        the right number.
 
