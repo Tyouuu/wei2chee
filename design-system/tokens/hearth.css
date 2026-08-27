@@ -186,21 +186,24 @@
      as a tint of the page rather than as a separate surface. Both text colors
      still clear AA on it: paper-dim 4.88:1, primary 4.79:1. */
   --color-primary-soft: #e1f4f3;
-  /* 色块 —— A SECOND COLOUR, NOT A DILUTION OF THE FIRST.
+  /* 色块 —— CHOSEN AGAINST THE PRIMARY, NOT AGAINST THE TRADE.
 
-     Measured 2026-08-27 against the two Wix templates in this market: their
-     panels are #FFFE99 and #CD5334 while their primaries are a blue button and
-     a dark red. The panel is a separate designed value. Ours was
-     `color-mix(primary, canvas)` on all six registers, which is why every
-     panel read as a tinted form rather than as a design.
+     Founder, 2026-08-27, on five full pages: 「配色真的很奇怪」. The first version
+     of this token picked a second colour by trade association -- blush for a
+     salon, yellow for a renovator -- and never held it against the colour
+     already on the page. Every register ended up with two colours arguing.
 
-     血色的淡粉 blush. 满图 goes to 美容 and 餐饮 -- warm, close, skin. It
-     replaces a mint that was a 2% dilution of this register's teal and
-     read as a hospital wall.
+     Re-read from the references: Wix's law firm is khaki, terracotta, cream and
+     sage -- every ground in ONE family, accent included. Their yellow panel
+     works on 装修 because the blue there is a single small button, not a band.
 
-     Light enough for dark text at 4.5:1 except 招牌, which inverts its own
-     writing the way its dark ground already does. */
-  --color-block: #f3ddd8;
+     同一家：主色是 #237570 的青绿，色块是它的极淡版。The blush that was here
+     came from 「a salon is warm」 and sat opposite the teal on the wheel,
+     which is the loudest thing two colours can do to each other.
+
+     A dark page never takes a white block or a saturated one: on a dark ground
+     a block is a STEP UP from the ground, not a colour laid on top of it. */
+  --color-block: #dfe9e4;
 
   /* Text/icon color for content rendered on a --color-primary fill (CTA
      buttons and links). Not #ffffff: the same off-white as --color-ink-900,
