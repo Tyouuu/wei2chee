@@ -20,6 +20,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * answers 「多少」 and nothing else. A business owner describing his own trade
  * is handing over something private, and a usage ledger is the wrong place for
  * it to pile up.
+ *
+ * ── REACHABLE FROM THE BROWSER, ON PURPOSE ─────────────────────────
+ *
+ * Both callers use the CUSTOMER'S OWN SESSION, not a service key, so the JWT
+ * that reaches Postgres is theirs and `record_ai_usage` must be granted to
+ * `authenticated`. Security definer stops them writing against anybody else's
+ * account; it does not stop them calling the RPC directly with invented
+ * numbers against their own.
+ *
+ * So the function itself drops impossible counts and caps rows per hour --
+ * 20260827040000. Do not remove those guards on the assumption that this is
+ * server-only. It is not, and the row it protects is the one the founder uses
+ * to answer 「这个功能花我多少钱」.
  */
 export type UsageShape = {
   prompt_tokens?: number | null;
