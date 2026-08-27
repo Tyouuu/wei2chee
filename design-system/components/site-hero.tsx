@@ -133,7 +133,7 @@ export function SiteHero({
    * whose whole argument is a printed sheet. Offering it as a free choice is
    * how fourteen registers become one.
    */
-  ground?: "page" | "ink" | "brand"
+  ground?: "page" | "ink"
   figure?: HeroFigureKind
   /**
    * THE PHONE NUMBER, PRINTED.
@@ -220,22 +220,29 @@ export function SiteHero({
      anything that reads a token it also rewrites is a CSS cycle and CSS drops
      every declaration in one, silently. Capturing first is the habit that
      keeps that impossible. */
+  /*
+    THE DARK IS NEAR-NEUTRAL, AND THAT IS MEASURED.
+
+    Ten mature landing pages, dominant ground colour, 2026-08-27: five are
+    #080808 and five are #f8f8f8, and the chroma of that ground is 0.000 on
+    every one of them. Our own registers' navigation colours run 0.041 to
+    0.076 -- 圖纸 and 瑞士 #142744 at 0.060, 中台 #001529 at 0.050 -- which is
+    right for a 240px sidebar and too much for a whole first screen.
+
+    So the ground keeps 32% of the register's own hue and takes the rest from
+    a neutral of the same darkness. 台账 stays recognisably navy-black, 瓷 stays
+    warm-black, and neither is a coloured panel. That is exactly the difference
+    between linear's #080808 and framer's #080818.
+  */
   const groundStyle =
     ground === "ink"
       ? ({
-          "--tone-bg": "var(--color-nav-bg)",
+          "--tone-bg": "color-mix(in oklab, var(--color-nav-bg) 32%, #101215)",
           "--tone-fg": "var(--color-nav-fg)",
           "--tone-fg-dim": "var(--color-nav-fg-dim)",
-          "--tone-line": "var(--color-nav-border)",
+          "--tone-line": "color-mix(in oklab, var(--color-nav-fg) 16%, transparent)",
         } as React.CSSProperties)
-      : ground === "brand"
-        ? ({
-            "--tone-bg": "var(--color-primary)",
-            "--tone-fg": "var(--color-on-primary)",
-            "--tone-fg-dim": "color-mix(in oklab, var(--color-on-primary) 76%, transparent)",
-            "--tone-line": "color-mix(in oklab, var(--color-on-primary) 40%, transparent)",
-          } as React.CSSProperties)
-        : undefined
+      : undefined
   const painted = ground !== "page"
   /* A photo is enough to earn the second column on its own. `figure` was the
      only thing that could before, which meant a register asking for the split

@@ -9,7 +9,7 @@
    }
 */
 
-/* 漆 (Lacquer) — the first register whose GROUND is a colour.
+/* 漆 (Lacquer) — gold hairlines and inlaid panels on a warm ivory board.
 
    WHY IT EXISTS, MEASURED. Saturation of every register's three surfaces on
    2026-08-23, as (max-min)/max on the hex:
@@ -55,14 +55,15 @@
    panels need to float and need room. Radius comes in from 14 to 6: a lacquer
    panel is inlaid, not a rounded plastic tile.
 
-   @structural --color-canvas, --color-ink-900, --color-ink-850, --color-ink-950, --color-paper, --color-paper-dim
-
-   The whole register is the relationship between a coloured ground and pale
-   panels. A palette that repaints the ground pale deletes it, and one that
-   repaints the panels leaves white text on white. Same argument 夜 and 牛皮
-   make. The ACCENT still follows the palette, so 漆 + 青绿 is a jade lacquer
-   rather than an oxblood one — which is exactly the variation this register
-   should have. */
+   NO STRUCTURAL TOKENS ANY MORE -- the annotation this file used to carry on
+   the line above is gone, and deliberately. It was there because the register
+   was a
+   coloured ground under pale panels, and a palette repainting the ground pale
+   deleted it. With a neutral board that whole hazard is gone, and the register
+   gains what it was excluded from: all nine palettes may repaint it, so 漆 + 森绿
+   is a jade lacquer and 漆 + 群青 a blue one. The identity that survives is the
+   one that never depended on the hue — gold hairlines, inlaid 6px panels,
+   floating shadow, and the trades it speaks to. */
 @theme {
 
   /* The column-head band. Seven of the eight registers draw a card-coloured
@@ -100,8 +101,8 @@
      canvas, then the hover fill, then the page background, then two border
      steps. Components rely on that ordering, not on the numbers in the names.
      Measured: 0.978 / 0.937 / 0.916 / 0.863 / 0.794 / 0.661. */
-  --color-canvas: #6e2019;
-  --color-ink-950: #5a1712;
+  --color-canvas: #f7efe8;
+  --color-ink-950: #f0e4da;
 
   /* The card surface. Ledger puts a pure #ffffff here; Hearth does not, and
      this is the one place the two files disagree about a neutral rather than
@@ -121,7 +122,7 @@
      2% of its contrast ratio against the card compared to pure white. That
      cost is uniform, it is stated at each color below, and every value used as
      text still clears 4.5:1 with margin after paying it. */
-  --color-ink-900: #fdfaf4;
+  --color-ink-900: #ffffff;
   --color-ink-850: #f6efe3;
   --color-ink-800: #e6d9c6;
   --color-ink-700: #cbb99f;
@@ -169,8 +170,8 @@
      panels — so its page title was near-black on near-black. 夜 avoids the
      problem by being dark everywhere, panels included. A register with two
      dominant surfaces of opposite value needs two inks. */
-  --color-on-canvas: #fbeee4;
-  --color-on-canvas-dim: #d8b9a6;
+  --color-on-canvas: #24140f;
+  --color-on-canvas-dim: #6b5348;
 
   /* Restrained accent: a muted teal, one step past the neutrals in the
      direction they already lean (neutrals ~152, accent 176), so the accent
@@ -400,9 +401,9 @@
      which is what makes a screen of them read as soft objects resting on a
      surface rather than as ruled compartments cut into one. */
   --border-card-width: 0px;
-  --shadow-card: 0 2px 4px rgba(30, 8, 6, 0.28), 0 10px 26px rgba(30, 8, 6, 0.22);
-  --shadow-raised: 0 4px 10px rgba(30, 8, 6, 0.32), 0 16px 36px rgba(30, 8, 6, 0.28);
-  --shadow-overlay: 0 24px 60px rgba(30, 8, 6, 0.48);
+  --shadow-card: 0 1px 2px rgba(60, 24, 16, 0.10), 0 6px 18px rgba(60, 24, 16, 0.10);
+  --shadow-raised: 0 2px 6px rgba(60, 24, 16, 0.14), 0 12px 30px rgba(60, 24, 16, 0.12);
+  --shadow-overlay: 0 24px 60px rgba(60, 24, 16, 0.26);
 
   /* ── SURFACE ────────────────────────────────────────────────────────
      · surface-image — A layer painted over a card's own colour: grain, a gradient wash, a hairline grid. `none` for every register that shipped before this line existed.

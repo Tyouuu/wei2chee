@@ -83,9 +83,24 @@ export type SiteSkeleton = {
   hero: "left" | "band" | "center" | "plain" | "split";
   /**
    * 开场的地 —— what the first screen is painted on. `page` follows the
-   * register's own ground; `ink` is the register's SIDEBAR colour, which is
-   * the one committed dark every register already declares and the website
-   * never used; `brand` is its primary at full strength.
+   * register's own ground; `ink` is a near-black carrying a HINT of the
+   * register's own navigation hue.
+   *
+   * THERE IS NO COLOURED GROUND, AND THAT IS MEASURED, NOT TASteful. Ten
+   * mature landing pages, dominant colour of each, 2026-08-27:
+   *
+   *   #080808  linear · framer · shopify · tailark · launch-ui
+   *   #f8f8f8  stripe · vercel · notion · figma · intercom
+   *
+   * Chroma of that ground: 0.000 on all ten. Not one uses a colour as its
+   * ground. The colour is real -- peak chroma 0.193 on stripe, 0.136 on
+   * framer -- and it lives in the top 2% of pixels: a button, a ribbon, a
+   * badge. The founder said this before the measurement did: 「这些鲜艳的颜色
+   * 只会是配色 跟着就没有人会使用来当底色」.
+   *
+   * A `brand` ground existed here for about an hour. 招牌 opened on a full
+   * panel of its own red, chroma 0.207 -- two hundred times what any of the
+   * ten carries on its ground.
    *
    * Measured 2026-08-27, every pixel of a 1440px screenshot in OKLab: our
    * darkest pixel was L* 0.69 and 1% of the page carried any chroma at all,
@@ -97,7 +112,7 @@ export type SiteSkeleton = {
    * 中台 IS its deep blue sidebar, 招牌 IS a colour panel with a name on it,
    * 瑞士 is a printed sheet and must stay white.
    */
-  ground?: "page" | "ink" | "brand";
+  ground?: "page" | "ink";
   /** Movable sections, most important first. Anything the template has and
    *  this list omits keeps its template position, after the listed ones. */
   order: SiteSection[];
@@ -203,7 +218,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // signboard. Then the two things somebody standing on the street needs:
   // when are you open, and where exactly are you.
   signboard: {
-    ground: "brand",
+    ground: "ink",
     hero: "center",
     opens: "店名 + 找得到",
     order: ["hours", "areas", "services", "creds", "work", "story", "prices", "reviews", "cta", "faq", "flow", "promise"],

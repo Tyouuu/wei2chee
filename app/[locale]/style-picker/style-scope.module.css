@@ -948,9 +948,9 @@
   --color-table-head-bg: var(--color-ink-900);
   --color-table-bg: var(--color-ink-900);
   --color-table-head-fg: var(--color-paper-dim);
-  --color-canvas: #6e2019;
-  --color-ink-950: #5a1712;
-  --color-ink-900: #fdfaf4;
+  --color-canvas: #f7efe8;
+  --color-ink-950: #f0e4da;
+  --color-ink-900: #ffffff;
   --color-ink-850: #f6efe3;
   --color-ink-800: #e6d9c6;
   --color-ink-700: #cbb99f;
@@ -964,8 +964,8 @@
   --color-nav-accent: #c8952f;
   --color-paper: #24140f;
   --color-paper-dim: #6b5348;
-  --color-on-canvas: #fbeee4;
-  --color-on-canvas-dim: #d8b9a6;
+  --color-on-canvas: #24140f;
+  --color-on-canvas-dim: #6b5348;
   --color-primary: #8c2a20;
   --color-primary-deep: #6e2019;
   --color-primary-soft: #f7e6e2;
@@ -1026,9 +1026,9 @@
   --row-h: 52px;
   --control-h: 42px;
   --border-card-width: 0px;
-  --shadow-card: 0 2px 4px rgba(30, 8, 6, 0.28), 0 10px 26px rgba(30, 8, 6, 0.22);
-  --shadow-raised: 0 4px 10px rgba(30, 8, 6, 0.32), 0 16px 36px rgba(30, 8, 6, 0.28);
-  --shadow-overlay: 0 24px 60px rgba(30, 8, 6, 0.48);
+  --shadow-card: 0 1px 2px rgba(60, 24, 16, 0.10), 0 6px 18px rgba(60, 24, 16, 0.10);
+  --shadow-raised: 0 2px 6px rgba(60, 24, 16, 0.14), 0 12px 30px rgba(60, 24, 16, 0.12);
+  --shadow-overlay: 0 24px 60px rgba(60, 24, 16, 0.26);
   --surface-image: none;
   --surface-blur: none;
   --surface-border-style: solid;
@@ -1085,17 +1085,6 @@
 
 .lacquer :focus-visible {
   border-radius: var(--radius-control);
-}
-
-/* lacquer's structural colours, re-declared under a doubled class so they
- * outrank the palette layer. See styleBlock() in the generator for why. */
-.lacquer.lacquer {
-  --color-canvas: #6e2019;
-  --color-ink-900: #fdfaf4;
-  --color-ink-850: #f6efe3;
-  --color-ink-950: #5a1712;
-  --color-paper: #24140f;
-  --color-paper-dim: #6b5348;
 }
 
 /* ---------------------------------------------------------------------- *

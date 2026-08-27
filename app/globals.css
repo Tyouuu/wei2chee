@@ -711,6 +711,48 @@
    page has.
    -------------------------------------------------------------------------- */
 
+/* ── 官网的底色一律是中性 ────────────────────────────────────────────────────
+
+   The founder, 2026-08-27: 「不要做那么多花哨的颜色…这些鲜艳的颜色只会是配色
+   跟着就没有人会使用来当底色」.
+
+   Measured the same hour, dominant colour of ten mature landing pages:
+
+     #080808   linear · framer · shopify · tailark · launch-ui
+     #f8f8f8   stripe · vercel · notion · figma · intercom
+
+   Chroma of that ground: 0.000 on ALL TEN. The colour is real and strong --
+   peak chroma 0.193 on stripe, 0.136 on framer -- and it lives in the top 2%
+   of pixels. A button, a ribbon, a badge. Never the page.
+
+   Our own registers measure 0.001-0.018 on their canvas, which is already
+   right, except 漆 at 0.112: a page of oxblood. That register was built on
+   purpose as 「the first register whose GROUND is a colour」, for Malaysian-
+   Chinese trades whose shopfront is already red. That argument is about a
+   DASHBOARD somebody sits in front of all day. It is not true of a website,
+   where the reference set is unanimous.
+
+   WHY A RELATIVE COLOUR AND NOT FOURTEEN EDITS. `oklch(from …)` keeps the
+   register's own lightness and its own hue and takes 18% of its chroma, so
+   漆's page becomes warm ivory-red rather than red, 瓷 stays cream, and the
+   eleven that were already neutral do not move at all. One rule, no register
+   file touched, and the dashboards keep their identity.
+
+   Where the syntax is unsupported the whole declaration is invalid and the
+   register's own canvas applies -- the previous behaviour, which is the
+   correct fallback. */
+/* TWO LAYERS AGAIN, and the first draft of this rule was the fifth time:
+   `--color-canvas: oklch(from var(--color-canvas) …)` reads the property it is
+   declaring, which is a cycle, and CSS drops it in silence. The capture reads
+   only; the apply, one element down on Puck's wrapper, rewrites only. */
+.ds-site {
+  --reg-canvas: var(--color-canvas);
+  background-color: oklch(from var(--color-canvas) l calc(c * 0.18) h);
+}
+.ds-site > * {
+  --color-canvas: oklch(from var(--reg-canvas) l calc(c * 0.18) h);
+}
+
 .ds-site {
   --site-radius: calc(var(--radius-lg) * 1.7);
   --site-radius-sm: calc(var(--radius-md) * 1.7);

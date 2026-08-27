@@ -10,7 +10,7 @@ const OUT = "design-system/tokens/lacquer.css";
 
 let css = readFileSync(SRC, "utf8");
 
-const HEADER = `/* 漆 (Lacquer) — the first register whose GROUND is a colour.
+const HEADER = `/* 漆 (Lacquer) — gold hairlines and inlaid panels on a warm ivory board.
 
    WHY IT EXISTS, MEASURED. Saturation of every register's three surfaces on
    2026-08-23, as (max-min)/max on the hex:
@@ -56,14 +56,15 @@ const HEADER = `/* 漆 (Lacquer) — the first register whose GROUND is a colour
    panels need to float and need room. Radius comes in from 14 to 6: a lacquer
    panel is inlaid, not a rounded plastic tile.
 
-   @structural --color-canvas, --color-ink-900, --color-ink-850, --color-ink-950, --color-paper, --color-paper-dim
-
-   The whole register is the relationship between a coloured ground and pale
-   panels. A palette that repaints the ground pale deletes it, and one that
-   repaints the panels leaves white text on white. Same argument 夜 and 牛皮
-   make. The ACCENT still follows the palette, so 漆 + 青绿 is a jade lacquer
-   rather than an oxblood one — which is exactly the variation this register
-   should have. */`;
+   NO STRUCTURAL TOKENS ANY MORE -- the annotation this file used to carry on
+   the line above is gone, and deliberately. It was there because the register
+   was a
+   coloured ground under pale panels, and a palette repainting the ground pale
+   deleted it. With a neutral board that whole hazard is gone, and the register
+   gains what it was excluded from: all nine palettes may repaint it, so 漆 + 森绿
+   is a jade lacquer and 漆 + 群青 a blue one. The identity that survives is the
+   one that never depended on the hue — gold hairlines, inlaid 6px panels,
+   floating shadow, and the trades it speaks to. */`;
 
 const at = css.indexOf("/* Hearth —");
 const end = css.indexOf("@theme", at);
@@ -71,29 +72,48 @@ if (at < 0 || end < 0) throw new Error("hearth.css header not found");
 css = css.slice(0, at) + HEADER + "\n" + css.slice(end);
 
 const MOVES = {
-  // ── 1. the ground is a colour ───────────────────────────────────────────
-  "--color-canvas": "#6e2019",
-  "--color-ink-950": "#5a1712",
+  /* ── 1. THE GROUND IS NOT A COLOUR ANY MORE ───────────────────────────
+     2026-08-27. This register was built as 「the first register whose GROUND
+     is a colour」 -- #6e2019 oxblood, chroma 0.112 -- for Malaysian-Chinese
+     trades whose own shopfront is already red.
 
-  // ── 2. the panels stay pale ─────────────────────────────────────────────
-  "--color-ink-900": "#fdfaf4",
+     The founder: 「这些鲜艳的颜色只会是配色 跟着就没有人会使用来当底色」, and
+     then, when the argument was that it might still hold on a dashboard:
+     「我觉得在后台也站不住」.
+
+     Measured the same hour. Ten mature landing pages, dominant ground colour:
+     five #080808, five #f8f8f8, chroma 0.000 on ALL TEN. Nine real business
+     systems on 2026-08-26 (SQL Account, AutoCount, Xero, Linear, Stripe,
+     Notion, monday, FreshBooks, Zoho): grounds 9/9 neutral, primaries 9/9
+     coloured. Two independent samples, one answer, and it is his.
+
+     So the board is warm ivory now and the oxblood is where every reference
+     puts its colour: the accent. Nothing else about the register moves -- the
+     gold hairline, the inlaid 6px radius, the floating panel and the trades it
+     is for are all still only true of this one. What it loses is the one
+     property no product in either sample has. */
+  "--color-canvas": "#f7efe8",
+  "--color-ink-950": "#f0e4da",
+
+  // ── 2. the panels are white, so they still lift off the board ──────────
+  "--color-ink-900": "#ffffff",
   "--color-ink-850": "#f6efe3",
   "--color-ink-800": "#e6d9c6",
   "--color-ink-700": "#cbb99f",
   "--color-paper": "#24140f",
   "--color-paper-dim": "#6b5348",
 
-  // A page title sits on the GROUND, not in a panel, and the ground here is the
-  // opposite value from the panels. Every other register can use one ink
-  // because its two surfaces are the same value; this one cannot.
-  "--color-on-canvas": "#fbeee4",
-  "--color-on-canvas-dim": "#d8b9a6",
+  /* The inversion this register needed is gone with the coloured ground: its
+     two surfaces are the same value again, like every other register's, so a
+     page title reads in the same ink as everything else. */
+  "--color-on-canvas": "#24140f",
+  "--color-on-canvas-dim": "#6b5348",
 
-  // Deeper and warmer than Hearth's, which is tuned for a card on cream. On a
-  // dark ground a cool grey shadow reads as a smudge.
-  "--shadow-card": "0 2px 4px rgba(30, 8, 6, 0.28), 0 10px 26px rgba(30, 8, 6, 0.22)",
-  "--shadow-raised": "0 4px 10px rgba(30, 8, 6, 0.32), 0 16px 36px rgba(30, 8, 6, 0.28)",
-  "--shadow-overlay": "0 24px 60px rgba(30, 8, 6, 0.48)",
+  /* Warm rather than grey -- a cool shadow on a warm ivory board reads as a
+     smudge -- but lighter than the version tuned for the oxblood ground. */
+  "--shadow-card": "0 1px 2px rgba(60, 24, 16, 0.10), 0 6px 18px rgba(60, 24, 16, 0.10)",
+  "--shadow-raised": "0 2px 6px rgba(60, 24, 16, 0.14), 0 12px 30px rgba(60, 24, 16, 0.12)",
+  "--shadow-overlay": "0 24px 60px rgba(60, 24, 16, 0.26)",
 
   // Inlaid, not a rounded tile.
   "--radius-sm": "4px",
