@@ -14,6 +14,7 @@ import {
 } from "@/lib/portal/layout-ops";
 import { COLUMN_KINDS } from "@/lib/portal/table-model";
 import { buildDesignDoc, preferredVariants, STYLE_BRIEFS } from "@/lib/portal/design-doc";
+import { renderBlockRules } from "@/lib/portal/block-rules";
 import { PALETTE_ROWS } from "@/lib/portal/palettes.generated";
 import { LAYOUT_SETS } from "@/lib/templates/industry-template";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
@@ -382,6 +383,9 @@ export async function POST(req: NextRequest) {
 ${describeLayout(layout)}
 
 Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
+${renderBlockRules() ? `这些块自己的规矩（字段名看不出来的）:
+${renderBlockRules()}
+` : ""}
 Text fields you may set: ${EDITABLE_TEXT_FIELDS.join(", ")}
 Pages in this system: ${pageList || "(unknown)"}
 This page: ${generated

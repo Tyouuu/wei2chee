@@ -125,6 +125,7 @@ const {
   EDITABLE_TEXT_FIELDS,
 } = await import("../lib/portal/layout-ops.ts");
 const { buildDesignDoc, preferredVariants, STYLE_BRIEFS } = await import("../lib/portal/design-doc.ts");
+const { renderBlockRules } = await import("../lib/portal/block-rules.ts");
 
 /**
  * One renovation contractor's dashboard, in the shape the generator produces.
@@ -790,6 +791,42 @@ const CASES = [
     expect: ["add_table_column"],
     note: "「再」指的是哪张表，只有上一轮知道",
   },
+
+  /*
+    ── 已经有了还叫它加 ─────────────────────────────────
+
+    Puck's own AI reference declares per-component rules on the CONFIG -- "one
+    per page", "always the first component". We have none, and had never
+    checked whether we need them. Measured first: what the model WRITES is
+    short (「收款进度」, 「本月收款」), so the word-count half of that idea buys us
+    nothing. Placement and cardinality were never measured at all, and these
+    two cases are that measurement.
+
+    A second workflow strip is not a small mess. The page already carries one,
+    it is the same six stages, and the owner asked for the thing he can already
+    see -- which usually means he did not recognise it, and a duplicate is the
+    one answer that makes that worse.
+  */
+  {
+    name: "重复 · 已经有了还叫它加",
+    ask: "帮我加一个工程进到哪一步的流程",
+    // The page already has a WorkflowStrip. Editing it, or saying it is
+    // already there, are both right. A second one is not.
+    forbid: ["add_component"],
+    orNothing: true,
+    accept: ["set_workflow", "set_text", "move_component"],
+    note: "页面上已经有一条流程了",
+  },
+  {
+    name: "重复 · 再来一个页面标题",
+    ask: "上面再加一个标题",
+    // One PageHeader per page. A second one is not a heading, it is two
+    // pages stacked -- and nothing in the config says so today.
+    forbid: ["add_component"],
+    orNothing: true,
+    accept: ["set_text"],
+    note: "一页一个页面标题",
+  },
   {
     name: "记得 · 撤销过的不算数",
     ask: "刚才那个不要了，改回去",
@@ -826,6 +863,7 @@ function promptFor(ask, saved = false, history = []) {
 ${describeLayout(layout)}
 
 Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
+${renderBlockRules() ? `这些块自己的规矩（字段名看不出来的）:\n${renderBlockRules()}\n` : ""}
 Text fields you may set: ${EDITABLE_TEXT_FIELDS.join(", ")}
 Pages in this system: dashboard ("总览"), quotations ("报价单")
 This page: ${saved
@@ -931,7 +969,7 @@ for (const c of chosen) {
   for (let i = 0; i < N; i++) {
     try {
       runs.push(await once(c.ask, c.image, c.saved === true, c.history ?? []));
-      if (process.env.EVAL_VERBOSE) console.log("   ", c.name, JSON.stringify({ ops: runs[runs.length-1].ops, design: runs[runs.length-1].design, exp: runs[runs.length-1].explanation }));
+      if (process.env.EVAL_VERBOSE) console.log("   ", c.name, JSON.stringify({ ops: runs[runs.length-1].ops, design: runs[runs.length-1].design, exp: runs[runs.length-1].explanation, wrote: runs[runs.length-1].values }));
     } catch (e) {
       runs.push({ ops: [], applied: 0, skipped: [{ op: "-", reason: String(e.message).replace(/\s+/g, " ").slice(0, 300) }], explanation: "" });
     }
