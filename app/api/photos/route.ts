@@ -3,7 +3,7 @@ import {
   createSessionSupabaseClient,
   getSessionUser,
 } from "@/lib/supabase/server-session";
-import { searchStock, TRADE_QUERY } from "@/lib/images/stock";
+import { searchStock, TRADE_QUERY, TRADE_QUERIES } from "@/lib/images/stock";
 
 /**
  * The three ways a photograph gets onto a customer's page.
@@ -37,9 +37,17 @@ export async function GET(req: Request) {
 
   // The typed words win; the trade is only the opening guess. See TRADE_QUERY
   // for why a trade name is not itself an image search.
-  const query = q || TRADE_QUERY[trade] || "small business";
+  const query = q || TRADE_QUERY[trade] || TRADE_QUERY.other;
   const result = await searchStock(query, { page, exclude });
-  return NextResponse.json({ ...result, query });
+  /* The other three candidates travel with the answer so the picker can offer
+     them as chips. One string per trade was never enough -- 「services」 covers
+     the aircond man and the electrician, whose photographs share nothing --
+     and the owner is the only one who knows which of the four is theirs. */
+  return NextResponse.json({
+    ...result,
+    query,
+    suggestions: TRADE_QUERIES[trade] ?? TRADE_QUERIES.other,
+  });
 }
 
 /** Bytes we will accept from the library. Well under the bucket's own 8MB, and

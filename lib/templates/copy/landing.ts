@@ -154,6 +154,19 @@ export type LandingCopy = {
         rating: { score: string; count: string; source: string };
         items: { label: string; note: string }[];
       };
+      /**
+       * 一段话配一张照片 -- the one section on the page written in the owner's
+       * own voice.
+       *
+       * IT SHIPS WITH NO BODY, and that is the whole design. Everything else
+       * here is generated from the questionnaire and is therefore true. A
+       * paragraph about how long this business has been going and who runs it
+       * is something we do not know, and 「we are a small family team since
+       * 1998」 invented by us is a lie printed on a stranger's screen. So the
+       * heading is the true half, `hint` is the ask, and publish-projection
+       * drops the section until the owner has written the other half.
+       */
+      story: { heading: string; hint: string };
     };
   };
 };
@@ -390,6 +403,10 @@ const EN: LandingCopy = {
           { label: "", note: "An association you belong to" },
         ],
       },
+      story: {
+        heading: "Who you are dealing with",
+        hint: "Two or three lines in your own words -- how long you have been doing this, who turns up on the day -- and one photo of your own work. This section stays off your live page until you write it.",
+      },
     },
   },
 };
@@ -607,6 +624,10 @@ const ZH: LandingCopy = {
           { label: "", note: "你给的保固" },
           { label: "", note: "你参加的公会" },
         ],
+      },
+      story: {
+        heading: "跟你做的是什么人",
+        hint: "用你自己的话写两三句 —— 做了多久、到场的是什么人 —— 再放一张你自己做的照片。没写之前这一段不会出现在客人看到的页面上。",
       },
     },
   },

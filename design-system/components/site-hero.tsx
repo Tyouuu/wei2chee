@@ -44,6 +44,8 @@ export function SiteHero({
   layout = "left",
   figure,
   figureData,
+  photo,
+  photoAlt,
 }: {
   /** Where and what, e.g. 「吉隆坡 · 住宅装修」. The line people search by. */
   eyebrow?: ReactNode
@@ -83,6 +85,24 @@ export function SiteHero({
    * Absent (or on a layout that is not `split`) nothing renders, so every page
    * that existed before this prop is byte-identical.
    */
+  /**
+   * THE OWNER'S OWN PHOTOGRAPH, AND WHY IT OUTRANKS THE DRAWN FIGURE.
+   *
+   * Measured 2026-08-27 across 19 trading Malaysian SME sites: 14 of them give
+   * the first screen to a photograph, and the median one covers 59% of it. Not
+   * a stock photograph -- the two local sites in that sample show their own
+   * technicians in their own uniforms, and the dental one puts a picture of its
+   * physical signboard on the page to prove the shop exists.
+   *
+   * So when there is a photo it takes the second column and the drawn figure
+   * steps aside. When there is not, the drawn figure stays -- it is a designed
+   * object built from this business's own services and stages, which is a far
+   * better first screen than a grey box, and better than somebody else's
+   * kitchen. See docs/founder-tasks.md task 21 for why stock is never the
+   * default here.
+   */
+  photo?: string
+  photoAlt?: string
   figure?: HeroFigureKind
   /**
    * THE PHONE NUMBER, PRINTED.
@@ -163,7 +183,11 @@ export function SiteHero({
   const centred = layout === "center"
   const band = layout === "band"
   const plain = layout === "plain"
-  const split = layout === "split" && Boolean(figure)
+  const hasPhoto = Boolean(photo?.trim())
+  /* A photo is enough to earn the second column on its own. `figure` was the
+     only thing that could before, which meant a register asking for the split
+     layout on a template with no drawn figure quietly rendered as 左对齐. */
+  const split = layout === "split" && (Boolean(figure) || hasPhoto)
   const showProof = !plain && proof && proof.length > 0
 
   return (
@@ -351,7 +375,21 @@ export function SiteHero({
           a phone reads the claim and the button before the picture -- which is
           the order a stranger needs, and the opposite of what a
           figure-first source would give them. */}
-      {split && figure && (
+      {split && hasPhoto && (
+        <div className="min-w-0">
+          {/* eslint-disable-next-line @next/next/no-img-element -- the src is a
+              Supabase storage URL on a bucket Next's optimiser is not
+              configured for, and a broken hero image is worse than an
+              unoptimised one. */}
+          <img
+            src={photo}
+            alt={photoAlt || ""}
+            className="h-full max-h-[30rem] w-full object-cover [border-radius:var(--radius-lg)]"
+          />
+        </div>
+      )}
+
+      {split && !hasPhoto && figure && (
         <div className="min-w-0">
           <HeroFigure
             kind={figure}

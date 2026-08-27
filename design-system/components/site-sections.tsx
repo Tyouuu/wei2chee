@@ -368,3 +368,254 @@ export function SiteCreds({
     </section>
   )
 }
+
+/**
+ * 作品墙 —— the photographs, in a shape that is not always three equal boxes.
+ *
+ * ── WHAT IT REPLACES AND WHY ──────────────────────────────────────────────
+ *
+ * `work` was a Columns of three PhotoFrames, hard-coded to thirds. Two things
+ * were wrong with it. It is the section this market cares most about -- 14 of
+ * 19 trading Malaysian SME sites give their first screen to a photograph, and
+ * the renovation ones are photo galleries all the way down -- and it was the
+ * one section where the register had no say at all, so fourteen 风格 showed
+ * fourteen identical rows of three.
+ *
+ * ── WHERE THE SHAPES COME FROM ────────────────────────────────────────────
+ *
+ * tailark's block catalogue, read properly on 2026-08-27. shoot:kits measured
+ * their HOMEPAGE the first time round, which has three sections on it; the
+ * library behind it is 4 themes × 12 block kinds. Two of those kinds are
+ * galleries this product had no answer to -- `bento` and `features-carousel`
+ * -- and both are better than a row of three for showing work:
+ *
+ *   grid   three equal. Fine, and what we had.
+ *   bento  one large beside two small, all three cut from ONE rectangle, so
+ *          the section has a size to it rather than three of the same thing.
+ *   strip  a horizontal scroller. For a contractor with eleven finished
+ *          kitchens this is the only shape that does not run down the page.
+ */
+export function SiteGallery({
+  heading,
+  note,
+  shape = "grid",
+  items,
+}: {
+  heading?: string
+  note?: string
+  shape?: "grid" | "bento" | "strip"
+  items?: { src?: string; alt?: string; caption?: string }[]
+}) {
+  const shots = items ?? []
+  if (!shots.length) return null
+
+  const frame = (
+    s: { src?: string; alt?: string; caption?: string },
+    key: string,
+    className = "",
+    ratio = 4 / 3,
+  ) => (
+    <figure
+      key={key}
+      className={"flex min-w-0 flex-col [gap:calc(var(--gap-stack)*0.4)] " + className}
+    >
+      <div
+        className="relative w-full overflow-hidden [background-color:var(--color-ink-850)] [border-radius:var(--radius-lg)] [border:var(--hairline)_solid_var(--color-ink-800)]"
+        style={{ aspectRatio: String(ratio) }}
+      >
+        {s.src ? (
+          // eslint-disable-next-line @next/next/no-img-element -- Supabase
+          // storage, which Next's optimiser is not configured for here.
+          <img
+            src={s.src}
+            alt={s.alt ?? s.caption ?? ""}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+            {s.caption || s.alt || ""}
+          </span>
+        )}
+      </div>
+      {s.caption && s.src ? (
+        <figcaption className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+          {s.caption}
+        </figcaption>
+      ) : null}
+    </figure>
+  )
+
+  return (
+    <section className="@container">
+      {heading ? (
+        <div className="mb-8 max-w-[46ch]">
+          <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+          {note ? (
+            <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+              {note}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {shape === "strip" ? (
+        /* Scrolls inside itself, never the page. A gallery that widens the
+           document is the bug every wide table in this repo has already had. */
+        <div className="-mx-2 flex snap-x snap-mandatory overflow-x-auto px-2 [gap:var(--gap-stack)] [scrollbar-width:thin]">
+          {shots.map((s, i) => (
+            <div key={i} className="w-[78cqw] shrink-0 snap-start @2xl:w-[38cqw]">
+              {frame(s, "strip-" + i)}
+            </div>
+          ))}
+        </div>
+      ) : shape === "bento" && shots.length >= 3 ? (
+        /* ONE RECTANGLE CUT IN THREE, not three rectangles placed together --
+           the same argument the dashboard's bento makes. The tall one is first
+           in the DOM so a phone, which stacks them, still opens on the best
+           photograph. */
+        <div className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3 @2xl:grid-rows-2">
+          <div className="@2xl:col-span-2 @2xl:row-span-2">
+            {frame(shots[0], "bento-0", "h-full", 3 / 2)}
+          </div>
+          {shots.slice(1).map((s, i) => frame(s, "bento-" + (i + 1)))}
+        </div>
+      ) : (
+        <div className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
+          {shots.map((s, i) => frame(s, "grid-" + i))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+/**
+ * 一段话配一张照片 —— the section every small business page has and this one
+ * did not.
+ *
+ * tailark ships it as `content` in three of its four themes; every SME site in
+ * the 2026-08-27 sample has one (「about us」, 「why choose us」, 「since 1993」).
+ * Ours had no way to put a paragraph beside a picture at all: the page was
+ * cards, rows and a table, which is a dashboard's vocabulary and reads like
+ * one.
+ *
+ * IT IS THE ONE PLACE THE OWNER WRITES IN THEIR OWN VOICE. Everything else on
+ * the page is generated from the questionnaire, so this ships as a short, true
+ * line the owner is expected to replace -- never as agency filler, and never
+ * with somebody else's photograph.
+ */
+export function SiteStory({
+  heading,
+  hint,
+  body,
+  shape = "side",
+  photo,
+  photoAlt,
+  points,
+}: {
+  heading?: string
+  /** What the OWNER is asked for while the body is still empty. Never
+   *  published -- publish-projection.ts drops the whole section until there is
+   *  a body, because a paragraph about a business we invented is a lie on a
+   *  stranger's screen. */
+  hint?: string
+  body?: string
+  /** `side` picture right, `side-reverse` picture left, `stack` picture over
+   *  the words. The register chooses; see design-doc.ts. */
+  shape?: "side" | "side-reverse" | "stack"
+  photo?: string
+  photoAlt?: string
+  points?: { label: string }[]
+}) {
+  const marks = (points ?? []).filter((p) => p.label?.trim())
+
+  /* EMPTY IS A PROMPT, NOT NOTHING -- the same rule SiteCreds follows. A block
+     that renders nothing while unfilled is a block the owner never sees, never
+     fills, and therefore never publishes. */
+  if (!body?.trim() && !photo?.trim() && !marks.length) {
+    if (!hint) return null
+    return (
+      <section
+        data-prompt=""
+        className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
+      >
+        {heading ? (
+          <h2 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+            {heading}
+          </h2>
+        ) : null}
+        <p className="mt-2 max-w-[56ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+          {hint}
+        </p>
+      </section>
+    )
+  }
+  if (!heading?.trim() && !body?.trim()) return null
+
+  const words = (
+    <div className="min-w-0">
+      {heading ? (
+        <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+      ) : null}
+      {body ? (
+        <p className="mt-4 max-w-[52ch] [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+          {body}
+        </p>
+      ) : null}
+      {marks.length ? (
+        <ul className="mt-6 grid [gap:var(--gap-inline)]">
+          {marks.map((m) => (
+            <li key={m.label} className="flex items-start [gap:var(--gap-inline)]">
+              <span
+                aria-hidden
+                className="mt-[3px] grid h-5 w-5 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)]"
+              >
+                <Check className="h-3 w-3" strokeWidth={3} />
+              </span>
+              <span className="[color:var(--color-paper)] [font-size:var(--text-base)]">{m.label}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+
+  const picture = photo?.trim() ? (
+    <div className="min-w-0">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={photo}
+        alt={photoAlt || ""}
+        className="w-full object-cover [border-radius:var(--radius-lg)]"
+        style={{ aspectRatio: "4 / 3" }}
+      />
+    </div>
+  ) : null
+
+  if (!picture || shape === "stack") {
+    return (
+      <section className="@container">
+        {picture ? <div className="mb-8">{picture}</div> : null}
+        {words}
+      </section>
+    )
+  }
+
+  return (
+    <section className="@container grid items-center [gap:calc(var(--gap-stack)*1.5)] @2xl:grid-cols-2">
+      {shape === "side-reverse" ? (
+        <>
+          {/* The picture is second in the DOM either way and moved by `order`,
+              so a phone always reads the words first -- the same rule
+              site-hero.tsx makes for its own figure. */}
+          <div className="@2xl:order-2">{words}</div>
+          <div className="@2xl:order-1">{picture}</div>
+        </>
+      ) : (
+        <>
+          {words}
+          {picture}
+        </>
+      )}
+    </section>
+  )
+}

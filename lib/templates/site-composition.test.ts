@@ -32,6 +32,7 @@ const MOVABLE = [
   "promise",
   "hours",
   "creds",
+  "story",
 ];
 
 const renovation: BusinessContext = {

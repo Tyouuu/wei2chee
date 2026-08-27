@@ -252,6 +252,9 @@ export default async function PortalEditorPage({
       layout={(project.layout as string | null) ?? null}
       previewPages={previewPages as unknown as { key: string; label: string; data: Data }[]}
       systemLang={systemLangOf(businessContext)}
+      /* The library's opening guess. See trade-context.tsx for why it travels
+         as a context rather than through the Puck config. */
+      trade={businessContext.industry?.slug ?? null}
       /** The 官网's public address and whether it answers -- read here rather
        *  than fetched again in the editor, because the same projects row
        *  already supplies style and palette and a second query would be a

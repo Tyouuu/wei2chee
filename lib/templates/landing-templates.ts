@@ -336,12 +336,34 @@ const form = (c: LandingContent, key: string, look: string) => {
  *  photos of somebody else's kitchen announces that nobody designed it, and
  *  the fix is the owner's own three photos, which is a two-minute job with an
  *  obvious, sized, labelled slot to drop them into. */
+/*
+  作品墙. Was a Columns of three PhotoFrames locked to thirds -- the section
+  this market cares most about, and the one section where the register had no
+  say at all, so fourteen 风格 drew fourteen identical rows of three.
+
+  SiteGallery owns its own shapes now (三张一样大 / 一大两小 / 横着滑), taken
+  from tailark's `bento` and `features-carousel` blocks. See site-sections.tsx.
+*/
 const work = (c: LandingContent) =>
-  node("Columns", "website-work", {
-    layout: "thirds",
-    a: [node("PhotoFrame", "website-work-1", { caption: c.words.sections.work.shots[0], ratio: "photo" })],
-    b: [node("PhotoFrame", "website-work-2", { caption: c.words.sections.work.shots[1], ratio: "photo" })],
-    c: [node("PhotoFrame", "website-work-3", { caption: c.words.sections.work.shots[2], ratio: "photo" })],
+  node("SiteGallery", "website-work", {
+    heading: c.words.sections.work.heading,
+    note: c.words.sections.work.hint,
+    items: c.words.sections.work.shots.map((caption) => ({ src: "", caption, alt: "" })),
+  });
+
+/*
+  一段话配一张照片 — the section every small business page has and this one did
+  not: the page was cards, rows and a table, which is a dashboard's vocabulary.
+  tailark ships it as `content` in three of its four themes.
+*/
+const story = (c: LandingContent) =>
+  node("SiteStory", "website-story", {
+    heading: c.words.sections.story.heading,
+    hint: c.words.sections.story.hint,
+    body: "",
+    photo: "",
+    photoAlt: "",
+    points: [],
   });
 
 /**
@@ -588,6 +610,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hero(c, "split", "quote"),
       services(c, sect(c, "quote").services),
       work(c),
+      story(c),
       prices(c),
       flow(c, sect(c, "quote").flow ?? ""),
       reviews(c),
@@ -617,6 +640,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       // first", which is a list of steps rather than a pipeline.
       flow(c, sect(c, "booking").flow ?? "", "numbered"),
       work(c),
+      story(c),
       prices(c),
       reviews(c),
       creds(c),
@@ -643,6 +667,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hero(c, "split", "order"),
       services(c, sect(c, "order").services),
       work(c),
+      story(c),
       prices(c),
       hours(c),
       areas(c),
@@ -666,6 +691,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       bar(c, anchors(c)),
       hero(c, "split", "pricelist"),
       services(c, sect(c, "wholesale").services),
+      story(c),
       flow(c, sect(c, "wholesale").flow ?? "", "timeline"),
       prices(c),
       areas(c),
@@ -691,6 +717,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       // Services first and unframed: on a page whose job is "look at this",
       // boxes around every section fight the looking.
       work(c),
+      story(c),
       services(c, sect(c, "portfolio").services, false),
       reviews(c),
       creds(c),
@@ -714,6 +741,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       bar(c, anchors(c)),
       hero(c, "split", "card"),
       services(c, sect(c, "card").services, false),
+      story(c),
       hours(c),
       areas(c),
       reviews(c),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTrade } from "@/design-system/trade-context";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 /**
@@ -40,9 +41,14 @@ export function PhotoField({
 }: {
   value?: string;
   onChange: (next: string) => void;
-  /** The customer's industry slug, the library's opening guess. */
+  /** The customer's industry slug, the library's opening guess. Optional
+   *  because the picker is registered inside a memoised Puck config that has
+   *  no way to pass it; it falls back to TradeProvider, which is read at
+   *  render and therefore cannot go stale. */
   trade?: string;
 }) {
+  const contextTrade = useTrade();
+  const forTrade = trade || contextTrade;
   const [tab, setTab] = useState<"own" | "library">("own");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -86,17 +92,19 @@ export function PhotoField({
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [page, setPage] = useState(1);
   const [noKey, setNoKey] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [q, setQ] = useState("");
   const seen = useRef<string[]>([]);
 
-  async function ask(nextPage = 1, reset = false) {
+  async function ask(nextPage = 1, reset = false, override?: string) {
     setError(null);
     setBusy("search");
     try {
       if (reset) seen.current = [];
       const url = new URL("/api/photos", window.location.origin);
-      if (q.trim()) url.searchParams.set("q", q.trim());
-      if (trade) url.searchParams.set("trade", trade);
+      const words = (override ?? q).trim();
+      if (words) url.searchParams.set("q", words);
+      if (forTrade) url.searchParams.set("trade", forTrade);
       url.searchParams.set("page", String(nextPage));
       // 「不滿意 可以再去圖庫推薦」: everything already offered is excluded, so
       // pressing again never returns the same photograph twice.
@@ -109,6 +117,7 @@ export function PhotoField({
         return;
       }
       setNoKey(false);
+      if (Array.isArray(body.suggestions)) setSuggestions(body.suggestions as string[]);
       const next = (body.photos ?? []) as Photo[];
       seen.current.push(...next.map((p) => p.id));
       setPhotos(next);
@@ -237,6 +246,40 @@ export function PhotoField({
               {busy === "search" ? "…" : "换一批"}
             </button>
           </div>
+
+          {/*
+            FOUR WORDS TO PRESS, NOT ONE SEARCH TO GUESS.
+
+            Photographed on 2026-08-27: one query per trade returned LEGO men
+            for a renovation contractor. No single string is right for a trade
+            either -- 「services」 covers the aircond man and the electrician --
+            so the four measured candidates are offered and the owner presses
+            the one that is their business. The chips carry English words
+            because that is what the library is tagged in; the owner is
+            choosing a picture, not reading a sentence.
+          */}
+          {suggestions.length > 1 && !noKey ? (
+            <div className="flex flex-wrap gap-1">
+              {suggestions.map((sgg) => (
+                <button
+                  key={sgg}
+                  type="button"
+                  onClick={() => {
+                    setQ(sgg);
+                    void ask(1, true, sgg);
+                  }}
+                  disabled={busy === "search"}
+                  className={`rounded-full px-2 py-0.5 [border:1px_solid_var(--color-ink-800)] [font-size:var(--text-micro)] disabled:opacity-40 ${
+                    q.trim() === sgg
+                      ? "[background-color:var(--color-primary)] [color:var(--color-on-primary)] [border-color:var(--color-primary)]"
+                      : "[color:var(--color-paper-dim)] hover:[color:var(--color-paper)]"
+                  }`}
+                >
+                  {sgg}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           {noKey ? (
             <p className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)] [line-height:var(--leading-body)]">

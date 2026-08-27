@@ -3,55 +3,34 @@ import { forPublication } from "@/lib/portal/publish-projection";
 import { LANDING_TEMPLATES } from "@/lib/templates/landing-templates";
 import type { PuckLayout, PuckNode } from "@/lib/portal/layout-ops";
 import type { LandingContent } from "@/lib/templates/landing-templates";
+import { landingContentFor, pagesForIndustry } from "@/lib/templates/industry-template";
 
-/** Enough of a business to build all six templates. */
-const CONTENT: LandingContent = {
-  brand: "Xing Fa Renovation",
-  eyebrow: "Malaysia · Renovation",
-  pitch: "Home renovation, kitchen and commercial fitout.",
-  services: [{ label: "Home renovation", value: "3-room, shoplot", icon: "wrench" }],
-  stages: ["Enquiry", "Quote", "Build"],
-  landsIn: "Quotations",
-  enquiryFields: [],
-  proof: [{ value: "10 years", label: "In this trade" }],
-  contact: [{ label: "WhatsApp", value: "012-345 6789", icon: "phone" }],
-  words: {
-    whatsapp: "Ask on WhatsApp",
-    seeWork: "See our work",
-    contactHeading: "How to reach us",
-    replyNote: "Usually answered within a day.",
-    arrowBadge: "automatic",
-    arrowBefore: "Send this and your system opens a ",
-    arrowAfter: " — nobody has to retype it.",
-    fields: [{ label: "Your name", placeholder: "Mr Tan", kind: "text" }],
-    byTemplate: {
-      quote: { services: "What we do", flow: "After you call", formHeading: "Leave a number", formBlurb: "Three fields.", submit: "Send" },
+/*
+  THE REAL CONTENT BAG, NOT A HAND-WRITTEN ONE.
+
+  This was a literal that spelled out every string the six templates read. It
+  broke three times in one day, on 2026-08-27, each time a section gained a
+  field -- and each break looked like a failure of the thing being tested
+  rather than of the fixture. A copy of copy/landing.ts is a copy that drifts,
+  and this file's whole subject is what reaches a stranger, so it must be built
+  from what the product actually builds.
+
+  The seeded phone number matters and is deliberate: `landingContentFor` marks
+  it `placeholder: true` for a business with no number of its own, which is the
+  exact condition every assertion below is about.
+*/
+const CONTENT: LandingContent = landingContentFor(
+  {
+    industry: {
+      slug: "renovation",
+      name_zh: "装修/承包商",
+      labels: { customer: "客户", order: "项目", staff: "师傅" },
+      default_workflow: ["Customer", "Quotation", "Deposit", "Project"],
+      suggested_modules: ["Customer", "Quotation", "Project", "Payment"],
     },
-    // The six sections a Malaysian SME page needs, added 2026-08-25. Present
-    // here because every template now reads them, and a fixture that omits
-    // them is testing a page no customer will ever be shown.
-    sections: {
-      work: { heading: "Our work", hint: "Your own photos", shots: ["Add a photo", "Add a photo", "Add a photo"] },
-      areas: { heading: "Where we cover", note: "Ask anyway", list: ["Kuala Lumpur", "Klang"] },
-      prices: { heading: "What it costs", note: "A guide", askLabel: "Ask", blank: "RM —" },
-      // The middle ask, added 2026-08-27. Every reference has one and no
-      // template did; a fixture without it tests a page nobody will be shown.
-      cta: { heading: "Tell us what you need", note: "No charge for the visit." },
-      reviews: { heading: "What customers say", note: "Replace these", quotes: [{ text: "On time.", who: "A customer" }] },
-      faq: { heading: "Questions", rows: [{ title: "How long?", body: "A day." }] },
-      hours: { heading: "When we are open", rows: [{ label: "Mon – Fri", value: "9 – 6" }] },
-      promiseList: { heading: "What you get", marks: ["A written quote"] },
-      // 别人给的证明, added 2026-08-27. Ships empty on purpose -- see below for
-      // the assertion that an empty one never reaches a stranger.
-      creds: {
-        heading: "Certified, and what people scored us",
-        hint: "Your licence, the brands you carry, your Google score.",
-        rating: { score: "", count: "", source: "Google reviews" },
-        items: [{ label: "", note: "A licence or certification" }],
-      },
-    },
-  } as unknown as LandingContent["words"],
-};
+  },
+  pagesForIndustry("renovation").map((key) => ({ key })),
+);
 
 function nodesOf(layout: PuckLayout): PuckNode[] {
   return layout.content ?? [];
@@ -144,11 +123,25 @@ describe("forPublication", () => {
     expect(kept).toContain("WorkflowStrip");
     expect(kept).toContain("FoldSection");
 
-    // The price list is one of several InfoRows, so count instead: services,
-    // areas and contact stay; prices goes.
-    const infoRows = nodesOf(built).filter((n) => n.type === "InfoRows").length;
-    const keptRows = kept.filter((t) => t === "InfoRows").length;
-    expect(keptRows).toBe(infoRows - 1);
+    /*
+      NAMED, NOT COUNTED. This counted InfoRows and asserted 「one fewer」, which
+      stopped meaning anything the moment a second one qualified for removal.
+      Every id below is a decision worth stating out loud:
+
+        website-areas    STAYS. Place names are real; nobody seeded them.
+        website-prices   GOES. Every row still reads 「RM —」, which a visitor
+                         reads as 「this business will not tell you what it
+                         costs」, not as 「not filled in yet」.
+        website-contact  GOES, and this is the one worth noticing -- with the
+                         real content bag the only contact row is the SEEDED
+                         012-345 6789. A contact section whose every line is
+                         somebody else's number must not exist on a stranger's
+                         page, which is the same call FloatingContact makes.
+    */
+    const keptIds = nodesOf(published).map((n) => n.props.id);
+    expect(keptIds).toContain("website-areas");
+    expect(keptIds).not.toContain("website-prices");
+    expect(keptIds).not.toContain("website-contact");
   });
 
   it("keeps a photo frame that has a photo in it", () => {

@@ -17,7 +17,14 @@ import { Inline } from "@/design-system/editor/inline-text";
 import { SiteHero } from "@/design-system/components/site-hero";
 import { FloatingContact } from "@/design-system/components/floating-contact";
 import { SiteBar, SiteFoot } from "@/design-system/components/site-chrome";
-import { SiteFeatures, SiteTestimonials, SiteCta, SiteCreds } from "@/design-system/components/site-sections";
+import {
+  SiteFeatures,
+  SiteTestimonials,
+  SiteCta,
+  SiteCreds,
+  SiteGallery,
+  SiteStory,
+} from "@/design-system/components/site-sections";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
 import { EnquiryForm } from "@/design-system/components/enquiry-form";
 import { TableFieldEditor } from "@/design-system/editor/table-field";
@@ -250,6 +257,21 @@ type Components = {
     heading?: string;
     items: { quote: string; who: string; role?: string; stars?: number }[];
   };
+  SiteGallery: {
+    heading?: string;
+    note?: string;
+    shape?: "grid" | "bento" | "strip";
+    items?: { src?: string; alt?: string; caption?: string }[];
+  };
+  SiteStory: {
+    heading?: string;
+    hint?: string;
+    body?: string;
+    shape?: "side" | "side-reverse" | "stack";
+    photo?: string;
+    photoAlt?: string;
+    points?: { label: string }[];
+  };
   SiteCreds: {
     heading?: string;
     hint?: string;
@@ -292,6 +314,10 @@ type Components = {
     secondaryLabel?: string;
     secondaryHref?: string;
     proof?: { value: string; label: string }[];
+    /* The owner's own photograph for the first screen. 14 of 19 trading
+       Malaysian SME sites give the opening to one; see site-hero.tsx. */
+    photo?: string;
+    photoAlt?: string;
     /* The printed phone number and the hours strip. Flat props rather than an
        object, because Puck's fields are flat and the owner has to be able to
        type their real number into one box. `phonePlaceholder` is what stops
@@ -613,7 +639,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteBar", "SiteHero", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteStory", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1700,6 +1726,89 @@ export const puckConfig: Config<Components> = {
       render: ({ heading, items }) => <SiteTestimonials heading={heading} items={items} />,
     },
 
+    SiteGallery: {
+      label: "作品墙",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        note: { label: "下面一句", type: "text" },
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "三张一样大", value: "grid" },
+            { label: "一大两小", value: "bento" },
+            { label: "横着滑", value: "strip" },
+          ],
+        },
+        items: {
+          label: "每一张",
+          type: "array",
+          arrayFields: {
+            src: {
+              label: "照片",
+              type: "custom",
+              render: ({ value, onChange }) => (
+                <PhotoField value={value as string} onChange={onChange} />
+              ),
+            },
+            caption: { label: "图说", type: "text" },
+            alt: { label: "照片说明（给看不到的人）", type: "text" },
+          },
+          defaultItemProps: { src: "", caption: "", alt: "" },
+          getItemSummary: (item) => item.caption || (item.src ? "一张照片" : "还没填"),
+        },
+      },
+      defaultProps: { shape: "grid", items: [] },
+      render: ({ heading, note, shape, items }) => (
+        <SiteGallery heading={heading} note={note} shape={shape} items={items} />
+      ),
+    },
+
+    SiteStory: {
+      label: "一段话配一张照片",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        body: { label: "一段话", type: "textarea" },
+        hint: { label: "还没填的时候讲什么", type: "textarea" },
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "照片在右", value: "side" },
+            { label: "照片在左", value: "side-reverse" },
+            { label: "照片在上", value: "stack" },
+          ],
+        },
+        photo: {
+          label: "照片",
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <PhotoField value={value as string} onChange={onChange} />
+          ),
+        },
+        photoAlt: { label: "照片说明（给看不到的人）", type: "text" },
+        points: {
+          label: "打勾的几点",
+          type: "array",
+          arrayFields: { label: { label: "写什么", type: "text" } },
+          defaultItemProps: { label: "" },
+          getItemSummary: (item) => item.label || "还没填",
+        },
+      },
+      defaultProps: { shape: "side", points: [] },
+      render: ({ heading, hint, body, shape, photo, photoAlt, points }) => (
+        <SiteStory
+          heading={heading}
+          hint={hint}
+          body={body}
+          shape={shape}
+          photo={photo}
+          photoAlt={photoAlt}
+          points={points}
+        />
+      ),
+    },
+
     SiteCreds: {
       label: "别人给的证明",
       fields: {
@@ -1843,6 +1952,24 @@ export const puckConfig: Config<Components> = {
         eyebrow: { label: "地区 · 行业", type: "text" },
         headline: { label: "大标题", type: "text" },
         sub: { label: "下面那一句", type: "textarea" },
+        /*
+          THE FIRST SCREEN'S PHOTOGRAPH, THIRD FIELD DOWN.
+
+          Measured 2026-08-27 across 19 trading Malaysian SME sites: 14 give
+          the opening to a photograph and the median one covers 59% of it. It
+          sits this high in the panel because that is how much it matters, and
+          it is the same picker PhotoFrame uses -- the owner's own phone first,
+          the library second. Empty is not a hole: the drawn figure keeps the
+          second column until a real photo arrives.
+        */
+        photo: {
+          label: "第一屏的照片",
+          type: "custom",
+          render: ({ value, onChange }) => (
+            <PhotoField value={value as string} onChange={onChange} />
+          ),
+        },
+        photoAlt: { label: "照片说明（给看不到的人）", type: "text" },
         /* Directly under the headline, not at the bottom with the rest of the
            contact details, because on both Malaysian sites this was measured
            against it IS the headline's other half. An owner who opens this
@@ -1880,11 +2007,13 @@ export const puckConfig: Config<Components> = {
         primaryLabel: "WhatsApp 问价",
         primaryHref: "#",
       },
-      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip, priceRows }) => (
+      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip, priceRows, photo, photoAlt }) => (
         <SiteHero
           layout={layout ?? "left"}
           figure={figure}
           figureData={figureData}
+          photo={photo}
+          photoAlt={photoAlt}
           phone={phoneNumber ? { label: phoneLabel, number: phoneNumber } : undefined}
           priceRows={priceRows}
           strip={strip || undefined}

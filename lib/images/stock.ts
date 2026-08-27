@@ -64,22 +64,53 @@ export type StockResult =
   | { ok: false; reason: "no-key" }
   | { ok: false; reason: "failed"; detail: string };
 
-/** What a trade should search for, when the owner has not typed anything.
+/**
+ * What a trade should search for -- FOUR CANDIDATES, not one.
  *
- *  Written per industry rather than passing the trade name straight through:
- *  「装修/承包商」 is not an image search, and the English name of a trade is
- *  not always what photographers tag. Measured against the two Malaysian trade
- *  sites this was designed from -- both lead with a person at work, not with a
- *  finished room. */
-export const TRADE_QUERY: Record<string, string> = {
-  renovation: "renovation construction worker",
-  services: "technician repair service",
-  retail: "small shop counter",
-  fnb: "restaurant kitchen chef",
-  beauty: "hair salon interior",
-  education: "classroom tutor",
-  wholesale: "warehouse boxes logistics",
+ * ── WHY IT IS A LIST NOW ──────────────────────────────────────────────────
+ *
+ * It was one string per trade, written from a desk. On 2026-08-27, with a real
+ * key, they were finally run and photographed (.screenshots/queries/):
+ *
+ *   renovation "renovation construction worker"  →  LEGO men and plastic
+ *                                                   figurines, four of the
+ *                                                   first six
+ *   services   "plumber pipe repair"             →  a model posing in
+ *                                                   dungarees beside a valve
+ *   fnb        "restaurant kitchen chef"         →  a French chef in whites
+ *
+ * The old comment even states the mistake out loud: 「both lead with a person
+ * at work, not with a finished room」. That is true of the two SITES and false
+ * of the LIBRARY -- searching for a person at work is what returns figurines,
+ * and what a homeowner is actually shopping for is the finished kitchen.
+ *
+ * ── WHY FOUR AND NOT A BETTER ONE ─────────────────────────────────────────
+ *
+ * No single string is right for a trade. 「services」 covers the aircond man and
+ * the electrician, and their photographs share nothing. So the picker offers
+ * these as chips the owner presses, first one first, and the search box stays.
+ * The owner knows which of the four is their business; we do not.
+ *
+ * Ordered so the FIRST one is the one that came back best for this market --
+ * 「asian food plate」 returns dim sum, curry and noodles where 「restaurant
+ * kitchen chef」 returns a French kitchen.
+ */
+export const TRADE_QUERIES: Record<string, string[]> = {
+  renovation: ["kitchen renovation", "home interior renovation", "bathroom interior", "shop interior fitout"],
+  services: ["air conditioner technician", "technician repair service", "electrician working", "service van tools"],
+  retail: ["shop interior retail store", "shopfront street", "small shop counter", "product shelf display"],
+  fnb: ["asian food plate", "coffee shop counter", "cafe interior table", "restaurant kitchen"],
+  beauty: ["hair salon interior", "hairdresser cutting hair", "manicure nails", "spa massage room"],
+  education: ["classroom tutor", "tuition teacher whiteboard", "student desk study", "books notebook study"],
+  wholesale: ["warehouse shelves stock", "warehouse boxes logistics", "forklift warehouse", "cartons pallet delivery"],
+  other: ["small business shop", "shopfront street", "team working office", "tools workbench"],
 };
+
+/** The opening guess -- the first candidate. Kept as its own export because
+ *  the route wants one string and the picker wants the list. */
+export const TRADE_QUERY: Record<string, string> = Object.fromEntries(
+  Object.entries(TRADE_QUERIES).map(([k, v]) => [k, v[0]]),
+);
 
 const ENDPOINT = "https://pixabay.com/api/";
 

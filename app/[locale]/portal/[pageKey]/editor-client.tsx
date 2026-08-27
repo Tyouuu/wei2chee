@@ -41,6 +41,7 @@ import { StyleButton, StyleSheet } from "@/design-system/editor/style-sheet";
 import { cornerApply, cornerCapture } from "@/design-system/editor/corners";
 import { PagesButton, PagesSheet } from "@/design-system/editor/pages-sheet";
 import { RailSync, announcePages } from "@/design-system/editor/rail-sync";
+import { TradeProvider } from "@/design-system/trade-context";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
 import type { SystemLang } from "@/lib/system-lang";
 import { InlineEditing } from "@/design-system/editor/inline-editing";
@@ -136,6 +137,7 @@ export function PortalEditor({
   layout,
   previewPages,
   systemLang,
+  trade,
   siteSlug,
   sitePublished,
 }: {
@@ -203,6 +205,10 @@ export function PortalEditor({
    *  down so the canvas can be wrapped in it: the blocks inside are the
    *  customer's system, the chrome around them is Formae's. */
   systemLang: SystemLang;
+  /** The business's industry slug. Only the photo picker reads it, and it
+   *  reads it through TradeProvider rather than through the Puck config, which
+   *  is memoised on locale and system language alone. See trade-context.tsx. */
+  trade?: string | null;
   /** projects.site_slug -- the 官网's public address, or null before one is
    *  claimed. Only the website page does anything with it. */
   siteSlug: string | null;
@@ -794,6 +800,12 @@ export function PortalEditor({
   );
 
   return (
+    /* TradeProvider wraps EVERYTHING, not just the canvas. 选图器 renders inside
+       Puck's field panel, which is a sibling of the canvas -- wrapping the
+       canvas the way RegisterProvider does would have left the picker outside
+       it, asking the library for 「small business」 and offering a renovation
+       contractor an aeroplane. Screenshotted 2026-08-27. */
+    <TradeProvider trade={trade}>
     <EditorUiProvider>
       <div
         // Regression fix: this wrapper (and the header bar inside it) never
@@ -1356,5 +1368,6 @@ export function PortalEditor({
         />
       </div>
     </EditorUiProvider>
+    </TradeProvider>
   );
 }

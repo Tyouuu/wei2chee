@@ -103,6 +103,33 @@ function isEmptyOnPublish(node: PuckNode): boolean {
     rule on purpose: the hero keeps its headline because the headline is true,
     and there is no true half of an empty certification.
   */
+  /*
+    A STORY WE WROTE IS A LIE ABOUT A BUSINESS WE HAVE NOT MET.
+
+    Every other section on this page is generated from the questionnaire and is
+    therefore true. 「跟你做的是什么人」 is not: how long they have been going and
+    who turns up on the day are facts only the owner has. So the section ships
+    as a heading plus an ask, and stays off the visitor's page until the owner
+    has written the half we cannot.
+  */
+  if (node.type === "SiteStory") {
+    const marks = Array.isArray(node.props.points) ? (node.props.points as Row[]) : [];
+    return (
+      !String(node.props.body ?? "").trim() &&
+      !String(node.props.photo ?? "").trim() &&
+      !marks.some((m) => String((m as { label?: string }).label ?? "").trim())
+    );
+  }
+  /*
+    AN EMPTY GALLERY IS THREE GREY BOXES, WHICH IS THE FAILURE THAT STARTED
+    THIS MODULE. The founder photographed his own live site showing 「Add a
+    photo」 three times. Individual unfilled frames go, and a gallery left
+    holding none of them goes with it.
+  */
+  if (node.type === "SiteGallery") {
+    const shots = Array.isArray(node.props.items) ? (node.props.items as Row[]) : [];
+    return !shots.some((s) => String((s as { src?: string }).src ?? "").trim());
+  }
   if (node.type === "SiteCreds") {
     const items = Array.isArray(node.props.items) ? (node.props.items as Row[]) : [];
     const filled = items.some((i) => String((i as { label?: string }).label ?? "").trim());
@@ -181,6 +208,22 @@ function withoutPlaceholders(node: PuckNode): PuckNode {
   return props === node.props ? node : { ...node, props };
 }
 
+/*
+  A GALLERY PUBLISHES THE PHOTOGRAPHS IT HAS, NOT THE SLOTS IT WAS GIVEN.
+
+  Not a `placeholder` flag, and the difference matters: the owner fills these
+  frames IN PLACE through the picker, so a flag written at generation would
+  still be sitting on the item after they had put their own kitchen in it. The
+  presence of a `src` is the only statement that cannot go stale.
+*/
+function withoutEmptyShots(node: PuckNode): PuckNode {
+  if (node.type !== "SiteGallery") return node;
+  const shots = Array.isArray(node.props.items) ? (node.props.items as Row[]) : [];
+  const kept = shots.filter((s) => String((s as { src?: string }).src ?? "").trim());
+  if (kept.length === shots.length) return node;
+  return { ...node, props: { ...node.props, items: kept } };
+}
+
 /** True when stripping placeholders emptied the only list this node had. */
 function isAllPlaceholder(node: PuckNode): boolean {
   const lists = Object.entries(node.props).filter(
@@ -198,7 +241,7 @@ function hasNothingLeft(node: PuckNode): boolean {
 }
 
 function project(node: PuckNode): PuckNode {
-  const stripped = withoutPlaceholderFields(withoutPlaceholders(node));
+  const stripped = withoutEmptyShots(withoutPlaceholderFields(withoutPlaceholders(node)));
   const drop = DESIGN_TIME_PROPS[stripped.type];
   let props = stripped.props;
 

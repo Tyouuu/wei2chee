@@ -218,14 +218,13 @@ describe("buildPageLayout", () => {
       // Cards, not rows: what a business SELLS is a card grid on every
       // reference, and rows are for what it merely lists. 2026-08-27.
       "SiteFeatures",      // what we do
-      "Columns",       // work photos, three empty frames the owner fills
-      // The three frames INSIDE that Columns. They were always there; this
-      // list could not see them until `flatten` started walking every slot
-      // rather than the shell's two -- which is the same blindness that hid
-      // the dashboard's own table from the AI.
-      "PhotoFrame",
-      "PhotoFrame",
-      "PhotoFrame",
+      // 作品墙. Was a Columns of three PhotoFrames locked to thirds; it owns
+      // its own shapes now (三张一样大 / 一大两小 / 横着滑), taken from tailark's
+      // bento and carousel blocks, and the register picks one. 2026-08-27.
+      "SiteGallery",
+      // 一段话配一张照片 -- the only section written in the owner's own voice,
+      // and therefore the only one that ships EMPTY. See publish-projection.
+      "SiteStory",
       "WorkflowStrip", // what happens after you call
       "InfoRows",      // a price guide, never a price
       // A review has a rating, the words and a face -- not the dashboard's

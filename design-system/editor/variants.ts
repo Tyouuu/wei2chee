@@ -101,6 +101,23 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "split", label: "左字右图", props: { layout: "split" } },
   ],
 
+  /* 作品墙. A row of three, one rectangle cut in three, and a scroller. The
+     third is not a styling of the first two -- it changes how many photographs
+     the section can hold without running down the page, which is the whole
+     question for a contractor with eleven finished kitchens. */
+  SiteGallery: [
+    { id: "grid", label: "三张一样大", props: { shape: "grid" } },
+    { id: "bento", label: "一大两小", props: { shape: "bento" } },
+    { id: "strip", label: "横着滑", props: { shape: "strip" } },
+  ],
+
+  /* 一段话配一张照片. Which side the picture is on, or no side at all. */
+  SiteStory: [
+    { id: "side", label: "照片在右", props: { shape: "side" } },
+    { id: "side-reverse", label: "照片在左", props: { shape: "side-reverse" } },
+    { id: "stack", label: "照片在上", props: { shape: "stack" } },
+  ],
+
   /* 别人给的证明. Three genuinely different objects, not three alignments:
      a LINE of facts, a GRID of ticked cards, and a SCORE with the facts small
      underneath. Which one suits depends on what the business has -- a salon
