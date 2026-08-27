@@ -1049,10 +1049,28 @@ function buildDashboard(
         const key = r.status || c.col.status;
         byStatus.set(key, (byStatus.get(key) ?? 0) + n);
       }
-      const slices = [...byStatus.entries()].map(([label, value], i) => ({
+      /*
+        ONE HUE IN STEPS, NOT FIVE HUES.
+
+        This read `var(--chart-${i % 5 + 1})`, which is primary / jade / brass /
+        clay / slate -- five different hues in one donut. The founder, looking
+        at the gallery: 「还是有很花哨的颜色 不是说了 不要用这些颜色了吗」. He is
+        right, and the reason is stronger than taste: these slices are not five
+        different things. They are five STAGES OF ONE PIPELINE -- where the
+        money is sitting -- and a categorical palette says they are unrelated.
+        Parts of one whole take a sequential ramp, which is also what every
+        reference does with a share.
+
+        Mixed toward the card rather than toward black, so the ramp lands on
+        the register's own surface: 夜's steps stay dark, 瓷's stay warm, and a
+        register whose primary is already pale does not fade into its page.
+      */
+      const slices = [...byStatus.entries()].map(([label, value], i, all) => ({
         label,
         value,
-        color: `var(--chart-${(i % 5) + 1})`,
+        color: `color-mix(in oklab, var(--color-primary) ${Math.round(
+          100 - (i / Math.max(1, all.length - 1)) * 62,
+        )}%, var(--color-ink-850))`,
       }));
       return node("ShareChart", "dashboard-share", {
         title: c.dashboard.shareTitle,

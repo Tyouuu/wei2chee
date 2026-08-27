@@ -430,6 +430,20 @@ export function SiteGallery({
 }) {
   const shots = items ?? []
   if (!shots.length) return null
+  /*
+    AN EMPTY GALLERY IS A STRIP, NOT THREE FULL SCREENS.
+
+    The founder photographed his own phone on 2026-08-27: three 「Add a photo」
+    boxes, each one taking a whole screen, one after another. At 390px a 4:3
+    frame is 293px tall, and three of them plus captions is nearly 900px of
+    nothing to scroll past before the page continues.
+
+    The prompt has to stay -- an owner who never sees where the photographs go
+    never adds any, and this is the section that matters most in this market.
+    It does not have to be enormous. Unfilled frames collapse to a short row;
+    the moment one has a photograph in it the gallery takes its real shape.
+  */
+  const anyFilled = shots.some((s) => s.src?.trim())
 
   const frame = (
     s: { src?: string; alt?: string; caption?: string },
@@ -443,7 +457,7 @@ export function SiteGallery({
     >
       <div
         className="relative w-full overflow-hidden [background-color:var(--color-ink-850)] [border-radius:var(--radius-lg)] [border:var(--hairline)_solid_var(--color-ink-800)]"
-        style={{ aspectRatio: String(ratio) }}
+        style={{ aspectRatio: anyFilled || s.src ? String(ratio) : "5 / 2" }}
       >
         {s.src ? (
           // eslint-disable-next-line @next/next/no-img-element -- Supabase

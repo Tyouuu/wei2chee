@@ -250,7 +250,14 @@ export function PhotoFrame({
   ratio?: "wide" | "photo" | "square"
   caption?: string
 }) {
-  const r = ratio === "square" ? 1 : ratio === "wide" ? 16 / 9 : 4 / 3
+  /* AN EMPTY FRAME IS SHORT. Photographed on the founder's own phone,
+     2026-08-27: three unfilled frames at 4:3 on a 390px screen is nearly 900px
+     of 「Add a photo」 to scroll past. The prompt has to stay -- an owner who
+     never sees where the photographs go never adds one -- but a prompt is a
+     line, not a screen. A frame WITH a photograph keeps its real proportion,
+     because that one is the content. */
+  const declared = ratio === "square" ? 1 : ratio === "wide" ? 16 / 9 : 4 / 3
+  const r = src ? declared : 5 / 2
   return (
     <figure className="flex flex-col [gap:calc(var(--gap-stack)*0.5)]">
       <AspectRatio
