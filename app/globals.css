@@ -1118,6 +1118,66 @@
   }
 }
 
+/* ── 浏览器自己那几个面 ────────────────────────────────────────────────────
+
+   impeccable's craft floor, under Verify: 「the parts you did not draw still
+   carry the design. Text selection, the caret, custom scrollbars, focus rings,
+   underline offset, and the numerals in tabular data all ship with browser
+   defaults that belong to no design system. This is the cheapest signal that a
+   page was built rather than assembled, and the one models skip most
+   reliably.」
+
+   Grepped on 2026-08-27: this file had ZERO of them. Every generated customer
+   website selected text in the operating system's blue, focused in the
+   operating system's ring, and scrolled on the operating system's bar --
+   whatever register it was wearing.
+
+   All of it reads the register's own tokens, so 招牌 selects in its red and
+   中台 in its blue. */
+
+.ds-site ::selection,
+.ds-ground ::selection {
+  background: color-mix(in oklab, var(--color-primary) 28%, transparent);
+  color: var(--color-paper);
+}
+
+.ds-site input,
+.ds-site textarea,
+.ds-ground input,
+.ds-ground textarea {
+  caret-color: var(--color-primary);
+}
+
+/* Not `outline: none` anywhere -- a focus ring the register owns, so keyboard
+   users get one that belongs to the page instead of one that fights it. */
+.ds-site :focus-visible,
+.ds-ground :focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* An underline that clears the descenders instead of cutting through them. */
+.ds-site a:not([class*="inline-flex"]) {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: from-font;
+}
+
+/* Figures that line up in a column line up. */
+.ds-site dt,
+.ds-site td,
+.ds-site [data-price],
+.ds-site [data-figure] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The scrollbar is part of the page on every desktop that shows one. */
+.ds-ground {
+  scrollbar-color: color-mix(in oklab, var(--color-primary) 45%, var(--color-canvas))
+    var(--color-canvas);
+  scrollbar-width: thin;
+}
+
 /* ── 滚动进场 ──────────────────────────────────────────────────────────────
 
    From tympanus.net/codrops, sent by the founder 2026-08-27. Their Playground

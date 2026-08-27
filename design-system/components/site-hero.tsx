@@ -612,11 +612,21 @@ export function SiteHero({
           (「报价前先上门 / 看」), which is the kind of thing only a render
           shows. */}
       <div className={centred ? "mx-auto max-w-[62ch]" : "max-w-[62ch]"}>
-        {eyebrow && (
-          <p className="mb-3 [color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
-            {eyebrow}
-          </p>
-        )}
+        {/* THE EYEBROW IS GONE, AND IT IS A BAN RATHER THAN A PREFERENCE.
+
+            pbakaus/impeccable (Apache-2.0, installed at .claude/skills/impeccable
+            on 2026-08-27) puts it under Refuse with the note 「This one is a ban,
+            not a default: no brief earns it back. The heading carries its own
+            weight; delete the label and let the heading speak.」
+
+            And on this page it was worse than a habit, it was a repeat: the
+            eyebrow read 「MALAYSIA · RENOVATION & FITOUT」 directly above a
+            headline reading 「Renovation & fitout in Kuala Lumpur」. Same trade,
+            same place, twice, on every register. Printing one fact twice on one
+            page is what got 印 culled on 2026-08-26.
+
+            The prop stays in the signature because saved customer layouts carry
+            it; it simply renders nothing. */}
         <h1
           className={`ds-display ${centred ? "mx-auto " : ""}max-w-[24ch] text-balance [color:var(--color-paper)] [font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)] [line-height:var(--leading-tight)]`}
         >

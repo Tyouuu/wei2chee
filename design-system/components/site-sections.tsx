@@ -82,6 +82,12 @@ export function SiteFeatures({
     </div>
   ) : null
 
+  /* NO 01 / 02 / 03. impeccable's Refuse list: 「Section numbers unless the
+     sequence itself carries information the reader needs」. Three services a
+     contractor offers are not a sequence -- you do not do the kitchen before
+     the bathroom because it is numbered 01. 流程 keeps its numbers, because
+     there the order IS the information. Added by me an hour before reading
+     that list, which is the whole reason the list is worth having. */
   if (shape === "panel") {
     /* ONE PAINTED AREA HOLDING ALL THREE, split by hairlines rather than by
        gaps. Taken from Wix's Home Remodeling template, where the services sit
@@ -100,9 +106,6 @@ export function SiteFeatures({
                 i > 0 ? "@2xl:[border-inline-start:var(--hairline)_solid_var(--border-subtle)]" : "",
               ].join(" ")}
             >
-              <span className="[color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-variant-numeric:tabular-nums]">
-                {String(i + 1).padStart(2, "0")}
-              </span>
               <span className="ds-display [color:var(--color-paper)] [font-size:var(--text-xl)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
                 {f.label}
               </span>
@@ -130,9 +133,6 @@ export function SiteFeatures({
               key={f.label}
               className="grid [border-top:var(--hairline)_solid_var(--border-strong)] [gap:.35rem_calc(var(--gap-stack)*1.2)] [padding-block:calc(var(--pad-card-lg)*0.9)] @2xl:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1.1fr)] @2xl:items-baseline"
             >
-              <span className="[color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-variant-numeric:tabular-nums]">
-                {String(i + 1).padStart(2, "0")}
-              </span>
               <span className="ds-display [color:var(--color-paper)] [font-size:var(--text-2xl,1.5rem)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
                 {f.label}
               </span>
