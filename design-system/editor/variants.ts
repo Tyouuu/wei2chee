@@ -110,6 +110,11 @@ export const VARIANTS: Record<string, Variant[]> = {
        the one the 19-SME measurement (photo covers a median 59% of the first
        screen) had been asking for since the day it was written down. */
     { id: "bleed", label: "满图压字", props: { layout: "bleed" } },
+    /* 色带压满图 — Wix's Home Remodeling opening, rebuilt in our tokens rather
+       than measured and approximated. A short colour band with the headline
+       left and its one line right, then a photograph edge to edge underneath.
+       Degrades to 左对齐 without a photo, like `split` and `bleed`. */
+    { id: "band-bleed", label: "色带压满图", props: { layout: "band-bleed" } },
   ],
 
   /* 中段的「请他联络」. Three shapes because it had none: fourteen registers

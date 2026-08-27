@@ -467,6 +467,7 @@ export const LABELS_EN: Record<string, string> = {
   一条线在上: "Rule above",
   引号: "Quotation",
   满图压字: "Photo behind the words",
+  色带压满图: "Colour band over a full-bleed photo",
   左对齐: "Left aligned",
   上下留白: "Space above and below",
   极简: "Minimal",

@@ -93,7 +93,7 @@ export type SiteSkeleton = {
    * and deliberately not the only one: a library where fourteen registers all
    * open the same way is a library with one register in it.
    */
-  hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed";
+  hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed";
   /**
    * 一句话占一屏 —— whether the pitch gets a screen of its own, and in what
    * shape. Absent means it stays under the headline where it has always been.
@@ -272,7 +272,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        keeps this library worth having: if eight registers open on a bleed
        photo they are eight paint jobs again. A trade that wants its photo
        bigger has the `hero` axis, which is per-page and free. */
-    hero: "bleed",
+    hero: "band-bleed",
     opens: "照片墙",
     order: ["work", "story", "team", "reviews", "creds", "services", "hours", "prices", "areas", "cta", "faq", "flow", "promise"],
   },

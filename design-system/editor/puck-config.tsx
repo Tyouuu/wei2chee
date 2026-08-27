@@ -356,7 +356,7 @@ type Components = {
     strip?: string;
     stripPlaceholder?: boolean;
     // Set by the 换款式 picker, not by a field -- see variants.ts.
-    layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed";
+    layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed";
     /** What the `split` 款式 draws on the right: the document this business
      *  sends. Written by the template, not offered as a field -- picking
      *  「价目表」 for a salon is a choice nobody should have to get right, and

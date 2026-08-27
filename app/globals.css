@@ -916,6 +916,16 @@
   outline: var(--hairline) solid var(--border-subtle);
   outline-offset: 0;
 }
+/* EXCEPT WHERE THE PHOTOGRAPH IS THE GROUND. 色带压满图 and 满图压字 run their
+   picture edge to edge -- that is the whole shape, copied off Wix's Home
+   Remodeling opening, where the photo has no radius, no shadow and no hairline
+   because it is not an object ON the page, it IS the page. Rounding it puts it
+   back in a frame and undoes the copy. */
+.ds-site [data-photo-ground] img {
+  border-radius: 0;
+  box-shadow: none;
+  outline: 0;
+}
 
 /* Section headings sit closer to the thing they head than to the section
    above. Measured against every reference: the gap above a heading is roughly

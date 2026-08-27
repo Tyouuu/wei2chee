@@ -72,7 +72,7 @@ export function SiteHero({
    *   plain   headline and one button. A name card.
    *   split   the words on the left and a FIGURE on the right. See below.
    */
-  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed"
+  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed"
   /**
    * WHAT GOES ON THE RIGHT, AND WHY THERE IS NOW A RIGHT AT ALL.
    *
@@ -376,6 +376,109 @@ export function SiteHero({
     block-tone.ts documents this exact failure and shipped the two-layer fix
     for it. Writing it once is not enough; it has to be the shape.
   */
+  /*
+    ── 色带 + 满边照片 ──────────────────────────────────────────────────────
+
+    A DIRECT COPY, and that is the point. The founder, 2026-08-27: 「我给了那么多
+    网站跟skills 你好像一点也没有去做参考跟借鉴 直接去抄啊」. He was right about
+    what I had been doing -- counting their colours and their blocks and then
+    adjusting our own components by a little. Measuring is not copying.
+
+    So this is Wix's `Home Remodeling Company (Professional)` opening rebuilt in
+    our tokens, read off .screenshots/stores/wix-top.jpg rather than remembered:
+
+      1. a colour band edge to edge, and SHORT -- it hugs the headline instead
+         of filling a screen
+      2. the headline enormous and LEFT at about 60% of the width, the
+         supporting line small and RIGHT, aligned to its top. Not stacked.
+      3. a photograph directly beneath, edge to edge, NO radius and NO gap
+      4. nothing else in the first screen: no eyebrow, no buttons, no figures.
+         The one call to action is the button already sitting in the navigation.
+
+    Point 4 is the one that took the longest to accept. Our first screen prints
+    seven things and every register printed all seven; theirs prints two. That
+    was measured on 2026-08-27 and then not acted on for several rounds.
+
+    Nothing is deleted, it is MOVED: the buttons and the figures are still on
+    the page, directly under the photograph, where a reader arrives having
+    already seen what the business looks like.
+  */
+  if (layout === "band-bleed" && hasPhoto) {
+    return (
+      <section data-bleed="" data-photo-ground="" className="@container">
+        {/* THE BAND. Short on purpose -- `padding-block` is a little over one
+            card's worth, not a screen's. */}
+        <div className="[background:var(--color-primary-soft)] [padding-block:calc(var(--pad-card-lg)*1.15)] [padding-inline:var(--pad-card-lg)]">
+          <div className="mx-auto grid w-full max-w-[80rem] items-start [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+            <h1
+              className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-bold,700)] [letter-spacing:-0.03em] [line-height:0.94] [text-wrap:balance]"
+              style={{ fontSize: "clamp(2.6rem, 6.6vw, 5.2rem)" }}
+            >
+              {headline}
+            </h1>
+            {sub ? (
+              <p className="max-w-[34ch] [color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)] @3xl:mt-2">
+                {sub}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        {/* EDGE TO EDGE, NO RADIUS, NO GAP. The photograph is the ground the
+            band is sitting on, not an illustration inside a column. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photo}
+          alt={photoAlt || ""}
+          className="block w-full object-cover"
+          style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
+        />
+
+        {/* MOVED, NOT DELETED. Everything the first screen used to shout sits
+            under the picture instead, at the page's own measure. */}
+        {(primaryLabel || secondaryLabel || (proof && proof.length > 0) || strip) ? (
+          <div className="mx-auto w-full max-w-[68rem] [padding-block:calc(var(--pad-card-lg)*1.2)] [padding-inline:var(--pad-card-lg)]">
+            {strip ? (
+              <p className="mb-6 [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]">
+                {strip}
+              </p>
+            ) : null}
+            <div className="flex flex-wrap items-center [gap:calc(var(--gap-stack)*1.6)]">
+              {primaryLabel ? (
+                <a
+                  href={primaryHref || "#"}
+                  className="inline-flex min-h-12 items-center [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
+                >
+                  {primaryLabel}
+                </a>
+              ) : null}
+              {secondaryLabel ? (
+                <a
+                  href={secondaryHref || "#"}
+                  className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-medium)] underline underline-offset-4"
+                >
+                  {secondaryLabel}
+                </a>
+              ) : null}
+              {proof && proof.length > 0 ? (
+                <dl className="flex flex-wrap [gap:calc(var(--gap-stack)*1.4)]">
+                  {proof.map((x) => (
+                    <div key={x.label}>
+                      <dt className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-base)] [font-variant-numeric:tabular-nums] [font-weight:var(--fw-semibold)]">
+                        {x.value}
+                      </dt>
+                      <dd className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{x.label}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </section>
+    )
+  }
+
   const shell = (
     <section
       /* The hero paints the page's ground and its hours strip runs edge to
