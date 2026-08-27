@@ -323,6 +323,23 @@ export const pageSuggestionSchema = z.object({
 
 export type PageSuggestion = z.infer<typeof pageSuggestionSchema>;
 
+/**
+ * Every operation the schema will accept, read off the schema.
+ *
+ * There is no `default:` in applyLayoutOps' switch, so an operation added to
+ * the union and not to the switch does NOTHING -- it is not applied, it is not
+ * refused, it does not appear in `skipped`, and the assistant reports success
+ * over a page that did not move. That is the shape of nine of the eleven
+ * 「说了没做」 bugs in this repo: a capability declared in one place and never
+ * consumed in the next.
+ *
+ * Derived so the guard in layout-ops.test.ts cannot go stale the way a second
+ * hand-written list would.
+ */
+export const LAYOUT_OP_NAMES: string[] = layoutOpSchema.options.map(
+  (o) => (o.shape.op as unknown as { value: string }).value,
+);
+
 export const layoutOpsSchema = z.object({
   operations: z.array(layoutOpSchema).max(12),
   /** One sentence, in the customer's language, describing what was done. Shown
@@ -1014,6 +1031,30 @@ export function applyLayoutOps(
         }
         node.props.stages = op.stages.map((label) => ({ label, tone: "normal" }));
         applied++;
+        break;
+      }
+
+      /*
+        AN OPERATION WITH NO CASE MUST NOT BE SILENCE.
+
+        This switch had no default. An operation added to layoutOpSchema and
+        not to this switch would fall straight through: not applied, not
+        refused, absent from `skipped` -- and the assistant would report
+        success over a page that had not moved. That is the shape of nine of
+        the eleven 「说了没做」 bugs here: a capability declared in one place and
+        never consumed in the next.
+
+        Two guards, and the first is the one that matters. The `never`
+        assignment makes the COMPILER refuse a new operation that has no case,
+        so this cannot ship. The push below is what happens if it somehow does:
+        the customer is told, instead of being lied to.
+      */
+      default: {
+        const unhandled: never = op;
+        skipped.push({
+          op: (unhandled as { op: string }).op,
+          reason: "这个操作还没接上",
+        });
         break;
       }
     }
