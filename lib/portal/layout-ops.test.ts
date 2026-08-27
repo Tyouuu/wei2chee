@@ -7,6 +7,7 @@ import {
   REGISTERED_COMPONENTS,
   PHOTO_BLOCKS,
   findSelector,
+  mainColumn,
   ROOT_ZONE,
   type LayoutOp,
   type PuckLayout,
@@ -460,5 +461,98 @@ describe("findSelector", () => {
 
   it("returns null for an id that is not on the page", () => {
     expect(findSelector(page.content, "no-such-block")).toBeNull();
+  });
+});
+
+describe("move_component into a wrapped page", () => {
+  /*
+    THE BUG THIS FILE WAS WRITTEN TO CATCH.
+
+    Blocks are not all top-level. Since 2026-08-25 the dashboard wraps them in
+    `Panel` (slot `body`) and puts pairs side by side in `Columns`, so on most
+    registers the thing the customer names is nested one or two levels down.
+
+    move_component resolved `before_id` with `mainColumn(...).findIndex(...)`,
+    which only ever sees the top level -- and when that returned -1 it PUSHED
+    THE BLOCK TO THE END. So 「把表格搬到收款进度上面」 answered with 「已把表格
+    移到上面了」 while the table travelled to the bottom of the page. Not a
+    missed edit: a wrong one, reported as done.
+
+    Found by the other session hitting the identical bug in the click path and
+    saying so, not by reading this code.
+  */
+  const nestedPage = () => {
+    const page = buildPageLayout("dashboard", {}, "我", "zh", [], "hearth", null) as unknown as PuckLayout;
+    return page;
+  };
+
+  it("the fixture really does nest its blocks", () => {
+    const page = nestedPage();
+    const top = mainColumn(page).map((n) => String(n.props?.id ?? ""));
+    const all = walkNodes(page.content).map((n) => String(n.props?.id ?? ""));
+    // If this ever stops being true the test below proves nothing, so assert it.
+    expect(all.length).toBeGreaterThan(top.length);
+  });
+
+  it("moves a block IN FRONT OF a nested target, not to the end", () => {
+    const page = nestedPage();
+    const ids = walkNodes(page.content)
+      .filter((n) => n.type !== "SystemShell" && n.type !== "RailNav")
+      .map((n) => String(n.props?.id ?? ""));
+    const topIds = new Set(mainColumn(page).map((n) => String(n.props?.id ?? "")));
+    // A target that is NOT at the top level -- the case that was broken.
+    const nestedTarget = ids.find((id) => id && !topIds.has(id));
+    const mover = ids.find((id) => id && id !== nestedTarget);
+    expect(nestedTarget).toBeTruthy();
+    expect(mover).toBeTruthy();
+
+    const out = applyLayoutOps(page, [
+      { op: "move_component", target_id: mover!, before_id: nestedTarget! },
+    ] as LayoutOp[]);
+
+    expect(out.applied).toBe(1);
+    expect(out.skipped).toEqual([]);
+
+    // The mover must sit immediately before the target, wherever the target
+    // lives. Walking order is document order, so adjacency is checkable.
+    const order = walkNodes(out.layout.content).map((n) => String(n.props?.id ?? ""));
+    expect(order.indexOf(mover!)).toBe(order.indexOf(nestedTarget!) - 1);
+  });
+
+  it("adds a block beside a nested anchor, not at the top level", () => {
+    const page = nestedPage();
+    const topIds = new Set(mainColumn(page).map((n) => String(n.props?.id ?? "")));
+    const nestedAnchor = walkNodes(page.content)
+      .map((n) => String(n.props?.id ?? ""))
+      .find((id) => id && !topIds.has(id));
+    expect(nestedAnchor).toBeTruthy();
+
+    const out = applyLayoutOps(page, [
+      { op: "add_component", component: "Progress", after_id: nestedAnchor! },
+    ] as LayoutOp[]);
+    expect(out.applied).toBe(1);
+
+    const added = walkNodes(out.layout.content).find((n) => n.type === "Progress");
+    expect(added).toBeTruthy();
+
+    /*
+      The assertion that matters: it must NOT have landed in the shell's top
+      level. The anchor lives inside a wrapper, so a block placed correctly is
+      inside that wrapper too -- and the old code's answer was the bottom of
+      the main column, which is exactly what this rules out.
+    */
+    const topLevelNow = mainColumn(out.layout).map((n) => String(n.props?.id ?? ""));
+    expect(topLevelNow).not.toContain(String(added!.props.id));
+  });
+
+  it("refuses rather than guessing when before_id is not on the page", () => {
+    const page = nestedPage();
+    const mover = String(mainColumn(page)[0]?.props?.id ?? "");
+    const out = applyLayoutOps(page, [
+      { op: "move_component", target_id: mover, before_id: "no-such-block" },
+    ] as LayoutOp[]);
+    // Silently landing it at the end is how the original bug read as success.
+    expect(out.applied).toBe(0);
+    expect(out.skipped.length).toBe(1);
   });
 });

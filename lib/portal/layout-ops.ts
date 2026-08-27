@@ -415,6 +415,35 @@ export function findSelector(
   return null;
 }
 
+/**
+ * The array a block actually lives in, and where in it.
+ *
+ * `mainColumn` only ever sees the shell's top level, and blocks stopped being
+ * top-level on 2026-08-25 when the dashboard began wrapping them in `Panel`
+ * (slot `body`) and pairing them inside `Columns`. So on most registers the
+ * block the customer names is one or two levels down, and a search that only
+ * looks at the top returns -1 for it.
+ *
+ * That -1 was being read as "no target given" and the block was pushed to the
+ * end -- 「把表格搬到收款进度上面」 answered 「已把表格移到上面了」 while the table
+ * travelled to the bottom of the page. Not a missed edit, a wrong one,
+ * reported as done.
+ */
+function findHome(nodes: PuckNode[], id: string): { arr: PuckNode[]; index: number } | null {
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    if (String(n.props?.id ?? "") === id) return { arr: nodes, index: i };
+    for (const k of SLOT_KEYS) {
+      const kids = n.props?.[k];
+      if (Array.isArray(kids)) {
+        const hit = findHome(kids as PuckNode[], id);
+        if (hit) return hit;
+      }
+    }
+  }
+  return null;
+}
+
 export function walkNodes(nodes: PuckNode[]): PuckNode[] {
   return nodes.flatMap((n) => [
     n,
@@ -646,8 +675,20 @@ export function applyLayoutOps(
         };
         if (op.title && typeof node.props.title === "string") node.props.title = op.title;
 
-        const column = mainColumn(layout);
-        const at = op.after_id ? column.findIndex((n) => String(n.props?.id) === op.after_id) : -1;
+        /*
+          Same wrapper problem as move_component, milder consequence: 「在收款
+          进度下面加一个」 aimed at a block inside a Panel used to land at the
+          bottom of the page instead. Nothing of his is lost -- the block is
+          new -- but it is still not where he said, so it resolves the same way.
+
+          Unlike move_component this does NOT refuse when the anchor is
+          missing: 「加一个收款进度」 with a stale after_id still wants the
+          block, and the end of the page is a defensible place for it. Losing
+          an edit he asked for would be worse than placing it low.
+        */
+        const home = op.after_id ? findHome(layout.content, op.after_id) : null;
+        const column = home ? home.arr : mainColumn(layout);
+        const at = home ? home.index : -1;
         if (at === -1) column.push(node);
         else column.splice(at + 1, 0, node);
         applied++;
@@ -701,10 +742,25 @@ export function applyLayoutOps(
           skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
           break;
         }
-        const col = mainColumn(layout);
-        const at = op.before_id
-          ? col.findIndex((n) => String(n.props?.id) === op.before_id)
-          : -1;
+        /*
+          Landing spot resolved against the WHOLE tree, and a missing one is a
+          refusal. Falling back to "the end of the main column" is what turned
+          a wrapped target into a block at the bottom of the page while the
+          reply said it had gone to the top.
+        */
+        let col = mainColumn(layout);
+        let at = -1;
+        if (op.before_id) {
+          const home = findHome(layout.content, op.before_id);
+          if (!home) {
+            // Put it back where it was rather than leaving the page short.
+            col.push(node);
+            skipped.push({ op: op.op, reason: `找不到 ${op.before_id}` });
+            break;
+          }
+          col = home.arr;
+          at = home.index;
+        }
         if (at === -1) col.push(node);
         else col.splice(at, 0, node);
         applied++;
