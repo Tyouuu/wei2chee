@@ -290,6 +290,32 @@ const CASES = [
     ask: "我要一进来就先看到表格，不要先看数字",
     design: { field: "layout", oneOf: ["table"] },
   },
+  /*
+    THE SAME SENTENCE, AFTER THE CUSTOMER HAS SAVED.
+
+    排法 re-generates the page, and page.tsx only generates while `layout_json`
+    is still empty -- so once they have saved, `projects.layout` is never read
+    again and answering with design.layout writes a row that changes nothing.
+    That is exactly what shipped: the model answered correctly, the browser
+    dropped it, and the assistant replied 「已将总览改为表格先行」 over a page that
+    had not moved.
+
+    The right answer here is move_component, which moves the real block and
+    keeps every word, column and row the owner has edited -- a regenerate would
+    throw all of it away, which is why 「just re-generate it」 is not the fix.
+
+    Paired deliberately with the case above: same words, opposite answer. A
+    ruler that only asks in one state cannot see the difference, and the
+    difference is the whole bug.
+  */
+  {
+    name: "换排法 · 已经保存过",
+    ask: "我要一进来就先看到表格，不要先看数字",
+    saved: true,
+    expect: ["move_component"],
+    noDesign: true,
+    note: "保存过的页面只能搬真实的块，不能重新生成",
+  },
   {
     name: "不要乱换 · 只是改字",
     ask: "把标题改成「今天要跟的」",
@@ -547,7 +573,17 @@ const CASES = [
 
 const chosen = ONLY ? CASES.filter((c) => c.name.includes(ONLY)) : CASES;
 
-function promptFor(ask) {
+/**
+ * `saved` mirrors the route's own 「This page:」 line.
+ *
+ * 排法 re-generates a page and page.tsx only generates while `layout_json` is
+ * empty, so the same sentence has two right answers depending on which state
+ * the page is in -- design.layout before the first save, move_component after
+ * it. A ruler that only ever asks in one state cannot see the difference, and
+ * that difference is where the assistant was caught claiming a change it had
+ * not made.
+ */
+function promptFor(ask, saved = false) {
   const layout = PAGE();
   const designDoc = buildDesignDoc("ledger", null);
   return `Blocks currently on this page:
@@ -556,6 +592,9 @@ ${describeLayout(layout)}
 Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
 Text fields you may set: ${EDITABLE_TEXT_FIELDS.join(", ")}
 Pages in this system: dashboard ("总览"), quotations ("报价单")
+This page: ${saved
+  ? "ALREADY SAVED by the customer -- 排法 (layout) CANNOT take effect on it. Reorder with move_component."
+  : "never saved -- 排法 (layout) will re-generate it, so it is available"}
 
 ${designDoc ? `${designDoc}\n` : ""}
 The business owner asked:
@@ -584,8 +623,8 @@ function dataUrl(path) {
   return `data:image/jpeg;base64,${readFileSync(path).toString("base64")}`;
 }
 
-async function once(ask, image) {
-  const text = promptFor(ask);
+async function once(ask, image, saved = false) {
+  const text = promptFor(ask, saved);
   const completion = await openai.chat.completions.create({
     model: "gpt-5.6-luna",
     reasoning_effort: "high",
@@ -651,7 +690,7 @@ for (const c of chosen) {
   const runs = [];
   for (let i = 0; i < N; i++) {
     try {
-      runs.push(await once(c.ask, c.image));
+      runs.push(await once(c.ask, c.image, c.saved === true));
       if (process.env.EVAL_VERBOSE) console.log("   ", c.name, JSON.stringify({ ops: runs[runs.length-1].ops, design: runs[runs.length-1].design, exp: runs[runs.length-1].explanation }));
     } catch (e) {
       runs.push({ ops: [], applied: 0, skipped: [{ op: "-", reason: String(e.message).replace(/\s+/g, " ").slice(0, 300) }], explanation: "" });

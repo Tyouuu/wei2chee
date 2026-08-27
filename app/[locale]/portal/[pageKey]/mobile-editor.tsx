@@ -50,11 +50,15 @@ export function MobileEditor({
   palette,
   locale,
   navPages,
+  isGeneratedDraft,
 }: {
   style: StyleName;
   palette: string | null;
   locale: string;
   navPages: { key: string; label: string }[];
+  /** Passed straight through to the assistant: 排法 only applies to a page that
+   *  has never been saved, and the route has to be told which this is. */
+  isGeneratedDraft: boolean;
 }) {
   const t = useTranslations("portal.editor");
   // The live canvas, not a copy threaded down: this component renders inside
@@ -135,6 +139,7 @@ export function MobileEditor({
           pages={navPages}
           locale={locale}
           activeStyle={style}
+          isGeneratedDraft={isGeneratedDraft}
           compact
         />
       </div>

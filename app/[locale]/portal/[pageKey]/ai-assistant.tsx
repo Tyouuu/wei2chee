@@ -77,6 +77,7 @@ export function AiAssistant({
   pages,
   locale,
   activeStyle,
+  isGeneratedDraft,
   compact = false,
 }: {
   /** The customer's own pages. Sent with each request so「把报价单删掉」can name
@@ -87,6 +88,15 @@ export function AiAssistant({
    *  the customer asked only for a palette change -- that RPC takes both, and
    *  passing the current one is how 「换个颜色」 leaves the register alone. */
   activeStyle: string;
+  /**
+   * Has this page never been saved?
+   *
+   * 排法 re-generates the page, and page.tsx only generates while `layout_json`
+   * is empty -- so after the first save 「表格放前面」 has to be answered by
+   * moving the real block instead. The route needs to know before it writes
+   * the prompt, or the assistant says it re-arranged a page it cannot touch.
+   */
+  isGeneratedDraft: boolean;
   /** The phone layout, where this panel is about half a small screen. Not a
    *  density preference — see the empty state below for what it changes and
    *  why the vertical version does not fit. */
@@ -185,7 +195,7 @@ export function AiAssistant({
       const res = await fetch("/api/portal/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ layout: before, instruction: trimmed, pages, imageUrl: image }),
+        body: JSON.stringify({ layout: before, instruction: trimmed, pages, imageUrl: image, generated: isGeneratedDraft }),
       });
 
       if (!res.ok) {

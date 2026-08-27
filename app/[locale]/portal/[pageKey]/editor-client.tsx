@@ -1117,6 +1117,7 @@ export function PortalEditor({
                       palette={activePalette}
                       locale={locale}
                       navPages={navPages}
+                      isGeneratedDraft={isGeneratedDraft}
                     />
                   ) : (
                     // Wrapped rather than returned bare: Puck's RenderFunc is
@@ -1289,6 +1290,7 @@ export function PortalEditor({
                         pages={navPages}
                         locale={locale}
                         activeStyle={activeStyle}
+                        isGeneratedDraft={isGeneratedDraft}
                         // Not a phone here -- but `compact` is the same request
                         // either way: drop the duplicate header and lay the three
                         // examples out as a swipeable row rather than a stack.

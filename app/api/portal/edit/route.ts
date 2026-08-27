@@ -159,6 +159,13 @@ Whole pages:
 - \`layout\` is the arrangement of the dashboard, without changing the style:
   table (表格先行) · console (四格＋图表) · hero (一个大数字) · today (今天要做的) ·
   board (看板).
+- \`layout\` RE-GENERATES the page, so it only exists until the customer's first
+  save. The line 「This page:」 above says which state this one is in. ON A SAVED
+  PAGE, answer 「表格放前面」 with move_component instead — it moves the real block
+  and keeps every word, column and row they have edited, where a regenerate
+  would throw all of it away. Saying 「已改为表格先行」 on a page that cannot
+  regenerate is the worst answer available: they read that it happened and it
+  did not.
 - ALL THREE NULL IS THE NORMAL ANSWER, and this is the important half. Fill
   \`design\` ONLY when the owner said something about how the system LOOKS as a
   whole — darker, brighter, too colourful, too plain, denser, roomier, this
@@ -219,7 +226,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { layout, instruction, pages, imageUrl } = (body ?? {}) as {
+  const { layout, instruction, pages, imageUrl, generated } = (body ?? {}) as {
     layout?: PuckLayout;
     instruction?: string;
     /**
@@ -245,6 +252,23 @@ export async function POST(req: NextRequest) {
      *  ever used to constrain a suggestion, never to authorise anything -- the
      *  RPC the button calls resolves the project from auth.uid() itself. */
     pages?: { key: string; label: string }[];
+    /**
+     * Has this page ever been saved?
+     *
+     * It decides whether 排法 is even possible: page.tsx generates a page from
+     * `projects.layout` ONLY while `layout_json` is still empty, so on a saved
+     * page that column is never read again and an arrangement change is a
+     * write that shows up nowhere. The model is told, so it can answer with
+     * move_component instead of a sentence that is not true.
+     *
+     * Client-supplied and NOT trusted for anything: like `pages` above it only
+     * constrains what the assistant may answer. It authorises nothing -- every
+     * write still goes through an RPC that resolves the project from
+     * auth.uid() -- so the worst a forged `true` can do is put the caller back
+     * where this whole bug started, with a layout written and a page that does
+     * not move.
+     */
+    generated?: boolean;
   };
 
   if (!layout || !Array.isArray(layout.content) || typeof instruction !== "string") {
@@ -280,6 +304,9 @@ ${describeLayout(layout)}
 Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
 Text fields you may set: ${EDITABLE_TEXT_FIELDS.join(", ")}
 Pages in this system: ${pageList || "(unknown)"}
+This page: ${generated
+  ? "never saved -- 排法 (layout) will re-generate it, so it is available"
+  : "ALREADY SAVED by the customer -- 排法 (layout) CANNOT take effect on it. Reorder with move_component."}
 
 ${designDoc ? `
 ${designDoc}
@@ -357,7 +384,7 @@ The business owner asked:
     applied: result.applied,
     skipped: result.skipped,
     suggestion: resolveSuggestion(parsed.suggestion, Array.isArray(pages) ? pages : []),
-    design: validDesign((parsed as { design?: unknown }).design),
+    design: validDesign((parsed as { design?: unknown }).design, generated !== false, result.skipped),
   });
 }
 
@@ -373,7 +400,16 @@ The business owner asked:
  * Returns only what is both present AND real. `null` for a field the customer
  * did not ask about is the normal case and not an error.
  */
-function validDesign(raw: unknown): { style?: string; palette?: string | null; layout?: string } | null {
+function validDesign(
+  raw: unknown,
+  /** False once the customer has saved: see the `generated` field on the body. */
+  canRegenerate: boolean,
+  /** The same list the applier's rejections go into. An arrangement we refuse
+   *  is something the owner asked for that will not happen, which is exactly
+   *  what that list is, and dropping it silently is how this bug read to them
+   *  in the first place. */
+  skipped: { op: string; reason: string }[],
+): { style?: string; palette?: string | null; layout?: string } | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as Record<string, unknown>;
   const out: { style?: string; palette?: string | null; layout?: string } = {};
@@ -388,7 +424,20 @@ function validDesign(raw: unknown): { style?: string; palette?: string | null; l
   else if (palette && PALETTE_ROWS.some((p) => p.key === palette)) out.palette = palette;
 
   const layout = typeof d.layout === "string" ? d.layout.trim() : "";
-  if (layout && Object.keys(LAYOUT_SETS).includes(layout)) out.layout = layout;
+  if (layout && Object.keys(LAYOUT_SETS).includes(layout)) {
+    /*
+      A SAVED PAGE CANNOT BE RE-ARRANGED, AND THE MODEL IS TOLD SO.
+
+      page.tsx builds from `projects.layout` only while `layout_json` is still
+      empty. After the first save the column is never read again, so writing it
+      changes a row and nothing else -- which is precisely how 「已将总览改为表格
+      先行」 came to be said over a page that had not moved. The prompt already
+      steers a saved page to move_component; this is the backstop for the turn
+      where it answers 排法 anyway.
+    */
+    if (canRegenerate) out.layout = layout;
+    else skipped.push({ op: "design.layout", reason: "这一页已经保存过，排法只能用搬动区块来换" });
+  }
 
   return Object.keys(out).length ? out : null;
 }
