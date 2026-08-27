@@ -65,8 +65,28 @@ export function AiDock({ children }: { children: ReactNode }) {
 
   // A different block is a different question -- drop the override so the new
   // selection gets the same treatment the last one did before it was toggled.
+  //
+  // EXCEPT AN EXPLICIT OPEN, WHICH IS A CONVERSATION AND NOT A PREFERENCE.
+  //
+  // Measured in a real browser on 2026-08-27 (`npm run eval:browser`, which
+  // exists because no other ruler here opens one): ask the assistant anything
+  // at all and this dock CLOSES ITSELF while the request is still in flight.
+  // Two ways in, both ordinary:
+  //   - open it from the slim line with nothing selected, send, and the edit
+  //     lands on a page whose assistant is no longer on screen
+  //   - select a block, send, and pressing 修改 -- a control OUTSIDE the canvas
+  //     -- deselects it, so `Boolean(blockId)` goes false mid-request
+  // Either way the reply is written into a panel the customer cannot see, and
+  // 「撤销这次修改」 lives under that reply. The assistant did the work and then
+  // hid both the explanation and the way back.
+  //
+  // The reset still applies to an explicit COLLAPSE (false), which is what the
+  // note above is actually protecting: 「让我看看下面那张表」 must not become a
+  // setting nobody remembers turning on.
   useEffect(() => {
-    setManual(null);
+    if (manual !== true) setManual(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a change of block
+    // is the trigger; `manual` is read, deliberately not subscribed to.
   }, [blockId]);
 
   // Preview means nothing of Formae's on the screen -- a floating assistant

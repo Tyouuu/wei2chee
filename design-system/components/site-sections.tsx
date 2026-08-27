@@ -176,6 +176,7 @@ export function SiteCta({
   primaryHref,
   secondaryLabel,
   secondaryHref,
+  shape = "band",
 }: {
   heading: string
   note?: string
@@ -183,7 +184,127 @@ export function SiteCta({
   primaryHref?: string
   secondaryLabel?: string
   secondaryHref?: string
+  /**
+   * `band` the ask centred on its own colour · `panel` the colour taking one
+   * side with the register's own ground beside it · `rule` no fill at all, a
+   * hairline with the words left and the buttons right.
+   *
+   * ── WHY THIS AXIS EXISTS ────────────────────────────────────────────────
+   *
+   * It did not, and that was the defect. All fourteen registers rendered the
+   * identical centred band, and the only thing that changed between them was
+   * the colour of it -- 重点 7c, 「换个配色它还是不是另一个设计？」, answered
+   * 「no」 by a section this library shipped fourteen times over.
+   *
+   * `panel` is Wix's Home Remodeling Company template, shot 2026-08-27 from
+   * its own address rather than the store's preview (.screenshots/stores/
+   * tpl-wh-1125.png): a filled block holding the heading and the button, with
+   * the other half given to something else entirely. They put a photograph
+   * there. We put the register's own ground, because we have one -- the dot
+   * grid, hatch, diamond and graph textures taken from uiverse-io/galaxy --
+   * and because the mid-page ask has no photograph of its own to give. Two
+   * sources meeting in one section, neither overwriting the other.
+   *
+   * `rule` exists because a block of solid colour across the page is the one
+   * thing 瑞士 and 工作室 never do anywhere else. Wearing it here made the ask
+   * look like it had been pasted in from a different website.
+   */
+  shape?: "band" | "panel" | "rule"
 }) {
+  const buttons = (onColour: boolean) =>
+    primaryLabel || secondaryLabel ? (
+      <div
+        className={
+          shape === "band"
+            ? "mt-8 flex flex-wrap justify-center [gap:var(--gap-inline)]"
+            : "mt-7 flex flex-wrap [gap:var(--gap-inline)]"
+        }
+      >
+        {primaryLabel ? (
+          <a
+            href={primaryHref || "#"}
+            className={
+              onColour
+                ? "inline-flex min-h-12 items-center [background-color:var(--color-on-primary)] [border-radius:var(--radius-control)] [color:var(--color-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
+                : "inline-flex min-h-12 items-center [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
+            }
+          >
+            {primaryLabel}
+          </a>
+        ) : null}
+        {secondaryLabel ? (
+          <a
+            href={secondaryHref || "#"}
+            className={
+              onColour
+                ? "inline-flex min-h-12 items-center border [border-color:color-mix(in_oklab,var(--color-on-primary)_45%,transparent)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-medium)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
+                : "inline-flex min-h-12 items-center border [border-color:var(--border-strong)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-medium)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
+            }
+          >
+            {secondaryLabel}
+          </a>
+        ) : null}
+      </div>
+    ) : null
+
+  if (shape === "rule") {
+    return (
+      <section
+        data-cta-band=""
+        data-wide=""
+        className="@container [border-top:var(--hairline)_solid_var(--border-strong)] [padding-block-start:calc(var(--pad-card-lg)*1.5)]"
+      >
+        <div className="flex flex-col justify-between [gap:var(--gap-stack)] @3xl:flex-row @3xl:items-end">
+          <div>
+            <h2 className="ds-display max-w-[20ch] text-balance [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+              {heading}
+            </h2>
+            {note ? (
+              <p className="mt-4 max-w-[46ch] [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+                {note}
+              </p>
+            ) : null}
+          </div>
+          <div className="shrink-0">{buttons(false)}</div>
+        </div>
+      </section>
+    )
+  }
+
+  if (shape === "panel") {
+    return (
+      <section data-cta-band="" data-wide="" className="@container">
+        <div className="grid overflow-hidden [border-radius:var(--radius-lg)] @3xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+          <div className="[background:var(--color-primary)] [padding-block:calc(var(--pad-card-lg)*1.8)] [padding-inline:calc(var(--pad-card-lg)*1.2)]">
+            <h2 className="ds-display max-w-[16ch] text-balance [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]">
+              {heading}
+            </h2>
+            {note ? (
+              <p className="mt-4 max-w-[40ch] [color:color-mix(in_oklab,var(--color-on-primary)_78%,transparent)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+                {note}
+              </p>
+            ) : null}
+            {buttons(true)}
+          </div>
+          {/* The other half. It is the register's own canvas rather than more
+              of the colour, so the section reads as two materials meeting --
+              which is the whole shape. It collapses away below @3xl, where a
+              second empty column would just be a gap. */}
+          <div
+            aria-hidden
+            /* A TINT OF THE GROUND, NOT THE GROUND. Rendered on 招牌 -- whose
+               canvas is nearly the page's own colour -- the plain canvas made
+               this half invisible, so the section read as a colour block with
+               a border drawn around some empty air. 8% of the primary keeps
+               every register's own hue and guarantees the half is a third
+               material: not the block, not the page. */
+            className="hidden [background-color:color-mix(in_oklab,var(--color-primary)_8%,var(--color-canvas))] [border:var(--hairline)_solid_var(--border-subtle)] [border-inline-start:0] @3xl:block"
+          />
+        </div>
+      </section>
+    )
+  }
+
   return (
     /* A BAND, not a card. Every reference sets the mid-page ask on its own
        ground so it reads as a break in the page rather than as one more
@@ -203,26 +324,7 @@ export function SiteCta({
           {note}
         </p>
       ) : null}
-      {primaryLabel || secondaryLabel ? (
-        <div className="mt-8 flex flex-wrap justify-center [gap:var(--gap-inline)]">
-          {primaryLabel ? (
-            <a
-              href={primaryHref || "#"}
-              className="inline-flex min-h-12 items-center [background-color:var(--color-on-primary)] [border-radius:var(--radius-control)] [color:var(--color-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
-            >
-              {primaryLabel}
-            </a>
-          ) : null}
-          {secondaryLabel ? (
-            <a
-              href={secondaryHref || "#"}
-              className="inline-flex min-h-12 items-center border [border-color:color-mix(in_oklab,var(--color-on-primary)_45%,transparent)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-medium)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
-            >
-              {secondaryLabel}
-            </a>
-          ) : null}
-        </div>
-      ) : null}
+      {buttons(true)}
     </section>
   )
 }

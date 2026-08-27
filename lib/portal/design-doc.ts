@@ -133,6 +133,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给美容院、沙龙这种前台就是店面的生意，开系统是在客人面前。52px 的行、20px 的圆角、靠阴影分层。牺牲的是密度 —— 一屏少放三分之一的行，换一个客人看到不会皱眉的画面。",
     facts: "圆角 20px · 无边框、靠阴影分层 · 行高 52px · 正文 15px · 标签不大写",
     prefer: {
+      SiteCta: "panel",
       SiteTeam: "cards",
       SiteGallery: "bento",
       SiteStory: "side",
@@ -172,6 +173,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给还讲不清楚自己是什么行业的老板，开系统是第一次。中性、12px 圆角、一条细边、什么都不抢。它不是最好看的一套，它是最不会出错的一套 —— 牺牲个性换零风险，所以「其他」这一栏给它。",
     facts: "圆角 12px · 边框 1px · 淡阴影 · 行高 42px · 正文 14px · 标签不大写",
     prefer: {
+      SiteCta: "rule",
       SiteTeam: "cards",
       SiteGallery: "grid",
       SiteStory: "side",
@@ -291,6 +293,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给会计、顾问这种把资料印出来给人看的公司。黑白为主，只有一个红，用在必须被找到的地方；没有卡片，靠线跟留白分区。牺牲的是所有装饰 —— 它在萤幕上很素，但它是全库印在纸上最好看的一套。",
     facts: "全直角 · 边框 1px · 无阴影 · 标签全大写字距 0.12em · 强调色瑞士红",
     prefer: {
+      SiteCta: "rule",
       SiteTeam: "plain",
       SiteGallery: "grid",
       SiteStory: "stack",
@@ -408,6 +411,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给茶餐室、娘惹菜这种开在店屋里的餐饮。地上铺娘惹砖，卡片一律平的奶白 —— 图案在地上，不在字底下。牺牲的是中性：它一眼就是马来西亚，所以它只对马来西亚的生意有用。",
     facts: "地上 48px 花砖图 · 底色水泥 #f0e9dd · 卡片平奶白 #fffdf8 · 圆角 6px · 釉绿 #14837a · 角点砖红",
     prefer: {
+      SiteCta: "panel",
       SiteTeam: "row",
       SiteGallery: "strip",
       SiteStory: "side-reverse",
@@ -447,6 +451,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给卖零件、批货的人 —— 型号、条码、数量。整页等宽字，数字自己就对齐了，不用谁去排。牺牲的是读长句：等宽字读一段说明比读一栏货号累得多。",
     facts: "内文等宽 13px 行高 32px · 标题也是等宽 · 圆角 2px · 边框 1px · 强调色 #0f6fa8 · 冷灰底 #f4f6f7",
     prefer: {
+      SiteCta: "rule",
       SiteTeam: "plain",
       SiteGallery: "strip",
       SiteStory: "stack",
@@ -525,6 +530,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给店屋零售 —— 有一块实体招牌、客人是看到招牌走进来的。店名用又窄又粗的字排到 46px，底下的内文是普通 15px。全库第一个标题跟内文不同字体的。牺牲的是低调：这一套永远在喊自己的名字。",
     facts: "标题字 Archivo Narrow 46px 字距 -0.03em · 内文 15px · 招牌红 #c8102e · 暖白底 #f7f4ef · 圆角 0 · 无阴影 · 标签全大写",
     prefer: {
+      SiteCta: "panel",
       SiteTeam: "row",
       SiteGallery: "strip",
       SiteStory: "side",
@@ -615,6 +621,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给顾问、代理这种「系统主要是拿来看一眼」的服务公司 —— 开进来确认一个状态，不是进来打单。底跟卡同一个白，靠 1px 细环分开；主色是黑，颜色只出现在涨跌药丸上；行高 52px。全库唯一一套什么都不并排的。牺牲的是密度 —— 四块堆下来比台账多滚一屏。",
     facts: "圆角 10-14px · 无边框、靠 1px 细环分层 · 行高 52px · 正文 14px · 标签不大写 · 主色是黑",
     prefer: {
+      SiteCta: "rule",
       SiteTeam: "plain",
       SiteGallery: "grid",
       SiteStory: "side-reverse",

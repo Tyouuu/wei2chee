@@ -112,6 +112,16 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "bleed", label: "满图压字", props: { layout: "bleed" } },
   ],
 
+  /* 中段的「请他联络」. Three shapes because it had none: fourteen registers
+     rendered the identical centred colour band and only the colour changed,
+     which is 重点 7c answered 「no」 by our own library. 半块颜色 is Wix's Home
+     Remodeling template, shot 2026-08-27. */
+  SiteCta: [
+    { id: "band", label: "整条色带", props: { shape: "band" } },
+    { id: "panel", label: "半块颜色", props: { shape: "panel" } },
+    { id: "rule", label: "一条线", props: { shape: "rule" } },
+  ],
+
   /* 作品墙. A row of three, one rectangle cut in three, and a scroller. The
      third is not a styling of the first two -- it changes how many photographs
      the section can hold without running down the page, which is the whole

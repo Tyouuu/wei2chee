@@ -1186,8 +1186,22 @@ Webflow Templates · Squarespace · Wix · Tailwind UI · Cruip · Shipixen …
 
 照重点 7h：**每一家至少留下一点，写下来用在哪一套风格，落点要分散到十四格。**
 
-- [ ] 列出还活着的模板商店，一家一家实拍
-- [ ] 每一家挑一个可融合的点 → 指定落在哪一套风格
+- [x] **实拍完了**（2026-08-27，`npm run shoot:stores`）：Wix · Webflow · Framer ·
+      Squarespace · Tailwind Plus · Cruip · ThemeFisher 七家拍到，**ThemeForest 被
+      Cloudflare 挡住**
+- [x] **拿了一样：中段「请他联络」的形状。** Wix 的
+      `Home Remodeling Company (Professional)` 把它做成**一块实色面板配另一半材质并排**。
+      拿之前我们 `SiteCta` **十四套是同一块，只有颜色不同** —— [重点 7c](./founder-points.md)
+      被我们自己的库回答成「不是另一个设计」。现在三种形状：
+      整条色带（原本那个）· 半块颜色（招牌 / 瓷 / 炉）· 一条线（瑞士 / 工作室 / 码 / 图纸）
+- [x] **半块颜色的另一半用我们自己的东西** —— Wix 放照片，我们放风格自己的地
+      （uiverse 那四种纹理所在的那一层）。**两个来源在同一段里相遇，谁也没推翻谁**，
+      这正是 7h 要的形状
+- [ ] **还没拿的两样，下一轮**：
+      · **Wix 用「行业 + 感觉」命名模板**（`Painting Company (Earthy Tones)`）——
+        我们的风格叫台账 / 瓷 / 工作室，装修老板看不懂。这一件落在**风格画廊的命名**上，不是组件
+      · **Tailwind Plus 的版段库按「区段角色」分组带数量**（Hero 11 · Feature 12 ·
+        CTA 11 · Pricing 12）—— 对照我们 216 段的分法
 - [ ] ⚠️ 分边（第 25 条的教训）：**国外模板给「有哪些区段、怎么排」，
       马来西亚 19 家给「多大、多宽、多密」**
 

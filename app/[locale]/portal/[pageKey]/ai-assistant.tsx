@@ -10,6 +10,8 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { planDesignChange } from "@/lib/portal/design-change";
 import { findSelector, type PuckLayout } from "@/lib/portal/layout-ops";
+import { relayout } from "@/lib/portal/relayout";
+import { useEditorUi } from "@/design-system/editor/editor-ui";
 
 /*
   WHO ENDED THE WAIT.
@@ -122,6 +124,11 @@ export function AiAssistant({
    * editor-client does not re-render is what makes typing possible at all.
    * See assistant-state.tsx for the measurement. */
   const { turns, setTurns, instruction, setInstruction, busy, setBusy } = useAssistant();
+  /* The dock's OWN open state, in editor-ui. Note that useAssistant()
+     also carries a dockOpen/setDockOpen pair and NOTHING READS IT --
+     two providers each claiming in a comment to be where this lives.
+     The one AiDock consults is this one. */
+  const { setDockOpen } = useEditorUi();
 
   /*
     A PICTURE THE OWNER POINTED AT.
@@ -203,6 +210,17 @@ export function AiAssistant({
     // would silently ride along on the next, unrelated request.
     setImage(null);
     setBusy(true);
+    /*
+      SENDING IS THE STRONGEST 「keep this open」 THERE IS.
+
+      The dock opens by itself when a block is selected, and 修改 sits OUTSIDE
+      the canvas -- so pressing it deselects, and the dock closed on its own
+      while the request was still running. The reply, and the 撤销 button under
+      it, arrived in a panel the customer could no longer see. Saying so
+      explicitly here also survives the selection changing again when the new
+      layout lands.
+    */
+    setDockOpen(true);
 
     const settle = (patch: Partial<Turn>) =>
       setTurns((prev) => prev.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
@@ -336,6 +354,36 @@ export function AiAssistant({
         // Refresh if ANY of them landed: a failed palette must not hide a
         // register that did change, or the page shows a state matching neither.
         if (landed) router.refresh();
+
+        /*
+          THE COLUMN MOVED AND THE CANVAS DID NOT.
+
+          Caught by `npm run eval:browser` on 2026-08-27 -- the tenth 「说了没做」
+          in this repo and the first one found by a ruler instead of by the
+          founder. 「我要一进来就先看到那个表格」 answered 「好，打开页面会先看到
+          表格。」, `set_project_layout` wrote `table`, and the page in front of
+          him did not move a pixel. Reload it and the new arrangement is there
+          -- which is why every other check passed, and is no comfort at all to
+          somebody staring at an unchanged screen with no reason to reload.
+
+          `router.refresh()` cannot fix this. It re-renders the SERVER tree,
+          and the arrangement lives in Puck's own client state, which the
+          refresh does not replace.
+
+          So the real blocks are moved here, with the pure function the click
+          buttons already use. Not a regenerate: that would throw away every
+          word, column and row the customer has edited -- the same wall the
+          other session hit from the click side on the same day, and the same
+          answer. It returns the identical array when nothing moved, so a page
+          already in that arrangement costs one comparison and no re-render.
+        */
+        if (result.design?.layout) {
+          const base = result.layout as unknown as PuckLayout;
+          const moved = relayout(base, result.design.style ?? activeStyle, result.design.layout);
+          if (moved !== base) {
+            dispatch({ type: "setData", data: moved as unknown as Data, recordHistory: true });
+          }
+        }
       }
 
       settle({

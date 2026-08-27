@@ -305,7 +305,8 @@ type Components = {
     primaryHref?: string;
     secondaryLabel?: string;
     secondaryHref?: string;
-  };
+      shape?: "band" | "panel" | "rule";
+};
   SiteBar: {
     brand: string;
     links?: { label: string; href: string }[];
@@ -1986,6 +1987,15 @@ export const puckConfig: Config<Components> = {
     SiteCta: {
       label: "中段再问一次",
       fields: {
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "整条色带", value: "band" },
+            { label: "半块颜色", value: "panel" },
+            { label: "一条线", value: "rule" },
+          ],
+        },
         heading: { label: "大标题", type: "text" },
         note: { label: "下面一句", type: "text" },
         primaryLabel: { label: "主要按钮", type: "text" },
@@ -1994,7 +2004,7 @@ export const puckConfig: Config<Components> = {
         secondaryHref: { label: "第二颗按钮去哪", type: "text" },
       },
       defaultProps: { heading: "要不要先问个价？" },
-      render: ({ heading, note, primaryLabel, primaryHref, secondaryLabel, secondaryHref }) => (
+      render: ({ heading, note, primaryLabel, primaryHref, secondaryLabel, secondaryHref, shape }) => (
         <SiteCta
           heading={heading}
           note={note}
@@ -2002,6 +2012,7 @@ export const puckConfig: Config<Components> = {
           primaryHref={primaryHref}
           secondaryLabel={secondaryLabel}
           secondaryHref={secondaryHref}
+          shape={shape}
         />
       ),
     },

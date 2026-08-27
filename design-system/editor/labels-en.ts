@@ -455,6 +455,9 @@ export const LABELS_EN: Record<string, string> = {
      with a blind spot reports zero for the part it never enters. */
   字上图下: "Text above, image below",
   一句话占一屏: "One sentence, one screen",
+  整条色带: "Full colour band",
+  半块颜色: "Half colour, half ground",
+  一条线: "A rule and the words",
   那一句话: "The sentence",
   "署名（可以不填）": "Signature (optional)",
   居中: "Centred",

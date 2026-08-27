@@ -258,6 +258,26 @@
       "takenAt": "-",
       "takenOn": "2026-08-27",
       "note": "它不加字，是把第一屏那句话搬出来自己占一屏 —— 所以十四套里只有三套有，其余十一套那句话留在第一屏。⚠️ 分类页的卡片有一半是 Webflow / Mobbin / Framer 的广告横幅，按图片尺寸抓会把广告当作品。"
+    },
+    {
+      "repo": "-",
+      "name": "卖模板的商店（Wix · Webflow · Framer · Squarespace · Tailwind Plus · Cruip · ThemeFisher）",
+      "licence": "n/a",
+      "kind": "market",
+      "took": "「请他联络」那一段的形状 —— Wix 的 Home Remodeling Company (Professional) 模板把中段的 CTA 做成一块实色面板配另一半材质并排，不是一条居中的色带。另外看到的：Wix 用「行业 + 感觉」命名模板（Painting Company (Earthy Tones) / Home Remodeling Company (Professional)），Tailwind Plus 的版段库按「区段角色」分组并带数量（Hero 11 · Feature 12 · CTA 11 · Pricing 12）",
+      "where": "design-system/components/site-sections.tsx (SiteCta shape 轴), design-system/editor/variants.ts",
+      "appliedTo": [
+        "招牌（半块颜色）",
+        "瓷（半块颜色）",
+        "炉（半块颜色）",
+        "瑞士（一条线）",
+        "工作室（一条线）",
+        "码（一条线）",
+        "图纸（一条线）"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "⚠️ 拿之前 SiteCta 十四套是同一块，只有颜色不同 —— 重点 7c 被我们自己的库回答成「不是另一个设计」。⚠️ ThemeForest 被 Cloudflare 挡住（我的尺第四次说谎：那句话只在 <title> 里，innerText 查不到，所以现在两个地方都查）。⚠️ Wix 的预览页有一层关不掉的弹层，模板本体在 iframe 里，网址是 wix.com/demone2/<name>。"
     }
   ]
 }
