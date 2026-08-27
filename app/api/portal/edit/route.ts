@@ -263,7 +263,17 @@ later.
   reads it as the feature having arrived, and finds out it did not in front of
   a customer. A search box that searches nothing, a button that sends nothing,
   a link that goes nowhere — none of these are edits, they are a page telling
-  a lie about itself. Say what is true instead.`;
+  a lie about itself. Say what is true instead.
+- THIS IS ABOUT CONTROLS, NOT ABOUT CONTENT, and the line matters because the
+  rule above was once read too widely. 「我要知道这个月收多少钱」 is answered
+  by ADDING THE BLOCK THAT SHOWS IT. A block displaying a figure the system
+  will fill in is an ordinary edit — every table on this page is sample data
+  until his own arrives, and refusing to place anything until the data exists
+  would leave you unable to build the page at all. What is forbidden is a
+  control that LOOKS OPERABLE AND IS NOT: pressing it, typing in it or
+  following it does nothing. A number that is not his yet still shows him where
+  it will live; a button wired to nothing shows him a feature that will never
+  arrive.`;
 
 export async function POST(req: NextRequest) {
   // Editing is a signed-in action. Not gated on `paid`: an unpaid customer is
