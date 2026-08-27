@@ -33,7 +33,12 @@ config();
 /* Which template each register copies whole. See docs/founder-tasks.md 33. */
 const REF = {
   hearth: "https://www.wix.com/demone2/a-reynolds",
-  ledger: "https://www.wix.com/demone2/wright-and-taylor",
+  /* 改了 2026-08-27: Wright & Taylor is a paint COLOUR CONSULTANT -- pretty,
+     but a boutique adviser. Newel is an actual residential remodeling
+     contractor, which is the trade 台账 is for. Found by opening Wix's
+     `industrial` category, which I had never opened and which is entirely our
+     market: remodeling, plumbing, auto service, construction. */
+  ledger: "https://www.wix.com/demone2/wh-newel",
   swiss: "https://www.wix.com/demone2/wh-leah",
   blueprint: "https://www.wix.com/demone2/wh-law-firm-2",
   signboard: "https://www.wix.com/demone2/brasserie",
@@ -46,6 +51,10 @@ const REF = {
   mosaic: "https://www.wix.com/demone2/wh-beauty-shop",
   nocturne: "https://www.wix.com/demone2/kaito-ramen-den",
   shelf: "https://www.wix.com/demone2/wagora",
+  /* 服务 had no register built for it: its three were all 「facts」 registers
+     with not one photograph of a workman, while 14 of the 19 Malaysian trade
+     sites measured in 任务 26 lead with one. */
+  crew: "https://plumbzo.framer.website/",
 };
 
 const register = process.argv[2] || "hearth";
