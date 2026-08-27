@@ -450,6 +450,11 @@ export const LABELS_EN: Record<string, string> = {
   下拉选择: "Dropdown",
   左右分: "Left / right",
   左字右图: "Text left, image right",
+  /* Both of these were missing, and check:en could not see it: it walks the
+     portal's PAGES, and a 款式 label only exists once 换款式 is opened. A ruler
+     with a blind spot reports zero for the part it never enters. */
+  字上图下: "Text above, image below",
+  满图压字: "Photo behind the words",
   左对齐: "Left aligned",
   上下留白: "Space above and below",
   极简: "Minimal",

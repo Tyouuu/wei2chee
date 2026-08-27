@@ -372,6 +372,21 @@
 .ds-ground[data-measure="wide"].ds-site {
   --site-measure: 78rem;
 }
+/* THE CONTAINER THE BLOCKS HAVE BEEN QUERYING ALL ALONG.
+
+   site-hero.tsx carries `@3xl:[min-block-size:94svh]` on its own <section> with
+   a long comment about the first screen owning the screen. It never once
+   applied. Tailwind's `@container` on an element makes it a container for its
+   CHILDREN, so an `@3xl:` written on that same element looks for an ANCESTOR
+   container -- and this file declared none. The inner grids worked (they are
+   children), the section's own height did not, and nothing failed: it simply
+   rendered at content height, which looks like a decision.
+
+   Tenth time in this repo that a capability was built and the wire was never
+   connected. One declaration turns four of them on. */
+.ds-site > * {
+  container-type: inline-size;
+}
 .ds-site > * > * {
   margin-inline: auto;
   width: 100%;
@@ -385,6 +400,13 @@
 
 .ds-site > * > * + * {
   margin-top: 4.5rem;
+}
+/* A PHOTOGRAPH THAT IS THE GROUND STARTS WHERE THE NAVIGATION ENDS. With the
+   stack's rhythm still applied there is a band of the page's own colour above
+   it, and the first screen reads as a picture placed on a page rather than as
+   the page. Every bleed hero on .screenshots/motion/sheet.jpg runs flush. */
+.ds-site > * > [data-photo-ground] {
+  margin-top: 0;
 }
 
 @media (min-width: 48rem) {

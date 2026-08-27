@@ -103,6 +103,13 @@ export const VARIANTS: Record<string, Variant[]> = {
        headline, one line, two small buttons, then the object full width under
        them, running off the bottom of the screen. See site-hero.tsx. */
     { id: "stage", label: "字上图下", props: { layout: "stage" } },
+    /* 满图 — the photograph IS the ground and the words sit on it. Listed last
+       for the same reason `split` is: without a `photo` it degrades to 左对齐
+       rather than painting a black rectangle. The shape every good-looking one
+       of the thirty-two sites on .screenshots/motion/sheet.jpg opens with, and
+       the one the 19-SME measurement (photo covers a median 59% of the first
+       screen) had been asking for since the day it was written down. */
+    { id: "bleed", label: "满图压字", props: { layout: "bleed" } },
   ],
 
   /* 作品墙. A row of three, one rectangle cut in three, and a scroller. The

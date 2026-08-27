@@ -296,6 +296,13 @@ export const SAMPLE_EN: Record<string, string> = {
   陈老板: "Mr Tan",
   筛选条件: "Filtered by",
   清空全部: "Clear all",
+
+  /* 官网顶栏 / 页脚 default brand, added with those two blocks on
+     2026-08-27 and missed by their English projection -- check:en found it
+     the same day, which is the ruler doing exactly its job. `chrome.ts`
+     already carries "My Company" for the generated path; this is the one a
+     block picks up when the owner drags it in by hand. */
+  "我的公司": "My Company",
 };
 
 /**

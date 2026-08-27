@@ -9,7 +9,11 @@
       "where": "components/ui/, components/blocks/, design-system/tokens/pop.css",
       "takenAt": "64e77583",
       "takenOn": "2026-08-23",
-      "note": "Same stack: Next.js 16, Tailwind v4, shadcn on Radix. Its 25 screens are still unmined."
+      "note": "Same stack: Next.js 16, Tailwind v4, shadcn on Radix. Its 25 screens are still unmined.",
+      "appliedTo": [
+        "粗野",
+        "工作室"
+      ]
     },
     {
       "repo": "jnsahaj/tweakcn",
@@ -19,7 +23,10 @@
       "where": "design-system/palettes/, lib/portal/palettes.generated.ts",
       "takenAt": "d21c8e3d",
       "takenOn": "2026-08-23",
-      "note": "Attribution is in every generated palette file."
+      "note": "Attribution is in every generated palette file.",
+      "appliedTo": [
+        "配色层（12 套）"
+      ]
     },
     {
       "repo": "satnaing/shadcn-admin",
@@ -29,7 +36,8 @@
       "where": "-",
       "takenAt": "e16c87f2",
       "takenOn": "2026-08-25",
-      "note": "React + Vite + shadcn + Tailwind v4, 14.0k stars. The nearest same-stack source if more blocks are wanted."
+      "note": "React + Vite + shadcn + Tailwind v4, 14.0k stars. The nearest same-stack source if more blocks are wanted.",
+      "appliedTo": []
     },
     {
       "repo": "tabler/tabler",
@@ -39,7 +47,10 @@
       "where": "design-system/tokens/console.css",
       "takenAt": "-",
       "takenOn": "2026-08-25",
-      "note": "Bootstrap. Nothing is copied; the register was measured off a screenshot."
+      "note": "Bootstrap. Nothing is copied; the register was measured off a screenshot.",
+      "appliedTo": [
+        "仪表盘"
+      ]
     },
     {
       "repo": "ColorlibHQ/AdminLTE",
@@ -49,7 +60,10 @@
       "where": "design-system/tokens/console.css",
       "takenAt": "-",
       "takenOn": "2026-08-25",
-      "note": "Bootstrap 5."
+      "note": "Bootstrap 5.",
+      "appliedTo": [
+        "仪表盘"
+      ]
     },
     {
       "repo": "akveo/ngx-admin",
@@ -59,7 +73,10 @@
       "where": "design-system/tokens/console.css",
       "takenAt": "-",
       "takenOn": "2026-08-25",
-      "note": "Angular."
+      "note": "Angular.",
+      "appliedTo": [
+        "仪表盘"
+      ]
     },
     {
       "repo": "ant-design/ant-design-pro",
@@ -69,7 +86,10 @@
       "where": "design-system/tokens/counter.css",
       "takenAt": "-",
       "takenOn": "2026-08-25",
-      "note": "React + antd, which conflicts with our Radix. Look only, permanently."
+      "note": "React + antd, which conflicts with our Radix. Look only, permanently.",
+      "appliedTo": [
+        "中台"
+      ]
     },
     {
       "repo": "PanJiaChen/vue-element-admin",
@@ -79,7 +99,10 @@
       "where": "design-system/tokens/counter.css",
       "takenAt": "-",
       "takenOn": "2026-08-25",
-      "note": "Vue 2, unmaintained. Kept in the list because it is what this market has already used."
+      "note": "Vue 2, unmaintained. Kept in the list because it is what this market has already used.",
+      "appliedTo": [
+        "中台"
+      ]
     },
     {
       "repo": "Daymychen/art-design-pro",
@@ -89,7 +112,8 @@
       "where": "-",
       "takenAt": "-",
       "takenOn": "2026-08-25",
-      "note": "The best-looking of the batch. Revisit if 柔和 ever needs work."
+      "note": "The best-looking of the batch. Revisit if 柔和 ever needs work.",
+      "appliedTo": []
     },
     {
       "repo": "pure-admin/vue-pure-admin",
@@ -99,7 +123,8 @@
       "where": "-",
       "takenAt": "-",
       "takenOn": "2026-08-25",
-      "note": "The double-column sidebar is a shape SystemShell does not have."
+      "note": "The double-column sidebar is a shape SystemShell does not have.",
+      "appliedTo": []
     },
     {
       "repo": "vbenjs/vue-vben-admin",
@@ -109,7 +134,8 @@
       "where": "-",
       "takenAt": "-",
       "takenOn": "2026-08-25",
-      "note": "Vue, but built on Shadcn UI — its CSS-variable themes speak our language even though its components cannot."
+      "note": "Vue, but built on Shadcn UI — its CSS-variable themes speak our language even though its components cannot.",
+      "appliedTo": []
     },
     {
       "repo": "tailark/blocks",
@@ -118,7 +144,12 @@
       "took": "The SHAPES of six marketing sections -- bento, features-carousel, content, logo-cloud, secondary-hero, how-it-works -- rebuilt against our own tokens. None of their code.",
       "where": "design-system/components/site-sections.tsx",
       "takenOn": "2026-08-27",
-      "note": "Their components hardcode Tailwind colours, so a paste would stop following the register and the palette. 4 themes x 12 block kinds -- the same theme-x-kind shape SITE_COMPOSITION uses."
+      "note": "Their components hardcode Tailwind colours, so a paste would stop following the register and the palette. 4 themes x 12 block kinds -- the same theme-x-kind shape SITE_COMPOSITION uses.",
+      "appliedTo": [
+        "炉（作品墙）",
+        "工作室（一段话配一张照片）",
+        "官网 SiteCreds"
+      ]
     },
     {
       "repo": "nobruf/shadcn-landing-page",
@@ -127,7 +158,10 @@
       "took": "Section rhythm and the testimonial's star-above-quote order.",
       "where": "design-system/components/site-sections.tsx",
       "takenOn": "2026-08-27",
-      "note": "Cross-checked against tailark. Its PROPORTIONS were wrong for this market and were replaced by the 19-site measurement -- see docs/market-references.json."
+      "note": "Cross-checked against tailark. Its PROPORTIONS were wrong for this market and were replaced by the 19-site measurement -- see docs/market-references.json.",
+      "appliedTo": [
+        "柔和（评价）"
+      ]
     },
     {
       "repo": "uiverse-io/galaxy",
@@ -136,7 +170,13 @@
       "took": "The GEOMETRY of four ground patterns -- dot grid, diagonal hatch, diamond lattice, ruled grid -- redrawn from each register's own ink.",
       "where": "app/globals.css",
       "takenOn": "2026-08-27",
-      "note": "3,571 components and NOT ONE page section: decorated controls, not layouts. Every snippet styles a generic class name (.container, .card), so two in one document collide. Last pushed 2024-09-02. Its colours are hardcoded and loud; only the geometry was taken."
+      "note": "3,571 components and NOT ONE page section: decorated controls, not layouts. Every snippet styles a generic class name (.container, .card), so two in one document collide. Last pushed 2024-09-02. Its colours are hardcoded and loud; only the geometry was taken.",
+      "appliedTo": [
+        "图纸（网格）",
+        "粗野（斜线）",
+        "瓷（菱形）",
+        "码（点阵）"
+      ]
     },
     {
       "repo": "imskyleen/animate-ui",
@@ -146,7 +186,8 @@
       "where": "-",
       "takenOn": "2026-08-27",
       "note": "GitHub's classifier returns NOASSERTION for MIT + Commons Clause, so that is what is recorded here -- a guard that cries wolf on every run is a guard nobody reads. The human reading is in licenceHuman. The Commons Clause forbids redistributing 「the components themselves -- whether alone, in a bundle, or as a ported version」. Formae IS a component library a customer picks from and that we hand over, so their code may sit on our own marketing site and may NOT sit in the library we ship. Recorded so nobody takes it later without reading the licence.",
-      "licenceHuman": "MIT + Commons Clause"
+      "licenceHuman": "MIT + Commons Clause",
+      "appliedTo": []
     },
     {
       "repo": "DavidHDev/react-bits",
@@ -156,7 +197,51 @@
       "where": "-",
       "takenOn": "2026-08-27",
       "note": "GitHub's classifier returns NOASSERTION for MIT + Commons Clause, so that is what is recorded here -- a guard that cries wolf on every run is a guard nobody reads. The human reading is in licenceHuman. 46k stars and pushed daily, which is exactly why it needs to be recorded as a NO rather than left unlisted for somebody to rediscover and take.",
-      "licenceHuman": "MIT + Commons Clause"
+      "licenceHuman": "MIT + Commons Clause",
+      "appliedTo": []
+    },
+    {
+      "repo": "-",
+      "name": "19 家在营业的马来西亚 SME 官网",
+      "licence": "n/a",
+      "kind": "market",
+      "took": "第一屏的比例：大标题 38px、正文行宽 574px、照片占第一屏中位数 59%、15/19 第一屏就给 WhatsApp、0/19 价钱在第一屏",
+      "where": "docs/market-references.json, .screenshots/market/, app/globals.css (--site-measure, --text-hero)",
+      "appliedTo": [
+        "全部 14 套（字级与行宽）",
+        "炉（满图压字）"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "他要求的：不要拿几年前的截图判整个市场。名单来自我们自己的 find:prospects，41 家页面上印着 © 2026。npm run shoot:market 可以重跑。"
+    },
+    {
+      "repo": "-",
+      "name": "32 个动效站（landing.love 八个分类）",
+      "licence": "n/a",
+      "kind": "market",
+      "took": "满图压字 —— 好看的那几个（Diamond Rose / Fame Estate / ON.energy / OceanX / Studio X）全部是照片当地、字压在上面。反面教材同样有用：13/32 第一张截图是 loading 画面或空舞台，那种动效我们不能要，因为我们自己的风格画廊就是靠截图卖的",
+      "where": ".screenshots/motion/, design-system/components/site-hero.tsx (layout=\"bleed\")",
+      "appliedTo": [
+        "炉（满图压字）",
+        "动效层：维持克制，不加 preloader"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "lenis 21/32、gsap 8/32，但数字是误导的：动得最多的那几个截图是空白的。判断用的是拼图 .screenshots/motion/sheet.jpg。"
+    },
+    {
+      "repo": "launch-ui / bigspring / magicui",
+      "licence": "MIT / MIT / MIT",
+      "kind": "look",
+      "took": "分段节奏与「别人替你背书」那一段的存在（logo 墙）",
+      "where": "design-system/components/site-sections.tsx (SiteCreds)",
+      "appliedTo": [
+        "官网 SiteCreds（三种款式分给 14 套）"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "bag-ui 跟 convertfast 的部署没了（Vercel 404），不是 kit，是我把 404 页当 kit 存了。logo 墙在这个市场换成 JKKP 执照 / 代理牌子 / Google 分数。"
     }
   ]
 }

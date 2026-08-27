@@ -72,7 +72,7 @@ export function SiteHero({
    *   plain   headline and one button. A name card.
    *   split   the words on the left and a FIGURE on the right. See below.
    */
-  layout?: "left" | "band" | "center" | "plain" | "split" | "stage"
+  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed"
   /**
    * WHAT GOES ON THE RIGHT, AND WHY THERE IS NOW A RIGHT AT ALL.
    *
@@ -245,6 +245,34 @@ export function SiteHero({
     work. Same shape, their photograph.
   */
   const stage = layout === "stage"
+  /*
+    照片当地，字压在上面。
+
+    ── WHY THIS SHAPE EXISTS, AND WHY IT DID NOT UNTIL NOW ──────────────────
+
+    Thirty-two motion-award sites were photographed on 2026-08-27 and laid out
+    as one contact sheet, and the shape every one of the GOOD-looking ones
+    shares is this: a full-bleed photograph as the ground with the type on it.
+    Diamond Rose, Fame Estate, ON.energy, OceanX, Frequency Breathwork, Studio
+    X -- photo behind, not beside.
+
+    The embarrassing part is that the note eighty lines above this one already
+    said so: 「the median one covers 59% of it」, measured off nineteen trading
+    Malaysian SME sites. A second column is not 59%. The measurement was right,
+    was written down, and then the implementation put the photo in a column
+    anyway -- a fact recorded next to code that outlived the code agreeing with
+    it, which is now the sixth time in this repo.
+
+    ── AND WHY IT CARRIES ITS OWN GROUND RATHER THAN THE REGISTER'S ─────────
+
+    Type on a photograph has no guaranteed contrast: the photo decides, and the
+    owner picks the photo. So this layout does not use the register's nav
+    colour the way `ground="ink"` does. It lays a scrim of its own and pins the
+    surface tokens to white-on-near-black, which is the one combination that
+    survives whatever they upload. 招牌's red hero printed a phone number in
+    red on red; a photo can do worse and there is no token to blame.
+  */
+  const bleed = layout === "bleed"
   const centred = layout === "center"
   const band = layout === "band"
   const plain = layout === "plain"
@@ -268,8 +296,25 @@ export function SiteHero({
     warm-black, and neither is a coloured panel. That is exactly the difference
     between linear's #080808 and framer's #080818.
   */
+  /* A bleed hero with no photograph is just a dark hero, which is a shape the
+     library already has -- so it degrades to the register's own ground rather
+     than painting a black rectangle for a picture that is not there. Same
+     defensive rule `split` learned when a register asked for two columns on a
+     template with no drawn figure. */
+  const bled = bleed && hasPhoto
+
   const groundStyle =
-    ground === "ink"
+    bled
+      ? ({
+          /* NOT the register's nav colour. The scrim is what has to be
+             trusted, and a scrim tinted 32% toward 招牌's red would put warm
+             grey text on a warm grey photograph. */
+          "--tone-bg": "#101215",
+          "--tone-fg": "#ffffff",
+          "--tone-fg-dim": "rgb(255 255 255 / 0.76)",
+          "--tone-line": "rgb(255 255 255 / 0.22)",
+        } as React.CSSProperties)
+      : ground === "ink"
       ? ({
           "--tone-bg": "color-mix(in oklab, var(--color-nav-bg) 32%, #101215)",
           "--tone-fg": "var(--color-nav-fg)",
@@ -277,7 +322,7 @@ export function SiteHero({
           "--tone-line": "color-mix(in oklab, var(--color-nav-fg) 16%, transparent)",
         } as React.CSSProperties)
       : undefined
-  const painted = ground !== "page"
+  const painted = ground !== "page" || bled
   /* A photo is enough to earn the second column on its own. `figure` was the
      only thing that could before, which meant a register asking for the split
      layout on a template with no drawn figure quietly rendered as 左对齐. */
@@ -378,8 +423,42 @@ export function SiteHero({
            than a screen. `svh` rather than `vh` so a phone's shrinking address
            bar does not leave a gap. */
         stage ? "[padding-block:calc(var(--pad-card-lg)*2.2)_0] flex flex-col justify-center @3xl:[min-block-size:94svh]" : "",
+        /* The photograph is the first screen, so it gets the first screen.
+           `isolate` keeps the scrim under the words and out of the page. */
+        bled ? "relative isolate flex flex-col justify-end @3xl:[min-block-size:82svh]" : "",
       ].join(" ")}
     >
+      {/* THE GROUND IS THE PHOTOGRAPH.
+
+          Two layers, and both are needed. The image alone cannot be trusted --
+          the owner uploads it, it can be a white-tiled bathroom, and white
+          text on it disappears. The scrim alone is a dark rectangle. So: a
+          flat 45% wash that guarantees the floor wherever the photo goes
+          bright, plus a left-anchored gradient that deepens the side the
+          words are actually on. Worst case behind the headline is a composite
+          of #4b4b4b, which carries white at about 8:1; the right edge, where
+          nothing is printed, holds 4.4:1 anyway.
+
+          `object-cover` and no width prop: this is a background, and a
+          background that letterboxes is a picture of a picture. */}
+      {bled ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photo}
+            alt={photoAlt || ""}
+            className="absolute inset-0 -z-20 block size-full object-cover"
+          />
+          <span
+            aria-hidden
+            className="absolute inset-0 -z-10 block"
+            style={{
+              background:
+                "linear-gradient(to right, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.06) 62%, transparent), rgb(0 0 0 / 0.45)",
+            }}
+          />
+        </>
+      ) : null}
       {/* THE HOURS STRIP. Full-bleed, because a strip that stops where the
           text column stops is a caption, and both sites this is taken from run
           it edge to edge. `-mx` undoes the section's own inline padding rather
@@ -639,7 +718,7 @@ export function SiteHero({
      ground that stops 200px from each edge, which looks like a mistake and is
      one. See app/globals.css. */
   return painted ? (
-    <div data-bleed="" style={groundStyle}>
+    <div data-bleed="" data-photo-ground={bled ? "" : undefined} style={groundStyle}>
       {shell}
     </div>
   ) : (

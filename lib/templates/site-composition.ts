@@ -93,7 +93,7 @@ export type SiteSkeleton = {
    * and deliberately not the only one: a library where fourteen registers all
    * open the same way is a library with one register in it.
    */
-  hero: "left" | "band" | "center" | "plain" | "split" | "stage";
+  hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed";
   /**
    * 开场的地 —— what the first screen is painted on. `page` follows the
    * register's own ground; `ink` is a near-black carrying a HINT of the
@@ -169,7 +169,20 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // the look of the last customer who walked out, so the photographs lead and
   // the reviews come straight after them.
   hearth: {
-    hero: "stage",
+    /* THE ONLY REGISTER THAT OPENS ON A PHOTOGRAPH AS ITS GROUND, and one is
+       the right number.
+
+       Its own line below already says 照片墙 -- this is the register whose
+       argument IS the picture, and it goes to 美容, the trade that sells the
+       result of the work by showing it. On the contact sheet of thirty-two
+       award sites this shape is what separates the ones that look expensive
+       from the ones that look like a template.
+
+       It is not given to the other thirteen because 重点 7c is the rule that
+       keeps this library worth having: if eight registers open on a bleed
+       photo they are eight paint jobs again. A trade that wants its photo
+       bigger has the `hero` axis, which is per-page and free. */
+    hero: "bleed",
     opens: "照片墙",
     order: ["work", "story", "team", "reviews", "creds", "services", "hours", "prices", "areas", "cta", "faq", "flow", "promise"],
   },
