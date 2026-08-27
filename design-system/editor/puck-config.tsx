@@ -271,6 +271,8 @@ type Components = {
     shape?: "side" | "side-reverse" | "stack";
     photo?: string;
     photoAlt?: string;
+    /* The customer's own dashboard, as a layout. See site-hero.tsx. */
+    systemPreview?: unknown;
     /* 开场的地. Register-chosen; see site-composition.ts. */
     ground?: "page" | "ink";
     points?: { label: string }[];
@@ -321,6 +323,8 @@ type Components = {
        Malaysian SME sites give the opening to one; see site-hero.tsx. */
     photo?: string;
     photoAlt?: string;
+    /* The customer's own dashboard, as a layout. See site-hero.tsx. */
+    systemPreview?: unknown;
     /* 开场的地. Register-chosen; see site-composition.ts. */
     ground?: "page" | "ink";
     /* The printed phone number and the hours strip. Flat props rather than an
@@ -2063,7 +2067,7 @@ export const puckConfig: Config<Components> = {
         primaryLabel: "WhatsApp 问价",
         primaryHref: "#",
       },
-      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip, priceRows, photo, photoAlt, ground }) => (
+      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip, priceRows, photo, photoAlt, ground, systemPreview }) => (
         <SiteHero
           layout={layout ?? "left"}
           ground={ground}
@@ -2071,6 +2075,7 @@ export const puckConfig: Config<Components> = {
           figureData={figureData}
           photo={photo}
           photoAlt={photoAlt}
+          systemPreview={systemPreview}
           phone={phoneNumber ? { label: phoneLabel, number: phoneNumber } : undefined}
           priceRows={priceRows}
           strip={strip || undefined}

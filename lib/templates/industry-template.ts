@@ -1723,10 +1723,40 @@ function buildWebsite(
     「我要这一套的样子，但照台账那样排」 -- and LAYOUT_SETS maps a named 排法 back
     onto the register whose skeleton it is.
   */
-  return composeSite(
+  const composed = composeSite(
     template.build(content),
     (layout && LAYOUT_SETS[layout as LayoutSet]) || style,
   );
+
+  /*
+    THE OBJECT ON THE FIRST SCREEN IS THEIR OWN SYSTEM.
+
+    Put beside linear, vercel and resend, the biggest remaining gap was not
+    colour or type -- it was that their object is DENSE and real (linear shows
+    its own app) and ours was a drawn quotation with three lines and a lot of
+    white.
+
+    The drawn figure cannot be made denser honestly. hero-figure.tsx carries
+    the rule and it is the right rule: no figure states a price, an amount or a
+    date the owner did not give us, because this is published on a real
+    company's page and a stranger does not read corner badges. Adding a
+    「RM 48,500」 to fill the space would be the same class of error as the
+    seeded phone number.
+
+    So the object becomes the thing that IS real and IS dense: the dashboard
+    this business already has. It is not a mock -- it is the same page the
+    owner opens, built by the same builder, rendered small. That is also the
+    product's own claim (看到的就是拿到的) making its argument in the one place
+    a stranger looks first.
+
+    A layout, not a component: Puck props are JSON, and PagePreview takes Data.
+  */
+  const hero = composed.find((n) => n.props?.id === "website-hero");
+  if (hero && !hero.props.photo) {
+    const dash = BUILDERS.dashboard(ctx, name, locale, pages, style, layout);
+    hero.props.systemPreview = { root: {}, content: dash };
+  }
+  return composed;
 }
 
 function buildCustomers(

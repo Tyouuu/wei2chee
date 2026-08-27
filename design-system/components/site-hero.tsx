@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { HeroFigure, type HeroFigureKind } from "./hero-figure"
 import { TiltStage } from "./tilt-stage"
+import { SystemMini } from "./system-mini"
 
 /**
  * The first screen of the page a business's own CUSTOMERS see.
@@ -47,6 +48,7 @@ export function SiteHero({
   figureData,
   photo,
   photoAlt,
+  systemPreview,
   ground = "page",
 }: {
   /** Where and what, e.g. 「吉隆坡 · 住宅装修」. The line people search by. */
@@ -105,6 +107,11 @@ export function SiteHero({
    */
   photo?: string
   photoAlt?: string
+  /** The customer's OWN dashboard, as a layout, rendered small. The dense,
+   *  real object every reference puts on its first screen -- see
+   *  buildWebsite in lib/templates/industry-template.ts for why it is this and
+   *  not a fuller drawing. */
+  systemPreview?: unknown
   /**
    * 开场的地 —— what the first screen is painted on.
    *
@@ -279,6 +286,20 @@ export function SiteHero({
      them, so it is not a `split` and must not build the two-column grid. */
   const staged = stage && (Boolean(figure) || hasPhoto)
   const showProof = !plain && proof && proof.length > 0
+  /*
+    THE THREE FIGURES LEAVE THE WORDS ON 舞台.
+
+    Counted side by side with linear, vercel and resend: their first screen
+    holds THREE things -- headline, one line, the object. Ours held seven, and
+    the last three were 10 years / 24 hours / Klang Valley stacked under the
+    phone number. A first screen that is a list is a first screen a stranger
+    skims instead of reads.
+
+    They are not deleted. They move BELOW the object, which is where vercel
+    puts its logo row: still on the first screen for anyone who scrolls a
+    thumb, no longer competing with the headline.
+  */
+  const proofBelow = stage && showProof
 
   /*
     TWO ELEMENTS, AND THE FOURTH TIME THIS REPO HAS LEARNED WHY.
@@ -351,7 +372,12 @@ export function SiteHero({
           ? "[background-color:var(--color-primary-soft)] [border-bottom:var(--hairline)_solid_var(--color-ink-800)] [padding-block:calc(var(--pad-card-lg)*2.4)]"
           : "[padding-block:calc(var(--pad-card-lg)*2)]",
         centred || stage ? "text-center" : "",
-        stage ? "[padding-block:calc(var(--pad-card-lg)*2.2)_0]" : "",
+        /* THE FIRST SCREEN OWNS THE SCREEN. Theirs ends where the fold does
+           and the object runs off it; ours already showed the next section's
+           heading, which is what made the opening feel like a paragraph rather
+           than a screen. `svh` rather than `vh` so a phone's shrinking address
+           bar does not leave a gap. */
+        stage ? "[padding-block:calc(var(--pad-card-lg)*2.2)_0] flex flex-col justify-center @3xl:[min-block-size:94svh]" : "",
       ].join(" ")}
     >
       {/* THE HOURS STRIP. Full-bleed, because a strip that stops where the
@@ -489,7 +515,7 @@ export function SiteHero({
         </a>
       ) : null}
 
-      {showProof && (
+      {showProof && !proofBelow && (
         <dl
           className={`mt-9 flex flex-wrap [gap:calc(var(--gap-stack)*2)] ${centred ? "justify-center" : ""}`}
         >
@@ -552,9 +578,12 @@ export function SiteHero({
           be large -- the property ten of the twelve references share and the
           one that cannot be measured off a stylesheet. */}
       {staged ? (
-        <div className="mt-12 overflow-hidden [max-height:46vh]">
+        <div className="mt-12 overflow-hidden [max-height:52vh]">
           <TiltStage>
-            <div className="mx-auto w-full max-w-[62rem]">
+            {/* WIDER THAN THE WORDS. Their object breathes to the edges of the
+                screen while the sentence above it keeps a readable measure --
+                one column for both is what made ours look boxed in. */}
+            <div className="mx-auto w-full max-w-[78rem]">
               {hasPhoto ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -563,6 +592,8 @@ export function SiteHero({
                   className="w-full object-cover [border-radius:var(--radius-lg)]"
                   style={{ aspectRatio: "16 / 10" }}
                 />
+              ) : systemPreview ? (
+                <SystemMini data={systemPreview} />
               ) : figure ? (
                 <HeroFigure
                   kind={figure}
@@ -579,6 +610,21 @@ export function SiteHero({
             </div>
           </TiltStage>
         </div>
+      ) : null}
+
+      {proofBelow ? (
+        <dl className="mx-auto mt-10 flex w-full max-w-[68rem] flex-wrap justify-center [gap:calc(var(--gap-stack)*2.4)] [padding-bottom:var(--pad-card-lg)]">
+          {proof!.map((p) => (
+            <div key={p.label} className="text-center">
+              <dt className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-variant-numeric:tabular-nums] [font-weight:var(--fw-semibold)]">
+                {p.value}
+              </dt>
+              <dd className="mt-0.5 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                {p.label}
+              </dd>
+            </div>
+          ))}
+        </dl>
       ) : null}
       </div>
     </section>

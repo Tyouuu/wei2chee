@@ -410,7 +410,10 @@
 .ds-site {
   /* Bigger. Every reference sets its h1 between 48 and 96px and ours
      topped out at 56 while the first screen sat half empty. */
-  --text-hero: clamp(2.5rem, 6.4vw, 4.25rem);
+  /* Bigger again. Beside linear (64px) and notion (96px) at the same
+     width ours still read small -- the headline has to carry the screen on
+     its own once the three figures leave it. */
+  --text-hero: clamp(2.75rem, 7.4vw, 5rem);
   /* Tighter than the register's own title tracking, because tracking and size
      trade off: what is right at a 21px page title is loose at 56px. The
      multiplier keeps it a register axis -- 炉's −1.2% becomes −1.9%, 粗野's
