@@ -15,7 +15,7 @@
       "repo": "jnsahaj/tweakcn",
       "licence": "Apache-2.0",
       "kind": "code",
-      "took": "25 palettes (配色 layer) and soft-pop's colour values",
+      "took": "25 palettes (配色 layer) and soft-pop's colour values Twelve palettes now: nine from the 2026-08-26 cull plus 咖啡, 藏青 and 艾绿 chosen on 2026-08-27 by rendering all 42 registry themes as swatches and looking.",
       "where": "design-system/palettes/, lib/portal/palettes.generated.ts",
       "takenAt": "d21c8e3d",
       "takenOn": "2026-08-23",
@@ -110,6 +110,53 @@
       "takenAt": "-",
       "takenOn": "2026-08-25",
       "note": "Vue, but built on Shadcn UI — its CSS-variable themes speak our language even though its components cannot."
+    },
+    {
+      "repo": "tailark/blocks",
+      "licence": "MIT",
+      "kind": "look",
+      "took": "The SHAPES of six marketing sections -- bento, features-carousel, content, logo-cloud, secondary-hero, how-it-works -- rebuilt against our own tokens. None of their code.",
+      "where": "design-system/components/site-sections.tsx",
+      "takenOn": "2026-08-27",
+      "note": "Their components hardcode Tailwind colours, so a paste would stop following the register and the palette. 4 themes x 12 block kinds -- the same theme-x-kind shape SITE_COMPOSITION uses."
+    },
+    {
+      "repo": "nobruf/shadcn-landing-page",
+      "licence": "MIT",
+      "kind": "look",
+      "took": "Section rhythm and the testimonial's star-above-quote order.",
+      "where": "design-system/components/site-sections.tsx",
+      "takenOn": "2026-08-27",
+      "note": "Cross-checked against tailark. Its PROPORTIONS were wrong for this market and were replaced by the 19-site measurement -- see docs/market-references.json."
+    },
+    {
+      "repo": "uiverse-io/galaxy",
+      "licence": "MIT",
+      "kind": "look",
+      "took": "The GEOMETRY of four ground patterns -- dot grid, diagonal hatch, diamond lattice, ruled grid -- redrawn from each register's own ink.",
+      "where": "app/globals.css",
+      "takenOn": "2026-08-27",
+      "note": "3,571 components and NOT ONE page section: decorated controls, not layouts. Every snippet styles a generic class name (.container, .card), so two in one document collide. Last pushed 2024-09-02. Its colours are hardcoded and loud; only the geometry was taken."
+    },
+    {
+      "repo": "imskyleen/animate-ui",
+      "licence": "NOASSERTION",
+      "kind": "none",
+      "took": "NOTHING, and the licence is why.",
+      "where": "-",
+      "takenOn": "2026-08-27",
+      "note": "GitHub's classifier returns NOASSERTION for MIT + Commons Clause, so that is what is recorded here -- a guard that cries wolf on every run is a guard nobody reads. The human reading is in licenceHuman. The Commons Clause forbids redistributing 「the components themselves -- whether alone, in a bundle, or as a ported version」. Formae IS a component library a customer picks from and that we hand over, so their code may sit on our own marketing site and may NOT sit in the library we ship. Recorded so nobody takes it later without reading the licence.",
+      "licenceHuman": "MIT + Commons Clause"
+    },
+    {
+      "repo": "DavidHDev/react-bits",
+      "licence": "NOASSERTION",
+      "kind": "none",
+      "took": "NOTHING. Same clause as animate-ui.",
+      "where": "-",
+      "takenOn": "2026-08-27",
+      "note": "GitHub's classifier returns NOASSERTION for MIT + Commons Clause, so that is what is recorded here -- a guard that cries wolf on every run is a guard nobody reads. The human reading is in licenceHuman. 46k stars and pushed daily, which is exactly why it needs to be recorded as a NO rather than left unlisted for somebody to rediscover and take.",
+      "licenceHuman": "MIT + Commons Clause"
     }
   ]
 }

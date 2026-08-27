@@ -63,12 +63,21 @@ for (const s of sources) {
         behind = "比不了（commit 太旧或被 force push）";
         flag = "手动看";
       }
+    } else if (s.kind === "none") {
+      /* A source we deliberately took NOTHING from. Recorded so the decision
+         survives: react-bits is 46k stars and pushed daily, and without a row
+         here somebody rediscovers it in three months and takes it without
+         reading the Commons Clause. */
+      behind = "故意没拿";
     } else {
       behind = "只拿长相";
     }
 
+    /* Compared against what GITHUB reports, not against the human sentence.
+       MIT + Commons Clause classifies as NOASSERTION, and comparing the two
+       fired on every run -- see licenceHuman in upstream.json. */
     if (licenceMoved) flag = `⚠ 许可从 ${s.licence} 变成 ${licence}`;
-    rows.push({ repo: s.repo, kind: s.kind, licence, behind, flag, stars: repo.stargazers_count });
+    rows.push({ repo: s.repo, kind: s.kind, licence: s.licenceHuman ?? licence, behind, flag, stars: repo.stargazers_count });
   } catch (e) {
     rows.push({ repo: s.repo, kind: s.kind, licence: "?", behind: "查不到", flag: String(e).slice(0, 40), stars: 0 });
   }
@@ -76,13 +85,13 @@ for (const s of sources) {
 
 const w = Math.max(...rows.map((r) => r.repo.length));
 console.log("\n上游检查 · " + new Date().toISOString().slice(0, 10) + "\n");
-console.log("仓库".padEnd(w) + "  许可          落后            备注");
+console.log("仓库".padEnd(w) + "  许可                  落后            备注");
 console.log("─".repeat(w + 46));
 for (const r of rows) {
   console.log(
     r.repo.padEnd(w) +
       "  " +
-      String(r.licence).padEnd(13) +
+      String(r.licence).padEnd(21) +
       String(r.behind).padEnd(15) +
       (r.flag || ""),
   );
