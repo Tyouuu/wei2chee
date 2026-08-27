@@ -340,6 +340,25 @@
       "takenAt": "-",
       "takenOn": "2026-08-27",
       "note": "⚠️ **没拿他们的机器**：他们的滚动全部跑 GSAP ScrollTrigger，而 GSAP 的许可要求「向终端用户收费」的产品买 Business 会籍 —— RM199 月费正是那个。做法不受著作权保护，12 行 IntersectionObserver 就够。⚠️ **Three.js / WebGL / WebGPU 一律不拿**：他们的重心在那里，但 lapa 7303 个站里 3D 只占 2%，而我们的访客是 4G 中阶 Android。⚠️ 上一次做滚动进场用 animation-timeline: view()，整页截图变白页，把风格画廊弄坏 —— 这一版隐藏状态只在 JS 武装之后才存在。"
+    },
+    {
+      "repo": "-",
+      "name": "wix.com/website/templates — 六套模版，一套风格一套",
+      "licence": "N/A —— 只看做法，不拿代码也不拿内容",
+      "kind": "look",
+      "took": "**整页的组成**：一页由哪些区段、什么顺序、每一段什么形状。老板 2026-08-27：`你要抄别人家的你就整套都抄` `抄完一个才抄另外一套`。之前是从这里拿一个第一屏、从那里拿一段节奏接到我们自己十三段的页上 —— 拼出来是四不像，配色跟节奏一直在打架。",
+      "where": "lib/templates/site-composition.ts（每套风格的 order/omit）+ design-system/components/site-*.tsx（形状）",
+      "appliedTo": [
+        "満図 hearth ← A. Reynolds wh-1125（美容）—— 抄完 2026-08-27：八段对八段，照片长在论证里、没有作品墙",
+        "台账 ledger ← Wright & Taylor wh-1135（油漆/色彩顾问）—— 待办",
+        "瑞士 swiss ← Leah Webb wh-1128（商业顾问）—— 待办",
+        "图纸 blueprint ← Parker & Brown wh-1174（律师）—— 待办",
+        "招牌 signboard ← Toulouse Brasserie wh-1040（餐饮）—— 待办",
+        "中台 counter ← Kurofude wh-1147（日式餐饮，但骨架是表格）—— 待办"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "⚠️ **只拿组成，不拿内容也不拿代码**：每一段用我们自己的 token 重建，所以换配色它还是那一套风格（重点 7c）。⚠️ **不可以把上一套抄掉的东西再抄回来**：stats 数字带故意不拿，因为「同一行印两次同一个数字」正是印那一套被砍的原因（重点 7h）。⚠️ **他们的填充料也不拿**：A. Reynolds 的页脚印着一个不属於任何人的旧金山地址跟「Powered and secured by Wix」；我们只拿说得出东西的那几栏。实拍：.screenshots/whole/plan.jpg（六套配对）、.screenshots/whole/vs.jpg（満図 vs 参考）"
     }
   ]
 }
