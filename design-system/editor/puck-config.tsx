@@ -255,7 +255,8 @@ type Components = {
     heading?: string;
     note?: string;
     items: { label: string; value: string; icon?: string }[];
-  };
+      shape?: "cards" | "panel" | "bands";
+};
   SiteTestimonials: {
     heading?: string;
     items: { quote: string; who: string; role?: string; stars?: number }[];
@@ -1716,6 +1717,15 @@ export const puckConfig: Config<Components> = {
     SiteFeatures: {
       label: "服务卡片",
       fields: {
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "三张卡片", value: "cards" },
+            { label: "一整块色面", value: "panel" },
+            { label: "一条一条", value: "bands" },
+          ],
+        },
         heading: { label: "标题", type: "text" },
         note: { label: "下面一句", type: "text" },
         items: {
@@ -1731,8 +1741,9 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { items: [] },
-      render: ({ heading, note, items }) => (
-        <SiteFeatures heading={heading} note={note} items={items} />
+      render: ({ heading, note, items , shape}) => (
+        <SiteFeatures heading={heading} note={note} items={items}           shape={shape}
+        />
       ),
     },
 

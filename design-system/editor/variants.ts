@@ -116,6 +116,17 @@ export const VARIANTS: Record<string, Variant[]> = {
      rendered the identical centred colour band and only the colour changed,
      which is 重点 7c answered 「no」 by our own library. 半块颜色 is Wix's Home
      Remodeling template, shot 2026-08-27. */
+  /* 卖点. Three genuinely different objects, not one restyled: a bordered
+     card each, all three inside ONE painted area, or no box at all. Added
+     2026-08-27 after counting painted areas per page against three Wix
+     templates -- theirs 20-27, ours 1-10, and ours were `ds-card`, the
+     dashboard's own card class. */
+  SiteFeatures: [
+    { id: "cards", label: "三张卡片", props: { shape: "cards" } },
+    { id: "panel", label: "一整块色面", props: { shape: "panel" } },
+    { id: "bands", label: "一条一条", props: { shape: "bands" } },
+  ],
+
   SiteCta: [
     { id: "band", label: "整条色带", props: { shape: "band" } },
     { id: "panel", label: "半块颜色", props: { shape: "panel" } },

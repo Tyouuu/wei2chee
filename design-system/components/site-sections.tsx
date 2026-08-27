@@ -39,24 +39,116 @@ export function SiteFeatures({
   heading,
   note,
   items,
+  shape = "cards",
 }: {
   heading?: string
   note?: string
   items: { label: string; value: string; icon?: string }[]
+  /**
+   * `cards` a bordered card each · `panel` all three on one painted ground,
+   * split by hairlines · `bands` a numbered row each, ruled off, no boxes.
+   *
+   * ── THE MEASUREMENT THAT MADE THIS NECESSARY ────────────────────────────
+   *
+   * Counted on the live pages against three Wix templates, 2026-08-27 --
+   * painted areas larger than 150px tall, per page:
+   *
+   *   我们 满图   10      Wix 装修   27
+   *   我们 台账    2      Wix 油漆   27  (and 14 photographs to our 2-5)
+   *   我们 瑞士    1      Wix 律师   20
+   *
+   * They compose a page out of twenty to twenty-seven painted areas. We
+   * composed one out of one to ten, and out of bordered cards -- `ds-card`,
+   * which is the DASHBOARD's card class. This section is the most repeated
+   * element on every generated website and it was rendering admin furniture.
+   * 任务 28 wrote the diagnosis months ago -- 「这套 token 是给后台做的」 -- and
+   * every round since has rearranged that furniture instead of replacing it.
+   *
+   * So a register may now say what a service looks like, and the three
+   * answers are genuinely different objects rather than one object restyled.
+   */
+  shape?: "cards" | "panel" | "bands"
 }) {
   if (!items?.length) return null
+
+  const title = heading ? (
+    <div className="mb-10 max-w-[46ch]">
+      <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+      {note ? (
+        <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+          {note}
+        </p>
+      ) : null}
+    </div>
+  ) : null
+
+  if (shape === "panel") {
+    /* ONE PAINTED AREA HOLDING ALL THREE, split by hairlines rather than by
+       gaps. Taken from Wix's Home Remodeling template, where the services sit
+       inside a single filled rectangle instead of floating as three objects --
+       which is what stops a page reading as a grid of widgets. */
+    return (
+      <section className="@container" data-wide="">
+        {title}
+        <ul className="grid overflow-hidden [background:var(--color-primary-soft)] [border-radius:var(--radius-lg)] @2xl:grid-cols-3">
+          {items.map((f, i) => (
+            <li
+              key={f.label}
+              className={[
+                "flex flex-col [gap:calc(var(--gap-inline)*0.6)] [padding:calc(var(--pad-card-lg)*1.1)]",
+                i > 0 ? "[border-top:var(--hairline)_solid_var(--border-subtle)] @2xl:[border-top:0]" : "",
+                i > 0 ? "@2xl:[border-inline-start:var(--hairline)_solid_var(--border-subtle)]" : "",
+              ].join(" ")}
+            >
+              <span className="[color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-variant-numeric:tabular-nums]">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="ds-display [color:var(--color-paper)] [font-size:var(--text-xl)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
+                {f.label}
+              </span>
+              <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                {f.value}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  if (shape === "bands") {
+    /* NO BOXES AT ALL. A rule, a number, and the words -- the shape a printed
+       schedule of works has, and the one 瑞士 and 台账 can wear without
+       contradicting themselves. The label is set at display size because with
+       nothing drawn around it, size is the only thing left to rank it by. */
+    return (
+      <section className="@container">
+        {title}
+        <ul>
+          {items.map((f, i) => (
+            <li
+              key={f.label}
+              className="grid [border-top:var(--hairline)_solid_var(--border-strong)] [gap:.35rem_calc(var(--gap-stack)*1.2)] [padding-block:calc(var(--pad-card-lg)*0.9)] @2xl:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1.1fr)] @2xl:items-baseline"
+            >
+              <span className="[color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-variant-numeric:tabular-nums]">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="ds-display [color:var(--color-paper)] [font-size:var(--text-2xl,1.5rem)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
+                {f.label}
+              </span>
+              <span className="[color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
+                {f.value}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
   return (
     <section className="@container">
-      {heading ? (
-        <div className="mb-10 max-w-[46ch]">
-          <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
-          {note ? (
-            <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
-              {note}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+      {title}
 
       {/* One card per thing they do. A card, not a row: the references use
           cards for what a business SELLS and rows for what it merely lists, and
