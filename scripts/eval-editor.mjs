@@ -772,12 +772,23 @@ const CASES = [
   },
   {
     name: "记得 · 再加一栏",
-    ask: "再加一栏",
+    ask: "再加一栏，写工地地址",
     history: [{ asked: "表格加一列，写哪个师傅负责", did: "加了「负责师傅」这一栏。" }],
-    // 「再」 carries no noun. Without the previous turn there is nothing here
-    // to act on at all, which is exactly what makes it a good test.
+    /*
+      MY FOURTH WRONG EXPECTATION, AND THIS ONE ARGUED WITH MY OWN RULE.
+
+      The ask was 「再加一栏」 with no name, and I expected add_table_column. It
+      asked 「再加的这一栏要叫什么？」 -- which is exactly what the prompt's own
+      test says to do: a question he can obviously answer beats a column named
+      by guessing. The case was measuring whether the model would invent a
+      column name, not whether it remembered the last turn.
+
+      So the name is given and 「再」 is left carrying the only thing that needs
+      the history: WHICH TABLE. Nothing in the sentence says, and there is more
+      than one block on the page.
+    */
     expect: ["add_table_column"],
-    note: "「再」只有靠上一轮才解得开",
+    note: "「再」指的是哪张表，只有上一轮知道",
   },
   {
     name: "记得 · 撤销过的不算数",
