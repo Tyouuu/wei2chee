@@ -1729,33 +1729,30 @@ function buildWebsite(
   );
 
   /*
-    THE OBJECT ON THE FIRST SCREEN IS THEIR OWN SYSTEM.
+    THE OBJECT IS NOT THEIR DASHBOARD, AND THAT WAS A REAL MISTAKE.
 
-    Put beside linear, vercel and resend, the biggest remaining gap was not
-    colour or type -- it was that their object is DENSE and real (linear shows
-    its own app) and ours was a drawn quotation with three lines and a lot of
-    white.
+    For about an hour this handed the hero a miniature of the business's own
+    admin dashboard, reasoning that linear puts its own application on its
+    first screen. The founder: 「谁会放自己的system 就是后台出去给人看啊」.
 
-    The drawn figure cannot be made denser honestly. hero-figure.tsx carries
-    the rule and it is the right rule: no figure states a price, an amount or a
-    date the owner did not give us, because this is published on a real
-    company's page and a stranger does not read corner badges. Adding a
-    「RM 48,500」 to fill the space would be the same class of error as the
-    seeded phone number.
+    He is right and the error is a category one. Linear's application IS the
+    product it sells, so showing it is showing the goods. A renovation
+    contractor sells RENOVATION. Their dashboard is the tool they run the
+    business with -- a homeowner has no use for it, and putting an internal
+    tool on a public page shows a stranger something that was never theirs to
+    see.
 
-    So the object becomes the thing that IS real and IS dense: the dashboard
-    this business already has. It is not a mock -- it is the same page the
-    owner opens, built by the same builder, rendered small. That is also the
-    product's own claim (看到的就是拿到的) making its argument in the one place
-    a stranger looks first.
+    What belongs there is what this market already showed us: 14 of 19 trading
+    Malaysian SME sites give the first screen to a PHOTOGRAPH of the work. The
+    photo slot is built and the picker is wired; what is missing is asking the
+    owner for one, which is 任务 21. Until then the drawn figure -- their own
+    services and their own pipeline, no invented numbers -- is the honest
+    fallback, and it is a better one than somebody else's kitchen.
 
-    A layout, not a component: Puck props are JSON, and PagePreview takes Data.
+    SystemMini survives because it is right for ONE page: Formae's own landing
+    page, where the system IS what we sell. Recorded in founder-tasks.md so it
+    is used rather than left to rot.
   */
-  const hero = composed.find((n) => n.props?.id === "website-hero");
-  if (hero && !hero.props.photo) {
-    const dash = BUILDERS.dashboard(ctx, name, locale, pages, style, layout);
-    hero.props.systemPreview = { root: {}, content: dash };
-  }
   return composed;
 }
 

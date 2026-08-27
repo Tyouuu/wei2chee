@@ -194,6 +194,28 @@ const WANTED = [
    "Rosewood", "A deep plum. Not pink.",
    "Beauty · bridal · florists · boutiques · wellness"],
 
+  /* ── 2026-08-27: three the founder asked for, chosen by LOOKING ──────────
+     All 42 themes in tweakcn's registry rendered as swatches and looked at
+     (.screenshots/themes42/sheet.jpg), then filtered by his two rules: the
+     ground is neutral, and a Malaysian SME owner would actually pick it.
+
+     Twenty were ruled out on sight as novelty -- doom-64, cyberpunk, candyland,
+     bubblegum, neo-brutalism, claymorphism, retro-arcade and the rest. Of what
+     remained, most duplicated a hue we already carry: solar-dusk and darkmatter
+     are amber and tangerine again, northern-lights and ocean-breeze are 森绿
+     again, mono and graphite are 极简黑 again.
+
+     These three are the ones that add a hue the library did not have. */
+  ["caffeine", "咖啡", "深咖啡色,烘焙和木头的颜色", "咖啡店·面包·茶行·家私·木工",
+   "Coffee", "Deep coffee brown. Roasting and timber.",
+   "Cafes · bakeries · tea · furniture · carpentry"],
+  ["starry-night", "藏青", "沉的深蓝,不是亮蓝", "会计·律师·工程·验屋·保险",
+   "Navy", "A deep, serious blue. Not a bright one.",
+   "Accounting · law · engineering · surveying · insurance"],
+  ["sage-garden", "艾绿", "带灰的柔绿,安静", "养生·spa·诊所·花艺·有机",
+   "Sage", "A muted grey-green. Quiet.",
+   "Wellness · spa · clinics · florists · organic"],
+
   // ── the one the popularity data added; see NATIVE.zen for the numbers ───
   ["zen", "宣纸", "暖纸底配墨黑,唯一一套不是白底的", "茶行·药材·古董·手作·咖啡·民宿",
    "Rice Paper", "Ink on warm paper. The only one that is not white.",
