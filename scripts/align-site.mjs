@@ -38,6 +38,14 @@ const REF = {
   blueprint: "https://www.wix.com/demone2/wh-law-firm-2",
   signboard: "https://www.wix.com/demone2/brasserie",
   counter: "https://www.wix.com/demone2/wh-kurofude-rest",
+  /* The three added 2026-08-27 to fix a MEASURED defect, not to have more:
+     with six registers, 图纸 sat in seven of the eight trades' hands and two
+     pairs of trades were handed an identical three. Both gaps were on the same
+     side -- four of the six argue with FACTS and only one each argues with the
+     WORK or with the SIGN. See docs/founder-tasks.md 35. */
+  mosaic: "https://www.wix.com/demone2/wh-beauty-shop",
+  nocturne: "https://www.wix.com/demone2/kaito-ramen-den",
+  shelf: "https://www.wix.com/demone2/wagora",
 };
 
 const register = process.argv[2] || "hearth";
