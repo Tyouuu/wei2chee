@@ -96,7 +96,29 @@ export type StockResult =
  * kitchen chef」 returns a French kitchen.
  */
 export const TRADE_QUERIES: Record<string, string[]> = {
-  renovation: ["kitchen renovation", "home interior renovation", "bathroom interior", "shop interior fitout"],
+  /* WORK AND MATERIAL, NOT SOMEBODY ELSE'S FURNISHED HOME.
+
+     Measured 2026-08-27, 18 queries and 124 results. Pixabay has no Malaysia:
+     「malaysia shophouse」 returns a monkey and a plate of hawker food,
+     「asian kitchen renovation」 returns ramen and dumplings -- it reads 「asian
+     kitchen」 as CUISINE -- 「terrace house malaysia」 returns rice terraces,
+     and 「tiling worker asia」 returns incense sticks drying in Vietnam.
+
+     So a better country is not available. What IS available is a better
+     SUBJECT. The first version of this list asked for rooms, and rooms in a
+     stock library are American real-estate listings: a Manhattan dining room
+     with radiators, a cream living room with a chess set. A Klang Valley
+     homeowner recognises none of it, and a page of them tells him this
+     contractor has no photographs of his own work.
+
+     Tiles being laid, timber being cut, a wall being painted, tools on a
+     bench: none of those can be caught being foreign, and all of them are what
+     this trade actually sells. The finished room stays as ONE frame -- the
+     hero -- because the reference pages in this market do open on the result.
+
+     The real answer is still 任务 21: ask the owner for a photograph during
+     the two-minute questionnaire. This list is what stands in until then. */
+  renovation: ["tiles floor installation", "carpenter working wood", "painting wall interior", "kitchen renovation"],
   services: ["air conditioner technician", "technician repair service", "electrician working", "service van tools"],
   retail: ["shop interior retail store", "shopfront street", "small shop counter", "product shelf display"],
   fnb: ["asian food plate", "coffee shop counter", "cafe interior table", "restaurant kitchen"],
