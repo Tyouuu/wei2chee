@@ -67,6 +67,7 @@ import {
 } from "@/app/[locale]/style-picker/style-column";
 import { scopeClasses, PALETTES } from "@/lib/portal/palettes";
 import { RegisterProvider } from "@/design-system/editor/style-scope";
+import { siteSkeleton } from "@/lib/templates/site-composition";
 
 // Same lookup app/[locale]/style-picker/style-column.tsx uses internally
 // (its own `SCOPE_CLASS` isn't exported, so this is a second, identical
@@ -1232,6 +1233,12 @@ export function PortalEditor({
                          container, no rhythm, dashboard-sized headings -- and
                          the whole promise of this editor is 看到的就是拿到的.
                          See `.ds-site` in app/globals.css. */
+                      /* The register's 开场的地, so the canvas shows the page
+                         the visitor gets rather than a dark box on a light
+                         one. See app/globals.css. */
+                      data-ground={
+                        pageKey === "website" ? (siteSkeleton(activeStyle).ground ?? "page") : undefined
+                      }
                       className={`ds-ground ${scopeClasses(activeStyle, activePalette)} ${
                         pageKey === "website" ? "ds-site" : ""
                       } h-full [background-color:var(--color-canvas)]`}

@@ -24,13 +24,20 @@ import { useEditorUi } from "@/design-system/editor/editor-ui";
 export function CanvasGutter({
   className,
   children,
+  ...rest
 }: {
   className: string;
   children: ReactNode;
-}) {
+  /* Anything else lands on the div. It took only `className` and `children`,
+     so `data-ground` -- which decides whether the canvas is a dark PAGE or a
+     dark box on a light one -- was passed in and silently dropped. Ninth time
+     in this repo that a value reached a component that had no parameter for
+     it; a rest spread is the version that cannot happen again. */
+} & Record<string, unknown>) {
   const { gutter } = useEditorUi();
   return (
     <div
+      {...rest}
       className={className}
       style={{
         paddingRight: gutter,

@@ -1049,3 +1049,82 @@
     position: relative;
   }
 }
+
+/* ── 整页的地 ────────────────────────────────────────────────────────────────
+
+   A register that opens dark opens the WHOLE PAGE dark. Put beside linear,
+   vercel and resend on 2026-08-27 the difference was immediate and it was not
+   colour: their black runs edge to edge and top to bottom, ours was a dark
+   rectangle floating in a white page with pale margins on three sides. A dark
+   box on a light page reads as a banner pasted onto a website.
+
+   TWO ELEMENTS, AS ALWAYS. The capture sits on the ground wrapper and only
+   READS the register's tokens; the apply sits on `.ds-site` inside it and only
+   REWRITES them. Both on one element is the CSS cycle this repo has now walked
+   into five times, and CSS discards every declaration in a cycle in silence.
+
+   The dark is the register's own navigation colour pulled 68% toward a
+   neutral, so 台账 stays navy-black and 瓷 warm-black without either becoming a
+   coloured page -- ten mature landing pages carry chroma 0.000 on their
+   ground. Cards sit one step above it, which is what makes a dark page read as
+   layered rather than as a hole. */
+.ds-ground[data-ground="ink"] {
+  --ink-bg: color-mix(in oklab, var(--color-nav-bg) 32%, #101215);
+  --ink-fg: var(--color-nav-fg);
+  --ink-fg-dim: var(--color-nav-fg-dim);
+  background-color: var(--ink-bg);
+}
+/* BOTH SHAPES. On the published page StyleScope is the ground and `.ds-site`
+   is a child of it; in the editor CanvasGutter carries BOTH classes on one
+   element. No cycle either way: the capture above only reads --color-nav-*,
+   and nothing below rewrites those. */
+.ds-ground[data-ground="ink"] .ds-site,
+.ds-ground[data-ground="ink"].ds-site {
+  --color-canvas: var(--ink-bg);
+  --color-ink-950: color-mix(in oklab, var(--ink-bg) 88%, #000);
+  --color-ink-900: color-mix(in oklab, var(--ink-bg) 86%, var(--ink-fg));
+  --color-ink-850: color-mix(in oklab, var(--ink-bg) 80%, var(--ink-fg));
+  --color-ink-800: color-mix(in oklab, var(--ink-bg) 72%, var(--ink-fg));
+  --color-ink-700: color-mix(in oklab, var(--ink-bg) 58%, var(--ink-fg));
+  --color-paper: var(--ink-fg);
+  --color-paper-dim: var(--ink-fg-dim);
+  --color-on-canvas: var(--ink-fg);
+  --color-on-canvas-dim: var(--ink-fg-dim);
+  --border: color-mix(in oklab, var(--ink-fg) 16%, transparent);
+  --border-subtle: color-mix(in oklab, var(--ink-fg) 11%, transparent);
+  --border-strong: color-mix(in oklab, var(--ink-fg) 24%, transparent);
+  --card: color-mix(in oklab, var(--ink-bg) 86%, var(--ink-fg));
+  --background: color-mix(in oklab, var(--ink-bg) 86%, var(--ink-fg));
+  --color-table-bg: transparent;
+  --color-table-head-bg: color-mix(in oklab, var(--ink-bg) 80%, var(--ink-fg));
+  --color-table-head-fg: var(--ink-fg-dim);
+  /* The sheen was tuned for a card on a light page. On a dark one the light
+     has to come from above or every surface looks like the same flat grey. */
+  --site-sheen: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.045) 0%,
+    rgb(255 255 255 / 0) 60%
+  );
+}
+
+/* The hero no longer paints its own ground when the page already carries it --
+   two coats of the same dark with a seam between them is what this change
+   exists to remove. */
+.ds-ground[data-ground="ink"] .ds-site [data-bleed],
+.ds-ground[data-ground="ink"].ds-site [data-bleed] {
+  background-color: transparent !important;
+}
+
+/* THE HOURS STRIP ON A DARK PAGE.
+
+   It is `--color-paper` on `--color-canvas` -- a black bar with light text,
+   which is exactly the strip three of the nineteen Malaysian sites run across
+   the top. On a page that is ALREADY dark those two swap and it becomes a
+   bright white band cutting the first screen in half, which is the first thing
+   the eye lands on and the last thing it should be. One step up from the page
+   instead: still a band, no longer a flash. */
+.ds-ground[data-ground="ink"] [data-hours-strip],
+.ds-ground[data-ground="ink"] [data-hours-strip] {
+  background-color: color-mix(in oklab, var(--ink-bg) 78%, var(--ink-fg)) !important;
+  color: var(--ink-fg) !important;
+}

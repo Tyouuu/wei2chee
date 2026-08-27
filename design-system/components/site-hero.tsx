@@ -359,7 +359,7 @@ export function SiteHero({
           it edge to edge. `-mx` undoes the section's own inline padding rather
           than the section giving it up, so nothing else on the page moves. */}
       {strip ? (
-        <p className="-mt-[calc(var(--pad-card-lg)*2)] mb-[calc(var(--pad-card-lg)*1.5)] [background-color:var(--color-paper)] [color:var(--color-canvas)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [margin-inline:calc(var(--pad-card-lg)*-1)] [padding-block:calc(var(--pad-control-y)*0.9)] [padding-inline:var(--pad-card-lg)] [text-align:center]">
+        <p data-hours-strip="" className="-mt-[calc(var(--pad-card-lg)*2)] mb-[calc(var(--pad-card-lg)*1.5)] [background-color:var(--color-paper)] [color:var(--color-canvas)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [margin-inline:calc(var(--pad-card-lg)*-1)] [padding-block:calc(var(--pad-control-y)*0.9)] [padding-inline:var(--pad-card-lg)] [text-align:center]">
           {strip}
         </p>
       ) : null}

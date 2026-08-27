@@ -7,6 +7,7 @@ import { Render, type Data } from "@puckeditor/core";
 import { registerAwarePuckConfig as puckConfig } from "@/design-system/editor/puck-config-client";
 import { StyleScope } from "@/design-system/editor/style-scope";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
+import { siteSkeleton } from "@/lib/templates/site-composition";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import type { SystemLang } from "@/lib/system-lang";
 
@@ -42,9 +43,22 @@ export function PublicSite({
   lang: SystemLang;
 }) {
   return (
+    /*
+      THE WHOLE PAGE IS DARK, NOT A DARK BOX ON A LIGHT ONE.
+
+      Put side by side with linear, vercel and resend on 2026-08-27, the
+      difference was immediate and it was not colour: their black runs edge to
+      edge and top to bottom, and ours was a dark rectangle floating in a white
+      page with pale margins around it. That reads as a banner pasted onto a
+      website rather than as a website.
+
+      So the register's 开场的地 belongs to the PAGE. See app/globals.css for
+      the token remap and site-composition.ts for which registers ask for it.
+    */
     <StyleScope
       register={style}
       palette={palette}
+      data-ground={siteSkeleton(style).ground ?? "page"}
       className="ds-ground min-h-screen [background-color:var(--color-canvas)]"
     >
       <SystemLangProvider lang={lang}>
