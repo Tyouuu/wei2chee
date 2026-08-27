@@ -253,7 +253,9 @@ describe("buildPageLayout", () => {
       "SiteCta",
       "FoldSection",   // questions we get
       "InfoRows",      // where we cover
-      "MarkList",      // what you get from us
+      /* 图纸 declines 保证 on 2026-08-27 -- the flow already makes that
+         promise, and this section repeated it. See `omit` in
+         site-composition.ts. */      // what you get from us
       "EnquiryForm",
       "InfoRows",      // how to reach us
       "SiteFoot",

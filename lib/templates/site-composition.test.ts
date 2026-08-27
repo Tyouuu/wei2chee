@@ -118,17 +118,33 @@ describe("composeSite", () => {
   const bag = landingContentFor(renovation, pagesForIndustry("renovation").map((key) => ({ key })));
   const content = (t: (typeof LANDING_TEMPLATES)[number]) => t.build(bag) as Node[];
 
-  it("keeps every block the template built, for every register", () => {
-    // A register reorders. A register that DROPS a section would be a register
-    // that deletes the owner's own prices or photographs -- the one thing this
-    // layer must never do, and the reason it is not modelled on the dashboard
-    // composition's freedom to omit blocks.
+  it("drops only what its register declared, and nothing else", () => {
+    /* THE INVARIANT, AND HOW IT CHANGED ON 2026-08-27.
+    
+       It used to be 「a register never drops anything」, and the reason was
+       right: a register that deletes a section deletes the owner's own prices
+       or photographs. What made it too strict is that `order` is a TOTAL
+       ordering, so every register carried all thirteen sections and could only
+       argue about where they went -- and six pages of the same twelve bands
+       shuffled is one design with six sort orders, which is what the founder
+       kept seeing.
+    
+       So a register may now DECLINE a section, and this asserts the declining
+       is deliberate: the only ids missing may be the ones its skeleton names in
+       `omit`. Anything else disappearing is still the bug the old assertion was
+       written to catch.
+    
+       And it is safe only because composeSite runs while the page is still
+       being generated -- the public route reads the SAVED layout and 404s
+       without one, so nothing here ever touches a page the customer owns. */
     for (const t of LANDING_TEMPLATES) {
       const built = content(t);
-      for (const style of Object.keys(SITE_COMPOSITION)) {
+      for (const [style, skeleton] of Object.entries(SITE_COMPOSITION)) {
         const out = composeSite(built, style);
-        expect(idsOf(out).sort(), `${t.key} × ${style}`).toEqual(idsOf(built).sort());
-        expect(out.length).toBe(built.length);
+        const gone = idsOf(built).filter((id) => !idsOf(out).includes(id));
+        const allowed = (skeleton.omit ?? []).map((k) => `website-${k}`);
+        expect(gone.sort(), `${t.key} × ${style} dropped something it never declared`)
+          .toEqual(allowed.filter((id) => idsOf(built).includes(id)).sort());
       }
     }
   });

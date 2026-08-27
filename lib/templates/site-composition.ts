@@ -147,6 +147,36 @@ export type SiteSkeleton = {
    */
   tones?: Partial<Record<SiteSection, "ink" | "tint" | "paper">>;
   /**
+   * 这一套不带的区段。
+   *
+   * ── WHY THIS IS THE ONE THAT MATTERS ────────────────────────────────────
+   *
+   * Six registers were photographed as whole pages on 2026-08-27 and the
+   * bottom half of all six was identical: 流程 → 你会得到什么 → 客户评价 →
+   * 覆盖范围 → CTA → 表单, same sections, same shapes, same order. `order` is
+   * a TOTAL ordering, so every register carried all thirteen sections and the
+   * only thing a register could say was where they went.
+   *
+   * Twelve identical bands shuffled is not six designs. It is one design with
+   * six sort orders, which is exactly what the founder kept seeing and calling
+   * 「有点一样」 -- and 重点 7a says a register is 「用了哪些区块」 before it is
+   * anything about paint.
+   *
+   * So a register may now decline a section outright, and what it declines is
+   * an argument about it: 瑞士 is a document and a document has no photo wall;
+   * 中台 is a counter screen and nobody reads a shop's life story at a counter;
+   * 招牌 is read from the street and a street sign has no FAQ.
+   *
+   * ── WHY DROPPING IS SAFE HERE ───────────────────────────────────────────
+   *
+   * composeSite runs while the page is still being GENERATED -- the public
+   * route reads the saved layout and 404s without one, so nothing here ever
+   * touches a page the customer has saved. What is dropped is template
+   * default, never their words. Once they save, the blocks are theirs and this
+   * file never runs on them again.
+   */
+  omit?: SiteSection[];
+  /**
    * 开场的地 —— what the first screen is painted on. `page` follows the
    * register's own ground; `ink` is a near-black carrying a HINT of the
    * register's own navigation hue.
@@ -212,6 +242,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // a table, so its website opens on the one table a stranger wants -- what it
   // costs. No figure: this register's whole argument is that it is not pretty.
   ledger: {
+  /* Every section this register keeps is a fact that could go in a
+     quotation. 一段话 and 师傅团队 are the two that could not. */
+    omit: ["story", "team"],
     tones: { flow: "tint", creds: "paper" },
     measure: "wide",
     hero: "left",
@@ -222,6 +255,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // the look of the last customer who walked out, so the photographs lead and
   // the reviews come straight after them.
   hearth: {
+  /* 照片墙 carries this register, so the two sections that are lists of
+     words go. A portfolio does not print its own terms and conditions. */
+    omit: ["promise", "faq"],
     tones: { story: "tint", reviews: "paper" },
     /* THE ONLY REGISTER THAT OPENS ON A PHOTOGRAPH AS ITS GROUND, and one is
        the right number.
@@ -243,6 +279,11 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.
   blueprint: {
+  /* The neutral one keeps almost everything, and that is its argument:
+     the ordinary answer for a business that has not told us it is
+     unusual. It declines only the section that repeats the guarantee
+     the flow already makes. */
+    omit: ["promise"],
     tones: { flow: "tint" },
     pattern: "grid",
     hero: "stage",
@@ -253,6 +294,10 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // another business, and a business asks for terms before it asks for a look:
   // price, then delivery, then what the arrangement actually is.
   counter: {
+  /* NOBODY READS A SHOP'S LIFE STORY AT A COUNTER. This register is the
+     dense one; what it keeps is what a buyer checks before ordering --
+     what you stock, what it costs, where you deliver, how to reach you. */
+    omit: ["story", "reviews", "faq"],
     tones: { promise: "paper" },
     measure: "wide",
     ground: "ink",
@@ -264,6 +309,10 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // a page that reads like a document leads with words -- what we do, how it
   // works, what we promise. No photo wall; that would be the opposite register.
   swiss: {
+  /* A DOCUMENT HAS NO PHOTO WALL. This is the register that prints, and
+     a page of photographs is the one thing that does not survive being
+     printed -- nor does it belong on an accountant's letterhead. */
+    omit: ["work", "team"],
     statement: "rule",
     measure: "narrow",
     pattern: "hatch",
@@ -279,6 +328,11 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // signboard. Then the two things somebody standing on the street needs:
   // when are you open, and where exactly are you.
   signboard: {
+  /* READ FROM THE STREET, so it is the shortest page in the library. A
+     shop sign does not answer frequently asked questions, walk you
+     through a process, or introduce its staff -- it says who we are,
+     what we sell, where we are, and come in. */
+    omit: ["faq", "flow", "promise", "team"],
     tones: { prices: "ink", promise: "paper", areas: "tint" },
     pattern: "diamond",
     ground: "ink",
@@ -332,7 +386,10 @@ export function composeSite(nodes: PuckNode[], style?: string | null): PuckNode[
 
   const head = nodes.slice(0, first);
   const tail = nodes.slice(last + 1);
-  const middle = nodes.slice(first, last + 1);
+  const dropped = new Set<string>(skeleton.omit ?? []);
+  const middle = nodes
+    .slice(first, last + 1)
+    .filter((n) => !dropped.has(sectionOf(n)));
 
   // Anything inside the run that is NOT movable -- a template may have put one
   // there -- keeps its relative place by riding with the section before it.

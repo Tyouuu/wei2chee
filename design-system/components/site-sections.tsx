@@ -720,6 +720,14 @@ export function SiteStory({
     </div>
   )
 
+  /* THE RATIO FOLLOWS THE SHAPE, and the reason is a render rather than a
+     preference. 4:3 is right in a column beside the words -- roughly 520 wide
+     and 390 tall. Applied at FULL width on `stack` the same ratio came out
+     1100 x 825, which made a close-up of one pair of hands the largest thing
+     on the page, taller than the first screen, on all six registers.
+     Photographed 2026-08-27; the founder's word for it was 不好看.
+     A picture under a paragraph is the evidence for the paragraph. It is not
+     allowed to out-shout the opening. */
   const picture = photo?.trim() ? (
     <div className="min-w-0">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -727,7 +735,11 @@ export function SiteStory({
         src={photo}
         alt={photoAlt || ""}
         className="w-full object-cover [border-radius:var(--radius-lg)]"
-        style={{ aspectRatio: "4 / 3" }}
+        style={
+          shape === "stack"
+            ? { aspectRatio: "21 / 9", maxHeight: "26rem" }
+            : { aspectRatio: "4 / 3", maxHeight: "30rem" }
+        }
       />
     </div>
   ) : null
