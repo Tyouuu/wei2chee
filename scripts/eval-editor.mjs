@@ -127,6 +127,7 @@ const {
 const { buildDesignDoc, preferredVariants, STYLE_BRIEFS, darkPalettes } = await import("../lib/portal/design-doc.ts");
 const { renderBlockRules } = await import("../lib/portal/block-rules.ts");
 const { PALETTE_ROWS } = await import("../lib/portal/palettes.generated.ts");
+const { buildPageLayout } = await import("../lib/templates/industry-template.ts");
 
 /**
  * One renovation contractor's dashboard, in the shape the generator produces.
@@ -289,6 +290,24 @@ const SITE_PAGE = () => ({
     },
   ],
 });
+
+/*
+  A PAGE THE PRODUCT ACTUALLY BUILDS, NOT ONE WRITTEN BY HAND.
+
+  PAGE() above is flat: every block sits at the top level of the shell. Real
+  pages have not looked like that since 2026-08-25, when the dashboard began
+  wrapping blocks in `Panel` and pairing them inside `Columns` -- and that gap
+  hid a real bug from all 49 cases. move_component resolved `before_id` against
+  the top level only, so a wrapped target scored -1, was read as "no target",
+  and the block was pushed to the BOTTOM of the page while the reply said it
+  had gone up. Every id in the flat fixture happens to be top-level, so the
+  ruler stayed green through all of it.
+
+  The flat page is kept for the other cases -- it is small, and small keeps
+  those prompts about the sentence rather than about the page. This one exists
+  so that at least one case is answered against the real shape.
+*/
+const REAL_PAGE = () => buildPageLayout("dashboard", {}, "我", "zh", [], "hearth", null);
 
 const CASES = [
   /*
@@ -902,6 +921,20 @@ const CASES = [
     // does not lean on that.
     expect: [],
     note: "这一页没有任何一块收照片",
+  },
+  {
+    name: "搬 · 真实页面上的块是包起来的",
+    ask: "把工程记录那张表搬到最上面",
+    page: REAL_PAGE,
+    /*
+      The point is 改到了, not 听得懂: on the flat fixture this passed while the
+      applier was quietly putting the block at the bottom. Against a real page
+      a wrapped target has to resolve, or the operation comes back skipped and
+      this row goes red.
+    */
+    expect: ["move_component"],
+    forbid: ["remove_component", "add_component"],
+    note: "真实页面里块包在 Panel / Columns 里",
   },
   {
     name: "记得 · 撤销过的不算数",
