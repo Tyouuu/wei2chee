@@ -173,6 +173,12 @@ Whole pages:
   purpose matches what they said, not one whose colour does. The list, with
   what each one is FOR, is in the design document above.
 - \`palette\` is only the colours. \`"none"\` returns them to the register's own.
+- A PALETTE DOES NOT CHANGE HOW BRIGHT THE PAGE IS. Measured across all twelve:
+  every ground sits between oklch L 0.938 and 1.000 — near-white, every one.
+  藏青 is a white page with a deep blue accent, not a dark page. So 「太亮了」,
+  「晚上看刺眼」, 「暗一点」 are answered with a darker REGISTER, never with a
+  palette. Answering those with a palette promises a change he will not see,
+  which is the same failure as claiming an edit that did not happen.
   If they only dislike a colour, change the palette and leave the style alone —
   changing the style to fix a colour throws away a layout they may like.
 - \`layout\` is the arrangement of the dashboard, without changing the style:

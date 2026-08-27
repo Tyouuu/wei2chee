@@ -126,6 +126,7 @@ const {
 } = await import("../lib/portal/layout-ops.ts");
 const { buildDesignDoc, preferredVariants, STYLE_BRIEFS } = await import("../lib/portal/design-doc.ts");
 const { renderBlockRules } = await import("../lib/portal/block-rules.ts");
+const { PALETTE_ROWS } = await import("../lib/portal/palettes.generated.ts");
 
 /**
  * One renovation contractor's dashboard, in the shape the generator produces.
@@ -248,6 +249,26 @@ const DARKER_THAN_LEDGER = Object.entries(CANVAS)
   .filter(([, v]) => v < CANVAS.ledger - 12)
   .map(([k]) => k);
 
+/*
+  A DARK PALETTE WOULD ALSO ANSWER 「太亮了」. TODAY THERE ARE NONE.
+
+  Measured 2026-08-27, all twelve palettes, ground lightness in oklch:
+  0.938 zen … 1.000 amber-minimal. Every single one is near-white, including
+  the three added that morning -- 藏青 is a white page with a deep blue accent,
+  not a dark page. 「配色层缺一个明度轴」 is in the task list and is still true.
+
+  So this list is empty right now and that is correct, not a bug. It is derived
+  rather than deleted so that the day somebody ships a genuinely dark palette,
+  this case starts accepting it without anyone remembering to come back here.
+
+  Parsed as oklch because that is what `dots` holds. Reading those strings as
+  hex is how the first version of this passed 1 run in 3 on nonsense.
+*/
+const DARK_PALETTES = PALETTE_ROWS.filter((row) => {
+  const l = /oklch\(\s*([0-9.]+)/.exec(row.dots?.[0] ?? "")?.[1];
+  return l !== undefined && parseFloat(l) < 0.5;
+}).map((row) => row.key);
+
 
 const CASES = [
   /*
@@ -263,7 +284,10 @@ const CASES = [
   {
     name: "换风格 · 深色一点",
     ask: "这个太亮了，换成深色一点的",
-    design: { field: "style", oneOf: DARKER_THAN_LEDGER },
+    designAny: [
+      { field: "style", oneOf: DARKER_THAN_LEDGER },
+      { field: "palette", oneOf: DARK_PALETTES },
+    ],
   },
   {
     /*
@@ -1027,6 +1051,15 @@ for (const c of chosen) {
           : (c.acceptDesign.oneOf ?? []).includes(d[c.acceptDesign.field]);
       const byOp = (c.accept ?? []).some((op) => r.ops.includes(op));
       return byDesign || byOp;
+    }
+    /*
+      Two fields, either of which is a right answer. `design` takes one field
+      and one list, which was enough while only a register could be dark.
+    */
+    if (c.designAny) {
+      const d = r.design ?? {};
+      const ok = c.designAny.some(({ field, oneOf }) => oneOf.includes(d[field]));
+      return ok && r.ops.length === 0;
     }
     if (c.design) {
       const d = r.design ?? {};
