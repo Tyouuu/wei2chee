@@ -122,7 +122,8 @@ https://claude.ai/code/artifact/9b91b313-ff58-4f77-8b0c-98e13095a872
 
 #### Wix 那两件（他自己点名的）
 - [ ] **编辑器画布做成一个有框的「窗口」** —— 学 Wix，不学 Durable 的贴边
-- [ ] **桌面 / 手机切换** —— 他点名两次了，优先级提到前面
+- [x] **桌面 / 手机切换** —— 做好了（`design-system/editor/device-toggle.tsx`），顶栏中间那两颗。
+      2026-08-27 实测：按下去画布变成 390px 的手机框，边条标着尺寸。**任务档落后于代码。**
 
 #### 还缺、跟 Durable 无关的
 - [ ] **拖拽换顺序**（现在只有工具条上的「上移」）
@@ -441,8 +442,13 @@ autoblog 102 · Enterprise Mod 2 101 · Deep Purple 95。
 **夜那一条自己讲出来了**：它的主张其实是「暗」，而暗是明度，照 7c 它比较像一个配色。
 留着是因为九套配色全是浅色，砍了等於删掉深色模式。**要修的是配色层缺一个明度轴。**
 
-- [ ] **还没做**：配色层加明度轴，然后夜从风格降成配色
-- [ ] **还没做**：柔和的大数字卡底下还有 120px 空地（HeroCard，不是图表，我今天修的那条盖不到）
+- [x] **配色层加明度轴** —— 2026-08-27 加了 `深夜 midnight`，底 `oklch(0.18 0.008 265)`。
+      量出来的理由：12 套配色底色全部近白（0.938–1.000），**藏青跟咖啡是白底深主色，不是深色页**。
+      实拍验过：同一套配色套在炉 / 台账 / 工作室上，是三个不同的深色页面
+- [ ] **还没做**：夜从风格降成配色 —— **技术上已经不挡了**（深夜存在，而且能套十四套），
+      但砍一套风格要老板点头。对照图：`.screenshots/midnight/sheet.jpg` 右上角就是「炉 + 深夜」
+- [x] **柔和的 120px 空地** —— 2026-08-27 实测已经没有了（大数字卡底下是走势图，满的）。
+      量法：找每一张卡「最后一个子元素的底」到「卡的底」之间的空隙 > 60px 的，回传空阵列
 
 ### 19. 客户的 landing page 模块 —— 研究做完了，规则立起来了（2026-08-26）
 > `然後要開始做客戶的landing pages了 是嗎 要這麼設計功能 才能讓客戶好用`
@@ -561,7 +567,10 @@ bag-ui · bigspring · convertfast · creativetim · launch-ui · startup · tai
 - [x] ⚠️ **它整段不上线，直到老板填了真的东西。**它问的每一格都是**关於世界的宣称** ——
       我们不知道这家有没有 JKKP 执照。编造一个就是伪造认证。
       编辑器看得到虚线框跟一句「填了才会上线」，公开页面看不到
-- [ ] 记进 `upstream.json`，让 `check:upstream` 管得到
+- [x] **记进 `upstream.json` 了**（2026-08-27，11 → 16 个来源）：tailark · nobruf ·
+      uiverse-io/galaxy · 加上**两个故意没拿的** animate-ui / react-bits（Commons Clause）。
+      顺手修了那把尺自己的毛病：GitHub 把 MIT + Commons Clause 报成 `NOASSERTION`，
+      跟我写的字串对不上，**它会每一次跑都对我叫一次狼** —— 一把天天叫狼的尺没有人看
 - [ ] **国外的 landing page 也再看一轮** —— `scratchpad/L-*.png` 已经有 16 张
       （Linear / Attio / Stripe / Resend / Raycast / Polar / Vercel / Supabase / Clerk /
       Framer / Cal / Dub / Lovable / Mintlify / shadcn / Tailwind），同样是**只看不挖**
@@ -675,7 +684,13 @@ bag-ui · bigspring · convertfast · creativetim · launch-ui · startup · tai
 - **Vengeance UI 的 GitHub 连结是死的**（API 查不到 repo），不算开源
 - **做法不受著作权保护，代码才受。** 对 tailark 我们就是这样做的：看他们怎么做，
   用我们自己的 token 重建。没有法律风险，而且做出来是我们自己的
-- [ ] UIverse 那 12k★ 的库还没挖（唯一可以直接搬代码的一个）
+- [x] **挖完了**（2026-08-27）。**3,571 个组件，一个版段都没有** —— Buttons 1000 ·
+      Cards 726 · loaders 718 · Toggle 260 · Inputs 226 · Forms 180 · Checkboxes 171 ·
+      **Patterns 103** · Radio 102 · Tooltips 62 · Notifications 23。全部是**装饰过的控件**，
+      不是页面区块，帮不到风格库。而且**每一个都用同一个类名 `.container`**，
+      24 个放同一页会全部渲染成一模一样（要 iframe 才看得到）。最后更新 2024-09-02。
+      **只拿了 Patterns 的几何**：图纸方格纸 · 码点阵 · 瑞士细斜纹 · 招牌菱形格，
+      用我们自己的 token 重画，而且列印时全部关掉
 
 ### 20. 🔴 平台「四不像」（2026-08-26 他讲的）
 > `感覺我的平台有點四不像`
