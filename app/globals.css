@@ -1131,3 +1131,72 @@
   background-color: color-mix(in oklab, var(--ink-bg) 78%, var(--ink-fg)) !important;
   color: var(--ink-fg) !important;
 }
+
+/* ── 地上的纹路 ──────────────────────────────────────────────────────────────
+
+   Taken from uiverse-io/galaxy (MIT, 12k stars), and the honest report on that
+   library is that this is the ONLY thing in it worth taking.
+
+   It holds 3,571 components -- 1000 buttons, 726 cards, 718 loaders, 260
+   toggles -- and not one page section. It is decorated CONTROLS, not layouts,
+   so it cannot help a library that is about page composition. It was last
+   pushed 2024-09-02. Every snippet styles a generic class name (`.container`,
+   `.card`), so two of them in one document fight over the same selector --
+   twenty-four rendered in one page came out identical, which is how that was
+   found. And its colours are hardcoded and loud: rainbow diagonals, neon
+   S-curves, cartoon clouds.
+
+   What IS good is the GEOMETRY. Four of its patterns are real ground textures
+   -- a dot grid, a diagonal hatch, a diamond lattice, a ruled grid -- and
+   geometry is not copyrightable, is not coloured, and is exactly the axis this
+   library was missing: 瓷 has had its nyonya tile since August and no other
+   register had any ground at all.
+
+   So they are redrawn from the register's OWN ink at 9-20%. The first pass
+   used 5-6% and the screenshot settled it: a texture nobody can see is a
+   texture that is not there -- no hex anywhere,
+   nothing that can clash with a palette, and nothing that survives being
+   printed. A register opts in by setting --ground-pattern; the default is
+   none, because a texture under every register is a texture that means
+   nothing. */
+.ds-ground[data-pattern="dots"] {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--color-paper) 20%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 20px 20px;
+}
+.ds-ground[data-pattern="hatch"] {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--color-paper) 5%, transparent) 0 1px,
+    transparent 1px 11px
+  );
+}
+.ds-ground[data-pattern="diamond"] {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      color-mix(in oklab, var(--color-paper) 11%, transparent) 0 1px,
+      transparent 1px 24px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      color-mix(in oklab, var(--color-paper) 11%, transparent) 0 1px,
+      transparent 1px 24px
+    );
+}
+.ds-ground[data-pattern="grid"] {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--color-paper) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-paper) 10%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+/* A pattern is a screen decision. On paper it is toner spent on nothing and it
+   makes body text harder to read -- the same call check:print already makes
+   about shadows. */
+@media print {
+  .ds-ground[data-pattern] {
+    background-image: none;
+  }
+}

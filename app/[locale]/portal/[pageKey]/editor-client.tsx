@@ -1239,6 +1239,7 @@ export function PortalEditor({
                       data-ground={
                         pageKey === "website" ? (siteSkeleton(activeStyle).ground ?? "page") : undefined
                       }
+                      data-pattern={pageKey === "website" ? siteSkeleton(activeStyle).pattern : undefined}
                       className={`ds-ground ${scopeClasses(activeStyle, activePalette)} ${
                         pageKey === "website" ? "ds-site" : ""
                       } h-full [background-color:var(--color-canvas)]`}

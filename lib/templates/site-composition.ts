@@ -126,6 +126,16 @@ export type SiteSkeleton = {
    * 瑞士 is a printed sheet and must stay white.
    */
   ground?: "page" | "ink";
+  /**
+   * 地上的纹路 —— an optional ground texture, drawn from the register's own ink
+   * at 3-6%. Geometry taken from uiverse-io/galaxy (MIT); the colours are ours,
+   * because theirs are hardcoded rainbows.
+   *
+   * Most registers have none, and that is the point: a texture under all
+   * fourteen is a texture that distinguishes nothing. 瓷 keeps its own nyonya
+   * tile, which is painted by its token file rather than here.
+   */
+  pattern?: "dots" | "hatch" | "diamond" | "grid";
   /** Movable sections, most important first. Anything the template has and
    *  this list omits keeps its template position, after the listed ones. */
   order: SiteSection[];
@@ -154,6 +164,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.
   blueprint: {
+    pattern: "grid",
     hero: "stage",
     opens: "做什么",
     order: ["services", "work", "story", "team", "flow", "prices", "reviews", "creds", "cta", "faq", "areas", "promise", "hours"],
@@ -179,6 +190,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // a page that reads like a document leads with words -- what we do, how it
   // works, what we promise. No photo wall; that would be the opposite register.
   swiss: {
+    pattern: "hatch",
     hero: "plain",
     opens: "说明",
     order: ["services", "story", "team", "flow", "promise", "creds", "faq", "prices", "areas", "reviews", "work", "cta", "hours"],
@@ -213,6 +225,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // prices, then whether you deliver here. Monospace all the way down, so no
   // long-prose section gets to lead.
   code: {
+    pattern: "dots",
     ground: "ink",
     hero: "plain",
     opens: "货单",
@@ -231,6 +244,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // signboard. Then the two things somebody standing on the street needs:
   // when are you open, and where exactly are you.
   signboard: {
+    pattern: "diamond",
     ground: "ink",
     hero: "center",
     opens: "店名 + 找得到",

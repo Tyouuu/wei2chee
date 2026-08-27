@@ -59,6 +59,7 @@ export function PublicSite({
       register={style}
       palette={palette}
       data-ground={siteSkeleton(style).ground ?? "page"}
+      data-pattern={siteSkeleton(style).pattern}
       className="ds-ground min-h-screen [background-color:var(--color-canvas)]"
     >
       <SystemLangProvider lang={lang}>
