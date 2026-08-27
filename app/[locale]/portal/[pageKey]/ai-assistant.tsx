@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { useAssistant } from "./assistant-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { usePuck, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { planDesignChange } from "@/lib/portal/design-change";
 import { claimStands } from "@/lib/portal/claim-check";
+import { suggestionsFor } from "@/lib/portal/trade-suggestions";
+import { useTrade } from "@/design-system/trade-context";
 import { findSelector, type PuckLayout } from "@/lib/portal/layout-ops";
 import { relayout } from "@/lib/portal/relayout";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
@@ -557,7 +559,20 @@ export function AiAssistant({
     router.refresh();
   }
 
-  const suggestions = [t("aiSuggest1"), t("aiSuggest2"), t("aiSuggest3")];
+  /*
+    HIS TRADE, NOT A DENTIST'S.
+
+    These were three fixed strings and the first was 「把「客户」改成「病人」」 --
+    a dental example shown to every renovation contractor, aircon technician,
+    kopitiam and tuition centre in the product. An example that is not about
+    your business does not teach you what the box is for; it teaches you the
+    box is for somebody else.
+
+    The trade was on hand the whole time: TradeProvider, the same context the
+    photo picker reads. Ninth time in this repo that a capability existed and
+    the wire was never connected.
+  */
+  const suggestions = suggestionsFor(useTrade(), useLocale());
 
   /**
    * ONE PRESS, ON THE THING THAT IS SELECTED — the part of Durable that this
