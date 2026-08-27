@@ -61,7 +61,12 @@ it("writes one page per register, each for its own trade", () => {
   const out: Record<string, unknown> = {};
   for (const [key, t] of Object.entries(TRADE)) {
     const l = buildPageLayout("website", t.ctx, t.name, "en", undefined, t.style) as any;
-    fill(l.content, PHOTOS[t.ctx.industry.slug] ?? {});
+    /* `industry` is optional on BusinessContext -- a project can exist before
+       the analysis has decided a trade. Every entry in TRADE above sets one,
+       but the type does not know that, and `next build` type-checks this file
+       while `tsc --noEmit` here did not: two deployments failed on it before
+       the difference was noticed. */
+    fill(l.content, PHOTOS[t.ctx.industry?.slug ?? ""] ?? {});
     out[key] = l;
   }
   writeFileSync(".screenshots/photos/per-trade.json", JSON.stringify(out));
