@@ -276,6 +276,23 @@ export function SiteHero({
   const centred = layout === "center"
   const band = layout === "band"
   const plain = layout === "plain"
+  /* A PLAIN OPENING IS NOT A REASON TO BIN THE PHOTOGRAPH.
+
+     Measured on the live page, 2026-08-27: 瑞士 and 中台 open on `plain`, both
+     had the owner's photograph in their props, and both rendered zero images.
+     The prop reached the page and the layout ignored it -- so an owner who
+     uploads a photo of his own finished kitchen sees it on four registers out
+     of six and cannot tell why.
+
+     Of the 19 trading Malaysian SME sites photographed on 2026-08-27, 14 give
+     the first screen to a photograph and the median one covers 59% of it. None
+     of them is a name card.
+
+     It is NOT the stage and NOT the bleed: the picture sits under the words at
+     the page's own measure, framed, ending where the text ends. 瑞士 is a
+     document, and a document can carry a plate -- it just does not let it run
+     off the edge. */
+  const plainPhoto = plain && Boolean(photo?.trim())
   const hasPhoto = Boolean(photo?.trim())
   /* TWO LAYERS, NOT ONE -- see block-tone.ts. Writing
      `--color-paper: var(--color-nav-fg)` beside `--color-nav-fg` is safe, but
@@ -705,6 +722,19 @@ export function SiteHero({
           ))}
         </dl>
       ) : null}
+
+      {/* THE PLAIN OPENING'S PHOTOGRAPH. Under the words, at the page's own
+          measure, framed -- not bleeding off the bottom the way 舞台 does and
+          not behind the type the way 满图 does. See `plainPhoto` above for the
+          measurement that made it necessary. */}
+      {plainPhoto ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={photo}
+          alt={photoAlt || ""}
+          className="mx-auto mt-10 block aspect-[16/7] w-full max-w-[68rem] object-cover [border-radius:var(--radius-lg)]"
+        />
+      ) : null}
       </div>
     </section>
   )
@@ -717,6 +747,7 @@ export function SiteHero({
      hero inside the measure and let it bleed only within that -- a full-width
      ground that stops 200px from each edge, which looks like a mistake and is
      one. See app/globals.css. */
+  /* Rendered by `shell` below, at the end of the measured wrapper. */
   return painted ? (
     <div data-bleed="" data-photo-ground={bled ? "" : undefined} style={groundStyle}>
       {shell}

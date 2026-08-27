@@ -140,11 +140,19 @@ export function InfoRows({
       heading={heading}
       variant={variant}
       framed={framed}
+      /* A ROW WITH NO LABEL IS STILL A ROW.
+         `primary` is the line InfoList actually draws; `secondary` is its
+         subtitle, and a subtitle under nothing draws nothing. 「Where we cover」
+         carried its place names in `value` with an empty label, so on the live
+         page the whole section came to fourteen characters -- its own heading
+         and not one of the eight towns it covers. Measured 2026-08-27; the
+         founder had been looking at it and asking 「这个是还没渲染的吗」.
+         So an unlabelled row promotes its value to the line you read. */
       items={(rows ?? []).map((r, i) => ({
         id: String(i),
         icon: icon(r.icon),
-        primary: r.label,
-        secondary: r.value,
+        primary: r.label?.trim() ? r.label : r.value,
+        secondary: r.label?.trim() ? r.value : undefined,
       }))}
       labels={{ emptyText: w.empty }}
     />

@@ -232,8 +232,19 @@ function withoutEmptyShots(node: PuckNode): PuckNode {
 
 /** True when stripping placeholders emptied the only list this node had. */
 function isAllPlaceholder(node: PuckNode): boolean {
+  /* ONLY THE LISTS THAT HAVE SOMETHING IN THEM.
+     `[].every(...)` is TRUE, so a block carrying one empty array was judged
+     「every row in every list is a placeholder」 and deleted from the published
+     page -- with its real content still in it.
+     Found on 2026-08-27 by measuring what each section on the live page
+     actually contains: 一段话配一张照片 had 183 characters of the owner's own
+     words and a photograph, and never appeared on any of the six registers,
+     because it also ships `points: []`. The founder saw it as 「还没渲染」.
+     An empty list is not a list of placeholders. It is no list at all, and
+     whether the block is empty is `isEmptyOnPublish`'s question, not this
+     one's. */
   const lists = Object.entries(node.props).filter(
-    ([k, v]) => Array.isArray(v) && !SLOT_KEYS.includes(k),
+    ([k, v]) => Array.isArray(v) && !SLOT_KEYS.includes(k) && (v as unknown[]).length > 0,
   );
   if (!lists.length) return false;
   return lists.every(([, v]) => (v as unknown[]).every(isPlaceholderRow));

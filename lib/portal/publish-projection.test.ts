@@ -318,3 +318,61 @@ describe("a placeholder never reaches a stranger", () => {
     expect(out.content).toHaveLength(1);
   });
 });
+
+describe("an empty list is not a list of placeholders", () => {
+  /* THE BUG THIS EXISTS FOR, and it is worth stating because it deleted real
+     content silently for weeks.
+
+     `isAllPlaceholder` asked 「is every row in every list a placeholder?」 and
+     `[].every(...)` is TRUE, so a block carrying one empty array answered yes
+     however full the rest of it was. 一段话配一张照片 ships `points: []`; filled
+     with 183 characters of the owner's own words and a photograph of his own
+     crew, it never reached a published page on any register. The founder saw
+     six websites with a section missing and asked 「这个是还没渲染的吗」.
+
+     Nothing threw. The block was in the layout, in the editor, in the saved
+     JSON -- and gone from the page. */
+  it("keeps a filled block that also carries an empty list", () => {
+    const layout = {
+      root: {},
+      content: [
+        {
+          type: "SiteStory",
+          props: {
+            id: "website-story",
+            heading: "跟你做的是什么人",
+            body: "做了十年，报价的人就是到场的人。",
+            photo: "https://example.com/crew.jpg",
+            points: [],
+          },
+        },
+      ],
+    } as unknown as PuckLayout;
+
+    const out = forPublication(layout);
+    expect(out.content).toHaveLength(1);
+    expect(String((out.content[0].props as { body?: string }).body)).toContain("做了十年");
+  });
+
+  it("still drops a block whose only list IS all placeholders", () => {
+    const layout = {
+      root: {},
+      content: [
+        {
+          type: "PriceList",
+          props: {
+            id: "website-prices",
+            /* `placeholder: true` is the flag the generator writes, and
+               isPlaceholderRow reads exactly that -- not the em-dash. */
+            rows: [
+              { label: "Home renovation", value: "RM —", placeholder: true },
+              { label: "Kitchen", value: "RM —", placeholder: true },
+            ],
+          },
+        },
+      ],
+    } as unknown as PuckLayout;
+
+    expect(forPublication(layout).content).toHaveLength(0);
+  });
+});

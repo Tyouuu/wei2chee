@@ -420,8 +420,14 @@ const areas = (c: LandingContent) =>
     heading: c.words.sections.areas.heading,
     framed: true,
     rows: [
+      /* NO LABEL. It used to repeat `areas.heading` -- so the section rendered
+         「Where we cover」 as its title and 「Where we cover」 again as the row's
+         label, and the whole band came to 29 characters of which 24 were the
+         same three words twice. Measured 2026-08-27 while looking for why six
+         registers had an almost-empty section in the same place. Printing one
+         fact twice on one page is what got 印 culled. */
       {
-        label: c.words.sections.areas.heading,
+        label: "",
         value: c.words.sections.areas.list.join(" · "),
         icon: "place",
       },
