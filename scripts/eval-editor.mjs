@@ -414,6 +414,17 @@ const CASES = [
       looks like a number.
     */
     accept: ["move_component", "remove_component", "set_variant", "set_text"],
+    /*
+      AND SO IS A DESIGN ANSWER, WHICH THIS CASE LEARNED THE SECOND TIME.
+
+      The comment above records getting this wrong once by listing only layout
+      operations. It was still wrong afterwards, in the same way: 「太多字看不到
+      重点」 answered with the 「一个大数字」 arrangement is a good answer, and
+      the case scored it 0 because `accept` only knew about operations. Written
+      down twice now, because a ruler that quietly measures its author is worth
+      exactly nothing and looks identical to one that works.
+    */
+    acceptDesign: { field: "any" },
   },
   {
     name: "新页面 · 我们从来没有的",
@@ -456,6 +467,13 @@ const CASES = [
       "move_component", "add_component", "set_variant", "set_text",
       "add_table_column", "add_table_row", "set_workflow",
     ],
+    /*
+      TAKING THE ARRANGEMENT IS THE POINT, and it counts however it arrives.
+      「我们觉得好用跟好看我们就抄」 -- what must not be taken is their WORDS,
+      which forbidText below is what actually guards. Refusing the whole picture
+      is the failure this case is looking for, not a design answer.
+    */
+    acceptDesign: { field: "any" },
     forbidText: ["RM 60", "RM 130", "Smart Home", "0168001631"],
   },
 
@@ -568,6 +586,156 @@ const CASES = [
     // guess at an edit the owner did not ask for.
     expect: [],
     note: "该问清楚或不动，不该乱猜",
+  },
+
+  /*
+    ── 真实情况 ───────────────────────────────────────────
+
+    2026-08-27: 「模拟更多真实的情况进去 看看AI agent的output是什么
+    有没有做到客户想要表达的事情」.
+
+    Everything above this line is a CLEAN INSTRUCTION -- a sentence written by
+    somebody who already knows the assistant edits pages. The cases below are
+    the ones a contractor actually types on a phone between jobs: a question
+    about whether the system does something at all, a want stated as an outcome
+    with no idea what block it needs, a job for a person rather than for a page,
+    and a complaint about DATA in a system whose data is still a sample.
+
+    Each of these has a defensible answer and most of them are NOT an edit. The
+    failure they are looking for is the assistant doing something -- anything --
+    because doing something feels more helpful than saying what is true.
+  */
+  {
+    name: "真实 · 问功能有没有",
+    ask: "客人问我要收据 系统有没有",
+    // A question about the product, not a request to change the page. Adding a
+    // 「收据」 block because the word appeared is the failure here.
+    /*
+      Run twice, it answered two ways: 「现在还没有收据页」 and an OFFER to add
+      one. Both are right, and the offer is the better of the two -- adding a
+      page is already an offer with a button the customer presses, so nothing
+      happens behind his back. What this case is actually guarding against is
+      the assistant seeing the word 「收据」 and dropping a receipt block onto
+      the dashboard he is looking at.
+    */
+    expect: [],
+    orNothing: true,
+    noDesign: true,
+    note: "问句不是指令；回答或提议加页都对，不能直接往这页塞东西",
+  },
+  {
+    name: "真实 · 讲结果不讲手段",
+    ask: "我要知道这个月收多少钱",
+    /*
+      He names an outcome and no block. This is the single most common shape a
+      real want arrives in, and the assistant has to pick the block itself --
+      which is allowed, because unlike 「金额那边怪怪的」 there is nothing to ask:
+      he has told you exactly what he wants to see.
+    */
+    accept: ["add_component", "add_table_column", "set_text"],
+    note: "他讲得很清楚，只是没讲用哪一块",
+  },
+  {
+    name: "真实 · 寒暄包着指令",
+    ask: "早啊 帮我加个备注栏 谢谢啊",
+    // The instruction is in there. Answering the greeting instead of the
+    // request, or padding the reply with 不客气, is the failure.
+    expect: ["add_table_column"],
+    note: "寒暄不是指令，不要被带偏",
+  },
+  {
+    name: "真实 · 叫它去做人的事",
+    ask: "帮我发 whatsapp 给客人",
+    // It edits a page. It does not send messages. Saying so plainly in one
+    // sentence is the whole answer; offering to 「稍后帮您安排」 is not.
+    expect: [],
+    noDesign: true,
+    note: "做不到就说做不到，不要假装会",
+  },
+  {
+    name: "真实 · 抱怨资料不是版面",
+    ask: "昨天那单怎么没有了",
+    /*
+      THE ONE THAT MATTERS MOST HERE.
+
+      The rows on every customer's page are still a SAMPLE -- 「Taman Desa 三房
+      翻新 / 陈先生 / RM 48,500」 is written into lib/portal/sample-system.ts and
+      is the same for every account. An owner who believes those rows are his
+      will eventually type this sentence, and an assistant that answers it with
+      add_table_row has just invented a job that does not exist inside a page he
+      thinks is his real business.
+    */
+    expect: [],
+    noDesign: true,
+    forbid: ["add_table_row"],
+    note: "资料不是它管的，更不能造一笔",
+  },
+  {
+    name: "真实 · 员工不能看到钱",
+    ask: "这个我要给我员工用 但是不能让他看到钱",
+    /*
+      Real permissions do not exist in the product. But the page-level half of
+      what he wants does: take the money column off. Doing that AND saying that
+      is what a person would do; answering 「系统不支持权限」 and stopping is
+      technically true and useless.
+    */
+    /*
+      MY EXPECTATION WAS WRONG AND THE MODEL WAS RIGHT. Written down rather than
+      quietly edited.
+
+      I wrote this case expecting remove_table_column -- take the money column
+      off, since per-employee permissions do not exist. But REMOVING IT TAKES IT
+      AWAY FROM HIM TOO. He asked to hide it from one person, and the page has
+      no concept of people, so there is no edit that does what he asked. What it
+      answered -- what cannot be done, what can, and what that would cost him --
+      is the honest answer, and it leaves the decision where it belongs.
+      Removing the column would have been the assistant deciding for him.
+
+      So: doing nothing is correct here, and doing it is also defensible if he
+      is told. What is NOT allowed is pretending permissions exist.
+    */
+    accept: ["remove_table_column"],
+    orNothing: true,
+    forbidText: ["权限已", "已设置权限", "已限制员工"],
+    note: "不能假装会做权限；讲清楚限制就是答案",
+  },
+  {
+    name: "真实 · 口语指代",
+    ask: "上面那个我不要了",
+    // Unlike 「把那个删掉」 this one does carry a position. 「上面那个」 is the
+    // first block in the main column, and resolving it is the difference
+    // between an assistant that understands people and one that needs a form.
+    /*
+      ALSO MY MISTAKE. I wrote this expecting it to resolve 「上面那个」 to the
+      first block. But the page opens with a PageHeader ABOVE that block, so
+      there are genuinely two things at the top and it asked which -- naming
+      one of them, which is what the prompt asks for. That is better than the
+      answer I had in mind, not worse.
+
+      The case still earns its place: what it now measures is that a phone-typed
+      fragment does not make the assistant remove several blocks, or the frame.
+    */
+    accept: ["remove_component"],
+    orNothing: true,
+    forbid: ["remove_table_column", "set_text"],
+    note: "页面顶上真的有两个候选，问一句比猜好",
+  },
+  {
+    name: "真实 · 英文口语而且模糊",
+    ask: "can u make the table bigger",
+    // 「bigger」 could be density, could be a variant, could be the page's
+    // arrangement. Any of those is defensible; replying in Chinese is not.
+    /*
+      Run twice it did both: set_variant 「Made the table roomier.」 and a
+      question 「Should I make the table rows taller, or make the table take up
+      more space?」. 「bigger」 really is ambiguous, so both are right -- what is
+      not negotiable is that the answer comes back in English.
+    */
+    accept: ["set_variant", "move_component"],
+    acceptDesign: { field: "any" },
+    orNothing: true,
+    replyIn: "en",
+    note: "模糊但有方向，而且要用英文答",
   },
 ];
 
@@ -723,6 +891,17 @@ for (const c of chosen) {
       blocks to make the page darker has misunderstood what it was asked.
     */
     if (c.noDesign && r.design && Object.keys(r.design).length) return false;
+    /*
+      SOME QUESTIONS HAVE TWO RIGHT ANSWERS AND THE RULER MUST NOT PICK ONE.
+
+      `orNothing` marks a case where doing the edit AND asking which edit are
+      both defensible -- 「上面那个我不要了」 over a page that opens with a header
+      above the first block. Every OTHER guard still applies, so a case with
+      this flag can still fail by removing the frame, removing several things,
+      or replying in the wrong language. It buys the model the choice, not a
+      pass.
+    */
+    if (c.orNothing && r.ops.length === 0) return true; // also covers offering a page
     // Either the operation OR the design counts. See the case's own note.
     if (c.acceptDesign) {
       const d = r.design ?? {};
@@ -761,6 +940,13 @@ for (const c of chosen) {
     blind spot rather than the assistant.
   */
   const landed = runs.filter((r) => {
+    /*
+      A case that is allowed to ask has NOTHING TO LAND when it asks. Without
+      this, `orNothing` passes 听得懂 and then fails 改到了 for the same run --
+      the ruler contradicting itself, and looking from the outside exactly like
+      an assistant whose edits do not stick.
+    */
+    if (c.orNothing && r.ops.length === 0) return r.skipped.length === 0;
     if (r.design && Object.keys(r.design).length) return r.skipped.length === 0;
     return ((c.expect?.length ?? 0) > 0 || c.accept) && !c.suggest
       ? r.applied > 0 && r.skipped.length === 0
