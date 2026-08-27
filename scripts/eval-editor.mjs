@@ -108,6 +108,20 @@ const args = process.argv.slice(2);
 const N = Number(args[args.indexOf("--n") + 1]) || 2;
 const DRY = args.includes("--dry");
 const PREFIX = args.includes("--prefix");
+/*
+  RUN THE WHOLE THING AT A DIFFERENT REASONING EFFORT  --  --effort medium
+
+  Reasoning tokens are billed as output and never appear in the reply: measured
+  186 of 311 output tokens per edit, so most of what the founder pays for on
+  the output side is thinking nobody reads. It is also most of the latency the
+  route's maxDuration was set against.
+
+  Whether "high" is buying anything has never been measured, and this is the
+  only instrument that can answer it. An ENV-FREE FLAG rather than editing
+  ai-model.ts, so the experiment cannot accidentally ship: the product's value
+  stays the default, and ai-model.test.ts still asserts what that value is.
+*/
+const EFFORT = args.includes("--effort") ? args[args.indexOf("--effort") + 1] : null;
 const ONLY = args.includes("--only") ? args[args.indexOf("--only") + 1] : null;
 
 for (const line of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
@@ -1137,7 +1151,7 @@ async function once(ask, image, saved = false, history = [], page = null) {
   const startedAt = Date.now();
   const completion = await openai.chat.completions.create({
     model: AI_MODEL,
-    reasoning_effort: AI_REASONING_EFFORT,
+    reasoning_effort: EFFORT ?? AI_REASONING_EFFORT,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       {
@@ -1341,7 +1355,9 @@ for (const c of chosen) {
 }
 
 const pct = (a, b) => `${Math.round((a / b) * 100)}%`.padStart(4);
-console.log("\n用讲的改 — 编辑器 agent\n");
+/* Self-describing: a run at a different reasoning effort must not be
+   mistakable for the default one three days later. */
+console.log(`\n用讲的改 — 编辑器 agent · ${AI_MODEL} · reasoning=${EFFORT ?? AI_REASONING_EFFORT}\n`);
 console.log(`${"".padEnd(24)}听得懂  改到了  每次一样   最常见的答案`);
 for (const r of rows) {
   console.log(

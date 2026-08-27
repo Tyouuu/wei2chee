@@ -37,8 +37,29 @@ export const AI_MODEL = "gpt-5.6-luna";
  * right: this model emits a structured edit against a customer's real page,
  * where a wrong id or a wrong operation is a change he did not ask for.
  *
- * Whether "medium" would score the same for less is an open question and the
- * eval can answer it -- change this line, run `eval:editor -- --n 2`, compare
- * 听得懂 / 改到了 / 每次一样 and the latency line. Nobody has run that yet.
+ * ── MEASURED 2026-08-27, AND THE ANSWER IS NOT ABOUT THE MONEY ────────────
+ *
+ * 100 real calls at each setting (`npm run eval:editor -- --n 2 --effort medium`):
+ *
+ *                 听得懂   改到了   每次一样   中位    p95    输出 tok
+ *   high           100%    100%     100%     3.7s   7.2s    311
+ *   medium          98%     99%      98%     2.8s   5.7s    231
+ *
+ * Medium is a second faster and 80 output tokens cheaper -- which at this
+ * volume is fractions of a cent, so the money was never the argument.
+ *
+ * WHAT IT LOSES IS THE PRODUCT. The case medium failed 0 out of 2 is:
+ *
+ *     「客人一直打电话问进度，我每次都要翻 WhatsApp」
+ *
+ * That is not an instruction, it is a contractor describing his day. The right
+ * answer is a 进度 column on the jobs table he already has; medium answered by
+ * REARRANGING THE PAGE. Understanding an owner who describes a problem instead
+ * of specifying a change is the whole reason this feature exists -- it is what
+ * a page builder cannot do -- and it is precisely what the cheaper setting
+ * stops doing.
+ *
+ * So: high, and this is settled unless somebody re-measures. Re-run the two
+ * lines above before reopening it; do not reason about it from the prices.
  */
 export const AI_REASONING_EFFORT = "high" as const;
