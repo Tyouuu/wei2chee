@@ -25,6 +25,7 @@ import {
   SiteGallery,
   SiteStory,
   SiteStatement,
+  SiteBand,
   SiteTeam,
 } from "@/design-system/components/site-sections";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
@@ -279,6 +280,13 @@ type Components = {
     /* 开场的地. Register-chosen; see site-composition.ts. */
     ground?: "page" | "ink";
     points?: { label: string }[];
+  };
+  SiteBand: {
+    photo?: string;
+    photoAlt?: string;
+    line?: string;
+    hint?: string;
+    height?: "tall" | "short";
   };
   SiteStatement: {
     body?: string;
@@ -664,7 +672,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteStatement", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteBand", "SiteStatement", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1872,6 +1880,34 @@ export const puckConfig: Config<Components> = {
           photoAlt={photoAlt}
           points={points}
         />
+      ),
+    },
+
+    SiteBand: {
+      label: "一条满边照片",
+      fields: {
+        photo: {
+          label: "照片",
+          type: "custom",
+          render: ({ value, onChange }) => <PhotoField value={value as string} onChange={onChange} />,
+        },
+        photoAlt: { label: "照片说明（给看不到的人）", type: "text" },
+        line: { label: "压在上面的一句话（可以不填）", type: "text" },
+        hint: { label: "还没填的时候讲什么", type: "textarea" },
+        height: {
+          label: "高度",
+          type: "select",
+          options: [
+            { label: "一整段", value: "tall" },
+            { label: "一条", value: "short" },
+          ],
+        },
+      },
+      /* No `height` in defaultProps -- an absent prop is the only way to say
+         「follow the register」. See SiteStory for the long version. */
+      defaultProps: {},
+      render: ({ photo, photoAlt, line, hint, height }) => (
+        <SiteBand photo={photo} photoAlt={photoAlt} line={line} hint={hint} height={height} />
       ),
     },
 

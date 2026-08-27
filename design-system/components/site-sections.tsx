@@ -1164,3 +1164,83 @@ export function SiteStatement({
     </section>
   )
 }
+
+
+/**
+ * 一条满边的照片。
+ *
+ * ── WHY THIS SECTION EXISTS ───────────────────────────────────────────────
+ *
+ * Counted on 2026-08-27: Wix's Painting Company template carries 14
+ * photographs and their Home Remodeling template 6; ours carried between 2 and
+ * 5, and every one of them sat inside the page's measure with a radius and a
+ * shadow. Two of theirs do not: a photograph runs the full width of the
+ * viewport between sections, top and bottom edge to edge, and it is the thing
+ * that makes their page read as a place rather than as a document about one.
+ *
+ * The founder, after being shown ours at full size: 「到底谁有去用啊」.
+ *
+ * ── AND WHY IT CARRIES NO WORDS BY DEFAULT ────────────────────────────────
+ *
+ * Because the type over a photograph has no guaranteed contrast and the owner
+ * picks the photograph. `line` is optional and, when present, sits on a scrim
+ * strong enough to survive whatever they upload -- the same rule 满图压字
+ * follows in the hero.
+ *
+ * It ships EMPTY and publish-projection drops it, like every other section
+ * that would otherwise put a grey box on a stranger's screen.
+ */
+export function SiteBand({
+  photo,
+  photoAlt,
+  line,
+  hint,
+  height = "tall",
+}: {
+  photo?: string
+  photoAlt?: string
+  /** One line over the picture. Optional, and usually better absent. */
+  line?: string
+  /** Shown to the OWNER while this is still empty. Never published. */
+  hint?: string
+  /** `tall` a band you scroll through · `short` a rule made of photograph. */
+  height?: "tall" | "short"
+}) {
+  if (!photo?.trim()) {
+    if (!hint) return null
+    return (
+      <section
+        data-prompt=""
+        data-wide=""
+        className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
+      >
+        <p className="max-w-[56ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+          {hint}
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <section data-bleed="" data-photo-ground="" className="@container relative isolate">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={photo}
+        alt={photoAlt || ""}
+        className="block w-full object-cover"
+        style={{ height: height === "short" ? "clamp(9rem, 22vh, 15rem)" : "clamp(16rem, 52vh, 30rem)" }}
+      />
+      {line ? (
+        <>
+          <span aria-hidden className="absolute inset-0 block" style={{ background: "rgb(0 0 0 / 0.42)" }} />
+          <p
+            className="ds-display absolute inset-0 mx-auto flex max-w-[28ch] items-center justify-center px-6 text-center [color:#fff] [font-weight:var(--fw-medium)] [text-wrap:balance]"
+            style={{ fontSize: "clamp(1.3rem, 3.4vw, 2.2rem)" }}
+          >
+            {line}
+          </p>
+        </>
+      ) : null}
+    </section>
+  )
+}

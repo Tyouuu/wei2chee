@@ -324,7 +324,7 @@
      FLAVORS THAT STAY, Câphê, MARBLE, Healing Begins With The Breath -- sets
      its display type in a serif over a photograph. Nunito stays for the body,
      where warmth is right and a serif at 15px is not. */
-  --font-display: var(--font-serif-latin), var(--font-song-cjk), Georgia, serif;
+  --font-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
   /* No mono anywhere in this register: a monospaced figure is a precision
      signal, and precision is Ledger's job, not this one's. */
   --font-numeric: var(--font-rounded-latin), "PingFang SC", system-ui, sans-serif;

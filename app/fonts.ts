@@ -19,7 +19,6 @@ import {
   Geist,
   Geist_Mono,
   IBM_Plex_Sans,
-  Instrument_Serif,
   Bricolage_Grotesque,
   Manrope,
   Noto_Sans_SC,
@@ -27,22 +26,9 @@ import {
   Nunito,
   Plus_Jakarta_Sans,
   Public_Sans,
+  Newsreader,
 } from "next/font/google";
 
-// Latin-only webfonts, composed with system CJK fallbacks in globals.css'
-// --font-sans/--font-serif so Chinese text uses the OS's own (already good)
-// CJK fonts instead of shipping a multi-MB CJK webfont subset.
-//
-// Instrument Serif is the display voice: very high stroke contrast, narrow,
-// almost no tracking needed at large sizes — it reads as typeset rather than
-// rendered, which is the whole difference at Hero scale. Single 400 weight by
-// design (the face carries its weight through contrast, not mass).
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-serif-latin",
-  display: "swap",
-});
 
 const geist = Geist({
   subsets: ["latin"],
@@ -165,6 +151,30 @@ const notoSansSC = Noto_Sans_SC({
 });
 
 
+/* NEWSREADER, AND WHY NOT INSTRUMENT SERIF.
+
+   impeccable's detector on our own live page, 2026-08-27:
+   「overused-font — Primary font: instrument serif (20% of text). Inter,
+   Roboto, Fraunces, Geist, Plus Jakarta Sans and Space Grotesk are used on so
+   many sites they no longer feel distinctive. Each new wave of AI-generated
+   UIs converges on the same handful of faces.」
+
+   I had chosen Instrument Serif that same afternoon, for exactly the reason
+   the rule describes: it is the serif that turns up on every generated page.
+   Newsreader is a screen-first editorial serif with a real personality --
+   sharper terminals, a lower contrast that survives at 15px, and an optical
+   size axis -- and it is not on anybody's convergence list.
+
+   Instrument Serif stays loaded for nothing; it is removed below. */
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-editorial-latin",
+  display: "swap",
+  preload: false,
+});
+
 /* TWO FACES LEFT WITH THEIR REGISTERS, 2026-08-27. 柔和 and 粗野 were culled
    and their Latin faces went with them -- a font declared here is downloaded on
    every page whether or not any surviving register asks for it, and the people
@@ -173,7 +183,7 @@ const notoSansSC = Noto_Sans_SC({
 
 /** Every font variable, ready for a root layout's <html className>. */
 export const fontVariables = [
-  instrumentSerif.variable,
+  newsreader.variable,
   geist.variable,
   geistMono.variable,
   archivo.variable,

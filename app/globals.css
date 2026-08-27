@@ -854,6 +854,18 @@
    and the sheen. `background-image` rather than `background`, so a register
    that paints its card a colour keeps the colour and gains the light. */
 .ds-site :is(.ds-card, .ds-raised) {
+  /* ELEVATION OR EDGE, NOT BOTH -- three hits of impeccable's
+     `gpt-thin-border-wide-shadow` on our live page, 2026-08-27:
+     「a hairline border paired with a wide, diffuse shadow is a recurring
+     generated-UI signature」.
+
+     The rule below it was already forcing --site-elevation (a 28px blur) onto
+     every register's card while the register's own 1px edge stayed. On the
+     WEBSITE layer the elevation wins and the border goes: none of the
+     reference pages in this market draws a bordered card at all -- Wix's油漆
+     and律师 templates have zero. A register whose identity IS the edge keeps
+     it where it belongs, on its dashboard. */
+  border-width: 0;
   border-radius: var(--site-radius);
   box-shadow: var(--site-elevation);
   background-image: var(--site-sheen);
@@ -868,7 +880,10 @@
 }
 .ds-site figure > div:has(> img),
 .ds-site [data-photo] {
+  /* Same rule as the cards above: the frame carries the elevation, so the
+     picture inside it does not also carry an edge. */
   box-shadow: var(--site-elevation);
+  outline: 0;
 }
 
 /* ── THE WASH BEHIND THE FIRST SCREEN ────────────────────────────────────────
@@ -911,10 +926,20 @@
 /* The hero's photograph is the largest object on the page and was rendering as
    a bare rectangle. It gets the site radius, the elevation and a hairline. */
 .ds-site [data-bleed] img {
+  /* ONE OR THE OTHER, NOT BOTH.
+
+     impeccable's detector on our live page, 2026-08-27:
+     「gpt-thin-border-wide-shadow — a hairline border paired with a wide,
+     diffuse shadow is a RECURRING GENERATED-UI SIGNATURE. Commit to one — a
+     defined edge or a soft elevation — rather than both at once.」
+
+     Three hits on one page, and this rule was one of them: I wrote it earlier
+     today to stop the hero photograph rendering as a bare rectangle, and
+     reached for both at once, which is exactly the tell. A photograph is a
+     physical object on the page, so it keeps the elevation and loses the
+     outline. */
   border-radius: var(--site-radius);
   box-shadow: var(--site-elevation);
-  outline: var(--hairline) solid var(--border-subtle);
-  outline-offset: 0;
 }
 /* EXCEPT WHERE THE PHOTOGRAPH IS THE GROUND. 色带压满图 and 满图压字 run their
    picture edge to edge -- that is the whole shape, copied off Wix's Home

@@ -454,7 +454,7 @@
      heading over a sans body is the most ordinary editorial pairing there is
      -- exactly the register's argument -- and it is the difference between
      「no opinion」 and 「no design」. */
-  --font-display: var(--font-serif-latin), var(--font-song-cjk), Georgia, serif;
+  --font-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --fw-regular: 400;

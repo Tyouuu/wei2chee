@@ -75,6 +75,12 @@ export const MOVABLE = [
      register puts the people is an argument about the register: 工作室 leads
      with them (a consultancy IS its people), 中台 buries them under the terms. */
   "team",
+  /* 一条满边的照片, 2026-08-27. Counted against Wix's two templates in this
+     market: they run 6 and 14 photographs a page and two of theirs go edge to
+     edge between sections; ours ran 2-5, every one inside the measure with a
+     radius. A page whose pictures are all objects in a column reads as a
+     document about a place. */
+  "band",
 ] as const;
 
 export type SiteSection = (typeof MOVABLE)[number];
@@ -249,7 +255,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     measure: "wide",
     hero: "left",
     opens: "价目表",
-    order: ["prices", "creds", "services", "flow", "work", "story", "promise", "areas", "faq", "reviews", "team", "hours", "cta"],
+    order: ["prices", "creds", "services", "flow", "work", "story", "promise", "areas", "faq", "reviews", "team", "hours", "band", "cta"],
   },
   // 炉: the salon, where the front desk IS the shop. What a stranger buys is
   // the look of the last customer who walked out, so the photographs lead and
@@ -274,7 +280,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        bigger has the `hero` axis, which is per-page and free. */
     hero: "band-bleed",
     opens: "照片墙",
-    order: ["work", "story", "team", "reviews", "creds", "services", "hours", "prices", "areas", "cta", "faq", "flow", "promise"],
+    order: ["work", "story", "team", "reviews", "creds", "services", "hours", "prices", "areas", "band", "cta", "faq", "flow", "promise"],
   },
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.
@@ -288,7 +294,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     pattern: "grid",
     hero: "stage",
     opens: "做什么",
-    order: ["services", "work", "story", "team", "flow", "prices", "reviews", "creds", "cta", "faq", "areas", "promise", "hours"],
+    order: ["services", "work", "story", "team", "flow", "prices", "reviews", "creds", "band", "cta", "faq", "areas", "promise", "hours"],
   },
   // 中台: the wholesaler's register, the densest in the library. Its buyer is
   // another business, and a business asks for terms before it asks for a look:
@@ -303,7 +309,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     ground: "ink",
     hero: "plain",
     opens: "条件",
-    order: ["prices", "promise", "creds", "areas", "services", "story", "flow", "faq", "work", "reviews", "team", "cta", "hours"],
+    order: ["prices", "promise", "creds", "areas", "services", "story", "flow", "faq", "work", "reviews", "team", "band", "cta", "hours"],
   },
   // 瑞士: black, white, one red, no cards. It is the register that prints, and
   // a page that reads like a document leads with words -- what we do, how it
@@ -322,7 +328,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        lapa's real-business pages set that sentence LEFT under a rule rather
        than centred -- FLAVORS THAT STAY and Câphê both. */
     opens: "一句话",
-    order: ["services", "story", "team", "flow", "promise", "creds", "faq", "prices", "areas", "reviews", "work", "cta", "hours"],
+    order: ["services", "story", "team", "flow", "promise", "creds", "faq", "prices", "areas", "reviews", "work", "band", "cta", "hours"],
   },
   // 招牌: shophouse retail with a physical sign outside. The centred hero IS a
   // signboard. Then the two things somebody standing on the street needs:
@@ -338,7 +344,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     ground: "ink",
     hero: "center",
     opens: "店名 + 找得到",
-    order: ["hours", "areas", "services", "creds", "work", "story", "team", "prices", "reviews", "cta", "faq", "flow", "promise"],
+    order: ["hours", "areas", "services", "creds", "work", "story", "team", "prices", "reviews", "band", "cta", "faq", "flow", "promise"],
   },
 };
 

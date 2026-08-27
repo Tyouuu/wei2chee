@@ -250,6 +250,11 @@ describe("buildPageLayout", () => {
       // 蓝图 puts it straight under what customers said: both are somebody
       // else vouching, and they read as one argument.
       "SiteCreds",
+      /* 一条满边的照片, 2026-08-27. Wix's two templates in this market run 6 and
+         14 photographs a page with two of them edge to edge between sections;
+         ours ran 2-5, every one inside the measure. Ships empty and
+         publish-projection drops it until the owner puts a photo in. */
+      "SiteBand",
       "SiteCta",
       "FoldSection",   // questions we get
       "InfoRows",      // where we cover

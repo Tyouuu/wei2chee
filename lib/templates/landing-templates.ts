@@ -390,6 +390,14 @@ const team = (c: LandingContent) =>
    on the three registers that actually want it. It belongs to the head, with
    the bar and the hero, because its position is not an argument any register
    is having. */
+/* 一条满边的照片 —— ships empty, prompts in the editor, dropped on publish. */
+const band = (c: LandingContent) =>
+  node("SiteBand", "website-band", {
+    photo: "",
+    photoAlt: "",
+    hint: c.words.sections.work.hint,
+  });
+
 const statement = (c: LandingContent) =>
   node("SiteStatement", "website-statement", {
     body: c.pitch,
@@ -663,6 +671,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       flow(c, sect(c, "quote").flow ?? ""),
       reviews(c),
       creds(c),
+      band(c),
       cta(c),
       areas(c),
       faq(c),
@@ -694,6 +703,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       prices(c),
       reviews(c),
       creds(c),
+      band(c),
       cta(c),
       hours(c),
       faq(c),
@@ -725,6 +735,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       areas(c),
       reviews(c),
       creds(c),
+      band(c),
       cta(c),
       form(c, "order", "split"),
       contact(c, false),
@@ -777,6 +788,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       services(c, sect(c, "portfolio").services, false),
       reviews(c),
       creds(c),
+      band(c),
       cta(c),
       flow(c, sect(c, "portfolio").flow ?? "", "timeline"),
       faq(c),
@@ -804,6 +816,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       areas(c),
       reviews(c),
       creds(c),
+      band(c),
       cta(c),
       contact(c),
       foot(c),

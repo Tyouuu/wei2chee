@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
-import { SITE_COMPOSITION, composeSite, siteSkeleton } from "./site-composition";
+import { SITE_COMPOSITION, composeSite, siteSkeleton, MOVABLE as MOVABLE_SECTIONS } from "./site-composition";
 import { LANDING_TEMPLATES } from "./landing-templates";
 import {
   buildPageLayout,
@@ -22,21 +22,12 @@ import { VARIANTS } from "@/design-system/editor/variants";
  * 图纸" -- which is exactly the complaint this whole layer exists to answer.
  */
 
-const MOVABLE = [
-  "services",
-  "work",
-  "prices",
-  "flow",
-  "reviews",
-  "cta",
-  "areas",
-  "faq",
-  "promise",
-  "hours",
-  "creds",
-  "story",
-  "team",
-];
+/* READ, NOT KEPT. This was a hand-written copy of the list in
+   site-composition.ts -- the pattern that has bitten this repo at least six
+   times, where a second copy outlives the thing it describes. It went stale
+   within a day: 一条满边的照片 joined MOVABLE on 2026-08-27 and this list did
+   not know, so the guard failed on the real code being right. */
+const MOVABLE = MOVABLE_SECTIONS as readonly string[];
 
 const renovation: BusinessContext = {
   industry: {
