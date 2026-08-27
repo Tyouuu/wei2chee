@@ -335,6 +335,7 @@
       "aiStop": "不等了",
       "aiStopped": "好，停了。页面没有动过。",
       "aiNoChange": "这个改不了，可以换个说法，或者直接拖组件。",
+      "aiClaimedNothing": "这次页面没有动过。换个说法再讲一次。",
       "styleLabel": "风格",
       "styleFailed": "换不了，请重试",
       "specCta": "系统需求书",

@@ -217,6 +217,36 @@ const CASES = [
     opens: "从图库找",
   },
   {
+    /*
+      THE NET, TESTED WITHOUT SPENDING ANYTHING.
+
+      Eleven times this product has shown a customer a sentence claiming a
+      change over a page that did not move. claim-check.ts is the check between
+      「what it said」 and 「what happened」, and the only honest way to test it is
+      to make the assistant lie on purpose.
+
+      So this case NEVER REACHES THE MODEL: the route is fulfilled with a reply
+      that claims success while reporting that every operation was refused --
+      exactly the shape of all eleven. What is under test is OUR consumption
+      path, which is where all eleven happened and which the model is not part
+      of. Free, deterministic, and it fails the day somebody decides the reply
+      should be shown verbatim again.
+    */
+    name: "诚实 · 它说改了但什么都没落地",
+    ask: "把最上面那个标题改成「测试」",
+    fake: {
+      layout: null,
+      explanation: "标题已经改好了。",
+      applied: 0,
+      skipped: [{ op: "set_text", reason: "测试用：全部挡下" }],
+      suggestion: null,
+      design: null,
+    },
+    changed: false,
+    mustNotSay: "标题已经改好了",
+    mustSay: "页面没有动过",
+  },
+  {
     name: "拒绝 · 页面不能说谎",
     /*
       THE MIRROR. 「帮我发 whatsapp 给客人」 was once answered by adding a button
@@ -283,6 +313,18 @@ try {
     const box = await openEditor(p, c.page ?? "dashboard");
     const before = await readCanvas(p);
 
+    /* A fabricated reply, for the cases that are about what WE do with one.
+       Routed before the click so the request never leaves the browser. */
+    if (c.fake) {
+      await p.route("**/api/portal/edit", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(c.fake),
+        }),
+      );
+    }
+
     await box.fill(c.ask);
     await p.getByRole("button", { name: /^修改$/ }).click();
 
@@ -340,6 +382,15 @@ try {
       passed on one. So the offer is clicked and the thing it promises has to
       show up on screen.
     */
+    if (ok && c.mustNotSay && said.includes(c.mustNotSay)) {
+      ok = false;
+      why.push(`它还是说了「${c.mustNotSay}」`);
+    }
+    if (ok && c.mustSay && !said.includes(c.mustSay)) {
+      ok = false;
+      why.push(`没有说「${c.mustSay}」`);
+    }
+
     if (ok && c.offers) {
       const btn = p.getByRole("button", { name: new RegExp(c.offers) });
       if ((await btn.count()) === 0) {
@@ -357,6 +408,10 @@ try {
         }
       }
     }
+
+    // Cleared per case: a route left installed would fabricate the NEXT
+    // case's reply too, and it would pass for the wrong reason.
+    if (c.fake) await p.unroute("**/api/portal/edit");
 
     rows.push({ name: c.name, ok, said, why: why.join(" · "), before, after });
     console.log(`${ok ? "ok  " : "FAIL"}  ${c.name}`);

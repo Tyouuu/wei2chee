@@ -9,6 +9,7 @@ import { usePuck, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { planDesignChange } from "@/lib/portal/design-change";
+import { claimStands } from "@/lib/portal/claim-check";
 import { findSelector, type PuckLayout } from "@/lib/portal/layout-ops";
 import { relayout } from "@/lib/portal/relayout";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
@@ -367,6 +368,10 @@ export function AiAssistant({
         the reply can carry, so the next field added cannot go unspent.
       */
       const calls = planDesignChange(result.design, activeStyle);
+      /* Hoisted out of the block below so the honesty check at the end can see
+         it -- whether a design change actually landed is half of 「did anything
+         this reply claimed really happen」. */
+      let designLanded = false;
       if (calls.length) {
         const supabase = createBrowserSupabaseClient();
         let landed = false;
@@ -377,6 +382,7 @@ export function AiAssistant({
         // Refresh if ANY of them landed: a failed palette must not hide a
         // register that did change, or the page shows a state matching neither.
         if (landed) router.refresh();
+        designLanded = landed;
 
         /*
           THE COLUMN MOVED AND THE CANVAS DID NOT.
@@ -409,9 +415,33 @@ export function AiAssistant({
         }
       }
 
+      /*
+        IT DOES NOT GET TO SAY IT CHANGED SOMETHING IF NOTHING CHANGED.
+
+        The model writes its sentence while emitting operations -- before any
+        of them run. By this line we know exactly what landed and what was
+        refused, and until now the sentence was shown verbatim regardless.
+        Eleven times in this repo that produced a reply claiming a change over
+        a page that had not moved, and every one of them was found separately
+        and fixed by connecting one more wire.
+
+        This is the net under that seam. See claim-check.ts for what it can and
+        cannot see -- it is not a substitute for wiring things correctly, it is
+        what catches the twelfth on the day it ships.
+      */
+      const honest = claimStands({
+        applied: result.applied,
+        skipped: result.skipped.length,
+        designPlanned: calls.length,
+        designLanded,
+      });
+
       settle({
         state: "done",
-        explanation: result.explanation || t("aiNoChange"),
+        // The model's own words when they are true; ours when they are not.
+        // Not both: a false sentence followed by a correction still reads as
+        // 「it worked, but」, and what happened is that it did not work.
+        explanation: honest ? result.explanation || t("aiNoChange") : t("aiClaimedNothing"),
         applied: result.applied,
         skipped: result.skipped,
         offer: result.suggestion ?? undefined,

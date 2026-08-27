@@ -335,6 +335,7 @@
       "aiStop": "Stop waiting",
       "aiStopped": "Stopped. Your page hasn't changed.",
       "aiNoChange": "Can't do that one. Try rephrasing, or drag a block in instead.",
+      "aiClaimedNothing": "Nothing on the page changed this time. Try saying it a different way.",
       "styleLabel": "Style",
       "styleFailed": "Couldn't switch — try again",
       "specCta": "System spec",
