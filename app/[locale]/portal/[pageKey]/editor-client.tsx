@@ -41,6 +41,7 @@ import { StyleButton, StyleSheet } from "@/design-system/editor/style-sheet";
 import { cornerApply, cornerCapture } from "@/design-system/editor/corners";
 import { PagesButton, PagesSheet } from "@/design-system/editor/pages-sheet";
 import { RailSync, announcePages } from "@/design-system/editor/rail-sync";
+import { LayoutSync, announceLayout } from "@/design-system/editor/layout-sync";
 import { TradeProvider } from "@/design-system/trade-context";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
 import type { SystemLang } from "@/lib/system-lang";
@@ -307,11 +308,25 @@ export function PortalEditor({
   const [activeLayout, setActiveLayout] = useState<string | null>(layout);
 
   /**
-   * 排法 changes which BLOCKS the page is made of, and the page in the canvas
-   * was generated before the change. Unlike a rename there is nothing to
-   * patch — the block list itself is different — so this reloads rather than
-   * refreshes. Only ever reached from a page that has never been saved: once
-   * the customer saves, the arrangement is theirs and generation stops.
+   * 排法 changes the order the page's blocks are in.
+   *
+   * TWO PATHS, AND THE SECOND ONE WAS MISSING UNTIL 2026-08-27.
+   *
+   * On a page that has never been saved the layout is generated on every read,
+   * so writing the column and reloading is the whole job. The comment that
+   * used to sit here said this was 「only ever reached from a page that has
+   * never been saved」 -- and that was an assumption, not a guard. The buttons
+   * are shown either way. On a SAVED page it wrote the column, lit up
+   * (`aria-pressed`), called router.refresh(), and the page did not move.
+   *
+   * A control that reports success and changes nothing is worse than a
+   * disabled one, because the owner believes it and stops looking.
+   *
+   * On a saved page the fix is not to regenerate -- that would throw away
+   * every word they typed, every column they added and every row they edited,
+   * which is a far worse bug than the one being fixed. It is to MOVE THE REAL
+   * BLOCKS, which is the same answer the AI side reached for the same request
+   * on the same day. See lib/portal/relayout.ts.
    */
   async function pickLayout(next: string | null) {
     const previous = activeLayout;
@@ -323,8 +338,16 @@ export function PortalEditor({
       setActiveLayout(previous);
       return;
     }
-    if (isGeneratedDraft) window.location.reload();
-    else router.refresh();
+    if (isGeneratedDraft) {
+      window.location.reload();
+      return;
+    }
+    /* Announced rather than dispatched: this component is chrome and sits
+       OUTSIDE Puck's provider, so it cannot reach the canvas. LayoutSync is
+       inside and does the move -- same boundary, same shape, same reason as
+       RailSync. It records history, because these are the customer's blocks. */
+    announceLayout(activeStyle, next);
+    router.refresh();
   }
 
   /** Repaints on every step, writes once the hand stops. A range input
@@ -1279,6 +1302,7 @@ export function PortalEditor({
                     <InlineEditing />
                     {/* Hears 页面's renames and reorders. Renders nothing. */}
                     <RailSync />
+                    <LayoutSync />
                     {/* The draft note now rides the canvas instead of being a
                       band above it -- see draft-notice.tsx for the measurement
                       that motivated the move. */}
