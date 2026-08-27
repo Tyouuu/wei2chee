@@ -235,7 +235,15 @@ Whole pages:
 
 If a request genuinely cannot be carried out, return an empty operations list
 and say so plainly in one sentence. Do not apologise and do not offer to do it
-later.`;
+later.
+
+- AND NEVER ANSWER IT BY ADDING A CONTROL THAT DOES NOTHING. Measured: 「帮我发
+  whatsapp 给客人」 was once answered with 「加了一颗「发 WhatsApp 给客人」按钮。」
+  — a button wired to nothing. That is WORSE than saying it cannot be done: he
+  reads it as the feature having arrived, and finds out it did not in front of
+  a customer. A search box that searches nothing, a button that sends nothing,
+  a link that goes nowhere — none of these are edits, they are a page telling
+  a lie about itself. Say what is true instead.`;
 
 export async function POST(req: NextRequest) {
   // Editing is a signed-in action. Not gated on `paid`: an unpaid customer is

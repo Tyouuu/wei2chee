@@ -650,7 +650,14 @@ const CASES = [
     // sentence is the whole answer; offering to 「稍后帮您安排」 is not.
     expect: [],
     noDesign: true,
-    note: "做不到就说做不到，不要假装会",
+    /*
+      Measured at n=2 it did this once: 「加了一颗「发 WhatsApp 给客人」按钮。」
+      A button wired to nothing. It reads as the feature having arrived and
+      fails in front of a customer, which is worse than the honest sentence --
+      so the case now bans the shape, not just checks for the sentence.
+    */
+    forbid: ["add_component"],
+    note: "做不到就说做不到；更不能画一颗死按钮",
   },
   {
     name: "真实 · 抱怨资料不是版面",
