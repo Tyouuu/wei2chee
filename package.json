@@ -36,7 +36,9 @@
     "shoot:stores": "node scripts/shoot-stores.mjs",
     "shoot:pending": "node scripts/shoot-pending.mjs",
     "shoot:saas": "node scripts/shoot-saas.mjs",
-    "shoot:codrops": "node scripts/shoot-codrops.mjs"
+    "shoot:codrops": "node scripts/shoot-codrops.mjs",
+    "align": "node scripts/align-site.mjs",
+    "align:sheet": "python scripts/align-sheet.py"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

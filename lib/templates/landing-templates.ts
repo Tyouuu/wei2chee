@@ -277,17 +277,32 @@ const services = (c: LandingContent, heading: string, framed = true) =>
 
       Every other shape ignores `note`, so this costs them nothing.
     */
+    noteHeading: c.words.sections.areas.heading,
     note: c.words.sections.areas.list.slice(0, 4).join(" · "),
     items: c.services,
     // Referenced so the parameter is not dead weight to a reader.
     ...(framed ? {} : {}),
   });
 
-const flow = (c: LandingContent, title: string, layout = "row") =>
-  node("WorkflowStrip", "website-flow", {
-    title,
-    layout,
-    stages: c.stages.map((label) => ({ label, tone: "normal" })),
+/*
+  流程 —— AND WHY IT NO LONGER NAMES ITS OWN SHAPE.
+
+  This shipped `layout = "row"` as a default and three of the four templates
+  passed one explicitly. A prop that is PRESENT beats the register's
+  preference -- that is the precedence the whole shape layer rests on, and an
+  ABSENT prop is the only way to say 「follow the register」. So every register's
+  WorkflowStrip preference was dead on the website: 満図 asked for 竖排 and got
+  a 155px horizontal strip of numbered chips, against the reference's 663px
+  stacked section.
+
+  Ninth time in this repo that a capability was built and something upstream
+  quietly overrode it. The template states the words; the register states the
+  shape.
+*/
+const flow = (c: LandingContent, title: string) =>
+  node("SiteSteps", "website-flow", {
+    heading: title,
+    steps: c.stages.map((label) => ({ label, value: "" })),
   });
 
 const form = (c: LandingContent, key: string, look: string) => {
@@ -744,7 +759,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       services(c, sect(c, "booking").services),
       // Numbered, not arrows: someone booking a slot is reading "what do I do
       // first", which is a list of steps rather than a pipeline.
-      flow(c, sect(c, "booking").flow ?? "", "numbered"),
+      flow(c, sect(c, "booking").flow ?? ""),
       work(c),
       story(c),
       team(c),
@@ -807,7 +822,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       services(c, sect(c, "wholesale").services),
       story(c),
       team(c),
-      flow(c, sect(c, "wholesale").flow ?? "", "timeline"),
+      flow(c, sect(c, "wholesale").flow ?? ""),
       prices(c),
       areas(c),
       creds(c),
@@ -841,7 +856,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       band(c),
       woven(c),
       cta(c),
-      flow(c, sect(c, "portfolio").flow ?? "", "timeline"),
+      flow(c, sect(c, "portfolio").flow ?? ""),
       faq(c),
       form(c, "portfolio", "plain"),
       contact(c, false),

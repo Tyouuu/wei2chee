@@ -237,7 +237,7 @@ describe("buildPageLayout", () => {
       // model replaced. Ships empty; publish-projection drops it until the
       // owner names somebody. 2026-08-27.
       "SiteTeam",
-      "WorkflowStrip", // what happens after you call
+      "SiteSteps", // what happens after you call
       "InfoRows",      // a price guide, never a price
       // A review has a rating, the words and a face -- not the dashboard's
       // 「title, description, action」 shelf row.
@@ -301,8 +301,15 @@ describe("buildPageLayout", () => {
        page has no gallery: its photographs live inside the argument, two of
        them woven through 「Why Choose Us?」 and one full-bleed between
        sections. So 满图 declines 作品墙 and opens on what it does — which is
-       the register genuinely differing, not the assertion drifting. */
-    expect(opensOn("hearth")).toBe("website-services");
+       the register genuinely differing, not the assertion drifting.
+
+       Then, still on 2026-08-27, both pages were read out of the DOM section by
+       section and lined up against each other. Ours ran 8 sections to their 8,
+       but 服务 sat where their SECOND section is, and their second section is a
+       heading with three text items and no cards at all -- so everything below
+       it was one slot out of step the whole way down. 満図 now opens on 流程,
+       which is that shape and which is true of the trade. */
+    expect(opensOn("hearth")).toBe("website-flow");
   });
 
   // The arrow the whole page exists to draw. An enquiry has to say which of

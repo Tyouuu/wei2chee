@@ -120,7 +120,7 @@ describe("forPublication", () => {
     expect(kept).not.toContain("PhotoFrame");
     expect(kept).toContain("SiteHero");
     expect(kept).toContain("EnquiryForm");
-    expect(kept).toContain("WorkflowStrip");
+    expect(kept).toContain("SiteSteps");
     expect(kept).toContain("FoldSection");
 
     /*

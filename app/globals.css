@@ -398,8 +398,32 @@
   max-width: calc(var(--site-measure) + 14rem);
 }
 
+/* ── 段落节奏 —— A REGISTER AXIS, NOT ONE NUMBER ────────────────────────────
+
+   Measured 2026-08-27, section by section, against the page 満図 copies whole
+   (Wix a-reynolds, both pages read out of the DOM at 1440px):
+
+       theirs   8 sections   5398px   mean 655px
+       ours     8 sections   4178px   mean 452px
+
+   Every one of our sections is shorter than its opposite number, and the
+   founder's word for the result was 完全不对. Their page is not busier -- it
+   is the same eight arguments with room around each one.
+
+   But a single larger number would make all six registers airier, and 中台's
+   whole thesis is that it is the densest page in the library (重点 7c). So the
+   rhythm is a variable each register sets: 満図 breathes, 中台 does not. */
+.ds-site {
+  --site-rhythm: 4.5rem;
+  /* 图有多大. Same axis as the rhythm and for the same measured reason: their
+     eight sections came to 5398px and ours to 4178, and the gap was not only
+     between the sections -- their full-bleed band is 777px to our 480 and
+     their 「Why Choose Us」 is 1216 to our 596, because their photographs are
+     simply bigger. A register that breathes shows bigger pictures. */
+  --site-figure: 1;
+}
 .ds-site > * > * + * {
-  margin-top: 4.5rem;
+  margin-top: var(--site-rhythm);
 }
 /* A PHOTOGRAPH THAT IS THE GROUND STARTS WHERE THE NAVIGATION ENDS. With the
    stack's rhythm still applied there is a band of the page's own colour above
@@ -410,8 +434,21 @@
 }
 
 @media (min-width: 48rem) {
-  .ds-site > * > * + * {
-    margin-top: 6.5rem;
+  .ds-site {
+    --site-rhythm: 6.5rem;
+  }
+  /* 満図 is the airy one: its argument IS the photograph, and a picture with
+     something pressed against it stops being a picture. Measured against the
+     reference above -- 104px between sections left ours 1220px shorter over
+     the same eight sections. */
+  .ds-ground[data-rhythm="airy"] .ds-site,
+  .ds-ground[data-rhythm="airy"].ds-site {
+    --site-rhythm: 9rem;
+    --site-figure: 1.6;
+  }
+  .ds-ground[data-rhythm="tight"] .ds-site,
+  .ds-ground[data-rhythm="tight"].ds-site {
+    --site-rhythm: 4.5rem;
   }
 }
 
@@ -491,8 +528,34 @@
   line-height: var(--leading-display);
 }
 
+/* ── 区段标题 —— MEASURED, NOT GUESSED ─────────────────────────────────────
+
+   Both pages read out of the DOM at 1440px on 2026-08-27, every h1 and h2 on
+   each, against the page 満図 copies whole:
+
+       theirs   h1 90px/700    every section heading 50px/700
+       ours     h1 83px/600    every section heading 32px/700
+
+   The first screens were within 8%. The SECTIONS were 18px apart, on every
+   heading down the page, and that one number is most of what 完全不对 meant:
+   their page ANNOUNCES each argument, ours labelled it.
+
+   32px is right for a system page, where a heading sits over a table the
+   reader is already working in. On a website the section heading IS the
+   argument. So the cap scales with the same register axis as the rhythm and
+   the pictures -- 中台 stays dense, 満図 breathes -- and 1.6 x 32 = 51px, which
+   is theirs.
+
+   ⚠️ The first attempt added a SECOND rule, `.ds-site h2`, and it never once
+   applied: this selector is more specific, so the new rule lost silently and
+   the measurement came back 32px unchanged. A rule that cannot win is worse
+   than no rule, because it reads as a decision. */
 .ds-site :is(h2, h3):not([data-chrome-top] *):not([data-chrome-foot] *) {
-  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-size: clamp(
+    calc(1.5rem * var(--site-figure, 1)),
+    calc(2.6vw * var(--site-figure, 1)),
+    calc(2rem * var(--site-figure, 1))
+  );
   letter-spacing: var(--tracking-title);
   line-height: var(--leading-tight);
 }

@@ -134,6 +134,15 @@ export const VARIANTS: Record<string, Variant[]> = {
   /* 口碑 —— which one a register picks is an argument about what a stranger
      checks first: the rating, or the face. 頭像在上 is measured off the page
      満図 copies whole, whose review section carries no rating at all. */
+  /* 怎么做 —— three genuinely different objects: a ruled row, a big number, a
+     line of four. Which one a register wears is an argument about whether the
+     steps are a list, a countdown, or a diagram. */
+  SiteSteps: [
+    { id: "ruled", label: "细线一行一步", props: { shape: "ruled" } },
+    { id: "numbered", label: "大编号", props: { shape: "numbered" } },
+    { id: "across", label: "横排四格", props: { shape: "across" } },
+  ],
+
   SiteTestimonials: [
     { id: "cards", label: "评分在上", props: { shape: "cards" } },
     { id: "ruled", label: "头像在上", props: { shape: "ruled" } },

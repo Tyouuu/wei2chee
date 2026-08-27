@@ -240,6 +240,18 @@ export type SiteSkeleton = {
    * its whole argument is that nothing sits beside anything.
    */
   measure?: "narrow" | "normal" | "wide";
+  /**
+   * 段落节奏 —— how much air sits between one section and the next.
+   *
+   * Measured 2026-08-27 against the page 満図 copies whole: eight sections
+   * against eight, 5398px against 4178px. Every one of ours was shorter than
+   * its opposite number, and the page read as cramped rather than as busy.
+   *
+   * A register axis rather than one larger number, because 中台's entire thesis
+   * is that it is the densest page in the library and 工作室's is that nothing
+   * is pressed against anything. See `--site-rhythm` in app/globals.css.
+   */
+  rhythm?: "tight" | "normal" | "airy";
   /** Movable sections, most important first. Anything the template has and
    *  this list omits keeps its template position, after the listed ones. */
   order: SiteSection[];
@@ -297,7 +309,12 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        skeletons until each is done in turn. */
   /* 照片墙 carries this register, so the two sections that are lists of
      words go. A portfolio does not print its own terms and conditions. */
-    omit: ["work", "story", "team", "prices", "flow", "faq", "promise", "areas", "hours", "creds"],
+    /* 流程 comes back, because the reference's SECOND section is a heading and
+       three text items -- 663px of it, the largest thing on their page after
+       「Why Choose Us」 -- and we had nothing in that slot at all. Ours is the
+       trade's own stages, which is true, and which is the single most
+       persuasive section on the 19 Malaysian trade sites measured on 08-27. */
+    omit: ["work", "story", "team", "prices", "faq", "promise", "areas", "hours", "creds"],
     /* 口碑 SITS ON THE PAGE, NOT ON A CARD. It was `paper`, which drew a white
        rectangle under the quotes; the page this register copies rules its
        reviews off the ground with a hairline and no box at all. A card there
@@ -318,7 +335,17 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        bigger has the `hero` axis, which is per-page and free. */
     hero: "band-bleed",
     opens: "照片墙",
-    order: ["services", "cta", "band", "woven", "reviews", "creds", "hours", "areas", "work", "story", "team", "prices", "flow", "faq", "promise"],
+    /* THEIR ORDER, MEASURED OUT OF THEIR DOM, NOT GUESSED:
+         2  流程     heading + three text items, no cards, no pictures
+         3  半块颜色  a filled panel beside a photograph
+         4  服务     two headings and three dotted cards
+         5  满边带    edge to edge
+         6  四点两栏  the biggest section, pictures woven among the claims
+         7  评价     three across, faces first
+       Before this, 服务 sat at position 2 and everything after it was one slot
+       out of step with the reference all the way down the page. */
+    rhythm: "airy",
+    order: ["flow", "cta", "services", "band", "woven", "reviews", "creds", "hours", "areas", "work", "story", "team", "prices", "faq", "promise"],
   },
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.

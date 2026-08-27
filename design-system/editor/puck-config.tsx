@@ -27,6 +27,7 @@ import {
   SiteStatement,
   SiteBand,
   SiteWoven,
+  SiteSteps,
   SiteTeam,
 } from "@/design-system/components/site-sections";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
@@ -258,6 +259,7 @@ type Components = {
     note?: string;
     items: { label: string; value: string; icon?: string }[];
       shape?: "cards" | "panel" | "bands" | "stated" | "dotted";
+    noteHeading?: string;
 };
   SiteTestimonials: {
     heading?: string;
@@ -282,6 +284,12 @@ type Components = {
     /* 开场的地. Register-chosen; see site-composition.ts. */
     ground?: "page" | "ink";
     points?: { label: string }[];
+  };
+  SiteSteps: {
+    heading?: string;
+    note?: string;
+    steps?: { label: string; value?: string }[];
+    shape?: "ruled" | "numbered" | "across";
   };
   SiteWoven: {
     heading?: string;
@@ -689,7 +697,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteBand", "SiteWoven", "SiteStatement", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteBand", "SiteWoven", "SiteSteps", "SiteStatement", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1742,6 +1750,7 @@ export const puckConfig: Config<Components> = {
     SiteFeatures: {
       label: "服务卡片",
       fields: {
+        noteHeading: { label: "右边那个小标题", type: "text" },
         shape: {
           label: "款式",
           type: "select",
@@ -1768,9 +1777,9 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { items: [] },
-      render: ({ heading, note, items , shape}) => (
+      render: ({ heading, note, items , shape, noteHeading}) => (
         <SiteFeatures heading={heading} note={note} items={items}           shape={shape}
-        />
+        noteHeading={noteHeading} />
       ),
     },
 
@@ -1907,6 +1916,37 @@ export const puckConfig: Config<Components> = {
           photoAlt={photoAlt}
           points={points}
         />
+      ),
+    },
+
+    SiteSteps: {
+      label: "怎么做",
+      fields: {
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "细线一行一步", value: "ruled" },
+            { label: "大编号", value: "numbered" },
+            { label: "横排四格", value: "across" },
+          ],
+        },
+        heading: { label: "标题", type: "text" },
+        note: { label: "小字", type: "textarea" },
+        steps: {
+          label: "步骤",
+          type: "array",
+          arrayFields: {
+            label: { label: "一步", type: "text" },
+            value: { label: "补充", type: "text" },
+          },
+          defaultItemProps: { label: "", value: "" },
+          getItemSummary: (item) => item.label || "还没填",
+        },
+      },
+      defaultProps: { steps: [] },
+      render: ({ heading, note, steps, shape }) => (
+        <SiteSteps heading={heading} note={note} steps={steps} shape={shape} />
       ),
     },
 

@@ -40,6 +40,7 @@ export function SiteFeatures({
   note,
   items,
   shape = "cards",
+  noteHeading,
 }: {
   heading?: string
   note?: string
@@ -68,6 +69,8 @@ export function SiteFeatures({
    * answers are genuinely different objects rather than one object restyled.
    */
   shape?: "cards" | "panel" | "bands" | "stated" | "dotted"
+  /** 两个标题三张点卡 only: the bold half of the right-hand pair. */
+  noteHeading?: string
 }) {
   if (!items?.length) return null
 
@@ -147,16 +150,28 @@ export function SiteFeatures({
             <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
           ) : null}
           {note ? (
-            <p className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-              {note}
-            </p>
+            /* THEIR RIGHT-HAND HALF IS A HEADING WITH A LINE UNDER IT
+               (「Where We Excel」 in bold, then one sentence), not a caption.
+               Ours rendered as a single line of small grey text and read as a
+               stray caption floating beside the real heading. `noteHeading` is
+               the bold half; both halves are true (服务范围 and its list). */
+            <div>
+              {noteHeading ? (
+                <p className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                  {noteHeading}
+                </p>
+              ) : null}
+              <p className="mt-1 [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                {note}
+              </p>
+            </div>
           ) : null}
         </div>
         <ul className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
           {items.map((f) => (
             <li
               key={f.label}
-              className="flex flex-col [background:color-mix(in_oklab,var(--color-primary)_5%,var(--color-canvas))] [border:var(--hairline)_solid_var(--border-subtle)] [border-radius:var(--radius-lg)] [gap:calc(var(--gap-inline)*0.7)] [padding:calc(var(--pad-card-lg)*1.05)]"
+              className="flex flex-col [background:color-mix(in_oklab,var(--color-primary)_5%,var(--color-canvas))] [border:var(--hairline)_solid_var(--border-subtle)] [border-radius:var(--radius-lg)] [gap:calc(var(--gap-inline)*0.7)] [min-height:calc(11rem*var(--site-figure,1))] [padding:calc(var(--pad-card-lg)*1.05*var(--site-figure,1))]"
             >
               <span aria-hidden className="mb-1 block size-2 rounded-full [background:var(--color-primary)]" />
               <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
@@ -956,7 +971,7 @@ export function SiteStory({
        column carries the register's block colour it IS the panel, and a panel
        whose text starts at the top reads as a page, not as a label floating in
        a rectangle. */
-    <div className="flex min-w-0 flex-col justify-center [padding-block:calc(var(--pad-card-lg)*0.9)] [padding-inline:calc(var(--pad-card-lg)*0.9)]">
+    <div className="flex min-w-0 flex-col justify-center [padding-block:calc(var(--pad-card-lg)*0.9*var(--site-figure,1))] [padding-inline:calc(var(--pad-card-lg)*0.9*var(--site-figure,1))]">
       {heading ? (
         <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
       ) : null}
@@ -1395,7 +1410,12 @@ export function SiteBand({
         src={photo}
         alt={photoAlt || ""}
         className="block w-full object-cover"
-        style={{ height: height === "short" ? "clamp(9rem, 22vh, 15rem)" : "clamp(16rem, 52vh, 30rem)" }}
+        style={{
+          height:
+            height === "short"
+              ? "clamp(9rem, 22vh, calc(15rem * var(--site-figure, 1)))"
+              : "clamp(16rem, 52vh, calc(30rem * var(--site-figure, 1)))",
+        }}
       />
       {line ? (
         <>
@@ -1520,7 +1540,10 @@ export function SiteWoven({
                     src={shots[ci]}
                     alt=""
                     className="mt-6 w-full object-cover [border-radius:var(--site-radius,var(--radius-lg))]"
-                    style={{ aspectRatio: ci === 0 ? "4 / 5" : "5 / 4", maxHeight: "26rem" }}
+                    style={{
+                      aspectRatio: ci === 0 ? "4 / 5" : "5 / 4",
+                      maxHeight: "calc(26rem * var(--site-figure, 1))",
+                    }}
                   />
                 ) : null}
               </div>
@@ -1528,6 +1551,125 @@ export function SiteWoven({
           </div>
         ))}
       </div>
+    </section>
+  )
+}
+
+/**
+ * 怎么做 —— the steps, as a WEBSITE section.
+ *
+ * ── WHY THIS EXISTS AT ALL ───────────────────────────────────────────────
+ *
+ * The generated website put `WorkflowStrip` here, which is the DASHBOARD's
+ * block: a `ds-card`, and a title set at --text-micro in uppercase because on
+ * a system page it labels a widget the owner is already working inside.
+ * Rendered on a public page beside the reference, it came out as a small white
+ * card floating in the middle of the page with a caption over it -- 245px
+ * against their 663px section, and the founder's word for the page was 完全不对.
+ *
+ * The reference's second section is a website section: a 50px heading, a line
+ * under it, and the steps as text on the page with nothing drawn around them.
+ *
+ * ── WHY IT HAS THREE SHAPES AND NOT ONE ──────────────────────────────────
+ *
+ * 重点 7c: if all six registers wear one shape here, this is a sixth place
+ * where the library answers 「repaint it and it is still the same design」 with
+ * yes. The three are genuinely different objects -- a big number, a ruled row,
+ * a line of chevrons -- not one object restyled.
+ */
+export function SiteSteps({
+  heading,
+  note,
+  steps,
+  shape = "ruled",
+}: {
+  heading?: string
+  note?: string
+  steps?: { label: string; value?: string }[]
+  shape?: "ruled" | "numbered" | "across"
+}) {
+  const rows = (steps ?? []).filter((s) => s.label?.trim())
+  if (!rows.length) return null
+
+  const title = heading ? (
+    <div className="mb-8 max-w-[46ch]">
+      <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+      {note ? (
+        <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+          {note}
+        </p>
+      ) : null}
+    </div>
+  ) : null
+
+  const n = (i: number) => String(i + 1).padStart(2, "0")
+
+  if (shape === "across") {
+    return (
+      <section className="@container" data-wide="">
+        {title}
+        <ol className="grid [gap:var(--gap-stack)] @2xl:grid-cols-4">
+          {rows.map((s, i) => (
+            <li key={s.label} className="flex flex-col [gap:.4rem]">
+              <span className="[color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)]">
+                {n(i)}
+              </span>
+              <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                {s.label}
+              </span>
+              {s.value ? (
+                <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                  {s.value}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      </section>
+    )
+  }
+
+  if (shape === "numbered") {
+    return (
+      <section className="@container">
+        {title}
+        <ol className="flex flex-col [gap:calc(var(--gap-stack)*1.2)]">
+          {rows.map((s, i) => (
+            <li key={s.label} className="grid [gap:var(--gap-inline)] @2xl:grid-cols-[7rem_minmax(0,1fr)] @2xl:items-baseline">
+              <span
+                className="ds-display [color:color-mix(in_oklab,var(--color-primary)_38%,transparent)] [font-weight:var(--fw-semibold)] [line-height:1]"
+                style={{ fontSize: "clamp(2.6rem, 6vw, 4.4rem)" }}
+              >
+                {n(i)}
+              </span>
+              <span className="[color:var(--color-paper)] [font-size:var(--text-xl)] [font-weight:var(--fw-semibold)]">
+                {s.label}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )
+  }
+
+  return (
+    <section className="@container">
+      {title}
+      <ol>
+        {rows.map((s, i) => (
+          <li
+            key={s.label}
+            className="grid [border-top:var(--hairline)_solid_var(--border-subtle)] [gap:.4rem_calc(var(--gap-stack)*1.2)] [padding-block:calc(var(--pad-card-lg)*1.1*var(--site-figure,1))] @2xl:grid-cols-[5rem_minmax(0,1fr)] @2xl:items-baseline"
+          >
+            <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]">
+              {n(i)}
+            </span>
+            <span className="[color:var(--color-paper)] [font-size:var(--text-xl)] [font-weight:var(--fw-semibold)]">
+              {s.label}
+            </span>
+          </li>
+        ))}
+      </ol>
     </section>
   )
 }
