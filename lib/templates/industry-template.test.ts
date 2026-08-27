@@ -295,7 +295,13 @@ describe("buildPageLayout", () => {
        added -- it now finds the first movable block instead. */
     const opensOn = (style: string) =>
       sectionsOf(style).find((id) => MOVABLE.some((k) => id === `website-${k}`));
-    expect(opensOn("ledger")).toBe("website-prices");
+    /* 台账 opened on 价目表 until 2026-08-27, when it was rebuilt to copy Wix's
+       `wh-newel` end to end. Two reasons, and the second is the one that
+       matters: their page has no price list at all, AND 任务 26 measured 19
+       Malaysian trade sites still trading with 0 OF 19 putting prices on the
+       first screen. A contractor leads with who they are and what they built.
+       The price list is still in the library; it stopped being the opening. */
+    expect(opensOn("ledger")).toBe("website-story");
     /* 满图 opened on 作品墙 until 2026-08-27, when it was rebuilt to copy Wix's
        Home Remodeling page END TO END rather than one section at a time. That
        page has no gallery: its photographs live inside the argument, two of

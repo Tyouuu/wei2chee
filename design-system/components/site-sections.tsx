@@ -41,6 +41,8 @@ export function SiteFeatures({
   items,
   shape = "cards",
   noteHeading,
+  photo,
+  photoAlt,
 }: {
   heading?: string
   note?: string
@@ -68,9 +70,12 @@ export function SiteFeatures({
    * So a register may now say what a service looks like, and the three
    * answers are genuinely different objects rather than one object restyled.
    */
-  shape?: "cards" | "panel" | "bands" | "stated" | "dotted"
+  shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed"
   /** 两个标题三张点卡 only: the bold half of the right-hand pair. */
   noteHeading?: string
+  /** 清单配照片 only: the picture that stands beside the list. */
+  photo?: string
+  photoAlt?: string
 }) {
   if (!items?.length) return null
 
@@ -118,6 +123,71 @@ export function SiteFeatures({
             </li>
           ))}
         </ul>
+      </section>
+    )
+  }
+
+  if (shape === "listed") {
+    /*
+      ── 清单配照片 ────────────────────────────────────────────────────────
+
+      Section three of the page 台账 copies whole (Wix `wh-newel`, measured in
+      the browser 2026-08-27: 832px, two pictures). A remodeling contractor's
+      services are not three cards -- they are a LIST, one ruled line each
+      （Complete Remodeling · Kitchen · Bathroom · Home Interior · Flooring）,
+      set on the page's own dark ground with a photograph filling the other
+      half. Cards would say 「pick one of three」; a list says 「we do all of
+      these」, which is what a contractor is telling you.
+
+      The list can run to five or six rows without the section growing wider,
+      which is the other reason a contractor's page uses one.
+    */
+    return (
+      <section className="@container" data-wide="">
+        {title}
+        <div className="grid overflow-hidden [border-radius:var(--radius-lg)] @3xl:grid-cols-2">
+          {/* ⚠️ A STEP UP FROM THE GROUND, NOT A COLOUR LAID ON IT.
+
+              First version used `--color-block`, which on 台账 is a warm sand
+              (#f2e8dd). 台账's website now opens on its dark navigation colour,
+              so that painted a LIGHT panel on a DARK page while the text inside
+              stayed `--color-paper` -- light on light, the whole list invisible.
+
+              任务 36 records this exact failure for `tint`/`paper`: a tone that
+              sets a background and not a foreground is correct on a light page
+              and broken on a dark one. Mixing from `--color-canvas` cannot
+              break that way: the panel moves with the ground, so the ground's
+              own text colour keeps working on it. */}
+          <ul className="[background:color-mix(in_oklab,var(--color-primary)_9%,var(--color-canvas))]">
+            {items.map((f, i) => (
+              <li
+                key={f.label}
+                className={[
+                  "flex flex-col [gap:.25rem] [padding-block:calc(var(--pad-card-lg)*0.95*var(--site-figure,1))] [padding-inline:calc(var(--pad-card-lg)*1.05)]",
+                  i > 0 ? "[border-top:var(--hairline)_solid_var(--border-subtle)]" : "",
+                ].join(" ")}
+              >
+                <span className="[color:var(--color-paper)] [font-size:var(--text-xl)] [font-weight:var(--fw-medium)]">
+                  {f.label}
+                </span>
+                {f.value ? (
+                  <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                    {f.value}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {photo?.trim() ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={photo} alt={photoAlt || ""} className="hidden size-full min-h-full object-cover @3xl:block" />
+          ) : (
+            <div
+              aria-hidden
+              className="hidden [background-color:color-mix(in_oklab,var(--color-primary)_8%,var(--color-canvas))] @3xl:block"
+            />
+          )}
+        </div>
       </section>
     )
   }
@@ -334,9 +404,43 @@ export function SiteTestimonials({
    * thing a stranger actually checks. 口碑在这个市场就是全部生意, and the two
    * shapes make two different arguments about how it is shown.
    */
-  shape?: "cards" | "ruled"
+  shape?: "cards" | "ruled" | "boxed"
 }) {
   if (!items?.length) return null
+
+  if (shape === "boxed") {
+    /*
+      ── 三个方框 ──────────────────────────────────────────────────────────
+
+      Section five of 台账's reference: three quotes, each inside a thin
+      rectangle on the page's own dark ground, the name alone at the bottom.
+      No rating, no face. On a contractor's page the quote IS the evidence --
+      a homeowner reads what the last homeowner said, and a five-star row on
+      every one of them says nothing a contractor could not have typed.
+    */
+    return (
+      <section className="@container" data-wide="">
+        {heading ? (
+          <h2 className="ds-display mb-8 text-center [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+            {heading}
+          </h2>
+        ) : null}
+        <ul className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
+          {items.map((t, i) => (
+            <li
+              key={i}
+              className="flex flex-col justify-between [border:var(--hairline)_solid_var(--border-subtle)] [gap:var(--gap-stack)] [min-height:calc(9rem*var(--site-figure,1))] [padding:calc(var(--pad-card-lg)*1.15*var(--site-figure,1))]"
+            >
+              <p className="[color:var(--color-paper)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
+                {t.quote}
+              </p>
+              <p className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{t.who}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 
   if (shape === "ruled") {
     return (
@@ -802,11 +906,67 @@ export function SiteGallery({
 }: {
   heading?: string
   note?: string
-  shape?: "grid" | "bento" | "strip"
+  shape?: "grid" | "bento" | "strip" | "mosaic"
   items?: { src?: string; alt?: string; caption?: string }[]
 }) {
   const shots = items ?? []
   if (!shots.length) return null
+
+  if (shape === "mosaic") {
+    /*
+      ── 大图马赛克 ────────────────────────────────────────────────────────
+
+      Section four of the page 台账 copies whole, and by a long way the biggest
+      thing on it: 2198px of the reference's 6555, ten photographs, edge to
+      edge, in tiles of three different sizes. Ours in the same slot was five
+      photographs in a tidy 3-up grid, 822px.
+
+      That difference is the argument, not the decoration. A remodeling
+      contractor is sold on the work: 「Recent Projects」 IS the page, and a
+      neat grid of equal thumbnails reads as a catalogue while a mosaic reads
+      as a portfolio. The tile pattern repeats every six so a gallery of four
+      and a gallery of twelve both compose.
+    */
+    const SPAN = [
+      "@2xl:col-span-6 @2xl:row-span-2",
+      "@2xl:col-span-6 @2xl:row-span-2",
+      "@2xl:col-span-12",
+      "@2xl:col-span-7",
+      "@2xl:col-span-5",
+      "@2xl:col-span-12",
+    ]
+    /* Measured against the reference: at 4/5 and 4/3 our six tiles came to
+       3657px against their 2198. Theirs are wider than they are tall in every
+       row but the first. */
+    const RATIO = ["1 / 1", "1 / 1", "21 / 9", "3 / 2", "3 / 2", "21 / 9"]
+    return (
+      <section className="@container" data-wide="">
+        {heading ? (
+          <h2 className="ds-display mb-8 text-center [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+            {heading}
+          </h2>
+        ) : null}
+        <ul className="grid [gap:calc(var(--gap-inline)*0.8)] @2xl:grid-cols-12">
+          {shots.map((s2, i) => (
+            <li key={i} className={SPAN[i % 6]}>
+              {s2.src ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={s2.src}
+                  alt={s2.alt || ""}
+                  className="w-full object-cover"
+                  style={{ aspectRatio: RATIO[i % 6] }}
+                />
+              ) : null}
+              {s2.caption ? (
+                <p className="mt-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{s2.caption}</p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
   /*
     AN EMPTY GALLERY IS A STRIP, NOT THREE FULL SCREENS.
 
@@ -1470,6 +1630,7 @@ export function SiteWoven({
   points,
   photos,
   hint,
+  shape = "woven",
 }: {
   heading?: string
   note?: string
@@ -1477,6 +1638,18 @@ export function SiteWoven({
   /** Two is the reference's number, and the shape is built for two. */
   photos?: string[]
   hint?: string
+  /**
+   * `woven` the claims in two columns with the photographs among them.
+   * `band`  the claims in ONE painted strip, split by hairlines, no pictures.
+   *
+   * 台账's reference closes its About section with exactly that: 「Our
+   * Benefits」 over four cells — Vast Experience · Professional Team · High
+   * Finish · Sustainable & Accountable. Four short claims in a row is a
+   * different argument from four claims woven through photographs: the strip
+   * says 「these four things are true of us」 and moves on, which is what a
+   * contractor's About page does before it shows you the work.
+   */
+  shape?: "woven" | "band"
 }) {
   const marks = (points ?? []).filter((p) => p.label?.trim())
   const shots = (photos ?? []).filter((p) => p?.trim())
@@ -1489,6 +1662,35 @@ export function SiteWoven({
         className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
       >
         <p className="max-w-[56ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{hint}</p>
+      </section>
+    )
+  }
+
+  if (shape === "band") {
+    return (
+      <section className="@container" data-wide="">
+        {heading ? (
+          <h2 className="ds-display mb-6 [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+        ) : null}
+        <ul className="grid overflow-hidden [background:color-mix(in_oklab,var(--color-primary)_9%,var(--color-canvas))] [border-radius:var(--radius-lg)] @2xl:grid-cols-4">
+          {marks.map((m, i) => (
+            <li
+              key={m.label}
+              className={[
+                "flex flex-col items-center text-center [gap:.3rem] [padding:calc(var(--pad-card-lg)*1.1*var(--site-figure,1))_calc(var(--pad-card-lg)*0.8)]",
+                i > 0 ? "[border-top:var(--hairline)_solid_var(--border-subtle)] @2xl:[border-top:0]" : "",
+                i > 0 ? "@2xl:[border-inline-start:var(--hairline)_solid_var(--border-subtle)]" : "",
+              ].join(" ")}
+            >
+              <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-medium)] [line-height:var(--leading-tight)]">
+                {m.label}
+              </span>
+              {m.value ? (
+                <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{m.value}</span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
       </section>
     )
   }

@@ -252,6 +252,15 @@ export type SiteSkeleton = {
    * is pressed against anything. See `--site-rhythm` in app/globals.css.
    */
   rhythm?: "tight" | "normal" | "airy";
+  /**
+   * 图跟字有多大 —— separate from the rhythm since 2026-08-27.
+   *
+   * 満図 wants air AND big pictures; 台账's reference wants 56px headings and a
+   * 2198px photograph mosaic with the bands BUTTED TOGETHER. One axis could not
+   * say both, and tying them would make every big-picture register airy whether
+   * its reference was or not.
+   */
+  figure?: "normal" | "large" | "huge";
   /** Movable sections, most important first. Anything the template has and
    *  this list omits keeps its template position, after the listed ones. */
   order: SiteSection[];
@@ -267,12 +276,46 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   ledger: {
   /* Every section this register keeps is a fact that could go in a
      quotation. 一段话 and 师傅团队 are the two that could not. */
-    omit: ["story", "team"],
-    tones: { flow: "tint", creds: "paper" },
+    /* ── COPIED WHOLE ─────────────────────────────────────────────────────
+
+       Wix `wh-newel` (Newel Residential Remodeling), both pages read out of the
+       DOM at 1440px on 2026-08-27:
+
+           1100px  1img   full-bleed photograph, the name centred over it
+           1030px  1img   About Us — half photo, half panel, then a benefits band
+            832px  2img   Our Services — a RULED LIST beside a photograph
+           2198px 10img   Recent Projects — a photograph mosaic, edge to edge
+            523px  0img   Testimonials — three quotes in thin boxes
+            491px  0img   Contact Us — half words, half form
+            381px  0img   foot
+
+       Seven sections, 6555px, fifteen photographs, headings 56px.
+       Ours ran THIRTEEN sections, 4937px, eight photographs, headings 32px --
+       twice as many arguments, each one half the size. That is what
+       「完全不对」 looks like from the inside.
+
+       台账 now carries FOUR movable sections against their four, in their
+       order, and declines the other eleven.
+
+       ⚠️ IT NO LONGER OPENS ON THE PRICE LIST, and that is a change of thesis
+       made on evidence rather than on the reference alone: 任务 26 measured 19
+       Malaysian trade sites still trading, and 0 OF 19 put prices on the first
+       screen. What a contractor leads with is who they are and what they have
+       built. The price list stays in the library; it stops being this
+       register's opening. */
+    omit: ["prices", "creds", "flow", "areas", "faq", "woven", "hours", "band", "cta", "team"],
+    tones: {},
+    /* 深色开场 —— their whole page is one dark ground with the bands butted
+       against each other. Ours is 台账's OWN dark surface (its navigation
+       colour), not theirs: 重点 7c means we take the structure and keep the
+       identity. */
+    ground: "ink",
+    rhythm: "tight",
+    figure: "huge",
     measure: "wide",
-    hero: "left",
-    opens: "价目表",
-    order: ["prices", "creds", "services", "flow", "work", "story", "promise", "areas", "faq", "woven", "reviews", "team", "hours", "band", "cta"],
+    hero: "bleed",
+    opens: "作品",
+    order: ["story", "promise", "services", "work", "reviews", "prices", "creds", "flow", "areas", "faq", "woven", "hours", "band", "cta", "team"],
   },
   // 炉: the salon, where the front desk IS the shop. What a stranger buys is
   // the look of the last customer who walked out, so the photographs lead and
@@ -345,6 +388,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        Before this, 服务 sat at position 2 and everything after it was one slot
        out of step with the reference all the way down the page. */
     rhythm: "airy",
+    figure: "large",
     order: ["flow", "cta", "services", "band", "woven", "reviews", "creds", "hours", "areas", "work", "story", "team", "prices", "faq", "promise"],
   },
   // 图纸: the neutral one. The most ordinary order there is -- what you do,

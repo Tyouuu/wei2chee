@@ -137,6 +137,13 @@ export const VARIANTS: Record<string, Variant[]> = {
   /* 怎么做 —— three genuinely different objects: a ruled row, a big number, a
      line of four. Which one a register wears is an argument about whether the
      steps are a list, a countdown, or a diagram. */
+  SiteWoven: [
+    { id: "woven", label: "照片织在点之间", props: { shape: "woven" } },
+    /* 一条四格 — 台账's reference closes its About with four claims in one
+       painted strip, then moves on to the work. */
+    { id: "band", label: "一条四格", props: { shape: "band" } },
+  ],
+
   SiteSteps: [
     { id: "ruled", label: "细线一行一步", props: { shape: "ruled" } },
     { id: "numbered", label: "大编号", props: { shape: "numbered" } },
@@ -146,6 +153,7 @@ export const VARIANTS: Record<string, Variant[]> = {
   SiteTestimonials: [
     { id: "cards", label: "评分在上", props: { shape: "cards" } },
     { id: "ruled", label: "头像在上", props: { shape: "ruled" } },
+    { id: "boxed", label: "三个方框", props: { shape: "boxed" } },
   ],
   SiteFeatures: [
     { id: "cards", label: "三张卡片", props: { shape: "cards" } },
@@ -156,6 +164,8 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "stated", label: "左标签右大字", props: { shape: "stated" } },
     /* 两个标题三张点卡 — section four of the page 満図 copies whole. */
     { id: "dotted", label: "两个标题三张点卡", props: { shape: "dotted" } },
+    /* 清单配照片 — a contractor's services are a list, not three cards. */
+    { id: "listed", label: "清单配照片", props: { shape: "listed" } },
   ],
 
   SiteCta: [
@@ -172,6 +182,9 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "grid", label: "三张一样大", props: { shape: "grid" } },
     { id: "bento", label: "一大两小", props: { shape: "bento" } },
     { id: "strip", label: "横着滑", props: { shape: "strip" } },
+    /* 大图马赛克 — 2198px and ten photographs on 台账's reference, against our
+       822px 3-up grid in the same slot. */
+    { id: "mosaic", label: "大图马赛克", props: { shape: "mosaic" } },
   ],
 
   /* 一段话配一张照片. Which side the picture is on, or no side at all. */

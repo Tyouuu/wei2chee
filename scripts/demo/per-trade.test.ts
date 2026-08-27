@@ -49,7 +49,11 @@ function fill(nodes: any[], P: Record<string, string>) {
     const id = String(n?.props?.id ?? "");
     if (id === "website-hero") { n.props.photo = P.hero; n.props.photoAlt = ""; }
     if (id === "website-work") {
-      n.props.items = [P.big, P.g1, P.g2, P.g3, P.g4].filter(Boolean).map((src) => ({ src, alt: "" }));
+      /* Six, because 大图马赛克 repeats its tile pattern every six and a
+         seventh opens a hole in the last row. */
+      n.props.items = [P.big, P.g1, P.g2, P.g3, P.g4, P.story]
+        .filter(Boolean)
+        .map((src) => ({ src, alt: "" }));
     }
     if (id === "website-band") { n.props.photo = P.strip; n.props.photoAlt = ""; }
     /* 四点两栏 and 半块颜色 both take photographs and neither was being fed --
@@ -59,6 +63,12 @@ function fill(nodes: any[], P: Record<string, string>) {
        and one beside its mid-page panel; these are those three. */
     if (id === "website-woven") { n.props.photos = [P.g1, P.g2].filter(Boolean); }
     if (id === "website-cta") { n.props.photo = P.story; n.props.photoAlt = ""; }
+    /* 清单配照片 stands the services beside a picture, and 大图马赛克 wants more
+       than three: 台账's reference runs TEN in that slot. Both are slots that
+       had no wire, which is how 満図's woven section shipped empty. */
+    /* Not P.strip -- that one is a texture (brickwork), and beside a list of
+       services a texture says nothing. The story shot is a person working. */
+    if (id === "website-services") { n.props.photo = P.story || P.hero; n.props.photoAlt = ""; }
     if (id === "website-story") { n.props.photo = P.story; n.props.photoAlt = ""; n.props.body = "The same team that quotes is the team that turns up, and we tell you what it costs before we start."; }
     for (const v of Object.values(n?.props ?? {})) if (Array.isArray(v)) fill(v as any[], P);
   }

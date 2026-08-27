@@ -258,18 +258,20 @@ type Components = {
     heading?: string;
     note?: string;
     items: { label: string; value: string; icon?: string }[];
-      shape?: "cards" | "panel" | "bands" | "stated" | "dotted";
+      shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed";
+    photo?: string;
+    photoAlt?: string;
     noteHeading?: string;
 };
   SiteTestimonials: {
     heading?: string;
     items: { quote: string; who: string; role?: string; stars?: number }[];
-    shape?: "cards" | "ruled";
+    shape?: "cards" | "ruled" | "boxed";
   };
   SiteGallery: {
     heading?: string;
     note?: string;
-    shape?: "grid" | "bento" | "strip";
+    shape?: "grid" | "bento" | "strip" | "mosaic";
     items?: { src?: string; alt?: string; caption?: string }[];
   };
   SiteStory: {
@@ -292,6 +294,7 @@ type Components = {
     shape?: "ruled" | "numbered" | "across";
   };
   SiteWoven: {
+    shape?: "woven" | "band";
     heading?: string;
     note?: string;
     points?: { label: string; value?: string }[];
@@ -1750,6 +1753,12 @@ export const puckConfig: Config<Components> = {
     SiteFeatures: {
       label: "服务卡片",
       fields: {
+        photo: {
+          label: "清单旁边那张照片",
+          type: "custom",
+          render: ({ value, onChange }) => <PhotoField value={value as string} onChange={onChange} />,
+        },
+        photoAlt: { label: "照片说明（给看不到的人）", type: "text" },
         noteHeading: { label: "右边那个小标题", type: "text" },
         shape: {
           label: "款式",
@@ -1760,6 +1769,7 @@ export const puckConfig: Config<Components> = {
             { label: "一条一条", value: "bands" },
             { label: "左标签右大字", value: "stated" },
             { label: "两个标题三张点卡", value: "dotted" },
+            { label: "清单配照片", value: "listed" },
           ],
         },
         heading: { label: "标题", type: "text" },
@@ -1777,9 +1787,9 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { items: [] },
-      render: ({ heading, note, items , shape, noteHeading}) => (
+      render: ({ heading, note, items, shape, noteHeading, photo, photoAlt }) => (
         <SiteFeatures heading={heading} note={note} items={items}           shape={shape}
-        noteHeading={noteHeading} />
+        noteHeading={noteHeading} photo={photo} photoAlt={photoAlt} />
       ),
     },
 
@@ -1792,6 +1802,7 @@ export const puckConfig: Config<Components> = {
           options: [
             { label: "评分在上", value: "cards" },
             { label: "头像在上", value: "ruled" },
+            { label: "三个方框", value: "boxed" },
           ],
         },
         heading: { label: "标题", type: "text" },
@@ -1824,6 +1835,7 @@ export const puckConfig: Config<Components> = {
             { label: "三张一样大", value: "grid" },
             { label: "一大两小", value: "bento" },
             { label: "横着滑", value: "strip" },
+            { label: "大图马赛克", value: "mosaic" },
           ],
         },
         items: {
@@ -1953,6 +1965,14 @@ export const puckConfig: Config<Components> = {
     SiteWoven: {
       label: "四点两栏配照片",
       fields: {
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "照片织在点之间", value: "woven" },
+            { label: "一条四格", value: "band" },
+          ],
+        },
         heading: { label: "标题", type: "text" },
         note: { label: "小字", type: "textarea" },
         hint: { label: "还没填的时候讲什么", type: "textarea" },
@@ -1968,8 +1988,8 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { points: [] },
-      render: ({ heading, note, points, photos, hint }) => (
-        <SiteWoven heading={heading} note={note} points={points} photos={photos} hint={hint} />
+      render: ({ heading, note, points, photos, hint , shape}) => (
+        <SiteWoven heading={heading} note={note} points={points} photos={photos} hint={hint} shape={shape} />
       ),
     },
 

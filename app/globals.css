@@ -415,11 +415,14 @@
    rhythm is a variable each register sets: 満図 breathes, 中台 does not. */
 .ds-site {
   --site-rhythm: 4.5rem;
-  /* 图有多大. Same axis as the rhythm and for the same measured reason: their
-     eight sections came to 5398px and ours to 4178, and the gap was not only
-     between the sections -- their full-bleed band is 777px to our 480 and
-     their 「Why Choose Us」 is 1216 to our 596, because their photographs are
-     simply bigger. A register that breathes shows bigger pictures. */
+  /* 图跟字有多大 —— A SEPARATE AXIS FROM THE RHYTHM, and they had to be split.
+
+     It started tied to the rhythm because 満図 wants both: air between sections
+     AND big pictures. 台账's reference (Wix `wh-newel`, measured 2026-08-27)
+     wants the opposite pair -- 56px headings and a 2198px photograph mosaic,
+     with the bands BUTTED AGAINST EACH OTHER and no gap at all. One axis could
+     not say that, and tying them would have made every big-picture register
+     airy whether its reference was or not. */
   --site-figure: 1;
 }
 .ds-site > * > * + * {
@@ -444,11 +447,20 @@
   .ds-ground[data-rhythm="airy"] .ds-site,
   .ds-ground[data-rhythm="airy"].ds-site {
     --site-rhythm: 9rem;
-    --site-figure: 1.6;
   }
   .ds-ground[data-rhythm="tight"] .ds-site,
   .ds-ground[data-rhythm="tight"].ds-site {
-    --site-rhythm: 4.5rem;
+    --site-rhythm: 2.5rem;
+  }
+  .ds-ground[data-figure="large"] .ds-site,
+  .ds-ground[data-figure="large"].ds-site {
+    --site-figure: 1.6;
+  }
+  /* 台账's reference sets its headings at 56px against our 32 and runs a
+     2198px photograph mosaic -- the biggest thing on either page. */
+  .ds-ground[data-figure="huge"] .ds-site,
+  .ds-ground[data-figure="huge"].ds-site {
+    --site-figure: 1.75;
   }
 }
 
