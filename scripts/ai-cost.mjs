@@ -61,26 +61,59 @@ async function main() {
   }
 
   const since = new Date(Date.now() - DAYS * 86400_000).toISOString();
-  const res = await fetch(
-    `${URL_}/rest/v1/ai_usage` +
-      `?select=surface,model,prompt_tokens,completion_tokens,reasoning_tokens,account_id,created_at` +
-      `&created_at=gte.${encodeURIComponent(since)}`,
-    { headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, Connection: "close" } },
-  );
+  const BASE_COLS = "surface,model,prompt_tokens,completion_tokens,reasoning_tokens,account_id,created_at";
+  const HEALTH_COLS = ",outcome,took_ms";
+
+  const pull = (cols) =>
+    fetch(
+      `${URL_}/rest/v1/ai_usage?select=${cols}&created_at=gte.${encodeURIComponent(since)}`,
+      { headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, Connection: "close" } },
+    );
+
+  let res = await pull(BASE_COLS + HEALTH_COLS);
+  let degraded = false;
 
   if (!res.ok) {
     const body = await res.text();
-    // The table not existing is the likeliest failure and deserves its own
-    // sentence -- the migration ships alongside this script.
-    console.error(
-      body.includes("does not exist") || res.status === 404
-        ? "ai_usage 这张表还没有建。先跑 npm run db:push。"
-        : `读不到 ai_usage (${res.status}): ${body.slice(0, 200)}`,
-    );
-    return 1;
+    /*
+      READ THE CODE, NOT THE SENTENCE.
+
+      Postgres says 42P01 for a missing TABLE and 42703 for a missing COLUMN,
+      and both render as 「... does not exist」. Matching on the words told
+      somebody to run db:push for a table that was already there, on the day
+      the health columns were added and not yet pushed -- a diagnostic tool
+      giving a confidently wrong instruction, which is worse than one that
+      gives none.
+    */
+    const code = (() => {
+      try { return JSON.parse(body).code; } catch { return null; }
+    })();
+
+    if (code === "42703") {
+      // The health columns are pending. Fall back to what the table DOES have
+      // rather than refusing: a checker that stops working because a migration
+      // has not been pushed yet is a checker nobody runs again.
+      degraded = true;
+      res = await pull(BASE_COLS);
+    }
+
+    if (!res.ok) {
+      const b2 = degraded ? await res.text() : body;
+      console.error(
+        code === "42P01" || res.status === 404
+          ? "ai_usage 这张表还没有建。先跑 npm run db:push。"
+          : `读不到 ai_usage (${res.status}): ${b2.slice(0, 200)}`,
+      );
+      return 1;
+    }
   }
 
   const data = await res.json();
+  if (degraded) {
+    console.log(
+      "\n⚠️  失败率跟延迟还读不到：20260827050000 还没推。先跑 npm run db:push。",
+    );
+  }
   if (!data.length) {
     console.log(`\n最近 ${DAYS} 天没有任何 AI 呼叫。\n`);
     return 0;
@@ -91,8 +124,15 @@ async function main() {
   for (const row of data) {
     accounts.add(row.account_id);
     const k = `${row.surface}·${row.model}`;
-    const acc = bySurface.get(k) ?? { calls: 0, in: 0, out: 0, reasoning: 0, model: row.model };
+    const acc = bySurface.get(k) ?? {
+      calls: 0, failed: 0, in: 0, out: 0, reasoning: 0, model: row.model, times: [],
+    };
     acc.calls += 1;
+    /* `outcome` arrives undefined against a database that has not taken the
+       migration yet, and undefined must not read as a failure -- a checker
+       that invents an outage is worse than one that reports none. */
+    if (row.outcome === "failed") acc.failed += 1;
+    if (typeof row.took_ms === "number") acc.times.push(row.took_ms);
     acc.in += row.prompt_tokens ?? 0;
     acc.out += row.completion_tokens ?? 0;
     /* Reasoning tokens are billed as output and never appear in the reply, so
@@ -103,6 +143,43 @@ async function main() {
     bySurface.set(k, acc);
   }
 
+  /*
+    IS IT STILL WORKING -- printed FIRST, and above the money.
+
+    The money is a monthly question. This is the one asked when something feels
+    wrong, and until 2026-08-27 the only way to answer it was a customer
+    saying so: failures wrote no row at all, so a table full of successes
+    reported a healthy 100% while every call was falling over. Both AI routes
+    now record what happened, so this can be read instead of guessed.
+
+    A failure rate over a handful of calls is noise, so the count is printed
+    beside it -- 「1 次里坏了 1 次」 is not 100% broken, and a bare percentage
+    would say it was.
+  */
+  const allTimes = data.map((r) => r.took_ms).filter((t) => typeof t === "number").sort((a, b) => a - b);
+  // Not 「0 failures」 when the column simply is not there. A checker reporting
+  // health it cannot see is the failure mode this whole section exists to fix.
+  const failed = degraded ? null : data.filter((r) => r.outcome === "failed").length;
+  const sec = (ms) => `${(ms / 1000).toFixed(1)}s`;
+  console.log(`
+AI 还在正常吗 — 最近 ${DAYS} 天`);
+  console.log(
+    failed === null
+      ? `  失败  读不到（欄位还没建）`
+      : `  失败  ${data.length} 次里坏了 ${failed} 次` +
+        (failed ? `  ← 看一下` : ""),
+  );
+  if (allTimes.length) {
+    const at = (q) => allTimes[Math.min(allTimes.length - 1, Math.floor(allTimes.length * q))];
+    console.log(
+      `  他等了多久  中位 ${sec(at(0.5))} · p95 ${sec(at(0.95))} · 最慢 ${sec(allTimes[allTimes.length - 1])}`,
+    );
+  } else {
+    console.log(
+      `  他等了多久  还没有数据（这些行是计时上线之前写的）`,
+    );
+  }
+
   let totalUsd = 0;
   const rows = [];
   for (const [k, v] of bySurface) {
@@ -111,7 +188,7 @@ async function main() {
     if (!Number.isNaN(usd)) totalUsd += usd;
     rows.push([
       k,
-      String(v.calls),
+      v.failed ? `${v.calls} (坏 ${v.failed})` : String(v.calls),
       v.in.toLocaleString(),
       v.out.toLocaleString(),
       v.reasoning.toLocaleString(),

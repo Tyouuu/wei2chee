@@ -57,14 +57,38 @@ export async function recordAiUsage(
   surface: "analyze" | "edit",
   model: string,
   usage: UsageShape,
+  /**
+   * A FAILED CALL IS THE ONE WORTH RECORDING MOST.
+   *
+   * This used to return early whenever `usage` was absent, which is exactly
+   * the shape of every failure: the provider 500s, the platform cuts the
+   * request off at its ceiling, the reply will not parse -- and no row is
+   * written at all. So the ledger answered 「花了多少钱」 and was silent on
+   * 「它还在正常吗」, and the honest answer to 「AI 坏了我们怎么知道」
+   * was: a customer tells us.
+   *
+   * A failure row carries zeroes, because there is nothing to count, and its
+   * own outcome, because a zero-token success and a failure are different
+   * events that would otherwise look identical.
+   */
+  opts: { outcome?: "ok" | "failed"; tookMs?: number | null } = {},
 ): Promise<boolean> {
-  if (!usage) return false;
+  const outcome = opts.outcome ?? "ok";
+  if (!usage && outcome === "ok") return false;
   try {
     const { error } = await supabase.rpc("record_ai_usage", {
       in_surface: surface,
       in_model: model,
-      in_prompt_tokens: Math.max(0, Math.round(usage.prompt_tokens ?? 0)),
-      in_completion_tokens: Math.max(0, Math.round(usage.completion_tokens ?? 0)),
+      in_outcome: outcome,
+      /* Wall clock around the model call. Rounded rather than passed as a
+         float: the column is an integer and a millisecond of precision past
+         the decimal point is not a thing anybody will ever ask about. */
+      in_took_ms:
+        typeof opts.tookMs === "number" && Number.isFinite(opts.tookMs)
+          ? Math.max(0, Math.round(opts.tookMs))
+          : null,
+      in_prompt_tokens: Math.max(0, Math.round(usage?.prompt_tokens ?? 0)),
+      in_completion_tokens: Math.max(0, Math.round(usage?.completion_tokens ?? 0)),
       /*
         Reasoning tokens are billed as output and never appear in the reply, so
         leaving them out under-reports precisely the setting both callers run
@@ -72,7 +96,7 @@ export async function recordAiUsage(
         0, because 0 is a claim and absent is an absence.
       */
       in_reasoning_tokens:
-        usage.completion_tokens_details?.reasoning_tokens == null
+        usage?.completion_tokens_details?.reasoning_tokens == null
           ? null
           : Math.max(0, Math.round(usage.completion_tokens_details.reasoning_tokens)),
     });

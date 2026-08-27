@@ -70,4 +70,66 @@ describe("recordAiUsage", () => {
     // truth, which is that this reply did not say.
     expect(args.in_reasoning_tokens).toBeNull();
   });
+
+  /*
+    THE ONE THE LEDGER WAS MISSING.
+
+    Before this, a call that failed wrote nothing at all -- the early return on
+    an absent `usage` is exactly the shape of every failure -- so the table
+    reported a healthy 100% while every call in production was failing. This is
+    the row that makes 「AI 坏了我们怎么知道」 answerable by something other than
+    a customer telling us.
+  */
+  it("writes a row for a failure, which has no usage at all", async () => {
+    let args: Record<string, unknown> = {};
+    const rpc = vi.fn(async (_n: string, a: Record<string, unknown>) => {
+      args = a;
+      return { error: null };
+    });
+    const ok = await recordAiUsage(client(rpc), "edit", "gpt-5.6-luna", null, {
+      outcome: "failed",
+      tookMs: 9200,
+    });
+    expect(ok).toBe(true);
+    expect(args.in_outcome).toBe("failed");
+    expect(args.in_took_ms).toBe(9200);
+    // Zero, not null: there is nothing to count, and a null count would read as
+    // 「we do not know」 when in fact we do.
+    expect(args.in_prompt_tokens).toBe(0);
+  });
+
+  /*
+    A reply that was billed and then would not parse is ONE event with two
+    facts: what it cost, and that it did not work. Splitting it into two rows
+    would count the call twice and make the failure rate depend on how the
+    failure happened.
+  */
+  it("keeps the counts on a failure that was already billed", async () => {
+    let args: Record<string, unknown> = {};
+    const rpc = vi.fn(async (_n: string, a: Record<string, unknown>) => {
+      args = a;
+      return { error: null };
+    });
+    await recordAiUsage(
+      client(rpc),
+      "analyze",
+      "gpt-5.6-luna",
+      { prompt_tokens: 4000, completion_tokens: 200 },
+      { outcome: "failed", tookMs: 7000 },
+    );
+    expect(args.in_outcome).toBe("failed");
+    expect(args.in_prompt_tokens).toBe(4000);
+  });
+
+  it("defaults to a success that took an unknown amount of time", async () => {
+    let args: Record<string, unknown> = {};
+    const rpc = vi.fn(async (_n: string, a: Record<string, unknown>) => {
+      args = a;
+      return { error: null };
+    });
+    await recordAiUsage(client(rpc), "edit", "gpt-5.6-luna", { prompt_tokens: 1, completion_tokens: 1 });
+    expect(args.in_outcome).toBe("ok");
+    // Null rather than 0 -- see the reasoning-tokens test: 0 is a claim.
+    expect(args.in_took_ms).toBeNull();
+  });
 });

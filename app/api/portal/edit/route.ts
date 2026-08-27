@@ -515,6 +515,10 @@ The business owner asked:
   })();
 
   let parsed;
+  /* Started here rather than inside the try, so a call that throws still has a
+     duration to record. See recordAiUsage: a failed call is the one worth
+     recording most, and it is also the one most likely to be slow. */
+  const startedAt = Date.now();
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-5.6-luna",
@@ -545,10 +549,29 @@ The business owner asked:
       the money. Awaited and error-swallowing -- see recordAiUsage: accounting
       must never be the reason an edit fails in front of a customer.
     */
-    await recordAiUsage(supabase, "edit", "gpt-5.6-luna", completion.usage);
+    await recordAiUsage(supabase, "edit", "gpt-5.6-luna", completion.usage, {
+      tookMs: Date.now() - startedAt,
+    });
     parsed = parseLayoutOps(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
   } catch (err) {
     console.error("layout edit failed", err);
+    /*
+      A FAILURE IS A ROW TOO.
+
+      console.error lands in the hosting platform's log viewer, which the
+      founder does not read and which expires. Without this line the only
+      way anybody learns that the assistant has stopped working is a customer
+      saying so -- and a ledger that records successes only reports a healthy
+      100% while every call is failing.
+
+      Swallowed and awaited like the success path: accounting must never be
+      the reason an edit fails in front of a customer, and the 502 below is
+      returned either way.
+    */
+    await recordAiUsage(supabase, "edit", "gpt-5.6-luna", null, {
+      outcome: "failed",
+      tookMs: Date.now() - startedAt,
+    });
     // No fallback here, unlike /api/analyze. Guessing at an edit nobody asked
     // for is worse than saying "I did not understand that" -- the customer's
     // design is already on screen and unharmed, and they can rephrase.

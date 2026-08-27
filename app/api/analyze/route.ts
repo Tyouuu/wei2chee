@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { recordAiUsage } from "@/lib/portal/ai-usage";
+import { recordAiUsage, type UsageShape } from "@/lib/portal/ai-usage";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   analysisSchema,
@@ -154,6 +154,12 @@ export async function POST(req: NextRequest) {
   let usedFallback = false;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS && !parsed; attempt++) {
+    /* Per attempt, not per request: attempt 2 is a second model call and its
+       own wait, and averaging the two hides which of them was slow. */
+    const startedAt = Date.now();
+    /* UsageShape is what recordAiUsage takes; the SDK's own union covers a
+       streaming response this route never asks for and cannot be indexed. */
+    let usage: UsageShape = undefined;
     try {
       const completion = await openai.chat.completions.create({
         model: "gpt-5.6-luna",
@@ -177,13 +183,10 @@ export async function POST(req: NextRequest) {
         response_format: { type: "json_schema", json_schema: analysisJsonSchema },
       });
 
-      /*
-        Recorded on EVERY attempt, inside the retry loop, because every attempt
-        is billed. A schema failure that clears on attempt 2 costs twice and
-        would otherwise show up in the ledger as one call -- which is exactly
-        the shape of spending worth being able to see.
-      */
-      await recordAiUsage(supabase, "analyze", "gpt-5.6-luna", completion.usage);
+      /* Captured before the parse, spent in the `finally` below: the model has
+         already been billed by this point, so a reply that will not parse must
+         still record what it cost. */
+      usage = completion.usage;
 
       const raw = completion.choices[0]?.message?.content;
       rawResponse = JSON.parse(raw ?? "{}");
@@ -193,6 +196,27 @@ export async function POST(req: NextRequest) {
       // that always clears at attempt 2 is distinguishable from a total
       // outage -- they need different responses from us.
       console.error(`analysis attempt ${attempt}/${MAX_ATTEMPTS} failed`, err);
+    } finally {
+      /*
+        ONE ROW PER ATTEMPT, WHATEVER HAPPENED TO IT.
+
+        Every attempt is billed, so a schema failure that clears on the retry
+        costs twice -- exactly the spending worth being able to see. And every
+        attempt is worth its outcome: this route has a FALLBACK, so a visitor
+        who hits a broken model still gets a system built and never learns
+        anything went wrong. That is right for them, and it means nobody here
+        finds out either. Repeated attempt-1 failures that quietly clear on
+        attempt 2 are what a model degrading looks like, and they are invisible
+        without this line.
+
+        Written in `finally` rather than in both branches so the two cannot
+        drift, and so a reply that was billed and then failed to parse lands as
+        ONE row carrying both facts: what it cost, and that it did not work.
+      */
+      await recordAiUsage(supabase, "analyze", "gpt-5.6-luna", usage, {
+        outcome: parsed ? "ok" : "failed",
+        tookMs: Date.now() - startedAt,
+      });
     }
   }
 
