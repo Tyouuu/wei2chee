@@ -27,7 +27,8 @@
     "shoot:market": "node scripts/shoot-market.mjs",
     "shoot:skeletons": "node scripts/shoot-skeletons.mjs",
     "shoot:kits": "node scripts/shoot-kits.mjs",
-    "shoot:photo": "node scripts/shoot-photo.mjs"
+    "shoot:photo": "node scripts/shoot-photo.mjs",
+    "restore:demo": "node scripts/restore-demo.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
