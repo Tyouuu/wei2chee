@@ -192,6 +192,7 @@ export function SiteCta({
        they are. */
     <section
       data-cta-band=""
+      data-wide=""
       className="[background:var(--color-primary)] [border-radius:var(--radius-lg)] [padding-block:calc(var(--pad-card-lg)*2)] [padding-inline:var(--pad-card-lg)] text-center"
     >
       <h2 className="ds-display mx-auto max-w-[24ch] text-balance [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]">
@@ -482,7 +483,9 @@ export function SiteGallery({
   )
 
   return (
-    <section className="@container">
+    /* `data-wide`: a gallery is pictures, and pictures take the room. The
+       heading above them keeps the page measure -- see app/globals.css. */
+    <section data-wide="" className="@container">
       {heading ? (
         <div className="mb-8 max-w-[46ch]">
           <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>

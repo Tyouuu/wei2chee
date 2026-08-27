@@ -1240,6 +1240,7 @@ export function PortalEditor({
                         pageKey === "website" ? (siteSkeleton(activeStyle).ground ?? "page") : undefined
                       }
                       data-pattern={pageKey === "website" ? siteSkeleton(activeStyle).pattern : undefined}
+                      data-measure={pageKey === "website" ? (siteSkeleton(activeStyle).measure ?? "normal") : undefined}
                       className={`ds-ground ${scopeClasses(activeStyle, activePalette)} ${
                         pageKey === "website" ? "ds-site" : ""
                       } h-full [background-color:var(--color-canvas)]`}

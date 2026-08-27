@@ -136,6 +136,17 @@ export type SiteSkeleton = {
    * tile, which is painted by its token file rather than here.
    */
   pattern?: "dots" | "hatch" | "diamond" | "grid";
+  /**
+   * 页面多宽 —— the measure the page is set to. `narrow` is a quiet 60rem,
+   * `normal` the 68rem everything used to share, `wide` 78rem.
+   *
+   * Their content breathes to the edges and ours sat in one column: that was
+   * the fifth difference found beside linear, vercel and resend. Width is a
+   * register decision because it is one of the few that reads instantly --
+   * 中台 is dense and wide because a trade counter is, 工作室 is narrow because
+   * its whole argument is that nothing sits beside anything.
+   */
+  measure?: "narrow" | "normal" | "wide";
   /** Movable sections, most important first. Anything the template has and
    *  this list omits keeps its template position, after the listed ones. */
   order: SiteSection[];
@@ -149,6 +160,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // a table, so its website opens on the one table a stranger wants -- what it
   // costs. No figure: this register's whole argument is that it is not pretty.
   ledger: {
+    measure: "wide",
     hero: "left",
     opens: "价目表",
     order: ["prices", "creds", "services", "flow", "work", "story", "promise", "areas", "faq", "reviews", "team", "hours", "cta"],
@@ -181,6 +193,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // another business, and a business asks for terms before it asks for a look:
   // price, then delivery, then what the arrangement actually is.
   counter: {
+    measure: "wide",
     ground: "ink",
     hero: "plain",
     opens: "条件",
@@ -190,6 +203,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // a page that reads like a document leads with words -- what we do, how it
   // works, what we promise. No photo wall; that would be the opposite register.
   swiss: {
+    measure: "narrow",
     pattern: "hatch",
     hero: "plain",
     opens: "说明",
@@ -207,6 +221,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // The work first at full volume, then the ask, immediately. This is the only
   // skeleton that puts the mid-page CTA in the top third.
   brut: {
+    measure: "wide",
     ground: "ink",
     hero: "band",
     opens: "作品 + 马上问",
@@ -225,6 +240,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // prices, then whether you deliver here. Monospace all the way down, so no
   // long-prose section gets to lead.
   code: {
+    measure: "wide",
     pattern: "dots",
     ground: "ink",
     hero: "plain",
@@ -235,6 +251,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // the band hero is not decoration -- it is the register itself. What it sells
   // is trust built over years, so the work and the word-of-mouth lead.
   lacquer: {
+    measure: "narrow",
     ground: "ink",
     hero: "band",
     opens: "招牌 + 口碑",
@@ -261,6 +278,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // side. A quiet centred opening, the work, then who said what -- and the
   // enquiry is the only thing that ever asks anything.
   studio: {
+    measure: "narrow",
     hero: "stage",
     opens: "自己的话",
     order: ["story", "team", "work", "services", "reviews", "creds", "flow", "faq", "promise", "prices", "areas", "cta", "hours"],

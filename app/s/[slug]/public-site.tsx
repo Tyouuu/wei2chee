@@ -60,6 +60,7 @@ export function PublicSite({
       palette={palette}
       data-ground={siteSkeleton(style).ground ?? "page"}
       data-pattern={siteSkeleton(style).pattern}
+      data-measure={siteSkeleton(style).measure ?? "normal"}
       className="ds-ground min-h-screen [background-color:var(--color-canvas)]"
     >
       <SystemLangProvider lang={lang}>

@@ -343,11 +343,44 @@
    wrapper div, so `.ds-site > *` is that wrapper -- measured on the live page:
    childCount 1. Styling it gave the page a container and no rhythm at all,
    which looked almost right and was the wrong element. */
+/* ── 呼吸到边 ────────────────────────────────────────────────────────────────
+
+   The fifth of the five differences found by putting ours beside linear,
+   vercel and resend: their content breathes to the edges of the screen and
+   ours sat inside one 68rem column with a lot of unused margin on both sides.
+
+   But not everything should. A paragraph at 86rem is a paragraph nobody
+   finishes -- the 19 Malaysian SME sites measured on 2026-08-27 set their body
+   text at 574px, and every typographic rule ever written agrees that reading
+   wants a narrow measure. What wants width is PICTURES: a gallery, a colour
+   band, a photograph.
+
+   So the measure is the default and width is opt-in per block, plus a register
+   axis for the page as a whole -- 中台 is dense and wide, 工作室 is quiet and
+   narrow, and that is a difference between them rather than one number for
+   all fourteen. */
+.ds-site {
+  --site-measure: 68rem;
+}
+/* Set on the ground wrapper, read by the frame inside it -- two elements, as
+   every token remap in this file is, so nothing reads a property it writes. */
+.ds-ground[data-measure="narrow"] .ds-site,
+.ds-ground[data-measure="narrow"].ds-site {
+  --site-measure: 60rem;
+}
+.ds-ground[data-measure="wide"] .ds-site,
+.ds-ground[data-measure="wide"].ds-site {
+  --site-measure: 78rem;
+}
 .ds-site > * > * {
   margin-inline: auto;
   width: 100%;
-  max-width: 68rem;
+  max-width: var(--site-measure);
   padding-inline: 1.5rem;
+}
+/* Pictures take the room. Text does not. */
+.ds-site > * > [data-wide] {
+  max-width: calc(var(--site-measure) + 14rem);
 }
 
 .ds-site > * > * + * {
