@@ -122,6 +122,15 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "stack", label: "照片在上", props: { shape: "stack" } },
   ],
 
+  /* 师傅团队. A card each, a bare column, or a line of faces. The third is not
+     a styling of the first two: for a business whose team is three people, a
+     grid of three cards is three-quarters whitespace. */
+  SiteTeam: [
+    { id: "cards", label: "卡片", props: { shape: "cards" } },
+    { id: "plain", label: "不用卡片", props: { shape: "plain" } },
+    { id: "row", label: "一排头像", props: { shape: "row" } },
+  ],
+
   /* 别人给的证明. Three genuinely different objects, not three alignments:
      a LINE of facts, a GRID of ticked cards, and a SCORE with the facts small
      underneath. Which one suits depends on what the business has -- a salon

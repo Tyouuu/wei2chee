@@ -130,6 +130,12 @@ function isEmptyOnPublish(node: PuckNode): boolean {
     const shots = Array.isArray(node.props.items) ? (node.props.items as Row[]) : [];
     return !shots.some((s) => String((s as { src?: string }).src ?? "").trim());
   }
+  /* A team we invented is a list of people who do not work there. Same rule
+     as SiteCreds and SiteStory: the prompt stays in the editor. */
+  if (node.type === "SiteTeam") {
+    const people = Array.isArray(node.props.members) ? (node.props.members as Row[]) : [];
+    return !people.some((m) => String((m as { name?: string }).name ?? "").trim());
+  }
   if (node.type === "SiteCreds") {
     const items = Array.isArray(node.props.items) ? (node.props.items as Row[]) : [];
     const filled = items.some((i) => String((i as { label?: string }).label ?? "").trim());

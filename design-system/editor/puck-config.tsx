@@ -24,6 +24,7 @@ import {
   SiteCreds,
   SiteGallery,
   SiteStory,
+  SiteTeam,
 } from "@/design-system/components/site-sections";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
 import { EnquiryForm } from "@/design-system/components/enquiry-form";
@@ -276,6 +277,13 @@ type Components = {
     /* 开场的地. Register-chosen; see site-composition.ts. */
     ground?: "page" | "ink";
     points?: { label: string }[];
+  };
+  SiteTeam: {
+    heading?: string;
+    note?: string;
+    hint?: string;
+    shape?: "cards" | "plain" | "row";
+    members?: { name: string; role?: string; years?: string; photo?: string }[];
   };
   SiteCreds: {
     heading?: string;
@@ -648,7 +656,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteStory", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1846,6 +1854,48 @@ export const puckConfig: Config<Components> = {
           photoAlt={photoAlt}
           points={points}
         />
+      ),
+    },
+
+    SiteTeam: {
+      label: "师傅团队",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        note: { label: "下面一句", type: "text" },
+        hint: { label: "还没填的时候讲什么", type: "textarea" },
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "卡片", value: "cards" },
+            { label: "不用卡片", value: "plain" },
+            { label: "一排头像", value: "row" },
+          ],
+        },
+        members: {
+          label: "每一个人",
+          type: "array",
+          arrayFields: {
+            name: { label: "名字", type: "text" },
+            role: { label: "做什么", type: "text" },
+            years: { label: "做了多久", type: "text" },
+            photo: {
+              label: "照片",
+              type: "custom",
+              render: ({ value, onChange }) => (
+                <PhotoField value={value as string} onChange={onChange} />
+              ),
+            },
+          },
+          defaultItemProps: { name: "", role: "", years: "", photo: "" },
+          getItemSummary: (item) => item.name || "还没填",
+        },
+      },
+      /* No `shape`: an absent prop is the only way to say 「follow the
+         register」. See design-doc.test.ts. */
+      defaultProps: { members: [] },
+      render: ({ heading, note, hint, shape, members }) => (
+        <SiteTeam heading={heading} note={note} hint={hint} shape={shape} members={members} />
       ),
     },
 

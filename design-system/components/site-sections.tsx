@@ -655,3 +655,154 @@ export function SiteStory({
     </section>
   )
 }
+
+/**
+ * 师傅团队 —— who actually turns up.
+ *
+ * ── TAKEN FROM THE LIBRARY, NOT INVENTED ─────────────────────────────────
+ *
+ * The founder, 2026-08-27: 「那 217 段的绝大多数 怎么还没拿啊 去拿啊」. He is
+ * right that they were sitting there, and the honest report on what they are
+ * is this: `components/blocks/team-1.tsx` is 215 lines with ZERO hardcoded
+ * colours -- genuinely token-pure -- and a hardcoded `const members = [...]`
+ * of SaaS founders with LinkedIn, Twitter and GitHub links and bios like
+ * 「Former principal designer at Figma and Linear」.
+ *
+ * So a pulled section is a PICTURE, not a block. It takes no props, and its
+ * data model is somebody else's business. What it gives is the composition and
+ * the spacing, which is the expensive half; what it cannot give is the shape
+ * of the facts. A renovation contractor's team has a name, a trade, how long
+ * they have been doing it and a face -- and no GitHub.
+ *
+ * ── WHY THIS SECTION AND NOT ANOTHER ─────────────────────────────────────
+ *
+ * Measured, not guessed. Of the 19 trading Malaysian SME sites photographed on
+ * 2026-08-27, the dental clinics lead with their DOCTORS and the aircond
+ * companies with technicians in uniform. It is the same move the local market
+ * makes with a photograph of the physical signboard: proof that real people
+ * are behind the number you are about to call.
+ *
+ * ── AND IT SHIPS EMPTY ───────────────────────────────────────────────────
+ *
+ * Every field is a claim about a person. We do not know who works here. So it
+ * prompts in the editor and publish-projection drops it until the owner fills
+ * one in -- the same rule SiteCreds and SiteStory follow, and the rule that a
+ * seeded phone number broke on a live page on 2026-08-26.
+ */
+export function SiteTeam({
+  heading,
+  note,
+  hint,
+  shape = "cards",
+  members,
+}: {
+  heading?: string
+  note?: string
+  /** Shown to the OWNER while this is still empty. Never published. */
+  hint?: string
+  /** `cards` a bordered card each, `plain` a bare column, `row` faces in a
+   *  line with the name beside them. The register chooses. */
+  shape?: "cards" | "plain" | "row"
+  members?: { name: string; role?: string; years?: string; photo?: string }[]
+}) {
+  const real = (members ?? []).filter((m) => m.name?.trim())
+
+  if (!real.length) {
+    if (!hint) return null
+    return (
+      <section
+        data-prompt=""
+        className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
+      >
+        {heading ? (
+          <h2 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+            {heading}
+          </h2>
+        ) : null}
+        <p className="mt-2 max-w-[56ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+          {hint}
+        </p>
+      </section>
+    )
+  }
+
+  const face = (m: { name: string; photo?: string }, size: string) =>
+    m.photo?.trim() ? (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src={m.photo}
+        alt=""
+        className={`${size} shrink-0 rounded-full object-cover`}
+      />
+    ) : (
+      <span
+        aria-hidden
+        className={`${size} grid shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]`}
+      >
+        {m.name.trim().charAt(0)}
+      </span>
+    )
+
+  return (
+    <section className="@container">
+      {heading ? (
+        <div className="mb-8 max-w-[46ch]">
+          <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+          {note ? (
+            <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+              {note}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {shape === "row" ? (
+        /* A line of faces with the name beside each. For a business whose team
+           is three people, a grid of three cards is three-quarters whitespace. */
+        <ul className="flex flex-wrap [gap:calc(var(--gap-stack)*1.4)]">
+          {real.map((m) => (
+            <li key={m.name} className="flex items-center [gap:var(--gap-inline)]">
+              {face(m, "h-12 w-12")}
+              <span className="min-w-0">
+                <span className="block [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
+                  {m.name}
+                </span>
+                <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                  {[m.role, m.years].filter(Boolean).join(" · ")}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
+          {real.map((m) => (
+            <li
+              key={m.name}
+              className={
+                shape === "cards"
+                  ? "ds-card flex flex-col items-start [gap:var(--gap-inline)] [padding:calc(var(--pad-card)*1.3)]"
+                  : "flex flex-col items-start [gap:var(--gap-inline)]"
+              }
+            >
+              {face(m, "h-16 w-16")}
+              <span>
+                <span className="block [color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                  {m.name}
+                </span>
+                {m.role ? (
+                  <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{m.role}</span>
+                ) : null}
+                {m.years ? (
+                  <span className="mt-1 block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                    {m.years}
+                  </span>
+                ) : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}

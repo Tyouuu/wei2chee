@@ -225,6 +225,10 @@ describe("buildPageLayout", () => {
       // 一段话配一张照片 -- the only section written in the owner's own voice,
       // and therefore the only one that ships EMPTY. See publish-projection.
       "SiteStory",
+      // 师傅团队 -- composition taken from the pulled library's team-1, data
+      // model replaced. Ships empty; publish-projection drops it until the
+      // owner names somebody. 2026-08-27.
+      "SiteTeam",
       "WorkflowStrip", // what happens after you call
       "InfoRows",      // a price guide, never a price
       // A review has a rating, the words and a face -- not the dashboard's

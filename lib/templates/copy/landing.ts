@@ -167,6 +167,9 @@ export type LandingCopy = {
        * drops the section until the owner has written the other half.
        */
       story: { heading: string; hint: string };
+      /** 师傅团队 -- who turns up on the day. Every field is a claim about a
+       *  person, so it ships empty and publish-projection drops it. */
+      team: { heading: string; note: string; hint: string };
     };
   };
 };
@@ -407,6 +410,11 @@ const EN: LandingCopy = {
         heading: "Who you are dealing with",
         hint: "Two or three lines in your own words -- how long you have been doing this, who turns up on the day -- and one photo of your own work. This section stays off your live page until you write it.",
       },
+      team: {
+        heading: "Who turns up",
+        note: "",
+        hint: "Add the people who actually do the work -- a name, what they do, how long they have been doing it, and a photo if you have one. This section stays off your live page until you do.",
+      },
     },
   },
 };
@@ -628,6 +636,11 @@ const ZH: LandingCopy = {
       story: {
         heading: "跟你做的是什么人",
         hint: "用你自己的话写两三句 —— 做了多久、到场的是什么人 —— 再放一张你自己做的照片。没写之前这一段不会出现在客人看到的页面上。",
+      },
+      team: {
+        heading: "到场的是什么人",
+        note: "",
+        hint: "把真正做工的人加进来 —— 名字、做什么、做了多久，有照片更好。没填之前这一段不会出现在客人看到的页面上。",
       },
     },
   },

@@ -359,6 +359,20 @@ const work = (c: LandingContent) =>
   not: the page was cards, rows and a table, which is a dashboard's vocabulary.
   tailark ships it as `content` in three of its four themes.
 */
+/*
+  师傅团队. Composition taken from components/blocks/team-1.tsx -- 215 lines,
+  zero hardcoded colours -- with its data model replaced. Theirs is SaaS
+  founders with LinkedIn, Twitter and GitHub; a contractor's team is a name, a
+  trade, how long, and a face.
+*/
+const team = (c: LandingContent) =>
+  node("SiteTeam", "website-team", {
+    heading: c.words.sections.team.heading,
+    note: c.words.sections.team.note,
+    hint: c.words.sections.team.hint,
+    members: [],
+  });
+
 const story = (c: LandingContent) =>
   node("SiteStory", "website-story", {
     heading: c.words.sections.story.heading,
@@ -614,6 +628,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       services(c, sect(c, "quote").services),
       work(c),
       story(c),
+      team(c),
       prices(c),
       flow(c, sect(c, "quote").flow ?? ""),
       reviews(c),
@@ -644,6 +659,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       flow(c, sect(c, "booking").flow ?? "", "numbered"),
       work(c),
       story(c),
+      team(c),
       prices(c),
       reviews(c),
       creds(c),
@@ -671,6 +687,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       services(c, sect(c, "order").services),
       work(c),
       story(c),
+      team(c),
       prices(c),
       hours(c),
       areas(c),
@@ -695,6 +712,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hero(c, "split", "pricelist"),
       services(c, sect(c, "wholesale").services),
       story(c),
+      team(c),
       flow(c, sect(c, "wholesale").flow ?? "", "timeline"),
       prices(c),
       areas(c),
@@ -721,6 +739,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       // boxes around every section fight the looking.
       work(c),
       story(c),
+      team(c),
       services(c, sect(c, "portfolio").services, false),
       reviews(c),
       creds(c),
@@ -745,6 +764,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hero(c, "split", "card"),
       services(c, sect(c, "card").services, false),
       story(c),
+      team(c),
       hours(c),
       areas(c),
       reviews(c),

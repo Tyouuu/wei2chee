@@ -593,4 +593,9 @@ export const LABELS_EN: Record<string, string> = {
   "跟页面一样": "Same as the page",
   "深色": "Dark",
   "主色": "Your main colour",
+  "师傅团队": "Your team",
+  "不用卡片": "No cards",
+  "一排头像": "A row of faces",
+  "每一个人": "Each person",
+  "做了多久": "How long",
 };
