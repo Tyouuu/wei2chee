@@ -8,6 +8,7 @@ import {
   type BusinessContext,
 } from "./industry-template";
 import { STYLE_BRIEFS } from "@/lib/portal/design-doc";
+import { VARIANTS } from "@/design-system/editor/variants";
 
 /**
  * 官网骨架的尺子。
@@ -90,8 +91,14 @@ describe("SITE_COMPOSITION", () => {
   });
 
   it("uses hero layouts SiteHero actually has", () => {
+    /* READ FROM THE VARIANTS, NOT TYPED AGAIN. This was a literal array and it
+       went stale the hour 舞台 was added -- the fourth hand-written second copy
+       of a list this repo has had to delete. `variants.ts` is what the 换款式
+       picker renders from, so it is the list that cannot be wrong. */
+    const ids = (VARIANTS.SiteHero ?? []).map((v) => v.id);
+    expect(ids.length, "SiteHero has no variants").toBeGreaterThan(0);
     for (const [style, s] of Object.entries(SITE_COMPOSITION)) {
-      expect(["left", "band", "center", "plain", "split"], style).toContain(s.hero);
+      expect(ids, style).toContain(s.hero);
     }
   });
 

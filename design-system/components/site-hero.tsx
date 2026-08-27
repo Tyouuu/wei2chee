@@ -70,7 +70,7 @@ export function SiteHero({
    *   plain   headline and one button. A name card.
    *   split   the words on the left and a FIGURE on the right. See below.
    */
-  layout?: "left" | "band" | "center" | "plain" | "split"
+  layout?: "left" | "band" | "center" | "plain" | "split" | "stage"
   /**
    * WHAT GOES ON THE RIGHT, AND WHY THERE IS NOW A RIGHT AT ALL.
    *
@@ -212,6 +212,32 @@ export function SiteHero({
     sampleLabel?: string
   }
 }) {
+  /*
+    舞台 —— THE SHAPE TWELVE CURRENT LANDING PAGES USE AND WE DID NOT.
+
+    Photographed on 2026-08-27: arc, clerk, cursor, dub, framer, linear, polar,
+    raycast, resend, rive, spline, vercel. Ten of the twelve open the same way,
+    and it is not the way we did:
+
+      · the headline is SHORT and says what you DO, not who you are
+        (「Turn clicks into revenue」, 「Email for developers」)
+      · the company NAME is in the top bar. Twelve out of twelve. None of them
+        makes it the headline, which is exactly what ours did
+      · one supporting line, not three
+      · two small quiet buttons
+      · then THE THING ITSELF -- full width, centred, running off the bottom of
+        the screen rather than sitting politely beside the words
+
+    That last one is the difference a picture shows and a measurement does not.
+    Ours put the figure BESIDE the text at half width, so the first screen was
+    half words and half a small card. Theirs give the whole lower half to the
+    object and let it bleed, which is what makes the page feel like it has
+    something in it.
+
+    For a contractor the object is not a product screenshot -- it is their
+    work. Same shape, their photograph.
+  */
+  const stage = layout === "stage"
   const centred = layout === "center"
   const band = layout === "band"
   const plain = layout === "plain"
@@ -249,6 +275,9 @@ export function SiteHero({
      only thing that could before, which meant a register asking for the split
      layout on a template with no drawn figure quietly rendered as 左对齐. */
   const split = layout === "split" && (Boolean(figure) || hasPhoto)
+  /* The stage shows its object too, but under the words rather than beside
+     them, so it is not a `split` and must not build the two-column grid. */
+  const staged = stage && (Boolean(figure) || hasPhoto)
   const showProof = !plain && proof && proof.length > 0
 
   /*
@@ -321,7 +350,8 @@ export function SiteHero({
         band
           ? "[background-color:var(--color-primary-soft)] [border-bottom:var(--hairline)_solid_var(--color-ink-800)] [padding-block:calc(var(--pad-card-lg)*2.4)]"
           : "[padding-block:calc(var(--pad-card-lg)*2)]",
-        centred ? "text-center" : "",
+        centred || stage ? "text-center" : "",
+        stage ? "[padding-block:calc(var(--pad-card-lg)*2.2)_0]" : "",
       ].join(" ")}
     >
       {/* THE HOURS STRIP. Full-bleed, because a strip that stops where the
@@ -515,6 +545,41 @@ export function SiteHero({
         </TiltStage>
       )}
       </div>
+
+      {/* THE OBJECT, UNDER THE WORDS AND RUNNING OFF THE BOTTOM.
+          `max-height` at 46vh with the overflow visible is what makes it read
+          as continuing below the fold instead of as a picture that happens to
+          be large -- the property ten of the twelve references share and the
+          one that cannot be measured off a stylesheet. */}
+      {staged ? (
+        <div className="mt-12 overflow-hidden [max-height:46vh]">
+          <TiltStage>
+            <div className="mx-auto w-full max-w-[62rem]">
+              {hasPhoto ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={photo}
+                  alt={photoAlt || ""}
+                  className="w-full object-cover [border-radius:var(--radius-lg)]"
+                  style={{ aspectRatio: "16 / 10" }}
+                />
+              ) : figure ? (
+                <HeroFigure
+                  kind={figure}
+                  brand={figureData?.brand ?? (typeof headline === "string" ? headline : "")}
+                  services={figureData?.services}
+                  stages={figureData?.stages}
+                  proof={proof}
+                  landsIn={figureData?.landsIn}
+                  note={figureData?.note}
+                  askLabel={figureData?.askLabel}
+                  sampleLabel={figureData?.sampleLabel}
+                />
+              ) : null}
+            </div>
+          </TiltStage>
+        </div>
+      ) : null}
       </div>
     </section>
   )

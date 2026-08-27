@@ -99,6 +99,10 @@ export const VARIANTS: Record<string, Variant[]> = {
     // switching TO it needs a `figure` prop to have something to draw --
     // without one it renders exactly like 左对齐 rather than breaking.
     { id: "split", label: "左字右图", props: { layout: "split" } },
+    /* 舞台 — the shape ten of twelve current landing pages open on: short
+       headline, one line, two small buttons, then the object full width under
+       them, running off the bottom of the screen. See site-hero.tsx. */
+    { id: "stage", label: "字上图下", props: { layout: "stage" } },
   ],
 
   /* 作品墙. A row of three, one rectangle cut in three, and a scroller. The

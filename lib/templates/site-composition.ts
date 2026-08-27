@@ -80,7 +80,15 @@ export type SiteSkeleton = {
    *  19 real Malaysian SME sites give the first screen to a photograph, so
    *  `split` -- the only layout with a figure beside the words -- stays the
    *  most common answer. It is no longer the ONLY answer. */
-  hero: "left" | "band" | "center" | "plain" | "split";
+  /**
+   * SiteHero's `layout`. `stage` is the shape ten of twelve current landing
+   * pages open on -- short headline, one line, two quiet buttons, then the
+   * object full width beneath them running off the bottom of the screen.
+   * Photographed 2026-08-27; see site-hero.tsx. It is the most common answer
+   * and deliberately not the only one: a library where fourteen registers all
+   * open the same way is a library with one register in it.
+   */
+  hero: "left" | "band" | "center" | "plain" | "split" | "stage";
   /**
    * 开场的地 —— what the first screen is painted on. `page` follows the
    * register's own ground; `ink` is a near-black carrying a HINT of the
@@ -134,14 +142,14 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // the look of the last customer who walked out, so the photographs lead and
   // the reviews come straight after them.
   hearth: {
-    hero: "split",
+    hero: "stage",
     opens: "照片墙",
     order: ["work", "story", "reviews", "creds", "services", "hours", "prices", "areas", "cta", "faq", "flow", "promise"],
   },
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.
   blueprint: {
-    hero: "split",
+    hero: "stage",
     opens: "做什么",
     order: ["services", "work", "story", "flow", "prices", "reviews", "creds", "cta", "faq", "areas", "promise", "hours"],
   },
@@ -226,7 +234,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // 夜: the dark one -- shift work, monitoring, late openings. Its website
   // leads with the fact that makes it dark: we are open when others are not.
   night: {
-    hero: "band",
+    hero: "stage",
     opens: "还开着",
     order: ["hours", "services", "story", "areas", "flow", "promise", "creds", "prices", "faq", "work", "cta", "reviews"],
   },
@@ -234,7 +242,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // side. A quiet centred opening, the work, then who said what -- and the
   // enquiry is the only thing that ever asks anything.
   studio: {
-    hero: "center",
+    hero: "stage",
     opens: "自己的话",
     order: ["story", "work", "services", "reviews", "creds", "flow", "faq", "promise", "prices", "areas", "cta", "hours"],
   },

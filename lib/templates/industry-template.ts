@@ -1604,8 +1604,32 @@ export function landingContentFor(
       ? `${t.joinServices(services.map((x) => x.label))}。${promise}`
       : `${t.joinServices(services.map((x) => x.label))}. ${promise}`;
 
+  /*
+    THE HEADLINE IS WHAT THEY DO, NOT WHO THEY ARE.
+
+    It was `c.brand` -- the company name, set at 68px across the first screen.
+    Twelve current landing pages photographed on 2026-08-27 (arc, clerk,
+    cursor, dub, framer, linear, polar, raycast, resend, rive, spline, vercel):
+    TWELVE OUT OF TWELVE put the company name in the top bar, and NONE of them
+    makes it the headline. The headline is short and says what the thing does --
+    「Turn clicks into revenue」, 「Email for developers」, 「Make anything 3D」.
+
+    A stranger who has landed here already saw the name in the bar. What they
+    do not know is whether this business does the job they need, in the place
+    they live. Trade plus area answers both in six words, and it is what they
+    typed into Google to get here.
+
+    The name is not lost: it is in the bar, in the foot, and on the drawn
+    figure. It is simply no longer the largest words on the page.
+  */
+  const headline =
+    lang === "zh"
+      ? `${t.page.sections.areas.list[0]}的${t.tradeNoun[industry.slug] ?? t.tradeNounFallback}`
+      : `${tradeLabel(industry, lang)} in ${t.page.sections.areas.list[0]}`;
+
   return {
     brand,
+    headline,
     // The trade name only, no slash: several of them are stored as
     // 「装修/承包商」 and an eyebrow reading 「马来西亚 · 装修/承包商」 reads like
     // a database field, not like a business.

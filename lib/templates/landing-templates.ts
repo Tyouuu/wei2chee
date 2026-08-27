@@ -93,6 +93,9 @@ export type LandingTemplate = {
 export type LandingContent = {
   /** The business's own name. */
   brand: string;
+  /** What the business DOES, short. The company name lives in the bar; see
+   *  landingContentFor for the twelve references that agree on this. */
+  headline: string;
   /** 「马来西亚 · 装修」 */
   eyebrow: string;
   /** What they sell, one line. */
@@ -174,7 +177,7 @@ const hero = (
   node("SiteHero", "website-hero", {
     layout,
     eyebrow: c.eyebrow,
-    headline: c.brand,
+    headline: c.headline,
     sub: c.pitch,
     /*
       THE NUMBER AND THE HOURS, TAKEN FROM WHAT THE PAGE ALREADY CARRIES.
