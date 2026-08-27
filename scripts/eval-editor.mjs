@@ -259,6 +259,37 @@ const DARKER_THAN_LEDGER = Object.entries(CANVAS)
 const DARK_PALETTES = darkPalettes();
 
 
+/*
+  A SECOND PAGE, BECAUSE THE DASHBOARD HAS NOWHERE TO PUT A PICTURE.
+
+  Every block on PAGE() is a system block -- no photo field on any of them. So
+  the case that matters most for 照片 (「第一屏换一张工地的照片」) cannot be asked
+  against it at all, and a ruler that only ever asks against one page would
+  report the feature as untested while looking fully green.
+
+  This is the customer's own 官网 page as the editor actually builds it: a hero
+  with an empty picture slot, which is the state the founder keeps pointing at
+  (「三个空的『Add a photo』灰盒子」).
+*/
+const SITE_PAGE = () => ({
+  root: {},
+  content: [
+    {
+      type: "SiteHero",
+      props: {
+        id: "site-hero",
+        headline: "兴发装修工程",
+        sub: "巴生谷一带的屋内翻新",
+        photo: "",
+      },
+    },
+    {
+      type: "SiteFeatures",
+      props: { id: "site-features", title: "我们做什么" },
+    },
+  ],
+});
+
 const CASES = [
   /*
     换风格 / 换配色 / 换排法 -- added 2026-08-26.
@@ -840,6 +871,38 @@ const CASES = [
     accept: ["set_text"],
     note: "一页一个页面标题",
   },
+
+  /*
+    ── 照片 ────────────────────────────────────────────
+
+    The picker has existed for a while, it uploads to the owner's own storage,
+    and it even knows this trade's search words -- and the assistant could not
+    reach any of it, so 「第一屏换一张工地的照片」 had no answer at all.
+
+    It still must not CHOOSE the picture. 「审美这种东西都是用看的」, stock it
+    picked is stock he replaces, and his own work photo is the one thing on
+    that page that is really his. The right answer is an offer that puts him in
+    front of the picker with one press.
+  */
+  {
+    name: "照片 · 第一屏换一张",
+    ask: "第一屏换一张工地的照片",
+    page: SITE_PAGE,
+    // An offer, not an edit: it cannot pick the picture and must not pretend to.
+    expect: [],
+    suggest: "pick_photo",
+    note: "把他带到选图器前面，不是替他挑",
+  },
+  {
+    name: "照片 · 这一页没地方放",
+    ask: "这里放张图",
+    // The dashboard has no photo field on any block. Offering to open a slot
+    // that does not exist is a button that fails when pressed -- worse than
+    // saying so. The route drops such an offer anyway; this checks the model
+    // does not lean on that.
+    expect: [],
+    note: "这一页没有任何一块收照片",
+  },
   {
     name: "记得 · 撤销过的不算数",
     ask: "刚才那个不要了，改回去",
@@ -869,8 +932,8 @@ const chosen = ONLY ? CASES.filter((c) => c.name.includes(ONLY)) : CASES;
  * that difference is where the assistant was caught claiming a change it had
  * not made.
  */
-function promptFor(ask, saved = false, history = []) {
-  const layout = PAGE();
+function promptFor(ask, saved = false, history = [], page = null) {
+  const layout = page ?? PAGE();
   const designDoc = buildDesignDoc("ledger", null);
   return `Blocks currently on this page:
 ${describeLayout(layout)}
@@ -914,8 +977,8 @@ function dataUrl(path) {
   return `data:image/jpeg;base64,${readFileSync(path).toString("base64")}`;
 }
 
-async function once(ask, image, saved = false, history = []) {
-  const text = promptFor(ask, saved, history);
+async function once(ask, image, saved = false, history = [], page = null) {
+  const text = promptFor(ask, saved, history, page);
   const completion = await openai.chat.completions.create({
     model: "gpt-5.6-luna",
     reasoning_effort: "high",
@@ -936,7 +999,7 @@ async function once(ask, image, saved = false, history = []) {
   const parsed = parseLayoutOps(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
   // Applied against the same page the model was shown, so 改到了 measures what
   // the customer would have got and not what the model hoped for.
-  const result = applyLayoutOps(PAGE(), parsed.operations, preferredVariants("ledger"));
+  const result = applyLayoutOps(page ?? PAGE(), parsed.operations, preferredVariants("ledger"));
   return {
     ops: parsed.operations.map((o) => o.op),
     // Every string the model wrote, so a case can assert on CONTENT and not
@@ -981,7 +1044,7 @@ for (const c of chosen) {
   const runs = [];
   for (let i = 0; i < N; i++) {
     try {
-      runs.push(await once(c.ask, c.image, c.saved === true, c.history ?? []));
+      runs.push(await once(c.ask, c.image, c.saved === true, c.history ?? [], c.page ? c.page() : null));
       if (process.env.EVAL_VERBOSE) console.log("   ", c.name, JSON.stringify({ ops: runs[runs.length-1].ops, design: runs[runs.length-1].design, exp: runs[runs.length-1].explanation, wrote: runs[runs.length-1].values }));
     } catch (e) {
       runs.push({ ops: [], applied: 0, skipped: [{ op: "-", reason: String(e.message).replace(/\s+/g, " ").slice(0, 300) }], explanation: "" });

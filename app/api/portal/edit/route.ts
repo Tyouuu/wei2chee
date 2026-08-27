@@ -11,6 +11,8 @@ import {
   REGISTERED_COMPONENTS,
   type PageSuggestion,
   type PuckLayout,
+  PHOTO_BLOCKS,
+  walkNodes,
 } from "@/lib/portal/layout-ops";
 import { COLUMN_KINDS } from "@/lib/portal/table-model";
 import { buildDesignDoc, preferredVariants, STYLE_BRIEFS, darkPalettes } from "@/lib/portal/design-doc";
@@ -234,6 +236,21 @@ Whole pages:
 - 风格 / 配色 / 排法 changes have NO such button, deliberately. Those you can
   put back yourself -- but only if the history above says what it was before.
   If it does not, say so and ask which one he wants instead of guessing.
+
+照片:
+- A block with a picture slot shows \`photo=有\` or \`photo=还没放\` in the list
+  above. Blocks that have one at all: ${PHOTO_BLOCKS.join(", ")}.
+- YOU CANNOT CHOOSE THE PICTURE, and should not try. A picture is judged by eye
+  — stock you picked is stock he replaces — and the owner's own work photo is
+  the one thing on that page that is really his. What you CAN do is take him to
+  the slot: set \`suggestion.action\` to "pick_photo" and \`block_id\` to that
+  block's id. He presses once, and the picker opens already searching this
+  trade's own words.
+- Offer it when he asks for a picture (「第一屏换一张工地的照片」, 「这里放张图」),
+  or when he is asking about a block whose slot still says 还没放 and a picture
+  is most of that block's point. NOT every turn, and never alongside an
+  unrelated edit.
+- Say in the reply what pressing it does. 「按一下就可以挑工地的照片。」
 
 当老板是在求助而不是下指令:
 - 「你帮我弄好看一点」, 「我不会用」, 「随便你」 — do NOT ask them to be more
@@ -492,7 +509,7 @@ The business owner asked:
     explanation: parsed.explanation,
     applied: result.applied,
     skipped: result.skipped,
-    suggestion: resolveSuggestion(parsed.suggestion, Array.isArray(pages) ? pages : []),
+    suggestion: resolveSuggestion(parsed.suggestion, Array.isArray(pages) ? pages : [], result.layout as PuckLayout),
     design: validDesign((parsed as { design?: unknown }).design, generated !== false, result.skipped),
   });
 }
@@ -598,8 +615,34 @@ const KNOWN_PAGE_TYPES = ["customers", "quotations", "projects", "payments", "bo
 function resolveSuggestion(
   suggestion: PageSuggestion | null | undefined,
   pages: { key: string; label: string }[],
-): { action: "add_page" | "remove_page"; pageKey: string | null; title: string; label: string } | null {
+  /** The page as it stands AFTER the operations ran, so an offer can point at
+   *  a block this same turn just added. */
+  layout?: PuckLayout,
+): {
+  action: "add_page" | "remove_page" | "pick_photo";
+  pageKey: string | null;
+  title: string;
+  label: string;
+  blockId?: string;
+} | null {
   if (!suggestion || suggestion.action === "none") return null;
+
+  /*
+    OFFERING TO OPEN A PICTURE SLOT.
+
+    Checked against the page rather than trusted, like every other offer here:
+    a button that opens nothing is worse than no button, because he has to
+    press it to find out. The block must exist AND be one that owns a photo
+    field -- 「帮我换第一屏的照片」 aimed at a table is a button that would open
+    a panel with no picture in it.
+  */
+  if (suggestion.action === "pick_photo") {
+    const id = suggestion.block_id?.trim();
+    if (!id || !layout) return null;
+    const node = walkNodes(layout.content ?? []).find((n) => String(n.props?.id) === id);
+    if (!node || !PHOTO_BLOCKS.includes(node.type)) return null;
+    return { action: "pick_photo", pageKey: null, title: node.type, label: node.type, blockId: id };
+  }
 
   if (suggestion.action === "add_page") {
     const key = suggestion.page_key && KNOWN_PAGE_TYPES.includes(suggestion.page_key)
@@ -744,11 +787,14 @@ export const EDIT_JSON_SCHEMA = {
       suggestion: {
         type: "object",
         properties: {
-          action: { type: "string", enum: ["add_page", "remove_page", "none"] },
+          action: { type: "string", enum: ["add_page", "remove_page", "pick_photo", "none"] },
           page_title: { type: ["string", "null"] },
           page_key: { type: ["string", "null"] },
+          // pick_photo only: the id of the block whose picture slot to open.
+          // Checked against the finished page before it becomes a button.
+          block_id: { type: ["string", "null"] },
         },
-        required: ["action", "page_title", "page_key"],
+        required: ["action", "page_title", "page_key", "block_id"],
         additionalProperties: false,
       },
     },

@@ -5,6 +5,9 @@ import {
   layoutOpsSchema,
   walkNodes,
   REGISTERED_COMPONENTS,
+  PHOTO_BLOCKS,
+  findSelector,
+  ROOT_ZONE,
   type LayoutOp,
   type PuckLayout,
   type PuckNode,
@@ -402,5 +405,60 @@ describe("move_component", () => {
     ]);
     expect(out.applied).toBe(0);
     expect(mainIds(out.layout)).toEqual(["head", "stats", "table"]);
+  });
+});
+
+describe("PHOTO_BLOCKS", () => {
+  /*
+    The assistant could not reach a picture at all before this: the picker
+    existed, it uploaded to the customer's own storage, it even knew this
+    trade's search words -- and nothing told the model which blocks have
+    somewhere to put one. An empty list here means 「第一屏换一张工地的照片」
+    silently goes back to having no answer, which is exactly how it shipped.
+  */
+  it("finds the blocks that own a picture slot", () => {
+    expect(PHOTO_BLOCKS.length).toBeGreaterThan(0);
+    expect(PHOTO_BLOCKS).toContain("SiteHero");
+  });
+
+  it("only names blocks that are registered", () => {
+    for (const name of PHOTO_BLOCKS) {
+      expect(REGISTERED_COMPONENTS).toContain(name);
+    }
+  });
+
+  /*
+    SiteTeam keeps a photo per person inside an array. Offering to open "the
+    picture on SiteTeam" would not tell the customer WHICH person is being
+    changed, so it is deliberately not a top-level slot and must not appear.
+  */
+  it("leaves per-item photos out", () => {
+    expect(PHOTO_BLOCKS).not.toContain("SiteTeam");
+  });
+});
+
+describe("findSelector", () => {
+  const page = buildPageLayout("dashboard", {}, "我", "zh", [], "ledger", null) as unknown as PuckLayout;
+
+  /*
+    An offer to open a picture slot has to select that block, and selecting the
+    WRONG one is not a near miss -- the customer would replace a picture he
+    never meant to touch. So this returns null rather than falling back to the
+    root, and these two cases are the difference.
+  */
+  it("finds a block nested inside a slot, with its zone", () => {
+    const nested = walkNodes(page.content).find((n) => n.type !== "SystemShell");
+    expect(nested).toBeTruthy();
+    const sel = findSelector(page.content, String(nested!.props.id));
+    expect(sel).not.toBeNull();
+    expect(typeof sel!.index).toBe("number");
+    // Everything on a dashboard lives inside the shell's slots, so the zone is
+    // never the root one -- if it were, the panel would open on the shell.
+    expect(sel!.zone).not.toBe(ROOT_ZONE);
+    expect(sel!.zone).toContain(":");
+  });
+
+  it("returns null for an id that is not on the page", () => {
+    expect(findSelector(page.content, "no-such-block")).toBeNull();
   });
 });

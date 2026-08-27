@@ -63,6 +63,30 @@ const COMPONENT_CONFIGS = puckConfig.components as Record<
 
 export const REGISTERED_COMPONENTS = Object.keys(COMPONENT_CONFIGS);
 
+/**
+ * Blocks with a picture slot of their own, read off the config.
+ *
+ * The assistant could not reach a photo at all: the picker exists, it uploads
+ * to the customer's own storage, and it even knows this trade's search words --
+ * but nothing in the prompt said which blocks have somewhere to put a picture,
+ * so 「第一屏换一张工地的照片」 had no answer.
+ *
+ * Derived rather than listed for the reason this repo has now paid for five
+ * times in one day: a block gains or loses a photo field and a hand-written
+ * list goes on describing the old shape, silently.
+ *
+ * Only top-level `photo` fields. SiteTeam holds one per person inside an array
+ * and pointing the customer at the block would not tell them WHICH person's
+ * picture is being changed -- that one is a job for the fields panel, not for
+ * a sentence.
+ */
+export const PHOTO_BLOCKS = Object.entries(COMPONENT_CONFIGS)
+  .filter(([, cfg]) => {
+    const fields = (cfg as { fields?: Record<string, unknown> })?.fields;
+    return fields ? Object.prototype.hasOwnProperty.call(fields, "photo") : false;
+  })
+  .map(([name]) => name);
+
 const STATUS_TONES = ["positive", "warning", "negative", "neutral"] as const;
 
 /** Text-ish fields an edit is allowed to rewrite. Deliberately a fixed list:
@@ -234,13 +258,24 @@ export type LayoutOp = z.infer<typeof layoutOpSchema>;
  * conversation proposes structure, the customer confirms it.
  */
 export const pageSuggestionSchema = z.object({
-  action: z.enum(["add_page", "remove_page", "none"]),
+  /*
+    `pick_photo` is an OFFER, not an operation, and deliberately so.
+
+    A picture is the one thing on the page that has to be chosen by eye --
+    「审美这种东西都是用看的」. An assistant that searches stock and drops a
+    result in has picked for him, and nine times in ten he changes it. What it
+    can do is take him to the slot with the right search already loaded, which
+    is one press away from the picture he actually wants.
+  */
+  action: z.enum(["add_page", "remove_page", "pick_photo", "none"]),
   /** The customer's own name for a new page. */
   page_title: z.string().max(24).nullable(),
   /** A built-in type for `add_page` (so it arrives with real sample data), or
    *  the key of an existing page for `remove_page`. Validated against reality
    *  in the route -- the model is never trusted with a key. */
   page_key: z.string().max(64).nullable(),
+  /** `pick_photo` only: the id of the block whose picture slot to open. */
+  block_id: z.string().max(64).nullable().optional(),
 });
 
 export type PageSuggestion = z.infer<typeof pageSuggestionSchema>;
@@ -346,6 +381,40 @@ const SLOT_KEYS: string[] = Array.from(
 );
 
 /** Every node on the page, including the ones inside any component's slots. */
+/** Puck's own name for the top level, `rootAreaId:rootZone` in 0.23.0. Not
+ *  exported by the package; the same constant is read in inline-editing.tsx. */
+export const ROOT_ZONE = "root:default-zone";
+
+/**
+ * Where a block sits, in the shape Puck's `setUi` wants.
+ *
+ * Needed because an offer to open a picture slot has to SELECT that block --
+ * the photo field lives in the fields panel, and the panel shows whatever is
+ * selected. A zone is `parentId:propName`, Puck's `zoneCompound` convention.
+ *
+ * Returns null rather than guessing at the root: selecting the wrong block
+ * would open the wrong panel, and the customer would replace a picture he
+ * never meant to touch.
+ */
+export function findSelector(
+  nodes: PuckNode[],
+  id: string,
+  zone: string = ROOT_ZONE,
+): { index: number; zone: string } | null {
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    if (String(n.props?.id ?? "") === id) return { index: i, zone };
+    for (const k of SLOT_KEYS) {
+      const kids = n.props?.[k];
+      if (Array.isArray(kids)) {
+        const hit = findSelector(kids as PuckNode[], id, `${String(n.props?.id ?? "")}:${k}`);
+        if (hit) return hit;
+      }
+    }
+  }
+  return null;
+}
+
 export function walkNodes(nodes: PuckNode[]): PuckNode[] {
   return nodes.flatMap((n) => [
     n,
@@ -373,6 +442,21 @@ export function describeLayout(layout: PuckLayout): string {
       )
         .map((f) => `${f}="${n.props[f]}"`)
         .join(" ");
+
+      /*
+        A PICTURE SLOT, AND WHETHER IT IS EMPTY.
+
+        Without this the model cannot answer 「第一屏换一张工地的照片」 -- it has
+        no way to know this block takes a picture, let alone that the customer
+        has not put one in yet. Empty is the interesting state: it is the gap
+        the founder keeps pointing at (「三个空的『Add a photo』灰盒子」), and it
+        is what makes an offer worth making rather than noise.
+      */
+      const photo = PHOTO_BLOCKS.includes(n.type)
+        ? typeof n.props?.photo === "string" && n.props.photo
+          ? " photo=有"
+          : " photo=还没放"
+        : "";
 
       // A table's columns have to be listed, or the model cannot target one:
       // `column_key` is a stable identifier ("primary", "c3") that appears
@@ -433,7 +517,7 @@ export function describeLayout(layout: PuckLayout): string {
         extra = ` columns=[${cols}]`;
       }
 
-      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${variants}${extra}`;
+      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${photo}${variants}${extra}`;
     })
     .join("\n");
 }
@@ -487,7 +571,10 @@ function tableOf(layout: PuckLayout, id: string): TableModel | null {
 /** The list a new block should join: the shell's main column when there is a
  *  shell, otherwise the top level. Never the sidebar -- "add a table" meaning
  *  "put a table in the nav rail" is never what was asked. */
-function mainColumn(layout: PuckLayout): PuckNode[] {
+/** The column a page's blocks live in. Exported because relayout.ts needs the
+ *  same answer, and a second copy of 「where the blocks are」 is the shape of
+ *  mistake this repo has made four times. */
+export function mainColumn(layout: PuckLayout): PuckNode[] {
   const shell = layout.content?.find((n) => n.type === "SystemShell");
   if (shell && Array.isArray(shell.props?.main)) return shell.props.main as PuckNode[];
   return layout.content;

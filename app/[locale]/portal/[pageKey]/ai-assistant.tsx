@@ -9,15 +9,18 @@ import { usePuck, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { planDesignChange } from "@/lib/portal/design-change";
+import { findSelector, type PuckLayout } from "@/lib/portal/layout-ops";
 
 /** A page-level change the assistant offered and the customer can confirm.
  *  See lib/portal/layout-ops.ts's pageSuggestionSchema for why this is an offer
  *  with a button rather than another operation the route carries out. */
 export type PageOffer = {
-  action: "add_page" | "remove_page";
+  action: "add_page" | "remove_page" | "pick_photo";
   pageKey: string | null;
   title: string;
   label: string;
+  /** `pick_photo` only: the block whose picture slot to open. */
+  blockId?: string;
 };
 
 export type Turn = {
@@ -325,6 +328,28 @@ export function AiAssistant({
     const patch = (p: Partial<Turn>) =>
       setTurns((prev) => prev.map((x) => (x.id === turn.id ? { ...x, ...p } : x)));
 
+    /*
+      OPENING A PICTURE SLOT IS NOT A WRITE.
+
+      Every other offer here calls an RPC. This one selects a block, because
+      the photo field lives in the fields panel and the panel shows whatever is
+      selected -- so the whole action is 「put him in front of the picker」.
+      Nothing is saved, nothing is spent, and the picture he ends up with is
+      one he chose with his eyes.
+
+      Read from the LIVE canvas rather than the layout that came back with the
+      reply: he may have dragged something in the meantime, and a stale index
+      would select the wrong block and open the wrong panel.
+    */
+    if (offer.action === "pick_photo") {
+      const sel = offer.blockId
+        ? findSelector((appState.data as unknown as PuckLayout).content ?? [], offer.blockId)
+        : null;
+      if (sel) dispatch({ type: "setUi", ui: { itemSelector: sel } });
+      patch({ offerBusy: false, offerResult: { ok: Boolean(sel) } });
+      return;
+    }
+
     patch({ offerBusy: true });
     const supabase = createBrowserSupabaseClient();
 
@@ -547,7 +572,9 @@ export function AiAssistant({
                           ? t("aiOfferWorking")
                           : turn.offer.action === "add_page"
                             ? `${t("aiOfferAdd")}：${turn.offer.label}`
-                            : `${t("aiOfferRemove")}：${turn.offer.label}`}
+                            : turn.offer.action === "pick_photo"
+                              ? t("aiOfferPhoto")
+                              : `${t("aiOfferRemove")}：${turn.offer.label}`}
                       </button>
                     )}
 
