@@ -216,6 +216,12 @@ const WANTED = [
    "Sage", "A muted grey-green. Quiet.",
    "Wellness · spa · clinics · florists · organic"],
 
+  /* The lightness axis. See NATIVE.midnight for the twelve measurements that
+     say this was the hole -- every other palette is a near-white ground. */
+  ["midnight", "深夜", "近黑的底,唯一一套深色的", "排班·监控·夜间营业·车厂·保安",
+   "Midnight", "A near-black ground. The only dark one.",
+   "Shift work · monitoring · late openings · workshops · security"],
+
   // ── the one the popularity data added; see NATIVE.zen for the numbers ───
   ["zen", "宣纸", "暖纸底配墨黑,唯一一套不是白底的", "茶行·药材·古董·手作·咖啡·民宿",
    "Rice Paper", "Ink on warm paper. The only one that is not white.",
@@ -287,6 +293,66 @@ const NATIVE = {
     statement here; an accent with colour in it would fight the paper and turn
     this into a second 陶土.
   */
+  /*
+    深夜 — THE MISSING AXIS, AND IT IS LIGHTNESS.
+
+    Measured 2026-08-27 across all twelve palettes, ground lightness in oklch:
+
+      0.9380 zen        0.9755 starry-night  0.9842 clean-slate
+      0.9383 tangerine  0.9761 sage-garden   0.9900 vercel
+      0.9711 nature     0.9779 elegant-luxury 1.0000 modern-minimal
+                        0.9790 rosewood       1.0000 amber-minimal
+                        0.9821 caffeine
+
+    TWELVE OUT OF TWELVE ARE NEAR-WHITE. 藏青 and 咖啡, added the same morning,
+    are dark ACCENTS on white pages -- which is why the assistant answering
+    「换成深色一点的」 with 「换成藏青配色，整体暗一点」 was describing a change the
+    owner could not see. Found by the session working on the assistant, by
+    measuring rather than by trusting the sentence.
+
+    So the palette layer has had a hue axis and a chroma axis and no LIGHTNESS
+    axis, and 任务 17 has said so since 2026-08-26. This is that axis.
+
+    ── WHY IT MATTERS BEYOND DARK MODE ────────────────────────────────────
+
+    夜 is a REGISTER today, and its own brief admits the problem: 「这一套的主张
+    其实是「暗」，而暗是明度 —— 照重点 7c 它比较像一个配色而不是一套风格」. It was
+    kept only because nothing else could make a page dark. Once this exists,
+    夜 can be demoted and every OTHER register gains a dark mode -- fourteen
+    registers x dark, instead of one register that is dark.
+
+    ── THE COLOURS ─────────────────────────────────────────────────────────
+
+    Ground oklch(0.1800 0.0080 265): near-black with a hint of blue, chroma
+    0.008. Ten mature landing pages carry ground chroma 0.000 and five of them
+    sit at #080808; a trace of hue is what separates a chosen neutral from a
+    default one, and ground-neutral.test.ts allows up to 0.02.
+
+    Accent oklch(0.7000 0.1300 250): a clear blue at the lightness a dark page
+    needs. Nine real business systems measured on 2026-08-26 all carry a
+    coloured primary; going grey here would have thrown the colour away rather
+    than moved it, which is the failure the second half of that test guards.
+  */
+  "midnight": {
+    background: "oklch(0.1800 0.0080 265)",
+    card: "oklch(0.2200 0.0090 265)",
+    muted: "oklch(0.2600 0.0100 265)",
+    accent: "oklch(0.3000 0.0140 265)",
+    border: "oklch(0.3200 0.0120 265)",
+    input: "oklch(0.3200 0.0120 265)",
+    foreground: "oklch(0.9400 0.0050 265)",
+    "muted-foreground": "oklch(0.7200 0.0090 265)",
+    primary: "oklch(0.7000 0.1300 250)",
+    ring: "oklch(0.7000 0.1300 250)",
+    "primary-foreground": "oklch(0.1800 0.0080 265)",
+    "sidebar-foreground": "oklch(0.9400 0.0050 265)",
+    destructive: "oklch(0.6400 0.1800 27)",
+    "chart-1": "oklch(0.7000 0.1300 250)",
+    "chart-2": "oklch(0.7000 0.1400 150)",
+    "chart-3": "oklch(0.7800 0.1300 80)",
+    "chart-4": "oklch(0.6800 0.1500 20)",
+    "chart-5": "oklch(0.6600 0.0200 265)",
+  },
   "zen": {
     background: "oklch(0.9380 0.0130 85)",
     card: "oklch(0.9660 0.0090 85)",
