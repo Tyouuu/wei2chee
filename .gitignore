@@ -50,3 +50,5 @@ next-env.d.ts
 .screenshots/
 .prospects/
 .browser-durable/
+.claude/skills/design-md-generator/node_modules/
+.claude/skills/design-md-generator/output/
