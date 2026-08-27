@@ -452,6 +452,18 @@
   .ds-ground[data-rhythm="tight"].ds-site {
     --site-rhythm: 2.5rem;
   }
+  /* 贴住 —— no gap at all between one section and the next.
+
+     Measured 2026-08-28 by the SPACE axis the ruler had just learned: 台账's
+     reference runs 段间 0/0/0/0 and ours ran 40/40/41/39/40/40. Their whole
+     page is one continuous field of colour with each band's own padding doing
+     the separating; a 40px gutter between them turns it back into a stack of
+     cards on a background. This is the same fact as the mosaic's tiles
+     touching, one level up. */
+  .ds-ground[data-rhythm="flush"] .ds-site,
+  .ds-ground[data-rhythm="flush"].ds-site {
+    --site-rhythm: 0rem;
+  }
   .ds-ground[data-figure="large"] .ds-site,
   .ds-ground[data-figure="large"].ds-site {
     --site-figure: 1.6;

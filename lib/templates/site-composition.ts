@@ -251,7 +251,7 @@ export type SiteSkeleton = {
    * is that it is the densest page in the library and 工作室's is that nothing
    * is pressed against anything. See `--site-rhythm` in app/globals.css.
    */
-  rhythm?: "tight" | "normal" | "airy";
+  rhythm?: "flush" | "tight" | "normal" | "airy";
   /**
    * 图跟字有多大 —— separate from the rhythm since 2026-08-27.
    *
@@ -316,7 +316,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        colour), not theirs: 重点 7c means we take the structure and keep the
        identity. */
     ground: "ink",
-    rhythm: "tight",
+    rhythm: "flush",
     figure: "huge",
     measure: "wide",
     hero: "plate-centre",
