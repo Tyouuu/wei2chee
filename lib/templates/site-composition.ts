@@ -303,7 +303,13 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        screen. What a contractor leads with is who they are and what they have
        built. The price list stays in the library; it stops being this
        register's opening. */
-    omit: ["prices", "creds", "flow", "areas", "faq", "woven", "hours", "band", "cta", "team"],
+    /* ⚠️ 保证 renders through `MarkList`, which is the DASHBOARD's tick list --
+       it came out on the website as a thin strip of green ticks where the
+       reference has a four-cell band. Twelfth time a dashboard block reached a
+       public page. 四点两栏 carries the same four commitments and has a `band`
+       shape built for exactly this section, so 台账 takes that and declines
+       保证. */
+    omit: ["prices", "creds", "flow", "areas", "faq", "promise", "hours", "band", "cta", "team"],
     tones: {},
     /* 深色开场 —— their whole page is one dark ground with the bands butted
        against each other. Ours is 台账's OWN dark surface (its navigation
@@ -315,7 +321,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     measure: "wide",
     hero: "bleed",
     opens: "作品",
-    order: ["story", "promise", "services", "work", "reviews", "prices", "creds", "flow", "areas", "faq", "woven", "hours", "band", "cta", "team"],
+    order: ["story", "woven", "services", "work", "reviews", "prices", "creds", "flow", "areas", "faq", "promise", "hours", "band", "cta", "team"],
   },
   // 炉: the salon, where the front desk IS the shop. What a stranger buys is
   // the look of the last customer who walked out, so the photographs lead and

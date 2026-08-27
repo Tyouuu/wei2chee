@@ -51,7 +51,7 @@ function fill(nodes: any[], P: Record<string, string>) {
     if (id === "website-work") {
       /* Six, because 大图马赛克 repeats its tile pattern every six and a
          seventh opens a hole in the last row. */
-      n.props.items = [P.big, P.g1, P.g2, P.g3, P.g4, P.story]
+      n.props.items = [P.big, P.g1, P.g2, P.g3, P.strip, P.hero]
         .filter(Boolean)
         .map((src) => ({ src, alt: "" }));
     }
@@ -68,7 +68,10 @@ function fill(nodes: any[], P: Record<string, string>) {
        had no wire, which is how 満図's woven section shipped empty. */
     /* Not P.strip -- that one is a texture (brickwork), and beside a list of
        services a texture says nothing. The story shot is a person working. */
-    if (id === "website-services") { n.props.photo = P.story || P.hero; n.props.photoAlt = ""; }
+    /* Distinct shots per slot. Before this, P.story went to the story block,
+       the services list AND the mosaic -- the same hammer on the same planks
+       three times down one page, which reads as a business with one photo. */
+    if (id === "website-services") { n.props.photo = P.g4 || P.hero; n.props.photoAlt = ""; }
     if (id === "website-story") { n.props.photo = P.story; n.props.photoAlt = ""; n.props.body = "The same team that quotes is the team that turns up, and we tell you what it costs before we start."; }
     for (const v of Object.values(n?.props ?? {})) if (Array.isArray(v)) fill(v as any[], P);
   }
