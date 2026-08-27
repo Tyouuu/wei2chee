@@ -441,10 +441,30 @@ export async function POST(req: NextRequest) {
 
   const recent = renderHistory(history);
 
-  const userPrompt = `Blocks currently on this page:
-${describeLayout(layout)}
+  /*
+    THE UNCHANGING HALF GOES FIRST.
 
-Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
+    A provider prompt cache is a PREFIX match: what it pays for is not how much
+    of two requests is identical, it is how much is identical BEFORE the first
+    byte that differs. This message used to open with the page listing, which
+    is the single most volatile thing in it -- it changes the moment the owner
+    edits anything -- and every fixed token behind it was stranded: the
+    component catalogue, the block rules, the editable fields, his design
+    brief, the palette facts. All of those are the same from one sentence to
+    the next, and all of them sat behind the one line that moves.
+
+    Measured with `npm run eval:editor -- --prefix`, which builds these exact
+    prompts and finds where two of them stop agreeing:
+
+        he says a second thing, after his first edit landed
+          listing first     5,668 of 7,545 reusable   75%
+          catalogue first   7,316 of 7,545 reusable   97%
+
+    ~1,650 tokens a call paid at full rate for no reason. The sentence stays
+    last, where recency helps it; the listing moves down beside it, so the two
+    volatile things sit together with everything fixed above them.
+  */
+  const userPrompt = `Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
 ${renderBlockRules() ? `这些块自己的规矩（字段名看不出来的）:
 ${renderBlockRules()}
 ` : ""}
@@ -465,6 +485,8 @@ ${designDoc}
 ` : `明暗（从配色量出来的）: 现在没有任何一套配色是深底的，每一套的底都近白。
 「太亮了」只能用更暗的风格回答，拿配色回答等于承诺一个他看不到的变化。
 `}
+Blocks currently on this page:
+${describeLayout(layout)}
 ${recent ? `\n刚才这段对话里发生过的事（最新的在最下面）:\n${recent}\n` : ""}
 The business owner asked:
 "${trimmed}"`;

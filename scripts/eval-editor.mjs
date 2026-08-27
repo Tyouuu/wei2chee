@@ -107,6 +107,7 @@ const nodeRequire = createRequire(import.meta.url);
 const args = process.argv.slice(2);
 const N = Number(args[args.indexOf("--n") + 1]) || 2;
 const DRY = args.includes("--dry");
+const PREFIX = args.includes("--prefix");
 const ONLY = args.includes("--only") ? args[args.indexOf("--only") + 1] : null;
 
 for (const line of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
@@ -968,10 +969,10 @@ const chosen = ONLY ? CASES.filter((c) => c.name.includes(ONLY)) : CASES;
 function promptFor(ask, saved = false, history = [], page = null) {
   const layout = page ?? PAGE();
   const designDoc = buildDesignDoc("ledger", null);
-  return `Blocks currently on this page:
-${describeLayout(layout)}
-
-Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
+  // Order mirrors the route exactly, including the reason for it: everything
+  // that does not change between two sentences goes first, so a provider
+  // prompt cache can keep it. See the route's note, and --prefix below.
+  return `Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
 ${renderBlockRules() ? `这些块自己的规矩（字段名看不出来的）:\n${renderBlockRules()}\n` : ""}
 Text fields you may set: ${EDITABLE_TEXT_FIELDS.join(", ")}
 Pages in this system: dashboard ("总览"), quotations ("报价单")
@@ -980,12 +981,115 @@ This page: ${saved
   : "never saved -- 排法 (layout) will re-generate it, so it is available"}
 
 ${designDoc ? `${designDoc}\n` : ""}${darkPalettes().length ? `明暗（从配色量出来的）: 深底的配色只有 ${darkPalettes().join("、")}。\n「太亮了」「暗一点」用它回答，不要换风格。\n其他每一套配色的底都是近白的。\n` : ""}
+Blocks currently on this page:
+${describeLayout(layout)}
 ${renderHistory(history) ? `
 刚才这段对话里发生过的事（最新的在最下面）:
 ${renderHistory(history)}
 ` : ""}
 The business owner asked:
 "${ask}"`;
+}
+
+/*
+  WHERE THE SHARED PART STOPS  --  npm run eval:editor -- --prefix
+
+  A provider prompt cache is a PREFIX match. What it pays for is not how much
+  of two requests is identical, it is how much is identical BEFORE the first
+  byte that differs -- so one volatile line near the top throws away every
+  cacheable token behind it, however fixed those tokens are.
+
+  This route's user message currently opens with the page listing, which is the
+  single most volatile thing in it: it changes on every edit the owner makes.
+  Everything after it -- the component catalogue, the block rules, the editable
+  fields, the design brief, the palette facts -- is identical from one sentence
+  to the next and is stranded behind it.
+
+  Measured with the real prompt builder rather than a stand-in: a first attempt
+  at this used made-up strings of roughly the right size and produced a number
+  that was wrong by a factor of two.
+
+  No model calls. Nothing here costs anything.
+*/
+if (PREFIX) {
+  const shared = (a, b) => {
+    let i = 0;
+    while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    return i;
+  };
+  // Chars per token, calibrated against a real reply: this prompt shape
+  // measured 7545 input tokens, so the ratio is derived, not guessed.
+  const sample = SYSTEM_PROMPT + promptFor("把表格搬到上面");
+  const RATIO = sample.length / 7545;
+  const tok = (chars) => Math.round(chars / RATIO);
+
+  const A = promptFor("把表格搬到上面");
+  const B = promptFor("加一栏记生日");
+  // The ordinary case is not two sentences over an unchanged page -- it is a
+  // second sentence AFTER the first one changed something. A page whose blocks
+  // have moved renders a different listing.
+  /*
+    A REAL PAGE'S BLOCKS ARE NESTED, which the first version of this did not
+    account for: it swapped the top two entries of `content`, and on a real
+    page `content` holds one thing -- the SystemShell -- with everything else
+    inside its slots. The swap changed nothing and the measurement reported a
+    perfect prefix for a page that had not moved. Editing a word anywhere in
+    the tree is what actually produces a different listing.
+  */
+  const moved = (() => {
+    const l = PAGE();
+    let once = false;
+    const walk = (n) => {
+      if (Array.isArray(n)) return n.map(walk);
+      if (n && typeof n === "object") {
+        const out = {};
+        for (const [k, v] of Object.entries(n)) {
+          if (!once && k === "title" && typeof v === "string") {
+            out[k] = v + "一";
+            once = true;
+          } else out[k] = walk(v);
+        }
+        return out;
+      }
+      return n;
+    };
+    return walk(l);
+  })();
+  const B2 = promptFor("加一栏记生日", false, [], moved);
+
+  const total = SYSTEM_PROMPT.length + A.length;
+  const line = (label, chars) =>
+    `  ${label.padEnd(20)} ${String(tok(chars)).padStart(5)} tok 可以重用  (${Math.round((chars / total) * 100)}%)`;
+
+  console.log(`
+一次呼叫的输入  ${tok(total)} tok`);
+  console.log(`  其中固定不变的系统提示  ${tok(SYSTEM_PROMPT.length)} tok`);
+  console.log(`  每次重新组的那一段    ${tok(A.length)} tok`);
+  console.log(`
+同一页，讲第二句（页面没变）:`);
+  console.log(line("现在的顺序", SYSTEM_PROMPT.length + shared(A, B)));
+  console.log(`
+上一句改动了页面，再讲一句:`);
+  console.log(line("现在的顺序", SYSTEM_PROMPT.length + shared(A, B2)));
+
+  /*
+    AND WHAT THE OLD ORDER COST.
+
+    The listing used to come first and strand every fixed token behind it. This
+    puts it back, by string surgery on the prompt the route really builds, so
+    the second row is what we moved away from -- and so anyone who reorders
+    this again sees the number they are giving up before they do it.
+  */
+  const MARK = "\nBlocks currently on this page:";
+  const flip = (t) => {
+    const i = t.indexOf(MARK);
+    if (i < 0) return t;
+    const j = t.lastIndexOf("\nThe business owner asked:");
+    return t.slice(i, j) + "\n" + t.slice(0, i) + t.slice(j);
+  };
+  console.log(line("页面清单放前面", SYSTEM_PROMPT.length + shared(flip(A), flip(B2))));
+  console.log("");
+  process.exit(0);
 }
 
 if (DRY) {
@@ -1050,6 +1154,19 @@ async function once(ask, image, saved = false, history = [], page = null) {
   const result = applyLayoutOps(page ?? PAGE(), parsed.operations, preferredVariants("ledger"));
   return {
     tookMs,
+    /*
+      WHAT ONE SENTENCE COSTS, AND HOW MUCH OF IT WE PAID FOR TWICE.
+
+      The system prompt is the same on every call and sits first, which is the
+      shape a provider-side prompt cache rewards -- `cached_tokens` says
+      whether we are actually getting it. It is not recorded anywhere in the
+      product (ai_usage stores prompt_tokens only), so the money figure from
+      check:ai-cost currently prices cached input at the full rate. Measured
+      here first: if the hit rate is high, the ledger is over-reporting and
+      should learn the column; if it is low, something in the prefix is moving
+      between calls and that is a bug worth finding.
+    */
+    usage: completion.usage ?? null,
     ops: parsed.operations.map((o) => o.op),
     // Every string the model wrote, so a case can assert on CONTENT and not
     // only on which operation was chosen.
@@ -1254,6 +1371,25 @@ if (process.env.SAY) {
 
   p95 and not the mean, because the mean is the call nobody complains about.
 */
+/*
+  一句话花多少钱，其中有多少是重复送的。
+*/
+const usages = rows.flatMap((r) => r.runs.map((x) => x.usage)).filter(Boolean);
+if (usages.length) {
+  const sum = (f) => usages.reduce((a, u) => a + (f(u) ?? 0), 0);
+  const pin = sum((u) => u.prompt_tokens);
+  const pout = sum((u) => u.completion_tokens);
+  const reason = sum((u) => u.completion_tokens_details?.reasoning_tokens);
+  const cached = sum((u) => u.prompt_tokens_details?.cached_tokens);
+  const n = usages.length;
+  console.log(
+    `
+每一句话  输入 ${Math.round(pin / n)} tok` +
+      `（其中 ${Math.round((cached / pin) * 100)}% 命中缓存）` +
+      ` · 输出 ${Math.round(pout / n)} tok（推理 ${Math.round(reason / n)}）`,
+  );
+}
+
 const times = rows.flatMap((r) => r.runs.map((x) => x.tookMs)).filter((t) => typeof t === "number");
 if (times.length) {
   const sorted = [...times].sort((a, b) => a - b);
