@@ -102,17 +102,47 @@ export function SiteFoot({
 }) {
   const filled = (rows ?? []).filter((r) => r.value?.trim())
   return (
+    /*
+      THE FOOT WEARS THE REGISTER'S NAVIGATION COLOURS.
+
+      ── THE MEASUREMENT ──────────────────────────────────────────────────
+      Sampled 2026-08-27 against five reference sites, converting every pixel
+      of a 1440px screenshot to OKLab:
+
+                        ground L*   darkest L*   contrast span
+        ours              0.95         0.69          0.31
+        linear            0.15         0.11          0.55
+        launch-ui         0.15         0.13          0.55
+        stripe            1.00         0.60          0.40
+        framer            0.00         0.00          0.98
+
+      The darkest pixel on our entire page was L* 0.69. There was nothing dark
+      on it at all -- every surface sat in a narrow pale band, which is what
+      「感觉是配色的问题」 looks like from the inside. The references either go
+      dark or go saturated; we did neither.
+
+      ── WHY THE NAV COLOURS AND NOT A NEW DARK ───────────────────────────
+      Every register ALREADY declares a committed dark surface with a
+      contrast-checked foreground -- its sidebar. 台账 deep navy, 瓷 charcoal
+      brown, 柔和 forest, 漆 oxblood, 夜 near-black. The website has no sidebar,
+      which is the entire reason it had no dark area.
+
+      So this is not a new colour decision. It is fourteen colour decisions
+      that were already made, already tested (nav-contrast.test.ts), and never
+      used on this page. 重点 7c holds: fourteen registers get fourteen
+      different feet, not one black one.
+    */
     <footer
       data-chrome-foot=""
-      className="@container w-full [background-color:var(--color-ink-850)] [border-top:var(--hairline)_solid_var(--border-subtle)]"
+      className="@container w-full [background-color:var(--color-nav-bg)] [border-top:var(--hairline)_solid_var(--color-nav-border)]"
     >
       <div className="mx-auto flex w-full max-w-[68rem] flex-col [gap:var(--gap-stack)] [padding-block:calc(var(--pad-card-lg)*1.8)] [padding-inline:1.5rem]">
         <div className="flex flex-wrap items-baseline [gap:var(--gap-inline)]">
-          <span className="[color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+          <span className="[color:var(--color-nav-fg)] [font-family:var(--font-display)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
             {brand}
           </span>
           {tagline ? (
-            <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{tagline}</span>
+            <span className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">{tagline}</span>
           ) : null}
         </div>
 
@@ -120,17 +150,17 @@ export function SiteFoot({
           <dl className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
             {filled.map((r) => (
               <div key={r.label}>
-                <dt className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+                <dt className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
                   {r.label}
                 </dt>
-                <dd className="mt-1 [color:var(--color-paper)] [font-size:var(--text-base)]">{r.value}</dd>
+                <dd className="mt-1 [color:var(--color-nav-fg)] [font-size:var(--text-base)]">{r.value}</dd>
               </div>
             ))}
           </dl>
         ) : null}
 
         {note ? (
-          <p className="[border-top:var(--hairline)_solid_var(--border-subtle)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [padding-top:var(--gap-stack)]">
+          <p className="[border-top:var(--hairline)_solid_var(--color-nav-border)] [color:var(--color-nav-fg-dim)] [font-size:var(--text-xs)] [padding-top:var(--gap-stack)]">
             {note}
           </p>
         ) : null}

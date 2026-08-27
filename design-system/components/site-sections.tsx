@@ -190,12 +190,15 @@ export function SiteCta({
        section -- which is the whole job: somebody who has read this far and
        still not pressed anything gets asked once more, in the middle, where
        they are. */
-    <section className="[background:var(--color-primary-soft)] [border-radius:var(--radius-lg)] [padding-block:calc(var(--pad-card-lg)*2)] [padding-inline:var(--pad-card-lg)] text-center">
-      <h2 className="ds-display mx-auto max-w-[24ch] text-balance [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+    <section
+      data-cta-band=""
+      className="[background:var(--color-primary)] [border-radius:var(--radius-lg)] [padding-block:calc(var(--pad-card-lg)*2)] [padding-inline:var(--pad-card-lg)] text-center"
+    >
+      <h2 className="ds-display mx-auto max-w-[24ch] text-balance [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]">
         {heading}
       </h2>
       {note ? (
-        <p className="mx-auto mt-4 max-w-[46ch] [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+        <p className="mx-auto mt-4 max-w-[46ch] [color:color-mix(in_oklab,var(--color-on-primary)_78%,transparent)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
           {note}
         </p>
       ) : null}
@@ -204,7 +207,7 @@ export function SiteCta({
           {primaryLabel ? (
             <a
               href={primaryHref || "#"}
-              className="inline-flex min-h-12 items-center [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
+              className="inline-flex min-h-12 items-center [background-color:var(--color-on-primary)] [border-radius:var(--radius-control)] [color:var(--color-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
             >
               {primaryLabel}
             </a>
@@ -212,7 +215,7 @@ export function SiteCta({
           {secondaryLabel ? (
             <a
               href={secondaryHref || "#"}
-              className="inline-flex min-h-12 items-center border [border-color:var(--border-strong)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-medium)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
+              className="inline-flex min-h-12 items-center border [border-color:color-mix(in_oklab,var(--color-on-primary)_45%,transparent)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-medium)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)]"
             >
               {secondaryLabel}
             </a>
@@ -297,11 +300,11 @@ export function SiteCreds({
         className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
       >
         {heading ? (
-          <h2 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+          <h2 className="[color:var(--color-on-primary)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
             {heading}
           </h2>
         ) : null}
-        <p className="mt-2 max-w-[52ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+        <p className="mt-2 max-w-[52ch] [color:color-mix(in_oklab,var(--color-on-primary)_78%,transparent)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
           {hint}
         </p>
       </section>
@@ -313,7 +316,7 @@ export function SiteCreds({
   return (
     <section className="@container">
       {heading && shape !== "strip" ? (
-        <h2 className="ds-display mb-8 [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+        <h2 className="ds-display mb-8 [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]">{heading}</h2>
       ) : null}
 
       {showRating ? (
@@ -330,11 +333,11 @@ export function SiteCreds({
               />
             ))}
           </span>
-          <span className="[color:var(--color-paper)] [font-size:var(--text-2xl)] [font-weight:var(--fw-semibold)] [font-variant-numeric:tabular-nums]">
+          <span className="[color:var(--color-on-primary)] [font-size:var(--text-2xl)] [font-weight:var(--fw-semibold)] [font-variant-numeric:tabular-nums]">
             {rating!.score}
           </span>
           {rating?.count ? (
-            <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+            <span className="[color:color-mix(in_oklab,var(--color-on-primary)_78%,transparent)] [font-size:var(--text-sm)]">
               {rating.count}
               {rating.source ? ` · ${rating.source}` : ""}
             </span>
@@ -347,7 +350,7 @@ export function SiteCreds({
            windscreen sites use across the top of their first screen. It is a
            line of facts, not a grid of cards, and giving it a card each would
            make four short phrases take a whole screen. */
-        <p className="flex flex-wrap items-center [gap:calc(var(--gap-inline)*1.2)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] uppercase [letter-spacing:0.09em]">
+        <p className="flex flex-wrap items-center [gap:calc(var(--gap-inline)*1.2)] [color:color-mix(in_oklab,var(--color-on-primary)_78%,transparent)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] uppercase [letter-spacing:0.09em]">
           {real.map((c, i) => (
             <span key={c.label} className="flex items-center [gap:calc(var(--gap-inline)*1.2)]">
               {i > 0 ? (
@@ -373,11 +376,11 @@ export function SiteCreds({
                 <Check className="h-3 w-3" strokeWidth={3} />
               </span>
               <span className="min-w-0">
-                <span className="block [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+                <span className="block [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
                   {c.label}
                 </span>
                 {c.note ? (
-                  <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{c.note}</span>
+                  <span className="block [color:color-mix(in_oklab,var(--color-on-primary)_78%,transparent)] [font-size:var(--text-xs)]">{c.note}</span>
                 ) : null}
               </span>
             </li>

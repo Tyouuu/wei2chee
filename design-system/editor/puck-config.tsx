@@ -271,6 +271,8 @@ type Components = {
     shape?: "side" | "side-reverse" | "stack";
     photo?: string;
     photoAlt?: string;
+    /* 开场的地. Register-chosen; see site-composition.ts. */
+    ground?: "page" | "ink" | "brand";
     points?: { label: string }[];
   };
   SiteCreds: {
@@ -319,6 +321,8 @@ type Components = {
        Malaysian SME sites give the opening to one; see site-hero.tsx. */
     photo?: string;
     photoAlt?: string;
+    /* 开场的地. Register-chosen; see site-composition.ts. */
+    ground?: "page" | "ink" | "brand";
     /* The printed phone number and the hours strip. Flat props rather than an
        object, because Puck's fields are flat and the owner has to be able to
        type their real number into one box. `phonePlaceholder` is what stops
@@ -2014,6 +2018,15 @@ export const puckConfig: Config<Components> = {
           ),
         },
         photoAlt: { label: "照片说明（给看不到的人）", type: "text" },
+        ground: {
+          label: "开场的地",
+          type: "select",
+          options: [
+            { label: "跟页面一样", value: "page" },
+            { label: "深色", value: "ink" },
+            { label: "主色", value: "brand" },
+          ],
+        },
         /* Directly under the headline, not at the bottom with the rest of the
            contact details, because on both Malaysian sites this was measured
            against it IS the headline's other half. An owner who opens this
@@ -2051,9 +2064,10 @@ export const puckConfig: Config<Components> = {
         primaryLabel: "WhatsApp 问价",
         primaryHref: "#",
       },
-      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip, priceRows, photo, photoAlt }) => (
+      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip, priceRows, photo, photoAlt, ground }) => (
         <SiteHero
           layout={layout ?? "left"}
+          ground={ground}
           figure={figure}
           figureData={figureData}
           photo={photo}

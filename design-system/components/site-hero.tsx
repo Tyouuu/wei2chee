@@ -46,6 +46,7 @@ export function SiteHero({
   figureData,
   photo,
   photoAlt,
+  ground = "page",
 }: {
   /** Where and what, e.g. 「吉隆坡 · 住宅装修」. The line people search by. */
   eyebrow?: ReactNode
@@ -103,6 +104,36 @@ export function SiteHero({
    */
   photo?: string
   photoAlt?: string
+  /**
+   * 开场的地 —— what the first screen is painted on.
+   *
+   * ── THE MEASUREMENT THAT MADE THIS AN AXIS ─────────────────────────────
+   * Every pixel of a 1440px screenshot converted to OKLab, 2026-08-27:
+   *
+   *                  darkest L*   contrast span   coloured area
+   *     ours            0.69          0.31             1%
+   *     linear          0.11          0.55             0%
+   *     launch-ui       0.13          0.55            18%
+   *     stripe          0.60          0.40            27%
+   *     framer          0.00          0.98            37%
+   *
+   * There was nothing dark on our page and nothing saturated either. Every
+   * reference does one or the other, and 「感觉是配色的问题」 is what the
+   * absence of both looks like.
+   *
+   * ── WHY nav-bg AND NOT A NEW DARK ──────────────────────────────────────
+   * Each register already declares a committed dark surface with a
+   * contrast-checked foreground -- its sidebar. 台账 deep navy, 瓷 charcoal
+   * brown, 中台 #001529, 漆 oxblood. The website has no sidebar, which is
+   * exactly why it had no dark. This is not a new colour decision; it is
+   * fourteen that were already made and never used here.
+   *
+   * ── WHY THE REGISTER CHOOSES AND NOT THE OWNER ─────────────────────────
+   * 重点 7c. A dark opening is right for 中台, 码, 粗野, 瓷 and wrong for 瑞士,
+   * whose whole argument is a printed sheet. Offering it as a free choice is
+   * how fourteen registers become one.
+   */
+  ground?: "page" | "ink" | "brand"
   figure?: HeroFigureKind
   /**
    * THE PHONE NUMBER, PRINTED.
@@ -184,18 +215,85 @@ export function SiteHero({
   const band = layout === "band"
   const plain = layout === "plain"
   const hasPhoto = Boolean(photo?.trim())
+  /* TWO LAYERS, NOT ONE -- see block-tone.ts. Writing
+     `--color-paper: var(--color-nav-fg)` beside `--color-nav-fg` is safe, but
+     anything that reads a token it also rewrites is a CSS cycle and CSS drops
+     every declaration in one, silently. Capturing first is the habit that
+     keeps that impossible. */
+  const groundStyle =
+    ground === "ink"
+      ? ({
+          "--tone-bg": "var(--color-nav-bg)",
+          "--tone-fg": "var(--color-nav-fg)",
+          "--tone-fg-dim": "var(--color-nav-fg-dim)",
+          "--tone-line": "var(--color-nav-border)",
+        } as React.CSSProperties)
+      : ground === "brand"
+        ? ({
+            "--tone-bg": "var(--color-primary)",
+            "--tone-fg": "var(--color-on-primary)",
+            "--tone-fg-dim": "color-mix(in oklab, var(--color-on-primary) 76%, transparent)",
+            "--tone-line": "color-mix(in oklab, var(--color-on-primary) 40%, transparent)",
+          } as React.CSSProperties)
+        : undefined
+  const painted = ground !== "page"
   /* A photo is enough to earn the second column on its own. `figure` was the
      only thing that could before, which meant a register asking for the split
      layout on a template with no drawn figure quietly rendered as 左对齐. */
   const split = layout === "split" && (Boolean(figure) || hasPhoto)
   const showProof = !plain && proof && proof.length > 0
 
-  return (
+  /*
+    TWO ELEMENTS, AND THE FOURTH TIME THIS REPO HAS LEARNED WHY.
+
+    The first version put the capture and the apply on the SAME element:
+    `--tone-bg: var(--color-primary)` beside `--color-primary: var(--tone-fg)`.
+    That is a cycle -- --tone-bg reads a property that is being rewritten in
+    the same declaration block -- and CSS silently discards every declaration
+    in one. 招牌's hero came back white with black text: the red simply was
+    not there, nothing threw, and the variables were all present in the DOM.
+
+    block-tone.ts documents this exact failure and shipped the two-layer fix
+    for it. Writing it once is not enough; it has to be the shape.
+  */
+  const shell = (
     <section
       /* The hero paints the page's ground and its hours strip runs edge to
          edge, so it opts out of `.ds-site`'s frame and applies the same measure
          to its own contents instead. */
       data-bleed=""
+      /* The painted ground and, with it, the writing that has to sit on it.
+         Re-pointing the surface family rather than colouring the section is
+         the same move block-tone.ts makes, and for the same reason: a hero is
+         a heading, a paragraph, two buttons, a phone number, an hours strip
+         and three figures, and each of those reads a different token. */
+      style={
+        painted
+          ? ({
+              backgroundColor: "var(--tone-bg)",
+              "--color-paper": "var(--tone-fg)",
+              "--color-paper-dim": "var(--tone-fg-dim)",
+              "--color-on-canvas": "var(--tone-fg)",
+              "--color-on-canvas-dim": "var(--tone-fg-dim)",
+              "--border-subtle": "var(--tone-line)",
+              "--border-strong": "var(--tone-line)",
+              "--color-ink-800": "var(--tone-line)",
+              /*
+                THE ACCENT INVERTS TOO, AND IT HAS TO.
+
+                招牌's ground IS its primary, so the eyebrow, the price pills
+                and -- worst -- the phone number were printed in the same red
+                they sat on. Screenshotted 2026-08-27: 「CALL US」 followed by
+                nothing at all, on the one register whose whole argument is
+                that the name is readable from the street.
+              */
+              "--color-primary": "var(--tone-fg)",
+              "--color-primary-deep": "var(--tone-fg)",
+              "--color-on-primary": "var(--tone-bg)",
+              "--color-primary-soft": "color-mix(in oklab, var(--tone-fg) 18%, transparent)",
+            } as React.CSSProperties)
+          : undefined
+      }
       className={[
         // A CONTAINER, NOT A VIEWPORT.
         //
@@ -407,5 +505,21 @@ export function SiteHero({
       </div>
       </div>
     </section>
+  )
+
+  /* The capture layer. It only ever READS the register's own tokens, so it can
+     never take part in a cycle with the layer that rewrites them. */
+  /* `data-bleed` RIDES ON THE WRAPPER TOO. `.ds-site > * > *` gives every
+     top-level block the page's 68rem measure and `[data-bleed]` is how a block
+     opts out of it. Adding a layer without the attribute would have put the
+     hero inside the measure and let it bleed only within that -- a full-width
+     ground that stops 200px from each edge, which looks like a mistake and is
+     one. See app/globals.css. */
+  return painted ? (
+    <div data-bleed="" style={groundStyle}>
+      {shell}
+    </div>
+  ) : (
+    shell
   )
 }

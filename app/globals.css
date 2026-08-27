@@ -800,3 +800,140 @@
 .ds-site :is(h2, h3) + * {
   margin-top: 0.75rem;
 }
+
+/* ── 会动的那一层 ────────────────────────────────────────────────────────────
+
+   The founder, 2026-08-27: 「因为现在前端的UI/UX 设计已经是很重大的进步了 所以
+   我们一定要去应用啊… 我们要做一些可以吸引到客户眼球的东西」, with a list of
+   five libraries: Animate UI, Vengeance UI, UIverse, Forge UI, UI LORA.
+
+   ── WHY NONE OF THEIR CODE IS IN HERE ────────────────────────────────────
+
+   Read their licence files rather than their landing pages. React Bits (46k
+   stars) and Animate UI (4.2k) are both **MIT + Commons Clause**, whose one
+   restriction is:
+
+     "so long as you do not sell, sublicense, or redistribute the components
+      themselves -- whether alone, in a bundle, or as a ported version"
+
+   Formae IS a component library a customer picks from and that we hand over.
+   That is the sentence, exactly. Their code may sit in our own marketing site;
+   it may not sit in the library we ship. UIverse (uiverse-io/galaxy) is clean
+   MIT and can be lifted; the rest can only be learned from.
+
+   A visual behaviour is not copyrightable -- the code that implements it is.
+   So everything below is written against our own tokens, which is the same
+   thing this repo already did with tailark's blocks.
+
+   ── WHY THE MOTION IS THIS RESTRAINED ────────────────────────────────────
+
+   The page this runs on is read by a homeowner in Kuala Lumpur on a mid-range
+   Android over 4G, deciding whether to message a contractor. Motion that
+   delays the phone number is motion that costs the customer a job. So:
+
+     · one reveal on load, 260ms, and everything is readable before it finishes
+     · scroll reveals only where the browser can do them off the main thread
+       (`animation-timeline: view()`), and nothing at all where it cannot
+     · no parallax, no scroll-jacking, no entrance on the phone number
+     · prefers-reduced-motion turns all of it off
+
+   The eye-catching part is not the animation. It is that the first screen is
+   now painted, has depth, and arrives composed. */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* THE OPENING. Eyebrow, headline, supporting line, buttons, figure -- in the
+     order a person reads them, 60ms apart. `translateY` is 8px, not 40: the
+     reference sites that feel expensive move things a little, and the ones
+     that feel like a template move them a lot. */
+  @keyframes ds-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .ds-site [data-bleed] > * > :is(p, h1, div, dl) {
+    animation: ds-rise 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  }
+  .ds-site [data-bleed] > * > :nth-child(1) { animation-delay: 0.02s; }
+  .ds-site [data-bleed] > * > :nth-child(2) { animation-delay: 0.08s; }
+  .ds-site [data-bleed] > * > :nth-child(3) { animation-delay: 0.14s; }
+  .ds-site [data-bleed] > * > :nth-child(4) { animation-delay: 0.2s; }
+
+  /* NO SCROLL-TRIGGERED ENTRANCES, AND THE REASON IS A MEASUREMENT.
+
+     The first version used `animation-timeline: view()` -- the modern,
+     compositor-driven way, no scroll listener. Then the OKLab sample of the
+     page came back with a contrast span of 0.10 and 0% colour, worse than
+     before the whole finish layer. The screenshot explained it: a full-page
+     capture does not scroll, so every section below the fold sat at its
+     `from` keyframe, invisible.
+
+     That is not a measurement problem, it is the feature's real behaviour in
+     every context that renders without scrolling -- print, a crawler, and our
+     OWN style gallery, which draws whole pages scaled down to a thumbnail.
+     Fourteen register cards would have shown a hero and a blank page.
+
+     The load reveal below is enough for the impression, and it cannot leave
+     anything invisible: it is `backwards`-filled on elements that are in the
+     first screen anyway. */
+
+  /* THE ONE BUTTON THE PAGE EXISTS FOR. A slow sheen crossing it every six
+     seconds -- the detail every one of the five libraries he sent has on its
+     primary call to action, rebuilt in two declarations. It is masked to the
+     button, so it cannot leak onto a register that paints its own ground. */
+  @keyframes ds-sheen {
+    0%,
+    72% {
+      transform: translateX(-120%);
+    }
+    100% {
+      transform: translateX(120%);
+    }
+  }
+  .ds-site [data-bleed] a[href]:first-of-type {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .ds-site [data-bleed] a[href]:first-of-type::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inline-size: 45%;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.28) 50%,
+      transparent 100%
+    );
+    animation: ds-sheen 6s ease-in-out infinite;
+  }
+
+  /* Cards lift under the pointer. 2px and a deepened shadow, on a transition
+     the register already declares. */
+  .ds-site :is(.ds-card, .ds-raised) {
+    transition:
+      transform var(--dur) ease,
+      box-shadow var(--dur) ease;
+  }
+  .ds-site :is(.ds-card, .ds-raised):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+  }
+
+  /* A photograph in a gallery grows very slightly inside its own frame. The
+     frame does not move, so the grid never reflows. */
+  .ds-site figure img {
+    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .ds-site figure:hover img {
+    transform: scale(1.03);
+  }
+}

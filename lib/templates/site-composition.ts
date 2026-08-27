@@ -81,6 +81,23 @@ export type SiteSkeleton = {
    *  `split` -- the only layout with a figure beside the words -- stays the
    *  most common answer. It is no longer the ONLY answer. */
   hero: "left" | "band" | "center" | "plain" | "split";
+  /**
+   * 开场的地 —— what the first screen is painted on. `page` follows the
+   * register's own ground; `ink` is the register's SIDEBAR colour, which is
+   * the one committed dark every register already declares and the website
+   * never used; `brand` is its primary at full strength.
+   *
+   * Measured 2026-08-27, every pixel of a 1440px screenshot in OKLab: our
+   * darkest pixel was L* 0.69 and 1% of the page carried any chroma at all,
+   * against 0.11/0% for linear and 0.00/37% for framer. Every reference goes
+   * dark or goes saturated; we did neither, and that is what 「感觉是配色的
+   * 问题」 was pointing at.
+   *
+   * Which registers take it is an argument about the register, not a setting:
+   * 中台 IS its deep blue sidebar, 招牌 IS a colour panel with a name on it,
+   * 瑞士 is a printed sheet and must stay white.
+   */
+  ground?: "page" | "ink" | "brand";
   /** Movable sections, most important first. Anything the template has and
    *  this list omits keeps its template position, after the listed ones. */
   order: SiteSection[];
@@ -125,6 +142,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // another business, and a business asks for terms before it asks for a look:
   // price, then delivery, then what the arrangement actually is.
   counter: {
+    ground: "ink",
     hero: "plain",
     opens: "条件",
     order: ["prices", "promise", "creds", "areas", "services", "story", "flow", "faq", "work", "reviews", "cta", "hours"],
@@ -149,6 +167,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // The work first at full volume, then the ask, immediately. This is the only
   // skeleton that puts the mid-page CTA in the top third.
   brut: {
+    ground: "ink",
     hero: "band",
     opens: "作品 + 马上问",
     order: ["work", "cta", "services", "story", "prices", "reviews", "creds", "hours", "areas", "faq", "flow", "promise"],
@@ -157,6 +176,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // list IS the menu and the menu IS the page -- then when you are open, then
   // where you are. Nobody reads a coffee shop's process diagram.
   tile: {
+    ground: "ink",
     hero: "split",
     opens: "菜单",
     order: ["prices", "work", "story", "hours", "creds", "areas", "services", "reviews", "faq", "cta", "flow", "promise"],
@@ -165,6 +185,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // prices, then whether you deliver here. Monospace all the way down, so no
   // long-prose section gets to lead.
   code: {
+    ground: "ink",
     hero: "plain",
     opens: "货单",
     order: ["prices", "services", "story", "areas", "promise", "creds", "faq", "flow", "work", "reviews", "cta", "hours"],
@@ -173,6 +194,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // the band hero is not decoration -- it is the register itself. What it sells
   // is trust built over years, so the work and the word-of-mouth lead.
   lacquer: {
+    ground: "ink",
     hero: "band",
     opens: "招牌 + 口碑",
     order: ["services", "work", "story", "reviews", "creds", "hours", "areas", "prices", "cta", "faq", "flow", "promise"],
@@ -181,6 +203,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // signboard. Then the two things somebody standing on the street needs:
   // when are you open, and where exactly are you.
   signboard: {
+    ground: "brand",
     hero: "center",
     opens: "店名 + 找得到",
     order: ["hours", "areas", "services", "creds", "work", "story", "prices", "reviews", "cta", "faq", "flow", "promise"],
@@ -264,6 +287,12 @@ export function composeSite(nodes: PuckNode[], style?: string | null): PuckNode[
 
 function heroFor(node: PuckNode, skeleton: SiteSkeleton): PuckNode {
   if (idOf(node) !== "website-hero") return node;
-  if (skeleton.hero === "split" && !node.props.figure) return node;
-  return { ...node, props: { ...node.props, layout: skeleton.hero } };
+  const props = { ...node.props };
+  /* `ground` is written even when it is "page", because the value the
+     register chose has to survive into the saved layout -- a customer who
+     switches register on an unsaved page re-skeletons, and one who switches
+     after saving keeps what they were given. */
+  props.ground = skeleton.ground ?? "page";
+  if (!(skeleton.hero === "split" && !node.props.figure)) props.layout = skeleton.hero;
+  return { ...node, props };
 }

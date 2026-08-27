@@ -589,4 +589,8 @@ export const LABELS_EN: Record<string, string> = {
   "照片在上": "Photo on top",
   "一段话": "The paragraph",
   "打勾的几点": "Ticked points",
+  "开场的地": "What the first screen sits on",
+  "跟页面一样": "Same as the page",
+  "深色": "Dark",
+  "主色": "Your main colour",
 };
