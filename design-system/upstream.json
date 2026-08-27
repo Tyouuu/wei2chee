@@ -181,22 +181,22 @@
     {
       "repo": "imskyleen/animate-ui",
       "licence": "NOASSERTION",
-      "kind": "none",
-      "took": "NOTHING, and the licence is why.",
+      "kind": "look",
+      "took": "做法，不是代码。挖出来的是 38 个「会动的地」跟 41 颗「会动的按钮」—— 这是它跟 UIverse、react-bits 唯一不重叠的一格。其余 96 个 radix / 84 个 base 是把 shadcn 的控件加上进场动画，我们已经有那些控件。",
       "where": "-",
       "takenOn": "2026-08-27",
-      "note": "GitHub's classifier returns NOASSERTION for MIT + Commons Clause, so that is what is recorded here -- a guard that cries wolf on every run is a guard nobody reads. The human reading is in licenceHuman. The Commons Clause forbids redistributing 「the components themselves -- whether alone, in a bundle, or as a ported version」. Formae IS a component library a customer picks from and that we hand over, so their code may sit on our own marketing site and may NOT sit in the library we ship. Recorded so nobody takes it later without reading the licence.",
+      "note": "⚠️ 代码仍然不可以拿：MIT + Commons Clause 写着不可以转售、再散布、或做成移植版组件本身，而我们的产品就是一个组件库。做法不受著作权保护 —— 跟 tailark 一样，看完用我们自己的 token 重建。落点待定：慢速会动的地只适合深色那几套（招牌 / 中台 / 夜）。",
       "licenceHuman": "MIT + Commons Clause",
       "appliedTo": []
     },
     {
       "repo": "DavidHDev/react-bits",
       "licence": "NOASSERTION",
-      "kind": "none",
-      "took": "NOTHING. Same clause as animate-ui.",
+      "kind": "look",
+      "took": "做法，不是代码。3742 个档案其实是 ~319 个组件 × 4 种写法（js/ts × default/tailwind）。绝大多数是文字特效跟背景特效，给开发者看的站用的。",
       "where": "-",
       "takenOn": "2026-08-27",
-      "note": "GitHub's classifier returns NOASSERTION for MIT + Commons Clause, so that is what is recorded here -- a guard that cries wolf on every run is a guard nobody reads. The human reading is in licenceHuman. 46k stars and pushed daily, which is exactly why it needs to be recorded as a NO rather than left unlisted for somebody to rediscover and take.",
+      "note": "⚠️ 同一条 Commons Clause。而且判下来跟 UIverse 同一个结论：装饰过的控件，不是页面区段，帮不到风格库。装修承包商的官网不需要文字打字机效果。",
       "licenceHuman": "MIT + Commons Clause",
       "appliedTo": []
     },
@@ -278,6 +278,49 @@
       "takenAt": "-",
       "takenOn": "2026-08-27",
       "note": "⚠️ 拿之前 SiteCta 十四套是同一块，只有颜色不同 —— 重点 7c 被我们自己的库回答成「不是另一个设计」。⚠️ ThemeForest 被 Cloudflare 挡住（我的尺第四次说谎：那句话只在 <title> 里，innerText 查不到，所以现在两个地方都查）。⚠️ Wix 的预览页有一层关不掉的弹层，模板本体在 iframe 里，网址是 wix.com/demone2/<name>。"
+    },
+    {
+      "repo": "greensock/gsap-skills",
+      "licence": "MIT",
+      "licenceHuman": "MIT License",
+      "kind": "look",
+      "took": "动画的做法，八份官方 SKILL.md：只动 transform 跟 opacity（留在合成层，不触发 layout）· 用 stagger 不要手写一堆 delay · 频繁更新的属性（跟手的东西）用 quickTo 重用同一个 tween，不要每帧新建 · will-change 提前提升图层",
+      "where": "design-system/components/tilt-stage.tsx（跟手那一条正好对上）, app/globals.css 的动效层",
+      "appliedTo": [
+        "动效层：确认我们的 ds-rise 只动 transform/opacity 是对的",
+        "tilt-stage 待改：改成重用一个 tween"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "🔴 **技能是 MIT，GSAP 本身不是。** GSAP 的 Standard「No Charge」License 原文：「as long as end users are not charged a fee of any kind to use your product or gain access to any part of it」——**我们收 RM199 月费**，那就是 access fee，要买 Business 会籍。而且它的 Prohibited Uses 特别点名不可以做「competing with Webflow's rich animation-building capabilities」——**我们就是一个建站工具**。所以：拿知识，不装库。"
+    },
+    {
+      "repo": "-",
+      "name": "16 个成熟产品官网整页（Linear · Stripe · Attio · Resend · Raycast · Vercel · Supabase · Clerk · Framer · Cal · Dub · Lovable · Mintlify · Polar · shadcn · Tailwind）",
+      "licence": "n/a",
+      "kind": "market",
+      "took": "卖点那一段的形状：**一个标题 + 一张大图，重复三到五次**，不是「一个标题 + 一排三张一样大的卡片」。16 个里有 10 个以上这样做。另外 10/16 在第一屏底下紧接一条 logo 墙。",
+      "where": "待做：SiteFeatures 需要一个「一次讲一件事」的款式",
+      "appliedTo": [
+        "待做 —— 这是「区段词汇只有一种」那个病的解药"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "⚠️ 分边：这 16 个给的是「有哪些区段、什么顺序」，**不是「多大多宽」**。它们的大标题 56px，19 家马来西亚 SME 量出来是 38px。"
+    },
+    {
+      "repo": "-",
+      "name": "Tailwind Plus · marketing 版段目录",
+      "licence": "n/a（只看分类，不拿代码）",
+      "kind": "market",
+      "took": "169 个区段分成 20 类。跟我们 18 个架子对照下来，**我们的分法基本是对的**，唯一的大洞是他们第二大的分类：**Banners（13 个）—— 顶上那一条**。",
+      "where": "待做：版段库缺「顶上那一条」这个架子",
+      "appliedTo": [
+        "待做 —— 而且 19 家马来西亚 SME 里 7 家用了顶栏条（营业时间 / 电话），这一格在本地市场是刚需"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "他们有我们没有的：Banners 13 · Blog 7（故意不做，车厂老板不写博客）· 404 5（不适用）· Flyout Menus 7（导航）。我们有他们没有的：流程 how-it-works（本地市场的报价流程）· 作品 gallery · 对比 · 整合。"
     }
   ]
 }

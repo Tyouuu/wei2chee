@@ -34,7 +34,8 @@
     "restore:demo": "node scripts/restore-demo.mjs",
     "shoot:lapa": "node scripts/shoot-lapa.mjs",
     "shoot:stores": "node scripts/shoot-stores.mjs",
-    "shoot:pending": "node scripts/shoot-pending.mjs"
+    "shoot:pending": "node scripts/shoot-pending.mjs",
+    "shoot:saas": "node scripts/shoot-saas.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
