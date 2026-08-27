@@ -196,6 +196,29 @@ const CASES = [
   },
   {
     /*
+      THE ONE BLOCK ON THIS PAGE THAT PRODUCES MONEY.
+
+      `site_enquiries` is a real table with real rows: a stranger fills this
+      form and the owner sees it in his system. It is the only arrow in the
+      whole product that already goes all the way through, and until
+      2026-08-27 EVERY WORD OF IT was unreachable by voice -- `heading`,
+      `blurb`, `submitLabel`, `landsIn`, `note`, none of them on the
+      hand-written field list. 「用讲的改」 did nothing here and looked like it
+      worked.
+
+      `submitLabel` on purpose: it is the last thing a visitor reads before
+      deciding whether to press, and it is a label -- next to a `href` the
+      assistant must never touch. If the derivation ever loosens, this case
+      goes first.
+    */
+    name: "官网 · 询价表格的送出按钮",
+    page: "website",
+    ask: "把询价表格那颗送出的按钮改成「立刻问价钱」",
+    changed: true,
+    gains: ["立刻问价钱"],
+  },
+  {
+    /*
       THE BUTTON NOBODY HAD EVER PRESSED.
 
       `pick_photo` is an OFFER, not an edit: the assistant does not choose a
