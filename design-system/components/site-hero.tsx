@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { HeroFigure, type HeroFigureKind } from "./hero-figure"
+import { TiltStage } from "./tilt-stage"
 
 /**
  * The first screen of the page a business's own CUSTOMERS see.
@@ -481,6 +482,7 @@ export function SiteHero({
           the order a stranger needs, and the opposite of what a
           figure-first source would give them. */}
       {split && hasPhoto && (
+        <TiltStage>
         <div className="min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element -- the src is a
               Supabase storage URL on a bucket Next's optimiser is not
@@ -492,9 +494,11 @@ export function SiteHero({
             className="h-full max-h-[30rem] w-full object-cover [border-radius:var(--radius-lg)]"
           />
         </div>
+        </TiltStage>
       )}
 
       {split && !hasPhoto && figure && (
+        <TiltStage>
         <div className="min-w-0">
           <HeroFigure
             kind={figure}
@@ -508,6 +512,7 @@ export function SiteHero({
             sampleLabel={figureData?.sampleLabel}
           />
         </div>
+        </TiltStage>
       )}
       </div>
       </div>

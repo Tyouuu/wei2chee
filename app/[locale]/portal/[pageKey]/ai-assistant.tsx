@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { usePuck, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { planDesignChange } from "@/lib/portal/design-change";
 
 /** A page-level change the assistant offered and the customer can confirm.
  *  See lib/portal/layout-ops.ts's pageSuggestionSchema for why this is an offer
@@ -223,13 +224,27 @@ export function AiAssistant({
         the honest affordance -- they change it back the same way they changed
         it, by saying so.
       */
-      if (result.design) {
-        const { error } = await createBrowserSupabaseClient().rpc("set_project_style", {
-          new_style: result.design.style ?? activeStyle,
-          new_palette: result.design.palette ?? null,
-          clear_palette: result.design.palette === null,
-        });
-        if (!error) router.refresh();
+      /*
+        WHICH RPCS A DESIGN ANSWER BECOMES IS DECIDED IN design-change.ts.
+
+        Not inline, because this handler is where 排法 was lost: the field was
+        added to the prompt, the schema, validDesign and the database, and this
+        one place was never updated, so the model answered 「表格放前面」
+        correctly and the browser threw it away while the reply said it was
+        done. The planner is a pure function with a test that walks every field
+        the reply can carry, so the next field added cannot go unspent.
+      */
+      const calls = planDesignChange(result.design, activeStyle);
+      if (calls.length) {
+        const supabase = createBrowserSupabaseClient();
+        let landed = false;
+        for (const call of calls) {
+          const { error } = await supabase.rpc(call.rpc, call.args);
+          if (!error) landed = true;
+        }
+        // Refresh if ANY of them landed: a failed palette must not hide a
+        // register that did change, or the page shows a state matching neither.
+        if (landed) router.refresh();
       }
 
       settle({

@@ -408,7 +408,29 @@
    still apply -- 招牌 keeps its condensed display type, 瑞士 keeps its
    restraint. Only the size changes. */
 .ds-site {
-  --text-hero: clamp(2.25rem, 5.5vw, 3.5rem);
+  /* Bigger. Every reference sets its h1 between 48 and 96px and ours
+     topped out at 56 while the first screen sat half empty. */
+  --text-hero: clamp(2.5rem, 6.4vw, 4.25rem);
+  /* Tighter than the register's own title tracking, because tracking and size
+     trade off: what is right at a 21px page title is loose at 56px. The
+     multiplier keeps it a register axis -- 炉's −1.2% becomes −1.9%, 粗野's
+     −3% becomes −4.8% -- rather than flattening fourteen registers onto one
+     number. */
+  --tracking-display: calc(var(--tracking-title) * 1.6);
+  --leading-display: 1.03;
+}
+
+/* THE HEADLINE IS LIGHTER AT DISPLAY SIZE, AND THAT IS THE RULE, NOT A TASTE.
+   Weight and size trade off the same way tracking does: 700 at 21px is a
+   confident page title and 700 at 56px is a shout. Every reference sets its
+   own h1 between 300 and 510 -- stripe 300, vercel 400, figma 400, framer 500,
+   linear 510 -- while ours ran 600 to 800. One step down the register's own
+   scale keeps 粗野 heavier than 工作室; it just stops all fourteen shouting. */
+.ds-site [data-bleed] h1,
+.ds-site h1 {
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-display);
 }
 
 .ds-site :is(h2, h3):not([data-chrome-top] *):not([data-chrome-foot] *) {
@@ -741,17 +763,18 @@
    Where the syntax is unsupported the whole declaration is invalid and the
    register's own canvas applies -- the previous behaviour, which is the
    correct fallback. */
-/* TWO LAYERS AGAIN, and the first draft of this rule was the fifth time:
-   `--color-canvas: oklch(from var(--color-canvas) …)` reads the property it is
-   declaring, which is a cycle, and CSS drops it in silence. The capture reads
-   only; the apply, one element down on Puck's wrapper, rewrites only. */
-.ds-site {
-  --reg-canvas: var(--color-canvas);
-  background-color: oklch(from var(--color-canvas) l calc(c * 0.18) h);
-}
-.ds-site > * {
-  --color-canvas: oklch(from var(--reg-canvas) l calc(c * 0.18) h);
-}
+/* ENFORCED AT THE SOURCE, NOT PAINTED OVER.
+
+   The first version of this rule repainted the website's ground with a
+   chroma-reduced copy of the register's canvas. It worked, and the screenshot
+   showed what it cost: 瓷's nyonya floor tile is a background-IMAGE on the
+   ground its register paints, and a background-COLOUR laid over it hides the
+   pattern that is the entire register.
+
+   The rule now lives where the colour is chosen -- 漆's board is ivory in its
+   own token file, and ground-neutral.test.ts fails the build on any register
+   or palette whose canvas exceeds chroma 0.02. A rule enforced at the source
+   needs no second layer, and the second layer could only ever hide things. */
 
 .ds-site {
   --site-radius: calc(var(--radius-lg) * 1.7);
@@ -977,5 +1000,52 @@
   }
   .ds-site figure:hover img {
     transform: scale(1.03);
+  }
+}
+
+/* ── 立起来的那一块 ──────────────────────────────────────────────────────────
+
+   The figure on the first screen sits on a plane and answers the pointer. See
+   tilt-stage.tsx for why the angle is small and what it costs.
+
+   The perspective lives on the STAGE and the transform on the child, because a
+   `perspective` and a `transform` on one element make the vanishing point
+   travel with the object -- the card appears to slide rather than to lean. Two
+   elements is the only arrangement that gives a fixed viewpoint. */
+[data-tilt] {
+  perspective: 1200px;
+}
+[data-tilt] > * {
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-tilt] > * {
+    transform: perspective(1200px) rotateX(calc(var(--tilt-x, 0) * 1deg))
+      rotateY(calc(var(--tilt-y, 0) * 1deg));
+  }
+  /* The light the lean is supposed to catch. Without it the card rotates and
+     stays evenly lit, which is the tell that it is a rectangle pretending. */
+  [data-tilt] > *::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    background: radial-gradient(
+      42% 42% at var(--tilt-lx, 50%) var(--tilt-ly, 50%),
+      rgb(255 255 255 / 0.16) 0%,
+      transparent 70%
+    );
+  }
+  [data-tilt]:hover > *::after {
+    opacity: 1;
+  }
+  [data-tilt] > * {
+    position: relative;
   }
 }
