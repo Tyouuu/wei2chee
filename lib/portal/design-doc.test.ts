@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { STYLE_BRIEFS } from "./design-doc";
 import { VARIANTS } from "@/design-system/editor/variants";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
+import { puckConfig } from "@/design-system/editor/puck-config";
 
 /**
  * A register's preference has to name a variant that EXISTS.
@@ -29,6 +30,41 @@ describe("every register's preferences point at something real", () => {
           VARIANTS[component],
           `${style} prefers a variant of ${component}, which has none`,
         ).toBeDefined();
+      }
+    }
+  });
+
+  /*
+    THE FOURTH FORM, AND IT SHIPPED ON 2026-08-27.
+
+    A preference can name a component that exists and a variant that exists and
+    STILL reach nothing, because precedence in this system is: the customer's
+    own prop > the register's preference > the component's default. A prop Puck
+    filled in from `defaultProps` is PRESENT, and present is indistinguishable
+    from "the customer chose this".
+
+    SiteGallery, SiteStory and SiteCreds all shipped with their `shape` in
+    defaultProps. Fourteen registers each declared a shape; all fourteen pages
+    drew the identical object, and every test above passed. The component's own
+    parameter default is where a fallback belongs -- `shape = "grid"` in the
+    function signature -- because that one only applies when nothing else did.
+  */
+  it("names a prop no defaultProps has already filled in", () => {
+    const components = (puckConfig as unknown as {
+      components: Record<string, { defaultProps?: Record<string, unknown> }>;
+    }).components;
+
+    for (const [style, brief] of Object.entries(STYLE_BRIEFS)) {
+      for (const [component, id] of Object.entries(brief.prefer)) {
+        const variant = (VARIANTS[component] ?? []).find((v) => v.id === id);
+        if (!variant) continue;
+        const defaults = components[component]?.defaultProps ?? {};
+        for (const key of Object.keys(variant.props)) {
+          expect(
+            Object.prototype.hasOwnProperty.call(defaults, key),
+            `${component}.defaultProps sets "${key}", so ${style}'s preference "${id}" can never apply`,
+          ).toBe(false);
+        }
       }
     }
   });

@@ -201,7 +201,8 @@ type Components = {
     size: "sm" | "default" | "lg";
   };
   Tag: { label: string; variant?: "default" | "secondary" | "outline" | "destructive" };
-  Divider: { spacing: "tight" | "normal" | "loose" };
+  /* Optional so the register can supply it -- see design-doc.test.ts. */
+  Divider: { spacing?: "tight" | "normal" | "loose" };
   NoteField: { label: string; placeholder: string };
   Panel: { title: string; description?: string; body: Slot; look?: "card" | "tinted" | "plain" | "ruled" };
   TabbedPanel: {
@@ -435,7 +436,7 @@ type Components = {
   Listbox: { name?: string; defaultValue?: string; options: ListboxOption[]; placeholder?: string };
   Alert: { variant: "default" | "destructive"; title: string; description?: string };
   Progress: { label?: string; value: number };
-  TrendChart: { title?: string; caption?: string; frame?: TrendFrame; kind: TrendKind; unit?: string; points: TrendPoint[] };
+  TrendChart: { title?: string; caption?: string; frame?: TrendFrame; kind?: TrendKind; unit?: string; points: TrendPoint[] };
   // ---- 生意零件 ----
   InfoRows: {
     heading?: string;
@@ -1440,7 +1441,9 @@ export const puckConfig: Config<Components> = {
           ],
         },
       },
-      defaultProps: { label: "新客户", variant: "secondary" },
+      /* `variant` deliberately absent -- see Divider above. UiBadge's own
+         default is `secondary`, which is what this used to hard-code. */
+      defaultProps: { label: "新客户" },
       render: ({ label, variant }) => <UiBadge variant={variant}>{label}</UiBadge>,
     },
     Divider: {
@@ -1456,7 +1459,12 @@ export const puckConfig: Config<Components> = {
           ],
         },
       },
-      defaultProps: { spacing: "normal" },
+      /* NO `spacing` HERE. All fourteen registers declare one and none of
+         them has ever applied: a prop Puck fills in from defaultProps is
+         present, and present outranks the register. The render below already
+         treats anything that is not tight or loose as normal, so the fallback
+         is where it belongs. See design-doc.test.ts. */
+      defaultProps: {},
       render: ({ spacing }) => (
         <div className={spacing === "tight" ? "py-1.5" : spacing === "loose" ? "py-7" : "py-4"}>
           <UiSeparator />
@@ -1758,7 +1766,19 @@ export const puckConfig: Config<Components> = {
           getItemSummary: (item) => item.caption || (item.src ? "一张照片" : "还没填"),
         },
       },
-      defaultProps: { shape: "grid", items: [] },
+      /*
+        NO `shape` IN defaultProps, AND THAT IS THE WHOLE POINT.
+
+        Precedence in this system is: the customer's own prop > the register's
+        preference > the component's default. A prop Puck has filled in from
+        defaultProps is PRESENT, so it reads as the customer's own choice and
+        the register never gets a say. Shipping `shape` here made all fourteen
+        registers draw the same object -- the ninth time this repo has lost a
+        register preference exactly this way. An ABSENT prop is the only way to
+        say 「follow the register」; the component's own parameter default is
+        where the fallback belongs, and it is there.
+      */
+      defaultProps: { items: [] },
       render: ({ heading, note, shape, items }) => (
         <SiteGallery heading={heading} note={note} shape={shape} items={items} />
       ),
@@ -1795,7 +1815,19 @@ export const puckConfig: Config<Components> = {
           getItemSummary: (item) => item.label || "还没填",
         },
       },
-      defaultProps: { shape: "side", points: [] },
+      /*
+        NO `shape` IN defaultProps, AND THAT IS THE WHOLE POINT.
+
+        Precedence in this system is: the customer's own prop > the register's
+        preference > the component's default. A prop Puck has filled in from
+        defaultProps is PRESENT, so it reads as the customer's own choice and
+        the register never gets a say. Shipping `shape` here made all fourteen
+        registers draw the same object -- the ninth time this repo has lost a
+        register preference exactly this way. An ABSENT prop is the only way to
+        say 「follow the register」; the component's own parameter default is
+        where the fallback belongs, and it is there.
+      */
+      defaultProps: { points: [] },
       render: ({ heading, hint, body, shape, photo, photoAlt, points }) => (
         <SiteStory
           heading={heading}
@@ -1843,7 +1875,19 @@ export const puckConfig: Config<Components> = {
           getItemSummary: (item) => item.label || item.note || "还没填",
         },
       },
-      defaultProps: { shape: "strip", items: [] },
+      /*
+        NO `shape` IN defaultProps, AND THAT IS THE WHOLE POINT.
+
+        Precedence in this system is: the customer's own prop > the register's
+        preference > the component's default. A prop Puck has filled in from
+        defaultProps is PRESENT, so it reads as the customer's own choice and
+        the register never gets a say. Shipping `shape` here made all fourteen
+        registers draw the same object -- the ninth time this repo has lost a
+        register preference exactly this way. An ABSENT prop is the only way to
+        say 「follow the register」; the component's own parameter default is
+        where the fallback belongs, and it is there.
+      */
+      defaultProps: { items: [] },
       render: ({ heading, hint, shape, rating, items }) => (
         <SiteCreds heading={heading} hint={hint} shape={shape} rating={rating} items={items} />
       ),
@@ -2600,7 +2644,8 @@ export const puckConfig: Config<Components> = {
       defaultProps: {
         title: "每月收款",
         caption: "已经收到的工程款，按月看。",
-        kind: "bar" as const,
+        /* `kind` deliberately absent -- see Divider. TrendChart's own
+           signature falls back to a bar. */
         unit: "RM",
         points: [
           { label: "3月", value: 42000 },

@@ -37,7 +37,12 @@ export type TrendChartProps = {
   title?: string
   caption?: string
   frame?: TrendFrame
-  kind: TrendKind
+  /** Optional, and it has to be: `kind` is one of the three shapes a register
+   *  chooses, and a register's preference only reaches a component when the
+   *  prop is ABSENT. It was required, so puck-config.tsx supplied it from
+   *  defaultProps, so all fourteen preferences were dead. The fallback lives
+   *  here now, which is the one place it cannot outrank anybody. */
+  kind?: TrendKind
   /** Prefixed to the tooltip figure. "RM" for money, "" for counts. */
   unit?: string
   points: TrendPoint[]
@@ -190,7 +195,7 @@ function usePlotHeight(host: React.RefObject<HTMLElement | null>) {
   return h
 }
 
-export function TrendChart({ title, caption, frame, kind, unit = "", points }: TrendChartProps) {
+export function TrendChart({ title, caption, frame, kind = "bar", unit = "", points }: TrendChartProps) {
   const w = useSystemWords()
   const hostRef = useRef<HTMLElement>(null)
   const barRadius = useStyleRadius(hostRef, 4)

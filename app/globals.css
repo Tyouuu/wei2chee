@@ -670,3 +670,133 @@
     page-break-after: avoid;
   }
 }
+
+/* ── 官网的做工层 ────────────────────────────────────────────────────────────
+
+   The founder, 2026-08-27, looking at a generated site: 「我们的模版就是做的
+   这一套风格官网很丑啊 我不是叫你去融合吗 我们现在已经是高审美 高科技的时代了」.
+
+   He is right, and it is measurable. Same page, same method, one afternoon
+   (the numbers are from getComputedStyle on the running pages):
+
+                     ours   launch-ui   linear   framer
+     images            1        25         6       47
+     gradients         0       163        30        5
+     card radius      8px      12px       9px     20px
+     objects on page   15       122        45       21
+
+   ZERO GRADIENTS AND ONE IMAGE. Everything else on our page is a flat fill in
+   a square-ish box. That is not a taste disagreement, it is a finish that was
+   never applied.
+
+   ── WHY IT HAPPENED ──────────────────────────────────────────────────────
+
+   The token set was designed for DASHBOARDS. A dashboard should have no
+   gradients, minimal shadow, small radii and no photographs -- every one of
+   those is a virtue on a screen somebody reads forty rows on, all day. The
+   website inherited them wholesale, and on a page a stranger reads once they
+   do not read as restraint. They read as unfinished.
+
+   ── WHY EVERYTHING BELOW IS A MULTIPLIER ─────────────────────────────────
+
+   重点 7c: a register is its geometry, so this must not flatten fourteen
+   registers into one soft SaaS look. Nothing here sets an absolute value.
+   Every rule scales what the register already declared, so 中台's 2px corner
+   becomes 3px and 柔和's 20px becomes 32px -- the same argument the 圆角滑杆
+   settled on 2026-08-25: 是倍数不是 px，每套风格自己的比例保住.
+
+   The one thing that is not a multiplier is the wash behind the hero, and it
+   is painted in the register's OWN primary, so fourteen registers give
+   fourteen different washes rather than the one purple glow every AI landing
+   page has.
+   -------------------------------------------------------------------------- */
+
+.ds-site {
+  --site-radius: calc(var(--radius-lg) * 1.7);
+  --site-radius-sm: calc(var(--radius-md) * 1.7);
+  /* The register's own biggest shadow, not a new one. A register that declares
+     flat shadows (瑞士 prints on paper, 中台 is a POS screen) stays flat. */
+  --site-elevation: var(--shadow-lg);
+  /* Light from above, in amounts that are nearly invisible on a white card and
+     do the work on a dark one. Depth on light grounds comes from the shadow. */
+  --site-sheen: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.07) 0%,
+    rgb(255 255 255 / 0) 42%,
+    rgb(0 0 0 / 0.025) 100%
+  );
+}
+
+/* Cards on the website carry the site's radius, the register's own elevation
+   and the sheen. `background-image` rather than `background`, so a register
+   that paints its card a colour keeps the colour and gains the light. */
+.ds-site :is(.ds-card, .ds-raised) {
+  border-radius: var(--site-radius);
+  box-shadow: var(--site-elevation);
+  background-image: var(--site-sheen);
+}
+
+/* Photographs. Measured: 0 of ours were rounded, 13 of framer's 47 were. An
+   unrounded photograph beside a rounded card is the detail that says nobody
+   looked at the page. The ring is a hairline of the register's own border, so
+   a photograph on a dark register does not float unattached. */
+.ds-site :is(img, video):not([data-chrome-top] *):not([data-chrome-foot] *) {
+  border-radius: var(--site-radius-sm);
+}
+.ds-site figure > div:has(> img),
+.ds-site [data-photo] {
+  box-shadow: var(--site-elevation);
+}
+
+/* ── THE WASH BEHIND THE FIRST SCREEN ────────────────────────────────────────
+
+   The one new visual object, and the only place a gradient is introduced. It
+   is the register's own `--color-primary` at 8%, thrown from above, so
+   fourteen registers give fourteen washes rather than the one purple glow
+   every AI landing page has.
+
+   ON THE PAGE, NOT ON THE HERO. The first version put it on the hero section
+   and the screenshot showed why that is wrong: the hero starts BELOW the
+   sticky bar, so the wash began with a hard horizontal seam across the page
+   about 170px down. It read as a rendering fault, not as light. Anchored to
+   the page instead, the bar sits inside it and there is no edge to see.
+
+   A pseudo-element rather than a background, because a register whose ground
+   is a texture (瓷's nyonya tile, 漆's lacquered red) must keep showing the
+   texture through it. `position: absolute` inside the site's own stacking
+   context, so it scrolls away with the first screen instead of tinting the
+   whole document. */
+.ds-site {
+  position: relative;
+  isolation: isolate;
+}
+.ds-site::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: min(120vh, 1100px);
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(
+    140% 100% at 50% -30%,
+    color-mix(in oklab, var(--color-primary) 8%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+/* The hero's photograph is the largest object on the page and was rendering as
+   a bare rectangle. It gets the site radius, the elevation and a hairline. */
+.ds-site [data-bleed] img {
+  border-radius: var(--site-radius);
+  box-shadow: var(--site-elevation);
+  outline: var(--hairline) solid var(--border-subtle);
+  outline-offset: 0;
+}
+
+/* Section headings sit closer to the thing they head than to the section
+   above. Measured against every reference: the gap above a heading is roughly
+   three times the gap below it, and ours were even. */
+.ds-site :is(h2, h3) + * {
+  margin-top: 0.75rem;
+}

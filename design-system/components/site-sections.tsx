@@ -1,5 +1,5 @@
 import { Check, Star } from "lucide-react"
-import { railIcon } from "./rail-icons"
+import { icon as tradeIcon } from "./trade-blocks"
 
 /**
  * The sections a LANDING PAGE has and a dashboard does not.
@@ -67,14 +67,33 @@ export function SiteFeatures({
             key={f.label}
             className="ds-card flex flex-col [gap:var(--gap-inline)] [padding:calc(var(--pad-card)*1.4)]"
           >
-            {f.icon ? (
-              <span
-                aria-hidden
-                className="grid h-10 w-10 place-items-center [background:var(--color-primary-soft)] [border-radius:var(--radius-md)] text-[color:var(--color-primary)]"
-              >
-                {railIcon(f.icon, "h-5 w-5")}
-              </span>
-            ) : null}
+            {/*
+              THE ICON MAP, NOT THE RAIL'S.
+
+              This called `railIcon`, which is the SIDEBAR's registry -- its
+              keys are module names (customers, quotations, payments). The
+              words a service carries are semantic (work, file, tag, money),
+              none of which are in it, so `railIcon` returned null and every
+              service card on every generated website drew an empty pale
+              square where its icon should be. Three of them per page, on the
+              first screen a stranger sees. The founder called the result 很丑
+              and he was looking straight at this.
+
+              `icon()` from trade-blocks.tsx is the registry these words belong
+              to, and it falls back to a real glyph rather than to nothing --
+              which is the property that would have prevented this.
+            */}
+            {(() => {
+              const Glyph = tradeIcon(f.icon)
+              return (
+                <span
+                  aria-hidden
+                  className="grid h-11 w-11 place-items-center [background:var(--color-primary-soft)] [border-radius:var(--radius-md)] text-[color:var(--color-primary)]"
+                >
+                  <Glyph className="h-5 w-5" />
+                </span>
+              )
+            })()}
             <h3 className="[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{f.label}</h3>
             <p className="[color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
               {f.value}
