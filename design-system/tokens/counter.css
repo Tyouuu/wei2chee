@@ -435,14 +435,10 @@
      could tell these styles apart. */
   --font-ui: var(--font-sans-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 
-  /* ── DISPLAY FACE ───────────────────────────────────────────────────
-     What headings are set in, when a register wants them set in something
-     else. Defaults to --font-ui, so this is inert here.
-
-     Added 2026-08-23 because type CONTRAST was the last flat axis: all
-     sixteen registers set a heading and a table cell in the same face.
-     rail-nav.tsx was already reading this token and finding nothing. */
-  --font-display: var(--font-ui);
+  /* 中台 takes the condensed face for headings for a different reason than
+     台账: density. A narrow heading leaves more of a crowded row for the row
+     itself, which is what a POS screen trades everything for. */
+  --font-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --fw-regular: 400;

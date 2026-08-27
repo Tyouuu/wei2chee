@@ -256,14 +256,11 @@
      a page that is ninety per cent Chinese. */
   --font-ui: var(--font-industrial-latin), var(--font-song-cjk), "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 
-  /* ── DISPLAY FACE ───────────────────────────────────────────────────
-     What headings are set in, when a register wants them set in something
-     else. Defaults to --font-ui, so this is inert here.
-
-     Added 2026-08-23 because type CONTRAST was the last flat axis: all
-     sixteen registers set a heading and a table cell in the same face.
-     rail-nav.tsx was already reading this token and finding nothing. */
-  --font-display: var(--font-ui);
+  /* 台账's headings are CONDENSED, and the reason is what this register is
+     for: a page that reads like a quotation, where a heading is a label on a
+     column of facts rather than a piece of writing. Archivo Narrow next to
+     Songti for the body is the pairing a printed invoice already has. */
+  --font-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* Heavier than the other two registers by design: ops software is read at a

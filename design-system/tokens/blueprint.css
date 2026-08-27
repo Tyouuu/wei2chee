@@ -434,14 +434,11 @@
      could tell these styles apart. */
   --font-ui: var(--font-sans-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 
-  /* ── DISPLAY FACE ───────────────────────────────────────────────────
-     What headings are set in, when a register wants them set in something
-     else. Defaults to --font-ui, so this is inert here.
-
-     Added 2026-08-23 because type CONTRAST was the last flat axis: all
-     sixteen registers set a heading and a table cell in the same face.
-     rail-nav.tsx was already reading this token and finding nothing. */
-  --font-display: var(--font-ui);
+  /* 图纸 is the neutral one, which is not the same as the plain one. A serif
+     heading over a sans body is the most ordinary editorial pairing there is
+     -- exactly the register's argument -- and it is the difference between
+     「no opinion」 and 「no design」. */
+  --font-display: var(--font-serif-latin), var(--font-song-cjk), Georgia, serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --fw-regular: 400;

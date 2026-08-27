@@ -403,14 +403,12 @@
   --font-ui: var(--font-swiss-latin), var(--font-hei-cjk), "PingFang SC",
     "Microsoft YaHei", system-ui, sans-serif;
 
-  /* ── DISPLAY FACE ───────────────────────────────────────────────────
-     What headings are set in, when a register wants them set in something
-     else. Defaults to --font-ui, so this is inert here.
-
-     Added 2026-08-23 because type CONTRAST was the last flat axis: all
-     sixteen registers set a heading and a table cell in the same face.
-     rail-nav.tsx was already reading this token and finding nothing. */
-  --font-display: var(--font-ui);
+  /* 瑞士 keeps ONE face on purpose, and this line says so out loud rather
+     than leaving it to look like an oversight. The whole argument of this
+     register is that a hairline and a measure are enough; a second typeface
+     is exactly the kind of decoration it refuses. What changes here is WEIGHT
+     and TRACKING, not family. */
+  --font-display: var(--font-swiss-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --fw-regular: 400;

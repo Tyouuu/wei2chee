@@ -300,14 +300,15 @@
      from. */
   --font-ui: var(--font-rounded-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 
-  /* ── DISPLAY FACE ───────────────────────────────────────────────────
-     What headings are set in, when a register wants them set in something
-     else. Defaults to --font-ui, so this is inert here.
-
-     Added 2026-08-23 because type CONTRAST was the last flat axis: all
-     sixteen registers set a heading and a table cell in the same face.
-     rail-nav.tsx was already reading this token and finding nothing. */
-  --font-display: var(--font-ui);
+  /* 满图's display face is a SERIF, and it is the one decision that makes
+     this register look like somebody designed it rather than filled it in.
+     A photograph of a finished kitchen with a rounded sans over it is an
+     advertisement; the same photograph with a serif over it is a portfolio.
+     Every one of the five real pages on lapa's contact sheet -- IRONHILL,
+     FLAVORS THAT STAY, Câphê, MARBLE, Healing Begins With The Breath -- sets
+     its display type in a serif over a photograph. Nunito stays for the body,
+     where warmth is right and a serif at 15px is not. */
+  --font-display: var(--font-serif-latin), var(--font-song-cjk), Georgia, serif;
   /* No mono anywhere in this register: a monospaced figure is a precision
      signal, and precision is Ledger's job, not this one's. */
   --font-numeric: var(--font-rounded-latin), "PingFang SC", system-ui, sans-serif;
