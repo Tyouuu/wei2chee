@@ -18,6 +18,9 @@ import { tradeLabel } from "@/lib/templates/industry-template";
 import type { PuckLayout } from "@/lib/portal/layout-ops";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { recordAiUsage } from "@/lib/portal/ai-usage";
+import { AI_MODEL, AI_REASONING_EFFORT } from "@/lib/portal/ai-model";
 import { checkRateLimit } from "@/lib/rate-limit";
 import chrome from "../../chrome.module.css";
 
@@ -119,6 +122,18 @@ const proseJsonSchema = (lang: "zh" | "en") =>
     },
   }) as const;
 
+/*
+  THE CALLER THE LEDGER NEVER KNEW ABOUT.
+
+  ai_usage was built for the two routes under app/api and this one was missed
+  -- it is a page, not a route, so nobody adding accounting went looking here.
+  It spends the founder's key at the same reasoning effort as the other two,
+  and until 2026-08-27 none of it appeared in 「这个功能花我多少钱」.
+
+  Its own surface rather than folded into 'analyze': this runs once per visit
+  to the specification, not once per customer, so a single total would hide
+  which of the three is actually expensive.
+*/
 async function writeProse(
   spec: SystemSpec,
   industryName: string,
@@ -133,13 +148,17 @@ async function writeProse(
    *  following the language of what it was shown. Naming one language while
    *  showing the other is a contradiction, not an instruction. */
   lang: "zh" | "en",
+  /* The caller already holds one for its rate-limit check; passed in rather
+     than created again so both writes travel on the same session. */
+  supabase: SupabaseClient,
 ): Promise<Prose | null> {
   if (!process.env.OPENAI_API_KEY) return null;
+  const startedAt = Date.now();
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.6-luna",
-      reasoning_effort: "high",
+      model: AI_MODEL,
+      reasoning_effort: AI_REASONING_EFFORT,
       messages: [
         {
           role: "system",
@@ -173,10 +192,22 @@ Hard rules:
       ],
       response_format: { type: "json_schema", json_schema: proseJsonSchema(lang) },
     });
+    /* Before the parse, because a reply that will not parse still cost the
+       money. Swallows its own errors -- see recordAiUsage. */
+    await recordAiUsage(supabase, "spec", AI_MODEL, completion.usage, {
+      tookMs: Date.now() - startedAt,
+    });
     return proseSchema.parse(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
   } catch (err) {
     // Logged, not surfaced: the document below is complete without this.
     console.error("spec prose generation failed", err);
+    /* A failure here is INVISIBLE to the customer -- the document renders
+       without the prose and reads as complete. That is right for them, and it
+       means nobody here finds out unless the row exists. */
+    await recordAiUsage(supabase, "spec", AI_MODEL, null, {
+      outcome: "failed",
+      tookMs: Date.now() - startedAt,
+    });
     return null;
   }
 }
@@ -274,7 +305,7 @@ export default async function SystemSpecPage({
     windowMs: 60 * 60 * 1000,
   });
   const prose = rate.allowed
-    ? await writeProse(spec, industryName, zh ? "zh" : "en")
+    ? await writeProse(spec, industryName, zh ? "zh" : "en", rateSupabase)
     : null;
 
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(

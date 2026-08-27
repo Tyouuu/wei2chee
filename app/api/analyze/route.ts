@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { recordAiUsage, type UsageShape } from "@/lib/portal/ai-usage";
+import { AI_MODEL, AI_REASONING_EFFORT } from "@/lib/portal/ai-model";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   analysisSchema,
@@ -162,8 +163,8 @@ export async function POST(req: NextRequest) {
     let usage: UsageShape = undefined;
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-5.6-luna",
-        reasoning_effort: "high",
+        model: AI_MODEL,
+        reasoning_effort: AI_REASONING_EFFORT,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
@@ -213,7 +214,7 @@ export async function POST(req: NextRequest) {
         drift, and so a reply that was billed and then failed to parse lands as
         ONE row carrying both facts: what it cost, and that it did not work.
       */
-      await recordAiUsage(supabase, "analyze", "gpt-5.6-luna", usage, {
+      await recordAiUsage(supabase, "analyze", AI_MODEL, usage, {
         outcome: parsed ? "ok" : "failed",
         tookMs: Date.now() - startedAt,
       });

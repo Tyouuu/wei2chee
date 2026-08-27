@@ -48,6 +48,10 @@
 import { readFileSync } from "node:fs";
 import OpenAI from "openai";
 import { analysisSchema, analysisJsonSchema } from "../lib/openai/analysis-schema.ts";
+/* The same constant the routes use. An eval pointed at a different model
+   than production prints a confident score for something no customer is
+   talking to -- the same reason SYSTEM_PROMPT is imported and not copied. */
+import { AI_MODEL, AI_REASONING_EFFORT } from "../lib/portal/ai-model.ts";
 
 const args = process.argv.slice(2);
 const N = Number(args[args.indexOf("--n") + 1]) || 3;
@@ -157,8 +161,8 @@ for (const c of CASES) {
   for (let i = 0; i < N; i++) {
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-5.6-luna",
-        reasoning_effort: "high",
+        model: AI_MODEL,
+        reasoning_effort: AI_REASONING_EFFORT,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: buildUserPrompt(c.industry, "zh", c.answers) },

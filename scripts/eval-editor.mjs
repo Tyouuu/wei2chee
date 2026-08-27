@@ -1100,6 +1100,11 @@ if (DRY) {
   process.exit(0);
 }
 
+/* The same constant the routes use -- an eval measuring a different model
+   than production prints a confident score for something nobody is talking
+   to. Same rule as importing SYSTEM_PROMPT rather than copying it. */
+const { AI_MODEL, AI_REASONING_EFFORT } = nodeRequire("../lib/portal/ai-model.ts");
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
@@ -1131,8 +1136,8 @@ async function once(ask, image, saved = false, history = [], page = null) {
   */
   const startedAt = Date.now();
   const completion = await openai.chat.completions.create({
-    model: "gpt-5.6-luna",
-    reasoning_effort: "high",
+    model: AI_MODEL,
+    reasoning_effort: AI_REASONING_EFFORT,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       {

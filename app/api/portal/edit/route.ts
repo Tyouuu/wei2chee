@@ -18,6 +18,7 @@ import { COLUMN_KINDS } from "@/lib/portal/table-model";
 import { buildDesignDoc, preferredVariants, STYLE_BRIEFS, darkPalettes } from "@/lib/portal/design-doc";
 import { renderBlockRules } from "@/lib/portal/block-rules";
 import { recordAiUsage } from "@/lib/portal/ai-usage";
+import { AI_MODEL, AI_REASONING_EFFORT } from "@/lib/portal/ai-model";
 import { PALETTE_ROWS } from "@/lib/portal/palettes.generated";
 import { LAYOUT_SETS } from "@/lib/templates/industry-template";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
@@ -521,8 +522,8 @@ The business owner asked:
   const startedAt = Date.now();
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.6-luna",
-      reasoning_effort: "high",
+      model: AI_MODEL,
+      reasoning_effort: AI_REASONING_EFFORT,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
@@ -549,7 +550,7 @@ The business owner asked:
       the money. Awaited and error-swallowing -- see recordAiUsage: accounting
       must never be the reason an edit fails in front of a customer.
     */
-    await recordAiUsage(supabase, "edit", "gpt-5.6-luna", completion.usage, {
+    await recordAiUsage(supabase, "edit", AI_MODEL, completion.usage, {
       tookMs: Date.now() - startedAt,
     });
     parsed = parseLayoutOps(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
@@ -568,7 +569,7 @@ The business owner asked:
       the reason an edit fails in front of a customer, and the 502 below is
       returned either way.
     */
-    await recordAiUsage(supabase, "edit", "gpt-5.6-luna", null, {
+    await recordAiUsage(supabase, "edit", AI_MODEL, null, {
       outcome: "failed",
       tookMs: Date.now() - startedAt,
     });

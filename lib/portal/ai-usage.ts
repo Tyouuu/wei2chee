@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { AI_MODEL } from "./ai-model";
 
 /**
  * What one model call cost, written down.
@@ -54,7 +55,11 @@ export type UsageShape = {
  */
 export async function recordAiUsage(
   supabase: SupabaseClient,
-  surface: "analyze" | "edit",
+  /* Kept in step with ai_usage_surface_check by hand, which is the one
+     hand-maintained list here -- the constraint is the authority and a
+     value missing from it is rejected by Postgres, loudly, at the only
+     moment it matters. */
+  surface: "analyze" | "edit" | "spec",
   model: string,
   usage: UsageShape,
   /**
@@ -114,5 +119,5 @@ export async function recordAiUsage(
   -- not a number to quote at anybody.
 */
 export const PRICE_PER_MTOK_USD_2026_08_27: Record<string, { in: number; out: number }> = {
-  "gpt-5.6-luna": { in: 1.25, out: 10 },
+  [AI_MODEL]: { in: 1.25, out: 10 },
 };

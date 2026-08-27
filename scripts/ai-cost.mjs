@@ -47,9 +47,20 @@ const SERVICE = env.SUPABASE_SERVICE_ROLE_KEY;
 const argv = process.argv.slice(2);
 const DAYS = Number(argv[argv.indexOf("--days") + 1]) || 30;
 
+/*
+  READ OUT OF THE SOURCE, NOT COPIED.
+
+  This script has no bundler and cannot import a .ts file, and a second copy of
+  the model name is exactly the drift this repo keeps paying for: the day
+  somebody changes the model, a copy here would silently price every call at
+  the old model's rate while printing a confident total.
+*/
+const AI_MODEL = readFileSync(new URL("../lib/portal/ai-model.ts", import.meta.url), "utf8")
+  .match(/export const AI_MODEL = "([^"]+)"/)[1];
+
 /* USD per million tokens, as of the date in the name. See the note above:
  * this is a stand-in to correct in one place, not a figure to quote. */
-const PRICE_2026_08_27 = { "gpt-5.6-luna": { in: 1.25, out: 10 } };
+const PRICE_2026_08_27 = { [AI_MODEL]: { in: 1.25, out: 10 } };
 const USD_TO_MYR_2026_08_27 = 4.2;
 
 const money = (usd) => `US$${usd.toFixed(2)} ≈ RM${(usd * USD_TO_MYR_2026_08_27).toFixed(2)}`;
@@ -210,7 +221,7 @@ AI 还在正常吗 — 最近 ${DAYS} 天`);
   console.log(`每个账号  ${money(totalUsd / accounts.size)}`);
   console.log("");
   console.log(
-    `⚠️ 价格是 2026-08-27 的（US$${PRICE_2026_08_27["gpt-5.6-luna"].in}/${PRICE_2026_08_27["gpt-5.6-luna"].out} 每百万 token，` +
+    `⚠️ 价格是 2026-08-27 的（US$${PRICE_2026_08_27[AI_MODEL].in}/${PRICE_2026_08_27[AI_MODEL].out} 每百万 token，` +
       `US$1 = RM${USD_TO_MYR_2026_08_27}）。token 数是真的，钱是算出来的 —— 对帐单请以 OpenAI 为准。`,
   );
   console.log("");
