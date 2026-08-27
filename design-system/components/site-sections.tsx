@@ -158,7 +158,7 @@ export function SiteFeatures({
               and broken on a dark one. Mixing from `--color-canvas` cannot
               break that way: the panel moves with the ground, so the ground's
               own text colour keeps working on it. */}
-          <ul className="[background:color-mix(in_oklab,var(--color-primary)_9%,var(--color-canvas))]">
+          <ul className="[background:var(--site-panel,color-mix(in_oklab,var(--color-primary)_9%,var(--color-canvas)))]">
             {items.map((f, i) => (
               <li
                 key={f.label}
@@ -946,7 +946,10 @@ export function SiteGallery({
             {heading}
           </h2>
         ) : null}
-        <ul className="grid [gap:calc(var(--gap-inline)*0.8)] @2xl:grid-cols-12">
+        {/* NO GAP. The reference's tiles touch: 「Recent Projects」 is one field of
+            photographs, and a gutter between them turns a portfolio back into a
+            grid of thumbnails. */}
+        <ul className="grid [gap:0] @2xl:grid-cols-12">
           {shots.map((s2, i) => (
             <li key={i} className={SPAN[i % 6]}>
               {s2.src ? (
@@ -1672,7 +1675,7 @@ export function SiteWoven({
         {heading ? (
           <h2 className="ds-display mb-6 [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
         ) : null}
-        <ul className="grid overflow-hidden [background:color-mix(in_oklab,var(--color-primary)_9%,var(--color-canvas))] [border-radius:var(--radius-lg)] @2xl:grid-cols-4">
+        <ul className="grid overflow-hidden [background:var(--site-panel,color-mix(in_oklab,var(--color-primary)_9%,var(--color-canvas)))] [border-radius:var(--radius-lg)] @2xl:grid-cols-4">
           {marks.map((m, i) => (
             <li
               key={m.label}

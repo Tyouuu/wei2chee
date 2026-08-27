@@ -651,6 +651,18 @@
 .ds-display {
   font-family: var(--font-display, var(--font-ui));
 }
+/* 官网自己的标题字 —— the TYPE axis of 重点 7i.
+
+   台账's system pages are set in Archivo Narrow, which is right for a table of
+   forty rows. The page it clones sets its name in a light serif, and a
+   condensed grotesk in that slot is a different design however well the
+   sections line up. A register that says nothing keeps one face everywhere. */
+.ds-site .ds-display,
+.ds-site h1,
+.ds-site h2,
+.ds-site h3 {
+  font-family: var(--site-display, var(--font-display, var(--font-ui)));
+}
 
 /* ── PAPER ───────────────────────────────────────────────────────────────────
 
@@ -1378,16 +1390,49 @@
    coloured page -- ten mature landing pages carry chroma 0.000 on their
    ground. Cards sit one step above it, which is what makes a dark page read as
    layered rather than as a hole. */
+/* ── 官网自己的地 ──────────────────────────────────────────────────────────
+
+   The dark ground started as 「the register's own navigation colour」, and that
+   was right while every register's website was a recolouring of one skeleton.
+   It stopped being right the day we started cloning a whole template: the
+   founder, on 台账 beside Wix `wh-newel`, 「颜色也不同… 我只要你直接clone设计
+   罢了」.
+
+   Sampled off the reference at 1440px, every 5th pixel on eleven rows: their
+   entire page is TWO browns -- #45372a for the ground (10062 of the samples,
+   more than every other colour on the page combined) and #2c200a for the
+   inset panels. Ours was 台账's navigation navy, and against theirs it reads
+   cold.
+
+   So a register may now state the ground its WEBSITE opens on, separately from
+   the one its system pages wear. 台账's工作台 stays navy; its website is brown.
+   Registers that say nothing keep the old behaviour exactly. */
 .ds-ground[data-ground="ink"] {
-  --ink-bg: color-mix(in oklab, var(--color-nav-bg) 32%, #101215);
-  --ink-fg: var(--color-nav-fg);
-  --ink-fg-dim: var(--color-nav-fg-dim);
+  --ink-bg: var(--site-ink-bg, color-mix(in oklab, var(--color-nav-bg) 32%, #101215));
+  --ink-fg: var(--site-ink-fg, var(--color-nav-fg));
+  --ink-fg-dim: var(--site-ink-fg-dim, var(--color-nav-fg-dim));
   background-color: var(--ink-bg);
 }
 /* BOTH SHAPES. On the published page StyleScope is the ground and `.ds-site`
    is a child of it; in the editor CanvasGutter carries BOTH classes on one
    element. No cycle either way: the capture above only reads --color-nav-*,
    and nothing below rewrites those. */
+/* 顶栏跟页脚 wear the page's own ground, not a second dark one.
+
+   They carry `--color-nav-*` because on every other page that IS the register's
+   dark. On a website whose ground is already the register's dark, a foot in a
+   DIFFERENT dark reads as a second website glued to the bottom -- measured on
+   台账 against its reference: the page was #45372a and the foot #15273d, which
+   is the one navy rectangle left on an otherwise brown page. Theirs is the
+   same brown as everything above it. */
+.ds-ground[data-ground="ink"] [data-chrome-foot],
+.ds-ground[data-ground="ink"] [data-chrome-top] {
+  --color-nav-bg: var(--ink-bg);
+  --color-nav-fg: var(--ink-fg);
+  --color-nav-fg-dim: var(--ink-fg-dim);
+  --color-nav-border: color-mix(in oklab, var(--ink-fg) 16%, transparent);
+}
+
 .ds-ground[data-ground="ink"] .ds-site,
 .ds-ground[data-ground="ink"].ds-site {
   --color-canvas: var(--ink-bg);
@@ -1405,6 +1450,10 @@
   --border-strong: color-mix(in oklab, var(--ink-fg) 24%, transparent);
   --card: color-mix(in oklab, var(--ink-bg) 86%, var(--ink-fg));
   --background: color-mix(in oklab, var(--ink-bg) 86%, var(--ink-fg));
+  /* 内嵌面板 —— darker than the ground on 台账's reference (#2c200a against
+     #45372a), lighter on a register that says nothing. Read by 清单配照片,
+     一条四格 and 三个方框. */
+  --site-panel: var(--site-ink-panel, color-mix(in oklab, var(--ink-fg) 7%, var(--ink-bg)));
   --color-table-bg: transparent;
   --color-table-head-bg: color-mix(in oklab, var(--ink-bg) 80%, var(--ink-fg));
   --color-table-head-fg: var(--ink-fg-dim);

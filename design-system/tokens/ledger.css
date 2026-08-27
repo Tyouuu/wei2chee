@@ -279,6 +279,25 @@
      column of facts rather than a piece of writing. Archivo Narrow next to
      Songti for the body is the pairing a printed invoice already has. */
   --font-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
+  /* ── 官网开场的地 —— CLONED, AND MEASURED RATHER THAN EYEBALLED ───────────
+
+     Sampled off Wix `wh-newel` at 1440px, every 5th pixel across eleven rows.
+     Their whole page is two browns and nothing else:
+
+         #45372a   the ground        10062 samples — more than all others summed
+         #2c200a   the inset panels   2438
+         #efe9df   the type
+
+     台账's SYSTEM pages keep their navy; only the website opens on this. See
+     `--site-ink-bg` in app/globals.css for why the two are separate. */
+  --site-ink-bg: #45372a;
+  --site-ink-fg: #f0eae0;
+  --site-ink-fg-dim: color-mix(in oklab, #f0eae0 62%, transparent);
+  --site-ink-panel: #2c200a;
+  /* 字体 —— the TYPE axis. Their name and every section heading are a light
+     serif; 台账's工作台 keeps its condensed grotesk for the tables. */
+  --site-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
+
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* Heavier than the other two registers by design: ops software is read at a
@@ -500,6 +519,7 @@ body {
     0 0 0 2px var(--color-ink-900),
     0 0 0 4px var(--color-primary);
   border-radius: var(--radius-control);
+
 }
 
 /* Attribution: Ledger token set derived from vibe-dealer by Tyouuu — generalized

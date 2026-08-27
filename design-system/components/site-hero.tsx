@@ -77,7 +77,7 @@ export function SiteHero({
    *   plain   headline and one button. A name card.
    *   split   the words on the left and a FIGURE on the right. See below.
    */
-  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate"
+  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre"
   /**
    * WHAT GOES ON THE RIGHT, AND WHY THERE IS NOW A RIGHT AT ALL.
    *
@@ -463,6 +463,49 @@ export function SiteHero({
     are now copied from two different templates rather than being one shape
     twice.
   */
+  if (layout === "plate-centre" && hasPhoto) {
+    /*
+      ── 满图置中名牌 ──────────────────────────────────────────────────────
+
+      The first screen of the page 台账 clones (Wix `wh-newel`): a full-bleed
+      photograph of the building, the company name CENTRED over it in a light
+      serif across three lines, one quiet tagline under it, and NOTHING ELSE.
+      No buttons, no figure strip, no eyebrow.
+
+      Ours in the same slot was a left-aligned grotesk headline with two
+      buttons and a row of three figures. Every one of those is defensible on
+      its own -- 15 of the 19 Malaysian trade sites measured on 08-27 put
+      WhatsApp on the first screen -- but together they are a different design,
+      and the founder's word for it was 差很多. A contractor selling a
+      RENOVATION is not selling a same-day callout: the first screen's job is
+      to look like work worth paying for, and the ask is three sections down.
+    */
+    return (
+      <section data-bleed="" data-photo-ground="" className="@container relative isolate">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={photo} alt={photoAlt || ""} className="absolute inset-0 -z-20 block size-full object-cover" />
+        <span
+          aria-hidden
+          className="absolute inset-0 -z-10 block"
+          style={{ background: "linear-gradient(to bottom, rgb(0 0 0 / 0.34), rgb(0 0 0 / 0.14) 45%, rgb(0 0 0 / 0.46))" }}
+        />
+        <div className="flex flex-col items-center justify-center text-center [min-block-size:clamp(26rem,76svh,46rem)] [padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]">
+          <h1
+            className="ds-display max-w-[16ch] [color:#fff] [font-weight:var(--fw-regular,400)] [letter-spacing:-0.01em] [line-height:1.06] [text-wrap:balance]"
+            style={{ fontSize: "clamp(2.6rem, 6.6vw, 5.2rem)" }}
+          >
+            {brand || headline}
+          </h1>
+          {sub ? (
+            <p className="mt-6 max-w-[44ch] [color:rgb(255_255_255_/_0.86)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+              {sub}
+            </p>
+          ) : null}
+        </div>
+      </section>
+    )
+  }
+
   if (layout === "name-plate" && hasPhoto) {
     /* THE SLOT TAKES THE TRADE'S OWN FACT, not the same fact everywhere.
 

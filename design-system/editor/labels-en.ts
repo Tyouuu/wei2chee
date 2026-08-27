@@ -464,6 +464,7 @@ export const LABELS_EN: Record<string, string> = {
   左标签右大字: "Label left, statement right",
   两个标题三张点卡: "Paired headings, dotted cards",
   怎么做: "How it works",
+  满图置中名牌: "Name centred on a full-bleed photo",
   照片织在点之间: "Photos woven among the points",
   一条四格: "Four across, one band",
   清单配照片: "Ruled list beside a photo",

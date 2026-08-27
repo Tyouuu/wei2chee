@@ -120,6 +120,9 @@ export const VARIANTS: Record<string, Variant[]> = {
        at all, a hairline across it, then a row of three underneath. The only
        layout where the name is the largest thing on the page. */
     { id: "name-plate", label: "名牌压满图", props: { layout: "name-plate" } },
+    /* 满图置中名牌 — the first screen 台账 clones: the name centred over the
+       photograph and nothing competing with it. */
+    { id: "plate-centre", label: "满图置中名牌", props: { layout: "plate-centre" } },
   ],
 
   /* 中段的「请他联络」. Three shapes because it had none: fourteen registers
