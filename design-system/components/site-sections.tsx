@@ -316,6 +316,8 @@ export function SiteCta({
   secondaryLabel,
   secondaryHref,
   shape = "band",
+  photo,
+  photoAlt,
 }: {
   heading: string
   note?: string
@@ -349,6 +351,9 @@ export function SiteCta({
    * look like it had been pasted in from a different website.
    */
   shape?: "band" | "panel" | "rule"
+  /** The panel shape's other half. Empty falls back to a tint of the ground. */
+  photo?: string
+  photoAlt?: string
 }) {
   const buttons = (onColour: boolean) =>
     primaryLabel || secondaryLabel ? (
@@ -429,6 +434,22 @@ export function SiteCta({
               of the colour, so the section reads as two materials meeting --
               which is the whole shape. It collapses away below @3xl, where a
               second empty column would just be a gap. */}
+          {photo?.trim() ? (
+            /* THE OTHER HALF IS A PHOTOGRAPH.
+
+               Founder, 2026-08-27: 「你要抄别人家的你就整套都抄」. Side by side with
+               the reference at full page, this was the last remaining difference
+               in the whole copied page: Wix sets its 「Serving Clients in Your
+               Area」 panel beside a picture of two clients, and ours sat beside
+               an empty tint. Four photographs against their nine, and this half
+               was one of the missing five. */
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={photo}
+              alt={photoAlt || ""}
+              className="hidden size-full object-cover @3xl:block"
+            />
+          ) : (
           <div
             aria-hidden
             /* A TINT OF THE GROUND, NOT THE GROUND. Rendered on 招牌 -- whose
@@ -439,6 +460,7 @@ export function SiteCta({
                material: not the block, not the page. */
             className="hidden [background-color:color-mix(in_oklab,var(--color-primary)_8%,var(--color-canvas))] [border:var(--hairline)_solid_var(--border-subtle)] [border-inline-start:0] @3xl:block"
           />
+          )}
         </div>
       </section>
     )
@@ -1288,6 +1310,126 @@ export function SiteBand({
           </p>
         </>
       ) : null}
+    </section>
+  )
+}
+
+
+/**
+ * 四点两栏，照片织在点之间。
+ *
+ * ── COPIED WHOLE, WHICH IS THE POINT ─────────────────────────────────────
+ *
+ * Founder, 2026-08-27: 「你要抄别人家的你就整套都抄」. He is right that grafting
+ * one section from Wix and one rhythm from Polar onto our own twelve-section
+ * page produces a chimera, and that a chimera is exactly why the colours and
+ * the rhythms had been fighting.
+ *
+ * So the whole of Wix's `Home Remodeling` page was broken into its sections
+ * (2026-08-27, measured in the browser):
+ *
+ *     772px  1img   hero: colour band + full-bleed photograph
+ *     582px  0img   「Our Expertise」 — a heading and three text items, NO images
+ *     455px  1img   a filled panel beside a photograph
+ *     479px  0img   「Our Specializations」 — heading, second heading, three cards
+ *     683px  1img   a full-bleed band
+ *    1068px  2img   「Why Choose Us?」 — THE BIGGEST SECTION ON THE PAGE
+ *     289px  3img   reviews, three across
+ *     365px  0img   footer
+ *
+ * Eight sections, 4742px, nine photographs. Ours ran eleven to thirteen
+ * sections — longer AND thinner.
+ *
+ * And the section we had nothing like is the largest one they have: four
+ * claims in two columns with PHOTOGRAPHS WOVEN AMONG THEM rather than
+ * quarantined into a gallery. That is the structural difference the whole day
+ * kept circling: their pictures live inside the argument, ours were locked in
+ * a room of their own.
+ */
+export function SiteWoven({
+  heading,
+  note,
+  points,
+  photos,
+  hint,
+}: {
+  heading?: string
+  note?: string
+  points?: { label: string; value?: string }[]
+  /** Two is the reference's number, and the shape is built for two. */
+  photos?: string[]
+  hint?: string
+}) {
+  const marks = (points ?? []).filter((p) => p.label?.trim())
+  const shots = (photos ?? []).filter((p) => p?.trim())
+
+  if (!marks.length) {
+    if (!hint) return null
+    return (
+      <section
+        data-prompt=""
+        className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
+      >
+        <p className="max-w-[56ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{hint}</p>
+      </section>
+    )
+  }
+
+  /* The reference interleaves: two claims, a picture, two claims, a picture.
+     Splitting the list rather than putting the pictures in a row is what makes
+     the section read as one argument instead of as a list followed by a
+     gallery. */
+  const half = Math.ceil(marks.length / 2)
+  const columns = [marks.slice(0, half), marks.slice(half)]
+
+  return (
+    <section className="@container" data-wide="">
+      {heading ? (
+        <div className="mb-10 max-w-[46ch]">
+          <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+          {note ? (
+            <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+              {note}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="grid [gap:calc(var(--gap-stack)*1.4)] @3xl:grid-cols-2">
+        {columns.map((col, ci) => (
+          <div key={ci} className="flex flex-col [gap:calc(var(--gap-stack)*1.1)]">
+            {col.map((m, i) => (
+              <div key={m.label}>
+                <p className="flex items-baseline [gap:var(--gap-inline)]">
+                  <span
+                    aria-hidden
+                    className="inline-block size-2 shrink-0 rounded-full [background:var(--color-primary)]"
+                  />
+                  <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                    {m.label}
+                  </span>
+                </p>
+                {m.value ? (
+                  <p className="ml-5 mt-1 max-w-[40ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                    {m.value}
+                  </p>
+                ) : null}
+                {/* THE PICTURE, INSIDE THE ARGUMENT. One per column, after its
+                    first claim, exactly where the reference puts them. */}
+                {i === 0 && shots[ci] ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={shots[ci]}
+                    alt=""
+                    className="mt-6 w-full object-cover [border-radius:var(--site-radius,var(--radius-lg))]"
+                    style={{ aspectRatio: ci === 0 ? "4 / 5" : "5 / 4", maxHeight: "26rem" }}
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </section>
   )
 }

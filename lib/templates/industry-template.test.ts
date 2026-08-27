@@ -241,6 +241,11 @@ describe("buildPageLayout", () => {
       "InfoRows",      // a price guide, never a price
       // A review has a rating, the words and a face -- not the dashboard's
       // 「title, description, action」 shelf row.
+      /* 四点两栏配照片, 2026-08-27 -- the largest section on Wix's Home
+         Remodeling page (1068px of 4742) and the one we had no equivalent
+         for: four claims in two columns with the photographs woven among
+         them. See SiteWoven. */
+      "SiteWoven",
       "SiteTestimonials",
       // The middle ask. No template had one; every reference does.
       // 别人给的证明 -- a licence, a brand, a review score. Taken from the one
@@ -291,7 +296,13 @@ describe("buildPageLayout", () => {
     const opensOn = (style: string) =>
       sectionsOf(style).find((id) => MOVABLE.some((k) => id === `website-${k}`));
     expect(opensOn("ledger")).toBe("website-prices");
-    expect(opensOn("hearth")).toBe("website-work");
+    /* 满图 opened on 作品墙 until 2026-08-27, when it was rebuilt to copy Wix's
+       Home Remodeling page END TO END rather than one section at a time. That
+       page has no gallery: its photographs live inside the argument, two of
+       them woven through 「Why Choose Us?」 and one full-bleed between
+       sections. So 满图 declines 作品墙 and opens on what it does — which is
+       the register genuinely differing, not the assertion drifting. */
+    expect(opensOn("hearth")).toBe("website-services");
   });
 
   // The arrow the whole page exists to draw. An enquiry has to say which of

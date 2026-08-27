@@ -366,6 +366,13 @@ const EN: LandingCopy = {
         quotes: [
           { text: "Came when they said they would, and the price did not move.", who: "A customer" },
           { text: "Explained what could wait and what could not. Saved us money.", who: "A customer" },
+          /* THREE, NOT TWO. Every reference in this market runs reviews three
+             across -- Wix's 装修 template, both Malaysian trade sites, and
+             tailark's testimonials/three which this block was read off. Two
+             quotes in a three-column grid leave a hole where the third should
+             be, and a hole in the reviews reads as 「only two people said
+             anything」. Still placeholders the owner replaces. */
+          { text: "Sent photos on WhatsApp and had a number back the same day.", who: "A customer" },
         ],
       },
       faq: {
@@ -593,6 +600,7 @@ const ZH: LandingCopy = {
         quotes: [
           { text: "讲几时来就几时来，价钱也没有变过。", who: "一位客人" },
           { text: "哪些要现在做、哪些可以等，讲得清楚，省了我们钱。", who: "一位客人" },
+          { text: "WhatsApp 传了照片过去，当天就有数目回来。", who: "一位客人" },
         ],
       },
       faq: {

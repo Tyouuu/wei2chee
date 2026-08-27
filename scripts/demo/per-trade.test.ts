@@ -52,6 +52,13 @@ function fill(nodes: any[], P: Record<string, string>) {
       n.props.items = [P.big, P.g1, P.g2, P.g3, P.g4].filter(Boolean).map((src) => ({ src, alt: "" }));
     }
     if (id === "website-band") { n.props.photo = P.strip; n.props.photoAlt = ""; }
+    /* 四点两栏 and 半块颜色 both take photographs and neither was being fed --
+       满图 declines the gallery, so on that register g1/g2/story had nowhere to
+       go and the page rendered four pictures against the reference's nine.
+       Wix's 装修 page puts one picture inside each column of 「Why Choose Us」
+       and one beside its mid-page panel; these are those three. */
+    if (id === "website-woven") { n.props.photos = [P.g1, P.g2].filter(Boolean); }
+    if (id === "website-cta") { n.props.photo = P.story; n.props.photoAlt = ""; }
     if (id === "website-story") { n.props.photo = P.story; n.props.photoAlt = ""; n.props.body = "The same team that quotes is the team that turns up, and we tell you what it costs before we start."; }
     for (const v of Object.values(n?.props ?? {})) if (Array.isArray(v)) fill(v as any[], P);
   }

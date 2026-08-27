@@ -376,3 +376,60 @@ describe("an empty list is not a list of placeholders", () => {
     expect(forPublication(layout).content).toHaveLength(0);
   });
 });
+/*
+  页脚 survives publication with its seeded rows stripped.
+
+  The founder, comparing our page with the one it copies: 「明显不一样」. Theirs
+  closed on a footer band; ours stopped dead after the form. The footer was in
+  the saved layout the whole time and the projection was deleting it, because
+  its only list is the three seeded contact rows.
+*/
+it("publishes the footer without its seeded rows", () => {
+  const out = forPublication({
+    root: {},
+    content: [
+      {
+        type: "SiteFoot",
+        props: {
+          id: "website-foot",
+          brand: "My Salon",
+          tagline: "Malaysia · Beauty & salon",
+          rows: [
+            { label: "WhatsApp", value: "012-345 6789", placeholder: true },
+            { label: "Address", value: "Taman Desa, Kuala Lumpur", placeholder: true },
+          ],
+        },
+      },
+    ],
+  } as never) as never as { content: { type: string; props: Record<string, unknown> }[] };
+
+  expect(out.content.map((n) => n.type)).toEqual(["SiteFoot"]);
+  expect(out.content[0].props.brand).toBe("My Salon");
+  /* The rows are the part that must not reach a stranger: neither number nor
+     address belongs to this business. */
+  expect(out.content[0].props.rows).toEqual([]);
+});
+
+/* And the rule stays narrow. A price list every row of which reads 「RM —」 is
+   NOT chrome: to a visitor that says 「this business will not tell you what it
+   costs」, and it must keep going even though it, too, has a real heading. */
+it("still drops an all-placeholder price list, heading and all", () => {
+  const out = forPublication({
+    root: {},
+    content: [
+      {
+        type: "SitePrices",
+        props: {
+          id: "website-prices",
+          heading: "What it costs",
+          rows: [
+            { label: "Cut", value: "RM —", placeholder: true },
+            { label: "Colour", value: "RM —", placeholder: true },
+          ],
+        },
+      },
+    ],
+  } as never) as never as { content: unknown[] };
+  expect(out.content).toEqual([]);
+});
+

@@ -88,6 +88,9 @@ export function SiteFoot({
   tagline,
   rows,
   note,
+  links,
+  askLabel,
+  askHref,
 }: {
   brand: ReactNode
   tagline?: string
@@ -99,8 +102,27 @@ export function SiteFoot({
    *  renovation contractor does not need one, and it is the only line on the
    *  page that would be about lawyers rather than about work. */
   note?: string
+  /*
+    THE PAGE'S OWN LINKS AGAIN, AND THE ASK ONE LAST TIME.
+
+    Measured 2026-08-27 against the page this register copies: their foot is
+    365px and carries a large 「About Services」 nav, a Contact button and two
+    columns of links. Ours was 66px -- a name on a strip -- because its three
+    seeded contact rows are stripped on publication and nothing else was ever
+    given to it. A visitor who reaches the bottom without pressing anything
+    meets a dead end.
+
+    Both of these are already true and already on the page, which is the only
+    reason they may be here: the links are the same sections the 顶栏 points at,
+    and the ask is the same WhatsApp the hero opens with. Nothing new is
+    claimed at the bottom of the page.
+  */
+  links?: { label: string; href: string }[]
+  askLabel?: string
+  askHref?: string
 }) {
   const filled = (rows ?? []).filter((r) => r.value?.trim())
+  const jumps = (links ?? []).filter((l) => l.label?.trim())
   return (
     /*
       THE FOOT WEARS THE REGISTER'S NAVIGATION COLOURS.
@@ -145,6 +167,30 @@ export function SiteFoot({
             <span className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">{tagline}</span>
           ) : null}
         </div>
+
+        {jumps.length || askHref ? (
+          <div className="flex flex-wrap items-center justify-between [gap:var(--gap-stack)]">
+            <nav className="flex flex-wrap [gap:calc(var(--gap-inline)*1.6)]">
+              {jumps.map((l) => (
+                <a
+                  key={l.href + l.label}
+                  href={l.href}
+                  className="ds-display [color:var(--color-nav-fg)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] hover:underline"
+                >
+                  {l.label}
+                </a>
+              ))}
+            </nav>
+            {askHref ? (
+              <a
+                href={askHref}
+                className="inline-flex items-center [background:var(--color-primary)] [border-radius:var(--radius-pill)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [padding:0.7rem_1.4rem]"
+              >
+                {askLabel}
+              </a>
+            ) : null}
+          </div>
+        ) : null}
 
         {filled.length ? (
           <dl className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">

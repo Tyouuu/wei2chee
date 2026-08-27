@@ -392,6 +392,20 @@ const team = (c: LandingContent) =>
    the bar and the hero, because its position is not an argument any register
    is having. */
 /* 一条满边的照片 —— ships empty, prompts in the editor, dropped on publish. */
+/* 四点两栏配照片 —— the reference's largest section. Ships with the promises
+   the trade already gives (the same four 保证 carries) and no photographs; the
+   owner's own go in through the picker. */
+const woven = (c: LandingContent) =>
+  node("SiteWoven", "website-woven", {
+    heading: c.words.sections.promiseList.heading,
+    note: "",
+    /* The same four commitments 保证 already carries. This section does not
+       invent a claim -- it gives the ones the trade already makes the shape
+       the reference gives them. */
+    points: c.words.sections.promiseList.marks.map((label) => ({ label, value: "" })),
+    photos: [],
+  });
+
 const band = (c: LandingContent) =>
   node("SiteBand", "website-band", {
     photo: "",
@@ -588,15 +602,24 @@ const bar = (c: LandingContent, links: { label: string; href: string }[]) => {
   });
 };
 
-const foot = (c: LandingContent) =>
-  node("SiteFoot", "website-foot", {
+const foot = (c: LandingContent, links: { label: string; href: string }[]) => {
+  const phone = c.contact.find((r) => r.icon === "phone");
+  return node("SiteFoot", "website-foot", {
     brand: c.brand,
     tagline: c.eyebrow,
+    /* THE SAME LINKS THE 顶栏 CARRIES and the same ask the hero opens with --
+       the identical arguments, so the bottom of the page can never point
+       somewhere the top does not. The reference closes on exactly this: a
+       large nav and one button. */
+    links,
+    askLabel: c.words.askShort,
+    askHref: phone && phone.placeholder !== true ? `tel:${phone.value}` : "#enquiry",
     // The same rows the contact section carries, and the same placeholder flag
     // -- a foot that prints 「WhatsApp 012-345 6789」 is the exact failure this
     // module was built to stop, one screen further down.
     rows: c.contact.map((r) => ({ label: r.label, value: r.value, placeholder: r.placeholder })),
   });
+};
 
 /*
   跟着页面走的 WhatsApp 按钮.
@@ -673,13 +696,14 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       reviews(c),
       creds(c),
       band(c),
+      woven(c),
       cta(c),
       areas(c),
       faq(c),
       promiseList(c),
       form(c, "quote", "card"),
       contact(c),
-      foot(c),
+      foot(c, anchors(c)),
       ...floating(c),
     ],
   },
@@ -705,12 +729,13 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       reviews(c),
       creds(c),
       band(c),
+      woven(c),
       cta(c),
       hours(c),
       faq(c),
       form(c, "booking", "split"),
       contact(c),
-      foot(c),
+      foot(c, anchors(c)),
       ...floating(c),
     ],
   },
@@ -737,10 +762,11 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       reviews(c),
       creds(c),
       band(c),
+      woven(c),
       cta(c),
       form(c, "order", "split"),
       contact(c, false),
-      foot(c),
+      foot(c, anchors(c)),
       ...floating(c),
     ],
   },
@@ -766,7 +792,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       faq(c),
       form(c, "wholesale", "card"),
       contact(c),
-      foot(c),
+      foot(c, anchors(c)),
       ...floating(c),
     ],
   },
@@ -790,12 +816,13 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       reviews(c),
       creds(c),
       band(c),
+      woven(c),
       cta(c),
       flow(c, sect(c, "portfolio").flow ?? "", "timeline"),
       faq(c),
       form(c, "portfolio", "plain"),
       contact(c, false),
-      foot(c),
+      foot(c, anchors(c)),
       ...floating(c),
     ],
   },
@@ -818,9 +845,10 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       reviews(c),
       creds(c),
       band(c),
+      woven(c),
       cta(c),
       contact(c),
-      foot(c),
+      foot(c, anchors(c)),
       ...floating(c),
     ],
   },

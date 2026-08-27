@@ -230,8 +230,35 @@ function withoutEmptyShots(node: PuckNode): PuckNode {
   return { ...node, props: { ...node.props, items: kept } };
 }
 
+/*
+  CHROME IS NOT A CLAIM, AND A PAGE HAS TO END.
+
+  Found 2026-08-27 by putting our page beside the one it copies: theirs closes
+  on a full-width footer band, ours simply stopped after the enquiry form, and
+  the founder's reply was 「明显不一样」. It was not a missing design. The footer
+  was BUILT, was in the saved layout, and was being deleted on the way out --
+  because its only list is the three seeded contact rows, so `isAllPlaceholder`
+  read 「every list on this node is a placeholder」 and dropped the whole block,
+  taking the business name and the closing rule with it.
+
+  This is the sibling of the `[].every` bug two commits above: that one deleted
+  a node for a list it did not have, this one deletes a node for the only list
+  it does have while its real content sits outside every list.
+
+  The distinction that decides it is NOT 「does anything else survive」 -- the
+  price list also has a heading, and a price list whose every row reads 「RM —」
+  must still go, because to a visitor that is not 「unfilled」, it is 「this
+  business will not tell you what it costs」. The distinction is what the block
+  IS: 页脚 is the page's end, the same furniture as 顶栏. It makes no claim about
+  the world. Its placeholder rows still go -- `withoutPlaceholders` runs first
+  and takes all three -- and what is left is the name, the tagline and the band,
+  every one of them true.
+*/
+const CHROME = ["SiteFoot", "SiteBar"];
+
 /** True when stripping placeholders emptied the only list this node had. */
 function isAllPlaceholder(node: PuckNode): boolean {
+  if (CHROME.includes(node.type)) return false;
   /* ONLY THE LISTS THAT HAVE SOMETHING IN THEM.
      `[].every(...)` is TRUE, so a block carrying one empty array was judged
      「every row in every list is a placeholder」 and deleted from the published

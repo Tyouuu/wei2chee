@@ -26,6 +26,7 @@ import {
   SiteStory,
   SiteStatement,
   SiteBand,
+  SiteWoven,
   SiteTeam,
 } from "@/design-system/components/site-sections";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
@@ -281,6 +282,13 @@ type Components = {
     ground?: "page" | "ink";
     points?: { label: string }[];
   };
+  SiteWoven: {
+    heading?: string;
+    note?: string;
+    points?: { label: string; value?: string }[];
+    photos?: string[];
+    hint?: string;
+  };
   SiteBand: {
     photo?: string;
     photoAlt?: string;
@@ -315,6 +323,8 @@ type Components = {
     secondaryLabel?: string;
     secondaryHref?: string;
       shape?: "band" | "panel" | "rule";
+    photo?: string;
+    photoAlt?: string;
 };
   SiteBar: {
     brand: string;
@@ -323,6 +333,9 @@ type Components = {
     actionHref?: string;
   };
   SiteFoot: {
+    links?: { label: string; href: string }[];
+    askLabel?: string;
+    askHref?: string;
     brand: string;
     tagline?: string;
     rows?: { label: string; value: string }[];
@@ -673,7 +686,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteBand", "SiteStatement", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteBand", "SiteWoven", "SiteStatement", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1885,6 +1898,29 @@ export const puckConfig: Config<Components> = {
       ),
     },
 
+    SiteWoven: {
+      label: "四点两栏配照片",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        note: { label: "小字", type: "textarea" },
+        hint: { label: "还没填的时候讲什么", type: "textarea" },
+        points: {
+          label: "四点",
+          type: "array",
+          arrayFields: {
+            label: { label: "一句话", type: "text" },
+            value: { label: "补充", type: "textarea" },
+          },
+          defaultItemProps: { label: "", value: "" },
+          getItemSummary: (item) => item.label || "还没填",
+        },
+      },
+      defaultProps: { points: [] },
+      render: ({ heading, note, points, photos, hint }) => (
+        <SiteWoven heading={heading} note={note} points={points} photos={photos} hint={hint} />
+      ),
+    },
+
     SiteBand: {
       label: "一条满边照片",
       fields: {
@@ -2051,9 +2087,18 @@ export const puckConfig: Config<Components> = {
         primaryHref: { label: "主要按钮去哪", type: "text" },
         secondaryLabel: { label: "第二颗按钮", type: "text" },
         secondaryHref: { label: "第二颗按钮去哪", type: "text" },
+        /* 半块颜色 puts a photograph in its other half -- Wix's Home Remodeling
+           page sets its mid-page panel beside a picture of two clients. Left
+           empty the half falls back to a tint of the ground. */
+        photo: {
+          label: "旁边那张照片",
+          type: "custom",
+          render: ({ value, onChange }) => <PhotoField value={value as string} onChange={onChange} />,
+        },
+        photoAlt: { label: "照片说明（给看不到的人）", type: "text" },
       },
       defaultProps: { heading: "要不要先问个价？" },
-      render: ({ heading, note, primaryLabel, primaryHref, secondaryLabel, secondaryHref, shape }) => (
+      render: ({ heading, note, primaryLabel, primaryHref, secondaryLabel, secondaryHref, shape, photo, photoAlt }) => (
         <SiteCta
           heading={heading}
           note={note}
@@ -2062,6 +2107,8 @@ export const puckConfig: Config<Components> = {
           secondaryLabel={secondaryLabel}
           secondaryHref={secondaryHref}
           shape={shape}
+          photo={photo}
+          photoAlt={photoAlt}
         />
       ),
     },
@@ -2109,10 +2156,30 @@ export const puckConfig: Config<Components> = {
           getItemSummary: (item) => item.label || "一项",
         },
         note: { label: "最底下那一句", type: "text" },
+        links: {
+          label: "底下的导航",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            href: { label: "去哪", type: "text" },
+          },
+          defaultItemProps: { label: "", href: "#" },
+          getItemSummary: (item) => item.label || "一项",
+        },
+        askLabel: { label: "按钮上的字", type: "text" },
+        askHref: { label: "按钮去哪", type: "text" },
       },
       defaultProps: { brand: "我的公司" },
-      render: ({ brand, tagline, rows, note }) => (
-        <SiteFoot brand={brand} tagline={tagline} rows={rows} note={note} />
+      render: ({ brand, tagline, rows, note, links, askLabel, askHref }) => (
+        <SiteFoot
+          brand={brand}
+          tagline={tagline}
+          rows={rows}
+          note={note}
+          links={links}
+          askLabel={askLabel}
+          askHref={askHref}
+        />
       ),
     },
 

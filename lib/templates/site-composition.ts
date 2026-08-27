@@ -81,6 +81,11 @@ export const MOVABLE = [
      radius. A page whose pictures are all objects in a column reads as a
      document about a place. */
   "band",
+  /* 四点两栏配照片, 2026-08-27. The largest section on Wix's Home Remodeling
+     page (1068px of 4742) and the one we had no equivalent for: four claims in
+     two columns with the PHOTOGRAPHS WOVEN AMONG THEM. Ours were quarantined
+     into a gallery. See SiteWoven. */
+  "woven",
 ] as const;
 
 export type SiteSection = (typeof MOVABLE)[number];
@@ -255,15 +260,44 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     measure: "wide",
     hero: "left",
     opens: "价目表",
-    order: ["prices", "creds", "services", "flow", "work", "story", "promise", "areas", "faq", "reviews", "team", "hours", "band", "cta"],
+    order: ["prices", "creds", "services", "flow", "work", "story", "promise", "areas", "faq", "woven", "reviews", "team", "hours", "band", "cta"],
   },
   // 炉: the salon, where the front desk IS the shop. What a stranger buys is
   // the look of the last customer who walked out, so the photographs lead and
   // the reviews come straight after them.
   hearth: {
+    /* ── COPIED WHOLE ─────────────────────────────────────────────────────
+
+       Founder, 2026-08-27: 「你要抄别人家的你就整套都抄」「抄完一个才抄另外一套」.
+       Grafting one hero from Wix and one section rhythm from Polar onto our own
+       thirteen-section page produced a chimera, and the chimera is why the
+       colours and the rhythms kept fighting.
+
+       Wix's `Home Remodeling Company (Professional)` page, measured in the
+       browser on 2026-08-27:
+
+           772px  1img   colour band + full-bleed photograph
+           582px  0img   「Our Expertise」 — heading and three text items
+           455px  1img   a filled panel beside a photograph
+           479px  0img   「Our Specializations」 — heading and three cards
+           683px  1img   a full-bleed band
+          1068px  2img   「Why Choose Us?」 — the biggest section on the page
+           289px  3img   reviews, three across
+           365px  0img   footer
+
+       Eight sections, 4742px, nine photographs. Ours ran to thirteen — longer
+       and thinner at the same time.
+
+       So 满图 now carries SIX movable sections against their six, in their
+       order, and declines the other ten. It has no gallery, because THEY have
+       no gallery: their photographs live inside the argument. That is the
+       structural difference this whole day kept circling.
+
+       This is one register copied end to end. The other five keep their own
+       skeletons until each is done in turn. */
   /* 照片墙 carries this register, so the two sections that are lists of
      words go. A portfolio does not print its own terms and conditions. */
-    omit: ["promise", "faq"],
+    omit: ["work", "story", "team", "prices", "flow", "faq", "promise", "areas", "hours", "creds"],
     tones: { story: "tint", reviews: "paper" },
     /* THE ONLY REGISTER THAT OPENS ON A PHOTOGRAPH AS ITS GROUND, and one is
        the right number.
@@ -280,7 +314,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        bigger has the `hero` axis, which is per-page and free. */
     hero: "band-bleed",
     opens: "照片墙",
-    order: ["work", "story", "team", "reviews", "creds", "services", "hours", "prices", "areas", "band", "cta", "faq", "flow", "promise"],
+    order: ["services", "cta", "band", "woven", "reviews", "creds", "hours", "areas", "work", "story", "team", "prices", "flow", "faq", "promise"],
   },
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.
@@ -294,7 +328,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     pattern: "grid",
     hero: "stage",
     opens: "做什么",
-    order: ["services", "work", "story", "team", "flow", "prices", "reviews", "creds", "band", "cta", "faq", "areas", "promise", "hours"],
+    order: ["services", "work", "story", "team", "flow", "prices", "woven", "reviews", "creds", "band", "cta", "faq", "areas", "promise", "hours"],
   },
   // 中台: the wholesaler's register, the densest in the library. Its buyer is
   // another business, and a business asks for terms before it asks for a look:
@@ -309,7 +343,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     ground: "ink",
     hero: "plain",
     opens: "条件",
-    order: ["prices", "promise", "creds", "areas", "services", "story", "flow", "faq", "work", "reviews", "team", "band", "cta", "hours"],
+    order: ["prices", "promise", "creds", "areas", "services", "story", "flow", "faq", "work", "woven", "reviews", "team", "band", "cta", "hours"],
   },
   // 瑞士: black, white, one red, no cards. It is the register that prints, and
   // a page that reads like a document leads with words -- what we do, how it
@@ -328,7 +362,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        lapa's real-business pages set that sentence LEFT under a rule rather
        than centred -- FLAVORS THAT STAY and Câphê both. */
     opens: "一句话",
-    order: ["services", "story", "team", "flow", "promise", "creds", "faq", "prices", "areas", "reviews", "work", "band", "cta", "hours"],
+    order: ["services", "story", "team", "flow", "promise", "creds", "faq", "prices", "areas", "woven", "reviews", "work", "band", "cta", "hours"],
   },
   // 招牌: shophouse retail with a physical sign outside. The centred hero IS a
   // signboard. Then the two things somebody standing on the street needs:
@@ -344,7 +378,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     ground: "ink",
     hero: "name-plate",
     opens: "店名 + 找得到",
-    order: ["hours", "areas", "services", "creds", "work", "story", "team", "prices", "reviews", "band", "cta", "faq", "flow", "promise"],
+    order: ["hours", "areas", "services", "creds", "work", "story", "team", "prices", "woven", "reviews", "band", "cta", "faq", "flow", "promise"],
   },
 };
 
