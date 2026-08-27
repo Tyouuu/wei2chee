@@ -99,7 +99,7 @@ export type SiteSkeleton = {
    * and deliberately not the only one: a library where fourteen registers all
    * open the same way is a library with one register in it.
    */
-  hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed";
+  hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate";
   /**
    * 一句话占一屏 —— whether the pitch gets a screen of its own, and in what
    * shape. Absent means it stays under the headline where it has always been.
@@ -342,7 +342,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     tones: { prices: "ink", promise: "paper", areas: "tint" },
     pattern: "diamond",
     ground: "ink",
-    hero: "center",
+    hero: "name-plate",
     opens: "店名 + 找得到",
     order: ["hours", "areas", "services", "creds", "work", "story", "team", "prices", "reviews", "band", "cta", "faq", "flow", "promise"],
   },

@@ -115,6 +115,11 @@ export const VARIANTS: Record<string, Variant[]> = {
        left and its one line right, then a photograph edge to edge underneath.
        Degrades to 左对齐 without a photo, like `split` and `bleed`. */
     { id: "band-bleed", label: "色带压满图", props: { layout: "band-bleed" } },
+    /* 名牌 — Wix's Law Firm opening, copied off the screenshot: the business
+       NAME set enormous over a full-bleed photograph with no headline sentence
+       at all, a hairline across it, then a row of three underneath. The only
+       layout where the name is the largest thing on the page. */
+    { id: "name-plate", label: "名牌压满图", props: { layout: "name-plate" } },
   ],
 
   /* 中段的「请他联络」. Three shapes because it had none: fourteen registers
@@ -130,6 +135,9 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "cards", label: "三张卡片", props: { shape: "cards" } },
     { id: "panel", label: "一整块色面", props: { shape: "panel" } },
     { id: "bands", label: "一条一条", props: { shape: "bands" } },
+    /* 左标签右大字 — the current wave's section rhythm, copied off Polar,
+       Linear, Vercel and Attio rather than off a 2023 template. */
+    { id: "stated", label: "左标签右大字", props: { shape: "stated" } },
   ],
 
   SiteCta: [

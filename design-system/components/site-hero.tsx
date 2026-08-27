@@ -33,6 +33,7 @@ import { SystemMini } from "./system-mini"
  */
 export function SiteHero({
   eyebrow,
+  brand,
   headline,
   sub,
   primaryLabel,
@@ -53,6 +54,10 @@ export function SiteHero({
 }: {
   /** Where and what, e.g. 「吉隆坡 · 住宅装修」. The line people search by. */
   eyebrow?: ReactNode
+  /** The business's own name. Only 名牌 prints it -- every other layout leaves
+   *  the name to the navigation bar, which is where it belongs unless the name
+   *  IS the first screen. */
+  brand?: string
   /** ReactNode, not string, so the editor can make it editable in place. */
   headline: ReactNode
   sub?: ReactNode
@@ -72,7 +77,7 @@ export function SiteHero({
    *   plain   headline and one button. A name card.
    *   split   the words on the left and a FIGURE on the right. See below.
    */
-  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed"
+  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate"
   /**
    * WHAT GOES ON THE RIGHT, AND WHY THERE IS NOW A RIGHT AT ALL.
    *
@@ -276,6 +281,37 @@ export function SiteHero({
   const centred = layout === "center"
   const band = layout === "band"
   const plain = layout === "plain"
+
+  /*
+    ── 标题两个色调 ────────────────────────────────────────────────────────
+
+    Founder, 2026-08-27: 「我不要抄这些比较旧的 给我抄新一点的」. The Wix templates
+    are a 2023 house style; this is the current wave, shot the same day
+    (.screenshots/saas/current.jpg — Linear, Lovable, Framer, Attio, Polar,
+    Vercel).
+
+    Three of the six open on a headline in TWO TONES: the first line solid, the
+    rest dimmed.
+
+      Polar    「Meet Polar」 solid · 「The billing stack for the intelligence
+               era」 dimmed
+      Vercel   「Agentic」 solid · 「Infrastructure」 dimmed
+      Attio    the same move on its second line
+
+    It costs one split and it is the cheapest thing on this list that reads as
+    2026 rather than 2023: the headline stops being one block of type and
+    becomes a sentence with a subject and a predicate.
+
+    Split on the first line break the copy already has, so nothing new is
+    written and a headline with no break simply stays solid.
+  */
+  const headlineParts = (() => {
+    const t = typeof headline === "string" ? headline.trim() : ""
+    if (!t) return null
+    const i = t.search(/[\n]|(?<=\S)\s+(?=(in|for|that|with|across|to)\b)/i)
+    if (i < 0) return null
+    return [t.slice(0, i).trim(), t.slice(i).trim()]
+  })()
   /* A PLAIN OPENING IS NOT A REASON TO BIN THE PHOTOGRAPH.
 
      Measured on the live page, 2026-08-27: 瑞士 and 中台 open on `plain`, both
@@ -403,6 +439,101 @@ export function SiteHero({
     the page, directly under the photograph, where a reader arrives having
     already seen what the business looks like.
   */
+  /*
+    ── 名牌 ────────────────────────────────────────────────────────────────
+
+    A second direct copy, and deliberately from a DIFFERENT template than 满图
+    took. Founder, 2026-08-27: 「我要每一套都是尽量的不同…你做不出的话 就直接抄
+    别人的模版」.
+
+    This is Wix's `Law Firm (Business)` opening, read off
+    .screenshots/stores/law-top.jpg:
+
+      1. a full-bleed photograph, and the BUSINESS NAME set enormous over it in
+         the display face — two lines, left, white. There is no headline
+         sentence at all: the name IS the first screen.
+      2. a hairline all the way across the photograph
+      3. under the rule, still on the photograph, a row of three: a small
+         monospace fact on the left, one line of display type in the middle, a
+         button on the right.
+
+    It goes to 招牌 because that register's thesis has always been 「the name is
+    readable from the street」, and this is the only layout in the library where
+    the name is the largest thing on the page. 满图 keeps 色带压满图; the two
+    are now copied from two different templates rather than being one shape
+    twice.
+  */
+  if (layout === "name-plate" && hasPhoto) {
+    /* THE SLOT TAKES THE TRADE'S OWN FACT, not the same fact everywhere.
+
+       Founder, 2026-08-27: 「你要想办法融入进去行业里面」. Copying a shape is half
+       the job; the other half is what goes in it. The law-firm template puts
+       「Founded in 1992」 here because that is what a firm's clients weigh. A
+       SHOP is judged on whether it is open — 7 of the 19 trading Malaysian SME
+       sites measured on 2026-08-27 run a top strip carrying exactly that — so
+       when the page has opening hours, they win the slot. */
+    const fact =
+      strip?.trim()
+        ? { value: strip.trim(), label: "" }
+        : proof && proof.length > 0
+          ? proof[0]
+          : undefined
+    return (
+      <section data-bleed="" data-photo-ground="" className="@container relative isolate">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photo}
+          alt={photoAlt || ""}
+          className="absolute inset-0 -z-20 block size-full object-cover"
+        />
+        <span
+          aria-hidden
+          className="absolute inset-0 -z-10 block"
+          style={{ background: "linear-gradient(to top, rgb(0 0 0 / 0.62), rgb(0 0 0 / 0.20) 55%, rgb(0 0 0 / 0.34))" }}
+        />
+
+        <div className="flex flex-col justify-end [min-block-size:clamp(26rem,74svh,44rem)] [padding-inline:var(--pad-card-lg)] [padding-block:calc(var(--pad-card-lg)*1.4)]">
+          <div className="mx-auto w-full max-w-[80rem]">
+            {/* THE NAME, AND NOTHING COMPETING WITH IT. */}
+            <p
+              className="ds-display [color:#fff] [font-weight:var(--fw-semibold)] [letter-spacing:-0.02em] [line-height:0.9] [text-wrap:balance]"
+              style={{ fontSize: "clamp(2.8rem, 8.4vw, 6.6rem)" }}
+            >
+              {brand || headline}
+            </p>
+
+            <hr className="mt-8 border-0 [background:rgb(255_255_255_/_0.42)] [block-size:1px]" />
+
+            <div className="mt-6 grid items-center [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,auto)_minmax(0,1fr)_minmax(0,auto)]">
+              {fact ? (
+                <p className="[color:rgb(255_255_255_/_0.82)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]">
+                  {fact.label ? `${fact.value} · ${fact.label}` : fact.value}
+                </p>
+              ) : <span />}
+              {sub ? (
+                <p
+                  className="ds-display max-w-[26ch] [color:#fff] [font-weight:var(--fw-medium)] [line-height:1.15] @3xl:justify-self-center @3xl:text-center"
+                  style={{ fontSize: "clamp(1.1rem, 2.2vw, 1.75rem)" }}
+                >
+                  {sub}
+                </p>
+              ) : <span />}
+              {primaryLabel ? (
+                <a
+                  href={primaryHref || "#"}
+                  className="inline-flex min-h-12 items-center gap-3 [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.8)] @3xl:justify-self-end"
+                >
+                  {primaryLabel}
+                  <span aria-hidden>&rarr;</span>
+                </a>
+              ) : <span />}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   if (layout === "band-bleed" && hasPhoto) {
     return (
       <section data-bleed="" data-photo-ground="" className="@container">
@@ -414,7 +545,16 @@ export function SiteHero({
               className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-bold,700)] [letter-spacing:-0.03em] [line-height:0.94] [text-wrap:balance]"
               style={{ fontSize: "clamp(2.6rem, 6.6vw, 5.2rem)" }}
             >
-              {headline}
+              {headlineParts ? (
+                <>
+                  {headlineParts[0]}{" "}
+                  {/* The dimmed half. See `headlineParts` for the six sites
+                      this is copied from. */}
+                  <span className="[color:var(--color-paper-dim)]">{headlineParts[1]}</span>
+                </>
+              ) : (
+                headline
+              )}
             </h1>
             {sub ? (
               <p className="max-w-[34ch] [color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)] @3xl:mt-2">

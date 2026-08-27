@@ -67,7 +67,7 @@ export function SiteFeatures({
    * So a register may now say what a service looks like, and the three
    * answers are genuinely different objects rather than one object restyled.
    */
-  shape?: "cards" | "panel" | "bands"
+  shape?: "cards" | "panel" | "bands" | "stated"
 }) {
   if (!items?.length) return null
 
@@ -110,6 +110,53 @@ export function SiteFeatures({
                 {f.label}
               </span>
               <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                {f.value}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  if (shape === "stated") {
+    /*
+      ── 左标签 · 右大字 ──────────────────────────────────────────────────
+
+      Copied off the current wave rather than off a template house style —
+      founder, 2026-08-27: 「我不要抄这些比较旧的 给我抄新一点的」. Shot the same
+      day (.screenshots/saas/current.jpg): Polar runs this shape FOUR TIMES
+      down its page, and Linear, Vercel and Attio all use it.
+
+        left    a short quiet label, sometimes two words: 「Platform」,
+                「Meter everything」, 「Sell globally」, 「Intake and
+                integrations」
+        right   the sentence at display size, and its second half DIMMED —
+                「Every token becomes revenue」 solid, 「the moment your model
+                streams it」 dimmed.
+
+      It is the section shape that reads as 2026, and it needs no photograph,
+      no card and no icon: a label, a sentence, and a rule. Which is why it
+      belongs to 瑞士, the register that refuses every other decoration.
+    */
+    return (
+      <section className="@container">
+        {title}
+        <ul>
+          {items.map((f) => (
+            <li
+              key={f.label}
+              className="grid [border-top:var(--hairline)_solid_var(--border-subtle)] [gap:.5rem_calc(var(--gap-stack)*1.4)] [padding-block:calc(var(--pad-card-lg)*1.15)] @3xl:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]"
+            >
+              <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]">
+                {f.label}
+              </span>
+              <span
+                className="ds-display max-w-[30ch] [color:var(--color-paper)] [font-weight:var(--fw-medium)] [line-height:1.22]"
+                style={{ fontSize: "clamp(1.25rem, 2.5vw, 1.9rem)" }}
+              >
+                {/* The dimmed continuation, which is the half that makes the
+                    shape read as current rather than as a definition list. */}
                 {f.value}
               </span>
             </li>

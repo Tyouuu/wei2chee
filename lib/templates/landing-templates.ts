@@ -177,6 +177,7 @@ const hero = (
   node("SiteHero", "website-hero", {
     layout,
     eyebrow: c.eyebrow,
+    brand: c.brand,
     headline: c.headline,
     sub: c.pitch,
     /*
