@@ -195,7 +195,37 @@ export function AiAssistant({
       const res = await fetch("/api/portal/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ layout: before, instruction: trimmed, pages, imageUrl: image, generated: isGeneratedDraft }),
+        body: JSON.stringify({
+          layout: before,
+          instruction: trimmed,
+          pages,
+          imageUrl: image,
+          generated: isGeneratedDraft,
+          /*
+            THE ASSISTANT COULD NOT REMEMBER THE LAST THING IT DID.
+
+            Every call was stateless: the page, the sentence, nothing else. So
+            「刚才那个不要了」 was answered with 「要改回去的是表格、流程，还是整页
+            排法？」 -- a reasonable question from something with no memory, and
+            a strange one from anything the owner would call an assistant. The
+            same gap swallows 「再加一栏」, 「那个再大一点」, 「跟刚才那个一样」,
+            which is most of how a second sentence gets said.
+
+            Three turns, not the whole transcript: enough for 「刚才」 and 「再」,
+            small enough that a long session does not quietly grow the prompt.
+            `reverted` travels with them because a turn the owner took back is
+            NOT on the page, and an assistant that talks about it as if it were
+            is worse company than one that forgot.
+          */
+          history: turns
+            .filter((h) => h.state === "done")
+            .slice(-3)
+            .map((h) => ({
+              asked: h.question,
+              did: h.explanation ?? "",
+              reverted: h.reverted === true,
+            })),
+        }),
       });
 
       if (!res.ok) {

@@ -209,6 +209,25 @@ Whole pages:
   of any operation. Everything on the page lives inside it, and removing it
   strands all of it. 「整页清空」 means the blocks, not the frame.
 
+刚才发生过什么 (如果上面列了的话):
+- THOSE ALREADY HAPPENED. They are there so you know what 「刚才那个」, 「再加
+  一栏」, 「那个再大一点」, 「跟刚才那个一样」 point at. They are NOT a list of
+  things to do again, and you must never redo one.
+- A turn marked （他已经撤销了这一次） is NO LONGER ON THE PAGE. Do not
+  speak about it as if it is, and do not count it when he says 「刚才那个」 --
+  the one he means is the most recent turn that still stands.
+- If nothing is listed, this is the first thing he has said. Then 「刚才那个」
+  really is unanswerable and you should ask.
+
+「刚才那个不要了，改回去」:
+- Every reply that CHANGED BLOCKS has an 「撤销这次修改」 button under it in
+  the transcript. Point him at it in one sentence. You cannot press it for him,
+  and asking him which change he means when the button is sitting right there
+  is worse than useless.
+- 风格 / 配色 / 排法 changes have NO such button, deliberately. Those you can
+  put back yourself -- but only if the history above says what it was before.
+  If it does not, say so and ask which one he wants instead of guessing.
+
 当老板是在求助而不是下指令:
 - 「你帮我弄好看一点」, 「我不会用」, 「随便你」 — do NOT ask them to be more
   specific. They have just told you they cannot be. The person on the other
@@ -271,7 +290,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { layout, instruction, pages, imageUrl, generated } = (body ?? {}) as {
+  const { layout, instruction, pages, imageUrl, generated, history } = (body ?? {}) as {
     layout?: PuckLayout;
     instruction?: string;
     /**
@@ -314,6 +333,20 @@ export async function POST(req: NextRequest) {
      * not move.
      */
     generated?: boolean;
+    /**
+     * The last few turns of THIS conversation, oldest first.
+     *
+     * Without it every call is stateless, and 「刚才那个不要了」 can only be
+     * answered with a question -- which is honest for something with no memory
+     * and wrong for anything the owner would call an assistant. It is also
+     * most of how a SECOND sentence gets said: 「再加一栏」, 「那个再大一点」,
+     * 「跟刚才那个一样」.
+     *
+     * Capped and trusted for nothing, like `pages` and `generated`: it only
+     * shapes the reply. `reverted` marks a turn the owner took back, so the
+     * model does not talk about a change that is no longer on the page.
+     */
+    history?: { asked?: string; did?: string; reverted?: boolean }[];
   };
 
   if (!layout || !Array.isArray(layout.content) || typeof instruction !== "string") {
@@ -343,6 +376,8 @@ export async function POST(req: NextRequest) {
     .map((p) => `${p.key} ("${p.label}")`)
     .join(", ");
 
+  const recent = renderHistory(history);
+
   const userPrompt = `Blocks currently on this page:
 ${describeLayout(layout)}
 
@@ -356,6 +391,7 @@ This page: ${generated
 ${designDoc ? `
 ${designDoc}
 ` : ""}
+${recent ? `\n刚才这段对话里发生过的事（最新的在最下面）:\n${recent}\n` : ""}
 The business owner asked:
 "${trimmed}"`;
 
@@ -433,6 +469,34 @@ The business owner asked:
   });
 }
 
+
+/**
+ * The last few turns, as lines the model reads.
+ *
+ * EXPORTED SO THE RULER USES THE REAL ONE. eval-editor.mjs already imports
+ * SYSTEM_PROMPT from here for the same reason: a second copy of the format
+ * drifts, and then the eval is measuring a prompt nobody ships.
+ *
+ * Rendered as FACTS ABOUT THE PAGE'S PAST rather than passed as prior chat
+ * turns on purpose -- handed back as assistant messages, a model starts
+ * treating them as unfinished business and redoes them. Trimmed hard, so a
+ * customer who types an essay cannot push the actual instruction out of the
+ * model's attention.
+ */
+export function renderHistory(
+  history: { asked?: string; did?: string; reverted?: boolean }[] | undefined,
+): string {
+  return (Array.isArray(history) ? history : [])
+    .slice(-3)
+    .map((h) => {
+      const asked = String(h?.asked ?? "").trim().slice(0, 200);
+      const did = String(h?.did ?? "").trim().slice(0, 200);
+      if (!asked && !did) return "";
+      return `  - 他说「${asked}」→ 你做了「${did}」${h?.reverted ? "（他已经撤销了这一次）" : ""}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+}
 
 /**
  * The model asked for a register, a palette or an arrangement. Is it one?

@@ -116,7 +116,7 @@ for (const line of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
 
 // Dynamic, and after the env is loaded: the route builds its OpenAI client at
 // module scope and ESM hoists every static import above the first line here.
-const { SYSTEM_PROMPT, EDIT_JSON_SCHEMA } = await import("../app/api/portal/edit/route.ts");
+const { SYSTEM_PROMPT, EDIT_JSON_SCHEMA, renderHistory } = await import("../app/api/portal/edit/route.ts");
 const {
   describeLayout,
   applyLayoutOps,
@@ -744,6 +744,56 @@ const CASES = [
     replyIn: "en",
     note: "模糊但有方向，而且要用英文答",
   },
+
+  /*
+    ── 记不记得刚才 ───────────────────────────────────────
+
+    Every call used to be stateless -- the page, the sentence, nothing else --
+    so 「刚才那个不要了」 could only be answered with a question. That is honest
+    for something with no memory and strange for anything the owner would call
+    an assistant, and it swallows most of how a SECOND sentence gets said.
+
+    The three below are the whole point of that history: the same words mean
+    different things depending on what is behind them, and one of them is a
+    turn the owner already took back.
+  */
+  {
+    name: "记得 · 刚才那个改回去",
+    ask: "刚才那个不要了，改回去",
+    history: [{ asked: "把标题改成「今天要跟的」", did: "标题改成「今天要跟的」了。" }],
+    /*
+      The 撤销这次修改 button is already sitting under that turn in the
+      transcript. Pointing at it beats asking which change he means, and beats
+      a set_text that guesses at what the title used to be.
+    */
+    expect: [],
+    mustSay: ["撤销"],
+    note: "有历史就该指向那颗按钮，不是反问",
+  },
+  {
+    name: "记得 · 再加一栏",
+    ask: "再加一栏",
+    history: [{ asked: "表格加一列，写哪个师傅负责", did: "加了「负责师傅」这一栏。" }],
+    // 「再」 carries no noun. Without the previous turn there is nothing here
+    // to act on at all, which is exactly what makes it a good test.
+    expect: ["add_table_column"],
+    note: "「再」只有靠上一轮才解得开",
+  },
+  {
+    name: "记得 · 撤销过的不算数",
+    ask: "刚才那个不要了，改回去",
+    history: [
+      { asked: "把标题改成「今天要跟的」", did: "标题改成「今天要跟的」了。", reverted: true },
+    ],
+    /*
+      The only turn behind him is one he ALREADY took back, so there is nothing
+      to change back and the page does not carry that edit any more. Acting
+      here means editing something on the strength of a change that is not on
+      the page -- the memory being wrong is worse than there being none.
+    */
+    expect: [],
+    note: "唤上一轮已经被撤销，没有东西可以改回去",
+  },
 ];
 
 const chosen = ONLY ? CASES.filter((c) => c.name.includes(ONLY)) : CASES;
@@ -758,7 +808,7 @@ const chosen = ONLY ? CASES.filter((c) => c.name.includes(ONLY)) : CASES;
  * that difference is where the assistant was caught claiming a change it had
  * not made.
  */
-function promptFor(ask, saved = false) {
+function promptFor(ask, saved = false, history = []) {
   const layout = PAGE();
   const designDoc = buildDesignDoc("ledger", null);
   return `Blocks currently on this page:
@@ -772,6 +822,10 @@ This page: ${saved
   : "never saved -- 排法 (layout) will re-generate it, so it is available"}
 
 ${designDoc ? `${designDoc}\n` : ""}
+${renderHistory(history) ? `
+刚才这段对话里发生过的事（最新的在最下面）:
+${renderHistory(history)}
+` : ""}
 The business owner asked:
 "${ask}"`;
 }
@@ -798,8 +852,8 @@ function dataUrl(path) {
   return `data:image/jpeg;base64,${readFileSync(path).toString("base64")}`;
 }
 
-async function once(ask, image, saved = false) {
-  const text = promptFor(ask, saved);
+async function once(ask, image, saved = false, history = []) {
+  const text = promptFor(ask, saved, history);
   const completion = await openai.chat.completions.create({
     model: "gpt-5.6-luna",
     reasoning_effort: "high",
@@ -865,7 +919,7 @@ for (const c of chosen) {
   const runs = [];
   for (let i = 0; i < N; i++) {
     try {
-      runs.push(await once(c.ask, c.image, c.saved === true));
+      runs.push(await once(c.ask, c.image, c.saved === true, c.history ?? []));
       if (process.env.EVAL_VERBOSE) console.log("   ", c.name, JSON.stringify({ ops: runs[runs.length-1].ops, design: runs[runs.length-1].design, exp: runs[runs.length-1].explanation }));
     } catch (e) {
       runs.push({ ops: [], applied: 0, skipped: [{ op: "-", reason: String(e.message).replace(/\s+/g, " ").slice(0, 300) }], explanation: "" });
@@ -886,6 +940,12 @@ for (const c of chosen) {
     // A picture must not put somebody else's words on this page. Checked on
     // every value the model wrote, not only on the operation names.
     if (c.forbidText?.some((t) => JSON.stringify(r.values ?? []).includes(t))) return false;
+    /*
+      Some answers ARE the sentence. 「刚才那个不要了」 is answered correctly by
+      pointing at the 撤销 button that is already sitting under that turn --
+      there is no operation to check, so the check has to be on the words.
+    */
+    if (c.mustSay?.length && !c.mustSay.some((t) => r.explanation.includes(t))) return false;
     // 「Write all text in the same language the owner used」 -- the prompt has
     // said this from the start and nothing ever checked it.
     if (c.replyIn === "en" && /[一-鿿]/.test(r.explanation)) return false;
