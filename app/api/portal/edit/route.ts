@@ -25,6 +25,34 @@ import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
+ * HOW LONG THE PLATFORM LETS THIS RUN.
+ *
+ * Unset, a route handler gets the hosting platform's default ceiling, and this
+ * is the slowest call the product makes: reasoning_effort "high" over a system
+ * prompt of several thousand tokens plus the page listing, and when the owner
+ * attaches a photo, a vision request on top of that.
+ *
+ * MEASURED, 2026-08-27, 50 real calls through `npm run eval:editor`:
+ *
+ *     median 3.8s | p95 8.4s | slowest 13.6s
+ *
+ * and both of the slowest were the picture cases -- 13.6s and 12.2s -- which
+ * is the newest thing in the product. Add the session lookup, the rate-limit
+ * check, the project query and the ledger write and the handler is over the
+ * platform's default while the model is behaving perfectly.
+ *
+ * A call killed at the ceiling is the worst failure this route has: the money
+ * is spent, the answer was correct, and the owner sees 「AI 改不了」. So the
+ * ceiling is raised past anything measured, and the WAITING is bounded on the
+ * browser side instead, where it can be explained to him and cancelled.
+ *
+ * Re-measure with eval:editor when the model, the prompt size or the picture
+ * path changes; the latency line at the bottom of its report is this number's
+ * evidence.
+ */
+export const maxDuration = 60;
+
+/**
  * Conversational editing: the customer says what they want changed, in their
  * own words, and the page changes.
  *

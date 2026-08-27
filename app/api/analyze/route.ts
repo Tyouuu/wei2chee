@@ -14,6 +14,16 @@ import { catalogForPrompt, MAX_MODULES } from "@/lib/portal/module-catalog";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
+ * See the same export in app/api/portal/edit/route.ts for the measurement.
+ * This route is slower still by construction -- it retries once, so a schema
+ * failure on the first attempt means two full model calls inside one request,
+ * and it runs while a visitor who has just typed two minutes about his
+ * business is watching a spinner. Being killed at the platform default here
+ * costs a signup.
+ */
+export const maxDuration = 60;
+
+/**
  * The instruction that does not change between businesses. Splitting the
  * unchanging rules out of the per-request prompt is the first thing that makes
  * an LLM's output stable: the model sees the same constraints in the same

@@ -1012,6 +1012,20 @@ function dataUrl(path) {
 
 async function once(ask, image, saved = false, history = [], page = null) {
   const text = promptFor(ask, saved, history, page);
+  /*
+    HOW LONG HE WAITS, WHICH NOTHING HAS EVER MEASURED.
+
+    Three columns here score whether the answer is RIGHT. None of them notices
+    an answer that is right and arrives after the platform has already hung up:
+    a Vercel route handler has a wall-clock ceiling, and reasoning_effort
+    "high" on a prompt this size is the slowest call this product makes. A
+    correct operation that times out looks to the customer exactly like an
+    assistant that does not work.
+
+    Wall clock around the model call only -- applying the ops is microseconds
+    and would just blur the number we can act on.
+  */
+  const startedAt = Date.now();
   const completion = await openai.chat.completions.create({
     model: "gpt-5.6-luna",
     reasoning_effort: "high",
@@ -1029,11 +1043,13 @@ async function once(ask, image, saved = false, history = [], page = null) {
     ],
     response_format: { type: "json_schema", json_schema: EDIT_JSON_SCHEMA },
   });
+  const tookMs = Date.now() - startedAt;
   const parsed = parseLayoutOps(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
   // Applied against the same page the model was shown, so 改到了 measures what
   // the customer would have got and not what the model hoped for.
   const result = applyLayoutOps(page ?? PAGE(), parsed.operations, preferredVariants("ledger"));
   return {
+    tookMs,
     ops: parsed.operations.map((o) => o.op),
     // Every string the model wrote, so a case can assert on CONTENT and not
     // only on which operation was chosen.
@@ -1080,7 +1096,9 @@ for (const c of chosen) {
       runs.push(await once(c.ask, c.image, c.saved === true, c.history ?? [], c.page ? c.page() : null));
       if (process.env.EVAL_VERBOSE) console.log("   ", c.name, JSON.stringify({ ops: runs[runs.length-1].ops, design: runs[runs.length-1].design, exp: runs[runs.length-1].explanation, wrote: runs[runs.length-1].values }));
     } catch (e) {
-      runs.push({ ops: [], applied: 0, skipped: [{ op: "-", reason: String(e.message).replace(/\s+/g, " ").slice(0, 300) }], explanation: "" });
+      // tookMs null, not 0: a call that threw did not take no time, it took an
+      // unknown amount, and a 0 would drag the median toward a lie.
+      runs.push({ tookMs: null, ops: [], applied: 0, skipped: [{ op: "-", reason: String(e.message).replace(/\s+/g, " ").slice(0, 300) }], explanation: "" });
     }
   }
 
@@ -1222,6 +1240,34 @@ if (process.env.SAY) {
     console.log('  ' + r.name);
     for (const x of r.runs) console.log('      ' + (x.explanation || '(没讲话)'));
   }
+}
+
+/*
+  他等了多久。
+
+  The three columns above are all about whether the answer is right. This one
+  is about whether it ARRIVES: a route handler on Vercel is killed at a
+  wall-clock ceiling, and this call -- reasoning_effort "high", a system prompt
+  of several thousand tokens, a page listing on top -- is the slowest thing
+  this product does. A correct answer delivered after the platform hung up is
+  indistinguishable, from the passenger seat, from an assistant that is broken.
+
+  p95 and not the mean, because the mean is the call nobody complains about.
+*/
+const times = rows.flatMap((r) => r.runs.map((x) => x.tookMs)).filter((t) => typeof t === "number");
+if (times.length) {
+  const sorted = [...times].sort((a, b) => a - b);
+  const at = (q) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))];
+  const slowest = rows
+    .map((r) => ({ name: r.name, ms: Math.max(...r.runs.map((x) => x.tookMs ?? 0)) }))
+    .sort((a, b) => b.ms - a.ms)
+    .slice(0, 3);
+  const sec = (ms) => `${(ms / 1000).toFixed(1)}s`;
+  console.log(
+    `
+他等了多久  中位 ${sec(at(0.5))} · p95 ${sec(at(0.95))} · 最慢 ${sec(sorted[sorted.length - 1])}  (${times.length} 次)`,
+  );
+  console.log(`  最慢的三题  ${slowest.map((x) => `${x.name} ${sec(x.ms)}`).join(" · ")}`);
 }
 
 if (reasons.length) {

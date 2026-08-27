@@ -11,6 +11,16 @@ import { puckConfig } from "@/design-system/editor/puck-config";
 import { planDesignChange } from "@/lib/portal/design-change";
 import { findSelector, type PuckLayout } from "@/lib/portal/layout-ops";
 
+/*
+  WHO ENDED THE WAIT.
+
+  Both our own timer and the 「不等了」 button abort the same request, and the
+  two deserve different sentences: 「等太久我先停了」 is a report, and saying it
+  to somebody who just pressed stop himself is a small lie of the kind this
+  route has been in trouble for before. `signal.reason` carries which it was.
+*/
+const TIMED_OUT = "timed-out";
+
 /** A page-level change the assistant offered and the customer can confirm.
  *  See lib/portal/layout-ops.ts's pageSuggestionSchema for why this is an offer
  *  with a button rather than another operation the route carries out. */
@@ -129,6 +139,9 @@ export function AiAssistant({
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const imageRef = useRef<HTMLInputElement>(null);
+  /* The in-flight request, so both our own timer and the 「不等了」 button can
+   * end the same wait. Null whenever nothing is in flight. */
+  const abortRef = useRef<AbortController | null>(null);
 
   async function attach(file: File) {
     setUploading(true);
@@ -194,9 +207,29 @@ export function AiAssistant({
     const settle = (patch: Partial<Turn>) =>
       setTurns((prev) => prev.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
 
+    /*
+      NOTHING USED TO EVER STOP WAITING.
+
+      The fetch had no timeout, so a request that stalled left the spinner
+      running with no way out but reloading the editor -- which throws away
+      every unsaved change on the page. Measured 2026-08-27 over 50 real calls:
+      median 3.8s, p95 8.4s, slowest 13.6s (both slowest were picture requests).
+      45s is three times the worst call ever measured, so no honest answer is
+      ever cut off; anything past it is stuck, and he is told so instead of
+      being left to guess.
+
+      Held in a ref so the 「不等了」 button can reach it: a person who has been
+      staring at 「思考中…」 for half a minute should be able to end it himself
+      rather than wait for our timer to decide.
+    */
+    const abort = new AbortController();
+    abortRef.current = abort;
+    const timer = setTimeout(() => abort.abort(TIMED_OUT), 45_000);
+
     try {
       const res = await fetch("/api/portal/edit", {
         method: "POST",
+        signal: abort.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           layout: before,
@@ -232,7 +265,22 @@ export function AiAssistant({
       });
 
       if (!res.ok) {
-        settle({ state: "failed", explanation: res.status === 429 ? t("aiRateLimited") : t("aiFailed") });
+        /*
+          WHOSE FAULT IT WAS DECIDES WHICH SENTENCE HE READS.
+
+          Every failure used to say 「这次没听懂，换个说法再试一次」 -- which
+          tells a contractor to rewrite a sentence that was fine, when what
+          actually happened was our route failing or the platform hanging up.
+          It is the same family of bug as an assistant claiming a change it did
+          not make: the words do not match what happened. A 5xx is ours, and
+          both messages end by saying his page is untouched, because that is
+          the thing he is actually afraid of.
+        */
+        settle({
+          state: "failed",
+          explanation:
+            res.status === 429 ? t("aiRateLimited") : res.status >= 500 ? t("aiBroke") : t("aiFailed"),
+        });
         return;
       }
 
@@ -297,9 +345,21 @@ export function AiAssistant({
         skipped: result.skipped,
         offer: result.suggestion ?? undefined,
       });
-    } catch {
-      settle({ state: "failed", explanation: t("aiFailed") });
+    } catch (err) {
+      // An abort is not a failure to understand him. Told apart from a real
+      // network error so the reply says which of the two happened.
+      const stopped = err instanceof DOMException && err.name === "AbortError";
+      settle({
+        state: "failed",
+        explanation: !stopped
+          ? t("aiBroke")
+          : abort.signal.reason === TIMED_OUT
+            ? t("aiTookTooLong")
+            : t("aiStopped"),
+      });
     } finally {
+      clearTimeout(timer);
+      abortRef.current = null;
       setBusy(false);
     }
   }
@@ -715,15 +775,32 @@ export function AiAssistant({
               this assistant IS the whole editor (mobile-editor.tsx), and an
               icon tucked into a text field at that size is a target a thumb
               misses. */}
-          <button
-            type="button"
-            onClick={() => imageRef.current?.click()}
-            disabled={busy || uploading}
-            title={t("aiImageAdd")}
-            className="min-h-11 shrink-0 rounded-md px-3 [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)] disabled:opacity-40 lg:min-h-0 lg:py-1.5"
-          >
-            {uploading ? "…" : t("aiImageAdd")}
-          </button>
+          {/* WHILE HE IS WAITING, THIS IS THE ONLY THING HE CAN DO.
+
+              The attach button is disabled during a request anyway, so its slot
+              is free -- and a person who has been watching 「思考中…」 for half a
+              minute needs a way out that is not reloading the editor and losing
+              every unsaved change. Our own 45s timer is a backstop, not an
+              answer: he should not have to wait for it. */}
+          {busy ? (
+            <button
+              type="button"
+              onClick={() => abortRef.current?.abort()}
+              className="min-h-11 shrink-0 rounded-md px-3 [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)] lg:min-h-0 lg:py-1.5"
+            >
+              {t("aiStop")}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => imageRef.current?.click()}
+              disabled={uploading}
+              title={t("aiImageAdd")}
+              className="min-h-11 shrink-0 rounded-md px-3 [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)] disabled:opacity-40 lg:min-h-0 lg:py-1.5"
+            >
+              {uploading ? "…" : t("aiImageAdd")}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => ask(instruction)}
