@@ -19,6 +19,7 @@
     "shoot:registers": "node scripts/shoot-registers.mjs",
     "eval:analysis": "tsx scripts/eval-analysis.mjs",
     "check:upstream": "node scripts/check-upstream.mjs",
+    "check:ai-cost": "node scripts/ai-cost.mjs",
     "find:prospects": "node scripts/find-prospects.mjs",
     "backfill:analysis-en": "node scripts/backfill-analysis-en.mjs",
     "eval:editor": "tsx scripts/eval-editor.mjs",

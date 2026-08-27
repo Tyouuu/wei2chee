@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { recordAiUsage } from "@/lib/portal/ai-usage";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   analysisSchema,
@@ -165,6 +166,14 @@ export async function POST(req: NextRequest) {
         ],
         response_format: { type: "json_schema", json_schema: analysisJsonSchema },
       });
+
+      /*
+        Recorded on EVERY attempt, inside the retry loop, because every attempt
+        is billed. A schema failure that clears on attempt 2 costs twice and
+        would otherwise show up in the ledger as one call -- which is exactly
+        the shape of spending worth being able to see.
+      */
+      await recordAiUsage(supabase, "analyze", "gpt-5.6-luna", completion.usage);
 
       const raw = completion.choices[0]?.message?.content;
       rawResponse = JSON.parse(raw ?? "{}");

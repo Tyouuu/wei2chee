@@ -17,6 +17,7 @@ import {
 import { COLUMN_KINDS } from "@/lib/portal/table-model";
 import { buildDesignDoc, preferredVariants, STYLE_BRIEFS, darkPalettes } from "@/lib/portal/design-doc";
 import { renderBlockRules } from "@/lib/portal/block-rules";
+import { recordAiUsage } from "@/lib/portal/ai-usage";
 import { PALETTE_ROWS } from "@/lib/portal/palettes.generated";
 import { LAYOUT_SETS } from "@/lib/templates/industry-template";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
@@ -489,6 +490,12 @@ The business owner asked:
     // parseLayoutOps, not layoutOpsSchema.parse: one malformed operation used
     // to reject the whole answer, so a batch of five good edits and one bad one
     // came back as a 502 with nothing changed. See its note in layout-ops.ts.
+    /*
+      Recorded before the parse, because a reply that fails to parse still cost
+      the money. Awaited and error-swallowing -- see recordAiUsage: accounting
+      must never be the reason an edit fails in front of a customer.
+    */
+    await recordAiUsage(supabase, "edit", "gpt-5.6-luna", completion.usage);
     parsed = parseLayoutOps(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
   } catch (err) {
     console.error("layout edit failed", err);
