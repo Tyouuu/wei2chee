@@ -93,33 +93,67 @@ const STATUS_TONES = ["positive", "warning", "negative", "neutral"] as const;
  *  it keeps the model away from structural props (`gridId`, `href`, `name`)
  *  where a plausible-looking string quietly breaks behaviour instead of
  *  changing wording. */
+/**
+ * WHICH WORDS THE ASSISTANT MAY REWRITE, READ OFF THE BLOCKS THEMSELVES.
+ *
+ * ── WHY THIS IS DERIVED ───────────────────────────────────────────────────
+ *
+ * This was a HAND-WRITTEN LIST of eleven names, and the fields it was supposed
+ * to describe are declared per component. Measured 2026-08-27: **31 components
+ * had text a customer can see and NOT ONE FIELD the assistant could name** --
+ * including `EnquiryForm`, the only block on the public site that produces
+ * money, and almost the whole of that site (`SiteBar`, `SiteCta`, `SiteFoot`,
+ * `SiteFeatures`, `SiteGallery`, `SiteTestimonials`, `SiteStatement`).
+ *
+ * The product's promise is 「用讲的改」. On those blocks, talking did nothing.
+ *
+ * It looked like it worked, which is why it lasted: with no legal field for
+ * 「把第一屏那句大标题改成…」 the model reached for `title`, the applier wrote a
+ * prop `SiteHero` does not declare, and the reply said 「改了 1 处」. The list
+ * being wrong and the edit reporting success were the same bug wearing two
+ * faces.
+ *
+ * So the list is no longer written down. It is read off the component
+ * registry, which is the thing it was always trying to describe -- the same
+ * cure this repo has reached five times now for the same disease.
+ */
+
+/**
+ * A text input that is NOT a word anybody reads.
+ *
+ * The one judgement call in the derivation, so it is a named predicate rather
+ * than a filter buried in a chain: a link target, an image path, a QR payload,
+ * a DOM id, a file-type filter and a date are all typed into a text box and
+ * none of them is prose. Letting the assistant rewrite `primaryHref` because
+ * the owner said 「按钮改成联络我们」 breaks the button.
+ */
+const NOT_PROSE = (name: string): boolean =>
+  /Href$|Src$/.test(name) ||
+  ["href", "src", "data", "gridId", "accept", "start", "end"].includes(name);
+
+/** Every prose field each component actually declares. The per-block answer,
+ *  which is what `set_text` is checked against -- one global list cannot say
+ *  that `headline` belongs to SiteHero and `heading` to EnquiryForm. */
+export const TEXT_FIELDS_BY_COMPONENT: Record<string, string[]> = Object.fromEntries(
+  Object.entries(COMPONENT_CONFIGS).map(([name, cfg]) => [
+    name,
+    Object.entries(cfg?.fields ?? {})
+      .filter(
+        ([k, f]) =>
+          ((f as { type?: string } | undefined)?.type === "text" ||
+            (f as { type?: string } | undefined)?.type === "textarea") &&
+          !NOT_PROSE(k),
+      )
+      .map(([k]) => k),
+  ]),
+);
+
+/** The union, for the schema. A name the model may legally say; WHICH block it
+ *  may say it about is decided by TEXT_FIELDS_BY_COMPONENT when the operation
+ *  is applied. */
 export const EDITABLE_TEXT_FIELDS = [
-  "title",
-  "subtitle",
-  "description",
-  "label",
-  "value",
-  "caption",
-  "placeholder",
-  "hint",
-  // The four table-label fields are gone from this list, and deliberately: a
-  // table's columns are no longer props, and a `set_text` aimed at
-  // `primaryLabel` would now write a prop nothing renders -- an edit that
-  // reports success and changes nothing on screen. Renaming a column is
-  // `set_table_column`.
-  "brandLabel",
-  "userName",
-  "userRoleLabel",
-  /*
-    THE PUBLIC SITE'S OWN WORDS. `headline` is the h1 on the page the owner
-    actually sends to people, and `sub` is the line under it -- neither was on
-    this list, so 「把第一屏那句大标题改成…」 had NO field it could legally use.
-    The model reached for `title` instead, which SiteHero does not declare;
-    see the guard in the set_text case for what that produced.
-  */
-  "headline",
-  "sub",
-] as const;
+  ...new Set(Object.values(TEXT_FIELDS_BY_COMPONENT).flat()),
+].sort() as unknown as readonly [string, ...string[]];
 
 export const layoutOpSchema = z.discriminatedUnion("op", [
   z.object({
@@ -475,11 +509,30 @@ export function describeLayout(layout: PuckLayout): string {
     .map((n) => {
       const id = String(n.props?.id ?? "");
       const label = COMPONENT_CONFIGS[n.type]?.label ?? n.type;
-      const texts = EDITABLE_TEXT_FIELDS.filter(
-        (f) => typeof n.props?.[f] === "string" && n.props[f],
-      )
+      /*
+        THIS BLOCK'S OWN FIELDS, NOT THE WHOLE LIBRARY'S.
+
+        Read from the global union, this showed nothing for the 31 components
+        whose text fields were not on the hand-written list -- so the public
+        site's headline, and every word of the enquiry form, were invisible to
+        the model, and 「把第一屏那句大标题改成…」 had nothing to aim at.
+
+        Per component it is also SHORTER: a block has three or four fields, not
+        sixty. The model no longer has to guess which of `title` / `heading` /
+        `headline` this particular block calls it -- guessing is exactly what
+        produced an edit onto a prop SiteHero does not declare.
+      */
+      const mine = TEXT_FIELDS_BY_COMPONENT[n.type] ?? [];
+      const texts = mine
+        .filter((f) => typeof n.props?.[f] === "string" && n.props[f])
         .map((f) => `${f}="${n.props[f]}"`)
         .join(" ");
+
+      /* The fields it HAS but has not filled. Without this 「这里加一句说明」 can
+         only be answered by adding a block, because an empty `note` looks from
+         here exactly like a block that has no note at all. */
+      const blank = mine.filter((f) => !n.props?.[f]);
+      const spare = blank.length ? ` 还可以填=[${blank.join(",")}]` : "";
 
       /*
         A PICTURE SLOT, AND WHETHER IT IS EMPTY.
@@ -555,7 +608,7 @@ export function describeLayout(layout: PuckLayout): string {
         extra = ` columns=[${cols}]`;
       }
 
-      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${photo}${variants}${extra}`;
+      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${spare}${photo}${variants}${extra}`;
     })
     .join("\n");
 }
@@ -668,8 +721,8 @@ export function applyLayoutOps(
           Refused rather than written, and the refusal reaches the customer in
           `skipped`. Silently dropping it is what this was already doing.
         */
-        const declared = COMPONENT_CONFIGS[String(node.type ?? "")]?.fields;
-        if (declared && !Object.prototype.hasOwnProperty.call(declared, op.field)) {
+        const prose = TEXT_FIELDS_BY_COMPONENT[String(node.type ?? "")];
+        if (prose && !prose.includes(op.field)) {
           skipped.push({
             op: op.op,
             reason: `${String(node.type ?? "")} 没有「${op.field}」这个字段`,

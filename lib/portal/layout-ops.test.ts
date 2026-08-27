@@ -1,10 +1,13 @@
 import { describe, it, expect } from "vitest";
+import { puckConfig } from "@/design-system/editor/puck-config";
 import {
   applyLayoutOps,
   describeLayout,
   layoutOpsSchema,
   walkNodes,
   REGISTERED_COMPONENTS,
+  TEXT_FIELDS_BY_COMPONENT,
+  EDITABLE_TEXT_FIELDS,
   PHOTO_BLOCKS,
   findSelector,
   mainColumn,
@@ -594,5 +597,61 @@ describe("set_text only writes fields the block actually has", () => {
     expect(r.applied).toBe(1);
     const hero = (r.layout.content as { props: Record<string, unknown> }[])[0];
     expect(hero.props.headline).toBe("二十年装修经验");
+  });
+});
+
+describe("every block with words has words the assistant can reach", () => {
+  /*
+    THE GUARD THAT MAKES THE DERIVATION WORTH HAVING.
+
+    The list used to be eleven names written by hand, and on 2026-08-27 the
+    measurement was: 31 components had visible text and NOT ONE reachable field
+    -- EnquiryForm among them, the only block on the public site that produces
+    money. 「用讲的改」 did nothing on any of them, and looked like it worked
+    because the model wrote an undeclared prop and the applier said 「改了」.
+
+    Deriving the list fixes today. This fails the day somebody ships a block
+    whose text the assistant cannot name, which is the part that keeps.
+  */
+  it("no component has visible text and no reachable field", () => {
+    const stranded = Object.entries(TEXT_FIELDS_BY_COMPONENT)
+      .filter(([name]) => REGISTERED_COMPONENTS.includes(name))
+      .filter(([, fields]) => fields.length === 0)
+      .map(([name]) => name);
+    // A block with NO text fields at all is fine -- a chart, a divider, a
+    // photo frame. This only catches text that exists and cannot be spoken to.
+    const configs = puckConfig.components as unknown as Record<
+      string,
+      { fields?: Record<string, { type?: string }> }
+    >;
+    const withTextButUnreachable = stranded.filter((name) =>
+      Object.values(configs[name]?.fields ?? {}).some(
+        (f) => f?.type === "text" || f?.type === "textarea",
+      ),
+    );
+    /*
+      NAMED, NOT TOLERATED. PayQr's only text input is `data` -- the payload
+      encoded into the QR square. There is nothing on that block for a person
+      to reword, so it is not stranded, it is finished. Written as a list so
+      the NEXT block that arrives with unreachable words fails this test rather
+      than joining a silent tolerance.
+    */
+    const NO_WORDS_ON_PURPOSE = ["PayQr"];
+    expect(withTextButUnreachable).toEqual(NO_WORDS_ON_PURPOSE);
+  });
+
+  it("reaches the public site's own words, which is where this was found", () => {
+    // The h1 on the page the owner sends to people, and the form that is the
+    // only thing on it that produces money.
+    expect(TEXT_FIELDS_BY_COMPONENT.SiteHero).toContain("headline");
+    expect(TEXT_FIELDS_BY_COMPONENT.EnquiryForm).toContain("heading");
+    expect(TEXT_FIELDS_BY_COMPONENT.EnquiryForm).toContain("submitLabel");
+  });
+
+  it("does not offer a link target as if it were a sentence", () => {
+    // 「按钮改成联络我们」 must rewrite the LABEL, never the href beside it.
+    expect(TEXT_FIELDS_BY_COMPONENT.SiteCta).toContain("primaryLabel");
+    expect(TEXT_FIELDS_BY_COMPONENT.SiteCta).not.toContain("primaryHref");
+    expect(EDITABLE_TEXT_FIELDS).not.toContain("href");
   });
 });
