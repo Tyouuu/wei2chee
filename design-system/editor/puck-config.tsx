@@ -24,6 +24,7 @@ import {
   SiteCreds,
   SiteGallery,
   SiteStory,
+  SiteStatement,
   SiteTeam,
 } from "@/design-system/components/site-sections";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
@@ -277,6 +278,11 @@ type Components = {
     /* 开场的地. Register-chosen; see site-composition.ts. */
     ground?: "page" | "ink";
     points?: { label: string }[];
+  };
+  SiteStatement: {
+    body?: string;
+    attribution?: string;
+    shape?: "centre" | "rule" | "quote";
   };
   SiteTeam: {
     heading?: string;
@@ -656,7 +662,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteStatement", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -1854,6 +1860,32 @@ export const puckConfig: Config<Components> = {
           photoAlt={photoAlt}
           points={points}
         />
+      ),
+    },
+
+    SiteStatement: {
+      label: "一句话占一屏",
+      fields: {
+        body: { label: "那一句话", type: "textarea" },
+        attribution: { label: "署名（可以不填）", type: "text" },
+        shape: {
+          label: "款式",
+          type: "select",
+          options: [
+            { label: "居中", value: "centre" },
+            { label: "一条线在上", value: "rule" },
+            { label: "引号", value: "quote" },
+          ],
+        },
+      },
+      /* NO `shape`, NO `body`. `shape` is absent for the reason written out at
+         length under SiteStory -- an absent prop is the only way to say
+         「follow the register」. `body` is absent because the TEMPLATE fills it
+         with the owner's own pitch, and a defaultProps sentence would be a
+         sentence about somebody else's business sitting on his page. */
+      defaultProps: {},
+      render: ({ body, attribution, shape }) => (
+        <SiteStatement body={body} attribution={attribution} shape={shape} />
       ),
     },
 

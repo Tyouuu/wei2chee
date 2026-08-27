@@ -242,6 +242,22 @@
       "takenAt": "-",
       "takenOn": "2026-08-27",
       "note": "bag-ui 跟 convertfast 的部署没了（Vercel 404），不是 kit，是我把 404 页当 kit 存了。logo 墙在这个市场换成 JKKP 执照 / 代理牌子 / Google 分数。"
+    },
+    {
+      "repo": "-",
+      "name": "lapa.ninja（7,303 个 landing page）",
+      "licence": "n/a",
+      "kind": "market",
+      "took": "第一屏之后的「静band」—— 一句话、居中、大字、周围全是空气。IRONHILL · FLAVORS THAT STAY · Câphê Roasters · MARBLE · Healing Begins With The Breath 五个真作品全部这样做。另外拿到分类分布：83 个分类、31,914 个标签，Minimal 3,051/7,303 = 42%（跟 landing.love 的 64% 同方向），3D Websites 只有 156 = 2%",
+      "where": "design-system/components/site-sections.tsx (SiteStatement), lib/templates/site-composition.ts (statement 轴)",
+      "appliedTo": [
+        "瑞士（一条线在上）",
+        "柔和（引号）",
+        "工作室（居中）"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "它不加字，是把第一屏那句话搬出来自己占一屏 —— 所以十四套里只有三套有，其余十一套那句话留在第一屏。⚠️ 分类页的卡片有一半是 Webflow / Mobbin / Framer 的广告横幅，按图片尺寸抓会把广告当作品。"
     }
   ]
 }

@@ -373,6 +373,29 @@ const team = (c: LandingContent) =>
     members: [],
   });
 
+/**
+ * 一句话占一屏 -- the pitch, moved rather than repeated.
+ *
+ * `c.pitch` is already what the hero prints under the headline. Emitting it
+ * here is safe because composeSite drops THIS block on every register that
+ * does not name `statement`, and blanks the hero's `sub` on every register
+ * that does. Exactly one of the two prints it, always.
+ */
+/* PINNED UNDER THE HERO, NOT INSIDE THE MOVABLE RUN.
+
+   It was emitted next to `story` first, and industry-template.test.ts printed
+   the consequence: composeSite sorts the movable run by the register's order,
+   a block whose section nobody names sorts last, and the band that is supposed
+   to sit directly under the first screen landed at the bottom of the page --
+   on the three registers that actually want it. It belongs to the head, with
+   the bar and the hero, because its position is not an argument any register
+   is having. */
+const statement = (c: LandingContent) =>
+  node("SiteStatement", "website-statement", {
+    body: c.pitch,
+    attribution: "",
+  });
+
 const story = (c: LandingContent) =>
   node("SiteStory", "website-story", {
     heading: c.words.sections.story.heading,
@@ -625,6 +648,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     build: (c) => [
       bar(c, anchors(c)),
       hero(c, "split", "quote"),
+      statement(c),
       services(c, sect(c, "quote").services),
       work(c),
       story(c),
@@ -653,6 +677,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     build: (c) => [
       bar(c, anchors(c)),
       hero(c, "split", "booking"),
+      statement(c),
       services(c, sect(c, "booking").services),
       // Numbered, not arrows: someone booking a slot is reading "what do I do
       // first", which is a list of steps rather than a pipeline.
@@ -684,6 +709,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       // The band is the shopfront: for a business whose page IS the shop, the
       // first screen should feel like walking past it.
       hero(c, "split", "order"),
+      statement(c),
       services(c, sect(c, "order").services),
       work(c),
       story(c),
@@ -710,6 +736,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     build: (c) => [
       bar(c, anchors(c)),
       hero(c, "split", "pricelist"),
+      statement(c),
       services(c, sect(c, "wholesale").services),
       story(c),
       team(c),
@@ -735,6 +762,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     build: (c) => [
       bar(c, anchors(c)),
       hero(c, "split", "grid"),
+      statement(c),
       // Services first and unframed: on a page whose job is "look at this",
       // boxes around every section fight the looking.
       work(c),
@@ -762,6 +790,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     build: (c) => [
       bar(c, anchors(c)),
       hero(c, "split", "card"),
+      statement(c),
       services(c, sect(c, "card").services, false),
       story(c),
       team(c),

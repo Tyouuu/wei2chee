@@ -15,6 +15,7 @@ import {
 } from "./industry-template";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { walkNodes, type PuckNode } from "@/lib/portal/layout-ops";
+import { MOVABLE } from "@/lib/templates/site-composition";
 
 const renovation: BusinessContext = {
   industry: {
@@ -204,6 +205,13 @@ describe("buildPageLayout", () => {
       // blocks had neither either. See site-chrome.tsx.
       "SiteBar",
       "SiteHero",
+      /* 一句话占一屏, 2026-08-27, from lapa.ninja. Present on every register and
+         carrying a sentence on three of them -- 瑞士, 柔和, 工作室 -- because it
+         MOVES the hero's supporting line rather than adding one. On the other
+         eleven it is empty and renders nothing, which is deliberate: the block
+         is left in place because a register that deletes a block is a register
+         that could delete the owner's own prices. See statementFor(). */
+      "SiteStatement",
       /*
         THE MIDDLE IS IN 图纸's ORDER, NOT THE TEMPLATE'S, SINCE 2026-08-27.
 
@@ -267,9 +275,16 @@ describe("buildPageLayout", () => {
         }
       ).content.map((n) => String(n.props.id));
     expect(sectionsOf("ledger")).not.toEqual(sectionsOf("hearth"));
-    // 台账 opens on the price list, 炉 opens on the photographs.
-    expect(sectionsOf("ledger")[2]).toBe("website-prices");
-    expect(sectionsOf("hearth")[2]).toBe("website-work");
+    /* 台账 opens on the price list, 炉 opens on the photographs.
+       「Opens」 means the first section a register is free to move, which is
+       not the same as the third block: the head is pinned (bar, hero, and
+       since 2026-08-27 the 一句话 band, which no register reorders). Indexing
+       past the head by hand is how this assertion broke when the band was
+       added -- it now finds the first movable block instead. */
+    const opensOn = (style: string) =>
+      sectionsOf(style).find((id) => MOVABLE.some((k) => id === `website-${k}`));
+    expect(opensOn("ledger")).toBe("website-prices");
+    expect(opensOn("hearth")).toBe("website-work");
   });
 
   // The arrow the whole page exists to draw. An enquiry has to say which of

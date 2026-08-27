@@ -49,7 +49,7 @@ import type { PuckNode } from "@/lib/templates/puck-node";
  *  `bar` is the top strip, `form`/`contact`/`foot`/`floating` are the ask and
  *  the tail, and a register that put the enquiry form second would be a
  *  register asking for a phone number before saying what it sells. */
-const MOVABLE = [
+export const MOVABLE = [
   "services",
   "work",
   "prices",
@@ -94,6 +94,25 @@ export type SiteSkeleton = {
    * open the same way is a library with one register in it.
    */
   hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed";
+  /**
+   * 一句话占一屏 —— whether the pitch gets a screen of its own, and in what
+   * shape. Absent means it stays under the headline where it has always been.
+   *
+   * ── WHY AN AXIS AND NOT A MOVABLE SECTION ──────────────────────────────
+   *
+   * It was written as the thirteenth entry in MOVABLE first, and
+   * site-composition.test.ts refused it inside a minute: `order` is a TOTAL
+   * ordering, every register names every section, so presence in the list
+   * cannot express 「this register does not have one」. The test was right and
+   * the shape of the idea was wrong. Existence is the decision here, which is
+   * what the other four axes on this type are for.
+   *
+   * Taken from lapa.ninja's real-business categories, 2026-08-27 -- of the
+   * pages on .screenshots/lapa/real-business.jpg that were real work rather
+   * than a Webflow banner, every one puts a quiet one-sentence band directly
+   * under the first screen.
+   */
+  statement?: "centre" | "rule" | "quote";
   /**
    * 开场的地 —— what the first screen is painted on. `page` follows the
    * register's own ground; `ink` is a near-black carrying a HINT of the
@@ -216,18 +235,27 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // a page that reads like a document leads with words -- what we do, how it
   // works, what we promise. No photo wall; that would be the opposite register.
   swiss: {
+    statement: "rule",
     measure: "narrow",
     pattern: "hatch",
     hero: "plain",
-    opens: "说明",
+    /* 说明 opens on a sentence with a rule over it now. 瑞士 is the register
+       whose whole argument is that a hairline and a measure are enough, and
+       lapa's real-business pages set that sentence LEFT under a rule rather
+       than centred -- FLAVORS THAT STAY and Câphê both. */
+    opens: "一句话",
     order: ["services", "story", "team", "flow", "promise", "creds", "faq", "prices", "areas", "reviews", "work", "cta", "hours"],
   },
   // 柔和: the tuition centre, where the person reading is often nervous. It
   // opens on a coloured band and answers the worry before the sell -- what
   // happens, when you are open, what other parents said.
   soft: {
+    statement: "quote",
     hero: "band",
-    opens: "怎么开始",
+    /* 柔和 reads the sentence as reassurance, so it is set as a quotation --
+       something a person said, not a claim a company printed. The tuition
+       centre's parent is the reader this whole register is aimed at. */
+    opens: "一句话",
     order: ["services", "story", "team", "flow", "hours", "reviews", "creds", "faq", "prices", "work", "areas", "cta", "promise"],
   },
   // 粗野: gyms, barbers, tuning shops -- businesses that are loud on purpose.
@@ -291,9 +319,13 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // side. A quiet centred opening, the work, then who said what -- and the
   // enquiry is the only thing that ever asks anything.
   studio: {
+    statement: "centre",
     measure: "narrow",
     hero: "stage",
-    opens: "自己的话",
+    /* 工作室 is the register where nothing sits beside anything, so the plain
+       centred band -- the shape all five real pages on lapa's contact sheet
+       use -- belongs to it before it belongs to anyone. */
+    opens: "一句话",
     order: ["story", "team", "work", "services", "reviews", "creds", "flow", "faq", "promise", "prices", "areas", "cta", "hours"],
   },
 };
@@ -355,7 +387,37 @@ export function composeSite(nodes: PuckNode[], style?: string | null): PuckNode[
     })
     .map((x) => x.node);
 
-  return [...head, ...ordered, ...tail].map((n) => heroFor(n, skeleton));
+  return [...head, ...ordered, ...tail]
+    .map((n) => heroFor(n, skeleton))
+    .map((n) => statementFor(n, skeleton));
+}
+
+/**
+ * 一句话占一屏 —— the band, and the sentence it is or is not given.
+ *
+ * ── WHY THIS BLANKS RATHER THAN REMOVES ──────────────────────────────────
+ *
+ * The first version filtered the block out on the eleven registers that do not
+ * want a band, and site-composition.test.ts failed on the next run with a
+ * comment worth quoting: 「a register that DROPS a section would be a register
+ * that deletes the owner's own prices or photographs」. That invariant is
+ * worth more than the tidiness, so the block stays and its sentence moves.
+ *
+ * Exactly one of the two prints the pitch, always: `heroFor` clears the hero's
+ * `sub` where a register asks for the band, and this clears the band's `body`
+ * where it does not. Printing one fact twice on one page is what got 印 culled
+ * on 2026-08-26.
+ *
+ * An empty band renders nothing, and it is deliberately given no 「fill me in」
+ * prompt: on those eleven registers the sentence is not missing, it is on the
+ * screen above.
+ */
+function statementFor(node: PuckNode, skeleton: SiteSkeleton): PuckNode {
+  if (idOf(node) !== "website-statement") return node;
+  const props = { ...node.props };
+  if (skeleton.statement) props.shape = skeleton.statement;
+  else props.body = "";
+  return { ...node, props };
 }
 
 function heroFor(node: PuckNode, skeleton: SiteSkeleton): PuckNode {
@@ -367,5 +429,8 @@ function heroFor(node: PuckNode, skeleton: SiteSkeleton): PuckNode {
      after saving keeps what they were given. */
   props.ground = skeleton.ground ?? "page";
   if (!(skeleton.hero === "split" && !node.props.figure)) props.layout = skeleton.hero;
+  /* A register that gives the pitch its own screen takes it out of the first
+     one. Not a duplicate, a move -- see the note in composeSite. */
+  if (skeleton.statement) props.sub = "";
   return { ...node, props };
 }

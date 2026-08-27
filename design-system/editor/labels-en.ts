@@ -454,6 +454,12 @@ export const LABELS_EN: Record<string, string> = {
      portal's PAGES, and a 款式 label only exists once 换款式 is opened. A ruler
      with a blind spot reports zero for the part it never enters. */
   字上图下: "Text above, image below",
+  一句话占一屏: "One sentence, one screen",
+  那一句话: "The sentence",
+  "署名（可以不填）": "Signature (optional)",
+  居中: "Centred",
+  一条线在上: "Rule above",
+  引号: "Quotation",
   满图压字: "Photo behind the words",
   左对齐: "Left aligned",
   上下留白: "Space above and below",

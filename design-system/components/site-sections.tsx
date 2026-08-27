@@ -809,3 +809,142 @@ export function SiteTeam({
     </section>
   )
 }
+
+/**
+ * 一句话，占一整屏的气。
+ *
+ * ── WHERE IT COMES FROM ──────────────────────────────────────────────────
+ *
+ * lapa.ninja, 7,303 landing pages, mined 2026-08-27 after the founder pointed
+ * out that the four remaining unmined sources in upstream.json were all ADMIN
+ * templates and we are building landing pages. The real-business categories --
+ * food & drinks 302, health & fitness 443, education 434 -- were shot as one
+ * contact sheet (.screenshots/lapa/real-business.jpg) and looked at.
+ *
+ * Half the cards turned out to be Webflow and Mobbin ad banners, which is its
+ * own lesson about grabbing by image size. Of the ones that were real work --
+ * IRONHILL, FLAVORS THAT STAY, Câphê Roasters, MARBLE, Healing Begins With The
+ * Breath -- the repeated move is the same in every one: after the first screen
+ * comes a QUIET BAND. One sentence, large, centred, on a warm neutral, with
+ * nothing else on the screen at all.
+ *
+ * ── WHY IT ADDS NO WORDS ─────────────────────────────────────────────────
+ *
+ * It prints the pitch -- the one line the owner already gave in the two-minute
+ * questionnaire, which the hero has been printing under the headline since the
+ * first version. So this is not a new sentence, it is an argument about WHERE
+ * THAT SENTENCE LIVES: under the headline, or alone with a screen to itself.
+ * A register whose skeleton names `statement` takes it out of the hero.
+ *
+ * Writing it twice was never an option: printing one fact in two places on one
+ * page is exactly what got 印 culled on 2026-08-26.
+ *
+ * ── AND WHY IT NEVER SHIPS EMPTY-BUT-PROMPTING ───────────────────────────
+ *
+ * Unlike SiteCreds, SiteTeam and SiteStory, nothing here is a claim about the
+ * world -- no licence, no employee, no years in trade. It is the owner's own
+ * description of their own business, which we already have. So it is filled
+ * from the first render, and if somebody empties it, it simply disappears.
+ */
+export function SiteStatement({
+  body,
+  attribution,
+  shape = "centre",
+}: {
+  body?: string
+  /** Optional -- the business name under the line, the way a signed statement
+   *  reads. Off by default: a sentence about yourself does not need a byline. */
+  attribution?: string
+  /** `centre` the sentence alone in the middle · `rule` a hairline above it and
+   *  the line set left · `quote` oversized with a hanging opening mark. The
+   *  register chooses; see design-doc.ts. */
+  shape?: "centre" | "rule" | "quote"
+}) {
+  const line = body?.trim()
+  if (!line) return null
+
+  /* THE SIZE, AND WHY IT IS SET HERE.
+
+     `.ds-display` sets the FACE and nothing else -- every other place that
+     uses it also carries a size class, and this one did not. Rendered, the
+     band came out at body size in a narrow column: not a statement, just a
+     small paragraph with a rule over it.
+
+     Between the headline and the body, not equal to either. The hero is
+     --text-hero (38px on 图纸, up to 56 on the loudest registers) and the
+     references set this band clearly below that -- it is the second thing
+     read, not a competing first. 0.62 keeps every register's own proportion,
+     which is the multiplier rule the whole .ds-site finish layer follows. */
+  const size = { fontSize: "clamp(1.35rem, calc(var(--text-hero) * 0.62), 2.4rem)", lineHeight: 1.3 }
+
+  /* THE MEASURE IS WIDER THAN A HEADLINE'S, AND THAT IS FROM THE RENDER.
+
+     26ch was copied off the references, where the band holds a short slogan --
+     「Grow curiosity. Build confidence.」. Our sentence is the owner's own
+     pitch, which is two clauses and about 140 characters, and at 26ch it came
+     out six lines deep: a wall of large text rather than a statement. The
+     sentence is not shortened to fit, because the second half is the half that
+     says how they work. */
+
+  if (shape === "rule") {
+    return (
+      <section className="@container" data-wide="">
+        <div className="[border-top:var(--hairline)_solid_var(--border-subtle)] [padding-block-start:calc(var(--pad-card-lg)*1.6)]">
+          <p style={size} className="ds-display max-w-[34ch] [color:var(--color-paper)] [font-weight:var(--fw-medium)] [text-wrap:balance]">
+            {line}
+          </p>
+          {attribution ? (
+            <p className="mt-6 [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]">
+              {attribution}
+            </p>
+          ) : null}
+        </div>
+      </section>
+    )
+  }
+
+  if (shape === "quote") {
+    return (
+      <section className="@container">
+        <div className="relative [padding-inline-start:calc(var(--pad-card-lg)*1.2)]">
+          {/* Hanging, not inline: a quotation mark that pushes the first word
+              across is a mark that has become part of the sentence. */}
+          <span
+            aria-hidden
+            /* NOT --color-primary-soft. That token is a TINT for filling a
+               pill behind dark text, and 柔和's is so pale that the mark was
+               invisible in the render -- a quotation shape with no quotation
+               in it. Mixed straight off the primary instead, which keeps the
+               register's own hue and stays visible on every one of them. */
+            className="absolute left-0 top-[-0.15em] [color:color-mix(in_oklab,var(--color-primary)_60%,transparent)] [font-size:calc(var(--text-hero)*1.1)] [font-weight:var(--fw-semibold)] [line-height:1]"
+          >
+            &ldquo;
+          </span>
+          <p style={size} className="ds-display max-w-[32ch] [color:var(--color-paper)] [font-weight:var(--fw-semibold)] [text-wrap:balance]">
+            {line}
+          </p>
+          {attribution ? (
+            <p className="mt-6 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">— {attribution}</p>
+          ) : null}
+        </div>
+      </section>
+    )
+  }
+
+  /* THE ONE THE REFERENCES ACTUALLY USE. Centred, one measure wide, and the
+     vertical padding is what does the work -- the sentence is not big so much
+     as ALONE. Every one of the five real pages on the contact sheet gives this
+     band more empty space than type. */
+  return (
+    <section className="@container [padding-block:calc(var(--pad-card-lg)*2.2)] text-center">
+      <p style={size} className="ds-display mx-auto max-w-[36ch] [color:var(--color-paper)] [font-weight:var(--fw-medium)] [text-wrap:balance]">
+        {line}
+      </p>
+      {attribution ? (
+        <p className="mt-7 [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]">
+          {attribution}
+        </p>
+      ) : null}
+    </section>
+  )
+}
