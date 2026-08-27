@@ -6,6 +6,7 @@ import { Render, type Data } from "@puckeditor/core";
 // design-system/editor/puck-config-client.tsx.
 import { registerAwarePuckConfig as puckConfig } from "@/design-system/editor/puck-config-client";
 import { StyleScope } from "@/design-system/editor/style-scope";
+import { Reveal } from "@/design-system/components/reveal";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
 import { siteSkeleton } from "@/lib/templates/site-composition";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
@@ -71,6 +72,10 @@ export function PublicSite({
         <div className="ds-site flex flex-col">
           <Render config={puckConfig} data={data} />
         </div>
+        {/* Arms the reveal AFTER the page has rendered visible. See
+            design-system/components/reveal.tsx for why that order is the whole
+            safety property. */}
+        <Reveal />
       </SystemLangProvider>
     </StyleScope>
   );

@@ -1118,6 +1118,88 @@
   }
 }
 
+/* ── 滚动进场 ──────────────────────────────────────────────────────────────
+
+   From tympanus.net/codrops, sent by the founder 2026-08-27. Their Playground
+   is tagged `scroll` more than anything else and their demos are MIT.
+
+   THE HIDDEN STATE ONLY EXISTS ONCE JAVASCRIPT ARMS IT. Every rule below is
+   behind `[data-reveal-armed]`, which design-system/components/reveal.tsx sets
+   at runtime. Without it -- a crawler, a link preview, print, or our own style
+   gallery drawing a whole page as a thumbnail -- the page renders fully
+   visible. The first attempt at this feature used `animation-timeline: view()`
+   and had to be deleted precisely because a page that does not scroll stayed
+   at the `from` keyframe: measured, the whole finish layer's contrast span
+   fell to 0.10.
+
+   Each register ARRIVES DIFFERENTLY, and that is the point rather than a
+   flourish: 「有动效 有设计感 有特点」 asks for a motion that belongs to one
+   design, not one effect applied six times. */
+:root[data-reveal-armed] [data-reveal] {
+  opacity: 0;
+  transition:
+    opacity 0.62s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.62s cubic-bezier(0.22, 0.61, 0.36, 1),
+    filter 0.62s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: opacity, transform;
+}
+:root[data-reveal-armed] [data-reveal][data-revealed] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* 满图 — the photographs are the argument, so they SETTLE: a shade oversized,
+   easing down to true. Nothing slides. */
+[data-register="hearth"] [data-reveal] {
+  transform: scale(1.035);
+}
+
+/* 台账 — a ledger is written left to right, one line at a time. */
+[data-register="ledger"] [data-reveal] {
+  transform: translateX(-1.4rem);
+}
+
+/* 招牌 — a sign does not fade in. It is switched on: no movement at all, just
+   the step from off to lit, and faster than the rest. */
+[data-register="signboard"] [data-reveal] {
+  transform: none;
+  transition-duration: 0.22s;
+  transition-timing-function: steps(2, end);
+}
+
+/* 瑞士 — Codrops' blurry text reveal, which is the one that reads as
+   expensive: type sharpens as it arrives instead of moving. Right for the
+   register that refuses every other kind of decoration. */
+[data-register="swiss"] [data-reveal] {
+  filter: blur(9px);
+  transform: none;
+}
+
+/* 中台 — NOTHING, and the empty rule says so out loud. This register's whole
+   argument is that it is a counter screen: a POS that animates its rows is a
+   POS nobody trusts with a queue behind them. */
+[data-register="counter"] [data-reveal] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition: none;
+}
+
+/* 图纸 — the ordinary answer: a short rise. */
+[data-register="blueprint"] [data-reveal] {
+  transform: translateY(1.15rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-reveal-armed] [data-reveal] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+
 /* ── 整页的地 ────────────────────────────────────────────────────────────────
 
    A register that opens dark opens the WHOLE PAGE dark. Put beside linear,

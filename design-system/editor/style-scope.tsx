@@ -110,7 +110,17 @@ export function StyleScope({
     // everywhere a scope is mounted: the editor canvas, every gallery tile, and
     // a published site. Inert (`none`) for the twelve that shipped before the
     // surface vocabulary existed.
-    <div className={`ds-ground ${scopeClasses(register, palette)} ${className}`.trim()} {...rest}>
+    /* `data-register` is the STABLE hook. The scope classes are CSS-module
+       hashed (style-scope-module__LTzy5W__hearth), so nothing outside the
+       module can select a register by name -- which is what the scroll-reveal
+       layer in globals.css needs in order to give each register its own
+       arrival. shoot:registers and check:registers already click by this
+       attribute for the same reason. */
+    <div
+      data-register={register}
+      className={`ds-ground ${scopeClasses(register, palette)} ${className}`.trim()}
+      {...rest}
+    >
       <RegisterProvider style={register}>{children}</RegisterProvider>
     </div>
   );

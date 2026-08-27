@@ -321,6 +321,25 @@
       "takenAt": "-",
       "takenOn": "2026-08-27",
       "note": "他们有我们没有的：Banners 13 · Blog 7（故意不做，车厂老板不写博客）· 404 5（不适用）· Flyout Menus 7（导航）。我们有他们没有的：流程 how-it-works（本地市场的报价流程）· 作品 gallery · 对比 · 整合。"
+    },
+    {
+      "repo": "-",
+      "name": "tympanus.net/codrops",
+      "licence": "MIT（他们的 demo）",
+      "kind": "look",
+      "took": "滚动进场（scroll reveal）。他们 Playground 里标 scroll 的文章比任何标签都多 —— Blurry Text Reveal on Scroll · Consecutive Scroll Animations · On-Scroll Layout Formations · Push Animation on Grid Items。**模糊对焦**那一个直接给了瑞士。",
+      "where": "design-system/components/reveal.tsx, app/globals.css（[data-register] 各自的进场）",
+      "appliedTo": [
+        "满图（照片安定）",
+        "台账（从左写进来）",
+        "招牌（阶跃打开，不淡入）",
+        "瑞士（模糊对焦，Codrops 的技法）",
+        "中台（故意没有）",
+        "图纸（短距上升）"
+      ],
+      "takenAt": "-",
+      "takenOn": "2026-08-27",
+      "note": "⚠️ **没拿他们的机器**：他们的滚动全部跑 GSAP ScrollTrigger，而 GSAP 的许可要求「向终端用户收费」的产品买 Business 会籍 —— RM199 月费正是那个。做法不受著作权保护，12 行 IntersectionObserver 就够。⚠️ **Three.js / WebGL / WebGPU 一律不拿**：他们的重心在那里，但 lapa 7303 个站里 3D 只占 2%，而我们的访客是 4G 中阶 Android。⚠️ 上一次做滚动进场用 animation-timeline: view()，整页截图变白页，把风格画廊弄坏 —— 这一版隐藏状态只在 JS 武装之后才存在。"
     }
   ]
 }
