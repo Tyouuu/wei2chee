@@ -86,7 +86,7 @@ export function toneLayers(
     "--tone-paper": "var(--color-paper)",
     "--tone-paper-dim": "var(--color-paper-dim)",
     "--tone-ink": "var(--color-ink-900)",
-    "--tone-primary-soft": "var(--color-primary-soft)",
+    "--tone-primary-soft": "var(--color-block, var(--color-primary-soft))",
   };
 
   if (tone === "ink") {

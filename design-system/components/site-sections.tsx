@@ -90,7 +90,7 @@ export function SiteFeatures({
     return (
       <section className="@container" data-wide="">
         {title}
-        <ul className="grid overflow-hidden [background:var(--color-primary-soft)] [border-radius:var(--radius-lg)] @2xl:grid-cols-3">
+        <ul className="grid overflow-hidden [background:var(--color-block,var(--color-primary-soft))] [border-radius:var(--radius-lg)] @2xl:grid-cols-3">
           {items.map((f, i) => (
             <li
               key={f.label}
@@ -785,7 +785,11 @@ export function SiteStory({
   if (!heading?.trim() && !body?.trim()) return null
 
   const words = (
-    <div className="min-w-0">
+    /* Padded and top-weighted rather than dropped in the middle: when this
+       column carries the register's block colour it IS the panel, and a panel
+       whose text starts at the top reads as a page, not as a label floating in
+       a rectangle. */
+    <div className="flex min-w-0 flex-col justify-center [padding-block:calc(var(--pad-card-lg)*0.9)] [padding-inline:calc(var(--pad-card-lg)*0.9)]">
       {heading ? (
         <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
       ) : null}
@@ -846,7 +850,13 @@ export function SiteStory({
   }
 
   return (
-    <section className="@container grid items-center [gap:calc(var(--gap-stack)*1.5)] @2xl:grid-cols-2">
+    /* THE COLUMNS MATCH HEIGHT INSTEAD OF FLOATING. `items-center` left the
+       words centred inside a column as tall as the photograph -- rendered at
+       1440 on 2026-08-27, that was three lines of type with about 180px of the
+       panel's own colour empty above them and as much below. A panel with its
+       content in the middle and air at both ends is the shape that made the
+       founder ask 「到底谁有去用啊」. */
+    <section className="@container grid items-stretch [gap:calc(var(--gap-stack)*1.5)] @2xl:grid-cols-2">
       {shape === "side-reverse" ? (
         <>
           {/* The picture is second in the DOM either way and moved by `order`,

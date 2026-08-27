@@ -222,6 +222,22 @@
      the page, not merely a lighter step of the same neutral. Both text colors
      clear AA on it: paper-dim 5.61:1, primary 4.71:1. */
   --color-primary-soft: #fbe8ea;
+  /* 色块 —— A PANEL'S COLOUR, and it is not --color-primary-soft.
+
+     Measured 2026-08-27 against two Wix templates in this market:
+
+       Wix 装修   page #FEFEF2 cream   panel #FFFE99  a real yellow
+       Wix 油漆   page #EFE7E9 pink    panel #CD5334  a real terracotta
+       我们        page pale           panel #e1f4f3  a near-white pastel
+
+     Theirs is a pale ground with a STRONG block on it. Ours was a pale ground
+     with a pale block on it, on all six registers, which is why every panel
+     read as a hospital wall. `--color-primary-soft` is a tint for filling a
+     pill behind dark text and it was doing a job it was never mixed for.
+
+     Kept as a mix rather than a literal so the register's own hue survives,
+     and kept under 30% so dark text still clears 4.5:1 on it. */
+  --color-block: color-mix(in oklab, var(--color-primary) 26%, var(--color-canvas));
 
   /* Text/icon color for content rendered on a --color-primary fill (CTA buttons
      and links). Plain white — and unlike Hearth, which had to prove that choice
