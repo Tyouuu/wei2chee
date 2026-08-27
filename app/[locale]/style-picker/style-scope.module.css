@@ -87,7 +87,7 @@
   --color-primary: #2261dd;
   --color-primary-deep: #0b47b9;
   --color-primary-soft: #e5eefe;
-  --color-block: color-mix(in oklab, var(--color-primary) 20%, var(--color-canvas));
+  --color-block: #dde6d9;
   --color-on-primary: #ffffff;
   --color-on-dark: #ffffff;
   --color-brass: #a8710a;
@@ -234,7 +234,7 @@
   --color-primary: #1677ff;
   --color-primary-deep: #0958d9;
   --color-primary-soft: #e6f0ff;
-  --color-block: color-mix(in oklab, var(--color-primary) 22%, var(--color-canvas));
+  --color-block: #dde5ef;
   --color-on-primary: #ffffff;
   --color-on-dark: #ffffff;
   --color-brass: #d48806;
@@ -381,7 +381,7 @@
   --color-primary: #237570;
   --color-primary-deep: #165a55;
   --color-primary-soft: #e1f4f3;
-  --color-block: color-mix(in oklab, var(--color-primary) 24%, var(--color-canvas));
+  --color-block: #f3ddd8;
   --color-on-primary: #fffdf9;
   --color-on-dark: #fffdf9;
   --color-brass: #a8710a;
@@ -528,7 +528,7 @@
   --color-primary: #b8500f;
   --color-primary-deep: #8f3d0a;
   --color-primary-soft: #fdeee3;
-  --color-block: color-mix(in oklab, var(--color-primary) 20%, var(--color-canvas));
+  --color-block: #f7e6a4;
   --color-on-primary: #ffffff;
   --color-on-dark: #ffffff;
   --color-brass: #a8710a;
@@ -675,7 +675,7 @@
   --color-primary: #c8102e;
   --color-primary-deep: #9d0c24;
   --color-primary-soft: #fbe8ea;
-  --color-block: color-mix(in oklab, var(--color-primary) 26%, var(--color-canvas));
+  --color-block: #dd7a52;
   --color-on-primary: #ffffff;
   --color-on-dark: #ffffff;
   --color-brass: #a8710a;
@@ -828,7 +828,7 @@
   --color-primary: #3d4ea8;
   --color-primary-deep: #b01f12;
   --color-primary-soft: #fdeceb;
-  --color-block: color-mix(in oklab, var(--color-primary) 18%, var(--color-canvas));
+  --color-block: #ece5d4;
   --color-on-primary: #ffffff;
   --color-on-dark: #ffffff;
   --color-brass: #a8710a;

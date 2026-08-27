@@ -146,22 +146,21 @@
   --color-primary: #b8500f;
   --color-primary-deep: #8f3d0a;
   --color-primary-soft: #fdeee3;
-  /* 色块 —— A PANEL'S COLOUR, and it is not --color-primary-soft.
+  /* 色块 —— A SECOND COLOUR, NOT A DILUTION OF THE FIRST.
 
-     Measured 2026-08-27 against two Wix templates in this market:
+     Measured 2026-08-27 against the two Wix templates in this market: their
+     panels are #FFFE99 and #CD5334 while their primaries are a blue button and
+     a dark red. The panel is a separate designed value. Ours was
+     `color-mix(primary, canvas)` on all six registers, which is why every
+     panel read as a tinted form rather than as a design.
 
-       Wix 装修   page #FEFEF2 cream   panel #FFFE99  a real yellow
-       Wix 油漆   page #EFE7E9 pink    panel #CD5334  a real terracotta
-       我们        page pale           panel #e1f4f3  a near-white pastel
+     黄 yellow, and it is a direct copy: Wix's Home Remodeling template is a
+     renovation company and its panel is #FFFE99 while its primary is
+     blue. 台账 goes to 装修. The same trade reached the same colour.
 
-     Theirs is a pale ground with a STRONG block on it. Ours was a pale ground
-     with a pale block on it, on all six registers, which is why every panel
-     read as a hospital wall. `--color-primary-soft` is a tint for filling a
-     pill behind dark text and it was doing a job it was never mixed for.
-
-     Kept as a mix rather than a literal so the register's own hue survives,
-     and kept under 30% so dark text still clears 4.5:1 on it. */
-  --color-block: color-mix(in oklab, var(--color-primary) 20%, var(--color-canvas));
+     Light enough for dark text at 4.5:1 except 招牌, which inverts its own
+     writing the way its dark ground already does. */
+  --color-block: #f7e6a4;
 
   /* Text/icon color for content rendered on a --color-primary fill (CTA
      buttons and links) — plain white, which passes comfortably against
