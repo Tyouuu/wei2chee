@@ -996,11 +996,16 @@ export function SiteGallery({
   note,
   shape = "grid",
   items,
+  moreLabel,
+  moreHref,
 }: {
   heading?: string
   note?: string
   shape?: "grid" | "bento" | "strip" | "mosaic"
   items?: { src?: string; alt?: string; caption?: string }[]
+  /** 「看全部」. Their mosaic ends with one small button and nothing else. */
+  moreLabel?: string
+  moreHref?: string
 }) {
   const shots = items ?? []
   if (!shots.length) return null
@@ -1060,6 +1065,21 @@ export function SiteGallery({
             </li>
           ))}
         </ul>
+        {/* 「看全部」 —— their Recent Projects ends with a small pale button
+            pinned to the BOTTOM RIGHT of the mosaic, and it is the only control
+            in that whole section. Ours ended on the last photograph, so the
+            wall of work had no way out of it. The link is the same anchor the
+            navigation already points at; nothing new is claimed. */}
+        {moreLabel ? (
+          <div className="flex justify-end">
+            <a
+              href={moreHref || "#"}
+              className="inline-flex items-center [background:var(--color-paper)] [border-radius:var(--site-radius-control,var(--radius-control))] [color:var(--color-canvas)] [font-size:var(--text-sm)] [padding:0.6rem_1.6rem]"
+            >
+              {moreLabel}
+            </a>
+          </div>
+        ) : null}
       </section>
     )
   }

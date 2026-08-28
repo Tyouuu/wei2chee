@@ -218,7 +218,12 @@ export function SiteFoot({
           always there, because it is the one line that is true on every page.
         */}
         {filled.length || minor.length || copyright ? (
-          <div className="grid [border-top:var(--hairline)_solid_var(--color-nav-border)] [gap:var(--gap-stack)] [padding-top:var(--gap-stack)] @2xl:grid-cols-3">
+          /* `data-cells` — 台账's reference puts a VERTICAL RULE between the
+             three columns of its bottom band, the same rule it puts between
+             every other pair of cells on that page. Reusing the mark the
+             register already understands rather than writing a second rule for
+             the footer: a register that says 「分格」 says it everywhere. */
+          <div data-cells="" className="grid [border-top:var(--hairline)_solid_var(--color-nav-border)] [gap:var(--gap-stack)] [padding-top:var(--gap-stack)] @2xl:grid-cols-3">
             <dl>
               {filled.map((r) => (
                 <div key={r.label} className="mb-2">

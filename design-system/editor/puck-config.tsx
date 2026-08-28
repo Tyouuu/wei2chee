@@ -273,6 +273,8 @@ type Components = {
     note?: string;
     shape?: "grid" | "bento" | "strip" | "mosaic";
     items?: { src?: string; alt?: string; caption?: string }[];
+    moreLabel?: string;
+    moreHref?: string;
   };
   SiteStory: {
     heading?: string;
@@ -1869,8 +1871,8 @@ export const puckConfig: Config<Components> = {
         where the fallback belongs, and it is there.
       */
       defaultProps: { items: [] },
-      render: ({ heading, note, shape, items }) => (
-        <SiteGallery heading={heading} note={note} shape={shape} items={items} />
+      render: ({ heading, note, shape, items, moreLabel, moreHref }) => (
+        <SiteGallery heading={heading} note={note} shape={shape} items={items} moreLabel={moreLabel} moreHref={moreHref} />
       ),
     },
 

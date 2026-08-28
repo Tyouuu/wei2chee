@@ -382,6 +382,11 @@ const work = (c: LandingContent) =>
     heading: c.words.sections.work.heading,
     note: c.words.sections.work.hint,
     items: c.words.sections.work.shots.map((caption) => ({ src: "", caption, alt: "" })),
+    /* 「看全部」 — the one control their mosaic ends on. It points at the ask,
+       which is already on the page and already the thing a visitor who has
+       just looked at the work wants next. Nothing new is claimed. */
+    moreLabel: c.words.contactHeading,
+    moreHref: "#website-form",
   });
 
 /*

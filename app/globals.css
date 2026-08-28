@@ -610,6 +610,15 @@
    grid of cells divided by 1px, not a panel with things floating in it. The
    gap collapses to zero here because a rule and a gap say the same thing twice
    and their page uses only the rule. */
+/* 上下相邻的两块共用一条线 —— their About Us and Our Benefits are ONE frame
+   with a rule across it, not two frames stacked. Ours drew a border on each,
+   so where their page has one hairline ours had two with a seam between them.
+   Dropping the top border of every framed block after the first turns the
+   whole column back into one continuous grid, which is what that page is. */
+.ds-ground[data-frame="hairline"] .ds-site > * > * + *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]),
+.ds-ground[data-frame="hairline"].ds-site > * > * + *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]) {
+  border-top: 0;
+}
 .ds-ground[data-frame="hairline"] .ds-site [data-cells] {
   gap: 0;
 }
