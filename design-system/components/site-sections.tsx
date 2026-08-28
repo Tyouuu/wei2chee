@@ -1008,8 +1008,11 @@ export function SiteGallery({
         style={{ aspectRatio: anyFilled || s.src ? String(ratio) : "5 / 2" }}
       >
         {s.src ? (
-          // eslint-disable-next-line @next/next/no-img-element -- Supabase
-          // storage, which Next's optimiser is not configured for here.
+          // Supabase storage, which Next's optimiser is not configured for here.
+          // The directive has to be the LAST line before the code: with the
+          // reason wrapped onto a second comment line, "next line" was that
+          // line, and this disabled nothing for as long as it existed.
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={s.src}
             alt={s.alt ?? s.caption ?? ""}

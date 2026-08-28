@@ -2010,7 +2010,31 @@ ESLint 9 要 `eslint.config.js`，仓库里没有（还是 `.eslintrc` 时代的
 所以 `npm run lint` 每次都直接 exit 非零 —— 等於**这个仓库根本没有 lint 这道关**。
 不是这次改动造成的，先记着。
 
-- [ ] 迁到 `eslint.config.js`（flat config），接回 `next/core-web-vitals`
+- [x] **做完了 2026-08-28。** `eslint.config.mjs`（flat config）+ `core-web-vitals` + `typescript`，
+      写法照 `node_modules/next/dist/docs/.../03-eslint.md`，不是凭印象（AGENTS.md 的规矩）
+- [x] **第一次跑出 321 个问题**。其中 78 个在 `.claude/skills/` 底下一个**压缩过的第三方 bundle** 里
+      —— 不是我们的代码，排掉。真实数字是 **33 errors / 120 warnings**
+- [x] 🔴 **抓到一个真的 bug，而且正好在风格偏好上**：`hero-card` · `record-table`（两处）·
+      `workflow-strip` 都写着
+      `const lay = layout ?? useRegisterProp(...) ?? "full"`。
+      **`??` 会短路 —— prop 有值时那个 hook 根本不被呼叫。**
+      而 `useRegisterVariant` 里是 `useContext` + `useMemo`（两个 hook 槽），
+      React 又是**按位置**记 hook 的 → 同一个组件在不同 render 之间呼叫的 hook 数量会变。
+      `record-table` 连着两个，第二个可能读到第一个的槽位。
+      **这正是[任务 28](#28)「45 条风格偏好从来没生效过」那一类的静默失效**，
+      而且这条关关着，所以没人看得到。已把 hook 提到 `??` 链外面（语意不变，hook 数量固定）
+- [x] **两个 `eslint-disable-next-line` 一直在 disable 空气** —— 理由换行了，
+      所以「下一行」是注解的第二行，不是代码
+- [x] **剩下 29 个 error 用 ESLint 9 的 suppressions 建基线**（`eslint-suppressions.json`，
+      17 个档、29 条，全是 React 19 新加的 `set-state-in-effect` 16 / `refs` 11 / purity / use-memo）。
+      **不是把规则关掉** —— 规则开着，旧账是一份看得见、可以 `--prune-suppressions` 烧掉的清单，
+      **新的违规照样让 `npm run lint` 挂**（实测过：故意加一个新的条件式 hook → exit 1，还原 → exit 0）
+- [x] ⚠️ **为什么不当场修那 29 个**：它们大多在编辑器里，那是这个仓库最敏感的代码，
+      而且没有组件测试。在一个长 session 的末尾逐个重构 effect，是拿他在卖的东西去赌
+- [ ] **还欠**：把那 29 条烧掉，一次一个档（`set-state-in-effect` 16 条最多）
+- [ ] **还欠**：116 个 warning 里 53 个是 `no-unused-vars`（真的死代码）、
+      53 个是 `no-img-element`（design-system 里是**对的**，那些组件会被渲染进客户发布的页面
+      跟几百张实时缩略图，`next/image` 的包装会改掉正在被预览的版面）
 
 ### 48. 🔴 我们没有客户的电话号码（2026-08-28 查出来的）
 

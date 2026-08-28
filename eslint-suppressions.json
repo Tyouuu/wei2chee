@@ -1,0 +1,90 @@
+{
+  "app/[locale]/portal/(app)/portal-shell.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "app/[locale]/portal/[pageKey]/ai-assistant.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "app/[locale]/portal/[pageKey]/editor-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "app/[locale]/portal/[pageKey]/publish-site.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "app/[locale]/portal/[pageKey]/version-history.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "app/[locale]/portal/home-client.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "app/[locale]/portal/page-preview.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "components/kibo-ui/gantt/index.tsx": {
+    "react-hooks/refs": {
+      "count": 9
+    },
+    "react-hooks/use-memo": {
+      "count": 1
+    }
+  },
+  "components/ui/carousel.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "design-system/components/input-blocks.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "design-system/components/notification-toast.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "design-system/components/trade-blocks.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "design-system/editor/draft-notice.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "design-system/editor/inline-editing.tsx": {
+    "react-hooks/refs": {
+      "count": 2
+    }
+  },
+  "design-system/editor/live-preview.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "design-system/editor/photo-field.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "hooks/use-mobile.ts": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  }
+}

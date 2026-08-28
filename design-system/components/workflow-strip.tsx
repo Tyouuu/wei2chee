@@ -54,8 +54,27 @@ export function WorkflowStrip({
   layout?: "row" | "timeline" | "numbered"
 }) {
   // Absent means "follow the register", not "row" -- see style-scope.tsx.
-  const lay =
-    layout ?? useRegisterProp<"row" | "timeline" | "numbered">("WorkflowStrip", "layout") ?? "row"
+  /*
+    THE HOOK IS CALLED UNCONDITIONALLY, THE FALLBACK IS APPLIED AFTER.
+
+    This read `prop ?? useRegisterProp(...) ?? default` on one line, which is
+    the precedence rule stated exactly right and executed exactly wrong: `??`
+    SHORT-CIRCUITS, so when the customer's own prop is present the hook is
+    never called. useRegisterVariant is useContext + useMemo -- two hook slots
+    -- so the number of hooks this component calls changed with its props.
+    React matches hooks positionally, so that is either "rendered fewer hooks
+    than expected" or, worse, a memo silently read from the wrong slot; in
+    RecordTable, where there were TWO of these in a row, the second could take
+    the first one's place.
+
+    Splitting the line changes no semantics -- the hook is pure and its result
+    is still the middle term of the same precedence chain -- and it makes the
+    hook count constant. Found by `npm run lint`, which had never once run:
+    there was no eslint config in the repository, so `react-hooks/rules-of-hooks`
+    has been switched off for this codebase's entire life.
+  */
+  const layoutPref = useRegisterProp<"row" | "timeline" | "numbered">("WorkflowStrip", "layout")
+  const lay = layout ?? layoutPref ?? "row"
   if (stages.length === 0) return null
 
   return (

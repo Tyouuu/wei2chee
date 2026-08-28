@@ -94,15 +94,35 @@ export function RecordTable(props: {
   const { gridId, caption, look, row, filters } = props
   const w = useSystemWords()
   // Absent means "follow the register", not "plain" -- see style-scope.tsx.
-  const shown = look ?? useRegisterProp<"plain" | "compact" | "zebra" | "grid">("RecordTable", "look") ?? "plain"
+  /*
+    THE HOOK IS CALLED UNCONDITIONALLY, THE FALLBACK IS APPLIED AFTER.
+
+    This read `prop ?? useRegisterProp(...) ?? default` on one line, which is
+    the precedence rule stated exactly right and executed exactly wrong: `??`
+    SHORT-CIRCUITS, so when the customer's own prop is present the hook is
+    never called. useRegisterVariant is useContext + useMemo -- two hook slots
+    -- so the number of hooks this component calls changed with its props.
+    React matches hooks positionally, so that is either "rendered fewer hooks
+    than expected" or, worse, a memo silently read from the wrong slot; in
+    RecordTable, where there were TWO of these in a row, the second could take
+    the first one's place.
+
+    Splitting the line changes no semantics -- the hook is pure and its result
+    is still the middle term of the same precedence chain -- and it makes the
+    hook count constant. Found by `npm run lint`, which had never once run:
+    there was no eslint config in the repository, so `react-hooks/rules-of-hooks`
+    has been switched off for this codebase's entire life.
+  */
+  const lookPref = useRegisterProp<"plain" | "compact" | "zebra" | "grid">("RecordTable", "look")
+  const shown = look ?? lookPref ?? "plain"
   // "RecordTableRow", NOT "RecordTable". A register's preference is a VARIANT
   // ID, and the id is looked up in VARIANTS under the same key -- so two axes
   // on one component need two keys, or the second silently reads the first
   // one's props and finds nothing. This is the same class of failure as the
   // 315 preferences that reached nothing before 2026-08-23, and it is silent
   // in exactly the same way: the table renders, it just renders the default.
-  const rowShape =
-    row ?? useRegisterProp<"plain" | "pill" | "avatar">("RecordTableRow", "row") ?? "plain"
+  const rowPref = useRegisterProp<"plain" | "pill" | "avatar">("RecordTableRow", "row")
+  const rowShape = row ?? rowPref ?? "plain"
   const { columns, rows } = normalizeTable(props as unknown as Record<string, unknown>)
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE

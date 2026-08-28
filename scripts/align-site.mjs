@@ -128,13 +128,197 @@ function readSections(rootSel) {
   return out.sort((a, b) => a.top - b.top);
 }
 
+/* ── 字体 TYPE ─────────────────────────────────────────────────────────────
+   SIZE WAS NEVER THE WHOLE AXIS, and reading only the size is what let 満図
+   ship 「抄完了」 while wearing the wrong typeface. 2026-08-28, side by side at
+   native size: A. Reynolds sets its headings AND its body in a serif; ours was
+   a geometric sans throughout. The ruler said 90/50 vs 83/51 and passed it.
+
+   重点 7i names 字体 as one of five axes; a face is the loudest half of that
+   axis and it was the half nobody measured. So: family, weight, tracking and
+   line height, for headings and for body text — because a page can copy its
+   headings and still read as somebody else's if the paragraphs are wrong. */
 function readType() {
-  return [...document.querySelectorAll("h1,h2")]
-    .map((h) => ({
-      t: (h.innerText || "").trim().slice(0, 26),
-      px: Math.round(parseFloat(getComputedStyle(h).fontSize)),
-    }))
-    .filter((x) => x.t);
+  const face = (el) => {
+    const s = getComputedStyle(el);
+    /* The FIRST family is the one that applies; the rest of the stack is what
+       happens when it fails to load. Quotes stripped so 「"Playfair Display"」
+       and 「Playfair Display」 compare equal. */
+    const fam = (s.fontFamily || "").split(",")[0].trim().replace(/^["']|["']$/g, "");
+    return {
+      fam,
+      px: Math.round(parseFloat(s.fontSize)),
+      w: s.fontWeight,
+      lh: Math.round(parseFloat(s.lineHeight) || 0),
+      ls: (parseFloat(s.letterSpacing) || 0).toFixed(2),
+      /* Serif or not cannot be read off the computed style — it is a property
+         of the font file. Measured instead: render one glyph in the page's own
+         face and again in a known serif and a known sans, and see which it
+         matches. This is the standard font-detection trick and it is the only
+         thing here that answers 「衬线还是无衬线」 without a human looking. */
+      serif: (() => {
+        const w = (family, text) => {
+          const c = document.createElement("canvas").getContext("2d");
+          c.font = `100px ${family}`;
+          return c.measureText(text).width;
+        };
+        /* Wide glyphs over narrow ones. Text serifs run near 3.1; grotesks
+           near 4.0. An equality test against a generic was tried first and
+           came back null for every real webfont, because a loaded face
+           matches neither generic. */
+        const ratio = w(`"${fam}"`, "MWQ@") / w(`"${fam}"`, "illj");
+        return ratio < 3.55;
+      })(),
+      /* ⚠️ 有没有真的载入 —— THE FIELD THAT STOPS THIS RULER LYING.
+         2026-08-28 it reported A. Reynolds as a serif page and I told the
+         founder so. It is not: `helvetica-w01-light` came back from
+         document.fonts with status "error" — the webfont could not be fetched
+         from this machine, the browser fell back to Times, and both the
+         measurement and the screenshot showed serifs that are not in their
+         design. A face that did not load is not a face; say so. */
+      loaded: (() => {
+        const want = fam.toLowerCase();
+        const f = [...document.fonts].filter((x) =>
+          (x.family || "").toLowerCase().replace(/^["']|["']$/g, "") === want,
+        );
+        if (!f.length) return "本机字体";
+        return f.some((x) => x.status === "loaded")
+          ? "载入了"
+          : f.some((x) => x.status === "error")
+            ? "❌ 载入失败（画面上是退回字体，不是他们的设计）"
+            : "没用到";
+      })(),
+    };
+  };
+  const heads = [...document.querySelectorAll("h1,h2")]
+    .filter((h) => (h.innerText || "").trim())
+    .map((h) => ({ t: (h.innerText || "").trim().slice(0, 26), ...face(h) }));
+  /* Body: the paragraphs that actually carry prose, not a two-word label. */
+  const body = [...document.querySelectorAll("p,li")]
+    .filter((e) => (e.innerText || "").trim().split(/\s+/).length >= 8)
+    .slice(0, 40)
+    .map(face);
+  const commonest = (arr, key) => {
+    const m = {};
+    for (const x of arr) m[x[key]] = (m[x[key]] || 0) + 1;
+    const best = Object.entries(m).sort((a, b) => b[1] - a[1])[0];
+    return best ? best[0] : "—";
+  };
+  return {
+    heads,
+    bodyFam: commonest(body, "fam"),
+    bodyPx: commonest(body, "px"),
+    bodyLh: commonest(body, "lh"),
+    bodySerif: body.length ? body.filter((b) => b.serif).length > body.length / 2 : null,
+    bodyN: body.length,
+  };
+}
+
+/* ── 每一段的解剖 ─────────────────────────────────────────────────────────
+   The other thing size could not see. 満図's second section is 「Our Expertise」
+   — FIVE BORDERED CARDS ON A GREY PANEL, 3 then 2, each with a small icon.
+   Ours was a numbered list of four lines. Both are 「a section with a heading」
+   and the section list printed them as equals.
+
+   So for each section: what colour it is painted, how much air it has top and
+   bottom, and — the part that matters — the repeated group inside it, because
+   一排卡片 / 一列清单 / 一张大图 are three different skeletons wearing the same
+   height. */
+function readAnatomy(rootSel) {
+  const root = rootSel ? document.querySelector(rootSel) : null;
+  let node = root;
+  if (node) while (node && node.children.length <= 2) node = node.children[0];
+  const pool = node ? [...node.children] : [...document.querySelectorAll("section,div[id^='comp-']")];
+  const boxes = pool
+    .map((e) => {
+      const r = e.getBoundingClientRect();
+      return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
+    })
+    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= 1300))
+    .sort((a, b) => a.top - b.top || b.h - a.h);
+  const taken = [];
+  const hex = (raw) => {
+    const m = (raw || "").match(/rgba?\(([^)]+)\)/);
+    if (!m) return null;
+    const p = m[1].split(",").map((x) => parseFloat(x));
+    if (p.length > 3 && !p[3]) return null;
+    return "#" + p.slice(0, 3).map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+  };
+  /* What colour the section actually IS.
+     Three ways a section gets its colour and all three have to be read, or the
+     answer is 「—」 for every section, which is what the first version returned
+     for the whole reference: Wix paints with a filled DIV stretched inside the
+     section, not with a background on the section itself. So: the element's
+     own background, else a child that covers it, else the first ancestor that
+     declares one. */
+  const painted = (el) => {
+    const own = hex(getComputedStyle(el).backgroundColor);
+    if (own) return own;
+    const box = el.getBoundingClientRect();
+    if (box.width && box.height) {
+      for (const k of el.querySelectorAll("*")) {
+        const c = hex(getComputedStyle(k).backgroundColor);
+        if (!c) continue;
+        const r = k.getBoundingClientRect();
+        if (r.width * r.height >= box.width * box.height * 0.8) return c;
+      }
+    }
+    let n = el.parentElement;
+    while (n) {
+      const c = hex(getComputedStyle(n).backgroundColor);
+      if (c) return c;
+      n = n.parentElement;
+    }
+    return "—";
+  };
+  const out = [];
+  for (const { e, top, h } of boxes) {
+    if (taken.some((o) => top >= o.top && top + h <= o.top + o.h)) continue;
+    taken.push({ top, h });
+    /* THE REPEATED GROUP. Walk down looking for the deepest container whose
+       children are several boxes of the same width — that is a card row, a
+       list, or a gallery, and which of the three it is shows in their shape. */
+    let best = null;
+    const walk = (n, depth) => {
+      if (depth > 14) return;  // Wix nests ten wrappers deep; six stopped on them
+      const kids = [...n.children].filter((k) => k.getBoundingClientRect().height > 24);
+      if (kids.length >= 2) {
+        const r = kids.map((k) => k.getBoundingClientRect());
+        const w0 = Math.round(r[0].width);
+        const same = r.every((x) => Math.abs(Math.round(x.width) - w0) <= 6);
+        const perRow = new Set(r.map((x) => Math.round(x.top))).size;
+        if (same && w0 > 90) {
+          const cs = getComputedStyle(kids[0]);
+          const cand = {
+            n: kids.length,
+            rows: perRow,
+            cols: Math.round(kids.length / Math.max(1, perRow)),
+            w: w0,
+            bg: hex(cs.backgroundColor) || "透明",
+            border: parseFloat(cs.borderTopWidth) ? `${Math.round(parseFloat(cs.borderTopWidth))}px` : "无框",
+            radius: Math.round(parseFloat(cs.borderTopLeftRadius)) || 0,
+            img: kids[0].querySelectorAll("img,svg,video").length,
+          };
+          if (!best || cand.n > best.n || (cand.n === best.n && cand.w < best.w)) best = cand;
+        }
+      }
+      for (const k of kids) walk(k, depth + 1);
+    };
+    walk(e, 0);
+    const cs = getComputedStyle(e);
+    const im = e.querySelector("img,video");
+    out.push({
+      top,
+      h,
+      bg: painted(e),
+      padTop: Math.round(parseFloat(cs.paddingTop)) || 0,
+      padBottom: Math.round(parseFloat(cs.paddingBottom)) || 0,
+      group: best,
+      imgRadius: im ? Math.round(parseFloat(getComputedStyle(im).borderTopLeftRadius)) || 0 : null,
+      text: (e.innerText || "").trim().split(/\s+/).join(" ").slice(0, 30),
+    });
+  }
+  return out.sort((a, b) => a.top - b.top);
 }
 
 /* ── 动效 · 留白 · 颜色（带稳定性分层）──────────────────────────────────────
@@ -467,9 +651,10 @@ async function shoot(target, rootSel, wait, file) {
   const secs = await p.evaluate(readSections, rootSel);
   const type = await p.evaluate(readType);
   const axes = await p.evaluate(readAxes, rootSel);
+  const anat = await p.evaluate(readAnatomy, rootSel);
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
   await p.close();
-  return { secs, type, axes };
+  return { secs, type, axes, anat };
 }
 
 try {
@@ -480,8 +665,37 @@ try {
   const sum = (l) => l.reduce((a, s) => a + s.h, 0);
   console.log(`\n参考 ${url}\n${theirs.secs.map(row).join("\n")}\n  = ${theirs.secs.length} 段 ${sum(theirs.secs)}px`);
   console.log(`\n我们 ${register}\n${ours.secs.map(row).join("\n")}\n  = ${ours.secs.length} 段 ${sum(ours.secs)}px`);
-  console.log(`\n字级 TYPE   参考 ${theirs.type.map((t) => t.px).join("/")}`);
-  console.log(`           我们 ${ours.type.map((t) => t.px).join("/")}`);
+  /* -- 字体 TYPE, all of it ----------------------------------------------
+     Sizes alone passed 満図 while it wore the wrong typeface. The face is the
+     loudest half of this axis, so it is printed first and the sizes second. */
+  const typeLine = (t) => {
+    const kind = (b) => (b === null ? "?" : b ? "衬线" : "无衬线");
+    const h1 = t.heads[0];
+    return [
+      `标题 ${h1 ? h1.fam : "—"} (${h1 ? kind(h1.serif) : "?"} · ${h1 ? h1.loaded : "—"}) ${t.heads.map((x) => x.px).join("/")}`,
+      `           标题字重 ${h1 ? h1.w : "—"} · 行高 ${h1 ? h1.lh : "—"}px · 字距 ${h1 ? h1.ls : "—"}px`,
+      `           正文 ${t.bodyFam} (${kind(t.bodySerif)}) ${t.bodyPx}px/${t.bodyLh}px  ${t.bodyN} 段样本`,
+    ].join("\n");
+  };
+  console.log(`\n字体 TYPE   参考 ${typeLine(theirs.type)}`);
+  console.log(`\n           我们 ${typeLine(ours.type)}`);
+
+  /* -- 每一段的解剖 -------------------------------------------------------
+     一排卡片 / 一列清单 / 一张大图 all print the same height in the section
+     list. This is the column that tells them apart. */
+  const anatLines = (list) =>
+    list
+      .map((a, i2) => {
+        const g = a.group
+          ? `${a.group.n}${a.group.cols > 1 ? "个 " + a.group.cols + "栏" : "个 一列"} ${a.group.w}px ${a.group.bg} ${a.group.border}${a.group.radius ? " r" + a.group.radius : ""}${a.group.img ? " 带图标" : ""}`
+          : "无重复组";
+        return `${String(i2 + 1).padStart(2)}  ${String(a.h).padStart(5)}px  ${String(a.bg).padEnd(8)} 内距 ${a.padTop}/${a.padBottom}  ${g}`;
+      })
+      .join("\n");
+  console.log(`\n解剖 ANATOMY 参考
+${anatLines(theirs.anat)}`);
+  console.log(`\n            我们
+${anatLines(ours.anat)}`);
 
   /* ── 五根轴的另外两根 ─────────────────────────────────────────────────────
      重点 7i: 版面 · 字体 · 颜色 · 动效 · 留白. The first two are printed above

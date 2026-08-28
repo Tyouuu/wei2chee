@@ -119,8 +119,27 @@ export function HeroCard({
   href: string
 }) {
   // Absent means "follow the register", not "full" -- see style-scope.tsx.
-  const lay =
-    layout ?? useRegisterProp<"full" | "solo" | "trend" | "stats">("HeroCard", "layout") ?? "full"
+  /*
+    THE HOOK IS CALLED UNCONDITIONALLY, THE FALLBACK IS APPLIED AFTER.
+
+    This read `prop ?? useRegisterProp(...) ?? default` on one line, which is
+    the precedence rule stated exactly right and executed exactly wrong: `??`
+    SHORT-CIRCUITS, so when the customer's own prop is present the hook is
+    never called. useRegisterVariant is useContext + useMemo -- two hook slots
+    -- so the number of hooks this component calls changed with its props.
+    React matches hooks positionally, so that is either "rendered fewer hooks
+    than expected" or, worse, a memo silently read from the wrong slot; in
+    RecordTable, where there were TWO of these in a row, the second could take
+    the first one's place.
+
+    Splitting the line changes no semantics -- the hook is pure and its result
+    is still the middle term of the same precedence chain -- and it makes the
+    hook count constant. Found by `npm run lint`, which had never once run:
+    there was no eslint config in the repository, so `react-hooks/rules-of-hooks`
+    has been switched off for this codebase's entire life.
+  */
+  const layoutPref = useRegisterProp<"full" | "solo" | "trend" | "stats">("HeroCard", "layout")
+  const lay = layout ?? layoutPref ?? "full"
   const showTrend = lay === "full" || lay === "trend"
   const showStats = lay === "full" || lay === "stats"
 

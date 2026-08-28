@@ -85,8 +85,11 @@ export function AiDock({ children }: { children: ReactNode }) {
   // setting nobody remembers turning on.
   useEffect(() => {
     if (manual !== true) setManual(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- a change of block
-    // is the trigger; `manual` is read, deliberately not subscribed to.
+    // A change of block is the trigger; `manual` is read, deliberately not
+    // subscribed to. The directive goes last: with the reason wrapped onto a
+    // second comment line, "next line" was that line rather than the deps
+    // array, so this suppressed nothing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blockId]);
 
   // Preview means nothing of Formae's on the screen -- a floating assistant
