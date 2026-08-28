@@ -478,6 +478,7 @@ export const LABELS_EN: Record<string, string> = {
   "标题下小字＋图标卡": "Sub-line under heading, icon cards",
   "编号色块": "Numbered colour plates",
   "两张各占一半": "Two, half and half",
+  "底色上放一张照片": "A photograph on the ground colour",
   一步: "Step",
   半块颜色: "Half colour, half ground",
   一条线: "A rule and the words",

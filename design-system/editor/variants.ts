@@ -91,6 +91,10 @@ export const VARIANTS: Record<string, Variant[]> = {
   // screen, and these four are genuinely different pages rather than four
   // spacings of the same one.
   SiteHero: [
+    /* 底色上放一张照片 — Toulouse's first screen: the colour is the ground and
+       the photograph floats in the middle of it, rather than the photograph
+       being the ground. 老板: 「他是背景然后有照片的」. */
+    { id: "name-figure", label: "底色上放一张照片", props: { layout: "name-figure" } },
     { id: "left", label: "左对齐", props: { layout: "left" } },
     { id: "band", label: "整片底色", props: { layout: "band" } },
     { id: "center", label: "置中", props: { layout: "center" } },
