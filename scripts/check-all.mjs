@@ -32,6 +32,11 @@ const GATES = [
   { name: "registers", cmd: "npm", args: ["run", "check:registers"], slow: false },
   { name: "upstream", cmd: "npm", args: ["run", "check:upstream"], slow: false },
 
+  /* Not a defect list — the things the founder has to supply before anyone is
+     invited in. Exits 0 on purpose (see the script) so it reports without
+     blocking a business that does not exist yet. */
+  { name: "launch", cmd: "npm", args: ["run", "check:launch"], slow: false },
+
   /* Talks to the database with the service role and creates two throwaway
      accounts. Not slow, and it is the one that caught the style choice. */
   { name: "isolation", cmd: "npm", args: ["run", "check:isolation"], slow: false },

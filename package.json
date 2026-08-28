@@ -42,7 +42,8 @@
     "shoot:picker": "node scripts/shoot-picker.mjs",
     "shoot:console": "node scripts/shoot-console.mjs",
     "shoot:journey": "node scripts/shoot-journey.mjs",
-    "check": "node scripts/check-all.mjs"
+    "check": "node scripts/check-all.mjs",
+    "check:launch": "node scripts/check-launch.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
