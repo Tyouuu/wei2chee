@@ -327,6 +327,38 @@
      its display type in a serif over a photograph. Nunito stays for the body,
      where warmth is right and a serif at 15px is not. */
   --font-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
+
+  /* ── 官网的配色跟标题字 —— CLONED FROM A. REYNOLDS, MEASURED BY AREA ──────
+
+     Founder, 2026-08-28: 「我还是觉得要完全一样跟模版 因为你不懂什么颜色好看跟
+     不好看 反正图片都是我们去图库找的」. So every register takes its reference's
+     palette whole, including this one, where the reference is a REMODELING
+     company and the register goes to salons.
+
+     Sampled every 9th pixel of the reference at 1440px, 96000 samples:
+
+         #fefef2  49.3%   the ground
+         #fffe99  12.6%   the blocks — hero band and foot
+         #f1f2ed   3.0%   the cards
+         #010100          the type
+         #116dff          the one button          (from the DOM, not the pixels)
+
+     満図's SYSTEM pages keep their own warm cream and teal; only the website
+     wears this. The mechanism is the `ink` ground axis, which since today means
+     「the website states its own ground」 rather than 「dark」. */
+  --site-ink-bg: #fefef2;
+  --site-ink-fg: #0a0a08;
+  --site-ink-fg-dim: color-mix(in oklab, #0a0a08 62%, transparent);
+  --site-ink-panel: #f1f2ed;
+  --site-ink-block: #fffe99;
+  --site-on-block: #0a0a08;
+  --site-foot-bg: #fffe99;
+  --site-foot-fg: #0a0a08;
+  --site-primary: #116dff;
+  --site-on-primary: #ffffff;
+  /* Their headline is a heavy grotesk, not a serif. 満図's工作台 keeps the
+     Newsreader; the website takes theirs. */
+  --site-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
   /* No mono anywhere in this register: a monospaced figure is a precision
      signal, and precision is Ledger's job, not this one's. */
   --font-numeric: var(--font-rounded-latin), "PingFang SC", system-ui, sans-serif;

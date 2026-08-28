@@ -382,6 +382,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        keeps this library worth having: if eight registers open on a bleed
        photo they are eight paint jobs again. A trade that wants its photo
        bigger has the `hero` axis, which is per-page and free. */
+    /* 官网自己的地 —— see hearth.css. 「ink」 is the axis that lets a register
+       state its website's whole palette; 満図's is LIGHT (#fefef2). */
+    ground: "ink",
     hero: "band-bleed",
     opens: "照片墙",
     /* THEIR ORDER, MEASURED OUT OF THEIR DOM, NOT GUESSED:

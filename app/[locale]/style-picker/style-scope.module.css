@@ -402,6 +402,17 @@
   --color-brass-chart: #a8710a;
   --font-ui: var(--font-rounded-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
+  --site-ink-bg: #fefef2;
+  --site-ink-fg: #0a0a08;
+  --site-ink-fg-dim: color-mix(in oklab, #0a0a08 62%, transparent);
+  --site-ink-panel: #f1f2ed;
+  --site-ink-block: #fffe99;
+  --site-on-block: #0a0a08;
+  --site-foot-bg: #fffe99;
+  --site-foot-fg: #0a0a08;
+  --site-primary: #116dff;
+  --site-on-primary: #ffffff;
+  --site-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
   --font-numeric: var(--font-rounded-latin), "PingFang SC", system-ui, sans-serif;
   --fw-regular: 400;
   --fw-medium: 600;

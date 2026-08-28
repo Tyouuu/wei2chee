@@ -636,16 +636,24 @@ export function SiteCta({
     return (
       <section data-cta-band="" data-wide="" className="@container">
         <div className="grid overflow-hidden [border-radius:var(--radius-lg)] @3xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-          <div className="[background:var(--color-primary)] [padding-block:calc(var(--pad-card-lg)*1.8)] [padding-inline:calc(var(--pad-card-lg)*1.2)]">
-            <h2 className="ds-display max-w-[16ch] text-balance [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]">
+          {/* 半块颜色 IS THE BLOCK COLOUR, NOT THE PRIMARY.
+
+              Measured against the page 満図 clones: their 「Serving Clients in
+              Your Area」 panel is the same pale yellow as the hero band, with
+              BLACK type on it and the blue button sitting inside. Ours painted
+              the whole half in the primary and put a white ghost button on it,
+              which spends the loudest colour on the page in the one place the
+              reference keeps quiet. The primary belongs to the button. */}
+          <div className="[background:var(--color-block,var(--color-primary))] [padding-block:calc(var(--pad-card-lg)*1.8)] [padding-inline:calc(var(--pad-card-lg)*1.2)]">
+            <h2 className="ds-display max-w-[16ch] text-balance [color:var(--color-on-block,var(--color-paper))] [font-weight:var(--fw-semibold)]">
               {heading}
             </h2>
             {note ? (
-              <p className="mt-4 max-w-[40ch] [color:color-mix(in_oklab,var(--color-on-primary)_78%,transparent)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+              <p className="mt-4 max-w-[40ch] [color:color-mix(in_oklab,var(--color-on-block,var(--color-paper))_78%,transparent)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
                 {note}
               </p>
             ) : null}
-            {buttons(true)}
+            {buttons(false)}
           </div>
           {/* The other half. It is the register's own canvas rather than more
               of the colour, so the section reads as two materials meeting --

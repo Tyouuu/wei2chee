@@ -1423,6 +1423,22 @@
   --ink-bg: var(--site-ink-bg, color-mix(in oklab, var(--color-nav-bg) 32%, #101215));
   --ink-fg: var(--site-ink-fg, var(--color-nav-fg));
   --ink-fg-dim: var(--site-ink-fg-dim, var(--color-nav-fg-dim));
+  /* ⚠️ 「ink」 NO LONGER MEANS 「dark」. It means 「the website states its own
+     ground, its own type colour, its own block and its own primary」, and a
+     register may state a LIGHT one -- 満図's reference is #fefef2 with a
+     #fffe99 block and a #116dff button.
+
+     Founder, 2026-08-28: 「我还是觉得要完全一样跟模版 因为你不懂什么颜色好看跟
+     不好看」. He is right about the judgement and the mechanism has to allow it,
+     so every colour a cloned template states lands here.
+
+     Captured on THIS element and applied on .ds-site below -- two layers,
+     because a rule that both reads and writes --color-primary on one element
+     is a cycle, and the whole declaration is dropped silently. Fifth time. */
+  --ink-block: var(--site-ink-block, var(--color-block, var(--color-primary-soft)));
+  --ink-on-block: var(--site-on-block, var(--ink-fg, var(--color-paper)));
+  --ink-primary: var(--site-primary, var(--color-primary));
+  --ink-on-primary: var(--site-on-primary, var(--color-on-primary));
   background-color: var(--ink-bg);
 }
 /* BOTH SHAPES. On the published page StyleScope is the ground and `.ds-site`
@@ -1437,7 +1453,16 @@
    台账 against its reference: the page was #45372a and the foot #15273d, which
    is the one navy rectangle left on an otherwise brown page. Theirs is the
    same brown as everything above it. */
-.ds-ground[data-ground="ink"] [data-chrome-foot],
+/* 页脚有自己的地. 満図's reference closes on the SAME pale yellow as its hero
+   band, not on the page ground -- measured at 12.6% of the page's area across
+   exactly those two bands. A register that says nothing keeps the ground. */
+.ds-ground[data-ground="ink"] [data-chrome-foot] {
+  --color-nav-bg: var(--site-foot-bg, var(--ink-bg));
+  --color-nav-fg: var(--site-foot-fg, var(--ink-fg));
+  --color-nav-fg-dim: color-mix(in oklab, var(--site-foot-fg, var(--ink-fg)) 62%, transparent);
+  --color-nav-border: color-mix(in oklab, var(--site-foot-fg, var(--ink-fg)) 16%, transparent);
+}
+
 .ds-ground[data-ground="ink"] [data-chrome-top] {
   --color-nav-bg: var(--ink-bg);
   --color-nav-fg: var(--ink-fg);
@@ -1466,6 +1491,11 @@
      #45372a), lighter on a register that says nothing. Read by 清单配照片,
      一条四格 and 三个方框. */
   --site-panel: var(--site-ink-panel, color-mix(in oklab, var(--ink-fg) 7%, var(--ink-bg)));
+  --color-block: var(--ink-block);
+  --color-on-block: var(--ink-on-block);
+  --color-primary: var(--ink-primary);
+  --color-on-primary: var(--ink-on-primary);
+  --color-primary-soft: color-mix(in oklab, var(--ink-primary) 12%, var(--ink-bg));
   --color-table-bg: transparent;
   --color-table-head-bg: color-mix(in oklab, var(--ink-bg) 80%, var(--ink-fg));
   --color-table-head-fg: var(--ink-fg-dim);
