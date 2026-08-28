@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
-import { SITE_COMPOSITION, composeSite, siteSkeleton, MOVABLE as MOVABLE_SECTIONS } from "./site-composition";
+import { NEUTRAL_SKELETON, SITE_COMPOSITION, composeSite, siteSkeleton, MOVABLE as MOVABLE_SECTIONS } from "./site-composition";
 import { LANDING_TEMPLATES } from "./landing-templates";
 import {
   buildPageLayout,
@@ -95,9 +95,22 @@ describe("SITE_COMPOSITION", () => {
     }
   });
 
-  it("falls back to 图纸 for an unknown register", () => {
-    expect(siteSkeleton("no-such-register")).toBe(SITE_COMPOSITION.blueprint);
-    expect(siteSkeleton(null)).toBe(SITE_COMPOSITION.blueprint);
+  it("falls back to a NEUTRAL skeleton, not to another register", () => {
+    /* ⚠️ CHANGED 2026-08-28, and the reason is worth keeping.
+       This used to fall back to 图纸, which was harmless while every register
+       carried the whole section list in some order. It stopped being harmless
+       the moment registers began DECLINING sections in order to copy their
+       references: 图纸 now omits ten of them, so a project with no style chosen
+       silently lost two thirds of its page — and 「no style chosen」 is exactly
+       what a page is the moment before its owner picks one.
+
+       The neutral skeleton orders nothing, which composeSite reads as 「keep
+       the template's own sequence」. Having made no choice cannot mean having
+       made 图纸's. */
+    expect(siteSkeleton("no-such-register")).toBe(NEUTRAL_SKELETON);
+    expect(siteSkeleton(null)).toBe(NEUTRAL_SKELETON);
+    expect(NEUTRAL_SKELETON.omit ?? []).toEqual([]);
+    expect(NEUTRAL_SKELETON.dropBlocks ?? []).toEqual([]);
   });
 });
 

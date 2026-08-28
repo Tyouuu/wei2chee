@@ -199,78 +199,46 @@ describe("buildPageLayout", () => {
   // stranger to WhatsApp to ask -- which is one more reason not to bother.
   it("builds a website out of nothing but the fallback trade", () => {
     const content = contentOf({}, "website");
+    /*
+      ⚠️ THE MIDDLE IS THE TEMPLATE'S OWN ORDER AGAIN, SINCE 2026-08-28.
+
+      It was 图纸's between 08-27 and 08-28. That was harmless while every
+      register carried the whole section list in some order, and it stopped
+      being harmless the moment registers began DECLINING sections in order to
+      copy their references: 图纸 now omits ten of them, so a page with no
+      register named lost two thirds of itself. siteSkeleton falls to
+      NEUTRAL_SKELETON now, which orders nothing.
+
+      What this list is still for is the CONTENTS — the founder's own list of
+      what a Malaysian SME page was missing: 「缺的是口碑、价目、覆盖范围、常见
+      问题、营业时间、保证」. Every one of them is here.
+    */
     expect(content.map((n) => n.type)).toEqual([
-      // The bar and the foot arrived 2026-08-27: a website has both and a
-      // dashboard has neither, which is why the page built out of dashboard
-      // blocks had neither either. See site-chrome.tsx.
+      // A website has a bar and a foot; a dashboard has neither, which is why
+      // the page built out of dashboard blocks had neither either.
       "SiteBar",
       "SiteHero",
-      /* 一句话占一屏, 2026-08-27, from lapa.ninja. Present on every register and
-         carrying a sentence on three of them -- 瑞士, 柔和, 工作室 -- because it
-         MOVES the hero's supporting line rather than adding one. On the other
-         eleven it is empty and renders nothing, which is deliberate: the block
-         is left in place because a register that deletes a block is a register
-         that could delete the owner's own prices. See statementFor(). */
+      /* 一句话占一屏, from lapa.ninja. Empty on most registers and rendering
+         nothing, deliberately: a register that deletes a block is a register
+         that could delete the owner's own prices. */
       "SiteStatement",
-      /*
-        THE MIDDLE IS IN 图纸's ORDER, NOT THE TEMPLATE'S, SINCE 2026-08-27.
-
-        A website with no register named falls to 蓝图 exactly as a dashboard
-        does, and 蓝图's website skeleton is the most ordinary order there is:
-        what we do, what it looks like, what happens next. The order itself is
-        asserted against SITE_COMPOSITION in site-composition.test.ts rather
-        than spelled twice; what this list is still for is the CONTENTS -- the
-        founder's own list of what a Malaysian SME page was missing:
-        「缺的是口碑、价目、覆盖范围、常见问题、营业时间、保证」.
-      */
-      // Cards, not rows: what a business SELLS is a card grid on every
-      // reference, and rows are for what it merely lists. 2026-08-27.
       "SiteFeatures",      // what we do
-      // 作品墙. Was a Columns of three PhotoFrames locked to thirds; it owns
-      // its own shapes now (三张一样大 / 一大两小 / 横着滑), taken from tailark's
-      // bento and carousel blocks, and the register picks one. 2026-08-27.
-      "SiteGallery",
-      // 一段话配一张照片 -- the only section written in the owner's own voice,
-      // and therefore the only one that ships EMPTY. See publish-projection.
-      "SiteStory",
-      // 师傅团队 -- composition taken from the pulled library's team-1, data
-      // model replaced. Ships empty; publish-projection drops it until the
-      // owner names somebody. 2026-08-27.
+      "SiteGallery",       // 作品墙
+      "SiteStory",         // the only section in the owner's own voice
       "SiteTeam",
-      "SiteSteps", // what happens after you call
-      "InfoRows",      // a price guide, never a price
-      // A review has a rating, the words and a face -- not the dashboard's
-      // 「title, description, action」 shelf row.
-      /* 四点两栏配照片, 2026-08-27 -- the largest section on Wix's Home
-         Remodeling page (1068px of 4742) and the one we had no equivalent
-         for: four claims in two columns with the photographs woven among
-         them. See SiteWoven. */
-      "SiteWoven",
-      "SiteTestimonials",
-      // The middle ask. No template had one; every reference does.
-      // 别人给的证明 -- a licence, a brand, a review score. Taken from the one
-      // section kind every landing kit has and this product had no block for
-      // (npm run shoot:kits, 2026-08-27). It is here in the EDITOR and never on
-      // the published page until the owner fills it; see publish-projection.
-      // 蓝图 puts it straight under what customers said: both are somebody
-      // else vouching, and they read as one argument.
-      "SiteCreds",
-      /* 一条满边的照片, 2026-08-27. Wix's two templates in this market run 6 and
-         14 photographs a page with two of them edge to edge between sections;
-         ours ran 2-5, every one inside the measure. Ships empty and
-         publish-projection drops it until the owner puts a photo in. */
+      "InfoRows",          // 价目
+      "SiteSteps",         // 接下来会怎样
+      "SiteTestimonials",  // 口碑
+      "SiteCreds",         // 别人给的证明
       "SiteBand",
+      "SiteWoven",         // 保证
       "SiteCta",
-      "FoldSection",   // questions we get
-      "InfoRows",      // where we cover
-      /* 图纸 declines 保证 on 2026-08-27 -- the flow already makes that
-         promise, and this section repeated it. See `omit` in
-         site-composition.ts. */      // what you get from us
+      "InfoRows",          // 覆盖范围
+      "FoldSection",       // 常见问题
+      "MarkList",
       "EnquiryForm",
-      "InfoRows",      // how to reach us
+      "InfoRows",          // 营业时间
       "SiteFoot",
-      // The floating WhatsApp button, last so its fixed position has nothing
-      // after it to fight. Added 2026-08-26; see floating-contact.tsx.
       "FloatingContact",
     ]);
   });

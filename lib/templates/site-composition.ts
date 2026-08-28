@@ -546,8 +546,35 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
 /** Registers that have not declared one follow 图纸 -- the same fallback the
  *  dashboard composition uses, and for the same reason: it is the register
  *  whose argument is that it suits any trade. */
+/**
+ * 没有风格的时候用哪一张骨架。
+ *
+ * ⚠️ NOT ONE OF THE REGISTERS, and that changed on 2026-08-28.
+ *
+ * It used to fall back to 图纸, which was harmless while every register carried
+ * the full section list in some order. It stopped being harmless the moment
+ * registers began DECLINING sections to copy their references: 图纸 now omits
+ * ten of them, so a project with no style chosen lost two thirds of its page —
+ * and 「no style chosen」 is what a page looks like the moment before the owner
+ * picks one.
+ *
+ * The fallback is the template's own output, untouched: every section, in the
+ * order the trade template built them. A register is a CHOICE about that page;
+ * having made no choice yet cannot mean having made 图纸's.
+ */
+export const NEUTRAL_SKELETON: SiteSkeleton = {
+  hero: "left",
+  opens: "",
+  /* EMPTY, not MOVABLE. composeSite ranks by this list and leaves anything
+     unranked in the order it arrived, so an empty order means 「keep the
+     template's own sequence」 — which is exactly what having chosen no register
+     should mean. [...MOVABLE] was tried first and quietly imposed the
+     declaration order of that array on every styleless page. */
+  order: [],
+};
+
 export function siteSkeleton(style?: string | null): SiteSkeleton {
-  return (style && SITE_COMPOSITION[style]) || SITE_COMPOSITION.blueprint;
+  return (style && SITE_COMPOSITION[style]) || NEUTRAL_SKELETON;
 }
 
 const idOf = (n: PuckNode): string => String(n.props?.id ?? "");
