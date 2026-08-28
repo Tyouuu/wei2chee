@@ -100,7 +100,22 @@ const buildFeatures = (team: Record<string, Contributor>): Feature[] => [
  */
 const features: Feature[] = buildFeatures(team)
 
-export const copy = { team, features }
+/*
+  ONE TRUTH PER THING.
+
+  `team` used to be exported as editable copy alongside `features`, and the
+  two could disagree: features embeds team BY VALUE, so an edit to one was
+  invisible to the other. The first attempt was
+  `override?.features ?? build(team)`, and that is wrong HERE for a reason
+  worth writing down: set_copy saves `{ ...defaults, ...existing }` -- the whole
+  copy object -- so after any edit at all, features is present and the derived
+  branch can never run.
+
+  So team is no longer editable copy. features is the single truth, and
+  everything inside it stays addressable by the assistant, because set_copy
+  validates a dot path against the DEFAULTS and team still lives inside them.
+*/
+export const copy = { features }
 export type Copy = typeof copy
 
 
@@ -111,8 +126,7 @@ const statusVariant: Record<Status, "default" | "secondary" | "outline"> = {
 }
 
 export default function RoadmapBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
-  const { team } = { ...copy, ...override }
-  const features = override?.features ?? buildFeatures(team)
+  const { features } = { ...copy, ...override }
   const [voted, setVoted] = React.useState<Record<string, boolean>>({})
 
   const toggle = (id: string) =>

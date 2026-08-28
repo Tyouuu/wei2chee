@@ -88,29 +88,34 @@ describe("section copy overrides reach the page", () => {
     expect(out).toContain(INITIAL);
   });
 
-  it("roadmap-2 renders an overridden contributor", () => {
-    const out = html(
-      <Roadmap2 copy={{ team: { ...r2.team, ada: { ...r2.team.ada, name: NAME } } }} />,
-    );
-    expect(out).toContain(INITIAL);
+  /* roadmap-2, roadmap-3 and calendar-2 no longer export the contributor map
+     or the recurring event as separate copy: the array that embeds them is the
+     single truth (see the note above each `export const copy`). So the edit
+     that has to work is one made INSIDE that array -- which is exactly the path
+     set_copy would write. */
+  it("roadmap-2 renders an edit made inside its phases", () => {
+    const phases = structuredClone(r2.phases);
+    phases[0].items[0].title = "Rewire the shophouse";
+    const out = html(<Roadmap2 copy={{ phases }} />);
+    expect(out).toContain("Rewire the shophouse");
   });
 
-  it("roadmap-3 renders an overridden contributor", () => {
-    const out = html(
-      <Roadmap3 copy={{ team: { ...r3.team, ada: { ...r3.team.ada, name: NAME } } }} />,
-    );
-    expect(out).toContain(INITIAL);
+  it("roadmap-3 renders an edit made inside its features", () => {
+    const features = structuredClone(r3.features);
+    features[0].title = "Deposit reminders";
+    const out = html(<Roadmap3 copy={{ features }} />);
+    expect(out).toContain("Deposit reminders");
   });
 
-  it("calendar-2 renders an overridden recurring event", () => {
-    const out = html(<Calendar2 copy={{ STANDUP: { ...c2.STANDUP, title: "Site briefing" } }} />);
+  it("calendar-2 renders an edit made inside its weeks", () => {
+    const WEEKS = structuredClone(c2.WEEKS);
+    WEEKS[0].days[0].events[0].title = "Site briefing";
+    const out = html(<Calendar2 copy={{ WEEKS }} />);
     expect(out).toContain("Site briefing");
   });
 
-  /* The other half of the contract, and the reason the fix is
-     `override?.x ?? build(dep)` rather than always rebuilding: a section whose
-     array was replaced outright must still get exactly that array. */
-  it("an explicit array override still wins over the derived default", () => {
+  /* A section replaced outright must get exactly what it was given. */
+  it("an explicit array override still wins", () => {
     const out = html(
       <Roadmap2
         copy={{

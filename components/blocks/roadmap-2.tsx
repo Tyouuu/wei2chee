@@ -116,7 +116,22 @@ const buildPhases = (team: Record<string, Contributor>): Phase[] => [
  */
 const phases: Phase[] = buildPhases(team)
 
-export const copy = { team, phases }
+/*
+  ONE TRUTH PER THING.
+
+  `team` used to be exported as editable copy alongside `phases`, and the
+  two could disagree: phases embeds team BY VALUE, so an edit to one was
+  invisible to the other. The first attempt was
+  `override?.phases ?? build(team)`, and that is wrong HERE for a reason
+  worth writing down: set_copy saves `{ ...defaults, ...existing }` -- the whole
+  copy object -- so after any edit at all, phases is present and the derived
+  branch can never run.
+
+  So team is no longer editable copy. phases is the single truth, and
+  everything inside it stays addressable by the assistant, because set_copy
+  validates a dot path against the DEFAULTS and team still lives inside them.
+*/
+export const copy = { phases }
 export type Copy = typeof copy
 
 
@@ -127,8 +142,7 @@ const dotTone: Record<Phase["tone"], string> = {
 }
 
 export default function RoadmapBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
-  const { team } = { ...copy, ...override }
-  const phases = override?.phases ?? buildPhases(team)
+  const { phases } = { ...copy, ...override }
   return (
     <section className="flex w-full items-center justify-center bg-muted/30 px-6 py-16 text-foreground">
       <div className="mx-auto w-full max-w-2xl">

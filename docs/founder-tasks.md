@@ -2145,6 +2145,37 @@ export default function FaqsBlock({ copy: override }) {
       这直接打在[重点 9b](./founder-points.md) 的第一条判准上（让「调整」更轻松）
 - [x] `_` 开头的变数是「我知道，故意的」的惯例，eslint 设定改成认它，不是去改代码
 
+### 53. 扫描改成逐个 key 验 —— 又抓到一个，也抓到我自己修错的地方（2026-08-28）
+
+[任务 50](#50) 那支扫描有个漏洞我当时就写下来了：**它只问「哨兵有没有出现在这个版段里」**，
+所以一个版段五个 key、丢掉一个照样过。三个就是这样漏掉、靠 lint 撞到的（[任务 52](#52)）。
+改成**逐个 key 单独验**。
+
+- [x] **又一个真的：`activity-4`** —— 跟 `blog-2` 一模一样。
+      清单在模组层的 `ActivityList` 里闭包住预设，组件只把合并后的 `items` 拿去算**未读数**。
+      **数字会变、清单不会变。**
+- [x] **判别器换掉了，因为旧的是子字串比对会骗人** —— `table-1` 的 `COLUMN_LABELS.name`
+      是 `"Member"`，`includes()` 在页面上的 `"Members"` 里就命中，
+      于是一个只在关着的下拉里读的 key 被判成「有渲染」。
+      现在改成**把那个 key 清空再渲染**：画面一模一样＝没人读它；画面变了（或渲染直接抛）＝有人读
+
+#### 🔴 我上一轮的修法有一半是错的，这次查出来了
+`set_copy` 存回去的是 **`{ ...defaults, ...existing }` —— 完整的 copy 物件**
+（`layout-ops.ts`）。所以只要客户改过任何一个字，**copy 里每个 key 都在**。
+
+那我写的 `override?.phases ?? buildPhases(team)` **永远走不到 build 那一支** ——
+`phases` 一定存在。**改 `team` 还是没用，跟修之前一样。**
+
+- [x] 改成**一件事只有一个真相**：`team` / `STANDUP` / `MONTHS` 从 `copy` 拿掉，
+      留下更丰富的那个（`phases` / `features` / `WEEKS` / `services`）。
+      贡献者本来就嵌在里面，`phases.0.items.0.team.0.name` 是 defaults 里真实存在的路径，
+      **AI 照样定址得到** —— set_copy 就是拿 defaults 验路径的
+- [x] `roadmap-1` / `faqs-2` / `blog-2` / `activity-4` / `billing-3` / `table-2` **不受影响**：
+      它们的推导值本来就不在 copy 里，没有两个真相可以打架
+- [x] **两个探针到不了的，白名单里写清楚**：`roadmap-1.team` 跟 `profile-3.team`
+      只渲染名字的**首字母**，前缀哨兵活不到画面上。两个都确认有用合并后的值
+      （`roadmap-1` 有专门的测试盯着首字母从 A 变 Z）
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**

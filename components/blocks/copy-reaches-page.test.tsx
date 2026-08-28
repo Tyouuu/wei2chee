@@ -94,6 +94,29 @@ function firstProbeableString(value: unknown, depth = 0): string | null {
   return null;
 }
 
+/*
+  THE DISCRIMINATOR: EMPTY THE KEY AND SEE IF THE PAGE NOTICES.
+
+  The first version compared against the default render and asked whether the
+  untouched value appeared in it. That is substring matching, and it lies:
+  table-1's COLUMN_LABELS.name is "Member", which `includes()` finds inside the
+  word "Members" in a heading -- so a key that is only ever read inside a closed
+  dropdown looked like a key that renders.
+
+  Emptying is exact. If replacing the value with an empty one of the same kind
+  leaves the markup byte-identical, nothing on the server-rendered page reads
+  that key and there is nothing to conclude. If the markup changes -- or the
+  render throws, which is a component reaching into the value -- then the key IS
+  read, and a probe that failed to appear means the override was dropped.
+*/
+function emptyLike(value: unknown): unknown {
+  if (Array.isArray(value)) return [];
+  if (typeof value === "string") return "";
+  if (typeof value === "number") return 0;
+  if (value && typeof value === "object") return {};
+  return value;
+}
+
 const modules = import.meta.glob("./*.tsx", { eager: false }) as Record<
   string,
   () => Promise<{ default?: unknown; copy?: unknown }>
@@ -109,6 +132,7 @@ describe("section copy reaches the page", () => {
   it("reports every block that ignores its copy", { timeout: 120_000 }, async () => {
     const blind: string[] = [];
     const notRendered: string[] = [];
+    const droppedKeys: string[] = [];
     const threw: string[] = [];
     const noCopy: string[] = [];
     let ok = 0;
@@ -121,6 +145,62 @@ describe("section copy reaches the page", () => {
         continue;
       }
       try {
+        /*
+          ONE KEY AT A TIME, BECAUSE A BLOCK CAN DROP JUST ONE.
+
+          The first version of this probed the WHOLE copy object and asked
+          whether the sentinel reached the markup anywhere. That passes a
+          section which renders four of its five keys and silently drops the
+          fifth -- and three of those existed: billing-3 (STATUS_VARIANT,
+          UPGRADE_PLANS), table-2 (statusConfig), status-3 (MONTHS), each read
+          by a module-scope helper that closed over the defaults. Lint happened
+          to catch them, because they were destructured and unused. A block that
+          drops a key WITHOUT destructuring it is invisible to both.
+
+          It matters more than the shape suggests: `set_copy`, one of the
+          assistant's operations, writes a DOT PATH into a section's copy. So a
+          dropped key is an owner saying 「把这个方案改名」 and being told it
+          worked.
+        */
+        const keys = Object.keys(mod.copy as Record<string, unknown>);
+        const dropped: string[] = [];
+        for (const key of keys) {
+          /* Nothing the probe is willing to rewrite -- a list of image URLs, a
+             map of enum values like "outline" / "secondary" -- can never show a
+             sentinel, so its absence proves nothing about this key. */
+          if (!firstProbeableString((mod.copy as Record<string, unknown>)[key])) continue;
+          const one = { ...(mod.copy as Record<string, unknown>) };
+          one[key] = probe(one[key]);
+          const html = renderToStaticMarkup(
+            createElement(mod.default as React.ComponentType<{ copy?: unknown }>, { copy: one }),
+          );
+          if (html.includes(SENTINEL)) continue;
+          // Same discriminator as below, scoped to this key: if the untouched
+          // value does not appear either, this key is not server-rendered and
+          // there is nothing to conclude.
+          const defaults = renderToStaticMarkup(
+            createElement(mod.default as React.ComponentType<{ copy?: unknown }>, {
+              copy: mod.copy,
+            }),
+          );
+          const blanked = { ...(mod.copy as Record<string, unknown>) };
+          blanked[key] = emptyLike(blanked[key]);
+          let readsIt: boolean;
+          try {
+            readsIt =
+              renderToStaticMarkup(
+                createElement(mod.default as React.ComponentType<{ copy?: unknown }>, {
+                  copy: blanked,
+                }),
+              ) !== defaults;
+          } catch {
+            // Reaching into the value hard enough to throw is proof it is read.
+            readsIt = true;
+          }
+          if (readsIt) dropped.push(`${name}.${key}`);
+        }
+        if (dropped.length) droppedKeys.push(...dropped);
+
         const html = renderToStaticMarkup(
           createElement(mod.default as React.ComponentType<{ copy?: unknown }>, {
             copy: probe(mod.copy),
@@ -167,6 +247,15 @@ describe("section copy reaches the page", () => {
     /* The gate: nothing NEW may go blind or throw. A block that starts
        ignoring its copy tomorrow fails here, which is the whole point -- six of
        them had been doing it silently for months. */
+    /* Every key a section is handed must be able to reach the page. This is
+       the strict half of the gate: `blind` below only asks whether ANY key
+       lands. */
+    /* Two the probe cannot mark, both verified by reading the component: these
+       render a contributor's avatar and nothing of the name but `name[0]`, so a
+       sentinel PREFIXED to the name never survives to the markup. Both DO use
+       the merged copy -- roadmap-1 is asserted directly in copy-override.test.tsx,
+       which watches the initial change from A to Z. */
+    expect(droppedKeys.sort()).toEqual(["profile-3.team", "roadmap-1.team"]);
     expect(blind.sort()).toEqual(CANNOT_JUDGE.blind.sort());
     expect(threw.map((t) => t.split(":")[0]).sort()).toEqual(CANNOT_JUDGE.threw.sort());
   });

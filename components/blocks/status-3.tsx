@@ -115,13 +115,27 @@ const legend: DayStatus[] = ["operational", "degraded", "outage"]
  *
  * GENERATED. Re-run the opener rather than editing this block by hand.
  */
-export const copy = { MONTHS, services, legend }
+/*
+  ONE TRUTH PER THING.
+
+  `MONTHS` used to be exported as editable copy alongside `services`, and the
+  two could disagree: services embeds MONTHS BY VALUE, so an edit to one was
+  invisible to the other. The first attempt was
+  `override?.services ?? build(MONTHS)`, and that is wrong HERE for a reason
+  worth writing down: set_copy saves `{ ...defaults, ...existing }` -- the whole
+  copy object -- so after any edit at all, services is present and the derived
+  branch can never run.
+
+  So MONTHS is no longer editable copy. services is the single truth, and
+  everything inside it stays addressable by the assistant, because set_copy
+  validates a dot path against the DEFAULTS and MONTHS still lives inside them.
+*/
+export const copy = { services, legend }
 export type Copy = typeof copy
 
 
 export default function StatusBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
-  const { MONTHS, legend } = { ...copy, ...override }
-  const services = override?.services ?? buildServices(MONTHS)
+  const { services, legend } = { ...copy, ...override }
   return (
     <section className="flex w-full items-center justify-center bg-background px-6 py-16 text-foreground">
       <div className="mx-auto w-full max-w-3xl">

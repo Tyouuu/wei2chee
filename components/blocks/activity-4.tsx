@@ -167,7 +167,13 @@ function ActivityRow({ item }: { item: Item }) {
   )
 }
 
-function ActivityList({ filter }: { filter?: ActivityType }) {
+/* `items` is a PROP now. It used to be read straight off the module, while
+   ActivityBlock destructured the merged copy and used it for exactly one thing
+   -- the unread COUNT in the badge. So an edited activity list produced a
+   number that changed above a list that did not: the section disagreeing with
+   itself, which is worse than ignoring the edit outright because the badge
+   tells you it worked. Same shape as blog-2, found the same way. */
+function ActivityList({ filter, items }: { filter?: ActivityType; items: Item[] }) {
   const list = filter ? items.filter((item) => item.type === filter) : items
   return (
     <ul className="divide-y divide-border">
@@ -201,7 +207,7 @@ export default function ActivityBlock({ copy: override }: { copy?: Partial<Copy>
           </div>
           {tabs.map((tab) => (
             <TabsContent key={tab.value} value={tab.value} className="mt-2">
-              <ActivityList filter={tab.filter} />
+              <ActivityList filter={tab.filter} items={items} />
             </TabsContent>
           ))}
         </Tabs>

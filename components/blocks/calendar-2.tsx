@@ -275,7 +275,22 @@ const buildWEEKS = (STANDUP: CalEvent): Week[] => [
  */
 const WEEKS: Week[] = buildWEEKS(STANDUP)
 
-export const copy = { STANDUP, WEEKS }
+/*
+  ONE TRUTH PER THING.
+
+  `STANDUP` used to be exported as editable copy alongside `WEEKS`, and the
+  two could disagree: WEEKS embeds STANDUP BY VALUE, so an edit to one was
+  invisible to the other. The first attempt was
+  `override?.WEEKS ?? build(STANDUP)`, and that is wrong HERE for a reason
+  worth writing down: set_copy saves `{ ...defaults, ...existing }` -- the whole
+  copy object -- so after any edit at all, WEEKS is present and the derived
+  branch can never run.
+
+  So STANDUP is no longer editable copy. WEEKS is the single truth, and
+  everything inside it stays addressable by the assistant, because set_copy
+  validates a dot path against the DEFAULTS and STANDUP still lives inside them.
+*/
+export const copy = { WEEKS }
 export type Copy = typeof copy
 
 
@@ -294,8 +309,7 @@ const STATUS_LABEL: Record<EventStatus, string> = {
 }
 
 export default function CalendarBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
-  const { STANDUP } = { ...copy, ...override }
-  const WEEKS = override?.WEEKS ?? buildWEEKS(STANDUP)
+  const { WEEKS } = { ...copy, ...override }
   const [weekIdx, setWeekIdx] = React.useState(TODAY_WEEK)
   const week = WEEKS[weekIdx]
   const totalEvents = week.days.reduce((n, d) => n + d.events.length, 0)
