@@ -106,9 +106,10 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-figure: 1.35;
   --site-display-weight: 400;
   --site-statement: 2.1;
-  --site-inner: 8.5rem;
+  --site-inner: 10rem;
   --site-motion: 0.3s;
   --site-ease: ease;
   --site-hero-scale: 1.5;
@@ -277,7 +278,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #00a870;
   --color-brass-chart: #faad14;
-  --site-inner: 3rem;
+  --site-inner: 5rem;
   --site-hero-scale: 0.68;
   --site-display-weight: 700;
   --site-ink-bg: #fafafa;
@@ -293,7 +294,7 @@
   --site-hero-band: #f0f2f5;
   --site-radius-control: 0px;
   --site-card-radius: 0px;
-  --site-motion: 0.22s;
+  --site-motion: 0.09s;
   --site-ease: ease;
   --font-ui: var(--font-sans-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
@@ -609,7 +610,8 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
-  --site-inner: 3rem;
+  --site-figure: 1.45;
+  --site-inner: 7rem;
   --font-ui: var(--font-industrial-latin), var(--font-song-cjk), "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
   --site-ink-bg: #45372a;
@@ -772,7 +774,7 @@
   --site-paper-primary: #500014;
   --site-display-weight: 700;
   --site-heading: 1.6;
-  --site-inner: 10rem;
+  --site-inner: 9rem;
   --site-motion: 0.22s;
   --site-ease: ease;
   --site-hero-scale: 2.35;
@@ -939,14 +941,14 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
-  --site-inner: 4.5rem;
+  --site-inner: 8rem;
   --site-hero-scale: 0.87;
   --site-display-weight: 400;
   --site-ink-bg: #fafafa;
   --site-ink-fg: #141414;
   --site-ink-fg-dim: #5a5a5a;
   --site-ink-panel: #e6e6e6;
-  --site-ink-block: #282828;
+  --site-ink-block: #e6e6e6;
   --site-on-block: #fafafa;
   --site-primary: #1e1e1e;
   --site-on-primary: #fafafa;
@@ -954,7 +956,7 @@
   --site-foot-fg: #fafafa;
   --site-hero-band: #ffffff;
   --site-copy: 1;
-  --site-motion: 0.3s;
+  --site-motion: 0.2s;
   --site-ease: ease;
   --font-ui: var(--font-swiss-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font-swiss-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
