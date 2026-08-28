@@ -1,4 +1,18 @@
 import { Check, Star } from "lucide-react"
+
+/*
+  WHY EVERY <img> IN THIS FILE CARRIES loading="lazy".
+
+  Measured 2026-08-28 on a real published site at 390px: 2,080 KB, of which
+  1,911 KB was nine photographs — every one of them fetched at once, including
+  the ones several screens down. Not one of the sixteen <img> in the site
+  components carried a loading hint.
+
+  The browser keeps a generous margin above the viewport before it fetches, so
+  nothing appears late; what changes is that a stranger on a Malaysian mobile
+  connection stops paying for the gallery before they have read the first
+  sentence. The hero is deliberately the exception — see site-hero.tsx.
+*/
 import { icon as tradeIcon } from "./trade-blocks"
 
 /**
@@ -180,7 +194,7 @@ export function SiteFeatures({
           </ul>
           {photo?.trim() ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={photo} alt={photoAlt || ""} className="hidden size-full min-h-full object-cover @3xl:block" />
+            <img loading="lazy" decoding="async" src={photo} alt={photoAlt || ""} className="hidden size-full min-h-full object-cover @3xl:block" />
           ) : (
             <div
               aria-hidden
@@ -820,7 +834,7 @@ export function SiteCta({
                an empty tint. Four photographs against their nine, and this half
                was one of the missing five. */
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <img loading="lazy" decoding="async"
               src={photo}
               alt={photoAlt || ""}
               className="hidden size-full object-cover [border-radius:var(--site-card-radius,var(--radius-lg))] @3xl:block"
@@ -1103,7 +1117,7 @@ export function SiteGallery({
             <li key={(it.src || "") + i} className="min-w-0">
               {it.src?.trim() ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img
+                <img loading="lazy" decoding="async"
                   src={it.src}
                   alt={it.alt || ""}
                   className="block size-full object-cover"
@@ -1170,7 +1184,7 @@ export function SiteGallery({
             <li key={i} className={SPAN[i % 6]}>
               {s2.src ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img
+                <img loading="lazy" decoding="async"
                   src={s2.src}
                   alt={s2.alt || ""}
                   className="w-full object-cover"
@@ -1236,7 +1250,7 @@ export function SiteGallery({
           // reason wrapped onto a second comment line, "next line" was that
           // line, and this disabled nothing for as long as it existed.
           // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <img loading="lazy" decoding="async"
             src={s.src}
             alt={s.alt ?? s.caption ?? ""}
             className="absolute inset-0 h-full w-full object-cover"
@@ -1412,7 +1426,7 @@ export function SiteStory({
        here it is only marked. */
     <div data-fill="" className="min-w-0">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <img loading="lazy" decoding="async"
         src={photo}
         alt={photoAlt || ""}
         className="size-full object-cover [border-radius:var(--site-photo-radius,var(--radius-lg))]"
@@ -1541,7 +1555,7 @@ export function SiteTeam({
   const face = (m: { name: string; photo?: string }, size: string) =>
     m.photo?.trim() ? (
       /* eslint-disable-next-line @next/next/no-img-element */
-      <img
+      <img loading="lazy" decoding="async"
         src={m.photo}
         alt=""
         className={`${size} shrink-0 rounded-full object-cover`}
@@ -1817,7 +1831,7 @@ export function SiteBand({
   return (
     <section data-bleed="" data-photo-ground="" className="@container relative isolate">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <img loading="lazy" decoding="async"
         src={photo}
         alt={photoAlt || ""}
         className="block w-full object-cover"
@@ -2019,7 +2033,7 @@ export function SiteWoven({
         <div className="flex flex-col [gap:var(--gap-stack)]">
           {shots.slice(0, 2).map((src, i) => (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <img loading="lazy" decoding="async"
               key={src + i}
               src={src}
               alt=""

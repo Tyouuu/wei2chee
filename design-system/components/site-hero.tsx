@@ -1,6 +1,17 @@
 import type { ReactNode } from "react"
 import { HeroFigure, type HeroFigureKind } from "./hero-figure"
 import { TiltStage } from "./tilt-stage"
+
+/*
+  WHY EVERY <img> IN THIS FILE CARRIES fetchPriority="high" AND NONE CARRY
+  loading="lazy".
+
+  A hero photo is the largest thing a visitor waits for, so it is the paint the
+  page gets judged by; lazy-loading it delays exactly that. Only one hero
+  variant renders per page, so only one of these ever issues a request. The
+  sections file does the opposite, for the opposite reason -- see the note at
+  the top of site-sections.tsx.
+*/
 import { SystemMini } from "./system-mini"
 
 /**
@@ -483,7 +494,7 @@ export function SiteHero({
     return (
       <section data-bleed="" data-photo-ground="" className="@container relative isolate">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={photo} alt={photoAlt || ""} className="absolute inset-0 -z-20 block size-full object-cover" />
+        <img decoding="async" fetchPriority="high" src={photo} alt={photoAlt || ""} className="absolute inset-0 -z-20 block size-full object-cover" />
         <span
           aria-hidden
           className="absolute inset-0 -z-10 block"
@@ -531,7 +542,7 @@ export function SiteHero({
     return (
       <section data-bleed="" data-photo-ground="" className="@container relative isolate">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <img decoding="async" fetchPriority="high"
           src={photo}
           alt={photoAlt || ""}
           className="absolute inset-0 -z-20 block size-full object-cover"
@@ -648,7 +659,7 @@ export function SiteHero({
         {/* EDGE TO EDGE, NO RADIUS, NO GAP. The photograph is the ground the
             band is sitting on, not an illustration inside a column. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <img decoding="async" fetchPriority="high"
           src={photo}
           alt={photoAlt || ""}
           className="block w-full object-cover"
@@ -785,7 +796,7 @@ export function SiteHero({
       {bled ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img decoding="async" fetchPriority="high"
             src={photo}
             alt={photoAlt || ""}
             className="absolute inset-0 -z-20 block size-full object-cover"
@@ -974,7 +985,7 @@ export function SiteHero({
               Supabase storage URL on a bucket Next's optimiser is not
               configured for, and a broken hero image is worse than an
               unoptimised one. */}
-          <img
+          <img decoding="async" fetchPriority="high"
             src={photo}
             alt={photoAlt || ""}
             className="h-full max-h-[30rem] w-full object-cover [border-radius:var(--radius-lg)]"
@@ -1016,7 +1027,7 @@ export function SiteHero({
             <div className="mx-auto w-full max-w-[78rem]">
               {hasPhoto ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img
+                <img decoding="async" fetchPriority="high"
                   src={photo}
                   alt={photoAlt || ""}
                   className="w-full object-cover [border-radius:var(--radius-lg)]"
@@ -1063,7 +1074,7 @@ export function SiteHero({
           measurement that made it necessary. */}
       {plainPhoto ? (
         /* eslint-disable-next-line @next/next/no-img-element */
-        <img
+        <img decoding="async" fetchPriority="high"
           src={photo}
           alt={photoAlt || ""}
           className="mx-auto mt-10 block aspect-[16/7] w-full max-w-[68rem] object-cover [border-radius:var(--radius-lg)]"
