@@ -757,7 +757,9 @@
       },
       "shellName": "Console",
       "navOverview": "Overview",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "contactThem": "Email them",
+      "contactSubject": "About your system ({business})"
     },
     "account": {
       "title": "My account",

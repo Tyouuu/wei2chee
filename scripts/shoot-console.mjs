@@ -76,6 +76,18 @@ const shots = [
   ["leads", "/en/console/leads"],
 ];
 
+/* The customer detail page is where a project is handed over, so it needs a
+   real project id rather than a fixture. Take the most recently touched
+   customer, which is the one the founder would have open. */
+const { data: newest } = await db
+  .from("projects")
+  .select("id, account_id, accounts!inner(role)")
+  .eq("accounts.role", "customer")
+  .order("updated_at", { ascending: false, nullsFirst: false })
+  .limit(1)
+  .maybeSingle();
+if (newest?.id) shots.push(["customer", `/en/console/${newest.id}`]);
+
 for (const [name, path] of shots) {
   await p.goto(`${BASE}${path}`, { waitUntil: "networkidle", timeout: 120000 });
   await p.waitForTimeout(1500);

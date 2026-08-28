@@ -55,6 +55,11 @@ const PAGES = [
   ["account", "/en/portal/account", "customer"],
   ["console", "/en/console", "founder"],
   ["console-leads", "/en/console/leads", "founder"],
+  /* Resolved at run time -- its URL carries a project id, which is exactly why
+     it went unmeasured while the other two console screens were fixed twice.
+     A page list that can only hold static paths is a page list that silently
+     excludes every detail screen in the product. */
+  ["console-customer", null, "founder"],
 ];
 
 /* The customer's own data. Their name, their people, their words. A single
@@ -107,6 +112,21 @@ const env = Object.fromEntries(
     ]),
 );
 
+/** The most recently touched customer -- the one the founder would have open. */
+async function newestCustomerProjectId() {
+  const db = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+  const { data } = await db
+    .from("projects")
+    .select("id, accounts!inner(role)")
+    .eq("accounts.role", "customer")
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
 const b = await chromium.launch();
 
 /* The customer walk signs in with a password. The founder walk cannot: that
@@ -145,13 +165,18 @@ const pages = {};
 const report = {};
 let total = 0;
 
-for (const [name, path, as] of wanted) {
+for (const [name, staticPath, as] of wanted) {
+  const path = staticPath ?? `/en/console/${await newestCustomerProjectId()}`;
+  if (path.endsWith("/null")) {
+    console.log("    -", name, "skipped: no customer project to open");
+    continue;
+  }
   pages[as] ??= await signIn(as);
   const p = pages[as];
   await p.goto(`http://localhost:3000${path}`, { waitUntil: "networkidle", timeout: 120000 });
   // The spec page writes its prose with a model call; the libraries render a
   // few hundred live previews. Neither is finished at networkidle.
-  await p.waitForTimeout(name === "spec" ? 9000 : name.startsWith("console") ? 2000 : 5000);
+  await p.waitForTimeout(name === "spec" ? 9000 : name === "console-customer" ? 6000 : name.startsWith("console") ? 2000 : 5000);
 
   /* The whole reason the console went unmeasured: notFound() renders a page
      with no Chinese on it, which counts as a clean pass. Refuse to score a
