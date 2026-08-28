@@ -404,6 +404,18 @@
    sibling has.
    ============================================================================ */
 :root {
+
+  /* ── 官网层：抄 Wix `wh-leah` ────────────────────────────────────────────
+     That page is white, ruled and unfilled. Its whole identity is refusal:
+     nothing has a fill, every button is an outlined pill, and a full-width
+     hairline is the only thing between one section and the next. Two bands
+     break it — one pale grey for the logo wall, one near-black for the posts
+     and the testimonials — and they are the only colour on 5519px of page. */
+  --site-hero-band: #ffffff;
+  --site-copy: 1;
+  /* 300ms ease, like theirs; nothing on that page moves further than it must. */
+  --site-motion: 0.3s;
+  --site-ease: ease;
   color-scheme: light;
 
   /* ---- TYPE AXIS: neutral modern grotesque ------------------------------- */

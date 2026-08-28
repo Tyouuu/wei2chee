@@ -477,20 +477,38 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // a page that reads like a document leads with words -- what we do, how it
   // works, what we promise. No photo wall; that would be the opposite register.
   swiss: {
-  /* A DOCUMENT HAS NO PHOTO WALL. This is the register that prints, and
-     a page of photographs is the one thing that does not survive being
-     printed -- nor does it belong on an accountant's letterhead. */
-    omit: ["work", "team"],
-    statement: "rule",
-    measure: "narrow",
-    pattern: "hatch",
-    hero: "plain",
-    /* 说明 opens on a sentence with a rule over it now. 瑞士 is the register
-       whose whole argument is that a hairline and a measure are enough, and
-       lapa's real-business pages set that sentence LEFT under a rule rather
-       than centred -- FLAVORS THAT STAY and Câphê both. */
-    opens: "一句话",
-    order: ["services", "story", "team", "flow", "promise", "creds", "faq", "prices", "areas", "woven", "reviews", "work", "band", "cta", "hours"],
+    /* ── COPIED WHOLE: Wix `wh-leah` ─────────────────────────────────────────
+       Read at 1440 on 2026-08-28. Seven sections, 5519px, and the identity is
+       what it REFUSES: no fill on anything, every button an outlined pill, and
+       a full-width hairline between one section and the next. Two bands break
+       the white and they are the only colour on the page — one pale grey for
+       the logo wall, one near-black carrying the posts and the testimonials.
+
+           990px  1img  headline left · paragraph + pill right · wide photo under
+          1001px  1img  About — heading, paragraph, pill, portrait right
+           928px  3img  Programs — heading left + paragraph right, 3 photo cards
+           515px  4img  As Seen On — PALE GREY band, four logo tiles
+           611px  3img  Latest Posts — DARK band, three photos, titles on them
+           998px  0img  Testimonials — DARK band, outlined quote boxes
+           476px  0img  Newsletter — the ask, back on white
+
+       Ours ran twelve sections at a narrow measure with a plain hero: the same
+       library, none of that page. */
+    /* ⚠️ `story` was in BOTH lists on the first pass — declined and ordered at
+       the same time — so 「About」, their second section, never rendered. omit
+       wins, silently. */
+    omit: ["team", "prices", "flow", "promise", "faq", "areas", "hours", "band", "woven"],
+    tones: { creds: "tint", work: "ink", reviews: "ink" },
+    /* 第一屏是白的：标题在左，一段话跟一颗外框药丸在右，照片在下面，不是压在照片上。
+       band-bleed 就是这个形状 —— 那条带的颜色现在是一根轴（--site-hero-band），
+       瑞士把它设成自己的白。 */
+    hero: "band-bleed",
+    measure: "normal",
+    /* 他们第一屏跟 About 之间没有别的东西，收尾也只有一个订阅框 —— 一个 ask，不是
+       中段一个 CTA 再加一个表单。 */
+    dropBlocks: ["website-statement", "website-cta"],
+    opens: "About",
+    order: ["story", "services", "creds", "work", "reviews", "cta", "team", "prices", "flow", "promise", "faq", "areas", "hours", "band", "woven"],
   },
   // 招牌: shophouse retail with a physical sign outside. The centred hero IS a
   // signboard. Then the two things somebody standing on the street needs:
