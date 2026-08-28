@@ -2212,6 +2212,48 @@ export default function FaqsBlock({ copy: override }) {
       而且它呼叫 `usePathname()`，在测试里回 null 会让每个栏位都抛。
       它讲的话由 locale 管，`check:en` 在真的浏览器里走过它
 
+### 55. 🔴 手机上，我们自己的官网首屏是坏的（2026-08-28 量出来的）
+
+`npm run check:reachable` 在 390px 报 **3 个控件点不到**，全在 landing：
+
+```
+offscreen  LHDN e-Invoice: mandatory above RM1m tur   [left=-57 right=447 vw=390]
+offscreen  What kind of business do you run? e.g. I am [left=-44 right=434 vw=390]
+offscreen  Start →                                    [left=329 right=430 vw=390]
+```
+
+**实拍确认**（`.screenshots/journey/landing-390.png`）：副标题、**「你做哪一行？」那个输入框**、
+价格那行、公告条**全部两边被切**，而**「Start →」有一半在萤幕外**。
+
+⚠️ **而且页面不能横向滚**（`html/body` 有 `overflow-x: hidden`），所以那些字
+**不是难读，是根本碰不到**。我第一次用 `documentElement.scrollWidth` 量还报 "ok" ——
+**那把尺被 `overflow-x: hidden` 骗了，用眼睛看才对**。
+
+**根因量到一半**：`div.relative flex flex-col items-center px-6 pt-28 pb-16` 自己是
+**551px 宽而它的父层只有 390** —— 也就是里面有个东西的 min-content 撑到约 503px。
+（同一份量测还抓到产品截图里的 `table` 有 `min-width: 440px` 塞在 306px 的框里。）
+
+- [ ] 找出那个撑宽的子元素并修掉（hero 自己用的都是 `max-w-*`，是响应式安全的）
+- [ ] ⚠️ **这条在获客路径上，而且他的买家全在手机上** ——
+      他自己量过 19 家马来西亚 SME，[15/19 第一屏就给 WhatsApp](#26)，就是因为客人在手机上
+
+### 56. `industries.style_choices` 没有人读（2026-08-28）
+
+`20260827080000_three_registers_per_trade` 加了 `style_choices text[]`，
+每个行业三套推荐风格。**全仓库零个消费端。**
+
+而 `style-select` 现在渲染 `[...STYLE_ORDER]` —— **全部 6 套**，配一张跟他生意无关的假发票表，
+尽管资料库已经知道这个行业适合哪三套。这是第九次「能力有、线没接」。
+
+- [ ] ⚠️ **我没有动手** —— 那是另一个 session 昨天的 migration，消费端可能正在写
+- [ ] 老板的话（2026-08-28）：`他们不是在风格库那边看的吗 我觉得可以不用开多一个新的一页 没必要`
+      · `而且风格库里面的已经有详细的preview了`
+- [x] ✅ 照他讲的砍掉孤儿页 `/style-picker`（没有任何地方连它）
+- [ ] **我的建议（要他点头）**：`style-select` 那道门要嘛拿掉、要嘛换成
+      **用他自己的页面渲染**。理由是他自己讲的那一条 ——
+      **风格库的预览是「他自己的系统」，style-select 的是别人的假资料**，
+      而产品卖的就是「看到的就是拿到的」。同一件事做两次，还是差的那次挡在门口
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**
