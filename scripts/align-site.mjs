@@ -718,9 +718,32 @@ try {
 
   /* ── 1 版面 LAYOUT ─────────────────────────────────────────────────────── */
   console.log("\n版面 LAYOUT");
-  check("版面", "段数", theirs.secs.length, ours.secs.length, near(theirs.secs.length, ours.secs.length, 1));
+  /* ⚠️ 顶栏不算一段。Wix folds its navigation into the first section's box and
+     ours is a sibling, so an identical page reads as 「他们 6 段，我们 7 段」 — a
+     difference the ruler was creating rather than finding. Anything under 120px
+     at the very top is chrome. */
+  const bodySecs = (l) => (l.length && l[0].h < 120 ? l.slice(1) : l);
+  const ts = bodySecs(theirs.secs);
+  const os_ = bodySecs(ours.secs);
+  check("版面", "段数", ts.length, os_.length, near(ts.length, os_.length, 1));
   check("版面", "整页高", `${sum(theirs.secs)}px`, `${sum(ours.secs)}px`,
     near(sum(theirs.secs), sum(ours.secs), sum(theirs.secs) * 0.25));
+  /* ── 段均高 —— 最晚才量到的一项，而它是最大的那个差 ────────────────────────
+     老板 2026-08-28，看完三张对照图：「根本不一样哦 简直不能说是模版抄出来的」·
+     「我叫你对齐的东西 你完全没有去对齐啊」. He was right and nothing in the
+     checklist could see it: 段数 matched, 整页高 was inside tolerance, 段间 was
+     0 on both sides — and their sections were two and a half times as tall as
+     ours. A page of the same eight arguments in thin strips is not that page.
+
+         招牌  他们段均 1434px  我们 617px   2.3 倍
+         图纸        900        549        1.6
+         台账 / 瑞士 / 中台                  1.3
+
+     Height per section is where a reference's air actually lives, and it was
+     the one number nobody had asked for. */
+  const mean = (l) => (l.length ? Math.round(l.reduce((a, s) => a + s.h, 0) / l.length) : 0);
+  check("版面", "段均高", `${mean(ts)}px`, `${mean(os_)}px`, mean(ts) === 0 || mean(os_) / mean(ts) >= 0.8);
+
   const imgs = (l) => l.reduce((a, s) => a + s.img, 0);
   check("版面", "照片张数", imgs(theirs.secs), imgs(ours.secs), near(imgs(theirs.secs), imgs(ours.secs), 3));
 

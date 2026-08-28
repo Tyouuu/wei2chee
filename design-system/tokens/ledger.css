@@ -261,6 +261,9 @@
    surfaces, and a single high-visibility site-safety accent.
    ============================================================================ */
 :root {
+
+  /* 段内的气 —— 段均高对齐用的（见 align 的「段均高」那一项）。 */
+  --site-inner: 3rem;  /* ⚠️ 24rem 试过，退回来了：段均高的数字过关，画面变成一大片空的底色，内容浮在中间。内距不等於内容 —— 他们那些段是被大字跟大图填满的。 */
   color-scheme: light;
 
   /* ---- TYPE AXIS: condensed grotesque, heavy at display sizes -------------

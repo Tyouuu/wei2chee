@@ -768,10 +768,21 @@
    the measurement came back 32px unchanged. A rule that cannot win is worse
    than no rule, because it reads as a decision. */
 .ds-site :is(h2, h3):not([data-chrome-top] *):not([data-chrome-foot] *) {
+  /* ── 区段标题自己一根轴，跟图的大小分开 ────────────────────────────────────
+     Measured 2026-08-28, every heading on both pages:
+
+         台账  他们 99/56/56/56   我们 100/56/56/56   ← 已经一样
+         招牌  他们 263/225/225   我们 264/ 56/ 56
+         图纸  他们 158/54/81/81  我们 158/ 56/ 56
+
+     招牌's section headings are 225px — 「This Month at Toulouse」 is four times
+     the size of ours — and --site-figure could not say so, because it also
+     scales every photograph and every card on the page. Two decisions were
+     sharing one axis. */
   font-size: clamp(
-    calc(1.5rem * var(--site-figure, 1)),
-    calc(2.6vw * var(--site-figure, 1)),
-    calc(2rem * var(--site-figure, 1))
+    calc(1.5rem * var(--site-figure, 1) * var(--site-heading, 1)),
+    calc(2.6vw * var(--site-figure, 1) * var(--site-heading, 1)),
+    calc(2rem * var(--site-figure, 1) * var(--site-heading, 1))
   );
   letter-spacing: var(--tracking-title);
   line-height: var(--leading-tight);
