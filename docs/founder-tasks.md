@@ -2199,6 +2199,19 @@ export default function FaqsBlock({ copy: override }) {
       （`floating-contact.tsx`），而且用的是**客户自己的号码**，不是我们的占位符 ——
       它**没有**卡在[任务 11](#11) 上。那条可以划掉
 
+#### 再扩到客户每天用的系统页（同一天）
+官网是掉字最贵的地方，但老板也在改内页，那里掉一个字一样看不见。
+从 `MODULE_KEYS`（封闭目录）走每一个模块页，展平巢状的 slot。
+
+- [x] **297 个栏位、每一个产生出来的页面 —— 真正掉的只有 1 个，就是已知的 `eyebrow`。**
+- [x] 三类「看起来掉了」全部读过代码确认是**条件式**，不是缺陷，而且把条件写进名单：
+      `FilterChips` 的清空连结在 `chips.length > 1` 后面（页面只有 1 个筛选）·
+      `Listbox.placeholder` 是 `selected?.label ?? placeholder`（有选中就不显示）·
+      `TrendChart.unit` 只活在 Recharts 的 **hover tooltip** 里
+- [x] `RailNav` 整个跳过：它是 **Formae 自己的外壳**不是客户的字，
+      而且它呼叫 `usePathname()`，在测试里回 null 会让每个栏位都抛。
+      它讲的话由 locale 管，`check:en` 在真的浏览器里走过它
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**

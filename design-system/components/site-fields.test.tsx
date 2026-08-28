@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { buildPageLayout } from "@/lib/templates/industry-template";
+import { MODULE_KEYS } from "@/lib/portal/module-catalog";
 
 /**
  * Every word an owner types into their public site must reach the page.
@@ -28,6 +29,38 @@ import { buildPageLayout } from "@/lib/templates/industry-template";
 
 const SENTINEL = "ZZQXFIELDPROBE";
 
+/*
+  NOT ASKED OF EVERY COMPONENT.
+
+  SiteBlock renders one of the 200 pulled sections; its words come from `copy`,
+  which copy-reaches-page.test.tsx already sweeps. RailNav is Formae's own
+  chrome rather than the customer's words, and it calls usePathname(), which is
+  null outside Next's router -- every field on it throws here. What it says is
+  our copy, governed by the locale, and check:en walks it in a real browser.
+*/
+const NOT_THIS_TEST = new Set(["SiteBlock", "RailNav"]);
+
+/*
+  CONDITIONAL, NOT DROPPED -- each one opened and confirmed.
+
+  A field that renders only when the data says so is not a lost word. They are
+  listed with the condition rather than assumed, because "it is probably
+  conditional" is how a real defect gets waved through.
+*/
+const ONLY_UNDER_CONDITIONS = new Set([
+  // filter-chips.tsx puts the clear-all link behind `chips.length > 1`, and a
+  // generated page carries one chip.
+  "FilterChips.clearAllHref",
+  "FilterChips.clearAllLabel",
+  // listbox.tsx: `selected?.label ?? placeholder ?? …`. The generated page has
+  // a selection, so the placeholder is correctly absent.
+  "Listbox.placeholder",
+  // trend-chart.tsx uses it inside the Recharts tooltip formatter, which exists
+  // on hover and never in static markup.
+  "TrendChart.unit",
+]);
+
+
 /* A phone field is sanitised to digits before it is used -- FloatingContact
    does `number.replace(/[^\d]/g, "")` to build a wa.me link -- so a sentinel
    made of letters cannot survive it. Probe those with digits instead. */
@@ -49,22 +82,46 @@ type Node = { type: string; props: Record<string, unknown> };
 
 const components = (puckConfig.components ?? {}) as unknown as Record<string, Entry>;
 
-/* A real customer's website, for a trade that uses the most of it. */
-const page = buildPageLayout(
-  "website",
-  {
-    industry: {
-      slug: "renovation",
-      name_zh: "装修/承包商",
-      labels: { customer: "客户", order: "项目", staff: "师傅" },
-      default_workflow: ["Customer", "Quotation", "Project", "Payment"],
-      suggested_modules: [],
-    },
-    lang: "en",
-  } as never,
-  "Xingfa Renovation",
-  "en",
-) as unknown as { content: Node[] };
+/*
+  NOT ONLY THE WEBSITE.
+
+  The public site is where a dropped word is most expensive, but the owner edits
+  their internal pages too, and a field that never renders is exactly as
+  invisible there. MODULE_KEYS is the closed catalogue the generator builds
+  from, so walking it means a module added tomorrow is covered without anyone
+  remembering this file exists.
+*/
+const CTX = {
+  industry: {
+    slug: "renovation",
+    name_zh: "装修/承包商",
+    labels: { customer: "客户", order: "项目", staff: "师傅" },
+    default_workflow: ["Customer", "Quotation", "Project", "Payment"],
+    suggested_modules: [],
+  },
+  lang: "en",
+} as never;
+
+/** Flattened: the shell nests pages inside slots, and a field that only ever
+ *  renders three levels down is still a field the owner typed into. */
+function walk(nodes: Node[] | undefined, out: Node[] = []): Node[] {
+  for (const n of nodes ?? []) {
+    if (!n || typeof n !== "object") continue;
+    out.push(n);
+    for (const v of Object.values(n.props ?? {})) {
+      if (Array.isArray(v)) walk(v as Node[], out);
+    }
+  }
+  return out;
+}
+
+const pages = MODULE_KEYS.map((key) => ({
+  key,
+  nodes: walk(
+    (buildPageLayout(key, CTX, "Xingfa Renovation", "en") as unknown as { content: Node[] })
+      .content,
+  ),
+}));
 
 describe("public site fields reach the page", () => {
   it("reports every text field the page ignores", { timeout: 120_000 }, () => {
@@ -72,7 +129,9 @@ describe("public site fields reach the page", () => {
     const threw: string[] = [];
     let checked = 0;
 
-    for (const node of page.content ?? []) {
+    for (const { key: pageKey, nodes } of pages)
+    for (const node of nodes) {
+      if (NOT_THIS_TEST.has(node.type)) continue;
       const entry = components[node.type];
       if (typeof entry?.render !== "function" || !entry.fields) continue;
       // Narrowed once here so the closure below does not have to re-prove it.
@@ -108,9 +167,11 @@ describe("public site fields reach the page", () => {
               if (shows({ [shapeField as string]: opt.value })) { seen = true; break; }
             }
           }
-          if (!seen) dropped.push(`${node.type}.${key}`);
+          if (!seen && !ONLY_UNDER_CONDITIONS.has(`${node.type}.${key}`)) {
+            dropped.push(`${pageKey}/${node.type}.${key}`);
+          }
         } catch (e) {
-          threw.push(`${node.type}.${key}: ${String((e as Error).message).slice(0, 60)}`);
+          threw.push(`${pageKey}/${node.type}.${key}: ${String((e as Error).message).slice(0, 60)}`);
         }
       }
     }
@@ -133,6 +194,9 @@ describe("public site fields reach the page", () => {
       session working in this same tree today, and two sessions writing one file
       is how work gets lost.
     */
-    expect({ dropped, threw }).toEqual({ dropped: ["SiteHero.eyebrow"], threw: [] });
+    expect({ dropped: [...new Set(dropped)].sort(), threw }).toEqual({
+      dropped: ["website/SiteHero.eyebrow"],
+      threw: [],
+    });
   });
 });
