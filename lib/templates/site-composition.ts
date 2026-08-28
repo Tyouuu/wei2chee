@@ -410,6 +410,11 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     rhythm: "airy",
     figure: "large",
     copy: "large",
+    /* 内容几乎贴边 —— measured at native size 2026-08-28: their heading sits
+       32px from the page edge and ours sat at 87px, on every section down the
+       page. Their content box is 1376 of 1440; ours was 1312 centred, which
+       adds 64px of margin on each side before the 24px padding even starts. */
+    measure: "wide",
     /* ── 顺序改了 2026-08-28，因为参考页第二段是服务不是流程 ──────────────
        A. Reynolds runs 「Our Expertise」 — five service cards — as its SECOND
        section and 「Our Specializations」 — three more — as its fourth. Ours

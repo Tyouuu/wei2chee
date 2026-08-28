@@ -449,12 +449,20 @@
   --copy-sm: var(--text-sm);
   --copy-base: var(--text-base);
   --copy-lg: var(--text-lg);
+  /* 按钮的圆角 —— 后台的形状不一定是官网的形状。
+     満図's workbench sets --radius-control to 999px, a pill, and that is right
+     for a toolbar. Its reference puts a SMALL-RADIUS RECTANGLE on every button
+     it has — Call Now, Contact — and that shape repeats five times down the
+     page, so getting it wrong is five wrong things, not one. Captured here and
+     applied on the child for the same reason as the copy scale. */
+  --copy-radius-control: var(--radius-control);
 }
 .ds-ground[data-copy="large"] .ds-site,
 .ds-ground[data-copy="large"].ds-site {
   --site-copy: 1.25;
 }
 .ds-site > * {
+  --radius-control: var(--site-radius-control, var(--copy-radius-control));
   --text-micro: calc(var(--copy-micro) * var(--site-copy));
   --text-xs: calc(var(--copy-xs) * var(--site-copy));
   --text-sm: calc(var(--copy-sm) * var(--site-copy));
@@ -1434,10 +1442,22 @@
    design, not one effect applied six times. */
 :root[data-reveal-armed] [data-reveal] {
   opacity: 0;
+  /* ── 动效也是一根轴，也要跟模版对 ────────────────────────────────────────
+     重点 7i names 动效 as one of the five, and it was the one axis never
+     matched to anything. Measured 2026-08-28 with `npm run align`:
+
+         A. Reynolds   一档 300ms · 缓动 ease · 只动 transform
+         我们          240ms×4 + 620ms×30 · 自订 cubic-bezier · 动五个属性
+
+     620ms is not a slower version of 300ms, it is a different design: at that
+     length the arrival is something you watch, and their page's arrival is
+     something you barely notice. So duration and easing are register
+     variables with our old values as the default -- nothing else in the
+     library moves differently unless it says so. */
   transition:
-    opacity 0.62s cubic-bezier(0.22, 0.61, 0.36, 1),
-    transform 0.62s cubic-bezier(0.22, 0.61, 0.36, 1),
-    filter 0.62s cubic-bezier(0.22, 0.61, 0.36, 1);
+    opacity var(--site-motion, 0.62s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+    transform var(--site-motion, 0.62s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+    filter var(--site-motion, 0.62s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
   will-change: opacity, transform;
 }
 :root[data-reveal-armed] [data-reveal][data-revealed] {

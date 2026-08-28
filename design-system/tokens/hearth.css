@@ -368,6 +368,14 @@
      跟页脚同一个 #fffe99。改完一看画面就现形，所以退回来。
 
      留着 --site-hero-band 这根轴是对的（开场的地不一定等於色块），只是 満図 用不上。 */
+  /* 按钮是小圆角方块，不是药丸。量的是 Call Now 跟 Contact 两颗，
+     整页出现五次 —— 形状错就是错五次，不是错一次。 */
+  /* 动效：他们整页只有一档 300ms 的 ease，只动 transform。 */
+  --site-motion: 0.3s;
+  --site-ease: ease;
+  --site-radius-control: 4px;
+  /* 标题更重：他们 700，我们 600，放大到原尺寸一眼就看得出来。 */
+  --site-display-weight: 700;
   --site-card: #f1f1ee;
   --site-card-border: 0 solid transparent;
   --site-card-radius: 8px;

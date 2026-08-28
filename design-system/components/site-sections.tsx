@@ -649,7 +649,12 @@ export function SiteCta({
   if (shape === "panel") {
     return (
       <section data-cta-band="" data-wide="" className="@container">
-        <div className="grid overflow-hidden [border-radius:var(--radius-lg)] @3xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+        {/* ── 两个盒子中间有缝，不是一块切成两半 ─────────────────────────────
+            Native size, 2026-08-28: their yellow panel and the photograph beside
+            it are TWO separate rounded boxes with a gap between them. Ours was
+            one box with a divider — visually a single block cut in half, which
+            is the opposite reading. The gap is what makes it 「两个材料并排」. */}
+        <div className="grid [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
           {/* 半块颜色 IS THE BLOCK COLOUR, NOT THE PRIMARY.
 
               Measured against the page 満図 clones: their 「Serving Clients in
@@ -658,7 +663,12 @@ export function SiteCta({
               the whole half in the primary and put a white ghost button on it,
               which spends the loudest colour on the page in the one place the
               reference keeps quiet. The primary belongs to the button. */}
-          <div className="[background:var(--color-block,var(--color-primary))] [padding-block:calc(var(--pad-card-lg)*1.8)] [padding-inline:calc(var(--pad-card-lg)*1.2)]">
+          {/* THE BUTTON SITS ON THE FLOOR OF THE PANEL. Theirs leaves a clear
+              drop between the sub-line and 「Call Now」 — the panel is taller
+              than its words and the ask is at the bottom of it, which is what
+              gives that section its calm. Ours stacked everything at the top
+              and stopped, so the panel was only as tall as its text. */}
+          <div className="flex flex-col [background:var(--color-block,var(--color-primary))] [border-radius:var(--site-card-radius,var(--radius-lg))] [min-block-size:calc(19rem*var(--site-figure,1))] [padding-block:calc(var(--pad-card-lg)*1.8)] [padding-inline:calc(var(--pad-card-lg)*1.2)]">
             <h2 className="ds-display max-w-[16ch] text-balance [color:var(--color-on-block,var(--color-paper))] [font-weight:var(--fw-semibold)]">
               {heading}
             </h2>
@@ -667,7 +677,7 @@ export function SiteCta({
                 {note}
               </p>
             ) : null}
-            {buttons(false)}
+            <div className="mt-auto pt-10">{buttons(false)}</div>
           </div>
           {/* The other half. It is the register's own canvas rather than more
               of the colour, so the section reads as two materials meeting --
@@ -686,7 +696,7 @@ export function SiteCta({
             <img
               src={photo}
               alt={photoAlt || ""}
-              className="hidden size-full object-cover @3xl:block"
+              className="hidden size-full object-cover [border-radius:var(--site-card-radius,var(--radius-lg))] @3xl:block"
             />
           ) : (
           <div
@@ -1723,12 +1733,46 @@ export function SiteWoven({
     )
   }
 
-  /* The reference interleaves: two claims, a picture, two claims, a picture.
-     Splitting the list rather than putting the pictures in a row is what makes
-     the section read as one argument instead of as a list followed by a
-     gallery. */
+  /* ── 左边论点 · 中间照片 · 右边论点 ────────────────────────────────────
+     Read at native size on 2026-08-28, which is the only size this was
+     visible at. Their 「Why Choose Us?」 — the biggest section on the page at
+     1216px — is THREE columns:
+
+         claims left | photographs stacked down the middle | claims right
+
+     with a thin horizontal RULE above every claim, a small dot, a bold line,
+     and two or three lines of grey under it. The photographs are portrait and
+     they sit BETWEEN the two columns of argument, which is what 「织在论点里」
+     means and why that page needs no gallery.
+
+     Ours put the claims in two columns as single lines with the pictures
+     underneath them, side by side and large — a list, then a gallery. Same
+     ingredients, different argument. */
   const half = Math.ceil(marks.length / 2)
   const columns = [marks.slice(0, half), marks.slice(half)]
+
+  const claim = (m: { label: string; value?: string }) => (
+    <div
+      key={m.label}
+      /* THE RULE ABOVE, not a box around. Theirs draws a hairline across the
+         top of each claim and nothing else — no border, no fill. It is what
+         keeps a column of four claims reading as a list without turning them
+         into cards. */
+      className="[border-top:var(--hairline)_solid_var(--border-subtle)] [padding-block:calc(var(--pad-card-lg)*0.85)_calc(var(--pad-card-lg)*1.1)]"
+    >
+      <p className="flex items-baseline [gap:var(--gap-inline)]">
+        <span aria-hidden className="inline-block size-2 shrink-0 rounded-full [background:var(--color-primary)]" />
+        <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+          {m.label}
+        </span>
+      </p>
+      {m.value ? (
+        <p className="ml-5 mt-2 max-w-[34ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+          {m.value}
+        </p>
+      ) : null}
+    </div>
+  )
 
   return (
     <section className="@container" data-wide="">
@@ -1736,53 +1780,38 @@ export function SiteWoven({
         <div className="mb-10 max-w-[46ch]">
           <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
           {note ? (
-            <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+            <p className="mt-3 max-w-[34ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
               {note}
             </p>
           ) : null}
         </div>
       ) : null}
 
-      <div className="grid [gap:calc(var(--gap-stack)*1.4)] @3xl:grid-cols-2">
-        {columns.map((col, ci) => (
-          <div key={ci} className="flex flex-col [gap:calc(var(--gap-stack)*1.1)]">
-            {col.map((m, i) => (
-              <div key={m.label}>
-                <p className="flex items-baseline [gap:var(--gap-inline)]">
-                  <span
-                    aria-hidden
-                    className="inline-block size-2 shrink-0 rounded-full [background:var(--color-primary)]"
-                  />
-                  <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-                    {m.label}
-                  </span>
-                </p>
-                {m.value ? (
-                  <p className="ml-5 mt-1 max-w-[40ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-                    {m.value}
-                  </p>
-                ) : null}
-                {/* THE PICTURE, INSIDE THE ARGUMENT. One per column, after its
-                    first claim, exactly where the reference puts them. */}
-                {i === 0 && shots[ci] ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={shots[ci]}
-                    alt=""
-                    className="mt-6 w-full object-cover [border-radius:var(--site-radius,var(--radius-lg))]"
-                    style={{
-                      aspectRatio: ci === 0 ? "4 / 5" : "5 / 4",
-                      maxHeight: "calc(26rem * var(--site-figure, 1))",
-                    }}
-                  />
-                ) : null}
-              </div>
-            ))}
-          </div>
-        ))}
+      <div className="grid [gap:calc(var(--gap-stack)*1.3)] @3xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,1fr)]">
+        <div className="flex flex-col">{columns[0].map(claim)}</div>
+
+        {/* THE MIDDLE COLUMN IS THE PICTURES. Portrait, stacked, and the first
+            one starts level with the first claim — theirs sits slightly above
+            the rules, which is what stops the three columns reading as a
+            table. */}
+        <div className="flex flex-col [gap:var(--gap-stack)]">
+          {shots.slice(0, 2).map((src, i) => (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              key={src + i}
+              src={src}
+              alt=""
+              className="w-full object-cover [border-radius:var(--site-card-radius,var(--radius-lg))]"
+              style={{ aspectRatio: "4 / 5" }}
+            />
+          ))}
+        </div>
+
+        <div className="flex flex-col">{columns[1].map(claim)}</div>
       </div>
     </section>
   )
+
 }
 
 /**

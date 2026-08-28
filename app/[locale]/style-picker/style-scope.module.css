@@ -407,6 +407,10 @@
   --site-ink-fg-dim: color-mix(in oklab, #0a0a08 62%, transparent);
   --site-ink-panel: #f1f2ed;
   --site-ink-block: #fffe99;
+  --site-motion: 0.3s;
+  --site-ease: ease;
+  --site-radius-control: 4px;
+  --site-display-weight: 700;
   --site-card: #f1f1ee;
   --site-card-border: 0 solid transparent;
   --site-card-radius: 8px;
@@ -572,6 +576,8 @@
   --site-hero-scale: 1.2;
   --site-frame: color-mix(in oklab, #f0eae0 26%, transparent);
   --site-strip: #2c200b;
+  --site-motion: 0.3s;
+  --site-ease: ease;
   --site-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --fw-regular: 400;
