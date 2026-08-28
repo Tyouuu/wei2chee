@@ -204,7 +204,14 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
               rows={3}
               placeholder={t("askPlaceholder")}
               aria-label={t("askPlaceholder")}
-              className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-[0.9375rem] leading-relaxed text-white placeholder:text-white/45 focus:outline-none"
+              /* `rows={3}` is measured for the wide layout: at 768 and at
+                 1440 the example fits the box exactly. On a 390px phone the
+                 same sentence wraps to more lines and needs 118px against the
+                 box's 93 -- so the example that tells someone HOW MUCH to
+                 write was cut off mid-clause, on the one control this page
+                 exists for. One line's worth of floor below md, and the wide
+                 layout keeps the height it was tuned to. */
+              className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-[0.9375rem] leading-relaxed text-white placeholder:text-white/45 focus:outline-none min-h-[7.4rem] md:min-h-0"
             />
             <div className="flex items-center justify-end px-1 pb-1">
               <button
