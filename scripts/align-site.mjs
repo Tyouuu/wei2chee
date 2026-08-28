@@ -748,6 +748,23 @@ try {
   const mean = (l) => (l.length ? Math.round(l.reduce((a, s) => a + s.h, 0) / l.length) : 0);
   check("版面", "段均高", `${mean(ts)}px`, `${mean(os_)}px`, mean(ts) === 0 || mean(os_) / mean(ts) >= 0.8);
 
+  /* ── 逐段的高度，一段对一段 ────────────────────────────────────────────────
+     老板 2026-08-29, holding up 台账 while this checklist reported 0 差异:
+     「你自己用眼睛看 一样吗」. It was not. Their Recent Projects is 2198px of tidy
+     grid; ours had become 4442px of enormous tiles — TWICE their section — and
+     every check passed, because 段均高 is an average and one section at double
+     size hides inside it when the others are short.
+
+     An average is not a comparison. Each section is compared to its opposite
+     number now, and a section more than 40% out is a failure on its own. */
+  for (let i = 0; i < Math.min(ts.length, os_.length); i++) {
+    const a = ts[i].h;
+    const b = os_[i].h;
+    const ok = a === 0 || (b / a >= 0.6 && b / a <= 1.6);
+    if (!ok) check("版面", `第${i + 1}段高`, `${a}px`, `${b}px`, false);
+    else marks.push({ axis: "版面", name: `第${i + 1}段高`, ok: true });
+  }
+
   const imgs = (l) => l.reduce((a, s) => a + s.img, 0);
   check("版面", "照片张数", imgs(theirs.secs), imgs(ours.secs), near(imgs(theirs.secs), imgs(ours.secs), 3));
 

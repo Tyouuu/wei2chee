@@ -1208,7 +1208,17 @@ export function SiteGallery({
                   src={s2.src}
                   alt={s2.alt || ""}
                   className="w-full object-cover"
-                  style={{ aspectRatio: RATIO[i % 6] }}
+                  /* ── 每一格都要有上限 ────────────────────────────────────────
+                     Aspect ratios alone let a 720px-wide square become a 720px
+                     -tall one, and ten of those made 台账's Recent Projects
+                     4442px against their 2198 — twice their section, and every
+                     check in the ruler passed, because an AVERAGE section
+                     height hides one section at double size among short ones.
+                     Their own tiles measure 465–502px with one at 933.
+
+                     老板 2026-08-29, holding the two pages side by side:
+                     「你自己用眼睛看 一样吗」. It was not. */
+                  style={{ aspectRatio: RATIO[i % 6], maxHeight: "32rem" }}
                 />
               ) : null}
               {s2.caption ? (

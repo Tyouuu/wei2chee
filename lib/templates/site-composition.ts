@@ -335,7 +335,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        public page. 四点两栏 carries the same four commitments and has a `band`
        shape built for exactly this section, so 台账 takes that and declines
        保证. */
-    omit: ["prices", "creds", "flow", "areas", "faq", "promise", "hours", "band", "cta", "team"],
+    omit: ["prices", "creds", "flow", "areas", "faq", "promise", "hours", "band", "cta", "team", "woven"],
     tones: {},
     /* 深色开场 —— their whole page is one dark ground with the bands butted
        against each other. Ours is 台账's OWN dark surface (its navigation
