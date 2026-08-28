@@ -88,7 +88,20 @@ export function PhotoField({
   }
 
   /* ── the library ─────────────────────────────────────────────────────── */
-  type Photo = { id: string; thumb: string; full: string; credit: string };
+  /* `provider` and `link` travel with each photograph because the two libraries
+     do NOT ask for the same thing. Pixabay wants to be named where results are
+     shown and nothing on the published page; Pexels wants a prominent link
+     wherever a request is made AND the photographer credited where possible.
+     Assuming one rule for both is either a licence breach or a credit line on a
+     contractor's website that nobody asked for. */
+  type Photo = {
+    id: string;
+    thumb: string;
+    full: string;
+    credit: string;
+    provider?: "pixabay" | "pexels";
+    link?: string;
+  };
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [page, setPage] = useState(1);
   const [noKey, setNoKey] = useState(false);
@@ -291,7 +304,7 @@ export function PhotoField({
                 <button
                   key={p.id}
                   type="button"
-                  title={`Pixabay · ${p.credit}`}
+                  title={`${p.provider === "pexels" ? "Pexels" : "Pixabay"} · ${p.credit}`}
                   onClick={() => void adopt(p)}
                   disabled={Boolean(busy)}
                   className="relative overflow-hidden rounded-[var(--radius-sm)] [aspect-ratio:4/3] disabled:opacity-50"
@@ -308,13 +321,33 @@ export function PhotoField({
             </div>
           )}
 
-          {/* Pixabay asks to be named wherever search results are shown. Their
-              licence does not require it on the published page, and it does not
-              belong there: a contractor's website is not the place to credit a
-              photographer he has never met. */}
+          {/* BOTH LIBRARIES ASK TO BE NAMED HERE, AND THE WORDING IS THEIRS.
+
+              Pixabay: 「show your users where the images are from, whenever
+              search results are displayed」.
+              Pexels: 「whenever you are doing an API request make sure to show a
+              prominent link to Pexels」 — a LINK, not just the word, which is
+              why this one is an anchor.
+
+              Named only for the libraries that actually answered this search:
+              crediting a library that returned nothing is not attribution, it
+              is decoration. */}
           {photos.length ? (
             <p className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)]">
-              图片来自 Pixabay
+              图片来自{" "}
+              {photos.some((p) => p.provider !== "pexels") ? (
+                <a href="https://pixabay.com" target="_blank" rel="noreferrer" className="underline">
+                  Pixabay
+                </a>
+              ) : null}
+              {photos.some((p) => p.provider !== "pexels") && photos.some((p) => p.provider === "pexels")
+                ? " · "
+                : null}
+              {photos.some((p) => p.provider === "pexels") ? (
+                <a href="https://www.pexels.com" target="_blank" rel="noreferrer" className="underline">
+                  Pexels
+                </a>
+              ) : null}
             </p>
           ) : null}
         </div>

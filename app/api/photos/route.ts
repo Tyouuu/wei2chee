@@ -80,7 +80,21 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false, reason: "bad-src" }, { status: 400 });
   }
-  const allowedHost = host === "pixabay.com" || host.endsWith(".pixabay.com");
+  /* ── WHICH HOSTS WE WILL FETCH BYTES FROM ────────────────────────────────
+     An allow-list rather than a check on the URL's shape: this endpoint takes a
+     URL from the browser and fetches it server-side, which is a request made
+     from inside our network with our credentials available. Anything not on
+     this list is somebody else's server.
+
+     Pexels was added 2026-08-28 with the founder's key. Without it the merged
+     picker would show Pexels results and then refuse every one of them with
+     「bad-host」 — the search half of the wire connected and the storing half
+     not, which is the failure this repo keeps finding. */
+  const allowedHost =
+    host === "pixabay.com" ||
+    host.endsWith(".pixabay.com") ||
+    host === "pexels.com" ||
+    host.endsWith(".pexels.com");
   if (!allowedHost) return NextResponse.json({ ok: false, reason: "bad-host" }, { status: 400 });
 
   // The user's own session, not the service role: storage RLS (migration
@@ -104,7 +118,23 @@ export async function POST(req: Request) {
   }
 
   const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : type === "image/avif" ? "avif" : "jpg";
-  const path = `${project.id}/${crypto.randomUUID()}.${ext}`;
+  /* ── PROVENANCE IN THE FILE NAME ─────────────────────────────────────────
+     The two libraries ask for different things on the published page — Pixabay
+     for nothing, Pexels for 「always credit our photographers when possible」 —
+     so which one a photograph came from has to survive the download. It is
+     recorded here rather than in a column because the block only stores a URL,
+     and a name is the one piece of a stored file that always travels with it.
+
+     `pexels-36035072-<uuid>.jpg` can be read back into a credit line at any
+     time. Losing it would mean re-picking every photograph to find out. */
+  const from = host.endsWith("pexels.com") ? "pexels" : "pixabay";
+  /* Pixabay's delivery URLs carry no plain numeric id (they look like
+     `/get/g1a2b3…_1280.jpg`), so there is nothing to record and nothing to
+     record it FOR — their licence asks for no credit on the page. Writing a
+     「0」 there would read as an id we failed to parse. */
+  const originId = (src.match(/\/(?:photos\/)?(\d{4,})/) ?? [])[1];
+  const stamp = originId ? `${from}-${originId}` : from;
+  const path = `${project.id}/${stamp}-${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
     .from("site-photos")
     .upload(path, bytes, { contentType: type, upsert: false });

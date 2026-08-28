@@ -50,11 +50,26 @@ export type StockPhoto = {
   full: string;
   width: number;
   height: number;
-  /** Who took it. Shown in the PICKER -- Pixabay asks for it there ("show your
-   *  users where the images are from, whenever search results are displayed")
-   *  -- and not on the published page, which their licence does not require. */
+  /** Who took it. Shown in the PICKER, which is where both libraries ask to be
+   *  named. Pixabay: 「show your users where the images are from, whenever
+   *  search results are displayed」. Pexels: 「whenever you are doing an API
+   *  request make sure to show a prominent link to Pexels」. */
   credit: string;
-  provider: "pixabay";
+  /**
+   * The photo's own page on the provider.
+   *
+   * Only Pexels needs it, and it is the one obligation the two libraries do NOT
+   * share: 「always credit our photographers when possible (e.g. "Photo by John
+   * Doe on Pexels" with a link to the photo page on Pexels)」. Pixabay's licence
+   * asks for nothing on the published page.
+   *
+   * So the provider has to travel WITH the photograph, not be assumed: a page
+   * carrying one photo from each must credit one of them and not the other, and
+   * guessing wrong is either a licence breach or a credit line on a
+   * contractor's website that nobody asked for.
+   */
+  link?: string;
+  provider: "pixabay" | "pexels";
 };
 
 export type StockResult =
@@ -134,65 +149,127 @@ export const TRADE_QUERY: Record<string, string> = Object.fromEntries(
   Object.entries(TRADE_QUERIES).map(([k, v]) => [k, v[0]]),
 );
 
-const ENDPOINT = "https://pixabay.com/api/";
+const PIXABAY = "https://pixabay.com/api/";
+const PEXELS = "https://api.pexels.com/v1/search";
+
+/* A landing page hero is wide and large. Anything under this scales up badly on
+   a retina phone, which is where most of these pages are read. */
+const MIN_WIDTH = 1600;
+
+async function searchPixabay(query: string, page: number): Promise<StockPhoto[] | null> {
+  const key = process.env.PIXABAY_KEY;
+  if (!key) return null;
+  const url = new URL(PIXABAY);
+  url.searchParams.set("key", key);
+  url.searchParams.set("q", query);
+  url.searchParams.set("image_type", "photo");
+  url.searchParams.set("orientation", "horizontal");
+  url.searchParams.set("min_width", String(MIN_WIDTH));
+  url.searchParams.set("safesearch", "true");
+  url.searchParams.set("per_page", "20");
+  url.searchParams.set("page", String(page));
+  // Pixabay asks that responses be cached for 24 hours. Next's fetch cache does
+  // it for us, keyed by the URL -- which includes the query and page, so two
+  // businesses in the same trade share one upstream call.
+  const res = await fetch(url, { next: { revalidate: 86400 } });
+  if (!res.ok) throw new Error(`pixabay HTTP ${res.status}`);
+  const body = (await res.json()) as {
+    hits?: { id: number; webformatURL: string; largeImageURL: string; imageWidth: number; imageHeight: number; user: string }[];
+  };
+  return (body.hits ?? []).map((h) => ({
+    id: `pixabay:${h.id}`,
+    thumb: h.webformatURL,
+    full: h.largeImageURL,
+    width: h.imageWidth,
+    height: h.imageHeight,
+    credit: h.user,
+    provider: "pixabay" as const,
+  }));
+}
+
+async function searchPexels(query: string, page: number): Promise<StockPhoto[] | null> {
+  const key = process.env.PEXELS_KEY;
+  if (!key) return null;
+  const url = new URL(PEXELS);
+  url.searchParams.set("query", query);
+  url.searchParams.set("orientation", "landscape");
+  url.searchParams.set("per_page", "20");
+  url.searchParams.set("page", String(page));
+  const res = await fetch(url, { headers: { Authorization: key }, next: { revalidate: 86400 } });
+  if (!res.ok) throw new Error(`pexels HTTP ${res.status}`);
+  const body = (await res.json()) as {
+    photos?: {
+      id: number;
+      width: number;
+      height: number;
+      url: string;
+      photographer: string;
+      alt?: string;
+      src: { large: string; large2x: string; original: string };
+    }[];
+  };
+  return (body.photos ?? [])
+    /* Pixabay is filtered server-side by min_width; Pexels has no such
+       parameter, so the same floor is applied here rather than left to differ
+       between the two halves of one result grid. */
+    .filter((p) => p.width >= MIN_WIDTH)
+    .map((p) => ({
+      id: `pexels:${p.id}`,
+      thumb: p.src.large,
+      full: p.src.original,
+      width: p.width,
+      height: p.height,
+      credit: p.photographer,
+      link: p.url,
+      provider: "pexels" as const,
+    }));
+}
 
 /**
- * Search the library.
+ * Search the libraries — BOTH OF THEM, INTERLEAVED, ONE GRID.
  *
- * `exclude` carries the ids already shown, which is how 「不滿意 可以再去圖庫推薦」
- * works without a cursor: the caller keeps asking for the next page and drops
- * what it has seen. Pixabay pages are 20 wide and stable for a query, so this
- * is cheaper and more predictable than re-randomising.
+ * ── WHY MERGED AND NOT A SOURCE PICKER ────────────────────────────────────
+ *
+ * The founder, 2026-08-28: 「我可以不可以就是再另外接多几个免费的图库 这样就有很多
+ * 图库 就增加找到心仪照片的机率」. The value he named is 「a better chance of
+ * finding the one I want」, and that is a property of ONE grid with more in it.
+ * A dropdown labelled 「source」 gives him the same photographs behind an extra
+ * click and one more decision that is not his to make: nobody wants a photo
+ * BECAUSE it is from Pexels.
+ *
+ * Interleaved rather than concatenated, so the second library is visible in the
+ * first row rather than after twenty scrolls.
+ *
+ * One library failing is not a failure. Both are optional and either can be
+ * down; what would be a failure is showing an error over a grid that has
+ * twenty usable photographs in it.
  */
 export async function searchStock(
   query: string,
   { page = 1, exclude = [] }: { page?: number; exclude?: string[] } = {},
 ): Promise<StockResult> {
-  const key = process.env.PIXABAY_KEY;
-  if (!key) return { ok: false, reason: "no-key" };
+  const [pix, pex] = await Promise.allSettled([searchPixabay(query, page), searchPexels(query, page)]);
+  const got = (r: PromiseSettledResult<StockPhoto[] | null>) =>
+    r.status === "fulfilled" ? r.value : null;
+  const a = got(pix);
+  const b = got(pex);
 
-  const url = new URL(ENDPOINT);
-  url.searchParams.set("key", key);
-  url.searchParams.set("q", query);
-  url.searchParams.set("image_type", "photo");
-  url.searchParams.set("orientation", "horizontal");
-  // A landing page hero is wide and large. Anything under this scales up badly
-  // on a retina phone, which is where most of these pages are read.
-  url.searchParams.set("min_width", "1600");
-  url.searchParams.set("safesearch", "true");
-  url.searchParams.set("per_page", "20");
-  url.searchParams.set("page", String(page));
-
-  try {
-    // Pixabay asks that responses be cached for 24 hours. Next's fetch cache
-    // does it for us, keyed by the URL -- which includes the query and page, so
-    // two businesses in the same trade share one upstream call.
-    const res = await fetch(url, { next: { revalidate: 86400 } });
-    if (!res.ok) return { ok: false, reason: "failed", detail: `HTTP ${res.status}` };
-    const body = (await res.json()) as {
-      hits?: {
-        id: number;
-        webformatURL: string;
-        largeImageURL: string;
-        imageWidth: number;
-        imageHeight: number;
-        user: string;
-      }[];
-    };
-    const seen = new Set(exclude);
-    const photos = (body.hits ?? [])
-      .map((h) => ({
-        id: String(h.id),
-        thumb: h.webformatURL,
-        full: h.largeImageURL,
-        width: h.imageWidth,
-        height: h.imageHeight,
-        credit: h.user,
-        provider: "pixabay" as const,
-      }))
-      .filter((p) => !seen.has(p.id));
-    return { ok: true, photos };
-  } catch (e) {
-    return { ok: false, reason: "failed", detail: e instanceof Error ? e.message : "unknown" };
+  if (a === null && b === null) {
+    const why = [pix, pex]
+      .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+      .map((r) => String(r.reason))
+      .join(" · ");
+    return why ? { ok: false, reason: "failed", detail: why } : { ok: false, reason: "no-key" };
   }
+
+  const left = a ?? [];
+  const right = b ?? [];
+  const merged: StockPhoto[] = [];
+  for (let i = 0; i < Math.max(left.length, right.length); i++) {
+    if (right[i]) merged.push(right[i]);
+    if (left[i]) merged.push(left[i]);
+  }
+
+  const seen = new Set(exclude);
+  return { ok: true, photos: merged.filter((p) => !seen.has(p.id)) };
 }
