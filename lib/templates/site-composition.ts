@@ -604,19 +604,22 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* 交替，而且**奶白要比酒红多** —— 逐像素量出来他们是白 37.1% 对酒红 28.4%，
        我们第一版是酒红 46.3% 对白 7.6%：同样两个颜色，比例整个倒过来。
        菜单、故事、评价、询价都放在奶白带上，酒红只留给第一屏、作品墙跟页脚。 */
-    tones: { services: "paper", story: "paper" },
+    tones: { services: "paper", story: "paper", cta: "paper" },
     /* ⚠️ 纹理拿掉了。量出来我们的酒红是 #460014，他们是 #500014 —— 差的那一层就是
        这张菱形网，它盖在整页上把地压暗了一档。他们那一页没有任何纹理。 */
     ground: "ink",
     hero: "name-figure",
     figure: "huge",
     measure: "wide",
-    dropBlocks: ["website-statement"],
+    dropBlocks: ["website-statement", "website-form", "website-contact"],
     /* 段间贴住 —— 六个参考页量出来全部是 0，我们是 104（这一套）或 40。
        气挪进段内（--site-inner），页面不会因此变短。 */
     rhythm: "flush",
     opens: "菜单",
-    order: ["services", "prices", "story", "work", "cta", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "woven", "band"],
+    /* 交替是这一页的身份：奶白 / 酒红 / 奶白 / 酒红。菜单跟故事是奶白带，中间要有
+       一段留在酒红底上，所以作品墙插在两者之间 —— 我们本来 services 跟 story 连着，
+       两段都是奶白，交替就断了。 */
+    order: ["services", "work", "story", "prices", "cta", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "woven", "band"],
   },
 };
 

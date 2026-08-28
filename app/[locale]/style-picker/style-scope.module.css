@@ -108,7 +108,7 @@
   --color-brass-chart: #a8710a;
   --site-display-weight: 400;
   --site-statement: 2.1;
-  --site-inner: 5rem;
+  --site-inner: 8.5rem;
   --site-motion: 0.3s;
   --site-ease: ease;
   --site-hero-scale: 1.5;
@@ -771,7 +771,7 @@
   --color-brass-chart: #a8710a;
   --site-display-weight: 700;
   --site-heading: 1.6;
-  --site-inner: 6rem;
+  --site-inner: 10rem;
   --site-motion: 0.22s;
   --site-ease: ease;
   --site-hero-scale: 2.35;
@@ -783,8 +783,8 @@
   --site-on-block: #ffd9f2;
   --site-primary: #ff99ee;
   --site-on-primary: #500014;
-  --site-foot-bg: #500014;
-  --site-foot-fg: #ffd9f2;
+  --site-foot-bg: #fafafa;
+  --site-foot-fg: #500014;
   --font-ui: var(--font-swiss-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font-signboard-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
