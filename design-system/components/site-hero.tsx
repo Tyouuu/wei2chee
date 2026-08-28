@@ -499,7 +499,7 @@ export function SiteHero({
         <div className="flex flex-col items-center justify-center text-center [min-block-size:clamp(26rem,76svh,46rem)] [padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]">
           <h1
             className="ds-display max-w-[16ch] [color:#fff] [font-weight:var(--fw-regular,400)] [letter-spacing:-0.01em] [line-height:1.06] [text-wrap:balance]"
-            style={{ fontSize: "clamp(2.6rem, 6.6vw, calc(5.2rem * var(--site-hero-scale, 1)))" }}
+            style={{ fontSize: "clamp(2.6rem, calc(6.6vw * var(--site-hero-scale, 1)), calc(5.2rem * var(--site-hero-scale, 1)))" }}
           >
             {brand || headline}
           </h1>
@@ -547,7 +547,7 @@ export function SiteHero({
             {/* THE NAME, AND NOTHING COMPETING WITH IT. */}
             <p
               className="ds-display [color:#fff] [font-weight:var(--fw-semibold)] [letter-spacing:-0.02em] [line-height:0.9] [text-wrap:balance]"
-              style={{ fontSize: "clamp(2.8rem, 8.4vw, 6.6rem)" }}
+              style={{ fontSize: "clamp(2.8rem, calc(8.4vw * var(--site-hero-scale, 1)), calc(6.6rem * var(--site-hero-scale, 1)))" }}
             >
               {brand || headline}
             </p>
@@ -584,6 +584,19 @@ export function SiteHero({
     )
   }
 
+  /* ── 第一屏的字级是一根轴，而且四种版式都要读它 ────────────────────────────
+     `--site-hero-scale` was added for 台账 and wired into ONE of the four hero
+     layouts. Measured 2026-08-28, every register that uses a different one:
+
+         招牌  他们 263px  我们 56px      TOULOUSE 横跨整页
+         图纸  他们 158px  我们 32px      PARKER & BROWN
+         中台  他们  56px  我们 83px      theirs is the SMALL one
+         瑞士  他们  72px  我们 83px
+
+     A declaration that only one branch reads is a declaration that is right in
+     the token file and absent from the page — the shape this repo keeps
+     finding. All four read it now, and the vw term scales with it so the
+     name still fits its line at 1440. */
   if (layout === "band-bleed" && hasPhoto) {
     return (
       <section data-bleed="" data-photo-ground="" className="@container">
@@ -599,7 +612,7 @@ export function SiteHero({
           <div className="mx-auto grid w-full max-w-[80rem] items-start [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
             <h1
               className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-bold,700)] [letter-spacing:-0.03em] [line-height:0.94] [text-wrap:balance]"
-              style={{ fontSize: "clamp(2.6rem, 6.6vw, 5.2rem)" }}
+              style={{ fontSize: "clamp(2.6rem, calc(6.6vw * var(--site-hero-scale, 1)), calc(5.2rem * var(--site-hero-scale, 1)))" }}
             >
               {headlineParts ? (
                 <>

@@ -105,7 +105,13 @@ function RegisterResolved({
   // re-pointed on an element that then painted none of them. This file had
   // never carried a class before, so there was nothing to notice it by.
   return (
-    <div style={layers.capture as React.CSSProperties}>
+    /* `data-toned` — 一条色带要满宽，不是一张卡。
+       Founder, 2026-08-28: 「每一个的页面的排版」. Toulouse's cream sections run
+       1592px and 1255px EDGE TO EDGE; ours painted only the measure-limited
+       content box, so the same colour read as a card lying on the page instead
+       of as a band of it. The mark is here and the bleed is in globals.css,
+       where the measure it has to escape is declared. */
+    <div data-toned="" style={layers.capture as React.CSSProperties}>
       <div
         style={{ ...layers.apply, backgroundColor: "var(--color-canvas)" } as React.CSSProperties}
       >

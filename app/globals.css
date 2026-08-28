@@ -540,6 +540,26 @@
   padding-inline: 0;
 }
 
+/* ── 上了色的一段要满宽 ──────────────────────────────────────────────────────
+   Toulouse's cream sections are 1592px and 1255px running edge to edge; the
+   colour IS the section. Ours painted the measure-limited content box, so the
+   same cream read as a card lying on the page. The band escapes the measure
+   and the content inside keeps it — which is what every reference in the set
+   does with a coloured section, and what a bled photograph here already did. */
+.ds-site > * > [data-toned] {
+  max-width: none;
+  padding-inline: 0;
+}
+.ds-site > * > [data-toned] > * {
+  padding-block: var(--site-inner, calc(var(--pad-card-lg) * 2));
+}
+.ds-site > * > [data-toned] > * > * {
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--site-measure);
+  padding-inline: 1.5rem;
+}
+
 /* ── 开场那条带的颜色 ────────────────────────────────────────────────────────
    A. Reynolds opens on a band THE SAME COLOUR AS THE PAGE, with the photograph
    under it. Its yellow appears exactly twice on the whole page — one mid-page
@@ -847,6 +867,15 @@
 .ds-site h2,
 .ds-site h3 {
   font-family: var(--site-display, var(--font-display, var(--font-ui)));
+}
+
+/* 正文的字也是一根轴。Measured 2026-08-28: A. Reynolds sets its body in
+   helvetica — a neutral grotesk — and ours was Nunito, a ROUNDED humanist. Same
+   size, different voice, and on a page whose headings already matched it was
+   the loudest remaining difference. A register that has measured its reference
+   says so; the rest keep the face their workbench uses. */
+.ds-site {
+  font-family: var(--site-body, var(--font-ui));
 }
 
 /* ── PAPER ───────────────────────────────────────────────────────────────────

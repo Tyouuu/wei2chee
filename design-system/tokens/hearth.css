@@ -304,6 +304,9 @@
    one.  Every axis below is the deliberate opposite of Ledger's.
    ============================================================================ */
 :root {
+
+  /* 字体 TYPE，逐项量出来的（重点 7i）：他们正文是 helvetica —— 中性的 grotesk；我们是 Nunito，圆体人文。同样大小，两种声音。 */
+  --site-body: var(--font-industrial-latin), ui-sans-serif, system-ui, sans-serif;
   color-scheme: light;
 
   /* ---- TYPE AXIS: rounded geometric --------------------------------------

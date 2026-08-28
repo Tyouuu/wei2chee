@@ -106,6 +106,10 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-inner: 4.5rem;
+  --site-motion: 0.3s;
+  --site-ease: ease;
+  --site-hero-scale: 1.9;
   --site-ink-bg: #f0f0f0;
   --site-ink-fg: #1b1b17;
   --site-ink-fg-dim: #54554b;
@@ -271,6 +275,9 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #00a870;
   --color-brass-chart: #faad14;
+  --site-inner: 2.5rem;
+  --site-hero-scale: 0.68;
+  --site-display-weight: 700;
   --site-ink-bg: #fafafa;
   --site-ink-fg: #141414;
   --site-ink-fg-dim: #5a5a5a;
@@ -433,6 +440,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-body: var(--font-industrial-latin), ui-sans-serif, system-ui, sans-serif;
   --font-ui: var(--font-rounded-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
   --site-ink-bg: #fefef2;
@@ -758,6 +766,10 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-inner: 4.5rem;
+  --site-motion: 0.3s;
+  --site-ease: ease;
+  --site-hero-scale: 3.1;
   --site-ink-bg: #500014;
   --site-ink-fg: #ffd9f2;
   --site-ink-fg-dim: #e0a8c8;
@@ -921,6 +933,9 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-inner: 4rem;
+  --site-hero-scale: 0.87;
+  --site-display-weight: 400;
   --site-ink-bg: #fafafa;
   --site-ink-fg: #141414;
   --site-ink-fg-dim: #5a5a5a;

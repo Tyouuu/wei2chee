@@ -473,6 +473,12 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* 「ink」 在这一层的意思是「官网自己说了算它的地」，浅色深色都行 —— 任务 28
        就是这样定的。不打开它，上面那套逐像素抄来的颜色一个都不会生效。 */
     ground: "ink",
+    /* 区段标题也要大 —— 他们「Practice Areas」「Meet Your Attorneys」都是 50px
+       上下的衬线，我们量出来第一个 h2 只有 32px。 */
+    figure: "huge",
+    /* 段间贴住 —— 六个参考页量出来全部是 0，我们是 104（这一套）或 40。
+       气挪进段内（--site-inner），页面不会因此变短。 */
+    rhythm: "flush",
     opens: "Introducing",
     order: ["story", "services", "team", "work", "cta", "prices", "flow", "promise", "faq", "areas", "hours", "band", "woven", "creds", "reviews"],
   },
@@ -508,10 +514,14 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     hero: "band-bleed",
     measure: "wide",
     figure: "large",
-    rhythm: "tight",
     /* 「ink」 在这一层的意思是「官网自己说了算它的地」，浅色深色都行 —— 任务 28
        就是这样定的。不打开它，上面那套逐像素抄来的颜色一个都不会生效。 */
     ground: "ink",
+    /* 正文 13px 对他们的 16-17px —— 后台的字级又跟着上了官网。 */
+    copy: "large",
+    /* 段间贴住 —— 六个参考页量出来全部是 0，我们是 104（这一套）或 40。
+       气挪进段内（--site-inner），页面不会因此变短。 */
+    rhythm: "flush",
     opens: "菜单",
     order: ["work", "services", "story", "prices", "areas", "flow", "cta", "faq", "promise", "team", "creds", "reviews", "band", "woven", "hours"],
   },
@@ -552,6 +562,11 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* 「ink」 在这一层的意思是「官网自己说了算它的地」，浅色深色都行 —— 任务 28
        就是这样定的。不打开它，上面那套逐像素抄来的颜色一个都不会生效。 */
     ground: "ink",
+    /* ⚠️ 没有 copy: large。瑞士的正文本来就 16px，跟他们一样；加上去量出来变
+       20px，是往另一边过头。他们那个 10px 的读数是页脚的法务小字，样本本身不对。 */
+    /* 段间贴住 —— 六个参考页量出来全部是 0，我们是 104（这一套）或 40。
+       气挪进段内（--site-inner），页面不会因此变短。 */
+    rhythm: "flush",
     opens: "About",
     order: ["story", "services", "creds", "work", "reviews", "cta", "team", "prices", "flow", "promise", "faq", "areas", "hours", "band", "woven"],
   },
@@ -590,6 +605,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     figure: "huge",
     measure: "wide",
     dropBlocks: ["website-statement"],
+    /* 段间贴住 —— 六个参考页量出来全部是 0，我们是 104（这一套）或 40。
+       气挪进段内（--site-inner），页面不会因此变短。 */
+    rhythm: "flush",
     opens: "菜单",
     order: ["services", "prices", "story", "work", "cta", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "woven", "band"],
   },

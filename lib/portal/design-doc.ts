@@ -276,7 +276,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteCta: "rule",
       SiteTeam: "plain",
       SiteGallery: "grid",
-      SiteStory: "side-reverse",
+      SiteStory: "side",
       SiteCreds: "strip",
       StatRow: "rule",
       RecordTable: "plain",
