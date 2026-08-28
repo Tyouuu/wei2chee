@@ -44,15 +44,46 @@ const TRADE: Record<string, { style: string; name: string; ctx: BusinessContext 
 
 const PHOTOS = JSON.parse(readFileSync(".screenshots/photos/trade-photos.json", "utf8")) as Record<string, Record<string, string>>;
 
-function fill(nodes: any[], P: Record<string, string>) {
+/* ── 作品墙放几张，照它自己那一页 ──────────────────────────────────────────
+   Ten was tried for every register on 2026-08-28 and it fixed two while
+   breaking two: 満図 and 台账 went to zero differences, and 图纸 — whose
+   reference carries SEVEN photographs on the whole page — went to twelve, while
+   中台's page went from 5540px to 9005px against their 5259.
+
+   A count is not a constant. Measured, per reference:
+
+       台账 Recent Projects 10 · 中台 18 across the page · 瑞士 12 ·
+       図纸 7 in total · 招牌 14 · 満図 9
+
+   so the gallery carries what its own page carries and nothing else. */
+const SHOTS: Record<string, number> = {
+  renovation: 10, // 台账 ← Newel: Recent Projects is ten
+  beauty: 6,      // 満図 ← A. Reynolds: its photographs live in the argument
+  services: 6,    // 瑞士 ← Leah Webb: three programmes, three posts
+  education: 3,   // 図纸 ← Parker & Brown: seven on the whole page
+  retail: 6,      // 招牌 ← Toulouse: Moments is six
+  wholesale: 6,   // 中台 ← Kurofude: pairs, not a wall
+};
+
+function fill(nodes: any[], P: Record<string, string>, shots = 6) {
   for (const n of nodes ?? []) {
     const id = String(n?.props?.id ?? "");
     if (id === "website-hero") { n.props.photo = P.hero; n.props.photoAlt = ""; }
     if (id === "website-work") {
-      /* Six, because 大图马赛克 repeats its tile pattern every six and a
-         seventh opens a hole in the last row. */
-      n.props.items = [P.big, P.g1, P.g2, P.g3, P.strip, P.hero]
+      /* ── 十张，不是六张 ──────────────────────────────────────────────────
+         Six was chosen because 大图马赛克 repeats its tile pattern every six and
+         a seventh opened a hole in the last row — a layout reason, and it left
+         the page with less material than every reference it copies. Measured
+         2026-08-28: 台账's Recent Projects carries ten photographs, 中台's page
+         eighteen, 瑞士's twelve; ours came out at eight and nine, which is most
+         of why our pages run shorter than theirs.
+
+         Ten keeps the pattern whole (six plus a full second row of four) and
+         the extra four repeat the trade's own set, which is what a placeholder
+         is for — 「要嘛你就是去图库拿图 要嘛只是一个占位图 都可以」. */
+      n.props.items = [P.big, P.g1, P.g2, P.g3, P.strip, P.hero, P.g4, P.story, P.g1, P.g2]
         .filter(Boolean)
+        .slice(0, shots)
         .map((src) => ({ src, alt: "" }));
     }
     if (id === "website-band") { n.props.photo = P.strip; n.props.photoAlt = ""; }
@@ -73,7 +104,18 @@ function fill(nodes: any[], P: Record<string, string>) {
        three times down one page, which reads as a business with one photo. */
     if (id === "website-services") { n.props.photo = P.g4 || P.hero; n.props.photoAlt = ""; }
     if (id === "website-story") { n.props.photo = P.story; n.props.photoAlt = ""; n.props.body = "The same team that quotes is the team that turns up, and we tell you what it costs before we start."; }
-    for (const v of Object.values(n?.props ?? {})) if (Array.isArray(v)) fill(v as any[], P);
+    /* 评价的头像是照片，不是字母。
+       Founder, 2026-08-28: 「照片我要看」. Five of the six references put a round
+       PHOTOGRAPH at the top of each testimonial — Betty Downey, James T.
+       O'Reilly, Tom Levis on A. Reynolds — and ours drew the first letter of
+       the name in a coloured circle. Three photographs per page, which is most
+       of the gap the ruler kept reporting as 「照片张数 模版 9 · 我们 5」 without
+       anything saying where the four had gone. */
+    if (id === "website-reviews" && Array.isArray(n.props.items)) {
+      const faces = [P.g1, P.g2, P.g3, P.story].filter(Boolean);
+      n.props.items = n.props.items.map((t: any, i: number) => ({ ...t, face: faces[i % faces.length] }));
+    }
+    for (const v of Object.values(n?.props ?? {})) if (Array.isArray(v)) fill(v as any[], P, shots);
   }
 }
 
@@ -86,7 +128,8 @@ it("writes one page per register, each for its own trade", () => {
        but the type does not know that, and `next build` type-checks this file
        while `tsc --noEmit` here did not: two deployments failed on it before
        the difference was noticed. */
-    fill(l.content, PHOTOS[t.ctx.industry?.slug ?? ""] ?? {});
+    const slug = t.ctx.industry?.slug ?? "";
+    fill(l.content, PHOTOS[slug] ?? {}, SHOTS[slug] ?? 6);
     out[key] = l;
   }
   writeFileSync(".screenshots/photos/per-trade.json", JSON.stringify(out));

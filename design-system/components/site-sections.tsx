@@ -546,7 +546,14 @@ export function SiteTestimonials({
   /** `stars` is optional and defaults to five: a business putting a review on
    *  its own page is not publishing a three-star one, and an explicit 5 on
    *  every row is data nobody typed. */
-  items: { quote: string; who: string; role?: string; stars?: number }[]
+  /** `face` — 一张真的头像照。
+   *
+   *  老板 2026-08-28: 「照片我要看」. Their testimonials carry round PHOTOGRAPHS
+   *  at 64px, name under, quote under that; ours drew the first letter of the
+   *  name in a coloured circle. Three photographs per page, on five of the six
+   *  references, and the ruler counted them as 「照片张数 模版 9 · 我们 5」 without
+   *  anything saying where the four went. */
+  items: { quote: string; who: string; role?: string; stars?: number; face?: string }[]
   /**
    * `cards` stars, then the quote, then the face -- read off tailark.
    * `ruled` the face first, then the name, then the quote, under a hairline
@@ -608,12 +615,25 @@ export function SiteTestimonials({
         <ul className="grid [gap:calc(var(--gap-stack)*1.5)] @2xl:grid-cols-3">
           {items.map((t, i) => (
             <li key={i} className="flex flex-col">
-              <span
-                aria-hidden
-                className="mb-3 grid h-11 w-11 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]"
-              >
-                {t.who.trim().charAt(0) || "·"}
-              </span>
+              {t.face?.trim() ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={t.face}
+                  alt=""
+                  className="mb-3 h-16 w-16 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                /* 没有照片就是一个同样大小的圆 —— 一张风格图要看得到它的形状。
+                   64px, which is theirs; the letter stays inside it so an owner
+                   who has no photograph still gets something with a name in it
+                   rather than a grey hole. */
+                <span
+                  aria-hidden
+                  className="mb-3 grid h-16 w-16 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]"
+                >
+                  {t.who.trim().charAt(0) || "·"}
+                </span>
+              )}
               <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
                 {t.who}
               </span>

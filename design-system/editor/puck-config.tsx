@@ -265,7 +265,7 @@ type Components = {
 };
   SiteTestimonials: {
     heading?: string;
-    items: { quote: string; who: string; role?: string; stars?: number }[];
+    items: { quote: string; who: string; role?: string; stars?: number; face?: string }[];
     shape?: "cards" | "ruled" | "boxed";
   };
   SiteGallery: {
@@ -1814,6 +1814,14 @@ export const puckConfig: Config<Components> = {
           arrayFields: {
             quote: { label: "客人讲的话", type: "textarea" },
             who: { label: "谁讲的", type: "text" },
+            /* 头像是照片。老板 2026-08-28: 「照片我要看」—— 五个参考页里的评价都是
+               圆形真人照，我们画的是名字的第一个字母。三张照片，就是尺子一直在报
+               的「照片张数 模版 9 · 我们 5」里的大半。 */
+            face: {
+              label: "头像照片",
+              type: "custom",
+              render: ({ value, onChange }) => <PhotoField value={value as string} onChange={onChange} />,
+            },
             role: { label: "下面一行", type: "text" },
             stars: { label: "几颗星", type: "number" },
           },

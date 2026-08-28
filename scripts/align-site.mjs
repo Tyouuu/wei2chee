@@ -199,7 +199,11 @@ function readType() {
     .map((h) => ({ t: (h.innerText || "").trim().slice(0, 26), ...face(h) }));
   /* Body: the paragraphs that actually carry prose, not a two-word label. */
   const body = [...document.querySelectorAll("p,li")]
+    /* ⚠️ 12px 以下的不算正文。瑞士的参考页回报正文 10px，我们 16px，判成对不上 —
+       那 10px 是页脚的法务小字，它页面上真正的正文跟我们一样。一个把最小的字
+       当成正文的样本，量的是那一页的免责声明。 */
     .filter((e) => (e.innerText || "").trim().split(/\s+/).length >= 8)
+    .filter((e) => parseFloat(getComputedStyle(e).fontSize) >= 12)
     .slice(0, 40)
     .map(face);
   const commonest = (arr, key) => {
