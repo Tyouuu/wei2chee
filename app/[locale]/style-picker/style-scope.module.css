@@ -253,6 +253,11 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #00a870;
   --color-brass-chart: #faad14;
+  --site-hero-band: #f0f2f5;
+  --site-radius-control: 0px;
+  --site-card-radius: 0px;
+  --site-motion: 0.3s;
+  --site-ease: ease;
   --font-ui: var(--font-sans-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;

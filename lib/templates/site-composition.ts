@@ -477,16 +477,37 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // another business, and a business asks for terms before it asks for a look:
   // price, then delivery, then what the arrangement actually is.
   counter: {
-  /* NOBODY READS A SHOP'S LIFE STORY AT A COUNTER. This register is the
-     dense one; what it keeps is what a buyer checks before ordering --
-     what you stock, what it costs, where you deliver, how to reach you. */
-    omit: ["story", "reviews", "faq"],
-    tones: { promise: "paper" },
+    /* ── COPIED WHOLE: Wix `wh-kurofude-rest` ───────────────────────────────
+       Read at 1440 on 2026-08-28. Six sections, 5259px, off-white ground, black
+       condensed grotesk, and an identity made of three things nothing else in
+       the library does:
+
+           955px  1img  name + line, then a row of LABELLED DATA COLUMNS
+                        (Open for Dinners · Address · Phone Number), a black
+                        bar button with an arrow, then a full-bleed photograph
+          1016px  3img  two photographs edge to edge, a white card laid over one
+           893px  5img  FEATURED PLATES — three columns of dish, photograph and
+                        DOTTED-UNDERLINE ingredient rows, then a black bar
+          1011px  2img  two more photographs, no gap
+          1189px  6img  RESERVE — a mosaic with the ask in the middle of it
+           195px  1img  foot: the name, link columns, labelled data again
+
+       No radius anywhere, no gap between photographs, and every control is a
+       full-width black bar. Ours ran seven sections and 2459px — less than half
+       the page — with no photographs at all.
+
+       中台 is the densest register in the library (重点 7c) and this is the page
+       that says why: density here is INFORMATION LAID OUT AS DATA, not small
+       type. */
+    omit: ["faq", "promise", "team", "creds", "reviews", "band", "woven", "hours"],
+    /* 名字跟那排资料在上面，照片满边接在下面 —— band-bleed 就是这个形状，
+       那条带用它自己的米白（--site-hero-band）。 */
+    hero: "band-bleed",
     measure: "wide",
-    ground: "ink",
-    hero: "plain",
-    opens: "条件",
-    order: ["prices", "promise", "creds", "areas", "services", "story", "flow", "faq", "work", "woven", "reviews", "team", "band", "cta", "hours"],
+    figure: "large",
+    rhythm: "tight",
+    opens: "菜单",
+    order: ["work", "services", "story", "prices", "areas", "flow", "cta", "faq", "promise", "team", "creds", "reviews", "band", "woven", "hours"],
   },
   // 瑞士: black, white, one red, no cards. It is the register that prints, and
   // a page that reads like a document leads with words -- what we do, how it

@@ -444,6 +444,16 @@
    sibling has.
    ============================================================================ */
 :root {
+
+  /* ── 官网层：抄 Wix `wh-kurofude-rest` ────────────────────────────────────
+     Off-white ground, black condensed grotesk, no radius anywhere, no gap
+     between photographs, and every control a full-width black bar. The opening
+     band is the page's own colour with the photograph running under it. */
+  --site-hero-band: #f0f2f5;
+  --site-radius-control: 0px;
+  --site-card-radius: 0px;
+  --site-motion: 0.3s;
+  --site-ease: ease;
   color-scheme: light;
 
   /* ---- TYPE AXIS: neutral modern grotesque ------------------------------- */
