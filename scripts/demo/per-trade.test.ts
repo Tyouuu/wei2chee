@@ -92,7 +92,10 @@ function fill(nodes: any[], P: Record<string, string>, shots = 6) {
        go and the page rendered four pictures against the reference's nine.
        Wix's 装修 page puts one picture inside each column of 「Why Choose Us」
        and one beside its mid-page panel; these are those three. */
-    if (id === "website-woven") { n.props.photos = [P.g1, P.g2].filter(Boolean); }
+    /* 四张：三栏各一张，加底下那张满边的。两张是给「四点两栏」那个形状的，
+       三栏那个形状（Toulouse 的 This Month）第三栏就空着，而空的那一格在一段
+       只有三栏的设计里非常显眼。 */
+    if (id === "website-woven") { n.props.photos = [P.g1, P.g2, P.g3, P.strip].filter(Boolean); }
     if (id === "website-cta") { n.props.photo = P.story; n.props.photoAlt = ""; }
     /* 清单配照片 stands the services beside a picture, and 大图马赛克 wants more
        than three: 台账's reference runs TEN in that slot. Both are slots that

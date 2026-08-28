@@ -145,6 +145,8 @@ export const VARIANTS: Record<string, Variant[]> = {
      line of four. Which one a register wears is an argument about whether the
      steps are a list, a countdown, or a diagram. */
   SiteWoven: [
+    /* 三栏中间换底色＋底下满边照片 — Toulouse's This Month section. */
+    { id: "columns", label: "三栏＋满边照片", props: { shape: "columns" } },
     { id: "woven", label: "照片织在点之间", props: { shape: "woven" } },
     /* 一条四格 — 台账's reference closes its About with four claims in one
        painted strip, then moves on to the work. */

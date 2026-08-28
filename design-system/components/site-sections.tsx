@@ -2050,7 +2050,7 @@ export function SiteWoven({
    * says 「these four things are true of us」 and moves on, which is what a
    * contractor's About page does before it shows you the work.
    */
-  shape?: "woven" | "band"
+  shape?: "woven" | "band" | "columns"
 }) {
   const marks = (points ?? []).filter((p) => p.label?.trim())
   const shots = (photos ?? []).filter((p) => p?.trim())
@@ -2063,6 +2063,90 @@ export function SiteWoven({
         className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
       >
         <p className="max-w-[56ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{hint}</p>
+      </section>
+    )
+  }
+
+  if (shape === "columns") {
+    /*
+      ── 三栏，中间那栏底色不一样，底下一张满边照片 ──────────────────────────
+
+      Toulouse's third section, cropped at native size: 2007px, and one section
+      rather than two.
+
+        · a huge SCRIPT heading across the whole width, sitting on the cream and
+          overlapping the band below it
+        · THREE COLUMNS EDGE TO EDGE, no gap — and the middle one has a
+          DIFFERENT GROUND, a pale pink between two wines. That single change is
+          what stops three equal columns reading as a table.
+        · each column: a centred caps title over two lines, one small line
+          under it, then a photograph. The outer two are small squares; the
+          MIDDLE one is large and runs to the bottom edge of its column.
+        · underneath, a full-bleed photograph of the room, edge to edge
+
+      Ours had a gallery here. Same slot, nothing of that design.
+    */
+    const mid = 1
+    return (
+      <section data-bleed="" className="@container">
+        {heading ? (
+          <h2 className="ds-display mb-0 text-center [color:var(--color-primary)] [font-weight:var(--fw-regular,400)] [line-height:1.05] [padding-inline:var(--pad-card-lg)]">
+            {heading}
+          </h2>
+        ) : null}
+        <ul className="grid [gap:0] @2xl:grid-cols-3">
+          {marks.slice(0, 3).map((m, i) => (
+            <li
+              key={m.label}
+              className="flex flex-col items-center [padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]"
+              style={{
+                background:
+                  i === mid
+                    ? "color-mix(in oklab, var(--color-primary) 18%, #ffffff)"
+                    : "var(--color-canvas)",
+              }}
+            >
+              <span
+                className="max-w-[18ch] text-center [color:var(--color-primary)] [font-size:var(--text-lg)] [letter-spacing:0.06em] [line-height:1.3] [text-transform:uppercase]"
+                style={i === mid ? { color: "var(--site-paper-primary, var(--color-primary))" } : undefined}
+              >
+                {m.label}
+              </span>
+              {m.value ? (
+                <span
+                  className="mt-2 text-center [color:var(--color-paper-dim)] [font-size:var(--text-sm)]"
+                  style={i === mid ? { color: "color-mix(in oklab, var(--site-paper-primary, var(--color-primary)) 76%, transparent)" } : undefined}
+                >
+                  {m.value}
+                </span>
+              ) : null}
+              {shots[i] ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={shots[i]}
+                  alt=""
+                  className="mt-8 w-full object-cover"
+                  style={{ maxWidth: i === mid ? "100%" : "62%", height: i === mid ? "22rem" : "11rem" }}
+                />
+              ) : (
+                <div
+                  aria-hidden
+                  className="mt-8 w-full [background:color-mix(in_oklab,var(--color-primary)_16%,transparent)]"
+                  style={{ maxWidth: i === mid ? "100%" : "62%", height: i === mid ? "22rem" : "11rem" }}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+        {shots[3] ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={shots[3]}
+            alt=""
+            className="block w-full object-cover"
+            style={{ height: "clamp(16rem, 46vh, 32rem)" }}
+          />
+        ) : null}
       </section>
     )
   }

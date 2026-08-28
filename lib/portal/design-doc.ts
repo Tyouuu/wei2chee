@@ -314,6 +314,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给店屋零售 —— 有一块实体招牌、客人是看到招牌走进来的。店名用又窄又粗的字排到 46px，底下的内文是普通 15px。全库第一个标题跟内文不同字体的。牺牲的是低调：这一套永远在喊自己的名字。",
     facts: "标题字 Archivo Narrow 46px 字距 -0.03em · 内文 15px · 招牌红 #c8102e · 暖白底 #f7f4ef · 圆角 0 · 无阴影 · 标签全大写",
     prefer: {
+      SiteWoven: "columns",
       SiteFeatures: "menu",
       SiteCta: "panel",
       SiteTeam: "row",

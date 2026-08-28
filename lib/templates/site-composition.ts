@@ -600,7 +600,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        The identity is the ALTERNATION: wine, cream, wine, cream, wine. Ours ran
        twelve sections all on one ground with opening hours and a coverage strip
        at the top, which is a shop's noticeboard, not a brasserie. */
-    omit: ["faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "woven", "band"],
+    omit: ["faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "band", "prices"],
     /* 交替，而且**奶白要比酒红多** —— 逐像素量出来他们是白 37.1% 对酒红 28.4%，
        我们第一版是酒红 46.3% 对白 7.6%：同样两个颜色，比例整个倒过来。
        菜单、故事、评价、询价都放在奶白带上，酒红只留给第一屏、作品墙跟页脚。 */
@@ -619,7 +619,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* 交替是这一页的身份：奶白 / 酒红 / 奶白 / 酒红。菜单跟故事是奶白带，中间要有
        一段留在酒红底上，所以作品墙插在两者之间 —— 我们本来 services 跟 story 连着，
        两段都是奶白，交替就断了。 */
-    order: ["services", "work", "story", "prices", "cta", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "woven", "band"],
+    /* 他们的顺序：第一屏 → 菜单（奶白）→ 本月三栏＋满边照片（酒红）→ 故事（奶白）
+       → 作品墙（酒红）→ 页脚（奶白）。 */
+    order: ["services", "woven", "story", "work", "cta", "prices", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "band"],
   },
 };
 
