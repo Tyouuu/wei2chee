@@ -1874,8 +1874,21 @@ A4 / B4 / C2：**八个行业八种不同的手牌，最高占用 7/8 → 4/8。
 单个客户看得到，跨客户看不到 —— 而跨客户那个数字是判断
 「该先把哪个形状做成真的」的**唯一依据**，也是[任务 41](#41) 那份「形状候选清单」的自动版。
 
-- [ ] `console_overview` 加模块与形状的跨客户计数（一个聚合查询，没有新表）
-- [ ] console 首页把它画出来：哪个形状被要得最多，就是下一个该做成真的
+- [x] `console_overview` 加模块与形状的跨客户计数（2026-08-28）
+- [x] console 首页画出来了：**pipeline 3 排第一，ledger 3 第二** —— 跟[任务 42](#42) 的建议顺序对上
+- [x] **数的是 `project_pages`**（客户真正有的、编辑之后的），不是 AI 提议的
+      —— 后者 10 笔只有 2 笔有记录，只写成一行覆盖率，不画成第二张图
+- [x] **故意不回填那 8 笔**：用行业预设去补，等於让这个数字永远同意我们已经决定的事
+- [x] **不到 5 套系统，画面自己说「还不能拿来做决定」**，不画一张两个 demo 撑起来的自信图
+- [x] 🔴 **路上挖到：一个客户「已付款」却存不了档。** `console_set_stage` 会把
+      `paid` 跟 `stage` 一起设、注解写着「永远不会不一致」—— 但那只是两条写入路径之一，
+      另一条是在 Supabase Studio 手改。dealer 那个 project 卡在 `stage='paid'` 配
+      `paid=false`：console 显示已付款、营收算了它，**而 `save_project_page` 读的是另一栏**。
+      现在是 check constraint
+- [x] 🔴 **`check:en` 打不开 console 却回报 0** —— 它用客户帐号登入，`is_founder()` 是 false，
+      每条 console 路由都 `notFound()`。换成 founder 登入当场读到 **31**。
+      现在 founder 页面打不开就是 failure。跟 `check:registers` 报「0/0」同一类
+- [x] 新增 `npm run shoot:console`（magic link，不动他的密码）
 
 ### 44. 🔴 第一个真客户：沙龙，年费 RM1000（2026-08-27）
 > `我有接到一个saloon的system 他的想法是年费 是一年RM1000
@@ -1954,17 +1967,41 @@ RM199/月 是照装修市场定的 —— 那个市场我们没有对手。
 **我原本建议同一个部署、先分路径。他要分部署 —— 照他的。**
 但执行方式有便宜跟贵两种，只走便宜那种：
 
-- [ ] **同一个 repo、同一份代码，Vercel 开第二个 project 指向它**
+- [x] **同一个 repo、同一份代码，Vercel 开第二个 project 指向它**（代码这半做完 2026-08-28）
       —— 用一个 env（如 `APP_SURFACE=admin`）＋ middleware 决定这个部署只服务 `/console`，
       另一个只服务客户的 portal。
       ❌ **不要**拆成 monorepo 两个 app：那要 workspaces、共享包、两套 tsconfig、
       两份会漂移的代码。分部署要的是**两个来源**，不是两份代码
-- [ ] **这样做同时拿到那个真正的好处**：两个部署＝**两个 origin**，
+- [x] **这样做同时拿到那个真正的好处**：两个部署＝**两个 origin**，
       客户 portal 万一出 XSS，founder 的 session 不同源，炸不到
-- [ ] `/portal/console` → **`/console`**，自己的外壳、自己的导航，
-      没有客户 rail、没有素材库。`/portal` 的意思是「客户的门户」，**老板不是客户**
-- [ ] ⚠️ **Supabase 要加新 origin 的回调白名单**，不然 founder 在新网址登不进去
+- [x] `/portal/console` → **`/console`**，自己的外壳（顶栏不是侧栏 —— console 只有三个去处，
+      260px 的侧栏放三行等於放空）。客户侧栏里的 console 连结**删掉**了，
+      不是改指向：admin 部署根本不服务那个档案，留着就是一个时常 404 的连结
+- [x] **三个 surface 实测过**（不是推的）：
+
+      | | `=app` | `=admin` | 不设 |
+      |---|---|---|---|
+      | `/en` | 200 | **404** | 200 |
+      | `/en/portal` | 307 | **404** | 307 |
+      | `/en/console` | **404** | 307 | 307 |
+      | `/en/login` | 200 | 200 | 200 |
+
+- [x] **不设＝两边都开**（本机只有一个 dev server；会逼你翻变数的分法你会关掉它。
+      而且现在线上那个部署在两个变数都设好之前，行为完全不变）
+- [x] 顺手修的三件：**登入本来一律推 `/portal`**（admin 部署上不服务，founder 会落在 404）·
+      **没有自己 project 的 founder 本来被放进客户外壳** · **新外壳 token 全没解析**
+      （`--color-ink-*` 全定义在 `.chrome` 上）
+- [ ] ⚠️ **要你做的两件**：① Vercel 上 import 同一个 repo 开第二个 project，
+      环境变数设 `APP_SURFACE=admin`（现有那个设 `APP_SURFACE=app`）
+      ② **Supabase 加新 origin 的回调白名单**，不然 founder 在新网址登不进去
 - [ ] 域名还没有（公司还没开）→ 先用 `*.vercel.app`，之后搬 domain 只是 DNS
+
+### 47. `npm run lint` 整个仓库是坏的（2026-08-28 顺手发现）
+ESLint 9 要 `eslint.config.js`，仓库里没有（还是 `.eslintrc` 时代的设定）。
+所以 `npm run lint` 每次都直接 exit 非零 —— 等於**这个仓库根本没有 lint 这道关**。
+不是这次改动造成的，先记着。
+
+- [ ] 迁到 `eslint.config.js`（flat config），接回 `next/core-web-vitals`
 
 ## 已完成
 
