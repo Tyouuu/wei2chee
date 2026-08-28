@@ -97,11 +97,19 @@ export default async function PortalAppLayout({
     it can be seen from every screen rather than only on the one screen he has
     to navigate to.
   */
+  /* UNREAD, not every enquiry that ever arrived. A badge is a "there is
+     something here for you"; counting the lifetime total makes it a tally, and
+     a tally that only ever grows stops being read after the second week.
+     `status` has had a 'new' state since the table was written and nothing had
+     ever moved a row off it -- see 20260828070000. The home screen's own
+     count deliberately stays a lifetime total, because the sentence there is
+     「X enquiries so far」 and that is a different question. */
   const { count: enquiryCount } = project
     ? await supabase
         .from("site_enquiries")
         .select("id", { count: "exact", head: true })
         .eq("project_id", project.id)
+        .eq("status", "new")
     : { count: 0 };
 
   const { data: context } = await supabase.rpc("get_my_business_context");

@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
+import { MarkEnquiriesRead } from "./mark-read";
 
 /**
  * 官网来的询价 — the other end of the arrow.
@@ -31,8 +32,13 @@ export default async function EnquiriesPage() {
     created_at: string;
   }[];
 
+  /* Counted from what this render is showing, so the marker only fires when
+     there is something to mark. */
+  const unread = rows.filter((r) => r.status === "new").length;
+
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-10">
+      <MarkEnquiriesRead unread={unread} />
       <h1 className="[font-size:var(--text-title)] font-semibold">
         {t("enquiries")}
       </h1>
