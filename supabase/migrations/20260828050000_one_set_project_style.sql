@@ -1,0 +1,41 @@
+-- supabase/migrations/20260828050000_one_set_project_style.sql
+--
+-- 🔴 The first thing a new customer does has been failing for a week.
+--
+-- `set_project_style(new_style text)` was created in 20260818120000 and never
+-- dropped. 20260821050000 added `set_project_style(new_style, new_palette,
+-- clear_palette)` beside it -- a NEW FUNCTION, because a changed argument list
+-- is a new function, not a replacement -- and every register migration since
+-- has re-declared the three-argument one while the one-argument one sat there.
+--
+-- PostgREST resolves an RPC by the argument names in the body. A call carrying
+-- only `new_style` fits both, so it refuses:
+--
+--   Could not choose the best candidate function between:
+--     public.set_project_style(new_style => text),
+--     public.set_project_style(new_style => text, new_palette => text,
+--                              clear_palette => boolean)
+--
+-- Two callers exist. The editor's shuffle sends `new_style` AND `new_palette`,
+-- which fits only the three-argument one, so it works. style-select-client.tsx
+-- sends `new_style` alone -- and that is the ONE-TIME STYLE CHOICE, the screen
+-- a customer lands on straight after signing up, before they have ever seen
+-- their system. It has been returning an error since 2026-08-21.
+--
+-- WHY NOBODY SAW IT. /portal/style-select is reachable only while
+-- `projects.style` is null, so it is the one screen the two seeded demo
+-- accounts can never open again. Every walkthrough since has started from an
+-- account that already had a style. `npm run check:isolation` did catch it --
+-- it is in that script's output as a FAIL -- and the script is not part of any
+-- other command, so nothing read it.
+--
+-- WHY DROPPING IS THE WHOLE FIX, and why it is safe rather than a judgement
+-- call: the one-argument body is also STALE. It validates against
+-- `('ledger', 'hearth', 'blueprint')`, the original three registers, while the
+-- catalogue moved to `public.is_known_register()` and now holds six. So even
+-- when it did resolve, it could only accept a style nobody is offered any more.
+-- It is dead, wrong, and ambiguous; the three-argument one already defaults
+-- both extra parameters, so the existing `{ new_style }` call resolves to it
+-- untouched and no caller has to change.
+
+drop function if exists public.set_project_style(text);

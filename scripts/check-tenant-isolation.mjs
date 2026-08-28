@@ -99,7 +99,9 @@ try {
     createdIds.push(u.id);
   }
 
-  // The signup trigger provisions account + project + five pages.
+  // The signup trigger provisions account + project + SIX pages: the five
+  // internal ones plus 官网, appended by 20260826030000 so every business has a
+  // public page from the moment it exists.
   const [a, b] = users;
   a.client = await signIn(a);
   b.client = await signIn(b);
@@ -151,8 +153,8 @@ try {
   // --- project_pages ------------------------------------------------------
   const { data: aSeesPages } = await a.client.from("project_pages").select("id, project_id");
   check(
-    "A sees only its own five pages",
-    aSeesPages?.length === 5 && aSeesPages.every((p) => p.project_id === aProject.id),
+    "A sees only its own six pages",
+    aSeesPages?.length === 6 && aSeesPages.every((p) => p.project_id === aProject.id),
     `saw ${aSeesPages?.length ?? 0}`,
   );
 
@@ -261,8 +263,19 @@ try {
   // a project id, so neither can be pointed at another customer.
   const { error: setStyle } = await a.client.rpc("set_project_style", { new_style: "ledger" });
   check("set_project_style works the first time", !setStyle, setStyle?.message);
+  /*
+    IT USED TO REFUSE A SECOND TIME, AND NO LONGER SHOULD.
+
+    The one-time guard lived in `set_project_style(new_style text)` -- the
+    original one-argument function, which 20260828050000 dropped because it had
+    become ambiguous with the three-argument one and was blocking the onboarding
+    screen outright. The surviving function is a general setter, and it has to
+    be: the editor's Shuffle calls it on every roll, and /portal/styles lets an
+    owner change register whenever they like. A one-time gate on this RPC would
+    only have been enforcing a rule the product stopped having.
+  */
   const { error: setAgain } = await a.client.rpc("set_project_style", { new_style: "hearth" });
-  check("set_project_style refuses a second time", Boolean(setAgain), setAgain?.message);
+  check("set_project_style accepts a later change too", !setAgain, setAgain?.message);
 
   const { error: updStyle } = await a.client.rpc("update_project_style", { new_style: "hearth" });
   check("update_project_style allows a later change", !updStyle, updStyle?.message);
@@ -280,9 +293,22 @@ try {
   // get_my_business_context resolves the lead from auth.uid() and takes no
   // argument, so there is no id for a caller to substitute.
   const { data: aCtx, error: ctxErr } = await a.client.rpc("get_my_business_context");
+  /*
+    IT RETURNS A SHAPE NOW, NOT NULL. 20260825020000 made the no-lead branch
+    return `{ language, lang, industry: null, analysis: null, identity }` on
+    purpose: every builder downstream reads `ctx.lang` to decide what language
+    the customer's SYSTEM speaks, and a null context made that fall back to the
+    default in a place too far away to see. What this check is actually for is
+    that the context is A's and carries no other tenant's business -- so that is
+    what it asserts.
+  */
   check(
-    "get_my_business_context returns null for an account with no lead",
-    !ctxErr && aCtx === null,
+    "get_my_business_context returns only this account's own context",
+    !ctxErr &&
+      aCtx !== null &&
+      aCtx.industry === null &&
+      aCtx.analysis === null &&
+      (aCtx.identity?.business_name ?? null) === null,
     ctxErr?.message ?? `returned ${JSON.stringify(aCtx)}`,
   );
 
