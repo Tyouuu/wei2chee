@@ -2292,9 +2292,23 @@ published-site   69 reqs   2,080 KB   其中 image/jpeg 1,911 KB（9 张）
 剩下 `newsreader` / `archivoNarrow` / `nunito` / `publicSans` 是**风格专用的字**，
 官网一个都没用到，却跟着 `fontVariables` 挂在 `<html>` 上被预载。
 
-- [ ] 把风格专用的字体变数从 `app/[locale]/layout.tsx` 下放到 portal / `/s` 的 layout，
-      官网只留 Geist + Archivo。**约省 100KB 在获客页的关键路径上**
-- [ ] ⚠️ 没动手的理由：那是共用的 root layout，而且另一个 session 正在动 `globals.css` 一带
+- [x] **试过了，退回来了（2026-08-28）。** 先量了一份「每一页真正用哪些字」的底：
+
+      | 页面 | 渲染出来的字 |
+      |---|---|
+      | 官网 `/en` | Archivo · Geist · Geist Mono |
+      | 登入 | Geist · Geist Mono · **Newsreader** |
+      | 法律页 | Geist |
+      | portal / 客户官网 | 全部（风格需要）|
+
+      照这份底把「全部」下放到 portal、根层只留官网那四套 —— **改完一比对，
+      官网少了 Archivo、登入页少了 Newsreader**。省下来只有 15 → 13 个档，
+      却弄丢两个字体。**不值得，已经 `git checkout` 退掉。**
+- [x] ⚠️ **这次真正的收获是那把尺**：改视觉之前先量一份底、改完比对，
+      否则「字体默默换掉」这种事没有人会当场发现。方法记在这里，
+      要再试的人先做这一步（census：逐页读每个元素的 computed `font-family`）
+- [ ] 要再试的话，得先搞清楚为什么 `siteFontVariables` 里明明有 archivo / newsreader
+      却没生效 —— 多半是某个 CSS 变数被后面的宣告盖过去了，不是少了 class
 
 ### 59. 🔴 建议加的功能：询价进来要**通知**他（2026-08-28）
 > 他问：`甚至是要加什么功能`
