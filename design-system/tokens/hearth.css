@@ -373,6 +373,8 @@
   /* 动效：他们整页只有一档 300ms 的 ease，只动 transform。 */
   --site-motion: 0.3s;
   --site-ease: ease;
+  /* 段内上下的气，接手原本段间那 144px。 */
+  --site-inner: 4.5rem;
   --site-radius-control: 4px;
   /* 标题更重：他们 700，我们 600，放大到原尺寸一眼就看得出来。 */
   --site-display-weight: 700;

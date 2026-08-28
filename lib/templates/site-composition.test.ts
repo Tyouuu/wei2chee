@@ -133,7 +133,16 @@ describe("composeSite", () => {
       for (const [style, skeleton] of Object.entries(SITE_COMPOSITION)) {
         const out = composeSite(built, style);
         const gone = idsOf(built).filter((id) => !idsOf(out).includes(id));
-        const allowed = (skeleton.omit ?? []).map((k) => `website-${k}`);
+        /* `dropBlocks` joins `omit` as a second, narrower way to decline —
+           it names a FIXED block by id (the enquiry form, the contact rows)
+           rather than a movable section by name. 満図 uses it because the page
+           it clones has eight sections and no form on it. The guard is not
+           weakened: anything gone that neither list names is still a failure,
+           which is the bug this was written to catch. */
+        const allowed = [
+          ...(skeleton.omit ?? []).map((k) => `website-${k}`),
+          ...(skeleton.dropBlocks ?? []),
+        ];
         expect(gone.sort(), `${t.key} × ${style} dropped something it never declared`)
           .toEqual(allowed.filter((id) => idsOf(built).includes(id)).sort());
       }
@@ -162,8 +171,14 @@ describe("composeSite", () => {
         idsOf(nodes).filter((id) =>
           ["website-bar", "website-form", "website-contact", "website-foot", "website-floating"].includes(id),
         );
-      for (const style of Object.keys(SITE_COMPOSITION)) {
-        expect(fixed(composeSite(built, style)), `${t.key} × ${style}`).toEqual(fixed(built));
+      for (const [style, skeleton] of Object.entries(SITE_COMPOSITION)) {
+        /* A register may DROP one of these (満図's reference has no form), but
+           it may never REORDER them — so the assertion compares against the
+           original with that register's declared drops removed, and any other
+           movement still fails. */
+        const cut = new Set(skeleton.dropBlocks ?? []);
+        expect(fixed(composeSite(built, style)), `${t.key} × ${style}`)
+          .toEqual(fixed(built).filter((id) => !cut.has(id)));
       }
     }
   });

@@ -409,6 +409,7 @@
   --site-ink-block: #fffe99;
   --site-motion: 0.3s;
   --site-ease: ease;
+  --site-inner: 4.5rem;
   --site-radius-control: 4px;
   --site-display-weight: 700;
   --site-card: #f1f1ee;

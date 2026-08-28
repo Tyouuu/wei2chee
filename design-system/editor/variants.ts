@@ -173,6 +173,8 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "dotted", label: "两个标题三张点卡", props: { shape: "dotted" } },
     /* 清单配照片 — a contractor's services are a list, not three cards. */
     { id: "listed", label: "清单配照片", props: { shape: "listed" } },
+    /* 标题下小字＋图标卡 — section TWO of the page 満図 copies whole. */
+    { id: "iconed", label: "标题下小字＋图标卡", props: { shape: "iconed" } },
   ],
 
   SiteCta: [

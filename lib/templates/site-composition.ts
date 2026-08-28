@@ -262,6 +262,23 @@ export type SiteSkeleton = {
    *  page; nothing else in the library does. See --site-frame. */
   frame?: "hairline";
   /**
+   * 连固定那几块也丢掉 —— by block id, not by section name.
+   *
+   * ── WHY THIS EXISTS ────────────────────────────────────────────────────
+   * `omit` only reaches the movable middle; the head and tail (top bar, hero,
+   * enquiry form, contact rows, footer) are fixed by the trade's template and
+   * were out of a register's reach entirely.
+   *
+   * 満図 clones a page that has EIGHT sections and no form on it, and ours ran
+   * ten because our template appends one. I argued for keeping it — it is the
+   * one block a customer can send money through — and the founder overruled it
+   * twice: 「我只是觉得这个模版好看 叫你去clone起来作为一个design token」 and
+   * 「我们现在都没有客户 你管那么多干嘛」. He is right about what this layer is
+   * for: it is a design token set for him to choose from, not a live business
+   * page. The form is still in the library and every other register keeps it.
+   */
+  dropBlocks?: string[];
+  /**
    * 图跟字有多大 —— separate from the rhythm since 2026-08-27.
    *
    * 満図 wants air AND big pictures; 台账's reference wants 56px headings and a
@@ -407,9 +424,13 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
          7  评价     three across, faces first
        Before this, 服务 sat at position 2 and everything after it was one slot
        out of step with the reference all the way down the page. */
-    rhythm: "airy",
+    /* 段间贴住 —— 参考页量出来是 0/0/1/1，我们是 144。气挪进段内（--site-inner），
+       所以页面不会因此缩短，但有底色的段会像他们一样连成一片。 */
+    rhythm: "flush",
     figure: "large",
     copy: "large",
+    /* 八段对八段。参考页没有表单，也没有一条联络资料的横列。 */
+    dropBlocks: ["website-form", "website-contact"],
     /* 内容几乎贴边 —— measured at native size 2026-08-28: their heading sits
        32px from the page edge and ours sat at 87px, on every section down the
        page. Their content box is 1376 of 1440; ours was 1312 centred, which
@@ -549,7 +570,14 @@ export function composeSite(nodes: PuckNode[], style?: string | null): PuckNode[
     })
     .map((x) => x.node);
 
+  /* A register that clones a page with no form on it drops the form. Matched
+     on the block's own id so it works wherever the template put it — head,
+     middle or tail. */
+  const cut = new Set<string>(skeleton.dropBlocks ?? []);
+  const keep = (n: PuckNode) => !cut.has(String(n?.props?.id ?? ""));
+
   return [...head, ...ordered, ...tail]
+    .filter(keep)
     .map((n) => heroFor(n, skeleton))
     .map((n) => statementFor(n, skeleton))
     .map((n) => tonedFor(n, skeleton));

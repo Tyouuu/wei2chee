@@ -508,6 +508,21 @@
   .ds-ground[data-rhythm="flush"].ds-site {
     --site-rhythm: 0rem;
   }
+  /* 气挪到段内 —— WHY FLUSH NEEDED A SECOND HALF.
+
+     A. Reynolds runs 段间 0/0/1/1 and ours ran 144. Setting the gap to zero on
+     its own would not have copied their page, it would have made ours 1000px
+     shorter and tighter than theirs: their air is INSIDE each section and ours
+     was between them. Same total height either way on a page of one colour —
+     but the moment a section carries its own colour, a gap turns a continuous
+     field into a stack of cards, and that is the difference you can see.
+
+     So flush moves the air rather than deleting it. Default 0, so 台账 — whose
+     blocks carry their own frame padding already — is untouched. */
+  .ds-ground[data-rhythm="flush"] .ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]),
+  .ds-ground[data-rhythm="flush"].ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]) {
+    padding-block: var(--site-inner, 0rem);
+  }
   .ds-ground[data-figure="large"] .ds-site,
   .ds-ground[data-figure="large"].ds-site {
     --site-figure: 1.6;

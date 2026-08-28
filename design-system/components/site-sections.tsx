@@ -70,7 +70,7 @@ export function SiteFeatures({
    * So a register may now say what a service looks like, and the three
    * answers are genuinely different objects rather than one object restyled.
    */
-  shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed"
+  shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed" | "iconed"
   /** 两个标题三张点卡 only: the bold half of the right-hand pair. */
   noteHeading?: string
   /** 清单配照片 only: the picture that stands beside the list. */
@@ -188,6 +188,67 @@ export function SiteFeatures({
             />
           )}
         </div>
+      </section>
+    )
+  }
+
+  if (shape === "iconed") {
+    /*
+      ── 标题 + 底下一行小字 + 带图标的卡 ────────────────────────────────────
+
+      Section TWO of the page 満図 copies whole (Wix a-reynolds, read at native
+      size 2026-08-28: 663px, no photographs, five cards laid three then two).
+
+      It differs from `dotted` — their section FOUR — in exactly two ways, and
+      those two are how their page tells two rows of cards apart:
+
+        the sub-line sits UNDER the heading, small and grey, not in a second
+        heading block on the right. 「Our Expertise / Contemporary Designs」.
+
+        each card carries a small ICON above its title rather than a dot.
+
+      Both sections are otherwise the same card: #f1f1ee, no border, 8px. That
+      is the reference's own economy and it is why copying only one of the two
+      shapes left our page reading as a repeat.
+    */
+    return (
+      <section className="@container" data-wide="">
+        {heading ? (
+          <div className="mb-10">
+            <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+            {noteHeading || note ? (
+              <p className="mt-2 max-w-[52ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                {noteHeading ? `${noteHeading}${note ? " · " : ""}` : ""}
+                {note}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        {/* THREE THEN TWO. With five items the second row runs two wide, which
+            is theirs; with three it is one row, which is the same design with
+            less in it. */}
+        <ul className="grid [gap:var(--gap-stack)] @2xl:grid-cols-6">
+          {items.map((f, i) => {
+            const Glyph = tradeIcon(f.icon)
+            const wide = items.length === 5 && i >= 3
+            return (
+              <li
+                key={f.label}
+                className={`flex flex-col [background:var(--site-card,color-mix(in_oklab,var(--color-primary)_5%,var(--color-canvas)))] [border:var(--site-card-border,var(--hairline)_solid_var(--border-subtle))] [border-radius:var(--site-card-radius,var(--radius-lg))] [gap:calc(var(--gap-inline)*0.7)] [min-height:calc(11rem*var(--site-figure,1))] [padding:calc(var(--pad-card-lg)*1.05*var(--site-figure,1))] ${wide ? "@2xl:col-span-3" : "@2xl:col-span-2"}`}
+              >
+                <span aria-hidden className="mb-1 block [color:var(--color-primary)]">
+                  <Glyph className="h-6 w-6" />
+                </span>
+                <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
+                  {f.label}
+                </span>
+                <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                  {f.value}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
       </section>
     )
   }
