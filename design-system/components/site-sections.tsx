@@ -1067,7 +1067,7 @@ export function SiteGallery({
 }: {
   heading?: string
   note?: string
-  shape?: "grid" | "bento" | "strip" | "mosaic"
+  shape?: "grid" | "bento" | "strip" | "mosaic" | "pair"
   items?: { src?: string; alt?: string; caption?: string }[]
   /** 「看全部」. Their mosaic ends with one small button and nothing else. */
   moreLabel?: string
@@ -1075,6 +1075,58 @@ export function SiteGallery({
 }) {
   const shots = items ?? []
   if (!shots.length) return null
+
+  if (shape === "pair") {
+    /*
+      ── 两张照片各占一半，满宽，中间没有缝 ──────────────────────────────────
+
+      Kurofude's second and fourth sections, read at 1440 on 2026-08-28: two
+      photographs side by side, 720px each, 1016px and 1011px tall, running the
+      full width of the page with NO GAP and no radius between them. They are
+      not a gallery of the restaurant's work — they ARE the page, twice.
+
+      Founder, looking at ours beside it: 「有时候的背景 图片大小也不一样啊」. Ours
+      put three small tiles in a row with white gutters between them, which is
+      a thumbnail strip on a white page. Same photographs, a quarter the size,
+      and the white between them reads as the ground rather than as a frame.
+    */
+    const two = shots.slice(0, 2)
+    return (
+      <section data-bleed="" className="@container">
+        {heading ? (
+          <h2 className="ds-display mb-6 [color:var(--color-paper)] [font-weight:var(--fw-semibold)] [padding-inline:1.5rem]">
+            {heading}
+          </h2>
+        ) : null}
+        <ul className="grid [gap:0] @2xl:grid-cols-2">
+          {two.map((it, i) => (
+            <li key={(it.src || "") + i} className="min-w-0">
+              {it.src?.trim() ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={it.src}
+                  alt={it.alt || ""}
+                  className="block size-full object-cover"
+                  style={{ height: "clamp(18rem, 92vh, calc(52rem * var(--site-figure, 1)))" }}
+                />
+              ) : (
+                /* 占位图 —— 老板 2026-08-28: 「要嘛你就是去图库拿图 要嘛只是一个
+                   占位图 都可以」. A style is a design being shown, so an empty
+                   slot has to show its SIZE. Published pages still drop the
+                   unfilled frame (publish-projection), which is the rule that
+                   keeps 「Add a photo」 off a stranger's screen. */
+                <div
+                  aria-hidden
+                  className="block w-full [background:color-mix(in_oklab,var(--color-paper)_12%,var(--color-canvas))]"
+                  style={{ height: "clamp(18rem, 92vh, calc(52rem * var(--site-figure, 1)))" }}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 
   if (shape === "mosaic") {
     /*

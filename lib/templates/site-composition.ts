@@ -512,7 +512,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        fourth sections are FULL-BLEED PHOTOGRAPHS, 1007px tall, and declining
        the one block that draws one left our tallest picture at 672 — a gallery
        tile. Measured by the ruler's SHOTS axis, which did not exist yesterday. */
-    omit: ["faq", "promise", "team", "creds", "reviews", "woven", "hours"],
+    omit: ["faq", "promise", "team", "creds", "reviews", "woven", "hours", "areas"],
     /* 名字跟那排资料在上面，照片满边接在下面 —— band-bleed 就是这个形状，
        那条带用它自己的米白（--site-hero-band）。 */
     hero: "band-bleed",

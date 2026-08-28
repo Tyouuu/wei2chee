@@ -190,6 +190,8 @@ export const VARIANTS: Record<string, Variant[]> = {
      the section can hold without running down the page, which is the whole
      question for a contractor with eleven finished kitchens. */
   SiteGallery: [
+    /* 两张各占一半 — Kurofude's second and fourth sections, edge to edge. */
+    { id: "pair", label: "两张各占一半", props: { shape: "pair" } },
     { id: "grid", label: "三张一样大", props: { shape: "grid" } },
     { id: "bento", label: "一大两小", props: { shape: "bento" } },
     { id: "strip", label: "横着滑", props: { shape: "strip" } },

@@ -26,6 +26,7 @@ import { createClient } from "@supabase/supabase-js";
 import { chromium } from "playwright";
 import { config } from "dotenv";
 import fs from "node:fs";
+import { execSync } from "node:child_process";
 
 config({ path: ".env.local" });
 config();
@@ -755,7 +756,34 @@ try {
   }
 
   /* ── 4 颜色 COLOR —— 面积，不是声明次数 ───────────────────────────────── */
-  console.log("\n颜色 COLOR  （面积要用 npm run align:palette 量截图；这里只列声明层）");
+  /* ── 颜色，逐段量，而且判在同一张表里 ────────────────────────────────────
+     老板 2026-08-28: 「就是每个颜色 分段去测量」.
+
+     Two holes closed at once. Colour used to be PRINTED and never judged — and
+     colour is exactly where four registers went out with matching section
+     counts and a different page. And a whole-page average can match while every
+     section is wrong: 40% white / 25% dark is equally true of 「a white page
+     with two dark bands」 and of 「a dark page with two white bands」, which are
+     opposite designs. So the unit is the SECTION, and the verdict lands here
+     rather than in a second command nobody runs. */
+  try {
+    const out = execSync(`python scripts/align-palette.py ${register}`, {
+      encoding: "utf8",
+      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+    });
+    console.log("\n颜色 COLOR  （逐段量截图，按铺出来的面积）");
+    for (const raw of out.split("\n")) {
+      const line = raw.trimEnd();
+      if (!line.trim()) continue;
+      console.log("  " + line.trim());
+      const m = /^(OK|XX|--)\\s+第(\d+)段/.exec(line.trim());
+      if (m) marks.push({ axis: "颜色", name: `第${m[2]}段底色`, ok: m[1] === "OK" ? true : m[1] === "--" ? null : false });
+    }
+  } catch (e) {
+    console.log("\n颜色 COLOR  量不到 —— align-palette.py 跑不起来：" + String(e).slice(0, 90));
+    marks.push({ axis: "颜色", name: "逐段底色", ok: null });
+  }
+  console.log("\n颜色 COLOR  （声明层，仅供参考）");
   const stack = (a) => {
     if (!a) return "—";
     const by = {};

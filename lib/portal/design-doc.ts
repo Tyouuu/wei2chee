@@ -231,7 +231,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     prefer: {
       SiteFeatures: "cards",
       SiteTeam: "row",
-      SiteGallery: "strip",
+      SiteGallery: "pair",
       SiteStory: "stack",
       SiteCreds: "strip",
       StatRow: "boxed",
