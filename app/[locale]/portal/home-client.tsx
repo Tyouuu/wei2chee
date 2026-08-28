@@ -567,7 +567,16 @@ export function PortalHome({
                 </StyleScope>
               </div>
 
-              <div className="flex flex-col justify-center gap-5 p-6 lg:p-8">
+              {/* `min-w-0`, because a grid item's default `min-width: auto`
+                  refuses to shrink below its own min-content. This cell holds
+                  the site's full address, so its min-content is that URL: at
+                  390px it measured 395 wide inside a 326px track and pushed the
+                  Copy button 13px past the edge of the phone -- the one control
+                  whose whole job is 「把它发给人」. The row inside is already
+                  written correctly (`min-w-0 flex-1 truncate` beside a
+                  `shrink-0` button); it never got the chance, because the cell
+                  around it was not allowed to be narrow. */}
+              <div className="flex min-w-0 flex-col justify-center gap-5 p-6 lg:p-8">
                 {/* THE ADDRESS. A website with no address is not a website, and
                     「还没有网址」 is a more useful thing to read than a blank. */}
                 <div>

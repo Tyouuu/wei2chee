@@ -64,7 +64,25 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
         // tall. Without this the announcement pill rendered UNDER it and the
         // nav links cut its right end off -- visible in the first screenshot
         // taken after the pill landed, invisible in any test.
-        className="relative flex flex-col items-center px-6 pt-28 pb-16 sm:pt-32"
+        /*
+          `w-full` IS LOad-BEARING. Without a definite width this column sizes
+          itself from its widest child's max-content, and the announcement pill
+          is one long unbreakable sentence: it measured 503px, so this whole
+          section measured 551 inside a 390px phone. Everything else -- the
+          headline, the "what kind of business do you run" box, the Start
+          button, the price line -- is then laid out 503 wide and CLIPPED,
+          because `overflow-x: hidden` further up means the page does not even
+          scroll to reach it. The pill already carries `max-w-full` and a
+          `truncate` span; `max-width: 100%` resolves against this box, and a
+          box whose own width is being derived from its content cannot
+          constrain it. Giving it a definite width makes both work, and makes
+          the NEXT long child truncate instead of widening the section.
+
+          Found by `npm run check:reachable` at 390 -- 3 unreachable controls,
+          all of them here. A `documentElement.scrollWidth` check said "ok",
+          because overflow-x: hidden had already clipped the evidence.
+        */
+        className="relative flex w-full flex-col items-center px-6 pt-28 pb-16 sm:pt-32"
       >
         {/*
           Local readability panel. The gradient is deliberately left vivid (the
