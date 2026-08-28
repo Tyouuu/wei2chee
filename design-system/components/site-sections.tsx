@@ -1698,7 +1698,18 @@ export function SiteStatement({
      references set this band clearly below that -- it is the second thing
      read, not a competing first. 0.62 keeps every register's own proportion,
      which is the multiplier rule the whole .ds-site finish layer follows. */
-  const size = { fontSize: "clamp(1.35rem, calc(var(--text-hero) * 0.62), 2.4rem)", lineHeight: 1.3 }
+  /* ── 这一句多大，是一根轴 ────────────────────────────────────────────────
+     Parker & Brown's second section opens with a serif paragraph running the
+     FULL WIDTH at 81px — it is the loudest thing on that page after the name,
+     and it is the whole reason their intro reads as a statement rather than as
+     a caption. Ours rendered the same sentence at 2.4rem and it read as a
+     caption. Measured 2026-08-28: 他们 81px, 我们 38px.
+
+     A register that has measured its reference raises it; nothing else moves. */
+  const size = {
+    fontSize: "clamp(1.35rem, calc(var(--text-hero) * 0.62 * var(--site-statement, 1)), calc(2.4rem * var(--site-statement, 1)))",
+    lineHeight: 1.3,
+  }
 
   /* THE MEASURE IS WIDER THAN A HEADLINE'S, AND THAT IS FROM THE RENDER.
 
