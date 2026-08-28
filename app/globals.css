@@ -591,6 +591,34 @@
 .ds-ground[data-frame="hairline"] .ds-site :has(> h2:not([data-column-heading])) {
   max-width: none;
 }
+
+/* 照片贴到框的内缘 —— their About Us photograph runs edge to edge against the
+   frame on three sides while the text beside it keeps the padding. Ours was
+   inset all round, which reads as a picture ON a panel rather than half OF
+   one. The pull is exactly the frame's own padding, so it lands on the line. */
+.ds-ground[data-frame="hairline"] .ds-site [data-fill] {
+  margin: calc(var(--pad-card-lg) * -1.35);
+  margin-inline-end: 0;
+}
+.ds-ground[data-frame="hairline"] .ds-site [data-fill] img {
+  border-radius: 0;
+  height: 100%;
+}
+
+/* 框里面分格 —— the rule BETWEEN the cells, which is the other half of 台账's
+   identity. Their About Us, Our Services, Testimonials and Contact are each a
+   grid of cells divided by 1px, not a panel with things floating in it. The
+   gap collapses to zero here because a rule and a gap say the same thing twice
+   and their page uses only the rule. */
+.ds-ground[data-frame="hairline"] .ds-site [data-cells] {
+  gap: 0;
+}
+@media (min-width: 42rem) {
+  .ds-ground[data-frame="hairline"] .ds-site [data-cells] > * + * {
+    border-inline-start: 1px solid var(--site-frame, color-mix(in oklab, var(--color-paper) 22%, transparent));
+    padding-inline-start: calc(var(--pad-card-lg) * 1.35);
+  }
+}
 .ds-ground[data-frame="hairline"] .ds-site h2:not([data-column-heading]),
 .ds-ground[data-frame="hairline"].ds-site .ds-site h2:not([data-column-heading]) {
   background: var(--site-strip, color-mix(in oklab, #000 24%, var(--color-canvas)));

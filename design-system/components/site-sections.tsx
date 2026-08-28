@@ -1266,12 +1266,18 @@ export function SiteStory({
      A picture under a paragraph is the evidence for the paragraph. It is not
      allowed to out-shout the opening. */
   const picture = photo?.trim() ? (
-    <div className="min-w-0">
+    /* `data-fill` — 在有细框的风格里，照片要贴到框的内缘，不是浮在框的留白里。
+       Newel's About Us puts the photograph edge to edge against its own frame
+       and the text beside it inside the padding; ours sat inset on all four
+       sides and read as a picture placed on a panel instead of half of one.
+       The pull is done in globals.css, where the frame's padding is declared —
+       here it is only marked. */
+    <div data-fill="" className="min-w-0">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={photo}
         alt={photoAlt || ""}
-        className="w-full object-cover [border-radius:var(--radius-lg)]"
+        className="size-full object-cover [border-radius:var(--site-photo-radius,var(--radius-lg))]"
         style={
           shape === "stack"
             ? { aspectRatio: "21 / 9", maxHeight: "26rem" }
@@ -1297,7 +1303,15 @@ export function SiteStory({
        panel's own colour empty above them and as much below. A panel with its
        content in the middle and air at both ends is the shape that made the
        founder ask 「到底谁有去用啊」. */
-    <section className="@container grid items-stretch [gap:calc(var(--gap-stack)*1.5)] @2xl:grid-cols-2">
+    /* `data-cells` —— 框里面还要分格。
+       Founder, 2026-08-28, pointing at the reference: 「你看他们是有框的」. Their
+       About Us is not one framed panel with two things floating in it — it is
+       a GRID OF CELLS with a 1px rule between them, and so is Our Services,
+       and so is Testimonials, and so is Contact. The outer frame was only half
+       of it; a register whose whole identity is 「ordered by rules」 needs the
+       rules on the inside too. Drawn in globals.css beside the frame it
+       belongs to. */
+    <section data-cells="" className="@container grid items-stretch [gap:calc(var(--gap-stack)*1.5)] @2xl:grid-cols-2">
       {shape === "side-reverse" ? (
         <>
           {/* The picture is second in the DOM either way and moved by `order`,
