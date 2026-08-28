@@ -427,6 +427,24 @@
    sibling has.
    ============================================================================ */
 :root {
+
+  /* ── 官网的配色，整套照抄（重点 7j）────────────────────────────────────────
+     整页逐像素：奶白 #fafafa 37.1% · 酒红 #500014 28.4%。我们是**近黑 #0a0a14
+     37.5%** —— 我们那一页是黑的，他们那一页是白的配酒红。标题的粉 #ff99ee
+     是他们整页唯一的亮色。
+
+     ⚠️ 这一层只装在**官网**上。同一套风格的**工作台**还是它自己的颜色 ——
+     这些声明的是 --site-*，不是 --color-*。 */
+  --site-ink-bg: #500014;
+  --site-ink-fg: #ffd9f2;
+  --site-ink-fg-dim: #e0a8c8;
+  --site-ink-panel: #5a0014;
+  --site-ink-block: #500014;
+  --site-on-block: #ffd9f2;
+  --site-primary: #ff99ee;
+  --site-on-primary: #500014;
+  --site-foot-bg: #500014;
+  --site-foot-fg: #ffd9f2;
   color-scheme: light;
 
   /* ---- TYPE AXIS: neutral modern grotesque ------------------------------- */

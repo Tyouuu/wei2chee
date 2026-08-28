@@ -441,6 +441,32 @@
    sibling has.
    ============================================================================ */
 :root {
+
+  /* ── 官网的配色，整套照抄（重点 7j）────────────────────────────────────────
+     整页逐像素：底 #f0f0f0 34.9% · 页脚深棕 #78320a 8.3% · 卡其 #dcd2aa 8.0% ·
+     橘 #dc5a32 · 绿 #788c6e · 灰褐 #b4a08c。我们是蓝灰底 #e6e6f0 47% 配海军蓝。
+     那四个色块的颜色就是他们那一段的设计本身，所以它们自己是 token。
+
+     ⚠️ 这一层只装在**官网**上。同一套风格的**工作台**还是它自己的颜色 ——
+     这些声明的是 --site-*，不是 --color-*。 */
+  --site-ink-bg: #f0f0f0;
+  --site-ink-fg: #1b1b17;
+  --site-ink-fg-dim: #54554b;
+  --site-ink-panel: #dcd2aa;
+  --site-ink-block: #dc5a32;
+  --site-on-block: #ffffff;
+  --site-primary: #dc5a32;
+  --site-on-primary: #ffffff;
+  --site-foot-bg: #78320a;
+  --site-foot-fg: #f0f0f0;
+  --site-plate-1: #788c6e;
+  --site-plate-2: #b4a08c;
+  --site-plate-3: #dc5a32;
+  --site-plate-4: #dcd2aa;
+  --site-plate-1-fg: #ffffff;
+  --site-plate-2-fg: #1b1b17;
+  --site-plate-3-fg: #ffffff;
+  --site-plate-4-fg: #1b1b17;
   color-scheme: light;
 
   /* ---- TYPE AXIS: neutral modern grotesque ------------------------------- */

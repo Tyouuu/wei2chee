@@ -470,6 +470,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     omit: ["prices", "flow", "promise", "faq", "areas", "hours", "band", "woven", "creds", "reviews"],
     statement: "quote",
     hero: "name-plate",
+    /* 「ink」 在这一层的意思是「官网自己说了算它的地」，浅色深色都行 —— 任务 28
+       就是这样定的。不打开它，上面那套逐像素抄来的颜色一个都不会生效。 */
+    ground: "ink",
     opens: "Introducing",
     order: ["story", "services", "team", "work", "cta", "prices", "flow", "promise", "faq", "areas", "hours", "band", "woven", "creds", "reviews"],
   },
@@ -506,6 +509,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     measure: "wide",
     figure: "large",
     rhythm: "tight",
+    /* 「ink」 在这一层的意思是「官网自己说了算它的地」，浅色深色都行 —— 任务 28
+       就是这样定的。不打开它，上面那套逐像素抄来的颜色一个都不会生效。 */
+    ground: "ink",
     opens: "菜单",
     order: ["work", "services", "story", "prices", "areas", "flow", "cta", "faq", "promise", "team", "creds", "reviews", "band", "woven", "hours"],
   },
@@ -543,6 +549,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* 他们第一屏跟 About 之间没有别的东西，收尾也只有一个订阅框 —— 一个 ask，不是
        中段一个 CTA 再加一个表单。 */
     dropBlocks: ["website-statement", "website-cta"],
+    /* 「ink」 在这一层的意思是「官网自己说了算它的地」，浅色深色都行 —— 任务 28
+       就是这样定的。不打开它，上面那套逐像素抄来的颜色一个都不会生效。 */
+    ground: "ink",
     opens: "About",
     order: ["story", "services", "creds", "work", "reviews", "cta", "team", "prices", "flow", "promise", "faq", "areas", "hours", "band", "woven"],
   },
@@ -570,9 +579,12 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        twelve sections all on one ground with opening hours and a coverage strip
        at the top, which is a shop's noticeboard, not a brasserie. */
     omit: ["faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "woven", "band"],
-    /* 交替：菜单跟故事是米色带，其余留在酒红底上。 */
-    tones: { services: "paper", story: "paper" },
-    pattern: "diamond",
+    /* 交替，而且**奶白要比酒红多** —— 逐像素量出来他们是白 37.1% 对酒红 28.4%，
+       我们第一版是酒红 46.3% 对白 7.6%：同样两个颜色，比例整个倒过来。
+       菜单、故事、评价、询价都放在奶白带上，酒红只留给第一屏、作品墙跟页脚。 */
+    tones: { services: "paper", story: "paper", prices: "paper", cta: "paper" },
+    /* ⚠️ 纹理拿掉了。量出来我们的酒红是 #460014，他们是 #500014 —— 差的那一层就是
+       这张菱形网，它盖在整页上把地压暗了一档。他们那一页没有任何纹理。 */
     ground: "ink",
     hero: "name-plate",
     figure: "huge",

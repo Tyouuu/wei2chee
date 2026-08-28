@@ -218,16 +218,18 @@ export function SiteFeatures({
        inverted text. Two dark, two light, which is also the reference's own
        rhythm (green, taupe, orange, khaki). */
     const STEP = [
-      { bg: "var(--color-primary)", fg: "var(--color-on-primary)" },
-      { bg: "color-mix(in oklab, var(--color-primary) 16%, var(--color-canvas))", fg: "var(--color-paper)" },
-      /* ⚠️ NOT --color-block. On 图纸 that token is #e5ebf6, a very pale blue —
-         a LIGHT surface — and --color-on-block falls back to white, so the
-         third plate rendered white type on near-white and the block was simply
-         missing from the row. Deepening the primary towards the page's own ink
-         is dark on every register by construction. */
-      { bg: "color-mix(in oklab, var(--color-primary) 68%, var(--color-paper))", fg: "var(--color-on-primary)" },
-      { bg: "color-mix(in oklab, var(--color-primary) 32%, var(--color-canvas))", fg: "var(--color-paper)" },
+      /* 每一格可以自己声明颜色 —— 那四个颜色就是那一段的设计。
+         重点 7j: 参考页的配色整套抄过来。Parker & Brown's four are a green, a
+         taupe, an orange and a khaki, and no derivation from one primary can
+         produce four hues. A register that has measured its reference declares
+         them; one that has not falls back to four steps of its own primary,
+         which is what every other register still gets. */
+      { bg: "var(--site-plate-1, var(--color-primary))", fg: "var(--site-plate-1-fg, var(--color-on-primary))" },
+      { bg: "var(--site-plate-2, color-mix(in oklab, var(--color-primary) 16%, var(--color-canvas)))", fg: "var(--site-plate-2-fg, var(--color-paper))" },
+      { bg: "var(--site-plate-3, color-mix(in oklab, var(--color-primary) 68%, var(--color-paper)))", fg: "var(--site-plate-3-fg, var(--color-on-primary))" },
+      { bg: "var(--site-plate-4, color-mix(in oklab, var(--color-primary) 32%, var(--color-canvas)))", fg: "var(--site-plate-4-fg, var(--color-paper))" },
     ]
+
     return (
       <section className="@container" data-wide="">
         {heading ? (

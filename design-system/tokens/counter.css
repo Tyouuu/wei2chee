@@ -445,6 +445,23 @@
    ============================================================================ */
 :root {
 
+  /* ── 官网的配色，整套照抄（重点 7j）────────────────────────────────────────
+     整页逐像素：奶白 #fafafa 35.5% · 暖灰 #dcd2c8 / #d2c8be（照片本身）· 黑字。
+     整页没有一点蓝。我们是 #e6e6e6 配海军蓝 #001428 8.6%。
+
+     ⚠️ 这一层只装在**官网**上。同一套风格的**工作台**还是它自己的颜色 ——
+     这些声明的是 --site-*，不是 --color-*。 */
+  --site-ink-bg: #fafafa;
+  --site-ink-fg: #141414;
+  --site-ink-fg-dim: #5a5a5a;
+  --site-ink-panel: #dcd2c8;
+  --site-ink-block: #000000;
+  --site-on-block: #fafafa;
+  --site-primary: #000000;
+  --site-on-primary: #fafafa;
+  --site-foot-bg: #fafafa;
+  --site-foot-fg: #141414;
+
   /* ── 官网层：抄 Wix `wh-kurofude-rest` ────────────────────────────────────
      Off-white ground, black condensed grotesk, no radius anywhere, no gap
      between photographs, and every control a full-width black bar. The opening

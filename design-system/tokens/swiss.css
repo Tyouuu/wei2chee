@@ -405,6 +405,24 @@
    ============================================================================ */
 :root {
 
+  /* ── 官网的配色，整套照抄（重点 7j）────────────────────────────────────────
+     整页逐像素量出来（scripts/align-palette.py）：底 #fafafa 40.5% · 深带 #282828
+     22.7% · 分隔灰 #e6e6e6 6.5%。我们量出来是 #dcdce6 40.8% —— 一个蓝灰的地 ——
+     配一条海军蓝。两边「最大面积」的数字接近，颜色是两回事。
+
+     ⚠️ 这一层只装在**官网**上。同一套风格的**工作台**还是它自己的颜色 ——
+     这些声明的是 --site-*，不是 --color-*。 */
+  --site-ink-bg: #fafafa;
+  --site-ink-fg: #141414;
+  --site-ink-fg-dim: #5a5a5a;
+  --site-ink-panel: #e6e6e6;
+  --site-ink-block: #282828;
+  --site-on-block: #fafafa;
+  --site-primary: #1e1e1e;
+  --site-on-primary: #fafafa;
+  --site-foot-bg: #282828;
+  --site-foot-fg: #fafafa;
+
   /* ── 官网层：抄 Wix `wh-leah` ────────────────────────────────────────────
      That page is white, ruled and unfilled. Its whole identity is refusal:
      nothing has a fill, every button is an outlined pill, and a full-width
