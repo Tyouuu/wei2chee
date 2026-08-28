@@ -631,7 +631,7 @@ export function SiteHero({
           style={{ background: "linear-gradient(to top, rgb(0 0 0 / 0.60), rgb(0 0 0 / 0.06) 52%, rgb(0 0 0 / 0.12))" }}
         />
 
-        <div className="flex flex-col justify-end [min-block-size:clamp(26rem,74svh,44rem)] [padding-inline:var(--pad-card-lg)] [padding-block:calc(var(--pad-card-lg)*1.4)]">
+        <div className="flex flex-col justify-end [min-block-size:clamp(26rem,88svh,calc(44rem*var(--site-figure,1)))] [padding-inline:var(--pad-card-lg)] [padding-block:calc(var(--pad-card-lg)*1.4)]">
           <div className="mx-auto w-full max-w-[80rem]">
             {/* THE NAME, AND NOTHING COMPETING WITH IT.
 

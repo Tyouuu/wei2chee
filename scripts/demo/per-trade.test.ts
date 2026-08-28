@@ -57,12 +57,12 @@ const PHOTOS = JSON.parse(readFileSync(".screenshots/photos/trade-photos.json", 
 
    so the gallery carries what its own page carries and nothing else. */
 const SHOTS: Record<string, number> = {
-  renovation: 10, // 照片张数 10 对他们 15；格子有上限之后十张不会再撑爆
+  renovation: 7,  // 第4段 3613 对他们 2198 —— 十张又撑过头
   beauty: 6,      // 満図 ← A. Reynolds: its photographs live in the argument
-  services: 6,  // 第5段 1413 对他们 611 —— 九张把作品墙撑成两倍
+  services: 6,   // 六张在网格里是 611px，跟他们的 Latest Posts 一样
   education: 3,   // 図纸 ← Parker & Brown: seven on the whole page
-  retail: 6,      // 招牌 ← Toulouse: Moments is six
-  wholesale: 6,   // 中台 ← Kurofude: pairs, not a wall
+  retail: 8,     // Moments 是一整墙散照片
+  wholesale: 4,  // 第2段 2195 vs their 1016 — eight tiles is twice their section
 };
 
 function fill(nodes: any[], P: Record<string, string>, shots = 6) {

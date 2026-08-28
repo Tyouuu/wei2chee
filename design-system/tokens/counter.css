@@ -476,7 +476,7 @@
   --site-hero-band: #f0f2f5;
   --site-radius-control: 0px;
   --site-card-radius: 0px;
-  --site-motion: 0.12s;  /* 他们那一页量出来一个过渡都没有 */
+  --site-motion: 0.09s;
   --site-ease: ease;
   color-scheme: light;
 

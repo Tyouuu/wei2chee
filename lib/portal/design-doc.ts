@@ -272,6 +272,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给会计、顾问这种把资料印出来给人看的公司。黑白为主，只有一个红，用在必须被找到的地方；没有卡片，靠线跟留白分区。牺牲的是所有装饰 —— 它在萤幕上很素，但它是全库印在纸上最好看的一套。",
     facts: "全直角 · 边框 1px · 无阴影 · 标签全大写字距 0.12em · 强调色瑞士红",
     prefer: {
+      SiteGallery: "grid",
       SiteFeatures: "stated",
       SiteCta: "rule",
       SiteTeam: "plain",
@@ -318,7 +319,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteFeatures: "menu",
       SiteCta: "panel",
       SiteTeam: "row",
-      SiteGallery: "strip",
+      SiteGallery: "bento",
       SiteStory: "side",
       SiteCreds: "rating",
       StatRow: "boxed",
