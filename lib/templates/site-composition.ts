@@ -512,7 +512,15 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        fourth sections are FULL-BLEED PHOTOGRAPHS, 1007px tall, and declining
        the one block that draws one left our tallest picture at 672 — a gallery
        tile. Measured by the ruler's SHOTS axis, which did not exist yesterday. */
-    omit: ["faq", "promise", "team", "creds", "reviews", "woven", "hours", "areas"],
+    /* ── 六段对六段，2026-08-29 逐段拍出来重排 ─────────────────────────────
+       他们六段里有三段是照片：第2段两张各占一半、第4段两张满幅、第5段是一片
+       散开的马赛克，问的那句话就坐在中间那一栏里。我们原本七段，而且照片全部
+       挤在第2段一个 bento 里，第5段是一张图配一段话。
+
+       · story / flow 拿掉 —— 他们没有这两段，而这两段正是多出来的那一段
+       · woven 放回来 —— 三栏，中间那栏自己一个地、一张更高的照片，压在一张
+         满幅照片上。那就是他们第5段 RESERVE 的形状 */
+    omit: ["faq", "promise", "team", "creds", "reviews", "story", "flow", "hours", "areas"],
     /* 名字跟那排资料在上面，照片满边接在下面 —— band-bleed 就是这个形状，
        那条带用它自己的米白（--site-hero-band）。 */
     hero: "band-bleed",
@@ -522,9 +530,11 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        就是这样定的。不打开它，上面那套逐像素抄来的颜色一个都不会生效。 */
     ground: "ink",
     /* 正文 13px 对他们的 16-17px —— 后台的字级又跟着上了官网。 */
-    copy: "large",
+
     /* 段间贴住 —— 六个参考页量出来全部是 0，我们是 104（这一套）或 40。
        气挪进段内（--site-inner），页面不会因此变短。 */
+    /* 后台的字级又跟着上了官网：这一套是全库最小的。 */
+    copy: "large",
     rhythm: "flush",
     /* 他们六段，收在页脚上；我们八段，多一个表单跟一条联络横列。 */
     dropBlocks: ["website-form", "website-contact"],
@@ -532,7 +542,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* 他们的顺序：第一屏 → 两张各半 → 白底的卡 → 两张各半 → 马赛克配 ask → 页脚。
        逐段量出来我们第 4 段是白的、他们是照片，第 6 段刚好相反 —— 中间少了一次
        「照片 / 白 / 照片」的交替。band 排到服务后面就对上了。 */
-    order: ["work", "services", "band", "story", "flow", "prices", "cta", "faq", "promise", "team", "creds", "reviews", "woven", "hours", "areas"],
+    order: ["work", "services", "band", "woven", "prices", "cta", "faq", "promise", "team", "creds", "reviews", "story", "flow", "hours", "areas"],
   },
   // 瑞士: black, white, one red, no cards. It is the register that prints, and
   // a page that reads like a document leads with words -- what we do, how it

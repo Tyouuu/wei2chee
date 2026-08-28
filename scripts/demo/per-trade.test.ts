@@ -59,7 +59,7 @@ const PHOTOS = JSON.parse(readFileSync(".screenshots/photos/trade-photos.json", 
 const SHOTS: Record<string, number> = {
   renovation: 9,  // 照片张数 10 vs their 15
   beauty: 6,      // 満図 ← A. Reynolds: its photographs live in the argument
-  services: 3,   // 第5段 1143 vs their 611 — their Latest Posts is three
+  services: 3,   // Latest Posts is three photographs in one row, 611px
   education: 3,   // 図纸 ← Parker & Brown: seven on the whole page
   retail: 5,     // 照片张数 18 vs their 14 — the bento overshot
   wholesale: 6,  // 照片张数 5 vs their 18, 半幅的 2 vs 5
@@ -95,7 +95,7 @@ function fill(nodes: any[], P: Record<string, string>, shots = 6) {
     /* 四张：三栏各一张，加底下那张满边的。两张是给「四点两栏」那个形状的，
        三栏那个形状（Toulouse 的 This Month）第三栏就空着，而空的那一格在一段
        只有三栏的设计里非常显眼。 */
-    if (id === "website-woven") { n.props.photos = [P.g1, P.g2, P.g3, P.strip].filter(Boolean); }
+    if (id === "website-woven") { n.props.photos = [P.g1, P.g2, P.g3, P.strip, P.g4, P.story].filter(Boolean); }
     if (id === "website-cta") { n.props.photo = P.story; n.props.photoAlt = ""; }
     /* 清单配照片 stands the services beside a picture, and 大图马赛克 wants more
        than three: 台账's reference runs TEN in that slot. Both are slots that
@@ -111,7 +111,7 @@ function fill(nodes: any[], P: Record<string, string>, shots = 6) {
       /* 菜单式那个形状每一项自己一张照片，三张高矮不一 —— 那是 Toulouse 那一段
          的节奏。没有照片的位子画一张同样大小的占位。 */
       if (Array.isArray(n.props.items)) {
-        const shots = [P.g1, P.g2, P.g3, P.big].filter(Boolean);
+        const shots = [P.g4, P.story, P.strip, P.g3].filter(Boolean);
         n.props.items = n.props.items.map((it: any, i: number) => ({ ...it, photo: shots[i % shots.length] }));
       }
     }

@@ -198,6 +198,10 @@ function readType() {
     .filter((h) => (h.innerText || "").trim())
     .map((h) => ({ t: (h.innerText || "").trim().slice(0, 26), ...face(h) }));
   /* Body: the paragraphs that actually carry prose, not a two-word label. */
+  const bodyEls = [...document.querySelectorAll("p,li")]
+    .filter((e) => (e.innerText || "").trim().split(/\s+/).length >= 8)
+    .filter((e) => parseFloat(getComputedStyle(e).fontSize) >= 12)
+    .slice(0, 40);
   const body = [...document.querySelectorAll("p,li")]
     /* ⚠️ 12px 以下的不算正文。瑞士的参考页回报正文 10px，我们 16px，判成对不上 —
        那 10px 是页脚的法务小字，它页面上真正的正文跟我们一样。一个把最小的字
@@ -209,7 +213,11 @@ function readType() {
   const commonest = (arr, key) => {
     const m = {};
     for (const x of arr) m[x[key]] = (m[x[key]] || 0) + 1;
-    const best = Object.entries(m).sort((a, b) => b[1] - a[1])[0];
+    /* 平手的时候取大的那个。中台 只凑得出两个样本 —— 26px 的第一屏副标跟 13px
+       的一行全大写标签 —— 一比一，而 Object.entries 对数字样的键是由小到大，
+       所以它安静地选了 13，把一行标签判成了这一页的正文。
+       平手不是「小的赢」，平手是「这把尺问错了」；下面 bodyN < 3 会报量不到。 */
+    const best = Object.entries(m).sort((a, b) => b[1] - a[1] || Number(b[0]) - Number(a[0]))[0];
     return best ? best[0] : "—";
   };
   return {
@@ -219,6 +227,7 @@ function readType() {
     bodyLh: commonest(body, "lh"),
     bodyHere: body.length ? body.filter((b) => b.here).length > body.length / 2 : null,
     bodyN: body.length,
+    bodySamples: bodyEls.slice(0, 12).map((e, i) => `${body[i]?.px}px  ${(e.innerText || "").trim().slice(0, 34)}`),
   };
 }
 
@@ -793,8 +802,20 @@ try {
   check("字体", "标题字重", h1(theirs.type).w ?? "—", h1(ours.type).w ?? "—",
     String(h1(theirs.type).w) === String(h1(ours.type).w));
   check("字体", "正文字体", theirs.type.bodyFam, ours.type.bodyFam, null);
+  if (process.env.ALIGN_DEBUG) {
+    console.log("      模版样本 " + (theirs.type.bodySamples || []).join(" | "));
+    console.log("      我们样本 " + (ours.type.bodySamples || []).join(" | "));
+  }
+  /* ⚠️ 样本少於三段就不判。一页上只有两段够长的文字，「最常见的正文字级」量的
+     不是这一页的正文，是这两段里比较小的那一个 —— 而它一样会印出一个数字，
+     跟一把好尺印出来的一模一样。少於三段本身也是一个读数：这一页几乎没有
+     可以读的整段文字，那件事该用眼睛看，不该由这一行冒充回答。 */
+  const thinSample = (theirs.type.bodyN ?? 0) < 3 || (ours.type.bodyN ?? 0) < 3;
   check("字体", "正文字级", `${theirs.type.bodyPx}px`, `${ours.type.bodyPx}px`,
-    near(Number(theirs.type.bodyPx) || 0, Number(ours.type.bodyPx) || 0, 3));
+    thinSample ? null : near(Number(theirs.type.bodyPx) || 0, Number(ours.type.bodyPx) || 0, 3));
+  if (thinSample) {
+    console.log(`      （够长的整段文字：模版 ${theirs.type.bodyN} 段 · 我们 ${ours.type.bodyN} 段 —— 少於三段，这一项不判）`);
+  }
   if (h1(theirs.type).here === false) {
     console.log("      ⚠️ 模版的字这台机器没载入到 —— 上面那两行字体名是宣告的，不是画面上的");
   }

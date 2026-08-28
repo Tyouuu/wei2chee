@@ -166,7 +166,7 @@ export function SiteFoot({
       data-chrome-foot=""
       className="@container w-full [background-color:var(--color-nav-bg)] [border-top:var(--hairline)_solid_var(--color-nav-border)]"
     >
-      <div className="mx-auto flex w-full max-w-[68rem] flex-col [gap:var(--gap-stack)] [padding-block:calc(var(--pad-card-lg)*1.8*var(--site-figure,1))] [padding-inline:1.5rem]">
+      <div className="mx-auto flex w-full max-w-[68rem] flex-col [gap:var(--gap-stack)] [padding-block:calc(var(--pad-card-lg)*1.8*var(--site-figure,1)*var(--site-foot,1))] [padding-inline:1.5rem]">
         <div className="flex flex-wrap items-baseline [gap:var(--gap-inline)]">
           <span className="[color:var(--color-nav-fg)] [font-family:var(--font-display)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
             {brand}

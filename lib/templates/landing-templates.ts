@@ -838,6 +838,11 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       /* 满边一条照片带 —— Kurofude's second and fourth sections are exactly this,
          1007px tall, and it was the other block this template never built. */
       band(c),
+      /* 四点两栏配照片 —— Kurofude 第5段 RESERVE 就是这个形状：左右各一张照片，
+         中间那一栏自己一个地，照片、一句话、一条黑色的横按钮，再一张照片。
+         骨架里点了它，而这个行业的模版从来没有造过这一块 —— 这个仓库
+         「点了一个不存在的区段」第二次，上一次是这上面那个作品墙。 */
+      woven(c),
       team(c),
       flow(c, sect(c, "wholesale").flow ?? ""),
       prices(c),

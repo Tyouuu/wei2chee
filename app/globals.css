@@ -519,8 +519,10 @@
 
      So flush moves the air rather than deleting it. Default 0, so 台账 — whose
      blocks carry their own frame padding already — is untouched. */
-  .ds-ground[data-rhythm="flush"] .ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]),
-  .ds-ground[data-rhythm="flush"].ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]) {
+  /* data-toned 除外 —— 颜色刷在它的子元素上，气加在它自己身上就落在颜色外面，
+     一条该填满整段的色带上下各留一条白。子元素在 555 行已经拿到同一份气。 */
+  .ds-ground[data-rhythm="flush"] .ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]):not([data-toned]),
+  .ds-ground[data-rhythm="flush"].ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]):not([data-toned]) {
     padding-block: var(--site-inner, 0rem);
   }
   .ds-ground[data-figure="large"] .ds-site,

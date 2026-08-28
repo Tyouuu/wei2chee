@@ -151,7 +151,9 @@ export const VARIANTS: Record<string, Variant[]> = {
     /* 一条四格 — 台账's reference closes its About with four claims in one
        painted strip, then moves on to the work. */
     { id: "band", label: "一条四格", props: { shape: "band" } },
-  ],
+      /* 散开的六张 —— Kurofude 第5段 RESERVE：照片围着那句话，问的那件事在正中间。 */
+    { id: "scatter", label: "散开的六张", props: { shape: "scatter" } },
+],
 
   SiteSteps: [
     { id: "ruled", label: "细线一行一步", props: { shape: "ruled" } },
@@ -167,6 +169,10 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "cards", label: "评分在上", props: { shape: "cards" } },
     { id: "ruled", label: "头像在上", props: { shape: "ruled" } },
     { id: "boxed", label: "三个方框", props: { shape: "boxed" } },
+    /* 错开的气泡 — Leah Webb 第6段: three rounded boxes at half width, stacked
+       left · right · left. Not a row of three, which is why their section is
+       998px and the row shape is 598. */
+    { id: "stagger", label: "错开的气泡", props: { shape: "stagger" } },
   ],
   SiteFeatures: [
     { id: "cards", label: "三张卡片", props: { shape: "cards" } },
@@ -185,6 +191,9 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "plates", label: "编号色块", props: { shape: "plates" } },
     /* 眉标＋居中大标题＋编号＋高矮不一的照片 — Toulouse's menu section. */
     { id: "menu", label: "菜单式：编号配照片", props: { shape: "menu" } },
+    /* 标题左说明右＋三张照片卡 — Leah Webb 第3段, the shape that carries three of
+       the twelve photographs on that page. */
+    { id: "photoed", label: "标题左说明右＋照片卡", props: { shape: "photoed" } },
   ],
 
   SiteCta: [
@@ -233,6 +242,9 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "strip", label: "一行字", props: { shape: "strip" } },
     { id: "badges", label: "打勾卡", props: { shape: "badges" } },
     { id: "rating", label: "评分", props: { shape: "rating" } },
+    /* 一排牌子 — Leah Webb's 「As Seen On」 band: four flat tiles in a row, a
+       wordmark in each. A logo wall, not a line of facts. */
+    { id: "logos", label: "一排牌子", props: { shape: "logos" } },
   ],
 
   // ---------------------------------------------------------------- 询价表格

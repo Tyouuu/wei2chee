@@ -86,7 +86,7 @@ export function SiteFeatures({
    * So a register may now say what a service looks like, and the three
    * answers are genuinely different objects rather than one object restyled.
    */
-  shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed" | "iconed" | "plates" | "menu"
+  shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed" | "iconed" | "plates" | "menu" | "photoed"
   /** 两个标题三张点卡 only: the bold half of the right-hand pair. */
   noteHeading?: string
   /** 清单配照片 only: the picture that stands beside the list. */
@@ -288,6 +288,82 @@ export function SiteFeatures({
             {items[0]?.label ? "View full list" : ""}
           </span>
         </div>
+      </section>
+    )
+  }
+
+  if (shape === "photoed") {
+    /*
+      ── 标题左 · 说明右 · 三张照片卡 ────────────────────────────────────────
+
+      Leah Webb (Wix `wh-leah`) 第3段, read at 1440 on 2026-08-29 —— 928px:
+
+        · heading on the LEFT over two lines, a paragraph on the RIGHT,
+          starting at about the halfway line and running to the margin
+        · three cards, edge-to-edge photograph at 4:3 on top, then the name,
+          then one small line, then a second small line
+        · an OUTLINED PILL the full width of the card closing each one
+
+      瑞士 was rendering 逐条列出 there —— label / value rows under a hairline.
+      Same words, and not one thing of that design: no photographs at all,
+      which is four of the twelve the reference carries.
+
+      ⚠️ 那颗按钮连到 #ask（询价那一段）。一颗按下去没有反应的按钮，是这个仓库
+      写进 prompt 的那条规矩里点名禁止的东西。
+    */
+    return (
+      <section className="@container" data-wide="">
+        {heading || note ? (
+          <div className="mb-12 grid [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] @3xl:items-start">
+            {heading ? (
+              <h2 className="ds-display max-w-[18ch] [color:var(--color-paper)] [font-weight:var(--fw-regular,400)] [line-height:1.18]">
+                {heading}
+              </h2>
+            ) : null}
+            {note ? (
+              <p className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                {note}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        <ul className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
+          {items.map((f) => (
+            <li key={f.label} className="flex flex-col">
+              {f.photo?.trim() ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={f.photo}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full object-cover"
+                  style={{ aspectRatio: "4 / 3" }}
+                />
+              ) : (
+                <div
+                  aria-hidden
+                  className="w-full [background:color-mix(in_oklab,var(--color-paper)_12%,var(--color-canvas))]"
+                  style={{ aspectRatio: "4 / 3" }}
+                />
+              )}
+              <span className="mt-5 [color:var(--color-paper)] [font-size:var(--text-xl)] [line-height:1.3]">
+                {f.label}
+              </span>
+              {f.value ? (
+                <span className="mt-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                  {f.value}
+                </span>
+              ) : null}
+              <a
+                href="#ask"
+                className="mt-6 block w-full text-center [border:var(--hairline)_solid_var(--border-strong)] [border-radius:999px] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-block:0.7rem]"
+              >
+                View details
+              </a>
+            </li>
+          ))}
+        </ul>
       </section>
     )
   }
@@ -652,9 +728,48 @@ export function SiteTestimonials({
    * thing a stranger actually checks. 口碑在这个市场就是全部生意, and the two
    * shapes make two different arguments about how it is shown.
    */
-  shape?: "cards" | "ruled" | "boxed"
+  shape?: "cards" | "ruled" | "boxed" | "stagger"
 }) {
   if (!items?.length) return null
+
+  if (shape === "stagger") {
+    /*
+      ── 错开的三个气泡 ────────────────────────────────────────────────────
+
+      Leah Webb 第6段, 998px, read at 1440 on 2026-08-29: NOT a row of three.
+      Three rounded outlined boxes at about half the page width, stacked and
+      alternating LEFT · RIGHT · LEFT, the name inside at the bottom in small
+      type. No stars, no face.
+
+      That stagger is the reason their section is 998px against our 598: three
+      quotes standing one above another, not three columns of one row. 段高
+      对不上从来不是留白不够 —— 是排法根本不是同一种（重点 7l：先看图）。
+    */
+    return (
+      <section className="@container" data-wide="">
+        {heading ? (
+          <h2 className="ds-display mb-12 [color:var(--color-paper)] [font-weight:var(--fw-regular,400)]">
+            {heading}
+          </h2>
+        ) : null}
+        <ul className="flex flex-col [gap:calc(var(--gap-stack)*0.9)]">
+          {items.map((t, i) => (
+            <li
+              key={i}
+              className={`w-full @3xl:w-[52%] ${i % 2 ? "@3xl:self-end" : "@3xl:self-start"}`}
+            >
+              <div className="[border:var(--hairline)_solid_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:calc(var(--pad-card-lg)*1.2)]">
+                <p className="[color:var(--color-paper)] [font-size:var(--text-base)] [line-height:1.7]">
+                  {t.quote?.startsWith("“") ? t.quote : `“${t.quote}”`}
+                </p>
+                <p className="mt-4 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{t.who}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 
   if (shape === "boxed") {
     /*
@@ -1040,9 +1155,9 @@ export function SiteCreds({
   /** 换款式. `strip` a single dotted line, `badges` ticked pills, `rating` the
    *  review score with the credentials small underneath. The register picks it;
    *  see design-doc.ts. */
-  shape?: "strip" | "badges" | "rating"
+  shape?: "strip" | "badges" | "rating" | "logos"
   rating?: { score?: string; count?: string; source?: string; placeholder?: boolean }
-  items?: { label: string; note?: string; placeholder?: boolean }[]
+  items?: { label: string; note?: string; photo?: string; placeholder?: boolean }[]
 }) {
   const real = (items ?? []).filter((i) => i.label?.trim())
   const hasRating = Boolean(rating?.score?.trim())
@@ -1067,6 +1182,52 @@ export function SiteCreds({
         <p className="mt-2 max-w-[52ch] [color:color-mix(in_oklab,var(--color-on-primary)_78%,transparent)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
           {hint}
         </p>
+      </section>
+    )
+  }
+
+  if (shape === "logos") {
+    /*
+      ── 「As Seen On」 —— 一排四块牌子 ──────────────────────────────────────
+
+      Leah Webb 第4段, 515px, read at 1440 on 2026-08-29: a PALE GREY band,
+      the heading small and left, and four flat grey tiles in a row with a
+      wordmark centred in each one.
+
+      ⚠️ 这一段以前长什么样，看 .screenshots/align/pairs-swiss/04.jpg 右边：
+      一条 strip，淡灰的字压在淡灰的带上，几乎读不到。两个各自正确的决定撞在
+      一起 —— tone 把这一段刷成淡灰，而 strip 的字色本来就是淡的。这是这个仓库
+      第几次撞它我没数，但它每次都长这样。
+
+      牌子里画的是字，不是照片：客人的「别人给的背书」是 logo，不是工地照。
+      有 logo 就放 logo，没有就放名字 —— 塞一张图库照片进去，那一格讲的是别人
+      的故事。
+    */
+    return (
+      <section className="@container" data-wide="">
+        {heading ? (
+          <h2 className="ds-display mb-10 [color:var(--color-on-primary)] [font-weight:var(--fw-regular,400)]">
+            {heading}
+          </h2>
+        ) : null}
+        <ul className="grid [gap:var(--gap-inline)] grid-cols-2 @3xl:grid-cols-4">
+          {real.map((c) => (
+            <li
+              key={c.label}
+              className="grid place-items-center overflow-hidden [background:color-mix(in_oklab,var(--color-on-primary)_16%,transparent)]"
+              style={{ aspectRatio: "16 / 10" }}
+            >
+              {c.photo?.trim() ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={c.photo} alt={c.label} loading="lazy" decoding="async" className="h-full w-full object-contain" />
+              ) : (
+                <span className="px-4 text-center [color:var(--color-on-primary)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [letter-spacing:0.02em]">
+                  {c.label}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
       </section>
     )
   }
@@ -2050,7 +2211,7 @@ export function SiteWoven({
    * says 「these four things are true of us」 and moves on, which is what a
    * contractor's About page does before it shows you the work.
    */
-  shape?: "woven" | "band" | "columns"
+  shape?: "woven" | "band" | "columns" | "scatter"
 }) {
   const marks = (points ?? []).filter((p) => p.label?.trim())
   const shots = (photos ?? []).filter((p) => p?.trim())
@@ -2063,6 +2224,71 @@ export function SiteWoven({
         className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
       >
         <p className="max-w-[56ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{hint}</p>
+      </section>
+    )
+  }
+
+  if (shape === "scatter") {
+    /*
+      ── 散开的六张照片，问的那句话坐在中间 ──────────────────────────────────
+
+      Kurofude 第5段 RESERVE, 1189px, read at 1440 on 2026-08-29 —— 他们整页
+      最大的一段，六张照片：
+
+        · 左边贴着页缘一张，上一张下一张
+        · 右边镜像，也是上下各一张
+        · 中间那一栏由上往下：一张照片 · 一行粗黑大写标题 · 两行小字 ·
+          一条满栏的黑色横按钮（带箭头）· 再一张更高的照片
+
+      它不是画廊 —— 照片是围在那句话周围的，问的那件事在正中间。中台 原本借
+      招牌 的「三栏」在这个位子，那是 Toulouse 的设计，不是 Kurofude 的。
+
+      ⚠️ 黑色横条连到 #ask。一颗按下去没反应的按钮是这个仓库写进 prompt 的
+      那条规矩点名禁止的东西。
+    */
+    const edge = (src: string | undefined, tall: string) =>
+      src ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={src} alt="" loading="lazy" decoding="async" className="block w-full object-cover" style={{ height: tall }} />
+      ) : (
+        <div aria-hidden className="block w-full [background:color-mix(in_oklab,var(--color-paper)_12%,var(--color-canvas))]" style={{ height: tall }} />
+      )
+    const SIDE = "calc(15rem * var(--site-figure, 1))"
+    return (
+      <section data-bleed="" className="@container">
+        <div className="grid [gap:0] @2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)_minmax(0,1fr)] @2xl:items-start">
+          <div className="flex flex-col [gap:calc(var(--gap-stack)*4)]">
+            {edge(shots[0], SIDE)}
+            {edge(shots[4], SIDE)}
+          </div>
+
+          <div className="flex flex-col items-stretch [padding-inline:calc(var(--pad-card-lg)*1.2)]">
+            {edge(shots[1], "calc(17rem * var(--site-figure, 1))")}
+            {heading ? (
+              <h2 className="ds-display mt-8 [color:var(--color-paper)] [font-weight:var(--fw-bold,700)] [letter-spacing:-0.01em] [line-height:1.05]">
+                {heading}
+              </h2>
+            ) : null}
+            {note ? (
+              <p className="mt-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                {note}
+              </p>
+            ) : null}
+            <a
+              href="#ask"
+              className="mt-6 flex items-center justify-between [background:var(--color-paper)] [color:var(--color-canvas)] [font-size:var(--text-sm)] [padding:0.8rem_1.1rem]"
+            >
+              <span>{marks[0]?.label ?? ""}</span>
+              <span aria-hidden>→</span>
+            </a>
+            <div className="mt-0">{edge(shots[2], "calc(24rem * var(--site-figure, 1))")}</div>
+          </div>
+
+          <div className="flex flex-col [gap:calc(var(--gap-stack)*4)]">
+            {edge(shots[3], SIDE)}
+            {edge(shots[5], SIDE)}
+          </div>
+        </div>
       </section>
     )
   }

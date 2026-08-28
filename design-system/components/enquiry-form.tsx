@@ -173,7 +173,9 @@ export function EnquiryForm({
   }
 
   return (
-    <section className="[padding-block:var(--pad-card-lg)] [padding-inline:var(--pad-card-lg)]">
+    /* id="ask" —— 页面上别处的按钮要有地方去。瑞士 那三张服务卡上的
+       「View Details」如果不连到任何东西，就是一颗画出来的死按钮。 */
+    <section id="ask" className="[padding-block:var(--pad-card-lg)] [padding-inline:var(--pad-card-lg)]">
       <div
         className={[
           boxed

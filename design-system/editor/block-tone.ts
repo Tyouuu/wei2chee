@@ -93,6 +93,7 @@ export function toneLayers(
     "--tone-paper-dim": "var(--color-paper-dim)",
     "--tone-ink": "var(--color-ink-900)",
     "--tone-primary-soft": "var(--color-block, var(--color-primary-soft))",
+    "--tone-on-primary": "var(--color-on-primary)",
   };
 
   if (tone === "ink") {
@@ -115,6 +116,11 @@ export function toneLayers(
         "--card": "var(--tone-paper)",
         "--border": "color-mix(in oklab, var(--tone-paper) 74%, var(--tone-ink))",
         "--border-subtle": "color-mix(in oklab, var(--tone-paper) 82%, var(--tone-ink))",
+        /* ⚠️ 第三个家族：线。ink 本来只交代了 --border 跟 --border-subtle，
+           --border-strong 留在页面那一层 —— 在浅色页上那是一条深线，翻到深底
+           上就是一条看不见的线。瑞士 那三个错开的引言框整段没有框，拍出来才
+           看到（.screenshots/align/swiss.jpg 第6段）。跟字色是同一个形状。 */
+        "--border-strong": "color-mix(in oklab, var(--tone-paper) 58%, var(--tone-ink))",
         // The table draws its head from its OWN pair of tokens (印 fills the
         // band, seven others rule it), and leaving them out produced a dark
         // table with a white head -- visible immediately, invisible to any
@@ -123,6 +129,7 @@ export function toneLayers(
         "--color-table-head-bg": "color-mix(in oklab, var(--tone-paper) 88%, var(--tone-ink))",
         "--color-table-head-fg": "color-mix(in oklab, var(--tone-ink) 72%, var(--tone-paper))",
         "--color-table-bg": "transparent",
+        "--color-on-primary": "var(--tone-ink)",
       },
     };
   }
@@ -138,6 +145,17 @@ export function toneLayers(
         "--color-table-bg": "transparent",
         "--color-ink-900": "var(--tone-primary-soft)",
         "--card": "var(--tone-primary-soft)",
+        /* ⚠️ 字色 —— 跟 `paper` 那一支同一个洞，2026-08-29 才补上。
+
+           这一支也是只设了背景。别的区块没事，因为它们用 --color-paper 写字，
+           而 --color-paper 在这一层没有被改，本来就读得到。SiteCreds 不是：
+           它整段用 --color-on-primary 写字，那是「主色块上的字」，在一条主色
+           的「淡」带上就是淡的压淡的。拍出来是一整段几乎看不到的字
+           （.screenshots/align/pairs-swiss/04.jpg 右边那一格）。
+
+           这是 tone 这一层第二次「刷了地没有交代字」。所以补的不是那一段，
+           是这一支：一条淡带上的字，就是这一页本来写字的那个颜色。 */
+        "--color-on-primary": "var(--tone-paper)",
       },
     };
   }
@@ -176,8 +194,10 @@ export function toneLayers(
       "--color-on-canvas-dim": "color-mix(in oklab, #1a1d24 66%, #ffffff)",
       "--border": "color-mix(in oklab, #1a1d24 18%, #ffffff)",
       "--border-subtle": "color-mix(in oklab, #1a1d24 10%, #ffffff)",
+      "--border-strong": "color-mix(in oklab, #1a1d24 34%, #ffffff)",
       "--color-table-head-fg": "color-mix(in oklab, #1a1d24 72%, #ffffff)",
       "--color-table-bg": "transparent",
+      "--color-on-primary": "#1a1d24",
     },
   };
 }
