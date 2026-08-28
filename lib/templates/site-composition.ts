@@ -104,7 +104,7 @@ export type SiteSkeleton = {
    * and deliberately not the only one: a library where fourteen registers all
    * open the same way is a library with one register in it.
    */
-  hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre";
+  hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre" | "name-figure";
   /**
    * 一句话占一屏 —— whether the pitch gets a screen of its own, and in what
    * shape. Absent means it stays under the headline where it has always been.
@@ -608,7 +608,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* ⚠️ 纹理拿掉了。量出来我们的酒红是 #460014，他们是 #500014 —— 差的那一层就是
        这张菱形网，它盖在整页上把地压暗了一档。他们那一页没有任何纹理。 */
     ground: "ink",
-    hero: "name-plate",
+    hero: "name-figure",
     figure: "huge",
     measure: "wide",
     dropBlocks: ["website-statement"],

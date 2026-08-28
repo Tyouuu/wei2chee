@@ -88,7 +88,7 @@ export function SiteHero({
    *   plain   headline and one button. A name card.
    *   split   the words on the left and a FIGURE on the right. See below.
    */
-  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre"
+  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre" | "name-figure"
   /**
    * WHAT GOES ON THE RIGHT, AND WHY THERE IS NOW A RIGHT AT ALL.
    *
@@ -519,6 +519,81 @@ export function SiteHero({
               {sub}
             </p>
           ) : null}
+        </div>
+      </section>
+    )
+  }
+
+  if (layout === "name-figure") {
+    /*
+      ── 底色上放一张照片，不是满版照片 ──────────────────────────────────────
+
+      老板 2026-08-28, pointing at Toulouse's first screen: 「他是背景然后有照片的」.
+      He is right and it is not a detail — it is the difference between a page
+      that OWNS its colour and a page that borrows a photograph's.
+
+      Measured off their screenshot at 1440:
+
+          底              #500014 wine, the whole screen
+          店名            ~263px, pink, letter-spaced wide, edge to edge
+          手写体          three fragments overlapping the name's baseline
+          照片            ~558 × 650, PORTRAIT, centred, floating on the wine
+          左右            two links, each with a hairline running from the page
+                          edge to the photograph
+
+      Every other hero in this file puts the photograph BEHIND the words. This
+      one puts the colour behind everything and the photograph in the middle of
+      it, which is why their first screen reads as a poster and ours read as a
+      stock photo with a caption.
+    */
+    return (
+      <section data-bleed="" className="@container [background:var(--site-hero-band,var(--color-canvas))]">
+        <div className="[padding-block:calc(var(--pad-card-lg)*1.2)_0] [padding-inline:var(--pad-card-lg)]">
+          <h1
+            className="ds-display [color:var(--color-primary)] [font-weight:var(--fw-regular,400)] [letter-spacing:0.01em] [line-height:0.92] [text-align:center] [text-wrap:balance]"
+            style={{ fontSize: "clamp(2.6rem, calc(9.2vw * var(--site-hero-scale, 1)), calc(7rem * var(--site-hero-scale, 1)))" }}
+          >
+            {brand || headline}
+          </h1>
+          {sub ? (
+            <p className="mx-auto mt-2 max-w-[52ch] [color:color-mix(in_oklab,var(--color-primary)_82%,transparent)] [font-size:var(--text-lg)] [line-height:var(--leading-body)] [text-align:center]">
+              {sub}
+            </p>
+          ) : null}
+
+          {/* 左连结 —— 照片 —— 右连结，两条细线从页缘伸到照片。 */}
+          <div className="mt-10 grid items-start [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1fr)_minmax(0,26rem)_minmax(0,1fr)]">
+            <div className="[border-top:1px_solid_color-mix(in_oklab,var(--color-primary)_50%,transparent)] [padding-top:calc(var(--pad-card-lg)*0.6)]">
+              {primaryLabel ? (
+                <a href={primaryHref || "#"} className="[color:var(--color-primary)] [font-size:var(--text-sm)] underline">
+                  {primaryLabel}
+                </a>
+              ) : null}
+            </div>
+            {photo?.trim() ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={photo}
+                alt={photoAlt || ""}
+                className="block w-full object-cover"
+                style={{ aspectRatio: "5 / 6", maxHeight: "calc(42rem * var(--site-figure, 1))" }}
+              />
+            ) : (
+              /* 占位图 —— 一张风格图要看得到它的形状，就算还没有照片。 */
+              <div
+                aria-hidden
+                className="w-full [background:color-mix(in_oklab,var(--color-primary)_18%,var(--color-canvas))]"
+                style={{ aspectRatio: "5 / 6", maxHeight: "calc(42rem * var(--site-figure, 1))" }}
+              />
+            )}
+            <div className="[border-top:1px_solid_color-mix(in_oklab,var(--color-primary)_50%,transparent)] [padding-top:calc(var(--pad-card-lg)*0.6)] [text-align:right]">
+              {secondaryLabel ? (
+                <a href={secondaryHref || "#"} className="[color:var(--color-primary)] [font-size:var(--text-sm)] underline">
+                  {secondaryLabel}
+                </a>
+              ) : null}
+            </div>
+          </div>
         </div>
       </section>
     )
