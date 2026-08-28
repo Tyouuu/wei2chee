@@ -60,11 +60,24 @@ export const copy = { faqs }
 export type Copy = typeof copy
 
 
-const half = Math.ceil(faqs.length / 2)
-const columns = [faqs.slice(0, half), faqs.slice(half)]
-
 export default function FaqsBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
   const { faqs } = { ...copy, ...override }
+  /*
+    DERIVED INSIDE, BECAUSE THE OVERRIDE ARRIVES AS AN ARGUMENT.
+
+    `half` and `columns` were module-level consts, computed once at import from
+    the DEFAULT `faqs`. The component then destructured the merged `faqs` --
+    the customer's edited copy -- and rendered `columns` instead, so editing
+    the questions in the editor changed nothing on the page. `copy` really does
+    reach here at runtime (site-block.tsx renders <Block copy={copy} />), so
+    this was a control that moved and did not connect.
+
+    Found by react/@typescript-eslint's no-unused-vars once the lint gate was
+    finally configured: an unused destructured variable in a component that
+    takes an override is the exact signature of a discarded edit.
+  */
+  const half = Math.ceil(faqs.length / 2)
+  const columns = [faqs.slice(0, half), faqs.slice(half)]
   return (
     <section className="flex w-full items-center justify-center bg-background px-6 py-16 text-foreground">
       <div className="mx-auto w-full max-w-5xl">

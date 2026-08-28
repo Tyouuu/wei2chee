@@ -29,7 +29,18 @@ const team: Record<string, Contributor> = {
   owen: { name: "Owen", src: "https://i.pravatar.cc/64?img=53" },
 }
 
-const phases: Phase[] = [
+/*
+  A FUNCTION, BECAUSE ITS INPUT IS EDITABLE.
+
+  Built once at import with the DEFAULT team baked in by value, while the
+  component destructured the MERGED copy and rendered this frozen array -- so
+  editing team in the editor changed nothing on the page. `copy` really does
+  reach these blocks at runtime (site-block.tsx renders <Block copy={copy} />).
+
+  An explicit phases override still wins; phases only follows team when the
+  customer has not replaced it outright.
+*/
+const buildPhases = (team: Record<string, Contributor>): Phase[] => [
   {
     id: "now",
     label: "Now",
@@ -103,6 +114,8 @@ const phases: Phase[] = [
  *
  * GENERATED. Re-run the opener rather than editing this block by hand.
  */
+const phases: Phase[] = buildPhases(team)
+
 export const copy = { team, phases }
 export type Copy = typeof copy
 
@@ -114,7 +127,8 @@ const dotTone: Record<Phase["tone"], string> = {
 }
 
 export default function RoadmapBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
-  const { team, phases } = { ...copy, ...override }
+  const { team } = { ...copy, ...override }
+  const phases = override?.phases ?? buildPhases(team)
   return (
     <section className="flex w-full items-center justify-center bg-muted/30 px-6 py-16 text-foreground">
       <div className="mx-auto w-full max-w-2xl">

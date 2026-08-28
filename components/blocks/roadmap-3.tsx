@@ -34,7 +34,18 @@ const team: Record<string, Contributor> = {
   mara: { name: "Mara", src: "https://i.pravatar.cc/64?img=32" },
 }
 
-const features: Feature[] = [
+/*
+  A FUNCTION, BECAUSE ITS INPUT IS EDITABLE.
+
+  Built once at import with the DEFAULT team baked in by value, while the
+  component destructured the MERGED copy and rendered this frozen array -- so
+  editing team in the editor changed nothing on the page. `copy` really does
+  reach these blocks at runtime (site-block.tsx renders <Block copy={copy} />).
+
+  An explicit features override still wins; features only follows team when the
+  customer has not replaced it outright.
+*/
+const buildFeatures = (team: Record<string, Contributor>): Feature[] => [
   {
     id: "mobile",
     title: "Native mobile apps",
@@ -87,6 +98,8 @@ const features: Feature[] = [
  *
  * GENERATED. Re-run the opener rather than editing this block by hand.
  */
+const features: Feature[] = buildFeatures(team)
+
 export const copy = { team, features }
 export type Copy = typeof copy
 
@@ -98,7 +111,8 @@ const statusVariant: Record<Status, "default" | "secondary" | "outline"> = {
 }
 
 export default function RoadmapBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
-  const { team, features } = { ...copy, ...override }
+  const { team } = { ...copy, ...override }
+  const features = override?.features ?? buildFeatures(team)
   const [voted, setVoted] = React.useState<Record<string, boolean>>({})
 
   const toggle = (id: string) =>

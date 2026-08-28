@@ -49,11 +49,21 @@ export const copy = { team }
 export type Copy = typeof copy
 
 
-const columns: {
+/*
+  A FUNCTION, BECAUSE THE CONTRIBUTORS ARE EDITABLE.
+
+  This was `const columns = [...]`, evaluated once at import with `team.ada`
+  and friends baked in by value. The component then destructured the MERGED
+  `team` -- the customer's edited copy -- and rendered the frozen array, so
+  editing a contributor's name or avatar in the editor changed nothing on the
+  page. `copy` genuinely reaches here at runtime (site-block.tsx renders
+  <Block copy={copy} />), so this was a control that moved and did not connect.
+*/
+const buildColumns = (team: Record<string, Contributor>): {
   status: string
   icon: IconRenderer
   items: Item[]
-}[] = [
+}[] => [
   {
     status: "Planned",
     icon: (p: IconProps) => (
@@ -168,6 +178,7 @@ function AvatarStack({ members }: { members: Contributor[] }) {
 
 export default function RoadmapBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
   const { team } = { ...copy, ...override }
+  const columns = buildColumns(team)
   return (
     <section className="flex w-full items-center justify-center bg-background px-6 py-16 text-foreground">
       <div className="mx-auto w-full max-w-5xl">
