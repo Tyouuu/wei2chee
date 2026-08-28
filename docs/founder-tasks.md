@@ -2114,6 +2114,37 @@ export default function FaqsBlock({ copy: override }) {
       （3 个要 `TooltipProvider`、3 个是探针把大写的查表键也换掉了）。
       **新的版段哪天开始忽略 copy，这里就会挂**
 
+### 51. 🔴 官网第一屏的「地区 · 行业」永远不会出现（2026-08-28）
+
+`SiteHero` 把 `eyebrow` **destructure 出来之后，整个档案没有任何 JSX 用到它**。
+而它是一个**真的编辑器栏位**（`puck-config.tsx:2298`，`label: "地区 · 行业"`），
+有传进组件（2376），型别也宣告了（`site-hero.tsx:56`）。
+档头注解还写着「the eyebrow places the business (地区 + 行业)」。
+
+**客户在第一屏填了地区跟行业，公开网站上永远看不到。**
+档案里 819 行的注解在描述它以前长什么样（`MALAYSIA · RENOVATION & FITOUT`），
+所以它是**被某次重构弄丢的**，不是从来没做。
+
+- [ ] ⚠️ **我没有动手**：`design-system/components/site-hero.tsx` 当时正被
+      另一个 session 改（未提交）。两个 session 共用一个工作目录，改同一个档案会打架
+- [ ] 修的时候要决定它在四种版式里各自摆哪里（431 / 473 行的注解说有两种版式
+      **故意**不放 eyebrow，那两个不要动）
+
+### 52. 又三个版段丢掉编辑，这次是 AI 改的会丢（2026-08-28）
+
+[任务 50](#50) 那支扫描漏掉这三个，因为**同一个版段里别的 key 有渲染**，哨兵出现就算过。
+是 lint 的 `no-unused-vars` 补上的 —— 两把尺各自看得到对方看不到的东西。
+
+- [x] `billing-3` —— `STATUS_VARIANT`（表格栏位定义在模组层，闭包抓住预设）
+      跟 `UPGRADE_PLANS`（另一个组件 `UpgradePlanDialog` 自己去读模组层那份）
+- [x] `table-2` —— `statusConfig`，同样是模组层的栏位定义
+- [x] `status-3` —— `MONTHS` → `dateLabel` → `buildDays` → `services`，一路都在模组层
+- [x] ⚠️ **为什么这三个比看起来重要**：`set_copy` 是 **AI Agent 的操作**，
+      吃的是 copy 里的**点路径**（`tiers.0.name`）。所以客户跟 AI 讲
+      「把这个方案改名」「月份改成中文」，AI 会写进去、**回报成功，而画面不会变**。
+      这直接打在[重点 9b](./founder-points.md) 的第一条判准上（让「调整」更轻松）
+- [x] `_` 开头的变数是「我知道，故意的」的惯例，eslint 设定改成认它，不是去改代码
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**

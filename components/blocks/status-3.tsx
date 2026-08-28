@@ -36,25 +36,37 @@ const MONTHS = [
 const TODAY = Date.UTC(2026, 5, 26)
 const DAY_MS = 86_400_000
 
-function dateLabel(i: number): string {
+function dateLabel(i: number, MONTHS: string[]): string {
   const d = new Date(TODAY - (DAYS - 1 - i) * DAY_MS)
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`
 }
 
 function buildDays(
-  exceptions: Record<number, { status: DayStatus; note: string }>
+  exceptions: Record<number, { status: DayStatus; note: string }>,
+  MONTHS: string[]
 ): Day[] {
   return Array.from({ length: DAYS }, (_, i) => {
     const ex = exceptions[i]
     return {
       status: ex?.status ?? "operational",
-      date: dateLabel(i),
+      date: dateLabel(i, MONTHS),
       note: ex?.note ?? "No incidents. Service operated normally all day.",
     }
   })
 }
 
-const services: { name: string; uptime: string; days: Day[] }[] = [
+/*
+  BUILT FROM `MONTHS`, BECAUSE `MONTHS` IS EDITABLE COPY.
+
+  `dateLabel` reads MONTHS, `buildDays` calls it, and `services` was built from
+  both at module scope -- off the defaults. The component destructured the
+  merged MONTHS and never used it, so an assistant `set_copy` renaming a month
+  (「月份改成中文」) wrote the value, reported success, and left every date on
+  the page in English. An explicit `services` override still wins outright.
+*/
+const buildServices = (
+  MONTHS: string[],
+): { name: string; uptime: string; days: Day[] }[] => [
   {
     name: "API",
     uptime: "99.98%",
@@ -63,9 +75,9 @@ const services: { name: string; uptime: string; days: Day[] }[] = [
         status: "degraded",
         note: "Elevated response times for 38 minutes after a slow database query. Resolved by rolling back the query plan.",
       },
-    }),
+    }, MONTHS),
   },
-  { name: "Dashboard", uptime: "100%", days: buildDays({}) },
+  { name: "Dashboard", uptime: "100%", days: buildDays({}, MONTHS) },
   {
     name: "Webhooks",
     uptime: "99.91%",
@@ -78,10 +90,12 @@ const services: { name: string; uptime: string; days: Day[] }[] = [
         status: "degraded",
         note: "Delayed deliveries for some workspaces over roughly 40 minutes. No events were lost.",
       },
-    }),
+    }, MONTHS),
   },
-  { name: "CDN", uptime: "100%", days: buildDays({}) },
+  { name: "CDN", uptime: "100%", days: buildDays({}, MONTHS) },
 ]
+
+const services = buildServices(MONTHS)
 
 const legend: DayStatus[] = ["operational", "degraded", "outage"]
 
@@ -106,7 +120,8 @@ export type Copy = typeof copy
 
 
 export default function StatusBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
-  const { MONTHS, services, legend } = { ...copy, ...override }
+  const { MONTHS, legend } = { ...copy, ...override }
+  const services = override?.services ?? buildServices(MONTHS)
   return (
     <section className="flex w-full items-center justify-center bg-background px-6 py-16 text-foreground">
       <div className="mx-auto w-full max-w-3xl">

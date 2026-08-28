@@ -54,6 +54,24 @@ const eslintConfig = defineConfig([
   ]),
 
   {
+    /* `_name` is the conventional "I know, and I mean it" -- destructured to
+       drop a key, or a positional argument kept for shape. The codebase already
+       writes them that way (_icon-placeholder.tsx), so the rule should read
+       them that way rather than have the convention argued with by a linter. */
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+
+  {
     /*
       DELIBERATELY A WARNING, NOT AN ERROR.
 

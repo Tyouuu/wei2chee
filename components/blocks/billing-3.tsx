@@ -142,10 +142,12 @@ const INVOICES: Invoice[] = [
   },
 ]
 
-const STATUS_VARIANT: Record<
+type StatusVariant = Record<
   InvoiceStatus,
   "default" | "secondary" | "destructive" | "outline"
-> = {
+>
+
+const STATUS_VARIANT: StatusVariant = {
   Paid: "secondary",
   Pending: "outline",
   Failed: "destructive",
@@ -215,7 +217,15 @@ function SortHeader({
   )
 }
 
-const columns: ColumnDef<typeof TABLE_FEATURES, Invoice>[] = [
+/*
+  A BUILDER, BECAUSE `STATUS_VARIANT` IS EDITABLE COPY. The column definitions
+  are module scope and closed over the default map while the component
+  destructured the merged one and never used it -- so an assistant `set_copy`
+  into STATUS_VARIANT succeeded and changed nothing.
+*/
+const buildColumns = (
+  STATUS_VARIANT: StatusVariant,
+): ColumnDef<typeof TABLE_FEATURES, Invoice>[] => [
   {
     accessorKey: "id",
     header: ({ column }) => (
@@ -307,6 +317,7 @@ const columns: ColumnDef<typeof TABLE_FEATURES, Invoice>[] = [
 
 export default function BillingBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
   const { PLAN, PAYMENT, INVOICES, STATUS_VARIANT, UPGRADE_PLANS } = { ...copy, ...override }
+  const columns = buildColumns(STATUS_VARIANT)
   const autoRenew = true
   const [sorting, setSorting] = React.useState<SortingState>([])
   const storagePct = Math.round((PLAN.storage.used / PLAN.storage.total) * 100)
@@ -410,7 +421,7 @@ export default function BillingBlock({ copy: override }: { copy?: Partial<Copy> 
             </CardContent>
 
             <CardFooter className="flex flex-col gap-2 sm:flex-row">
-              <UpgradePlanDialog />
+              <UpgradePlanDialog plans={UPGRADE_PLANS} />
               <Button
                 variant="outline"
                 className="w-full sm:flex-1"
@@ -661,7 +672,10 @@ export const copy = { PLAN, PAYMENT, INVOICES, STATUS_VARIANT, UPGRADE_PLANS }
 export type Copy = typeof copy
 
 
-function UpgradePlanDialog() {
+/* `plans` is a prop now: this dialog is rendered from BillingBlock, which is
+   where the merged copy lives. Reading the module-scope array meant a renamed
+   plan never reached the screen. */
+function UpgradePlanDialog({ plans = UPGRADE_PLANS }: { plans?: typeof UPGRADE_PLANS }) {
   const [open, setOpen] = React.useState(false)
 
   return (
@@ -685,7 +699,7 @@ function UpgradePlanDialog() {
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
-          {UPGRADE_PLANS.map((plan) => (
+          {plans.map((plan) => (
             <button
               key={plan.name}
               type="button"

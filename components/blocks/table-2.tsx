@@ -74,10 +74,12 @@ type Invoice = {
   status: PaymentStatus
 }
 
-const statusConfig: Record<
+type StatusConfig = Record<
   PaymentStatus,
   { variant: "default" | "secondary" | "destructive" | "outline"; dot: string }
-> = {
+>
+
+const statusConfig: StatusConfig = {
   Paid: { variant: "default", dot: "bg-primary-foreground" },
   Pending: { variant: "secondary", dot: "bg-muted-foreground" },
   Overdue: { variant: "destructive", dot: "bg-destructive" },
@@ -369,7 +371,18 @@ const headLabel =
 const sortButton =
   "-mx-1 inline-flex items-center gap-1 rounded-md px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase transition-colors hover:text-foreground"
 
-const columns: ColumnDef<typeof TABLE_FEATURES, Invoice>[] = [
+/*
+  A BUILDER, BECAUSE `statusConfig` IS EDITABLE COPY.
+
+  These column definitions live at module scope and closed over the DEFAULT
+  statusConfig, while the component destructured the merged one and never used
+  it. `set_copy` -- the AI assistant's operation -- writes any dot path inside a
+  section's copy, so a customer saying "call that one Overdue instead" produced
+  a write, a success message, and no change on the page.
+*/
+const buildColumns = (
+  statusConfig: StatusConfig,
+): ColumnDef<typeof TABLE_FEATURES, Invoice>[] => [
   {
     id: "select",
     enableSorting: false,
@@ -574,6 +587,7 @@ const columns: ColumnDef<typeof TABLE_FEATURES, Invoice>[] = [
 
 export default function TableBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
   const { statusConfig, invoices } = { ...copy, ...override }
+  const columns = buildColumns(statusConfig)
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "due", desc: true },
   ])
