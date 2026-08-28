@@ -2262,6 +2262,55 @@ offscreen  Start →                                    [left=329 right=430 vw=3
 - [ ] `style-select` 的预览换成**他自己的页面**（风格库已经做对了：真资料、会翻页）
 - [ ] 只给 `style_choices` 那三套，不要全部 6 套
 
+### 57. 客户的公开官网一次载 1.9MB 图片（2026-08-28 量的）
+
+在 390px 用真的客户站 `/s/xingfa-reno` 量：
+
+```
+published-site   69 reqs   2,080 KB   其中 image/jpeg 1,911 KB（9 张）
+我们的官网        75 reqs     332 KB   其中 font/woff2 233 KB
+```
+
+**根因量到了**：`design-system` 的 site 组件里 **15 个 `<img>`，
+零个有 `loading="lazy"`、零个 `decoding="async"`、零个 `fetchPriority`。**
+所以第一屏以下的照片全部跟着第一屏一起载 —— 陌生人用马来西亚的手机网路开这一页。
+
+- [ ] 第一屏以下的 `<img>` 加 `loading="lazy"` + `decoding="async"`，
+      第一屏那张加 `fetchPriority="high"`。**零画质损失、零新依赖、零方案升级**
+- [ ] ⚠️ **我没有动手**：`site-sections.tsx` 当时正被另一个 session 改（未提交）
+- [x] 查过两条走不通的路：**Supabase 的图片转换要 Pro 方案**（现在是免费，
+      2 个 project 已满）；`getPublicUrl` 给的是原始档，没有缩放参数可用
+- [ ] 之後可以再做：存进 storage 之前用 `sharp` 转 WebP（sharp 已经在依赖里）。
+      Pixabay 给的是 `largeImageURL`（1280px，约 200–400KB 一张）
+
+### 58. 我们自己官网预载 6 套字体，只用 3 套（2026-08-28）
+
+390px 上量到 **7 个 woff2、233KB**，而整页真正渲染的 family 只有
+**Geist · Geist Mono · Archivo** 三个。
+
+`app/fonts.ts` 宣告 9 套（风格库需要），其中 3 套已经有 `preload: false`（注解写了原因）。
+剩下 `newsreader` / `archivoNarrow` / `nunito` / `publicSans` 是**风格专用的字**，
+官网一个都没用到，却跟着 `fontVariables` 挂在 `<html>` 上被预载。
+
+- [ ] 把风格专用的字体变数从 `app/[locale]/layout.tsx` 下放到 portal / `/s` 的 layout，
+      官网只留 Geist + Archivo。**约省 100KB 在获客页的关键路径上**
+- [ ] ⚠️ 没动手的理由：那是共用的 root layout，而且另一个 session 正在动 `globals.css` 一带
+
+### 59. 🔴 建议加的功能：询价进来要**通知**他（2026-08-28）
+> 他问：`甚至是要加什么功能`
+
+**那条箭头（官网表格 → 系统出单）2026-08-25 就接通了，是真的。**
+但**没有任何通知** —— 询价落进 `site_enquiries`，老板要**自己打开 portal 才会知道**。
+
+他自己量过的市场数据说得很清楚：[19 家马来西亚 SME，15 家第一屏就给 WhatsApp](#26)。
+**他的客人整天在 WhatsApp 上，他自己也是。** 一条没人看到的询价，
+等於整个产品在最后一寸失败 —— 我们卖的月费买的就是「**官网 + 真的询价进来**」（[任务 22](#22)）。
+
+- [ ] 询价落地时寄 email 给老板（**今天就能做**，`accounts.email` 一直都有）
+- [ ] WhatsApp 通知 —— 卡在[任务 48](#48)（没有栏位放他的号码）跟[任务 11](#11)（没有真号码）
+- [ ] 这一条同时满足[重点 9b](./founder-points.md) 的两个判准：
+      它让**交接更完整**（线索不会掉），而且它是**客户唯一真正会动的资料**
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**
