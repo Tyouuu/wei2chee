@@ -83,6 +83,12 @@ export function toneLayers(
 
   // The register's own values, frozen under private names.
   const capture = {
+    /* 浅色块上的重点色 —— 深底风格的主色是给深底用的。
+       招牌's primary is #ff99ee, a pink that reads on wine and washes out on
+       cream; its reference sets the same headings in the wine itself. A
+       register can name the accent its light blocks should use; everything
+       else keeps the primary it already had. */
+    "--tone-accent": "var(--site-paper-primary, var(--color-primary))",
     "--tone-paper": "var(--color-paper)",
     "--tone-paper-dim": "var(--color-paper-dim)",
     "--tone-ink": "var(--color-ink-900)",
@@ -163,6 +169,7 @@ export function toneLayers(
          「the one surface identical in every register」), and its own swatch in
          TONE_SWATCH has been pairing that white with #1a1d24 since the day it
          was written. The pair is the thing; half of it was missing. */
+      "--color-primary": "var(--tone-accent)",
       "--color-paper": "#1a1d24",
       "--color-paper-dim": "color-mix(in oklab, #1a1d24 66%, #ffffff)",
       "--color-on-canvas": "#1a1d24",

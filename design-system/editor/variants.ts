@@ -181,6 +181,8 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "iconed", label: "标题下小字＋图标卡", props: { shape: "iconed" } },
     /* 编号色块 — Parker & Brown's Practice Areas, four blocks four colours. */
     { id: "plates", label: "编号色块", props: { shape: "plates" } },
+    /* 眉标＋居中大标题＋编号＋高矮不一的照片 — Toulouse's menu section. */
+    { id: "menu", label: "菜单式：编号配照片", props: { shape: "menu" } },
   ],
 
   SiteCta: [

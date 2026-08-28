@@ -60,7 +60,9 @@ export function SiteFeatures({
 }: {
   heading?: string
   note?: string
-  items: { label: string; value: string; icon?: string }[]
+  /** `photo` — 每一项自己一张照片。Toulouse's menu items each carry one, at
+   *  three different heights, and that unevenness is the section's rhythm. */
+  items: { label: string; value: string; icon?: string; photo?: string }[]
   /**
    * `cards` a bordered card each · `panel` all three on one painted ground,
    * split by hairlines · `bands` a numbered row each, ruled off, no boxes.
@@ -84,7 +86,7 @@ export function SiteFeatures({
    * So a register may now say what a service looks like, and the three
    * answers are genuinely different objects rather than one object restyled.
    */
-  shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed" | "iconed" | "plates"
+  shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed" | "iconed" | "plates" | "menu"
   /** 两个标题三张点卡 only: the bold half of the right-hand pair. */
   noteHeading?: string
   /** 清单配照片 only: the picture that stands beside the list. */
@@ -201,6 +203,90 @@ export function SiteFeatures({
               className="hidden [background-color:color-mix(in_oklab,var(--color-primary)_8%,var(--color-canvas))] @3xl:block"
             />
           )}
+        </div>
+      </section>
+    )
+  }
+
+  if (shape === "menu") {
+    /*
+      ── 眉标 · 居中大标题 · 编号 · 高矮不一的照片 · 三条线上的按钮 ──────────
+
+      老板 2026-08-29: 「你没有把设计感复刻到 我觉得最重要的是 你还没用眼睛看」.
+      He was right: I had been reading a 30% sheet and a column of numbers.
+      Cropped at native size, Toulouse's second section — 1592px, the largest
+      cream block on that page — is five things we had none of:
+
+        · a SMALL CENTRED eyebrow, 「The Menu」, with air above it
+        · a huge centred display heading, ALL CAPS, letter-spaced wide, over
+          four lines, in the wine — not a left-aligned section title
+        · 01 / 02 / 03 above each item, then the name, then one line under it
+        · THREE PHOTOGRAPHS OF UNEQUAL HEIGHT. The middle one is 450px, the
+          left 285, the right 355 — they do not line up at the bottom, and
+          that is the section's whole rhythm
+        · three hairlines running the full page width with one small button
+          sitting on them
+
+      Ours was a left-aligned heading over three cards with no photographs at
+      all. Same words, nothing of that design.
+    */
+    const STEP = [0.62, 1, 0.78]
+    return (
+      <section className="@container" data-wide="">
+        {noteHeading || note ? (
+          <p className="mb-6 text-center [color:var(--color-primary)] [font-size:var(--text-sm)]">
+            {noteHeading || note}
+          </p>
+        ) : null}
+        {heading ? (
+          <h2 className="ds-display mx-auto mb-16 max-w-[22ch] text-center [color:var(--color-primary)] [font-weight:var(--fw-regular,400)] [letter-spacing:0.06em] [line-height:1.16] [text-transform:uppercase]">
+            {heading}
+          </h2>
+        ) : null}
+        <ul className="grid items-start [gap:var(--gap-stack)] @2xl:grid-cols-3">
+          {items.map((f, i) => (
+            <li key={f.label} className="flex flex-col">
+              <span className="[color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="mt-3 [color:var(--color-paper)] [font-size:var(--text-base)]">{f.label}</span>
+              {f.value ? (
+                <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                  {f.value}
+                </span>
+              ) : null}
+              {f.photo?.trim() ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={f.photo}
+                  alt=""
+                  className="mt-4 w-full object-cover"
+                  style={{ height: `calc(${28 * STEP[i % 3]}rem * var(--site-figure, 1))` }}
+                />
+              ) : (
+                <div
+                  aria-hidden
+                  className="mt-4 w-full [background:color-mix(in_oklab,var(--color-primary)_14%,var(--color-canvas))]"
+                  style={{ height: `calc(${28 * STEP[i % 3]}rem * var(--site-figure, 1))` }}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+        {/* 三条通栏细线，中间坐一颗按钮 —— that bar is the only control in the
+            section and it is what closes it. */}
+        <div className="relative mt-12 flex justify-center">
+          <span
+            aria-hidden
+            className="absolute inset-x-0 top-1/2 -translate-y-1/2 [background:repeating-linear-gradient(to_bottom,var(--color-primary)_0_1px,transparent_1px_5px)] [block-size:11px]"
+          />
+          {/* ⚠️ 底色当字色，不是 --color-on-primary。招牌 的 on-primary 是酒红
+              —— 因为它的主色是粉，粉底上的字当然是酒红。到了奶白带上主色变成
+              酒红，on-primary 还是酒红，按钮就变成酒红配酒红，一个字都看不到。
+              一块颜色上的字，安全的那个永远是这一块所在的「地」。 */}
+          <span className="relative [background:var(--color-primary)] [color:var(--color-canvas)] [font-size:var(--text-sm)] [padding:0.5rem_1.6rem]">
+            {items[0]?.label ? "View full list" : ""}
+          </span>
         </div>
       </section>
     )

@@ -102,7 +102,16 @@ function fill(nodes: any[], P: Record<string, string>, shots = 6) {
     /* Distinct shots per slot. Before this, P.story went to the story block,
        the services list AND the mosaic -- the same hammer on the same planks
        three times down one page, which reads as a business with one photo. */
-    if (id === "website-services") { n.props.photo = P.g4 || P.hero; n.props.photoAlt = ""; }
+    if (id === "website-services") {
+      n.props.photo = P.g4 || P.hero;
+      n.props.photoAlt = "";
+      /* 菜单式那个形状每一项自己一张照片，三张高矮不一 —— 那是 Toulouse 那一段
+         的节奏。没有照片的位子画一张同样大小的占位。 */
+      if (Array.isArray(n.props.items)) {
+        const shots = [P.g1, P.g2, P.g3, P.big].filter(Boolean);
+        n.props.items = n.props.items.map((it: any, i: number) => ({ ...it, photo: shots[i % shots.length] }));
+      }
+    }
     if (id === "website-story") { n.props.photo = P.story; n.props.photoAlt = ""; n.props.body = "The same team that quotes is the team that turns up, and we tell you what it costs before we start."; }
     /* 评价的头像是照片，不是字母。
        Founder, 2026-08-28: 「照片我要看」. Five of the six references put a round

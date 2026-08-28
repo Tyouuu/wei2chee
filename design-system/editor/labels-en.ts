@@ -477,6 +477,7 @@ export const LABELS_EN: Record<string, string> = {
   三张卡带编号: "Numbered cards",
   "标题下小字＋图标卡": "Sub-line under heading, icon cards",
   "编号色块": "Numbered colour plates",
+  "菜单式：编号配照片": "Menu: numbered, with photographs",
   "两张各占一半": "Two, half and half",
   "底色上放一张照片": "A photograph on the ground colour",
   一步: "Step",
