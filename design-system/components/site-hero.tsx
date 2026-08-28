@@ -539,18 +539,30 @@ export function SiteHero({
         <span
           aria-hidden
           className="absolute inset-0 -z-10 block"
-          style={{ background: "linear-gradient(to top, rgb(0 0 0 / 0.62), rgb(0 0 0 / 0.20) 55%, rgb(0 0 0 / 0.34))" }}
+          /* ⚠️ 遮罩轻一档。逐段量出来第 1 段：他们 #dcd2aa 的暖卡其，我们 #000000
+             —— 同一个版式，我们那一屏黑掉了，因为这条渐层压在照片上。名字要读得到
+             靠的是底部那 0.62，不是整片。 */
+          style={{ background: "linear-gradient(to top, rgb(0 0 0 / 0.60), rgb(0 0 0 / 0.06) 52%, rgb(0 0 0 / 0.12))" }}
         />
 
         <div className="flex flex-col justify-end [min-block-size:clamp(26rem,74svh,44rem)] [padding-inline:var(--pad-card-lg)] [padding-block:calc(var(--pad-card-lg)*1.4)]">
           <div className="mx-auto w-full max-w-[80rem]">
-            {/* THE NAME, AND NOTHING COMPETING WITH IT. */}
-            <p
+            {/* THE NAME, AND NOTHING COMPETING WITH IT.
+
+                ⚠️ AN h1, NOT A p — changed 2026-08-28. The business name is the
+                one heading on the first screen and it was marked up as a
+                paragraph, so the page's h1 was a section heading further down.
+                Two consequences, and the second is why it was found: a
+                screen-reader user hears the page's title as 「Practice Areas」,
+                and the ruler's TYPE axis reported 招牌's headline as 56px
+                against their 263px while the 263px equivalent sat right here
+                unmeasured. */}
+            <h1
               className="ds-display [color:#fff] [font-weight:var(--fw-semibold)] [letter-spacing:-0.02em] [line-height:0.9] [text-wrap:balance]"
               style={{ fontSize: "clamp(2.8rem, calc(8.4vw * var(--site-hero-scale, 1)), calc(6.6rem * var(--site-hero-scale, 1)))" }}
             >
               {brand || headline}
-            </p>
+            </h1>
 
             <hr className="mt-8 border-0 [background:rgb(255_255_255_/_0.42)] [block-size:1px]" />
 

@@ -527,7 +527,10 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        气挪进段内（--site-inner），页面不会因此变短。 */
     rhythm: "flush",
     opens: "菜单",
-    order: ["work", "services", "story", "prices", "areas", "flow", "cta", "faq", "promise", "team", "creds", "reviews", "band", "woven", "hours"],
+    /* 他们的顺序：第一屏 → 两张各半 → 白底的卡 → 两张各半 → 马赛克配 ask → 页脚。
+       逐段量出来我们第 4 段是白的、他们是照片，第 6 段刚好相反 —— 中间少了一次
+       「照片 / 白 / 照片」的交替。band 排到服务后面就对上了。 */
+    order: ["work", "services", "band", "story", "flow", "prices", "cta", "faq", "promise", "team", "creds", "reviews", "woven", "hours", "areas"],
   },
   // 瑞士: black, white, one red, no cards. It is the register that prints, and
   // a page that reads like a document leads with words -- what we do, how it

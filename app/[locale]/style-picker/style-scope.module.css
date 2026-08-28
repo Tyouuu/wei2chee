@@ -109,7 +109,7 @@
   --site-inner: 4.5rem;
   --site-motion: 0.3s;
   --site-ease: ease;
-  --site-hero-scale: 1.9;
+  --site-hero-scale: 1.5;
   --site-ink-bg: #f0f0f0;
   --site-ink-fg: #1b1b17;
   --site-ink-fg-dim: #54554b;
@@ -769,7 +769,7 @@
   --site-inner: 4.5rem;
   --site-motion: 0.3s;
   --site-ease: ease;
-  --site-hero-scale: 3.1;
+  --site-hero-scale: 2.5;
   --site-ink-bg: #500014;
   --site-ink-fg: #ffd9f2;
   --site-ink-fg-dim: #e0a8c8;
