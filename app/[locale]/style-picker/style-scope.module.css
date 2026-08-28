@@ -571,6 +571,7 @@
   --site-display-weight: 400;
   --site-hero-scale: 1.2;
   --site-frame: color-mix(in oklab, #f0eae0 26%, transparent);
+  --site-strip: #2c200b;
   --site-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --fw-regular: 400;

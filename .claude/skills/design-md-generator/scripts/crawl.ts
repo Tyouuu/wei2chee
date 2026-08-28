@@ -11,6 +11,17 @@ export interface CrawlOptions {
   extraUrls?: string[];
   verbose: boolean;
   waitFor?: WaitStrategy;
+  /* LOCAL PATCH, Formae, 2026-08-28. Crawl ONLY the URLs given.
+
+     Eight of our ten reference designs are Wix templates living at a PATH
+     (wix.com/demone2/<slug>). Handed one of those, this crawler adds the
+     origin as a second seed and then prefers the homepage, so the extraction
+     came back describing wix.com's own marketing site — Wix's brand font and
+     Wix's blue — with not one value from the page we asked about. Measured:
+     sourceUrls carried both, totalPages was 1, and the 1 was theirs.
+
+     Default behaviour is untouched; this only fires with --exact. */
+  exact?: boolean;
 }
 
 const DEFAULT_OPTIONS: CrawlOptions = {
@@ -723,7 +734,8 @@ export async function crawlPages(
     const initialUrls = new Set<string>();
     for (const url of urls) {
       initialUrls.add(url);
-      // Add root URL if input isn't root
+      // Add root URL if input isn't root -- unless we were told to stay put.
+      if (opts.exact) continue;
       try {
         const parsed = new URL(url);
         const root = `${parsed.origin}/`;

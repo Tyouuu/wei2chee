@@ -33,6 +33,8 @@ interface ExtractOptions {
   output: string;
   concurrency: number;
   maxPages: number;
+  /* LOCAL PATCH, Formae 2026-08-28: crawl only the URL given. See crawl.ts. */
+  exact: boolean;
   extraUrls: string[];
   noDarkMode: boolean;
   noInteraction: boolean;
@@ -47,6 +49,7 @@ function parseArgs(argv: string[]): ExtractOptions {
   let output = '';
   let concurrency = 5;
   let maxPages = 8;
+  let exact = false;
   const extraUrls: string[] = [];
   let noDarkMode = false;
   let noInteraction = true;
@@ -66,6 +69,9 @@ function parseArgs(argv: string[]): ExtractOptions {
       concurrency = parseInt(args[++i], 10);
     } else if (arg === '--max-pages') {
       maxPages = parseInt(args[++i], 10);
+    } else if (arg === '--exact') {
+      exact = true;
+      maxPages = 1;
     } else if (arg === '--extra-urls') {
       const file = args[++i];
       if (fs.existsSync(file)) {
@@ -131,6 +137,7 @@ function parseArgs(argv: string[]): ExtractOptions {
     output,
     concurrency,
     maxPages,
+    exact,
     extraUrls,
     noDarkMode,
     noInteraction,
@@ -155,6 +162,8 @@ Options:
   --no-interaction       Skip interaction state capture (default: skipped)
   --with-interaction     Enable interaction state capture (hover/focus/active)
   --fast                 Fast mode: maxPages=5, noInteraction, concurrency=8
+  --exact                Crawl ONLY the URL given (maxPages=1). Needed for any
+                         reference that lives at a path, e.g. a Wix template.
   --verbose              Detailed logging
   --help, -h             Show this help
 `);
@@ -193,6 +202,7 @@ async function extract(options: ExtractOptions): Promise<void> {
   log(options.verbose, 'Starting page crawl...');
   const crawlResult = await crawlPages(options.urls, {
     maxPages: options.maxPages,
+    exact: options.exact,
     concurrency: options.concurrency,
     extraUrls: options.extraUrls,
     verbose: options.verbose,

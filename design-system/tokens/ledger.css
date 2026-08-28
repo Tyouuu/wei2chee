@@ -322,6 +322,8 @@
 
      Ours had the ground and the serif and none of the frames. */
   --site-frame: color-mix(in oklab, #f0eae0 26%, transparent);
+  /* 深色标题带 —— 量出来是 #2c200b，跟侧栏那块深色同一个。 */
+  --site-strip: #2c200b;
   /* 字体 —— the TYPE axis. Their name and every section heading are a light
      serif; 台账's工作台 keeps its condensed grotesk for the tables. */
   --site-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;

@@ -1142,7 +1142,7 @@ export function SiteStory({
         className="@container [border:1px_dashed_var(--border-strong)] [border-radius:var(--radius-lg)] [padding:var(--pad-card-lg)]"
       >
         {heading ? (
-          <h2 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+          <h2 data-column-heading="" className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
             {heading}
           </h2>
         ) : null}
@@ -1161,7 +1161,7 @@ export function SiteStory({
        a rectangle. */
     <div className="flex min-w-0 flex-col justify-center [padding-block:calc(var(--pad-card-lg)*0.9*var(--site-figure,1))] [padding-inline:calc(var(--pad-card-lg)*0.9*var(--site-figure,1))]">
       {heading ? (
-        <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+        <h2 data-column-heading="" className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
       ) : null}
       {body ? (
         <p className="mt-4 max-w-[52ch] [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">

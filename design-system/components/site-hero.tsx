@@ -589,7 +589,13 @@ export function SiteHero({
       <section data-bleed="" data-photo-ground="" className="@container">
         {/* THE BAND. Short on purpose -- `padding-block` is a little over one
             card's worth, not a screen's. */}
-        <div className="[background:var(--color-block,var(--color-primary-soft))] [padding-block:calc(var(--pad-card-lg)*1.15)] [padding-inline:var(--pad-card-lg)]">
+        {/* ── 开场那条带的颜色，是一根轴，不是色块的默认值 ────────────────
+            A. Reynolds opens on a band THE SAME COLOUR AS THE PAGE with the
+            photograph under it; the yellow appears twice, on one mid-page
+            panel and on the footer, and that scarcity is what makes it read as
+            an accent. Ours painted the opening band with --color-block, so the
+            first thing on the page was the loudest colour on it. */}
+        <div data-hero-band="" className="[padding-block:calc(var(--pad-card-lg)*1.15)] [padding-inline:var(--pad-card-lg)]">
           <div className="mx-auto grid w-full max-w-[80rem] items-start [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
             <h1
               className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-bold,700)] [letter-spacing:-0.03em] [line-height:0.94] [text-wrap:balance]"

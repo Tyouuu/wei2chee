@@ -517,6 +517,23 @@
   padding-inline: 0;
 }
 
+/* ── 开场那条带的颜色 ────────────────────────────────────────────────────────
+   A. Reynolds opens on a band THE SAME COLOUR AS THE PAGE, with the photograph
+   under it. Its yellow appears exactly twice on the whole page — one mid-page
+   panel and the footer — and that scarcity is what makes it read as an accent
+   rather than as the ground. Ours painted the opening band with --color-block,
+   so the first thing a stranger saw was the loudest colour on the site.
+
+   A RULE AND NOT AN ARBITRARY CLASS. It was written first as
+   [background:var(--site-hero-band,var(--color-block,…))] and rendered yellow
+   anyway: a nested var() fallback inside a Tailwind arbitrary value is not a
+   class that gets generated, so the declaration simply was not there. Nothing
+   errors — the band keeps whatever it had. Same silent shape as the CSS cycle
+   this file has hit five times. */
+[data-hero-band] {
+  background: var(--site-hero-band, var(--color-block, var(--color-primary-soft)));
+}
+
 /* ── 每一块都在一个细框里 ────────────────────────────────────────────────────
    台账's reference (Wix `wh-newel`) puts a 1px hairline around every block on
    the page: About Us, the four benefit cells, the services list, Testimonials,
@@ -531,6 +548,34 @@
 .ds-ground[data-frame="hairline"].ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]) {
   border: 1px solid var(--site-frame, color-mix(in oklab, var(--color-paper) 22%, transparent));
   padding: calc(var(--pad-card-lg) * 1.35);
+}
+
+/* ── 每一块的标题都坐在一条深色带上 ─────────────────────────────────────────
+   The other half of that page, and the half that was missing. On Wix
+   `wh-newel` no heading sits on the ground: About Us, Our Benefits, Our
+   Services, Recent Projects, Testimonials and Contact Us each ride a #2c200b
+   bar that runs the FULL WIDTH of the framed block it belongs to, centred.
+   Read at native size 2026-08-28 — 「我要完全一样」.
+
+   The negative margins are how the bar reaches the frame's inner edge: the
+   frame's own padding is the only padding between them, so pulling by exactly
+   that amount lands the bar on the line. `max-width: none` is there because
+   several of these headings sit inside a measure-limited wrapper, and without
+   it the bar would stop where the prose does. */
+/* A heading that shares a row with a photograph is NOT one of these bars —
+   their About Us sits as plain text in its column beside the picture, and only
+   the headings that own their whole column ride the dark bar. */
+.ds-ground[data-frame="hairline"] .ds-site :has(> h2:not([data-column-heading])) {
+  max-width: none;
+}
+.ds-ground[data-frame="hairline"] .ds-site h2:not([data-column-heading]),
+.ds-ground[data-frame="hairline"].ds-site .ds-site h2:not([data-column-heading]) {
+  background: var(--site-strip, color-mix(in oklab, #000 24%, var(--color-canvas)));
+  margin-block: calc(var(--pad-card-lg) * -1.35) calc(var(--pad-card-lg) * 1.1);
+  margin-inline: calc(var(--pad-card-lg) * -1.35);
+  padding: calc(var(--pad-card-lg) * 0.9) calc(var(--pad-card-lg) * 1.35);
+  max-width: none;
+  text-align: center;
 }
 
 /* The bar sits above the first block and the foot below the last, so neither

@@ -361,6 +361,13 @@
      重点 7j: the reference's palette is cloned whole, and that includes the
      colour of a card. What stays ours is the SKELETON — which sections, in
      which order, in which shape — and none of that is touched here. */
+  /* ⚠️ 这里故意什么都不设，让它退回 --color-block 的黄。
+
+     2026-08-28 我把它改成米色，理由写着「参考页的黄只出现两次」—— 那是我在缩图上
+     看错的。放大到原尺寸看，A. Reynolds 的第一屏那条带**就是黄的**，跟中段那块面板、
+     跟页脚同一个 #fffe99。改完一看画面就现形，所以退回来。
+
+     留着 --site-hero-band 这根轴是对的（开场的地不一定等於色块），只是 満図 用不上。 */
   --site-card: #f1f1ee;
   --site-card-border: 0 solid transparent;
   --site-card-radius: 8px;
