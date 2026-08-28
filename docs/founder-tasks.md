@@ -2129,6 +2129,11 @@ export default function FaqsBlock({ copy: override }) {
       另一个 session 改（未提交）。两个 session 共用一个工作目录，改同一个档案会打架
 - [ ] 修的时候要决定它在四种版式里各自摆哪里（431 / 473 行的注解说有两种版式
       **故意**不放 eyebrow，那两个不要动）
+- [x] **现在有一道关会盯着它了**（`design-system/components/site-fields.test.tsx`）：
+      拿 `buildPageLayout("website", …)` 产生一个**真的客户官网**，
+      把每一个 text/textarea 栏位轮流换成哨兵再渲染。**48 个栏位，只有 eyebrow 掉了。**
+      它现在写在测试的基线里，**标着「这是欠债不是可接受状态」**，
+      名单只能变短；有新的掉进去就会挂
 
 ### 52. 又三个版段丢掉编辑，这次是 AI 改的会丢（2026-08-28）
 
@@ -2175,6 +2180,24 @@ export default function FaqsBlock({ copy: override }) {
 - [x] **两个探针到不了的，白名单里写清楚**：`roadmap-1.team` 跟 `profile-3.team`
       只渲染名字的**首字母**，前缀哨兵活不到画面上。两个都确认有用合并后的值
       （`roadmap-1` 有专门的测试盯着首字母从 A 变 Z）
+
+### 54. 官网栏位的关立起来了 —— 而且路上澄清了三件事（2026-08-28）
+
+[任务 51](#51) 的 `eyebrow` 是 lint **偶然**撞到的（它刚好是个「destructure 了没用」的 prop）。
+那是运气，不是关。所以做了一支：拿 `buildPageLayout("website", …)` 产生一个真的客户官网，
+**每一个 text/textarea 栏位轮流换成哨兵再渲染**，看字有没有到画面上。
+
+- [x] **48 个栏位验过，只有 `SiteHero.eyebrow` 掉了。** 这也反过来证明这支测试是准的
+- [x] ⚠️ **第一版量的是我的测试床，不是产品** —— 我用 Puck 的 `defaultProps` 直接渲染，
+      报了 **28 个死栏位**。查了才知道 `SiteFeatures` 的 defaultProps 只有 `items`，
+      单独渲染回传空字串。改成用**产品自己产生页面的那个函数**，数字才是真的
+- [x] **`FloatingContact.number` 是探针误报** —— 组件做 `number.replace(/[^\d]/g,"")`
+      去组 wa.me 连结，字母哨兵被洗掉。改成数字哨兵
+- [x] **`SiteFeatures.noteHeading` 是版式限定** —— 它在某些版式才渲染，
+      产生的页面刚好用了别的。测试现在会把编辑器提供的每一个版式都试一遍才判它掉了
+- [x] ✅ **顺带澄清[任务 19](#19) 的一条「还欠」**：**浮动 WhatsApp 按钮其实已经做好了**
+      （`floating-contact.tsx`），而且用的是**客户自己的号码**，不是我们的占位符 ——
+      它**没有**卡在[任务 11](#11) 上。那条可以划掉
 
 ## 已完成
 
