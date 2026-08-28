@@ -1218,7 +1218,7 @@ export function SiteGallery({
 
                      老板 2026-08-29, holding the two pages side by side:
                      「你自己用眼睛看 一样吗」. It was not. */
-                  style={{ aspectRatio: RATIO[i % 6], maxHeight: "32rem" }}
+                  style={{ aspectRatio: RATIO[i % 6], maxHeight: "min(32rem, 34vw)" }}
                 />
               ) : null}
               {s2.caption ? (

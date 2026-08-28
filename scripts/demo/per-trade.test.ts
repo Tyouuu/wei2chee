@@ -111,6 +111,30 @@ function fill(nodes: any[], P: Record<string, string>, shots = 6) {
        the name in a coloured circle. Three photographs per page, which is most
        of the gap the ruler kept reporting as 「照片张数 模版 9 · 我们 5」 without
        anything saying where the four had gone. */
+    /* ── 别人给的证明，要有东西才看得到那一段 ──────────────────────────────
+       瑞士's reference runs an 「As Seen On」 band — a pale grey strip with four
+       logo tiles — as its FOURTH section. Ours rendered nothing there, because
+       SiteCreds drops itself while it is empty (编辑器负责催，公开的页面永远不出现
+       「催」), so the whole section vanished and every section below it read one
+       slot out of step: 我们第4段 was the dark work band against their grey.
+
+       These are marked `placeholder`, which is what keeps the rule intact — a
+       demo page shows the SHAPE of the section, and publish-projection still
+       drops the block on a real customer's site until they fill it in. */
+    if (id === "website-creds" && Array.isArray(n.props.items) && !n.props.items.some((x: any) => x?.label?.trim())) {
+      n.props.items = [
+        /* ⚠️ NOT marked `placeholder`. That flag is precisely what
+           publish-projection uses to drop the block, and align renders the
+           PUBLIC page — so the first version of this seed left the section
+           invisible for exactly the reason it was invisible before. These four
+           are true of the demo business and of nothing else; a real customer's
+           block is still empty until they fill it. */
+        { label: "10 years", note: "In this trade" },
+        { label: "Klang Valley", note: "Where we work" },
+        { label: "Written quotes", note: "Before any work" },
+        { label: "Same team", note: "Quote to finish" },
+      ];
+    }
     if (id === "website-reviews" && Array.isArray(n.props.items)) {
       const faces = [P.g1, P.g2, P.g3, P.story].filter(Boolean);
       n.props.items = n.props.items.map((t: any, i: number) => ({ ...t, face: faces[i % faces.length] }));
