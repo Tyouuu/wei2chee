@@ -1366,8 +1366,8 @@ export function SiteStory({
         className="size-full object-cover [border-radius:var(--site-photo-radius,var(--radius-lg))]"
         style={
           shape === "stack"
-            ? { aspectRatio: "21 / 9", maxHeight: "26rem" }
-            : { aspectRatio: "4 / 3", maxHeight: "30rem" }
+            ? { aspectRatio: "21 / 9", maxHeight: "calc(30rem * var(--site-figure, 1))" }
+            : { aspectRatio: "4 / 3", maxHeight: "calc(38rem * var(--site-figure, 1))" }
         }
       />
     </div>
@@ -1770,10 +1770,19 @@ export function SiteBand({
         alt={photoAlt || ""}
         className="block w-full object-cover"
         style={{
+          /* ── 满边那条带要跟他们一样高 ────────────────────────────────────
+             Measured 2026-08-28 with the ruler's new SHOTS axis: their tallest
+             photograph runs 933–1100px on five of the six references — a full
+             screen — and ours capped at 572, because `52vh` bound before the
+             rem term ever did. 「1img」 was true of both and said nothing.
+
+             That single number is most of why our pages come out half the
+             height of theirs: 台账 736 against 983, 中台 672 against 1007,
+             招牌 704 against 990. */
           height:
             height === "short"
-              ? "clamp(9rem, 22vh, calc(15rem * var(--site-figure, 1)))"
-              : "clamp(16rem, 52vh, calc(30rem * var(--site-figure, 1)))",
+              ? "clamp(9rem, 30vh, calc(20rem * var(--site-figure, 1)))"
+              : "clamp(16rem, 88vh, calc(50rem * var(--site-figure, 1)))",
         }}
       />
       {line ? (
@@ -1963,7 +1972,7 @@ export function SiteWoven({
               src={src}
               alt=""
               className="w-full object-cover [border-radius:var(--site-card-radius,var(--radius-lg))]"
-              style={{ aspectRatio: "4 / 5" }}
+              style={{ aspectRatio: "4 / 5", maxHeight: "calc(34rem * var(--site-figure, 1))" }}
             />
           ))}
         </div>

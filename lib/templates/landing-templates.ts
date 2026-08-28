@@ -825,7 +825,19 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       hero(c, "split", "pricelist"),
       statement(c),
       services(c, sect(c, "wholesale").services),
+      /* 作品墙 —— 批发这一套本来没有，而它是唯一一套没有的。
+         Founder, 2026-08-28: 「要嘛你就是去图库拿图 要嘛只是一个占位图 都可以」.
+         中台's reference (Kurofude) carries EIGHTEEN photographs and 5259px;
+         ours came out with two and 3594px, and the whole difference was that
+         this template never built a gallery, so the register's skeleton listed
+         a section that did not exist. A wholesaler has a warehouse and stock —
+         there was never a reason for this to be the one trade with nothing to
+         show. */
+      work(c),
       story(c),
+      /* 满边一条照片带 —— Kurofude's second and fourth sections are exactly this,
+         1007px tall, and it was the other block this template never built. */
+      band(c),
       team(c),
       flow(c, sect(c, "wholesale").flow ?? ""),
       prices(c),

@@ -217,6 +217,29 @@ function readType() {
   };
 }
 
+/* ── 照片：几张、多大、什么比例 ───────────────────────────────────────────
+   老板 2026-08-28: 「图片的大小 也是要注意」.
+
+   The section list counts photographs and the anatomy reads the group they sit
+   in; neither says how BIG one is, and 「1img」 is equally true of a 1440×810
+   band and of a thumbnail. Five of the six references are pages whose pictures
+   ARE the argument, so they are not copied until the pictures are the size
+   theirs are. */
+function readShots(rootSel) {
+  const root = rootSel ? document.querySelector(rootSel) : document.body;
+  if (!root) return [];
+  return [...root.querySelectorAll("img,video")]
+    .map((e) => {
+      const r = e.getBoundingClientRect();
+      return { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top + scrollY) };
+    })
+    /* Below a thumbnail it is a logo, an icon or a spacer — counting those
+       would drown the numbers that matter. */
+    .filter((x) => x.w >= 120 && x.h >= 90)
+    .sort((a, b) => a.top - b.top)
+    .map((x) => ({ ...x, ratio: +(x.w / x.h).toFixed(2) }));
+}
+
 /* ── 每一段的解剖 ─────────────────────────────────────────────────────────
    The other thing size could not see. 満図's second section is 「Our Expertise」
    — FIVE BORDERED CARDS ON A GREY PANEL, 3 then 2, each with a small icon.
@@ -655,120 +678,123 @@ async function shoot(target, rootSel, wait, file) {
   const type = await p.evaluate(readType);
   const axes = await p.evaluate(readAxes, rootSel);
   const anat = await p.evaluate(readAnatomy, rootSel);
+  const shots = await p.evaluate(readShots, rootSel);
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
   await p.close();
-  return { secs, type, axes, anat };
+  return { secs, type, axes, anat, shots };
 }
 
 try {
   const theirs = await shoot(url, null, 7000, `${register}-ref`);
   const ours = await shoot(`http://localhost:3000/s/${project.site_slug}`, ".ds-site", 2500, `${register}-ours`);
 
+  /* ── 一份差异清单，不是一份读数 ────────────────────────────────────────────
+     老板 2026-08-28: 「那就重写全部的尺子 确保能复刻到一模一样」「如果复刻不到
+     就补尺子 看看到底哪里没有测量好」.
+
+     The old report printed both sides and left the comparing to whoever read
+     it, which is how four registers shipped with matching section counts and
+     entirely different colours: nothing in the output ever said 「这一项不一样」.
+
+     Every line below is a CHECK with a verdict. A check that cannot be made
+     says 量不到 rather than passing quietly — an unmeasured axis is where the
+     next difference will hide, and the founder's instruction is that the gap
+     itself is the finding. */
+  const marks = [];
+  const check = (axis, name, theirsV, oursV, ok) => {
+    marks.push({ axis, name, ok });
+    const flag = ok === null ? "?" : ok ? "OK" : "XX";
+    console.log(
+      `  ${flag}  ${name.padEnd(16)} 模版 ${String(theirsV).padEnd(30)} 我们 ${oursV}`,
+    );
+  };
+  const near = (a, b, tol) => Math.abs(a - b) <= tol;
+
   const row = (s, i) => `${String(i + 1).padStart(2)}  ${String(s.h).padStart(5)}px  ${String(s.img).padStart(2)}img  ${s.text}`;
   const sum = (l) => l.reduce((a, s) => a + s.h, 0);
   console.log(`\n参考 ${url}\n${theirs.secs.map(row).join("\n")}\n  = ${theirs.secs.length} 段 ${sum(theirs.secs)}px`);
   console.log(`\n我们 ${register}\n${ours.secs.map(row).join("\n")}\n  = ${ours.secs.length} 段 ${sum(ours.secs)}px`);
-  /* -- 字体 TYPE, all of it ----------------------------------------------
-     Sizes alone passed 満図 while it wore the wrong typeface. The face is the
-     loudest half of this axis, so it is printed first and the sizes second. */
-  const typeLine = (t) => {
-    const h1 = t.heads[0];
-    return [
-      `标题 ${h1 ? h1.fam : "—"} ${h1 && !h1.here ? " ❌ 这台机器没载入到，画面上是退回字体" : ""} ${t.heads.map((x) => x.px).join("/")}`,
-      `           标题字重 ${h1 ? h1.w : "—"} · 行高 ${h1 ? h1.lh : "—"}px · 字距 ${h1 ? h1.ls : "—"}px`,
-      `           正文 ${t.bodyFam}${t.bodyHere === false ? " ❌ 没载入到" : ""} ${t.bodyPx}px/${t.bodyLh}px  ${t.bodyN} 段样本`,
-    ].join("\n");
-  };
-  console.log(`\n字体 TYPE   参考 ${typeLine(theirs.type)}`);
-  console.log(`\n           我们 ${typeLine(ours.type)}`);
 
-  /* -- 每一段的解剖 -------------------------------------------------------
-     一排卡片 / 一列清单 / 一张大图 all print the same height in the section
-     list. This is the column that tells them apart. */
-  const anatLines = (list) =>
-    list
-      .map((a, i2) => {
-        const g = a.group
-          ? `${a.group.n}${a.group.cols > 1 ? "个 " + a.group.cols + "栏" : "个 一列"} ${a.group.w}px ${a.group.bg} ${a.group.border}${a.group.radius ? " r" + a.group.radius : ""}${a.group.img ? " 带图标" : ""}`
-          : "无重复组";
-        return `${String(i2 + 1).padStart(2)}  ${String(a.h).padStart(5)}px  ${String(a.bg).padEnd(8)} 内距 ${a.padTop}/${a.padBottom}  ${g}`;
-      })
-      .join("\n");
-  console.log(`\n解剖 ANATOMY 参考
-${anatLines(theirs.anat)}`);
-  console.log(`\n            我们
-${anatLines(ours.anat)}`);
+  /* ── 1 版面 LAYOUT ─────────────────────────────────────────────────────── */
+  console.log("\n版面 LAYOUT");
+  check("版面", "段数", theirs.secs.length, ours.secs.length, near(theirs.secs.length, ours.secs.length, 1));
+  check("版面", "整页高", `${sum(theirs.secs)}px`, `${sum(ours.secs)}px`,
+    near(sum(theirs.secs), sum(ours.secs), sum(theirs.secs) * 0.25));
+  const imgs = (l) => l.reduce((a, s) => a + s.img, 0);
+  check("版面", "照片张数", imgs(theirs.secs), imgs(ours.secs), near(imgs(theirs.secs), imgs(ours.secs), 3));
 
-  /* ── 五根轴的另外两根 ─────────────────────────────────────────────────────
-     重点 7i: 版面 · 字体 · 颜色 · 动效 · 留白. The first two are printed above
-     and the third is the section list; these are the two this ruler was blind
-     to until 2026-08-28, which is exactly why 台账's first pass matched the
-     section counts and still looked nothing like its reference. */
-  const motion = (a) => {
-    if (!a) return "—";
-    const t = a.motion.tiers.map((x) => `${x.tier} ${x.ms.join("/")}ms×${x.n}`).join(" · ");
-    const e = a.motion.easings.map(([v, n]) => `${v}×${n}`).join(" · ");
-    const an = a.motion.animations.map(([n2, c]) => `${n2}×${c}`).join(" · ") || "无";
-    const rm =
-      a.motion.sheetsBlocked && !a.motion.reducedMotion
-        ? `读不到（${a.motion.sheetsBlocked} 张外站样式表）`
-        : a.motion.reducedMotion
-          ? "有"
-          : "没有";
-    return [
-      t || "没有过渡",
-      `           缓动 ${e || "—"}`,
-      `           动的属性 ${a.motion.properties.join(" ") || "—"}`,
-      `           keyframe ${an}`,
-      `           减少动效 ${rm}`,
-    ].join("\n");
-  };
-  console.log(`\n动效 MOTION 参考 ${motion(theirs.axes)}`);
-  console.log(`\n           我们 ${motion(ours.axes)}`);
+  /* ── 2 照片 SHOTS —— 大小，不只是张数 ──────────────────────────────────── */
+  const band = (l) => ({
+    wide: l.filter((x) => x.w >= 1200).length,
+    half: l.filter((x) => x.w >= 500 && x.w < 1200).length,
+    small: l.filter((x) => x.w < 500).length,
+    tallest: l.length ? Math.max(...l.map((x) => x.h)) : 0,
+  });
+  const bt = band(theirs.shots);
+  const bo = band(ours.shots);
+  console.log("\n照片 SHOTS");
+  check("照片", "满宽的", bt.wide, bo.wide, near(bt.wide, bo.wide, 1));
+  check("照片", "半幅的", bt.half, bo.half, near(bt.half, bo.half, 2));
+  check("照片", "最高一张", `${bt.tallest}px`, `${bo.tallest}px`, near(bt.tallest, bo.tallest, 220));
+  console.log(`      模版 ${theirs.shots.slice(0, 7).map((x) => `${x.w}×${x.h}`).join(" ") || "无"}`);
+  console.log(`      我们 ${ours.shots.slice(0, 7).map((x) => `${x.w}×${x.h}`).join(" ") || "无"}`);
 
-  const space = (a, secs) => {
-    if (!a) return "—";
-    const between = secs
-      .slice(1)
-      .map((s2, i2) => s2.top - (secs[i2].top + secs[i2].h))
-      .filter((g) => g >= 0);
-    return `基数 ${a.space.baseUnit ? a.space.baseUnit + "px" : "量不出来"} · 段间 ${between.join("/") || "0"} · 内距常用 ${a.space.topPads
-      .map(([v, n]) => `${v}×${n}`)
-      .join(" ")}`;
-  };
-  console.log(`\n留白 SPACE  参考 ${space(theirs.axes, theirs.secs)}`);
-  console.log(`           我们 ${space(ours.axes, ours.secs)}`);
+  /* ── 3 字体 TYPE ───────────────────────────────────────────────────────── */
+  const h1 = (t) => (t.heads[0] || {});
+  console.log("\n字体 TYPE");
+  check("字体", "标题字体", h1(theirs.type).fam ?? "—", h1(ours.type).fam ?? "—", null);
+  check("字体", "标题字级", `${h1(theirs.type).px}px`, `${h1(ours.type).px}px`,
+    near(h1(theirs.type).px || 0, h1(ours.type).px || 0, 12));
+  check("字体", "标题字重", h1(theirs.type).w ?? "—", h1(ours.type).w ?? "—",
+    String(h1(theirs.type).w) === String(h1(ours.type).w));
+  check("字体", "正文字体", theirs.type.bodyFam, ours.type.bodyFam, null);
+  check("字体", "正文字级", `${theirs.type.bodyPx}px`, `${ours.type.bodyPx}px`,
+    near(Number(theirs.type.bodyPx) || 0, Number(ours.type.bodyPx) || 0, 3));
+  if (h1(theirs.type).here === false) {
+    console.log("      ⚠️ 模版的字这台机器没载入到 —— 上面那两行字体名是宣告的，不是画面上的");
+  }
 
-  /* ── 四层稳定性 ──────────────────────────────────────────────────────────
-     design-md-generator's method (MIT; a method is not copyrightable), with its
-     「how many pages」 signal replaced by 「how many sections」 because we measure
-     one page. It answers one question — 「will this value still be correct in
-     six months?」 — and that is the question I failed on 任务 26: I read one
-     PROMOTIONAL screenshot as a rule, wrote 「prices go on the first screen」,
-     shipped it, and 19 trading sites later 0 of 19 agreed. RM60 was a campaign
-     value. This is the check that would have caught it before it shipped. */
+  /* ── 4 颜色 COLOR —— 面积，不是声明次数 ───────────────────────────────── */
+  console.log("\n颜色 COLOR  （面积要用 npm run align:palette 量截图；这里只列声明层）");
   const stack = (a) => {
     if (!a) return "—";
     const by = {};
-    for (const c of a.colours) (by[c.layer] = by[c.layer] || []).push(c);
-    return ["infrastructure", "system", "campaign", "content"]
-      .filter((l) => by[l])
-      .map((l) => `${l} ${by[l].length}：` + by[l].slice(0, 5).map((c) => c.hex).join(" "))
-      .join("\n           ");
+    for (const c of a.colours) (by[c.layer] = by[c.layer] || []).push(c.hex);
+    return ["infrastructure", "system"].filter((l) => by[l]).map((l) => `${l}: ${by[l].slice(0, 4).join(" ")}`).join(" | ");
   };
-  console.log(`\n颜色 COLOR  参考 ${stack(theirs.axes)}`);
-  console.log(`\n           我们 ${stack(ours.axes)}`);
+  console.log(`      模版 ${stack(theirs.axes)}`);
+  console.log(`      我们 ${stack(ours.axes)}`);
 
-  const campaign = (a, who) => {
-    const c = (a?.colours || []).filter((x) => x.layer === "campaign" || x.layer === "content");
-    if (!c.length) return;
-    console.log(`\n⚠️ ${who}这几个颜色像「这个月的海报」不像设计 —— 抄之前先想六个月后还在不在：`);
-    for (const x of c.slice(0, 4)) console.log(`   ${x.hex}  ${x.layer}  ${x.signals.join(" · ")}`);
-  };
-  campaign(theirs.axes, "参考：");
-  campaign(ours.axes, "我们：");
+  /* ── 5 动效 MOTION ─────────────────────────────────────────────────────── */
+  const tiers = (a) => (a ? a.motion.tiers.map((x) => `${x.tier}${x.ms.join("/")}`).join(" ") : "—");
+  const ease = (a) => (a && a.motion.easings[0] ? a.motion.easings[0][0] : "—");
+  const longest = (a) => (a ? Math.max(0, ...a.motion.tiers.flatMap((x) => x.ms)) : 0);
+  console.log("\n动效 MOTION");
+  check("动效", "时长", tiers(theirs.axes), tiers(ours.axes), near(longest(theirs.axes), longest(ours.axes), 200));
+  check("动效", "缓动", ease(theirs.axes), ease(ours.axes), ease(theirs.axes) === ease(ours.axes));
+  check("动效", "减少动效", theirs.axes?.motion.reducedMotion, ours.axes?.motion.reducedMotion,
+    Boolean(theirs.axes?.motion.reducedMotion) === Boolean(ours.axes?.motion.reducedMotion));
+
+  /* ── 6 留白 SPACE ──────────────────────────────────────────────────────── */
+  const gaps = (secs) => secs.slice(1).map((s2, i2) => s2.top - (secs[i2].top + secs[i2].h));
+  const biggestGap = (secs) => Math.max(0, ...gaps(secs).filter((g) => g >= 0));
+  console.log("\n留白 SPACE");
+  check("留白", "段间最大", `${biggestGap(theirs.secs)}px`, `${biggestGap(ours.secs)}px`,
+    near(biggestGap(theirs.secs), biggestGap(ours.secs), 24));
+  const inset = (l) => (l.length ? Math.min(...l.map((x) => x.pad ?? 0)) : 0);
+  check("留白", "间距基数", theirs.axes?.space.baseUnit ?? "量不到", ours.axes?.space.baseUnit ?? "量不到", null);
+
+  /* ── 结论 ──────────────────────────────────────────────────────────────── */
+  const bad = marks.filter((m) => m.ok === false);
+  const unknown = marks.filter((m) => m.ok === null);
+  console.log(
+    `\n对不上的 ${bad.length} 项：${bad.map((b) => b.name).join(" · ") || "无"}` +
+      `\n量不到的 ${unknown.length} 项：${unknown.map((b) => b.name).join(" · ") || "无"}` +
+      `\n⚠️ 「量不到」不是「过关」—— 下一个差异就藏在那几项里。`,
+  );
 
   fs.writeFileSync(`${OUT}/${register}.json`, JSON.stringify({ url, theirs, ours }, null, 1));
+
   console.log(`\n对照图 → ${OUT}/${register}.jpg （用眼睛看这一张，不是看上面的数字）`);
 } finally {
   await browser.close();

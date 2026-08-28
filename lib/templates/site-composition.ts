@@ -508,7 +508,11 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        中台 is the densest register in the library (重点 7c) and this is the page
        that says why: density here is INFORMATION LAID OUT AS DATA, not small
        type. */
-    omit: ["faq", "promise", "team", "creds", "reviews", "band", "woven", "hours"],
+    /* ⚠️ `band` was in here and it should not have been: Kurofude's second and
+       fourth sections are FULL-BLEED PHOTOGRAPHS, 1007px tall, and declining
+       the one block that draws one left our tallest picture at 672 — a gallery
+       tile. Measured by the ruler's SHOTS axis, which did not exist yesterday. */
+    omit: ["faq", "promise", "team", "creds", "reviews", "woven", "hours"],
     /* 名字跟那排资料在上面，照片满边接在下面 —— band-bleed 就是这个形状，
        那条带用它自己的米白（--site-hero-band）。 */
     hero: "band-bleed",
