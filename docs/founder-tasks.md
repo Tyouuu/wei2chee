@@ -2080,6 +2080,40 @@ console 的客户详情页有一颗「Message them on WhatsApp」，指向
       跟从他自己页面抽出来的 brief。照同一条规则用 `data-their-words` 在渲染处声明，
       不是加正则名单。现在 0，而「客户自己的字」从 0 → **454**
 
+### 50. 版段在静默丢掉客户的编辑 —— 六个，全修了（2026-08-28）
+
+[任务 47](#47) 那道 lint 关一开就抓到：`no-unused-vars` 指着「组件收了 override、
+destructure 出来却没用」—— **那正好是「编辑被丢掉」的签名**。
+
+```js
+const columns = [faqs.slice(0, half), faqs.slice(half)]   // 模组载入时算，用预设
+export default function FaqsBlock({ copy: override }) {
+  const { faqs } = { ...copy, ...override }               // 合并后的，从来没被读
+  ...渲染的是 columns...
+```
+
+**而且这条路是通的**：`site-block.tsx` 就是 `<Block copy={copy} />`，copy 来自客户存下来的版面。
+所以客户改了 FAQ 的问题、改了 roadmap 上的名字 —— **编辑器收下，页面照渲染别人的字，什么都不报错。**
+跟「315 条风格偏好指向不存在的东西」同一家。
+
+- [x] `faqs-2` · `roadmap-1` · `roadmap-2` · `roadmap-3` · `calendar-2`
+      —— 推导搬进组件，吃合并后的值；**整段覆写照样赢**（`override?.phases ?? buildPhases(team)`）
+- [x] **lint 只看得到一种形状，所以又写了一支扫描**（`copy-reaches-page.test.tsx`）：
+      把每个版段自己的 `copy` 里每一个字串换成哨兵，渲染，看哨兵有没有出现。
+      **112 → 118 个版段确认覆写有生效。**
+- [x] **扫描抓到第六个：`blog-2`** —— lint 看不到它，因为 `posts` **有**被用，
+      只是只用在「几篇文章」那个数字上；文章本身来自模组层对预设的解构。
+      **客户改了文章，数字会变、文章不会变** —— 比完全不更新更糟，因为它自相矛盾
+- [x] **判别器，不用猜**：哨兵没出现的，再用**预设** copy 渲染一次同一个字串。
+      预设也不出现 → 那段本来就不在服务端渲染（Radix 的 portal、收起来的手风琴、
+      全是图片网址的 copy），不是缺陷。这一步把「疑似」从 9 个降到 1 个
+- [x] **那 1 个（`settings-3`）查过了，是判别器误判**：markup 里的 "Ada Lovelace"
+      来自表单上一个**写死的 `value=`**，不是来自 `teamMembers`；那张表其实没在服务端渲染。
+      只改 `teamMembers[].name` 再渲染一次，确认没有痕迹
+- [x] **定成基线**：白名单里 1 个 blind + 6 个 threw，每一条都写着**查证过**的理由
+      （3 个要 `TooltipProvider`、3 个是探针把大写的查表键也换掉了）。
+      **新的版段哪天开始忽略 copy，这里就会挂**
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**

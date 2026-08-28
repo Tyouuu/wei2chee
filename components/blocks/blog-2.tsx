@@ -97,10 +97,23 @@ export const copy = { posts }
 export type Copy = typeof copy
 
 
-const [featuredPost, ...restPosts] = posts
-
 export default function BlogBlock({ copy: override }: { copy?: Partial<Copy> } = {}) {
   const { posts } = { ...copy, ...override }
+  /*
+    SPLIT INSIDE, FROM THE MERGED POSTS.
+
+    This was `const [featuredPost, ...restPosts] = posts` at module scope, off
+    the DEFAULTS, while the component read the merged `posts` for exactly one
+    thing: the article COUNT in the header. So a customer who edited their
+    posts got a number that changed and a list that did not -- the section
+    disagreeing with itself, which is worse than not updating at all.
+
+    Same family as faqs-2, the three roadmaps and calendar-2 (fixed the same
+    day), and found the same way: copy-reaches-page.test.tsx probes every
+    block's copy and looks for it in the markup. Lint could not see this one --
+    `posts` IS used, just not for the part that matters.
+  */
+  const [featuredPost, ...restPosts] = posts
   return (
     <section className="flex w-full items-center justify-center bg-background px-6 py-16 text-foreground">
       <div className="mx-auto w-full max-w-2xl">
