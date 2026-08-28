@@ -187,7 +187,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给还讲不清楚自己是什么行业的老板，开系统是第一次。中性、12px 圆角、一条细边、什么都不抢。它不是最好看的一套，它是最不会出错的一套 —— 牺牲个性换零风险，所以「其他」这一栏给它。",
     facts: "圆角 12px · 边框 1px · 淡阴影 · 行高 42px · 正文 14px · 标签不大写",
     prefer: {
-      SiteFeatures: "cards",
+      SiteFeatures: "plates",
       SiteCta: "rule",
       SiteTeam: "cards",
       SiteGallery: "grid",

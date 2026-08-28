@@ -447,16 +447,31 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.
   blueprint: {
-  /* The neutral one keeps almost everything, and that is its argument:
-     the ordinary answer for a business that has not told us it is
-     unusual. It declines only the section that repeats the guarantee
-     the flow already makes. */
-    omit: ["promise"],
-    tones: { flow: "tint" },
-    pattern: "grid",
-    hero: "stage",
-    opens: "做什么",
-    order: ["services", "work", "story", "team", "flow", "prices", "woven", "reviews", "creds", "band", "cta", "faq", "areas", "promise", "hours"],
+    /* ── COPIED WHOLE: Wix `wh-law-firm-2` (Parker & Brown) ─────────────────
+       Read at 1440 on 2026-08-28. Eight sections, 7202px, cream ground, serif
+       display, and one orange that only ever appears on a control with an
+       arrow after it.
+
+           912/1100  1img  full-bleed library photo, the NAME over it, then a
+                           strip: founded-in left · what they do centre · an
+                           orange call-to-action right
+            929px    1img  Introducing — an eyebrow, one BIG serif paragraph
+                           across the measure, then small text left and a team
+                           photograph right
+            943px    0img  Practice Areas — FOUR NUMBERED COLOUR BLOCKS,
+                           01 green · 02 taupe · 03 orange · 04 khaki
+            946px    3img  Meet Your Attorneys — three portraits
+            891px    0img  a centred serif QUOTE and nothing else
+            933px    1img  News — khaki panel left, photograph right
+            548px    0img  dark footer
+
+       Ours ran THIRTEEN sections including opening hours, a reply-time strip
+       and two separate asks. */
+    omit: ["prices", "flow", "promise", "faq", "areas", "hours", "band", "woven", "creds", "reviews"],
+    statement: "quote",
+    hero: "name-plate",
+    opens: "Introducing",
+    order: ["story", "services", "team", "work", "cta", "prices", "flow", "promise", "faq", "areas", "hours", "band", "woven", "creds", "reviews"],
   },
   // 中台: the wholesaler's register, the densest in the library. Its buyer is
   // another business, and a business asks for terms before it asks for a look:

@@ -70,7 +70,7 @@ export function SiteFeatures({
    * So a register may now say what a service looks like, and the three
    * answers are genuinely different objects rather than one object restyled.
    */
-  shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed" | "iconed"
+  shape?: "cards" | "panel" | "bands" | "stated" | "dotted" | "listed" | "iconed" | "plates"
   /** 两个标题三张点卡 only: the bold half of the right-hand pair. */
   noteHeading?: string
   /** 清单配照片 only: the picture that stands beside the list. */
@@ -188,6 +188,70 @@ export function SiteFeatures({
             />
           )}
         </div>
+      </section>
+    )
+  }
+
+  if (shape === "plates") {
+    /*
+      ── 编号色块，一块一个颜色 ──────────────────────────────────────────────
+
+      Parker & Brown's 「Practice Areas」, read at 1440 on 2026-08-28: four
+      blocks side by side, each a DIFFERENT colour — 01 green, 02 taupe,
+      03 orange, 04 khaki — carrying a number, a title, three lines and a
+      「Learn More →」. No border, no radius, no shadow. It is the only place on
+      that page where colour appears in quantity, and it is what makes a page
+      of cream and serif read as a firm rather than as a brochure.
+
+      ⚠️ THE FOUR COLOURS ARE NOT FOUR NEW DECISIONS. Inventing four hexes here
+      would put a palette inside a component, which is the one thing the token
+      layer exists to prevent (重点 7c: a register must survive a repaint). They
+      are four steps along the register's OWN primary and block colours, so a
+      repaint moves all four together and the shape stays the shape.
+    */
+    /* ⚠️ EACH PLATE CARRIES ITS OWN FOREGROUND, and it has to.
+       The first version stepped the primary down towards the canvas and put
+       --color-on-primary on all four; on 图纸, whose primary is a mid blue, the
+       second and fourth plates came out nearly white with white type on them —
+       one of the four blocks was simply gone. A tint is a LIGHT surface and
+       takes the page's own ink; only the full-strength plates take the
+       inverted text. Two dark, two light, which is also the reference's own
+       rhythm (green, taupe, orange, khaki). */
+    const STEP = [
+      { bg: "var(--color-primary)", fg: "var(--color-on-primary)" },
+      { bg: "color-mix(in oklab, var(--color-primary) 16%, var(--color-canvas))", fg: "var(--color-paper)" },
+      /* ⚠️ NOT --color-block. On 图纸 that token is #e5ebf6, a very pale blue —
+         a LIGHT surface — and --color-on-block falls back to white, so the
+         third plate rendered white type on near-white and the block was simply
+         missing from the row. Deepening the primary towards the page's own ink
+         is dark on every register by construction. */
+      { bg: "color-mix(in oklab, var(--color-primary) 68%, var(--color-paper))", fg: "var(--color-on-primary)" },
+      { bg: "color-mix(in oklab, var(--color-primary) 32%, var(--color-canvas))", fg: "var(--color-paper)" },
+    ]
+    return (
+      <section className="@container" data-wide="">
+        {heading ? (
+          <h2 className="ds-display mb-10 [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
+        ) : null}
+        <ul className="grid [gap:var(--gap-inline)] @2xl:grid-cols-4">
+          {items.map((f, i) => (
+            <li
+              key={f.label}
+              className="flex flex-col [gap:calc(var(--gap-inline)*0.6)] [min-height:calc(13rem*var(--site-figure,1))] [padding:calc(var(--pad-card-lg)*1.1)]"
+              style={{ background: STEP[i % STEP.length].bg, color: STEP[i % STEP.length].fg }}
+            >
+              <span className="[font-family:var(--font-numeric)] [font-size:var(--text-xs)] [letter-spacing:var(--tracking-label)] [opacity:0.7]">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
+                {f.label}
+              </span>
+              <span className="[font-size:var(--text-sm)] [line-height:var(--leading-body)] [opacity:0.84]">
+                {f.value}
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
     )
   }

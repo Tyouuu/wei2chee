@@ -175,6 +175,8 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "listed", label: "清单配照片", props: { shape: "listed" } },
     /* 标题下小字＋图标卡 — section TWO of the page 満図 copies whole. */
     { id: "iconed", label: "标题下小字＋图标卡", props: { shape: "iconed" } },
+    /* 编号色块 — Parker & Brown's Practice Areas, four blocks four colours. */
+    { id: "plates", label: "编号色块", props: { shape: "plates" } },
   ],
 
   SiteCta: [
