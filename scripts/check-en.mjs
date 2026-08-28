@@ -26,17 +26,35 @@
  * Needs `npm run dev` on :3000 and the demo account seeded.
  */
 import { chromium } from "playwright";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { createClient } from "@supabase/supabase-js";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
+/*
+  WHO EACH PAGE HAS TO BE OPENED AS.
+
+  Everything used to be walked as tianyou.demo@formae.test, and that account is
+  a CUSTOMER. `is_founder()` is false for it, so every /portal/console route
+  calls notFound() -- this script walked eight pages, could not open the ninth
+  and tenth at all, and reported zero. On 2026-08-28 the console was opened for
+  real for the first time and had Chinese in two columns: the TRADE column
+  printed `industries.name_zh` unconditionally, and the FEES column had a 「月」
+  welded onto the end of a number in JSX.
+
+  A ruler that returns 0 for a page it cannot open is worse than no ruler. So
+  `as` is part of the page list now, and a founder page that fails to open is a
+  FAILURE rather than a silent zero.
+*/
 const PAGES = [
-  ["home", "/en/portal"],
-  ["library", "/en/portal/library"],
-  ["sections", "/en/portal/sections"],
-  ["templates", "/en/portal/templates"],
-  ["styles", "/en/portal/styles"],
-  ["spec", "/en/portal/spec"],
-  ["enquiries", "/en/portal/enquiries"],
-  ["account", "/en/portal/account"],
+  ["home", "/en/portal", "customer"],
+  ["library", "/en/portal/library", "customer"],
+  ["sections", "/en/portal/sections", "customer"],
+  ["templates", "/en/portal/templates", "customer"],
+  ["styles", "/en/portal/styles", "customer"],
+  ["spec", "/en/portal/spec", "customer"],
+  ["enquiries", "/en/portal/enquiries", "customer"],
+  ["account", "/en/portal/account", "customer"],
+  ["console", "/en/portal/console", "founder"],
+  ["console-leads", "/en/portal/console/leads", "founder"],
 ];
 
 /* The customer's own data. Their name, their people, their words. A single
@@ -44,7 +62,7 @@ const PAGES = [
 const OWN_WORDS = [
   /兴发装修工程/, /陈老板/, /陈先生/, /陈太太/, /李先生/,
   /真实测试/, /厨房翻新/, /想问大概多少钱/,
-  /Taman/, /装修/,
+  /Taman/, /装修/, /我的测试系统/,
   /^[一-鿿]$/,
 ];
 
@@ -53,45 +71,125 @@ const OWN_WORDS = [
    reading 「Chinese」 tells a Chinese reader nothing about what they will get. */
 const BY_DESIGN = [/^中文$/];
 
+/* THE SECOND PROJECTION, AND WHY IT IS NOT A LEAK.
+
+   There are two languages in this product and they are set by two different
+   things (see docs/founder-points.md 13). `locale` is what Formae speaks to the
+   owner -- that is what this script measures. `projects.system_language` is
+   what the CUSTOMER'S SYSTEM speaks to their customers, and it governs the page
+   names in the rail.
+
+   The founder's own test project is a Chinese system. So on /en/portal/console
+   his rail correctly reads 总览 · 客户 · 报价单, and counting those as
+   untranslated UI would be measuring the wrong projection -- the fix a red
+   number there would push you towards is to translate a customer's system into
+   a language they did not choose.
+
+   Read from the catalogue rather than typed out, so a module added tomorrow is
+   covered without anyone remembering this file exists. */
+const SYSTEM_WORDS = (() => {
+  const src = readFileSync("lib/portal/module-catalog.ts", "utf8");
+  return [...src.matchAll(/^\s+label: "([^"]+)",$/gm)].map((m) => new RegExp(`^${m[1]}$`));
+})();
+
 const only = process.argv.slice(2);
 const wanted = only.length ? PAGES.filter(([n]) => only.includes(n)) : PAGES;
 
 mkdirSync(".screenshots/en", { recursive: true });
 
-const b = await chromium.launch();
-const p = await b.newPage({ viewport: { width: 1440, height: 960 } });
-await p.goto("http://localhost:3000/en/login", { waitUntil: "networkidle" });
-await p.fill('input[type="email"]', "tianyou.demo@formae.test");
-await p.fill('input[type="password"]', "FormaeDemo2026!");
-await p.click('button[type="submit"]');
-await p.waitForURL(/portal/, { timeout: 60000 });
+const env = Object.fromEntries(
+  readFileSync(".env.local", "utf8")
+    .split(/\r?\n/)
+    .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
+    .map((l) => [
+      l.slice(0, l.indexOf("=")).trim(),
+      l.slice(l.indexOf("=") + 1).trim().replace(/^["']|["']$/g, ""),
+    ]),
+);
 
+const b = await chromium.launch();
+
+/* The customer walk signs in with a password. The founder walk cannot: that
+   account is the founder's real email, and this script is not worth changing
+   his password over. Same magic-link route shoot-console.mjs uses. */
+async function signIn(as) {
+  const p = await b.newPage({ viewport: { width: 1440, height: 960 } });
+  if (as === "customer") {
+    await p.goto("http://localhost:3000/en/login", { waitUntil: "networkidle" });
+    await p.fill('input[type="email"]', "tianyou.demo@formae.test");
+    await p.fill('input[type="password"]', "FormaeDemo2026!");
+    await p.click('button[type="submit"]');
+    await p.waitForURL(/portal/, { timeout: 60000 });
+    return p;
+  }
+  const db = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+  const { data: founder } = await db
+    .from("accounts").select("email").eq("role", "founder").limit(1).single();
+  if (!founder?.email) throw new Error("no founder account -- accounts.role = 'founder' is unset");
+  const { data: link, error } = await db.auth.admin.generateLink({
+    type: "magiclink",
+    email: founder.email,
+  });
+  if (error) throw new Error(`generateLink failed: ${error.message}`);
+  await p.goto(
+    `http://localhost:3000/auth/confirm?token_hash=${link.properties.hashed_token}&type=magiclink&next=/en/portal/console`,
+    { waitUntil: "networkidle", timeout: 60000 },
+  );
+  if (!/\/portal/.test(p.url())) throw new Error(`founder sign-in landed on ${p.url()}`);
+  return p;
+}
+
+const pages = {};
 const report = {};
 let total = 0;
 
-for (const [name, path] of wanted) {
+for (const [name, path, as] of wanted) {
+  pages[as] ??= await signIn(as);
+  const p = pages[as];
   await p.goto(`http://localhost:3000${path}`, { waitUntil: "networkidle", timeout: 120000 });
   // The spec page writes its prose with a model call; the libraries render a
   // few hundred live previews. Neither is finished at networkidle.
-  await p.waitForTimeout(name === "spec" ? 9000 : 5000);
+  await p.waitForTimeout(name === "spec" ? 9000 : name.startsWith("console") ? 2000 : 5000);
+
+  /* The whole reason the console went unmeasured: notFound() renders a page
+     with no Chinese on it, which counts as a clean pass. Refuse to score a
+     page we did not actually open. */
+  if (as === "founder" && !(await p.locator("h1, h2").first().isVisible().catch(() => false))) {
+    throw new Error(`${name}: signed in as founder but ${path} did not render -- is_founder() false?`);
+  }
 
   // Text NODES, not innerText: a node is the smallest thing a single literal
   // can be, so the count lands on strings rather than on paragraphs.
-  const found = await p.evaluate(() => {
+  const foundRaw = await p.evaluate(() => {
     const out = [];
+    const theirs = [];
     const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n = walk.nextNode(); n; n = walk.nextNode()) {
       const s = (n.textContent || "").trim();
       if (!s || !/[\u4e00-\u9fff]/.test(s)) continue;
       const el = n.parentElement;
       if (el && getComputedStyle(el).display === "none") continue;
+      /* Content a person supplied or that was generated for them and shown to
+         them, marked at the render site. Skipping the whole SUBTREE (closest,
+         not the parent) is deliberate: their words arrive wrapped in our
+         spans. */
+      if (el && el.closest("[data-their-words]")) {
+        theirs.push(s);
+        continue;
+      }
       out.push(s);
     }
-    return out;
+    return { out, theirs };
   });
 
-  const keep = (s) => OWN_WORDS.some((r) => r.test(s)) || BY_DESIGN.some((r) => r.test(s));
-  const own = found.filter(keep);
+  const { out: found, theirs: declared } = foundRaw;
+  const keep = (s) =>
+    OWN_WORDS.some((r) => r.test(s)) ||
+    BY_DESIGN.some((r) => r.test(s)) ||
+    SYSTEM_WORDS.some((r) => r.test(s));
+  const own = [...declared, ...found.filter(keep)];
   const bad = found.filter((s) => !keep(s));
   report[name] = { chinese: bad.length, theirs: own.length, strings: [...new Set(bad)] };
   total += bad.length;

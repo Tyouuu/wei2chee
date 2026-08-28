@@ -11,6 +11,7 @@ type Lead = {
   created_at: string;
   language: string;
   industry_name: string | null;
+  industry_name_en: string | null;
   style_selected: string | null;
   answers: Record<string, unknown> | null;
   summary: string | null;
@@ -23,6 +24,14 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
   const t = useTranslations("portal.console");
   const [open, setOpen] = useState<string | null>(null);
   const [onlyUnconverted, setOnlyUnconverted] = useState(false);
+
+  /* The trade name has always come back in Chinese only. Fifteen of them down
+     a page whose every other word is English -- and invisible to check:en until
+     2026-08-28, because that script signed in as a customer and this route
+     404s for anyone who is not the founder. */
+  const lang = locale === "zh" ? "zh" : "en";
+  const trade = (l: Lead) =>
+    (lang === "en" ? l.industry_name_en || l.industry_name : l.industry_name) ?? t("unknownIndustry");
 
   const shown = onlyUnconverted ? leads.filter((l) => !l.converted) : leads;
   const unconverted = leads.filter((l) => !l.converted).length;
@@ -69,7 +78,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2.5">
                         <span className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
-                          {lead.industry_name ?? t("unknownIndustry")}
+                          {trade(lead)}
                         </span>
                         <span className="rounded-full px-2 py-0.5 [font-size:var(--text-micro)] uppercase tracking-[0.1em] [background-color:var(--color-ink-850)] [color:var(--color-paper-dim)]">
                           {lead.language}
@@ -88,8 +97,23 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                       {/* The AI's own sentence about this business. It is the
                           single most useful thing on the row and it has never
                           been visible outside a table editor. */}
+                      {/* WHOSE WORDS THESE ARE, DECLARED WHERE THEY RENDER.
+
+                          The analysis was written FOR this lead, FROM their own
+                          answers, IN the language they answered in, and it was
+                          on their screen. `summary_en` exists, but showing it
+                          here would have the founder reading a version of the
+                          analysis this person never saw -- and quoting it back
+                          to them on the phone.
+
+                          So it stays in their language, and says so in the DOM
+                          rather than in a regex inside check-en.mjs. An
+                          exclusion list of sentences would need a new line per
+                          lead and would quietly grow into a way of making the
+                          number green; an attribute at the render site is the
+                          decision written down in the one place that knows it. */}
                       {lead.summary ? (
-                        <p className="mt-2 max-w-3xl border-l-2 pl-3 [border-color:var(--color-primary)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                        <p data-their-words className="mt-2 max-w-3xl border-l-2 pl-3 [border-color:var(--color-primary)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
                           {lead.summary}
                         </p>
                       ) : (
@@ -130,7 +154,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
                           <h3 className="[font-size:var(--text-micro)] uppercase tracking-[0.12em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
                             {t("bottlenecks")}
                           </h3>
-                          <ul className="mt-2 flex flex-col gap-2">
+                          <ul data-their-words className="mt-2 flex flex-col gap-2">
                             {lead.bottlenecks.map((b, i) => (
                               <li key={i} className="max-w-3xl">
                                 <span className="[color:var(--color-brass-bright)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">

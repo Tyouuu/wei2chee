@@ -613,6 +613,7 @@ export const LABELS_EN: Record<string, string> = {
   "几个人评": "How many reviews",
   "哪里的评价": "Where from",
   "还没填": "Not filled in",
+  一条满边照片: "Edge-to-edge photo",
   "第一屏的照片": "Photo for the first screen",
   "作品墙": "Your work",
   "三张一样大": "Three the same",
