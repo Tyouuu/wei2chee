@@ -819,9 +819,16 @@ try {
   /* ── 5 动效 MOTION ─────────────────────────────────────────────────────── */
   const tiers = (a) => (a ? a.motion.tiers.map((x) => `${x.tier}${x.ms.join("/")}`).join(" ") : "—");
   const ease = (a) => (a && a.motion.easings[0] ? a.motion.easings[0][0] : "—");
-  const longest = (a) => (a ? Math.max(0, ...a.motion.tiers.flatMap((x) => x.ms)) : 0);
+  /* ⚠️ 比「最常出现的那一档」，不是比最长的那一档。台账的参考页有一个 600ms 的
+     过渡出现十次，跟 200/300ms 出现六十八次 —— 拿最长的去比，我们把主要那一档
+     调成跟他们一样之后反而被判成对不上。一页的动效是它重复最多的那个长度。 */
+  const dominant = (a) => {
+    if (!a || !a.motion.tiers.length) return 0;
+    const top = [...a.motion.tiers].sort((x, y) => y.n - x.n)[0];
+    return top.ms[Math.floor(top.ms.length / 2)] ?? 0;
+  };
   console.log("\n动效 MOTION");
-  check("动效", "时长", tiers(theirs.axes), tiers(ours.axes), near(longest(theirs.axes), longest(ours.axes), 200));
+  check("动效", "时长", tiers(theirs.axes), tiers(ours.axes), near(dominant(theirs.axes), dominant(ours.axes), 90));
   check("动效", "缓动", ease(theirs.axes), ease(ours.axes), ease(theirs.axes) === ease(ours.axes));
   check("动效", "减少动效", theirs.axes?.motion.reducedMotion, ours.axes?.motion.reducedMotion,
     Boolean(theirs.axes?.motion.reducedMotion) === Boolean(ours.axes?.motion.reducedMotion));

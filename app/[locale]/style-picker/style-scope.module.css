@@ -106,6 +106,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-display-weight: 400;
   --site-statement: 2.1;
   --site-inner: 5rem;
   --site-motion: 0.3s;
@@ -292,7 +293,7 @@
   --site-hero-band: #f0f2f5;
   --site-radius-control: 0px;
   --site-card-radius: 0px;
-  --site-motion: 0.3s;
+  --site-motion: 0.22s;
   --site-ease: ease;
   --font-ui: var(--font-sans-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
@@ -620,7 +621,7 @@
   --site-hero-scale: 1.2;
   --site-frame: color-mix(in oklab, #f0eae0 26%, transparent);
   --site-strip: #2c200b;
-  --site-motion: 0.3s;
+  --site-motion: 0.25s;
   --site-ease: ease;
   --site-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -768,11 +769,12 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-display-weight: 700;
   --site-heading: 1.6;
   --site-inner: 6rem;
-  --site-motion: 0.3s;
+  --site-motion: 0.22s;
   --site-ease: ease;
-  --site-hero-scale: 2.5;
+  --site-hero-scale: 2.35;
   --site-ink-bg: #500014;
   --site-ink-fg: #ffd9f2;
   --site-ink-fg-dim: #e0a8c8;

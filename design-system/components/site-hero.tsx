@@ -507,7 +507,7 @@ export function SiteHero({
              photograph in the picker, not against theirs. */
           style={{ background: "linear-gradient(to bottom, rgb(0 0 0 / 0.52), rgb(0 0 0 / 0.42) 45%, rgb(0 0 0 / 0.62))" }}
         />
-        <div className="flex flex-col items-center justify-center text-center [min-block-size:clamp(26rem,76svh,46rem)] [padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]">
+        <div className="flex flex-col items-center justify-center text-center [min-block-size:clamp(26rem,92svh,calc(46rem*var(--site-figure,1)))] [padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]">
           <h1
             className="ds-display max-w-[16ch] [color:#fff] [font-weight:var(--fw-regular,400)] [letter-spacing:-0.01em] [line-height:1.06] [text-wrap:balance]"
             style={{ fontSize: "clamp(2.6rem, calc(6.6vw * var(--site-hero-scale, 1)), calc(5.2rem * var(--site-hero-scale, 1)))" }}
@@ -576,14 +576,14 @@ export function SiteHero({
                 src={photo}
                 alt={photoAlt || ""}
                 className="block w-full object-cover"
-                style={{ aspectRatio: "5 / 6", maxHeight: "calc(42rem * var(--site-figure, 1))" }}
+                style={{ aspectRatio: "5 / 6", maxHeight: "calc(42rem * var(--site-figure, 1))", minHeight: "clamp(18rem, 58vh, 44rem)" }}
               />
             ) : (
               /* 占位图 —— 一张风格图要看得到它的形状，就算还没有照片。 */
               <div
                 aria-hidden
                 className="w-full [background:color-mix(in_oklab,var(--color-primary)_18%,var(--color-canvas))]"
-                style={{ aspectRatio: "5 / 6", maxHeight: "calc(42rem * var(--site-figure, 1))" }}
+                style={{ aspectRatio: "5 / 6", maxHeight: "calc(42rem * var(--site-figure, 1))", minHeight: "clamp(18rem, 58vh, 44rem)" }}
               />
             )}
             <div className="[border-top:1px_solid_color-mix(in_oklab,var(--color-primary)_50%,transparent)] [padding-top:calc(var(--pad-card-lg)*0.6)] [text-align:right]">

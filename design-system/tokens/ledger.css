@@ -329,7 +329,7 @@
   --site-strip: #2c200b;
   /* 动效：Newel 量出来是 200/300ms 的 ease 为主（68 次），最长 600ms×10。
      我们原本是 130ms×6 + 620ms×27 —— 短的更短、长的更长，两头都不对。 */
-  --site-motion: 0.3s;
+  --site-motion: 0.25s;
   --site-ease: ease;
   /* 字体 —— the TYPE axis. Their name and every section heading are a light
      serif; 台账's工作台 keeps its condensed grotesk for the tables. */

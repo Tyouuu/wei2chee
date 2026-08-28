@@ -1401,7 +1401,9 @@
   /* A photograph in a gallery grows very slightly inside its own frame. The
      frame does not move, so the grid never reflows. */
   .ds-site figure img {
-    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+    /* 跟着 --site-motion 走，跟进场同一档。0.5s 是这一层最后一个自己决定时长的
+       地方，而尺子每一轮都在 ledger / 中台 / 图纸 上把它报成「时长对不上」。 */
+    transition: transform var(--site-motion, 0.5s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
   }
   .ds-site figure:hover img {
     transform: scale(1.03);
@@ -1422,7 +1424,7 @@
 }
 [data-tilt] > * {
   transform-style: preserve-3d;
-  transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: transform var(--site-motion, 0.35s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
 }
 
 @media (prefers-reduced-motion: no-preference) {

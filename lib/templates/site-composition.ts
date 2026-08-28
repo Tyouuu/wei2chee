@@ -604,7 +604,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* 交替，而且**奶白要比酒红多** —— 逐像素量出来他们是白 37.1% 对酒红 28.4%，
        我们第一版是酒红 46.3% 对白 7.6%：同样两个颜色，比例整个倒过来。
        菜单、故事、评价、询价都放在奶白带上，酒红只留给第一屏、作品墙跟页脚。 */
-    tones: { services: "paper", story: "paper", prices: "paper", cta: "paper" },
+    tones: { services: "paper", story: "paper" },
     /* ⚠️ 纹理拿掉了。量出来我们的酒红是 #460014，他们是 #500014 —— 差的那一层就是
        这张菱形网，它盖在整页上把地压暗了一档。他们那一页没有任何纹理。 */
     ground: "ink",
