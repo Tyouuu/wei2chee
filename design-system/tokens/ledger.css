@@ -263,7 +263,7 @@
 :root {
 
   /* 段内的气 —— 段均高对齐用的（见 align 的「段均高」那一项）。 */
-  --site-inner: 5rem;  /* 第2段 449 对他们 1030 */
+  --site-inner: 7rem;  /* 第2段 449 对他们 1030 */
   color-scheme: light;
 
   /* ---- TYPE AXIS: condensed grotesque, heavy at display sizes -------------

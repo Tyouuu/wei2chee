@@ -442,7 +442,7 @@
   --site-heading: 1.6;
 
   /* 留白 SPACE / 动效 MOTION，量出来的：段间他们 0、动效他们 200–350ms ease。 */
-  --site-inner: 12rem;
+  --site-inner: 9rem;  /* ⚠️ 15rem 试过，第2段上面出现一片空的底色 —— 段高的数字可以靠内距买到，画面买不到。 */
   --site-motion: 0.22s;  /* 他们主要那一档是 200ms */
   --site-ease: ease;
 

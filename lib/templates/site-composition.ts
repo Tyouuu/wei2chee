@@ -526,6 +526,8 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* 段间贴住 —— 六个参考页量出来全部是 0，我们是 104（这一套）或 40。
        气挪进段内（--site-inner），页面不会因此变短。 */
     rhythm: "flush",
+    /* 他们六段，收在页脚上；我们八段，多一个表单跟一条联络横列。 */
+    dropBlocks: ["website-form", "website-contact"],
     opens: "菜单",
     /* 他们的顺序：第一屏 → 两张各半 → 白底的卡 → 两张各半 → 马赛克配 ask → 页脚。
        逐段量出来我们第 4 段是白的、他们是照片，第 6 段刚好相反 —— 中间少了一次

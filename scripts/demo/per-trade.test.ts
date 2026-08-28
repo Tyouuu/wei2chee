@@ -57,9 +57,9 @@ const PHOTOS = JSON.parse(readFileSync(".screenshots/photos/trade-photos.json", 
 
    so the gallery carries what its own page carries and nothing else. */
 const SHOTS: Record<string, number> = {
-  renovation: 7,  // 台账 ← Newel: Recent Projects is 2198px of ~500px tiles; ten of ours ran 4442
+  renovation: 10, // 照片张数 10 对他们 15；格子有上限之后十张不会再撑爆
   beauty: 6,      // 満図 ← A. Reynolds: its photographs live in the argument
-  services: 9,    // 瑞士 ← Leah Webb: 12 across the page — three programmes, three posts, About, hero
+  services: 6,  // 第5段 1413 对他们 611 —— 九张把作品墙撑成两倍
   education: 3,   // 図纸 ← Parker & Brown: seven on the whole page
   retail: 6,      // 招牌 ← Toulouse: Moments is six
   wholesale: 6,   // 中台 ← Kurofude: pairs, not a wall
