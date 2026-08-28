@@ -738,7 +738,10 @@
         "catalog": "things you hold and count",
         "report": "a period, summarised",
         "landing": "the page strangers see"
-      }
+      },
+      "shellName": "Console",
+      "navOverview": "Overview",
+      "signOut": "Sign out"
     },
     "account": {
       "title": "My account",

@@ -67,13 +67,13 @@ const p = await b.newPage({ viewport: { width: 1400, height: 1000 } });
   the confirmation email), so hand it the hashed token directly and skip
   Supabase's redirect entirely.
 */
-const confirm = `${BASE}/auth/confirm?token_hash=${link.properties.hashed_token}&type=magiclink&next=/en/portal/console`;
+const confirm = `${BASE}/auth/confirm?token_hash=${link.properties.hashed_token}&type=magiclink&next=/en/console`;
 await p.goto(confirm, { waitUntil: "networkidle", timeout: 60000 });
-if (!/\/portal/.test(p.url())) throw new Error(`login did not land in the portal: ${p.url()}`);
+if (!/\/console/.test(p.url())) throw new Error(`login did not land in the console: ${p.url()}`);
 
 const shots = [
-  ["home", "/en/portal/console"],
-  ["leads", "/en/portal/console/leads"],
+  ["home", "/en/console"],
+  ["leads", "/en/console/leads"],
 ];
 
 for (const [name, path] of shots) {

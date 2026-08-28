@@ -738,7 +738,10 @@
         "catalog": "手上有多少货",
         "report": "一段时间的总结",
         "landing": "陌生人看到的那一页"
-      }
+      },
+      "shellName": "后台",
+      "navOverview": "总览",
+      "signOut": "登出"
     },
     "account": {
       "title": "我的账号",

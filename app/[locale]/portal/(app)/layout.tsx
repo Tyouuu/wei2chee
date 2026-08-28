@@ -53,13 +53,18 @@ export default async function PortalAppLayout({
     .eq("account_id", user.id)
     .single();
 
-  // A founder account has no project of its own, and must still be able to
-  // reach the console. Customers without a project are a broken signup and go
-  // back to login, as before.
-  const { data: founder } = await supabase.rpc("is_founder");
-  const isFounder = Boolean(founder);
-
-  if (!project && !isFounder) redirect("/login");
+  /*
+    A founder account may have no project of its own. It used to be let into
+    this shell anyway, because the console lived inside it and there was
+    nowhere else to go. The console has its own route and its own shell now, so
+    the right answer is to send them there rather than to hand them a customer
+    portal with an empty rail. Customers without a project are a broken signup
+    and still go back to login, as before.
+  */
+  if (!project) {
+    const { data: founder } = await supabase.rpc("is_founder");
+    redirect(founder ? `/${locale}/console` : "/login");
+  }
 
   const { data: pageRows } = project
     ? await supabase
@@ -122,7 +127,6 @@ export default async function PortalAppLayout({
       sitePublished={Boolean(project?.site_published)}
       enquiryCount={enquiryCount ?? 0}
       paid={Boolean(project?.paid)}
-      isFounder={isFounder}
     >
       {/* Inside the shell, not around it. PortalShell is FORMAE -- dark chrome,
           the founder's own product, always in the owner's language. Everything

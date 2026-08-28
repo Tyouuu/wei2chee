@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { PageBar } from "../../page-bar";
+import { PageBar } from "@/app/[locale]/portal/(app)/page-bar";
 import { formatDayTime } from "@/lib/format-date";
 
 type Lead = {
@@ -49,7 +49,7 @@ export function LeadsClient({ locale, leads }: { locale: string; leads: Lead[] }
           {t("onlyUnconverted")}
         </label>
         <Link
-          href={`/${locale}/portal/console`}
+          href={`/${locale}/console`}
           className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
         >
           ← {t("title")}

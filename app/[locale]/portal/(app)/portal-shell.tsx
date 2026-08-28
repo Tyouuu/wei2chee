@@ -11,7 +11,6 @@ import { AddPageDialog } from "../add-page-dialog";
 import chrome from "../chrome.module.css";
 import {
   IconBlocks,
-  IconConsole,
   IconHandoff,
   IconHome,
   IconPages,
@@ -155,7 +154,6 @@ export function PortalShell({
   sitePublished,
   enquiryCount,
   paid,
-  isFounder,
 }: {
   children: ReactNode;
   locale: string;
@@ -176,10 +174,6 @@ export function PortalShell({
   /** Enquiries posted through the public site. */
   enquiryCount: number;
   paid: boolean;
-  /** Shows the founder's console entry. Never a security boundary — the console
-   *  routes and their RPCs check the role themselves. This only decides whether
-   *  a link is drawn. */
-  isFounder: boolean;
 }) {
   const t = useTranslations("portal.shell");
 
@@ -388,17 +382,16 @@ export function PortalShell({
             {t("handoff")}
           </NavRow>
 
-          {isFounder && (
-            <>
-              <SectionLabel>{t("founderSection")}</SectionLabel>
-              <NavRow href={`${base}/console`} active={is("/console")} icon={<IconConsole />}>
-                {t("console")}
-              </NavRow>
-              <NavRow href={`${base}/console/leads`} active={is("/console/leads")} icon={<IconSpec />}>
-                {t("leads")}
-              </NavRow>
-            </>
-          )}
+          {/* THE CONSOLE USED TO BE TWO ROWS HERE, AND THAT WAS THE BUG.
+
+              「感覺我的平台有點四不像」. Reaching the admin panel meant scrolling
+              past a sidebar built for somebody else -- the customer's own
+              pages, then the component libraries, then DELIVER -- to find
+              CONSOLE at the bottom. Two products, one set of furniture.
+
+              It now lives at /console with its own shell, and on the admin
+              deployment this file is not served at all. A link from here would
+              therefore be a link to a 404 as often as not. See proxy.ts. */}
         </nav>
 
         <div className="shrink-0 border-t px-2 py-2 [border-color:var(--color-nav-border)]">

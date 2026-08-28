@@ -33,7 +33,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
   WHO EACH PAGE HAS TO BE OPENED AS.
 
   Everything used to be walked as tianyou.demo@formae.test, and that account is
-  a CUSTOMER. `is_founder()` is false for it, so every /portal/console route
+  a CUSTOMER. `is_founder()` is false for it, so every /console route
   calls notFound() -- this script walked eight pages, could not open the ninth
   and tenth at all, and reported zero. On 2026-08-28 the console was opened for
   real for the first time and had Chinese in two columns: the TRADE column
@@ -53,8 +53,8 @@ const PAGES = [
   ["spec", "/en/portal/spec", "customer"],
   ["enquiries", "/en/portal/enquiries", "customer"],
   ["account", "/en/portal/account", "customer"],
-  ["console", "/en/portal/console", "founder"],
-  ["console-leads", "/en/portal/console/leads", "founder"],
+  ["console", "/en/console", "founder"],
+  ["console-leads", "/en/console/leads", "founder"],
 ];
 
 /* The customer's own data. Their name, their people, their words. A single
@@ -79,7 +79,7 @@ const BY_DESIGN = [/^中文$/];
    what the CUSTOMER'S SYSTEM speaks to their customers, and it governs the page
    names in the rail.
 
-   The founder's own test project is a Chinese system. So on /en/portal/console
+   The founder's own test project is a Chinese system. So on /en/console
    his rail correctly reads 总览 · 客户 · 报价单, and counting those as
    untranslated UI would be measuring the wrong projection -- the fix a red
    number there would push you towards is to translate a customer's system into
@@ -134,10 +134,10 @@ async function signIn(as) {
   });
   if (error) throw new Error(`generateLink failed: ${error.message}`);
   await p.goto(
-    `http://localhost:3000/auth/confirm?token_hash=${link.properties.hashed_token}&type=magiclink&next=/en/portal/console`,
+    `http://localhost:3000/auth/confirm?token_hash=${link.properties.hashed_token}&type=magiclink&next=/en/console`,
     { waitUntil: "networkidle", timeout: 60000 },
   );
-  if (!/\/portal/.test(p.url())) throw new Error(`founder sign-in landed on ${p.url()}`);
+  if (!/\/console/.test(p.url())) throw new Error(`founder sign-in landed on ${p.url()}`);
   return p;
 }
 

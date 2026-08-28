@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { PageBar } from "../page-bar";
+import { PageBar } from "@/app/[locale]/portal/(app)/page-bar";
 import { STAGES, StageSelect, stageTone } from "./stage";
 import { formatDay } from "@/lib/format-date";
 import { MODULE_BY_KEY, type ModuleShape } from "@/lib/portal/module-catalog";
@@ -118,7 +118,7 @@ export function ConsoleHome({
     <>
       <PageBar title={t("title")} subtitle={t("subtitle")}>
         <Link
-          href={`/${locale}/portal/console/leads`}
+          href={`/${locale}/console/leads`}
           className="rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
         >
           {t("leadsCta", { count: num("leads_total") })}
@@ -280,7 +280,7 @@ export function ConsoleHome({
                     <tr key={c.project_id} className="[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-850)]">
                       <td className="px-4 py-3">
                         <Link
-                          href={`/${locale}/portal/console/${c.project_id}`}
+                          href={`/${locale}/console/${c.project_id}`}
                           className="block [color:var(--color-paper)] [font-weight:var(--fw-medium)] hover:[color:var(--color-primary)]"
                         >
                           {c.business_name || t("unnamed")}

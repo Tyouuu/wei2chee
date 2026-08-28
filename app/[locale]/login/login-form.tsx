@@ -25,14 +25,29 @@ export function LoginForm({ locale }: { locale: string }) {
     const supabase = createBrowserSupabaseClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-    setPending(false);
-
     if (signInError) {
+      setPending(false);
       setError(t("errorInvalidCredentials"));
       return;
     }
 
-    router.push("/portal");
+    /*
+      WHERE SIGNING IN LANDS YOU DEPENDS ON WHO YOU ARE.
+
+      This used to be `/portal` for everyone, which was fine while the console
+      lived inside the portal. It does not any more, and on the admin
+      deployment `/portal` is not served at all -- so a founder signing in
+      there would land on a 404. One extra round trip, on the one screen where
+      an extra round trip is invisible.
+
+      A customer who somehow reaches the admin deployment's login still goes to
+      /portal and gets a 404 there. That is correct: this deployment does not
+      have a customer product to show them.
+    */
+    const { data: founder } = await supabase.rpc("is_founder");
+
+    setPending(false);
+    router.push(founder ? "/console" : "/portal");
   }
 
   return (

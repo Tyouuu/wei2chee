@@ -7,11 +7,11 @@ import { useTranslations } from "next-intl";
 import type { Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
-import { PagePreview } from "../../../page-preview";
-import { PageBar } from "../../page-bar";
+import { PagePreview } from "@/app/[locale]/portal/page-preview";
+import { PageBar } from "@/app/[locale]/portal/(app)/page-bar";
 import { StageSelect } from "../stage";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
-import chrome from "../../../chrome.module.css";
+import chrome from "@/app/[locale]/portal/chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 import { StyleScope } from "@/design-system/editor/style-scope";
@@ -111,7 +111,7 @@ export function CustomerDetail({
       <PageBar title={businessName || t("unnamed")} subtitle={email}>
         <StageSelect value={stage} disabled={busy} onChange={setStage} />
         <Link
-          href={`/${locale}/portal/console`}
+          href={`/${locale}/console`}
           className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
         >
           ← {t("title")}
