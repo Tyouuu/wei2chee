@@ -1549,7 +1549,7 @@ export function SiteStory({
         style={
           shape === "stack"
             ? { aspectRatio: "21 / 9", maxHeight: "calc(30rem * var(--site-figure, 1))" }
-            : { aspectRatio: "4 / 3", maxHeight: "calc(38rem * var(--site-figure, 1))" }
+            : { aspectRatio: "3 / 4", maxHeight: "calc(38rem * var(--site-figure, 1))", minHeight: "clamp(16rem, 52vh, 34rem)" }
         }
       />
     </div>
@@ -2126,13 +2126,13 @@ export function SiteWoven({
                   src={shots[i]}
                   alt=""
                   className="mt-8 w-full object-cover"
-                  style={{ maxWidth: i === mid ? "100%" : "62%", height: i === mid ? "22rem" : "11rem" }}
+                  style={{ maxWidth: i === mid ? "100%" : "62%", height: i === mid ? "calc(30rem * var(--site-figure, 1))" : "calc(15rem * var(--site-figure, 1))" }}
                 />
               ) : (
                 <div
                   aria-hidden
                   className="mt-8 w-full [background:color-mix(in_oklab,var(--color-primary)_16%,transparent)]"
-                  style={{ maxWidth: i === mid ? "100%" : "62%", height: i === mid ? "22rem" : "11rem" }}
+                  style={{ maxWidth: i === mid ? "100%" : "62%", height: i === mid ? "calc(30rem * var(--site-figure, 1))" : "calc(15rem * var(--site-figure, 1))" }}
                 />
               )}
             </li>
