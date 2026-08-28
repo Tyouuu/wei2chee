@@ -446,7 +446,7 @@
 :root {
 
   /* 留白 SPACE / 动效 MOTION，量出来的：段间他们 0、动效他们 200–350ms ease。 */
-  --site-inner: 3rem;  /* ⚠️ 24rem 试过，退回来了：段均高的数字过关，画面变成一大片空的底色，内容浮在中间。内距不等於内容 —— 他们那些段是被大字跟大图填满的。 */
+  --site-inner: 5rem;
 
   /* 字体 TYPE，逐项量出来的（重点 7i）：他们 h1 是 56px w700，我们 83px w500。 */
   --site-hero-scale: 0.68;
@@ -476,7 +476,7 @@
   --site-hero-band: #f0f2f5;
   --site-radius-control: 0px;
   --site-card-radius: 0px;
-  --site-motion: 0.22s;  /* 他们那一页几乎不动 */
+  --site-motion: 0.12s;  /* 他们那一页量出来一个过渡都没有 */
   --site-ease: ease;
   color-scheme: light;
 

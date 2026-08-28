@@ -59,7 +59,7 @@ const PHOTOS = JSON.parse(readFileSync(".screenshots/photos/trade-photos.json", 
 const SHOTS: Record<string, number> = {
   renovation: 7,  // 台账 ← Newel: Recent Projects is 2198px of ~500px tiles; ten of ours ran 4442
   beauty: 6,      // 満図 ← A. Reynolds: its photographs live in the argument
-  services: 6,    // 瑞士 ← Leah Webb: three programmes, three posts
+  services: 9,    // 瑞士 ← Leah Webb: 12 across the page — three programmes, three posts, About, hero
   education: 3,   // 図纸 ← Parker & Brown: seven on the whole page
   retail: 6,      // 招牌 ← Toulouse: Moments is six
   wholesale: 6,   // 中台 ← Kurofude: pairs, not a wall
