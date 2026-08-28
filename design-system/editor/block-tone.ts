@@ -144,6 +144,33 @@ export function toneLayers(
       "--color-canvas": "#ffffff",
       "--color-ink-900": "#ffffff",
       "--card": "#ffffff",
+      /* ⚠️ THE WRITING, WHICH THIS BRANCH SET FOR THE FIRST TIME ON 2026-08-28.
+
+         It set three backgrounds and no foreground. On a light register that
+         is invisible — the page's text is already dark and stays readable on
+         white. On a DARK one it is a white rectangle with white type in it:
+         招牌 opens on a near-black ground, so its --color-paper is light, and
+         its 「Who you are dealing with」 block rendered as an empty white box.
+         Photographed, not reasoned about.
+
+         Two earlier attempts at this were reverted (see founder-tasks 36) and
+         both failed the same way: they reached for --color-ink-900 as the text
+         colour, and it is a SURFACE token — this very branch sets it to
+         #ffffff three lines up. There is no register token that means 「the
+         dark you write with on a white sheet」.
+
+         So the literal, and only here: this tone is ALREADY literal (#ffffff,
+         「the one surface identical in every register」), and its own swatch in
+         TONE_SWATCH has been pairing that white with #1a1d24 since the day it
+         was written. The pair is the thing; half of it was missing. */
+      "--color-paper": "#1a1d24",
+      "--color-paper-dim": "color-mix(in oklab, #1a1d24 66%, #ffffff)",
+      "--color-on-canvas": "#1a1d24",
+      "--color-on-canvas-dim": "color-mix(in oklab, #1a1d24 66%, #ffffff)",
+      "--border": "color-mix(in oklab, #1a1d24 18%, #ffffff)",
+      "--border-subtle": "color-mix(in oklab, #1a1d24 10%, #ffffff)",
+      "--color-table-head-fg": "color-mix(in oklab, #1a1d24 72%, #ffffff)",
+      "--color-table-bg": "transparent",
     },
   };
 }

@@ -529,17 +529,36 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // signboard. Then the two things somebody standing on the street needs:
   // when are you open, and where exactly are you.
   signboard: {
-  /* READ FROM THE STREET, so it is the shortest page in the library. A
-     shop sign does not answer frequently asked questions, walk you
-     through a process, or introduce its staff -- it says who we are,
-     what we sell, where we are, and come in. */
-    omit: ["faq", "flow", "promise", "team"],
-    tones: { prices: "ink", promise: "paper", areas: "tint" },
+    /* ── COPIED WHOLE: Wix `brasserie` (Toulouse) ───────────────────────────
+       Read at 1440 on 2026-08-28. Six sections, 8604px, and it is the loudest
+       page in the whole reference set:
+
+           1100px  1img  the NAME across the full width in enormous letters, a
+                         script sub-line, a centred photograph, and two links on
+                         rules — wine ground
+           1592px  3img  The Menu — CREAM band, small eyebrow, a huge centred
+                         heading over four lines, three numbered dishes
+           2007px  4img  This Month — back to wine, script heading, three
+                         columns, then one wide interior photograph
+           1255px  0img  Our Story — CREAM again, huge centred heading, one
+                         narrow column of small text
+           1812px  6img  Moments — wine, script heading, scattered photographs
+            838px  0img  the NAME again, huge, over the links
+
+       The identity is the ALTERNATION: wine, cream, wine, cream, wine. Ours ran
+       twelve sections all on one ground with opening hours and a coverage strip
+       at the top, which is a shop's noticeboard, not a brasserie. */
+    omit: ["faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "woven", "band"],
+    /* 交替：菜单跟故事是米色带，其余留在酒红底上。 */
+    tones: { services: "paper", story: "paper" },
     pattern: "diamond",
     ground: "ink",
     hero: "name-plate",
-    opens: "店名 + 找得到",
-    order: ["hours", "areas", "services", "creds", "work", "story", "team", "prices", "woven", "reviews", "band", "cta", "faq", "flow", "promise"],
+    figure: "huge",
+    measure: "wide",
+    dropBlocks: ["website-statement"],
+    opens: "菜单",
+    order: ["services", "prices", "story", "work", "cta", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "woven", "band"],
   },
 };
 
