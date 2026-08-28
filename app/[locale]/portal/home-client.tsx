@@ -14,6 +14,7 @@ import { PageBar } from "./(app)/page-bar";
 import styles from "@/app/[locale]/style-picker/style-scope.module.css";
 import chrome from "./chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { formatDay } from "@/lib/format-date";
 
 import { StyleScope } from "@/design-system/editor/style-scope";
 
@@ -65,10 +66,17 @@ const BUILT_IN_PAGE_KEYS: string[] = [
  * on a normal laptop puts it near 0.47, where the shape of the page is
  * readable, which is the entire job of a gallery tile.
  */
+/** The five the database allows, in order. Mirrors the check constraint in
+ *  20260821020000; a value outside it simply lights nothing, which is the right
+ *  failure for a strip that is only ever informational. */
+const DELIVERY_STAGES = ["designing", "quoted", "paid", "building", "live"];
+
 export function PortalHome({
   locale,
   accountEmail,
   paid,
+  stage,
+  stageChangedAt,
   style,
   palette,
   pages,
@@ -84,6 +92,13 @@ export function PortalHome({
   locale: string;
   accountEmail?: string;
   paid: boolean;
+  /** Where this customer is in the business: designing, quoted, paid, building,
+   *  live. Distinct from `paid`, which is the gate on saving. */
+  stage: string;
+  /** When they entered that step. Never an estimate of when they will leave it
+   *  -- see the migration for why a promise nobody maintains is worse than no
+   *  promise at all. */
+  stageChangedAt: string | null;
   style: StyleName;
   /** The customer's 配色 layer, or null for this layout's native colours.
    *  Threaded from the server rather than fetched again: the same projects row
@@ -267,6 +282,96 @@ export function PortalHome({
             {paid ? t("statPlanPaidNote") : t("statPlanFreeNote")}
           </span>
         </div>
+
+
+        {/*
+          WHERE THEIR SYSTEM IS, ON THE SCREEN THAT ALREADY KNEW.
+
+          「客户是否要看到交付状态」 -- yes, and it was the cheapest thing in the
+          backlog: five stages, an RPC that moves them and a column that stores
+          them have existed since 20260821020000, read by nobody but the
+          founder. Between paying and going live the customer looked at a page
+          that had the answer and did not say it.
+
+          READ-ONLY, DELIBERATELY. This is not somewhere to ask for changes. A
+          progress strip with a text box under it becomes an unbounded queue of
+          free revisions, and the request that matters ("can you add stock
+          tracking") needs a conversation about the delivery date, not a
+          comment field.
+
+          FIVE MILESTONES AND NO PERCENTAGE. A percentage has to be maintained
+          by hand every week by the one person building the thing, and the week
+          it is not maintained it is lying. A stage plus the date it started is
+          true without anyone touching it -- and a date three weeks old says
+          more about a stalled build than 60% ever would.
+        */}
+        <section className="mt-8" aria-label={t("deliveryTitle")}>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+              {t("deliveryTitle")}
+            </h2>
+            {stageChangedAt && (
+              <span className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                {t("deliverySince", { date: formatDay(stageChangedAt, locale) })}
+              </span>
+            )}
+          </div>
+
+          <ol className="mt-3 grid gap-px overflow-hidden rounded-[var(--radius-md)] [background-color:var(--color-ink-800)] sm:grid-cols-3 lg:grid-cols-5">
+            {DELIVERY_STAGES.map((key, i) => {
+              const at = DELIVERY_STAGES.indexOf(stage);
+              const here = key === stage;
+              // Everything before the current step is done. Nothing after it is
+              // predicted -- a future step is drawn as a future step, not as a
+              // thing that is about to happen.
+              const done = at > -1 && i < at;
+              return (
+                /*
+                  DONE / HERE / NOT YET, CARRIED BY FORM RATHER THAN BY DIMNESS.
+
+                  The first cut leaned on colour for all three and measured
+                  badly in both directions. "You are here" was
+                  --color-primary-soft, which resolves to #20242c on Formae's
+                  dark chrome -- one step off the #15181f of every other cell,
+                  so the current step was announced almost entirely by its text
+                  being white. And "not yet" was --color-ink-700 on ink-900,
+                  about 2.3:1: the same mistake as the console's shape gloss
+                  earlier the same day, which is twice in one file's lifetime
+                  that a SEPARATOR token was used for a sentence.
+
+                  So: a tick says done, an accent rule says here, and nothing
+                  says not-yet except the absence of both. Every string on the
+                  strip is now readable, which is the floor, not the goal.
+                */
+                <li
+                  key={key}
+                  aria-current={here ? "step" : undefined}
+                  className={`px-4 py-3.5 ${
+                    here
+                      ? "border-l-2 [border-color:var(--color-jade-bright)] [background-color:var(--color-ink-850)]"
+                      : "[background-color:var(--color-ink-900)]"
+                  }`}
+                >
+                  <span
+                    className={`block [font-size:var(--text-micro)] uppercase tracking-[0.12em] [font-weight:var(--fw-semibold)] ${
+                      here ? "[color:var(--color-jade-bright)]" : "[color:var(--color-paper-dim)]"
+                    }`}
+                  >
+                    <span aria-hidden="true">{done ? "✓" : i + 1}</span> ·{" "}
+                    {t(`deliveryStage.${key}`)}
+                  </span>
+                  <span
+                    className={`mt-1.5 block [font-size:var(--text-xs)] [line-height:var(--leading-body)] ${
+                      here ? "[color:var(--color-paper)]" : "[color:var(--color-paper-dim)]"
+                    }`}
+                  >
+                    {t(`deliveryNote.${key}`)}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
 
         {/*
           TWO KINDS OF THING, TWO PLACES.

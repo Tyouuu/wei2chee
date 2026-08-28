@@ -58,7 +58,7 @@ export default async function PortalHomePage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style, palette, paid, site_slug, site_published, layout")
+    .select("id, style, palette, paid, stage, stage_changed_at, site_slug, site_published, layout")
     .eq("account_id", user.id)
     .single();
 
@@ -130,6 +130,12 @@ export default async function PortalHomePage({
       locale={locale}
       accountEmail={user.email}
       paid={Boolean(project.paid)}
+      /* `stage` is where they are in the BUSINESS -- designing, quoted, paid,
+         building, live -- and it has been in this table, and readable by its
+         owner, since 20260821020000. Nothing selected it, so the screen that
+         had the answer never said it. */
+      stage={(project.stage as string | null) ?? "designing"}
+      stageChangedAt={(project.stage_changed_at as string | null) ?? null}
       style={project.style as StyleName}
       palette={(project.palette as string | null) ?? null}
       pages={pages}

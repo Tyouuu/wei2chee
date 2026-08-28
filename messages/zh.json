@@ -551,7 +551,23 @@
       "siteView": "看真的页面",
       "siteEnquiries": "收到 {n} 条询价",
       "siteEnquiriesNone": "还没有询价进来",
-      "siteEnquiriesLink": "去看"
+      "siteEnquiriesLink": "去看",
+      "deliveryTitle": "你的系统在哪一步",
+      "deliverySince": "停在这一步：{date} 起",
+      "deliveryStage": {
+        "designing": "设计中",
+        "quoted": "已报价",
+        "paid": "已付款",
+        "building": "建置中",
+        "live": "已上线"
+      },
+      "deliveryNote": {
+        "designing": "你在调页面、挑风格。",
+        "quoted": "报价跟包含什么已经发给你了。",
+        "paid": "已付款，排进建置队列。",
+        "building": "我们在真的建了 —— 你的资料、你的页面。",
+        "live": "已经在跑了，这就是你每天用的那一套。"
+      }
     },
     "settings": {
       "title": "生意资料",

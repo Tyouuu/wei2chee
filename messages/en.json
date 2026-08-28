@@ -551,7 +551,23 @@
       "siteView": "View the live page",
       "siteEnquiries": "{n} enquiries so far",
       "siteEnquiriesNone": "No enquiries yet",
-      "siteEnquiriesLink": "Open"
+      "siteEnquiriesLink": "Open",
+      "deliveryTitle": "Where your system is",
+      "deliverySince": "In this step since {date}",
+      "deliveryStage": {
+        "designing": "Designing",
+        "quoted": "Quoted",
+        "paid": "Paid",
+        "building": "Building",
+        "live": "Live"
+      },
+      "deliveryNote": {
+        "designing": "You are shaping the pages and picking the style.",
+        "quoted": "We have sent what it costs and what it includes.",
+        "paid": "Paid. Your build is in the queue.",
+        "building": "We are building it for real — your data, your pages.",
+        "live": "It is running. This is the one you use every day."
+      }
     },
     "settings": {
       "title": "Business details",
