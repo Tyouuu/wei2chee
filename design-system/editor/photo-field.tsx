@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useTrade } from "@/design-system/trade-context";
+import { similarQuery } from "@/lib/images/photo-words";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 /**
@@ -15,24 +17,35 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
  * that could be on his website, and the product was asking him to paste a link
  * to it.
  *
- * The founder found the consequence on his own phone: three grey boxes reading
- * 「Add a photo」, one per screen, on the live published site. That is fixed on
- * the publishing side — an unfilled frame no longer publishes — but a page
- * with the section removed is not the goal. The goal is his photo.
- *
  * ── THE THREE SOURCES, IN THE ORDER THEY DESERVE ──────────────────────────
  *
  * 1. HIS OWN, straight off the device he is holding. The only one that answers
  *    the question a homeowner is actually asking: what does this contractor's
  *    work look like.
- * 2. THE LIBRARY. 「不滿意 可以再去圖庫推薦」 — ask again, get different ones. For
- *    the trades that genuinely have nothing to photograph: a wholesaler, a
- *    bookkeeper, an agent.
+ * 2. THE LIBRARY. For the trades that genuinely have nothing to photograph: a
+ *    wholesaler, a bookkeeper, an agent.
  * 3. GENERATED. Not built. Named here so the seam is visible rather than
  *    implied.
  *
- * All three land in one bucket and come back as one URL, so nothing downstream
- * — the page, the projection, the published site — has to know which it was.
+ * ── 「像这张」, ADDED 2026-08-28 ────────────────────────────────────────────
+ *
+ * The founder: 「客户要换照片的话 然后他点击进去照片 我们是不是提供足够类似的照片
+ * 我们需不需要加脚本来挡掉一些客户不想要的图片啊」.
+ *
+ * The second half — a blocklist — was measured and rejected; the reasoning is
+ * in lib/images/photo-words.ts. The first half is answered here. Every
+ * photograph arrives carrying the words its library uses to describe it, so
+ * the one he points at IS the next query. It costs nothing to maintain, it
+ * gets better as the libraries grow, and it is steered by the only person who
+ * knows which of the twenty is his business.
+ *
+ * ── AND THE PANEL SPEAKS ENGLISH NOW ──────────────────────────────────────
+ *
+ * 重点 13: the platform talks to the owner in English. Task 18 moved 386
+ * strings and missed this file entirely — it sits behind two clicks and a
+ * network call, so the crawler that counted them never opened it. Fifteen
+ * hard-coded Chinese strings were still here on 2026-08-28, on a panel reached
+ * through /en/.
  */
 export function PhotoField({
   value,
@@ -47,6 +60,7 @@ export function PhotoField({
    *  render and therefore cannot go stale. */
   trade?: string;
 }) {
+  const t = useTranslations("portal.editor.photo");
   const contextTrade = useTrade();
   const forTrade = trade || contextTrade;
   const [tab, setTab] = useState<"own" | "library">("own");
@@ -61,13 +75,13 @@ export function PhotoField({
     try {
       const supabase = createBrowserSupabaseClient();
       const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) throw new Error("请先登入");
+      if (!auth.user) throw new Error(t("signIn"));
       const { data: project } = await supabase
         .from("projects")
         .select("id")
         .eq("account_id", auth.user.id)
         .single();
-      if (!project) throw new Error("找不到你的系统");
+      if (!project) throw new Error(t("noProject"));
 
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
       const path = `${project.id}/${crypto.randomUUID()}.${ext}`;
@@ -81,7 +95,7 @@ export function PhotoField({
       const { data } = supabase.storage.from("site-photos").getPublicUrl(path);
       onChange(data.publicUrl);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "上传失败");
+      setError(e instanceof Error ? e.message : t("uploadFailed"));
     } finally {
       setBusy(null);
     }
@@ -91,14 +105,16 @@ export function PhotoField({
   /* `provider` and `link` travel with each photograph because the two libraries
      do NOT ask for the same thing. Pixabay wants to be named where results are
      shown and nothing on the published page; Pexels wants a prominent link
-     wherever a request is made AND the photographer credited where possible.
-     Assuming one rule for both is either a licence breach or a credit line on a
-     contractor's website that nobody asked for. */
+     wherever a request is made. Assuming one rule for both is either a licence
+     breach or a credit line on a contractor's website that nobody asked for.
+
+     `tags` travels for 「像这张」 — see similarQuery. */
   type Photo = {
     id: string;
     thumb: string;
     full: string;
     credit: string;
+    tags?: string;
     provider?: "pixabay" | "pexels";
     link?: string;
   };
@@ -107,6 +123,9 @@ export function PhotoField({
   const [noKey, setNoKey] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [q, setQ] = useState("");
+  /** The photograph the grid is currently matching, and the words that were in
+   *  the box before it — so 「回到搜索」 goes back rather than to nothing. */
+  const [like, setLike] = useState<{ thumb: string; wasQ: string } | null>(null);
   const seen = useRef<string[]>([]);
 
   async function ask(nextPage = 1, reset = false, override?: string) {
@@ -136,7 +155,7 @@ export function PhotoField({
       setPhotos(next);
       setPage(nextPage);
     } catch {
-      setError("图库连不上");
+      setError(t("offline"));
     } finally {
       setBusy(null);
     }
@@ -149,6 +168,25 @@ export function PhotoField({
     // typing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
+
+  /** 「像这张」 — the photograph he pointed at becomes the search. */
+  function askLike(p: Photo) {
+    const seed = similarQuery(p.tags, p.provider);
+    /* A photograph with no words on it cannot seed anything, and a button that
+       does nothing when pressed is worse than one that is not there — so it is
+       not rendered in that case. This is the guard for the race where it is. */
+    if (!seed) return;
+    setLike({ thumb: p.thumb, wasQ: q });
+    setQ(seed);
+    void ask(1, true, seed);
+  }
+
+  function backToSearch() {
+    const was = like?.wasQ ?? "";
+    setLike(null);
+    setQ(was);
+    void ask(1, true, was);
+  }
 
   async function adopt(p: Photo) {
     setError(null);
@@ -163,10 +201,10 @@ export function PhotoField({
         body: JSON.stringify({ src: p.full }),
       });
       const body = await res.json();
-      if (!body.ok) throw new Error("拿不到这张");
+      if (!body.ok) throw new Error(t("cantTake"));
       onChange(body.url as string);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "拿不到这张");
+      setError(e instanceof Error ? e.message : t("cantTake"));
     } finally {
       setBusy(null);
     }
@@ -177,7 +215,10 @@ export function PhotoField({
   const OFF = "[color:var(--color-paper-dim)] hover:[color:var(--color-paper)]";
 
   return (
-    <div className="flex flex-col gap-2.5">
+    /* `data-photo-picker` is a handle for npm run shoot:picker. The grid is the
+       thing being judged, and a screenshot of the whole 1500px editor makes it
+       forty pixels tall. */
+    <div data-photo-picker className="flex flex-col gap-2.5">
       {value ? (
         <div className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -191,7 +232,7 @@ export function PhotoField({
             onClick={() => onChange("")}
             className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)]"
           >
-            换掉
+            {t("replace")}
           </button>
         </div>
       ) : null}
@@ -202,14 +243,14 @@ export function PhotoField({
           onClick={() => setTab("own")}
           className={`${TAB} ${tab === "own" ? ON : OFF}`}
         >
-          我自己的照片
+          {t("ownTab")}
         </button>
         <button
           type="button"
           onClick={() => setTab("library")}
           className={`${TAB} ${tab === "library" ? ON : OFF}`}
         >
-          从图库找
+          {t("libraryTab")}
         </button>
       </div>
 
@@ -232,10 +273,10 @@ export function PhotoField({
             onClick={() => fileRef.current?.click()}
             className="w-full rounded-[var(--radius-md)] px-3 py-2.5 [border:1px_dashed_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[border-color:var(--color-paper-dim)] hover:[color:var(--color-paper)] disabled:opacity-50"
           >
-            {busy === "upload" ? "上传中…" : "选一张照片（手机里那张就可以）"}
+            {busy === "upload" ? t("uploading") : t("uploadCta")}
           </button>
           <p className="mt-1.5 [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [line-height:var(--leading-body)]">
-            客人是看完工照片在选人的。你自己拍的那一张，比任何图库的照片都有用。
+            {t("uploadNote")}
           </p>
         </div>
       ) : (
@@ -245,9 +286,12 @@ export function PhotoField({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") void ask(1, true);
+                if (e.key === "Enter") {
+                  setLike(null);
+                  void ask(1, true);
+                }
               }}
-              placeholder="想找什么样的照片"
+              placeholder={t("searchPlaceholder")}
               className="min-w-0 flex-1 rounded-[var(--radius-sm)] px-2 py-1.5 [background-color:var(--color-ink-900)] [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-xs)]"
             />
             <button
@@ -256,22 +300,22 @@ export function PhotoField({
               disabled={busy === "search" || noKey}
               className="shrink-0 rounded-[var(--radius-sm)] px-2.5 [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)] disabled:opacity-40"
             >
-              {busy === "search" ? "…" : "换一批"}
+              {busy === "search" ? "…" : t("another")}
             </button>
           </div>
 
           {/*
             FOUR WORDS TO PRESS, NOT ONE SEARCH TO GUESS.
 
-            Photographed on 2026-08-27: one query per trade returned LEGO men
-            for a renovation contractor. No single string is right for a trade
-            either -- 「services」 covers the aircond man and the electrician --
-            so the four measured candidates are offered and the owner presses
-            the one that is their business. The chips carry English words
-            because that is what the library is tagged in; the owner is
-            choosing a picture, not reading a sentence.
+            Measured twice. 2026-08-27: one query per trade returned LEGO men
+            for a renovation contractor. 2026-08-28: the first word decides the
+            whole grid — 「tiles floor installation」 returns four fluorescent
+            mosaic swatches and a laundromat, 「interior renovation work」
+            returns six painters out of six. All four candidates are measured;
+            the owner presses the one that is his business, because 「services」
+            covers the aircond man and the electrician and we cannot know which.
           */}
-          {suggestions.length > 1 && !noKey ? (
+          {suggestions.length > 1 && !noKey && !like ? (
             <div className="flex flex-wrap gap-1">
               {suggestions.map((sgg) => (
                 <button
@@ -294,29 +338,69 @@ export function PhotoField({
             </div>
           ) : null}
 
+          {/* WHICH PHOTOGRAPH THE GRID IS MATCHING, shown as the photograph
+              itself. A line of text saying 「similar results」 leaves him
+              guessing which one he pressed; the thumbnail cannot. */}
+          {like ? (
+            <div className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 [background-color:var(--color-ink-900)] [border:1px_solid_var(--color-ink-800)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={like.thumb} alt="" className="h-8 w-11 shrink-0 rounded-[2px] object-cover" />
+              <span className="min-w-0 flex-1 [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [line-height:var(--leading-body)]">
+                {t("similarOn")}
+              </span>
+              <button
+                type="button"
+                onClick={backToSearch}
+                className="shrink-0 underline [color:var(--color-paper-dim)] [font-size:var(--text-micro)] hover:[color:var(--color-paper)]"
+              >
+                {t("similarBack")}
+              </button>
+            </div>
+          ) : null}
+
           {noKey ? (
             <p className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)] [line-height:var(--leading-body)]">
-              图库还没接上。先用你自己的照片 —— 那一张本来就比图库的好用。
+              {t("noKey")}
             </p>
           ) : (
             <div className="grid grid-cols-3 gap-1.5">
               {photos.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  title={`${p.provider === "pexels" ? "Pexels" : "Pixabay"} · ${p.credit}`}
-                  onClick={() => void adopt(p)}
-                  disabled={Boolean(busy)}
-                  className="relative overflow-hidden rounded-[var(--radius-sm)] [aspect-ratio:4/3] disabled:opacity-50"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.thumb} alt="" className="h-full w-full object-cover" />
-                  {busy === p.id ? (
-                    <span className="absolute inset-0 grid place-items-center [background-color:oklch(0.16_0.012_265/0.7)] [color:#fff] [font-size:10px]">
-                      …
-                    </span>
+                /* A DIV, NOT A BUTTON. 「像这张」 sits on top of the tile, and a
+                   button inside a button is invalid markup that browsers
+                   silently un-nest — which would move the second control out of
+                   the tile it belongs to. */
+                <div key={p.id} className="relative [aspect-ratio:4/3]">
+                  <button
+                    type="button"
+                    title={`${p.provider === "pexels" ? "Pexels" : "Pixabay"} · ${p.credit}`}
+                    onClick={() => void adopt(p)}
+                    disabled={Boolean(busy)}
+                    className="absolute inset-0 overflow-hidden rounded-[var(--radius-sm)] disabled:opacity-50"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.thumb} alt="" className="h-full w-full object-cover" />
+                    {busy === p.id ? (
+                      <span className="absolute inset-0 grid place-items-center [background-color:oklch(0.16_0.012_265/0.7)] [color:#fff] [font-size:10px]">
+                        …
+                      </span>
+                    ) : null}
+                  </button>
+                  {/* ALWAYS VISIBLE, NOT ON HOVER. Half of this product is read
+                      on a phone, where there is no hover, and the owner we are
+                      building for does not go hunting for a control that is not
+                      there. */}
+                  {similarQuery(p.tags, p.provider) ? (
+                    <button
+                      type="button"
+                      data-similar
+                      onClick={() => askLike(p)}
+                      disabled={Boolean(busy)}
+                      className="absolute bottom-0.5 right-0.5 rounded-[3px] px-1 py-px [background-color:oklch(0.16_0.012_265/0.55)] [color:#ffffffcc] [font-size:var(--text-micro)] [line-height:1.35] hover:[background-color:oklch(0.16_0.012_265/0.92)] hover:[color:#fff] disabled:opacity-40"
+                    >
+                      {t("similar")}
+                    </button>
                   ) : null}
-                </button>
+                </div>
               ))}
             </div>
           )}
@@ -334,7 +418,7 @@ export function PhotoField({
               is decoration. */}
           {photos.length ? (
             <p className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)]">
-              图片来自{" "}
+              {t("creditPrefix")}{" "}
               {photos.some((p) => p.provider !== "pexels") ? (
                 <a href="https://pixabay.com" target="_blank" rel="noreferrer" className="underline">
                   Pixabay

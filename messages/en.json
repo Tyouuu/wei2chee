@@ -443,7 +443,27 @@
       "layoutToday": "Today's work first",
       "layoutBoard": "Board",
       "aiImageAdd": "Add a picture",
-      "aiImageRemove": "Remove"
+      "aiImageRemove": "Remove",
+      "photo": {
+        "ownTab": "My own photo",
+        "libraryTab": "From the library",
+        "replace": "Replace",
+        "uploadCta": "Choose a photo — the one on your phone is fine",
+        "uploading": "Uploading…",
+        "uploadNote": "People pick a contractor by looking at finished work. Your own photo beats anything in the library.",
+        "searchPlaceholder": "What kind of photo?",
+        "another": "Show others",
+        "similar": "Like this",
+        "similarOn": "Showing photos like this one",
+        "similarBack": "Back to search",
+        "noKey": "The library isn't connected yet. Use your own photo — it works better anyway.",
+        "creditPrefix": "Photos from",
+        "signIn": "Please sign in first",
+        "noProject": "Couldn't find your system",
+        "uploadFailed": "Upload failed",
+        "offline": "Can't reach the library",
+        "cantTake": "Couldn't take that one"
+      }
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",
@@ -700,7 +720,25 @@
       "notePlaceholder": "Where the conversation is, what you promised, when to follow up… (never shown to the customer)",
       "save": "Save",
       "saved": "Saved",
-      "whatsapp": "Message them on WhatsApp"
+      "whatsapp": "Message them on WhatsApp",
+      "shapesTitle": "What to build next",
+      "shapesDenominator": "across {systems} customer systems",
+      "shapesEmpty": "No customer systems yet, so nothing to count.",
+      "shapesTooEarly": "Too few systems to decide from — this ranking starts meaning something at {needed}.",
+      "shapesProposedCoverage": "Counted from what customers actually have. The AI's own module picks are only recorded on {with} of {total} analyses, so they are not counted here.",
+      "perMonth": "{amount}/mo",
+      "shapeGloss": {
+        "overview": "one screen, today's numbers",
+        "directory": "a list of people you look up",
+        "pipeline": "rows that move through stages",
+        "ledger": "money in and out, by date",
+        "calendar": "times someone is booked",
+        "reconcile": "two lists that must agree",
+        "leaderboard": "who is ahead",
+        "catalog": "things you hold and count",
+        "report": "a period, summarised",
+        "landing": "the page strangers see"
+      }
     },
     "account": {
       "title": "My account",

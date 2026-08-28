@@ -38,7 +38,8 @@
     "shoot:saas": "node scripts/shoot-saas.mjs",
     "shoot:codrops": "node scripts/shoot-codrops.mjs",
     "align": "node scripts/align-site.mjs",
-    "align:sheet": "python scripts/align-sheet.py"
+    "align:sheet": "python scripts/align-sheet.py",
+    "shoot:picker": "node scripts/shoot-picker.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

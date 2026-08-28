@@ -443,7 +443,27 @@
       "layoutToday": "今天要做的",
       "layoutBoard": "看板",
       "aiImageAdd": "加一张图",
-      "aiImageRemove": "拿掉"
+      "aiImageRemove": "拿掉",
+      "photo": {
+        "ownTab": "我自己的照片",
+        "libraryTab": "从图库找",
+        "replace": "换掉",
+        "uploadCta": "选一张照片（手机里那张就可以）",
+        "uploading": "上传中…",
+        "uploadNote": "客人是看完工照片在选人的。你自己拍的那一张，比任何图库的照片都有用。",
+        "searchPlaceholder": "想找什么样的照片",
+        "another": "换一批",
+        "similar": "像这张",
+        "similarOn": "正在找像这张的照片",
+        "similarBack": "回到搜索",
+        "noKey": "图库还没接上。先用你自己的照片 —— 那一张本来就比图库的好用。",
+        "creditPrefix": "图片来自",
+        "signIn": "请先登入",
+        "noProject": "找不到你的系统",
+        "uploadFailed": "上传失败",
+        "offline": "图库连不上",
+        "cantTake": "拿不到这张"
+      }
     },
     "home": {
       "eyebrow": "你的系统",
@@ -700,7 +720,25 @@
       "notePlaceholder": "谈到哪里了、答应了什么、什么时候跟进…（客户看不到）",
       "save": "保存",
       "saved": "已保存",
-      "whatsapp": "WhatsApp 联系他"
+      "whatsapp": "WhatsApp 联系他",
+      "shapesTitle": "下一个该建哪个形状",
+      "shapesDenominator": "统计自 {systems} 套客户系统",
+      "shapesEmpty": "还没有客户系统，没有东西可以数。",
+      "shapesTooEarly": "系统数太少，这个排序还不能拿来做决定 —— 到 {needed} 套才开始有意义。",
+      "shapesProposedCoverage": "数的是客户真正有的东西。AI 自己挑的模块只有 {with} / {total} 笔分析记录到，所以不算进来。",
+      "perMonth": "{amount}/月",
+      "shapeGloss": {
+        "overview": "一页看完今天",
+        "directory": "一份拿来查的名单",
+        "pipeline": "会往下一格走的单子",
+        "ledger": "钱进钱出，按日期",
+        "calendar": "谁被约在什么时候",
+        "reconcile": "两份必须对得上的清单",
+        "leaderboard": "谁领先",
+        "catalog": "手上有多少货",
+        "report": "一段时间的总结",
+        "landing": "陌生人看到的那一页"
+      }
     },
     "account": {
       "title": "我的账号",

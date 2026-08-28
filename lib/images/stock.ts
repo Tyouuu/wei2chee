@@ -41,6 +41,8 @@
  * substitution away from each other. The seam is worth one type.
  */
 
+import { isNotAPhotographOfABusiness } from "./photo-words";
+
 export type StockPhoto = {
   /** Stable id from the provider, so 「show me more」 can exclude what was seen. */
   id: string;
@@ -70,6 +72,15 @@ export type StockPhoto = {
    */
   link?: string;
   provider: "pixabay" | "pexels";
+  /**
+   * What the library says this photograph is — Pixabay's `tags`, Pexels' `alt`.
+   *
+   * Carried through to the browser because it is the handle for 「像这张」: the
+   * photograph the owner points at becomes the next search. See
+   * lib/images/photo-words.ts, and 2026-08-28's measurements for why this beats
+   * a blocklist at the question he actually asked.
+   */
+  tags: string;
 };
 
 export type StockResult =
@@ -111,36 +122,54 @@ export type StockResult =
  * kitchen chef」 returns a French kitchen.
  */
 export const TRADE_QUERIES: Record<string, string[]> = {
-  /* WORK AND MATERIAL, NOT SOMEBODY ELSE'S FURNISHED HOME.
+  /* ── THE FIRST WORD IS THE WHOLE GAME, MEASURED 2026-08-28 ───────────────
 
-     Measured 2026-08-27, 18 queries and 124 results. Pixabay has no Malaysia:
-     「malaysia shophouse」 returns a monkey and a plate of hawker food,
-     「asian kitchen renovation」 returns ramen and dumplings -- it reads 「asian
-     kitchen」 as CUISINE -- 「terrace house malaysia」 returns rice terraces,
-     and 「tiling worker asia」 returns incense sticks drying in Vietnam.
+     The founder asked whether the picker offers enough of the right kind of
+     photograph. It was pulled and photographed: 1,278 results, 32 queries, the
+     merged grid exactly as he sees it. Usable in the opening twelve:
 
-     So a better country is not available. What IS available is a better
-     SUBJECT. The first version of this list asked for rooms, and rooms in a
-     stock library are American real-estate listings: a Manhattan dining room
-     with radiators, a cream living room with a chess set. A Klang Valley
-     homeowner recognises none of it, and a page of them tells him this
-     contractor has no photographs of his own work.
+         retail 12 · beauty 11 · fnb 11 · education 11 · other 9
+         services 7 · wholesale 7 · renovation 5
 
-     Tiles being laid, timber being cut, a wall being painted, tools on a
-     bench: none of those can be caught being foreign, and all of them are what
-     this trade actually sells. The finished room stays as ONE frame -- the
-     hero -- because the reference pages in this market do open on the result.
+     The four below were re-cut after looking at six candidate words each. The
+     failures were never the LIBRARY, they were the WORD:
 
-     The real answer is still 任务 21: ask the owner for a photograph during
-     the two-minute questionnaire. This list is what stands in until then. */
-  renovation: ["tiles floor installation", "carpenter working wood", "painting wall interior", "kitchen renovation"],
-  services: ["air conditioner technician", "technician repair service", "electrician working", "service van tools"],
+       tiles floor installation  → four fluorescent mosaic SWATCHES and a
+                                   laundromat. 「floor tile」 is a materials
+                                   photography subject.
+       interior renovation work  → six of six: painters, dust sheets, rooms
+                                   being skimmed. ← now first
+
+       air conditioner technician → aircond units cut out on white, a car
+                                    dashboard
+       technician fixing appliance → six of six, and the most Asian faces
+                                     anything here has returned ← now first
+
+       warehouse shelves stock   → a share-price chart. 「stock」 is inventory
+                                   AND the stock market, and the library cannot
+                                   tell which one a wholesaler meant.
+       distribution warehouse interior → six of six real warehouses ← now first
+
+       small business shop       → a miniature model village
+       shop owner counter        → six of six people behind their own counters
+                                   ← now first
+
+     The other four trades were looked at and left alone; 「asian food plate」
+     is still the only word here that returns Malay curry instead of a French
+     kitchen.
+
+     WHAT WAS TRIED AND DID NOT WORK, so nobody spends the afternoon again:
+     Pixabay's own `category` parameter (「industry」 gives motorbikes and boots
+     for a tiler) and `editors_choice` (hot air balloons and aircraft for an
+     aircond search). Both narrow the pool without improving it. */
+  renovation: ["interior renovation work", "carpenter working wood", "painting wall interior", "kitchen renovation"],
+  services: ["technician fixing appliance", "air conditioner technician", "electrician working", "mechanic workshop"],
   retail: ["shop interior retail store", "shopfront street", "small shop counter", "product shelf display"],
   fnb: ["asian food plate", "coffee shop counter", "cafe interior table", "restaurant kitchen"],
   beauty: ["hair salon interior", "hairdresser cutting hair", "manicure nails", "spa massage room"],
   education: ["classroom tutor", "tuition teacher whiteboard", "student desk study", "books notebook study"],
-  wholesale: ["warehouse shelves stock", "warehouse boxes logistics", "forklift warehouse", "cartons pallet delivery"],
-  other: ["small business shop", "shopfront street", "team working office", "tools workbench"],
+  wholesale: ["distribution warehouse interior", "warehouse worker boxes", "forklift warehouse", "cartons pallet delivery"],
+  other: ["shop owner counter", "local business storefront", "workshop craftsman", "small business shop"],
 };
 
 /** The opening guess -- the first candidate. Kept as its own export because
@@ -174,7 +203,7 @@ async function searchPixabay(query: string, page: number): Promise<StockPhoto[] 
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) throw new Error(`pixabay HTTP ${res.status}`);
   const body = (await res.json()) as {
-    hits?: { id: number; webformatURL: string; largeImageURL: string; imageWidth: number; imageHeight: number; user: string }[];
+    hits?: { id: number; webformatURL: string; largeImageURL: string; imageWidth: number; imageHeight: number; user: string; tags?: string }[];
   };
   return (body.hits ?? []).map((h) => ({
     id: `pixabay:${h.id}`,
@@ -184,6 +213,7 @@ async function searchPixabay(query: string, page: number): Promise<StockPhoto[] 
     height: h.imageHeight,
     credit: h.user,
     provider: "pixabay" as const,
+    tags: h.tags ?? "",
   }));
 }
 
@@ -222,6 +252,7 @@ async function searchPexels(query: string, page: number): Promise<StockPhoto[] |
       credit: p.photographer,
       link: p.url,
       provider: "pexels" as const,
+      tags: p.alt ?? "",
     }));
 }
 
@@ -270,6 +301,15 @@ export async function searchStock(
     if (left[i]) merged.push(left[i]);
   }
 
+  /* ── ONE NARROW RULE, AND IT IS NOT A BLOCKLIST ──────────────────────────
+     Renders, swatches, toys, cut-outs on white, and images the uploader
+     declared were generated. 2.1% of 1,278 measured results, and the comment
+     at the top of photo-words.ts records why the list stops there: widening it
+     to catch the green mosaic swatches would have taken a mechanic lifting an
+     engine and two women in a coffee shop with them. */
   const seen = new Set(exclude);
-  return { ok: true, photos: merged.filter((p) => !seen.has(p.id)) };
+  return {
+    ok: true,
+    photos: merged.filter((p) => !seen.has(p.id) && !isNotAPhotographOfABusiness(p.tags)),
+  };
 }
