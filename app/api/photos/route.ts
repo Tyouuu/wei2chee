@@ -117,7 +117,53 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "too-large" }, { status: 400 });
   }
 
-  const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : type === "image/avif" ? "avif" : "jpg";
+  /* ── RE-ENCODED ON THE WAY IN ────────────────────────────────────────────
+     Measured 2026-08-28 on a real published site: four photographs on the
+     first screen came to 1,282 KB, about 320 KB each. They are Pixabay's
+     `largeImageURL` — a 1280px JPEG — stored exactly as it arrived, and a
+     stranger on a Malaysian mobile connection pays for all of it before the
+     page has said anything.
+
+     WHY HERE AND NOT AT DELIVERY. Supabase can transform images on the render
+     endpoint, and that is the obvious answer — it is also a PAID feature, and
+     this account is on the free plan with both of its projects used. Doing it
+     once at upload costs nothing per view, works on any plan, and the stored
+     file is the small one, so nothing has to remember to ask for a size.
+
+     WHY 1600 AND NOT SMALLER. It is a hero photograph on a desktop as well as
+     a phone; 1600 covers a 2x phone and a 1440 laptop without upscaling, and
+     Pixabay's 1280 is already under it, so this only ever shrinks the ones
+     that arrive larger.
+
+     WHY IT FALLS BACK RATHER THAN FAILING. sharp is native, and a picture that
+     stores as a slightly larger JPEG is a working page; a picture that refuses
+     to store is an owner who cannot put a photograph on their website. If the
+     re-encode throws, the original bytes go in unchanged. */
+  let stored: Uint8Array = bytes;
+  let storedType = type;
+  try {
+    const sharp = (await import("sharp")).default;
+    const webp = await sharp(bytes)
+      .rotate()
+      .resize({ width: 1600, withoutEnlargement: true })
+      .webp({ quality: 78 })
+      .toBuffer();
+    if (webp.byteLength < bytes.byteLength) {
+      stored = new Uint8Array(webp);
+      storedType = "image/webp";
+    }
+  } catch {
+    // Keep the original. See the note above.
+  }
+
+  const ext =
+    storedType === "image/webp"
+      ? "webp"
+      : type === "image/png"
+        ? "png"
+        : type === "image/avif"
+          ? "avif"
+          : "jpg";
   /* ── PROVENANCE IN THE FILE NAME ─────────────────────────────────────────
      The two libraries ask for different things on the published page — Pixabay
      for nothing, Pexels for 「always credit our photographers when possible」 —
@@ -137,7 +183,7 @@ export async function POST(req: Request) {
   const path = `${project.id}/${stamp}-${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
     .from("site-photos")
-    .upload(path, bytes, { contentType: type, upsert: false });
+    .upload(path, stored, { contentType: storedType, upsert: false });
   if (error) return NextResponse.json({ ok: false, reason: "store-failed", detail: error.message }, { status: 500 });
 
   const { data } = supabase.storage.from("site-photos").getPublicUrl(path);
