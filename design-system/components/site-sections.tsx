@@ -241,7 +241,21 @@ export function SiteFeatures({
           {items.map((f) => (
             <li
               key={f.label}
-              className="flex flex-col [background:color-mix(in_oklab,var(--color-primary)_5%,var(--color-canvas))] [border:var(--hairline)_solid_var(--border-subtle)] [border-radius:var(--radius-lg)] [gap:calc(var(--gap-inline)*0.7)] [min-height:calc(11rem*var(--site-figure,1))] [padding:calc(var(--pad-card-lg)*1.05*var(--site-figure,1))]"
+              /* ── 卡片的皮，三个值全部量出来的 ─────────────────────────────
+                 2026-08-28, A. Reynolds read out of the DOM and looked at at
+                 native size. The shape was right and the skin was three
+                 separate misses:
+
+                     他们  #f1f1ee 中性灰 · 无框      · 圆角 8
+                     我们  主色 5% 的蓝调 · 1px 细框 · 圆角 20
+
+                 A tint of the primary is what every OTHER register wants — it
+                 is how a card belongs to a palette. This reference does not
+                 tint: its cards are a neutral step off the cream, and the only
+                 colour on them is the dot. So the three values became tokens
+                 with the old behaviour as the fallback: nobody else changes,
+                 満図 declares its own. */
+              className="flex flex-col [background:var(--site-card,color-mix(in_oklab,var(--color-primary)_5%,var(--color-canvas)))] [border:var(--site-card-border,var(--hairline)_solid_var(--border-subtle))] [border-radius:var(--site-card-radius,var(--radius-lg))] [gap:calc(var(--gap-inline)*0.7)] [min-height:calc(11rem*var(--site-figure,1))] [padding:calc(var(--pad-card-lg)*1.05*var(--site-figure,1))]"
             >
               <span aria-hidden className="mb-1 block size-2 rounded-full [background:var(--color-primary)]" />
               <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
@@ -1802,7 +1816,7 @@ export function SiteSteps({
   heading?: string
   note?: string
   steps?: { label: string; value?: string }[]
-  shape?: "ruled" | "numbered" | "across"
+  shape?: "ruled" | "numbered" | "across" | "carded"
 }) {
   const rows = (steps ?? []).filter((s) => s.label?.trim())
   if (!rows.length) return null
@@ -1819,6 +1833,44 @@ export function SiteSteps({
   ) : null
 
   const n = (i: number) => String(i + 1).padStart(2, "0")
+
+  if (shape === "carded") {
+    /*
+      ── 跟服务同一张卡，只是标记换成步骤编号 ────────────────────────────
+      A. Reynolds puts CARDS in both of its two argument sections — five in
+      「Our Expertise」, three in 「Our Specializations」 — and tells them apart
+      by their mark, not by their shape: the first row carries a small
+      multicolour glyph, the second a plain blue dot. 満図's fourth section is
+      a PROCESS, so its mark is the step number it already has. Same skin
+      (see the tokens on SiteFeatures.dotted), different mark, which is the
+      reference's own way of separating two rows of cards.
+    */
+    return (
+      <section className="@container" data-wide="">
+        {title}
+        <ol className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
+          {rows.map((s, i) => (
+            <li
+              key={s.label}
+              className="flex flex-col [background:var(--site-card,color-mix(in_oklab,var(--color-primary)_5%,var(--color-canvas)))] [border:var(--site-card-border,var(--hairline)_solid_var(--border-subtle))] [border-radius:var(--site-card-radius,var(--radius-lg))] [gap:calc(var(--gap-inline)*0.7)] [min-height:calc(11rem*var(--site-figure,1))] [padding:calc(var(--pad-card-lg)*1.05*var(--site-figure,1))]"
+            >
+              <span className="mb-1 [color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)]">
+                {n(i)}
+              </span>
+              <span className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
+                {s.label}
+              </span>
+              {s.value ? (
+                <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                  {s.value}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      </section>
+    )
+  }
 
   if (shape === "across") {
     return (

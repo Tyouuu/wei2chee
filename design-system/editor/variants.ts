@@ -151,6 +151,10 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "ruled", label: "细线一行一步", props: { shape: "ruled" } },
     { id: "numbered", label: "大编号", props: { shape: "numbered" } },
     { id: "across", label: "横排四格", props: { shape: "across" } },
+    /* 三张卡带编号 — A. Reynolds runs CARDS in both of its argument sections and
+       separates them by their mark, not their shape. 満図's fourth section is a
+       process, so its mark is the step number. */
+    { id: "carded", label: "三张卡带编号", props: { shape: "carded" } },
   ],
 
   SiteTestimonials: [

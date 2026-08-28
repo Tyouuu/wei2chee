@@ -424,6 +424,42 @@
      not say that, and tying them would have made every big-picture register
      airy whether its reference was or not. */
   --site-figure: 1;
+  /* 正文多大 —— THE THIRD SITE AXIS, added 2026-08-28.
+
+     Measured, both references and both of ours, at 1440px:
+
+         A. Reynolds  正文 17px/24     満図  13.5px/22
+         Newel        正文 16px/20     台账  13px/19
+
+     Neither of ours was chosen for a website. Every register's text scale was
+     tuned for the WORKBENCH, where a table wants to fit forty rows on a
+     screen; the site layer inherited it and nobody looked. 13px of body copy
+     on a page a homeowner reads at arm's length is the same class of mistake
+     as the radius and shadow that 任务 28 had to multiply.
+
+     A MULTIPLIER, not a size, for the reason 重点 7c gives: 中台's thesis is
+     that it is the densest page in the library, and a flat 17px would take
+     that away from it. */
+  --site-copy: 1;
+  /* Captured HERE and applied on the child, because a rule that both reads and
+     writes the same custom property on ONE element is dropped in silence.
+     This repo has hit that five times; the fix is always two layers. */
+  --copy-micro: var(--text-micro);
+  --copy-xs: var(--text-xs);
+  --copy-sm: var(--text-sm);
+  --copy-base: var(--text-base);
+  --copy-lg: var(--text-lg);
+}
+.ds-ground[data-copy="large"] .ds-site,
+.ds-ground[data-copy="large"].ds-site {
+  --site-copy: 1.25;
+}
+.ds-site > * {
+  --text-micro: calc(var(--copy-micro) * var(--site-copy));
+  --text-xs: calc(var(--copy-xs) * var(--site-copy));
+  --text-sm: calc(var(--copy-sm) * var(--site-copy));
+  --text-base: calc(var(--copy-base) * var(--site-copy));
+  --text-lg: calc(var(--copy-lg) * var(--site-copy));
 }
 .ds-site > * > * + * {
   margin-top: var(--site-rhythm);
@@ -479,6 +515,22 @@
 .ds-site > * > [data-bleed] {
   max-width: none;
   padding-inline: 0;
+}
+
+/* ── 每一块都在一个细框里 ────────────────────────────────────────────────────
+   台账's reference (Wix `wh-newel`) puts a 1px hairline around every block on
+   the page: About Us, the four benefit cells, the services list, Testimonials,
+   the contact block, the legal bar. Read at native size on 2026-08-28. It is
+   what makes a page of one warm brown read as ordered rather than as a wash,
+   and it survives a repaint, which is what makes it a REGISTER property and
+   not a palette one (重点 7c).
+
+   Bled blocks and the chrome are exempt: a frame around a full-bleed hero is a
+   line drawn across a photograph, and their page does not do that either. */
+.ds-ground[data-frame="hairline"] .ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]),
+.ds-ground[data-frame="hairline"].ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]) {
+  border: 1px solid var(--site-frame, color-mix(in oklab, var(--color-paper) 22%, transparent));
+  padding: calc(var(--pad-card-lg) * 1.35);
 }
 
 /* The bar sits above the first block and the foot below the last, so neither
@@ -547,8 +599,24 @@
    scale keeps 粗野 heavier than 工作室; it just stops all fourteen shouting. */
 .ds-site [data-bleed] h1,
 .ds-site h1 {
-  font-weight: var(--fw-medium);
-  letter-spacing: var(--tracking-display);
+  /* ── 三个值现在是每一套自己的，因为量出来它们对不上 ────────────────────
+     2026-08-28, 台账 beside Wix `wh-newel`:
+
+         他们  99px · 字重 400 · 字距 0.00px
+         我们  83px · 字重 500 · 字距 −3.19px
+
+     −3.19px is not a taste, it is arithmetic: --tracking-display is the
+     register's own title tracking times 1.6, and that multiplier is right for
+     a condensed grotesk on a dashboard and wrong for a light serif display at
+     99px. Their name is set open; ours was squeezed shut.
+
+     ⚠️ AND THE COMPONENT COULD NOT SAY SO. The hero already wrote
+     [letter-spacing:-0.01em] on the h1 — a single class, specificity (0,1,0),
+     against this rule's (0,1,1). It never applied once. Same shape as the
+     .ds-site h2 rule that could not win last week: when a value has to be
+     settable per register, it is settable HERE or not at all. */
+  font-weight: var(--site-display-weight, var(--fw-medium));
+  letter-spacing: var(--site-display-tracking, var(--tracking-display));
   line-height: var(--leading-display);
 }
 

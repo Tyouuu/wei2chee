@@ -474,6 +474,7 @@ export const LABELS_EN: Record<string, string> = {
   右边那个小标题: "Small heading, right",
   细线一行一步: "Ruled step rows",
   横排四格: "Four across",
+  三张卡带编号: "Numbered cards",
   一步: "Step",
   半块颜色: "Half colour, half ground",
   一条线: "A rule and the words",

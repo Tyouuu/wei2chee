@@ -351,6 +351,19 @@
   --site-ink-fg-dim: color-mix(in oklab, #0a0a08 62%, transparent);
   --site-ink-panel: #f1f2ed;
   --site-ink-block: #fffe99;
+  /* ── 卡片：中性灰，无框，小圆角 ──────────────────────────────────────────
+     Measured off A. Reynolds 2026-08-28. Their cards are #f1f1ee — a NEUTRAL
+     step off the cream ground, with no border and an 8px radius. Ours were a
+     5% tint of the blue primary inside a 1px hairline at 20px. All three were
+     wrong and all three were invisible to a ruler that only counted sections
+     and font sizes.
+
+     重点 7j: the reference's palette is cloned whole, and that includes the
+     colour of a card. What stays ours is the SKELETON — which sections, in
+     which order, in which shape — and none of that is touched here. */
+  --site-card: #f1f1ee;
+  --site-card-border: 0 solid transparent;
+  --site-card-radius: 8px;
   --site-on-block: #0a0a08;
   --site-foot-bg: #fffe99;
   --site-foot-fg: #0a0a08;

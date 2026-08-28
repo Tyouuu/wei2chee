@@ -407,6 +407,9 @@
   --site-ink-fg-dim: color-mix(in oklab, #0a0a08 62%, transparent);
   --site-ink-panel: #f1f2ed;
   --site-ink-block: #fffe99;
+  --site-card: #f1f1ee;
+  --site-card-border: 0 solid transparent;
+  --site-card-radius: 8px;
   --site-on-block: #0a0a08;
   --site-foot-bg: #fffe99;
   --site-foot-fg: #0a0a08;
@@ -564,6 +567,10 @@
   --site-ink-fg: #f0eae0;
   --site-ink-fg-dim: color-mix(in oklab, #f0eae0 62%, transparent);
   --site-ink-panel: #2c200a;
+  --site-display-tracking: 0em;
+  --site-display-weight: 400;
+  --site-hero-scale: 1.2;
+  --site-frame: color-mix(in oklab, #f0eae0 26%, transparent);
   --site-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --fw-regular: 400;

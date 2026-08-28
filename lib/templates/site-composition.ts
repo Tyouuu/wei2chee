@@ -252,6 +252,15 @@ export type SiteSkeleton = {
    * is pressed against anything. See `--site-rhythm` in app/globals.css.
    */
   rhythm?: "flush" | "tight" | "normal" | "airy";
+  /** 正文多大。Measured 2026-08-28: both references set their body copy at
+   *  16-17px and both of ours inherited the WORKBENCH's 13-13.5px, because
+   *  every register's text scale was tuned for a table with forty rows on it.
+   *  A multiplier rather than a size — 中台's thesis is that it is the densest
+   *  page in the library (重点 7c). See --site-copy in app/globals.css. */
+  copy?: "large";
+  /** 每一块要不要一个细框。台账's reference draws one around every block on the
+   *  page; nothing else in the library does. See --site-frame. */
+  frame?: "hairline";
   /**
    * 图跟字有多大 —— separate from the rhythm since 2026-08-27.
    *
@@ -319,6 +328,8 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     rhythm: "flush",
     figure: "huge",
     measure: "wide",
+    copy: "large",
+    frame: "hairline",
     hero: "plate-centre",
     opens: "作品",
     order: ["story", "woven", "services", "work", "reviews", "prices", "creds", "flow", "areas", "faq", "promise", "hours", "band", "cta", "team"],
@@ -398,7 +409,14 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        out of step with the reference all the way down the page. */
     rhythm: "airy",
     figure: "large",
-    order: ["flow", "cta", "services", "band", "woven", "reviews", "creds", "hours", "areas", "work", "story", "team", "prices", "faq", "promise"],
+    copy: "large",
+    /* ── 顺序改了 2026-08-28，因为参考页第二段是服务不是流程 ──────────────
+       A. Reynolds runs 「Our Expertise」 — five service cards — as its SECOND
+       section and 「Our Specializations」 — three more — as its fourth. Ours
+       opened with 「How to book」, a numbered list, in the slot their cards
+       hold, and put the services two places further down. Same eight
+       arguments, two of them in each other's seats. */
+    order: ["services", "cta", "flow", "band", "woven", "reviews", "creds", "hours", "areas", "work", "story", "team", "prices", "faq", "promise"],
   },
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.

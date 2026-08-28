@@ -64,6 +64,8 @@ export function PublicSite({
       data-measure={siteSkeleton(style).measure ?? "normal"}
       data-rhythm={siteSkeleton(style).rhythm ?? "normal"}
       data-figure={siteSkeleton(style).figure ?? "normal"}
+      data-copy={siteSkeleton(style).copy ?? "normal"}
+      data-frame={siteSkeleton(style).frame ?? "none"}
       className="ds-ground min-h-screen [background-color:var(--color-canvas)]"
     >
       <SystemLangProvider lang={lang}>

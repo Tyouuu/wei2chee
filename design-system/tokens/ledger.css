@@ -294,6 +294,34 @@
   --site-ink-fg: #f0eae0;
   --site-ink-fg-dim: color-mix(in oklab, #f0eae0 62%, transparent);
   --site-ink-panel: #2c200a;
+
+  /* ── 第一屏的名字：他们开着写，我们挤在一起 ─────────────────────────────
+     Measured 2026-08-28 against Wix `wh-newel`:
+
+         他们  99px · 字重 400 · 字距 0.00px  （轻的衬线 display）
+         我们  83px · 字重 500 · 字距 −3.19px
+
+     −3.19px came out of --tracking-display, which is this register's own title
+     tracking times 1.6. That multiplier is right for a condensed grotesk on a
+     dashboard of forty rows and wrong for a light serif at display size — it
+     closes up exactly the letterforms the face is chosen for. Nothing else in
+     the library changes: these three are declared here and fall back to the
+     old behaviour everywhere else. */
+  --site-display-tracking: 0em;
+  --site-display-weight: 400;
+  --site-hero-scale: 1.2;
+
+  /* ── 细框 —— 台账真正的身份 ────────────────────────────────────────────
+     Read off the reference at native size, 2026-08-28: EVERY block on that
+     page sits inside a 1px hairline. About Us, the four benefit cells divided
+     by vertical rules, the services list, Testimonials with its darker header
+     strip, the contact block split down the middle, even the legal bar under
+     the footer. It is not decoration — it is the whole reason a page of warm
+     brown reads as ordered rather than as a wash, and it is the one thing a
+     palette cannot repaint away (重点 7c).
+
+     Ours had the ground and the serif and none of the frames. */
+  --site-frame: color-mix(in oklab, #f0eae0 26%, transparent);
   /* 字体 —— the TYPE axis. Their name and every section heading are a light
      serif; 台账's工作台 keeps its condensed grotesk for the tables. */
   --site-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;

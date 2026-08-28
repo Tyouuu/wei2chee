@@ -487,12 +487,19 @@ export function SiteHero({
         <span
           aria-hidden
           className="absolute inset-0 -z-10 block"
-          style={{ background: "linear-gradient(to bottom, rgb(0 0 0 / 0.34), rgb(0 0 0 / 0.14) 45%, rgb(0 0 0 / 0.46))" }}
+          /* ── 遮罩要按最亮的照片来定，不是按参考图那张 ─────────────────────
+             The reference opens on a dark timber building, so a light scrim
+             reads. 台账 opens on WHATEVER PHOTOGRAPH THE OWNER PICKED, and the
+             one the demo picked is a white kitchen in daylight: at 0.14 in the
+             middle the white serif name was unreadable, which is the one thing
+             the first screen cannot be. Measured against the brightest
+             photograph in the picker, not against theirs. */
+          style={{ background: "linear-gradient(to bottom, rgb(0 0 0 / 0.52), rgb(0 0 0 / 0.42) 45%, rgb(0 0 0 / 0.62))" }}
         />
         <div className="flex flex-col items-center justify-center text-center [min-block-size:clamp(26rem,76svh,46rem)] [padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]">
           <h1
             className="ds-display max-w-[16ch] [color:#fff] [font-weight:var(--fw-regular,400)] [letter-spacing:-0.01em] [line-height:1.06] [text-wrap:balance]"
-            style={{ fontSize: "clamp(2.6rem, 6.6vw, 5.2rem)" }}
+            style={{ fontSize: "clamp(2.6rem, 6.6vw, calc(5.2rem * var(--site-hero-scale, 1)))" }}
           >
             {brand || headline}
           </h1>

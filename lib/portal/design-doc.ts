@@ -154,7 +154,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       /* 竖排 —— their second section is a heading and three items STACKED, at
          663px the second-largest thing on the page. A horizontal strip of four
          numbered chips came to 155px and read as a caption. */
-      SiteSteps: "ruled",
+      SiteSteps: "carded",
       WorkflowStrip: "timeline",
       ActionButton: "default",
       Tag: "secondary",

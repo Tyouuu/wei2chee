@@ -156,37 +156,40 @@ function readType() {
          face and again in a known serif and a known sans, and see which it
          matches. This is the standard font-detection trick and it is the only
          thing here that answers 「衬线还是无衬线」 without a human looking. */
-      serif: (() => {
+      /* ── 衬线还是无衬线，以及它到底有没有出现在画面上 ──────────────────
+         ⚠️ THIS IS THE FIELD THAT STOPPED THIS RULER LYING, 2026-08-28.
+
+         It reported A. Reynolds as a serif page. I looked at the screenshot,
+         agreed, and told the founder their design is serif and ours is wrong.
+         It is not. `helvetica-w01-light` came back from document.fonts with
+         status "error": the webfont could not be fetched from this machine, so
+         the browser fell back to Times and BOTH the measurement and the
+         picture showed serifs that are not in their design. Their real faces —
+         neue-haas-grotesk-display-pro and helvetica — are grotesks, and ours
+         already was one. A whole typeface change was one sentence away from
+         being made on the strength of a failed download.
+
+         So availability is measured FIRST, and the shape only reported when
+         the face is actually on screen. The test is the standard one: set the
+         family with monospace behind it, and again with monospace alone. If
+         the widths are identical the family resolved to nothing. */
+      ...(() => {
         const w = (family, text) => {
           const c = document.createElement("canvas").getContext("2d");
           c.font = `100px ${family}`;
           return c.measureText(text).width;
         };
-        /* Wide glyphs over narrow ones. Text serifs run near 3.1; grotesks
-           near 4.0. An equality test against a generic was tried first and
-           came back null for every real webfont, because a loaded face
-           matches neither generic. */
-        const ratio = w(`"${fam}"`, "MWQ@") / w(`"${fam}"`, "illj");
-        return ratio < 3.55;
-      })(),
-      /* ⚠️ 有没有真的载入 —— THE FIELD THAT STOPS THIS RULER LYING.
-         2026-08-28 it reported A. Reynolds as a serif page and I told the
-         founder so. It is not: `helvetica-w01-light` came back from
-         document.fonts with status "error" — the webfont could not be fetched
-         from this machine, the browser fell back to Times, and both the
-         measurement and the screenshot showed serifs that are not in their
-         design. A face that did not load is not a face; say so. */
-      loaded: (() => {
-        const want = fam.toLowerCase();
-        const f = [...document.fonts].filter((x) =>
-          (x.family || "").toLowerCase().replace(/^["']|["']$/g, "") === want,
-        );
-        if (!f.length) return "本机字体";
-        return f.some((x) => x.status === "loaded")
-          ? "载入了"
-          : f.some((x) => x.status === "error")
-            ? "❌ 载入失败（画面上是退回字体，不是他们的设计）"
-            : "没用到";
+        const probe = "WWWMMMiiilllQQQ@@@";
+        const here = w(`"${fam}", monospace`, probe) !== w("monospace", probe);
+        /* ⚠️ NO SERIF/SANS VERDICT IS PRINTED, and that is deliberate.
+           A wide-over-narrow glyph ratio was tried: Georgia 3.09, Times 3.13,
+           Arial 4.02 — clean. Then the fonts this product actually uses were
+           measured and it collapsed: Geist, a sans, came back 3.338;
+           Newsreader, a serif, 3.374. The metric cannot separate them, and a
+           ruler that prints a confident wrong answer is worse than one that
+           prints the family name and lets the eye decide. The eye has the
+           picture; give it the name and whether the name reached the screen. */
+        return { here };
       })(),
     };
   };
@@ -209,7 +212,7 @@ function readType() {
     bodyFam: commonest(body, "fam"),
     bodyPx: commonest(body, "px"),
     bodyLh: commonest(body, "lh"),
-    bodySerif: body.length ? body.filter((b) => b.serif).length > body.length / 2 : null,
+    bodyHere: body.length ? body.filter((b) => b.here).length > body.length / 2 : null,
     bodyN: body.length,
   };
 }
@@ -669,12 +672,11 @@ try {
      Sizes alone passed 満図 while it wore the wrong typeface. The face is the
      loudest half of this axis, so it is printed first and the sizes second. */
   const typeLine = (t) => {
-    const kind = (b) => (b === null ? "?" : b ? "衬线" : "无衬线");
     const h1 = t.heads[0];
     return [
-      `标题 ${h1 ? h1.fam : "—"} (${h1 ? kind(h1.serif) : "?"} · ${h1 ? h1.loaded : "—"}) ${t.heads.map((x) => x.px).join("/")}`,
+      `标题 ${h1 ? h1.fam : "—"} ${h1 && !h1.here ? " ❌ 这台机器没载入到，画面上是退回字体" : ""} ${t.heads.map((x) => x.px).join("/")}`,
       `           标题字重 ${h1 ? h1.w : "—"} · 行高 ${h1 ? h1.lh : "—"}px · 字距 ${h1 ? h1.ls : "—"}px`,
-      `           正文 ${t.bodyFam} (${kind(t.bodySerif)}) ${t.bodyPx}px/${t.bodyLh}px  ${t.bodyN} 段样本`,
+      `           正文 ${t.bodyFam}${t.bodyHere === false ? " ❌ 没载入到" : ""} ${t.bodyPx}px/${t.bodyLh}px  ${t.bodyN} 段样本`,
     ].join("\n");
   };
   console.log(`\n字体 TYPE   参考 ${typeLine(theirs.type)}`);

@@ -311,11 +311,23 @@ describe("buildPageLayout", () => {
 
        Then, still on 2026-08-27, both pages were read out of the DOM section by
        section and lined up against each other. Ours ran 8 sections to their 8,
-       but 服务 sat where their SECOND section is, and their second section is a
-       heading with three text items and no cards at all -- so everything below
-       it was one slot out of step the whole way down. 満図 now opens on 流程,
-       which is that shape and which is true of the trade. */
-    expect(opensOn("hearth")).toBe("website-flow");
+       but 服务 sat where their SECOND section is, so everything below it was one
+       slot out of step the whole way down, and 満図 was moved to open on 流程.
+
+       ⚠️ CHANGED BACK 2026-08-28, and the reason is that the sentence above was
+       written about a DIFFERENT PAGE. 満図's reference moved from Wix's Home
+       Remodeling to `a-reynolds`, and nobody re-read the second section
+       afterwards. Read at native size on 2026-08-28, A. Reynolds' second
+       section is 「Our Expertise」: FIVE CARDS, three then two, each on a
+       #f1f1ee panel with an icon. Not a heading with three text items — that
+       was the old page. Their fourth section is three more cards
+       (「Our Specializations」), so the shape their page opens on is SERVICES,
+       twice, and the process is not on it at all.
+
+       So 満図 opens on 服务 and keeps 流程 in the fourth slot wearing the same
+       card skin with the step number as its mark — which is how the reference
+       itself separates its two rows of cards. */
+    expect(opensOn("hearth")).toBe("website-services");
   });
 
   // The arrow the whole page exists to draw. An enquiry has to say which of

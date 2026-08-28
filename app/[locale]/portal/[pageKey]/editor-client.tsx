@@ -1258,6 +1258,8 @@ export function PortalEditor({
                       data-measure={pageKey === "website" ? (siteSkeleton(activeStyle).measure ?? "normal") : undefined}
                       data-rhythm={pageKey === "website" ? (siteSkeleton(activeStyle).rhythm ?? "normal") : undefined}
                       data-figure={pageKey === "website" ? (siteSkeleton(activeStyle).figure ?? "normal") : undefined}
+                      data-copy={pageKey === "website" ? (siteSkeleton(activeStyle).copy ?? "normal") : undefined}
+                      data-frame={pageKey === "website" ? (siteSkeleton(activeStyle).frame ?? "none") : undefined}
                       className={`ds-ground ${scopeClasses(activeStyle, activePalette)} ${
                         pageKey === "website" ? "ds-site" : ""
                       } h-full [background-color:var(--color-canvas)]`}
