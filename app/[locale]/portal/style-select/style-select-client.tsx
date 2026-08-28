@@ -64,7 +64,27 @@ export function StyleSelectClient({ recommended }: { recommended: StyleName | nu
   return (
     <>
       {error ? <p className="mb-4 [font-size:var(--text-sm)] text-destructive">{error}</p> : null}
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+      {/* TWO ACROSS, NOT THREE, AND IT IS A MEASUREMENT NOT A TASTE.
+
+            The sample table declares `minWidth: 380` -- four columns plus a
+            right-aligned amount, see sample-content.tsx. At three across inside
+            `max-w-7xl` the space left inside a card is 326-344px, so every card
+            clipped the STATUS column mid-word: 「Pendin」「Overd」. Measured
+            identically at 1280 and at 1440, because the container is capped --
+            a wider screen never helped.
+
+            DataGrid does scroll what overflows and draws an edge shadow, which
+            is right on a phone where 380px cannot fit however you cut it. On a
+            desktop it was the worst case instead: 36px short, so it did not
+            read as scrollable, it read as broken. On the one screen whose whole
+            job is 「客人是用眼睛看的满意了 才会用我们的风格」, six of six
+            options looked broken.
+
+            Two across leaves ~556px inside a card. It also matches what the
+            styles gallery already settled on for the same reason: a register
+            card is a whole page, and four-across at 230px is a photograph of a
+            page rather than a page you can judge. */}
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
         {[...STYLE_ORDER]
           .sort((a, b) => Number(b === recommended) - Number(a === recommended))
           .map((style) => (

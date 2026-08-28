@@ -40,7 +40,8 @@
     "align": "node scripts/align-site.mjs",
     "align:sheet": "python scripts/align-sheet.py",
     "shoot:picker": "node scripts/shoot-picker.mjs",
-    "shoot:console": "node scripts/shoot-console.mjs"
+    "shoot:console": "node scripts/shoot-console.mjs",
+    "shoot:journey": "node scripts/shoot-journey.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
