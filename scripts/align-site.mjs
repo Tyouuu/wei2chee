@@ -260,7 +260,25 @@ function readShape(rootSel) {
     return t.trim();
   };
 
-  return kept.map((sec) => {
+  /* ── 每一个看得见的盒子都要归到某一段，按它在页面上的位置 ────────────────
+     ⚠️ 以前是走「各段元素的子孙」（`sec.els.flatMap(...querySelectorAll)`），
+     而那假设了「页面上每一块都是某一段的子孙」。Wix 不是这样排的：它有窄的
+     comp 是那些段的**兄弟**，於是那里面的东西谁也装不到。瑞士 的参考因此有
+     两张照片掉在所有段之外 —— 尺子自己的自检抓到的。
+
+     段本来就是**页面上的一段垂直范围**。所以改成：把 root 底下所有看得见的
+     盒子走一遍，每一个按它的**垂直中心**落在哪一段的范围里，就归哪一段。
+     这样「有东西不是任何一段的子孙」这一整类问题不再存在，而不是修掉一个实例。 */
+  const ranges = kept.map((k) => ({ ...k, pool: [] }));
+  for (const el of root ? root.querySelectorAll("*") : document.body.querySelectorAll("*")) {
+    const r = el.getBoundingClientRect();
+    if (r.height < 8) continue;
+    const mid = r.top + scrollY + r.height / 2;
+    const hit = ranges.find((k) => mid >= k.top && mid < k.top + k.h);
+    if (hit) hit.pool.push(el);
+  }
+
+  return ranges.map((sec) => {
     const sr = { top: sec.top - scrollY, height: sec.h };
     const boxes = [];
     const push = (el, kind, extra) => {
@@ -280,7 +298,7 @@ function readShape(rootSel) {
       boxes.push({ kind, x0, x1, y0, y1, ...extra });
     };
 
-    for (const el of sec.els.flatMap((e) => [...e.querySelectorAll("*")])) {
+    for (const el of sec.pool) {
       if (!vis(el)) continue;
       if (el.matches("img,video")) { push(el, "图"); continue; }
       /* ⚠️ 背景图也是图，而这一行以前不存在。
@@ -308,14 +326,19 @@ function readShape(rootSel) {
         continue;
       }
       const t = ownText(el);
-      if (t.length >= 2) push(el, "字", { px: Math.round(parseFloat(getComputedStyle(el).fontSize)) });
+      if (t.length >= 2) push(el, "字", { px: Math.round(parseFloat(getComputedStyle(el).fontSize)), n: t.length });
     }
     /* 一段里的字块常常几十个（每一行一个）—— 按「左边缘 + 字级」并成一栏，
        那才是排版上的一个东西。 */
     const merged = [];
     for (const b of boxes.sort((a, b2) => a.y0 - b2.y0 || a.x0 - b2.x0)) {
       const same = b.kind === "字" && merged.find((m) => m.kind === "字" && Math.abs(m.x0 - b.x0) <= 2 && m.px === b.px && b.y0 - m.y1 <= 4);
-      if (same) { same.y1 = Math.max(same.y1, b.y1); same.x1 = Math.max(same.x1, b.x1); continue; }
+      if (same) {
+        same.y1 = Math.max(same.y1, b.y1);
+        same.x1 = Math.max(same.x1, b.x1);
+        same.n = (same.n || 0) + (b.n || 0);
+        continue;
+      }
       merged.push(b);
     }
     return merged;
@@ -489,6 +512,26 @@ function readType() {
    band and of a thumbnail. Five of the six references are pages whose pictures
    ARE the argument, so they are not copied until the pictures are the size
    theirs are. */
+/* 这一页总共有多少看得见的字。规则跟 readShape 里的 ownText 一模一样 ——
+   两边规则不同，比出来的差就是规则的差，不是页面的差。 */
+function readChars(rootSel) {
+  const root = rootSel ? document.querySelector(rootSel) : document.body;
+  if (!root) return 0;
+  const PAGE = document.documentElement.getBoundingClientRect().width || 1440;
+  let n = 0;
+  for (const el of root.querySelectorAll("*")) {
+    const cs = getComputedStyle(el);
+    if (cs.display === "none" || cs.visibility === "hidden" || Number(cs.opacity) <= 0.05) continue;
+    const r = el.getBoundingClientRect();
+    if (r.right < PAGE * 0.02 || r.left > PAGE * 0.98) continue;
+    let t = "";
+    for (const c of el.childNodes) if (c.nodeType === 3) t += c.nodeValue;
+    t = t.trim();
+    if (t.length >= 2) n += t.length;
+  }
+  return n;
+}
+
 function readShots(rootSel) {
   const root = rootSel ? document.querySelector(rootSel) : document.body;
   if (!root) return [];
@@ -1191,10 +1234,11 @@ async function shoot(target, rootSel, wait, file, width = 1440, withMotion = tru
     }).length;
   }, rootSel);
   const shape = await p.evaluate(readShape, rootSel);
+  const chars = await p.evaluate(readChars, rootSel);
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
   const move = withMotion ? await probeMotion(p, rootSel) : null;
   await p.close();
-  return { secs, type, axes, anat, shots, shape, move, vids, file };
+  return { secs, type, axes, anat, shots, shape, move, vids, chars, file };
 }
 
 /* ── 验收这一次采集，不过就拒绝 ──────────────────────────────────────────────
@@ -1595,6 +1639,39 @@ try {
      判什么：这一段有几个图 / 几颗按钮 / 几栏字，配对得上的那些左右位置差多少。
      不判什么：好不好看、字写什么、照片拍的是什么。 */
   console.log("\n结构 SHAPE  （一段里面有哪些盒子，图 · 钮 · 字）");
+  {
+    /* ── 尺子的自检：分段之后，照片有没有掉在段外 ────────────────────────
+       老板 2026-08-30: 「重点是都还没修好那个尺子 尺子都不准怎么去量」.
+
+       今天两个洞是同一个形状：**页面上真的有那个东西，而分段之后它不在任何
+       一段里**。一个是 CSS 背景图，一个是「被包住就丢掉」的兄弟层。两个都不是
+       想出来的，是准备照着报告改页面的时候才撞到的。
+
+       所以不再靠撞：readShots 数这一页有几张够大的照片，readShape 数分段之后
+       各段里装了几张。对不上就是有东西掉在段外 —— 那一块的每一项读数都是错的，
+       而它印出来跟对的一模一样。
+
+       ⚠️ 它只查得到「图」。字跟按钮掉了它看不见 —— 写清楚，不要拿它当成
+       「什么都没漏」的证明。 */
+    const inBoxes = (shp) => (shp ?? []).reduce((n2, bs) => n2 + bs.filter((b) => b.kind === "图").length, 0);
+    for (const [who, cap] of [["模版", theirs], ["我们", ours]]) {
+      const all = cap.shots.length;
+      const held = inBoxes(cap.shape);
+      if (all - held > 1) {
+        console.log(`  XX  ${who}分段漏图  这一页 ${all} 张，各段装下 ${held} 张 —— ${all - held} 张掉在段外`);
+        marks.push({ axis: "结构", name: `${who}分段漏图`, ok: false });
+      }
+      /* 字才是页面上的大面积。图漏一张看得出来，字漏一整段看不出来 ——
+         它只会让「几栏」「顺序」「版心」全部小一号，每一项都还是印得像真的。 */
+      const chAll = cap.chars || 0;
+      const chHeld = (cap.shape ?? []).reduce(
+        (n2, bs) => n2 + bs.reduce((m, b) => m + (b.kind === "字" ? b.n || 0 : 0), 0), 0);
+      if (chAll > 400 && chHeld / chAll < 0.8) {
+        console.log(`  XX  ${who}分段漏字  这一页 ${chAll} 个字，各段装下 ${chHeld} 个 —— 漏了 ${Math.round(100 - (chHeld / chAll) * 100)}%`);
+        marks.push({ axis: "结构", name: `${who}分段漏字`, ok: false });
+      }
+    }
+  }
   {
     const TS = TSHAPE;
     const OS = OSHAPE;
