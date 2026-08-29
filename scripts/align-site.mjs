@@ -1836,8 +1836,26 @@ try {
      opposite designs. So the unit is the SECTION, and the verdict lands here
      rather than in a second command nobody runs. */
   try {
+    /* ── 照片铺满的那一段，底色是那张照片的，不是这一页设计的 ──────────────
+       老板 2026-08-30 这一轮量到：台账 第1段「模版 #3c3228 13% · 我们 #78786e
+       5.2%」。那两个颜色一个是他们那栋暖色建筑，一个是我们那间灰厨房 ——
+       **比的是两张不同的照片，不是两个不同的设计。** 而且两边的占比都只有
+       5–13%，因为一张照片根本没有主色。
+
+       所以照片盖过八成的段，逐段底色回报「看照片」，不判。这不是放水：
+       那一格本来就答不了它宣称在答的问题。 */
+    const photoLed = new Set();
+    {
+      const TS2 = TSHAPE, OS2 = OSHAPE;
+      const cover = (bs) =>
+        bs.filter((b) => b.kind === "图").reduce((m, b) => m + ((b.x1 - b.x0) * (b.y1 - b.y0)) / 100, 0);
+      for (const [a, b] of paired) {
+        if (cover(TS2[a] ?? []) >= 80 || cover(OS2[b] ?? []) >= 80) photoLed.add(a);
+      }
+    }
     const pairArg = paired.map(([a, b]) => `${a}:${b}`).join(",");
-    const out = execSync(`python scripts/align-palette.py ${register} --pairs=${pairArg}`, {
+    const skipArg = [...photoLed].join(",");
+    const out = execSync(`python scripts/align-palette.py ${register} --pairs=${pairArg} --photo=${skipArg}`, {
       encoding: "utf8",
       env: { ...process.env, PYTHONIOENCODING: "utf-8" },
     });

@@ -72,12 +72,22 @@ def run(reg):
     if not pairs:
         pairs = [(i, i) for i in range(min(len(T), len(O)))]
 
+    # 照片铺满的那几段，align-site.mjs 会把编号传进来 —— 那一段的底色是那张
+    # 照片的，不是这一页设计的。比两张不同的照片，答不了「配色一不一样」。
+    photo_led = set()
+    for arg in sys.argv[2:]:
+        if arg.startswith("--photo="):
+            photo_led = {int(x) for x in arg[len("--photo="):].split(",") if x.strip()}
+
     print(f"{reg}  逐段底色（一段对一段）")
     bad = 0
     for (i, j) in pairs:
         t = dominant(ref, T[i]["top"], T[i]["h"]) if 0 <= i < len(T) else []
         o = dominant(ours, O[j]["top"], O[j]["h"]) if 0 <= j < len(O) else []
         tag = f"第{i+1}段" if i == j else f"第{i+1}段(配我们第{j+1}段)"
+        if i in photo_led:
+            print(f"  --  {tag}  照片铺满这一段 —— 底色是那张照片的，不判")
+            continue
         if not t or not o:
             print(f"  --  {tag}  " + ("模版没有这一段" if not t else "我们没有这一段"))
             bad += 1

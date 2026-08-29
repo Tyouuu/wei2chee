@@ -264,11 +264,16 @@
 
   /* About 那一段 449 对他们 1030 —— 他们的照片占半幅而且很高。 */
   --site-page-measure: 80.0rem;
-  --site-wide-extra: 0rem;  /* Newel 的每一块都收在框里，没有更宽的段 */  /* 参考页量出来的版心 5%–94% */
+  --site-wide-extra: 0rem;
+  /* 导航压在第一屏的照片上 —— Newel 的做法。透明底、没有下缘线，
+     再用负边距把它拉回照片上面。 */
+  --site-bar-bg: transparent;
+  --site-bar-line: transparent;
+  --site-bar-pull: -4.6rem;  /* Newel 的每一块都收在框里，没有更宽的段 */  /* 参考页量出来的版心 5%–94% */
   --site-figure: 1.45;
 
   /* 段内的气 —— 段均高对齐用的（见 align 的「段均高」那一项）。 */
-  --site-inner: 7rem;  /* 第2段 449 对他们 1030 */
+  --site-inner: 2.6rem;  /* 段内的气 他们 上2% 下12% */
   color-scheme: light;
 
   /* ---- TYPE AXIS: condensed grotesque, heavy at display sizes -------------

@@ -202,7 +202,14 @@ export function EnquiryForm({
             the contract's layout rule: cap fields, not pages. */}
         <form
           onSubmit={onSubmit}
-          className={`${split ? "" : "mt-6 "}flex max-w-[34rem] flex-col [gap:var(--gap-stack)]`}
+          /* ── 短的栏位并排 ────────────────────────────────────────────────
+             老板 2026-08-30，看 台账 对 Newel 第6段：他们的 Contact Us 是
+             **两栏**（First name / Last name 并排，Email 一整行），我们是一栏
+             从上叠到下。尺子读出来「几栏 3 对 1」。
+
+             短的（name / phone）各占一半，长的（要讲的事）一整行 —— 那是这一
+             类表格的通用排法，也是他们那一段的排法。手机上照样一栏。 */
+          className={`${split ? "" : "mt-6 "}grid max-w-[34rem] [gap:var(--gap-stack)] @xl:grid-cols-2`}
         >
           {/* Nobody sees this and nobody fills it. A bot fills every input it
               finds, which is what makes it the cheapest honest filter there
@@ -218,7 +225,7 @@ export function EnquiryForm({
           {rows.map((f, i) => {
             const id = `${base}-${i}`;
             return (
-              <div key={f.label}>
+              <div key={f.label} className={f.kind === "long" ? "@xl:col-span-2" : ""}>
                 <label
                   htmlFor={id}
                   className="mb-1.5 block [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]"
@@ -249,7 +256,7 @@ export function EnquiryForm({
             );
           })}
 
-          <div className="mt-1 flex flex-wrap items-center [gap:var(--gap-inline)]">
+          <div className="mt-1 flex flex-wrap items-center [gap:var(--gap-inline)] @xl:col-span-2">
             <button
               type="submit"
               disabled={state === "sending"}

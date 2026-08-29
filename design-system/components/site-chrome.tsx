@@ -45,7 +45,16 @@ export function SiteBar({
       /* `@container`, not a viewport breakpoint: the editor canvas is narrower
          than the window and a phone preview is a 390px box inside a 1440px one.
          Same trap site-hero.tsx documents at length. */
-      className="@container sticky top-0 z-30 w-full [background-color:var(--color-canvas)] [border-bottom:var(--hairline)_solid_var(--border-subtle)]"
+      /* ── 导航压在第一屏上，还是坐在第一屏上面 ────────────────────────────
+         老板 2026-08-30，看 台账 对 Newel 第1段：他们的导航（logo · 四个连结 ·
+         Call Now）**压在那张满边的照片上**，所以那一整屏是一段；我们的是照片
+         **上面**另一条实心带，於是同一屏被切成「一条 chrome」加「一段 hero」。
+         尺子读出来是「顺序 图→字→钮→字 对 图→字」——他们那一段有导航，我们没有。
+
+         那不是尺子的错，是两个不同的开场。哪一种由风格自己决定：
+         --site-bar-bg 设成 transparent 就是压上去，不设就是原本那条实心带。 */
+      className="@container sticky top-0 z-30 w-full [background-color:var(--site-bar-bg,var(--color-canvas))] [border-bottom:var(--hairline)_solid_var(--site-bar-line,var(--border-subtle))]"
+      style={{ marginBottom: "var(--site-bar-pull, 0)" }}
     >
       <div className="mx-auto flex w-full max-w-[68rem] items-center justify-between [gap:var(--gap-stack)] [padding-block:calc(var(--pad-control-y)*1.1)] [padding-inline:1.5rem]">
         <span className="min-w-0 truncate [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
