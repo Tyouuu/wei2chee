@@ -1332,6 +1332,18 @@ try {
   const h1 = (t) => (t.heads[0] || {});
   console.log("\n字体 TYPE");
   check("字体", "标题字体", h1(theirs.type).fam ?? "—", h1(ours.type).fam ?? "—", null);
+  /* ⚠️ 字体档案在这台机器上载不载得到，直接决定下面三项算的是那一页还是这台
+     机器。载不到的时候浏览器退回 Times，量出来的宽窄比讲的是 Times。
+     所以先把这件事印出来 —— 一个被降级的量测，不该跟一个正常的量测长得一样。 */
+  const loaded = (t) => (t.heads?.[0] ? (t.heads[0].here ? "载到了" : "载不到（退回系统字）") : "—");
+  check("字体", "字体档载入", loaded(theirs.type), loaded(ours.type), null);
+  /* 衬线还是无衬线 —— serifish 从写出来那天就算了，一行都没有拿它比过。
+     它是「像不像」最先被眼睛看到的那一件：一页衬线跟一页无衬线，字级字重
+     全部对上也还是两页。 */
+  const serif = (t) => Number(t.heads?.[0]?.serifish) || 0;
+  const sT = serif(theirs.type), sO = serif(ours.type);
+  check("字体", "衬线/无衬线", sT ? sT.toFixed(2) : "量不到", sO ? sO.toFixed(2) : "量不到",
+    judge(sT, sO, Math.abs(sT - sO) / sT <= 0.09));
   /* 名字判不了（我们不可能用他们的授权字体），字宽判得了。
      窄体跟宽体在同一个字级上是两页不同的东西 —— 招牌 的参考是压缩体。 */
   const wid = (t) => Number(t.heads?.[0]?.widthish) || 0;
@@ -1410,10 +1422,16 @@ try {
        这一条是这把尺第一次跑就抓到的、而且最大的一件：瑞士 整页的内容跑
        7%–93%，我们 14%–86%。两边各差 7 个点，那不是某一段的事，是版心
        本身窄了 200px。段高一样、张数一样、字级一样，所以以前每一项都过。 */
+    /* ⚠️ 满边的段要拿出来另外算。
+       一段铺满整页（0%–100%）是一个设计决定，不是「版心很宽」。混在一起取
+       中位数，台账 就回报「我们 0%–100%」—— 那讲的是它有一半的段是满边的，
+       不是它的版心。两件事，两行。 */
+    const isBleed = (bs) => Math.min(...bs.map((b) => b.x0)) <= 2 && Math.max(...bs.map((b) => b.x1)) >= 98;
+    const bleeds = (SS) => SS.filter((bs) => bs.length && isBleed(bs)).length;
     const edge = (SS) => {
       const l = [], r = [];
       for (const bs of SS) {
-        if (!bs.length) continue;
+        if (!bs.length || isBleed(bs)) continue;
         l.push(Math.min(...bs.map((b) => b.x0)));
         r.push(Math.max(...bs.map((b) => b.x1)));
       }
@@ -1422,10 +1440,10 @@ try {
       return [l[Math.floor(l.length / 2)], r[Math.floor(r.length / 2)]];
     };
     const et = edge(TS), eo = edge(OS);
-    if (et && eo) {
-      check("结构", "版心", `${et[0]}%–${et[1]}%`, `${eo[0]}%–${eo[1]}%`,
-        Math.abs((et[1] - et[0]) - (eo[1] - eo[0])) <= 6);
-    }
+    check("结构", "版心", et ? `${et[0]}%–${et[1]}%` : "全部满边", eo ? `${eo[0]}%–${eo[1]}%` : "全部满边",
+      et && eo ? Math.abs((et[1] - et[0]) - (eo[1] - eo[0])) <= 6 : null);
+    check("结构", "满边的段", `${bleeds(TS)}/${TS.length}`, `${bleeds(OS)}/${OS.length}`,
+      Math.abs(bleeds(TS) - bleeds(OS)) <= 1);
 
     /* 用同一份配对 —— 结构以前也是按位置比的，招牌 的询价表格被拿去跟他们的
        页脚比结构，比出来的每一条都是假的。 */
