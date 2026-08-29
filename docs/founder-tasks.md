@@ -2499,6 +2499,42 @@ set_variant · set_copy` ＋ `add_page · remove_page · pick_photo` ＋ **换�
       首页、库存页、需求书、风格库全部看不到。**招牌承诺藏在第二层点击后面。**
       模型那端早就收得到完整页面清单，跨页有能力，只是没有地方讲
 
+### 63. 后端开源项目清单（2026-08-29，他要「仔仔细细的去找」）
+
+#### 授权那条线 —— 决定一切，而且他的商业模式让它更严
+| 授权 | 自己托管 | **卖断给客户**（他讲过「买断不是白送」）|
+|---|---|---|
+| MIT / Apache | ✅ | ✅ |
+| GPL-3.0 | ✅ 可以用、不用开源 | 🔴 **一卖断就要附源码** |
+| AGPL-3.0 | 🔴 有人上网用就要开源 | 🔴 |
+| 「Other」自订 | ⚠️ 要读合约 | ⚠️ |
+
+⚠️ **我上一次讲得不够准**：不是 GPL 不能用，是**他的买断选项让 GPL 不能用**。
+散布那一刻义务就来了。所以对我们而言 **GPL = 只能拿设计**。
+
+#### 可以直接拿代码（授权用 GitHub API 核对过）
+| 项目 | ★ | 语言 | 值在哪 |
+|---|---|---|---|
+| **`marmelab/atomic-crm`** | 1.2k | TS · MIT | 🔴 **React + shadcn/ui + Supabase —— 我们的栈一字不差。** 8 张表：companies / contacts / deals / tasks / notes（带附件阵列）/ tags / sales。**给 `directory` + `pipeline`** |
+| **`refinedev/refine`** | 35.6k | TS · MIT | **headless CRUD 引擎** —— 「在自己栈里做小引擎」的现成版，画面完全是我们的 |
+| `frappe/frappe` | 10.7k | Python · MIT | DocType 引擎本体，但要多养 Python + MariaDB |
+| `marmelab/react-admin` | 26.9k | TS · MIT | refine 同门，更成熟 |
+| `appsmithorg/appsmith` | 40.8k | TS · Apache-2.0 | 后台建构器 |
+
+#### 只能拿设计（GPL）
+`frappe/erpnext`（38.6k）—— 栏位与状态，见[任务 61](#61)。
+`alextselegidis/easyappointments`（4.3k）—— 预约排班与挡重叠。
+
+#### 不要碰
+`bigcapital`（会计）· `ToolJet` —— **AGPL，托管就要开源**。
+`twenty` · `nocodb` · `medusa` · `invoiceninja` —— 授权是「Other」自订，不能假设。
+
+#### ⚠️ atomic-crm 缺的那一半
+**它是 CRM，没有钱** —— 没有收款表、没有预约、没有库存、没有订金余额。
+`ledger` · `calendar` · `catalog` 三个形状它一个都不给。**那三个正是下一轮要找的。**
+
+- [ ] 下一轮：按 `ledger` / `calendar` / `catalog` 三个缺口，找 MIT/Apache 且同栈的
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**
