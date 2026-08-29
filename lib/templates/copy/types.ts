@@ -38,6 +38,27 @@ export type SampleSet = {
     tone: StatusTone;
     status: string;
   }[];
+  /**
+   * What this trade keeps on a shelf.
+   *
+   * Separate from `records` because the two answer different questions: a
+   * salon's records are appointments, its stock is colour tubes. Until this
+   * existed the Stock page fell through to `moduleCopy`'s generic rows, so a
+   * salon owner shown their own system read 「Item A · Store 1 · carton」 on the
+   * one page whose whole subject is the thing they buy every month -- while the
+   * page next to it correctly said 「Colour + treatment」.
+   *
+   * Units are the point, not decoration: a wholesaler buys by the carton and
+   * sells by the piece, and a stock page that cannot say which is a stock page
+   * that is wrong for them.
+   */
+  stock: {
+    primary: string;
+    secondary: string;
+    amount: string;
+    tone: StatusTone;
+    status: string;
+  }[];
   heroLabel: string;
   heroValue: string;
   /** What the headline figure is measured against -- "vs 上个月", "vs 昨天". */

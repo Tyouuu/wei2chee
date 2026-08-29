@@ -2122,7 +2122,26 @@ function buildFromShape(
   const industry = ctx.industry ?? fallbackIndustry(lang);
   const labels = labelsFromPages(industryLabels(industry, lang), pages);
   const brand = displayBusinessName(ctx);
-  const copy = moduleCopy(pageKey, labels, lang);
+  const generic = moduleCopy(pageKey, labels, lang);
+  /*
+    THE STOCK PAGE GETS THIS TRADE'S SHELF, NOT A GENERIC ONE.
+
+    `moduleCopy` knows the trade's NOUNS -- it renames 客户 to 经销商 for a master
+    dealer -- but it has never seen the trade's sample rows, so every module
+    outside the main table fell back to its own generic set. On the Stock page
+    that read 「Item A · Store 1 · carton」 while the Bookings page one click away
+    correctly read 「Colour + treatment · Today 4:30 PM · Jasmine」. A salon owner
+    being shown their own system notices that on the page whose entire subject is
+    the thing they buy every month.
+
+    Only `inventory` for now, and deliberately: it is the one module whose rows
+    are about objects rather than about the trade's core transaction, which is
+    what `records` already covers everywhere else.
+  */
+  const copy =
+    pageKey === "inventory"
+      ? { ...generic, rows: sampleFor(industry.slug, lang).stock }
+      : generic;
   // The customer's own noun wins over the archetype's default: the AI renames
   // `customers` to 经销商 for a master dealer, and the page heading has to agree
   // with the rail or the system reads as two products bolted together.

@@ -18,6 +18,29 @@ import type { SampleSet } from "./types";
  */
 export const SAMPLES_EN: Record<string, SampleSet> = {
   renovation: {
+    stock: [
+      {
+        primary: "Cement 50kg",
+        secondary: "Store · bag",
+        amount: "84",
+        tone: "positive",
+        status: "In stock",
+      },
+      {
+        primary: "Floor tile 60×60",
+        secondary: "Store · box",
+        amount: "12",
+        tone: "warning",
+        status: "Running low",
+      },
+      {
+        primary: "Paint · off-white 18L",
+        secondary: "Van · pail",
+        amount: "31",
+        tone: "neutral",
+        status: "Slow moving",
+      },
+    ],
     records: [
       {
         primary: "Taman Desa 3-room reno",
@@ -77,6 +100,29 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
     heroSpark: [42000, 51000, 47500, 58000, 63000, 71300],
   },
   retail: {
+    stock: [
+      {
+        primary: "Kids tee · M",
+        secondary: "Front rack · piece",
+        amount: "46",
+        tone: "positive",
+        status: "In stock",
+      },
+      {
+        primary: "Tote bag · canvas",
+        secondary: "Back store · piece",
+        amount: "7",
+        tone: "warning",
+        status: "Running low",
+      },
+      {
+        primary: "Umbrella · black",
+        secondary: "Back store · box",
+        amount: "120",
+        tone: "neutral",
+        status: "Slow moving",
+      },
+    ],
     records: [
       {
         primary: "Order #10238",
@@ -136,6 +182,29 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
     heroSpark: [14200, 15800, 17100, 16400, 18000, 18940],
   },
   beauty: {
+    stock: [
+      {
+        primary: "Colour tube 8.0",
+        secondary: "Colour room · tube",
+        amount: "64",
+        tone: "positive",
+        status: "In stock",
+      },
+      {
+        primary: "Shampoo 1L · salon",
+        secondary: "Wash area · bottle",
+        amount: "6",
+        tone: "warning",
+        status: "Running low",
+      },
+      {
+        primary: "Hair mask 500ml",
+        secondary: "Store room · jar",
+        amount: "38",
+        tone: "neutral",
+        status: "Slow moving",
+      },
+    ],
     records: [
       {
         primary: "Facial · 90 min",
@@ -195,6 +264,29 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
     heroSpark: [9800, 10400, 11200, 10900, 12100, 12650],
   },
   wholesale: {
+    stock: [
+      {
+        primary: "Reload RM30",
+        secondary: "Counter · roll",
+        amount: "480",
+        tone: "positive",
+        status: "In stock",
+      },
+      {
+        primary: "Type-C cable 1m",
+        secondary: "Store 1 · box",
+        amount: "14",
+        tone: "warning",
+        status: "Running low",
+      },
+      {
+        primary: "Power bank 10000mAh",
+        secondary: "Store 2 · carton",
+        amount: "96",
+        tone: "neutral",
+        status: "Slow moving",
+      },
+    ],
     records: [
       {
         primary: "PO-2026-0412",
@@ -259,6 +351,29 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
     heroSpark: [142000, 158000, 151000, 169000, 177000, 186400],
   },
   services: {
+    stock: [
+      {
+        primary: "R32 refrigerant 1kg",
+        secondary: "Van 1 · can",
+        amount: "22",
+        tone: "positive",
+        status: "In stock",
+      },
+      {
+        primary: "Copper pipe 1/4",
+        secondary: "Store · roll",
+        amount: "5",
+        tone: "warning",
+        status: "Running low",
+      },
+      {
+        primary: "Cable tie 300mm",
+        secondary: "Store · pack",
+        amount: "240",
+        tone: "neutral",
+        status: "Slow moving",
+      },
+    ],
     records: [
       {
         primary: "Brand consulting",
@@ -313,6 +428,29 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
     heroSpark: [28000, 31000, 29500, 36000, 38000, 40500],
   },
   fnb: {
+    stock: [
+      {
+        primary: "House blend bean",
+        secondary: "Dry store · kg",
+        amount: "18",
+        tone: "positive",
+        status: "In stock",
+      },
+      {
+        primary: "Oat milk 1L",
+        secondary: "Chiller · carton",
+        amount: "4",
+        tone: "warning",
+        status: "Running low",
+      },
+      {
+        primary: "Takeaway cup 12oz",
+        secondary: "Dry store · sleeve",
+        amount: "300",
+        tone: "neutral",
+        status: "Slow moving",
+      },
+    ],
     records: [
       {
         primary: "Table 3",
@@ -372,6 +510,29 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
     heroSpark: [2650, 2980, 3120, 2740, 3350, 3280],
   },
   education: {
+    stock: [
+      {
+        primary: "Workbook · Year 4",
+        secondary: "Office · set",
+        amount: "52",
+        tone: "positive",
+        status: "In stock",
+      },
+      {
+        primary: "Whiteboard marker",
+        secondary: "Office · box",
+        amount: "8",
+        tone: "warning",
+        status: "Running low",
+      },
+      {
+        primary: "Exam pad A4",
+        secondary: "Store · ream",
+        amount: "140",
+        tone: "neutral",
+        status: "Slow moving",
+      },
+    ],
     records: [
       {
         primary: "Form 3 Maths · Tue",
@@ -428,6 +589,29 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
 };
 
 export const GENERIC_SAMPLE_EN: SampleSet = {
+  stock: [
+    {
+      primary: "Item A",
+      secondary: "Store 1 · carton",
+      amount: "128",
+      tone: "positive",
+      status: "In stock",
+    },
+    {
+      primary: "Item B",
+      secondary: "Store 1 · piece",
+      amount: "9",
+      tone: "warning",
+      status: "Running low",
+    },
+    {
+      primary: "Item C",
+      secondary: "Store 2 · carton",
+      amount: "340",
+      tone: "neutral",
+      status: "Slow moving",
+    },
+  ],
   records: [
     {
       primary: "Record 001",

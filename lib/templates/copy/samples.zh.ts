@@ -10,6 +10,29 @@ import type { SampleSet } from "./types";
  */
 export const SAMPLES_ZH: Record<string, SampleSet> = {
   renovation: {
+    stock: [
+      {
+        primary: "水泥 50kg",
+        secondary: "仓库 · 包",
+        amount: "84",
+        tone: "positive",
+        status: "充足",
+      },
+      {
+        primary: "地砖 60×60",
+        secondary: "仓库 · 箱",
+        amount: "12",
+        tone: "warning",
+        status: "快没了",
+      },
+      {
+        primary: "油漆 · 米白 18L",
+        secondary: "货车 · 桶",
+        amount: "31",
+        tone: "neutral",
+        status: "压太久",
+      },
+    ],
     records: [
       {
         primary: "Taman Desa 三房翻新",
@@ -69,6 +92,29 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
     heroSpark: [42000, 51000, 47500, 58000, 63000, 71300],
   },
   retail: {
+    stock: [
+      {
+        primary: "童装 T恤 · M",
+        secondary: "前架 · 件",
+        amount: "46",
+        tone: "positive",
+        status: "充足",
+      },
+      {
+        primary: "帆布袋",
+        secondary: "后仓 · 件",
+        amount: "7",
+        tone: "warning",
+        status: "快没了",
+      },
+      {
+        primary: "雨伞 · 黑",
+        secondary: "后仓 · 箱",
+        amount: "120",
+        tone: "neutral",
+        status: "压太久",
+      },
+    ],
     records: [
       {
         primary: "订单 #10238",
@@ -123,6 +169,29 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
     heroSpark: [14200, 15800, 17100, 16400, 18000, 18940],
   },
   beauty: {
+    stock: [
+      {
+        primary: "染膏 8.0",
+        secondary: "染发区 · 支",
+        amount: "64",
+        tone: "positive",
+        status: "充足",
+      },
+      {
+        primary: "洗发水 1L · 沙龙装",
+        secondary: "洗头区 · 瓶",
+        amount: "6",
+        tone: "warning",
+        status: "快没了",
+      },
+      {
+        primary: "发膜 500ml",
+        secondary: "储藏室 · 罐",
+        amount: "38",
+        tone: "neutral",
+        status: "压太久",
+      },
+    ],
     records: [
       {
         primary: "面部护理 · 90分钟",
@@ -177,6 +246,29 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
     heroSpark: [9800, 10400, 11200, 10900, 12100, 12650],
   },
   wholesale: {
+    stock: [
+      {
+        primary: "预付卡 RM30",
+        secondary: "柜台 · 卷",
+        amount: "480",
+        tone: "positive",
+        status: "充足",
+      },
+      {
+        primary: "Type-C 线 1m",
+        secondary: "仓一 · 盒",
+        amount: "14",
+        tone: "warning",
+        status: "快没了",
+      },
+      {
+        primary: "行动电源 10000mAh",
+        secondary: "仓二 · 箱",
+        amount: "96",
+        tone: "neutral",
+        status: "压太久",
+      },
+    ],
     records: [
       {
         primary: "PO-2026-0412",
@@ -241,6 +333,29 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
     heroSpark: [142000, 158000, 151000, 169000, 177000, 186400],
   },
   services: {
+    stock: [
+      {
+        primary: "R32 冷媒 1kg",
+        secondary: "车一 · 罐",
+        amount: "22",
+        tone: "positive",
+        status: "充足",
+      },
+      {
+        primary: "铜管 1/4",
+        secondary: "仓库 · 卷",
+        amount: "5",
+        tone: "warning",
+        status: "快没了",
+      },
+      {
+        primary: "束线带 300mm",
+        secondary: "仓库 · 包",
+        amount: "240",
+        tone: "neutral",
+        status: "压太久",
+      },
+    ],
     records: [
       {
         primary: "品牌顾问项目",
@@ -295,6 +410,29 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
     heroSpark: [28000, 31000, 29500, 36000, 38000, 40500],
   },
   fnb: {
+    stock: [
+      {
+        primary: "咖啡豆 · 招牌",
+        secondary: "干货区 · 公斤",
+        amount: "18",
+        tone: "positive",
+        status: "充足",
+      },
+      {
+        primary: "燕麦奶 1L",
+        secondary: "冷藏 · 箱",
+        amount: "4",
+        tone: "warning",
+        status: "快没了",
+      },
+      {
+        primary: "外带杯 12oz",
+        secondary: "干货区 · 条",
+        amount: "300",
+        tone: "neutral",
+        status: "压太久",
+      },
+    ],
     records: [
       {
         primary: "3号桌",
@@ -354,6 +492,29 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
     heroSpark: [2650, 2980, 3120, 2740, 3350, 3280],
   },
   education: {
+    stock: [
+      {
+        primary: "练习本 · 四年级",
+        secondary: "办公室 · 套",
+        amount: "52",
+        tone: "positive",
+        status: "充足",
+      },
+      {
+        primary: "白板笔",
+        secondary: "办公室 · 盒",
+        amount: "8",
+        tone: "warning",
+        status: "快没了",
+      },
+      {
+        primary: "考卷 A4",
+        secondary: "仓库 · 令",
+        amount: "140",
+        tone: "neutral",
+        status: "压太久",
+      },
+    ],
     records: [
       {
         primary: "中三数学 · 周二班",
@@ -410,6 +571,29 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
 };
 
 export const GENERIC_SAMPLE_ZH: SampleSet = {
+  stock: [
+    {
+      primary: "货品 A",
+      secondary: "仓库一 · 箱",
+      amount: "128",
+      tone: "positive",
+      status: "充足",
+    },
+    {
+      primary: "货品 B",
+      secondary: "仓库一 · 件",
+      amount: "9",
+      tone: "warning",
+      status: "快没了",
+    },
+    {
+      primary: "货品 C",
+      secondary: "仓库二 · 箱",
+      amount: "340",
+      tone: "neutral",
+      status: "压太久",
+    },
+  ],
   records: [
     {
       primary: "记录 001",
