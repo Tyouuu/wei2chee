@@ -1424,18 +1424,25 @@ export function SiteGallery({
       as a portfolio. The tile pattern repeats every six so a gallery of four
       and a gallery of twelve both compose.
     */
+    /* 五张一循环，照他们那一段的节奏：两张竖的并排 · 两张横的并排 · 一张满宽。
+       逐张量出来 643×718 · 643×718 · 644×483 · 644×483 · 1290×967，
+       加起来 2168px —— 那就是他们整段的高。 */
     const SPAN = [
-      "@2xl:col-span-6 @2xl:row-span-2",
-      "@2xl:col-span-6 @2xl:row-span-2",
-      "@2xl:col-span-12",
-      "@2xl:col-span-7",
-      "@2xl:col-span-5",
+      "@2xl:col-span-6",
+      "@2xl:col-span-6",
+      "@2xl:col-span-6",
+      "@2xl:col-span-6",
       "@2xl:col-span-12",
     ]
-    /* Measured against the reference: at 4/5 and 4/3 our six tiles came to
-       3657px against their 2198. Theirs are wider than they are tall in every
-       row but the first. */
-    const RATIO = ["1 / 1", "1 / 1", "21 / 9", "3 / 2", "3 / 2", "21 / 9"]
+    /* ── 逐张量出来的比例，2026-08-30 ────────────────────────────────────
+       上一版是照「整段多高」调出来的：把两块拉成 21/9，段高就压下去了，而
+       每一张的**形状**因此变成 2.33 —— 尺子后来加了「长宽比」那一根，量出来
+       模版 1.33、我们 1.93。用一个总高去反推每一张的形状，就是这样跑掉的。
+
+       他们那一段的照片，逐张量：
+         643×718 (0.90) · 643×718 (0.90) · 1290×967 (1.33) · 644×483 (1.33)
+       两张竖的并排、一张满宽、两张横的并排 —— 这才是那个节奏。 */
+    const RATIO = ["9 / 10", "9 / 10", "4 / 3", "4 / 3", "4 / 3"]
     return (
       <section className="@container" data-wide="">
         {heading ? (
@@ -1443,12 +1450,13 @@ export function SiteGallery({
             {heading}
           </h2>
         ) : null}
-        {/* NO GAP. The reference's tiles touch: 「Recent Projects」 is one field of
-            photographs, and a gutter between them turns a portfolio back into a
-            grid of thumbnails. */}
-        <ul className="grid [gap:0] @2xl:grid-cols-12">
+        {/* ⚠️ 「NO GAP —— 他们的格子是贴着的」是上一版写的，而那句是错的。
+            2026-08-30 原尺寸裁图看：他们每一格之间有一条细的白缝，
+            尺子量出来 4%（我们 1%）。贴死的马赛克读起来是一整块布，
+            有细缝的才是一格一格的作品。 */}
+        <ul className="grid [gap:4px] @2xl:grid-cols-12">
           {shots.map((s2, i) => (
-            <li key={i} className={SPAN[i % 6]}>
+            <li key={i} className={SPAN[i % 5]}>
               {s2.src ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img loading="lazy" decoding="async"
@@ -1465,7 +1473,7 @@ export function SiteGallery({
 
                      老板 2026-08-29, holding the two pages side by side:
                      「你自己用眼睛看 一样吗」. It was not. */
-                  style={{ aspectRatio: RATIO[i % 6], maxHeight: "min(23rem, 25vw)" }}
+                  style={{ aspectRatio: RATIO[i % 5] }}
                 />
               ) : null}
               {s2.caption ? (

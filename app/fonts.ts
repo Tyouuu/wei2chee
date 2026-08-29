@@ -168,7 +168,7 @@ const notoSansSC = Noto_Sans_SC({
    Instrument Serif stays loaded for nothing; it is removed below. */
 const newsreader = Newsreader({
   subsets: ["latin"],
-  weight: ["400", "600"],
+  weight: ["200", "400", "600"],
   style: ["normal", "italic"],
   variable: "--font-editorial-latin",
   display: "swap",

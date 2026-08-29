@@ -391,13 +391,14 @@ function readType() {
          family with monospace behind it, and again with monospace alone. If
          the widths are identical the family resolved to nothing. */
       ...(() => {
+        /* family 这个参数现在带字重跟字级，所以下面不再自己补 `100px`。 */
         const w = (family, text) => {
           const c = document.createElement("canvas").getContext("2d");
-          c.font = `100px ${family}`;
+          c.font = family;   /* 呼叫端已经把字重跟字级放进去了 */
           return c.measureText(text).width;
         };
         const probe = "WWWMMMiiilllQQQ@@@";
-        const here = w(`"${fam}", monospace`, probe) !== w("monospace", probe);
+        const here = w(`100px "${fam}", monospace`, probe) !== w("100px monospace", probe);
         /* ⚠️ NO SERIF/SANS VERDICT IS PRINTED, and that is deliberate.
            A wide-over-narrow glyph ratio was tried: Georgia 3.09, Times 3.13,
            Arial 4.02 — clean. Then the fonts this product actually uses were
@@ -417,9 +418,10 @@ function readType() {
            这三件量得到，而且是这一层真的在打架的东西。
            ⚠️ 只有在字真的载入了（here）的时候才算数 —— 一个 fallback 到
            Times 的量测，量的是这台机器，不是那一页。 */
-        const serifRun = w(`"${fam}", monospace`, "IHMTEFL");
-        const plainRun = w(`"${fam}", monospace`, "ooeecc");
-        const widthOf = w(`"${fam}", monospace`, "HHHHHHHHHH") / 1000;
+        const wt0 = s.fontWeight || "400";
+        const serifRun = w(`${wt0} 100px "${fam}", monospace`, "IHMTEFL");
+        const plainRun = w(`${wt0} 100px "${fam}", monospace`, "ooeecc");
+        const widthOf = w(`${wt0} 100px "${fam}", monospace`, "HHHHHHHHHH") / 1000;
 
         /* ── 字体的「种类」还有两根轴，而且两根都量得到 ────────────────────
            老板 2026-08-29: 「字体的种类呢？」
@@ -433,9 +435,10 @@ function readType() {
            · **墨量** —— 宣告的 font-weight 两边都写 400，画出来的粗细可以差
              很多（Newsreader 的 400 跟 Archivo 的 400 不是同一种黑）。把一串
              字画进画布数暗像素，量的是它真正有多重，不是它自称多重。 */
+        const wt = s.fontWeight || "400";
         const metrics = (text) => {
           const c = document.createElement("canvas").getContext("2d");
-          c.font = `100px "${fam}", monospace`;
+          c.font = `${wt} 100px "${fam}", monospace`;
           const m = c.measureText(text);
           return m.actualBoundingBoxAscent || 0;
         };
@@ -448,7 +451,7 @@ function readType() {
           const c = cv.getContext("2d", { willReadFrequently: true });
           c.fillStyle = "#fff"; c.fillRect(0, 0, 400, 140);
           c.fillStyle = "#000";
-          c.font = `100px "${fam}", monospace`;
+          c.font = `${wt} 100px "${fam}", monospace`;
           c.textBaseline = "alphabetic";
           c.fillText("Hamburgefons", 4, 110);
           const d = c.getImageData(0, 0, 400, 140).data;
@@ -1544,12 +1547,19 @@ try {
      所以先把这件事印出来 —— 一个被降级的量测，不该跟一个正常的量测长得一样。 */
   const loaded = (t) => (t.heads?.[0] ? (t.heads[0].here ? "载到了" : "载不到（退回系统字）") : "—");
   check("字体", "字体档载入", loaded(theirs.type), loaded(ours.type), null);
-  /* 衬线还是无衬线 —— serifish 从写出来那天就算了，一行都没有拿它比过。
-     它是「像不像」最先被眼睛看到的那一件：一页衬线跟一页无衬线，字级字重
-     全部对上也还是两页。 */
+  /* ⚠️ 这一项以前叫「衬线/无衬线」，而它量不了那件事。
+
+     它算的是 width("IHMTEFL") / width("ooeecc") —— 大写那一串比圆的小写那一串
+     宽多少。那是**字形的比例**，不是有没有衬线。2026-08-30 差点照它把 台账 的
+     标题从衬线换成无衬线：它报「模版 1.21」，而我们手上唯一命中 1.21 的是
+     Noto Sans SC（1.24）。原尺寸裁图一看，Newel 的「Recent Projects」R 的脚、
+     j 的头都有清楚的衬线 —— **那是一套衬线体，而这个数字说它不是。**
+
+     一个名字说得比它量得多的读数，比没有读数危险：它会被当成它宣称的那件事
+     去用。所以改名叫它真正量的东西，并且写下来「衬线要用眼睛看」。 */
   const serif = (t) => Number(t.heads?.[0]?.serifish) || 0;
   const sT = serif(theirs.type), sO = serif(ours.type);
-  check("字体", "衬线/无衬线", sT ? sT.toFixed(2) : "量不到", sO ? sO.toFixed(2) : "量不到",
+  check("字体", "大写比小写宽", sT ? sT.toFixed(2) : "量不到", sO ? sO.toFixed(2) : "量不到",
     judge(sT, sO, Math.abs(sT - sO) / sT <= 0.09));
   /* 小写多高 —— 同一个字级下看起来大一号还是秀气一号，就是这个比例。 */
   const xh = (t) => Number(t.heads?.[0]?.xish) || 0;

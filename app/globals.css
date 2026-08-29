@@ -401,8 +401,12 @@
   padding-inline: 1.5rem;
 }
 /* Pictures take the room. Text does not. */
+/* 「宽一点的那种段」宽多少，是一根轴，不是一个 14rem。
+   +14rem 在 1440 上等於超过整页宽 —— 那一段其实是满边的。台账 抄的 Newel
+   把每一块都收在一个细框里，两边看得见页面自己的棕色；逐段量出来他们的
+   内容是 5%–95%，我们是 2%–98%。一套风格该不该让某些段更宽，是它自己的事。 */
 .ds-site > * > [data-wide] {
-  max-width: calc(var(--site-measure) + 14rem);
+  max-width: calc(var(--site-measure) + var(--site-wide-extra, 14rem));
 }
 
 /* ── 段落节奏 —— A REGISTER AXIS, NOT ONE NUMBER ────────────────────────────
@@ -617,8 +621,13 @@
 /* A heading that shares a row with a photograph is NOT one of these bars —
    their About Us sits as plain text in its column beside the picture, and only
    the headings that own their whole column ride the dark bar. */
+/* ⚠️ 这一条以前是 `max-width: none` —— 它放开的是**装着 h2 的那一段**，
+   不是那条带。而那条带自己下面已经有负边距去贴框的内缘（见 664 行），
+   所以这一条唯一的作用是让**整段跑出版心**：台账 第4段因此量到 0%–100%，
+   而 Newel 那一段是 5%–95%。一条为了「让带子够宽」写的规则，
+   代价是那一整段不再收在框里。 */
 .ds-ground[data-frame="hairline"] .ds-site :has(> h2:not([data-column-heading])) {
-  max-width: none;
+  max-width: var(--site-measure);
 }
 
 /* 照片贴到框的内缘 —— their About Us photograph runs edge to edge against the
