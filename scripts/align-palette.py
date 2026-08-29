@@ -58,13 +58,28 @@ def run(reg):
     body = lambda l: l[1:] if l and l[0]["h"] < 120 else l
     T, O = body(d["theirs"]["secs"]), body(d["ours"]["secs"])
 
+    # ── 配对由 align-site.mjs 给，不再按位置 ────────────────────────────────
+    # 以前这里是 `for i in range(max(len(T), len(O)))` —— 硬按位置。招牌 我们
+    # 七段他们六段，於是我们的**询价表格**被拿去跟他们的**页脚**比底色，比出
+    # 来的每一条都是假的，而真的那一对（页脚对页脚）从来没有比过。
+    # 一个假差异比没有差异更糟：它会把人送去修一件本来没坏的东西。
+    pairs = []
+    for arg in sys.argv[2:]:
+        if arg.startswith("--pairs="):
+            for bit in arg[len("--pairs="):].split(","):
+                a, b = bit.split(":")
+                pairs.append((int(a), int(b)))
+    if not pairs:
+        pairs = [(i, i) for i in range(min(len(T), len(O)))]
+
     print(f"{reg}  逐段底色（一段对一段）")
     bad = 0
-    for i in range(max(len(T), len(O))):
-        t = dominant(ref, T[i]["top"], T[i]["h"]) if i < len(T) else []
-        o = dominant(ours, O[i]["top"], O[i]["h"]) if i < len(O) else []
+    for (i, j) in pairs:
+        t = dominant(ref, T[i]["top"], T[i]["h"]) if 0 <= i < len(T) else []
+        o = dominant(ours, O[j]["top"], O[j]["h"]) if 0 <= j < len(O) else []
+        tag = f"第{i+1}段" if i == j else f"第{i+1}段(配我们第{j+1}段)"
         if not t or not o:
-            print(f"  --  第{i+1}段  " + ("模版没有这一段" if not t else "我们没有这一段"))
+            print(f"  --  {tag}  " + ("模版没有这一段" if not t else "我们没有这一段"))
             bad += 1
             continue
         th, tp = t[0]
@@ -75,7 +90,7 @@ def run(reg):
         if not close:
             bad += 1
         why = "" if same else "  ← 底色不是同一个"
-        print(f"  {flag}  第{i+1}段  模版 {th} {tp}%   我们 {oh} {op}%{why}")
+        print(f"  {flag}  {tag}  模版 {th} {tp}%   我们 {oh} {op}%{why}")
     print(f"  逐段对不上 {bad} 段")
 
 

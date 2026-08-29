@@ -1020,12 +1020,85 @@ try {
 
      An average is not a comparison. Each section is compared to its opposite
      number now, and a section more than 40% out is a failure on its own. */
-  for (let i = 0; i < Math.min(ts.length, os_.length); i++) {
+  /* ── 段落配对：按内容配，不按位置配 ────────────────────────────────────
+     ⚠️ 这一段之前是 `ts[i]` 对 `os_[i]` —— 硬按位置。只要我们多一段，从那里
+     开始后面全部错位，而尺子照样一段一段比下去。
+
+     招牌 就是活的例子：我们七段、他们六段，我们第6段是**询价表格**，被拿去
+     跟他们的**页脚**比。那个「段均高 不及格」有一半是这样造出来的**假差异**，
+     同时它把真差异藏起来了 —— 我们的页脚从头到尾没有跟他们的页脚比过。
+
+     一个假差异比没有差异更糟：它会把人送去修一件本来没坏的东西。
+
+     所以配对用序列比对（跟基因序列同一套 DP）：允许一边多出一段，代价是一个
+     缺口。相似度看的是**这一段是什么**（几张图 · 几颗钮 · 几栏字 · 相对高度），
+     不是它排第几。 */
+  const featOf = (sec, shp, total) => ({
+    img: sec.img ?? 0,
+    btn: (shp ?? []).filter((b) => b.kind === "钮").length,
+    col: (shp ?? []).filter((b) => b.kind === "字").length,
+    hr: total ? sec.h / total : 0,
+  });
+  const sim = (a, b) => {
+    /* 张数差得越远越不像；高度按比例比，因为两页的总高不一样。 */
+    const near01 = (x, y, span) => 1 - Math.min(1, Math.abs(x - y) / span);
+    return (
+      0.42 * near01(a.img, b.img, 6) +
+      0.18 * near01(a.btn, b.btn, 4) +
+      0.14 * near01(a.col, b.col, 8) +
+      0.26 * near01(a.hr, b.hr, 0.22)
+    );
+  };
+  const pairSections = (T, O, TS2, OS2) => {
+    const tot = (l) => l.reduce((x, y) => x + y.h, 0) || 1;
+    const A = T.map((x, i) => featOf(x, TS2[i], tot(T)));
+    const B = O.map((x, i) => featOf(x, OS2[i], tot(O)));
+    const GAP = -0.42;   // 空一段的代价：低於它就宁可配一个不像的
+    const m = A.length, n = B.length;
+    const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    const bt = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(""));
+    for (let i = 1; i <= m; i++) { dp[i][0] = dp[i - 1][0] + GAP; bt[i][0] = "u"; }
+    for (let j = 1; j <= n; j++) { dp[0][j] = dp[0][j - 1] + GAP; bt[0][j] = "l"; }
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const d = dp[i - 1][j - 1] + sim(A[i - 1], B[j - 1]);
+        const u = dp[i - 1][j] + GAP;
+        const l = dp[i][j - 1] + GAP;
+        dp[i][j] = Math.max(d, u, l);
+        bt[i][j] = dp[i][j] === d ? "d" : dp[i][j] === u ? "u" : "l";
+      }
+    }
+    const out = [];
+    let i = m, j = n;
+    while (i > 0 || j > 0) {
+      const move = i === 0 ? "l" : j === 0 ? "u" : bt[i][j];
+      if (move === "d") { out.push([i - 1, j - 1]); i--; j--; }
+      else if (move === "u") { out.push([i - 1, null]); i--; }
+      else { out.push([null, j - 1]); j--; }
+    }
+    return out.reverse();
+  };
+  const bodyOf = (l, secsL) => (secsL.length && secsL[0].h < 120 ? l.slice(1) : l);
+  const TSHAPE = bodyOf(theirs.shape ?? [], theirs.secs);
+  const OSHAPE = bodyOf(ours.shape ?? [], ours.secs);
+  const pairs = pairSections(ts, os_, TSHAPE, OSHAPE);
+  const paired = pairs.filter(([a, b]) => a !== null && b !== null);
+  if (paired.length !== pairs.length) {
+    const extraT = pairs.filter(([a, b]) => a !== null && b === null).map(([a]) => a + 1);
+    const extraO = pairs.filter(([a, b]) => a === null && b !== null).map(([, b]) => b + 1);
+    check("版面", "配得上的段", `${ts.length} 段`, `${os_.length} 段`,
+      false);
+    if (extraT.length) console.log(`      模版多出来：第 ${extraT.join(" · ")} 段（我们没有对应的）`);
+    if (extraO.length) console.log(`      我们多出来：第 ${extraO.join(" · ")} 段（模版没有对应的）`);
+  }
+
+  for (const [i, j] of paired) {
     const a = ts[i].h;
-    const b = os_[i].h;
+    const b = os_[j].h;
     const ok = a === 0 || (b / a >= 0.6 && b / a <= 1.6);
-    if (!ok) check("版面", `第${i + 1}段高`, `${a}px`, `${b}px`, false);
-    else marks.push({ axis: "版面", name: `第${i + 1}段高`, ok: true });
+    const name = i === j ? `第${i + 1}段高` : `第${i + 1}段高(配我们第${j + 1}段)`;
+    if (!ok) check("版面", name, `${a}px`, `${b}px`, false);
+    else marks.push({ axis: "版面", name, ok: true });
   }
 
   const imgs = (l) => l.reduce((a, s) => a + s.img, 0);
@@ -1083,9 +1156,8 @@ try {
      不判什么：好不好看、字写什么、照片拍的是什么。 */
   console.log("\n结构 SHAPE  （一段里面有哪些盒子，图 · 钮 · 字）");
   {
-    const bodyShape = (l, secsL) => (secsL.length && secsL[0].h < 120 ? l.slice(1) : l);
-    const TS = bodyShape(theirs.shape ?? [], theirs.secs);
-    const OS = bodyShape(ours.shape ?? [], ours.secs);
+    const TS = TSHAPE;
+    const OS = OSHAPE;
     const line = (bs) =>
       bs
         .slice(0, 9)
@@ -1113,12 +1185,16 @@ try {
         Math.abs((et[1] - et[0]) - (eo[1] - eo[0])) <= 6);
     }
 
-    for (let i = 0; i < Math.max(TS.length, OS.length); i++) {
-      const t = TS[i];
-      const o = OS[i];
+    /* 用同一份配对 —— 结构以前也是按位置比的，招牌 的询价表格被拿去跟他们的
+       页脚比结构，比出来的每一条都是假的。 */
+    for (const [pi, pj] of pairs) {
+      const t = pi === null ? null : TS[pi];
+      const o = pj === null ? null : OS[pj];
+      const i = pi ?? pj;
+      const tag = pi !== null && pj !== null && pi !== pj ? `第${pi + 1}段(配我们第${pj + 1}段)` : `第${(pi ?? pj) + 1}段`;
       if (!t || !o) {
-        console.log(`  --  第${i + 1}段  ` + (!t ? "模版没有这一段" : "我们没有这一段"));
-        marks.push({ axis: "结构", name: `第${i + 1}段结构`, ok: null });
+        console.log(`  --  ${tag}  ` + (!t ? "模版没有这一段" : "我们没有这一段"));
+        marks.push({ axis: "结构", name: `${tag}结构`, ok: null });
         continue;
       }
       /* 一段里几十栏字是内容长短的事，不是设计的事 —— 只判图跟按钮的个数，
@@ -1139,10 +1215,10 @@ try {
       if (dRad) bad.push(`钮的圆角 ${rads(t)}对${rads(o)}`);
       if (dSpan > 12) bad.push(`最宽的图 ${widest(t)}%对${widest(o)}%`);
       const ok = bad.length === 0;
-      console.log(`  ${ok ? "OK" : "XX"}  第${i + 1}段  ${ok ? "" : "← " + bad.join(" · ")}`);
+      console.log(`  ${ok ? "OK" : "XX"}  ${tag}  ${ok ? "" : "← " + bad.join(" · ")}`);
       console.log(`        模版 ${line(t)}`);
       console.log(`        我们 ${line(o)}`);
-      marks.push({ axis: "结构", name: `第${i + 1}段结构`, ok });
+      marks.push({ axis: "结构", name: `${tag}结构`, ok });
     }
   }
 
@@ -1157,7 +1233,8 @@ try {
      opposite designs. So the unit is the SECTION, and the verdict lands here
      rather than in a second command nobody runs. */
   try {
-    const out = execSync(`python scripts/align-palette.py ${register}`, {
+    const pairArg = paired.map(([a, b]) => `${a}:${b}`).join(",");
+    const out = execSync(`python scripts/align-palette.py ${register} --pairs=${pairArg}`, {
       encoding: "utf8",
       env: { ...process.env, PYTHONIOENCODING: "utf-8" },
     });
