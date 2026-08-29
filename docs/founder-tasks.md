@@ -2533,7 +2533,66 @@ set_variant · set_copy` ＋ `add_page · remove_page · pick_photo` ＋ **换�
 **它是 CRM，没有钱** —— 没有收款表、没有预约、没有库存、没有订金余额。
 `ledger` · `calendar` · `catalog` 三个形状它一个都不给。**那三个正是下一轮要找的。**
 
-- [ ] 下一轮：按 `ledger` / `calendar` / `catalog` 三个缺口，找 MIT/Apache 且同栈的
+- [x] **三个缺口找完了（2026-08-29）。查的是 GitHub API 的 `license.spdx_id`，不是读首页。**
+
+#### 结论一：三个缺口几乎没有「授权干净 + 同栈」的东西，而且这不是运气
+
+| 缺口 | 找到的 | 授权 |
+|---|---|---|
+| **`ledger`**（开单收款） | idurar-erp-crm ★8.7k · frappe/books ★4.9k · bigcapital ★3.9k · lago ★10.4k · ever-gauzy ★4.4k | **全部 AGPL-3.0** 🔴 |
+| | akaunting ★10.1k | 自订授权 ⚠️ |
+| | Dolibarr ★7.6k | GPL-3.0（托管可以，买断 🔴） |
+| | **killbill ★5.7k** | **Apache-2.0** ✅ 但是 **Java** |
+| **`calendar`**（预约排程） | cal.com · easyappointments ★4.3k | AGPL / GPL 🔴 |
+| | rinvex/laravel-bookings ★465 | MIT ✅ 但**作者自己标 ABANDONED** + PHP |
+| | — | **同栈的、活着的、授权干净的：零个** |
+| **`catalog`**（库存进货） | **aureuserp ★11.8k** | **MIT** ✅ PHP/Laravel |
+| | **GreaterWMS ★4.4k** | **Apache-2.0** ✅ Python |
+| | **saleor ★23.3k** | **BSD-3** ✅ Python |
+| | opensourcepos ★4.4k · NexoPOS ★1.2k · lakasir ★899 | 自订 / GPL |
+
+**规律讲出来**：**钱、预约、库存正好是商业价值最高的三块，所以作者全部选了 AGPL** ——
+AGPL 存在的唯一目的就是挡住「拿去做 SaaS」。**我要抄的那三块，正好是别人锁得最紧的三块。**
+
+反过来看这件事：**如果它们随便拿，我的每一个对手早就都有了。** 这三块难做，才是它们值钱的原因。
+
+#### 结论二：同栈里唯一的大发现 —— `payloadcms/payload`
+**MIT · ★44,468 · TypeScript · Next.js 原生 · 支援 Postgres**（topics 自己写着 `nextjs postgres mit-license`）
+
+这是 **Frappe DocType 在 Next.js 里的对应物**：定义一个 collection（栏位、关联、权限）→
+自动拿到 CRUD、admin 介面、REST + GraphQL、认证、access control。
+**比 `refine` 更贴我们的栈**（refine 是 headless，Payload 连资料层都给）。
+要不要用它当「客户自己的资料表」那一层的引擎，值得单独评一轮。
+
+#### 结论三：MyInvois 没有一个能直接拿，但那不重要
+- `farhan-syah/myinvois-client` TS ★51 —— **LGPL-3.0**。⚠️ **这一条要分清楚**：
+  LGPL **允许动态连结不传染** —— 用 npm 装、不改它的码，**买断也没问题**。
+  跟 GPL 不一样。这是唯一一个「TS + 可用」的
+- `farhan-syah/myinvois-gateway` TS ★47 —— GPL-3.0，买断挡住 🔴
+- `amaseng/myinvois-open-sdk` Apache ★31 —— Java
+- `klsheng/myinvois-php-sdk` MIT ★101 —— PHP（星最多的一个）
+- **判断**：LHDN 的 API 规格是公开的，这些 SDK 只是一层壳，最多几百行。
+  **自己写比接一个 ★51 的库安全** —— 那是会计凭证，出事没人赔
+
+#### 结论四：🔴 WhatsApp 那几个库不能用，这一条最要紧
+`whatsapp-web.js` Apache-2.0 ★22.5k · `waha` Apache-2.0 ★7.3k · `OpenWA` MIT ★13.3k ·
+`venom` Apache ★6.6k —— **授权全部干净，但它们是逆向 WhatsApp Web 的**。
+**违反 WhatsApp 服务条款，会封号。** 被封的是**他自己的商业号码**，而那个号码是官网上唯一的转换入口。
+
+**正路只有一条：Meta 官方 Cloud API**（对话计费，马来西亚的 service conversation 很便宜）。
+慢一点、要审核，但不会某天早上醒来号码没了。
+
+#### 顺手更正一条我之前记的
+`twentyhq/twenty` 我先前记「Other 自订授权」—— **核对过了，确实是 NOASSERTION**，记的没错。
+`nocobase` / `directus` / `budibase` / `strapi` **四个全部是 NOASSERTION**，不是 MIT。
+这四个常常被人当成「开源可商用」，实际上要一条一条读它们自己的 licence 档。
+
+#### 所以这一轮的实际收获
+1. **`catalog` 有三个授权干净的可以照着做**（aureuserp MIT / GreaterWMS Apache / saleor BSD-3）——
+   都不同栈，所以是**拿设计不拿代码**，跟我们对 tailark 的做法一样
+2. **`ledger` 跟 `calendar` 要自己写。** 没有捷径，而这也正好是护城河
+3. **`payload` 值得单独评一轮**，它可能是「客户自己的资料表」那一层的引擎
+4. 🔴 **WhatsApp 只走官方 Cloud API**，那四个星很多的库一个都不能碰
 
 ## 已完成
 
