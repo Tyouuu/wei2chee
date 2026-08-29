@@ -786,6 +786,18 @@
    the measurement came back 32px unchanged. A rule that cannot win is worse
    than no rule, because it reads as a decision. */
 .ds-site :is(h2, h3):not([data-chrome-top] *):not([data-chrome-foot] *) {
+  /* ── 段标题的字重，跟 h1 同一根轴 ──────────────────────────────────────
+     ⚠️ 组件在 class 里写着 `[font-weight:var(--fw-semibold)]`，那是一个
+     class（0,1,0）；这条选择器是（0,1,3），所以这里说了算。写在 class 里的
+     字重排在风格前面 —— 这个仓库同一件事撞过好几次（表格的样子、45 条风格
+     偏好、询价表格的 look）。**一个值只要每一套风格要能自己决定，就得在这里
+     决定，不然就是决定不了。**
+
+     台账 抄的 Newel，段标题跟第一屏是同一套细体；我们 h1 已经跟着
+     --site-display-weight 走，h2 还停在组件写死的 650，於是同一页两种粗细。
+     没有宣告的风格拿 --fw-semibold，跟以前一样。 */
+  font-weight: var(--site-display-weight, var(--fw-semibold));
+
   /* ── 区段标题自己一根轴，跟图的大小分开 ────────────────────────────────────
      Measured 2026-08-28, every heading on both pages:
 
@@ -1584,9 +1596,14 @@
   transform: scale(1.035);
 }
 
-/* 台账 — a ledger is written left to right, one line at a time. */
+/* 台账 — 量出来他们只淡入，一点都不移动。
+
+   「一本台账是一行一行往右写的」是想出来的理由，不是量出来的。
+   2026-08-30 用真的指针跑过 Newel：3/60 块会进场，**位移 0px**，纯淡入；
+   我们 translateX(-1.4rem) 量出来是 22px。抄一整套模版，动效也是那五根轴
+   之一（重点 7i），而这一根我们一直在加他们没有的东西。 */
 [data-register="ledger"] [data-reveal] {
-  transform: translateX(-1.4rem);
+  transform: none;
 }
 
 /* 招牌 — a sign does not fade in. It is switched on: no movement at all, just

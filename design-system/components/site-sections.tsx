@@ -160,7 +160,11 @@ export function SiteFeatures({
     */
     return (
       <section className="@container" data-wide="">
-        {title}
+        {/* ⚠️ 这一段的标题坐在**左栏里**，不是一条通栏的深带。
+            Newel 的 Our Services 量出来在 9%–46%，跟底下那份清单同一栏；
+            我们那一条横过整页 6%–94%，於是这一段的顺序变成 字→图，
+            他们是 图→字。`data-column-heading` 就是「这个标题属於它那一栏」
+            的记号，细框那套版式靠它决定要不要给标题铺带子。 */}
         <div className="grid overflow-hidden [border-radius:var(--radius-lg)] @3xl:grid-cols-2">
           {/* ⚠️ A STEP UP FROM THE GROUND, NOT A COLOUR LAID ON IT.
 
@@ -174,7 +178,15 @@ export function SiteFeatures({
               and broken on a dark one. Mixing from `--color-canvas` cannot
               break that way: the panel moves with the ground, so the ground's
               own text colour keeps working on it. */}
-          <ul className="[background:var(--site-panel,color-mix(in_oklab,var(--color-primary)_9%,var(--color-canvas)))]">
+          <div className="[background:var(--site-panel,color-mix(in_oklab,var(--color-primary)_9%,var(--color-canvas)))]">
+          {/* 标题**在这一栏里**，在清单上面 —— 不在整段上面。
+              Newel 的 Our Services 量出来 9%–46%，跟清单同一栏；照片从这一段
+              最顶开始一直到最底，所以他们那一段的顺序是 图→字，我们本来是
+              字→图。标题放在哪一层，决定的是整段的顺序。 */}
+          {heading ? (
+            <h2 data-column-heading="" className="ds-display [padding:calc(var(--pad-card-lg)*0.9)_var(--pad-card-lg)_0] [color:var(--color-paper)]">{heading}</h2>
+          ) : null}
+          <ul>
             {items.map((f, i) => (
               <li
                 key={f.label}
@@ -194,6 +206,7 @@ export function SiteFeatures({
               </li>
             ))}
           </ul>
+          </div>
           {photo?.trim() ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img loading="lazy" decoding="async" src={photo} alt={photoAlt || ""} className="hidden size-full min-h-full object-cover @3xl:block" />
@@ -203,6 +216,17 @@ export function SiteFeatures({
               className="hidden [background-color:color-mix(in_oklab,var(--color-primary)_8%,var(--color-canvas))] @3xl:block"
             />
           )}
+        </div>
+        {/* 收尾那一颗方角按钮 —— Newel 的 Our Services 右下角是「More Info」，
+            我们那一段以前就到清单为止，没有出口。连到询价那一段（#ask）；
+            一颗按下去没反应的按钮是这个仓库写进 prompt 的规矩点名禁止的。 */}
+        <div className="flex justify-end">
+          <a
+            href="#ask"
+            className="inline-flex min-h-10 items-center [background:var(--color-canvas)] [border:var(--hairline)_solid_var(--border-subtle)] [color:var(--color-paper)] [font-size:var(--text-xs)] [padding-inline:calc(var(--pad-control-x)*1.6)]"
+          >
+            More info
+          </a>
         </div>
       </section>
     )
@@ -1621,6 +1645,7 @@ export function SiteStory({
   shape = "side",
   photo,
   photoAlt,
+  bandHeading,
   points,
 }: {
   heading?: string
@@ -1632,7 +1657,14 @@ export function SiteStory({
   body?: string
   /** `side` picture right, `side-reverse` picture left, `stack` picture over
    *  the words. The register chooses; see design-doc.ts. */
-  shape?: "side" | "side-reverse" | "stack" | "centre"
+  /** 照片配字＋四栏带 only：底下那条带自己的标题。
+   *  ⚠️ 第一版拿 `hint` 当它 —— 而 hint 是**编辑器里催老板填东西的那句话**，
+   *  publish-projection 从来不让它上线（编辑器负责催，公开的页面永远不出现
+   *  「催」）。site-fields.test.tsx 当场判它掉了：那条带在没有四条承诺的时候
+   *  整个不渲染，於是 hint 连一个落点都没有。用一句催人的话当公开页面的标题，
+   *  是把编辑器的语气漏到访客面前。 */
+  bandHeading?: string
+  shape?: "side" | "side-reverse" | "stack" | "centre" | "banded"
   photo?: string
   photoAlt?: string
   points?: { label: string }[]
@@ -1642,7 +1674,11 @@ export function SiteStory({
   /* EMPTY IS A PROMPT, NOT NOTHING -- the same rule SiteCreds follows. A block
      that renders nothing while unfilled is a block the owner never sees, never
      fills, and therefore never publishes. */
-  if (!body?.trim() && !photo?.trim() && !marks.length) {
+  /* ⚠️ 「空的」看的是**老板自己的东西**：他写的那段话、他传的那张照片。
+     那四条承诺是这个行业的样板句，每一块一出厂就带着 —— 把它算进「有东西了」，
+     这一块就永远不算空，催他写自己故事的那句提示再也不会出现。
+     site-fields.test.tsx 当场判 hint 掉了，那就是它抓到的东西。 */
+  if (!body?.trim() && !photo?.trim()) {
     if (!hint) return null
     return (
       <section
@@ -1661,6 +1697,59 @@ export function SiteStory({
     )
   }
   if (!heading?.trim() && !body?.trim()) return null
+
+  if (shape === "banded") {
+    /*
+      ── 照片配一段话，底下一条四栏的带 ────────────────────────────────────
+
+      Newel 第2段, 1030px, 原尺寸裁图 2026-08-30：上半是照片在左、About Us
+      在右；下半是一条深色的「Our Benefits」带，里面四栏用细线分开
+      （Vast Experience · Professional Team · High Finish · Sustainable）。
+
+      我们那一段只有上半，底下什么都没有 —— 老板：「没有就去加啊」。
+      那四条不是发明出来的，是这个行业已经在讲的四条承诺（保证 用的同一组）。
+    */
+    return (
+      <section className="@container">
+        <div className="grid items-stretch [gap:0] @3xl:grid-cols-2">
+          {photo?.trim() ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img loading="lazy" decoding="async" src={photo} alt={photoAlt || ""} className="size-full min-h-full object-cover" />
+          ) : (
+            <div aria-hidden className="min-h-[16rem] [background:color-mix(in_oklab,var(--color-paper)_10%,var(--color-canvas))]" />
+          )}
+          <div className="flex flex-col justify-center [padding:calc(var(--pad-card-lg)*1.1)]">
+            {heading ? (
+              <h2 data-column-heading="" className="ds-display [color:var(--color-paper)]">{heading}</h2>
+            ) : null}
+            {body ? (
+              <p className="mt-4 max-w-[46ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                {body}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        {marks.length ? (
+          <div className="mt-10">
+            {/* 「Our Benefits」那一条 —— 它自己的标题坐在带子上，跟段标题一样。 */}
+            <h3 className="[background:var(--site-strip,color-mix(in_oklab,#000_24%,var(--color-canvas)))] [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-xl)] [padding:calc(var(--pad-card)*0.9)_calc(var(--pad-card-lg))]">
+              {bandHeading || "Our benefits"}
+            </h3>
+            <ul data-cells="" className="grid [border-top:var(--hairline)_solid_var(--border-subtle)] @2xl:grid-cols-4">
+              {marks.slice(0, 4).map((m, i) => (
+                <li
+                  key={m.label}
+                  className={`text-center [color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.5] [padding:calc(var(--pad-card-lg)*0.9)_var(--pad-card)] ${i ? "@2xl:[border-inline-start:var(--hairline)_solid_var(--border-subtle)]" : ""}`}
+                >
+                  {m.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
+    )
+  }
 
   if (shape === "centre") {
     /*

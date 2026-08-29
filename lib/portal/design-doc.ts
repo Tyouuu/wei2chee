@@ -97,7 +97,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       EnquiryForm: "card",
       /* 抄自 Wix wh-newel, section by section. See site-composition.ts. */
       SiteWoven: "band",
-      SiteStory: "side-reverse",
+      SiteStory: "banded",
       SiteFeatures: "listed",
       SiteGallery: "mosaic",
       SiteTestimonials: "boxed",

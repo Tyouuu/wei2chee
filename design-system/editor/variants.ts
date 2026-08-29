@@ -230,6 +230,8 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "stack", label: "照片在上", props: { shape: "stack" } },
     /* 居中的一句主张 — Toulouse 第4段：一句大写居中的话，一张照片都没有。 */
     { id: "centre", label: "居中的一句主张", props: { shape: "centre" } },
+    /* 照片配字＋四栏带 — Newel 第2段：About Us 底下一条「Our Benefits」。 */
+    { id: "banded", label: "照片配字＋四栏带", props: { shape: "banded" } },
   ],
 
   /* 师傅团队. A card each, a bare column, or a line of faces. The third is not

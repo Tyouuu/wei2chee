@@ -279,8 +279,10 @@ type Components = {
   SiteStory: {
     heading?: string;
     hint?: string;
+    /** 照片配字＋四栏带 only：底下那条带自己的标题。 */
+    bandHeading?: string;
     body?: string;
-    shape?: "side" | "side-reverse" | "stack";
+    shape?: "side" | "side-reverse" | "stack" | "centre" | "banded";
     photo?: string;
     photoAlt?: string;
     /* The customer's own dashboard, as a layout. See site-hero.tsx. */

@@ -469,7 +469,18 @@ const story = (c: LandingContent) =>
     body: "",
     photo: "",
     photoAlt: "",
-    points: [],
+    /* ── 那四条承诺，也给这一段 ─────────────────────────────────────────
+       老板 2026-08-30，看着 台账 对 Newel：「他们 About Us 底下还有一条
+       「Our Benefits」四栏带,我们没有 … 没有就去加啊」.
+
+       Newel 的第2段是「About Us」加底下一条深色的「Our Benefits」，四栏：
+       Vast Experience · Professional Team · High Finish · Sustainable。
+       我们那一段只有照片加一段字，底下什么都没有。
+
+       内容不发明：用这个行业**已经在讲**的那四条承诺（保证 跟 四点两栏 用的
+       是同一组）。哪一套风格要不要把它画成一条带，是形状层的事。 */
+    points: c.words.sections.promiseList.marks.map((label) => ({ label })),
+    bandHeading: c.words.sections.promiseList.heading,
   });
 
 /**

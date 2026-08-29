@@ -316,7 +316,7 @@
      the library changes: these three are declared here and fall back to the
      old behaviour everywhere else. */
   --site-display-tracking: 0em;
-  --site-display-weight: 400;
+  --site-display-weight: 200;  /* 墨量 0.094 对他们 0.093 */
   --site-hero-scale: 1.2;
 
   /* ── 细框 —— 台账真正的身份 ────────────────────────────────────────────
@@ -338,7 +338,21 @@
   --site-ease: ease;
   /* 字体 —— the TYPE axis. Their name and every section heading are a light
      serif; 台账's工作台 keeps its condensed grotesk for the tables. */
-  --site-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
+  /* ⚠️ 官网的标题不是衬线体 —— 2026-08-30 把 Newel 的「Recent Projects」放大
+     到 1500px 看清楚：那是一套**细的、高对比、笔画末端外扩**的无衬线
+     （Optima 那一类），不是衬线。我原本判它有衬线，是把 flare 看成了 serif。
+
+     不猜，量：把手上每一套字在 200/300/400 三个字重下都量一遍，
+     对他们的三个读数（大写比小写宽 1.21 · 小写多高 0.74 · 墨量 0.093）：
+
+       Geist 200        1.20 · 0.75 · 0.094   差距 0.03
+       PublicSans 200   1.28 · 0.71 · 0.108   差距 0.26
+       Archivo 200      1.35 · 0.77 · 0.114   差距 0.38
+       Newsreader 400   1.62 · 0.65 · 0.135   差距 0.91  ← 原本用的
+
+     差距 0.03 对 0.91。没有 flare，但**种类**对上了：细、宽、开口大的人文
+     无衬线。老板 2026-08-30：「是字体的种类不一样 就是不同字体种类」。 */
+  --site-display: var(--font-sans-latin), var(--font-hei-cjk), system-ui, sans-serif;
 
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
