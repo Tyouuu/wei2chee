@@ -60,3 +60,9 @@ next-env.d.ts
 .browser-durable/
 .claude/skills/design-md-generator/node_modules/
 .claude/skills/design-md-generator/output/
+
+# Scratch scripts written while investigating — never part of the repo.
+# Two of them were swept into a commit by a `git add -A` from another session
+# working in this same tree; this makes that impossible rather than careful.
+scripts/_*.mjs
+scripts/_*.cjs
