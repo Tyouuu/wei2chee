@@ -1500,9 +1500,16 @@ export function SiteGallery({
                   style={{ aspectRatio: RATIO[i % 5] }}
                 />
               ) : null}
-              {s2.caption ? (
-                <p className="mt-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{s2.caption}</p>
-              ) : null}
+              {/* ── 每一格都有编号，名字有才印 ────────────────────────────
+                  Newel 的 Recent Projects 每一格底下是「01  The Nelson's
+                  Project」。编号是**这个形状的一部分**，不是内容 —— 一个数字
+                  不宣称任何事，所以它对每一个客户都成立，不用等他填。
+                  名字是客户自己的东西，没填就只有编号。
+                  （老板 2026-08-30:「不然就用占位图」—— 同一条道理，
+                  缺的东西给它一个诚实的位子，不要整个不画。） */}
+              <p className="mt-2 [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-variant-numeric:tabular-nums]">
+                {`${String(i + 1).padStart(2, "0")}${s2.caption ? `  ${s2.caption}` : ""}`}
+              </p>
             </li>
           ))}
         </ul>
