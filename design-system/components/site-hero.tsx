@@ -88,7 +88,7 @@ export function SiteHero({
    *   plain   headline and one button. A name card.
    *   split   the words on the left and a FIGURE on the right. See below.
    */
-  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre" | "name-figure"
+  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre" | "name-figure" | "band-inset" | "data-columns"
   /**
    * WHAT GOES ON THE RIGHT, AND WHY THERE IS NOW A RIGHT AT ALL.
    *
@@ -695,6 +695,126 @@ export function SiteHero({
      the token file and absent from the page — the shape this repo keeps
      finding. All four read it now, and the vw term scales with it so the
      name still fits its line at 1440. */
+  if (layout === "band-inset" && hasPhoto) {
+    /*
+      ── 标题左 · 一段话跟一颗药丸在右 · 照片缩在版心里 ─────────────────────
+
+      Leah Webb 第1段, 990px, 逐像素量於 2026-08-29:
+
+        · 大标题 72px 细体靠左，左边留 99px
+        · 右栏一段 17px 的字，底下一颗**描边药丸**
+        · 照片**不是满边的** —— 它左右跟文字同一条边线（101 → 1337），
+          而且上面空了一段气才开始
+
+      band-bleed 是 満図 的第一屏：一条带，底下一张满边照片。三套风格共用它，
+      而这三套的参考页第一屏根本不是同一个设计（重点 7a）。差的两件都在这里：
+      那颗药丸从来没画过，照片一直是满边的。
+    */
+    return (
+      <section data-bleed="" data-photo-ground="" className="@container">
+        <div data-hero-band="" className="[padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]">
+          <div className="mx-auto grid w-full max-w-[80rem] items-start [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+            <h1
+              className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-regular,400)] [letter-spacing:-0.01em] [line-height:1.16] [text-wrap:balance]"
+              style={{ fontSize: "clamp(2.4rem, calc(5.6vw * var(--site-hero-scale, 1)), calc(4.5rem * var(--site-hero-scale, 1)))" }}
+            >
+              {headline}
+            </h1>
+            <div>
+              {sub ? (
+                <p className="max-w-[34ch] [color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
+                  {sub}
+                </p>
+              ) : null}
+              {secondaryLabel || primaryLabel ? (
+                <a
+                  href={secondaryHref || primaryHref || "#"}
+                  className="mt-8 inline-flex min-h-11 items-center justify-center [border:var(--hairline)_solid_var(--border-strong)] [border-radius:999px] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:calc(var(--pad-control-x)*2.4)]"
+                >
+                  {secondaryLabel || primaryLabel}
+                </a>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {/* 缩在版心里，不是满边的 —— 他们的照片跟文字同一条左右边线。 */}
+        <div className="mx-auto w-full max-w-[80rem] [padding-inline:var(--pad-card-lg)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img decoding="async" fetchPriority="high"
+            src={photo}
+            alt={photoAlt || ""}
+            className="block w-full object-cover"
+            style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
+          />
+        </div>
+      </section>
+    )
+  }
+
+  if (layout === "data-columns" && hasPhoto) {
+    /*
+      ── 标题贴着页缘 · 一排带标签的资料栏 · 一条黑杠 · 然后满边照片 ─────────
+
+      Kurofude 第1段, 955px, 逐像素量於 2026-08-29:
+
+        · MODERN JAPANESE DINING 顶在页面**最左边，左边距是 0**，粗黑压缩体
+        · 底下一排：两栏「标签在上、值在下」的资料
+          （Open for Dinners: / Tue - Sat: 8am - 11pm · Address: / Phone Number:）
+          最右边一条**方角的黑杠**「View Menu →」
+        · 再来才是满边的照片
+
+      我们原本是 band-bleed：标题有版心边距、副标在标题**右边**、那排资料在
+      **照片下面**。顺序反了，而顺序是这一段的设计。
+    */
+    const cols = (proof ?? []).slice(0, 4)
+    return (
+      <section data-bleed="" data-photo-ground="" className="@container">
+        <div data-hero-band="" className="[padding-block:calc(var(--pad-card-lg)*0.9)]">
+          <h1
+            className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-bold,700)] [letter-spacing:-0.02em] [line-height:0.92]"
+            style={{ fontSize: "clamp(2.4rem, calc(6.4vw * var(--site-hero-scale, 1)), calc(5rem * var(--site-hero-scale, 1)))" }}
+          >
+            {headline}
+          </h1>
+          <div className="mt-8 flex flex-wrap items-end justify-between [gap:var(--gap-stack)]">
+            <dl className="flex flex-wrap [gap:calc(var(--gap-stack)*2.4)]">
+              {sub ? (
+                <div className="max-w-[24ch]">
+                  <dd className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.45]">{sub}</dd>
+                </div>
+              ) : null}
+              {cols.map((x) => (
+                <div key={x.label}>
+                  <dt className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.45]">{x.label}:</dt>
+                  <dd className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.45]">{x.value}</dd>
+                </div>
+              ))}
+            </dl>
+            {primaryLabel ? (
+              /* 方角，不是药丸 —— 这一套整页没有一个圆角。 */
+              <a
+                href={primaryHref || "#"}
+                className="inline-flex min-h-11 min-w-[13rem] items-center justify-between [background-color:var(--color-paper)] [color:var(--color-canvas)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [padding-inline:calc(var(--pad-control-x)*1.4)]"
+              >
+                <span>{primaryLabel}</span>
+                <span aria-hidden>→</span>
+              </a>
+            ) : null}
+          </div>
+        </div>
+
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img decoding="async" fetchPriority="high"
+          src={photo}
+          alt={photoAlt || ""}
+          className="block w-full object-cover"
+          style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
+        />
+      </section>
+    )
+  }
+
   if (layout === "band-bleed" && hasPhoto) {
     return (
       <section data-bleed="" data-photo-ground="" className="@container">

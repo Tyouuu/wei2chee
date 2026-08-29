@@ -439,7 +439,7 @@
      hairline is the only thing between one section and the next. Two bands
      break it — one pale grey for the logo wall, one near-black for the posts
      and the testimonials — and they are the only colour on 5519px of page. */
-  --site-hero-band: #ffffff;
+  --site-hero-band: #fafafa;  /* 跟页面同一个白 —— 他们那一段没有卡 */
   --site-copy: 1;
   /* 300ms ease, like theirs; nothing on that page moves further than it must. */
   --site-motion: 0.2s;  /* 他们主要那一档是 200ms */

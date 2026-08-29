@@ -129,6 +129,106 @@ function readSections(rootSel) {
   return out.sort((a, b) => a.top - b.top);
 }
 
+/* ── 结构 SHAPE：一段的「里面」有哪些盒子 ───────────────────────────────────
+
+   老板 2026-08-29, 看完六张对照图：「是准确了 可是还不是100%」·
+   「我问你有什么解决方法吗 是skills不好用还是什么」.
+
+   不是 skill 的问题。这个档案量的是**整页级**（几段 · 每段多高 · 几张照片 ·
+   字多大 · 每段底色），design-md-generator 抽的是 **token 级**（颜色 · 字级 ·
+   间距 · 动效）。那一天剩下的每一个差异都落在这两层中间：
+
+     · 他们的导航浮在照片上，我们是照片上面另一条
+     · 他们的照片缩在版心里、上面空一段气，我们满边贴着字
+     · 他们那一段右边有一颗描边药丸，我们从来没画过
+     · 他们的按钮方角，我们圆角
+     · 他们的标题贴着页缘、左边距 0，我们有版心边距
+
+   五件里没有一件会改变段高或照片张数，所以尺子印 0，而画面一眼就看得出不像。
+   量不到的东西不会因为看得够久就被看到 —— 那一整天就是这个循环。
+
+   所以这里量的是一段**里面有哪些盒子**：每个盒子是图 / 按钮 / 字，左右占这一段
+   宽的百分之几、上下在哪、圆角多少。然后一段对一段比。
+
+   ⚠️ 它不判「好不好看」，它判「有没有这个东西、在不在同一个位置」。
+   两边的 DOM 完全不同（Wix 的包装层套五层），所以认的是**角色**不是标签，
+   而且只收看得见、够大的盒子 —— 一个 4px 的分隔线不是这一段的结构。 */
+function readShape(rootSel) {
+  const root = rootSel ? document.querySelector(rootSel) : null;
+  let node = root;
+  if (node) while (node && node.children.length <= 2) node = node.children[0];
+  const pool = node ? [...node.children] : [...document.querySelectorAll("section,div[id^='comp-']")];
+  const secs = pool
+    .map((e) => {
+      const r = e.getBoundingClientRect();
+      return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
+    })
+    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= 1300))
+    .sort((a, b) => a.top - b.top || b.h - a.h);
+  const kept = [];
+  for (const b of secs) if (!kept.some((o) => b.top >= o.top && b.top + b.h <= o.top + o.h)) kept.push(b);
+  kept.sort((a, b) => a.top - b.top);
+
+  const PAGE = document.documentElement.getBoundingClientRect().width || 1440;
+  const vis = (el) => {
+    const cs = getComputedStyle(el);
+    return cs.display !== "none" && cs.visibility !== "hidden" && Number(cs.opacity) > 0.05;
+  };
+  /* 一个盒子算「按钮」的条件：它是可以点的，有自己的底或框，而且高度像一个控件。
+     Wix 的按钮是 <a> 套一个 <span>，我们的是 <a> 自己 —— 认背景/边框比认标签准。 */
+  const isButton = (el) => {
+    if (!el.matches("a,button,[role=button]")) return false;
+    const r = el.getBoundingClientRect();
+    if (r.height < 24 || r.height > 96 || r.width < 60) return false;
+    const cs = getComputedStyle(el);
+    const painted = cs.backgroundColor && !/(^rgba\(0, 0, 0, 0\)$|transparent)/.test(cs.backgroundColor);
+    const framed = parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderBottomWidth) > 0;
+    return painted || framed;
+  };
+  const ownText = (el) => {
+    let t = "";
+    for (const n of el.childNodes) if (n.nodeType === 3) t += n.nodeValue;
+    return t.trim();
+  };
+
+  return kept.map((sec) => {
+    const sr = sec.e.getBoundingClientRect();
+    const boxes = [];
+    const push = (el, kind, extra) => {
+      const r = el.getBoundingClientRect();
+      if (r.width < PAGE * 0.03 || r.height < 10) return;
+      const x0 = Math.round((r.left / PAGE) * 100);
+      const x1 = Math.round(((r.left + r.width) / PAGE) * 100);
+      const y0 = Math.round(((r.top - sr.top) / Math.max(1, sr.height)) * 100);
+      const y1 = Math.round(((r.top + r.height - sr.top) / Math.max(1, sr.height)) * 100);
+      /* 同一个盒子被包了五层，五层的矩形一样 —— 只留一个。 */
+      if (boxes.some((b) => b.kind === kind && Math.abs(b.x0 - x0) <= 1 && Math.abs(b.y0 - y0) <= 1 && Math.abs(b.x1 - x1) <= 1)) return;
+      boxes.push({ kind, x0, x1, y0, y1, ...extra });
+    };
+
+    for (const el of sec.e.querySelectorAll("*")) {
+      if (!vis(el)) continue;
+      if (el.matches("img,video")) { push(el, "图"); continue; }
+      if (isButton(el)) {
+        const rad = Math.round(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0);
+        push(el, "钮", { rad: rad >= 40 ? "丸" : rad >= 3 ? "圆" : "方" });
+        continue;
+      }
+      const t = ownText(el);
+      if (t.length >= 2) push(el, "字", { px: Math.round(parseFloat(getComputedStyle(el).fontSize)) });
+    }
+    /* 一段里的字块常常几十个（每一行一个）—— 按「左边缘 + 字级」并成一栏，
+       那才是排版上的一个东西。 */
+    const merged = [];
+    for (const b of boxes.sort((a, b2) => a.y0 - b2.y0 || a.x0 - b2.x0)) {
+      const same = b.kind === "字" && merged.find((m) => m.kind === "字" && Math.abs(m.x0 - b.x0) <= 2 && m.px === b.px && b.y0 - m.y1 <= 4);
+      if (same) { same.y1 = Math.max(same.y1, b.y1); same.x1 = Math.max(same.x1, b.x1); continue; }
+      merged.push(b);
+    }
+    return merged;
+  });
+}
+
 /* ── 字体 TYPE ─────────────────────────────────────────────────────────────
    SIZE WAS NEVER THE WHOLE AXIS, and reading only the size is what let 満図
    ship 「抄完了」 while wearing the wrong typeface. 2026-08-28, side by side at
@@ -693,9 +793,10 @@ async function shoot(target, rootSel, wait, file) {
   const axes = await p.evaluate(readAxes, rootSel);
   const anat = await p.evaluate(readAnatomy, rootSel);
   const shots = await p.evaluate(readShots, rootSel);
+  const shape = await p.evaluate(readShape, rootSel);
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
   await p.close();
-  return { secs, type, axes, anat, shots };
+  return { secs, type, axes, anat, shots, shape };
 }
 
 try {
@@ -821,6 +922,77 @@ try {
   }
 
   /* ── 4 颜色 COLOR —— 面积，不是声明次数 ───────────────────────────────── */
+  /* ── 结构 SHAPE：一段里面有哪些盒子，一段对一段 ──────────────────────────
+     老板 2026-08-29: 「是准确了 可是还不是100%」. 剩下的每一个差异都在一段的
+     里面，而上面每一项量的都是一段的外面。readShape 的注解写了那五个实例。
+
+     判什么：这一段有几个图 / 几颗按钮 / 几栏字，配对得上的那些左右位置差多少。
+     不判什么：好不好看、字写什么、照片拍的是什么。 */
+  console.log("\n结构 SHAPE  （一段里面有哪些盒子，图 · 钮 · 字）");
+  {
+    const bodyShape = (l, secsL) => (secsL.length && secsL[0].h < 120 ? l.slice(1) : l);
+    const TS = bodyShape(theirs.shape ?? [], theirs.secs);
+    const OS = bodyShape(ours.shape ?? [], ours.secs);
+    const line = (bs) =>
+      bs
+        .slice(0, 9)
+        .map((b) => (b.kind === "钮" ? `钮${b.rad}` : b.kind) + ` ${b.x0}–${b.x1}`)
+        .join("  ") || "（空）";
+    const count = (bs, k) => bs.filter((b) => b.kind === k).length;
+    /* ── 版心：内容从页面的百分之几开始，到百分之几结束 ──────────────────
+       这一条是这把尺第一次跑就抓到的、而且最大的一件：瑞士 整页的内容跑
+       7%–93%，我们 14%–86%。两边各差 7 个点，那不是某一段的事，是版心
+       本身窄了 200px。段高一样、张数一样、字级一样，所以以前每一项都过。 */
+    const edge = (SS) => {
+      const l = [], r = [];
+      for (const bs of SS) {
+        if (!bs.length) continue;
+        l.push(Math.min(...bs.map((b) => b.x0)));
+        r.push(Math.max(...bs.map((b) => b.x1)));
+      }
+      if (!l.length) return null;
+      l.sort((a, b) => a - b); r.sort((a, b) => a - b);
+      return [l[Math.floor(l.length / 2)], r[Math.floor(r.length / 2)]];
+    };
+    const et = edge(TS), eo = edge(OS);
+    if (et && eo) {
+      check("结构", "版心", `${et[0]}%–${et[1]}%`, `${eo[0]}%–${eo[1]}%`,
+        Math.abs((et[1] - et[0]) - (eo[1] - eo[0])) <= 6);
+    }
+
+    for (let i = 0; i < Math.max(TS.length, OS.length); i++) {
+      const t = TS[i];
+      const o = OS[i];
+      if (!t || !o) {
+        console.log(`  --  第${i + 1}段  ` + (!t ? "模版没有这一段" : "我们没有这一段"));
+        marks.push({ axis: "结构", name: `第${i + 1}段结构`, ok: null });
+        continue;
+      }
+      /* 一段里几十栏字是内容长短的事，不是设计的事 —— 只判图跟按钮的个数，
+         字那一栏印出来给眼睛看。张数差一个之内算对上：一张图被包成两个盒子、
+         或者他们多一行小字，都不该判成「结构不同」。 */
+      const dImg = Math.abs(count(t, "图") - count(o, "图"));
+      const dBtn = Math.abs(count(t, "钮") - count(o, "钮"));
+      /* 圆角是形状不是装饰：方角的按钮跟药丸是两个设计（重点 7c）。 */
+      const rads = (bs) => [...new Set(bs.filter((b) => b.kind === "钮").map((b) => b.rad))].sort().join("");
+      const dRad = count(t, "钮") && count(o, "钮") && rads(t) !== rads(o);
+      /* 最宽的那张图占这一段多宽 —— 满边（≥96%）跟缩在版心里（≈90%）
+         是两个决定，而两个都不改变段高，所以上面每一项都看不到。 */
+      const widest = (bs) => bs.filter((b) => b.kind === "图").reduce((m, b) => Math.max(m, b.x1 - b.x0), 0);
+      const dSpan = widest(t) && widest(o) ? Math.abs(widest(t) - widest(o)) : 0;
+      const bad = [];
+      if (dImg > 1) bad.push(`图 ${count(t, "图")}对${count(o, "图")}`);
+      if (dBtn > 1) bad.push(`钮 ${count(t, "钮")}对${count(o, "钮")}`);
+      if (dRad) bad.push(`钮的圆角 ${rads(t)}对${rads(o)}`);
+      if (dSpan > 12) bad.push(`最宽的图 ${widest(t)}%对${widest(o)}%`);
+      const ok = bad.length === 0;
+      console.log(`  ${ok ? "OK" : "XX"}  第${i + 1}段  ${ok ? "" : "← " + bad.join(" · ")}`);
+      console.log(`        模版 ${line(t)}`);
+      console.log(`        我们 ${line(o)}`);
+      marks.push({ axis: "结构", name: `第${i + 1}段结构`, ok });
+    }
+  }
+
   /* ── 颜色，逐段量，而且判在同一张表里 ────────────────────────────────────
      老板 2026-08-28: 「就是每个颜色 分段去测量」.
 

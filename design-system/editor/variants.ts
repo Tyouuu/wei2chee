@@ -119,6 +119,12 @@ export const VARIANTS: Record<string, Variant[]> = {
        left and its one line right, then a photograph edge to edge underneath.
        Degrades to 左对齐 without a photo, like `split` and `bleed`. */
     { id: "band-bleed", label: "色带压满图", props: { layout: "band-bleed" } },
+    /* 色带配版心图 — Leah Webb: 标题左、一段话跟一颗描边药丸在右，
+       照片跟文字同一条左右边线，不是满边的。 */
+    { id: "band-inset", label: "色带配版心图", props: { layout: "band-inset" } },
+    /* 资料栏开场 — Kurofude: 标题贴着页缘，底下一排「标签在上值在下」的资料
+       跟一条方角黑杠，然后才是满边照片。 */
+    { id: "data-columns", label: "资料栏开场", props: { layout: "data-columns" } },
     /* 名牌 — Wix's Law Firm opening, copied off the screenshot: the business
        NAME set enormous over a full-bleed photograph with no headline sentence
        at all, a hairline across it, then a row of three underneath. The only

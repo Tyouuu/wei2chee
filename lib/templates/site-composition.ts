@@ -104,7 +104,7 @@ export type SiteSkeleton = {
    * and deliberately not the only one: a library where fourteen registers all
    * open the same way is a library with one register in it.
    */
-  hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre" | "name-figure";
+  hero: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre" | "name-figure" | "band-inset" | "data-columns";
   /**
    * 一句话占一屏 —— whether the pitch gets a screen of its own, and in what
    * shape. Absent means it stays under the headline where it has always been.
@@ -523,7 +523,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     omit: ["faq", "promise", "team", "creds", "reviews", "story", "flow", "hours", "areas"],
     /* 名字跟那排资料在上面，照片满边接在下面 —— band-bleed 就是这个形状，
        那条带用它自己的米白（--site-hero-band）。 */
-    hero: "band-bleed",
+    hero: "data-columns",
     measure: "wide",
     figure: "large",
     /* 「ink」 在这一层的意思是「官网自己说了算它的地」，浅色深色都行 —— 任务 28
@@ -573,7 +573,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     /* 第一屏是白的：标题在左，一段话跟一颗外框药丸在右，照片在下面，不是压在照片上。
        band-bleed 就是这个形状 —— 那条带的颜色现在是一根轴（--site-hero-band），
        瑞士把它设成自己的白。 */
-    hero: "band-bleed",
+    hero: "band-inset",
     measure: "normal",
     /* 他们第一屏跟 About 之间没有别的东西，收尾也只有一个订阅框 —— 一个 ask，不是
        中段一个 CTA 再加一个表单。 */
