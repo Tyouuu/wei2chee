@@ -98,9 +98,44 @@ export function AccountClient({
       db.from("projects").select("*").single(),
       db.rpc("get_my_business_context"),
     ]);
-    const { data: pages } = project
-      ? await db.from("project_pages").select("*").eq("project_id", project.id)
-      : { data: [] };
+    /*
+      THE ENQUIRIES ARE THE PART WORTH TAKING.
+
+      This export shipped with the pages and the design and without them, which
+      inverts what the file is for. A layout can be rebuilt; the people who
+      filled in the form on their website cannot. `site_enquiries` is also the
+      only table in this product holding data about the CUSTOMER'S customers --
+      names, phone numbers, what they asked for -- so an export that leaves it
+      out hands somebody their wallpaper and keeps their address book.
+
+      Read through their own session like everything else here, so RLS is what
+      bounds it rather than a filter we wrote.
+    */
+    const [{ data: pages }, { data: enquiries }, { data: photoFiles }] = project
+      ? await Promise.all([
+          db.from("project_pages").select("*").eq("project_id", project.id),
+          db
+            .from("site_enquiries")
+            .select("*")
+            .eq("project_id", project.id)
+            .order("created_at", { ascending: false }),
+          /* Photographs live in storage, not in a row, so the JSON alone would
+             let somebody walk away believing they had everything. The layouts
+             quote public URLs that stop resolving the day hosting does, which
+             is exactly the day this file matters. Listing them by name and URL
+             is what makes them saveable -- we are not zipping binaries into a
+             browser download to achieve it. */
+          db.storage.from("site-photos").list(project.id, { limit: 1000 }),
+        ])
+      : [{ data: [] }, { data: [] }, { data: [] }];
+
+    const photos = (photoFiles ?? []).map((f: { name: string }) => {
+      const path = `${project?.id}/${f.name}`;
+      return {
+        name: f.name,
+        url: db.storage.from("site-photos").getPublicUrl(path).data.publicUrl,
+      };
+    });
 
     const payload = {
       exported_at: new Date().toISOString(),
@@ -108,6 +143,17 @@ export function AccountClient({
       project,
       business_context: context,
       pages,
+      enquiries,
+      photos,
+      /* Named rather than silently absent. Someone reading this file to decide
+         whether they have everything deserves to be told what they do not
+         have, and why -- an omission a reader has to notice is not disclosure. */
+      not_included: {
+        page_versions:
+          "Edit history. Every saved version of every page; the current one is in `pages`.",
+        photo_files:
+          "The image files themselves. Listed in `photos` with a URL each — download them before hosting ends.",
+      },
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);

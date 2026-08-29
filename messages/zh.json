@@ -781,7 +781,7 @@
       "newEmail": "新邮箱",
       "changeEmail": "换邮箱",
       "exportTitle": "导出我的资料",
-      "exportBody": "你的系统设计、页面、生意资料，全部下载成一个 JSON 文件。免费，随时可以拿走——这是我们讲过的。",
+      "exportBody": "你收到的询价、你的页面、系统设计、生意资料，全部下载成一个 JSON 文件，每一张照片附网址。免费，随时可以拿走——这是我们讲过的。",
       "exportCta": "下载我的资料",
       "exporting": "准备中…",
       "deleteTitle": "删掉账号",
