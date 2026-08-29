@@ -305,7 +305,17 @@ const flow = (c: LandingContent, title: string) =>
     steps: c.stages.map((label) => ({ label, value: "" })),
   });
 
-const form = (c: LandingContent, key: string, look: string) => {
+/* ⚠️ 表格的样子（一个框 / 不要框 / 左右分）不再由行业模版写死。
+
+   它以前是这里的第三个参数：quote 是 card、booking 是 split、order 是 split。
+   写进 props 的东西在这套系统里排在最前面 —— 客人自己的值 > 风格的偏好 >
+   组件预设 —— 所以那一行等於「这个行业永远用这个形状，任何风格都改不了」。
+   瑞士 照 Leah Webb 抄的时候，它的第7段是平铺在白底上的表格加右边一栏联络
+   资料；风格宣告了 split，画出来还是一张灰卡，因为模版早就替它决定了。
+
+   形状属於风格层，跟这个档案里其他每一个 Site* 一样（重点 7c）。没有宣告的
+   风格拿组件预设 card。 */
+const form = (c: LandingContent, key: string) => {
   const t = c.words.byTemplate[key] ?? c.words.byTemplate.quote;
 
   // THE QUESTIONS THIS TRADE ACTUALLY NEEDS ANSWERED, 2026-08-25.
@@ -329,7 +339,6 @@ const form = (c: LandingContent, key: string, look: string) => {
     : c.words.fields;
 
   return node("EnquiryForm", "website-form", {
-    look,
     heading: t.formHeading,
     blurb: t.formBlurb,
     fields,
@@ -744,7 +753,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       areas(c),
       faq(c),
       promiseList(c),
-      form(c, "quote", "card"),
+      form(c, "quote"),
       contact(c),
       foot(c, anchors(c)),
       ...floating(c),
@@ -776,7 +785,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       cta(c),
       hours(c),
       faq(c),
-      form(c, "booking", "split"),
+      form(c, "booking"),
       contact(c),
       foot(c, anchors(c)),
       ...floating(c),
@@ -807,7 +816,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       band(c),
       woven(c),
       cta(c),
-      form(c, "order", "split"),
+      form(c, "order"),
       contact(c, false),
       foot(c, anchors(c)),
       ...floating(c),
@@ -850,7 +859,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       creds(c),
       promiseList(c),
       faq(c),
-      form(c, "wholesale", "card"),
+      form(c, "wholesale"),
       contact(c),
       foot(c, anchors(c)),
       ...floating(c),
@@ -880,7 +889,7 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       cta(c),
       flow(c, sect(c, "portfolio").flow ?? ""),
       faq(c),
-      form(c, "portfolio", "plain"),
+      form(c, "portfolio"),
       contact(c, false),
       foot(c, anchors(c)),
       ...floating(c),

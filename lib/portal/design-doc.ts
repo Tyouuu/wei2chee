@@ -94,6 +94,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给装修承包商这种一天要看几十条记录的生意，开系统是为了扫过一整张表。32px 的行、4px 的角、没有阴影。牺牲的是宽松 —— 一屏塞得下最多的行，代价是它不好看，它好用。",
     facts: "圆角 4px · 边框 1px · 无阴影 · 行高 32px · 正文 13px · 标签全大写",
     prefer: {
+      EnquiryForm: "card",
       /* 抄自 Wix wh-newel, section by section. See site-composition.ts. */
       SiteWoven: "band",
       SiteStory: "side-reverse",
@@ -138,6 +139,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给美容院、沙龙这种前台就是店面的生意，开系统是在客人面前。52px 的行、20px 的圆角、靠阴影分层。牺牲的是密度 —— 一屏少放三分之一的行，换一个客人看到不会皱眉的画面。",
     facts: "圆角 20px · 无边框、靠阴影分层 · 行高 52px · 正文 15px · 标签不大写",
     prefer: {
+      EnquiryForm: "split",
       SiteFeatures: "iconed",
       SiteCta: "panel",
       /* 头像在上, no rating -- the shape the page this register copies whole
@@ -187,6 +189,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给还讲不清楚自己是什么行业的老板，开系统是第一次。中性、12px 圆角、一条细边、什么都不抢。它不是最好看的一套，它是最不会出错的一套 —— 牺牲个性换零风险，所以「其他」这一栏给它。",
     facts: "圆角 12px · 边框 1px · 淡阴影 · 行高 42px · 正文 14px · 标签不大写",
     prefer: {
+      EnquiryForm: "split",
       SiteFeatures: "plates",
       SiteCta: "rule",
       SiteTeam: "cards",
@@ -229,6 +232,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给批发商这种一天要开二十张单的生意，开系统就是在里面做事，不是在里面看事。深蓝侧栏、2px 直角、没有阴影，全库最密的正文。牺牲的是全部的呼吸感 —— 但这正是 Autocount、进销存那一类他们本来就在用的样子。",
     facts: "圆角 2px · 边框 1px · 无阴影 · 行高 34px · 正文 13px · 深蓝 #001529 侧栏 · 选中的一行整条填蓝",
     prefer: {
+      EnquiryForm: "card",
       SiteFeatures: "menu",
       SiteTeam: "row",
       SiteGallery: "pair",
@@ -317,6 +321,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
     mood: "给店屋零售 —— 有一块实体招牌、客人是看到招牌走进来的。店名用又窄又粗的字排到 46px，底下的内文是普通 15px。全库第一个标题跟内文不同字体的。牺牲的是低调：这一套永远在喊自己的名字。",
     facts: "标题字 Archivo Narrow 46px 字距 -0.03em · 内文 15px · 招牌红 #c8102e · 暖白底 #f7f4ef · 圆角 0 · 无阴影 · 标签全大写",
     prefer: {
+      EnquiryForm: "split",
       SiteWoven: "columns",
       SiteFeatures: "menu",
       SiteCta: "panel",
