@@ -365,10 +365,49 @@ function readType() {
         const serifRun = w(`"${fam}", monospace`, "IHMTEFL");
         const plainRun = w(`"${fam}", monospace`, "ooeecc");
         const widthOf = w(`"${fam}", monospace`, "HHHHHHHHHH") / 1000;
+
+        /* ── 字体的「种类」还有两根轴，而且两根都量得到 ────────────────────
+           老板 2026-08-29: 「字体的种类呢？」
+
+           名字判不了（我们不可能用他们的授权字体），衬线跟字宽已经在判了。
+           剩下这两件才是同一个字级下「看起来完全不同」的原因：
+
+           · **小写多高（x-height / 大写高）** —— 同样 40px，一个 x 高的字体
+             看起来大一号、密一号；一个 x 矮的看起来秀气、松。它是两页放在
+             一起最先分得出来的一件，而字级、字重、字距全部可以一模一样。
+           · **墨量** —— 宣告的 font-weight 两边都写 400，画出来的粗细可以差
+             很多（Newsreader 的 400 跟 Archivo 的 400 不是同一种黑）。把一串
+             字画进画布数暗像素，量的是它真正有多重，不是它自称多重。 */
+        const metrics = (text) => {
+          const c = document.createElement("canvas").getContext("2d");
+          c.font = `100px "${fam}", monospace`;
+          const m = c.measureText(text);
+          return m.actualBoundingBoxAscent || 0;
+        };
+        const capH = metrics("H");
+        const xH = metrics("x");
+
+        const inkOf = () => {
+          const cv = document.createElement("canvas");
+          cv.width = 400; cv.height = 140;
+          const c = cv.getContext("2d", { willReadFrequently: true });
+          c.fillStyle = "#fff"; c.fillRect(0, 0, 400, 140);
+          c.fillStyle = "#000";
+          c.font = `100px "${fam}", monospace`;
+          c.textBaseline = "alphabetic";
+          c.fillText("Hamburgefons", 4, 110);
+          const d = c.getImageData(0, 0, 400, 140).data;
+          let dark = 0;
+          for (let i = 0; i < d.length; i += 4) if (d[i] < 128) dark++;
+          return dark / (400 * 140);
+        };
+
         return {
           here,
           serifish: here ? +(serifRun / plainRun).toFixed(3) : 0,
           widthish: here ? +widthOf.toFixed(3) : 0,
+          xish: here && capH ? +(xH / capH).toFixed(3) : 0,
+          inkish: here ? +inkOf().toFixed(4) : 0,
         };
       })(),
     };
@@ -1409,6 +1448,16 @@ try {
   const sT = serif(theirs.type), sO = serif(ours.type);
   check("字体", "衬线/无衬线", sT ? sT.toFixed(2) : "量不到", sO ? sO.toFixed(2) : "量不到",
     judge(sT, sO, Math.abs(sT - sO) / sT <= 0.09));
+  /* 小写多高 —— 同一个字级下看起来大一号还是秀气一号，就是这个比例。 */
+  const xh = (t) => Number(t.heads?.[0]?.xish) || 0;
+  const xT = xh(theirs.type), xO = xh(ours.type);
+  check("字体", "小写多高", xT ? xT.toFixed(2) : "量不到", xO ? xO.toFixed(2) : "量不到",
+    judge(xT, xO, Math.abs(xT - xO) / xT <= 0.08));
+  /* 墨量 —— 画出来真正有多重，不是 font-weight 自称多重。 */
+  const ink = (t) => Number(t.heads?.[0]?.inkish) || 0;
+  const iT = ink(theirs.type), iO = ink(ours.type);
+  check("字体", "墨量", iT ? iT.toFixed(3) : "量不到", iO ? iO.toFixed(3) : "量不到",
+    judge(iT, iO, Math.abs(iT - iO) / iT <= 0.16));
   /* 名字判不了（我们不可能用他们的授权字体），字宽判得了。
      窄体跟宽体在同一个字级上是两页不同的东西 —— 招牌 的参考是压缩体。 */
   const wid = (t) => Number(t.heads?.[0]?.widthish) || 0;
