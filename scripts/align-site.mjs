@@ -145,9 +145,21 @@ function readSections(rootSel) {
 
      判断的依据是**上下有没有重叠**：两块在页面上盖住同一片垂直空间，人看到的
      就是一段。重叠超过矮的那一块的六成就并起来。 */
+  /* ⚠️ 被包住的那一个要**并进去**，不能丢掉。
+
+     原本这里是 `continue` —— 理由是「一个盒子完全在另一个的上下范围里，
+     那是同一段的包装层」。包装层丢掉没差，它的内容已经在外层里了。
+     但**并排叠着的兄弟**也会落在同一个范围里：Newel 的第一屏是一个 1440×891
+     的照片 comp，跟导航 comp 是兄弟，而它整个落在导航那一段的上下范围内。
+     丢掉它，那张满边的照片就从这一段消失 —— 於是尺子报「模版 满边的段 0/7」
+     「最宽的图 20%」，那 20% 是他们的 logo。
+
+     **照那份报告改，我会去拆掉我们那张对的满边第一屏。**
+     一把看不见半个页面的尺，会把人送去改做对的地方。 */
   const out = [];
   for (const { e, top, h } of boxes) {
-    if (out.some((o) => top >= o.top && top + h <= o.top + o.h)) continue;
+    const inside = out.find((o) => top >= o.top && top + h <= o.top + o.h);
+    if (inside) { inside.els.push(e); continue; }
     const hit = out.find((o) => {
       const over = Math.min(top + h, o.top + o.h) - Math.max(top, o.top);
       return over > Math.min(h, o.h) * 0.6;
@@ -210,7 +222,8 @@ function readShape(rootSel) {
      在讲不同的分段，而报告把它们当成同一份。 */
   const kept = [];
   for (const b of secs) {
-    if (kept.some((o) => b.top >= o.top && b.top + b.h <= o.top + o.h)) continue;
+    const inside = kept.find((o) => b.top >= o.top && b.top + b.h <= o.top + o.h);
+    if (inside) { inside.els.push(b.e); continue; }
     const hit = kept.find((o) => {
       const over = Math.min(b.top + b.h, o.top + o.h) - Math.max(b.top, o.top);
       return over > Math.min(b.h, o.h) * 0.6;
@@ -270,6 +283,25 @@ function readShape(rootSel) {
     for (const el of sec.els.flatMap((e) => [...e.querySelectorAll("*")])) {
       if (!vis(el)) continue;
       if (el.matches("img,video")) { push(el, "图"); continue; }
+      /* ⚠️ 背景图也是图，而这一行以前不存在。
+
+         台账 抄的 Newel，第一屏那张满边的照片是 CSS 的 background-image，不是
+         <img>。盒子读不到它，於是尺子回报「模版 满边的段 0/7」「最宽的图 20%」
+         —— 那个 20% 是他们的 **logo**。照这份报告去改，我会把我们那张对的
+         满边第一屏拆掉，去追一个他们其实也有的东西。
+
+         **一把看不见半个页面的尺，会把人送去拆掉做对的地方。**
+         这是今天最危险的一个洞，而它是在准备动手改页面的时候才现形的。 */
+      const bg = getComputedStyle(el).backgroundImage || "";
+      if (bg.includes("url(")) {
+        const r0 = el.getBoundingClientRect();
+        /* 够大才算 —— 图标、纹理、装饰性的小图不是这一段的图。
+           而且里面不能已经有一张真的 <img>，否则同一块地方数两次。 */
+        if (r0.width >= PAGE * 0.12 && r0.height >= 80 && !el.querySelector("img,video")) {
+          push(el, "图");
+          continue;
+        }
+      }
       if (isButton(el)) {
         const rad = Math.round(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0);
         push(el, "钮", { rad: rad >= 40 ? "丸" : rad >= 3 ? "圆" : "方" });
@@ -460,7 +492,16 @@ function readType() {
 function readShots(rootSel) {
   const root = rootSel ? document.querySelector(rootSel) : document.body;
   if (!root) return [];
-  return [...root.querySelectorAll("img,video")]
+  /* 背景图也算一张照片 —— 见 readShape 里那段注解。这里漏掉它，
+     「满宽的 / 半幅的 / 最高一张 / 长宽比 / 照片张数」五项一起错。 */
+  const W0 = document.documentElement.getBoundingClientRect().width || 1440;
+  const backdrops = [...root.querySelectorAll("*")].filter((e) => {
+    const bg = getComputedStyle(e).backgroundImage || "";
+    if (!bg.includes("url(")) return false;
+    const r = e.getBoundingClientRect();
+    return r.width >= W0 * 0.12 && r.height >= 80 && !e.querySelector("img,video");
+  });
+  return [...root.querySelectorAll("img,video"), ...backdrops]
     .map((e) => {
       const r = e.getBoundingClientRect();
       return { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top + scrollY) };
