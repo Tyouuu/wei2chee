@@ -23,7 +23,7 @@ TOL = 26      # 每个通道差在这之内算同一个颜色
 SHARE_TOL = 18  # 面积差几个百分点之内算对上
 
 
-def dominant(im, top, height, n=3):
+def dominant(im, top, height, n=6):
     """一段画面里铺得最多的几个颜色。"""
     w, h = im.size
     y0, y1 = max(0, top), min(h, top + height)
@@ -86,12 +86,56 @@ def run(reg):
         oh, op = o[0]
         same = near(th, oh)
         close = same and abs(tp - op) <= SHARE_TOL
+
+        # ── 这一段用了几个颜色 ──────────────────────────────────────────────
+        # 以前只判「面积最大的那一个」。一段铺三个颜色跟一段铺一个颜色，只要
+        # 最大的那个对上就算过 —— 而「用几个颜色」正是设计本身：招牌 的那一段
+        # 是酒红配奶白配粉，我们画成一整片酒红，最大的那个一模一样。
+        # 只数铺得够多的（≥6%），JPEG 的杂讯跟一条细线不是「一个颜色」。
+        nt = len([1 for _, sh in t if sh >= 6.0])
+        no = len([1 for _, sh in o if sh >= 6.0])
+        spread = abs(nt - no) <= 1
+        close = close and spread
+
         flag = "OK" if close else "XX"
         if not close:
             bad += 1
         why = "" if same else "  ← 底色不是同一个"
+        if same and not spread:
+            why = f"  ← 用的颜色数不同（模版 {nt} 个 · 我们 {no} 个）"
         print(f"  {flag}  {tag}  模版 {th} {tp}%   我们 {oh} {op}%{why}")
     print(f"  逐段对不上 {bad} 段")
+
+    # ── 深浅分布：整页最暗到最亮跨多少，有颜色的面积占多少 ──────────────────
+    # 任务 28 量过一次，那把尺是散的，从来没有接进 align。而「我们的模版很丑」
+    # 那一次量出来的根因就是它：整页最暗的一个像素是 L* 0.69 —— 页面上根本没有
+    # 「暗」这个东西，别人要嘛压到 0.15 以下，要嘛把颜色开到 27–37%。
+    # 两个数字都不改变段数、段高、张数、字级，所以每一根轴都看不到它们。
+    def spread(im):
+        w, h = im.size
+        px = im.load()
+        ls, coloured, total = [], 0, 0
+        for y in range(0, h, 9):
+            for x in range(0, w, 9):
+                r, g, b = px[x, y]
+                # 近似明度：sRGB 的相对亮度开三次方，够分辨「暗不暗」
+                lin = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
+                ls.append(lin ** (1 / 3))
+                mx, mn = max(r, g, b), min(r, g, b)
+                if mx and (mx - mn) / mx > 0.18:
+                    coloured += 1
+                total += 1
+        ls.sort()
+        lo = ls[int(len(ls) * 0.02)]
+        hi = ls[int(len(ls) * 0.98)]
+        return round(lo, 2), round(hi, 2), round(hi - lo, 2), round(100 * coloured / max(1, total))
+
+    tl, th_, tsp, tc = spread(ref)
+    ol, oh, osp, oc = spread(ours)
+    ok_span = abs(tsp - osp) <= 0.18
+    ok_col = abs(tc - oc) <= 14
+    print(f"  {'OK' if ok_span else 'XX'}  对比跨度  模版 {tsp}（{tl}→{th_}）   我们 {osp}（{ol}→{oh}）")
+    print(f"  {'OK' if ok_col else 'XX'}  有颜色的面积  模版 {tc}%   我们 {oc}%")
 
 
 for reg in sys.argv[1:]:

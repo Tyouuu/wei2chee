@@ -1201,6 +1201,17 @@ try {
   check("照片", "满宽的", bt.wide, bo.wide, near(bt.wide, bo.wide, 1));
   check("照片", "半幅的", bt.half, bo.half, near(bt.half, bo.half, 2));
   check("照片", "最高一张", `${bt.tallest}px`, `${bo.tallest}px`, near(bt.tallest, bo.tallest, 220));
+  /* ── 长宽比：一张 4:3 靠着一段字，跟一张 21:9 满边压过去，是两个设计 ──────
+     以前只数张数、量宽度跟最高的那一张。「1img」对一张 1440×810 的横幅跟一张
+     缩图一样成立，而 16/9 跟 4/3 摆在同一个位子上是两种节奏。
+     取中位数，不取平均 —— 一张满边的长条会把平均整个拉走。 */
+  const midRatio = (l) => {
+    const a = l.map((x) => x.ratio).filter(Boolean).sort((x, y) => x - y);
+    return a.length ? a[Math.floor(a.length / 2)] : 0;
+  };
+  const rt = midRatio(theirs.shots), ro = midRatio(ours.shots);
+  check("照片", "长宽比", rt ? rt.toFixed(2) : "量不到", ro ? ro.toFixed(2) : "量不到",
+    rt && ro ? Math.abs(rt - ro) <= 0.35 : null);
   console.log(`      模版 ${theirs.shots.slice(0, 7).map((x) => `${x.w}×${x.h}`).join(" ") || "无"}`);
   console.log(`      我们 ${ours.shots.slice(0, 7).map((x) => `${x.w}×${x.h}`).join(" ") || "无"}`);
 
@@ -1212,6 +1223,19 @@ try {
     near(h1(theirs.type).px || 0, h1(ours.type).px || 0, 12));
   check("字体", "标题字重", h1(theirs.type).w ?? "—", h1(ours.type).w ?? "—",
     String(h1(theirs.type).w) === String(h1(ours.type).w));
+  /* ── 级差：h2 是 h1 的几分之几 ─────────────────────────────────────────
+     h1 量了，h2 没量。而「层级感」不是最大那个字多大，是**大字跟中字差多少**：
+     72 → 32 是一个陡的阶梯，72 → 56 是一个平的，两页的 h1 可以一模一样。 */
+  const step = (t) => {
+    const h1px = Number(t.heads[0]?.px) || 0;
+    const h2 = t.heads.slice(1).map((x) => Number(x.px)).filter(Boolean);
+    if (!h1px || !h2.length) return 0;
+    h2.sort((a, b) => b - a);
+    return +(h2[0] / h1px).toFixed(2);
+  };
+  const st = step(theirs.type), so = step(ours.type);
+  check("字体", "级差 h2/h1", st || "量不到", so || "量不到",
+    st && so ? Math.abs(st - so) <= 0.16 : null);
   check("字体", "正文字体", theirs.type.bodyFam, ours.type.bodyFam, null);
   if (process.env.ALIGN_DEBUG) {
     console.log("      模版样本 " + (theirs.type.bodySamples || []).join(" | "));
@@ -1222,6 +1246,17 @@ try {
      跟一把好尺印出来的一模一样。少於三段本身也是一个读数：这一页几乎没有
      可以读的整段文字，那件事该用眼睛看，不该由这一行冒充回答。 */
   const thinSample = (theirs.type.bodyN ?? 0) < 3 || (ours.type.bodyN ?? 0) < 3;
+  /* ── 行距：readType 从写出来那天就收了 bodyLh，没有一行拿它比过 ────────
+     它是这个仓库第 N 次「能力有、线没接」。行距是一段字读起来松还是紧，
+     跟字级同一个量级的决定：17px/1.4 跟 17px/1.9 是两页不同的东西。 */
+  const lh = (t) => {
+    const v = parseFloat(t.bodyLh);
+    const px = parseFloat(t.bodyPx);
+    return v && px ? +(v / px).toFixed(2) : 0;
+  };
+  const lt = lh(theirs.type), lo = lh(ours.type);
+  check("字体", "行距", lt || "量不到", lo || "量不到",
+    lt && lo ? Math.abs(lt - lo) <= 0.28 : null);
   check("字体", "正文字级", `${theirs.type.bodyPx}px`, `${ours.type.bodyPx}px`,
     thinSample ? null : near(Number(theirs.type.bodyPx) || 0, Number(ours.type.bodyPx) || 0, 3));
   if (thinSample) {
@@ -1327,8 +1362,15 @@ try {
       const line = raw.trimEnd();
       if (!line.trim()) continue;
       console.log("  " + line.trim());
-      const m = /^(OK|XX|--)\\s+第(\d+)段/.exec(line.trim());
+      /* ⚠️ 这一行本来写的是 \\s —— 在正则里那是「一个反斜线接一个 s」，
+         永远不匹配。於是**逐段颜色的判定从来没有进过总数**：画面上一整排 XX，
+         最后那一行结论当它不存在。一把印出差异却不把它算进去的尺比不印更糟 ——
+         它同时给了两个答案，而人只会读最后那一行。 */
+      const m = /^(OK|XX|--)\s+第(\d+)段/.exec(line.trim());
       if (m) marks.push({ axis: "颜色", name: `第${m[2]}段底色`, ok: m[1] === "OK" ? true : m[1] === "--" ? null : false });
+      /* 深浅分布那两行也要进帐 —— 印出来而不判，正是这把尺以前的毛病。 */
+      const g = /^(OK|XX)\s+(对比跨度|有颜色的面积)/.exec(line.trim());
+      if (g) marks.push({ axis: "颜色", name: g[2], ok: g[1] === "OK" });
     }
   } catch (e) {
     console.log("\n颜色 COLOR  量不到 —— align-palette.py 跑不起来：" + String(e).slice(0, 90));
