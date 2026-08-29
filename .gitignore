@@ -47,7 +47,15 @@ next-env.d.ts
 .tmp-*
 
 .print-audit-*.pdf
-.screenshots/
+.screenshots/*
+# ── 例外：参考快照要进版本库 ───────────────────────────────────────────────
+# 截图是产物，可以丢；<风格>-ref.json 是**参考本身**（模版那一页量出来的段、
+# 结构、字、颜色、动效）。不进版本库的话，换一台机器跑 align 就会重新去爬，
+# 爬到的是当天那一版的 Wix —— 於是「我们改了什么」跟「它变了什么」永远分不开。
+# 一份 8–12K，六套加起来 60K。
+!.screenshots/align/
+.screenshots/align/*
+!.screenshots/align/*-ref.json
 .prospects/
 .browser-durable/
 .claude/skills/design-md-generator/node_modules/

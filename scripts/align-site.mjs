@@ -932,12 +932,31 @@ async function shoot(target, rootSel, wait, file) {
   await p.goto(target, { waitUntil: "domcontentloaded", timeout: 90000 });
   await p.addStyleTag({ content: "nextjs-portal,[data-nextjs-toolbar]{display:none!important}" }).catch(() => {});
   await p.waitForTimeout(wait);
-  // Lazy images only load once they have been in view.
+  /* ── 把这一页真的载完，然后验收 ────────────────────────────────────────────
+     ⚠️ 以前是滚一轮、每格等 200ms，然后就开始量。Wix 的段落是滚到才载入的，
+     一轮不够：満図 的参考页第2段跟第5段回来是**空白**，而上面每一根轴照样算，
+     照样印出一个数字，照样显示「过关」。
+
+     参考错了，从它算出来的每一件事都是错的 —— 而且是安静地错。所以这里滚
+     两轮、等每一张图 decode 完、等 document.fonts.ready，最后**验收**：
+     空白的段落超过一个就 exit 1，不准往下算。
+     把「安静地给错答案」换成「大声拒绝」。 */
   await p.evaluate(async () => {
-    for (let y = 0; y < document.body.scrollHeight; y += 600) {
-      window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 200));
+    for (let pass = 0; pass < 2; pass++) {
+      for (let y = 0; y < document.body.scrollHeight; y += 500) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, pass === 0 ? 240 : 130));
+      }
     }
     window.scrollTo(0, 0);
+    /* 图要真的解码完 —— complete 只说「请求结束了」，naturalWidth 才说
+       「里面真的有一张图」。 */
+    await Promise.all(
+      [...document.images].map((im) =>
+        im.decode ? im.decode().catch(() => {}) : Promise.resolve(),
+      ),
+    );
+    if (document.fonts && document.fonts.ready) await document.fonts.ready.catch(() => {});
   });
   await p.waitForTimeout(2500);
   const secs = await p.evaluate(readSections, rootSel);
@@ -949,12 +968,77 @@ async function shoot(target, rootSel, wait, file) {
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
   const move = await probeMotion(p, rootSel);
   await p.close();
-  return { secs, type, axes, anat, shots, shape, move };
+  return { secs, type, axes, anat, shots, shape, move, file };
+}
+
+/* ── 验收这一次采集，不过就拒绝 ──────────────────────────────────────────────
+   一段「空白」的定义：它里面一个盒子都没有（readShape 走完什么都没收到），
+   而它却有 200px 以上的高。那是一段还没载入的内容，不是一段留白的设计 ——
+   留白的设计里至少有一行字。 */
+function auditCapture(who, r) {
+  const blank = [];
+  const body = (l, secsL) => (secsL.length && secsL[0].h < 120 ? l.slice(1) : l);
+  const secs = body(r.secs, r.secs);
+  const shape = body(r.shape ?? [], r.secs);
+  for (let i = 0; i < secs.length; i++) {
+    if (secs[i].h >= 200 && (!shape[i] || shape[i].length === 0)) blank.push(i + 1);
+  }
+  return blank;
 }
 
 try {
-  const theirs = await shoot(url, null, 7000, `${register}-ref`);
+  /* ── 模版那一边冻起来 ────────────────────────────────────────────────────
+     参考页是活的：Wix 会改版、网速会抖、Cloudflare 会挡。每一次跑都重新爬，
+     等於每一次的「模版」都可能是不同的一份 —— 我们改了什么、还是它变了什么，
+     分不出来。
+
+     所以采集一次、验收一次、存成快照，之后只重新量**我们自己那一边**。
+     模版不再是变数，我们的页面才是。顺便一次跑从两页变一页。
+
+     快照带日期，而且每一次都印出来 —— 一份三个月前的参考不该安静地当成今天的。
+     要重新采集：npm run align -- <风格> --refresh */
+  const REFRESH = process.argv.includes("--refresh");
+  const refFile = `${OUT}/${register}-ref.json`;
+  let theirs = null;
+  if (!REFRESH && fs.existsSync(refFile)) {
+    const snap = JSON.parse(fs.readFileSync(refFile, "utf8"));
+    if (snap.url === url) {
+      theirs = snap.data;
+      console.log(`参考快照 ${String(snap.at).slice(0, 10)} 采集（要重来：加 --refresh）`);
+    }
+  }
+  if (!theirs) {
+    theirs = await shoot(url, null, 7000, `${register}-ref`);
+    const blank = auditCapture("模版", theirs);
+    /* ALIGN_FORCE_AUDIT=1 强迫它红一次 —— 一个没有人看过它红的守卫等於没有守卫。 */
+    if (blank.length > (process.env.ALIGN_FORCE_AUDIT ? -1 : 1)) {
+      console.error(`
+🔴 这一次采集不算数：模版那一页有 ${blank.length} 段是空的（第 ${blank.join(" · ")} 段）。`);
+      console.error("   一段有高度却一个盒子都没有，是它还没载入 —— 不是它的设计。");
+      console.error("   从一份没载完的参考算出来的每一个数字都是错的，而且会印成「过关」。");
+      console.error(`   看一眼 ${OUT}/${register}-ref.jpg 再决定：网速、Cloudflare、还是那一页真的改了。`);
+      await restore();
+      await browser.close();
+      process.exit(1);
+    }
+    fs.writeFileSync(refFile, JSON.stringify({ url, at: new Date().toISOString(), data: theirs }));
+    console.log(`参考重新采集了，存成 ${refFile}`);
+  }
   const ours = await shoot(`http://localhost:3000/s/${project.site_slug}`, ".ds-site", 2500, `${register}-ours`);
+
+  {
+    /* 我们自己这一边也验 —— dev server 重编到一半被读到，长得跟一段没载入的
+       参考一模一样，而那一次的每一个数字都是错的。 */
+    const blank = auditCapture("我们", ours);
+    if (blank.length > 1) {
+      console.error(`
+🔴 这一次采集不算数：我们那一页有 ${blank.length} 段是空的（第 ${blank.join(" · ")} 段）。`);
+      console.error("   多半是 dev server 还在重编。等一下再跑一次。");
+      await restore();
+      await browser.close();
+      process.exit(1);
+    }
+  }
 
   /* ── 一份差异清单，不是一份读数 ────────────────────────────────────────────
      老板 2026-08-28: 「那就重写全部的尺子 确保能复刻到一模一样」「如果复刻不到
