@@ -76,10 +76,78 @@ export async function recordAiUsage(
    * own outcome, because a zero-token success and a failure are different
    * events that would otherwise look identical.
    */
-  opts: { outcome?: "ok" | "failed"; tookMs?: number | null } = {},
+  opts: {
+    outcome?: "ok" | "failed";
+    tookMs?: number | null;
+    /**
+     * THE VISITOR HAS NO ACCOUNT, AND THAT IS NOT AN EDGE CASE.
+     *
+     * `record_ai_usage` returns early when `auth.uid()` is null. The
+     * questionnaire is answered on the LANDING PAGE, before signup, so that
+     * branch was taken every single time and the ledger recorded nothing for
+     * the most-run call in the product. See 20260830010000 for the whole
+     * story, including the comment that caused it.
+     *
+     * Passing a lead id says "this call belongs to a questionnaire, not to a
+     * customer", and switches to the insert below. Only `/api/analyze` may do
+     * that: it holds the SERVICE-ROLE client already (see
+     * createServerSupabaseClient), which is why this path needs no grant and
+     * cannot be reached from a browser.
+     */
+    leadId?: string | null;
+  } = {},
 ): Promise<boolean> {
   const outcome = opts.outcome ?? "ok";
   if (!usage && outcome === "ok") return false;
+
+  const promptTokens = Math.max(0, Math.round(usage?.prompt_tokens ?? 0));
+  const completionTokens = Math.max(0, Math.round(usage?.completion_tokens ?? 0));
+  const reasoningTokens =
+    usage?.completion_tokens_details?.reasoning_tokens == null
+      ? null
+      : Math.max(0, Math.round(usage.completion_tokens_details.reasoning_tokens));
+  const tookMs =
+    typeof opts.tookMs === "number" && Number.isFinite(opts.tookMs)
+      ? Math.max(0, Math.round(opts.tookMs))
+      : null;
+
+  if (opts.leadId) {
+    /*
+      The RPC's guards exist because it is granted to `authenticated` and is
+      therefore reachable from a browser with invented numbers. This path is
+      not: it runs inside a server route holding the service role. What it
+      still owes is the same refusal to store a number that cannot be true --
+      the ceiling is re-stated here rather than assumed away, because the
+      reason to drop an impossible count was never "who called us", it was
+      "a kept number that was invented is worse than no number".
+    */
+    const IMPOSSIBLE = 2_000_000;
+    if (
+      promptTokens > IMPOSSIBLE ||
+      completionTokens > IMPOSSIBLE ||
+      (reasoningTokens ?? 0) > IMPOSSIBLE
+    ) {
+      return false;
+    }
+    try {
+      const { error } = await supabase.from("ai_usage").insert({
+        account_id: null,
+        lead_id: opts.leadId,
+        surface,
+        model: (model ?? "").slice(0, 64),
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        reasoning_tokens: reasoningTokens,
+        outcome,
+        // A whole day is not a model call; a negative one is not a duration.
+        took_ms: tookMs !== null && tookMs <= 3_600_000 ? tookMs : null,
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
   try {
     const { error } = await supabase.rpc("record_ai_usage", {
       in_surface: surface,
@@ -87,23 +155,21 @@ export async function recordAiUsage(
       in_outcome: outcome,
       /* Wall clock around the model call. Rounded rather than passed as a
          float: the column is an integer and a millisecond of precision past
-         the decimal point is not a thing anybody will ever ask about. */
-      in_took_ms:
-        typeof opts.tookMs === "number" && Number.isFinite(opts.tookMs)
-          ? Math.max(0, Math.round(opts.tookMs))
-          : null,
-      in_prompt_tokens: Math.max(0, Math.round(usage?.prompt_tokens ?? 0)),
-      in_completion_tokens: Math.max(0, Math.round(usage?.completion_tokens ?? 0)),
+         the decimal point is not a thing anybody will ever ask about.
+
+         Both paths read the SAME four values, computed once above. They were
+         computed twice while there was one path, and a ledger whose two
+         writers round differently is a ledger that cannot be added up. */
+      in_took_ms: tookMs,
+      in_prompt_tokens: promptTokens,
+      in_completion_tokens: completionTokens,
       /*
         Reasoning tokens are billed as output and never appear in the reply, so
         leaving them out under-reports precisely the setting both callers run
         at (reasoning_effort "high"). Null when the field is absent rather than
         0, because 0 is a claim and absent is an absence.
       */
-      in_reasoning_tokens:
-        usage?.completion_tokens_details?.reasoning_tokens == null
-          ? null
-          : Math.max(0, Math.round(usage.completion_tokens_details.reasoning_tokens)),
+      in_reasoning_tokens: reasoningTokens,
     });
     return !error;
   } catch {

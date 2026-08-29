@@ -133,3 +133,99 @@ describe("recordAiUsage", () => {
     expect(args.in_took_ms).toBeNull();
   });
 });
+
+/*
+  THE VISITOR WHO HAS NOT SIGNED UP.
+
+  `record_ai_usage` returns early when auth.uid() is null, and the
+  questionnaire is answered on the landing page BEFORE signup -- so the
+  most-run model call in the product recorded nothing at all, from the day the
+  ledger was built until 20260830010000. The table's own comment said the
+  questionnaire was 「at signup」, and the guard was written to match the
+  comment rather than the product.
+
+  These pin the shape of the repair: a lead id means the row belongs to a
+  questionnaire, and it must NOT go through the RPC, because the RPC is the
+  thing that cannot see it.
+*/
+describe("recordAiUsage · the anonymous questionnaire", () => {
+  /* The row parameter is declared rather than inferred: without it the mock's
+     call tuple is empty and `mock.calls[0][0]` does not type-check, which is
+     the compiler correctly pointing out that a test asserting on an argument
+     nobody declared is asserting on nothing. */
+  const inserting = () => {
+    const insert = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
+    const rpc = vi.fn(async () => ({ error: null }));
+    const from = vi.fn(() => ({ insert }));
+    return { insert, rpc, from, client: { rpc, from } as unknown as SupabaseClient };
+  };
+
+  it("writes the row directly, never through the RPC", async () => {
+    const c = inserting();
+    const ok = await recordAiUsage(c.client, "analyze", "gpt-5.6-luna",
+      { prompt_tokens: 3000, completion_tokens: 400 },
+      { leadId: "11111111-1111-1111-1111-111111111111", tookMs: 4200 });
+
+    expect(ok).toBe(true);
+    // The whole bug in one assertion.
+    expect(c.rpc).not.toHaveBeenCalled();
+    expect(c.from).toHaveBeenCalledWith("ai_usage");
+
+    const row = c.insert.mock.calls[0][0];
+    expect(row.account_id).toBeNull();
+    expect(row.lead_id).toBe("11111111-1111-1111-1111-111111111111");
+    expect(row.prompt_tokens).toBe(3000);
+    expect(row.took_ms).toBe(4200);
+    expect(row.outcome).toBe("ok");
+  });
+
+  it("records a failed questionnaire too — that is the one worth having", async () => {
+    const c = inserting();
+    await recordAiUsage(c.client, "analyze", "gpt-5.6-luna", null,
+      { leadId: "22222222-2222-2222-2222-222222222222", outcome: "failed", tookMs: 29000 });
+    const row = c.insert.mock.calls[0][0];
+    expect(row.outcome).toBe("failed");
+    expect(row.prompt_tokens).toBe(0);
+  });
+
+  /*
+    The RPC drops impossible counts because it is reachable from a browser.
+    This path is not -- and still refuses them, because the reason was never
+    who called us, it was that a kept number which was invented is worse than
+    no number.
+  */
+  it("still refuses a count that cannot be true", async () => {
+    const c = inserting();
+    const ok = await recordAiUsage(c.client, "analyze", "gpt-5.6-luna",
+      { prompt_tokens: 900_000_000, completion_tokens: 1 },
+      { leadId: "33333333-3333-3333-3333-333333333333" });
+    expect(ok).toBe(false);
+    expect(c.insert).not.toHaveBeenCalled();
+  });
+
+  it("drops a duration that is not a duration", async () => {
+    const c = inserting();
+    await recordAiUsage(c.client, "analyze", "gpt-5.6-luna",
+      { prompt_tokens: 5, completion_tokens: 5 },
+      { leadId: "44444444-4444-4444-4444-444444444444", tookMs: 86_400_000 });
+    expect(c.insert.mock.calls[0][0].took_ms).toBeNull();
+  });
+
+  it("must not fail the questionnaire when the insert throws", async () => {
+    const from = vi.fn(() => ({
+      insert: () => { throw new Error("relation \"public.ai_usage\" does not exist"); },
+    }));
+    await expect(
+      recordAiUsage({ from } as unknown as SupabaseClient, "analyze", "gpt-5.6-luna",
+        { prompt_tokens: 1, completion_tokens: 1 },
+        { leadId: "55555555-5555-5555-5555-555555555555" }),
+    ).resolves.toBe(false);
+  });
+
+  it("goes back to the RPC when there is a signed-in customer", async () => {
+    const c = inserting();
+    await recordAiUsage(c.client, "edit", "gpt-5.6-luna", { prompt_tokens: 1, completion_tokens: 1 });
+    expect(c.rpc).toHaveBeenCalled();
+    expect(c.from).not.toHaveBeenCalled();
+  });
+});

@@ -217,6 +217,13 @@ export async function POST(req: NextRequest) {
       await recordAiUsage(supabase, "analyze", AI_MODEL, usage, {
         outcome: parsed ? "ok" : "failed",
         tookMs: Date.now() - startedAt,
+        /* WITHOUT THIS THE ROW IS NEVER WRITTEN. The visitor answering the
+           questionnaire has not signed up -- that is the point of the
+           questionnaire -- so `record_ai_usage` sees a null auth.uid() and
+           returns. It did that for every call this route ever made. The lead
+           was created above, before the model was reached, and naming it is
+           what lets the ledger hold a call that has no owner yet. */
+        leadId: lead.id,
       });
     }
   }

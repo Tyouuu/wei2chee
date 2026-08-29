@@ -126,7 +126,46 @@ async function main() {
     );
   }
   if (!data.length) {
-    console.log(`\n最近 ${DAYS} 天没有任何 AI 呼叫。\n`);
+    /*
+      AN EMPTY LEDGER IS TWO DIFFERENT FACTS AND THIS USED TO PRINT ONE.
+
+      「最近 N 天没有任何 AI 呼叫」 was returned as a success for three days
+      while every questionnaire on the landing page ran, spent the founder's
+      key, and wrote nothing -- because `record_ai_usage` returns early when
+      there is no session and the visitor has not signed up yet (fixed in
+      20260830010000). The instrument built to answer 「AI 坏了我们怎么知道」
+      reported a quiet week.
+
+      So before calling it quiet, ask something that MUST have produced a call.
+      Every lead row is a questionnaire that reached the model. Leads in the
+      window with no rows beside them is not silence, it is a severed wire, and
+      it is the exact shape of the bug this check missed.
+    */
+    const leadRes = await fetch(
+      `${URL_}/rest/v1/leads?select=id&created_at=gte.${encodeURIComponent(since)}`,
+      {
+        headers: {
+          apikey: SERVICE,
+          Authorization: `Bearer ${SERVICE}`,
+          Connection: "close",
+          Prefer: "count=exact",
+          Range: "0-0",
+        },
+      },
+    );
+    const leads = leadRes.ok
+      ? Number((leadRes.headers.get("content-range") ?? "").split("/")[1]) || 0
+      : 0;
+
+    if (leads > 0) {
+      console.log(
+        `\n🔴 最近 ${DAYS} 天有 ${leads} 份问卷，帐本里却一行都没有。\n` +
+          `   问卷每一份都呼叫过模型，所以这不是「很安静」，是记帐那条线断了。\n` +
+          `   先查 recordAiUsage 有没有把 leadId 传下去（app/api/analyze/route.ts）。\n`,
+      );
+      return 1;
+    }
+    console.log(`\n最近 ${DAYS} 天没有任何 AI 呼叫，也没有任何问卷 —— 是真的安静。\n`);
     return 0;
   }
 
