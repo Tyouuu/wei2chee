@@ -1436,7 +1436,23 @@ try {
       `\n⚠️ 「量不到」不是「过关」—— 下一个差异就藏在那几项里。`,
   );
 
-  fs.writeFileSync(`${OUT}/${register}.json`, JSON.stringify({ url, theirs, ours }, null, 1));
+  fs.writeFileSync(
+    `${OUT}/${register}.json`,
+    JSON.stringify({ url, theirs, ours, pairs, marks }, null, 1),
+  );
+
+  /* 差异图 —— 只贴判 XX 的那几段，而且在图上把盒子画出来。
+     尺子说哪里不对，这一张说它长什么样；重点 3 说最后判的是这一张。 */
+  try {
+    const out = execSync(`python scripts/align-diff.py ${register}`, {
+      encoding: "utf8",
+      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+    });
+    const LF = String.fromCharCode(10);
+    console.log(out.trim().split(LF).map((l) => "  " + l.trimEnd()).join(LF));
+  } catch (e) {
+    console.log("  差异图出不来：" + String(e).slice(0, 90));
+  }
 
   console.log(`\n对照图 → ${OUT}/${register}.jpg （用眼睛看这一张，不是看上面的数字）`);
 } finally {
