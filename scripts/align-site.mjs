@@ -85,9 +85,29 @@ const restore = async () => {
     .eq("project_id", PROJECT).eq("page_key", "website");
 };
 
-await db.from("projects").update({ style: register, palette: null }).eq("id", PROJECT);
-await db.from("project_pages").update({ layout_json: layouts[register] })
-  .eq("project_id", PROJECT).eq("page_key", "website");
+/* ⚠️ 写完要读回来。这两行是整份报告的前提：量的那一页到底是不是这一套风格。
+
+   写失败（RLS 拦下、字段名打错、这个 register 还没进 is_known_register）
+   supabase-js **不会抛**，它把错误放在回传的 error 里。没有人看那个 error，
+   下一步就照样去量 —— 量到的是上一套风格的页面，而报告会一本正经地印出
+   五十项读数，每一项都是关於另一套风格的。
+
+   一份对着错的东西量出来的报告，比没有报告危险：它看起来完全正常。 */
+{
+  const { error: e1 } = await db.from("projects").update({ style: register, palette: null }).eq("id", PROJECT);
+  const { error: e2 } = await db.from("project_pages").update({ layout_json: layouts[register] })
+    .eq("project_id", PROJECT).eq("page_key", "website");
+  const { data: back } = await db.from("projects").select("style").eq("id", PROJECT).single();
+  if (e1 || e2 || back?.style !== register) {
+    console.error(`
+🔴 这一次测量不算数：没能把 demo 站切到 ${register}。`);
+    if (e1) console.error("   projects: " + e1.message);
+    if (e2) console.error("   project_pages: " + e2.message);
+    if (back && back.style !== register) console.error(`   写完读回来还是 ${back.style} —— 量出来的会是那一套。`);
+    await restore();
+    process.exit(1);
+  }
+}
 
 const browser = await chromium.launch();
 
@@ -116,17 +136,38 @@ function readSections(rootSel) {
     .filter((x) => x.h >= 90 && (node || x.w >= window.innerWidth * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
 
+  /* ⚠️ 「一个盒子完全在另一个里面」挡得住包装层，挡不住**并排叠着的两层**。
+
+     Parker & Brown 的第一屏在 DOM 里是两个兄弟：一个满边的背景图，一个压在
+     它上面的导航＋标题。两个都不在对方里面，於是尺子把一屏切成两段 —— 模版
+     变成「第1段只有一张图」「第2段是导航加字」，而我们那一屏是一段。从那里
+     开始每一段都错位一格，段数、配对、逐段结构、逐段底色、段内的气全部跟着错。
+
+     判断的依据是**上下有没有重叠**：两块在页面上盖住同一片垂直空间，人看到的
+     就是一段。重叠超过矮的那一块的六成就并起来。 */
   const out = [];
   for (const { e, top, h } of boxes) {
     if (out.some((o) => top >= o.top && top + h <= o.top + o.h)) continue;
-    out.push({
+    const hit = out.find((o) => {
+      const over = Math.min(top + h, o.top + o.h) - Math.max(top, o.top);
+      return over > Math.min(h, o.h) * 0.6;
+    });
+    if (hit) {
+      hit.top = Math.min(hit.top, top);
+      hit.h = Math.max(hit.top + hit.h, top + h) - hit.top;
+      hit.els.push(e);
+      continue;
+    }
+    out.push({ top, h, els: [e] });
+  }
+  return out
+    .sort((a, b) => a.top - b.top)
+    .map(({ top, h, els }) => ({
       top,
       h,
-      img: e.querySelectorAll("img,video").length,
-      text: (e.innerText || "").trim().split(/\s+/).join(" ").slice(0, 64),
-    });
-  }
-  return out.sort((a, b) => a.top - b.top);
+      img: els.reduce((n, e) => n + e.querySelectorAll("img,video").length, 0),
+      text: els.map((e) => (e.innerText || "").trim()).join(" ").split(/\s+/).join(" ").slice(0, 64),
+    }));
 }
 
 /* ── 结构 SHAPE：一段的「里面」有哪些盒子 ───────────────────────────────────
@@ -165,8 +206,23 @@ function readShape(rootSel) {
     })
     .filter((x) => x.h >= 90 && (node || x.w >= window.innerWidth * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
+  /* 跟 readSections 同一套并段规则 —— 两边不同就等於 shape 跟 secs 各自
+     在讲不同的分段，而报告把它们当成同一份。 */
   const kept = [];
-  for (const b of secs) if (!kept.some((o) => b.top >= o.top && b.top + b.h <= o.top + o.h)) kept.push(b);
+  for (const b of secs) {
+    if (kept.some((o) => b.top >= o.top && b.top + b.h <= o.top + o.h)) continue;
+    const hit = kept.find((o) => {
+      const over = Math.min(b.top + b.h, o.top + o.h) - Math.max(b.top, o.top);
+      return over > Math.min(b.h, o.h) * 0.6;
+    });
+    if (hit) {
+      hit.top = Math.min(hit.top, b.top);
+      hit.h = Math.max(hit.top + hit.h, b.top + b.h) - hit.top;
+      hit.els.push(b.e);
+      continue;
+    }
+    kept.push({ top: b.top, h: b.h, els: [b.e] });
+  }
   kept.sort((a, b) => a.top - b.top);
 
   const PAGE = document.documentElement.getBoundingClientRect().width || 1440;
@@ -192,7 +248,7 @@ function readShape(rootSel) {
   };
 
   return kept.map((sec) => {
-    const sr = sec.e.getBoundingClientRect();
+    const sr = { top: sec.top - scrollY, height: sec.h };
     const boxes = [];
     const push = (el, kind, extra) => {
       const r = el.getBoundingClientRect();
@@ -206,7 +262,7 @@ function readShape(rootSel) {
       boxes.push({ kind, x0, x1, y0, y1, ...extra });
     };
 
-    for (const el of sec.e.querySelectorAll("*")) {
+    for (const el of sec.els.flatMap((e) => [...e.querySelectorAll("*")])) {
       if (!vis(el)) continue;
       if (el.matches("img,video")) { push(el, "图"); continue; }
       if (isButton(el)) {
@@ -971,10 +1027,14 @@ async function probeMotion(p, rootSel) {
       }
       return { btn, img, card, link };
     }, rootSel);
-    const btn = tagged.btn ? await hover('[data-hover-probe="btn"]') : "没有这种按钮";
-    const img = tagged.img ? await hover('[data-hover-probe="img"]') : "没有够大的图";
-    const card = tagged.card ? await hover('[data-hover-probe="card"]') : "没有卡片";
-    const link = tagged.link ? await hover('[data-hover-probe="link"]') : "没有纯文字连结";
+    /* ⚠️ 「这一页没有卡片」不是一个 hover 的答案，是「这一题问不了」。
+       中台 的页面本来就没有卡片（它的主张就是不用卡片），而尺子拿
+       「不动」对「没有卡片」判成不及格 —— 那是在骂它做对的事。
+       问不了就回 null，走「量不到」那条路。 */
+    const btn = tagged.btn ? await hover('[data-hover-probe="btn"]') : null;
+    const img = tagged.img ? await hover('[data-hover-probe="img"]') : null;
+    const card = tagged.card ? await hover('[data-hover-probe="card"]') : null;
+    const link = tagged.link ? await hover('[data-hover-probe="link"]') : null;
 
     return { probed: before.length, entered, faded, maxShift, btn, img, card, link };
   } catch {
@@ -1469,11 +1529,47 @@ try {
          是两个决定，而两个都不改变段高，所以上面每一项都看不到。 */
       const widest = (bs) => bs.filter((b) => b.kind === "图").reduce((m, b) => Math.max(m, b.x1 - b.x0), 0);
       const dSpan = widest(t) && widest(o) ? Math.abs(widest(t) - widest(o)) : 0;
+      /* ── 顺序 ────────────────────────────────────────────────────────────
+         ⚠️ 上面每一项都在数「有几个」，没有一项在问「什么顺序」。
+
+         中台 第1段就是这样跑掉的：他们是 标题 → 一排资料 → 满边照片，我们是
+         标题 → 照片 → 一排资料。张数一样、圆角一样、最宽的图一样宽 —— 六项
+         全绿，而那是两个不同的开场。**顺序就是设计**，我是裁图用眼睛看出来的。
+
+         把这一段里的盒子按上下排好，只留种类，连着的同种压成一个：
+           模版 字→钮→图    我们 字→图→钮
+         比的是这一串。连着的压成一个是必要的 —— 一段里有六行字是内容长短的
+         事，不是设计的事。 */
+      const seqOf = (bs) => {
+        const ks = [...bs].sort((a, b2) => a.y0 - b2.y0 || a.x0 - b2.x0).map((b) => b.kind);
+        return ks.filter((k, i) => k !== ks[i - 1]);
+      };
+      const sq = seqOf(t), so2 = seqOf(o);
+      /* 编辑距离 —— 差一步（多一块或少一块）还算同一个顺序，差两步不算。 */
+      const editDist = (a, b) => {
+        const m = a.length, n = b.length;
+        const d = Array.from({ length: m + 1 }, (_, i) => [i, ...new Array(n).fill(0)]);
+        for (let j = 0; j <= n; j++) d[0][j] = j;
+        for (let i = 1; i <= m; i++)
+          for (let j = 1; j <= n; j++)
+            d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        return d[m][n];
+      };
+      const dSeq = editDist(sq, so2);
+
+      /* ── 有几栏字 ────────────────────────────────────────────────────────
+         同样从来没判过。一段两栏字跟一段六栏字是两个排版，而「字」这个种类
+         印在报告里、没有一行拿它比过。容差放宽一点（±2）：字块的边界会被
+         包装层切开，不像图跟按钮那么干净。 */
+      const dCol = Math.abs(count(t, "字") - count(o, "字"));
+
       const bad = [];
       if (dImg > 1) bad.push(`图 ${count(t, "图")}对${count(o, "图")}`);
       if (dBtn > 1) bad.push(`钮 ${count(t, "钮")}对${count(o, "钮")}`);
       if (dRad) bad.push(`钮的圆角 ${rads(t)}对${rads(o)}`);
       if (dSpan > 12) bad.push(`最宽的图 ${widest(t)}%对${widest(o)}%`);
+      if (dSeq > 1) bad.push(`顺序 ${sq.join("→") || "空"} 对 ${so2.join("→") || "空"}`);
+      if (dCol > 2) bad.push(`几栏字 ${count(t, "字")}对${count(o, "字")}`);
       const ok = bad.length === 0;
       console.log(`  ${ok ? "OK" : "XX"}  ${tag}  ${ok ? "" : "← " + bad.join(" · ")}`);
       console.log(`        模版 ${line(t)}`);

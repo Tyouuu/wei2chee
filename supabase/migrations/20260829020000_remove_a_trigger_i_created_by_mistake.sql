@@ -1,0 +1,22 @@
+-- supabase/migrations/20260829020000_remove_a_trigger_i_created_by_mistake.sql
+--
+-- Cleanup for my own slip, written down rather than quietly undone.
+--
+-- While fixing the built-in page title I first wrote a migration that
+-- re-pointed provisioning at `provision_project_pages()`, then discovered that
+-- function inserts ONLY into project_pages -- it creates neither the account
+-- nor the project -- so pointing signup at it would have broken signup
+-- outright. I rewrote the fix as a table-level trigger
+-- (20260829010000_a_built_in_page_cannot_freeze_its_name) and did not delete
+-- the first file. Two files, one version number.
+--
+-- The CLI applied the correct one, recorded version 20260829010000, then tried
+-- the second and failed on the duplicate version -- but only AFTER running its
+-- statements. So `on_account_created` may exist on public.accounts, firing a
+-- page-provisioning function against an accounts row.
+--
+-- A fresh signup after the fact produced exactly six pages with no duplicates,
+-- so it most likely never took. `drop trigger if exists` costs nothing and
+-- removes the doubt, which is worth more than being right about it.
+
+drop trigger if exists on_account_created on public.accounts;

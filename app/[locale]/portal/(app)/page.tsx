@@ -13,6 +13,7 @@ import {
   pageLabel,
   sortPages,
   systemLangOf,
+  tradeLabels,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
@@ -99,6 +100,19 @@ export default async function PortalHomePage({
     return {
       pageKey: key,
       title: ref.title ?? null,
+      /* Resolved HERE, with the same call the rail uses, because the home
+         screen was resolving it a second way: a hand-kept BUILT_IN_PAGE_KEYS
+         array of seven names, against a catalogue of seventeen. Ten modules —
+         commission, staff, inventory and the rest — fell through it to
+         「New page」 the moment they had no stored title, which is exactly the
+         state 20260826030000 intended every built-in to be in. A second list is
+         how the register list, the palette list and the page list have each
+         gone stale in turn; the catalogue is the one that cannot. */
+      label: pageLabel(
+        ref,
+        tradeLabels(businessContext, pageRefs),
+        systemLangOf(businessContext),
+      ),
       isDraft: generated,
       // Upgraded on the way out, same as the editor does: a preview renders the
       // real components, so a table still saved in the four-prop shape would

@@ -27,18 +27,7 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   counter: styles.counter,
 };
 
-/** Mirrors PAGE_KEYS. Kept as a plain array here rather than imported so this
- *  client component does not pull the whole template module into the browser
- *  bundle for one membership test. */
-const BUILT_IN_PAGE_KEYS: string[] = [
-  "dashboard",
-  "customers",
-  "quotations",
-  "projects",
-  "payments",
-  "bookings",
-  "orders",
-];
+
 
 /**
  * The customer's home.
@@ -104,7 +93,7 @@ export function PortalHome({
    *  Threaded from the server rather than fetched again: the same projects row
    *  supplies `style`, and a second query would be a second source of truth. */
   palette: string | null;
-  pages: { pageKey: string; title: string | null; isDraft: boolean; layout: Data }[];
+  pages: { pageKey: string; title: string | null; label?: string | null; isDraft: boolean; layout: Data }[];
   /** The address the site answers on, or null before the owner claims one. */
   siteSlug: string | null;
   sitePublished: boolean;
@@ -138,9 +127,12 @@ export function PortalHome({
   const siteUrl = siteSlug ? `${origin}/s/${siteSlug}` : "";
   const offerable = OPTIONAL_MODULES.filter((m) => !have.has(m.key)).slice(0, 6);
 
-  const labelFor = (page: { pageKey: string; title: string | null }) =>
-    page.title?.trim() ||
-    (BUILT_IN_PAGE_KEYS.includes(page.pageKey) ? tEditor(`pages.${page.pageKey}`) : t("customPage"));
+  /* The server resolves this with the same call the rail uses -- catalogue
+     word in the system's own language, the customer's own title on top. What
+     used to be here was a seven-name array checked against a seventeen-module
+     catalogue, so anything outside it read 「New page」. */
+  const labelFor = (page: { pageKey: string; title: string | null; label?: string | null }) =>
+    page.title?.trim() || page.label?.trim() || t("customPage");
 
   async function removePage(pageKey: string, label: string) {
     if (removing) return;
