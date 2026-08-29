@@ -988,7 +988,13 @@ async function probeMotion(p, rootSel) {
       if (!h) return null;
       const read = () => h.evaluate((el) => {
         const cs = getComputedStyle(el);
-        return { tf: cs.transform, sh: cs.boxShadow, bg: cs.backgroundColor, fl: cs.filter, op: cs.opacity };
+        return {
+          tf: cs.transform, sh: cs.boxShadow, bg: cs.backgroundColor, fl: cs.filter, op: cs.opacity,
+          /* 反应多快也是动效的一部分：120ms 的抬起跟 600ms 的抬起，
+             一个像按钮一个像幻灯片。 */
+          ms: Math.round(Math.max(0, ...String(cs.transitionDuration || "0s").split(",")
+            .map((v) => (v.includes("ms") ? parseFloat(v) : parseFloat(v) * 1000) || 0))),
+        };
       });
       try {
         /* ⚠️ 不要用 locator.hover() —— 它会做「这个元素点得到吗」的检查，
@@ -1010,7 +1016,7 @@ async function probeMotion(p, rootSel) {
         if (a.bg !== b.bg) bits.push("底色");
         if (a.fl !== b.fl) bits.push("滤镜");
         if (Math.abs(Number(a.op) - Number(b.op)) > 0.05) bits.push("淡");
-        return bits.length ? bits.join("+") : "不动";
+        return bits.length ? `${bits.join("+")} ${b.ms || a.ms}ms` : "不动";
       } catch {
         return null;
       }
@@ -1131,11 +1137,23 @@ async function shoot(target, rootSel, wait, file, width = 1440, withMotion = tru
   const axes = await p.evaluate(readAxes, rootSel);
   const anat = await p.evaluate(readAnatomy, rootSel);
   const shots = await p.evaluate(readShots, rootSel);
+  /* 影片是一个版面决定，不是一张照片。満図 的参考第5段整段是一段自动播放的
+     背景影片（「Play Background Video」），我们那一段是一张静态照片 —— 段高
+     一样、张数一样（video 也被算成一张），六项全绿，而一段会动的画面跟一张
+     不会动的照片是两个东西。 */
+  const vids = await p.evaluate((sel) => {
+    const root = sel ? document.querySelector(sel) : document.body;
+    if (!root) return 0;
+    return [...root.querySelectorAll("video")].filter((v) => {
+      const r = v.getBoundingClientRect();
+      return r.width >= 200 && r.height >= 120;
+    }).length;
+  }, rootSel);
   const shape = await p.evaluate(readShape, rootSel);
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
   const move = withMotion ? await probeMotion(p, rootSel) : null;
   await p.close();
-  return { secs, type, axes, anat, shots, shape, move, file };
+  return { secs, type, axes, anat, shots, shape, move, vids, file };
 }
 
 /* ── 验收这一次采集，不过就拒绝 ──────────────────────────────────────────────
@@ -1470,6 +1488,19 @@ try {
       const a = h1(theirs.type).px || 0, b = h1(ours.type).px || 0;
       return a === 0 ? null : Math.abs(a - b) / a <= 0.12;
     })());
+  /* 字距 —— readType 从写出来那天就在收 ls，一行都没有拿它比过。
+     它是这一层最看得出来的一件：Toulouse 的店名字距拉到 0.1em 以上，
+     一个字距 0 的同名同级同重的标题，看起来是另一个牌子。
+     用 em 比不用 px 比 —— 99px 上的 2px 跟 40px 上的 2px 不是同一件事。 */
+  const track = (t) => {
+    const h = t.heads?.[0];
+    const px = Number(h?.px) || 0;
+    const ls = Number(h?.ls);
+    return px && Number.isFinite(ls) ? +(ls / px).toFixed(3) : null;
+  };
+  const kT = track(theirs.type), kO = track(ours.type);
+  check("字体", "标题字距", kT === null ? "量不到" : `${kT}em`, kO === null ? "量不到" : `${kO}em`,
+    kT === null || kO === null ? null : Math.abs(kT - kO) <= 0.015);
   check("字体", "标题字重", h1(theirs.type).w ?? "—", h1(ours.type).w ?? "—",
     String(h1(theirs.type).w) === String(h1(ours.type).w));
   /* ── 级差：h2 是 h1 的几分之几 ─────────────────────────────────────────
@@ -1623,6 +1654,22 @@ try {
       if (dRad) bad.push(`钮的圆角 ${rads(t)}对${rads(o)}`);
       if (dSpan > 12) bad.push(`最宽的图 ${widest(t)}%对${widest(o)}%`);
       if (dSeq > 1) bad.push(`顺序 ${sq.join("→") || "空"} 对 ${so2.join("→") || "空"}`);
+      /* ── 几栏 ──────────────────────────────────────────────────────────
+         「几栏字」数的是文字**块**，而一栏字会被包装层切成好几块，两边切法
+         不一样，所以那个数字判不了（下面留着只印不判）。
+
+         真正想问的是「这一段分成几栏」，而那个问得准：把所有盒子的**左边缘**
+         聚起来，相差 5 个百分点以内算同一栏。三栏卡片就是三个左边缘，不管
+         每张卡里被切成几块。 */
+      const colsOf = (bs) => {
+        const xs = [...new Set(bs.map((b) => b.x0))].sort((a, b2) => a - b2);
+        const seeds = [];
+        for (const x of xs) if (!seeds.some((v) => Math.abs(v - x) <= 5)) seeds.push(x);
+        return seeds.length;
+      };
+      const cT = colsOf(t), cO = colsOf(o);
+      if (Math.abs(cT - cO) > 1) bad.push(`几栏 ${cT}对${cO}`);
+
       /* ⚠️ 「几栏字」印出来，但**先不判**。
          一栏字在 DOM 里会被包装层切成好几块，两边的切法不一样：満図 第1段
          报「2 对 9」、第6段报「10 对 3」，而那两段用眼睛看栏数是一样的。
@@ -1716,6 +1763,8 @@ try {
     const has = (m) => Boolean(m && m.entered > 0);
     check("动效", "滚动进场", enter(t), enter(o),
       t && o ? has(t) === has(o) && (!has(t) || Math.abs(t.maxShift - o.maxShift) <= 20) : null);
+    check("动效", "有影片", theirs.vids ?? "量不到", ours.vids ?? "量不到",
+      theirs.vids === undefined || ours.vids === undefined ? null : theirs.vids === ours.vids);
     check("动效", "按钮 hover", t?.btn ?? "量不到", o?.btn ?? "量不到",
       t?.btn && o?.btn ? t.btn === o.btn : null);
     check("动效", "图片 hover", t?.img ?? "量不到", o?.img ?? "量不到",
@@ -1807,6 +1856,41 @@ try {
       const mid = (a) => { a.sort((x, y) => x - y); return a[Math.floor(a.length / 2)]; };
       return [mid(top), mid(bot)];
     };
+    /* ── 段内的缝：并排的两块之间留多少 ──────────────────────────────────
+       中台 抄的那一页，档头第一句就是「两张照片边到边、**中间没有缝**」，
+       而尺子从来没有一项在量缝。留白量的是段跟段之间、段内上下的气，
+       并排那一轴一直是空的 —— 而「有没有缝」正是照片墙读起来是一整块
+       还是一叠卡片的分界。
+
+       量法：同一行（y0 相差 6 个百分点以内）的相邻两块，右边缘到下一块
+       左边缘的距离，取中位数。 */
+    const seam = (SS) => {
+      const gaps = [];
+      for (const bs of SS) {
+        const rows = new Map();
+        for (const b of bs) {
+          const key = Math.round(b.y0 / 6);
+          if (!rows.has(key)) rows.set(key, []);
+          rows.get(key).push(b);
+        }
+        for (const row of rows.values()) {
+          if (row.length < 2) continue;
+          row.sort((a, b2) => a.x0 - b2.x0);
+          for (let i = 1; i < row.length; i++) {
+            const g = row[i].x0 - row[i - 1].x1;
+            if (g >= 0 && g <= 40) gaps.push(g);
+          }
+        }
+      }
+      if (!gaps.length) return null;
+      gaps.sort((a, b) => a - b);
+      return gaps[Math.floor(gaps.length / 2)];
+    };
+    const gT = seam(bodyAir(theirs.shape ?? [], theirs.secs));
+    const gO = seam(bodyAir(ours.shape ?? [], ours.secs));
+    check("留白", "段内的缝", gT === null ? "量不到" : `${gT}%`, gO === null ? "量不到" : `${gO}%`,
+      gT === null || gO === null ? null : Math.abs(gT - gO) <= 3);
+
     const at = air(bodyAir(theirs.shape ?? [], theirs.secs));
     const ao = air(bodyAir(ours.shape ?? [], ours.secs));
     check("留白", "段内的气", at ? `上 ${at[0]}% 下 ${at[1]}%` : "量不到", ao ? `上 ${ao[0]}% 下 ${ao[1]}%` : "量不到",
