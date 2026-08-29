@@ -253,6 +253,11 @@ function readShape(rootSel) {
     const push = (el, kind, extra) => {
       const r = el.getBoundingClientRect();
       if (r.width < PAGE * 0.03 || r.height < 10) return;
+      /* ⚠️ 画面外的东西不算这一段的内容。
+         満図 的参考回报过「字 -93–-73」「字 102–121」—— 那是轮播里还没转到的
+         那几张，人一眼都看不到。它们会灌水「几栏字」，也会把版心的左右边界
+         拉到负数。看不到的东西不是这一页的设计。 */
+      if (r.right < PAGE * 0.02 || r.left > PAGE * 0.98) return;
       const x0 = Math.round((r.left / PAGE) * 100);
       const x1 = Math.round(((r.left + r.width) / PAGE) * 100);
       const y0 = Math.round(((r.top - sr.top) / Math.max(1, sr.height)) * 100);
@@ -1569,7 +1574,13 @@ try {
       if (dRad) bad.push(`钮的圆角 ${rads(t)}对${rads(o)}`);
       if (dSpan > 12) bad.push(`最宽的图 ${widest(t)}%对${widest(o)}%`);
       if (dSeq > 1) bad.push(`顺序 ${sq.join("→") || "空"} 对 ${so2.join("→") || "空"}`);
-      if (dCol > 2) bad.push(`几栏字 ${count(t, "字")}对${count(o, "字")}`);
+      /* ⚠️ 「几栏字」印出来，但**先不判**。
+         一栏字在 DOM 里会被包装层切成好几块，两边的切法不一样：満図 第1段
+         报「2 对 9」、第6段报「10 对 3」，而那两段用眼睛看栏数是一样的。
+         一个量不准的数字拿去判，制造的是假差异 —— 而假差异比没有差异更糟，
+         它会把人送去改一件本来没坏的东西。
+         等 merged 那一段的合并规则够准了再打开。 */
+      void dCol;
       const ok = bad.length === 0;
       console.log(`  ${ok ? "OK" : "XX"}  ${tag}  ${ok ? "" : "← " + bad.join(" · ")}`);
       console.log(`        模版 ${line(t)}`);
