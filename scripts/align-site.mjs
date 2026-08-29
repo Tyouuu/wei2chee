@@ -766,6 +766,11 @@ function readAxes(rootSel) {
     },
     space: {
       baseUnit: base,
+      sample: (() => {
+        const m = {};
+        for (const n of pads.concat(gaps)) m[n] = (m[n] || 0) + 1;
+        return Object.entries(m).map(([k, v]) => [Number(k), v]).sort((a, b) => b[1] - a[1]).slice(0, 20);
+      })(),
       padScale: [...new Set(pads)].sort((a, b) => a - b).slice(0, 14),
       gapScale: [...new Set(gaps)].sort((a, b) => a - b).slice(0, 14),
       topPads: count(pads).slice(0, 5),
@@ -773,6 +778,153 @@ function readAxes(rootSel) {
     colours: colours.slice(0, 12),
     sectionCount: sections.length,
   };
+}
+
+/* ── 动效 MOTION：真的动了什么，不是宣告了什么 ─────────────────────────────
+
+   老板 2026-08-29: 「动效只量了「宣告了什么」，没量「真的动了什么」…
+   你看看要这么去修」.
+
+   readAxes 读的是 CSS 文本里的 transition-duration 跟 easing —— 那是**写了
+   什么**。一条写了 400ms 的 transition，可能挂在一个从来不变的属性上；一段
+   滚动进场，可能整页只有第一屏有。两者印出来的数字一模一样。
+
+   这里量的是**位置真的变了多少**，做法是把页面当成一个访客来用：
+
+     · 进场：先滚到顶，记下还在视窗外那些块的 opacity 跟 transform；把它们滚
+       进视窗、等它演完，再记一次。变了的就是会进场的块，位移是量出来的 px。
+     · hover：用真的鼠标停在第一颗按钮跟第一张图上（CSS 的 :hover 只有真的
+       指针触发得了，dispatchEvent 不行），前后各读一次 transform / 阴影 /
+       底色 / filter。
+
+   ⚠️ 它量不到「好不好看」，只量「有没有动、动多远」。判断一套风格的动效对不对
+   还是眼睛的事（重点 7c）。 */
+async function probeMotion(p, rootSel) {
+  try {
+    /* 回到顶端，让还没进场的块回到它们的起点。reload 比 scrollTo(0) 干净：
+       已经播过一次的进场动画不会倒带。 */
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await p.reload({ waitUntil: "domcontentloaded" });
+    await p.waitForTimeout(2600);
+
+    const before = await p.evaluate((sel) => {
+      const root = sel ? document.querySelector(sel) : document.body;
+      if (!root) return [];
+      const vh = window.innerHeight;
+      const out = [];
+      let i = 0;
+      for (const el of root.querySelectorAll("*")) {
+        const r = el.getBoundingClientRect();
+        /* 只看还在视窗下面、而且够大的块 —— 第一屏的东西已经演完了。 */
+        if (r.top < vh + 40 || r.height < 60 || r.width < 200) continue;
+        el.setAttribute("data-motion-probe", String(i));
+        const cs = getComputedStyle(el);
+        out.push({ i, op: Number(cs.opacity), tf: cs.transform, top: Math.round(r.top + scrollY) });
+        i++;
+        if (i >= 60) break;
+      }
+      return out;
+    }, rootSel);
+
+    for (let y = 0; y < 12; y++) {
+      await p.evaluate((k) => window.scrollTo(0, k * window.innerHeight * 0.7), y);
+      await p.waitForTimeout(260);
+    }
+    await p.waitForTimeout(1200);
+
+    const after = await p.evaluate(() =>
+      [...document.querySelectorAll("[data-motion-probe]")].map((el) => {
+        const cs = getComputedStyle(el);
+        return { i: Number(el.getAttribute("data-motion-probe")), op: Number(cs.opacity), tf: cs.transform };
+      }),
+    );
+
+    const shift = (a, b) => {
+      /* ⚠️ 「none」不是「量不到」，是「没有位移」—— 当成单位矩阵。
+
+         第一版在这里回传一个常数 60，理由是「none → matrix 也是动」。跑出来
+         台账 · 图纸 · 満図 三套整整齐齐都是「位移 60px」—— 那不是量出来的，
+         那是我自己写的哨兵，印出来跟一个真的读数一模一样。这个仓库反覆栽在
+         同一件事上：一把坏掉的尺照样印出一个看起来可信的数字。 */
+      const num = (t) => (t && t !== "none" ? t.replace(/^matrix\w*\(|\)$/g, "").split(",").map(Number) : [1, 0, 0, 1, 0, 0]);
+      const A = num(a), B = num(b);
+      const ax = A.length === 6 ? A[4] : A[12], ay = A.length === 6 ? A[5] : A[13];
+      const bx = B.length === 6 ? B[4] : B[12], by = B.length === 6 ? B[5] : B[13];
+      return Math.round(Math.hypot((bx ?? 0) - (ax ?? 0), (by ?? 0) - (ay ?? 0)));
+    };
+    const byI = new Map(after.map((x) => [x.i, x]));
+    let entered = 0, faded = 0, maxShift = 0;
+    for (const b of before) {
+      const a = byI.get(b.i);
+      if (!a) continue;
+      const d = shift(b.tf, a.tf);
+      const fade = a.op - b.op > 0.15;
+      if (fade) faded++;
+      if (d >= 4 || fade) entered++;
+      maxShift = Math.max(maxShift, d);
+    }
+
+    /* hover —— 真的把指针停上去。 */
+    const hover = async (sel) => {
+      const h = await p.$(sel);
+      if (!h) return null;
+      const read = () => h.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { tf: cs.transform, sh: cs.boxShadow, bg: cs.backgroundColor, fl: cs.filter, op: cs.opacity };
+      });
+      try {
+        await h.scrollIntoViewIfNeeded({ timeout: 3000 });
+        const a = await read();
+        await h.hover({ timeout: 3000 });
+        await p.waitForTimeout(700);
+        const b = await read();
+        const bits = [];
+        if (shift(a.tf, b.tf) >= 2 || (a.tf !== b.tf && a.tf !== "none")) bits.push("变形");
+        if (a.sh !== b.sh) bits.push("阴影");
+        if (a.bg !== b.bg) bits.push("底色");
+        if (a.fl !== b.fl) bits.push("滤镜");
+        if (Math.abs(Number(a.op) - Number(b.op)) > 0.05) bits.push("淡");
+        return bits.length ? bits.join("+") : "不动";
+      } catch {
+        return null;
+      }
+    };
+    /* ⚠️ 「第一个 a[href]」不是「第一颗按钮」。Wix 的页面第一个连结是顶栏里
+       一个透明的文字连结，停上去当然什么都不动，而那一格会印出「量不到」或者
+       「不动」—— 两个都是假的。用跟 readShape 同一条规则挑：可以点的、有自己
+       的底或框、高度像一个控件。挑到了就在它身上做记号再 hover。 */
+    const tagged = await p.evaluate((sel) => {
+      const root = sel ? document.querySelector(sel) : document.body;
+      if (!root) return { btn: false, img: false };
+      let btn = false, img = false;
+      for (const el of root.querySelectorAll("a,button,[role=button]")) {
+        const r = el.getBoundingClientRect();
+        if (r.height < 24 || r.height > 96 || r.width < 60) continue;
+        const cs = getComputedStyle(el);
+        if (cs.visibility === "hidden" || cs.display === "none") continue;
+        const painted = cs.backgroundColor && !/(^rgba\(0, 0, 0, 0\)$|transparent)/.test(cs.backgroundColor);
+        const framed = parseFloat(cs.borderTopWidth) > 0;
+        if (!painted && !framed) continue;
+        el.setAttribute("data-hover-probe", "btn");
+        btn = true;
+        break;
+      }
+      for (const el of root.querySelectorAll("img")) {
+        const r = el.getBoundingClientRect();
+        if (r.width < 200 || r.height < 120) continue;
+        el.setAttribute("data-hover-probe", "img");
+        img = true;
+        break;
+      }
+      return { btn, img };
+    }, rootSel);
+    const btn = tagged.btn ? await hover('[data-hover-probe="btn"]') : "没有这种按钮";
+    const img = tagged.img ? await hover('[data-hover-probe="img"]') : "没有够大的图";
+
+    return { probed: before.length, entered, faded, maxShift, btn, img };
+  } catch {
+    return null;
+  }
 }
 
 async function shoot(target, rootSel, wait, file) {
@@ -795,8 +947,9 @@ async function shoot(target, rootSel, wait, file) {
   const shots = await p.evaluate(readShots, rootSel);
   const shape = await p.evaluate(readShape, rootSel);
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
+  const move = await probeMotion(p, rootSel);
   await p.close();
-  return { secs, type, axes, anat, shots, shape };
+  return { secs, type, axes, anat, shots, shape, move };
 }
 
 try {
@@ -1047,6 +1200,24 @@ try {
   check("动效", "减少动效", theirs.axes?.motion.reducedMotion, ours.axes?.motion.reducedMotion,
     Boolean(theirs.axes?.motion.reducedMotion) === Boolean(ours.axes?.motion.reducedMotion));
 
+  /* 上面三项读的是**宣告**，下面三项读的是**真的动了什么**。
+     一条挂在从来不变的属性上的 400ms transition，跟一段真的会滑进来的区块，
+     在上面三项里印出来一模一样。 */
+  {
+    const t = theirs.move, o = ours.move;
+    const enter = (m) =>
+      !m ? "量不到" : m.entered === 0 ? `不动（试了 ${m.probed} 块）` : `${m.entered}/${m.probed} 块 · 位移 ${m.maxShift}px${m.faded ? " · 淡入" : ""}`;
+    /* 判「有没有」而不是「几块」—— 块数是这一页有多少区段的事。
+       位移差 20px 以内算同一种进场：24 跟 32 是同一个手势，24 跟 0 不是。 */
+    const has = (m) => Boolean(m && m.entered > 0);
+    check("动效", "滚动进场", enter(t), enter(o),
+      t && o ? has(t) === has(o) && (!has(t) || Math.abs(t.maxShift - o.maxShift) <= 20) : null);
+    check("动效", "按钮 hover", t?.btn ?? "量不到", o?.btn ?? "量不到",
+      t?.btn && o?.btn ? t.btn === o.btn : null);
+    check("动效", "图片 hover", t?.img ?? "量不到", o?.img ?? "量不到",
+      t?.img && o?.img ? t.img === o.img : null);
+  }
+
   /* ── 6 留白 SPACE ──────────────────────────────────────────────────────── */
   const gaps = (secs) => secs.slice(1).map((s2, i2) => s2.top - (secs[i2].top + secs[i2].h));
   const biggestGap = (secs) => Math.max(0, ...gaps(secs).filter((g) => g >= 0));
@@ -1054,7 +1225,46 @@ try {
   check("留白", "段间最大", `${biggestGap(theirs.secs)}px`, `${biggestGap(ours.secs)}px`,
     near(biggestGap(theirs.secs), biggestGap(ours.secs), 24));
   const inset = (l) => (l.length ? Math.min(...l.map((x) => x.pad ?? 0)) : 0);
-  check("留白", "间距基数", theirs.axes?.space.baseUnit ?? "量不到", ours.axes?.space.baseUnit ?? "量不到", null);
+  /* ── 段内的气：一段里内容上下各留多少 ──────────────────────────────────
+     这一项换掉了「间距基数」，而换掉的理由是量出来的（2026-08-29）。
+
+     基数那一项六套全部回报「量不到」，我原本以为是尺子写坏了。把样本印出来
+     才知道是问题本身错了：
+
+       模版（Wix）  15×9  7×8  10×8  27×7  11×6  20×6  32×6  4×4  24×4  8×2  12×2  31×2
+       我们         20×19 8×14 96×12 11×8  10×6  31×6  6×4  24×3  9×2  16×2  18×2  23×2
+
+     15 · 7 · 27 · 11 · 31 不是任何东西的倍数。Wix 是**拖出来的**，不是照阶梯
+     排出来的，所以那一页根本没有基数。design-md-generator 报得出「基数 4」是
+     因为它读**写在 CSS 里的值**；我们读**算出来的值**，而 rem 乘根字号跟
+     百分比的行会算出 11 跟 31。同一根轴，两个不同的问题。
+
+     留白在这种页面上真正的决定是：**一段里，内容的上下各空掉这一段的百分之
+     几**。它是设计的一部分（他们的 Our Story 是一句话浮在一大片气里），而且
+     两边可比 —— readShape 已经把每个盒子相对这一段的 y 位置量出来了。 */
+  {
+    const bodyAir = (l, secsL) => (secsL.length && secsL[0].h < 120 ? l.slice(1) : l);
+    const air = (SS) => {
+      const top = [], bot = [];
+      for (const bs of SS) {
+        if (bs.length < 2) continue;
+        top.push(Math.max(0, Math.min(...bs.map((b) => b.y0))));
+        bot.push(Math.max(0, 100 - Math.max(...bs.map((b) => b.y1))));
+      }
+      if (!top.length) return null;
+      const mid = (a) => { a.sort((x, y) => x - y); return a[Math.floor(a.length / 2)]; };
+      return [mid(top), mid(bot)];
+    };
+    const at = air(bodyAir(theirs.shape ?? [], theirs.secs));
+    const ao = air(bodyAir(ours.shape ?? [], ours.secs));
+    check("留白", "段内的气", at ? `上 ${at[0]}% 下 ${at[1]}%` : "量不到", ao ? `上 ${ao[0]}% 下 ${ao[1]}%` : "量不到",
+      at && ao ? Math.abs(at[0] - ao[0]) <= 8 && Math.abs(at[1] - ao[1]) <= 8 : null);
+    if (process.env.ALIGN_DEBUG) {
+      const show = (a) => (a?.space.sample ?? []).map(([v, n]) => `${v}×${n}`).join(" ");
+      console.log("      间距样本 模版 " + show(theirs.axes));
+      console.log("      间距样本 我们 " + show(ours.axes));
+    }
+  }
 
   /* ── 结论 ──────────────────────────────────────────────────────────────── */
   const bad = marks.filter((m) => m.ok === false);
