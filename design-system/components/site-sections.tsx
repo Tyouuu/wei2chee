@@ -1465,7 +1465,7 @@ export function SiteGallery({
 
                      老板 2026-08-29, holding the two pages side by side:
                      「你自己用眼睛看 一样吗」. It was not. */
-                  style={{ aspectRatio: RATIO[i % 6], maxHeight: "min(32rem, 34vw)" }}
+                  style={{ aspectRatio: RATIO[i % 6], maxHeight: "min(23rem, 25vw)" }}
                 />
               ) : null}
               {s2.caption ? (
@@ -1624,7 +1624,7 @@ export function SiteStory({
   body?: string
   /** `side` picture right, `side-reverse` picture left, `stack` picture over
    *  the words. The register chooses; see design-doc.ts. */
-  shape?: "side" | "side-reverse" | "stack"
+  shape?: "side" | "side-reverse" | "stack" | "centre"
   photo?: string
   photoAlt?: string
   points?: { label: string }[]
@@ -1653,6 +1653,48 @@ export function SiteStory({
     )
   }
   if (!heading?.trim() && !body?.trim()) return null
+
+  if (shape === "centre") {
+    /*
+      ── 居中的一句主张，一张照片都没有 ──────────────────────────────────────
+
+      Toulouse 第4段「Our Story」, 1255px, read at 1440 on 2026-08-29:
+
+        · 一句大写、字距拉开、居中、断成三行的主张
+          （THREE GENERATIONS, ONE PROMISE: GENEROUS PLATES & GENUINE SMILES.）
+        · 一栏窄的正文，靠右半边
+        · 一条通栏细线，中间坐一颗小按钮
+
+      招牌 原本在这个位子放「一段话配一张照片」。照片一进来，那句话就不再是
+      这一段的主角，而这一段存在的理由就是让页面停下来听那一句。
+    */
+    return (
+      <section className="@container" data-wide="" style={{ paddingBlock: "calc(var(--pad-card-lg) * 2.2 * var(--site-figure, 1))" }}>
+        <h2
+          className="mx-auto max-w-[26ch] text-center [color:var(--color-primary)] [font-family:var(--font-display)] [letter-spacing:0.1em] [line-height:1.34] [text-transform:uppercase]"
+          style={{ fontSize: "clamp(1.9rem, 4.3vw, 3.9rem)", fontWeight: 300 }}
+        >
+          {heading}
+        </h2>
+        {body ? (
+          <p className="mx-auto mt-16 max-w-[30ch] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:1.95]">
+            {body}
+          </p>
+        ) : null}
+        <div className="relative mt-28 flex justify-center">
+          <span aria-hidden className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 [background:var(--border-subtle)]" />
+          {/* 连到询价那一段 —— 他们那颗是 Meet the Family。一颗按下去没反应的
+              按钮是这个仓库写进 prompt 的规矩里点名禁止的东西。 */}
+          <a
+            href="#ask"
+            className="relative [background:var(--color-canvas)] [color:var(--color-primary)] [font-size:var(--text-sm)] [padding:0.5rem_1.6rem]"
+          >
+            How to reach us
+          </a>
+        </div>
+      </section>
+    )
+  }
 
   const words = (
     /* Padded and top-weighted rather than dropped in the middle: when this

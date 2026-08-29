@@ -222,6 +222,8 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "side", label: "照片在右", props: { shape: "side" } },
     { id: "side-reverse", label: "照片在左", props: { shape: "side-reverse" } },
     { id: "stack", label: "照片在上", props: { shape: "stack" } },
+    /* 居中的一句主张 — Toulouse 第4段：一句大写居中的话，一张照片都没有。 */
+    { id: "centre", label: "居中的一句主张", props: { shape: "centre" } },
   ],
 
   /* 师傅团队. A card each, a bare column, or a line of faces. The third is not

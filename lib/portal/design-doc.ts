@@ -327,7 +327,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteCta: "panel",
       SiteTeam: "row",
       SiteGallery: "bento",
-      SiteStory: "side",
+      SiteStory: "centre",
       SiteCreds: "rating",
       StatRow: "boxed",
       RecordTable: "grid",

@@ -466,7 +466,8 @@
   --site-on-primary: #500014;
   /* ⚠️ 他们的页脚是奶白底配酒红的巨大 TOULOUSE，不是酒红底 —— 逐段量出来第6段
      模版 #fafafa 84.1%，我们 #460014 83.2%，整个反过来。 */
-  --site-foot: 2.4;  /* 他们的页脚 838px，我们 340 */
+  --site-foot: 2.0;
+  --site-foot-brand: 7;  /* 他们的收尾是一个横跨整页的 TOULOUSE */  /* 他们的页脚 838px，我们 340 */
   --site-foot-bg: #fafafa;
   --site-foot-fg: #500014;
   color-scheme: light;

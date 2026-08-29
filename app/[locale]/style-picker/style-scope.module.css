@@ -788,7 +788,8 @@
   --site-on-block: #ffd9f2;
   --site-primary: #ff99ee;
   --site-on-primary: #500014;
-  --site-foot: 2.4;
+  --site-foot: 2.0;
+  --site-foot-brand: 7;
   --site-foot-bg: #fafafa;
   --site-foot-fg: #500014;
   --font-ui: var(--font-swiss-latin), var(--font-hei-cjk), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
