@@ -360,17 +360,24 @@
    narrow, and that is a difference between them rather than one number for
    all fourteen. */
 .ds-site {
-  --site-measure: 68rem;
+  /* ⚠️ 三档不够。逐段量出来的版心（内容从页面的百分之几开始到百分之几结束）：
+       台账 5%–94% · 瑞士 7%–93% · 图纸 2%–98% · 招牌 2%–99%
+     四个不一样的数字，而这里只有 60 / 68 / 78 三个格子。
+     每一套自己的那个宽度是它抄的那一页量出来的，不是三选一。
+
+     ⚠️ 名字一定要另外一个：写 `--site-measure: var(--site-measure, …)` 是那条
+     会静静吃掉整条规则的 CSS 循环引用，这个仓库撞过五次。 */
+  --site-measure: var(--site-page-measure, 68rem);
 }
 /* Set on the ground wrapper, read by the frame inside it -- two elements, as
    every token remap in this file is, so nothing reads a property it writes. */
 .ds-ground[data-measure="narrow"] .ds-site,
 .ds-ground[data-measure="narrow"].ds-site {
-  --site-measure: 60rem;
+  --site-measure: var(--site-page-measure, 60rem);
 }
 .ds-ground[data-measure="wide"] .ds-site,
 .ds-ground[data-measure="wide"].ds-site {
-  --site-measure: 78rem;
+  --site-measure: var(--site-page-measure, 78rem);
 }
 /* THE CONTAINER THE BLOCKS HAVE BEEN QUERYING ALL ALONG.
 

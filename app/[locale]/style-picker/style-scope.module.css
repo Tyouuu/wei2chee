@@ -106,6 +106,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-page-measure: 86.5rem;
   --site-foot: 1.9;
   --site-figure: 1.35;
   --site-display-weight: 400;
@@ -612,6 +613,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-page-measure: 80.0rem;
   --site-figure: 1.45;
   --site-inner: 7rem;
   --font-ui: var(--font-industrial-latin), var(--font-song-cjk), "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -773,6 +775,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-page-measure: 87.5rem;
   --site-paper-primary: #500014;
   --site-display-weight: 700;
   --site-heading: 1.6;
@@ -945,6 +948,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-page-measure: 77.5rem;
   --site-inner: 6rem;
   --site-hero-scale: 0.87;
   --site-display-weight: 400;

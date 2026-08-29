@@ -113,7 +113,7 @@ function readSections(rootSel) {
       const r = e.getBoundingClientRect();
       return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
     })
-    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= window.innerWidth * 0.9))
+    .filter((x) => x.h >= 90 && (node || x.w >= window.innerWidth * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
 
   const out = [];
@@ -163,7 +163,7 @@ function readShape(rootSel) {
       const r = e.getBoundingClientRect();
       return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
     })
-    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= window.innerWidth * 0.9))
+    .filter((x) => x.h >= 90 && (node || x.w >= window.innerWidth * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
   const kept = [];
   for (const b of secs) if (!kept.some((o) => b.top >= o.top && b.top + b.h <= o.top + o.h)) kept.push(b);
@@ -392,7 +392,7 @@ function readAnatomy(rootSel) {
       const r = e.getBoundingClientRect();
       return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
     })
-    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= window.innerWidth * 0.9))
+    .filter((x) => x.h >= 90 && (node || x.w >= window.innerWidth * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
   const taken = [];
   const hex = (raw) => {
@@ -1066,10 +1066,16 @@ try {
   let theirsPhone = null;
   if (!REFRESH && fs.existsSync(refFile)) {
     const snap = JSON.parse(fs.readFileSync(refFile, "utf8"));
-    if (snap.url === url && snap.phone) {
+    /* ⚠️ 快照里没有截图 —— 截图在 <风格>-ref.jpg，逐段颜色跟差异图读的是它。
+       只检查 JSON 在不在，就会出现「量到的是 8-29 那一份、看到的是别天那一张」
+       甚至根本没有那一张。两半必须同时在，缺一半就重来。 */
+    const jpgOk = fs.existsSync(`${OUT}/${register}-ref.jpg`);
+    if (snap.url === url && snap.phone && jpgOk) {
       theirs = snap.data;
       theirsPhone = snap.phone;
       console.log(`参考快照 ${String(snap.at).slice(0, 10)} 采集（要重来：加 --refresh）`);
+    } else if (snap.url === url && !jpgOk) {
+      console.log("参考快照在，但那张截图不见了 —— 重新采集。");
     }
   }
   if (!theirs) {
@@ -1089,6 +1095,16 @@ try {
     /* 手机也采一份。他自己量的 19 家马来西亚 SME 里 15 家第一屏就给 WhatsApp，
        因为客人在手机上 —— 而这个宽度我们一次都没量过，抄的一直只有桌面那一套。 */
     theirsPhone = await shoot(url, null, 7000, `${register}-ref-390`, 390, false);
+    /* 手机那一份也要验 —— 只验桌面，等於「桌面拒绝、手机照收」，
+       而手机那一份正好是最容易载不完的（一页更长、图更多）。 */
+    const blankP = auditCapture("模版手机", theirsPhone);
+    if (blankP.length > 1) {
+      console.error(`
+🔴 模版的手机那一份有 ${blankP.length} 段是空的（第 ${blankP.join(" · ")} 段）—— 这一次采集不算数。`);
+      await restore();
+      await browser.close();
+      process.exit(1);
+    }
     fs.writeFileSync(
       refFile,
       JSON.stringify({ url, at: new Date().toISOString(), data: theirs, phone: theirsPhone }),
@@ -1134,6 +1150,17 @@ try {
   };
   const near = (a, b, tol) => Math.abs(a - b) <= tol;
 
+  /* ── 两边都量不到 ≠ 两边一样 ────────────────────────────────────────────
+     整份报告的落款写着「量不到不是过关」，而这些检查自己在违反它：
+       · 时长   两边都读不到 → dominant() 各回 0 → near(0, 0, 90) → 过关
+       · 缓动   两边都读不到 → "—" === "—" → 过关
+       · 减少动效 两边 axes 都是 undefined → Boolean 相等 → 过关
+       · 段间最大 / 满宽的 / 最高一张 / 手机最宽的图 —— 全部 0 对 0 → 过关
+     一页被 Cloudflare 挡住、一份 CSS 读不到，整个动效轴会安静地全绿。
+     judge() 把「没有值」跟「值一样」分开：缺一边就回 null。 */
+  const judge = (a, b, ok) => (a === 0 || a === "—" || a === undefined || a === null ||
+                               b === 0 || b === "—" || b === undefined || b === null ? null : ok);
+
   const row = (s, i) => `${String(i + 1).padStart(2)}  ${String(s.h).padStart(5)}px  ${String(s.img).padStart(2)}img  ${s.text}`;
   const sum = (l) => l.reduce((a, s) => a + s.h, 0);
   console.log(`\n参考 ${url}\n${theirs.secs.map(row).join("\n")}\n  = ${theirs.secs.length} 段 ${sum(theirs.secs)}px`);
@@ -1148,7 +1175,11 @@ try {
   const bodySecs = (l) => (l.length && l[0].h < 120 ? l.slice(1) : l);
   const ts = bodySecs(theirs.secs);
   const os_ = bodySecs(ours.secs);
-  check("版面", "段数", ts.length, os_.length, near(ts.length, os_.length, 1));
+  /* ⚠️ 这一项以前是 near(±1) —— 而下面的「配得上的段」问的是同一件事，
+     问得还更准（它知道多出来的是哪一段）。瑞士 7 段对 8 段：这一项判过，
+     那一项判不过。同一份报告里两个相反的答案，人只会读到其中一个。
+     所以这里只印不判，判交给「配得上的段」。 */
+  check("版面", "段数", ts.length, os_.length, null);
   check("版面", "整页高", `${sum(theirs.secs)}px`, `${sum(ours.secs)}px`,
     near(sum(theirs.secs), sum(ours.secs), sum(theirs.secs) * 0.25));
   /* ── 段均高 —— 最晚才量到的一项，而它是最大的那个差 ────────────────────────
@@ -1165,7 +1196,8 @@ try {
      Height per section is where a reference's air actually lives, and it was
      the one number nobody had asked for. */
   const mean = (l) => (l.length ? Math.round(l.reduce((a, s) => a + s.h, 0) / l.length) : 0);
-  check("版面", "段均高", `${mean(ts)}px`, `${mean(os_)}px`, mean(ts) === 0 || mean(os_) / mean(ts) >= 0.8);
+  check("版面", "段均高", `${mean(ts)}px`, `${mean(os_)}px`,
+    judge(mean(ts), mean(os_), mean(os_) / (mean(ts) || 1) >= 0.8));
 
   /* ── 逐段的高度，一段对一段 ────────────────────────────────────────────────
      老板 2026-08-29, holding up 台账 while this checklist reported 0 差异:
@@ -1257,8 +1289,12 @@ try {
     else marks.push({ axis: "版面", name, ok: true });
   }
 
-  const imgs = (l) => l.reduce((a, s) => a + s.img, 0);
-  check("版面", "照片张数", imgs(theirs.secs), imgs(ours.secs), near(imgs(theirs.secs), imgs(ours.secs), 3));
+  /* ⚠️ 这一项以前数的是 secs 里的 img —— 那是「页面上所有的 <img>」，图标、
+     logo、间隔用的透明图全部算进去。而下面「照片 SHOTS」那一段数的是
+     ≥120×90 的。同一份报告里两个「一张照片」的定义，印出两个不同的数字。
+     一份报告只能有一个定义，取会拍到东西的那个。 */
+  check("照片", "照片张数", theirs.shots.length, ours.shots.length,
+    near(theirs.shots.length, ours.shots.length, 3));
 
   /* ── 2 照片 SHOTS —— 大小，不只是张数 ──────────────────────────────────── */
   const band = (l) => ({
@@ -1270,9 +1306,14 @@ try {
   const bt = band(theirs.shots);
   const bo = band(ours.shots);
   console.log("\n照片 SHOTS");
-  check("照片", "满宽的", bt.wide, bo.wide, near(bt.wide, bo.wide, 1));
-  check("照片", "半幅的", bt.half, bo.half, near(bt.half, bo.half, 2));
-  check("照片", "最高一张", `${bt.tallest}px`, `${bo.tallest}px`, near(bt.tallest, bo.tallest, 220));
+  check("照片", "满宽的", bt.wide, bo.wide,
+    theirs.shots.length && ours.shots.length ? near(bt.wide, bo.wide, 1) : null);
+  check("照片", "半幅的", bt.half, bo.half,
+    theirs.shots.length && ours.shots.length ? near(bt.half, bo.half, 2) : null);
+  /* ±220px 是绝对值：在一张 1000px 的照片上是 22%，在一张 300px 的上是 73%。
+     一把在小的地方特别松的尺，正好在最容易出错的地方失效。 */
+  check("照片", "最高一张", `${bt.tallest}px`, `${bo.tallest}px`,
+    judge(bt.tallest, bo.tallest, Math.abs(bt.tallest - bo.tallest) / (bt.tallest || 1) <= 0.22));
   /* ── 长宽比：一张 4:3 靠着一段字，跟一张 21:9 满边压过去，是两个设计 ──────
      以前只数张数、量宽度跟最高的那一张。「1img」对一张 1440×810 的横幅跟一张
      缩图一样成立，而 16/9 跟 4/3 摆在同一个位子上是两种节奏。
@@ -1297,8 +1338,12 @@ try {
   const wt = wid(theirs.type), wo = wid(ours.type);
   check("字体", "标题字宽", wt || "量不到", wo || "量不到",
     wt && wo ? Math.abs(wt - wo) / wt <= 0.12 : null);
+  /* 同样：±12px 在 263px 的招牌标题上是 5%，在一个 40px 的标题上是 30%。 */
   check("字体", "标题字级", `${h1(theirs.type).px}px`, `${h1(ours.type).px}px`,
-    near(h1(theirs.type).px || 0, h1(ours.type).px || 0, 12));
+    (() => {
+      const a = h1(theirs.type).px || 0, b = h1(ours.type).px || 0;
+      return a === 0 ? null : Math.abs(a - b) / a <= 0.12;
+    })());
   check("字体", "标题字重", h1(theirs.type).w ?? "—", h1(ours.type).w ?? "—",
     String(h1(theirs.type).w) === String(h1(ours.type).w));
   /* ── 级差：h2 是 h1 的几分之几 ─────────────────────────────────────────
@@ -1476,10 +1521,14 @@ try {
     return top.ms[Math.floor(top.ms.length / 2)] ?? 0;
   };
   console.log("\n动效 MOTION");
-  check("动效", "时长", tiers(theirs.axes), tiers(ours.axes), near(dominant(theirs.axes), dominant(ours.axes), 90));
-  check("动效", "缓动", ease(theirs.axes), ease(ours.axes), ease(theirs.axes) === ease(ours.axes));
+  check("动效", "时长", tiers(theirs.axes), tiers(ours.axes),
+    judge(dominant(theirs.axes), dominant(ours.axes), near(dominant(theirs.axes), dominant(ours.axes), 90)));
+  check("动效", "缓动", ease(theirs.axes), ease(ours.axes),
+    judge(ease(theirs.axes), ease(ours.axes), ease(theirs.axes) === ease(ours.axes)));
   check("动效", "减少动效", theirs.axes?.motion.reducedMotion, ours.axes?.motion.reducedMotion,
-    Boolean(theirs.axes?.motion.reducedMotion) === Boolean(ours.axes?.motion.reducedMotion));
+    theirs.axes && ours.axes
+      ? Boolean(theirs.axes.motion.reducedMotion) === Boolean(ours.axes.motion.reducedMotion)
+      : null);
 
   /* 上面三项读的是**宣告**，下面三项读的是**真的动了什么**。
      一条挂在从来不变的属性上的 400ms transition，跟一段真的会滑进来的区块，
@@ -1542,7 +1591,7 @@ try {
         et && eo ? Math.abs((et[1] - et[0]) - (eo[1] - eo[0])) <= 8 : null);
       const widestP = (l) => (l.length ? Math.max(...l.map((x) => x.w)) : 0);
       check("手机", "手机 最宽的图", `${widestP(tp.shots)}px`, `${widestP(op.shots)}px`,
-        near(widestP(tp.shots), widestP(op.shots), 90));
+        judge(widestP(tp.shots), widestP(op.shots), near(widestP(tp.shots), widestP(op.shots), 90)));
       check("手机", "手机 照片张数", tp.shots.length, op.shots.length, near(tp.shots.length, op.shots.length, 3));
     }
   }
