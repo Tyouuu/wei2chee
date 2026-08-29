@@ -113,7 +113,7 @@ function readSections(rootSel) {
       const r = e.getBoundingClientRect();
       return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
     })
-    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= 1300))
+    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= window.innerWidth * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
 
   const out = [];
@@ -163,7 +163,7 @@ function readShape(rootSel) {
       const r = e.getBoundingClientRect();
       return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
     })
-    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= 1300))
+    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= window.innerWidth * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
   const kept = [];
   for (const b of secs) if (!kept.some((o) => b.top >= o.top && b.top + b.h <= o.top + o.h)) kept.push(b);
@@ -290,7 +290,25 @@ function readType() {
            ruler that prints a confident wrong answer is worse than one that
            prints the family name and lets the eye decide. The eye has the
            picture; give it the name and whether the name reached the screen. */
-        return { here };
+        /* ── 字体真正能判的三件 ────────────────────────────────────────
+           名字判不了 —— 我们不可能用 Wix 的授权字体，两边的名字永远不一样，
+           所以那一格永远是「印出来给眼睛看」。但「像不像」真正吃的不是名字：
+
+             · 衬线还是无衬线 —— 用一串会长出衬线的字母对一串不会的，比宽度
+             · 字宽（窄体还是宽体）—— 同一串字画出来多宽，除以字级
+             · 大小写处理 —— 全大写、字距拉开，是同一个字体的两张脸
+
+           这三件量得到，而且是这一层真的在打架的东西。
+           ⚠️ 只有在字真的载入了（here）的时候才算数 —— 一个 fallback 到
+           Times 的量测，量的是这台机器，不是那一页。 */
+        const serifRun = w(`"${fam}", monospace`, "IHMTEFL");
+        const plainRun = w(`"${fam}", monospace`, "ooeecc");
+        const widthOf = w(`"${fam}", monospace`, "HHHHHHHHHH") / 1000;
+        return {
+          here,
+          serifish: here ? +(serifRun / plainRun).toFixed(3) : 0,
+          widthish: here ? +widthOf.toFixed(3) : 0,
+        };
       })(),
     };
   };
@@ -374,7 +392,7 @@ function readAnatomy(rootSel) {
       const r = e.getBoundingClientRect();
       return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
     })
-    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= 1300))
+    .filter((x) => x.h >= (node ? 60 : 140) && (node || x.w >= window.innerWidth * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
   const taken = [];
   const hex = (raw) => {
@@ -873,9 +891,17 @@ async function probeMotion(p, rootSel) {
         return { tf: cs.transform, sh: cs.boxShadow, bg: cs.backgroundColor, fl: cs.filter, op: cs.opacity };
       });
       try {
-        await h.scrollIntoViewIfNeeded({ timeout: 3000 });
+        /* ⚠️ 不要用 locator.hover() —— 它会做「这个元素点得到吗」的检查，
+           Wix 的页面上面盖着一层全屏包装，检查过不了就抛，於是模版那一栏印
+           「量不到」。而那不是真的量不到，是我们自己不肯把指针移过去。
+           直接把鼠标移到它的中心：CSS 的 :hover 本来就是「指针在这个点上」，
+           盖住了就是盖住了 —— 那也是一个诚实的答案。 */
+        await h.evaluate((el) => el.scrollIntoView({ block: "center" }));
+        await p.waitForTimeout(400);
+        const box = await h.boundingBox();
+        if (!box) return null;
         const a = await read();
-        await h.hover({ timeout: 3000 });
+        await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
         await p.waitForTimeout(700);
         const b = await read();
         const bits = [];
@@ -916,19 +942,48 @@ async function probeMotion(p, rootSel) {
         img = true;
         break;
       }
-      return { btn, img };
+      /* ── 第三、四种：卡片跟纯文字连结 ──────────────────────────────────
+         以前只试一颗按钮跟一张图。卡片抬起来、连结画底线，是这一层最常见的
+         两种反应，而两种都没试过 —— 任务 28 明明写着「卡片 hover 抬起」，
+         从来没有一行验证过它真的抬。 */
+      let card = false, link = false;
+      for (const el of root.querySelectorAll("li,article,figure,div")) {
+        const r = el.getBoundingClientRect();
+        if (r.width < 200 || r.width > 700 || r.height < 140) continue;
+        const cs = getComputedStyle(el);
+        const painted = cs.backgroundColor && !/(^rgba\(0, 0, 0, 0\)$|transparent)/.test(cs.backgroundColor);
+        const framed = parseFloat(cs.borderTopWidth) > 0;
+        if (!painted && !framed) continue;
+        el.setAttribute("data-hover-probe", "card");
+        card = true;
+        break;
+      }
+      for (const el of root.querySelectorAll("a[href]")) {
+        const r = el.getBoundingClientRect();
+        if (r.height < 12 || r.height > 40 || r.width < 40) continue;
+        if (el.getAttribute("data-hover-probe")) continue;
+        const cs = getComputedStyle(el);
+        const painted = cs.backgroundColor && !/(^rgba\(0, 0, 0, 0\)$|transparent)/.test(cs.backgroundColor);
+        if (painted) continue;   // 那是按钮，上面已经试过
+        el.setAttribute("data-hover-probe", "link");
+        link = true;
+        break;
+      }
+      return { btn, img, card, link };
     }, rootSel);
     const btn = tagged.btn ? await hover('[data-hover-probe="btn"]') : "没有这种按钮";
     const img = tagged.img ? await hover('[data-hover-probe="img"]') : "没有够大的图";
+    const card = tagged.card ? await hover('[data-hover-probe="card"]') : "没有卡片";
+    const link = tagged.link ? await hover('[data-hover-probe="link"]') : "没有纯文字连结";
 
-    return { probed: before.length, entered, faded, maxShift, btn, img };
+    return { probed: before.length, entered, faded, maxShift, btn, img, card, link };
   } catch {
     return null;
   }
 }
 
-async function shoot(target, rootSel, wait, file) {
-  const p = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
+async function shoot(target, rootSel, wait, file, width = 1440, withMotion = true) {
+  const p = await browser.newPage({ viewport: { width, height: width < 500 ? 844 : 1100 } });
   await p.goto(target, { waitUntil: "domcontentloaded", timeout: 90000 });
   await p.addStyleTag({ content: "nextjs-portal,[data-nextjs-toolbar]{display:none!important}" }).catch(() => {});
   await p.waitForTimeout(wait);
@@ -951,9 +1006,17 @@ async function shoot(target, rootSel, wait, file) {
     window.scrollTo(0, 0);
     /* 图要真的解码完 —— complete 只说「请求结束了」，naturalWidth 才说
        「里面真的有一张图」。 */
+    /* ⚠️ decode() 可以永远不返回 —— 一张 loading="lazy" 的图，滚过去又滚回来
+       之后既不解码也不失败，那个 promise 就一直挂着。.catch() 接的是「拒绝」，
+       接不了「不回来」。实测：390px 的客户官网 12 张图，卡在这里超过五分钟。
+       所以每一张给 1.5 秒上限，到了就算了 —— 我们要的是「尽量都载完」，
+       不是「保证全部载完」。 */
     await Promise.all(
       [...document.images].map((im) =>
-        im.decode ? im.decode().catch(() => {}) : Promise.resolve(),
+        Promise.race([
+          im.decode ? im.decode().catch(() => {}) : Promise.resolve(),
+          new Promise((r) => setTimeout(r, 1500)),
+        ]),
       ),
     );
     if (document.fonts && document.fonts.ready) await document.fonts.ready.catch(() => {});
@@ -966,7 +1029,7 @@ async function shoot(target, rootSel, wait, file) {
   const shots = await p.evaluate(readShots, rootSel);
   const shape = await p.evaluate(readShape, rootSel);
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
-  const move = await probeMotion(p, rootSel);
+  const move = withMotion ? await probeMotion(p, rootSel) : null;
   await p.close();
   return { secs, type, axes, anat, shots, shape, move, file };
 }
@@ -1000,10 +1063,12 @@ try {
   const REFRESH = process.argv.includes("--refresh");
   const refFile = `${OUT}/${register}-ref.json`;
   let theirs = null;
+  let theirsPhone = null;
   if (!REFRESH && fs.existsSync(refFile)) {
     const snap = JSON.parse(fs.readFileSync(refFile, "utf8"));
-    if (snap.url === url) {
+    if (snap.url === url && snap.phone) {
       theirs = snap.data;
+      theirsPhone = snap.phone;
       console.log(`参考快照 ${String(snap.at).slice(0, 10)} 采集（要重来：加 --refresh）`);
     }
   }
@@ -1021,10 +1086,17 @@ try {
       await browser.close();
       process.exit(1);
     }
-    fs.writeFileSync(refFile, JSON.stringify({ url, at: new Date().toISOString(), data: theirs }));
-    console.log(`参考重新采集了，存成 ${refFile}`);
+    /* 手机也采一份。他自己量的 19 家马来西亚 SME 里 15 家第一屏就给 WhatsApp，
+       因为客人在手机上 —— 而这个宽度我们一次都没量过，抄的一直只有桌面那一套。 */
+    theirsPhone = await shoot(url, null, 7000, `${register}-ref-390`, 390, false);
+    fs.writeFileSync(
+      refFile,
+      JSON.stringify({ url, at: new Date().toISOString(), data: theirs, phone: theirsPhone }),
+    );
+    console.log(`参考重新采集了（桌面 + 手机），存成 ${refFile}`);
   }
   const ours = await shoot(`http://localhost:3000/s/${project.site_slug}`, ".ds-site", 2500, `${register}-ours`);
+  const oursPhone = await shoot(`http://localhost:3000/s/${project.site_slug}`, ".ds-site", 2500, `${register}-ours-390`, 390, false);
 
   {
     /* 我们自己这一边也验 —— dev server 重编到一半被读到，长得跟一段没载入的
@@ -1219,6 +1291,12 @@ try {
   const h1 = (t) => (t.heads[0] || {});
   console.log("\n字体 TYPE");
   check("字体", "标题字体", h1(theirs.type).fam ?? "—", h1(ours.type).fam ?? "—", null);
+  /* 名字判不了（我们不可能用他们的授权字体），字宽判得了。
+     窄体跟宽体在同一个字级上是两页不同的东西 —— 招牌 的参考是压缩体。 */
+  const wid = (t) => Number(t.heads?.[0]?.widthish) || 0;
+  const wt = wid(theirs.type), wo = wid(ours.type);
+  check("字体", "标题字宽", wt || "量不到", wo || "量不到",
+    wt && wo ? Math.abs(wt - wo) / wt <= 0.12 : null);
   check("字体", "标题字级", `${h1(theirs.type).px}px`, `${h1(ours.type).px}px`,
     near(h1(theirs.type).px || 0, h1(ours.type).px || 0, 12));
   check("字体", "标题字重", h1(theirs.type).w ?? "—", h1(ours.type).w ?? "—",
@@ -1419,6 +1497,54 @@ try {
       t?.btn && o?.btn ? t.btn === o.btn : null);
     check("动效", "图片 hover", t?.img ?? "量不到", o?.img ?? "量不到",
       t?.img && o?.img ? t.img === o.img : null);
+    check("动效", "卡片 hover", t?.card ?? "量不到", o?.card ?? "量不到",
+      t?.card && o?.card ? t.card === o.card : null);
+    check("动效", "连结 hover", t?.link ?? "量不到", o?.link ?? "量不到",
+      t?.link && o?.link ? t.link === o.link : null);
+  }
+
+  /* ── 手机 390 ────────────────────────────────────────────────────────────
+     老板 2026-08-29: 「你到9都要」. 第九件，而且是最该做的一件。
+
+     上面每一项都是在 1440 量的。他自己量过的 19 家马来西亚 SME 里 **15 家第一
+     屏就给 WhatsApp**，因为客人在手机上；`check:reachable` 也在 390 报过我们
+     自己官网三个控件点不到。他们那些模版在 390 是**另一套排版** —— 栏数、图的
+     比例、按钮位置全部换 —— 而我们照抄的一直只有桌面那一套。
+
+     只量最决定性的四件：几段、整页多高、内容左右占多宽、最宽的一张图多宽。
+     其余的留给眼睛看 <风格>-ours-390.jpg。 */
+  console.log(String.fromCharCode(10) + "手机 390");
+  {
+    const tp = theirsPhone, op = oursPhone;
+    if (!tp || !op) {
+      check("手机", "手机 390px", "量不到", "量不到", null);
+    } else {
+      const bodyP = (l, secsL) => (secsL.length && secsL[0].h < 120 ? l.slice(1) : l);
+      const tsP = bodyP(tp.secs, tp.secs), osP = bodyP(op.secs, op.secs);
+      const sumP = (l) => l.reduce((a, x) => a + x.h, 0);
+      check("手机", "手机 段数", tsP.length, osP.length, near(tsP.length, osP.length, 1));
+      check("手机", "手机 整页高", `${sumP(tsP)}px`, `${sumP(osP)}px`,
+        near(sumP(tsP), sumP(osP), sumP(tsP) * 0.3));
+      const edgeP = (SS) => {
+        const l = [], r = [];
+        for (const bs of SS) {
+          if (!bs.length) continue;
+          l.push(Math.min(...bs.map((b) => b.x0)));
+          r.push(Math.max(...bs.map((b) => b.x1)));
+        }
+        if (!l.length) return null;
+        l.sort((a, b) => a - b); r.sort((a, b) => a - b);
+        return [l[Math.floor(l.length / 2)], r[Math.floor(r.length / 2)]];
+      };
+      const et = edgeP(bodyP(tp.shape ?? [], tp.secs));
+      const eo = edgeP(bodyP(op.shape ?? [], op.secs));
+      check("手机", "手机 版心", et ? `${et[0]}%–${et[1]}%` : "量不到", eo ? `${eo[0]}%–${eo[1]}%` : "量不到",
+        et && eo ? Math.abs((et[1] - et[0]) - (eo[1] - eo[0])) <= 8 : null);
+      const widestP = (l) => (l.length ? Math.max(...l.map((x) => x.w)) : 0);
+      check("手机", "手机 最宽的图", `${widestP(tp.shots)}px`, `${widestP(op.shots)}px`,
+        near(widestP(tp.shots), widestP(op.shots), 90));
+      check("手机", "手机 照片张数", tp.shots.length, op.shots.length, near(tp.shots.length, op.shots.length, 3));
+    }
   }
 
   /* ── 6 留白 SPACE ──────────────────────────────────────────────────────── */
