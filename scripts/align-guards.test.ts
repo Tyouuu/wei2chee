@@ -229,4 +229,23 @@ describe("尺子不准再犯", () => {
   it("--probe 会说出「段界切开了照片」", () => {
     expect(MJS).toMatch(/张照片被段界切开/);
   });
+  /* ㉓ 一块字的宽度量的是**墨迹**，不是它那个盒子。
+     Wix 把每行字包在行内的 span（盒子＝字宽），我们用块级的 p（盒子＝整栏宽）
+     —— 同一句话两个宽度，「段内的缝」因此报他们 8% 我们 1%，而两页排版一样。
+     `Range.getClientRects()` 是浏览器自己的答案；视觉回归那一整类比的是图片，
+     答不了这件事。 */
+  it("字块的宽度用 Range 的行盒，不用元素的盒子", () => {
+    expect(MJS).toMatch(/getClientRects/);
+    expect(MJS).toMatch(/inkRect/);
+  });
+
+  /* ㉔ 「够不够大」跟「画到哪里」是两个问题，不能共用一个矩形。
+     第一版两个都用墨迹，「01」「24/7」这种短字被 3% 那道门槛当成装饰丢掉，
+     尺子自己的自检当场红「模版分段漏字 · 漏图」。 */
+  it("大小的门槛用元素的盒子判，几何用墨迹", () => {
+    const blk = MJS.slice(MJS.indexOf("const push = (el, kind, extra)"), MJS.indexOf("const push = (el, kind, extra)") + 900);
+    expect(blk).toMatch(/const box = el\.getBoundingClientRect\(\)/);
+    expect(blk).toMatch(/box\.width < PAGE \* 0\.03/);
+    expect(blk).toMatch(/kind === "字" \? inkRect\(el\) : null/);
+  });
 });

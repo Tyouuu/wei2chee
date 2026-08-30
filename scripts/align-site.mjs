@@ -150,6 +150,38 @@ if (process.argv.includes("--probe")) {
     if (cut.length)
       console.log(`  🔴 有 ${cut.length} 张照片被段界切开 —— 那一段的边界找错了（照片顶 ${cut.map((c) => c.top).join(" · ")}）`);
   }
+  /* ⚠️ 漏了多少不够，要讲**漏到哪里去了**。
+     2026-08-31：重新采集之后自检第一次跑得起来，blueprint 的参考报
+     「2008 个字，各段装下 1115 —— 漏了 44%」。三套风格都这样，
+     而它们每一段的比较都是拿这份残缺的资料做的。
+     只说「漏了 44%」的话，下一个人还是得从头查一遍。 */
+  {
+    const acct = await p.evaluate(() => {
+      const own = (el) => { let t = ""; for (const n of el.childNodes) if (n.nodeType === 3) t += n.nodeValue; return t.trim(); };
+      const PAGE = document.documentElement.getBoundingClientRect().width || 1440;
+      let total = 0, tooNarrow = 0, offscreen = 0, hidden = 0, tiny = 0;
+      const narrow = [];
+      for (const el of document.body.querySelectorAll("*")) {
+        const t = own(el);
+        if (t.length < 2) continue;
+        /* ⚠️ 分母只算**看得见的字**。第一版把隐藏的也算进去，於是 Wix 那一页
+           报「421472/424019 被挡在门外」—— 那 42 万是它藏起来的手机版跟脚本，
+           一个真正的读者一个字都看不到。**一个把不存在的东西算进分母的比例，
+           读起来像天塌了，其实什么都没讲。** */
+        if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) { hidden += t.length; continue; }
+        total += t.length;
+        const r = el.getBoundingClientRect();
+        if (r.height < 10) { tiny += t.length; continue; }
+        if (r.right < PAGE * 0.02 || r.left > PAGE * 0.98) { offscreen += t.length; continue; }
+        if (r.width < PAGE * 0.03) { tooNarrow += t.length; if (narrow.length < 4) narrow.push(`${Math.round(r.width)}px「${t.slice(0, 14)}」`); }
+      }
+      return { total, tooNarrow, offscreen, hidden, tiny, narrow };
+    });
+    const gone = acct.tooNarrow + acct.offscreen + acct.tiny;
+    if (gone > acct.total * 0.05)
+      console.log(`  ⚠️ 字被挡在门外 ${gone}/${acct.total}：太窄(<3%页宽) ${acct.tooNarrow} · 画面外 ${acct.offscreen} · 太矮 ${acct.tiny}（另有 ${acct.hidden} 个字是藏起来的，不算）` +
+        (acct.narrow.length ? String.fromCharCode(10) + "     太窄的样本：" + acct.narrow.join(" · ") : ""));
+  }
   console.log(`  整页图 → ${file}`);
   await b.close();
   process.exit(0);
@@ -467,12 +499,31 @@ function readShape(rootSel) {
      段本来就是**页面上的一段垂直范围**。所以改成：把 root 底下所有看得见的
      盒子走一遍，每一个按它的**垂直中心**落在哪一段的范围里，就归哪一段。
      这样「有东西不是任何一段的子孙」这一整类问题不再存在，而不是修掉一个实例。 */
-  const ranges = kept.map((k) => ({ ...k, pool: [] }));
+  /* ⚠️ **段与段之间不可以有缝。**
+     老板 2026-08-31 那一轮，尺子自己的自检抓到：blueprint 的参考「这一页
+     2008 个字，各段装下 1115 —— 漏了 44%」，hearth 跟 counter 也一样。
+     原因是段的范围照它们各自的**盒子**取，而盒子之间有垂直的空隙；
+     落在空隙里的东西**不属於任何一段**，於是它既不算他们的、也没人跟它比。
+
+     这跟 Squarespace 那条线切进照片是同一个病的两面：**DOM 的盒子不等於
+     这一页画出来的那一带**（VIPS 那个演算法讲的就是这件事）。
+
+     所以指派用的范围**互相接上**：两段之间那条缝从中点切开，第一段往上吃到
+     页顶，最后一段往下吃到页底。⚠️ 只有**指派用的范围**接上，
+     每一段**回报的高度照旧** —— 跟「量大小用盒子、量位置用墨迹」同一条：
+     两个用途，两个数字，不要合成一个。 */
+  const pageH = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  const ranges = kept.map((k, i) => {
+    const prev = kept[i - 1], next = kept[i + 1];
+    const from = prev ? Math.round((prev.top + prev.h + k.top) / 2) : 0;
+    const to = next ? Math.round((k.top + k.h + next.top) / 2) : pageH;
+    return { ...k, from: Math.min(from, k.top), to: Math.max(to, k.top + k.h), pool: [] };
+  });
   for (const el of root ? root.querySelectorAll("*") : document.body.querySelectorAll("*")) {
     const r = el.getBoundingClientRect();
     if (r.height < 8) continue;
     const mid = r.top + scrollY + r.height / 2;
-    const hit = ranges.find((k) => mid >= k.top && mid < k.top + k.h);
+    const hit = ranges.find((k) => mid >= k.from && mid < k.to);
     if (hit) hit.pool.push(el);
   }
 
@@ -480,14 +531,43 @@ function readShape(rootSel) {
     const sr = { top: sec.top - scrollY, height: sec.h };
     const boxes = [];
     let seqN = 0;
+    /* ⚠️ 一块「字」的宽度，量的应该是**字真的画到哪里**，不是它那个盒子多宽。
+       老板 2026-08-31:「段内的缝 …那不是设计差异」— 他讲对了，而我查出来的
+       原因是：Wix 把每一行字包在 `<span>`（行内，盒子就是字宽），我们用 `<p>`
+       （块级，盒子是整栏宽）。**同一句话，两个宽度**，於是「段内的缝」量到
+       他们 8% 我们 1%，而两页的排版一模一样。我差点去改栏距。
+
+       `Range.getClientRects()` 给的是**字的行盒**，行内块级都一样 ——
+       这是浏览器自己的答案，不是哪个套件的（查过：视觉回归那一类
+       reg-suit / jest-image-snapshot / odiff 全部比的是**图片**，
+       答不了「这一块字实际占多宽」）。 */
+    const inkRect = (el) => {
+      try {
+        const rg = document.createRange();
+        rg.selectNodeContents(el);
+        const rs = [...rg.getClientRects()].filter((r) => r.width > 0 && r.height > 0);
+        if (!rs.length) return null;
+        const left = Math.min(...rs.map((r) => r.left)), right = Math.max(...rs.map((r) => r.right));
+        const top = Math.min(...rs.map((r) => r.top)), bottom = Math.max(...rs.map((r) => r.bottom));
+        return { left, top, width: right - left, height: bottom - top, right, bottom };
+      } catch { return null; }
+    };
     const push = (el, kind, extra) => {
-      const r = el.getBoundingClientRect();
-      if (r.width < PAGE * 0.03 || r.height < 10) return;
+      /* ⚠️ 两个问题，两个矩形，不能共用一个。
+         「这个东西够不够大、在不在画面上」问的是**它那个盒子**；
+         「它画到哪里」问的是**墨迹**。第一版两个都用墨迹，於是
+         「01」「24/7」这种短字的墨迹只有几十像素，被 3% 那道门槛
+         当成装饰丢掉 —— 尺子自己的自检当场红：「模版分段漏字 · 漏图」。 */
+      const box = el.getBoundingClientRect();
+      if (box.width < PAGE * 0.03 || box.height < 10) return;
+      if (box.right < PAGE * 0.02 || box.left > PAGE * 0.98) return;
+      const r = (kind === "字" ? inkRect(el) : null) ?? box;
+      if (r.width < 1 || r.height < 1) return;
       /* ⚠️ 画面外的东西不算这一段的内容。
          満図 的参考回报过「字 -93–-73」「字 102–121」—— 那是轮播里还没转到的
          那几张，人一眼都看不到。它们会灌水「几栏字」，也会把版心的左右边界
          拉到负数。看不到的东西不是这一页的设计。 */
-      if (r.right < PAGE * 0.02 || r.left > PAGE * 0.98) return;
+      
       const x0 = Math.round((r.left / PAGE) * 100);
       const x1 = Math.round(((r.left + r.width) / PAGE) * 100);
       const y0 = Math.round(((r.top - sr.top) / Math.max(1, sr.height)) * 100);
