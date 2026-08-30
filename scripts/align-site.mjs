@@ -2183,7 +2183,31 @@ try {
     console.log("  差异图出不来：" + String(e).slice(0, 90));
   }
 
-  console.log(`\n对照图 → ${OUT}/${register}.jpg （用眼睛看这一张，不是看上面的数字）`);
+  /* ── 验收：清单全绿不算做完 ────────────────────────────────────────────
+     老板 2026-08-30:「就是往尺子那边加多一段话就是验收成果 一定要用眼睛去看」.
+
+     这一段不是装饰，是当天付了学费的。台账 第6段那一次：清单上它是**绿的**
+     —— 盒子的种类对、顺序对、几栏对。裁成原尺寸一看，他们那一段是**一个有框
+     的盒子从中间切两半、右半自己一块深色面板、中间一条通到底的竖线**，我们是
+     两栏并排。同一份报告，一个说过关，一个说完全不是同一个设计。
+
+     **尺子量得到「有几个盒子、什么顺序」，量不到「这是一个框里切两半还是两栏
+     并排」。** 那一格它连一个可疑的数字都没有给。
+
+     所以每一段都要自己开原尺寸的裁图看过，才准说做完。 */
+  const secN = bodySecs(ours.secs).length;
+  console.log("");
+  console.log("验收 —— 上面全绿也不算做完");
+  console.log(`  1. python scripts/align-pairs.py ${register}`);
+  console.log(`     → ${OUT}/pairs-${register}/  一段一对，原尺寸，共 ${secN} 张`);
+  console.log("  2. 每一张都要自己看过。清单量得到有几个盒子、什么顺序，");
+  console.log("     量不到「一个框里切两半」跟「两栏并排」的差别 —— 台账第6段");
+  console.log("     那一次它是绿的，而两边根本不是同一个设计。");
+  console.log("  3. 眼睛看到而清单没抓到的，当场补成新的一项检查（重点 7l），");
+  console.log("     不要只修那一次。");
+  console.log("");
+  console.log(`差异图 → ${OUT}/${register}-diff.jpg （只有不及格的那几段）`);
+  console.log(`对照图 → ${OUT}/${register}.jpg （整页缩图，看全貌用）`);
 } finally {
   await browser.close();
   await restore();
