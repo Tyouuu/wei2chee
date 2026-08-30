@@ -78,18 +78,30 @@ const run = (reg) =>
     p.stderr.on("data", (d) => (text += d));
     p.on("close", (code) => {
       fs.writeFileSync(`${OUT}/${reg}.log`, text);
-      res({ code, bad: parseList(text, "对不上的"), blind: parseList(text, "量不到的") });
+      /* 过关的那几项也要收 —— 「见过哪些检查」这份名单要完整，
+         不然一项从红转绿会被误判成「这一项不见了」。 */
+      const ok = [...new Set([...text.matchAll(/^ {2}OK {2}(\S+)/gm)].map((m) => m[1]))];
+      res({ code, bad: parseList(text, "对不上的"), blind: parseList(text, "量不到的"), ok });
     });
   });
 
-const now = { at: new Date().toISOString(), regs: {} };
+/* ⚠️ **合并，不要覆盖。**
+   2026-08-31 实测：我跑了几次 `align:all -- ledger`，每一次都把整份快照写成
+   「只有 ledger」。等到再跑全部的时候，另外五套全部回报「第一次量」——
+   **这张表唯一的用处就是记得上一次，而它把上一次弄丢了。**
+   跑子集只更新子集，没跑到的那几套原样留着（连同它们上次的日期）。 */
+const now = { at: new Date().toISOString(), regs: { ...(before.regs ?? {}) } };
 const rows = [];
 let refused = 0;
 
 for (const reg of regs) {
   process.stdout.write(`… ${reg}`);
   const r = await run(reg);
-  now.regs[reg] = { code: r.code, bad: r.bad ?? [], blind: r.blind ?? [] };
+  /* 见过的每一项检查名字都记下来 —— 少了这一份，**新加一项检查**跟
+     **页面坏了** 在这张表上长得一模一样：两者都是「新红」。
+     实测：加了「逐段正文字级」跟「最常用的圆角」之后，六套每一套都 +1 到 +2，
+     而那跟任何一个页面都无关。 */
+  now.regs[reg] = { code: r.code, bad: r.bad ?? [], blind: r.blind ?? [], seen: [...(r.bad ?? []), ...(r.blind ?? []), ...(r.ok ?? [])] };
 
   /* ⚠️ 「跑完了」不等於「量到了」。exit 非零，或者报告尾巴那两行根本没印出来
      ——两种都是**尺子没有作答**，不是「零差异」。一把量不到却回报过关的尺，
@@ -107,9 +119,14 @@ for (const reg of regs) {
   if (was) {
     /* 两边都去重 —— 一个名字在快照里出现两次，不该在报告里也讲两次。 */
     const gone = [...new Set(was.bad.filter((x) => !r.bad.includes(x)))];
-    const came = [...new Set(r.bad.filter((x) => !was.bad.includes(x)))];
-    note = gone.length || came.length
-      ? [came.length ? `新红 ${came.join(" · ")}` : "", gone.length ? `转绿 ${gone.join(" · ")}` : ""]
+    const cameAll = [...new Set(r.bad.filter((x) => !was.bad.includes(x)))];
+    /* 上一次根本没有这一项检查 = 尺子长出一根新轴，不是页面坏了。分开讲。 */
+    const seenBefore = new Set(was.seen ?? []);
+    const fresh = was.seen ? cameAll.filter((x) => !seenBefore.has(x)) : [];
+    const came = cameAll.filter((x) => !fresh.includes(x));
+    const freshNote = fresh.length ? `尺子新加 ${fresh.join(" · ")}` : "";
+    note = gone.length || came.length || freshNote
+      ? [came.length ? `新红 ${came.join(" · ")}` : "", gone.length ? `转绿 ${gone.join(" · ")}` : "", freshNote]
           .filter(Boolean).join("   ")
       : "没动";
   }

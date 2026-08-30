@@ -58,6 +58,107 @@ const REF = {
   crew: "https://plumbzo.framer.website/",
 };
 
+/* ── `--probe <网址>` —— 拿一个没见过的模版试尺子 ─────────────────────────
+   老板 2026-08-31:「loop到真的能成功的打造出一个完美的尺子出来
+   可以应对任何的别人的官网模板」.
+
+   「能对付任何模版」这句话，在只跑过七个页面（六个 Wix ＋ 一个 Framer）之前
+   是**推翻不了的**。这个模式让尺子可以指着任何一个网址跑，**不切风格、
+   不碰资料库、不动 demo project** —— 它只读参考那一边，把它读出来的结构印出来。
+
+   读得出东西 ≠ 读对了。所以它印的是**能拿去跟截图对照的东西**：几段、
+   每段多高多少张图、版心、字级、颜色，外加一张整页图。破绽是用眼睛找的。 */
+if (process.argv.includes("--probe")) {
+  const target = process.argv[process.argv.indexOf("--probe") + 1];
+  if (!target || !/^https?:/.test(target)) {
+    console.error("用法: npm run align -- --probe <网址>");
+    process.exit(1);
+  }
+  const b = await chromium.launch();
+  const p = await b.newPage({ viewport: { width: 1440, height: 1100 } });
+  let ok = true;
+  try {
+    const res = await p.goto(target, { waitUntil: "domcontentloaded", timeout: 90000 });
+    if (!res || res.status() >= 400) { console.error(`🔴 ${target} 回 ${res ? res.status() : "没有回应"}`); ok = false; }
+  } catch (e) {
+    console.error(`🔴 载不到 ${target}：${String(e.message).split(String.fromCharCode(10))[0]}`);
+    ok = false;
+  }
+  if (!ok) {
+    /* ⚠️ 载不到要吼出来。一个空的页面读起来跟「这一页很简单」一模一样，
+       而这个仓库被「量不到却印一个漂亮数字」的尺子骗过至少四次。 */
+    await b.close();
+    process.exit(1);
+  }
+  await p.waitForTimeout(7000);
+  await p.evaluate(async () => {
+    for (let y = 0; y < document.body.scrollHeight; y += 500) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 120)); }
+    window.scrollTo(0, 0);
+  });
+  await p.waitForTimeout(2500);
+
+  const secs = await p.evaluate(readSections, null);
+  const shape = await p.evaluate(readShape, null);
+  const type = await p.evaluate(readType);
+  const shots = await p.evaluate(readShots, null);
+  const declared = await p.evaluate(readDeclared, null);
+  const chars = await p.evaluate(readChars, null);
+
+  const host = new URL(target).host.replace(/[^a-z0-9]+/gi, "-");
+  fs.mkdirSync(".screenshots/align", { recursive: true });
+  const file = `.screenshots/align/probe-${host}.jpg`;
+  await p.screenshot({ path: file, fullPage: true, type: "jpeg", quality: 82 });
+
+  console.log(String.fromCharCode(10) + target);
+  console.log(`  段数 ${secs.length}   整页高 ${secs.reduce((a, x) => a + x.h, 0)}px   照片 ${shots.length}   看得见的字 ${chars}`);
+  console.log(`  标题 ${(type.heads?.[0]?.px) ?? "?"}px  正文 ${type.bodyPx ?? "?"}px  圆角 ${declared?.radius ?? "?"}`);
+  const sum = (bs) => `${bs.filter((x) => x.kind === "图").length}图 ${bs.filter((x) => x.kind === "钮").length}钮 ${bs.filter((x) => x.kind === "字").length}字`;
+  secs.forEach((sec, i) => console.log(`  第${i + 1}段  ${String(sec.h).padStart(5)}px  ${sum(shape[i] ?? [])}`));
+
+  /* 自检跟正式那条同一套：读出来的东西对不对得上整页 —— 数字漂亮而
+     一半的页面没读到，正是这把尺犯过最贵的错。 */
+  const inSecs = (shape ?? []).flat();
+  const lostPics = shots.length - inSecs.filter((b) => b.kind === "图").length;
+  if (secs.length < 3) {
+    console.log("  🔴 读到的段太少 —— 这个 DOM 尺子看不懂。底下是它实际长什么样：");
+    /* ⚠️ 读不懂的时候要**把 DOM 印出来**，不要只说读不懂。
+       不然每遇到一个新平台，我都得另外手写一支探针去看它的结构 ——
+       那正是[重点 25](../docs/founder-points.md) 里「一天十几轮」的来源。 */
+    const tree = await p.evaluate(() => {
+      const out = [];
+      const walk = (el, d) => {
+        if (d > 3) return;
+        for (const c of el.children) {
+          const r = c.getBoundingClientRect();
+          if (r.height < 60) continue;
+          const cls = String(c.className || "").split(" ").filter(Boolean).slice(0, 3).join(".");
+          out.push(`${"  ".repeat(d)}${c.tagName.toLowerCase()}${c.id ? "#" + c.id : ""}${cls ? "." + cls : ""}  ${Math.round(r.width)}x${Math.round(r.height)}`);
+          walk(c, d + 1);
+        }
+      };
+      walk(document.body, 0);
+      return out.slice(0, 26);
+    });
+    for (const l of tree) console.log("     " + l);
+  }
+  if (lostPics > 1) console.log(`  🔴 有 ${lostPics} 张照片不属於任何一段 —— 分段规则漏了这一种排法`);
+  /* ⚠️ **分段的线不准穿过一张照片。**
+     老板 2026-08-31 的 loop：Squarespace 的 mojave 模版，五条线里四条落在
+     真的段界上，第一条**切在第一屏那张大图的中间** —— 照片的下半跟 Mission
+     被归成同一段。数字看起来完全正常（5 段、5130px、3 张图），
+     而分段是错的。**一条穿过照片的线，就是这一段的边界找错了**，
+     那是一条不用看内容也判得了的规则。 */
+  {
+    const edges = secs.map((x) => x.top).slice(1);
+    const cut = shots.filter((sh) => edges.some((e) => e > sh.top + 8 && e < sh.top + sh.h - 8));
+    if (cut.length)
+      console.log(`  🔴 有 ${cut.length} 张照片被段界切开 —— 那一段的边界找错了（照片顶 ${cut.map((c) => c.top).join(" · ")}）`);
+  }
+  console.log(`  整页图 → ${file}`);
+  await b.close();
+  process.exit(0);
+}
+
 const register = process.argv[2] || "hearth";
 const url = REF[register];
 if (!url) {
@@ -117,11 +218,47 @@ const browser = await chromium.launch();
 /* Passed to page.evaluate as real functions, not as eval'd strings: the first
    version built them as template literals and one escape level was lost, so
    `\s` became `s` and every letter s was stripped out of the printed text. */
+/* ── 找「装着那些段的那个盒子」 ─────────────────────────────────────────────
+   老板 2026-08-31:「可以应对任何的别人的官网模板」. 第一个没见过的模版就把
+   旧规则打破了：`tailark.com` 有一条 168px 的侧栏，於是它的 `<main>` 只有
+   1267px —— **视窗的 88%**，而旧规则要求「宽度 ≥ 视窗的 90%」。
+   **段数 0。** 任何有侧栏、有外壳、有最大宽度的页面都会这样。
+
+   所以改成从 body 往下走，一层一层问：这一层里有没有**一个又高又宽的孩子**？
+   有就走进去；看到**两个以上又高又宽的孩子**就停 —— 那一层就是段的清单。
+   「宽」比的是**父层的宽**，不是视窗的宽，所以侧栏跟外壳不再是问题。
+
+   ⚠️ 这一支是**后备**，不是替换。六套已经量过的参考照旧走原本那条选择器，
+   读到的段数一个都不会变 —— 换掉它等於让所有存下来的快照失去可比性，
+   而那是这把尺唯一的记性。只有原本那条读到少於三段时才用这一支。 */
 function readSections(rootSel) {
+  /* ⚠️ 写在里面，不写在外面：这个函式是**整段源码送进浏览器**执行的，
+     模组层的辅助函式在那边不存在（档头那句「Passed to page.evaluate as real
+     functions」讲的就是这件事）。第一版写在外面，当场 ReferenceError。 */
+  const sectionHost = () => {
+  const big = (el, parent) => {
+    const r = el.getBoundingClientRect(), pr = parent.getBoundingClientRect();
+    return r.height >= 90 && r.width >= Math.max(200, pr.width * 0.6);
+  };
+  let node = document.body;
+  for (let d = 0; d < 10; d++) {
+    const kids = [...node.children].filter((c) => big(c, node));
+    if (kids.length !== 1) break;
+    node = kids[0];
+  }
+  return node;
+};
   const root = rootSel ? document.querySelector(rootSel) : null;
   let node = root;
   if (node) while (node && node.children.length <= 2) node = node.children[0];
-  const pool = node ? [...node.children] : [...document.querySelectorAll("section,div[id^='comp-']")];
+  let pool = node ? [...node.children] : [...document.querySelectorAll("section,div[id^='comp-']")];
+  if (!node) {
+    const enough = pool.filter((e) => {
+      const r = e.getBoundingClientRect();
+      return r.height >= 90 && r.width >= window.innerWidth * 0.9;
+    });
+    if (enough.length < 3) pool = [...sectionHost().children];
+  }
   /* Wix nests wrappers, so 「outermost at each position」 is the rule, and it
      needs the boxes sorted tallest-first at each top or an inner wrapper wins.
      Two ways this went wrong before: without sorting the reference came back
@@ -133,7 +270,9 @@ function readSections(rootSel) {
       const r = e.getBoundingClientRect();
       return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
     })
-    .filter((x) => x.h >= 90 && (node || x.w >= window.innerWidth * 0.9))
+    /* 宽度比的是**这一层最宽的那个**，不是视窗 —— 有侧栏的页面上，
+       视窗的 90% 是一个没有任何东西达得到的门槛。 */
+    .filter((x, _i, all) => x.h >= 90 && (node || x.w >= Math.max(...all.map((y) => y.w)) * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
 
   /* ⚠️ 「一个盒子完全在另一个里面」挡得住包装层，挡不住**并排叠着的两层**。
@@ -210,13 +349,38 @@ function readShape(rootSel) {
   const root = rootSel ? document.querySelector(rootSel) : null;
   let node = root;
   if (node) while (node && node.children.length <= 2) node = node.children[0];
-  const pool = node ? [...node.children] : [...document.querySelectorAll("section,div[id^='comp-']")];
+  /* 跟 readSections 同一条后备：有侧栏／有外壳的页面上，「宽度 ≥ 视窗的 90%」
+     是一个没有任何东西达得到的门槛。**两支必须用同一条规则** —— 不然
+     secs 讲七段、shape 讲两段，而报告把它们当成同一份分段。 */
+  const host = () => {
+    const big = (el, parent) => {
+      const r = el.getBoundingClientRect(), pr = parent.getBoundingClientRect();
+      return r.height >= 90 && r.width >= Math.max(200, pr.width * 0.6);
+    };
+    let n = document.body;
+    for (let d = 0; d < 10; d++) {
+      const kids = [...n.children].filter((c) => big(c, n));
+      if (kids.length !== 1) break;
+      n = kids[0];
+    }
+    return n;
+  };
+  let pool = node ? [...node.children] : [...document.querySelectorAll("section,div[id^='comp-']")];
+  if (!node) {
+    const enough = pool.filter((e) => {
+      const r = e.getBoundingClientRect();
+      return r.height >= 90 && r.width >= window.innerWidth * 0.9;
+    });
+    if (enough.length < 3) pool = [...host().children];
+  }
   const secs = pool
     .map((e) => {
       const r = e.getBoundingClientRect();
       return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
     })
-    .filter((x) => x.h >= 90 && (node || x.w >= window.innerWidth * 0.9))
+    /* 宽度比的是**这一层最宽的那个**，不是视窗 —— 有侧栏的页面上，
+       视窗的 90% 是一个没有任何东西达得到的门槛。 */
+    .filter((x, _i, all) => x.h >= 90 && (node || x.w >= Math.max(...all.map((y) => y.w)) * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
   /* 跟 readSections 同一套并段规则 —— 两边不同就等於 shape 跟 secs 各自
      在讲不同的分段，而报告把它们当成同一份。 */
@@ -739,7 +903,9 @@ function readAnatomy(rootSel) {
       const r = e.getBoundingClientRect();
       return { e, top: Math.round(r.top + scrollY), h: Math.round(r.height), w: Math.round(r.width) };
     })
-    .filter((x) => x.h >= 90 && (node || x.w >= window.innerWidth * 0.9))
+    /* 宽度比的是**这一层最宽的那个**，不是视窗 —— 有侧栏的页面上，
+       视窗的 90% 是一个没有任何东西达得到的门槛。 */
+    .filter((x, _i, all) => x.h >= 90 && (node || x.w >= Math.max(...all.map((y) => y.w)) * 0.9))
     .sort((a, b) => a.top - b.top || b.h - a.h);
   const taken = [];
   const hex = (raw) => {

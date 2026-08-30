@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
  */
 const MJS = readFileSync("scripts/align-site.mjs", "utf8");
 const PY = readFileSync("scripts/align-palette.py", "utf8");
+const ALL = readFileSync("scripts/align-all.mjs", "utf8");
 const lines = MJS.split("\n");
 
 /** 去掉注解 —— 注解里写着「以前是 \s」这种句子，那是纪录不是代码。 */
@@ -188,5 +189,44 @@ describe("尺子不准再犯", () => {
     const found = [...MJS.matchAll(/check\("[^"]+",\s*"([^"]+)"[^;]*?,\s*null\s*\)\s*;/g)].map((m) => m[1]);
     for (const name of found) expect(Object.keys(BLANK)).toContain(name);
     expect(found.length).toBeLessThanOrEqual(Object.keys(BLANK).length);
+  });
+  /* ⑱ 跑子集不准把整份快照写掉。
+     2026-08-31：我跑了几次 `align:all -- ledger`，每一次都把快照写成「只有
+     ledger」；再跑全部的时候，另外五套全部回报「第一次量」——
+     **这张表唯一的用处就是记得上一次，而它把上一次弄丢了。** */
+  it("align:all 跑子集会合并快照，不会覆盖", () => {
+    expect(ALL).toMatch(/\.\.\.\(before\.regs \?\? \{\}\)/);
+  });
+
+  /* ⑲ 「尺子长出一根新轴」跟「页面坏了」在表上不能长得一样。
+     加了「逐段正文字级」跟「最常用的圆角」之后六套每一套都 +1~+2，
+     而那跟任何一个页面都无关。快照记下**见过哪些检查**才分得开。 */
+  it("新加的检查会讲成「尺子新加」，不算页面新红", () => {
+    expect(ALL).toMatch(/seen:/);
+    expect(ALL).toMatch(/尺子新加/);
+  });
+
+  /* ⑳ 分段规则不准把宽度门槛钉在视窗上。
+     `tailark.com` 有一条 168px 侧栏，於是它的 main 只有视窗的 88% ——
+     旧规则「宽度 ≥ 视窗的 90%」让整页读到 **0 段**。任何有侧栏、有外壳、
+     有最大宽度的模版都会这样，而尺子要能对付任何模版。 */
+  it("分段的宽度门槛比的是这一层最宽的，不是视窗", () => {
+    expect(MJS).not.toMatch(/node \|\| x\.w >= window\.innerWidth \* 0\.9/);
+    expect(MJS).toMatch(/Math\.max\(\.\.\.all\.map\(\(y\) => y\.w\)\) \* 0\.9/);
+  });
+
+  /* ㉑ `--probe` 载不到就要 exit 1。
+     一个空页面读起来跟「这一页很简单」一模一样。 */
+  it("--probe 载不到一个网址会拒绝，不会印一份漂亮的空报告", () => {
+    const blk = MJS.slice(MJS.indexOf('--probe'), MJS.indexOf('--probe') + 3000);
+    expect(blk).toMatch(/载不到/);
+    expect(blk).toMatch(/process\.exit\(1\)/);
+  });
+  /* ㉒ 分段的线不准穿过一张照片。
+     Squarespace 的 mojave 模版：五条线四条对，第一条切在第一屏那张大图中间 ——
+     数字看起来完全正常（5 段 · 5130px · 3 张图），而分段是错的。
+     一条穿过照片的线不用看内容就判得了，所以尺子要自己讲出来。 */
+  it("--probe 会说出「段界切开了照片」", () => {
+    expect(MJS).toMatch(/张照片被段界切开/);
   });
 });
