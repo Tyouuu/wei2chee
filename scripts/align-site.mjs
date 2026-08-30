@@ -49,13 +49,9 @@ const REF = {
      pairs of trades were handed an identical three. Both gaps were on the same
      side -- four of the six argue with FACTS and only one each argues with the
      WORK or with the SIGN. See docs/founder-tasks.md 35. */
-  mosaic: "https://www.wix.com/demone2/wh-beauty-shop",
-  nocturne: "https://www.wix.com/demone2/kaito-ramen-den",
-  shelf: "https://www.wix.com/demone2/wagora",
   /* 服务 had no register built for it: its three were all 「facts」 registers
      with not one photograph of a workman, while 14 of the 19 Malaysian trade
      sites measured in 任务 26 lead with one. */
-  crew: "https://plumbzo.framer.website/",
 };
 
 /* ── `--probe <网址>` —— 拿一个没见过的模版试尺子 ─────────────────────────
@@ -158,6 +154,27 @@ if (process.argv.includes("--probe")) {
   await b.close();
   process.exit(0);
 }
+
+/* ── 选好了模版、还没开始建的 ────────────────────────────────────────────
+   ⚠️ **不放在 REF 里**，而 REF 是 `align:all` 读风格名单的地方。
+   老板 2026-08-31:「mosaic / nocturne / shelf / crew 这些是什么 我有叫你去建
+   新的风格吗？」—— 跑一次全部会印出四行 🔴，读起来像四套坏掉的风格，
+   而它们是**还没建的四个位子**：零个 token 档、零个 composition、
+   资料库的约束里也没有它们。
+
+   一份「参考清单」应该只放**正在量的东西**。计划放在
+   [任务 35](../docs/founder-tasks.md)，那里写着为什么是这四个
+   （量出来 A「作品说话」只有 1 套而 4 个行业需要，C「招牌说话」只有 1 套而 3 个需要）。
+   在报告里给它们开特例是修错地方 —— 源头是它们不该在那份名单里。
+
+   ⚠️ 老板拍板的是**「24 套」这个数字**（任务 37）；具体是哪四套、配哪个模版，
+   是我提的，还没有单独过他的眼。 */
+const PLANNED = {
+  mosaic: "https://www.wix.com/demone2/wh-beauty-shop",
+  nocturne: "https://www.wix.com/demone2/kaito-ramen-den",
+  shelf: "https://www.wix.com/demone2/wagora",
+  crew: "https://plumbzo.framer.website/",
+};
 
 const register = process.argv[2] || "hearth";
 const url = REF[register];

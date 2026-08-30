@@ -41,12 +41,29 @@ const SUMMARY = `${OUT}/summary.json`;
 /* 名单从尺子自己那份 REF 读，不另外抄一份。
    这个仓库被「第二份手写名单活得比它描述的东西久」咬过至少四次。 */
 const SRC = fs.readFileSync("scripts/align-site.mjs", "utf8");
-const BLOCK = SRC.slice(SRC.indexOf("const REF = {"), SRC.indexOf("const register = process.argv"));
+/* ⚠️ 只读 REF 那一块，**在 PLANNED 之前停**。
+   第一版读到 `const register` 为止，而 PLANNED 就写在那之前 —— 於是四套
+   还没建的又被读了进来，报告照样印四行 🔴。
+   一个「范围到某个字串为止」的规则，会被任何写在它前面的新东西悄悄改掉。 */
+const STOP = ["const PLANNED = {", "const register = process.argv"].map((k) => SRC.indexOf(k)).filter((i) => i > 0);
+const BLOCK = SRC.slice(SRC.indexOf("const REF = {"), Math.min(...STOP));
 const ALL = [...BLOCK.matchAll(/^ {2}([a-z]+):\s*"https?:/gm)].map((m) => m[1]);
 if (!ALL.length) {
   console.error("🔴 读不到尺子的参考名单（scripts/align-site.mjs 的 REF）——不猜，停。");
   process.exit(1);
 }
+
+/* ── 还没建的那几套，不要每天对我叫一次狼 ──────────────────────────────────
+   老板 2026-08-31:「所以现在真的可以使用了」. 跑一次全部会印出四行 🔴 ——
+   mosaic · nocturne · shelf · crew 在参考名单里（[任务 35](../docs/founder-tasks.md)
+   已经选好模版），但还没有 token 档、也还没进资料库的约束。
+   **它们不是坏了，是还没做。** 而 `check:upstream` 已经教过一次：
+   一把每一次跑都对你叫一次狼的尺，没有人看。
+
+   ⚠️ 名单是**算出来的，不是手写的**：有没有 `design-system/tokens/<名>.css`。
+   手写的第二份名单活得比它描述的东西久，这个仓库栽过四次。
+   所以哪一天 token 档建好了，它自动回到队伍里，不用有人记得改这里。 */
+const built = (r) => fs.existsSync(`design-system/tokens/${r}.css`);
 
 const asked = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const REFRESH = process.argv.includes("--refresh");
@@ -94,7 +111,8 @@ const now = { at: new Date().toISOString(), regs: { ...(before.regs ?? {}) } };
 const rows = [];
 let refused = 0;
 
-for (const reg of regs) {
+const planned = regs.filter((r) => !built(r));
+for (const reg of regs.filter(built)) {
   process.stdout.write(`… ${reg}`);
   const r = await run(reg);
   /* 见过的每一项检查名字都记下来 —— 少了这一份，**新加一项检查**跟
@@ -135,6 +153,7 @@ for (const reg of regs) {
 }
 
 fs.writeFileSync(SUMMARY, JSON.stringify(now, null, 1));
+for (const reg of planned) rows.push({ reg, state: "还没建", n: "—", blind: "—", note: "参考选好了，token 档还没有" });
 
 const pad = (s, n) => String(s) + " ".repeat(Math.max(0, n - [...String(s)].reduce((a, c) => a + (c.charCodeAt(0) > 255 ? 2 : 1), 0)));
 console.log(`\n风格            对不上  量不到   跟上一次比${before.at ? `（${before.at.slice(0, 16).replace("T", " ")}）` : "（没有上一次）"}`);

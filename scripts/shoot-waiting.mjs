@@ -73,23 +73,51 @@ const CANNED = {
 };
 
 /*
-  ANIMATIONS DISABLED, AND THAT IS NOT A COMPROMISE HERE.
+  PLAIN VIEWPORT SHOTS, AND THE THREE FANCIER ONES THAT DO NOT WORK HERE.
 
-  The spinner is `repeat: Infinity`, and a plain screenshot against it timed out
-  after 30s every time -- the capture waits on a compositor layer that never
-  settles. Playwright's `animations: "disabled"` FINISHES finite animations and
-  freezes infinite ones, which is exactly the split this page needs: the
-  paragraph's 0.35s crossfade lands on its end state (so the sentence is fully
-  legible, which is the thing being judged) while the compass stops turning.
+  Measured against this exact screen, with the analyze request held open:
+
+    viewport            ok, 99ms
+    fullPage            TIMES OUT
+    animations:disabled TIMES OUT
+    clip                TIMES OUT
+
+  The compass is `repeat: Infinity`, and every capture mode that has to reach a
+  settled frame first waits for a layer that never settles. The plain viewport
+  path does not, and the loading screen is one screen tall anyway.
+
+  The warm-up shot right after `goto` is not decoration: the very first capture
+  against a cold `next dev` page pays for the compile, and that is what made the
+  first attempt at this look like a screenshot bug.
 */
 async function shoot(p, path) {
-  await p.screenshot({ path, animations: "disabled", caret: "initial", timeout: 20000 });
+  await p.screenshot({ path, timeout: 60000 });
 }
 
 const b = await chromium.launch();
 
+/*
+  A CLICK THAT REPORTS WHEN IT HAD TO BE FORCED.
+
+  Playwright will not click an element whose box is still moving. On the phone
+  width this page keeps several `whileInView` reveals and one ambient layer in
+  flight long enough that a card never reads as stable. Forcing the click gets
+  the shoot moving, but the fact that it had to be forced is written into the
+  log rather than swallowed -- 「量不到却印一个漂亮数字」 is how this repo has
+  been fooled by its own rulers before.
+*/
+async function clickOrForce(loc, notes, what) {
+  try {
+    await loc.click({ timeout: 9000 });
+  } catch {
+    await loc.click({ force: true, timeout: 9000 });
+    notes.push(`     !! had to force the click on ${what}`);
+  }
+}
+
 async function run(width, height, suffix) {
   const p = await b.newPage({ viewport: { width, height } });
+  const notes = [];
 
   await p.route("**/api/analyze", async (route) => {
     await new Promise((r) => setTimeout(r, WAIT_MS + 4000));
@@ -102,24 +130,44 @@ async function run(width, height, suffix) {
 
   await p.goto(`${BASE}/${LOCALE}`, { waitUntil: "domcontentloaded", timeout: 120000 });
   await p.waitForTimeout(4000);
+  // Best-effort: its only job is to pay for the dev-server compile before a
+  // frame that matters is due.
+  try { await p.screenshot({ path: `${OUT}/.warmup.png`, timeout: 30000 }); } catch {}
 
-  /* The Hero's textarea feeds q3, so the stepper's last question arrives
-     already filled -- same path a real visitor takes. */
-  const brief = p.locator("main textarea").first();
-  await brief.fill(
+  /*
+    THE HERO IS OPTIONAL HERE, AND THE REASON IS ITSELF A FINDING.
+
+    Its textarea feeds q3, so filling it is the path a real visitor takes. At
+    390px it cannot be filled at all: 任务 55 measured that box sitting off the
+    left edge with `overflow-x: hidden` on the document, so nothing can scroll
+    it into reach -- Playwright waits for actionability and never gets it. That
+    bug is still open, and this shoot must not die on it, so the hero is tried
+    and its failure is reported rather than thrown.
+  */
+  const brief =
     LOCALE === "zh"
       ? "我做装修，五个师傅，报价都用 WhatsApp 发，客人问进度我要翻聊天记录"
-      : "I run a renovation firm with five workers, quotes go out on WhatsApp",
-  );
-  await p.keyboard.press("Enter");
+      : "I run a renovation firm with five workers, quotes go out on WhatsApp";
+  let heroTook = true;
+  try {
+    await p.locator("main textarea").first().fill(brief, { timeout: 8000 });
+    await p.keyboard.press("Enter");
+  } catch {
+    heroTook = false;
+    await p.locator("#industry-select").scrollIntoViewIfNeeded();
+  }
   await p.waitForTimeout(2500);
 
   // 01 SECTOR: take the first trade card rather than naming one, so a change
   // to the trade list does not silently break the shoot.
-  await p.locator("#industry-select button").first().click();
+  await clickOrForce(p.locator("#industry-select button").first(), notes, "the trade card");
   await p.waitForTimeout(2500);
 
-  await p.getByRole("button", { name: /(开始分析我的生意|Analyze my business)/ }).click();
+  await clickOrForce(
+    p.getByRole("button", { name: /(开始分析我的生意|Analyze my business)/ }),
+    notes,
+    "「开始分析我的生意」",
+  );
   await p.waitForTimeout(1500);
 
   /*
@@ -134,10 +182,16 @@ async function run(width, height, suffix) {
   for (let step = 0; step < 3; step++) {
     const options = sheet.locator("button[aria-pressed]");
     if (await options.count()) await options.first().click();
+    // q3 is the free-text one; the hero normally pre-fills it, and the Next
+    // button stays disabled while it is empty.
+    const box = sheet.locator("textarea");
+    if ((await box.count()) && !(await box.inputValue())) await box.fill(brief);
     await p.waitForTimeout(400);
-    await sheet
-      .getByRole("button", { name: /(下一题|开始分析|Next|Start my analysis)/ })
-      .click();
+    await clickOrForce(
+      sheet.getByRole("button", { name: /(下一题|开始分析|Next|Start my analysis)/ }),
+      notes,
+      `step ${step + 1}`,
+    );
     await p.waitForTimeout(700);
   }
 
@@ -148,16 +202,34 @@ async function run(width, height, suffix) {
   for (const at of SHOTS) {
     const wait = t0 + at * 1000 - Date.now();
     if (wait > 0) await p.waitForTimeout(wait);
-    const line = (await p.locator("section p.font-serif").first().innerText()).trim();
-    seen.push(`${String(at).padStart(2)}s  ${line}`);
+    const el = p.locator("[data-analysis-step]");
+    const step = await el.getAttribute("data-analysis-step");
+    const line = (await el.innerText()).trim();
+    seen.push(`${String(at).padStart(2)}s  ${step}  ${line}`);
     await shoot(p, `${OUT}/${TAG}-${LOCALE}${suffix}-${String(at).padStart(2, "0")}s.png`);
   }
 
-  // And that it actually resolves into the findings.
-  await p.getByText("FINDINGS").waitFor({ timeout: 30000 });
-  await shoot(p, `${OUT}/${TAG}-${LOCALE}${suffix}-done.png`);
-  seen.push("     -> FINDINGS");
+  /*
+    THE PROOF THAT IT RESOLVES IS THE TEXT, NOT THE PICTURE.
 
+    The findings screen brings the ambient backdrop and a page of scroll-reveal
+    motion back into frame, and capture against it stalls the same way the
+    fancier modes stalled above. So the assertion is what has to pass; the
+    frame is taken best-effort and its absence is reported rather than thrown.
+    A shoot that dies at the very end would throw away six frames that already
+    succeeded, which is the opposite of what it is for.
+  */
+  await p.getByText("FINDINGS").waitFor({ timeout: 40000 });
+  seen.push("     -> FINDINGS (the screen resolves)");
+  await p.waitForTimeout(2500);
+  try {
+    await p.screenshot({ path: `${OUT}/${TAG}-${LOCALE}${suffix}-done.png`, timeout: 20000 });
+  } catch {
+    seen.push("        (done frame not captured — see comment)");
+  }
+
+  if (!heroTook) seen.push("     !! hero textarea unreachable at this width (任务 55)");
+  seen.push(...notes);
   await p.close();
   return seen;
 }
@@ -167,8 +239,8 @@ try {
   console.log(`\n${TAG} · ${LOCALE} · 1440px`);
   for (const l of wide) console.log("  " + l);
 
-  const distinct = new Set(wide.filter((l) => l.includes("s  ")).map((l) => l.slice(5))).size;
-  console.log(`  distinct sentences: ${distinct} / ${SHOTS.length}`);
+  const distinct = new Set(wide.filter((l) => /^\s*\d+s /.test(l)).map((l) => l.slice(5))).size;
+  console.log(`  distinct lines: ${distinct} / ${SHOTS.length}`);
 
   // 重点 24: the person judging this is on a phone.
   const narrow = await run(390, 844, "-390");
