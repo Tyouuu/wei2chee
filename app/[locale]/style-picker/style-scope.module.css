@@ -458,7 +458,7 @@
   --site-ease: ease;
   --site-inner: 4.5rem;
   --site-radius-control: 4px;
-  --site-display-weight: 700;
+  --site-display-weight: 300;
   --site-card: #f1f1ee;
   --site-card-border: 0 solid transparent;
   --site-card-radius: 8px;
@@ -614,8 +614,12 @@
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
   --site-page-measure: 80.0rem;
+  --site-wide-extra: 0rem;
+  --site-bar-bg: transparent;
+  --site-bar-line: transparent;
+  --site-bar-pull: -4.6rem;
   --site-figure: 1.45;
-  --site-inner: 7rem;
+  --site-inner: 2.6rem;
   --font-ui: var(--font-industrial-latin), var(--font-song-cjk), "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: var(--font-industrial-latin), var(--font-hei-cjk), "PingFang SC", system-ui, sans-serif;
   --site-ink-bg: #45372a;
@@ -623,13 +627,13 @@
   --site-ink-fg-dim: color-mix(in oklab, #f0eae0 62%, transparent);
   --site-ink-panel: #2c200a;
   --site-display-tracking: 0em;
-  --site-display-weight: 400;
+  --site-display-weight: 200;
   --site-hero-scale: 1.2;
   --site-frame: color-mix(in oklab, #f0eae0 26%, transparent);
   --site-strip: #2c200b;
   --site-motion: 0.25s;
   --site-ease: ease;
-  --site-display: var(--font-editorial-latin), var(--font-song-cjk), Georgia, serif;
+  --site-display: var(--font-sans-latin), var(--font-hei-cjk), system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --fw-regular: 400;
   --fw-medium: 500;
