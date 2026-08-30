@@ -281,6 +281,7 @@ function readShape(rootSel) {
   return ranges.map((sec) => {
     const sr = { top: sec.top - scrollY, height: sec.h };
     const boxes = [];
+    let seqN = 0;
     const push = (el, kind, extra) => {
       const r = el.getBoundingClientRect();
       if (r.width < PAGE * 0.03 || r.height < 10) return;
@@ -295,7 +296,7 @@ function readShape(rootSel) {
       const y1 = Math.round(((r.top + r.height - sr.top) / Math.max(1, sr.height)) * 100);
       /* 同一个盒子被包了五层，五层的矩形一样 —— 只留一个。 */
       if (boxes.some((b) => b.kind === kind && Math.abs(b.x0 - x0) <= 1 && Math.abs(b.y0 - y0) <= 1 && Math.abs(b.x1 - x1) <= 1)) return;
-      boxes.push({ kind, x0, x1, y0, y1, ...extra });
+      boxes.push({ kind, x0, x1, y0, y1, seq: seqN++, pos: getComputedStyle(el).position, ...extra });
     };
 
     for (const el of sec.pool) {
@@ -328,6 +329,37 @@ function readShape(rootSel) {
       const t = ownText(el);
       if (t.length >= 2) push(el, "字", { px: Math.round(parseFloat(getComputedStyle(el).fontSize)), n: t.length });
     }
+    /* ── 被图片整个盖住的字，人看不到 ────────────────────────────────────
+       老板 2026-08-30:「用眼睛找完全部错误 然后去修好尺子」.
+
+       Newel 第4段的六张照片上**一个字都没有** —— 而尺子报「字 x5-50 y15-17」，
+       正好落在第一张图的框里。那些字在 DOM 里、CSS 也说可见（不是 none、
+       不是 hidden、opacity 是 1），但它们**在图片后面**，没有人看得到。
+
+       我照着那个读数把工程编号压到我们的照片上 —— **凭一个看不见的东西，
+       在我们的页面上造了一个他们没有的东西。** 一把把看不见的算成看得见的尺，
+       会指挥人去无中生有。
+
+       所以：一个字块如果被同一段里的某一张图**完全盖住**，就不算。
+       「完全」是必要的：他们别的段里，字确实压在图上（第7段的 logo 旁边），
+       那种是部分重叠，留着。 */
+    /* ⚠️ 「在图的框里」不等於「被图盖住」。第一版只比几何，於是把**我们第一屏
+       压在照片上的大标题**也判成埋掉了 —— 自检当场红：「我们分段漏字」。
+       那句标题在照片上面，是看得见的。
+
+       要判的是**谁画在上面**：一个静态定位的字块，如果整个落在一张**排在它
+       后面**的图里，那张图会盖住它；而定位过的（relative / absolute）字块是
+       被刻意抬起来的，压在图上就是设计。 */
+    const pics = boxes.filter((b) => b.kind === "图");
+    const buried = (b) =>
+      b.kind === "字" &&
+      b.pos === "static" &&
+      pics.some(
+        (p2) =>
+          b.x0 >= p2.x0 && b.x1 <= p2.x1 && b.y0 >= p2.y0 && b.y1 <= p2.y1 && p2.seq > b.seq,
+      );
+    for (let k = boxes.length - 1; k >= 0; k--) if (buried(boxes[k])) boxes.splice(k, 1);
+
     /* 一段里的字块常常几十个（每一行一个）—— 按「左边缘 + 字级」并成一栏，
        那才是排版上的一个东西。 */
     const merged = [];

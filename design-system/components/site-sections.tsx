@@ -1546,9 +1546,11 @@ export function SiteGallery({
                   名字是客户自己的东西，没填就只有编号。
                   （老板 2026-08-30:「不然就用占位图」—— 同一条道理，
                   缺的东西给它一个诚实的位子，不要整个不画。） */}
-              <p className="pointer-events-none absolute inset-x-0 bottom-0 [background:linear-gradient(to_top,rgb(0_0_0/0.55),transparent)] [color:#fff] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-variant-numeric:tabular-nums] [padding:2.2rem_var(--pad-card)_0.6rem]">
-                {`${String(i + 1).padStart(2, "0")}${s2.caption ? `  ${s2.caption}` : ""}`}
-              </p>
+              {s2.caption?.trim() ? (
+                <p className="pointer-events-none absolute inset-x-0 bottom-0 [background:linear-gradient(to_top,rgb(0_0_0/0.55),transparent)] [color:#fff] [font-size:var(--text-sm)] [padding:2.2rem_var(--pad-card)_0.6rem]">
+                  {s2.caption}
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -1757,7 +1759,7 @@ export function SiteStory({
     */
     return (
       <section className="@container">
-        <div data-fill="" className="grid items-stretch [gap:0] [margin-block-end:0] @3xl:grid-cols-2">
+        <div className="grid items-stretch [gap:0] [margin:calc(var(--pad-card-lg)*-1.35)_calc(var(--pad-card-lg)*-1.35)_0] @3xl:grid-cols-2">
           {photo?.trim() ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img loading="lazy" decoding="async" src={photo} alt={photoAlt || ""} className="size-full min-h-full object-cover" />
