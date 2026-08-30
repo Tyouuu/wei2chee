@@ -762,7 +762,10 @@
       "navOverview": "Overview",
       "signOut": "Sign out",
       "contactThem": "Email them",
-      "contactSubject": "About your system ({business})"
+      "contactSubject": "About your system ({business})",
+      "stateLive": "RUNNING",
+      "stateDrawn": "drawing",
+      "stateLegend": "RUNNING means a real table, a document number, a form a person fills in, and the assistant calling that same function. Everything else still shows the same sample rows to every business."
     },
     "account": {
       "title": "My account",

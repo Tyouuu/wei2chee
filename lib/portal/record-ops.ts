@@ -34,13 +34,10 @@ import type { LayoutOp } from "./layout-ops";
  * decided to write it, with the customer's own session so RLS still decides.
  */
 
-/** Modules whose rows are real. Mirror is_pipeline_module() in 20260830040000
- *  and is_ledger_module() in 20260831020000, and the two sets in live-rows.ts. */
-const PIPELINE_MODULES = new Set(["quotations", "orders", "projects", "tasks"]);
-const LEDGER_MODULES = new Set(["payments", "expenses", "commission"]);
+import { PIPELINE_MODULES, LEDGER_MODULES, LIVE_MODULES } from "./shape-state";
 
 export function isRecordModule(pageKey: string | null | undefined): boolean {
-  return !!pageKey && (PIPELINE_MODULES.has(pageKey) || LEDGER_MODULES.has(pageKey));
+  return !!pageKey && LIVE_MODULES.has(pageKey);
 }
 
 /** RM 48,500 · 48,500 · 48500.50 -> sen. Undefined when there is no number in

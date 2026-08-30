@@ -8,7 +8,8 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { PageBar } from "@/app/[locale]/portal/(app)/page-bar";
 import { STAGES, StageSelect, stageTone } from "./stage";
 import { formatDay } from "@/lib/format-date";
-import { MODULE_BY_KEY, type ModuleShape } from "@/lib/portal/module-catalog";
+import { MODULE_BY_KEY, MODULE_CATALOG, type ModuleShape } from "@/lib/portal/module-catalog";
+import { SHAPE_STATE, isLiveShape } from "@/lib/portal/shape-state";
 
 type Customer = {
   project_id: string;
@@ -65,6 +66,17 @@ function toShapeRows(counts: Record<string, number>): ShapeRow[] {
     row.systems += n;
     row.modules.push({ key, n });
     rows.set(archetype.shape, row);
+  }
+  /* EVERY SHAPE, not only the ones a customer has picked.
+
+     This list used to be built purely from usage, so a shape nobody had
+     chosen yet was simply absent -- and the founder's question was 「我有什么
+     模板，什么状态」, which an absent row cannot answer. A shape at zero is a
+     real answer: it exists, nobody wants it yet.
+
+     They still rank by usage; the zeroes fall to the bottom on their own. */
+  for (const m of MODULE_CATALOG) {
+    if (!rows.has(m.shape)) rows.set(m.shape, { shape: m.shape, systems: 0, modules: [] });
   }
   return [...rows.values()]
     .map((r) => ({ ...r, modules: r.modules.sort((a, b) => b.n - a.n) }))
@@ -199,13 +211,19 @@ export function ConsoleHome({
             </span>
           </div>
 
-          {built.length === 0 ? (
+          {/* The list is an INVENTORY now, not only a ranking, so it renders
+              even with no customers -- 「我有什么模板」 is a question about the
+              product, and answering it with 「nobody has picked any yet」 was
+              answering a different one. The emptiness is said above the list
+              rather than instead of it. */}
+          {systems === 0 && (
             <p className="mt-4 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
               {t("shapesEmpty")}
             </p>
-          ) : (
+          )}
+          {built.length > 0 && (
             <>
-              {systems < ENOUGH_SYSTEMS_TO_DECIDE && (
+              {systems > 0 && systems < ENOUGH_SYSTEMS_TO_DECIDE && (
                 <p className="mt-3 [font-size:var(--text-xs)] [color:var(--color-amber-bright,var(--color-paper-dim))]">
                   {t("shapesTooEarly", { needed: ENOUGH_SYSTEMS_TO_DECIDE })}
                 </p>
@@ -216,8 +234,30 @@ export function ConsoleHome({
                     key={row.shape}
                     className="grid grid-cols-[7.5rem_2.5rem_1fr] items-baseline gap-3 [background-color:var(--color-ink-900)] px-4 py-3"
                   >
-                    <span className="font-mono [font-size:var(--text-xs)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
-                      {row.shape}
+                    <span className="flex flex-col gap-1">
+                      <span className="font-mono [font-size:var(--text-xs)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+                        {row.shape}
+                      </span>
+                      {/* THE FACT THAT WAS WRITTEN DOWN NOWHERE.
+
+                          This screen could say three customers use `ledger`
+                          and could not say whether a ledger works. That is the
+                          single most important thing about the product right
+                          now, and the founder had no way to see it.
+
+                          Read from SHAPE_STATE, which is also what decides
+                          whether the projection reads a table and whether
+                          加一单 opens -- so this badge cannot claim something
+                          the product does not do. */}
+                      <span
+                        className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 [font-size:10px] uppercase tracking-[0.1em] [font-weight:var(--fw-semibold)] ${
+                          isLiveShape(row.shape)
+                            ? "[background-color:var(--color-jade-bright)] [color:var(--color-ink-900)]"
+                            : "[background-color:var(--color-ink-800)] [color:var(--color-paper-dim)]"
+                        }`}
+                      >
+                        {t(isLiveShape(row.shape) ? "stateLive" : "stateDrawn")}
+                      </span>
                     </span>
                     <span
                       className={`text-right tabular-nums [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] ${
@@ -241,6 +281,9 @@ export function ConsoleHome({
                 ))}
               </ol>
               <p className="mt-3 [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                {t("stateLegend")}
+              </p>
+              <p className="mt-2 [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
                 {t("shapesProposedCoverage", {
                   with: analysesWithModules,
                   total: analysesTotal,

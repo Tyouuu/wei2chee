@@ -14,6 +14,7 @@ import {
   normalizeModules,
 } from "./module-catalog";
 import { buildPageLayout } from "@/lib/templates/industry-template";
+import { SHAPE_STATE } from "./shape-state";
 
 const content = (data: Data) => (data as unknown as { content: unknown[] }).content;
 
@@ -241,6 +242,43 @@ describe("the SQL mirror", () => {
     const inSql = [...list.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
     const inTs = MODULE_CATALOG.filter((m) => m.shape === shape).map((m) => m.key).sort();
     expect(inSql).toEqual(inTs);
+  });
+
+  /*
+    A SHAPE CANNOT CLAIM TO BE RUNNING WITHOUT A TABLE.
+
+    SHAPE_STATE is read by three things that all promise something to a
+    customer: the projection decides whether to look for real rows, 加一单
+    decides whether to open a form, and the console prints 「真的能跑」 on the
+    founder's screen. Flipping a shape there without building its table would
+    make all three lie at once, and the console's badge is the worst of them --
+    it is the screen he uses to decide what to build NEXT.
+
+    So the claim is checked against the database: a live shape must have a
+    membership function, which is the thing every table's CHECK constraint and
+    every RPC is written against.
+  */
+  it("has a table behind every shape marked live", () => {
+    for (const [shape, state] of Object.entries(SHAPE_STATE)) {
+      if (state !== "live") continue;
+      const fn = `is_${shape}_module`;
+      expect(
+        () => newestDefining(`function public.${fn}`),
+        `${shape} is marked live but no migration defines ${fn}()`,
+      ).not.toThrow();
+    }
+  });
+
+  /* And the reverse, which is the cheaper mistake to make: a table built and
+     the flag never flipped means the projection never reads it, so a customer
+     writes rows nobody ever sees. */
+  it("marks live every shape that already has a table", () => {
+    const files = readdirSync(dir).filter((f) => f.endsWith(".sql"));
+    const all = files.map((f) => readFileSync(join(dir, f), "utf8")).join("\n");
+    for (const shape of Object.keys(SHAPE_STATE) as (keyof typeof SHAPE_STATE)[]) {
+      if (!all.includes(`function public.is_${shape}_module`)) continue;
+      expect(SHAPE_STATE[shape], `is_${shape}_module() exists but the shape is still "drawn"`).toBe("live");
+    }
   });
 
   /* A module that can be written but cannot be numbered would get 'DOC-' --

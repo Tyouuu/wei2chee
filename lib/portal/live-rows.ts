@@ -30,9 +30,7 @@ import type { StatusTone } from "@/lib/templates/copy/types";
  * 消失」) implemented by construction rather than by bookkeeping.
  */
 
-/** Modules whose rows live in `pipeline_records`. Mirrors is_pipeline_module()
- *  in 20260830040000; module-catalog.test.ts fails if the shapes drift. */
-const PIPELINE_MODULES = new Set(["quotations", "orders", "projects", "tasks"]);
+import { PIPELINE_MODULES, LEDGER_MODULES } from "./shape-state";
 
 export type LiveRow = {
   primary: string;
@@ -135,8 +133,6 @@ export function rowsFromRecords(
  * was deliberately written to avoid.
  */
 
-/** Mirrors is_ledger_module() in 20260831020000. */
-const LEDGER_MODULES = new Set(["payments", "expenses", "commission"]);
 
 type LedgerEntry = {
   id: string;

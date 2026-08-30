@@ -19,6 +19,7 @@ import {
 } from "@/lib/templates/industry-template";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
+import { isLiveShape } from "@/lib/portal/shape-state";
 import { NewRecordForm } from "./new-record-form";
 import { StyleScope } from "@/design-system/editor/style-scope";
 
@@ -79,7 +80,11 @@ export default async function NewRecordPage({
      writes nowhere, which this repo has shipped enough times. */
   const shape = MODULE_BY_KEY[pageKey]?.shape;
   const isLedger = shape === "ledger";
-  if (shape !== "pipeline" && !isLedger) notFound();
+  /* One fact, read from one place: a shape that is not live has no table
+     behind it, so 加一单 there would be a button that writes nowhere. When
+     directory lands, moving it to "live" in shape-state.ts is what opens this
+     page for it -- not a second list edited here. */
+  if (!shape || !isLiveShape(shape)) notFound();
 
   const user = await getSessionUser();
   if (!user) redirect("/login");

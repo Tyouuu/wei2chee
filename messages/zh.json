@@ -762,7 +762,10 @@
       "navOverview": "总览",
       "signOut": "登出",
       "contactThem": "寄信给他",
-      "contactSubject": "关于你的系统（{business}）"
+      "contactSubject": "关于你的系统（{business}）",
+      "stateLive": "真的能跑",
+      "stateDrawn": "还是画的",
+      "stateLegend": "「真的能跑」= 真的表 · 真的单号 · 人自己填得进 · AI 走同一支。其余的每一家客户看到的还是同一份示例资料。"
     },
     "account": {
       "title": "我的账号",
