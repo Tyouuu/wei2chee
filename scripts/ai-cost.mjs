@@ -29,7 +29,7 @@
  *   npm run check:ai-cost
  *   npm run check:ai-cost -- --days 7
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -62,6 +62,34 @@ const AI_MODEL = readFileSync(new URL("../lib/portal/ai-model.ts", import.meta.u
  * this is a stand-in to correct in one place, not a figure to quote. */
 const PRICE_2026_08_27 = { [AI_MODEL]: { in: 1.25, out: 10 } };
 const USD_TO_MYR_2026_08_27 = 4.2;
+
+/*
+  THE MOMENT RECORDING BECAME POSSIBLE.
+
+  Every questionnaire before 20260830010000 ran without a session and wrote
+  nothing. That was the bug, and it is FIXED -- but this check could not tell a
+  severed wire from a repaired one nobody has used since, and on 2026-08-31 it
+  was still printing 🔴 over seventeen leads that ALL predate the repair.
+
+  A red light that cannot go out teaches whoever runs this to stop reading red
+  lights, which is worse than the silence it replaced.
+
+  Found by CONTENT, not by a date written here: the migration that taught
+  `ai_usage` about `lead_id` is the one that opened the wire. Renaming the file
+  cannot break this, and nobody has to remember to update a constant -- which
+  is the same cure this repo has now reached six times for the same disease.
+*/
+const RECORDING_SINCE = (() => {
+  const dir = new URL("../supabase/migrations/", import.meta.url);
+  for (const f of readdirSync(dir).sort()) {
+    if (!f.endsWith(".sql")) continue;
+    const sql = readFileSync(new URL(f, dir), "utf8");
+    if (!sql.includes("ai_usage") || !sql.includes("lead_id")) continue;
+    const m = f.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+    if (m) return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
+  }
+  return null;
+})();
 
 const money = (usd) => `US$${usd.toFixed(2)} ≈ RM${(usd * USD_TO_MYR_2026_08_27).toFixed(2)}`;
 
@@ -157,14 +185,54 @@ async function main() {
       ? Number((leadRes.headers.get("content-range") ?? "").split("/")[1]) || 0
       : 0;
 
-    if (leads > 0) {
+    /* Only the questionnaires the ledger COULD have recorded are evidence of a
+       break. See RECORDING_SINCE: everything older ran before the wire existed,
+       and counting those keeps a red light on over a bug that is fixed. */
+    const cutoff =
+      RECORDING_SINCE && RECORDING_SINCE > new Date(since) ? RECORDING_SINCE : new Date(since);
+    const afterRes = await fetch(
+      `${URL_}/rest/v1/leads?select=id&created_at=gte.${encodeURIComponent(cutoff.toISOString())}`,
+      {
+        headers: {
+          apikey: SERVICE,
+          Authorization: `Bearer ${SERVICE}`,
+          Connection: "close",
+          Prefer: "count=exact",
+          Range: "0-0",
+        },
+      },
+    );
+    const recordable = afterRes.ok
+      ? Number((afterRes.headers.get("content-range") ?? "").split("/")[1]) || 0
+      : 0;
+
+    if (recordable > 0) {
       console.log(
-        `\n🔴 最近 ${DAYS} 天有 ${leads} 份问卷，帐本里却一行都没有。\n` +
-          `   问卷每一份都呼叫过模型，所以这不是「很安静」，是记帐那条线断了。\n` +
+        `\n🔴 有 ${recordable} 份问卷跑在记帐修好之后，帐本里却一行都没有。\n` +
+          `   问卷每一份都呼叫过模型，所以这不是「很安静」，是记帐那条线又断了。\n` +
           `   先查 recordAiUsage 有没有把 leadId 传下去（app/api/analyze/route.ts）。\n`,
       );
       return 1;
     }
+
+    if (leads > 0) {
+      /*
+        NOT RED, AND NOT GREEN EITHER.
+
+        These questionnaires all ran before the wire existed, so their absence
+        is expected and says nothing about today. What it DOES say is that
+        nobody has run one since the repair -- so the repair is UNVERIFIED, and
+        printing 「一切正常」 over it would be the same kind of lie the red was.
+      */
+      console.log(
+        `\n⚠️  帐本是空的，但那 ${leads} 份问卷全部跑在记帐修好之前（${cutoff
+          .toISOString()
+          .slice(0, 10)}），所以是预期内的。\n` +
+          `   修好之后还没有人跑过问卷 —— 这条线现在是「还没验证过」，不是「正常」。\n`,
+      );
+      return 0;
+    }
+
     console.log(`\n最近 ${DAYS} 天没有任何 AI 呼叫，也没有任何问卷 —— 是真的安静。\n`);
     return 0;
   }
