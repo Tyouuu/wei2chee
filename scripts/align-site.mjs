@@ -1649,15 +1649,20 @@ async function settlePage(p, wait) {
      两次一样才算载完，最多五轮。
      ⚠️ 五轮还在变就**说出来**（下面 auditCapture 会拒绝），不要静静地拿
      第五轮那一份去算 —— 那正是这一次的形状。 */
+  /* ⚠️ 每一步等多久，是这一整条里最贵的一个数字。
+     A. Reynolds（満図 的参考）两次都拍回半张 ——「Our Expertise」底下一整片
+     空白。它的内容是滚到才载入的，而每格 120ms 不够它回来。
+     放慢到 300ms、放到八轮：一轮多花几秒，换一份不用重拍的采集。
+     ⚠️ 仍然会有拍不到的时候，那就该拒绝 —— 慢不是保证，只是把赌注变小。 */
   let last = -1, stable = 0;
-  for (let pass = 0; pass < 5 && stable < 2; pass++) {
+  for (let pass = 0; pass < 8 && stable < 2; pass++) {
     const n = await p.evaluate(async () => {
       for (let y = 0; y < document.body.scrollHeight; y += 500) {
         window.scrollTo(0, y);
-        await new Promise((r) => setTimeout(r, 120));
+        await new Promise((r) => setTimeout(r, 300));
       }
       window.scrollTo(0, 0);
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 700));
       let c = 0;
       for (const el of document.body.querySelectorAll("*")) {
         if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
