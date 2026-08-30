@@ -1227,8 +1227,14 @@
    needs no second layer, and the second layer could only ever hide things. */
 
 .ds-site {
-  --site-radius: calc(var(--radius-lg) * 1.7);
-  --site-radius-sm: calc(var(--radius-md) * 1.7);
+  /* ⚠️ 1.7 这个倍数是给整个官网层定的（任务 28：官网上圆角、阴影、照片
+     处理全部是倍数，这样每一套风格的比例保得住）。但**一个方角的模版乘 1.7
+     还是圆的** —— 台账 抄的 Newel 整页没有圆角，我们的 --radius-md 3px 乘完
+     变 5.1px，七个元素上看得到。尺子印着「模版 没有圆角 · 我们 5.1px ×7」，
+     而那一项以前**只印不判、连理由都没写**。
+     所以倍数改成风格自己能设的一个数：不设就还是 1.7，方角的那几套设 0。 */
+  --site-radius: calc(var(--radius-lg) * var(--site-round, 1.7));
+  --site-radius-sm: calc(var(--radius-md) * var(--site-round, 1.7));
   /* The register's own biggest shadow, not a new one. A register that declares
      flat shadows (瑞士 prints on paper, 中台 is a POS screen) stays flat. */
   --site-elevation: var(--shadow-lg);

@@ -620,6 +620,7 @@
   --site-bar-pull: -4.6rem;
   --site-field-bg: transparent;
   --site-field-radius: 0;
+  --site-round: 0;
   --site-field-border: 0;
   --site-field-line: inset 0 -1px 0 color-mix(in oklab, var(--color-paper) 42%, transparent);
   --site-row-line: color-mix(in oklab, var(--site-ink-fg) 26%, transparent);

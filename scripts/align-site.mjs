@@ -1921,7 +1921,30 @@ try {
 
      判什么：这一段有几个图 / 几颗按钮 / 几栏字，配对得上的那些左右位置差多少。
      不判什么：好不好看、字写什么、照片拍的是什么。 */
-  check("结构", "最常用的圆角", theirs.declared?.radius ?? "量不到", ours.declared?.radius ?? "量不到", null);
+  /* ⚠️ 这一项以前只印不判，而且**没有写理由** —— 另外两个只印不判的（段数 ·
+     标题字重）都写着「同一个问题下面那一项问得更准」，这一项什么都没有。
+     报告尾巴自己警告过「量不到不是过关，下一个差异就藏在那几项里」，
+     而它印出来的正是一个真差异：**模版 没有圆角 · 我们 5.1px ×7**。
+     台账 抄的那一页是方角的，我们七个元素是圆的 —— 眼睛看得到，没有人判。
+
+     判法：把「没有圆角」读成 0，差 2px 以内算同一个决定。
+     两边都量不到就回 null（judge 会处理），不算过关。 */
+  {
+    const rad = (d) => {
+      const v = d?.radius;
+      if (!v) return null;
+      if (String(v).includes("没有圆角")) return 0;
+      const m = String(v).match(/([0-9.]+)px/);
+      return m ? Number(m[1]) : null;
+    };
+    const rT = rad(theirs.declared), rO = rad(ours.declared);
+    /* ⚠️ 这里**不能用 `judge()`**：它把 0 当成「量不到」，而那对张数、字级是对的
+       （0 张照片多半是没量到），对圆角是错的 —— **0 是一个真的读数：方角**。
+       台账 的参考正好是 0，第一版套了 judge，整项就静静回到「量不到」。
+       同一个 0，在不同的轴上意思不一样；一个通用的「空值」规则挡不住这件事。 */
+    check("结构", "最常用的圆角", theirs.declared?.radius ?? "量不到", ours.declared?.radius ?? "量不到",
+      rT === null || rO === null ? null : Math.abs(rT - rO) <= 2);
+  }
 
   console.log("\n结构 SHAPE  （一段里面有哪些盒子，图 · 钮 · 字）");
   {

@@ -274,6 +274,9 @@
      人找不到那是可以打字的地方；他们用的是「标签在上、底下一条线」。 */
   --site-field-bg: transparent;
   --site-field-radius: 0;
+  /* 官网整页方角 —— 参考页量出来「没有圆角」，而官网层预设把风格的圆角乘 1.7。
+     工作台不动：那里 --radius-lg 4px 还是它自己的。 */
+  --site-round: 0;
   --site-field-border: 0;
   --site-field-line: inset 0 -1px 0 color-mix(in oklab, var(--color-paper) 42%, transparent);
   /* 送出是一条满宽的白横条 —— Newel 的 Contact Us 就是这样收尾的。 */
