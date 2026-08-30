@@ -3087,6 +3087,74 @@ Supabase · 跟我们一模一样的栈」，**然后我一次都没打开过它
 
 ---
 
+### 73. 网域规格 —— 两条同时活，他的优先，你的永不下线（2026-08-31 定案）
+> `为什么不用他们的子网啊 他们的后台来的` → `可以 这个提议也很方便我要改东西还是维护东西的时候`
+
+**他顶对了，我改口。** 我原本主张后台用我们的网域，理由是成本跟维运 ——
+**成本那条不成立**（Vercel 文件：`Unlimited custom domains` + `Automatic SSL` + REST API），
+而他给的理由更强：**买断的时候系统本来就在他自己的网域上，交接干净得多**（[任务 64](#64)）。
+
+#### 别人怎么做（只 verify 了一家，其余读不到）
+**Framer 原文**：`By default, your website is hosted on a Framer subdomain, which cannot be
+customized. However, you can add a custom domain…`
+→ **平台子网域是预设、拿不掉；自订网域叠上去。两条同时活。**
+⚠️ Shopify 跟 Webflow 的说明页都挡爬虫（403），**没读到，不算数**。
+
+#### 规格
+| 层 | 网址 | 性质 |
+|---|---|---|
+| **1 · 永远有** | `xingfa.<我们的网域>` | **一条 wildcard 就盖住全部**：Supabase 支援 `https://*.域名/**` |
+| **2 · 他自己的** | `system.xingfa.com.my` | 他有网域就接，**买断更干净**。⚠️ 每一个要**手动**加一条 Supabase 白名单 |
+| **3 · 改东西** | **不靠网域** | 靠草稿／发布（`site_published` + publish 投影），**已经建好** |
+
+🔴 **第 1 层永远不关掉**，它救三种情况：
+1. **他忘了续网域** ← 最可能发生，装修老板不会记得 domain 到期
+2. 白名单忘了加 → 还有一条登得进去
+3. 你要远端支援 → **永远有一个你确定打得开的网址**
+
+⚠️ **一个要更正的误解**：两个网址是**同一个专案、同一个资料库**，
+所以在子网域改一个字，主网域同一秒就变了。**它们不是 staging / production，是同一间房子的两个门。**
+「先改再上线」是**草稿／发布**在做的事。
+
+- [ ] 买一个网域（要他决定名字）
+- [ ] `*.网域` DNS 指到 Vercel + Supabase 白名单加 `https://*.网域/**`
+- [ ] `proxy.ts` 读 Host 解析子网域 → 对应 project（`projects.site_slug` **已经存在**）
+- [ ] 自订网域：`project_domains` 表 + Vercel REST API 加网域
+
+---
+
+### 74. 他自己的 `vibe-dealer` —— 四样我们没有而他已经解过的（2026-08-31）
+> `你看我的github 我之前不是做了一个vibe dealer management的吗 可以加进来我的平台的吗`
+
+`Tyouuu/vibe-dealer`（私有，TypeScript，**跟 Formae 同一个栈**：Next.js · Supabase · vitest）。
+是他自己做的 **SIM 经销商系统**。
+
+#### 它的表对上我们三个零件
+| vibe-dealer | Formae |
+|---|---|
+| `dealers` | `directory` |
+| `transactions` | `ledger` |
+| `company_statements` | `reconcile` |
+
+**搬不过来**（它是单一生意，Formae 是一张表服务很多生意），
+**但它是 `ledger` 跟 `directory` 最好的来源** —— 因为那是**一个真的马来西亚生意逼出来的需求**。
+
+#### 四样我们没有、他有
+1. ✅ **`idempotency_key`** —— **已修**（migration `20260831010000`）。
+   修之前实测过：按一下、等 400ms、再按一下 → **QT-2026-0001 跟 QT-2026-0002，同一张单两次**
+2. 🔴 **`whatsapp` 栏位长在 `dealers` 上** —— [任务 48](#48) 记着我们「没有栏位放客户号码」，**他早就解了**
+3. 🔴 **`adjusts_id`** —— 冲正单指向被改的那一笔。**会计上不该改也不该删，要开一张冲正**
+4. 🔴 **`commission_rm` 是 generated column** —— 佣金由**资料库**算，不是程式算。
+   印证 [任务 69](#69) 第三层「看的」：佣金是算出来的，不是记进去的
+5. 🔴 **`recorded_by` / `verified_by` + `0007_audit_hardening`** —— 两个人负责 + 审计。
+   正好是我提的 admin panel 第 1、4 项，**他已经做过一次**
+
+- [ ] `directory` 开工时：`whatsapp` 栏位、`recorded_by`
+- [ ] `ledger` 开工时：`adjusts_id` 冲正、佣金用 generated column、`receipt_url`
+- [ ] admin panel 的审计，直接照 `0007_audit_hardening` 的做法
+
+---
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**
