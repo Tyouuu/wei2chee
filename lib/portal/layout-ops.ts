@@ -685,6 +685,38 @@ export function tableColumnKeys(layout: PuckLayout, id: string): string[] | null
   return table ? table.columns.map((c) => c.key) : null;
 }
 
+/**
+ * The record table on this page, wherever it is in the tree.
+ *
+ * For the form behind 「加一单」: its inputs are this table's OWN columns, so a
+ * business that added 「车牌号」 gets a box for it without anyone writing that
+ * business a form. A page with no record table has no form, which is correct
+ * -- there is nothing on it to add a row to.
+ *
+ * Recurses into slots for the reason live-rows.ts records at length: a
+ * generated page is one SystemShell whose `main` prop holds the blocks, and a
+ * projection that only walks `content` finds nothing on any real page.
+ */
+export function firstRecordTable(layout: PuckLayout): TableModel | null {
+  const find = (nodes: PuckNode[] | undefined): TableModel | null => {
+    for (const n of nodes ?? []) {
+      if (!n || typeof n !== "object") continue;
+      if (n.type === "RecordTable") {
+        n.props = upgradeRecordTableProps(n.props);
+        return n.props.table as TableModel;
+      }
+      for (const value of Object.values(n.props ?? {})) {
+        if (Array.isArray(value) && value.some((v) => v && typeof v === "object" && "type" in (v as object))) {
+          const hit = find(value as PuckNode[]);
+          if (hit) return hit;
+        }
+      }
+    }
+    return null;
+  };
+  return find(layout.content);
+}
+
 function tableOf(layout: PuckLayout, id: string): TableModel | null {
   const node = findNode(layout.content, id);
   if (!node || node.type !== "RecordTable") return null;

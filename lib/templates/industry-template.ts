@@ -1815,6 +1815,12 @@ function buildQuotations(
     node("PageHeader", "quotations-header", {
       title: c.quotations.title,
       subtitle: c.quotations.subtitle(labels.customer),
+      // 加一单 — the ONE action this page is for. A link and not a control,
+      // because this header is drawn in the style gallery, in hundreds of
+      // thumbnails and on paper, where there is no session to write with.
+      // The writing happens at /new; see that page for why.
+      actionLabel: c.dashboard.primaryAction(c.quotations.title),
+      actionHref: `/${locale}/portal/quotations/new`,
     }),
     filterChips(
       "quotations-filters",
@@ -1865,6 +1871,12 @@ function buildProjects(
         const focus = focusTitle(ctx, lang);
         return focus ? c.projects.focus(focus) : c.projects.subtitle(labels.order);
       })(),
+      // 加一单 — the ONE action this page is for. A link and not a control,
+      // because this header is drawn in the style gallery, in hundreds of
+      // thumbnails and on paper, where there is no session to write with.
+      // The writing happens at /new; see that page for why.
+      actionLabel: c.dashboard.primaryAction(c.projects.title(labels.order)),
+      actionHref: `/${locale}/portal/projects/new`,
     }),
     workflowStrip(
       "projects-workflow",
@@ -1913,6 +1925,12 @@ function buildPayments(
     node("PageHeader", "payments-header", {
       title: c.payments.title,
       subtitle: c.payments.subtitle(labels.customer),
+      // 加一单 — the ONE action this page is for. A link and not a control,
+      // because this header is drawn in the style gallery, in hundreds of
+      // thumbnails and on paper, where there is no session to write with.
+      // The writing happens at /new; see that page for why.
+      actionLabel: c.dashboard.primaryAction(c.payments.title),
+      actionHref: `/${locale}/portal/payments/new`,
     }),
     node("MonthPicker", "payments-month", {
       name: "payment-month",
@@ -2034,6 +2052,12 @@ function buildOrders(
         const focus = focusTitle(ctx, lang);
         return focus ? c.orders.focus(focus) : c.orders.subtitle(labels.order);
       })(),
+      // 加一单 — the ONE action this page is for. A link and not a control,
+      // because this header is drawn in the style gallery, in hundreds of
+      // thumbnails and on paper, where there is no session to write with.
+      // The writing happens at /new; see that page for why.
+      actionLabel: c.dashboard.primaryAction(c.orders.title(labels.order)),
+      actionHref: `/${locale}/portal/orders/new`,
     }),
     workflowStrip(
       "orders-workflow",
