@@ -38,6 +38,7 @@
     "shoot:saas": "node scripts/shoot-saas.mjs",
     "shoot:codrops": "node scripts/shoot-codrops.mjs",
     "align": "node scripts/align-site.mjs",
+    "align:all": "node scripts/align-all.mjs",
     "align:sheet": "python scripts/align-sheet.py",
     "shoot:picker": "node scripts/shoot-picker.mjs",
     "shoot:console": "node scripts/shoot-console.mjs",
