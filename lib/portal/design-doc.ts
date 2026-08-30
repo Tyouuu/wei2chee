@@ -100,7 +100,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteStory: "banded",
       SiteFeatures: "listed",
       SiteGallery: "mosaic",
-      SiteTestimonials: "boxed",
+      SiteTestimonials: "celled",
       SiteSteps: "numbered",
       SiteTeam: "row",
       SiteCreds: "strip",

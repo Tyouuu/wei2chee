@@ -279,6 +279,7 @@
   /* 送出是一条满宽的白横条 —— Newel 的 Contact Us 就是这样收尾的。 */
   /* 表格那一半自己一块更深的地，跟左半用一条通到底的竖线分开 ——
      Newel 的 Contact Us 是一个框里切两半，不是两栏并排。 */
+  --site-row-line: color-mix(in oklab, var(--site-ink-fg) 26%, transparent);
   --site-form-bleed: calc(var(--pad-card-lg) * -1.35);
   --site-form-panel: color-mix(in oklab, var(--site-ink-bg) 82%, #000);
   --site-form-line: 1px solid color-mix(in oklab, var(--site-ink-fg) 22%, transparent);

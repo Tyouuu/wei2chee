@@ -165,7 +165,7 @@ export function SiteFeatures({
             我们那一条横过整页 6%–94%，於是这一段的顺序变成 字→图，
             他们是 图→字。`data-column-heading` 就是「这个标题属於它那一栏」
             的记号，细框那套版式靠它决定要不要给标题铺带子。 */}
-        <div className="grid overflow-hidden [border-radius:var(--radius-lg)] @3xl:grid-cols-2">
+        <div data-fill="" className="grid overflow-hidden [border-radius:var(--radius-lg)] @3xl:grid-cols-2">
           {/* ⚠️ A STEP UP FROM THE GROUND, NOT A COLOUR LAID ON IT.
 
               First version used `--color-block`, which on 台账 is a warm sand
@@ -184,7 +184,12 @@ export function SiteFeatures({
               最顶开始一直到最底，所以他们那一段的顺序是 图→字，我们本来是
               字→图。标题放在哪一层，决定的是整段的顺序。 */}
           {heading ? (
-            <h2 data-column-heading="" className="ds-display [padding:calc(var(--pad-card-lg)*0.9)_var(--pad-card-lg)_0] [color:var(--color-paper)]">{heading}</h2>
+            <h2
+              data-column-heading=""
+              className="ds-display [background:var(--site-strip,color-mix(in_oklab,#000_24%,var(--color-canvas)))] [border-block-end:var(--hairline)_solid_var(--site-row-line,var(--border-subtle))] [color:var(--color-paper)] [padding:calc(var(--pad-card-lg)*0.9)_calc(var(--pad-card-lg)*1.05)]"
+            >
+              {heading}
+            </h2>
           ) : null}
           <ul>
             {items.map((f, i) => (
@@ -192,7 +197,7 @@ export function SiteFeatures({
                 key={f.label}
                 className={[
                   "flex flex-col [gap:.25rem] [padding-block:calc(var(--pad-card-lg)*0.95*var(--site-figure,1))] [padding-inline:calc(var(--pad-card-lg)*1.05)]",
-                  i > 0 ? "[border-top:var(--hairline)_solid_var(--border-subtle)]" : "",
+                  i > 0 ? "[border-top:var(--hairline)_solid_var(--site-row-line,var(--border-subtle))]" : "",
                 ].join(" ")}
               >
                 <span className="[color:var(--color-paper)] [font-size:var(--text-xl)] [font-weight:var(--fw-medium)]">
@@ -223,7 +228,7 @@ export function SiteFeatures({
         <div className="flex justify-end">
           <a
             href="#ask"
-            className="inline-flex min-h-10 items-center [background:var(--color-canvas)] [border:var(--hairline)_solid_var(--border-subtle)] [color:var(--color-paper)] [font-size:var(--text-xs)] [padding-inline:calc(var(--pad-control-x)*1.6)]"
+            className="inline-flex min-h-10 items-center justify-center [background:var(--site-submit-bg,var(--color-canvas))] [border:var(--hairline)_solid_var(--border-subtle)] [color:var(--site-submit-fg,var(--color-paper))] [font-size:var(--text-xs)] [min-width:14rem] [padding-inline:calc(var(--pad-control-x)*1.6)]"
           >
             More info
           </a>
@@ -752,7 +757,7 @@ export function SiteTestimonials({
    * thing a stranger actually checks. 口碑在这个市场就是全部生意, and the two
    * shapes make two different arguments about how it is shown.
    */
-  shape?: "cards" | "ruled" | "boxed" | "stagger"
+  shape?: "cards" | "ruled" | "boxed" | "stagger" | "celled"
 }) {
   if (!items?.length) return null
 
@@ -788,6 +793,40 @@ export function SiteTestimonials({
                 </p>
                 <p className="mt-4 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{t.who}</p>
               </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  if (shape === "celled") {
+    /*
+      ── 一个格子切三格，细线分开 ──────────────────────────────────────────
+
+      Newel 第5段, 原尺寸裁图 2026-08-30（老板:「你看一下吧」）：三则评价不是
+      三张卡片，是**同一个方框里的三格** —— 中间两条细线，四周贴住框，格与格
+      之间没有缝。引言在上、名字在下，两者之间是空的。
+
+      我们原本是三个各自带框、中间留缝的盒子。同样三则评价，读起来一个是
+      「一份名单」，一个是「三张贴在墙上的纸」。 */
+    return (
+      <section className="@container" data-wide="">
+        {heading ? (
+          <h2 className="ds-display mb-0 text-center [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+            {heading}
+          </h2>
+        ) : null}
+        <ul data-cells="" className="grid [gap:0] @2xl:grid-cols-3">
+          {items.map((t, i) => (
+            <li
+              key={i}
+              className="flex flex-col justify-between [gap:var(--gap-stack)] [min-height:calc(9rem*var(--site-figure,1))] [padding:calc(var(--pad-card-lg)*1.05)]"
+            >
+              <p className="[color:var(--color-paper)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
+                {t.quote}
+              </p>
+              <p className="[color:var(--color-paper-dim)] [font-size:var(--text-base)]">{t.who}</p>
             </li>
           ))}
         </ul>
@@ -1718,7 +1757,7 @@ export function SiteStory({
     */
     return (
       <section className="@container">
-        <div className="grid items-stretch [gap:0] @3xl:grid-cols-2">
+        <div data-fill="" className="grid items-stretch [gap:0] [margin-block-end:0] @3xl:grid-cols-2">
           {photo?.trim() ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img loading="lazy" decoding="async" src={photo} alt={photoAlt || ""} className="size-full min-h-full object-cover" />
@@ -1737,7 +1776,7 @@ export function SiteStory({
           </div>
         </div>
         {marks.length ? (
-          <div className="mt-10">
+          <div>
             {/* 「Our Benefits」那一条 —— 它自己的标题坐在带子上，跟段标题一样。 */}
             <h3 className="[background:var(--site-strip,color-mix(in_oklab,#000_24%,var(--color-canvas)))] [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-xl)] [padding:calc(var(--pad-card)*0.9)_calc(var(--pad-card-lg))]">
               {bandHeading || "Our benefits"}

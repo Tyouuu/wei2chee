@@ -179,6 +179,8 @@ export const VARIANTS: Record<string, Variant[]> = {
        left · right · left. Not a row of three, which is why their section is
        998px and the row shape is 598. */
     { id: "stagger", label: "错开的气泡", props: { shape: "stagger" } },
+    /* 一格切三格 — Newel 第5段：同一个框里三格，细线分开，四周贴住框。 */
+    { id: "celled", label: "一格切三格", props: { shape: "celled" } },
   ],
   SiteFeatures: [
     { id: "cards", label: "三张卡片", props: { shape: "cards" } },

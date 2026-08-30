@@ -232,7 +232,13 @@ export function SiteFoot({
              every other pair of cells on that page. Reusing the mark the
              register already understands rather than writing a second rule for
              the footer: a register that says 「分格」 says it everywhere. */
-          <div data-cells="" className="grid [border-top:var(--hairline)_solid_var(--color-nav-border)] [gap:var(--gap-stack)] [padding-top:var(--gap-stack)] @2xl:grid-cols-3">
+          <div
+            data-cells=""
+            className={`grid [border-top:var(--hairline)_solid_var(--color-nav-border)] [gap:var(--gap-stack)] [padding-top:var(--gap-stack)] ${
+              filled.length ? "@2xl:grid-cols-3" : "@2xl:grid-cols-2"
+            }`}
+          >
+            {filled.length ? (
             <dl>
               {filled.map((r) => (
                 <div key={r.label} className="mb-2">
@@ -243,8 +249,9 @@ export function SiteFoot({
                 </div>
               ))}
             </dl>
+            ) : null}
             <ul className="flex flex-col [gap:.35rem]">
-              {minor.map((l) => (
+              {(minor.length ? minor : jumps).map((l) => (
                 <li key={l.href + l.label}>
                   <a href={l.href} className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)] hover:underline">
                     {l.label}
