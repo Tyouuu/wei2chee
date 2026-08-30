@@ -297,4 +297,29 @@ describe("尺子不准再犯", () => {
     expect(blk).toMatch(/太少，比例不判/);
     expect(blk).toMatch(/name: `\$\{who\}分段漏字`, ok: null/);
   });
+
+  /* ㉙ 分段漏图要**两个方向**都问。
+     招牌第一次印出读数就是「这一页 14 张，各段装下 15 张」——一张图跨在段界上，
+     被两段各算一次，而 `all - held > 1` 那一边永远是绿的。
+     重复算代表分段不是一个乾净的切分，而每一段的读数都盖在那上面。 */
+  it("分段漏图 也要抓得到「装下的比整页有的还多」", () => {
+    const blk = MJS.slice(MJS.indexOf("const inBoxes ="), MJS.indexOf("const TS = TSHAPE"));
+    expect(blk).toMatch(/held - all <= 1/);
+    expect(blk).toMatch(/被两段各算了一次/);
+  });
+
+  /* ㉚ 两个 align 不准同时跑。
+     十套共用一个 demo project：第二个的切换会把第一个正在拍的页面换掉，
+     拍回来的是别人的公司名跟别人的配色，而报告照样一项一项印。
+     发生过两次，第二次是我自己 —— 而两次都只有其中一个进程知道。
+     开跑前的锁挡两个 npm；拍完之后的复查挡在 Studio 里手改的。两道都要在。 */
+  it("开跑前有锁，而且死掉的锁会被接手", () => {
+    expect(MJS).toMatch(/已经有一个 align 在跑/);
+    expect(MJS).toMatch(/flag: "wx"/);            // 存在就失败，不是覆盖
+    expect(MJS).toMatch(/process\.kill\(held\.pid, 0\)/); // 问系统那个进程还在不在
+    expect(MJS).toMatch(/上一次的锁没清干净/);
+    expect(MJS).toMatch(/SIGINT/);                 // Ctrl-C 也要放开
+    // 拍完之后的复查不准被这把锁取代
+    expect(MJS).toMatch(/拍完之后 demo 站已经不是/);
+  });
 });

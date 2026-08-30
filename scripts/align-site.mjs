@@ -214,6 +214,43 @@ const PROJECT = process.env.DEMO_PROJECT_ID || "37f2b188-5899-48ab-8650-11cefa5f
 const OUT = ".screenshots/align";
 fs.mkdirSync(OUT, { recursive: true });
 
+/* ── 一次只准跑一个 ────────────────────────────────────────────────────────
+   十套共用同一个 demo project：这支脚本会把它切成要量的那一套，量完切回去。
+   两个一起跑，第二个的切换会把第一个正在拍的页面换掉 —— 拍回来的是**别人的
+   公司名、别人的配色**，而报告照样一项一项印，读起来跟对的一模一样。
+
+   ⚠️ 这件事发生过两次，第二次是我自己：批次还在跑的时候手动跑了一支去看新的
+   自检。两次都靠**拍完之后的复查**才发现 —— 那道关是对的，但它太晚：
+   两分钟的采集作废，而且**只有其中一个进程知道**。另一个拿到的是一份被污染、
+   却没有任何地方说它被污染过的报告。
+
+   所以这里再加一把**开跑前**的锁。它不取代那道复查（锁挡得住两个 npm，挡不住
+   有人在 Studio 里手改），两道一起才完整。 */
+const LOCK = `${OUT}/.busy`;
+try {
+  fs.writeFileSync(LOCK, JSON.stringify({ pid: process.pid, register, at: new Date().toISOString() }), { flag: "wx" });
+} catch (e) {
+  if (e.code !== "EEXIST") throw e;
+  let held = {};
+  try { held = JSON.parse(fs.readFileSync(LOCK, "utf8")); } catch { /* 锁写坏了也要讲得出话 */ }
+  /* 上一次被 Ctrl-C 掉的锁不该挡住今天 —— 那个进程还在不在，问系统，不要猜。 */
+  let alive = false;
+  try { process.kill(held.pid, 0); alive = true; } catch { alive = false; }
+  if (alive) {
+    console.error(`
+🔴 已经有一个 align 在跑（pid ${held.pid} · ${held.register} · ${held.at}）。
+   十套共用同一个 demo project，两个一起跑会互相把页面换掉 ——
+   拍回来的是别人的公司名跟别人的配色，而报告照样印得像真的。
+   等它跑完，或者 npm run align:all（那支是一个接一个跑的）。`);
+    process.exit(1);
+  }
+  console.log(`  上一次的锁没清干净（pid ${held.pid} 已经不在了），接手。`);
+  fs.writeFileSync(LOCK, JSON.stringify({ pid: process.pid, register, at: new Date().toISOString() }));
+}
+const dropLock = () => { try { fs.unlinkSync(LOCK); } catch { /* 已经没了就算了 */ } };
+process.on("exit", dropLock);
+for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => { dropLock(); process.exit(130); });
+
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const layouts = JSON.parse(fs.readFileSync(".screenshots/photos/per-trade.json", "utf8"));
 
@@ -2309,9 +2346,16 @@ try {
     for (const [who, cap] of [["模版", theirs], ["我们", ours]]) {
       const all = cap.shots.length;
       const held = inBoxes(cap.shape);
-      const okImg = all - held <= 1;
-      console.log(`  ${okImg ? "OK" : "XX"}  ${who}分段漏图  这一页 ${all} 张，各段装下 ${held} 张`
-        + (okImg ? "" : ` —— ${all - held} 张掉在段外`));
+      /* ⚠️ 两个方向都要问。
+         2026-08-31 这两句刚改成绿的也印，招牌第一次跑就吐出「这一页 14 张，
+         各段装下 15 张」——**装下的比整页有的还多**。一张图跨在段界上，被上下
+         两段各算一次。原本的判断是 `all - held > 1`，负的那一边永远是绿的。
+         重复算不是小数点问题：它代表分段**不是一个乾净的切分**，而每一段的
+         「几栏 · 顺序 · 底色」全部建立在「这一段装了哪些盒子」上面。 */
+      const okImg = all - held <= 1 && held - all <= 1;
+      const why = held > all ? ` —— 有 ${held - all} 张被两段各算了一次（段界穿过它）`
+        : all > held ? ` —— ${all - held} 张掉在段外` : "";
+      console.log(`  ${okImg ? "OK" : "XX"}  ${who}分段漏图  这一页 ${all} 张，各段装下 ${held} 张${why}`);
       marks.push({ axis: "结构", name: `${who}分段漏图`, ok: okImg });
 
       /* 字才是页面上的大面积。图漏一张看得出来，字漏一整段看不出来 ——
