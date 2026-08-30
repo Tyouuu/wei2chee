@@ -2750,6 +2750,61 @@ RLS 比应用层过滤好，那是**安全**那根轴；**它跟「拿不拿得�
 
 ---
 
+### 67. 主流系统有什么模块 —— 实查，用来补我们的目录（2026-08-30 他交办）
+> `深度研究一下 目前主流的system都有什么模块 还是主流的行业都是用什么system 就是完善我这个pipeline`
+
+**读的是画面上的字（innerText），不是猜。** 抓不到的老实讲：Jobber 被 Cloudflare 挡、
+ServiceM8 回 403、Odoo 的 app 目录回 403、Financio 跟 AutoCount 的功能页 404。
+
+#### 抓到的（六家）
+| | 是谁 | 它的模块 |
+|---|---|---|
+| **ERPNext** | 全球开源 ERP | Accounting · Assets · **Buying** · Selling · CRM · **Stock** · POS · Manufacturing · Quality · Subcontracting · Projects · Support · E-commerce · Website |
+| **SQL Account** | 马来西亚老大 | Sales and Purchase · Stock（**多仓 · 多单位 UOM** · 补货建议 · 条码）· SST · Customer（**账龄 · 信用额度 · CTOS**）· Supplier · General Ledger · **Project Accounting** |
+| **AutoCount** | **≥240,000 家公司** | Accounting · POS · **HRMS** · Cloud · OneSales · **OneRewards（忠诚度）** · LHDN e-Invoice · Embedded Financing |
+| **Tunai** | **7,000+ 沙龙**，RM2.30/天 | **套票/次数追踪** · 智能预约表 · **佣金自动算** · 客户历史 · **多分店看板** · **忠诚度/会员** · **WhatsApp 自动提醒** · e-Invoice 自动送 |
+| **Aoikumo** | RM2,680–6,680/年 | 排班+提醒 · 客户 · **e-Wallet（预付余额）** · 服务奖金 · 产品库存 · 忠诚度 → 高阶加 EMR · 电子表单 · **批号效期库存** |
+| **StoreHub** | **20,000 商户** | 按 **F&B / 零售 / 服务** 三行分，每行都给：e-Invoice · 成本或库存或客户管理 · 数字支付 · 销售报表 |
+
+#### 🔴 最重要的一条：SQL Account 自己就是按行业卖的
+它的 **Special Industries** 一栏白纸黑字列着：
+**Construction Company · Distributor, Wholesaler · Services Company · Motor Vehicle System ·
+Property Management · Transportation · Pharmaceutical · Glass and Aluminum**
+
+**那正是「主流行业用什么 system」的答案，而且是从老大那里直接读到的** ——
+他们不是卖一套通用 ERP，他们卖**一套核心 + 一个行业包**。
+**跟我们「零件 + 每个行业挑几块」是同一个想法，只是他们用的词是「行业版本」。**
+
+#### 量出来我们缺的五件（出现在两家以上，而且对得上我们服务的行业）
+| 缺的 | 谁有 | 对哪一行 | **落在哪个零件** |
+|---|---|---|---|
+| 🔴 **套票 / 预付余额** | Tunai 头条 · Aoikumo 每一档 | 沙龙 · 补习 · 健身 | **`ledger`**（一张交易表 + 大数字是「还剩几次」）—— **不用新零件** |
+| 🔴 **采购单** | ERPNext `Buying` · SQL `Purchase` | 批发 · 零售 | **`pipeline`**（下单→到货→入库→付款）—— **pipeline 做完就白送** |
+| 🔴 **会员 / 忠诚度** | Tunai · Aoikumo · AutoCount OneRewards | 零售 · 餐饮 · 沙龙 | **`directory`** + 积分栏 —— **不用新零件** |
+| **信用额度 · 账龄** | SQL 的卖点 | 批发 | **不是模块，是客户身上的栏位** |
+| **多分店** | Tunai · Aoikumo · StoreHub **三家都按分店收费** | 沙龙 · 零售 · 餐饮 | ⚠️ **不是模块，是一根维度** —— 每一行都要知道自己属於哪一间店 |
+
+#### 这一轮最值钱的结论
+**五个缺口里，三个是「已有零件上多一个模块」，一个是栏位，一个是维度。零个需要新零件。**
+**十个零件扛得住主流系统的功能表** —— 这是这套做法第一次被外面的东西验过，而且过了。
+
+⚠️ **但那根「多分店」维度要早点决定**，因为它是**每一张表都要多一栏**，
+越晚加越贵。而三家马来西亚的对手**全部按分店收费** —— 那说明这个市场的客户是有分店的。
+
+#### 我们有而他们没有的一件
+**官网。** Tunai · Aoikumo · StoreHub · SQL **四家都不给生意一个对外的网站**。
+[任务 44](#44) 判断沙龙那一单卖的是「官网 + 从官网进来的预约」—— **这一轮四家的功能表都印证了它**。
+
+#### 故意不做的，理由不变
+**e-Invoice**（四家都有，Tunai 连沙龙都自动送）· **薪资 HRMS**（SQL 跟 AutoCount 都是独立产品）·
+**会计总账**。[任务 22](#22) 算过帐，那几场打不赢，而且不必打。
+
+- [ ] 决定「多分店」这根维度做不做，什么时候做
+- [ ] `pipeline` 做完之后，采购单几乎是白捡的 —— 记得捡
+- [ ] 套票要等 `ledger`；[沙龙那一单](#44)签之前要先问清楚他们怎么算
+
+---
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**
