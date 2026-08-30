@@ -256,7 +256,12 @@ describe("尺子不准再犯", () => {
   it("载页面滚到看得见的字不再变，不是滚固定轮数", () => {
     const blk = MJS.slice(MJS.indexOf("async function settlePage"), MJS.indexOf("async function shoot("));
     expect(blk).toMatch(/stable/);
-    expect(blk).toMatch(/pass < 5 && stable < 2/);
+    /* ⚠️ 守的是**机制**，不是那个数字。上限从 5 改成 8（A. Reynolds 要更慢的
+       那一轮）的时候，这条断言红了 —— 而它红得没有道理：轮数上限是天花板，
+       「滚到不再变」才是这条规矩。守一个常数，等於每次调参都要来改守卫一次，
+       改久了就会有人把守卫改成永远绿的。 */
+    expect(blk).toMatch(/stable < 2/);
+    expect(blk).toMatch(/pass < \d+ && stable < 2/);
   });
 
   /* ㉖ probe 跟正式那条必须用**同一份**载页面的程序。
@@ -275,5 +280,21 @@ describe("尺子不准再犯", () => {
     expect(MJS).toMatch(/function captureThin/);
     expect(MJS).toMatch(/重拍一次/);
     expect(MJS).toMatch(/连拍两次都不完整/);
+  });
+
+  /* ㉘ 自检要**永远印**，绿的也印。
+     2026-08-31：六套跑完，没有一份报告出现「漏字」「漏图」—— 而那份沉默有两种
+     读法，「量过了没漏」跟「这两项根本没跑」，两种长得一模一样。
+     任务 81 那一次它真的漏了 44%，报告也是安静的，安静了三天。
+     **一把只在坏的时候说话的自检，说不出「我还活着」。** */
+  it("分段漏字 · 漏图 绿的时候也要印出读数", () => {
+    const blk = MJS.slice(MJS.indexOf("const inBoxes ="), MJS.indexOf("const TS = TSHAPE"));
+    // 不准再有「只在坏的时候才印」的形状
+    expect(blk).not.toMatch(/if \(all - held > 1\) \{/);
+    expect(blk).toMatch(/okImg \? "OK" : "XX"/);
+    expect(blk).toMatch(/okCh \? "OK" : "XX"/);
+    // 字太少的时候要说「不判」，不准算成过关
+    expect(blk).toMatch(/太少，比例不判/);
+    expect(blk).toMatch(/name: `\$\{who\}分段漏字`, ok: null/);
   });
 });

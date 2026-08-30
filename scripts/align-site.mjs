@@ -2300,22 +2300,35 @@ try {
 
        ⚠️ 它只查得到「图」。字跟按钮掉了它看不见 —— 写清楚，不要拿它当成
        「什么都没漏」的证明。 */
+    /* ⚠️ 两项都是**永远印**，绿的也印。
+       2026-08-31：六套跑完，六份报告里一个「漏字」「漏图」都没有 —— 而那两句
+       长得跟「量过了，没漏」一模一样，也跟「这两项根本没跑」一模一样。
+       任务 81 那一次就是这样过去的：**一把量不到的尺回报的是沉默，不是警报。**
+       自检自己变成沉默的那一刻，它就不再是自检了。 */
     const inBoxes = (shp) => (shp ?? []).reduce((n2, bs) => n2 + bs.filter((b) => b.kind === "图").length, 0);
     for (const [who, cap] of [["模版", theirs], ["我们", ours]]) {
       const all = cap.shots.length;
       const held = inBoxes(cap.shape);
-      if (all - held > 1) {
-        console.log(`  XX  ${who}分段漏图  这一页 ${all} 张，各段装下 ${held} 张 —— ${all - held} 张掉在段外`);
-        marks.push({ axis: "结构", name: `${who}分段漏图`, ok: false });
-      }
+      const okImg = all - held <= 1;
+      console.log(`  ${okImg ? "OK" : "XX"}  ${who}分段漏图  这一页 ${all} 张，各段装下 ${held} 张`
+        + (okImg ? "" : ` —— ${all - held} 张掉在段外`));
+      marks.push({ axis: "结构", name: `${who}分段漏图`, ok: okImg });
+
       /* 字才是页面上的大面积。图漏一张看得出来，字漏一整段看不出来 ——
          它只会让「几栏」「顺序」「版心」全部小一号，每一项都还是印得像真的。 */
       const chAll = cap.chars || 0;
       const chHeld = (cap.shape ?? []).reduce(
         (n2, bs) => n2 + bs.reduce((m, b) => m + (b.kind === "字" ? b.n || 0 : 0), 0), 0);
-      if (chAll > 400 && chHeld / chAll < 0.8) {
-        console.log(`  XX  ${who}分段漏字  这一页 ${chAll} 个字，各段装下 ${chHeld} 个 —— 漏了 ${Math.round(100 - (chHeld / chAll) * 100)}%`);
-        marks.push({ axis: "结构", name: `${who}分段漏字`, ok: false });
+      if (chAll <= 400) {
+        /* 一页不到 400 个字，比例算不准 —— 说「量不到」，不要说「没漏」。 */
+        console.log(`  --  ${who}分段漏字  这一页只有 ${chAll} 个字 —— 太少，比例不判`);
+        marks.push({ axis: "结构", name: `${who}分段漏字`, ok: null });
+      } else {
+        const pct = Math.round((chHeld / chAll) * 100);
+        const okCh = chHeld / chAll >= 0.8;
+        console.log(`  ${okCh ? "OK" : "XX"}  ${who}分段漏字  这一页 ${chAll} 个字，各段装下 ${chHeld} 个（${pct}%）`
+          + (okCh ? "" : ` —— 漏了 ${100 - pct}%`));
+        marks.push({ axis: "结构", name: `${who}分段漏字`, ok: okCh });
       }
     }
   }
