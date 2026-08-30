@@ -1519,7 +1519,7 @@ export function SiteGallery({
             有细缝的才是一格一格的作品。 */}
         <ul className="grid [gap:4px] @2xl:grid-cols-12">
           {shots.map((s2, i) => (
-            <li key={i} className={SPAN[i % 5]}>
+            <li key={i} className={`relative ${SPAN[i % 5]}`}>
               {s2.src ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img loading="lazy" decoding="async"
@@ -1546,7 +1546,7 @@ export function SiteGallery({
                   名字是客户自己的东西，没填就只有编号。
                   （老板 2026-08-30:「不然就用占位图」—— 同一条道理，
                   缺的东西给它一个诚实的位子，不要整个不画。） */}
-              <p className="mt-2 [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-variant-numeric:tabular-nums]">
+              <p className="pointer-events-none absolute inset-x-0 bottom-0 [background:linear-gradient(to_top,rgb(0_0_0/0.55),transparent)] [color:#fff] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-variant-numeric:tabular-nums] [padding:2.2rem_var(--pad-card)_0.6rem]">
                 {`${String(i + 1).padStart(2, "0")}${s2.caption ? `  ${s2.caption}` : ""}`}
               </p>
             </li>

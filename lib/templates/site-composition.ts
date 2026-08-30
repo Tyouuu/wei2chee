@@ -257,7 +257,7 @@ export type SiteSkeleton = {
    *  every register's text scale was tuned for a table with forty rows on it.
    *  A multiplier rather than a size — 中台's thesis is that it is the densest
    *  page in the library (重点 7c). See --site-copy in app/globals.css. */
-  copy?: "large";
+  copy?: "large" | "loose";
   /** 每一块要不要一个细框。台账's reference draws one around every block on the
    *  page; nothing else in the library does. See --site-frame. */
   frame?: "hairline";
@@ -345,7 +345,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     rhythm: "flush",
     figure: "huge",
     measure: "wide",
-    copy: "large",
+    copy: "loose",
     frame: "hairline",
     hero: "plate-centre",
     opens: "作品",

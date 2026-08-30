@@ -322,7 +322,7 @@
   --site-ink-bg: #45372a;
   --site-ink-fg: #f0eae0;
   --site-ink-fg-dim: color-mix(in oklab, #f0eae0 62%, transparent);
-  --site-ink-panel: #2c200a;
+  --site-ink-panel: #3c3228;  /* 逐段取样：他们第3段的面板 47.1% 是这个 */
 
   /* ── 第一屏的名字：他们开着写，我们挤在一起 ─────────────────────────────
      Measured 2026-08-28 against Wix `wh-newel`:

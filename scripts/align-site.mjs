@@ -611,7 +611,7 @@ function readShots(rootSel) {
        would drown the numbers that matter. */
     .filter((x) => x.w >= 120 && x.h >= 90)
     .sort((a, b) => a.top - b.top)
-    .map((x) => ({ ...x, ratio: +(x.w / x.h).toFixed(2) }));
+    .map((x) => ({ ...x, ratio: +(x.w / x.h).toFixed(2), share: +(x.w / W0).toFixed(3) }));
 }
 
 /* ── 每一段的解剖 ─────────────────────────────────────────────────────────
@@ -1564,9 +1564,9 @@ try {
 
   /* ── 2 照片 SHOTS —— 大小，不只是张数 ──────────────────────────────────── */
   const band = (l) => ({
-    wide: l.filter((x) => x.w >= 1200).length,
-    half: l.filter((x) => x.w >= 500 && x.w < 1200).length,
-    small: l.filter((x) => x.w < 500).length,
+    wide: l.filter((x) => (x.share ?? x.w / 1440) >= 0.83).length,
+    half: l.filter((x) => (x.share ?? x.w / 1440) >= 0.35 && (x.share ?? x.w / 1440) < 0.83).length,
+    small: l.filter((x) => (x.share ?? x.w / 1440) < 0.35).length,
     tallest: l.length ? Math.max(...l.map((x) => x.h)) : 0,
   });
   const bt = band(theirs.shots);

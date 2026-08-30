@@ -472,6 +472,14 @@
 .ds-ground[data-copy="large"].ds-site {
   --site-copy: 1.25;
 }
+/* 第三档。台账 的「整页字级」（按字数加权的中位数）量出来 15px 对他们 17px ——
+   而「正文字级」是过关的，因为那一项只取八个字以上的整段，而这一页占最多字数
+   的那一级是清单的行、栏位的标签、卡片下面那句说明。
+   1.25 × (17/15) ≈ 1.42。 */
+.ds-ground[data-copy="loose"] .ds-site,
+.ds-ground[data-copy="loose"].ds-site {
+  --site-copy: 1.42;
+}
 .ds-site > * {
   --radius-control: var(--site-radius-control, var(--copy-radius-control));
   --text-micro: calc(var(--copy-micro) * var(--site-copy));
