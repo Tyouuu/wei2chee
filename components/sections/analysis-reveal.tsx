@@ -6,7 +6,44 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import type { AnalysisResult } from "@/types/database";
 import { SectionShell } from "@/components/section-shell";
 
-const LOADING_STEPS = ["loadingStep1", "loadingStep2", "loadingStep3"] as const;
+/**
+ * WHAT HE READS WHILE THE MODEL THINKS, AND FOR HOW LONG.
+ *
+ * There were three of these on a 1900ms timer -- 5.7 seconds of movement --
+ * and then `Math.min` pinned the last one and the screen said the same
+ * sentence until the answer arrived.
+ *
+ * MEASURED 2026-08-31 (`npm run eval:analysis`, and confirmed by the first row
+ * the usage ledger ever wrote): median 28.6s, p95 34.1s. So a visitor watched
+ * ONE FROZEN SENTENCE FOR TWENTY-THREE SECONDS, on the landing page, after
+ * typing two minutes about his business and before he has an account. A
+ * progress display that stops changing does not read as slow, it reads as
+ * stuck -- and this is the moment the whole product is being judged in.
+ *
+ * The wait cannot be shortened from the model side: reasoning_effort "medium"
+ * halves it (12.4s) and costs the analysis its consistency -- the same
+ * questionnaire started landing enquiries on a different page 1 run in 3. What
+ * he is being sold is 「你自己的系统」, and it stops being his if the same
+ * description grows a different one.
+ *
+ * So the copy walks the real duration instead. Six steps, and each names
+ * something the analysis genuinely decides (modules, the enquiry landing page,
+ * the layout) rather than padding.
+ */
+const LOADING_STEPS = [
+  "loadingStep1",
+  "loadingStep2",
+  "loadingStep3",
+  "loadingStep4",
+  "loadingStep5",
+  "loadingStep6",
+] as const;
+
+/** Median 28.6s, p95 34.1s, measured. Re-run eval:analysis and move this if the
+ *  model gets faster; the pacing below is derived from it rather than guessed,
+ *  so one number is the only thing to change. */
+const MEASURED_WAIT_MS = 30_000;
+const STEP_MS = Math.round(MEASURED_WAIT_MS / LOADING_STEPS.length);
 
 const container: Variants = {
   hidden: {},
@@ -28,8 +65,10 @@ function LoadingState() {
 
   useEffect(() => {
     const id = setInterval(() => {
+      // Still clamped: the last line is written to be true for as long as it
+      // has to be ("almost there"), which the four before it are not.
       setStepIndex((i) => Math.min(i + 1, LOADING_STEPS.length - 1));
-    }, 1900);
+    }, STEP_MS);
     return () => clearInterval(id);
   }, []);
 

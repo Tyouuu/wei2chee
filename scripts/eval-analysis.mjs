@@ -56,6 +56,22 @@ import { AI_MODEL, AI_REASONING_EFFORT } from "../lib/portal/ai-model.ts";
 const args = process.argv.slice(2);
 const N = Number(args[args.indexOf("--n") + 1]) || 3;
 const DRY = args.includes("--dry");
+/*
+  --effort medium
+
+  The questionnaire measured 28.7s in production (the first ledger row the
+  repaired wire ever wrote). That runs while a stranger who has just typed two
+  minutes about his business watches a spinner, BEFORE he has an account -- it
+  is the product's first impression, and reasoning is most of it.
+
+  The editor needs "high": measured 2026-08-27, medium answered 「客人一直打电话
+  问进度」 by rearranging the page. But this is a DIFFERENT TASK -- structured
+  extraction from a form, not understanding a complaint -- so the answer there
+  does not carry over, and this is the only instrument that can say.
+
+  A flag rather than an edit to ai-model.ts: the experiment cannot ship.
+*/
+const EFFORT = args.includes("--effort") ? args[args.indexOf("--effort") + 1] : null;
 
 // .env.local rather than a shell export: it is where this project's keys live,
 // and an eval that needs a different setup from `npm run dev` is an eval nobody
@@ -154,21 +170,26 @@ function mode(values) {
   return { value: best, rate: values.length ? hits / values.length : 0, spread: count.size };
 }
 
+/* How long a stranger waits after finishing the questionnaire. Nothing had
+   ever measured it until a ledger row put 28.7s on the record. */
+const TIMES = [];
 const results = [];
 for (const c of CASES) {
   const runs = [];
   process.stdout.write(`${c.name} `);
   for (let i = 0; i < N; i++) {
     try {
+      const startedAt = Date.now();
       const completion = await openai.chat.completions.create({
         model: AI_MODEL,
-        reasoning_effort: AI_REASONING_EFFORT,
+        reasoning_effort: EFFORT ?? AI_REASONING_EFFORT,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: buildUserPrompt(c.industry, "zh", c.answers) },
         ],
         response_format: { type: "json_schema", json_schema: analysisJsonSchema },
       });
+      TIMES.push(Date.now() - startedAt);
       runs.push(analysisSchema.parse(JSON.parse(completion.choices[0]?.message?.content ?? "{}")));
       process.stdout.write("·");
     } catch (e) {
@@ -212,3 +233,21 @@ for (const r of results) {
 console.log(
   "\n低的不是模型坏，是那一题问得不够清楚 —— 该改的是 analysis-schema.ts 里那个栏位的 description。",
 );
+
+/*
+  他填完问卷之后，等多久。
+
+  Measured in production for the first time on 2026-08-31, from the first row
+  the repaired ledger ever wrote: 28.7s. That runs on the landing page, after a
+  stranger has typed two minutes about his business and before he has an
+  account -- so it is the product's first impression, and reasoning effort is
+  most of it.
+*/
+if (TIMES.length) {
+  const t = [...TIMES].sort((a, b) => a - b);
+  const at = (q) => t[Math.min(t.length - 1, Math.floor(t.length * q))];
+  const sec = (ms) => `${(ms / 1000).toFixed(1)}s`;
+  console.log(
+    `\n他等了多久  中位 ${sec(at(0.5))} · p95 ${sec(at(0.95))} · 最慢 ${sec(t[t.length - 1])}  (${t.length} 次 · reasoning=${EFFORT ?? AI_REASONING_EFFORT})`,
+  );
+}
