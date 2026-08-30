@@ -669,6 +669,22 @@ function removeNode(nodes: PuckNode[], id: string): boolean {
  * shows -- and hands back the SAME object that now sits in `props.table`, so
  * the caller mutates the layout by mutating what it is given.
  */
+/**
+ * The column keys of one table, in the order the model was shown them -- which
+ * is the order `add_table_row`'s cells are read in.
+ *
+ * Exported because a row is written in TWO places now: into the page, here,
+ * and into the customer's own table, in lib/portal/record-ops.ts. The second
+ * one has to know which key each cell belongs to, because a key that is not
+ * one of the built-in four is the owner's own column and its value belongs in
+ * `extra` rather than nowhere. A second copy of 「which columns does this
+ * table have」 is the shape of mistake this repo has made four times.
+ */
+export function tableColumnKeys(layout: PuckLayout, id: string): string[] | null {
+  const table = tableOf(layout, id);
+  return table ? table.columns.map((c) => c.key) : null;
+}
+
 function tableOf(layout: PuckLayout, id: string): TableModel | null {
   const node = findNode(layout.content, id);
   if (!node || node.type !== "RecordTable") return null;

@@ -267,3 +267,65 @@ describe("the tree the product actually renders", () => {
     expect(textOf(withLiveRows(real(), []))).toBe(before);
   });
 });
+
+/*
+  THE OTHER HALF OF THE SAME WIRE.
+
+  record-ops.test.ts asserts a value reaches `extra`; these assert it comes
+  back out onto the page under the column the owner named. Without both, the
+  column exists, the value is stored, and nobody ever sees it -- which is this
+  repo's signature defect and the exact reason `extra` sat unread for a day.
+*/
+describe("the column this business added for itself", () => {
+  const treeWithOwnColumn = () => ({
+    content: [
+      {
+        type: "RecordTable",
+        props: {
+          id: "t",
+          table: {
+            columns: [
+              { key: "primary", label: "工作", kind: "text" },
+              { key: "c1", label: "车牌号", kind: "text" },
+              { key: "status", label: "状态", kind: "status" },
+            ],
+            rows: [{ cells: { primary: "示例", c1: "", status: "等确认" }, tones: {} }],
+          },
+        },
+      },
+    ],
+  });
+
+  const cellsOf = (out: unknown) =>
+    (out as { content: { props: { table: { rows: { cells: Record<string, string> }[] } } }[] })
+      .content[0].props.table.rows[0].cells;
+
+  it("shows the value under the owner's own column", () => {
+    const out = withLiveRows(treeWithOwnColumn(), [
+      { primary: "换机油", tone: "neutral", status: "已确认", extra: { c1: "WXY 1234" } },
+    ]);
+    expect(cellsOf(out).c1).toBe("WXY 1234");
+    expect(cellsOf(out).primary).toBe("换机油");
+  });
+
+  /*
+    `extra` is free-form jsonb -- an import, or an owner naming a column badly,
+    can put `primary` in it. The document's real title must win: a record
+    showing somebody else's text is worse than a blank cell.
+  */
+  it("never lets extra overwrite the record's own fields", () => {
+    const out = withLiveRows(treeWithOwnColumn(), [
+      { primary: "换机油", tone: "neutral", status: "已确认", extra: { primary: "不是这个", status: "也不是" } },
+    ]);
+    expect(cellsOf(out).primary).toBe("换机油");
+    expect(cellsOf(out).status).toBe("已确认");
+  });
+
+  it("leaves the cell empty rather than printing [object Object]", () => {
+    const [row] = rowsFromRecords(
+      [{ title: "换机油", party: "", amount_cents: null, stage: "", extra: { c1: { deep: 1 }, c2: "好的", c3: 7 } }],
+      [],
+    );
+    expect(row.extra).toEqual({ c2: "好的", c3: "7" });
+  });
+});

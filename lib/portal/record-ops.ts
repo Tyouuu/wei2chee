@@ -95,6 +95,52 @@ export type RecordResult = {
  * the customer's connection drops and the browser retries the same sentence,
  * the same key arrives and the same row comes back instead of a second one.
  */
+/** Cell keys the table model owns. Everything else on a table is a column the
+ *  owner added, and its value belongs in `extra`. Mirrors BUILT_IN_KEYS in
+ *  live-rows.ts, which reads back what this writes. */
+const BUILT_IN_KEYS = new Set(["primary", "secondary", "amount", "status"]);
+
+/**
+ * One row's cells, sorted into the columns the record table owns and the ones
+ * this business added for itself.
+ *
+ * ── WHY THIS IS NOT POSITIONAL ANY MORE ───────────────────────────────────
+ *
+ * It was: cells[0] was the title, [1] the party, [2] the money. That is true
+ * of a table nobody has touched, and false the moment an owner adds 「车牌号」
+ * in front of the amount or removes the 说明 column -- and adding columns is a
+ * thing both the fields panel and the assistant can already do.
+ *
+ * Worse, the surplus went nowhere. A workshop owner asking for 「加一栏车牌
+ * 号」 got the column, and every row under it stayed blank forever, because
+ * the value had no place to live. `extra` is that place; this is the wire.
+ */
+export function sortCells(
+  cells: string[],
+  columnKeys: string[] | null,
+): { title: string; party: string; amount?: string; status?: string; extra: Record<string, string> } {
+  const extra: Record<string, string> = {};
+  /* No columns known -- an older caller, or a target that is not a record
+     table. Fall back to the positional reading rather than dropping the row:
+     the four built-in columns in their default order is what a generated page
+     has, so this is right far more often than it is wrong. */
+  const keys = columnKeys ?? ["primary", "secondary", "amount", "status"];
+  const by: Record<string, string> = {};
+  cells.forEach((value, i) => {
+    const key = keys[i];
+    if (!key || !value) return;
+    if (BUILT_IN_KEYS.has(key)) by[key] = value;
+    else extra[key] = value;
+  });
+  return {
+    title: by.primary ?? "",
+    party: by.secondary ?? "",
+    amount: by.amount,
+    status: by.status,
+    extra,
+  };
+}
+
 export async function writeRecords(
   supabase: SupabaseClient,
   projectId: string,
@@ -102,14 +148,18 @@ export async function writeRecords(
   ops: LayoutOp[],
   /** Stable per request, so a retried request does not duplicate. */
   requestKey: string,
+  /** The column keys of the table an op targets, in display order. Null when
+   *  the caller cannot resolve it; see sortCells. */
+  columnsFor?: (targetId: string) => string[] | null,
 ): Promise<RecordResult> {
   const skipped: RecordResult["skipped"] = [];
   let written = 0;
 
   for (let i = 0; i < ops.length; i += 1) {
-    const op = ops[i] as { op: string; cells?: unknown };
+    const op = ops[i] as { op: string; cells?: unknown; target_id?: unknown };
     const cells = Array.isArray(op.cells) ? (op.cells as unknown[]).map((c) => String(c ?? "").trim()) : [];
-    const title = cells[0] ?? "";
+    const keys = columnsFor?.(String(op.target_id ?? "")) ?? null;
+    const { title, party, amount, status, extra } = sortCells(cells, keys);
     if (!title) {
       skipped.push({ op: op.op, reason: "没有写这一单是什么" });
       continue;
@@ -132,17 +182,23 @@ export async function writeRecords(
       ? await supabase.rpc("add_ledger_entry", {
           in_project_id: projectId,
           in_module_key: moduleKey,
-          in_amount_cents: senFrom(cells[2]) ?? 0,
-          in_party: cells[1] ?? "",
+          in_amount_cents: senFrom(amount) ?? 0,
+          in_party: party,
           in_note: title,
+          in_extra: extra,
           in_idempotency_key: keyFor(requestKey, i),
         })
       : await supabase.rpc("add_pipeline_record", {
           in_project_id: projectId,
           in_module_key: moduleKey,
           in_title: title,
-          in_party: cells[1] ?? "",
-          in_amount_cents: senFrom(cells[2]) ?? null,
+          in_party: party,
+          in_amount_cents: senFrom(amount) ?? null,
+          /* The customer's own word for where it is stuck. Dropped until now,
+             which meant 「加一单，已确认的」 quietly started at the first stage
+             -- the RPC still falls back to that when this is blank. */
+          in_stage: status ?? null,
+          in_extra: extra,
           in_idempotency_key: keyFor(requestKey, i),
         });
     if (error) skipped.push({ op: op.op, reason: error.message.slice(0, 80) });

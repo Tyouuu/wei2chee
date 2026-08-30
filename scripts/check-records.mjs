@@ -1,5 +1,9 @@
 /**
- * Can this business still write a document?
+ * Can this business still write down its own work?
+ *
+ * Numbering, and the column an owner added for himself. Both are things that
+ * only break when somebody DELETES, or presses twice at once, or names a
+ * column of their own -- none of which any unit test in this repo does.
  *
  * Every failure below was real, shipped, and found by DOING rather than
  * reading. They are here so they cannot come back quietly.
@@ -158,6 +162,36 @@ try {
     direction: "in", amount_cents: 100,
   });
   check("a module of another shape is refused by the table itself", !!wrongShape);
+
+  console.log("\n⑥ 这间店自己多的那一栏");
+  /* The tenth of a business that is only that business: a workshop keeps a
+     plate number, a salon a colour formula, a wholesaler a container number.
+     It rides in `extra`, keyed by the owner's own column key, so a hundred
+     shops share one table and none of them needs a schema change.
+
+     Asserted against the real RPC on purpose: a jsonb argument the function
+     quietly ignores looks exactly like one it stored, and this column sat in
+     both tables for a day with nothing writing it. */
+  const { data: withPlate, error: plateErr } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "projects", in_title: "换机油",
+    in_party: "陈先生", in_extra: { c1: "WXY 1234" },
+  });
+  check("the RPC stores a column this business invented",
+    withPlate?.extra?.c1 === "WXY 1234", plateErr?.message ?? JSON.stringify(withPlate?.extra));
+
+  const { data: readBack } = await c
+    .from("pipeline_records").select("extra").eq("id", withPlate.id).single();
+  check("and it is still there when the page reads it back",
+    readBack?.extra?.c1 === "WXY 1234", JSON.stringify(readBack?.extra));
+
+  const { data: money, error: moneyErr } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_amount_cents: 5000,
+    in_party: "陈先生", in_note: "订金", in_extra: { c1: "Maybank" },
+  });
+  check("the money table takes one too",
+    money?.extra?.c1 === "Maybank", moneyErr?.message ?? JSON.stringify(money?.extra));
+
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

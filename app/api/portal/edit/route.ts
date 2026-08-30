@@ -15,6 +15,7 @@ import {
   type PuckLayout,
   PHOTO_BLOCKS,
   walkNodes,
+  tableColumnKeys,
 } from "@/lib/portal/layout-ops";
 import { COLUMN_KINDS } from "@/lib/portal/table-model";
 import { buildDesignDoc, preferredVariants, STYLE_BRIEFS, darkPalettes } from "@/lib/portal/design-doc";
@@ -623,6 +624,12 @@ The business owner asked:
       pageKey as string,
       split.recordOps,
       `${user.id}:${trimmed}`,
+      /* Which column each cell belongs to, read from the page the customer is
+         looking at. A key that is not one of the built-in four is a column
+         this business added for itself, and its value goes to `extra` instead
+         of being dropped -- which is what made 「加一栏车牌号」 produce a
+         column that stayed blank for ever. */
+      (targetId) => tableColumnKeys(layout, targetId),
     );
     recordsWritten = wrote.written;
     recordSkips.push(...wrote.skipped);

@@ -40,13 +40,44 @@ export type LiveRow = {
   amount?: string;
   tone: StatusTone;
   status: string;
+  /* ── THE TENTH OF THIS BUSINESS THAT IS ONLY THIS BUSINESS ──────────────
+   *
+   * 「车牌号」 for a workshop, 「染发配方」 for a salon, 「货柜号」 for a
+   * wholesaler. Keyed by the COLUMN KEY the owner's own column carries, so a
+   * hundred businesses share one table and none of them needs a schema change.
+   *
+   * Before this existed, `add_table_column` put the column on the page and
+   * every row under it was blank forever -- the column was real and its values
+   * had nowhere to live. That is the whole reason `extra` was added to both
+   * tables, and nothing wrote it. */
+  extra?: Record<string, string>;
 };
+
+/** Cell keys the table model owns. Anything else on a row is the owner's own
+ *  column and lives in `extra`. Mirrors normalizeTable() in table-model.ts. */
+const BUILT_IN_KEYS = new Set(["primary", "secondary", "amount", "status"]);
+
+/** Whatever the business put in `extra`, as strings a table cell can show.
+ *  Objects and arrays are dropped rather than stringified: 「[object Object]」
+ *  in a customer's own system is worse than an empty cell. */
+function extraCells(extra: unknown): Record<string, string> | undefined {
+  if (!extra || typeof extra !== "object" || Array.isArray(extra)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(extra as Record<string, unknown>)) {
+    if (BUILT_IN_KEYS.has(k)) continue;
+    if (v == null) continue;
+    if (typeof v === "string") out[k] = v;
+    else if (typeof v === "number" || typeof v === "boolean") out[k] = String(v);
+  }
+  return Object.keys(out).length ? out : undefined;
+}
 
 type PipelineRecord = {
   title: string | null;
   party: string | null;
   amount_cents: number | null;
   stage: string | null;
+  extra?: unknown;
 };
 
 /**
@@ -92,6 +123,7 @@ export function rowsFromRecords(
     amount: ringgit(r.amount_cents),
     tone: toneForStage((r.stage ?? "").trim(), workflow),
     status: (r.stage ?? "").trim(),
+    extra: extraCells(r.extra),
   }));
 }
 
@@ -115,6 +147,7 @@ type LedgerEntry = {
   allocated_cents: number | null;
   adjusts_id: string | null;
   note: string | null;
+  extra?: unknown;
 };
 
 /**
@@ -194,6 +227,7 @@ export function rowsFromEntries(
       amount: amount && against ? `− ${amount}` : amount,
       tone,
       status,
+      extra: extraCells(e.extra),
     };
   });
 }
@@ -241,7 +275,14 @@ export function withLiveRows(
  *  keys from recordTable(); a column the owner added has no value here, which
  *  renders empty rather than wrong. */
 function toModelRow(r: LiveRow): { cells: Record<string, string>; tones: Record<string, StatusTone> } {
-  const cells: Record<string, string> = { primary: r.primary };
+  /* The owner's own columns first, the built-in four second. Order matters:
+     `extra` is free-form jsonb, so a row carrying `{"primary": "…"}` -- from an
+     import, or from an owner who named a column badly -- must not be able to
+     replace the document's real title. extraCells() already drops the built-in
+     keys; this is the second lock on the same door, because the cost of being
+     wrong here is a customer's records showing somebody else's text. */
+  const cells: Record<string, string> = { ...(r.extra ?? {}) };
+  cells.primary = r.primary;
   if (r.secondary) cells.secondary = r.secondary;
   if (r.amount) cells.amount = r.amount;
   cells.status = r.status;
@@ -333,7 +374,7 @@ export async function fetchLiveRows(
     if (PIPELINE_MODULES.has(moduleKey)) {
       const { data, error } = await supabase
         .from("pipeline_records")
-        .select("title, party, amount_cents, stage")
+        .select("title, party, amount_cents, stage, extra")
         .eq("project_id", projectId)
         .eq("module_key", moduleKey)
         .is("archived_at", null)
@@ -350,7 +391,7 @@ export async function fetchLiveRows(
          first: an entry keyed in today for last Friday belongs on Friday. */
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("id, doc_no, party, direction, amount_cents, allocated_cents, adjusts_id, note")
+        .select("id, doc_no, party, direction, amount_cents, allocated_cents, adjusts_id, note, extra")
         .eq("project_id", projectId)
         .eq("module_key", moduleKey)
         .order("entry_on", { ascending: false })

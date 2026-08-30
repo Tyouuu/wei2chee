@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { isRecordModule, senFrom, splitRecordOps, writeRecords, keyFor } from "./record-ops";
+import { isRecordModule, senFrom, splitRecordOps, writeRecords, keyFor , sortCells } from "./record-ops";
 import type { LayoutOp } from "./layout-ops";
 
 const row = (...cells: string[]) => ({ op: "add_table_row", target_id: "t", cells }) as unknown as LayoutOp;
@@ -106,5 +106,58 @@ describe("keyFor", () => {
 
   it("is a uuid Postgres will accept", () => {
     expect(keyFor("a", 0)).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+});
+
+/*
+  THE COLUMN AN OWNER ADDED FOR HIMSELF.
+
+  「加一栏车牌号」 has worked since add_table_column existed -- the column
+  appeared, and every row under it stayed blank for ever, because a cell's
+  value had nowhere to live once rows became real. These assert the wire, in
+  both directions: the value is sorted into `extra` on the way in, and
+  live-rows.test.ts asserts it comes back out onto the page.
+*/
+describe("sortCells", () => {
+  const KEYS = ["primary", "secondary", "amount", "status"];
+
+  it("puts the built-in four where they belong", () => {
+    const r = sortCells(["Taman Desa 翻新", "陈先生", "RM 48,500", "已确认"], KEYS);
+    expect(r).toMatchObject({ title: "Taman Desa 翻新", party: "陈先生", amount: "RM 48,500", status: "已确认" });
+    expect(r.extra).toEqual({});
+  });
+
+  it("sends a column this business added to extra, keyed by that column", () => {
+    const r = sortCells(["换机油", "WXY 1234", "陈先生", "RM 180"], ["primary", "c1", "secondary", "amount"]);
+    expect(r.title).toBe("换机油");
+    expect(r.party).toBe("陈先生");
+    expect(r.extra).toEqual({ c1: "WXY 1234" });
+  });
+
+  /*
+    THE CASE THE POSITIONAL VERSION GOT WRONG SILENTLY.
+
+    An owner who puts his own column FIRST used to have its value read as the
+    document's title and every later cell shifted one column left -- a row that
+    is wrong in every field and raises nothing.
+  */
+  it("does not shift everything when the owner's column comes first", () => {
+    const r = sortCells(["WXY 1234", "换机油", "陈先生"], ["c1", "primary", "secondary"]);
+    expect(r.title).toBe("换机油");
+    expect(r.party).toBe("陈先生");
+    expect(r.extra).toEqual({ c1: "WXY 1234" });
+  });
+
+  /* A table whose columns could not be resolved still writes a usable row --
+     the built-in four in their default order is what a generated page has. */
+  it("falls back to the default order when the columns are unknown", () => {
+    const r = sortCells(["装修", "陈先生", "RM 100"], null);
+    expect(r).toMatchObject({ title: "装修", party: "陈先生", amount: "RM 100" });
+  });
+
+  it("ignores cells past the end of the table", () => {
+    const r = sortCells(["装修", "多出来的"], ["primary"]);
+    expect(r.title).toBe("装修");
+    expect(r.extra).toEqual({});
   });
 });
