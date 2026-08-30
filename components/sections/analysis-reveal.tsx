@@ -100,6 +100,13 @@ function LoadingState() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.35 }}
             className="font-serif text-2xl tracking-[-0.01em] text-foreground/80"
+            /* The hook shoot-waiting.mjs reads. Naming the STEP, not just the
+               sentence, is what lets that shoot assert the six lines actually
+               advanced -- reading 「the first serif paragraph on the page」
+               picked up a different section's copy the moment the layout
+               moved, which is the shape of ruler this repo has been lied to
+               by before. */
+            data-analysis-step={LOADING_STEPS[stepIndex]}
           >
             {t(LOADING_STEPS[stepIndex])}
           </motion.p>

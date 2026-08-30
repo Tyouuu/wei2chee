@@ -31,6 +31,7 @@
     "shoot:kits": "node scripts/shoot-kits.mjs",
     "shoot:photo": "node scripts/shoot-photo.mjs",
     "shoot:assistant": "node scripts/shoot-assistant.mjs",
+    "shoot:waiting": "node scripts/shoot-waiting.mjs",
     "restore:demo": "node scripts/restore-demo.mjs",
     "shoot:lapa": "node scripts/shoot-lapa.mjs",
     "shoot:stores": "node scripts/shoot-stores.mjs",

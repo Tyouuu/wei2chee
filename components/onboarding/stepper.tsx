@@ -37,7 +37,24 @@ export function OnboardingStepper({
   }
 
   return (
-    <section className="fixed inset-0 z-50 flex flex-col bg-background">
+    /*
+      z-60, ABOVE THE COOKIE NOTICE, AND THAT IS A BUG FIX NOT A PREFERENCE.
+
+      Measured at 390x844 on 2026-08-31, on the real landing page: 「下一题」
+      sits at y 776-824, the cookie notice is `fixed bottom-6 z-50` at y 700,
+      and `document.elementFromPoint` at the centre of the button returns THE
+      COOKIE NOTICE. Both were z-50, so the one later in the document won.
+
+        一个用手机的老板，还没关掉 cookie 提示，就按不到「下一题」。
+
+      That is the entire funnel: the questionnaire is what feeds /api/analyze,
+      which is what produces the system he came here to look at. It failed at
+      question one, on the width 任务 26 measured this market to be on.
+
+      A modal owns the screen while it is open; page-level chrome belongs
+      underneath it. The notice is still there when the sheet closes.
+    */
+    <section className="fixed inset-0 z-60 flex flex-col bg-background">
       {/* Sheet header: step counter as a drawing revision marker. Replaces the
           generic progress bar — a discrete "02 / 03" is more legible than a
           filled track, and matches the annotation voice used site-wide. */}

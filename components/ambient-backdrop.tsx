@@ -1,7 +1,14 @@
 "use client";
 
 import { useRef, type PointerEvent as ReactPointerEvent } from "react";
-import { motion, useMotionValue, useSpring, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useScroll,
+  useTransform,
+  useReducedMotion,
+} from "framer-motion";
 import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
 
 /*
@@ -22,7 +29,31 @@ import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
   full query string is modeled on the library's own "nightyNight" preset so
   every param the component reads unconditionally is present.
 
-  NOTE 2: ShaderGradientCanvas forwards `className` to @react-three/fiber's
+  NOTE 2: REDUCED MOTION TURNS THE CANVAS OFF ENTIRELY, not down.
+
+  This is a Three.js render loop behind every pixel of the landing page, and it
+  runs forever. CSS `@media (prefers-reduced-motion)` -- which globals.css uses
+  in six places -- cannot reach it, because nothing here is a CSS animation. So
+  a visitor who has asked their phone to stop moving things still got a
+  mouse-tilted, continuously redrawing WebGL surface.
+
+  Three reasons it is off rather than slowed:
+
+    · the visitor asked. A waterPlane drifting under the whole page is exactly
+      the kind of thing the setting exists for.
+    · 任务 57 measured this market's visitor: a mid-range Android on 4G. A
+      permanent GL loop is battery, and it is the FIRST screen of the product.
+    · it made every screenshot ruler flaky. `page.screenshot` on this page
+      would hang past 60s waiting for a compositor frame that a never-settling
+      GL canvas does not hand over, and this repo has been lied to by its own
+      rulers enough times (24) that a camera which cannot get a picture is a
+      defect, not an inconvenience.
+
+  The still frame is painted from the SAME three colours the shader is given
+  (#606080 / #8da0ce / #212121), so the room is the same room -- it has just
+  stopped moving.
+
+  NOTE 3: ShaderGradientCanvas forwards `className` to @react-three/fiber's
   <Canvas>, whose wrapper div sets `position: relative; width: 100%; height:
   100%` inline. Inline styles beat Tailwind's positioning classes, so the
   absolute/fixed wrapper has to be ours, outside ShaderGradientCanvas, or the
@@ -30,6 +61,7 @@ import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
 */
 export function AmbientBackdrop() {
   const hostRef = useRef<HTMLDivElement>(null);
+  const still = useReducedMotion();
 
   // Mouse-reactive tilt: the surface leans a few degrees toward the cursor, so
   // it reads as responding to the visitor rather than autoplaying underneath
@@ -50,6 +82,7 @@ export function AmbientBackdrop() {
   const scrimOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.75]);
 
   function handlePointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+    if (still) return;
     const rect = e.currentTarget.getBoundingClientRect();
     pointerX.set((e.clientX - rect.left) / rect.width - 0.5);
     pointerY.set((e.clientY - rect.top) / rect.height - 0.5);
@@ -76,17 +109,27 @@ export function AmbientBackdrop() {
           style={{
             opacity: gradientOpacity,
             y: gradientY,
-            rotateX: tiltX,
-            rotateY: tiltY,
+            // The tilt follows the cursor, so it is motion too. Held flat
+            // rather than removed, to keep one element and one style object.
+            rotateX: still ? 0 : tiltX,
+            rotateY: still ? 0 : tiltY,
             transformPerspective: 900,
+            ...(still
+              ? {
+                  background:
+                    "radial-gradient(70% 55% at 50% 38%, #8da0ce 0%, #606080 45%, #212121 100%)",
+                }
+              : null),
           }}
         >
+          {still ? null : (
           <ShaderGradientCanvas>
             <ShaderGradient
               control="query"
               urlString="https://www.shadergradient.co/customize?animate=on&axesHelper=off&brightness=1&cAzimuthAngle=180&cDistance=2.8&cPolarAngle=80&cameraZoom=9.1&color1=%23606080&color2=%238da0ce&color3=%23212121&destination=onCanvas&embedMode=off&envPreset=city&format=gif&frameRate=10&gizmoHelper=hide&grain=on&lightType=3d&pixelDensity=1&positionX=0&positionY=0&positionZ=0&range=disabled&rangeEnd=40&rangeStart=0&reflection=0.1&rotationX=50&rotationY=0&rotationZ=-60&shader=defaults&type=waterPlane&uAmplitude=0&uDensity=1.5&uFrequency=0&uSpeed=0.3&uStrength=1.5&uTime=8&wireframe=false"
             />
           </ShaderGradientCanvas>
+          )}
         </motion.div>
 
         {/*

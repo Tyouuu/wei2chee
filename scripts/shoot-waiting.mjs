@@ -73,38 +73,42 @@ const CANNED = {
 };
 
 /*
-  PLAIN VIEWPORT SHOTS, AND THE THREE FANCIER ONES THAT DO NOT WORK HERE.
+  WHY THIS RUNS UNDER `reducedMotion: "reduce"`, AND WHY THAT IS NOT CHEATING.
 
-  Measured against this exact screen, with the analyze request held open:
+  Every capture against this page used to hang past 60s, always right after
+  「fonts loaded」. The cause is not fonts and not the compass spinner: the
+  landing page carries <AmbientBackdrop>, a full-viewport @shadergradient
+  (three.js) canvas whose render loop never ends, and Chromium's
+  Page.captureScreenshot waits for a compositor frame that a permanently
+  animating GL surface does not hand over. Measured on this screen, with the
+  analyze request held open:
 
-    viewport            ok, 99ms
-    fullPage            TIMES OUT
-    animations:disabled TIMES OUT
-    clip                TIMES OUT
+    viewport             99ms once, then timed out on later runs
+    fullPage             TIMES OUT
+    animations:disabled  TIMES OUT   (it disables CSS animations; GL is not one)
+    clip                 TIMES OUT
+    raw CDP captureScreenshot        208s
 
-  The compass is `repeat: Infinity`, and every capture mode that has to reach a
-  settled frame first waits for a layer that never settles. The plain viewport
-  path does not, and the loading screen is one screen tall anyway.
+  The published workaround for GL pages is `--use-angle=gl`, which trades the
+  hang for a dependency on the machine's GPU -- fine on his Windows box, not
+  fine anywhere else, and this shoot has to keep working. So the fix went into
+  the PRODUCT instead: AmbientBackdrop now honours prefers-reduced-motion and
+  paints a still frame, which it should have done for the visitor's sake
+  anyway. Asking for that here is asking for a real state of the real page.
 
-  The warm-up shot right after `goto` is not decoration: the very first capture
-  against a cold `next dev` page pays for the compile, and that is what made the
-  first attempt at this look like a screenshot bug.
+  ⚠️ It does mean this shoot cannot see the shader. Anything judging the
+  ATMOSPHERE has to be shot separately, with motion on.
 */
-async function shoot(p, path) {
-  await p.screenshot({ path, timeout: 60000 });
-}
 
 const b = await chromium.launch();
 
 /*
   A CLICK THAT REPORTS WHEN IT HAD TO BE FORCED.
 
-  Playwright will not click an element whose box is still moving. On the phone
-  width this page keeps several `whileInView` reveals and one ambient layer in
-  flight long enough that a card never reads as stable. Forcing the click gets
-  the shoot moving, but the fact that it had to be forced is written into the
-  log rather than swallowed -- 「量不到却印一个漂亮数字」 is how this repo has
-  been fooled by its own rulers before.
+  Playwright will not click an element whose box is still moving. Forcing the
+  click gets the shoot moving, but the fact that it had to be forced is written
+  into the log rather than swallowed -- 「量不到却印一个漂亮数字」 is how this
+  repo has been fooled by its own rulers before.
 */
 async function clickOrForce(loc, notes, what) {
   try {
@@ -116,7 +120,8 @@ async function clickOrForce(loc, notes, what) {
 }
 
 async function run(width, height, suffix) {
-  const p = await b.newPage({ viewport: { width, height } });
+  const ctx = await b.newContext({ viewport: { width, height }, reducedMotion: "reduce" });
+  const p = await ctx.newPage();
   const notes = [];
 
   await p.route("**/api/analyze", async (route) => {
@@ -130,9 +135,8 @@ async function run(width, height, suffix) {
 
   await p.goto(`${BASE}/${LOCALE}`, { waitUntil: "domcontentloaded", timeout: 120000 });
   await p.waitForTimeout(4000);
-  // Best-effort: its only job is to pay for the dev-server compile before a
-  // frame that matters is due.
-  try { await p.screenshot({ path: `${OUT}/.warmup.png`, timeout: 30000 }); } catch {}
+  // Pays for the dev-server compile before a frame that matters is due.
+  await p.screenshot({ path: `${OUT}/.warmup.png` });
 
   /*
     THE HERO IS OPTIONAL HERE, AND THE REASON IS ITSELF A FINDING.
@@ -160,15 +164,15 @@ async function run(width, height, suffix) {
 
   // 01 SECTOR: take the first trade card rather than naming one, so a change
   // to the trade list does not silently break the shoot.
+  // 01 SECTOR: take the first trade card rather than naming one, so a change
+  // to the trade list does not silently break the shoot.
   await clickOrForce(p.locator("#industry-select button").first(), notes, "the trade card");
-  await p.waitForTimeout(2500);
 
-  await clickOrForce(
-    p.getByRole("button", { name: /(开始分析我的生意|Analyze my business)/ }),
-    notes,
-    "「开始分析我的生意」",
-  );
-  await p.waitForTimeout(1500);
+  const startBtn = p.getByRole("button", {
+    name: /(开始分析我的生意|Analyze my business)/,
+  });
+  await startBtn.waitFor({ timeout: 20000 });
+  await clickOrForce(startBtn, notes, "「开始分析我的生意」");
 
   /*
     SCOPED TO THE STEPPER, NOT TO THE PAGE. The trade cards in 01 SECTOR also
@@ -177,22 +181,68 @@ async function run(width, height, suffix) {
     thirty seconds for a click Playwright can already see is blocked.
   */
   const sheet = p.locator("section.fixed");
+  await sheet.waitFor({ timeout: 20000 });
 
-  // Three questions: option, option, then the text one the Hero pre-filled.
+  /*
+    THREE QUESTIONS, AND EACH ONE IS WAITED FOR RATHER THAN TIMED.
+
+    The Next button is `disabled` until the current question has an answer, and
+    a click on a disabled button is not an error -- it is silently nothing. An
+    earlier version slept 700ms and pressed on, and at 390px it walked the
+    whole way to a loading screen that never came, because it had actually been
+    parked on q3 the entire time. So the counter is read every step, and a step
+    that does not advance stops the shoot with a sentence saying which one.
+  */
+  const counter = sheet.locator("span.annotation").first();
   for (let step = 0; step < 3; step++) {
+    /*
+      WAIT FOR THIS QUESTION TO BE THE ONE ON SCREEN.
+
+      QuestionCard animates in and out under AnimatePresence mode="wait", so
+      for a few hundred milliseconds after Next the OLD card is still in the
+      DOM. Clicking 「the first option」 in that window answers the question
+      that is leaving, and the one arriving is left blank -- which is exactly
+      how this failed, at 1440 one run and at 390 the next. The step counter is
+      the page's own statement of where it is, so it is what gets waited on.
+    */
+    await counter
+      .filter({ hasText: new RegExp(`^0${step + 1} `) })
+      .waitFor({ timeout: 20000 })
+      .catch(async () => {
+        await p.screenshot({ path: `${OUT}/.stuck-${width}.png` });
+        const sheets = await p.locator("section.fixed").count();
+        const ann = await sheet.locator("span.annotation").allInnerTexts();
+        throw new Error(
+          `never reached step ${step + 1} at ${width}px ` +
+            `(section.fixed=${sheets} annotations=${JSON.stringify(ann)})`,
+        );
+      });
+
+    // The counter flips the instant state changes; the outgoing card is still
+    // sliding out for another ~400ms after that, and Playwright refuses to
+    // click a box that is still moving. One settle beat, then the LAST option
+    // in the sheet -- during the crossfade that is the incoming card's.
+    await p.waitForTimeout(900);
     const options = sheet.locator("button[aria-pressed]");
-    if (await options.count()) await options.first().click();
-    // q3 is the free-text one; the hero normally pre-fills it, and the Next
-    // button stays disabled while it is empty.
+    if (await options.count()) {
+      await clickOrForce(options.last(), notes, `an option on step ${step + 1}`);
+      // And the answer registered, not just got clicked at.
+      await sheet.locator('button[aria-pressed="true"]').last().waitFor({ timeout: 10000 });
+    }
+
+    // q3 is the free-text one. The Hero normally pre-fills it; at 390px the
+    // Hero could not be reached, so it is typed here instead.
     const box = sheet.locator("textarea");
-    if ((await box.count()) && !(await box.inputValue())) await box.fill(brief);
-    await p.waitForTimeout(400);
-    await clickOrForce(
-      sheet.getByRole("button", { name: /(下一题|开始分析|Next|Start my analysis)/ }),
-      notes,
-      `step ${step + 1}`,
-    );
-    await p.waitForTimeout(700);
+    if ((await box.count()) === 1 && !(await box.inputValue())) await box.fill(brief);
+
+    const next = sheet.getByRole("button", {
+      name: /(下一题|开始分析|Next|Start my analysis)/,
+    });
+    if (await next.isDisabled()) {
+      await p.screenshot({ path: `${OUT}/.stuck-${width}.png` });
+      throw new Error(`step ${step + 1} never became answerable at ${width}px`);
+    }
+    await clickOrForce(next, notes, `step ${step + 1}`);
   }
 
   await p.getByText("SYS.ANALYSIS").waitFor({ timeout: 30000 });
@@ -206,31 +256,21 @@ async function run(width, height, suffix) {
     const step = await el.getAttribute("data-analysis-step");
     const line = (await el.innerText()).trim();
     seen.push(`${String(at).padStart(2)}s  ${step}  ${line}`);
-    await shoot(p, `${OUT}/${TAG}-${LOCALE}${suffix}-${String(at).padStart(2, "0")}s.png`);
+    await p.screenshot({ path: `${OUT}/${TAG}-${LOCALE}${suffix}-${String(at).padStart(2, "0")}s.png` });
   }
 
   /*
-    THE PROOF THAT IT RESOLVES IS THE TEXT, NOT THE PICTURE.
-
-    The findings screen brings the ambient backdrop and a page of scroll-reveal
-    motion back into frame, and capture against it stalls the same way the
-    fancier modes stalled above. So the assertion is what has to pass; the
-    frame is taken best-effort and its absence is reported rather than thrown.
-    A shoot that dies at the very end would throw away six frames that already
-    succeeded, which is the opposite of what it is for.
+    AND THAT IT RESOLVES. The text assertion is the proof; the frame is the
+    evidence he actually looks at.
   */
   await p.getByText("FINDINGS").waitFor({ timeout: 40000 });
   seen.push("     -> FINDINGS (the screen resolves)");
   await p.waitForTimeout(2500);
-  try {
-    await p.screenshot({ path: `${OUT}/${TAG}-${LOCALE}${suffix}-done.png`, timeout: 20000 });
-  } catch {
-    seen.push("        (done frame not captured — see comment)");
-  }
+  await p.screenshot({ path: `${OUT}/${TAG}-${LOCALE}${suffix}-done.png`, fullPage: true });
 
   if (!heroTook) seen.push("     !! hero textarea unreachable at this width (任务 55)");
   seen.push(...notes);
-  await p.close();
+  await ctx.close();
   return seen;
 }
 
