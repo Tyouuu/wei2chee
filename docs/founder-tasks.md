@@ -3315,6 +3315,54 @@ template」回来的是 FastAPI 脚手架、部落格模版、后台面板 —�
 **第 7 套要比第 6 套便宜。**
 
 
+---
+
+### 77. vibe-dealer 是他第一个生意 —— `ledger` 照它的表建（2026-08-31）
+> `其实我那个vibe dealer management才是我第一个生意 然后我才叫你能不能加进来我这个system做管控`
+> `我不是用源代码吗 你把源代码拿进来就好 为什么要重写什么`
+
+**我 8-27 把 vibe-dealer 当成「抄几个栏位的来源」。它不是 —— 它是他第一个真的在跑的生意,**
+**31 个 migration、真的钱。他要的是把它搬进 Formae 做管控。**
+
+#### 今天接不住,差四个零件
+| vibe-dealer | 零件 | 8-31 之前 | 现在 |
+|---|---|---|---|
+| `transactions` | **ledger** | ❌ | ✅ `20260831020000` |
+| `dealers` | directory | ❌ | ❌ 下一个 |
+| `company_statements` | reconcile | ❌ | ❌ |
+| `sim_stock` | catalog | ❌ | ❌ |
+
+#### 🔴 他顶的那一句是对的,而且当场抓到一个我刚推上去的 bug
+他问「为什么要重写」。**表不能直接搬**（他的表没有 `project_id`,整个库属於一家公司;
+`commission_rm` 写死 0.02;`points`/`sim_type` 是 SIM 卡的栏位）——
+**但应用代码该搬,而我一行都没看过,只读了他的 migration。**
+
+翻开 `src/lib/month.ts` 第一句注解就是我刚犯的错:
+> *「Using plain server-local time would misreport yesterday for anyone viewing between 12am-8am MYT」*
+
+**Supabase 跑 UTC。我两张表都写 `current_date` —— 马来西亚半夜 12 点到早上 8 点
+收的钱会记成昨天,而那正是承包商补记昨天工地、餐厅收档的时段。**
+`pipeline_records` 从 `20260830040000` 起就有这个 bug,单号的**年份**也一样
+（1 月 1 日凌晨开的收据会变成 `RC-2025-0001`,而单号错了不能改）。
+→ 修在 `20260831030000`:`public.today_myt()`,一个地方,两张表六个落点全部改。
+
+#### `ledger` 建好了,30/30 用真的客户身分验过
+- **一个栏位关掉三件我们记了三次的事**:`amount_cents - allocated_cents` = **未分摊**
+  = 订金（[任务 61](#61)）= 预付余额/套票（[任务 67](#67)）= [沙龙那一单](#44)要问的第一件
+- `direction` in/out 不用负数 —— 打错一个减号会变成收入,而且月结还是加得起来
+- `adjusts_id` **冲正**,搬他的:钱不改不删,开一张反向的。`reverse_ledger_entry()` 一起上
+- `against_id` → `pipeline_records`:**报价单 → 收款那条箭头是真的了**
+- 幂等 · 收据 · `recorded_by` · RLS · RC/EX/CM 三个单号前缀
+- **故意没搬的**:`commission_rm` generated column（0.02 是他一家的抽成率,
+  那是[任务 41](#41) 禁的 `if (client === X)`）· `verified_by`（没有第二个人可以复核）
+
+#### 还欠（照顺序）
+- [ ] `ledger-rows.ts` 投影 —— 收款页现在还是示例资料
+- [ ] AI 走 `add_ledger_entry`（[重点 23](./founder-points.md) AI 平权）
+- [ ] 🔴 **他的应用代码还有一整块没搬**:`period-lock`（对完帐的月份不准补单）·
+      `credit-balance`（预付余额算法）· 角色权限（accountant/master = 地基决定 3）· `friendlyDbError`
+- [ ] `directory` —— vibe-dealer 要的第二个,而且 `party` 变外键要在那时候留 TIN 的位子
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**
