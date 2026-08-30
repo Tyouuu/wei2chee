@@ -46,7 +46,8 @@
     "check": "node scripts/check-all.mjs",
     "check:launch": "node scripts/check-launch.mjs",
     "shoot:awwwards": "node scripts/shoot-awwwards.mjs",
-    "preview": "node scripts/preview-for.mjs"
+    "preview": "node scripts/preview-for.mjs",
+    "check:doc-numbers": "node scripts/check-doc-numbers.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
