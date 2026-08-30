@@ -160,6 +160,11 @@ export default async function PortalEditorPage({
     project.id,
     pageKey,
     workflowStages(businessContext),
+    // 收款 · 开销 · 佣金 need words we supply (订金 · 已冲正 · 已付), unlike a
+    // pipeline stage which is always the customer's own. They follow the
+    // SYSTEM language -- what the built system speaks to its users -- not the
+    // portal locale, which is what Formae speaks to the owner.
+    systemLangOf(businessContext),
   );
   initialData = withLiveRows(initialData, liveRows);
 

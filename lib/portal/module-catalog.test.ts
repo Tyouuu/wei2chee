@@ -215,6 +215,45 @@ describe("the SQL mirror", () => {
     const add = sql.slice(sql.indexOf("function public.add_project_page"));
     for (const key of MODULE_KEYS) expect(add, `cannot re-add ${key}`).toContain(`'${key}'`);
   });
+
+  /*
+    THE GUARD THAT WAS ADVERTISED AND DID NOT EXIST.
+
+    Both 20260830040000 and 20260831020000 carry a comment saying this file
+    fails if their membership function drifts from MODULE_CATALOG. It did not:
+    nothing here mentioned either function, and a shape could have been added
+    in TypeScript with no table behind it -- which renders a page whose rows
+    silently never become real, the exact defect these tables were built to
+    end.
+
+    A comment claiming a guard is worse than no comment, because it stops the
+    next person looking.
+  */
+  const shapeFunctions = [
+    ["pipeline", "is_pipeline_module"],
+    ["ledger", "is_ledger_module"],
+  ] as const;
+
+  it.each(shapeFunctions)("keeps SQL's idea of shape %s equal to the catalogue", (shape, fn) => {
+    const sql = newestDefining(`function public.${fn}`);
+    const body = sql.slice(sql.indexOf(`function public.${fn}`));
+    const list = body.slice(body.indexOf("key in ("), body.indexOf(")", body.indexOf("key in (")));
+    const inSql = [...list.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+    const inTs = MODULE_CATALOG.filter((m) => m.shape === shape).map((m) => m.key).sort();
+    expect(inSql).toEqual(inTs);
+  });
+
+  /* A module that can be written but cannot be numbered would get 'DOC-' --
+     or, since 20260831020000, an exception at the moment a customer presses
+     the button. Either way the prefix belongs beside the shape. */
+  it("gives every module that has a table its own document prefix", () => {
+    const sql = newestDefining("function public.default_doc_prefix");
+    const body = sql.slice(sql.indexOf("function public.default_doc_prefix"));
+    const numbered = MODULE_CATALOG.filter((m) => m.shape === "pipeline" || m.shape === "ledger");
+    for (const m of numbered) {
+      expect(body, `${m.key} would fall through to DOC-`).toContain(`when '${m.key}' then`);
+    }
+  });
 });
 
 /**

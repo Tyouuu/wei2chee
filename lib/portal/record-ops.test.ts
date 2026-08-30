@@ -10,11 +10,20 @@ describe("isRecordModule", () => {
     for (const k of ["quotations", "orders", "projects", "tasks"]) expect(isRecordModule(k)).toBe(true);
   });
 
+  /* 收款 · 开销 · 佣金 joined them on 2026-08-31 when ledger_entries landed.
+     This test named payments as NOT a record module until that day, which was
+     true and is the reason it had to change with the table rather than after
+     it: an assistant still writing 收款 into the page props would have written
+     rows the live-rows projection then erased. */
+  it("knows the three whose money is real", () => {
+    for (const k of ["payments", "expenses", "commission"]) expect(isRecordModule(k)).toBe(true);
+  });
+
   /* On 客户 or 库存 a table row is still a layout row, and stays one until
      those shapes have tables of their own. Treating them as records early
      would write into a table that does not exist. */
   it("leaves the other modules alone", () => {
-    for (const k of ["customers", "payments", "inventory", "website", null, undefined]) {
+    for (const k of ["customers", "inventory", "website", "dashboard", null, undefined]) {
       expect(isRecordModule(k)).toBe(false);
     }
   });

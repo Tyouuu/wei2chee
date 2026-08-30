@@ -95,6 +95,109 @@ export function rowsFromRecords(
   }));
 }
 
+/* ── THE OTHER SHAPE ────────────────────────────────────────────────────────
+ *
+ * 收款 · 开销 · 佣金 draw the same RecordTable with the same four column keys,
+ * so the projection below is shared and only the row-building differs. A second
+ * copy of withLiveRows() for the second shape would be the mistake next_doc_no
+ * was deliberately written to avoid.
+ */
+
+/** Mirrors is_ledger_module() in 20260831020000. */
+const LEDGER_MODULES = new Set(["payments", "expenses", "commission"]);
+
+type LedgerEntry = {
+  id: string;
+  doc_no: string | null;
+  party: string | null;
+  direction: string | null;
+  amount_cents: number | null;
+  allocated_cents: number | null;
+  adjusts_id: string | null;
+  note: string | null;
+};
+
+/**
+ * What a money row says about itself.
+ *
+ * Every one of these is READ, not judged -- the same rule as toneForStage. A
+ * ledger has no opinion to offer beyond what the columns already state:
+ *
+ *   冲正 / 已冲正   this entry cancels another, or has been cancelled. Marked
+ *                  on BOTH so the pair reads as a pair; a corrected figure
+ *                  with no visible correction is the thing adjusts_id exists
+ *                  to prevent.
+ *   订金            money in that is not yet applied to any document. Warning
+ *                  is right: it is the row an owner has to do something about.
+ *   已入账          money in, fully applied.
+ *   已付            money out. Allocation says nothing about an expense --
+ *                  buying cement is not "applied" to anything -- so it does
+ *                  not claim to.
+ */
+const LEDGER_WORDS = {
+  zh: { reversal: "冲正", reversed: "已冲正", deposit: "订金", applied: "已入账", paid: "已付" },
+  en: { reversal: "Reversal", reversed: "Reversed", deposit: "Deposit", applied: "Recorded", paid: "Paid" },
+} as const;
+
+/** Which way money normally moves on this page. Mirrors the default inside
+ *  add_ledger_entry(); a row going the other way is the exception and is the
+ *  only one worth marking. */
+function usualDirection(moduleKey: string): "in" | "out" {
+  return moduleKey === "payments" ? "in" : "out";
+}
+
+export function rowsFromEntries(
+  entries: LedgerEntry[],
+  moduleKey: string,
+  lang: "zh" | "en" = "zh",
+): LiveRow[] {
+  const w = LEDGER_WORDS[lang] ?? LEDGER_WORDS.zh;
+  const usual = usualDirection(moduleKey);
+  const cancelled = new Set(entries.map((e) => e.adjusts_id).filter(Boolean) as string[]);
+
+  return entries.map((e) => {
+    const dir = (e.direction ?? usual) === "out" ? "out" : "in";
+    const out = dir === "out";
+    const against = dir !== usual;
+    const amount = ringgit(e.amount_cents);
+
+    let status: string;
+    let tone: StatusTone;
+    if (e.adjusts_id) {
+      status = w.reversal;
+      tone = "negative";
+    } else if (cancelled.has(e.id)) {
+      status = w.reversed;
+      tone = "negative";
+    } else if (!out && (e.amount_cents ?? 0) > (e.allocated_cents ?? 0)) {
+      status = w.deposit;
+      tone = "warning";
+    } else if (!out) {
+      status = w.applied;
+      tone = "positive";
+    } else {
+      status = w.paid;
+      tone = "neutral";
+    }
+
+    return {
+      /* What the money was for. The note is the owner's own words; the
+         document number is what is printed on the receipt when there are
+         none. Never blank -- the first column is the one a person scanning a
+         list cannot read past. */
+      primary: (e.note ?? "").trim() || (e.doc_no ?? "").trim(),
+      secondary: (e.party ?? "").trim() || undefined,
+      /* A minus only where the direction is not this page's own. On 收款 that
+         marks a reversal; on 开销 every row is out, so nothing is marked and
+         the column stays readable. Signing every row on an expenses page
+         would be noise, not information. */
+      amount: amount && against ? `− ${amount}` : amount,
+      tone,
+      status,
+    };
+  });
+}
+
 /**
  * Rewrite the tables of a page tree to carry `rows`.
  *
@@ -223,20 +326,43 @@ export async function fetchLiveRows(
   projectId: string,
   moduleKey: string,
   workflow: string[],
+  lang: "zh" | "en" = "zh",
   limit = 50,
 ): Promise<LiveRow[]> {
-  if (!PIPELINE_MODULES.has(moduleKey)) return [];
   try {
-    const { data, error } = await supabase
-      .from("pipeline_records")
-      .select("title, party, amount_cents, stage")
-      .eq("project_id", projectId)
-      .eq("module_key", moduleKey)
-      .is("archived_at", null)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (error || !data) return [];
-    return rowsFromRecords(data as PipelineRecord[], workflow);
+    if (PIPELINE_MODULES.has(moduleKey)) {
+      const { data, error } = await supabase
+        .from("pipeline_records")
+        .select("title, party, amount_cents, stage")
+        .eq("project_id", projectId)
+        .eq("module_key", moduleKey)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error || !data) return [];
+      return rowsFromRecords(data as PipelineRecord[], workflow);
+    }
+
+    if (LEDGER_MODULES.has(moduleKey)) {
+      /* `id` and `adjusts_id` are selected for the reversal pairing, not for
+         display -- a reversed entry has to be readable AS reversed, and that
+         fact lives in the other row. Ordered by the business's own date
+         first: an entry keyed in today for last Friday belongs on Friday. */
+      const { data, error } = await supabase
+        .from("ledger_entries")
+        .select("id, doc_no, party, direction, amount_cents, allocated_cents, adjusts_id, note")
+        .eq("project_id", projectId)
+        .eq("module_key", moduleKey)
+        .order("entry_on", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error || !data) return [];
+      return rowsFromEntries(data as LedgerEntry[], moduleKey, lang);
+    }
+
+    /* A module of some other shape. Not an error -- 客户 and 库存 still draw
+       their samples, and will until those shapes have tables of their own. */
+    return [];
   } catch {
     return [];
   }

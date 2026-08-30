@@ -111,6 +111,14 @@ $$;
 -- default cannot save it. Both are re-declared, unchanged apart from the date.
 -- Repairing one and not the other is this repo's most-repeated defect.
 
+/* Dropped by its exact signature before being re-declared, and its grants
+   re-stated afterwards. `create or replace` would keep both -- but a file
+   that redefines a security-definer function and does not SAY who may call it
+   leaves the next reader to go and check, and the one time they do not check
+   is the time the signature drifted and left two overloads, one of which
+   quietly ignores the idempotency key. pipeline-rpc.test.ts asserts this,
+   which is how the omission was caught rather than shipped. */
+drop function if exists public.add_pipeline_record(uuid, text, text, text, bigint, text, date, date, jsonb, uuid);
 create or replace function public.add_pipeline_record(
   in_project_id uuid,
   in_module_key text,
@@ -365,5 +373,17 @@ begin
 end;
 $$;
 
+
+revoke execute on function public.add_pipeline_record(uuid, text, text, text, bigint, text, date, date, jsonb, uuid) from public;
+grant execute on function public.add_pipeline_record(uuid, text, text, text, bigint, text, date, date, jsonb, uuid) to authenticated;
+
+revoke execute on function public.add_ledger_entry(uuid, text, text, bigint, text, uuid, date, text, text, text, text, jsonb, uuid) from public;
+grant execute on function public.add_ledger_entry(uuid, text, text, bigint, text, uuid, date, text, text, text, text, jsonb, uuid) to authenticated;
+
+revoke execute on function public.reverse_ledger_entry(uuid, text) from public;
+grant execute on function public.reverse_ledger_entry(uuid, text) to authenticated;
+
+revoke execute on function public.next_doc_no(uuid, text) from public;
+grant execute on function public.next_doc_no(uuid, text) to authenticated;
 revoke execute on function public.today_myt() from public;
 grant execute on function public.today_myt() to authenticated;

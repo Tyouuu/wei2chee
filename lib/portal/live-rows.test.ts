@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ringgit, toneForStage, rowsFromRecords, withLiveRows } from "./live-rows";
+import { ringgit, toneForStage, rowsFromRecords, rowsFromEntries, withLiveRows } from "./live-rows";
 import { buildPageLayout } from "@/lib/templates/industry-template";
 
 const WORKFLOW = ["客户", "报价", "订金", "施工", "尾款"];
@@ -70,6 +70,83 @@ describe("rowsFromRecords", () => {
     );
     expect(row.primary).toBe("阿明");
     expect(row.amount).toBeUndefined();
+  });
+});
+
+describe("rowsFromEntries", () => {
+  const entry = (over: Partial<Parameters<typeof rowsFromEntries>[0][number]> = {}) => ({
+    id: "e1", doc_no: "RC-2026-0001", party: "陈先生", direction: "in",
+    amount_cents: 1_000_000, allocated_cents: 0, adjusts_id: null, note: "",
+    ...over,
+  });
+
+  /*
+    THE ONE THIS SHAPE EXISTS FOR.
+
+    Money that is not yet applied to a document is not an unfinished row -- it
+    is the deposit. It is also the salon's unused package and the wholesaler's
+    credit balance; 任务 61, 67 and 44 each asked for it separately.
+  */
+  it("calls unapplied money in what it is: 订金", () => {
+    const [r] = rowsFromEntries([entry()], "payments");
+    expect(r.status).toBe("订金");
+    expect(r.tone).toBe("warning");
+  });
+
+  it("calls it recorded once it is fully applied", () => {
+    const [r] = rowsFromEntries([entry({ allocated_cents: 1_000_000 })], "payments");
+    expect(r.status).toBe("已入账");
+    expect(r.tone).toBe("positive");
+  });
+
+  /* Both halves are marked, because a correction nobody can see is the thing
+     adjusts_id exists to prevent. */
+  it("marks the reversal AND the entry it cancels", () => {
+    const rows = rowsFromEntries(
+      [entry(), entry({ id: "e2", doc_no: "RC-2026-0002", direction: "out", adjusts_id: "e1" })],
+      "payments",
+    );
+    expect(rows[0].status).toBe("已冲正");
+    expect(rows[1].status).toBe("冲正");
+    expect(rows.every((r) => r.tone === "negative")).toBe(true);
+  });
+
+  /*
+    A MINUS SIGN IS INFORMATION ONLY WHERE IT IS UNUSUAL.
+
+    On 收款 an outgoing row is a reversal and reads as −RM 10,000. On 开销
+    every row is outgoing, so signing them all would say nothing and only make
+    the column harder to read. The first version signed by direction alone and
+    would have put a minus on every expense a business has.
+  */
+  it("signs an outgoing row on 收款 but not on 开销", () => {
+    const [onPayments] = rowsFromEntries([entry({ direction: "out" })], "payments");
+    const [onExpenses] = rowsFromEntries([entry({ direction: "out" })], "expenses");
+    expect(onPayments.amount).toBe("− RM 10,000");
+    expect(onExpenses.amount).toBe("RM 10,000");
+  });
+
+  /* Allocation says nothing about buying cement -- an expense is not applied
+     to anything -- so it does not pretend to. */
+  it("does not call an unallocated expense a deposit", () => {
+    // direction matters, not the page: the fixture defaults to 'in', and an
+    // incoming unallocated row IS a deposit wherever it appears (a supplier
+    // refund on 开销 is money sitting unapplied too). The first version of
+    // this test forgot to set it and caught the fixture, not the code.
+    const [r] = rowsFromEntries([entry({ direction: "out", allocated_cents: 0 })], "expenses");
+    expect(r.status).toBe("已付");
+  });
+
+  it("never leaves the first column blank", () => {
+    const [withNote] = rowsFromEntries([entry({ note: "订金" })], "payments");
+    const [without] = rowsFromEntries([entry({ note: "" })], "payments");
+    expect(withNote.primary).toBe("订金");
+    expect(without.primary).toBe("RC-2026-0001");
+  });
+
+  it("follows the system language", () => {
+    const [r] = rowsFromEntries([entry()], "payments", "en");
+    expect(r.status).toBe("Deposit");
   });
 });
 

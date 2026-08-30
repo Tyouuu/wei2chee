@@ -34,12 +34,13 @@ import type { LayoutOp } from "./layout-ops";
  * decided to write it, with the customer's own session so RLS still decides.
  */
 
-/** Modules whose rows are real. Mirrors is_pipeline_module() in
- *  20260830040000 and PIPELINE_MODULES in live-rows.ts. */
+/** Modules whose rows are real. Mirror is_pipeline_module() in 20260830040000
+ *  and is_ledger_module() in 20260831020000, and the two sets in live-rows.ts. */
 const PIPELINE_MODULES = new Set(["quotations", "orders", "projects", "tasks"]);
+const LEDGER_MODULES = new Set(["payments", "expenses", "commission"]);
 
 export function isRecordModule(pageKey: string | null | undefined): boolean {
-  return !!pageKey && PIPELINE_MODULES.has(pageKey);
+  return !!pageKey && (PIPELINE_MODULES.has(pageKey) || LEDGER_MODULES.has(pageKey));
 }
 
 /** RM 48,500 · 48,500 · 48500.50 -> sen. Undefined when there is no number in
@@ -113,14 +114,37 @@ export async function writeRecords(
       skipped.push({ op: op.op, reason: "没有写这一单是什么" });
       continue;
     }
-    const { error } = await supabase.rpc("add_pipeline_record", {
-      in_project_id: projectId,
-      in_module_key: moduleKey,
-      in_title: title,
-      in_party: cells[1] ?? "",
-      in_amount_cents: senFrom(cells[2]) ?? null,
-      in_idempotency_key: keyFor(requestKey, i),
-    });
+
+    /* ── SAME COLUMNS, DIFFERENT BUSINESS ACTION ──────────────────────────
+       Both shapes draw the same four-column table, so the cells arrive the
+       same way; what they MEAN is decided by the page. A payment has no
+       stage and a quotation has no direction, and each shape's own RPC is
+       what knows that -- which is the whole point of 「AI 平权」: the
+       assistant calls the button's action, not a convenient one of its own.
+
+       ⚠️ An entry with no document is money the owner has not yet applied to
+       anything, which is exactly what a deposit is. The assistant does NOT
+       guess which quotation 「收了陈先生三千」 belongs to -- guessing wrong
+       silently moves money against the wrong job. It lands unallocated, which
+       renders as 订金, which is both true and the row he can act on. */
+    const ledger = LEDGER_MODULES.has(moduleKey);
+    const { error } = ledger
+      ? await supabase.rpc("add_ledger_entry", {
+          in_project_id: projectId,
+          in_module_key: moduleKey,
+          in_amount_cents: senFrom(cells[2]) ?? 0,
+          in_party: cells[1] ?? "",
+          in_note: title,
+          in_idempotency_key: keyFor(requestKey, i),
+        })
+      : await supabase.rpc("add_pipeline_record", {
+          in_project_id: projectId,
+          in_module_key: moduleKey,
+          in_title: title,
+          in_party: cells[1] ?? "",
+          in_amount_cents: senFrom(cells[2]) ?? null,
+          in_idempotency_key: keyFor(requestKey, i),
+        });
     if (error) skipped.push({ op: op.op, reason: error.message.slice(0, 80) });
     else written += 1;
   }
