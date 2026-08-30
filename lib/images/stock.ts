@@ -162,7 +162,25 @@ export const TRADE_QUERIES: Record<string, string[]> = {
      Pixabay's own `category` parameter (「industry」 gives motorbikes and boots
      for a tiler) and `editors_choice` (hot air balloons and aircraft for an
      aircond search). Both narrow the pool without improving it. */
-  renovation: ["interior renovation work", "carpenter working wood", "painting wall interior", "kitchen renovation"],
+  /* ⚠️ 装修这一行卖的是「做完长什么样」，不是「做的时候长什么样」。
+
+     老板 2026-08-30，看着 台账 对 Newel 的对照图：「还是不能完整的复刻」。
+     骨架已经对上了，而两页看起来还是两回事 —— 因为**照片是两种东西**：
+     Newel 摆的是完工的厨房、浴室、卧室、客厅；我们摆的是钉在板上的工具、
+     一面白砖墙、一间毛胚房。那不是版面，是**词**。
+
+     实拍六个词各六张（任务 38b 的做法，只能用眼睛挑）：
+
+       interior renovation work  → 油漆桶 · 刷子 · 壁虎 · 电锯 · 屋顶工人   ← 原本第一个
+       renovated home interior   → 油漆盘 · 色卡 · 图纸                     ← 也是材料
+       modern kitchen interior   → 六张全是完工的厨房                        ✓
+       interior design living room → 六张全是完工的客厅                      ✓
+       bathroom interior modern  → 六张全是完工的浴室                        ✓
+       bedroom interior design   → 六张全是完工的卧室                        ✓
+
+     四个完工的房间领头，正好也是他们那面作品墙的组成。施工中的照片留给
+     客户自己打字 —— 一个装修承包商的作品墙上，屋主要看的是他家将来长什么样。 */
+  renovation: ["modern kitchen interior", "interior design living room", "bathroom interior modern", "bedroom interior design"],
   services: ["technician fixing appliance", "air conditioner technician", "electrician working", "mechanic workshop"],
   retail: ["shop interior retail store", "shopfront street", "small shop counter", "product shelf display"],
   fnb: ["asian food plate", "coffee shop counter", "cafe interior table", "restaurant kitchen"],
