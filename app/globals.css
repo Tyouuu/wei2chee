@@ -580,13 +580,21 @@
   .ds-ground[data-frame="hairline"] .ds-site [data-fill] {
     margin: 0;
   }
-  /* 标题带在手机上不要冲出区块的边。
-     那条带的负边距是「拉到细框的内缘」，等於框自己的内距；到了 390 上，
-     那个内距比整段的左右留白还大，於是带子越过区块跑到页面边上 ——
-     量出来「手机 版心 我们 0%–100%」，而其余每一块都还在 6% 上。
-     一条带比它所在的那一块还宽，就不是那一块的带了。 */
-  .ds-ground[data-frame="hairline"] .ds-site :is(h2, h3):not([data-column-heading]) {
-    margin-inline: 0;
+  /* 标题带跟询价表格在手机上不要冲出区块的边。
+     那两个负边距是「拉到细框的内缘」，等於框自己的内距；到了 390 上，
+     那个内距**正好等於整段的左右留白**，於是它们把留白抵消掉，一路贴到
+     页面边上 —— 量出来「手机 版心 我们 0%–100%」，而 section 自己
+     明明有 24.3px 的内距。
+
+     ⚠️ 这里改成**关掉那个负边距的来源**，不是再写一条同名的宣告去压它。
+     上一版写的是 `margin-inline: 0`，跟标题带那条特异度一模一样（0,4,1），
+     而带子那条排在後面 —— **它一次都没有生效过**，实测 computed 还是
+     -24.3px。同名同特异度的两条规则，赢的是排在後面那一条，不是写得晚
+     的那个人以为的那一条。 */
+  .ds-ground[data-frame="hairline"] .ds-site,
+  .ds-ground[data-frame="hairline"].ds-site {
+    --site-strip-bleed: 0;
+    --site-form-bleed: 0;
   }
 }
 
@@ -707,7 +715,12 @@
 .ds-ground[data-frame="hairline"].ds-site .ds-site h2:not([data-column-heading]) {
   background: var(--site-strip, color-mix(in oklab, #000 24%, var(--color-canvas)));
   margin-block: calc(var(--pad-card-lg) * -1.35) calc(var(--pad-card-lg) * 1.1);
-  margin-inline: calc(var(--pad-card-lg) * -1.35);
+  /* 读一个变量，不写死 —— 手机上那条负边距要收掉，而**用特异度去压它压不动**：
+     底下那条 @media 里的覆写跟这一条特异度一模一样（都是 0,4,1），
+     而这一条排在后面，後面的赢。上一个 session 写的那条 `margin-inline: 0`
+     因此从来没有生效过，注解却写着修好了。
+     变量在**使用的地方**取值，不比特异度，所以 `.ds-site` 上设一次就够。 */
+  margin-inline: var(--site-strip-bleed, calc(var(--pad-card-lg) * -1.35));
   padding: calc(var(--pad-card-lg) * 0.9) calc(var(--pad-card-lg) * 1.35);
   max-width: none;
   text-align: center;

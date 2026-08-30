@@ -142,4 +142,15 @@ describe("尺子不准再犯", () => {
   it("按钮自己的字不算一栏字", () => {
     expect(MJS).toMatch(/labelled/);
   });
+  /* ⑭ 量完要再读一次风格。
+     2026-08-31：我把五套丢到背景跑、又在前台跑 ledger —— 开头写 ledger、
+     读回来是 ledger、守卫放行，接着另一个进程把同一个 demo project 切走，
+     拍到的是别人的页面。报告印了六十项「台账」的读数，而手机那张图是洋红色的、
+     公司名是别人的、一张照片都没有。三项检查只是「转红」，没有一项说这一份
+     不算数。一次写一次读防的是写失败；量完再读一次，防的是量到一半被换掉。 */
+  it("拍完之后会再确认一次 demo 站还是这一套风格", () => {
+    const after = MJS.slice(MJS.indexOf("-ours-390"));
+    expect(after).toMatch(/select\("style"\)/);
+    expect(after).toMatch(/这一次测量不算数：拍完之后/);
+  });
 });

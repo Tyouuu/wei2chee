@@ -1476,6 +1476,26 @@ try {
   const ours = await shoot(`http://localhost:3000/s/${project.site_slug}`, ".ds-site", 2500, `${register}-ours`);
   const oursPhone = await shoot(`http://localhost:3000/s/${project.site_slug}`, ".ds-site", 2500, `${register}-ours-390`, 390, false);
 
+  /* ⚠️ 量完再读一次风格 —— 开头那一次挡不住「量到一半被人改掉」。
+     2026-08-31 实测：我把五套丢到背景跑，又在前台跑 ledger。开头写 ledger、
+     读回来是 ledger、守卫放行；接着另一个进程把同一个 demo project 切成别的
+     风格，我们拍到的是**那一套的页面**，而报告一本正经地印了六十项台账的读数。
+     手机那张图是洋红色的、公司名是别人的、一张照片都没有 —— 而三项检查
+     只是「转红」，没有任何一项说「这一份不算数」。
+
+     一次写、一次读，防的是写失败；**量完再读一次**，防的是量的过程中它被换掉。
+     两次都要，而且这一次要在拍完之后。 */
+  {
+    const { data: still } = await db.from("projects").select("style").eq("id", PROJECT).single();
+    if (still?.style !== register) {
+      console.error(`
+🔴 这一次测量不算数：拍完之后 demo 站已经不是 ${register} 了（现在是 ${still?.style}）。
+   多半是同时有第二个 align 在跑 —— 十套共用同一个 project，不能并行。`);
+      await restore();
+      process.exit(1);
+    }
+  }
+
   {
     /* 我们自己这一边也验 —— dev server 重编到一半被读到，长得跟一段没载入的
        参考一模一样，而那一次的每一个数字都是错的。 */
@@ -1837,6 +1857,43 @@ try {
   if (thinSample) {
     console.log(`      （够长的整段文字：模版 ${theirs.type.bodyN} 段 · 我们 ${ours.type.bodyN} 段 —— 少於三段，这一项不判）`);
   }
+  /* ── 逐段正文字级 ──────────────────────────────────────────────────────
+     老板 2026-08-31，裁成原尺寸看第2段：他们的正文读起来明显比我们的大 ——
+     **而上面每一项字体检查都是绿的**（整页 17 对 18、正文 17 对 18、
+     级差 h2/h1 0.57 对 0.56）。
+
+     因为它们量的是**整页的中位数**，而整页一样、逐段不一样是完全可能的：
+     实测台账 —— 第2段两边都是 56/17（真的一样，我眼睛看错了，是他们那段
+     文字长七行、我们两行），而**第3段他们的清单是 25px、我们 17px**，
+     **第1段他们的副标是一行 28px 的标语、我们是三行 21px 的段落**。
+     一页里两段差 8px，中位数一个都没动。
+
+     这跟 align-palette.py 档头写的是同一个错，一字不差：
+     「40% 白 25% 深」既可以是白底两条深带，也可以是深底两条白带 ——
+     两个数字一样，两个设计相反。**颜色那一轴改成逐段量了，字级没有。**
+
+     量法跟整页那一项同一条规则（按**字数**加权取中位，不是按块），
+     只是单位换成一段。差三成以上才点名 —— 一两个像素是内容长短的事。 */
+  {
+    const bodyOf = (bs) => {
+      const t = bs.filter((b) => b.kind === "字" && b.px && b.n);
+      if (!t.length) return null;
+      const rows = t.map((b) => [b.px, b.n]).sort((a, b) => a[0] - b[0]);
+      const tot = rows.reduce((a, r) => a + r[1], 0);
+      let acc = 0;
+      for (const [px, n] of rows) { acc += n; if (acc >= tot / 2) return px; }
+      return rows[rows.length - 1][0];
+    };
+    const off = [];
+    for (const [a, b] of paired) {
+      const bt = bodyOf(TSHAPE[a] ?? []), bo = bodyOf(OSHAPE[b] ?? []);
+      if (!bt || !bo) continue;
+      if (Math.abs(bt - bo) / bt > 0.3) off.push(`第${a + 1}段 ${bt}对${bo}px`);
+    }
+    check("字体", "逐段正文字级", off.length ? "不一样" : "每一段都对得上",
+      off.length ? off.join(" · ") : "每一段都对得上", off.length === 0);
+  }
+
   if (h1(theirs.type).here === false) {
     console.log("      ⚠️ 模版的字这台机器没载入到 —— 上面那两行字体名是宣告的，不是画面上的");
   }
