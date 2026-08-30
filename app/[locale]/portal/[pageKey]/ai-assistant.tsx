@@ -10,7 +10,8 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { planDesignChange } from "@/lib/portal/design-change";
 import { claimStands } from "@/lib/portal/claim-check";
-import { suggestionsFor } from "@/lib/portal/trade-suggestions";
+import { suggestionsFor, ASSISTANT_LIMITS } from "@/lib/portal/trade-suggestions";
+import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
 import { useTrade } from "@/design-system/trade-context";
 import { findSelector, type PuckLayout } from "@/lib/portal/layout-ops";
 import { relayout } from "@/lib/portal/relayout";
@@ -593,7 +594,18 @@ export function AiAssistant({
     photo picker reads. Ninth time in this repo that a capability existed and
     the wire was never connected.
   */
-  const suggestions = suggestionsFor(useTrade(), useLocale());
+  /* AND THE PAGE, not only the trade.
+
+     A ledger has no stages, and the 官网 page has no table at all, so two of
+     the three lines were impossible on the page they were shown on -- HAX
+     Guideline 1 calls that a task mismatch and puts 「product abandonment」
+     next to it. The shape decides which survive and what the first one is. */
+  const suggestions = suggestionsFor(
+    useTrade(),
+    useLocale(),
+    pageKey ? (MODULE_BY_KEY[pageKey]?.shape ?? null) : null,
+  );
+  const limits = ASSISTANT_LIMITS[useLocale().startsWith("zh") ? "zh" : "en"];
 
   /**
    * ONE PRESS, ON THE THING THAT IS SELECTED — the part of Durable that this
@@ -724,6 +736,35 @@ export function AiAssistant({
                 </button>
               ))}
             </div>
+            {/* WHAT IT WILL NOT DO.
+
+                PAIR's mental-models guidance is that onboarding has to say
+                what a system can do AND what it cannot; this panel said only
+                the first, which is how an owner asks for the same impossible
+                thing three times and then decides the product is broken.
+
+                ⚠️ The first version hid these behind `!compact`, copying the
+                explanation above it. But the dock on a 1500px desktop IS
+                compact -- it is a floating panel, not the full sidebar -- so
+                the limits rendered nowhere a customer would ever be. A limit
+                nobody sees is the same defect as no limit, written by the
+                person fixing it. Found by opening the panel and looking.
+
+                They stay, in both modes; compact lays them on one wrapping
+                line instead of three, which measures ~2 lines rather than the
+                explanation's ~180px. check:reachable is what says the chips
+                above are still pressable at 390. */}
+            <ul
+              className={
+                compact
+                  ? "mt-3 flex flex-wrap gap-x-3 gap-y-0.5 [font-size:var(--text-micro)] [color:var(--color-paper-dim)]"
+                  : "mt-4 flex flex-col gap-1 [font-size:var(--text-micro)] leading-relaxed [color:var(--color-paper-dim)]"
+              }
+            >
+              {limits.map((line) => (
+                <li key={line}>· {line}</li>
+              ))}
+            </ul>
           </div>
         ) : (
           <ol className="flex flex-col gap-4">
@@ -973,14 +1014,28 @@ export function AiAssistant({
             type="button"
             onClick={() => ask(instruction)}
             disabled={busy || !instruction.trim()}
-            // Full width and 44px tall below 1024px, unchanged above it.
-            // Measured at 30px on a 390px viewport, which is under the 44px a
-            // thumb needs -- and this is the send button of the assistant that
-            // mobile-editor.tsx makes the ENTIRE phone interface, so it is the
-            // one control on that screen that cannot be fiddly. It also has the
-            // row to itself down there now that the Enter hint beside it is
-            // desktop-only, so widening costs nothing.
-            className="min-h-11 w-full shrink-0 rounded-md px-3 py-1.5 [font-size:var(--text-xs)] transition-colors disabled:opacity-40 lg:min-h-0 lg:w-auto [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
+            /*
+              44px tall and filling the rest of the row below 1024px, unchanged
+              above it.
+
+              ⚠️ `w-full` WAS WRONG HERE, AND THE COMMENT THAT REPLACED SAID SO
+              CONFIDENTLY. It claimed this button "has the row to itself down
+              there" -- it does not. The row still holds 「加图」 (or 「不等了」
+              while busy), and in a flex row `w-full` does not mean "take the
+              space that is left", it means "be as wide as the whole row" and
+              then get pushed right by the sibling. Measured on the real editor
+              at 390: the row is left=14 right=376, and this button was
+              left=96 right=458 -- SIXTY-EIGHT PIXELS PAST THE SCREEN.
+
+              So the send button of the assistant that mobile-editor.tsx makes
+              the entire phone interface could not be pressed on a phone. 「用讲
+              的改」 is the product's headline promise, and on the width this
+              market was measured to be on, the sentence could be typed and
+              never sent.
+
+              `flex-1` is the class that means what the old comment meant.
+            */
+            className="min-h-11 flex-1 rounded-md px-3 py-1.5 [font-size:var(--text-xs)] transition-colors disabled:opacity-40 lg:min-h-0 lg:w-auto lg:flex-none [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
           >
             {busy ? t("aiThinking") : t("aiSubmit")}
           </button>

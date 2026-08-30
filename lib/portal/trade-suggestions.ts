@@ -120,8 +120,131 @@ export const TRADE_SUGGESTIONS: Record<string, TradeSuggestions> = {
   },
 };
 
-/** The three chips for this owner, in the language the editor is speaking. */
-export function suggestionsFor(trade: string | null | undefined, locale: string): string[] {
+/**
+ * The chips for this owner, on this page, in the language the editor speaks.
+ *
+ * `shape` is optional so that a caller which does not know the page still
+ * gets the trade's three -- which is what every caller got before, and is
+ * right on a pipeline page. It is passed wherever it is known.
+ */
+export function suggestionsFor(
+  trade: string | null | undefined,
+  locale: string,
+  shape?: string | null,
+): string[] {
+  const zh = locale.startsWith("zh");
   const set = TRADE_SUGGESTIONS[trade ?? "other"] ?? TRADE_SUGGESTIONS.other;
-  return locale.startsWith("zh") ? set.zh : set.en;
+  const lines = zh ? set.zh : set.en;
+
+  if (!shape) return lines;
+
+  const opener = SHAPE_OPENER[shape];
+  const kinds = KINDS_BY_SHAPE[shape] ?? KINDS_DEFAULT;
+  const kept = SUGGESTION_KINDS.map((k, i) => (kinds.includes(k) ? lines[i] : null)).filter(
+    (s): s is string => !!s,
+  );
+
+  /* Three is the ceiling the panel was measured at: a hit-test sweep found
+     the third chip already pushing itself out of the scroll viewport, so a
+     fourth would be a suggestion nobody can press. The opener goes first
+     because it is the one about this page. */
+  return [opener ? (zh ? opener.zh : opener.en) : null, ...kept]
+    .filter((s): s is string => !!s)
+    .slice(0, 3);
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   THE SAME THREE SENTENCES ON EVERY PAGE WAS THE WHOLE PROBLEM.
+
+   A trade's three lines are about a table: add a column, change the stages,
+   rename a heading. On 报价单 all three are true. On 收款 the middle one is a
+   lie -- a ledger has no stages, its status is read from the money -- and on
+   the 官网 page none of them are, because there is no table on it at all.
+
+   Microsoft's HAX Guideline 1 names the two ways this fails and they are
+   exactly these: DOMAIN mismatch (the area is not supported) and TASK
+   mismatch (the action is not supported), and it says what they cost --
+   「disappointment, product abandonment」. An example that cannot work here
+   does not teach somebody what the box is for; it teaches them it is broken.
+
+   So the sentences are filtered by the shape of the page, and each shape
+   opens with one line that is about THIS page. Every line still maps to an
+   operation that exists -- the rule this file already had, and the reason it
+   is worth keeping: Puck's own AI guidance warns that invented examples
+   advertise abilities a product does not have.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/** What each position in a trade's three sentences is about. Positional
+ *  because the eight trades were written that way; named here so the filter
+ *  below reads, and held in place by trade-suggestions.test.ts. */
+export const SUGGESTION_KINDS = ["column", "stages", "rename"] as const;
+export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
+
+/** Which of a trade's sentences can be true on a page of this shape. */
+const KINDS_BY_SHAPE: Record<string, SuggestionKind[]> = {
+  /* Rows that move through stages -- all three apply. */
+  pipeline: ["column", "stages", "rename"],
+  /* 「把流程改成…」 is dropped: a ledger row's status comes from the money and
+     the allocation (订金 · 已入账 · 冲正), so a stage the owner typed would be
+     overruled by the page the moment it rendered. */
+  ledger: ["column", "rename"],
+  /* No table at all. Only the opener, which is about the words on the page. */
+  landing: [],
+};
+const KINDS_DEFAULT: SuggestionKind[] = ["column", "rename"];
+
+/**
+ * One line that is about THIS page, and nothing else.
+ *
+ * `pipeline` and `ledger` open with writing a real row, because on those two
+ * shapes that is a business record now rather than a drawing -- the single
+ * biggest thing that changed on 2026-08-31 and the last thing an owner would
+ * guess he could say.
+ */
+const SHAPE_OPENER: Record<string, { zh: string; en: string }> = {
+  pipeline: {
+    zh: "加一单：Taman Desa 三房翻新，陈先生，RM 48,500",
+    en: "Add one: Taman Desa 3-room renovation, Mr Tan, RM 48,500",
+  },
+  ledger: {
+    zh: "加一笔：陈先生的订金 RM 3,000，转账",
+    en: "Add one: RM 3,000 deposit from Mr Tan, bank transfer",
+  },
+  landing: {
+    zh: "把第一屏那句大标题改成「二十年装修经验」",
+    en: 'Change the headline to "Twenty years of renovation work"',
+  },
+  calendar: { zh: "在表格加一列「几点到」", en: 'Add an "Arrives" column to the table' },
+  directory: { zh: "在表格加一列「WhatsApp 号码」", en: 'Add a "WhatsApp" column to the table' },
+  catalog: { zh: "在表格加一列「进货价」", en: 'Add a "Cost price" column to the table' },
+};
+
+/**
+ * WHAT IT WILL NOT DO.
+ *
+ * Google's PAIR guidance is explicit that onboarding has to say what a system
+ * can do AND what it cannot -- and this panel said only the first, which is
+ * how an owner ends up asking for a thing three times before deciding the
+ * product is broken.
+ *
+ * ⚠️ Every line here is a rule the assistant actually follows, not a caveat
+ * written to sound careful:
+ *   · it refuses to invent business facts -- a price it was not told is a
+ *     number that would end up in front of that owner's customer
+ *   · block-rules.ts stops it adding a control wired to nothing (the reason
+ *     the fake ⌘K search box was cut)
+ *   · pick_photo is a PROPOSAL: it opens the picker and the owner chooses,
+ *     because a stock photo is the one thing on the page that is not his
+ */
+export const ASSISTANT_LIMITS: { zh: string[]; en: string[] } = {
+  zh: [
+    "不会替你决定价钱，或填一个你没讲过的数字",
+    "不会加一颗按下去没反应的按钮",
+    "不会替你挑照片 —— 它把图库开在你面前，你自己挑",
+  ],
+  en: [
+    "Won't decide a price, or fill in a number you didn't give it",
+    "Won't add a button that does nothing when pressed",
+    "Won't pick your photos — it opens the picker and you choose",
+  ],
+};
