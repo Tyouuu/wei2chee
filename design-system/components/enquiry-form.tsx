@@ -181,13 +181,13 @@ export function EnquiryForm({
           boxed
             ? "ds-card [padding:var(--pad-card-lg)]"
             : "",
-          split ? "grid items-start gap-x-10 gap-y-6 md:grid-cols-2" : "",
+          split ? "grid items-stretch gap-0 md:grid-cols-2 [margin:var(--site-form-bleed,0)]" : "",
         ].join(" ")}
       >
         {/* `contents` when not split, so the heading and blurb stay direct
             children of a plain block and nothing about their spacing changes.
             In split mode this becomes the left column. */}
-        <div className={split ? "" : "contents"}>
+        <div className={split ? "[padding:calc(var(--pad-card-lg)*1.2)]" : "contents"}>
           <h2 data-column-heading="" className="ds-display [color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
             {heading}
           </h2>
@@ -209,7 +209,7 @@ export function EnquiryForm({
 
              短的（name / phone）各占一半，长的（要讲的事）一整行 —— 那是这一
              类表格的通用排法，也是他们那一段的排法。手机上照样一栏。 */
-          className={`${split ? "" : "mt-6 "}grid max-w-[34rem] [gap:var(--gap-stack)] @xl:grid-cols-2`}
+          className={`${split ? "[background:var(--site-form-panel,transparent)] [border-inline-start:var(--site-form-line,0)] [padding:calc(var(--pad-card-lg)*1.2)] " : "mt-6 "}grid [gap:var(--gap-stack)] ${split ? "" : "max-w-[34rem] "}@xl:grid-cols-2`}
         >
           {/* Nobody sees this and nobody fills it. A bot fills every input it
               finds, which is what makes it the cheapest honest filter there
@@ -256,7 +256,7 @@ export function EnquiryForm({
             );
           })}
 
-          <div className="mt-1 flex flex-wrap items-center [gap:var(--gap-inline)] @xl:col-span-2">
+          <div className="mt-1 flex flex-col items-stretch [gap:var(--gap-inline)] @xl:col-span-2">
             <button
               type="submit"
               disabled={state === "sending"}

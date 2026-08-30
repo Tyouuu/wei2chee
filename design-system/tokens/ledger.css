@@ -277,6 +277,11 @@
   --site-field-border: 0;
   --site-field-line: inset 0 -1px 0 color-mix(in oklab, var(--color-paper) 42%, transparent);
   /* 送出是一条满宽的白横条 —— Newel 的 Contact Us 就是这样收尾的。 */
+  /* 表格那一半自己一块更深的地，跟左半用一条通到底的竖线分开 ——
+     Newel 的 Contact Us 是一个框里切两半，不是两栏并排。 */
+  --site-form-bleed: calc(var(--pad-card-lg) * -1.35);
+  --site-form-panel: color-mix(in oklab, var(--site-ink-bg) 82%, #000);
+  --site-form-line: 1px solid color-mix(in oklab, var(--site-ink-fg) 22%, transparent);
   --site-submit-grow: 1;
   --site-submit-bg: var(--site-ink-fg);
   --site-submit-fg: var(--site-ink-bg);  /* Newel 的每一块都收在框里，没有更宽的段 */  /* 参考页量出来的版心 5%–94% */

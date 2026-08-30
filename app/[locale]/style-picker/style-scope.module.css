@@ -622,6 +622,9 @@
   --site-field-radius: 0;
   --site-field-border: 0;
   --site-field-line: inset 0 -1px 0 color-mix(in oklab, var(--color-paper) 42%, transparent);
+  --site-form-bleed: calc(var(--pad-card-lg) * -1.35);
+  --site-form-panel: color-mix(in oklab, var(--site-ink-bg) 82%, #000);
+  --site-form-line: 1px solid color-mix(in oklab, var(--site-ink-fg) 22%, transparent);
   --site-submit-grow: 1;
   --site-submit-bg: var(--site-ink-fg);
   --site-submit-fg: var(--site-ink-bg);
