@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { buildPageLayout } from "@/lib/templates/industry-template";
 import { MODULE_KEYS } from "@/lib/portal/module-catalog";
+import { heroDeadFields } from "./site-hero";
 
 /**
  * Every word an owner types into their public site must reach the page.
@@ -137,7 +138,28 @@ describe("public site fields reach the page", () => {
       // Narrowed once here so the closure below does not have to re-prove it.
       const render = entry.render;
 
+      /*
+        WHAT THIS FILE STOPPED OWNING, 2026-08-31.
+
+        SiteHero carries thirteen layouts that print different words, and the
+        「try the other shapes」 fallback below cannot see them: its layout is
+        chosen by SITE_COMPOSITION, not by an editor select with options. So a
+        field dead on the layout a customer is actually on looked fine here.
+        `heroDeadFields` states that per layout and site-hero-fields.test.tsx
+        renders every one of them to keep it honest -- a stricter gate than this
+        one, so what it covers is skipped rather than double-reported.
+      */
+      const heroDead = new Set(
+        node.type === "SiteHero"
+          ? heroDeadFields({
+              layout: node.props.layout as string | undefined,
+              photo: node.props.photo as string | undefined,
+            })
+          : [],
+      );
+
       for (const [key, field] of Object.entries(entry.fields)) {
+        if (heroDead.has(key)) continue;
         if (field?.type !== "text" && field?.type !== "textarea") continue;
         // Only probe what this page actually carries: a field the generator
         // left empty is not a dropped word, it is an empty field.
@@ -182,20 +204,18 @@ describe("public site fields reach the page", () => {
         (threw.length ? `\n  THREW: ${threw.join(" | ")}` : ""),
     );
     /*
-      A DEBT, NOT AN ACCEPTED STATE.
+      EMPTY, AND IT HAS TO STAY EMPTY.
 
-      SiteHero.eyebrow is a live defect: the owner's 「地区 · 行业」 is typed on
-      the first screen of their public website and never rendered. It is listed
-      here only so this gate can run and catch the NEXT one — see
-      docs/founder-tasks.md task 51. This list must shrink to nothing; anything
-      joining it is a new field that stopped reaching the page.
+      The one entry this list used to carry -- SiteHero.eyebrow -- has not been
+      fixed. It moved: `heroDeadFields` now states it, the panel no longer
+      offers a box for it, and the assistant refuses to claim it changed
+      anything. It is still a live defect (任务 51: the owner's 「地区 · 行业」 has
+      no home on their own first screen) and the debt is recorded there.
 
-      Not fixed in this commit because site-hero.tsx belongs to the other
-      session working in this same tree today, and two sessions writing one file
-      is how work gets lost.
+      Anything appearing here now is a NEW field that stopped reaching the page.
     */
     expect({ dropped: [...new Set(dropped)].sort(), threw }).toEqual({
-      dropped: ["website/SiteHero.eyebrow"],
+      dropped: [],
       threw: [],
     });
   });

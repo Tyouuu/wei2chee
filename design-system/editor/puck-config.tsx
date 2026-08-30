@@ -14,7 +14,7 @@ import { HeroCard } from "@/design-system/components/hero-card";
 import { Avatar } from "@/design-system/components/avatar";
 import { RecordTable } from "@/design-system/components/record-table";
 import { Inline } from "@/design-system/editor/inline-text";
-import { SiteHero } from "@/design-system/components/site-hero";
+import { SiteHero, heroDeadFields } from "@/design-system/components/site-hero";
 import { FloatingContact } from "@/design-system/components/floating-contact";
 import { SiteBar, SiteFoot } from "@/design-system/components/site-chrome";
 import {
@@ -2307,6 +2307,23 @@ export const puckConfig: Config<Components> = {
       // what to press. `proof` last because it is the part a business fills in
       // once and never touches again.
       fields: {
+        /*
+          THE WORDS THAT ARE ACTUALLY THE BIGGEST ONES, AND THEY HAD NO CONTROL.
+
+          Three of this block's layouts -- 名牌 / 名牌居中 / 名牌配图 -- write
+          their h1 as `{brand || headline}`, and `brand` is always filled from
+          the business name. So on those registers 「大标题」 below edited
+          nothing, and the line a stranger actually reads had no box anywhere in
+          the editor. Found 2026-08-31 by eval:browser: the assistant answered
+          「第一屏的大标题改成…了。改了 1 处」 over a canvas that was
+          byte-identical.
+
+          Adding the field changes no pixel by itself -- it hands over the lever
+          that was missing. Which layouts show which field is measured, not
+          assumed: see heroDeadFields in site-hero.tsx and the test that renders
+          every layout to keep it honest.
+        */
+        brand: { label: "第一屏的大字（店名）", type: "text" },
         eyebrow: { label: "地区 · 行业", type: "text" },
         headline: { label: "大标题", type: "text" },
         sub: { label: "下面那一句", type: "textarea" },
@@ -2367,6 +2384,31 @@ export const puckConfig: Config<Components> = {
           defaultItemProps: { value: "0", label: "说明" },
           getItemSummary: (item) => `${item.value} ${item.label}`,
         },
+      },
+      /*
+        A BOX THAT EDITS NOTHING IS WORSE THAN NO BOX.
+
+        This block has thirteen layouts and they do not carry the same words:
+        名牌 puts the shop name in the h1 and has no slot for a headline; 满图
+        drops the phone; 数据栏 drops the second button. Measured, not assumed --
+        heroDeadFields renders every layout, and site-hero-fields.test.tsx fails
+        if it and the markup ever disagree.
+
+        Until now the panel showed all of them all of the time, so an owner on
+        名牌 could type a 「大标题」 that his own website would never print. The
+        assistant used to do the same thing out loud: 「改了 1 处」 over a page
+        that had not moved.
+
+        Puck re-runs this when the props it depends on change, so choosing a
+        photo can legitimately change which boxes are here -- that is the design
+        changing, and the panel following it.
+      */
+      resolveFields: (data, { fields }) => {
+        const props = (data.props ?? {}) as { layout?: string; photo?: string };
+        const dead = new Set(heroDeadFields({ layout: props.layout, photo: props.photo }));
+        return Object.fromEntries(
+          Object.entries(fields).filter(([name]) => !dead.has(name)),
+        ) as typeof fields;
       },
       defaultProps: {
         headline: "我们做什么",

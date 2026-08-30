@@ -213,6 +213,17 @@ const CASES = [
     */
     name: "官网 · 询价表格的送出按钮",
     page: "website",
+    /*
+      NOT EVERY BUSINESS'S SITE HAS ONE.
+
+      SITE_COMPOSITION gives each register its own set of sections, and the demo
+      account is regenerated as different trades. On a run where its website had
+      no enquiry form this case reported 「画面没有动」 -- and the assistant had
+      answered correctly: 「这页看不到询价表格或「送出」按钮；是要改首页的
+      「Ask on WhatsApp」按钮吗？」. A ruler that marks an honest answer wrong is
+      worse than no ruler, so the case declares the block it is about.
+    */
+    needs: "website-form",
     ask: "把询价表格那颗送出的按钮改成「立刻问价钱」",
     changed: true,
     gains: ["立刻问价钱"],
@@ -300,6 +311,13 @@ async function readCanvas(p) {
       .evaluateAll((els) =>
         els.map((e) => (e.innerText || "").trim().split("\n")[0].slice(0, 24)),
       ),
+    /* WHICH BLOCKS ARE ON THIS PAGE AT ALL. Puck puts the block id in
+       data-puck-component -- `website-form`, `website-hero` -- and a case about
+       a block the page does not have is not a product failure, it is a question
+       nobody asked. See `needs` on the enquiry case. */
+    ids: await p
+      .locator(`${CANVAS} [data-puck-component]`)
+      .evaluateAll((els) => els.map((e) => e.getAttribute("data-puck-component") || "")),
   };
 }
 
@@ -335,6 +353,14 @@ try {
     // second case would be asked about a page the first one already changed.
     const box = await openEditor(p, c.page ?? "dashboard");
     const before = await readCanvas(p);
+
+    /* Reported, never silently passed: a skip that looks like a pass is how a
+       ruler stops noticing the thing it was built for. */
+    if (c.needs && !before.ids.includes(c.needs)) {
+      rows.push({ name: c.name, skipped: `这个项目的页面上没有「${c.needs}」这一块`, before, after: before, said: "" });
+      console.log(`skip  ${c.name}`);
+      continue;
+    }
 
     /* A fabricated reply, for the cases that are about what WE do with one.
        Routed before the click so the request never leaves the browser. */
@@ -449,6 +475,11 @@ try {
 
 console.log("\n它说改了，画面真的动了吗\n");
 for (const r of rows) {
+  if (r.skipped) {
+    console.log(`  跳过  ${r.name}`);
+    console.log(`          ${r.skipped}`);
+    continue;
+  }
   console.log(`${r.ok ? "  通过  " : "  没过  "}${r.name}`);
   console.log(`          它说: ${r.said || "(没读到)"}`);
   if (!r.ok) {
@@ -457,12 +488,14 @@ for (const r of rows) {
     console.log(`          之后 ${r.after.order.length} 块: ${r.after.order.join(" | ")}`);
   }
 }
-const passed = rows.filter((r) => r.ok).length;
-console.log(`\n合计  ${passed}/${rows.length}\n`);
+const ran = rows.filter((r) => !r.skipped);
+const passed = ran.filter((r) => r.ok).length;
+const skipped = rows.length - ran.length;
+console.log(`\n合计  ${passed}/${ran.length}${skipped ? ` · 跳过 ${skipped}` : ""}\n`);
 /*
   A non-zero exit, because this one is allowed to be a gate. eval:editor is a
   score to read; this is a yes/no about whether the thing the customer sees
   matches the thing the assistant claimed, and there is no version of that
   being 「mostly」 true.
 */
-process.exitCode = passed === rows.length ? 0 : 1;
+process.exitCode = passed === ran.length ? 0 : 1;

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { heroDeadFields } from "@/design-system/components/site-hero";
 import { VARIANTS, activeVariant } from "@/design-system/editor/variants";
 // Straight from the generated data module, not through components/blocks --
 // the barrel imports 250 client components, and this file runs on the server.
@@ -134,6 +135,34 @@ const NOT_PROSE = (name: string): boolean =>
 /** Every prose field each component actually declares. The per-block answer,
  *  which is what `set_text` is checked against -- one global list cannot say
  *  that `headline` belongs to SiteHero and `heading` to EnquiryForm. */
+/**
+ * The fields on THIS node, in the shape it is actually in.
+ *
+ * TEXT_FIELDS_BY_COMPONENT answers 「what can a SiteHero be told?」. It cannot
+ * answer 「what can THIS SiteHero be told?」, and the difference is a whole
+ * class of 「说了没做」: on three of its layouts the first screen's big line is
+ * the business name and `headline` has no slot, so an edit lands in props,
+ * reports 「改了 1 处」, and the page does not move. `eval:browser` caught
+ * exactly that on 2026-08-31 — the twelfth of these.
+ *
+ * The component owns the fact (`heroDeadFields`) because the component owns the
+ * markup, and a test renders every layout to keep the two honest. Anything else
+ * here is a second copy of a truth that lives elsewhere, which is how the last
+ * six of these were built.
+ */
+export function proseFieldsOn(node: { type?: unknown; props?: Record<string, unknown> }): string[] {
+  const type = String(node.type ?? "");
+  const all = TEXT_FIELDS_BY_COMPONENT[type] ?? [];
+  if (type !== "SiteHero") return all;
+  const dead = new Set(
+    heroDeadFields({
+      layout: typeof node.props?.layout === "string" ? node.props.layout : null,
+      photo: typeof node.props?.photo === "string" ? node.props.photo : null,
+    }),
+  );
+  return all.filter((f) => !dead.has(f));
+}
+
 export const TEXT_FIELDS_BY_COMPONENT: Record<string, string[]> = Object.fromEntries(
   Object.entries(COMPONENT_CONFIGS).map(([name, cfg]) => [
     name,
@@ -539,7 +568,7 @@ export function describeLayout(layout: PuckLayout): string {
         `headline` this particular block calls it -- guessing is exactly what
         produced an edit onto a prop SiteHero does not declare.
       */
-      const mine = TEXT_FIELDS_BY_COMPONENT[n.type] ?? [];
+      const mine = proseFieldsOn(n);
       const texts = mine
         .filter((f) => typeof n.props?.[f] === "string" && n.props[f])
         .map((f) => `${f}="${n.props[f]}"`)
@@ -786,11 +815,17 @@ export function applyLayoutOps(
           Refused rather than written, and the refusal reaches the customer in
           `skipped`. Silently dropping it is what this was already doing.
         */
-        const prose = TEXT_FIELDS_BY_COMPONENT[String(node.type ?? "")];
-        if (prose && !prose.includes(op.field)) {
+        const declared = TEXT_FIELDS_BY_COMPONENT[String(node.type ?? "")];
+        const prose = proseFieldsOn(node);
+        if (declared && !prose.includes(op.field)) {
           skipped.push({
             op: op.op,
-            reason: `${String(node.type ?? "")} 没有「${op.field}」这个字段`,
+            reason: declared.includes(op.field)
+              ? // Declared, but this block's current shape does not put it on
+                // the page. Writing it would be the silent no-op this whole
+                // mechanism exists to stop.
+                `${String(node.type ?? "")} 这一套版式不显示「${op.field}」`
+              : `${String(node.type ?? "")} 没有「${op.field}」这个字段`,
           });
           break;
         }

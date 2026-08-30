@@ -42,6 +42,87 @@ import { SystemMini } from "./system-mini"
  * changes appearance — nothing typed is ever dropped by switching, which is
  * what makes the row safe to click through. See variants.ts.
  */
+/**
+ * 这一屏，哪几格的字根本到不了画面上。
+ *
+ * ── WHY THIS EXISTS ───────────────────────────────────────────────────────
+ *
+ * Found by `eval:browser` on 2026-08-31, and it is the TWELFTH time in this
+ * repository that the assistant has told a customer it changed something and
+ * the page did not move:
+ *
+ *   ask      「把第一屏那句大标题改成「二十年装修经验」」
+ *   reply    「第一屏的大标题改成「二十年装修经验」了。改了 1 处」
+ *   canvas   byte-identical, before and after
+ *
+ * Three of this component's layouts open on the BUSINESS NAME — 「THE NAME, AND
+ * NOTHING COMPETING WITH IT」 — and write it as `{brand || headline}`. `brand`
+ * is always set, so on those three the headline has no slot at all. That is the
+ * clone being faithful, not a bug: 招牌 and 満図 open on the name because their
+ * references do. THE BUG IS OFFERING A FIELD THAT CANNOT LAND.
+ *
+ * `eyebrow` is the same shape and older (任务 51): declared, typed into, and
+ * used by no JSX in this file since a refactor dropped it.
+ *
+ * ── WHY IT IS A FUNCTION AND NOT A COMMENT ────────────────────────────────
+ *
+ * A note saying 「headline does not render here」 helps a reader of this file
+ * and nobody else. The assistant needs it at request time, so that 「大标题」
+ * is not on the list of things it may say it changed — and the customer needs
+ * it as a refusal that names the field that WOULD work.
+ *
+ * ⚠️ Kept honest by rendering, not by trust: site-hero-fields.test.tsx renders
+ * every layout with and without a picture and fails if this list and the actual
+ * markup disagree. A hand-written fact outliving what it describes is the
+ * mistake this repo has made six times.
+ */
+/**
+ * Measured 2026-08-31 by rendering every layout with and without a picture and
+ * looking for a sentinel in the markup. site-hero-fields.test.tsx does exactly
+ * that on every run and fails if this table and the component disagree, so this
+ * is written down but it is not trusted -- 「手写名单总是活得比它描述的东西久」
+ * has cost this repo six bugs.
+ *
+ * Read it as: on THIS layout, these words never appear on the first screen.
+ */
+const OFF_THE_FIRST_SCREEN: Record<string, { bare: string[]; withPhoto: string[] }> = {
+  left: { bare: ["brand"], withPhoto: ["brand"] },
+  "band-bleed": { bare: ["brand"], withPhoto: ["brand", "phoneLabel", "phoneNumber"] },
+  "band-inset": {
+    bare: ["brand"],
+    withPhoto: ["brand", "phoneLabel", "phoneNumber", "strip", "primaryLabel"],
+  },
+  "data-columns": {
+    bare: ["brand"],
+    withPhoto: ["brand", "phoneLabel", "phoneNumber", "strip", "secondaryLabel"],
+  },
+  // The three that open on the business NAME: `{brand || headline}`, and brand
+  // is always filled. Note that brand and headline are exactly complementary --
+  // whichever one is the display line, the other never appears.
+  "name-plate": {
+    bare: ["brand"],
+    withPhoto: ["headline", "phoneLabel", "phoneNumber", "secondaryLabel"],
+  },
+  "plate-centre": {
+    bare: ["brand"],
+    withPhoto: ["headline", "phoneLabel", "phoneNumber", "strip", "primaryLabel", "secondaryLabel"],
+  },
+  // The only one that drops the headline with no picture too.
+  "name-figure": {
+    bare: ["headline", "phoneLabel", "phoneNumber", "strip"],
+    withPhoto: ["headline", "phoneLabel", "phoneNumber", "strip"],
+  },
+}
+
+export function heroDeadFields(props: { layout?: string | null; photo?: string | null }): string[] {
+  // 任务 51, and it is every layout: declared as 「地区 · 行业」, typed into, and
+  // used by no JSX in this file since a refactor dropped it.
+  const dead = ["eyebrow"]
+  const row = OFF_THE_FIRST_SCREEN[String(props.layout ?? "")]
+  if (row) dead.push(...(props.photo?.trim() ? row.withPhoto : row.bare))
+  return dead
+}
+
 export function SiteHero({
   eyebrow,
   brand,
