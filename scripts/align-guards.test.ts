@@ -185,7 +185,7 @@ describe("尺子不准再犯", () => {
       正文字体: "同 标题字体",
       "手机 390px": "两边有一边没拍到手机 —— 这是拒绝作答，不是过关",
     };
-    const found = [...MJS.matchAll(/check\("[^"]+",\s*"([^"]+)"[^;]*?,\s*null\s*\)\s*;/gs)].map((m) => m[1]);
+    const found = [...MJS.matchAll(/check\("[^"]+",\s*"([^"]+)"[^;]*?,\s*null\s*\)\s*;/g)].map((m) => m[1]);
     for (const name of found) expect(Object.keys(BLANK)).toContain(name);
     expect(found.length).toBeLessThanOrEqual(Object.keys(BLANK).length);
   });
