@@ -561,6 +561,35 @@
   padding-inline: 0;
 }
 
+/* ── 有框的一页，在手机上还是有框 ────────────────────────────────────────────
+   老板 2026-08-30:「用眼睛找完全部错误」，两张 390px 的截图并排：
+
+     他们  每一块都还在细框里，左右各留一条页面的地
+     我们  照片一路贴到两边，框不见了
+
+   量出来是「手机 版心 模版 6%–94% · 我们 0%–100%」。
+
+   满边在 1440 上是一个决定（照片就是那一段），在 390 上它把「一张有框的纸」
+   变成一张贴边的海报 —— 那是另一套设计，不是同一套设计的窄版。
+   只对宣告了细框的风格生效：没有框的风格，满边在手机上仍然是对的。 */
+@media (max-width: 640px) {
+  .ds-ground[data-frame="hairline"] .ds-site > * > [data-bleed] {
+    max-width: var(--site-measure);
+    padding-inline: 1.5rem;
+  }
+  .ds-ground[data-frame="hairline"] .ds-site [data-fill] {
+    margin: 0;
+  }
+  /* 标题带在手机上不要冲出区块的边。
+     那条带的负边距是「拉到细框的内缘」，等於框自己的内距；到了 390 上，
+     那个内距比整段的左右留白还大，於是带子越过区块跑到页面边上 ——
+     量出来「手机 版心 我们 0%–100%」，而其余每一块都还在 6% 上。
+     一条带比它所在的那一块还宽，就不是那一块的带了。 */
+  .ds-ground[data-frame="hairline"] .ds-site :is(h2, h3):not([data-column-heading]) {
+    margin-inline: 0;
+  }
+}
+
 /* ── 上了色的一段要满宽 ──────────────────────────────────────────────────────
    Toulouse's cream sections are 1592px and 1255px running edge to edge; the
    colour IS the section. Ours painted the measure-limited content box, so the
