@@ -115,4 +115,31 @@ describe("尺子不准再犯", () => {
     expect(PY).toMatch(/photo_led/);
     expect(PY).toMatch(/照片铺满这一段/);
   });
+  /* ⑪ 看不看得见，要问整条祖先链。
+     2026-08-31：Newel 第4段六张照片上，尺子读到「01」「The Nelson's Project」——
+     照片上一个字都没有。那些字的祖先 `span._details_` 是 opacity:0 的 hover
+     浮层，而 **opacity 不继承计算值**，所以只问元素自己的写法永远看不到它。
+     我照那个读数在我们的照片上压了工程编号 —— 凭一个看不见的东西，
+     在我们的页面上造了一个他们没有的东西。 */
+  it("「看得见」问的是整条祖先链，不是元素自己", () => {
+    expect(MJS).toMatch(/checkVisibility/);
+    expect(MJS).toMatch(/opacityProperty:\s*true/);
+  });
+
+  /* ⑫ 顺序要按眼睛读的顺序，不按 DOM，也不按一个固定的桶宽。
+     台账第3段判过两次不及格：两边都是「左边一栏字，右边一张照片」，而他们的
+     照片比标题高 6%，我们的齐平 —— 一个固定桶宽永远会有一对刚好跨在桶边上的
+     东西。并排的定义是**垂直范围有没有重叠**，那没有边界可以跨。 */
+  it("顺序按垂直重叠分行，不按固定桶宽", () => {
+    const fn = MJS.slice(MJS.indexOf("const seqOf ="), MJS.indexOf("const seqOf =") + 900);
+    expect(fn).not.toMatch(/y0\s*\/\s*\d/);
+    expect(fn).toMatch(/Math\.min\(r\.y1, b\.y1\)/);
+  });
+
+  /* ⑬ 一颗按钮上的字不是一栏字。
+     Wix 的按钮是 <a> 套 <span>，我们的 <a> 自己带字 —— 同一颗按钮，他们多出
+     一个字块。第4段因此报「几栏 5对3」，而两边的排版一模一样。 */
+  it("按钮自己的字不算一栏字", () => {
+    expect(MJS).toMatch(/labelled/);
+  });
 });

@@ -417,6 +417,9 @@
   --radius-lg: 4px;
   --radius-control: 2px;
   --radius-pill: 3px;
+  /* 页脚不放按钮 —— 参考页的页脚是三栏字加一条底带，一颗按钮都没有，
+     而这一套的询价表格就在页脚上面那一段。 */
+  --site-foot-ask: none;
 
   /* ---- DENSITY AXIS: compact -------------------------------------------- */
   --pad-card: 14px;

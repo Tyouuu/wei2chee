@@ -176,69 +176,43 @@ export function SiteFoot({
       className="@container w-full [background-color:var(--color-nav-bg)] [border-top:var(--hairline)_solid_var(--color-nav-border)]"
     >
       <div className="mx-auto flex w-full max-w-[68rem] flex-col [gap:var(--gap-stack)] [padding-block:calc(var(--pad-card-lg)*1.8*var(--site-figure,1)*var(--site-foot,1))] [padding-inline:1.5rem]">
-        <div className="flex flex-wrap items-baseline [gap:var(--gap-inline)]">
-          <span className="[color:var(--color-nav-fg)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*var(--site-foot-brand,1))] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)] [line-height:1.05]">
-            {brand}
-          </span>
-          {tagline ? (
-            <span className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">{tagline}</span>
-          ) : null}
-        </div>
+        {/* ── 栏 ──────────────────────────────────────────────────────────
+            老板 2026-08-31，裁成原尺寸看第7段：他们的页脚是**三栏并排**
+            （名字＋社交 · 联络 · 去哪里），连结是**直排一栏**；我们是名字一行、
+            连结横排一行。同样的东西，两个排法 —— 而横排那一行是我们自己
+            长出来的，不是抄来的。
 
-        {jumps.length || askHref ? (
-          <div className="flex flex-wrap items-center justify-between [gap:var(--gap-stack)]">
-            <nav className="flex flex-wrap [gap:calc(var(--gap-inline)*1.6)]">
-              {jumps.map((l) => (
-                <a
-                  key={l.href + l.label}
-                  href={l.href}
-                  className="ds-display [color:var(--color-nav-fg)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] hover:underline"
-                >
-                  {l.label}
-                </a>
-              ))}
-            </nav>
+            我们只有两栏，因为**联络那一栏我们不填假的**（任务 19：
+            假联络资料不上线）。他们那一栏是 500 Terry Francine Street、
+            info@mysite.com、123-456-7890 —— 三行没有人接的东西。
+            少一栏是决定，不是漏掉。 */}
+        <div
+          data-cells=""
+          className={`grid [gap:var(--gap-stack)] ${filled.length ? "@2xl:grid-cols-3" : "@2xl:grid-cols-2"}`}
+        >
+          <div className="flex flex-col items-start [gap:var(--gap-inline)]">
+            <span className="[color:var(--color-nav-fg)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*var(--site-foot-brand,1))] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)] [line-height:1.05]">
+              {brand}
+            </span>
+            {tagline ? (
+              <span className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">{tagline}</span>
+            ) : null}
+            {/* ⚠️ 页脚有没有这颗按钮，是**风格**的事。
+                台账 抄的 Newel，页脚是三栏字加一条框起来的底带 —— **一颗按钮
+                都没有**，而它的询价表格就在上一段（491px，半边字半边表格）。
+                在一个刚走过表格的访客底下再放一颗橘色药丸，是我们加的，不是
+                他们的设计。其余风格照旧（预设 inline-flex）。 */}
             {askHref ? (
               <a
                 href={askHref}
-                className="inline-flex items-center [background:var(--color-primary)] [border-radius:var(--radius-pill)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [padding:0.7rem_1.4rem]"
+                className="items-center [background:var(--color-primary)] [border-radius:var(--radius-pill)] [color:var(--color-on-primary)] [display:var(--site-foot-ask,inline-flex)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [padding:0.7rem_1.4rem]"
               >
                 {askLabel}
               </a>
             ) : null}
           </div>
-        ) : null}
 
-        {/*
-          THE BOTTOM BAND.
-
-          Founder, 2026-08-27, on a crop of our foot next to theirs: 「还是抄的
-          不完全」. Theirs does not stop at the nav -- under a hairline it runs
-          three columns: the address, the phone and email, and the copyright.
-          Ours stopped at the nav, which is why the page still ended abruptly.
-
-          What is NOT copied is the half of theirs that is noise: a San
-          Francisco address that belongs to nobody and 「Powered and secured by
-          Wix」. The columns that carry something go in; the columns that carry
-          somebody else's advertising do not.
-
-          The contact column is empty on a page whose owner has not typed their
-          own number, and that is correct -- 假联络资料不再上线. The copyright is
-          always there, because it is the one line that is true on every page.
-        */}
-        {filled.length || minor.length || copyright ? (
-          /* `data-cells` — 台账's reference puts a VERTICAL RULE between the
-             three columns of its bottom band, the same rule it puts between
-             every other pair of cells on that page. Reusing the mark the
-             register already understands rather than writing a second rule for
-             the footer: a register that says 「分格」 says it everywhere. */
-          <div
-            data-cells=""
-            className={`grid [border-top:var(--hairline)_solid_var(--color-nav-border)] [gap:var(--gap-stack)] [padding-top:var(--gap-stack)] ${
-              filled.length ? "@2xl:grid-cols-3" : "@2xl:grid-cols-2"
-            }`}
-          >
-            {filled.length ? (
+          {filled.length ? (
             <dl>
               {filled.map((r) => (
                 <div key={r.label} className="mb-2">
@@ -249,26 +223,50 @@ export function SiteFoot({
                 </div>
               ))}
             </dl>
-            ) : null}
-            <ul className="flex flex-col [gap:.35rem]">
-              {(minor.length ? minor : jumps).map((l) => (
-                <li key={l.href + l.label}>
-                  <a href={l.href} className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)] hover:underline">
-                    {l.label}
-                  </a>
-                </li>
+          ) : null}
+
+          {jumps.length ? (
+            <nav className="flex flex-col items-start [gap:.45rem]">
+              {jumps.map((l) => (
+                <a
+                  key={l.href + l.label}
+                  href={l.href}
+                  className="ds-display [color:var(--color-nav-fg)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] hover:underline"
+                >
+                  {l.label}
+                </a>
               ))}
-            </ul>
+            </nav>
+          ) : null}
+        </div>
+
+        {/* ⚠️ 这一格以前写着 `minor.length ? minor : jumps` —— 而 minor 是
+            社交跟条款，我们一个都没有（[任务 19](../../docs/founder-tasks.md)：
+            假联络资料不上线）。於是每一个客户的页脚都把**同一组三个连结印两次**，
+            上面一次大的、下面一次小的。裁成原尺寸才看得到：
+            「Our work · What it costs · How to reach us」上下各一行。
+            没有东西可以放的格子就不放，不要拿上面那一格的东西来填。 */}
+        {minor.length || copyright ? (
+          /* ⚠️ 这一条底带以前是一张 2–3 栏的格子，而 `data-cells` 会在每两格
+             之间画一条竖线。社交/条款我们一个都没有，於是画出来的是**一条
+             通往空格子的线** —— 裁成原尺寸才看得到。空的格子不要留，
+             线是分东西用的，不是装饰。 */
+          <div className="flex flex-wrap items-baseline justify-between [border-top:var(--hairline)_solid_var(--color-nav-border)] [gap:var(--gap-inline)] [padding-top:var(--gap-stack)]">
+            {minor.length ? (
+              <ul className="flex flex-wrap [gap:calc(var(--gap-inline)*1.6)]">
+                {minor.map((l) => (
+                  <li key={l.href + l.label}>
+                    <a href={l.href} className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)] hover:underline">
+                      {l.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             {copyright ? (
               <p className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">{copyright}</p>
             ) : null}
           </div>
-        ) : null}
-
-        {note ? (
-          <p className="[border-top:var(--hairline)_solid_var(--color-nav-border)] [color:var(--color-nav-fg-dim)] [font-size:var(--text-xs)] [padding-top:var(--gap-stack)]">
-            {note}
-          </p>
         ) : null}
       </div>
     </footer>

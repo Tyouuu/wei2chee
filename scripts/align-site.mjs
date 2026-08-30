@@ -239,7 +239,24 @@ function readShape(rootSel) {
   kept.sort((a, b) => a.top - b.top);
 
   const PAGE = document.documentElement.getBoundingClientRect().width || 1440;
+  /* ⚠️ 「这个元素看不看得见」不能只问这个元素。
+     老板 2026-08-30:「用眼睛找完全部错误 然后去修好尺子」.
+
+     Newel 第4段六张照片上，尺子读到「01」「The Nelson’s Project」——
+     照片上一个字都没有。查下去：字的祖先 `span._details_` 是
+     **opacity: 0** 的 hover 浮层。而 opacity **不继承计算值** —— 子元素自己
+     的 computed opacity 还是 1，所以只问元素自己的旧写法，永远看不到它。
+
+     我昨天照这个读数，在我们的照片上压了工程编号 —— **凭一个看不见的东西，
+     在我们的页面上造了一个他们没有的东西。** 当时的修法是几何的（整个落在
+     一张排在后面的图里就算埋掉），那只修掉了一个实例；真正的原因是这个，
+     而它一次修掉一整类：祖先的 opacity、祖先的 visibility、display 链。
+
+     `contentVisibilityAuto` 故意不开：整页截图时视窗外的东西会被判成「跳过」，
+     那会让下半页整段消失 —— 跟 `animation-timeline: view()` 那次同一个坑。 */
   const vis = (el) => {
+    if (typeof el.checkVisibility === "function")
+      return el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
     const cs = getComputedStyle(el);
     return cs.display !== "none" && cs.visibility !== "hidden" && Number(cs.opacity) > 0.05;
   };
@@ -358,7 +375,16 @@ function readShape(rootSel) {
         (p2) =>
           b.x0 >= p2.x0 && b.x1 <= p2.x1 && b.y0 >= p2.y0 && b.y1 <= p2.y1 && p2.seq > b.seq,
       );
-    for (let k = boxes.length - 1; k >= 0; k--) if (buried(boxes[k])) boxes.splice(k, 1);
+    /* ⚠️ 一颗按钮上的字不是一栏字，它是那颗按钮。
+       Wix 的按钮是 <a> 套 <span>，我们的 <a> 自己带字 —— 於是同一颗
+       「View All」按钮，他们多出一个字块、我们没有。第4段因此报「几栏 5对3」，
+       而两边的排版一模一样。**假差异会把人送去改一件本来没坏的东西。** */
+    const btns = boxes.filter((b) => b.kind === "钮");
+    const labelled = (b) =>
+      b.kind === "字" &&
+      btns.some((k) => b.x0 >= k.x0 - 1 && b.x1 <= k.x1 + 1 && b.y0 >= k.y0 - 1 && b.y1 <= k.y1 + 1);
+    for (let k = boxes.length - 1; k >= 0; k--)
+      if (buried(boxes[k]) || labelled(boxes[k])) boxes.splice(k, 1);
 
     /* 一段里的字块常常几十个（每一行一个）—— 按「左边缘 + 字级」并成一栏，
        那才是排版上的一个东西。 */
@@ -1934,11 +1960,29 @@ try {
          他们排出「图→字」，我们排出「字→图」—— 同一个设计，两个顺序，
          尺子判不及格。那不是页面的差别，是排序规则在挑边。
 
-         所以先把 y0 归到「行」（每 6 个百分点一行），同一行里再按左边缘排。
-         这样并排的东西在两边都得到同一个答案，而上下的先后照样看得出来。 */
+         ⚠️ 第一版是「每 6 个百分点归成一行」，而它**没有修好这一条** ——
+         2026-08-31 同一段又判一次不及格：他们 图 y0=0 · 字 y0=6（两个桶），
+         我们 图 y0=3 · 字 y0=3（同一个桶）。**同一个设计，两个答案**，
+         差别只在他们的照片比标题高了 6%。一个固定的桶宽，永远会有一对
+         刚好跨在桶边上的东西。
+
+         所以改成问**它们的垂直范围有没有重叠** —— 那才是「并排」的定义，
+         而且没有边界可以跨。一张跟整栏文字一样高的照片会跟每一行都重叠，
+         於是整块并成一行、按左右读 —— 那正是眼睛读它的方式：先左栏，再右栏。 */
       const seqOf = (bs) => {
-        const row = (b) => Math.round(b.y0 / 6);
-        const ks = [...bs].sort((a, b2) => row(a) - row(b2) || a.x0 - b2.x0).map((b) => b.kind);
+        const rows = [];
+        for (const b of [...bs].sort((a, b2) => a.y0 - b2.y0)) {
+          const hit = rows.find((r) => {
+            const over = Math.min(r.y1, b.y1) - Math.max(r.y0, b.y0);
+            return over > Math.min(r.y1 - r.y0, b.y1 - b.y0) * 0.5;
+          });
+          if (hit) { hit.y0 = Math.min(hit.y0, b.y0); hit.y1 = Math.max(hit.y1, b.y1); hit.bs.push(b); }
+          else rows.push({ y0: b.y0, y1: b.y1, bs: [b] });
+        }
+        const ks = rows
+          .sort((a, b2) => a.y0 - b2.y0)
+          .flatMap((r) => r.bs.sort((a, b2) => a.x0 - b2.x0))
+          .map((b) => b.kind);
         return ks.filter((k, i) => k !== ks[i - 1]);
       };
       const sq = seqOf(t), so2 = seqOf(o);

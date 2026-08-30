@@ -104,14 +104,14 @@ def run(reg):
         # 只数铺得够多的（≥6%），JPEG 的杂讯跟一条细线不是「一个颜色」。
         nt = len([1 for _, sh in t if sh >= 6.0])
         no = len([1 for _, sh in o if sh >= 6.0])
-        spread = abs(nt - no) <= 1
-        close = close and spread
+        same_count = abs(nt - no) <= 1
+        close = close and same_count
 
         flag = "OK" if close else "XX"
         if not close:
             bad += 1
         why = "" if same else "  ← 底色不是同一个"
-        if same and not spread:
+        if same and not same_count:
             why = f"  ← 用的颜色数不同（模版 {nt} 个 · 我们 {no} 个）"
         print(f"  {flag}  {tag}  模版 {th} {tp}%   我们 {oh} {op}%{why}")
     print(f"  逐段对不上 {bad} 段")
@@ -148,6 +148,12 @@ def run(reg):
     print(f"  {'OK' if ok_col else 'XX'}  有颜色的面积  模版 {tc}%   我们 {oc}%")
 
 
-for reg in sys.argv[1:]:
+# 旗标不是风格名。以前这里是 `for reg in sys.argv[1:]` —— 於是每一次跑完，
+# 尺子最后两行都在讲 「还没有 .screenshots/align/--photo=0.json」。
+# 一把每次都对自己叫一次狼的尺没有人看（upstream 那把犯过同一个错）。
+regs = [a for a in sys.argv[1:] if not a.startswith("--")]
+if not regs:
+    sys.exit("用法: python scripts/align-palette.py <风格> [--pairs=..] [--photo=..]")
+for reg in regs:
     run(reg)
     print()
