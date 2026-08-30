@@ -134,13 +134,65 @@ export function withLiveRows(
  * Puck slot is. Nothing here needs to know the slot's name: a projection that
  * lists `["sidebar", "main"]` is the hardcoded version of this bug.
  */
+/** A LiveRow in the table model's own shape. The keys are the built-in column
+ *  keys from recordTable(); a column the owner added has no value here, which
+ *  renders empty rather than wrong. */
+function toModelRow(r: LiveRow): { cells: Record<string, string>; tones: Record<string, StatusTone> } {
+  const cells: Record<string, string> = { primary: r.primary };
+  if (r.secondary) cells.secondary = r.secondary;
+  if (r.amount) cells.amount = r.amount;
+  cells.status = r.status;
+  return { cells, tones: { status: r.tone } };
+}
+
 function mapNodes(nodes: unknown[], rows: LiveRow[]): unknown[] {
   return nodes.map((node) => {
     const n = node as { type?: string; props?: Record<string, unknown> };
     if (!n || typeof n !== "object" || !n.props) return node;
 
     if (n.type === "RecordTable") {
-      return { ...n, props: { ...n.props, rows } };
+      /*
+        THE ROWS ARE NOT WHERE THEIR NAME SAYS.
+
+        A generated table's props are { id, gridId, caption, table: { columns,
+        rows } } -- the rows live one level down, inside `table`, beside the
+        columns they belong to (see recordTable() and lib/portal/table-model.ts).
+
+        The first version wrote props.rows, which the component does not read,
+        so every page kept its samples. The unit test passed because its fixture
+        put rows at props.rows -- a shape this codebase never produces. That is
+        the same "the fixture is not the product" mistake as the slot bug it was
+        written to catch, made inside the fix for it.
+
+        Both shapes are handled because a page saved before the table model
+        changed can still carry the flat one (see lib/portal/layout-upgrade.ts),
+        and a projection that only understood today's shape would quietly skip
+        exactly the oldest customers.
+      */
+      /*
+        AND THE ROW SHAPE IS NOT THE SAME IN BOTH PLACES.
+
+        `props.rows` is the legacy flat row -- { primary, secondary, amount,
+        status } -- which normalizeTable() converts. `props.table.rows` is the
+        model itself: { cells: Record<key, string>, tones: Record<key, tone> },
+        keyed by COLUMN KEY so a row keeps its meaning when the owner renames or
+        reorders a column.
+
+        Writing the flat shape into the model gave a table with the right number
+        of rows and nothing in any cell -- which is how it looked in the browser
+        before this line existed.
+      */
+      const table = n.props.table as { rows?: unknown; columns?: unknown } | undefined;
+      if (table && typeof table === "object") {
+        return {
+          ...n,
+          props: { ...n.props, table: { ...table, rows: rows.map(toModelRow) } },
+        };
+      }
+      if (Array.isArray(n.props.rows)) {
+        return { ...n, props: { ...n.props, rows } };
+      }
+      return node;
     }
 
     let changed = false;

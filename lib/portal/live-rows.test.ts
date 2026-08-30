@@ -134,38 +134,59 @@ describe("withLiveRows", () => {
   This builds the page the way the product builds it. A fixture that does not
   match the product measures the fixture.
 */
+/*
+  THE ONE THAT WOULD HAVE CAUGHT BOTH.
+
+  Two versions of this projection shipped broken while a test passed, and
+  both times for the same reason: the fixture was a shape this codebase never
+  produces. First a flat tree, when a page is one SystemShell holding slots.
+  Then rows at props.rows, when a generated table keeps them inside
+  props.table beside their columns.
+
+  So this asserts nothing about WHERE the rows live. It builds the page the
+  way the product builds it, and asks the only question that cannot be got
+  wrong: are the sample rows still on the page, and are the real ones?
+*/
 describe("the tree the product actually renders", () => {
   const real = () =>
     buildPageLayout("quotations", {}, "老板", "zh", [{ key: "quotations" }], "ledger", null) as unknown as Record<string, unknown>;
 
-  const findTable = (nodes: unknown): Record<string, unknown> | null => {
-    if (!Array.isArray(nodes)) return null;
-    for (const n of nodes as { type?: string; props?: Record<string, unknown> }[]) {
-      if (n?.type === "RecordTable") return n.props ?? null;
-      for (const v of Object.values(n?.props ?? {})) {
-        const hit = findTable(v);
-        if (hit) return hit;
-      }
-    }
-    return null;
+  /** Every string anywhere in the tree -- deliberately blind to prop names. */
+  const textOf = (tree: unknown): string => JSON.stringify(tree);
+
+  const sampleText = () => {
+    const t = textOf(real());
+    // Whatever the generated samples say, they are in there before we touch it.
+    return t;
   };
 
-  it("puts the table inside a slot, not at the top level", () => {
-    const tree = real();
-    const top = (tree.content as { type?: string }[]).map((n) => n.type);
-    expect(top).toEqual(["SystemShell"]);
-    expect(findTable(tree.content)).not.toBeNull();
+  it("has a table with sample rows before anything is projected", () => {
+    expect(sampleText().includes(String.fromCharCode(34)+"rows"+String.fromCharCode(34)+":")).toBe(true);
   });
 
-  it("reaches the table through the slot", () => {
-    const rows = [{ primary: "Cheras 店面装修", tone: "warning" as const, status: "订金" }];
+  it("puts the real rows on the page", () => {
+    const rows = [{ primary: "Cheras 店面装修", secondary: "王老板", amount: "RM 96,000", tone: "warning" as const, status: "订金" }];
     const out = withLiveRows(real(), rows);
-    expect(findTable((out as { content: unknown }).content)?.rows).toEqual(rows);
+    expect(textOf(out)).toContain("Cheras 店面装修");
+    expect(textOf(out)).toContain("RM 96,000");
+  });
+
+  /* The point of the whole feature: the demonstration ends when real work
+     begins. Compared against the untouched tree rather than a literal, so a
+     change to the sample copy cannot quietly disable this. */
+  it("removes every sample row", () => {
+    const before = real();
+    const table = JSON.parse(textOf(before)) as unknown;
+    const samples = (JSON.stringify(table).match(/"primary":"([^"]+)"/g) ?? []).slice(0, 3);
+    expect(samples.length).toBeGreaterThan(0);
+
+    const out = textOf(withLiveRows(before, [{ primary: "只有这一笔", tone: "neutral" as const, status: "新" }]));
+    for (const s of samples) expect(out).not.toContain(s);
+    expect(out).toContain("只有这一笔");
   });
 
   it("leaves the samples in place when the business has no rows", () => {
-    const before = findTable(real().content);
-    const after = findTable((withLiveRows(real(), []) as { content: unknown }).content);
-    expect(after?.rows).toEqual(before?.rows);
+    const before = textOf(real());
+    expect(textOf(withLiveRows(real(), []))).toBe(before);
   });
 });
