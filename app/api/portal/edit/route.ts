@@ -1,7 +1,9 @@
+import { splitRecordOps, writeRecords, isRecordModule } from "@/lib/portal/record-ops";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getSessionUser } from "@/lib/supabase/server-session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   applyLayoutOps,
@@ -354,7 +356,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { layout, instruction, pages, imageUrl, generated, history } = (body ?? {}) as {
+  const { layout, instruction, pages, imageUrl, generated, history, pageKey } = (body ?? {}) as {
+    /** Which module is open. Sent by the browser, trusted for nothing except
+     *  deciding whether a table row on THIS page is a business record or a
+     *  layout row -- and the RPC it routes to resolves the project from the
+     *  session itself, so a wrong value cannot reach anybody else's data. */
+    pageKey?: string | null;
     layout?: PuckLayout;
     instruction?: string;
     /**
@@ -431,7 +438,7 @@ export async function POST(req: NextRequest) {
   // is the behaviour every call had before this existed.
   const { data: project } = await supabase
     .from("projects")
-    .select("style, palette")
+    .select("id, style, palette")
     .eq("account_id", user.id)
     .single();
   const designDoc = buildDesignDoc(project?.style, project?.palette);
@@ -579,16 +586,64 @@ The business owner asked:
     return NextResponse.json({ error: "edit failed" }, { status: 502 });
   }
 
-  const result = applyLayoutOps(layout, parsed.operations, preferredVariants(project?.style));
+  /*
+    A ROW ON THESE FOUR PAGES IS A RECORD, NOT A LAYOUT ROW.
+
+    founder-points 23 -- the assistant calls the same business action the
+    button calls. Written here rather than sent to the browser because a
+    quotation is not an unsaved tree the customer can undo; it is a row in
+    their books, and it goes through `add_pipeline_record` so the document
+    number, the workflow stage, the idempotency key and RLS all apply to it
+    exactly as they do to the button.
+
+    On every other module a table row is still a layout row, and stays one.
+  */
+  const split = splitRecordOps(parsed.operations, pageKey);
+  let recordsWritten = 0;
+  const recordSkips: { op: string; reason: string }[] = [];
+  if (split.recordOps.length && project?.id && isRecordModule(pageKey)) {
+    /*
+      THE CUSTOMER'S OWN SESSION, NOT THE SERVICE ROLE.
+
+      Everything else in this route uses the service-role client, which is
+      right for the ledger and for reading the project. It is wrong here:
+      `add_pipeline_record` resolves the project from auth.uid(), and the
+      service role has none -- the first real call came back「not your
+      project」 while the assistant said it had added the quotation.
+
+      Passing the account id instead and keeping the service role would have
+      worked and would have been the wrong fix: it bypasses RLS, which is
+      precisely what founder-points 23 says not to do. The button goes
+      through the customer's session; so does this.
+    */
+    const asCustomer = await createSessionSupabaseClient();
+    const wrote = await writeRecords(
+      asCustomer,
+      project.id as string,
+      pageKey as string,
+      split.recordOps,
+      `${user.id}:${trimmed}`,
+    );
+    recordsWritten = wrote.written;
+    recordSkips.push(...wrote.skipped);
+  }
+
+  const result = applyLayoutOps(layout, split.layoutOps, preferredVariants(project?.style));
   // Whatever the schema turned away is reported beside whatever the applier
   // turned away: to the customer they are the same thing -- something they
   // asked for that did not happen -- and both belong in the same list.
-  result.skipped = [...parsed.rejected, ...result.skipped];
+  result.skipped = [...parsed.rejected, ...result.skipped, ...recordSkips];
+  result.applied += recordsWritten;
 
   return NextResponse.json({
     layout: result.layout,
     explanation: parsed.explanation,
     applied: result.applied,
+    /* The new rows are in the database, not in the tree we just returned, so
+       the page has to be re-read to show them. Without this the assistant
+       says it added a quotation and the table does not move -- the exact
+       defect founder-points 23 is about. */
+    refetch: recordsWritten > 0,
     skipped: result.skipped,
     suggestion: resolveSuggestion(parsed.suggestion, Array.isArray(pages) ? pages : [], result.layout as PuckLayout),
     design: validDesign((parsed as { design?: unknown }).design, generated !== false, result.skipped),

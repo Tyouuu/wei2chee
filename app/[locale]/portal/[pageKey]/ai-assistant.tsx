@@ -92,6 +92,7 @@ export type Turn = {
  * other edits one block by hand, which is the same job at two levels of zoom.
  */
 export function AiAssistant({
+  pageKey,
   pages,
   locale,
   activeStyle,
@@ -101,6 +102,9 @@ export function AiAssistant({
   /** The customer's own pages. Sent with each request so「把报价单删掉」can name
    *  a real page, and used to build the link after one is added. */
   pages: { key: string; label: string }[];
+  /** Which module is open. The route uses it to decide whether 「加一单」 on
+   *  this page writes a business record or a layout row -- founder-points 23. */
+  pageKey: string | null;
   locale: string;
   /** The register the system is on right now. Sent to `set_project_style` when
    *  the customer asked only for a palette change -- that RPC takes both, and
@@ -281,6 +285,10 @@ export function AiAssistant({
           pages,
           imageUrl: image,
           generated: isGeneratedDraft,
+          /* Which module is open. The route needs it to know whether 「加一单」
+             on THIS page is a business record or a layout row -- see
+             lib/portal/record-ops.ts and founder-points 23. */
+          pageKey,
           /*
             THE ASSISTANT COULD NOT REMEMBER THE LAST THING IT DID.
 
@@ -337,7 +345,20 @@ export function AiAssistant({
         /* 风格 / 配色 / 排法 -- not layout, so it is not in `result.layout`
            and is applied through the same RPC the style picker calls. */
         design: { style?: string; palette?: string | null; layout?: string } | null;
+        /* True when the route wrote real rows. They are in the database, not
+           in `layout`, so the page has to be re-read for them to appear. */
+        refetch?: boolean;
       };
+
+      /*
+        THE ROWS ARE NOT IN THE TREE WE JUST GOT BACK.
+
+        A quotation the assistant wrote lives in `pipeline_records`, and the
+        page picks it up through the live-rows projection on the server. So
+        this is the one case where refreshing IS the fix -- unlike 排法, where
+        a refresh cannot help because the layout lives in Puck's client state.
+      */
+      if (result.refetch) router.refresh();
 
       if (result.applied > 0) {
         // `recordHistory` is what puts the edit on the undo stack. Without it

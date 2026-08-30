@@ -46,6 +46,7 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
  * on a phone is the same edit, on the same undo stack.
  */
 export function MobileEditor({
+  pageKey,
   style,
   palette,
   locale,
@@ -56,6 +57,9 @@ export function MobileEditor({
   palette: string | null;
   locale: string;
   navPages: { key: string; label: string }[];
+  /** Straight through to the assistant, which sends it to the route: a table
+   *  row on a pipeline module is a business record, not a layout row. */
+  pageKey: string;
   /** Passed straight through to the assistant: 排法 only applies to a page that
    *  has never been saved, and the route has to be told which this is. */
   isGeneratedDraft: boolean;
@@ -135,7 +139,7 @@ export function MobileEditor({
           both, because that is where every assistant a customer has used puts
           it. */}
       <div className="flex h-[52%] shrink-0 flex-col border-t [border-color:var(--color-ink-800)] sm:h-[38%] md:h-[32%]">
-        <AiAssistant
+        <AiAssistant pageKey={pageKey} 
           pages={navPages}
           locale={locale}
           activeStyle={style}

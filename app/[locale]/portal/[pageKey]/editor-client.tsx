@@ -1128,7 +1128,7 @@ export function PortalEditor({
                 // editing the same live canvas on the same undo stack.
                 puck: ({ children }) =>
                   narrow ? (
-                    <MobileEditor
+                    <MobileEditor pageKey={pageKey}
                       style={activeStyle}
                       palette={activePalette}
                       locale={locale}
@@ -1315,7 +1315,7 @@ export function PortalEditor({
                       it in whichever register they picked, which is the exact
                       confusion chrome.module.css exists to prevent. */}
                     <AiDock>
-                      <AiAssistant
+                      <AiAssistant pageKey={pageKey} 
                         pages={navPages}
                         locale={locale}
                         activeStyle={activeStyle}
