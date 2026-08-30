@@ -188,6 +188,11 @@ const KINDS_BY_SHAPE: Record<string, SuggestionKind[]> = {
      the allocation (订金 · 已入账 · 冲正), so a stage the owner typed would be
      overruled by the page the moment it rendered. */
   ledger: ["column", "rename"],
+  /* 「把流程改成…」 is dropped for the same reason as on a ledger, one step
+     further out: a party has no workflow at all. 「新客户」 and 「在职」 are
+     words about a person, not steps in anything, so a stage list typed here
+     would be a list of things nobody ever moves between. */
+  directory: ["column", "rename"],
   /* No table at all. Only the opener, which is about the words on the page. */
   landing: [],
 };
@@ -196,10 +201,14 @@ const KINDS_DEFAULT: SuggestionKind[] = ["column", "rename"];
 /**
  * One line that is about THIS page, and nothing else.
  *
- * `pipeline` and `ledger` open with writing a real row, because on those two
- * shapes that is a business record now rather than a drawing -- the single
- * biggest thing that changed on 2026-08-31 and the last thing an owner would
- * guess he could say.
+ * `pipeline`, `ledger` and `directory` open with writing a real row, because
+ * on those three shapes that is a business record now rather than a drawing --
+ * the single biggest thing that changed on 2026-08-31 and the last thing an
+ * owner would guess he could say.
+ *
+ * ⚠️ The other openers are still 「加一列…」, and that is not an oversight: on
+ * 库存 and 预约 a table row IS still a drawing, so offering to add one would be
+ * offering to write into a page that forgets it.
  */
 const SHAPE_OPENER: Record<string, { zh: string; en: string }> = {
   pipeline: {
@@ -215,7 +224,14 @@ const SHAPE_OPENER: Record<string, { zh: string; en: string }> = {
     en: 'Change the headline to "Twenty years of renovation work"',
   },
   calendar: { zh: "在表格加一列「几点到」", en: 'Add an "Arrives" column to the table' },
-  directory: { zh: "在表格加一列「WhatsApp 号码」", en: 'Add a "WhatsApp" column to the table' },
+  /* Since 2026-08-31 this writes a real party, so the opener says so. The
+     line it replaced -- 「加一列 WhatsApp 号码」 -- is now actively wrong
+     advice: the number is a field on the entry, because a wa.me link has to be
+     built from a value rather than read out of a table cell (任务 48). */
+  directory: {
+    zh: "加一个客户：陈先生，013-234 5678",
+    en: "Add one: Mr Tan, 013-234 5678",
+  },
   catalog: { zh: "在表格加一列「进货价」", en: 'Add a "Cost price" column to the table' },
 };
 

@@ -30,7 +30,12 @@ import type { StatusTone } from "@/lib/templates/copy/types";
  * 消失」) implemented by construction rather than by bookkeeping.
  */
 
-import { PIPELINE_MODULES, LEDGER_MODULES } from "./shape-state";
+import { PIPELINE_MODULES, LEDGER_MODULES, DIRECTORY_MODULES } from "./shape-state";
+import {
+  systemLangOf,
+  workflowStages,
+  type BusinessContext,
+} from "@/lib/templates/industry-template";
 
 export type LiveRow = {
   primary: string;
@@ -228,6 +233,96 @@ export function rowsFromEntries(
   });
 }
 
+/* ── THE THIRD SHAPE ────────────────────────────────────────────────────────
+ *
+ * 客户 · 供应商 · 员工. A noun rather than a document, which changes exactly
+ * three things about the row it produces -- and each of them is a thing this
+ * function deliberately does NOT do:
+ *
+ *   no amount   Every amount a directory page shows (未付 · 本月业绩 · 累计) is
+ *               a sum of OTHER rows. There is no column on directory_entries
+ *               to read one from, on purpose: a typed figure is right the day
+ *               it is typed and lying the first time money moves. The cell
+ *               stays empty until the ledger link can compute it.
+ *
+ *   no tone     A stage has a position in a workflow, so toneForStage can read
+ *               severity off it without judging. 「新客户」 has no position.
+ *               Colouring it would be inventing an opinion about somebody
+ *               else's customer, which is the same thing toneForStage refuses
+ *               to do when a stage is not in the list.
+ *
+ *   no invented status  A party with no word typed against it shows nothing,
+ *               rather than 「活跃」 -- we have not been told that.
+ */
+
+type DirectoryEntry = {
+  name: string | null;
+  kind: string | null;
+  contact_person: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  region: string | null;
+  status: string | null;
+  note: string | null;
+  extra?: unknown;
+};
+
+/**
+ * The one line under a party's name -- the column the generated page heads
+ * 「联络方式 / 备注」 (Contact / notes).
+ *
+ * It is COMPOSED, not stored, and that is the whole reason directory_entries
+ * has structured columns instead of one free-text contact field: `whatsapp`
+ * has to be a value code can build a wa.me link out of (任务 48) and send a
+ * notification to (任务 59). A blob cannot do that.
+ *
+ * Order is how this market actually reaches somebody, and it stops at two
+ * pieces because the cell is one line on a phone:
+ *   · who to ask for, when the party is a company and the name is not a person
+ *   · the number -- WhatsApp before the shop line, which is the ordering
+ *     vibe-dealer's own 0030 gives for this market
+ *   · the email only when there is no number at all, because a row with no way
+ *     to reach it is the one an owner has to fix
+ */
+export function contactLine(e: DirectoryEntry): string | undefined {
+  const pieces: string[] = [];
+  const person = (e.contact_person ?? "").trim();
+  const name = (e.name ?? "").trim();
+  if (person && person !== name) pieces.push(person);
+
+  const number = (e.whatsapp ?? "").trim() || (e.phone ?? "").trim();
+  if (number) pieces.push(number);
+  else {
+    const email = (e.email ?? "").trim();
+    if (email) pieces.push(email);
+  }
+
+  /* Nothing to reach them by and nobody to ask for: fall back to where they
+     are, then to the owner's own note. An empty second column reads as a
+     broken row, and every one of these is something he typed. */
+  if (!pieces.length) {
+    const region = (e.region ?? "").trim();
+    if (region) pieces.push(region);
+    else {
+      const note = (e.note ?? "").trim();
+      if (note) pieces.push(note.length > 60 ? `${note.slice(0, 60)}…` : note);
+    }
+  }
+
+  return pieces.length ? pieces.slice(0, 2).join(" · ") : undefined;
+}
+
+export function rowsFromParties(entries: DirectoryEntry[]): LiveRow[] {
+  return entries.map((e) => ({
+    primary: (e.name ?? "").trim(),
+    secondary: contactLine(e),
+    tone: "neutral" as StatusTone,
+    status: (e.status ?? "").trim(),
+    extra: extraCells(e.extra),
+  }));
+}
+
 /**
  * Rewrite the tables of a page tree to carry `rows`.
  *
@@ -242,10 +337,13 @@ export function withLiveRows(
   tree: Record<string, unknown>,
   rows: LiveRow[],
 ): Record<string, unknown> {
-  if (!rows.length) return tree;
   const content = (tree as { content?: unknown }).content;
   if (!Array.isArray(content)) return tree;
-  return { ...tree, content: mapNodes(content, rows) };
+  const mapped = mapNodes(content, rows);
+  /* Identity is kept when nothing moved, so a caller can apply this
+     unconditionally and an untouched page stays the same object. */
+  if (mapped.every((n, i) => n === content[i])) return tree;
+  return { ...tree, content: mapped };
 }
 
 /**
@@ -322,13 +420,34 @@ function mapNodes(nodes: unknown[], rows: LiveRow[]): unknown[] {
         of rows and nothing in any cell -- which is how it looked in the browser
         before this line existed.
       */
-      const table = n.props.table as { rows?: unknown; columns?: unknown } | undefined;
+      const table = n.props.table as { rows?: unknown; columns?: unknown; live?: unknown } | undefined;
       if (table && typeof table === "object") {
+        /* ── THE GHOST THIS FLAG EXISTS TO PREVENT ────────────────────────
+           The editor autosaves 2.5 seconds after any change, so whatever the
+           canvas holds is written into layout_json -- including rows this
+           projection put there. They are then FROZEN into the page.
+
+           While the business has records that is invisible: real rows replace
+           the frozen ones every render. The day it deletes its last one, the
+           projection has nothing to put in and the old behaviour was to leave
+           the tree alone -- so the deleted customer came back on screen, and
+           the delete looked as though it had failed.
+
+           `live` is the one bit that tells the two cases apart, because once
+           frozen a real row and a sample row are the same JSON: rows that were
+           ever real are cleared to empty, and a page that has only ever shown
+           samples keeps them, which is the founder's decision of 2026-08-30
+           (「留着、标清楚、加第一笔真的就消失」) still intact in both directions. */
+        if (!rows.length) {
+          if (table.live !== true) return node;
+          return { ...n, props: { ...n.props, table: { ...table, rows: [] } } };
+        }
         return {
           ...n,
-          props: { ...n.props, table: { ...table, rows: rows.map(toModelRow) } },
+          props: { ...n.props, table: { ...table, live: true, rows: rows.map(toModelRow) } },
         };
       }
+      if (!rows.length) return node;
       if (Array.isArray(n.props.rows)) {
         return { ...n, props: { ...n.props, rows } };
       }
@@ -397,10 +516,78 @@ export async function fetchLiveRows(
       return rowsFromEntries(data as LedgerEntry[], moduleKey, lang);
     }
 
-    /* A module of some other shape. Not an error -- 客户 and 库存 still draw
+    if (DIRECTORY_MODULES.has(moduleKey)) {
+      /* Ordered by name and not by when it was added: a directory is READ
+         DOWN, and 「where did 陈先生 go」 has an answer only if the list is in
+         an order a person can scan. The other two shapes are newest-first
+         because a document you just wrote is the one you are looking for.
+
+         Archived parties are off the shelf, not deleted -- the same filter
+         pipeline_records uses, and the reason last year's supplier is still
+         findable when you need their number again. */
+      const { data, error } = await supabase
+        .from("directory_entries")
+        .select("name, kind, contact_person, phone, whatsapp, email, region, status, note, extra")
+        .eq("project_id", projectId)
+        .is("archived_at", null)
+        .eq("module_key", moduleKey)
+        .order("name", { ascending: true })
+        .limit(limit);
+      if (error || !data) return [];
+      return rowsFromParties(data as DirectoryEntry[]);
+    }
+
+    /* A module of some other shape. Not an error -- 库存 and 对账 still draw
        their samples, and will until those shapes have tables of their own. */
     return [];
   } catch {
     return [];
   }
+}
+
+/**
+ * The tree this business's own rows belong in, ready to render.
+ *
+ * ── WHY BOTH CALLERS GO THROUGH ONE FUNCTION ──────────────────────────────
+ *
+ * There are two places a page gets its real rows, and until 2026-08-31 only
+ * one of them did:
+ *
+ *   · the SERVER render (page.tsx), which is how they appear on a reload
+ *   · the ASSISTANT'S REPLY, which is how they appear when he says
+ *     「加一个客户：陈先生」 and expects to see 陈先生
+ *
+ * The second one returned the tree the operations were applied to -- and a
+ * record is not an operation, it is a row in another table, so the tree came
+ * back without it. The reply said 「加了客户陈先生」 over a table that had not
+ * moved: the twelfth time this product has claimed a change it did not show.
+ *
+ * ⚠️ `router.refresh()` was already there and does NOT fix it. Puck owns the
+ * canvas state once it is mounted, so a fresh server render does not reach it
+ * -- which the route's own comment says out loud about 排法, one paragraph
+ * away from assuming records were different.
+ *
+ * Caught by a browser, not by reading: eval:browser reported 「画面没有动」
+ * beside a reply that said 改了 1 处, and the row was in the database the
+ * whole time. The write was never the broken half.
+ */
+export async function withFreshRows(
+  supabase: SupabaseClient,
+  tree: Record<string, unknown>,
+  projectId: string,
+  moduleKey: string,
+  businessContext: BusinessContext,
+): Promise<Record<string, unknown>> {
+  const rows = await fetchLiveRows(
+    supabase,
+    projectId,
+    moduleKey,
+    workflowStages(businessContext),
+    /* 收款 · 开销 · 佣金 need words we supply (订金 · 已冲正 · 已付), unlike a
+       pipeline stage which is always the customer's own. They follow the
+       SYSTEM language -- what the built system speaks to its users -- not the
+       portal locale, which is what Formae speaks to the owner. */
+    systemLangOf(businessContext),
+  );
+  return withLiveRows(tree, rows);
 }

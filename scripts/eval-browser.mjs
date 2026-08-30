@@ -281,6 +281,55 @@ const CASES = [
     mustSay: "页面没有动过",
   },
   {
+    /*
+      THE SAME DEFECT, ON THE SHAPE THAT HAS HAD IT LONGEST.
+
+      pipeline_records has been real since 2026-08-30, and for a day and a half
+      「加一单」 wrote a genuine quotation into a table the owner could not see
+      until he reloaded. It is one bug in one place -- the route returned a tree
+      the rows were not in -- so it was never a directory problem; directory is
+      only where it was finally noticed.
+
+      Kept as its own case because 「fixed for one shape」 and 「fixed」 are
+      different claims, and this repo has shipped the first while saying the
+      second.
+    */
+    name: "报价单 · 加一单，画面要跟着动",
+    page: "quotations",
+    ask: "加一单：Taman Desa 三房翻新，陈先生，RM 48,500",
+    changed: true,
+    gains: ["Taman Desa"],
+    writes: { table: "pipeline_records", column: "title", value: "Taman Desa 三房翻新" },
+  },
+  {
+    /*
+      A BUSINESS RECORD, NOT A DRAWING -- AND THE PAGE HAS TO MOVE.
+
+      客户 became a real table on 2026-08-31. So 「加一个客户」 no longer edits
+      the page: `add_table_row` is pulled out of the layout operations and
+      written through add_directory_entry, and the row comes back on the NEXT
+      SERVER RENDER through the live-rows projection.
+
+      That is the whole reason this case is worth a browser. Everything the
+      assistant does elsewhere lands in the tree it returns; this one lands in
+      the database, and the only thing that puts it on screen is the
+      `refetch` -> router.refresh() path -- which is a claim nobody had
+      checked. If Puck keeps its own client state through that refresh, the
+      owner reads 「加了陈先生」 over a table that has not changed, which is the
+      eleven-times defect wearing a new hat.
+
+      `writes` is asserted separately from `changed`, because they can fail
+      independently and they mean different things: one is whether his books
+      have the customer in them, the other is whether he can see it.
+    */
+    name: "客户 · 加一个真的客户",
+    page: "customers",
+    ask: "加一个客户：陈先生，013-234 5678",
+    changed: true,
+    gains: ["陈先生"],
+    writes: { table: "directory_entries", column: "name", value: "陈先生" },
+  },
+  {
     name: "拒绝 · 页面不能说谎",
     /*
       THE MIRROR. 「帮我发 whatsapp 给客人」 was once answered by adding a button
@@ -340,6 +389,10 @@ const pagesBefore = await readPages();
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1500, height: 1000 } });
 const rows = [];
+/** Business records this run created, so the finally block can take them out
+ *  again. Layouts are snapshotted; rows have to be deleted, because there was
+ *  no row to snapshot. */
+const wroteRows = [];
 
 try {
   await p.goto(`${BASE}/zh/login`, { waitUntil: "networkidle", timeout: 90000 });
@@ -440,6 +493,26 @@ try {
       why.push(`没有说「${c.mustSay}」`);
     }
 
+    /*
+       DID HIS BOOKS ACTUALLY GET THE ROW.
+
+       Read straight from the table, not from the canvas: a page can show a
+       name that only exists in a tree, and a tree is not a business record.
+       The row is removed in the finally block -- this ruler writes to the
+       founder's own demo account (see the autosave note at the top). */
+    if (ok && c.writes) {
+      const found = await fetch(
+        `${DB}/rest/v1/${c.writes.table}?select=id&${c.writes.column}=eq.${encodeURIComponent(c.writes.value)}`,
+        { headers: dbHead },
+      ).then((r) => r.json()).catch(() => []);
+      if (!Array.isArray(found) || !found.length) {
+        ok = false;
+        why.push(`${c.writes.table} 里没有这一行 —— 它说加了，书上没有`);
+      } else {
+        for (const r of found) wroteRows.push([c.writes.table, r.id]);
+      }
+    }
+
     if (ok && c.offers) {
       const btn = p.getByRole("button", { name: new RegExp(c.offers) });
       if ((await btn.count()) === 0) {
@@ -471,6 +544,10 @@ try {
      them back before the pages exist in their old shape is the wrong order. */
   await restorePages(pagesBefore);
   await restoreDesign(designBefore);
+  for (const [table, id] of wroteRows) {
+    await fetch(`${DB}/rest/v1/${table}?id=eq.${id}`, { method: "DELETE", headers: dbHead });
+  }
+  if (wroteRows.length) console.log(`放回去了 ${wroteRows.length} 行真的记录`);
 }
 
 console.log("\n它说改了，画面真的动了吗\n");

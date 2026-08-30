@@ -34,7 +34,7 @@ import type { LayoutOp } from "./layout-ops";
  * decided to write it, with the customer's own session so RLS still decides.
  */
 
-import { PIPELINE_MODULES, LEDGER_MODULES, LIVE_MODULES } from "./shape-state";
+import { LEDGER_MODULES, DIRECTORY_MODULES, LIVE_MODULES } from "./shape-state";
 
 export function isRecordModule(pageKey: string | null | undefined): boolean {
   return !!pageKey && LIVE_MODULES.has(pageKey);
@@ -49,6 +49,47 @@ export function senFrom(text: string | null | undefined): number | undefined {
   const n = Number(m[0]);
   if (!Number.isFinite(n)) return undefined;
   return Math.round(n * 100);
+}
+
+/**
+ * A phone number that is already in the sentence, or nothing.
+ *
+ * ── WHY THIS READS AND DOES NOT GUESS ─────────────────────────────────────
+ *
+ * On a directory page the assistant is handed the page's columns, and the
+ * second one is headed 「联络方式 / 备注」 -- one blob. Underneath it the table
+ * has structured columns, because `whatsapp` has to be something a wa.me link
+ * can be built out of (任务 48) rather than a line of prose.
+ *
+ * So 「加一个客户：陈先生，Taman Desa 013-2345678」 has to end up with the
+ * number in a column. Taking a number that is LITERALLY IN THE TEXT is
+ * reading; deciding it is a mobile, or that the customer is in Selangor,
+ * would be inventing. Only the first is done here, and the whole blob is kept
+ * in `note` regardless, so nothing the owner said is thrown away.
+ *
+ * ⚠️ IT LANDS IN `phone`, NEVER IN `whatsapp`. In this market the number
+ * somebody gives you usually IS their WhatsApp -- but "usually" builds a
+ * wa.me link that opens on nothing for the rest, which is precisely the dead
+ * control block-rules.ts forbids the assistant to draw. The form has its own
+ * WhatsApp box, where a person says so.
+ */
+export function phoneFrom(text: string | null | undefined): string | undefined {
+  if (!text) return undefined;
+  /* A run of the characters a Malaysian number is written with. 「+60 12-345
+     6789」, 「012-345 6789」 and 「0123456789」 are all correct and all three
+     occur. */
+  const runs = String(text).match(/\+?[\d][\d\s().-]{7,17}\d/g);
+  if (!runs) return undefined;
+  for (const run of runs) {
+    const digits = run.replace(/\D/g, "");
+    /* 9 to 12 digits, starting 0 or 60. Below that it is a house number or a
+       price; above it, an account number. The prefix test is what keeps
+       「RM 48,500」 and 「2026-08-31」 out. */
+    if (digits.length < 9 || digits.length > 12) continue;
+    if (!/^(0|60)/.test(digits)) continue;
+    return run.trim();
+  }
+  return undefined;
 }
 
 export type SplitOps = {
@@ -117,10 +158,21 @@ export function sortCells(
   columnKeys: string[] | null,
 ): { title: string; party: string; amount?: string; status?: string; extra: Record<string, string> } {
   const extra: Record<string, string> = {};
-  /* No columns known -- an older caller, or a target that is not a record
-     table. Fall back to the positional reading rather than dropping the row:
-     the four built-in columns in their default order is what a generated page
-     has, so this is right far more often than it is wrong. */
+  /* ── THE LAST RESORT, AND WHY IT IS THIS ONE ─────────────────────────────
+     No columns known: a target id that resolves to no table at all. The real
+     caller reads the page's own columns, and since 2026-08-31 falls back to
+     the page's first record table before ever reaching here.
+
+     The four built-in columns in recordTable()'s own order. ⚠️ It is WRONG on
+     a three-column table -- 客户 · 联络方式 · 状态 has no `amount`, so 「新客户」
+     is read as an amount and dropped, because add_directory_entry has nothing
+     to put an amount in.
+
+     Dropping is the failure that was chosen. Deriving the keys from how many
+     cells arrived instead shifts everything: the model sends three cells to a
+     four-column quotations table all the time, and 「RM 48,500」 would be
+     written as the stage. One lost cell beats a row that is wrong in every
+     column, and the caller's fallback is what keeps either from happening. */
   const keys = columnKeys ?? ["primary", "secondary", "amount", "status"];
   const by: Record<string, string> = {};
   cells.forEach((value, i) => {
@@ -158,7 +210,12 @@ export async function writeRecords(
     const keys = columnsFor?.(String(op.target_id ?? "")) ?? null;
     const { title, party, amount, status, extra } = sortCells(cells, keys);
     if (!title) {
-      skipped.push({ op: op.op, reason: "没有写这一单是什么" });
+      /* A directory row is a name, not a document -- 「没有写这一单是什么」 on
+         a customer page is a sentence about the wrong product. */
+      skipped.push({
+        op: op.op,
+        reason: DIRECTORY_MODULES.has(moduleKey) ? "没有写名字" : "没有写这一单是什么",
+      });
       continue;
     }
 
@@ -175,7 +232,30 @@ export async function writeRecords(
        silently moves money against the wrong job. It lands unallocated, which
        renders as 订金, which is both true and the row he can act on. */
     const ledger = LEDGER_MODULES.has(moduleKey);
-    const { error } = ledger
+    const directory = DIRECTORY_MODULES.has(moduleKey);
+
+    /* ── A NOUN IS NOT A DOCUMENT ─────────────────────────────────────────
+       The cells arrive the same way on all three shapes because all three
+       draw the same table. What differs is what the second one MEANS: on a
+       pipeline it is who the job is with, on a ledger who the money is with,
+       and on a directory it is the whole contact line -- which is a view over
+       structured columns rather than a column itself.
+
+       So the blob is kept whole in `note`, and a number inside it is lifted
+       into `phone` (see phoneFrom). Nothing is discarded and nothing is
+       decided that the owner did not say. */
+    const { error } = directory
+      ? await supabase.rpc("add_directory_entry", {
+          in_project_id: projectId,
+          in_module_key: moduleKey,
+          in_name: title,
+          in_phone: phoneFrom(party) ?? "",
+          in_status: status ?? "",
+          in_note: party,
+          in_extra: extra,
+          in_idempotency_key: keyFor(requestKey, i),
+        })
+      : ledger
       ? await supabase.rpc("add_ledger_entry", {
           in_project_id: projectId,
           in_module_key: moduleKey,

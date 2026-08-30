@@ -230,10 +230,17 @@ describe("the SQL mirror", () => {
     A comment claiming a guard is worse than no comment, because it stops the
     next person looking.
   */
-  const shapeFunctions = [
-    ["pipeline", "is_pipeline_module"],
-    ["ledger", "is_ledger_module"],
-  ] as const;
+  /* ⚠️ DERIVED, NOT LISTED. The first version of this was a two-line literal
+     -- ["pipeline", …], ["ledger", …] -- which is the same hand-written list
+     the guard above it exists to catch, one level up. `directory` going live
+     would have added a shape with a table and no check on it, silently, and
+     this file would still have printed two passing rows.
+
+     Every live shape has a membership function by definition (the test below
+     is what makes that true), so the list is the live shapes. */
+  const shapeFunctions = (Object.keys(SHAPE_STATE) as (keyof typeof SHAPE_STATE)[])
+    .filter((shape) => SHAPE_STATE[shape] === "live")
+    .map((shape) => [shape, `is_${shape}_module`] as const);
 
   it.each(shapeFunctions)("keeps SQL's idea of shape %s equal to the catalogue", (shape, fn) => {
     const sql = newestDefining(`function public.${fn}`);
@@ -287,9 +294,38 @@ describe("the SQL mirror", () => {
   it("gives every module that has a table its own document prefix", () => {
     const sql = newestDefining("function public.default_doc_prefix");
     const body = sql.slice(sql.indexOf("function public.default_doc_prefix"));
-    const numbered = MODULE_CATALOG.filter((m) => m.shape === "pipeline" || m.shape === "ledger");
-    for (const m of numbered) {
+    /* WHICH SHAPES ARE NUMBERED IS READ, NOT LISTED.
+
+       next_doc_no() branches on the membership functions, so its own body is
+       the authority on which shapes get a number -- and `directory`
+       deliberately is not one of them (a customer is a noun, not a document;
+       see 20260831070000). Deriving it here means the two cannot disagree:
+       adding a shape to next_doc_no without giving it a prefix fails, and so
+       does giving a prefix to a shape nothing numbers. */
+    const numbering = newestDefining("function public.next_doc_no");
+    const numberedShapes = (Object.keys(SHAPE_STATE) as (keyof typeof SHAPE_STATE)[]).filter(
+      (shape) => numbering.includes(`is_${shape}_module(in_module_key)`),
+    );
+    expect(numberedShapes.length, "no shape is numbered -- next_doc_no changed shape").toBeGreaterThan(0);
+    for (const m of MODULE_CATALOG.filter((mod) => numberedShapes.includes(mod.shape))) {
       expect(body, `${m.key} would fall through to DOC-`).toContain(`when '${m.key}' then`);
+    }
+  });
+
+  /* And the other way: a shape with no number must not be handed one. A
+     directory row with QT-2026-0007 printed on it is a customer pretending to
+     be a document, and the prefix would then be the only place in the product
+     claiming that. */
+  it("gives no document prefix to a shape nothing numbers", () => {
+    const body = newestDefining("function public.default_doc_prefix");
+    const numbering = newestDefining("function public.next_doc_no");
+    const unnumbered = MODULE_CATALOG.filter(
+      (m) => SHAPE_STATE[m.shape] === "live" && !numbering.includes(`is_${m.shape}_module(in_module_key)`),
+    );
+    for (const m of unnumbered) {
+      expect(body, `${m.key} is a ${m.shape} -- nothing numbers it, so a prefix is a claim`).not.toContain(
+        `when '${m.key}' then`,
+      );
     }
   });
 });

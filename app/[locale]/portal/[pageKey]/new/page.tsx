@@ -53,8 +53,17 @@ const COPY = {
     saving: "保存中…",
     cancel: "取消",
     required: "第一栏要填，不然这一单看不出是什么。",
+    requiredName: "名字要填，不然这一行找不回来。",
     failed: "没有存进去",
     choose: "选一个",
+    more: "还要填地址、email 这些",
+    less: "收起来",
+    whatsapp: "WhatsApp 号码",
+    phone: "电话",
+    contactPerson: "找谁",
+    email: "Email",
+    region: "地区",
+    note: "备注",
   },
   en: {
     heading: (page: string) => `New entry · ${page}`,
@@ -63,8 +72,17 @@ const COPY = {
     saving: "Saving…",
     cancel: "Cancel",
     required: "The first field is what this entry is about — it cannot be blank.",
+    requiredName: "A name is what makes this findable again — it cannot be blank.",
     failed: "Not saved",
     choose: "Choose one",
+    more: "Address, email and the rest",
+    less: "Hide these",
+    whatsapp: "WhatsApp",
+    phone: "Phone",
+    contactPerson: "Ask for",
+    email: "Email",
+    region: "Area",
+    note: "Notes",
   },
 } as const;
 
@@ -75,15 +93,16 @@ export default async function NewRecordPage({
 }) {
   const { locale, pageKey } = await params;
 
-  /* Only the shapes that hold real rows. 客户 and 库存 draw a table too, and
+  /* Only the shapes that hold real rows. 库存 and 对账 draw a table too, and
      they are still samples -- offering 「加一单」 there would be a button that
      writes nowhere, which this repo has shipped enough times. */
   const shape = MODULE_BY_KEY[pageKey]?.shape;
-  const isLedger = shape === "ledger";
   /* One fact, read from one place: a shape that is not live has no table
      behind it, so 加一单 there would be a button that writes nowhere. When
-     directory lands, moving it to "live" in shape-state.ts is what opens this
-     page for it -- not a second list edited here. */
+     a shape goes live, moving it in shape-state.ts is what opens this page for
+     it -- not a second list edited here. That is how 客户 · 供应商 · 员工
+     arrived: one word changed, and the gate, the console badge and the
+     projection all agreed at once. */
   if (!shape || !isLiveShape(shape)) notFound();
 
   const user = await getSessionUser();
@@ -168,11 +187,17 @@ export default async function NewRecordPage({
       <NewRecordForm
         projectId={project.id as string}
         moduleKey={pageKey}
-        isLedger={isLedger}
+        /* One value, not a boolean per shape: a page is exactly one of the
+           three, and a boolean each is how two of them end up true. */
+        shape={shape as "pipeline" | "ledger" | "directory"}
         columns={table.columns}
         /* This business's own words for its stages, not a vocabulary we
-           invented -- the same list add_pipeline_record falls back to. */
-        stages={isLedger ? [] : workflowStages(businessContext)}
+           invented -- the same list add_pipeline_record falls back to.
+
+           Only a pipeline has them. A ledger's status is read from the money;
+           a directory's is a word about a person (新客户 · 在职), which is not
+           a step in anything and must stay free text. */
+        stages={shape === "pipeline" ? workflowStages(businessContext) : []}
         backHref={backHref}
         /* Only the strings. `heading` is a function, and a function cannot
            cross from a server component to a client one -- it renders as a 500
@@ -184,8 +209,17 @@ export default async function NewRecordPage({
           saving: copy.saving,
           cancel: copy.cancel,
           required: copy.required,
+          requiredName: copy.requiredName,
           failed: copy.failed,
           choose: copy.choose,
+          more: copy.more,
+          less: copy.less,
+          whatsapp: copy.whatsapp,
+          phone: copy.phone,
+          contactPerson: copy.contactPerson,
+          email: copy.email,
+          region: copy.region,
+          note: copy.note,
         }}
       />
       </main>

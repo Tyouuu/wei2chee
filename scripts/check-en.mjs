@@ -53,6 +53,11 @@ const PAGES = [
   ["spec", "/en/portal/spec", "customer"],
   ["enquiries", "/en/portal/enquiries", "customer"],
   ["account", "/en/portal/account", "customer"],
+  /* 加一单. Every label on it is written in this file's COPY block rather than
+     coming through next-intl, which is exactly the shape 任务 38 found the
+     photo picker in: 15 hardcoded Chinese strings behind two clicks and a
+     network request, so this crawler had never opened it. */
+  ["new record", "/en/portal/customers/new", "customer"],
   ["console", "/en/console", "founder"],
   ["console-leads", "/en/console/leads", "founder"],
   /* Resolved at run time -- its URL carries a project id, which is exactly why

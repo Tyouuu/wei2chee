@@ -121,6 +121,11 @@ PAGES = [
     ("account", "/en/portal/account"),
     ("specification", "/en/portal/spec"),
     ("editor", "/en/portal/dashboard"),
+    # 加一单. The only page in the product where a customer WRITES a business
+    # record with his thumb, and it grows its own boxes from the columns of
+    # whatever page he came from -- so its height is not something anyone can
+    # predict from the source. Added the day 客户 became a real table.
+    ("new record", "/en/portal/customers/new"),
     ("legal", "/en/legal/terms"),
 ]
 

@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
-import { isRecordModule, senFrom, splitRecordOps, writeRecords, keyFor , sortCells } from "./record-ops";
+import {
+  isRecordModule,
+  senFrom,
+  splitRecordOps,
+  writeRecords,
+  keyFor,
+  sortCells,
+  phoneFrom,
+} from "./record-ops";
 import type { LayoutOp } from "./layout-ops";
 
 const row = (...cells: string[]) => ({ op: "add_table_row", target_id: "t", cells }) as unknown as LayoutOp;
@@ -22,8 +30,15 @@ describe("isRecordModule", () => {
   /* On 客户 or 库存 a table row is still a layout row, and stays one until
      those shapes have tables of their own. Treating them as records early
      would write into a table that does not exist. */
+  it("knows the three whose rows are real on the third shape", () => {
+    for (const k of ["customers", "suppliers", "staff"]) expect(isRecordModule(k)).toBe(true);
+  });
+
   it("leaves the other modules alone", () => {
-    for (const k of ["customers", "inventory", "website", "dashboard", null, undefined]) {
+    /* 客户 was in this list until 2026-08-31, which is the point: the list is
+       derived from SHAPE_STATE, so a shape going live moves its modules out of
+       here on its own and this test is what says so out loud. */
+    for (const k of ["inventory", "website", "dashboard", "reconciliation", null, undefined]) {
       expect(isRecordModule(k)).toBe(false);
     }
   });
@@ -52,9 +67,11 @@ describe("splitRecordOps", () => {
   });
 
   it("touches nothing on a module whose rows are layout", () => {
+    /* 库存, not 客户: customers became a real table on 2026-08-31, and this
+       test kept passing only because the example had gone stale. */
     const ops = [text, row("A")];
-    expect(splitRecordOps(ops, "customers").layoutOps).toBe(ops);
-    expect(splitRecordOps(ops, "customers").recordOps).toHaveLength(0);
+    expect(splitRecordOps(ops, "inventory").layoutOps).toBe(ops);
+    expect(splitRecordOps(ops, "inventory").recordOps).toHaveLength(0);
   });
 });
 
@@ -159,5 +176,120 @@ describe("sortCells", () => {
     const r = sortCells(["装修", "多出来的"], ["primary"]);
     expect(r.title).toBe("装修");
     expect(r.extra).toEqual({});
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────────────
+   READING A NUMBER OUT OF WHAT HE SAID, AND NOT INVENTING ONE.
+
+   On a directory page the assistant is handed one blob column headed 「联络方式
+   / 备注」, and underneath it the table has structured fields -- because
+   `whatsapp` has to be something a wa.me link can be built out of rather than
+   a line of prose. So a number that is literally in the sentence is lifted.
+
+   The half of this that matters is what must NOT be lifted: every false
+   positive becomes a phone number in a customer's system that nobody said.
+   ──────────────────────────────────────────────────────────────────────────── */
+describe("phoneFrom", () => {
+  it("reads the three ways a Malaysian number is written", () => {
+    expect(phoneFrom("Taman Desa 013-234 5678")).toBe("013-234 5678");
+    expect(phoneFrom("call +60 12-345 6789 lah")).toBe("+60 12-345 6789");
+    expect(phoneFrom("0123456789")).toBe("0123456789");
+  });
+
+  it("does not read money as a phone number", () => {
+    // The whole reason for the leading-0/60 test: 「RM 48,500」 has digits and
+    // separators and is not a number anybody can call.
+    expect(phoneFrom("欠 RM 48,500 未付")).toBeUndefined();
+    expect(phoneFrom("RM 1,234,567.00")).toBeUndefined();
+  });
+
+  it("does not read a date as a phone number", () => {
+    expect(phoneFrom("上次来 2026-08-31")).toBeUndefined();
+  });
+
+  it("does not read something too short or too long", () => {
+    expect(phoneFrom("门牌 12-3A")).toBeUndefined();
+    expect(phoneFrom("account 0123456789012345")).toBeUndefined();
+  });
+
+  it("says nothing when there is nothing", () => {
+    expect(phoneFrom("熟客，做了三次")).toBeUndefined();
+    expect(phoneFrom("")).toBeUndefined();
+    expect(phoneFrom(null)).toBeUndefined();
+  });
+});
+
+describe("writeRecords on a directory page", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+
+  it("calls the SAME rpc the form calls", async () => {
+    const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
+    await writeRecords(
+      client(rpc),
+      "p1",
+      "customers",
+      [row("陈先生", "Taman Desa · 013-234 5678", "新客户")],
+      "req",
+      /* The real caller reads these off the page. A customers table is
+         三 columns -- 客户 · 联络方式 · 状态 -- not the four a quotation has. */
+      () => ["primary", "secondary", "status"],
+    );
+    // 重点 23 again, on the third shape.
+    expect(rpc.mock.calls[0][0]).toBe("add_directory_entry");
+    const args = rpc.mock.calls[0][1];
+    expect(args.in_name).toBe("陈先生");
+    expect(args.in_phone).toBe("013-234 5678");
+    expect(args.in_status).toBe("新客户");
+  });
+
+  it("keeps the whole line he said, not just the part it understood", async () => {
+    // The blob is the owner's own words. Lifting a number out of it must not
+    // throw the rest away -- 「Taman Desa」 is where the job is.
+    const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
+    await writeRecords(client(rpc), "p1", "customers", [row("陈先生", "Taman Desa · 013-234 5678")], "req", () => [
+      "primary",
+      "secondary",
+      "status",
+    ]);
+    expect(rpc.mock.calls[0][1].in_note).toBe("Taman Desa · 013-234 5678");
+  });
+
+  it("never puts a guessed number in the WhatsApp field", async () => {
+    /* A wa.me link built from a landline opens on nothing, which is exactly
+       the dead control block-rules.ts forbids the assistant to draw. The form
+       has its own WhatsApp box, where a person says so. */
+    const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
+    await writeRecords(client(rpc), "p1", "customers", [row("陈先生", "03-7788 1234")], "req", () => [
+      "primary",
+      "secondary",
+      "status",
+    ]);
+    expect(rpc.mock.calls[0][1].in_whatsapp).toBeUndefined();
+  });
+
+  it("says the row needs a name, not that it needs a document", async () => {
+    const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
+    const out = await writeRecords(client(rpc), "p1", "suppliers", [row("", "016-2 2223333")], "req", () => [
+      "primary",
+      "secondary",
+      "amount",
+      "status",
+    ]);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(out.skipped[0].reason).toBe("没有写名字");
+  });
+
+  it("still writes this business's own columns", async () => {
+    const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
+    await writeRecords(
+      client(rpc),
+      "p1",
+      "customers",
+      [row("陈先生", "013-234 5678", "新客户", "会员 88")],
+      "req",
+      () => ["primary", "secondary", "status", "c1"],
+    );
+    expect(rpc.mock.calls[0][1].in_extra).toEqual({ c1: "会员 88" });
   });
 });

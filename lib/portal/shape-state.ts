@@ -49,7 +49,7 @@ export type ShapeState = "live" | "drawn";
 export const SHAPE_STATE: Record<ModuleShape, ShapeState> = {
   pipeline: "live",
   ledger: "live",
-  directory: "drawn",
+  directory: "live",
   calendar: "drawn",
   catalog: "drawn",
   reconcile: "drawn",
@@ -76,3 +76,4 @@ export const LIVE_MODULES: ReadonlySet<string> = new Set(
 
 export const PIPELINE_MODULES: ReadonlySet<string> = new Set(modulesOfShape("pipeline"));
 export const LEDGER_MODULES: ReadonlySet<string> = new Set(modulesOfShape("ledger"));
+export const DIRECTORY_MODULES: ReadonlySet<string> = new Set(modulesOfShape("directory"));

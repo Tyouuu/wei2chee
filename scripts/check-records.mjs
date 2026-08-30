@@ -22,6 +22,10 @@
  *      This is the second time in this repo -- submit_site_enquiry threw 42702
  *      on the first real form submission for exactly the same reason.
  *
+ *   ④ a directory page's three columns read as a pipeline's four (…07000)
+ *      客户 · 联络方式 · 状态 has no `amount`, so 「新客户」 was read as money
+ *      and dropped -- the owner's own word for that customer, gone silently.
+ *
  * Run as a REAL CUSTOMER, never the service role: the service role bypasses
  * RLS, and half of what is asserted here is what RLS lets a front end do.
  */
@@ -191,6 +195,84 @@ try {
   check("the money table takes one too",
     money?.extra?.c1 === "Maybank", moneyErr?.message ?? JSON.stringify(money?.extra));
 
+
+  console.log("\n⑦ 第三个形状：名词不是单据");
+  /* directory went live 2026-08-31. Everything below is a promise the
+     migration header makes, checked against the database rather than against
+     the header. */
+  const party = (over = {}) =>
+    c.rpc("add_directory_entry", {
+      in_project_id: P, in_module_key: "customers", in_name: "陈先生", ...over,
+    });
+
+  const { data: mr, error: mrErr } = await party({
+    in_phone: "03-7788 1234", in_whatsapp: "012-345 6789", in_region: "Cheras",
+  });
+  check("a customer can be written down at all", !!mr, mrErr?.message?.slice(0, 80));
+  check("and the two numbers stay two numbers",
+    mr?.phone === "03-7788 1234" && mr?.whatsapp === "012-345 6789",
+    JSON.stringify({ phone: mr?.phone, whatsapp: mr?.whatsapp }));
+
+  /* THE DECISION THIS PROVES: a customer is a noun, not a document. If
+     next_doc_no ever learns to number them, a person starts having QT-2026-
+     0007 printed beside their name -- and a number, once shown, cannot be
+     taken back. So the refusal is asserted, not assumed. */
+  const { error: numbered } = await c.rpc("next_doc_no", {
+    in_project_id: P, in_module_key: "customers",
+  });
+  check("a party is never handed a document number", !!numbered,
+    "next_doc_no answered for a directory module");
+
+  const { error: blank } = await party({ in_name: "   " });
+  check("a party with no name is refused", !!blank, "a nameless row is unfindable");
+
+  const { error: wrongShapeRpc } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "quotations", in_name: "陈先生",
+  });
+  check("and a module of another shape is refused", !!wrongShapeRpc);
+
+  /* Pressing 保存 twice on 4G. Same key, same row -- not two customers. */
+  const twice = crypto.randomUUID();
+  const first = await party({ in_name: "李太太", in_idempotency_key: twice });
+  const again = await party({ in_name: "李太太", in_idempotency_key: twice });
+  check("pressing it twice is one customer",
+    !!first.data && first.data.id === again.data?.id,
+    `${first.data?.id} vs ${again.data?.id ?? again.error?.message}`);
+
+  const { data: member, error: memberErr } = await party({
+    in_name: "王老板", in_extra: { c1: "会员 88" },
+  });
+  check("this business's own column rides along here too",
+    member?.extra?.c1 === "会员 88", memberErr?.message ?? JSON.stringify(member?.extra));
+
+  /* Off the shelf, not gone: last year's supplier is still the answer to
+     「上次那家云石厂叫什么」. The projection filters archived rows; the table
+     keeps them. */
+  await c.from("directory_entries")
+    .update({ archived_at: new Date().toISOString() }).eq("id", member.id);
+  const onShelf = await c.from("directory_entries")
+    .select("id").eq("project_id", P).eq("module_key", "customers").is("archived_at", null);
+  const inTable = await c.from("directory_entries")
+    .select("id").eq("project_id", P).eq("module_key", "customers");
+  check("an archived party leaves the shelf",
+    !onShelf.data?.some((r) => r.id === member.id));
+  check("and is still in the book",
+    !!inTable.data?.some((r) => r.id === member.id));
+
+  const { error: noName } = await c.from("directory_entries").insert({
+    project_id: P, module_key: "customers",
+  });
+  check("the table itself refuses a row with no name", !!noName);
+
+  const { error: badKind } = await c.from("directory_entries").insert({
+    project_id: P, module_key: "customers", name: "试", kind: "robot",
+  });
+  check("and an invented kind", !!badKind);
+
+  const { error: notDirectory } = await c.from("directory_entries").insert({
+    project_id: P, module_key: "payments", name: "试",
+  });
+  check("and a module of another shape", !!notDirectory);
 
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);

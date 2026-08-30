@@ -14,6 +14,7 @@ import {
   defaultModulesForIndustry,
   type ModuleShape,
 } from "@/lib/portal/module-catalog";
+import { isLiveShape } from "@/lib/portal/shape-state";
 import { DEFAULT_SYSTEM_LANG, type SystemLang } from "@/lib/system-lang";
 import {
   chrome,
@@ -1778,6 +1779,11 @@ function buildCustomers(
     node("PageHeader", "customers-header", {
       title: c.customers.title(labels.customer),
       subtitle: c.customers.subtitle(labels.customer),
+      /* 新增客户 -- the trade's own noun, not the page's title: that reads
+         「客户名单」, and 「新增客户名单」 is a button that offers to make a
+         second list. Same link-not-control reason as the quotations header. */
+      actionLabel: c.dashboard.primaryAction(labels.customer),
+      actionHref: `/${locale}/portal/customers/new`,
     }),
     node("TextAutocomplete", "customers-search", {
       name: "customer-search",
@@ -2182,7 +2188,24 @@ function buildFromShape(
 
   const head: PuckNode[] = [
     railNav(labels, brand, name, pageKey, locale, pages, lang),
-    node("PageHeader", `${pageKey}-header`, { title, subtitle: copy.subtitle }),
+    node("PageHeader", `${pageKey}-header`, {
+      title,
+      subtitle: copy.subtitle,
+      /* The one action this page is for, on every shape that has a table
+         behind it -- and on no other. Read from SHAPE_STATE rather than from a
+         list of page keys, so a shape going live gets its button in the same
+         edit that opens /new for it, and a shape that is still a drawing
+         cannot be given a button that writes nowhere.
+
+         `title` is already this business's own noun for the module (供应商,
+         经销商, 师傅), so the label is his word and not ours. */
+      ...(isLiveShape(shape)
+        ? {
+            actionLabel: c.dashboard.primaryAction(title),
+            actionHref: `/${locale}/portal/${pageKey}/new`,
+          }
+        : {}),
+    }),
   ];
 
   const search = copy.searchPlaceholder

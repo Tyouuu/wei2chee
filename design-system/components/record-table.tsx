@@ -277,7 +277,23 @@ export function RecordTable(props: {
                     <td key={col.key} className={`${bodyCell} [color:var(--color-paper-dim)]`}>
                       {rowShape === "avatar" && value ? (
                         <span className="flex items-center [gap:var(--gap-inline)]">
-                          <Avatar name={String(value)} size={24} />
+                          {/*
+                            THE FACE BELONGS TO THE PERSON, NOT TO THE CELL.
+
+                            This read `name={value}` -- the DETAIL cell -- so the
+                            initials were taken from whatever happened to be in
+                            the second column. With the sample rows that looked
+                            plausible (「Taman Desa · 013-2xx xxxx」 -> Ta); with a
+                            business's real customers, where that column is a
+                            composed contact line, 陈先生 got a badge reading
+                            「06」 and 建材行 A got 「王·」.
+
+                            Found by looking at the page on the day directory
+                            went live. Twenty-nine database assertions and the
+                            whole unit suite were green -- none of them can see
+                            two digits of a phone number in a circle.
+                          */}
+                          <Avatar name={String(row.cells?.primary || value)} size={24} />
                           <span className="truncate">{value}</span>
                         </span>
                       ) : (

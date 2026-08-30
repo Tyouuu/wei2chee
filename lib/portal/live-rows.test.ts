@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { ringgit, toneForStage, rowsFromRecords, rowsFromEntries, withLiveRows } from "./live-rows";
+import {
+  ringgit,
+  toneForStage,
+  rowsFromRecords,
+  rowsFromEntries,
+  rowsFromParties,
+  withLiveRows,
+} from "./live-rows";
 import { buildPageLayout } from "@/lib/templates/industry-template";
 
 const WORKFLOW = ["客户", "报价", "订金", "施工", "尾款"];
@@ -327,5 +334,135 @@ describe("the column this business added for itself", () => {
       [],
     );
     expect(row.extra).toEqual({ c2: "好的", c3: "7" });
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────────────
+   THE THIRD SHAPE.
+
+   A directory row is a noun, so the three things this shape does NOT do are
+   worth more test than the one it does: it must not invent an amount, must not
+   invent a severity, and must not invent a status word. Each of those is a
+   sentence about somebody else's customer.
+   ──────────────────────────────────────────────────────────────────────────── */
+describe("rowsFromParties", () => {
+  const party = (over: Partial<Parameters<typeof rowsFromParties>[0][number]> = {}) => ({
+    name: "陈先生",
+    kind: "person",
+    contact_person: "",
+    phone: "",
+    whatsapp: "",
+    email: "",
+    region: "",
+    status: "",
+    note: "",
+    ...over,
+  });
+
+  it("puts the WhatsApp number in front of the shop line", () => {
+    // vibe-dealer's own 0030: in this market the WhatsApp number is the one
+    // people actually use, and it is often not the shop's main line.
+    const [row] = rowsFromParties([party({ phone: "03-7788 1234", whatsapp: "012-345 6789" })]);
+    expect(row.secondary).toBe("012-345 6789");
+  });
+
+  it("names who to ask for when the party is a company", () => {
+    const [row] = rowsFromParties([
+      party({ name: "建材行 A", kind: "company", contact_person: "王老板", phone: "016-222 3333" }),
+    ]);
+    expect(row.secondary).toBe("王老板 · 016-222 3333");
+  });
+
+  it("does not repeat the name as the contact person", () => {
+    const [row] = rowsFromParties([party({ contact_person: "陈先生", phone: "012-1 2345678" })]);
+    expect(row.secondary).toBe("012-1 2345678");
+  });
+
+  it("falls back to the email only when there is no number", () => {
+    expect(rowsFromParties([party({ email: "a@b.my" })])[0].secondary).toBe("a@b.my");
+    expect(rowsFromParties([party({ email: "a@b.my", phone: "012-345 6789" })])[0].secondary).toBe(
+      "012-345 6789",
+    );
+  });
+
+  it("says where they are rather than leaving the row looking broken", () => {
+    expect(rowsFromParties([party({ region: "Cheras" })])[0].secondary).toBe("Cheras");
+  });
+
+  it("leaves it empty when the owner has told us nothing else", () => {
+    expect(rowsFromParties([party()])[0].secondary).toBeUndefined();
+  });
+
+  it("never claims an amount", () => {
+    // 未付 · 本月业绩 · 累计 are sums of other rows. A number here would be
+    // right on the day it was typed and lying the first time money moved.
+    const [row] = rowsFromParties([party({ phone: "012-345 6789" })]);
+    expect(row.amount).toBeUndefined();
+  });
+
+  it("never colours the status", () => {
+    // 「新客户」 has no position in anything, so severity would be an opinion
+    // about somebody else's customer -- the same refusal toneForStage makes.
+    for (const status of ["新客户", "活跃", "退步中", "在职", ""]) {
+      expect(rowsFromParties([party({ status })])[0].tone).toBe("neutral");
+    }
+  });
+
+  it("shows nothing rather than a status nobody typed", () => {
+    expect(rowsFromParties([party()])[0].status).toBe("");
+  });
+
+  it("carries this business's own columns", () => {
+    const [row] = rowsFromParties([party({ extra: { c1: "会员编号 88" } })]);
+    expect(row.extra).toEqual({ c1: "会员编号 88" });
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────────────
+   THE DELETED CUSTOMER WHO CAME BACK.
+
+   The editor autosaves 2.5s after any change, so rows this projection puts on
+   the canvas end up written into layout_json. While the business has records
+   nobody can tell: real rows replace the frozen ones on every render. On the
+   day it deletes its last one, there is nothing to project -- and the frozen
+   copy was still sitting in the page.
+
+   `live` is the one bit that tells a frozen REAL row from a sample, which are
+   otherwise the same JSON.
+   ──────────────────────────────────────────────────────────────────────────── */
+describe("withLiveRows when the last record is deleted", () => {
+  const withRows = (rows: unknown, extra: Record<string, unknown> = {}) => ({
+    content: [
+      {
+        type: "RecordTable",
+        props: {
+          id: "t",
+          table: { columns: [{ key: "primary", label: "客户", kind: "text" }], rows, ...extra },
+        },
+      },
+    ],
+  });
+  const tableOf = (out: unknown) =>
+    (out as { content: { props: { table: { rows: unknown[]; live?: boolean } } }[] }).content[0].props.table;
+
+  it("marks a table whose rows came from the database", () => {
+    const out = withLiveRows(withRows([{ cells: { primary: "示例" }, tones: {} }]), [
+      { primary: "陈先生", tone: "neutral", status: "" },
+    ]);
+    expect(tableOf(out).live).toBe(true);
+    expect(tableOf(out).rows).toHaveLength(1);
+  });
+
+  it("empties a table that was real, rather than showing yesterday's rows", () => {
+    const frozen = withRows([{ cells: { primary: "陈先生" }, tones: {} }], { live: true });
+    expect(tableOf(withLiveRows(frozen, [])).rows).toEqual([]);
+  });
+
+  it("still leaves the teaching samples alone on a business with no records", () => {
+    // 决定 6, both directions: the samples retire when the first real row
+    // arrives, and they must NOT be swept away before it does.
+    const samples = withRows([{ cells: { primary: "示例" }, tones: {} }]);
+    expect(withLiveRows(samples, [])).toBe(samples);
+    expect(tableOf(withLiveRows(samples, [])).rows).toHaveLength(1);
   });
 });

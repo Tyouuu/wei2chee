@@ -16,8 +16,11 @@ import {
   PHOTO_BLOCKS,
   walkNodes,
   tableColumnKeys,
+  firstRecordTable,
 } from "@/lib/portal/layout-ops";
 import { COLUMN_KINDS } from "@/lib/portal/table-model";
+import { withFreshRows } from "@/lib/portal/live-rows";
+import type { BusinessContext } from "@/lib/templates/industry-template";
 import { buildDesignDoc, preferredVariants, STYLE_BRIEFS, darkPalettes } from "@/lib/portal/design-doc";
 import { renderBlockRules } from "@/lib/portal/block-rules";
 import { recordAiUsage } from "@/lib/portal/ai-usage";
@@ -601,6 +604,7 @@ The business owner asked:
   */
   const split = splitRecordOps(parsed.operations, pageKey);
   let recordsWritten = 0;
+  let asCustomerForRows: Awaited<ReturnType<typeof createSessionSupabaseClient>> | null = null;
   const recordSkips: { op: string; reason: string }[] = [];
   if (split.recordOps.length && project?.id && isRecordModule(pageKey)) {
     /*
@@ -618,6 +622,10 @@ The business owner asked:
       through the customer's session; so does this.
     */
     const asCustomer = await createSessionSupabaseClient();
+    /* Kept for the projection below, which has to read the rows back as the
+       customer too -- RLS is what bounds it, and the service role would
+       cheerfully return another business's. */
+    asCustomerForRows = asCustomer;
     const wrote = await writeRecords(
       asCustomer,
       project.id as string,
@@ -629,13 +637,52 @@ The business owner asked:
          this business added for itself, and its value goes to `extra` instead
          of being dropped -- which is what made 「加一栏车牌号」 produce a
          column that stayed blank for ever. */
-      (targetId) => tableColumnKeys(layout, targetId),
+      /* ⚠️ And when the id resolves to nothing, the page's own first record
+         table rather than a positional guess. A directory page has three
+         columns where a quotations page has four, so the guess reads 「新客户」
+         as an amount and drops it -- see the last-resort note in sortCells.
+         Every generated page has exactly one record table, so this is the
+         same table the 加一单 form writes into. */
+      (targetId) =>
+        tableColumnKeys(layout, targetId) ??
+        firstRecordTable(layout)?.columns.map((c) => c.key) ??
+        null,
     );
     recordsWritten = wrote.written;
     recordSkips.push(...wrote.skipped);
   }
 
   const result = applyLayoutOps(layout, split.layoutOps, preferredVariants(project?.style));
+
+  /*
+    THE ROW HE JUST WROTE HAS TO BE ON THE PAGE HE IS LOOKING AT.
+
+    A record does not live in this tree -- it is a row in pipeline_records,
+    ledger_entries or directory_entries -- so `result.layout` comes back
+    without it, and the browser dispatches that tree into Puck. The reply said
+    「加了客户陈先生」 and the table did not move: the same shape as the eleven
+    before it, found by eval:browser rather than by him.
+
+    ⚠️ `refetch` below is NOT the fix and never was. It calls router.refresh(),
+    which re-renders the server tree -- and Puck owns the canvas state once it
+    is mounted, which is exactly what the comment about 排法 in ai-assistant.tsx
+    says. It is kept because the rail and its counts are server-rendered; the
+    rows arrive here.
+
+    Through the SAME projection page.tsx uses, deliberately: two copies of
+    「which rows belong on this page」 would drift, and the drift would show as
+    the assistant's version of the table disagreeing with the reload's.
+  */
+  if (recordsWritten > 0 && project?.id && asCustomerForRows) {
+    const { data: ctx } = await asCustomerForRows.rpc("get_my_business_context");
+    result.layout = (await withFreshRows(
+      asCustomerForRows,
+      result.layout as unknown as Record<string, unknown>,
+      project.id as string,
+      pageKey as string,
+      (ctx as BusinessContext | null) ?? {},
+    )) as unknown as typeof result.layout;
+  }
   // Whatever the schema turned away is reported beside whatever the applier
   // turned away: to the customer they are the same thing -- something they
   // asked for that did not happen -- and both belong in the same list.
