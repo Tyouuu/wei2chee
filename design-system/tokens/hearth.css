@@ -380,7 +380,22 @@
   --site-inner: 4.5rem;
   --site-radius-control: 4px;
   /* 标题更重：他们 700，我们 600，放大到原尺寸一眼就看得出来。 */
-  --site-display-weight: 700;
+  /* ⚠️ 700 是猜的，300 是量的。
+
+     我的尺子对这一格永远回报「量不到」—— A. Reynolds 的 webfont 在这台机器
+     载不下来，浏览器退回系统字，所以「大写比小写宽 · 小写多高 · 墨量」三格
+     全部无解。老板 2026-08-30:「不是叫你很多次要去弄了吗」。
+
+     design-md-generator 读的是**声明的 @font-face**，不是渲染出来的字，
+     所以它不受载入失败影响。它抽到的那一页声明了：
+
+       helveticaneuew01-45ligh   Helvetica Neue 45 **Light**
+       din-next-w01-light        DIN Next **Light**
+       neue-haas-grotesk-display-pro   （h1 实际用的那一套）
+
+     整页是 Light。我们同一个位子是 700，墨量量出来 0.215 —— 差一整个量级。
+     种类本来就对（Archivo 也是怪诞体），错的是字重。 */
+  --site-display-weight: 300;
   --site-card: #f1f1ee;
   --site-card-border: 0 solid transparent;
   --site-card-radius: 8px;

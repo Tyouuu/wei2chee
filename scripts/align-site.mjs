@@ -535,6 +535,61 @@ function readChars(rootSel) {
   return n;
 }
 
+/* ── 宣告的字体档，跟这一页最常用的圆角 ─────────────────────────────────────
+   老板 2026-08-30:「那个skills 有好东西 我们也可以加在我的尺子上」·
+   「全部放在一起的话 我们只要测量一个就好 就不需要每次都要量那个」.
+
+   design-md-generator 读**声明层**（CSS 里写了什么），align 读**渲染层**
+   （画出来是什么）。渲染层在一件事上必然失灵：**那套字载不下来的时候**。
+   満図 的参考就是这样 —— A. Reynolds 的 webfont 在这台机器拿不到，浏览器退回
+   系统字，於是「大写比小写宽 · 小写多高 · 墨量 · 字宽 · 字重」五格全部量不到。
+   而 skill 抽出来的 @font-face 清单写得清清楚楚：
+
+       helveticaneuew01-45ligh   Helvetica Neue 45 Light
+       din-next-w01-light        DIN Next Light
+
+   整页是 Light，我们同一个位子是 700。**那一格我猜了，而档案清单读得到。**
+
+   并进这里而不是留在两个工具里，是因为两把尺要分两次跑、两份输出、两次
+   对照，而它们讲的是同一页。
+
+   ⚠️ 这两项**印出来给眼睛看，不判**：字体名字两边永远不一样（我们不可能用
+   Wix 的授权字体），圆角在两套 token 系统之间也不是同一个刻度。
+   它们是「据以决定」的资料，不是「据以判决」的读数。 */
+function readDeclared(rootSel) {
+  const faces = [];
+  let blocked = 0;
+  for (const sheet of document.styleSheets) {
+    let rules;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      blocked++;
+      continue;
+    }
+    for (const r of rules || []) {
+      if (r.type !== 5) continue;
+      const fam = (r.style?.fontFamily || "").replace(/['"]/g, "").trim();
+      const wt = (r.style?.fontWeight || "").trim();
+      if (fam && !faces.some((f) => f.fam === fam)) faces.push({ fam, wt });
+    }
+  }
+  /* 最常用的圆角 —— 按「有几个看得见的元素用它」算，不按声明次数：
+     一条声明一次然后被继承一百次的规则，跟一条写一百次的规则，在页面上是
+     同一件事。skill 的颜色排名就是栽在这一点上（任务 39）。 */
+  const root = rootSel ? document.querySelector(rootSel) : document.body;
+  const tally = {};
+  for (const el of (root || document.body).querySelectorAll("*")) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 40 || r.height < 20) continue;
+    const px = Math.round((parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0) * 100) / 100;
+    if (!Number.isFinite(px) || px <= 0 || px > 400) continue;
+    tally[px] = (tally[px] || 0) + 1;
+  }
+  const top = Object.entries(tally).sort((a, b) => b[1] - a[1])[0];
+  return { faces: faces.slice(0, 8), blocked, radius: top ? `${top[0]}px ×${top[1]}` : "没有圆角" };
+}
+
 function readShots(rootSel) {
   const root = rootSel ? document.querySelector(rootSel) : document.body;
   if (!root) return [];
@@ -1238,10 +1293,11 @@ async function shoot(target, rootSel, wait, file, width = 1440, withMotion = tru
   }, rootSel);
   const shape = await p.evaluate(readShape, rootSel);
   const chars = await p.evaluate(readChars, rootSel);
+  const declared = await p.evaluate(readDeclared, rootSel);
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
   const move = withMotion ? await probeMotion(p, rootSel) : null;
   await p.close();
-  return { secs, type, axes, anat, shots, shape, move, vids, chars, file };
+  return { secs, type, axes, anat, shots, shape, move, vids, chars, declared, file };
 }
 
 /* ── 验收这一次采集，不过就拒绝 ──────────────────────────────────────────────
@@ -1547,6 +1603,14 @@ try {
      所以先把这件事印出来 —— 一个被降级的量测，不该跟一个正常的量测长得一样。 */
   const loaded = (t) => (t.heads?.[0] ? (t.heads[0].here ? "载到了" : "载不到（退回系统字）") : "—");
   check("字体", "字体档载入", loaded(theirs.type), loaded(ours.type), null);
+  /* 渲染层量不到的时候，声明层还答得出来 —— 満図 五格全空就是这一格补上的。 */
+  const faceList = (d) =>
+    !d ? "量不到"
+      : d.faces.length
+        ? d.faces.slice(0, 3).map((f) => `${f.fam}${f.wt && f.wt !== "normal" ? " " + f.wt : ""}`).join(" · ") +
+          (d.faces.length > 3 ? ` …共${d.faces.length}` : "")
+        : d.blocked ? `读不到（${d.blocked} 张跨域）` : "没有 @font-face";
+  check("字体", "宣告的字体档", faceList(theirs.declared), faceList(ours.declared), null);
   /* ⚠️ 这一项以前叫「衬线/无衬线」，而它量不了那件事。
 
      它算的是 width("IHMTEFL") / width("ooeecc") —— 大写那一串比圆的小写那一串
@@ -1652,6 +1716,8 @@ try {
 
      判什么：这一段有几个图 / 几颗按钮 / 几栏字，配对得上的那些左右位置差多少。
      不判什么：好不好看、字写什么、照片拍的是什么。 */
+  check("结构", "最常用的圆角", theirs.declared?.radius ?? "量不到", ours.declared?.radius ?? "量不到", null);
+
   console.log("\n结构 SHAPE  （一段里面有哪些盒子，图 · 钮 · 字）");
   {
     /* ── 尺子的自检：分段之后，照片有没有掉在段外 ────────────────────────
