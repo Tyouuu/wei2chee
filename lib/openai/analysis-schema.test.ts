@@ -149,3 +149,38 @@ describe("fallbackAnalysis", () => {
     expect(fallbackAnalysis(industry, "en").summary).toContain("Renovation");
   });
 });
+
+/*
+  A REAL SALON HAD THIS STORED, AND ITS OWNER READ IT ON THE FIRST SCREEN.
+
+  The six-character cap keeps a Chinese stage from becoming a sentence. Fed
+  English -- which is what `after_workflow` holds when the questionnaire was
+  answered in English -- it produced 「Cust · Book · Conf · Serv · Due · Paid」,
+  while the _en column of the same analysis kept "Booking" and "Service".
+  One source, one field chopped and the other not.
+*/
+describe("a stage is capped by its script, not by the field it is in", () => {
+  const run = (after: string[]) =>
+    analysisSchema.parse({ ...validAnalysis(), after_workflow: after, after_workflow_en: after });
+
+  it("leaves ordinary English words whole", () => {
+    const p = run(["Customer", "Booking", "Service", "Paid"]);
+    expect(p.after_workflow).toEqual(["Customer", "Booking", "Service", "Paid"]);
+  });
+
+  it("still keeps a Chinese stage to a heading", () => {
+    const p = run(["客户", "报价", "这一段是被模型漏出来的一整句话"]);
+    expect(p.after_workflow[0]).toBe("客户");
+    expect(p.after_workflow[2]).toHaveLength(6);
+  });
+
+  it("still catches an English sentence that leaked in", () => {
+    const p = run(["Customer sends us the enquiry by WhatsApp first"]);
+    expect(p.after_workflow[0].length).toBeLessThanOrEqual(14);
+  });
+
+  it("keeps the two real examples that were found in the database", () => {
+    expect(run(["Deposit paid"]).after_workflow[0]).toBe("Deposit paid");
+    expect(run(["Final payment"]).after_workflow[0]).toBe("Final payment");
+  });
+});

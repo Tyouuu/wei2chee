@@ -37,6 +37,11 @@ import { MODULE_KEYS, defaultRecommendations, normalizeModules } from "@/lib/por
  *  survives, while a leaked sentence cannot. */
 const STAGE_MAX_CHARS = 6;
 
+/** The same cap for Latin script. Six characters is a heading in Chinese and
+ *  half a word in English -- see the note in the transform below, and the
+ *  salon whose workflow read 「Cust · Book · Conf · Serv · Due · Paid」. */
+const STAGE_MAX_CHARS_LATIN = 14;
+
 const SEVERITIES = ["high", "medium", "low"] as const;
 export type Severity = (typeof SEVERITIES)[number];
 
@@ -161,7 +166,32 @@ export const analysisSchema = z
   // would trade a small blemish for a total failure -- exactly the wrong
   // trade for the first thing a prospective customer sees.
   .transform((value) => {
-    const stage = (s: string) => (s.length > STAGE_MAX_CHARS ? s.slice(0, STAGE_MAX_CHARS) : s);
+    /*
+      THE SIX-CHARACTER CAP IS A CHINESE RULE, AND THIS FIELD IS NOT ALWAYS
+      CHINESE.
+
+      `after_workflow_en` is left alone three lines below for exactly this
+      reason, and the note there is right -- but `after_workflow` carries
+      whatever language the questionnaire was answered in. A salon answering
+      in English got its own workflow stored as
+
+          ["Cust", "Book", "Conf", "Serv", "Due", "Paid"]
+
+      and that is what its owner reads across the top of the first screen.
+      The same analysis kept "Booking" and "Service" intact in the _en
+      column: one source, one field chopped and the other not.
+
+      So the cap follows the script rather than the field. Six characters is
+      a column heading in Chinese; in Latin script that is half a word, and
+      the same idea needs about fourteen ("Final payment", "Deposit paid").
+      A leaked sentence is still caught, which is all the cap was ever for.
+    */
+    const CJK = /[　-鿿豈-﫿＀-￯]/;
+    const stage = (s: string) => {
+      const max = CJK.test(s) ? STAGE_MAX_CHARS : STAGE_MAX_CHARS_LATIN;
+      const t = s.trim();
+      return t.length > max ? t.slice(0, max) : t;
+    };
     const after_workflow = value.after_workflow.map(stage);
     return {
       ...value,
