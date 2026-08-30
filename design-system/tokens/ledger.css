@@ -269,7 +269,17 @@
      再用负边距把它拉回照片上面。 */
   --site-bar-bg: transparent;
   --site-bar-line: transparent;
-  --site-bar-pull: -4.6rem;  /* Newel 的每一块都收在框里，没有更宽的段 */  /* 参考页量出来的版心 5%–94% */
+  --site-bar-pull: -4.6rem;
+  /* 栏位只有一条下划线 —— Newel 的 Contact Us。深棕的纸上放一个更深的方块，
+     人找不到那是可以打字的地方；他们用的是「标签在上、底下一条线」。 */
+  --site-field-bg: transparent;
+  --site-field-radius: 0;
+  --site-field-border: 0;
+  --site-field-line: inset 0 -1px 0 color-mix(in oklab, var(--color-paper) 42%, transparent);
+  /* 送出是一条满宽的白横条 —— Newel 的 Contact Us 就是这样收尾的。 */
+  --site-submit-grow: 1;
+  --site-submit-bg: var(--site-ink-fg);
+  --site-submit-fg: var(--site-ink-bg);  /* Newel 的每一块都收在框里，没有更宽的段 */  /* 参考页量出来的版心 5%–94% */
   --site-figure: 1.45;
 
   /* 段内的气 —— 段均高对齐用的（见 align 的「段均高」那一项）。 */

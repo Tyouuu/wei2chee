@@ -188,7 +188,7 @@ export function EnquiryForm({
             children of a plain block and nothing about their spacing changes.
             In split mode this becomes the left column. */}
         <div className={split ? "" : "contents"}>
-          <h2 className="ds-display [color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+          <h2 data-column-heading="" className="ds-display [color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
             {heading}
           </h2>
           {blurb && (
@@ -239,7 +239,7 @@ export function EnquiryForm({
                     value={values[i] ?? ""}
                     onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
                     placeholder={f.placeholder}
-                    className="w-full resize-y [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-base)] [line-height:var(--leading-body)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
+                    className="w-full resize-y [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--color-ink-800))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [line-height:var(--leading-body)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
                   />
                 ) : (
                   <input
@@ -249,7 +249,7 @@ export function EnquiryForm({
                     value={values[i] ?? ""}
                     onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
                     placeholder={f.placeholder}
-                    className="min-h-11 w-full [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-base)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
+                    className="min-h-11 w-full [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--color-ink-800))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
                   />
                 )}
               </div>
@@ -260,7 +260,7 @@ export function EnquiryForm({
             <button
               type="submit"
               disabled={state === "sending"}
-              className="inline-flex min-h-11 items-center disabled:opacity-60 [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.6)] [transition-duration:var(--dur)] [transition-property:background-color] hover:[background-color:var(--color-primary-deep)]"
+              className="inline-flex min-h-11 items-center justify-center disabled:opacity-60 [flex-grow:var(--site-submit-grow,0)] [background-color:var(--site-submit-bg,var(--color-primary))] [border-radius:var(--radius-control)] [color:var(--site-submit-fg,var(--color-on-primary))] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.6)] [transition-duration:var(--dur)] [transition-property:background-color] hover:[background-color:var(--color-primary-deep)]"
             >
               {submitLabel || "送出"}
             </button>

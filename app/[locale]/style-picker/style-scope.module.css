@@ -618,6 +618,13 @@
   --site-bar-bg: transparent;
   --site-bar-line: transparent;
   --site-bar-pull: -4.6rem;
+  --site-field-bg: transparent;
+  --site-field-radius: 0;
+  --site-field-border: 0;
+  --site-field-line: inset 0 -1px 0 color-mix(in oklab, var(--color-paper) 42%, transparent);
+  --site-submit-grow: 1;
+  --site-submit-bg: var(--site-ink-fg);
+  --site-submit-fg: var(--site-ink-bg);
   --site-figure: 1.45;
   --site-inner: 2.6rem;
   --font-ui: var(--font-industrial-latin), var(--font-song-cjk), "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;

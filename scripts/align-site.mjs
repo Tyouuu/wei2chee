@@ -1700,6 +1700,36 @@ try {
   const lt = lh(theirs.type), lo = lh(ours.type);
   check("字体", "行距", lt || "量不到", lo || "量不到",
     lt && lo ? Math.abs(lt - lo) <= 0.28 : null);
+  /* ── 整页的字级：按**字数**加权的中位数 ────────────────────────────────
+     老板 2026-08-30，看着台账的对照图（尺子说只差 5 项）:「你自己看一下」.
+     他是对的 —— 那一页读起来比模版淡一号，而每一项检查都过了。
+
+     「正文字级」只取**八个字以上的整段**。一页上占最多字数的那一级往往不是
+     整段：清单的每一行、栏位的标签、卡片下面那句说明。台账 实测：
+
+         模版 17px×1066字 · 25px×252 · 16px×223
+         我们 15px×612字  · 19px×206 · 16px×179
+
+     「正文字级」抽到的是我们那个 19px 的副标，报 17 对 19，过关；而整页
+     真正铺出来的那一级是 15px，从来没有被比过。**页面看起来淡不淡，取决于
+     绝大多数的字有多大，不是取决于最长那一段有多大。**
+
+     按字数加权，不按块数：一个 56px 的标题只有 6 个字，不该跟一段 200 字的
+     说明一样重。 */
+  {
+    const bodyOf2 = (l, secsL) => (secsL.length && secsL[0].h < 120 ? l.slice(1) : l);
+    const weighted = (cap) => {
+      const all = [];
+      for (const bs of bodyOf2(cap.shape ?? [], cap.secs))
+        for (const b of bs) if (b.kind === "字" && b.px) for (let k = 0; k < (b.n || 1); k++) all.push(b.px);
+      if (!all.length) return 0;
+      all.sort((a, b) => a - b);
+      return all[Math.floor(all.length / 2)];
+    };
+    const wT = weighted(theirs), wO = weighted(ours);
+    check("字体", "整页字级", wT ? `${wT}px` : "量不到", wO ? `${wO}px` : "量不到",
+      judge(wT, wO, Math.abs(wT - wO) / wT <= 0.08));
+  }
   check("字体", "正文字级", `${theirs.type.bodyPx}px`, `${ours.type.bodyPx}px`,
     thinSample ? null : near(Number(theirs.type.bodyPx) || 0, Number(ours.type.bodyPx) || 0, 3));
   if (thinSample) {
