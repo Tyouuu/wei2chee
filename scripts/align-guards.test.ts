@@ -248,4 +248,32 @@ describe("尺子不准再犯", () => {
     expect(blk).toMatch(/box\.width < PAGE \* 0\.03/);
     expect(blk).toMatch(/kind === "字" \? inkRect\(el\) : null/);
   });
+  /* ㉕ 载页面要**载到不再变为止**，不准滚固定的轮数。
+     blueprint 的参考拍回来少了整个第一屏的大标题、副标、按钮跟团队照片；
+     版心量到 2%–59%、正文量到 81px、44% 的字掉在段外 —— 而
+     `auditCapture` 没有拒绝，因为没有哪一段是**完全**空的。
+     滚固定轮数等於赌这一页的进场动画在第几轮跑完，Wix 那一页赌输了。 */
+  it("载页面滚到看得见的字不再变，不是滚固定轮数", () => {
+    const blk = MJS.slice(MJS.indexOf("async function settlePage"), MJS.indexOf("async function shoot("));
+    expect(blk).toMatch(/stable/);
+    expect(blk).toMatch(/pass < 5 && stable < 2/);
+  });
+
+  /* ㉖ probe 跟正式那条必须用**同一份**载页面的程序。
+     一个跟尺子载法不同的诊断工具，诊断的是另一页 —— 那正是这一次
+     「probe 说 7 张图、align 说 3 张」花掉的那几轮。 */
+  it("probe 跟 shoot 共用同一支 settlePage", () => {
+    expect((MJS.match(/settlePage\(p,/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+  /* ㉗ 采集不完整要**重拍一次，再不过就拒绝**。
+     blueprint 的参考少了整个第一屏的大标题、副标、按钮跟团队照片，而
+     auditCapture 放行了 —— 它只查「有没有哪一段是完全空的」，那一页每一段
+     都还有东西。**一份半空的采集长得跟一份好的一模一样。**
+     而且它不稳定：单独跑拍得到，六套连着跑就拍不到。所以答案不是多滚几轮
+     （那只是把赌注加大），是宁可大声拒绝，不要安静地给错答案。 */
+  it("参考拍得不完整会重拍，两次都不完整就 exit 1", () => {
+    expect(MJS).toMatch(/function captureThin/);
+    expect(MJS).toMatch(/重拍一次/);
+    expect(MJS).toMatch(/连拍两次都不完整/);
+  });
 });

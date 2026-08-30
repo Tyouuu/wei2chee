@@ -86,12 +86,7 @@ if (process.argv.includes("--probe")) {
     await b.close();
     process.exit(1);
   }
-  await p.waitForTimeout(7000);
-  await p.evaluate(async () => {
-    for (let y = 0; y < document.body.scrollHeight; y += 500) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 120)); }
-    window.scrollTo(0, 0);
-  });
-  await p.waitForTimeout(2500);
+  await settlePage(p, 7000);
 
   const secs = await p.evaluate(readSections, null);
   const shape = await p.evaluate(readShape, null);
@@ -1602,20 +1597,18 @@ async function probeMotion(p, rootSel) {
   }
 }
 
-async function shoot(target, rootSel, wait, file, width = 1440, withMotion = true) {
-  const p = await browser.newPage({ viewport: { width, height: width < 500 ? 844 : 1100 } });
-  await p.goto(target, { waitUntil: "domcontentloaded", timeout: 90000 });
+/* ── 把一页真的载完 —— **两支共用同一份** ────────────────────────────────
+   老板 2026-08-31:「再修」. 追[任务 81](../docs/founder-tasks.md) 那条线索时
+   量到的：同一个网址，`--probe` 读到段里有 7 张图，`align` 只读到 3 张。
+   两支呼叫的是同一个 `readShape`，**差别在怎么把那一页载完** ——
+   probe 滚一轮，shoot 滚两轮＋等每张图 decode＋等字体。
+
+   **一个跟尺子载法不同的诊断工具，诊断的是另一页。** 所以抽成一份，
+   两支都用它；以后改载法只有一个地方，也不会再出现「probe 说没事、
+   正式那条说有事」这种自己跟自己对不上的情况。 */
+async function settlePage(p, wait) {
   await p.addStyleTag({ content: "nextjs-portal,[data-nextjs-toolbar]{display:none!important}" }).catch(() => {});
   await p.waitForTimeout(wait);
-  /* ── 把这一页真的载完，然后验收 ────────────────────────────────────────────
-     ⚠️ 以前是滚一轮、每格等 200ms，然后就开始量。Wix 的段落是滚到才载入的，
-     一轮不够：満図 的参考页第2段跟第5段回来是**空白**，而上面每一根轴照样算，
-     照样印出一个数字，照样显示「过关」。
-
-     参考错了，从它算出来的每一件事都是错的 —— 而且是安静地错。所以这里滚
-     两轮、等每一张图 decode 完、等 document.fonts.ready，最后**验收**：
-     空白的段落超过一个就 exit 1，不准往下算。
-     把「安静地给错答案」换成「大声拒绝」。 */
   await p.evaluate(async () => {
     for (let pass = 0; pass < 2; pass++) {
       for (let y = 0; y < document.body.scrollHeight; y += 500) {
@@ -1642,6 +1635,46 @@ async function shoot(target, rootSel, wait, file, width = 1440, withMotion = tru
     if (document.fonts && document.fonts.ready) await document.fonts.ready.catch(() => {});
   });
   await p.waitForTimeout(2500);
+
+  /* ── 滚到「不再变」为止，不是滚固定的两轮 ──────────────────────────────
+     老板 2026-08-31:「再修」. blueprint 的参考拍回来**少了整个第一屏的大标题、
+     少了副标、少了按钮、少了团队照片** —— 内容挤在左边（版心 2%–59%），
+     「正文」量到 81px（只剩大字看得见），44% 的字掉在段外。
+     而同一个网址用 `--probe` 载，那些东西全部都在。
+
+     两支的载法统一之后数字还是不一样，所以**不是载法不同，是载得够不够**：
+     滚固定的轮数，等於赌这一页的进场动画在第几轮跑完。Wix 这一页赌输了。
+
+     所以改成**量到稳为止**：滚一轮 → 数一次看得见的字 → 再滚一轮 → 再数，
+     两次一样才算载完，最多五轮。
+     ⚠️ 五轮还在变就**说出来**（下面 auditCapture 会拒绝），不要静静地拿
+     第五轮那一份去算 —— 那正是这一次的形状。 */
+  let last = -1, stable = 0;
+  for (let pass = 0; pass < 5 && stable < 2; pass++) {
+    const n = await p.evaluate(async () => {
+      for (let y = 0; y < document.body.scrollHeight; y += 500) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 120));
+      }
+      window.scrollTo(0, 0);
+      await new Promise((r) => setTimeout(r, 400));
+      let c = 0;
+      for (const el of document.body.querySelectorAll("*")) {
+        if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+        for (const nd of el.childNodes) if (nd.nodeType === 3) c += (nd.nodeValue || "").trim().length;
+      }
+      return c;
+    });
+    stable = n === last ? stable + 1 : 0;
+    last = n;
+  }
+  await p.waitForTimeout(600);
+}
+
+async function shoot(target, rootSel, wait, file, width = 1440, withMotion = true) {
+  const p = await browser.newPage({ viewport: { width, height: width < 500 ? 844 : 1100 } });
+  await p.goto(target, { waitUntil: "domcontentloaded", timeout: 90000 });
+  await settlePage(p, wait);
   const secs = await p.evaluate(readSections, rootSel);
   const type = await p.evaluate(readType);
   const axes = await p.evaluate(readAxes, rootSel);
@@ -1672,6 +1705,27 @@ async function shoot(target, rootSel, wait, file, width = 1440, withMotion = tru
    一段「空白」的定义：它里面一个盒子都没有（readShape 走完什么都没收到），
    而它却有 200px 以上的高。那是一段还没载入的内容，不是一段留白的设计 ——
    留白的设计里至少有一行字。 */
+/* ── 这一份采集完不完整 ──────────────────────────────────────────────────
+   老板 2026-08-31:「再修」. blueprint 的参考拍回来少了整个第一屏的大标题、
+   副标、按钮跟团队照片 —— 而 `auditCapture` 放行了，因为它只查「有没有哪一段
+   是**完全**空的」，而那一页每一段都还有东西。**一份半空的采集，长得跟一份好的
+   一模一样。**
+
+   ⚠️ 而且它是**不稳定**的：单独跑 blueprint 拍得到（16 项），
+   六套连着跑就拍不到（24 项，而且漏的字数一个不差）。所以答案不是
+   「再多滚几轮」—— 多滚只是把赌注加大。答案是**验收，不过就重来，
+   再不过就拒绝**：这把尺的规矩一直是「宁可大声拒绝，不要安静地给错答案」。
+
+   判准用**字**不用图：一张图漏了看得出来，一整段字漏了看不出来 ——
+   它只会让版心、字级、几栏全部小一号，每一项都还印得像真的。 */
+function captureThin(r) {
+  const all = r.chars || 0;
+  if (all < 400) return null;
+  const held = (r.shape ?? []).reduce(
+    (n, bs) => n + bs.reduce((m, b) => m + (b.kind === "字" ? b.n || 0 : 0), 0), 0);
+  return held / all < 0.8 ? Math.round((1 - held / all) * 100) : null;
+}
+
 function auditCapture(who, r) {
   const blank = [];
   const body = (l, secsL) => (secsL.length && secsL[0].h < 120 ? l.slice(1) : l);
@@ -1716,6 +1770,23 @@ try {
   }
   if (!theirs) {
     theirs = await shoot(url, null, 7000, `${register}-ref`);
+    {
+      /* 半空就重来一次。第二次还是半空，就不要往下算了 ——
+         从一份残缺的参考算出来的每一项读数，都会印得跟对的一模一样。 */
+      let thin = captureThin(theirs);
+      if (thin !== null) {
+        console.log(`  ⚠️ 参考拍得不完整（${thin}% 的字不在任何一段里）—— 重拍一次`);
+        theirs = await shoot(url, null, 7000, `${register}-ref`);
+        thin = captureThin(theirs);
+      }
+      if (thin !== null) {
+        console.error(`
+🔴 这一次测量不算数：${url} 连拍两次都不完整（${thin}% 的字不在任何一段里）。
+   多半是它的进场动画没跑完就拍了。看一眼 ${OUT}/${register}-ref.jpg —— 少了什么一眼就知道。`);
+        await browser.close();
+        process.exit(1);
+      }
+    }
     const blank = auditCapture("模版", theirs);
     /* ALIGN_FORCE_AUDIT=1 强迫它红一次 —— 一个没有人看过它红的守卫等於没有守卫。 */
     if (blank.length > (process.env.ALIGN_FORCE_AUDIT ? -1 : 1)) {

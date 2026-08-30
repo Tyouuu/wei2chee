@@ -101,6 +101,10 @@ CHECK = r"""
     const y = Math.min(vh - 1, Math.max(1, r.top + r.height / 2));
     const hit = document.elementFromPoint(x, y);
     if (!hit || hit === el || el.contains(hit) || hit.contains(el)) continue;
+    // The Next.js dev overlay is not part of the product -- it exists only
+    // under `next dev`, and nobody it reports on will ever meet it. A ruler
+    // that cries wolf every run is a ruler nobody reads.
+    if (hit.closest && hit.closest('nextjs-portal')) continue;
     out.covered.push(label + '  <-- covered by ' + hit.tagName + '[' + (hit.className || '').toString().slice(0, 44) + ']');
   }
   return out;
