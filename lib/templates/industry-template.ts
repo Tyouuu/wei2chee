@@ -425,7 +425,11 @@ function industryLabels(
  * Capped at six stages: past that the chip row wraps to a third line and
  * stops reading as a pipeline.
  */
-function workflowStages(ctx: BusinessContext): string[] {
+/* Exported for lib/portal/live-rows.ts, which needs THIS business's stage
+   list to decide a row's tone. A second copy of the same resolution would
+   drift the first time the language fallback changed -- this repo has been
+   bitten four times by a hand-written second list. */
+export function workflowStages(ctx: BusinessContext): string[] {
   const lang = langOf(ctx);
   // The AI returns the tailored workflow in BOTH languages
   // (lib/openai/analysis-schema.ts), so an English system still gets THIS

@@ -1,3 +1,4 @@
+import { fetchLiveRows, withLiveRows } from "@/lib/portal/live-rows";
 import { notFound, redirect } from "next/navigation";
 import {
   createSessionSupabaseClient,
@@ -20,6 +21,7 @@ import {
   sortPages,
   systemLangOf,
   tradeLabels,
+  workflowStages,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
@@ -139,6 +141,27 @@ export default async function PortalEditorPage({
       (project.layout as string | null) ?? null,
     ) as unknown as Record<string, unknown>;
   }
+
+  /*
+    THE CUSTOMER'S OWN ROWS, IF THEY HAVE ANY.
+
+    Applied to whichever tree we ended up with -- freshly generated or saved
+    and upgraded -- because a saved page has the sample rows FROZEN into its
+    props, so a customer who saved before writing their first quotation would
+    otherwise keep 陈先生 · RM 48,500 forever.
+
+    Returns the tree untouched when there are no rows yet, which is how the
+    samples retire: not by a flag or a state to maintain, but because real
+    rows replace them the moment the first one exists. An empty business
+    still gets a page that shows what it is for.
+  */
+  const liveRows = await fetchLiveRows(
+    supabase,
+    project.id,
+    pageKey,
+    workflowStages(businessContext),
+  );
+  initialData = withLiveRows(initialData, liveRows);
 
   // 「去用它」 from the component library. Applied through the SAME
   // add_component operation the AI assistant emits, so a block arrives in the
