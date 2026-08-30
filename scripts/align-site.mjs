@@ -615,7 +615,14 @@ function readShape(rootSel) {
       const cls = String(el.className || "").split(" ").filter((c) => c && !c.startsWith("[") && !c.startsWith("@")).slice(0, 2).join(".");
       const marks = ["bleed", "fill", "toned", "cells", "wide", "columnHeading"].filter((k) => el.dataset[k] !== undefined).map((k) => `[${k}]`).join("");
       const sel = `${el.tagName.toLowerCase()}${marks}${cls ? "." + cls : ""}`.slice(0, 56);
-      boxes.push({ kind, x0, x1, y0, y1, seq: seqN++, pos: getComputedStyle(el).position, sel, ...extra });
+      /* ⚠️ 记下**像素**的宽高，不只百分比。
+         2026-08-31：自检问「各段装下几张图」的时候，拿的是 readShape 的图，
+         而 readShape 对 <img> 没有尺寸下限、readShots 有（120×90）。
+         两个数字根本不在数同一群东西 —— 满図 报「6 张 · 装下 9 张」，我照那个
+         差额写了一句「段界穿过它」的诊断，而多出来的其实是图标跟小 logo。
+         **一句听起来很有道理的解释，配一个错的数字。** */
+      boxes.push({ kind, x0, x1, y0, y1, pw: Math.round(box.width), ph: Math.round(box.height),
+        seq: seqN++, pos: getComputedStyle(el).position, sel, ...extra });
     };
 
     for (const el of sec.pool) {
@@ -2342,7 +2349,10 @@ try {
        长得跟「量过了，没漏」一模一样，也跟「这两项根本没跑」一模一样。
        任务 81 那一次就是这样过去的：**一把量不到的尺回报的是沉默，不是警报。**
        自检自己变成沉默的那一刻，它就不再是自检了。 */
-    const inBoxes = (shp) => (shp ?? []).reduce((n2, bs) => n2 + bs.filter((b) => b.kind === "图").length, 0);
+    /* 只数够得上 readShots 那道门槛（120×90）的 —— 两边要数同一群东西，
+       否则差额讲的是「两把尺不一样」，不是「这一页漏了什么」。 */
+    const bigPic = (b) => b.kind === "图" && (b.pw ?? 999) >= 120 && (b.ph ?? 999) >= 90;
+    const inBoxes = (shp) => (shp ?? []).reduce((n2, bs) => n2 + bs.filter(bigPic).length, 0);
     for (const [who, cap] of [["模版", theirs], ["我们", ours]]) {
       const all = cap.shots.length;
       const held = inBoxes(cap.shape);
@@ -2353,7 +2363,10 @@ try {
          重复算不是小数点问题：它代表分段**不是一个乾净的切分**，而每一段的
          「几栏 · 顺序 · 底色」全部建立在「这一段装了哪些盒子」上面。 */
       const okImg = all - held <= 1 && held - all <= 1;
-      const why = held > all ? ` —— 有 ${held - all} 张被两段各算了一次（段界穿过它）`
+      /* 两个方向讲的是两件事，而且「多出来」有两个可能的原因，尺子分不出来 ——
+         所以只讲**读数**，不讲**原因**。（写死一个猜出来的原因，正是上一版
+         把「图标被算进去」讲成「段界穿过它」的那次。） */
+      const why = held > all ? ` —— 多算了 ${held - all} 张：段界穿过它，或者同一块地方被数了两次`
         : all > held ? ` —— ${all - held} 张掉在段外` : "";
       console.log(`  ${okImg ? "OK" : "XX"}  ${who}分段漏图  这一页 ${all} 张，各段装下 ${held} 张${why}`);
       marks.push({ axis: "结构", name: `${who}分段漏图`, ok: okImg });

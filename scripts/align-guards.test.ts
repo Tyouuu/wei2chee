@@ -298,14 +298,21 @@ describe("尺子不准再犯", () => {
     expect(blk).toMatch(/name: `\$\{who\}分段漏字`, ok: null/);
   });
 
-  /* ㉙ 分段漏图要**两个方向**都问。
-     招牌第一次印出读数就是「这一页 14 张，各段装下 15 张」——一张图跨在段界上，
-     被两段各算一次，而 `all - held > 1` 那一边永远是绿的。
-     重复算代表分段不是一个乾净的切分，而每一段的读数都盖在那上面。 */
-  it("分段漏图 也要抓得到「装下的比整页有的还多」", () => {
-    const blk = MJS.slice(MJS.indexOf("const inBoxes ="), MJS.indexOf("const TS = TSHAPE"));
+  /* ㉙ 分段漏图要**两个方向**都问，而且两边要数**同一群东西**。
+     招牌第一次印出读数就是「这一页 14 张，各段装下 15 张」——`all - held > 1`
+     那一边永远看不到它。
+     ⚠️ 而第一版补上之后我犯了更糟的一个：给差额配了一句「段界穿过它」的诊断。
+     查下去 readShape 对 <img> **没有尺寸下限**、readShots 有（120×90）——
+     多出来的大半是图标跟小 logo。**一句听起来很有道理的解释，配一个错的数字。**
+     所以两件事一起守：同一道门槛，以及不准写死一个没证明过的原因。 */
+  it("分段漏图 两个方向都问，而且跟 readShots 同一道门槛", () => {
+    const blk = MJS.slice(MJS.indexOf("const bigPic ="), MJS.indexOf("const TS = TSHAPE"));
     expect(blk).toMatch(/held - all <= 1/);
-    expect(blk).toMatch(/被两段各算了一次/);
+    expect(blk).toMatch(/>= 120/);
+    expect(blk).toMatch(/>= 90/);
+    // 只讲读数，不讲原因
+    expect(blk).not.toMatch(/被两段各算了一次/);
+    expect(blk).toMatch(/或者同一块地方被数了两次/);
   });
 
   /* ㉚ 两个 align 不准同时跑。
