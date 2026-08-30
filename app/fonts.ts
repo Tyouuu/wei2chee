@@ -27,6 +27,7 @@ import {
   Plus_Jakarta_Sans,
   Public_Sans,
   Newsreader,
+  Tenor_Sans,
 } from "next/font/google";
 
 
@@ -166,6 +167,31 @@ const notoSansSC = Noto_Sans_SC({
    size axis -- and it is not on anybody's convergence list.
 
    Instrument Serif stays loaded for nothing; it is removed below. */
+/* ── 台账 的标题：Optima 那一族 ──────────────────────────────────────────
+ *
+ * 老板 2026-08-31，看着放大的两个标题：「用的字不一样」·「你找不到他是用什么
+ * 字体吗」. 找得到 —— 把 Wix 的 woff2 抓下来读名字表，是 **Displace 2.0**，
+ * 他们授权的字，我们用不了。
+ *
+ * 但「用不了那一套」不等於「随便挑一套」。逐项量它：
+ *   笔画对比 1.83 · 大写比小写宽 1.21 · 小写多高 0.74 · 墨量 0.093
+ *
+ * ⚠️ 原本换上的 Geist 200 在**数字上最接近**（四根中三根，差距 0.48，
+ * 比每一个候选都好）—— 而它的笔画对比是 **1.00**，从头到尾一样粗。
+ * 他一眼就看出来。**四根轴里，眼睛几乎只看那一根。**
+ *
+ * 画出来并排看（.screenshots/align/face.jpg）：Tenor Sans 是唯一一套末端
+ * 外扩、粗细有对比的 —— 跟 Displace 2.0 同一族（Optima 那一类）。
+ * Marcellus 偏罗马体太重，Spectral 是真衬线，Geist 完全均匀。
+ */
+const tenorSans = Tenor_Sans({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-flared-latin",
+  display: "swap",
+  preload: false,
+});
+
 const newsreader = Newsreader({
   subsets: ["latin"],
   weight: ["200", "400", "600"],
@@ -185,6 +211,7 @@ const newsreader = Newsreader({
 export const fontVariables = [
   newsreader.variable,
   geist.variable,
+  tenorSans.variable,
   geistMono.variable,
   archivo.variable,
   archivoNarrow.variable,

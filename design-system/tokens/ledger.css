@@ -337,7 +337,7 @@
      the library changes: these three are declared here and fall back to the
      old behaviour everywhere else. */
   --site-display-tracking: 0em;
-  --site-display-weight: 200;  /* 墨量 0.094 对他们 0.093 */
+  --site-display-weight: 400;  /* Tenor Sans 只有 400 */
   --site-hero-scale: 1.2;
 
   /* ── 细框 —— 台账真正的身份 ────────────────────────────────────────────
@@ -373,7 +373,7 @@
 
      差距 0.03 对 0.91。没有 flare，但**种类**对上了：细、宽、开口大的人文
      无衬线。老板 2026-08-30：「是字体的种类不一样 就是不同字体种类」。 */
-  --site-display: var(--font-sans-latin), var(--font-hei-cjk), system-ui, sans-serif;
+  --site-display: var(--font-flared-latin), var(--font-song-cjk), Optima, system-ui, sans-serif;
 
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
 

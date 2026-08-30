@@ -638,13 +638,13 @@
   --site-ink-fg-dim: color-mix(in oklab, #f0eae0 62%, transparent);
   --site-ink-panel: #3c3228;
   --site-display-tracking: 0em;
-  --site-display-weight: 200;
+  --site-display-weight: 400;
   --site-hero-scale: 1.2;
   --site-frame: color-mix(in oklab, #f0eae0 26%, transparent);
   --site-strip: #2c200b;
   --site-motion: 0.25s;
   --site-ease: ease;
-  --site-display: var(--font-sans-latin), var(--font-hei-cjk), system-ui, sans-serif;
+  --site-display: var(--font-flared-latin), var(--font-song-cjk), Optima, system-ui, sans-serif;
   --font-numeric: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --fw-regular: 400;
   --fw-medium: 500;

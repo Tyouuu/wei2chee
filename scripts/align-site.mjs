@@ -492,8 +492,46 @@ function readType() {
           return dark / (400 * 140);
         };
 
+        /* ── 笔画的粗细对比 ────────────────────────────────────────────────
+           老板 2026-08-31，看着放大的两个标题：「用的字不一样」。三根轴全绿，
+           而他一眼看出来 —— 因为那三根量的是**比例**跟**总墨量**，量不到
+           **一笔之内粗细变不变**。
+
+             他们  竖笔粗、横笔细，末端外扩（Optima 那一类）
+             我们  从头到尾一样粗（Geist）
+
+           一套粗细均匀的黑体可以同时满足「字宽比 1.21 · 小写多高 0.74 ·
+           墨量 0.093」而看起来完全是另一套字。
+
+           量法：把一个大写 O 画进画布，量**中间那一横**穿过左右竖笔的厚度，
+           跟**中间那一竖**穿过上下横笔的厚度，取比值。
+           均匀的黑体接近 1.0，对比强的接近 1.5 以上。 */
+        const contrast = (() => {
+          const S = 200;
+          const cv = document.createElement("canvas");
+          cv.width = S; cv.height = S;
+          const g = cv.getContext("2d", { willReadFrequently: true });
+          g.fillStyle = "#fff"; g.fillRect(0, 0, S, S);
+          g.fillStyle = "#000";
+          g.font = `${wt} 160px "${fam}", monospace`;
+          g.textBaseline = "middle"; g.textAlign = "center";
+          g.fillText("O", S / 2, S / 2);
+          const d2 = g.getImageData(0, 0, S, S).data;
+          const dark = (x, y) => d2[(y * S + x) * 4] < 128;
+          /* 一条线上有几段连续的黑 —— 取最长的那一段，那就是笔画的厚度。 */
+          const run = (pts) => {
+            let best = 0, cur = 0;
+            for (const on of pts) { cur = on ? cur + 1 : 0; if (cur > best) best = cur; }
+            return best;
+          };
+          const stem = run(Array.from({ length: S }, (_, x) => dark(x, S / 2 | 0)));
+          const bar = run(Array.from({ length: S }, (_, y) => dark(S / 2 | 0, y)));
+          return stem && bar ? +(Math.max(stem, bar) / Math.min(stem, bar)).toFixed(2) : 0;
+        })();
+
         return {
           here,
+          contrast: here ? contrast : 0,
           serifish: here ? +(serifRun / plainRun).toFixed(3) : 0,
           widthish: here ? +widthOf.toFixed(3) : 0,
           xish: here && capH ? +(xH / capH).toFixed(3) : 0,
@@ -1657,6 +1695,12 @@ try {
   const sT = serif(theirs.type), sO = serif(ours.type);
   check("字体", "大写比小写宽", sT ? sT.toFixed(2) : "量不到", sO ? sO.toFixed(2) : "量不到",
     judge(sT, sO, Math.abs(sT - sO) / sT <= 0.09));
+  /* 笔画的粗细对比 —— 一笔之内粗细变不变。比例跟墨量都对得上的两套字，
+     可以在这一根上差一倍：均匀的黑体接近 1.0，对比强的 1.5 以上。 */
+  const ctr = (t) => Number(t.heads?.[0]?.contrast) || 0;
+  const cT = ctr(theirs.type), cO = ctr(ours.type);
+  check("字体", "笔画对比", cT || "量不到", cO || "量不到",
+    judge(cT, cO, Math.abs(cT - cO) / cT <= 0.15));
   /* 小写多高 —— 同一个字级下看起来大一号还是秀气一号，就是这个比例。 */
   const xh = (t) => Number(t.heads?.[0]?.xish) || 0;
   const xT = xh(theirs.type), xO = xh(ours.type);
