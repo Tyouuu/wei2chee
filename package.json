@@ -18,6 +18,7 @@
     "check:registers": "node scripts/check-registers.mjs",
     "shoot:registers": "node scripts/shoot-registers.mjs",
     "eval:analysis": "tsx scripts/eval-analysis.mjs",
+    "check:ambient": "node scripts/check-ambient.mjs",
     "check:upstream": "node scripts/check-upstream.mjs",
     "check:ai-cost": "node scripts/ai-cost.mjs",
     "find:prospects": "node scripts/find-prospects.mjs",

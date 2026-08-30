@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   motion,
   useMotionValue,
@@ -53,7 +53,35 @@ import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
   (#606080 / #8da0ce / #212121), so the room is the same room -- it has just
   stopped moving.
 
-  NOTE 3: ShaderGradientCanvas forwards `className` to @react-three/fiber's
+  NOTE 3: IT ALSO STOPS ONCE THE PAGE HAS TURNED WHITE.
+
+  Measured 2026-08-31 at 390x844 with the CPU throttled 4x (Lighthouse's own
+  mobile setting -- this market's visitor is a mid-range Android on 4G):
+
+    top of the page          12 draws/s   effective opacity 1.000
+    the white half           55 draws/s   effective opacity 0.000
+    bottom of the page       62 draws/s   effective opacity 0.000
+
+  It runs FASTEST where it cannot be seen at all, and crawls at 12fps where it
+  can. Two thirds of this page sits past the handover, where <Handover> has
+  faded this layer to nothing -- and every one of those frames is a phone
+  heating up to composite something at opacity zero.
+
+  The library's own `lazyLoad` cannot help: it mounts on an IntersectionObserver
+  and this wrapper is `fixed inset-0`, so it is always "in view". Nor can the
+  loop be paused, because ShaderGradientCanvas names its props explicitly and
+  does not forward r3f's `frameloop`. Unmounting is the lever there is, and it
+  is the same lever reduced motion already pulls.
+
+  The two thresholds are apart on purpose: it goes away at t >= 0.995 and comes
+  back at t < 0.9, so scrolling back up re-creates the GL context while the
+  layer is still essentially invisible, instead of popping in.
+
+  `--handover-t` is read rather than recomputed -- <Handover> publishes it every
+  frame, and a second copy of that scroll maths here is the kind of duplicate
+  fact this repo keeps being bitten by.
+
+  NOTE 4: ShaderGradientCanvas forwards `className` to @react-three/fiber's
   <Canvas>, whose wrapper div sets `position: relative; width: 100%; height:
   100%` inline. Inline styles beat Tailwind's positioning classes, so the
   absolute/fixed wrapper has to be ours, outside ShaderGradientCanvas, or the
@@ -62,6 +90,43 @@ import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
 export function AmbientBackdrop() {
   const hostRef = useRef<HTMLDivElement>(null);
   const still = useReducedMotion();
+
+  // Whether this layer is still contributing anything the visitor can see.
+  // Starts true so the first paint at the top of the page is the lit one.
+  const [lit, setLit] = useState(true);
+  useEffect(() => {
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      // The inline property, not the computed one: <Handover> writes it with
+      // setProperty, and reading it back is far cheaper than a style
+      // recalculation on every scroll frame.
+      const t = Number(document.documentElement.style.getPropertyValue("--handover-t")) || 0;
+      setLit((was) => (was ? t < 0.995 : t < 0.9));
+    };
+    /*
+      TWO FRAMES, NOT ONE, AND THIS WAS MEASURED THE HARD WAY.
+
+      <Handover> writes --handover-t from its own rAF, scheduled off the same
+      scroll event. Listener order is mount order, and this component mounts
+      first -- so a single rAF here reads the value from BEFORE the scroll. The
+      first version of this looked right and did the wrong thing at both ends:
+      the shader stayed running at the bottom of the page, and once it had gone
+      away it never came back when you scrolled up. Deferring by one more frame
+      reads after every rAF callback of the current frame, whatever the order.
+    */
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(() => window.requestAnimationFrame(read));
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   // Mouse-reactive tilt: the surface leans a few degrees toward the cursor, so
   // it reads as responding to the visitor rather than autoplaying underneath
@@ -114,7 +179,7 @@ export function AmbientBackdrop() {
             rotateX: still ? 0 : tiltX,
             rotateY: still ? 0 : tiltY,
             transformPerspective: 900,
-            ...(still
+            ...(still || !lit
               ? {
                   background:
                     "radial-gradient(70% 55% at 50% 38%, #8da0ce 0%, #606080 45%, #212121 100%)",
@@ -122,7 +187,7 @@ export function AmbientBackdrop() {
               : null),
           }}
         >
-          {still ? null : (
+          {still || !lit ? null : (
           <ShaderGradientCanvas>
             <ShaderGradient
               control="query"
