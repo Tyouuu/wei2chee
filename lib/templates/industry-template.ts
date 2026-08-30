@@ -600,6 +600,11 @@ function navGroup(key: string, pageCount: number, c: Chrome): string {
     case "payments":
       return g.daily;
     case "projects":
+    /* 任务 fell through to the default branch and therefore into 日常, beside
+       a comment saying that branch exists for pages the AI named itself. It
+       is a built-in, and a task belongs next to the 项目 it hangs off: one is
+       the job, the other is a day of it. */
+    case "tasks":
     case "inventory":
     case "suppliers":
     case "staff":

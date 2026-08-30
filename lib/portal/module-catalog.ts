@@ -94,8 +94,9 @@ export function moduleLabel(
   return lang === "en" ? archetype.labelEn || archetype.label : archetype.label;
 }
 
-export const MODULE_CATALOG: ModuleArchetype[] = [
-  // --- The spine every business has -------------------------------------
+export const MODULE_CATALOG: ModuleArchetype[
+  // --- 一进来先看到的 -------------------------------------------------------------
+] = [
   {
     key: "dashboard",
     label: "总览",
@@ -104,24 +105,8 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
     shape: "overview",
     always: true,
   },
-  {
-    key: "customers",
-    label: "客户",
-    labelEn: "Customers",
-    blurb: "所有客户的名单和联络方式，点进去看这个客户的历史。",
-    shape: "directory",
-    always: true,
-  },
-  {
-    key: "payments",
-    label: "收款",
-    labelEn: "Payments",
-    blurb: "谁付了、谁还欠着、这个月收了多少，附收据凭证。",
-    shape: "ledger",
-    always: true,
-  },
+  // --- 活儿从进来到做完 ------------------------------------------------------------
 
-  // --- Sell-side: how work comes in -------------------------------------
   {
     key: "quotations",
     label: "报价单",
@@ -130,18 +115,18 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
     shape: "pipeline",
   },
   {
-    key: "orders",
-    label: "订单",
-    labelEn: "Orders",
-    blurb: "一张张的订单从下单到出货。适合成交量大、不用逐单报价的生意。",
-    shape: "pipeline",
-  },
-  {
     key: "bookings",
     label: "预约",
     labelEn: "Bookings",
     blurb: "今天谁要来、几点、谁接。适合按时间排班接客的生意。",
     shape: "calendar",
+  },
+  {
+    key: "orders",
+    label: "订单",
+    labelEn: "Orders",
+    blurb: "一张张的订单从下单到出货。适合成交量大、不用逐单报价的生意。",
+    shape: "pipeline",
   },
   {
     key: "projects",
@@ -157,21 +142,14 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
     blurb: "谁负责什么、什么时候要交、做完没有。",
     shape: "pipeline",
   },
-
-  // --- Money-side: the things that were impossible before ---------------
+  // --- 钱进钱出 ----------------------------------------------------------------
   {
-    key: "reconciliation",
-    label: "对账",
-    labelEn: "Reconciliation",
-    blurb: "拿上游/银行/平台出的总数，对系统里的逐笔总额，差多少一眼看到。",
-    shape: "reconcile",
-  },
-  {
-    key: "commission",
-    label: "佣金",
-    labelEn: "Commission",
-    blurb: "抽成、分佣、业绩提成，每月自动算出来该拿多少。",
+    key: "payments",
+    label: "收款",
+    labelEn: "Payments",
+    blurb: "谁付了、谁还欠着、这个月收了多少，附收据凭证。",
     shape: "ledger",
+    always: true,
   },
   {
     key: "expenses",
@@ -181,20 +159,20 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
     shape: "ledger",
   },
   {
-    key: "reports",
-    label: "报表",
-    labelEn: "Reports",
-    blurb: "按月看趋势：营业额、笔数、增长，可以导出给会计或银行。",
-    shape: "report",
+    key: "commission",
+    label: "佣金",
+    labelEn: "Commission",
+    blurb: "抽成、分佣、业绩提成，每月自动算出来该拿多少。",
+    shape: "ledger",
   },
-
-  // --- Relationship-side ------------------------------------------------
+  // --- 名词 — 被上面每一件事指到的东西 ---------------------------------------------------
   {
-    key: "ranking",
-    label: "排名",
-    labelEn: "Ranking",
-    blurb: "谁最活跃、谁在退步，按金额和频率排出等级。适合有下线、代理、业务员的生意。",
-    shape: "leaderboard",
+    key: "customers",
+    label: "客户",
+    labelEn: "Customers",
+    blurb: "所有客户的名单和联络方式，点进去看这个客户的历史。",
+    shape: "directory",
+    always: true,
   },
   {
     key: "suppliers",
@@ -211,7 +189,6 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
     shape: "directory",
   },
 
-  // --- Stock-side -------------------------------------------------------
   {
     key: "inventory",
     label: "库存",
@@ -219,8 +196,32 @@ export const MODULE_CATALOG: ModuleArchetype[] = [
     blurb: "还有多少货、什么快没了、什么压太久。",
     shape: "catalog",
   },
+  // --- 月底才看的 — 一行资料都不新增 ----------------------------------------------------
 
-  // --- The one page that faces OUTWARD ----------------------------------
+  {
+    key: "reconciliation",
+    label: "对账",
+    labelEn: "Reconciliation",
+    blurb: "拿上游/银行/平台出的总数，对系统里的逐笔总额，差多少一眼看到。",
+    shape: "reconcile",
+  },
+  {
+    key: "reports",
+    label: "报表",
+    labelEn: "Reports",
+    blurb: "按月看趋势：营业额、笔数、增长，可以导出给会计或银行。",
+    shape: "report",
+  },
+
+  {
+    key: "ranking",
+    label: "排名",
+    labelEn: "Ranking",
+    blurb: "谁最活跃、谁在退步，按金额和频率排出等级。适合有下线、代理、业务员的生意。",
+    shape: "leaderboard",
+  },
+  // --- 唯一一页给陌生人看的 ----------------------------------------------------------
+
   // Last on purpose. Every key above is somewhere the OWNER works; this is the
   // only one a stranger reads, so it sits at the end of the rail rather than
   // in the middle of the day's work -- and appending it leaves the reading

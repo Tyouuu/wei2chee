@@ -71,7 +71,12 @@ describe("the catalogue itself", () => {
     // three are: a system with no page the business's own customers can see is
     // missing the half of the product the founder can actually demonstrate,
     // and it is not a choice the model should be spending a slot on.
-    expect(ALWAYS_MODULES).toEqual(["dashboard", "customers", "payments", "website"]);
+    // The ORDER here is the catalogue's own, and it changed on 2026-08-30
+    // when the catalogue was re-ordered to follow the owner's day (work,
+    // then the money it produced, then the nouns it referenced). What this
+    // test is about is WHICH four are free, not where they sit -- but it is
+    // written strictly so that a change to either one has to be deliberate.
+    expect(ALWAYS_MODULES).toEqual(["dashboard", "payments", "customers", "website"]);
   });
 
   it("puts both the free and the choosable modules in the prompt", () => {
@@ -85,7 +90,7 @@ describe("the catalogue itself", () => {
 describe("normalizeModules", () => {
   it("always returns the modules every system gets, even from an empty answer", () => {
     const out = normalizeModules([]);
-    expect(out.map((m) => m.key)).toEqual(["dashboard", "customers", "payments", "website"]);
+    expect(out.map((m) => m.key)).toEqual(["dashboard", "payments", "customers", "website"]);
   });
 
   it("drops keys that are not in the catalogue", () => {
@@ -166,15 +171,33 @@ describe("the default sets, which are the floor when nothing was analysed", () =
  * has to accept and this module has to be able to build.
  */
 describe("the SQL mirror", () => {
+  /*
+    EACH OBJECT IS LOOKED UP IN THE NEWEST FILE THAT DEFINES *IT*.
+
+    This used to find one file -- the newest defining `module_rank` -- and
+    then look for the check constraint and `add_project_page` inside it too.
+    That held only while all three were introduced together. On 2026-08-30
+    `module_rank` was re-declared on its own to re-order the rail, and two
+    tests failed reporting that the constraint "rejects dashboard", which is
+    alarming and untrue: the constraint was untouched, in the file it has
+    always lived in.
+
+    A guard that fails for a reason it names wrongly costs more than one that
+    does not fail, so it now asks the question per object.
+  */
   const dir = join(process.cwd(), "supabase", "migrations");
-  const file = readdirSync(dir)
-    .filter((f) => f.endsWith(".sql"))
-    .sort()
-    .reverse()
-    .find((f) => readFileSync(join(dir, f), "utf8").includes("function public.module_rank"))!;
-  const sql = readFileSync(join(dir, file), "utf8");
+  const newestDefining = (marker: string) => {
+    const file = readdirSync(dir)
+      .filter((f) => f.endsWith(".sql"))
+      .sort()
+      .reverse()
+      .find((f) => readFileSync(join(dir, f), "utf8").includes(marker));
+    if (!file) throw new Error(`no migration defines ${marker}`);
+    return readFileSync(join(dir, file), "utf8");
+  };
 
   it("orders modules the same way in SQL as in TypeScript", () => {
+    const sql = newestDefining("function public.module_rank");
     const arr = sql.slice(sql.indexOf("function public.module_rank"));
     const body = arr.slice(arr.indexOf("array["), arr.indexOf("]", arr.indexOf("array[")));
     const keys = [...body.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
@@ -182,11 +205,13 @@ describe("the SQL mirror", () => {
   });
 
   it("lets the check constraint accept every key the catalogue can produce", () => {
-    const check = sql.slice(sql.indexOf("project_pages_page_key_check"), sql.indexOf("module_rank"));
+    const sql = newestDefining("project_pages_page_key_check");
+    const check = sql.slice(sql.indexOf("project_pages_page_key_check"));
     for (const key of MODULE_KEYS) expect(check, `constraint rejects ${key}`).toContain(`'${key}'`);
   });
 
   it("lets a customer add every module type back after deleting it", () => {
+    const sql = newestDefining("function public.add_project_page");
     const add = sql.slice(sql.indexOf("function public.add_project_page"));
     for (const key of MODULE_KEYS) expect(add, `cannot re-add ${key}`).toContain(`'${key}'`);
   });
