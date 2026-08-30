@@ -313,7 +313,16 @@ function readShape(rootSel) {
       const y1 = Math.round(((r.top + r.height - sr.top) / Math.max(1, sr.height)) * 100);
       /* 同一个盒子被包了五层，五层的矩形一样 —— 只留一个。 */
       if (boxes.some((b) => b.kind === kind && Math.abs(b.x0 - x0) <= 1 && Math.abs(b.y0 - y0) <= 1 && Math.abs(b.x1 - x1) <= 1)) return;
-      boxes.push({ kind, x0, x1, y0, y1, seq: seqN++, pos: getComputedStyle(el).position, ...extra });
+      /* ⚠️ 每个盒子记下**它是谁**。
+         老板 2026-08-31:「就是能不能更快的让你去提升这个办法 现在太慢了」.
+         一次 align 45 秒不是瓶颈 —— 瓶颈是「这一项为什么红」尺子答不了，
+         於是每查一件事都要另外手写一支探针（今天写了三支），而每支探针
+         自己又要错两轮才写对。盒子带着自己的身分，报告就直接指得出元素，
+         `--why` 把它印出来。 */
+      const cls = String(el.className || "").split(" ").filter((c) => c && !c.startsWith("[") && !c.startsWith("@")).slice(0, 2).join(".");
+      const marks = ["bleed", "fill", "toned", "cells", "wide", "columnHeading"].filter((k) => el.dataset[k] !== undefined).map((k) => `[${k}]`).join("");
+      const sel = `${el.tagName.toLowerCase()}${marks}${cls ? "." + cls : ""}`.slice(0, 56);
+      boxes.push({ kind, x0, x1, y0, y1, seq: seqN++, pos: getComputedStyle(el).position, sel, ...extra });
     };
 
     for (const el of sec.pool) {
@@ -1423,6 +1432,8 @@ try {
      快照带日期，而且每一次都印出来 —— 一份三个月前的参考不该安静地当成今天的。
      要重新采集：npm run align -- <风格> --refresh */
   const REFRESH = process.argv.includes("--refresh");
+  const SKIP_PHONE = process.argv.includes("--desktop");
+  const WHY = process.argv.includes("--why");
   const refFile = `${OUT}/${register}-ref.json`;
   let theirs = null;
   let theirsPhone = null;
@@ -1474,7 +1485,12 @@ try {
     console.log(`参考重新采集了（桌面 + 手机），存成 ${refFile}`);
   }
   const ours = await shoot(`http://localhost:3000/s/${project.site_slug}`, ".ds-site", 2500, `${register}-ours`);
-  const oursPhone = await shoot(`http://localhost:3000/s/${project.site_slug}`, ".ds-site", 2500, `${register}-ours-390`, 390, false);
+  /* `--desktop`：在改桌面那几根轴的时候，手机那一遍是纯等待。
+     省下来大约一半的时间，而**手机的那几项会印「没量」不是「过关」** ——
+     一把跳过一项却回报绿的尺，这个仓库被骗过四次。 */
+  const oursPhone = SKIP_PHONE
+    ? null
+    : await shoot(`http://localhost:3000/s/${project.site_slug}`, ".ds-site", 2500, `${register}-ours-390`, 390, false);
 
   /* ⚠️ 量完再读一次风格 —— 开头那一次挡不住「量到一半被人改掉」。
      2026-08-31 实测：我把五套丢到背景跑，又在前台跑 ledger。开头写 ledger、
@@ -2094,6 +2110,23 @@ try {
       console.log(`  ${ok ? "OK" : "XX"}  ${tag}  ${ok ? "" : "← " + bad.join(" · ")}`);
       console.log(`        模版 ${line(t)}`);
       console.log(`        我们 ${line(o)}`);
+      /* `--why`：这一段不及格的时候，把每个盒子连同**它是哪个元素**一起印。
+         没有这一行，「第4段结构 XX」只讲得出「有几个盒子」，讲不出「是谁」——
+         而每一次追下去我都要另外手写一支探针。名字印出来，改哪一个当场就知道。 */
+      if (WHY && !ok) {
+        const dump = (lbl, bs) => {
+          console.log(`        ── ${lbl} ──`);
+          for (const b of bs)
+            console.log(`           ${(b.kind === "钮" ? "钮" + b.rad : b.kind).padEnd(3)} x ${String(b.x0).padStart(3)}–${String(b.x1).padStart(3)}  y ${String(b.y0).padStart(3)}–${String(b.y1).padStart(3)}${b.px ? "  " + b.px + "px×" + (b.n ?? 0) : ""}  ${b.sel ?? "—"}`);
+        };
+        /* ⚠️ 存下来的参考快照可能比 `sel` 这个字段旧 —— 那时候印出来是一整栏
+           「—」，读起来像「他们那些元素没有身分」，而其实是**这份快照太旧**。
+           一个看起来像读数的空值，跟一个错的读数一样会误导人。 */
+        if (t.length && t.every((b) => !b.sel))
+          console.log("        （模版那一栏的元素名是空的 —— 存下来的参考比这个字段旧，跑一次 --refresh）");
+        dump("模版", t);
+        dump("我们", o);
+      }
       marks.push({ axis: "结构", name: `${tag}结构`, ok });
     }
   }

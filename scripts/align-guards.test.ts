@@ -153,4 +153,20 @@ describe("尺子不准再犯", () => {
     expect(after).toMatch(/select\("style"\)/);
     expect(after).toMatch(/这一次测量不算数：拍完之后/);
   });
+  /* ⑮ 跳过一项要印「没量」，不准印「过关」。
+     `--desktop` 省掉手机那一遍是为了改桌面轴的时候快一半；一把跳过一项却
+     回报绿的尺，这个仓库被骗过四次。手机那一段拿不到读数时走 `量不到`。 */
+  it("--desktop 跳过手机，手机那几项印「量不到」不是绿的", () => {
+    expect(MJS).toMatch(/SKIP_PHONE/);
+    const blk = MJS.slice(MJS.indexOf("手机 390"));
+    expect(blk).toMatch(/if \(!tp \|\| !op\)/);
+    expect(blk).toMatch(/"手机 390px", "量不到", "量不到", null/);
+  });
+
+  /* ⑯ 存下来的参考快照比某个字段旧的时候，要讲出来。
+     一整栏「—」读起来像「他们那些元素没有身分」，而其实是快照太旧 ——
+     一个看起来像读数的空值，跟一个错的读数一样会误导人。 */
+  it("参考快照比 sel 旧的时候会讲出来", () => {
+    expect(MJS).toMatch(/存下来的参考比这个字段旧/);
+  });
 });
