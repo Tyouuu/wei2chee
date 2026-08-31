@@ -444,6 +444,10 @@
   /* 官网的标题字 —— 见 app/fonts.ts 里那一段。工作台不动。
      量出来：他们 笔画对比 1.00 · 墨量 0.118，Archivo Narrow 1.15 / 0.180，
      Questrial 1.00 / 0.130。 */
+  /* 页脚满幅 —— Toulouse 的页脚是店名横过整页、三栏连结从页缘开始（2%–98%）。
+     我们量出来 14%–59%，「满边的段」他们 5/6 我们 3/6。 */
+  --site-foot-measure: 100%;
+  --site-foot-pad: 1.4rem;
   --site-display: var(--font-geometric-latin), ui-sans-serif, system-ui, sans-serif;
   --site-name-case: uppercase;
   --site-name-align: left;

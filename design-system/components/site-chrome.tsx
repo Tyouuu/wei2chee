@@ -175,7 +175,12 @@ export function SiteFoot({
       data-chrome-foot=""
       className="@container w-full [background-color:var(--color-nav-bg)] [border-top:var(--hairline)_solid_var(--color-nav-border)]"
     >
-      <div className="mx-auto flex w-full max-w-[68rem] flex-col [gap:var(--gap-stack)] [padding-block:calc(var(--pad-card-lg)*1.8*var(--site-figure,1)*var(--site-foot,1))] [padding-inline:1.5rem]">
+      {/* ⚠️ 68rem 是写死的，而页脚是一段。
+          招牌 抄的 Toulouse，页脚是**满幅**的：店名横过整页，三栏连结从页缘
+          开始。我们量出来 14%–59%，而「满边的段」那一项数的就是这个
+          （他们 5/6，我们 3/6）。一个宽度写在 class 里，风格就决定不了它 ——
+          这份仓库同一件事撞过好几次（表格的样子、45 条风格偏好、询价表格）。 */}
+      <div className="mx-auto flex w-full flex-col [gap:var(--gap-stack)] [max-width:var(--site-foot-measure,68rem)] [padding-block:calc(var(--pad-card-lg)*1.8*var(--site-figure,1)*var(--site-foot,1))] [padding-inline:var(--site-foot-pad,1.5rem)]">
         {/* ── 栏 ──────────────────────────────────────────────────────────
             老板 2026-08-31，裁成原尺寸看第7段：他们的页脚是**三栏并排**
             （名字＋社交 · 联络 · 去哪里），连结是**直排一栏**；我们是名字一行、
@@ -191,7 +196,12 @@ export function SiteFoot({
           className={`grid [gap:var(--gap-stack)] ${filled.length ? "@2xl:grid-cols-3" : "@2xl:grid-cols-2"}`}
         >
           <div className="flex flex-col items-start [gap:var(--gap-inline)]">
-            <span className="[color:var(--color-nav-fg)] [font-family:var(--font-display)] [font-size:calc(var(--text-title)*var(--site-foot-brand,1))] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)] [line-height:1.05]">
+            {/* ⚠️ 两个洞，都是裁成原尺寸看页脚才看到的：
+                · `var(--font-display)` 是**工作台**那一套字 —— 官网层换了字
+                  （招牌 的第一屏是 Questrial）而页脚还是 Archivo Narrow，
+                  同一页两套字。要读 --site-display。
+                · 店名的大小写跟第一屏是同一个决定：他们的页脚是 TOULOUSE。 */}
+            <span className="[color:var(--color-nav-fg)] [font-family:var(--site-display,var(--font-display))] [font-size:calc(var(--text-title)*var(--site-foot-brand,1))] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)] [line-height:1.05] [text-transform:var(--site-name-case,none)]">
               {brand}
             </span>
             {tagline ? (
