@@ -441,6 +441,10 @@
      而版心那一项量出来 13%–87% 对 14%–74% 讲的就是这件事。
      ⚠️ `text-transform` 只改**画出来**的样子，不改客户存的字 ——
      他在编辑器里打的还是「My Shop」，AI 也还是改得到那个字段。 */
+  /* 官网的标题字 —— 见 app/fonts.ts 里那一段。工作台不动。
+     量出来：他们 笔画对比 1.00 · 墨量 0.118，Archivo Narrow 1.15 / 0.180，
+     Questrial 1.00 / 0.130。 */
+  --site-display: var(--font-geometric-latin), ui-sans-serif, system-ui, sans-serif;
   --site-name-case: uppercase;
   --site-name-align: left;
   --site-radius-abs: 4.5px;

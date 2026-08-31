@@ -26,6 +26,7 @@ import {
   Nunito,
   Plus_Jakarta_Sans,
   Public_Sans,
+  Questrial,
   Newsreader,
   Tenor_Sans,
 } from "next/font/google";
@@ -207,6 +208,32 @@ const newsreader = Newsreader({
   preload: false,
 });
 
+/* 招牌 的官网标题字 —— 2026-08-31，老板：「为什么你不要帮我换字
+ * 我说了那么多次是字体不同」。他讲对了：我把根因量出来、工具也写了，
+ * 然后没有换。
+ *
+ * Toulouse Brasserie 的 h1 是 `marzo-w00-regular`（Wix 授权，我们拿不到），
+ * 量出来 **笔画对比 1.00 · 墨量 0.118**；我们 Archivo Narrow 是 1.15 / 0.180。
+ * `node scripts/font-probe.mjs --target signboard --sheet TOULOUSE` 把 26 套
+ * Google 字照 align 一模一样的量法量了一遍，Questrial 的笔画对比**正好 1.00**，
+ * 墨量 0.130 是几何无衬线里最低的一套。
+ *
+ * ⚠️ 定案是用眼睛（重点 24，而且上一次换字就是这样定的）：
+ * `.screenshots/align/face-candidates.jpg` 七套并排画成 108px 的 TOULOUSE ——
+ * Questrial 的 O 是正圆、笔画最细，跟他们那一行同一族；Space Grotesk /
+ * Manrope / Inter 是窄开口的黑体，Poppins 圆但太重。
+ *
+ * ⚠️ 只装在**官网层**（--site-display）。工作台还是 Archivo Narrow ——
+ * 那里是四十行的表格，一套细的几何体在那里会散掉。
+ */
+const questrial = Questrial({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-geometric-latin",
+  display: "swap",
+  preload: false,
+});
+
 /* TWO FACES LEFT WITH THEIR REGISTERS, 2026-08-27. 柔和 and 粗野 were culled
    and their Latin faces went with them -- a font declared here is downloaded on
    every page whether or not any surviving register asks for it, and the people
@@ -218,6 +245,7 @@ export const fontVariables = [
   newsreader.variable,
   geist.variable,
   tenorSans.variable,
+  questrial.variable,
   geistMono.variable,
   archivo.variable,
   archivoNarrow.variable,

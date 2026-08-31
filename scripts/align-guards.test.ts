@@ -413,4 +413,23 @@ describe("尺子不准再犯", () => {
       expect(css.includes(`:root[data-reveal-armed] [data-register="${reg}"] [data-reveal]`)).toBe(true);
     }
   });
+
+  /* ㊱ 字体那几根轴量的是**画出来的字**，不是字体档里的字形。
+     Toulouse 的 h1 量出来「小写多高 1.00」跟「大写比小写宽 0.94」——
+     26 套 Google 字一套都到不了，因为那不是字体的性质，是**「这一行没有小写」**
+     的性质（他们那套 Marzo 把小写画成大写）。
+     我们照着把店名改成 text-transform: uppercase，**画面对上了而两项还是红的**，
+     因为尺子拿原始的 "x" 去问字体，而页面根本不画那个 "x"。
+     一把量字形不量画面的尺，会把一个已经修好的差异一直报成没修。 */
+  it("字体的量法要套上这一行自己的 text-transform", () => {
+    const blk = MJS.slice(MJS.indexOf("const tf = (t) =>"), MJS.indexOf("const tf = (t) =>") + 900);
+    expect(blk).toMatch(/s\.textTransform/);
+    expect(blk).toMatch(/toUpperCase\(\)/);
+    expect(blk).toMatch(/toLowerCase\(\)/);
+    // 四个探针字串全部要经过它，一个漏掉就是半修
+    expect(MJS).toMatch(/tf\("IHMTEFL"\)/);
+    expect(MJS).toMatch(/tf\("ooeecc"\)/);
+    expect(MJS).toMatch(/metrics\(tf\("H"\)\)/);
+    expect(MJS).toMatch(/metrics\(tf\("x"\)\)/);
+  });
 });

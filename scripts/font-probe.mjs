@@ -158,3 +158,29 @@ console.log(`
 ⚠️ 排在最前面的**不是答案，是候选**。这四根轴量得到「同一个字级下看起来
    像不像」，量不到有没有衬线、字形好不好看、马来西亚的老板认不认得。
    照重点 24：挑出前三名，渲染出来，用眼睛看那张图。`);
+
+/* ── 并排画出来，用眼睛看 ────────────────────────────────────────────────
+   `--sheet "TOULOUSE" --bg #500014 --fg #f9a8d4`
+   老板 2026-08-31:「为什么你不要帮我换字 我说了那么多次是字体不同」。
+   ⚠️ 数字挑候选，眼睛定案（重点 24）。上一次换字（台账 → Tenor Sans）
+   就是这样定的：数字上最接近的是 Geist 200，而它的笔画从头到尾一样粗，
+   老板一眼看出来。**四根轴里，眼睛几乎只看笔画那一根。** */
+if (args.includes("--sheet")) {
+  const word = args[args.indexOf("--sheet") + 1] || "TOULOUSE";
+  const bg = args[args.indexOf("--bg") + 1] || "#500014";
+  const fg = args[args.indexOf("--fg") + 1] || "#f9a8d4";
+  const short = rows.filter((r) => r.here).sort((a, b) => dist(a) - dist(b)).slice(0, 7);
+  const b2 = await chromium.launch();
+  const p2 = await b2.newPage({ viewport: { width: 1440, height: 200 * (short.length + 1) } });
+  await p2.setContent(`<link rel="stylesheet" href="${css}">
+    <body style="margin:0;background:${bg};color:${fg}">
+    ${short.map((r) => `<div style="padding:10px 24px 24px">
+      <div style="font:400 13px system-ui;opacity:.65;letter-spacing:.08em">${r.fam}　笔画对比 ${r.contrast}　墨量 ${r.inkish}</div>
+      <div style="font-family:'${r.fam}';font-weight:${weight};font-size:108px;line-height:1;letter-spacing:0.01em">${word}</div>
+    </div>`).join("")}</body>`);
+  await p2.waitForLoadState("networkidle");
+  await p2.evaluate(() => document.fonts.ready);
+  await p2.screenshot({ path: ".screenshots/align/face-candidates.jpg", fullPage: true, type: "jpeg", quality: 92 });
+  await b2.close();
+  console.log("\n  .screenshots/align/face-candidates.jpg  ← 用眼睛看这一张");
+}

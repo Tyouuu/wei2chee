@@ -803,8 +803,23 @@ function readType() {
            ⚠️ 只有在字真的载入了（here）的时候才算数 —— 一个 fallback 到
            Times 的量测，量的是这台机器，不是那一页。 */
         const wt0 = s.fontWeight || "400";
-        const serifRun = w(`${wt0} 100px "${fam}", monospace`, "IHMTEFL");
-        const plainRun = w(`${wt0} 100px "${fam}", monospace`, "ooeecc");
+        /* ⚠️ 量的是**页面画出来的字**，不是字体档里的字形。
+           2026-08-31：Toulouse 的 h1 量出来「小写多高 1.00」（x 跟 H 一样高）
+           跟「大写比小写宽 0.94」（IHMTEFL 比 ooeecc **窄**）。26 套 Google 字
+           量下来一套都到不了 —— 因为那两个读数不是字体的性质，
+           **是「这一行根本没有小写」的性质**：他们那套 Marzo 把小写画成大写。
+
+           我们照着把 招牌 的店名改成 `text-transform: uppercase`（他们的第一屏
+           就是 TOULOUSE），画面对上了，**而这两项还是红的** —— 因为尺子拿原始的
+           "x" 去问字体，而页面根本不画那个 "x"。
+           一把量字形不量画面的尺，会把一个已经修好的差异一直报成没修。
+           所以把这一行自己的 text-transform 套上去再量。 */
+        const tf = (t) => {
+          const tt = s.textTransform;
+          return tt === "uppercase" ? t.toUpperCase() : tt === "lowercase" ? t.toLowerCase() : t;
+        };
+        const serifRun = w(`${wt0} 100px "${fam}", monospace`, tf("IHMTEFL"));
+        const plainRun = w(`${wt0} 100px "${fam}", monospace`, tf("ooeecc"));
         const widthOf = w(`${wt0} 100px "${fam}", monospace`, "HHHHHHHHHH") / 1000;
 
         /* ── 字体的「种类」还有两根轴，而且两根都量得到 ────────────────────
@@ -826,8 +841,8 @@ function readType() {
           const m = c.measureText(text);
           return m.actualBoundingBoxAscent || 0;
         };
-        const capH = metrics("H");
-        const xH = metrics("x");
+        const capH = metrics(tf("H"));
+        const xH = metrics(tf("x"));
 
         const inkOf = () => {
           const cv = document.createElement("canvas");

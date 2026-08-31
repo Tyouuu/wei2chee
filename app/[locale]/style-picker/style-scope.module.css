@@ -797,6 +797,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-display: var(--font-geometric-latin), ui-sans-serif, system-ui, sans-serif;
   --site-name-case: uppercase;
   --site-name-align: left;
   --site-radius-abs: 4.5px;
