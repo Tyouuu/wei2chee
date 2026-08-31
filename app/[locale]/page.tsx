@@ -17,6 +17,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { CookieNotice } from "@/components/cookie-notice";
 import { SiteHeader } from "@/components/site-header";
 import { Handover } from "@/components/handover";
+import { ChapterRail } from "@/components/chapter-rail";
 import { Showroom } from "@/components/sections/showroom";
 import type { Industry, AnalysisResult } from "@/types/database";
 
@@ -38,6 +39,10 @@ export default function HomePage() {
       {/* Drives the page's tokens from Formae's dark ground to white paper
           across <Showroom>. Renders nothing; see components/handover.tsx. */}
       <Handover />
+      {/* 右边那条青边条 —— 老板：「青色那张只有一张的话有点奇怪」。
+          解法不是多加几张青，是**让青一直在**（模版就是这样做的：
+          它整页不换地色，靠一条永远在的青标签）。见 components/chapter-rail.tsx。 */}
+      <ChapterRail />
       <SiteHeader />
       <HeroSection
         onStart={(brief) => {

@@ -80,6 +80,11 @@ export function SectionShell({
     <section
       ref={ref}
       id={id}
+      /* 右边那条青边条读这一栏来显示「你现在读到哪一章」。
+         写在这里而不是各个 caller 上：一个事实一个来源，
+         不然它会变成又一份手写清单（这仓库栽过五次）。
+         见 components/chapter-rail.tsx。 */
+      data-chapter={index ? `${index} · ${label}` : label}
       data-ground={ground}
       /*
         A TOKEN REMAP, NOT A TEXT COLOUR.

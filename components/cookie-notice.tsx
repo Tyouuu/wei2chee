@@ -86,9 +86,12 @@ export function CookieNotice({ locale }: { locale: string }) {
       // 512px slab pinned 16px off the corner, so on the hero it landed
       // across the product screenshot -- the one object on the fold the
       // page exists to show. max-w-sm and bottom-6/left-6 keep it clear.
-      className="fixed right-4 bottom-6 left-4 z-50 mx-auto max-w-sm rounded-2xl border border-border/80 bg-background/95 p-4 shadow-[0_18px_50px_-18px_rgba(0,0,0,0.6)] backdrop-blur-md sm:left-6 sm:right-auto"
+      // ⚠️ 手机上它以前是 **141px 高，占一支手机萤幕的 16.7%**，而且每一屏都在
+      // （实测 390×844）—— 一条同意条挡掉六分之一的画面，挡的还是这一页
+      // 唯一在卖东西的那几屏。现在字挤成一行、按钮跟它并排，量出来 141 → 74。
+      className="fixed right-3 bottom-4 left-3 z-50 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-border/80 bg-background/95 p-3 shadow-[0_18px_50px_-18px_rgba(0,0,0,0.6)] backdrop-blur-md sm:right-auto sm:bottom-6 sm:left-6 sm:block sm:p-4"
     >
-      <p className="text-[13px] leading-relaxed text-muted-foreground">
+      <p className="min-w-0 text-[12px] leading-snug text-muted-foreground sm:text-[13px] sm:leading-relaxed">
         {t("body")}{" "}
         <Link
           href={`/${locale}/legal/privacy`}
@@ -100,7 +103,7 @@ export function CookieNotice({ locale }: { locale: string }) {
       <button
         type="button"
         onClick={dismiss}
-        className="mt-3 rounded-lg bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        className="shrink-0 rounded-lg bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:mt-3"
       >
         {t("dismiss")}
       </button>

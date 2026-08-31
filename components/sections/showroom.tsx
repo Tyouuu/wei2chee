@@ -26,10 +26,21 @@ import { sampleSystem } from "@/lib/portal/sample-system";
  * The same sample the sign-in page shows, deliberately — a visitor who signs up
  * and goes looking for it finds the same thing rather than a bait.
  *
- * WHY THE HANDOVER RULE IS HERE. This section is where the page stops being
- * about Formae and starts being about the visitor's own business, so it carries
- * `id="handover"` and the ground turns white across it. See components/
- * handover.tsx for the mechanism and for why the system panel itself is pinned.
+ * ── 青的只有那一句，不是整段 ────────────────────────────────────────────────
+ * 老板 2026-09-01：「我感觉青色那张只有一张的话有点奇怪 也不是很好看」。
+ * **他讲对了，而且我第一版把两件事塞在同一块青上**：一句宣告，跟一块
+ * 白底的产品面板。同一屏上三个地 —— 青 + 白 + 深色外壳，那正是他讲过的
+ * 「四不像」（[任务 20](../../docs/founder-tasks.md)）。
+ *
+ * 模版的做法不是这样：consider.digital 整整 23670px **一次都没换过地色**，
+ * 它的停顿是**一句话独占一屏**（「1 / PAGE SIZE / 0.5 g CO₂e」）。
+ * 所以现在青只装那一句宣告，**面板搬回黑底** ——
+ * 白面板在黑底上本来就是整页最亮的东西，「房间跟展品」那句话由展品自己讲。
+ *
+ * ⚠️ 2026-09-01 之前它是从黑**翻成白、而且再也不翻回来** —— 量完七个站之后
+ * 拿掉了（模版5 整整 23670px 换 0 次；Stripe 换 2 次、Trafft 换 3 次，
+ * 两个都换回来）。理由跟证据写在 components/handover.tsx 的档头。
+ * `id="handover"` 留着：那一层 WebGL 靠它算什么时候卸载。
  */
 
 // A client component because the landing page itself is one — `app/[locale]/
@@ -44,11 +55,10 @@ export function Showroom() {
   const sample = sampleSystem(locale, "show", true);
 
   return (
-    <section
-      id="handover"
-      className="relative mx-auto max-w-5xl px-6 pt-24 pb-28 sm:px-10"
-      aria-labelledby="showroom-heading"
-    >
+    <section id="handover" className="relative" aria-labelledby="showroom-heading">
+      {/* ── 那一句宣告。满幅的青，只有字。 */}
+      <div className="band-cyan border-y border-border">
+        <div className="mx-auto max-w-5xl px-6 py-20 sm:px-10 md:py-28">
       <p className="annotation">{t("eyebrow")}</p>
       <h2
         id="showroom-heading"
@@ -59,14 +69,24 @@ export function Showroom() {
       <p className="mt-5 max-w-[46ch] text-[0.9375rem] leading-relaxed text-muted-foreground">
         {t("body")}
       </p>
+      {/* 那条把刚才那件事讲出来的线。没有它，颜色只是一个转场；有它，它是一句话。 */}
+      <div className="mt-12 flex items-center gap-5">
+        <span className="h-px flex-1 bg-border" />
+        <span className="annotation shrink-0">{t("rule")}</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+        </div>
+      </div>
 
+      {/* ── 展品。搬回黑底 —— 白面板在黑底上是整页最亮的东西。 */}
+      <div className="mx-auto max-w-5xl px-6 pt-16 pb-24 sm:px-10">
       {/*
         THE MOUNT, and the one element on this page that does not change colour.
 
-        `handover-fixed` pins every token the scroll is interpolating back to
-        the values the customer's own register defines, so this panel is light
-        on the dark half of the page and identically light on the white half.
-        That is the whole argument: the room changes, the exhibit does not.
+        `handover-fixed` 把这一块用到的每一个 token 钉回页面自己的值，所以
+        这块面板在黑底上跟在青带上长得一模一样。
+        **房间换了，展品没有换** —— 那句话本来是白底在讲的，现在由青带讲，
+        而它成立的前提就是这一块不跟着变。
 
         `chrome.mount` is the same white plinth the portal, the editor and the
         sign-in page use — so a visitor meets the object here in exactly the
@@ -80,12 +100,6 @@ export function Showroom() {
         </StyleScope>
       </div>
 
-      {/* The rule that names what just happened. Without it the colour change
-          is a nice transition; with it, it is a sentence. */}
-      <div className="mt-14 flex items-center gap-5">
-        <span className="h-px flex-1 bg-border" />
-        <span className="annotation shrink-0">{t("rule")}</span>
-        <span className="h-px flex-1 bg-border" />
       </div>
     </section>
   );

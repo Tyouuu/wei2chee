@@ -53,3 +53,29 @@ describe("官网上的数字是真的", () => {
     }
   });
 });
+
+/* 2026-09-01：三张线稿各多了一个大数字（模版每一段都有一个 —— 400,000 伏 /
+ * 120,000 / 1）。**大数字最容易变成一个编出来的宣称**，所以这三个一个都不准
+ * 自己发明：它们必须原样等於页面上早就有守卫盯着的那几个数。
+ * 这就是把「假的不上线」从一句规矩变成一条会红的检查。 */
+describe("线稿上的大数字不准自己发明", () => {
+  const ns = (m: typeof en, k: string) => (m as unknown as Record<string, Record<string, string>>)[k];
+
+  it("01 的数字 = 第一屏那个「2 分钟」", () => {
+    for (const [lang, msgs] of [["en", en], ["zh", zh]] as const) {
+      expect(ns(msgs, "draw1").figure, `${lang}`).toBe(findProof(msgs)!.proofC);
+    }
+  });
+
+  it("02 的数字 = 第一屏那个版段数", () => {
+    for (const [lang, msgs] of [["en", en], ["zh", zh]] as const) {
+      expect(ns(msgs, "drawing").figure, `${lang}`).toBe(findProof(msgs)!.proofB);
+    }
+  });
+
+  it("03 的数字 = 收据上那个规格书价钱", () => {
+    for (const [lang, msgs] of [["en", en], ["zh", zh]] as const) {
+      expect(ns(msgs, "draw3").figure, `${lang}`).toBe(ns(msgs, "receipt").specV);
+    }
+  });
+});
