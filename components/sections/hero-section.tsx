@@ -216,7 +216,13 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
             <div className="flex items-center justify-end px-1 pb-1">
               <button
                 type="submit"
-                className="rounded-full bg-white px-6 py-2.5 text-[0.875rem] font-semibold text-[oklch(0.16_0.012_265)] transition-transform duration-200 hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:outline-none"
+                /* ⚠️ 这颗按钮本来是白底。2026-08-31 老板：「为什么还是这个背景
+                   我们不是换品牌色了吗 说是要黑色跟青色搭配」——
+                   品牌色换成青之后，token 全部对了，**而页面上最大的那颗按钮
+                   还是白的**，所以青一个字都看不到。
+                   一个页面用不到自己的品牌色，等於没有品牌色。
+                   青只能配深色字（配白最高 2.3:1），所以是青底墨字。 */
+                className="rounded-full px-6 py-2.5 text-[0.875rem] font-semibold [background-color:var(--color-primary)] [color:var(--color-primary-foreground)] transition-transform duration-200 hover:scale-[1.03] focus-visible:ring-2 [--tw-ring-color:var(--color-primary)] focus-visible:outline-none"
               >
                 {t("askCta")} →
               </button>

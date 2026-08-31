@@ -64,7 +64,7 @@ export function SiteHeader() {
           <span
             aria-hidden="true"
             className={`grid h-7 w-7 shrink-0 place-items-center rounded-[6px] text-[12px] font-semibold transition-colors ${
-              landed ? "bg-primary text-primary-foreground" : "bg-white text-[#0b0d13]"
+              "bg-primary text-primary-foreground"
             }`}
           >
             F
@@ -100,7 +100,7 @@ export function SiteHeader() {
             className={`rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
               landed
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-white text-[#0b0d13] hover:bg-white/90"
+                : "bg-primary text-primary-foreground hover:brightness-110"
             }`}
           >
             {t("start")}

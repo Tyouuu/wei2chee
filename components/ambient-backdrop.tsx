@@ -50,8 +50,14 @@ import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
       defect, not an inconvenience.
 
   The still frame is painted from the SAME three colours the shader is given
-  (#606080 / #8da0ce / #212121), so the room is the same room -- it has just
-  stopped moving.
+  (see AMBIENT below), so the room is the same room -- it has just stopped
+  moving.
+
+  ⚠️ 那三个颜色 2026-08-31 换了。老板：「为什么还是这个背景 我们不是换品牌色了吗
+  说是要黑色跟青色搭配」。原本是 #606080 / #8da0ce / #212121 —— 一组蓝紫，
+  跟着旧的蓝主色配的。品牌色换成青之后，globals.css、handover.tsx、
+  section-shell.tsx 都改了，**这一层没有**：一个决定的第五份手写拷贝。
+  所以现在三个值只写一次，静止图跟 shader 的网址都从这里读。
 
   NOTE 3: IT ALSO STOPS ONCE THE PAGE HAS TURNED WHITE.
 
@@ -87,6 +93,11 @@ import { ShaderGradientCanvas, ShaderGradient } from "@shadergradient/react";
   absolute/fixed wrapper has to be ours, outside ShaderGradientCanvas, or the
   canvas collapses to the browser's 300x150 fallback.
 */
+/** 这一层的三个颜色 —— 黑 + 青，跟品牌色同一族。只写一次。
+ *  深 → 中 → 近黑。中间那个是主色压暗的一档：它是**背景**，
+ *  跟按钮抢亮度的话，页面上就有两个主色了。 */
+const AMBIENT = { deep: "#0e3b39", mid: "#12756f", dark: "#0a0c10" } as const;
+
 export function AmbientBackdrop() {
   const hostRef = useRef<HTMLDivElement>(null);
   const still = useReducedMotion();
@@ -182,7 +193,7 @@ export function AmbientBackdrop() {
             ...(still || !lit
               ? {
                   background:
-                    "radial-gradient(70% 55% at 50% 38%, #8da0ce 0%, #606080 45%, #212121 100%)",
+                    `radial-gradient(70% 55% at 50% 38%, ${AMBIENT.mid} 0%, ${AMBIENT.deep} 45%, ${AMBIENT.dark} 100%)`,
                 }
               : null),
           }}
@@ -191,7 +202,7 @@ export function AmbientBackdrop() {
           <ShaderGradientCanvas>
             <ShaderGradient
               control="query"
-              urlString="https://www.shadergradient.co/customize?animate=on&axesHelper=off&brightness=1&cAzimuthAngle=180&cDistance=2.8&cPolarAngle=80&cameraZoom=9.1&color1=%23606080&color2=%238da0ce&color3=%23212121&destination=onCanvas&embedMode=off&envPreset=city&format=gif&frameRate=10&gizmoHelper=hide&grain=on&lightType=3d&pixelDensity=1&positionX=0&positionY=0&positionZ=0&range=disabled&rangeEnd=40&rangeStart=0&reflection=0.1&rotationX=50&rotationY=0&rotationZ=-60&shader=defaults&type=waterPlane&uAmplitude=0&uDensity=1.5&uFrequency=0&uSpeed=0.3&uStrength=1.5&uTime=8&wireframe=false"
+              urlString={`https://www.shadergradient.co/customize?animate=on&axesHelper=off&brightness=1&cAzimuthAngle=180&cDistance=2.8&cPolarAngle=80&cameraZoom=9.1&${"color1=" + encodeURIComponent(AMBIENT.deep) + "&color2=" + encodeURIComponent(AMBIENT.mid) + "&color3=" + encodeURIComponent(AMBIENT.dark)}&destination=onCanvas&embedMode=off&envPreset=city&format=gif&frameRate=10&gizmoHelper=hide&grain=on&lightType=3d&pixelDensity=1&positionX=0&positionY=0&positionZ=0&range=disabled&rangeEnd=40&rangeStart=0&reflection=0.1&rotationX=50&rotationY=0&rotationZ=-60&shader=defaults&type=waterPlane&uAmplitude=0&uDensity=1.5&uFrequency=0&uSpeed=0.3&uStrength=1.5&uTime=8&wireframe=false`}
             />
           </ShaderGradientCanvas>
           )}
