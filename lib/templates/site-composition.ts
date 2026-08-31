@@ -478,6 +478,16 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
 
        Ours ran THIRTEEN sections including opening hours, a reply-time strip
        and two separate asks. */
+    /* ⚠️ **试过拿掉询价那一段，退回来了 —— 记下来免得再试一次。**
+       Parker & Brown 是七段我们八段，多的看起来就是它，所以我加了
+       `dropBlocks: ["website-cta"]`。段数当场对上（配得上的段 转绿），
+       而**每一段的配对反而更歪**：12 项变 18 项，第3~7段结构跟第2~6段底色
+       一起转红。
+       因为差的不只是**多一段**，是**顺序不一样**：他们是
+       第一屏 → 介绍 → 业务范围 → 团队 → 引言 → 新闻 → 联络；
+       我们是 第一屏 → 引言 → 团队 → 服务 → 作品 → 询价 → 表格 → 页脚。
+       八对七的时候错开一格，七对七的时候错开两格。
+       **为了一项数字买到，赔了六项。** 要修的是顺序，不是段数。 */
     omit: ["prices", "flow", "promise", "faq", "areas", "hours", "band", "woven", "creds", "reviews"],
     statement: "quote",
     hero: "name-plate",
@@ -486,6 +496,10 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     ground: "ink",
     /* 区段标题也要大 —— 他们「Practice Areas」「Meet Your Attorneys」都是 50px
        上下的衬线，我们量出来第一个 h2 只有 32px。 */
+    /* ⚠️ 版心：**试过 measure: "wide"，一点反应都没有** —— 读数还是 6%–78%。
+       他们 2%–95%。86.5rem 的 --site-page-measure 已经是 1384px（96%），
+       所以收窄的不是这一层，是**块自己**（第一屏那张名牌、引言、团队卡各自
+       带着 max-w）。要修的在组件那一层，不在这里。记下来免得再试一次。 */
     figure: "huge",
     /* 段间贴住 —— 六个参考页量出来全部是 0，我们是 104（这一套）或 40。
        气挪进段内（--site-inner），页面不会因此变短。 */
