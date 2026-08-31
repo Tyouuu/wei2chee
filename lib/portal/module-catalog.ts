@@ -144,6 +144,24 @@ export const MODULE_CATALOG: ModuleArchetype[
   },
   // --- 钱进钱出 ----------------------------------------------------------------
   {
+    /* 进货单. The eighteenth, and it needs no new shape: a purchase order is a
+       document with a counterparty, an amount and a stage -- the definition of
+       `pipeline`. 任务 67 measured six real systems and said so before it was
+       built: 「pipeline 做完之后采购单几乎是白捡的」.
+
+       ⚠️ IT BUYS RATHER THAN SELLS, and that is the one thing about it that is
+       not like its four siblings. Its counterparty is a 供应商, not a 客户 --
+       see directory_side() in 20260831110000, which exists because the same
+       person can legitimately be both and the money would otherwise be filed
+       against the wrong side. */
+    key: "purchases",
+    label: "进货单",
+    labelEn: "Purchase orders",
+    blurb: "向供应商订的货：订了什么、多少钱、到了没有、付了没有。",
+    shape: "pipeline",
+  },
+
+  {
     key: "payments",
     label: "收款",
     labelEn: "Payments",

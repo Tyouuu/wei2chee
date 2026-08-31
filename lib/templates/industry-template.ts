@@ -430,6 +430,44 @@ function industryLabels(
    list to decide a row's tone. A second copy of the same resolution would
    drift the first time the language fallback changed -- this repo has been
    bitten four times by a hand-written second list. */
+/**
+ * 进货单 does not go through the selling pipeline.
+ *
+ * ── WHAT THE PAGE SHOWED BEFORE THIS ──────────────────────────────────────
+ *
+ * 「Purchase orders workflow: Enquiry → Quote → Approved → Deposit → Build →
+ * Progress」 -- the contractor's own SALES flow, on the page where he buys
+ * cement. Every pipeline module read `workflowStages(ctx)`, which is the one
+ * workflow the questionnaire asked about, and that question was about how he
+ * sells.
+ *
+ * ── WHY THIS ONE IS FIXED AND THE OTHERS ARE NOT ──────────────────────────
+ *
+ * Selling is the trade's own vocabulary -- 报价 · 订金 · 施工 · 尾款 for a
+ * contractor, 预约 · 到店 · 服务 for a salon -- and that vocabulary is the
+ * product. Buying is not: everybody orders, waits, receives, and pays.
+ * ERPNext agrees by construction: its Purchase Order status list is a fixed
+ * Select, not a per-customer workflow.
+ *
+ * And the three are the two INDEPENDENT facts its statuses are built from --
+ * 到货了没有 and 付了没有 -- laid out in the order they happen. A purchase
+ * order spends most of its life at the middle one, which is exactly the state
+ * a single sales-shaped pipeline could not express.
+ */
+const BUYING_STAGES = {
+  zh: ["开了单", "到货了", "付清了"],
+  en: ["Ordered", "Received", "Paid"],
+} as const;
+
+/** The stages for ONE module. Everything except 进货单 uses this business's
+ *  own workflow -- see the note above. */
+export function stagesForModule(ctx: BusinessContext, moduleKey?: string | null): string[] {
+  if (moduleKey === "purchases") {
+    return [...BUYING_STAGES[langOf(ctx) === "en" ? "en" : "zh"]];
+  }
+  return workflowStages(ctx);
+}
+
 export function workflowStages(ctx: BusinessContext): string[] {
   const lang = langOf(ctx);
   // The AI returns the tailored workflow in BOTH languages
@@ -2269,7 +2307,11 @@ function buildFromShape(
         workflowStrip(
           `${pageKey}-workflow`,
           c.shape.workflow(title),
-          workflowStages(ctx),
+          /* Not the business's own workflow on every pipeline page: 进货单 buys,
+             and buying is 开了单 → 到货了 → 付清了 everywhere. See
+             stagesForModule. The page it used to draw said 「Enquiry → Quote →
+             Deposit → Build」 over a list of cement orders. */
+          stagesForModule(ctx, pageKey),
           1,
         ),
         ...filter,

@@ -13,7 +13,7 @@ import {
   sortPages,
   systemLangOf,
   tradeLabels,
-  workflowStages,
+  stagesForModule,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
@@ -132,7 +132,12 @@ export async function loadRecordPage(
         .from("directory_entries")
         .select("id, name")
         .eq("project_id", project.id)
-        .eq("module_key", "customers")
+        /* WHICH SIDE OF THE BOOK. 进货单 buys, so its picker offers suppliers
+           -- the same rule directory_side() applies in the database, and the
+           reason it exists: the same person can be both, and a purchase order
+           attached to the CUSTOMER of that name files the money against the
+           wrong side of the business. */
+        .eq("module_key", pageKey === "purchases" ? "suppliers" : "customers")
         .is("archived_at", null)
         .order("name")
         .limit(500);
@@ -149,7 +154,9 @@ export async function loadRecordPage(
     palette: (project.palette as string | null) ?? null,
     lang: lang === "en" ? "en" : "zh",
     columns: table.columns,
-    stages: shape === "pipeline" ? workflowStages(businessContext) : [],
+    /* 进货单's stages are its own -- see stagesForModule. The form offers
+       what the page actually shows. */
+    stages: shape === "pipeline" ? stagesForModule(businessContext, pageKey) : [],
     parties: (parties as { id: string; name: string }[] | null) ?? [],
     title: pageLabel({ key: pageKey, title: page.title ?? null }, labels, lang),
     backHref: `/${locale}/portal/${pageKey}`,

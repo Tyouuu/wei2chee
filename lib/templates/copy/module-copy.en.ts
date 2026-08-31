@@ -276,6 +276,45 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
         },
       };
 
+    case "purchases":
+      return {
+        title: "Purchase orders",
+        subtitle: "What you ordered from suppliers: how much, has it arrived, has it been paid.",
+        columns: {
+          primary: "What was ordered",
+          secondary: "Supplier",
+          amount: "Amount",
+          status: "Status",
+        },
+        /* ⚠️ The status is TWO facts, not one line -- see the note on the
+           Chinese copy. 「Arrived, not paid」 is where a purchase order spends
+           most of its life, and a single linear stage list cannot say it. */
+        rows: [
+          {
+            primary: "Cement, 200 bags",
+            secondary: "Hardware supplier A",
+            amount: "RM 4,800",
+            tone: "warning",
+            status: "Awaiting delivery",
+          },
+          {
+            primary: "Aluminium frames — Taman Desa",
+            secondary: "Hardware store B",
+            amount: "RM 12,300",
+            tone: "warning",
+            status: "Arrived, unpaid",
+          },
+          {
+            primary: "Marble — kitchen top",
+            secondary: "Stone yard C",
+            amount: "RM 8,600",
+            tone: "positive",
+            status: "Paid",
+          },
+        ],
+        searchPlaceholder: "Search order no. or supplier",
+      };
+
     case "suppliers":
       return {
         title: "Suppliers",

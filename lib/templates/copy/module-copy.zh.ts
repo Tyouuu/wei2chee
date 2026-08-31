@@ -267,6 +267,47 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
         },
       };
 
+    case "purchases":
+      return {
+        title: "进货单",
+        subtitle: "向供应商订的货：订了什么、多少钱、到了没有、付了没有。",
+        columns: {
+          primary: "订的东西",
+          secondary: "供应商",
+          amount: "金额",
+          status: "状态",
+        },
+        /* ⚠️ 状态是两件事的组合，不是一条直线。ERPNext 的采购单状态
+           （To Receive and Bill · To Bill · To Receive · Completed）全部是
+           「到货了没有」跟「付了没有」这两个独立事实的位置。一条把两者混在一起
+           的流程，讲不出「货到了，钱还没付」—— 而那是一张采购单大部分时间待着
+           的状态。示例这三行就是那三个位置。 */
+        rows: [
+          {
+            primary: "水泥 200 包",
+            secondary: "建材行 A",
+            amount: "RM 4,800",
+            tone: "warning",
+            status: "等到货",
+          },
+          {
+            primary: "铝框 · Taman Desa 那单",
+            secondary: "五金店 B",
+            amount: "RM 12,300",
+            tone: "warning",
+            status: "到了，未付",
+          },
+          {
+            primary: "云石 · 厨房台面",
+            secondary: "云石厂 C",
+            amount: "RM 8,600",
+            tone: "positive",
+            status: "已付清",
+          },
+        ],
+        searchPlaceholder: "搜索单号或供应商",
+      };
+
     case "suppliers":
       return {
         title: "供应商",

@@ -423,6 +423,67 @@ try {
     edErr?.message);
   check("而没碰的那几格留着", edited?.reg_no === FILLED.in_reg_no && edited?.phone === FILLED.in_phone);
 
+  console.log("\n\u246a \u8fdb\u8d27\u5355\uff1a\u4e70\u7684\u90a3\u4e00\u8fb9");
+  /* 20260831110000. A purchase order is a pipeline, and the one thing about it
+     that is not like its four siblings: its counterparty is a SUPPLIER. */
+  const { data: yard } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "suppliers", in_name: "\u4e91\u77f3\u5382 C",
+  });
+  const { data: alsoCustomer } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "\u4e91\u77f3\u5382 C",
+  });
+
+  const { data: po, error: poErr } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases",
+    in_title: "\u4e91\u77f3 \u00b7 \u53a8\u623f\u53f0\u9762", in_party: "\u4e91\u77f3\u5382 C", in_amount_cents: 860000,
+  });
+  check("\u5f00\u5f97\u51fa\u4e00\u5f20\u8fdb\u8d27\u5355", !!po, poErr?.message?.slice(0, 80));
+  check("\u5355\u53f7\u662f PO", po?.doc_no?.startsWith("PO-"), po?.doc_no);
+
+  /* THE ONE THAT MATTERS. The same name exists on both sides -- a stone yard
+     that also buys from him. A purchase order must land on the SUPPLIER. */
+  check("\u5b83\u8fde\u5230\u4f9b\u5e94\u5546\uff0c\u4e0d\u662f\u540c\u540d\u7684\u5ba2\u6237",
+    po?.party_id === yard?.id && po?.party_id !== alsoCustomer?.id,
+    `${po?.party_id} | supplier ${yard?.id} | customer ${alsoCustomer?.id}`);
+
+  const { error: wrongSide } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases",
+    in_title: "\u6307\u5b9a\u9519\u8fb9", in_party_id: alsoCustomer.id,
+  });
+  check("\u6307\u5b9a\u4e00\u4e2a\u5ba2\u6237\u5f53\u4f9b\u5e94\u5546\uff0c\u88ab\u62d2", !!wrongSide);
+
+  /* And a quotation still lands on the customer of that name, not the
+     supplier -- the sides do not swap. */
+  const { data: qt } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations",
+    in_title: "\u5356\u7ed9\u4ed6", in_party: "\u4e91\u77f3\u5382 C",
+  });
+  check("\u800c\u62a5\u4ef7\u5355\u8fd8\u662f\u8fde\u5230\u5ba2\u6237\u90a3\u4e00\u8fb9",
+    qt?.party_id === alsoCustomer?.id, `${qt?.party_id}`);
+
+  /* \u4ed8\u94b1\u7ed9\u4f9b\u5e94\u5546 -- money OUT goes to the supplier side. */
+  const { data: paidOut } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "expenses",
+    in_amount_cents: 860000, in_party: "\u4e91\u77f3\u5382 C", in_note: "\u4ed8\u4e91\u77f3",
+  });
+  check("\u4e00\u7b14\u5f00\u9500\u8fde\u5230\u7684\u662f\u4f9b\u5e94\u5546",
+    paidOut?.party_id === yard?.id, `${paidOut?.party_id}`);
+
+  /* 买的那一边有自己的流程。 The questionnaire asked how he SELLS, so a purchase
+     order with no stage used to start at 「Enquiry」 -- over an order for
+     cement. Buying is 开了单 → 到货了 → 付清了 for everybody. */
+  const { data: noStage } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases", in_title: "没写阶段",
+  });
+  check("进货单默认从「开了单」开始，不是销售流程的第一步",
+    ["开了单", "Ordered"].includes(noStage?.stage ?? ""), noStage?.stage);
+
+  const { data: sold } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "卖的",
+  });
+  check("而报价单还是他自己的流程",
+    !["开了单", "Ordered"].includes(sold?.stage ?? ""), sold?.stage);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);
