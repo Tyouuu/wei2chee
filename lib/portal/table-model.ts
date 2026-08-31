@@ -43,6 +43,10 @@ export type TableColumn = {
 };
 
 export type TableRow = {
+  /** This row's own page, when it has one. Set by the live-rows projection so
+   *  a real record can be opened and fixed; absent on every sample row, which
+   *  is why a demonstration table has nothing to click. */
+  href?: string;
   cells: Record<string, string>;
   /** Only meaningful for `status` columns; keyed the same way so a row keeps
    *  its tone when a status column is renamed or reordered. */
@@ -152,6 +156,9 @@ export function normalizeTable(props: Record<string, unknown>): TableModel {
       rows: (Array.isArray(t.rows) ? t.rows : []).map((r) => ({
         cells: (r?.cells ?? {}) as Record<string, string>,
         tones: (r?.tones ?? {}) as Record<string, StatusTone>,
+        /* Carried, like `live` -- normalizeTable rebuilds this object on every
+           load, and a row that loses its address becomes unopenable. */
+        ...(typeof r?.href === "string" && r.href ? { href: r.href } : {}),
       })),
       /* Carried, not rebuilt -- see the note on TableModel.live. Only `true`
          survives: a page that never held real rows must not gain the flag by

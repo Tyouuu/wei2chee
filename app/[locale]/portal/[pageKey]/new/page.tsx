@@ -1,27 +1,7 @@
-import { notFound, redirect } from "next/navigation";
-import {
-  createSessionSupabaseClient,
-  getSessionUser,
-} from "@/lib/supabase/server-session";
-import { firstRecordTable, type PuckLayout } from "@/lib/portal/layout-ops";
-import { upgradeLayout } from "@/lib/portal/layout-upgrade";
-import {
-  buildPageLayout,
-  displayOwnerName,
-  isUngeneratedLayout,
-  pageLabel,
-  sortPages,
-  systemLangOf,
-  tradeLabels,
-  workflowStages,
-  type BusinessContext,
-  type PageKey,
-} from "@/lib/templates/industry-template";
-import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
-import { isLiveShape } from "@/lib/portal/shape-state";
-import { NewRecordForm } from "./new-record-form";
 import { StyleScope } from "@/design-system/editor/style-scope";
+import { loadRecordPage } from "../record-context";
+import { NewRecordForm } from "./new-record-form";
+import { RECORD_COPY } from "../record-copy";
 
 /**
  * 加一单 — the page behind the button in every record page's header.
@@ -39,52 +19,9 @@ import { StyleScope } from "@/design-system/editor/style-scope";
  * ── THE FIELDS ARE THIS BUSINESS'S OWN COLUMNS ────────────────────────────
  *
  * Read off the page the owner is looking at, so a workshop that added 「车牌
- * 号」 gets a box for it and nobody writes a form per trade. A page never
- * saved is generated exactly as the editor generates it, rather than being
- * approximated here -- a form whose columns disagree with the table it writes
- * into is worse than no form.
+ * 号」 gets a box for it and nobody writes a form per trade. Loaded by
+ * loadRecordPage, which 改这一单 shares -- see the note there.
  */
-
-const COPY = {
-  zh: {
-    heading: (page: string) => `加一单 · ${page}`,
-    lede: "填好按保存，它就会出现在这一页的表格里。",
-    save: "保存",
-    saving: "保存中…",
-    cancel: "取消",
-    required: "第一栏要填，不然这一单看不出是什么。",
-    requiredName: "名字要填，不然这一行找不回来。",
-    failed: "没有存进去",
-    choose: "选一个",
-    more: "还要填地址、email 这些",
-    less: "收起来",
-    whatsapp: "WhatsApp 号码",
-    phone: "电话",
-    contactPerson: "找谁",
-    email: "Email",
-    region: "地区",
-    note: "备注",
-  },
-  en: {
-    heading: (page: string) => `New entry · ${page}`,
-    lede: "Fill this in and save. It appears in the table on this page.",
-    save: "Save",
-    saving: "Saving…",
-    cancel: "Cancel",
-    required: "The first field is what this entry is about — it cannot be blank.",
-    requiredName: "A name is what makes this findable again — it cannot be blank.",
-    failed: "Not saved",
-    choose: "Choose one",
-    more: "Address, email and the rest",
-    less: "Hide these",
-    whatsapp: "WhatsApp",
-    phone: "Phone",
-    contactPerson: "Ask for",
-    email: "Email",
-    region: "Area",
-    note: "Notes",
-  },
-} as const;
 
 export default async function NewRecordPage({
   params,
@@ -92,101 +29,8 @@ export default async function NewRecordPage({
   params: Promise<{ locale: string; pageKey: string }>;
 }) {
   const { locale, pageKey } = await params;
-
-  /* Only the shapes that hold real rows. 库存 and 对账 draw a table too, and
-     they are still samples -- offering 「加一单」 there would be a button that
-     writes nowhere, which this repo has shipped enough times. */
-  const shape = MODULE_BY_KEY[pageKey]?.shape;
-  const isDirectory = shape === "directory";
-  /* One fact, read from one place: a shape that is not live has no table
-     behind it, so 加一单 there would be a button that writes nowhere. When
-     a shape goes live, moving it in shape-state.ts is what opens this page for
-     it -- not a second list edited here. That is how 客户 · 供应商 · 员工
-     arrived: one word changed, and the gate, the console badge and the
-     projection all agreed at once. */
-  if (!shape || !isLiveShape(shape)) notFound();
-
-  const user = await getSessionUser();
-  if (!user) redirect("/login");
-
-  const supabase = await createSessionSupabaseClient();
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, style, palette, layout")
-    .eq("account_id", user.id)
-    .single();
-  if (!project) redirect("/login");
-
-  const { data: pageRows } = await supabase
-    .from("project_pages")
-    .select("page_key, title, sort_order, layout_json")
-    .eq("project_id", project.id);
-
-  const page = (pageRows ?? []).find(
-    (r: { page_key: string }) => r.page_key === pageKey,
-  );
-  /* Not 「this module exists in the catalogue」 -- 「this business has it」. A
-     restaurant with no quotations page must not be given a form for one. */
-  if (!page) notFound();
-
-  const { data: context } = await supabase.rpc("get_my_business_context");
-  const businessContext = (context as BusinessContext | null) ?? {};
-  const lang = systemLangOf(businessContext);
-
-  const savedLayout = (page.layout_json as Record<string, unknown>) ?? {};
-  const pageRefs = sortPages(
-    (pageRows ?? []).map((r: { page_key: string; title: string | null; sort_order: number | null }) => ({
-      key: r.page_key,
-      title: r.title,
-      sortOrder: r.sort_order,
-    })),
-  );
-
-  const layout = (
-    isUngeneratedLayout(savedLayout)
-      ? buildPageLayout(
-          pageKey as PageKey,
-          businessContext,
-          displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
-          locale,
-          pageRefs,
-          project.style as StyleName,
-          (project.layout as string | null) ?? null,
-        )
-      : upgradeLayout(savedLayout, lang)
-  ) as unknown as PuckLayout;
-
-  const table = firstRecordTable(layout);
-  /* No table on the page means nothing to add a row to. The owner removed it,
-     which is allowed; a form writing into a table he cannot see is not. */
-  if (!table || !table.columns.length) notFound();
-
-  /*
-    WHO HE CAN PICK FROM.
-
-    The RPC resolves a typed name on its own, and refuses when two people share
-    one (see party_by_name). The list is what makes that refusal rare instead of
-    routine: he chooses 陈先生 from his own customers rather than retyping him,
-    so the quotation lands on the right person and 「陈先生」 and 「陈 先生」 do
-    not become two customers.
-
-    Only for the shapes that HAVE a counterparty. A directory page's own form is
-    where a party is created; offering to attach one to itself is a loop. */
-  const { data: parties } = isDirectory
-    ? { data: null }
-    : await supabase
-        .from("directory_entries")
-        .select("id, name")
-        .eq("project_id", project.id)
-        .eq("module_key", "customers")
-        .is("archived_at", null)
-        .order("name")
-        .limit(500);
-
-  const copy = COPY[lang === "en" ? "en" : "zh"];
-  const labels = tradeLabels(businessContext, pageRefs);
-  const title = pageLabel({ key: pageKey, title: page.title ?? null }, labels, lang);
-  const backHref = `/${locale}/portal/${pageKey}`;
+  const ctx = await loadRecordPage(locale, pageKey);
+  const copy = RECORD_COPY[ctx.lang];
 
   return (
     /* THE CUSTOMER'S OWN STYLE, NOT OURS.
@@ -197,55 +41,32 @@ export default async function NewRecordPage({
        just left, one click away, has to look like it.
 
        Found by looking at the screenshot. Every check passed first. */
-    <StyleScope
-      register={project.style as StyleName}
-      palette={(project.palette as string | null) ?? null}
-      className="min-h-screen"
-    >
+    <StyleScope register={ctx.style} palette={ctx.palette} className="min-h-screen">
       <main className="mx-auto w-full max-w-[560px] px-6 py-10">
-      <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-        {copy.heading(title)}
-      </h1>
-      <p className="mt-1 mb-7 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">{copy.lede}</p>
-      <NewRecordForm
-        projectId={project.id as string}
-        moduleKey={pageKey}
-        /* One value, not a boolean per shape: a page is exactly one of the
-           three, and a boolean each is how two of them end up true. */
-        shape={shape as "pipeline" | "ledger" | "directory"}
-        parties={(parties as { id: string; name: string }[] | null) ?? []}
-        columns={table.columns}
-        /* This business's own words for its stages, not a vocabulary we
-           invented -- the same list add_pipeline_record falls back to.
-
-           Only a pipeline has them. A ledger's status is read from the money;
-           a directory's is a word about a person (新客户 · 在职), which is not
-           a step in anything and must stay free text. */
-        stages={shape === "pipeline" ? workflowStages(businessContext) : []}
-        backHref={backHref}
-        /* Only the strings. `heading` is a function, and a function cannot
-           cross from a server component to a client one -- it renders as a 500
-           the first time the page is opened, which is exactly how this was
-           found: by opening it. Passing the whole object type-checked fine,
-           because an excess property on a variable is not an excess property. */
-        copy={{
-          save: copy.save,
-          saving: copy.saving,
-          cancel: copy.cancel,
-          required: copy.required,
-          requiredName: copy.requiredName,
-          failed: copy.failed,
-          choose: copy.choose,
-          more: copy.more,
-          less: copy.less,
-          whatsapp: copy.whatsapp,
-          phone: copy.phone,
-          contactPerson: copy.contactPerson,
-          email: copy.email,
-          region: copy.region,
-          note: copy.note,
-        }}
-      />
+        <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+          {copy.heading(ctx.title)}
+        </h1>
+        <p className="mt-1 mb-7 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+          {copy.lede}
+        </p>
+        <NewRecordForm
+          projectId={ctx.projectId}
+          moduleKey={ctx.pageKey}
+          /* One value, not a boolean per shape: a page is exactly one of the
+             three, and a boolean each is how two of them end up true. */
+          shape={ctx.shape as "pipeline" | "ledger" | "directory"}
+          parties={ctx.parties}
+          columns={ctx.columns}
+          stages={ctx.stages}
+          backHref={ctx.backHref}
+          /* Only the strings. `heading` is a function, and a function cannot
+             cross from a server component to a client one -- it renders as a
+             500 the first time the page is opened, which is exactly how this
+             was found: by opening it. Passing the whole object type-checked
+             fine, because an excess property on a variable is not an excess
+             property. */
+          copy={copy.form}
+        />
       </main>
     </StyleScope>
   );

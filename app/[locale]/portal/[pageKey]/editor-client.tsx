@@ -43,6 +43,8 @@ import { PagesButton, PagesSheet } from "@/design-system/editor/pages-sheet";
 import { RailSync, announcePages } from "@/design-system/editor/rail-sync";
 import { LayoutSync, announceLayout } from "@/design-system/editor/layout-sync";
 import { TradeProvider } from "@/design-system/trade-context";
+import { RecordPageProvider } from "@/design-system/record-page-context";
+import { isRecordModule } from "@/lib/portal/record-ops";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
 import type { SystemLang } from "@/lib/system-lang";
 import { InlineEditing } from "@/design-system/editor/inline-editing";
@@ -822,6 +824,11 @@ export function PortalEditor({
        it, asking the library for 「small business」 and offering a renovation
        contractor an aeroplane. Screenshotted 2026-08-27. */
     <TradeProvider trade={trade}>
+    {/* Mounted beside TradeProvider and for the identical reason: the fields
+        panel is a SIBLING of the canvas, so a provider around the canvas does
+        not reach it. What it carries is whether this page's rows are the
+        business's own records -- see record-page-context.tsx. */}
+    <RecordPageProvider live={isRecordModule(pageKey)}>
     <EditorUiProvider>
       <div
         // Regression fix: this wrapper (and the header bar inside it) never
@@ -1404,6 +1411,7 @@ export function PortalEditor({
         />
       </div>
     </EditorUiProvider>
+    </RecordPageProvider>
     </TradeProvider>
   );
 }

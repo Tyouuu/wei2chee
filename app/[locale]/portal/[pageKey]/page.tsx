@@ -1,4 +1,4 @@
-import { fetchLiveRows, withLiveRows } from "@/lib/portal/live-rows";
+import { fetchLiveRows, withLiveRows, moduleHasEverHadRows } from "@/lib/portal/live-rows";
 import { fetchLiveStats, withLiveStats } from "@/lib/portal/live-stats";
 import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
 import { notFound, redirect } from "next/navigation";
@@ -168,8 +168,20 @@ export default async function PortalEditorPage({
     // SYSTEM language -- what the built system speaks to its users -- not the
     // portal locale, which is what Formae speaks to the owner.
     systemLangOf(businessContext),
+    50,
+    /* WHERE ONE ROW LIVES. The first cell becomes a link to it, so a record he
+       wrote wrong is a record he can fix -- and a record he cannot fix is one
+       he keeps a second copy of in WhatsApp. A LINK, because this table is
+       also drawn in the gallery, in thumbnails and on paper. */
+    (id) => `/${locale}/portal/${pageKey}/${id}`,
   );
-  initialData = withLiveRows(initialData, liveRows);
+  initialData = withLiveRows(initialData, liveRows, {
+    /* Nothing on the shelf is not the same as never having started. Asked only
+       when there is nothing to show, and it is what keeps 收起来 from looking
+       like it deleted his work and restored the demonstration. */
+    businessIsLive:
+      liveRows.length === 0 && (await moduleHasEverHadRows(supabase, project.id, pageKey)),
+  });
 
   /*
     AND THE NUMBERS ON THE FIRST SCREEN.

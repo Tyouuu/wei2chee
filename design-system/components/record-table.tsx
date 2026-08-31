@@ -307,7 +307,31 @@ export function RecordTable(props: {
                     key={col.key}
                     className={`${bodyCell} [color:var(--color-paper)] [font-weight:var(--fw-medium)]`}
                   >
-                    {value}
+                    {/*
+                      A REAL RECORD OPENS; A SAMPLE DOES NOT.
+
+                      `row.href` is set only by the live-rows projection, so a
+                      demonstration table has nothing to click and a business's
+                      own row can be opened and fixed. An anchor rather than a
+                      control on purpose: this table is drawn in the style
+                      gallery, in hundreds of thumbnails and on paper, where
+                      there is no session -- a link is inert in all of them and
+                      a button would not be.
+
+                      Only the first column. A row of four links is four
+                      answers to one question, and the underline would fight
+                      the amount column's alignment.
+                    */}
+                    {row.href && col.key === "primary" && value ? (
+                      <a
+                        href={row.href}
+                        className="underline decoration-[color:var(--color-ink-700)] underline-offset-[3px] hover:decoration-[color:var(--color-primary)]"
+                      >
+                        {value}
+                      </a>
+                    ) : (
+                      value
+                    )}
                   </td>
                 )
               })}

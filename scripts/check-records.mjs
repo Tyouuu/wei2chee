@@ -326,6 +326,57 @@ try {
   const { error: mistake } = await c.from("directory_entries").delete().eq("id", spare.id);
   check("an onboarding mistake with nothing against it still can be", !mistake, mistake?.message);
 
+  console.log("\n⑨ 他能不能修自己写错的");
+  /* 20260831100000. 「他加得进去，改不了，也删不掉。」 */
+  const { data: typo } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations",
+    in_title: "打错的", in_party: "陈大文", in_amount_cents: 999900,
+  });
+  const { data: fixed, error: fixErr } = await c.rpc("update_pipeline_record", {
+    in_id: typo.id, in_title: "改好的", in_amount_cents: 480000,
+  });
+  check("一张报价单改得了", fixed?.title === "改好的" && fixed?.amount_cents === 480000,
+    fixErr?.message ?? `${fixed?.title} ${fixed?.amount_cents}`);
+  check("而单号没有跟着变", fixed?.doc_no === typo.doc_no, `${typo.doc_no} -> ${fixed?.doc_no}`);
+
+  /* 没给的栏位不准被清空 —— 一个只改金额的表单会把其余的送成 null。 */
+  check("没碰的栏位留着", fixed?.party === "陈大文", fixed?.party);
+
+  const { data: away } = await c.rpc("set_pipeline_archived", { in_id: typo.id, in_archived: true });
+  check("收得起来", !!away?.archived_at);
+  const { data: shelf } = await c
+    .from("pipeline_records").select("id").eq("project_id", P)
+    .eq("module_key", "quotations").is("archived_at", null);
+  check("收起来之后不在名单上", !shelf?.some((r) => r.id === typo.id));
+  const { data: back } = await c.rpc("set_pipeline_archived", { in_id: typo.id, in_archived: false });
+  check("也放得回架上", back?.archived_at === null);
+
+  /* 钱不一样：金额、日期、对方都不给改，只有字给改。 */
+  const { data: cash } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 250000, in_party: "陈大文", in_note: "打错的备注",
+  });
+  const { data: worded, error: wErr } = await c.rpc("update_ledger_words", {
+    in_id: cash.id, in_note: "改好的备注", in_method: "转账",
+  });
+  check("一笔收款的字改得了",
+    worded?.note === "改好的备注" && worded?.method === "转账", wErr?.message);
+  check("而金额一分都没动", worded?.amount_cents === 250000, `${worded?.amount_cents}`);
+
+  const { data: rev, error: rErr } = await c.rpc("reverse_ledger_entry", { in_entry_id: cash.id });
+  check("冲正开得出来", rev?.direction === "out" && rev?.amount_cents === 250000,
+    rErr?.message ?? `${rev?.direction} ${rev?.amount_cents}`);
+  check("冲正那一笔指着原来那一笔", rev?.adjusts_id === cash.id);
+  check("而且它跟着同一个客户", rev?.party_id === cash.party_id, `${rev?.party_id}`);
+  const { error: againErr } = await c.rpc("reverse_ledger_entry", { in_entry_id: cash.id });
+  check("同一笔不能冲正两次", !!twice);
+
+  /* 别人的记录碰不到 —— RLS 的那一层。 */
+  const { error: notOurs } = await c.rpc("update_pipeline_record", {
+    in_id: "00000000-0000-0000-0000-000000000009", in_title: "偷改",
+  });
+  check("改不了不属於这个项目的单", !!notOurs);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

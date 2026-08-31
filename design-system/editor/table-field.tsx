@@ -11,6 +11,7 @@ import {
   type TableModel,
 } from "@/lib/portal/table-model";
 import type { StatusTone } from "@/design-system/components/status-dot";
+import { useRecordPage } from "@/design-system/record-page-context";
 
 /**
  * The table editor in the fields panel.
@@ -65,6 +66,9 @@ export function TableFieldEditor({
   const columns = value?.columns ?? [];
   const rows = value?.rows ?? [];
   const [openRow, setOpenRow] = useState<number | null>(null);
+  /* On 报价单 · 收款 · 客户 a row is a business record, not part of the page --
+     see record-page-context.tsx for what this button used to do there. */
+  const live = useRecordPage();
 
   function setColumns(
     next: TableColumn[],
@@ -213,6 +217,25 @@ export function TableFieldEditor({
       <section className="flex flex-col gap-1.5">
         <span className={sectionLabelClass}>记录</span>
 
+        {/*
+          THE ROWS ON THIS PAGE ARE NOT THE PAGE'S TO EDIT.
+
+          On a live-record page they come from the business's own table on
+          every render, so anything typed here is overwritten -- silently, and
+          only AFTER the first real record exists, which is the worst possible
+          moment for a button to start lying.
+
+          The columns above stay editable: they belong to the page. The rows do
+          not, and this says where they live instead.
+        */}
+        {live ? (
+          <p className="rounded-[7px] border border-dashed p-2 text-[12px] leading-relaxed [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)]">
+            这一页的记录是你自己的资料，不在这里改。
+            <br />
+            用这一页上面那颗「加一单」，或者点表格里那一行。
+          </p>
+        ) : null}
+
         {rows.map((row, i) => {
           const open = openRow === i;
           const summary = row.cells?.[columns[0]?.key ?? ""] || "（空白）";
@@ -278,16 +301,18 @@ export function TableFieldEditor({
           );
         })}
 
-        <button
-          type="button"
-          onClick={() => {
-            onChange({ columns, rows: [...rows, blankRow(columns)] });
-            setOpenRow(rows.length);
-          }}
-          className={addBtnClass}
-        >
-          ＋ 加一行
-        </button>
+        {live ? null : (
+          <button
+            type="button"
+            onClick={() => {
+              onChange({ columns, rows: [...rows, blankRow(columns)] });
+              setOpenRow(rows.length);
+            }}
+            className={addBtnClass}
+          >
+            ＋ 加一行
+          </button>
+        )}
       </section>
     </div>
   );

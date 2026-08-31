@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { TableColumn } from "@/lib/portal/table-model";
+import type { RecordFormCopy } from "../record-copy";
 
 /**
  * 加一单 — the form a person fills in.
@@ -57,29 +58,13 @@ function senFrom(text: string): number | undefined {
   return Number.isFinite(n) ? Math.round(n * 100) : undefined;
 }
 
-export type NewRecordCopy = {
-  save: string;
-  saving: string;
-  cancel: string;
-  required: string;
-  requiredName: string;
-  failed: string;
-  choose: string;
-  more: string;
-  less: string;
-  whatsapp: string;
-  phone: string;
-  contactPerson: string;
-  email: string;
-  region: string;
-  note: string;
-};
 
 export function NewRecordForm({
   projectId,
   moduleKey,
   shape,
   parties,
+  record,
   columns,
   stages,
   backHref,
@@ -94,16 +79,35 @@ export function NewRecordForm({
   /** This business's own customers, for the name box. Empty on a directory
    *  page, which is where a party is created rather than chosen. */
   parties: { id: string; name: string }[];
+  /**
+   * The record being fixed, when there is one.
+   *
+   * ── WHY ONE COMPONENT AND NOT TWO ─────────────────────────────────────
+   *
+   * 加一单 and 改这一单 ask for the same things, from the same columns, in the
+   * same language, and write through the same shape's own function. Two forms
+   * would agree today and disagree in a month -- which is how a business ends
+   * up able to record a plate number and unable to correct one.
+   */
+  record?: {
+    id: string;
+    /** Keyed the way the boxes are: built-in column keys plus this business's
+     *  own, plus the directory fields. */
+    values: Record<string, string>;
+    archivedAt: string | null;
+    /** Ledger only: it has been reversed already, so it cannot be again. */
+    reversed?: boolean;
+  };
   columns: TableColumn[];
   /** This business's own workflow words. Empty on a ledger page, which has no
    *  stages -- its status is read from the money -- and on a directory page,
    *  where the status is a word about a person rather than a step. */
   stages: string[];
   backHref: string;
-  copy: NewRecordCopy;
+  copy: RecordFormCopy;
 }) {
   const router = useRouter();
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>(record?.values ?? {});
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -161,6 +165,56 @@ export function NewRecordForm({
     const partyId = hits.length === 1 ? hits[0].id : null;
 
     const supabase = createBrowserSupabaseClient();
+
+    /* ── FIXING ONE, RATHER THAN WRITING ONE ──────────────────────────────
+       Same boxes, same shape, same person's session -- a different function,
+       because 「what this document says」 and 「what happened to this money」
+       are not the same kind of change. See the header of migration
+       20260831100000: a ledger's amount is never edited, it is reversed. */
+    if (record) {
+      const { error: fixErr } = isDirectory
+        ? await supabase.rpc("update_directory_entry", {
+            in_id: record.id,
+            in_name: title,
+            in_contact_person: (values.contact_person ?? "").trim(),
+            in_phone: (values.phone ?? "").trim(),
+            in_whatsapp: (values.whatsapp ?? "").trim(),
+            in_email: (values.email ?? "").trim(),
+            in_region: (values.region ?? "").trim(),
+            in_status: (values.status ?? "").trim(),
+            in_note: (values.note ?? "").trim(),
+            in_extra: extra,
+          })
+        : isLedger
+        ? await supabase.rpc("update_ledger_words", {
+            in_id: record.id,
+            /* The note is what the first box holds on a money page -- it is
+               「what this was for」, which is the only part of a payment a
+               person may rewrite. */
+            in_note: title,
+          })
+        : await supabase.rpc("update_pipeline_record", {
+            in_id: record.id,
+            in_title: title,
+            in_party: party,
+            in_party_id: partyId,
+            in_amount_cents: amount ?? null,
+            in_stage: (values.status ?? "").trim() || null,
+            in_extra: extra,
+            /* He cleared the name box: detach it, rather than silently
+               keeping whoever it used to be attached to. */
+            in_clear_party: !party && !partyId,
+          });
+      if (fixErr) {
+        setError(`${copy.failed}${fixErr.message ? ` — ${fixErr.message}` : ""}`);
+        setBusy(false);
+        return;
+      }
+      router.push(backHref);
+      router.refresh();
+      return;
+    }
+
     /* One key per submission, so a double tap on a slow connection -- which is
        the normal way to use a phone on 4G -- is one document and not two. */
     const idempotencyKey = crypto.randomUUID();
@@ -214,6 +268,28 @@ export function NewRecordForm({
     router.refresh();
   }
 
+  /** 冲正 on a money page, 收起来 / 放回架上 everywhere else. One handler,
+   *  because from the owner's side it is one thing: 「这一笔我要处理掉」. */
+  async function correct() {
+    setError(null);
+    if (!record) return;
+    setBusy(true);
+    const supabase = createBrowserSupabaseClient();
+    const { error: err } = isLedger
+      ? await supabase.rpc("reverse_ledger_entry", { in_entry_id: record.id })
+      : await supabase.rpc(
+          isDirectory ? "set_directory_archived" : "set_pipeline_archived",
+          { in_id: record.id, in_archived: !record.archivedAt },
+        );
+    if (err) {
+      setError(`${copy.failed}${err.message ? ` — ${err.message}` : ""}`);
+      setBusy(false);
+      return;
+    }
+    router.push(backHref);
+    router.refresh();
+  }
+
   const control =
     "ds-control h-11 w-full [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]";
   const labelText =
@@ -225,15 +301,30 @@ export function NewRecordForm({
        quotation for somebody he has not filed yet must not be stopped, and the
        name he types is what the row carries. */
     const list = key === "secondary" && parties.length ? `${key}-list` : undefined;
+    /* ── A BOX THAT CANNOT BE SAVED MUST NOT BE TYPEABLE ──────────────────
+       On a money page the amount and the counterparty are shown -- he opened
+       this row to see what it says -- and update_ledger_words does not accept
+       them, because money is corrected by an opposite entry and never by a
+       rewrite. Leaving them editable meant typing a new amount, pressing 保存,
+       and nothing happening: a control that lies about what it does, which is
+       the one thing block-rules.ts forbids the assistant to draw and which we
+       had drawn by hand.
+
+       Found by looking at the screenshot; fifty database assertions and the
+       whole suite were green. */
+    const locked = !!record && isLedger && key !== titleCol?.key;
     return (
       <label key={key} className="flex flex-col gap-1.5">
         <span className={labelText}>{label}</span>
         <input
           inputMode={inputMode}
-          list={list}
+          list={locked ? undefined : list}
+          readOnly={locked}
+          aria-readonly={locked || undefined}
+          tabIndex={locked ? -1 : undefined}
           value={values[key] ?? ""}
           onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
-          className={control}
+          className={locked ? `${control} cursor-default opacity-60` : control}
         />
         {list ? (
           <datalist id={list}>
@@ -302,6 +393,12 @@ export function NewRecordForm({
         </div>
       ) : null}
 
+      {record && isLedger ? (
+        <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+          {copy.moneyFixed}
+        </p>
+      ) : null}
+
       {error ? (
         <p role="alert" className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]">
           {error}
@@ -319,6 +416,40 @@ export function NewRecordForm({
         <a href={backHref} className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)] underline">
           {copy.cancel}
         </a>
+
+        {/* ── THE TWO CORRECTIONS ────────────────────────────────────────
+            Pushed to the right, away from 保存: they are not the ordinary
+            thing to do on this page, and a destructive-looking action beside
+            the primary one gets pressed by accident.
+
+            冲正 is the ONLY way money is corrected -- an opposite entry, both
+            kept -- and 收起来 is the only way anything leaves a list. Neither
+            is a delete, and there is no delete: a lost job is next year's
+            answer to 「上次我们报多少」. */}
+        {record ? (
+          <span className="ml-auto flex items-center gap-3">
+            {isLedger ? (
+              <button
+                type="button"
+                disabled={busy || record.reversed}
+                onClick={correct}
+                title={record.reversed ? copy.reversed : copy.reverseHint}
+                className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)] underline disabled:opacity-40 disabled:no-underline"
+              >
+                {busy ? copy.reversing : record.reversed ? copy.reversed : copy.reverse}
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={correct}
+                className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline disabled:opacity-40"
+              >
+                {busy ? copy.archiving : record.archivedAt ? copy.unarchive : copy.archive}
+              </button>
+            )}
+          </span>
+        ) : null}
       </div>
     </form>
   );

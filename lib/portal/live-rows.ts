@@ -54,6 +54,15 @@ export type LiveRow = {
    * had nowhere to live. That is the whole reason `extra` was added to both
    * tables, and nothing wrote it. */
   extra?: Record<string, string>;
+  /* WHERE THIS ROW LIVES.
+   *
+   * A record he can write and cannot fix is a record he keeps a second copy
+   * of in WhatsApp. The row carries its own address so the first cell can be
+   * a link to it -- a LINK and not a control, because this table is drawn in
+   * the style gallery, in hundreds of thumbnails and on paper, where there is
+   * no session and nothing to click. Inert everywhere else; the writing all
+   * happens on the page it points at. */
+  href?: string;
 };
 
 /** Cell keys the table model owns. Anything else on a row is the owner's own
@@ -76,6 +85,7 @@ function extraCells(extra: unknown): Record<string, string> | undefined {
 }
 
 type PipelineRecord = {
+  id?: string;
   title: string | null;
   party: string | null;
   amount_cents: number | null;
@@ -119,8 +129,10 @@ export function toneForStage(stage: string, workflow: string[]): StatusTone {
 export function rowsFromRecords(
   records: PipelineRecord[],
   workflow: string[],
+  href?: (id: string) => string,
 ): LiveRow[] {
   return records.map((r) => ({
+    ...(href && r.id ? { href: href(r.id) } : {}),
     primary: (r.title ?? "").trim() || (r.party ?? "").trim(),
     secondary: (r.party ?? "").trim() || undefined,
     amount: ringgit(r.amount_cents),
@@ -184,6 +196,7 @@ export function rowsFromEntries(
   entries: LedgerEntry[],
   moduleKey: string,
   lang: "zh" | "en" = "zh",
+  href?: (id: string) => string,
 ): LiveRow[] {
   const w = LEDGER_WORDS[lang] ?? LEDGER_WORDS.zh;
   const usual = usualDirection(moduleKey);
@@ -215,6 +228,7 @@ export function rowsFromEntries(
     }
 
     return {
+      ...(href && e.id ? { href: href(e.id) } : {}),
       /* What the money was for. The note is the owner's own words; the
          document number is what is printed on the receipt when there are
          none. Never blank -- the first column is the one a person scanning a
@@ -256,6 +270,7 @@ export function rowsFromEntries(
  */
 
 type DirectoryEntry = {
+  id?: string;
   name: string | null;
   kind: string | null;
   contact_person: string | null;
@@ -313,8 +328,12 @@ export function contactLine(e: DirectoryEntry): string | undefined {
   return pieces.length ? pieces.slice(0, 2).join(" · ") : undefined;
 }
 
-export function rowsFromParties(entries: DirectoryEntry[]): LiveRow[] {
+export function rowsFromParties(
+  entries: DirectoryEntry[],
+  href?: (id: string) => string,
+): LiveRow[] {
   return entries.map((e) => ({
+    ...(href && e.id ? { href: href(e.id) } : {}),
     primary: (e.name ?? "").trim(),
     secondary: contactLine(e),
     tone: "neutral" as StatusTone,
@@ -396,7 +415,7 @@ function toModelRow(r: LiveRow): { cells: Record<string, string>; tones: Record<
   if (r.secondary) cells.secondary = r.secondary;
   if (r.amount) cells.amount = r.amount;
   cells.status = r.status;
-  return { cells, tones: { status: r.tone } };
+  return { cells, tones: { status: r.tone }, ...(r.href ? { href: r.href } : {}) };
 }
 
 function mapNodes(nodes: unknown[], rows: LiveRow[], started = false): unknown[] {
@@ -504,6 +523,53 @@ function mapNodes(nodes: unknown[], rows: LiveRow[], started = false): unknown[]
 }
 
 /**
+ * Has this module EVER held a row, archived ones included?
+ *
+ * ── WHY THIS QUESTION IS DIFFERENT FROM 「are there rows」 ─────────────────
+ *
+ * A page with nothing to show is two different situations, and the samples
+ * belong to only one of them:
+ *
+ *   never started   the demonstration teaches what the page is for
+ *   put it away     he archived his last quotation, and 陈先生 · 李太太 came
+ *                   back on screen -- which reads as 「收起来 deleted my work
+ *                   and put the demo back」
+ *
+ * Seen in a browser on the day 收起来 was built: archive the only record, and
+ * the samples returned. Nothing in the projection could tell the two apart,
+ * because both arrive as an empty array.
+ *
+ * Asked only when there is nothing to show, so the ordinary render costs
+ * nothing extra.
+ */
+export async function moduleHasEverHadRows(
+  supabase: SupabaseClient,
+  projectId: string,
+  moduleKey: string,
+): Promise<boolean> {
+  const table = PIPELINE_MODULES.has(moduleKey)
+    ? "pipeline_records"
+    : LEDGER_MODULES.has(moduleKey)
+      ? "ledger_entries"
+      : DIRECTORY_MODULES.has(moduleKey)
+        ? "directory_entries"
+        : null;
+  if (!table) return false;
+  try {
+    const { count } = await supabase
+      .from(table)
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", projectId)
+      .eq("module_key", moduleKey);
+    return (count ?? 0) > 0;
+  } catch {
+    /* Could not ask: leave the page as it is. Blanking a table because a count
+       failed is the same lie as blanking the totals -- see withLiveStats. */
+    return false;
+  }
+}
+
+/**
  * Read this module's rows for this project.
  *
  * Through the caller's own session, so RLS is what bounds it -- the policies
@@ -518,19 +584,23 @@ export async function fetchLiveRows(
   workflow: string[],
   lang: "zh" | "en" = "zh",
   limit = 50,
+  /** Where one row's own page lives. Omitted by callers that draw a table
+   *  nobody can click -- the dashboard's 「最近的工程」 points at the module's
+   *  own page, not at a row. */
+  href?: (id: string) => string,
 ): Promise<LiveRow[]> {
   try {
     if (PIPELINE_MODULES.has(moduleKey)) {
       const { data, error } = await supabase
         .from("pipeline_records")
-        .select("title, party, amount_cents, stage, extra")
+        .select("id, title, party, amount_cents, stage, extra")
         .eq("project_id", projectId)
         .eq("module_key", moduleKey)
         .is("archived_at", null)
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error || !data) return [];
-      return rowsFromRecords(data as PipelineRecord[], workflow);
+      return rowsFromRecords(data as PipelineRecord[], workflow, href);
     }
 
     if (LEDGER_MODULES.has(moduleKey)) {
@@ -547,7 +617,7 @@ export async function fetchLiveRows(
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error || !data) return [];
-      return rowsFromEntries(data as LedgerEntry[], moduleKey, lang);
+      return rowsFromEntries(data as LedgerEntry[], moduleKey, lang, href);
     }
 
     if (DIRECTORY_MODULES.has(moduleKey)) {
@@ -561,14 +631,14 @@ export async function fetchLiveRows(
          findable when you need their number again. */
       const { data, error } = await supabase
         .from("directory_entries")
-        .select("name, kind, contact_person, phone, whatsapp, email, region, status, note, extra")
+        .select("id, name, kind, contact_person, phone, whatsapp, email, region, status, note, extra")
         .eq("project_id", projectId)
         .is("archived_at", null)
         .eq("module_key", moduleKey)
         .order("name", { ascending: true })
         .limit(limit);
       if (error || !data) return [];
-      return rowsFromParties(data as DirectoryEntry[]);
+      return rowsFromParties(data as DirectoryEntry[], href);
     }
 
     /* A module of some other shape. Not an error -- 库存 and 对账 still draw
