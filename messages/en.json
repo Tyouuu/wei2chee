@@ -270,7 +270,7 @@
     "proofStep1": "Answer a few questions about your business; the AI reads how you actually work today.",
     "proofStep2": "It builds you a first version — your trade's words, your workflow, your tables. Edit it directly, or just tell it what to change.",
     "proofStep3": "When it looks right, we build the real system from your design.",
-    "proofPrice": "RM5,000 to build, then RM100–300/month hosting. Designing costs nothing, and you can change it as many times as you like.",
+    "proofPrice": "Spec RM 500 · build priced by module · hosting RM 199/month. Designing costs nothing, and you can change it as many times as you like.",
     "googleCta": "Continue with Google",
     "googlePending": "Redirecting…",
     "googleFailed": "Google sign-in is not configured yet — use email for now.",
@@ -974,7 +974,7 @@
         },
         {
           "heading": "Fees",
-          "body": "Designing: free. Change it as often as you like.\nBuild fee: RM5,000 (if your needs are unusually large we will tell you and quote before starting).\nHosting: RM100–300 per month depending on usage.\nPayment is by bank transfer; we enable saving on your account once it arrives. There is no online payment yet."
+          "body": "Designing: free. Change it as often as you like.\nSpecification: RM 500 — the document that says exactly what will be built, module by module, with a price against each.\nBuild fee: priced by the modules you choose, listed in the spec before you decide.\nHosting: RM 199 per month.\nPayment is by bank transfer; we enable saving on your account once it arrives. There is no online payment yet."
         },
         {
           "heading": "Your work is yours",
