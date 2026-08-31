@@ -857,7 +857,10 @@
       "s2n": "Or just type what you want changed: “rename ‘customer’ to ‘patient’”.",
       "s3": "We build exactly what you designed",
       "s3d": "A real team takes over and builds a system that issues real quotes, takes real payments and holds real records — not a prototype.",
-      "s3n": "Typically 3 to 6 weeks, depending on scope."
+      "s3n": "Typically 3 to 6 weeks, depending on scope.",
+      "s1c": "formae.app — the two-minute questionnaire",
+      "s2c": "your portal — the editor, on your own dashboard",
+      "s3c": "your public site — what a stranger sees"
     },
     "scope": {
       "title": "What you end up holding.",
