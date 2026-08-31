@@ -484,6 +484,75 @@ try {
   check("而报价单还是他自己的流程",
     !["开了单", "Ordered"].includes(sold?.stage ?? ""), sold?.stage);
 
+  console.log("\n⑫ 逐项明细");
+  /* 20260831150000. LHDN's MyInvois marks Description, Unit Price, Tax Type,
+     Tax Amount, Subtotal and Total Excluding Tax [1-1] at LINE level -- a
+     product that cannot hold a line cannot issue a legal invoice here. */
+  const { data: quoteDoc } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "Taman Desa 三房翻新",
+  });
+  const { data: lines, error: lineErr } = await c.rpc("set_record_lines", {
+    in_record_id: quoteDoc.id,
+    in_lines: [
+      { description: "拆除旧厨房", amount_cents: 300000 },
+      { description: "泥水", qty: "1", unit: "项", unit_price_cents: 1200000, amount_cents: 1200000 },
+      { description: "油漆", qty: "2.5", unit: "房", unit_price_cents: 200000, amount_cents: 500000 },
+    ],
+  });
+  check("一张单存得下三行", lines?.length === 3, lineErr?.message?.slice(0, 80));
+  check("顺序是他写的那个顺序",
+    lines?.map((l) => l.description).join("|") === "拆除旧厨房|泥水|油漆",
+    lines?.map((l) => l.description).join("|"));
+  check("半个数量不会被抹掉", Number(lines?.[2]?.qty) === 2.5, `${lines?.[2]?.qty}`);
+  check("一行可以没有数量（一笔包工）", lines?.[0]?.qty === null, `${lines?.[0]?.qty}`);
+
+  const { data: totalled } = await c
+    .from("pipeline_records").select("amount_cents").eq("id", quoteDoc.id).single();
+  check("总数自己加起来了", totalled?.amount_cents === 2000000, `${totalled?.amount_cents}`);
+
+  /* Change one line: the document's total has to follow, because six things
+     already read that column. */
+  await c.rpc("set_record_lines", {
+    in_record_id: quoteDoc.id,
+    in_lines: [{ description: "只剩拆除", amount_cents: 300000 }],
+  });
+  const { data: after1 } = await c
+    .from("pipeline_records").select("amount_cents").eq("id", quoteDoc.id).single();
+  check("改了行，总数跟着变", after1?.amount_cents === 300000, `${after1?.amount_cents}`);
+
+  const { data: emptied } = await c.rpc("set_record_lines", { in_record_id: quoteDoc.id, in_lines: [] });
+  check("清空之后没有行", (emptied ?? []).length === 0);
+  const { data: after2 } = await c
+    .from("pipeline_records").select("amount_cents").eq("id", quoteDoc.id).single();
+  check("而总数交回给他自己填", after2?.amount_cents === null, `${after2?.amount_cents}`);
+
+  const { error: noDesc } = await c.rpc("set_record_lines", {
+    in_record_id: quoteDoc.id, in_lines: [{ amount_cents: 100 }],
+  });
+  check("没写是什么的一行，拒掉", !!noDesc);
+
+  const { error: otherDoc } = await c.rpc("set_record_lines", {
+    in_record_id: "00000000-0000-0000-0000-000000000009", in_lines: [{ description: "x" }],
+  });
+  check("写不了别人的单", !!otherDoc);
+
+  /* THE DENORMALISED COLUMN. A client naming its own project while pointing at
+     somebody else's document would otherwise pass the policy. */
+  const { data: rawLine } = await c.from("record_lines").insert({
+    record_id: quoteDoc.id, project_id: P, description: "直接写的", amount_cents: 100,
+  }).select().single();
+  check("直接写的行，项目跟着单走", rawLine?.project_id === P, `${rawLine?.project_id}`);
+  await c.from("record_lines").delete().eq("id", rawLine.id);
+
+  /* Deleting the document takes its lines with it -- there is nothing to keep. */
+  const { data: doomed } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "要删的",
+  });
+  await c.rpc("set_record_lines", { in_record_id: doomed.id, in_lines: [{ description: "一行" }] });
+  await c.from("pipeline_records").delete().eq("id", doomed.id);
+  const { data: orphans } = await c.from("record_lines").select("id").eq("record_id", doomed.id);
+  check("删掉单，行也跟着走", (orphans ?? []).length === 0);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);
