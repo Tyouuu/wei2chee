@@ -889,6 +889,77 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     ],
   },
   {
+    /* ── 明码标价 ───────────────────────────────────────────────────────
+       THE SEVENTH, AND IT IS A DIFFERENT CONVERSATION -- NOT A DIFFERENT LOOK.
+
+       「上门报价」 says: ask, I come and look, then I quote.
+       This one says the opposite: the price is already public, and there is no
+       surprise. A customer choosing between them is choosing how he sells, not
+       which colours he likes.
+
+       ── WHERE IT COMES FROM ──────────────────────────────────────────────
+       Five of the nineteen Malaysian SME sites photographed for 任务 26 are
+       this page and nothing else: ACService.my, AircondCare, ACFix,
+       TukarBateri, Doktor Cermin. Three of them put it in the URL
+       (`/aircond-service-price/`). Looked at side by side, all four of the
+       phone shots share the same spine:
+
+         · a black strip at the very top carrying 「Call Now」 and the number
+         · a first screen whose headline is about the PRICE, not the trade
+         · immediately under it, a list of guarantees -- no hidden fees,
+           30-day warranty, free on-site quote, JKKP-certified
+         · two buttons: WhatsApp, and a free quote
+
+       ⚠️ IT REFINES 任务 26's OWN READING. That task recorded 「0/19 价钱在第
+       一屏」 and it is right -- the NUMBERS are further down. What is on the
+       first screen is the PROMISE about the numbers. Those are different
+       things, and building the template on the first reading would have put a
+       price list where a promise belongs.
+
+       ── WHAT MAKES IT A DIFFERENT SKELETON ───────────────────────────────
+       The price list is SECOND, and the guarantees are THIRD. On 上门报价 the
+       prices sit eighth, after the story and the team, because there a price
+       is the end of a conversation. Here it is the beginning of one, and
+       everything above it exists to make it believable.
+
+       No 作品墙, no 团队, no 满边照片: an aircond call-out is not chosen by
+       looking at photographs of the last one. Every section this page does not
+       have is a section those five pages do not have either. */
+    key: "tariff",
+    label: "明码标价",
+    blurb: "价钱先讲清楚，不用问。冷气、维修、换电池这一类，客人比的就是价钱跟有没有隐藏收费。",
+    labelEn: "Published prices",
+    blurbEn:
+      "The price is on the page, no need to ask. Aircond, repairs, batteries — where people compare the rate and whether there are hidden charges.",
+    trades: ["services"],
+    build: (c) => [
+      bar(c, anchors(c)),
+      hero(c, "split", "pricelist"),
+      /* The spine. Everything above it is the promise; everything below is the
+         evidence for it. */
+      prices(c),
+      /* 保证 second, because 「no hidden fees」 is what a published price is
+         worth nothing without -- and it is the line all five of them run. */
+      promiseList(c),
+      creds(c),
+      services(c, sect(c, "tariff").services),
+      flow(c, sect(c, "tariff").flow ?? ""),
+      /* 覆盖范围 —— TukarBateri lists seven states on its first screen; a trade
+         that publishes a price is asked 「do you come to me」 next. */
+      areas(c),
+      reviews(c),
+      /* All four run a 「what affects the price」 section. On a page whose whole
+         claim is that the price is honest, the questions ARE the argument. */
+      faq(c),
+      statement(c),
+      cta(c),
+      form(c, "tariff"),
+      contact(c),
+      foot(c, anchors(c)),
+      ...floating(c),
+    ],
+  },
+  {
     key: "portfolio",
     label: "先看东西",
     blurb: "客人是看了作品才决定的。设计、摄影、装修都可以用这个。",

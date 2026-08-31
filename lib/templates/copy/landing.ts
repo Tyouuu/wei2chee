@@ -297,6 +297,29 @@ const EN: LandingCopy = {
       },
     ],
     byTemplate: {
+      /* ── 明码标价 ─────────────────────────────────────────────────────
+         The seventh shape, and it is a different CONVERSATION rather than a
+         different look. 「上门报价」 says 「ask, I come and look, then I
+         quote」; this one says the opposite -- 「the price is already public
+         and there is no surprise」.
+
+         Measured, not invented: of the 19 Malaysian SME sites photographed for
+         任务 26, five lead with exactly this -- ACService.my, AircondCare,
+         ACFix, TukarBateri and Doktor Cermin. Three of them put it in the URL
+         (`/aircond-service-price/`) and all of them put a version of
+         「transparent · no hidden fees」 in the first screen.
+
+         ⚠️ It refines 任务 26's own note that 「0/19 价钱在第一屏」. Correct --
+         the NUMBERS are further down. What is on the first screen is the
+         PROMISE about the numbers, which is a different thing and is what this
+         template is built around. */
+      tariff: {
+        services: "What we charge for",
+        flow: "What happens when you call",
+        formHeading: "Not sure which one you need?",
+        formBlurb: "Tell us what is wrong and we will say which price applies.",
+        submit: "Ask",
+      },
       quote: {
         services: "What we do",
         flow: "What happens after you call",
@@ -532,6 +555,14 @@ const ZH: LandingCopy = {
       { label: "想做什么", placeholder: "三房翻新，想问大概多少", kind: "long" },
     ],
     byTemplate: {
+      /* 明码标价 —— 见英文那一份的注解。19 家里有五家是这个形状。 */
+      tariff: {
+        services: "收费的项目",
+        flow: "打来之后会怎么走",
+        formHeading: "不确定是哪一项？",
+        formBlurb: "讲一下什么问题，我们告诉你算哪一个价。",
+        submit: "问一下",
+      },
       quote: {
         services: "我们做什么",
         flow: "找我们之后会怎么走",

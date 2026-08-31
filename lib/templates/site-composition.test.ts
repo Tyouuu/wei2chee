@@ -9,6 +9,7 @@ import {
   type BusinessContext,
 } from "./industry-template";
 import { STYLE_BRIEFS } from "@/lib/portal/design-doc";
+import { landingCopy } from "./copy";
 import { VARIANTS } from "@/design-system/editor/variants";
 
 /**
@@ -158,6 +159,29 @@ describe("composeSite", () => {
         ];
         expect(gone.sort(), `${t.key} × ${style} dropped something it never declared`)
           .toEqual(allowed.filter((id) => idsOf(built).includes(id)).sort());
+      }
+    }
+  });
+
+  it("gives every template its own words, in both languages", () => {
+    /* ⚠️ THE SILENT FALLBACK THIS CATCHES.
+       `sect()` in landing-templates.ts reads `words.byTemplate[key]` and falls
+       back to `byTemplate.quote`. A template added without its own entry
+       therefore renders perfectly -- wearing 上门报价's headings and 上门报价's
+       form wording, on a page whose whole argument is that it is a DIFFERENT
+       conversation. Nothing throws, nothing looks broken, and the customer is
+       shown the wrong sentence.
+
+       The same shape as every other 「a hand-written list outlived the thing it
+       described」 in this repo, so it is derived: every key that exists must
+       have words, in both languages. */
+    for (const lang of ["zh", "en"] as const) {
+      const words = landingCopy(lang).page;
+      for (const t of LANDING_TEMPLATES) {
+        expect(
+          Object.prototype.hasOwnProperty.call(words.byTemplate, t.key),
+          `${t.key} has no ${lang} words -- it would silently wear quote's`,
+        ).toBe(true);
       }
     }
   });
