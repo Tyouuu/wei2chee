@@ -110,3 +110,79 @@ describe("加一单 is the same component with nothing to fix", () => {
     expect(html).not.toContain(RECORD_COPY.zh.form.archive);
   });
 });
+
+describe("逐项明细", () => {
+  const cols = [
+    { key: "primary", label: "Work quoted", kind: "text" as const },
+    { key: "secondary", label: "Client", kind: "detail" as const },
+    { key: "amount", label: "Quoted", kind: "amount" as const },
+  ];
+  const quote = (over: Partial<Parameters<typeof NewRecordForm>[0]> = {}) =>
+    renderToStaticMarkup(
+      <NewRecordForm
+        projectId="p"
+        moduleKey="quotations"
+        shape="pipeline"
+        parties={[]}
+        columns={cols}
+        stages={[]}
+        backHref="/back"
+        copy={RECORD_COPY.zh.form}
+        {...over}
+      />,
+    );
+  /* The box holding a given value, whichever order React wrote its attributes
+     in. ⚠️ Two earlier versions of this helper matched nothing and returned an
+     empty string -- and an empty string CONTAINS nothing, so the negative
+     assertions passed vacuously while the positive one failed. A helper that
+     can silently match nothing makes half its tests decorative. */
+  const boxWith = (html: string, value: string) =>
+    [...html.matchAll(/<input[^>]*\/?>/g)].map((m) => m[0]).find((t) => t.includes(`value="${value}"`)) ?? null;
+
+  const withLines = {
+    id: "r1",
+    values: { primary: "翻新", secondary: "陈先生", amount: "RM 999" },
+    archivedAt: null,
+    lines: [
+      { description: "拆除", qty: "", unit: "", unitPrice: "", amount: "RM 3,000" },
+      { description: "油漆", qty: "2.5", unit: "房", unitPrice: "RM 2,000", amount: "RM 5,000" },
+    ],
+  };
+
+  it("shows the lines' total in the amount box, not what was typed there", () => {
+    /* The database recomputes the document's total from its lines on every
+       write, so a figure typed above would be replaced between 保存 and the
+       page reloading. 「RM 999」 is deliberately wrong in the fixture. */
+    const html = quote({ record: withLines });
+    expect(html).toContain("RM 8,000");
+    expect(html).not.toContain("RM 999");
+  });
+
+  it("does not let him type into it", () => {
+    // The same rule the money page was locked for this morning: a box that
+    // cannot be saved must not accept typing.
+    const box = boxWith(quote({ record: withLines }), "RM 8,000");
+    expect(box, "no box is showing the lines' total").not.toBeNull();
+    expect(box).toContain("readonly");
+  });
+
+  it("and leaves it his to type when there are no lines", () => {
+    const html = quote({ record: { id: "r1", values: { primary: "翻新", amount: "RM 999" }, archivedAt: null } });
+    const box = boxWith(html, "RM 999");
+    expect(box, "the typed amount is not on the page").not.toBeNull();
+    expect(box).not.toContain("readonly");
+  });
+
+  it("says why, so a greyed box is not a mystery", () => {
+    expect(quote({ record: withLines })).toContain(RECORD_COPY.zh.form.amountFromLines);
+  });
+
+  it("offers no lines on a money page or a person", () => {
+    // Money is one entry and a person is not a list of things.
+    for (const shape of ["ledger", "directory"] as const) {
+      expect(quote({ shape, moduleKey: shape === "ledger" ? "payments" : "customers" }))
+        .not.toContain(RECORD_COPY.zh.form.lineAdd);
+    }
+    expect(quote({})).toContain(RECORD_COPY.zh.form.lineAdd);
+  });
+});

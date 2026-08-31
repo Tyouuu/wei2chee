@@ -49,6 +49,15 @@ export default async function EditRecordPage({
   const values: Record<string, string> = {};
   let archivedAt: string | null = null;
   let reversed = false;
+  /* 逐项. Read back in the order he wrote them -- a quotation whose lines come
+     back shuffled is a different quotation. */
+  let lines: {
+    description: string;
+    qty: string;
+    unit: string;
+    unitPrice: string;
+    amount: string;
+  }[] = [];
 
   if (ctx.isDirectory) {
     const { data } = await supabase
@@ -111,6 +120,21 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+
+    const { data: rows } = await supabase
+      .from("record_lines")
+      .select("description, qty, unit, unit_price_cents, amount_cents")
+      .eq("record_id", recordId)
+      .order("sort_order");
+    lines = (rows ?? []).map((r) => ({
+      description: r.description ?? "",
+      /* 「2.500」 comes back from numeric(14,3); he typed 2.5 and that is what
+         he should see again. */
+      qty: r.qty == null ? "" : String(Number(r.qty)),
+      unit: r.unit ?? "",
+      unitPrice: ringgit(r.unit_price_cents) ?? "",
+      amount: ringgit(r.amount_cents) ?? "",
+    }));
   }
 
   return (
@@ -130,7 +154,7 @@ export default async function EditRecordPage({
           columns={ctx.columns}
           stages={ctx.stages}
           backHref={ctx.backHref}
-          record={{ id: recordId, values, archivedAt, reversed }}
+          record={{ id: recordId, values, archivedAt, reversed, lines }}
           copy={copy.form}
         />
       </main>

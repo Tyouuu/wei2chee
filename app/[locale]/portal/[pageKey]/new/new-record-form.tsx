@@ -5,6 +5,7 @@ import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { TableColumn } from "@/lib/portal/table-model";
 import type { RecordFormCopy } from "../record-copy";
+import { LineEditor, blankLine, senOf, totalOf, ringgitOf, type Line } from "./line-editor";
 
 /**
  * 加一单 — the form a person fills in.
@@ -47,6 +48,20 @@ import type { RecordFormCopy } from "../record-copy";
  */
 
 const BUILT_IN = new Set(["primary", "secondary", "amount", "status"]);
+
+/** The lines as set_record_lines wants them: money in sen, blank rows dropped.
+ *  A row he started and left empty is not a line he meant to write. */
+function linesForDb(lines: Line[]) {
+  return lines
+    .filter((l) => l.description.trim())
+    .map((l) => ({
+      description: l.description.trim(),
+      qty: l.qty.trim() || null,
+      unit: l.unit.trim(),
+      unit_price_cents: senOf(l.unitPrice) ?? null,
+      amount_cents: senOf(l.amount) ?? 0,
+    }));
+}
 
 /** RM 48,500 · 48500.50 -> sen. Mirrors senFrom() in record-ops.ts, which is
  *  what the assistant's side uses; kept in both because the alternative is
@@ -97,6 +112,8 @@ export function NewRecordForm({
     archivedAt: string | null;
     /** Ledger only: it has been reversed already, so it cannot be again. */
     reversed?: boolean;
+    /** 逐项明细, when this document has any. */
+    lines?: Line[];
   };
   columns: TableColumn[];
   /** This business's own workflow words. Empty on a ledger page, which has no
@@ -108,12 +125,21 @@ export function NewRecordForm({
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>(record?.values ?? {});
+  /* 逐项. Only a document has them -- money is one entry and a person is not a
+     list of things. */
+  const [lines, setLines] = useState<Line[]>(record?.lines ?? []);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isLedger = shape === "ledger";
   const isDirectory = shape === "directory";
+  const isPipeline = shape === "pipeline";
+  /* WITH LINES, THE TOTAL IS NOT HIS TO TYPE. The database recomputes it from
+     them on every write (20260831150000), so a figure typed up there would be
+     overwritten between pressing 保存 and the page reloading -- the same
+     control-that-lies the money page was locked for this morning. */
+  const totalFromLines = lines.length ? ringgitOf(totalOf(lines)) : null;
 
   /* The status column is not typed on a ledger page: 订金 · 已入账 · 冲正 are
      read from the money and the allocation, so offering a box for it would be
@@ -224,6 +250,20 @@ export function NewRecordForm({
         setBusy(false);
         return;
       }
+      /* The lines go through their own call, and AFTER the document exists --
+         they are children of it. Written even when empty, because emptying the
+         list is a real edit: it hands the total back to him. */
+      if (isPipeline) {
+        const { error: lineErr } = await supabase.rpc("set_record_lines", {
+          in_record_id: record.id,
+          in_lines: linesForDb(lines),
+        });
+        if (lineErr) {
+          setError(`${copy.failed}${lineErr.message ? ` — ${lineErr.message}` : ""}`);
+          setBusy(false);
+          return;
+        }
+      }
       router.push(backHref);
       router.refresh();
       return;
@@ -232,7 +272,7 @@ export function NewRecordForm({
     /* One key per submission, so a double tap on a slow connection -- which is
        the normal way to use a phone on 4G -- is one document and not two. */
     const idempotencyKey = crypto.randomUUID();
-    const { error: err } = isDirectory
+    const { data, error: err } = isDirectory
       ? await supabase.rpc("add_directory_entry", {
           in_project_id: projectId,
           in_module_key: moduleKey,
@@ -280,6 +320,16 @@ export function NewRecordForm({
       setError(`${copy.failed}${err.message ? ` — ${err.message}` : ""}`);
       setBusy(false);
       return;
+    }
+    /* A new document's lines, once it has an id to hang them on. */
+    if (isPipeline && lines.length) {
+      const made = Array.isArray(data) ? data[0] : data;
+      if (made?.id) {
+        await supabase.rpc("set_record_lines", {
+          in_record_id: made.id,
+          in_lines: linesForDb(lines),
+        });
+      }
     }
     router.push(backHref);
     router.refresh();
@@ -329,7 +379,10 @@ export function NewRecordForm({
 
        Found by looking at the screenshot; fifty database assertions and the
        whole suite were green. */
-    const locked = !!record && isLedger && key !== titleCol?.key;
+    const locked =
+      (!!record && isLedger && key !== titleCol?.key) ||
+      (key === "amount" && totalFromLines !== null);
+    const shown = key === "amount" && totalFromLines !== null ? totalFromLines : values[key] ?? "";
     return (
       <label key={key} className="flex flex-col gap-1.5">
         <span className={labelText}>{label}</span>
@@ -339,7 +392,7 @@ export function NewRecordForm({
           readOnly={locked}
           aria-readonly={locked || undefined}
           tabIndex={locked ? -1 : undefined}
-          value={values[key] ?? ""}
+          value={shown}
           onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
           className={locked ? `${control} cursor-default opacity-60` : control}
         />
@@ -395,6 +448,17 @@ export function NewRecordForm({
           </div>
         );
       })}
+
+      {isPipeline ? (
+        <>
+          <LineEditor lines={lines} onChange={setLines} copy={copy} />
+          {totalFromLines ? (
+            <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+              {copy.amountFromLines}
+            </p>
+          ) : null}
+        </>
+      ) : null}
 
       {extraContact.length ? (
         <div className="flex flex-col gap-4">
