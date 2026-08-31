@@ -1,127 +1,65 @@
-/**
- * 一个全新的客户，从零走到自己的系统。
+/* 客户会经过的每一个画面，两个宽度各拍一张。
  *
- * WHY THIS EXISTS. On 2026-08-28 the one-time style choice was found broken —
- * for a week — because /portal/style-select is reachable ONLY while
- * `projects.style` is null, and the two seeded demo accounts can never be in
- * that state again. Every screenshot, every walkthrough and every eval since
- * has started from an account that was already past it. The first screen a
- * paying stranger sees was the one screen nobody could look at.
- *
- * So this makes a real account, walks it, photographs each step, and deletes
- * it. The account is thrown away at the end precisely so the next run can be
- * the first time again.
- *
- *   npm run shoot:journey
- *
- * Needs `npm run dev` on :3000.
+ * 老板 2026-08-31:「就是每一个UI/UX都去上网深度研究 怎么才是最适配 最好看
+ * 最user friendly的」。
+ * ⚠️ 研究之前要先有**清单**：哪几个画面、每一个多高、有几张图、几个可以按的。
+ * 凭印象列出来的清单会漏掉真正难看的那几页（[重点 3](../docs/founder-points.md)）。
  */
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
-import { mkdirSync, readFileSync } from "node:fs";
+import { config } from "dotenv";
+import fs from "node:fs";
 
-const env = Object.fromEntries(
-  readFileSync(".env.local", "utf8")
-    .split(/\r?\n/)
-    .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
-    .map((l) => [
-      l.slice(0, l.indexOf("=")).trim(),
-      l.slice(l.indexOf("=") + 1).trim().replace(/^["']|["']$/g, ""),
-    ]),
-);
+config({ path: ".env.local", quiet: true });
+const BASE = process.env.ALIGN_BASE || "http://localhost:3000";
+const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false } });
 
-const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+const PROJECT = process.env.DEMO_PROJECT_ID || "37f2b188-5899-48ab-8650-11cefa5f98d2";
+const { data: proj } = await db.from("projects").select("account_id, site_slug").eq("id", PROJECT).single();
+const { data: acct } = await db.from("accounts").select("email").eq("id", proj.account_id).single();
+const { data: link } = await db.auth.admin.generateLink({ type: "magiclink", email: acct.email });
+
 const OUT = ".screenshots/journey";
-mkdirSync(OUT, { recursive: true });
+fs.mkdirSync(OUT, { recursive: true });
 
-const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+const SCREENS = [
+  ["01-landing",   "/en",                    false],
+  ["02-login",     "/en/login",              false],
+  ["03-portal",    "/en/portal",             true],
+  ["04-dashboard", "/en/portal/dashboard",   true],
+  ["05-quotations","/en/portal/quotations",  true],
+  ["06-website",   "/en/portal/website",     true],
+  ["07-enquiries", "/en/portal/enquiries",   true],
+  ["08-library",   "/en/portal/library",     true],
+  ["09-account",   "/en/portal/account",     true],
+  ["10-public",    `/s/${proj.site_slug}`,   false],
+  ["11-404",       "/en/portal/nope",        true],
+];
 
-const stamp = Date.now();
-const email = `journey.${stamp}@formae.test`;
-const password = `Journey${stamp}!`;
-let userId = null;
-let browser = null;
-
-const shots = [];
-async function shot(page, name) {
-  await page.waitForTimeout(1200);
-  const path = `${OUT}/${String(shots.length + 1).padStart(2, "0")}-${name}.png`;
-  await page.screenshot({ path, fullPage: true });
-  shots.push(`${path}  ${page.url()}`);
-  console.log(shots[shots.length - 1]);
+const b = await chromium.launch();
+for (const W of [1440, 390]) {
+  const ctx = await b.newContext({ viewport: { width: W, height: W < 500 ? 844 : 950 } });
+  const p = await ctx.newPage();
+  await p.goto(`${BASE}/auth/confirm?token_hash=${link.properties.hashed_token}&type=magiclink&next=/en/portal`,
+    { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
+  for (const [name, path] of SCREENS) {
+    try {
+      await p.goto(`${BASE}${path}`, { waitUntil: "networkidle", timeout: 60000 });
+      await p.waitForTimeout(1600);
+      await p.addStyleTag({ content: "nextjs-portal,[data-nextjs-toast]{display:none!important}" });
+      const m = await p.evaluate(() => ({
+        h: document.body.scrollHeight,
+        pics: [...document.querySelectorAll("img,video")].filter(e => e.getBoundingClientRect().width > 120).length,
+        btns: document.querySelectorAll("button,a[href],input,select,textarea").length,
+        words: (document.body.innerText.match(/\S+/g) || []).length,
+        dead: /does not exist|404/i.test(document.body.innerText.slice(0, 300)),
+      }));
+      await p.screenshot({ path: `${OUT}/${name}-${W}.jpg`, fullPage: W === 1440, type: "jpeg", quality: 64 });
+      if (W === 1440) console.log(`${name.padEnd(14)} ${String(m.h).padStart(6)}px  ${String(m.pics).padStart(2)}图  ${String(m.btns).padStart(3)}个可按  ${String(m.words).padStart(4)}字${m.dead ? "  ← 404" : ""}`);
+    } catch (e) { console.log(`${name.padEnd(14)} 读不到 ${String(e).slice(0, 60)}`); }
+  }
+  await ctx.close();
 }
-
-try {
-  const { data, error } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-  if (error) throw new Error(`createUser: ${error.message}`);
-  userId = data.user.id;
-
-  browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-
-  // Errors the browser swallows are the ones that hide for a week. Anything
-  // the page logs as an error is printed here, next to the step it happened on.
-  page.on("console", (m) => {
-    if (m.type() === "error") console.log("   ⚠ console:", m.text().slice(0, 160));
-  });
-  page.on("pageerror", (e) => console.log("   ⚠ pageerror:", String(e.message).slice(0, 160)));
-
-  await page.goto(`${BASE}/en/login`, { waitUntil: "networkidle" });
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL(/portal/, { timeout: 60000 });
-  await shot(page, "after-signin");
-
-  // The screen that was broken. Pick the first style offered and watch what
-  // happens -- an error here is the whole reason this script exists.
-  if (/style-select/.test(page.url())) {
-    const choice = page.locator("button, [role='button']").filter({ hasText: /choose|select|用这一套|选这套/i });
-    if (await choice.count()) {
-      await choice.first().click();
-      await page.waitForTimeout(3000);
-    }
-    await shot(page, "after-choosing-style");
-  }
-
-  await page.goto(`${BASE}/en/portal`, { waitUntil: "networkidle", timeout: 120000 });
-  await shot(page, "their-system");
-
-  await page.goto(`${BASE}/en/portal/dashboard`, { waitUntil: "networkidle", timeout: 120000 });
-  await shot(page, "editor");
-
-  // What a stranger would see, if they published. Reached from the owner's own
-  // slug so the URL is the real one.
-  const { data: project } = await admin
-    .from("projects")
-    .select("site_slug")
-    .eq("account_id", userId)
-    .maybeSingle();
-  if (project?.site_slug) {
-    await page.goto(`${BASE}/s/${project.site_slug}`, { waitUntil: "networkidle", timeout: 120000 });
-    await shot(page, "public-site");
-  }
-
-  // The same first screen on the phone every one of these owners actually
-  // carries. 390px is an iPhone 15 in portrait.
-  const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
-  await phone.goto(`${BASE}/en/login`, { waitUntil: "networkidle" });
-  await phone.fill('input[type="email"]', email);
-  await phone.fill('input[type="password"]', password);
-  await phone.click('button[type="submit"]');
-  await phone.waitForURL(/portal/, { timeout: 60000 });
-  await phone.goto(`${BASE}/en/portal`, { waitUntil: "networkidle", timeout: 120000 });
-  await shot(phone, "their-system-390");
-} finally {
-  if (browser) await browser.close();
-  if (userId) {
-    await admin.auth.admin.deleteUser(userId).catch(() => {});
-    console.log(`\ncleaned up ${email}`);
-  }
-}
+await b.close();
+console.log(`\n→ ${OUT}/  两个宽度各 ${SCREENS.length} 张`);
