@@ -394,4 +394,21 @@ describe("尺子不准再犯", () => {
     expect(PY).toMatch(/min\(255, max\(0, round\(v \/ QUANT\) \* QUANT\)\)/);
     expect(PY).not.toMatch(/round\(r \/ QUANT\) \* QUANT/);   // 不准再直接用没夹的
   });
+
+  /* ㉟ 「这一套不进场」的规则要赢得了基础规则。
+     基础规则是 `:root[data-reveal-armed] [data-reveal]` —— **(0,3,0)**；
+     三条 `[data-register="X"] [data-reveal]` 是 **(0,2,0)**，全部输掉，
+     三套照样淡入。中台 那条从写出来那天就没赢过，而它的注解写着
+     「NOTHING，而且这条空规则大声说出来」。
+     **一条赢不了的规则比没有规则更糟，因为它读起来像一个决定** ——
+     这句话本来就写在这份档案里（.ds-site h2 那一条），而我又踩了一次。 */
+  it("不进场的风格，规则要带 armed 前缀才赢得了基础规则", () => {
+    const css = readFileSync(resolve("app/globals.css"), "utf8");
+    for (const reg of ["counter", "signboard", "swiss"]) {
+      // 不准再有裸的 (0,2,0) 版本 —— 行首那一条就是输掉的那一条
+      expect(css.includes(`
+[data-register="${reg}"] [data-reveal] {`)).toBe(false);
+      expect(css.includes(`:root[data-reveal-armed] [data-register="${reg}"] [data-reveal]`)).toBe(true);
+    }
+  });
 });

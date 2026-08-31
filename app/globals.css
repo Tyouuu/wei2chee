@@ -1688,6 +1688,25 @@
   filter: none;
 }
 
+/* ── 完全不进场的那几套 —— ⚠️ 前缀不是装饰，它是这条规则能不能赢 ────────────
+   中台 · 招牌 · 瑞士 三套的参考页量出来都是**试了 60 块，一块都不动**。
+   本来这里是三条 `[data-register="X"] [data-reveal]` —— **(0,2,0)**，
+   而上面那条基础规则是 `:root[data-reveal-armed] [data-reveal]`，**(0,3,0)**。
+   三条全部输掉，三套照样淡入。
+
+   中台 那条从写出来那天就没赢过，而它的注解写着「NOTHING，而且这条空规则
+   大声说出来」—— 它一个字都没说出来。它看起来过关，只是因为 Kurofude 自己
+   也淡入，两边刚好一样。**一条赢不了的规则比没有规则更糟，因为它读起来
+   像一个决定** —— 这句话就写在这份档案的 .ds-site h2 上面，我又踩了一次。 */
+:root[data-reveal-armed] [data-register="counter"] [data-reveal],
+:root[data-reveal-armed] [data-register="signboard"] [data-reveal],
+:root[data-reveal-armed] [data-register="swiss"] [data-reveal] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition: none;
+}
+
 /* 满图 — the photographs are the argument, so they SETTLE: a shade oversized,
    easing down to true. Nothing slides. */
 [data-register="hearth"] [data-reveal] {
@@ -1707,12 +1726,6 @@
 /* 招牌 — NOTHING。Toulouse 量出来**试了 60 块，一块都不动**。
    跟 瑞士 同一天同一个发现：我们替两套风格各编了一个进场，而两个参考页
    都是静的。一块招牌不会淡入。 */
-[data-register="signboard"] [data-reveal] {
-  opacity: 1;
-  transform: none;
-  filter: none;
-  transition: none;
-}
 
 /* 瑞士 — NOTHING，而且这一条是**量出来的，不是想出来的**。
    原本这里是 Codrops 那个「字从模糊里变清楚」的进场，理由写着「贵气，适合一套
@@ -1720,22 +1733,10 @@
    2026-08-31 量 Leah Webb：**试了 60 块，一块都不动**。
    一套「拒绝每一种装饰」的风格，连进场也是装饰。我们那个模糊进场是替它加了一样
    它的参考页上没有的东西，而且加的理由正好是它不该有的那个理由。 */
-[data-register="swiss"] [data-reveal] {
-  opacity: 1;
-  transform: none;
-  filter: none;
-  transition: none;
-}
 
 /* 中台 — NOTHING, and the empty rule says so out loud. This register's whole
    argument is that it is a counter screen: a POS that animates its rows is a
    POS nobody trusts with a queue behind them. */
-[data-register="counter"] [data-reveal] {
-  opacity: 1;
-  transform: none;
-  filter: none;
-  transition: none;
-}
 
 /* 图纸 — the ordinary answer: a short rise. */
 [data-register="blueprint"] [data-reveal] {
