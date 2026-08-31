@@ -53,6 +53,9 @@ const FAMILIES = [
   // 末端外扩 / 人文（Displace 2.0 · Optima 那一类）—— 台账 的参考
   "Marcellus", "Gilda Display", "Radley", "Copse", "Quattrocento Sans",
   "Spectral", "Vollkorn", "Faustina", "Petrona", "Amiri", "Cardo", "Gentium Book Plus",
+  // 更细的展示体 —— 台账 的参考墨量 0.093，比我们手上每一套都轻
+  "Italiana", "Julius Sans One", "Federo", "Cormorant", "Cormorant Infant",
+  "Marcellus SC", "Gruppo", "Antic Didone",
   // 图纸 用的那一套本人
   "EB Garamond",
 ];

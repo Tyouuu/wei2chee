@@ -276,6 +276,17 @@
   --site-field-radius: 0;
   /* 官网整页方角 —— 参考页量出来「没有圆角」，而官网层预设把风格的圆角乘 1.7。
      工作台不动：那里 --radius-lg 4px 还是它自己的。 */
+  /* ⚠️ 官网标题字**没有换，而且查过了，不要再查一次**（2026-08-31）。
+     Newel 的 h1 是 `displace-2-0`（末端外扩的无衬线，Optima 那一族，授权字体）：
+     笔画对比 1.83 · 墨量 0.093 · 直笔比 1.21。我们 Tenor Sans 是 2.14 / 0.123 / 1.37，
+     所以「大写比小写宽 · 笔画对比 · 墨量」三项一直红。
+     `node scripts/font-probe.mjs --target ledger` 跑 46 套 Google 字：
+     **最好的是 Petrona 0.64，Tenor Sans 0.66** —— 差距在噪音里，而 Petrona 是
+     **真衬线**，Displace 2.0 不是。裁成原尺寸看他们的「Our Services」跟我们的
+     「What we do」，两边已经是同一族，剩下的差别是他们那一套更细，
+     而 Tenor Sans 只出 400 一个字重。
+     **这三项是有理由的红，不是没修的红。** 要改只能等 Google Fonts 上出现
+     一套更轻的末端外扩无衬线。 */
   --site-round: 0;
   --site-field-border: 0;
   --site-field-line: inset 0 -1px 0 color-mix(in oklab, var(--color-paper) 42%, transparent);
