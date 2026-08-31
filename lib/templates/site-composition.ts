@@ -676,7 +676,17 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        两段都是奶白，交替就断了。 */
     /* 他们的顺序：第一屏 → 菜单（奶白）→ 本月三栏＋满边照片（酒红）→ 故事（奶白）
        → 作品墙（酒红）→ 页脚（奶白）。 */
-    order: ["services", "woven", "story", "work", "prices", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "band"],
+    /* ⚠️ 「cta」 is in this list even though dropBlocks removes it, and that is
+       the convention this file already follows: every `omit`ted section above
+       is listed here too. `order` states the register's OPINION about where a
+       section belongs; whether it is drawn is `omit` / `dropBlocks`. Dropping
+       it from here instead left 招牌 as the only register with no opinion about
+       part of its own page, and site-composition.test.ts -- which exists to
+       catch exactly that -- went red on main.
+
+       Last, because that is where its opinion actually is: Toulouse folds the
+       ask into the footer, so if it were ever drawn, that is where it goes. */
+    order: ["services", "woven", "story", "work", "prices", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "band", "cta"],
   },
 };
 
