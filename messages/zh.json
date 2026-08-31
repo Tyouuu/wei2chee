@@ -10,12 +10,12 @@
     "shotCaption": "这不是示意图。这是一个真的账号，用同一套东西生成的 —— 你讲完你的生意，看到的就是这样一页。",
     "pill": "LHDN e-Invoice：年营业额 RM100 万以上已强制，2028 起开罚",
     "pillCta": "看看你要准备什么",
-    "proofA": "17",
-    "proofALabel": "套版式，每一套不同的组件",
-    "proofB": "66",
-    "proofBLabel": "个组件，都能自己换、自己改",
+    "proofA": "6",
+    "proofALabel": "套风格，每一套是不同的骨架 —— 不是换个颜色",
+    "proofB": "219",
+    "proofBLabel": "个版段，每一个都换得掉",
     "proofC": "2 分钟",
-    "proofCLabel": "讲完你的生意，看到你的系统",
+    "proofCLabel": "讲两分钟你的生意，当场看到你的系统",
     "shotWindow": "兴发装修工程 · Overview"
   },
   "industrySelect": {
@@ -1009,5 +1009,25 @@
     "heading": "这就是那句话生成的系统。",
     "body": "五页、四张表、十七个栏位 —— 用你行业自己的说法，跟你自己的流程，每一处都可以改。不是截图，就是你会拿到的那个。",
     "rule": "从这里开始，都是你的"
+  },
+  "receipt": {
+    "eyebrow": "规格",
+    "title": "你最后拿到的是这些。",
+    "body": "不是一份提案。是一份写清楚有哪几页、哪几张表、哪些栏位的文件，每一个模块旁边都有价钱 —— 你看完才决定要不要做。",
+    "pages": "系统页面",
+    "pagesV": "照你的行业生成",
+    "registers": "套风格",
+    "sections": "个版段可以换",
+    "langs": "语言",
+    "langsV": "English · 中文",
+    "time": "讲完到看见",
+    "spec": "规格书",
+    "specV": "RM 500",
+    "build": "开发费",
+    "buildV": "按模块计",
+    "hosting": "托管",
+    "hostingV": "RM 199 / 月",
+    "freeK": "设计阶段",
+    "freeV": "免费，改几次都可以"
   }
 }

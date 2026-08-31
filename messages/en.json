@@ -10,10 +10,10 @@
     "shotCaption": "Not a mockup. A real account, built by the same generator — describe your business and this is the page you get.",
     "pill": "LHDN e-Invoice: mandatory above RM1m turnover, fines from 2028",
     "pillCta": "See what you need",
-    "proofA": "17",
-    "proofALabel": "registers, each built from different components",
-    "proofB": "66",
-    "proofBLabel": "blocks, every one of them yours to swap",
+    "proofA": "6",
+    "proofALabel": "registers, each a different skeleton — not a repaint",
+    "proofB": "219",
+    "proofBLabel": "sections in the library, every one of them yours to swap",
     "proofC": "2 min",
     "proofCLabel": "describe your business, see your system",
     "shotWindow": "Xing Fa Renovation · Overview"
@@ -1009,5 +1009,25 @@
     "heading": "This is the system that sentence produced.",
     "body": "Five pages, four tables, seventeen fields — in your trade’s own words, with your workflow, and every part of it editable. Not a screenshot: the actual thing you get.",
     "rule": "FROM HERE DOWN, IT IS YOURS"
+  },
+  "receipt": {
+    "eyebrow": "THE SPECIFICATION",
+    "title": "What you walk away with.",
+    "body": "Not a proposal. A document that names every page, every table and every field, with a price against each module — you read it before you decide anything.",
+    "pages": "system pages",
+    "pagesV": "built from your trade",
+    "registers": "registers",
+    "sections": "sections in the library",
+    "langs": "languages",
+    "langsV": "English · 中文",
+    "time": "describe → see it",
+    "spec": "specification",
+    "specV": "RM 500",
+    "build": "build",
+    "buildV": "priced by module",
+    "hosting": "hosting",
+    "hostingV": "RM 199 / month",
+    "freeK": "designing it",
+    "freeV": "free, as often as you like"
   }
 }

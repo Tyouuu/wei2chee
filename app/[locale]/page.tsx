@@ -11,6 +11,7 @@ import { ConversionCta } from "@/components/sections/conversion-cta";
 import { AmbientBackdrop } from "@/components/ambient-backdrop";
 import { WhatYouGet, Pricing, Faq } from "@/components/sections/landing-explainer";
 import { ProcessShowcase } from "@/components/sections/process-showcase";
+import { SpecReceipt } from "@/components/sections/spec-receipt";
 import { SiteFooter } from "@/components/site-footer";
 import { CookieNotice } from "@/components/cookie-notice";
 import { SiteHeader } from "@/components/site-header";
@@ -115,6 +116,7 @@ export default function HomePage() {
           to contact anyone. */}
       <WhatYouGet />
       <Pricing />
+      <SpecReceipt />
       <Faq />
       <SiteFooter />
       <CookieNotice locale={locale} />
