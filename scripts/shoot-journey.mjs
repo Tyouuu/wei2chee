@@ -51,12 +51,26 @@ for (const W of [1440, 390]) {
       const m = await p.evaluate(() => ({
         h: document.body.scrollHeight,
         pics: [...document.querySelectorAll("img,video")].filter(e => e.getBoundingClientRect().width > 120).length,
-        btns: document.querySelectorAll("button,a[href],input,select,textarea").length,
+        /* ⚠️ 只数**看得见**的。
+           第一版数了 `querySelectorAll` 的全部，编辑器那几页报 460–497 个，
+           而裁图一看画面上只有三十来个 —— 其余是 Puck 的组件面板、抽屉、
+           还没打开的弹层，全部在 DOM 里但人看不到。
+           **数一个看不见的控件，跟今天修了一整天的那类错是同一个**：
+           量到的东西不是画面上的东西。 */
+        btns: [...document.querySelectorAll("button,a[href],input,select,textarea")]
+          .filter((e) => {
+            const r = e.getBoundingClientRect();
+            if (r.width < 4 || r.height < 4) return false;
+            const c = getComputedStyle(e);
+            if (c.visibility === "hidden" || c.display === "none" || Number(c.opacity) < 0.05) return false;
+            return e.checkVisibility ? e.checkVisibility({ opacityProperty: true, visibilityProperty: true }) : true;
+          }).length,
+        btnsAll: document.querySelectorAll("button,a[href],input,select,textarea").length,
         words: (document.body.innerText.match(/\S+/g) || []).length,
         dead: /does not exist|404/i.test(document.body.innerText.slice(0, 300)),
       }));
       await p.screenshot({ path: `${OUT}/${name}-${W}.jpg`, fullPage: W === 1440, type: "jpeg", quality: 64 });
-      if (W === 1440) console.log(`${name.padEnd(14)} ${String(m.h).padStart(6)}px  ${String(m.pics).padStart(2)}图  ${String(m.btns).padStart(3)}个可按  ${String(m.words).padStart(4)}字${m.dead ? "  ← 404" : ""}`);
+      if (W === 1440) console.log(`${name.padEnd(14)} ${String(m.h).padStart(6)}px  ${String(m.pics).padStart(2)}图  ${String(m.btns).padStart(3)}个可按（DOM 里 ${String(m.btnsAll).padStart(3)}）  ${String(m.words).padStart(4)}字${m.dead ? "  ← 404" : ""}`);
     } catch (e) { console.log(`${name.padEnd(14)} 读不到 ${String(e).slice(0, 60)}`); }
   }
   await ctx.close();
