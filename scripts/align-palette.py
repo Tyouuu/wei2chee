@@ -23,6 +23,11 @@ TOL = 26      # 每个通道差在这之内算同一个颜色
 SHARE_TOL = 18  # 面积差几个百分点之内算对上
 
 
+def q(v):
+    """四舍五入到最近的色阶，并夹在 0–255 里。"""
+    return min(255, max(0, round(v / QUANT) * QUANT))
+
+
 def dominant(im, top, height, n=6):
     """一段画面里铺得最多的几个颜色。"""
     w, h = im.size
@@ -38,7 +43,11 @@ def dominant(im, top, height, n=6):
             # 2026-08-31：招牌 的酒红实际像素是 (79,0,21)，他们是 (83,1,23) ——
             # 差四个数值。向下取整让 79 掉进 #46、83 掉进 #50，**报成十级的差**，
             # 而那两个颜色人眼分不出来。一个桶的边界不该变成一个设计差异。
-            c[(round(r / QUANT) * QUANT, round(g / QUANT) * QUANT, round(b / QUANT) * QUANT)] += 1
+            # ⚠️ 而四舍五入会**冲出 255**：255 → round(25.5)=26 → 260，
+            # 而 "%02x" % 260 是 "104" 三位数，於是近白被印成 `#104104104`，
+            # near() 再拿 "10"/"41"/"04" 去比 —— 颜色判断整个变成乱码。
+            # 一个为了更准而做的改动，第一次跑就把三套风格的底色判错。
+            c[(q(r), q(g), q(b))] += 1
     total = sum(c.values()) or 1
     return [("#%02x%02x%02x" % k, round(100 * v / total, 1)) for k, v in c.most_common(n)]
 
