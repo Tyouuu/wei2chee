@@ -234,8 +234,14 @@ try {
   let held = {};
   try { held = JSON.parse(fs.readFileSync(LOCK, "utf8")); } catch { /* 锁写坏了也要讲得出话 */ }
   /* 上一次被 Ctrl-C 掉的锁不该挡住今天 —— 那个进程还在不在，问系统，不要猜。 */
+  /* ⚠️ EPERM 不是「它不在」，是「它在，而你碰不到」。
+     2026-08-31：两批 align 重叠跑，台账 被判「拍完之后 demo 站已经不是 ledger」——
+     锁没挡住。因为第一版把**任何**例外都当成「那个进程死了」就接手，
+     而 Windows 上跨 session 问一个活着的进程会丢 EPERM。
+     **一把把「我没有权限知道」读成「它不存在」的锁，就是一把会自己让路的锁。** */
   let alive = false;
-  try { process.kill(held.pid, 0); alive = true; } catch { alive = false; }
+  try { process.kill(held.pid, 0); alive = true; }
+  catch (err) { alive = err?.code === "EPERM"; }
   if (alive) {
     console.error(`
 🔴 已经有一个 align 在跑（pid ${held.pid} · ${held.register} · ${held.at}）。

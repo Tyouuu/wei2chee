@@ -306,6 +306,8 @@
 :root {
 
   /* 字体 TYPE，逐项量出来的（重点 7i）：他们正文是 helvetica —— 中性的 grotesk；我们是 Nunito，圆体人文。同样大小，两种声音。 */
+  /* 并排的缝 —— A. Reynolds 量出来 17%，我们 11%。见 app/globals.css 的 --site-gap。工作台不动。 */
+  --site-gap: 1.55;
   --site-body: var(--font-industrial-latin), ui-sans-serif, system-ui, sans-serif;
   color-scheme: light;
 

@@ -263,6 +263,8 @@
 :root {
 
   /* About 那一段 449 对他们 1030 —— 他们的照片占半幅而且很高。 */
+  /* 并排的缝 —— Newel 量出来 14%，我们 7%。见 app/globals.css 的 --site-gap。工作台不动。 */
+  --site-gap: 2.0;
   --site-page-measure: 80.0rem;
   --site-wide-extra: 0rem;
   /* 导航压在第一屏的照片上 —— Newel 的做法。透明底、没有下缘线，

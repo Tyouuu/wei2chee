@@ -467,6 +467,19 @@
      page, so getting it wrong is five wrong things, not one. Captured here and
      applied on the child for the same reason as the copy scale. */
   --copy-radius-control: var(--radius-control);
+  /* 并排的东西之间留多少 —— 第五根 site 轴，2026-08-31。
+     `段内的缝` 六套里五套红，**而且方向不一样**：
+
+         台账 他们 14% 我们 7    満図 17 / 11    中台 8 / 2
+         瑞士 他们  6% 我们 13   招牌 13 / 17
+
+     不是「我们太挤」也不是「我们太松」，是**每一套都照工作台的间距在画官网**。
+     中台 的 --gap-stack 是 14px —— 那对一台 POS 是对的，对一张给陌生人看的
+     官网不是。跟 --site-copy · --site-round · --site-rhythm 同一个形状：
+     工作台的值漏进官网，而官网层没有那一根轴。
+     ⚠️ 倍数不是绝对值，所以每一套自己的比例保得住（重点 7c）。 */
+  --copy-gap-stack: var(--gap-stack);
+  --copy-gap-inline: var(--gap-inline);
 }
 .ds-ground[data-copy="large"] .ds-site,
 .ds-ground[data-copy="large"].ds-site {
@@ -489,6 +502,8 @@
   --site-copy: 1.12;
 }
 .ds-site > * {
+  --gap-stack: calc(var(--copy-gap-stack) * var(--site-gap, 1));
+  --gap-inline: calc(var(--copy-gap-inline) * var(--site-gap, 1));
   --radius-control: var(--site-radius-control, var(--copy-radius-control));
   --text-micro: calc(var(--copy-micro) * var(--site-copy));
   --text-xs: calc(var(--copy-xs) * var(--site-copy));
@@ -523,6 +538,16 @@
      收进正文会把它们变成另一种东西。而且它们只占 2% 的字，动不了中位数。 */
   --text-sm: var(--text-base);
   --site-foot-jump: var(--text-base);
+}
+/* ⚠️ 页脚不吃这根轴 —— 它是 chrome，不是一段。
+   中台 的 --site-gap 是 4.0（Kurofude 的段内缝 8%，我们 2%），套上去缝对上了
+   而**页脚从 211px 涨到 355px**，他们只有 195px。页脚自己早就有一根比例轴
+   （--site-foot，中台设 0.3），两根乘在一起就是把一个已经调好的东西再乘一次。
+   量出来的那 8% 是从**内容段**量的，那就只用在内容段上。 */
+[data-chrome-foot],
+[data-chrome-top] {
+  --gap-stack: var(--copy-gap-stack);
+  --gap-inline: var(--copy-gap-inline);
 }
 .ds-site > * > * + * {
   margin-top: var(--site-rhythm);

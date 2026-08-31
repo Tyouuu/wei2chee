@@ -459,6 +459,8 @@
   /* 官网的标题字 —— Kurofude 用 Univers（拿不到）。38 套量下来 Libre Franklin
      最近（笔画对比 1.45 对 1.44 · 小写多高 0.707 对 0.70），而且同属新哥特。
      见 app/fonts.ts。工作台不动。 */
+  /* 并排的缝 —— Kurofude 量出来 8%，我们 2%（工作台的 --gap-stack 是 14px，那是 POS 的间距）。见 app/globals.css 的 --site-gap。工作台不动。 */
+  --site-gap: 4.0;
   --site-display: var(--font-grotesque-latin), ui-sans-serif, system-ui, sans-serif;
   --site-round: 0;
   --site-heading: 0.76;

@@ -446,6 +446,8 @@
      Questrial 1.00 / 0.130。 */
   /* 页脚满幅 —— Toulouse 的页脚是店名横过整页、三栏连结从页缘开始（2%–98%）。
      我们量出来 14%–59%，「满边的段」他们 5/6 我们 3/6。 */
+  /* 并排的缝 —— Toulouse 量出来 13%，我们 17%。见 app/globals.css 的 --site-gap。工作台不动。 */
+  --site-gap: 0.76;
   --site-foot-measure: 100%;
   --site-foot-pad: 1.4rem;
   --site-display: var(--font-geometric-latin), ui-sans-serif, system-ui, sans-serif;

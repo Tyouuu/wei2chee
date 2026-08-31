@@ -326,6 +326,9 @@ describe("尺子不准再犯", () => {
     expect(MJS).toMatch(/flag: "wx"/);            // 存在就失败，不是覆盖
     expect(MJS).toMatch(/process\.kill\(held\.pid, 0\)/); // 问系统那个进程还在不在
     expect(MJS).toMatch(/上一次的锁没清干净/);
+    /* EPERM = 它在，你碰不到。当成「死了」就是一把会自己让路的锁 ——
+       2026-08-31 两批重叠跑，台账 的采集被换掉，就是这一行造成的。 */
+    expect(MJS).toMatch(/err\?\.code === "EPERM"/);
     expect(MJS).toMatch(/SIGINT/);                 // Ctrl-C 也要放开
     // 拍完之后的复查不准被这把锁取代
     expect(MJS).toMatch(/拍完之后 demo 站已经不是/);

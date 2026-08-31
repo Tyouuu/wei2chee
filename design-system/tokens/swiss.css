@@ -415,6 +415,8 @@
      瑞士 的工作台 --radius-lg 是 0，那是它的身份，倍数救不了；官网层给绝对值。
      ⚠️ 一个全白、只有细线分段的页面配 20px 的圆角，听起来矛盾 —— 而那正是
      那一页：线是直的，卡是圆的。 */
+  /* 并排的缝 —— Leah Webb 量出来 **6%**，我们 13% —— 这一套要收紧，不是放开。见 app/globals.css 的 --site-gap。工作台不动。 */
+  --site-gap: 0.46;
   --site-radius-abs: 20px;
   --site-radius-sm-abs: 20px;
   --site-display-tracking: 0em;
