@@ -461,6 +461,31 @@ LHDN 已经强制，那不是加分项，是**及格线**。
 
 ---
 
+**22c. 🔴 风格不是我的。模板才是。我漂过去三次,他讲了两次。**
+> `接更多模版进来 不是你这个session不是负责这个东西 你是负责模板`
+> `你不要懂风格的东西 你没有听懂吗`（2026-08-31,同一天第二次）
+
+**分清楚三样东西,它们在三个地方**：
+
+| | 是什么 | 住在哪 | 谁管 |
+|---|---|---|---|
+| **官网风格** | 那一页哪几段、什么顺序、什么颜色 | `site-composition.ts` · `design-system/tokens/*` | **不是我** |
+| **后台风格** | 工作台哪几块、怎么排 | `DASHBOARD_COMPOSITION` · 同一批 token | **不是我** |
+| **模板** | 整页现成的官网版面,客人直接套 | `landing-templates.ts` | ✅ **我** |
+
+**我实际漂过去动的档案**（他讲第二次之前）：
+`design-system/tokens/counter.css` · `design-system/components/record-table.tsx` ·
+`design-system/components/floating-contact.tsx` · `style-scope.module.css` ·
+`site-composition.test.ts`。
+
+⚠️ **而且每一次我都有一个「好理由」** —— 尺子报了 20 个读不到的字,那是真的错。
+**但「这是个真的错」不等於「这是我的错要修」** —— 另一个 session 正在同一批档案上跑
+`align`,我改一个 token 他就要重量一次。
+
+**看到别人地盘上的错,写进[任务档](./founder-tasks.md),不要动手。**
+
+---
+
 **22b. 🔴 报告里不准出现英文技术词。他看不懂就等於我没讲。**
 > `讲华语我看不懂`（2026-08-31，我刚交完 directory 的报告）
 
