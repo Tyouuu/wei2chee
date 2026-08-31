@@ -125,22 +125,16 @@
   body {
     @apply bg-background text-foreground;
     /*
-      The drafting grid. Two superimposed line sets: a fine 32px working grid
-      and a heavier 160px major division, exactly as on real drafting paper.
-      Fixed attachment so it reads as the surface the page sits on, not as
-      texture glued to each section.
+      ⚠️ 製图网格拿掉了 —— 老板 2026-08-31，拍了手机上的 404 给我：
+      「我不要网格的」。
+
+      它原本画在 `body` 上，所以**客户看到的每一页都有**：官网、问卷、
+      portal、404。当初写的理由是「让页面读起来像放在一张製图纸上」——
+      那是一个我们自己想出来的比喻，不是量出来的，也不是任何一个参考页在做的事。
+      Trafft（[任务 84](docs/founder-tasks.md)）整页零纹理，
+      今天量的十个成熟官网底色彩度 0.000。
+      **一层没有人要求过的纹理，铺在每一个客户会看到的画面上。**
     */
-    background-image:
-      linear-gradient(oklch(0.66 0.17 262 / 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(0.66 0.17 262 / 0.045) 1px, transparent 1px),
-      linear-gradient(oklch(0.66 0.17 262 / 0.025) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(0.66 0.17 262 / 0.025) 1px, transparent 1px);
-    background-size:
-      160px 160px,
-      160px 160px,
-      32px 32px,
-      32px 32px;
-    background-attachment: fixed;
   }
   html {
     @apply font-sans;
