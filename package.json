@@ -50,7 +50,8 @@
     "shoot:awwwards": "node scripts/shoot-awwwards.mjs",
     "preview": "node scripts/preview-for.mjs",
     "check:records": "node scripts/check-records.mjs",
-    "shoot:directory": "node scripts/shoot-directory.mjs"
+    "shoot:directory": "node scripts/shoot-directory.mjs",
+    "shoot:scroll": "node scripts/shoot-scroll.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
