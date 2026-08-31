@@ -210,8 +210,8 @@ export function AmbientBackdrop() {
           style={{
             opacity: scrimOpacity,
             background:
-              "radial-gradient(130% 100% at 50% 42%, oklch(0.16 0.012 265 / 0.34) 0%, oklch(0.16 0.012 265 / 0.2) 55%, transparent 100%)," +
-              "linear-gradient(to bottom, oklch(0.16 0.012 265 / 0.5) 0%, transparent 22%, transparent 62%, oklch(0.16 0.012 265 / 0.62) 100%)",
+              "radial-gradient(130% 100% at 50% 42%, oklch(from var(--ink) l c h / 0.34) 0%, oklch(from var(--ink) l c h / 0.2) 55%, transparent 100%)," +
+              "linear-gradient(to bottom, oklch(from var(--ink) l c h / 0.5) 0%, transparent 22%, transparent 62%, oklch(from var(--ink) l c h / 0.62) 100%)",
           }}
         />
       </div>

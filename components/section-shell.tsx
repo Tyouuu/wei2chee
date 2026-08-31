@@ -95,7 +95,11 @@ export function SectionShell({
       style={
         ground === "ink"
           ? ({
-              "--background": "oklch(0.16 0.012 265)",
+              /* ⚠️ 这里本来写死 oklch(0.16 0.012 265)。2026-08-31 把地压深到 0.13
+                 （老板：「黑色一片都没有设计感」，而量出来根因是黑里面没有层次），
+                 globals.css 改完这一段还是旧的 —— 一个写死的颜色就是一份不会跟着走的
+                 拷贝。跟 handover.tsx 那份是同一天同一个病。 */
+              "--background": "var(--ink)",
               "--foreground": "oklch(0.97 0.004 265)",
               "--muted-foreground": "oklch(0.74 0.015 265)",
               "--border": "oklch(1 0 0 / 14%)",

@@ -56,14 +56,19 @@ import { useEffect } from "react";
 type Triple = [number, number, number];
 
 /** Eased. Surfaces — nothing is read directly off these. */
+/* ⚠️ 这一整张表是 globals.css 的**第二份拷贝**，而且它每一帧写成 <html> 的
+   inline style —— inline 赢过所有样式表。2026-08-31 改深色层次（地 0.16 → 0.13、
+   卡 0.21 → 0.22）跟主色（蓝 → 青），globals.css 全部改完而**画面一点都没变**，
+   四轮才查到是这里。
+   handover-brand.test.ts 现在会盯着 from 那一栏，跟 globals.css 对不上就红。 */
 const GROUND: Record<string, { from: Triple; to: Triple }> = {
-  "--background": { from: [0.16, 0.012, 265], to: [1, 0, 265] },
-  "--ink": { from: [0.16, 0.012, 265], to: [1, 0, 265] },
+  "--background": { from: [0.13, 0.012, 265], to: [1, 0, 265] },
+  "--ink": { from: [0.13, 0.012, 265], to: [1, 0, 265] },
   // On the dark half a panel is LIGHTER than the ground; on the light half it
   // has to be darker, or every card vanishes into the page.
-  "--ink-raised": { from: [0.21, 0.014, 265], to: [0.975, 0.002, 265] },
-  "--card": { from: [0.21, 0.014, 265], to: [0.975, 0.002, 265] },
-  "--popover": { from: [0.21, 0.014, 265], to: [0.975, 0.002, 265] },
+  "--ink-raised": { from: [0.22, 0.014, 265], to: [0.975, 0.002, 265] },
+  "--card": { from: [0.22, 0.014, 265], to: [0.975, 0.002, 265] },
+  "--popover": { from: [0.22, 0.014, 265], to: [0.975, 0.002, 265] },
   "--muted": { from: [0.26, 0.014, 265], to: [0.95, 0.003, 265] },
   "--secondary": { from: [0.26, 0.014, 265], to: [0.95, 0.003, 265] },
   "--accent": { from: [0.28, 0.03, 262], to: [0.94, 0.012, 262] },
@@ -86,11 +91,18 @@ const GROUND: Record<string, { from: Triple; to: Triple }> = {
 const INK: Record<string, { darkL: number; lightL: number; c: number; h: number; gap: number }> = {
   "--foreground": { darkL: 0.96, lightL: 0.18, c: 0.008, h: 265, gap: 0.42 },
   "--muted-foreground": { darkL: 0.68, lightL: 0.46, c: 0.014, h: 265, gap: 0.34 },
-  // The accent is not the same value on both grounds: oklch(0.66 0.17 262) is
-  // #568ef9, which measures 3.0:1 on white and fails AA for anything but large
-  // text. L 0.52 clears 4.9:1 with the hue held exactly, so it stays
-  // recognisably the same blue.
-  "--blueprint": { darkL: 0.66, lightL: 0.52, c: 0.17, h: 262, gap: 0.3 },
+  /* ⚠️ 这里是品牌色的**第二份拷贝**，而且它每一帧写成 <html> 的 inline style ——
+     inline 赢过所有样式表。2026-08-31 把 globals.css 的 --blueprint 换成青，
+     整份 CSS 都对了，**画面一点都没变**，因为这一行还是旧的蓝。
+     查了四轮才找到（服务的 CSS 是 #00bdb6，浏览器算出来却是 oklch(0.6600 0.17 262)
+     —— 那个四位小数就是这里 toFixed 出来的）。
+     **一份手写的拷贝活得比它描述的东西久**，这个仓库第五次。
+     底下的 handover-brand.test.ts 现在会盯着它。
+
+     青在两个地上不是同一个值：深底用 L 0.72（对 #0B0D13 是 8.4:1），
+     浅底要压到 **L 0.55**（#008882，对白 4.34:1）才及格 —— 0.72 在白底上只有
+     2.3:1，整段文字会糊掉。色相跟彩度不动，所以它还是同一个青。 */
+  "--blueprint": { darkL: 0.72, lightL: 0.55, c: 0.13, h: 190, gap: 0.3 },
 };
 
 /** Hairlines. They flip polarity in one step rather than fading, because white

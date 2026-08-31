@@ -82,24 +82,25 @@ export function ProcessShowcase() {
   }, [reduced]);
 
   return (
-    /* ⚠️ 这一段是**浅底**，而整页其余是近黑的。
-      老板 2026-08-31:「黑色一片都没有设计感」。量出来他是对的：
-      我们整页**亮的面积 21%**，Trafft 51%，LPAS 90%。
-      一页全黑不是风格，是没有节奏 —— 而这一段刚好是全页最高的一块（2334px），
-      装的又是三张浅色的产品截图，放在黑底上等於把它们孤立成三个发光的方块。
-      翻成浅底之后，那三张图变成「放在桌面上的东西」，而深色的第一屏
-      跟深色的交付带各自回到「一条带」的角色。 */
-    <section
-      id="how"
-      className="border-y border-[oklch(0.9_0.006_265)] [background:linear-gradient(180deg,#f7f8fa_0%,#eef1f5_100%)] [color:#12161d]"
-    >
+    /* ⚠️ 我先做成浅底，做错了，老板当场纠正：
+      「为什么要做浅色 我们就做黑色跟青色」。
+
+      他讲「黑色一片都没有设计感」的时候，我读成「要加浅色」——
+      而他要的是**让黑真的成立**。我自己量出来的第二个原因正好支持他：
+      卡 #212938 在地 #0B0D13 上只差两阶，**边界几乎看不到** ——
+      问题从来不是「太黑」，是**黑里面没有层次**。
+
+      所以修的是三件，不是把它翻白：地压深、卡拉高、边线加重（见 globals.css），
+      主色换成青（对地 8.4:1，原本那个蓝 6.1:1）。
+      三张浅色的产品截图放在深底上，本身就是这一页最亮的东西 —— 那才是对比。 */
+    <section id="how" className="border-y border-border">
       <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
         <div className="flex items-baseline gap-4">
-          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] [color:#7b8492]">
+          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-muted-foreground">
             PROCESS
           </span>
         </div>
-        <h2 className="mt-3 max-w-[18ch] text-[clamp(1.75rem,3.6vw,2.75rem)] leading-[1.08] tracking-[-0.02em] [color:#12161d]">
+        <h2 className="mt-3 max-w-[18ch] text-[clamp(1.75rem,3.6vw,2.75rem)] leading-[1.08] tracking-[-0.02em] ">
           {t("title")}
         </h2>
 
@@ -125,7 +126,7 @@ export function ProcessShowcase() {
                   ref={(el) => {
                     marks.current[i] = el;
                   }}
-                  className="flex flex-col justify-center border-b border-[oklch(0.9_0.006_265)] py-10 md:min-h-[70vh] md:py-16"
+                  className="flex flex-col justify-center border-b border-border py-10 md:min-h-[70vh] md:py-16"
                 >
                   <StepText i={i} step={s} active={active === i} />
                   {/* 手机上没有钉住的那一栏，图跟在每一步下面。 */}
@@ -142,7 +143,7 @@ export function ProcessShowcase() {
                   於是「这一步」跟「这一步的画面」在画面上差了半屏，右下角空一片。
                   看图才看得到，而那时候每一项读数都是绿的。 */}
               <div className="sticky top-0 flex h-screen items-center">
-                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-white shadow-[0_1px_2px_rgba(16,24,40,.06),0_24px_48px_-12px_rgba(16,24,40,.18)] ring-1 ring-[oklch(0.88_0.008_265)]">
+                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-card shadow-[0_24px_60px_-16px_rgba(0,0,0,.65)] ring-1 ring-[oklch(1_0_0/12%)]">
                   {steps.map((s, i) => (
                     <motion.div
                       key={s.shot}
@@ -183,7 +184,7 @@ function StepText({ i, step, active }: { i: number; step: Step; active: boolean 
       <div className="flex flex-col items-center pt-1">
         <span
           className="font-mono text-[2rem] leading-none tabular-nums transition-colors duration-300 md:text-[2.75rem]"
-          style={{ color: active ? "#12161d" : "#b9c0cb" }}
+          style={{ color: active ? "var(--foreground)" : "oklch(0.45 0.012 265)" }}
         >
           {String(i + 1).padStart(2, "0")}
         </span>
@@ -194,27 +195,27 @@ function StepText({ i, step, active }: { i: number; step: Step; active: boolean 
           style={{
             width: active ? "3px" : "1px",
             minHeight: "2.5rem",
-            backgroundColor: active ? "#2f5fe0" : "#cfd6e0",
+            backgroundColor: active ? "var(--color-primary)" : "oklch(1 0 0 / 18%)",
           }}
         />
       </div>
       <div className="pb-2">
         <span
           className="font-mono text-[0.625rem] uppercase tracking-[0.22em] transition-colors duration-300"
-          style={{ color: active ? "#2f5fe0" : "#8c95a3" }}
+          style={{ color: active ? "var(--color-primary)" : "oklch(0.58 0.012 265)" }}
         >
           {active ? "NOW" : `STEP ${i + 1}`}
         </span>
         <h3
           className="mt-2 text-[1.375rem] leading-snug tracking-[-0.015em] transition-colors duration-300 md:text-[1.75rem]"
-          style={{ color: active ? "#12161d" : "#5d6673" }}
+          style={{ color: active ? "var(--foreground)" : "oklch(0.62 0.012 265)" }}
         >
           {step.term}
         </h3>
-        <p className="mt-3 max-w-[44ch] text-[0.9375rem] leading-relaxed" style={{ color: "#5d6673" }}>
+        <p className="mt-3 max-w-[44ch] text-[0.9375rem] leading-relaxed" style={{ color: "oklch(0.72 0.012 265)" }}>
           {step.detail}
         </p>
-        <p className="mt-4 font-mono text-[0.6875rem] tracking-[0.04em]" style={{ color: "#8c95a3" }}>
+        <p className="mt-4 font-mono text-[0.6875rem] tracking-[0.04em]" style={{ color: "oklch(0.58 0.012 265)" }}>
           {step.caption}
         </p>
       </div>
@@ -224,7 +225,7 @@ function StepText({ i, step, active }: { i: number; step: Step; active: boolean 
 
 function Frame({ src, alt, priority }: { src: string; alt: string; priority?: boolean }) {
   return (
-    <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-white shadow-[0_1px_2px_rgba(16,24,40,.06),0_18px_36px_-12px_rgba(16,24,40,.16)] ring-1 ring-[oklch(0.88_0.008_265)]">
+    <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-card shadow-[0_18px_44px_-16px_rgba(0,0,0,.6)] ring-1 ring-[oklch(1_0_0/12%)]">
       <Image
         src={src}
         alt={alt}

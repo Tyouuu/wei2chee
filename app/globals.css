@@ -75,13 +75,28 @@
   Never decorative. The temperature contrast is the argument.
 */
 :root {
-  --ink: oklch(0.16 0.012 265);
-  --ink-raised: oklch(0.21 0.014 265);
+  /* ⚠️ 层次拉开了。老板 2026-08-31:「黑色一片都没有设计感」。
+     量出来第二个原因不是「太黑」，是**黑里面没有分别**：
+     地 0.16 对卡 0.21 只差 0.05，边界几乎看不到。
+     现在地压到 0.13、卡拉到 0.22，中间再加一阶 —— 一样是黑的，但分得出层。 */
+  --ink: oklch(0.13 0.012 265);
+  --ink-raised: oklch(0.22 0.014 265);
+  --ink-sunken: oklch(0.10 0.010 265);
   --paper: oklch(0.96 0.008 85);
 
-  --blueprint: oklch(0.66 0.17 262);
-  --blueprint-dim: oklch(0.42 0.09 262);
-  --signal: oklch(0.8 0.13 195);
+  /* ⚠️ 品牌主色 2026-08-31 从蓝换成青。老板：「青色呢 我觉得黑色跟青色很好配」。
+     量出来他是对的：对 #0B0D13 的对比 **8.4:1**，原本那个蓝只有 6.1:1，
+     而任务 16 量的九个商用系统里 7 个落在色相 230–290 —— 那个蓝正中那一带，
+     站得住而没有人记得。
+     ⚠️ 离 AutoCount #00A8E6（马来西亚 24 万家公司在用的那个青）**18°**，
+     够远；再往绿走会开始像 Supabase。
+     ⚠️ 青只能配深色字（配白最高 2.3:1），所以 --primary-foreground 是墨色，
+     按钮是「青底黑字」—— 那是这个选择的代价，也是它好看的原因。 */
+  --blueprint: oklch(0.72 0.13 190);
+  --blueprint-dim: oklch(0.46 0.07 190);
+  /* signal 本来是青，主色换青之后两个撞在一起 —— 挪到琥珀。
+     它的用途是「注意一下」，那本来就不该跟品牌色同一个颜色。 */
+  --signal: oklch(0.82 0.14 75);
   --rust: oklch(0.66 0.11 45);
 
   --background: var(--ink);
@@ -91,7 +106,7 @@
   --popover: var(--ink-raised);
   --popover-foreground: oklch(0.96 0.004 265);
   --primary: var(--blueprint);
-  --primary-foreground: oklch(0.16 0.012 265);
+  --primary-foreground: oklch(0.13 0.012 265);
   --secondary: oklch(0.26 0.014 265);
   --secondary-foreground: oklch(0.96 0.004 265);
   --muted: oklch(0.26 0.014 265);
@@ -99,7 +114,7 @@
   --accent: oklch(0.28 0.03 262);
   --accent-foreground: oklch(0.96 0.004 265);
   --destructive: oklch(0.65 0.19 25);
-  --border: oklch(1 0 0 / 11%);
+  --border: oklch(1 0 0 / 16%);
   --input: oklch(1 0 0 / 14%);
   --ring: var(--blueprint);
   --chart-1: var(--blueprint);
@@ -213,18 +228,31 @@
    reach here by inheritance and only a nearer definition beats them.
    --------------------------------------------------------------------------- */
 .handover-fixed {
-  --background: oklch(0.16 0.012 265);
-  --ink: oklch(0.16 0.012 265);
-  --ink-raised: oklch(0.21 0.014 265);
+  --background: oklch(0.13 0.012 265);
+  /* ⚠️ 层次拉开了。老板 2026-08-31:「黑色一片都没有设计感」。
+     量出来第二个原因不是「太黑」，是**黑里面没有分别**：
+     地 0.16 对卡 0.21 只差 0.05，边界几乎看不到。
+     现在地压到 0.13、卡拉到 0.22，中间再加一阶 —— 一样是黑的，但分得出层。 */
+  --ink: oklch(0.13 0.012 265);
+  --ink-raised: oklch(0.22 0.014 265);
+  --ink-sunken: oklch(0.10 0.010 265);
   --foreground: oklch(0.96 0.004 265);
   --muted-foreground: oklch(0.68 0.015 265);
-  --card: oklch(0.21 0.014 265);
+  --card: oklch(0.22 0.014 265);
   --popover: oklch(0.21 0.014 265);
   --muted: oklch(0.26 0.014 265);
   --secondary: oklch(0.26 0.014 265);
   --accent: oklch(0.28 0.03 262);
-  --blueprint: oklch(0.66 0.17 262);
-  --border: oklch(1 0 0 / 11%);
+  /* ⚠️ 品牌主色 2026-08-31 从蓝换成青。老板：「青色呢 我觉得黑色跟青色很好配」。
+     量出来他是对的：对 #0B0D13 的对比 **8.4:1**，原本那个蓝只有 6.1:1，
+     而任务 16 量的九个商用系统里 7 个落在色相 230–290 —— 那个蓝正中那一带，
+     站得住而没有人记得。
+     ⚠️ 离 AutoCount #00A8E6（马来西亚 24 万家公司在用的那个青）**18°**，
+     够远；再往绿走会开始像 Supabase。
+     ⚠️ 青只能配深色字（配白最高 2.3:1），所以 --primary-foreground 是墨色，
+     按钮是「青底黑字」—— 那是这个选择的代价，也是它好看的原因。 */
+  --blueprint: oklch(0.72 0.13 190);
+  --border: oklch(1 0 0 / 16%);
   --input: oklch(1 0 0 / 14%);
 }
 
