@@ -1031,7 +1031,7 @@
     "freeV": "free, as often as you like"
   },
   "drawing": {
-    "eyebrow": "HOW IT IS BUILT",
+    "eyebrow": "02 · HOW IT IS BUILT",
     "title": "One sentence, drawn into a system.",
     "body": "Nothing here is a picture. The frame, the rail, the tiles, the table and the workflow are drawn line by line as you read — the same order the generator builds them in.",
     "alt": "A wireframe of a system being drawn: outer frame, sidebar, four figures, a record table, a workflow strip.",
@@ -1041,5 +1041,25 @@
     "s4": "your records, in your columns",
     "s5": "your workflow, in your words",
     "s6": "where a job is right now"
+  },
+  "draw1": {
+    "eyebrow": "01 · WHAT YOU SAY",
+    "title": "Two minutes of your own words.",
+    "body": "No form, no checkboxes. You describe the business the way you would describe it to a friend, and every noun in it becomes something the system has to hold.",
+    "s1": "one sentence, your words",
+    "s2": "broken into what you actually said",
+    "s3": "the trade and the verbs it recognises",
+    "s4": "the modules that follow from them",
+    "s5": "collected into one list"
+  },
+  "draw3": {
+    "eyebrow": "03 · WHAT HAPPENS NEXT",
+    "title": "You hand it over. It starts working.",
+    "body": "The specification goes to a real team, the system gets built, and the public site goes up with it — so a stranger filling in the form lands as a row in the system you designed.",
+    "s1": "the specification you signed off",
+    "s2": "a real team builds it",
+    "s3": "your public site goes live",
+    "s4": "a stranger asks for a price",
+    "s5": "it lands as a record, in your columns"
   }
 }
