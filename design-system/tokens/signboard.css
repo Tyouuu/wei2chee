@@ -436,6 +436,13 @@
      表格调的，不是为一行 72px 的大标题。） */
   /* 圆角 —— Toulouse 量出来 **4.5px ×11**，我们「没有圆角」。
      一点点，但它出现十一次；十一个方角跟十一个 4.5px 是两张不同的脸。 */
+  /* 店名全大写、贴左 —— Toulouse 的第一屏是「TOULOUSE」横过整页，
+     两边各留 2%。我们本来是居中的「My Shop」，只占中间 60%，
+     而版心那一项量出来 13%–87% 对 14%–74% 讲的就是这件事。
+     ⚠️ `text-transform` 只改**画出来**的样子，不改客户存的字 ——
+     他在编辑器里打的还是「My Shop」，AI 也还是改得到那个字段。 */
+  --site-name-case: uppercase;
+  --site-name-align: left;
   --site-radius-abs: 4.5px;
   --site-radius-sm-abs: 4.5px;
   --site-display-tracking: 0.01em;

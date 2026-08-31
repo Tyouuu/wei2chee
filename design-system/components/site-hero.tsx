@@ -631,7 +631,15 @@ export function SiteHero({
       <section data-bleed="" className="@container [background:var(--site-hero-band,var(--color-canvas))]">
         <div className="[padding-block:calc(var(--pad-card-lg)*1.2)_0] [padding-inline:var(--pad-card-lg)]">
           <h1
-            className="ds-display [color:var(--color-primary)] [font-weight:var(--fw-regular,400)] [letter-spacing:0.01em] [line-height:0.92] [text-align:center] [text-wrap:balance]"
+            /* ⚠️ 大小写跟对齐是**风格自己的**，不是这个版式的。
+               2026-08-31 把 招牌 第1段裁成原尺寸看：他们是「TOULOUSE」——
+               **全大写、贴到两边（2%–98%）、笔画细**；我们是「My Shop」——
+               首字母大写、居中、只占中间 60%。
+               而 `小写多高 1.00`（x 的高等於 H 的高）正是「小写也画成大写」
+               那一类标题体的签名 —— 26 套 Google 字量下来一套都到不了 1.00，
+               因为那根本不是字体的事，是**大小写**的事。
+               一块招牌上没有小写字母。 */
+            className="ds-display [color:var(--color-primary)] [font-weight:var(--fw-regular,400)] [letter-spacing:0.01em] [line-height:0.92] [text-wrap:balance] [text-align:var(--site-name-align,center)] [text-transform:var(--site-name-case,none)]"
             style={{ fontSize: "clamp(2.6rem, calc(9.2vw * var(--site-hero-scale, 1)), calc(7rem * var(--site-hero-scale, 1)))" }}
           >
             {brand || headline}

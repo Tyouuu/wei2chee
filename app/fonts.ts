@@ -74,7 +74,13 @@ const archivo = Archivo({
 // pair them without the pairing looking accidental.
 const archivoNarrow = Archivo_Narrow({
   subsets: ["latin"],
-  weight: ["600", "700"],
+  /* ⚠️ 400 是 2026-08-31 加的，而它加的理由是一个**说了没做**：
+     招牌 的官网层宣告 `--site-display-weight: 400`（Toulouse 的大标题量出来
+     墨量 0.118，我们 0.213，重一倍），而这里只载了 600 跟 700 ——
+     **那个字重根本没有档案**，浏览器退回 600，画面一点都没变，
+     而尺子的「标题字重」读回 400，看起来像生效了。
+     宣告一个载不进来的字重，跟没有宣告是同一件事。 */
+  weight: ["400", "600", "700"],
   variable: "--font-signboard-latin",
   display: "swap",
 });
