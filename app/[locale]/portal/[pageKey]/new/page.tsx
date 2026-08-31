@@ -97,6 +97,7 @@ export default async function NewRecordPage({
      they are still samples -- offering 「加一单」 there would be a button that
      writes nowhere, which this repo has shipped enough times. */
   const shape = MODULE_BY_KEY[pageKey]?.shape;
+  const isDirectory = shape === "directory";
   /* One fact, read from one place: a shape that is not live has no table
      behind it, so 加一单 there would be a button that writes nowhere. When
      a shape goes live, moving it in shape-state.ts is what opens this page for
@@ -160,6 +161,28 @@ export default async function NewRecordPage({
      which is allowed; a form writing into a table he cannot see is not. */
   if (!table || !table.columns.length) notFound();
 
+  /*
+    WHO HE CAN PICK FROM.
+
+    The RPC resolves a typed name on its own, and refuses when two people share
+    one (see party_by_name). The list is what makes that refusal rare instead of
+    routine: he chooses 陈先生 from his own customers rather than retyping him,
+    so the quotation lands on the right person and 「陈先生」 and 「陈 先生」 do
+    not become two customers.
+
+    Only for the shapes that HAVE a counterparty. A directory page's own form is
+    where a party is created; offering to attach one to itself is a loop. */
+  const { data: parties } = isDirectory
+    ? { data: null }
+    : await supabase
+        .from("directory_entries")
+        .select("id, name")
+        .eq("project_id", project.id)
+        .eq("module_key", "customers")
+        .is("archived_at", null)
+        .order("name")
+        .limit(500);
+
   const copy = COPY[lang === "en" ? "en" : "zh"];
   const labels = tradeLabels(businessContext, pageRefs);
   const title = pageLabel({ key: pageKey, title: page.title ?? null }, labels, lang);
@@ -190,6 +213,7 @@ export default async function NewRecordPage({
         /* One value, not a boolean per shape: a page is exactly one of the
            three, and a boolean each is how two of them end up true. */
         shape={shape as "pipeline" | "ledger" | "directory"}
+        parties={(parties as { id: string; name: string }[] | null) ?? []}
         columns={table.columns}
         /* This business's own words for its stages, not a vocabulary we
            invented -- the same list add_pipeline_record falls back to.

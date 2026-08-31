@@ -79,6 +79,7 @@ export function NewRecordForm({
   projectId,
   moduleKey,
   shape,
+  parties,
   columns,
   stages,
   backHref,
@@ -90,6 +91,9 @@ export function NewRecordForm({
    *  is exactly one of them, and a boolean per shape is how two of them end up
    *  true. */
   shape: "pipeline" | "ledger" | "directory";
+  /** This business's own customers, for the name box. Empty on a directory
+   *  page, which is where a party is created rather than chosen. */
+  parties: { id: string; name: string }[];
   columns: TableColumn[];
   /** This business's own workflow words. Empty on a ledger page, which has no
    *  stages -- its status is read from the money -- and on a directory page,
@@ -149,6 +153,12 @@ export function NewRecordForm({
     }
     const party = (values.secondary ?? "").trim();
     const amount = senFrom(values.amount ?? "");
+    /* Exactly one match, case-insensitively, or nothing. The same rule the
+       database uses: attaching a job to the wrong person because two of them
+       share a name is worse than leaving it unlinked, and the typed text is
+       kept either way. */
+    const hits = parties.filter((x) => x.name.trim().toLowerCase() === party.toLowerCase());
+    const partyId = hits.length === 1 ? hits[0].id : null;
 
     const supabase = createBrowserSupabaseClient();
     /* One key per submission, so a double tap on a slow connection -- which is
@@ -175,6 +185,7 @@ export function NewRecordForm({
           in_module_key: moduleKey,
           in_amount_cents: amount ?? 0,
           in_party: party,
+          in_party_id: partyId,
           in_note: title,
           in_extra: extra,
           in_idempotency_key: idempotencyKey,
@@ -184,6 +195,7 @@ export function NewRecordForm({
           in_module_key: moduleKey,
           in_title: title,
           in_party: party,
+          in_party_id: partyId,
           in_amount_cents: amount ?? null,
           in_stage: (values.status ?? "").trim() || null,
           in_extra: extra,
@@ -208,15 +220,28 @@ export function NewRecordForm({
     "[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]";
 
   function box(key: string, label: string, inputMode?: "tel" | "email" | "decimal") {
+    /* The party box offers his own customers. A `datalist` and not a select:
+       a new customer typed straight in still has to work -- an owner writing a
+       quotation for somebody he has not filed yet must not be stopped, and the
+       name he types is what the row carries. */
+    const list = key === "secondary" && parties.length ? `${key}-list` : undefined;
     return (
       <label key={key} className="flex flex-col gap-1.5">
         <span className={labelText}>{label}</span>
         <input
           inputMode={inputMode}
+          list={list}
           value={values[key] ?? ""}
           onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
           className={control}
         />
+        {list ? (
+          <datalist id={list}>
+            {parties.map((x) => (
+              <option key={x.id} value={x.name} />
+            ))}
+          </datalist>
+        ) : null}
       </label>
     );
   }

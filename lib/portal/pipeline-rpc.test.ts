@@ -47,10 +47,23 @@ describe("add_pipeline_record", () => {
     expect(sql).toContain("unique_violation");
   });
 
-  it("drops the previous overload", () => {
-    // Two functions of the same name where one quietly ignores the key is how
-    // this defect would come back.
-    expect(sql).toContain("drop function if exists public.add_pipeline_record");
+  it("cannot leave a second overload behind", () => {
+    /* Two functions of the same name, one of which quietly ignores the
+       idempotency key, is how this defect comes back -- Postgres picks by
+       argument list, and a caller that omits the new parameter would get the
+       old body.
+
+       ⚠️ The check was literally 「contains a drop」, which is only one of the
+       two safe ways. `create or replace` on the SAME signature cannot create
+       an overload at all, and 20260831090000 -- restoring a handler with no
+       signature change -- is exactly that case. A guard that fails a correct
+       migration teaches the next person to weaken it, so it now asserts the
+       thing it was defending: a NEW signature must drop the old one. */
+    const declares = /create (or replace )?function public\.add_pipeline_record/.exec(sql);
+    expect(declares, "no migration declares it").toBeTruthy();
+    if (!declares?.[1]) {
+      expect(sql).toContain("drop function if exists public.add_pipeline_record");
+    }
   });
 
   it("still carries what the row is about", () => {

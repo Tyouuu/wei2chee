@@ -274,6 +274,58 @@ try {
   });
   check("and a module of another shape", !!notDirectory);
 
+  console.log("\n⑧ 单据连到人身上");
+  /* 20260831080000. The promise both earlier shapes wrote down: the text stays
+     as what was written at the time, the link says who it is. */
+  const { data: tan } = await party({ in_name: "陈大文" });
+  const { data: linkedQuote } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations",
+    in_title: "厨房翻新", in_party: "陈大文", in_amount_cents: 480000,
+  });
+  check("a quotation finds the customer by the name he typed",
+    linkedQuote?.party_id === tan?.id,
+    `${linkedQuote?.party_id} vs ${tan?.id}`);
+
+  const { data: paidIn } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 100000, in_against_id: linkedQuote.id, in_party: "",
+  });
+  /* Money against a document belongs to whoever that document belongs to,
+     even when the name box was left empty. */
+  check("a payment against that quotation inherits its customer",
+    paidIn?.party_id === tan?.id, `${paidIn?.party_id}`);
+
+  /* TWO PEOPLE WITH ONE NAME. Real, and the reason the name is not unique.
+     Attaching money to the wrong account silently is worse than a gap. */
+  const { data: twin } = await party({ in_name: "陈大文" });
+  const { data: ambiguous } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "第二单", in_party: "陈大文",
+  });
+  check("it refuses to choose between two people with the same name",
+    ambiguous?.party_id === null, `${ambiguous?.party_id}`);
+  check("and the row still carries what he typed", ambiguous?.party === "陈大文");
+
+  const { data: byId } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations",
+    in_title: "指定的", in_party: "陈大文", in_party_id: twin.id,
+  });
+  check("a caller that knows which one is believed", byId?.party_id === twin.id);
+
+  const { error: notMine } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "别人的客户",
+    in_party_id: "00000000-0000-0000-0000-000000000001",
+  });
+  check("a party from outside this project is refused", !!notMine);
+
+  /* vibe-dealer 0011: a party with history is not deletable. An onboarding
+     mistake with nothing against it still is. */
+  const { error: hasHistory } = await c.from("directory_entries").delete().eq("id", tan.id);
+  check("a customer with a quotation against him cannot be deleted", !!hasHistory);
+
+  const { data: spare } = await party({ in_name: "删得掉的" });
+  const { error: mistake } = await c.from("directory_entries").delete().eq("id", spare.id);
+  check("an onboarding mistake with nothing against it still can be", !mistake, mistake?.message);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);
