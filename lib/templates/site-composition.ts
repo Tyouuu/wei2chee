@@ -632,6 +632,15 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        The identity is the ALTERNATION: wine, cream, wine, cream, wine. Ours ran
        twelve sections all on one ground with opening hours and a coverage strip
        at the top, which is a shop's noticeboard, not a brasserie. */
+    /* ⚠️ 「cta」折进页脚，所以它在这里 —— Toulouse 只有**六段**，而它的第六段
+       就是页脚：店名、Reserve a Table、Order Delivery、导航连结，全部在同一块。
+       我们本来把询价做成独立的第六段，於是七段对六段，而且从那里开始每一段的
+       配对都错开一格 —— 第3/4/5段底色一起判红，那三项量的是错开之后的两段。
+       （[任务 33](../../docs/founder-tasks.md) 早就写着这件事，只是没有动手。）
+       页脚自己那颗「Ask」按钮本来就在（--site-foot-ask 预设是显示的）。
+       ⚠️ 而且钥匙是 `dropBlocks` 不是 `omit` —— `omit` 只管得到**中段**，
+       询价那一块在**尾段**（这份档案自己的注解就写着这条界线，我还是用错了）。
+       用错的那一次：段数没有变，而报告看起来跟改之前一模一样。 */
     omit: ["faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "band", "prices"],
     /* 交替，而且**奶白要比酒红多** —— 逐像素量出来他们是白 37.1% 对酒红 28.4%，
        我们第一版是酒红 46.3% 对白 7.6%：同样两个颜色，比例整个倒过来。
@@ -643,7 +652,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
     hero: "name-figure",
     figure: "huge",
     measure: "wide",
-    dropBlocks: ["website-statement", "website-form", "website-contact"],
+    dropBlocks: ["website-statement", "website-form", "website-contact", "website-cta"],
     /* 段间贴住 —— 六个参考页量出来全部是 0，我们是 104（这一套）或 40。
        气挪进段内（--site-inner），页面不会因此变短。 */
     rhythm: "flush",
@@ -653,7 +662,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        两段都是奶白，交替就断了。 */
     /* 他们的顺序：第一屏 → 菜单（奶白）→ 本月三栏＋满边照片（酒红）→ 故事（奶白）
        → 作品墙（酒红）→ 页脚（奶白）。 */
-    order: ["services", "woven", "story", "work", "cta", "prices", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "band"],
+    order: ["services", "woven", "story", "work", "prices", "faq", "flow", "promise", "team", "creds", "hours", "areas", "reviews", "band"],
   },
 };
 

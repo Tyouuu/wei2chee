@@ -443,7 +443,11 @@
   --site-paper-primary: #500014;
 
   /* 标题字重：TOULOUSE 量出来 700。 */
-  --site-display-weight: 700;
+  /* 展示字的粗细 —— Toulouse 的 h1 是 **marzo-w00-regular**，量出来的墨量
+     0.118；我们 Archivo Narrow 700 量出来 0.231，**重一倍**。
+     工作台不动：那里 700 是招牌该有的样子，一块有字的色板。
+     官网层照他们的来。 */
+  --site-display-weight: 400;
 
   /* 区段标题：他们区段标题 225px，我们 56px —— This Month / Moments 那两行手写体 */
   /* ⚠️ 4 试过，画面上是错的。他们那两行 225px 是「This Month at Toulouse」跟

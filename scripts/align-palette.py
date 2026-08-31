@@ -34,7 +34,11 @@ def dominant(im, top, height, n=6):
     for y in range(y0, y1, STEP):
         for x in range(0, w, STEP):
             r, g, b = px[x, y]
-            c[(r // QUANT * QUANT, g // QUANT * QUANT, b // QUANT * QUANT)] += 1
+            # ⚠️ 四舍五入，不是向下取整。
+            # 2026-08-31：招牌 的酒红实际像素是 (79,0,21)，他们是 (83,1,23) ——
+            # 差四个数值。向下取整让 79 掉进 #46、83 掉进 #50，**报成十级的差**，
+            # 而那两个颜色人眼分不出来。一个桶的边界不该变成一个设计差异。
+            c[(round(r / QUANT) * QUANT, round(g / QUANT) * QUANT, round(b / QUANT) * QUANT)] += 1
     total = sum(c.values()) or 1
     return [("#%02x%02x%02x" % k, round(100 * v / total, 1)) for k, v in c.most_common(n)]
 

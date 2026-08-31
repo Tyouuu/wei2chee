@@ -1704,12 +1704,14 @@
   transform: none;
 }
 
-/* 招牌 — a sign does not fade in. It is switched on: no movement at all, just
-   the step from off to lit, and faster than the rest. */
+/* 招牌 — NOTHING。Toulouse 量出来**试了 60 块，一块都不动**。
+   跟 瑞士 同一天同一个发现：我们替两套风格各编了一个进场，而两个参考页
+   都是静的。一块招牌不会淡入。 */
 [data-register="signboard"] [data-reveal] {
+  opacity: 1;
   transform: none;
-  transition-duration: 0.22s;
-  transition-timing-function: steps(2, end);
+  filter: none;
+  transition: none;
 }
 
 /* 瑞士 — NOTHING，而且这一条是**量出来的，不是想出来的**。

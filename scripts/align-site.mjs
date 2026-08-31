@@ -252,7 +252,24 @@ process.on("exit", dropLock);
 for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => { dropLock(); process.exit(130); });
 
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-const layouts = JSON.parse(fs.readFileSync(".screenshots/photos/per-trade.json", "utf8"));
+/* ⚠️ 这份版面是**预先产生**的，不是每次跑现算的。
+   2026-08-31：把 招牌 的询价段拿掉（dropBlocks 加 website-cta），跑完段数一动
+   都没动，报告跟改之前一模一样 —— 因为量的是这份档案里那一版。
+   **改组成而不重新产生它，等於什么都没改，而尺子不会说。**
+   所以这里比一次时间：它比 site-composition.ts 旧就喊出来。 */
+const LAYOUT_FILE = ".screenshots/photos/per-trade.json";
+{
+  const a = fs.statSync(LAYOUT_FILE).mtimeMs;
+  const b = fs.statSync("lib/templates/site-composition.ts").mtimeMs;
+  if (a < b) {
+    console.log(`
+⚠️ ${LAYOUT_FILE} 比 site-composition.ts 旧 —— 组成改了但版面没有重新产生。
+   量出来的段数、顺序、每一段有什么，全部是旧的那一版。
+   先跑：npx vitest run scripts/demo/per-trade.test.ts
+`);
+  }
+}
+const layouts = JSON.parse(fs.readFileSync(LAYOUT_FILE, "utf8"));
 
 /* ⚠️ The editor autosaves. Snapshot the demo project and put it back, or every
    run quietly rewrites the founder's own preview site. */
