@@ -560,8 +560,10 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // works, what we promise. No photo wall; that would be the opposite register.
   swiss: {
     /* 一个正文尺寸 —— Leah Webb 整页 66% 的字是 17px（加上 16px 就是 80%）。
-       我们碎成 14/15/16 三级各 28/25/24%，中位数落在最小的那一级。 */
+       我们碎成 14/15/16 三级各 28/25/24%，中位数落在最小的那一级。
+       收成一级之后落在 15px，还差他们两个像素：17 ÷ 15 = 1.13。 */
     steps: "one",
+    copy: "plus",
     /* ── COPIED WHOLE: Wix `wh-leah` ─────────────────────────────────────────
        Read at 1440 on 2026-08-28. Seven sections, 5519px, and the identity is
        what it REFUSES: no fill on anything, every button an outlined pill, and

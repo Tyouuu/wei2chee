@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /* ── 尺子不准再犯的错 ──────────────────────────────────────────────────────
@@ -328,5 +329,57 @@ describe("尺子不准再犯", () => {
     expect(MJS).toMatch(/SIGINT/);                 // Ctrl-C 也要放开
     // 拍完之后的复查不准被这把锁取代
     expect(MJS).toMatch(/拍完之后 demo 站已经不是/);
+  });
+
+  /* ㉛ 载不出来的图要**每一次都印**。
+     把 満図 第3段裁成原尺寸用眼睛看，他们右边那一格是一个**破图框** ——
+     而尺子把它当成一张 40% 宽的照片在比，报「最宽的图 100%对40%」。
+     一个失败的 <img> 有宽有高、进得了段、算得进张数，跟图有关的每一项读数
+     都被它拉走，而报告读起来跟对的一模一样。
+     ⚠️ 旧的快照没有这一栏 —— 那要说「量不到」，不准当成「0 张」。 */
+  it("载不出来的图 每一次都印，旧快照说量不到不说 0", () => {
+    expect(MJS).toMatch(/naturalWidth === 0/);
+    expect(MJS).toMatch(/载不出来的图  0 张/);
+    expect(MJS).toMatch(/这份采集是旧的，没有这一栏/);
+    // 破图不该被大小过滤悄悄丢掉，但也不该把 16px 的图标算进来
+    expect(MJS).toMatch(/x\.w >= 60 && x\.h >= 60/);
+  });
+
+  /* ㉜ 「一个正文尺寸」是一根**风格轴**，不是一个全域改动。
+     每一份参考都靠一级撑起半页以上（招牌 75% · 中台 90%），我们碎成三级。
+     但 图纸 的参考真的有两级（18px 48% + 16px 27%）—— 一刀切会把它抄成
+     另一页。所以这一条守的是「它可以被单独关掉」，不是「大家都要收」。 */
+  it("steps 一个正文尺寸 是 opt-in，而且不收 xs/micro", () => {
+    const css = readFileSync(resolve("app/globals.css"), "utf8");
+    const blk = css.slice(css.indexOf('[data-steps="one"]'), css.indexOf('[data-steps="one"]') + 700);
+    expect(blk).toMatch(/--text-lg: var\(--text-base\)/);
+    expect(blk).toMatch(/--text-sm: var\(--text-base\)/);
+    expect(blk).not.toMatch(/--text-xs: var\(--text-base\)/);
+    expect(blk).not.toMatch(/--text-micro: var\(--text-base\)/);
+    const comp = readFileSync(resolve("lib/templates/site-composition.ts"), "utf8");
+    expect(comp).toMatch(/steps\?: "one"/);
+    // 图纸 必须留着两级，而且理由要写在旁边
+    /* 只切 图纸 自己那一段 —— 600 个字元会切进下一套，而下一套是有 steps 的。 */
+    const bpStart = comp.indexOf("  blueprint: {");
+    const bp = comp.slice(bpStart, comp.indexOf("\n  },", bpStart));
+    /* 锚在行首 —— 那段注解自己就写着「故意没有 steps: "one"」，
+       不锚的话守卫会被它要守的那句解释打败。 */
+    expect(bp).not.toMatch(/^\s*steps: "one",/m);
+    expect(bp).toMatch(/两级/);
+  });
+
+  /* ㉝ 「逐段正文字级」不准拿展示型的字当正文。
+     招牌 第5段是 **19 个字、全部 225px** —— 一个招牌上的词。尺子拿它比我们
+     那一段的 17px，报「225对16px」，读起来像正文差了 13 倍。
+     ⚠️ 而这条规矩最容易被拿来买分数：门槛一放宽就会盖掉真的差异
+     （招牌第3段 28对17、图纸第7段 16对21）。所以守两件：门槛是「自己那一页
+     正文的两倍」这个**相对**量，而且跳过的段要**印出来**，不准安静地少判一段。 */
+  it("逐段正文字级 跳过没有正文的段，而且把跳过的印出来", () => {
+    const blk = MJS.slice(MJS.indexOf("const pageBody ="), MJS.indexOf("const pageBody =") + 1400);
+    expect(blk).toMatch(/pbT \* 2/);
+    expect(blk).toMatch(/pbO \* 2/);
+    expect(blk).toMatch(/没有正文可以比 —— 不判/);
+    // 门槛必须是相对页面正文，不准写成一个绝对 px
+    expect(blk).not.toMatch(/> 40/);
   });
 });

@@ -411,12 +411,19 @@
      标题靠字形自己撑开，不靠收紧。我们一律 -0.032em，那是工作台的收紧。
      （--tracking-display 是工作台的 title 字距乘 1.6，那个乘数是为四十行的
      表格调的，不是为一行 72px 的大标题。） */
+  /* 圆角 —— Leah Webb 量出来 **20px ×5**，我们「没有圆角」。
+     瑞士 的工作台 --radius-lg 是 0，那是它的身份，倍数救不了；官网层给绝对值。
+     ⚠️ 一个全白、只有细线分段的页面配 20px 的圆角，听起来矛盾 —— 而那正是
+     那一页：线是直的，卡是圆的。 */
+  --site-radius-abs: 20px;
+  --site-radius-sm-abs: 20px;
   --site-display-tracking: 0em;
   --site-page-measure: 77.5rem;  /* 参考页量出来的版心 7%–93% */
   --site-inner: 6rem;  /* 第7段 795 对他们 476 */
 
   /* 字体 TYPE，逐项量出来的（重点 7i）：他们 h1 是 72px w400，我们 83px w500。 */
-  --site-hero-scale: 0.87;
+  /* Leah Webb 量出来 72px，我们 63px。0.87 × (72 ÷ 63) = 0.99。 */
+  --site-hero-scale: 0.99;
   --site-display-weight: 400;
 
   /* ── 官网的配色，整套照抄（重点 7j）────────────────────────────────────────

@@ -1269,8 +1269,14 @@
      变 5.1px，七个元素上看得到。尺子印着「模版 没有圆角 · 我们 5.1px ×7」，
      而那一项以前**只印不判、连理由都没写**。
      所以倍数改成风格自己能设的一个数：不设就还是 1.7，方角的那几套设 0。 */
-  --site-radius: calc(var(--radius-lg) * var(--site-round, 1.7));
-  --site-radius-sm: calc(var(--radius-md) * var(--site-round, 1.7));
+  /* ⚠️ 倍数救不了两个方向。
+     瑞士 跟 招牌 的工作台是 `--radius-lg: 0`（那是它们的身份），而它们的参考页
+     量出来是 **20px ×5** 跟 **4.5px ×11** —— 零乘任何数还是零。
+     所以留一个绝对值的出口：设了就用设的，没设还是那个倍数。
+     倍数仍然是预设，因为[重点 7c](docs/founder-points.md) 要保住的是「换配色
+     它还是不是另一个设计」，而不是「每一套都自己填一个数」。 */
+  --site-radius: var(--site-radius-abs, calc(var(--radius-lg) * var(--site-round, 1.7)));
+  --site-radius-sm: var(--site-radius-sm-abs, calc(var(--radius-md) * var(--site-round, 1.7)));
   /* The register's own biggest shadow, not a new one. A register that declares
      flat shadows (瑞士 prints on paper, 中台 is a POS screen) stays flat. */
   --site-elevation: var(--shadow-lg);
@@ -1706,12 +1712,17 @@
   transition-timing-function: steps(2, end);
 }
 
-/* 瑞士 — Codrops' blurry text reveal, which is the one that reads as
-   expensive: type sharpens as it arrives instead of moving. Right for the
-   register that refuses every other kind of decoration. */
+/* 瑞士 — NOTHING，而且这一条是**量出来的，不是想出来的**。
+   原本这里是 Codrops 那个「字从模糊里变清楚」的进场，理由写着「贵气，适合一套
+   拒绝装饰的风格」—— 那是我们自己编的一个说法。
+   2026-08-31 量 Leah Webb：**试了 60 块，一块都不动**。
+   一套「拒绝每一种装饰」的风格，连进场也是装饰。我们那个模糊进场是替它加了一样
+   它的参考页上没有的东西，而且加的理由正好是它不该有的那个理由。 */
 [data-register="swiss"] [data-reveal] {
-  filter: blur(9px);
+  opacity: 1;
   transform: none;
+  filter: none;
+  transition: none;
 }
 
 /* 中台 — NOTHING, and the empty rule says so out loud. This register's whole

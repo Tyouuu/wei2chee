@@ -106,6 +106,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-heading: 1.47;
   --site-display-tracking: 0em;
   --site-page-measure: 86.5rem;
   --site-foot: 1.9;
@@ -281,6 +282,8 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #00a870;
   --color-brass-chart: #faad14;
+  --site-round: 0;
+  --site-heading: 0.76;
   --site-display-tracking: -0.05em;
   --site-foot: 0.3;
   --site-inner: 5rem;
@@ -794,6 +797,8 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-radius-abs: 4.5px;
+  --site-radius-sm-abs: 4.5px;
   --site-display-tracking: 0.01em;
   --site-page-measure: 87.5rem;
   --site-paper-primary: #500014;
@@ -968,10 +973,12 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-radius-abs: 20px;
+  --site-radius-sm-abs: 20px;
   --site-display-tracking: 0em;
   --site-page-measure: 77.5rem;
   --site-inner: 6rem;
-  --site-hero-scale: 0.87;
+  --site-hero-scale: 0.99;
   --site-display-weight: 400;
   --site-ink-bg: #fafafa;
   --site-ink-fg: #141414;

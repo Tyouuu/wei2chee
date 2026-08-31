@@ -2301,12 +2301,31 @@ try {
       for (const [px, n] of rows) { acc += n; if (acc >= tot / 2) return px; }
       return rows[rows.length - 1][0];
     };
-    const off = [];
+    /* ⚠️ 有些段里根本没有正文，而这一项叫「正文字级」。
+       招牌 第5段：**19 个字，全部 225px**。尺子拿它去比我们那一段的 17px，
+       报「225对16px」—— 那不是正文差了 13 倍，那是一边是招牌上的一个词、
+       一边是一段说明。同一个形状还有 图纸 第5段（81px）跟 瑞士 第5段（41px）。
+       判法：一段的中位字级如果超过**它自己那一页**正文的两倍，那一段就是
+       展示型的，没有正文可以比 —— 讲「量不到」，不讲「不一样」。
+       ⚠️ 门槛不是拿来调数字的：把它放宽到能盖掉真的差异（招牌第3段 28对17、
+       图纸第7段 16对21）就是在买分数。两倍这条线只盖得住「一个词」那一类。 */
+    const pageBody = (shp) => {
+      const all = [];
+      for (const bs of shp ?? []) for (const b of bs)
+        if (b.kind === "字" && b.px) for (let k = 0; k < (b.n || 1); k++) all.push(b.px);
+      if (!all.length) return 0;
+      all.sort((x, y) => x - y);
+      return all[Math.floor(all.length / 2)];
+    };
+    const pbT = pageBody(TSHAPE), pbO = pageBody(OSHAPE);
+    const off = [], skipped = [];
     for (const [a, b] of paired) {
       const bt = bodyOf(TSHAPE[a] ?? []), bo = bodyOf(OSHAPE[b] ?? []);
       if (!bt || !bo) continue;
+      if ((pbT && bt > pbT * 2) || (pbO && bo > pbO * 2)) { skipped.push(a + 1); continue; }
       if (Math.abs(bt - bo) / bt > 0.3) off.push(`第${a + 1}段 ${bt}对${bo}px`);
     }
+    if (skipped.length) console.log(`      （第${skipped.join(" · 第")}段整段是展示型的字，没有正文可以比 —— 不判）`);
     check("字体", "逐段正文字级", off.length ? "不一样" : "每一段都对得上",
       off.length ? off.join(" · ") : "每一段都对得上", off.length === 0);
   }
