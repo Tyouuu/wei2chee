@@ -1764,8 +1764,55 @@ async function settlePage(p, wait) {
   await p.waitForTimeout(600);
 }
 
-async function shoot(target, rootSel, wait, file, width = 1440, withMotion = true) {
-  const p = await browser.newPage({ viewport: { width, height: width < 500 ? 844 : 1100 } });
+/* ── 参考页录下来，以后从录音重量 ──────────────────────────────────────────
+   老板 2026-08-31，六套压到 10 之后我去重新采集参考，**六套里三套连拍两次都
+   不完整，尺子拒绝作答**（満図 26% · 图纸 44% · 中台 22%）。
+   而重新采集这件事本身是必要的：中台 那一次采集才揭出他们的大标题是全大写，
+   而旧快照量不到（尺子那时还不会套 text-transform）。
+
+   **所以每一次 `--refresh` 都在赌两件事：Wix 的进场动画跑完了没有、
+   它的图床今天在不在。** 瑞士 8→11 里就有一项是「模版载不出来的图」。
+   而赌输的时候，「他们改版了」跟「今天没拍好」**长得一模一样**。
+
+   Playwright 的 HAR 录制／重放正好是为这件事做的：采集成功的那一次把整页
+   （HTML · CSS · 字体 · 图）录成一个档，以后尺子多一项检查，就从那份录音
+   重新量，不再碰网路。
+     npm run align -- <风格> --refresh    采集 ＋ 录音
+     npm run align -- <风格> --replay     从录音重量（不碰网路）
+
+   ⚠️ 录音**不取代**重新采集。上游改版是一个决定（check:upstream 那条规矩），
+   要看到改版就还是得去爬一次。录音解的是另一件事：
+   **尺子自己变了的时候，不该被迫重爬一次参考。** */
+const HAR = (reg) => `${OUT}/${reg}-ref.har.zip`;
+/* ⚠️ --replay **还没做完，而且它诚实地讲出来**（2026-08-31）。
+   录音录得起来（signboard 那份 29.5MB，HTML · CSS · 字体 · 图都在），
+   但重放的时候 playwright 读不开那个 zip：
+   `End of central directory record signature not found`。
+   最可能是 HAR 要到 **browser** 关掉才写完，而这支脚本在 context 关掉之后
+   就继续跑、而且好几条路径会 process.exit()。
+   **一个半通的功能比没有更糟**，所以这里挡住，不要留一支会丢堆叠的旗标。 */
+const REPLAY_READY = false;
+const REPLAY = process.argv.includes("--replay") && REPLAY_READY;
+if (process.argv.includes("--replay") && !REPLAY_READY) {
+  console.error(`
+🔴 --replay 还没做完：录音录得起来，重放读不开那个 zip
+   （End of central directory record signature not found）。
+   多半要等 browser 关掉才写得完 —— 见 scripts/align-site.mjs 里那段注解。
+   现在照常跑：npm run align -- <风格> [--refresh]`);
+  process.exit(1);
+}
+
+async function shoot(target, rootSel, wait, file, width = 1440, withMotion = true, har = null) {
+  const ctx = await browser.newContext({
+    viewport: { width, height: width < 500 ? 844 : 1100 },
+    ...(har?.record ? { recordHar: { path: har.record, content: "embed" } } : {}),
+  });
+  if (har?.replay) {
+    /* notFound: "abort" —— 录音里没有的东西就是没有。让它去网路上补，
+       等於又变成一次赌博，而且赌的时候还不会说。 */
+    await ctx.routeFromHAR(har.replay, { notFound: "abort", update: false });
+  }
+  const p = await ctx.newPage();
   await p.goto(target, { waitUntil: "domcontentloaded", timeout: 90000 });
   await settlePage(p, wait);
   const secs = await p.evaluate(readSections, rootSel);
@@ -1809,6 +1856,7 @@ async function shoot(target, rootSel, wait, file, width = 1440, withMotion = tru
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
   const move = withMotion ? await probeMotion(p, rootSel) : null;
   await p.close();
+  await ctx.close();   // HAR 是在 context 关掉的时候才写出来的
   return { secs, type, axes, anat, shots, shape, move, vids, chars, declared, broken, file };
 }
 
@@ -1865,7 +1913,9 @@ try {
   const refFile = `${OUT}/${register}-ref.json`;
   let theirs = null;
   let theirsPhone = null;
-  if (!REFRESH && fs.existsSync(refFile)) {
+  /* --replay 也要走采集那一支 —— 有快照的时候本来根本不会重新采集，
+     而 --replay 存在的意义正是「尺子变了，从录音重新量一次」。 */
+  if (!REFRESH && !REPLAY && fs.existsSync(refFile)) {
     const snap = JSON.parse(fs.readFileSync(refFile, "utf8"));
     /* ⚠️ 快照里没有截图 —— 截图在 <风格>-ref.jpg，逐段颜色跟差异图读的是它。
        只检查 JSON 在不在，就会出现「量到的是 8-29 那一份、看到的是别天那一张」
@@ -1880,14 +1930,29 @@ try {
     }
   }
   if (!theirs) {
-    theirs = await shoot(url, null, 7000, `${register}-ref`);
+    /* --replay 从录音重量；否则去网路上采集，顺手录一份。
+       ⚠️ 录音写进一个暂存档，**验收过了才搬正** —— 一份半空的采集配一份
+       半空的录音，等於把今天这次赌输的结果冻起来，以后每一次重量都错。 */
+    const harNew = `${HAR(register)}.new`;
+    const harOpt = REPLAY
+      ? (fs.existsSync(HAR(register)) ? { replay: HAR(register) } : null)
+      : { record: harNew };
+    if (REPLAY && !harOpt) {
+      console.error(`
+🔴 这一次测量不算数：没有 ${HAR(register)} 这份录音。
+   先跑一次 npm run align -- ${register} --refresh（那一次会录）。`);
+      await restore();
+      process.exit(1);
+    }
+    if (REPLAY) console.log(`从录音重量（不碰网路）：${HAR(register)}`);
+    theirs = await shoot(url, null, 7000, `${register}-ref`, 1440, true, harOpt);
     {
       /* 半空就重来一次。第二次还是半空，就不要往下算了 ——
          从一份残缺的参考算出来的每一项读数，都会印得跟对的一模一样。 */
       let thin = captureThin(theirs);
       if (thin !== null) {
         console.log(`  ⚠️ 参考拍得不完整（${thin}% 的字不在任何一段里）—— 重拍一次`);
-        theirs = await shoot(url, null, 7000, `${register}-ref`);
+        theirs = await shoot(url, null, 7000, `${register}-ref`, 1440, true, harOpt);
         thin = captureThin(theirs);
       }
       if (thin !== null) {
@@ -1912,7 +1977,13 @@ try {
     }
     /* 手机也采一份。他自己量的 19 家马来西亚 SME 里 15 家第一屏就给 WhatsApp，
        因为客人在手机上 —— 而这个宽度我们一次都没量过，抄的一直只有桌面那一套。 */
-    theirsPhone = await shoot(url, null, 7000, `${register}-ref-390`, 390, false);
+    theirsPhone = await shoot(url, null, 7000, `${register}-ref-390`, 390, false,
+      REPLAY ? { replay: HAR(register) } : null);
+    /* 验收过了才把录音搬正。 */
+    if (!REPLAY && fs.existsSync(harNew)) {
+      fs.renameSync(harNew, HAR(register));
+      console.log(`录了一份参考：${HAR(register)}  —— 以后 --replay 从它重量，不碰网路`);
+    }
     /* 手机那一份也要验 —— 只验桌面，等於「桌面拒绝、手机照收」，
        而手机那一份正好是最容易载不完的（一页更长、图更多）。 */
     const blankP = auditCapture("模版手机", theirsPhone);
