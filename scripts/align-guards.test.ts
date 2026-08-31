@@ -404,7 +404,9 @@ describe("尺子不准再犯", () => {
      这句话本来就写在这份档案里（.ds-site h2 那一条），而我又踩了一次。 */
   it("不进场的风格，规则要带 armed 前缀才赢得了基础规则", () => {
     const css = readFileSync(resolve("app/globals.css"), "utf8");
-    for (const reg of ["counter", "signboard", "swiss"]) {
+    /* ⚠️ 中台 故意不在这里 —— Kurofude 自己会淡入（4/60 块）。
+         把它设成静的，是照一句没量过的注解把对的改成错的。 */
+      for (const reg of ["signboard", "swiss"]) {
       // 不准再有裸的 (0,2,0) 版本 —— 行首那一条就是输掉的那一条
       expect(css.includes(`
 [data-register="${reg}"] [data-reveal] {`)).toBe(false);
