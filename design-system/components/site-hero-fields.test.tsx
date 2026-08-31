@@ -80,6 +80,28 @@ const probe = (k: string) =>
     ? { value: "0199887766", want: "0199887766" }
     : { value: `${SENTINEL} ${base?.props?.[k]}`, want: SENTINEL };
 
+describe("the banned field stays banned", () => {
+  /*
+    `eyebrow` is not a lost field, it is a REFUSED one -- 9e19ed6, 2026-08-27,
+    after pbakaus/impeccable: 「This one is a ban, not a default: no brief earns
+    it back.」 On this page it was also a repeat, 「MALAYSIA · RENOVATION &
+    FITOUT」 sitting directly above 「Renovation & fitout in Kuala Lumpur」.
+
+    It survived in the editor panel for four days after the markup stopped
+    printing it, so an owner could type their area and trade into a control that
+    edited nothing -- and 任务 51 filed that as a dropped field, which sent this
+    session looking for somewhere to put it back. A box for a banned field is
+    how a decision gets quietly reversed.
+  */
+  it("has no 「地区 · 行业」 box in the panel", () => {
+    expect(Object.keys(hero?.fields ?? {})).not.toContain("eyebrow");
+  });
+
+  it("is not written into a generated page either", () => {
+    expect(base?.props).not.toHaveProperty("eyebrow");
+  });
+});
+
 describe("SiteHero tells the truth about which of its fields render", () => {
   it("has a hero to probe", () => {
     expect(base, "buildPageLayout('website') produced no SiteHero").toBeTruthy();

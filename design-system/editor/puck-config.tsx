@@ -2324,7 +2324,13 @@ export const puckConfig: Config<Components> = {
           every layout to keep it honest.
         */
         brand: { label: "第一屏的大字（店名）", type: "text" },
-        eyebrow: { label: "地区 · 行业", type: "text" },
+        /* NO 「地区 · 行业」 BOX. SiteHero has printed nothing for `eyebrow`
+           since 9e19ed6 (2026-08-27), on purpose -- see the ban in
+           site-hero.tsx. It stayed in this panel for four days afterwards, so
+           an owner could type their area and trade into a control that edited
+           nothing, and 任务 51 recorded it as a lost field rather than as the
+           deliberate removal it was. The prop stays in the component's
+           signature because saved layouts carry it. */
         headline: { label: "大标题", type: "text" },
         sub: { label: "下面那一句", type: "textarea" },
         /*
@@ -2415,7 +2421,7 @@ export const puckConfig: Config<Components> = {
         primaryLabel: "WhatsApp 问价",
         primaryHref: "#",
       },
-      render: ({ id, eyebrow, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip, priceRows, photo, photoAlt, ground, systemPreview , brand}) => (
+      render: ({ id, headline, sub, primaryLabel, primaryHref, secondaryLabel, secondaryHref, proof, layout, figure, figureData, phoneLabel, phoneNumber, strip, priceRows, photo, photoAlt, ground, systemPreview , brand}) => (
         <SiteHero
           layout={layout ?? "left"}
           ground={ground}
@@ -2427,13 +2433,6 @@ export const puckConfig: Config<Components> = {
           phone={phoneNumber ? { label: phoneLabel, number: phoneNumber } : undefined}
           priceRows={priceRows}
           strip={strip || undefined}
-          eyebrow={
-            eyebrow ? (
-              <Inline id={id} field="eyebrow">
-                {eyebrow}
-              </Inline>
-            ) : undefined
-          }
           headline={
             <Inline id={id} field="headline">
               {headline}

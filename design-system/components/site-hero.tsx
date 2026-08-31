@@ -61,8 +61,13 @@ import { SystemMini } from "./system-mini"
  * clone being faithful, not a bug: 招牌 and 満図 open on the name because their
  * references do. THE BUG IS OFFERING A FIELD THAT CANNOT LAND.
  *
- * `eyebrow` is the same shape and older (任务 51): declared, typed into, and
- * used by no JSX in this file since a refactor dropped it.
+ * ⚠️ `eyebrow` LOOKED like the same bug and was not, and the task file said so
+ * wrongly for four days. It renders nothing BY DECISION (9e19ed6, 2026-08-27):
+ * it read 「MALAYSIA · RENOVATION & FITOUT」 directly above a headline reading
+ * 「Renovation & fitout in Kuala Lumpur」 — one fact twice on one screen, on
+ * every register. The defect was that the panel kept offering a box for it and
+ * the generator kept filling it; both are gone as of 2026-08-31. The prop stays
+ * in the signature because saved layouts carry it.
  *
  * ── WHY IT IS A FUNCTION AND NOT A COMMENT ────────────────────────────────
  *
@@ -115,9 +120,12 @@ const OFF_THE_FIRST_SCREEN: Record<string, { bare: string[]; withPhoto: string[]
 }
 
 export function heroDeadFields(props: { layout?: string | null; photo?: string | null }): string[] {
-  // 任务 51, and it is every layout: declared as 「地区 · 行业」, typed into, and
-  // used by no JSX in this file since a refactor dropped it.
-  const dead = ["eyebrow"]
+  /* `eyebrow` is NOT in here, and that is the point: it is not offered at all
+     any more. It was banned from the markup on 2026-08-27 and removed from the
+     panel on 2026-08-31; a field nobody can type into does not need a rule
+     saying it will not land. site-hero-fields.test.tsx holds the config to
+     that. */
+  const dead: string[] = []
   const row = OFF_THE_FIRST_SCREEN[String(props.layout ?? "")]
   if (row) dead.push(...(props.photo?.trim() ? row.withPhoto : row.bare))
   return dead

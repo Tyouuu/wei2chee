@@ -176,7 +176,19 @@ const hero = (
 ) =>
   node("SiteHero", "website-hero", {
     layout,
-    eyebrow: c.eyebrow,
+    /*
+      NO `eyebrow`, AND IT IS NOT AN OMISSION.
+
+      SiteHero has printed nothing for it since 2026-08-27 (9e19ed6), and that
+      is a decision with a reason: the eyebrow read 「MALAYSIA · RENOVATION &
+      FITOUT」 directly above a headline reading 「Renovation & fitout in Kuala
+      Lumpur」 -- the same fact twice on one screen, on every register. Writing
+      it here anyway put a value into every customer's saved page that nothing
+      would ever show, and the editor then offered a box for it.
+
+      The string itself is not wasted: `foot` still uses it as the tagline,
+      which is the one place on the page it is not a repeat.
+    */
     brand: c.brand,
     headline: c.headline,
     sub: c.pitch,
