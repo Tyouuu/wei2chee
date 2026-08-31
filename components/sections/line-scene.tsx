@@ -126,7 +126,10 @@ export function LineScene({
         </h2>
         <p className="mt-4 max-w-[52ch] leading-relaxed text-foreground/65">{body}</p>
 
-        <div className="mt-12 grid gap-10 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-14">
+        {/* ⚠️ 图要满幅。第一版是 15rem 的步骤表配剩下的宽，线稿缩在左上角，
+            右边跟下面一大片死空 —— consider 的每一张图都横过整页。
+            步骤表收窄成 13rem，图那一栏放开，viewBox 也拉宽。 */}
+        <div className="mt-12 grid gap-10 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] md:gap-12">
           <ol className="font-mono text-[0.75rem]">
             {steps.map((s, i) => {
               const on = p >= 0.12 && i <= now;
@@ -149,7 +152,7 @@ export function LineScene({
           </ol>
 
           <div className="relative">
-            <svg viewBox={viewBox} className="w-full text-foreground/55" role="img" aria-label={title}>
+            <svg viewBox={viewBox} className="w-full" style={{ color: "var(--line-ink, oklch(0.82 0.018 85))" }} role="img" aria-label={title}>
               {children((i) => stageOf(p, i, n), now, p)}
             </svg>
           </div>

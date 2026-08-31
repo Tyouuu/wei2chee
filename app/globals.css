@@ -100,7 +100,11 @@
   --rust: oklch(0.66 0.11 45);
 
   --background: var(--ink);
-  --foreground: oklch(0.96 0.004 265);
+  /* ⚠️ 暖白，不是纯白。老板挑的 consider.digital 量出来字是 **#CFC8BA** ——
+     一个暖的灰白压在近黑上；我们原本是 oklch(0.96 0.004 265)，冷而且更亮，
+     读起来硬。把色相挪到 85（暖）、亮度收一点，整页立刻不刺眼。
+     ⚠️ 只动色相跟亮度，不动结构 —— 对比度 15.8:1 → 13.1:1，还是远高於 4.5。 */
+  --foreground: oklch(0.90 0.016 85);
   --card: var(--ink-raised);
   --card-foreground: oklch(0.96 0.004 265);
   --popover: var(--ink-raised);

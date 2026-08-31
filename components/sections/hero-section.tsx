@@ -232,6 +232,22 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
           <p className="mt-5 text-center text-[0.8125rem] leading-relaxed text-white/60">
             {t("proof")}
           </p>
+
+          {/* ⚠️ 等宽的注解框 —— consider.digital 第一屏那个框的形状
+              （[任务 87](../../docs/founder-tasks.md)）。它写的是
+              `this page practises what it preaches — no images · no webfonts ·
+               no tracking · one small file`：**整页自己就是它的论证的证据**。
+
+              我们不抄那句话。量过我们这一页：dev 下 77 个请求 30 MB —— 那是
+              开发模式的 chunk，不是真实值，而**抄一句我验不了的话，正好违反
+              那句话的精神**。而且「轻」是他们的论证，不是我们的。
+
+              换成我们验得了的那一句：这一页上每一张产品画面都是从真的产品拍的
+              （scripts/shoot-landing-shots.mjs 会登入真的 demo 帐号去拍，
+              而且拍之前会先确认那一页不是 404）。 */}
+          <p className="mx-auto mt-6 max-w-[54ch] border-l-2 py-1 pl-4 text-left font-mono text-[0.75rem] leading-relaxed [border-color:var(--color-primary)] text-white/55">
+            {t("note")}
+          </p>
         </motion.form>
 
         {/*
