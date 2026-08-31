@@ -460,6 +460,12 @@
      最近（笔画对比 1.45 对 1.44 · 小写多高 0.707 对 0.70），而且同属新哥特。
      见 app/fonts.ts。工作台不动。 */
   /* 并排的缝 —— Kurofude 量出来 8%，我们 2%（工作台的 --gap-stack 是 14px，那是 POS 的间距）。见 app/globals.css 的 --site-gap。工作台不动。 */
+  /* 大标题全大写 —— Kurofude 的第一屏是「KUROFUDE / MODERN JAPANESE DINING」。
+     量出来 小写多高 1.00 · 大写比小写宽 1.04，跟 Toulouse 同一个签名：
+     **那两个读数是「这一行没有小写」的性质，不是字体的性质。**
+     ⚠️ 这两项以前是绿的，因为旧的参考快照是在尺子还不会套 text-transform
+     之前拍的 —— 一把量错的尺，把一个真差异报成没有差异。 */
+  --site-name-case: uppercase;
   --site-gap: 4.0;
   --site-display: var(--font-grotesque-latin), ui-sans-serif, system-ui, sans-serif;
   --site-round: 0;

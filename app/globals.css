@@ -872,6 +872,13 @@
   font-weight: var(--site-display-weight, var(--fw-medium));
   letter-spacing: var(--site-display-tracking, var(--tracking-display));
   line-height: var(--leading-display);
+  /* 大小写是一根风格轴 —— 见 site-hero.tsx 的 name-plate。
+     写在这里而不是只写在那一个版式上，因为它是**这一套风格的决定**，
+     不是那一个开场形状的决定：招牌 的 TOULOUSE 跟 中台 的 KUROFUDE 用的是
+     两个不同的第一屏版式，而两边的大标题都是全大写。
+     ⚠️ 这条选择器 (0,1,1) 赢得了组件 class (0,1,0) —— 这份档案上面
+     那一段注解就写着为什么值只要每一套要能自己决定就得写在这里。 */
+  text-transform: var(--site-name-case, none);
 }
 
 /* ── 区段标题 —— MEASURED, NOT GUESSED ─────────────────────────────────────

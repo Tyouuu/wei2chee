@@ -1048,7 +1048,13 @@ function readShots(rootSel) {
   return [...root.querySelectorAll("img,video"), ...backdrops]
     .map((e) => {
       const r = e.getBoundingClientRect();
-      return { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top + scrollY) };
+      /* 记下这张图**是哪一张** —— 见下面「不同的照片」那一项。
+         背景图从 background-image 里取，<img> 取 currentSrc。 */
+      const bg = getComputedStyle(e).backgroundImage || "";
+      const m = bg.match(/url\(["']?([^"')]+)/);
+      const src = e.currentSrc || e.src || (m ? m[1] : "");
+      return { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top + scrollY),
+        src: String(src).split("?")[0].slice(-60) };
     })
     /* Below a thumbnail it is a logo, an icon or a spacer — counting those
        would drown the numbers that matter. */
@@ -2440,6 +2446,26 @@ try {
         console.log(`  OK  ${who}载不出来的图  0 张`);
         marks.push({ axis: "结构", name: `${who}载不出来的图`, ok: true });
       }
+    }
+    /* ── 不同的照片，不是几张照片 ────────────────────────────────────────
+       老板 2026-08-31，六套压到 10 以下之后，我把整页缩图拿出来用眼睛看：
+       **同一张堆高机在中台的第2、3、5段各出现一次**，那个轮胎跟那个红盒子
+       在第3跟第5段各一次。量出来六套**全部**有，每一页 2–4 张重复。
+
+       「照片张数 17 对 13」把重复的算成新的 —— 他们那 17 张**张张不同**，
+       我们 13 张里只有 8 张不同。**真实的差距是 17 对 8，不是 17 对 13。**
+
+       ⚠️ 而重复本身**不是 bug**：`per-trade.test.ts` 是故意让占位图重复的，
+       老板拍过板（「要嘛你就是去图库拿图 要嘛只是一个占位图 都可以」）。
+       所以这一项**印出来不判**——它讲的是「这一页有多少不同的东西可看」，
+       而那件事在客户填上自己的照片之后才有答案。 */
+    for (const [who, cap] of [["模版", theirs], ["我们", ours]]) {
+      const srcs = (cap.shots ?? []).map((x) => x.src).filter(Boolean);
+      const uniq = new Set(srcs).size;
+      const rep = srcs.length - uniq;
+      console.log(`  --  ${who}不同的照片  ${uniq}/${srcs.length} 张不重复`
+        + (rep ? `  ← 有 ${rep} 张是同一张用了第二次` : ""));
+      marks.push({ axis: "结构", name: `${who}不同的照片`, ok: null });
     }
     const bigPic = (b) => b.kind === "图" && (b.pw ?? 999) >= 120 && (b.ph ?? 999) >= 90;
     const inBoxes = (shp) => (shp ?? []).reduce((n2, bs) => n2 + bs.filter(bigPic).length, 0);
