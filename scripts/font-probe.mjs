@@ -30,8 +30,10 @@ import { chromium } from "playwright";
 const TARGETS = {
   /* Toulouse Brasserie（招牌 的参考），2026-08-31 实测 */
   signboard: { serifish: 0.94, contrast: 1.0, xish: 1.0, inkish: 0.118 },
-  /* Kurofude（中台 的参考），同日 */
-  counter: { serifish: 1.13, contrast: 1.44, xish: 0.7, inkish: 0.118 },
+  /* Kurofude（中台 的参考）—— univers-lt-std，字重 700 */
+  counter: { serifish: 1.28, contrast: 1.44, xish: 0.70, inkish: 0.210 },
+  /* Newel（台账 的参考）—— displace-2-0，末端外扩那一族 */
+  ledger: { serifish: 1.21, contrast: 1.83, xish: 0.74, inkish: 0.093 },
 };
 
 /* 候选。挑的规矩：Google Fonts 上有、SIL OFL、而且是**展示体或正文体**
@@ -46,6 +48,13 @@ const FAMILIES = [
   "Jost", "Poppins", "Outfit", "Questrial", "Josefin Sans", "Lexend",
   // 高 x 高的黑体
   "Inter", "Manrope", "Space Grotesk", "Figtree",
+  // 新哥特（Univers 那一类）—— 中台 的参考是 univers-lt-std
+  "Roboto", "Barlow", "Libre Franklin", "Asap", "Encode Sans", "Arimo", "Mulish", "Rubik",
+  // 末端外扩 / 人文（Displace 2.0 · Optima 那一类）—— 台账 的参考
+  "Marcellus", "Gilda Display", "Radley", "Copse", "Quattrocento Sans",
+  "Spectral", "Vollkorn", "Faustina", "Petrona", "Amiri", "Cardo", "Gentium Book Plus",
+  // 图纸 用的那一套本人
+  "EB Garamond",
 ];
 
 const args = process.argv.slice(2);

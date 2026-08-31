@@ -451,6 +451,10 @@
   /* 段标题 —— Parker & Brown 量出来 h1 158 · h2 **81**（级差 0.51），
      我们 158/55（0.35）。81 ÷ 55 = 1.47。那一页的段标题几乎有第一屏一半大，
      因为它每一段都是一个论点，不是一个标签。 */
+  /* 官网的标题字 —— Parker & Brown 用的就是 **EB Garamond**，而它在
+     Google Fonts 上（见 app/fonts.ts）。他们 笔画对比 2.29 · 墨量 0.119，
+     我们 Newsreader 1.67 / 0.135。工作台不动。 */
+  --site-display: var(--font-garamond-latin), Georgia, "Times New Roman", serif;
   --site-heading: 1.47;
   --site-display-tracking: 0em;
   --site-page-measure: 86.5rem;  /* 参考页量出来的版心 2%–98% */

@@ -106,6 +106,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #1a9a4d;
   --color-brass-chart: #a8710a;
+  --site-display: var(--font-garamond-latin), Georgia, "Times New Roman", serif;
   --site-heading: 1.47;
   --site-display-tracking: 0em;
   --site-page-measure: 86.5rem;
@@ -282,6 +283,7 @@
   --color-medal-bronze: #a56732;
   --color-jade-chart: #00a870;
   --color-brass-chart: #faad14;
+  --site-display: var(--font-grotesque-latin), ui-sans-serif, system-ui, sans-serif;
   --site-round: 0;
   --site-heading: 0.76;
   --site-display-tracking: -0.05em;

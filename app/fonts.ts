@@ -20,6 +20,8 @@ import {
   Geist_Mono,
   IBM_Plex_Sans,
   Bricolage_Grotesque,
+  EB_Garamond,
+  Libre_Franklin,
   Manrope,
   Noto_Sans_SC,
   Noto_Serif_SC,
@@ -234,6 +236,45 @@ const questrial = Questrial({
   preload: false,
 });
 
+/* 图纸 的官网标题字 —— **他们用的就是这一套，而它在 Google Fonts 上。**
+ * `npm run align -- blueprint` 的「标题字体」那一行印着
+ * `模版 eb garamond · 我们 Newsreader` —— 那个名字一直在报告里，
+ * 而我一直把它当成「量不到」跳过去（它是 `?` 不是 `XX`，因为字体名
+ * 判不了对错 —— 但它讲得出**他们用什么**）。
+ *
+ * 量出来：他们 笔画对比 2.29 · 墨量 0.119；Newsreader 1.67 / 0.135。
+ * EB Garamond 是**同一套字**，不是像的那一套。
+ *
+ * ⚠️ 只装在官网层。工作台还是 Newsreader —— 一页四十行的表格用
+ * Garamond 的小写会太秀气，那是另一个场合的判断。
+ */
+const ebGaramond = EB_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-garamond-latin",
+  display: "swap",
+  preload: false,
+});
+
+/* 中台 的官网标题字 —— Kurofude 的 h1 是 `univers-lt-std`（**Univers**，
+ * 授权字体，拿不到），量出来 笔画对比 1.44 · 小写多高 0.70 · 墨量 0.210
+ * · 直笔比 1.28，字重 700。我们 Archivo 是 1.20 / 0.77 / 0.215 / 1.26。
+ *
+ * `node scripts/font-probe.mjs --target counter --weight 700` 跑 38 套：
+ * **Libre Franklin 700 是 1.45 / 0.707 / 0.2248 / 1.328**，四根轴距离 0.12，
+ * 第二名 0.18。而它跟 Univers 同属新哥特（Franklin Gothic 那一族），
+ * 不是「数字碰巧对上」的另一类字。
+ *
+ * ⚠️ 只装在官网层。工作台还是 Archivo。
+ */
+const libreFranklin = Libre_Franklin({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-grotesque-latin",
+  display: "swap",
+  preload: false,
+});
+
 /* TWO FACES LEFT WITH THEIR REGISTERS, 2026-08-27. 柔和 and 粗野 were culled
    and their Latin faces went with them -- a font declared here is downloaded on
    every page whether or not any surviving register asks for it, and the people
@@ -246,6 +287,8 @@ export const fontVariables = [
   geist.variable,
   tenorSans.variable,
   questrial.variable,
+  ebGaramond.variable,
+  libreFranklin.variable,
   geistMono.variable,
   archivo.variable,
   archivoNarrow.variable,
