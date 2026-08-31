@@ -9,7 +9,8 @@ import { OnboardingStepper } from "@/components/onboarding/stepper";
 import { AnalysisReveal } from "@/components/sections/analysis-reveal";
 import { ConversionCta } from "@/components/sections/conversion-cta";
 import { AmbientBackdrop } from "@/components/ambient-backdrop";
-import { HowItWorks, WhatYouGet, Pricing, Faq } from "@/components/sections/landing-explainer";
+import { WhatYouGet, Pricing, Faq } from "@/components/sections/landing-explainer";
+import { ProcessShowcase } from "@/components/sections/process-showcase";
 import { SiteFooter } from "@/components/site-footer";
 import { CookieNotice } from "@/components/cookie-notice";
 import { SiteHeader } from "@/components/site-header";
@@ -51,7 +52,7 @@ export default function HomePage() {
           are being asked to pick a trade FOR. Everything below the picker is
           conditional on having picked one, so this is the last thing an
           undecided visitor reads if it sits underneath. */}
-      <HowItWorks />
+      <ProcessShowcase />
 
       {/* THE FOLD THIS PAGE DID NOT HAVE. Measured: 249 elements and not one
           rendered system, on a site whose promise is that you see your system

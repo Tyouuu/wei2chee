@@ -60,4 +60,25 @@ for (const [name, path] of shots) {
   await p.screenshot({ path: `public/shots/${name}.jpg`, type: "jpeg", quality: 78 });
   console.log(`public/shots/${name}.jpg   ← ${path}`);
 }
+/* 第四张：问卷 —— 「回答几个问题」那一步讲的就是它，而它要点过才看得到。
+   ⚠️ 不能拿 portal 首页顶替：那是**答完之后**的画面，用它讲「回答问题」
+   等於用结果的图去讲过程。 */
+{
+  const q = await b.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
+  await q.goto(`${BASE}/en`, { waitUntil: "networkidle", timeout: 60000 });
+  /* cookie 提示关掉 —— 它是给第一次来的访客看的，不该印在行销图上。
+     （而且它在 390px 会盖住「下一题」，见 waiting-screen 那一轮。） */
+  const ok = q.getByRole("button", { name: /got it|知道了/i }).first();
+  if (await ok.count().catch(() => 0)) await ok.click({ timeout: 2000 }).catch(() => {});
+  await q.addStyleTag({ content: "nextjs-portal,[data-nextjs-toast]{display:none!important}" });
+  const card = q.locator("[aria-pressed]").first();
+  if (await card.count()) { await card.click({ timeout: 4000 }).catch(() => {}); await q.waitForTimeout(2200); }
+  const asked = await q.evaluate(() => /\?/.test(document.body.innerText));
+  if (!asked) console.log("  ⚠️ 问卷没打开 —— 那一张没拍（宁可少一张，不要一张假的）");
+  else {
+    await q.screenshot({ path: "public/shots/ask.jpg", type: "jpeg", quality: 78 });
+    console.log("public/shots/ask.jpg   ← /en 点了行业之后");
+  }
+  await q.close();
+}
 await b.close();
