@@ -1,4 +1,6 @@
 import { fetchLiveRows, withLiveRows } from "@/lib/portal/live-rows";
+import { fetchLiveStats, withLiveStats } from "@/lib/portal/live-stats";
+import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
 import { notFound, redirect } from "next/navigation";
 import {
   createSessionSupabaseClient,
@@ -22,6 +24,7 @@ import {
   systemLangOf,
   tradeLabels,
   workflowStages,
+  dashboardRecordModule,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
@@ -167,6 +170,71 @@ export default async function PortalEditorPage({
     systemLangOf(businessContext),
   );
   initialData = withLiveRows(initialData, liveRows);
+
+  /*
+    AND THE NUMBERS ON THE FIRST SCREEN.
+
+    The tables became real one shape at a time; 总览 did not, and it is the page
+    he opens first every morning. It printed 「本月已确认工程额 RM 71,300」 out of
+    the sample file -- the same figure for every business in the product -- so an
+    owner could write three quotations and still read somebody else's month.
+
+    A table of samples announces itself (陈先生, 李太太, obviously a
+    demonstration). A total does not: it is just a number, and it looks like his.
+
+    Only on the overview page, read from the shape rather than from a page key,
+    because TrendChart also appears on 排名 and 客户 where its points mean
+    something else entirely.
+  */
+  if (MODULE_BY_KEY[pageKey]?.shape === "overview") {
+    const nouns = tradeLabels(businessContext, pageRefs);
+
+    /*
+      AND THE TABLE UNDER THEM.
+
+      The first version projected the tiles and left this table alone, so the
+      first screen read 「本月收到 RM 18,000」 over 陈先生 · 李太太 · 王老板 --
+      real figures sitting on top of somebody else's rows. That is worse than
+      the page was before, because two things that disagree cannot both be
+      believed, and the totals are the half he cannot check by eye.
+
+      `dashboardRecordModule` is what the caption already resolved to, so the
+      rows and the heading are about the same module (see the note beside it).
+    */
+    const recentOf = dashboardRecordModule(pageRefs);
+    const stats = await fetchLiveStats(
+      supabase,
+      project.id,
+      /* The pages this business actually has. A tile about 收款 on a system
+         with no 收款 page is a number about a part of his system that does
+         not exist. */
+      pageRefs.map((r) => r.key),
+      { customer: nouns.customer, pipeline: nouns.order },
+      /* The same module the table below is filled from, so the tile and the
+         list under it cannot count different things. */
+      recentOf,
+      workflowStages(businessContext),
+      systemLangOf(businessContext),
+    );
+
+    if (recentOf) {
+      initialData = withLiveRows(
+        initialData,
+        await fetchLiveRows(
+          supabase,
+          project.id,
+          recentOf,
+          workflowStages(businessContext),
+          systemLangOf(businessContext),
+        ),
+        /* Once he has started, every block owes him the truth -- including
+           「nothing here yet」. Samples are for somebody who has not. */
+        { businessIsLive: !!stats },
+      );
+    }
+    initialData = withLiveStats(initialData, stats);
+  }
+
 
   // 「去用它」 from the component library. Applied through the SAME
   // add_component operation the AI assistant emits, so a block arrives in the

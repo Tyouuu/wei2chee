@@ -14,7 +14,7 @@ import {
   defaultModulesForIndustry,
   type ModuleShape,
 } from "@/lib/portal/module-catalog";
-import { isLiveShape } from "@/lib/portal/shape-state";
+import { isLiveShape, PIPELINE_MODULES } from "@/lib/portal/shape-state";
 import { DEFAULT_SYSTEM_LANG, type SystemLang } from "@/lib/system-lang";
 import {
   chrome,
@@ -2445,6 +2445,27 @@ function labelsFromPages(
     // wholesaler has both; `orders` wins because it is the one their day runs on.
     order: titleOf("orders") ?? titleOf("projects") ?? base.order,
   };
+}
+
+/**
+ * Which module the 总览 page's 「最近的<工程>」 table is actually about.
+ *
+ * ⚠️ It has to agree with labelsFromPages above, and that is the whole reason
+ * it lives here rather than beside the projection that uses it: the caption
+ * says 「最近的订单」 because `order` resolved to the 订单 page, so filling that
+ * table from 报价单 would put quotations under a heading that says orders.
+ *
+ * The third branch is not in labelsFromPages because a LABEL can fall back to
+ * the trade's generic noun and a TABLE cannot fall back to a module that does
+ * not exist. A business with only 报价单 gets its quotations there, under a
+ * caption using the trade's word -- which is the honest reading of a page that
+ * says 「最近的工程」 to a contractor whose only pipeline is quotes.
+ */
+export function dashboardRecordModule(refs: PageRef[]): string | null {
+  const has = (key: string) => refs.some((p) => p.key === key);
+  if (has("orders")) return "orders";
+  if (has("projects")) return "projects";
+  return refs.map((p) => p.key).find((k) => PIPELINE_MODULES.has(k)) ?? null;
 }
 
 export function buildPageLayout(

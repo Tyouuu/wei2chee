@@ -336,10 +336,26 @@ export function rowsFromParties(entries: DirectoryEntry[]): LiveRow[] {
 export function withLiveRows(
   tree: Record<string, unknown>,
   rows: LiveRow[],
+  opts: {
+    /**
+     * This business has records SOMEWHERE, even if none belong on this page.
+     *
+     * ⚠️ Without it the 总览 page contradicted itself in the empty direction:
+     * a contractor with three quotations and no 工程 yet read 「在做的工程 0」
+     * in the tile and 「Quoting RM 96,000」 in the chart beside it, because the
+     * chart had never been live and so kept its samples. The tiles knew he had
+     * started and the blocks did not.
+     *
+     * A demonstration is for somebody who has not started. The moment he has,
+     * every block on the page owes him the truth -- including 「nothing here
+     * yet」.
+     */
+    businessIsLive?: boolean;
+  } = {},
 ): Record<string, unknown> {
   const content = (tree as { content?: unknown }).content;
   if (!Array.isArray(content)) return tree;
-  const mapped = mapNodes(content, rows);
+  const mapped = mapNodes(content, rows, opts.businessIsLive === true);
   /* Identity is kept when nothing moved, so a caller can apply this
      unconditionally and an untouched page stays the same object. */
   if (mapped.every((n, i) => n === content[i])) return tree;
@@ -383,7 +399,7 @@ function toModelRow(r: LiveRow): { cells: Record<string, string>; tones: Record<
   return { cells, tones: { status: r.tone } };
 }
 
-function mapNodes(nodes: unknown[], rows: LiveRow[]): unknown[] {
+function mapNodes(nodes: unknown[], rows: LiveRow[], started = false): unknown[] {
   return nodes.map((node) => {
     const n = node as { type?: string; props?: Record<string, unknown> };
     if (!n || typeof n !== "object" || !n.props) return node;
@@ -439,7 +455,7 @@ function mapNodes(nodes: unknown[], rows: LiveRow[]): unknown[] {
            samples keeps them, which is the founder's decision of 2026-08-30
            (「留着、标清楚、加第一笔真的就消失」) still intact in both directions. */
         if (!rows.length) {
-          if (table.live !== true) return node;
+          if (table.live !== true && !started) return node;
           return { ...n, props: { ...n.props, table: { ...table, rows: [] } } };
         }
         return {
@@ -454,11 +470,29 @@ function mapNodes(nodes: unknown[], rows: LiveRow[]): unknown[] {
       return node;
     }
 
+    /* ── THE OTHER THREE BLOCKS DRAWING THE SAME LIST ────────────────────
+       The 总览 page's table, its 「今天要跟的」 shelf, its board and its ranking
+       are all built from ONE array in industry-template (`sample.records`) --
+       four shapes of the same question, which is why they can never disagree
+       there. Filling only the table left the first screen reading real totals
+       over 陈先生 · 李太太 · 王老板 in the three blocks beside it, which is
+       worse than all of them being samples: two things that contradict each
+       other cannot both be believed, and the totals are the half he cannot
+       check by eye. */
+    if (SAME_LIST.has(n.type ?? "")) {
+      const wasLive = (n.props as { live?: unknown }).live === true;
+      if (!rows.length) {
+        if (!wasLive && !started) return node;
+        return { ...n, props: { ...n.props, ...emptied(n.type ?? "") } };
+      }
+      return { ...n, props: { ...n.props, live: true, ...fill(n.type ?? "", n.props, rows) } };
+    }
+
     let changed = false;
     const props: Record<string, unknown> = { ...n.props };
     for (const [key, value] of Object.entries(n.props)) {
       if (Array.isArray(value) && value.some((v) => v && typeof v === "object" && "type" in (v as object))) {
-        const mapped = mapNodes(value, rows);
+        const mapped = mapNodes(value, rows, started);
         if (mapped.some((v, i) => v !== value[i])) {
           props[key] = mapped;
           changed = true;
@@ -590,4 +624,111 @@ export async function withFreshRows(
     systemLangOf(businessContext),
   );
   return withLiveRows(tree, rows);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FOUR SHAPES OF ONE LIST.
+
+   buildDashboard builds all of these from the same `sample.records`, so they
+   are not four blocks with four data sources -- they are four answers to one
+   question, and they have to become real together or not at all.
+   ────────────────────────────────────────────────────────────────────────── */
+const SAME_LIST = new Set(["ShelfList", "TaskBoard", "RankList", "ShareChart"]);
+
+function fill(
+  type: string,
+  props: Record<string, unknown>,
+  rows: LiveRow[],
+): Record<string, unknown> {
+  if (type === "ShelfList") {
+    /* Three, because that is what 「今天要跟的」 means -- a list of everything
+       is not a list of what to do today. The icon, the button's word and where
+       it goes are kept: they are the page's, not this row's. */
+    const keep = (props.items as { icon?: string; action?: string; href?: string }[] | undefined)?.[0];
+    return {
+      items: rows.slice(0, 3).map((r) => ({
+        title: r.primary,
+        description: r.status || r.secondary || "",
+        icon: keep?.icon ?? "work",
+        action: keep?.action,
+        href: keep?.href,
+      })),
+    };
+  }
+
+  if (type === "TaskBoard") {
+    /* A card goes in the column its row is ACTUALLY at. The board shows the
+       first three stages of this business's workflow, so a row further along
+       has no column here and is left out -- which is right: putting a 尾款 job
+       under 报价 because there was space would be the board lying about where
+       the work is. */
+    const stages = (props.stages as { name?: string }[] | undefined)?.map((s) => s.name ?? "") ?? [];
+    return {
+      cards: rows
+        .filter((r) => stages.includes(r.status))
+        .slice(0, 12)
+        .map((r) => ({
+          title: r.primary,
+          stage: r.status,
+          note: [r.secondary, r.amount].filter(Boolean).join(" · "),
+        })),
+    };
+  }
+
+  if (type === "RankList") {
+    /* Biggest first -- a ranking whose order is 「whatever came back」 is a
+       list, not a ranking. Rows with no amount sort last rather than being
+       dropped: a job with no figure yet is still one of his. */
+    const keep = (props.rows as { href?: string }[] | undefined)?.[0];
+    return {
+      rows: [...rows]
+        .sort((a, b) => senOf(b.amount) - senOf(a.amount))
+        .slice(0, 5)
+        .map((r) => ({
+          name: r.secondary || r.primary,
+          sub: r.secondary ? r.primary : r.status,
+          amount: r.amount ?? "",
+          href: keep?.href,
+        })),
+    };
+  }
+
+  if (type === "ShareChart") {
+    /* 「多少钱卡在哪一段」. Grouped by the row's own status, same as the page
+       already does, and the colours are left alone -- they are the register's
+       ramp and have nothing to do with which rows exist. */
+    const by = new Map<string, number>();
+    for (const r of rows) {
+      const key = r.status || "—";
+      by.set(key, (by.get(key) ?? 0) + senOf(r.amount) / 100);
+    }
+    const old = (props.slices as { color?: string }[] | undefined) ?? [];
+    return {
+      slices: [...by.entries()].map(([label, value], i) => ({
+        label,
+        value,
+        color: old[i]?.color ?? old[old.length - 1]?.color,
+      })),
+    };
+  }
+  return {};
+}
+
+/** Real once, empty now. Same rule as the table: zeroes and empty lists rather
+ *  than yesterday's rows, because a business that deleted everything must not
+ *  be shown a memory of it. */
+function emptied(type: string): Record<string, unknown> {
+  if (type === "ShelfList") return { items: [] };
+  if (type === "TaskBoard") return { cards: [] };
+  if (type === "RankList") return { rows: [] };
+  if (type === "ShareChart") return { slices: [] };
+  return {};
+}
+
+/** 「RM 48,500」 -> 4850000. Only for ordering and totals inside this file; the
+ *  string stays the thing that is displayed. */
+function senOf(amount: string | undefined): number {
+  if (!amount) return 0;
+  const m = amount.replace(/[, ]/g, "").match(/\d+(\.\d{1,2})?/);
+  return m ? Math.round(Number(m[0]) * 100) : 0;
 }

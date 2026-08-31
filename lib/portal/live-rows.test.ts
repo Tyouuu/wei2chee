@@ -6,6 +6,7 @@ import {
   rowsFromEntries,
   rowsFromParties,
   withLiveRows,
+  type LiveRow,
 } from "./live-rows";
 import { buildPageLayout } from "@/lib/templates/industry-template";
 import { upgradeLayout } from "./layout-upgrade";
@@ -517,5 +518,119 @@ describe("the live flag through a real load", () => {
       content: { props: { table: { rows: unknown[] } } }[];
     };
     expect(out.content[0].props.table.rows).toHaveLength(1);
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────────────
+   THE OTHER THREE BLOCKS ON THE SAME SCREEN.
+
+   The 总览 page builds its table, its 「今天要跟的」 shelf, its board and its
+   ranking from ONE array. Filling only the table put real totals over 陈先生 ·
+   李太太 · 王老板 in the blocks beside them -- and two things on one screen
+   that contradict each other cannot both be believed.
+
+   Found by looking at the page after the tiles went real, not by a test.
+   ──────────────────────────────────────────────────────────────────────────── */
+describe("the blocks that draw the same list as the table", () => {
+  const rows: LiveRow[] = [
+    { primary: "Taman Desa 三房翻新", secondary: "陈先生", amount: "RM 48,500", tone: "warning", status: "施工" },
+    { primary: "Bukit Jalil 厨房", secondary: "李太太", amount: "RM 12,800", tone: "neutral", status: "报价" },
+    { primary: "Cheras 店屋", secondary: "王老板", amount: "RM 96,000", tone: "positive", status: "尾款" },
+  ];
+  const one = (type: string, props: Record<string, unknown>) => ({
+    content: [{ type: "SystemShell", props: { id: "s", main: [{ type, props: { id: "b", ...props } }] } }],
+  });
+  const out = (tree: Record<string, unknown>, live: LiveRow[]) =>
+    (withLiveRows(tree, live) as { content: { props: { main: { props: Record<string, unknown> }[] } }[] })
+      .content[0].props.main[0].props;
+
+  it("puts his own three on the shelf, keeping the button's word", () => {
+    const props = out(
+      one("ShelfList", { heading: "今天要跟的", items: [{ title: "示例", icon: "work", action: "去看", href: "/x" }] }),
+      rows,
+    );
+    const items = props.items as { title: string; action?: string; href?: string }[];
+    expect(items.map((i) => i.title)).toEqual(["Taman Desa 三房翻新", "Bukit Jalil 厨房", "Cheras 店屋"]);
+    expect(items[0].action).toBe("去看");
+    expect(items[0].href).toBe("/x");
+  });
+
+  it("puts a card in the column it is actually at, and leaves out the ones with no column", () => {
+    /* 尾款 is not one of the three columns this board shows. Putting it under
+       报价 because there was room would be the board lying about where the
+       work is. */
+    const props = out(
+      one("TaskBoard", { stages: [{ name: "报价" }, { name: "订金" }, { name: "施工" }], cards: [] }),
+      rows,
+    );
+    const cards = props.cards as { title: string; stage: string }[];
+    expect(cards.map((c) => c.stage)).toEqual(["施工", "报价"]);
+    expect(cards.map((c) => c.title)).not.toContain("Cheras 店屋");
+  });
+
+  it("ranks by the money, biggest first", () => {
+    const props = out(one("RankList", { heading: "排名", rows: [{ href: "/y" }] }), rows);
+    const ranked = props.rows as { name: string; amount: string; href?: string }[];
+    expect(ranked.map((r) => r.name)).toEqual(["王老板", "陈先生", "李太太"]);
+    expect(ranked[0].href).toBe("/y");
+  });
+
+  it("splits the money by the stage it is stuck at", () => {
+    const props = out(
+      one("ShareChart", { title: "钱卡在哪", slices: [{ label: "示例", value: 1, color: "A" }] }),
+      rows,
+    );
+    expect(props.slices).toEqual([
+      { label: "施工", value: 48500, color: "A" },
+      { label: "报价", value: 12800, color: "A" },
+      { label: "尾款", value: 96000, color: "A" },
+    ]);
+  });
+
+  it("empties them once he has deleted everything, and only if they were real", () => {
+    const live = one("ShelfList", { items: [{ title: "陈先生" }], live: true });
+    expect((out(live, []).items as unknown[]).length).toBe(0);
+    const samples = one("ShelfList", { items: [{ title: "示例" }] });
+    expect(withLiveRows(samples, [])).toBe(samples);
+  });
+});
+
+describe("a business that has started, on a page with nothing on it yet", () => {
+  /* 「在做的工程 0」 in a tile beside 「Quoting RM 96,000」 in the chart: the
+     tiles knew he had begun and the sample blocks did not. A demonstration is
+     for somebody who has not started; the moment he has, every block owes him
+     the truth, including 「nothing here yet」. */
+  const page = () => ({
+    content: [
+      {
+        type: "SystemShell",
+        props: {
+          id: "s",
+          main: [
+            { type: "ShareChart", props: { id: "share", slices: [{ label: "Quoting", value: 96000 }] } },
+            {
+              type: "RecordTable",
+              props: {
+                id: "t",
+                table: { columns: [{ key: "primary", label: "工程", kind: "text" }], rows: [{ cells: { primary: "示例" }, tones: {} }] },
+              },
+            },
+          ],
+        },
+      },
+    ],
+  });
+  const main = (out: unknown) =>
+    (out as { content: { props: { main: { props: Record<string, unknown> }[] } }[] }).content[0].props.main;
+
+  it("empties the blocks rather than leaving somebody else's figures", () => {
+    const out = withLiveRows(page(), [], { businessIsLive: true });
+    expect(main(out)[0].props.slices).toEqual([]);
+    expect((main(out)[1].props.table as { rows: unknown[] }).rows).toEqual([]);
+  });
+
+  it("still leaves the demonstration alone for a business that has not started", () => {
+    const p = page();
+    expect(withLiveRows(p, [])).toBe(p);
   });
 });
