@@ -8,6 +8,7 @@ import {
   withLiveRows,
 } from "./live-rows";
 import { buildPageLayout } from "@/lib/templates/industry-template";
+import { upgradeLayout } from "./layout-upgrade";
 
 const WORKFLOW = ["客户", "报价", "订金", "施工", "尾款"];
 
@@ -464,5 +465,57 @@ describe("withLiveRows when the last record is deleted", () => {
     const samples = withRows([{ cells: { primary: "示例" }, tones: {} }]);
     expect(withLiveRows(samples, [])).toBe(samples);
     expect(tableOf(withLiveRows(samples, [])).rows).toHaveLength(1);
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────────────
+   AND IT HAS TO SURVIVE BEING LOADED.
+
+   The three tests above passed while the page still showed the ghost, because
+   they hand a tree straight to the projection. A real page goes through
+   upgradeLayout() first, which rebuilds every RecordTable's `table` prop --
+   and that rebuild dropped `live`, so the flag lived for exactly one render:
+   written on save, erased on load.
+
+   Caught in a browser: the customers page was saved with a real row, the row
+   was deleted, and 陈先生 was still on screen. That is the same 「fixture is
+   not the product」 mistake this file's own header records about the slot bug,
+   made inside the fix for something else.
+   ──────────────────────────────────────────────────────────────────────────── */
+describe("the live flag through a real load", () => {
+  const saved = () => ({
+    content: [
+      {
+        type: "RecordTable",
+        props: {
+          id: "customers-list",
+          gridId: "customers-list",
+          caption: "客户",
+          table: {
+            columns: [{ key: "primary", label: "客户", kind: "text" }],
+            rows: [{ cells: { primary: "陈先生" }, tones: {} }],
+            live: true,
+          },
+        },
+      },
+    ],
+  });
+
+  it("still knows the rows were real after upgradeLayout has rebuilt the table", () => {
+    const loaded = upgradeLayout(saved(), "zh") as Record<string, unknown>;
+    const out = withLiveRows(loaded, []) as {
+      content: { props: { table: { rows: unknown[] } } }[];
+    };
+    expect(out.content[0].props.table.rows).toEqual([]);
+  });
+
+  it("does not invent the flag for a page that only ever had samples", () => {
+    const samples = saved();
+    delete (samples.content[0].props.table as { live?: boolean }).live;
+    const loaded = upgradeLayout(samples, "zh") as Record<string, unknown>;
+    const out = withLiveRows(loaded, []) as {
+      content: { props: { table: { rows: unknown[] } } }[];
+    };
+    expect(out.content[0].props.table.rows).toHaveLength(1);
   });
 });

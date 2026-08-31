@@ -49,7 +49,30 @@ export type TableRow = {
   tones?: Record<string, StatusTone>;
 };
 
-export type TableModel = { columns: TableColumn[]; rows: TableRow[] };
+export type TableModel = {
+  columns: TableColumn[];
+  rows: TableRow[];
+  /**
+   * These rows came out of the database, not out of the template.
+   *
+   * Set by the live-rows projection and carried through here so that it
+   * SURVIVES A LOAD. Without that it does not exist for longer than one
+   * render: the editor autosaves the projected rows into layout_json, and
+   * this function rebuilds `table` on the way back in -- so the flag was
+   * written on save and erased on load, every time.
+   *
+   * What it costs when it is lost: the day a business deletes its last
+   * record, the projection has nothing to put in, and a frozen row that was
+   * once real is indistinguishable from a sample -- so the deleted customer
+   * comes back on screen and the delete looks as though it failed.
+   *
+   * ⚠️ Found in a browser, not in a test. The unit test for the fix built its
+   * own tree and called the projection directly, so it never went through this
+   * function at all -- 「the fixture is not the product」, which is the same
+   * mistake the projection's own header records about the slot bug.
+   */
+  live?: boolean;
+};
 
 export const KIND_LABELS: Record<ColumnKind, string> = {
   text: "文字",
@@ -130,6 +153,11 @@ export function normalizeTable(props: Record<string, unknown>): TableModel {
         cells: (r?.cells ?? {}) as Record<string, string>,
         tones: (r?.tones ?? {}) as Record<string, StatusTone>,
       })),
+      /* Carried, not rebuilt -- see the note on TableModel.live. Only `true`
+         survives: a page that never held real rows must not gain the flag by
+         accident, because the flag is what decides whether an empty result
+         means 「他删完了」 or 「他还没开始」. */
+      ...(t.live === true ? { live: true as const } : {}),
     };
   }
 
