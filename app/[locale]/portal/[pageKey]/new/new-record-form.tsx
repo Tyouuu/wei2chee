@@ -136,6 +136,17 @@ export function NewRecordForm({
           { key: "contact_person", label: copy.contactPerson },
           { key: "email", label: copy.email, inputMode: "email" },
           { key: "region", label: copy.region },
+          { key: "address", label: copy.address },
+          /* ⚠️ 地址 · 公司注册号 · 税号 WERE HELD BACK ON PURPOSE, and the reason
+             stopped being true on 2026-08-31. Until a record had a page of its
+             own there was nowhere to show them back, and a box that swallows
+             what he types is worse than no box. 改这一单 is that page.
+
+             They matter beyond tidiness: MyInvois needs Buyer as a STRUCTURE
+             with a TIN, not a line of text (任务 70), and this is where the
+             only person who knows it types it in. */
+          { key: "reg_no", label: copy.regNo },
+          { key: "tax_id", label: copy.taxId },
           { key: "note", label: copy.note },
         ]
       : [];
@@ -181,6 +192,9 @@ export function NewRecordForm({
             in_whatsapp: (values.whatsapp ?? "").trim(),
             in_email: (values.email ?? "").trim(),
             in_region: (values.region ?? "").trim(),
+            in_address: (values.address ?? "").trim(),
+            in_reg_no: (values.reg_no ?? "").trim(),
+            in_tax_id: (values.tax_id ?? "").trim(),
             in_status: (values.status ?? "").trim(),
             in_note: (values.note ?? "").trim(),
             in_extra: extra,
@@ -228,6 +242,9 @@ export function NewRecordForm({
           in_whatsapp: (values.whatsapp ?? "").trim(),
           in_email: (values.email ?? "").trim(),
           in_region: (values.region ?? "").trim(),
+          in_address: (values.address ?? "").trim(),
+          in_reg_no: (values.reg_no ?? "").trim(),
+          in_tax_id: (values.tax_id ?? "").trim(),
           in_status: (values.status ?? "").trim(),
           in_note: (values.note ?? "").trim(),
           in_extra: extra,

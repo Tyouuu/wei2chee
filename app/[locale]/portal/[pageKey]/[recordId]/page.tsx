@@ -53,7 +53,7 @@ export default async function EditRecordPage({
   if (ctx.isDirectory) {
     const { data } = await supabase
       .from("directory_entries")
-      .select("id, name, contact_person, phone, whatsapp, email, region, status, note, extra, archived_at")
+      .select("id, name, contact_person, phone, whatsapp, email, region, address, reg_no, tax_id, status, note, extra, archived_at")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -65,6 +65,9 @@ export default async function EditRecordPage({
       whatsapp: data.whatsapp ?? "",
       email: data.email ?? "",
       region: data.region ?? "",
+      address: data.address ?? "",
+      reg_no: data.reg_no ?? "",
+      tax_id: data.tax_id ?? "",
       status: data.status ?? "",
       note: data.note ?? "",
     });

@@ -377,6 +377,52 @@ try {
   });
   check("改不了不属於这个项目的单", !!notOurs);
 
+  console.log("\n⑩ 表单收的每一格，都要存得进也读得回");
+  /* A box that swallows what he types is worse than no box. 地址 · 公司注册号 ·
+     税号 were held back until 改这一单 existed to show them again -- this is
+     the check that the round trip is real, field by field, against the
+     database rather than against the form. */
+  const FILLED = {
+    in_name: "陈氏建材有限公司",
+    in_kind: "company",
+    in_contact_person: "陈老板",
+    in_phone: "03-7788 1234",
+    in_whatsapp: "012-345 6789",
+    in_email: "boss@chan.my",
+    in_region: "Cheras",
+    in_address: "12, Jalan Besar, Taman Desa",
+    in_reg_no: "202301012345 (1234567-A)",
+    in_tax_id: "C12345678900",
+    in_status: "长期供应",
+    in_note: "水泥跟砖，账期 30 天",
+  };
+  const { data: full, error: fullErr } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "suppliers", ...FILLED,
+  });
+  check("每一格都存进去了", !!full, fullErr?.message?.slice(0, 80));
+  for (const [arg, value] of Object.entries(FILLED)) {
+    const col = arg.replace(/^in_/, "");
+    check(`  · ${col}`, full?.[col] === value, `${full?.[col]}`);
+  }
+
+  const { data: reread } = await c
+    .from("directory_entries")
+    .select("address, reg_no, tax_id")
+    .eq("id", full.id)
+    .single();
+  check("而且页面读得回来",
+    reread?.address === FILLED.in_address &&
+      reread?.reg_no === FILLED.in_reg_no &&
+      reread?.tax_id === FILLED.in_tax_id,
+    JSON.stringify(reread));
+
+  const { data: edited, error: edErr } = await c.rpc("update_directory_entry", {
+    in_id: full.id, in_address: "88, Jalan Baru", in_tax_id: "C99999999900",
+  });
+  check("改也改得动", edited?.address === "88, Jalan Baru" && edited?.tax_id === "C99999999900",
+    edErr?.message);
+  check("而没碰的那几格留着", edited?.reg_no === FILLED.in_reg_no && edited?.phone === FILLED.in_phone);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

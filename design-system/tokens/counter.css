@@ -147,7 +147,22 @@
   --color-nav-bg: #001529;
   --color-nav-bg-deep: #000c17;
   --color-nav-fg: #b7c3d1;
-  --color-nav-fg-dim: #5c6b7e;
+  /* ⚠️ WAS #5c6b7e, WHICH IS 3.39:1 ON THIS RAIL -- and the note above claims
+     6.44:1 for it. Measured in a browser on 2026-08-31: NINETEEN strings under
+     4.5:1 on one page, every one of them this pair. It is not a corner of the
+     rail either -- this colour carries the section headings, all seven nav
+     items, the owner's name and his role, at 13px and 11.5px.
+
+     Nothing caught it for five days because the only contrast ruler in this
+     repo has to log in and can therefore only ever measure the ONE register
+     the demo account happens to be wearing. 任务 24 records a token-file test
+     written for exactly this and it is not in the repo; nav-contrast.test.ts
+     is now, and it reads all six files on every commit.
+
+     #8b9aab is the same hue and saturation lifted to the lightness this file
+     already said it had: 6.41:1 on the rail, 6.86:1 on the active row, and
+     still clearly quieter than --color-nav-fg at 10.30:1. */
+  --color-nav-fg-dim: #8b9aab;
   /*
      THE ACTIVE AND HOVER GROUNDS BELONG TO THE RAIL'S GROUND.
 
@@ -198,7 +213,13 @@
      text on every surface this file defines, with more headroom than either
      sibling needed because the darker border steps demanded a paper-dim that
      stays legible against them too. */
-  --color-paper-dim: #6b7688;
+  /* ⚠️ WAS #6b7688. The note above claims 5.56:1 on the page background;
+     measured in a browser 2026-08-31 it is 4.10:1 on #f0f2f5 -- and that is
+     the surface the record table's banded rows are actually painted on, where
+     this colour carries 「3 records」, 「Filtered by」 and every client's name.
+     Darkened until the WORST of its real surfaces clears AA: 5.02:1 on the
+     band, 5.40:1 on the card, 5.63:1 on white. */
+  --color-paper-dim: #5e6878;
 
   /* ── INK ON THE GROUND ──────────────────────────────────────────────
      Text that sits directly on the canvas rather than inside a card: a page
@@ -225,7 +246,12 @@
      page-background number beats Ledger's own worst case for its primary
      (4.15:1) outright — the extra chroma bought vividness without costing the
      contrast floor Ledger itself didn't fully clear. */
-  --color-primary: #1677ff;
+  /* ⚠️ WAS #1677ff -- Ant Design 5's brand blue, which is the whole argument
+     of this register. White on it is 4.10:1, and the page's one primary
+     button (「新增报价单」) is 13px white text. Ant's own darker step, blue-7
+     #0958d9, keeps the family and reads at 6.16:1. The rail's active row is
+     unaffected: it fills with --color-nav-accent, not with this. */
+  --color-primary: #0958d9;
 
   /* Hover/pressed. Darkened by essentially Ledger's own relative-luminance step
      between primary and primary-deep — ratio 0.5727 here against Ledger's 0.5691

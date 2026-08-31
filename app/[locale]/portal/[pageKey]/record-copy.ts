@@ -21,6 +21,9 @@ export type RecordFormCopy = {
   contactPerson: string;
   email: string;
   region: string;
+  address: string;
+  regNo: string;
+  taxId: string;
   note: string;
   archive: string;
   archiving: string;
@@ -65,6 +68,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       contactPerson: "找谁",
       email: "Email",
       region: "地区",
+      address: "地址",
+      regNo: "公司注册号 (SSM)",
+      taxId: "税号 (TIN)",
       note: "备注",
       /* ── 三颗只在「改」那一页出现的 ────────────────────────────────
          「收起来」不是删掉：丢掉的那一单，是明年客人回头时「上次我们报多少」
@@ -101,6 +107,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       contactPerson: "Ask for",
       email: "Email",
       region: "Area",
+      address: "Address",
+      regNo: "Company no. (SSM)",
+      taxId: "Tax ID (TIN)",
       note: "Notes",
       archive: "Put away",
       archiving: "Putting away…",

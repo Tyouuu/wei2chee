@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -23,13 +23,29 @@ import { join } from "node:path";
 
 const ROOT = process.cwd();
 
-const STYLES = ["ledger", "hearth", "blueprint"] as const;
+/* ⚠️ DERIVED, NOT LISTED, AND THIS COST FIVE DAYS.
+ *
+ * It was `["ledger", "hearth", "blueprint"]` -- the three registers that
+ * existed when this file was written. Three more were added; the generator
+ * learnt about them and this list did not, so half the registers had NOTHING
+ * checking that the generated copy matched the source.
+ *
+ * What it let ship: 中台's rail text was corrected in counter.css and the
+ * generated file kept the old value. Every word in that sidebar rendered at
+ * 3.39:1 -- nineteen strings on one page -- while this test passed and the
+ * token file's own comment claimed 6.44:1.
+ *
+ * Read from the directory instead. A seventh register cannot be added without
+ * this file noticing, which is the whole reason it exists. */
+const STYLES = readdirSync(join(ROOT, "design-system", "tokens"))
+  .filter((f) => f.endsWith(".css"))
+  .map((f) => f.replace(/\.css$/, ""));
 type Style = (typeof STYLES)[number];
 
 const SOURCE_PATHS: Record<Style, string> = {
-  ledger: join(ROOT, "design-system", "tokens", "ledger.css"),
-  hearth: join(ROOT, "design-system", "tokens", "hearth.css"),
-  blueprint: join(ROOT, "design-system", "tokens", "blueprint.css"),
+  ...Object.fromEntries(
+    STYLES.map((s) => [s, join(ROOT, "design-system", "tokens", `${s}.css`)]),
+  ),
 };
 
 const MODULE_PATH = join(
@@ -81,7 +97,13 @@ function extractBlockDeclarations(
   const declRegex = /(--[\w-]+)\s*:\s*([^;]+);/g;
   let declMatch: RegExpExecArray | null;
   while ((declMatch = declRegex.exec(body)) !== null) {
-    decls[declMatch[1]] = declMatch[2].trim();
+    /* Whitespace INSIDE a value is not part of the value. A long font stack is
+       wrapped across lines in the hand-written source and emitted on one line
+       by the generator, and comparing those literally reports two registers as
+       drifted when nothing about them differs -- which is a ruler crying wolf,
+       and a ruler that cries wolf gets switched off. Matches how selectors are
+       already normalised further down this file. */
+    decls[declMatch[1]] = declMatch[2].replace(/\s+/g, " ").trim();
   }
   return decls;
 }

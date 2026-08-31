@@ -369,7 +369,26 @@ function Pill({ tone, label }: { tone: StatusTone; label: string }) {
   return (
     <span
       className="inline-flex max-w-full items-center truncate whitespace-nowrap [border-radius:var(--radius-control)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [padding-block:2px] [padding-inline:var(--pad-control-x)]"
-      style={{ color: c, background: `color-mix(in oklab, ${c} 14%, transparent)`, border: `var(--hairline) solid color-mix(in oklab, ${c} 32%, transparent)` }}
+      /*
+        THE LABEL IS NEVER THE TONE, AND THIS FILE'S SIBLING SAYS SO.
+
+        status-dot.tsx, three files over, argues it in its own header: 「A label
+        that also takes the hue is the weakest-contrast text on the page for
+        something meant to be read.」 The dot obeys it; this pill did not -- it
+        painted the label in the status colour at --text-xs, which measured
+        2.56:1 for 「Awaiting reply」 and 2.74:1 for 「Confirmed」 on 中台's
+        table band. Both are STATES OF HIS OWN JOBS, at 11.5px.
+
+        The tone still says everything it said: it is the fill and the border,
+        which is what makes a pill a pill. Only the words moved to reading
+        contrast, and they are mixed a quarter of the way back toward the tone
+        so the chip keeps its character.
+      */
+      style={{
+        color: `color-mix(in oklab, ${c} 25%, var(--color-paper))`,
+        background: `color-mix(in oklab, ${c} 14%, transparent)`,
+        border: `var(--hairline) solid color-mix(in oklab, ${c} 32%, transparent)`,
+      }}
     >
       {label}
     </span>
