@@ -12,6 +12,7 @@ import { AmbientBackdrop } from "@/components/ambient-backdrop";
 import { WhatYouGet, Pricing, Faq } from "@/components/sections/landing-explainer";
 import { ProcessShowcase } from "@/components/sections/process-showcase";
 import { SpecReceipt } from "@/components/sections/spec-receipt";
+import { SystemDrawing } from "@/components/sections/system-drawing";
 import { SiteFooter } from "@/components/site-footer";
 import { CookieNotice } from "@/components/cookie-notice";
 import { SiteHeader } from "@/components/site-header";
@@ -53,6 +54,7 @@ export default function HomePage() {
           are being asked to pick a trade FOR. Everything below the picker is
           conditional on having picked one, so this is the last thing an
           undecided visitor reads if it sits underneath. */}
+      <SystemDrawing />
       <ProcessShowcase />
 
       {/* THE FOLD THIS PAGE DID NOT HAVE. Measured: 249 elements and not one

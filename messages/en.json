@@ -1029,5 +1029,17 @@
     "hostingV": "RM 199 / month",
     "freeK": "designing it",
     "freeV": "free, as often as you like"
+  },
+  "drawing": {
+    "eyebrow": "HOW IT IS BUILT",
+    "title": "One sentence, drawn into a system.",
+    "body": "Nothing here is a picture. The frame, the rail, the tiles, the table and the workflow are drawn line by line as you read — the same order the generator builds them in.",
+    "alt": "A wireframe of a system being drawn: outer frame, sidebar, four figures, a record table, a workflow strip.",
+    "s1": "the outer frame",
+    "s2": "your pages, down the side",
+    "s3": "the four figures you check first",
+    "s4": "your records, in your columns",
+    "s5": "your workflow, in your words",
+    "s6": "where a job is right now"
   }
 }
