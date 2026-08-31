@@ -880,17 +880,32 @@
         {
           "label": "Step one · the spec",
           "amount": "RM 500",
-          "note": "Your business written up as a document you can take to any developer for a quote: which modules, what each costs, how long. Yours to keep even if you build it elsewhere."
+          "note": "A document you can take to any developer for a quote.",
+          "includes": [
+            "which modules, and what each one costs",
+            "how long each one takes",
+            "yours to keep even if you build it elsewhere"
+          ]
         },
         {
           "label": "Step two · the build",
           "amount": "Priced by module",
-          "note": "You pay for the modules you want, not a flat fee. Every module's price is in the spec, so you see it before you decide."
+          "note": "You pay for the modules you actually want.",
+          "includes": [
+            "not a flat fee — you pick the modules",
+            "every module's price is written in the spec first",
+            "you see the total before you decide"
+          ]
         },
         {
           "label": "After · hosting",
           "amount": "RM 199 / month",
-          "note": "Servers, backups, day-to-day maintenance and the LHDN e-Invoice updates. Export your data free, any time."
+          "note": "Everything after it goes live.",
+          "includes": [
+            "servers, backups and day-to-day maintenance",
+            "the LHDN e-Invoice updates",
+            "export your data free, any time"
+          ]
         }
       ],
       "free": "Designing it costs nothing. Build the whole system, see exactly what it looks like, and only then decide whether to pay the RM 500.",

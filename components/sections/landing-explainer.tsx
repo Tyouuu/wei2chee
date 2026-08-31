@@ -130,7 +130,7 @@ export function Pricing() {
   const locale = useLocale();
   // `t.raw` rather than three flat keys: the steps are a LIST, and a list in
   // the message file is one edit when it becomes four steps instead of three.
-  const steps = t.raw("steps") as { label: string; amount: string; note: string }[];
+  const steps = t.raw("steps") as { label: string; amount: string; note: string; includes?: string[] }[];
 
   return (
     <SectionShell id="pricing" label="PRICE" heading={t("title")}>
@@ -160,7 +160,7 @@ export function Pricing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-            className="grid gap-x-10 gap-y-3 border-b border-border py-8 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]"
+            className="grid gap-x-10 gap-y-3 border-b border-border py-8 sm:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]"
           >
             <div>
               <div className="annotation">{step.label}</div>
@@ -168,9 +168,26 @@ export function Pricing() {
                 {step.amount}
               </div>
             </div>
-            <p className="max-w-[46ch] self-center text-sm leading-relaxed text-muted-foreground">
-              {step.note}
-            </p>
+            <div className="max-w-[46ch] self-center">
+              <p className="text-sm leading-relaxed text-muted-foreground">{step.note}</p>
+              {/* 打勾的清单。
+                  2026-09-01 量了六个真的在收订阅费的价钱页（Linear · Vercel ·
+                  Framer · Stripe · Trafft · Notion，对照图
+                  `.screenshots/pricing/sheet.jpg`）——**六个里六个**在价钱底下
+                  都是一串打勾的短句，没有一个用整段文字。
+                  ⚠️ 他们的**四栏并排**我们故意不抄：那是「三选一」的形状，
+                  而我们这三步是**照顺序全部都要付**的。抄成并排等於在骗人。
+                  能搬的是这一样 —— 一个老板读「按模块计价」学不到东西，
+                  读三个打勾学得到。 */}
+              <ul className="mt-3 grid gap-1.5">
+                {(step.includes ?? []).map((line) => (
+                  <li key={line} className="flex gap-2.5 text-sm leading-snug text-foreground/70">
+                    <span aria-hidden className="mt-[0.35em] size-1.5 shrink-0 rounded-full bg-[var(--color-primary)]" />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </motion.li>
         ))}
       </ol>
