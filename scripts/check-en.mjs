@@ -58,6 +58,12 @@ const PAGES = [
      photo picker in: 15 hardcoded Chinese strings behind two clicks and a
      network request, so this crawler had never opened it. */
   ["new record", "/en/portal/customers/new", "customer"],
+  /* 改这一单. Its URL carries a RECORD id, so the same trap as
+     console-customer one level deeper -- and it carries its own hard-coded
+     copy block (地址 · 公司注册号 · 冲正 · 收起来), which is precisely the
+     shape 任务 38 found the photo picker in. A record is made for it below and
+     removed afterwards. */
+  ["edit record", null, "customer"],
   ["console", "/en/console", "founder"],
   ["console-leads", "/en/console/leads", "founder"],
   /* Resolved at run time -- its URL carries a project id, which is exactly why
@@ -170,8 +176,44 @@ const pages = {};
 const report = {};
 let total = 0;
 
+/* One customer record, so 改这一单 has something to open. Written through the
+   same RPC the button calls and deleted in the finally below -- a checker that
+   leaves rows behind is a checker that changes the thing it measures. */
+let scratchRecordId = null;
+let scratchCleanup = null;
+async function scratchRecord() {
+  if (scratchRecordId) return scratchRecordId;
+  const asCustomer = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    auth: { persistSession: false },
+  });
+  const signIn = await asCustomer.auth.signInWithPassword({
+    email: "tianyou.demo@formae.test",
+    password: "FormaeDemo2026!",
+  });
+  if (signIn.error) throw new Error(`scratch record sign-in: ${signIn.error.message}`);
+  const { data: project } = await asCustomer.from("projects").select("id").limit(1).single();
+  if (!project?.id) return null;
+  const { data, error } = await asCustomer.rpc("add_pipeline_record", {
+    in_project_id: project.id,
+    in_module_key: "quotations",
+    in_title: "check:en scratch",
+  });
+  /* Loudly. A page this crawler cannot open scores zero, and a zero it did
+     not earn is the failure this whole file's header is about. */
+  if (error) throw new Error(`scratch record: ${error.message}`);
+  scratchRecordId = data?.id ?? null;
+  scratchCleanup = async () => {
+    await asCustomer.from("pipeline_records").delete().eq("id", scratchRecordId);
+  };
+  return scratchRecordId;
+}
+
 for (const [name, staticPath, as] of wanted) {
-  const path = staticPath ?? `/en/console/${await newestCustomerProjectId()}`;
+  const path =
+    staticPath ??
+    (name === "edit record"
+      ? `/en/portal/quotations/${await scratchRecord()}`
+      : `/en/console/${await newestCustomerProjectId()}`);
   if (path.endsWith("/null")) {
     console.log("    -", name, "skipped: no customer project to open");
     continue;
@@ -188,6 +230,18 @@ for (const [name, staticPath, as] of wanted) {
      page we did not actually open. */
   if (as === "founder" && !(await p.locator("h1, h2").first().isVisible().catch(() => false))) {
     throw new Error(`${name}: signed in as founder but ${path} did not render -- is_founder() false?`);
+  }
+  /* ⚠️ AND THE SAME TRAP ON THE CUSTOMER'S SIDE. 加一单 and 改这一单 both
+     notFound() on a page this business does not have, on a shape that is not
+     live, or on a record id that is not theirs -- and a 404 has no Chinese on
+     it, so it scores a clean zero. The guard above was written for the console
+     and stopped at `as === "founder"`; these two are the only customer pages
+     that can 404, and they are the two carrying a hand-written copy block. */
+  if (
+    (name === "new record" || name === "edit record") &&
+    !(await p.locator("form").first().isVisible().catch(() => false))
+  ) {
+    throw new Error(`${name}: ${path} rendered no form -- it 404'd and would have scored zero`);
   }
 
   // Text NODES, not innerText: a node is the smallest thing a single literal
@@ -235,5 +289,8 @@ for (const [name, staticPath, as] of wanted) {
 
 writeFileSync(".screenshots/en/report.json", JSON.stringify(report, null, 2));
 await b.close();
+/* Put the demo account back. A checker that leaves a row behind changes the
+   thing it measures, and the next run reports on its own litter. */
+if (scratchCleanup) await scratchCleanup();
 console.log("\n", total, "Chinese strings on the English portal");
 process.exit(total === 0 ? 0 : 1);
