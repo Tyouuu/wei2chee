@@ -65,6 +65,7 @@ export function PublicSite({
       data-rhythm={siteSkeleton(style).rhythm ?? "normal"}
       data-figure={siteSkeleton(style).figure ?? "normal"}
       data-copy={siteSkeleton(style).copy ?? "normal"}
+      data-steps={siteSkeleton(style).steps}
       data-frame={siteSkeleton(style).frame ?? "none"}
       className="ds-ground min-h-screen [background-color:var(--color-canvas)]"
     >

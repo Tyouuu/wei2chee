@@ -480,6 +480,14 @@
 .ds-ground[data-copy="loose"].ds-site {
   --site-copy: 1.42;
 }
+/* 第四档，2026-08-31。満図 的正文（`--text-base`）画出来是 19px，A. Reynolds 是
+   17px —— 而 `large`(1.25) 是当初为了把 13.5px 救起来加的，救过头了一档。
+   17 ÷ (19 ÷ 1.25) = 1.12。**这个数字是量出来的，不是调出来的**：
+   它把我们的正文放在他们的正文上，一个像素的余地都没留。 */
+.ds-ground[data-copy="plus"] .ds-site,
+.ds-ground[data-copy="plus"].ds-site {
+  --site-copy: 1.12;
+}
 .ds-site > * {
   --radius-control: var(--site-radius-control, var(--copy-radius-control));
   --text-micro: calc(var(--copy-micro) * var(--site-copy));
@@ -487,6 +495,34 @@
   --text-sm: calc(var(--copy-sm) * var(--site-copy));
   --text-base: calc(var(--copy-base) * var(--site-copy));
   --text-lg: calc(var(--copy-lg) * var(--site-copy));
+}
+/* ── 一个页面跑几个正文尺寸 —— 第四根 site 轴，2026-08-31 ────────────────
+   老板 2026-08-31:「还是太高了 我要每一个都是10一次啊」。
+   満図 的「整页字级」量出来 17 对 21，而**不能靠整页缩小去修** —— 那正好会把
+   `copy: large` 当初修好的正文又送回 13.5px。看逐字的分布才看得到根因：
+
+       模版   17px 占 83% 的字   25px 12%   50px 3%
+       我们   17px 占 41%        21px 34%   51px 10%
+
+   **他们整页只有一个正文尺寸，我们有两个在打架。** 那 34% 是 `--text-lg`：
+   第一屏的副标、第三段那一段说明、第六段两条评价 —— 每一处单独看都合理，
+   合起来就变成第二个正文级别，而中位数落在它上面。
+
+   这不是「字太大」，是「阶梯多了一级」，所以它是一根**风格轴**不是一个数字：
+   A. Reynolds 那一页的主张就是一个尺寸讲完所有正文；中台 的主张相反。
+   ⚠️ 页脚的跳转连结一起收 —— 他们的页脚导航是 17px 的普通连结，我们是
+   23px 的 `ds-display`。一个页脚导航是导航，不是标题。 */
+.ds-ground[data-steps="one"] .ds-site > *,
+.ds-ground[data-steps="one"].ds-site > * {
+  --text-lg: var(--text-base);
+  /* ⚠️ `sm` 也要收，而这是收完 `lg` 之后才看得到的第二层：
+     收完 lg，分布变成 19px 41% / 17px 41% —— **同一个病低一阶**。
+     那 41% 的 17px 不是标签，是正文：第2段那段 72 字的说明、第7段三条各 70 字
+     的评价。A. Reynolds 整页最小的一级就是 17px，没有比正文更小的字。
+     ⚠️ `xs` / `micro` 不收 —— 那两级是眉标跟栏位名，带着字距跟大写，
+     收进正文会把它们变成另一种东西。而且它们只占 2% 的字，动不了中位数。 */
+  --text-sm: var(--text-base);
+  --site-foot-jump: var(--text-base);
 }
 .ds-site > * > * + * {
   margin-top: var(--site-rhythm);

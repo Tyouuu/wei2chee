@@ -1259,6 +1259,7 @@ export function PortalEditor({
                       data-rhythm={pageKey === "website" ? (siteSkeleton(activeStyle).rhythm ?? "normal") : undefined}
                       data-figure={pageKey === "website" ? (siteSkeleton(activeStyle).figure ?? "normal") : undefined}
                       data-copy={pageKey === "website" ? (siteSkeleton(activeStyle).copy ?? "normal") : undefined}
+                      data-steps={pageKey === "website" ? (siteSkeleton(activeStyle).steps) : undefined}
                       data-frame={pageKey === "website" ? (siteSkeleton(activeStyle).frame ?? "none") : undefined}
                       className={`ds-ground ${scopeClasses(activeStyle, activePalette)} ${
                         pageKey === "website" ? "ds-site" : ""

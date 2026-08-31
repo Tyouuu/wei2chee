@@ -1741,13 +1741,31 @@ async function shoot(target, rootSel, wait, file, width = 1440, withMotion = tru
       return r.width >= 200 && r.height >= 120;
     }).length;
   }, rootSel);
+  /* ⚠️ 载不出来的图，长得像一张照片。
+     老板 2026-08-31:「10以下 你想办法去修好」。修 満図 的时候把第3段裁成原尺寸
+     用眼睛看 —— 他们那一段右边**是一个破图框**（白底加一个小图标），而尺子把它
+     当成一张 40% 宽的照片在比，报「最宽的图 100%对40%」。
+     **一个失败的 <img> 有宽有高、进得了段、算得进张数**，每一项跟图有关的读数
+     都被它拉走，而报告读起来跟对的一模一样。
+     （这跟半张的采集是同一家：眼睛一眼看得到，尺子每一项都绿。） */
+  const broken = await p.evaluate((sel) => {
+    const root = sel ? document.querySelector(sel) : document.body;
+    if (!root) return [];
+    return [...root.querySelectorAll("img")]
+      .filter((i) => i.complete && i.naturalWidth === 0)
+      .map((i) => {
+        const r = i.getBoundingClientRect();
+        return { w: Math.round(r.width), h: Math.round(r.height), src: (i.currentSrc || i.src || "").slice(-48) };
+      })
+      .filter((x) => x.w >= 60 && x.h >= 60);
+  }, rootSel);
   const shape = await p.evaluate(readShape, rootSel);
   const chars = await p.evaluate(readChars, rootSel);
   const declared = await p.evaluate(readDeclared, rootSel);
   await p.screenshot({ path: `${OUT}/${file}.jpg`, fullPage: true, type: "jpeg", quality: 80 });
   const move = withMotion ? await probeMotion(p, rootSel) : null;
   await p.close();
-  return { secs, type, axes, anat, shots, shape, move, vids, chars, declared, file };
+  return { secs, type, axes, anat, shots, shape, move, vids, chars, declared, broken, file };
 }
 
 /* ── 验收这一次采集，不过就拒绝 ──────────────────────────────────────────────
@@ -2351,6 +2369,21 @@ try {
        自检自己变成沉默的那一刻，它就不再是自检了。 */
     /* 只数够得上 readShots 那道门槛（120×90）的 —— 两边要数同一群东西，
        否则差额讲的是「两把尺不一样」，不是「这一页漏了什么」。 */
+    /* 载不出来的图，永远印，绿的也印 —— 见 shoot() 里那段注解。 */
+    for (const [who, cap] of [["模版", theirs], ["我们", ours]]) {
+      const bk = cap.broken;
+      if (!Array.isArray(bk)) {
+        console.log(`  --  ${who}载不出来的图  这份采集是旧的，没有这一栏 —— 加 --refresh 重新采集`);
+        marks.push({ axis: "结构", name: `${who}载不出来的图`, ok: null });
+      } else if (bk.length) {
+        console.log(`  XX  ${who}载不出来的图  ${bk.length} 张 —— 每一项跟图有关的读数都被它拉走`);
+        for (const b of bk.slice(0, 4)) console.log(`      ${b.w}×${b.h}  …${b.src}`);
+        marks.push({ axis: "结构", name: `${who}载不出来的图`, ok: false });
+      } else {
+        console.log(`  OK  ${who}载不出来的图  0 张`);
+        marks.push({ axis: "结构", name: `${who}载不出来的图`, ok: true });
+      }
+    }
     const bigPic = (b) => b.kind === "图" && (b.pw ?? 999) >= 120 && (b.ph ?? 999) >= 90;
     const inBoxes = (shp) => (shp ?? []).reduce((n2, bs) => n2 + bs.filter(bigPic).length, 0);
     for (const [who, cap] of [["模版", theirs], ["我们", ours]]) {

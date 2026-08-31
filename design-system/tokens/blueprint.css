@@ -443,6 +443,12 @@
 :root {
 
   /* 页脚高度：第8段 290 对他们 548 —— Parker & Brown 的页脚有一个巨大的 P&B。 */
+  /* 大标题的字距 —— 官网层自己一个值，工作台不动。
+     Parker & Brown 量出来 0em。那一页的主张是「中规中矩、要人信任」，
+     收紧的字距读起来像广告，不像一份证书。
+     （--tracking-display 是工作台的 title 字距乘 1.6，那个乘数是为四十行的
+     表格调的，不是为一行 72px 的大标题。） */
+  --site-display-tracking: 0em;
   --site-page-measure: 86.5rem;  /* 参考页量出来的版心 2%–98% */
   --site-foot: 1.9;
 

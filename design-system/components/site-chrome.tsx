@@ -231,7 +231,7 @@ export function SiteFoot({
                 <a
                   key={l.href + l.label}
                   href={l.href}
-                  className="ds-display [color:var(--color-nav-fg)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] hover:underline"
+                  className="ds-display [color:var(--color-nav-fg)] [font-size:var(--site-foot-jump,var(--text-title))] [font-weight:var(--fw-semibold)] hover:underline"
                 >
                   {l.label}
                 </a>

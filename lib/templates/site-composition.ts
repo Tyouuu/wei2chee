@@ -257,7 +257,11 @@ export type SiteSkeleton = {
    *  every register's text scale was tuned for a table with forty rows on it.
    *  A multiplier rather than a size — 中台's thesis is that it is the densest
    *  page in the library (重点 7c). See --site-copy in app/globals.css. */
-  copy?: "large" | "loose";
+  copy?: "plus" | "large" | "loose";
+  /* 这一页跑几个正文尺寸。"one" = 把 `--text-lg` 收成正文，页脚导航一起收。
+     見 app/globals.css。A. Reynolds 整页 83% 的字是同一级；我们原本 41/34
+     两级打架，中位数落在大的那一级 —— 而整页缩小会把正文送回 13.5px。 */
+  steps?: "one";
   /** 每一块要不要一个细框。台账's reference draws one around every block on the
    *  page; nothing else in the library does. See --site-frame. */
   frame?: "hairline";
@@ -355,6 +359,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // the look of the last customer who walked out, so the photographs lead and
   // the reviews come straight after them.
   hearth: {
+    /* 一个正文尺寸讲完整页 —— 量出来他们 17px 占 83% 的字，我们 17/21 两级
+       各占 41%/34%。见 app/globals.css 的 data-steps。 */
+    steps: "one",
     /* ── COPIED WHOLE ─────────────────────────────────────────────────────
 
        Founder, 2026-08-27: 「你要抄别人家的你就整套都抄」「抄完一个才抄另外一套」.
@@ -428,7 +435,7 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
        所以页面不会因此缩短，但有底色的段会像他们一样连成一片。 */
     rhythm: "flush",
     figure: "large",
-    copy: "large",
+    copy: "plus",
     /* 八段对八段。参考页没有表单，也没有一条联络资料的横列。 */
     dropBlocks: ["website-form", "website-contact"],
     /* 内容几乎贴边 —— measured at native size 2026-08-28: their heading sits
@@ -447,6 +454,10 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // 图纸: the neutral one. The most ordinary order there is -- what you do,
   // what it looks like, what happens next -- which is this register's point.
   blueprint: {
+    /* ⚠️ 故意**没有** steps: "one" —— Parker & Brown 是 18px(48%) + 16px(27%)
+       **两级**，那一页真的有两个正文尺寸（正文跟卡片里的说明）。
+       收成一级会让它变成另一套风格的做法。只把主级对上：16 × 1.12 ≈ 18。 */
+    copy: "plus",
     /* ── COPIED WHOLE: Wix `wh-law-firm-2` (Parker & Brown) ─────────────────
        Read at 1440 on 2026-08-28. Eight sections, 7202px, cream ground, serif
        display, and one orange that only ever appears on a control with an
@@ -548,6 +559,9 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // a page that reads like a document leads with words -- what we do, how it
   // works, what we promise. No photo wall; that would be the opposite register.
   swiss: {
+    /* 一个正文尺寸 —— Leah Webb 整页 66% 的字是 17px（加上 16px 就是 80%）。
+       我们碎成 14/15/16 三级各 28/25/24%，中位数落在最小的那一级。 */
+    steps: "one",
     /* ── COPIED WHOLE: Wix `wh-leah` ─────────────────────────────────────────
        Read at 1440 on 2026-08-28. Seven sections, 5519px, and the identity is
        what it REFUSES: no fill on anything, every button an outlined pill, and
@@ -593,6 +607,10 @@ export const SITE_COMPOSITION: Record<string, SiteSkeleton> = {
   // signboard. Then the two things somebody standing on the street needs:
   // when are you open, and where exactly are you.
   signboard: {
+    /* 一个正文尺寸 —— Toulouse 整页 **75%** 的字是 18px，全库最集中的一份。
+       我们 16/14 两级各 38%/37%，等於一页有两个正文。 */
+    steps: "one",
+    copy: "plus",
     /* ── COPIED WHOLE: Wix `brasserie` (Toulouse) ───────────────────────────
        Read at 1440 on 2026-08-28. Six sections, 8604px, and it is the loudest
        page in the whole reference set:
