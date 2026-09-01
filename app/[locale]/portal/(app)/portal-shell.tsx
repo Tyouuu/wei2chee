@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
@@ -58,6 +58,39 @@ type NavPage = { key: string; label: string };
 const ROW =
   "group relative flex items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-[7px] [font-size:var(--text-sm)] transition-colors duration-100";
 
+
+/**
+ * 点下去到画面真的换掉之间，那一格自己会讲一句话。
+ *
+ * 🔴 走一遍量出来的（`npm run walk`，2026-09-02）：
+ * **手机上从侧栏点进报价单，等 1330ms 才有第一个变化，而中间画面上
+ * 没有任何「正在做」的样子。** 一秒三，对一个站在客人后面的老板来说，
+ * 那就是「这个按钮坏了」—— 然后他会再按一次。
+ *
+ * `useLinkStatus` 只能长在 `<Link>` 里面（它读的是那一条连结自己的状态），
+ * 所以它是 NavRow 的一个子元素，不是外面包一层。
+ *
+ * ⚠️ 故意只画一条极细的进度线，不是转圈圈：这一格是导航，
+ * 一个转圈圈会把「你在哪一页」这件事变成一个动画。
+ * 而且 200ms 以内不显示 —— 预取过的页面是瞬间的，
+ * **给一个已经完成的动作画一个载入中，比不画更吵。**
+ */
+function NavPending() {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span
+      aria-hidden="true"
+      /* 走一遍那把尺认这个属性 —— 一个没有人看过它亮起来的指示器，
+         跟没有指示器是同一回事。 */
+      data-nav-pending=""
+      className="pointer-events-none absolute inset-x-2 bottom-0 h-[2px] overflow-hidden rounded-full"
+    >
+      <span className="block h-full w-full origin-left [animation:nav-pending_600ms_200ms_ease-out_both] [background-color:var(--color-brand)]" />
+    </span>
+  );
+}
+
 function NavRow({
   href,
   active,
@@ -96,6 +129,7 @@ function NavRow({
       <span className="shrink-0">{icon}</span>
       <span className="min-w-0 flex-1 truncate">{children}</span>
       {trailing}
+      <NavPending />
     </>
   );
 

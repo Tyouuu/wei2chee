@@ -2070,3 +2070,17 @@
     background-image: none;
   }
 }
+
+/* 侧栏那一格在等页面换过来的时候，底下走一条极细的线。
+   见 portal-shell.tsx 的 NavPending —— 走一遍量出来手机上等 1.3 秒
+   而画面上什么都没有。延迟 200ms 才开始，预取过的页面根本来不及看到它。 */
+@keyframes nav-pending {
+  from { transform: scaleX(0); opacity: 0.9; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes nav-pending {
+    from { transform: scaleX(1); opacity: 1; }
+    to   { transform: scaleX(1); opacity: 1; }
+  }
+}
