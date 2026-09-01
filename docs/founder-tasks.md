@@ -2039,8 +2039,15 @@ A4 / B4 / C2：**八个行业八种不同的手牌，最高占用 7/8 → 4/8。
 ### 46b. Vercel 的 `is-agentic` 实跑：**71 分**（2026-09-01 他交办）
 > `然后看看这个vercel Seo 怎么评价我们的官网`
 
-`npx is-agentic wei2chee.vercel.app --json` —— **71 / 100 · Ready with a few
-material gaps**。必要项 7 项过 5、建议项 10 项过 2。
+`npx is-agentic wei2chee.vercel.app --json` —— 改之前 **71 / 100**，
+改之后 **76 / 100**（建议项 2/10 → **3/10**，得分 6.7 → **11.2**，加分讯号 6 → **7**）。
+
+⚠️ **重扫要自己去按，而且不按就看不到**：那支 CLI 的说明写着
+「retrieve the latest report, **scanning the site when none exists**」——
+已经有报告就**永远回旧的那一份**。我改完再跑，分数一模一样、
+`scanned_at` 一秒都没变（`08:40:50.833Z`）。
+要按 `https://is-agentic.com/scan/<域名>` 那一页上的 **Rescan**。
+**一把只会回快取的尺，长得跟一把说「你没有进步」的尺一模一样。**
 
 ⚠️ **先顶一句那个帖的说法**：它写「拜拜传统 SEO」，而 Vercel 那 118 项里
 **发现（20 分）跟可及（30 分）那 50 分基本上就是传统 SEO**
@@ -2070,6 +2077,11 @@ material gaps**。必要项 7 项过 5、建议项 10 项过 2。
 - [ ] **About / Contact 页** —— 它报「Trust anchor pages: 只验到 Privacy」。
       ⚠️ 卡在[任务 11](#11)（真号码）跟公司还没注册
 - [ ] **404 页给一段可读的内容 + 回首页的连结**（它现在是干净的 404，没有出路）
+- [ ] 🔴 **价钱要有自己的网址**（现在只有 `#pricing` 这个锚点）。
+      重扫之后它的评语写着「**pricing … remained inaccessible**」——
+      而 `RM 500` `RM 150` 明明都在服务出去的 HTML 里（实测各 1 次）。
+      它找的是**一个网址**，不是一段。而这一件**对人也有用**：
+      「价钱写在这里，不用先问」要能贴进 WhatsApp 才算数
 - [ ] ⚪ **故意先不做**：markdown 内容协商 · MCP 握手 · agent 说明档。
       我们的买家是承包商，不是 agent（[任务 31](#31) 的教训：不要照抄别人的主流）
 
