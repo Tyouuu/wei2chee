@@ -53,12 +53,25 @@ export type LiveStat = {
   deltaLabel?: string;
   tone: StatTone;
   spark?: number[];
+  /** Which icon belongs beside this figure. The dashboard's four are
+   *  positional (ICONS below) because that page's tiles are always the same
+   *  four questions in the same order; a page that builds its own tiles --
+   *  see live-months.ts -- names its own, or 「笔数」 arrives wearing the
+   *  reconciliation mark. */
+  icon?: string;
 };
 
 export type LiveStats = {
   tiles: LiveStat[];
   /** Six months, oldest first, for the chart under the tiles. */
   trend: { label: string; value: number }[];
+  /** What the chart is actually a chart OF, when that differs from what the
+   *  block was drawn with. Only the thing that did the counting knows what it
+   *  counted: 排名's chart was captioned 「顶级和活跃加起来的人数」 and the
+   *  figure is everybody who had a record, 退步中 included. Left undefined --
+   *  which is the normal case, and 总览's -- the block keeps its own words. */
+  trendTitle?: string;
+  trendCaption?: string;
 };
 
 const WORDS = {
@@ -328,10 +341,68 @@ function mapNodes(nodes: unknown[], stats: LiveStats | null): unknown[] {
             deltaLabel: t.deltaLabel ?? "",
             tone: t.tone,
             ...(t.spark ? { spark: t.spark, delta: deltaOf(t.spark) } : {}),
-            iconName: ICONS[i] ?? "dashboard",
+            iconName: t.icon ?? ICONS[i] ?? "dashboard",
             /* The href each tile carried is kept: it points at the page that
                explains the figure, and which page that is has not changed. */
             href: (tiles?.[i] as { href?: string })?.href,
+          })),
+        },
+      };
+    }
+
+    /*
+      🔴 HeroCard, AND IT WAS FOUND BY LOOKING RATHER THAN BY ANY ASSERTION.
+
+      A saved page has had its HeroCard split into a StatRow and a TrendChart
+      by upgradeLayout, so the two arms below were enough for 总览 -- which is
+      always a saved page by the time anybody reads it. A FRESHLY GENERATED
+      page still carries the HeroCard itself, and 报表's first screenshot
+      showed this business's own months in the table under a headline reading
+      「RM 71,300」 -- the sample figure every customer in the product shares.
+
+      That is the worst shape this defect takes (任务 80): a table of samples
+      announces itself, a total does not, and two figures that disagree cannot
+      both be believed.
+
+      Mapped the same way splitHeroCard maps it, so a page projected before it
+      is saved and the same page projected after cannot say different things.
+    */
+    if (n.type === "HeroCard") {
+      const wasLive = (n.props as { live?: unknown }).live === true;
+      if (!stats) {
+        if (!wasLive) return node;
+        const flat = (n.props.stats as { label?: string }[] | undefined) ?? [];
+        return {
+          ...n,
+          props: {
+            ...n.props,
+            value: zeroLike(n.props.value),
+            spark: [],
+            stats: flat.map((st) => ({ ...st, value: zeroLike((st as { value?: unknown }).value) })),
+          },
+        };
+      }
+      const [head, ...rest] = stats.tiles;
+      const keep = (n.props.stats as { href?: string }[] | undefined) ?? [];
+      return {
+        ...n,
+        props: {
+          ...n.props,
+          live: true,
+          label: head.label,
+          value: head.value,
+          chgSuffix: head.deltaLabel ?? "",
+          /* HeroCard draws its sparkline from objects, not numbers -- the same
+             shape splitHeroCard reads back. */
+          spark: (head.spark ?? []).map((v) => ({ n: v })),
+          stats: rest.slice(0, Math.max(1, keep.length)).map((tl, i) => ({
+            label: tl.label,
+            value: tl.value,
+            sub: tl.deltaLabel ?? "",
+            tone: tl.tone === "bad" ? "warn" : tl.tone === "warn" ? "caution" : undefined,
+            /* The link each stat carried is kept: it points at the page that
+               explains the figure, and which page that is has not changed. */
+            href: keep[i]?.href,
           })),
         },
       };
@@ -344,7 +415,16 @@ function mapNodes(nodes: unknown[], stats: LiveStats | null): unknown[] {
         const flat = (n.props.points as { label: string }[] | undefined) ?? [];
         return { ...n, props: { ...n.props, points: flat.map((p) => ({ label: p.label, value: 0 })) } };
       }
-      return { ...n, props: { ...n.props, live: true, points: stats.trend } };
+      return {
+        ...n,
+        props: {
+          ...n.props,
+          live: true,
+          points: stats.trend,
+          ...(stats.trendTitle ? { title: stats.trendTitle } : {}),
+          ...(stats.trendCaption ? { caption: stats.trendCaption } : {}),
+        },
+      };
     }
 
     let changed = false;

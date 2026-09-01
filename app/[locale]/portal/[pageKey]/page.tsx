@@ -1,5 +1,6 @@
 import { fetchLiveRows, withLiveRows, moduleHasEverHadRows } from "@/lib/portal/live-rows";
 import { fetchLiveStats, withLiveStats } from "@/lib/portal/live-stats";
+import { fetchMonthlyPage } from "@/lib/portal/live-months";
 import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -263,6 +264,43 @@ export default async function PortalEditorPage({
       );
     }
     initialData = withLiveStats(initialData, stats);
+  }
+
+  /*
+    AND THE TWO PAGES THAT ONLY ASK.
+
+    报表 and 排名 add not one row of their own -- the catalogue said so under
+    the heading it filed them beneath, 「月底才看的 — 一行资料都不新增」 -- and
+    that is why they were still drawings: they need no table, and so nothing
+    was ever going to build one for them. What they needed was for somebody to
+    ask the ledger a question.
+
+    Both blocks they are made of are already live elsewhere: the table by
+    withLiveRows, the headline and the chart by withLiveStats. This routes his
+    own figures into them and invents no third mechanism.
+
+    ⚠️ `undefined` is 「could not read」 and leaves the page exactly as it is.
+    Only `null` -- he genuinely has nothing yet -- empties a page whose figures
+    were once real. Collapsing the two prints RM 0 across a report every time a
+    query fails, which is a lie rather than a degradation.
+  */
+  const asksOnly = MODULE_BY_KEY[pageKey]?.shape;
+  if (asksOnly === "report" || asksOnly === "leaderboard") {
+    const monthly = await fetchMonthlyPage(
+      supabase,
+      project.id,
+      asksOnly,
+      systemLangOf(businessContext),
+    );
+    if (monthly !== undefined) {
+      initialData = withLiveRows(initialData, monthly?.rows ?? [], {
+        /* Only once he has started. `null` is 「nothing in the books at all」,
+           and then the demonstration stays -- the founder's decision of
+           2026-08-30, and the same rule every other projection follows. */
+        businessIsLive: !!monthly,
+      });
+      initialData = withLiveStats(initialData, monthly?.stats ?? null);
+    }
   }
 
 

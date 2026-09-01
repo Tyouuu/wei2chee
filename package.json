@@ -54,6 +54,7 @@
     "shoot:scroll": "node scripts/shoot-scroll.mjs",
     "check:sticky": "node scripts/check-sticky.mjs",
     "check:staff": "node scripts/check-staff.mjs",
+    "shoot:months": "node scripts/shoot-months.mjs",
     "shoot:staff": "node scripts/shoot-staff.mjs",
     "shoot:fonts": "node scripts/shoot-fonts.mjs",
     "shoot:inbox": "node scripts/shoot-inbox.mjs",

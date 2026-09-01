@@ -9,7 +9,7 @@ import { PageBar } from "@/app/[locale]/portal/(app)/page-bar";
 import { STAGES, StageSelect, stageTone } from "./stage";
 import { formatDay } from "@/lib/format-date";
 import { MODULE_BY_KEY, MODULE_CATALOG, type ModuleShape } from "@/lib/portal/module-catalog";
-import { SHAPE_STATE, isLiveShape } from "@/lib/portal/shape-state";
+import { SHAPE_STATE, isLiveShape, isRealShape } from "@/lib/portal/shape-state";
 
 type Customer = {
   project_id: string;
@@ -248,15 +248,36 @@ export function ConsoleHome({
                           Read from SHAPE_STATE, which is also what decides
                           whether the projection reads a table and whether
                           加一单 opens -- so this badge cannot claim something
-                          the product does not do. */}
+                          the product does not do.
+
+                          THREE WORDS, NOT TWO, SINCE 2026-09-01. With only
+                          「跑」 and 「画」 available, 总览 read this business's
+                          own figures and its own rows all through August and
+                          this screen still called it a drawing -- because the
+                          only other word meant 「has a table of its own」, and
+                          总览 correctly has none. On the screen he uses to
+                          decide what to build NEXT, that is the expensive
+                          direction to be wrong in. */}
                       <span
                         className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 [font-size:10px] uppercase tracking-[0.1em] [font-weight:var(--fw-semibold)] ${
                           isLiveShape(row.shape)
                             ? "[background-color:var(--color-jade-bright)] [color:var(--color-ink-900)]"
-                            : "[background-color:var(--color-ink-800)] [color:var(--color-paper-dim)]"
+                            : isRealShape(row.shape)
+                              ? /* Real, but it holds nothing. Outlined rather
+                                   than filled: the difference from RUNNING is
+                                   worth seeing at a glance, and it is not a
+                                   lesser state -- 报表 is finished. */
+                                "[box-shadow:inset_0_0_0_1px_var(--color-jade-bright)] [color:var(--color-jade-bright)]"
+                              : "[background-color:var(--color-ink-800)] [color:var(--color-paper-dim)]"
                         }`}
                       >
-                        {t(isLiveShape(row.shape) ? "stateLive" : "stateDrawn")}
+                        {t(
+                          isLiveShape(row.shape)
+                            ? "stateLive"
+                            : isRealShape(row.shape)
+                              ? "stateReads"
+                              : "stateDrawn",
+                        )}
                       </span>
                     </span>
                     <span

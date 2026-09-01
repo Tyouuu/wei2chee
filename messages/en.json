@@ -770,7 +770,8 @@
       "contactSubject": "About your system ({business})",
       "stateLive": "RUNNING",
       "stateDrawn": "drawing",
-      "stateLegend": "RUNNING means a real table, a document number, a form a person fills in, and the assistant calling that same function. Everything else still shows the same sample rows to every business."
+      "stateReads": "READS ONLY",
+      "stateLegend": "RUNNING means a real table, a document number, a form a person fills in, and the assistant calling that same function. READS ONLY means it stores nothing of its own -- its figures are counted from the tables above it, and are just as much his. Everything still marked as a drawing shows the same sample rows to every business."
     },
     "account": {
       "title": "My account",
