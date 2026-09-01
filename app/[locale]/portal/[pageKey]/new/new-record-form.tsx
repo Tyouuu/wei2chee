@@ -77,6 +77,7 @@ function senFrom(text: string): number | undefined {
 export function NewRecordForm({
   projectId,
   moduleKey,
+  received,
   shape,
   parties,
   record,
@@ -104,6 +105,11 @@ export function NewRecordForm({
    * would agree today and disagree in a month -- which is how a business ends
    * up able to record a plate number and unable to correct one.
    */
+  /* 进货单 only, and only when it already has lines: a 收货 button on an
+     order with nothing on it is a button that does nothing. `received` is read
+     from the movements rather than from the stage, because the stage is a word
+     the owner can type and the movements are the fact. */
+  received?: boolean;
   record?: {
     id: string;
     /** Keyed the way the boxes are: built-in column keys plus this business's
@@ -142,6 +148,7 @@ export function NewRecordForm({
      page was locked for. On a NEW item it IS his to type: that is the opening
      count, and it becomes the first movement. */
   const stockLocked = isCatalog && !!record;
+  const canReceive = moduleKey === "purchases" && !!record && lines.length > 0;
   /* WITH LINES, THE TOTAL IS NOT HIS TO TYPE. The database recomputes it from
      them on every write (20260831150000), so a figure typed up there would be
      overwritten between pressing 保存 and the page reloading -- the same
@@ -401,6 +408,27 @@ export function NewRecordForm({
     router.refresh();
   }
 
+  /** 货到了 —— every line of this order becomes one stock movement.
+   *
+   *  Through the same function that has been proven against a real session
+   *  (check:records ⑨). It cannot fire twice: each movement is anchored to
+   *  the LINE that caused it, so a second press moves nothing. */
+  async function receive() {
+    setError(null);
+    if (!record) return;
+    setBusy(true);
+    const { error: err } = await createBrowserSupabaseClient().rpc("receive_purchase", {
+      in_record_id: record.id,
+    });
+    setBusy(false);
+    if (err) {
+      setError(`${copy.failed}${err.message ? ` — ${err.message}` : ""}`);
+      return;
+    }
+    router.push(backHref);
+    router.refresh();
+  }
+
   /** 冲正 on a money page, 收起来 / 放回架上 everywhere else. One handler,
    *  because from the owner's side it is one thing: 「这一笔我要处理掉」. */
   async function correct() {
@@ -611,8 +639,32 @@ export function NewRecordForm({
             kept -- and 收起来 is the only way anything leaves a list. Neither
             is a delete, and there is no delete: a lost job is next year's
             answer to 「上次我们报多少」. */}
-        {record ? (
+        {canReceive ? (
+          /* Left of 收起来 and drawn as a real button, because it is the one
+             thing an owner opens a purchase order to do. Once the goods are in
+             it says so instead, rather than offering a press that would be
+             refused -- the same rule the money page follows for 冲正. */
           <span className="ml-auto flex items-center gap-3">
+            {received ? (
+              <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                {copy.receiveDone}
+              </span>
+            ) : (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={receive}
+                title={copy.receiveHint}
+                className="rounded-[var(--radius-md)] px-3.5 py-2 [font-size:var(--text-sm)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] disabled:opacity-50"
+              >
+                {busy ? copy.receiving : copy.receive}
+              </button>
+            )}
+          </span>
+        ) : null}
+
+        {record ? (
+          <span className={canReceive ? "flex items-center gap-3" : "ml-auto flex items-center gap-3"}>
             {isLedger ? (
               <button
                 type="button"

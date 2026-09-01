@@ -643,6 +643,107 @@ try {
   check("删掉那张单，那一封询价还在",
     !!e1c?.id && e1c.converted_record_id === null && !!e1c.converted_at);
 
+  // ⑨ 库存 · 进货单收货 ─────────────────────────────────
+  console.log("\n⑨ 库存 · 进货单收货");
+
+  /* This project may not have been given a stock page by its industry. Added
+     the way the product adds one, so the section runs everywhere. */
+  await admin.from("project_pages").upsert(
+    { project_id: P, page_key: "inventory", layout_json: {} },
+    { onConflict: "project_id,page_key" },
+  );
+
+  const { data: cementItem } = await c.rpc("add_catalog_item", {
+    in_project_id: P, in_module_key: "inventory", in_name: "水泥 50kg", in_unit: "包",
+    in_reorder_at: 20,
+  });
+  check("加得了一个货品", !!cementItem?.id);
+  await c.rpc("move_stock", {
+    in_item_id: cementItem.id, in_direction: "in", in_qty: 10, in_reason: "开帐",
+  });
+
+  const { data: onHand0 } = await c
+    .from("stock_on_hand").select("on_hand").eq("item_id", cementItem.id).single();
+  check("进出加起来就是现在有多少", Number(onHand0?.on_hand) === 10, String(onHand0?.on_hand));
+
+  const { data: goodsPo } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases", in_title: "建材行 A", in_party: "建材行 A",
+  });
+  await c.rpc("set_record_lines", {
+    in_record_id: goodsPo.id,
+    in_lines: [
+      { description: "水泥 50kg", qty: "100", unit: "包", unit_price_cents: "1850", amount_cents: "185000" },
+      { description: "沙 · 幼", qty: "3", unit: "车", unit_price_cents: "12000", amount_cents: "36000" },
+      /* A lump-sum line. There is nothing to put on a shelf. */
+      { description: "运费", amount_cents: "5000" },
+    ],
+  });
+
+  const { data: recv, error: recvErr } = await c.rpc("receive_purchase", { in_record_id: goodsPo.id });
+  const got = (recv ?? [])[0];
+  check("收货：两行进了库存", Number(got?.moved) === 2, `${JSON.stringify(got)} ${recvErr?.message ?? ""}`);
+  check("单上没有的货品，自己开一个", Number(got?.created) === 1, String(got?.created));
+  check("没有数量的那一行跳过", Number(got?.skipped) === 1, String(got?.skipped));
+  /* Not a hardcoded 「到货了」: a fresh account's system speaks English, which
+     is what tripped my own first expectation. */
+  check("单子走到「到货了」", ["到货了", "Received"].includes(got?.stage ?? ""), got?.stage);
+
+  const { data: shelfNow } = await c
+    .from("stock_on_hand").select("name, on_hand").eq("project_id", P);
+  const byName = Object.fromEntries((shelfNow ?? []).map((r) => [r.name, Number(r.on_hand)]));
+  /* The line said 水泥 50kg and the shelf already had one. A SECOND entry with
+     the same name would be the same thing typed twice -- which is why items
+     match on name and people deliberately do not (20260901060000). */
+  check("10 + 100 = 110，认出来是同一个货品", byName["水泥 50kg"] === 110, JSON.stringify(byName));
+  check("新开的那个也进了", byName["沙 · 幼"] === 3, JSON.stringify(byName));
+
+  const { data: moves } = await c
+    .from("stock_moves").select("id, doc_no, reason, against_id, line_id, cost_cents")
+    .eq("against_id", goodsPo.id);
+  check("每一笔记得住是哪一张单 · 哪一行",
+    (moves ?? []).length === 2 && (moves ?? []).every((x) => x.against_id === goodsPo.id && !!x.line_id));
+  check("单价跟着进来了", (moves ?? []).some((x) => x.cost_cents === 1850));
+
+  const { data: againRecv } = await c.rpc("receive_purchase", { in_record_id: goodsPo.id });
+  check("再按一次收货，一行都不会再进", Number((againRecv ?? [])[0]?.moved) === 0, JSON.stringify((againRecv ?? [])[0]));
+
+  /* 🔴 THE ONE THAT WAS REAL, AND ONLY DOING IT FOUND IT.
+     He receives, then adds a delivery line, then presses receive again.
+     `set_record_lines` replaces every line with a NEW id, so the movements no
+     longer recognised them and the whole order came in a second time --
+     measured, 100 bags became 200. The lines of a received order are closed
+     now, the way a submitted document is in any accounting system. */
+  const { error: shutErr } = await c.rpc("set_record_lines", {
+    in_record_id: goodsPo.id,
+    in_lines: [{ description: "水泥 50kg", qty: "100", unit: "包" }, { description: "运费" }],
+  });
+  check("收过货的单，行不能再改", !!shutErr, shutErr ? "" : "🔴 lines were replaced after receiving");
+  check("而且拒绝的时候讲的是人话",
+    /already in your stock|已经进了库存/.test(shutErr?.message ?? ""), shutErr?.message?.slice(0, 60));
+  const { data: shelf2 } = await c
+    .from("stock_on_hand").select("name, on_hand").eq("project_id", P);
+  check("所以总数没有变成两倍",
+    Object.fromEntries((shelf2 ?? []).map((r) => [r.name, Number(r.on_hand)]))["水泥 50kg"] === 110);
+
+  /* Editing BEFORE anything has arrived is the ordinary case and must still
+     work -- 100 ordered, 60 came, change the line and then receive. */
+  const { data: goodsPo2 } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases", in_title: "另一张",
+  });
+  await c.rpc("set_record_lines", {
+    in_record_id: goodsPo2.id, in_lines: [{ description: "水泥 50kg", qty: "100", unit: "包" }],
+  });
+  const { error: editErr } = await c.rpc("set_record_lines", {
+    in_record_id: goodsPo2.id, in_lines: [{ description: "水泥 50kg", qty: "60", unit: "包" }],
+  });
+  check("还没收货的单，行照样改得动", !editErr, editErr?.message);
+
+  const { data: notAPo } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "报价",
+  });
+  const { error: notPo } = await c.rpc("receive_purchase", { in_record_id: notAPo.id });
+  check("报价单收不了货", !!notPo);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

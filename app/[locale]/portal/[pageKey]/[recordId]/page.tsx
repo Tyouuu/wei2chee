@@ -49,6 +49,7 @@ export default async function EditRecordPage({
   const values: Record<string, string> = {};
   let archivedAt: string | null = null;
   let reversed = false;
+  let received = false;
   /* 逐项. Read back in the order he wrote them -- a quotation whose lines come
      back shuffled is a different quotation. */
   let lines: {
@@ -157,6 +158,17 @@ export default async function EditRecordPage({
       .select("description, qty, unit, unit_price_cents, amount_cents")
       .eq("record_id", recordId)
       .order("sort_order");
+    /* Whether goods from THIS order are already on a shelf. Read from the
+       movements and not from the stage: the stage is a word the owner can type
+       and change, the movements are the fact. */
+    if (pageKey === "purchases") {
+      const { count } = await supabase
+        .from("stock_moves")
+        .select("id", { count: "exact", head: true })
+        .eq("against_id", recordId);
+      received = (count ?? 0) > 0;
+    }
+
     lines = (rows ?? []).map((r) => ({
       description: r.description ?? "",
       /* 「2.500」 comes back from numeric(14,3); he typed 2.5 and that is what
@@ -180,6 +192,7 @@ export default async function EditRecordPage({
         <NewRecordForm
           projectId={ctx.projectId}
           moduleKey={ctx.pageKey}
+          received={received}
           shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog"}
           parties={ctx.parties}
           columns={ctx.columns}

@@ -57,6 +57,12 @@ export type RecordFormCopy = {
   stockReorder: string;
   stockPackSize: string;
   stockPackUnit: string;
+  /* 进货单收货。只在进货单上出现，而且只在它有逐项明细的时候 ——
+     一张没有行的单没有东西可以进库存。 */
+  receive: string;
+  receiving: string;
+  receiveHint: string;
+  receiveDone: string;
 };
 
 type RecordCopy = {
@@ -130,6 +136,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       stockReorder: "剩到多少要提醒我",
       stockPackSize: "一大包几个",
       stockPackUnit: "大包叫什么（箱 · 托）",
+      receive: "货到了，进库存",
+      receiving: "进中…",
+      receiveHint: "按下去，这张单上每一行都会变成库存里的一笔进货。之后这张单的行就不能再改了。",
+      receiveDone: "这张单的货已经在库存里了。要更正就去库存记一笔进或出。",
     },
   },
   en: {
@@ -184,6 +194,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       stockReorder: "Tell me when it drops to",
       stockPackSize: "How many in a pack",
       stockPackUnit: "Pack is called (box · pallet)",
+      receive: "The goods came in",
+      receiving: "Adding…",
+      receiveHint: "Every line on this order becomes one stock movement. After that its lines cannot be changed.",
+      receiveDone: "The goods on this order are already in your stock. Correct it with a stock movement.",
     },
   },
 };
