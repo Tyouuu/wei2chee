@@ -23,11 +23,17 @@ export function AccountClient({
   businessName,
   paid,
   pageCount,
+  isOwner,
+  members,
 }: {
   locale: string;
   email: string;
   providers: string[];
   hasPassword: boolean;
+  /** Only an owner has people; a 师傅 opening his own account page has an
+   *  empty shell project and nobody in it. */
+  isOwner: boolean;
+  members: Member[];
   createdAt: string | null;
   businessName: string;
   paid: boolean;
@@ -194,14 +200,27 @@ export function AccountClient({
 
         <Section title={t("overview")}>
           <Row label={t("business")} value={businessName} />
-          <Row label={t("plan")} value={paid ? tShell("planPaid") : tShell("planFree")} />
-          <Row label={t("pages")} value={String(pageCount)} />
+          {/* ⚠️ BOTH OF THESE COME FROM THE PROJECT THIS PERSON OWNS, and a
+              师傅 owns an empty shell the signup trigger made for him -- so he
+              was reading 「Free trial」 and 「Pages 6」 about a project he has
+              never opened, one line under a business name that came from
+              somewhere else entirely. Two sources on one list is a small lie
+              told confidently. What is left is all about the PERSON, which is
+              what this page is for. */}
+          {isOwner && (
+            <>
+              <Row label={t("plan")} value={paid ? tShell("planPaid") : tShell("planFree")} />
+              <Row label={t("pages")} value={String(pageCount)} />
+            </>
+          )}
           <Row label={t("since")} value={createdAt ? formatDay(createdAt, locale) : "—"} />
           <Row
             label={t("signInMethod")}
             value={providers.includes("google") ? "Google" : t("methodEmail")}
           />
         </Section>
+
+        {isOwner && <TeamPanel initial={members} />}
 
         {hasPassword ? (
           <Section title={t("passwordTitle")} body={t("passwordBody")}>
@@ -348,5 +367,131 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{label}</span>
       <span className="[color:var(--color-paper)] [font-size:var(--text-sm)]">{value}</span>
     </div>
+  );
+}
+
+
+/** One person who works here, as the owner sees them. */
+export type Member = {
+  user_id: string;
+  email: string;
+  role: string;
+  active: boolean;
+};
+
+/**
+ * 谁在这里工作 —— the only way to use the permission system without SQL.
+ *
+ * ⚠️ WHY 「ADD」 CANNOT INVITE A STRANGER. `add_project_member` looks the email
+ * up in `auth.users` and refuses when it is not there, on purpose: a row
+ * pointing at nobody would look like a supervisor who exists and cannot sign
+ * in. Sending an invitation email is a real feature -- it needs a sender, a
+ * token and an expiry -- and pretending to have it is worse than saying so.
+ * That refusal is the one message this form has to translate carefully, which
+ * is why it is matched on rather than shown raw.
+ *
+ * ⚠️ AND NOBODY IS DELETED. 「关掉」 is the only removal there is, because
+ * `recorded_by` on every row he wrote points at him -- the founder's own
+ * vibe-dealer 0036 made the same call for the same reason.
+ */
+function TeamPanel({ initial }: { initial: Member[] }) {
+  const t = useTranslations("portal.account");
+  const [members, setMembers] = useState<Member[]>(initial);
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [note, setNote] = useState<{ key: string; ok: boolean } | null>(null);
+
+  async function reload() {
+    const { data } = await createBrowserSupabaseClient().rpc("list_project_members");
+    setMembers((data as Member[] | null) ?? []);
+  }
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy("add");
+    setNote(null);
+    const { error } = await createBrowserSupabaseClient().rpc("add_project_member", {
+      in_email: email.trim(),
+    });
+    setBusy(null);
+    if (error) {
+      /* The one failure with its own answer: he typed a real address for
+         somebody who has not signed up. Telling him 「could not add」 there
+         would send him back to check a spelling that was right. */
+      const first = /no account yet/i.test(error.message ?? "");
+      return setNote({ key: first ? "teamSignUpFirst" : "teamFailed", ok: false });
+    }
+    setEmail("");
+    await reload();
+  }
+
+  async function toggle(m: Member) {
+    setBusy(m.user_id);
+    await createBrowserSupabaseClient().rpc("set_member_active", {
+      in_user_id: m.user_id,
+      in_active: !m.active,
+    });
+    setBusy(null);
+    await reload();
+  }
+
+  return (
+    <Section title={t("teamTitle")} body={t("teamBody")}>
+      {note && (
+        <p
+          role="status"
+          className="mb-4 max-w-xl rounded-[var(--radius-md)] border px-3.5 py-2.5 [font-size:var(--text-sm)] [border-color:var(--color-clay)] [color:var(--color-clay-bright)]"
+        >
+          {t(note.key)}
+        </p>
+      )}
+
+      {members.length === 0 ? (
+        <p className="mb-4 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+          {t("teamEmpty")}
+        </p>
+      ) : (
+        <ul className="mb-5 max-w-xl">
+          {members.map((m) => (
+            <li
+              key={m.user_id}
+              className="flex items-center justify-between gap-4 border-b py-2.5 last:border-b-0 [border-color:var(--color-ink-850)]"
+            >
+              <span className="min-w-0">
+                <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)]">
+                  {m.email}
+                </span>
+                <span className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                  {m.active ? t("teamRoleStaff") : t("teamOffLabel")}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => toggle(m)}
+                disabled={busy !== null}
+                className={`${button} shrink-0`}
+              >
+                {m.active ? t("teamOff") : t("teamOn")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form onSubmit={add} className="flex max-w-sm flex-col gap-3">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          placeholder={t("teamEmail")}
+          aria-label={t("teamEmail")}
+          className={input}
+        />
+        <button type="submit" disabled={busy !== null} className={`${button} self-start`}>
+          {busy === "add" ? t("teamAdding") : t("teamAdd")}
+        </button>
+      </form>
+    </Section>
   );
 }

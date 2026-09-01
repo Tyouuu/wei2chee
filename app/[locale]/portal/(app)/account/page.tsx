@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
-import { AccountClient } from "./account-client";
+import { AccountClient, type Member } from "./account-client";
+import { loadWorkspace } from "@/lib/portal/workspace";
 import {
   displayBusinessName,
   sortPages,
@@ -54,6 +55,18 @@ export default async function AccountPage({
   // the auth client directly. It tells the person HOW they sign in: someone who
   // created their account with Google has no password to change, and offering
   // them that form is offering a control that cannot work.
+  /* WHO ELSE WORKS HERE. Read through an RPC rather than a join because the
+     membership table holds user ids and `auth.users` is not readable from a
+     client -- an owner knows his supervisor by email, not by uuid. Only asked
+     for an owner: a 师傅 opening this page is looking at his own empty shell
+     project, and 「nobody works here」 about a business he does not run is a
+     sentence with no meaning. */
+  const workspace = await loadWorkspace();
+  const isOwner = workspace?.isOwner ?? false;
+  const { data: members } = isOwner
+    ? await supabase.rpc("list_project_members")
+    : { data: [] };
+
   const { data: authUser } = await supabase.auth.getUser();
   const providers = (authUser.user?.identities ?? []).map((i) => i.provider);
   const hasPassword = providers.length === 0 || providers.includes("email");
@@ -64,6 +77,8 @@ export default async function AccountPage({
       email={user.email ?? ""}
       providers={providers}
       hasPassword={hasPassword}
+      isOwner={isOwner}
+      members={(members as Member[] | null) ?? []}
       createdAt={authUser.user?.created_at ?? null}
       businessName={displayBusinessName(businessContext)}
       paid={Boolean(project?.paid)}

@@ -5,6 +5,7 @@ import { PortalHome } from "../home-client";
 import { REGISTERED_COMPONENTS } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
+import { canOpenModule, hideMoneyFromRail, loadWorkspace } from "@/lib/portal/workspace";
 import {
   buildPageLayout,
   displayBusinessName,
@@ -57,13 +58,20 @@ export default async function PortalHomePage({
   // `projects_select_own` / `project_pages_select_own` policies are the real
   // enforcement, with the `.eq(...)` filters kept for explicitness.
   const supabase = await createSessionSupabaseClient();
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, style, palette, paid, stage, stage_changed_at, site_slug, site_published, layout")
-    .eq("account_id", user.id)
-    .single();
 
-  if (!project) redirect("/login");
+  /* WHICH BUSINESS, NOT WHOSE ACCOUNT -- see lib/portal/workspace.ts. This is
+     the first screen a supervisor lands on, so it is the first place the old
+     `account_id = auth.uid()` would have put him in an empty shell. */
+  const workspace = await loadWorkspace();
+  const { data: project } = workspace
+    ? await supabase
+        .from("projects")
+        .select("id, style, palette, paid, stage, stage_changed_at, site_slug, site_published, layout")
+        .eq("id", workspace.projectId)
+        .single()
+    : { data: null };
+
+  if (!project || !workspace) redirect("/login");
   if (!project.style) redirect("/portal/style-select");
 
   const { data: pageRows } = await supabase
@@ -92,7 +100,18 @@ export default async function PortalHomePage({
   // email into every screenshot of their own system.
   const ownerName = displayOwnerName(businessContext, user.email?.split("@")[0] || "我");
 
-  const pages = pageRefs.map((ref) => {
+  /* 🔴 The money pages are not on his home screen either.
+
+     Filtered here rather than only in the rail because this screen draws a
+     LIVE MINIATURE of each page -- a supervisor would get a picture of 收款
+     with every row missing, which says something false about the business
+     rather than nothing about his permissions. By shape, so a money module
+     catalogued later is covered without anybody remembering. */
+  const visibleRefs = pageRefs.filter((ref) =>
+    canOpenModule(workspace.role, ref.key),
+  );
+
+  const pages = visibleRefs.map((ref) => {
     const key = ref.key;
     const row = (pageRows ?? []).find((r: { page_key: string }) => r.page_key === key);
     const saved = (row?.layout_json as Record<string, unknown>) ?? {};
@@ -118,7 +137,14 @@ export default async function PortalHomePage({
       // real components, so a table still saved in the four-prop shape would
       // otherwise be read by the legacy path on this screen and the new one in
       // the editor. One reader, one shape. See lib/portal/layout-upgrade.ts.
-      layout: (generated
+      /* ⚠️ The miniature carries the customer's OWN rail inside it, and that
+         rail lists every page including the money ones. It is `inert`, so it
+         is a photograph of a rail rather than a rail -- but a supervisor
+         looking at a picture of 收款 is still being shown a part of the
+         business he was told he cannot see. Filtered for the same reason the
+         real one is. */
+      layout: hideMoneyFromRail(
+        (generated
         ? buildPageLayout(
             key,
             businessContext,
@@ -129,6 +155,8 @@ export default async function PortalHomePage({
             (project.layout as string | null) ?? null,
           )
         : upgradeLayout(saved, systemLangOf(businessContext))) as unknown as Data,
+        workspace.role,
+      ),
     };
   });
 
@@ -144,6 +172,7 @@ export default async function PortalHomePage({
       locale={locale}
       accountEmail={user.email}
       paid={Boolean(project.paid)}
+      isOwner={workspace.isOwner}
       /* `stage` is where they are in the BUSINESS -- designing, quoted, paid,
          building, live -- and it has been in this table, and readable by its
          owner, since 20260821020000. Nothing selected it, so the screen that

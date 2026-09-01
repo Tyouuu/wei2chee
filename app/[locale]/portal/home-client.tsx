@@ -66,6 +66,7 @@ export function PortalHome({
   paid,
   stage,
   stageChangedAt,
+  isOwner,
   style,
   palette,
   pages,
@@ -88,6 +89,17 @@ export function PortalHome({
    *  -- see the migration for why a promise nobody maintains is worse than no
    *  promise at all. */
   stageChangedAt: string | null;
+  /** 🔴 An owner is buying a system; a 师傅 is working in one.
+
+      Everything gated on this is gated because it belongs to the purchase
+      rather than to the work: handing the design over to us, where the build
+      has got to, how many pages are still drafts, which style it wears, and
+      adding a page. Every one of those is refused at the server for him --
+      `save_project_page` asks for `account_id = auth.uid()` -- so drawing them
+      would be drawing controls that look available and are not.
+
+      ⚠️ Presentation. The refusals are in the database. */
+  isOwner: boolean;
   style: StyleName;
   /** The customer's 配色 layer, or null for this layout's native colours.
    *  Threaded from the server rather than fetched again: the same projects row
@@ -155,6 +167,8 @@ export function PortalHome({
   return (
     <>
       <PageBar title={t("navTitle")}>
+        {isOwner && (
+          <>
         <Link
           href={`/${locale}/portal/spec`}
           prefetch={false}
@@ -170,6 +184,8 @@ export function PortalHome({
         >
           {t("buildCta")}
         </a>
+          </>
+        )}
       </PageBar>
 
       <div className="px-8 py-9">
@@ -186,17 +202,29 @@ export function PortalHome({
             which for a master dealer literally rendered the industry slug
             "其他" as their trade. */}
         <section className="max-w-3xl">
+          {/* ⚠️ THE HEADLINE IS THE OWNER'S SENTENCE, AND ONLY HIS.
+
+              `summary` is the AI's line about what is wrong with THIS business
+              -- 「After sending your quote, no one followed up」 -- written to
+              the person deciding whether to buy. Under it: 「the 5 pages below
+              are the draft built from it. Every name, column and sample row is
+              yours to change.」 A 师傅 cannot change any of it, and the pitch
+              was never addressed to him. */}
           <h1 className="text-balance [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-hero)] [font-weight:var(--fw-regular)] [letter-spacing:var(--tracking-title-lg)] [line-height:1.08]">
-            {summary || (industryName ? t("titleWithIndustry", { industry: industryName }) : t("title"))}
+            {isOwner
+              ? summary || (industryName ? t("titleWithIndustry", { industry: industryName }) : t("title"))
+              : t("staffTitle")}
           </h1>
 
           <p className="mt-5 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-base)] [line-height:var(--leading-body)]">
-            {summary
-              ? t("subline", { count: pages.length })
-              : t("namePrompt", { name: businessName })}
+            {!isOwner
+              ? t("staffSubline", { name: businessName })
+              : summary
+                ? t("subline", { count: pages.length })
+                : t("namePrompt", { name: businessName })}
           </p>
 
-          {summary && !savedBusinessName && (
+          {isOwner && summary && !savedBusinessName && (
             <p className="mt-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
               {t("namePrompt", { name: businessName })}
             </p>
@@ -212,6 +240,7 @@ export function PortalHome({
             as separate statistics, and that is what this is now: one quiet
             line, scannable, with the two things that are actually actionable
             carrying links. */}
+        {isOwner && (
         <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
           <span>
             <b className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-weight:var(--fw-semibold)] tabular-nums">
@@ -274,6 +303,7 @@ export function PortalHome({
             {paid ? t("statPlanPaidNote") : t("statPlanFreeNote")}
           </span>
         </div>
+        )}
 
 
         {/*
@@ -297,6 +327,7 @@ export function PortalHome({
           true without anyone touching it -- and a date three weeks old says
           more about a stalled build than 60% ever would.
         */}
+        {isOwner && (
         <section className="mt-8" aria-label={t("deliveryTitle")}>
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
@@ -364,6 +395,7 @@ export function PortalHome({
             })}
           </ol>
         </section>
+        )}
 
         {/*
           TWO KINDS OF THING, TWO PLACES.
@@ -393,7 +425,7 @@ export function PortalHome({
             {t("pagesTitle")}
           </h2>
           <p className="mt-1.5 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
-            {t("pagesNote")}
+            {isOwner ? t("pagesNote") : t("staffPagesNote")}
           </p>
 
           <ul className="mt-4 grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
@@ -436,6 +468,9 @@ export function PortalHome({
                         job is to show them where they left off. Brass is the
                         product's existing "needs attention" tone; jade is its
                         "done". */}
+                    {/* 「Generated draft · not edited yet」 is about the owner's
+                        drafting, not about the work in the page. */}
+                    {isOwner && (
                     <span
                       className={`mt-1 inline-block rounded-[var(--radius-pill)] px-2 py-0.5 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] ${
                         page.isDraft
@@ -445,13 +480,14 @@ export function PortalHome({
                     >
                       {page.isDraft ? t("cardDraft") : t("cardEdited")}
                     </span>
+                    )}
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
                     {/* The dashboard is not removable — every page's rail links
                         back to it and /portal sends people there. The database
                         refuses it too (migration 20260820200000), so this is the
                         affordance matching the rule, not the rule itself. */}
-                    {page.pageKey !== "dashboard" && (
+                    {isOwner && page.pageKey !== "dashboard" && (
                       <button
                         type="button"
                         onClick={() => removePage(page.pageKey, labelFor(page))}
@@ -469,7 +505,7 @@ export function PortalHome({
                       href={`/${locale}/portal/${page.pageKey}`}
                       className="whitespace-nowrap [color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] transition-transform after:absolute after:inset-0 after:content-[''] group-hover:translate-x-0.5"
                     >
-                      {t("cardCta")} →
+                      {isOwner ? t("cardCta") : t("cardCtaStaff")} →
                     </Link>
                   </span>
                 </div>
@@ -487,6 +523,7 @@ export function PortalHome({
                 库存, and a salon is offered something else. Same move as
                 21st.dev putting a count beside every category: naming what is
                 available is what makes a library read as deep. */}
+            {isOwner && (
             <li>
               <Link
                 href={`/${locale}/portal/templates`}
@@ -520,6 +557,7 @@ export function PortalHome({
                 )}
               </Link>
             </li>
+            )}
           </ul>
         </section>
 
@@ -537,7 +575,10 @@ export function PortalHome({
           above, because the register is the product and this is the page it
           matters most on.
         */}
-        {sitePage && (
+        {/* The public site is the owner's marketing: its address, whether it
+            is live, and the enquiries strangers post into it. A supervisor is
+            not the person who decides any of the three. */}
+        {isOwner && sitePage && (
           <section className="mt-12">
             <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
               {t("siteTitle")}

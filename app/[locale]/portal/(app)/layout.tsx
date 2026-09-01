@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
 import { PortalShell } from "./portal-shell";
+import { canOpenModule, loadWorkspace } from "@/lib/portal/workspace";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
 import {
   displayBusinessName,
@@ -43,15 +44,23 @@ export default async function PortalAppLayout({
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  // Session-aware client: RLS's own `projects_select_own` /
-  // `project_pages_select_own` policies are the real enforcement, the `.eq()`
-  // filters are for explicitness.
+  // Session-aware client: RLS's own policies are the real enforcement, the
+  // `.eq()` filters are for explicitness.
   const supabase = await createSessionSupabaseClient();
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, paid, site_published")
-    .eq("account_id", user.id)
-    .single();
+
+  /* NOT 「the project I own」 any more. A site supervisor owns an empty shell
+     the signup trigger made for him and works in his boss's business, so the
+     question the rail has to answer is 「which business am I standing in」.
+     One place decides that, and it is the database -- see lib/portal/
+     workspace.ts and 20260901030000. */
+  const workspace = await loadWorkspace();
+  const { data: project } = workspace
+    ? await supabase
+        .from("projects")
+        .select("id, paid, site_published")
+        .eq("id", workspace.projectId)
+        .single()
+    : { data: null };
 
   /*
     A founder account may have no project of its own. It used to be let into
@@ -124,14 +133,28 @@ export default async function PortalAppLayout({
       savedOwnerName={businessContext.identity?.owner_name ?? null}
       systemLang={systemLangOf(businessContext)}
       ownerName={displayOwnerName(businessContext, user.email?.split("@")[0] || "我")}
-      pages={pageRefs.map((ref) => ({
-        key: ref.key,
-        label: pageLabel(
-          ref,
-          tradeLabels(businessContext, pageRefs),
-          systemLangOf(businessContext),
-        ),
-      }))}
+      isOwner={workspace?.isOwner ?? true}
+      /* 🔴 THE MONEY IS NOT IN HIS RAIL.
+
+         RLS already refuses it -- a supervisor opening 收款 gets a page that
+         renders perfectly and is empty. Empty is the worse failure: it reads
+         as 「the boss has taken no money」 rather than 「this is not mine to
+         see」, and a system that quietly answers a question wrongly is worse
+         than one that does not offer to answer it.
+
+         Filtered by SHAPE, not by a list of page keys, so 佣金 -- catalogued
+         into the ledger shape after 收款 and 开销 -- is covered without
+         anybody remembering to add it. */
+      pages={pageRefs
+        .filter((ref) => canOpenModule(workspace?.role ?? "owner", ref.key))
+        .map((ref) => ({
+          key: ref.key,
+          label: pageLabel(
+            ref,
+            tradeLabels(businessContext, pageRefs),
+            systemLangOf(businessContext),
+          ),
+        }))}
       sitePublished={Boolean(project?.site_published)}
       enquiryCount={enquiryCount ?? 0}
       paid={Boolean(project?.paid)}

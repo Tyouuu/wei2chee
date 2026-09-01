@@ -154,6 +154,7 @@ export function PortalShell({
   sitePublished,
   enquiryCount,
   paid,
+  isOwner,
 }: {
   children: ReactNode;
   locale: string;
@@ -174,6 +175,18 @@ export function PortalShell({
   /** Enquiries posted through the public site. */
   enquiryCount: number;
   paid: boolean;
+  /** 🔴 An OWNER adjusts the business; a 师傅 works in it.
+
+      Everything hidden below is hidden because it is not his: the public site
+      and its enquiries are the owner's marketing, the libraries and the
+      specification are what he hands to us to build, and 交付 is a message to
+      us about a job he is paying for. The money pages are already gone before
+      this component sees them -- the layout filters them out by shape.
+
+      ⚠️ This hides; it does not enforce. The enforcement is RLS
+      (`sees_money()`) and each route's own refusal, because a rail is a
+      suggestion and a URL is typeable. */
+  isOwner: boolean;
 }) {
   const t = useTranslations("portal.shell");
 
@@ -279,6 +292,11 @@ export function PortalShell({
               scrolling a gallery. */}
           <SectionLabel
             action={
+              /* Adding a page writes a layout, and `save_project_page` asks
+                 for the owner. A 「+」 that raises 「payment required」 or
+                 nothing at all is the control this whole change exists to
+                 stop drawing. */
+              !isOwner ? null : (
               <button
                 type="button"
                 onClick={() => setAddPageOpen(true)}
@@ -288,6 +306,7 @@ export function PortalShell({
               >
                 <IconPlus className="h-[13px] w-[13px]" />
               </button>
+              )
             }
           >
             {t("systemSection")}
@@ -322,7 +341,7 @@ export function PortalShell({
               are real -- true, and beside the point: an enquiry is what the
               官网 produces, and the two belong to each other more than either
               belongs to a list of deliverables. */}
-          {sitePage && (
+          {sitePage && isOwner && (
             <>
               <SectionLabel>{t("publicSection")}</SectionLabel>
               <NavRow
@@ -360,6 +379,8 @@ export function PortalShell({
             </>
           )}
 
+          {isOwner && (
+            <>
           <SectionLabel>{t("librarySection")}</SectionLabel>
           <NavRow href={`${base}/library`} active={is("/library")} icon={<IconBlocks />}>
             {t("library")}
@@ -381,6 +402,8 @@ export function PortalShell({
           <NavRow href={handoffHref} external icon={<IconHandoff />}>
             {t("handoff")}
           </NavRow>
+            </>
+          )}
 
           {/* THE CONSOLE USED TO BE TWO ROWS HERE, AND THAT WAS THE BUG.
 
@@ -400,6 +423,7 @@ export function PortalShell({
               is two fields. 我的账号 is about the PERSON — password, email,
               exporting their data, deleting it — and is a page because none of
               that belongs in a popup. */}
+          {isOwner && (
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
@@ -410,6 +434,7 @@ export function PortalShell({
             </span>
             <span className="min-w-0 flex-1 truncate text-left">{t("settings")}</span>
           </button>
+          )}
           {/* THE ACCOUNT BLOCK.
               This replaces three separate things that used to sit stacked in
               this corner: a 「我的账号」 nav row, a non-interactive name/plan
@@ -442,19 +467,28 @@ export function PortalShell({
               {ownerName.slice(0, 1)}
             </span>
             <span className="min-w-0 flex-1 leading-tight">
+              {/* 🔴 WHO AM I SIGNED IN AS. `ownerName` is the BUSINESS
+                  OWNER's name, which is the right answer on his own screen and
+                  a wrong one on anybody else's -- a supervisor was reading
+                  「陈老板」 over his own email address, as though he had signed
+                  in as his boss. */}
               <span className="block truncate [font-size:var(--text-xs)] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]">
-                {ownerName}
+                {isOwner ? ownerName : accountEmail.split("@")[0]}
               </span>
               <span className="block truncate [font-size:var(--text-micro)] [color:var(--color-nav-fg-dim)]">
                 {accountEmail}
               </span>
             </span>
+            {/* The plan is what the OWNER is paying. Beside a supervisor's own
+                name it reads as a statement about him, and it is not one. */}
+            {isOwner && (
             <span
               aria-hidden="true"
               className="shrink-0 rounded-[var(--radius-xs)] border px-1.5 py-0.5 [border-color:var(--color-nav-border)] [color:var(--color-nav-fg-dim)] [font-size:var(--text-micro)]"
             >
               {paid ? t("planPaid") : t("planFree")}
             </span>
+            )}
           </Link>
         </div>
       </aside>

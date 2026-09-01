@@ -15,18 +15,67 @@ import { join } from "node:path";
   they check the two things a re-declaration is most likely to get wrong.
 */
 const dir = join(process.cwd(), "supabase", "migrations");
+const files = () => readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
+
 const newestDefining = (marker: string) => {
-  const file = readdirSync(dir)
-    .filter((f) => f.endsWith(".sql"))
-    .sort()
-    .reverse()
-    .find((f) => readFileSync(join(dir, f), "utf8").includes(marker));
+  const file = [...files()].reverse().find((f) =>
+    readFileSync(join(dir, f), "utf8").includes(marker),
+  );
   if (!file) throw new Error(`no migration defines ${marker}`);
   return readFileSync(join(dir, file), "utf8");
 };
 
+/**
+ * Who may execute a function TODAY, as the migrations say it.
+ *
+ * ⚠️ WHY THIS IS NOT JUST `newestDefining(...)`. It was, and it broke the
+ * moment a migration restated the privileges without restating the body:
+ * 20260901040000 says only 「revoke ... grant ... to authenticated」, and
+ * because its text contains the function's name it became 「the newest
+ * migration defining add_pipeline_record」 -- so four assertions about the
+ * BODY started reading a file that has no body in it. One red guard became
+ * five, none of which described a real defect.
+ *
+ * A declaration and a grant are two different statements about one function
+ * and they can honestly live in different migrations. So they are looked up
+ * separately, and the real invariant is asserted directly: the grant must be
+ * at or after the latest declaration, because a re-declaration that CHANGES
+ * the signature resets privileges to Postgres's default -- EXECUTE for PUBLIC.
+ */
+const declaresRe = (fn: string) =>
+  new RegExp(`create (or replace )?function public\\.${fn}\\(`);
+
+/**
+ * The newest migration that actually DECLARES it -- not merely one that names
+ * it. `newestDefining` matches any mention, which is right for an index and
+ * wrong for a function whose privileges may be restated on their own.
+ */
+const newestDeclaring = (fn: string) => {
+  const re = declaresRe(fn);
+  const file = [...files()].reverse().find((f) => re.test(readFileSync(join(dir, f), "utf8")));
+  if (!file) throw new Error(`no migration declares ${fn}`);
+  return readFileSync(join(dir, file), "utf8");
+};
+
+const privilegesFor = (fn: string) => {
+  const declares = declaresRe(fn);
+  const grants = new RegExp(`grant execute on function public\\.${fn}\\(`);
+  const all = files();
+  const lastDecl = [...all].reverse().find((f) =>
+    declares.test(readFileSync(join(dir, f), "utf8")),
+  );
+  const lastGrant = [...all].reverse().find((f) =>
+    grants.test(readFileSync(join(dir, f), "utf8")),
+  );
+  return {
+    lastDecl,
+    lastGrant,
+    grantSql: lastGrant ? readFileSync(join(dir, lastGrant), "utf8") : "",
+  };
+};
+
 describe("add_pipeline_record", () => {
-  const sql = newestDefining("function public.add_pipeline_record");
+  const sql = newestDeclaring("add_pipeline_record");
 
   it("takes an idempotency key, so a second press is not a second quotation", () => {
     // Proven before the fix: press, wait 400ms on a slow connection, press
@@ -71,8 +120,19 @@ describe("add_pipeline_record", () => {
   });
 
   it("is reachable by a signed-in customer and nobody else", () => {
-    expect(sql).toMatch(/grant execute on function public\.add_pipeline_record[^;]*to authenticated/);
-    expect(sql).toMatch(/revoke execute on function public\.add_pipeline_record[^;]*from public/);
+    /* Stated at or after the newest declaration -- see privilegesFor. A
+       re-declaration that changes the signature makes a NEW function, and a
+       new function is executable by PUBLIC (which includes anon) until
+       something says otherwise. */
+    const { lastDecl, lastGrant, grantSql } = privilegesFor("add_pipeline_record");
+    expect(lastGrant, "no migration grants it").toBeTruthy();
+    expect(
+      lastGrant! >= lastDecl!,
+      `re-declared in ${lastDecl} with no grant after it`,
+    ).toBe(true);
+    expect(grantSql).toMatch(/grant execute on function public\.add_pipeline_record[\s\S]*?to authenticated/);
+    expect(grantSql).toMatch(/revoke execute on function public\.add_pipeline_record[\s\S]*?from public/);
+    expect(grantSql).not.toMatch(/grant execute on function public\.add_pipeline_record[\s\S]*?to anon/);
   });
 });
 

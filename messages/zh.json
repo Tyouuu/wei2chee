@@ -571,7 +571,11 @@
         "paid": "已付款，排进建置队列。",
         "building": "我们在真的建了 —— 你的资料、你的页面。",
         "live": "已经在跑了，这就是你每天用的那一套。"
-      }
+      },
+      "staffTitle": "你在这里工作。",
+      "staffSubline": "下面这几页是{name}的。打开一页就看得到今天的活，也加得了一单。",
+      "staffPagesNote": "你打得开的。收款、开销、佣金还是老板一个人的。",
+      "cardCtaStaff": "打开"
     },
     "settings": {
       "title": "生意资料",
@@ -806,7 +810,20 @@
       "languageBody": "只影响 Formae 本身。你自己系统里的字，还是你写的那些。",
       "signOutTitle": "登出",
       "signOutBody": "你的设计已经存好了。下次登入回到原来的地方。",
-      "signOutCta": "登出"
+      "signOutCta": "登出",
+      "teamTitle": "谁在这里工作",
+      "teamBody": "给他一个自己的登入。他看得到工程跟客户，也加得了。钱他看不到 —— 收款、开销、佣金还是你一个人的。",
+      "teamEmail": "他的 email",
+      "teamAdd": "加进来",
+      "teamAdding": "加中…",
+      "teamEmpty": "目前只有你。",
+      "teamSignUpFirst": "他要先有一个 Formae 帐号。叫他用那个 email 注册，再回来加。",
+      "teamFailed": "加不进去。看看 email 对不对。",
+      "teamRoleStaff": "在这里工作",
+      "teamOff": "关掉",
+      "teamOn": "开回来",
+      "teamOffLabel": "已关掉",
+      "teamOffBody": "他什么都打不开了。他写过的东西原样留着。"
     },
     "enquiries": "官网来的询价",
     "enquiriesBlurb": "客人在你的官网填表送出的，会直接落在这里 —— 不用有人转抄。系统正式交付之后，这些会直接进你自己的那一页。",
@@ -844,7 +861,17 @@
       "inputPrefix": "输入项：",
       "emptyPage": "这一页客户暂时留空。",
       "footer": "本文档由客户在 Formae 编辑器里的实际设计自动生成。页面、栏位、流程、称呼全部取自客户自己的设计，不是模板推测。",
-      "genericTrade": "一般生意"
+      "genericTrade": "一般生意",
+      "secQuote": "开发费",
+      "quoteBase": "起底（登入 · 权限 · 外壳 · 官网）",
+      "quoteFirst": "第一个",
+      "quoteRepeat": "同类再加一个",
+      "quoteSubtotal": "小计",
+      "quoteCredit": "规格书已付，抵扣",
+      "quoteTotal": "开发费合计",
+      "quoteNote": "按「形状」算，不是按模块算：同一类的第二个是拼出来的，不是重写的，所以便宜很多。每一块的价钱都在上面，你先看到总数再决定要不要做。",
+      "quoteSpecNote": "另有规格书 RM 500（就是你手上这份）。付了之后从上面的开发费里扣掉。",
+      "quoteAfter": "上线之后：托管 RM 150 / 月。"
     }
   },
   "explainer": {

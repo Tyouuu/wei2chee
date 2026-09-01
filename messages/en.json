@@ -571,7 +571,11 @@
         "paid": "Paid. Your build is in the queue.",
         "building": "We are building it for real — your data, your pages.",
         "live": "It is running. This is the one you use every day."
-      }
+      },
+      "staffTitle": "You work here.",
+      "staffSubline": "The pages below are {name}'s. Open one to see today's work, and add to it.",
+      "staffPagesNote": "What you can open. Payments, expenses and commission stay with the owner.",
+      "cardCtaStaff": "Open"
     },
     "settings": {
       "title": "Business details",
@@ -806,7 +810,20 @@
       "languageBody": "Applies to Formae itself. Your own system keeps whatever words you wrote in it.",
       "signOutTitle": "Sign out",
       "signOutBody": "Your design is saved. Signing back in puts you where you left off.",
-      "signOutCta": "Sign out"
+      "signOutCta": "Sign out",
+      "teamTitle": "Who works here",
+      "teamBody": "Give someone their own login. They see the jobs and the customers, and add to both. They do not see the money — payments, expenses and commission stay yours.",
+      "teamEmail": "Their email address",
+      "teamAdd": "Add them",
+      "teamAdding": "Adding…",
+      "teamEmpty": "Only you, so far.",
+      "teamSignUpFirst": "They need a Formae account first. Ask them to sign up with that email, then add them here.",
+      "teamFailed": "Could not add them. Check the email address.",
+      "teamRoleStaff": "Works here",
+      "teamOff": "Switch off",
+      "teamOn": "Switch back on",
+      "teamOffLabel": "Switched off",
+      "teamOffBody": "They can no longer open anything. What they wrote stays where it is."
     },
     "enquiries": "Enquiries from your website",
     "enquiriesBlurb": "What visitors send from your own site lands here — nobody has to retype it. Once the system is delivered these go straight into your own page.",
@@ -844,7 +861,17 @@
       "inputPrefix": "Input: ",
       "emptyPage": "The customer has left this page empty for now.",
       "footer": "Generated from what the customer actually built in the Formae editor. Every page, column, workflow step and word here comes from their own design, not from a template's guess.",
-      "genericTrade": "General business"
+      "genericTrade": "General business",
+      "secQuote": "Build fee",
+      "quoteBase": "Foundation (sign-in, roles, shell, public site)",
+      "quoteFirst": "first of its kind",
+      "quoteRepeat": "another of the same kind",
+      "quoteSubtotal": "Subtotal",
+      "quoteCredit": "Specification already paid, credited",
+      "quoteTotal": "Build fee total",
+      "quoteNote": "Priced by kind, not by module: the second module of the same kind is assembled rather than written, so it costs much less. Every line is above, so you see the total before you decide.",
+      "quoteSpecNote": "The specification is RM 500 — this document. Once paid it is credited against the build fee above.",
+      "quoteAfter": "After it goes live: hosting RM 150 / month."
     }
   },
   "explainer": {

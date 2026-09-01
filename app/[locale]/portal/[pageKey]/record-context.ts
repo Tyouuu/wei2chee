@@ -21,6 +21,7 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { MODULE_BY_KEY, type ModuleShape } from "@/lib/portal/module-catalog";
 import { isLiveShape } from "@/lib/portal/shape-state";
 import type { TableColumn } from "@/lib/portal/table-model";
+import { canOpenModule, loadWorkspace, type WorkspaceRole } from "@/lib/portal/workspace";
 
 /**
  * Everything 「加一单」 and 「改这一单」 both need, loaded once.
@@ -58,6 +59,8 @@ export type RecordPageContext = {
   /** The page's own title, in the system's language. */
   title: string;
   backHref: string;
+  /** Owner or 师傅. Carried so the form can say what it will not offer. */
+  role: WorkspaceRole;
 };
 
 export async function loadRecordPage(
@@ -75,12 +78,25 @@ export async function loadRecordPage(
   if (!user) redirect("/login");
 
   const supabase = await createSessionSupabaseClient();
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, style, palette, layout")
-    .eq("account_id", user.id)
-    .single();
-  if (!project) redirect("/login");
+
+  /* WHICH BUSINESS, NOT WHOSE ACCOUNT -- see lib/portal/workspace.ts. Writing
+     down a job from the site is the whole reason a supervisor has a login, so
+     this is the one form he must be able to reach. */
+  const workspace = await loadWorkspace();
+  const { data: project } = workspace
+    ? await supabase
+        .from("projects")
+        .select("id, style, palette, layout")
+        .eq("id", workspace.projectId)
+        .single()
+    : { data: null };
+  if (!project || !workspace) redirect("/login");
+
+  /* And 收款 · 开销 · 佣金 are refused here too, not only on the page they are
+     reached from. `add_ledger_entry` would refuse him at the database anyway;
+     a form that collects an amount and then cannot save it is worse than no
+     form, because he will have typed it. */
+  if (!canOpenModule(workspace.role, pageKey)) notFound();
 
   const { data: pageRows } = await supabase
     .from("project_pages")
@@ -160,5 +176,6 @@ export async function loadRecordPage(
     parties: (parties as { id: string; name: string }[] | null) ?? [],
     title: pageLabel({ key: pageKey, title: page.title ?? null }, labels, lang),
     backHref: `/${locale}/portal/${pageKey}`,
+    role: workspace.role,
   };
 }

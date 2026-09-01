@@ -8,6 +8,8 @@ import {
 } from "@/lib/supabase/server-session";
 import { PortalEditor } from "./editor-client";
 import type { Data } from "@puckeditor/core";
+import { canOpenModule, hideMoneyFromRail, loadWorkspace } from "@/lib/portal/workspace";
+import { WorkView } from "./work-view";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { applyLayoutOps, type PuckLayout } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
@@ -60,13 +62,29 @@ export default async function PortalEditorPage({
   // explicitness -- the filters alone aren't a backstop against a future
   // edit dropping or mistyping one.
   const supabase = await createSessionSupabaseClient();
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, style, palette, paid, site_slug, site_published, corners, layout")
-    .eq("account_id", user.id)
-    .single();
 
-  if (!project) redirect("/login");
+  /* WHICH BUSINESS, NOT WHOSE ACCOUNT. A site supervisor owns an empty shell
+     project the signup trigger made for him and works in his boss's -- see
+     lib/portal/workspace.ts. */
+  const workspace = await loadWorkspace();
+  const { data: project } = workspace
+    ? await supabase
+        .from("projects")
+        .select("id, style, palette, paid, site_slug, site_published, corners, layout")
+        .eq("id", workspace.projectId)
+        .single()
+    : { data: null };
+
+  if (!project || !workspace) redirect("/login");
+
+  /* 🔴 THE MONEY, REFUSED AT THE ROUTE AND NOT ONLY IN THE RAIL.
+
+     RLS already returns him nothing from `ledger_entries`, so this page would
+     render correctly and be empty -- and empty reads as 「the boss has taken no
+     money」 rather than 「this is not mine to see」. A rail is a suggestion; a
+     URL is typeable. `notFound()` rather than a redirect, because from where he
+     stands there is no such page. */
+  if (!canOpenModule(workspace.role, pageKey)) notFound();
   if (!project.style) redirect("/portal/style-select");
 
   // Every page this account has, in its own order. Pages are now provisioned
@@ -313,6 +331,24 @@ export default async function PortalEditorPage({
       data,
     };
   });
+
+  /* ① A SUPERVISOR GETS THE PAGE, NOT THE EDITOR.
+
+     Everything above this line was work he needs -- the generated layout, his
+     boss's real rows, the trade's own words. Everything below it is the
+     owner's tool. See work-view.tsx for why offering it to him and refusing
+     each control at the server is the worse of the two answers. */
+  if (!workspace.isOwner) {
+    return (
+      <WorkView
+        data={hideMoneyFromRail(initialData, workspace.role) as unknown as Data}
+        style={project.style as StyleName}
+        palette={(project.palette as string | null) ?? null}
+        corners={Number(project.corners ?? 1)}
+        systemLang={systemLangOf(businessContext)}
+      />
+    );
+  }
 
   return (
     <PortalEditor

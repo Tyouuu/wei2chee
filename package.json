@@ -52,7 +52,9 @@
     "check:records": "node scripts/check-records.mjs",
     "shoot:directory": "node scripts/shoot-directory.mjs",
     "shoot:scroll": "node scripts/shoot-scroll.mjs",
-    "check:sticky": "node scripts/check-sticky.mjs"
+    "check:sticky": "node scripts/check-sticky.mjs",
+    "check:staff": "node scripts/check-staff.mjs",
+    "shoot:staff": "node scripts/shoot-staff.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
