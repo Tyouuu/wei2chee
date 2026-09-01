@@ -5174,6 +5174,59 @@ ERPNext 的库存流水每一笔带三样：**单据类型 · 单号 · 哪一�
 - [ ] ⚠️ 拿之前先跑 [任务 24](#24) 那四步：**先量出我们哪里不如人，再决定加不加** ——
       直接加一批新组件而排法不变，就是[重点 7a](./founder-points.md) 讲的「换个颜色」
 
+#### 95b. 他发了 `next-shadcn-admin` 的两张图问「哪里找那么多」（2026-09-02）
+> `我们又那么好的参考吗 就是后台参考 这个比起我们的不懂强上多少倍了？？
+> 哪里可以找到那么多 又好看 又专业`
+
+**有，而且就是那一个。** `arhamkhnz/next-shadcn-admin-dashboard` 是
+`design-system/upstream.json` 的**第一条**（8-23 记进去，8-26 拍了 20 张，
+[任务 24](#24)）。他发的那张开发票的图，仓库里就是
+`.screenshots/upstream/up-invoice.png`。
+
+**所以问题不是找不到参考，是我拿了参考只学了一半。**
+
+#### 🔴 量出来的差距不是「组件」，是「页的种类」（2026-09-02 实跑 `buildPageLayout`）
+| | |
+|---|---|
+| 我们 | **17 个后台模块 → 14 种「不同」的骨架** |
+| 但是 | **16 种是同一句话**：`标题 → 一两个筛选 → 同一张表格` |
+| 唯一例外 | 总览（数字 + 图 + 排行 + 表）|
+| **他们那张开发票的页** | **左边填表 · 右边即时预览印出来的发票 · 一张表格都没有** |
+
+逐页读数（`SystemShell → RailNav →` 之后）：
+```
+orders/tasks        PageHeader → WorkflowStrip → FilterChips → RecordTable
+payments/expenses   PageHeader → MonthPicker → HeroCard → RecordTable → FileUploadField
+suppliers/staff     PageHeader → Combobox → RecordTable
+quotations          PageHeader → FilterChips → DatePicker → RecordTable
+bookings            PageHeader → DatePicker → Listbox → RecordTable
+projects            PageHeader → WorkflowStrip → Listbox → RecordTable
+purchases           PageHeader → WorkflowStrip → RecordTable
+customers           PageHeader → TextAutocomplete → RecordTable
+inventory           PageHeader → Combobox → FilterChips → RecordTable
+reconciliation      PageHeader → MonthPicker → HeroCard → Alert → RecordTable
+reports             PageHeader → MonthPicker → HeroCard → TrendChart → RecordTable
+dashboard           StatRow → TrendChart → ShelfList → ShareChart → WorkflowStrip → RecordTable
+```
+**「14 种骨架」听起来不少，画面上是一种。** 差别只在标题下面那一两颗筛选控件。
+
+#### 所以要抄的是这五种页，不是二十个组件
+- [ ] **填表 + 即时预览**（他们的 Create New Invoice）—— 落点：报价单 · 进货单 · 收款
+- [ ] **左清单右详情** —— 落点：客户 · 供应商 · 员工（[任务 81](#81) 记着「点进去看一个客户」这一页不存在）
+- [ ] **看板** —— 落点：工程 · 任务（`TaskBoard` 组件已经有了，没有一页在用）
+- [ ] **日历** —— 落点：预约（`DaySchedule` / `WeekStrip` 也已经有了）
+- [ ] **单据预览 / 可列印的一张纸** —— 落点：报价单、发票
+
+⚠️ **前两种他们那份里都有现成的，而且是 MIT，可以直接读代码不是只看图。**
+
+#### 还可以拿的（全部 MIT，[任务 77](#77) 核对过许可）
+`PanJiaChen/vue-element-admin` 90.2k（停更，只看长相）· `ColorlibHQ/AdminLTE` 45.5k ·
+`tabler/tabler` 41.6k · `ant-design/ant-design-pro` 38.7k · `satnaing/shadcn-admin` 14.1k
+
+⚠️ **后台跟官网正好相反**：客户的官网**没有开源可拿**（所以才抄 Wix 模版），
+**后台可以直接拿代码**。
+
+
 
 ### 96. 🔴 里面 18 个模块，外面 1 个动作（2026-09-01 他问出来的）
 > `我们现在整个平台都是围绕着后台 就是自己公司的人使用 就是内部系统
