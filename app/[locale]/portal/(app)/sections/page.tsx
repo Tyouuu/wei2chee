@@ -12,10 +12,15 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
  */
 export default async function SectionsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  /** `?q=` —— 「找东西」那个面板落地就已经筛好。在服务端接，
+   *  所以不用 Suspense，也不会服务端跟浏览器各画一个值。 */
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { locale } = await params;
+  const { q } = await searchParams;
 
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -29,6 +34,7 @@ export default async function SectionsPage({
 
   return (
     <SectionsClient
+      initialQuery={typeof q === "string" ? q : undefined}
       locale={locale}
       style={(project?.style as StyleName) ?? "blueprint"}
       palette={(project?.palette as string | null) ?? null}

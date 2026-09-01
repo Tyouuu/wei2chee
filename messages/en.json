@@ -641,6 +641,21 @@
       "navClose": "Close navigation",
       "enquiries": "Website enquiries"
     },
+    "find": {
+      "title": "Find anything",
+      "open": "Find anything",
+      "placeholder": "Search pages, blocks, sections",
+      "loading": "Loading…",
+      "nothing": "Nothing matches “{q}”.",
+      "keys": "↑↓ to move · Enter to open",
+      "scale": "{n} things you can search",
+      "kind": {
+        "page": "Your pages",
+        "go": "Go to",
+        "block": "Blocks",
+        "section": "Sections"
+      }
+    },
     "styles": {
       "title": "Styles",
       "subtitle": "One system, {n} ways",

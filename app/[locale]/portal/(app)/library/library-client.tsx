@@ -182,6 +182,7 @@ export function LibraryClient({
   style,
   palette,
   firstPage,
+  initialQuery,
 }: {
   locale: string;
   style: StyleName;
@@ -191,6 +192,8 @@ export function LibraryClient({
    *  hardcoded `dashboard` — a business whose trade has no dashboard route
    *  would have been sent to a 404. */
   firstPage: string;
+  /** 「找东西」那个面板带过来的字。见下面 `useState` 上的注解。 */
+  initialQuery?: string;
 }) {
   const t = useTranslations("portal.library");
   /*
@@ -221,7 +224,14 @@ export function LibraryClient({
     () => localisedPuckConfig(locale, systemLang),
     [locale, systemLang],
   );
-  const [query, setQuery] = useState("");
+  /* 🔴 从网址接住那个字。
+     「找东西」那个面板搜到一个组件/版段，落点必须是**已经筛好的这一页** ——
+     把人丢在一张 4,705px（版段库 21,417px）的页上，然后叫他自己找，
+     就是这个仓库最常犯的那一类：能力有，线只接了一半。
+     ⚠️ 从**服务端**穿下来，不用 `useSearchParams` —— 那要一层 Suspense，
+     而且在 `useState` 初值里读 `window.location` 会让服务端跟浏览器
+     渲染出两个不同的值。 */
+  const [query, setQuery] = useState(initialQuery ?? "");
   /*
     WHICH SHELF IS OPEN, AND WHY null IS THE FRONT DOOR NOW.
 

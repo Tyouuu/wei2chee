@@ -8,6 +8,7 @@ import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { SettingsDialog } from "../settings-dialog";
 import type { SystemLang } from "@/lib/system-lang";
 import { AddPageDialog } from "../add-page-dialog";
+import { CommandBar, FindButton } from "./command-bar";
 import chrome from "../chrome.module.css";
 import {
   IconBlocks,
@@ -240,6 +241,22 @@ export function PortalShell({
   const [navOpen, setNavOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addPageOpen, setAddPageOpen] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+
+  /* ⌘K / Ctrl+K，全域。
+     ⚠️ 只在**没有在打字**的时候接管 —— 一个在编辑器里改标题的人按 Ctrl+K
+     是在选字，不是在找东西。而 macOS 上 ⌘K 本来就是浏览器的网址列，
+     所以两边都要 preventDefault，不然面板开了、网址列也跳出来。 */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "k" && e.key !== "K") return;
+      if (!e.metaKey && !e.ctrlKey) return;
+      e.preventDefault();
+      setFindOpen((v) => !v);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [identity, setIdentity] = useState({
     businessName: savedBusinessName,
     ownerName: savedOwnerName,
@@ -312,6 +329,8 @@ export function PortalShell({
             </span>
           </span>
         </Link>
+
+        <FindButton onOpen={() => setFindOpen(true)} />
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
           <div className="pt-3">
@@ -553,6 +572,13 @@ export function PortalShell({
         {children}
       </div>
 
+      <CommandBar
+        locale={locale}
+        open={findOpen}
+        onClose={() => setFindOpen(false)}
+        pages={pages}
+        isOwner={isOwner}
+      />
       <AddPageDialog
         open={addPageOpen}
         onClose={() => setAddPageOpen(false)}

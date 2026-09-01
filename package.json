@@ -13,6 +13,8 @@
     "check:isolation": "node scripts/check-tenant-isolation.mjs",
     "build:tokens": "node scripts/build-style-scope.mjs",
     "check:reachable": "python scripts/check-reachable.py",
+    "shoot:find": "node scripts/shoot-find.mjs",
+    "shoot:ours": "node scripts/shoot-ours.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:print": "node scripts/check-print.mjs",
     "check:registers": "node scripts/check-registers.mjs",

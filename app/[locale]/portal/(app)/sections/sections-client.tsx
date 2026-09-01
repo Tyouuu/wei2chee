@@ -85,17 +85,26 @@ export function SectionsClient({
   locale,
   style,
   palette,
+  initialQuery,
 }: {
   locale: string;
   style: StyleName;
   palette: string | null;
+  /* 🔴 从网址接住那个字。
+     「找东西」那个面板搜到一个组件/版段，落点必须是**已经筛好的这一页** ——
+     把人丢在一张 4,705px（版段库 21,417px）的页上，然后叫他自己找，
+     就是这个仓库最常犯的那一类：能力有，线只接了一半。
+     ⚠️ 从**服务端**穿下来，不用 `useSearchParams` —— 那要一层 Suspense，
+     而且在 `useState` 初值里读 `window.location` 会让服务端跟浏览器
+     渲染出两个不同的值。 */
+  initialQuery?: string;
 }) {
   const t = useTranslations("portal.sections");
   // Chrome, so it follows the interface locale. The SEARCH still reads the
   // Chinese names as well -- an owner who has been using this page in Chinese
   // and switches should not lose the word he was about to type.
   const names = shelfNames(locale);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery ?? "");
   /* null = the sectioned front door. See the grid below, and 组件库's own
      note: 21st.dev opens on rows, not on one shelf and not on everything. */
   const [active, setActive] = useState<string | null>(null);

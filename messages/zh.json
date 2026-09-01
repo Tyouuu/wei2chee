@@ -641,6 +641,21 @@
       "navClose": "关闭导航",
       "enquiries": "官网来的询价"
     },
+    "find": {
+      "title": "找东西",
+      "open": "找东西",
+      "placeholder": "搜页面、组件、版段",
+      "loading": "载入中…",
+      "nothing": "没有配得上「{q}」的。",
+      "keys": "↑↓ 选 · Enter 打开",
+      "scale": "{n} 样可以找",
+      "kind": {
+        "page": "你的页面",
+        "go": "去",
+        "block": "组件",
+        "section": "版段"
+      }
+    },
     "styles": {
       "title": "风格",
       "subtitle": "同一套系统，{n} 种做法",
