@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { PageBar } from "../page-bar";
-import { Card, CardTitle, Field, FieldRow, DataRow, EmptyState, control, btn } from "../kit";
+import { Card, CardTitle, Field, FieldRow, DataRow, EmptyState, SplitCard, SplitTab, control, btn } from "../kit";
 import { formatDay } from "@/lib/format-date";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 
@@ -45,6 +45,7 @@ export function AccountClient({
   const tShell = useTranslations("portal.shell");
   const router = useRouter();
 
+  const [tab, setTab] = useState<"profile" | "team" | "security" | "data">("profile");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -181,11 +182,24 @@ export function AccountClient({
     router.push("/");
   }
 
+  /* 一张卡，左边一列小导航 —— tabler 设定页的形状。
+     四格，因为这一页问的本来就是四件不同的事。 */
+  const tabs: { id: typeof tab; label: string; show: boolean }[] = [
+    { id: "profile", label: t("overview"), show: true },
+    { id: "team", label: t("teamTitle"), show: isOwner },
+    { id: "security", label: t("tabSecurity"), show: true },
+    { id: "data", label: t("tabData"), show: true },
+  ];
+
   return (
     <>
       <PageBar title={t("title")} subtitle={email} />
 
-      <div className="max-w-3xl px-8 py-7">
+      {/* 🔴 `max-w-3xl` 拿掉了（2026-09-02）。
+          逐像素量：这一页 **70% 的面积是一片什么都没有的黑**，亮暗跨度 0.74 ——
+          并排的那个真后台是 46% 白 / 跨度 0.97，而它那 46% 是**纸**，
+          上面压着东西。老板讲的「没有别人专业」量出来就是这个。 */}
+      <div className="px-8 py-7">
         {msg && (
           <p
             role="status"
@@ -199,6 +213,15 @@ export function AccountClient({
           </p>
         )}
 
+        <SplitCard
+          nav={tabs.filter((x) => x.show).map((x) => (
+            <SplitTab key={x.id} active={tab === x.id} onClick={() => setTab(x.id)}>
+              {x.label}
+            </SplitTab>
+          ))}
+        >
+        {tab === "profile" && (
+        <>
         <Section title={t("overview")}>
           <Row label={t("business")} value={businessName} />
           {/* ⚠️ BOTH OF THESE COME FROM THE PROJECT THIS PERSON OWNS, and a
@@ -221,7 +244,22 @@ export function AccountClient({
           />
         </Section>
 
-        {isOwner && <TeamPanel initial={members} />}
+        {/* LANGUAGE AND SIGN OUT 跟身分同一格 —— 它们讲的都是「你」。 */}
+        <Section title={t("languageTitle")} body={t("languageBody")}>
+          <LocaleSwitcher />
+        </Section>
+        <Section title={t("signOutTitle")} body={t("signOutBody")}>
+          <button type="button" onClick={signOut} disabled={busy !== null} className={btn("quiet")}>
+            {busy === "signout" ? t("saving") : t("signOutCta")}
+          </button>
+        </Section>
+        </>
+        )}
+
+        {tab === "team" && isOwner && <TeamPanel initial={members} />}
+
+        {tab === "security" && (
+        <>
 
         {hasPassword ? (
           <Section title={t("passwordTitle")} body={t("passwordBody")}>
@@ -287,13 +325,19 @@ export function AccountClient({
           </form>
         </Section>
 
+        </>
+        )}
+
+        {tab === "data" && (
+        <>
         <Section title={t("exportTitle")} body={t("exportBody")}>
           <button type="button" onClick={exportData} disabled={exporting} className={btn("quiet")}>
             {exporting ? t("exporting") : t("exportCta")}
           </button>
         </Section>
 
-        {/* LANGUAGE AND SIGN OUT LIVE HERE NOW.
+        {/* 旧的语言 / 登出那一段搬到「你」那一格去了，原本的注解留在那里。
+            LANGUAGE AND SIGN OUT USED TO LIVE HERE.
             They used to be two naked controls in the bottom corner of the
             navigation rail — a switcher and an underlined link, lying loose
             under the last nav item with nothing around them. On the one screen
@@ -303,20 +347,11 @@ export function AccountClient({
             Every product of this shape puts them behind the account row, so
             the rail now carries one account block that leads here, and these
             are rows in a settings page like everything else. */}
-        <Section title={t("languageTitle")} body={t("languageBody")}>
-          <LocaleSwitcher />
-        </Section>
-
-        <Section title={t("signOutTitle")} body={t("signOutBody")}>
-          <button type="button" onClick={signOut} disabled={busy !== null} className={btn("quiet")}>
-            {busy === "signout" ? t("saving") : t("signOutCta")}
-          </button>
-        </Section>
 
         {/* Last, and visually separated. A destructive action placed among
             ordinary settings is a destructive action somebody will hit by
             accident. */}
-        <section className="mt-10 rounded-[var(--radius-md)] border p-5 [border-color:var(--color-clay-deep)]">
+        <section className="mt-8 rounded-[var(--radius-md)] border p-5 [border-color:var(--color-clay-deep)]">
           <h2 className="[color:var(--color-clay-bright)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
             {t("deleteTitle")}
           </h2>
@@ -344,16 +379,17 @@ export function AccountClient({
             </button>
           </div>
         </section>
+        </>
+        )}
+        </SplitCard>
       </div>
     </>
   );
 }
 
-/* 🔴 一段 = 一张卡，2026-09-01。
-   改之前这一页是**八段裸表单**，靠一条细线分开，标题、说明、输入框全部一样重，
-   整页唯一被设计过的东西是最底下那个红框。
-   tabler（MIT · 41.5k★）的设定页读下来是：**一张卡装起来**，卡里 `CardTitle`
-   当小标题，表单栏位**并排**。这一段就是那个形状，用我们自己的零件重建。 */
+/* 一段 = 小标题 + 一条细线。
+   9-01 我把每一段包成一张卡，9-02 又拿掉了 —— 见 kit.tsx 的 `SplitCard`：
+   tabler 的设定页是**一张**卡装整页，我看到「卡」漏了「一」。 */
 function Section({
   title,
   body,
@@ -363,11 +399,15 @@ function Section({
   body?: string;
   children?: React.ReactNode;
 }) {
+  /* 🔴 2026-09-02：不再是一张卡。
+     9-01 我把每一段都包成一张卡，而那八张里没有一张是「要操作的容器」——
+     它们只是在分组，那是装饰（Refero `anti-ai-slop.md`，MIT，当天读到）。
+     现在整页共用**一张** `SplitCard`，段落回到「小标题 + 一条细线」。 */
   return (
-    <Card className="mt-4 first:mt-0">
+    <section className="mt-8 border-t pt-6 first:mt-0 first:border-t-0 first:pt-0 [border-color:var(--color-ink-800)]">
       <CardTitle hint={body}>{title}</CardTitle>
       {children}
-    </Card>
+    </section>
   );
 }
 

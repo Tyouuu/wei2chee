@@ -169,3 +169,73 @@ export function EmptyState({
     </div>
   );
 }
+
+
+/**
+ * 一张卡装整页，左边一列小导航，右边才是内容。
+ *
+ * ── 为什么（2026-09-02，逐像素量出来的）────────────────────────────────────
+ * 老板：`就是感觉我的平台 没有别人的有专业感`。
+ * 把我们的画面跟一个真的后台（next-shadcn-admin · 45k★）并排，逐像素量：
+ *
+ *              最大一块单色     亮暗跨度
+ *   别人 CRM    白 46%          0.97
+ *   别人 单据    白 33%          1.00
+ *   **我们 账号  黑 70%          0.74**   ← 最低
+ *
+ * **七成画面是一片什么都没有的地。** 别人那 46% 的白是**纸**——上面压着卡片、
+ * 表格、图表；我们那 70% 的黑是**空的**。内容挤在 `max-w-3xl` 的一条里，
+ * 右边四成留白。这就是「不专业」量出来的样子，跟深色不深色无关。
+ *
+ * ── 抄的是 tabler 的设定页（MIT · 41.5k★），而且只抄它那一张卡 ───────────
+ * 它是 `card > row > [3/12 小导航 | 9/12 内容]`。
+ * ⚠️ 我 9-01 抄错过一次：看到「卡」漏了「一」，把这一页做成**八张叠起来的卡**。
+ * Refero 那份 `anti-ai-slop.md`（MIT）当天就点名这件事：
+ * 「默认不要卡片；拿掉边框阴影底色圆角之后不影响操作跟理解的，就不是卡片」。
+ * 八张里没有一张是「要操作的容器」，它们只是在分组 —— 那是装饰。
+ * **现在回到一张。**
+ */
+export function SplitCard({
+  nav,
+  children,
+}: {
+  nav: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <Card pad={false} className="grid md:grid-cols-[13.5rem_1fr]">
+      {/* 小导航。窄萤幕上它变成横着滑的一排 —— 手机上一列 13.5rem 的导航
+          是一个 13.5rem 的洞（`Section` 那份档头讲过同一件事）。 */}
+      <nav className="flex gap-1 overflow-x-auto border-b p-3 md:flex-col md:overflow-visible md:border-r md:border-b-0 [border-color:var(--color-ink-800)]">
+        {nav}
+      </nav>
+      <div className="min-w-0 p-6">{children}</div>
+    </Card>
+  );
+}
+
+/** 小导航里的一格。选中的那一格用品牌色，跟侧栏同一个语言。 */
+export function SplitTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={`shrink-0 whitespace-nowrap rounded-[var(--radius-md)] px-3 py-2 text-left [font-size:var(--text-sm)] transition-colors ${
+        active
+          ? "[background-color:var(--color-nav-active)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]"
+          : "[color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}

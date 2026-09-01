@@ -824,7 +824,9 @@
       "teamOff": "Switch off",
       "teamOn": "Switch back on",
       "teamOffLabel": "Switched off",
-      "teamOffBody": "They can no longer open anything. What they wrote stays where it is."
+      "teamOffBody": "They can no longer open anything. What they wrote stays where it is.",
+      "tabSecurity": "Sign-in",
+      "tabData": "Your data"
     },
     "enquiries": "Enquiries from your website",
     "enquiriesBlurb": "What visitors send from your own site lands here — nobody has to retype it. One press turns an enquiry into a job on your own page, with the person added to your customers.",
