@@ -15,6 +15,7 @@
     "check:reachable": "python scripts/check-reachable.py",
     "shoot:find": "node scripts/shoot-find.mjs",
     "shoot:ours": "node scripts/shoot-ours.mjs",
+    "probe:admin-era": "node scripts/probe-admin-era.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:print": "node scripts/check-print.mjs",
     "check:registers": "node scripts/check-registers.mjs",
