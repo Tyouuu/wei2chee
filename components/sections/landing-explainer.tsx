@@ -202,7 +202,7 @@ export function Pricing({ standalone = false }: { standalone?: boolean } = {}) {
         <p className="max-w-[52ch] leading-relaxed text-foreground/80">{t("free")}</p>
         <Link
           href={`/${locale}#ask`}
-          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
         >
           {t("cta")}
           <span aria-hidden>&rarr;</span>

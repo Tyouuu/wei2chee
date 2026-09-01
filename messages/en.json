@@ -957,7 +957,8 @@
     "place": "Malaysia · business systems for SMEs",
     "wa": "Talk on WhatsApp",
     "waMessage": "Hi, I saw Formae online and would like to know more.",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "waFallback": "Design one free"
   },
   "system": {
     "notFoundTitle": "This page does not exist.",

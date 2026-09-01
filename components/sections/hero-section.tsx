@@ -214,6 +214,10 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
               className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-[0.9375rem] leading-relaxed text-white placeholder:text-white/45 focus:outline-none min-h-[7.4rem] md:min-h-0"
             />
             <div className="flex items-center justify-end px-1 pb-1">
+              {/* ⚠️ `min-h-11` = 44px。实测这颗在手机上是 **94×39** ——
+                  低於 Apple 跟 Google 都写的 44/48px 触控下限，
+                  而这是**广告进来之后第一颗、也是最重要的一颗按钮**。
+                  内距没有动（画面不变），只是给它一个高度下限。 */}
               <button
                 type="submit"
                 /* ⚠️ 这颗按钮本来是白底。2026-08-31 老板：「为什么还是这个背景
@@ -222,7 +226,7 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
                    还是白的**，所以青一个字都看不到。
                    一个页面用不到自己的品牌色，等於没有品牌色。
                    青只能配深色字（配白最高 2.3:1），所以是青底墨字。 */
-                className="rounded-full px-6 py-2.5 text-[0.875rem] font-semibold [background-color:var(--color-primary)] [color:var(--color-primary-foreground)] transition-transform duration-200 hover:scale-[1.03] focus-visible:ring-2 [--tw-ring-color:var(--color-primary)] focus-visible:outline-none"
+                className="min-h-11 rounded-full px-6 py-2.5 text-[0.875rem] font-semibold [background-color:var(--color-primary)] [color:var(--color-primary-foreground)] transition-transform duration-200 hover:scale-[1.03] focus-visible:ring-2 [--tw-ring-color:var(--color-primary)] focus-visible:outline-none"
               >
                 {t("askCta")} →
               </button>

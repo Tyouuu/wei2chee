@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { BRAND_NAME, WHATSAPP_NUMBER } from "@/lib/brand";
+import { BRAND_NAME, WHATSAPP_NUMBER, WHATSAPP_IS_PLACEHOLDER } from "@/lib/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 
 /**
@@ -33,15 +33,18 @@ export function SiteFooter() {
           <p className="mt-4 text-sm text-muted-foreground">{t("place")}</p>
         </div>
 
+        {/* 🔴 号码还是占位符的时候，这颗指向的是那个占位号码 ——
+            一个不存在的号码，而这是页脚唯一的联络出口。
+            换成「先免费设计一套」——**那条路今天真的走得通**。
+            号码填进环境变数那天，它自己变回 WhatsApp（见 lib/brand.ts）。 */}
         <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={WHATSAPP_IS_PLACEHOLDER ? `/${locale}#ask` : href}
+          {...(WHATSAPP_IS_PLACEHOLDER ? {} : { target: "_blank", rel: "noopener noreferrer" })}
           className="group relative shrink-0 self-start border border-blueprint/50 px-8 py-4 font-mono text-[0.75rem] tracking-[0.14em] text-blueprint uppercase transition-colors duration-300 hover:border-blueprint focus-visible:ring-1 focus-visible:ring-blueprint focus-visible:outline-none md:self-auto"
         >
           <span className="absolute inset-0 origin-left scale-x-0 bg-blueprint transition-transform duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
           <span className="relative transition-colors duration-300 group-hover:text-[var(--ink)]">
-            {t("wa")} →
+            {WHATSAPP_IS_PLACEHOLDER ? t("waFallback") : t("wa")} →
           </span>
         </a>
       </div>

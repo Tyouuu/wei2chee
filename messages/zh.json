@@ -957,7 +957,8 @@
     "place": "马来西亚 · 中小企业业务系统",
     "wa": "WhatsApp 聊一聊",
     "waMessage": "你好，我在 Formae 网站看到你们的系统，想了解多一点。",
-    "signIn": "登录"
+    "signIn": "登录",
+    "waFallback": "先免费设计一套"
   },
   "system": {
     "notFoundTitle": "这一页找不到。",
