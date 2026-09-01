@@ -4806,6 +4806,48 @@ Completed · Cancelled · Closed · Delivered。
 
 ---
 
+### 90. 模板库的实测缺口：餐饮跟教育一家都没有（2026-09-01 挖到一半，他叫我先做 ERP）
+> `你再自己去找模版搬进来吧` → `先做ERP就是要做主流的的system 一个个主流的system拆解`
+
+**没有动手写任何代码，所以没有半成品挂着。** 挖到的资料记在这里。
+
+#### 今天模板库的样子：七套，八个行业里六个只有一套可选
+| 模板 | 给哪几行 |
+|---|---|
+| 上门报价 quote | 装修 · 服务 · 其他 |
+| 预约时段 booking | 美容 · 教育 |
+| 现货落单 order | 餐饮 · 零售 |
+| 批发询价 wholesale | 批发 |
+| 明码标价 tariff | 服务 |
+| **先看东西 portfolio** | **空的 —— 做好了，没有行业指过去** |
+| **一页名片 card** | **空的 —— 同上** |
+
+#### 🔴 而 19 家实测里，餐饮跟教育一家都没有
+[任务 26](#26) 那 19 家是：装修 4 · 冷气 3 · 牙科 3 · 美容 3 · 家具 3 ·
+车厂 1 · 汽车配件 1 · 五金 1。**F&B 零家、教育零家**，
+而那是八个行业里的两个 —— 所以那两行的模板是照别的行业推出来的。
+
+#### 已经捞到样本了，下次直接用
+用 OSM 开放资料捞吉隆坡，**6,890 个地点里有 354 家有自己的域名、而且不是连锁**
+（Grab / FoodPanda / Facebook / Wix 子域全部排掉）。可以直接量的例子：
+Kanna Curry House · Omega Pork Noodles · Yishensu · Niche Vege Kitchen ·
+Levain · Lokl Coffee · Nam Heong · Hakka · Meeples Boardgame Cafe ·
+Porto Romano · Halab Restaurant · WTF Restaurants。
+
+查法（一次呼叫，不用存名单）：Overpass 打 `amenity=restaurant|cafe|fast_food`
+＋ `shop=bakery`、教育打 `amenity=language_school|music_school|driving_school`
+＋ `office=educational_institution`，bbox 用吉隆坡 `3.0,101.55,3.25,101.78`。
+⚠️ **一定要带 user-agent**，不然 Overpass 回 406；连打两次会被限流，回的是 XML 不是 JSON。
+
+#### 下次接着做（照[重点 5c](./founder-points.md) 一件一件）
+- [ ] 量 12 家餐饮：段序 · 第一屏有没有菜单 · 有没有营业时间 · 有没有 WhatsApp · 照片占多少
+- [ ] 量 12 家教育：有没有课程表 · 有没有价钱 · 报名怎么走
+- [ ] **`先看东西` 跟 `一页名片` 配给行业** —— 零工作量，做好了没人指过去
+- [ ] 照量出来的补模板；⚠️ [任务 25](#25) 的分边规矩：
+      **国外模板站给「有哪些区段、怎么排」，马来西亚给「多大、多宽、多密」**
+
+---
+
 ### 91. 库存 —— 第四个零件，拆的是 ERPNext（2026-09-01）
 > `先做ERP就是要做主流的的system 一个个主流的system拆解`
 
