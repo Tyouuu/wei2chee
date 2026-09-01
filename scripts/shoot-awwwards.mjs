@@ -10,8 +10,15 @@
 import { chromium } from "playwright";
 import fs from "node:fs";
 
-const CATS = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-const N = Number(process.argv[process.argv.indexOf("--n") + 1]) || 4;
+/* ⚠️ `--n 4` 的那个 **4** 也不是分类。
+   第一版只滤掉 `--` 开头的，於是 4 被当成一个分类名去爬
+   `awwwards.com/websites/4/` —— 它**没有回 404，回了一页别的东西**，
+   报告里就多出一段「════ 4 （31 个提名）」，里面是匹克球拍跟一家行销公司。
+   一个不存在的分类印出一份看起来很正常的读数，是这个仓库最常见的那种谎。 */
+const argv = process.argv.slice(2);
+const nAt = argv.indexOf("--n");
+const N = nAt >= 0 ? Number(argv[nAt + 1]) || 4 : 4;
+const CATS = argv.filter((a, i) => !a.startsWith("--") && i !== nAt + 1);
 if (!CATS.length) { console.error("用法: node scripts/shoot-awwwards.mjs header-design animation [--n 4]"); process.exit(1); }
 
 const OUT = ".screenshots/awwwards";
@@ -20,7 +27,7 @@ const b = await chromium.launch();
 
 for (const cat of CATS) {
   const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
-  await p.goto(`https://www.awwwards.com/websites/${cat}/`, { waitUntil: "domcontentloaded", timeout: 45000 });
+  await p.goto(`https://www.awwwards.com/websites/${cat}/`, { waitUntil: "domcontentloaded", timeout: 90000 });
   await p.waitForTimeout(4000);
   const slugs = await p.evaluate(() => [...new Set([...document.querySelectorAll("a[href*='/sites/']")]
     .map((a) => a.href).filter((h) => /awwwards\.com\/sites\//.test(h)))]);
@@ -31,7 +38,7 @@ for (const cat of CATS) {
     const q = await b.newPage({ viewport: { width: 1440, height: 1000 } });
     let url = "", title = "";
     try {
-      await q.goto(s, { waitUntil: "domcontentloaded", timeout: 40000 });
+      await q.goto(s, { waitUntil: "domcontentloaded", timeout: 90000 });
       await q.waitForTimeout(2000);
       ({ url, title } = await q.evaluate(() => {
         const a = [...document.querySelectorAll("a")].find((x) => /visit|website/i.test(x.innerText) && x.href.startsWith("http") && !x.href.includes("awwwards"));
@@ -43,7 +50,7 @@ for (const cat of CATS) {
 
     const r = await b.newPage({ viewport: { width: 1440, height: 1000 } });
     try {
-      await r.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+      await r.goto(url, { waitUntil: "domcontentloaded", timeout: 90000 });
       await r.waitForTimeout(3000);
       const before = await r.evaluate(() => [...document.querySelectorAll("body *")].slice(0, 800)
         .map((e) => { const c = getComputedStyle(e); return c.opacity + "|" + c.transform; }));
