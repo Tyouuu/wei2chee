@@ -218,6 +218,33 @@ describe("the SQL mirror", () => {
   });
 
   /*
+    THE FOURTH COPY OF THE SAME LIST, found on 2026-09-02 while re-declaring
+    the trigger for something else entirely.
+
+    Task 85 said there were three (the check constraint, add_project_page,
+    module_rank) and gave each its own migration. There were four. The signup
+    trigger filters the model's recommendation through its own inline list, and
+    `purchases` was never added to it -- so the analysis could return 進貨單,
+    tell the owner their system would have it, and the trigger would drop it
+    while provisioning. Nothing failed; the page was simply absent.
+
+    That is why this is a derived guard and not a fourth hand-written list: the
+    next key will be added to the catalogue and to three of the four places,
+    and the only thing that will notice is something asking all four the same
+    question.
+  */
+  it("provisions every module type the analysis is allowed to recommend", () => {
+    const sql = newestDefining("function public.handle_new_account");
+    const fn = sql.slice(sql.indexOf("function public.handle_new_account"));
+    /* The filter, not the whole body: the body also names 'website' in the
+       forced-page branch, which would mask a key missing from the list. */
+    const list = fn.slice(fn.indexOf("where m.key in ("), fn.indexOf(");", fn.indexOf("where m.key in (")));
+    for (const key of MODULE_KEYS) {
+      expect(list, `signup silently drops ${key}`).toContain(`'${key}'`);
+    }
+  });
+
+  /*
     THE GUARD THAT WAS ADVERTISED AND DID NOT EXIST.
 
     Both 20260830040000 and 20260831020000 carry a comment saying this file

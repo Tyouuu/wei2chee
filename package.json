@@ -59,7 +59,10 @@
     "shoot:fonts": "node scripts/shoot-fonts.mjs",
     "shoot:inbox": "node scripts/shoot-inbox.mjs",
     "check:consistency": "node scripts/check-consistency.mjs",
-    "walk": "node scripts/walk.mjs"
+    "walk": "node scripts/walk.mjs",
+    "check:address": "node scripts/check-address.mjs",
+    "shoot:address": "node scripts/shoot-address.mjs",
+    "shoot:admins": "node scripts/shoot-admins.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
