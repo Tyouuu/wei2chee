@@ -553,6 +553,96 @@ try {
   const { data: orphans } = await c.from("record_lines").select("id").eq("record_id", doomed.id);
   check("删掉单，行也跟着走", (orphans ?? []).length === 0);
 
+  // ⑧ 询价 → 报价单 ────────────────────────────────────
+  /* The one arrow the product is sold on: a stranger fills in the form on his
+     website and the owner presses once. Every assertion here is a real press
+     as the real customer -- see 20260901050000. */
+  console.log("\n⑧ 询价 → 报价单");
+
+  const enquiry = async (name, contact, answers, lands = "quotations") => {
+    /* Written with the admin key ON PURPOSE: a stranger's submission comes in
+       through submit_site_enquiry from a browser with no session, and this
+       checker is about what the OWNER can then do with it. */
+    const { data, error } = await admin.from("site_enquiries").insert({
+      project_id: P, name, contact, answers, lands_in: lands,
+    }).select().single();
+    if (error) throw new Error(`enquiry: ${error.message}`);
+    return data;
+  };
+
+  /* ⚠️ 016 AND NOT 012. ⑥ above already put a 陈先生 on file whose
+     WhatsApp is 012-345 6789 -- so an enquiry on that number is the SAME MAN
+     and must reuse him, which is tested on its own below. This one is a
+     stranger, so it has to be a number nobody has. My first version used 012
+     and read the reuse as a bug; the checker was right and I was not. */
+  const e1 = await enquiry("李先生", "016-222 8888", { "想做什么": "厨房翻新，三房" });
+  const { data: conv1, error: convErr } = await c.rpc("convert_enquiry", { in_enquiry_id: e1.id });
+  const g1 = (conv1 ?? [])[0];
+  check("一按就开出一张单", !!g1?.record_id, convErr?.message);
+  check("单号是那一页自己的", /^[A-Z]{2}-\d{4}-\d{4}$/.test(g1?.doc_no ?? ""), g1?.doc_no);
+  check("顺手把人变成客户", !!g1?.party_id);
+
+  const { data: fromEnq } = await c.from("pipeline_records").select("*").eq("id", g1.record_id).single();
+  /* NOT 「一封询价」 -- what they asked for. The trade's own first question is
+     the closest thing to a subject line that exists. */
+  check("标题是他问的那件事", fromEnq?.title === "厨房翻新，三房", fromEnq?.title);
+  check("单子连到那个客户", fromEnq?.party_id === g1.party_id);
+  /* He has not quoted yet. A figure here would be a number nobody agreed to. */
+  check("还没有金额", fromEnq?.amount_cents === null, String(fromEnq?.amount_cents));
+  check("记得是哪一封询价来的", fromEnq?.extra?.from_enquiry === e1.id);
+
+  const { data: enqParty } = await c.from("directory_entries").select("*").eq("id", g1.party_id).single();
+  check("电话认出来是电话，不是 email",
+    enqParty?.phone === "016-222 8888" && enqParty?.email === "",
+    `${enqParty?.phone}|${enqParty?.email}`);
+
+  const { data: e1After } = await c.from("site_enquiries").select("status, converted_at").eq("id", e1.id).single();
+  check("那一封标成处理好了", e1After?.status === "done" && !!e1After?.converted_at);
+
+  /* A double-tap on a phone is the normal case, not a mistake. */
+  const { data: conv1b } = await c.rpc("convert_enquiry", { in_enquiry_id: e1.id });
+  const g1b = (conv1b ?? [])[0];
+  check("再按一次，回同一张单", g1b?.record_id === g1.record_id && g1b?.already === true);
+
+  /* The same person asking twice is normal in this trade; two 李先生 in the
+     customer list is not. */
+  const e2 = await enquiry("李先生", "016-222 8888", { "想做什么": "厕所也要做" });
+  const { data: conv2 } = await c.rpc("convert_enquiry", { in_enquiry_id: e2.id });
+  const g2 = (conv2 ?? [])[0];
+  check("同一个人再问一次，第二张单", g2?.record_id !== g1.record_id);
+  check("而客户只有一个", g2?.party_id === g1.party_id);
+
+  /* ⑥'s 陈先生 has phone 03-7788 1234 and WhatsApp 012-345 6789. An enquiry
+     on the WhatsApp number is him -- a contractor's customer gives whichever
+     number he happens to be holding. */
+  const eSame = await enquiry("陈总", "012-345 6789", { "想做什么": "上次那间房" });
+  const { data: convSame } = await c.rpc("convert_enquiry", { in_enquiry_id: eSame.id });
+  check("号码对得上，就是那个旧客户（名字写不一样也算）",
+    (convSame ?? [])[0]?.party_id === mr?.id, `${(convSame ?? [])[0]?.party_id} vs ${mr?.id}`);
+
+  /* 🔴 THE ONE THIS CHECKER FOUND AND A CLEAN-ROOM SCRIPT COULD NOT.
+     Same name as ⑥'s 陈先生, a number he has never had. The first rule matched
+     on 「contact OR name」 and handed the new caller somebody else's record --
+     so a quotation would have gone to the wrong man's phone. A name match
+     whose contact disagrees is evidence of TWO people. See 20260901060000. */
+  const eTwin = await enquiry("陈先生", "019-777 1111", { "想做什么": "另一个陈先生" });
+  const { data: convTwin } = await c.rpc("convert_enquiry", { in_enquiry_id: eTwin.id });
+  const { data: otherTan } = await c.from("directory_entries").select("id, phone")
+    .eq("id", (convTwin ?? [])[0]?.party_id).single();
+  check("同名但号码不同，是两个人",
+    otherTan?.id !== mr?.id && otherTan?.phone === "019-777 1111", `${otherTan?.id} / ${otherTan?.phone}`);
+
+  const e3 = await enquiry("Ms Lim", "lim@example.com", { "想做什么": "办公室装修" });
+  const { data: conv3 } = await c.rpc("convert_enquiry", { in_enquiry_id: e3.id });
+  const { data: p3 } = await c.from("directory_entries").select("phone, email").eq("id", (conv3 ?? [])[0]?.party_id).single();
+  check("email 认出来是 email", p3?.email === "lim@example.com" && p3?.phone === "", `${p3?.phone}|${p3?.email}`);
+
+  /* Deleting the quotation must not delete the evidence that somebody asked. */
+  await c.from("pipeline_records").delete().eq("id", g1.record_id);
+  const { data: e1c } = await c.from("site_enquiries").select("id, converted_record_id, converted_at").eq("id", e1.id).single();
+  check("删掉那张单，那一封询价还在",
+    !!e1c?.id && e1c.converted_record_id === null && !!e1c.converted_at);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

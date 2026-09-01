@@ -826,9 +826,9 @@
       "teamOffBody": "They can no longer open anything. What they wrote stays where it is."
     },
     "enquiries": "Enquiries from your website",
-    "enquiriesBlurb": "What visitors send from your own site lands here — nobody has to retype it. Once the system is delivered these go straight into your own page.",
+    "enquiriesBlurb": "What visitors send from your own site lands here — nobody has to retype it. One press turns an enquiry into a job on your own page, with the person added to your customers.",
     "enquiriesEmpty": "Nobody has written yet. The first one appears here once your site is live.",
-    "enquiriesLandsIn": "After delivery this becomes a row in: {page}",
+    "enquiriesLandsIn": "Opens a job on: {page}",
     "sections": {
       "title": "Sections",
       "subtitle": "{n} sections · drop straight into your site",
@@ -872,7 +872,13 @@
       "quoteNote": "Priced by kind, not by module: the second module of the same kind is assembled rather than written, so it costs much less. Every line is above, so you see the total before you decide.",
       "quoteSpecNote": "The specification is RM 500 — this document. Once paid it is credited against the build fee above.",
       "quoteAfter": "After it goes live: hosting RM 150 / month."
-    }
+    },
+    "enquiryConvert": "Open a quotation",
+    "enquiryConverting": "Opening…",
+    "enquiryConverted": "Opened {docNo} — open it",
+    "enquiryConvertedPlain": "Already opened — open it",
+    "enquiryConvertFailed": "Could not open it. Try again.",
+    "enquiryNoPipeline": "This system has no page for jobs yet, so there is nothing to open a quotation on."
   },
   "explainer": {
     "process": {

@@ -826,9 +826,9 @@
       "teamOffBody": "他什么都打不开了。他写过的东西原样留着。"
     },
     "enquiries": "官网来的询价",
-    "enquiriesBlurb": "客人在你的官网填表送出的，会直接落在这里 —— 不用有人转抄。系统正式交付之后，这些会直接进你自己的那一页。",
+    "enquiriesBlurb": "别人从你自己官网填的，都落在这里 —— 不用再打一遍。按一下就变成你那一页上的一张单，那个人也进了你的客户名单。",
     "enquiriesEmpty": "还没有人来问。官网上线之后，第一条会出现在这里。",
-    "enquiriesLandsIn": "交付后会进：{page}",
+    "enquiriesLandsIn": "开在：{page}",
     "sections": {
       "title": "版段库",
       "subtitle": "{n} 段 · 可以直接放进官网",
@@ -872,7 +872,13 @@
       "quoteNote": "按「形状」算，不是按模块算：同一类的第二个是拼出来的，不是重写的，所以便宜很多。每一块的价钱都在上面，你先看到总数再决定要不要做。",
       "quoteSpecNote": "另有规格书 RM 500（就是你手上这份）。付了之后从上面的开发费里扣掉。",
       "quoteAfter": "上线之后：托管 RM 150 / 月。"
-    }
+    },
+    "enquiryConvert": "开一张单",
+    "enquiryConverting": "开中…",
+    "enquiryConverted": "开好了 {docNo} —— 去看",
+    "enquiryConvertedPlain": "已经开过了 —— 去看",
+    "enquiryConvertFailed": "开不成。再试一次。",
+    "enquiryNoPipeline": "这套系统还没有放工程的那一页，所以没有地方可以开单。"
   },
   "explainer": {
     "process": {
