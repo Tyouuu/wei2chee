@@ -30,7 +30,12 @@ import type { StatusTone } from "@/lib/templates/copy/types";
  * 消失」) implemented by construction rather than by bookkeeping.
  */
 
-import { PIPELINE_MODULES, LEDGER_MODULES, DIRECTORY_MODULES } from "./shape-state";
+import {
+  PIPELINE_MODULES,
+  LEDGER_MODULES,
+  DIRECTORY_MODULES,
+  CATALOG_MODULES,
+} from "./shape-state";
 import {
   systemLangOf,
   workflowStages,
@@ -342,6 +347,74 @@ export function rowsFromParties(
   }));
 }
 
+/** One line of the 库存 page's second column: 「仓库 · 包」. */
+function shelfLine(r: StockRow): string {
+  return [r.location, r.unit].map((x) => (x ?? "").trim()).filter(Boolean).join(" · ");
+}
+
+/** A quantity as a person writes it: 84, not 84.000. */
+function qtyText(n: number): string {
+  return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(3)));
+}
+
+export type StockRow = {
+  item_id: string;
+  name: string | null;
+  unit: string | null;
+  location: string | null;
+  reorder_at: number | string | null;
+  on_hand: number | string | null;
+  moves: number | string | null;
+};
+
+/**
+ * 库存, and it is the first shape whose `amount` column is NOT money.
+ *
+ * ⚠️ THAT IS THE WHOLE HAZARD HERE. The page's own heading for that column
+ * is 「数量」/「Qty」, and every other shape puts ringgit there. A projection
+ * that reached for `ringgit()` would print 「RM 84」 against a bag of cement --
+ * which is the same class of mistake as 任务 79 ④, where a directory's three
+ * columns were read as a pipeline's four and the owner's own word for a
+ * customer was dropped as though it were a price.
+ *
+ * THE STATUS IS COMPUTED, NOT STORED. 「充足」/「快没了」/「没货了」 is a fact about
+ * the number beside it, so storing it would create a second thing that can
+ * disagree -- and it disagrees silently, because nobody knows by eye that a
+ * hardware shop should have 84 bags. An item with no reorder level says
+ * nothing rather than guessing one.
+ */
+export function rowsFromStock(
+  items: StockRow[],
+  lang: "zh" | "en" = "zh",
+  href?: (id: string) => string,
+): LiveRow[] {
+  const word = {
+    zh: { ok: "充足", low: "快没了", none: "没货了" },
+    en: { ok: "In stock", low: "Running low", none: "Out of stock" },
+  }[lang];
+
+  return items.map((it) => {
+    const on = Number(it.on_hand ?? 0);
+    const at = it.reorder_at === null || it.reorder_at === undefined ? null : Number(it.reorder_at);
+    /* Three states and the middle one only exists when he asked for it. */
+    /* 「negative」 and not 「critical」: the four tones this product has are
+       positive · warning · negative · neutral, and out-of-stock is the same
+       weight as an overdue payment. */
+    const tone: StatusTone = on <= 0 ? "negative" : at !== null && on <= at ? "warning" : "positive";
+    const status = on <= 0 ? word.none : at !== null && on <= at ? word.low : at !== null ? word.ok : "";
+
+    return {
+      ...(href && it.item_id ? { href: href(it.item_id) } : {}),
+      primary: (it.name ?? "").trim(),
+      secondary: shelfLine(it),
+      /* A COUNT, NOT A PRICE. See the warning above. */
+      amount: qtyText(on),
+      tone,
+      status,
+    };
+  });
+}
+
 /**
  * Rewrite the tables of a page tree to carry `rows`.
  *
@@ -422,6 +495,35 @@ function mapNodes(nodes: unknown[], rows: LiveRow[], started = false): unknown[]
   return nodes.map((node) => {
     const n = node as { type?: string; props?: Record<string, unknown> };
     if (!n || typeof n !== "object" || !n.props) return node;
+
+    /* 🔴 THE DEMONSTRATION'S FILTER CHIP, ONCE THE ROWS ARE REAL.
+
+       Every generated page carries one -- 「FILTERED BY  Status: Running low ×」
+       -- and on a page of samples it is honest: it teaches that the table can
+       be narrowed. On a page of HIS rows it is a lie in two directions at
+       once. It says the list is filtered while showing everything, and its
+       × goes to `#`, so pressing it to see 「the rest」 does nothing.
+
+       Seen by opening the stock page, not by any ruler: the tables were right,
+       the tones were right, and the line above them said the list was cut down
+       to 「Running low」 over three rows that were not.
+
+       Emptied rather than dropped, so the block the owner may have moved or
+       renamed stays where he put it -- and it comes back the moment there is a
+       real filter to put in it. */
+    /* ⚠️ `rows.length > 0 || started`, not `started` alone. `started` means
+       「he has records somewhere but none on THIS page」 -- an empty page that
+       must not show samples. A page WITH his rows is the ordinary case and the
+       one the chip lies on, so both have to be covered. Getting this wrong
+       would have left the chip on every page that actually has stock, which is
+       every page anybody looks at. */
+    if (n.type === "FilterChips" && (rows.length > 0 || started)) {
+      const chips = n.props.chips;
+      if (Array.isArray(chips) && chips.length) {
+        return { ...n, props: { ...n.props, chips: [] } };
+      }
+      return node;
+    }
 
     if (n.type === "RecordTable") {
       /*
@@ -553,7 +655,9 @@ export async function moduleHasEverHadRows(
       ? "ledger_entries"
       : DIRECTORY_MODULES.has(moduleKey)
         ? "directory_entries"
-        : null;
+        : CATALOG_MODULES.has(moduleKey)
+          ? "catalog_items"
+          : null;
   if (!table) return false;
   try {
     const { count } = await supabase
@@ -618,6 +722,27 @@ export async function fetchLiveRows(
         .limit(limit);
       if (error || !data) return [];
       return rowsFromEntries(data as LedgerEntry[], moduleKey, lang, href);
+    }
+
+    if (CATALOG_MODULES.has(moduleKey)) {
+      /* Read from the VIEW, not from the table: how much is left is the sum of
+         the movements and there is deliberately no column holding it. The view
+         runs as the caller (`security_invoker`), so RLS still bounds it --
+         which it did not on the day it shipped, and cost one business four
+         rows of another's shelf. See 20260901080000.
+
+         Ordered by name for the same reason a directory is: a shelf is READ
+         DOWN, and 「where is the cement」 has an answer only in an order a
+         person can scan. */
+      const { data, error } = await supabase
+        .from("stock_on_hand")
+        .select("item_id, name, unit, location, reorder_at, on_hand, moves")
+        .eq("project_id", projectId)
+        .eq("module_key", moduleKey)
+        .order("name", { ascending: true })
+        .limit(limit);
+      if (error || !data) return [];
+      return rowsFromStock(data as StockRow[], lang, href);
     }
 
     if (DIRECTORY_MODULES.has(moduleKey)) {

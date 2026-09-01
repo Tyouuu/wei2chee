@@ -38,7 +38,10 @@ describe("isRecordModule", () => {
     /* 客户 was in this list until 2026-08-31, which is the point: the list is
        derived from SHAPE_STATE, so a shape going live moves its modules out of
        here on its own and this test is what says so out loud. */
-    for (const k of ["inventory", "website", "dashboard", "reconciliation", null, undefined]) {
+    /* 库存 left this list on 2026-09-01, the same way 客户 left it on 8-31 --
+       which is the second time this test has said the thing out loud rather
+       than needing to be remembered. */
+    for (const k of ["bookings", "website", "dashboard", "reconciliation", null, undefined]) {
       expect(isRecordModule(k)).toBe(false);
     }
   });
@@ -67,11 +70,13 @@ describe("splitRecordOps", () => {
   });
 
   it("touches nothing on a module whose rows are layout", () => {
-    /* 库存, not 客户: customers became a real table on 2026-08-31, and this
-       test kept passing only because the example had gone stale. */
+    /* 预约, not 库存 and not 客户: both of those became real tables in turn
+       (8-31 and 9-01) and this example went stale each time. That is the test
+       working -- the list is derived from SHAPE_STATE, so the example has to
+       be a shape that is still a drawing. */
     const ops = [text, row("A")];
-    expect(splitRecordOps(ops, "inventory").layoutOps).toBe(ops);
-    expect(splitRecordOps(ops, "inventory").recordOps).toHaveLength(0);
+    expect(splitRecordOps(ops, "bookings").layoutOps).toBe(ops);
+    expect(splitRecordOps(ops, "bookings").recordOps).toHaveLength(0);
   });
 });
 

@@ -34,7 +34,12 @@ import type { LayoutOp } from "./layout-ops";
  * decided to write it, with the customer's own session so RLS still decides.
  */
 
-import { LEDGER_MODULES, DIRECTORY_MODULES, LIVE_MODULES } from "./shape-state";
+import {
+  LEDGER_MODULES,
+  DIRECTORY_MODULES,
+  CATALOG_MODULES,
+  LIVE_MODULES,
+} from "./shape-state";
 
 export function isRecordModule(pageKey: string | null | undefined): boolean {
   return !!pageKey && LIVE_MODULES.has(pageKey);
@@ -233,6 +238,7 @@ export async function writeRecords(
        renders as 订金, which is both true and the row he can act on. */
     const ledger = LEDGER_MODULES.has(moduleKey);
     const directory = DIRECTORY_MODULES.has(moduleKey);
+    const catalog = CATALOG_MODULES.has(moduleKey);
 
     /* ── A NOUN IS NOT A DOCUMENT ─────────────────────────────────────────
        The cells arrive the same way on all three shapes because all three
@@ -244,6 +250,57 @@ export async function writeRecords(
        So the blob is kept whole in `note`, and a number inside it is lifted
        into `phone` (see phoneFrom). Nothing is discarded and nothing is
        decided that the owner did not say. */
+    /* 库存, AND IT TAKES TWO WRITES.
+
+       A row typed on the stock page -- 「水泥 50kg | 仓库 · 包 | 84」 -- means
+       「I have 84 bags」, and 84 is not a column: how much is left is the sum of
+       the movements (20260901070000). So the item is created and an opening
+       movement is written after it, which is exactly what ERPNext's own
+       `opening_stock` field does on Item.
+
+       ⚠️ THE STATUS CELL IS IGNORED ON PURPOSE. 「充足」 is computed from the
+       quantity and the reorder level; storing what the model typed would give
+       the page two answers that can disagree, and this is the one shape where
+       nobody can tell by eye which is right.
+
+       ⚠️ AND THE SECOND CELL IS SPLIT ON THE PAGE'S OWN SEPARATOR. The column
+       is headed 「位置 / 单位」 and rendered as 「仓库 · 包」, so reading it back
+       the same way is not guessing. One value alone goes to `location`,
+       because that is the half the heading names first -- and both are boxes
+       on the item's own form, so a wrong guess costs one correction rather
+       than a lost fact. */
+    if (catalog) {
+      const [locPart, unitPart] = (party || "").split("·").map((x) => x.trim());
+      const { data: item, error: itemErr } = await supabase.rpc("add_catalog_item", {
+        in_project_id: projectId,
+        in_module_key: moduleKey,
+        in_name: title,
+        in_location: locPart ?? "",
+        in_unit: unitPart ?? "",
+        in_note: status ?? "",
+        in_extra: extra,
+        in_idempotency_key: keyFor(requestKey, i),
+      });
+      if (itemErr) {
+        skipped.push({ op: op.op, reason: itemErr.message.slice(0, 80) });
+        continue;
+      }
+      const opening = Number(String(amount ?? "").replace(/[^0-9.]/g, ""));
+      if (item?.id && Number.isFinite(opening) && opening > 0) {
+        /* Its own idempotency key, derived from the item's -- pressing twice
+           must not add the opening stock twice. */
+        await supabase.rpc("move_stock", {
+          in_item_id: item.id,
+          in_direction: "in",
+          in_qty: opening,
+          in_reason: "开帐",
+          in_idempotency_key: keyFor(`${requestKey}-open`, i),
+        });
+      }
+      written += 1;
+      continue;
+    }
+
     const { error } = directory
       ? await supabase.rpc("add_directory_entry", {
           in_project_id: projectId,

@@ -1,7 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
 import { MarkEnquiriesRead } from "./mark-read";
-import { ConvertEnquiry } from "./convert";
+import { EnquiryList } from "./enquiry-list";
+import { InboxCount } from "./inbox-count";
+import { PageBar } from "../page-bar";
+import { PageBody, Section } from "../section";
 import { loadWorkspace } from "@/lib/portal/workspace";
 import { MODULE_BY_KEY, moduleLabel } from "@/lib/portal/module-catalog";
 
@@ -32,6 +35,18 @@ import { MODULE_BY_KEY, moduleLabel } from "@/lib/portal/module-catalog";
  * false the moment the button existed. A page describing a limit the product
  * no longer has is the same defect as a control that does not work, seen from
  * the other side.
+ *
+ * ── 🔴 2026-09-01：这一页第一次讲 portal 自己的话 ───────────────────────────
+ * 老板：`我们要每一个操作跟页面都是要好看的UI设计跟流畅的使用体验`。
+ * 量出来的不是「不好看」，是**这一页不属於这个产品**：
+ *
+ *     顶栏 `PageBar` .............. 9 个 surface 在用，**这一页没有**
+ *     段落语言 `Section`/`PageBody`  写於 8-21，**零个消费端**
+ *     页面边距 ................... portal 里有 **8 种**，`PAGE_PADDING` 只有 1 个人用
+ *
+ * `(app)/section.tsx` 的档头自己就写着这件事的病因（「every portal screen then
+ * invented its own heading」）—— 它写对了，然后没有人用它。
+ * 这一页是第一个改成用它的。
  */
 export default async function EnquiriesPage({
   params,
@@ -111,83 +126,59 @@ export default async function EnquiriesPage({
     ]),
   );
 
-  return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-10">
-      <MarkEnquiriesRead unread={unread} />
-      <h1 className="[font-size:var(--text-title)] font-semibold">
-        {t("enquiries")}
-      </h1>
-      <p className="mt-2 max-w-[62ch] text-sm opacity-70">{t("enquiriesBlurb")}</p>
+  /* 「新的」有几封 —— 从这一次渲染看到的东西数出来，而且要在 mark-read 跑之前。 */
+  const shaped = rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    contact: r.contact,
+    answers: r.answers,
+    status: r.status,
+    created_at: r.created_at,
+    /* 那一页自己的名字，不是 key。`quotations` 是工程师的词，报价单才是他的。 */
+    landsInLabel: (() => {
+      const key = landings.get(r.lands_in) ?? r.lands_in;
+      const m = MODULE_BY_KEY[key];
+      const page = m ? moduleLabel(m, locale === "zh" ? "zh" : "en") : key;
+      return t("enquiriesLandsIn", { page });
+    })(),
+    converted:
+      r.converted_record_id && madeBy.has(r.converted_record_id)
+        ? {
+            recordId: r.converted_record_id,
+            moduleKey: madeBy.get(r.converted_record_id)!.module_key,
+            docNo: madeBy.get(r.converted_record_id)!.doc_no,
+          }
+        : null,
+  }));
 
-      {rows.length === 0 ? (
-        <p className="mt-10 rounded-lg border border-dashed p-8 text-center text-sm opacity-60">
-          {t("enquiriesEmpty")}
-        </p>
-      ) : (
-        <ul className="mt-8 flex flex-col gap-3">
-          {rows.map((r) => (
-            <li key={r.id} className="rounded-lg border p-4">
-              <div className="flex flex-wrap items-baseline gap-3">
-                <span className="font-medium">{r.name}</span>
-                <a
-                  className="text-sm underline underline-offset-2"
-                  href={`https://wa.me/${r.contact.replace(/[^0-9]/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {r.contact}
-                </a>
-                <span className="ml-auto text-xs tabular-nums opacity-60">
-                  {new Date(r.created_at).toLocaleString()}
-                </span>
-              </div>
-              {Object.entries(r.answers ?? {}).map(([k, v]) => (
-                <p key={k} className="mt-2 text-sm opacity-80">
-                  <span className="opacity-60">{k}：</span>
-                  {String(v)}
-                </p>
-              ))}
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <p className="text-xs opacity-55">
-                  {t("enquiriesLandsIn", {
-                    /* The page's own name in the language the system speaks,
-                       not the key. 「Opens a job on: quotations」 is a
-                       developer's word for 报价单. */
-                    page: (() => {
-                      const key = landings.get(r.lands_in) ?? r.lands_in;
-                      const m = MODULE_BY_KEY[key];
-                      return m ? moduleLabel(m, locale === "zh" ? "zh" : "en") : key;
-                    })(),
-                  })}
-                </p>
-                <span className="ml-auto">
-                  {hasPipeline ? (
-                    <ConvertEnquiry
-                      enquiryId={r.id}
-                      locale={locale}
-                      converted={
-                        /* Only when the row it points at is still there. A
-                           quotation he deleted leaves `converted_at` set and
-                           the record gone -- the enquiry keeps its history and
-                           the button stops offering to open nothing. */
-                        r.converted_record_id && madeBy.has(r.converted_record_id)
-                          ? {
-                              recordId: r.converted_record_id,
-                              moduleKey: madeBy.get(r.converted_record_id)!.module_key,
-                              docNo: madeBy.get(r.converted_record_id)!.doc_no,
-                            }
-                          : null
-                      }
-                    />
-                  ) : (
-                    <span className="text-xs opacity-55">{t("enquiryNoPipeline")}</span>
-                  )}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+  return (
+    <>
+      <MarkEnquiriesRead unread={unread} />
+      {/* 别的 portal 页都有这一条，这一页本来没有 —— 一个产品里有一页不长得
+          像那个产品，比十页都平庸更明显。 */}
+      <PageBar
+        title={t("enquiries")}
+        subtitle={
+          rows.length ? <InboxCount unread={unread} total={rows.length} /> : undefined
+        }
+      />
+      <PageBody>
+        <Section
+          label={t("enquiriesInbox")}
+          count={rows.length ? rows.length : undefined}
+        >
+          <p className="mb-6 max-w-[62ch] [font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
+            {t("enquiriesBlurb")}
+          </p>
+          {rows.length === 0 ? (
+            <p className="rounded-[var(--radius-lg)] border border-dashed p-8 text-center [font-size:var(--text-sm)] [color:var(--color-paper-dim)] [border-color:var(--color-ink-800)]">
+              {t("enquiriesEmpty")}
+            </p>
+          ) : (
+            <EnquiryList rows={shaped} locale={locale} hasPipeline={hasPipeline} />
+          )}
+        </Section>
+      </PageBody>
+    </>
   );
 }

@@ -18,7 +18,10 @@ export function PageBar({
   children,
 }: {
   title: string;
-  subtitle?: string;
+  /** 一句话说明。⚠️ 收 ReactNode 不是 string —— 有些页面的副标要**在浏览器里
+   *  定住一个数字**（询价那一页的「几封新的」，见 inbox-count.tsx），
+   *  而那只能是一个 client 组件。 */
+  subtitle?: ReactNode;
   /** Actions, right-aligned. */
   children?: ReactNode;
 }) {

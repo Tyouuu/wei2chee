@@ -18,7 +18,6 @@ const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABA
 const PROJECT = process.env.DEMO_PROJECT_ID || "37f2b188-5899-48ab-8650-11cefa5f98d2";
 const { data: proj } = await db.from("projects").select("account_id, site_slug").eq("id", PROJECT).single();
 const { data: acct } = await db.from("accounts").select("email").eq("id", proj.account_id).single();
-const { data: link } = await db.auth.admin.generateLink({ type: "magiclink", email: acct.email });
 
 const OUT = ".screenshots/journey";
 fs.mkdirSync(OUT, { recursive: true });
@@ -37,13 +36,22 @@ const SCREENS = [
   ["11-404",       "/en/portal/nope",        true],
 ];
 
+const bad = [];
 const b = await chromium.launch();
 for (const W of [1440, 390]) {
   const ctx = await b.newContext({ viewport: { width: W, height: W < 500 ? 844 : 950 } });
   const p = await ctx.newPage();
+  /* 🔴 一条 magic link 只能用一次，而这一支本来在回圈**外面**只产生一条 ——
+     所以 1440 那一轮用掉之后，390 那一轮全部落在登入页上。
+     十一张手机截图有八张是同一张登入页，而这支脚本只印 1440 的读数，
+     所以它三天来一次都没有喊过。
+     ⚠️ [重点 24](../docs/founder-points.md)：判这一页的是那个陌生人，而他在手机上 ——
+     **手机那一半的稽核等於从来没有做过。**
+     下面 `landed` 那一条现在会把这件事变成失败，不是沉默。 */
+  const { data: link } = await db.auth.admin.generateLink({ type: "magiclink", email: acct.email });
   await p.goto(`${BASE}/auth/confirm?token_hash=${link.properties.hashed_token}&type=magiclink&next=/en/portal`,
     { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
-  for (const [name, path] of SCREENS) {
+  for (const [name, path, needsAuth] of SCREENS) {
     try {
       await p.goto(`${BASE}${path}`, { waitUntil: "networkidle", timeout: 60000 });
       await p.waitForTimeout(1600);
@@ -69,6 +77,11 @@ for (const W of [1440, 390]) {
         words: (document.body.innerText.match(/\S+/g) || []).length,
         dead: /does not exist|404/i.test(document.body.innerText.slice(0, 300)),
       }));
+      /* 要登入才看得到的画面，落在登入页上就是**没有拍到**，不是拍到了一张登入页。 */
+      const landed = p.url();
+      if (needsAuth && /\/login/.test(landed)) {
+        bad.push(`${name} @${W} 落在登入页 —— 这一张不算数`);
+      }
       await p.screenshot({ path: `${OUT}/${name}-${W}.jpg`, fullPage: W === 1440, type: "jpeg", quality: 64 });
       if (W === 1440) console.log(`${name.padEnd(14)} ${String(m.h).padStart(6)}px  ${String(m.pics).padStart(2)}图  ${String(m.btns).padStart(3)}个可按（DOM 里 ${String(m.btnsAll).padStart(3)}）  ${String(m.words).padStart(4)}字${m.dead ? "  ← 404" : ""}`);
     } catch (e) { console.log(`${name.padEnd(14)} 读不到 ${String(e).slice(0, 60)}`); }

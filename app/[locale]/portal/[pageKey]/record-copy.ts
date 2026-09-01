@@ -15,6 +15,8 @@ export type RecordFormCopy = {
   failed: string;
   choose: string;
   more: string;
+  /* 库存的那一批不是地址跟 email，是补货线、一箱几个、编号。 */
+  moreStock: string;
   less: string;
   whatsapp: string;
   phone: string;
@@ -44,6 +46,17 @@ export type RecordFormCopy = {
   lineRemove: string;
   lineTotal: string;
   amountFromLines: string;
+  /* 库存. The quantity box exists ONLY when the item is new -- afterwards how
+     much is left is the sum of the movements, so an editable box there would
+     be a control that lies (the same call the money page made this morning). */
+  stockWhere: string;
+  stockUnit: string;
+  stockOpening: string;
+  stockOnHand: string;
+  stockDerived: string;
+  stockReorder: string;
+  stockPackSize: string;
+  stockPackUnit: string;
 };
 
 type RecordCopy = {
@@ -72,6 +85,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       failed: "没有存进去",
       choose: "选一个",
       more: "还要填地址、email 这些",
+      moreStock: "补货线、一箱几个、编号",
       less: "收起来",
       whatsapp: "WhatsApp 号码",
       phone: "电话",
@@ -108,6 +122,14 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       lineRemove: "删掉这一行",
       lineTotal: "合计",
       amountFromLines: "有逐项的时候，上面的金额是这几行加起来的。",
+      stockWhere: "位置（仓库 · 货车 · 店面）",
+      stockUnit: "单位（包 · 箱 · 罐）",
+      stockOpening: "现在有多少",
+      stockOnHand: "现在有",
+      stockDerived: "这个数字是进出加起来的，不在这里改 —— 要改就记一笔进或出。",
+      stockReorder: "剩到多少要提醒我",
+      stockPackSize: "一大包几个",
+      stockPackUnit: "大包叫什么（箱 · 托）",
     },
   },
   en: {
@@ -124,6 +146,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       failed: "Not saved",
       choose: "Choose one",
       more: "Address, email and the rest",
+      moreStock: "Reorder level, pack size, code",
       less: "Hide these",
       whatsapp: "WhatsApp",
       phone: "Phone",
@@ -153,6 +176,14 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       lineRemove: "Remove this line",
       lineTotal: "Total",
       amountFromLines: "With line items, the amount above is their total.",
+      stockWhere: "Where (store · van · shopfront)",
+      stockUnit: "Unit (bag · box · can)",
+      stockOpening: "How many now",
+      stockOnHand: "On hand",
+      stockDerived: "This number is the ins and outs added up. Change it by recording a movement, not here.",
+      stockReorder: "Tell me when it drops to",
+      stockPackSize: "How many in a pack",
+      stockPackUnit: "Pack is called (box · pallet)",
     },
   },
 };

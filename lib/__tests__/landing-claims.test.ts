@@ -12,6 +12,7 @@
  *
  * 这支测试守的是：官网上那三个数字不准跟代码漂开。
  */
+import { readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -44,7 +45,6 @@ describe("官网上的数字是真的", () => {
 
   it("版段数 = components/blocks 里真的有几个档", () => {
     /* 用 import.meta.glob 之外最简单可靠的办法：读目录。 */
-    const { readdirSync } = require("node:fs") as typeof import("node:fs");
     const real = readdirSync(resolve("components/blocks")).filter((f) => f.endsWith(".tsx")).length;
     expect(real).toBeGreaterThan(0);
     for (const [lang, msgs] of [["en", en], ["zh", zh]] as const) {

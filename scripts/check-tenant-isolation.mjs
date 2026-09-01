@@ -321,6 +321,37 @@ try {
     new_layout: {},
   });
   check("a signed-out visitor cannot call save_project_page", Boolean(anonRpc), anonRpc?.message);
+
+  // ── VIEWS ───────────────────────────────────────────────────────
+  /* 🔴 A VIEW DOES NOT RUN AS THE CALLER, and every policy above is
+     bypassed by one that forgets to say so.
+     `stock_on_hand` shipped on 2026-09-01 with a comment claiming the
+     opposite, and a second real customer read FOUR rows of the first one's
+     shelf through it. Every table in this schema was correct; the view was
+     not, because a view executes as its OWNER unless `security_invoker` is
+     set and its owner is postgres.
+     Asserted of EVERY view, not of that one -- see 20260901080000. */
+  console.log("\nViews (a view bypasses every policy above unless it says not to):");
+  const { data: views, error: viewErr } = await admin.rpc("views_without_invoker");
+  const leaky = ((views ?? [])).filter((v) => v.leaks).map((v) => v.view_name);
+  check(
+    `every view in public runs as its caller (${(views ?? []).length} checked)`,
+    !viewErr && leaky.length === 0,
+    leaky.length ? `reads past RLS: ${leaky.join(", ")}` : viewErr?.message,
+  );
+
+  /* And the one that was wrong, asked the way a front end asks it: B holds a
+     valid session and names A's project. A count is not enough -- an empty
+     list is also what a broken query returns -- so A reading its own rows
+     through the identical call is the control. */
+  const aShelf = await a.client.from("stock_on_hand").select("item_id").eq("project_id", aProject.id);
+  const bShelf = await b.client.from("stock_on_hand").select("item_id").eq("project_id", aProject.id);
+  check(
+    "B cannot read A's shelf through stock_on_hand",
+    (bShelf.data ?? []).length === 0,
+    `${(bShelf.data ?? []).length} rows`,
+  );
+  void aShelf;
 } catch (err) {
   failures.push(`harness error: ${err.message}`);
   console.error("\nHarness error:", err.message);

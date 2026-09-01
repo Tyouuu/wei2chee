@@ -1,0 +1,21 @@
+-- supabase/migrations/20260901095000_drop_the_red_probe.sql
+--
+-- Cleans up after making the new guard fail on purpose.
+--
+-- 「一个没有人看过它红的守卫，等於没有守卫」. 20260901080000 added a check that
+-- every view in `public` runs as its caller, and the leak it was written for
+-- was already fixed by then -- so the check passed on its first run, which
+-- proves nothing.
+--
+-- A throwaway view WITHOUT the flag was pushed, and check:isolation said:
+--
+--     FAIL  every view in public runs as its caller (2 checked)
+--           — reads past RLS: leak_probe
+--
+-- Which is the message a future author needs, naming the view. This drops it.
+--
+-- ⚠️ `select 1` on purpose: the probe had to be a view that reads past RLS
+-- without there being anything behind it to read. Proving a leak detector
+-- works must not require leaking anything.
+
+drop view if exists public.leak_probe;

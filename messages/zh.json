@@ -828,7 +828,7 @@
     "enquiries": "官网来的询价",
     "enquiriesBlurb": "别人从你自己官网填的，都落在这里 —— 不用再打一遍。按一下就变成你那一页上的一张单，那个人也进了你的客户名单。",
     "enquiriesEmpty": "还没有人来问。官网上线之后，第一条会出现在这里。",
-    "enquiriesLandsIn": "开在：{page}",
+    "enquiriesLandsIn": "→ {page}",
     "sections": {
       "title": "版段库",
       "subtitle": "{n} 段 · 可以直接放进官网",
@@ -878,7 +878,12 @@
     "enquiryConverted": "开好了 {docNo} —— 去看",
     "enquiryConvertedPlain": "已经开过了 —— 去看",
     "enquiryConvertFailed": "开不成。再试一次。",
-    "enquiryNoPipeline": "这套系统还没有放工程的那一页，所以没有地方可以开单。"
+    "enquiryNoPipeline": "这套系统还没有放工程的那一页，所以没有地方可以开单。",
+    "enquiriesInbox": "收件",
+    "enquiriesCount": "共 {total} 封",
+    "enquiriesCountNew": "{unread} 封新的 · 共 {total} 封",
+    "enquiryNew": "新",
+    "enquiryWhatsApp": "WhatsApp {number}"
   },
   "explainer": {
     "process": {

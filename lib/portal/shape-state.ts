@@ -51,7 +51,7 @@ export const SHAPE_STATE: Record<ModuleShape, ShapeState> = {
   ledger: "live",
   directory: "live",
   calendar: "drawn",
-  catalog: "drawn",
+  catalog: "live",
   reconcile: "drawn",
   report: "drawn",
   leaderboard: "drawn",
@@ -77,3 +77,4 @@ export const LIVE_MODULES: ReadonlySet<string> = new Set(
 export const PIPELINE_MODULES: ReadonlySet<string> = new Set(modulesOfShape("pipeline"));
 export const LEDGER_MODULES: ReadonlySet<string> = new Set(modulesOfShape("ledger"));
 export const DIRECTORY_MODULES: ReadonlySet<string> = new Set(modulesOfShape("directory"));
+export const CATALOG_MODULES: ReadonlySet<string> = new Set(modulesOfShape("catalog"));

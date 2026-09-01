@@ -82,6 +82,37 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+  } else if (ctx.shape === "catalog") {
+    /* Two reads, because the thing and how much of it there is live in two
+       places on purpose -- see 20260901070000. The quantity comes from the
+       view and is shown locked; changing it means recording a movement, which
+       is the only honest way to change a total that is a sum. */
+    const { data } = await supabase
+      .from("catalog_items")
+      .select("id, name, unit, location, sku, pack_size, pack_unit, reorder_at, note, extra, archived_at")
+      .eq("id", recordId)
+      .eq("module_key", pageKey)
+      .maybeSingle();
+    if (!data) notFound();
+    const { data: hand } = await supabase
+      .from("stock_on_hand")
+      .select("on_hand")
+      .eq("item_id", recordId)
+      .maybeSingle();
+    Object.assign(values, {
+      primary: data.name ?? "",
+      unit: data.unit ?? "",
+      location: data.location ?? "",
+      sku: data.sku ?? "",
+      /* numeric(14,3) comes back as 「24.000」; he typed 24. */
+      pack_size: data.pack_size == null ? "" : String(Number(data.pack_size)),
+      pack_unit: data.pack_unit ?? "",
+      reorder_at: data.reorder_at == null ? "" : String(Number(data.reorder_at)),
+      note: data.note ?? "",
+      amount: hand?.on_hand == null ? "0" : String(Number(hand.on_hand)),
+    });
+    Object.assign(values, ownColumns(data.extra));
+    archivedAt = data.archived_at;
   } else if (ctx.shape === "ledger") {
     const { data } = await supabase
       .from("ledger_entries")
@@ -149,7 +180,7 @@ export default async function EditRecordPage({
         <NewRecordForm
           projectId={ctx.projectId}
           moduleKey={ctx.pageKey}
-          shape={ctx.shape as "pipeline" | "ledger" | "directory"}
+          shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog"}
           parties={ctx.parties}
           columns={ctx.columns}
           stages={ctx.stages}

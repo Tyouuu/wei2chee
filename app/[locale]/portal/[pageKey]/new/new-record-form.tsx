@@ -90,7 +90,7 @@ export function NewRecordForm({
   /** Which of the three live shapes this page is. Not three booleans: a page
    *  is exactly one of them, and a boolean per shape is how two of them end up
    *  true. */
-  shape: "pipeline" | "ledger" | "directory";
+  shape: "pipeline" | "ledger" | "directory" | "catalog";
   /** This business's own customers, for the name box. Empty on a directory
    *  page, which is where a party is created rather than chosen. */
   parties: { id: string; name: string }[];
@@ -135,6 +135,13 @@ export function NewRecordForm({
   const isLedger = shape === "ledger";
   const isDirectory = shape === "directory";
   const isPipeline = shape === "pipeline";
+  const isCatalog = shape === "catalog";
+  /* 🔴 HOW MUCH IS LEFT IS NOT HIS TO TYPE, once the item exists.
+     It is the sum of the movements (20260901070000), so a box here would be
+     overwritten by the next render -- the same control-that-lies the money
+     page was locked for. On a NEW item it IS his to type: that is the opening
+     count, and it becomes the first movement. */
+  const stockLocked = isCatalog && !!record;
   /* WITH LINES, THE TOTAL IS NOT HIS TO TYPE. The database recomputes it from
      them on every write (20260831150000), so a figure typed up there would be
      overwritten between pressing 保存 and the page reloading -- the same
@@ -149,7 +156,14 @@ export function NewRecordForm({
      see the header. Everything the owner added himself still comes from here. */
   const shown = isDirectory
     ? tableFields.filter((c) => c.key !== "secondary")
-    : tableFields;
+    : isCatalog
+      /* 「仓库 · 包」 is a composed view of two fields, like a directory's
+         contact line -- so it gets two boxes below rather than one here. And
+         「充足 / 快没了」 is computed from the quantity and the reorder
+         level, so offering a box for it offers to write a value the page then
+         overrules. */
+      ? tableFields.filter((c) => c.key !== "secondary" && c.key !== "status")
+      : tableFields;
   const titleCol = columns.find((c) => c.key === "primary") ?? shown[0];
 
   /* Collapsed by default and in this order on purpose. A contractor standing
@@ -157,7 +171,17 @@ export function NewRecordForm({
      is true of the record and not of the moment. Measured at 390px, where an
      eight-box form is a scroll before the save button. */
   const extraContact: { key: string; label: string; inputMode?: "tel" | "email" }[] =
-    isDirectory
+    isCatalog
+      ? [
+          { key: "reorder_at", label: copy.stockReorder },
+          /* 一箱 = 24 罐. Collapsed because most trades buy and sell in the
+             same unit; a wholesaler is the one who opens this (任务 61). */
+          { key: "pack_size", label: copy.stockPackSize },
+          { key: "pack_unit", label: copy.stockPackUnit },
+          { key: "sku", label: "SKU" },
+          { key: "note", label: copy.note },
+        ]
+      : isDirectory
       ? [
           { key: "contact_person", label: copy.contactPerson },
           { key: "email", label: copy.email, inputMode: "email" },
@@ -272,6 +296,48 @@ export function NewRecordForm({
     /* One key per submission, so a double tap on a slow connection -- which is
        the normal way to use a phone on 4G -- is one document and not two. */
     const idempotencyKey = crypto.randomUUID();
+    if (isCatalog) {
+      const num = (k: string) => {
+        const n = Number((values[k] ?? "").replace(/[^0-9.]/g, ""));
+        return Number.isFinite(n) && (values[k] ?? "").trim() !== "" ? n : null;
+      };
+      const { data: item, error: itemErr } = await supabase.rpc("add_catalog_item", {
+        in_project_id: projectId,
+        in_module_key: moduleKey,
+        in_name: title,
+        in_unit: (values.unit ?? "").trim(),
+        in_location: (values.location ?? "").trim(),
+        in_sku: (values.sku ?? "").trim(),
+        in_pack_size: num("pack_size"),
+        in_pack_unit: (values.pack_unit ?? "").trim(),
+        in_reorder_at: num("reorder_at"),
+        in_note: (values.note ?? "").trim(),
+        in_extra: extra,
+        in_idempotency_key: idempotencyKey,
+      });
+      if (itemErr) {
+        setError(`${copy.failed}${itemErr.message ? ` — ${itemErr.message}` : ""}`);
+        setBusy(false);
+        return;
+      }
+      /* THE OPENING COUNT BECOMES THE FIRST MOVEMENT, which is what ERPNext's
+         `opening_stock` field does too. Its own idempotency key, derived from
+         the item's, so a double tap does not count the shelf twice. */
+      const opening = num("amount");
+      if (item?.id && opening !== null && opening > 0) {
+        await supabase.rpc("move_stock", {
+          in_item_id: item.id,
+          in_direction: "in",
+          in_qty: opening,
+          in_reason: copy.stockOpening,
+          in_idempotency_key: idempotencyKey,
+        });
+      }
+      router.push(backHref);
+      router.refresh();
+      return;
+    }
+
     const { data, error: err } = isDirectory
       ? await supabase.rpc("add_directory_entry", {
           in_project_id: projectId,
@@ -345,7 +411,11 @@ export function NewRecordForm({
     const { error: err } = isLedger
       ? await supabase.rpc("reverse_ledger_entry", { in_entry_id: record.id })
       : await supabase.rpc(
-          isDirectory ? "set_directory_archived" : "set_pipeline_archived",
+          isDirectory
+            ? "set_directory_archived"
+            : isCatalog
+              ? "set_catalog_archived"
+              : "set_pipeline_archived",
           { in_id: record.id, in_archived: !record.archivedAt },
         );
     if (err) {
@@ -429,6 +499,29 @@ export function NewRecordForm({
             </label>
           );
         }
+        if (isCatalog && c.kind === "amount") {
+          /* A COUNT, NOT A PRICE -- and read-only once the item exists. */
+          return (
+            <label key={c.key} className="flex flex-col gap-1.5">
+              <span className={labelText}>
+                {stockLocked ? copy.stockOnHand : copy.stockOpening}
+              </span>
+              <input
+                inputMode="decimal"
+                value={values.amount ?? ""}
+                readOnly={stockLocked}
+                aria-readonly={stockLocked || undefined}
+                onChange={(e) => setValues((v) => ({ ...v, amount: e.target.value }))}
+                className={`${control}${stockLocked ? " opacity-60" : ""}`}
+              />
+              {stockLocked ? (
+                <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                  {copy.stockDerived}
+                </span>
+              ) : null}
+            </label>
+          );
+        }
         const node = box(
           c.key,
           c.label,
@@ -439,6 +532,17 @@ export function NewRecordForm({
         );
         /* The two numbers go directly under the name, because on a directory
            page they are the reason the row exists. */
+        if (isCatalog && c.key === "primary") {
+          /* Where it is and what it is counted in, directly under the name --
+             on a shelf those two ARE the row. */
+          return (
+            <div key="name-and-shelf" className="flex flex-col gap-4">
+              {node}
+              {box("location", copy.stockWhere)}
+              {box("unit", copy.stockUnit)}
+            </div>
+          );
+        }
         if (!isDirectory || c.key !== "primary") return node;
         return (
           <div key="name-and-numbers" className="flex flex-col gap-4">
@@ -468,7 +572,7 @@ export function NewRecordForm({
             aria-expanded={open}
             className="self-start [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline"
           >
-            {open ? copy.less : copy.more}
+            {open ? copy.less : isCatalog ? copy.moreStock : copy.more}
           </button>
           {open ? extraContact.map((f) => box(f.key, f.label, f.inputMode)) : null}
         </div>
