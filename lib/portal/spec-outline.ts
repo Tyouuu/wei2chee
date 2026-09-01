@@ -1,6 +1,7 @@
 import { walkNodes, type PuckLayout, type PuckNode } from "./layout-ops";
 import { normalizeTable } from "./table-model";
-import { PAGE_KEYS, isBuiltInPage, type PageId, type PageKey, type PageRef } from "@/lib/templates/industry-template";
+import { PAGE_KEYS, type PageId, type PageRef } from "@/lib/templates/industry-template";
+import { MODULE_CATALOG } from "./module-catalog";
 
 /**
  * Reads a customer's finished design and states, factually, what system they
@@ -19,25 +20,24 @@ import { PAGE_KEYS, isBuiltInPage, type PageId, type PageKey, type PageRef } fro
  * division as everywhere else in this codebase.
  */
 
-export const PAGE_TITLES: Record<PageKey, string> = {
-  dashboard: "总览",
-  customers: "客户",
-  quotations: "报价单",
-  projects: "项目 / 订单",
-  payments: "收款",
-  bookings: "预约",
-  orders: "订单",
-};
-
-export const PAGE_TITLES_EN: Record<PageKey, string> = {
-  dashboard: "Overview",
-  customers: "Customers",
-  quotations: "Quotations",
-  projects: "Projects / Orders",
-  payments: "Payments",
-  bookings: "Bookings",
-  orders: "Orders",
-};
+/**
+ * 一页在规格书里叫什么。**从 MODULE_CATALOG 读，不要在这里再手写一份。**
+ *
+ * 🔴 2026-09-01 抓到的真 bug：这里本来是两张**手写的七条**对照表，
+ * 而 `isBuiltInPage()` 查的是 `PAGE_KEYS`（**十八个**）。
+ * 於是 `website` 这种不在七条里的页，`(PAGE_TITLES)[pageKey]` 回 `undefined`，
+ * 而那个字串**一路走进送给模型的文字里**，模型照抄，最后印在客户手上那份
+ * 收 RM 500 的文件上：「网站 — 对应「**undefined** (website)」」。
+ *
+ * ⚠️ **型别没有挡住它，因为 `PageKey = string`** ——
+ * `Record<string, string>` 从来不检查有没有漏。两张名单、一个真相，
+ * 这个仓库第六次。现在没有第二张名单了。
+ */
+function pageTitle(pageKey: string, lang: "zh" | "en"): string | undefined {
+  const m = MODULE_CATALOG.find((x) => x.key === pageKey);
+  if (!m) return undefined;
+  return lang === "en" ? m.labelEn || m.label : m.label;
+}
 
 export type PageSpec = {
   pageKey: PageId;
@@ -152,9 +152,8 @@ function specForPage(
     // document a developer is meant to build from.
     title:
       ownTitle?.trim() ||
-      (isBuiltInPage(pageKey)
-        ? (lang === "zh" ? PAGE_TITLES : PAGE_TITLES_EN)[pageKey]
-        : lang === "zh" ? "自定页面" : "Custom page"),
+      pageTitle(pageKey, lang) ||
+      (lang === "zh" ? "自定页面" : "Custom page"),
     heading: header ? str(header.props.title) : null,
     subtitle: header ? str(header.props.subtitle) : null,
     tables,

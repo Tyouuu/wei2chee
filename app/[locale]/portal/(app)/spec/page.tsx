@@ -14,6 +14,7 @@ import {
 } from "@/lib/templates/industry-template";
 import { displayBusinessName, sortPages, type PageId } from "@/lib/templates/industry-template";
 import { buildSystemSpec, specToText, type SystemSpec } from "@/lib/portal/spec-outline";
+import { buildQuote, formatMyr, moduleLabelFor } from "@/lib/portal/build-quote";
 import { tradeLabel } from "@/lib/templates/industry-template";
 import type { PuckLayout } from "@/lib/portal/layout-ops";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
@@ -236,7 +237,8 @@ export default async function SystemSpecPage({
   const supabase = await createSessionSupabaseClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, style")
+    /* `paid` 是给开发费那一段用的：规格书付过就从总数里扣掉那 RM 500。 */
+    .select("id, style, paid")
     .eq("account_id", user.id)
     .single();
   if (!project) redirect("/login");
@@ -294,6 +296,9 @@ export default async function SystemSpecPage({
   ) as Record<PageId, PuckLayout>;
 
   const spec = buildSystemSpec(layouts, pageRefs, zh ? "zh" : "en");
+  /* 开发费。算的是**客户真的有的那几页**，不是行业预设 ——
+     一份报价单上多算一个他没有的模块，比少算一个严重得多。 */
+  const quote = buildQuote(spec.pages.map((p) => p.pageKey), Boolean(project.paid));
 
   // Every render of this page would otherwise be an LLM call: a reload, a
   // back-button, a share link opened twice. Capped per account, and going over
@@ -353,6 +358,7 @@ export default async function SystemSpecPage({
   const noPurpose = nextNo();
   const noFlow = hasFlow ? nextNo() : null;
   const noModules = hasModules ? nextNo() : null;
+  const noQuote = nextNo();
   const noPages = nextNo();
   const noVocab = hasVocab ? nextNo() : null;
   const noNotes = hasNotes ? nextNo() : null;
@@ -418,6 +424,52 @@ export default async function SystemSpecPage({
           </ul>
         </section>
       ) : null}
+
+      {/* 开发费。**2026-09-01 之前这一整段不存在**，而这份文件从第一天就写着
+          「一个模块一个价钱」—— 一个填不出来的承诺，每一单靠 console 手打。
+          老板：`我们每一个模版的开发收多少钱`。算法跟三个数字在
+          lib/portal/build-quote.ts，里面写了为什么按形状不按模块。 */}
+      <section className="mt-8">
+        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noQuote}{sep}{t("secQuote")}</h2>
+        <p className="mt-2 [font-size:var(--text-sm)] text-muted-foreground">{t("quoteNote")}</p>
+        <table className="mt-3 w-full [font-size:var(--text-sm)]">
+          <tbody>
+            <tr className="border-b border-border/60">
+              <td className="py-1.5 text-muted-foreground">{t("quoteBase")}</td>
+              <td className="py-1.5 text-right tabular-nums text-foreground">{formatMyr(quote.baseMyr)}</td>
+            </tr>
+            {quote.lines.map((line) => (
+              <tr key={line.moduleKey} className="border-b border-border/60">
+                <td className="py-1.5 text-muted-foreground">
+                  <span className="text-foreground">{moduleLabelFor(line.moduleKey, zh ? "zh" : "en")}</span>
+                  {" — "}
+                  {line.nth === 1 ? t("quoteFirst") : t("quoteRepeat")}
+                </td>
+                <td className="py-1.5 text-right tabular-nums text-foreground">{formatMyr(line.amountMyr)}</td>
+              </tr>
+            ))}
+            {quote.specCreditMyr > 0 ? (
+              <>
+                <tr className="border-b border-border/60">
+                  <td className="py-1.5 text-muted-foreground">{t("quoteSubtotal")}</td>
+                  <td className="py-1.5 text-right tabular-nums text-foreground">{formatMyr(quote.subtotalMyr)}</td>
+                </tr>
+                <tr className="border-b border-border/60">
+                  <td className="py-1.5 text-muted-foreground">{t("quoteCredit")}</td>
+                  <td className="py-1.5 text-right tabular-nums text-foreground">−{formatMyr(quote.specCreditMyr)}</td>
+                </tr>
+              </>
+            ) : null}
+            <tr>
+              <td className="pt-2 font-semibold text-foreground">{t("quoteTotal")}</td>
+              <td className="pt-2 text-right font-semibold tabular-nums text-foreground">{formatMyr(quote.totalMyr)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p className="mt-3 [font-size:var(--text-sm)] text-muted-foreground">
+          {quote.specCreditMyr > 0 ? t("quoteAfter") : `${t("quoteSpecNote")} ${t("quoteAfter")}`}
+        </p>
+      </section>
 
       <section className="mt-8">
         <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noPages}{sep}{t("secPages")}</h2>
