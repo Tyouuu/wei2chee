@@ -35,3 +35,33 @@ describe("定价只有一个真相", () => {
     expect(en).toMatch(/RM ?199/);
   });
 });
+
+/* 价钱旁边不准出现我们还没有的功能。
+ *
+ * 2026-09-01：托管那一档底下写着「LHDN e-Invoice 的更新」。
+ * 查了产品这边 —— **一行都没有**：`20260830050000` 那支迁移自己写着
+ * 「We do not file e-Invoices」，全仓库没有任何送件的路径。
+ * 那句话是 8-25 就在的旧文案，而**我 9-01 把它从一整段文字提成一个打勾**，
+ * 等於把一个不成立的宣称讲得更大声。
+ *
+ * ⚠️ [任务 71](../../docs/founder-tasks.md)：e-Invoice **要做，只是排在后面**。
+ * 所以这条守的不是「永远不准提」，是**「做出来之前不准写在价目上」** ——
+ * 真的做好了，把 `hasEInvoice` 那一行改成 true，这条自己让路。
+ *
+ * ⚠️ 公告胶囊里那句「LHDN e-Invoice：已强制」不在这条管辖内，
+ * 那讲的是**法律**，不是我们的功能。所以只查价钱那一段。
+ */
+describe("价目上不准卖还没做的东西", () => {
+  const hasEInvoice = false; // 做好了改这里，这条测试就自己让路
+  for (const f of ["messages/en.json", "messages/zh.json"]) {
+    it(`${f} 的价钱步骤里没有 e-Invoice`, () => {
+      if (hasEInvoice) return;
+      const msgs = JSON.parse(readFileSync(resolve(f), "utf8"));
+      const steps = JSON.stringify(msgs.explainer?.price?.steps ?? []);
+      expect(
+        /e-?invoice|myinvois/i.test(steps),
+        `${f} 的价目在卖 e-Invoice，而产品里一行都没有`,
+      ).toBe(false);
+    });
+  }
+});
