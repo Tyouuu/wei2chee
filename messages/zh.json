@@ -872,7 +872,8 @@
       "quoteTotal": "开发费合计",
       "quoteNote": "按「形状」算，不是按模块算：同一类的第二个是拼出来的，不是重写的，所以便宜很多。每一块的价钱都在上面，你先看到总数再决定要不要做。",
       "quoteSpecNote": "另有规格书 RM 500（就是你手上这份）。付了之后从上面的开发费里扣掉。",
-      "quoteAfter": "上线之后：托管 RM 150 / 月。"
+      "quoteAfter": "上线之后：托管 RM 150 / 月。",
+      "print": "列印"
     },
     "enquiryConvert": "开一张单",
     "enquiryConverting": "开中…",

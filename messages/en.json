@@ -872,7 +872,8 @@
       "quoteTotal": "Build fee total",
       "quoteNote": "Priced by kind, not by module: the second module of the same kind is assembled rather than written, so it costs much less. Every line is above, so you see the total before you decide.",
       "quoteSpecNote": "The specification is RM 500 — this document. Once paid it is credited against the build fee above.",
-      "quoteAfter": "After it goes live: hosting RM 150 / month."
+      "quoteAfter": "After it goes live: hosting RM 150 / month.",
+      "print": "Print"
     },
     "enquiryConvert": "Open a quotation",
     "enquiryConverting": "Opening…",

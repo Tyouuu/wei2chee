@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
 import OpenAI from "openai";
 import { z } from "zod";
 import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
@@ -24,6 +23,8 @@ import { recordAiUsage } from "@/lib/portal/ai-usage";
 import { AI_MODEL, AI_REASONING_EFFORT } from "@/lib/portal/ai-model";
 import { checkRateLimit } from "@/lib/rate-limit";
 import chrome from "../../chrome.module.css";
+import { PageBar } from "../page-bar";
+import { SpecActions } from "./spec-actions";
 
 /**
  * 系统需求书 -- the specification document a customer reads before paying, and
@@ -364,26 +365,19 @@ export default async function SystemSpecPage({
   const noNotes = hasNotes ? nextNo() : null;
 
   return (
-    <main
-      className={`${chrome.paper} ${chrome.paperSheet} mx-auto my-8 max-w-3xl px-10 py-12 print:my-0 print:max-w-none print:px-0 print:py-0`}
-    >
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <Link
-          href={`/${locale}/portal/dashboard`}
-          className="[font-size:var(--text-sm)] text-muted-foreground underline underline-offset-4"
-        >
-          {t("back")}
-        </Link>
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-lg bg-primary px-4 py-2 [font-size:var(--text-sm)] font-semibold text-primary-foreground"
-        >
-          {t("handoff")}
-        </a>
+    <>
+      {/* 🔴 顶栏 —— 十一页里这一页本来是唯一真的没有的一个。
+          而且它原本那两颗控件**长在纸里面**，靠 `print:hidden` 藏掉：
+          纸上不该有按钮（见 spec-actions.tsx）。搬下来之后那张纸只剩文件。
+          ⚠️ `print:hidden` 留在这里，因为顶栏本身在列印时也不该出现。 */}
+      <div className="print:hidden">
+        <PageBar title={t("titleOf", { business: businessName })} subtitle={industryName}>
+          <SpecActions handoffHref={whatsappHref} backHref={`/${locale}/portal/dashboard`} />
+        </PageBar>
       </div>
-
+      <main
+        className={`${chrome.paper} ${chrome.paperSheet} mx-auto my-8 max-w-3xl px-10 py-12 print:my-0 print:max-w-none print:px-0 print:py-0`}
+      >
       <header className="border-b pb-6">
         <p className="[font-size:var(--text-xs)] tracking-[0.16em] text-muted-foreground uppercase">
           {t("brand")}
@@ -543,6 +537,7 @@ export default async function SystemSpecPage({
       <footer className="mt-10 border-t pt-4 [font-size:var(--text-xs)] text-muted-foreground">
         {t("footer")}
       </footer>
-    </main>
+      </main>
+    </>
   );
 }

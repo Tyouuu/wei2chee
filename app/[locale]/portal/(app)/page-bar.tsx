@@ -42,7 +42,16 @@ export function PageBar({
           <p className="truncate [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">{subtitle}</p>
         )}
       </div>
-      {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}
+      {/* 🔴 `shrink-0` 拿掉，换成会换行。
+          2026-09-01：规格书那一页的顶栏放了三个控件（回编辑器 · 列印 · 交接），
+          在 390px 上 `shrink-0` 让它们不肯缩也不肯换行 ——
+          **整页横滚 20px**，而这一页本来是没有横滚的。
+          `check:consistency` 当场抓到，那是我自己造的回归。
+          外层本来就有 `flex-wrap`，这里跟着换行就好；
+          其余八个 surface 只会从「挤爆」变成「换一行」，不会更差。 */}
+      {children && (
+        <div className="flex flex-wrap items-center justify-end gap-2">{children}</div>
+      )}
     </div>
   );
 }

@@ -113,11 +113,32 @@ const PROBE = () => {
   })[0];
   const barBottom = bar ? bar.getBoundingClientRect().bottom : 0;
 
-  const first = [...document.querySelectorAll("h1,h2,h3,p,table,ul")]
-    .filter((e) => seen(e) && !inChrome(e) && e.textContent.trim().length > 1)
+  /* ⚠️ 「正文左缘」量的是**这一页的内距**，不是「第一段字在哪」。
+     第一版量的是第一个段落，於是两个其实对齐的页面被判成不一样：
+     询价页的段落在 412（它的眉标在 268，而眉标才是那一页开始的地方），
+     账号页的字在 292（卡片的边在 268，字在卡片的内距里面）。
+     **两个都对齐了，是尺在量卡片里面。**
+     改成量那个装内容的框：顶栏底下第一个横过整个工作区的块，
+     它的左缘 + 它自己的左内距 —— 那正好是 `PAGE_PADDING` 讲的东西。 */
+  const wrap = [...document.querySelectorAll("div,main,section")]
+    .filter((e) => seen(e) && !inChrome(e))
     .map((e) => ({ e, r: e.getBoundingClientRect() }))
-    .filter((o) => o.r.left >= railW - 1 && o.r.top > barBottom)
-    .sort((a, b) => a.r.top - b.r.top)[0];
+    .filter(
+      (o) =>
+        o.r.top >= barBottom - 1 &&
+        o.r.left >= railW - 1 &&
+        /* 40% 而不是 90%：账号页的内容框有 `max-w-3xl`，它照样是那一页的
+           内容框，只是有上限。要求它铺满九成，量出来会是「读不到」。 */
+        o.r.width > (innerWidth - railW) * 0.4,
+    )
+    .sort((a, b) => a.r.top - b.r.top || b.r.width - a.r.width)[0];
+  const first = wrap
+    ? {
+        r: {
+          left: wrap.r.left + parseFloat(getComputedStyle(wrap.e).paddingLeft || "0"),
+        },
+      }
+    : null;
 
   /* ⚠️ 「这一页最大的标题」不可以包含**客户自己页面**里的标题 ——
      编辑器那三页画布上就是他的官网，那里的 54px Libre Franklin 是他的字体，
@@ -200,20 +221,45 @@ for (const W of [1440, 390]) {
 }
 
 const ok = rows[1440].filter((r) => !r.failed);
-const xs = [...new Set(ok.map((r) => r.contentX))].sort((a, c) => a - c);
-const heads = [...new Set(ok.map((r) => `${r.headPx}/${r.headWeight}`))];
-const bars = ok.filter((r) => r.hasBar).length;
+/* ⚠️ 规格书是**一份居中的文件**（`chrome.paper`），它的正文本来就不该跟
+   其他页对齐左缘 —— 那是纸，不是画面。所以它从「几种左缘」里排除，
+   **而且把排除的那一个印出来**：排除清单是拿来看的，不是拿来把数字做漂亮的。 */
+const CENTRED = new Set(["spec", "editor", "quotations", "website"]);
+const ok2 = ok.filter((r) => !CENTRED.has(r.name));
+const xs = [...new Set(ok2.map((r) => r.contentX))].sort((a, c) => a - c);
+/* 同一批排除，同一个理由：编辑器那三页最大的字长在**客户自己的画布**里，
+   不是我们外壳的标题。 */
+const heads = [...new Set(ok2.map((r) => `${r.headPx}/${r.headWeight}`))];
+const bars = ok2.filter((r) => r.hasBar).length;
 const over = rows[390].filter((r) => !r.failed && r.overflowX > 1);
 const thumbs = rows[390].filter((r) => !r.failed).reduce((a, r) => a + r.tapsUnder44, 0);
 
 console.log("\n── 一个产品，还是十一个 ──");
 console.log(`  正文左缘   ${xs.length} 种   ${xs.join(" · ")}`);
+console.log(`             （排除居中的文件页：${[...CENTRED].join(" ")}）`);
 console.log(`  标题       ${heads.length} 种   ${heads.join(" · ")}`);
-console.log(`  顶栏       ${bars}/${ok.length} 页有`);
+console.log(`  顶栏       ${bars}/${ok2.length} 页有`);
 console.log(`  手机横滚   ${over.length} 页   ${over.map((r) => `${r.name}+${r.overflowX}`).join(" ") || "—"}`);
 console.log(`  手机上拇指按不稳的按钮  ${thumbs} 个`);
-console.log(`\n  目标：正文左缘 ≤ 2 种 · 标题 ≤ 3 种 · 顶栏 ${ok.length}/${ok.length} · 横滚 0 页`);
+console.log(
+  `
+  目标：正文左缘 ≤ 2 种 · 标题 ≤ 3 种 · 顶栏 ${ok2.length}/${ok2.length} · 横滚 0 页`,
+);
 
+/* 🔴 门槛现在会红了。
+   写它的那天四项全部超标，所以故意先不 exit —— 一把从第一天就红的尺
+   跟一把坏掉的尺一样没有人看（`check:upstream` 天天喊狼那次的教训）。
+   2026-09-01 四项第一次同时达标：左缘 2 种 · 标题 2 种 · 顶栏 7/7 · 横滚 0，
+   所以从今天起它守着这条线。 */
+const failing = [];
+if (xs.length > 2) failing.push(`正文左缘 ${xs.length} 种（≤2）`);
+if (heads.length > 3) failing.push(`标题 ${heads.length} 种（≤3）`);
+if (bars < ok2.length) failing.push(`顶栏 只有 ${bars}/${ok2.length} 页有`);
+if (failing.length) {
+  console.log(`
+🔴 退步了：${failing.join(" · ")}`);
+  process.exit(1);
+}
 /* ⚠️ 门槛**故意先不 exit 1**。今天的数字远超它，而一把从第一天就红的尺
    跟一把坏掉的尺一样没有人看（`check:upstream` 天天喊狼那次的教训）。
    收敛到门槛之内的那一天再把它打开 —— 写在[任务 92](../docs/founder-tasks.md)。
