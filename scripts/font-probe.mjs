@@ -37,27 +37,41 @@ const TARGETS = {
 };
 
 /* 候选。挑的规矩：Google Fonts 上有、SIL OFL、而且是**展示体或正文体**
-   —— 手写体跟图标字不进这张表，因为一个客户的官网标题不该是手写。 */
+   —— 手写体跟图标字不进这张表，因为一个客户的官网标题不该是手写。
+
+   ⚠️ 2026-09-01 从 46 套扩到 96 套。老板：`字体样式可以去帮我去拿更多的字体套吗`。
+   量出来缺在哪很具体：**六套风格的工作台层只有四套字** ——
+   图纸跟満図 共用 Newsreader，中台跟台账 共用 Archivo。
+   官网层已经六套六个字，不缺；缺的是工作台。 */
 const FAMILIES = [
   // 我们已经在用的，当作基准线
   "Archivo", "Archivo Narrow", "Geist", "Public Sans", "Nunito", "Tenor Sans", "Newsreader",
+  "Questrial", "EB Garamond", "Libre Franklin",
   // 展示衬线（Marzo 那一类）
   "Playfair Display", "DM Serif Display", "Prata", "Bodoni Moda", "Abril Fatface",
   "Libre Baskerville", "Cormorant Garamond", "Instrument Serif", "Fraunces",
+  "Lora", "Crimson Pro", "Source Serif 4", "Literata", "Bitter", "Zilla Slab",
+  "Playfair", "Young Serif", "Gloock", "Rozha One", "Yeseva One",
   // 几何无衬线（Futura 那一类）
-  "Jost", "Poppins", "Outfit", "Questrial", "Josefin Sans", "Lexend",
+  "Jost", "Poppins", "Outfit", "Josefin Sans", "Lexend",
+  "Urbanist", "Sora", "Red Hat Display", "Comfortaa", "Hanken Grotesk",
   // 高 x 高的黑体
-  "Inter", "Manrope", "Space Grotesk", "Figtree",
-  // 新哥特（Univers 那一类）—— 中台 的参考是 univers-lt-std
-  "Roboto", "Barlow", "Libre Franklin", "Asap", "Encode Sans", "Arimo", "Mulish", "Rubik",
-  // 末端外扩 / 人文（Displace 2.0 · Optima 那一类）—— 台账 的参考
+  "Inter", "Manrope", "Space Grotesk", "Figtree", "Plus Jakarta Sans",
+  "DM Sans", "Onest", "Geologica", "Instrument Sans", "Bricolage Grotesque",
+  // 新哥特（Univers 那一类）
+  "Roboto", "Barlow", "Asap", "Encode Sans", "Arimo", "Mulish", "Rubik",
+  "IBM Plex Sans", "Noto Sans", "Work Sans", "Karla", "Cabin", "Assistant",
+  // 末端外扩 / 人文（Displace 2.0 · Optima 那一类）
   "Marcellus", "Gilda Display", "Radley", "Copse", "Quattrocento Sans",
-  "Spectral", "Vollkorn", "Faustina", "Petrona", "Amiri", "Cardo", "Gentium Book Plus",
-  // 更细的展示体 —— 台账 的参考墨量 0.093，比我们手上每一套都轻
+  "Spectral", "Vollkorn", "Faustina", "Petrona", "Amiri", "Cardo",
+  "Gentium Book Plus", "Alegreya", "Eczar", "Domine", "Frank Ruhl Libre",
+  // 更细的展示体
   "Italiana", "Julius Sans One", "Federo", "Cormorant", "Cormorant Infant",
-  "Marcellus SC", "Gruppo", "Antic Didone",
-  // 图纸 用的那一套本人
-  "EB Garamond",
+  "Marcellus SC", "Gruppo", "Antic Didone", "Tenor Sans", "Forum",
+  // 等宽 / 技术感（注解、单号、表格用得上）
+  "JetBrains Mono", "IBM Plex Mono", "Space Mono", "Roboto Mono", "DM Mono",
+  // 压缩体（招牌、标题墙）
+  "Oswald", "Fjalla One", "Anton", "Archivo Black", "Bebas Neue",
 ];
 
 const args = process.argv.slice(2);
