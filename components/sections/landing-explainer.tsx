@@ -125,7 +125,7 @@ export function WhatYouGet() {
   );
 }
 
-export function Pricing() {
+export function Pricing({ standalone = false }: { standalone?: boolean } = {}) {
   const t = useTranslations("explainer.price");
   const locale = useLocale();
   // `t.raw` rather than three flat keys: the steps are a LIST, and a list in
@@ -133,7 +133,9 @@ export function Pricing() {
   const steps = t.raw("steps") as { label: string; amount: string; note: string; includes?: string[] }[];
 
   return (
-    <SectionShell id="pricing" label="PRICE" heading={t("title")}>
+    /* `standalone` 只有一个用途：这一段搬到 /pricing 自己一页的时候，
+       那一页需要一个 h1（首页上 h1 是第一屏那句）。量出来价钱页 h1 = 0。 */
+    <SectionShell id="pricing" label="PRICE" heading={t("title")} headingAs={standalone ? "h1" : "h2"}>
       {/*
         THREE STEPS, NOT TWO FIGURES.
         Confirmed by the founder on 2026-08-25 after he said the page had it

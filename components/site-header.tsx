@@ -84,7 +84,11 @@ export function SiteHeader() {
             {t("how")}
           </a>
           <a
-            href="#pricing"
+            /* ⚠️ 从锚点改成网址（2026-09-01）。理由不是导航，是**可以贴**：
+               这个市场讲给别人听的动作就是把连结贴进 WhatsApp，
+               而一个 `#pricing` 贴出去，对方拿到的是首页。
+               见 app/[locale]/pricing/page.tsx 的档头。 */
+            href={`/${locale}/pricing`}
             className="hidden rounded-lg px-2.5 py-1.5 text-[13px] opacity-70 transition-opacity hover:opacity-100 sm:block"
           >
             {t("pricing")}

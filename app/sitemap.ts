@@ -46,6 +46,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
     });
   }
 
+  /* 价钱页。2026-09-01 加的 —— 它是首页之外唯一一个**会被单独分享**的页
+     （见 app/[locale]/pricing/page.tsx）。优先度排在法律页前面。 */
+  for (const locale of PUBLIC_LOCALES) {
+    entries.push({
+      url: `${SITE_URL}/${locale}/pricing`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+      alternates: {
+        languages: Object.fromEntries(
+          PUBLIC_LOCALES.map((l) => [l, `${SITE_URL}/${l}/pricing`]),
+        ),
+      },
+    });
+  }
+
   for (const locale of PUBLIC_LOCALES) {
     for (const doc of PUBLIC_LEGAL_DOCS) {
       entries.push({

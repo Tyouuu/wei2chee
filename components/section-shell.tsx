@@ -29,6 +29,7 @@ export function SectionShell({
   id,
   children,
   headingClassName = "text-[clamp(1.875rem,4vw,3rem)]",
+  headingAs = "h2",
   ground = "paper",
 }: {
   /** The section's place in the visitor's flow. Omit for sections that are
@@ -43,6 +44,9 @@ export function SectionShell({
   id?: string;
   children: ReactNode;
   headingClassName?: string;
+  /** 这个区段的标题用哪一级。首页上是 h2（第一屏那句才是 h1）；
+   *  一个区段单独成一页的时候要传 "h1"。 */
+  headingAs?: "h1" | "h2";
   /**
    * A GROUND OF ITS OWN.
    *
@@ -70,6 +74,8 @@ export function SectionShell({
   const numeralY = useTransform(scrollYProgress, [0, 1], ["16%", "-16%"]);
   const numeralOpacity = useTransform(scrollYProgress, [0, 0.25, 0.75, 1], [0, 1, 1, 0.25]);
   const headingY = useTransform(scrollYProgress, [0, 1], ["8%", "-8%"]);
+
+  const Heading = headingAs === "h1" ? motion.h1 : motion.h2;
 
   return (
     /* py-28 was 224px of air between every pair of sections, on top of the
@@ -154,12 +160,16 @@ export function SectionShell({
         </motion.div>
 
         <div>
-          <motion.h2
+          {/* 标题层级可以换。**首页上这是 h2**（h1 是第一屏那句），
+              但同一个区段搬到自己一页上（`/pricing`）的时候，
+              那一页会**一个 h1 都没有** —— 对搜寻引擎跟读屏都是缺陷。
+              2026-09-01 加，因为价钱页量出来 h1 = 0。 */}
+          <Heading
             style={{ y: headingY }}
             className={`max-w-2xl font-serif leading-[1.05] tracking-[-0.02em] text-balance ${headingClassName}`}
           >
             {heading}
-          </motion.h2>
+          </Heading>
           <div className="mt-10">{children}</div>
         </div>
       </div>
