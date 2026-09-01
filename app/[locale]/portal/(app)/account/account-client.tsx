@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { PageBar } from "../page-bar";
+import { Card, CardTitle, Field, FieldRow, DataRow, EmptyState, control, btn } from "../kit";
 import { formatDay } from "@/lib/format-date";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 
@@ -224,30 +225,39 @@ export function AccountClient({
 
         {hasPassword ? (
           <Section title={t("passwordTitle")} body={t("passwordBody")}>
-            <form onSubmit={changePassword} className="flex max-w-sm flex-col gap-3">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                minLength={8}
-                required
-                autoComplete="new-password"
-                placeholder={t("newPassword")}
-                aria-label={t("newPassword")}
-                className={input}
-              />
-              <input
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                minLength={8}
-                required
-                autoComplete="new-password"
-                placeholder={t("confirmPassword")}
-                aria-label={t("confirmPassword")}
-                className={input}
-              />
-              <button type="submit" disabled={busy !== null} className={`${button} self-start`}>
+            {/* 🔴 标签从 placeholder 变成看得见的字。
+                改之前两个框长得一模一样，标签就是框里那句灰字 —— **打了第一个字
+                就不见了**。一个人改到一半被客人打断，回来看到两个空框，
+                分不出哪个是新密码、哪个是再打一次。
+                并排也是抄来的（tabler 的 `row g-3`）：两个短栏位不该各占一整行。 */}
+            <form onSubmit={changePassword} className="flex flex-col gap-4">
+              <FieldRow>
+                <Field label={t("newPassword")} htmlFor="new-password">
+                  <input
+                    id="new-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    minLength={8}
+                    required
+                    autoComplete="new-password"
+                    className={control}
+                  />
+                </Field>
+                <Field label={t("confirmPassword")} htmlFor="confirm-password">
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    minLength={8}
+                    required
+                    autoComplete="new-password"
+                    className={control}
+                  />
+                </Field>
+              </FieldRow>
+              <button type="submit" disabled={busy !== null} className={`${btn("quiet")} self-start`}>
                 {busy === "password" ? t("saving") : t("changePassword")}
               </button>
             </form>
@@ -259,25 +269,26 @@ export function AccountClient({
         )}
 
         <Section title={t("emailTitle")} body={t("emailBody")}>
-          <form onSubmit={changeEmail} className="flex max-w-sm flex-col gap-3">
-            <input
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              required
-              autoComplete="email"
-              placeholder={t("newEmail")}
-              aria-label={t("newEmail")}
-              className={input}
-            />
-            <button type="submit" disabled={busy !== null} className={`${button} self-start`}>
+          <form onSubmit={changeEmail} className="flex max-w-md flex-col gap-4">
+            <Field label={t("newEmail")} htmlFor="new-email">
+              <input
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+                autoComplete="email"
+                className={control}
+              />
+            </Field>
+            <button type="submit" disabled={busy !== null} className={`${btn("quiet")} self-start`}>
               {busy === "email" ? t("saving") : t("changeEmail")}
             </button>
           </form>
         </Section>
 
         <Section title={t("exportTitle")} body={t("exportBody")}>
-          <button type="button" onClick={exportData} disabled={exporting} className={button}>
+          <button type="button" onClick={exportData} disabled={exporting} className={btn("quiet")}>
             {exporting ? t("exporting") : t("exportCta")}
           </button>
         </Section>
@@ -297,7 +308,7 @@ export function AccountClient({
         </Section>
 
         <Section title={t("signOutTitle")} body={t("signOutBody")}>
-          <button type="button" onClick={signOut} disabled={busy !== null} className={button}>
+          <button type="button" onClick={signOut} disabled={busy !== null} className={btn("quiet")}>
             {busy === "signout" ? t("saving") : t("signOutCta")}
           </button>
         </Section>
@@ -313,20 +324,21 @@ export function AccountClient({
             {t("deleteBody")}
           </p>
           <div className="mt-4 flex max-w-sm flex-col gap-3">
-            <input
-              value={deleteConfirm}
-              onChange={(e) => setDeleteConfirm(e.target.value)}
-              placeholder={t("deletePlaceholder")}
-              aria-label={t("deletePlaceholder")}
-              className={input}
-            />
+            <Field label={t("deletePlaceholder")} htmlFor="delete-confirm">
+              <input
+                id="delete-confirm"
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                className={control}
+              />
+            </Field>
             <button
               type="button"
               onClick={deleteAccount}
               // Typing the word is the confirmation. A dialog asking "are you
               // sure" is clicked through without reading; typing DELETE is not.
               disabled={deleteConfirm.trim().toUpperCase() !== "DELETE" || busy !== null}
-              className="self-start rounded-[var(--radius-md)] px-3.5 py-2 [font-size:var(--text-xs)] [background-color:var(--color-clay-deep)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)] disabled:opacity-40"
+              className={`${btn("danger")} self-start [background-color:var(--color-clay-deep)] [border-color:var(--color-clay-deep)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]`}
             >
               {busy === "delete" ? t("saving") : t("deleteCta")}
             </button>
@@ -337,6 +349,11 @@ export function AccountClient({
   );
 }
 
+/* 🔴 一段 = 一张卡，2026-09-01。
+   改之前这一页是**八段裸表单**，靠一条细线分开，标题、说明、输入框全部一样重，
+   整页唯一被设计过的东西是最底下那个红框。
+   tabler（MIT · 41.5k★）的设定页读下来是：**一张卡装起来**，卡里 `CardTitle`
+   当小标题，表单栏位**并排**。这一段就是那个形状，用我们自己的零件重建。 */
 function Section({
   title,
   body,
@@ -347,28 +364,15 @@ function Section({
   children?: React.ReactNode;
 }) {
   return (
-    <section className="mt-8 border-t pt-6 first:mt-0 first:border-t-0 first:pt-0 [border-color:var(--color-ink-800)]">
-      <h2 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-        {title}
-      </h2>
-      {body && (
-        <p className="mt-1.5 max-w-xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-          {body}
-        </p>
-      )}
-      {children && <div className="mt-4">{children}</div>}
-    </section>
+    <Card className="mt-4 first:mt-0">
+      <CardTitle hint={body}>{title}</CardTitle>
+      {children}
+    </Card>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 border-b py-2 last:border-b-0 [border-color:var(--color-ink-850)]">
-      <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{label}</span>
-      <span className="[color:var(--color-paper)] [font-size:var(--text-sm)]">{value}</span>
-    </div>
-  );
-}
+/* 搬进 ../kit.tsx —— console 那边也在手写同一行。 */
+const Row = DataRow;
 
 
 /** One person who works here, as the owner sees them. */
@@ -479,16 +483,17 @@ function TeamPanel({ initial }: { initial: Member[] }) {
       )}
 
       <form onSubmit={add} className="flex max-w-sm flex-col gap-3">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          placeholder={t("teamEmail")}
-          aria-label={t("teamEmail")}
-          className={input}
-        />
-        <button type="submit" disabled={busy !== null} className={`${button} self-start`}>
+        <Field label={t("teamEmail")} htmlFor="team-email">
+          <input
+            id="team-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className={control}
+          />
+        </Field>
+        <button type="submit" disabled={busy !== null} className={`${btn("quiet")} self-start`}>
           {busy === "add" ? t("teamAdding") : t("teamAdd")}
         </button>
       </form>

@@ -69,3 +69,4 @@ scripts/_*.cjs
 
 # 参考页的录音：一份 ~30MB，重量用的，不是原始码
 .screenshots/align/*.har.zip
+.research/
