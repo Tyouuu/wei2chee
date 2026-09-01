@@ -28,7 +28,14 @@ export function PageBar({
   return (
     <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b px-8 py-3 [background-color:color-mix(in_srgb,var(--color-canvas)_88%,transparent)] [backdrop-filter:blur(8px)] [border-color:var(--color-ink-800)]">
       <div className="min-w-0">
-        <h1 className="truncate [font-size:var(--text-sm)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+        {/* 🔴 14px → 20px，2026-09-01。
+            `check:consistency` 量出来：十一页里有六页**整页最大的字就是 14px**，
+            而首页是 56px。一个工作台从头到尾只有 14–18px，不是「干净」，
+            是**没有层次** —— 眼睛没有地方落下。
+            老板：`我要更有设计感 一点 不是单纯的好坏 我要的是提升`。
+            20px 是这一层唯一动的东西：它不抢客户预览的颜色，只把「你在哪一页」
+            这句话讲清楚。 */}
+        <h1 className="truncate [font-size:var(--text-lg)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)] [letter-spacing:-0.01em]">
           {title}
         </h1>
         {subtitle && (

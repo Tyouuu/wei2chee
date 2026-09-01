@@ -56,7 +56,8 @@
     "check:staff": "node scripts/check-staff.mjs",
     "shoot:staff": "node scripts/shoot-staff.mjs",
     "shoot:fonts": "node scripts/shoot-fonts.mjs",
-    "shoot:inbox": "node scripts/shoot-inbox.mjs"
+    "shoot:inbox": "node scripts/shoot-inbox.mjs",
+    "check:consistency": "node scripts/check-consistency.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

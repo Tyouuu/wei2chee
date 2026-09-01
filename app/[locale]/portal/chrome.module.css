@@ -226,7 +226,31 @@
   --color-nav-hover: #1c212b;
   --color-nav-active: #232936;
   --color-nav-border: #2c303a;
-  --color-nav-accent: #f0f2f4;
+  /* 🔴 这一行从近白改成品牌青，2026-09-01。
+     老板：`就是我要更有设计感 一点 不是单纯的好坏 我要的是提升` ·
+     `然后我们也有自己的品牌色`。
+
+     上面那段「FORMAE HAS NO ACCENT」的论证有一个**前提**：
+     「the platform has never had a colour of its own; it has had two loans
+     from Blueprint」。**那个前提当天不成立了** —— 官网定案是黑 + 青
+     #00beb7（`.band-cyan`，逐像素量过的那一段），而他亲口讲我们有品牌色。
+     ⚠️ 所以这不是推翻一个量过的决定，是它的依据变了；
+     推翻之前先去看它为什么是那样，这是[任务 51](../../../docs/founder-tasks.md) 的教训。
+
+     它论证里**仍然成立的那一半照留**：画面上的颜色应该属於「正在被看的那个
+     东西」，所以 `--color-primary`（主要按钮、强调控件）**还是墨色不变** ——
+     一颗青色的按钮会跟客户自己系统的预览抢眼睛。
+     青只拿三个位子，而那三个位子刚好都是**Formae 自己在讲话**：
+     侧栏「你在哪一页」那一条 · 左上角那个 F · 询价的数字徽章。
+
+     ⚠️ 数字是**算出来的，不是估的** —— 我第一版凭印象写 9.4:1，算完是 7.95。
+     #00beb7 配侧栏底 #10141c = **7.95:1**；它当底、上面写 #10141c 的深字
+     = **7.95:1**（对比度是对称的）；配工作区的底 #0b0d13 = **8.37:1**。
+     三个方向都远超 AA 的 4.5。 */
+  --color-brand: #00beb7;
+  --color-brand-deep: #33cbc5;
+  --color-brand-soft: #06282c;
+  --color-nav-accent: var(--color-brand);
 
   /* ---- TYPE -------------------------------------------------------------
      `--font-display` stays Instrument Serif, the same face the Hero is set in
@@ -398,7 +422,8 @@
   --destructive-foreground: var(--color-on-primary);
   --border: var(--color-ink-800);
   --input: var(--color-ink-800);
-  --ring: var(--color-primary);
+  /* 键盘走到哪里，用品牌色讲 —— 那是 Formae 自己在讲话，不是客户的内容。 */
+  --ring: var(--color-brand);
   --radius: var(--radius-md);
   --chart-1: var(--color-primary);
   --chart-2: var(--color-jade);
@@ -567,6 +592,13 @@
   --color-primary-deep: #000000;
   --color-primary-soft: #f1f1ee;
   --color-on-primary: #ffffff;
+
+  /* ⚠️ 印出来的那一份要另一个青。#00beb7 压白纸只有 **1.87:1** —— 读不到，
+     跟上面那几个 status 色在这里全部换成墨色版本是同一个理由。
+     深到 #0f6f6b，白底上 **5.99:1**。 */
+  --color-brand: #0f6f6b;
+  --color-brand-deep: #0b5754;
+  --color-brand-soft: #e6f5f4;
 
   /* Ink, not the dark ground's lifted hues -- these are printed. Measured on
      white: jade 4.95:1, brass 5.37:1, clay 5.94:1, slate 5.72:1. */
