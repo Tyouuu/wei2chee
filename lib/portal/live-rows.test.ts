@@ -555,17 +555,51 @@ describe("the blocks that draw the same list as the table", () => {
     expect(items[0].href).toBe("/x");
   });
 
-  it("puts a card in the column it is actually at, and leaves out the ones with no column", () => {
-    /* 尾款 is not one of the three columns this board shows. Putting it under
-       报价 because there was room would be the board lying about where the
-       work is. */
+  it("puts a card in the column it is actually at, and never drops one", () => {
+    /* ⚠️ THIS TEST USED TO ASSERT THE OPPOSITE, and the assertion was the
+       defect. It read 「leaves out the ones with no column」 and argued that
+       drawing a 尾款 job under 报价 would be the board lying about where the
+       work is -- which is true, and does not make deleting it the remedy.
+
+       工程 became a board on 2026-09-02 and the first picture showed six empty
+       columns above a table holding three of the owner's real jobs: their
+       stage was not one of the columns, so every card was filtered away and
+       the page told him he had no work. Fourteen assertions passed.
+
+       The rule now: the columns are the workflow the business declared PLUS
+       any stage its rows actually carry. Nothing invented, nothing hidden, and
+       no row in a column that is not its own. */
     const props = out(
       one("TaskBoard", { stages: [{ name: "报价" }, { name: "订金" }, { name: "施工" }], cards: [] }),
       rows,
     );
     const cards = props.cards as { title: string; stage: string }[];
-    expect(cards.map((c) => c.stage)).toEqual(["施工", "报价"]);
-    expect(cards.map((c) => c.title)).not.toContain("Cheras 店屋");
+    expect(cards.map((c) => c.title)).toContain("Cheras 店屋");
+    expect(cards.map((c) => c.stage)).toEqual(["施工", "报价", "尾款"]);
+    /* 尾款 gets a column of its own, at the end -- the declared workflow keeps
+       its order and the stages the records turned out to be at follow it. */
+    expect((props.stages as { name: string }[]).map((s) => s.name)).toEqual([
+      "报价",
+      "订金",
+      "施工",
+      "尾款",
+    ]);
+  });
+
+  it("sends a row with NO stage to the first column rather than nowhere", () => {
+    /* add_pipeline_record sets the first stage of the business's own workflow
+       and leaves it blank only when there is no analysed workflow to read, so
+       an empty stage means 「not started」 -- which is the first column, not a
+       column named "". Seen on a real signup that never answered the
+       questionnaire. */
+    const props = out(
+      one("TaskBoard", { stages: [{ name: "报价" }, { name: "施工" }], cards: [] }),
+      [{ primary: "还没排", secondary: "陈", amount: "RM 1", status: "", tone: "neutral" }],
+    );
+    const cards = props.cards as { title: string; stage: string }[];
+    expect(cards).toHaveLength(1);
+    expect(cards[0].stage).toBe("报价");
+    expect((props.stages as { name: string }[]).map((s) => s.name)).toEqual(["报价", "施工"]);
   });
 
   it("ranks by the money, biggest first", () => {

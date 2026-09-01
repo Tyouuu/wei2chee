@@ -124,6 +124,51 @@ const pages = MODULE_KEYS.map((key) => ({
   ),
 }));
 
+/**
+ * Puck hands a SLOT to render() as a component, not as the array it is stored
+ * as -- `render({ body: Body }) => <Body />`. This probe renders outside Puck,
+ * so every slot arrives as a raw array and `<Body />` throws 「Element type is
+ * invalid」 before the field under test is ever looked at.
+ *
+ * ⚠️ THIS WAS A HOLE IN THE RULER, FOUND 2026-09-02 AND NOT A NEW DEFECT.
+ * Panel has carried a `title` since it was written and this probe has never
+ * once looked at it: the only Panels on any generated page were the 总览's,
+ * which pass an EMPTY title on purpose (a section with no title is a section,
+ * not a section with an empty heading -- see puck-config), and the loop skips
+ * empty strings. The first page to give a Panel a real title was the quotation
+ * document, and the probe reported it as a throw rather than as a field it
+ * could not reach. A ruler that cannot render a block cannot tell you whether
+ * that block drops the owner's words.
+ *
+ * Emptying the slots rather than filling them is deliberate: what is being
+ * measured is whether THIS node prints the string it was handed, and children
+ * that print their own would make a passing result meaningless.
+ */
+const slotSafe = (props: Record<string, unknown>): Record<string, unknown> => {
+  const out: Record<string, unknown> = { ...props };
+  for (const [k, v] of Object.entries(props)) {
+    /* BOTH `type` AND `props`, because 「an array of objects with a type」 is
+       not specific enough: SiteTeam's members, SiteWoven's photos and
+       SiteFoot's small print all carry a `type` of their own, and turning
+       those into components made eight fields throw that had been fine. A Puck
+       node is the pair. */
+    const isSlot =
+      Array.isArray(v) &&
+      v.length > 0 &&
+      v.every(
+        (c) =>
+          c &&
+          typeof c === "object" &&
+          typeof (c as { type?: unknown }).type === "string" &&
+          typeof (c as { props?: unknown }).props === "object",
+      );
+    if (isSlot) {
+      out[k] = () => null;
+    }
+  }
+  return out;
+};
+
 describe("public site fields reach the page", () => {
   it("reports every text field the page ignores", { timeout: 120_000 }, () => {
     const dropped: string[] = [];
@@ -169,7 +214,7 @@ describe("public site fields reach the page", () => {
         try {
           const shows = (extra: Record<string, unknown> = {}) =>
             renderToStaticMarkup(
-              render({ ...node.props, ...extra, [key]: value }),
+              render({ ...slotSafe(node.props), ...extra, [key]: value }),
             ).includes(want);
 
           /* A field can belong to ONE SHAPE. SiteFeatures' `noteHeading` renders

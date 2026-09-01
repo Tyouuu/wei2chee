@@ -64,7 +64,8 @@
     "walk": "node scripts/walk.mjs",
     "check:address": "node scripts/check-address.mjs",
     "shoot:address": "node scripts/shoot-address.mjs",
-    "shoot:admins": "node scripts/shoot-admins.mjs"
+    "shoot:admins": "node scripts/shoot-admins.mjs",
+    "shoot:kinds": "node scripts/shoot-kinds.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

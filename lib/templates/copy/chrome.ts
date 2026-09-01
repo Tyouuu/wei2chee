@@ -158,6 +158,31 @@ export type Chrome = {
     workflow: (title: string) => string;
   };
 
+  /**
+   * The words the four NON-TABLE page kinds need.
+   *
+   * Measured 2026-09-02: seventeen backstage modules produced fourteen page
+   * skeletons and sixteen of them were the same sentence -- a heading, one or
+   * two filter controls, and the same table. That is not a shortage of
+   * components (there are eighty-seven); it is one arrangement wearing
+   * fourteen coats, which is exactly what 重点 7a rules out.
+   *
+   * Deliberately small. Every other string these pages need is already the
+   * module's own noun -- the detail panel labels its rows with the SAME column
+   * headings the table uses, so a master dealer's page says 经销商 in both
+   * places without a word being added here.
+   */
+  pageKind: {
+    /** The board's own columns are the trade's workflow, so it needs no title. */
+    detailFallback: string;
+    documentHeading: (title: string) => string;
+    documentTermsHeading: string;
+    documentTerms: string;
+    documentSign: string;
+    documentDate: string;
+    dayHeading: string;
+  };
+
   custom: {
     subtitle: string;
     columns: { primary: string; secondary: string; amount: string; status: string };
@@ -289,6 +314,21 @@ const EN: Chrome = {
   shape: {
     monthPlaceholder: "Pick a month",
     workflow: (title) => `${title} workflow`,
+  },
+
+  pageKind: {
+    detailFallback: "Details",
+    documentHeading: (title) => `${title} — as it prints`,
+    documentTermsHeading: "Terms",
+    /* Deliberately about HOW the business works and not about money owed to
+       anyone: this paragraph is printed on a document a stranger reads, and a
+       default that invents a payment term would be us making a commitment on
+       the owner's behalf. */
+    documentTerms:
+      "Quoted prices hold for 30 days. Work starts once this is signed and the deposit is received. Anything added later is quoted separately.",
+    documentSign: "Signature",
+    documentDate: "Date",
+    dayHeading: "Today",
   },
 
   custom: {
@@ -424,6 +464,17 @@ const ZH: Chrome = {
   shape: {
     monthPlaceholder: "选择月份",
     workflow: (title) => `${title}流程`,
+  },
+
+  pageKind: {
+    detailFallback: "详情",
+    documentHeading: (title) => `${title} — 印出来的样子`,
+    documentTermsHeading: "条款",
+    documentTerms:
+      "报价 30 天内有效。签名并收到订金后开工。之后另外加的项目另外报价。",
+    documentSign: "签名",
+    documentDate: "日期",
+    dayHeading: "今天",
   },
 
   custom: {

@@ -609,6 +609,72 @@ function mapNodes(nodes: unknown[], rows: LiveRow[], started = false): unknown[]
       return { ...n, props: { ...n.props, live: true, ...fill(n.type ?? "", n.props, rows) } };
     }
 
+    /* ── THE PANEL BESIDE THE LIST ───────────────────────────────────────
+       客户 · 供应商 · 师傅 · 报价单 · 进货单 gained a second column on
+       2026-09-02: the list on the left, the one selected on the right. Without
+       this arm that panel keeps 陈先生 while the table beside it shows his real
+       customers -- the same defect the block above was written to end, one
+       screen wide instead of one page.
+
+       ⚠️ KEYED ON THE ID, NOT ON THE TYPE, and that is not a shortcut. InfoRows
+       is also how a published website prints the business's OWN phone number,
+       address and opening hours, and this projection walks that page too.
+       Filling every InfoRows in the tree would replace what a stranger reads
+       with the name of one of the owner's customers. Only the node
+       industry-template deliberately named `<page>-detail` is a record. */
+    if (n.type === "InfoRows" && String((n.props as { id?: unknown }).id ?? "").endsWith("-detail")) {
+      const wasLive = (n.props as { live?: unknown }).live === true;
+      const shown =
+        (n.props.rows as { label?: string; icon?: string; field?: string }[] | undefined) ?? [];
+      if (!rows.length) {
+        /* Emptied rather than reverted: a business that deleted its last
+           customer must not be shown a memory of one. The labels stay -- they
+           are the module's nouns, not this record's. */
+        if (!wasLive && !started) return node;
+        return {
+          ...n,
+          props: {
+            ...n.props,
+            heading: "",
+            rows: shown.map((r) => ({ ...r, value: "" })),
+          },
+        };
+      }
+      /* The FIRST row, because that is what the table shows at the top and a
+         panel pointing at something further down would answer a question
+         nobody asked. Selecting is a page this product does not have yet --
+         see task 81. */
+      const first = rows[0];
+      /* ⚠️ BY FIELD NAME, NEVER BY POSITION. The first version zipped the
+         labels against whichever values happened to be non-empty, so a
+         directory row with no status shifted everything up one and the panel
+         printed 「Contact / notes: Ang Chee Keong」. It was found by looking at
+         the screenshot, not by any assertion -- a label and a value that do
+         not correspond are worse than a sample, because a sample announces
+         itself and this does not. industry-template stamps each pair with the
+         column it came from precisely so this can never be guessed. */
+      const of = (field: string | undefined): string => {
+        if (field === "primary") return first.primary ?? "";
+        if (field === "secondary") return first.secondary ?? "";
+        if (field === "amount") return first.amount ?? "";
+        if (field === "status") return first.status ?? "";
+        return "";
+      };
+      return {
+        ...n,
+        props: {
+          ...n.props,
+          live: true,
+          heading: first.primary,
+          /* The LABELS the page was built with are kept and only the values
+             move. They carry this module's own noun -- 经销商 for a master
+             dealer -- and re-deriving them here would be a second vocabulary
+             disagreeing with the table one column away. */
+          rows: shown.map((r) => ({ ...r, value: of(r.field) })),
+        },
+      };
+    }
+
     let changed = false;
     const props: Record<string, unknown> = { ...n.props };
     for (const [key, value] of Object.entries(n.props)) {
@@ -852,21 +918,43 @@ function fill(
   }
 
   if (type === "TaskBoard") {
-    /* A card goes in the column its row is ACTUALLY at. The board shows the
-       first three stages of this business's workflow, so a row further along
-       has no column here and is left out -- which is right: putting a 尾款 job
-       under 报价 because there was space would be the board lying about where
-       the work is. */
-    const stages = (props.stages as { name?: string }[] | undefined)?.map((s) => s.name ?? "") ?? [];
+    /* A card goes in the column its row is ACTUALLY at, and NO ROW IS EVER
+       DROPPED.
+
+       ⚠️ THIS FILTERED, AND THE PICTURE IS WHAT CAUGHT IT. 工程 became a board
+       on 2026-09-02, and the first run drew six empty columns above a table
+       holding three of the owner's real jobs -- because their stage was not
+       one of the columns, so every card was filtered away. Fourteen assertions
+       passed: 「his own jobs are on it」 was reading the table underneath.
+
+       The old reasoning was right about one thing and wrong about the other.
+       Right: a 尾款 job must never be drawn under 报价 just because there was
+       room. Wrong: the remedy is not to delete it. A job that exists and
+       appears nowhere is the page telling the owner he has no work.
+
+       So the columns are the union -- the workflow this business declared,
+       plus any stage its rows actually carry. Nothing is invented and nothing
+       is hidden; a stage that is not in the workflow gets a column named after
+       itself, which is the truth about that row.
+
+       A row with an EMPTY stage is a different case and belongs at the start:
+       add_pipeline_record sets the first stage of the business's own workflow
+       and leaves it blank only when there is no analysed workflow to read, so
+       「not started」 is exactly what it means. */
+    const declared = (props.stages as { name?: string }[] | undefined)
+      ?.map((s) => s.name ?? "")
+      .filter(Boolean) ?? [];
+    const extra = [
+      ...new Set(rows.map((r) => r.status).filter((s) => s && !declared.includes(s))),
+    ];
+    const columns = [...declared, ...extra];
     return {
-      cards: rows
-        .filter((r) => stages.includes(r.status))
-        .slice(0, 12)
-        .map((r) => ({
-          title: r.primary,
-          stage: r.status,
-          note: [r.secondary, r.amount].filter(Boolean).join(" · "),
-        })),
+      stages: columns.map((name) => ({ name })),
+      cards: rows.slice(0, 12).map((r) => ({
+        title: r.primary,
+        stage: r.status || columns[0] || "",
+        note: [r.secondary, r.amount].filter(Boolean).join(" · "),
+      })),
     };
   }
 

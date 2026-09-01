@@ -1828,15 +1828,32 @@ function buildCustomers(
       placeholder: c.customers.search(labels.customer),
       suggestions: sample.customers.map((row) => ({ value: row.primary })),
     }),
-    recordTable(
-      "customers-list",
-      c.customers.caption(labels.customer),
-      {
-        primary: labels.customer,
-        secondary: c.col.contact,
-        status: c.col.status,
-      },
-      sample.customers,
+    /* A NAME LIST EXISTS SO SOMEBODY CAN BE OPENED. Task 81 has recorded the
+       missing customer detail page since 2026-08-31; this is not that page,
+       and it is the half of it that can be honest today -- the one selected,
+       beside the list, in the module's own nouns. */
+    besideNode(
+      "customers",
+      [
+        recordTable(
+          "customers-list",
+          c.customers.caption(labels.customer),
+          {
+            primary: labels.customer,
+            secondary: c.col.contact,
+            status: c.col.status,
+          },
+          sample.customers,
+        ),
+      ],
+      [
+        detailNode(
+          "customers",
+          { primary: labels.customer, secondary: c.col.contact, status: c.col.status },
+          sample.customers[0],
+          c,
+        ),
+      ],
     ),
   ];
 }
@@ -1877,16 +1894,39 @@ function buildQuotations(
       placeholder: c.quotations.datePlaceholder,
       allowClear: true,
     }),
-    recordTable(
-      "quotations-list",
-      c.quotations.caption,
-      {
-        primary: c.quotations.itemColumn,
-        secondary: labels.customer,
-        amount: c.quotations.amountColumn,
-        status: c.col.status,
-      },
-      sample.records,
+    /* A quotation is not a list that happens to have a document -- it IS the
+       document. Showing the paper beside the list is the arrangement the
+       founder pointed at, and it is the one page in the system whose output
+       somebody outside the business reads. */
+    besideNode(
+      "quotations",
+      [
+        recordTable(
+          "quotations-list",
+          c.quotations.caption,
+          {
+            primary: c.quotations.itemColumn,
+            secondary: labels.customer,
+            amount: c.quotations.amountColumn,
+            status: c.col.status,
+          },
+          sample.records,
+        ),
+      ],
+      [
+        documentNode(
+          "quotations",
+          c.quotations.title,
+          {
+            primary: c.quotations.itemColumn,
+            secondary: labels.customer,
+            amount: c.quotations.amountColumn,
+            status: c.col.status,
+          },
+          sample.records[0],
+          c,
+        ),
+      ],
     ),
   ];
 }
@@ -1922,12 +1962,14 @@ function buildProjects(
       actionLabel: c.dashboard.primaryAction(c.projects.title(labels.order)),
       actionHref: `/${locale}/portal/projects/new`,
     }),
-    workflowStrip(
-      "projects-workflow",
-      c.projects.workflow(labels.order),
-      workflowStages(ctx),
-      1,
-    ),
+    /* WHERE EACH JOB ACTUALLY IS, as columns rather than as a strip over a
+       table. The strip drew the same five words on every pipeline page and said
+       nothing about which job was where; the board is the answer to the only
+       question anybody opens this page with.
+
+       Live rows land in the column their own status names -- live-rows.ts has
+       filled TaskBoard since it was written, and until today no page used it. */
+    boardNode("projects", ctx, sample.records),
     node("Listbox", "projects-staff", {
       name: "assigned-staff",
       placeholder: c.projects.staffPlaceholder(labels.staff),
@@ -2042,11 +2084,14 @@ function buildBookings(
       title: c.bookings.title,
       subtitle: c.bookings.subtitle(labels.staff),
     }),
-    node("DatePicker", "bookings-date", {
-      name: "booking-date",
-      placeholder: c.bookings.datePlaceholder,
-      allowClear: true,
-    }),
+    /* THE ONE MODULE WHOSE AXIS IS TIME. A salon owner does not read their day
+       as four rows with a date filter above them; the week and the day ARE the
+       page. The staff filter stays underneath with the table, where filtering
+       belongs.
+
+       ⚠️ Still a drawing: `calendar` has no table behind it (SHAPE_STATE), so
+       none of this becomes real yet. What changed is the shape. */
+    ...dayNodes("bookings", sample.records, c),
     node("Listbox", "bookings-staff", {
       name: "booking-staff",
       placeholder: c.bookings.staffPlaceholder(labels.staff),
@@ -2185,6 +2230,209 @@ function trendNode(id: string, copy: ModuleCopy): PuckNode[] {
  * commission is calculated rather than evidenced, and an empty upload box on
  * that page would be furniture pretending to be a feature.
  */
+/* ──────────────────────────────────────────────────────────────────────────
+   FOUR KINDS OF PAGE, BECAUSE THERE USED TO BE ONE.
+
+   Measured 2026-09-02 by running buildPageLayout over all seventeen backstage
+   modules and walking into the shell's slots: fourteen distinct skeletons, and
+   sixteen of them were the same sentence -- a heading, one or two filter
+   controls, and the same RecordTable. Only 总览 differed. Fourteen registers
+   could repaint that and not one of them could change it, which is 重点 7a
+   exactly: 每一个design都是用不同的组件去完成的.
+
+   The reference the founder sent (arhamkhnz/next-shadcn-admin, MIT, already
+   the first entry in upstream.json and screenshotted here since 2026-08-26) is
+   not better because its components are better -- ours draw the same deltas
+   and the same grouped rail. It is better because it has KINDS OF PAGE we did
+   not have: a form beside a live document, a list beside the one thing
+   selected, a board, a diary.
+
+   So none of this adds a component. All four are arrangements of blocks that
+   were already in the library, and two of them (TaskBoard, Columns) already
+   had a wire into the live projection that no page was using.
+
+   ── WHAT DECIDES WHICH PAGE GETS WHICH ────────────────────────────────────
+
+   The QUESTION the page answers, not its shape. All five pipeline modules
+   share a shape and do not share a question: 工程 asks 「这一单走到哪」, which is
+   a board; 报价单 asks 「那张纸长什么样」, which is a document. Keying this off
+   `shape` would have made all five boards and put us straight back where we
+   started -- one arrangement in five coats.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * 看板 — the page whose only question is where each job actually is.
+ *
+ * ⚠️ THE SAMPLE CARDS ARE SPREAD ACROSS THE STAGES ON PURPOSE, and only while
+ * they are samples. A sample row's `status` comes from the sample table while
+ * the columns come from THIS business's analysed workflow, so the two rarely
+ * agree -- placing samples by their own status draws an empty board for most
+ * trades, which teaches the owner that the block is broken. Live rows land by
+ * their real status, because live-rows.ts filters them against these same
+ * `stages`; see fill() there.
+ */
+function boardNode(
+  pageKey: PageId,
+  ctx: BusinessContext,
+  rows: KindRow[],
+): PuckNode {
+  /* Every stage the business declared, not the dashboard's first three: on the
+     page whose whole subject is where the work is, a hidden column is a hidden
+     part of the business. The table underneath still carries everything. */
+  const stages = stagesForModule(ctx, pageKey);
+  return node("TaskBoard", `${pageKey}-board`, {
+    stages: stages.map((name) => ({ name })),
+    cards: rows.slice(0, 9).map((r, i) => ({
+      title: r.primary,
+      stage: stages[i % Math.max(stages.length, 1)] ?? "",
+      note: [r.secondary, r.amount].filter(Boolean).join(" · "),
+    })),
+  });
+}
+
+/** The label/value pairs one row makes, in the module's own nouns.
+ *
+ *  ⚠️ THE LABELS ARE THE TABLE'S OWN COLUMN HEADINGS, not a second set of
+ *  words. The AI renames 客户 to 经销商 for a master dealer, and a panel
+ *  carrying its own nouns would disagree with the table beside it inside one
+ *  screen. Reading `copy.columns` means there is one vocabulary per module and
+ *  this file never has to know what it is. */
+/** Which column of the record a detail row is showing. Read by live-rows.ts. */
+type KindField = "primary" | "secondary" | "amount" | "status";
+type KindCols = { primary: string; secondary?: string; amount?: string; status?: string };
+type KindRow = { primary: string; secondary?: string; amount?: string; status?: string };
+
+/**
+ * ⚠️ EACH PAIR CARRIES THE NAME OF THE FIELD IT CAME FROM, and that is not
+ * decoration. The live projection has to replace these values with the
+ * customer's own record, and its first version matched them BY POSITION -- so
+ * a directory row whose status was empty shifted everything up one and the
+ * page printed 「Contact / notes: Ang Chee Keong」. Labels and values that do
+ * not correspond are worse than samples: a sample announces itself and this
+ * does not. Seen in the picture; every assertion had passed.
+ */
+function rowPairs(
+  cols: KindCols,
+  first: KindRow | undefined,
+  withPrimary: boolean,
+): { label: string; value: string; icon: string; field: KindField }[] {
+  const out: { label: string; value: string; icon: string; field: KindField }[] = [];
+  const add = (
+    label: string | undefined,
+    value: string | undefined,
+    icon: string,
+    field: KindField,
+  ) => {
+    if (label && value) out.push({ label, value, icon, field });
+  };
+  if (withPrimary) add(cols.primary, first?.primary, "file", "primary");
+  add(cols.secondary, first?.secondary, "person", "secondary");
+  add(cols.amount, first?.amount, "money", "amount");
+  add(cols.status, first?.status, "tag", "status");
+  return out;
+}
+
+/**
+ * 左清单右详情 — a name list exists so that somebody can be opened.
+ *
+ * ⚠️ THE ID IS THE MARKER, and live-rows.ts keys the detail panel off it
+ * rather than off the type. InfoRows is also how a published website prints
+ * the business's own phone number and address; filling every InfoRows in the
+ * tree with record data would overwrite that with a customer's name on a page
+ * strangers read.
+ */
+function detailNode(
+  pageKey: PageId,
+  cols: KindCols,
+  first: KindRow | undefined,
+  c: Chrome,
+): PuckNode {
+  const pairs = rowPairs(cols, first, false);
+  return node("InfoRows", `${pageKey}-detail`, {
+    heading: first?.primary || c.pageKind.detailFallback,
+    rows: pairs.length
+      ? pairs
+      : [{ label: c.pageKind.detailFallback, value: "—", icon: "file" }],
+  });
+}
+
+/**
+ * 单据 — the page whose answer is a piece of paper somebody else will read.
+ *
+ * 报价单 and 进货单 are not lists that happen to have a document; they are
+ * documents that happen to be listed. The founder's reference puts the form on
+ * the left and the printed thing on the right, and the reason that reads as
+ * better is that it shows the OUTPUT while you are still making it.
+ *
+ * ⚠️ NO PriceTable HERE, though it exists and looks the part. PriceTable is a
+ * sales price list -- packages, features, a button -- and putting one on a
+ * quotation would print an offer nobody made.
+ */
+function documentNode(
+  pageKey: PageId,
+  title: string,
+  cols: KindCols,
+  first: KindRow | undefined,
+  c: Chrome,
+): PuckNode {
+  return node("Panel", `${pageKey}-doc`, {
+    title: c.pageKind.documentHeading(title),
+    description: "",
+    body: [
+      node("InfoRows", `${pageKey}-detail`, {
+        heading: first?.primary || title,
+        rows: rowPairs(cols, first, true),
+      }),
+      node("TermsBlock", `${pageKey}-terms`, {
+        heading: c.pageKind.documentTermsHeading,
+        body: c.pageKind.documentTerms,
+        signLabel: c.pageKind.documentSign,
+        dateLabel: c.pageKind.documentDate,
+      }),
+    ],
+  });
+}
+
+/**
+ * 日历 — 预约 is the one module whose primary axis is time rather than a row.
+ *
+ * ⚠️ THIS PAGE IS STILL A DRAWING, and saying so is part of shipping it. The
+ * `calendar` shape has no table behind it (see SHAPE_STATE), so nothing here
+ * ever becomes real. What changes today is that the page finally has the shape
+ * of a diary instead of the shape of every other page -- and a salon owner
+ * recognising their own week is what the first screen is for.
+ */
+function dayNodes(pageKey: PageId, rows: KindRow[], c: Chrome): PuckNode[] {
+  return [
+    node("WeekStrip", `${pageKey}-week`, { days: 5 }),
+    node("DaySchedule", `${pageKey}-day`, {
+      heading: c.pageKind.dayHeading,
+      rows: rows.slice(0, 4).map((r, i) => ({
+        /* Spread through a working day rather than all at 09:00. Three
+           appointments stacked on one hour is a diary nobody has ever used,
+           and this is the block a salon owner judges the product by. */
+        time: ["09:30", "11:00", "14:30", "16:00"][i] ?? "09:00",
+        title: r.primary,
+        description: [r.secondary, r.status].filter(Boolean).join(" · "),
+      })),
+    }),
+  ];
+}
+
+/** 分栏 — the list on the left, the one thing on the right.
+ *
+ *  wide-left, because the list IS the page and the panel is an answer to it.
+ *  Half and half would say they matter equally, and a table squeezed into half
+ *  a screen drops the column carrying the money. */
+function besideNode(pageKey: PageId, left: PuckNode[], right: PuckNode[]): PuckNode {
+  return node("Columns", `${pageKey}-split`, {
+    layout: "wide-left",
+    a: left,
+    b: right,
+    c: [],
+  });
+}
+
 function buildFromShape(
   shape: ModuleShape,
   pageKey: PageId,
@@ -2295,13 +2543,39 @@ function buildFromShape(
     : [];
 
   switch (shape) {
+    /* A NAME LIST EXISTS SO SOMEBODY CAN BE OPENED, so it is the list beside
+       the one selected rather than a table on its own. 供应商 and 师傅 arrive
+       here; 客户 has its own builder and gets the same arrangement there. */
     case "directory":
-      return [...head, ...search, ...table];
+      return [
+        ...head,
+        ...search,
+        besideNode(pageKey, table, [detailNode(pageKey, copy.columns, copy.rows[0], c)]),
+      ];
 
     case "catalog":
       return [...head, ...search, ...filter, ...table];
 
     case "pipeline":
+      /* THE FIVE PIPELINE MODULES DO NOT SHARE A QUESTION.
+
+         进货单 is a document -- a piece of paper a supplier reads -- and 任务 is
+         a board, because 「这一件走到哪」 is the only thing anybody opens it for.
+         Keying the arrangement off `shape` alone is what produced sixteen
+         copies of one page; keying it off what the page is FOR is the repair.
+         报价单, 订单 and 工程 have their own builders below. */
+      if (pageKey === "tasks") {
+        return [...head, boardNode(pageKey, ctx, copy.rows), ...table];
+      }
+      if (pageKey === "purchases") {
+        return [
+          ...head,
+          ...filter,
+          besideNode(pageKey, table, [
+            documentNode(pageKey, copy.title, copy.columns, copy.rows[0], c),
+          ]),
+        ];
+      }
       return [
         ...head,
         workflowStrip(
@@ -2359,6 +2633,14 @@ function buildFromShape(
           : []),
         ...table,
       ];
+
+    /* 预约 is the one module whose primary axis is time rather than a row, and
+       it had been rendering as a table like everything else. ⚠️ Still a
+       drawing: `calendar` has no table behind it (SHAPE_STATE), so nothing
+       here becomes real -- what changed is that it now has the shape of a
+       diary. */
+    case "calendar":
+      return [...head, ...dayNodes(pageKey, copy.rows, c), ...table];
 
     default:
       return [...head, ...table];
