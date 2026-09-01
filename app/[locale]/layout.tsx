@@ -3,6 +3,8 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { BRAND_NAME } from "@/lib/brand";
+import { SITE_URL } from "@/lib/site-url";
+import { OrganizationSchema } from "@/components/organization-schema";
 import { fontVariables } from "@/app/fonts";
 import "../globals.css";
 /**
@@ -23,11 +25,7 @@ import "../globals.css";
  * `next build` working off-platform rather than silently emitting relative
  * image URLs that no scraper can follow.
  */
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
-  ? `https://${process.env.NEXT_PUBLIC_SITE_URL.replace(/^https?:\/\//, "")}`
-  : process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : "http://localhost:3000";
+/* 搬进 lib/site-url.ts —— sitemap 跟 robots 也要用同一个。 */
 
 export async function generateMetadata({
   params,
@@ -94,6 +92,9 @@ export default async function LocaleLayout({
       className={fontVariables}
     >
       <body>
+        {/* 「这家公司是谁」，讲给机器听。见 components/organization-schema.tsx —— 里面写了
+            为什么没有地址跟电话（那两样今天是假的，宁可留白）。 */}
+        <OrganizationSchema locale={locale} />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>

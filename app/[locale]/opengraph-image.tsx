@@ -27,18 +27,21 @@ const COPY = {
     eyebrow: "FORMAE / SYS.DESIGN",
     headline: "先看到你的系统，再决定要不要做。",
     sub: "回答几个问题，当场看到一套照你流程做的系统。",
-    /* ⚠️ 定价是 2026-08-25 改的（规格书 RM500 · 开发费按模块 · 月费 RM199），
-       而这张卡一直印着旧的。**它是别人把连结贴进 WhatsApp 时跳出来的那张图** ——
+    /* ⚠️ 月费 2026-09-01 老板定成 **RM 150**（原话：「每个月150吧」）。
+       作废掉的那几个数字**故意不写在这里** —— `pricing-consistency.test.ts`
+       会在每一个客户看得到的档案里搜它们，注解也算，写了这条就红。
+       **这张卡是别人把连结贴进 WhatsApp 时跳出来的那张图** ——
        在这个市场 WhatsApp 就是通路，所以它比官网还早被看到。
        改一个价钱要改四个地方（官网 · 登入页 · 需求书 · 这张卡），
-       前三个改了，这一个没有 —— 因为它不是「一页」，没有人会走到它。 */
-    facts: ["规格书 RM 500", "托管 RM 199 / 月", "设计阶段免费"],
+       2026-08-25 那次前三个改了、这一个没有 —— 因为它不是「一页」，
+       没有人会走到它。`pricing-consistency.test.ts` 现在盯着它。 */
+    facts: ["规格书 RM 500", "托管 RM 150 / 月", "设计阶段免费"],
   },
   en: {
     eyebrow: "FORMAE / SYS.DESIGN",
     headline: "See your system before you decide to build it.",
     sub: "Answer a few questions and watch a system built around your own workflow appear.",
-    facts: ["Spec RM 500", "Hosting RM 199 / mo", "Designing is free"],
+    facts: ["Spec RM 500", "Hosting RM 150 / mo", "Designing is free"],
   },
 } as const;
 

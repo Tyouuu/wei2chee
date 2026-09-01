@@ -15,8 +15,11 @@ import { resolve } from "node:path";
 
 const FILES = ["messages/en.json", "messages/zh.json", "app/[locale]/opengraph-image.tsx"];
 
-/* 旧定价的每一种写法。要再改价钱，就把新的旧值加进来。 */
-const RETIRED = [/RM ?5,000/, /RM ?100[–-]300/];
+/* 旧定价的每一种写法。要再改价钱，就把新的旧值加进来。
+   ⚠️ RM199 是 2026-09-01 退役的 —— 老板定成 RM150（原话：「每个月150吧」）。
+   它退役得特别值得盯：它同时印在官网、登入页、需求书跟 WhatsApp 那张卡上，
+   而上一次改价钱正好漏掉那张卡。 */
+const RETIRED = [/RM ?5,000/, /RM ?100[–-]300/, /RM ?199/];
 
 describe("定价只有一个真相", () => {
   for (const f of FILES) {
@@ -24,7 +27,7 @@ describe("定价只有一个真相", () => {
       const src = readFileSync(resolve(f), "utf8");
       for (const re of RETIRED) {
         const hit = src.match(re);
-        expect(hit, `${f} 还印着 ${hit?.[0]} —— 那是 2026-08-25 改掉的定价`).toBeNull();
+        expect(hit, `${f} 还印着 ${hit?.[0]} —— 那是已经作废的定价`).toBeNull();
       }
     });
   }
@@ -32,7 +35,7 @@ describe("定价只有一个真相", () => {
   it("现行定价的数字都还在（免得有人整段删掉就算过）", () => {
     const en = readFileSync(resolve("messages/en.json"), "utf8");
     expect(en).toMatch(/RM ?500/);
-    expect(en).toMatch(/RM ?199/);
+    expect(en).toMatch(/RM ?150/);
   });
 });
 
