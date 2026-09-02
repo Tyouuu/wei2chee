@@ -2,6 +2,7 @@ import { StyleScope } from "@/design-system/editor/style-scope";
 import { loadRecordPage } from "../record-context";
 import { NewRecordForm } from "./new-record-form";
 import { RECORD_COPY } from "../record-copy";
+import { todayInMalaysia } from "@/lib/portal/live-months";
 
 /**
  * 加一单 — the page behind the button in every record page's header.
@@ -42,7 +43,15 @@ export default async function NewRecordPage({
 
        Found by looking at the screenshot. Every check passed first. */
     <StyleScope register={ctx.style} palette={ctx.palette} className="min-h-screen">
-      <main className="mx-auto w-full max-w-[560px] px-6 py-10">
+      {/* Wider when there is a document beside the form -- 560px cannot
+          hold both. Narrow everywhere else: a name list and a shelf make no
+          paper, and a wide column of short boxes reads as a form with
+          something missing from it. */}
+      <main
+        className={`mx-auto w-full px-6 py-10 ${
+          ctx.shape === "pipeline" ? "max-w-[1080px]" : "max-w-[560px]"
+        }`}
+      >
         <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
           {copy.heading(ctx.title)}
         </h1>
@@ -57,6 +66,8 @@ export default async function NewRecordPage({
           shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog"}
           parties={ctx.parties}
           columns={ctx.columns}
+          title={ctx.title}
+          today={todayInMalaysia()}
           stages={ctx.stages}
           backHref={ctx.backHref}
           /* Only the strings. `heading` is a function, and a function cannot

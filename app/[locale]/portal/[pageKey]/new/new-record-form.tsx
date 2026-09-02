@@ -6,6 +6,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { TableColumn } from "@/lib/portal/table-model";
 import type { RecordFormCopy } from "../record-copy";
 import { LineEditor, blankLine, senOf, totalOf, ringgitOf, type Line } from "./line-editor";
+import { DocumentPreview } from "./document-preview";
 
 /**
  * 加一单 — the form a person fills in.
@@ -82,6 +83,8 @@ export function NewRecordForm({
   parties,
   record,
   columns,
+  title,
+  today,
   stages,
   backHref,
   copy,
@@ -120,8 +123,24 @@ export function NewRecordForm({
     reversed?: boolean;
     /** 逐项明细, when this document has any. */
     lines?: Line[];
+    /** Its own document number, for the preview. Never present on a new one --
+     *  next_doc_no() issues it inside the write, so anything shown before that
+     *  would be a guess printed where the real number goes. */
+    docNo?: string | null;
   };
   columns: TableColumn[];
+  /** The module's own noun -- 报价单, 进货单 -- for the head of the document. */
+  title: string;
+  /**
+   * Today, in Malaysia, worked out on the SERVER and passed down.
+   *
+   * ⚠️ Not `new Date()` in here. This component renders on both sides, the
+   * server runs UTC and the owner is UTC+8, so between midnight and 8am they
+   * would disagree -- the server would print yesterday, the browser today, and
+   * React would throw away the hydrated tree. It is the same eight hours that
+   * put today_myt() in the database (20260831030000).
+   */
+  today: string;
   /** This business's own workflow words. Empty on a ledger page, which has no
    *  stages -- its status is read from the money -- and on a directory page,
    *  where the status is a word about a person rather than a step. */
@@ -505,7 +524,34 @@ export function NewRecordForm({
     );
   }
 
+  /* THE PAPER, BESIDE THE FORM THAT IS FILLING IT IN.
+     Only on the pages that produce one. A name list and a shelf have no
+     document, and drawing an empty sheet next to them would be decoration. */
+  const paper = isPipeline ? (
+    <DocumentPreview
+      title={title}
+      docNo={record?.docNo ?? null}
+      values={{
+        primary: values.primary,
+        secondary: values.secondary,
+        amount: values.amount,
+        status: values.status,
+      }}
+      lines={lines}
+      labels={{
+        primary: columns.find((c) => c.key === "primary")?.label,
+        secondary: columns.find((c) => c.key === "secondary")?.label,
+        amount: columns.find((c) => c.key === "amount")?.label,
+        status: columns.find((c) => c.key === "status")?.label,
+      }}
+      copy={copy}
+      dateLabel={copy.previewDate}
+      today={today}
+    />
+  ) : null;
+
   return (
+    <div className={paper ? "grid gap-8 lg:grid-cols-2 lg:gap-10" : undefined}>
     <form onSubmit={submit} className="flex flex-col gap-4">
       {shown.map((c) => {
         if (c.key === "status" && stages.length) {
@@ -689,5 +735,7 @@ export function NewRecordForm({
         ) : null}
       </div>
     </form>
+    {paper}
+    </div>
   );
 }

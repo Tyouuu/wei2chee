@@ -63,6 +63,11 @@ export type RecordFormCopy = {
   receiving: string;
   receiveHint: string;
   receiveDone: string;
+  /* The document preview. Only on the pages that produce a piece of paper
+     somebody outside the business reads; a name list and a shelf do not. */
+  previewLabel: string;
+  previewDate: string;
+  previewNoNumber: string;
 };
 
 type RecordCopy = {
@@ -140,6 +145,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       receiving: "进中…",
       receiveHint: "按下去，这张单上每一行都会变成库存里的一笔进货。之后这张单的行就不能再改了。",
       receiveDone: "这张单的货已经在库存里了。要更正就去库存记一笔进或出。",
+      previewLabel: "印出来的样子",
+      previewDate: "日期",
+      previewNoNumber: "单号要保存了才有 —— 它是系统发的，不是猜的。",
     },
   },
   en: {
@@ -198,6 +206,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       receiving: "Adding…",
       receiveHint: "Every line on this order becomes one stock movement. After that its lines cannot be changed.",
       receiveDone: "The goods on this order are already in your stock. Correct it with a stock movement.",
+      previewLabel: "As it prints",
+      previewDate: "Date",
+      previewNoNumber: "The number is issued when you save — it is not guessed.",
     },
   },
 };

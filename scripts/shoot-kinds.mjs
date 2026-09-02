@@ -245,6 +245,94 @@ try {
     bookings.slice(0, 160));
   check("and a day with hours in it", /\d{1,2}:\d{2}/.test(bookings));
 
+  console.log("");
+  console.log("填表 + 即时预览 — 报价单那一页:");
+  const formBoxes = page.locator("form input");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${BASE}/en/portal/quotations/new`, { waitUntil: "networkidle", timeout: 90000 });
+  await page.waitForTimeout(1200);
+  /* Typed, not written into React state: what is under test is that the paper
+     follows the keystrokes. `fill` dispatches the events React listens for. */
+  await formBoxes.nth(0).fill("Sunway Damansara kitchen");
+  await formBoxes.nth(1).fill("Ang Chee Keong");
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `${OUT}/new-quotation-1440.png`, fullPage: true });
+
+  const aside = await page.evaluate(() => {
+    const a = document.querySelector("aside");
+    return a ? { text: a.innerText, left: Math.round(a.getBoundingClientRect().left) } : null;
+  });
+  check("there is a document beside the form", !!aside, "no aside on the page");
+  check("it follows what is being typed",
+    !!aside && aside.text.includes("Sunway Damansara kitchen"),
+    aside ? aside.text.slice(0, 140) : "");
+  check("and who it is for", !!aside && aside.text.includes("Ang Chee Keong"));
+  /* The number is issued by next_doc_no() INSIDE the write. Anything printed
+     before saving is a guess sitting where the real one goes, which is the
+     worst place in this system to be wrong. */
+  check("it does not invent a document number",
+    !!aside && !/(QT|PO|SO|RC)-\d{4}-\d+/.test(aside.text),
+    aside ? aside.text.slice(0, 140) : "");
+  check("it is beside the form and not under it at 1440",
+    !!aside && aside.left > 560, aside ? `left=${aside.left}` : "");
+
+  /* THE ONE THE PICTURE CAUGHT AND SIX ASSERTIONS DID NOT.
+
+     The first version painted the card with --color-paper and wrote on it with
+     --color-on-canvas. On 台账 both resolve to #14273d -- `paper` is the INK in
+     this system, not the sheet -- so the document rendered as a black rectangle
+     with black text, and every assertion above passed, because innerText holds
+     the words whether or not a human can see one of them.
+
+     Contrast, measured off what the browser actually computed. Not a token
+     name: names are what caused this. */
+  const legible = await page.evaluate(() => {
+    /* ⚠️ THROUGH A CANVAS, NOT A REGEX. The first version pulled the numbers
+       out of the colour string, and these tokens compute to `lab(16.2 -0.47
+       -13.2)` -- three values that are not red, green and blue. It read a
+       correct page as 1.5:1 and failed it. Painting the colour and reading the
+       pixel back is the browser converting it, which is the only conversion
+       that cannot be wrong about a colour space it invented. */
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = 1;
+    const ctx = cv.getContext("2d");
+    const lum = (css) => {
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = "#000";
+      ctx.fillStyle = css;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      const f = (v) => {
+        const x = v / 255;
+        return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+      };
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    const card = document.querySelector("aside > div");
+    if (!card) return null;
+    const heading = [...card.querySelectorAll("p, span")].find(
+      (e) => (e.textContent || "").includes("Sunway Damansara kitchen"),
+    );
+    if (!heading) return null;
+    const bg = getComputedStyle(card).backgroundColor;
+    const fg = getComputedStyle(heading).color;
+    const a = lum(bg);
+    const b = lum(fg);
+    const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    return { bg, fg, ratio: Math.round(ratio * 100) / 100 };
+  });
+  check(
+    "the words on the document can actually be read off it",
+    !!legible && legible.ratio !== null && legible.ratio >= 4.5,
+    legible ? `${legible.fg} on ${legible.bg} = ${legible.ratio}:1` : "no card",
+  );
+
+  /* And a page that makes no paper must not grow an empty sheet. */
+  await page.goto(`${BASE}/en/portal/customers/new`, { waitUntil: "networkidle", timeout: 90000 });
+  await page.waitForTimeout(900);
+  check("a name list gets no document, because it makes none",
+    await page.evaluate(() => !document.querySelector("aside")));
+
   console.log("\n手机上（390，他自己站的地方）:");
   const p390 = await read("/en/portal/projects", "projects-390", 390);
   check("the board still carries his jobs at 390", p390.includes("Sunway Damansara kitchen"));

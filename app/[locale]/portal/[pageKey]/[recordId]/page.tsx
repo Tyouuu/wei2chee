@@ -3,6 +3,7 @@ import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
 import { StyleScope } from "@/design-system/editor/style-scope";
 import { loadRecordPage } from "../record-context";
 import { RECORD_COPY } from "../record-copy";
+import { todayInMalaysia } from "@/lib/portal/live-months";
 import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
 
@@ -52,6 +53,7 @@ export default async function EditRecordPage({
   let received = false;
   /* 逐项. Read back in the order he wrote them -- a quotation whose lines come
      back shuffled is a different quotation. */
+  let docNo: string | null = null;
   let lines: {
     description: string;
     qty: string;
@@ -139,7 +141,10 @@ export default async function EditRecordPage({
   } else {
     const { data } = await supabase
       .from("pipeline_records")
-      .select("id, title, party, amount_cents, stage, extra, archived_at")
+      /* doc_no for the preview's head. It exists on a saved document and
+         never on a new one -- next_doc_no() issues it inside the write -- so
+         this is the only place it can honestly come from. */
+      .select("id, doc_no, title, party, amount_cents, stage, extra, archived_at")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -151,6 +156,7 @@ export default async function EditRecordPage({
       status: data.stage ?? "",
     });
     Object.assign(values, ownColumns(data.extra));
+    docNo = data.doc_no ?? null;
     archivedAt = data.archived_at;
 
     const { data: rows } = await supabase
@@ -182,7 +188,14 @@ export default async function EditRecordPage({
 
   return (
     <StyleScope register={ctx.style} palette={ctx.palette} className="min-h-screen">
-      <main className="mx-auto w-full max-w-[560px] px-6 py-10">
+      {/* Wider when there is a document beside the form. A quotation is the
+          only thing this system makes that somebody outside the business
+          reads, and 560px cannot hold the form and the paper. */}
+      <main
+        className={`mx-auto w-full px-6 py-10 ${
+          ctx.shape === "pipeline" ? "max-w-[1080px]" : "max-w-[560px]"
+        }`}
+      >
         <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
           {copy.editHeading(ctx.title)}
         </h1>
@@ -196,9 +209,11 @@ export default async function EditRecordPage({
           shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog"}
           parties={ctx.parties}
           columns={ctx.columns}
+          title={ctx.title}
+          today={todayInMalaysia()}
           stages={ctx.stages}
           backHref={ctx.backHref}
-          record={{ id: recordId, values, archivedAt, reversed, lines }}
+          record={{ id: recordId, values, archivedAt, reversed, lines, docNo }}
           copy={copy.form}
         />
       </main>

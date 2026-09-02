@@ -40,6 +40,11 @@ const form = (over: Partial<Parameters<typeof NewRecordForm>[0]> = {}) =>
       shape="ledger"
       parties={[]}
       columns={columns}
+      title="Payments"
+      /* Fixed, never new Date(): a test whose expected output changes at
+         midnight in one time zone is a test that fails for a reason nobody can
+         reproduce the next morning. */
+      today="2026-09-02"
       stages={[]}
       backHref="/back"
       copy={RECORD_COPY.zh.form}
@@ -125,6 +130,8 @@ describe("逐项明细", () => {
         shape="pipeline"
         parties={[]}
         columns={cols}
+        title="Quotations"
+        today="2026-09-02"
         stages={[]}
         backHref="/back"
         copy={RECORD_COPY.zh.form}
