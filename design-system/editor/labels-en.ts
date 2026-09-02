@@ -76,7 +76,6 @@ export const LABELS_EN: Record<string, string> = {
      英文的组件库里。 */
   顶栏: "Top bar",
   你在哪: "Where you are",
-  日期: "Date",
   页面框架: "Page shell",
   分栏: "Columns",
   询价表格: "Form fields",

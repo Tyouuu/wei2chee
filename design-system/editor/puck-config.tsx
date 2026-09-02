@@ -218,6 +218,7 @@ type Components = {
   };
   SystemBar: { crumbs?: { text?: string }[]; date?: string };
   SystemShell: {
+    bar?: boolean;
     strip: Slot;
     sidebar: Slot;
     /** The split shell's second column. See system-shell.tsx. */
@@ -1352,13 +1353,14 @@ export const puckConfig: Config<Components> = {
       // say "follow the register". These two carried "side" / "dark" and
       // therefore overrode all twenty-one registers' preferences forever --
       // measured, three registers rendered a byte-identical rail.
-      defaultProps: { strip: [], sidebar: [], aside: [], main: [] },
-      render: ({ strip: Strip, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
+      defaultProps: { bar: false, strip: [], sidebar: [], aside: [], main: [] },
+      render: ({ bar, strip: Strip, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
         <SystemShell
           nav={nav ?? "side"}
           navTone={navTone ?? "dark"}
           frame={frame ?? "flush"}
           width={width ?? "wide"}
+          bar={Boolean(bar)}
           strip={<Strip />}
           sidebar={<Sidebar />}
           aside={<Aside />}

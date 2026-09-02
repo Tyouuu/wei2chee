@@ -44,7 +44,16 @@ export type ShareSlice = {
   color: string
 }
 
-export type ShareShape = "donut" | "pie" | "bars"
+/* 🔴 三种变成五种（2026-09-02）。
+   老板：「你没有帮我去加轴的吗 怪不得你一直复刻不到」。他讲对了，而且量得出来：
+   二十根轴里**有十根只有两三种**，而一根只有两种的轴，十五套风格里必然有八套
+   共用同一个值 —— 到那时候唯一还能分开它们的就只剩颜色，
+   而那正好是他这两天一直在骂的那件事。
+
+   加的两种都是**别人页面上真的有、而我们画不出来**的东西：
+   `gauge`  半圆的表 —— TailAdmin 整页就靠这一个物件撑起来
+   `stack`  一条堆叠条 —— 一整条就是全部，每一段是一块，Ant Design Pro 用它 */
+export type ShareShape = "donut" | "pie" | "bars" | "gauge" | "stack"
 
 export function ShareChart({
   title,
@@ -77,7 +86,81 @@ export function ShareChart({
   const config = { v: { label: title || "", color: "var(--chart-1)" } } satisfies ChartConfig
 
   const body =
-    look === "bars" ? (
+    look === "stack" ? (
+      /* 一条堆叠条。跟 `bars` 的差别不是画法，是**问题不一样**：
+         bars 一行一段，问的是「每一段各占多少」；stack 一整条，
+         问的是「整个加起来是多少，而它被切成几块」。 */
+      <div className="flex flex-1 flex-col [gap:var(--gap-stack)]">
+        <div
+          className="flex h-[14px] w-full overflow-hidden [border-radius:var(--radius-sm)]"
+          style={{ background: "var(--color-ink-800)" }}
+        >
+          {rows.map((s) => (
+            <div
+              key={s.label}
+              className="h-full"
+              style={{ width: `${total ? (s.value / total) * 100 : 0}%`, background: s.color }}
+            />
+          ))}
+        </div>
+        <ul className="flex flex-wrap [gap:var(--gap-stack)]">
+          {rows.map((s) => (
+            <li key={s.label} className="flex items-center [gap:var(--gap-inline)] [font-size:var(--text-xs)]">
+              <span
+                aria-hidden
+                className="h-[9px] w-[9px] flex-none [border-radius:var(--radius-sm)]"
+                style={{ background: s.color }}
+              />
+              <span className="truncate">{s.label}</span>
+              <span className="tnum [font-weight:var(--fw-medium)]">{fmt(s.value)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : look === "gauge" ? (
+      /* 半圆的表。第一段是「已经到手的」，剩下的是槽。
+         ⚠️ 它读的是**第一段占全部多少** —— 一个半圆没有第三段的位置，
+         硬塞第三段会画出一个没有人读得懂的东西。 */
+      <div className="flex flex-1 flex-wrap items-center [gap:var(--gap-stack)]">
+        <div className="relative h-[100px] w-[184px] flex-none">
+          <svg viewBox="0 0 184 100" className="h-full w-full" aria-hidden="true">
+            <path
+              d="M 16 92 A 76 76 0 0 1 168 92"
+              fill="none"
+              stroke="var(--color-ink-800)"
+              strokeWidth="16"
+              strokeLinecap="round"
+            />
+            <path
+              d="M 16 92 A 76 76 0 0 1 168 92"
+              fill="none"
+              stroke={rows[0]?.color ?? "var(--color-primary)"}
+              strokeWidth="16"
+              strokeLinecap="round"
+              strokeDasharray={`${238.8 * (total ? (rows[0]?.value ?? 0) / total : 0)} 238.8`}
+            />
+          </svg>
+          <div className="absolute inset-x-0 bottom-0 text-center">
+            <span className="tnum [font-size:var(--text-stat,var(--text-title))] [font-weight:var(--fw-semibold)] [color:var(--color-on-canvas)]">
+              {total ? Math.round(((rows[0]?.value ?? 0) / total) * 100) : 0}%
+            </span>
+          </div>
+        </div>
+        <ul className="flex min-w-[140px] flex-1 flex-col [gap:calc(var(--gap-inline)*0.6)]">
+          {rows.map((s) => (
+            <li key={s.label} className="flex items-center [gap:var(--gap-inline)] [font-size:var(--text-xs)]">
+              <span
+                aria-hidden
+                className="h-[9px] w-[9px] flex-none [border-radius:var(--radius-sm)]"
+                style={{ background: s.color }}
+              />
+              <span className="min-w-0 flex-1 truncate">{s.label}</span>
+              <span className="tnum flex-none [font-weight:var(--fw-medium)]">{fmt(s.value)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : look === "bars" ? (
       <div className="flex flex-col [gap:var(--gap-inline)]">
         {rows.map((s) => {
           const pct = (Number(s.value) / total) * 100

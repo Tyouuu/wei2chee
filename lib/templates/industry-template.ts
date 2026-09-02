@@ -3003,6 +3003,7 @@ export function buildPageLayout(
     root: {},
     content: [
       node("SystemShell", `${pageKey}-shell`, {
+        bar: strip.length > 0,
         strip,
         sidebar: [rail],
         aside,

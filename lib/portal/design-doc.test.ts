@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { STYLE_BRIEFS } from "./design-doc";
 import { VARIANTS } from "@/design-system/editor/variants";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
@@ -114,7 +116,34 @@ describe("every register's preferences point at something real", () => {
    * count, so two registers at six here are still further apart than the number
    * suggests.
    */
+  /* 🔴 这一条守的是**尺子本身**。
+     它被窄化过一次：十一根轴，而每一套实际宣告三十八个偏好，于是一对
+     12/20 的双胞胎被报成 4/11 并且放行。一把量错子集的尺，比没有尺更糟 ——
+     它会发绿灯。 */
+  it("the ruler itself does not get narrower", () => {
+    const src = readFileSync(resolve("lib/portal/design-doc.test.ts"), "utf8");
+    const block = src.match(/const AXES = \[([\s\S]*?)\] as const;/);
+    expect(block, "AXES 不见了 —— 这条守卫读不到它要守的东西").toBeTruthy();
+    const count = (block?.[1].match(/"/g)?.length ?? 0) / 2;
+    expect(count, "结构轴的数量变少了。要拿掉一根，先在这里写下为什么").toBeGreaterThanOrEqual(20);
+  });
+
   it("has no two registers that are one design in two colours", () => {
+    /* 🔴 十一根变二十根（2026-09-02），而这不是把尺放宽，是把尺**修准**。
+       老板：「你没有帮我去加轴的吗 怪不得你一直复刻不到」。
+
+       这份清单本来只数十一根，而每一套风格实际上宣告了三十八个偏好。
+       没被数到的那几根不是装饰 —— `WorkflowStrip`（一条流程是一行、一条时间线
+       还是一串编号）、`ShelfList`、`HeroCard`、`PriceTable`、`DaySchedule`
+       全部是**画面上看得见的不同物件**。
+
+       量出来的后果很具体：把它们数进来之后，**台账 跟 中台 共用 12/20** ——
+       六成一样。而旧的尺子说它们是 4/11，还给了绿灯。
+       两套都是暗侧栏、都最密、都表格先行、都有搜索工具条，而尺子看不到。
+
+       ⚠️ 只有**结构**的轴进这份清单。`Tag` `ActionButton` `Divider` 那几个是
+       漆，而这条守卫存在的意义就是「换个配色它还是不是另一个设计」—— 把漆
+       数进来会让这个数字自己回答自己。 */
     const AXES = [
       "SystemShell",
       "RailNav",
@@ -127,8 +156,28 @@ describe("every register's preferences point at something real", () => {
       "ShareChart",
       "RankList",
       "PageHeader",
+      "WorkflowStrip",
+      "ShelfList",
+      "HeroCard",
+      "PriceTable",
+      "DaySchedule",
+      "InfoRows",
+      "SmallStat",
+      "MarkList",
+      "TabbedPanel",
     ] as const;
-    const MAX_SHARED = 6;
+    /* 8/20。⚠️ **这个数字只准往下走，永远不准往上。**
+
+       它今天是 8 而不是 6，理由是量出来的、而且写下来了：二十根轴里**十根只有
+       两三种变体**（DaySchedule 2 · PriceTable 2 · MarkList/RankList/
+       RecordTableRow/RecordTableTools/ShareChart/SmallStat/TrendChart/
+       WorkflowStrip 各 3）。一根只有两种的轴，六套风格里必然有三套共用同一个
+       值 —— 那不是设计懒，那是**没有东西可以选**。
+
+       所以路线是：**先把轴加深，再把这个数字调下来**（[任务 102](../../docs/founder-tasks.md)）。
+       九月二日已经给 ShareChart 加了半圆表跟堆叠条，3 → 5。
+       每加深一根轴，这里就该少一分。 */
+    const MAX_SHARED = 8;
 
     const styles = [...STYLE_ORDER];
     for (let i = 0; i < styles.length; i++) {

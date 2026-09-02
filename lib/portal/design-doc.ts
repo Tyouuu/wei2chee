@@ -252,8 +252,10 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       StatRow: "boxed",
       /* 全库最密的一套，一屏最多行 —— 密度让「找」变得更必要，不是更不必要。 */
       RecordTableTools: "search",
-      RecordTable: "compact",
-      HeroCard: "stats",
+      /* 🔴 台账 也是 compact，而这两套本来就最像。这一套要**画格线** —— 它的主张是「像他们本来在用的进销存」，而那种画面就是一张有格子的表，照着纸对得上。 */
+      RecordTable: "grid",
+      /* 台账 也是 stats。这一套的大数字卡是**整块**的，不是四个小格 —— 一个开二十张单的人一天只盯一个总数。 */
+      HeroCard: "full",
       SiteSteps: "across",
       WorkflowStrip: "row",
       ActionButton: "default",
@@ -262,23 +264,35 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       TrendChart: "area",
       SystemShell: "side-dark",
       RailNav: "tree",
-      InfoRows: "compact",
-      DaySchedule: "framed",
+      /* 台账 也是 compact。去掉线之后它比 台账 更紧 —— 全库最密要在每一个零件上兑现，不是只在行高上。 */
+      InfoRows: "compact-bare",
+      /* 台账 也是 framed。这一套没有阴影没有圆角，一个带框的日程跟它整页的做法打架。 */
+      DaySchedule: "bare",
       DateProgress: "framed",
       PeopleBoard: "five",
       PriceTable: "table",
-      SmallStat: "compact",
-      ShelfList: "ruled-sm",
+      /* 台账 也是 compact。小数字在这一套不是主角（主角是那张表），所以它反而不用挤。 */
+      SmallStat: "default",
+      /* 台账 也是 ruled-sm。它的清单用格子，因为它的表已经全是线了，再来一份线就分不出哪一块是哪一块。 */
+      ShelfList: "boxed-sm",
       AttachmentList: "row",
+      /* 台账 也是 ruled。 */
+      /* 招牌 也是 spread。 */
       MarkList: "ruled",
       RankList: "badge",
-      ShareChart: "pie",
+      /* 🔴 pie → stack（2026-09-02）。一个圆饼在一张最密的表旁边是一块浪费掉的
+      正方形；一条堆叠条只吃一行高，而它回答的是同一个问题。
+      Ant Design Pro 的列表页用的就是这个。 */
+      ShareChart: "stack",
       RecordTableRow: "pill",
       PhotoFrame: "wide",
       ActionRow: "row",
       ChoiceSelect: "default",
       PageHeader: "ruled",
-      Panel: "card",
+      /* 🔴 招牌 也是 card。这一套没有阴影、2px 直角 —— 用线分区才是它，卡片是别人的。 */
+      Panel: "ruled",
+      /* 台账 也是 underline。分段按钮是 Autocount 那一类真正在用的样子。 */
+      /* 招牌 也是 segment，而分段按钮在最密的一屏里比一条下划线高。 */
       TabbedPanel: "underline",
     },
     avoid: ["给客人看的页面", "要有温度的生意"],
@@ -369,7 +383,10 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       /* 🔴 pie → donut（2026-09-02）。中台 也是 pie，两套撞在同一个物件上；
       而这一套要的是**一个大到当招牌用的圆**，中间空着放数字 ——
       TailAdmin 那一页整页就靠一个大圆环撑起来。实心圆做不到那件事。 */
-      ShareChart: "donut",
+      /* 🔴 donut → gauge（2026-09-02）。抄的是 TailAdmin：那一页整个靠一个
+      半圆表撑起来，而这一套的主张就是「一个大到当招牌用的数字」。
+      圆环还是一个圆，半圆表是一根**指针指到哪里**——招牌要的是后面那件事。 */
+      ShareChart: "gauge",
       RecordTableRow: "pill",
       PhotoFrame: "wide",
       ActionRow: "row",

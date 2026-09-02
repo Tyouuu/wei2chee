@@ -501,6 +501,13 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "donut", label: "圆环", props: { shape: "donut" } },
     { id: "pie", label: "实心圆", props: { shape: "pie" } },
     { id: "bars", label: "比例条", props: { shape: "bars" } },
+    /* 两种新的（2026-09-02）。加的理由是**深度不够**，不是好看：
+       二十根轴里十根只有两三种，而一根两种的轴在十五套风格里必然逼出八套共用
+       同一个值 —— 到那时候只剩颜色可以分开它们。
+       两种都是别人页上真的有、我们画不出来的：半圆表（TailAdmin 整页靠它）、
+       堆叠条（Ant Design Pro 用它讲「一整条被切成几块」）。 */
+    { id: "gauge", label: "半圆表", props: { shape: "gauge" } },
+    { id: "stack", label: "一条堆叠", props: { shape: "stack" } },
   ],
 
   RankList: [

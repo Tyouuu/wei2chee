@@ -34,6 +34,7 @@ export function SystemShell({
   nav = "side",
   navTone = "dark",
   strip,
+  bar = false,
   frame = "flush",
   width = "wide",
 }: {
@@ -68,9 +69,19 @@ export function SystemShell({
   /** Where the navigation sits. Pair `"top"` with RailNav's `variant="topbar"`;
    *  the two are a matched set and neither reads right without the other.
    *  `"split"` is a side rail plus the `aside` column above. */
-  /** 页面上方那一条细的（面包屑 · 日期）。见 system-bar.tsx。
-   *  没有给就不画 —— 其余几套一个像素都不动。 */
+  /** 页面上方那一条细的（面包屑 · 日期）。见 system-bar.tsx。 */
   strip?: React.ReactNode
+  /**
+   * 🔴 这一页到底有没有顶栏 —— 一个布林，不是「slot 空不空」。
+   *
+   * 第一版直接画 `{strip}`，而 Puck 的空 slot **在编辑器里不是零高** ——
+   * 它是一块可以拖东西进去的放置区。实拍 2026-09-02：招牌 的页头跟内容之间
+   * 多出 380px 的空地，而那一套根本没有要顶栏。**十二页 × 十四套，全部多一块。**
+   *
+   * 组件读不到 slot 里有几个东西（Puck 交给它的是一个已经包好的组件），
+   * 所以由产生器直接讲：有就是有。
+   */
+  bar?: boolean
   nav?: "side" | "top" | "split"
   /** What the navigation's ground is made of. `"dark"` is the register's own
    *  nav ground; `"light"` runs the navigation on the same paper as the page,
@@ -330,8 +341,9 @@ export function SystemShell({
           }`}
         >
           {/* 顶栏。在内距里面，所以它跟页面内容左右对齐 ——
-              一条跟内容不对齐的横线，看起来像是别人的东西掉进来了。 */}
-          {strip}
+              一条跟内容不对齐的横线，看起来像是别人的东西掉进来了。
+              ⚠️ `bar` 才画。空 slot 在编辑器里是一块放置区，不是零高。 */}
+          {bar ? strip : null}
           {main}
         </div>
       </div>
