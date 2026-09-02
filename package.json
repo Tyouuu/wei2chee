@@ -71,7 +71,8 @@
     "check:table-search": "node scripts/check-table-search.mjs",
     "check:bookings": "node scripts/check-bookings.mjs",
     "shoot:objects": "node scripts/shoot-objects.mjs",
-    "align:admin": "node scripts/align-admin.mjs"
+    "align:admin": "node scripts/align-admin.mjs",
+    "shoot:appui": "node scripts/shoot-appui.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
