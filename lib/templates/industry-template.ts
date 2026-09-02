@@ -1444,7 +1444,16 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // so the table leads, then the month's progress with the figures beside it.
   // Black, white and one red on a PRINTED SHEET. A printed sheet is one
   // column. No split -- this is the register where restraint is the design.
-  swiss: ["stats4", "trend|share@wide-left", "table", "flow"],
+  /* 🔴 瑞士 拿掉分栏，变成一栏（2026-09-02）。
+     它的主张是「印在纸上最好看的一套」，而**一张印出来的纸是一栏的** ——
+     分栏是萤幕的东西，不是纸的东西。它跟 图纸 本来都是
+     「四个数字 → 一个带分栏的走势」开场，两套的侧栏底色在 token 里又一模一样，
+     所以摆在一起像同一页。
+
+     一栏之后它是全库唯一一套从上到下不分左右的：数字、表、走势、流程，
+     一件一件往下读 —— 跟一张 A4 的读法一样。圆饼也拿掉了：
+     一张纸上没有人会去量一个圆的角度。 */
+  swiss: ["stats4", "table", "trend", "flow"],
   // Friendly and rounded. One figure with its own supporting numbers, the
   // day's list beside it, then the money.
   // Weight. Two enormous figures and the work, in slabs. No chart, no split --
@@ -1496,7 +1505,16 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // early. Then the same chart-and-ranking pair their own dashboard opens on.
   // 中台: Ant Design Pro's list pages all carry a second column. Share first,
   // because 「钱卡在哪一段」 is the question this register is opened with.
-  counter: ["share", "todo", "stats4", "table", "trend|flow@wide-right"],
+  /* 🔴 中台 减到三块（2026-09-02）。老板：「还是不够明显 就是每一套都是有特点的」。
+     它本来有六块 —— 圆饼、今天要跟的、四个数字、表、走势、流程 ——
+     跟 图纸 一模一样的「什么都有一点」，而那是**图纸**的主张，不是它的。
+
+     它自己的主张写着「开系统就是在里面做事，不是在里面看事」。
+     一个在里面做事的人不看圆饼，也不看六个月的走势 —— 他看**今天这张表**。
+     所以：表在最前面而且最长，数字在下面，流程收尾。**没有图。**
+     少掉的那几块不是被删了，是让给了行数：同一屏它现在放得下最多的记录，
+     而那正是 Autocount、进销存那一类真正在做的事。 */
+  counter: ["table", "stats4", "flow"],
   /*
     工作室 IS THE ONLY REGISTER THAT PAIRS NOTHING.
 
@@ -2989,10 +3007,18 @@ export function buildPageLayout(
  *
  *   台账 ledger   a ledger is a list you scan and a record you open. It was
  *                 the densest table in the set with nothing beside it.
- *   中台 counter  the Ant-Design-Pro lineage this was measured from ships a
- *                 second column in every one of its list pages.
+ * 🔴 中台 CAME OFF THIS LIST ON 2026-09-02, and the reason is the founder's:
+ * 「还是不够明显 就是每一套都是有特点的」. Two registers on the same shell is
+ * one shell, and the split -- a scan list pinned left, the record on the right
+ * -- is 台账's whole argument. 中台's own brief never mentions a second column;
+ * it says 「开系统就是在里面做事，不是在里面看事」 and 「全库最密」, and what
+ * makes a page dense is more ROWS, not another column taking a third of them.
+ *
+ * ⚠️ It was also a SECOND SOURCE OF TRUTH: this Set said 中台 is split while
+ * its own `SystemShell` preference said `side-dark`. The set now agrees with
+ * what each register declares about itself.
  */
-export const SPLIT_REGISTERS = new Set(["ledger", "counter"]);
+export const SPLIT_REGISTERS = new Set(["ledger"]);
 
 /**
  * True when a `project_pages.layout_json` has never been written to -- the

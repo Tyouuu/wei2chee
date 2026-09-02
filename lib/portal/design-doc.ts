@@ -366,7 +366,10 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       AttachmentList: "tile",
       MarkList: "spread",
       RankList: "badge",
-      ShareChart: "pie",
+      /* 🔴 pie → donut（2026-09-02）。中台 也是 pie，两套撞在同一个物件上；
+      而这一套要的是**一个大到当招牌用的圆**，中间空着放数字 ——
+      TailAdmin 那一页整页就靠一个大圆环撑起来。实心圆做不到那件事。 */
+      ShareChart: "donut",
       RecordTableRow: "pill",
       PhotoFrame: "wide",
       ActionRow: "row",
