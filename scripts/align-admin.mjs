@@ -335,6 +335,130 @@ const PROBE = (rootSel) => {
   const lastBottom = outer.length ? Math.max(...outer.map((o) => o.r.bottom)) : R.top;
   const tailGap = Math.max(0, Math.round(R.top + root.scrollHeight - lastBottom));
 
+  // ---- 这一页由哪些**组件**组成 --------------------------------------------
+  /* 🔴 2026-09-03。老板连讲四次：`全部组件才弄清楚啊 先加进尺子啊` ·
+     `不是叫你重修尺子吗` · `为什么每次都要跟你讲那么多次` ·
+     `没有的组件 就自己重建啊`。
+
+     **他抓到的毛病是真的**：TailAdmin 是侧栏我做成顶栏，Tabler 是顶栏我做成侧栏，
+     而我还替这三个写了「故意不跟」的理由 —— 那不是判断，那是我没看清楚参考页。
+
+     根因：尺子量的是**尺寸**（多宽、多高、几像素），从来没有量过
+     **这一页上有哪些东西**。所以「他们有搜索框我们没有」「他们有柱状图我们没有」
+     这一类差异，尺子一句都讲不出来，只能等我用眼睛偶然看到。
+
+     这一段就是那份清单。每一个都用**画面上认得出的特徵**去认，不认 class 名字
+     —— 十家的 class 名字有十种写法，而一个圆环就是一个圆环。 */
+  const has = (fn) => {
+    try { return Boolean(fn()); } catch { return false; }
+  };
+  const svgs = [...root.querySelectorAll("svg,canvas")].filter(vis);
+  const bigSvgs = svgs.filter((e) => {
+    const r = e.getBoundingClientRect();
+    return r.width >= 90 && r.height >= 40;
+  });
+  const components = {
+    侧栏: rail?.axis === "side",
+    顶栏: rail?.axis === "top" || all.some((e) => {
+      const r = e.getBoundingClientRect();
+      return r.width >= R.width * 0.85 && r.height >= 36 && r.height <= 96 && r.top - R.top < 40;
+    }),
+    面包屑: has(() =>
+      root.querySelector('[aria-label*="breadcrumb" i], nav[class*="breadcrumb" i]') ||
+      all.some((e) => {
+        const t = (e.childNodes.length < 12 && e.innerText) || "";
+        const one = t.trim().split("\n")[0];
+        return /^.{2,40}\s*[/›>]\s*.{2,40}$/.test(one) && e.querySelectorAll("a").length >= 1;
+      })),
+    搜索框: has(() =>
+      root.querySelector('input[type="search"]') ||
+      [...root.querySelectorAll("input")].some((i) =>
+        /search|搜索|搜尋|filter|查找/i.test(i.placeholder || i.getAttribute("aria-label") || ""))),
+    头像: has(() =>
+      all.some((e) => {
+        const r = e.getBoundingClientRect();
+        const c = getComputedStyle(e);
+        return r.width >= 22 && r.width <= 56 && Math.abs(r.width - r.height) < 6 &&
+          parseFloat(c.borderRadius) >= r.width * 0.4;
+      })),
+    数字卡: has(() =>
+      all.some((e) => {
+        const t = (e.childNodes.length === 1 && e.textContent) || "";
+        return /[\d][\d,. ]*$/.test(t.trim()) && t.trim().length >= 2 &&
+          parseFloat(getComputedStyle(e).fontSize) >= 20;
+      })),
+    /* 柱状图：一堆等宽、不等高的方块并排。认的是形状，不是库。 */
+    柱状图: has(() =>
+      bigSvgs.some((sv) => {
+        const rects = [...sv.querySelectorAll("rect")].filter((x) => {
+          const r = x.getBoundingClientRect();
+          return r.width >= 3 && r.width <= 60 && r.height >= 6;
+        });
+        if (rects.length < 4) return false;
+        const ws = rects.map((x) => Math.round(x.getBoundingClientRect().width));
+        const hs = rects.map((x) => Math.round(x.getBoundingClientRect().height));
+        return new Set(ws).size <= 3 && new Set(hs).size >= 3;
+      })),
+    /* 线/面图：一条拐很多次的路径。 */
+    走势图: has(() =>
+      bigSvgs.some((sv) =>
+        [...sv.querySelectorAll("path")].some((pth) => {
+          const d = pth.getAttribute("d") || "";
+          return (d.match(/[LC]/g) || []).length >= 6 && pth.getBoundingClientRect().width >= 120;
+        }))),
+    /* 圆环 / 半圆表：一个画了一段弧的圆。 */
+    圆环: has(() =>
+      svgs.some((sv) =>
+        [...sv.querySelectorAll("circle,path")].some((x) => {
+          const st = getComputedStyle(x);
+          if (x.tagName.toLowerCase() === "circle" && st.strokeDasharray && st.strokeDasharray !== "none") return true;
+          const d = x.getAttribute("d") || "";
+          return /[Aa]\s*[\d.]/.test(d) && x.getBoundingClientRect().width >= 60;
+        }))),
+    表格: Boolean(root.querySelector("table")),
+    表格页尾: tableFoot === "有",
+    分页签: has(() =>
+      root.querySelector('[role="tablist"]') ||
+      all.filter((e) => e.getAttribute("aria-selected") !== null).length >= 2),
+    进度条: has(() =>
+      root.querySelector('[role="progressbar"], progress') ||
+      all.some((e) => {
+        const r = e.getBoundingClientRect();
+        if (r.height < 4 || r.height > 14 || r.width < 60) return false;
+        const kid = e.firstElementChild;
+        if (!kid) return false;
+        const kr = kid.getBoundingClientRect();
+        return kr.height >= r.height - 2 && kr.width > 4 && kr.width < r.width - 4;
+      })),
+    /* 药丸 / 状态标签：小、很圆、字很短。 */
+    状态标签: has(() =>
+      all.filter((e) => {
+        const r = e.getBoundingClientRect();
+        const c = getComputedStyle(e);
+        const t = (e.innerText || "").trim();
+        return r.height >= 16 && r.height <= 34 && r.width >= 24 && r.width <= 160 &&
+          parseFloat(c.borderRadius) >= 8 && t.length > 0 && t.length <= 18 && !e.querySelector("svg");
+      }).length >= 2),
+    看板: has(() => {
+      const cols = all.filter((e) => {
+        const r = e.getBoundingClientRect();
+        return r.width >= 180 && r.width <= 420 && r.height >= 220 &&
+          [...e.children].filter((k) => k.getBoundingClientRect().height >= 48).length >= 2;
+      });
+      if (cols.length < 3) return false;
+      const tops = cols.map((e) => Math.round(e.getBoundingClientRect().top));
+      return new Set(tops).size <= 2;
+    }),
+    /* 日历：七个等宽的格子排成一行，而且里面是数字。 */
+    日历: has(() =>
+      all.some((e) => {
+        const kids = [...e.children].filter((k) => k.getBoundingClientRect().width > 20);
+        if (kids.length !== 7) return false;
+        return kids.filter((k) => /^\d{1,2}$/.test((k.innerText || "").trim().split("\n")[0])).length >= 4;
+      })),
+    地图: has(() => svgs.some((sv) => sv.querySelectorAll("path").length >= 40)),
+  };
+
   // ---- 一屏塞了多少字 -----------------------------------------------------
   const words = (root.innerText.match(/\S+/g) || []).length;
 
@@ -367,6 +491,7 @@ const PROBE = (rootSel) => {
     gap: med(gaps),
     lonely,
     tailGap,
+    components,
     rowH,
     sortable,
     tableFoot,
@@ -592,6 +717,27 @@ async function main() {
       console.log(line(n, a, o, v === "差" ? (why ? "留" : "🔴 差") : v));
       if (v === "差" && why) console.log(`  ${" ".repeat(14)} ↳ ${why}`);
     }
+    /* ── 组件清单 ────────────────────────────────────────────────────────
+       **这一段才是「复刻」真正要看的东西。** 上面那些是尺寸，
+       这里是「这一页上有哪些东西」——「他们有搜索框我们没有」这种差异，
+       在尺寸那一栏里一个字都讲不出来。
+       缺的另外数一个数字，因为它跟「差 5 像素」不是同一种欠债：
+       **一个尺寸是调，一个组件是建。** */
+    const names = Object.keys(theirs.components ?? {});
+    const missing = names.filter((k) => theirs.components[k] && !ours.components[k]);
+    const extra = names.filter((k) => !theirs.components[k] && ours.components[k]);
+    console.log(`  ${pad("── 组件", 14)}`);
+    for (const k of names) {
+      const t = theirs.components[k], o = ours.components[k];
+      if (!t && !o) continue;
+      const mark = t && !o ? "🔴 缺" : !t && o ? "多出来" : "ok";
+      console.log(line(k, t ? "有" : "没有", o ? "有" : "没有", mark));
+    }
+    console.log(
+      `  ${pad("", 14)} 缺 ${missing.length} 个${missing.length ? "：" + missing.join(" · ") : ""}` +
+        (extra.length ? `   多 ${extra.length} 个：${extra.join(" · ")}` : ""),
+    );
+
     console.log(`  ${pad("顺序", 14)} 参考 ${theirs.blocks}`);
     console.log(`  ${pad("", 14)} 我们 ${ours.blocks}`);
     const bad = rows.filter(([n, , , v]) => v === "差" && !kept.has(n)).length;

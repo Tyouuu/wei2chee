@@ -122,7 +122,10 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       我们本来只有图，读的人要自己从柱子里读出结论。 */
       TrendChart: "sum",
       SystemShell: "split-deep",
-      RailNav: "compact",
+      /* 🔴 图标栏 → 有字的侧栏（2026-09-03）。shadcn 那一页是 240 宽、有字的侧栏，
+         而我一直拿「窄图标栏是台账唯一的分别」当理由留着它。
+         **分别应该来自这一页有哪些组件、怎么排，不是来自一条别人没有的侧栏。** */
+      RailNav: "full",
       InfoRows: "compact",
       DaySchedule: "ruled",
       DateProgress: "framed",
@@ -223,7 +226,9 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       Tag: "default",
       Divider: "normal",
       TrendChart: "bar",
-      SystemShell: "side-light",
+      /* 🔴 侧栏 → 顶栏（2026-09-03）。Tabler 的单据页是**顶栏 + 一张居中的纸**，
+         而我做成了侧栏。同一个错的另一半。 */
+      SystemShell: "top-light-centred",
       RailNav: "full",
       InfoRows: "compact",
       DaySchedule: "framed",
@@ -273,7 +278,9 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       Tag: "outline",
       Divider: "tight",
       TrendChart: "area",
-      SystemShell: "side-dark",
+      /* 🔴 侧栏 → 顶栏（2026-09-03）。Tabler 的仪表盘是顶栏，不是侧栏。
+         「中台要暗侧栏因为像 Autocount」是我写的，参考不是。 */
+      SystemShell: "top-light",
       RailNav: "tree",
       /* 台账 也是 compact。去掉线之后它比 台账 更紧 —— 全库最密要在每一个零件上兑现，不是只在行高上。 */
       InfoRows: "compact-bare",
@@ -385,7 +392,12 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       Tag: "default",
       Divider: "tight",
       TrendChart: "bar",
-      SystemShell: "top-dark",
+      /* 🔴 顶栏 → 侧栏（2026-09-03）。老板：`这个的侧栏的 不是顶栏的…
+         你根本就没复刻明白 先把模版照片的组件弄清楚啊`。
+         **他讲对了，而且我还替这一条写了「故意不跟」的理由** ——
+         那不是判断，那是我没看清楚参考页：TailAdmin 是**侧栏**。
+         尺子现在自己会数组件，这一条是它第一次跑就报的「缺 侧栏 · 多 顶栏」。 */
+      SystemShell: "side-inset-light",
       RailNav: "quiet",
       InfoRows: "comfortable-bare",
       DaySchedule: "rail",
