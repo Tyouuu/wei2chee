@@ -36,6 +36,7 @@ import {
   DIRECTORY_MODULES,
   CATALOG_MODULES,
   RECONCILE_MODULES,
+  CALENDAR_MODULES,
 } from "./shape-state";
 import {
   systemLangOf,
@@ -49,6 +50,14 @@ export type LiveRow = {
   amount?: string;
   tone: StatusTone;
   status: string;
+  /* WHEN, for the one shape whose axis is time.
+   *
+   * A diary block needs the clock face and a table does not, and squeezing
+   * 「09:30」 into `secondary` so both could read it would mean parsing a
+   * display string back into a time -- which is how a 「10:00 - Mrs Lee」 row
+   * ends up sorted after 「9:30」. Optional, and every other shape leaves it
+   * unset. */
+  at?: { time: string; endTime?: string };
   /* ── THE TENTH OF THIS BUSINESS THAT IS ONLY THIS BUSINESS ──────────────
    *
    * 「车牌号」 for a workshop, 「染发配方」 for a salon, 「货柜号」 for a
@@ -515,6 +524,110 @@ function monthText(period: string, lang: "zh" | "en"): string {
   return `${y} 年 ${n} 月`;
 }
 
+export type AppointmentRow = {
+  id: string;
+  starts_at: string;
+  ends_at: string;
+  kind: string | null;
+  party: string | null;
+  service: string | null;
+  status: string | null;
+  source: string | null;
+  note: string | null;
+  extra: unknown;
+};
+
+/**
+ * 预约 — the sixth shape, and the only one a person reads by the clock.
+ *
+ * The first column is WHAT, not when: the diary block beside it already puts
+ * the times down the left, and repeating them in the table's first cell would
+ * be the same figure twice on one screen -- which is the reason 印 was cut as a
+ * register (任务 17).
+ *
+ * ⚠️ THE CLOCK IS READ IN MALAYSIA, always. `starts_at` is an instant, the
+ * server runs UTC, and a 9am appointment printed off a UTC clock is 5pm to a
+ * salon in Klang. Same eight hours as today_myt(), except that here it is not
+ * a rounding question -- it is who turns up when.
+ */
+export function rowsFromAppointments(
+  rows: AppointmentRow[],
+  lang: "zh" | "en" = "zh",
+  href?: (id: string) => string,
+): LiveRow[] {
+  const word = {
+    zh: {
+      booked: "已约",
+      done: "来了",
+      no_show: "没来",
+      cancelled: "取消了",
+      block: "不接单",
+      web: "官网",
+    },
+    en: {
+      booked: "Booked",
+      done: "Came",
+      no_show: "No show",
+      cancelled: "Cancelled",
+      block: "Not taking bookings",
+      web: "From the website",
+    },
+  }[lang];
+
+  const clock = (iso: string): string =>
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Kuala_Lumpur",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date(iso));
+
+  return rows.map((r) => {
+    const isBlock = r.kind === "block";
+    const status = isBlock
+      ? word.block
+      : r.status === "done"
+        ? word.done
+        : r.status === "no_show"
+          ? word.no_show
+          : r.status === "cancelled"
+            ? word.cancelled
+            : word.booked;
+    /* A no-show is the one a salon owner is scanning for; a cancellation is
+       already dealt with and is dimmed rather than flagged. */
+    const tone: StatusTone = isBlock
+      ? "neutral"
+      : r.status === "no_show"
+        ? "negative"
+        : r.status === "cancelled"
+          ? "neutral"
+          : r.status === "done"
+            ? "positive"
+            : "warning";
+
+    return {
+      ...(href && r.id ? { href: href(r.id) } : {}),
+      at: { time: clock(r.starts_at), endTime: clock(r.ends_at) },
+      /* What it is, then who it is for. A block has no customer, so it leads
+         with its own note -- 「Lunch」 -- rather than with an empty name. */
+      primary: isBlock
+        ? (r.note ?? "").trim() || word.block
+        : (r.service ?? "").trim() || (r.party ?? "").trim(),
+      secondary: isBlock
+        ? ""
+        : [(r.party ?? "").trim(), r.source === "website" ? word.web : ""]
+            .filter(Boolean)
+            .join(" · "),
+      tone,
+      status,
+      /* His own columns, through the one helper the other five use -- a second
+         way of turning `extra` into cells is a second set of rules about what
+         counts as a string. */
+      ...(extraCells(r.extra) ? { extra: extraCells(r.extra) } : {}),
+    };
+  });
+}
+
 /**
  * Rewrite the tables of a page tree to carry `rows`.
  *
@@ -932,6 +1045,23 @@ export async function fetchLiveRows(
       return rowsFromParties(data as DirectoryEntry[], href);
     }
 
+    if (CALENDAR_MODULES.has(moduleKey)) {
+      /* BY THE CLOCK, not by when it was written. A diary is read forwards,
+         and 「what is next」 has an answer only in the order it will happen.
+         Cancelled rows stay: 「Mrs Lee cancelled」 is information a salon
+         reading its day needs, and hiding it makes the gap unexplained. */
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, starts_at, ends_at, kind, party, service, status, source, note, extra")
+        .eq("project_id", projectId)
+        .eq("module_key", moduleKey)
+        .is("archived_at", null)
+        .order("starts_at", { ascending: true })
+        .limit(limit);
+      if (error || !data) return [];
+      return rowsFromAppointments(data as AppointmentRow[], lang, href);
+    }
+
     if (RECONCILE_MODULES.has(moduleKey)) {
       /* THE VIEW, never the table: our own side is summed there and exists in
          no column. `security_invoker` bounds it by RLS -- which stock_on_hand
@@ -1014,7 +1144,7 @@ export async function withFreshRows(
    are not four blocks with four data sources -- they are four answers to one
    question, and they have to become real together or not at all.
    ────────────────────────────────────────────────────────────────────────── */
-const SAME_LIST = new Set(["ShelfList", "TaskBoard", "RankList", "ShareChart"]);
+const SAME_LIST = new Set(["ShelfList", "TaskBoard", "RankList", "ShareChart", "DaySchedule"]);
 
 function fill(
   type: string,
@@ -1078,6 +1208,25 @@ function fill(
     };
   }
 
+  if (type === "DaySchedule") {
+    /* 预约's diary. The times come off the row rather than out of the props --
+       a schedule whose hours are the ones it was drawn with, over somebody
+       else's appointments, is the 「real figures over sample names」 defect
+       standing on its head. Rows with no time (every other shape) are left
+       out rather than stacked at 09:00. */
+    return {
+      rows: rows
+        .filter((r) => r.at?.time)
+        .slice(0, 8)
+        .map((r) => ({
+          time: r.at?.time ?? "",
+          endTime: r.at?.endTime ?? "",
+          title: r.primary,
+          description: [r.secondary, r.status].filter(Boolean).join(" · "),
+        })),
+    };
+  }
+
   if (type === "RankList") {
     /* Biggest first -- a ranking whose order is 「whatever came back」 is a
        list, not a ranking. Rows with no amount sort last rather than being
@@ -1122,6 +1271,7 @@ function fill(
  *  be shown a memory of it. */
 function emptied(type: string): Record<string, unknown> {
   if (type === "ShelfList") return { items: [] };
+  if (type === "DaySchedule") return { rows: [] };
   if (type === "TaskBoard") return { cards: [] };
   if (type === "RankList") return { rows: [] };
   if (type === "ShareChart") return { slices: [] };

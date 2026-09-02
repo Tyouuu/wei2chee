@@ -387,6 +387,44 @@ try {
   check("and the verdict panel does not claim it ties out",
     !/ties out/i.test(recon), "the panel still asserts agreement");
 
+  console.log("");
+  console.log("预约 — 他自己的一天:");
+  const slot = (h, m) => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + 1);
+    d.setUTCHours(h, m, 0, 0);
+    return d.toISOString();
+  };
+  for (const [who, what, h] of [
+    ["Ang Chee Keong", "Site measure", 2],
+    ["Norhaslinda Binti Rahim", "Handover walk", 6],
+  ]) {
+    const { error } = await as.rpc("add_appointment", {
+      in_project_id: proj.id,
+      in_module_key: "bookings",
+      in_starts_at: slot(h, 30),
+      in_ends_at: slot(h + 1, 0),
+      in_party: who,
+      in_service: what,
+    });
+    if (error) throw new Error(`add_appointment: ${error.message}`);
+  }
+  const book = await read("/en/portal/bookings", "bookings-live-1440");
+  check("his own appointments are on it", book.includes("Site measure"), book.slice(0, 200));
+  check("no sample survived", !SAMPLES.some((x) => book.includes(x)),
+    SAMPLES.filter((x) => book.includes(x)).join(" "));
+  /* THE DIARY, not only the table underneath it. A schedule still showing the
+     hours it was DRAWN with, over somebody's real appointments, is the defect
+     the board had this morning standing on its head. */
+  const inDiary = await page.evaluate(() => {
+    const head = [...document.querySelectorAll("*")].find(
+      (el) => el.textContent?.trim() === "Today",
+    );
+    const diary = head?.parentElement?.parentElement;
+    return (diary?.textContent ?? "").includes("Site measure");
+  });
+  check("the appointment is IN THE DIARY, not only in the table below", inDiary);
+
   console.log("\n手机上（390，他自己站的地方）:");
   const p390 = await read("/en/portal/projects", "projects-390", 390);
   check("the board still carries his jobs at 390", p390.includes("Sunway Damansara kitchen"));

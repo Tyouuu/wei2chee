@@ -116,6 +116,51 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+  } else if (ctx.shape === "calendar") {
+    const { data } = await supabase
+      .from("appointments")
+      .select("id, starts_at, ends_at, kind, party, service, note, extra, archived_at")
+      .eq("id", recordId)
+      .eq("module_key", pageKey)
+      .maybeSingle();
+    if (!data) notFound();
+    /* The instant back into the day and two clock times the form asks for, IN
+       MALAYSIA. `toISOString().slice(11,16)` would give UTC and a 10am
+       appointment would open at 02:00 -- the same eight hours, and here it is
+       not a rounding question, it is who turns up when. */
+    const parts = (iso: string) => {
+      const got = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kuala_Lumpur",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).formatToParts(new Date(iso));
+      const at = (type: string) => got.find((x) => x.type === type)?.value ?? "";
+      /* 24-hour, and Intl says 「24」 for midnight in some locales where a time
+         input wants 「00」. en-CA with hour12:false gives 24 for the hour that
+         starts a day, which a <input type="time"> refuses outright. */
+      const hour = at("hour") === "24" ? "00" : at("hour");
+      return {
+        day: `${at("year")}-${at("month")}-${at("day")}`,
+        time: `${hour}:${at("minute")}`,
+      };
+    };
+    const from = parts(data.starts_at);
+    const to = parts(data.ends_at);
+    Object.assign(values, {
+      day: from.day,
+      from: from.time,
+      to: to.time,
+      kind: data.kind ?? "booking",
+      primary: data.party ?? "",
+      service: data.service ?? "",
+      note: data.note ?? "",
+    });
+    Object.assign(values, ownColumns(data.extra));
+    archivedAt = data.archived_at;
   } else if (ctx.shape === "reconcile") {
     /* Read from the TABLE and not from the view: what is being edited is what
        the outside said, and our own side is not editable -- it is the sum of
@@ -231,7 +276,7 @@ export default async function EditRecordPage({
           projectId={ctx.projectId}
           moduleKey={ctx.pageKey}
           received={received}
-          shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog" | "reconcile"}
+          shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog" | "reconcile" | "calendar"}
           parties={ctx.parties}
           columns={ctx.columns}
           title={ctx.title}

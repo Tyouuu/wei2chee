@@ -82,10 +82,19 @@ export const SHAPE_STATE: Record<ModuleShape, ShapeState> = {
      maps onto directory, ledger, catalog and this. */
   reconcile: "live",
 
-  /* 预约 needs a real table: a time, an overlap rule, and the prepaid balance
-     任务 44 and 67 both named. The biggest of the five, and the salon that
-     needs it does not start until next year. */
-  calendar: "drawn",
+  /* 预约 got its table on 2026-09-02 (20260902030000): two instants rather
+     than a start and a duration, time off in the same table so 「is this free」
+     has one place to look, and the no-clash rule as a database CONSTRAINT
+     rather than a check-then-insert -- easyappointments does the latter in PHP
+     and a booking page is exactly where two people press at once.
+
+     ⚠️ The prepaid balance 任务 44 and 67 both named is NOT a column here.
+     任务 61 already worked out that it is the ledger's unallocated amount, and
+     a second place to hold the same number is a second number that goes
+     stale. What is still open is what a no-show COSTS -- a commercial rule the
+     founder has to settle, and until he does this records what happened and
+     touches no money. */
+  calendar: "live",
 
   landing: "drawn",
 };
@@ -124,3 +133,4 @@ export const LEDGER_MODULES: ReadonlySet<string> = new Set(modulesOfShape("ledge
 export const DIRECTORY_MODULES: ReadonlySet<string> = new Set(modulesOfShape("directory"));
 export const CATALOG_MODULES: ReadonlySet<string> = new Set(modulesOfShape("catalog"));
 export const RECONCILE_MODULES: ReadonlySet<string> = new Set(modulesOfShape("reconcile"));
+export const CALENDAR_MODULES: ReadonlySet<string> = new Set(modulesOfShape("calendar"));

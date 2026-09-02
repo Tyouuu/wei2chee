@@ -79,6 +79,19 @@ export type RecordFormCopy = {
   reconNet: string;
   reconReference: string;
   reconRequired: string;
+  /* 预约. Two instants, who it is for, who is doing it -- none of which
+     come from the table's columns. */
+  bookDay: string;
+  bookFrom: string;
+  bookTo: string;
+  bookWho: string;
+  bookStaff: string;
+  bookService: string;
+  bookKind: string;
+  bookKindBooking: string;
+  bookKindBlock: string;
+  bookRequired: string;
+  bookTaken: string;
 };
 
 type RecordCopy = {
@@ -168,6 +181,17 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       reconNet: "净额（收减付）",
       reconReference: "他们的单号",
       reconRequired: "要写是谁给的总数，不然这一行看不出在对什么。",
+      bookDay: "哪一天",
+      bookFrom: "几点开始",
+      bookTo: "到几点",
+      bookWho: "哪一位客人",
+      bookStaff: "谁做",
+      bookService: "做什么",
+      bookKind: "这一格是",
+      bookKindBooking: "客人的预约",
+      bookKindBlock: "不接单（休息、请假）",
+      bookRequired: "要写是哪一位客人。不接单的时段不用写。",
+      bookTaken: "那个时段已经有人了。",
     },
   },
   en: {
@@ -238,6 +262,17 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       reconNet: "Net (in minus out)",
       reconReference: "Their reference",
       reconRequired: "Say who gave the figure — without it the row is not about anything.",
+      bookDay: "Which day",
+      bookFrom: "From",
+      bookTo: "Until",
+      bookWho: "Which customer",
+      bookStaff: "Who is doing it",
+      bookService: "What for",
+      bookKind: "This slot is",
+      bookKindBooking: "A customer's booking",
+      bookKindBlock: "Not taking bookings (break, leave)",
+      bookRequired: "Say which customer. Time off does not need one.",
+      bookTaken: "That time is already taken.",
     },
   },
 };

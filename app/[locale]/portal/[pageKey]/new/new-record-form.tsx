@@ -94,7 +94,7 @@ export function NewRecordForm({
   /** Which of the three live shapes this page is. Not three booleans: a page
    *  is exactly one of them, and a boolean per shape is how two of them end up
    *  true. */
-  shape: "pipeline" | "ledger" | "directory" | "catalog" | "reconcile";
+  shape: "pipeline" | "ledger" | "directory" | "catalog" | "reconcile" | "calendar";
   /** This business's own customers, for the name box. Empty on a directory
    *  page, which is where a party is created rather than chosen. */
   parties: { id: string; name: string }[];
@@ -162,6 +162,7 @@ export function NewRecordForm({
   const isPipeline = shape === "pipeline";
   const isCatalog = shape === "catalog";
   const isReconcile = shape === "reconcile";
+  const isCalendar = shape === "calendar";
   /* 🔴 HOW MUCH IS LEFT IS NOT HIS TO TYPE, once the item exists.
      It is the sum of the movements (20260901070000), so a box here would be
      overwritten by the next render -- the same control-that-lies the money
@@ -181,7 +182,12 @@ export function NewRecordForm({
   const tableFields = columns.filter((c) => !(isLedger && c.key === "status"));
   /* On a directory page the second column is a composed view, not a field --
      see the header. Everything the owner added himself still comes from here. */
-  const shown = isReconcile
+  const shown = isCalendar
+    ? /* NONE OF THE TABLE'S COLUMNS EITHER. An appointment is two instants, a
+         customer and a stylist; the table's first column is what it is FOR,
+         which is one of its own boxes below. */
+      []
+    : isReconcile
     ? /* NONE OF THE TABLE'S COLUMNS. A reconciliation row is a COMPARISON:
          its first column is the month and the source together, its second is
          our own total, and its status is the gap -- three things the page
@@ -247,6 +253,13 @@ export function NewRecordForm({
         setError(copy.reconRequired);
         return;
       }
+    } else if (isCalendar) {
+      /* A BOOKING IS FOR SOMEBODY; TIME OFF IS NOT. Demanding a name to close
+         his own shop for lunch would be the form arguing with him. */
+      if ((values.kind ?? "booking") !== "block" && !(values.primary ?? "").trim()) {
+        setError(copy.bookRequired);
+        return;
+      }
     } else if (!title) {
       setError(isDirectory ? copy.requiredName : copy.required);
       return;
@@ -275,6 +288,35 @@ export function NewRecordForm({
        are not the same kind of change. See the header of migration
        20260831100000: a ledger's amount is never edited, it is reversed. */
     if (record) {
+      if (isCalendar) {
+        const day = (values.day ?? today).trim();
+        const from = (values.from ?? "").trim();
+        const to = (values.to ?? "").trim();
+        const { error: bErr } = await supabase.rpc("update_appointment", {
+          in_id: record.id,
+          in_starts_at: new Date(`${day}T${from}`).toISOString(),
+          in_ends_at: new Date(`${day}T${to}`).toISOString(),
+          in_party: (values.primary ?? "").trim(),
+          in_party_id: partyId,
+          in_service: (values.service ?? "").trim(),
+          in_note: (values.note ?? "").trim(),
+          in_extra: extra,
+          in_clear_party: !(values.primary ?? "").trim() && !partyId,
+        });
+        if (bErr) {
+          setError(
+            /already taken/i.test(bErr.message ?? "")
+              ? copy.bookTaken
+              : `${copy.failed}${bErr.message ? ` — ${bErr.message}` : ""}`,
+          );
+          setBusy(false);
+          return;
+        }
+        router.push(backHref);
+        router.refresh();
+        return;
+      }
+
       if (isReconcile) {
         const { error: rErr } = await supabase.rpc("update_reconciliation", {
           in_id: record.id,
@@ -395,6 +437,51 @@ export function NewRecordForm({
           in_reason: copy.stockOpening,
           in_idempotency_key: idempotencyKey,
         });
+      }
+      router.push(backHref);
+      router.refresh();
+      return;
+    }
+
+    if (isCalendar) {
+      const day = (values.day ?? today).trim();
+      const from = (values.from ?? "").trim();
+      const to = (values.to ?? "").trim();
+      if (!day || !from || !to) {
+        setError(copy.bookRequired);
+        setBusy(false);
+        return;
+      }
+      /* Local wall-clock into an instant. `new Date("2026-09-03T10:00")` with
+         no zone is read in the BROWSER's zone, which is the salon's -- which is
+         what is wanted here and is why this is not built on the server. */
+      const startsAt = new Date(`${day}T${from}`).toISOString();
+      const endsAt = new Date(`${day}T${to}`).toISOString();
+      const { error: bErr } = await supabase.rpc("add_appointment", {
+        in_project_id: projectId,
+        in_module_key: moduleKey,
+        in_starts_at: startsAt,
+        in_ends_at: endsAt,
+        in_party: (values.primary ?? "").trim(),
+        in_party_id: partyId,
+        in_service: (values.service ?? "").trim(),
+        in_kind: (values.kind ?? "booking").trim() || "booking",
+        in_note: (values.note ?? "").trim(),
+        in_extra: extra,
+        in_idempotency_key: idempotencyKey,
+      });
+      if (bErr) {
+        /* The clash gets his own sentence. 「conflicting key value violates
+           exclusion constraint」 teaches a salon owner nothing he can act on --
+           the database already raises 「that time is already taken」 and this
+           says it in his language. */
+        setError(
+          /already taken/i.test(bErr.message ?? "")
+            ? copy.bookTaken
+            : `${copy.failed}${bErr.message ? ` — ${bErr.message}` : ""}`,
+        );
+        setBusy(false);
+        return;
       }
       router.push(backHref);
       router.refresh();
@@ -689,6 +776,66 @@ export function NewRecordForm({
           </div>
         );
       })}
+
+      {isCalendar ? (
+        <div className="flex flex-col gap-4">
+          {/* A DAY AND TWO CLOCK TIMES, rather than one datetime box each. A
+              salon owner books 「Saturday, 10 to 11」; making him type the date
+              twice is the form describing the database instead of the day. */}
+          <label className="flex flex-col gap-1.5">
+            <span className={labelText}>{copy.bookDay}</span>
+            <input
+              type="date"
+              value={values.day ?? today}
+              onChange={(e) => setValues((v) => ({ ...v, day: e.target.value }))}
+              className={control}
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="flex flex-col gap-1.5">
+              <span className={labelText}>{copy.bookFrom}</span>
+              <input
+                type="time"
+                value={values.from ?? ""}
+                onChange={(e) => setValues((v) => ({ ...v, from: e.target.value }))}
+                className={control}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={labelText}>{copy.bookTo}</span>
+              <input
+                type="time"
+                value={values.to ?? ""}
+                onChange={(e) => setValues((v) => ({ ...v, to: e.target.value }))}
+                className={control}
+              />
+            </label>
+          </div>
+          <label className="flex flex-col gap-1.5">
+            <span className={labelText}>{copy.bookKind}</span>
+            <select
+              value={values.kind ?? "booking"}
+              onChange={(e) => setValues((v) => ({ ...v, kind: e.target.value }))}
+              className={control}
+            >
+              <option value="booking">{copy.bookKindBooking}</option>
+              <option value="block">{copy.bookKindBlock}</option>
+            </select>
+          </label>
+          {(values.kind ?? "booking") !== "block" ? (
+            <>
+              {box("primary", copy.bookWho)}
+              {box("service", copy.bookService)}
+            </>
+          ) : null}
+          {/* WHO IS DOING IT, from his own 师傅 page. A plain box and not a
+              picker yet: the staff list is a directory like any other and the
+              same datalist the customer box uses would need the staff rows,
+              which this form is not given. Recorded rather than guessed. */}
+          {box("staffName", copy.bookStaff)}
+          {box("note", copy.note)}
+        </div>
+      ) : null}
 
       {isReconcile ? (
         <div className="flex flex-col gap-4">

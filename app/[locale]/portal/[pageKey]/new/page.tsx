@@ -63,7 +63,7 @@ export default async function NewRecordPage({
           moduleKey={ctx.pageKey}
           /* One value, not a boolean per shape: a page is exactly one of the
              three, and a boolean each is how two of them end up true. */
-          shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog" | "reconcile"}
+          shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog" | "reconcile" | "calendar"}
           parties={ctx.parties}
           columns={ctx.columns}
           title={ctx.title}

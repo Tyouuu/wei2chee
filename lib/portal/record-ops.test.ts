@@ -42,15 +42,24 @@ describe("isRecordModule", () => {
     expect(isRecordModule("reconciliation")).toBe(true);
   });
 
+  /* 预约 joined them the same day, and it is the last one: after 2026-09-02
+     every shape that draws a table has a real table behind it. */
+  it("knows the one whose rows are hours", () => {
+    expect(isRecordModule("bookings")).toBe(true);
+  });
+
   it("leaves the other modules alone", () => {
     /* 客户 was in this list until 2026-08-31, which is the point: the list is
        derived from SHAPE_STATE, so a shape going live moves its modules out of
-       here on its own and this test is what says so out loud. */
-    /* 库存 left this list on 2026-09-01 and 对账 on 2026-09-02, the same way
-       客户 left it on 8-31 -- the third time this test has said the thing out
-       loud rather than needing to be remembered. What is left here is 预约 and
-       the two pages that were never records at all. */
-    for (const k of ["bookings", "website", "dashboard", null, undefined]) {
+       here on its own and this test is what says so out loud. 库存 left on
+       2026-09-01, 对账 and 预约 both on 2026-09-02 -- four times, none of
+       them remembered, all four reported by this line going red.
+
+       WHAT IS LEFT IS THE TWO THAT WERE NEVER RECORDS. 官网 is the page a
+       stranger reads and 总览 asks questions of the other tables without
+       holding a row of its own. There is no longer a shape that draws a table
+       and has nothing behind it. */
+    for (const k of ["website", "dashboard", null, undefined]) {
       expect(isRecordModule(k)).toBe(false);
     }
   });
@@ -79,13 +88,14 @@ describe("splitRecordOps", () => {
   });
 
   it("touches nothing on a module whose rows are layout", () => {
-    /* 预约, not 库存 and not 客户: both of those became real tables in turn
-       (8-31 and 9-01) and this example went stale each time. That is the test
-       working -- the list is derived from SHAPE_STATE, so the example has to
-       be a shape that is still a drawing. */
+    /* 官网 now -- and this example has gone stale three times, which is the
+       test working rather than the test being wrong. 客户 became a real table
+       on 8-31, 库存 on 9-01, 预约 on 9-02. It is 官网's turn precisely
+       because it is the only page left whose rows are layout and always will
+       be: it is read by strangers and holds nothing of the business's own. */
     const ops = [text, row("A")];
-    expect(splitRecordOps(ops, "bookings").layoutOps).toBe(ops);
-    expect(splitRecordOps(ops, "bookings").recordOps).toHaveLength(0);
+    expect(splitRecordOps(ops, "website").layoutOps).toBe(ops);
+    expect(splitRecordOps(ops, "website").recordOps).toHaveLength(0);
   });
 });
 
