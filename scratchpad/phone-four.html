@@ -84,9 +84,13 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
    （那三套蓝是风格库自己的问题，已经写进任务档，不在这里改。） */
 
 /* 台账 ← Xero：骨架拿它的「一个大数字」，颜色是台账自己的铁锈 #b8500f。 */
-.r-ledger{--canvas:#fff;--card:#fff;--ink:#14273d;--dim:#5b6d82;--line:#e3e7ec;
+/* 🔴 地不是白的 —— Xero 是**灰地上三张白卡**，卡片看得见才是它。
+   老板讲「颜色我也要全部都是白色的」，而我把它做成白底白卡 ——
+   然后他说`你做的完全就不像啊`。**两件事都对：地要近白，
+   但卡跟地必须分得出来**。Xero 量出来的地是 #f2f4f6，卡是 #fff。 */
+.r-ledger{--canvas:#f2f4f6;--card:#fff;--ink:#14273d;--dim:#5b6d82;--line:#e3e7ec;
   --primary:#b8500f;--ptext:#b8500f;--soft:#fdeee3;--nav:#fff;--navfg:#14273d;--navdim:#5b6d82;
-  --navac:#b8500f;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:3px;--rl:4px}
+  --navac:#b8500f;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:3px;--rl:10px;--top:#14273d;--topfg:#e9eef5}
 /* 炉 ← Fresha：骨架拿它的**色块日程表**，而且拿它那一个结构决定 ——
    **颜色不画按钮，全部交给内容块**，主色只剩一个深色。
    那不是一个颜色选择，是「颜色住在哪里」—— 换配色它还在，所以它属于骨架。
@@ -177,6 +181,43 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 .hero .big{font-size:36px;font-weight:700;letter-spacing:-.03em;margin-top:5px;
            font-variant-numeric:tabular-nums}
 .hero .sub2{font-size:12.5px;color:var(--dim);margin-top:4px}
+
+/* ①b Xero 那一套的结构（台账）—— 逐项量自
+   `.screenshots/clone/ref-ledger.png`（1080×1920 的原图，换算到 390px）：
+     顶栏色带 · 公司名＋下拉 · 右边圆形头像缩写
+     灰地 · 三张白卡 · 卡间 12px · 左右边距 14px · 圆角跟风格走
+     卡头：标题左＋一个链接右
+     **数字居中** · 底下一行小灰字 · 再底下一颗**描边药丸**
+     清单行：圆点＋**链接色标题** · 副行小灰字 · **两栏数字，标签在数字下面**
+   ⚠️ 颜色全部用台账自己的 token，拿的只是这些**结构** */
+.topbar{background:var(--top);color:var(--topfg);padding:14px 16px;
+        display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar .co2{font-size:17px;font-weight:640;display:flex;align-items:center;gap:7px}
+.topbar .co2::after{content:"▾";font-size:12px;opacity:.85}
+.topbar .me{width:36px;height:36px;flex:0 0 36px;border-radius:50%;
+            border:1px solid color-mix(in srgb,var(--topfg) 45%,transparent);
+            display:grid;place-items:center;font-size:12px;font-weight:700}
+.xcard{background:var(--card);border-radius:var(--rl);margin:12px 14px 0;padding:16px 16px 18px}
+.xcard:first-of-type{margin-top:12px}
+.xhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
+.xhead h4{margin:0;font-size:17px;font-weight:640}
+.xlink{font-size:14px;color:var(--ptext);font-weight:600}
+.xfig{text-align:center;padding:12px 0 2px}
+.xfig .n{font-size:34px;font-weight:700;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.xfig .d{font-size:13.5px;color:var(--dim);margin-top:3px}
+.xpill{display:block;margin:14px auto 0;min-height:44px;padding:0 18px;border-radius:999px;
+       border:1px solid color-mix(in srgb,var(--ptext) 40%,transparent);background:none;
+       color:var(--ptext);font:inherit;font-size:14.5px;font-weight:600;cursor:pointer}
+.xrow{display:grid;grid-template-columns:14px 1fr;gap:10px;padding:14px 0 2px}
+.xrow + .xrow{border-top:1px solid var(--line);margin-top:8px}
+.xrow .dot2{width:9px;height:9px;border-radius:50%;margin-top:7px}
+.xrow .nm2{font-size:15.5px;font-weight:640;color:var(--ptext)}
+.xrow .sub3{font-size:13px;color:var(--dim);margin-top:2px}
+.xrow .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.xrow .two .v2{font-size:16px;font-variant-numeric:tabular-nums}
+.xrow .two .l2{font-size:12.5px;color:var(--dim);margin-top:1px}
+/* Xero 那颗不是圆的，是**圆角方形** */
+.r-ledger .fab{border-radius:14px;width:58px;height:58px}
 
 /* ② 两格并排 */
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:8px 0 0;
@@ -323,13 +364,13 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 
 <script>
 /* 一家公司，一批资料。四支手机读的是同一份。 */
-const BIZ = { co: "XINGFA RENOVATION", month: "RM 12,400", deposits: "RM 3,000" };
+const BIZ = { co: "XINGFA RENOVATION", co2: "Xingfa Renovation", month: "RM 12,400", deposits: "RM 3,000" };
 /* ⚠️ 六笔不是四笔。四笔的时候台账 · 中台 · 图纸 三支的清单底下各留着
    两百多像素的空 —— 那正是我今天替官网那把尺新加的一条检查（底下的空），
    而我自己的 demo 第一版就踩了。 */
 const JOBS = [
-  { t: "Taman Desa 3-bedroom refit", who: "Mr. Chan",  amt: "RM 48,500", st: "Confirmed", tone: "jade"  },
-  { t: "Bukit Jalil kitchen",        who: "Mrs. Lee",  amt: "RM 22,800", st: "Awaiting",  tone: "brass" },
+  { t: "Taman Desa 3-bedroom refit", who: "Mr. Chan",  amt: "RM 48,500", paid: "RM 14,550", st: "Confirmed", tone: "jade"  },
+  { t: "Bukit Jalil kitchen",        who: "Mrs. Lee",  amt: "RM 22,800", paid: "RM 0",      st: "Awaiting",  tone: "brass" },
   { t: "Cheras shopfront",           who: "Mr. Ong",   amt: "RM 96,000", st: "Quoting",   tone: "dim"   },
   { t: "Ampang condo flooring",      who: "Ms. Lim",   amt: "RM  8,400", st: "Overdue",   tone: "clay"  },
   { t: "Sri Petaling rewiring",      who: "Mr. Tan",   amt: "RM 18,200", st: "Confirmed", tone: "jade"  },
@@ -385,11 +426,32 @@ const REG = {
     zh:"台账", en:"ledger", why:"抄 Xero。一个数字压住整屏，其余全部让位。卡片浮在灰地上、近直角 —— 它的主张是「先给答案，再给清单」。",
     tabs:[["today","home","Today"],["jobs","job","Projects"],["money","cash","Money"],["clients","user","Clients"]],
     fab:true,
+    /* Xero 那一页的结构，逐项对着 ref-ledger.png 做的：
+       色带顶栏（公司名＋下拉 · 右边头像）→ 三张白卡在灰地上
+       → 卡头“标题左＋链接右” → **数字居中＋小字＋描边药丸**
+       → 清单行“圆点＋链接色标题＋两栏数字”。 */
     today: () =>
-      '<div class="hd"><div class="co">'+BIZ.co+'</div><h2>Today</h2></div>'
-      + '<div class="hero"><div class="lab">Received this month</div><div class="big">'+BIZ.month+'</div>'
-      + '<div class="sub2">Deposits not yet used · '+BIZ.deposits+'</div></div>'
-      + '<div class="sec">On site today</div><div class="list">'+rowsOf("dot").join("")+'</div>',
+      '<div class="topbar"><div class="co2">'+esc(BIZ.co2)+'</div>'
+      + '<div class="me">CT</div></div>'
+      + '<div class="xcard"><div class="xhead"><h4>Cash received</h4>'
+      + '<span class="xlink">What’s this?</span></div>'
+      + '<div class="xfig"><div class="n">'+BIZ.month+'</div>'
+      + '<div class="d">This month · 3 Sep</div></div>'
+      + '<button class="xpill">Deposits not yet used (RM 3,000)</button></div>'
+      + '<div class="xcard"><div class="xhead"><h4>On site today</h4>'
+      + '<span class="xlink">Manage</span></div>'
+      + JOBS.slice(0, 2).map((j) =>
+          '<div class="xrow"><span class="dot2" style="background:var(--'+j.tone+')"></span>'
+          + '<div><div class="nm2">'+esc(j.t)+'</div>'
+          + '<div class="sub3">'+esc(j.who)+' · '+esc(j.st)+'</div>'
+          + '<div class="two"><div><div class="v2">'+esc(j.amt)+'</div>'
+          + '<div class="l2">Quoted</div></div>'
+          + '<div><div class="v2">'+esc(j.paid)+'</div>'
+          + '<div class="l2">Received</div></div></div></div></div>').join("")
+      + '</div>'
+      + '<div class="xcard"><div class="xhead"><h4>Still to collect</h4></div>'
+      + '<div class="xfig"><div class="n" style="color:var(--ptext)">RM 96,240</div>'
+      + '<div class="d">Across 4 jobs</div></div></div>',
     jobs: () => '<div class="hd"><h2>Projects</h2></div><div class="list">'+rowsOf("dot").join("")+'</div>',
   },
   hearth: {
