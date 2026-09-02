@@ -16,14 +16,26 @@ import { catalogForPrompt, MAX_MODULES } from "@/lib/portal/module-catalog";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
- * See the same export in app/api/portal/edit/route.ts for the measurement.
- * This route is slower still by construction -- it retries once, so a schema
- * failure on the first attempt means two full model calls inside one request,
- * and it runs while a visitor who has just typed two minutes about his
- * business is watching a spinner. Being killed at the platform default here
- * costs a signup.
+ * 60 WAS OUR OWN LINE, AND IT WAS TOO LOW. (corrected 2026-08-31)
+ *
+ * This sat at 60 and was described in a report to the founder as the host's
+ * limit. It is not: Vercel's duration docs (last updated 2026-08-24) give
+ * Hobby a default AND maximum of 300s with fluid compute, which is on by
+ * default. We had written a ceiling four fifths lower than the one we have and
+ * then designed around it.
+ *
+ * It matters because this is the slowest call the product makes and it runs
+ * while a stranger who has just typed two minutes about his business watches a
+ * spinner. Measured 2026-08-31 by walking the real route (`npm run
+ * check:analyze`): one attempt, 47.5s. A model having a slow minute would have
+ * been killed at 60 with the visitor holding an empty screen — for no reason
+ * except a number nobody had checked.
+ *
+ * ⚠️ This is HEADROOM, not permission to be slow. How long the visitor is
+ * actually made to wait is decided in lib/portal/retry-budget.ts, and that
+ * number is about him, not about the platform.
  */
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /**
  * The instruction that does not change between businesses. Splitting the
