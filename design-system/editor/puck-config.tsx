@@ -98,6 +98,7 @@ import {
   type PackageOption,
 } from "@/design-system/components/input-blocks";
 import { SystemShell } from "@/design-system/components/system-shell";
+import { SystemBar } from "@/design-system/components/system-bar";
 // STRAIGHT FROM THE shadcn REGISTRY, unmodified. They render in the customer's
 // chosen style because each token file now aliases the shadcn variable contract
 // onto its own tokens (design-system/tokens/ledger.css, "THE shadcn/ui
@@ -215,7 +216,9 @@ type Components = {
     oneLabel: string; twoLabel: string; threeLabel: string;
     one: Slot; two: Slot; three: Slot;
   };
+  SystemBar: { crumbs?: { text?: string }[]; date?: string };
   SystemShell: {
+    strip: Slot;
     sidebar: Slot;
     /** The split shell's second column. See system-shell.tsx. */
     aside: Slot;
@@ -767,7 +770,7 @@ export const puckConfig: Config<Components> = {
     },
     layout: {
       title: "页面框架",
-      components: ["SystemShell", "RailNav", "Columns", "Panel", "TabbedPanel", "Divider"],
+      components: ["SystemShell", "SystemBar", "RailNav", "Columns", "Panel", "TabbedPanel", "Divider"],
       defaultExpanded: false,
     },
   },
@@ -1312,6 +1315,17 @@ export const puckConfig: Config<Components> = {
     // The page shell. Listed first because it is the frame every generated
     // page is built inside -- see design-system/components/system-shell.tsx for
     // why a sidebar could not simply be the first block in a flat stack.
+    SystemBar: {
+      label: "顶栏",
+      fields: {
+        crumbs: { label: "你在哪", type: "array", arrayFields: { text: { type: "text" } } },
+        date: { label: "日期", type: "text" },
+      },
+      defaultProps: { crumbs: [], date: "" },
+      render: ({ crumbs, date }: { crumbs?: { text?: string }[]; date?: string }) => (
+        <SystemBar crumbs={(crumbs ?? []).map((c) => c?.text ?? "")} date={date || undefined} />
+      ),
+    },
     SystemShell: {
       label: "页面框架",
       fields: {
@@ -1324,6 +1338,8 @@ export const puckConfig: Config<Components> = {
         // would be the same control twice -- with the worse half on top, since
         // reading 「顶部 / 浅色」 and imagining the result is exactly what the
         // pictures exist to replace.
+        /* 顶栏那一条。产生器往里面放 SystemBar；没放就是空的，空 slot 不画。 */
+        strip: { label: "顶栏", type: "slot" },
         sidebar: { label: "侧边栏", type: "slot" },
         // The split shell's second column. Empty on every register that does
         // not ask for one, and an empty slot renders nothing -- so the other
@@ -1336,13 +1352,14 @@ export const puckConfig: Config<Components> = {
       // say "follow the register". These two carried "side" / "dark" and
       // therefore overrode all twenty-one registers' preferences forever --
       // measured, three registers rendered a byte-identical rail.
-      defaultProps: { sidebar: [], aside: [], main: [] },
-      render: ({ sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
+      defaultProps: { strip: [], sidebar: [], aside: [], main: [] },
+      render: ({ strip: Strip, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
         <SystemShell
           nav={nav ?? "side"}
           navTone={navTone ?? "dark"}
           frame={frame ?? "flush"}
           width={width ?? "wide"}
+          strip={<Strip />}
           sidebar={<Sidebar />}
           aside={<Aside />}
           main={<Main />}

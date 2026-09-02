@@ -33,6 +33,7 @@ export function SystemShell({
   main,
   nav = "side",
   navTone = "dark",
+  strip,
   frame = "flush",
   width = "wide",
 }: {
@@ -67,6 +68,9 @@ export function SystemShell({
   /** Where the navigation sits. Pair `"top"` with RailNav's `variant="topbar"`;
    *  the two are a matched set and neither reads right without the other.
    *  `"split"` is a side rail plus the `aside` column above. */
+  /** 页面上方那一条细的（面包屑 · 日期）。见 system-bar.tsx。
+   *  没有给就不画 —— 其余几套一个像素都不动。 */
+  strip?: React.ReactNode
   nav?: "side" | "top" | "split"
   /** What the navigation's ground is made of. `"dark"` is the register's own
    *  nav ground; `"light"` runs the navigation on the same paper as the page,
@@ -325,6 +329,9 @@ export function SystemShell({
             width === "centred" ? "mx-auto w-full [max-width:96ch]" : ""
           }`}
         >
+          {/* 顶栏。在内距里面，所以它跟页面内容左右对齐 ——
+              一条跟内容不对齐的横线，看起来像是别人的东西掉进来了。 */}
+          {strip}
           {main}
         </div>
       </div>

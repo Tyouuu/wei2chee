@@ -71,6 +71,12 @@ export const LABELS_EN: Record<string, string> = {
   可以选的标签: "Tag picker",
   选配套: "Package picker",
   一周日期: "Week strip",
+  /* 顶栏 —— 2026-09-02 新加的那一条细的。少了这三行，`check:en` 当场从 0 变 1：
+     中文是正本，英文是它的投影，而一个没有投影的新组件会原样穿着中文出现在
+     英文的组件库里。 */
+  顶栏: "Top bar",
+  你在哪: "Where you are",
+  日期: "Date",
   页面框架: "Page shell",
   分栏: "Columns",
   询价表格: "Form fields",

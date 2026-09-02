@@ -2981,10 +2981,29 @@ export function buildPageLayout(
     }
   }
 
+  /* 顶栏 —— 只给 STRIP_REGISTERS 那两套。见 system-bar.tsx 为什么它存在，
+     跟 STRIP_REGISTERS 为什么不是六套都给。
+     ⚠️ 面包屑用的是**侧栏自己的分组词** —— 不是另外写一份。侧栏分组只在页数
+     够多的时候才出现（navGroup 自己会回空字串），所以页少的生意拿到的是
+     一层面包屑而不是一条假的路径。 */
+  const strip = STRIP_REGISTERS.has(style ?? "")
+    ? [
+        node("SystemBar", `${pageKey}-bar`, {
+          crumbs: [
+            navGroup(pageKey, refs.length, chrome(lang)),
+            pageLabel(self ?? { key: pageKey }, labels, lang),
+          ]
+            .filter(Boolean)
+            .map((text) => ({ text })),
+        }),
+      ]
+    : [];
+
   return {
     root: {},
     content: [
       node("SystemShell", `${pageKey}-shell`, {
+        strip,
         sidebar: [rail],
         aside,
         main: body,
@@ -2992,6 +3011,23 @@ export function buildPageLayout(
     ],
   } as unknown as Data;
 }
+
+/**
+ * 哪几套风格有顶栏。
+ *
+ * 老板 2026-09-02:「复刻不到他们的设计吗 就是全部复刻」。二十八个实拍的后台
+ * 二十八个都有一条顶栏 —— 那是我们跟 Studio Admin 并排之后剩下最大的一个
+ * 结构差。但**六套都加就是六套又变成同一套**（[重点 7a](../../docs/founder-points.md)），
+ * 所以它跟其他每一根轴一样，是一个选择：
+ *
+ *   台账   ✅  它抄的就是 Studio Admin，而那一页的顶栏是它形状的一部分
+ *   图纸   ✅  最中规中矩的那一套，最普通的安排就是它的主张
+ *   中台   ❌  全库最密。一条顶栏吃掉一行，而它的主张就是一屏最多行
+ *   瑞士   ❌  它是印出来的那一套，纸上没有 chrome
+ *   炉     ❌  宽松、在客人面前打开，少一条线就少一条线
+ *   招牌   ❌  它的导航本来就在顶上，再加一条就是两条横线叠在一起
+ */
+export const STRIP_REGISTERS = new Set(["ledger", "blueprint"]);
 
 /**
  * THE REGISTERS BUILT ON THE THIRD SHELL.
