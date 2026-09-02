@@ -72,7 +72,8 @@
     "check:bookings": "node scripts/check-bookings.mjs",
     "shoot:objects": "node scripts/shoot-objects.mjs",
     "align:admin": "node scripts/align-admin.mjs",
-    "shoot:appui": "node scripts/shoot-appui.mjs"
+    "shoot:appui": "node scripts/shoot-appui.mjs",
+    "shoot:phone": "node scripts/shoot-phone.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
