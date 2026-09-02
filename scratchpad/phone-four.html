@@ -1,0 +1,384 @@
+<title>Four Registers, One Business</title>
+<style>
+/* 同一家装修公司、同一批资料，四套风格各自的手机骨架。
+   判准是重点 7c：换个配色它还是不是另一个设计？
+   所以这四支不是四个颜色 —— 它们的首屏主角、底栏格数、清单行形状、
+   分组方式、主要动作在哪、圆角、密度，七根轴全部不一样。
+   每一个颜色都逐字来自 design-system/tokens/<register>.css。 */
+:root{
+  --ground:#0e1113; --panel:#171b1f; --line:#262c31;
+  --fg:#e9edf0; --dim:#8b959d; --accent:#00beb7;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --ground:#f2f4f6; --panel:#ffffff; --line:#dfe4e8;
+    --fg:#12171b; --dim:#5d6a73; --accent:#00807b;
+  }
+}
+:root[data-theme="light"]{
+  --ground:#f2f4f6; --panel:#ffffff; --line:#dfe4e8;
+  --fg:#12171b; --dim:#5d6a73; --accent:#00807b;
+}
+:root[data-theme="dark"]{
+  --ground:#0e1113; --panel:#171b1f; --line:#262c31;
+  --fg:#e9edf0; --dim:#8b959d; --accent:#00beb7;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--fg);font-family:var(--sans);
+     -webkit-font-smoothing:antialiased}
+.wrap{max-width:1720px;margin:0 auto;padding:34px 22px 80px}
+
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
+.sub{color:var(--dim);font-size:14px;margin:0 0 26px;max-width:62ch;line-height:1.55}
+.sub b{color:var(--fg);font-weight:600}
+
+/* ── 轴表 ───────────────────────────────────────────────────────────── */
+.axes{width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 30px;
+      background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.axes th,.axes td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);
+                  vertical-align:top}
+.axes tr:last-child td{border-bottom:0}
+.axes th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+         color:var(--dim);font-weight:600;background:color-mix(in srgb,var(--line) 45%,transparent)}
+.axes td:first-child{font-family:var(--mono);color:var(--dim);white-space:nowrap}
+.scroller{overflow-x:auto}
+
+/* ── 手机 ───────────────────────────────────────────────────────────── */
+.rack{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+.slot{width:390px;flex:0 0 390px}
+@media (max-width:900px){ .slot{width:100%;flex:1 1 320px;max-width:390px} }
+
+.phone{height:750px;border-radius:26px;overflow:hidden;position:relative;
+       display:flex;flex-direction:column;
+       border:1px solid var(--line);box-shadow:0 18px 44px rgba(0,0,0,.36);
+       background:var(--canvas);color:var(--ink);
+       font-family:var(--sans);font-size:15px}
+.cap{margin-top:12px}
+.cap .nm{font-size:15px;font-weight:650;letter-spacing:-.01em}
+.cap .nm span{font-family:var(--mono);font-size:11px;color:var(--dim);
+              font-weight:400;margin-left:8px;letter-spacing:.04em}
+.cap p{margin:5px 0 0;font-size:12.5px;color:var(--dim);line-height:1.5}
+
+/* 每一支自己的 token —— 逐字从 design-system/tokens/*.css 抄的 */
+.r-ledger{--canvas:#f3f4f6;--card:#fff;--ink:#14273d;--dim:#5b6d82;--line:#dde2e8;
+  --primary:#b8500f;--soft:#fdeee3;--nav:#14273d;--navfg:#e9eef5;--navdim:#a6b4c6;
+  --navac:#f39158;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:3px;--rl:4px}
+.r-hearth{--canvas:#faf6f0;--card:#fffdf9;--ink:#153227;--dim:#536e63;--line:#e6ddcf;
+  --primary:#237570;--soft:#e1f4f3;--nav:#f6f0e6;--navfg:#153227;--navdim:#7e8d84;
+  --navac:#1c5f5b;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:14px;--rl:20px}
+.r-counter{--canvas:#f0f2f5;--card:#fff;--ink:#1f2430;--dim:#5e6878;--line:#d9dee6;
+  --primary:#0958d9;--soft:#e6f0ff;--nav:#17181a;--navfg:#e8e8e8;--navdim:#8c8c8c;
+  --navac:#fff;--jade:#00a870;--brass:#d48806;--clay:#f5222d;--r:2px;--rl:2px}
+.r-blueprint{--canvas:#f3f7fe;--card:#fff;--ink:#0c182e;--dim:#515e75;--line:#d8e2f3;
+  --primary:#2261dd;--soft:#e5eefe;--nav:#142744;--navfg:#e8eef9;--navdim:#93a2bb;
+  --navac:#7fa8f7;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:8px;--rl:12px}
+
+.status{height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:space-between;
+        padding:0 16px;font-size:11px;font-family:var(--mono);color:var(--dim);
+        background:var(--canvas)}
+.body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.body::-webkit-scrollbar{width:0}
+/* 🔴 有浮动按钮的，最后一行要让出它的位置。
+   第一版三支都被那颗圆按钮盖掉最后一笔的金额（`RM 5,400` 只剩一半）——
+   一个浮在内容上面、又不让内容躲开的按钮，就是在吃掉资料，
+   而它吃掉的偏偏是这一行最重要的那一栏。 */
+.has-fab .body{padding-bottom:84px}
+
+/* 标题栏 —— 三种：大标题 / 居中 / 带右上动作 */
+.hd{padding:14px 16px 8px;background:var(--canvas);position:sticky;top:0;z-index:2}
+.hd.mid{text-align:center;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.hd.act{display:flex;align-items:center;justify-content:space-between}
+.hd h2{margin:0;font-size:24px;letter-spacing:-.02em;font-weight:680}
+.hd.mid h2{font-size:16px;font-weight:620;letter-spacing:0}
+.hd .co{font-size:11px;font-family:var(--mono);color:var(--dim);letter-spacing:.05em;
+        text-transform:uppercase;margin-bottom:2px}
+.hdbtn{border:0;background:var(--primary);color:#fff;border-radius:999px;
+       min-height:44px;padding:0 16px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+
+/* ① 一个大数字 */
+.hero{margin:6px 16px 14px;background:var(--card);border-radius:var(--rl);
+      border:1px solid var(--line);padding:16px}
+.hero .lab{font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;
+           color:var(--dim)}
+.hero .big{font-size:36px;font-weight:700;letter-spacing:-.03em;margin-top:5px;
+           font-variant-numeric:tabular-nums}
+.hero .sub2{font-size:12.5px;color:var(--dim);margin-top:4px}
+
+/* ② 两格并排 */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:8px 0 0;
+     background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.duo div{background:var(--card);padding:13px 14px}
+.duo .l{font-size:11px;color:var(--dim);font-family:var(--mono);letter-spacing:.05em;
+        text-transform:uppercase}
+.duo .v{font-size:23px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums;
+        letter-spacing:-.02em}
+
+/* ③ 捷径格子 */
+.grid6{display:grid;grid-template-columns:repeat(4,1fr);background:var(--line);gap:1px;
+       border-bottom:1px solid var(--line)}
+.grid6 button{background:var(--card);border:0;padding:13px 4px 11px;font:inherit;
+              color:var(--ink);cursor:pointer;min-height:74px;display:flex;
+              flex-direction:column;align-items:center;gap:6px;font-size:11px}
+.ic{width:30px;height:30px;border-radius:var(--rl);background:var(--soft);color:var(--primary);
+    display:grid;place-items:center;font-size:14px;font-weight:700;font-family:var(--mono)}
+
+/* ④ 时间轴 */
+.tl{padding:4px 16px 8px}
+.tl .row{display:grid;grid-template-columns:56px 1fr;gap:10px;position:relative}
+.tl .t{font-family:var(--mono);font-size:12px;color:var(--dim);padding-top:16px;
+       text-align:right}
+.tl .c{border-left:2px solid var(--line);padding:0 0 12px 14px;position:relative}
+.tl .row:last-child .c{border-left-color:transparent}
+.tl .c::before{content:"";position:absolute;left:-6px;top:16px;width:10px;height:10px;
+               border-radius:50%;background:var(--primary)}
+.tl .box{background:var(--card);border-radius:var(--rl);padding:12px 14px;margin-top:6px}
+.tl .who{font-weight:640;font-size:15px}
+.tl .what{font-size:13px;color:var(--dim);margin-top:2px}
+
+/* ⑤ 清单 —— 四种行 */
+.sec{font-size:11px;font-family:var(--mono);letter-spacing:.09em;text-transform:uppercase;
+     color:var(--dim);padding:15px 16px 6px}
+.list{background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.list.boxed{margin:0 16px 14px;border:1px solid var(--line);border-radius:var(--rl);overflow:hidden}
+.li{display:flex;gap:11px;align-items:center;padding:13px 16px;border-bottom:1px solid var(--line);
+    min-height:56px}
+.li:last-child{border-bottom:0}
+.li.dense{padding:9px 16px;min-height:42px;font-size:14px}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
+.av{width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:var(--soft);
+    color:var(--primary);display:grid;place-items:center;font-size:12px;font-weight:700}
+.txt{flex:1;min-width:0}
+.p1{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p2{font-size:12.5px;color:var(--dim);margin-top:2px}
+.amt{font-variant-numeric:tabular-nums;font-weight:640;white-space:nowrap}
+.pill{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--soft);
+      color:var(--primary);white-space:nowrap;font-weight:600}
+
+/* ⑥ 一张可以印的纸 */
+.paper{margin:10px 16px 16px;background:var(--card);border:1px solid var(--line);
+       border-radius:var(--r);padding:18px}
+.paper .no{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.06em}
+.paper h3{margin:6px 0 2px;font-size:19px;letter-spacing:-.01em}
+.paper .to{font-size:13px;color:var(--dim);margin-bottom:14px}
+.paper table{width:100%;border-collapse:collapse;font-size:13px}
+.paper td{padding:7px 0;border-bottom:1px solid var(--line)}
+.paper td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.paper tr:last-child td{border-bottom:0;font-weight:700;padding-top:11px;font-size:15px}
+
+/* ⑦ 底栏 —— 3 / 4＋FAB / 5 */
+.nav{flex:0 0 auto;background:var(--nav);display:flex;align-items:stretch;
+     padding-bottom:env(safe-area-inset-bottom)}
+.nav button{flex:1;background:none;border:0;color:var(--navdim);font:inherit;font-size:10.5px;
+            padding:9px 2px 11px;cursor:pointer;display:flex;flex-direction:column;
+            align-items:center;gap:4px;min-height:60px}
+.nav button[aria-current="true"]{color:var(--navac)}
+.nav .g{width:22px;height:22px;display:grid;place-items:center}
+.nav svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;
+         stroke-linecap:round;stroke-linejoin:round}
+.fab{position:absolute;right:16px;bottom:78px;width:56px;height:56px;border-radius:50%;
+     background:var(--primary);color:#fff;border:0;font-size:26px;line-height:1;cursor:pointer;
+     box-shadow:0 6px 18px rgba(0,0,0,.28);z-index:3}
+.r-counter .fab{border-radius:2px}
+
+.note{margin-top:34px;padding:15px 17px;border:1px solid var(--line);border-radius:10px;
+      background:var(--panel);font-size:13px;color:var(--dim);line-height:1.65;max-width:78ch}
+.note b{color:var(--fg)}
+</style>
+
+<div class="wrap">
+  <h1>Four registers, one business</h1>
+  <p class="sub">同一家装修公司、<b>同一批资料</b>，四套风格各自的手机版。判准是
+     <b>换个配色它还是不是另一个设计</b> —— 所以下面四支不是四个颜色，是四个骨架。<b>不跟行业绑</b>，看的是它自己有没有主张。
+     每一个颜色都逐字来自 <code>design-system/tokens/</code>，一个都不是我挑的。</p>
+
+  <div class="scroller"><table class="axes">
+    <tr><th>轴</th><th>台账 ledger</th><th>炉 hearth</th><th>中台 counter</th><th>图纸 blueprint</th></tr>
+    <tr><td>首屏主角</td><td>一个大数字</td><td>一条时间轴</td><td>两格并排＋捷径格子</td><td>分组的清单，没有大数字</td></tr>
+    <tr><td>底栏</td><td>4 格＋右下圆按钮</td><td><b>3 格，而且是亮的</b></td><td><b>5 格</b>，近黑</td><td>4 格，深蓝</td></tr>
+    <tr><td>清单行</td><td>圆点＋两行＋金额</td><td>时间在左，竖线串起来</td><td><b>一行，最密</b>，无图示</td><td>头像＋状态药丸</td></tr>
+    <tr><td>分区</td><td>卡片浮在灰地上</td><td>大圆角，无边框</td><td>细线，满宽，不留边</td><td>分组标题＋白卡带边</td></tr>
+    <tr><td>主要动作</td><td>右下圆按钮</td><td><b>标题栏右上</b></td><td>右下方块</td><td>右下圆按钮</td></tr>
+    <tr><td>圆角</td><td>3 / 4px</td><td>14 / 20px</td><td><b>2px（直角）</b></td><td>8 / 12px</td></tr>
+    <tr><td>密度</td><td>56px 一行</td><td>宽松，卡之间留白</td><td><b>42px 一行</b></td><td>56px 一行</td></tr>
+  </table></div>
+
+  <div class="rack" id="rack"></div>
+
+  <div class="note">
+    <b>它还不是什么。</b>这是一张会动的图，不是产品 —— 没有资料库、没有登入、按了不会存。
+    它只回答一个问题：<b>手机上四套风格分不分得出来</b>。资料是示例的，
+    而真的做进去的时候，第一笔真记录一进来示例就整批消失（8-30 定的做法）。
+  </div>
+</div>
+
+<script>
+/* 一家公司，一批资料。四支手机读的是同一份。 */
+const BIZ = { co: "XINGFA RENOVATION", month: "RM 12,400", deposits: "RM 3,000" };
+/* ⚠️ 六笔不是四笔。四笔的时候台账 · 中台 · 图纸 三支的清单底下各留着
+   两百多像素的空 —— 那正是我今天替官网那把尺新加的一条检查（底下的空），
+   而我自己的 demo 第一版就踩了。 */
+const JOBS = [
+  { t: "Taman Desa 3-bedroom refit", who: "Mr. Chan",  amt: "RM 48,500", st: "Confirmed", tone: "jade"  },
+  { t: "Bukit Jalil kitchen",        who: "Mrs. Lee",  amt: "RM 22,800", st: "Awaiting",  tone: "brass" },
+  { t: "Cheras shopfront",           who: "Mr. Ong",   amt: "RM 96,000", st: "Quoting",   tone: "dim"   },
+  { t: "Ampang condo flooring",      who: "Ms. Lim",   amt: "RM  8,400", st: "Overdue",   tone: "clay"  },
+  { t: "Sri Petaling rewiring",      who: "Mr. Tan",   amt: "RM 18,200", st: "Confirmed", tone: "jade"  },
+  { t: "Kepong shoplot repaint",     who: "Ho Seng",   amt: "RM  5,400", st: "Awaiting",  tone: "brass" },
+];
+const DAY = [
+  { t: "08:30", who: "Mr. Chan",  what: "Tiling, level 2" },
+  { t: "11:00", who: "Mrs. Lee",  what: "Measure kitchen" },
+  { t: "14:30", who: "Mr. Ong",   what: "Shopfront survey" },
+  { t: "16:00", who: "Supplier",  what: "Cement, 200 bags" },
+  { t: "17:15", who: "Mr. Tan",   what: "Rewiring handover" },
+  { t: "18:30", who: "Ho Seng",   what: "Quote walkthrough" },
+];
+const esc = (s) => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const initials = (n) => n.replace(/^(Mr|Mrs|Ms)\.?\s*/,"").slice(0,2).toUpperCase();
+
+const ICONS = {
+  home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/>',
+  job: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7"/>',
+  cash:'<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/>',
+  user:'<circle cx="12" cy="8" r="3.4"/><path d="M4.6 20c1.3-3.6 4.1-5.4 7.4-5.4S18.1 16.4 19.4 20"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  box: '<path d="M3 8.2 12 3.4l9 4.8v7.6L12 20.6 3 15.8Z"/><path d="M3 8.2 12 13l9-4.8M12 13v7.6"/>',
+  doc: '<path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  chart:'<path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/>',
+};
+const svg = (k) => '<span class="g"><svg viewBox="0 0 24 24">' + (ICONS[k]||ICONS.doc) + '</svg></span>';
+
+/* ── 四套骨架 ─────────────────────────────────────────────────────────
+   每一支自己决定：标题栏长什么样、首屏放什么、清单行什么形状、底栏几格。
+   这就是 DASHBOARD_COMPOSITION 在手机上的对应物。 */
+const rowsOf = (kind) => JOBS.map((j) => {
+  if (kind === "dot")
+    return '<div class="li"><span class="dot" style="background:var(--'+j.tone+')"></span>'
+      + '<div class="txt"><div class="p1">'+esc(j.t)+'</div><div class="p2">'+esc(j.who)+' · '+esc(j.st)+'</div></div>'
+      + '<div class="amt">'+esc(j.amt)+'</div></div>';
+  if (kind === "dense")
+    return '<div class="li dense"><div class="txt"><div class="p1">'+esc(j.t)+'</div></div>'
+      + '<div class="amt">'+esc(j.amt)+'</div></div>';
+  return '<div class="li"><span class="av">'+esc(initials(j.who))+'</span>'
+    + '<div class="txt"><div class="p1">'+esc(j.t)+'</div><div class="p2">'+esc(j.who)+'</div></div>'
+    + '<span class="pill">'+esc(j.st)+'</span></div>';
+});
+
+const REG = {
+  ledger: {
+    zh:"台账", en:"ledger", why:"一个数字压住整屏，其余全部让位。卡片浮在灰地上、近直角 —— 它的主张是「先给答案，再给清单」。",
+    tabs:[["today","home","Today"],["jobs","job","Projects"],["money","cash","Money"],["clients","user","Clients"]],
+    fab:true,
+    today: () =>
+      '<div class="hd"><div class="co">'+BIZ.co+'</div><h2>Today</h2></div>'
+      + '<div class="hero"><div class="lab">Received this month</div><div class="big">'+BIZ.month+'</div>'
+      + '<div class="sub2">Deposits not yet used · '+BIZ.deposits+'</div></div>'
+      + '<div class="sec">On site today</div><div class="list">'+rowsOf("dot").join("")+'</div>',
+    jobs: () => '<div class="hd"><h2>Projects</h2></div><div class="list">'+rowsOf("dot").join("")+'</div>',
+  },
+  hearth: {
+    zh:"炉", en:"hearth", why:"全库唯一一套亮底栏。时间是主轴，一条竖线串到底；大圆角、无边框、留白最多 —— 它拿密度换从容。",
+    tabs:[["today","cal","Today"],["clients","user","Clients"],["money","cash","Money"]],
+    fab:false,
+    today: () =>
+      '<div class="hd act"><div><div class="co">'+BIZ.co+'</div><h2>Wed 3 Sep</h2></div>'
+      + '<button class="hdbtn">＋ Add</button></div>'
+      + '<div class="tl">' + DAY.map((d) =>
+          '<div class="row"><div class="t">'+esc(d.t)+'</div><div class="c"><div class="box">'
+          + '<div class="who">'+esc(d.who)+'</div><div class="what">'+esc(d.what)+'</div></div></div></div>').join("")
+      + '</div>',
+    clients: () =>
+      '<div class="hd act"><h2>Clients</h2><button class="hdbtn">＋ Add</button></div>'
+      + '<div class="list boxed">'+rowsOf("avatar").join("")+'</div>',
+  },
+  counter: {
+    zh:"中台", en:"counter", why:"五格底栏、直角、细线、一行 42px —— 全库最密。它不留边、不用阴影，把一屏能装的全部装上。",
+    tabs:[["today","home","Home"],["jobs","job","Orders"],["stock","box","Stock"],["money","cash","Money"],["more","chart","Reports"]],
+    fab:true,
+    today: () =>
+      '<div class="hd mid"><h2>'+BIZ.co+'</h2></div>'
+      /* ⚠️ 不用 RM 71,300 —— 那是每一家公司共用的那个示例总数（任务 94 点名过），
+         拿它当 demo 的道具，等於替一个还没修好的洞背书。 */
+      + '<div class="duo"><div><div class="l">Receivable</div><div class="v">RM 96,240</div></div>'
+      + '<div><div class="l">Payable</div><div class="v">RM 18,900</div></div></div>'
+      + '<div class="grid6">'
+      + [["QT","Quote"],["OR","Order"],["RC","Receipt"],["PO","Purchase"],["ST","Stock"],["CU","Client"],["EX","Expense"],["RP","Report"]]
+          .map(([a,b]) => '<button><span class="ic">'+a+'</span>'+b+'</button>').join("")
+      + '</div><div class="sec">Recent</div><div class="list">'+rowsOf("dense").join("")+'</div>',
+    jobs: () => '<div class="hd mid"><h2>Orders</h2></div><div class="list">'+rowsOf("dense").join("")+'</div>',
+  },
+  blueprint: {
+    zh:"图纸", en:"blueprint", why:"全库唯一一套不给大数字的。开场就是按状态分好的清单，点一笔进去是一张可以印出来的纸。",
+    tabs:[["today","doc","Quotes"],["jobs","job","Projects"],["clients","user","Clients"],["money","cash","Money"]],
+    fab:true,
+    today: () => {
+      /* 分组用**它自己真的状态**，不要一个 Other 把 Quoting 跟 Overdue 混在一起 ——
+         一个把两种状态并成一格的标题，读起来像分类做完了，其实没有。 */
+      const g = {};
+      JOBS.forEach((j) => (g[j.st] = g[j.st] || []).push(j));
+      return '<div class="hd"><div class="co">'+BIZ.co+'</div><h2>Quotations</h2></div>'
+        + ["Overdue","Awaiting","Confirmed","Quoting"].filter((k)=>g[k]&&g[k].length).map((k) =>
+            '<div class="sec">'+k+' · '+g[k].length+'</div><div class="list boxed">'
+            + g[k].map((j) => '<div class="li"><span class="av">'+esc(initials(j.who))+'</span>'
+                + '<div class="txt"><div class="p1">'+esc(j.t)+'</div><div class="p2">'+esc(j.who)+'</div></div>'
+                + '<span class="pill">'+esc(j.amt)+'</span></div>').join("")
+            + '</div>').join("");
+    },
+    jobs: () =>
+      '<div class="hd"><h2>QT-2026-0018</h2></div>'
+      + '<div class="paper"><div class="no">QUOTATION · 3 SEP 2026</div>'
+      + '<h3>Taman Desa 3-bedroom refit</h3><div class="to">For Mr. Chan · Taman Desa, KL</div>'
+      + '<table><tr><td>Hacking &amp; disposal</td><td>RM 6,800</td></tr>'
+      + '<tr><td>Tiling, 3 rooms</td><td>RM 18,400</td></tr>'
+      + '<tr><td>Carpentry</td><td>RM 15,300</td></tr>'
+      + '<tr><td>Painting</td><td>RM 8,000</td></tr>'
+      + '<tr><td>Total</td><td>RM 48,500</td></tr></table></div>',
+  },
+};
+
+function render(key, screen) {
+  const r = REG[key];
+  const view = r[screen] || r[Object.keys(r).find((k) => typeof r[k] === "function")];
+  return '<div class="phone r-'+key+(r.fab ? " has-fab" : "")+'" data-reg="'+key+'">'
+    + '<div class="status"><span>9:41</span><span>▮▮▮ ▾</span></div>'
+    + '<div class="body">' + view() + '</div>'
+    + (r.fab ? '<button class="fab" aria-label="Add">＋</button>' : "")
+    + '<nav class="nav">' + r.tabs.map(([id,ic,lab]) =>
+        '<button data-go="'+id+'" aria-current="'+(id===screen)+'">'+svg(ic)+esc(lab)+'</button>').join("")
+    + '</nav></div>';
+}
+
+const state = { ledger:"today", hearth:"today", counter:"today", blueprint:"today" };
+const rack = document.getElementById("rack");
+
+function slotHTML(k) {
+  return render(k, state[k])
+    + '<div class="cap"><div class="nm">'+REG[k].zh+'<span>'+REG[k].en+'</span></div>'
+    + '<p>'+esc(REG[k].why)+'</p></div>';
+}
+rack.innerHTML = Object.keys(REG).map((k) =>
+  '<div class="slot" data-slot="'+k+'">' + slotHTML(k) + '</div>').join("");
+
+/* 🔴 **只重画被按的那一支，不要重画整排。**
+   第一版每按一次就把四支全部重建，於是同一轮里第二次以后的点击打在
+   已经被换掉的节点上 —— 实测四支里**三支的底栏按了不换页**。
+   而那正是我们禁止 AI 画的那种按钮：它会亮、会变色，就是不做事。
+   （顺带：重画整排也会把另外三支已经滚到的位置弹回顶部。） */
+rack.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-go]");
+  if (!btn) return;
+  const key = btn.closest(".phone").dataset.reg;
+  const want = btn.dataset.go;
+  /* 一格没有对应画面的时候不要给空白 —— 退回那一套自己的第一屏，
+     而底栏照样高亮他按的那一格，不然读起来像按了没反应。 */
+  state[key] = typeof REG[key][want] === "function" ? want : "today";
+  const slot = rack.querySelector('[data-slot="'+key+'"]');
+  slot.innerHTML = slotHTML(key);
+  slot.querySelectorAll("[data-go]").forEach((b) =>
+    b.setAttribute("aria-current", String(b.dataset.go === want)));
+});
+</script>
