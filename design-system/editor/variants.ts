@@ -296,6 +296,19 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "avatar", label: "客户带头像", props: { row: "avatar" } },
   ],
 
+  /* A THIRD AXIS ON THE SAME COMPONENT: the table's own FURNITURE.
+     shadcn 的那张 task 表整张页面就是这个 —— 标题、一条工具条、一张表，
+     没有指标卡也没有图表。工具条本身就是那个设计。
+
+     ⚠️ 那个输入框**是真的会筛的**，而且上面的条数会跟着变。
+     任务 15 砍掉过一个搜不到东西的 ⌘K，任务 94 抓到过一条说「已筛选」而画面
+     没筛的筛选条 —— 一个按不动的控件是缺陷，不是装饰。 */
+  RecordTableTools: [
+    { id: "chips", label: "标题旁边一排分段", props: { tools: "chips" } },
+    { id: "search", label: "自己一行 · 搜索框 + 分段", props: { tools: "search" } },
+    { id: "none", label: "只有标题跟条数", props: { tools: "none" } },
+  ],
+
   // ---------------------------------------------------------------- 分栏
   Columns: [
     { id: "half", label: "对半分", props: { layout: "half" } },

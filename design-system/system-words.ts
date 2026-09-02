@@ -76,6 +76,11 @@ export type SystemWords = {
   /** The filter segments above a table. Only the first is active in a preview;
    *  the finished system wires them to real queries. */
   filterAll: string;
+  /** 表格自己那个搜索框的提示字。只有 `search` 那一档的表格会画它。 */
+  tableSearch: string;
+  /** 筛到一行都不剩的时候说的话。**空白的表格不会讲话** —— 而一个刚打完字的人
+   *  分不出「找不到」跟「坏了」。 */
+  tableNoMatch: (q: string) => string;
   empty: string;
   emptyToday: string;
   emptyPeople: string;
@@ -160,6 +165,8 @@ const EN: SystemWords = {
   sendPreviewOnly: "This is the preview — nothing was sent. On your live site it becomes a row in your system.",
   rowCount: (n) => `${n} record${n === 1 ? "" : "s"}`,
   filterAll: "All",
+  tableSearch: "Filter these rows…",
+  tableNoMatch: (q) => `No rows match “${q}”.`,
   empty: "Nothing here yet",
   emptyToday: "Nothing booked today",
   emptyPeople: "Nobody added yet",
@@ -247,6 +254,8 @@ const ZH: SystemWords = {
   sendPreviewOnly: "这是预览 —— 没有真的送出。上线之后，这一按会在你的系统里开一行。",
   rowCount: (n) => `共 ${n} 条`,
   filterAll: "全部",
+  tableSearch: "在这些记录里找…",
+  tableNoMatch: (q) => `没有配得上「${q}」的记录。`,
   empty: "还没有资料",
   emptyToday: "今天没有安排",
   emptyPeople: "还没有加人",

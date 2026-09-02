@@ -120,6 +120,7 @@ describe("every register's preferences point at something real", () => {
       "RailNav",
       "RecordTable",
       "RecordTableRow",
+      "RecordTableTools",
       "StatRow",
       "Panel",
       "TrendChart",
@@ -152,7 +153,7 @@ describe("every register's preferences point at something real", () => {
    * for -- which is how RailNav and Panel sat unreachable for months.
    */
   it("gives every register an opinion on every axis", () => {
-    const AXES = ["RecordTableRow", "ShareChart", "RankList"];
+    const AXES = ["RecordTableRow", "RecordTableTools", "ShareChart", "RankList"];
     for (const style of STYLE_ORDER) {
       for (const ax of AXES) {
         expect(

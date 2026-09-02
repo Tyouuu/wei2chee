@@ -6,7 +6,7 @@
 // else here needs the client; the props are all serialisable data.
 "use client"
 
-import type { CSSProperties } from "react"
+import { useMemo, useState, type CSSProperties } from "react"
 import { useRegisterProp } from "@/design-system/editor/style-scope"
 import { DataGrid } from "./data-grid"
 import { useSystemWords } from "@/design-system/system-lang-context"
@@ -90,8 +90,31 @@ export function RecordTable(props: {
    *  Empty or absent means no segment row, which is right for a table that is
    *  already the whole of its page. */
   filters?: string[]
+  /**
+   * THE TABLE'S OWN FURNITURE -- a third axis, and the one shadcn's task table
+   * is entirely made of.
+   *
+   * 老板 2026-09-02:「重点去复刻就可以了」. Photographed the same week, their
+   * page is a title, a TOOLBAR and one table -- no stat cards, no chart. The
+   * toolbar is the design: a field you type into, the segments beside it, the
+   * count following what you typed.
+   *
+   * `chips`  the segment row we already had, sharing the caption's line
+   * `search` the toolbar on its OWN row: a working field + the segments
+   * `none`   caption and count only
+   *
+   * ⚠️ **The field really filters.** 任务 15 killed a ⌘K for being a search box
+   * that searched nothing, and 任务 94 found a filter chip claiming a list was
+   * filtered when it was not. A box that does nothing is the defect, not the
+   * decoration. Rows are already an array on this side, so filtering them is
+   * one `.filter()` -- there was never a reason for it to be inert.
+   *
+   * ⚠️ And the count follows the filter. A heading that says 「3 records」 over
+   * one visible row is the same lie in the other direction.
+   */
+  tools?: "chips" | "search" | "none"
 }) {
-  const { gridId, caption, look, row, filters } = props
+  const { gridId, caption, look, row, filters, tools } = props
   const w = useSystemWords()
   // Absent means "follow the register", not "plain" -- see style-scope.tsx.
   /*
@@ -123,7 +146,21 @@ export function RecordTable(props: {
   // in exactly the same way: the table renders, it just renders the default.
   const rowPref = useRegisterProp<"plain" | "pill" | "avatar">("RecordTableRow", "row")
   const rowShape = row ?? rowPref ?? "plain"
-  const { columns, rows } = normalizeTable(props as unknown as Record<string, unknown>)
+  /* A THIRD KEY, not a third read of "RecordTable". The comment above says why:
+     a register's preference is looked up under the axis name, so two axes on
+     one component sharing a key means the second silently finds nothing. */
+  const toolsPref = useRegisterProp<"chips" | "search" | "none">("RecordTableTools", "tools")
+  const toolShape = tools ?? toolsPref ?? "chips"
+
+  const [query, setQuery] = useState("")
+  const { columns, rows: allRows } = normalizeTable(props as unknown as Record<string, unknown>)
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q || toolShape !== "search") return allRows
+    return allRows.filter((r) =>
+      Object.values(r.cells ?? {}).join(" ").toLowerCase().includes(q),
+    )
+  }, [allRows, query, toolShape])
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE
   // TRACKING under Ledger (--label-transform: uppercase), plain sentence case
@@ -174,26 +211,32 @@ export function RecordTable(props: {
         <span className="tnum [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
           {w.rowCount(rows.length)}
         </span>
-        {filters?.length ? (
-          <div
-            className="ms-auto flex overflow-hidden [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-control)]"
-            role="group"
-          >
-            {[w.filterAll, ...filters].map((f, i) => (
-              <span
-                key={f}
-                className={`whitespace-nowrap [font-size:var(--text-xs)] [padding-block:2px] [padding-inline:var(--pad-control-x)] ${
-                  i === 0
-                    ? "[background:var(--color-primary-soft)] [color:var(--color-primary)] [font-weight:var(--fw-medium)]"
-                    : "[color:var(--color-paper-dim)]"
-                }`}
-              >
-                {f}
-              </span>
-            ))}
-          </div>
-        ) : null}
+        {toolShape === "chips" && filters?.length ? <Segments filters={filters} all={w.filterAll} /> : null}
       </div>
+
+      {/* THE TOOLBAR, ON ITS OWN LINE. shadcn's task table puts the field and
+          the segments under the heading rather than beside it, and that one
+          decision is most of why theirs reads as a tool and ours read as a
+          caption: a control sharing a line with a title is an ornament on the
+          title; a control on its own line is a place to work. */}
+      {toolShape === "search" ? (
+        <div className="flex flex-wrap items-center [gap:var(--gap-inline)]">
+          <label className="flex min-w-0 flex-1 items-center gap-2 [background:var(--color-ink-900)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] sm:max-w-[22rem]">
+            <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+              <circle cx="9" cy="9" r="5.5" />
+              <path d="m13.5 13.5 3 3" strokeLinecap="round" />
+            </svg>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={w.tableSearch}
+              aria-label={w.tableSearch}
+              className="w-full bg-transparent [padding-block:var(--pad-control-y)] [font-size:var(--text-xs)] [color:var(--color-paper)] outline-none placeholder:[color:var(--color-paper-dim)]"
+            />
+          </label>
+          {filters?.length ? <Segments filters={filters} all={w.filterAll} /> : null}
+        </div>
+      ) : null}
 
       {/* `revealEndWhen`: adding a column in a 460px-wide canvas puts the new
           column past the right edge, so the customer's own action appeared to do
@@ -229,6 +272,21 @@ export function RecordTable(props: {
           </tr>
         </thead>
         <tbody>
+          {/* 🔴 筛到零行的时候，表格本来是**整个空白的**。
+              实测（`npm run check:table-search`）：打一个找不到的字，tbody 的
+              内容是空字串 —— 一个刚打完字的人分不出「找不到」跟「这东西坏了」。
+              这跟这个仓库一直在犯的那一类是同一件事：能力做出来了，
+              **它讲不出自己发生了什么**。 */}
+          {rows.length === 0 && query.trim() ? (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="[padding-block:var(--pad-card)] [padding-inline:var(--pad-cell-x)] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
+              >
+                {w.tableNoMatch(query.trim())}
+              </td>
+            </tr>
+          ) : null}
           {rows.map((row, i) => (
             <tr
               key={i}
@@ -392,5 +450,29 @@ function Pill({ tone, label }: { tone: StatusTone; label: string }) {
     >
       {label}
     </span>
+  )
+}
+
+/** The segment row. Lifted out because the toolbar draws it in one of two
+ *  places now -- beside the caption, or under it next to the field. */
+function Segments({ filters, all }: { filters: string[]; all: string }) {
+  return (
+    <div
+      className="ms-auto flex overflow-hidden [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-control)]"
+      role="group"
+    >
+      {[all, ...filters].map((f, i) => (
+        <span
+          key={f}
+          className={`whitespace-nowrap [font-size:var(--text-xs)] [padding-block:2px] [padding-inline:var(--pad-control-x)] ${
+            i === 0
+              ? "[background:var(--color-primary-soft)] [color:var(--color-primary)] [font-weight:var(--fw-medium)]"
+              : "[color:var(--color-paper-dim)]"
+          }`}
+        >
+          {f}
+        </span>
+      ))}
+    </div>
   )
 }

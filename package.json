@@ -67,7 +67,8 @@
     "shoot:address": "node scripts/shoot-address.mjs",
     "shoot:admins": "node scripts/shoot-admins.mjs",
     "shoot:kinds": "node scripts/shoot-kinds.mjs",
-    "check:reconcile": "node scripts/check-reconcile.mjs"
+    "check:reconcile": "node scripts/check-reconcile.mjs",
+    "check:table-search": "node scripts/check-table-search.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

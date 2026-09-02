@@ -105,6 +105,8 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteTeam: "row",
       SiteCreds: "strip",
       StatRow: "boxed",
+      /* 扫一整张表的人要找一行，不是往下卷四十行。它的 mood 一字不差写着这件事。 */
+      RecordTableTools: "search",
       RecordTable: "compact",
       HeroCard: "stats",
       WorkflowStrip: "row",
@@ -151,6 +153,8 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteStory: "side",
       SiteCreds: "rating",
       StatRow: "tinted",
+      /* 在客人面前开的画面。分段够了，多一个输入框是多一个要解释的东西。 */
+      RecordTableTools: "chips",
       RecordTable: "zebra",
       HeroCard: "full",
       /* 竖排 —— their second section is a heading and three items STACKED, at
@@ -197,6 +201,8 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteStory: "side",
       SiteCreds: "badges",
       StatRow: "lead",
+      /* 最不会出错的那一套 —— 最普通的安排就是它的主张。 */
+      RecordTableTools: "chips",
       RecordTable: "plain",
       HeroCard: "full",
       SiteSteps: "across",
@@ -240,6 +246,8 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteStory: "stack",
       SiteCreds: "strip",
       StatRow: "boxed",
+      /* 全库最密的一套，一屏最多行 —— 密度让「找」变得更必要，不是更不必要。 */
+      RecordTableTools: "search",
       RecordTable: "compact",
       HeroCard: "stats",
       SiteSteps: "across",
@@ -286,6 +294,8 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       EnquiryForm: "split",
       SiteTestimonials: "stagger",
       StatRow: "rule",
+      /* 印在纸上的那一套。一个搜索框印不出来，而这一套的主张就是把印不出来的东西全部拿掉。 */
+      RecordTableTools: "none",
       RecordTable: "plain",
       HeroCard: "stats",
       SiteSteps: "ruled",
@@ -330,6 +340,8 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteStory: "centre",
       SiteCreds: "rating",
       StatRow: "boxed",
+      /* 一块招牌上不会有搜索框。名字跟数字是招牌，其余的小而在下面。 */
+      RecordTableTools: "none",
       RecordTable: "grid",
       HeroCard: "solo",
       SiteSteps: "numbered",
