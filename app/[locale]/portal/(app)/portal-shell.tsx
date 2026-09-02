@@ -559,7 +559,7 @@ export function PortalShell({
             onClick={() => setNavOpen(true)}
             aria-label={t("navOpen")}
             aria-expanded={navOpen}
-            className="-ml-1.5 grid h-9 w-9 shrink-0 place-items-center rounded-[var(--radius-md)] [color:var(--color-paper)] hover:[background-color:var(--color-ink-850)]"
+            className="-ml-2.5 grid h-11 w-11 shrink-0 place-items-center rounded-[var(--radius-md)] [color:var(--color-paper)] hover:[background-color:var(--color-ink-850)]"
           >
             <svg viewBox="0 0 20 20" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
               <path d="M3 5.5h14M3 10h14M3 14.5h14" strokeLinecap="round" />

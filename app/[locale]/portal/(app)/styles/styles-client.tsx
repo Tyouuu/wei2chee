@@ -243,7 +243,7 @@ export function StylesClient({
                       onClick={() => choose(name)}
                       data-register-use={name}
                       disabled={Boolean(pending)}
-                      className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-50 enabled:hover:[border-color:var(--color-primary)]"
+                      className="inline-flex min-h-11 shrink-0 items-center rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-50 enabled:hover:[border-color:var(--color-primary)]"
                     >
                       {pending === name ? tEditor("saving") : tHome("styleUse")}
                     </button>

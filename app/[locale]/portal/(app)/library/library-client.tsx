@@ -483,7 +483,7 @@ export function LibraryClient({
                       <button
                         type="button"
                         onClick={() => setActive(sec.key)}
-                        className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)]"
+                        className="-my-2 inline-flex min-h-11 items-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)] hover:[color:var(--color-paper)]"
                       >
                         {t("filterAll")} {sec.items.length} →
                       </button>

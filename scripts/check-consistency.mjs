@@ -149,14 +149,32 @@ const PROBE = () => {
     .sort((a, b) => b.s - a.s)[0];
   const hc = head ? getComputedStyle(head.e) : null;
 
+  /* ⚠️ A PICTURE OF A CONTROL IS NOT A CONTROL, and `inChrome` was not
+     catching these. The portal home carries live previews of the customer's own
+     pages, and every button inside one was being counted as a button a thumb
+     has to hit -- measured 2026-09-02: EVERY control under 44px on that page
+     was inside a preview, 「Open and edit →」 at 109×21 and 「Ask on WhatsApp」
+     at 33×11. A hundred and thirty-two of them across eleven pages.
+
+     Rendered height against LAYOUT height, rather than another guess at how the
+     shrink was done. `offsetHeight` is what the element measures before any
+     transform; `getBoundingClientRect().height` is what it ends up as. Anything
+     visibly smaller than it was laid out to be is a picture, whether that was
+     done with a matrix, a zoom, or two nested scales -- and the second of those
+     is what the transform test above walks straight past. */
+  const shrunk = (e) => e.offsetHeight > 0 && e.getBoundingClientRect().height / e.offsetHeight < 0.9;
+
   const taps = [...document.querySelectorAll("button, a[href], [role=button]")]
-    .filter((e) => seen(e) && !inChrome(e))
+    .filter((e) => seen(e) && !inChrome(e) && !shrunk(e))
     .filter((e) => {
       const c = getComputedStyle(e);
       const painted = !/rgba?\\(0, 0, 0, 0\\)|transparent/.test(c.backgroundColor);
       return painted || parseFloat(c.borderTopWidth) > 0;
     })
-    .map((e) => Math.round(e.getBoundingClientRect().height));
+    .map((e) => ({
+      h: Math.round(e.getBoundingClientRect().height),
+      what: (e.textContent || e.getAttribute("aria-label") || e.tagName).trim().slice(0, 28),
+    }));
 
   return {
     hasBar: Boolean(bar),
@@ -165,8 +183,18 @@ const PROBE = () => {
     headWeight: hc ? hc.fontWeight : null,
     headFamily: hc ? hc.fontFamily.split(",")[0].replace(/["']/g, "") : null,
     overflowX: document.documentElement.scrollWidth - innerWidth,
-    tapsUnder44: taps.filter((h) => h < 44).length,
+    tapsUnder44: taps.filter((t) => t.h < 44).length,
     tapsTotal: taps.length,
+    /* ⚠️ THE NUMBER HAS TO BE CHECKABLE. This printed 132 for weeks and
+       nobody could see one of them; a faithful replay of these same filters
+       found three on the page it claimed eighteen for. A count nobody can
+       audit is a count nobody should act on -- and this file has already been
+       wrong twice about which controls are real (378 inside thumbnails once,
+       the whole portal excluded another time). */
+    tapsSmall: taps
+      .filter((t) => t.h < 44)
+      .map((t) => `${t.h}px ${t.what}`)
+      .slice(0, 6),
   };
 };
 
@@ -241,6 +269,12 @@ console.log(`  标题       ${heads.length} 种   ${heads.join(" · ")}`);
 console.log(`  顶栏       ${bars}/${ok2.length} 页有`);
 console.log(`  手机横滚   ${over.length} 页   ${over.map((r) => `${r.name}+${r.overflowX}`).join(" ") || "—"}`);
 console.log(`  手机上拇指按不稳的按钮  ${thumbs} 个`);
+/* NAMED, not just counted. See the note beside tapsSmall. */
+for (const r of rows[390]) {
+  if (!r.failed && r.tapsSmall?.length) {
+    console.log(`    ${r.name.padEnd(11)} ${r.tapsSmall.join(" · ")}`);
+  }
+}
 console.log(
   `
   目标：正文左缘 ≤ 2 种 · 标题 ≤ 3 种 · 顶栏 ${ok2.length}/${ok2.length} · 横滚 0 页`,

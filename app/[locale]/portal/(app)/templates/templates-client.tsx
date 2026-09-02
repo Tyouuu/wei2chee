@@ -221,7 +221,7 @@ export function TemplatesClient({
                   {hasWebsite ? (
                     <Link
                       href={`/${locale}/portal/website?tpl=${lp.key}`}
-                      className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
+                      className="inline-flex min-h-11 shrink-0 items-center rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors hover:[border-color:var(--color-primary)]"
                     >
                       {t("use")}
                     </Link>
@@ -230,7 +230,7 @@ export function TemplatesClient({
                       type="button"
                       onClick={() => add("website", "")}
                       disabled={busy !== null || full}
-                      className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-40 enabled:hover:[border-color:var(--color-primary)]"
+                      className="inline-flex min-h-11 shrink-0 items-center rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-40 enabled:hover:[border-color:var(--color-primary)]"
                     >
                       {tAdd("add")}
                     </button>
@@ -306,7 +306,7 @@ export function TemplatesClient({
                         onClick={() => add(tpl.pageKey, "")}
                         disabled={busy !== null || full}
                         title={full ? tAdd("failedLimit") : undefined}
-                        className="shrink-0 rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-40 enabled:hover:[border-color:var(--color-primary)]"
+                        className="inline-flex min-h-11 shrink-0 items-center rounded-[var(--radius-md)] border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] transition-colors disabled:opacity-40 enabled:hover:[border-color:var(--color-primary)]"
                       >
                         {busy === tpl.pageKey ? tEditor("saving") : tAdd("add")}
                       </button>
@@ -386,7 +386,7 @@ export function TemplatesClient({
               {hasWebsite && (
                 <Link
                   href={`/${locale}/portal/website?tpl=${zoomedLanding.key}`}
-                  className="rounded-[var(--radius-md)] px-3 py-1.5 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
+                  className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 py-1.5 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
                 >
                   {t("use")}
                 </Link>
