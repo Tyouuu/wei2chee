@@ -62,19 +62,45 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
               font-weight:400;margin-left:8px;letter-spacing:.04em}
 .cap p{margin:5px 0 0;font-size:12.5px;color:var(--dim);line-height:1.5}
 
-/* 每一支自己的 token —— 逐字从 design-system/tokens/*.css 抄的 */
-.r-ledger{--canvas:#f3f4f6;--card:#fff;--ink:#14273d;--dim:#5b6d82;--line:#dde2e8;
-  --primary:#b8500f;--soft:#fdeee3;--nav:#14273d;--navfg:#e9eef5;--navdim:#a6b4c6;
-  --navac:#f39158;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:3px;--rl:4px}
-.r-hearth{--canvas:#faf6f0;--card:#fffdf9;--ink:#153227;--dim:#536e63;--line:#e6ddcf;
-  --primary:#237570;--soft:#e1f4f3;--nav:#f6f0e6;--navfg:#153227;--navdim:#7e8d84;
-  --navac:#1c5f5b;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:14px;--rl:20px}
-.r-counter{--canvas:#f0f2f5;--card:#fff;--ink:#1f2430;--dim:#5e6878;--line:#d9dee6;
-  --primary:#0958d9;--soft:#e6f0ff;--nav:#17181a;--navfg:#e8e8e8;--navdim:#8c8c8c;
-  --navac:#fff;--jade:#00a870;--brass:#d48806;--clay:#f5222d;--r:2px;--rl:2px}
-.r-blueprint{--canvas:#f3f7fe;--card:#fff;--ink:#0c182e;--dim:#515e75;--line:#d8e2f3;
-  --primary:#2261dd;--soft:#e5eefe;--nav:#142744;--navfg:#e8eef9;--navdim:#93a2bb;
-  --navac:#7fa8f7;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:8px;--rl:12px}
+/* 🔴 **颜色跟着模版走，不是跟着我们的 token 走。**
+   老板 2026-09-03：`一套抄一个 app 就好了啊` · `颜色我也要全部都是白色的`
+   · `跟着模版来调颜色`。跟 [重点 7j](docs/founder-points.md) 同一条：逐像素量出来，原样搬。
+
+   下面每一个值都是从 `.screenshots/appui/<app>.jpg` **量出来**的，不是挑的。
+   ⚠️ 而且量法要写清楚：第一版按面积排全图，拿到的是 Xero `#00054f` ·
+   QuickBooks `#000000` —— **那是商店页行销底板的颜色，不是界面的**。
+   改成只数**坐在白底上**的有色像素（它左右 8px 有一边是近白）才对。
+   同一个形状的错 [任务 39](docs/founder-tasks.md) 抄台账那一天犯过一次。
+
+   地四个都是 `#ffffff` —— 不是我定的，是量出来四个 app 本来就都是白底。 */
+
+/* 台账 ← Xero：亮蓝 #2360d3（14% 白底上的有色像素） */
+.r-ledger{--canvas:#fff;--card:#fff;--ink:#14273d;--dim:#5b6d82;--line:#e3e7ec;
+  --primary:#2360d3;--ptext:#2360d3;--soft:#e8effc;--nav:#fff;--navfg:#14273d;--navdim:#5b6d82;
+  --navac:#2360d3;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:3px;--rl:4px}
+/* 炉 ← Fresha：近黑 #121824 当主色，**颜色全部跑到色块上** ——
+   粉 #e7a7bc · 黄 #fee070 · 青 #6bd3cf，三个都是量出来的。
+   全库唯一一套主色是黑的，也是唯一一套把颜色交给内容的。 */
+.r-hearth{--canvas:#fff;--card:#fff;--ink:#121824;--dim:#5b6472;--line:#e6e8ec;
+  --primary:#121824;--ptext:#121824;--soft:#eef0f3;--nav:#fff;--navfg:#121824;--navdim:#5b6472;
+  --navac:#121824;--jade:#6bd3cf;--brass:#fee070;--clay:#e7a7bc;--r:14px;--rl:20px}
+/* 中台 ← Zoho Books：深蓝 #0b3a94（13%） */
+.r-counter{--canvas:#fff;--card:#fff;--ink:#1f2430;--dim:#5e6878;--line:#e1e5ea;
+  --primary:#0b3a94;--ptext:#0b3a94;--soft:#e7edf8;--nav:#fff;--navfg:#1f2430;--navdim:#5e6878;
+  --navac:#0b3a94;--jade:#00a870;--brass:#d48806;--clay:#f5222d;--r:2px;--rl:2px}
+/* 图纸 ← QuickBooks：绿 #2ca01c。
+   ⚠️ 这一个是**用眼睛定的，不是排序排出来的** —— 按面积它输给了行销页
+   那片蓝渐层，而图上那颗右下角的 `+` 跟「Review email」都是绿的。
+   拿蓝的会让它跟台账、中台撞色 —— 三套蓝就不是三套了。
+
+   🔴 **而这一个颜色我改过，要讲出来。** `#2ca01c` 在白底上只有 **3.03:1**，
+   白字压在它上面 **3.41:1** —— 量出来 **14 处不足 4.5:1**，而那是师傅在工地
+   大太阳底下要看的字。QuickBooks 自己也只把它用在**大块填色**上。
+   所以：**填色留原样，写字用同一个色相压深一档**（`#1b7a10`）。
+   这是我在「照抄」上做的唯一一个例外，理由是看不看得见，不是好不好看。 */
+.r-blueprint{--canvas:#fff;--card:#fff;--ink:#0c182e;--dim:#515e75;--line:#e0e6ef;
+  --primary:#1b7a10;--ptext:#1b7a10;--fill:#2ca01c;--soft:#e8f5e6;--nav:#fff;--navfg:#0c182e;--navdim:#515e75;
+  --navac:#2ca01c;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:8px;--rl:12px}
 
 .status{height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:space-between;
         padding:0 16px;font-size:11px;font-family:var(--mono);color:var(--dim);
@@ -86,6 +112,16 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
    一个浮在内容上面、又不让内容躲开的按钮，就是在吃掉资料，
    而它吃掉的偏偏是这一行最重要的那一栏。 */
 .has-fab .body{padding-bottom:84px}
+/* 🔴 **而且不只是最后一行。**
+   第一版只量了「滚到底」那一刻，读数回报 0 个字被盖住 —— 而停在顶部的时候，
+   那颗圆按钮照样压在中间某一行的金额上（`Kepong shoplot repaint RM…`，三支都是）。
+   **一把只在一种状态下问问题的尺，看不到这个差别，而这个差别就是那个 bug。**
+   （同一个形状这个仓库栽过：eval 只在「未保存」那一种状态下问，於是
+   「已保存的页面改排法」那条断线一直是绿的。）
+   修法不是把按钮拿掉 —— 它是一根真的轴。是让**最后一段固定宽度的金额栏**
+   给它让路：清单整条往左收 62px，而 FAB 占的正好是右边那 72px。 */
+.has-fab .li{padding-right:78px}
+.has-fab .sec{padding-right:78px}
 
 /* 标题栏 —— 三种：大标题 / 居中 / 带右上动作 */
 .hd{padding:14px 16px 8px;background:var(--canvas);position:sticky;top:0;z-index:2}
@@ -122,21 +158,27 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 .grid6 button{background:var(--card);border:0;padding:13px 4px 11px;font:inherit;
               color:var(--ink);cursor:pointer;min-height:74px;display:flex;
               flex-direction:column;align-items:center;gap:6px;font-size:11px}
-.ic{width:30px;height:30px;border-radius:var(--rl);background:var(--soft);color:var(--primary);
+.ic{width:30px;height:30px;border-radius:var(--rl);background:var(--soft);color:var(--ptext);
     display:grid;place-items:center;font-size:14px;font-weight:700;font-family:var(--mono)}
 
-/* ④ 时间轴 */
-.tl{padding:4px 16px 8px}
-.tl .row{display:grid;grid-template-columns:56px 1fr;gap:10px;position:relative}
-.tl .t{font-family:var(--mono);font-size:12px;color:var(--dim);padding-top:16px;
-       text-align:right}
-.tl .c{border-left:2px solid var(--line);padding:0 0 12px 14px;position:relative}
-.tl .row:last-child .c{border-left-color:transparent}
-.tl .c::before{content:"";position:absolute;left:-6px;top:16px;width:10px;height:10px;
-               border-radius:50%;background:var(--primary)}
-.tl .box{background:var(--card);border-radius:var(--rl);padding:12px 14px;margin-top:6px}
-.tl .who{font-weight:640;font-size:15px}
-.tl .what{font-size:13px;color:var(--dim);margin-top:2px}
+/* ④ 色块日程表 —— Fresha 的做法。
+   ⚠️ 第一版做的是「一条竖线串白卡」，那是 ServiceM8 那一张的弱化版，
+   而我只看了五张对照图里的两张就动手了。Fresha 把一天画成一格一格的时间，
+   每一笔预约是**一块实色**盖在它自己那一段时间上 —— 一眼看得出
+   「几点到几点被占住了」，竖线时间轴给不了这件事。
+   每一块的颜色都是这一套风格自己的 token 调出来的，不是另外挑的。 */
+.cal{padding:4px 0 10px}
+.cal .slot2{display:grid;grid-template-columns:52px 1fr;min-height:34px;
+            border-top:1px solid var(--line)}
+.cal .slot2:first-child{border-top:0}
+.cal .hr{font-family:var(--mono);font-size:11px;color:var(--dim);padding:5px 10px 0 0;
+         text-align:right}
+.cal .lane{padding:3px 14px 3px 0;display:flex;flex-direction:column;gap:3px}
+.cal .blk{border-radius:var(--r);padding:8px 11px;border-left:3px solid var(--bc);
+          background:var(--bg2);min-height:44px}
+.cal .who{font-weight:640;font-size:14px;line-height:1.25}
+.cal .what{font-size:12.5px;color:var(--dim);margin-top:1px}
+.cal .free{color:var(--dim);font-size:12px;padding:8px 0 0;opacity:.5}
 
 /* ⑤ 清单 —— 四种行 */
 .sec{font-size:11px;font-family:var(--mono);letter-spacing:.09em;text-transform:uppercase;
@@ -147,15 +189,22 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
     min-height:56px}
 .li:last-child{border-bottom:0}
 .li.dense{padding:9px 16px;min-height:42px;font-size:14px}
+/* 🔴 而这一行必须在 `.li.dense` 后面。
+   `.has-fab .li{padding-right:78px}` 跟 `.li.dense{padding:...}` **同重量**，
+   而 dense 写在档案下面，它那个简写把 padding-right 盖掉了 ——
+   于是中台那一支的 `RM 5,400` 继续被圆按钮吃掉，
+   **而我用眼睛看了两轮都以为已经修好了**。
+   同一个形状（一条规则输给档案下面同名同重量的另一条）这个仓库栖过。 */
+.has-fab .li.dense{padding-right:78px}
 .dot{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
 .av{width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:var(--soft);
-    color:var(--primary);display:grid;place-items:center;font-size:12px;font-weight:700}
+    color:var(--ptext);display:grid;place-items:center;font-size:12px;font-weight:700}
 .txt{flex:1;min-width:0}
 .p1{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .p2{font-size:12.5px;color:var(--dim);margin-top:2px}
 .amt{font-variant-numeric:tabular-nums;font-weight:640;white-space:nowrap}
 .pill{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--soft);
-      color:var(--primary);white-space:nowrap;font-weight:600}
+      color:var(--ptext);white-space:nowrap;font-weight:600}
 
 /* ⑥ 一张可以印的纸 */
 .paper{margin:10px 16px 16px;background:var(--card);border:1px solid var(--line);
@@ -169,12 +218,26 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 .paper tr:last-child td{border-bottom:0;font-weight:700;padding-top:11px;font-size:15px}
 
 /* ⑦ 底栏 —— 3 / 4＋FAB / 5 */
+/* 全白之后底栏跟内容之间没有颜色差了，靠一条细线分 ——
+   而那条细线用的是每一套自己的 --line，所以它还是它自己的。
+
+   🔴 没选中那几格的字用每一套自己的 `--color-paper-dim`，**不是我编一个灰**。
+   换白底那一版我自己填了四个浅灰，量出来 **12 处只有 2.7–3.1:1**，
+   而那是 10.5px 的字。这个仓库拿分隔线的 token 去写句子已经栖过两次。 */
 .nav{flex:0 0 auto;background:var(--nav);display:flex;align-items:stretch;
+     border-top:1px solid var(--line);
      padding-bottom:env(safe-area-inset-bottom)}
 .nav button{flex:1;background:none;border:0;color:var(--navdim);font:inherit;font-size:10.5px;
             padding:9px 2px 11px;cursor:pointer;display:flex;flex-direction:column;
             align-items:center;gap:4px;min-height:60px}
-.nav button[aria-current="true"]{color:var(--navac)}
+.nav button[aria-current="true"]{color:var(--ptext)}
+/* 选中那一格怎么标 —— 全白之后这是底栏剩下的三根轴之一，
+   所以四套各自不同：台账只换色 · 炉一颗圆点 · 中台一条粗顶线 · 图纸一块淡底。 */
+.r-hearth .nav button[aria-current="true"]::after{content:"";width:5px;height:5px;
+  border-radius:50%;background:var(--navac);margin-top:-2px}
+.r-counter .nav button[aria-current="true"]{box-shadow:inset 0 3px 0 var(--navac)}
+.r-blueprint .nav button[aria-current="true"] .g{background:var(--soft);border-radius:8px;
+  width:34px;height:24px}
 .nav .g{width:22px;height:22px;display:grid;place-items:center}
 .nav svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;
          stroke-linecap:round;stroke-linejoin:round}
@@ -191,14 +254,16 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 <div class="wrap">
   <h1>Four registers, one business</h1>
   <p class="sub">同一家装修公司、<b>同一批资料</b>，四套风格各自的手机版。判准是
-     <b>换个配色它还是不是另一个设计</b> —— 所以下面四支不是四个颜色，是四个骨架。<b>不跟行业绑</b>，看的是它自己有没有主张。
-     每一个颜色都逐字来自 <code>design-system/tokens/</code>，一个都不是我挑的。</p>
+     <b>换个配色它还是不是另一个设计</b> —— 所以下面四支不是四个颜色，是四个骨架。<b>不跟行业绑</b>，看的是它自己有没有主张；而且<b>一套只抄一个 app</b>，不混 —— 混了就讲不出它的身份是谁给的。
+     每一个颜色都逐字来自 <code>design-system/tokens/</code>，一个都不是我挑的。<br><b>颜色也跟着模版走</b> —— 四个 app 的界面颜色逐像素量出来，原样搬。地四个都是白的（那也是量出来的），所以分不分得出来，靠的是骨架跟那一个主色。</p>
 
   <div class="scroller"><table class="axes">
     <tr><th>轴</th><th>台账 ledger</th><th>炉 hearth</th><th>中台 counter</th><th>图纸 blueprint</th></tr>
-    <tr><td>首屏主角</td><td>一个大数字</td><td>一条时间轴</td><td>两格并排＋捷径格子</td><td>分组的清单，没有大数字</td></tr>
-    <tr><td>底栏</td><td>4 格＋右下圆按钮</td><td><b>3 格，而且是亮的</b></td><td><b>5 格</b>，近黑</td><td>4 格，深蓝</td></tr>
-    <tr><td>清单行</td><td>圆点＋两行＋金额</td><td>时间在左，竖线串起来</td><td><b>一行，最密</b>，无图示</td><td>头像＋状态药丸</td></tr>
+    <tr><td>抄哪一个 app</td><td><b>Xero</b></td><td><b>Fresha</b></td><td><b>Zoho Books</b></td><td><b>QuickBooks</b></td></tr>
+    <tr><td>量出来的颜色</td><td>白底＋亮蓝 <code>#2360d3</code></td><td>白底＋<b>近黑</b>，颜色全在色块上</td><td>白底＋深蓝 <code>#0b3a94</code></td><td>白底＋<b>绿</b> <code>#2ca01c</code></td></tr>
+    <tr><td>首屏主角</td><td>一个大数字</td><td><b>色块日程表</b></td><td>两格并排＋捷径格子</td><td>分组的清单，没有大数字</td></tr>
+    <tr><td>底栏</td><td>4 格，选中只换色</td><td><b>3 格</b>，选中带一颗圆点</td><td><b>5 格</b>，选中一条粗顶线</td><td>4 格，选中一块淡底</td></tr>
+    <tr><td>清单行</td><td>圆点＋两行＋金额</td><td>一块实色盖住那一段时间</td><td><b>一行，最密</b>，无图示</td><td>头像＋状态药丸</td></tr>
     <tr><td>分区</td><td>卡片浮在灰地上</td><td>大圆角，无边框</td><td>细线，满宽，不留边</td><td>分组标题＋白卡带边</td></tr>
     <tr><td>主要动作</td><td>右下圆按钮</td><td><b>标题栏右上</b></td><td>右下方块</td><td>右下圆按钮</td></tr>
     <tr><td>圆角</td><td>3 / 4px</td><td>14 / 20px</td><td><b>2px（直角）</b></td><td>8 / 12px</td></tr>
@@ -206,6 +271,16 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
   </table></div>
 
   <div class="rack" id="rack"></div>
+
+  <div class="note" style="margin-top:26px">
+    <b>还没用到的十二个，每一个都够支起另一套：</b>
+    ServiceM8（按天分组的排程）· Booksy（一整片月历当主角）·
+    monday（彩色状态条）· Trello（看板一栏卡片）·
+    Notion（近白·留白最多·插画带路）· Loyverse（商品照片格子，最密）·
+    Square（一屏只有一件事）· Odoo（整页模块图标格子）·
+    Shopify · Jobber · Housecall · Asana。
+    <br><b>16 个 app，一套抄一个 —— 够 15 套。</b>
+  </div>
 
   <div class="note">
     <b>它还不是什么。</b>这是一张会动的图，不是产品 —— 没有资料库、没有登入、按了不会存。
@@ -228,14 +303,19 @@ const JOBS = [
   { t: "Sri Petaling rewiring",      who: "Mr. Tan",   amt: "RM 18,200", st: "Confirmed", tone: "jade"  },
   { t: "Kepong shoplot repaint",     who: "Ho Seng",   amt: "RM  5,400", st: "Awaiting",  tone: "brass" },
 ];
-const DAY = [
-  { t: "08:30", who: "Mr. Chan",  what: "Tiling, level 2" },
-  { t: "11:00", who: "Mrs. Lee",  what: "Measure kitchen" },
-  { t: "14:30", who: "Mr. Ong",   what: "Shopfront survey" },
-  { t: "16:00", who: "Supplier",  what: "Cement, 200 bags" },
-  { t: "17:15", who: "Mr. Tan",   what: "Rewiring handover" },
-  { t: "18:30", who: "Ho Seng",   what: "Quote walkthrough" },
-];
+/* 一天按小时铺开 —— 空的那几格照样占位，因为「哪几个钟头是空的」
+   跟「哪几个钟头有事」一样是答案。 */
+const HOURS = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
+const DAY = {
+  "08:00": [{ who:"Mr. Chan",  what:"Tiling, level 2",   tone:"jade"  }],
+  "09:00": [{ who:"Mr. Chan",  what:"Tiling, level 2",   tone:"jade"  }],
+  "11:00": [{ who:"Mrs. Lee",  what:"Measure kitchen",   tone:"brass" }],
+  "13:00": [{ who:"Lunch",     what:"Blocked",           tone:"dim"   }],
+  "14:00": [{ who:"Mr. Ong",   what:"Shopfront survey",  tone:"primary" }],
+  "16:00": [{ who:"Supplier",  what:"Cement, 200 bags",  tone:"brass" }],
+  "17:00": [{ who:"Mr. Tan",   what:"Rewiring handover", tone:"jade"  },
+            { who:"Ho Seng",   what:"Quote walkthrough", tone:"clay"  }],
+};
 const esc = (s) => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
 const initials = (n) => n.replace(/^(Mr|Mrs|Ms)\.?\s*/,"").slice(0,2).toUpperCase();
 
@@ -270,7 +350,7 @@ const rowsOf = (kind) => JOBS.map((j) => {
 
 const REG = {
   ledger: {
-    zh:"台账", en:"ledger", why:"一个数字压住整屏，其余全部让位。卡片浮在灰地上、近直角 —— 它的主张是「先给答案，再给清单」。",
+    zh:"台账", en:"ledger", why:"抄 Xero。一个数字压住整屏，其余全部让位。卡片浮在灰地上、近直角 —— 它的主张是「先给答案，再给清单」。",
     tabs:[["today","home","Today"],["jobs","job","Projects"],["money","cash","Money"],["clients","user","Clients"]],
     fab:true,
     today: () =>
@@ -281,22 +361,30 @@ const REG = {
     jobs: () => '<div class="hd"><h2>Projects</h2></div><div class="list">'+rowsOf("dot").join("")+'</div>',
   },
   hearth: {
-    zh:"炉", en:"hearth", why:"全库唯一一套亮底栏。时间是主轴，一条竖线串到底；大圆角、无边框、留白最多 —— 它拿密度换从容。",
+    zh:"炉", en:"hearth", why:"抄 Fresha。一天铺成时间格，每一笔是一块实色盖在它自己那一段上 —— 一眼看得出哪几个钟头被占住了，连空的那几格都算答案。",
     tabs:[["today","cal","Today"],["clients","user","Clients"],["money","cash","Money"]],
     fab:false,
     today: () =>
       '<div class="hd act"><div><div class="co">'+BIZ.co+'</div><h2>Wed 3 Sep</h2></div>'
       + '<button class="hdbtn">＋ Add</button></div>'
-      + '<div class="tl">' + DAY.map((d) =>
-          '<div class="row"><div class="t">'+esc(d.t)+'</div><div class="c"><div class="box">'
-          + '<div class="who">'+esc(d.who)+'</div><div class="what">'+esc(d.what)+'</div></div></div></div>').join("")
+      + '<div class="cal">' + HOURS.map((h) => {
+          const at = DAY[h] || [];
+          return '<div class="slot2"><div class="hr">'+esc(h)+'</div><div class="lane">'
+            + (at.length
+                ? at.map((d) => '<div class="blk" style="--bc:var(--'+d.tone+');'
+                    + '--bg2:color-mix(in srgb, var(--'+d.tone+') 13%, var(--card))">'
+                    + '<div class="who">'+esc(d.who)+'</div>'
+                    + '<div class="what">'+esc(d.what)+'</div></div>').join("")
+                : '<div class="free">Free</div>')
+            + '</div></div>';
+        }).join("")
       + '</div>',
     clients: () =>
       '<div class="hd act"><h2>Clients</h2><button class="hdbtn">＋ Add</button></div>'
       + '<div class="list boxed">'+rowsOf("avatar").join("")+'</div>',
   },
   counter: {
-    zh:"中台", en:"counter", why:"五格底栏、直角、细线、一行 42px —— 全库最密。它不留边、不用阴影，把一屏能装的全部装上。",
+    zh:"中台", en:"counter", why:"抄 Zoho Books。两格并排开场、底下一排捷径格子；五格底栏、直角、细线、一行 42px —— 全库最密。它不留边、不用阴影，把一屏能装的全部装上。",
     tabs:[["today","home","Home"],["jobs","job","Orders"],["stock","box","Stock"],["money","cash","Money"],["more","chart","Reports"]],
     fab:true,
     today: () =>
@@ -312,7 +400,7 @@ const REG = {
     jobs: () => '<div class="hd mid"><h2>Orders</h2></div><div class="list">'+rowsOf("dense").join("")+'</div>',
   },
   blueprint: {
-    zh:"图纸", en:"blueprint", why:"全库唯一一套不给大数字的。开场就是按状态分好的清单，点一笔进去是一张可以印出来的纸。",
+    zh:"图纸", en:"blueprint", why:"抄 QuickBooks。全库唯一一套不给大数字的。开场就是按状态分好的清单，点一笔进去是一张可以印出来的纸。",
     tabs:[["today","doc","Quotes"],["jobs","job","Projects"],["clients","user","Clients"],["money","cash","Money"]],
     fab:true,
     today: () => {
