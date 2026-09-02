@@ -33,16 +33,41 @@ import { pathToFileURL } from "node:url";
 const OUT = ".screenshots/appui";
 fs.mkdirSync(OUT, { recursive: true });
 
+
+/* 🟢 专业的老板端 —— 他 2026-09-02：`不要那么大众的吧 去那种专业去弄App后端的网站`。
+   挑的不是「有名的 app」，是**跟我们十个零件同一件事的 app**：
+   走单 · 记帐 · 名册 · 预约 · 库存。前四个更是他手上两个真的市场
+   （承包商 · 沙龙）自己在用的东西。
+   ⚠️ 包名全部先打过一次：回「Not Found」的一律不放进来。 */
+const PRO = [
+  // ── 上门服务 / 承包商：他最大的那个市场 ────────────────────────────────
+  ["jobber", "com.getjobber.jobber", "Jobber · 承包商走单"],
+  ["housecall", "housecall.pros", "Housecall Pro · 上门服务"],
+  ["servicem8", "com.servicem8.skip", "ServiceM8 · 师傅端"],
+  // ── 沙龙 / 预约：他手上那一单 ─────────────────────────────────────────
+  ["fresha", "com.fresha.Business", "Fresha for business · 沙龙老板端"],
+  ["booksy", "net.booksy.business", "Booksy Biz · 沙龙老板端"],
+  // ── 收钱 / POS ────────────────────────────────────────────────────────
+  ["square", "com.squareup", "Square · 收款 POS"],
+  ["shopify", "com.shopify.mobile", "Shopify · 店主端"],
+  ["loyverse", "com.loyverse.sale", "Loyverse · POS"],
+  // ── 记帐 / 开单 ───────────────────────────────────────────────────────
+  ["xero", "com.xero.touch", "Xero · 记帐"],
+  ["quickbooks", "com.intuit.quickbooks", "QuickBooks · 记帐"],
+  ["zohobooks", "com.zoho.books", "Zoho Books · 记帐"],
+  // ── 走单 / 排程 ───────────────────────────────────────────────────────
+  ["odoo", "com.odoo.mobile", "Odoo · 整套"],
+  ["monday", "com.monday.monday", "monday · 看板"],
+  ["asana", "com.asana.app", "Asana · 任务"],
+  ["trello", "com.trello", "Trello · 看板"],
+  ["notion", "notion.id", "Notion · 文件"],
+];
+
 /* 他客人手机里装着的。商店页面上就有官方截图。 */
 const LOCAL = [
   ["grab", "com.grabtaxi.passenger", "Grab · 叫车外送"],
   ["tng", "my.com.tngdigital.ewallet", "Touch 'n Go · 电子钱包"],
   ["shopee", "com.shopee.my", "Shopee · 网购"],
-  ["mae", "com.maybank2u.life", "Maybank MAE · 银行"],
-  ["foodpanda", "com.global.foodpanda.android", "foodpanda · 外送"],
-  ["setel", "com.setel.mobile", "Setel · 打油"],
-  ["lazada", "com.lazada.android", "Lazada · 网购"],
-  ["boost", "my.com.myboost", "Boost · 电子钱包"],
   /* 🟢 这两个最贴近我们：使用者就是小生意老板本人。 */
   ["grab-merchant", "com.grab.merchant", "GrabMerchant · 老板端"],
   /* ⚠️ Shopee Seller 拿掉了：试过五个包名全部回 Not Found。
@@ -129,6 +154,22 @@ async function grab(page, name, label, clipToPhones) {
   );
 }
 
+console.log("\n专业的老板端 —— 跟我们做同一件事的 app:");
+for (const [name, id, label] of PRO) {
+  const p = await b.newPage({ viewport: { width: 1440, height: 1100 } });
+  try {
+    await p.goto(`https://play.google.com/store/apps/details?id=${id}&hl=en&gl=MY`, {
+      waitUntil: "domcontentloaded", timeout: 45000,
+    });
+    await p.waitForTimeout(5000);
+    await grab(p, name, label, true);
+  } catch (e) {
+    bad.push(name);
+    console.log(`${name.padEnd(15)} 🔴 读不到  ${String(e).slice(0, 44)}`);
+  }
+  await p.close();
+}
+
 console.log("\n他客人手机里装着的（商店页面上的官方截图）:");
 for (const [name, id, label] of LOCAL) {
   const p = await b.newPage({ viewport: { width: 1440, height: 1100 } });
@@ -176,6 +217,7 @@ for (const [name, url, label] of KITS) {
 /* 拼成一张。不用外挂 —— 就是一页 HTML，再拍它一次。 */
 const cell = (f, label) =>
   `<figure><img src="${pathToFileURL(f).href}"><figcaption>${label}</figcaption></figure>`;
+const pick = (list) => shots.filter(([f]) => list.some(([n]) => f.endsWith(`/${n}.jpg`))).map(([f, l]) => cell(f, l)).join("");
 const sheet = `<!doctype html><meta charset="utf-8"><style>
  body{margin:0;background:#0e1113;color:#cfc8ba;font:13px/1.4 system-ui,sans-serif;padding:28px}
  h2{font:600 15px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#00beb7;margin:34px 0 14px}
@@ -185,11 +227,14 @@ const sheet = `<!doctype html><meta charset="utf-8"><style>
  img{width:100%;display:block;border-radius:6px;background:#fff}
  figcaption{margin-top:6px;font-size:12px;color:#9a938a}
 </style>
-<h2>他客人手机里装着的</h2><div class="g">
-${shots.filter(([f]) => LOCAL.some(([n]) => f.endsWith(`/${n}.jpg`))).map(([f, l]) => cell(f, l)).join("")}
+<h2>专业的老板端 —— 跟我们做同一件事的</h2><div class="g">
+${pick(PRO)}
+</div>
+<h2>他客人手机里装着的（本地的视觉习惯）</h2><div class="g">
+${pick(LOCAL)}
 </div>
 <h2>国外的画廊 / 开源那几套</h2><div class="g k">
-${shots.filter(([f]) => !LOCAL.some(([n]) => f.endsWith(`/${n}.jpg`))).map(([f, l]) => cell(f, l)).join("")}
+${pick(FOREIGN.concat(KITS))}
 </div>`;
 fs.writeFileSync(`${OUT}/sheet.html`, sheet);
 const sp = await b.newPage({ viewport: { width: 1700, height: 1200 } });
