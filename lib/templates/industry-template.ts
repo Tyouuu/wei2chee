@@ -894,6 +894,12 @@ function buildDashboard(
             // already drawing, so the tile and the chart cannot disagree.
             delta: headlineDelta(sample.heroSpark),
             deltaLabel: sample.heroSuffix,
+            /* 上一期的实数，跟上面那个百分比来自同一个阵列 —— 所以卡片上的
+               三样（数字 · 涨跌 · 上个月）永远不会互相矛盾。
+               ⚠️ 抄的是 Studio Admin 的招牌动作：他们四张卡每一张底下都有
+               「$254,200 last month」。少了它，我们只讲了「涨了」，
+               没有讲「从多少涨的」。 */
+            previous: previousFigure(sample.heroSpark, sample.heroValue),
             spark: sample.heroSpark,
             tone: "good",
             iconName: "payments",
@@ -1358,6 +1364,29 @@ function layerFirst(nodes: PuckNode[], plan: string[]): PuckNode[] {
  * (every increase from nothing is infinite, and printing 「↑ 100%」 for a
  * business's first month of takings is worse than printing nothing).
  */
+/**
+ * 上一期那个数字，照**这一期怎么写的**去写。
+ *
+ * Studio Admin 每一张 KPI 底下都有一行「$254,200 last month」，而我们只有一个
+ * 百分比 —— 讲了「涨了」，没讲「从多少涨的」。
+ *
+ * ⚠️ 格式是**从 `value` 那串字上抄下来的**，不是假设的：前缀（「RM 」、「$」，
+ * 或者什么都没有）原样拿过来，数字照同一种千分位排。这个产品哪天卖到用别的
+ * 货币的地方，这一行不用改。
+ *
+ * ⚠️ 拿不到就回 undefined。上一期是零、只有一期、或者 `value` 根本不是一个
+ * 数字（「4 单」那种）—— 三种都不给，因为「RM 0 上个月」是一句读起来像事实
+ * 的假话。
+ */
+function previousFigure(spark: number[] | undefined, value: string): string | undefined {
+  if (!spark || spark.length < 2) return undefined;
+  const prev = spark[spark.length - 2];
+  if (!prev) return undefined;
+  const m = value.match(/^([^\d]*)([\d.,]+)/);
+  if (!m) return undefined;
+  return `${m[1]}${Math.round(prev).toLocaleString("en-US")}`;
+}
+
 function headlineDelta(spark: number[] | undefined): number | null {
   if (!spark || spark.length < 2) return null;
   const prev = spark[spark.length - 2];
@@ -1394,7 +1423,16 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
     the list gets a full half beside the trend. Same argument -- 「今天要跟的，
     钱在旁边」 -- laid out so both halves are worth looking at.
   */
-  hearth: ["stats2", "todo|trend@half", "table"],
+  /* 🔴 炉 现在从「今天要做什么」开场，不是从钱开场（2026-09-02）。
+     抄的是 Ant Design Pro 的**工作台**那一页：它开场是一句问候加一张
+     「进行中的项目」清单，数字是小的、在旁边的。老板 9-02:「重点去复刻」。
+
+     这一套的客人是美容院、沙龙 —— 前台就是店面，开系统的那一刻店里有客人。
+     那一刻他要的是「等一下谁来、哪一单要跟」，不是本月收了多少。
+     钱没有被挪走，它退到下面一整行，两张卡都够宽
+     （上一版把 stats2 塞进半栏，「RM 71,300」印成「RM …」，
+     那个教训在下面几行还留着）。 */
+  hearth: ["todo|trend@wide-left", "stats2", "table"],
   // The neutral one, and the only one that should read as "a bit of
   // everything". Chart left, the day's list beside it: the most ordinary
   // arrangement there is, which is the point of this register.

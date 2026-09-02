@@ -53,6 +53,9 @@ export type LiveStat = {
   deltaLabel?: string;
   tone: StatTone;
   spark?: number[];
+  /** 上一期那个数字，已经格式化好。只有真的算得出来的那一格才有 ——
+   *  没有历史就不给，「RM 0 上个月」是一句查得出来是假的话。 */
+  previous?: string;
   /** Which icon belongs beside this figure. The dashboard's four are
    *  positional (ICONS below) because that page's tiles are always the same
    *  four questions in the same order; a page that builds its own tiles --
@@ -212,10 +215,17 @@ export function buildLiveStats(input: {
     const thisMonth = money
       .filter((e) => inThisMonth(e.entry_on))
       .reduce((n, e) => n + (e.amount_cents ?? 0), 0);
+    /* 上个月真的收到多少。`receivedByMonth` 是六个月的实数，
+       所以这不是推出来的，是同一份资料的倒数第二格。
+       ⚠️ 只有**六个月里真的有两个月**才给 —— 一个刚开张的生意没有上个月，
+       而「RM 0 上个月」读起来像一句事实，其实是我们没有资料。 */
+    const lastMonth =
+      receivedByMonth.length > 1 ? receivedByMonth[receivedByMonth.length - 2] : null;
     tiles.push({
       label: w.received,
       value: ringgit(thisMonth) ?? "RM 0",
       deltaLabel: w.vsLast,
+      previous: lastMonth != null ? (ringgit(lastMonth * 100) ?? undefined) : undefined,
       tone: "good",
       spark: receivedByMonth,
     });
@@ -339,6 +349,10 @@ function mapNodes(nodes: unknown[], stats: LiveStats | null): unknown[] {
             label: t.label,
             value: t.value,
             deltaLabel: t.deltaLabel ?? "",
+            /* ⚠️ 这一行漏掉就等於白做：上一期那个数字算出来了，
+               投影不带过去，画面上就什么都不会变 ——
+               这个仓库最常犯的那一类。 */
+            ...(t.previous ? { previous: t.previous } : {}),
             tone: t.tone,
             ...(t.spark ? { spark: t.spark, delta: deltaOf(t.spark) } : {}),
             iconName: t.icon ?? ICONS[i] ?? "dashboard",

@@ -222,6 +222,17 @@
      the page, not merely a lighter step of the same neutral. Both text colors
      clear AA on it: paper-dim 5.61:1, primary 4.71:1. */
   --color-primary-soft: #fbe8ea;
+
+  /* 🔴 页头那条带用中性的，不用上面那个粉的（2026-09-02）。
+     `--color-primary-soft` 拿来画药丸跟 hover 是对的 —— 小块、有意义。
+     铺满整个页顶就不是一个「台阶」，是一片粉色的地。实拍量出来
+     `#fbe8ea` 压在 `#f7f4ef` 的画布上，是整页最大的一块有颜色的东西。
+
+     而这一套的主张是**用字喊，不是用漆喊**：「店名用又窄又粗的字排到 46px，
+     底下的内文是普通 15px」。一片洗白的粉红两样都不是 ——
+     它既不是白，也不够像一块招牌。红留给按钮跟店名，地回到纸。
+     老板 2026-09-02:「就跟着白色跟黑色做」。 */
+  --color-band: #ece7de;
   /* 色块 —— CHOSEN AGAINST THE PRIMARY, NOT AGAINST THE TRADE.
 
      Founder, 2026-08-27, on five full pages: 「配色真的很奇怪」. The first version

@@ -788,6 +788,7 @@
   --color-primary: #c8102e;
   --color-primary-deep: #9d0c24;
   --color-primary-soft: #fbe8ea;
+  --color-band: #ece7de;
   --color-block: #2b1d1e;
   --color-on-primary: #ffffff;
   --color-on-dark: #ffffff;
@@ -1086,7 +1087,7 @@
   --input: var(--color-ink-800);
   --ring: var(--color-primary);
   --radius: var(--radius-md);
-  --chart-1: var(--color-primary);
+  --chart-1: var(--color-paper);
   --chart-2: var(--color-jade);
   --chart-3: var(--color-brass);
   --chart-4: var(--color-clay);

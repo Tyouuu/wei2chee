@@ -625,7 +625,21 @@
   /* shadcn's chart palette. Mapped onto the four status colours this system
      already uses plus two neutrals, so a chart pulled off any registry speaks
      the same colour language as the StatusDots beside it. */
-  --chart-1: var(--color-primary);
+  /* 🔴 瑞士 的图表用墨，不用主色 —— 2026-09-02。
+     这一套自己的主张写着「黑白为主，只有一个主色，用在**必须被找到的地方**」，
+     而一张走势图不是必须被找到的地方，它是资料。把主色刷在整片柱子上，
+     等於把这一套仅有的一点颜色花在最不需要它的地方。
+
+     ⚠️ 而且它造成一个看得见的后果：**瑞士 跟 图纸 摆在一起几乎分不出来** ——
+     两套都是白侧栏 + 四张指标 + 一片蓝柱子，而两套的侧栏底色在 token 里
+     **一模一样都是 `#142744`**。改完之后一片黑柱子对一片蓝柱子，一眼就分得开。
+
+     抄的是 shadcn-admin：它那张 Overview 的柱子是黑的，整页量出来只有 3.6%
+     有颜色。老板 2026-09-02：「就跟着白色跟黑色做」。
+
+     其余四条 chart 保持原样 —— 那四条是状态色（好 / 提醒 / 坏 / 中性），
+     它们讲的是意思，不是装饰。 */
+  --chart-1: var(--color-paper);
   --chart-2: var(--color-jade);
   --chart-3: var(--color-brass);
   --chart-4: var(--color-clay);

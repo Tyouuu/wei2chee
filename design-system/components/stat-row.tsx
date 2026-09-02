@@ -72,6 +72,23 @@ export type StatTile = {
   href?: string
   /** Trailing values, oldest first, drawn as a 52px sparkline. */
   spark?: number[]
+  /**
+   * LAST PERIOD'S FIGURE, already formatted.
+   *
+   * 老板 2026-09-02:「感觉不像模版的 就是没有改变多少」. Put side by side at
+   * full size, the loudest difference in Studio Admin's KPI is not the size of
+   * the number -- it is that every card carries a SECOND number under it:
+   * 「$254,200 last month」. Four cards, four histories. Ours carried a
+   * direction (↑13.2%) and no baseline, which tells you it moved and never
+   * what it moved from.
+   *
+   * ⚠️ A STRING, AND ONLY WHERE IT IS REAL. It arrives formatted by whoever
+   * formatted `value`, so this component never invents a currency or a
+   * separator -- and a tile with no history simply omits it. Printing 「RM 0
+   * last month」 under a figure whose history we do not have is the same defect
+   * as a percentage nobody maintains (任务 40).
+   */
+  previous?: string
 }
 
 export type StatRowLayout = "tinted" | "boxed" | "rule" | "lead" | "chip"
@@ -190,7 +207,20 @@ function Tile({
           because a four-line label in a 130px tile pushes the figure out of the
           row and the figure is the point.
         */}
-        <span className="line-clamp-2 min-w-0 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)] text-[color:var(--color-on-canvas-dim)]">
+        {/* 🔴 `chip` 不套小型大写（2026-09-02）。
+            这个版面是照 arhamkhnz 那一套量出来的，而他们的卡片标签是
+            **普通大小写、正常字级、一行**：「Lead Pipeline Value」。
+            套上小型大写之后同样的字宽了两成，「CONFIRMED JOBS THIS MONTH」
+            折成两行 —— 一个折了两行的全大写标签读起来是**资料库的栏名**，
+            不是一张卡片的题目，而那正是「看起来不像模版」的一部分。
+            其余四个版面照旧跟风格自己的 `--label-transform` 走。 */}
+        <span
+          className={`min-w-0 [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] ${
+            look === "chip"
+              ? "truncate [font-size:var(--text-sm)]"
+              : "line-clamp-2 [font-size:var(--text-xs)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]"
+          }`}
+        >
           {tile.label}
         </span>
       </div>
@@ -237,8 +267,15 @@ function Tile({
           {tile.deltaLabel && <span className="truncate">{tile.deltaLabel}</span>}
         </div>
       )}
-      {look === "chip" && tile.deltaLabel && (
+      {look === "chip" && (tile.previous || tile.deltaLabel) && (
         <p className="mt-1.5 [font-size:var(--text-xs)] [line-height:var(--leading-body)] text-[color:var(--color-on-canvas-dim)]">
+          {tile.previous ? (
+            <>
+              <span className="tnum [color:var(--color-on-canvas)] [font-weight:var(--fw-medium)]">
+                {tile.previous}
+              </span>{" "}
+            </>
+          ) : null}
           {tile.deltaLabel}
         </p>
       )}

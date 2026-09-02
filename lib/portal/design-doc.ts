@@ -104,7 +104,11 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteSteps: "numbered",
       SiteTeam: "row",
       SiteCreds: "strip",
-      StatRow: "boxed",
+      /* 🔴 从 boxed 换成 chip（2026-09-02）。
+      `chip` 是 8-26 照 arhamkhnz 那套量出来做的 —— 涨跌做成一颗药丸贴在数字
+      旁边，解释的话另起一行。**做出来之后六套没有一套选它。**
+      老板 9-02 把两张图并排：「感觉不像模版的」。那个差别就在这里。 */
+      StatRow: "chip",
       /* 扫一整张表的人要找一行，不是往下卷四十行。它的 mood 一字不差写着这件事。 */
       RecordTableTools: "search",
       RecordTable: "compact",
@@ -282,7 +286,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
   // The two that came from a published brief rather than from this file's own
   // hand -- see design-system/tokens/{swiss,soft}.css for where each came from.
   swiss: {
-    mood: "给会计、顾问这种把资料印出来给人看的公司。黑白为主，只有一个红，用在必须被找到的地方；没有卡片，靠线跟留白分区。牺牲的是所有装饰 —— 它在萤幕上很素，但它是全库印在纸上最好看的一套。",
+    mood: "给会计、顾问这种把资料印出来给人看的公司。黑白为主，连图表的柱子都是墨色；唯一的颜色是一个靛蓝，只出现在必须被按到的地方。没有卡片，靠线跟留白分区。牺牲的是所有装饰 —— 它在萤幕上很素，但它是全库印在纸上最好看的一套。",
     facts: "全直角 · 边框 1px · 无阴影 · 标签全大写字距 0.12em · 强调色瑞士红",
     prefer: {
       SiteGallery: "grid",

@@ -49,7 +49,14 @@ export function Overlap({
           register tuned that value to sit just above its own page background,
           so this is a step and never a slab. A register whose whole argument is
           restraint (瑞士, 大字) gets a band you can barely see, which is the
-          correct amount of band for it. */}
+          correct amount of band for it.
+
+          ⚠️ EXCEPT WHERE THE PRIMARY IS A STRONG HUE. 招牌's primary is a sign
+          red, so its `soft` step is #fbe8ea -- and across the top of a whole
+          page that stops being a step and becomes a pink field. Photographed
+          2026-09-02, and the founder had just said 「就跟着白色跟黑色做」.
+          A register can now name its own band; the default is unchanged, so
+          the five that were right stay exactly as they were. */}
       {/* The band is sized by its CONTENT plus the rise, not by a constant, so
           a two-line page title and a one-line one both get a band that ends
           exactly `rise` px into the block below. Two numbers that have to agree
@@ -57,7 +64,7 @@ export function Overlap({
       <div className="relative">
         <div
           aria-hidden
-          className="absolute inset-x-0 top-0 bottom-0 -mx-[var(--pad-card-lg)] -mt-[var(--pad-card-lg)] [background:var(--color-primary-soft)]"
+          className="absolute inset-x-0 top-0 bottom-0 -mx-[var(--pad-card-lg)] -mt-[var(--pad-card-lg)] [background:var(--color-band,var(--color-primary-soft))]"
           style={{ bottom: -rise }}
         />
         {/*

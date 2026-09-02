@@ -6,7 +6,7 @@
 // else here needs the client; the props are all serialisable data.
 "use client"
 
-import { useMemo, useState, type CSSProperties } from "react"
+import { useState, type CSSProperties } from "react"
 import { useRegisterProp } from "@/design-system/editor/style-scope"
 import { DataGrid } from "./data-grid"
 import { useSystemWords } from "@/design-system/system-lang-context"
@@ -154,13 +154,18 @@ export function RecordTable(props: {
 
   const [query, setQuery] = useState("")
   const { columns, rows: allRows } = normalizeTable(props as unknown as Record<string, unknown>)
-  const rows = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q || toolShape !== "search") return allRows
-    return allRows.filter((r) =>
-      Object.values(r.cells ?? {}).join(" ").toLowerCase().includes(q),
-    )
-  }, [allRows, query, toolShape])
+  /* 没有包 useMemo，这是故意的：React Compiler 报
+     `Existing memoization could not be preserved` —— 它看不出
+     `normalizeTable(props)` 回来的阵列不会被改，所以整个组件被跳过不优化。
+     一张表就那几十行，一次 filter 的成本远低于「让整个组件失去自动优化」。
+     手写的 memo 换掉编译器的 memo，是这里最贵的一笔交易。 */
+  const q = query.trim().toLowerCase()
+  const rows =
+    q && toolShape === "search"
+      ? allRows.filter((r) =>
+          Object.values(r.cells ?? {}).join(" ").toLowerCase().includes(q),
+        )
+      : allRows
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE
   // TRACKING under Ledger (--label-transform: uppercase), plain sentence case
@@ -277,7 +282,7 @@ export function RecordTable(props: {
               内容是空字串 —— 一个刚打完字的人分不出「找不到」跟「这东西坏了」。
               这跟这个仓库一直在犯的那一类是同一件事：能力做出来了，
               **它讲不出自己发生了什么**。 */}
-          {rows.length === 0 && query.trim() ? (
+          {rows.length === 0 && q ? (
             <tr>
               <td
                 colSpan={columns.length}
