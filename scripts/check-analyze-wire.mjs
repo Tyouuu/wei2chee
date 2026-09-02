@@ -94,7 +94,7 @@ let rows = [];
 if (leadId) {
   // The row is written in a `finally`, after the response has been composed.
   await new Promise((r) => setTimeout(r, 2500));
-  rows = (await rest(`ai_usage?select=surface,outcome,took_ms,account_id,lead_id&lead_id=eq.${leadId}`)) ?? [];
+  rows = (await rest(`ai_usage?select=surface,outcome,took_ms,account_id,lead_id,prompt_tokens,completion_tokens,reasoning_tokens&lead_id=eq.${leadId}`)) ?? [];
 }
 check("the ledger has a row for it", rows.length === 1, `${rows.length} row(s)`);
 
@@ -107,6 +107,13 @@ if (row) {
      without one. Null here is the whole point. */
   check("with no account, which is correct", row.account_id === null, String(row.account_id));
   check("and a duration", typeof row.took_ms === "number" && row.took_ms > 0, `${row.took_ms}ms`);
+  /* Printed rather than asserted: what one questionnaire COSTS is the number
+     the founder prices against, and until a real customer runs one this is the
+     only place it can be read. */
+  console.log(
+    `
+  一份问卷用掉  进 ${row.prompt_tokens} · 出 ${row.completion_tokens} · 其中推理 ${row.reasoning_tokens ?? "?"}`,
+  );
 }
 
 /* Cleaned up in the order the foreign keys allow: the row points at the lead. */

@@ -40,23 +40,24 @@ const LOADING_STEPS = [
 ] as const;
 
 /**
- * THE NUMBER THE PACING IS DERIVED FROM, AND WHY IT IS NOT THE MEDIAN.
+ * WHEN EACH LINE ARRIVES, AND WHY THE SPACING IS NOT EVEN.
  *
- * Measured: eval:analysis gives a median of 28.6s and p95 of 34.1s against the
- * model directly. Then `npm run check:analyze` walked the REAL route end to end
- * on 2026-08-31 and one call took 47.5s -- a single attempt, confirmed by the
- * ledger writing exactly one row.
+ * Measured on the real route (`npm run check:analyze`), not against the model:
+ * 47.5s on 2026-08-31, then 66.0s on the next run. eval:analysis, which calls
+ * the model directly, gives a median of 28.6s. The tail on this is long and it
+ * is not going to be tamed by picking a bigger number — every constant I choose
+ * gets exceeded by some call, and pacing evenly to the worst one makes the
+ * common case feel dead.
  *
- * Pacing to the median means the tail is spent on a frozen sentence, which is
- * the bug this whole screen was rebuilt for: at 47.5s a 30s walk leaves the
- * last line sitting for eighteen seconds. Pacing to the slow end costs a fast
- * visitor nothing he can notice -- he simply never sees the last line or two,
- * and he was not counting them.
+ * So the spacing widens. The first lines come quickly, which is what tells him
+ * the thing is alive; the later ones hold longer, which is what a long wait
+ * actually feels like. The last line is written to be true for as long as it
+ * has to be (「快好了」), and it owns the tail — that is the honest answer to a
+ * call that runs to 66s, not a seventh sentence invented to fill the time.
  *
- * Re-run those two and move this one number; everything below is derived.
+ * Cumulative milliseconds from mount. One entry per line.
  */
-const MEASURED_WAIT_MS = 42_000;
-const STEP_MS = Math.round(MEASURED_WAIT_MS / LOADING_STEPS.length);
+const SHOW_AT = [0, 4_000, 9_000, 16_000, 26_000, 40_000];
 
 const container: Variants = {
   hidden: {},
@@ -77,12 +78,12 @@ function LoadingState() {
   const [stepIndex, setStepIndex] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      // Still clamped: the last line is written to be true for as long as it
-      // has to be ("almost there"), which the four before it are not.
-      setStepIndex((i) => Math.min(i + 1, LOADING_STEPS.length - 1));
-    }, STEP_MS);
-    return () => clearInterval(id);
+    // One timer per line rather than an interval, because the gaps differ.
+    // Cleared together, so a screen that resolves early leaves nothing behind.
+    const timers = SHOW_AT.slice(1).map((at, i) =>
+      setTimeout(() => setStepIndex(Math.min(i + 1, LOADING_STEPS.length - 1)), at),
+    );
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   return (

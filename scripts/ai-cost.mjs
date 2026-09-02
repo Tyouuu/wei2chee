@@ -92,12 +92,73 @@ const RECORDING_SINCE = (() => {
 })();
 
 const money = (usd) => `US$${usd.toFixed(2)} ≈ RM${(usd * USD_TO_MYR_2026_08_27).toFixed(2)}`;
+const sen = (usd) => `RM ${(usd * USD_TO_MYR_2026_08_27).toFixed(3)}`;
+
+/*
+  一个动作多少钱 —— 而这一段不需要有客户才印得出来。
+
+  The ledger answers 「what did it cost LAST MONTH」, and until a paying customer
+  runs a questionnaire it is empty and answers nothing. But the founder prices
+  at RM150 a month and has never had a figure for what the AI inside that costs
+  him, which is a question that can be answered today from measurements rather
+  than from a customer.
+
+  Both rows are MEASURED, and the measurements are reproducible:
+
+    问卷   `npm run check:analyze` on 2026-08-31 — one real call through the
+           real route, read off the ledger row it wrote: in 2,161 out 6,527
+           (of which 6,146 is reasoning).
+    改一句  `npm run eval:editor --n 2` the same day, averaged over 112 real
+           calls: in 7,722 out 296.
+
+  ⚠️ UPPER BOUND, DELIBERATELY. 84% of the editor's input is a cache hit and
+  providers bill cached input at a fraction of the rate, but our price table has
+  no cached rate in it and inventing one would be the kind of number that reads
+  like a measurement and is not. Everything here is priced at full rate, so the
+  real bill is lower than this — never higher.
+*/
+const MEASURED = [
+  { what: "一份问卷（客人第一次讲他的生意）", inTok: 2161, outTok: 6527 },
+  { what: "跟助手讲一句话改页面", inTok: 7722, outTok: 296 },
+];
+
+function perAction() {
+  const price = PRICE_2026_08_27[AI_MODEL];
+  console.log("\n一个动作多少钱  (量出来的，不是估的)\n");
+  if (!price) {
+    console.log(`  ${AI_MODEL} 的价钱没写在表里 —— 见 ai-usage.ts`);
+    return null;
+  }
+  const rows = MEASURED.map((m) => ({
+    ...m,
+    usd: (m.inTok / 1e6) * price.in + (m.outTok / 1e6) * price.out,
+  }));
+  for (const r of rows) {
+    console.log(`  ${r.what.padEnd(22)} ${sen(r.usd)}   (进 ${r.inTok} · 出 ${r.outTok})`);
+  }
+  /*
+    ONE ASSUMPTION, SAID OUT LOUD. Nobody has measured how many times a real
+    owner talks to the assistant in a month, so this is a stated number rather
+    than a finding -- 50 is 「a couple of sentences on most working days」. When
+    the ledger has real months in it, replace this with the actual count.
+  */
+  const EDITS_A_MONTH = 50;
+  const monthly = rows[0].usd + rows[1].usd * EDITS_A_MONTH;
+  console.log(
+    `\n  一个客人第一个月  ${sen(monthly)}` +
+      `   (一份问卷 + 假设 ${EDITS_A_MONTH} 次修改 —— 这个次数是假设，不是量出来的)`,
+  );
+  console.log(`  他每个月付 RM 150，所以 AI 吃掉 ${((monthly * USD_TO_MYR_2026_08_27) / 150 * 100).toFixed(1)}%`);
+  return monthly;
+}
 
 async function main() {
   if (!URL_ || !SERVICE) {
     console.error("Missing Supabase env vars in .env.local");
     return 1;
   }
+
+  perAction();
 
   const since = new Date(Date.now() - DAYS * 86400_000).toISOString();
   const BASE_COLS = "surface,model,prompt_tokens,completion_tokens,reasoning_tokens,account_id,created_at";
