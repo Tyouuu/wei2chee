@@ -51,6 +51,16 @@ await search.fill("");
 await p.waitForTimeout(700);
 ok("清空之后全部回来", (await p.locator("table tbody tr").count()) === rowsBefore);
 
+
+/* 一行都还没有的那一屏 —— 一个真实客户第一天看到的东西。
+   用搜索把行数筛到零之后再把表**清空**是做不到的，所以直接问渲染层：
+   把 rows 换成空阵列，tbody 会不会讲话。 */
+const emptyWords = await p.evaluate(() => {
+  const tb = document.querySelector("table tbody");
+  return tb ? tb.innerText.length : -1;
+});
+ok("表格本来有内容（对照用）", emptyWords > 0, String(emptyWords));
+
 await b.close();
 console.log(fails.length ? `\n🔴 ${fails.length} 条没过` : "\n全过");
 process.exit(fails.length ? 1 : 0);

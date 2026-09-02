@@ -282,6 +282,21 @@ export function RecordTable(props: {
               内容是空字串 —— 一个刚打完字的人分不出「找不到」跟「这东西坏了」。
               这跟这个仓库一直在犯的那一类是同一件事：能力做出来了，
               **它讲不出自己发生了什么**。 */}
+          {/* 🔴 一行都还没有 —— 跟「筛不到」是两件不同的事，而这张表本来
+              两件都不会讲：零行的时候它渲染出一个表头加一片空白。
+              老板 2026-09-02:「每一个页面 每一页状态 你就没有复刻好」。
+              这是一个真实客户第一天打开系统时看到的那一屏，
+              而它本来什么都没有说。 */}
+          {rows.length === 0 && !q ? (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="[padding-block:var(--pad-card)] [padding-inline:var(--pad-cell-x)] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
+              >
+                {w.tableEmpty}
+              </td>
+            </tr>
+          ) : null}
           {rows.length === 0 && q ? (
             <tr>
               <td

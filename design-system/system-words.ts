@@ -81,6 +81,9 @@ export type SystemWords = {
   /** 筛到一行都不剩的时候说的话。**空白的表格不会讲话** —— 而一个刚打完字的人
    *  分不出「找不到」跟「坏了」。 */
   tableNoMatch: (q: string) => string;
+  /** 这张表一行都还没有的时候说的话 —— 跟「筛不到」是两件事：
+   *  一个是「找不到」，一个是「还没开始」。**空白的表两种都不会讲。** */
+  tableEmpty: string;
   empty: string;
   emptyToday: string;
   emptyPeople: string;
@@ -167,6 +170,7 @@ const EN: SystemWords = {
   filterAll: "All",
   tableSearch: "Filter these rows…",
   tableNoMatch: (q) => `No rows match “${q}”.`,
+  tableEmpty: "Nothing here yet. The first one you add shows up here.",
   empty: "Nothing here yet",
   emptyToday: "Nothing booked today",
   emptyPeople: "Nobody added yet",
@@ -256,6 +260,7 @@ const ZH: SystemWords = {
   filterAll: "全部",
   tableSearch: "在这些记录里找…",
   tableNoMatch: (q) => `没有配得上「${q}」的记录。`,
+  tableEmpty: "这里还没有东西。你记的第一笔会出现在这里。",
   empty: "还没有资料",
   emptyToday: "今天没有安排",
   emptyPeople: "还没有加人",
