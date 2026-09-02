@@ -117,12 +117,64 @@ async function palette(file) {
  * 在量同一件事，而报告把它们当成同一份。
  */
 function readPage() {
+  /* 🔴 **往下走，找到真正装着那些段的那个盒子。**
+     第一版的后备直接拿 `document.body.children` —— 而现代的站几乎都是
+     `<body><div id="root"><main>…`，於是整页读成 **1 段**。
+     实测 2026-09-03 第一次跑：faithibiza 20068px · 26 张图 · **1 段**，
+     lesaintgeorges 1 段、governorsmansion 1 段、breadandboxers 1 段 ——
+     **32 个里有 7 个被我自己的尺子砍掉，而它们没有一个是坏页面。**
+     `align-site.mjs` 的 `host()` 本来就有这一段下降，**我抄规则的时候把它漏了**
+     —— 抄一半的尺，跟没有尺不一样：它会给出一份看起来很正常的判决。 */
+  const host = () => {
+    const big = (el, parent) => {
+      const r = el.getBoundingClientRect(), pr = parent.getBoundingClientRect();
+      return r.height >= 90 && r.width >= Math.max(200, pr.width * 0.6);
+    };
+    let n = document.body;
+    for (let d = 0; d < 10; d++) {
+      const kids = [...n.children].filter((c) => big(c, n));
+      if (kids.length !== 1) break;
+      n = kids[0];
+    }
+    return n;
+  };
+
   let pool = [...document.querySelectorAll("section,div[id^='comp-']")];
   const enough = pool.filter((e) => {
     const r = e.getBoundingClientRect();
     return r.height >= 90 && r.width >= window.innerWidth * 0.9;
   });
-  if (enough.length < 3) pool = [...document.body.children];
+  if (enough.length < 3) pool = [...host().children];
+
+  /* 🔴 **一个跟整页一样高的东西不是一段，是装着那些段的壳。**
+     `host()` 只在「刚好一个大孩子」的时候往下走，而这几个站是
+     **一个铺满整页的外壳 ＋ 一个页脚** —— 两个大孩子，於是它停在原地，
+     然后包含合并把页脚吃掉，整页回报 1 段。
+     实测 2026-09-03：faithibiza `body > DIV#page > DIV` 底下是
+     `DIV 1440×19304` 加 `FOOTER 1440×764`；lesaintgeorges 的 body 底下直接
+     有一个 `DIV 1440×8151`。**四个好页面被这一条砍掉。**
+     所以壳要拆开，而且要反覆拆 —— 一层壳里面常常还有一层。 */
+  const docH = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+  /* ⚠️ 滚动被劫持的页面 `scrollHeight` 只有一个视窗高，那时候「跟整页一样高」
+     是每一段都成立的条件，拆下去会把整页拆成碎片。 */
+  if (docH > 2000) {
+    /* ⚠️ **拆的时候不管它有几个孩子**，一个也拆。
+       第一版写了 `children.length > 1`，於是 faithibiza 那个 19304px 的壳
+       （它只有一个孩子）原封不动留着，读数还是 1 段 —— 现代的站是
+       `<div id=page><div><main><section>` 一层套一层，**「只有一个孩子」
+       正是壳最常见的样子**，而我把它当成了「这已经是一段」。 */
+    for (let pass = 0; pass < 8; pass++) {
+      let opened = false;
+      const next = [];
+      for (const e of pool) {
+        const r = e.getBoundingClientRect();
+        if (r.height >= docH * 0.8 && e.children.length >= 1) { next.push(...e.children); opened = true; }
+        else next.push(e);
+      }
+      pool = next;
+      if (!opened) break;
+    }
+  }
 
   const secs = pool
     .map((e) => {
@@ -148,6 +200,9 @@ function readPage() {
   }).length;
 
   const words = (document.body.innerText || "").replace(/\s+/g, "").length;
+  /* ⚠️ 整页高只是印出来给人看的，**不是门槛**。滚动被劫持的页面
+     （heronaiapp · crispmtl 实测）`scrollHeight` 回的是视窗高 1000px，
+     而它们真的有八九段。拿它当门槛就是照一个假的数字砍页面。 */
   return { sections: kept.length, pics, words, height: document.body.scrollHeight };
 }
 
@@ -222,26 +277,48 @@ for (const url of urls) {
 }
 await b.close();
 
-/* 留下来的拼成一张，一排一个 —— 缩图看不出来的东西，1:1 上一眼就看到，
-   而他 2026-09-03 讲过 `太模糊了 我看不到`。 */
+/* 摊成一张**首屏**对照图 —— 三个一排。
+   ⚠️ 第一版一排一个、整页下来，17 个拼出来 **109,992px**，而那跟
+   「太模糊了 我看不到」是同一件事：一张塞不进萤幕的图会被缩到看不清。
+   判「要不要抄这一套」看的是第一屏（[重点 11](docs/founder-points.md)：
+   那一屏就是产品），整页留在 `cand-*.jpg` 里，他指哪一个再开哪一个。 */
 if (kept.length) {
-  const W = 900;
+  const TILE = 700;                              // 1440 的 0.49 —— 版面看得出来，字还读得到
+  const COLS = 3, GAP = 10, LABEL = 26;
   const tiles = [];
   for (const k of kept) {
-    const buf = await sharp(k.file).resize({ width: W, fit: "inside" }).jpeg({ quality: 62 }).toBuffer();
-    tiles.push({ buf, meta: await sharp(buf).metadata(), name: k.url });
+    const meta = await sharp(k.file).metadata();
+    /* 只裁第一屏：整页高的一张图缩进格子里，就是把 20000px 压成 500px。 */
+    const oneScreen = Math.round((1000 / PAGE) * meta.width);
+    const buf = await sharp(k.file)
+      .extract({ left: 0, top: 0, width: meta.width, height: Math.min(meta.height, oneScreen) })
+      .resize({ width: TILE })
+      .jpeg({ quality: 72 })
+      .toBuffer();
+    const m2 = await sharp(buf).metadata();
+    tiles.push({ buf, h: m2.height, name: k.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "").slice(0, 44) });
   }
-  const H = tiles.reduce((a, t) => a + t.meta.height + 8, 0);
-  if (H > 20000) {
-    console.log(`\n  ⚠️ 留下 ${kept.length} 个，拼起来 ${H}px 太高 —— 分开看 cand-*.jpg，不拼总表`);
-  } else {
-    let y = 0;
-    const comp = tiles.map((t) => { const at = { input: t.buf, left: 0, top: y }; y += t.meta.height + 8; return at; });
-    await sharp({ create: { width: W, height: H, channels: 3, background: "#111" } })
-      .composite(comp).jpeg({ quality: 62 }).toFile(`${OUT}/pick.jpg`);
-    console.log(`\n  → ${OUT}/pick.jpg  （${kept.length} 个，${W}×${H}）`);
-  }
+  const CELLH = Math.max(...tiles.map((t) => t.h)) + LABEL + GAP;
+  const rows = Math.ceil(tiles.length / COLS);
+  const W = COLS * (TILE + GAP) + GAP;
+  const H = rows * CELLH + GAP;
+  const comp = [];
+  const svg = [`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`];
+  tiles.forEach((t, i) => {
+    const cx = GAP + (i % COLS) * (TILE + GAP);
+    const cy = GAP + Math.floor(i / COLS) * CELLH;
+    comp.push({ input: t.buf, left: cx, top: cy });
+    svg.push(`<text x="${cx}" y="${cy + t.h + 19}" font-family="monospace" font-size="15" fill="#dcdcdc">${
+      t.name.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</text>`);
+  });
+  svg.push("</svg>");
+  comp.push({ input: Buffer.from(svg.join("")), left: 0, top: 0 });
+  await sharp({ create: { width: W, height: H, channels: 3, background: "#111" } })
+    .composite(comp).jpeg({ quality: 74 }).toFile(`${OUT}/pick.jpg`);
+  console.log(`\n  → ${OUT}/pick.jpg  （${kept.length} 个首屏，${W}×${H}）`);
+  console.log(`     整页在 ${OUT}/cand-*.jpg`);
 }
+
 
 console.log(`\n判：留 ${kept.length} · 砍 ${cut.length} · 读不到 ${unread.length}`);
 console.log(`⚠️ 「留」只表示它没有踩到那四条。够不够格是用眼睛看 pick.jpg 决定的。`);
