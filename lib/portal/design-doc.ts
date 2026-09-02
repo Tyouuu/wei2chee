@@ -146,7 +146,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
   },
   hearth: {
     mood: "给美容院、沙龙这种前台就是店面的生意，开系统是在客人面前。52px 的行、20px 的圆角、靠阴影分层。牺牲的是密度 —— 一屏少放三分之一的行，换一个客人看到不会皱眉的画面。",
-    facts: "圆角 20px · 无边框、靠阴影分层 · 行高 52px · 正文 15px · 标签不大写",
+    facts: "圆角 20px · 无边框、靠阴影分层 · 行高 56px · 正文 15px · 标签不大写",
     prefer: {
       EnquiryForm: "split",
       SiteFeatures: "iconed",
@@ -181,7 +181,12 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       PeopleBoard: "three",
       PriceTable: "cards",
       SmallStat: "detailed",
-      ShelfList: "boxed",
+      /* 🔴 boxed → ruled（2026-09-03）。1:1 的裁图上，「今天要跟的」每一行
+         **自己带一条框**，而参考那一页（Ant 工作台的「进行中的项目」）
+         是一张卡里面几条用细线分开的行。
+         而且这一套自己的说明写着「**无边框、靠阴影分层**」——
+         量出来 42% 的块带框，一半是这几行造的。**说明跟画面对不上。** */
+      ShelfList: "ruled",
       AttachmentList: "tile",
       MarkList: "plain",
       RankList: "person",
