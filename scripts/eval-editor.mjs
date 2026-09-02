@@ -1366,6 +1366,33 @@ for (const c of chosen) {
     */
     if (c.noDesign && r.design && Object.keys(r.design).length) return false;
     /*
+      「什么都不要动」 HAS TO MEAN THE WHOLE PAGE, INCLUDING 风格 / 配色 / 排法.
+
+      Found 2026-08-31 by reading the replies rather than the score. 「很难用啊
+      这个，看不懂」 is a case whose note says 「该好好回一句，不该乱改」 and whose
+      expectation is an empty operations list -- and it was scoring 100% while
+      the model answered 「我先把首页改成「今天要做的」排法」 and 「先换成比较清楚的
+      版式」. Both are real changes to the customer's page. They passed because
+      this scorer only ever counted OPERATIONS, and a design change is not one.
+
+      A man who says he cannot use something is not asking for a different
+      version of it to learn. Silently rearranging his page hands him a second
+      thing he did not ask for and still cannot use.
+
+      Cases where acting IS right say so with `acceptDesign` -- 「你帮我弄好看
+      一点」 is exactly that, and it is unaffected.
+    */
+    if (
+      Array.isArray(c.expect) &&
+      c.expect.length === 0 &&
+      !c.acceptDesign &&
+      !c.accept &&
+      r.design &&
+      Object.keys(r.design).length
+    ) {
+      return false;
+    }
+    /*
       SOME QUESTIONS HAVE TWO RIGHT ANSWERS AND THE RULER MUST NOT PICK ONE.
 
       `orNothing` marks a case where doing the edit AND asking which edit are
