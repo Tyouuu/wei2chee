@@ -1650,7 +1650,9 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      而那张图表卡**头上带控件**（换区间），不是一张光秃秃的图。
      我们把走势 · 占比 · 流程收进同一张卡的三个页签 —— 一张卡回答三个问题，
      而不是三条整页宽的带子往下叠。 */
-  swiss: ["stats4", "tabbed", "table"],
+  /* Studio Admin 的顺序是「四个数字 → 图表卡 → 两张半栏 → 表」，
+     那两张半栏是我们缺的一排。 */
+  swiss: ["stats4", "tabbed", "todo|target@half", "table"],
   // Friendly and rounded. One figure with its own supporting numbers, the
   // day's list beside it, then the money.
   // Weight. Two enormous figures and the work, in slabs. No chart, no split --
@@ -1675,7 +1677,10 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   /* 🔴 share → target（2026-09-03）。TailAdmin 那一页中间那张是
      **Monthly Target：一个半圆表加底下三个小数字**，不是一个光秃秃的圆环。
      老板：`总之找抄就是了`—— 卡住的不是力气是零件，所以补了 `target` 这个拼法。 */
-  signboard: ["hero@over", "trend|target@half", "table"],
+  /* 🔴 一大块开场 → 一排卡（2026-09-03）。像素那把尺量出来最后一件大的：
+     **他们的块是 160–250 宽的卡排成格子，我们的是 1000–1300 宽的整条带。**
+     TailAdmin 第一排是「两张小卡 + 目标卡」，不是一条横幅。 */
+  signboard: ["stats4", "trend|target@half", "table"],
   // A coloured ground with ivory panels floating on it -- panels want to be
   // few and LARGE, so one figure beside one chart, then one table.
   // Every character the same width. Squares and a ranking are both grids of
@@ -1732,7 +1737,8 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      密度没有让掉：小走势卡是这一页最省地方的图，一行四张不多占一行。 */
   /* 🔴 加了一排小格子（2026-09-03）。Tabler 那一页第三排就是四个小 tile，
      而它是「最密」这个主张真正的样子：一行放得下好几个不抢戏的数字。 */
-  counter: ["stats4", "tiles", "trend", "table"],
+  /* Tabler 那一页有两排并排的图，我们只有一条整页宽的。 */
+  counter: ["stats4", "tiles", "trend|target@half", "table"],
   /*
     工作室 IS THE ONLY REGISTER THAT PAIRS NOTHING.
 
