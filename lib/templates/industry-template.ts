@@ -1021,7 +1021,8 @@ function buildDashboard(
 
     todo: () =>
       node("ShelfList", "dashboard-today", {
-        heading: c.dashboard.todoTitle,
+        /* 同 ranking：标题搬到卡头。 */
+        heading: "",
         items: sample.records.slice(0, 3).map((r) => ({
           title: r.primary,
           description: r.status,
@@ -1067,7 +1068,10 @@ function buildDashboard(
      */
     ranking: () =>
       node("RankList", "dashboard-ranking", {
-        heading: c.dashboard.rankingTitle,
+        /* 标题搬到外面那张卡的头上去了（见 build 里的 CARD_HEAD），
+           因为卡头右边要放「看全部」，而那一行只有卡头有。
+           留在这里会**印两次标题**。 */
+        heading: "",
         rows: sample.records.map((r) => ({
           name: r.secondary ?? r.primary,
           sub: r.secondary ? r.primary : r.status,
@@ -1272,6 +1276,30 @@ function buildDashboard(
       });
     },
 
+    /**
+     * 问候带 —— 工作台那一页的开场。见 greet-band.tsx 的档头。
+     *
+     * ⚠️ **没有「早安」。** 那句话要看现在几点，而这一页是在伺服器上画的 ——
+     * 伺服器的时间不是他的时间，而且同一张缩图每拍一次就换一句。
+     * 换成他自己的招牌加一句今天的实况：两句都不会变，而且都是真的。
+     */
+    greet: () => {
+      const amounts = sample.records
+        .map((r) => Number(String(r.amount ?? "").replace(/[^0-9.]/g, "")))
+        .filter((n) => Number.isFinite(n) && n > 0);
+      const money = (n: number) => `RM ${Math.round(n).toLocaleString("en-MY")}`;
+      const today = Math.min(3, sample.records.length);
+      return node("GreetBand", "dashboard-greet", {
+        monogram: name.slice(0, 2),
+        line: name,
+        sub: c.dashboard.greetSub.replace("{n}", String(today)),
+        figures: [
+          { label: c.dashboard.tileCount, value: String(sample.records.length) },
+          { label: c.dashboard.tileBiggest, value: amounts.length ? money(Math.max(...amounts)) : "—" },
+        ],
+      });
+    },
+
     flow: () =>
       workflowStrip(
         "dashboard-workflow",
@@ -1359,18 +1387,36 @@ function buildDashboard(
     "table",
   ]);
 
+  /**
+   * 哪几块的标题要搬到卡头上，而且卡头右边挂一个「看全部」。
+   *
+   * 老板 2026-09-03：`有改进 但是还有很多进步空间 用眼睛就能看得出`。
+   * 原尺寸并排看，**六个参考页每一张卡的头上都有一个连结**
+   * （Ant「全部项目」· Tabler「New view」· shadcn「View」），我们六套一个都没有。
+   *
+   * ⚠️ 只给「这张卡是另一页的摘要」那几块 —— 今天要跟的、最大的几个客户。
+   * 一张走势图上挂「看全部」，那句话没有去处。
+   * ⚠️ 连的是**真的存在的那一页**，不是 `#`。
+   */
+  const CARD_HEAD: Record<string, { title: string; href: string }> = {
+    todo: { title: c.dashboard.todoTitle, href: followHref },
+    ranking: { title: c.dashboard.rankingTitle, href: `/${locale}/portal/customers` },
+  };
+
   let seq = 0;
   const build = (role: string): PuckNode | null => {
     const make = blocks[role];
     if (!make) return null;
     const inner = make();
     if (!NEEDS_SECTION.has(role)) return inner;
+    const head = CARD_HEAD[role];
     // `look` is deliberately absent: puck-config-client fills it from the
     // register's preference, and a value here would out-rank the register.
     return node("Panel", `dashboard-section-${role}-${(seq += 1)}`, {
-      title: "",
+      title: head?.title ?? "",
       description: "",
       body: [inner],
+      ...(head ? { actionLabel: c.dashboard.seeAll, actionHref: head.href } : {}),
     });
   };
 
@@ -1574,7 +1620,11 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      钱没有被挪走，它退到下面一整行，两张卡都够宽
      （上一版把 stats2 塞进半栏，「RM 71,300」印成「RM …」，
      那个教训在下面几行还留着）。 */
-  hearth: ["todo|trend@wide-left", "stats2", "table"],
+  /* 🔴 开场加一条问候带（2026-09-03）。原尺寸并排看，炉跟 Ant 工作台最大的
+     一个差别不是颜色也不是间距：**他们那一页开场是一条问候带**，我们直接进卡片。
+     那一条是「工作台」这个页型的签名，也正好是炉那句主张的样子：
+     开系统的那一刻，客人就站在旁边。 */
+  hearth: ["greet", "todo|trend@wide-left", "stats2", "table"],
   // The neutral one, and the only one that should read as "a bit of
   // everything". Chart left, the day's list beside it: the most ordinary
   // arrangement there is, which is the point of this register.
@@ -1716,7 +1766,7 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
  */
 export const COMPOSITION_ROLES = new Set([
   "table", "stats4", "stats2", "trend", "todo", "ranking", "share",
-  "flow", "activity", "progress", "board", "hero", "target", "tabbed", "tiles",
+  "flow", "activity", "progress", "board", "hero", "target", "tabbed", "tiles", "greet",
 ]);
 
 /** The neutral composition, for a register with no entry and for the paths that

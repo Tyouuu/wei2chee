@@ -401,6 +401,14 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "compact-bare", label: "紧凑 · 不要框", props: { variant: "compact", framed: false } },
   ],
 
+  /* 问候带 —— 一页工作台的开场。三种：一张卡（Ant 的做法）· 只有一条下缘线 ·
+     数字掉到问候语底下（窄栏跟手机）。 */
+  GreetBand: [
+    { id: "banner", label: "一张卡", props: { shape: "banner" } },
+    { id: "bare", label: "只有一条线", props: { shape: "bare" } },
+    { id: "stacked", label: "数字在下面", props: { shape: "stacked" } },
+  ],
+
   DaySchedule: [
     { id: "framed", label: "有框", props: { shape: "framed" } },
     { id: "bare", label: "不要框", props: { shape: "bare" } },

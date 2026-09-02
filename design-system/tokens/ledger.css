@@ -471,6 +471,11 @@
   --pad-cell-x: 10px;
   --pad-cell-y: 10px;
   --gap-stack: 10px;
+  /* 🔴 2026-09-03 补上的。`--gap-section` 被四个组件用着
+     （并排两栏 · bento · 大编号流程 · 拼装块），而**整个仓库没有一个地方定义它** ——
+     所以那四个地方的缝一直是 0，而尺子在好几套上报「块间的缝 0 对 24」。
+     它是比 --gap-stack 大一档的那个缝：块跟块之间，不是块里面。 */
+  --gap-section: 16px;
   --gap-inline: 8px;
   --row-h: 52px;
   --control-h: 30px;

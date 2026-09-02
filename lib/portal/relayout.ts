@@ -59,6 +59,7 @@ const ROLE_ID: Record<string, string> = {
   target: "dashboard-target",
   tabbed: "dashboard-tabbed",
   tiles: "dashboard-tiles",
+  greet: "dashboard-greet",
   flow: "dashboard-workflow",
   activity: "dashboard-activity",
   progress: "dashboard-progress",

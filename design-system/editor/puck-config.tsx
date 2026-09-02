@@ -132,6 +132,7 @@ import { Textarea as UiTextarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Columns, type ColumnsLayout } from "@/design-system/components/columns";
+import { GreetBand } from "@/design-system/components/greet-band";
 import { PropertiesForm, type PropertiesFormField } from "@/components/properties-form";
 // Fourth pass, same day: three Kibo UI blocks (kibo-ui.com, MIT, 3.9k stars,
 // measured 100% token purity). They are headless and compound, so each is
@@ -210,11 +211,32 @@ type Components = {
   /* Optional so the register can supply it -- see design-doc.test.ts. */
   Divider: { spacing?: "tight" | "normal" | "loose" };
   NoteField: { label: string; placeholder: string };
-  Panel: { title: string; description?: string; body: Slot; look?: "card" | "tinted" | "plain" | "ruled" };
+  Panel: {
+    title: string;
+    description?: string;
+    body: Slot;
+    look?: "card" | "tinted" | "plain" | "ruled";
+    /**
+     * 卡片头上右边那个连结 —— Ant 的「全部项目」、Tabler 的「New view」、
+     * shadcn 的「View」。**六个参考页全部有，我们六套一个都没有。**
+     *
+     * ⚠️ 两个都填才画。一个只有字没有去处的连结，就是这个仓库禁掉的那种
+     * 死按钮 —— 客人按下去什么都不会发生，而他会以为是系统坏了。
+     */
+    actionLabel?: string;
+    actionHref?: string;
+  };
   TabbedPanel: {
     look?: "pill" | "underline" | "segment" | "plain";
     oneLabel: string; twoLabel: string; threeLabel: string;
     one: Slot; two: Slot; three: Slot;
+  };
+  GreetBand: {
+    monogram?: string;
+    line: string;
+    sub?: string;
+    figures?: { label: string; value: string }[];
+    shape?: "banner" | "bare" | "stacked";
   };
   SystemBar: { crumbs?: { text?: string }[]; date?: string };
   SystemShell: {
@@ -1564,13 +1586,15 @@ export const puckConfig: Config<Components> = {
         title: { label: "标题", type: "text" },
         description: { label: "说明", type: "text" },
         body: { label: "里面放什么", type: "slot" },
+        actionLabel: { label: "右上角的连结", type: "text" },
+        actionHref: { label: "连到哪一页", type: "text" },
       },
       defaultProps: { title: "这一区", description: "", body: [] },
       // FOUR LOOKS, and this is the second-largest surface on a page after the
       // rail. It had none until 2026-08-23, which is a large part of why
       // twenty-two registers rendered the same page: whatever the register
       // said, every section was a shadcn Card with a header.
-      render: ({ title, description, body: Body, look }) => {
+      render: ({ title, description, body: Body, look, actionLabel, actionHref }) => {
         // A SECTION WITH NO TITLE IS A SECTION, NOT A SECTION WITH AN EMPTY
         // TITLE. Some blocks carry their own heading -- RecordTable draws one
         // with a row count and filter segments beside it -- and wrapping those
@@ -1594,7 +1618,26 @@ export const puckConfig: Config<Components> = {
           this was the one that did not.
         */
         const titled = Boolean(title) || Boolean(description);
-        const head = (
+        /* 只有**两个都有**才画那个连结。见上面型别那一段：
+           一个没有去处的连结是一颗死按钮。 */
+        const action =
+          actionLabel && actionHref ? (
+            <a
+              href={actionHref}
+              className="shrink-0 whitespace-nowrap [color:var(--color-primary)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] hover:underline"
+            >
+              {actionLabel}
+            </a>
+          ) : null;
+        const head = action ? (
+          <div className="flex w-full items-baseline justify-between [gap:var(--gap-inline)]">
+            <div className="min-w-0">
+              {title ? <CardTitle>{title}</CardTitle> : null}
+              {description ? <CardDescription>{description}</CardDescription> : null}
+            </div>
+            {action}
+          </div>
+        ) : (
           <>
             {title ? <CardTitle>{title}</CardTitle> : null}
             {description ? <CardDescription>{description}</CardDescription> : null}
@@ -1638,6 +1681,33 @@ export const puckConfig: Config<Components> = {
     // number of tabs would mean a variable number of slot FIELDS, which the
     // config format cannot express. Three covers the shape every one of these
     // actually takes.
+    GreetBand: {
+      label: "问候带",
+      fields: {
+        monogram: { label: "圆章里的字", type: "text" },
+        line: { label: "对着人讲的那一句", type: "text" },
+        sub: { label: "底下那行小字", type: "text" },
+        figures: {
+          label: "右边的数字",
+          type: "array",
+          arrayFields: {
+            label: { label: "名称", type: "text" },
+            value: { label: "数字", type: "text" },
+          },
+          defaultItemProps: { label: "今天要跟", value: "3" },
+          getItemSummary: (item) => `${item.label || ""} ${item.value || ""}`.trim() || "一项",
+        },
+      },
+      defaultProps: {
+        monogram: "",
+        line: "今天有 3 单要跟",
+        sub: "",
+        figures: [],
+      },
+      render: ({ monogram, line, sub, figures, shape }) => (
+        <GreetBand monogram={monogram} line={line} sub={sub} figures={figures} shape={shape} />
+      ),
+    },
     TabbedPanel: {
       label: "标签页",
       fields: {

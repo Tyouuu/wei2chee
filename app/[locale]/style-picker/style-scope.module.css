@@ -172,6 +172,7 @@
   --pad-cell-x: 13px;
   --pad-cell-y: 12px;
   --gap-stack: 14px;
+  --gap-section: 22px;
   --gap-inline: 10px;
   --row-h: 52px;
   --control-h: 36px;
@@ -345,6 +346,7 @@
   --pad-cell-x: 13px;
   --pad-cell-y: 9px;
   --gap-stack: 14px;
+  --gap-section: 22px;
   --gap-inline: 10px;
   --row-h: 44px;
   --control-h: 36px;
@@ -514,6 +516,7 @@
   --pad-cell-x: 14px;
   --pad-cell-y: 15px;
   --gap-stack: 18px;
+  --gap-section: 28px;
   --gap-inline: 14px;
   --row-h: 56px;
   --control-h: 42px;
@@ -695,6 +698,7 @@
   --pad-cell-x: 10px;
   --pad-cell-y: 10px;
   --gap-stack: 10px;
+  --gap-section: 16px;
   --gap-inline: 8px;
   --row-h: 52px;
   --control-h: 30px;
@@ -873,6 +877,7 @@
   --pad-cell-x: 13px;
   --pad-cell-y: 15px;
   --gap-stack: 20px;
+  --gap-section: 32px;
   --gap-inline: 10px;
   --row-h: 62px;
   --control-h: 36px;
@@ -1049,6 +1054,7 @@
   --pad-cell-x: 13px;
   --pad-cell-y: 14px;
   --gap-stack: 20px;
+  --gap-section: 32px;
   --gap-inline: 10px;
   --row-h: 58px;
   --control-h: 36px;

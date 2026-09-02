@@ -127,6 +127,10 @@ export type Chrome = {
      * 所以这三个必须问**别的问题**：一共几个客户、最大的一单、平均一单 ——
      * 三个都是从同一份记录算出来的，而三个都不是上面那一排。
      */
+    /** 卡片头上右边那句「看全部」。参考六页全部有，我们六套一个都没有。 */
+    seeAll: string;
+    /** 问候带底下那行小字。`{n}` 是今天要跟的单数，由产生页面的那一步填。 */
+    greetSub: string;
     tileCount: string;
     tileBiggest: string;
     tileAverage: string;
@@ -287,6 +291,8 @@ const EN: Chrome = {
     tabTrend: "Trend",
     tabShare: "Share",
     tabFlow: "Stages",
+    seeAll: "See all",
+    greetSub: "{n} to follow up today",
     tileCount: "On the books",
     tileBiggest: "Biggest one",
     tileAverage: "Average one",
@@ -448,6 +454,8 @@ const ZH: Chrome = {
     tabTrend: "走势",
     tabShare: "占比",
     tabFlow: "流程",
+    seeAll: "看全部",
+    greetSub: "今天要跟 {n} 单",
     tileCount: "手上一共",
     tileBiggest: "最大的一单",
     tileAverage: "平均一单",
