@@ -46,6 +46,12 @@ const REGISTERS = process.argv.slice(2).length ? process.argv.slice(2) : ALL;
 const OUT = ".screenshots";
 mkdirSync(OUT, { recursive: true });
 
+/* 🔴 它跑完会把老板的 demo 帐号留在最后拍的那一套上。
+   2026-09-02 加的：先记住他本来选的是哪一套，跑完放回去。
+   [任务 23d](../docs/founder-tasks.md) 已经替 `eval:browser` 做过同一件事，
+   而这一支从来没有 —— **一把每跑一次就悄悄换掉他风格的尺，是有代价的尺。** */
+let ORIGINAL = null;
+
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1400, height: 950 } });
 await p.goto("http://localhost:3000/zh/login", { waitUntil: "networkidle" });
@@ -53,6 +59,17 @@ await p.fill('input[type="email"]', "tianyou.demo@formae.test");
 await p.fill('input[type="password"]', "FormaeDemo2026!");
 await p.click('button[type="submit"]');
 await p.waitForURL(/portal/, { timeout: 60000 });
+
+/* 他本来穿的那一套。读的是画廊上自己标着「在用中」的那一张 —— 跟下面点的
+   是同一个来源，所以不会一个读 A 一个写 B。 */
+await p.goto("http://localhost:3000/zh/portal/styles", { waitUntil: "networkidle", timeout: 120000 });
+await p.waitForTimeout(3500);
+ORIGINAL = await p.evaluate(() => {
+  const cards = [...document.querySelectorAll("li[data-register]")];
+  const inUse = cards.find((c) => !c.querySelector("button[data-register-use]"));
+  return inUse ? inUse.getAttribute("data-register") : null;
+});
+console.log("本来是", ORIGINAL ?? "(读不到 —— 跑完不会乱放回去)");
 
 const shot = [];
 for (const reg of REGISTERS) {
@@ -103,6 +120,20 @@ for (const reg of REGISTERS) {
   shot.push([reg, file]);
   console.log(reg.padEnd(11), file);
 }
+/* 放回去。读不到本来是哪一套就什么都不做 —— 猜一个放回去比不放更糟。 */
+if (ORIGINAL) {
+  await p.goto("http://localhost:3000/zh/portal/styles", { waitUntil: "networkidle", timeout: 120000 });
+  await p.waitForTimeout(3500);
+  const back = await p.evaluate((key) => {
+    const btn = document.querySelector(`button[data-register-use="${key}"]`);
+    if (!btn) return "already";
+    btn.click();
+    return "ok";
+  }, ORIGINAL);
+  await p.waitForTimeout(3500);
+  console.log("放回", ORIGINAL, back === "ok" ? "" : `(${back})`);
+}
+
 await b.close();
 
 writeFileSync(

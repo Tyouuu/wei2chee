@@ -110,14 +110,52 @@
      (--color-primary #237570) lifted for a dark ground -- unlifted it measures
      2.54:1 there. Same treatment as Ledger's: lightness raised (OKLCH L 0.7724
      from 0.5129), hue held (187.7 against 189.2, a 1.5 degree drift). */
-  --color-nav-bg: #153227;
-  --color-nav-bg-deep: #0f2419;
-  --color-nav-fg: #eef4f0;
-  --color-nav-fg-dim: #aec1b7;
-  --color-nav-hover: #1e4334;
-  --color-nav-active: #224c38;
-  --color-nav-border: #2a4d3c;
-  --color-nav-accent: #63c9c0;
+  /* ⚠️ 2026-09-02: THE RAIL WAS THIS FILE'S OWN DEEP GREEN, AND IT WAS 19% OF
+     THE SCREEN.
+
+     The founder: 「我觉得之前的风格有很多不是很需要的配色 你懂吗 就跟着白色跟
+     黑色做 配色你就自己看」. Measured rather than argued -- OKLab chroma over
+     every pixel of the canvas, the same function on their screens and ours
+     (`npm run check:register-colour`):
+
+         shadcn Tasks   0.2%     Signboard  3.0%
+         Studio Admin   0.3%     Swiss      4.1%
+         TailAdmin      5.7%     Blueprint  4.8%
+         Tabler         6.7%     Ledger     5.0%
+         Ant Design Pro 6.8%     ─────────────────
+         Notus 2020    32.4%     Counter   16.1%  ✗
+         AdminLTE 2014 38.1%     HEARTH    19.0%  ✗
+
+     Four of ours already sat inside the modern band. Hearth and Counter sat
+     with the 2020 templates, and in both cases nearly all of it was one thing:
+     a 236px wall of saturated colour running the full height of every screen.
+
+     THE WARMTH DOES NOT LIVE IN THE RAIL. It lives in --color-canvas
+     (#faf6f0) and in every neutral in this file carrying the same cast. A
+     rail made of paper rather than of evergreen keeps all of that and gives
+     up nothing this register's own brief claims -- 「roomy, warm and
+     readable」 says nothing about a dark wall.
+
+     AND IT IS NOT ONLY A COLOUR CHANGE. Five of the six modern references
+     draw a LIGHT rail; only Ant Design Pro keeps a dark one, and Counter is
+     the register whose whole identity is 「像他们本来在用的进销存」. So the
+     two that failed move APART rather than together: Hearth becomes the only
+     paper rail in the library, Counter stays dark and loses its hue. Taking
+     colour out must not make six registers converge -- 重点 7a is the
+     standing rule, and it gets harder to satisfy here, not easier.
+
+     Measured on the new ground: fg 12.21:1, fg-dim 5.59:1, accent 6.53:1;
+     on the active row 10.10:1 / 4.63:1 / 5.40:1. The accent is this file's
+     own --color-primary (#237570) DARKENED for a light ground rather than
+     lifted for a dark one -- OKLCH L 0.4380 from 0.5129, hue held. */
+  --color-nav-bg: #f6f0e6;
+  --color-nav-bg-deep: #f0e8da;
+  --color-nav-fg: #153227;
+  --color-nav-fg-dim: #556358;
+  --color-nav-hover: #ece2d3;
+  --color-nav-active: #e6dbc8;
+  --color-nav-border: #dbcdb8;
+  --color-nav-accent: #1c5f5b;
 
   /* Deep evergreen, not black — the same refusal as Ledger's navy ink, in this
      file's hue family. Hue 157 at 41% saturation sits between the neutrals

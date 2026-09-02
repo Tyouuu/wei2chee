@@ -144,9 +144,31 @@
      at 4.65:1. The accent is this file's own --color-primary (#2261dd, 3.22:1
      down there) lifted in lightness -- OKLCH L 0.7343 from 0.5300, hue held at
      262.8 against 262.0. */
-  --color-nav-bg: #001529;
-  --color-nav-bg-deep: #000c17;
-  --color-nav-fg: #b7c3d1;
+  /* ⚠️ 2026-09-02: THE NAVY IS GONE. See hearth.css for the measurement and
+     the founder's instruction; this file's number was 16.1% against a modern
+     band that tops out at 6.8%.
+
+     THE AWKWARD PART, STATED: Ant Design Pro -- the thing this register exists
+     to look like -- draws its own rail in exactly #001529 and measures 6.8%.
+     The hue is not what put us at 16.1%; the SHARE is. Their rail is a smaller
+     fraction of a wider page and their canvas carries almost nothing else.
+     Matching them by keeping the navy would mean shrinking the rail, which is
+     the one thing 「densest, table first」 cannot give up.
+
+     So the hue goes and the darkness stays. What a 中小企业 owner recognises
+     in an Autocount or SQL screen is a dark rail against a dense white table,
+     not that the dark is blue -- and #17181a keeps the first while costing
+     nothing but the second. It also keeps this register apart from Signboard,
+     the other near-black in the library, because Signboard's navigation is a
+     TOP BAR and this one is a side rail: same value, different object.
+
+     Measured on the new ground: fg 14.50:1, fg-dim 8.86:1 -- both well clear
+     of the 4.5:1 the rail test enforces, and both HIGHER than the navy they
+     replace (10.30:1 / 6.41:1). Taking the hue out made the rail more legible,
+     not less. */
+  --color-nav-bg: #17181a;
+  --color-nav-bg-deep: #0f1012;
+  --color-nav-fg: #e8e8e8;
   /* ⚠️ WAS #5c6b7e, WHICH IS 3.39:1 ON THIS RAIL -- and the note above claims
      6.44:1 for it. Measured in a browser on 2026-08-31: NINETEEN strings under
      4.5:1 on one page, every one of them this pair. It is not a corner of the
@@ -162,7 +184,7 @@
      #8b9aab is the same hue and saturation lifted to the lightness this file
      already said it had: 6.41:1 on the rail, 6.86:1 on the active row, and
      still clearly quieter than --color-nav-fg at 10.30:1. */
-  --color-nav-fg-dim: #8b9aab;
+  --color-nav-fg-dim: #b7b7b7;
   /*
      THE ACTIVE AND HOVER GROUNDS BELONG TO THE RAIL'S GROUND.
 
@@ -184,9 +206,9 @@
      foreground token that only one register would use. A step off the navy
      keeps the density and the fill and loses nothing a customer can name.
   */
-  --color-nav-hover: #162a3d;
-  --color-nav-active: #2c3f51;
-  --color-nav-border: #0b2136;
+  --color-nav-hover: #232427;
+  --color-nav-active: #2e3034;
+  --color-nav-border: #26282c;
   --color-nav-accent: #ffffff;
 
   /* The card is pure white, agreeing with Ledger's choice over Hearth's tinted
