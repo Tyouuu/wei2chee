@@ -155,6 +155,7 @@
   --text-base: 14px;
   --text-lg: 16px;
   --text-title: 21px;
+  --text-stat: 30px;
   --text-hero: 38px;
   --leading-tight: 1.25;
   --leading-body: 1.55;
@@ -327,6 +328,7 @@
   --text-base: 13px;
   --text-lg: 16px;
   --text-title: 21px;
+  --text-stat: 30px;
   --text-hero: 38px;
   --leading-tight: 1.25;
   --leading-body: 1.55;
@@ -495,6 +497,7 @@
   --text-base: 15px;
   --text-lg: 17px;
   --text-title: 23px;
+  --text-stat: 32px;
   --text-hero: 40px;
   --leading-tight: 1.3;
   --leading-body: 1.6;
@@ -674,6 +677,7 @@
   --text-base: 13px;
   --text-lg: 15px;
   --text-title: 19px;
+  --text-stat: 28px;
   --text-hero: 34px;
   --leading-tight: 1.2;
   --leading-body: 1.45;
@@ -851,6 +855,7 @@
   --text-base: 15px;
   --text-lg: 16px;
   --text-title: 26px;
+  --text-stat: 36px;
   --text-hero: 46px;
   --leading-tight: 1.02;
   --leading-body: 1.7;
@@ -1026,6 +1031,7 @@
   --text-base: 15px;
   --text-lg: 16px;
   --text-title: 21px;
+  --text-stat: 30px;
   --text-hero: 38px;
   --leading-tight: 1.25;
   --leading-body: 1.7;

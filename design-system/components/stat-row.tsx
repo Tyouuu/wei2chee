@@ -153,7 +153,13 @@ function Tile({
         : "[background:var(--card)] [border-radius:var(--radius)] [padding:var(--pad-card)] [box-shadow:var(--shadow-card)] [border:var(--border-card-width)_solid_var(--border-subtle)]"
 
   const span = lead ? "@2xl:col-span-2 @5xl:col-span-2" : ""
-  const valueSize = lead ? "var(--text-hero)" : "var(--text-title)"
+  /* 🔴 WAS --text-title, WHICH IS THE PAGE HEADING'S OWN TOKEN.
+     Measured 2026-09-02 against Studio Admin: their biggest text is a figure
+     at 36px, ours was the word 「Overview」 at 21px, and the number tied with
+     it. See any register token file for the full note. --text-stat is the rung
+     between title and hero; the fallback keeps a register that has not
+     declared one rendering exactly as before rather than collapsing. */
+  const valueSize = lead ? "var(--text-hero)" : "var(--text-stat, var(--text-title))"
 
   return (
     <Wrap href={tile.href} className={`min-w-0 ${shell} ${span}`}>

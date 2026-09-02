@@ -547,6 +547,32 @@
   --text-base: 14px;
   --text-lg: 16px;
   --text-title: 21px;
+  /* 🔴 A NUMBER ON A DASHBOARD MUST BE THE BIGGEST THING ON THE SCREEN, AND
+     UNTIL 2026-09-02 IT WAS NOT.
+
+     The founder, looking at the six rebuilt registers: 「为什么看起来还是不是
+     很惊艳的 就不像你所参考模版一样」. Measured rather than guessed, same probe
+     on their page and ours:
+
+                        biggest text   what it is        type steps
+       Studio Admin CRM     36px       「523 leads」          10
+       我们                  21px       「Overview」           7
+
+     The largest thing on their dashboard is a FIGURE. The largest thing on
+     ours was the word 「Overview」 -- because stat-row.tsx drew its value at
+     --text-title, which is the exact token the page's own h1 uses. A heading
+     and the number it introduces set at the same size is not restraint, it is
+     the absence of a focal point, and it is most of why ours reads flat next
+     to theirs.
+
+     --text-hero already existed at 34-46px and only ONE of the six registers
+     could reach it (blueprint, via StatRow's `lead` shape). So the ramp was
+     there and five registers had no rung to stand on.
+
+     This is that rung: above the title, below the hero, per register. Density
+     is not the thing being spent -- Ant Design Pro is denser than we are and
+     still sets its 总销售额 near 30px. Density is rows; this is one figure. */
+  --text-stat: 30px;
   --text-hero: 38px;
   --leading-tight: 1.25;
   --leading-body: 1.55;
