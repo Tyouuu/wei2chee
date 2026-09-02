@@ -1196,6 +1196,36 @@ function buildDashboard(
       });
     },
 
+    /**
+     * 一张卡，三个页签 —— 同一笔钱换三个角度看。
+     *
+     * 抄的是 TailAdmin 的 Statistics 卡跟 Ant 的图表卡：图表卡的头上带控件，
+     * 不是一张光秃秃的图。老板 2026-09-03：`我都给你图 照着补零件啊`。
+     *
+     * ⚠️ **三个页签里必须是三件不同的事。** 三张一样的图配三个名字，
+     * 是这个仓库禁掉过的那种谎（跟「画一颗接不到东西的按钮」同一类）。
+     * 走势答「这半年怎么走」、占比答「钱卡在哪一段」、流程答「一单走到哪」——
+     * 三个问题，三个真答案。
+     *
+     * ⚠️ 一样不用新组件：分页面板、走势图、占比图、流程条全部在库里，
+     * 这里只是**第一次把它们装进同一张卡**。
+     */
+    tabbed: () =>
+      node("TabbedPanel", "dashboard-tabbed", {
+        oneLabel: c.dashboard.tabTrend,
+        twoLabel: c.dashboard.tabShare,
+        threeLabel: c.dashboard.tabFlow,
+        one: [blocks.trend()],
+        two: [blocks.share()],
+        three: [
+          workflowStrip(
+            "dashboard-tabbed-flow",
+            "",
+            workflowStages(ctx),
+          ),
+        ],
+      }),
+
     flow: () =>
       workflowStrip(
         "dashboard-workflow",
@@ -1519,7 +1549,12 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      一栏之后它是全库唯一一套从上到下不分左右的：数字、表、走势、流程，
      一件一件往下读 —— 跟一张 A4 的读法一样。圆饼也拿掉了：
      一张纸上没有人会去量一个圆的角度。 */
-  swiss: ["stats4", "table", "trend", "flow"],
+  /* 🔴 走势 + 流程两块 → 一张带页签的卡（2026-09-03）。
+     参考（Studio Admin CRM）的顺序是「四个数字 → 一张图表卡 → 表」，
+     而那张图表卡**头上带控件**（换区间），不是一张光秃秃的图。
+     我们把走势 · 占比 · 流程收进同一张卡的三个页签 —— 一张卡回答三个问题，
+     而不是三条整页宽的带子往下叠。 */
+  swiss: ["stats4", "tabbed", "table"],
   // Friendly and rounded. One figure with its own supporting numbers, the
   // day's list beside it, then the money.
   // Weight. Two enormous figures and the work, in slabs. No chart, no split --
@@ -1633,7 +1668,7 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
  */
 export const COMPOSITION_ROLES = new Set([
   "table", "stats4", "stats2", "trend", "todo", "ranking", "share",
-  "flow", "activity", "progress", "board", "hero", "target",
+  "flow", "activity", "progress", "board", "hero", "target", "tabbed",
 ]);
 
 /** The neutral composition, for a register with no entry and for the paths that

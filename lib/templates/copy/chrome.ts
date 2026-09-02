@@ -90,6 +90,20 @@ export type Chrome = {
     rankingTitle: string;
     /** 占比块的标题 —— 问的是「钱卡在哪一段」,不是「这个月多少」。 */
     shareTitle: string;
+    /**
+     * 分页签上的三个词。
+     *
+     * 抄的是 TailAdmin 的 Statistics 卡跟 Ant 的图表卡：一张卡三个页签，
+     * 换一个角度看同一笔钱。**三个页签里放的必须是三件不同的事** ——
+     * 三张一样的图配三个不同的名字，是这个仓库禁掉过的那种谎。
+     * 所以是走势 / 占比 / 流程，三个问题各问一次。
+     *
+     * ⚠️ 页签上的字要**短**。上面那几个标题（「钱卡在哪一段」）是卡片的标题，
+     * 塞进页签会换行。
+     */
+    tabTrend: string;
+    tabShare: string;
+    tabFlow: string;
   };
 
   customers: {
@@ -244,6 +258,9 @@ const EN: Chrome = {
     primaryAction: (sellSide) => `New ${sellSide.toLowerCase()}`,
     rankingTitle: "Who is worth the most",
     shareTitle: "Where the money is sitting",
+    tabTrend: "Trend",
+    tabShare: "Share",
+    tabFlow: "Stages",
   },
 
   customers: {
@@ -399,6 +416,9 @@ const ZH: Chrome = {
     primaryAction: (sellSide) => `新增${sellSide}`,
     rankingTitle: "最大的几个客户",
     shareTitle: "钱卡在哪一段",
+    tabTrend: "走势",
+    tabShare: "占比",
+    tabFlow: "流程",
   },
 
   customers: {
