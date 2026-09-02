@@ -152,6 +152,7 @@ const CASES = [
     ask: "把最上面那个标题改成「本月总览」",
     changed: true,
     gains: ["本月总览"],
+    touches: ["dashboard-header"],
   },
   {
     name: "加一栏 · 师傅",
@@ -268,6 +269,7 @@ const CASES = [
     click: "dashboard-header",
     ask: "短一点",
     changed: true,
+    touches: ["dashboard-header"],
   },
   {
     /*
@@ -386,7 +388,52 @@ async function readCanvas(p) {
     ids: await p
       .locator(`${CANVAS} [data-puck-component]`)
       .evaluateAll((els) => els.map((e) => e.getAttribute("data-puck-component") || "")),
+    /*
+      EVERY BLOCK'S OWN WORDS, WHICH IS HOW 「动得对不对」 GETS CHECKED.
+
+      Until now this ruler could only say the page MOVED. That catches the
+      thirteen 「说了没做」 and nothing else -- an assistant that is asked to
+      shorten one heading and quietly rewrites four other blocks passes every
+      check here, and the SYSTEM_PROMPT's central rule (「做最小的那个改动」) had
+      nothing measuring it at all.
+
+      Keyed by block id, so a case can name the blocks it is allowed to touch
+      and the diff of everything else has to be empty.
+    */
+    blocks: Object.fromEntries(
+      await p
+        .locator(`${CANVAS} [data-puck-component]`)
+        .evaluateAll((els) =>
+          els.map((e) => [e.getAttribute("data-puck-component") || "", (e.innerText || "").trim()]),
+        ),
+    ),
+    /*
+      WHO CONTAINS WHOM, ASKED OF THE DOM RATHER THAN GUESSED FROM THE TEXT.
+
+      A generated page is one shell whose slots hold everything, so changing a
+      heading changes the shell's innerText too. A first version excluded
+      ancestors by substring-matching their text, which is right until two
+      blocks say the same words. `el.contains` is the actual question.
+    */
+    holds: await p
+      .locator(`${CANVAS} [data-puck-component]`)
+      .evaluateAll((els) =>
+        Object.fromEntries(
+          els.map((e) => [
+            e.getAttribute("data-puck-component") || "",
+            els
+              .filter((o) => o !== e && e.contains(o))
+              .map((o) => o.getAttribute("data-puck-component") || ""),
+          ]),
+        ),
+      ),
   };
+}
+
+/** Which blocks' words are not the same as they were. */
+function movedBlocks(before, after) {
+  const names = new Set([...Object.keys(before.blocks), ...Object.keys(after.blocks)]);
+  return [...names].filter((k) => before.blocks[k] !== after.blocks[k]).sort();
 }
 
 async function openEditor(p, page = "dashboard") {
@@ -500,6 +547,30 @@ try {
         why.push(`看不到「${missing.join("、")}」`);
       }
     }
+    /*
+      THE SMALLEST CHANGE, CHECKED.
+
+      「做最小的那个改动」 is the rule the prompt leans on hardest and the one
+      nothing could see. A case names the blocks its sentence is about; anything
+      else that moved is the assistant improving something nobody asked about,
+      which the founder has called out by name (「不要乱换」).
+
+      Nested blocks make a parent's text change when a child's does, so an
+      ancestor of a named block is not a violation -- the shell contains
+      everything, and it would fail every case.
+    */
+    if (ok && c.touches) {
+      const strayed = movedBlocks(before, after).filter(
+        (id) =>
+          !c.touches.includes(id) &&
+          !c.touches.some((t) => (after.holds[id] ?? []).includes(t)),
+      );
+      if (strayed.length) {
+        ok = false;
+        why.push(`还动了没人叫它动的：${strayed.join("、")}`);
+      }
+    }
+
     if (ok && c.reorders && !orderMoved) {
       ok = false;
       why.push("字变了但顺序没变 —— 排法要的是顺序");

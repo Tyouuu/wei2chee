@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { recordAiUsage, type UsageShape } from "@/lib/portal/ai-usage";
 import { AI_MODEL, AI_REASONING_EFFORT } from "@/lib/portal/ai-model";
+import { roomForAnother } from "@/lib/portal/retry-budget";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   analysisSchema,
@@ -71,6 +72,7 @@ Choosing this business's modules -- the pages their system will be built from:
  *  and a third attempt only adds latency to a visitor who is already waiting
  *  on a screen that promised them an answer. */
 const MAX_ATTEMPTS = 2;
+
 
 export type Industry = {
   slug: string;
@@ -154,6 +156,7 @@ export async function POST(req: NextRequest) {
   let rawResponse: unknown = null;
   let usedFallback = false;
 
+  const requestStartedAt = Date.now();
   for (let attempt = 1; attempt <= MAX_ATTEMPTS && !parsed; attempt++) {
     /* Per attempt, not per request: attempt 2 is a second model call and its
        own wait, and averaging the two hides which of them was slow. */
@@ -197,6 +200,13 @@ export async function POST(req: NextRequest) {
       // that always clears at attempt 2 is distinguishable from a total
       // outage -- they need different responses from us.
       console.error(`analysis attempt ${attempt}/${MAX_ATTEMPTS} failed`, err);
+      const spent = Date.now() - requestStartedAt;
+      if (!roomForAnother(spent, Date.now() - startedAt)) {
+        // Said out loud: a retry that was skipped for time looks identical to a
+        // retry that was never configured, and they mean different things.
+        console.error(`analysis: no room to retry after ${spent}ms, using the fallback`);
+        attempt = MAX_ATTEMPTS;
+      }
     } finally {
       /*
         ONE ROW PER ATTEMPT, WHATEVER HAPPENED TO IT.

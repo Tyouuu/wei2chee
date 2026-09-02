@@ -279,8 +279,28 @@ try {
   console.log(`\n${TAG} · ${LOCALE} · 1440px`);
   for (const l of wide) console.log("  " + l);
 
-  const distinct = new Set(wide.filter((l) => /^\s*\d+s /.test(l)).map((l) => l.slice(5))).size;
-  console.log(`  distinct lines: ${distinct} / ${SHOTS.length}`);
+  /*
+    THE NUMBER THAT MATTERS IS THE LONGEST HOLD, NOT HOW MANY LINES FIT.
+
+    The bug was never 「too few sentences」, it was ONE SENTENCE FOR TWENTY-TWO
+    SECONDS -- a progress display that stops changing does not read as slow, it
+    reads as stuck. Since the pacing is set to the slow tail (42s, because a
+    real call was measured at 47.5s), a fast analysis legitimately never reaches
+    the last line, and counting lines would call that a regression.
+
+    Sampled every 5s, so this is an upper bound of that resolution, which is all
+    it needs to be: what has to be true is that the screen keeps moving.
+  */
+  const seen = wide.filter((l) => /^\s*\d+s /.test(l)).map((l) => l.slice(5));
+  let streak = 1;
+  let longest = 1;
+  for (let i = 1; i < seen.length; i++) {
+    streak = seen[i] === seen[i - 1] ? streak + 1 : 1;
+    if (streak > longest) longest = streak;
+  }
+  const gap = (SHOTS[1] - SHOTS[0]) * longest;
+  console.log(`  distinct lines: ${new Set(seen).size} / ${SHOTS.length} sampled`);
+  console.log(`  longest anything sat still: <= ${gap}s   (before this was rebuilt: 22s)`);
 
   // 重点 24: the person judging this is on a phone.
   const narrow = await run(390, 844, "-390");

@@ -39,10 +39,23 @@ const LOADING_STEPS = [
   "loadingStep6",
 ] as const;
 
-/** Median 28.6s, p95 34.1s, measured. Re-run eval:analysis and move this if the
- *  model gets faster; the pacing below is derived from it rather than guessed,
- *  so one number is the only thing to change. */
-const MEASURED_WAIT_MS = 30_000;
+/**
+ * THE NUMBER THE PACING IS DERIVED FROM, AND WHY IT IS NOT THE MEDIAN.
+ *
+ * Measured: eval:analysis gives a median of 28.6s and p95 of 34.1s against the
+ * model directly. Then `npm run check:analyze` walked the REAL route end to end
+ * on 2026-08-31 and one call took 47.5s -- a single attempt, confirmed by the
+ * ledger writing exactly one row.
+ *
+ * Pacing to the median means the tail is spent on a frozen sentence, which is
+ * the bug this whole screen was rebuilt for: at 47.5s a 30s walk leaves the
+ * last line sitting for eighteen seconds. Pacing to the slow end costs a fast
+ * visitor nothing he can notice -- he simply never sees the last line or two,
+ * and he was not counting them.
+ *
+ * Re-run those two and move this one number; everything below is derived.
+ */
+const MEASURED_WAIT_MS = 42_000;
 const STEP_MS = Math.round(MEASURED_WAIT_MS / LOADING_STEPS.length);
 
 const container: Variants = {
