@@ -408,7 +408,12 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       PhotoFrame: "wide",
       ActionRow: "row",
       ChoiceSelect: "default",
-      PageHeader: "centred",
+      /* 🔴 centred → split（2026-09-03）。1:1 的裁图上，标题置中之后
+         **那颗红色的主要按钮就浮在正中间一条空带上**，看起来像画坏了。
+         参考那一页（TailAdmin）的动作在顶栏跟每张卡的头上，一个都不在正中间。
+         招牌的身份是**顶栏、大字、颜色少** —— 那三样都不靠置中。
+         ⚠️ 这一条是眼睛看到的，尺子十八项没有一项在问「一颗按钮孤不孤单」。 */
+      PageHeader: "split",
       Panel: "card",
       TabbedPanel: "segment",
     },
