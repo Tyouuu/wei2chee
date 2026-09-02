@@ -6662,6 +6662,61 @@ banani 是一份**目录**、refero 是首页、mobbin 首页是**空的**（要
 ⚠️ 其余十个全部 Not Found（Tradify · Connecteam · Deputy · simPRO · Sortly ·
 inFlow · Katana · FreshBooks · Wave · SumUp）—— **包名猜不到就是猜不到，不写进名单。**
 
+
+#### 🟢 「没有开源项目吗」—— 有，而且它把「复刻不了」这件事解开了（2026-09-03 他问的）
+
+**他这一问把上一条的死结打开了。** 上一条的结论是「商店截图量不出五根轴」，
+而开源项目**不是截图，是源码** —— 数字直接读得到，不用猜。
+
+##### ① 先讲坏消息：我们那几个形状的手机 app，开源是空的
+| 搜什么 | 最大的 |
+|---|---|
+| 手机 POS | **27★，2017 年就死了** |
+| 上门服务 / 派工 | **17★，而且是 AGPL**（买断挡住） |
+| Invoice Ninja 的手机端 | 1,752★ 但 **NOASSERTION**，拿不了代码 |
+| frappe/mobile | MIT，但 **2022-01 之后没动过** |
+
+→ 跟[任务 63](#63) 量到的是同一条规律：**钱、排程、库存这三块，别人锁得最紧。**
+
+##### 🟢 ② 但好消息大得多：`Expensify/App`
+| | |
+|---|---|
+| **★ 5,016 · MIT · 今天还在推** | 拿代码没问题 |
+| **React Native 0.86 ＋ react-native-web ＋ Expo 57 ＋ Reanimated 4** | **跟我们要用的栈一模一样** |
+| **它是一个记帐 / 报销 app** | **就是我们的 `ledger` 形状** |
+| 🟢 **`src/styles/` 底下有 `colors.ts` · `typography.ts` · `variables.ts`** | **五根轴的数字全部在里面** |
+
+实际读到的（不是印象）：
+```
+bottomTabHeight: 72          ← 四条通则里的第 ① 条，确切数字
+spacing2: 8
+fontSizeSmall 11 · Label 13 · Normal 15 · Medium 16 · Large 17 · Hero 36
+```
+而 `typography.ts` 的档头写着：
+> *「These are the only sizes, line heights, and families the app uses.
+> Do not add raw fontSize/lineHeight literals outside this file
+> (enforced by the `no-raw-typography` lint rule).」*
+
+**那跟我们 token 层的纪律是同一条**，而且他们用 lint 挡着。
+
+##### 另外三个可以看的（许可都查过）
+`bluesky-social/social-app` **18,259★ MIT** RN —— 不是我们的形状，
+但**这一批里做得最好的 RN 代码**，看它怎么摆、怎么动 ·
+`mattermost/mattermost-mobile` 2,714★ Apache-2.0 ·
+`inventree/inventree-app` 141★ MIT（库存，但是 Flutter，不同栈）
+
+##### 🔴 所以参考换成两个，各给各的（[重点 7h](./founder-points.md)）
+| 来源 | 它给什么 | 为什么是它 |
+|---|---|---|
+| **ServiceM8**（商店截图） | **有哪几屏 · 什么顺序 · 每屏干什么** | 那一根轴截图给得了，而且它就是我们的走单 |
+| **Expensify**（源码） | **多大 · 多宽 · 多密 · 怎么动** | 数字读得到，不用从一张斜着的行销图上量 |
+
+**上一条写「复刻不了」，这一条把它改成「复刻得了，但要两个来源」。**
+后一个没有推翻前一个 —— 前一个给版面，后一个给尺寸。
+
+- [ ] 记进 `design-system/upstream.json`（**等真的拿了东西再记**，
+      现在写进去那把尺会替一个我们什么都没拿的仓库天天查更新）
+
 ---
 
 ## 已完成
