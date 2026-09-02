@@ -138,7 +138,7 @@ async function grab(page, name, label, clipToPhones) {
       height: Math.min(2200, m.box.b - m.box.y + pad * 2),
     };
   }
-  await page.screenshot({ path: file, type: "jpeg", quality: 68, clip });
+  await page.screenshot({ path: file, type: "jpeg", quality: 88, clip });
 
   const note = m.missing
     ? "  🔴 商店上没有这个 app"
@@ -155,8 +155,11 @@ async function grab(page, name, label, clipToPhones) {
 }
 
 console.log("\n专业的老板端 —— 跟我们做同一件事的 app:");
+/* ⚠️ 两倍解析度。商店页里一张手机截图本身只有 ~150px 宽，
+   一倍拍出来拼成一张表之后根本读不了——老板 2026-09-03：`太模糊了 我看不到`。
+   放大一张小图不会长出细节，要在拍的时候就多拿像素。 */
 for (const [name, id, label] of PRO) {
-  const p = await b.newPage({ viewport: { width: 1440, height: 1100 } });
+  const p = await b.newPage({ viewport: { width: 1440, height: 1100 }, deviceScaleFactor: 2 });
   try {
     await p.goto(`https://play.google.com/store/apps/details?id=${id}&hl=en&gl=MY`, {
       waitUntil: "domcontentloaded", timeout: 45000,

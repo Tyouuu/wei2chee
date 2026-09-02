@@ -9,6 +9,13 @@
  * ⚠️ 只放**老板自己每天要用**的那几个。消费者那几个（Shopee · Lazada · Boost）
  * 跟画廊不放进来 —— 那不是我们要抄的东西，摆进来只是多几个要跳过的
  * （[重点 12](../docs/founder-points.md)）。
+ *
+ * ⚠️ 一组一张，一排一个，而且 shoot:appui 那一轮就要两倍解析度。
+ * 第一版两个一排、一倍拍，每一张手机只剩 ~150px —— 老板 2026-09-03：
+ * 「太模糊了 我看不到」。**一张他判不了的对照图，跟没有那张图一样**
+ * （[重点 3](../docs/founder-points.md)）。放大一张小图不会长出细节，
+ * 要在拍的时候就多拿像素；而一张 9000px 高的总表打开来会被缩到塑屏幕，
+ * 那跟模糊是同一件事。
  */
 import { chromium } from "playwright";
 import { pathToFileURL } from "node:url";
@@ -53,37 +60,42 @@ const cell = ([f, name, why]) => {
     <figcaption><b>${name}</b><span>${why}</span></figcaption></figure>`;
 };
 
-const html = `<!doctype html><meta charset="utf-8"><style>
- body{margin:0;background:#0e1113;color:#cfc8ba;font:13px/1.5 system-ui,sans-serif;padding:30px}
- h1{font:700 26px/1.2 system-ui;color:#fff;margin:0 0 6px}
- p.lede{margin:0 0 26px;color:#9a938a;max-width:64ch}
- h2{font:600 14px/1 system-ui;letter-spacing:.1em;text-transform:uppercase;color:#00beb7;
-    margin:34px 0 14px;padding-top:14px;border-top:1px solid #232a2e}
- .g{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+const STYLE = `<style>
+ body{margin:0;background:#0e1113;color:#cfc8ba;font:13px/1.5 system-ui,sans-serif;padding:26px}
+ h2{font:700 21px/1.2 system-ui;color:#fff;margin:0 0 4px}
+ p.lede{margin:0 0 20px;color:#9a938a}
+ .g{display:grid;grid-template-columns:1fr;gap:24px}
  figure{margin:0}
  img{width:100%;display:block;border-radius:8px;background:#fff}
  figcaption{margin-top:8px}
- figcaption b{color:#fff;font-size:15px;display:block}
- figcaption span{color:#9a938a;font-size:13px}
-</style>
-<h1>挑一套来抄 —— 手机上怎么摆</h1>
-<p class="lede">十五套风格不做，做一套。下面每一句写的是「抄它我们会拿到什么」，
-不是它好不好看。指一个就可以。</p>
-${GROUPS.map(([title, items]) =>
-  `<h2>${title}</h2><div class="g">${items.map(cell).join("")}</div>`).join("")}`;
+ figcaption b{color:#fff;font-size:16px;display:block}
+ figcaption span{color:#9a938a;font-size:14px}
+</style>`;
 
-fs.writeFileSync(`${OUT}/pick.html`, html);
 const b = await chromium.launch();
-const p = await b.newPage({ viewport: { width: 1600, height: 1200 } });
-await p.goto(pathToFileURL(`${OUT}/pick.html`).href);
-await p.waitForTimeout(2500);
-await p.screenshot({ path: `${OUT}/pick.jpg`, type: "jpeg", quality: 76, fullPage: true });
-await p.close();
+const made = [];
+for (let i = 0; i < GROUPS.length; i++) {
+  const [title, items] = GROUPS[i];
+  const file = `${OUT}/pick-${i + 1}.jpg`;
+  const html = `<!doctype html><meta charset="utf-8">${STYLE}
+    <h2>${title}</h2>
+    <p class="lede">每一句写的是「抄它我们会拿到什么」，不是它好不好看。</p>
+    <div class="g">${items.map(cell).join("")}</div>`;
+  fs.writeFileSync(`${OUT}/pick-${i + 1}.html`, html);
+  const p = await b.newPage({ viewport: { width: 1400, height: 1000 } });
+  await p.goto(pathToFileURL(`${OUT}/pick-${i + 1}.html`).href);
+  await p.waitForTimeout(1800);
+  await p.screenshot({ path: file, type: "jpeg", quality: 90, fullPage: true });
+  const h = await p.evaluate(() => document.body.scrollHeight);
+  await p.close();
+  made.push(file);
+  /* 一张太高的图，打开来会被缩到塞满萤幕，结果跟模糊一样判不了。 */
+  console.log(`${file}  ${h}px  ${title}${h > 4200 ? "  !! 太高" : ""}`);
+}
 await b.close();
 
-console.log(`→ ${OUT}/pick.jpg`);
+console.log(`\n→ ${made.length} 张，一组一张，打开就看得清`);
 if (missing.length) {
-  /* 少一张图跟一张全的表，在报告里长得一模一样。 */
-  console.log(`\n🔴 ${missing.length} 张图不在：${missing.join(" ")} —— 先跑 npm run shoot:appui`);
+  console.log(`\n!! ${missing.length} 张图不在：${missing.join(" ")} —— 先跑 npm run shoot:appui`);
   process.exit(1);
 }
