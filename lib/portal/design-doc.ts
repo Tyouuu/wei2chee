@@ -117,7 +117,10 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       ActionButton: "outline",
       Tag: "outline",
       Divider: "tight",
-      TrendChart: "line",
+      /* 🔴 line → sum（2026-09-02）。这一套抄的就是 Studio Admin，
+      而它那一格图表是**图在左、结论在右**：一个总数、一句话、一张小卡装比例。
+      我们本来只有图，读的人要自己从柱子里读出结论。 */
+      TrendChart: "sum",
       SystemShell: "split-deep",
       RailNav: "compact",
       InfoRows: "compact",

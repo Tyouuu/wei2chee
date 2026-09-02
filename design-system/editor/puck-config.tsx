@@ -218,8 +218,7 @@ type Components = {
   };
   SystemBar: { crumbs?: { text?: string }[]; date?: string };
   SystemShell: {
-    bar?: boolean;
-    strip: Slot;
+    crumbs?: { text?: string }[];
     sidebar: Slot;
     /** The split shell's second column. See system-shell.tsx. */
     aside: Slot;
@@ -1339,8 +1338,8 @@ export const puckConfig: Config<Components> = {
         // would be the same control twice -- with the worse half on top, since
         // reading 「顶部 / 浅色」 and imagining the result is exactly what the
         // pictures exist to replace.
-        /* 顶栏那一条。产生器往里面放 SystemBar；没放就是空的，空 slot 不画。 */
-        strip: { label: "顶栏", type: "slot" },
+        /* 顶栏那一条。**不是 slot** —— 见 system-shell.tsx 上面那段实拍。 */
+        crumbs: { label: "你在哪", type: "array", arrayFields: { text: { type: "text" } } },
         sidebar: { label: "侧边栏", type: "slot" },
         // The split shell's second column. Empty on every register that does
         // not ask for one, and an empty slot renders nothing -- so the other
@@ -1353,15 +1352,14 @@ export const puckConfig: Config<Components> = {
       // say "follow the register". These two carried "side" / "dark" and
       // therefore overrode all twenty-one registers' preferences forever --
       // measured, three registers rendered a byte-identical rail.
-      defaultProps: { bar: false, strip: [], sidebar: [], aside: [], main: [] },
-      render: ({ bar, strip: Strip, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
+      defaultProps: { crumbs: [], sidebar: [], aside: [], main: [] },
+      render: ({ crumbs, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
         <SystemShell
           nav={nav ?? "side"}
           navTone={navTone ?? "dark"}
           frame={frame ?? "flush"}
           width={width ?? "wide"}
-          bar={Boolean(bar)}
-          strip={<Strip />}
+          crumbs={(crumbs ?? []).map((c) => c?.text ?? "").filter(Boolean)}
           sidebar={<Sidebar />}
           aside={<Aside />}
           main={<Main />}

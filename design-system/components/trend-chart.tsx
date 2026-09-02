@@ -20,7 +20,20 @@ import {
 } from "@/components/ui/chart"
 import { useSystemWords } from "@/design-system/system-lang-context"
 
-export type TrendKind = "bar" | "line" | "area"
+/* 🔴 第四种：`sum`（2026-09-02）。
+   老板：「你不是有很多模版吗 做的好看一点啊 你还记得我们之前的做法吗
+   就是复刻了 改成那种可以给客户编辑的代码」。
+
+   这一种就是那个做法：Studio Admin 的 Qualified Lead Flow 那一格，
+   图在左、**结论在右** —— 一个大数字、一句话、再一张小卡装一条进度。
+   我们本来的图表卡只有图，读的人要自己从柱子里读出结论。
+   他指着那一页说「真的很喜欢」，指的多半就是这一格。
+
+   ⚠️ 右边那三样**全部是从同一份点算出来的**，一个都不是新资料：
+   总和 · 期数 · 最后一期占总和多少。编不出一个「目标」来配那条进度条 ——
+   一条没有人维护的目标线，就是[任务 40](../../docs/founder-tasks.md) 砍掉的
+   那个百分比换一个位置回来。 */
+export type TrendKind = "bar" | "line" | "area" | "sum"
 
 export type TrendPoint = {
   /** The period in the owner's own words — "1月", "第一季", "上周". */
@@ -285,6 +298,11 @@ export function TrendChart({ title, caption, frame, kind = "bar", unit = "", poi
         </header>
       ) : null}
 
+      {/* `sum` 把这一格切成两栏：图在左，结论在右。
+          其余三种照旧是一整格 —— 一个只有图的卡片是对的，
+          只是它不是唯一对的那一种。 */}
+      <div className={kind === "sum" ? "flex min-h-0 flex-1 flex-wrap [gap:var(--gap-stack)]" : "contents"}>
+      <div className={kind === "sum" ? "flex min-w-[16rem] flex-1 flex-col" : "contents"}>
       {/* aspect-auto cancels ChartContainer's own aspect-video: in the editor's
           narrow canvas a 16:9 box collapses to about 120px tall and the bars
           stop being readable, while on a full-width page it would grow past the
@@ -358,6 +376,53 @@ export function TrendChart({ title, caption, frame, kind = "bar", unit = "", poi
           </AreaChart>
         )}
       </ChartContainer>
+      </div>
+      {/* 结论那一栏。只有 `sum` 画，而它讲的三件事全部是这几个点自己算出来的。 */}
+      {kind === "sum" ? (
+        (() => {
+          const total = data.reduce((n, d) => n + d.v, 0)
+          const last = data[data.length - 1]?.v ?? 0
+          const pct = total ? Math.round((last / total) * 100) : 0
+          return (
+            <div className="flex min-w-[13rem] flex-1 flex-col justify-center [gap:var(--gap-stack)]">
+              <div>
+                <span className="tnum [font-size:var(--text-stat,var(--text-title))] [font-weight:var(--fw-semibold)] [color:var(--color-on-canvas)]">
+                  {unit ? `${unit} ` : ""}
+                  {total.toLocaleString("en-MY")}
+                </span>
+                {caption ? (
+                  <p className="mt-1 max-w-[34ch] [color:var(--color-on-canvas-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
+                    {caption}
+                  </p>
+                ) : null}
+              </div>
+              {/* 一张小卡装一条进度 —— Studio Admin 那一格里也是一张小卡，
+                  而它在那里的作用是把「一个比例」跟上面那个总数分开读。 */}
+              <div className="[background:var(--color-ink-850)] [border-radius:var(--radius-md)] [padding:var(--pad-card)]">
+                <p className="[color:var(--color-on-canvas-dim)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] uppercase [letter-spacing:var(--tracking-label)]">
+                  {data[data.length - 1]?.label ?? ""}
+                </p>
+                <p className="mt-1">
+                  <span className="tnum [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [color:var(--color-on-canvas)]">
+                    {unit ? `${unit} ` : ""}
+                    {last.toLocaleString("en-MY")}
+                  </span>
+                </p>
+                <div
+                  className="mt-2 h-[6px] w-full overflow-hidden [border-radius:var(--radius-sm)]"
+                  style={{ background: "var(--color-ink-800)" }}
+                >
+                  <div className="h-full" style={{ width: `${pct}%`, background: "var(--chart-1)" }} />
+                </div>
+                <p className="mt-1.5 tnum [color:var(--color-on-canvas-dim)] [font-size:var(--text-micro)]">
+                  {pct}%
+                </p>
+              </div>
+            </div>
+          )
+        })()
+      ) : null}
+      </div>
     </section>
   )
 }

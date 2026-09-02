@@ -75,6 +75,7 @@ export const LABELS_EN: Record<string, string> = {
      中文是正本，英文是它的投影，而一个没有投影的新组件会原样穿着中文出现在
      英文的组件库里。 */
   顶栏: "Top bar",
+  "图 + 结论": "Chart with a conclusion",
   你在哪: "Where you are",
   页面框架: "Page shell",
   分栏: "Columns",

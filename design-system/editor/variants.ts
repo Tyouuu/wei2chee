@@ -596,6 +596,10 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "bar", label: "柱状", props: { kind: "bar" } },
     { id: "line", label: "折线", props: { kind: "line" } },
     { id: "area", label: "面积", props: { kind: "area" } },
+    /* 第四种（2026-09-02）：图在左、**结论在右** —— Studio Admin 那一格。
+       老板指着它说「真的很喜欢」。右边那三样全部是从同一份点算出来的，
+       没有新资料，也没有编出来的目标。 */
+    { id: "sum", label: "图 + 结论", props: { kind: "sum" } },
   ],
 
   // ---------------------------------------------------------------- 提醒条

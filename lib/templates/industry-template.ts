@@ -1409,7 +1409,11 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
 
     台账: the list you scan pinned left, the ledger itself on the right.
   */
-  ledger: ["todo", "ranking", "table", "stats4", "trend|flow@half"],
+  /* 🔴 走势图从半栏改成整栏（2026-09-02）。它现在是 `sum` 那一种 ——
+     图在左、结论在右 —— 而那需要整行的宽度；塞在半栏里，结论那一栏会掉到
+     图下面，变成一个上下叠起来的东西，那不是 Studio Admin 那一格。
+     流程条自己一行，它本来就是一条横的。 */
+  ledger: ["todo", "ranking", "table", "stats4", "trend", "flow"],
   // A shopfront: what is happening today, with the money beside it rather than
   // under it -- the owner glances right, not down.
   /*
@@ -2986,25 +2990,20 @@ export function buildPageLayout(
      ⚠️ 面包屑用的是**侧栏自己的分组词** —— 不是另外写一份。侧栏分组只在页数
      够多的时候才出现（navGroup 自己会回空字串），所以页少的生意拿到的是
      一层面包屑而不是一条假的路径。 */
-  const strip = STRIP_REGISTERS.has(style ?? "")
+  const crumbs = STRIP_REGISTERS.has(style ?? "")
     ? [
-        node("SystemBar", `${pageKey}-bar`, {
-          crumbs: [
-            navGroup(pageKey, refs.length, chrome(lang)),
-            pageLabel(self ?? { key: pageKey }, labels, lang),
-          ]
-            .filter(Boolean)
-            .map((text) => ({ text })),
-        }),
+        navGroup(pageKey, refs.length, chrome(lang)),
+        pageLabel(self ?? { key: pageKey }, labels, lang),
       ]
+        .filter(Boolean)
+        .map((text) => ({ text }))
     : [];
 
   return {
     root: {},
     content: [
       node("SystemShell", `${pageKey}-shell`, {
-        bar: strip.length > 0,
-        strip,
+        crumbs,
         sidebar: [rail],
         aside,
         main: body,
