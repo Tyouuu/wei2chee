@@ -620,9 +620,9 @@
      （并排两栏 · bento · 大编号流程 · 拼装块），而**整个仓库没有一个地方定义它** ——
      所以那四个地方的缝一直是 0，而尺子在好几套上报「块间的缝 0 对 24」。
      它是比 --gap-stack 大一档的那个缝：块跟块之间，不是块里面。 */
-  --gap-section: 32px;
+  --gap-section: 24px;
   --gap-inline: 10px;
-  --row-h: 62px;
+  --row-h: 75px;
   --control-h: 36px;
 
   /* ---- ELEVATION AXIS: outlined card + subtle lift ------------------------ */

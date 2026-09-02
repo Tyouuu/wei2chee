@@ -462,7 +462,7 @@
   --radius-xs: 1px;
   --radius-sm: 2px;
   --radius-md: 3px;
-  --radius-lg: 4px;
+  --radius-lg: 14px;
   --radius-control: 2px;
   --radius-pill: 3px;
   /* 页脚不放按钮 —— 参考页的页脚是三栏字加一条底带，一颗按钮都没有，

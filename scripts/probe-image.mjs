@@ -77,13 +77,33 @@ export async function measureImage(input) {
   for (let y = 0; y < h; y += 2) {
     for (let x = 0; x < w; x += 2) {
       const [r, g, b] = at(x, y);
-      const k = `${r >> 4},${g >> 4},${b >> 4}`;
+      /* 🔴 一格 4 阶，不是 16 阶。自己的考卷第二次跑抓到的：
+         `#f8f8f8` 跟 `#ffffff` 在 16 阶一格里**落在同一格**（248>>4 跟 255>>4 都是 15），
+         於是「地」的平均值混进了卡片的白，地跟卡就分不开了 ——
+         而现代那几套后台正好就是白卡压在近白的地上。 */
+      const k = `${r >> 2},${g >> 2},${b >> 2}`;
       bins.set(k, (bins.get(k) || 0) + 1);
     }
   }
   let top = null, topN = 0;
   for (const [k, n] of bins) if (n > topN) { topN = n; top = k; }
-  const ground = top.split(",").map((v) => Number(v) * 16 + 8);
+  /* 🔴 地色要取那一格里的**平均**，不是那一格的中心点。
+     这是自己的考卷第一次跑就抓到的，而且它就是「我们那一页读成一整块」的原因：
+     格子是 16 阶一格，所以中心点最多差 8 阶 —— `#f0f2f5` 的地会被算成
+     `#f8f8f8`，而底下那个「跟地差不到 5 阶」的门槛**把地自己判成不是地**。
+     於是整页每一个像素都「不是地」，四张卡黏成一大块。
+     一个量错自己的地的探针，回报的每一个数字都是错的，而它看起来完全正常。 */
+  const [qr, qg, qb] = top.split(",").map(Number);
+  let sr = 0, sg = 0, sb = 0, sn = 0;
+  for (let y = 0; y < h; y += 2) {
+    for (let x = 0; x < w; x += 2) {
+      const [r, g, b] = at(x, y);
+      if ((r >> 2) === qr && (g >> 2) === qg && (b >> 2) === qb) { sr += r; sg += g; sb += b; sn++; }
+    }
+  }
+  const ground = sn
+    ? [Math.round(sr / sn), Math.round(sg / sn), Math.round(sb / sn)]
+    : [qr * 4 + 2, qg * 4 + 2, qb * 4 + 2];
   /* 🔴 门槛第一版设 14 阶明度，**整批参考的侧栏全部报 0**。
      查出来：现代那几套后台是**近白的卡片压在近白的地上**
      （TailAdmin 地 #f8f8f8、卡 #fff，只差 7 阶），松的门槛把卡也算成地，

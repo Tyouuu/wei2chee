@@ -162,7 +162,7 @@
   --radius-xs: 3px;
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-lg: 8px;
   --radius-control: 8px;
   --radius-pill: 999px;
   --pad-card: 18px;
@@ -336,10 +336,10 @@
   --radius-xs: 2px;
   --radius-sm: 2px;
   --radius-md: 2px;
-  --radius-lg: 2px;
+  --radius-lg: 8px;
   --radius-control: 2px;
   --radius-pill: 999px;
-  --pad-card: 12px;
+  --pad-card: 16px;
   --pad-card-lg: 24px;
   --pad-control-x: 13px;
   --pad-control-y: 8px;
@@ -348,7 +348,7 @@
   --gap-stack: 14px;
   --gap-section: 22px;
   --gap-inline: 10px;
-  --row-h: 44px;
+  --row-h: 57px;
   --control-h: 36px;
   --border-card-width: 1px;
   --shadow-card: none;
@@ -506,7 +506,7 @@
   --radius-xs: 6px;
   --radius-sm: 10px;
   --radius-md: 14px;
-  --radius-lg: 20px;
+  --radius-lg: 8px;
   --radius-control: 999px;
   --radius-pill: 999px;
   --pad-card: 22px;
@@ -687,7 +687,7 @@
   --radius-xs: 1px;
   --radius-sm: 2px;
   --radius-md: 3px;
-  --radius-lg: 4px;
+  --radius-lg: 14px;
   --radius-control: 2px;
   --radius-pill: 3px;
   --site-foot-ask: none;
@@ -877,9 +877,9 @@
   --pad-cell-x: 13px;
   --pad-cell-y: 15px;
   --gap-stack: 20px;
-  --gap-section: 32px;
+  --gap-section: 24px;
   --gap-inline: 10px;
-  --row-h: 62px;
+  --row-h: 75px;
   --control-h: 36px;
   --border-card-width: 1px;
   --shadow-card: none;
@@ -1054,9 +1054,9 @@
   --pad-cell-x: 13px;
   --pad-cell-y: 14px;
   --gap-stack: 20px;
-  --gap-section: 32px;
+  --gap-section: 24px;
   --gap-inline: 10px;
-  --row-h: 58px;
+  --row-h: 65px;
   --control-h: 36px;
   --border-card-width: 1px;
   --shadow-card: none;
