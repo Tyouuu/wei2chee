@@ -18,7 +18,11 @@ import fs from "node:fs";
 const argv = process.argv.slice(2);
 const nAt = argv.indexOf("--n");
 const N = nAt >= 0 ? Number(argv[nAt + 1]) || 4 : 4;
-const CATS = argv.filter((a, i) => !a.startsWith("--") && i !== nAt + 1);
+/* 🔴 同一个 index 陷阱的第二只脚：**不给 `--n` 的时候** `nAt` 是 −1，
+   `nAt + 1` 就是 0，於是**第一个分类被静静吃掉**，而报告一行都不会提它。
+   上面那段注解讲的是「4 被当成分类」，这一条是它的反面。2026-09-03 在
+   `harvest-awwwards.mjs` 上实测中过一次（`business-corporate` 整个不见）。 */
+const CATS = argv.filter((a, i) => !a.startsWith("--") && !(nAt >= 0 && i === nAt + 1));
 if (!CATS.length) { console.error("用法: node scripts/shoot-awwwards.mjs header-design animation [--n 4]"); process.exit(1); }
 
 const OUT = ".screenshots/awwwards";
