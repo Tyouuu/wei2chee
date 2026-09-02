@@ -75,6 +75,32 @@ describe("每一套风格抄谁", () => {
     expect(ref.ourPage, `${reg} 没说拿我们哪一页去对`).toMatch(/^\/en\/portal\//);
   });
 
+  /* 尺子会报的项目名。**打错一个字就等於偷偷把一项关掉**，
+     所以这份名单跟 `align-admin.mjs` 里那几行必须对得上。 */
+  const ITEMS = [
+    "图上几块", "一行几块", "块宽", "图几张", "表几张", "数字块几个", "名单几个", "组成",
+    "外框", "侧栏宽", "一屏几块", "第一块是", "最大的字", "最大的是数字", "字级阶梯",
+    "有颜色", "圆角", "卡片内距", "带阴影", "带细边", "块间的缝", "表格行高", "栏能不能排",
+    "表格页尾", "工具条几件", "一屏字数", "孤单的按钮", "底下的空",
+  ];
+
+  it.each(Object.entries(REGISTER_REFERENCES))("%s 故意不跟的每一项都指着真的项目、而且写了理由", (reg, ref) => {
+    for (const k of ref.keeps ?? []) {
+      expect(ITEMS, `${reg} 的「${k.item}」不是尺子会报的项目 —— 打错字等於偷偷关掉一项`)
+        .toContain(k.item);
+      /* 一句「设计如此」过不了这一条，而那正是它存在的理由：
+         留下来是一个**判断**，判断要讲得出理由。 */
+      expect(k.why.length, `${reg} 的「${k.item}」没写清楚为什么故意不跟`).toBeGreaterThan(15);
+    }
+  });
+
+  it("故意不跟的总数有上限 —— 它不是消音钮", () => {
+    /* 上限逼着下一个人拿理由来加，而不是把红的一项一项关掉。
+       今天是 7：台账 1 · 图纸 2 · 中台 2 · 招牌 2，全部是外框跟侧栏宽。 */
+    const n = Object.values(REGISTER_REFERENCES).reduce((a, r) => a + (r.keeps?.length ?? 0), 0);
+    expect(n, "故意不跟的项目变多了 —— 先问是不是在拿它盖住没做的事").toBeLessThanOrEqual(8);
+  });
+
   it.each(Object.entries(REGISTER_REFERENCES))("%s 写了许可", (reg, ref) => {
     /* 后台这一边可以直接拿代码，所以许可不是装饰。 */
     expect(ref.source, `${reg} 的来源没写许可`).toMatch(/MIT|Apache|BSD/);

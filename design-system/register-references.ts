@@ -54,6 +54,20 @@ export type RegisterReference = {
    * 拿不出一句，就代表这一对配得没有理由，那才是要改的地方。
    */
   takes: string;
+  /**
+   * **故意跟它不一样的地方。**
+   *
+   * 老板 2026-09-03：`还是差的多`。而六套里有四个红是**我们判过、决定不跟**的：
+   * 台账的窄图标栏是它跟另外五套唯一的分别；中台的暗侧栏是「像他们本来在用的
+   * 进销存」那句主张的本体，而 Tabler 用的是顶栏。
+   *
+   * 这几项如果一直红着，那个数字就不再是「还欠几件」，而是
+   * 「还欠几件 ＋ 几个已经想清楚的决定」—— 一份读不出来的清单，没有人会看。
+   *
+   * ⚠️ **它不是消音钮。** 每一条都要写理由，而且守卫会检查那个项目名
+   * 真的在尺子的清单里 —— 打错一个字就等於偷偷把一项关掉。
+   */
+  keeps?: { item: string; why: string }[];
 };
 
 export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
@@ -69,6 +83,9 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
       "工具条本身就是那个设计，不是表格上面的装饰。",
     /* 他们那一页是一张表，所以拿我们的报价单去对，不是总览 */
     ourPage: "/en/portal/quotations",
+    keeps: [
+      { item: "侧栏宽", why: "窄图标栏是台账跟另外五套唯一的分别。改成 240 就跟瑞士、炉长一样了" },
+    ],
   },
 
   /* 沙龙老板开系统的那一刻，客人就站在他旁边。 */
@@ -97,6 +114,10 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
       "整页零个彩色方块。",
     /* 他们那一页是一张单据，我们的报价单右边就是那张可以印的纸 */
     ourPage: "/en/portal/quotations",
+    keeps: [
+      { item: "外框", why: "Tabler 那一页用顶栏，而图纸给的是「还讲不清自己做哪一行」的老板 —— 侧栏把每一页摊在他眼前，顶栏要他先记得去哪一个下拉里找" },
+      { item: "侧栏宽", why: "他们那一页根本没有侧栏（顶栏 56px），两个数字量的不是同一个东西" },
+    ],
   },
 
   /* 印出来给人看的那一套。一张纸是一栏的。 */
@@ -123,6 +144,10 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
     takes: "一个大圆环加一条曲线，颜色少、字大。顶栏不是侧栏。",
     /* 同上 */
     ourPage: "/en/portal/dashboard",
+    keeps: [
+      { item: "外框", why: "招牌的身份就是顶栏：店名跟数字挂在最上面一条上，那是招牌本身。TailAdmin 用侧栏" },
+      { item: "侧栏宽", why: "外框本来就不一样：他们侧栏我们顶栏，一个横的一个竖的，宽度对不起来" },
+    ],
   },
 
   /* 在里面做事，不是在里面看事。少掉的全部让给行数。 */
@@ -137,6 +162,10 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
       "细边到处都是（100% 的卡片有边），阴影几乎没有。",
     /* 同上 */
     ourPage: "/en/portal/dashboard",
+    keeps: [
+      { item: "外框", why: "Tabler 用顶栏，而中台的主张一字不差是「像 Autocount、进销存那一类他们本来就在用的样子」——那一类全部是暗侧栏" },
+      { item: "侧栏宽", why: "外框本来就不一样：他们侧栏我们顶栏，一个横的一个竖的，宽度对不起来" },
+    ],
   },
 };
 

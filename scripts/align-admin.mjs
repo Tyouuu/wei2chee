@@ -68,17 +68,24 @@ const PROBE = (rootSel) => {
   const all = [...root.querySelectorAll("*")].filter(vis);
 
   // ---- 外框：侧栏还是顶栏，多宽 -------------------------------------------
+  /* 🔴 门槛放宽到 40px，而且高度门槛降到五成。
+     六套里**四套连「有没有侧栏」都读不到**，查出来是两个太紧的数字：
+       · 我们那一页画在 Puck 的画布里，画布上缘有一条假的浏览器标题条（约 28px），
+         所以顶栏的 top 是 28 不是 0 —— 12px 的容差把招牌整条顶栏挡在门外
+       · 炉的侧栏底下留了一截，高度只有画布的 57%，六成的门槛差一点点
+     十个红里有十个是这两个数字造的，**不是设计的错**。 */
+  const EDGE = 40;
   let rail = null;
   for (const e of all) {
     const r = e.getBoundingClientRect();
-    if (r.height >= R.height * 0.6 && r.width >= 48 && r.width <= 340 && r.left - R.left < 12) {
+    if (r.height >= R.height * 0.5 && r.width >= 48 && r.width <= 340 && r.left - R.left < EDGE) {
       if (!rail || r.width < rail.w) rail = { axis: "side", w: Math.round(r.width), el: e };
     }
   }
   if (!rail) {
     for (const e of all) {
       const r = e.getBoundingClientRect();
-      if (r.width >= R.width * 0.85 && r.height >= 36 && r.height <= 96 && r.top - R.top < 12) {
+      if (r.width >= R.width * 0.85 && r.height >= 36 && r.height <= 96 && r.top - R.top < EDGE) {
         rail = { axis: "top", w: Math.round(r.height), el: e };
         break;
       }
@@ -577,11 +584,18 @@ async function main() {
       ["底下的空", theirs.tailGap, ours.tailGap,
         ours.tailGap > 200 && theirs.tailGap < 120 ? "差" : "ok"],
     ];
-    for (const [n, a, o, v] of rows) console.log(line(n, a, o, v === "差" ? "🔴 差" : v));
+    /* 故意不跟的那几项：印「留」，不算进那个数字，而且把理由印出来。
+       ⚠️ 它不是消音钮 —— 理由写在 `register-references.ts` 里，守卫盯着。 */
+    const kept = new Map((ref.keeps ?? []).map((k) => [k.item, k.why]));
+    for (const [n, a, o, v] of rows) {
+      const why = kept.get(n);
+      console.log(line(n, a, o, v === "差" ? (why ? "留" : "🔴 差") : v));
+      if (v === "差" && why) console.log(`  ${" ".repeat(14)} ↳ ${why}`);
+    }
     console.log(`  ${pad("顺序", 14)} 参考 ${theirs.blocks}`);
     console.log(`  ${pad("", 14)} 我们 ${ours.blocks}`);
-    const bad = rows.filter(([, , , v]) => v === "差").length;
-    console.log(`  → ${bad} 项对不上。⚠️ 数字只能否决 —— 过不过看 ${OUT}/${reg}.jpg`);
+    const bad = rows.filter(([n, , , v]) => v === "差" && !kept.has(n)).length;
+    console.log(`  → ${bad} 项对不上${kept.size ? `（另有 ${kept.size} 项是故意不跟的）` : ""}。⚠️ 数字只能否决 —— 过不过看 ${OUT}/${reg}.jpg`);
 
     // ---- 给眼睛看的图：原尺寸，分段，不缩 -----------------------------------
     /* 老板 2026-09-03：`不要用缩图 一定要放大 每一个细节慢慢复刻`。
