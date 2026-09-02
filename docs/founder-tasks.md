@@ -6178,6 +6178,27 @@ Expo Router 是**照档案夹的位置决定网址**，跟这个仓库 `app/` �
 
 ---
 
+#### 素材池从 22 张变成 29 张，而且每一张都验过（2026-09-02 第二轮）
+> `总之不够素材就去帮我去找`
+
+`npm run shoot:admins` 现在拍 **29 张**，摊成一张 `.screenshots/admins/sheet.jpg`
+（[重点 7m](./founder-points.md)：他要的是**挑**，三十个档案不叫挑）。
+许可跟星数全部用 `gh api` 查过，不是读首页。
+
+**新进来的**：Gentelella v4 六页（首页 · 行事历 · 单据 · 专案 · 看板 · 商品）·
+shadcnstore MIT 1.1k · admin-one MIT 590 · tremor Apache 516 · modernize MIT 425 ·
+mantine-analytics MIT 387 · dashui MIT 178 · TailAdmin 的 Next.js demo MIT 2.5k。
+
+**四个查出来站在登入墙后面，写下来不要再捡**（都有密码框，实测不是网址写错）：
+Kiranism/next-shadcn-dashboard-starter · devias-io/material-kit-react ·
+Qualiora/shadboard · vercel 的 next-admin-dash。
+**不留在名单里**，不然这把尺每跑一次就对我叫一次狼。
+
+🔴 **而且这把尺自己冤枉过两张**：它原本看「头 600 个字里有没有 sign in」，
+於是**侧栏上一个「Sign In」的选单项**就把 mantine 跟 soft-ui 判成登入页。
+一张登入页真正的特徵是**整页只有那一件事**：字少 + 有一个密码框。
+现在拍坏了会 exit 1 —— **一张拍到登入页的截图，跟一张正常的截图，在报告里长得一模一样。**
+
 ### 104. 🔴 拿截图做界面验收 —— 后台这一边没有这把尺（2026-09-02 他发的）
 > `去看看`（配一张 Codex 的贴文：`前端能打开不等于做对了`·
 > `根据目标截图和当前页面，列出视觉差异：布局、间距、字号、颜色、对齐、溢出和移动端表现。
