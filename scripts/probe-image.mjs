@@ -122,7 +122,12 @@ export async function measureImage(input) {
      改成先把图铺成格子（一格约 12px 见方），**一格投一次票**：
      这一格里过半的像素是地色，它就是地。杂点投不赢一整格，
      而近白的卡片整格都不是地色，投得赢。 */
-  const CELL = Math.max(6, Math.round(12 / ((src.width || info.width) / w || 1)));
+  /* 🔴 12px 一格太粗。中台那一页四张卡之间的缝是 **14px**，
+     一格 12 的时候那道缝常常跟卡片挤在同一格里，投票投给卡 ——
+     於是四张卡黏成一块，尺子回报「一块，1120 宽」，而 1:1 的裁图上
+     那四张卡明明是分开的。**那个「一块」有一半是我的探针造的。**
+     改成 6px 一格：最窄要认得出的缝是 8px 上下，一格必须比它小。 */
+  const CELL = Math.max(4, Math.round(6 / ((src.width || info.width) / w || 1)));
   const gw = Math.floor(w / CELL), gh = Math.floor(h / CELL);
   const x0cell = rail ? Math.ceil((rail + 2) / CELL) : 0;
   const cell = new Uint8Array(gw * gh); // 1 = 不是地
@@ -188,7 +193,7 @@ export async function measureImage(input) {
          第一版设 3 格宽 × 2 格高（约 36×24px），於是**一个词就算一块** ——
          我们那几页读出「块宽 74」「块宽 87」，而画面上没有 74px 宽的卡。
          一张卡至少一个巴掌大：横过 6 格（约 72px）、上下 3 格，而且要够实。 */
-      if (n >= 18 && maxx - minx >= 5 && maxy - miny >= 2)
+      if (n >= 60 && maxx - minx >= 10 && maxy - miny >= 4)
         blobs.push({ x: minx, y: miny, w: maxx - minx + 1, h: maxy - miny + 1 });
     }
   }
@@ -201,6 +206,60 @@ export async function measureImage(input) {
     byRow.set(key, (byRow.get(key) || 0) + 1);
   }
   const perRowMax = byRow.size ? Math.max(...byRow.values()) : 0;
+
+  // ── 卡是什么颜色、主色是什么 ──────────────────────────────────────────────
+  /* 反推要用的两个颜色：
+       **卡色** —— 块里面最常见的颜色（不是地色的那一个）
+       **主色** —— 整页彩度最高、而且铺得够大的那一个（按钮、图表、强调）
+     两个都用「出现最多」而不是平均 —— 平均会给出一个页面上不存在的颜色。 */
+  const cardBins = new Map();
+  const huedBins = new Map();
+  for (const b of blobs) {
+    for (let cy = b.y; cy < b.y + b.h; cy++) {
+      for (let cx = b.x; cx < b.x + b.w; cx++) {
+        const px = cx * CELL + (CELL >> 1), py = cy * CELL + (CELL >> 1);
+        if (px >= w || py >= h) continue;
+        const [r, g, bb] = at(px, py);
+        const k = `${r >> 4},${g >> 4},${bb >> 4}`;
+        cardBins.set(k, (cardBins.get(k) || 0) + 1);
+      }
+    }
+  }
+  for (let y = 0; y < h; y += 2) {
+    for (let x = 0; x < w; x += 2) {
+      const [r, g, bb] = at(x, y);
+      if (oklabC(r, g, bb) > 0.06) {
+        const k = `${r >> 4},${g >> 4},${bb >> 4}`;
+        huedBins.set(k, (huedBins.get(k) || 0) + 1);
+      }
+    }
+  }
+  const pick = (m) => {
+    let k = null, n = 0;
+    for (const [kk, nn] of m) if (nn > n) { n = nn; k = kk; }
+    return k ? k.split(",").map((v) => Number(v) * 16 + 8) : null;
+  };
+  const hex = (c) => (c ? "#" + c.map((v) => Math.min(255, v).toString(16).padStart(2, "0")).join("") : null);
+  const card = pick(cardBins);
+  const accent = pick(huedBins);
+
+  // ── 骨架：一行几块、每块多宽多高 ──────────────────────────────────────────
+  /* 反推组成要的就是这个：把块按上缘分行，每一行印出几块跟它们的宽。
+     「一行四张 307 宽 → 再一张满宽的 → 再一张满宽的很高的」
+     就是 Tabler 那一页的骨架，而那句话可以直接翻成我们的组成。 */
+  const rowsMap = new Map();
+  for (const b of blobs) {
+    const key = Math.round(b.y / 2);
+    if (!rowsMap.has(key)) rowsMap.set(key, []);
+    rowsMap.get(key).push(b);
+  }
+  const skeleton = [...rowsMap.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, bs]) => ({
+      n: bs.length,
+      widths: bs.map((b) => real(b.w * CELL)).sort((a, b) => b - a),
+      h: real(Math.max(...bs.map((b) => b.h)) * CELL),
+    }));
 
   // ── 有颜色的面积 ─────────────────────────────────────────────────────────
   let hit = 0, tot = 0;
@@ -231,6 +290,9 @@ export async function measureImage(input) {
     cardWidth: med(widths),
     /* 一行最多几张 —— 「一行四张卡」是这一类页面最认得出的排法。 */
     perRowMax,
+    card: hex(card),
+    accent: hex(accent),
+    skeleton,
     colour: Math.round((hit / tot) * 1000) / 10,
   };
 }

@@ -532,22 +532,57 @@ async function main() {
     const bad = rows.filter(([, , , v]) => v === "差").length;
     console.log(`  → ${bad} 项对不上。⚠️ 数字只能否决 —— 过不过看 ${OUT}/${reg}.jpg`);
 
-    // ---- 并排图给眼睛看 ---------------------------------------------------
-    const H = 900;
-    const [a, o] = await Promise.all([
-      sharp(theirShot).resize({ height: H, fit: "inside" }).toBuffer(),
-      sharp(oursShot).resize({ height: H, fit: "inside" }).toBuffer(),
-    ]);
-    const [ma, mo] = await Promise.all([sharp(a).metadata(), sharp(o).metadata()]);
-    await sharp({
-      create: { width: ma.width + mo.width + 24, height: H, channels: 3, background: "#0b0d13" },
-    })
+    // ---- 给眼睛看的图：原尺寸，分段，不缩 -----------------------------------
+    /* 老板 2026-09-03：`不要用缩图 一定要放大 每一个细节慢慢复刻`。
+       他讲对了 —— 把 1440 宽的两页各缩到一半再并排，画面上一切都还在，
+       **而每一个细节都没了**：行高、字重、边框粗细、图标大小，
+       全部是要在原尺寸才看得出来的东西。
+
+       所以现在出两种：
+         <风格>.jpg        两页并排，**原尺寸**，看全貌
+         <风格>-1..3.jpg   横切成三段，**上参考下我们，原尺寸**，看细节
+       裁的是同样的 y 范围，所以上下两半讲的是页面上同一个位置。 */
+    const shots = { ref: theirShot, ours: oursShot };
+    const meta = {
+      ref: await sharp(shots.ref).metadata(),
+      ours: await sharp(shots.ours).metadata(),
+    };
+    const W = Math.max(meta.ref.width, meta.ours.width);
+    const H = Math.max(meta.ref.height, meta.ours.height);
+
+    /* 全貌：并排，原尺寸。 */
+    await sharp({ create: { width: meta.ref.width + meta.ours.width + 24, height: H, channels: 3, background: "#0b0d13" } })
       .composite([
-        { input: a, left: 0, top: 0 },
-        { input: o, left: ma.width + 24, top: 0 },
+        { input: shots.ref, left: 0, top: 0 },
+        { input: shots.ours, left: meta.ref.width + 24, top: 0 },
       ])
-      .jpeg({ quality: 74 })
+      .jpeg({ quality: 82 })
       .toFile(`${OUT}/${reg}.jpg`);
+
+    /* 细节：三段，上下叠，原尺寸。 */
+    const SLICES = 3;
+    const band = Math.floor(H / SLICES);
+    for (let i = 0; i < SLICES; i++) {
+      const top = i * band;
+      const cut = async (buf, m) => {
+        const h = Math.max(0, Math.min(band, m.height - top));
+        if (h <= 8) return null;
+        return sharp(buf).extract({ left: 0, top, width: m.width, height: h }).toBuffer();
+      };
+      const [ra, oa] = await Promise.all([cut(shots.ref, meta.ref), cut(shots.ours, meta.ours)]);
+      if (!ra && !oa) continue;
+      const rm = ra ? await sharp(ra).metadata() : { width: 0, height: 0 };
+      const om = oa ? await sharp(oa).metadata() : { width: 0, height: 0 };
+      const comp = [];
+      if (ra) comp.push({ input: ra, left: 0, top: 0 });
+      if (oa) comp.push({ input: oa, left: 0, top: rm.height + 14 });
+      await sharp({
+        create: { width: W, height: rm.height + om.height + 14, channels: 3, background: "#00beb7" },
+      })
+        .composite(comp)
+        .jpeg({ quality: 86 })
+        .toFile(`${OUT}/${reg}-${i + 1}.jpg`);
+    }
   }
 
   if (ORIGINAL) {

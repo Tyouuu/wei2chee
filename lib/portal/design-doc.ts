@@ -236,7 +236,10 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       ActionRow: "row",
       ChoiceSelect: "default",
       PageHeader: "split",
-      Panel: "card",
+      /* card → tinted（2026-09-03）：中台 拿了 card（它的参考是白卡压灰地），
+         而这两套本来就是最像的一对。图纸的参考是一张**印出来的单据** ——
+         淡底的区块比白卡更接近那张纸。 */
+      Panel: "tinted",
       TabbedPanel: "pill",
     },
     avoid: ["极端的密或极端的松"],
@@ -293,7 +296,13 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       ChoiceSelect: "default",
       PageHeader: "ruled",
       /* 🔴 招牌 也是 card。这一套没有阴影、2px 直角 —— 用线分区才是它，卡片是别人的。 */
-      Panel: "ruled",
+      /* 🔴 ruled → card（2026-09-03）。像素那把尺把我们这一页读成
+         **「一块，1120 宽」**，而 Tabler 那一页是「一行四张、每张 307」。
+         根因不是排法，是**块跟地分不开**：`ruled` 只画一条细线，
+         於是整页的墨连成一片，眼睛看到的也是一整块板。
+         Tabler 的做法正是「白卡压在灰地上，靠地色分开，不是靠阴影」——
+         中台的平、密、无阴影全部保住，只是每一块现在有自己的边。 */
+      Panel: "card",
       /* 台账 也是 underline。分段按钮是 Autocount 那一类真正在用的样子。 */
       /* 招牌 也是 segment，而分段按钮在最密的一屏里比一条下划线高。 */
       TabbedPanel: "underline",
