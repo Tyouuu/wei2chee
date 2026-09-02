@@ -28,6 +28,10 @@
  * 跟一把说「你没问题」的尺长得一模一样 —— 这个仓库被骗过至少四次。
  */
 import { chromium } from "playwright";
+/* 从**图**上量的那一支。老板 2026-09-03：`你不能帮我去反用在图片上
+   就是利用好我们的尺子`。DOM 那一支每一家写法都不一样，画面是同一种东西 ——
+   所以两边的截图用**同一支**像素探针再量一次，跟 DOM 那一支互相印证。 */
+import { measureImage } from "./probe-image.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
@@ -486,8 +490,17 @@ async function main() {
       return Math.abs(a - b) > 1;
     });
 
+    /* 图上量的那一份。两边同一支探针，跟 DOM 那一份并排印 ——
+       **两份不一样的时候，信图那一份**，因为客人看的是图。 */
+    const pxT = await measureImage(theirShot);
+    const pxO = await measureImage(oursShot);
+
     const rows = [
       /* 组成排最前面，因为它决定其余每一项值不值得看。 */
+      ["图上几块", pxT.cards, pxO.cards, Math.abs(pxT.cards - pxO.cards) <= 3 ? "ok" : "差"],
+      ["一行几块", pxT.perRowMax, pxO.perRowMax, Math.abs(pxT.perRowMax - pxO.perRowMax) <= 1 ? "ok" : "差"],
+      ["块宽", pxT.cardWidth, pxO.cardWidth,
+        pxT.cardWidth && pxO.cardWidth && Math.abs(pxT.cardWidth - pxO.cardWidth) / pxT.cardWidth <= 0.3 ? "ok" : "差"],
       ["图几张", theirs.charts, ours.charts, Math.abs(theirs.charts - ours.charts) <= 1 ? "ok" : "差"],
       ["表几张", theirs.tables, ours.tables, Math.abs(theirs.tables - ours.tables) <= 1 ? "ok" : "差"],
       ["数字块几个", theirs.figures, ours.figures, Math.abs(theirs.figures - ours.figures) <= 1 ? "ok" : "差"],
