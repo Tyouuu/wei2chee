@@ -286,6 +286,48 @@ const PROBE = (rootSel) => {
     }).length;
   }
 
+  // ---- 有没有一颗孤单的按钮 · 页面底下有没有一大块空 ------------------------
+  /* 这两条都是 2026-09-03 **用眼睛在 1:1 的裁图上看到的**，而尺子当时十八项
+     没有一项在问。[重点 24](../docs/founder-points.md)：眼睛看到而尺子量不到的，
+     当场变成尺子的一项，不然它会回来第三次。
+
+     · 孤单的按钮 —— 招牌的标题置中之后，那颗红色的主要按钮浮在正中间一条
+       空带上，看起来像画坏了。判法：这颗按钮左右各 140px 之内都没有别的东西，
+       而且它自己大致落在容器的正中。
+     · 底下的空 —— 中台那一页画到一半就没了，底下留一大块。判法：
+       最后一块的下缘离页面底端超过 200px。 */
+  let lonely = 0;
+  for (const e of all) {
+    const t = e.tagName;
+    if (t !== "BUTTON" && t !== "A") continue;
+    const r = e.getBoundingClientRect();
+    if (r.width < 60 || r.height < 24) continue;
+    const mid = r.top + r.height / 2;
+    /* 左右各看一眼：140px 之内有没有别的看得见的东西。 */
+    /* 🔴 第一版问的是「打到的那个元素有没有字」，而 `innerText` 会把**整个
+       子树**的字算进去 —— 打在空白上打到的是一个大容器，它当然「有字」，
+       於是这条守卫对着它就是为了抓的那颗置中的红按钮回报 0。
+       **写完就故意把标题改回置中试了一次，才发现。**
+       改成只认**它自己那一层的字**，或者一个图/控件。 */
+    const near = (dx) => {
+      const x = dx < 0 ? r.left + dx : r.right - dx;
+      const el = document.elementFromPoint(Math.max(1, Math.min(window.innerWidth - 1, x)), mid);
+      if (!el || el === e || e.contains(el)) return false;
+      if (/^(IMG|SVG|CANVAS|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) return true;
+      const own = [...el.childNodes]
+        .filter((n) => n.nodeType === 3)
+        .map((n) => n.textContent.trim())
+        .join("");
+      return own.length > 0;
+    };
+    const alone = !near(-140) && !near(140);
+    const box = e.parentElement ? e.parentElement.getBoundingClientRect() : R;
+    const centred = Math.abs((r.left + r.right) / 2 - (box.left + box.right) / 2) < 24 && box.width > 400;
+    if (alone && centred) lonely++;
+  }
+  const lastBottom = outer.length ? Math.max(...outer.map((o) => o.r.bottom)) : R.top;
+  const tailGap = Math.max(0, Math.round(R.top + root.scrollHeight - lastBottom));
+
   // ---- 一屏塞了多少字 -----------------------------------------------------
   const words = (root.innerText.match(/\S+/g) || []).length;
 
@@ -316,6 +358,8 @@ const PROBE = (rootSel) => {
     withShadow,
     withBorder,
     gap: med(gaps),
+    lonely,
+    tailGap,
     rowH,
     sortable,
     tableFoot,
@@ -525,6 +569,13 @@ async function main() {
       ["表格页尾", theirs.tableFoot, ours.tableFoot, theirs.tableFoot === ours.tableFoot ? "ok" : "差"],
       ["工具条几件", theirs.tools, ours.tools, judge("工具条几件", theirs.tools, ours.tools)],
       ["一屏字数", theirs.words, ours.words, judge("一屏字数", theirs.words, ours.words)],
+      /* 这两条不跟参考比 —— 它们是**画坏了**，参考有几个不影响我们有没有。 */
+      ["孤单的按钮", theirs.lonely, ours.lonely, ours.lonely > 0 ? "差" : "ok"],
+      /* ⚠️ 只在**他们那一页填满了而我们没有**的时候才算差。
+         参考页自己也常常留一大截（炉 670 · 中台 1300）——
+         拿一个绝对值去判，会把「他们也一样」判成我们的错。 */
+      ["底下的空", theirs.tailGap, ours.tailGap,
+        ours.tailGap > 200 && theirs.tailGap < 120 ? "差" : "ok"],
     ];
     for (const [n, a, o, v] of rows) console.log(line(n, a, o, v === "差" ? "🔴 差" : v));
     console.log(`  ${pad("顺序", 14)} 参考 ${theirs.blocks}`);
