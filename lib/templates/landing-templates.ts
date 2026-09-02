@@ -64,8 +64,20 @@ export type LandingTemplate = {
   /** Who it is for, in the founder's own register: a sentence about the SALE,
    *  not about the trade. */
   blurb: string;
-  /** Trades whose default this is. First match wins; anything unmapped falls
-   *  back to `quote`. */
+  /**
+   * Trades whose default this is. EMPTY MEANS GALLERY-ONLY, ON PURPOSE.
+   *
+   * ⚠️ It used to say 「first match wins」, and that sentence was hiding a dead
+   * template. `landingTemplateFor` scans in declaration order, `quote` declared
+   * services first, and 明码标价 -- built from five of the nineteen Malaysian SME
+   * sites actually measured, three of which put the price in their own URL --
+   * could never be reached by anybody. It read as a supported choice and was
+   * unreachable code.
+   *
+   * A trade may now appear on exactly ONE template, and every template either
+   * has a trade or is deliberately gallery-only. Both are asserted; see
+   * landing-templates.test.ts.
+   */
   trades: string[];
   /**
    * The same two, for the English portal.
@@ -757,7 +769,13 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurb: "客人先问，你上门看了才报价。装修、维修、承包这一类。",
     labelEn: "Quote after a visit",
     blurbEn: "They ask, you go and look, then you quote. Renovation, repairs, contracting.",
-    trades: ["renovation", "services", "other"],
+    /* 服务 MOVED TO 明码标价 on 2026-09-02, and this is the measurement rather
+       than a preference: of the nineteen Malaysian SME sites in
+       docs/market-references.json, FIVE are the published-price shape and all
+       five are services -- aircond, repairs, batteries, glass. Three of them
+       put the price in the address bar. A contractor surveys before quoting; a
+       man who comes to recharge your aircond has a number. */
+    trades: ["renovation", "other"],
     build: (c) => [
       bar(c, anchors(c)),
       hero(c, "split", "quote"),
@@ -965,6 +983,12 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurb: "客人是看了作品才决定的。设计、摄影、装修都可以用这个。",
     labelEn: "Work first",
     blurbEn: "They decide after seeing what you have made. Design, photography, renovation.",
+    /* GALLERY-ONLY, DELIBERATELY. Nothing in the questionnaire distinguishes a
+       renovation contractor whose customers choose by photographs from one
+       whose customers ask for a quote -- and the three furniture shops measured
+       in 任务 90 are the only evidence for this shape in this market, which is
+       not enough to make it anybody's opening page. It is one click away in
+       模板库 for an owner who knows their own trade better than we do. */
     trades: [],
     build: (c) => [
       bar(c, anchors(c)),
@@ -995,6 +1019,11 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
     blurb: "最简单的一页：你是谁、做什么、怎么找你。没有表格。",
     labelEn: "One-page card",
     blurbEn: "The simplest page: who you are, what you do, how to reach you. No form.",
+    /* GALLERY-ONLY, AND IT MUST STAY THAT WAY. This page has NO FORM, and the
+       enquiry form is the one thing on a customer's website that produces a row
+       in their system -- 官网 → 询价 → 报价单 is the arrow the monthly fee is
+       sold on. Opening a business on a page that cannot be written to would
+       remove the product's own reason to exist. Offered, never defaulted. */
     trades: [],
     build: (c) => [
       bar(c, anchors(c)),
