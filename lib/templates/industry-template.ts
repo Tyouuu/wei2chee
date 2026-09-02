@@ -971,7 +971,7 @@ function buildDashboard(
           href: `/${locale}/portal/payments`,
         })),
         spark: sample.heroSpark.map((n) => ({ n })),
-        sparkLabel: c.dashboard.sparkLabel,
+        sparkLabel: c.dashboard.sparkLabel.replace("{n}", String(sample.heroSpark.length)),
       }),
 
     trend: () => {
@@ -996,7 +996,7 @@ function buildDashboard(
       });
       return node("TrendChart", "dashboard-trend", {
         title: c.dashboard.trendTitle,
-        caption: c.dashboard.trendCaption,
+        caption: c.dashboard.trendCaption.replace("{n}", String(sample.heroSpark.length)),
         unit: "RM",
         points: sample.heroSpark.map((value, i) => ({
           label: months[i] ?? "",
@@ -1009,7 +1009,7 @@ function buildDashboard(
      *  another register wants a chart. */
     activity: () =>
       node("ActivitySquares", "dashboard-activity", {
-        label: c.dashboard.trendCaption,
+        label: c.dashboard.trendCaption.replace("{n}", String(sample.heroSpark.length)),
       }),
 
     /** How far through the month the money is. One bar, one number. */
@@ -1225,6 +1225,52 @@ function buildDashboard(
           ),
         ],
       }),
+
+    /**
+     * 一排小格子 —— 三个不抢戏的数字并排。
+     *
+     * 抄的是 Tabler 仪表盘第三排那四个小 tile（132 Sales · 78 Orders …）：
+     * 比指标卡小一号，一行放得下好几个，答的是「顺带看一眼」的问题。
+     * 老板 2026-09-03：`我都给你图 照着补零件啊`。
+     *
+     * ⚠️ 三个不是四个。他们的字是「132 Sales」，我们的是「RM 71,300」——
+     * 同样的宽度我们的字长一倍，凑到四个就会切字（目标卡刚刚栽过一次）。
+     * 抄的是「一排小格子」这个形状，不是那个数量。
+     */
+    tiles: () => {
+      /* 三个数字全部从同一份记录算出来，而三个都不是指标排上的那几个。
+         算不出来的时候（没有金额）就印他自己那一栏的字，不印 0 ——
+         「RM 0」跟「还没有」是两句不同的话，只有一句是真的。 */
+      const amounts = sample.records
+        .map((r) => Number(String(r.amount ?? "").replace(/[^0-9.]/g, "")))
+        .filter((n) => Number.isFinite(n) && n > 0);
+      const money = (n: number) => `RM ${Math.round(n).toLocaleString("en-MY")}`;
+      const biggest = amounts.length ? money(Math.max(...amounts)) : "—";
+      const average = amounts.length
+        ? money(amounts.reduce((a, c) => a + c, 0) / amounts.length)
+        : "—";
+      return node("Columns", "dashboard-tiles", {
+        layout: "thirds",
+        a: [
+          node("SmallStat", "dashboard-tile-a", {
+            label: c.dashboard.tileCount,
+            value: String(sample.records.length),
+          }),
+        ],
+        b: [
+          node("SmallStat", "dashboard-tile-b", {
+            label: c.dashboard.tileBiggest,
+            value: biggest,
+          }),
+        ],
+        c: [
+          node("SmallStat", "dashboard-tile-c", {
+            label: c.dashboard.tileAverage,
+            value: average,
+          }),
+        ],
+      });
+    },
 
     flow: () =>
       workflowStrip(
@@ -1634,7 +1680,9 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      **一排带小走势的数字卡开场**（Tabler 的招牌排法），再一张宽图，
      然后才是它最长的那张表。
      密度没有让掉：小走势卡是这一页最省地方的图，一行四张不多占一行。 */
-  counter: ["stats4", "trend", "table", "flow"],
+  /* 🔴 加了一排小格子（2026-09-03）。Tabler 那一页第三排就是四个小 tile，
+     而它是「最密」这个主张真正的样子：一行放得下好几个不抢戏的数字。 */
+  counter: ["stats4", "tiles", "trend", "table"],
   /*
     工作室 IS THE ONLY REGISTER THAT PAIRS NOTHING.
 
@@ -1668,7 +1716,7 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
  */
 export const COMPOSITION_ROLES = new Set([
   "table", "stats4", "stats2", "trend", "todo", "ranking", "share",
-  "flow", "activity", "progress", "board", "hero", "target", "tabbed",
+  "flow", "activity", "progress", "board", "hero", "target", "tabbed", "tiles",
 ]);
 
 /** The neutral composition, for a register with no entry and for the paths that

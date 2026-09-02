@@ -149,7 +149,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
         sub: "Over 30 days",
       },
     ],
-    heroSpark: [42000, 51000, 47500, 58000, 63000, 71300],
+    heroSpark: [26000, 30000, 28000, 33000, 35000, 38000, 42000, 51000, 47500, 58000, 63000, 71300],
   },
   retail: {
     stock: [
@@ -283,7 +283,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
         sub: "Below reorder level",
       },
     ],
-    heroSpark: [14200, 15800, 17100, 16400, 18000, 18940],
+    heroSpark: [9000, 10000, 9000, 11000, 12000, 13000, 14200, 15800, 17100, 16400, 18000, 18940],
   },
   beauty: {
     stock: [
@@ -417,7 +417,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
         sub: "Worth a call",
       },
     ],
-    heroSpark: [9800, 10400, 11200, 10900, 12100, 12650],
+    heroSpark: [6100, 7000, 6500, 7600, 8200, 8900, 9800, 10400, 11200, 10900, 12100, 12650],
   },
   wholesale: {
     stock: [
@@ -556,7 +556,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
         sub: "Mei Jia · 60 days",
       },
     ],
-    heroSpark: [142000, 158000, 151000, 169000, 177000, 186400],
+    heroSpark: [88000, 101000, 94000, 111000, 119000, 129000, 142000, 158000, 151000, 169000, 177000, 186400],
   },
   services: {
     stock: [
@@ -685,7 +685,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
       { label: "Proposals out", value: "3", tone: "caution" },
       { label: "Done, not invoiced", value: "RM 18,000", tone: "warn" },
     ],
-    heroSpark: [28000, 31000, 29500, 36000, 38000, 40500],
+    heroSpark: [17000, 20000, 18000, 22000, 24000, 25000, 28000, 31000, 29500, 36000, 38000, 40500],
   },
   fnb: {
     stock: [
@@ -819,7 +819,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
         sub: "Target under 28%",
       },
     ],
-    heroSpark: [2650, 2980, 3120, 2740, 3350, 3280],
+    heroSpark: [1600, 1900, 1700, 2100, 2200, 2400, 2650, 2980, 3120, 2740, 3350, 3280],
   },
   education: {
     stock: [
@@ -948,7 +948,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
       { label: "Fees unpaid", value: "9", tone: "caution", sub: "RM 2,180" },
       { label: "Did not renew", value: "5", tone: "warn" },
     ],
-    heroSpark: [19800, 21200, 22400, 23100, 23800, 24600],
+    heroSpark: [12000, 14000, 13000, 15000, 17000, 18000, 19800, 21200, 22400, 23100, 23800, 24600],
   },
 };
 
@@ -1027,5 +1027,5 @@ export const GENERIC_SAMPLE_EN: SampleSet = {
     { label: "Waiting", value: "2", tone: "caution" },
     { label: "To follow up", value: "1", tone: "warn" },
   ],
-  heroSpark: [3800, 4200, 4600, 4400, 5100, 5450],
+  heroSpark: [2400, 2700, 2500, 3000, 3200, 3500, 3800, 4200, 4600, 4400, 5100, 5450],
 };

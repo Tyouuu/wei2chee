@@ -54,6 +54,11 @@ const ROLE_ID: Record<string, string> = {
   todo: "dashboard-today",
   ranking: "dashboard-ranking",
   share: "dashboard-share",
+  /* 2026-09-03 加的两个拼法。id 要跟 industry-template 里 node(...) 的第二个
+     参数一字不差 —— 对不上的时候「换排法」会搬不动这一块，而画面上什么都不会讲。 */
+  target: "dashboard-target",
+  tabbed: "dashboard-tabbed",
+  tiles: "dashboard-tiles",
   flow: "dashboard-workflow",
   activity: "dashboard-activity",
   progress: "dashboard-progress",

@@ -71,6 +71,19 @@ export type Chrome = {
      *  differences between ours and eleven competitors' -- see
      *  design-system/components/stat-row.tsx for what was measured. */
     trendTitle: string;
+    /**
+     * 🔴 这两句本来写死「最近六期」，而 2026-09-03 示例的期数改成十二之后
+     * **画面上画着十二根柱子，底下写着六期** —— 一句查得出来是假的话，
+     * 而且它长在客人会拿去给他自己客人看的那一页上。
+     *
+     * 🔴 第一版改成了**函式**，而这份 copy 会从伺服器传进浏览器的组件里 ——
+     * `Functions cannot be passed directly to Client Components`，
+     * 整个风格画廊变成空白，一张卡都不剩。这个仓库栽在同一条上至少三次
+     * （见 puck-config-client 档头的 BLOCKS / BLOCK_COPY）。
+     *
+     * 所以留字串，里面放一个 `{n}` —— 期数在产生页面的时候填进去，
+     * 那一步是在伺服器上跑的，出来的还是一个字串。
+     */
     trendCaption: string;
     /** Six period labels for that chart's x-axis, oldest first, matching
      *  `heroSpark` in the sample files. Relative rather than named months so
@@ -104,6 +117,19 @@ export type Chrome = {
     tabTrend: string;
     tabShare: string;
     tabFlow: string;
+    /**
+     * 一排小格子上的三个标签。
+     *
+     * 🔴 第一版拿的是指标排那三个数字，於是 1:1 的裁图上**同一页把同一组数字
+     * 印了两遍**。那正是「印」那一套风格被砍掉的理由（同一行印两次同一个数字），
+     * 而我在补零件的时候又做了一次。
+     *
+     * 所以这三个必须问**别的问题**：一共几个客户、最大的一单、平均一单 ——
+     * 三个都是从同一份记录算出来的，而三个都不是上面那一排。
+     */
+    tileCount: string;
+    tileBiggest: string;
+    tileAverage: string;
   };
 
   customers: {
@@ -248,9 +274,9 @@ const EN: Chrome = {
       `How a ${industryName} runs, day to day — generated from your trade as a starting point. Every word here is yours to change.`,
     workflowTitle: "Your workflow",
     recent: (order) => `Recent ${plural(order).toLowerCase()}`,
-    sparkLabel: "Last six periods",
+    sparkLabel: "Last {n} periods",
     trendTitle: "Revenue trend",
-    trendCaption: "Last six periods",
+    trendCaption: "Last {n} periods",
     periods: ["−5", "−4", "−3", "−2", "Last", "Now"],
     todoTitle: "To follow up today",
     todoAction: "Open",
@@ -261,6 +287,9 @@ const EN: Chrome = {
     tabTrend: "Trend",
     tabShare: "Share",
     tabFlow: "Stages",
+    tileCount: "On the books",
+    tileBiggest: "Biggest one",
+    tileAverage: "Average one",
   },
 
   customers: {
@@ -406,9 +435,9 @@ const ZH: Chrome = {
       `${industryName}的日常运作总览 — 这是根据你的行业自动生成的起点，全部内容都可以改。`,
     workflowTitle: "你的业务流程",
     recent: (order) => `最近的${order}`,
-    sparkLabel: "最近六期",
+    sparkLabel: "最近 {n} 期",
     trendTitle: "收入走势",
-    trendCaption: "最近六期",
+    trendCaption: "最近 {n} 期",
     periods: ["−5", "−4", "−3", "−2", "上期", "本期"],
     todoTitle: "今天要跟的",
     todoAction: "打开",
@@ -419,6 +448,9 @@ const ZH: Chrome = {
     tabTrend: "走势",
     tabShare: "占比",
     tabFlow: "流程",
+    tileCount: "手上一共",
+    tileBiggest: "最大的一单",
+    tileAverage: "平均一单",
   },
 
   customers: {
