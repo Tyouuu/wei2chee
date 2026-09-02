@@ -123,6 +123,16 @@ const PREFIX = args.includes("--prefix");
 */
 const EFFORT = args.includes("--effort") ? args[args.indexOf("--effort") + 1] : null;
 const ONLY = args.includes("--only") ? args[args.indexOf("--only") + 1] : null;
+/*
+  --blind: RUN THE SAME CASES WITH THE SELECTION TAKEN AWAY.
+
+  Not a debug switch, a measurement. 「短一点」「拿掉」「换一张」 carry almost no
+  information as words and none at all as a request -- what makes them
+  answerable is that he clicked the thing first, and until 2026-08-31 the editor
+  knew which block that was and never sent it. This flag reproduces that, so the
+  value of sending it is a number rather than a claim.
+*/
+const BLIND = args.includes("--blind");
 
 for (const line of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
   const m = /^([A-Z0-9_]+)\s*=\s*(.*)$/.exec(line.trim());
@@ -658,6 +668,82 @@ const CASES = [
     note: "撤销是编辑器的按钮，不是它的操作 —— 该讲清楚在哪里按",
   },
 
+  /*
+    ── 他讲得很少，因为东西就在他眼前 ─────────────────────
+
+    2026-08-31: 「我要你能在客户给很少资讯的情况下 都能判断出客人在讲什么」.
+
+    A contractor on a phone between jobs does not type sentences. He taps the
+    block and says 「短一点」. As TEXT that carries almost nothing; on SCREEN it
+    is completely unambiguous, because the object of the sentence is the thing
+    he just opened -- and the editor has always known which block that is (the
+    panel header says 「改这一块 · 官网大标题」) and never sent it. So the model
+    was being asked to answer a sentence with its object removed.
+
+    Every case below is scored twice: with the selection, and with `--blind`,
+    which reproduces the product before 2026-08-31. The pair is the measurement.
+
+    ⚠️ The point is NOT that it should always act. 「短一点」 has its object on
+    screen and its answer in the word; 「加一栏」 has its object on screen and NO
+    answer anywhere, and asking is still right. What the selection removes is
+    「which block」, never 「changed to what」.
+  */
+  {
+    name: "很少字 · 点着标题说短一点",
+    ask: "短一点",
+    selected: "dashboard-header",
+    expect: ["set_text"],
+    // Rewriting his heading shorter is the answer; deleting the block he is
+    // looking at is the worst possible reading of one word.
+    forbid: ["remove_component"],
+  },
+  {
+    name: "很少字 · 点着流程条说拿掉",
+    ask: "拿掉",
+    selected: "dashboard-flow",
+    expect: ["remove_component"],
+  },
+  {
+    name: "很少字 · 点着表格说太挤了",
+    ask: "这个太挤了",
+    selected: "dashboard-table",
+    accept: ["set_variant"],
+  },
+  {
+    name: "很少字 · 点着第一屏说这张不好",
+    ask: "这张不好",
+    selected: "site-hero",
+    page: SITE_PAGE,
+    expect: [],
+    suggest: "pick_photo",
+    note: "东西在眼前，但照片不该它挑 —— 带他去选图器",
+  },
+  {
+    /*
+      THE OTHER HALF, AND IT IS WHAT KEEPS THIS FROM BECOMING A LICENCE TO GUESS.
+
+      He is holding a block and still has not said what he wants it to become.
+      The selection answers 「哪一块」 and answers nothing else, so this is a
+      question -- and it is the same one 任务 31 already judged correct.
+    */
+    name: "很少字 · 点着表格说加一栏",
+    ask: "加一栏",
+    selected: "dashboard-table",
+    expect: [],
+    note: "块知道了，栏名还是没讲 —— 该问",
+  },
+  {
+    /*
+      THE PAIR. Identical word, nothing selected. With no object anywhere the
+      honest answer is to ask which block, and this is exactly what --blind
+      turns every case above into.
+    */
+    name: "很少字 · 什么都没点说拿掉",
+    ask: "拿掉",
+    expect: [],
+    note: "没点任何东西，该问哪一块",
+  },
+
   {
     name: "含糊 · 只说了一半",
     ask: "那个金额的地方怪怪的",
@@ -980,7 +1066,7 @@ const chosen = ONLY ? CASES.filter((c) => c.name.includes(ONLY)) : CASES;
  * that difference is where the assistant was caught claiming a change it had
  * not made.
  */
-function promptFor(ask, saved = false, history = [], page = null) {
+function promptFor(ask, saved = false, history = [], page = null, selected = null) {
   const layout = page ?? PAGE();
   const designDoc = buildDesignDoc("ledger", null);
   // Order mirrors the route exactly, including the reason for it: everything
@@ -996,7 +1082,7 @@ This page: ${saved
 
 ${designDoc ? `${designDoc}\n` : ""}${darkPalettes().length ? `明暗（从配色量出来的）: 深底的配色只有 ${darkPalettes().join("、")}。\n「太亮了」「暗一点」用它回答，不要换风格。\n其他每一套配色的底都是近白的。\n` : ""}
 Blocks currently on this page:
-${describeLayout(layout)}
+${describeLayout(layout, selected)}
 ${renderHistory(history) ? `
 刚才这段对话里发生过的事（最新的在最下面）:
 ${renderHistory(history)}
@@ -1133,8 +1219,8 @@ function dataUrl(path) {
   return `data:image/jpeg;base64,${readFileSync(path).toString("base64")}`;
 }
 
-async function once(ask, image, saved = false, history = [], page = null) {
-  const text = promptFor(ask, saved, history, page);
+async function once(ask, image, saved = false, history = [], page = null, selected = null) {
+  const text = promptFor(ask, saved, history, page, selected);
   /*
     HOW LONG HE WAITS, WHICH NOTHING HAS EVER MEASURED.
 
@@ -1229,7 +1315,16 @@ for (const c of chosen) {
   const runs = [];
   for (let i = 0; i < N; i++) {
     try {
-      runs.push(await once(c.ask, c.image, c.saved === true, c.history ?? [], c.page ? c.page() : null));
+      runs.push(
+        await once(
+          c.ask,
+          c.image,
+          c.saved === true,
+          c.history ?? [],
+          c.page ? c.page() : null,
+          BLIND ? null : (c.selected ?? null),
+        ),
+      );
       if (process.env.EVAL_VERBOSE) console.log("   ", c.name, JSON.stringify({ ops: runs[runs.length-1].ops, design: runs[runs.length-1].design, exp: runs[runs.length-1].explanation, wrote: runs[runs.length-1].values }));
     } catch (e) {
       // tookMs null, not 0: a call that threw did not take no time, it took an

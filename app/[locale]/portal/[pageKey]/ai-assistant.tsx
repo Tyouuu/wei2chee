@@ -291,6 +291,15 @@ export function AiAssistant({
              lib/portal/record-ops.ts and founder-points 23. */
           pageKey,
           /*
+            WHICH BLOCK HE HAS OPEN.
+
+            The panel header已经 says 「改这一块 · 官网大标题」, so this component
+            has always known -- and never sent it. That is the whole object of
+            「短一点」「拿掉」「换一张」, which is how somebody talks when the thing
+            is already in front of them and their thumb is on a phone.
+          */
+          selected: blockId,
+          /*
             THE ASSISTANT COULD NOT REMEMBER THE LAST THING IT DID.
 
             Every call was stateless: the page, the sentence, nothing else. So

@@ -252,6 +252,25 @@ const CASES = [
   },
   {
     /*
+      THE SHORTEST SENTENCE THERE IS, AND THE WHOLE POINT IS THE WIRE.
+
+      2026-08-31: 「我要你能在客户给很少资讯的情况下 都能判断出客人在讲什么」.
+      A contractor on a phone taps a block and types 「短一点」. As text that
+      carries nothing; on screen it is unambiguous, because the object is the
+      thing he just opened. eval:editor proves the model handles it when it is
+      TOLD which block -- this proves the browser actually tells it, which is
+      the half this repo keeps failing to connect (thirteen times and counting).
+
+      Clicked, not passed as a parameter: whether `selected` survives the trip
+      from Puck's state into the request body is exactly what is under test.
+    */
+    name: "很少字 · 点着标题说短一点",
+    click: "dashboard-header",
+    ask: "短一点",
+    changed: true,
+  },
+  {
+    /*
       THE NET, TESTED WITHOUT SPENDING ANYTHING.
 
       Eleven times this product has shown a customer a sentence claiming a
@@ -425,6 +444,17 @@ try {
           body: JSON.stringify(c.fake),
         }),
       );
+    }
+
+    /* Click the block first when the case is about a selection, and put the
+       composer back in reach: selecting a block opens its own sheet. */
+    if (c.click) {
+      await p.locator(`[data-puck-component="${c.click}"]`).first().click({ force: true });
+      await p.waitForTimeout(1800);
+      if (!(await box.isVisible())) {
+        await p.getByRole("button", { name: /打开/ }).first().click();
+        await box.waitFor({ timeout: 15000 });
+      }
     }
 
     await box.fill(c.ask);

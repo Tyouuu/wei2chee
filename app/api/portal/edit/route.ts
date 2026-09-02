@@ -17,6 +17,7 @@ import {
   walkNodes,
   tableColumnKeys,
   firstRecordTable,
+  hasBlock,
 } from "@/lib/portal/layout-ops";
 import { COLUMN_KINDS } from "@/lib/portal/table-model";
 import { withFreshRows } from "@/lib/portal/live-rows";
@@ -299,6 +300,22 @@ Whole pages:
 - Handing somebody a question when they asked for help is how they stop using
   the assistant.
 
+当他已经点开了一块（清单上标着「← 他现在点开的就是这一块」）:
+- THAT IS THE OBJECT OF HIS SENTENCE. He clicked it first, so 「短一点」
+  「拿掉」「换一张」「太挤了」「这个改一下」 are all about THAT BLOCK, and they
+  are not vague at all -- the object is on the screen, it is just not in the
+  words. Act on it.
+- 「短一点」/「太长了」 -> set_text on that block's own longest prose field,
+  rewritten shorter with the SAME meaning. Never invent a new claim.
+- 「拿掉」/「不要了」 -> remove_component on that id.
+- 「换一张」/「这张不好」 -> suggestion pick_photo on that id, if it takes one.
+- 「太挤了」/「太素了」 -> set_variant on that id.
+- Only ask when the ANSWER is missing, not when the object is: 「改成红色」 on a
+  selected block still needs to know what red, and 「这里放我的电话」 still needs
+  the number. Those are questions. 「短一点」 is not.
+- If nothing is marked, he has not pointed at anything, and a one-word sentence
+  really is ambiguous -- then the section below applies.
+
 当老板指了一个东西，但没讲要改成什么:
 - 「那个金额的地方怎么怪怪的」, 「这里不太对」, 「上面那个怪怪的」 — this is
   NOT the section above, and the right answer is the opposite one. ASK.
@@ -360,7 +377,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { layout, instruction, pages, imageUrl, generated, history, pageKey } = (body ?? {}) as {
+  const { layout, instruction, pages, imageUrl, generated, history, pageKey, selected } = (body ?? {}) as {
     /** Which module is open. Sent by the browser, trusted for nothing except
      *  deciding whether a table row on THIS page is a business record or a
      *  layout row -- and the RPC it routes to resolves the project from the
@@ -422,6 +439,19 @@ export async function POST(req: NextRequest) {
      * model does not talk about a change that is no longer on the page.
      */
     history?: { asked?: string; did?: string; reverted?: boolean }[];
+    /**
+     * THE BLOCK HE HAS OPEN, WHICH IS MOST OF WHAT A SHORT SENTENCE MEANS.
+     *
+     * 「短一点」「拿掉」「换一张」「这个太挤了」 carry almost no information as
+     * text and are completely unambiguous on screen, because he clicked the
+     * thing first. The editor has always known which block that is -- the panel
+     * header says 「改这一块 · 官网大标题」 -- and it was never sent, so the model
+     * had to answer a sentence with the object removed.
+     *
+     * Trusted for nothing: it is looked up in the layout, and an id that is not
+     * there is dropped rather than repeated to the model.
+     */
+    selected?: string | null;
   };
 
   if (!layout || !Array.isArray(layout.content) || typeof instruction !== "string") {
@@ -476,6 +506,14 @@ export async function POST(req: NextRequest) {
     last, where recency helps it; the listing moves down beside it, so the two
     volatile things sit together with everything fixed above them.
   */
+  /* Verified against the page rather than believed. An id the layout does not
+     contain would put the model in front of a block that is not there, which is
+     a worse starting point than no selection at all. */
+  const here =
+    typeof selected === "string" && selected
+      ? (hasBlock(layout, selected) ? selected : null)
+      : null;
+
   const userPrompt = `Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
 ${renderBlockRules() ? `这些块自己的规矩（字段名看不出来的）:
 ${renderBlockRules()}
@@ -498,7 +536,7 @@ ${designDoc}
 「太亮了」只能用更暗的风格回答，拿配色回答等于承诺一个他看不到的变化。
 `}
 Blocks currently on this page:
-${describeLayout(layout)}
+${describeLayout(layout, here)}
 ${recent ? `\n刚才这段对话里发生过的事（最新的在最下面）:\n${recent}\n` : ""}
 The business owner asked:
 "${trimmed}"`;

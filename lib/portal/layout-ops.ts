@@ -550,10 +550,22 @@ export function walkNodes(nodes: PuckNode[]): PuckNode[] {
  * field is one more thing for it to "helpfully" rewrite. This is the smallest
  * description that still lets it target the right block.
  */
-export function describeLayout(layout: PuckLayout): string {
+/**
+ * @param selected  The block the owner has open in the panel, if any. Marked in
+ *   the listing rather than described separately, because 「短一点」 and 「拿掉」
+ *   are sentences ABOUT that block and the model reads them next to it.
+ */
+/** Whether this page actually contains that block. Used to check a selection
+ *  the browser sent before repeating it back to the model -- see the route. */
+export function hasBlock(layout: PuckLayout, id: string): boolean {
+  return walkNodes(layout.content ?? []).some((n) => String(n.props?.id ?? "") === id);
+}
+
+export function describeLayout(layout: PuckLayout, selected?: string | null): string {
   return walkNodes(layout.content ?? [])
     .map((n) => {
       const id = String(n.props?.id ?? "");
+      const here = selected && id === selected ? "  ← 他现在点开的就是这一块" : "";
       const label = COMPONENT_CONFIGS[n.type]?.label ?? n.type;
       /*
         THIS BLOCK'S OWN FIELDS, NOT THE WHOLE LIBRARY'S.
@@ -654,7 +666,7 @@ export function describeLayout(layout: PuckLayout): string {
         extra = ` columns=[${cols}]`;
       }
 
-      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${spare}${photo}${variants}${extra}`;
+      return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${spare}${photo}${variants}${extra}${here}`;
     })
     .join("\n");
 }
