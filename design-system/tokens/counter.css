@@ -97,7 +97,7 @@
      a wider spread than either sibling (Ledger: 1.000-0.7017, Hearth:
      0.9779-0.6613), because the border steps are meant to read as ruled lines on
      a drafting sheet, not just a soft edge. */
-  --color-canvas: #f0f2f5;
+  --color-canvas: #f5f6f8;
   --color-ink-950: #e9ebef;
   --color-ink-900: #ffffff;
   --color-ink-850: #fafafa;
@@ -166,9 +166,15 @@
      of the 4.5:1 the rail test enforces, and both HIGHER than the navy they
      replace (10.30:1 / 6.41:1). Taking the hue out made the rail more legible,
      not less. */
-  --color-nav-bg: #17181a;
-  --color-nav-bg-deep: #0f1012;
-  --color-nav-fg: #e8e8e8;
+  /* 🔴 侧栏改成浅色（2026-09-03）。老板：`我想要把全部风格的颜色都改去白色
+     那些模版用白色确实比较好看 现在主流的也是是用白色的多`。
+     量出来他讲对了：六个参考页里**五个是浅侧栏**（只有 Ant 是深的），
+     而我们六套里**五个是深的** —— 那正是并排看「不像」的一大半。
+     ⚠️ 每一套的分别从此不靠底色了，靠的是[重点 7c](../../docs/founder-points.md)
+     那几样：哪几块、什么顺序、什么形状、多密、主色。 */
+  --color-nav-bg: #ffffff;
+  --color-nav-bg-deep: #f7f8f9;
+  --color-nav-fg: #17181a;
   /* ⚠️ WAS #5c6b7e, WHICH IS 3.39:1 ON THIS RAIL -- and the note above claims
      6.44:1 for it. Measured in a browser on 2026-08-31: NINETEEN strings under
      4.5:1 on one page, every one of them this pair. It is not a corner of the
@@ -184,7 +190,7 @@
      #8b9aab is the same hue and saturation lifted to the lightness this file
      already said it had: 6.41:1 on the rail, 6.86:1 on the active row, and
      still clearly quieter than --color-nav-fg at 10.30:1. */
-  --color-nav-fg-dim: #b7b7b7;
+  --color-nav-fg-dim: #6b6f76;
   /*
      THE ACTIVE AND HOVER GROUNDS BELONG TO THE RAIL'S GROUND.
 
@@ -206,9 +212,9 @@
      foreground token that only one register would use. A step off the navy
      keeps the density and the fill and loses nothing a customer can name.
   */
-  --color-nav-hover: #232427;
-  --color-nav-active: #2e3034;
-  --color-nav-border: #26282c;
+  --color-nav-hover: #f1f2f4;
+  --color-nav-active: #e8eaed;
+  --color-nav-border: #e3e5e8;
   --color-nav-accent: #ffffff;
 
   /* The card is pure white, agreeing with Ledger's choice over Hearth's tinted

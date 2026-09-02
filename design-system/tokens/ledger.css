@@ -66,7 +66,7 @@
      panel; this canvas is a tint you feel rather than see, which is what
      lets tables sit directly on it without looking like they are on the
      wrong surface. */
-  --color-canvas: #f3f4f6;
+  --color-canvas: #f5f6f8;
   --color-ink-950: #eaeff5;
   --color-ink-900: #ffffff;
   --color-ink-850: #f2f6fb;
@@ -100,13 +100,19 @@
      same rust lifted in lightness (OKLCH L 0.7488 from 0.5571) while holding
      the hue (49.6 against the primary's 45.8, a 3.8 degree drift), so it still
      reads as this register's accent rather than a second one. */
-  --color-nav-bg: #14273d;
-  --color-nav-bg-deep: #101d2e;
-  --color-nav-fg: #e9eef5;
-  --color-nav-fg-dim: #a6b4c6;
-  --color-nav-hover: #1e3450;
-  --color-nav-active: #243d59;
-  --color-nav-border: #26405d;
+  /* 🔴 侧栏改成浅色（2026-09-03）。老板：`我想要把全部风格的颜色都改去白色
+     那些模版用白色确实比较好看 现在主流的也是是用白色的多`。
+     量出来他讲对了：六个参考页里**五个是浅侧栏**（只有 Ant 是深的），
+     而我们六套里**五个是深的** —— 那正是并排看「不像」的一大半。
+     ⚠️ 每一套的分别从此不靠底色了，靠的是[重点 7c](../../docs/founder-points.md)
+     那几样：哪几块、什么顺序、什么形状、多密、主色。 */
+  --color-nav-bg: #ffffff;
+  --color-nav-bg-deep: #f7f8fa;
+  --color-nav-fg: #14273d;
+  --color-nav-fg-dim: #64748b;
+  --color-nav-hover: #f1f5f9;
+  --color-nav-active: #e6eef7;
+  --color-nav-border: #e2e8f0;
   --color-nav-accent: #f39158;
 
   /* Deep navy, not black. Stripe's ink is #0d253d; Linear, Vercel and

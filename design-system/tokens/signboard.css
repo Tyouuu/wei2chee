@@ -85,7 +85,7 @@
      a wider spread than either sibling (Ledger: 1.000-0.7017, Hearth:
      0.9779-0.6613), because the border steps are meant to read as ruled lines on
      a drafting sheet, not just a soft edge. */
-  --color-canvas: #f7f4ef;
+  --color-canvas: #faf8f4;
   --color-ink-950: #e4e4e7;
   --color-ink-900: #ffffff;
   --color-ink-850: #f2eee7;
@@ -132,10 +132,16 @@
      at 4.65:1. The accent is this file's own --color-primary (#2261dd, 3.22:1
      down there) lifted in lightness -- OKLCH L 0.7343 from 0.5300, hue held at
      262.8 against 262.0. */
-  --color-nav-bg: #161412;
-  --color-nav-bg-deep: #0d0c0b;
-  --color-nav-fg: #e8eef9;
-  --color-nav-fg-dim: #9cabc4;
+  /* 🔴 侧栏改成浅色（2026-09-03）。老板：`我想要把全部风格的颜色都改去白色
+     那些模版用白色确实比较好看 现在主流的也是是用白色的多`。
+     量出来他讲对了：六个参考页里**五个是浅侧栏**（只有 Ant 是深的），
+     而我们六套里**五个是深的** —— 那正是并排看「不像」的一大半。
+     ⚠️ 每一套的分别从此不靠底色了，靠的是[重点 7c](../../docs/founder-points.md)
+     那几样：哪几块、什么顺序、什么形状、多密、主色。 */
+  --color-nav-bg: #ffffff;
+  --color-nav-bg-deep: #faf8f5;
+  --color-nav-fg: #161412;
+  --color-nav-fg-dim: #7a736c;
   /*
      THE ACTIVE AND HOVER GROUNDS BELONG TO THE RAIL'S GROUND.
 
@@ -151,9 +157,9 @@
      pair can never disagree again: whatever a register makes its rail out of,
      the row you are on is a step off it in the direction of the words.
   */
-  --color-nav-hover: #2f2e2e;
-  --color-nav-active: #484849;
-  --color-nav-border: #2c4569;
+  --color-nav-hover: #f5f2ed;
+  --color-nav-active: #efeae2;
+  --color-nav-border: #e7e1d8;
   --color-nav-accent: #ff5c47;
 
   /* The card is pure white, agreeing with Ledger's choice over Hearth's tinted
