@@ -141,6 +141,146 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
       font:inherit;font-size:17px;font-weight:650;cursor:pointer}
 .wide.ghost{background:none;color:var(--ptext);border:1px solid var(--line);margin-top:10px}
 
+/* ══ 五套的结构，逐项量自 .screenshots/clone/crop-<风格>.jpg ══════════════
+   老板 2026-09-03：「可以全部都做吧 把剩下的也复刻」。
+   每一段下面写的是**那一页真的怎么排**，不是我记得它怎么排。 */
+
+/* ─ 炉 ← Fresha #4 ────────────────────────────────────────────────────
+   顶栏白 · 三段式：左「•••」· 中间日期＋下拉（居中）· 右筛选图标
+   下面一条：圆形头像＋人名，居中（在看哪个师傅的那一栏）
+   时间在左边一条 52px 的窄栏，每一格一条细线
+   每一笔是一块：时间范围小字 → 粗人名 → 服务名小字
+   ⚠️ 块**不满宽**（左边让给时间栏），圆角只有 4px —— 我原本做 14px，太圆 */
+.fbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;
+      background:var(--card)}
+.fbar .ico{width:44px;height:44px;display:grid;place-items:center;color:var(--dim);font-size:19px}
+.fbar .day{font-size:19px;font-weight:680;display:flex;align-items:center;gap:6px}
+.fwho{display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px 0 12px;
+      background:var(--card);border-bottom:1px solid var(--line)}
+.fwho .av2{width:52px;height:52px;border-radius:50%;background:var(--soft);color:var(--ptext);
+           display:grid;place-items:center;font-size:17px;font-weight:700}
+.fwho .nm3{font-size:15px}
+.fgrid{padding:0 0 8px}
+.fslot{display:grid;grid-template-columns:52px 1fr;min-height:38px;border-top:1px solid var(--line)}
+.fslot .ft{font-size:12px;color:var(--dim);padding:6px 10px 0 0;text-align:right;line-height:1.15}
+.flane{padding:4px 16px 4px 0}
+.fblk{border-radius:4px;padding:9px 12px;background:var(--bg2);min-height:46px}
+.fblk .r1{font-size:12.5px;color:var(--dim)}
+.fblk .r2{font-size:15px;font-weight:680;margin-top:1px}
+.fblk .r3{font-size:13px;color:var(--dim);margin-top:1px}
+
+/* ─ 中台 ← Zoho Books #0 ──────────────────────────────────────────────
+   顶栏白：☰＋公司名（左）· 铃铛（右）
+   一排分页标签，选中的下面一条粗蓝线
+   bento：左边一张高的淡蓝卡（两个数字上下叠，各带⌄），右边两张小淡红卡（带›）
+     ⚠️ 我原本做成等分两格 —— 那不是它，它是 1 大 2 小
+   Quick Create：闪电＋标题，4 个方形圆角淡底图标（不是 8 个）
+   Cash Flow 卡：标题＋「This Fiscal Year ⌄」＋折线 */
+.zbar{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--card)}
+.zbar .lhs{display:flex;align-items:center;gap:14px;font-size:18px;font-weight:640}
+.ztabs{display:flex;gap:22px;padding:0 16px;background:var(--card);border-bottom:1px solid var(--line)}
+.ztabs button{background:none;border:0;font:inherit;font-size:14.5px;color:var(--dim);
+              padding:10px 0 9px;cursor:pointer;min-height:44px;border-bottom:3px solid transparent}
+.ztabs button[aria-current="true"]{color:var(--ptext);font-weight:640;border-bottom-color:var(--ptext)}
+.zbento{display:grid;grid-template-columns:1.15fr 1fr;gap:10px;padding:12px 14px 0}
+.zbig{background:var(--soft);border-radius:8px;padding:14px}
+.zbig .k{font-size:13px;color:var(--dim)}
+.zbig .v3{font-size:21px;font-weight:700;margin:2px 0 14px;font-variant-numeric:tabular-nums}
+.zbig .v3.last{margin-bottom:0}
+.zsmall{display:flex;flex-direction:column;gap:10px}
+.zwarn{background:color-mix(in srgb,var(--clay) 12%,#fff);border-radius:8px;padding:12px 13px;
+       display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex:1}
+.zwarn .n3{font-size:20px;font-weight:700;line-height:1.1}
+.zwarn .l3{font-size:12.5px;color:var(--dim);margin-top:3px}
+.zwarn .go{color:var(--dim);font-size:17px}
+.zq{padding:20px 14px 4px;font-size:15px;font-weight:680;display:flex;align-items:center;gap:7px}
+.zgrid{display:grid;grid-template-columns:repeat(4,1fr);padding:6px 8px 14px}
+.zgrid button{background:none;border:0;font:inherit;font-size:12.5px;color:var(--ink);cursor:pointer;
+              padding:8px 2px;min-height:74px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.zgrid .sq{width:44px;height:44px;border-radius:9px;background:var(--soft);color:var(--ptext);
+           display:grid;place-items:center;font-size:13px;font-weight:700;font-family:var(--mono)}
+.zchart{border-top:8px solid var(--canvas);padding:16px 14px 10px}
+.zchart .hd2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.zchart .hd2 b{font-size:15px;font-weight:680}
+.zchart .hd2 span{font-size:13px;color:var(--dim)}
+
+/* ─ 图纸 ← QuickBooks #4 ──────────────────────────────────────────────
+   一张单据卡：小灰标签在上、值在下 · 细线 · 品名＋金额靠右 ·
+   明细做成一颗淡灰药丸 · Subtotal / Discount / Tax 三行 · 细线 ·
+   Total 粗一号 · 底下两颗：左边纯文字、右边实心 · 最底一条「问点什么」 */
+.qdoc{margin:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:var(--rl);padding:18px}
+.qk{font-size:12.5px;color:var(--dim)}
+.qv{font-size:16px;font-weight:600;margin:2px 0 14px}
+.qhr{border-top:1px solid var(--line);margin:0 0 13px}
+.qline{display:flex;justify-content:space-between;gap:12px;font-size:15.5px;font-weight:600}
+.qtag{display:inline-block;background:var(--canvas);border-radius:5px;padding:4px 9px;
+      font-size:12.5px;color:var(--dim);margin:7px 0 13px}
+.qsum{display:flex;justify-content:space-between;gap:12px;font-size:14.5px;padding:4px 0}
+.qsum.total{font-size:17px;font-weight:700;padding-top:11px}
+.qacts{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px}
+.qtext{background:none;border:0;font:inherit;font-size:15px;font-weight:640;color:var(--ptext);
+       cursor:pointer;min-height:44px;padding:0 2px}
+.qsolid{background:var(--primary);color:#fff;border:0;border-radius:var(--r);font:inherit;
+        font-size:15px;font-weight:640;min-height:44px;padding:0 20px;cursor:pointer}
+.qask{margin:8px 14px 14px;border:1px solid var(--line);border-radius:999px;min-height:52px;
+      display:flex;align-items:center;gap:10px;padding:0 8px 0 6px;color:var(--dim);font-size:14.5px}
+.qask .plus{width:38px;height:38px;border-radius:50%;background:var(--canvas);display:grid;
+            place-items:center;font-size:19px;color:var(--ink)}
+
+/* ─ 瑞士 ← Notion #2 ──────────────────────────────────────────────────
+   顶上一条横幅＋一个大图标压在上面 · 小灰字一行 · 大标题 ~30px
+   区段标题 深色 19px 粗，下面一条细线（不是全大写小灰字 —— 我原本做错）
+   每一行：图标＋带下划线的字＋右边的值；行很矮 */
+.ncover{height:96px;background:linear-gradient(120deg,var(--soft),var(--canvas))}
+.nmark{width:62px;height:62px;border-radius:12px;background:var(--card);border:1px solid var(--line);
+       display:grid;place-items:center;font-size:26px;margin:-31px 0 0 20px;position:relative}
+.npage{padding:0 20px}
+.nmeta{font-size:13px;color:var(--dim);margin:12px 0 6px}
+.ntitle{font-size:30px;font-weight:720;letter-spacing:-.02em;margin:0 0 8px}
+.nsec{font-size:19px;font-weight:700;margin:26px 0 2px;padding-bottom:7px;
+      border-bottom:1px solid var(--line)}
+.nrow{display:flex;align-items:center;gap:11px;padding:9px 0;min-height:44px}
+.nrow .ni{width:20px;text-align:center;font-size:15px}
+.nrow .nt{flex:1;font-size:15px;border-bottom:1px solid var(--line);padding-bottom:1px;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nrow .nv{font-size:14.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+
+/* ─ 招牌 ← Square #2 ──────────────────────────────────────────────────
+   ⚠️ **左对齐，不是居中** —— 我原本做居中，那一条就错了
+   标题 26px 粗（左）＋ 右边一颗圆形灰底图标钮
+   小灰全大写标签 · 52px 的数字，左对齐
+   两颗药丸并排：左黑底白字、右灰底黑字（完全圆角）
+   行：方形圆角彩色图标＋名称＋副行＋右边两行数字
+   底下一条带下划线、居中的连结 */
+.sq1{padding:20px 20px 4px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sq1 h2{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.sq1 .gear{width:44px;height:44px;border-radius:50%;background:var(--canvas);display:grid;
+           place-items:center;font-size:17px;color:var(--dim)}
+.sqav{padding:8px 20px 0;font-size:12px;font-family:var(--mono);letter-spacing:.1em;
+      text-transform:uppercase;color:var(--dim)}
+.sqfig{padding:2px 20px 0;font-size:52px;font-weight:750;letter-spacing:-.035em;line-height:1.05;
+       font-variant-numeric:tabular-nums}
+.sqpair{display:flex;gap:12px;padding:18px 20px 4px}
+.sqpair button{flex:1;min-height:56px;border:0;border-radius:999px;font:inherit;font-size:16px;
+               font-weight:650;cursor:pointer}
+.sqpair .dark{background:var(--ink);color:#fff}
+.sqpair .soft2{background:var(--canvas);color:var(--ink)}
+.sqsec{padding:22px 20px 2px;font-size:19px;font-weight:700}
+.sqrow{display:flex;align-items:center;gap:13px;padding:14px 20px;border-top:1px solid var(--line);
+       min-height:64px}
+.sqrow.first{border-top:0}
+.sqrow .sqi{width:40px;height:40px;flex:0 0 40px;border-radius:9px;display:grid;place-items:center;
+            font-size:12px;font-weight:700;font-family:var(--mono);color:#fff}
+.sqrow .sqt{flex:1;min-width:0}
+.sqrow .sqn{font-size:15.5px;font-weight:640}
+.sqrow .sqs{font-size:13px;color:var(--dim);margin-top:2px}
+.sqrow .sqv{text-align:right;font-variant-numeric:tabular-nums}
+.sqrow .sqv b{display:block;font-size:15.5px;font-weight:650}
+.sqrow .sqv span{display:block;font-size:13px;color:var(--dim);margin-top:2px}
+.sqall{display:block;margin:16px auto 8px;background:none;border:0;font:inherit;font-size:15px;
+       font-weight:640;text-decoration:underline;text-underline-offset:4px;color:var(--ink);
+       cursor:pointer;min-height:44px}
+
 .status{height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:space-between;
         padding:0 16px;font-size:11px;font-family:var(--mono);color:var(--dim);
         background:var(--canvas)}
@@ -576,6 +716,131 @@ REG.signboard = {
         + '<div class="amt">'+esc(j.amt)+'</div></div>').join("")
     + '</div>',
 };
+
+
+/* 下一个整点 —— Fresha 的块头写的是「12:00 – 1:00 pm」这种区间 */
+const nextHour = (h) => { const n = (parseInt(h, 10) + 1) % 24; return String(n).padStart(2, "0") + ":00"; };
+/* Zoho 那张卡里那条折线。真的画出来，不放一张假图。 */
+function spark() {
+  const pts = [18, 19, 22, 40, 41, 41, 50, 50];
+  const W = 330, H = 92;
+  const min = Math.min(...pts), max = Math.max(...pts);
+  const d = pts.map((v, i) => (i ? "L" : "M") + (i * W / (pts.length - 1)).toFixed(1) + " "
+    + (H - ((v - min) / (max - min)) * (H - 8) - 4).toFixed(1)).join(" ");
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:92px" aria-hidden="true">'
+    + '<path d="' + d + ' L' + W + ' ' + H + ' L0 ' + H + ' Z" fill="var(--soft)"/>'
+    + '<path d="' + d + '" fill="none" stroke="var(--ptext)" stroke-width="2.4" '
+    + 'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+/* ── 炉 ← Fresha #4 ─────────────────────────────────────────────────── */
+REG.hearth.today = () =>
+  '<div class="fbar"><span class="ico">&#8943;</span>'
+  + '<span class="day">Wed 3 Sep <span style="font-size:12px;opacity:.7">&#9662;</span></span>'
+  + '<span class="ico">&#9776;</span></div>'
+  + '<div class="fwho"><span class="av2">AH</span><span class="nm3">Ah Hock</span></div>'
+  + '<div class="fgrid">' + HOURS.map((h) => {
+      const at = DAY[h] || [];
+      return '<div class="fslot"><div class="ft">' + esc(h.replace(":00", ":00")) + '</div>'
+        + '<div class="flane">'
+        + at.map((d) => '<div class="fblk" style="--bg2:'
+            + (d.tone === "dim" ? "var(--canvas)" : 'color-mix(in srgb, var(--' + d.tone + ') 16%, #fff)')
+            + '">'
+            + '<div class="r1">' + esc(h) + ' &ndash; ' + esc(nextHour(h)) + '</div>'
+            + '<div class="r2">' + esc(d.who) + '</div>'
+            + '<div class="r3">' + esc(d.what) + '</div></div>').join("")
+        + '</div></div>';
+    }).join("")
+  + '</div>';
+
+/* ── 中台 ← Zoho Books #0 ───────────────────────────────────────────── */
+REG.counter.today = () =>
+  '<div class="zbar"><span class="lhs">&#9776; ' + esc(BIZ.co2) + '</span>'
+  + '<span style="font-size:18px;color:var(--dim)">&#9788;</span></div>'
+  + '<div class="ztabs">'
+  + ['Dashboard', 'Alerts', 'Help'].map((t, i) =>
+      '<button aria-current="' + (i === 0) + '">' + t + '</button>').join("")
+  + '</div>'
+  + '<div class="zbento"><div class="zbig">'
+  + '<div class="k">Total receivable</div><div class="v3">RM 96,240 <span style="font-size:12px;opacity:.6">&#9662;</span></div>'
+  + '<div class="k">Total payable</div><div class="v3 last">RM 18,900 <span style="font-size:12px;opacity:.6">&#9662;</span></div>'
+  + '</div><div class="zsmall">'
+  + '<div class="zwarn"><div><div class="n3">2</div><div class="l3">Overdue quotes</div></div><span class="go">&rsaquo;</span></div>'
+  + '<div class="zwarn"><div><div class="n3">1</div><div class="l3">Overdue bills</div></div><span class="go">&rsaquo;</span></div>'
+  + '</div></div>'
+  + '<div class="zq">&#9889; Quick create</div>'
+  + '<div class="zgrid">'
+  + [["QT", "Quote"], ["OR", "Order"], ["RC", "Receipt"], ["EX", "Expense"]]
+      .map(([a, b]) => '<button><span class="sq">' + a + '</span>' + b + '</button>').join("")
+  + '</div>'
+  + '<div class="zchart"><div class="hd2"><b>&#9203; Cash flow</b><span>This year &#9662;</span></div>'
+  + spark() + '</div>';
+
+/* ── 图纸 ← QuickBooks #4 ───────────────────────────────────────────── */
+REG.blueprint.jobs = () =>
+  '<div class="hd"><h2>QT-2026-0018</h2></div>'
+  + '<div class="qdoc">'
+  + '<div class="qk">Due date</div><div class="qv">3 Oct 2026</div>'
+  + '<div class="qhr"></div>'
+  + '<div class="qk">Job</div>'
+  + '<div class="qline"><span>Taman Desa 3-bedroom refit</span><span>RM 48,500</span></div>'
+  + '<div class="qtag">Hacking &middot; tiling &middot; carpentry &middot; paint</div>'
+  + '<div class="qhr"></div>'
+  + '<div class="qsum"><span>Subtotal</span><span>RM 48,500</span></div>'
+  + '<div class="qsum"><span>Deposit (30%)</span><span>&minus; RM 14,550</span></div>'
+  + '<div class="qsum"><span>SST (8%)</span><span>RM 3,880</span></div>'
+  + '<div class="qhr" style="margin-top:11px"></div>'
+  + '<div class="qsum total"><span>Balance due</span><span>RM 37,830</span></div>'
+  + '<div class="qacts"><button class="qtext">Edit quote</button>'
+  + '<button class="qsolid">Send to Mr. Chan</button></div>'
+  + '</div>'
+  + '<div class="qask"><span class="plus">+</span>Ask anything</div>';
+
+/* ── 瑞士 ← Notion #2 ───────────────────────────────────────────────── */
+REG.swiss.today = () =>
+  '<div class="ncover"></div><div class="nmark">&#128203;</div>'
+  + '<div class="npage">'
+  + '<div class="nmeta">&#128172; Add comment</div>'
+  + '<h2 class="ntitle">' + esc(BIZ.co2) + '</h2>'
+  + ["Confirmed", "Awaiting", "Quoting", "Overdue"].map((k) => {
+      const rows = JOBS.filter((j) => j.st === k);
+      if (!rows.length) return "";
+      return '<div class="nsec">' + esc(k) + '</div>'
+        + rows.map((j) => '<div class="nrow"><span class="ni">&#128196;</span>'
+            + '<span class="nt">' + esc(j.t) + '</span>'
+            + '<span class="nv">' + esc(j.amt) + '</span></div>').join("");
+    }).join("")
+  + '</div>';
+
+REG.swiss.jobs = () =>
+  '<div class="ncover"></div><div class="nmark">&#128736;</div>'
+  + '<div class="npage"><div class="nmeta">&#128172; Add comment</div>'
+  + '<h2 class="ntitle">Projects</h2>'
+  + '<div class="nsec">All jobs</div>'
+  + JOBS.map((j) => '<div class="nrow"><span class="ni">&#128196;</span>'
+      + '<span class="nt">' + esc(j.t) + '</span>'
+      + '<span class="nv">' + esc(j.amt) + '</span></div>').join("")
+  + '</div>';
+
+/* ── 招牌 ← Square #2 ───────────────────────────────────────────────── */
+REG.signboard.today = () =>
+  '<div class="sq1"><h2>Money in</h2><span class="gear">&#9881;</span></div>'
+  + '<div class="sqav">Available</div>'
+  + '<div class="sqfig">RM 12,400</div>'
+  + '<div class="sqpair"><button class="dark">Charge</button>'
+  + '<button class="soft2">Transfer</button></div>'
+  + '<div class="sqsec">Recent activity</div>'
+  + JOBS.slice(0, 3).map((j, i) =>
+      '<div class="sqrow' + (i === 0 ? " first" : "") + '">'
+      /* ⚠️ 状态色直接当图标底色，白字只有 3.64:1（量出来的）。
+         Square 那几颗本来就是深的（黑 · 深绿），所以压深一档
+         既更像它，也读得到 —— 同一个色相，不是换一个颜色。 */
+      + '<span class="sqi" style="background:color-mix(in srgb, var(--' + j.tone + ') 72%, #000)">'
+      + esc(initials(j.who)) + '</span>'
+      + '<span class="sqt"><span class="sqn">' + esc(j.t) + '</span>'
+      + '<span class="sqs">' + esc(j.st) + '</span></span>'
+      + '<span class="sqv"><b>' + esc(j.amt) + '</b><span>' + esc(j.paid || "RM 0") + '</span></span></div>').join("")
+  + '<button class="sqall">View all activity</button>';
 
 function render(key, screen) {
   const r = REG[key];
