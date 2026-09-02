@@ -6717,6 +6717,54 @@ fontSizeSmall 11 · Label 13 · Normal 15 · Medium 16 · Large 17 · Hero 36
 - [ ] 记进 `design-system/upstream.json`（**等真的拿了东西再记**，
       现在写进去那把尺会替一个我们什么都没拿的仓库天天查更新）
 
+
+#### 再挖一轮 —— 15 组搜寻，捞出 9 个能拿、4 个只能看（2026-09-03 他追问）
+> `再去找找 还有什么 就那么少罢了吗`
+
+**又跑了十五组搜寻**（按主题 · 按语言 · 按星数 · 按最后更新），许可全部用 API 查过。
+
+##### ✅ 拿得了代码（许可干净 ＋ 还活着）
+| | ★ | 许可 | 语言 | 它是我们的哪个形状 |
+|---|---|---|---|---|
+| **`Expensify/App`** | **5,016** | MIT | **RN** | 🟢 **记帐** —— 同一个栈，token 档齐全 |
+| `bluesky-social/social-app` | 18,259 | MIT | RN | 不是形状，是**这一批 RN 写得最好的** |
+| **`artsy/eigen`** | **3,773** | MIT | **RN** | 一个成熟的**商用** RN app，今天还在推 |
+| `mattermost/mattermost-mobile` | 2,714 | Apache-2.0 | RN | 讯息 |
+| **`evan361425/flutter-pos-system`** | **602** | Apache-2.0 | Dart | 🟢 **餐饮 POS**，2026-08 还在动 |
+| `elrizwiraswara/flutter_pos` | 211 | MIT | Dart | POS |
+| `inventree/inventree-app` | 141 | MIT | Dart | 🟢 **库存** |
+| **`growerp/growerp`** | 111 | Apache-2.0 | Dart | 🟢 **Flutter 的整套 ERP**，今天还在推 |
+| `longnick/small-pos-open-source` | 92 | MIT | TS | 小咖啡店的离线 POS |
+
+##### ⚠️ 只能看，不能拿
+| | 为什么 |
+|---|---|
+| **`Grashjs/cmms` 761★** | **AGPL** —— 而它是**派工维修**，形状最对口的那一个。看得，拿不得 |
+| `bailabs/tailpos` 665★ | GPL-3.0，而且 **2022-10 就死了** |
+| `invoiceninja/admin-portal` 1,752★ | **NOASSERTION** |
+| `KRTirtho/spotube` 48,860★ | NOASSERTION（而且不是我们的形状） |
+
+##### 📚 还没挖的一整份目录
+**`dkhamsing/open-source-ios-apps` 51,944★ · CC0** —— 一份持续维护的开源 iOS app
+清单。**这是这一轮最大的一个来源，而我只是找到它，还没挖过。**
+
+##### 🔴 而这一轮量出来一条规律，比名单本身有用
+**开源手机 app 里，做得好又还活着的，几乎没有一个是生意 app** ——
+Bluesky（社群）· Artsy（艺术）· Notesnook（笔记）· Immich（照片）· Spotube（音乐）。
+**而生意形状的那几个：要嘛小（92–602★）、要嘛死（2022）、要嘛 AGPL。**
+
+跟[任务 63](#63) 量到的完全一致：**钱、排程、库存是商业价值最高的三块，
+所以作者全部选了 AGPL 或者干脆不开源。**
+→ **反过来看这件事：如果它们随便拿，我们的每一个对手早就都有了。**
+
+##### 所以答案没有变，只是更有把握
+**`Expensify` 还是那一个** —— 唯一一个「同一个栈 ＋ MIT ＋ 还在推 ＋ 就是我们的形状
+＋ token 档里有确切数字」全部同时成立的。
+第二顺位 **`artsy/eigen`**（看一个成熟商用 RN app 怎么组织），
+第三 **`flutter-pos-system`**（看 POS 那一屏怎么摆，虽然不同栈）。
+
+- [ ] 挖 `dkhamsing/open-source-ios-apps` 那份清单里的 Business / Finance 类
+
 ---
 
 ## 已完成
