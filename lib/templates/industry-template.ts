@@ -1471,7 +1471,15 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // 招牌 was three blocks and most of the first screen was white. The share
   // and the workflow pair up instead of the workflow standing alone at the
   // bottom, which is what left the page looking unfinished rather than bold.
-  signboard: ["hero@over", "share|flow@half", "table"],
+  /* 🔴 招牌重排（2026-09-03）。老板看着我们跟 TailAdmin 并排问
+     「为什么每一张都差别那么大」，而尺子当时说四种全对 —— 因为它把大半张
+     参考页判成「其他」。分类器修好之后读数是：**他们四张图，我们零张。**
+
+     TailAdmin 那一页由「两张小卡 → 柱状图 → 半圆环目标卡 → 面积图 → 表」
+     组成。我们拿得出来的图只有两种（走势、占比），所以对不到四张，
+     但从零张变两张是画面上看得见的差别。
+     招牌的身份保住：一个大数字开场、颜色少、字大。 */
+  signboard: ["hero@over", "trend|share@half", "table"],
   // A coloured ground with ivory panels floating on it -- panels want to be
   // few and LARGE, so one figure beside one chart, then one table.
   // Every character the same width. Squares and a ranking are both grids of
@@ -1518,7 +1526,15 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      所以：表在最前面而且最长，数字在下面，流程收尾。**没有图。**
      少掉的那几块不是被删了，是让给了行数：同一屏它现在放得下最多的记录，
      而那正是 Autocount、进销存那一类真正在做的事。 */
-  counter: ["table", "stats4", "flow"],
+  /* 🔴 中台重排（2026-09-03）。参考（Tabler 仪表盘）读出来 **10 张图**，
+     我们 0 张 —— 六对里最大的一个洞。
+
+     ⚠️ 这一条推翻我自己 9-02 写的那句「中台一张图都没有」。
+     那句话是我写的，参考不是；老板要的是尽量复刻。所以中台改成
+     **一排带小走势的数字卡开场**（Tabler 的招牌排法），再一张宽图，
+     然后才是它最长的那张表。
+     密度没有让掉：小走势卡是这一页最省地方的图，一行四张不多占一行。 */
+  counter: ["stats4", "trend", "table", "flow"],
   /*
     工作室 IS THE ONLY REGISTER THAT PAIRS NOTHING.
 

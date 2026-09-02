@@ -92,7 +92,11 @@ const PROBE = (rootSel) => {
     const r = e.getBoundingClientRect();
     return (
       vis(e) &&
-      r.width >= contentW * 0.28 &&
+      /* 🔴 0.28 → 0.15。Tabler 的仪表盘一行四张卡，每张 326px = 内容栏的 25%，
+         **一张都不到 28%**，於是那一层整个不算数，挑到的是外面那几条整行的包装，
+         报回来「其他 ×14」。一行四张卡是这种页面最常见的排法，
+         门槛必须容得下它。 */
+      r.width >= contentW * 0.15 &&
       r.height >= 48 &&
       r.left >= contentLeft - 4 &&
       r.top < R.top + 2200 &&
@@ -123,23 +127,43 @@ const PROBE = (rootSel) => {
     .map((e) => ({ e, r: e.getBoundingClientRect() }));
   outer.sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left);
 
-  /** 一块是什么：表 / 图 / 数字 / 名单 / 其他。判的是**画面上认得出的东西**。 */
+  /** 一块是什么：表 / 图 / 数字 / 名单 / 其他。判的是**画面上认得出的东西**。
+   *
+   * 🔴 第一版把 Tabler 的仪表盘读成「其他 ×14」—— 那一页画面上是四张小走势卡、
+   * 一张柱状图、一张地图。门槛设错了两个地方：
+   *   · 图要求 svg 高过 56px，而**小走势卡的曲线只有 40px 上下**
+   *   · 数字要求字级 ≥20px，而**小走势卡的数字是 18px**
+   * 一个把大半张页面判成「其他」的分类器，回报出来的是「四种全对」——
+   * 那正是老板看着两张图问「为什么差那么大」的时候，尺子说没事的原因。
+   *
+   * ⚠️ 顺带回答「官网那把尺不能复用吗」：**试过了，它读不了后台。**
+   * `npm run align -- --probe https://free-demo.tailadmin.com/` 自己印出
+   * 「段数 1 · 🔴 读到的段太少 —— 这个 DOM 尺子看不懂」。它是照**行销页**
+   * 长的：整页宽的区段一段一段往下叠。一张后台是一条侧栏加一格一格的卡，
+   * 不是那个形状。**能复用的是它的诚实（读不到就吼），不是它的切法。**
+   */
   const kindOf = (e) => {
     if (e.querySelector("table")) return "表";
-    const svg = [...e.querySelectorAll("svg,canvas")].find(
-      (s) => s.getBoundingClientRect().height > 56,
-    );
-    if (svg) return "图";
+    /* 画得出形状的东西：走势线、柱子、圆环、地图。**不设高门槛** ——
+       一张小走势卡就是一张图，只是它小。 */
+    const draws = [...e.querySelectorAll("svg,canvas")].filter((s) => {
+      const r = s.getBoundingClientRect();
+      /* 图标是 12–24px 见方的东西，图不是。用「够宽」把图标挡在外面，
+         而不是用「够高」—— 一条走势线可以很矮，但它一定很宽。 */
+      return r.width >= 70 && r.height >= 24;
+    });
+    if (draws.length) return "图";
     const nums = [...e.querySelectorAll("*")].filter((n) => {
       const t = (n.childNodes.length === 1 && n.textContent) || "";
-      return /^[^a-zA-Z]*[\d][\d,. ]{1,}$/.test(t.trim()) &&
-        parseFloat(getComputedStyle(n).fontSize) >= 20;
+      return /^[^a-zA-Z]*[\d][\d,. ]{0,}$/.test(t.trim()) &&
+        t.trim().length >= 2 &&
+        parseFloat(getComputedStyle(n).fontSize) >= 17;
     });
     if (nums.length) return "数字";
     if ([...e.querySelectorAll("li")].length >= 3) return "名单";
     return "其他";
   };
-  const blocks = outer.slice(0, 12).map(({ e, r }) => ({
+  const blocks = outer.slice(0, 16).map(({ e, r }) => ({
     kind: kindOf(e),
     h: Math.round(r.height),
     w: Math.round(r.width),
@@ -267,6 +291,16 @@ const PROBE = (rootSel) => {
     railGround,
     blocks: blocks.map((b) => b.kind).join(" → "),
     blockCount: blocks.length,
+    /* 🔴 2026-09-02 加的，而且它排在所有尺寸前面。
+       老板看着招牌跟 TailAdmin 并排问「为什么每一张都差别那么大」——
+       答案不在任何一个尺寸里：**他们那一页由四张图组成，我们那一页由一个数字
+       加一张表组成**。八块里只有一块是同一种东西。
+       尺子当时十八项，十七项在量尺寸跟颜色，剩下那一项印出顺序**但不判对错**。
+       组成不对的时候，调行高是在装修一间盖错的房子。 */
+    charts: blocks.filter((b) => b.kind === "图").length,
+    tables: blocks.filter((b) => b.kind === "表").length,
+    figures: blocks.filter((b) => b.kind === "数字").length,
+    lists: blocks.filter((b) => b.kind === "名单").length,
     firstBlock: blocks[0]?.kind ?? "—",
     biggestPx: biggest.px,
     biggestText: biggest.text,
@@ -442,7 +476,23 @@ async function main() {
     }
 
     console.log(`  ${pad("", 14)} ${num("参考", 18)}   ${num("我们", 18)}`);
+    /** 组成吻合：把两边的块按种类点名，看有几种数量对得上。
+     *  这不是「顺序一样」——顺序可以不一样而仍然是同一种页面；
+     *  「他们四张图我们一张」不行。 */
+    const kinds = ["图", "表", "数字", "名单"];
+    const off = kinds.filter((k) => {
+      const a = { 图: theirs.charts, 表: theirs.tables, 数字: theirs.figures, 名单: theirs.lists }[k];
+      const b = { 图: ours.charts, 表: ours.tables, 数字: ours.figures, 名单: ours.lists }[k];
+      return Math.abs(a - b) > 1;
+    });
+
     const rows = [
+      /* 组成排最前面，因为它决定其余每一项值不值得看。 */
+      ["图几张", theirs.charts, ours.charts, Math.abs(theirs.charts - ours.charts) <= 1 ? "ok" : "差"],
+      ["表几张", theirs.tables, ours.tables, Math.abs(theirs.tables - ours.tables) <= 1 ? "ok" : "差"],
+      ["数字块几个", theirs.figures, ours.figures, Math.abs(theirs.figures - ours.figures) <= 1 ? "ok" : "差"],
+      ["名单几个", theirs.lists, ours.lists, Math.abs(theirs.lists - ours.lists) <= 1 ? "ok" : "差"],
+      ["组成", `${kinds.length - off.length}/4 种对上`, off.length ? `差在 ${off.join("·")}` : "全对", off.length ? "差" : "ok"],
       ["外框", theirs.rail, ours.rail, theirs.rail === ours.rail ? "ok" : "差"],
       ["侧栏宽", theirs.railW, ours.railW, judge("侧栏宽", theirs.railW, ours.railW)],
       ["一屏几块", theirs.blockCount, ours.blockCount, judge("一屏几块", theirs.blockCount, ours.blockCount)],
