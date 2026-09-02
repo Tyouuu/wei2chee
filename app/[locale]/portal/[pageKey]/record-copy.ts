@@ -68,6 +68,17 @@ export type RecordFormCopy = {
   previewLabel: string;
   previewDate: string;
   previewNoNumber: string;
+  /* 对账. Its row is a COMPARISON rather than a thing, so none of its
+     boxes come from the table's columns -- see the note in the form. */
+  reconPeriod: string;
+  reconSource: string;
+  reconTheirs: string;
+  reconDirection: string;
+  reconIn: string;
+  reconOut: string;
+  reconNet: string;
+  reconReference: string;
+  reconRequired: string;
 };
 
 type RecordCopy = {
@@ -148,6 +159,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       previewLabel: "印出来的样子",
       previewDate: "日期",
       previewNoNumber: "单号要保存了才有 —— 它是系统发的，不是猜的。",
+      reconPeriod: "哪一个月",
+      reconSource: "谁给的总数",
+      reconTheirs: "他们讲多少",
+      reconDirection: "他们那个数字是什么",
+      reconIn: "收进来的",
+      reconOut: "付出去的",
+      reconNet: "净额（收减付）",
+      reconReference: "他们的单号",
+      reconRequired: "要写是谁给的总数，不然这一行看不出在对什么。",
     },
   },
   en: {
@@ -209,6 +229,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       previewLabel: "As it prints",
       previewDate: "Date",
       previewNoNumber: "The number is issued when you save — it is not guessed.",
+      reconPeriod: "Which month",
+      reconSource: "Who gave the figure",
+      reconTheirs: "What they say",
+      reconDirection: "What their figure is",
+      reconIn: "Money in",
+      reconOut: "Money out",
+      reconNet: "Net (in minus out)",
+      reconReference: "Their reference",
+      reconRequired: "Say who gave the figure — without it the row is not about anything.",
     },
   },
 };

@@ -72,12 +72,15 @@ export const SHAPE_STATE: Record<ModuleShape, ShapeState> = {
   report: "reads",
   leaderboard: "reads",
 
-  /* 对账 needs ONE small table: the outside total (bank, principal, platform)
-     to compare the books against. Until there is a statement to reconcile TO,
-     the page can only show its own sum twice, which is why it is NOT `reads`
-     -- 「asks a question of the other tables」 is precisely what it cannot do
-     with only one side of the comparison. */
-  reconcile: "drawn",
+  /* 对账 got that one small table on 2026-09-02 (20260902020000): what the
+     outside said, for one month, from one source. Our own side is NOT a column
+     -- it is summed from ledger_entries by the reconciliation_lines view every
+     time the page is read, because a cached agreement that has stopped being
+     true is worse than no reconciliation at all.
+
+     It is the last shape the founder's own first business needed: vibe-dealer
+     maps onto directory, ledger, catalog and this. */
+  reconcile: "live",
 
   /* 预约 needs a real table: a time, an overlap rule, and the prepaid balance
      任务 44 and 67 both named. The biggest of the five, and the salon that
@@ -120,3 +123,4 @@ export const PIPELINE_MODULES: ReadonlySet<string> = new Set(modulesOfShape("pip
 export const LEDGER_MODULES: ReadonlySet<string> = new Set(modulesOfShape("ledger"));
 export const DIRECTORY_MODULES: ReadonlySet<string> = new Set(modulesOfShape("directory"));
 export const CATALOG_MODULES: ReadonlySet<string> = new Set(modulesOfShape("catalog"));
+export const RECONCILE_MODULES: ReadonlySet<string> = new Set(modulesOfShape("reconcile"));

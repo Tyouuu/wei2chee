@@ -69,7 +69,14 @@ export async function loadWorkspace(): Promise<Workspace | null> {
  */
 export function canOpenModule(role: WorkspaceRole, pageKey: string): boolean {
   if (role === "owner") return true;
-  return MODULE_BY_KEY[pageKey]?.shape !== "ledger";
+  const shape = MODULE_BY_KEY[pageKey]?.shape;
+  /* 对账 JOINED THE LEDGER ON 2026-09-02, and not only because it shows money.
+     Its whole page is a comparison against the month's ledger total, and that
+     total is behind sees_money() -- so a supervisor opening it would not be
+     shown somebody else's figures, he would be shown 「our books RM 0」 against
+     the upstream's real figure and told the business is short by the whole
+     month. RLS holding is not the same as the page being true. */
+  return shape !== "ledger" && shape !== "reconcile";
 }
 
 /**

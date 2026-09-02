@@ -35,6 +35,7 @@ import {
   LEDGER_MODULES,
   DIRECTORY_MODULES,
   CATALOG_MODULES,
+  RECONCILE_MODULES,
 } from "./shape-state";
 import {
   systemLangOf,
@@ -413,6 +414,105 @@ export function rowsFromStock(
       status,
     };
   });
+}
+
+export type ReconcileRow = {
+  id: string;
+  period: string;
+  source: string | null;
+  direction: string | null;
+  their_cents: number | string | null;
+  ours_cents: number | string | null;
+  entries: number | string | null;
+  reference: string | null;
+  note: string | null;
+  settled_at: string | null;
+};
+
+/**
+ * 对账 — the fifth shape, and the only one whose row is a COMPARISON rather
+ * than a thing.
+ *
+ * The amount column carries THEIR figure, because that is the number the owner
+ * is holding a statement of; ours sits beside it in the second column with the
+ * count that produced it, so the figure can be checked rather than believed.
+ * The status is the gap.
+ *
+ * ⚠️ THE DIFFERENCE IS NEVER STORED and is not computed here either -- it comes
+ * off the view, which sums the ledger every time the page is read. A cached
+ * agreement that has stopped being true is worse than no reconciliation at all,
+ * which is the same rule 「how much is left is the sum of the movements」 and
+ * 「with line items the total is not his to type」 both landed on.
+ */
+export function rowsFromReconciliations(
+  rows: ReconcileRow[],
+  lang: "zh" | "en" = "zh",
+  href?: (id: string) => string,
+): LiveRow[] {
+  const word = {
+    zh: {
+      match: "对得上",
+      over: "我们多",
+      under: "我们少",
+      settled: "结了",
+      entries: (n: number) => `${n} 笔`,
+    },
+    en: {
+      match: "Matches",
+      over: "We are over",
+      under: "We are short",
+      settled: "Settled",
+      entries: (n: number) => `${n} ${n === 1 ? "entry" : "entries"}`,
+    },
+  }[lang];
+
+  return rows.map((r) => {
+    const theirs = Number(r.their_cents ?? 0);
+    const ours = Number(r.ours_cents ?? 0);
+    const gap = ours - theirs;
+    /* Settled wins over the arithmetic. A month he has looked at and explained
+       is closed even when the two figures still differ -- and in this market
+       most months end that way rather than at zero. Saying 「we are short」
+       about a month he has already accounted for would be the page arguing
+       with him. */
+    const status = r.settled_at
+      ? word.settled
+      : gap === 0
+        ? word.match
+        : gap > 0
+          ? `${word.over} ${ringgit(Math.abs(gap))}`
+          : `${word.under} ${ringgit(Math.abs(gap))}`;
+    const tone: StatusTone = r.settled_at ? "positive" : gap === 0 ? "positive" : "warning";
+
+    return {
+      ...(href && r.id ? { href: href(r.id) } : {}),
+      /* The month and who gave the figure -- which together ARE the name of
+         this row, and the reason it needs no document number. */
+      primary: [monthText(r.period, lang), (r.source ?? "").trim()].filter(Boolean).join(" · "),
+      /* Our side, and how many entries made it. A total with no count behind it
+         is a number he has to take on trust. */
+      secondary: [ringgit(ours), word.entries(Number(r.entries ?? 0))].filter(Boolean).join(" · "),
+      amount: ringgit(theirs),
+      tone,
+      status,
+    };
+  });
+}
+
+/** 「2026-08-01」 -> 「2026 年 8 月」 / 「Aug 2026」. Read off the digits, never
+ *  through `new Date()`: the server runs UTC and the owner is UTC+8, and a
+ *  first-of-month parsed as UTC is the last day of the previous month to him.
+ *  The same eight hours today_myt() exists over. */
+function monthText(period: string, lang: "zh" | "en"): string {
+  const m = /^(\d{4})-(\d{2})/.exec(period ?? "");
+  if (!m) return period ?? "";
+  const [, y, mm] = m;
+  const n = Number(mm);
+  if (lang === "en") {
+    const names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${names[n - 1] ?? mm} ${y}`;
+  }
+  return `${y} 年 ${n} 月`;
 }
 
 /**
@@ -832,8 +932,28 @@ export async function fetchLiveRows(
       return rowsFromParties(data as DirectoryEntry[], href);
     }
 
-    /* A module of some other shape. Not an error -- 库存 and 对账 still draw
-       their samples, and will until those shapes have tables of their own. */
+    if (RECONCILE_MODULES.has(moduleKey)) {
+      /* THE VIEW, never the table: our own side is summed there and exists in
+         no column. `security_invoker` bounds it by RLS -- which stock_on_hand
+         did not on the day it shipped, and cost one business four rows of
+         another's shelf (20260901080000).
+
+         Newest month first: the one he is holding a statement for is this
+         month's. */
+      const { data, error } = await supabase
+        .from("reconciliation_lines")
+        .select("id, period, source, direction, their_cents, ours_cents, entries, reference, note, settled_at")
+        .eq("project_id", projectId)
+        .eq("module_key", moduleKey)
+        .is("archived_at", null)
+        .order("period", { ascending: false })
+        .limit(limit);
+      if (error || !data) return [];
+      return rowsFromReconciliations(data as ReconcileRow[], lang, href);
+    }
+
+    /* A module of some other shape. Not an error -- 预约 still draws its
+       samples, and will until `calendar` has a table of its own. */
     return [];
   } catch {
     return [];

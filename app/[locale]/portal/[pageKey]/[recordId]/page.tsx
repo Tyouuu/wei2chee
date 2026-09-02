@@ -116,6 +116,31 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+  } else if (ctx.shape === "reconcile") {
+    /* Read from the TABLE and not from the view: what is being edited is what
+       the outside said, and our own side is not editable -- it is the sum of
+       the ledger and there is deliberately no column holding it. */
+    const { data } = await supabase
+      .from("reconciliations")
+      .select("id, period, source, direction, their_cents, reference, note, extra, archived_at")
+      .eq("id", recordId)
+      .eq("module_key", pageKey)
+      .maybeSingle();
+    if (!data) notFound();
+    Object.assign(values, {
+      /* A month input wants 「2026-08」, and the column holds the first of the
+         month. Sliced off the digits, never through new Date(): the server runs
+         UTC and the owner is UTC+8, so a first-of-month parsed as UTC is the
+         last day of the previous month to him. */
+      period: (data.period ?? "").slice(0, 7),
+      source: data.source ?? "",
+      direction: data.direction ?? "in",
+      their: data.their_cents == null ? "" : String(Number(data.their_cents) / 100),
+      reference: data.reference ?? "",
+      note: data.note ?? "",
+    });
+    Object.assign(values, ownColumns(data.extra));
+    archivedAt = data.archived_at;
   } else if (ctx.shape === "ledger") {
     const { data } = await supabase
       .from("ledger_entries")
@@ -206,7 +231,7 @@ export default async function EditRecordPage({
           projectId={ctx.projectId}
           moduleKey={ctx.pageKey}
           received={received}
-          shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog"}
+          shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog" | "reconcile"}
           parties={ctx.parties}
           columns={ctx.columns}
           title={ctx.title}

@@ -25,33 +25,35 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
         title: "Monthly reconciliation",
         subtitle:
           "The total your upstream gave you, against the total your own records add up to. How far apart, and which line.",
+        /* One row is one month from one source -- see the note on the
+           Chinese side. */
         columns: {
-          primary: "Item",
-          secondary: "Reference",
-          amount: "Amount",
-          status: "Result",
+          primary: "Month · Source",
+          secondary: "Our books",
+          amount: "What they say",
+          status: "Difference",
         },
         rows: [
           {
-            primary: "System total",
-            secondary: "128 entries this month",
-            amount: "RM 246,800",
-            tone: "positive",
-            status: "Checked",
-          },
-          {
-            primary: "Upstream statement",
-            secondary: "Their figure",
+            primary: "Aug 2026 · Principal",
+            secondary: "RM 246,800 · 128 entries",
             amount: "RM 246,800",
             tone: "positive",
             status: "Matches",
           },
           {
-            primary: "Unexplained difference",
-            secondary: "REF-2026-0817",
-            amount: "RM 0",
-            tone: "neutral",
-            status: "None",
+            primary: "Jul 2026 · Principal",
+            secondary: "RM 231,400 · 119 entries",
+            amount: "RM 231,700",
+            tone: "warning",
+            status: "We are short RM 300",
+          },
+          {
+            primary: "Jun 2026 · Principal",
+            secondary: "RM 198,050 · 104 entries",
+            amount: "RM 198,500",
+            tone: "positive",
+            status: "Settled",
           },
         ],
         hero: {

@@ -29,6 +29,21 @@ describe("canOpenModule", () => {
     }
   });
 
+  it("keeps 对账 away from him too, and for a second reason", () => {
+    /* Derived, like the money list above. 对账's whole page is a comparison
+       against the month's ledger total, and that total is behind sees_money():
+       a supervisor opening it would not see somebody else's figures, he would
+       see 「our books RM 0」 against the upstream's real number and be told the
+       business is short by the entire month. RLS holding is not the same as
+       the page being true. */
+    const compare = modulesOfShape("reconcile");
+    expect(compare.length).toBeGreaterThan(0);
+    for (const key of compare) {
+      expect(canOpenModule("staff", key), key).toBe(false);
+      expect(canOpenModule("owner", key), key).toBe(true);
+    }
+  });
+
   it("lets him open the work", () => {
     for (const key of [...modulesOfShape("pipeline"), ...modulesOfShape("directory")]) {
       expect(canOpenModule("staff", key), key).toBe(true);

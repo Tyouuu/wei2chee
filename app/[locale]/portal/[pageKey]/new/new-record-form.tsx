@@ -94,7 +94,7 @@ export function NewRecordForm({
   /** Which of the three live shapes this page is. Not three booleans: a page
    *  is exactly one of them, and a boolean per shape is how two of them end up
    *  true. */
-  shape: "pipeline" | "ledger" | "directory" | "catalog";
+  shape: "pipeline" | "ledger" | "directory" | "catalog" | "reconcile";
   /** This business's own customers, for the name box. Empty on a directory
    *  page, which is where a party is created rather than chosen. */
   parties: { id: string; name: string }[];
@@ -161,6 +161,7 @@ export function NewRecordForm({
   const isDirectory = shape === "directory";
   const isPipeline = shape === "pipeline";
   const isCatalog = shape === "catalog";
+  const isReconcile = shape === "reconcile";
   /* 🔴 HOW MUCH IS LEFT IS NOT HIS TO TYPE, once the item exists.
      It is the sum of the movements (20260901070000), so a box here would be
      overwritten by the next render -- the same control-that-lies the money
@@ -180,7 +181,13 @@ export function NewRecordForm({
   const tableFields = columns.filter((c) => !(isLedger && c.key === "status"));
   /* On a directory page the second column is a composed view, not a field --
      see the header. Everything the owner added himself still comes from here. */
-  const shown = isDirectory
+  const shown = isReconcile
+    ? /* NONE OF THE TABLE'S COLUMNS. A reconciliation row is a COMPARISON:
+         its first column is the month and the source together, its second is
+         our own total, and its status is the gap -- three things the page
+         computes and none of them things to type. Its own boxes are below. */
+      []
+    : isDirectory
     ? tableFields.filter((c) => c.key !== "secondary")
     : isCatalog
       /* 「仓库 · 包」 is a composed view of two fields, like a directory's
@@ -231,7 +238,16 @@ export function NewRecordForm({
     e.preventDefault();
     setError(null);
     const title = (values[titleCol?.key ?? "primary"] ?? "").trim();
-    if (!title) {
+    /* A reconciliation has no first column to type -- its identity is the month
+       and the source. What it cannot be without is WHO GAVE THE FIGURE, which
+       is the same check the writer makes and the same sentence the owner
+       needs. */
+    if (isReconcile) {
+      if (!(values.source ?? "").trim()) {
+        setError(copy.reconRequired);
+        return;
+      }
+    } else if (!title) {
       setError(isDirectory ? copy.requiredName : copy.required);
       return;
     }
@@ -259,6 +275,27 @@ export function NewRecordForm({
        are not the same kind of change. See the header of migration
        20260831100000: a ledger's amount is never edited, it is reversed. */
     if (record) {
+      if (isReconcile) {
+        const { error: rErr } = await supabase.rpc("update_reconciliation", {
+          in_id: record.id,
+          in_period: (values.period ?? "").trim() ? `${(values.period ?? "").trim()}-01` : null,
+          in_source: (values.source ?? "").trim(),
+          in_their_cents: senFrom(values.their ?? "") ?? 0,
+          in_direction: (values.direction ?? "in").trim() || "in",
+          in_reference: (values.reference ?? "").trim(),
+          in_note: (values.note ?? "").trim(),
+          in_extra: extra,
+        });
+        if (rErr) {
+          setError(`${copy.failed}${rErr.message ? ` — ${rErr.message}` : ""}`);
+          setBusy(false);
+          return;
+        }
+        router.push(backHref);
+        router.refresh();
+        return;
+      }
+
       const { error: fixErr } = isDirectory
         ? await supabase.rpc("update_directory_entry", {
             in_id: record.id,
@@ -358,6 +395,32 @@ export function NewRecordForm({
           in_reason: copy.stockOpening,
           in_idempotency_key: idempotencyKey,
         });
+      }
+      router.push(backHref);
+      router.refresh();
+      return;
+    }
+
+    if (isReconcile) {
+      const { error: rErr } = await supabase.rpc("add_reconciliation", {
+        in_project_id: projectId,
+        in_module_key: moduleKey,
+        /* 「2026-08」 from a month input becomes the first of that month. The
+           writer rounds it anyway; sending a real date keeps the two ends
+           agreeing rather than relying on one of them. */
+        in_period: (values.period ?? "").trim() ? `${(values.period ?? "").trim()}-01` : null,
+        in_source: (values.source ?? "").trim(),
+        in_their_cents: senFrom(values.their ?? "") ?? 0,
+        in_direction: (values.direction ?? "in").trim() || "in",
+        in_reference: (values.reference ?? "").trim(),
+        in_note: (values.note ?? "").trim(),
+        in_extra: extra,
+        in_idempotency_key: idempotencyKey,
+      });
+      if (rErr) {
+        setError(`${copy.failed}${rErr.message ? ` — ${rErr.message}` : ""}`);
+        setBusy(false);
+        return;
       }
       router.push(backHref);
       router.refresh();
@@ -626,6 +689,42 @@ export function NewRecordForm({
           </div>
         );
       })}
+
+      {isReconcile ? (
+        <div className="flex flex-col gap-4">
+          {/* THE MONTH, and a month input rather than a date one: the row IS a
+              month, and offering a day would invite a value the writer then
+              rounds away. */}
+          <label className="flex flex-col gap-1.5">
+            <span className={labelText}>{copy.reconPeriod}</span>
+            <input
+              type="month"
+              value={values.period ?? ""}
+              onChange={(e) => setValues((v) => ({ ...v, period: e.target.value }))}
+              className={control}
+            />
+          </label>
+          {box("source", copy.reconSource)}
+          {box("their", copy.reconTheirs, "decimal")}
+          {/* WHAT THEIR FIGURE IS ABOUT. Without it a supplier's statement gets
+              compared against the month's takings and reports a difference that
+              is not one -- see the column comment in 20260902020000. */}
+          <label className="flex flex-col gap-1.5">
+            <span className={labelText}>{copy.reconDirection}</span>
+            <select
+              value={values.direction ?? "in"}
+              onChange={(e) => setValues((v) => ({ ...v, direction: e.target.value }))}
+              className={control}
+            >
+              <option value="in">{copy.reconIn}</option>
+              <option value="out">{copy.reconOut}</option>
+              <option value="net">{copy.reconNet}</option>
+            </select>
+          </label>
+          {box("reference", copy.reconReference)}
+          {box("note", copy.note)}
+        </div>
+      ) : null}
 
       {isPipeline ? (
         <>

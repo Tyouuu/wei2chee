@@ -333,6 +333,60 @@ try {
   check("a name list gets no document, because it makes none",
     await page.evaluate(() => !document.querySelector("aside")));
 
+  console.log("");
+  console.log("对账 — 他们讲多少 对 我们的账:");
+  await as.rpc("add_project_page", { requested_key: "reconciliation", new_title: null });
+  const month = dayIn(0).slice(0, 7) + "-01";
+  for (const cents of [1200000, 850000]) {
+    const { error } = await as.rpc("add_ledger_entry", {
+      in_project_id: proj.id,
+      in_module_key: "payments",
+      in_direction: "in",
+      in_amount_cents: cents,
+      in_party: "Ang Chee Keong",
+      /* TODAY, not three days back. On the 2nd of a month 「three days back」 is
+         LAST month, so the reconciliation for this month summed nothing and the
+         page read 「RM 0 · 0 entries」 -- correct arithmetic over a fixture that
+         had put the money somewhere else. The same mistake the ranking dates
+         made, in the other direction. */
+      in_entry_on: dayIn(0),
+    });
+    if (error) throw new Error(`add_ledger_entry: ${error.message}`);
+  }
+  const { error: recErr } = await as.rpc("add_reconciliation", {
+    in_project_id: proj.id,
+    in_module_key: "reconciliation",
+    in_period: month,
+    in_source: "Maybank",
+    in_their_cents: 2080000,
+    in_reference: "STM-08",
+  });
+  if (recErr) throw new Error(`add_reconciliation: ${recErr.message}`);
+
+  const recon = await read("/en/portal/reconciliation", "reconciliation-1440");
+  check("his own month and source are on it", recon.includes("Maybank"), recon.slice(0, 160));
+  check("no sample survived", !recon.includes("Principal"),
+    "the three sample months are still there");
+  /* Their RM 20,800 against our RM 20,500: the gap is the point of the page,
+     and it is computed by the view rather than stored anywhere. */
+  check("the gap is worked out and shown", /short RM 300|RM 300/.test(recon),
+    recon.slice(0, 200));
+  check("our side says how many entries made it", /2 entries/.test(recon),
+    recon.slice(0, 200));
+
+  /* 🔴 THE PAGE MUST NOT SAY THREE THINGS AT ONCE, and it did. The first run
+     put real rows under a headline reading 「Difference this month RM 0 ·
+     System total RM 246,800 · 128 entries」 -- the sample figure every customer
+     shares -- and under that a panel asserting 「This month ties out」. Two of
+     the three statements were false and they were the two a person reads
+     first. A table of samples announces itself; a total does not (任务 80). */
+  check("the headline is not the sample figure",
+    !recon.includes("246,800"), "RM 246,800 is still on the page");
+  check("the headline is this month's real gap", recon.includes("RM 300"),
+    recon.slice(0, 200));
+  check("and the verdict panel does not claim it ties out",
+    !/ties out/i.test(recon), "the panel still asserts agreement");
+
   console.log("\n手机上（390，他自己站的地方）:");
   const p390 = await read("/en/portal/projects", "projects-390", 390);
   check("the board still carries his jobs at 390", p390.includes("Sunway Damansara kitchen"));

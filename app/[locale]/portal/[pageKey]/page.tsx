@@ -1,5 +1,6 @@
 import { fetchLiveRows, withLiveRows, moduleHasEverHadRows } from "@/lib/portal/live-rows";
 import { fetchLiveStats, withLiveStats } from "@/lib/portal/live-stats";
+import { fetchReconcileFacts, withReconcileAlert } from "@/lib/portal/live-reconcile";
 import { fetchMonthlyPage } from "@/lib/portal/live-months";
 import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
 import { notFound, redirect } from "next/navigation";
@@ -284,6 +285,23 @@ export default async function PortalEditorPage({
     were once real. Collapsing the two prints RM 0 across a report every time a
     query fails, which is a lie rather than a degradation.
   */
+  /* 对账's headline and its verdict, from the same view the table read. Without
+     this the page says three things at once and two of them are samples: real
+     rows under a headline reading RM 246,800 and a panel asserting that the
+     month ties out. See lib/portal/live-reconcile.ts for the photograph. */
+  if (MODULE_BY_KEY[pageKey]?.shape === "reconcile") {
+    const facts = await fetchReconcileFacts(
+      supabase,
+      project.id,
+      pageKey,
+      systemLangOf(businessContext),
+    );
+    if (facts !== undefined) {
+      initialData = withLiveStats(initialData, facts?.stats ?? null);
+      initialData = withReconcileAlert(initialData, facts?.alert ?? null);
+    }
+  }
+
   const asksOnly = MODULE_BY_KEY[pageKey]?.shape;
   if (asksOnly === "report" || asksOnly === "leaderboard") {
     const monthly = await fetchMonthlyPage(

@@ -34,14 +34,23 @@ describe("isRecordModule", () => {
     for (const k of ["customers", "suppliers", "staff"]) expect(isRecordModule(k)).toBe(true);
   });
 
+  /* 对账 joined them on 2026-09-02. Its rows are a COMPARISON rather than a
+     thing -- one month, one source, what the outside said -- and our own side
+     is not in the table at all: it is summed from the ledger by a view every
+     time the page is read. */
+  it("knows the one whose rows are a comparison", () => {
+    expect(isRecordModule("reconciliation")).toBe(true);
+  });
+
   it("leaves the other modules alone", () => {
     /* 客户 was in this list until 2026-08-31, which is the point: the list is
        derived from SHAPE_STATE, so a shape going live moves its modules out of
        here on its own and this test is what says so out loud. */
-    /* 库存 left this list on 2026-09-01, the same way 客户 left it on 8-31 --
-       which is the second time this test has said the thing out loud rather
-       than needing to be remembered. */
-    for (const k of ["bookings", "website", "dashboard", "reconciliation", null, undefined]) {
+    /* 库存 left this list on 2026-09-01 and 对账 on 2026-09-02, the same way
+       客户 left it on 8-31 -- the third time this test has said the thing out
+       loud rather than needing to be remembered. What is left here is 预约 and
+       the two pages that were never records at all. */
+    for (const k of ["bookings", "website", "dashboard", null, undefined]) {
       expect(isRecordModule(k)).toBe(false);
     }
   });

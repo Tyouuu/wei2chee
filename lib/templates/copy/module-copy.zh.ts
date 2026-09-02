@@ -19,33 +19,38 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
         title: "月度对账",
         subtitle:
           "上游给的总数，对系统里逐笔加起来的总数。差多少，差在哪一笔。",
+        /* ONE ROW IS ONE MONTH FROM ONE SOURCE, which is what the table
+           behind this page holds since 20260902020000. It used to be three
+           rows describing a single reconciliation -- system total, their
+           total, the difference -- and the moment real rows arrived those
+           headings would have sat over months. 对的数字配错的标签，比空白更糟. */
         columns: {
-          primary: "对账项目",
-          secondary: "参考号",
-          amount: "金额",
-          status: "结果",
+          primary: "月份 · 谁给的",
+          secondary: "我们的账",
+          amount: "他们讲多少",
+          status: "差额",
         },
         rows: [
           {
-            primary: "系统逐笔总额",
-            secondary: "本月 128 笔",
-            amount: "RM 246,800",
-            tone: "positive",
-            status: "已核对",
-          },
-          {
-            primary: "上游对账单总额",
-            secondary: "对方出的数字",
+            primary: "2026 年 8 月 · 上游",
+            secondary: "RM 246,800 · 128 笔",
             amount: "RM 246,800",
             tone: "positive",
             status: "对得上",
           },
           {
-            primary: "待查差异",
-            secondary: "REF-2026-0817",
-            amount: "RM 0",
-            tone: "neutral",
-            status: "无差异",
+            primary: "2026 年 7 月 · 上游",
+            secondary: "RM 231,400 · 119 笔",
+            amount: "RM 231,700",
+            tone: "warning",
+            status: "我们少 RM 300",
+          },
+          {
+            primary: "2026 年 6 月 · 上游",
+            secondary: "RM 198,050 · 104 笔",
+            amount: "RM 198,500",
+            tone: "positive",
+            status: "结了",
           },
         ],
         hero: {
