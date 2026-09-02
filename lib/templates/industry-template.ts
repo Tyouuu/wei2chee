@@ -1134,6 +1134,68 @@ function buildDashboard(
       });
     },
 
+    /**
+     * 目标卡 —— 一个半圆表，底下三个小数字。
+     *
+     * 老板 2026-09-03：`还是很多不一样的不是吗 总之找抄就是了`。
+     * 卡住的不是力气，是**零件**：参考那几页由四种图组成，我们只画得出两种。
+     * 这一块是数出来最常见的那一种 —— **TailAdmin 的 Monthly Target 是它，
+     * Tabler 的 78% 那一格也是它**，而我们一个都没有。
+     *
+     * ⚠️ **它不是新组件，是一个新的拼法。** 半圆表（`gauge`）跟小数字排
+     * 早就在库里，只是从来没有人把它们拼成一张卡 —— 这个仓库最常犯的错
+     * 就是「零件都有、没有人接线」。
+     *
+     * ⚠️ 三个小数字**全部是算出来的**：这个月收到多少、几单在做、几张单在等回覆。
+     * 没有编一条「目标」出来 —— 一条没有人维护的目标线，就是[任务 40](../../docs/founder-tasks.md)
+     * 砍掉那个百分比换个位置回来。半圆表画的是**钱卡在哪一段**，那是真的。
+     */
+    target: () => {
+      const byStatus = new Map<string, number>();
+      for (const r of sample.records) {
+        const n = Number(String(r.amount ?? "").replace(/[^0-9.]/g, ""));
+        if (!n) continue;
+        const key = r.status || c.col.status;
+        byStatus.set(key, (byStatus.get(key) ?? 0) + n);
+      }
+      const slices = [...byStatus.entries()].map(([label, value], i, all) => ({
+        label,
+        value,
+        color: `color-mix(in oklab, var(--color-primary) ${Math.round(
+          100 - (i / Math.max(1, all.length - 1)) * 62,
+        )}%, var(--color-ink-850))`,
+      }));
+      return node("Panel", "dashboard-target", {
+        title: c.dashboard.shareTitle,
+        description: "",
+        body: [
+          node("ShareChart", "dashboard-target-gauge", {
+            title: "",
+            caption: "",
+            unit: "RM",
+            shape: "gauge",
+            slices,
+          }),
+          node("StatRow", "dashboard-target-figures", {
+            tiles: [
+              { label: sample.heroLabel, value: sample.heroValue, tone: "normal" },
+              /* 🔴 三个变两个。TailAdmin 那张卡底下是三个（Target · Revenue ·
+                 Today），而**他们的数字是「$20K」，我们的是「RM 71,300」** ——
+                 同样的宽度，我们的字长一倍。1:1 的裁图上，
+                 「RM 71,300」的最后一个 0 被卡片边切掉了。
+                 抄的是「半圆表底下带几个小数字」这个形状，不是那个数量；
+                 **为了凑三个而切掉客人的钱，是把抄变成了错。** */
+              ...sample.heroStats.slice(0, 1).map((st) => ({
+                label: st.label,
+                value: st.value,
+                tone: "normal" as const,
+              })),
+            ],
+          }),
+        ],
+      });
+    },
+
     flow: () =>
       workflowStrip(
         "dashboard-workflow",
@@ -1479,7 +1541,10 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      组成。我们拿得出来的图只有两种（走势、占比），所以对不到四张，
      但从零张变两张是画面上看得见的差别。
      招牌的身份保住：一个大数字开场、颜色少、字大。 */
-  signboard: ["hero@over", "trend|share@half", "table"],
+  /* 🔴 share → target（2026-09-03）。TailAdmin 那一页中间那张是
+     **Monthly Target：一个半圆表加底下三个小数字**，不是一个光秃秃的圆环。
+     老板：`总之找抄就是了`—— 卡住的不是力气是零件，所以补了 `target` 这个拼法。 */
+  signboard: ["hero@over", "trend|target@half", "table"],
   // A coloured ground with ivory panels floating on it -- panels want to be
   // few and LARGE, so one figure beside one chart, then one table.
   // Every character the same width. Squares and a ranking are both grids of
@@ -1568,7 +1633,7 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
  */
 export const COMPOSITION_ROLES = new Set([
   "table", "stats4", "stats2", "trend", "todo", "ranking", "share",
-  "flow", "activity", "progress", "board", "hero",
+  "flow", "activity", "progress", "board", "hero", "target",
 ]);
 
 /** The neutral composition, for a register with no entry and for the paths that
