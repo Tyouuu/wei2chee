@@ -77,7 +77,10 @@
     "shoot:phone": "node scripts/shoot-phone.mjs",
     "pick:appui": "node scripts/pick-appui.mjs",
     "derive": "node scripts/derive-register.mjs",
-    "align:app": "node scripts/align-app.mjs"
+    "align:app": "node scripts/align-app.mjs",
+    "shoot:portfolio": "node scripts/shoot-portfolio.mjs",
+    "shoot:clone": "node scripts/shoot-clone-vs.mjs",
+    "brief:app": "node scripts/brief-app.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
