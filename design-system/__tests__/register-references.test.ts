@@ -69,6 +69,12 @@ describe("每一套风格抄谁", () => {
     expect(ref.takes, `${reg} 的「拿什么」是一句空话`).not.toMatch(/参考它的风格|好看|现代感$/);
   });
 
+  it.each(Object.entries(REGISTER_REFERENCES))("%s 说了拿我们哪一页去对", (reg, ref) => {
+    /* 不写这一栏，尺子就会拿总览去对一张只有表格的页，然后报一个
+       「一屏几块 2 对 5」的假差异。**那不是我们做错，是我拿错了页。** */
+    expect(ref.ourPage, `${reg} 没说拿我们哪一页去对`).toMatch(/^\/en\/portal\//);
+  });
+
   it.each(Object.entries(REGISTER_REFERENCES))("%s 写了许可", (reg, ref) => {
     /* 后台这一边可以直接拿代码，所以许可不是装饰。 */
     expect(ref.source, `${reg} 的来源没写许可`).toMatch(/MIT|Apache|BSD/);

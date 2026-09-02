@@ -608,10 +608,10 @@
   --pad-control-x: 13px;
   --pad-control-y: 8px;
   --pad-cell-x: 13px;
-  --pad-cell-y: 12px;
+  --pad-cell-y: 15px;
   --gap-stack: 20px;
   --gap-inline: 10px;
-  --row-h: 46px;
+  --row-h: 62px;
   --control-h: 36px;
 
   /* ---- ELEVATION AXIS: outlined card + subtle lift ------------------------ */

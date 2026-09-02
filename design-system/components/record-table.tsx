@@ -160,12 +160,48 @@ export function RecordTable(props: {
      一张表就那几十行，一次 filter 的成本远低于「让整个组件失去自动优化」。
      手写的 memo 换掉编译器的 memo，是这里最贵的一笔交易。 */
   const q = query.trim().toLowerCase()
-  const rows =
+  const filtered =
     q && toolShape === "search"
       ? allRows.filter((r) =>
           Object.values(r.cells ?? {}).join(" ").toLowerCase().includes(q),
         )
       : allRows
+
+  /* ── 点栏头排序 ──────────────────────────────────────────────────────────
+     `align:admin` 2026-09-02：**参考那一页四栏可以点着排，我们零栏。**
+     一个每天扫四十行的承包商，第一个动作就是「哪一单钱最大」「哪一单最久没动」，
+     而在这之前他只能自己用眼睛找。
+
+     ⚠️ **金额要按数字排，不是按字排。** 「RM 9,600」跟「RM 48,500」照字排的话
+     9 排在 4 后面 —— 一张把最大那一单排到最下面的表，比不能排更糟。
+     金额那一栏在 `table-model` 里本来就标着 kind，直接用它。
+
+     ⚠️ 不排就是**他自己的顺序**，那是有意义的顺序（最近的在上面），
+     所以第三下点回「不排」，不是在两个方向之间来回。 */
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null)
+  const numeric = (v: string) => {
+    const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""))
+    return Number.isFinite(n) ? n : null
+  }
+  const rows = (() => {
+    if (!sort) return filtered
+    const col = columns.find((c) => c.key === sort.key)
+    if (!col) return filtered
+    const sign = sort.dir === "asc" ? 1 : -1
+    return [...filtered].sort((a, b) => {
+      const x = String(a.cells?.[sort.key] ?? "")
+      const y = String(b.cells?.[sort.key] ?? "")
+      if (col.kind === "amount") {
+        const nx = numeric(x), ny = numeric(y)
+        if (nx !== null && ny !== null) return (nx - ny) * sign
+      }
+      return x.localeCompare(y, undefined, { numeric: true }) * sign
+    })
+  })()
+  const nextSort = (key: string) =>
+    setSort((s) =>
+      !s || s.key !== key ? { key, dir: "asc" } : s.dir === "asc" ? { key, dir: "desc" } : null,
+    )
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE
   // TRACKING under Ledger (--label-transform: uppercase), plain sentence case
@@ -258,22 +294,64 @@ export function RecordTable(props: {
                 // Distinct names: a property that reads itself is a cycle and
                 // CSS discards the whole declaration, which would have left
                 // 紧凑 silently identical to 正常.
-                "--row-height": "calc(var(--row-h) * 0.72)",
-                "--row-pad-y": "calc(var(--pad-cell-y) * 0.5)",
+                /* 0.72 → 0.9（2026-09-02）。`align:admin` 拿六套去对它们各自
+                   抄的那一页，**六套的行全部比参考矮**：参考 49–75px，我们 26–52。
+                   最矮那一套（台账）画出来只有 26px —— 那不是「密」，
+                   那是**挤到不好读**，而且它比号称全库最密的中台还要矮，
+                   我们自己那两句主张互相打架。
+                   紧凑仍然是紧凑，只是不再把行压掉三成。 */
+                "--row-height": "calc(var(--row-h) * 0.9)",
+                "--row-pad-y": "calc(var(--pad-cell-y) * 0.7)",
               } as CSSProperties)
             : { minWidth: `${minWidth}px` }
         }
       >
         <thead>
           <tr className="sticky top-0 [background-color:var(--color-table-head-bg)]">
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className={col.kind === "amount" ? `${headCell} !text-right` : headCell}
-              >
-                {col.label}
-              </th>
-            ))}
+            {columns.map((col) => {
+              const on = sort?.key === col.key
+              return (
+                <th
+                  key={col.key}
+                  className={col.kind === "amount" ? `${headCell} !text-right` : headCell}
+                  aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+                >
+                  {/* 整个栏头就是那颗按钮 —— 一个只有箭头能点的栏头，
+                      在手机上是一个点不中的目标（`check:reachable` 守着这件事）。 */}
+                  <button
+                    type="button"
+                    onClick={() => nextSort(col.key)}
+                    className={`inline-flex max-w-full items-center gap-1 ${
+                      col.kind === "amount" ? "flex-row-reverse" : ""
+                    } [font:inherit] [letter-spacing:inherit] [text-transform:inherit] [color:inherit]`}
+                  >
+                    <span className="truncate">{col.label}</span>
+                    {/* 没有在排的时候画一个淡的、方向中立的记号，
+                        那是在说「这里可以点」；不画的话没有人知道它能点。 */}
+                    <svg
+                      viewBox="0 0 12 12"
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 shrink-0"
+                      style={{ opacity: on ? 1 : 0.35 }}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    >
+                      {on ? (
+                        sort.dir === "asc" ? (
+                          <path d="M6 9.5V2.5M3 5.5 6 2.5l3 3" />
+                        ) : (
+                          <path d="M6 2.5v7M3 6.5l3 3 3-3" />
+                        )
+                      ) : (
+                        <path d="M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5" />
+                      )}
+                    </svg>
+                  </button>
+                </th>
+              )
+            })}
           </tr>
         </thead>
         <tbody>

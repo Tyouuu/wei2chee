@@ -41,6 +41,15 @@ export type RegisterReference = {
   /** `.screenshots/admins/` 底下那一张，`npm run shoot:admins` 拍的。 */
   shot: string;
   /**
+   * **我们这边要拿哪一页去对。**
+   *
+   * 🔴 这一栏是 2026-09-02 第一次跑 `align:admin` 之后加的，因为不加就是在
+   * 比错东西：台账抄的是一张**只有一张表**的页，而尺子拿我们的**总览**去比它，
+   * 於是「一屏几块 2 对 5」被报成差异 —— 那不是我们做错，那是我拿错了页。
+   * 对齐要拿**同一种页**去对：一张表的对一张表的，一张单的对一张单的。
+   */
+  ourPage: string;
+  /**
    * 从它那里拿什么 —— **一句讲得出来的东西，不是「参考它的风格」**。
    * 拿不出一句，就代表这一对配得没有理由，那才是要改的地方。
    */
@@ -58,6 +67,8 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
     takes:
       "整页只有三件事：标题 → 一条会筛的工具条 → 一张长表。" +
       "工具条本身就是那个设计，不是表格上面的装饰。",
+    /* 他们那一页是一张表，所以拿我们的报价单去对，不是总览 */
+    ourPage: "/en/portal/quotations",
   },
 
   /* 沙龙老板开系统的那一刻，客人就站在他旁边。 */
@@ -70,6 +81,8 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
     takes:
       "开场不是钱，是「今天要做什么」：一句问候、在做的几件、常用的入口。" +
       "数字退到下面去。",
+    /* 他们那一页是工作台，对我们的总览 */
+    ourPage: "/en/portal/dashboard",
   },
 
   /* 还讲不清自己做哪一行的老板，最不会出错的那一套。 */
@@ -82,6 +95,8 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
     takes:
       "一张可以直接印出来给客人的纸：抬头、逐项、金额靠右、底下一条合计。" +
       "整页零个彩色方块。",
+    /* 他们那一页是一张单据，我们的报价单右边就是那张可以印的纸 */
+    ourPage: "/en/portal/quotations",
   },
 
   /* 印出来给人看的那一套。一张纸是一栏的。 */
@@ -94,6 +109,8 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
     takes:
       "每一个数字底下都带着「上个月是多少」，图表卡自己讲结论。" +
       "字级阶梯十级，而整页最大的东西是一个数字不是一个词。",
+    /* 他们那一页是数字加图表的总览 */
+    ourPage: "/en/portal/dashboard",
   },
 
   /* 店名跟数字就是招牌。 */
@@ -104,6 +121,8 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
     url: "https://free-demo.tailadmin.com/",
     shot: "tailadmin.jpg",
     takes: "一个大圆环加一条曲线，颜色少、字大。顶栏不是侧栏。",
+    /* 同上 */
+    ourPage: "/en/portal/dashboard",
   },
 
   /* 在里面做事，不是在里面看事。少掉的全部让给行数。 */
@@ -116,6 +135,8 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
     takes:
       "全库最密的一格：小走势图排成一行，一屏塞完。" +
       "细边到处都是（100% 的卡片有边），阴影几乎没有。",
+    /* 同上 */
+    ourPage: "/en/portal/dashboard",
   },
 };
 

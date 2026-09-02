@@ -91,7 +91,7 @@ type StyleBrief = {
  *  typo is invisible to TypeScript and silently means "no opinion". */
 export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
   ledger: {
-    mood: "给装修承包商这种一天要看几十条记录的生意，开系统是为了扫过一整张表。32px 的行、4px 的角、没有阴影。牺牲的是宽松 —— 一屏塞得下最多的行，代价是它不好看，它好用。",
+    mood: "给装修承包商这种一天要看几十条记录的生意，开系统是为了扫过一整张表。窄图标栏、左边一条钉住的名单、会筛会排的表。牺牲的是花俏 —— 换来的是找得到那一行。",
     facts: "圆角 4px · 边框 1px · 无阴影 · 行高 32px · 正文 13px · 标签全大写",
     prefer: {
       EnquiryForm: "split",

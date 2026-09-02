@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { Children, type ReactNode } from "react"
 import { NavAxisProvider } from "./nav-axis"
 import { SystemBar } from "./system-bar"
 
@@ -127,7 +127,16 @@ export function SystemShell({
   const isTop = nav === "top"
   // A split shell is a side rail that happens to have a column beside it.
   // Everything below that asks `isTop` must keep answering no.
-  const isSplit = nav === "split" && Boolean(aside)
+  /* ⚠️ `Boolean(aside)` 对一个**空的**插槽也是 true —— 一个空阵列是真的。
+     数子元素比它准一点点（服务端渲染时空阵列会被数成 0），**但它挡不住编辑器**：
+     在编辑器里 Puck 把插槽当成一个组件传下来，所以里面有没有块，数出来都是一。
+
+     **真正的修法不在这里，在 `industry-template.ts`** —— 装这一页的人才知道
+     第二栏里有没有东西，它现在会在没有东西的时候直接把 `nav` 改成 `side`。
+     这一行留着当第二道网，不是那道正门。
+     （2026-09-02 的症状：台账的报价单页在侧栏跟内容之间有一条 267px 宽、
+     整页高的空白 —— 眼睛在并排图上一眼看到，而尺子十八项全绿。） */
+  const isSplit = nav === "split" && Children.toArray(aside).length > 0
   // `floating` only means anything beside a rail: a top bar detached from the
   // top of the window is a floating toolbar, which is a different idea and not
   // this one.

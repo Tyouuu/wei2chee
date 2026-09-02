@@ -410,7 +410,7 @@ async function main() {
     }, reg);
     if (hit === "miss") { console.log(`${reg}: 画廊里点不到它`); failed++; continue; }
     await p.waitForTimeout(3000);
-    await p.goto(`${BASE}/en/portal/dashboard`, { waitUntil: "networkidle", timeout: 120000 });
+    await p.goto(`${BASE}${ref.ourPage}`, { waitUntil: "networkidle", timeout: 120000 });
     await p.waitForTimeout(6500);
     const ours = await p.evaluate(PROBE, OURS_ROOT);
     if (ours.error) { console.log(`${reg}: ${ours.error}`); failed++; continue; }

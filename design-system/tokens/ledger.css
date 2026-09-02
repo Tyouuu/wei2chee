@@ -469,10 +469,10 @@
   --pad-control-x: 9px;
   --pad-control-y: 5px;
   --pad-cell-x: 10px;
-  --pad-cell-y: 7px;
+  --pad-cell-y: 10px;
   --gap-stack: 10px;
   --gap-inline: 8px;
-  --row-h: 32px;
+  --row-h: 52px;
   --control-h: 30px;
 
   /* ---- ELEVATION AXIS: flat, hard-edged ----------------------------------

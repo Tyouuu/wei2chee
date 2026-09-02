@@ -525,10 +525,10 @@
      the first screen a customer uses to choose a style. Still the roomiest of
      the three by a clear margin (Ledger 10px, Blueprint 13px). */
   --pad-cell-x: 14px;
-  --pad-cell-y: 14px;
+  --pad-cell-y: 15px;
   --gap-stack: 18px;
   --gap-inline: 14px;
-  --row-h: 52px;
+  --row-h: 56px;
   --control-h: 42px;
 
   /* ---- ELEVATION AXIS: soft shadow, no border ----------------------------
