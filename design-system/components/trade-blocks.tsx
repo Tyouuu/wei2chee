@@ -173,23 +173,146 @@ export function DaySchedule({
   heading,
   rows,
   framed = true,
+  shape,
 }: {
   heading?: string;
   rows: ScheduleRow[];
   framed?: boolean;
+  /**
+   * 一天的安排有几种画法，而它们不是同一张图的四种漆。
+   *
+   * ── 出处（`.screenshots/objects/`，2026-09-02 实拍）─────────────────────
+   *   framed / bare  一张一张，或者一行一行 —— 本来就有的两种
+   *   rail           左边一条轨道，一个点一个时段 ← FullCalendar timeGrid ·
+   *                  AdminLTE timeline（两个都 MIT）
+   *   ruled          时间在一个窄栏里，行与行只有细线 ← Gentelella v4 的清单
+   *
+   * ⚠️ **为什么要加**：这一根轴本来只有两种，而六套风格里必然有三套共用同一
+   * 个值 —— 那不是设计懒，是没有东西可以选（见 `design-doc.test.ts`）。
+   *
+   * ⚠️ `framed` 留着不动：客户已经存下来的页面带着它。没有给 `shape` 的时候
+   * 由 `framed` 决定，这样旧页面一个像素都不会变。
+   */
+  shape?: "framed" | "bare" | "rail" | "ruled";
 }) {
   const w = useSystemWords();
+  const items = (rows ?? []).map((r, i) => ({
+    id: String(i),
+    time: r.time,
+    endTime: r.endTime || undefined,
+    title: r.title,
+    description: r.description || undefined,
+  }));
+  const look = shape ?? (framed ? "framed" : "bare");
+
+  if (look === "rail" || look === "ruled") {
+    const head = heading ? (
+      <h2 className="mb-[var(--gap-stack)] [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+        {heading}
+      </h2>
+    ) : null;
+
+    /* 空的时候一定要讲话。一张只有表头的空白，跟一张坏掉的表，在画面上
+       长得一模一样 —— 这是 `record-table-states.test.tsx` 守的同一件事。 */
+    if (items.length === 0) {
+      return (
+        <section>
+          {head}
+          <p role="status" className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+            {w.emptyToday}
+          </p>
+        </section>
+      );
+    }
+
+    if (look === "ruled") {
+      return (
+        <section>
+          {head}
+          <ol className="flex flex-col">
+            {items.map((it, i) => (
+              <li
+                key={it.id}
+                className="flex items-baseline [gap:var(--gap-inline)] [padding-block:var(--pad-control-y)]"
+                style={
+                  i > 0
+                    ? {
+                        borderTopWidth: "var(--hairline)",
+                        borderTopStyle: "solid",
+                        borderTopColor: "var(--border-subtle)",
+                      }
+                    : undefined
+                }
+              >
+                <span className="tnum w-[5.5em] shrink-0 [color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                  {it.time}
+                </span>
+                <span className="min-w-0 flex-1 [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+                  {it.title}
+                </span>
+                {it.description && (
+                  <span className="shrink-0 [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                    {it.description}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </section>
+      );
+    }
+
+    return (
+      <section>
+        {head}
+        <ol className="flex flex-col">
+          {items.map((it, i) => (
+            <li key={it.id} className="flex [gap:var(--gap-inline)]">
+              {/* 轨道自己是一栏：一个点，加上连到下一个点的那一小段线。
+                  线画成 flex-grow 的子元素而不是 li 的边框，最后一个点下面
+                  才不会拖一条伸进空白的尾巴。 */}
+              <div className="flex flex-col items-center">
+                <span
+                  aria-hidden
+                  className="mt-1.5 size-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: "var(--color-primary)" }}
+                />
+                {i < items.length - 1 && (
+                  <span
+                    aria-hidden
+                    className="w-px flex-1"
+                    style={{ backgroundColor: "var(--border-subtle)", minHeight: 18 }}
+                  />
+                )}
+              </div>
+              <div
+                className={`min-w-0 flex-1 ${i < items.length - 1 ? "pb-[var(--gap-stack)]" : ""}`}
+              >
+                <div className="tnum [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                  {it.time}
+                  {it.endTime ? ` – ${it.endTime}` : null}
+                </div>
+                <div className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+                  {it.title}
+                </div>
+                {it.description && (
+                  <div className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                    {it.description}
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    );
+  }
+
   return (
     <ScheduleList
       heading={heading}
-      framed={framed}
-      items={(rows ?? []).map((r, i) => ({
-        id: String(i),
-        time: r.time,
-        endTime: r.endTime || undefined,
-        title: r.title,
-        description: r.description || undefined,
-      }))}
+      framed={look === "framed"}
+      items={items}
       labels={{ emptyText: w.emptyToday, timeRangeSeparator: " – " }}
     />
   );
@@ -306,11 +429,108 @@ export function PriceTable({
   tiers,
 }: {
   heading?: string;
-  layout?: "cards" | "table";
+  /**
+   * 一份价钱清单的四种画法。
+   *
+   * ── 出处 ────────────────────────────────────────────────────────────────
+   *   cards  一个方案一张卡，并排 ← Tabler 的 pricing 页（MIT · ★41.6k）
+   *   table  并排比较表           ← 同上那一页底下那张
+   *   rows   一行一项，只有细线   ← [任务 26](../../docs/founder-tasks.md) 实测的
+   *          马来西亚冷气公司：`General service RM 60 · Chemical cleaning RM 130`。
+   *          **这个市场的价目就长这样**，不是三张方案卡
+   *   stack  一项一条，整行宽     ← Tabler invoice 的逐行明细
+   *
+   * ⚠️ **为什么加 rows**：并排卡片假设「客人在三个方案里挑一个」。
+   * 一家装修公司的价目不是方案，是**一张服务表**，而一张服务表并排成卡片
+   * 会把六项服务画成六张各占五分之一屏的空卡。
+   */
+  layout?: "cards" | "table" | "rows" | "stack";
   currency?: string;
   tiers: PriceTier[];
 }) {
   const w = useSystemWords();
+
+  if (layout === "rows" || layout === "stack") {
+    const list = tiers ?? [];
+    const head = heading ? (
+      <h2 className="mb-[var(--gap-stack)] [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+        {heading}
+      </h2>
+    ) : null;
+    const money = (t: PriceTier) => {
+      const n = Number(t.price);
+      /* 价钱读不出来的时候印他自己打的字，不要印 0 —— 「RM 0」跟
+         「面议」是两句完全不同的话，而只有一句是真的。 */
+      if (!Number.isFinite(n) || String(t.price ?? "").trim() === "") return String(t.price ?? "");
+      return `${currency || "MYR"} ${n.toLocaleString("en-MY")}`;
+    };
+    return (
+      <section>
+        {head}
+        <ol className={layout === "stack" ? "flex flex-col [gap:var(--gap-stack)]" : "flex flex-col"}>
+          {list.map((t, i) => (
+            <li
+              key={`${t.name}-${i}`}
+              className={
+                layout === "stack"
+                  ? "ds-card flex items-baseline [gap:var(--gap-inline)] [padding:var(--pad-card)]"
+                  : "flex items-baseline [gap:var(--gap-inline)] [padding-block:var(--pad-control-y)]"
+              }
+              style={
+                layout === "stack"
+                  ? {
+                      borderWidth: "var(--border-card-width)",
+                      borderStyle: "solid",
+                      borderColor:
+                        t.highlighted === "yes"
+                          ? "var(--color-primary)"
+                          : "var(--color-ink-800)",
+                    }
+                  : i > 0
+                    ? {
+                        borderTopWidth: "var(--hairline)",
+                        borderTopStyle: "solid",
+                        borderTopColor: "var(--border-subtle)",
+                      }
+                    : undefined
+              }
+            >
+              <div className="min-w-0 flex-1">
+                <div
+                  className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
+                  style={{
+                    color:
+                      t.highlighted === "yes"
+                        ? "var(--color-primary)"
+                        : "var(--color-paper)",
+                  }}
+                >
+                  {t.name}
+                </div>
+                {t.description && (
+                  <div className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                    {t.description}
+                  </div>
+                )}
+              </div>
+              <div className="shrink-0 text-right">
+                <span className="tnum [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+                  {money(t)}
+                </span>
+                {t.period && (
+                  <span className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                    {" "}
+                    / {t.period}
+                  </span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    );
+  }
+
   return (
     <PricingTable
       heading={heading}

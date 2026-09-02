@@ -166,18 +166,27 @@ describe("every register's preferences point at something real", () => {
       "MarkList",
       "TabbedPanel",
     ] as const;
-    /* 8/20。⚠️ **这个数字只准往下走，永远不准往上。**
+    /* 6/20。⚠️ **这个数字只准往下走，永远不准往上。**
 
-       它今天是 8 而不是 6，理由是量出来的、而且写下来了：二十根轴里**十根只有
-       两三种变体**（DaySchedule 2 · PriceTable 2 · MarkList/RankList/
-       RecordTableRow/RecordTableTools/ShareChart/SmallStat/TrendChart/
-       WorkflowStrip 各 3）。一根只有两种的轴，六套风格里必然有三套共用同一个
-       值 —— 那不是设计懒，那是**没有东西可以选**。
+       8 → 6（2026-09-02）。降下来的方式不是把尺放宽，是**把三根最浅的轴加深**，
+       每一根的每一个新形状都有实拍出处（`.screenshots/objects/`，`npm run shoot:objects`）：
 
-       所以路线是：**先把轴加深，再把这个数字调下来**（[任务 102](../../docs/founder-tasks.md)）。
-       九月二日已经给 ShareChart 加了半圆表跟堆叠条，3 → 5。
-       每加深一根轴，这里就该少一分。 */
-    const MAX_SHARED = 8;
+         WorkflowStrip  3 → 5   ruled ← Gentelella v4 的 Tasks 卡
+                                track ← arhamkhnz Logistics 的运单卡
+         DaySchedule    2 → 4   rail  ← FullCalendar timeGrid · AdminLTE timeline
+                                ruled ← Gentelella v4 的清单
+         PriceTable     2 → 4   rows  ← [任务 26](../../docs/founder-tasks.md)
+                                        实测的十九家马来西亚同行
+                                stack ← Tabler invoice 的逐行明细
+
+       量出来的效果：最像的一对从 8/20 掉到 6/20，而 PriceTable 一根就从
+       五对里退了出去 —— **一根只有两种的轴，六套风格里必然有三套共用同一个值**，
+       所以浅轴不是设计懒，是没有东西可以选。
+
+       ⚠️ 还剩的浅轴，下一轮照同一个做法：`RecordTableRow`（3 种，出现在五对里）·
+       `SmallStat`（3）· `MarkList`（3）· `TabbedPanel`（4）· `RankList`（3）。
+       **每加深一根轴，这里就该少一分。** */
+    const MAX_SHARED = 6;
 
     const styles = [...STYLE_ORDER];
     for (let i = 0; i < styles.length; i++) {

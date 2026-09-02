@@ -273,6 +273,11 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "row", label: "横排箭头", props: { layout: "row" } },
     { id: "timeline", label: "竖排时间线", props: { layout: "timeline" } },
     { id: "numbered", label: "大编号", props: { layout: "numbered" } },
+    /* 2026-09-02 加的两种，各有实拍出处（`.screenshots/objects/`）：
+       ruled ← Gentelella v4 project_detail 的 Tasks 卡（只有细线，没有框）
+       track ← arhamkhnz Logistics 的运单卡（一条线，点在线上，字在下面）*/
+    { id: "ruled", label: "细线清单", props: { layout: "ruled" } },
+    { id: "track", label: "一条轨道", props: { layout: "track" } },
   ],
 
   // ---------------------------------------------------------------- 记录表格
@@ -397,8 +402,13 @@ export const VARIANTS: Record<string, Variant[]> = {
   ],
 
   DaySchedule: [
-    { id: "framed", label: "有框", props: { framed: true } },
-    { id: "bare", label: "不要框", props: { framed: false } },
+    { id: "framed", label: "有框", props: { shape: "framed" } },
+    { id: "bare", label: "不要框", props: { shape: "bare" } },
+    /* 2026-09-02 加的两种（实拍出处见 trade-blocks.tsx 的 DaySchedule 档头）：
+       rail  ← FullCalendar timeGrid · AdminLTE timeline
+       ruled ← Gentelella v4 的清单 */
+    { id: "rail", label: "一条时间轴", props: { shape: "rail" } },
+    { id: "ruled", label: "细线时刻表", props: { shape: "ruled" } },
   ],
 
   DateProgress: [
@@ -416,6 +426,10 @@ export const VARIANTS: Record<string, Variant[]> = {
   PriceTable: [
     { id: "cards", label: "一个方案一张卡", props: { layout: "cards" } },
     { id: "table", label: "并排比较表", props: { layout: "table" } },
+    /* 2026-09-02 加的两种。rows 那一种是[任务 26](../../docs/founder-tasks.md)
+       实测十九家马来西亚同行量出来的形状，不是从模版抄的。 */
+    { id: "rows", label: "一行一项", props: { layout: "rows" } },
+    { id: "stack", label: "一项一条", props: { layout: "stack" } },
   ],
 
   // ------------------------------------------------------------- 指标排

@@ -511,13 +511,19 @@ type Components = {
     variant?: "comfortable" | "compact";
     framed?: boolean;
   };
-  DaySchedule: { heading?: string; rows: ScheduleRow[]; framed?: boolean };
+  DaySchedule: {
+    heading?: string;
+    rows: ScheduleRow[];
+    /** 旧页面存下来的那一个。没有 `shape` 的时候由它决定。 */
+    framed?: boolean;
+    shape?: "framed" | "bare" | "rail" | "ruled";
+  };
   DateProgress: { heading?: string; start: string; end: string; framed?: boolean };
   PeopleBoard: { heading?: string; people: PersonRow[]; columns?: 2 | 3 | 4 | 5 };
   FaceRow: { people: PersonRow[]; max?: number };
   PriceTable: {
     heading?: string;
-    layout?: "cards" | "table";
+    layout?: "cards" | "table" | "rows" | "stack";
     currency?: string;
     tiers: PriceTier[];
   };
@@ -843,8 +849,8 @@ export const puckConfig: Config<Components> = {
           { time: "14:00", endTime: "16:30", title: "Bukit Jalil 施工", description: "泥水" },
         ],
       },
-      render: ({ heading, rows, framed }) => (
-        <DaySchedule heading={heading} rows={rows} framed={framed} />
+      render: ({ heading, rows, framed, shape }) => (
+        <DaySchedule heading={heading} rows={rows} framed={framed} shape={shape} />
       ),
     },
     DateProgress: {

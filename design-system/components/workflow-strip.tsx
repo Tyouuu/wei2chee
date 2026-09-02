@@ -51,7 +51,7 @@ export function WorkflowStrip({
       one of the three that survives a 390px screen -- five stages wrap the row
       into three ragged lines. `numbered` drops the boxes entirely, for a
       freshly drafted pipeline that has no counts in it yet. */
-  layout?: "row" | "timeline" | "numbered"
+  layout?: "row" | "timeline" | "numbered" | "ruled" | "track"
 }) {
   // Absent means "follow the register", not "row" -- see style-scope.tsx.
   /*
@@ -73,7 +73,10 @@ export function WorkflowStrip({
     there was no eslint config in the repository, so `react-hooks/rules-of-hooks`
     has been switched off for this codebase's entire life.
   */
-  const layoutPref = useRegisterProp<"row" | "timeline" | "numbered">("WorkflowStrip", "layout")
+  const layoutPref = useRegisterProp<"row" | "timeline" | "numbered" | "ruled" | "track">(
+    "WorkflowStrip",
+    "layout",
+  )
   const lay = layout ?? layoutPref ?? "row"
   if (stages.length === 0) return null
 
@@ -96,7 +99,150 @@ export function WorkflowStrip({
         </h2>
       )}
 
-      {lay === "timeline" ? (
+      {lay === "ruled" ? (
+        /*
+          一条一行，中间只有细线。
+
+          抄的是 Gentelella v4 的 project_detail（MIT · ★21.5k）那张 Tasks 卡：
+          每一步一行、左边一个窄的序号栏、名字、右边一个数字，行与行之间只有
+          一条细线 —— 没有框、没有点、没有轨道。
+
+          ⚠️ **它跟 timeline 不是同一个东西，差别不在装饰**：timeline 画的是
+          「这几步是连着的」（所以有一条贯穿的轨道跟点），ruled 画的是
+          「这里有一张清单」。一个讲流动，一个讲盘点。
+
+          ⚠️ 故意没有打勾框。原始那张卡是打勾的，但我们不知道哪一步「做完了」
+          —— 我们只知道 AI 标了哪一步是瓶颈。画一个永远不打勾的框，
+          或者靠位置推断「前面的都做完了」，两个都是在页面上讲一句我们不知道
+          真假的话。
+        */
+        <ol className="flex flex-col">
+          {stages.map((stage, i) => (
+            <li
+              key={`${stage.label}-${i}`}
+              className="flex items-baseline [gap:var(--gap-inline)] [padding-block:var(--pad-control-y)]"
+              style={
+                i > 0
+                  ? {
+                      borderTopWidth: "var(--hairline)",
+                      borderTopStyle: "solid",
+                      borderTopColor: "var(--border-subtle)",
+                    }
+                  : undefined
+              }
+            >
+              <span
+                aria-hidden
+                className="w-[1.5em] shrink-0 [font-family:var(--font-numeric)] [font-size:var(--text-micro)] [letter-spacing:var(--tracking-label)]"
+                style={{
+                  color:
+                    stage.tone === "attention"
+                      ? "var(--color-primary)"
+                      : "var(--color-paper-dim)",
+                }}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span
+                className="min-w-0 flex-1 [font-size:var(--text-sm)]"
+                style={{
+                  color:
+                    stage.tone === "attention"
+                      ? "var(--color-primary)"
+                      : "var(--color-paper)",
+                  fontWeight:
+                    stage.tone === "attention"
+                      ? "var(--fw-semibold)"
+                      : "var(--fw-regular)",
+                }}
+              >
+                {stage.label}
+              </span>
+              {stage.count && (
+                <span className="tnum shrink-0 [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+                  {stage.count}
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      ) : lay === "track" ? (
+        /*
+          一条轨道，点在轨道上，名字在下面。
+
+          抄的是 arhamkhnz 那张 Logistics 的运单卡（MIT）：起点跟终点之间一条
+          虚线，中间一个记号说「现在在这里」。同一个形状在每一家的订单追踪页
+          上都看得到，而**我们的客户天天在收这种通知**（Shopee、J&T）——
+          它是这个市场最不用解释的一个图。
+
+          ⚠️ 跟 row 的差别是结构，不是漆：row 是**一串盒子**，每个盒子自己有底、
+          有框、有内距；track 是**一条线**，盒子全部拿掉，只剩线、点、字。
+          换个配色它还是两个不同的东西。
+        */
+        <ol className="flex items-start">
+          {stages.map((stage, i) => (
+            <li
+              key={`${stage.label}-${i}`}
+              className="relative flex min-w-0 flex-1 flex-col items-center"
+            >
+              {/* 轨道分成两截画（左半、右半），因为第一颗点的左边跟最后一颗点的
+                  右边都不该有线 —— 一条画满的轨道会伸进空白里，看起来像还有
+                  一步没画出来。 */}
+              <span
+                aria-hidden
+                className="absolute left-0 right-1/2 h-px"
+                style={{
+                  top: 5,
+                  backgroundColor: i === 0 ? "transparent" : "var(--border-subtle)",
+                }}
+              />
+              <span
+                aria-hidden
+                className="absolute left-1/2 right-0 h-px"
+                style={{
+                  top: 5,
+                  backgroundColor:
+                    i === stages.length - 1 ? "transparent" : "var(--border-subtle)",
+                }}
+              />
+              <span
+                aria-hidden
+                className="relative size-2.5 shrink-0 rounded-full"
+                style={{
+                  backgroundColor:
+                    stage.tone === "attention"
+                      ? "var(--color-primary)"
+                      : "var(--color-canvas)",
+                  boxShadow:
+                    stage.tone === "attention"
+                      ? "none"
+                      : "inset 0 0 0 var(--hairline) var(--border-subtle)",
+                }}
+              />
+              <span
+                className="mt-2 text-center [font-size:var(--text-xs)] [padding-inline:2px]"
+                style={{
+                  color:
+                    stage.tone === "attention"
+                      ? "var(--color-primary)"
+                      : "var(--color-paper)",
+                  fontWeight:
+                    stage.tone === "attention"
+                      ? "var(--fw-semibold)"
+                      : "var(--fw-regular)",
+                }}
+              >
+                {stage.label}
+              </span>
+              {stage.count && (
+                <span className="tnum [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-micro)]">
+                  {stage.count}
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      ) : lay === "timeline" ? (
         <ol className="flex flex-col">
           {stages.map((stage, i) => (
             <li key={`${stage.label}-${i}`} className="flex [gap:var(--gap-inline)]">

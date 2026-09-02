@@ -5,14 +5,15 @@
       "repo": "arhamkhnz/next-shadcn-admin-dashboard",
       "licence": "MIT",
       "kind": "code",
-      "took": "15 shadcn primitives, 6 draggable blocks, and the soft-pop theme preset that became 波普",
+      "took": "15 shadcn primitives, 6 draggable blocks, and the soft-pop theme preset that became 波普；2026-09-02 再拿一样：Logistics 的运单卡把一段行程画成一条线加一个记号 → WorkflowStrip 的 track",
       "where": "components/ui/, components/blocks/, design-system/tokens/pop.css",
       "takenAt": "64e77583",
       "takenOn": "2026-08-23",
       "note": "Same stack: Next.js 16, Tailwind v4, shadcn on Radix. Its 25 screens are still unmined.",
       "appliedTo": [
         "粗野",
-        "工作室"
+        "工作室",
+        "中台"
       ]
     },
     {
@@ -383,6 +384,32 @@
       "takenOn": "2026-09-02",
       "note": "老板发的抖音贴文指过来的（Refero，142,000+ 张真实产品画面）。⚠️ 它的 MCP 要 Pro 订阅（US$10/月，年缴 120），**没有订**——这一条只拿 MIT 那一半。它当天就打中我们两件：① 「卡片不要当分组用」——我 9-01 才把账号页改成八张卡；② 图片一律要写宽高——我们 93 张 <img> 只有 2 张有。",
       "appliedTo": []
+    },
+    {
+      "repo": "ColorlibHQ/gentelella",
+      "licence": "MIT",
+      "kind": "look",
+      "took": "两个形状：一步一行只有细线的清单（project_detail 的 Tasks 卡）→ WorkflowStrip 的 ruled；同一张卡的时间栏排法 → DaySchedule 的 ruled",
+      "where": "design-system/components/workflow-strip.tsx, design-system/components/trade-blocks.tsx",
+      "takenOn": "2026-09-02",
+      "note": "v4.1.1 是 2026 年重写的（Vite 8、无 Bootstrap 无 jQuery），58 页。⚠️ gentelella.colorlib.com 是行销页不是 demo —— 任何路径都回 200 而且回同一张首页；真的 demo 在 preview.colorlib.com/theme/gentelella/production/",
+      "appliedTo": [
+        "台账",
+        "瑞士"
+      ]
+    },
+    {
+      "repo": "fullcalendar/fullcalendar",
+      "licence": "MIT",
+      "kind": "look",
+      "took": "一天的安排画成一条轨道：左边一条竖线，一个点一个时段 → DaySchedule 的 rail",
+      "where": "design-system/components/trade-blocks.tsx",
+      "takenOn": "2026-09-02",
+      "note": "只看 timeGrid 那一种的排法，没有装它的套件 —— 我们的时段是一天几笔，不需要一个日历引擎",
+      "appliedTo": [
+        "炉",
+        "招牌"
+      ]
     }
   ]
 }
