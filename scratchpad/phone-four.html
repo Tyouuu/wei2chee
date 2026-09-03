@@ -477,6 +477,27 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 .r-signboard .sqsec{font-size:21px;padding-top:26px}
 .r-signboard .sqrow{padding-left:20px;padding-right:20px}
 
+
+/* ── 风格库的自动播放 ──────────────────────────────
+   老板 2026-09-03：「我要建立风格库 然后一样是可以 preview 的」。
+
+   ⚠️ 两条是 [任务 13](docs/founder-tasks.md) 跟 [任务 15](docs/founder-tasks.md)
+   花过钱学到的，直接搬过来：
+     ① **一个计时器管全部**。十支各自计时会在一分钟内错开，
+        那就变成十台老虎机；同时翻才是「同一页，十种设计，并排比」
+     ② **分页隐藏时停下来** —— 每翻一次要重画十棵页面树
+   ⚠️ 而 21st.dev 那一轮量到的是：**一张卡要吗是静的、要吗是连续动的，
+   「一张一张照片跳」是最差的那一种**。所以翻页是**滑**过去，不是切。 */
+.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 22px}
+.bar button{background:var(--panel);border:1px solid var(--line);color:var(--fg);
+            border-radius:999px;min-height:44px;padding:0 18px;font:inherit;font-size:14px;
+            font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px}
+.bar button[aria-pressed="true"]{background:var(--accent);color:#08191a;border-color:transparent}
+.bar .tick{font-family:var(--mono);font-size:12px;color:var(--dim)}
+@keyframes slidein{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.phone .body > *{animation:slidein .34s ease both}
+@media (prefers-reduced-motion:reduce){ .phone .body > *{animation:none} }
+
 .status{height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:space-between;
         padding:0 16px;font-size:11px;font-family:var(--mono);color:var(--dim);
         background:var(--canvas)}
@@ -683,6 +704,11 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
     <tr><td><b>入口墙</b> cand10</td><td><b>Gojek</b></td><td><b>一整片圆形图标墙（16 格）</b></td><td>4 格</td><td>无清单</td><td>卡里两颗圆钮</td><td>14 / 20px</td><td>密</td><td><code>#0f7a3d</code></td></tr>
   </table></div>
 
+  <div class="bar">
+    <button id="play" aria-pressed="false">▶ 自己播</button>
+    <button id="step">下一页</button>
+    <span class="tick" id="tick">十套同时翻 —— 同一页，十种设计</span>
+  </div>
   <div class="rack" id="rack"></div>
 
   <div class="note" style="margin-top:26px">
@@ -792,7 +818,8 @@ const REG = {
       + '<div class="xcard"><div class="xhead"><h4>Still to collect</h4></div>'
       + '<div class="xfig"><div class="n" style="color:var(--ptext)">RM 96,240</div>'
       + '<div class="d">Across 4 jobs</div></div></div>',
-    jobs: () => '<div class="hd"><h2>Projects</h2></div><div class="list">'+rowsOf("dot").join("")+'</div>',
+    /* 通用的那一版拿掉了 —— 第二页十套里八套长得一模一样。
+     现在由 KIT 用它自己的零件重生成。 */
   },
   hearth: {
     zh:"炉", en:"hearth", why:"抄 Fresha。一天铺成时间格，每一笔是一块实色盖在它自己那一段上 —— 一眼看得出哪几个钟头被占住了，连空的那几格都算答案。",
@@ -813,9 +840,8 @@ const REG = {
             + '</div></div>';
         }).join("")
       + '</div>',
-    clients: () =>
-      '<div class="hd act"><h2>Clients</h2><button class="hdbtn">＋ Add</button></div>'
-      + '<div class="list boxed">'+rowsOf("avatar").join("")+'</div>',
+  /* 通用的那一版拿掉了 —— 第二页十套里八套长得一模一样。
+     现在由 KIT 用它自己的零件重生成。 */
   },
   counter: {
     zh:"中台", en:"counter", why:"抄 Zoho Books。两格并排开场、底下一排捷径格子；五格底栏、直角、细线、一行 42px —— 全库最密。它不留边、不用阴影，把一屏能装的全部装上。",
@@ -831,7 +857,8 @@ const REG = {
       + [["QT","Quote"],["OR","Order"],["RC","Receipt"],["PO","Purchase"],["ST","Stock"],["CU","Client"],["EX","Expense"],["RP","Report"]]
           .map(([a,b]) => '<button><span class="ic">'+a+'</span>'+b+'</button>').join("")
       + '</div><div class="sec">Recent</div><div class="list">'+rowsOf("dense").join("")+'</div>',
-    jobs: () => '<div class="hd mid"><h2>Orders</h2></div><div class="list">'+rowsOf("dense").join("")+'</div>',
+    /* 通用的那一版拿掉了 —— 第二页十套里八套长得一模一样。
+     现在由 KIT 用它自己的零件重生成。 */
   },
   blueprint: {
     zh:"图纸", en:"blueprint", why:"抄 QuickBooks。全库唯一一套不给大数字的。开场就是按状态分好的清单，点一笔进去是一张可以印出来的纸。",
@@ -909,12 +936,8 @@ REG.signboard = {
         '<div class="li"><div class="txt"><div class="p1">'+esc(j.t)+'</div>'
         + '<div class="p2">'+esc(j.who)+'</div></div><div class="amt">'+esc(j.amt)+'</div></div>').join("")
     + '</div>',
-  jobs: () =>
-    '<div class="hd mid"><h2>Jobs</h2></div><div class="list">'
-    + JOBS.map((j) => '<div class="li"><div class="txt"><div class="p1">'+esc(j.t)+'</div>'
-        + '<div class="p2">'+esc(j.who)+' · '+esc(j.st)+'</div></div>'
-        + '<div class="amt">'+esc(j.amt)+'</div></div>').join("")
-    + '</div>',
+  /* 通用的那一版拿掉了 —— 第二页十套里八套长得一模一样。
+     现在由 KIT 用它自己的零件重生成。 */
 };
 
 
@@ -1085,7 +1108,8 @@ REG.cand7 = {
     + [["&#128221;", "Quoted", 2], ["&#128666;", "On site", 3], ["&#9989;", "Done", 4], ["&#128176;", "Paid", 1]]
         .map(([g, t, n]) => '<button><span class="g2">' + g + '</span>' + t + ' &middot; ' + n + '</button>').join("")
     + '</div><div class="all">&#43; Track every job</div></div>',
-  jobs: () => '<div class="hd"><h2>Orders</h2></div><div class="list">' + rowsOf("dot").join("") + '</div>',
+  /* 通用的那一版拿掉了 —— 第二页十套里八套长得一模一样。
+     现在由 KIT 用它自己的零件重生成。 */
 };
 
 /* ── 候选 8 ← Brilliant ──────────────────────────────────────────────── */
@@ -1108,8 +1132,8 @@ REG.cand8 = {
     + '<div class="bt">Taman Desa 3-bedroom refit</div>'
     + '<div class="bs">Stage 3 of 5</div><div class="bn">Tiling, level 2</div>'
     + '<div class="bbar"><i style="width:60%"></i></div></div></div>',
-  jobs: () => '<div class="b1"><h2>Jobs</h2><span class="bpill">' + JOBS.length + '</span></div>'
-    + '<div class="list">' + rowsOf("dot").join("") + '</div>',
+  /* 通用的那一版拿掉了 —— 第二页十套里八套长得一模一样。
+     现在由 KIT 用它自己的零件重生成。 */
 };
 
 /* ── 候选 9 ← Gametime ───────────────────────────────────────────────── */
@@ -1140,7 +1164,8 @@ REG.cand9 = {
         + '<div class="gn">' + esc(j.t) + '</div>'
         + '<div class="gm"><span>' + esc(j.who) + '</span><span>' + esc(j.amt) + '</span></div>'
         + '</div></div>').join("") + '</div>',
-  jobs: () => '<div class="g1"><h2>Jobs</h2></div><div class="list">' + rowsOf("avatar").join("") + '</div>',
+  /* 通用的那一版拿掉了 —— 第二页十套里八套长得一模一样。
+     现在由 KIT 用它自己的零件重生成。 */
 };
 
 /* ── 候选 10 ← Gojek ─────────────────────────────────────────────────── */
@@ -1167,8 +1192,180 @@ REG.cand10 = {
         .map(([a, b, t, n]) => '<button><span class="jc" style="background:color-mix(in srgb, var(--' + t + ') 76%, #000)">'
           + a + (n ? '<em>' + n + '</em>' : "") + '</span>' + b + '</button>').join("")
     + '</div>',
-  jobs: () => '<div class="hd"><h2>Jobs</h2></div><div class="list">' + rowsOf("dot").join("") + '</div>',
+  /* 通用的那一版拿掉了 —— 第二页十套里八套长得一模一样。
+     现在由 KIT 用它自己的零件重生成。 */
 };
+
+/* ══ 每一套补齐同一批页面 ══════════════════════════════════════════════
+   老板 2026-09-03：「每一套都有多少页面 我要建立风格库 然后一样是可以preview的」。
+
+   量出来的实话：**十套一共 39 个底栏格，只有 21 格有自己的画面**，
+   另外 18 格按下去退回第一屏。而 `align:app` 的死按钮那一项**放它过了** ——
+   它问的是「画面有没有变」，退回第一屏也算变。
+   🔴 **一个把你带到错的页面的按钮，比按了没反应更糟**，所以那一项要加严。
+
+   ── 页面是同一批，骨架才是各自的 ─────────────────────────────────────
+   这一条跟 `DASHBOARD_COMPOSITION` 是同一个想法：
+   **客户有哪几页是他自己挑的，风格只决定那几页长什么样。**
+   所以下面不是替每一套手写四十个画面，而是给每一套一套自己的「零件」
+   （标题怎么写 · 一行长什么样 · 一个数字怎么摆），再拿同一批页面去套。
+   ⚠️ 已经手写过的画面不动 —— 那几个是逐项复刻出来的，通用件盖不过它们。 */
+
+const PAGE_TITLES = { money: "Money", clients: "Clients", stock: "Stock", more: "More", jobs: "Jobs" };
+
+const MONEY = [
+  { t: "Deposit · Taman Desa", who: "Mr. Chan", amt: "RM 14,550", paid: "3 Sep", st: "In", tone: "jade" },
+  { t: "Cement, 200 bags", who: "Bina Jaya", amt: "RM 3,180", paid: "2 Sep", st: "Out", tone: "clay" },
+  { t: "Deposit · Sri Petaling", who: "Mr. Tan", amt: "RM 5,460", paid: "1 Sep", st: "In", tone: "jade" },
+  { t: "Diesel · lorry", who: "Petronas", amt: "RM 240", paid: "1 Sep", st: "Out", tone: "clay" },
+  { t: "Progress claim 2", who: "Mrs. Lee", amt: "RM 6,840", paid: "29 Aug", st: "In", tone: "jade" },
+];
+const PEOPLE = [
+  { t: "Mr. Chan", who: "Taman Desa · 3 jobs", amt: "RM 48,500", paid: "RM 14,550", st: "Active", tone: "jade" },
+  { t: "Mrs. Lee", who: "Bukit Jalil · 1 job", amt: "RM 22,800", paid: "RM 0", st: "Awaiting", tone: "brass" },
+  { t: "Mr. Ong", who: "Cheras · 2 jobs", amt: "RM 96,000", paid: "RM 0", st: "Quoting", tone: "dim" },
+  { t: "Ms. Lim", who: "Ampang · 1 job", amt: "RM 8,400", paid: "RM 0", st: "Overdue", tone: "clay" },
+  { t: "Mr. Tan", who: "Sri Petaling · 1 job", amt: "RM 18,200", paid: "RM 5,460", st: "Active", tone: "jade" },
+];
+const STOCK = [
+  { t: "Cement 50kg", who: "Store · bags", amt: "84", paid: "", st: "Plenty", tone: "jade" },
+  { t: "Tile 60×60", who: "Store · boxes", amt: "12", paid: "", st: "Low", tone: "brass" },
+  { t: "Paint · off-white 18L", who: "Lorry · pails", amt: "31", paid: "", st: "Sitting", tone: "dim" },
+  { t: "Grout, grey", who: "Store · bags", amt: "6", paid: "", st: "Low", tone: "brass" },
+];
+
+/* 每一套自己的三个零件。没写的用最朴素的那一版。 */
+const KIT = {
+  ledger: {
+    head: (t) => '<div class="topbar"><div class="co2">' + esc(BIZ.co2) + '</div><div class="me">CT</div></div>'
+      + '<div class="hd"><h2>' + esc(t) + '</h2></div>',
+    stat: (l, v) => '<div class="xcard"><div class="xhead"><h4>' + esc(l) + '</h4></div>'
+      + '<div class="xfig"><div class="n">' + esc(v) + '</div><div class="d">This month · 3 Sep</div></div></div>',
+    rows: (items) => '<div class="xcard">' + items.map((j) =>
+      '<div class="xrow"><span class="dot2" style="background:var(--' + j.tone + ')"></span>'
+      + '<div><div class="nm2">' + esc(j.t) + '</div><div class="sub3">' + esc(j.who) + '</div>'
+      + '<div class="two"><div><div class="v2">' + esc(j.amt) + '</div><div class="l2">' + esc(j.st) + '</div></div>'
+      + (j.paid ? '<div><div class="v2">' + esc(j.paid) + '</div><div class="l2">Settled</div></div>' : "")
+      + '</div></div></div>').join("") + '</div>',
+  },
+  hearth: {
+    head: (t) => '<div class="fbar"><span class="ico">&#8943;</span>'
+      + '<span class="day">' + esc(t) + '</span><span class="ico">&#9776;</span></div>',
+    stat: (l, v) => '<div class="fgrid"><div class="fslot"><div class="ft">&nbsp;</div><div class="flane">'
+      + '<div class="fblk" style="--bg2:var(--soft)"><div class="r1">' + esc(l) + '</div>'
+      + '<div class="r2" style="font-size:26px">' + esc(v) + '</div></div></div></div></div>',
+    rows: (items) => '<div class="fgrid">' + items.map((j) =>
+      '<div class="fslot"><div class="ft">' + esc(j.paid || j.st) + '</div><div class="flane">'
+      + '<div class="fblk" style="--bg2:color-mix(in srgb, var(--' + j.tone + ') 14%, #fff)">'
+      + '<div class="r2">' + esc(j.t) + '</div><div class="r3">' + esc(j.who) + ' · ' + esc(j.amt) + '</div>'
+      + '</div></div></div>').join("") + '</div>',
+  },
+  counter: {
+    head: (t) => '<div class="zbar"><span class="lhs">&#9776; ' + esc(t) + '</span>'
+      + '<span style="font-size:18px;color:var(--dim)">&#9788;</span></div>'
+      + '<div class="ztabs"><button aria-current="true">All</button><button>Open</button><button>Done</button></div>',
+    stat: (l, v) => '<div class="zbento"><div class="zbig"><div class="k">' + esc(l) + '</div>'
+      + '<div class="v3 last">' + esc(v) + '</div></div>'
+      + '<div class="zsmall"><div class="zwarn"><div><div class="n3">3</div><div class="l3">Need a look</div></div>'
+      + '<span class="go">&rsaquo;</span></div></div></div>',
+    rows: (items) => '<div class="list">' + items.map((j) =>
+      '<div class="li dense"><div class="txt"><div class="p1">' + esc(j.t) + '</div></div>'
+      + '<div class="amt">' + esc(j.amt) + '</div></div>').join("") + '</div>',
+  },
+  blueprint: {
+    head: (t) => '<div class="qtop"><div><div class="qco">' + esc(BIZ.co2) + ' <span style="font-size:11px;opacity:.6">&#9662;</span></div>'
+      + '<div class="qhi">' + esc(t) + '</div></div><div class="qic"><span>&#9200;</span><span>&#128269;</span></div></div>',
+    stat: (l, v) => '<div class="qacct"><div class="qt2">' + esc(l) + '</div><div class="qbig">' + esc(v) + '</div>'
+      + '<div class="qcap">Across 2 accounts</div></div>',
+    rows: (items) => '<div class="qacct">' + items.map((j) =>
+      '<div class="qr"><span class="qsq" style="background:var(--' + j.tone + ')"></span>'
+      + '<span class="qn2"><b>' + esc(j.t) + '</b><span>' + esc(j.who) + '</span></span>'
+      + '<span class="qam">' + esc(j.amt) + '</span></div>').join("") + '</div>',
+  },
+  swiss: {
+    head: (t) => '<div class="ncover"></div><div class="nmark">&#128203;</div>'
+      + '<div class="npage"><div class="nmeta">&#128172; Add comment</div><h2 class="ntitle">' + esc(t) + '</h2></div>',
+    stat: (l, v) => '<div class="npage"><div class="nsec">' + esc(l) + '</div>'
+      + '<div class="nrow"><span class="ni">&#128176;</span><span class="nt">This month</span>'
+      + '<span class="nv" style="font-size:19px;font-weight:700;color:var(--ink)">' + esc(v) + '</span></div></div>',
+    rows: (items) => '<div class="npage">' + items.map((j) =>
+      '<div class="nrow"><span class="ni">&#128196;</span><span class="nt">' + esc(j.t) + '</span>'
+      + '<span class="nv">' + esc(j.amt) + '</span></div>').join("") + '</div>',
+  },
+  signboard: {
+    head: (t) => '<div class="sq1"><h2>' + esc(t) + '</h2><span class="gear">&#9881;</span></div>',
+    stat: (l, v) => '<div class="sqav">' + esc(l) + '</div><div class="sqfig">' + esc(v) + '</div>',
+    rows: (items) => items.map((j, i) =>
+      '<div class="sqrow' + (i === 0 ? " first" : "") + '">'
+      + '<span class="sqi" style="background:color-mix(in srgb, var(--' + j.tone + ') 72%, #000)">'
+      + esc(initials(j.who || j.t)) + '</span>'
+      + '<span class="sqt"><span class="sqn">' + esc(j.t) + '</span><span class="sqs">' + esc(j.st) + '</span></span>'
+      + '<span class="sqv"><b>' + esc(j.amt) + '</b><span>' + esc(j.paid || j.who) + '</span></span></div>').join(""),
+  },
+  cand7: {
+    head: (t) => '<div class="ktop"><div class="k1"><span class="brand">' + esc(t) + '</span>'
+      + '<span class="ico3"><span>&#9776;</span><span>&#9881;</span></span></div>'
+      + '<div class="ksearch">&#128269; Search</div></div>',
+    stat: (l, v) => '<div class="kduo"><div><div class="kk">' + esc(l) + '</div><div class="kv">' + esc(v) + '</div></div>'
+      + '<div><div class="kk">Last month</div><div class="kv">RM 9,860</div></div></div>',
+    rows: (items) => '<div class="kstage"><div class="four">' + items.slice(0, 4).map((j) =>
+      '<button><span class="g2">&#9679;</span>' + esc(j.st) + '</button>').join("") + '</div>'
+      + '<div class="all">&#43; ' + items.length + ' in total</div></div>'
+      + '<div class="list">' + items.map((j) =>
+        '<div class="li"><span class="dot" style="background:var(--' + j.tone + ')"></span>'
+        + '<div class="txt"><div class="p1">' + esc(j.t) + '</div><div class="p2">' + esc(j.who) + '</div></div>'
+        + '<div class="amt">' + esc(j.amt) + '</div></div>').join("") + '</div>',
+  },
+  cand8: {
+    head: (t) => '<div class="b1"><h2>' + esc(t) + '</h2><span class="bpill">' + "3 &#9889;" + '</span></div>',
+    stat: (l, v) => '<div class="bcall"><div class="t2">' + esc(l) + '</div>'
+      + '<div style="font-size:32px;font-weight:730;margin-top:6px">' + esc(v) + '</div></div>',
+    rows: (items) => items.map((j) =>
+      '<div class="bcard" style="margin-top:12px"><div class="bd">'
+      + '<div class="bt" style="font-size:15.5px">' + esc(j.t) + '</div>'
+      + '<div class="bs">' + esc(j.st) + '</div><div class="bn">' + esc(j.who) + ' · ' + esc(j.amt) + '</div>'
+      + '</div></div>').join(""),
+  },
+  cand9: {
+    head: (t) => '<div class="g1"><h2>' + esc(t) + ' <span style="font-size:15px;opacity:.55">&#9662;</span></h2></div>'
+      + '<div class="gsearch">&#128269; Search</div>'
+      + '<div class="gchips"><button aria-current="true">All</button><button>In</button><button>Out</button></div>',
+    stat: (l, v) => '<div class="ghero"><span class="tagx">' + esc(l) + '</span>'
+      + '<div class="gt" style="font-size:30px">' + esc(v) + '</div></div>',
+    rows: (items) => '<div class="grail">' + items.map((j) =>
+      '<div class="gitem"><div class="ga"></div><div class="gb"><div class="gn">' + esc(j.t) + '</div>'
+      + '<div class="gm"><span>' + esc(j.who) + '</span><span>' + esc(j.amt) + '</span></div></div></div>').join("")
+      + '</div>',
+  },
+  cand10: {
+    head: (t) => '<div class="jtop"><div class="jrow"><div class="jsearch">&#128269; ' + esc(t) + '</div>'
+      + '<span class="jme">CT</span></div></div>',
+    stat: (l, v) => '<div class="jpromo"><div class="jp1"><div class="jpt">' + esc(v) + '</div>'
+      + '<div class="jps">' + esc(l) + '</div></div></div>',
+    rows: (items) => '<div class="list" style="margin-top:14px">' + items.map((j) =>
+      '<div class="li"><span class="dot" style="background:var(--' + j.tone + ')"></span>'
+      + '<div class="txt"><div class="p1">' + esc(j.t) + '</div><div class="p2">' + esc(j.who) + '</div></div>'
+      + '<div class="amt">' + esc(j.amt) + '</div></div>').join("") + '</div>',
+  },
+};
+
+/* 拿同一批页面去套每一套自己的零件。**手写过的不动。** */
+for (const key of Object.keys(REG)) {
+  const r = REG[key], k = KIT[key];
+  if (!k) continue;
+  const fill = (id, title, statLabel, statValue, items) => {
+    if (typeof r[id] === "function") return;          // 逐项复刻出来的，别盖
+    r[id] = () => k.head(title) + (statValue ? k.stat(statLabel, statValue) : "") + k.rows(items);
+  };
+  fill("money", PAGE_TITLES.money, "Received this month", BIZ.month, MONEY);
+  /* 招牌 ← Square：**每一页都留那个左对齐大数字** ——
+     Square 的内页本来就这样，而且不这样它的 p2 会跟入口墙撞到 5/7。 */
+  const keepFig = key === "signboard";
+  fill("clients", PAGE_TITLES.clients, keepFig ? "Clients" : "", keepFig ? String(PEOPLE.length) : "", PEOPLE);
+  fill("stock", PAGE_TITLES.stock, keepFig ? "On the shelf" : "", keepFig ? String(STOCK.length) : "", STOCK);
+  fill("more", PAGE_TITLES.more, "", "", STOCK);
+  fill("jobs", PAGE_TITLES.jobs, keepFig ? "Running" : "", keepFig ? String(JOBS.length) : "", JOBS);
+}
 
 function render(key, screen) {
   const r = REG[key];
@@ -1198,6 +1395,35 @@ rack.innerHTML = Object.keys(REG).map((k) =>
    已经被换掉的节点上 —— 实测四支里**三支的底栏按了不换页**。
    而那正是我们禁止 AI 画的那种按钮：它会亮、会变色，就是不做事。
    （顺带：重画整排也会把另外三支已经滚到的位置弹回顶部。） */
+
+/* 一个计时器，十支同时翻。 */
+const order = (k) => REG[k].tabs.map((t) => t[0]);
+function advance() {
+  for (const k of Object.keys(REG)) {
+    const o = order(k);
+    const i = o.indexOf(state[k]);
+    state[k] = o[(i + 1) % o.length];
+    const slot = rack.querySelector('[data-slot="' + k + '"]');
+    if (slot) slot.innerHTML = slotHTML(k);
+  }
+}
+let timer = null;
+const playBtn = document.getElementById("play");
+const tick = document.getElementById("tick");
+function setPlaying(on) {
+  playBtn.setAttribute("aria-pressed", String(on));
+  playBtn.textContent = on ? "⏸ 停" : "▶ 自己播";
+  clearInterval(timer);
+  timer = on ? setInterval(advance, 3000) : null;
+}
+playBtn.addEventListener("click", () => setPlaying(playBtn.getAttribute("aria-pressed") !== "true"));
+document.getElementById("step").addEventListener("click", advance);
+/* 分页隐藏就停 —— 每翻一次要重画十棵页面树。 */
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { clearInterval(timer); timer = null; }
+  else if (playBtn.getAttribute("aria-pressed") === "true") timer = setInterval(advance, 3000);
+});
+
 rack.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-go]");
   if (!btn) return;

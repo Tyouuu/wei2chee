@@ -149,6 +149,23 @@ for (const reg of phones) {
   await p.waitForTimeout(160);
   say(dead.length === 0, "底栏每一格按了都有反应", dead.length ? `第 ${dead.join("/")} 格是死的` : "");
 
+  /* 🔴 **而「有反应」不等於「到对的地方」。**
+     实测 2026-09-03：十套一共 39 个底栏格，只有 21 格有自己的画面 ——
+     另外 18 格按下去**退回第一屏**，而上面那一条判它们全是活的
+     （画面确实变了嘛）。**一个把你带到错的页面的按钮，比按了没反应更糟。**
+     所以再问一次：按完之后，选中的那一格是不是它自己。 */
+  const wrong = [];
+  for (let i = 1; i <= tabs; i++) {
+    await p.click(`${one} .nav button:nth-child(${i})`).catch(() => {});
+    await p.waitForTimeout(140);
+    const cur = await p.$$eval(`${one} .nav button`, (bs) => bs.findIndex((x) => x.getAttribute("aria-current") === "true")).catch(() => -1);
+    if (cur !== i - 1) wrong.push(i);
+  }
+  await p.click(`${one} .nav button:nth-child(1)`).catch(() => {});
+  await p.waitForTimeout(140);
+  say(wrong.length === 0, "每一格都有自己的画面（不是退回第一屏）",
+    wrong.length ? `第 ${wrong.join("/")} 格没有` : "");
+
   const m = await p.evaluate(({ one: s2, TAP_MIN, HERO_MIN, VOID_MAX, CONTRAST_MIN, SHARED }) => {
     const ph = document.querySelector(s2);
     const body = ph.querySelector(".body");
@@ -257,7 +274,21 @@ say(scriptErrors.length === 0, "没有脚本错", scriptErrors.slice(0, 2).join(
    那三根轴换成了**底栏 · 清单行 · 主要动作在哪**。
    它只能**否决**：两套七根重叠 ≥ 5 就是太像；全部不同也可以很难看。 */
 const MAX_SHARED = 4;
-const prints = await p.evaluate((sel) =>
+/* 🔴 **每一页都要量，不是只量第一屏。**
+   实测 2026-09-03：十套的第一屏重叠只有 4/7，翻到**第二页**却是十套里八套
+   同一张清单 —— 而这一项当时只看第一屏，所以它一片绿。
+   「太一样」发生在第二页，尺子却站在第一页。 */
+const prints = [];
+const pageCount = await p.$$eval(SEL + " .nav button", (b2) => b2.length ? Math.max(...[...new Set(b2.map((x) => x.closest(".phone").querySelectorAll(".nav button").length))]) : 0);
+for (let page = 0; page < Math.min(pageCount, 4); page++) {
+  if (page) {
+    for (const reg of phones) {
+      const one2 = phones.length === 1 ? SEL : `${SEL}[data-reg="${reg}"]`;
+      await p.click(`${one2} .nav button:nth-child(${page + 1})`).catch(() => {});
+    }
+    await p.waitForTimeout(220);
+  }
+  const got = await p.evaluate((sel) =>
   [...document.querySelectorAll(sel)].map((ph) => {
     const has = (q) => !!ph.querySelector(q);
     const body = ph.querySelector(".body");
@@ -276,7 +307,11 @@ const prints = await p.evaluate((sel) =>
     const act = has(".fab") ? "右下浮钮" : has(".sqpair") ? "两颗药丸"
       : has(".wide") ? "满宽按钮" : has(".bcall button") ? "卡里的按钮"
       : has(".hdbtn") ? "标题栏右上" : has(".kstage .all") ? "导航底下" : "无";
-    const zone = has(".xcard") || has(".qdoc") || has(".bcard") || has(".qacct") ? "卡片"
+    /* ⚠️ 「有色顶区」是一根真的轴 —— Gojek 的绿顶跟 Klarna 的粉顶是它们的身份，
+       而第一版的 zone 只问「有没有卡片」，於是一个有色顶区的页面跟一张白纸
+       被判成同一种分区。signboard·p2 跟 cand10·p2 就是这样撞到 5/7 的。 */
+    const zone = has(".jtop") || has(".ktop") || has(".topbar") ? "有色顶区"
+      : has(".xcard") || has(".qdoc") || has(".bcard") || has(".qacct") ? "卡片"
       : has(".list.boxed") ? "框起来的清单" : has(".nsec") ? "细线" : "满边";
     const cs = getComputedStyle(first || ph);
     return {
@@ -287,11 +322,21 @@ const prints = await p.evaluate((sel) =>
       dense: (() => { const r = ph.querySelector(".li,.xrow,.nrow,.sqrow,.q,.fblk,.qr"); return r ? Math.round(r.getBoundingClientRect().height / 8) * 8 : 0; })(),
     };
   }), SEL);
+  got.forEach((g) => prints.push({ ...g, reg: g.reg + "·p" + (page + 1) }));
+}
+/* 回到第一页，不要让下一个跑的人拿到别人翻过的状态 */
+for (const reg of phones) {
+  const one2 = phones.length === 1 ? SEL : `${SEL}[data-reg="${reg}"]`;
+  await p.click(`${one2} .nav button:nth-child(1)`).catch(() => {});
+}
+await p.waitForTimeout(200);
 
 console.log("──── 两两之间有几根轴一样（七根：首屏主角 · 清单行 · 主要动作 · 分区 · 底栏 · 圆角 · 密度）");
 const pairs = [];
 for (let i = 0; i < prints.length; i++) for (let j = i + 1; j < prints.length; j++) {
   const a2 = prints[i], b2 = prints[j];
+  /* 只比同一页 —— 拿 A 的第一页去比 B 的第三页没有意义 */
+  if (a2.reg.split("·p")[1] !== b2.reg.split("·p")[1]) continue;
   const same = ["hero", "row", "act", "zone", "tabs", "radius", "dense"].filter((k) => a2[k] === b2[k]);
   if (same.length >= 3) pairs.push({ a: a2.reg, b: b2.reg, n: same.length, same });
 }
