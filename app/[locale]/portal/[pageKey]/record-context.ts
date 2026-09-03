@@ -53,6 +53,8 @@ export type RecordPageContext = {
   columns: TableColumn[];
   /** This business's own workflow words. Only a pipeline has them. */
   stages: string[];
+  /** 这一行是什么生意，给分期付款表建议惯例用。 */
+  trade: string | null;
   /** Who a record can be attached to. Empty on a directory page, which is
    *  where a party is created rather than chosen. */
   parties: { id: string; name: string }[];
@@ -177,5 +179,8 @@ export async function loadRecordPage(
     title: pageLabel({ key: pageKey, title: page.title ?? null }, labels, lang),
     backHref: `/${locale}/portal/${pageKey}`,
     role: workspace.role,
+    /* 这一行是什么生意 —— 分期付款表拿它去建议「订金三成 · 动工四成 ·
+       完工三成」，而那是一颗他要按的按钮，不是一个预设。 */
+    trade: businessContext.industry?.slug ?? null,
   };
 }

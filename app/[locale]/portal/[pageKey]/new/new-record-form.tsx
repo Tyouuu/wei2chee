@@ -8,6 +8,8 @@ import type { RecordFormCopy } from "../record-copy";
 import { LineEditor, blankLine, senOf, totalOf, ringgitOf, type Line } from "./line-editor";
 import { DocumentPreview } from "./document-preview";
 import { validityKindOf, defaultDueOn } from "@/lib/portal/record-validity";
+import { TermsEditor, termsForDb, blankTerm, priceRows, type TermRow } from "./terms-editor";
+import { suggestedFor } from "@/lib/portal/payment-terms";
 
 /**
  * 加一单 — the form a person fills in.
@@ -87,6 +89,7 @@ export function NewRecordForm({
   title,
   today,
   stages,
+  trade,
   backHref,
   copy,
 }: {
@@ -124,6 +127,8 @@ export function NewRecordForm({
     reversed?: boolean;
     /** 逐项明细, when this document has any. */
     lines?: Line[];
+    /** 分期付款表, when he has written one. */
+    terms?: TermRow[];
     /** Its own document number, for the preview. Never present on a new one --
      *  next_doc_no() issues it inside the write, so anything shown before that
      *  would be a guess printed where the real number goes. */
@@ -150,6 +155,8 @@ export function NewRecordForm({
    *  stages -- its status is read from the money -- and on a directory page,
    *  where the status is a word about a person rather than a step. */
   stages: string[];
+  /** 这一行是什么生意。只给分期付款表用来建议惯例，别的地方不读它。 */
+  trade?: string | null;
   backHref: string;
   copy: RecordFormCopy;
 }) {
@@ -177,6 +184,11 @@ export function NewRecordForm({
   const [dueOn, setDueOn] = useState<string>(
     record ? record.dueOn ?? "" : defaultDueOn(dateKind, today) ?? "",
   );
+
+  /* 分期付款表。⚠️ 只在有金额的走单上 —— 一张任务单没有钱可以分期，
+     给它一张分期表是给他一个永远填不了的框。 */
+  const canStage = isPipeline && moduleKey !== "tasks";
+  const [terms, setTerms] = useState<TermRow[]>(record?.terms ?? []);
   /* 🔴 HOW MUCH IS LEFT IS NOT HIS TO TYPE, once the item exists.
      It is the sum of the movements (20260901070000), so a box here would be
      overwritten by the next render -- the same control-that-lies the money
@@ -412,6 +424,19 @@ export function NewRecordForm({
           return;
         }
       }
+      /* 分期表也是整份换掉，跟明细同一个理由：半套改完的付款办法，
+         是一份没有人同意过的合约。空的也写 —— 清空是一次真的编辑。 */
+      if (canStage) {
+        const { error: termErr } = await supabase.rpc("set_record_terms", {
+          in_record_id: record.id,
+          in_terms: termsForDb(terms),
+        });
+        if (termErr) {
+          setError(`${copy.failed}${termErr.message ? ` — ${termErr.message}` : ""}`);
+          setBusy(false);
+          return;
+        }
+      }
       router.push(backHref);
       router.refresh();
       return;
@@ -583,15 +608,19 @@ export function NewRecordForm({
       setBusy(false);
       return;
     }
-    /* A new document's lines, once it has an id to hang them on. */
-    if (isPipeline && lines.length) {
-      const made = Array.isArray(data) ? data[0] : data;
-      if (made?.id) {
-        await supabase.rpc("set_record_lines", {
-          in_record_id: made.id,
-          in_lines: linesForDb(lines),
-        });
-      }
+    /* A new document's lines and instalments, once it has an id to hang them on. */
+    const made = Array.isArray(data) ? data[0] : data;
+    if (isPipeline && lines.length && made?.id) {
+      await supabase.rpc("set_record_lines", {
+        in_record_id: made.id,
+        in_lines: linesForDb(lines),
+      });
+    }
+    if (canStage && terms.length && made?.id) {
+      await supabase.rpc("set_record_terms", {
+        in_record_id: made.id,
+        in_terms: termsForDb(terms),
+      });
     }
     router.push(backHref);
     router.refresh();
@@ -722,6 +751,26 @@ export function NewRecordForm({
                   : copy.expected,
               value: dueOn,
             }
+          : null
+      }
+      /* 分期表印在那张纸上。算术在 payment-terms.ts，这里只排版。
+         ⚠️ 总数还不知道的时候，比例那几期印「—」不印 RM 0 —— 那两件事不一样。 */
+      schedule={
+        canStage
+          ? (() => {
+              const total =
+                totalFromLines != null
+                  ? senFrom(totalFromLines) ?? null
+                  : senFrom(values.amount ?? "") ?? null;
+              const priced = priceRows(terms, total);
+              return priced.terms.map((t) => ({
+                description: t.description,
+                portionText: t.portion != null ? `${t.portion}%` : "",
+                amountText:
+                  t.portion != null && priced.documentCents == null ? "—" : ringgitOf(t.cents),
+                due: t.due_on ?? "",
+              }));
+            })()
           : null
       }
       labels={{
@@ -945,6 +994,26 @@ export function NewRecordForm({
             <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
               {copy.amountFromLines}
             </p>
+          ) : null}
+
+        {canStage ? (
+          <TermsEditor
+            rows={terms}
+            onChange={setTerms}
+            /* 有明细的时候总数是明细算的，没有的时候是他打的 —— 分期表只要
+               一个总数，不用知道它是哪来的。 */
+            totalCents={totalFromLines != null ? senFrom(totalFromLines) ?? null : senFrom(values.amount ?? "") ?? null}
+            suggested={
+              suggestedFor(trade)?.map((t) => ({
+                ...blankTerm(),
+                /* 那三期的名字用他自己流程里的字，讲不出来就退回通用的那几个。
+                   「订金」在装修是订金，在别的行业可能是别的字。 */
+                description: copy.termDefaults[t.key] ?? t.key,
+                portion: String(t.portion),
+              })) ?? null
+            }
+            copy={copy}
+          />
           ) : null}
         </>
       ) : null}

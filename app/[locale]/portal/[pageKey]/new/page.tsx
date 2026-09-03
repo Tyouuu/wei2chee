@@ -69,6 +69,7 @@ export default async function NewRecordPage({
           title={ctx.title}
           today={todayInMalaysia()}
           stages={ctx.stages}
+          trade={ctx.trade}
           backHref={ctx.backHref}
           /* Only the strings. `heading` is a function, and a function cannot
              cross from a server component to a client one -- it renders as a

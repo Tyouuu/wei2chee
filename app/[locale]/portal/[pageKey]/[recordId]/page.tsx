@@ -63,6 +63,14 @@ export default async function EditRecordPage({
     unitPrice: string;
     amount: string;
   }[] = [];
+  /* 分期付款表。跟明细一样按他写的顺序读回来 —— 一份读错顺序的分期表
+     是另一份付款办法。 */
+  let terms: {
+    description: string;
+    portion: string;
+    amount: string;
+    dueOn: string;
+  }[] = [];
 
   if (ctx.isDirectory) {
     const { data } = await supabase
@@ -237,6 +245,21 @@ export default async function EditRecordPage({
       .select("description, qty, unit, unit_price_cents, amount_cents")
       .eq("record_id", recordId)
       .order("sort_order");
+
+    /* 分期付款表。他写的原话读回来 —— 比例存的是 30，不是 RM 14,550，
+       所以画面上那个金额是算出来的（lib/portal/payment-terms.ts）。 */
+    const { data: termRows } = await supabase
+      .from("record_terms")
+      .select("description, portion, amount_cents, due_on")
+      .eq("record_id", recordId)
+      .order("sort_order");
+    terms = (termRows ?? []).map((t) => ({
+      description: t.description ?? "",
+      /* 「30.00」 回来是 numeric(5,2)；他打的是 30，看到的也该是 30。 */
+      portion: t.portion == null ? "" : String(Number(t.portion)),
+      amount: t.amount_cents == null ? "" : ringgit(t.amount_cents) ?? "",
+      dueOn: t.due_on ?? "",
+    }));
     /* Whether goods from THIS order are already on a shelf. Read from the
        movements and not from the stage: the stage is a word the owner can type
        and change, the movements are the fact. */
@@ -285,8 +308,9 @@ export default async function EditRecordPage({
           title={ctx.title}
           today={todayInMalaysia()}
           stages={ctx.stages}
+          trade={ctx.trade}
           backHref={ctx.backHref}
-          record={{ id: recordId, values, archivedAt, reversed, lines, docNo, dueOn }}
+          record={{ id: recordId, values, archivedAt, reversed, lines, terms, docNo, dueOn }}
           copy={copy.form}
         />
       </main>

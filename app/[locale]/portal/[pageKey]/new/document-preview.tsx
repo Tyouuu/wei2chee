@@ -74,6 +74,7 @@ export function DocumentPreview({
   dateLabel,
   today,
   validity,
+  schedule,
 }: {
   /** The module's own noun -- 报价单, 进货单, 订单 -- never a word of ours. */
   title: string;
@@ -90,6 +91,9 @@ export function DocumentPreview({
   /** 有效期 / 期限 / 预计到货 —— 印出来那张纸上最要紧的一行之一。
    *  一张没有印有效期的报价单，是一个永远有效的价钱。 */
   validity?: { label: string; value: string } | null;
+  /** 分期付款表，已经算好、已经排好版的一行一行。
+   *  ⚠️ 这里不算术：算在 lib/portal/payment-terms.ts，那里有测试。 */
+  schedule?: { description: string; portionText: string; amountText: string; due: string }[] | null;
 }) {
   const filled = lines.filter((l) => l.description.trim());
   const lineTotal = totalOf(filled);
@@ -190,6 +194,30 @@ export function DocumentPreview({
             {total ? ringgitOf(total) : "—"}
           </span>
         </div>
+
+        {/* 🔴 分期付款表印在总额底下 —— 那是客人看完金额之后立刻要问的一句
+            「怎么付」，而在这一行那是合约条款不是附注。
+            比例跟金额都印：「订金 30%」告诉他为什么是这个数，
+            「RM 14,550」告诉他要转多少。 */}
+        {schedule?.length ? (
+          <div className="mt-3 border-t border-[color:var(--color-ink-800)] pt-3">
+            <p className={`${key} mb-1.5`}>{copy.terms}</p>
+            {schedule.map((s, i) => (
+              <div key={i} className={row}>
+                <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)]">
+                  {s.description}
+                  {s.portionText ? (
+                    <span className="text-[color:var(--color-on-canvas-dim)]"> · {s.portionText}</span>
+                  ) : null}
+                  {s.due ? (
+                    <span className="text-[color:var(--color-on-canvas-dim)]"> · {s.due}</span>
+                  ) : null}
+                </span>
+                <span className={`${val} [font-variant-numeric:tabular-nums]`}>{s.amountText}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {/* Said once, under the paper, in the owner's own language. Without it a

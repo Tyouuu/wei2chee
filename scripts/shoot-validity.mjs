@@ -52,6 +52,25 @@ try {
   await shoot(wide, "/en/portal/projects/new", "project-new");
   await shoot(wide, "/en/portal/quotations", "quote-list");
 
+  /* 🔴 空的表单看不出分期表对不对。真的填一份：打一个金额、按「照惯例填」，
+     然后看右边那张纸上印出来的三期是不是 14,550 / 19,400 / 14,550。 */
+  await wide.goto(`${BASE}/en/portal/quotations/new`, { waitUntil: "networkidle", timeout: 180000 });
+  /* ⚠️ `label:has-text("Quoted")` 会同时打到「Work quoted」跟「Quoted」，
+     而 .first() 挑的是前者 —— 第一版就是这样把金额打进了工程名那一格，
+     然后回报「那张纸上没有算出 RM 14,550」，指着一个不存在的产品缺陷。
+     用完全相符的字。 */
+  const boxFor = (label) =>
+    wide.locator("label").filter({ has: wide.getByText(label, { exact: true }) }).locator("input").first();
+  await boxFor("Work quoted").fill("Taman Desa kitchen");
+  await boxFor("Quoted").fill("48500");
+  await wide.getByRole("button", { name: /usual split/i }).click();
+  await wide.waitForTimeout(600);
+  await wide.screenshot({ path: `${OUT}/quote-filled.png`, fullPage: true });
+  const paper = await wide.locator('aside[aria-label="As it prints"]').innerText();
+  console.log(`\n那张纸上印的分期：\n${paper.split("\n").filter((l) => /RM|%/.test(l)).join(" | ")}`);
+  shots.push({ name: "quote-filled", h1: "filled", dates: 0, stuck: !/14,550/.test(paper) });
+  if (!/14,550/.test(paper)) console.log("🔴 那张纸上没有算出 RM 14,550");
+
   const phone = await b.newPage({ viewport: { width: 390, height: 844 } });
   await login(phone);
   await shoot(phone, "/en/portal/quotations/new", "quote-new-390");

@@ -102,6 +102,19 @@ export type RecordFormCopy = {
   pastDueValid: string;
   pastDueDeadline: string;
   pastDueExpected: string;
+  /* 分期付款表。一份合约条款，不是一张明细 —— 它把同一笔钱切开，
+     不会改那张单的总数（20260903020000）。 */
+  terms: string;
+  termWhat: string;
+  termPortion: string;
+  termAmount: string;
+  termWhen: string;
+  termAdd: string;
+  termSuggest: string;
+  termMismatch: string;
+  /* 建议那几期的名字。key 来自 SUGGESTED_TERMS，字在这里 —— 那个档案是
+     算术，不该住着两种语言的字。 */
+  termDefaults: Record<string, string>;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -224,6 +237,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       pastDueValid: "过期",
       pastDueDeadline: "逾期",
       pastDueExpected: "还没到",
+      terms: "分期付款",
+      termWhat: "这一期是什么",
+      termPortion: "%",
+      termAmount: "或写死金额",
+      termWhen: "什么时候",
+      termAdd: "加一期",
+      termSuggest: "照这一行的惯例填",
+      termMismatch: "这几期加起来跟单上的总数差",
+      termDefaults: { deposit: "订金", start: "动工", done: "完工" },
     },
   },
   en: {
@@ -312,6 +334,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       pastDueValid: "Expired",
       pastDueDeadline: "Overdue",
       pastDueExpected: "Not arrived",
+      terms: "Payment schedule",
+      termWhat: "What this stage is",
+      termPortion: "%",
+      termAmount: "or a set amount",
+      termWhen: "When",
+      termAdd: "Add a stage",
+      termSuggest: "Use the usual split for this trade",
+      termMismatch: "These stages do not add up to the document total — off by",
+      termDefaults: { deposit: "Deposit", start: "On start", done: "On completion" },
     },
   },
 };

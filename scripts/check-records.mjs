@@ -777,6 +777,72 @@ try {
       clearErr?.message ?? `拿回来的是 ${cleared?.due_on}`);
   }
 
+  /* ── 分期付款表：订金 30% · 动工 40% · 完工 30% ──────────────────────
+     20260903020000。用真的客户身分打，因为 plpgsql 到执行才解析名字 ——
+     db push 成功证明不了任何事（重点 26）。 */
+  const { data: staged } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "分期测试",
+    in_amount_cents: 4850000,
+  });
+
+  const { data: terms, error: termErr } = await c.rpc("set_record_terms", {
+    in_record_id: staged.id,
+    in_terms: [
+      { description: "订金", portion: 30, due_on: "2026-09-10" },
+      { description: "动工", portion: 40 },
+      { description: "完工", portion: 30, due_on: null },
+    ],
+  });
+  check("写得进三期", !termErr && terms?.length === 3, termErr?.message ?? `拿回 ${terms?.length}`);
+  check("顺序照他写的", terms?.[0]?.description === "订金" && terms?.[2]?.description === "完工");
+  check("没有日期的那一期是空的，不是今天",
+    terms?.[1]?.due_on === null, `拿回来的是 ${terms?.[1]?.due_on}`);
+
+  /* 🔴 分期表不可以动那张单的总数。它把同一笔钱切开，一分都没有变。
+     一支「把分期加起来写回去」的触发器，会让只写了订金的单总数变成三成。 */
+  const { data: docAfterTerms } = await c
+    .from("pipeline_records").select("amount_cents").eq("id", staged.id).single();
+  check("分期表不会改掉单的总数", docAfterTerms?.amount_cents === 4850000,
+    `总数变成 ${docAfterTerms?.amount_cents}`);
+
+  const { error: bothErr } = await c.rpc("set_record_terms", {
+    in_record_id: staged.id,
+    in_terms: [{ description: "两个都给", portion: 30, amount_cents: 100000 }],
+  });
+  check("一期不可以同时是比例又是金额", !!bothErr && /percentage or an amount/.test(bothErr.message),
+    bothErr?.message);
+
+  const { error: neitherErr } = await c.rpc("set_record_terms", {
+    in_record_id: staged.id,
+    in_terms: [{ description: "什么都没给" }],
+  });
+  check("一期一定要讲得出自己是多少", !!neitherErr, neitherErr?.message);
+
+  const { error: hugeErr } = await c.rpc("set_record_terms", {
+    in_record_id: staged.id,
+    in_terms: Array.from({ length: 13 }, (_, i) => ({ description: `第${i}期`, portion: 5 })),
+  });
+  check("十二期以上挡下来", !!hugeErr, hugeErr?.message);
+
+  /* 上面三次被拒绝之后，原本那三期要还在 —— 一次被拒绝的写入不可以把
+     他已经写好的东西删掉一半。整批换是先 delete 再 insert，所以这一条
+     真正验的是那一整支跑在同一个交易里。 */
+  const { data: still } = await c
+    .from("record_terms").select("description").eq("record_id", staged.id);
+  check("被拒绝之后，原本那三期还在", still?.length === 3, `剩下 ${still?.length} 期`);
+
+  const { data: cleanedTerms } = await c.rpc("set_record_terms", {
+    in_record_id: staged.id, in_terms: [],
+  });
+  check("清空分期表", Array.isArray(cleanedTerms) && cleanedTerms.length === 0);
+
+  /* 别人的单碰不得。这一条挡的是最贵的那种错。 */
+  const { error: termsNotMine } = await c.rpc("set_record_terms", {
+    in_record_id: "00000000-0000-0000-0000-000000000000",
+    in_terms: [{ description: "订金", portion: 30 }],
+  });
+  check("别人的单写不进分期", !!termsNotMine);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);
