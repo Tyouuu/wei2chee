@@ -10,6 +10,13 @@ import { DocumentPreview } from "./document-preview";
 import { validityKindOf, defaultDueOn } from "@/lib/portal/record-validity";
 import { TermsEditor, termsForDb, blankTerm, priceRows, type TermRow } from "./terms-editor";
 import { suggestedFor } from "@/lib/portal/payment-terms";
+import {
+  AllocationEditor,
+  allocationsForDb,
+  type AllocationRowInput,
+} from "./allocation-editor";
+import type { OpenDocument } from "../record-context";
+import type { DocumentSettlement } from "@/lib/portal/allocations";
 
 /**
  * 加一单 — the form a person fills in.
@@ -90,6 +97,8 @@ export function NewRecordForm({
   today,
   stages,
   trade,
+  openDocuments,
+  settlement,
   backHref,
   copy,
 }: {
@@ -129,6 +138,8 @@ export function NewRecordForm({
     lines?: Line[];
     /** 分期付款表, when he has written one. */
     terms?: TermRow[];
+    /** 钱那一边：这笔钱已经分摊给哪几张单。 */
+    allocations?: AllocationRowInput[];
     /** Its own document number, for the preview. Never present on a new one --
      *  next_doc_no() issues it inside the write, so anything shown before that
      *  would be a guess printed where the real number goes. */
@@ -157,6 +168,13 @@ export function NewRecordForm({
   stages: string[];
   /** 这一行是什么生意。只给分期付款表用来建议惯例，别的地方不读它。 */
   trade?: string | null;
+  /** 这笔钱可以分摊给哪几张单。只有钱那几页、而且只有看得到钱的人拿得到。
+   *  ⚠️ 空阵列的意思是「没有单可以分」，画面上要那样讲 —— 它跟「读不到」
+   *  在这里长得一模一样，而那正是这个仓库被骗过四次的形状。 */
+  openDocuments?: readonly OpenDocument[];
+  /** 这张单收到多少。⚠️ null = **没有问**（他看不到钱），不是零 ——
+   *  所以那一整段不画，而不是画一个 RM 0。 */
+  settlement?: DocumentSettlement | null;
   backHref: string;
   copy: RecordFormCopy;
 }) {
@@ -189,6 +207,12 @@ export function NewRecordForm({
      给它一张分期表是给他一个永远填不了的框。 */
   const canStage = isPipeline && moduleKey !== "tasks";
   const [terms, setTerms] = useState<TermRow[]>(record?.terms ?? []);
+  /* 这笔钱付了哪几张单。剩下的那一段是订金 —— 那不是错，是这门生意每天
+     在发生的事（lib/portal/allocations.ts）。 */
+  const [allocs, setAllocs] = useState<AllocationRowInput[]>(record?.allocations ?? []);
+  /* 分摊只在钱那几页，而且只有拿得到那份清单的人（看得到钱的老板）。
+     ⚠️ 冲正那一笔不给分摊 —— 它是撤销，资料库那边也会拒绝。 */
+  const canAllocate = isLedger && !!openDocuments && !record?.reversed;
   /* 🔴 HOW MUCH IS LEFT IS NOT HIS TO TYPE, once the item exists.
      It is the sum of the movements (20260901070000), so a box here would be
      overwritten by the next render -- the same control-that-lies the money
@@ -424,6 +448,21 @@ export function NewRecordForm({
           return;
         }
       }
+      /* 分摊也是整份换掉。空的也写 —— 把一笔钱从一张单上拿下来
+         （变回订金）是一次真的编辑，跟清空分期表同一个道理。
+         ⚠️ 只在这一页真的拿得到那份清单的时候才写：一个师傅打不开钱那几页，
+         而万一有一天打得开，一次空的写入会把老板分好的全部清掉。 */
+      if (isLedger && canAllocate) {
+        const { error: allocErr } = await supabase.rpc("set_payment_allocations", {
+          in_entry_id: record.id,
+          in_rows: allocationsForDb(allocs),
+        });
+        if (allocErr) {
+          setError(`${copy.failed}${allocErr.message ? ` — ${allocErr.message}` : ""}`);
+          setBusy(false);
+          return;
+        }
+      }
       /* 分期表也是整份换掉，跟明细同一个理由：半套改完的付款办法，
          是一份没有人同意过的合约。空的也写 —— 清空是一次真的编辑。 */
       if (canStage) {
@@ -621,6 +660,19 @@ export function NewRecordForm({
         in_record_id: made.id,
         in_terms: termsForDb(terms),
       });
+    }
+    if (isLedger && canAllocate && allocs.length && made?.id) {
+      /* 🔴 分摊失败要讲出来，不可以吞掉。这笔钱已经记进去了，
+         而他以为它已经分给那张单了 —— 那正是「说了没做」的形状。 */
+      const { error: allocErr } = await supabase.rpc("set_payment_allocations", {
+        in_entry_id: made.id,
+        in_rows: allocationsForDb(allocs),
+      });
+      if (allocErr) {
+        setError(`${copy.failed}${allocErr.message ? ` — ${allocErr.message}` : ""}`);
+        setBusy(false);
+        return;
+      }
     }
     router.push(backHref);
     router.refresh();
@@ -1012,9 +1064,51 @@ export function NewRecordForm({
                 portion: String(t.portion),
               })) ?? null
             }
+            /* 哪一期收过钱。⚠️ undefined 的意思是「没有问」，不是「都没收」——
+               所以师傅那一边整栏不画，不是画一排「未收」。 */
+            paidByTerm={
+              settlement
+                ? Object.fromEntries(
+                    settlement.terms.map((t) => [t.termId, { paidCents: t.paidCents, settled: t.settled }]),
+                  )
+                : undefined
+            }
             copy={copy}
           />
           ) : null}
+
+        {/* ── 这张单收到多少 ────────────────────────────────────────────
+            画在分期表底下，因为它回答的正是分期表提出的那一句：
+            「订金收了没有」。
+
+            🔴 为什么不印在右边那张纸上：那张纸是**客人拿到的东西**，
+            而一张报价单上印着「你已经付了 RM 14,550」是一份对帐单，
+            不是一份报价。收到多少是**老板这一边**的答案。
+
+            ⚠️ `settlement` 是 null 的时候整段不画 —— 那代表「没有问」
+            （师傅看不到钱），不是「零」。 */}
+        {settlement ? (
+          <div className="flex flex-col gap-1 [border-radius:var(--radius-md)] border p-3 [border-color:var(--color-ink-800)]">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                {copy.received}
+              </span>
+              <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-on-canvas)]">
+                {settlement.anyPaid ? ringgitOf(settlement.paidCents) : copy.nothingReceived}
+              </span>
+            </div>
+            {settlement.anyPaid ? (
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                  {copy.stillOwed}
+                </span>
+                <span className="[font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas)]">
+                  {settlement.settled ? copy.settledAll : ringgitOf(settlement.outstandingCents)}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         </>
       ) : null}
 
@@ -1030,6 +1124,19 @@ export function NewRecordForm({
           </button>
           {open ? extraContact.map((f) => box(f.key, f.label, f.inputMode)) : null}
         </div>
+      ) : null}
+
+      {/* 这笔钱付了哪几张单。⚠️ 画在 moneyFixed 上面：那一句讲的是
+          「金额跟日子锁住了」，而分摊是这一页上他还改得动的东西 ——
+          一句「不能改」底下接一个可以改的东西，读起来是坏的。 */}
+      {canAllocate ? (
+        <AllocationEditor
+          rows={allocs}
+          onChange={setAllocs}
+          documents={openDocuments ?? []}
+          entryCents={senFrom(values.amount ?? "") ?? null}
+          copy={copy}
+        />
       ) : null}
 
       {record && isLedger ? (

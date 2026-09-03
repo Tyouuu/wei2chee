@@ -843,6 +843,164 @@ try {
   });
   check("别人的单写不进分期", !!termsNotMine);
 
+  /* ── 一笔钱分摊多张单 ──────────────────────────────────────────────
+     20260903030000 · 20260903040000。这一整段验的是钱那一层，所以每一条
+     都用真的客户身分打，而不是读 SQL（重点 26）。 */
+  console.log("\n⑬ 一笔钱分摊多张单");
+
+  const { data: docA } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "A 厨房",
+    in_amount_cents: 1_200_000,
+  });
+  const { data: docB } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "B 浴室",
+    in_amount_cents: 800_000,
+  });
+  const { data: bigPay } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 2_000_000, in_party: "陈老板",
+  });
+
+  const { data: split, error: splitErr } = await c.rpc("set_payment_allocations", {
+    in_entry_id: bigPay.id,
+    in_rows: [
+      { record_id: docA.id, amount_cents: 1_200_000 },
+      { record_id: docB.id, amount_cents: 500_000 },
+    ],
+  });
+  check("一笔钱分给两张单", !splitErr && split?.length === 2,
+    splitErr?.message ?? `拿回 ${split?.length}`);
+
+  /* 🔴 这一条是整支的重点：allocated_cents 从今天起是加总出来的，
+     而剩下那 RM 3,000 就是订金 —— 任务 61 · 67 · 44 三天各要过一次的那个数字。 */
+  const { data: afterSplit } = await c
+    .from("ledger_entries").select("allocated_cents, amount_cents, against_id")
+    .eq("id", bigPay.id).single();
+  check("已分摊是加总出来的", afterSplit?.allocated_cents === 1_700_000,
+    `${afterSplit?.allocated_cents}`);
+  check("剩下的就是订金", (afterSplit?.amount_cents ?? 0) - (afterSplit?.allocated_cents ?? 0) === 300_000);
+  /* 分给两张的时候「这笔钱是给哪一张的」没有答案，所以 against_id 是 null。 */
+  check("分给两张单，against_id 不再指着任何一张", afterSplit?.against_id === null,
+    `${afterSplit?.against_id}`);
+
+  const { data: oneOnly } = await c.rpc("set_payment_allocations", {
+    in_entry_id: bigPay.id,
+    in_rows: [{ record_id: docA.id, amount_cents: 1_200_000 }],
+  });
+  const { data: afterOne } = await c
+    .from("ledger_entries").select("allocated_cents, against_id").eq("id", bigPay.id).single();
+  check("只分给一张的时候 against_id 就是那一张",
+    oneOnly?.length === 1 && afterOne?.against_id === docA.id, `${afterOne?.against_id}`);
+
+  /* 分摊不可以超过那笔钱本身。资料库那条 check 是最后一层，这一句是给人看的。 */
+  const { error: tooMuch } = await c.rpc("set_payment_allocations", {
+    in_entry_id: bigPay.id,
+    in_rows: [
+      { record_id: docA.id, amount_cents: 1_200_000 },
+      { record_id: docB.id, amount_cents: 900_000 },
+    ],
+  });
+  check("分摊超过那笔钱，挡下来", !!tooMuch && /more than the payment/.test(tooMuch.message),
+    tooMuch?.message);
+
+  /* 被拒绝之后，原本那一笔分摊要还在 —— 整批换是先删再插，
+     这一条真正验的是那一整支跑在同一个交易里。 */
+  const { data: stillOne } = await c
+    .from("ledger_allocations").select("id").eq("entry_id", bigPay.id);
+  check("被拒绝之后，原本那一笔分摊还在", stillOne?.length === 1, `剩下 ${stillOne?.length}`);
+
+  /* 一张单收到的不可以超过它自己。多出来的那一部分不是错，是订金。 */
+  const { error: overDoc } = await c.rpc("set_payment_allocations", {
+    in_entry_id: bigPay.id,
+    in_rows: [{ record_id: docB.id, amount_cents: 900_000 }],
+  });
+  check("一张单收超过它自己，挡下来，而且讲得出出路",
+    !!overDoc && /more than the document is worth/.test(overDoc.message), overDoc?.message);
+
+  /* 同一张单打两行，是他手滑，不是两笔钱。默默加倍是最贵的那一种。 */
+  const { error: listedTwice } = await c.rpc("set_payment_allocations", {
+    in_entry_id: bigPay.id,
+    in_rows: [
+      { record_id: docA.id, amount_cents: 100_000 },
+      { record_id: docA.id, amount_cents: 100_000 },
+    ],
+  });
+  check("同一张单列两次，挡下来", !!listedTwice && /listed twice/.test(listedTwice.message), listedTwice?.message);
+
+  /* 🔴 别的单上的一期，不可以拿来分摊这一张。
+     一个指错地方的连结，画面上看起来完全正常。 */
+  const { data: bTerms } = await c.rpc("set_record_terms", {
+    in_record_id: docB.id,
+    in_terms: [{ description: "订金", portion: 50 }, { description: "完工", portion: 50 }],
+  });
+  const { error: wrongTerm } = await c.rpc("set_payment_allocations", {
+    in_entry_id: bigPay.id,
+    in_rows: [{ record_id: docA.id, term_id: bTerms[0].id, amount_cents: 100_000 }],
+  });
+  check("别的单上的一期，分摊不进来",
+    !!wrongTerm && /not on that document/.test(wrongTerm.message), wrongTerm?.message);
+
+  const { data: onTerm, error: onTermErr } = await c.rpc("set_payment_allocations", {
+    in_entry_id: bigPay.id,
+    in_rows: [{ record_id: docB.id, term_id: bTerms[0].id, amount_cents: 400_000 }],
+  });
+  check("分摊得到某一期", !onTermErr && onTerm?.[0]?.term_id === bTerms[0].id,
+    onTermErr?.message);
+
+  /* 🔴 20260903020000 的档头在这一件发生之前就写下了它：
+     收过钱的那一期，不可以被整批换掉 —— 否则那笔钱会静静地忘记它付的是哪一期。 */
+  const { error: lockedTerms } = await c.rpc("set_record_terms", {
+    in_record_id: docB.id,
+    in_terms: [{ description: "改成一次付清", portion: 100 }],
+  });
+  check("收过钱的分期表锁住，而且讲得出出路",
+    !!lockedTerms && /money has already been taken/.test(lockedTerms.message),
+    lockedTerms?.message);
+  const { data: termsIntact } = await c
+    .from("record_terms").select("id").eq("record_id", docB.id);
+  check("锁住之后那两期还在", termsIntact?.length === 2, `剩下 ${termsIntact?.length}`);
+
+  /* 冲正那一笔不用再分摊 —— 它是撤销，不是收入。 */
+  const { data: reversal, error: revErr } = await c.rpc("reverse_ledger_entry", {
+    in_entry_id: bigPay.id,
+  });
+  check("冲正开得出来", !revErr && !!reversal?.id, revErr?.message);
+  /* 🔴 从 20260831020000 起它一直在抄原本那一笔的 allocated_cents。
+     今天那个值不再永远是 0，所以这一条现在才验得到。 */
+  check("冲正那一笔已分摊是 0，不是原本那一笔的拷贝",
+    reversal?.allocated_cents === 0, `${reversal?.allocated_cents}`);
+  check("冲正那一笔不指着任何一张单", reversal?.against_id === null, `${reversal?.against_id}`);
+  const { error: allocRev } = await c.rpc("set_payment_allocations", {
+    in_entry_id: reversal.id,
+    in_rows: [{ record_id: docA.id, amount_cents: 100_000 }],
+  });
+  check("冲正那一笔分摊不进去", !!allocRev && /reversal/.test(allocRev.message), allocRev?.message);
+
+  /* 单没了，这一笔钱就回去当订金 —— 而钱本身一分都不会少。 */
+  const { data: goneDoc } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "等下要删的",
+    in_amount_cents: 500_000,
+  });
+  const { data: payC } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_amount_cents: 500_000, in_party: "",
+  });
+  await c.rpc("set_payment_allocations", {
+    in_entry_id: payC.id, in_rows: [{ record_id: goneDoc.id, amount_cents: 500_000 }],
+  });
+  await c.from("pipeline_records").delete().eq("id", goneDoc.id);
+  const { data: afterDelete } = await c
+    .from("ledger_entries").select("amount_cents, allocated_cents").eq("id", payC.id).single();
+  check("单删掉了，钱还在，而且回去当订金",
+    afterDelete?.amount_cents === 500_000 && afterDelete?.allocated_cents === 0,
+    `${afterDelete?.amount_cents} / ${afterDelete?.allocated_cents}`);
+
+  /* 别人的钱碰不得。 */
+  const { error: allocNotMine } = await c.rpc("set_payment_allocations", {
+    in_entry_id: "00000000-0000-0000-0000-000000000000",
+    in_rows: [{ record_id: docA.id, amount_cents: 100 }],
+  });
+  check("别人的钱分摊不了", !!allocNotMine);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

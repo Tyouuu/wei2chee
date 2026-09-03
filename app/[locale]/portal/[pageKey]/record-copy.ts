@@ -115,6 +115,23 @@ export type RecordFormCopy = {
   /* 建议那几期的名字。key 来自 SUGGESTED_TERMS，字在这里 —— 那个档案是
      算术，不该住着两种语言的字。 */
   termDefaults: Record<string, string>;
+  /* 一笔钱分摊多张单（20260903030000）。剩下的那一段是订金，不是错 ——
+     所以 allocDeposit 是一句平常话，只有 allocOver 是红的。 */
+  allocations: string;
+  allocDocument: string;
+  allocAmount: string;
+  allocTerm: string;
+  allocWholeDoc: string;
+  allocAdd: string;
+  allocOwed: string;
+  allocDeposit: string;
+  allocOver: string;
+  allocNoDocs: string;
+  /* 单据那一边：这张单收到多少、还欠多少。 */
+  received: string;
+  stillOwed: string;
+  settledAll: string;
+  nothingReceived: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -246,6 +263,20 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       termSuggest: "照这一行的惯例填",
       termMismatch: "这几期加起来跟单上的总数差",
       termDefaults: { deposit: "订金", start: "动工", done: "完工" },
+      allocations: "这笔钱付了哪几张单",
+      allocDocument: "选一张单",
+      allocAmount: "分多少",
+      allocTerm: "哪一期",
+      allocWholeDoc: "整张单，不指定哪一期",
+      allocAdd: "再分一张",
+      allocOwed: "这张单还欠",
+      allocDeposit: "还没分摊，先当订金：",
+      allocOver: "分超过这笔钱了，多出",
+      allocNoDocs: "现在没有还没收齐的单可以分。这笔钱先当订金放着就好。",
+      received: "已收",
+      stillOwed: "还欠",
+      settledAll: "收齐了",
+      nothingReceived: "还没收到钱",
     },
   },
   en: {
@@ -343,6 +374,20 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       termSuggest: "Use the usual split for this trade",
       termMismatch: "These stages do not add up to the document total — off by",
       termDefaults: { deposit: "Deposit", start: "On start", done: "On completion" },
+      allocations: "What this money paid for",
+      allocDocument: "Pick a document",
+      allocAmount: "How much",
+      allocTerm: "Which stage",
+      allocWholeDoc: "The whole document",
+      allocAdd: "Add another document",
+      allocOwed: "Still owed on it",
+      allocDeposit: "Not applied yet — held as a deposit:",
+      allocOver: "That is more than this payment, by",
+      allocNoDocs: "Nothing outstanding to apply this to. It stays a deposit.",
+      received: "Received",
+      stillOwed: "Still owed",
+      settledAll: "Paid in full",
+      nothingReceived: "Nothing received yet",
     },
   },
 };

@@ -29,6 +29,9 @@ import { senOf, ringgitOf } from "./line-editor";
  */
 
 export type TermRow = {
+  /** 已经存起来的那一期自己的 id。新加的一行没有 —— 它还不存在。
+   *  只拿来对上「这一期收过钱没有」，不送回资料库（整批换会重发 id）。 */
+  id?: string;
   description: string;
   /** 「30」或者空。跟 amount 只能有一个有值。 */
   portion: string;
@@ -72,6 +75,7 @@ export function TermsEditor({
   onChange,
   totalCents,
   suggested,
+  paidByTerm,
   copy,
 }: {
   rows: TermRow[];
@@ -80,6 +84,18 @@ export function TermsEditor({
   totalCents: number | null;
   /** 这一行的惯例，他按一下才填 —— 从来不自己写进去。 */
   suggested: readonly TermRow[] | null;
+  /**
+   * 哪一期收过钱了，key 是那一期自己的 id。
+   *
+   * 🔴 这一段是靠看图才补上的。`term_id` 从 20260903030000 起就存得进去，
+   * 而分期表上**一个字都没有变** —— 老板指名「这笔是订金」，存进去了，
+   * 然后打开那张单看到的还是三期都没收。存得进去而看不见，
+   * 就是这个仓库最常犯的那个错。
+   *
+   * ⚠️ undefined = **没有问**（师傅看不到钱），不是「都没收」——
+   * 所以那一整栏不画，而不是画一排「未收」。
+   */
+  paidByTerm?: Readonly<Record<string, { paidCents: number; settled: boolean }>>;
   copy: RecordFormCopy;
 }) {
   const set = (i: number, patch: Partial<TermRow>) => {
@@ -102,6 +118,9 @@ export function TermsEditor({
       {rows.map((row, i) => {
         /* termsForDb 会丢掉写不完整的行，所以位置对不上 —— 用名字对回来。 */
         const shown = priced.terms.find((t) => t.description === row.description.trim());
+        /* 这一期收过钱没有。只有存起来的那几期有 id —— 他刚加的一行还不存在，
+           所以它永远不会印「已收」，那是对的。 */
+        const paid = row.id && paidByTerm ? paidByTerm[row.id] : undefined;
         return (
           <div
             key={i}
@@ -150,12 +169,27 @@ export function TermsEditor({
               />
             </div>
             {/* 比例那几期，讲出来今天等於多少 —— 不然「30%」要他自己心算。
-                ⚠️ 总数还不知道的时候什么都不印，不印 RM 0。 */}
-            {row.portion.trim() && shown && priced.documentCents != null ? (
-              <span className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)] tabular-nums">
-                {ringgitOf(shown.cents)}
-              </span>
-            ) : null}
+                ⚠️ 总数还不知道的时候什么都不印，不印 RM 0。
+                收过钱的那一期，同一行把它讲出来。 */}
+            <div className="flex items-baseline justify-between gap-3">
+              {row.portion.trim() && shown && priced.documentCents != null ? (
+                <span className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)] tabular-nums">
+                  {ringgitOf(shown.cents)}
+                </span>
+              ) : (
+                <span />
+              )}
+              {/* 🔴 只有真的收过才印。第一版三期都印了一行「Received RM 0」——
+                  而 RM 0 是一个数字，它读起来像一个事实，
+                  而事实是那两期还没有发生过任何事。
+                  「一分都还没收」跟「收齐了」是两句不一样的话，
+                  RM 0 是第三句，而且是错的那一句。 */}
+              {paid && (paid.paidCents > 0 || paid.settled) ? (
+                <span className="[font-size:var(--text-xs)] tabular-nums text-[color:var(--color-on-canvas)]">
+                  {paid.settled ? copy.settledAll : `${copy.received} ${ringgitOf(paid.paidCents)}`}
+                </span>
+              ) : null}
+            </div>
           </div>
         );
       })}

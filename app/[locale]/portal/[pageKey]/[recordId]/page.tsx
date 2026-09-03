@@ -6,6 +6,8 @@ import { RECORD_COPY } from "../record-copy";
 import { todayInMalaysia } from "@/lib/portal/live-months";
 import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
+import { reversedIds, settleDocument, type DocumentSettlement } from "@/lib/portal/allocations";
+import { priceSchedule } from "@/lib/portal/payment-terms";
 
 /**
  * 改这一单 — the page a row opens.
@@ -39,7 +41,9 @@ export default async function EditRecordPage({
   params: Promise<{ locale: string; pageKey: string; recordId: string }>;
 }) {
   const { locale, pageKey, recordId } = await params;
-  const ctx = await loadRecordPage(locale, pageKey);
+  /* 正在改的这一笔要从「这张单收到多少」里扣掉 —— 不然分摊编辑器会把
+     同一笔钱减两次（record-context.ts 的 excludeEntryId）。 */
+  const ctx = await loadRecordPage(locale, pageKey, recordId);
   const copy = RECORD_COPY[ctx.lang];
 
   const supabase = await createSessionSupabaseClient();
@@ -66,11 +70,18 @@ export default async function EditRecordPage({
   /* 分期付款表。跟明细一样按他写的顺序读回来 —— 一份读错顺序的分期表
      是另一份付款办法。 */
   let terms: {
+    id?: string;
     description: string;
     portion: string;
     amount: string;
     dueOn: string;
   }[] = [];
+  /* 钱那一边：这笔钱已经分摊给哪几张单。 */
+  let allocations: { recordId: string; termId: string; amount: string }[] = [];
+  /* 单据那一边：这张单收到多少、还欠多少。
+     ⚠️ null 的意思是**没有问**（他看不到钱），不是「零」—— 画面照这个
+     决定要不要画那一整段。 */
+  let settlement: DocumentSettlement | null = null;
 
   if (ctx.isDirectory) {
     const { data } = await supabase
@@ -218,6 +229,22 @@ export default async function EditRecordPage({
       .eq("adjusts_id", recordId)
       .maybeSingle();
     reversed = !!cancels || !!data.adjusts_id;
+
+    /* 这笔钱已经分摊给哪几张单。⚠️ `ledger_allocations` 是 sees_money，
+       所以一个师傅拿回来的是空的 —— 而他根本打不开这一页
+       （canOpenModule 在 loadRecordPage 里已经挡掉了）。 */
+    const { data: allocRows } = await supabase
+      .from("ledger_allocations")
+      .select("record_id, term_id, amount_cents")
+      .eq("entry_id", recordId)
+      .order("created_at");
+    allocations = (allocRows ?? []).map(
+      (a: { record_id: string; term_id: string | null; amount_cents: number }) => ({
+        recordId: a.record_id,
+        termId: a.term_id ?? "",
+        amount: ringgit(a.amount_cents) ?? "",
+      }),
+    );
   } else {
     const { data } = await supabase
       .from("pipeline_records")
@@ -250,16 +277,57 @@ export default async function EditRecordPage({
        所以画面上那个金额是算出来的（lib/portal/payment-terms.ts）。 */
     const { data: termRows } = await supabase
       .from("record_terms")
-      .select("description, portion, amount_cents, due_on")
+      .select("id, description, portion, amount_cents, due_on")
       .eq("record_id", recordId)
       .order("sort_order");
     terms = (termRows ?? []).map((t) => ({
+      id: t.id,
       description: t.description ?? "",
       /* 「30.00」 回来是 numeric(5,2)；他打的是 30，看到的也该是 30。 */
       portion: t.portion == null ? "" : String(Number(t.portion)),
       amount: t.amount_cents == null ? "" : ringgit(t.amount_cents) ?? "",
       dueOn: t.due_on ?? "",
     }));
+    /* ── 这张单收到多少 ────────────────────────────────────────────────
+       🔴 只问看得到钱的人。一个师傅问 `ledger_allocations` 拿回来的是空的，
+       而空的会画成「还欠 RM 48,500」—— 一张已经收齐的单，对他撒谎。
+       所以是**整段不画**，不是画一个 0（20260903030000 的档头）。 */
+    if (ctx.role === "owner") {
+      const { data: allocRows } = await supabase
+        .from("ledger_allocations")
+        .select("entry_id, record_id, term_id, amount_cents")
+        .eq("record_id", recordId);
+      const entryIds = [...new Set((allocRows ?? []).map((a: { entry_id: string }) => a.entry_id))];
+      const { data: entryRows } = entryIds.length
+        ? await supabase.from("ledger_entries").select("id, adjusts_id").in("id", entryIds)
+        : { data: [] };
+      const gone = reversedIds((entryRows ?? []) as { id: string; adjusts_id: string | null }[]);
+      /* 每一期今天等於多少 —— 比例存的是 30，不是 RM 14,550。
+         `settleDocument` 要这个才答得出「这一期收齐了没有」。 */
+      const dueByTerm = Object.fromEntries(
+        priceSchedule(
+          (termRows ?? []).map((t) => ({
+            description: t.description ?? "",
+            portion: t.portion,
+            amount_cents: t.amount_cents,
+          })),
+          data.amount_cents,
+        ).terms.map((t, i) => [(termRows ?? [])[i]?.id as string, t.cents]),
+      );
+      settlement = settleDocument({
+        dueByTerm,
+        documentCents: data.amount_cents,
+        allocations: (allocRows ?? []) as {
+          entry_id: string; record_id: string; term_id: string | null; amount_cents: number;
+        }[],
+        entries: ((entryRows ?? []) as { id: string; adjusts_id: string | null }[]).map((e) => ({
+          id: e.id,
+          adjusts_id: e.adjusts_id,
+          reversed: gone.has(e.id),
+        })),
+      });
+    }
+
     /* Whether goods from THIS order are already on a shelf. Read from the
        movements and not from the stage: the stage is a word the owner can type
        and change, the movements are the fact. */
@@ -310,7 +378,9 @@ export default async function EditRecordPage({
           stages={ctx.stages}
           trade={ctx.trade}
           backHref={ctx.backHref}
-          record={{ id: recordId, values, archivedAt, reversed, lines, terms, docNo, dueOn }}
+          openDocuments={ctx.openDocuments}
+          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, docNo, dueOn }}
+          settlement={settlement}
           copy={copy.form}
         />
       </main>

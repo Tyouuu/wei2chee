@@ -22,6 +22,8 @@ import { MODULE_BY_KEY, type ModuleShape } from "@/lib/portal/module-catalog";
 import { isLiveShape } from "@/lib/portal/shape-state";
 import type { TableColumn } from "@/lib/portal/table-model";
 import { canOpenModule, loadWorkspace, type WorkspaceRole } from "@/lib/portal/workspace";
+import { reversedIds, settleDocument } from "@/lib/portal/allocations";
+import { priceSchedule } from "@/lib/portal/payment-terms";
 
 /**
  * Everything 「加一单」 and 「改这一单」 both need, loaded once.
@@ -63,11 +65,39 @@ export type RecordPageContext = {
   backHref: string;
   /** Owner or 师傅. Carried so the form can say what it will not offer. */
   role: WorkspaceRole;
+  /** 这笔钱可以分摊给哪几张单。只有钱那几页、而且只有看得到钱的人拿得到 ——
+   *  一个空阵列在画面上要讲「没有单可以分」，不是「读不到」。 */
+  openDocuments: OpenDocument[];
+};
+
+/** 一张还没收齐的单，给分摊那个编辑器挑。 */
+export type OpenDocument = {
+  id: string;
+  docNo: string;
+  title: string;
+  party: string;
+  moduleKey: string;
+  amountCents: number;
+  /** 已经收到多少（冲正过的不算 —— lib/portal/allocations.ts）。 */
+  paidCents: number;
+  /** 这张单的分期，给他指名「这笔是订金」。 */
+  terms: { id: string; description: string; dueCents: number }[];
 };
 
 export async function loadRecordPage(
   locale: string,
   pageKey: string,
+  /**
+   * 正在改的那一笔钱自己的 id。
+   *
+   * 🔴 只有一个用途，而它是看图才发现的：`openDocuments.paidCents` 是
+   * 「这张单收到多少」，而在**改这一笔**的画面上，那个数字里已经含着这一笔。
+   * 分摊编辑器又把他打在框里的数字减一次 —— 一张欠 RM 36,500 的单，
+   * 旁边写着「还欠 RM 24,500」，同一笔钱扣了两次。
+   *
+   * 所以这里问的是「**除了这一笔以外**，别人付了多少」。
+   */
+  excludeEntryId?: string,
 ): Promise<RecordPageContext> {
   /* Only the shapes that hold real rows. 库存 and 对账 draw a table too, and
      they are still samples -- offering a form there would be a control that
@@ -162,6 +192,110 @@ export async function loadRecordPage(
 
   const labels = tradeLabels(businessContext, pageRefs);
 
+  /* ── 这笔钱可以分摊给哪几张单 ──────────────────────────────────────────
+     只在钱那几页问，而且只问看得到钱的人 —— `ledger_allocations` 是
+     sees_money，一个师傅问它拿回来的是空的，而空的跟「没有单」长得一模一样。
+
+     ⚠️ 哪一边的单，照 directory_side() 同一条规矩：进货单是买的那一边。
+     一笔客户的收款分摊到一张进货单，是把钱记到生意的反面 ——
+     画面上完全正常，而月底对不起来。 */
+  let openDocuments: OpenDocument[] = [];
+  if (shape === "ledger" && workspace.role === "owner") {
+    const buying = pageKey !== "payments";
+    let q = supabase
+      .from("pipeline_records")
+      .select("id, doc_no, title, party, module_key, amount_cents")
+      .eq("project_id", project.id)
+      .is("archived_at", null)
+      .gt("amount_cents", 0)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    q = buying ? q.eq("module_key", "purchases") : q.neq("module_key", "purchases");
+    const { data: docs } = await q;
+    const ids = (docs ?? []).map((d: { id: string }) => d.id);
+
+    if (ids.length) {
+      const [{ data: allAllocRows }, { data: termRows }] = await Promise.all([
+        supabase
+          .from("ledger_allocations")
+          .select("record_id, entry_id, term_id, amount_cents")
+          .in("record_id", ids),
+        supabase
+          .from("record_terms")
+          .select("id, record_id, description, portion, amount_cents, sort_order")
+          .in("record_id", ids)
+          .order("sort_order"),
+      ]);
+
+      /* 除了正在改的这一笔以外。见 excludeEntryId 上面那一段。 */
+      const allocRows = (allAllocRows ?? []).filter(
+        (a: { entry_id: string }) => a.entry_id !== excludeEntryId,
+      );
+
+      /* 哪几笔钱被冲正了。要问，不能假设 —— 一张退过款的单印着「已收」，
+         是他照一个假数字决定要不要开工。 */
+      const entryIds = [...new Set(allocRows.map((a: { entry_id: string }) => a.entry_id))];
+      const { data: entryRows } = entryIds.length
+        ? await supabase.from("ledger_entries").select("id, adjusts_id").in("id", entryIds)
+        : { data: [] };
+      const gone = reversedIds((entryRows ?? []) as { id: string; adjusts_id: string | null }[]);
+      const facts = ((entryRows ?? []) as { id: string; adjusts_id: string | null }[]).map((e) => ({
+        id: e.id,
+        adjusts_id: e.adjusts_id,
+        reversed: gone.has(e.id),
+      }));
+
+      openDocuments = (docs ?? []).map(
+        (d: {
+          id: string;
+          doc_no: string | null;
+          title: string | null;
+          party: string | null;
+          module_key: string;
+          amount_cents: number | null;
+        }) => {
+          const mine = allocRows.filter(
+            (a: { record_id: string }) => a.record_id === d.id,
+          ) as { entry_id: string; record_id: string; term_id: string | null; amount_cents: number }[];
+          const myTerms = ((termRows ?? []) as {
+            id: string;
+            record_id: string;
+            description: string | null;
+            portion: number | null;
+            amount_cents: number | null;
+          }[]).filter((t) => t.record_id === d.id);
+          const priced = priceSchedule(
+            myTerms.map((t) => ({
+              description: t.description ?? "",
+              portion: t.portion,
+              amount_cents: t.amount_cents,
+            })),
+            d.amount_cents ?? null,
+          );
+          const settled = settleDocument({
+            documentCents: d.amount_cents,
+            allocations: mine,
+            entries: facts,
+          });
+          return {
+            id: d.id,
+            docNo: d.doc_no ?? "",
+            title: d.title ?? "",
+            party: d.party ?? "",
+            moduleKey: d.module_key,
+            amountCents: d.amount_cents ?? 0,
+            paidCents: settled.paidCents,
+            terms: myTerms.map((t, i) => ({
+              id: t.id,
+              description: t.description ?? "",
+              dueCents: priced.terms[i]?.cents ?? 0,
+            })),
+          };
+        },
+      );
+    }
+  }
+
   return {
     locale,
     pageKey,
@@ -179,6 +313,7 @@ export async function loadRecordPage(
     title: pageLabel({ key: pageKey, title: page.title ?? null }, labels, lang),
     backHref: `/${locale}/portal/${pageKey}`,
     role: workspace.role,
+    openDocuments,
     /* 这一行是什么生意 —— 分期付款表拿它去建议「订金三成 · 动工四成 ·
        完工三成」，而那是一颗他要按的按钮，不是一个预设。 */
     trade: businessContext.industry?.slug ?? null,
