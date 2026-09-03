@@ -87,10 +87,12 @@ describe("改这一单, on a money page", () => {
 describe("改这一单, on a document page", () => {
   const record = { id: "r1", values: { primary: "翻新", secondary: "陈先生", amount: "RM 48,500" }, archivedAt: null };
 
-  /* 四格，不是三格：2026-09-03 报价单多了「有效期到」那一格。
-     数量留着不改成 every()，因为它同时在守另一件事 —— 一格消失了这里会红。 */
+  /* 五格，不是四格：9-03 报价单多了「有效期到」，9-04 又多了工地照片那个
+     选档案的格子。数量留着不改成 every()，因为它同时在守另一件事 ——
+     **一格消失了这里会红**，而这个仓库掉过太多次「那一格还在、只是没人画」。 */
   it("lets him fix every box, because a quotation is a working document", () => {
     expect(boxes(form({ shape: "pipeline", moduleKey: "quotations", record }))).toEqual([
+      false,
       false,
       false,
       false,

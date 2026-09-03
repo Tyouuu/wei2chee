@@ -8,6 +8,7 @@ import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, type DocumentSettlement } from "@/lib/portal/allocations";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
+import type { JobPhoto } from "../new/job-photos";
 import { priceSchedule } from "@/lib/portal/payment-terms";
 
 /**
@@ -83,6 +84,9 @@ export default async function EditRecordPage({
   let addresses: { id: string; label: string; line: string; region: string; isBilling: boolean }[] = [];
   /* 走单那一边：这张单是哪一个工地的。 */
   let siteAddressId: string | null = null;
+  /* 工地的照片。⚠️ 网址是签出来的、会过期的 —— 桶是 private 的，
+     因为那是他客户家里，不是官网（20260904010000）。 */
+  let photos: JobPhoto[] = [];
   /* 客户页那一边：他有几单，还欠多少。 */
   let jobs: PartyJob[] = [];
   let owing: number | null = null;
@@ -368,6 +372,38 @@ export default async function EditRecordPage({
       amount: t.amount_cents == null ? "" : ringgit(t.amount_cents) ?? "",
       dueOn: t.due_on ?? "",
     }));
+    /* ── 工地的照片 ────────────────────────────────────────────────────
+       存的是路径，签的是网址。一小时 —— 够他看完一单，而一个永不过期的
+       网址等於把一个 private 的桶变成公开的。 */
+    const { data: picRows } = await supabase
+      .from("record_photos")
+      .select("id, path, caption")
+      .eq("record_id", recordId)
+      .order("sort_order")
+      .order("created_at");
+    if ((picRows ?? []).length) {
+      const { data: signed } = await supabase.storage
+        .from("job-photos")
+        .createSignedUrls((picRows ?? []).map((x: { path: string }) => x.path), 3600);
+      /* ⚠️ 每一个都可能签失败（那个档案不在了），所以型别上 signedUrl 是
+         可空的 —— 而它就是可空的，不要断言掉它。 */
+      const urlByPath = new Map<string, string>(
+        (signed ?? [])
+          .filter((x) => !!x.path && !!x.signedUrl)
+          .map((x) => [x.path as string, x.signedUrl as string]),
+      );
+      photos = ((picRows ?? []) as { id: string; path: string; caption: string | null }[])
+        .map((x) => ({
+          id: x.id,
+          path: x.path,
+          caption: x.caption ?? "",
+          url: urlByPath.get(x.path) ?? "",
+        }))
+        /* 签不出来的那一张不画。一张破掉的图比少一张糟 ——
+           而「签不出来」通常表示那个档案已经不在了。 */
+        .filter((x) => x.url);
+    }
+
     /* ── 这张单收到多少 ────────────────────────────────────────────────
        🔴 只问看得到钱的人。一个师傅问 `ledger_allocations` 拿回来的是空的，
        而空的会画成「还欠 RM 48,500」—— 一张已经收齐的单，对他撒谎。
@@ -460,6 +496,7 @@ export default async function EditRecordPage({
           backHref={ctx.backHref}
           openDocuments={ctx.openDocuments}
           partyAddresses={ctx.partyAddresses}
+          photos={photos}
           record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, docNo, dueOn }}
           settlement={settlement}
           copy={copy.form}

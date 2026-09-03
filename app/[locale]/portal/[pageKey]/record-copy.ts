@@ -148,6 +148,15 @@ export type RecordFormCopy = {
   theirJobs: string;
   theirOwing: string;
   noJobsYet: string;
+  /* 工地的照片（20260904010000）。私人的桶，签名的网址 —— 那是他客户家里。 */
+  photos: string;
+  photoAdd: string;
+  photoAdding: string;
+  photoCaption: string;
+  photoRemove: string;
+  photoNone: string;
+  photoOnlySaved: string;
+  photoTooBig: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -305,6 +314,14 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       theirJobs: "他的单子",
       theirOwing: "他还欠",
       noJobsYet: "还没有单子",
+      photos: "工地的照片",
+      photoAdd: "拍一张 / 传一张",
+      photoAdding: "在传…",
+      photoCaption: "这一张是什么（可以不写）",
+      photoRemove: "删掉这一张",
+      photoNone: "这一单还没有照片。",
+      photoOnlySaved: "存好这一单，才挂得上照片。",
+      photoTooBig: "这张太大了，换一张小一点的",
     },
   },
   en: {
@@ -428,6 +445,14 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       theirJobs: "Their jobs",
       theirOwing: "They still owe",
       noJobsYet: "No jobs yet",
+      photos: "Photos on this job",
+      photoAdd: "Take or upload a photo",
+      photoAdding: "Uploading…",
+      photoCaption: "What this shows (optional)",
+      photoRemove: "Remove this photo",
+      photoNone: "No photos on this job yet.",
+      photoOnlySaved: "Save this job first, then photos can be attached.",
+      photoTooBig: "That photo is too large — try a smaller one",
     },
   },
 };

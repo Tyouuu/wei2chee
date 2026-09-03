@@ -23,6 +23,7 @@ import {
   type AddressRow,
 } from "./address-editor";
 import type { PartyAddress } from "../record-context";
+import { JobPhotos, type JobPhoto } from "./job-photos";
 
 /**
  * 加一单 — the form a person fills in.
@@ -105,6 +106,7 @@ export function NewRecordForm({
   trade,
   openDocuments,
   partyAddresses,
+  photos,
   settlement,
   backHref,
   copy,
@@ -185,6 +187,8 @@ export function NewRecordForm({
   openDocuments?: readonly OpenDocument[];
   /** 这一家所有对象的地址。只有走单那几页拿得到 —— 名册页自己在编辑它们。 */
   partyAddresses?: readonly PartyAddress[];
+  /** 工地的照片。只有走单那几页有，而且只有存过的单才有地方挂。 */
+  photos?: readonly JobPhoto[];
   /** 这张单收到多少。⚠️ null = **没有问**（他看不到钱），不是零 ——
    *  所以那一整段不画，而不是画一个 RM 0。 */
   settlement?: DocumentSettlement | null;
@@ -1179,6 +1183,15 @@ export function NewRecordForm({
               </select>
             </label>
           ) : null}
+
+          {/* 工地的照片。画在明细上面 —— 师傅打开这一单要看的第一件事
+              是「上次拆开来长什么样」，不是价钱。 */}
+          <JobPhotos
+            recordId={record?.id ?? null}
+            projectId={projectId}
+            photos={photos ?? []}
+            copy={copy}
+          />
 
           <LineEditor lines={lines} onChange={setLines} copy={copy} />
           {totalFromLines ? (

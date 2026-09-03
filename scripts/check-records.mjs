@@ -1101,6 +1101,65 @@ try {
   });
   check("别人的客户写不进地址", !!addrNotMine);
 
+  /* ── 工地的照片挂在那一张单上 ──────────────────────────────────────
+     20260904010000。 */
+  console.log("\n⑮ 工地的照片");
+
+  const { data: shotJob } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "拍照那一单",
+    in_amount_cents: 500_000,
+  });
+
+  const pathOf = (n) => `${P}/${shotJob.id}/photo-${n}.webp`;
+  const { data: pic1, error: picErr } = await c.rpc("add_record_photo", {
+    in_record_id: shotJob.id, in_path: pathOf(1), in_caption: "拆除之前",
+  });
+  check("挂得上一张照片", !picErr && pic1?.path === pathOf(1), picErr?.message);
+  check("说明存得住", pic1?.caption === "拆除之前");
+  check("而且记得是谁拍的", pic1?.taken_by === userId, `${pic1?.taken_by}`);
+
+  const { data: pic2 } = await c.rpc("add_record_photo", {
+    in_record_id: shotJob.id, in_path: pathOf(2),
+  });
+  check("第二张排在后面", pic2?.sort_order === 1, `${pic2?.sort_order}`);
+
+  /* 🔴 手机上网路慢，他会按两次。第二次要拿回同一张，不是报一个错，
+     也不是多一张一模一样的。 */
+  const { data: samePic, error: samePicErr } = await c.rpc("add_record_photo", {
+    in_record_id: shotJob.id, in_path: pathOf(1),
+  });
+  check("同一张按两次只有一张", !samePicErr && samePic?.id === pic1.id, samePicErr?.message);
+  const { count: howMany } = await c
+    .from("record_photos").select("id", { count: "exact", head: true }).eq("record_id", shotJob.id);
+  check("所以那一单是两张，不是三张", howMany === 2, `${howMany} 张`);
+
+  const { error: blankPath } = await c.rpc("add_record_photo", {
+    in_record_id: shotJob.id, in_path: "   ",
+  });
+  check("没有路径的挂不上", !!blankPath, blankPath?.message);
+
+  const { data: removed } = await c.rpc("remove_record_photo", { in_id: pic2.id });
+  check("删得掉一张", removed === true);
+  const { count: left } = await c
+    .from("record_photos").select("id", { count: "exact", head: true }).eq("record_id", shotJob.id);
+  check("删完剩一张", left === 1, `${left} 张`);
+
+  const { data: notThere } = await c.rpc("remove_record_photo", {
+    in_id: "00000000-0000-0000-0000-000000000000",
+  });
+  check("删一张不存在的，回 false 不是报错", notThere === false, `${notThere}`);
+
+  const { error: photoNotMine } = await c.rpc("add_record_photo", {
+    in_record_id: "00000000-0000-0000-0000-000000000000", in_path: "x/y/z.webp",
+  });
+  check("别人的单挂不上照片", !!photoNotMine);
+
+  /* 单收起来了，照片跟着走 —— 一张挂在不存在的单上的照片，没有人找得到它。 */
+  await c.from("pipeline_records").delete().eq("id", shotJob.id);
+  const { count: photosLeftAfterDoc } = await c
+    .from("record_photos").select("id", { count: "exact", head: true }).eq("record_id", shotJob.id);
+  check("单删了，照片那几行跟着走", photosLeftAfterDoc === 0, `${photosLeftAfterDoc} 张`);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

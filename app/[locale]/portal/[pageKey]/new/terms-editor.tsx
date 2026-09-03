@@ -223,8 +223,14 @@ export function TermsEditor({
       </div>
 
       {/* 🔴 加不起来就讲出来。不偷偷补，也不挡他保存 —— 一张写到一半的
-          分期表是常态（订金先谈好，余额下星期再算）。 */}
-      {priced.matches === false && priced.documentCents != null ? (
+          分期表是常态（订金先谈好，余额下星期再算）。
+
+          ⚠️ 但**一期都没写的时候什么都不讲**。看图才看到的：一张
+          RM 12,000 的单，他一期都没写，底下一行红字写着
+          「这几期加起来跟单上的总数差 RM 12,000」——
+          **在骂他没做一件他根本没有开始做的事。**
+          「还没写」跟「写错了」是两回事，而红色是留给后者的。 */}
+      {priced.terms.length > 0 && priced.matches === false && priced.documentCents != null ? (
         <p className="[font-size:var(--text-xs)] text-[color:var(--color-clay-bright)]">
           {copy.termMismatch} {ringgitOf(Math.abs(priced.differenceCents ?? 0))}
         </p>
