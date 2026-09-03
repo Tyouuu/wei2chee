@@ -26,6 +26,7 @@ import { readFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { chromium } from "playwright";
+import { dropThrowaway } from "./lib/throwaway.mjs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -257,7 +258,7 @@ try {
   await browser.close();
   /* The account and everything cascading off it. A ruler that leaves rows
      behind becomes a ruler nobody dares run twice. */
-  if (userId) await admin.auth.admin.deleteUser(userId);
+  if (userId) await dropThrowaway(admin, userId);
 }
 
 process.exit(failed.length ? 1 : 0);

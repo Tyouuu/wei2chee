@@ -15,6 +15,7 @@ import { readFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import { dropThrowaway } from "./lib/throwaway.mjs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -155,7 +156,7 @@ try {
   console.log(`\n  图在 .screenshots/staff/`);
 } finally {
   await browser.close();
-  if (staffId) await admin.auth.admin.deleteUser(staffId).catch(() => {});
+  if (staffId) await dropThrowaway(admin, staffId);
   console.log("(supervisor removed)");
 }
 

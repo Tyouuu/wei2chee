@@ -10,6 +10,7 @@
 import { chromium } from "playwright";
 import { readFileSync, mkdirSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { dropThrowaway } from "./lib/throwaway.mjs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -133,7 +134,7 @@ try {
   console.error(`\nthrew: ${err.message}`);
   shots.push({ name: err.message, stuck: true });
 } finally {
-  if (userId) await admin.auth.admin.deleteUser(userId).catch(() => {});
+  if (userId) await dropThrowaway(admin, userId);
   console.log("\n(临时帐号删掉了)");
   if (browser) await browser.close();
 }

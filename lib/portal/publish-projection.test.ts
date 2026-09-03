@@ -354,6 +354,74 @@ describe("an empty list is not a list of placeholders", () => {
     expect(String((out.content[0].props as { body?: string }).body)).toContain("做了十年");
   });
 
+  /* 🔴 实拍抓到的（2026-09-04，`/s/xingfa-reno`）。
+     那四条承诺是**样板句，一出厂就带着**，所以旧那条规则
+     （body 空 且 photo 空 且 四条也空）永远判不了它空 ——
+     於是编辑器催老板的那一句上了访客的页面，而那一句写的是
+     「This section stays off your live page until you write it」。
+     一句在公开页面上讲自己不会出现在公开页面的话。 */
+  it("drops the story while the owner has written nothing, even though the four promises came with it", () => {
+    const layout = {
+      root: {},
+      content: [
+        {
+          type: "SiteStory",
+          props: {
+            id: "website-story",
+            heading: "Who you are dealing with",
+            hint: "Two or three lines in your own words -- this section stays off your live page until you write it.",
+            body: "",
+            photo: "",
+            /* 产生器出厂就写好的四条，不是他写的。 */
+            points: [
+              { label: "A written quote before anything starts" },
+              { label: "One person you deal with from start to finish" },
+            ],
+          },
+        },
+      ],
+    } as unknown as PuckLayout;
+
+    const out = forPublication(layout);
+    expect(out.content).toHaveLength(0);
+    /* 那句催人的话一个字都不准到访客那边。 */
+    expect(JSON.stringify(out)).not.toContain("stays off your live page");
+  });
+
+  /* 🔴 第二个实例，同一天同一页：`SiteBand` 的
+     「Put your own photos here — three of your best jobs.」
+     它在任何一条「空的就不上线」规则里都没有登记过，而它照样漏了出去。
+
+     所以这一条守的**不是那两个组件**，是那条约定：
+     `hint` 是编辑器的话，永远不上线。以后新增一个块，这一条照样管得到它。 */
+  it("never lets an editor-only hint reach a visitor, whatever block carries it", () => {
+    const layout = {
+      root: {},
+      content: [
+        {
+          type: "SiteBand",
+          props: {
+            id: "website-band",
+            hint: "Put your own photos here — three of your best jobs.",
+            photo: "",
+            photoAlt: "",
+          },
+        },
+        {
+          /* 还没发明的那一块。名单挡不住它，约定挡得住。 */
+          type: "SomeBlockNobodyHasWrittenYet",
+          props: { id: "x", hint: "Fill this in and it will go live.", body: "真的内容" },
+        },
+      ],
+    } as unknown as PuckLayout;
+
+    const out = forPublication(layout);
+    expect(JSON.stringify(out)).not.toContain("Put your own photos here");
+    expect(JSON.stringify(out)).not.toContain("Fill this in");
+    /* 而**有内容的那一块留下来** —— 拿掉的是那句催人的话，不是那一块。 */
+    expect(JSON.stringify(out)).toContain("真的内容");
+  });
+
   it("still drops a block whose only list IS all placeholders", () => {
     const layout = {
       root: {},

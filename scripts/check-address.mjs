@@ -24,6 +24,7 @@
  */
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { dropThrowaway } from "./lib/throwaway.mjs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -253,7 +254,7 @@ try {
 } finally {
   /* Users first -- projects cascade off them -- then the leads, which nothing
      cascades from. A checker that leaves rows behind is one nobody runs twice. */
-  for (const id of made) await admin.auth.admin.deleteUser(id);
+  for (const id of made) await dropThrowaway(admin, id);
   for (const id of leads) await admin.from("leads").delete().eq("id", id);
 }
 

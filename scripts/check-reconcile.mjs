@@ -16,6 +16,7 @@
  */
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { dropThrowaway } from "./lib/throwaway.mjs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -332,7 +333,7 @@ try {
   console.log("\n判：");
   console.log(`  ${failed.length ? `${failed.length} FAILED` : "all good"}`);
 } finally {
-  for (const id of made) await admin.auth.admin.deleteUser(id);
+  for (const id of made) await dropThrowaway(admin, id);
 }
 
 process.exit(failed.length ? 1 : 0);

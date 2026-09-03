@@ -24,6 +24,7 @@
 
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { dropThrowaway } from "./lib/throwaway.mjs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -86,7 +87,7 @@ async function signIn(u) {
 
 async function cleanup(ids) {
   for (const id of ids) {
-    if (id) await admin.auth.admin.deleteUser(id).catch(() => {});
+    if (id) await dropThrowaway(admin, id);
   }
 }
 

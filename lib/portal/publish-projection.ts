@@ -112,12 +112,25 @@ function isEmptyOnPublish(node: PuckNode): boolean {
     as a heading plus an ask, and stays off the visitor's page until the owner
     has written the half we cannot.
   */
+  /*
+    🔴 「空的」看的是**老板自己的东西**：他写的那段话、他传的那张照片。
+
+    这一条 2026-09-04 改过一次，而它是一个真的「说了没做」：
+    `site-sections.tsx` 上 `hint` 那一栏的注解白纸黑字写着
+    **「Never published -- publish-projection.ts drops the whole section
+    until there is a body」**，而这里原本还多问了一句「那四条承诺是不是空的」。
+
+    那四条（「先给报价才动工」「一个人跟到底」「来看不收钱」）是**样板句，
+    一出厂就带着**。所以这一块永远不算空，於是它带着编辑器那句
+    **「This section stays off your live page until you write it」**
+    上了访客的页面 —— 一句在公开页面上讲自己不会出现在公开页面的话。
+
+    实拍在 `/s/xingfa-reno`（2026-09-04）。组件跟这里对「空」的定义不一样，
+    而画面听组件的。现在两边同一个定义。
+  */
   if (node.type === "SiteStory") {
-    const marks = Array.isArray(node.props.points) ? (node.props.points as Row[]) : [];
     return (
-      !String(node.props.body ?? "").trim() &&
-      !String(node.props.photo ?? "").trim() &&
-      !marks.some((m) => String((m as { label?: string }).label ?? "").trim())
+      !String(node.props.body ?? "").trim() && !String(node.props.photo ?? "").trim()
     );
   }
   /*
@@ -284,13 +297,39 @@ function hasNothingLeft(node: PuckNode): boolean {
   return slots.every((k) => (node.props[k] as PuckNode[]).length === 0);
 }
 
+/*
+  🔴 `hint` 是**编辑器里催老板填东西的那句话**，一律不上线。
+
+  这一条是从两个真的漏出去的实例长出来的（2026-09-04，`/s/xingfa-reno`）：
+
+    SiteStory  「Two or three lines in your own words … **This section stays
+                off your live page until you write it.**」
+    SiteBand   「Put your own photos here — three of your best jobs.」
+
+  两句都印在访客的页面上，而第一句还在那页上宣称自己不在那页上。
+
+  ⚠️ **不列一张名单。** 五个组件用 `hint`，而这个仓库栽在
+  「第二份手写清单活得比它描述的东西久」上至少五次（SLOT_KEYS 那一段
+  就是同一个教训）。这里改成一条**从组件的约定推出来的**规则：
+  五个 `hint` 的消费端每一个都写着 `if (!hint) return null` ——
+  **所以把 hint 拿掉，那一块在没填的时候自己就消失**，
+  而那正是它们的档头承诺的事（「Never published」）。
+  以后新增一个照这个约定写的块，不用回来改这里。
+*/
+const EDITOR_ONLY_PROP = "hint";
+
 function project(node: PuckNode): PuckNode {
   const stripped = withoutEmptyShots(withoutPlaceholderFields(withoutPlaceholders(node)));
   const drop = DESIGN_TIME_PROPS[stripped.type];
   let props = stripped.props;
 
-  if (drop?.some((k) => k in props)) {
+  if (EDITOR_ONLY_PROP in props) {
     props = { ...props };
+    delete props[EDITOR_ONLY_PROP];
+  }
+
+  if (drop?.some((k) => k in props)) {
+    props = props === stripped.props ? { ...props } : props;
     for (const k of drop) delete props[k];
   }
 

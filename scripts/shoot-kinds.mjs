@@ -24,6 +24,7 @@ import { readFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { chromium } from "playwright";
+import { dropThrowaway } from "./lib/throwaway.mjs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -435,7 +436,7 @@ try {
   console.log(`  ${failed.length ? `${failed.length} FAILED` : "all good"} — ${OUT}`);
 } finally {
   await browser.close();
-  if (userId) await admin.auth.admin.deleteUser(userId);
+  if (userId) await dropThrowaway(admin, userId);
   if (leadId) await admin.from("leads").delete().eq("id", leadId);
 }
 
