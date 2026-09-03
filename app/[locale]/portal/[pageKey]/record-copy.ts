@@ -157,6 +157,11 @@ export type RecordFormCopy = {
   photoNone: string;
   photoOnlySaved: string;
   photoTooBig: string;
+  /* 谁改了什么（20260904020000）。只画给看得到钱的人 ——
+     `rows` 是 null 的意思是「没有问」，不是「没有改过」。 */
+  changes: string;
+  changesNone: string;
+  changeBlank: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -322,6 +327,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       photoNone: "这一单还没有照片。",
       photoOnlySaved: "存好这一单，才挂得上照片。",
       photoTooBig: "这张太大了，换一张小一点的",
+      changes: "改过什么",
+      changesNone: "还没有人改过这一单。",
+      changeBlank: "空白",
     },
   },
   en: {
@@ -453,6 +461,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       photoNone: "No photos on this job yet.",
       photoOnlySaved: "Save this job first, then photos can be attached.",
       photoTooBig: "That photo is too large — try a smaller one",
+      changes: "What was changed",
+      changesNone: "Nobody has changed this one yet.",
+      changeBlank: "blank",
     },
   },
 };

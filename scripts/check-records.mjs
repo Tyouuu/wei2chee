@@ -1154,6 +1154,75 @@ try {
   });
   check("别人的单挂不上照片", !!photoNotMine);
 
+  /* ── 谁改了什么 ────────────────────────────────────────────────────
+     20260904020000。 */
+  console.log("\n⑯ 改前改后的轨迹");
+
+  const { data: watched } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "原本的名字",
+    in_party: "陈大文", in_amount_cents: 4_800_000,
+  });
+
+  /* 🔴 开一张新单**不记**一行 —— 每一张单的历史第一行都是「从无变成有」，
+     是让他不再看那一栏的方法。 */
+  const { count: onCreate } = await c
+    .from("record_changes").select("id", { count: "exact", head: true }).eq("entity_id", watched.id);
+  check("开一张新单不记一行废话", onCreate === 0, `${onCreate} 行`);
+
+  await c.rpc("update_pipeline_record", {
+    in_id: watched.id, in_title: "改过的名字", in_amount_cents: 3_800_000,
+  });
+  const { data: trail } = await c
+    .from("record_changes").select("field, was, now_is, changed_by, label")
+    .eq("entity_id", watched.id).order("created_at");
+  const byField = Object.fromEntries((trail ?? []).map((t) => [t.field, t]));
+  check("金额改了，记得住改之前是多少",
+    byField.amount_cents?.was === "4800000" && byField.amount_cents?.now_is === "3800000",
+    JSON.stringify(byField.amount_cents));
+  check("名字改了也记得住",
+    byField.title?.was === "原本的名字" && byField.title?.now_is === "改过的名字",
+    JSON.stringify(byField.title));
+  check("而且记得是谁改的", byField.title?.changed_by === userId, `${byField.title?.changed_by}`);
+  check("没有改的那几栏不记", (trail ?? []).length === 2, `记了 ${(trail ?? []).length} 行`);
+
+  /* 只改一个字，只记一行 —— 一本每次都记六行的帐，他不会看第二次。 */
+  await c.rpc("update_pipeline_record", { in_id: watched.id, in_stage: "已确认" });
+  const { count: afterStage } = await c
+    .from("record_changes").select("id", { count: "exact", head: true }).eq("entity_id", watched.id);
+  check("只改一栏就只多一行", afterStage === 3, `${afterStage} 行`);
+
+  /* 🔴 前端写不进这本帐，也删不掉 —— 一本伪造得了的稽核帐不是稽核帐。 */
+  const { error: forge } = await c.from("record_changes").insert({
+    project_id: P, entity: "pipeline", entity_id: watched.id,
+    field: "amount_cents", was: "1", now_is: "2",
+  });
+  check("前端伪造不了一行", !!forge, forge?.message);
+  const { error: erase } = await c.from("record_changes").delete().eq("entity_id", watched.id);
+  const { count: stillThere } = await c
+    .from("record_changes").select("id", { count: "exact", head: true }).eq("entity_id", watched.id);
+  check("也删不掉", stillThere === 3, `删完剩 ${stillThere} 行 · ${erase?.message ?? "没报错"}`);
+
+  /* 名册那一边也记 */
+  const { data: watchedParty } = await party({ in_name: "会被改名的" });
+  await c.rpc("update_directory_entry", { in_id: watchedParty.id, in_name: "改过名的" });
+  const { data: partyTrail } = await c
+    .from("record_changes").select("field, was, now_is").eq("entity_id", watchedParty.id);
+  check("客户改名也记得住",
+    partyTrail?.some((t) => t.field === "name" && t.was === "会被改名的"),
+    JSON.stringify(partyTrail));
+
+  /* 🔴 删掉那一张单，那条历史要留着 —— 而且留得住它当时叫什么。
+     「QT-2026-00xx 被谁删掉了」正是他要问的那一句。 */
+  const deletedNo = watched.doc_no;
+  await c.from("pipeline_records").delete().eq("id", watched.id);
+  const { data: afterGone } = await c
+    .from("record_changes").select("field, label").eq("entity_id", watched.id);
+  check("单删掉了，那条历史还在",
+    (afterGone ?? []).some((t) => t.field === "deleted"), `${(afterGone ?? []).length} 行`);
+  check("而且记得它当时叫什么",
+    (afterGone ?? []).some((t) => (t.label ?? "").includes(deletedNo)),
+    JSON.stringify((afterGone ?? []).map((t) => t.label)));
+
   /* 单收起来了，照片跟着走 —— 一张挂在不存在的单上的照片，没有人找得到它。 */
   await c.from("pipeline_records").delete().eq("id", shotJob.id);
   const { count: photosLeftAfterDoc } = await c

@@ -53,6 +53,7 @@
     "check:launch": "node scripts/check-launch.mjs",
     "shoot:awwwards": "node scripts/shoot-awwwards.mjs",
     "preview": "node scripts/preview-for.mjs",
+    "shoot:change-trail": "node scripts/shoot-change-trail.mjs",
     "shoot:job-photos": "node scripts/shoot-job-photos.mjs",
     "shoot:addresses": "node scripts/shoot-addresses.mjs",
     "shoot:allocations": "node scripts/shoot-allocations.mjs",

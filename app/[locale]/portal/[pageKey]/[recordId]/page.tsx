@@ -9,6 +9,7 @@ import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, type DocumentSettlement } from "@/lib/portal/allocations";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import type { JobPhoto } from "../new/job-photos";
+import { showChanges, type ShownChange, type ChangeRow } from "@/lib/portal/change-log";
 import { priceSchedule } from "@/lib/portal/payment-terms";
 
 /**
@@ -87,6 +88,8 @@ export default async function EditRecordPage({
   /* 工地的照片。⚠️ 网址是签出来的、会过期的 —— 桶是 private 的，
      因为那是他客户家里，不是官网（20260904010000）。 */
   let photos: JobPhoto[] = [];
+  /* 这一张被改过什么。⚠️ null = 没有问（他看不到这本帐），不是「没有改过」。 */
+  let changes: ShownChange[] | null = null;
   /* 客户页那一边：他有几单，还欠多少。 */
   let jobs: PartyJob[] = [];
   let owing: number | null = null;
@@ -466,6 +469,60 @@ export default async function EditRecordPage({
     }));
   }
 
+  /* ── 改过什么 ────────────────────────────────────────────────────────
+     🔴 只问看得到钱的人。`record_changes` 的 policy 就是 sees_money，
+     所以师傅问它拿回来的是空的 —— 而空的会画成「从来没有人改过」，
+     那是一句假话。所以问都不问，整段不画。 */
+  if (ctx.role === "owner") {
+    const { data: changeRows } = await supabase
+      .from("record_changes")
+      .select("id, entity, entity_id, label, field, was, now_is, changed_by, created_at")
+      .eq("entity_id", recordId)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    /* 谁改的。查得到名字才印 —— 一串 uuid 对他没有意义。
+       ⚠️ 这个 schema 里没有「员工叫什么」那一栏，只有他登入的 email
+       （`list_project_members`，20260901030000）。所以印的是 @ 前面那一段：
+       `ahmad@…` 印「ahmad」。那不是他的真名，而**它是我们真的有的东西** ——
+       编一个名字出来比印一段 email 糟得多。
+       他哪天真的加了一栏名字，改这一句就好。 */
+    const { data: members } = await supabase.rpc("list_project_members");
+    const names = Object.fromEntries(
+      ((members ?? []) as { user_id: string; email: string | null }[])
+        .filter((m) => (m.email ?? "").includes("@"))
+        .map((m) => [m.user_id, (m.email ?? "").split("@")[0]]),
+    );
+    changes = showChanges(
+      ((changeRows ?? []) as {
+        id: string; entity: string; entity_id: string; label: string | null;
+        field: string; was: string | null; now_is: string | null;
+        changed_by: string | null; created_at: string;
+      }[]).map((r) => ({
+        id: r.id,
+        entity: r.entity as ChangeRow["entity"],
+        entityId: r.entity_id,
+        label: r.label ?? "",
+        field: r.field,
+        was: r.was,
+        nowIs: r.now_is,
+        changedBy: r.changed_by,
+        createdAt: r.created_at,
+      })),
+      {
+        lang: ctx.lang,
+        blank: copy.form.changeBlank,
+        /* 那一页自己的栏名赢：「金额」在报价单上是他自己给它的名字。 */
+        labels: Object.fromEntries(
+          ctx.columns.map((c) => [
+            c.key === "primary" ? "title" : c.key === "secondary" ? "party" : c.key === "amount" ? "amount_cents" : c.key === "status" ? "stage" : c.key,
+            c.label,
+          ]),
+        ),
+        names,
+      },
+    );
+  }
+
   return (
     <StyleScope register={ctx.style} palette={ctx.palette} className="min-h-screen">
       {/* Wider when there is a document beside the form. A quotation is the
@@ -497,6 +554,7 @@ export default async function EditRecordPage({
           openDocuments={ctx.openDocuments}
           partyAddresses={ctx.partyAddresses}
           photos={photos}
+          changes={changes}
           record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, docNo, dueOn }}
           settlement={settlement}
           copy={copy.form}

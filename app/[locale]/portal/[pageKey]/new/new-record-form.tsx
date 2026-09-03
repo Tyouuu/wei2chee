@@ -24,6 +24,8 @@ import {
 } from "./address-editor";
 import type { PartyAddress } from "../record-context";
 import { JobPhotos, type JobPhoto } from "./job-photos";
+import { ChangeTrail } from "./change-trail";
+import type { ShownChange } from "@/lib/portal/change-log";
 
 /**
  * 加一单 — the form a person fills in.
@@ -107,6 +109,7 @@ export function NewRecordForm({
   openDocuments,
   partyAddresses,
   photos,
+  changes,
   settlement,
   backHref,
   copy,
@@ -189,6 +192,9 @@ export function NewRecordForm({
   partyAddresses?: readonly PartyAddress[];
   /** 工地的照片。只有走单那几页有，而且只有存过的单才有地方挂。 */
   photos?: readonly JobPhoto[];
+  /** 这一张被改过什么。⚠️ null = **没有问**（他看不到这本帐），
+   *  不是「没有改过」—— 那两句在画面上要长得不一样。 */
+  changes?: readonly ShownChange[] | null;
   /** 这张单收到多少。⚠️ null = **没有问**（他看不到钱），不是零 ——
    *  所以那一整段不画，而不是画一个 RM 0。 */
   settlement?: DocumentSettlement | null;
@@ -1296,6 +1302,10 @@ export function NewRecordForm({
           {copy.moneyFixed}
         </p>
       ) : null}
+
+      {/* 改过什么。画在最后 —— 它是读的，不是填的，而且它是老板才看得到的
+          那一段（`changes` 是 null 的时候整段不画）。 */}
+      {record ? <ChangeTrail rows={changes ?? null} copy={copy} /> : null}
 
       {error ? (
         <p role="alert" className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]">
