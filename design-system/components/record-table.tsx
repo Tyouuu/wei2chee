@@ -11,6 +11,7 @@ import { useRegisterProp } from "@/design-system/editor/style-scope"
 import { DataGrid } from "./data-grid"
 import { useSystemWords } from "@/design-system/system-lang-context"
 import { Avatar } from "@/design-system/components/avatar"
+import { CheckCircle2, CircleDashed, CircleOff, Timer } from "lucide-react"
 import { StatusDot, type StatusTone } from "./status-dot"
 import { normalizeTable, type ColumnKind, type TableModel } from "@/lib/portal/table-model"
 
@@ -144,7 +145,7 @@ export function RecordTable(props: {
   // one's props and finds nothing. This is the same class of failure as the
   // 315 preferences that reached nothing before 2026-08-23, and it is silent
   // in exactly the same way: the table renders, it just renders the default.
-  const rowPref = useRegisterProp<"plain" | "pill" | "avatar">("RecordTableRow", "row")
+  const rowPref = useRegisterProp<"plain" | "pill" | "avatar" | "mark">("RecordTableRow", "row")
   const rowShape = row ?? rowPref ?? "plain"
   /* A THIRD KEY, not a third read of "RecordTable". The comment above says why:
      a register's preference is looked up under the axis name, so two axes on
@@ -407,6 +408,8 @@ export function RecordTable(props: {
                       {value ? (
                         rowShape === "pill" ? (
                           <Pill tone={tone} label={value} />
+                        ) : rowShape === "mark" ? (
+                          <StatusMark tone={tone} label={value} />
                         ) : (
                           <StatusDot tone={tone} label={value} />
                         )
@@ -532,6 +535,38 @@ export function RecordTable(props: {
  * would be sixteen new declarations to keep in step with four that already
  * exist.
  */
+/* ── 第四种：形状说话，颜色不说话 ────────────────────────────────────────
+   台账抄的 shadcn Tasks 那一页，状态栏是**一个图标加一个词**，而那个图标
+   跟其余的字同一个灰 —— 🚫 Canceled · ✓ Done · ? Backlog。
+   2026-09-03 放大到两倍并排才看清楚：我们画的是一颗有颜色的圆点，
+   而他们画的是一个**形状**。
+
+   为什么值得单独做一种，而不是把圆点换个颜色：
+   · **它是这四种里唯一一种，把状态从颜色搬到形状上的。** 一张印出来的报价单、
+     一台调成灰阶的萤幕、一个分不出红绿的人 —— 圆点在这三种情况下讲不出话
+   · 它同时是[任务 100c](../../docs/founder-tasks.md) 那条「有颜色的面积 ≤ 7%」
+     的答案：一栏状态从此不再往那个数字里加东西
+   · [重点 7c](../../docs/founder-points.md)：换个配色它还在，所以它是骨架不是漆
+
+   ⚠️ 图标**不上色**，跟 `StatusDot` 的档头讲的是同一条：
+   一个跟着状态变色的字，是整页对比度最低的那一段，而它偏偏是要读的。 */
+const MARK_ICON = {
+  positive: CheckCircle2,
+  warning: Timer,
+  negative: CircleOff,
+  neutral: CircleDashed,
+} as const
+
+function StatusMark({ tone, label }: { tone: StatusTone; label: string }) {
+  const Icon = MARK_ICON[tone] ?? CircleDashed
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap [font-size:var(--text-sm)] [color:var(--color-paper)]">
+      <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]" strokeWidth={2} />
+      {label}
+    </span>
+  )
+}
+
 const PILL_TONE: Record<string, string> = {
   positive: "var(--color-jade-bright)",
   warning: "var(--color-brass-bright)",

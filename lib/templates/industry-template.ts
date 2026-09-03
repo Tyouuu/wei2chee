@@ -1253,26 +1253,19 @@ function buildDashboard(
       const average = amounts.length
         ? money(amounts.reduce((a, c) => a + c, 0) / amounts.length)
         : "—";
+      /* 🔴 `delta: null` 要写出来，不可以省（2026-09-03 放大两倍看到的）。
+         省掉的话 Puck 会拿 `SmallStat` 的 `defaultProps` 补上 `delta: 8`，
+         而 `StatCard` 把它当成倍数 —— 画出来是 **「↑ +800% vs last month」，
+         三张卡一模一样**。三个数字全部是从他这几笔记录当场算出来的，
+         **没有上个月可以比**，所以没有涨跌才是真话。
+         一个凭空冒出来的 800%，比少一行字贵得多。 */
+      const tile = (id: string, label: string, value: string) =>
+        node("SmallStat", id, { label, value, delta: null, period: null });
       return node("Columns", "dashboard-tiles", {
         layout: "thirds",
-        a: [
-          node("SmallStat", "dashboard-tile-a", {
-            label: c.dashboard.tileCount,
-            value: String(sample.records.length),
-          }),
-        ],
-        b: [
-          node("SmallStat", "dashboard-tile-b", {
-            label: c.dashboard.tileBiggest,
-            value: biggest,
-          }),
-        ],
-        c: [
-          node("SmallStat", "dashboard-tile-c", {
-            label: c.dashboard.tileAverage,
-            value: average,
-          }),
-        ],
+        a: [tile("dashboard-tile-a", c.dashboard.tileCount, String(sample.records.length))],
+        b: [tile("dashboard-tile-b", c.dashboard.tileBiggest, biggest)],
+        c: [tile("dashboard-tile-c", c.dashboard.tileAverage, average)],
       });
     },
 
@@ -1296,6 +1289,15 @@ function buildDashboard(
         figures: [
           { label: c.dashboard.tileCount, value: String(sample.records.length) },
           { label: c.dashboard.tileBiggest, value: amounts.length ? money(Math.max(...amounts)) : "—" },
+          /* 第三个。Ant 那一条是**三格**（项目数 / 团队内排名 / 项目访问），
+             2026-09-03 放大并排才数清楚。三格是它右半边撑得住的原因 ——
+             两格摆在同样的宽度里，右边会空一段。 */
+          {
+            label: c.dashboard.tileAverage,
+            value: amounts.length
+              ? money(amounts.reduce((a, b) => a + b, 0) / amounts.length)
+              : "—",
+          },
         ],
       });
     },
@@ -2105,11 +2107,14 @@ function buildCustomers(
       actionLabel: c.dashboard.primaryAction(labels.customer),
       actionHref: `/${locale}/portal/customers/new`,
     }),
-    node("TextAutocomplete", "customers-search", {
-      name: "customer-search",
-      placeholder: c.customers.search(labels.customer),
-      suggestions: sample.customers.map((row) => ({ value: row.primary })),
-    }),
+    /* 🔴 这里本来有一个「Search client name or phone」的搜索框，2026-09-03 拿掉了。
+       放大两倍看客户那一页，同一屏上**两个搜索框**：这一个在上面（大、显眼），
+       表格自己的「Filter these rows…」在下面。
+       而**上面那个不会筛任何东西** —— 它只是一个带建议清单的输入框，
+       打完字按 enter 什么都不会发生；真的会筛的是下面那个小的。
+       两个一样的控件摆在一起，其中大的那个是假的 —— 这正是这个仓库禁的那种
+       「画一颗按不动的按钮」，只是它长得像搜索框。
+       参考那一页（shadcn Tasks）也只有一个，而且它是真的会筛的那一个。 */
     /* A NAME LIST EXISTS SO SOMEBODY CAN BE OPENED. Task 81 has recorded the
        missing customer detail page since 2026-08-31; this is not that page,
        and it is the half of it that can be honest today -- the one selected,

@@ -107,8 +107,14 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       /* 🔴 从 boxed 换成 chip（2026-09-02）。
       `chip` 是 8-26 照 arhamkhnz 那套量出来做的 —— 涨跌做成一颗药丸贴在数字
       旁边，解释的话另起一行。**做出来之后六套没有一套选它。**
-      老板 9-02 把两张图并排：「感觉不像模版的」。那个差别就在这里。 */
-      StatRow: "chip",
+      老板 9-02 把两张图并排：「感觉不像模版的」。那个差别就在这里。
+
+      🔴 **9-03 又换回 boxed，而且理由是我 9-02 自己写错了地方。**
+      `chip` 是照 arhamkhnz 量出来的，而 arhamkhnz 就是 **Studio Admin ——
+      瑞士的参考，不是台账的**（见 register-references.ts）。
+      台账抄的 shadcn-admin，它自己那一页的指标卡是**四张白盒子**，
+      涨跌是底下一行安静的字。把那颗药丸装在台账身上，是把瑞士的身份穿到台账上。 */
+      StatRow: "boxed",
       /* 扫一整张表的人要找一行，不是往下卷四十行。它的 mood 一字不差写着这件事。 */
       RecordTableTools: "search",
       RecordTable: "compact",
@@ -143,7 +149,10 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       MarkList: "ruled",
       RankList: "plain",
       ShareChart: "bars",
-      RecordTableRow: "plain",
+      /* 图标 + 文字，图标不上色。2026-09-03 放大到两倍才看清楚：
+         shadcn Tasks 的状态栏是 🚫 Canceled · ✓ Done，而我们画的是一颗
+         有颜色的圆点。台账每天要扫四十行，形状扫得比颜色快，而且印出来还在。 */
+      RecordTableRow: "mark",
       PhotoFrame: "photo",
       ActionRow: "row",
       ChoiceSelect: "sm",
@@ -341,7 +350,13 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteCreds: "logos",
       EnquiryForm: "split",
       SiteTestimonials: "stagger",
-      StatRow: "rule",
+      /* 🔴 rule → chip（2026-09-03，放大两倍并排之后）。
+         Studio Admin 的 CRM 那一页，四个指标是**四张白卡**：标签在上、
+         大数字旁边贴一颗涨跌药丸、底下一行「上个月是多少」。
+         我们本来是 `rule`（连盒子都没有），所以四个数字直接浮在地上，
+         而且两个标签折成两行、四格高度不一样 —— 看起来像还没做完。
+         `chip` 这个版式本来就是照这一页量出来的，只是 9-02 装错在台账身上。 */
+      StatRow: "chip",
       /* 印在纸上的那一套。一个搜索框印不出来，而这一套的主张就是把印不出来的东西全部拿掉。 */
       /* 🔴 none → search（2026-09-03）。组件清单报「缺 搜索框」——
       Studio Admin 的表格上面有一条筛选框加两个分面，我们那张什么都没有。
@@ -394,7 +409,11 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteGallery: "bento",
       SiteStory: "centre",
       SiteCreds: "rating",
-      StatRow: "boxed",
+      /* 🔴 boxed → iconed（2026-09-03）。TailAdmin 的四张指标卡每一张顶上
+         都有一个灰底圆角方块装图标，标签在它下面，数字跟涨跌药丸分列左右。
+         我们本来是「标签 → 数字 → 底下一行涨跌」两行，少的那一行正是
+         TailAdmin 一眼认得出来的地方。 */
+      StatRow: "iconed",
       /* 一块招牌上不会有搜索框。名字跟数字是招牌，其余的小而在下面。 */
       /* 同上：TailAdmin 的顶栏就有一个搜索框，我们那一张表什么都没有。 */
       RecordTableTools: "search",

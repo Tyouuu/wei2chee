@@ -81,7 +81,8 @@
     "shoot:portfolio": "node scripts/shoot-portfolio.mjs",
     "shoot:clone": "node scripts/shoot-clone-vs.mjs",
     "brief:app": "node scripts/brief-app.mjs",
-    "shoot:galleries": "node scripts/shoot-galleries.mjs"
+    "shoot:galleries": "node scripts/shoot-galleries.mjs",
+    "zoom:admin": "node scripts/zoom-admin.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -415,7 +415,12 @@
      set --label-transform: none, so a component can apply these two tokens
      unconditionally and still get the right answer in all three. */
   --tracking-label: 0.09em;
-  --label-transform: uppercase;
+  /* 🔴 uppercase → none（2026-09-03，放大两倍并排之后）。
+  台账抄的 shadcn Tasks，那张表的栏头是 **Task / Title / Status / Priority
+  —— 普通大小写**，而我们印的是 WORK QUOTED / CLIENT / QUOTED / STATUS。
+  小型大写让同样的字宽两成（[任务 24](../../docs/founder-tasks.md) 量过），
+  所以它同时是「指标卡标签折两行」的来源。 */
+  --label-transform: none;
 
   /* Type scale: compressed.  A dense ops screen fits more rows by running
      everything about a pixel smaller than a comfortable register would. */

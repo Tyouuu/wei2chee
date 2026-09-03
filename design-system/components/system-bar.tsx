@@ -34,6 +34,7 @@ export function SystemBar({
   crumbs = [],
   date,
   monogram,
+  axis: axisProp,
 }: {
   /** 从大到小：分组、页名。空的就不画。 */
   crumbs?: string[]
@@ -50,10 +51,30 @@ export function SystemBar({
    * 在侧栏底下那个，这里只是**认人**。
    */
   monogram?: string
+  /**
+   * 侧栏在旁边还是在上面。
+   *
+   * 🔴 **本来是读 context 的，而那个 context 到不了这里**（2026-09-03）：
+   * `SystemShell` 只把 `NavAxisProvider` 包在侧栏那一段上，这一条画在它外面，
+   * 所以 `useContext` 永远拿到预设的 `"side"`。
+   * 后果有两个，两个都静静地存在了很久：顶栏那几套的头像**没有被挡掉**
+   * （同一屏两颗），而这一条**永远画自己的下缘线**，就算上面已经有一条顶栏。
+   * 一个读不到的 context 跟一个没有写过的判断，在档案里长得一模一样。
+   * 现在由外面明讲，context 只当后备。
+   */
+  axis?: "side" | "top"
 }) {
-  const axis = useContext(NavAxisContext)
+  const ctxAxis = useContext(NavAxisContext)
+  const axis = axisProp ?? ctxAxis
   const shown = crumbs.filter(Boolean)
-  if (!shown.length && !date && !monogram) return null
+  /* 🔴 顶栏那几套不画头像（2026-09-03，放大两倍才看到）。
+     `RailNav` 的顶栏**自己右上角就有一颗**，所以中台跟图纸那两页
+     **同一屏上有两颗头像**：一颗在顶栏、一颗孤零零挂在面包屑那一行右边。
+     它当初是为侧栏那几套加的 —— 那几套的头像画在侧栏最底下，
+     在 1000px 高的画面里常常掉到折线以下，等於没有。顶栏那几套没有这个问题。
+     Tabler 自己那一页也只有一颗（而且带着名字跟职称）。 */
+  const wantsFace = Boolean(monogram) && axis !== "top"
+  if (!shown.length && !date && !wantsFace) return null
   return (
     <div
       className={`flex w-full shrink-0 items-center justify-between [gap:var(--gap-inline)] [padding-block:var(--pad-control-y)] ${
@@ -97,7 +118,7 @@ export function SystemBar({
             圆角方块。尺子报「缺 头像」，而画面上那个字章明明在。
             **一颗头像是一个形状，不是一级圆角** —— 六个参考页里六个都是圆的。
             这跟这个仓库自己写过的那句是同一条：药丸的 999px 不是圆角，是形状。 */}
-        {monogram ? (
+        {wantsFace ? (
           <span
             aria-hidden
             /* 这两个字是**他自己的名字** —— `check:en` 会把它当成英文页上的中文，
@@ -105,7 +126,7 @@ export function SystemBar({
             data-their-words
             className="grid size-7 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]"
           >
-            {monogram.slice(0, 2)}
+            {monogram?.slice(0, 2)}
           </span>
         ) : null}
       </div>

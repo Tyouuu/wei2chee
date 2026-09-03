@@ -69,13 +69,26 @@ export function GreetBand({
         {monogram ? (
           <span
             aria-hidden
-            className="grid size-11 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
+            /* 圆章的大小跟形状走。`banner` 抄的是 Ant 那一条 —— 量出来 65px，
+               而我们本来是 44。一个 44px 的圆章配一句标题大小的话，
+               看起来像列表里的一行，不像一页的开场。
+               `bare` / `stacked` 留 44：它们没有卡片给它撑。 */
+            className={`grid shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-weight:var(--fw-semibold)] ${
+              look === "banner" ? "size-16 [font-size:var(--text-lg)]" : "size-11 [font-size:var(--text-sm)]"
+            }`}
           >
             {monogram.slice(0, 2)}
           </span>
         ) : null}
         <div className="min-w-0">
-          <div className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)]">
+          {/* 量出来 Ant 那一句跟它的页面标题**一样大**（两个都是 23px）——
+              那不是巧合，那是「这一条是开场，不是一行」的说法。
+              我们本来是 17px，比标题小一档，读起来就变成标题的副标。 */}
+          <div
+            className={`[font-weight:var(--fw-semibold)] [color:var(--color-paper)] ${
+              look === "banner" ? "[font-size:var(--text-title)]" : "[font-size:var(--text-lg)]"
+            }`}
+          >
             {line}
           </div>
           {sub ? (
@@ -105,7 +118,11 @@ export function GreetBand({
               <div className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
                 {f.label}
               </div>
-              <div className="tnum [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)]">
+              <div
+                className={`tnum [font-family:var(--font-numeric)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)] ${
+                  look === "banner" ? "[font-size:var(--text-title)]" : "[font-size:var(--text-lg)]"
+                }`}
+              >
                 {f.value}
               </div>
             </div>

@@ -354,7 +354,7 @@ export function SystemShell({
         >
           {/* 顶栏。在内距里面，所以它跟页面内容左右对齐 ——
               一条跟内容不对齐的横线，看起来像是别人的东西掉进来了。 */}
-          {crumbs?.length ? <SystemBar crumbs={crumbs} monogram={crumbMonogram} /> : null}
+          {crumbs?.length ? <SystemBar crumbs={crumbs} monogram={crumbMonogram} axis={isTop ? "top" : "side"} /> : null}
           {main}
         </div>
       </div>

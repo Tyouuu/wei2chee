@@ -588,7 +588,10 @@
      utility in the @layer utilities block above, not an uppercase transform on
      ordinary UI text -- so this axis stays neutral here. */
   --tracking-label: 0.01em;
-  --label-transform: none;
+  /* 🔴 none → uppercase（2026-09-03）。Tabler 的仪表盘每一张卡的标签是
+  **TOTAL USERS / ACTIVE USERS / SALES / REVENUE —— 全大写小字**。
+  中台最密，靠标签的大小写跟数字拉开层级，不靠留白。 */
+  --label-transform: uppercase;
 
   --text-micro: 10.5px;
   --text-xs: 11.5px;

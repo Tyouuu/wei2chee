@@ -299,6 +299,10 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "plain", label: "圆点 + 文字", props: { row: "plain" } },
     { id: "pill", label: "状态做成药丸", props: { row: "pill" } },
     { id: "avatar", label: "客户带头像", props: { row: "avatar" } },
+    /* 第四种。加它是因为四套风格挤在 `pill` 上 —— 一根只有三个值的轴，
+       六套里必然有人共用，那不是设计偷懒，是**没有东西可以选**。
+       出处：shadcn Tasks 的状态栏（`register-references.ts` 里台账那一条）。 */
+    { id: "mark", label: "图标 + 文字（不上色）", props: { row: "mark" } },
   ],
 
   /* A THIRD AXIS ON THE SAME COMPONENT: the table's own FURNITURE.
@@ -454,6 +458,11 @@ export const VARIANTS: Record<string, Variant[]> = {
     // The change rides BESIDE the figure as a filled pill, and the sentence
     // explaining it drops to its own quieter line. See StatRow's DeltaPill.
     { id: "chip", label: "涨跌做成药丸", props: { layout: "chip" } },
+    /* 第六种。出处 TailAdmin（招牌那一条参考）：图标自己一行装在一个灰方块里，
+       标签在它底下，再底下一行「数字靠左、涨跌药丸靠右」。
+       2026-09-03 放大两倍并排才看清楚它跟 `boxed` 差在哪 —— 不是圆角不是边框，
+       是**卡片里有三行还是两行**。 */
+    { id: "iconed", label: "图标一行 + 数字配药丸", props: { layout: "iconed" } },
   ],
 
   SmallStat: [

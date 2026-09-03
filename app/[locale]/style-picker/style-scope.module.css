@@ -148,7 +148,7 @@
   --tracking-title: -0.02em;
   --tracking-title-lg: -0.032em;
   --tracking-label: 0.02em;
-  --label-transform: none;
+  --label-transform: uppercase;
   --text-micro: 10.5px;
   --text-xs: 11.5px;
   --text-sm: 13px;
@@ -322,7 +322,7 @@
   --tracking-title: -0.02em;
   --tracking-title-lg: -0.032em;
   --tracking-label: 0.01em;
-  --label-transform: none;
+  --label-transform: uppercase;
   --text-micro: 10.5px;
   --text-xs: 11.5px;
   --text-sm: 13px;
@@ -673,7 +673,7 @@
   --tracking-title: -0.024em;
   --tracking-title-lg: -0.036em;
   --tracking-label: 0.09em;
-  --label-transform: uppercase;
+  --label-transform: none;
   --text-micro: 10px;
   --text-xs: 11px;
   --text-sm: 12px;
@@ -1030,7 +1030,7 @@
   --tracking-title: -0.02em;
   --tracking-title-lg: -0.032em;
   --tracking-label: 0.12em;
-  --label-transform: uppercase;
+  --label-transform: none;
   --text-micro: 10.5px;
   --text-xs: 11.5px;
   --text-sm: 14px;

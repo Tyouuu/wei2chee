@@ -91,7 +91,7 @@ export type StatTile = {
   previous?: string
 }
 
-export type StatRowLayout = "tinted" | "boxed" | "rule" | "lead" | "chip"
+export type StatRowLayout = "tinted" | "boxed" | "rule" | "lead" | "chip" | "iconed"
 
 // The VALUE only takes a colour when the colour is a reading of the figure and
 // not a decoration. A headline total painted green says "up" -- which nothing
@@ -165,7 +165,7 @@ function Tile({
   const shell =
     look === "rule"
       ? `[padding:var(--pad-card)] ${first ? "" : "@2xl:[border-left:var(--hairline)] @2xl:[border-color:var(--border-subtle)]"}`
-      : look === "boxed"
+      : look === "boxed" || look === "iconed"
         ? "[background:var(--card)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius)] [padding:var(--pad-card)]"
         : "[background:var(--card)] [border-radius:var(--radius)] [padding:var(--pad-card)] [box-shadow:var(--shadow-card)] [border:var(--border-card-width)_solid_var(--border-subtle)]"
 
@@ -180,12 +180,32 @@ function Tile({
 
   return (
     <Wrap href={tile.href} className={`min-w-0 ${shell} ${span}`}>
+      {/* 🔴 `iconed` 的图标**自己一行**，在标签上面（2026-09-03 放大两倍量的）。
+          TailAdmin 的卡片是：一个 48px 的灰底圆角方块装图标 → 底下一行标签 →
+          再底下一行「大数字靠左、涨跌药丸靠右」。其余四个版面的图标是**跟标签
+          同一行的一颗小方块**，那是另一种东西。
+          ⚠️ 底色用中性的 `--color-ink-850`，不用主色 —— 招牌的主色是那个红，
+          四张卡各挂一个红方块，等於把[任务 100c](../../docs/founder-tasks.md)
+          刚压下去的有色面积再加回来。TailAdmin 自己那四个也是灰的。 */}
+      {look === "iconed" && icon ? (
+        <span
+          className="mb-3 grid h-11 w-11 place-items-center [background:var(--color-ink-850)] [border-radius:var(--radius-sm)] text-[color:var(--color-paper-dim)]"
+          aria-hidden
+        >
+          {icon}
+        </span>
+      ) : null}
       <div className="flex items-center [gap:var(--gap-inline)]">
         {/* The tinted square is what makes a tile read as a tile at a glance
             rather than as a paragraph that happens to contain a number. It is
             skipped on `rule` and `boxed`, whose registers have no tint to
             spend — Ledger and Swiss put weight in the rule and the label. */}
-        {icon && look !== "rule" && look !== "boxed" ? (
+        {/* 🔴 `chip` 也不画（2026-09-03）。Studio Admin 的四张 KPI 卡
+            **一个图标都没有** —— 右上角只有一个灰色的 ↗，标签自己占一整行。
+            我们画的是一个上了主色的方块，四张卡就是四块颜色，
+            而瑞士的主色是玫瑰色 —— 那正好是[任务 100c](../../docs/founder-tasks.md)
+            刚压下去的有色面积。 */}
+        {icon && look !== "rule" && look !== "boxed" && look !== "iconed" && look !== "chip" ? (
           <span
             className="grid h-[30px] w-[30px] flex-none place-items-center [border-radius:var(--radius-sm)] [background:var(--color-primary-soft)] text-[color:var(--color-primary)]"
             aria-hidden
@@ -216,8 +236,14 @@ function Tile({
             其余四个版面照旧跟风格自己的 `--label-transform` 走。 */}
         <span
           className={`min-w-0 [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] ${
-            look === "chip"
-              ? "truncate [font-size:var(--text-sm)]"
+            /* 🔴 `line-clamp-2`，不是 `truncate`（2026-09-03）。
+               参考页的标签全部很短（Lead Pipeline Value · Customers），
+               而**他自己那几句不短**：「Confirmed jobs this month」在这个宽度
+               被切成「Confirmed jobs ...」。这个档案上面那段注解自己写着：
+               一张卡的标签变成省略号，它就不再讲那个数字是什么了。
+               折两行难看一点，切掉是错的。 */
+            look === "chip" || look === "iconed"
+              ? "line-clamp-2 [font-size:var(--text-sm)]"
               : "line-clamp-2 [font-size:var(--text-xs)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]"
           }`}
         >
@@ -238,14 +264,20 @@ function Tile({
         width and the sparkline drops to the next line when there is not enough
         room for both. The spark is the decoration; the figure is the point.
       */}
-      <div className="mt-2 flex flex-wrap items-baseline [gap:var(--gap-inline)]">
+      <div
+        className={`mt-2 flex flex-wrap items-baseline [gap:var(--gap-inline)] ${
+          /* TailAdmin 把数字跟药丸推到两边 —— 数字靠左、涨跌靠右，
+             中间那一段空白就是这张卡的呼吸。 */
+          look === "iconed" ? "justify-between" : ""
+        }`}
+      >
         <span
           className={`tnum shrink-0 leading-none [font-weight:var(--fw-semibold)] ${TONE_FG[tile.tone ?? "normal"]}`}
           style={{ fontSize: valueSize }}
         >
           {tile.value}
         </span>
-        {look === "chip" && tile.delta != null ? (
+        {(look === "chip" || look === "iconed") && tile.delta != null ? (
           <DeltaPill pct={tile.delta} />
         ) : tile.spark && tile.spark.length > 1 ? (
           <Spark values={tile.spark} />
@@ -261,13 +293,13 @@ function Tile({
         separate, quieter line. The other four layouts stack all three, which
         makes the direction a footnote to the figure rather than part of it.
       */}
-      {(tile.delta != null || tile.deltaLabel) && look !== "chip" && (
+      {(tile.delta != null || tile.deltaLabel) && look !== "chip" && look !== "iconed" && (
         <div className="mt-1.5 flex items-center [gap:var(--gap-inline)] [font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
           {tile.delta != null && <Delta pct={tile.delta} />}
           {tile.deltaLabel && <span className="truncate">{tile.deltaLabel}</span>}
         </div>
       )}
-      {look === "chip" && (tile.previous || tile.deltaLabel) && (
+      {(look === "chip" || look === "iconed") && (tile.previous || tile.deltaLabel) && (
         <p className="mt-1.5 [font-size:var(--text-xs)] [line-height:var(--leading-body)] text-[color:var(--color-on-canvas-dim)]">
           {tile.previous ? (
             <>

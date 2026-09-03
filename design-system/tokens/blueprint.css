@@ -545,7 +545,10 @@
      utility in the @layer utilities block above, not an uppercase transform on
      ordinary UI text -- so this axis stays neutral here. */
   --tracking-label: 0.02em;
-  --label-transform: none;
+  /* 🔴 none → uppercase（2026-09-03）。Tabler 的单据表栏头是
+  **PRODUCT / QNT / UNIT / AMOUNT —— 小型大写、带字距**。
+  一张印出来的单据靠栏头的字重跟大小分层，那是它的做工。 */
+  --label-transform: uppercase;
 
   --text-micro: 10.5px;
   --text-xs: 11.5px;

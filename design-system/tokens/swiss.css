@@ -497,7 +497,10 @@
      utility in the @layer utilities block above, not an uppercase transform on
      ordinary UI text -- so this axis stays neutral here. */
   --tracking-label: 0.12em;
-  --label-transform: uppercase;
+  /* 🔴 uppercase → none（2026-09-03）。Studio Admin 的卡片标签是
+  **Lead Pipeline Value / Qualified Lead Rate —— 普通大小写、一行**。
+  瑞士的主张是「拒绝装饰」，而小型大写正是一种装饰。 */
+  --label-transform: none;
 
   --text-micro: 10.5px;
   --text-xs: 11.5px;
