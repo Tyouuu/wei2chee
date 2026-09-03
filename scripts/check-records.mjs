@@ -1440,6 +1440,92 @@ try {
   check("他拿得掉那个额度", noLimit?.credit_limit_cents === null,
     `${noLimit?.credit_limit_cents}`);
 
+  /* ── 第二间店 ──────────────────────────────────────────────────────
+     20260904100000 · 20260904110000。 */
+  console.log("\n⑳ 第二间店");
+
+  const { data: puchong, error: brErr } = await c.rpc("add_branch", {
+    in_project_id: P, in_name: "Puchong 店",
+  });
+  check("开得了一间店", !brErr && !!puchong?.id, brErr?.message);
+  const { data: again2 } = await c.rpc("add_branch", {
+    in_project_id: P, in_name: "Puchong 店",
+  });
+  check("同一个名字开两次，拿回同一间", again2?.id === puchong.id);
+
+  const { error: blankBranch } = await c.rpc("add_branch", {
+    in_project_id: P, in_name: "   ",
+  });
+  check("没有名字的店开不了", !!blankBranch, blankBranch?.message);
+
+  /* 🔴 分店那根柱子 8-30 就立了，而它到今天都是 null —— 因为没有东西
+     填得进去。这几条验的是那一步。 */
+  const { data: atBranch } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "Puchong 那一单",
+    in_amount_cents: 100_000, in_branch_id: puchong.id,
+  });
+  check("开单的时候填得上分店", atBranch?.branch_id === puchong.id, `${atBranch?.branch_id}`);
+
+  const { data: keptBranch } = await c.rpc("update_pipeline_record", {
+    in_id: atBranch.id, in_title: "改个名字",
+  });
+  check("改名字不会把分店弄丢", keptBranch?.branch_id === puchong.id, `${keptBranch?.branch_id}`);
+  const { data: noBranch } = await c.rpc("update_pipeline_record", {
+    in_id: atBranch.id, in_clear_branch: true,
+  });
+  check("他拿得掉那间店", noBranch?.branch_id === null, `${noBranch?.branch_id}`);
+
+  const { data: moneyAt } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 50_000, in_party: "", in_branch_id: puchong.id,
+  });
+  check("🔴 收款也填得上分店（不然月底问不出 Puchong 收了多少）",
+    moneyAt?.branch_id === puchong.id, `${moneyAt?.branch_id}`);
+
+  const { error: alienBranch } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "别人的店",
+    in_branch_id: "00000000-0000-0000-0000-000000000000",
+  });
+  check("别人家的分店挂不上来", !!alienBranch && /branch is not in this project/.test(alienBranch.message),
+    alienBranch?.message);
+
+  /* ── 🔴 昨天我自己造的那个：against_id 设满了 allocated_cents
+     而不写任何一笔分摊 —— 一笔真的付过的钱，在客户页上不算数。 */
+  console.log("\n㉑ 对着一张单收钱");
+
+  const { data: billed } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "对单收款",
+    in_party: "陈大文", in_amount_cents: 1_000_000,
+  });
+  const { data: paidAgainst } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 400_000, in_party: "", in_against_id: billed.id,
+  });
+  const { data: allocMade } = await c
+    .from("ledger_allocations").select("record_id, amount_cents").eq("entry_id", paidAgainst.id);
+  check("🔴 对着一张单收钱，真的写了一笔分摊（不是只设一个总数）",
+    (allocMade ?? []).length === 1 && Number(allocMade[0].amount_cents) === 400_000,
+    JSON.stringify(allocMade));
+  check("已分摊是触发器算出来的", Number(paidAgainst?.allocated_cents) === 400_000,
+    `${paidAgainst?.allocated_cents}`);
+  check("而且 against_id 指着那一张", paidAgainst?.against_id === billed.id);
+
+  /* 付多过那张单：只分摊它还欠的那一部分，剩下的留着当订金。 */
+  const { data: overPaid } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 900_000, in_party: "", in_against_id: billed.id,
+  });
+  check("付多过那张单，只分摊它还欠的六百，剩下三百留着当订金",
+    Number(overPaid?.allocated_cents) === 600_000, `${overPaid?.allocated_cents}`);
+  check("所以未分摊（订金）是三百",
+    Number(overPaid?.amount_cents) - Number(overPaid?.allocated_cents) === 300_000);
+
+  /* 🔴 而这才是那个错真正的代价：这张单现在算不算收齐了。 */
+  const { data: nowOwed } = await c.rpc("party_debts", { in_project_id: P });
+  check("那张单收齐了，所以它不在欠款名单上",
+    !(nowOwed ?? []).some((x) => Number(x.owed_cents) === 1_000_000),
+    JSON.stringify(nowOwed));
+
   /* 单收起来了，照片跟着走 —— 一张挂在不存在的单上的照片，没有人找得到它。 */
   await c.from("pipeline_records").delete().eq("id", shotJob.id);
   const { count: photosLeftAfterDoc } = await c

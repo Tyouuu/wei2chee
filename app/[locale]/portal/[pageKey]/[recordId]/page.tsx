@@ -86,6 +86,9 @@ export default async function EditRecordPage({
   let addresses: { id: string; label: string; line: string; region: string; isBilling: boolean }[] = [];
   /* 走单那一边：这张单是哪一个工地的。 */
   let siteAddressId: string | null = null;
+  /* 哪一间店。读得回来，不然他每次打开都是「不分店」——
+     而那会在下一次保存的时候把分店清掉。 */
+  let branchId: string | null = null;
   /* 工地的照片。⚠️ 网址是签出来的、会过期的 —— 桶是 private 的，
      因为那是他客户家里，不是官网（20260904010000）。 */
   let photos: JobPhoto[] = [];
@@ -357,7 +360,7 @@ export default async function EditRecordPage({
   } else if (ctx.shape === "ledger") {
     const { data } = await supabase
       .from("ledger_entries")
-      .select("id, doc_no, note, party, amount_cents, adjusts_id, extra")
+      .select("id, doc_no, note, party, amount_cents, adjusts_id, branch_id, extra")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -376,6 +379,7 @@ export default async function EditRecordPage({
       .eq("adjusts_id", recordId)
       .maybeSingle();
     reversed = !!cancels || !!data.adjusts_id;
+    branchId = data.branch_id ?? null;
 
     /* 这笔钱已经分摊给哪几张单。⚠️ `ledger_allocations` 是 sees_money，
        所以一个师傅拿回来的是空的 —— 而他根本打不开这一页
@@ -398,7 +402,7 @@ export default async function EditRecordPage({
       /* doc_no for the preview's head. It exists on a saved document and
          never on a new one -- next_doc_no() issues it inside the write -- so
          this is the only place it can honestly come from. */
-      .select("id, doc_no, title, party, amount_cents, stage, due_on, site_address_id, extra, archived_at")
+      .select("id, doc_no, title, party, amount_cents, stage, due_on, site_address_id, branch_id, extra, archived_at")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -413,6 +417,7 @@ export default async function EditRecordPage({
     docNo = data.doc_no ?? null;
     dueOn = data.due_on ?? null;
     siteAddressId = data.site_address_id ?? null;
+    branchId = data.branch_id ?? null;
     archivedAt = data.archived_at;
 
     const { data: rows } = await supabase
@@ -615,9 +620,10 @@ export default async function EditRecordPage({
           openDocuments={ctx.openDocuments}
           partyAddresses={ctx.partyAddresses}
           partyDebts={ctx.partyDebts}
+          branches={ctx.branches}
           photos={photos}
           changes={changes}
-          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, docNo, dueOn }}
+          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, branchId, docNo, dueOn }}
           settlement={settlement}
           copy={copy.form}
         />

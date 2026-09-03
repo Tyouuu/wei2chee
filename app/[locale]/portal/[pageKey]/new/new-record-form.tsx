@@ -110,6 +110,7 @@ export function NewRecordForm({
   openDocuments,
   partyAddresses,
   partyDebts,
+  branches,
   photos,
   changes,
   settlement,
@@ -158,6 +159,8 @@ export function NewRecordForm({
     addresses?: AddressRow[];
     /** 走单那一边：这张单是哪一个工地的。 */
     siteAddressId?: string | null;
+    /** 哪一间店。 */
+    branchId?: string | null;
     /** Its own document number, for the preview. Never present on a new one --
      *  next_doc_no() issues it inside the write, so anything shown before that
      *  would be a guess printed where the real number goes. */
@@ -194,6 +197,9 @@ export function NewRecordForm({
   partyAddresses?: readonly PartyAddress[];
   /** 谁欠我多少。只有走单那几页、只有看得到钱的人拿得到。 */
   partyDebts?: Readonly<Record<string, PartyDebt>>;
+  /** 还在营业的分店。⚠️ 两间以上才画那个下拉 ——
+   *  一个只有一个选项的下拉是一个假的控件，而一间店的生意占绝大多数。 */
+  branches?: readonly { id: string; name: string }[];
   /** 工地的照片。只有走单那几页有，而且只有存过的单才有地方挂。 */
   photos?: readonly JobPhoto[];
   /** 这一张被改过什么。⚠️ null = **没有问**（他看不到这本帐），
@@ -266,6 +272,10 @@ export function NewRecordForm({
     null;
   /* 走单那一边：这张单是哪一个工地的。 */
   const [siteId, setSiteId] = useState<string>(record?.siteAddressId ?? "");
+  /* 哪一间店。柱子 8-30 就立了，而它到 9-04 之前一直是 null ——
+     因为没有任何东西填得进去（20260904110000）。 */
+  const [branchId, setBranchId] = useState<string>(record?.branchId ?? "");
+  const manyBranches = (branches?.length ?? 0) > 1;
 
   /* 这个客户的地址。⚠️ 用的是**跟保存时同一条**认人规矩：完全相符、
      而且只有一个 —— 两个同名的客户不准猜（20260901060000）。
@@ -525,6 +535,8 @@ export function NewRecordForm({
             /* 同一个形状：他把工地拿掉，就要真的拿掉。null 的意思是
                「这一栏不要动」，少了这一句，一个工地挂上去就永远拿不下来。 */
             in_clear_site: !siteOk,
+            in_branch_id: branchId || null,
+            in_clear_branch: !branchId,
           });
       if (fixErr) {
         setError(`${copy.failed}${fixErr.message ? ` — ${fixErr.message}` : ""}`);
@@ -735,6 +747,9 @@ export function NewRecordForm({
           in_note: title,
           in_extra: extra,
           in_idempotency_key: idempotencyKey,
+          /* 🔴 钱那一边也要收 —— 只在报价单上填得了分店、收款填不了，
+             就是他月底问「Puchong 收了多少」的时候答不出来。 */
+          in_branch_id: branchId || null,
         })
       : await supabase.rpc("add_pipeline_record", {
           in_project_id: projectId,
@@ -748,6 +763,7 @@ export function NewRecordForm({
           in_idempotency_key: idempotencyKey,
           in_due_on: dueOn || null,
           in_site_address_id: siteOk || null,
+          in_branch_id: branchId || null,
         });
 
     if (err) {
@@ -847,6 +863,29 @@ export function NewRecordForm({
     router.push(backHref);
     router.refresh();
   }
+
+  /* 哪一间店。⚠️ 只有两间以上才画 —— 一个只有一个选项的下拉是一个
+     假的控件，而一间店的生意占我们客户的绝大多数。 */
+  const branchPicker = (
+    <label className="flex flex-col gap-1.5">
+      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+        {copy.branch}
+      </span>
+      <select
+        aria-label={copy.branch}
+        value={branchId}
+        onChange={(e) => setBranchId(e.target.value)}
+        className="ds-control h-11 w-full [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]"
+      >
+        <option value="">{copy.branchAny}</option>
+        {(branches ?? []).map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 
   const control =
     "ds-control h-11 w-full [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]";
@@ -1268,6 +1307,8 @@ export function NewRecordForm({
             copy={copy}
           />
 
+          {manyBranches ? branchPicker : null}
+
           <LineEditor lines={lines} onChange={setLines} copy={copy} />
           {totalFromLines ? (
             <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
@@ -1356,6 +1397,8 @@ export function NewRecordForm({
       {/* 这笔钱付了哪几张单。⚠️ 画在 moneyFixed 上面：那一句讲的是
           「金额跟日子锁住了」，而分摊是这一页上他还改得动的东西 ——
           一句「不能改」底下接一个可以改的东西，读起来是坏的。 */}
+      {isLedger && manyBranches ? branchPicker : null}
+
       {canAllocate ? (
         <AllocationEditor
           rows={allocs}

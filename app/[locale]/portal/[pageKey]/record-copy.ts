@@ -210,6 +210,9 @@ export type RecordFormCopy = {
   historySpent: string;
   historyLast: string;
   historyNone: string;
+  /* 哪一间店（20260904100000）。两间以上才出现。 */
+  branch: string;
+  branchAny: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -414,6 +417,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       historySpent: "一共",
       historyLast: "上一次",
       historyNone: "还没有来过。",
+      branch: "哪一间店",
+      branchAny: "不分店",
     },
   },
   en: {
@@ -584,6 +589,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       historySpent: "worth",
       historyLast: "last one",
       historyNone: "Nothing yet.",
+      branch: "Which branch",
+      branchAny: "No particular branch",
     },
   },
 };

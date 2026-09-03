@@ -902,7 +902,19 @@
     "enquiriesCount": "{total} in total",
     "enquiriesCountNew": "{unread} new · {total} in total",
     "enquiryNew": "NEW",
-    "enquiryWhatsApp": "WhatsApp {number}"
+    "enquiryWhatsApp": "WhatsApp {number}",
+    "branches": {
+      "title": "Branches",
+      "lede": "One outlet is a name. Jobs and payments can then say which one they belong to.",
+      "label": "OPEN",
+      "add": "Open a branch",
+      "adding": "Opening…",
+      "name": "What you call it (Puchong · Main shop)",
+      "off": "Switch off",
+      "on": "Switch back on",
+      "offLabel": "closed",
+      "none": "Just the one shop. Open a second one here when there is one."
+    }
   },
   "explainer": {
     "process": {

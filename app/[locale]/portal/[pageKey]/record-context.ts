@@ -75,6 +75,9 @@ export type RecordPageContext = {
    *  ⚠️ **只有看得到钱的人拿得到**（`party_debts` 是 sees_money）——
    *  空物件的意思是「没有问」或者「没有人欠钱」，画面上两个都不该画。 */
   partyDebts: Record<string, PartyDebt>;
+  /** 还在营业的分店。**只有两间以上才有意义** —— 一间店的生意占绝大多数，
+   *  而一个只有一个选项的下拉是一个假的控件。 */
+  branches: { id: string; name: string }[];
 };
 
 /** 一个对象欠我多少。全部是算出来的，一栏都没有存（除了额度）。 */
@@ -373,6 +376,19 @@ export async function loadRecordPage(
     );
   }
 
+  /* 还在营业的分店。走单跟钱那几页要挑，名册跟库存不用（客户是共用的，
+     而库存分店是它自己的一格 —— 见 20260904110000 的档尾）。 */
+  let branches: { id: string; name: string }[] = [];
+  if (shape === "pipeline" || shape === "ledger") {
+    const { data: brRows } = await supabase
+      .from("branches")
+      .select("id, name")
+      .eq("project_id", project.id)
+      .eq("active", true)
+      .order("sort_order");
+    branches = (brRows ?? []) as { id: string; name: string }[];
+  }
+
   return {
     locale,
     pageKey,
@@ -393,6 +409,7 @@ export async function loadRecordPage(
     openDocuments,
     partyAddresses,
     partyDebts,
+    branches,
     /* 这一行是什么生意 —— 分期付款表拿它去建议「订金三成 · 动工四成 ·
        完工三成」，而那是一颗他要按的按钮，不是一个预设。 */
     trade: businessContext.industry?.slug ?? null,

@@ -73,6 +73,7 @@ export default async function NewRecordPage({
           openDocuments={ctx.openDocuments}
           partyAddresses={ctx.partyAddresses}
           partyDebts={ctx.partyDebts}
+          branches={ctx.branches}
           backHref={ctx.backHref}
           /* Only the strings. `heading` is a function, and a function cannot
              cross from a server component to a client one -- it renders as a
@@ -89,10 +90,19 @@ export default async function NewRecordPage({
                `PageHeader` 里，而那两个是另一个 session 的地盘（重点 20）
             ② **这里才是他想到那件事的时刻** —— 一个打开「加一单」、
                然后意识到自己有两百笔要打的人，正好在看这一页。 */}
-        <p className="mt-8 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+        {/* 一条小小的架子：搬旧资料 · 分店。
+            ⚠️ 分店那一条**在这里**，因为侧栏是 portal 的壳，而那是另一个
+            session 的地盘（重点 20）—— 而一个开得了店、却没有任何地方
+            点得进去的页面，就是这个仓库最常犯的那个错。 */}
+        <p className="mt-8 flex flex-wrap gap-x-5 gap-y-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
           <a href={`/${locale}/portal/${pageKey}/import`} className="underline">
             {copy.form.importHeading}
           </a>
+          {ctx.shape === "pipeline" || ctx.shape === "ledger" ? (
+            <a href={`/${locale}/portal/branches`} className="underline">
+              {copy.form.branch}
+            </a>
+          ) : null}
         </p>
       </main>
     </StyleScope>

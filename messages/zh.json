@@ -902,7 +902,19 @@
     "enquiriesCount": "共 {total} 封",
     "enquiriesCountNew": "{unread} 封新的 · 共 {total} 封",
     "enquiryNew": "新",
-    "enquiryWhatsApp": "WhatsApp {number}"
+    "enquiryWhatsApp": "WhatsApp {number}",
+    "branches": {
+      "title": "分店",
+      "lede": "一间店就是一个名字。开好之后，每一张单跟每一笔收款都讲得出自己属於哪一间。",
+      "label": "在营业",
+      "add": "开一间店",
+      "adding": "在开…",
+      "name": "叫它什么（Puchong · 总店）",
+      "off": "关掉",
+      "on": "开回来",
+      "offLabel": "已关",
+      "none": "只有一间店。哪天有第二间，在这里开。"
+    }
   },
   "explainer": {
     "process": {
