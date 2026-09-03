@@ -293,24 +293,41 @@ for (let page = 0; page < Math.min(pageCount, 4); page++) {
     const has = (q) => !!ph.querySelector(q);
     const body = ph.querySelector(".body");
     const first = [...(body ? body.children : [])].find((e) => e.className);
+    /* 🔴 十五套那一轮，五个新的**全部被判成「其他」**，於是两两 7/7 一模一样。
+       那不是设计一样，是**尺子不认得新类名**。一把认不得的尺，
+       报出来的「一模一样」跟一把量过的尺报出来的长得一样。 */
     const hero =
-      has(".cal") ? "日程表" : has(".jwall") ? "图标墙" : has(".kstage") ? "状态导航"
+      has(".tcols") ? "看板栏" : has(".hhero") ? "满幅主视觉"
+      : has(".lgrid") ? "照片方块" : has(".dgrid") ? "控制台"
+      : has(".wq") ? "一个大问题"
+      : has(".cal") ? "日程表" : has(".jwall") ? "图标墙" : has(".kstage") ? "状态导航"
       : has(".bweek") ? "星期圆点" : has(".grail") ? "横滑卡片" : has(".zbento") ? "bento"
       : has(".qacct") ? "问候＋帐户卡" : has(".qdoc") ? "单据"
       : has(".sqfig") ? "左对齐大数字" : has(".xfig") ? "居中大数字"
       : has(".quiet") || has(".npage") ? "安静清单" : "其他";
     const row =
-      has(".fblk") ? "色块" : has(".sqrow") ? "方图标＋两行数字"
+      has(".tcard") ? "堆着的卡" : has(".hposter") ? "海报"
+      : has(".ltile") ? "照片方块" : has(".dgrid button") ? "开关"
+      : has(".wopt") ? "选项行"
+      : has(".fblk") ? "色块" : has(".sqrow") ? "方图标＋两行数字"
       : has(".xrow") ? "圆点＋两栏数字" : has(".nrow") ? "下划线"
       : has(".gitem") ? "卡片" : has(".li.dense") ? "密" : has(".li .av") ? "头像"
       : has(".li .dot") ? "圆点" : has(".qr") ? "方块色标" : "无";
-    const act = has(".fab") ? "右下浮钮" : has(".sqpair") ? "两颗药丸"
+    const act = has(".tadd") ? "加一张" : has(".hbtns") ? "两颗大按钮"
+      : has(".lact") ? "分半的动作条" : has(".wnext") ? "满宽药丸"
+      : has(".fab") ? "右下浮钮" : has(".sqpair") ? "两颗药丸"
       : has(".wide") ? "满宽按钮" : has(".bcall button") ? "卡里的按钮"
       : has(".hdbtn") ? "标题栏右上" : has(".kstage .all") ? "导航底下" : "无";
     /* ⚠️ 「有色顶区」是一根真的轴 —— Gojek 的绿顶跟 Klarna 的粉顶是它们的身份，
        而第一版的 zone 只问「有没有卡片」，於是一个有色顶区的页面跟一张白纸
        被判成同一种分区。signboard·p2 跟 cand10·p2 就是这样撞到 5/7 的。 */
-    const zone = has(".jtop") || has(".ktop") || has(".topbar") ? "有色顶区"
+    /* 深色的地本身就是一根轴 —— 十五套里只有两套是深的，而第一版的 zone
+       只问「有没有卡片」，两套深色跟十三套白纸被判成同一种分区。 */
+    const darkGround = (() => { const c = getComputedStyle(ph).backgroundColor.match(/\d+/g);
+      return c && (0.2126 * +c[0] + 0.7152 * +c[1] + 0.0722 * +c[2]) < 90; })();
+    const zone = darkGround ? "深色的地"
+      : has(".tcol") ? "有色的栏" : has(".lbar") ? "有色顶栏"
+      : has(".jtop") || has(".ktop") || has(".topbar") ? "有色顶区"
       : has(".xcard") || has(".qdoc") || has(".bcard") || has(".qacct") ? "卡片"
       : has(".list.boxed") ? "框起来的清单" : has(".nsec") ? "细线" : "满边";
     const cs = getComputedStyle(first || ph);

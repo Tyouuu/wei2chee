@@ -1,4 +1,4 @@
-<title>Ten Registers, One Business</title>
+<title>Fifteen Registers, One Business</title>
 <style>
 /* 同一家装修公司、同一批资料，四套风格各自的手机骨架。
    判准是重点 7c：换个配色它还是不是另一个设计？
@@ -498,6 +498,149 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 .phone .body > *{animation:slidein .34s ease both}
 @media (prefers-reduced-motion:reduce){ .phone .body > *{animation:none} }
 
+/* ══ 候选 11–15 ══════════════════════════════════════════════════════════
+   老板 2026-09-03：「尽量选不一样的模版当风格 总之我要15套 每一套都要有自己的特点
+   什么行业不重要 主要是要体现出我们能设计的出来就好」。
+
+   所以这五个是**照「跟现有十套最不像」挑的**，不是照行业挑的：
+     看板 · 深色媒体 · 照片货架 · 控制台 · 一次一个问题
+   ⚠️ 前十套**一套深色都没有** —— 12 跟 14 补上，而且两套深得不一样
+   （一个是媒体的黑、一个是仪表的黑，骨架也差很远）。 */
+
+/* 看板 ← Trello：整片有色的栏，白卡叠在上面 */
+.r-cand11{--canvas:#f1f4f9;--card:#fff;--ink:#172b4d;--dim:#5e6c84;--line:#dfe3ea;
+  --primary:#0b5cd5;--ptext:#0b5cd5;--soft:#e4edfd;--nav:#fff;--navfg:#172b4d;--navdim:#5e6c84;
+  --navac:#0b5cd5;--jade:#1f845a;--brass:#946f00;--clay:#c9372c;--r:8px;--rl:10px}
+/* 夜巡 ← Hulu：**近黑**，主色是那个亮绿 */
+.r-cand12{--canvas:#0b0d10;--card:#15181c;--ink:#f2f4f6;--dim:#98a1ab;--line:#252a30;
+  --primary:#1ce783;--ptext:#5ff0a8;--soft:#16241d;--nav:#0b0d10;--navfg:#f2f4f6;--navdim:#98a1ab;
+  --navac:#1ce783;--jade:#1ce783;--brass:#e8b23a;--clay:#ef5f5f;--r:6px;--rl:10px}
+/* 货架 ← Loyverse：有色顶栏＋分两半的动作条＋照片格子 */
+.r-cand13{--canvas:#f2f4f2;--card:#fff;--ink:#12241a;--dim:#4f6156;--line:#dfe6e1;
+  --primary:#128a4b;--ptext:#0e6d3b;--soft:#e2f3e9;--nav:#fff;--navfg:#12241a;--navdim:#4f6156;
+  --navac:#128a4b;--jade:#128a4b;--brass:#a8710a;--clay:#bd616a;--r:4px;--rl:6px}
+/* 面板 ← Tesla：**近黑**，一张大图＋一排控制图标 */
+.r-cand14{--canvas:#131416;--card:#1c1e21;--ink:#f4f5f6;--dim:#9aa0a6;--line:#2a2d31;
+  --primary:#d0342c;--ptext:#ff8a82;--soft:#241a1a;--nav:#131416;--navfg:#f4f5f6;--navdim:#9aa0a6;
+  --navac:#ff8a82;--jade:#4ad07a;--brass:#e8b23a;--clay:#ff6b6b;--r:10px;--rl:16px}
+/* 问答 ← Wise：一次一个大问题 */
+.r-cand15{--canvas:#fff;--card:#fff;--ink:#163300;--dim:#4a5b3d;--line:#e2e7dd;
+  --primary:#163300;--ptext:#2f5c17;--soft:#e9f7d8;--nav:#fff;--navfg:#163300;--navdim:#4a5b3d;
+  --navac:#163300;--jade:#3f8f2a;--brass:#a8710a;--clay:#bd616a;--r:12px;--rl:18px}
+
+/* ─ 11 看板 ← Trello #3 ───────────────────────────────────────────────
+   一整片有色的栏（不是白底）· 栏头「名字 ⋯」· 里面白卡叠着
+   每张卡：绿色打勾圆点＋一段字＋一行小图标 · 底下「＋ 加一张」 */
+.tbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px}
+.tbar h2{margin:0;font-size:22px;font-weight:700}
+.tcols{display:flex;gap:12px;padding:6px 14px 10px;overflow-x:auto;align-items:stretch}
+.tcols::-webkit-scrollbar{height:0}
+/* Trello 的栏是**顶到底**的 —— 第一版栏只有内容那么高，
+   底下空 347px，看起来像没做完。 */
+.tcol{flex:0 0 268px;background:var(--primary);border-radius:var(--rl);padding:12px 10px 10px;
+      align-self:stretch;min-height:520px}
+.tcol .th{display:flex;align-items:center;justify-content:space-between;color:#fff;
+          font-size:14.5px;font-weight:660;padding:0 4px 10px}
+.tcard{background:var(--card);border-radius:var(--r);padding:11px 12px;margin-bottom:9px}
+.tcard .tc1{display:flex;align-items:flex-start;gap:9px}
+.tcard .tick2{width:17px;height:17px;flex:0 0 17px;border-radius:50%;background:var(--jade);
+              color:#fff;display:grid;place-items:center;font-size:11px;margin-top:1px}
+.tcard .tt{font-size:14px;line-height:1.35}
+.tcard .tm{display:flex;gap:12px;color:var(--dim);font-size:12px;margin-top:8px;padding-left:26px}
+.tadd{color:#fff;font-size:14px;font-weight:600;padding:8px 4px;min-height:44px;
+      display:flex;align-items:center;gap:7px;opacity:.92}
+
+/* ─ 12 夜巡 ← Hulu #7 ─────────────────────────────────────────────────
+   近黑 · 顶部一排分类横滑（选中带底线）· **满幅主视觉**＋两颗按钮
+   底下「给你的」横滑海报 */
+.hbar{display:flex;gap:20px;padding:12px 16px 0;overflow-x:auto;font-size:12.5px;
+      letter-spacing:.1em;text-transform:uppercase}
+.hbar::-webkit-scrollbar{height:0}
+.hbar button{background:none;border:0;color:var(--dim);font:inherit;cursor:pointer;
+             padding:6px 0 9px;min-height:44px;border-bottom:2px solid transparent;white-space:nowrap}
+.hbar button[aria-current="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.hhero{margin:10px 0 0;padding:22px 18px 20px;background:
+       linear-gradient(180deg,color-mix(in srgb,var(--primary) 16%,var(--canvas)),var(--canvas))}
+.hhero .hk{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ptext)}
+.hhero .hn{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px;line-height:1.05}
+.hhero .hs{font-size:13.5px;color:var(--dim)}
+.hbtns{display:flex;gap:10px;margin-top:16px}
+.hbtns button{min-height:48px;border:0;border-radius:var(--r);font:inherit;font-size:15px;
+              font-weight:700;padding:0 22px;cursor:pointer}
+.hbtns .go2{background:var(--primary);color:#06210f}
+.hbtns .gh{background:none;color:var(--ink);border:1px solid var(--line)}
+.hsec{padding:20px 18px 8px;font-size:15px;font-weight:700}
+.hrail{display:flex;gap:10px;padding:0 18px 6px;overflow-x:auto}
+.hrail::-webkit-scrollbar{height:0}
+.hposter{flex:0 0 128px;background:var(--card);border-radius:var(--r);padding:12px;min-height:150px;
+         display:flex;flex-direction:column;justify-content:flex-end}
+.hposter .hp1{font-size:13.5px;font-weight:660;line-height:1.3}
+.hposter .hp2{font-size:12px;color:var(--dim);margin-top:4px}
+
+/* ─ 13 货架 ← Loyverse #1 ─────────────────────────────────────────────
+   有色顶栏（☰ 单号 [8] ⋮）· **一条分两半的动作条**（存 / 收 金额）
+   一行筛选 · **照片方块网格 3×N**，名字压在格子底部 */
+/* ⚠️ 白字压在 #128a4b 上只有 4.41:1（量出来的）。
+   同一个色相压深一档 —— Loyverse 那条顶栏本来也比按钮深。 */
+.lbar{background:var(--ptext);color:#fff;display:flex;align-items:center;gap:12px;
+      padding:13px 14px;font-size:17px;font-weight:640}
+.lbar .lsp{margin-left:auto;display:flex;gap:14px;font-size:16px;opacity:.9}
+.lact{display:grid;grid-template-columns:1fr 1.4fr;gap:2px;margin:10px 12px 0}
+.lact button{border:0;font:inherit;cursor:pointer;min-height:60px;font-weight:700;
+             background:color-mix(in srgb,var(--primary) 18%,#fff);color:var(--ptext);
+             border-radius:var(--r) 0 0 var(--r);font-size:15px}
+.lact button+button{background:var(--ptext);color:#fff;border-radius:0 var(--r) var(--r) 0;
+                    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.lact .lamt{font-size:18px}
+.lfil{display:flex;align-items:center;gap:10px;padding:12px 14px 6px;color:var(--dim);font-size:14px}
+.lfil .lsel{flex:1;border:1px solid var(--line);border-radius:var(--r);min-height:44px;
+            display:flex;align-items:center;padding:0 12px;color:var(--ink)}
+.lgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:4px 12px 8px}
+.ltile{aspect-ratio:1/1;border-radius:var(--r);position:relative;overflow:hidden;
+       background:var(--soft);display:flex;align-items:flex-end}
+.ltile span{display:block;width:100%;background:color-mix(in srgb,var(--ink) 72%,transparent);
+            color:#fff;font-size:11.5px;padding:5px 6px;line-height:1.25}
+.ltile em{position:absolute;top:6px;right:7px;font-style:normal;font-size:11px;font-weight:700;
+          color:var(--ptext)}
+
+/* ─ 14 面板 ← Tesla ───────────────────────────────────────────────────
+   近黑 · 名字＋一行状态小字 · **一张大图**（这里画成一块） ·
+   一行小字说明 · **一整片控制图标格子 4×3**，图标在上、字在下 */
+.dhead{padding:16px 18px 4px}
+.dhead .dn{font-size:26px;font-weight:700;letter-spacing:-.02em;color:var(--dim)}
+.dhead .ds{font-size:12.5px;color:var(--dim);margin-top:4px;display:flex;align-items:center;gap:8px}
+.dhead .bat{display:inline-block;width:52px;height:9px;border-radius:2px;background:var(--line);
+            position:relative;overflow:hidden}
+.dhead .bat i{display:block;height:100%;background:var(--jade)}
+.dstage{height:150px;margin:12px 18px 0;border-radius:var(--rl);
+        background:radial-gradient(120% 90% at 50% 30%,color-mix(in srgb,var(--ink) 12%,var(--card)),var(--card))}
+.dcap{text-align:center;font-size:13px;color:var(--dim);padding:14px 18px 2px}
+.dcap b{display:block;color:var(--ink);font-size:15px;font-weight:640;margin-bottom:3px}
+.dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:10px 12px 8px}
+.dgrid button{background:none;border:0;font:inherit;font-size:11px;color:var(--dim);cursor:pointer;
+              padding:12px 2px;min-height:76px;display:flex;flex-direction:column;align-items:center;gap:9px}
+.dgrid .dic{width:26px;height:26px;display:grid;place-items:center;font-size:17px;color:var(--ink)}
+.dgrid button[aria-pressed="true"]{color:var(--ptext)}
+.dgrid button[aria-pressed="true"] .dic{color:var(--ptext)}
+
+/* ─ 15 问答 ← Wise ────────────────────────────────────────────────────
+   **一次一个大问题**（~30px）· 每个选项一行：头像＋名字＋右边一个圆
+   底下一颗满宽的药丸 · 顶上一条进度 */
+.wprog{height:4px;background:var(--line);margin:14px 20px 0;border-radius:99px;overflow:hidden}
+.wprog i{display:block;height:100%;background:var(--primary);border-radius:99px}
+.wq{padding:26px 20px 6px;font-size:30px;font-weight:720;letter-spacing:-.025em;line-height:1.18}
+.wq2{padding:22px 20px 2px;font-size:24px;font-weight:700}
+.wopt{display:flex;align-items:center;gap:14px;padding:14px 20px;min-height:68px;
+      border-bottom:1px solid var(--line)}
+.wopt .wav{width:44px;height:44px;flex:0 0 44px;border-radius:50%;background:var(--soft);
+           color:var(--ptext);display:grid;place-items:center;font-size:14px;font-weight:700}
+.wopt .wn{flex:1;font-size:18px;font-weight:600}
+.wopt .wc{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line)}
+.wopt[aria-selected="true"] .wc{background:var(--primary);border-color:var(--primary);
+      color:var(--soft);display:grid;place-items:center;font-size:14px}
+.wnext{display:block;margin:22px auto 10px;min-height:56px;padding:0 42px;border:0;border-radius:999px;
+       background:var(--primary);color:var(--soft);font:inherit;font-size:17px;font-weight:700;cursor:pointer}
+
 .status{height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:space-between;
         padding:0 16px;font-size:11px;font-family:var(--mono);color:var(--dim);
         background:var(--canvas)}
@@ -685,9 +828,9 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 </style>
 
 <div class="wrap">
-  <h1>Ten registers, one business</h1>
+  <h1>Fifteen registers, one business</h1>
   <p class="sub">同一家装修公司、<b>同一批资料</b>，四套风格各自的手机版。判准是
-     <b>换个配色它还是不是另一个设计</b> —— 所以下面十支不是十个颜色，是十个骨架。<b>不跟行业绑</b>，看的是它自己有没有主张；而且<b>一套只抄一个 app</b>，不混 —— 混了就讲不出它的身份是谁给的。
+     <b>换个配色它还是不是另一个设计</b> —— 所以下面十五支不是十五个颜色，是十五个骨架。<b>不跟行业绑</b>，看的是它自己有没有主张；而且<b>一套只抄一个 app</b>，不混 —— 混了就讲不出它的身份是谁给的。
      每一个颜色都逐字来自 <code>design-system/tokens/</code>，一个都不是我挑的。<br><b>颜色也跟着模版走</b> —— 四个 app 的界面颜色逐像素量出来，原样搬。<b>骨架抄 app，颜色用风格自己的</b> —— 客户在官网那边挑过的那一套，手机上直接复用，不用再挑一次。地六个都是白的。</p>
 
   <div class="scroller"><table class="axes">
@@ -702,6 +845,11 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
     <tr><td><b>早课</b> cand8</td><td><b>Brilliant</b></td><td><b>一排星期圆点</b>＋一张描边行动卡</td><td>4 格</td><td>一张带进度条的卡</td><td><b>卡里那颗按钮</b></td><td>12 / 16px</td><td>宽松</td><td><code>#8a5a00</code></td></tr>
     <tr><td><b>分店</b> cand9</td><td><b>Gametime</b></td><td><b>店名大标题带⌄</b>＋满幅深色大卡</td><td>4 格</td><td><b>横滑的卡片</b></td><td>无（药丸就是动作）</td><td>8 / 12px</td><td>中</td><td><code>#18181b</code></td></tr>
     <tr><td><b>入口墙</b> cand10</td><td><b>Gojek</b></td><td><b>一整片圆形图标墙（16 格）</b></td><td>4 格</td><td>无清单</td><td>卡里两颗圆钮</td><td>14 / 20px</td><td>密</td><td><code>#0f7a3d</code></td></tr>
+    <tr><td><b>看板</b> cand11</td><td><b>Trello</b></td><td><b>一整片有色的栏</b>，白卡叠在上面</td><td>4 格</td><td>堆着的卡</td><td>栏底「加一张」</td><td>8 / 10px</td><td>中</td><td>#0b5cd5</td></tr>
+    <tr><td><b>夜巡</b> cand12</td><td><b>Hulu</b></td><td><b>满幅主视觉＋两颗大按钮</b></td><td>4 格</td><td>横滑海报</td><td>两颗大按钮</td><td>6 / 10px</td><td>宽</td><td><b>深色 #0b0d10</b></td></tr>
+    <tr><td><b>货架</b> cand13</td><td><b>Loyverse</b></td><td><b>照片方块 3×N</b></td><td>4 格</td><td>照片方块</td><td><b>分半的动作条</b></td><td>4 / 6px</td><td>密</td><td>#128a4b 顶栏</td></tr>
+    <tr><td><b>面板</b> cand14</td><td><b>Tesla</b></td><td><b>一张大图＋一排开关</b></td><td>4 格</td><td>开关</td><td>开关本身</td><td>10 / 16px</td><td>中</td><td><b>深色 #131416</b></td></tr>
+    <tr><td><b>问答</b> cand15</td><td><b>Wise</b></td><td><b>一屏只有一个大问题</b></td><td>4 格</td><td>选项行＋圆圈</td><td><b>满宽药丸</b></td><td>12 / 18px</td><td>最宽</td><td>#163300</td></tr>
   </table></div>
 
   <div class="bar">
@@ -723,7 +871,7 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 
   <div class="note">
     <b>它还不是什么。</b>这是一张会动的图，不是产品 —— 没有资料库、没有登入、按了不会存。
-    它只回答一个问题：<b>手机上十套风格分不分得出来</b>。资料是示例的，
+    它只回答一个问题：<b>手机上十五套风格分不分得出来</b>。资料是示例的，
     而真的做进去的时候，第一笔真记录一进来示例就整批消失（8-30 定的做法）。
   </div>
 </div>
@@ -1211,6 +1359,116 @@ REG.cand10 = {
    （标题怎么写 · 一行长什么样 · 一个数字怎么摆），再拿同一批页面去套。
    ⚠️ 已经手写过的画面不动 —— 那几个是逐项复刻出来的，通用件盖不过它们。 */
 
+/* ── 11 看板 ← Trello ────────────────────────────────────────────────── */
+REG.cand11 = {
+  zh: "看板", en: "cand11 · Trello",
+  why: "抄 Trello。一整片有色的栏，白卡叠在上面，底下一句「加一张」—— 全库唯一一套把颜色给了容器、把白留给内容的。",
+  tabs: [["today", "job", "Board"], ["jobs", "home", "Jobs"], ["clients", "user", "Clients"], ["money", "cash", "Money"]],
+  fab: false,
+  today: () =>
+    '<div class="tbar"><h2>This week</h2><span style="color:var(--dim);font-size:19px">&#8943;</span></div>'
+    + '<div class="tcols">'
+    + [["On site", JOBS.slice(0, 2)], ["Waiting on a reply", JOBS.slice(2, 4)], ["Done", JOBS.slice(4)]]
+        .map(([name, items]) =>
+          '<div class="tcol"><div class="th"><span>' + esc(name) + ' &middot; ' + items.length + '</span><span>&#8943;</span></div>'
+          + items.map((j) =>
+              '<div class="tcard"><div class="tc1"><span class="tick2">&#10003;</span>'
+              + '<span class="tt">' + esc(j.t) + '</span></div>'
+              + '<div class="tm"><span>&#128206; 2</span><span>' + esc(j.amt) + '</span></div></div>').join("")
+          + '<div class="tadd">&#43; Add a card</div></div>').join("")
+    + '</div>',
+};
+
+/* ── 12 夜巡 ← Hulu ──────────────────────────────────────────────────── */
+REG.cand12 = {
+  zh: "夜巡", en: "cand12 · Hulu",
+  why: "抄 Hulu。近黑的地、顶上一排分类、一个满幅的主视觉配两颗按钮，底下横滑 —— 全库两套深色之一，而且是唯一一套把一件事放大到占半屏的。",
+  tabs: [["today", "home", "Today"], ["jobs", "job", "Jobs"], ["money", "cash", "Money"], ["clients", "user", "Clients"]],
+  fab: false,
+  today: () =>
+    '<div class="hbar">'
+    + ["All", "On site", "Quoting", "Waiting", "Done"].map((t, i) =>
+        '<button aria-current="' + (i === 0) + '">' + t + '</button>').join("")
+    + '</div>'
+    + '<div class="hhero"><div class="hk">Starts today</div>'
+    + '<div class="hn">Taman Desa<br>3-bedroom refit</div>'
+    + '<div class="hs">Mr. Chan &middot; Tiling, level 2 &middot; RM 48,500</div>'
+    + '<div class="hbtns"><button class="go2">&#9654; Start</button>'
+    + '<button class="gh">Details</button></div></div>'
+    + '<div class="hsec">Next up</div>'
+    + '<div class="hrail">' + JOBS.slice(1, 5).map((j) =>
+        '<div class="hposter"><div class="hp1">' + esc(j.t) + '</div>'
+        + '<div class="hp2">' + esc(j.amt) + '</div></div>').join("") + '</div>'
+    /* Hulu 底下本来还有第二条横滑 —— 只给一条的话底下空 177px。 */
+    + '<div class="hsec">Waiting on money</div>'
+    + '<div class="hrail">' + MONEY.slice(0, 4).map((j) =>
+        '<div class="hposter"><div class="hp1">' + esc(j.t) + '</div>'
+        + '<div class="hp2">' + esc(j.amt) + '</div></div>').join("") + '</div>',
+};
+
+/* ── 13 货架 ← Loyverse ──────────────────────────────────────────────── */
+REG.cand13 = {
+  zh: "货架", en: "cand13 · Loyverse",
+  why: "抄 Loyverse。有色顶栏、一条分成两半的动作条（存／收多少）、底下整片照片方块 —— 全库唯一一套以「看图挑东西」开场的。",
+  tabs: [["today", "box", "Sell"], ["jobs", "job", "Tickets"], ["money", "cash", "Money"], ["clients", "user", "Clients"]],
+  fab: false,
+  today: () =>
+    '<div class="lbar">&#9776; Ticket <span style="opacity:.8">&#183; 6</span>'
+    + '<span class="lsp"><span>&#128100;</span><span>&#8942;</span></span></div>'
+    + '<div class="lact"><button>Save</button>'
+    + '<button><span>Charge</span><span class="lamt">RM 3,180</span></button></div>'
+    + '<div class="lfil"><span class="lsel">All items &#9662;</span><span>&#128290;</span><span>&#128269;</span></div>'
+    + '<div class="lgrid">'
+    + [["Cement 50kg", "84", "jade"], ["Tile 60×60", "12", "brass"], ["Paint 18L", "31", "primary"],
+       ["Grout grey", "6", "clay"], ["Sand, tonne", "3", "jade"], ["Skirting 2.4m", "40", "brass"],
+       ["Adhesive 20kg", "18", "primary"], ["Primer 5L", "9", "clay"], ["Silicone", "56", "jade"]]
+        .map(([n, q, t]) => '<div class="ltile" style="background:color-mix(in srgb, var(--' + t + ') 22%, #fff)">'
+          + '<em>' + q + '</em><span>' + esc(n) + '</span></div>').join("")
+    + '</div>',
+};
+
+/* ── 14 面板 ← Tesla ─────────────────────────────────────────────────── */
+REG.cand14 = {
+  zh: "面板", en: "cand14 · Tesla",
+  why: "抄 Tesla。近黑、一张占地方的大图、底下一整排可以按的控制图标 —— 它不给你清单，它给你开关。全库唯一一套「控制台」。",
+  tabs: [["today", "home", "Site"], ["jobs", "job", "Jobs"], ["money", "cash", "Money"], ["clients", "user", "Crew"]],
+  fab: false,
+  today: () =>
+    '<div class="dhead"><div class="dn">Taman Desa</div>'
+    + '<div class="ds"><span class="bat"><i style="width:60%"></i></span> 60% &middot; stage 3 of 5</div></div>'
+    + '<div class="dstage"></div>'
+    + '<div class="dcap"><b>Site controls</b>Tap to switch. Held changes stay on.</div>'
+    + '<div class="dgrid">'
+    + [["&#128274;", "Locked", 1], ["&#128268;", "Power", 1], ["&#128167;", "Water", 0], ["&#128737;", "Safety", 1],
+       ["&#128666;", "Delivery", 0], ["&#128101;", "Crew in", 1], ["&#128247;", "Photos", 0], ["&#128276;", "Alerts", 1],
+       ["&#128203;", "Checklist", 0], ["&#128176;", "Claim", 0], ["&#9888;", "Snag", 1], ["&#9989;", "Sign off", 0]]
+        .map(([g, t, on]) => '<button aria-pressed="' + (on ? "true" : "false") + '">'
+          + '<span class="dic">' + g + '</span>' + t + '</button>').join("")
+    + '</div>',
+};
+
+/* ── 15 问答 ← Wise ──────────────────────────────────────────────────── */
+REG.cand15 = {
+  zh: "问答", en: "cand15 · Wise",
+  why: "抄 Wise。一屏只有一个大问题，选项一行一个，底下一颗按钮 —— 全库唯一一套不给你一整页东西、只问你一件事的。",
+  tabs: [["today", "user", "Setup"], ["jobs", "job", "Jobs"], ["money", "cash", "Money"], ["clients", "home", "Home"]],
+  fab: false,
+  today: () =>
+    '<div class="wprog"><i style="width:40%"></i></div>'
+    + '<div class="wq">Which job is on site today?</div>'
+    + [["CH", "Mr. Chan", "Taman Desa", 1], ["S.", "Mrs. Lee", "Bukit Jalil", 0],
+       ["ON", "Mr. Ong", "Cheras", 0], ["TA", "Mr. Tan", "Sri Petaling", 0],
+       ["LI", "Ms. Lim", "Ampang", 0], ["HO", "Ho Seng", "Kepong", 0]]
+        .map(([i, n, s2, on]) =>
+          '<div class="wopt" aria-selected="' + (on ? "true" : "false") + '">'
+          + '<span class="wav">' + i + '</span>'
+          + '<span class="wn">' + esc(n) + '<span style="display:block;font-size:13.5px;font-weight:400;color:var(--dim);margin-top:2px">'
+          + esc(s2) + '</span></span>'
+          + '<span class="wc">' + (on ? "&#10003;" : "") + '</span></div>').join("")
+    + '<div class="wq2">Anyone else?</div>'
+    + '<button class="wnext">Next</button>',
+};
+
 const PAGE_TITLES = { money: "Money", clients: "Clients", stock: "Stock", more: "More", jobs: "Jobs" };
 
 const MONEY = [
@@ -1236,6 +1494,55 @@ const STOCK = [
 
 /* 每一套自己的三个零件。没写的用最朴素的那一版。 */
 const KIT = {
+  cand11: {
+    head: (t) => '<div class="tbar"><h2>' + esc(t) + '</h2><span style="color:var(--dim);font-size:19px">&#8943;</span></div>',
+    stat: (l, v) => '<div class="tcols"><div class="tcol"><div class="th"><span>' + esc(l) + '</span></div>'
+      + '<div class="tcard"><div class="tc1"><span class="tt" style="font-size:26px;font-weight:700">' + esc(v) + '</span></div></div></div></div>',
+    rows: (items) => '<div class="tcols"><div class="tcol"><div class="th"><span>All &middot; ' + items.length + '</span><span>&#8943;</span></div>'
+      + items.map((j) => '<div class="tcard"><div class="tc1"><span class="tick2">&#10003;</span>'
+        + '<span class="tt">' + esc(j.t) + '</span></div>'
+        + '<div class="tm"><span>' + esc(j.who) + '</span><span>' + esc(j.amt) + '</span></div></div>').join("")
+      + '<div class="tadd">&#43; Add a card</div></div></div>',
+  },
+  cand12: {
+    head: (t) => '<div class="hbar"><button aria-current="true">' + esc(t) + '</button>'
+      + '<button>Open</button><button>Done</button></div>',
+    /* 内页也留那两颗大按钮 —— Hulu 每一页都有「播／详情」，
+       而且不留的话它的内页会跟面板（同样深色）撞到 5/7。 */
+    stat: (l, v) => '<div class="hhero"><div class="hk">' + esc(l) + '</div>'
+      + '<div class="hn">' + esc(v) + '</div>'
+      + '<div class="hbtns"><button class="go2">&#9654; Open</button>'
+      + '<button class="gh">Details</button></div></div>',
+    rows: (items) => '<div class="hrail">' + items.map((j) =>
+      '<div class="hposter"><div class="hp1">' + esc(j.t) + '</div>'
+      + '<div class="hp2">' + esc(j.amt) + '</div></div>').join("") + '</div>',
+  },
+  cand13: {
+    head: (t) => '<div class="lbar">&#9776; ' + esc(t) + '<span class="lsp"><span>&#8942;</span></span></div>',
+    stat: (l, v) => '<div class="lact"><button>' + esc(l || "Save") + '</button>'
+      + '<button><span>Total</span><span class="lamt">' + esc(v) + '</span></button></div>',
+    rows: (items) => '<div class="lgrid">' + items.map((j) =>
+      '<div class="ltile" style="background:color-mix(in srgb, var(--' + j.tone + ') 22%, #fff)">'
+      + '<em>' + esc(j.amt) + '</em><span>' + esc(j.t) + '</span></div>').join("") + '</div>',
+  },
+  cand14: {
+    head: (t) => '<div class="dhead"><div class="dn">' + esc(t) + '</div>'
+      + '<div class="ds"><span class="bat"><i style="width:60%"></i></span> live</div></div><div class="dstage"></div>',
+    stat: (l, v) => '<div class="dcap"><b>' + esc(v) + '</b>' + esc(l) + '</div>',
+    rows: (items) => '<div class="dgrid">' + items.map((j, i) =>
+      '<button aria-pressed="' + (i % 2 === 0 ? "true" : "false") + '">'
+      + '<span class="dic">&#9679;</span>' + esc(j.t.split(" ")[0]) + '</button>').join("") + '</div>',
+  },
+  cand15: {
+    head: (t) => '<div class="wprog"><i style="width:40%"></i></div><div class="wq">' + esc(t) + '?</div>',
+    stat: (l, v) => '<div class="wq2">' + esc(v) + '</div>',
+    rows: (items) => items.map((j, i) =>
+      '<div class="wopt" aria-selected="' + (i === 0 ? "true" : "false") + '">'
+      + '<span class="wav">' + esc(initials(j.who || j.t)) + '</span>'
+      + '<span class="wn">' + esc(j.t) + '<span style="display:block;font-size:13.5px;font-weight:400;color:var(--dim);margin-top:2px">'
+      + esc(j.amt) + '</span></span><span class="wc">' + (i === 0 ? "&#10003;" : "") + '</span></div>').join("")
+      + '<button class="wnext">Next</button>',
+  },
   ledger: {
     head: (t) => '<div class="topbar"><div class="co2">' + esc(BIZ.co2) + '</div><div class="me">CT</div></div>'
       + '<div class="hd"><h2>' + esc(t) + '</h2></div>',
@@ -1361,10 +1668,11 @@ for (const key of Object.keys(REG)) {
   /* 招牌 ← Square：**每一页都留那个左对齐大数字** ——
      Square 的内页本来就这样，而且不这样它的 p2 会跟入口墙撞到 5/7。 */
   const keepFig = key === "signboard";
-  fill("clients", PAGE_TITLES.clients, keepFig ? "Clients" : "", keepFig ? String(PEOPLE.length) : "", PEOPLE);
+  const dark = key === "cand12";
+  fill("clients", PAGE_TITLES.clients, keepFig || dark ? "Clients" : "", keepFig ? String(PEOPLE.length) : (dark ? "5 people" : ""), PEOPLE);
   fill("stock", PAGE_TITLES.stock, keepFig ? "On the shelf" : "", keepFig ? String(STOCK.length) : "", STOCK);
   fill("more", PAGE_TITLES.more, "", "", STOCK);
-  fill("jobs", PAGE_TITLES.jobs, keepFig ? "Running" : "", keepFig ? String(JOBS.length) : "", JOBS);
+  fill("jobs", PAGE_TITLES.jobs, keepFig || dark ? "Running" : "", keepFig ? String(JOBS.length) : (dark ? "6 jobs on site" : ""), JOBS);
 }
 
 function render(key, screen) {
