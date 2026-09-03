@@ -59,6 +59,31 @@ export type TrendChartProps = {
   /** Prefixed to the tooltip figure. "RM" for money, "" for counts. */
   unit?: string
   points: TrendPoint[]
+  /**
+   * 卡头右边那个「看多久」的开关，每一格是几期。
+   *
+   * 🔴 **四个参考页的图表卡头上都有一个控件，我们的卡头是空的**
+   * （[任务 24](../../docs/founder-tasks.md) 从 8-26 就记着这一条）：
+   * Tabler 是「Last 7 days ⌄」· Studio Admin 是「Last 12 months ⌄」·
+   * TailAdmin 是三段（Overview / Sales / Revenue）＋一个日期范围 ·
+   * Ant 是右上角一句「全部项目」。
+   *
+   * ⚠️ **它是真的会换的**，不是一颗装饰。按下去这张图真的少画几根柱子，
+   * 底下那句说明的数字也跟着变。一个按了没反应的下拉，正是这个仓库
+   * 禁的那种东西（⌘K 那个假搜索框就是因为这个被砍的）。
+   *
+   * 少於两格、或者最小的一格比手上的资料还长，就整个不画 ——
+   * **一个只有一个选项的开关，不是开关。**
+   */
+  ranges?: number[]
+  /**
+   * 底下那句说明的**模子**，里面带一个 `{n}`（「最近 {n} 期」）。
+   *
+   * 有它才有上面那个开关：换了期数而说明还写着 12，那句话就变成假的。
+   * 旧的页面存下来的只有已经填好数字的 `caption`，没有这个 —— 那些页面
+   * 不长开关，画出来跟以前一个像素都不差。
+   */
+  captionTemplate?: string
 }
 
 /** A 14px radius belongs on a card, not on a 40px-wide bar, where it reads as a
@@ -208,7 +233,16 @@ function usePlotHeight(host: React.RefObject<HTMLElement | null>) {
   return h
 }
 
-export function TrendChart({ title, caption, frame, kind = "bar", unit = "", points }: TrendChartProps) {
+export function TrendChart({
+  title,
+  caption,
+  frame,
+  kind = "bar",
+  unit = "",
+  points,
+  ranges,
+  captionTemplate,
+}: TrendChartProps) {
   const w = useSystemWords()
   const hostRef = useRef<HTMLElement>(null)
   const barRadius = useStyleRadius(hostRef, 4)
@@ -223,7 +257,27 @@ export function TrendChart({ title, caption, frame, kind = "bar", unit = "", poi
     v: { label: title || w.value, color: "var(--chart-1)" },
   } satisfies ChartConfig
 
-  const data = points.map((p) => ({ label: p.label, v: Number(p.value) || 0 }))
+  /* ── 卡头上那个「看多久」 ────────────────────────────────────────────────
+     只在**真的有得选**的时候才出现：至少两格，而且每一格都短过手上的资料。
+     默认是最长的那一格 —— 一进来看到的还是全部，跟以前一样。 */
+  const spans = [...new Set(ranges ?? [])]
+    .filter((n) => Number.isFinite(n) && n > 0 && n <= points.length)
+    .sort((a, b) => a - b)
+  const canSwitch = spans.length >= 2 && Boolean(captionTemplate)
+  const [picked, setPicked] = useState<number | null>(null)
+  const span = canSwitch ? (picked ?? spans[spans.length - 1]) : points.length
+  const shown = canSwitch ? points.slice(-span) : points
+  /* 说明跟着开关走 —— **但客户自己打的那一句先赢**。
+     🔴 没有这一条的时候，`caption` 变成一个「存下来却永远画不出来」的字段，
+     而 `site-fields.test.tsx` 当场就把它点名了（那把尺问的正是这件事）。
+     他改过的字要看得到；等他真的去按了那个开关，那句话才换成会讲实话的模子
+     —— 因为那时候「最近 12 期」已经是假的了。 */
+  const captionText =
+    canSwitch && picked !== null
+      ? (captionTemplate as string).replace("{n}", String(span))
+      : caption
+
+  const data = shown.map((p) => ({ label: p.label, v: Number(p.value) || 0 }))
 
   /** 12,340 -> "12.3k". A money axis at full length ("RM 12,340") is four
    *  times the width of the tick it labels and pushes the plot into a third of
@@ -288,12 +342,40 @@ export function TrendChart({ title, caption, frame, kind = "bar", unit = "", poi
       }`}
     >
       {title ? (
-        <header className="flex flex-col [gap:var(--gap-tight,4px)]">
-          <h3 className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
-            {title}
-          </h3>
-          {caption ? (
-            <p className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{caption}</p>
+        <header className="flex flex-wrap items-start justify-between [gap:var(--gap-inline)]">
+          <div className="flex min-w-0 flex-col [gap:var(--gap-tight,4px)]">
+            <h3 className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+              {title}
+            </h3>
+            {captionText ? (
+              <p className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{captionText}</p>
+            ) : null}
+          </div>
+          {canSwitch ? (
+            <div
+              className="flex shrink-0 items-center [border:var(--hairline)_solid_var(--border-subtle)] [border-radius:var(--radius-control)] [padding:2px]"
+              role="group"
+            >
+              {spans.map((n) => {
+                const on = n === span
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setPicked(n)}
+                    className="[border-radius:var(--radius-control)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [padding-block:3px] [padding-inline:var(--pad-control-x)]"
+                    style={
+                      on
+                        ? { background: "var(--color-ink-850)", color: "var(--color-paper)" }
+                        : { color: "var(--color-paper-dim)" }
+                    }
+                  >
+                    {n}
+                  </button>
+                )
+              })}
+            </div>
           ) : null}
         </header>
       ) : null}

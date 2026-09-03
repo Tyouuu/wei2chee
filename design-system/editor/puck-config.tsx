@@ -526,7 +526,7 @@ type Components = {
   Listbox: { name?: string; defaultValue?: string; options: ListboxOption[]; placeholder?: string };
   Alert: { variant: "default" | "destructive"; title: string; description?: string };
   Progress: { label?: string; value: number };
-  TrendChart: { title?: string; caption?: string; frame?: TrendFrame; kind?: TrendKind; unit?: string; points: TrendPoint[] };
+  TrendChart: { title?: string; caption?: string; frame?: TrendFrame; kind?: TrendKind; unit?: string; points: TrendPoint[]; ranges?: number[]; captionTemplate?: string };
   // ---- 生意零件 ----
   InfoRows: {
     heading?: string;
@@ -3118,8 +3118,17 @@ export const puckConfig: Config<Components> = {
           { label: "8月", value: 71300 },
         ],
       },
-      render: ({ title, caption, frame, kind, unit, points }) => (
-        <TrendChart title={title} caption={caption} frame={frame} kind={kind} unit={unit} points={points} />
+      render: ({ title, caption, frame, kind, unit, points, ranges, captionTemplate }) => (
+        <TrendChart
+          title={title}
+          caption={caption}
+          frame={frame}
+          kind={kind}
+          unit={unit}
+          points={points}
+          ranges={ranges}
+          captionTemplate={captionTemplate}
+        />
       ),
     },
     Progress: {

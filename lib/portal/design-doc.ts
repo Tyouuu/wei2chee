@@ -316,7 +316,10 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       /* 🔴 pie → stack（2026-09-02）。一个圆饼在一张最密的表旁边是一块浪费掉的
       正方形；一条堆叠条只吃一行高，而它回答的是同一个问题。
       Ant Design Pro 的列表页用的就是这个。 */
-      ShareChart: "stack",
+      /* 🔴 stack → donut（2026-09-03）。组件清单报「缺 圆环」，而 Tabler
+         那一页右上角那个 78% 就是**一个中间有洞的环**，不是一条比例条。
+         跟招牌那个 `gauge` 不一样：招牌抄的 TailAdmin 是**半圆**，这个是整圈。 */
+      ShareChart: "donut",
       RecordTableRow: "pill",
       PhotoFrame: "wide",
       ActionRow: "row",

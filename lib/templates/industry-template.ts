@@ -997,6 +997,13 @@ function buildDashboard(
       return node("TrendChart", "dashboard-trend", {
         title: c.dashboard.trendTitle,
         caption: c.dashboard.trendCaption.replace("{n}", String(sample.heroSpark.length)),
+        /* 卡头上那个「看多久」。四个参考页的图表卡头都有一个控件，
+           我们的一直是空的（[任务 24](../../docs/founder-tasks.md)）。
+           **它是真的会换的** —— 按 6 就真的只画最近六根，
+           而底下那句说明的数字跟着变，所以那句话永远是真的。
+           `12` 那一格只在他真的有十二期的时候才出现。 */
+        ranges: [6, 12],
+        captionTemplate: c.dashboard.trendCaption,
         unit: "RM",
         points: sample.heroSpark.map((value, i) => ({
           label: months[i] ?? "",
@@ -1684,7 +1691,10 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   /* 🔴 一大块开场 → 一排卡（2026-09-03）。像素那把尺量出来最后一件大的：
      **他们的块是 160–250 宽的卡排成格子，我们的是 1000–1300 宽的整条带。**
      TailAdmin 第一排是「两张小卡 + 目标卡」，不是一条横幅。 */
-  signboard: ["stats4", "trend|target@half", "progress", "table"],
+  /* 🔴 `half` → `wide-left`（2026-09-03，放大两倍量的）。TailAdmin 那一页
+     左边那张「Monthly Sales」是**宽的**，右边的目标卡是窄的一条 ——
+     对半分的时候两块一样宽，那张图就不再是这一页的主角。 */
+  signboard: ["stats4", "trend|target@wide-left", "progress", "table"],
   // A coloured ground with ivory panels floating on it -- panels want to be
   // few and LARGE, so one figure beside one chart, then one table.
   // Every character the same width. Squares and a ranking are both grids of
@@ -1742,7 +1752,11 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   /* 🔴 加了一排小格子（2026-09-03）。Tabler 那一页第三排就是四个小 tile，
      而它是「最密」这个主张真正的样子：一行放得下好几个不抢戏的数字。 */
   /* Tabler 那一页有两排并排的图，我们只有一条整页宽的。 */
-  counter: ["stats4", "tiles", "trend|progress@half", "table"],
+  /* 🔴 进度条 → 圆环（2026-09-03）。组件清单报「缺 圆环」，而 Tabler 那一页
+     右上角那个 78% 就是一个环，不是一条。中台是六套里唯一没有环的，
+     而它的参考有 —— 那不是我们的克制，是漏掉的一件。
+     顺便让图占宽的那一边（Tabler 的两排图也是左宽右窄）。 */
+  counter: ["stats4", "tiles", "trend|share@wide-left", "table"],
   /*
     工作室 IS THE ONLY REGISTER THAT PAIRS NOTHING.
 
@@ -2340,7 +2354,10 @@ function buildPayments(
         href: `/${locale}/portal/payments`,
       })),
       spark: sample.heroSpark.map((n) => ({ n })),
-      sparkLabel: c.dashboard.sparkLabel,
+      /* 🔴 `.replace("{n}", ...)` 漏了（2026-09-03 放大两倍看到的）：
+         收款那一页的图底下**原样印着「Last {n} periods」** —— 一个大括号
+         留在客户看得到的画面上。总览那一处从写出来就替换了，这一处没有。 */
+      sparkLabel: c.dashboard.sparkLabel.replace("{n}", String(sample.heroSpark.length)),
     }),
     recordTable(
       "payments-list",
