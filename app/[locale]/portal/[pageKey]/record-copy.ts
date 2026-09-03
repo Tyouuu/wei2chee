@@ -181,6 +181,14 @@ export type RecordFormCopy = {
   importRowNo: string;
   importLede: string;
   importHeading: string;
+  /* 盘点（20260904050000）。差多少是资料库算的，这里只画。 */
+  countHeading: string;
+  countLede: string;
+  countLabel: string;
+  countCta: string;
+  countRunning: string;
+  countSame: string;
+  countDiff: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -364,6 +372,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       importDone: "进去了 {n} 行。",
       importFailed: "有 {n} 行没进去：",
       importRowNo: "第 {n} 行",
+      countHeading: "盘点",
+      countLede: "站在架子前面数一次，打进去就好。差多少我们自己算，记成一笔。",
+      countLabel: "架上现在有几个",
+      countCta: "记下来",
+      countRunning: "在记…",
+      countSame: "跟系统一样，不用记。",
+      countDiff: "会记一笔：{n}",
     },
   },
   en: {
@@ -513,6 +528,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       importDone: "{n} rows are in.",
       importFailed: "{n} rows did not go in:",
       importRowNo: "Row {n}",
+      countHeading: "Stocktake",
+      countLede: "Count the shelf and type what is there. We work out the difference and record it.",
+      countLabel: "How many are on the shelf now",
+      countCta: "Record it",
+      countRunning: "Recording…",
+      countSame: "Same as the system — nothing to record.",
+      countDiff: "This will record: {n}",
     },
   },
 };

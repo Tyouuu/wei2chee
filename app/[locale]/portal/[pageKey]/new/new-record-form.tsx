@@ -25,6 +25,7 @@ import {
 import type { PartyAddress } from "../record-context";
 import { JobPhotos, type JobPhoto } from "./job-photos";
 import { ChangeTrail } from "./change-trail";
+import { Stocktake } from "./stocktake";
 import type { ShownChange } from "@/lib/portal/change-log";
 
 /**
@@ -998,6 +999,25 @@ export function NewRecordForm({
                 <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
                   {copy.stockDerived}
                 </span>
+              ) : null}
+              {/* 🔴 那一句「数量是算出来的」讲的是**为什么这一格锁住**，
+                  而它到今天为止就停在那里 —— 没有任何画面呼叫得到
+                  `move_stock`（新增货品那一次开帐除外）。所以一个货品建好
+                  之后，破了三包水泥就再也记不进去。盘点接在那一句底下，
+                  因为那一句正好是他读到「那我怎么改」的那一刻。 */}
+              {stockLocked && record ? (
+                <Stocktake
+                  itemId={record.id}
+                  onHand={(() => {
+                    const n = Number((values.amount ?? "").replace(/[^\d.-]/g, ""));
+                    return Number.isFinite(n) ? n : null;
+                  })()}
+                  unit={values.unit ?? ""}
+                  /* 记完把新的数量放回这一格。见 Stocktake 的档头 ——
+                     少了这一句，资料库变了而画面上那个数字不动。 */
+                  onCounted={(n) => setValues((v) => ({ ...v, amount: String(n) }))}
+                  copy={copy}
+                />
               ) : null}
             </label>
           );

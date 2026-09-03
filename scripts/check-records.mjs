@@ -1280,6 +1280,71 @@ try {
   });
   check("别人的项目汇不进去", !!impNotMine);
 
+  /* ── 盘点：架上数到 84，系统说 91 ──────────────────────────────────
+     20260904050000。 */
+  console.log("\n⑱ 盘点");
+
+  /* ⚠️ `add_catalog_item` 没有开帐数量那个参数（第一版我照印象写了一个
+     `in_opening_qty`，它不存在）—— 开帐是表单另外呼叫 move_stock 做的。
+     这里照它做：先建货品，再进 91。 */
+  const { data: counted, error: itemErr } = await c.rpc("add_catalog_item", {
+    in_project_id: P, in_module_key: "inventory", in_name: "水泥 50kg", in_unit: "包",
+  });
+  if (itemErr) throw new Error(`catalog item: ${itemErr.message}`);
+  await c.rpc("move_stock", {
+    in_item_id: counted.id, in_direction: "in", in_qty: 91, in_reason: "开帐",
+  });
+  const onHand = async () => {
+    const { data } = await c
+      .from("stock_on_hand").select("on_hand").eq("item_id", counted.id).maybeSingle();
+    return Number(data?.on_hand ?? 0);
+  };
+  check("开帐 91", (await onHand()) === 91, `${await onHand()}`);
+
+  const { data: short, error: shortErr } = await c.rpc("count_stock", {
+    in_item_id: counted.id, in_counted: 84,
+  });
+  check("数到 84，写一笔差额", !shortErr && Number(short?.moved) === -7,
+    shortErr?.message ?? JSON.stringify(short));
+  check("架上就变成 84", (await onHand()) === 84, `${await onHand()}`);
+  check("而且讲得出原本是多少", Number(short?.before) === 91, JSON.stringify(short));
+
+  /* 🔴 两个人同时盘点。两边都读到 84、都送「数到 80」——
+     差额在资料库里算，所以第二个读到的是 80，不是 84。 */
+  const [raceA, raceB] = await Promise.all([
+    c.rpc("count_stock", { in_item_id: counted.id, in_counted: 80 }),
+    c.rpc("count_stock", { in_item_id: counted.id, in_counted: 80 }),
+  ]);
+  check("两个人同时盘同一个数，架上只掉一次",
+    (await onHand()) === 80, `${await onHand()}`);
+  check("第二个写了 0 笔", [raceA, raceB].some((r) => Number(r.data?.moved) === 0),
+    JSON.stringify([raceA.data, raceB.data]));
+
+  /* 数出来跟系统一样 —— 什么都不写。一笔 0 的流水是他帐上一行没发生过的事。 */
+  const { data: same } = await c.rpc("count_stock", { in_item_id: counted.id, in_counted: 80 });
+  check("数出来一样就不写", Number(same?.moved) === 0 && !same?.move_id, JSON.stringify(same));
+
+  const { data: more } = await c.rpc("count_stock", { in_item_id: counted.id, in_counted: 95 });
+  check("数多了也记得进去（进 15）", Number(more?.moved) === 15, JSON.stringify(more));
+  check("而且那一笔有自己的单号", (more?.doc_no ?? "").length > 3, more?.doc_no);
+
+  const { error: negative } = await c.rpc("count_stock", {
+    in_item_id: counted.id, in_counted: -1,
+  });
+  check("负数挡下来", !!negative, negative?.message);
+
+  /* 🔴 那个词跟着系统自己的语言走 —— demo 是英文，不可以写死中文。 */
+  const { data: countMoves } = await c
+    .from("stock_moves").select("reason").eq("item_id", counted.id).order("created_at");
+  check("盘点那几笔的原因不是空的",
+    (countMoves ?? []).some((m) => (m.reason ?? "").trim().length > 0),
+    JSON.stringify((countMoves ?? []).map((m) => m.reason)));
+
+  const { error: countNotMine } = await c.rpc("count_stock", {
+    in_item_id: "00000000-0000-0000-0000-000000000000", in_counted: 5,
+  });
+  check("别人的货点不了", !!countNotMine);
+
   /* 单收起来了，照片跟着走 —— 一张挂在不存在的单上的照片，没有人找得到它。 */
   await c.from("pipeline_records").delete().eq("id", shotJob.id);
   const { count: photosLeftAfterDoc } = await c
