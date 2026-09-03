@@ -197,8 +197,14 @@ for (const reg of phones) {
 
     /* ⑦ 首屏最大的那个字要比页面标题大 —— 「一个大数字」不能比标题小 */
     const px = (e) => (e ? Math.round(parseFloat(getComputedStyle(e).fontSize)) : 0);
-    const hero = Math.max(px(ph.querySelector(".big")), px(ph.querySelector(".v")));
-    const title = px(ph.querySelector(".hd h2"));
+    /* ⚠️ 选择器要跟着画面走。逐项复刻那一轮把类名改了（.xfig .n / .sqfig /
+       .qbig / .amt2 / .zbig .v3），而这里还在找 .big / .v —— 於是十套全部
+       印「没有大数字」。**一把量不到就闭嘴的尺，看起来跟一把量过了的尺一模一样。** */
+    const hero = Math.max(...[".big", ".v", ".xfig .n", ".sqfig", ".qbig", ".amt2", ".zbig .v3", ".qlast .v4"]
+      .map((q) => px(ph.querySelector(q))));
+    const title = Math.max(...[".hd h2", ".b1 h2", ".g1 h2", ".sq1 h2", ".ntitle", ".ktop .brand", ".qtop .qco",
+       ".topbar .co2", ".fbar .day", ".zbar .lhs"]
+      .map((q) => px(ph.querySelector(q))));
 
     /* ⑧ 🔴 拿共用的示例数字当道具 */
     const propped = shared.test(ph.innerText);
@@ -239,6 +245,63 @@ for (const reg of phones) {
 }
 
 say(scriptErrors.length === 0, "没有脚本错", scriptErrors.slice(0, 2).join(" · "));
+
+/* ── 两两之间有几根轴一样 ─────────────────────────────
+   🔴 老板 2026-09-03：「有些还是太一样了」。他用眼睛看出来的，
+   而当时尺子量不到 —— 那就是尺子缺一项（[重点 24](docs/founder-points.md)）。
+   他指的两对：**图纸 vs 瑞士**（都是分区标题＋一列带金额的行）、
+   **台账 vs 招牌**（都是大数字 → 按钮 → 清单）。
+
+   ⚠️ 这一项跟 `design-doc.test.ts` 那条「任何两套重叠 ≤ 6/11」是同一个想法，
+   只是搬到手机上：手机没有侧栏、几乎没有表格、没有整条分区色带，
+   那三根轴换成了**底栏 · 清单行 · 主要动作在哪**。
+   它只能**否决**：两套七根重叠 ≥ 5 就是太像；全部不同也可以很难看。 */
+const MAX_SHARED = 4;
+const prints = await p.evaluate((sel) =>
+  [...document.querySelectorAll(sel)].map((ph) => {
+    const has = (q) => !!ph.querySelector(q);
+    const body = ph.querySelector(".body");
+    const first = [...(body ? body.children : [])].find((e) => e.className);
+    const hero =
+      has(".cal") ? "日程表" : has(".jwall") ? "图标墙" : has(".kstage") ? "状态导航"
+      : has(".bweek") ? "星期圆点" : has(".grail") ? "横滑卡片" : has(".zbento") ? "bento"
+      : has(".qacct") ? "问候＋帐户卡" : has(".qdoc") ? "单据"
+      : has(".sqfig") ? "左对齐大数字" : has(".xfig") ? "居中大数字"
+      : has(".quiet") || has(".npage") ? "安静清单" : "其他";
+    const row =
+      has(".fblk") ? "色块" : has(".sqrow") ? "方图标＋两行数字"
+      : has(".xrow") ? "圆点＋两栏数字" : has(".nrow") ? "下划线"
+      : has(".gitem") ? "卡片" : has(".li.dense") ? "密" : has(".li .av") ? "头像"
+      : has(".li .dot") ? "圆点" : has(".qr") ? "方块色标" : "无";
+    const act = has(".fab") ? "右下浮钮" : has(".sqpair") ? "两颗药丸"
+      : has(".wide") ? "满宽按钮" : has(".bcall button") ? "卡里的按钮"
+      : has(".hdbtn") ? "标题栏右上" : has(".kstage .all") ? "导航底下" : "无";
+    const zone = has(".xcard") || has(".qdoc") || has(".bcard") || has(".qacct") ? "卡片"
+      : has(".list.boxed") ? "框起来的清单" : has(".nsec") ? "细线" : "满边";
+    const cs = getComputedStyle(first || ph);
+    return {
+      reg: ph.dataset.reg,
+      hero, row, act, zone,
+      tabs: ph.querySelectorAll(".nav button").length,
+      radius: Math.round(parseFloat(getComputedStyle(ph.querySelector(".hero,.xcard,.qdoc,.bcard,.gitem,.fblk,.list.boxed") || ph).borderRadius) || 0),
+      dense: (() => { const r = ph.querySelector(".li,.xrow,.nrow,.sqrow,.q,.fblk,.qr"); return r ? Math.round(r.getBoundingClientRect().height / 8) * 8 : 0; })(),
+    };
+  }), SEL);
+
+console.log("──── 两两之间有几根轴一样（七根：首屏主角 · 清单行 · 主要动作 · 分区 · 底栏 · 圆角 · 密度）");
+const pairs = [];
+for (let i = 0; i < prints.length; i++) for (let j = i + 1; j < prints.length; j++) {
+  const a2 = prints[i], b2 = prints[j];
+  const same = ["hero", "row", "act", "zone", "tabs", "radius", "dense"].filter((k) => a2[k] === b2[k]);
+  if (same.length >= 3) pairs.push({ a: a2.reg, b: b2.reg, n: same.length, same });
+}
+pairs.sort((x, y) => y.n - x.n);
+if (!pairs.length) console.log("  没有任何一对重叠到 3 根");
+pairs.slice(0, 8).forEach((x) =>
+  console.log(`  ${x.n >= MAX_SHARED + 1 ? "⚠️" : "  "} ${x.a} · ${x.b}  重叠 ${x.n}/7  （${x.same.join(" ")}）`));
+const tooAlike = pairs.filter((x) => x.n > MAX_SHARED);
+say(tooAlike.length === 0, `任何两套重叠 ≤ ${MAX_SHARED}/7`,
+  tooAlike.map((x) => `${x.a}·${x.b} ${x.n}`).join(" · "));
 
 fs.mkdirSync(OUT, { recursive: true });
 const shot = `${OUT}/align-app.jpg`;

@@ -1,4 +1,4 @@
-<title>Six Registers, One Business</title>
+<title>Ten Registers, One Business</title>
 <style>
 /* 同一家装修公司、同一批资料，四套风格各自的手机骨架。
    判准是重点 7c：换个配色它还是不是另一个设计？
@@ -272,14 +272,210 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 .sqrow .sqi{width:40px;height:40px;flex:0 0 40px;border-radius:9px;display:grid;place-items:center;
             font-size:12px;font-weight:700;font-family:var(--mono);color:#fff}
 .sqrow .sqt{flex:1;min-width:0}
-.sqrow .sqn{font-size:15.5px;font-weight:640}
-.sqrow .sqs{font-size:13px;color:var(--dim);margin-top:2px}
+/* ⚠️ 两个 span 不换行，画出来是「…refit**Confirmed**」黏在一起。 */
+.sqrow .sqn{display:block;font-size:15.5px;font-weight:640}
+.sqrow .sqs{display:block;font-size:13px;color:var(--dim);margin-top:2px}
 .sqrow .sqv{text-align:right;font-variant-numeric:tabular-nums}
 .sqrow .sqv b{display:block;font-size:15.5px;font-weight:650}
 .sqrow .sqv span{display:block;font-size:13px;color:var(--dim);margin-top:2px}
 .sqall{display:block;margin:16px auto 8px;background:none;border:0;font:inherit;font-size:15px;
        font-weight:640;text-decoration:underline;text-underline-offset:4px;color:var(--ink);
        cursor:pointer;min-height:44px}
+
+/* ══ 候选 7–10 ══════════════════════════════════════════════════════════
+   老板 2026-09-03：「有些有用的还是可以拿来作为模版的 因为特点不一样嘛」。
+   所以这四个真界面不只是「拿一点」，它们自己就是第 7–10 套的模版。
+   逐项量自 .screenshots/clone/pf-*.png（Mobbin 策展的真画面，不是行销版）。
+
+   ⚠️ **颜色是暂定的。** 这四套还没有自己的 token 档
+   （`design-system/tokens/*.css` 现在只有六个），而建 token 档是风格库那一层的事。
+   等它们变成真的 register，主色就从那里读 —— 现在先各给一个跟既有六套不撞的，
+   并且在画面上标着「候选」。 */
+.r-cand7{--canvas:#fff;--card:#fff;--ink:#241a33;--dim:#5d5470;--line:#e7e3ee;
+  --primary:#5b3fb8;--ptext:#5b3fb8;--soft:#efeafb;--nav:#fff;--navfg:#241a33;--navdim:#5d5470;
+  --navac:#5b3fb8;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:10px;--rl:14px}
+.r-cand8{--canvas:#fff;--card:#fff;--ink:#20180a;--dim:#5f5647;--line:#eae5d9;
+  --primary:#8a5a00;--ptext:#8a5a00;--soft:#fdf3d8;--nav:#fff;--navfg:#20180a;--navdim:#5f5647;
+  --navac:#8a5a00;--jade:#1a9a4d;--brass:#a8710a;--clay:#bd616a;--r:12px;--rl:16px}
+.r-cand9{--canvas:#fff;--card:#fff;--ink:#111113;--dim:#55565b;--line:#e5e5e7;
+  --primary:#18181b;--ptext:#18181b;--soft:#efeff1;--nav:#fff;--navfg:#111113;--navdim:#55565b;
+  --navac:#111113;--jade:#0f7a3d;--brass:#a8710a;--clay:#bd616a;--r:8px;--rl:12px}
+.r-cand10{--canvas:#fff;--card:#fff;--ink:#0f2018;--dim:#4d6157;--line:#e2eae5;
+  --primary:#0f7a3d;--ptext:#0f7a3d;--soft:#e4f4ea;--nav:#fff;--navfg:#0f2018;--navdim:#4d6157;
+  --navac:#0f7a3d;--jade:#0f7a3d;--brass:#a8710a;--clay:#bd616a;--r:14px;--rl:20px}
+
+/* ─ 候选 7 ← Klarna #6 ────────────────────────────────────────────────
+   有色顶区（品牌名当大标题 ~28px ＋ 右边三个小图标）· 满宽圆角搜索条
+   **一排 5 个彩色圆图标**（不是方形淡底 —— 中台那排是方的）
+   一条提示卡带 × · 两格并排小卡
+   **四格状态导航**：图标在上、字在下，一排四个，下面一条「＋ 全部追踪」 */
+.ktop{background:var(--soft);padding:16px 16px 14px}
+.ktop .k1{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ktop .brand{font-size:26px;font-weight:750;letter-spacing:-.02em}
+.ktop .k1 .ico3{display:flex;gap:14px;font-size:17px;color:var(--dim)}
+.ksearch{background:var(--card);border-radius:10px;min-height:44px;display:flex;align-items:center;
+         gap:9px;padding:0 13px;color:var(--dim);font-size:15px}
+.kdots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:14px 10px 4px;background:var(--soft)}
+.kdots button{background:none;border:0;font:inherit;font-size:11px;color:var(--ink);cursor:pointer;
+              display:flex;flex-direction:column;align-items:center;gap:7px;min-height:70px;padding:4px 0}
+.kdots .rd{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+           font-size:12px;font-weight:700;font-family:var(--mono);color:#fff}
+.knote{margin:14px 14px 0;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+       padding:12px 13px;display:flex;gap:10px;align-items:flex-start;font-size:13.5px}
+.knote .x{margin-left:auto;color:var(--dim);font-size:17px}
+.kduo{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px 0}
+.kduo div{border:1px solid var(--line);border-radius:var(--r);padding:12px 13px}
+.kduo .kk{font-size:12.5px;color:var(--dim)}
+.kduo .kv{font-size:17px;font-weight:700;margin-top:3px}
+.kstage{margin:14px 14px 0;border:1px solid var(--line);border-radius:var(--rl);overflow:hidden}
+.kstage .four{display:grid;grid-template-columns:repeat(4,1fr)}
+.kstage .four button{background:none;border:0;font:inherit;font-size:11.5px;color:var(--ink);
+                     cursor:pointer;padding:14px 4px 12px;display:flex;flex-direction:column;
+                     align-items:center;gap:8px;min-height:80px}
+.kstage .four .g2{font-size:19px}
+.kstage .all{border-top:1px solid var(--line);padding:13px 14px;font-size:14px;color:var(--ptext);
+             font-weight:600;min-height:46px;display:flex;align-items:center;gap:8px}
+
+/* ─ 候选 8 ← Brilliant #4 ─────────────────────────────────────────────
+   大标题左（~30px）＋ **右边一颗药丸计数**
+   **一排星期圆点**：当天填色，其余描边；下面一行字母
+   **一张亮色描边卡**（整页唯一一块颜色）＋ 一颗同色实心按钮
+   「接着做」＋ 一张带插图的卡 */
+.b1{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 6px}
+.b1 h2{margin:0;font-size:30px;font-weight:730;letter-spacing:-.025em}
+.bpill{background:var(--soft);color:var(--ptext);border-radius:999px;padding:7px 14px;
+       font-size:14px;font-weight:700;min-height:36px;display:flex;align-items:center;gap:5px}
+.bweek{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 18px 4px}
+.bweek div{display:flex;flex-direction:column;align-items:center;gap:6px}
+.bweek .c2{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+           border:1.5px solid var(--line);font-size:15px;color:var(--dim)}
+.bweek .c2.on{background:var(--soft);border-color:var(--ptext);color:var(--ptext);font-weight:700}
+.bweek .lb{font-size:12px;color:var(--dim)}
+.bcall{margin:16px 18px 0;border:2px solid var(--primary);border-radius:var(--rl);padding:14px;
+       background:color-mix(in srgb,var(--soft) 55%,#fff)}
+.bcall .t2{font-size:14.5px;font-weight:640;line-height:1.35}
+.bcall button{display:block;width:100%;margin-top:12px;min-height:50px;border:0;border-radius:10px;
+              background:var(--soft);color:var(--ptext);font:inherit;font-size:16px;font-weight:700;
+              cursor:pointer;border:1.5px solid var(--primary)}
+.bsec{padding:24px 18px 8px;font-size:19px;font-weight:700}
+.bcard{margin:0 18px;border:1px solid var(--line);border-radius:var(--rl);overflow:hidden}
+.bcard .art{height:96px;background:linear-gradient(120deg,var(--soft),var(--canvas))}
+.bcard .bd{padding:13px 14px}
+.bcard .bt{font-size:17px;font-weight:700}
+.bcard .bs{font-size:12px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;margin-top:6px}
+.bcard .bn{font-size:14px;margin-top:3px}
+.bbar{height:5px;background:var(--soft);border-radius:99px;margin-top:11px;overflow:hidden}
+.bbar i{display:block;height:100%;background:var(--ptext);border-radius:99px}
+
+/* ─ 候选 9 ← Gametime #1 ──────────────────────────────────────────────
+   **店名当大标题＋⌄**（这一条正好是多分店那根维度要的形状）
+   满宽搜索条 · **分类药丸横滑**（选中深底白字）
+   一张满幅深色大卡带角标 · 分区标题＋「See All ›」＋**横滑卡片** */
+.g1{padding:14px 18px 4px}
+.g1 h2{margin:0;font-size:28px;font-weight:730;letter-spacing:-.025em;display:flex;
+       align-items:center;gap:8px}
+.gsearch{margin:10px 18px 0;border:1px solid var(--line);border-radius:8px;min-height:44px;
+         display:flex;align-items:center;gap:9px;padding:0 12px;color:var(--dim);font-size:14.5px}
+.gchips{display:flex;gap:9px;padding:12px 18px 4px;overflow-x:auto}
+.gchips::-webkit-scrollbar{height:0}
+/* 拇指按得准 —— Gametime 那排药丸看起来矮，但它是 iOS，
+   我们这一层的底线是 44px（量出来 38 就红了）。 */
+.gchips button{white-space:nowrap;border:1px solid var(--line);background:none;border-radius:999px;
+               padding:0 15px;min-height:44px;font:inherit;font-size:13.5px;color:var(--ink);cursor:pointer}
+.gchips button[aria-current="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ghero{margin:14px 18px 0;border-radius:var(--rl);overflow:hidden;background:var(--ink);color:#fff;
+       padding:16px;position:relative}
+.ghero .tagx{display:inline-block;background:var(--jade);color:#fff;font-size:11px;font-weight:700;
+             letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:4px}
+.ghero .gt{font-size:19px;font-weight:700;margin-top:10px;line-height:1.25}
+.ghero .gs{font-size:13px;opacity:.75;margin-top:5px}
+.gsec{display:flex;align-items:baseline;justify-content:space-between;padding:22px 18px 8px}
+.gsec b{font-size:19px;font-weight:700}
+.gsec span{font-size:14px;color:var(--dim)}
+.grail{display:flex;gap:12px;padding:0 18px 4px;overflow-x:auto}
+.grail::-webkit-scrollbar{height:0}
+.gitem{flex:0 0 208px;border:1px solid var(--line);border-radius:var(--rl);overflow:hidden}
+.gitem .ga{height:88px;background:var(--soft)}
+.gitem .gb{padding:11px 12px}
+.gitem .gn{font-size:14.5px;font-weight:640;line-height:1.3}
+.gitem .gm{font-size:12.5px;color:var(--dim);margin-top:4px;display:flex;justify-content:space-between}
+
+/* ─ 候选 10 ← Gojek #2 ────────────────────────────────────────────────
+   **满幅有色顶区**：圆角满宽搜索条＋右边圆形头像
+   一张促销卡压在顶区下缘
+   **一整片圆形彩色图标墙** 4×N，图标下面写字 —— 模块多的老板端 */
+/* 顶区要留够高，不然下面那张卡的上半截会被它盖住。
+   第一版 44px 配 -32px 的上提，卡头那一行字正好埋进绿里。 */
+.jtop{background:var(--primary);padding:14px 16px 58px;position:relative}
+.jrow{display:flex;align-items:center;gap:12px}
+.jsearch{flex:1;background:#fff;border-radius:999px;min-height:48px;display:flex;align-items:center;
+         gap:10px;padding:0 16px;color:var(--dim);font-size:15px}
+.jme{width:44px;height:44px;flex:0 0 44px;border-radius:50%;background:#fff;color:var(--ptext);
+     display:grid;place-items:center;font-size:13px;font-weight:700}
+.jpromo{margin:-32px 16px 0;background:var(--soft);border-radius:var(--rl);padding:14px;
+        display:flex;align-items:center;gap:12px}
+.jpromo .jp1{flex:1}
+.jpromo .jpt{font-size:15px;font-weight:700}
+.jpromo .jps{font-size:12.5px;color:var(--dim);margin-top:3px}
+.jpromo .jpa{display:flex;gap:14px}
+.jpromo .jpa div{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11.5px}
+.jpromo .jpa .rc{width:34px;height:34px;border-radius:50%;background:var(--card);color:var(--ptext);
+                 display:grid;place-items:center;font-size:15px}
+.jwall{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:18px 8px 6px}
+.jwall button{background:none;border:0;font:inherit;font-size:12px;color:var(--ink);cursor:pointer;
+              display:flex;flex-direction:column;align-items:center;gap:8px;min-height:82px;padding:6px 2px}
+.jwall .jc{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;
+           font-size:13px;font-weight:700;font-family:var(--mono);color:#fff;position:relative}
+/* ⚠️ 角标白字压在状态色上只有 4.13:1（量出来的）。
+   换成墨色底 —— Gojek 那个角标本来也是深的。 */
+.jwall .jc em{position:absolute;top:-4px;right:-6px;background:var(--ink);color:#fff;
+              font-style:normal;font-size:10px;font-weight:700;border-radius:999px;padding:2px 5px}
+
+/* ── 图纸的开场，改成真的抄 QuickBooks #1 ─────────────────────────────
+   🔴 老板 2026-09-03：「有些还是太一样了」。**他指的一对是图纸跟瑞士** ——
+   两个都是「分区标题＋一列带金额的行」。
+   而根因是我自己造的：图纸的开场**根本不是抄 QuickBooks**。
+   QuickBooks 第一张是「公司名带⌄ ＋ 问候语 ＋ 一条要注意的提醒 ＋
+   帐户卡（总额在上、每一行一个户口）＋ 未付发票卡」，
+   我却给它做了一个分组清单，於是撞上瑞士。现在照它真的样子做。 */
+.qtop{padding:14px 16px 4px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.qtop .qco{font-size:16px;font-weight:660;display:flex;align-items:center;gap:6px}
+.qtop .qhi{font-size:13.5px;color:var(--dim);margin-top:2px}
+.qtop .qic{display:flex;gap:14px;color:var(--dim);font-size:16px;padding-top:3px}
+.qday{display:flex;align-items:baseline;justify-content:space-between;padding:12px 16px 6px}
+.qday b{font-size:20px;font-weight:700}
+.qday span{font-size:14px;color:var(--ptext);font-weight:600}
+.qalert{margin:0 16px;border:1px solid var(--line);border-left:4px solid var(--jade);
+        border-radius:var(--r);padding:12px 13px;display:flex;gap:10px;align-items:flex-start}
+.qalert .qa1{font-size:14.5px;font-weight:640}
+.qalert .qa2{font-size:12.5px;color:var(--dim);margin-top:3px;line-height:1.4}
+.qacct{margin:12px 16px 0;border:1px solid var(--line);border-radius:var(--rl);padding:15px 15px 6px}
+.qacct .qt2{font-size:15px;font-weight:660}
+.qacct .qbig{font-size:26px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums}
+.qacct .qcap{font-size:12.5px;color:var(--dim);margin-top:2px}
+.qacct .qr{display:flex;align-items:center;gap:11px;padding:13px 0;border-top:1px solid var(--line);
+           margin-top:12px;min-height:56px}
+.qacct .qr:first-of-type{margin-top:14px}
+.qacct .qsq{width:26px;height:26px;flex:0 0 26px;border-radius:5px}
+.qacct .qn2{flex:1;min-width:0}
+.qacct .qn2 b{display:block;font-size:14.5px;font-weight:600}
+.qacct .qn2 span{display:block;font-size:12.5px;color:var(--dim);margin-top:2px}
+.qacct .qam{font-variant-numeric:tabular-nums;font-size:14.5px;font-weight:640}
+.qlast{margin:12px 16px 0;border:1px solid var(--line);border-radius:var(--rl);padding:15px}
+.qlast .l4{font-size:12px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+.qlast .t4{font-size:15px;font-weight:660;margin-top:5px}
+.qlast .v4{font-size:26px;font-weight:700;margin-top:4px;color:var(--ptext);
+           font-variant-numeric:tabular-nums}
+
+/* ── 招牌 推得离台账更远 ──────────────────────────────────────────────
+   🔴 第二对太像的是**台账 vs 招牌** —— 两个都是「大数字 → 按钮 → 清单」。
+   去看 Square 那一张：它**整页一张白纸，没有一张卡**，字大、行满边、
+   左对齐到底。台账正好相反（灰地上三张卡、数字居中）。
+   把这个差别推到底，两套就分得开了 —— 而这是**它本来就长的样子**，不是我加的。 */
+.r-signboard .sqfig{font-size:60px}
+.r-signboard .sq1 h2{font-size:30px}
+.r-signboard .sqsec{font-size:21px;padding-top:26px}
+.r-signboard .sqrow{padding-left:20px;padding-right:20px}
 
 .status{height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:space-between;
         padding:0 16px;font-size:11px;font-family:var(--mono);color:var(--dim);
@@ -468,9 +664,9 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
 </style>
 
 <div class="wrap">
-  <h1>Six registers, one business</h1>
+  <h1>Ten registers, one business</h1>
   <p class="sub">同一家装修公司、<b>同一批资料</b>，四套风格各自的手机版。判准是
-     <b>换个配色它还是不是另一个设计</b> —— 所以下面六支不是六个颜色，是六个骨架。<b>不跟行业绑</b>，看的是它自己有没有主张；而且<b>一套只抄一个 app</b>，不混 —— 混了就讲不出它的身份是谁给的。
+     <b>换个配色它还是不是另一个设计</b> —— 所以下面十支不是十个颜色，是十个骨架。<b>不跟行业绑</b>，看的是它自己有没有主张；而且<b>一套只抄一个 app</b>，不混 —— 混了就讲不出它的身份是谁给的。
      每一个颜色都逐字来自 <code>design-system/tokens/</code>，一个都不是我挑的。<br><b>颜色也跟着模版走</b> —— 四个 app 的界面颜色逐像素量出来，原样搬。<b>骨架抄 app，颜色用风格自己的</b> —— 客户在官网那边挑过的那一套，手机上直接复用，不用再挑一次。地六个都是白的。</p>
 
   <div class="scroller"><table class="axes">
@@ -481,6 +677,10 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
     <tr><td><b>图纸</b> blueprint</td><td><b>QuickBooks</b></td><td>分组的清单，没有大数字</td><td>4 格，选中一块淡底</td><td>头像＋状态药丸</td><td>右下圆钮</td><td>8 / 12px</td><td>56px</td><td><code>#2261dd</code></td></tr>
     <tr><td><b>瑞士</b> swiss</td><td><b>Notion</b></td><td><b>什么都没有</b>，只有段落标题</td><td>4 格</td><td>只有一条细线，无卡片</td><td>标题栏右上（描边）</td><td><b>0px</b></td><td><b>留白最多</b></td><td><code>#3d4ea8</code></td></tr>
     <tr><td><b>招牌</b> signboard</td><td><b>Square</b></td><td><b>一屏只有一件事</b>：52px 的金额</td><td>4 格</td><td>一行，字大</td><td><b>横跨整屏的按钮</b></td><td><b>0px</b></td><td>大</td><td><code>#c8102e</code></td></tr>
+    <tr><td><b>站台</b> cand7</td><td><b>Klarna</b></td><td>五个彩色圆图标＋<b>四格状态导航</b></td><td>3 格</td><td>四格导航代替清单</td><td>导航底下一条</td><td>10 / 14px</td><td>中</td><td><code>#5b3fb8</code></td></tr>
+    <tr><td><b>早课</b> cand8</td><td><b>Brilliant</b></td><td><b>一排星期圆点</b>＋一张描边行动卡</td><td>4 格</td><td>一张带进度条的卡</td><td><b>卡里那颗按钮</b></td><td>12 / 16px</td><td>宽松</td><td><code>#8a5a00</code></td></tr>
+    <tr><td><b>分店</b> cand9</td><td><b>Gametime</b></td><td><b>店名大标题带⌄</b>＋满幅深色大卡</td><td>4 格</td><td><b>横滑的卡片</b></td><td>无（药丸就是动作）</td><td>8 / 12px</td><td>中</td><td><code>#18181b</code></td></tr>
+    <tr><td><b>入口墙</b> cand10</td><td><b>Gojek</b></td><td><b>一整片圆形图标墙（16 格）</b></td><td>4 格</td><td>无清单</td><td>卡里两颗圆钮</td><td>14 / 20px</td><td>密</td><td><code>#0f7a3d</code></td></tr>
   </table></div>
 
   <div class="rack" id="rack"></div>
@@ -492,12 +692,12 @@ h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
     Loyverse（商品照片格子，最密）·
     Odoo（整页模块图标格子）·
     Shopify · Jobber · Housecall · Asana。
-    <br><b>16 个 app，一套抄一个 —— 六套已经在上面，剩下十个够把 15 套填满。</b>
+    <br><b>十套已经在上面。剩下六个（ServiceM8 · Booksy · monday · Trello · Loyverse · Odoo）够把 15 套填满。</b><br>⚠️ 后四套标着 <code>cand</code> —— 它们还没有自己的风格 token 档，主色是暂定的。
   </div>
 
   <div class="note">
     <b>它还不是什么。</b>这是一张会动的图，不是产品 —— 没有资料库、没有登入、按了不会存。
-    它只回答一个问题：<b>手机上六套风格分不分得出来</b>。资料是示例的，
+    它只回答一个问题：<b>手机上十套风格分不分得出来</b>。资料是示例的，
     而真的做进去的时候，第一笔真记录一进来示例就整批消失（8-30 定的做法）。
   </div>
 </div>
@@ -777,7 +977,8 @@ REG.counter.today = () =>
   + spark() + '</div>';
 
 /* ── 图纸 ← QuickBooks #4 ───────────────────────────────────────────── */
-REG.blueprint.jobs = () =>
+/* 原本那个分组清单还留着，只是不再当开场 —— 它跟瑞士太像。 */
+REG.blueprint.grouped = () =>
   '<div class="hd"><h2>QT-2026-0018</h2></div>'
   + '<div class="qdoc">'
   + '<div class="qk">Due date</div><div class="qv">3 Oct 2026</div>'
@@ -841,6 +1042,133 @@ REG.signboard.today = () =>
       + '<span class="sqs">' + esc(j.st) + '</span></span>'
       + '<span class="sqv"><b>' + esc(j.amt) + '</b><span>' + esc(j.paid || "RM 0") + '</span></span></div>').join("")
   + '<button class="sqall">View all activity</button>';
+
+/* 图纸的开场 —— 真的照 QuickBooks 第一张：公司名带⌄＋问候＋提醒条＋帐户卡＋未付卡 */
+REG.blueprint.today = () =>
+  '<div class="qtop"><div><div class="qco">' + esc(BIZ.co2) + ' <span style="font-size:11px;opacity:.6">&#9662;</span></div>'
+  + '<div class="qhi">Good morning, Chen</div></div>'
+  + '<div class="qic"><span>&#9200;</span><span>&#9993;</span><span>&#128269;</span></div></div>'
+  + '<div class="qday"><b>Today</b><span>Edit</span></div>'
+  + '<div class="qalert"><div><div class="qa1">3 things need you</div>'
+  + '<div class="qa2">1 quote overdue &middot; 1 deposit unpaid &middot; 1 receipt to file</div></div></div>'
+  + '<div class="qacct"><div class="qt2">Money in hand</div>'
+  + '<div class="qbig">RM 12,400</div><div class="qcap">Across 2 accounts</div>'
+  + '<div class="qr"><span class="qsq" style="background:var(--jade)"></span>'
+  + '<span class="qn2"><b>Maybank current</b><span>Updated today</span></span>'
+  + '<span class="qam">RM 9,180</span></div>'
+  + '<div class="qr"><span class="qsq" style="background:var(--brass)"></span>'
+  + '<span class="qn2"><b>Cash box</b><span>3 entries pending</span></span>'
+  + '<span class="qam">RM 3,220</span></div></div>'
+  + '<div class="qlast"><div class="l4">Last 90 days</div>'
+  + '<div class="t4">Quotes not yet paid</div><div class="v4">RM 96,240</div></div>';
+
+/* ── 候选 7 ← Klarna ─────────────────────────────────────────────────── */
+REG.cand7 = {
+  zh: "站台", en: "cand7 · Klarna",
+  why: "抄 Klarna。有色顶区＋品牌名当大标题、一排彩色圆图标、四格状态导航（已下单／在路上／到了／退货）—— 全库唯一一套把「走到哪一步」做成导航而不是一栏字的。",
+  tabs: [["today", "home", "Home"], ["jobs", "job", "Orders"], ["money", "cash", "Money"]],
+  fab: false,
+  today: () =>
+    '<div class="ktop"><div class="k1"><span class="brand">' + esc(BIZ.co2) + '</span>'
+    + '<span class="ico3"><span>&#9776;</span><span>&#9788;</span><span>&#9881;</span></span></div>'
+    + '<div class="ksearch">&#128269; Search a job or client</div></div>'
+    + '<div class="kdots">'
+    + [["QT", "Quote", "jade"], ["OR", "Order", "brass"], ["ST", "Stock", "primary"],
+       ["RC", "Paid", "clay"], ["CU", "Client", "jade"]]
+        .map(([a, b, t]) => '<button><span class="rd" style="background:color-mix(in srgb, var(--' + t + ') 78%, #000)">'
+          + a + '</span>' + b + '</button>').join("")
+    + '</div>'
+    + '<div class="knote"><span>&#9888;</span><div>1 quote is 7 days old. Chase Mr. Ong?</div><span class="x">&times;</span></div>'
+    + '<div class="kduo"><div><div class="kk">To collect</div><div class="kv">RM 96,240</div></div>'
+    + '<div><div class="kk">To pay</div><div class="kv">RM 18,900</div></div></div>'
+    + '<div class="kstage"><div class="four">'
+    + [["&#128221;", "Quoted", 2], ["&#128666;", "On site", 3], ["&#9989;", "Done", 4], ["&#128176;", "Paid", 1]]
+        .map(([g, t, n]) => '<button><span class="g2">' + g + '</span>' + t + ' &middot; ' + n + '</button>').join("")
+    + '</div><div class="all">&#43; Track every job</div></div>',
+  jobs: () => '<div class="hd"><h2>Orders</h2></div><div class="list">' + rowsOf("dot").join("") + '</div>',
+};
+
+/* ── 候选 8 ← Brilliant ──────────────────────────────────────────────── */
+REG.cand8 = {
+  zh: "早课", en: "cand8 · Brilliant",
+  why: "抄 Brilliant。大标题＋右边一颗计数药丸、一排星期圆点（这週跑了几天）、一张描边行动卡是整页唯一一块颜色 —— 它只问一件事：今天做不做。",
+  tabs: [["today", "home", "Today"], ["jobs", "job", "Jobs"], ["clients", "user", "Clients"], ["money", "cash", "Money"]],
+  fab: false,
+  today: () =>
+    '<div class="b1"><h2>Today</h2><span class="bpill">3 &#9889;</span></div>'
+    + '<div class="bweek">'
+    + [["M", 1], ["T", 1], ["W", 1], ["T", 0], ["F", 0]]
+        .map(([d, on]) => '<div><span class="c2' + (on ? " on" : "") + '">' + (on ? "&#10003;" : "") + '</span>'
+          + '<span class="lb">' + d + '</span></div>').join("")
+    + '</div>'
+    + '<div class="bcall"><div class="t2">Mr. Ong&rsquo;s quote has been sitting 7 days. Send a nudge?</div>'
+    + '<button>Send the nudge</button></div>'
+    + '<div class="bsec">Pick up where you left</div>'
+    + '<div class="bcard"><div class="art"></div><div class="bd">'
+    + '<div class="bt">Taman Desa 3-bedroom refit</div>'
+    + '<div class="bs">Stage 3 of 5</div><div class="bn">Tiling, level 2</div>'
+    + '<div class="bbar"><i style="width:60%"></i></div></div></div>',
+  jobs: () => '<div class="b1"><h2>Jobs</h2><span class="bpill">' + JOBS.length + '</span></div>'
+    + '<div class="list">' + rowsOf("dot").join("") + '</div>',
+};
+
+/* ── 候选 9 ← Gametime ───────────────────────────────────────────────── */
+REG.cand9 = {
+  zh: "分店", en: "cand9 · Gametime",
+  why: "抄 Gametime。店名当大标题带⌄、分类药丸横滑、一张满幅深色大卡、分区标题配「看全部」＋横滑的卡片 —— 多分店那根维度要的就是这个形状。",
+  tabs: [["today", "home", "Today"], ["jobs", "job", "Jobs"], ["clients", "user", "Clients"], ["money", "cash", "Money"]],
+  fab: false,
+  today: () =>
+    '<div class="g1"><h2>Kepong branch <span style="font-size:15px;opacity:.55">&#9662;</span></h2></div>'
+    + '<div class="gsearch">&#128269; A job, a client, a receipt</div>'
+    + '<div class="gchips">'
+    + ["All", "On site", "Quoting", "Waiting", "Done"].map((t, i) =>
+        '<button aria-current="' + (i === 0) + '">' + t + '</button>').join("")
+    + '</div>'
+    + '<div class="ghero"><span class="tagx">Starts today</span>'
+    + '<div class="gt">Taman Desa 3-bedroom refit</div>'
+    + '<div class="gs">Mr. Chan &middot; Tiling, level 2 &middot; RM 48,500</div></div>'
+    + '<div class="gsec"><b>Running now</b><span>See all &rsaquo;</span></div>'
+    + '<div class="grail">' + JOBS.slice(0, 4).map((j) =>
+        '<div class="gitem"><div class="ga"></div><div class="gb">'
+        + '<div class="gn">' + esc(j.t) + '</div>'
+        + '<div class="gm"><span>' + esc(j.who) + '</span><span>' + esc(j.amt) + '</span></div>'
+        + '</div></div>').join("") + '</div>'
+    + '<div class="gsec"><b>Waiting on a reply</b><span>See all &rsaquo;</span></div>'
+    + '<div class="grail">' + JOBS.slice(2, 6).map((j) =>
+        '<div class="gitem"><div class="ga"></div><div class="gb">'
+        + '<div class="gn">' + esc(j.t) + '</div>'
+        + '<div class="gm"><span>' + esc(j.who) + '</span><span>' + esc(j.amt) + '</span></div>'
+        + '</div></div>').join("") + '</div>',
+  jobs: () => '<div class="g1"><h2>Jobs</h2></div><div class="list">' + rowsOf("avatar").join("") + '</div>',
+};
+
+/* ── 候选 10 ← Gojek ─────────────────────────────────────────────────── */
+REG.cand10 = {
+  zh: "入口墙", en: "cand10 · Gojek",
+  why: "抄 Gojek。满幅有色顶区＋圆角搜索条、一张压在顶区下缘的卡、一整片圆形彩色图标墙 —— 模块开得最多的那种老板，一屏就把全部入口摊开。",
+  tabs: [["today", "home", "Home"], ["jobs", "job", "Jobs"], ["money", "cash", "Money"], ["clients", "user", "Clients"]],
+  fab: false,
+  today: () =>
+    '<div class="jtop"><div class="jrow"><div class="jsearch">&#128269; What do you need?</div>'
+    + '<span class="jme">CT</span></div></div>'
+    + '<div class="jpromo"><div class="jp1"><div class="jpt">RM 3,000 deposit unused</div>'
+    + '<div class="jps">Apply it to a job</div></div>'
+    + '<div class="jpa"><div><span class="rc">&#43;</span>Add</div>'
+    + '<div><span class="rc">&#8599;</span>Use</div></div></div>'
+    + '<div class="jwall">'
+    + [["QT", "Quotes", "jade", 2], ["OR", "Orders", "brass", 0], ["JB", "Jobs", "primary", 3],
+       ["RC", "Receipts", "clay", 0], ["EX", "Expenses", "brass", 0], ["ST", "Stock", "jade", 1],
+       ["PO", "Purchases", "primary", 0], ["CU", "Clients", "clay", 0], ["SP", "Suppliers", "jade", 0],
+       ["TM", "Crew", "brass", 0], ["RP", "Reports", "primary", 0], ["WB", "Website", "clay", 0],
+       /* 16 格不是 12 —— 12 格底下空 215px，而 Gojek 那面墙本来就是满的。 */
+       ["EN", "Enquiries", "jade", 4], ["CM", "Commission", "brass", 0],
+       ["RE", "Reconcile", "primary", 0], ["ST2", "Settings", "clay", 0]]
+        .map(([a, b, t, n]) => '<button><span class="jc" style="background:color-mix(in srgb, var(--' + t + ') 76%, #000)">'
+          + a + (n ? '<em>' + n + '</em>' : "") + '</span>' + b + '</button>').join("")
+    + '</div>',
+  jobs: () => '<div class="hd"><h2>Jobs</h2></div><div class="list">' + rowsOf("dot").join("") + '</div>',
+};
 
 function render(key, screen) {
   const r = REG[key];
