@@ -189,6 +189,13 @@ export type RecordFormCopy = {
   countRunning: string;
   countSame: string;
   countDiff: string;
+  /* 一箱 24 罐（lib/portal/pack-units.ts）。底下存的永远是最小那个单位。 */
+  packHowMany: string;
+  packLoose: string;
+  packThatIs: string;
+  /* 并排的时候用的短字。完整那一句留给 aria-label。 */
+  packShort: string;
+  packLooseShort: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -379,6 +386,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       countRunning: "在记…",
       countSame: "跟系统一样，不用记。",
       countDiff: "会记一笔：{n}",
+      packHowMany: "几箱",
+      packLoose: "另外几个",
+      packThatIs: "也就是",
+      packShort: "几箱",
+      packLooseShort: "另外几个",
     },
   },
   en: {
@@ -535,6 +547,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       countRunning: "Recording…",
       countSame: "Same as the system — nothing to record.",
       countDiff: "This will record: {n}",
+      packHowMany: "How many packs",
+      packLoose: "And how many loose",
+      packThatIs: "that is",
+      packShort: "Packs",
+      packLooseShort: "Loose",
     },
   },
 };

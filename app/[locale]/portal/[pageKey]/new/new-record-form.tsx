@@ -1013,6 +1013,12 @@ export function NewRecordForm({
                     return Number.isFinite(n) ? n : null;
                   })()}
                   unit={values.unit ?? ""}
+                  /* 一箱几个。他打了「1 箱 = 24 罐」，从今天起有东西读它。 */
+                  packSize={(() => {
+                    const n = Number((values.pack_size ?? "").replace(/[^\d.]/g, ""));
+                    return Number.isFinite(n) && n > 0 ? n : null;
+                  })()}
+                  packUnit={values.pack_unit ?? ""}
                   /* 记完把新的数量放回这一格。见 Stocktake 的档头 ——
                      少了这一句，资料库变了而画面上那个数字不动。 */
                   onCounted={(n) => setValues((v) => ({ ...v, amount: String(n) }))}

@@ -66,7 +66,11 @@ try {
 
   const { data: item, error: itemErr } = await api.rpc("add_catalog_item", {
     in_project_id: proj.id, in_module_key: "inventory",
-    in_name: "Cement 50kg", in_unit: "bags",
+    in_name: "Cement 50kg", in_unit: "tins",
+    /* 一箱 24 罐 —— 批发跟五金真正在数的单位（任务 61）。
+       这两栏从 20260901070000 就存得进去，而在今天之前
+       **没有任何地方拿它算过东西**。 */
+    in_pack_size: 24, in_pack_unit: "carton",
   });
   if (itemErr) throw new Error(`item: ${itemErr.message}`);
   itemId = item.id;
@@ -103,15 +107,15 @@ try {
 
       /* 🔴 按下去之前要先讲会发生什么 —— 他多打了一个零，
          这一行是他唯一发现得了的地方。 */
-      await page.getByLabel("How many are on the shelf now").fill("84");
+      await page.getByLabel("And how many loose").fill("84");
       await page.waitForTimeout(400);
       const withPreview = (await page.locator("main").innerText()).replace(/\s+/g, " ");
-      say("先讲会记一笔多少", /This will record: −7 bags/.test(withPreview),
+      say("先讲会记一笔多少", /This will record: −7 tins/.test(withPreview),
         withPreview.slice(withPreview.indexOf("Stocktake"), withPreview.indexOf("Stocktake") + 260));
 
       /* 数出来一样的时候，按钮要按不下去 —— 一笔 0 的流水是他帐上
          一行没有发生过的事。 */
-      await page.getByLabel("How many are on the shelf now").fill("91");
+      await page.getByLabel("And how many loose").fill("91");
       await page.waitForTimeout(400);
       const same = (await page.locator("main").innerText()).replace(/\s+/g, " ");
       const disabled = await page.getByRole("button", { name: /^Record it$/i }).isDisabled();
@@ -119,7 +123,7 @@ try {
         /Same as the system/i.test(same) && disabled, `${same.slice(0, 200)} · disabled=${disabled}`);
 
       /* 真的记一次 */
-      await page.getByLabel("How many are on the shelf now").fill("84");
+      await page.getByLabel("And how many loose").fill("84");
       await page.waitForTimeout(300);
       await page.getByRole("button", { name: /^Record it$/i }).click();
       await page.waitForTimeout(5000);
@@ -130,6 +134,19 @@ try {
       const { data: hand } = await api
         .from("stock_on_hand").select("on_hand").eq("item_id", itemId).maybeSingle();
       say("记完，架上是 84", Number(hand?.on_hand) === 84, `${hand?.on_hand}`);
+
+      /* 🔴 一箱 24 罐：他打「3 箱 19 罐」要变成 91。
+         `pack_size` 存得进去而没有人读它，从今天起有人读了。 */
+      await page.getByLabel("How many packs").fill("3");
+      await page.getByLabel("And how many loose").fill("19");
+      await page.waitForTimeout(400);
+      const packPreview = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+      say("按箱数得出来，而且讲得出等於几罐",
+        /This will record: \+7 tins/.test(packPreview),
+        packPreview.slice(packPreview.indexOf("Stocktake"), packPreview.indexOf("Stocktake") + 300));
+      say("而且现在有几箱几罐也讲得出来",
+        /3 carton \+ 12 tins/.test(packPreview),
+        packPreview.slice(packPreview.indexOf("Stocktake"), packPreview.indexOf("Stocktake") + 300));
       /* ⚠️ 「架上有几个」是一个 <input>，而 **innerText 不含 input 的值** ——
          第一版拿 innerText 去找 84，当然找不到，然后我以为画面没更新。
          **同一天第六次量错东西。**（而那一刻画面确实也有一个真的毛病，
