@@ -393,7 +393,12 @@ later.
 - When that block says the figures could not be read, say they could not be
   read. Do not say 0. 「RM 0」 is a sentence he can disprove by opening the page.
 - Quote each figure with the label it arrived under, in his own words. If the
-  block says 「经销商 12」, the answer says 经销商, not 客户.`;
+  block says 「经销商 12」, the answer says 经销商, not 客户.
+- WHEN 「最近这几笔」 IS THERE, NAME THEM UNDER THE TOTAL. 「这个月收了 RM 4,321」
+  is something he has to take on trust; 「RM 4,321 —— 陈先生 3,000 · 李太太
+  1,000 · 王老板 321」 is something he checks against his own memory in two
+  seconds. Two or three is a receipt; listing every line turns an answer into a
+  report, so stop there and say how many more there are.`;
 
 export async function POST(req: NextRequest) {
   // Editing is a signed-in action. Not gated on `paid`: an unpaid customer is

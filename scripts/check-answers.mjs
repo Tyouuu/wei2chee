@@ -48,6 +48,10 @@ const BASE = process.env.BASE ?? "http://localhost:3000";
 /** 一个不会跟他真的记录撞名的对方。清理的时候就靠它认。 */
 const MARK = `对帐测试-${Date.now().toString().slice(-6)}`;
 const AMOUNT = 4321;
+/** 第二笔，让总额不等於任何单独一笔 —— 收据那一半才验得到。 */
+const MATE = `对帐测试乙-${Date.now().toString().slice(-6)}`;
+const MATE_AMOUNT = 1234;
+const TOTAL = AMOUNT + MATE_AMOUNT;
 
 const rows = [];
 const fail = (name, why) => { rows.push({ name, ok: false, why }); console.log(`FAIL  ${name} — ${why}`); };
@@ -107,18 +111,24 @@ try {
 
   /* 马来西亚的今天，不是伺服器的。伺服器跑 UTC，而这一笔要落在他的这个月。 */
   const myt = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+  /* TWO receipts, not one. With a single row the total IS that row, so an
+     assistant that never names the rows still looks right -- and the receipt
+     under the total, which is the whole point of listing them, goes untested. */
   const seeded = await fetch(`${DB}/rest/v1/ledger_entries`, {
     method: "POST",
     headers: { ...head, Prefer: "return=representation" },
-    body: JSON.stringify({
-      project_id: pid,
-      module_key: "payments",
-      doc_no: `CHK-${Date.now().toString().slice(-8)}`,
-      party: MARK,
-      direction: "in",
-      amount_cents: AMOUNT * 100,
-      entry_on: myt,
-    }),
+    body: JSON.stringify([
+      {
+        project_id: pid, module_key: "payments",
+        doc_no: `CHK-${Date.now().toString().slice(-8)}`,
+        party: MARK, direction: "in", amount_cents: AMOUNT * 100, entry_on: myt,
+      },
+      {
+        project_id: pid, module_key: "payments",
+        doc_no: `CHK-${(Date.now() + 1).toString().slice(-8)}`,
+        party: MATE, direction: "in", amount_cents: MATE_AMOUNT * 100, entry_on: myt,
+      },
+    ]),
   }).then((r) => r.json());
   console.log(`\n种了一笔：${Array.isArray(seeded) ? seeded.length : 0} 笔 · ${JSON.stringify(seeded).slice(0, 160)}`);
 
@@ -137,28 +147,71 @@ try {
     const money = await ask(p, "这个月收了多少", "dashboard");
     console.log(`\n问：这个月收了多少\n答：${money.said}`);
 
-    /* 4321 会被格式化成 4,321。两种写法都收。 */
-    const shows = /4,?321/.test(money.said);
-    if (shows) pass("答得出这个月收了多少", "引到了 4,321");
-    else fail("答得出这个月收了多少", `没有引到那个数字：「${money.said}」`);
+    /* 5555 会被格式化成 5,555。两种写法都收 —— 千分位插在倒数第三位。 */
+    const digits = String(TOTAL);
+    const want = new RegExp(`${digits.slice(0, -3)},?${digits.slice(-3)}`);
+    if (want.test(money.said)) pass("答得出这个月收了多少", `引到了 ${TOTAL}`);
+    else fail("答得出这个月收了多少", `没有引到那个总额：「${money.said}」`);
+
+    /*
+      收据那一半，而这一条我先写错过一次，值得写下来。
+
+      第一版硬性要求「问总额的时候一定要顺便列出那几笔」，跑起来红了 ——
+      而去探了之后，那几笔**明明有送到模型面前**：问「分别是谁付的」，它答
+      「探针甲付 RM 3,000，探针乙付 RM 1,000」，一个不漏。
+
+      所以红的不是产品，是我把自己的偏好写成了正确答案。「这个月收了多少」
+      问的就是一个数字，回一个数字是对的；这个仓库另一条规矩还写着
+      「改动一看就懂就不要解释」。
+
+      改成量真正的那件事：**他要得到明细的时候，要得到。**
+      硬性守的是能力；顺不顺便列出来只印出来看，不判它对错。
+    */
+    const detail = await ask(p, "这个月收了多少，分别是谁付的", "dashboard");
+    console.log(`\n问：这个月收了多少，分别是谁付的\n答：${detail.said}`);
+    const named = detail.said.includes(MARK) || detail.said.includes(MATE);
+    if (named) pass("要得到明细的时候，要得到");
+    else fail("要得到明细的时候，要得到", `没有点到任何一笔：「${detail.said}」`);
+
+    const volunteered = money.said.includes(MARK) || money.said.includes(MATE);
+    console.log(`   （只问总额的时候有没有顺便列：${volunteered ? "有" : "没有"} —— 这一栏只看，不判）`);
 
     if (money.applied > 0) fail("问问题不准动页面", `动了 ${money.applied} 处`);
     else pass("问问题不准动页面");
   }
 
   /* ── 三 · 答不了的，要讲原因，而且不准编一个数字 ─────────────────── */
+  /*
+    ⚠️ 「不准给数字」是我第一版写的，而它是错的，而且是同一个毛病的第二次：
+    拿一个代理指标去量真正要守的性质。
+
+    实测它答的是「算不了利润，因为费用还不能挂到工作单上；**目前只能确认本月
+    收款是 RM 5,555，不是利润**」—— 那是这一题最好的答案：拒绝了它不知道的，
+    讲了原因，再给一个它确实知道的，而且**明写那不是利润**。判它红等於教产品
+    在答不了的时候闭嘴。
+
+    要守的从来不是「没有数字」，是「**没有编出来的数字**」。所以改成：
+    答案里出现的每一个金额，都必须是我们真的给过它的那几个。
+  */
+  const known = [String(TOTAL), String(AMOUNT), String(MATE_AMOUNT)].map((d) =>
+    d.length > 3 ? `${d.slice(0, -3)},?${d.slice(-3)}` : d,
+  );
   for (const q of ["这个月赚多少", "库存还剩多少"]) {
     const r = await ask(p, q, "dashboard");
     console.log(`\n问：${q}\n答：${r.said}`);
-    if (/RM\s*[\d,]+/.test(r.said)) fail(`答不了的不准给数字（${q}）`, r.said);
-    else pass(`答不了的不准给数字（${q}）`);
+    const amounts = r.said.match(/RM\s*[\d,]+/g) ?? [];
+    const invented = amounts.filter(
+      (a) => !known.some((k) => new RegExp(k).test(a.replace(/\s/g, ""))),
+    );
+    if (invented.length) fail(`答不了的不准编数字（${q}）`, `编了 ${invented.join(" · ")}`);
+    else pass(`答不了的不准编数字（${q}）`, amounts.length ? `引了 ${amounts.join(" · ")}，都是真的` : "没给数字");
     if (r.said.length < 6) fail(`答不了的要讲原因（${q}）`, "太短，等於没讲");
     else pass(`答不了的要讲原因（${q}）`);
   }
 } finally {
   /* 建过的一律删掉。留一笔在他自己的预览帐上，等於我们改了他的数字。 */
   const gone = await fetch(
-    `${DB}/rest/v1/ledger_entries?party=eq.${encodeURIComponent(MARK)}`,
+    `${DB}/rest/v1/ledger_entries?or=(party.eq.${encodeURIComponent(MARK)},party.eq.${encodeURIComponent(MATE)})`,
     { method: "DELETE", headers: { ...head, Prefer: "return=representation" } },
   ).then((r) => r.json()).catch(() => []);
   console.log(`\n清掉 ${Array.isArray(gone) ? gone.length : 0} 笔测试资料`);

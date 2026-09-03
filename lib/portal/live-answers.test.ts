@@ -19,6 +19,10 @@ const withFigures = (over: Partial<BusinessFacts> = {}): BusinessFacts => ({
     { label: "还没用完的订金", value: "RM 3,000" },
     { label: "经销商", value: "12 个" },
   ],
+  rows: [
+    { doc: "RC-2026-0007", party: "陈先生", amount: "RM 3,000", on: "2026-09-02" },
+    { doc: "QT-2026-0012", party: "李太太", amount: "RM 22,800", on: "2026-08-30", stage: "Awaiting reply" },
+  ],
   trend: [
     { label: "4月", value: 1 }, { label: "5月", value: 2 },
     { label: "6月", value: 3 }, { label: "7月", value: 4 },
@@ -115,8 +119,12 @@ describe("走势有上限", () => {
   it("最多六点，跟他画面上那张图一样远", () => {
     const many = Array.from({ length: 24 }, (_, i) => ({ label: `${i}月`, value: i }));
     const out = renderBusinessFacts(withFigures({ trend: many.slice(-6) }));
-    /* 已经在 fetch 那一层切好；这里守的是渲染不会把它变长。 */
-    expect(out.split("·").length - 1).toBeLessThanOrEqual(6);
+    /* ⚠️ 只数走势那一行。第一版数的是整段里有几个「·」，而那一天整段只有
+       走势在用它 —— 加了「最近这几笔」之后它就开始量别人的东西，当场变红。
+       一把「刚好只有一个东西符合」的尺，看起来跟一把量对了的尺一模一样。 */
+    const line = out.split("\n").find((l) => l.includes("近六个月")) ?? "";
+    expect(line).not.toBe("");
+    expect(line.split("·").length - 1).toBeLessThanOrEqual(6);
   });
 });
 
@@ -128,5 +136,36 @@ describe("英文的系统拿到英文", () => {
     expect(out).toContain("counted from their own books");
     expect(out).toContain("Cannot be answered");
     expect(out).not.toContain("答不了的");
+  });
+});
+
+describe("总额底下的那几笔", () => {
+  /* 一个他打不开的总数，是一个他只能相信的总数。数字是答案，那几笔是收据。 */
+  it("单号 · 对方 · 金额 · 日期都给出去", () => {
+    const out = renderBusinessFacts(withFigures());
+    expect(out).toContain("RC-2026-0007");
+    expect(out).toContain("陈先生");
+    expect(out).toContain("RM 3,000");
+    expect(out).toContain("2026-09-02");
+  });
+
+  it("走单那几笔连它走到哪一格一起给", () => {
+    expect(renderBusinessFacts(withFigures())).toContain("Awaiting reply");
+  });
+
+  it("没有记录的时候不出现「最近这几笔」这个空标题", () => {
+    const out = renderBusinessFacts(withFigures({ rows: [] }));
+    expect(out).not.toContain("最近这几笔");
+  });
+
+  /* WrenAI 的 row limit，而理由是他的不是我们的：
+     「列出全部客户」不可以在一个聊天面板里回三千行。 */
+  it("再多也不会全部倒进去", () => {
+    const many = Array.from({ length: 200 }, (_, i) => ({
+      doc: `RC-${i}`, party: `客${i}`, amount: "RM 1", on: "2026-09-01",
+    }));
+    const out = renderBusinessFacts(withFigures({ rows: many }));
+    const listed = out.split("\n").filter((l) => l.startsWith("- RC-")).length;
+    expect(listed).toBeLessThanOrEqual(10);
   });
 });

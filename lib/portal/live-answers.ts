@@ -58,6 +58,7 @@ const WORDS = {
     heading: "这家生意今天的数字（截至 <at>，全部从他自己的书数出来）",
     vsLast: "上个月",
     trend: "近六个月",
+    rows: "最近这几笔（他自己的记录，可以直接引）",
     cannot: "答不了的（要老实讲，并说出为什么）",
     none: "他还没有任何记录，所以一个数字都数不出来。",
     unread: "读不到他的数字（这一次的查询失败了）。不要给任何数字，也不要说 0。",
@@ -66,6 +67,7 @@ const WORDS = {
     heading: "This business's figures today (as at <at>, all counted from their own books)",
     vsLast: "last month",
     trend: "last six months",
+    rows: "The last few records (his own — quote them directly)",
     cannot: "Cannot be answered (say so plainly, and say why)",
     none: "They have no records yet, so nothing can be counted.",
     unread: "Their figures could not be read this time. Give no number, and never say 0.",
@@ -103,11 +105,31 @@ const GAPS = {
  *  disagree about how far back the business can see. */
 const TREND_CAP = 6;
 
+/**
+ * At most this many records reach the prompt.
+ *
+ * WrenAI's row limit, and the reason is his, not ours: 「列出全部客户」 must
+ * not come back as three thousand lines in a chat panel. Five is enough to
+ * make a total checkable and short enough that the answer stays an answer
+ * rather than becoming a report.
+ */
+const ROW_CAP = 5;
+
 export type BusinessFacts = {
   /** Malaysia's date, not the server's. Every figure below is bounded by a
    *  month, and the server runs on UTC -- see nowInMalaysia. */
   asOf: string;
   figures: { label: string; value: string; previous?: string }[];
+  /**
+   * The few records behind the figures.
+   *
+   * A total he cannot open is a total he has to take on trust, and this is
+   * the half of vanna's answer worth taking: it returns the number AND the
+   * table under it. 「这个月收了 RM 4,321」 is an assertion; 「三笔：陈先生
+   * 3,000 · 李太太 1,000 · 王老板 321」 is something he can check against
+   * his own memory in two seconds.
+   */
+  rows: { doc: string; party: string; amount: string; on: string; stage?: string }[];
   trend: { label: string; value: number }[];
   lang: "zh" | "en";
   /** True when the read itself failed, as opposed to succeeding and finding
@@ -158,7 +180,7 @@ export async function fetchBusinessFacts(
      Collapsing the first two is how a product ends up telling an owner his
      month is empty because a query timed out. */
   if (stats === undefined) {
-    return { asOf: malaysianDate(at), figures: [], trend: [], lang, unread: true };
+    return { asOf: malaysianDate(at), figures: [], rows: [], trend: [], lang, unread: true };
   }
   /* ⚠️ NOT null. A read that succeeded and found nothing is a FACT about
      his month -- 「你还没有任何记录」 -- and it has to reach the model, because
@@ -169,7 +191,7 @@ export async function fetchBusinessFacts(
      This was a real bug in the first version of this file: returning null here
      meant the 「还没有记录」 sentence below could never be rendered. */
   if (!stats || !stats.tiles.length) {
-    return { asOf: malaysianDate(at), figures: [], trend: [], lang, unread: false };
+    return { asOf: malaysianDate(at), figures: [], rows: [], trend: [], lang, unread: false };
   }
 
   return {
@@ -179,10 +201,69 @@ export async function fetchBusinessFacts(
       value: t.value,
       previous: t.previous,
     })),
+    rows: await fetchRecentRows(supabase, projectId),
     trend: stats.trend.slice(-TREND_CAP),
     lang,
     unread: false,
   };
+}
+
+/**
+ * The last few records, so a total can be opened rather than believed.
+ *
+ * ⚠️ Its own query rather than a second return value out of fetchLiveStats:
+ * that function's job is the four tiles and it is read by the page every
+ * time anybody opens the dashboard. Widening it to carry rows it does not
+ * draw would make every page load pay for a panel nobody has opened.
+ *
+ * ⚠️ Failure is silent and returns nothing. The figures are the answer; the
+ * rows are the receipt. A missing receipt must not cost him the answer.
+ */
+async function fetchRecentRows(
+  supabase: SupabaseClient,
+  projectId: string,
+): Promise<BusinessFacts["rows"]> {
+  try {
+    const [ledger, pipeline] = await Promise.all([
+      supabase
+        .from("ledger_entries")
+        .select("doc_no, party, amount_cents, entry_on, direction")
+        .eq("project_id", projectId)
+        .order("entry_on", { ascending: false })
+        .limit(ROW_CAP),
+      supabase
+        .from("pipeline_records")
+        .select("doc_no, party, amount_cents, issued_on, stage")
+        .eq("project_id", projectId)
+        .is("archived_at", null)
+        .order("issued_on", { ascending: false })
+        .limit(ROW_CAP),
+    ]);
+
+    const money = (c: number | null) =>
+      typeof c === "number" ? `RM ${(c / 100).toLocaleString("en-MY")}` : "";
+
+    return [
+      ...((ledger.data ?? []) as Record<string, unknown>[]).map((r) => ({
+        doc: String(r.doc_no ?? ""),
+        party: String(r.party ?? ""),
+        /* Direction rather than a sign: 「out」 on a receipt line is a refund,
+           and printing it as a negative is how a reader mistakes it for a
+           mistyped amount. The ledger itself made this choice first. */
+        amount: `${money(r.amount_cents as number)}${r.direction === "out" ? " (out)" : ""}`,
+        on: String(r.entry_on ?? ""),
+      })),
+      ...((pipeline.data ?? []) as Record<string, unknown>[]).map((r) => ({
+        doc: String(r.doc_no ?? ""),
+        party: String(r.party ?? ""),
+        amount: money(r.amount_cents as number),
+        on: String(r.issued_on ?? ""),
+        stage: String(r.stage ?? "") || undefined,
+      })),
+    ];
+  } catch {
+    return [];
+  }
 }
 
 /** Malaysia's calendar date. Not toISOString(): at 8am in Kuala Lumpur the
@@ -220,9 +301,24 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     lines.push(`- ${w.trend}: ${facts.trend.map((p) => `${p.label} ${p.value}`).join(" · ")}`);
   }
 
+  /* The receipt under the total. Capped upstream; capped again here so a
+     future caller cannot widen it by accident. */
+  const receipt = facts.rows.length
+    ? [
+        "",
+        `${w.rows}:`,
+        ...facts.rows
+          .slice(0, ROW_CAP * 2)
+          .map((r) =>
+            `- ${[r.doc, r.party, r.amount, r.on, r.stage].filter(Boolean).join(" · ")}`,
+          ),
+      ]
+    : [];
+
   return [
     w.heading.replace("<at>", facts.asOf),
     ...lines,
+    ...receipt,
     "",
     `${w.cannot}:`,
     ...gaps.map((g) => `- ${g}`),
