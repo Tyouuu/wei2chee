@@ -17,6 +17,12 @@ import {
 } from "./allocation-editor";
 import type { OpenDocument } from "../record-context";
 import type { DocumentSettlement } from "@/lib/portal/allocations";
+import {
+  AddressEditor,
+  addressesForDb,
+  type AddressRow,
+} from "./address-editor";
+import type { PartyAddress } from "../record-context";
 
 /**
  * 加一单 — the form a person fills in.
@@ -98,6 +104,7 @@ export function NewRecordForm({
   stages,
   trade,
   openDocuments,
+  partyAddresses,
   settlement,
   backHref,
   copy,
@@ -140,6 +147,10 @@ export function NewRecordForm({
     terms?: TermRow[];
     /** 钱那一边：这笔钱已经分摊给哪几张单。 */
     allocations?: AllocationRowInput[];
+    /** 名册那一边：这个对象的地址。 */
+    addresses?: AddressRow[];
+    /** 走单那一边：这张单是哪一个工地的。 */
+    siteAddressId?: string | null;
     /** Its own document number, for the preview. Never present on a new one --
      *  next_doc_no() issues it inside the write, so anything shown before that
      *  would be a guess printed where the real number goes. */
@@ -172,6 +183,8 @@ export function NewRecordForm({
    *  ⚠️ 空阵列的意思是「没有单可以分」，画面上要那样讲 —— 它跟「读不到」
    *  在这里长得一模一样，而那正是这个仓库被骗过四次的形状。 */
   openDocuments?: readonly OpenDocument[];
+  /** 这一家所有对象的地址。只有走单那几页拿得到 —— 名册页自己在编辑它们。 */
+  partyAddresses?: readonly PartyAddress[];
   /** 这张单收到多少。⚠️ null = **没有问**（他看不到钱），不是零 ——
    *  所以那一整段不画，而不是画一个 RM 0。 */
   settlement?: DocumentSettlement | null;
@@ -213,6 +226,47 @@ export function NewRecordForm({
   /* 分摊只在钱那几页，而且只有拿得到那份清单的人（看得到钱的老板）。
      ⚠️ 冲正那一笔不给分摊 —— 它是撤销，资料库那边也会拒绝。 */
   const canAllocate = isLedger && !!openDocuments && !record?.reversed;
+  /* 名册那一边：他的地址。
+     ⚠️ 还没有地址行、而旧栏位里有一行字的时候，把那一行**读进编辑器** ——
+     不然他打开一个有地址的老客户，看到的是一个空的地址清单，
+     而那一行字躺在一个他再也看不到的栏位里。保存一次就搬过来了。 */
+  const [addresses, setAddresses] = useState<AddressRow[]>(
+    record?.addresses?.length
+      ? record.addresses
+      : (record?.values.address ?? "").trim()
+      ? [
+          {
+            label: "",
+            line: (record?.values.address ?? "").trim(),
+            region: (record?.values.region ?? "").trim(),
+            isBilling: true,
+          },
+        ]
+      : [],
+  );
+  /* 表格那一行要讲得出他在哪里，而它读的是旧那两栏。所以保存的时候
+     从这一行抄回去 —— 勾了帐单的那一行，没有就第一行。 */
+  const primaryAddress =
+    addresses.find((a) => a.isBilling && a.line.trim()) ??
+    addresses.find((a) => a.line.trim()) ??
+    null;
+  /* 走单那一边：这张单是哪一个工地的。 */
+  const [siteId, setSiteId] = useState<string>(record?.siteAddressId ?? "");
+
+  /* 这个客户的地址。⚠️ 用的是**跟保存时同一条**认人规矩：完全相符、
+     而且只有一个 —— 两个同名的客户不准猜（20260901060000）。
+     两边用同一条，是为了不让画面上挑得到的东西在保存的时候被拒绝。 */
+  const chosenParty = (() => {
+    const typed = (values.secondary ?? "").trim().toLowerCase();
+    if (!typed) return null;
+    const hits = parties.filter((x) => x.name.trim().toLowerCase() === typed);
+    return hits.length === 1 ? hits[0].id : null;
+  })();
+  const sitesForParty = (partyAddresses ?? []).filter((a) => a.partyId === chosenParty);
+  /* 🔴 他换了客户，上一个客户的工地就不再属於这一张单。资料库会拒绝
+     （'that address belongs to somebody else'），而让他保存之后才知道，
+     比现在当成没挑糟。 */
+  const siteOk = sitesForParty.some((a) => a.id === siteId) ? siteId : "";
   /* 🔴 HOW MUCH IS LEFT IS NOT HIS TO TYPE, once the item exists.
      It is the sum of the movements (20260901070000), so a box here would be
      overwritten by the next render -- the same control-that-lies the money
@@ -274,8 +328,17 @@ export function NewRecordForm({
       ? [
           { key: "contact_person", label: copy.contactPerson },
           { key: "email", label: copy.email, inputMode: "email" },
-          { key: "region", label: copy.region },
-          { key: "address", label: copy.address },
+          /* 🔴 `region` 跟 `address` 那两格拿掉了 —— 上面那个地址编辑器
+             已经在写同一件事，而**同一个事实有两个写它的地方**，正是这个
+             仓库最贵的那一类缺陷（他在一个格子里改了，另一格没变）。
+
+             看图才看到的：新的「Addresses」编辑器画好之后，
+             「Address, email and the rest」底下那两格还在。
+
+             那两栏没有从资料库里拿掉：表格那一行的联络字串还在读它们
+             （contactLine），所以它们变成一个**只有一个写它的人**的快取 ——
+             保存的时候从「帐单寄这里」那一行抄回去，见下面。
+             跟 allocated_cents 从今天起只有触发器在写，是同一个做法。 */
           /* ⚠️ 地址 · 公司注册号 · 税号 WERE HELD BACK ON PURPOSE, and the reason
              stopped being true on 2026-08-31. Until a record had a page of its
              own there was nowhere to show them back, and a box that swallows
@@ -396,8 +459,11 @@ export function NewRecordForm({
             in_phone: (values.phone ?? "").trim(),
             in_whatsapp: (values.whatsapp ?? "").trim(),
             in_email: (values.email ?? "").trim(),
-            in_region: (values.region ?? "").trim(),
-            in_address: (values.address ?? "").trim(),
+            /* 旧的那两栏从「帐单寄这里」那一行抄过来。没有勾帐单的时候
+               用第一个 —— 表格上那一行要讲得出他在哪里，而一个只有
+               三个工地、没有帐单地址的客户，第一个工地就是答案。 */
+            in_region: primaryAddress?.region ?? "",
+            in_address: primaryAddress?.line ?? "",
             in_reg_no: (values.reg_no ?? "").trim(),
             in_tax_id: (values.tax_id ?? "").trim(),
             in_status: (values.status ?? "").trim(),
@@ -428,6 +494,10 @@ export function NewRecordForm({
                「这一栏不要动」，所以少了这一句，一个日子填进去就永远拿不掉
                （20260903010000）。 */
             in_clear_due_on: !!dateKind && !dueOn,
+            in_site_address_id: siteOk || null,
+            /* 同一个形状：他把工地拿掉，就要真的拿掉。null 的意思是
+               「这一栏不要动」，少了这一句，一个工地挂上去就永远拿不下来。 */
+            in_clear_site: !siteOk,
           });
       if (fixErr) {
         setError(`${copy.failed}${fixErr.message ? ` — ${fixErr.message}` : ""}`);
@@ -444,6 +514,19 @@ export function NewRecordForm({
         });
         if (lineErr) {
           setError(`${copy.failed}${lineErr.message ? ` — ${lineErr.message}` : ""}`);
+          setBusy(false);
+          return;
+        }
+      }
+      /* 地址整份换掉，跟明细/分期同一个形状。空的也写 —— 清空是一次真的编辑。
+         ⚠️ 有单指着的地址，资料库那边会拒绝并且讲得出出路（20260903060000）。 */
+      if (isDirectory) {
+        const { error: addrErr } = await supabase.rpc("set_directory_addresses", {
+          in_party_id: record.id,
+          in_rows: addressesForDb(addresses),
+        });
+        if (addrErr) {
+          setError(`${copy.failed}${addrErr.message ? ` — ${addrErr.message}` : ""}`);
           setBusy(false);
           return;
         }
@@ -606,8 +689,8 @@ export function NewRecordForm({
           in_phone: (values.phone ?? "").trim(),
           in_whatsapp: (values.whatsapp ?? "").trim(),
           in_email: (values.email ?? "").trim(),
-          in_region: (values.region ?? "").trim(),
-          in_address: (values.address ?? "").trim(),
+          in_region: primaryAddress?.region ?? "",
+          in_address: primaryAddress?.line ?? "",
           in_reg_no: (values.reg_no ?? "").trim(),
           in_tax_id: (values.tax_id ?? "").trim(),
           in_status: (values.status ?? "").trim(),
@@ -637,6 +720,7 @@ export function NewRecordForm({
           in_extra: extra,
           in_idempotency_key: idempotencyKey,
           in_due_on: dueOn || null,
+          in_site_address_id: siteOk || null,
         });
 
     if (err) {
@@ -660,6 +744,18 @@ export function NewRecordForm({
         in_record_id: made.id,
         in_terms: termsForDb(terms),
       });
+    }
+    if (isDirectory && addresses.length && made?.id) {
+      /* 🔴 讲出来，不要吞掉。这个客户已经存进去了，而他以为地址也存了。 */
+      const { error: addrErr } = await supabase.rpc("set_directory_addresses", {
+        in_party_id: made.id,
+        in_rows: addressesForDb(addresses),
+      });
+      if (addrErr) {
+        setError(`${copy.failed}${addrErr.message ? ` — ${addrErr.message}` : ""}`);
+        setBusy(false);
+        return;
+      }
     }
     if (isLedger && canAllocate && allocs.length && made?.id) {
       /* 🔴 分摊失败要讲出来，不可以吞掉。这笔钱已经记进去了，
@@ -803,6 +899,19 @@ export function NewRecordForm({
                   : copy.expected,
               value: dueOn,
             }
+          : null
+      }
+      /* 🔴 哪一个工地，印在那张纸上。那不是一个内部栏位 ——
+         师傅拿着这张纸出门，而一张讲不出去哪里的报价单他开不出门。
+         只有他真的挑了才出现（没填的东西不上线）。 */
+      site={
+        siteOk
+          ? (() => {
+              const a = sitesForParty.find((x) => x.id === siteOk);
+              return a
+                ? { label: copy.site, value: [a.label, a.line].filter(Boolean).join(" · ") }
+                : null;
+            })()
           : null
       }
       /* 分期表印在那张纸上。算术在 payment-terms.ts，这里只排版。
@@ -1039,8 +1148,38 @@ export function NewRecordForm({
         </div>
       ) : null}
 
+      {/* 他的地址。一格自由文字装不下「帐单一个地方、工地两三个」。 */}
+      {isDirectory ? (
+        <AddressEditor rows={addresses} onChange={setAddresses} copy={copy} />
+      ) : null}
+
       {isPipeline ? (
         <>
+          {/* ── 这张单是哪一个工地的 ──────────────────────────────────
+              🔴 只有那个客户**真的有两个以上地址**的时候才出现。
+              一个永远只有一个选项的下拉，是一个假的控件；而这个客户只有
+              一个地址的时候，「哪一个工地」这个问题本来就没有第二个答案。 */}
+          {sitesForParty.length > 1 ? (
+            <label className="flex flex-col gap-1.5">
+              <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+                {copy.site}
+              </span>
+              <select
+                aria-label={copy.site}
+                value={siteOk}
+                onChange={(e) => setSiteId(e.target.value)}
+                className="ds-control h-11 w-full [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]"
+              >
+                <option value="">{copy.sitePick}</option>
+                {sitesForParty.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {[a.label, a.line].filter(Boolean).join(" · ")}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
           <LineEditor lines={lines} onChange={setLines} copy={copy} />
           {totalFromLines ? (
             <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">

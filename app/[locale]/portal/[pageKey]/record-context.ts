@@ -68,6 +68,19 @@ export type RecordPageContext = {
   /** 这笔钱可以分摊给哪几张单。只有钱那几页、而且只有看得到钱的人拿得到 ——
    *  一个空阵列在画面上要讲「没有单可以分」，不是「读不到」。 */
   openDocuments: OpenDocument[];
+  /** 这一家所有客户/供应商的地址，给走单那几页挑工地用。
+   *  一个客户只有一个地址的时候不用挑 —— 那时候画面上什么都不出现。 */
+  partyAddresses: PartyAddress[];
+};
+
+/** 一个对象的一个地址。给「这张单是哪一个工地的」那个下拉。 */
+export type PartyAddress = {
+  id: string;
+  partyId: string;
+  label: string;
+  line: string;
+  region: string;
+  isBilling: boolean;
 };
 
 /** 一张还没收齐的单，给分摊那个编辑器挑。 */
@@ -296,6 +309,36 @@ export async function loadRecordPage(
     }
   }
 
+  /* ── 挑工地要的那份清单 ────────────────────────────────────────────────
+     只有走单那几页要 —— 名册页自己在编辑地址，钱那几页不挂工地。
+     一整家的地址加起来通常几十行，所以一次读完比每换一个客户打一次快。 */
+  let partyAddresses: PartyAddress[] = [];
+  if (shape === "pipeline") {
+    const { data: addrRows } = await supabase
+      .from("directory_addresses")
+      .select("id, party_id, label, line, region, is_billing")
+      .eq("project_id", project.id)
+      .order("sort_order")
+      .limit(1000);
+    partyAddresses = (
+      (addrRows ?? []) as {
+        id: string;
+        party_id: string;
+        label: string | null;
+        line: string | null;
+        region: string | null;
+        is_billing: boolean | null;
+      }[]
+    ).map((a) => ({
+      id: a.id,
+      partyId: a.party_id,
+      label: a.label ?? "",
+      line: a.line ?? "",
+      region: a.region ?? "",
+      isBilling: !!a.is_billing,
+    }));
+  }
+
   return {
     locale,
     pageKey,
@@ -314,6 +357,7 @@ export async function loadRecordPage(
     backHref: `/${locale}/portal/${pageKey}`,
     role: workspace.role,
     openDocuments,
+    partyAddresses,
     /* 这一行是什么生意 —— 分期付款表拿它去建议「订金三成 · 动工四成 ·
        完工三成」，而那是一颗他要按的按钮，不是一个预设。 */
     trade: businessContext.industry?.slug ?? null,

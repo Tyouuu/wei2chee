@@ -74,6 +74,7 @@ export function DocumentPreview({
   dateLabel,
   today,
   validity,
+  site,
   schedule,
 }: {
   /** The module's own noun -- 报价单, 进货单, 订单 -- never a word of ours. */
@@ -91,6 +92,9 @@ export function DocumentPreview({
   /** 有效期 / 期限 / 预计到货 —— 印出来那张纸上最要紧的一行之一。
    *  一张没有印有效期的报价单，是一个永远有效的价钱。 */
   validity?: { label: string; value: string } | null;
+  /** 哪一个工地。🔴 印在那张纸上，因为它就是给对方看的那一句 ——
+   *  一张讲不出去哪里的报价单，师傅拿着它开不出门。 */
+  site?: { label: string; value: string } | null;
   /** 分期付款表，已经算好、已经排好版的一行一行。
    *  ⚠️ 这里不算术：算在 lib/portal/payment-terms.ts，那里有测试。 */
   schedule?: { description: string; portionText: string; amountText: string; due: string }[] | null;
@@ -139,6 +143,7 @@ export function DocumentPreview({
               [labels.secondary, values.secondary],
               [dateLabel, today],
               ...(validity ? ([[validity.label, validity.value]] as const) : []),
+              ...(site ? ([[site.label, site.value]] as const) : []),
               [labels.status, values.status],
             ] as const
           ).map(([label, value], i) =>

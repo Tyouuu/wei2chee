@@ -132,6 +132,22 @@ export type RecordFormCopy = {
   stillOwed: string;
   settledAll: string;
   nothingReceived: string;
+  /* 一个客户不只一个地址（20260903060000）。标签是他自己的词，
+     不是一个固定选单 —— 跟 stage 跟 status 同一条。 */
+  addresses: string;
+  addrLabel: string;
+  addrLine: string;
+  addrRegion: string;
+  addrBilling: string;
+  addrAdd: string;
+  /* 那张单是哪一个工地的。 */
+  site: string;
+  sitePick: string;
+  siteNone: string;
+  /* 这个客户的单子。 */
+  theirJobs: string;
+  theirOwing: string;
+  noJobsYet: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -277,6 +293,18 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       stillOwed: "还欠",
       settledAll: "收齐了",
       nothingReceived: "还没收到钱",
+      addresses: "地址",
+      addrLabel: "叫它什么（工地 · 帐单）",
+      addrLine: "地址",
+      addrRegion: "区域",
+      addrBilling: "帐单寄这里",
+      addrAdd: "加一个地址",
+      site: "哪一个工地",
+      sitePick: "整个客户，不指定工地",
+      siteNone: "这个客户还没有第二个地址",
+      theirJobs: "他的单子",
+      theirOwing: "他还欠",
+      noJobsYet: "还没有单子",
     },
   },
   en: {
@@ -388,6 +416,18 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       stillOwed: "Still owed",
       settledAll: "Paid in full",
       nothingReceived: "Nothing received yet",
+      addresses: "Addresses",
+      addrLabel: "Call it (Site · Billing)",
+      addrLine: "Address",
+      addrRegion: "Area",
+      addrBilling: "Send the paperwork here",
+      addrAdd: "Add an address",
+      site: "Which site",
+      sitePick: "The customer, no particular site",
+      siteNone: "This customer has only one address",
+      theirJobs: "Their jobs",
+      theirOwing: "They still owe",
+      noJobsYet: "No jobs yet",
     },
   },
 };

@@ -7,6 +7,7 @@ import { todayInMalaysia } from "@/lib/portal/live-months";
 import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, type DocumentSettlement } from "@/lib/portal/allocations";
+import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { priceSchedule } from "@/lib/portal/payment-terms";
 
 /**
@@ -78,6 +79,13 @@ export default async function EditRecordPage({
   }[] = [];
   /* 钱那一边：这笔钱已经分摊给哪几张单。 */
   let allocations: { recordId: string; termId: string; amount: string }[] = [];
+  /* 名册那一边：这个对象的地址。 */
+  let addresses: { id: string; label: string; line: string; region: string; isBilling: boolean }[] = [];
+  /* 走单那一边：这张单是哪一个工地的。 */
+  let siteAddressId: string | null = null;
+  /* 客户页那一边：他有几单，还欠多少。 */
+  let jobs: PartyJob[] = [];
+  let owing: number | null = null;
   /* 单据那一边：这张单收到多少、还欠多少。
      ⚠️ null 的意思是**没有问**（他看不到钱），不是「零」—— 画面照这个
      决定要不要画那一整段。 */
@@ -106,6 +114,76 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+
+    /* 他的地址。帐单一个地方，工地另一个（20260903060000）。 */
+    const { data: addrRows } = await supabase
+      .from("directory_addresses")
+      .select("id, label, line, region, is_billing")
+      .eq("party_id", recordId)
+      .order("sort_order");
+    /* ── 他有几单在跑，还欠我多少 ──────────────────────────────────────
+       两句的答案本来就在库里，只是从来没有人在这一页问过（任务 81）。
+       🔴 「还欠」只问看得到钱的人 —— 一个师傅拿回来的是空的，
+       而空的会画成「他还欠 RM 48,500」，对一个已经付清的客户撒谎。 */
+    const { data: jobRows } = await supabase
+      .from("pipeline_records")
+      .select("id, module_key, doc_no, title, stage, amount_cents")
+      .eq("party_id", recordId)
+      .is("archived_at", null)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    const jobIds = (jobRows ?? []).map((j: { id: string }) => j.id);
+    jobs = (jobRows ?? []).map(
+      (j: {
+        id: string; module_key: string; doc_no: string | null;
+        title: string | null; stage: string | null; amount_cents: number | null;
+      }) => ({
+        id: j.id,
+        href: `/${locale}/portal/${j.module_key}/${j.id}`,
+        docNo: j.doc_no ?? "",
+        title: j.title ?? "",
+        stage: j.stage ?? "",
+        amount: ringgit(j.amount_cents) ?? "",
+        page: j.module_key,
+      }),
+    );
+
+    if (ctx.role === "owner" && jobIds.length) {
+      const { data: allocRows } = await supabase
+        .from("ledger_allocations")
+        .select("entry_id, record_id, term_id, amount_cents")
+        .in("record_id", jobIds);
+      const entryIds = [...new Set((allocRows ?? []).map((a: { entry_id: string }) => a.entry_id))];
+      const { data: entryRows } = entryIds.length
+        ? await supabase.from("ledger_entries").select("id, adjusts_id").in("id", entryIds)
+        : { data: [] };
+      const gone = reversedIds((entryRows ?? []) as { id: string; adjusts_id: string | null }[]);
+      const facts = ((entryRows ?? []) as { id: string; adjusts_id: string | null }[]).map((e) => ({
+        id: e.id,
+        adjusts_id: e.adjusts_id,
+        reversed: gone.has(e.id),
+      }));
+      owing = (jobRows ?? []).reduce((n: number, j: { id: string; amount_cents: number | null }) => {
+        const s = settleDocument({
+          documentCents: j.amount_cents,
+          allocations: ((allocRows ?? []) as {
+            entry_id: string; record_id: string; term_id: string | null; amount_cents: number;
+          }[]).filter((a) => a.record_id === j.id),
+          entries: facts,
+        });
+        return n + s.outstandingCents;
+      }, 0);
+    }
+
+    addresses = (addrRows ?? []).map(
+      (a: { id: string; label: string | null; line: string | null; region: string | null; is_billing: boolean | null }) => ({
+        id: a.id,
+        label: a.label ?? "",
+        line: a.line ?? "",
+        region: a.region ?? "",
+        isBilling: !!a.is_billing,
+      }),
+    );
   } else if (ctx.shape === "catalog") {
     /* Two reads, because the thing and how much of it there is live in two
        places on purpose -- see 20260901070000. The quantity comes from the
@@ -182,6 +260,7 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+
   } else if (ctx.shape === "reconcile") {
     /* Read from the TABLE and not from the view: what is being edited is what
        the outside said, and our own side is not editable -- it is the sum of
@@ -251,7 +330,7 @@ export default async function EditRecordPage({
       /* doc_no for the preview's head. It exists on a saved document and
          never on a new one -- next_doc_no() issues it inside the write -- so
          this is the only place it can honestly come from. */
-      .select("id, doc_no, title, party, amount_cents, stage, due_on, extra, archived_at")
+      .select("id, doc_no, title, party, amount_cents, stage, due_on, site_address_id, extra, archived_at")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -265,6 +344,7 @@ export default async function EditRecordPage({
     Object.assign(values, ownColumns(data.extra));
     docNo = data.doc_no ?? null;
     dueOn = data.due_on ?? null;
+    siteAddressId = data.site_address_id ?? null;
     archivedAt = data.archived_at;
 
     const { data: rows } = await supabase
@@ -379,10 +459,20 @@ export default async function EditRecordPage({
           trade={ctx.trade}
           backHref={ctx.backHref}
           openDocuments={ctx.openDocuments}
-          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, docNo, dueOn }}
+          partyAddresses={ctx.partyAddresses}
+          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, docNo, dueOn }}
           settlement={settlement}
           copy={copy.form}
         />
+
+        {/* 他的单子。画在表单**底下**，因为它是读的，不是填的 ——
+            而一个客户页上的第二颗「保存」会让他不知道按哪一颗。
+            ⚠️ 只在名册页上。 */}
+        {ctx.isDirectory ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
+          </div>
+        ) : null}
       </main>
     </StyleScope>
   );

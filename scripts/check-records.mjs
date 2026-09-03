@@ -1001,6 +1001,106 @@ try {
   });
   check("别人的钱分摊不了", !!allocNotMine);
 
+  /* ── 帐单一个地方，工地另一个 ──────────────────────────────────────
+     20260903060000 · 20260903070000。 */
+  console.log("\n⑭ 一个客户不只一个地址");
+
+  const { data: hasSites } = await party({ in_name: "多地址客户" });
+  const { data: addrs, error: addrErr } = await c.rpc("set_directory_addresses", {
+    in_party_id: hasSites.id,
+    in_rows: [
+      { label: "帐单地址", line: "12 Jalan Bukit, Taman Desa", region: "KL", is_billing: true },
+      { label: "工地 A", line: "Lot 42, Jalan Kebun", region: "Klang" },
+      { label: "工地 B", line: "No 8, Jalan Sekolah" },
+    ],
+  });
+  check("写得进三个地址", !addrErr && addrs?.length === 3, addrErr?.message ?? `拿回 ${addrs?.length}`);
+  check("顺序照他写的", addrs?.[0]?.label === "帐单地址" && addrs?.[2]?.label === "工地 B");
+  check("只有一个是帐单地址", addrs?.filter((a) => a.is_billing).length === 1);
+
+  const { error: twoBilling } = await c.rpc("set_directory_addresses", {
+    in_party_id: hasSites.id,
+    in_rows: [
+      { label: "一", line: "A", is_billing: true },
+      { label: "二", line: "B", is_billing: true },
+    ],
+  });
+  check("两个帐单地址挡下来，而且讲人话",
+    !!twoBilling && /only one address can be the billing/.test(twoBilling.message), twoBilling?.message);
+  const { data: stillThree } = await c
+    .from("directory_addresses").select("id").eq("party_id", hasSites.id);
+  check("被拒绝之后，原本那三个还在", stillThree?.length === 3, `剩下 ${stillThree?.length}`);
+
+  const { error: blankLine } = await c.rpc("set_directory_addresses", {
+    in_party_id: hasSites.id, in_rows: [{ label: "空的", line: "   " }],
+  });
+  check("没有地址那一行的，挡下来", !!blankLine, blankLine?.message);
+
+  /* 🔴 那张单讲得出自己是哪一个工地的。 */
+  const siteA = addrs.find((a) => a.label === "工地 A");
+  const { data: atSite, error: siteErr } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "厨房",
+    in_party: "多地址客户", in_party_id: hasSites.id,
+    in_amount_cents: 100_000, in_site_address_id: siteA.id,
+  });
+  check("开单的时候挂得上工地", !siteErr && atSite?.site_address_id === siteA.id,
+    siteErr?.message ?? `${atSite?.site_address_id}`);
+
+  const { data: movedSite } = await c.rpc("update_pipeline_record", {
+    in_id: atSite.id, in_site_address_id: addrs.find((a) => a.label === "工地 B").id,
+  });
+  check("换得了工地", movedSite?.site_address_id === addrs.find((a) => a.label === "工地 B").id);
+
+  const { data: keptSite } = await c.rpc("update_pipeline_record", {
+    in_id: atSite.id, in_title: "厨房加浴室",
+  });
+  check("改名字不会把工地弄丢", keptSite?.site_address_id != null, `${keptSite?.site_address_id}`);
+
+  /* 同一个形状：他把工地拿掉，就要真的拿掉。20260903010000 那个日子的坑。 */
+  const { data: noSite } = await c.rpc("update_pipeline_record", {
+    in_id: atSite.id, in_clear_site: true,
+  });
+  check("他拿得掉那个工地", noSite?.site_address_id === null, `${noSite?.site_address_id}`);
+
+  /* 🔴 别人的地址，挂不上这一张单 —— 师傅会开去另一个客户的工地。 */
+  const { data: someoneElse } = await party({ in_name: "另一个客户" });
+  const { data: elseAddr } = await c.rpc("set_directory_addresses", {
+    in_party_id: someoneElse.id, in_rows: [{ label: "他的家", line: "别人的地址" }],
+  });
+  const { error: wrongSite } = await c.rpc("update_pipeline_record", {
+    in_id: atSite.id, in_site_address_id: elseAddr[0].id,
+  });
+  check("别人的地址挂不上来",
+    !!wrongSite && /belongs to somebody else/.test(wrongSite.message), wrongSite?.message);
+
+  const { error: noParty } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "没写客户",
+    in_site_address_id: siteA.id,
+  });
+  check("没有客户就没有工地", !!noParty && /pick the customer/.test(noParty.message), noParty?.message);
+
+  /* 🔴 有单指着的地址，不给整批换掉 —— 否则那张单会静静地忘记它的工地。
+     跟「收过钱的分期表锁住」是同一条，同一天第二次。 */
+  await c.rpc("update_pipeline_record", { in_id: atSite.id, in_site_address_id: siteA.id });
+  const { error: lockedAddr } = await c.rpc("set_directory_addresses", {
+    in_party_id: hasSites.id, in_rows: [{ label: "只剩一个", line: "改成一个地址" }],
+  });
+  check("有单指着的地址锁住，而且讲得出出路",
+    !!lockedAddr && /already points at/.test(lockedAddr.message), lockedAddr?.message);
+
+  /* 地址删掉了，那张单还在 —— 只是不再指着一个不存在的地方。 */
+  await c.rpc("update_pipeline_record", { in_id: atSite.id, in_clear_site: true });
+  await c.rpc("set_directory_addresses", { in_party_id: hasSites.id, in_rows: [] });
+  const { data: orphan } = await c
+    .from("pipeline_records").select("id, site_address_id").eq("id", atSite.id).single();
+  check("地址清空了，那张单还在", !!orphan?.id && orphan.site_address_id === null);
+
+  const { error: addrNotMine } = await c.rpc("set_directory_addresses", {
+    in_party_id: "00000000-0000-0000-0000-000000000000",
+    in_rows: [{ line: "别人的" }],
+  });
+  check("别人的客户写不进地址", !!addrNotMine);
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);
