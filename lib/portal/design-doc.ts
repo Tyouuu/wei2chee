@@ -337,7 +337,10 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteTestimonials: "stagger",
       StatRow: "rule",
       /* 印在纸上的那一套。一个搜索框印不出来，而这一套的主张就是把印不出来的东西全部拿掉。 */
-      RecordTableTools: "none",
+      /* 🔴 none → search（2026-09-03）。组件清单报「缺 搜索框」——
+      Studio Admin 的表格上面有一条筛选框加两个分面，我们那张什么都没有。
+      一张四十行的表没有地方打字，是这一页最贵的一个空。 */
+      RecordTableTools: "search",
       RecordTable: "plain",
       HeroCard: "stats",
       SiteSteps: "ruled",
@@ -353,7 +356,11 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       DateProgress: "bare",
       PeopleBoard: "four",
       PriceTable: "rows",
-      SmallStat: "default",
+      /* 🔴 改成「带上一期」（2026-09-03）。Studio Admin 每一张卡底下都写着
+      「$254,200 last month」——**只讲涨了、没讲从多少涨的**是我们跟它最明显的一个差。
+      顺带把跟中台重叠的那一根轴分开：两套都加了搜索框之后，它们共用到 7 根，
+      而守卫的线是 6。 */
+      SmallStat: "detailed",
       ShelfList: "ruled",
       AttachmentList: "row",
       MarkList: "spread",
@@ -383,7 +390,8 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       SiteCreds: "rating",
       StatRow: "boxed",
       /* 一块招牌上不会有搜索框。名字跟数字是招牌，其余的小而在下面。 */
-      RecordTableTools: "none",
+      /* 同上：TailAdmin 的顶栏就有一个搜索框，我们那一张表什么都没有。 */
+      RecordTableTools: "search",
       RecordTable: "grid",
       HeroCard: "solo",
       SiteSteps: "numbered",

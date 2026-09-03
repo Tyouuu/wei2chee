@@ -496,6 +496,25 @@ export function RecordTable(props: {
         </tbody>
       </table>
     </DataGrid>
+
+      {/* 表格底下那一条。
+          🔴 组件清单 2026-09-03 报「缺 表格页尾」—— 参考那几页表格底下都有一条
+          （shadcn 是「10 Rows per page · Page 1 of 10」）。
+          ⚠️ **我们不画分页**：一次把每一行都显示出来，
+          一颗翻不了页的翻页钮就是这个仓库一直在禁的那种死按钮。
+          这一条讲的是真的：显示了几笔、一共几笔 —— 筛过之后两个数字会分开。 */}
+      {allRows.length > 0 ? (
+        <div
+          className="flex items-center justify-end [padding-block:var(--pad-control-y)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
+          style={{
+            borderTopWidth: "var(--hairline)",
+            borderTopStyle: "solid",
+            borderTopColor: "var(--border-subtle)",
+          }}
+        >
+          <span className="tnum">{w.tableFoot(rows.length, allRows.length)}</span>
+        </div>
+      ) : null}
     </div>
   )
 }

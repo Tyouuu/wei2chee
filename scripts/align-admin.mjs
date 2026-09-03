@@ -252,7 +252,10 @@ const PROBE = (rootSel) => {
         h.getAttribute("aria-sort") ||
         /sortable/i.test(h.className || ""),
     ).length;
-    /* 页尾：表格底下 160px 之内，有没有一条带「页 / page / rows / 下一页」的东西。 */
+    /* 页尾：表格底下 200px 之内，有没有一条**属於这张表的收尾**。
+       ⚠️ 第一版只认「分页」那几个字，於是我们自己刚加的
+       「Showing all 7」被判成没有页尾 —— 那把「有没有收尾」问成了
+       「有没有分页」，而我们**故意不做分页**（一颗翻不了页的翻页钮是死按钮）。 */
     const tb = table.getBoundingClientRect();
     /* 🔴 第一版报「没有」，而参考页明明写着「10 Rows per page · Page 1 of 10」。
        查出来：`find` 是照 DOM 顺序找的，於是先撞到 `<html>` —— 那一整页的字
@@ -265,7 +268,7 @@ const PROBE = (rootSel) => {
         r.top < tb.bottom + 200 &&
         r.width > tb.width * 0.4 &&
         r.height < 120 &&
-        /page|rows per|next|上一页|下一页|每页/i.test(e.innerText || "")
+        /page|rows per|next|showing|上一页|下一页|每页|显示|全部 \d/i.test(e.innerText || "")
       );
     });
     feet.sort((a, c) => {

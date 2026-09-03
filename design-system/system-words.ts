@@ -84,6 +84,17 @@ export type SystemWords = {
   /** 这张表一行都还没有的时候说的话 —— 跟「筛不到」是两件事：
    *  一个是「找不到」，一个是「还没开始」。**空白的表两种都不会讲。** */
   tableEmpty: string;
+  /**
+   * 表格底下那一条。
+   *
+   * 🔴 组件清单报「缺 表格页尾」—— 参考那几页表格底下都有一条
+   * （shadcn 是「10 Rows per page · Page 1 of 10」）。
+   *
+   * ⚠️ **我们不画分页。** 我们一次把每一行都显示出来，
+   * 一颗翻不了页的翻页钮就是这个仓库一直在禁的那种死按钮。
+   * 这一条讲的是真的：显示了几笔、一共几笔。
+   */
+  tableFoot: (shown: number, total: number) => string;
   empty: string;
   emptyToday: string;
   emptyPeople: string;
@@ -171,6 +182,8 @@ const EN: SystemWords = {
   tableSearch: "Filter these rows…",
   tableNoMatch: (q) => `No rows match “${q}”.`,
   tableEmpty: "Nothing here yet. The first one you add shows up here.",
+  tableFoot: (shown, total) =>
+    shown === total ? `Showing all ${total}` : `Showing ${shown} of ${total}`,
   empty: "Nothing here yet",
   emptyToday: "Nothing booked today",
   emptyPeople: "Nobody added yet",
@@ -261,6 +274,8 @@ const ZH: SystemWords = {
   tableSearch: "在这些记录里找…",
   tableNoMatch: (q) => `没有配得上「${q}」的记录。`,
   tableEmpty: "这里还没有东西。你记的第一笔会出现在这里。",
+  tableFoot: (shown, total) =>
+    shown === total ? `全部 ${total} 笔都在这里` : `显示 ${shown} 笔，一共 ${total} 笔`,
   empty: "还没有资料",
   emptyToday: "今天没有安排",
   emptyPeople: "还没有加人",

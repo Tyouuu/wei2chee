@@ -3259,7 +3259,15 @@ export function buildPageLayout(
  *   炉     ❌  宽松、在客人面前打开，少一条线就少一条线
  *   招牌   ❌  它的导航本来就在顶上，再加一条就是两条横线叠在一起
  */
-export const STRIP_REGISTERS = new Set(["ledger", "blueprint"]);
+/* 🔴 两套 → 全部（2026-09-03）。尺子加了组件清单之后报出来：
+   **六个参考页里五个有面包屑，我们六套只有两套。**
+   面包屑本来就建好了（`SystemBar`），只是当初只给了两套 ——
+   这个仓库最老的那个毛病：东西建好了，线只接一半。
+
+   ⚠️ 第一版我把六个名字列出来，`style-order.test.ts` 当场红：
+   **那是这个仓库的风格名单的第二份手抄本**，而这个仓库栽在那件事上至少五次。
+   现在它不是一份名单，是一句话：每一套都有。 */
+export const STRIP_REGISTERS = { has: (_style: string) => true };
 
 /**
  * THE REGISTERS BUILT ON THE THIRD SHELL.
