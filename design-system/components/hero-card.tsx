@@ -201,7 +201,21 @@ export function HeroCard({
             })()}
           </span>
           {chg != null && <Delta pct={chg} big />}
-          {chgSuffix && <span className="[font-size:var(--text-xs)] text-[color:var(--color-paper-dim)]">{chgSuffix}</span>}
+          {/*
+            🔴 没有涨跌就不准印「vs last month」（2026-09-03）。
+
+            这个档案自己修过一次：dashboard 那张卡本来只传 `chgSuffix`，
+            印出来是「RM 71,300  vs last month」——**一个比较的字，
+            里面没有比较**。8-26 修的是那一处，没有修这个形状；
+            9-03 放大两倍看收款那一页，同一句话又在那里，
+            而报表、开销、佣金、对帐每一页都有。
+
+            所以这次修在**画的地方**：那句话是那个数字的说明，
+            数字不在，说明就不该在。传的人漏了，它自己闭嘴。
+          */}
+          {chg != null && chgSuffix ? (
+            <span className="[font-size:var(--text-xs)] text-[color:var(--color-paper-dim)]">{chgSuffix}</span>
+          ) : null}
         </div>
       </div>
 

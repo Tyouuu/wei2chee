@@ -2327,6 +2327,10 @@ function buildPayments(
       label: sample.heroLabel,
       value: sample.heroValue,
       href: `/${locale}/portal/payments`,
+      /* 跟总览那张卡同一个来源 —— 两处讲同一个月，不可以给出两个答案。
+         漏掉它的后果不是少一行字，是「RM 71,300  vs last month」，
+         中间什么都没有（hero-card.tsx 里那段注解讲的就是这个）。 */
+      chg: headlineDelta(sample.heroSpark),
       chgSuffix: sample.heroSuffix,
       // Every supporting stat links back into the system rather than nowhere:
       // the number a business owner reacts to ("RM 31,200 已做未收") should be
@@ -2494,7 +2498,13 @@ function heroNode(id: string, locale: string, copy: ModuleCopy): PuckNode[] {
       label: copy.hero.label,
       value: copy.hero.value,
       href: `/${locale}/portal/dashboard`,
-      chgSuffix: copy.hero.suffix,
+      /* 🔴 这里本来写着 `chgSuffix: copy.hero.suffix`，2026-09-03 拿掉了。
+         `ModuleCopy.hero` 里**没有涨跌这个东西** —— 只有标签、数字、
+         一句后缀跟几个小数字。所以开销 · 佣金 · 对帐 · 报表四页印出来是
+         「RM 71,300　vs last month」，中间什么都没有。
+         `hero-card.tsx` 现在也不肯单独画那半句了（那是守形状的那一层），
+         这里是不再写出来（这是守来源的那一层）。
+         ⚠️ 哪一天 `ModuleCopy.hero` 真的带了涨跌，两半一起加回来。 */
       stats: copy.hero.stats.map((st) => ({
         ...st,
         href: `/${locale}/portal/dashboard`,
