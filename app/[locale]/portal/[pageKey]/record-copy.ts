@@ -162,6 +162,25 @@ export type RecordFormCopy = {
   changes: string;
   changesNone: string;
   changeBlank: string;
+  /* 把旧的那份 Excel 贴进来（20260904040000）。
+     ⚠️ 全部是字串，一个函式都没有 —— 这个物件是从伺服器传给浏览器的，
+     而函式过不去（那一句写在这个档案上面，而它是用一个 500 换来的）。
+     带数字的那几句用 {n}，画面那一层自己换掉。 */
+  importHeaders: string;
+  importCopyHeaders: string;
+  importPaste: string;
+  importPastePlaceholder: string;
+  importReadAs: string;
+  importUnmatched: string;
+  importNoHeaders: string;
+  importMoreRows: string;
+  importCta: string;
+  importRunning: string;
+  importDone: string;
+  importFailed: string;
+  importRowNo: string;
+  importLede: string;
+  importHeading: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -330,6 +349,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       changes: "改过什么",
       changesNone: "还没有人改过这一单。",
       changeBlank: "空白",
+      importHeading: "把旧的资料搬进来",
+      importLede: "从 Excel 圈起来、复製，贴到下面。第一行要是栏名。",
+      importHeaders: "第一行要写这几个（顺序随便，少写几个也可以）",
+      importCopyHeaders: "复製这一行",
+      importPaste: "贴在这里",
+      importPastePlaceholder: "从 Excel 复製之后贴上来…",
+      importReadAs: "读到 {n} 行。下面是前几行，看看每一栏有没有对：",
+      importUnmatched: "这几栏我们认不出来，不会进去：",
+      importNoHeaders: "一栏都认不出来 —— 第一行是不是栏名？",
+      importMoreRows: "还有 {n} 行没有列出来。",
+      importCta: "汇入",
+      importRunning: "在汇入…",
+      importDone: "进去了 {n} 行。",
+      importFailed: "有 {n} 行没进去：",
+      importRowNo: "第 {n} 行",
     },
   },
   en: {
@@ -464,6 +498,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       changes: "What was changed",
       changesNone: "Nobody has changed this one yet.",
       changeBlank: "blank",
+      importHeading: "Bring the old records in",
+      importLede: "Select it in Excel, copy, and paste below. The first row must be the column names.",
+      importHeaders: "The first row should have these (any order, and you can leave some out)",
+      importCopyHeaders: "Copy this row",
+      importPaste: "Paste here",
+      importPastePlaceholder: "Copy from Excel and paste it here…",
+      importReadAs: "Read {n} rows. Here are the first few — check every column landed where it should:",
+      importUnmatched: "These columns were not recognised and will not be brought in:",
+      importNoHeaders: "Nothing was recognised — is the first row the column names?",
+      importMoreRows: "{n} more rows not shown.",
+      importCta: "Bring them in",
+      importRunning: "Bringing them in…",
+      importDone: "{n} rows are in.",
+      importFailed: "{n} rows did not go in:",
+      importRowNo: "Row {n}",
     },
   },
 };

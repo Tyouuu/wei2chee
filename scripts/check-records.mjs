@@ -1223,6 +1223,63 @@ try {
     (afterGone ?? []).some((t) => (t.label ?? "").includes(deletedNo)),
     JSON.stringify((afterGone ?? []).map((t) => t.label)));
 
+  /* ── 把旧的 Excel 搬进来 ────────────────────────────────────────────
+     20260904040000。 */
+  console.log("\n⑰ 搬旧资料");
+
+  const impKey = (n) => `bbbbbbbb-cccc-4ddd-a000-${String(n).padStart(12, "0")}`;
+  const { data: imported, error: impErr } = await c.rpc("import_records", {
+    in_project_id: P, in_module_key: "quotations",
+    in_rows: [
+      { title: "汇入一", party: "陈大文", amount_cents: "4850000", idempotency_key: impKey(1) },
+      /* 🔴 资料库真的会拒绝的一行：日期不是日期。
+         客户端那一层会先挡掉它，而这一支要验的是**挡不掉的时候会怎样**。 */
+      { title: "汇入二", due_on: "不是日期", idempotency_key: impKey(2) },
+      { title: "汇入三", party: "李太太", amount_cents: "800000", idempotency_key: impKey(3) },
+    ],
+  });
+  check("汇入回得来", !impErr && !!imported, impErr?.message);
+  check("🔴 一行坏掉，其余照进（两行）", imported?.ok === 2, `进了 ${imported?.ok}`);
+  check("而且那一行单独讲出来，讲得出第几行",
+    (imported?.failed ?? []).length === 1 && imported.failed[0].row === 2,
+    JSON.stringify(imported?.failed));
+  check("讲得出为什么", /date|日期|invalid/i.test(imported?.failed?.[0]?.why ?? ""),
+    imported?.failed?.[0]?.why);
+
+  /* 🔴 走的是人按的那一支，所以单号是发出来的。 */
+  const { data: impRows } = await c
+    .from("pipeline_records").select("doc_no, title, amount_cents")
+    .in("title", ["汇入一", "汇入三"]);
+  check("汇进来的每一行都有单号",
+    (impRows ?? []).length === 2 && (impRows ?? []).every((r) => (r.doc_no ?? "").length > 3),
+    JSON.stringify((impRows ?? []).map((r) => r.doc_no)));
+
+  /* 再送一次同样的钥匙 —— 他按了两次，一行都不可以重复。 */
+  const { data: twiceImp } = await c.rpc("import_records", {
+    in_project_id: P, in_module_key: "quotations",
+    in_rows: [{ title: "汇入一", party: "陈大文", amount_cents: "4850000", idempotency_key: impKey(1) }],
+  });
+  const { count: stillTwo } = await c
+    .from("pipeline_records").select("id", { count: "exact", head: true }).eq("title", "汇入一");
+  check("同一把钥匙送两次只有一行", twiceImp?.ok === 1 && stillTwo === 1, `${stillTwo} 行`);
+
+  const { error: tooMany } = await c.rpc("import_records", {
+    in_project_id: P, in_module_key: "quotations",
+    in_rows: Array.from({ length: 501 }, (_, i) => ({ title: `第${i}行` })),
+  });
+  check("一次五百行以上挡下来", !!tooMany, tooMany?.message);
+
+  const { error: notImportable } = await c.rpc("import_records", {
+    in_project_id: P, in_module_key: "website", in_rows: [{ title: "x" }],
+  });
+  check("官网那一页汇不进东西", !!notImportable, notImportable?.message);
+
+  const { error: impNotMine } = await c.rpc("import_records", {
+    in_project_id: "00000000-0000-0000-0000-000000000000",
+    in_module_key: "quotations", in_rows: [{ title: "别人的" }],
+  });
+  check("别人的项目汇不进去", !!impNotMine);
+
   /* 单收起来了，照片跟着走 —— 一张挂在不存在的单上的照片，没有人找得到它。 */
   await c.from("pipeline_records").delete().eq("id", shotJob.id);
   const { count: photosLeftAfterDoc } = await c

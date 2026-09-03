@@ -81,6 +81,18 @@ export default async function NewRecordPage({
              property. */
           copy={copy.form}
         />
+
+        {/* 🔴 把旧的一次搬进来。
+            画在这里，不是画成表头上第二颗按钮，有两个理由：
+            ① 表头那颗（`actionHref`）住在 `industry-template` 跟
+               `PageHeader` 里，而那两个是另一个 session 的地盘（重点 20）
+            ② **这里才是他想到那件事的时刻** —— 一个打开「加一单」、
+               然后意识到自己有两百笔要打的人，正好在看这一页。 */}
+        <p className="mt-8 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+          <a href={`/${locale}/portal/${pageKey}/import`} className="underline">
+            {copy.form.importHeading}
+          </a>
+        </p>
       </main>
     </StyleScope>
   );
