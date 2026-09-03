@@ -17,83 +17,16 @@
 import { chromium } from "playwright";
 import sharp from "sharp";
 import fs from "node:fs";
+import { PAIRS, OUT, refShot } from "./clone-pairs.mjs";
 
-const OUT = ".screenshots/clone";
 const PAGE = process.argv.includes("--page")
   ? process.argv[process.argv.indexOf("--page") + 1]
   : null;
 if (!PAGE) { console.error("用法: node scripts/shoot-clone-vs.mjs --page <我们那一页的网址>"); process.exit(1); }
 
-/* 一套风格 · 它抄的那个 app · 商店的包名 · 取第几张
-   （第几张是**用眼睛挑的** —— 挑那一张真的画着界面的，不是行销大标题那一张） */
-const PAIRS = [
-  { reg: "ledger",    zh: "台账", app: "Xero",       id: "com.xero.touch",        pick: 0, take: "一个大数字压住整屏" },
-  { reg: "hearth",    zh: "炉",   app: "Fresha",     id: "com.fresha.Business",   pick: 4, take: "色块日程表" },
-  { reg: "counter",   zh: "中台", app: "Zoho Books", id: "com.zoho.books",        pick: 0, take: "两格并排＋捷径格子" },
-  { reg: "blueprint", zh: "图纸", app: "QuickBooks", id: "com.intuit.quickbooks", pick: 0, take: "问候＋提醒条＋帐户卡" },
-  { reg: "swiss",     zh: "瑞士", app: "Notion",     id: "notion.id",             pick: 2, take: "满幅封面＋段落标题" },
-  { reg: "signboard", zh: "招牌", app: "Square",     id: "com.squareup",          pick: 2, take: "一屏只有一件事" },
-  /* ⚠️ 候选 7–12 里有五套的参考**不在商店页上** —— 商店页给的是行销版
-     （一句大标题压一台斜着的手机），而这五套抄的是 Mobbin 收的**真界面**。
-     所以它们的参考读的是本地那五张裁图（`.screenshots/clone/pf-*.png`）。
-     两种来源要分开讲，不然下一个人会去商店找一张根本不存在的图。 */
-  { reg: "cand7",  zh: "站台",  app: "Klarna",   local: "pf-6.png", take: "有色顶区＋彩色圆图标＋四格状态导航" },
-  { reg: "cand8",  zh: "早课",  app: "Brilliant", local: "pf-4.png", take: "星期圆点＋一张填满的行动卡" },
-  { reg: "cand9",  zh: "分店",  app: "Gametime", local: "pf-1.png", take: "店名当大标题带⌄＋横滑卡片" },
-  { reg: "cand10", zh: "入口墙", app: "Gojek",    local: "pf-2.png", take: "有色顶区＋一整片圆图标墙" },
-  { reg: "cand11", zh: "看板",  app: "Trello",   id: "com.trello",            pick: 2, take: "一整片有色的栏，白卡叠上面" },
-  { reg: "cand12", zh: "夜巡",  app: "Hulu",     local: "pf-7.png", take: "深色的地＋满幅主视觉" },
-  { reg: "cand13", zh: "货架",  app: "Loyverse", id: "com.loyverse.sale",     pick: 0, take: "有色顶栏＋分半动作条＋照片方块" },
-  { reg: "cand14", zh: "面板",  app: "Tesla",    local: "pf-tesla.png", take: "深色＋大图＋一整片控制图标" },
-  { reg: "cand15", zh: "问答",  app: "Wise",     id: "com.transferwise.android", pick: 2, take: "一个问题＋一列选项" },
-];
-
 fs.mkdirSync(OUT, { recursive: true });
 const b = await chromium.launch();
 const bad = [];
-
-/* ── ① 去商店抓原图 ─────────────────────────────────────────────────── */
-async function refShot(pair) {
-  /* 本地那五张：Mobbin 收的真界面，商店页上没有。 */
-  if (pair.local) {
-    const f = `${OUT}/${pair.local}`;
-    if (!fs.existsSync(f)) { bad.push(`${pair.app} 本地参考不见了：${f}`); return null; }
-    const buf = fs.readFileSync(f);
-    const meta = await sharp(buf).metadata();
-    if (!meta.width || meta.width < 300) { bad.push(`${pair.app} 本地参考只有 ${meta.width}px 宽`); return null; }
-    return { buf, n: Number(pair.local.replace(/\D/g, "")) - 1, total: 7, w: meta.width, h: meta.height, from: "Mobbin 收的真界面" };
-  }
-  const p = await b.newPage({ viewport: { width: 1440, height: 1100 } });
-  try {
-    await p.goto(`https://play.google.com/store/apps/details?id=${pair.id}&hl=en`,
-      { waitUntil: "domcontentloaded", timeout: 60000 });
-    await p.waitForTimeout(3500);
-    const urls = await p.evaluate(() =>
-      [...document.querySelectorAll("img")]
-        .filter((i) => {
-          const r = i.getBoundingClientRect();
-          /* 直的、够大的、在主栏里 —— 右侧栏也有直的图（Rated for 3+ 那些） */
-          return r.height > r.width * 1.5 && r.height > 150 && r.x + r.width < 1000;
-        })
-        .map((i) => i.src)
-        .filter((s) => s.startsWith("http")));
-    await p.close();
-    if (!urls.length) { bad.push(`${pair.app} 一张手机截图都没抓到`); return null; }
-    const n = Math.min(pair.pick, urls.length - 1);
-    /* Play 的图网址结尾是 `=w526-h296`。换成大的就拿到原档。 */
-    const big = urls[n].replace(/=[-\w]+$/, "=w1080");
-    const q = await b.newPage();
-    const buf = await q.goto(big, { timeout: 45000 }).then((r) => r.body());
-    await q.close();
-    const meta = await sharp(buf).metadata();
-    if (!meta.width || meta.width < 400) { bad.push(`${pair.app} 抓到的图只有 ${meta.width}px 宽 —— 太小`); return null; }
-    return { buf, n, total: urls.length, w: meta.width, h: meta.height, from: "商店页（行销版）" };
-  } catch (e) {
-    await p.close().catch(() => {});
-    bad.push(`${pair.app} ${String(e.message ?? e).slice(0, 50)}`);
-    return null;
-  }
-}
 
 /* ── ② 我们那一支 ───────────────────────────────────────────────────── */
 const ours = await b.newPage({ viewport: { width: 1760, height: 1250 }, deviceScaleFactor: 3 });
@@ -107,7 +40,7 @@ for (const pair of PAIRS) {
   const el = await ours.$(`.phone[data-reg="${pair.reg}"]`);
   if (!el) { bad.push(`我们这边没有 ${pair.reg}`); continue; }
   const mine = await el.screenshot({ type: "png" });
-  const ref = await refShot(pair);
+  const ref = await refShot(pair, b, bad);
 
   const H = 1500;                                   // 两边都拉到同一个高度才比得了
   const mineTall = await sharp(mine).resize({ height: H }).png().toBuffer();
