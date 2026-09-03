@@ -84,7 +84,8 @@
     "shoot:galleries": "node scripts/shoot-galleries.mjs",
     "zoom:admin": "node scripts/zoom-admin.mjs",
     "zoom:clone": "node scripts/zoom-clone.mjs",
-    "check:answers": "node scripts/check-answers.mjs"
+    "check:answers": "node scripts/check-answers.mjs",
+    "check:site-identity": "node scripts/check-site-identity.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
