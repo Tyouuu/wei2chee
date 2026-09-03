@@ -1079,12 +1079,26 @@ function buildDashboard(
            因为卡头右边要放「看全部」，而那一行只有卡头有。
            留在这里会**印两次标题**。 */
         heading: "",
-        rows: sample.records.map((r) => ({
-          name: r.secondary ?? r.primary,
-          sub: r.secondary ? r.primary : r.status,
-          amount: r.amount ?? "",
-          href: followHref,
-        })),
+        /* 🔴 **按金额从大排到小**（2026-09-03 放大两倍看到的）。
+           在这之前它照记录本来的顺序印，於是画面上是
+           「1 Mr Tan RM48,500 · 2 Mrs Lee RM22,800 · **3 Mr Wong RM96,000**」
+           —— 一张写着「谁最值钱」的榜，第三名是最大的那个数字。
+           编号本身就是在宣称「已经排过了」，那句宣称当时是假的。
+           没有金额的排在后面，而且**保持他自己的顺序**（不是当成 0 往前塞）。 */
+        rows: [...sample.records]
+          .map((r) => ({
+            name: r.secondary ?? r.primary,
+            sub: r.secondary ? r.primary : r.status,
+            amount: r.amount ?? "",
+            href: followHref,
+            _n: Number(String(r.amount ?? "").replace(/[^0-9.]/g, "")),
+          }))
+          .sort((a, b) => {
+            const x = Number.isFinite(a._n) && a._n > 0 ? a._n : -1;
+            const y = Number.isFinite(b._n) && b._n > 0 ? b._n : -1;
+            return y - x;
+          })
+          .map(({ _n, ...row }) => row),
       }),
 
     /**
@@ -1277,6 +1291,27 @@ function buildDashboard(
     },
 
     /**
+     * 快捷入口 —— Ant 的工作台右边那张「快速开始 / 便捷导航」。
+     *
+     * ⚠️ 每一格都是**他自己已经有的那一页**，网址是真的。
+     * 官网那一页不放进来（那是给陌生人看的，不是他每天要按的），
+     * 总览自己也不放（他已经站在上面了）。
+     * 最多六个 —— 侧栏负责列全部，这一块只放「今天最可能要按的」。
+     */
+    quick: () =>
+      node("QuickLinks", "dashboard-quick", {
+        heading: c.dashboard.quickTitle,
+        links: pages
+          .filter((pg) => pg.key !== "dashboard" && pg.key !== "website")
+          .slice(0, 6)
+          .map((pg) => ({
+            label: pageLabel(pg, labels, lang),
+            href: `/${locale}/portal/${pg.key}`,
+            iconName: pg.key,
+          })),
+      }),
+
+    /**
      * 问候带 —— 工作台那一页的开场。见 greet-band.tsx 的档头。
      *
      * ⚠️ **没有「早安」。** 那句话要看现在几点，而这一页是在伺服器上画的 ——
@@ -1394,6 +1429,9 @@ function buildDashboard(
     "ranking",
     "flow",
     "table",
+    /* Ant 那张「快速开始」是**一张卡**，不是几颗药丸浮在地上。
+       它自己的标题留在块里（CARD_HEAD 没有它 —— 那张卡没有「看全部」）。 */
+    "quick",
   ]);
 
   /**
@@ -1633,7 +1671,10 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      一个差别不是颜色也不是间距：**他们那一页开场是一条问候带**，我们直接进卡片。
      那一条是「工作台」这个页型的签名，也正好是炉那句主张的样子：
      开系统的那一刻，客人就站在旁边。 */
-  hearth: ["greet", "todo|trend@wide-left", "stats2", "table"],
+  /* 🔴 加了「快捷入口」（2026-09-03）。Ant 那一页右边那张
+     「快速开始 / 便捷导航」是我们整个库里没有的一种东西 ——
+     不是清单（没有内容）、不是指标（没有数字），是一排**通往别处的门**。 */
+  hearth: ["greet", "todo|quick@wide-left", "stats2", "table"],
   // The neutral one, and the only one that should read as "a bit of
   // everything". Chart left, the day's list beside it: the most ordinary
   // arrangement there is, which is the point of this register.
@@ -1756,7 +1797,11 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      右上角那个 78% 就是一个环，不是一条。中台是六套里唯一没有环的，
      而它的参考有 —— 那不是我们的克制，是漏掉的一件。
      顺便让图占宽的那一边（Tabler 的两排图也是左宽右窄）。 */
-  counter: ["stats4", "tiles", "trend|share@wide-left", "table"],
+  /* 🔴 快捷入口摆**整条**，不摆在图旁边（2026-09-03 看图改的）。
+     并排的时候两格一样高，而四个图标撑不满一张跟折线图一样高的卡 ——
+     半空的卡跟中台「最密」那句主张正好相反。整条一排四个图标才是
+     Odoo / Zoho 那道模块墙的样子。 */
+  counter: ["stats4", "tiles", "trend|share@wide-left", "quick", "table"],
   /*
     工作室 IS THE ONLY REGISTER THAT PAIRS NOTHING.
 
@@ -1791,6 +1836,7 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
 export const COMPOSITION_ROLES = new Set([
   "table", "stats4", "stats2", "trend", "todo", "ranking", "share",
   "flow", "activity", "progress", "board", "hero", "target", "tabbed", "tiles", "greet",
+  "quick",
 ]);
 
 /** The neutral composition, for a register with no entry and for the paths that

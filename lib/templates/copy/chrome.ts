@@ -131,6 +131,8 @@ export type Chrome = {
     seeAll: string;
     /** 问候带底下那行小字。`{n}` 是今天要跟的单数，由产生页面的那一步填。 */
     greetSub: string;
+    /** 「快捷入口」那张卡的标题。 */
+    quickTitle: string;
     tileCount: string;
     tileBiggest: string;
     tileAverage: string;
@@ -293,6 +295,7 @@ const EN: Chrome = {
     tabFlow: "Stages",
     seeAll: "See all",
     greetSub: "{n} to follow up today",
+    quickTitle: "Jump to",
     tileCount: "On the books",
     tileBiggest: "Biggest one",
     tileAverage: "Average one",
@@ -456,6 +459,7 @@ const ZH: Chrome = {
     tabFlow: "流程",
     seeAll: "看全部",
     greetSub: "今天要跟 {n} 单",
+    quickTitle: "快捷入口",
     tileCount: "手上一共",
     tileBiggest: "最大的一单",
     tileAverage: "平均一单",

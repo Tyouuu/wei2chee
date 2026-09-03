@@ -152,6 +152,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       /* 图标 + 文字，图标不上色。2026-09-03 放大到两倍才看清楚：
          shadcn Tasks 的状态栏是 🚫 Canceled · ✓ Done，而我们画的是一颗
          有颜色的圆点。台账每天要扫四十行，形状扫得比颜色快，而且印出来还在。 */
+      QuickLinks: "rows",
       RecordTableRow: "mark",
       PhotoFrame: "photo",
       ActionRow: "row",
@@ -209,6 +210,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       MarkList: "plain",
       RankList: "person",
       ShareChart: "donut",
+      QuickLinks: "chips",
       RecordTableRow: "avatar",
       PhotoFrame: "photo",
       ActionRow: "row",
@@ -256,6 +258,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       MarkList: "ruled",
       RankList: "badge",
       ShareChart: "bars",
+      QuickLinks: "tiles",
       RecordTableRow: "pill",
       PhotoFrame: "wide",
       ActionRow: "row",
@@ -320,6 +323,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
          那一页右上角那个 78% 就是**一个中间有洞的环**，不是一条比例条。
          跟招牌那个 `gauge` 不一样：招牌抄的 TailAdmin 是**半圆**，这个是整圈。 */
       ShareChart: "donut",
+      QuickLinks: "tiles",
       RecordTableRow: "pill",
       PhotoFrame: "wide",
       ActionRow: "row",
@@ -390,6 +394,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       MarkList: "spread",
       RankList: "plain",
       ShareChart: "bars",
+      QuickLinks: "rows",
       RecordTableRow: "pill",
       PhotoFrame: "square",
       ActionRow: "row",
@@ -452,6 +457,7 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       半圆表撑起来，而这一套的主张就是「一个大到当招牌用的数字」。
       圆环还是一个圆，半圆表是一根**指针指到哪里**——招牌要的是后面那件事。 */
       ShareChart: "gauge",
+      QuickLinks: "chips",
       RecordTableRow: "pill",
       PhotoFrame: "wide",
       ActionRow: "row",

@@ -38,6 +38,7 @@ import { DatePicker } from "@/design-system/components/date-picker";
 import { MonthPicker } from "@/design-system/components/month-picker";
 import { FileUploadField } from "@/design-system/components/receipt-field";
 import { FilterChips, type FilterChip } from "@/design-system/components/filter-chips";
+import { QuickLinks, type QuickLink } from "@/design-system/components/quick-links";
 import { Combobox, type ComboboxOption } from "@/design-system/components/combobox";
 import { TextAutocomplete } from "@/design-system/components/text-autocomplete";
 import { Listbox, type ListboxOption } from "@/design-system/components/listbox";
@@ -611,6 +612,11 @@ type Components = {
     heading?: string;
     rows: RankRow[];
     shape?: RankShape;
+  };
+  QuickLinks: {
+    heading?: string;
+    links: QuickLink[];
+    shape?: "chips" | "tiles" | "rows";
   };
   Bento: { lead: Slot; a: Slot; b: Slot };
   Overlap: { band: Slot; body: Slot };
@@ -3161,6 +3167,30 @@ export const puckConfig: Config<Components> = {
     // NO APPEARANCE DEFAULTS in any defaultProps below. An absent prop is the
     // only signal that means "follow the register" -- ten of them were set here
     // once and overrode every register's preference forever.
+    QuickLinks: {
+      label: "快捷入口",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        links: {
+          label: "每一个入口",
+          type: "array",
+          arrayFields: {
+            label: { label: "字", type: "text" },
+            href: { label: "去哪一页", type: "text" },
+            iconName: { label: "图案", type: "text" },
+          },
+          defaultItemProps: { label: "入口", href: "", iconName: "" },
+          getItemSummary: (item) => item.label || "入口",
+        },
+      },
+      /* ⚠️ 出厂的样例**没有网址**，所以出厂的时候这一块画出来是空的 ——
+         而那是对的：一个通往哪里都不去的入口不该被画出来。
+         真的网址由产生页面的那一支填（它才知道这个客人有哪几页）。 */
+      defaultProps: { heading: "快捷入口", links: [] },
+      render: ({ heading, links, shape }) => (
+        <QuickLinks heading={heading} links={links} shape={shape} />
+      ),
+    },
     ShelfList: {
       label: "项目清单",
       fields: {

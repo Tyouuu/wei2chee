@@ -86,10 +86,20 @@ export function RecordTable(props: {
    * Recent Sales, Ant Design Pro puts a filled badge on every status.
    */
   row?: "plain" | "pill" | "avatar"
-  /** Segment labels shown above the table, after an "All" the component adds
-   *  itself. Inert in the preview — the finished system wires them to queries.
-   *  Empty or absent means no segment row, which is right for a table that is
-   *  already the whole of its page. */
+  /**
+   * Segment labels shown above the table, after an "All" the component adds
+   * itself. Empty or absent means no segment row, which is right for a table
+   * that is already the whole of its page.
+   *
+   * 🔴 **它们是真的会筛的**（2026-09-03）。在这之前它们是一排 `<span>` ——
+   * 长得完全像一个分段控件，按下去什么都不会发生，而它画在**每一张表**上。
+   * 这个档案自己在底下三十行的地方写着：
+   * 「一个什么都不做的框是缺陷，不是装饰」——搜索框照做了，这一排没有。
+   *
+   * 筛的是**状态那一栏**（`kind: "status"`），因为分段讲的就是状态；
+   * 跟搜索框叠加，而且**上面那个条数跟着一起变** ——
+   * 一个写着「7 records」的标题压在两行上面，是另一个方向的同一句谎。
+   */
   filters?: string[]
   /**
    * THE TABLE'S OWN FURNITURE -- a third axis, and the one shadcn's task table
@@ -160,13 +170,25 @@ export function RecordTable(props: {
      `normalizeTable(props)` 回来的阵列不会被改，所以整个组件被跳过不优化。
      一张表就那几十行，一次 filter 的成本远低于「让整个组件失去自动优化」。
      手写的 memo 换掉编译器的 memo，是这里最贵的一笔交易。 */
+  /** 选中的那一段。`null` 是「全部」—— 组件自己加的那一格。 */
+  const [seg, setSeg] = useState<string | null>(null)
+  /** 状态是哪一栏。分段讲的是状态，所以按栏的**种类**找，不是按栏名找
+   *  —— 栏名是老板自己取的，他随时可以改成「到哪一步」。 */
+  const statusKey = columns.find((c) => c.kind === "status")?.key
+
   const q = query.trim().toLowerCase()
-  const filtered =
+  const searched =
     q && toolShape === "search"
       ? allRows.filter((r) =>
           Object.values(r.cells ?? {}).join(" ").toLowerCase().includes(q),
         )
       : allRows
+  const filtered =
+    seg && statusKey
+      ? searched.filter((r) =>
+          String(r.cells?.[statusKey] ?? "").toLowerCase().includes(seg.toLowerCase()),
+        )
+      : searched
 
   /* ── 点栏头排序 ──────────────────────────────────────────────────────────
      `align:admin` 2026-09-02：**参考那一页四栏可以点着排，我们零栏。**
@@ -253,7 +275,9 @@ export function RecordTable(props: {
         <span className="tnum [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
           {w.rowCount(rows.length)}
         </span>
-        {toolShape === "chips" && filters?.length ? <Segments filters={filters} all={w.filterAll} /> : null}
+        {toolShape === "chips" && filters?.length ? (
+          <Segments filters={filters} all={w.filterAll} picked={seg} onPick={setSeg} />
+        ) : null}
       </div>
 
       {/* THE TOOLBAR, ON ITS OWN LINE. shadcn's task table puts the field and
@@ -276,7 +300,9 @@ export function RecordTable(props: {
               className="w-full bg-transparent [padding-block:var(--pad-control-y)] [font-size:var(--text-xs)] [color:var(--color-paper)] outline-none placeholder:[color:var(--color-paper-dim)]"
             />
           </label>
-          {filters?.length ? <Segments filters={filters} all={w.filterAll} /> : null}
+          {filters?.length ? (
+            <Segments filters={filters} all={w.filterAll} picked={seg} onPick={setSeg} />
+          ) : null}
         </div>
       ) : null}
 
@@ -366,7 +392,7 @@ export function RecordTable(props: {
               老板 2026-09-02:「每一个页面 每一页状态 你就没有复刻好」。
               这是一个真实客户第一天打开系统时看到的那一屏，
               而它本来什么都没有说。 */}
-          {rows.length === 0 && !q ? (
+          {rows.length === 0 && !q && !seg ? (
             <tr>
               <td
                 colSpan={columns.length}
@@ -376,13 +402,18 @@ export function RecordTable(props: {
               </td>
             </tr>
           ) : null}
-          {rows.length === 0 && q ? (
+          {/* 🔴 分段也会筛到零行，而在这之前这一支只问搜索框（2026-09-03）。
+              按一下「已确认」而一笔都没有的时候，上面那个空状态说
+              「还没有记录」、这一支不出声 —— **整个表身是一片空白**。
+              这个档案自己在上面写过同一句：一个刚筛完的人，分不出
+              「找不到」跟「这东西坏了」。 */}
+          {rows.length === 0 && (q || seg) ? (
             <tr>
               <td
                 colSpan={columns.length}
                 className="[padding-block:var(--pad-card)] [padding-inline:var(--pad-cell-x)] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
               >
-                {w.tableNoMatch(query.trim())}
+                {w.tableNoMatch(q ? query.trim() : (seg as string))}
               </td>
             </tr>
           ) : null}
@@ -607,24 +638,41 @@ function Pill({ tone, label }: { tone: StatusTone; label: string }) {
 
 /** The segment row. Lifted out because the toolbar draws it in one of two
  *  places now -- beside the caption, or under it next to the field. */
-function Segments({ filters, all }: { filters: string[]; all: string }) {
+function Segments({
+  filters,
+  all,
+  picked,
+  onPick,
+}: {
+  filters: string[]
+  all: string
+  /** `null` = 全部。 */
+  picked: string | null
+  onPick: (v: string | null) => void
+}) {
   return (
     <div
       className="ms-auto flex overflow-hidden [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-control)]"
       role="group"
     >
-      {[all, ...filters].map((f, i) => (
-        <span
-          key={f}
-          className={`whitespace-nowrap [font-size:var(--text-xs)] [padding-block:2px] [padding-inline:var(--pad-control-x)] ${
-            i === 0
-              ? "[background:var(--color-primary-soft)] [color:var(--color-primary)] [font-weight:var(--fw-medium)]"
-              : "[color:var(--color-paper-dim)]"
-          }`}
-        >
-          {f}
-        </span>
-      ))}
+      {[null, ...filters].map((f) => {
+        const on = picked === f
+        return (
+          <button
+            key={f ?? "__all"}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onPick(f)}
+            className={`whitespace-nowrap [font-size:var(--text-xs)] [padding-block:2px] [padding-inline:var(--pad-control-x)] ${
+              on
+                ? "[background:var(--color-primary-soft)] [color:var(--color-primary)] [font-weight:var(--fw-medium)]"
+                : "[color:var(--color-paper-dim)] hover:[color:var(--color-paper)]"
+            }`}
+          >
+            {f ?? all}
+          </button>
+        )
+      })}
     </div>
   )
 }

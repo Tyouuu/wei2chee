@@ -553,6 +553,15 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "spread", label: "线拉到两边", props: { rule: "separator" } },
   ],
 
+  /* 一排「通往别处的门」。出处：Ant Design Pro 的「快速开始 / 便捷导航」
+     （药丸）· Zoho / Odoo 的模块格子（方块）· Studio Admin 的快捷动作（一行一个）。
+     三种是三个不同的东西，不是同一张图的三种漆。 */
+  QuickLinks: [
+    { id: "chips", label: "一排药丸", props: { shape: "chips" } },
+    { id: "tiles", label: "方格子 · 图标在上", props: { shape: "tiles" } },
+    { id: "rows", label: "一行一个 · 右边箭头", props: { shape: "rows" } },
+  ],
+
   PhotoFrame: [
     { id: "photo", label: "相片 4:3", props: { ratio: "photo" } },
     { id: "wide", label: "宽 16:9", props: { ratio: "wide" } },
