@@ -33,16 +33,27 @@ import { NavAxisContext } from "./nav-axis"
 export function SystemBar({
   crumbs = [],
   date,
+  monogram,
 }: {
   /** 从大到小：分组、页名。空的就不画。 */
   crumbs?: string[]
   /** 今天。**由外面给**，不在这里 `new Date()` —— 一个自己读时钟的组件
    *  在伺服器跟浏览器会算出两个值，而且缩图跟列印每拍一次就换一个日期。 */
   date?: string
+  /**
+   * 右边那颗圆头像里的一到两个字。
+   *
+   * 🔴 2026-09-03 组件清单报出来的：**六个参考页每一页的右上角都有一颗圆头像**，
+   * 我们六套一个都没有 —— 我们把它画在侧栏底下，而那个位置在 1000px 高的
+   * 画面里常常掉到折线以下，等於没有。
+   * ⚠️ 它不是一颗按钮：这一条是「你在哪一页」，不是操作。点得下去的头像
+   * 在侧栏底下那个，这里只是**认人**。
+   */
+  monogram?: string
 }) {
   const axis = useContext(NavAxisContext)
   const shown = crumbs.filter(Boolean)
-  if (!shown.length && !date) return null
+  if (!shown.length && !date && !monogram) return null
   return (
     <div
       className={`flex w-full shrink-0 items-center justify-between [gap:var(--gap-inline)] [padding-block:var(--pad-control-y)] ${
@@ -74,11 +85,27 @@ export function SystemBar({
           </span>
         ))}
       </nav>
-      {date ? (
-        <span className="tnum shrink-0 [font-size:var(--text-xs)] [color:var(--color-on-canvas-dim)]">
-          {date}
-        </span>
-      ) : null}
+      <div className="flex shrink-0 items-center [gap:var(--gap-inline)]">
+        {date ? (
+          <span className="tnum [font-size:var(--text-xs)] [color:var(--color-on-canvas-dim)]">
+            {date}
+          </span>
+        ) : null}
+        {/* 🔴 `rounded-full`，不是 `--radius-pill`（2026-09-03）。
+            三套风格把「药丸」的圆角设成 0–3px（台账 3 · 瑞士 0 · 招牌 0）——
+            那是它们**状态标签**的身份（直角的小标签），而它顺手把头像也弄成了
+            圆角方块。尺子报「缺 头像」，而画面上那个字章明明在。
+            **一颗头像是一个形状，不是一级圆角** —— 六个参考页里六个都是圆的。
+            这跟这个仓库自己写过的那句是同一条：药丸的 999px 不是圆角，是形状。 */}
+        {monogram ? (
+          <span
+            aria-hidden
+            className="grid size-7 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]"
+          >
+            {monogram.slice(0, 2)}
+          </span>
+        ) : null}
+      </div>
     </div>
   )
 }

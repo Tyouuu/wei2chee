@@ -68,7 +68,7 @@ export function GreetBand({
         {monogram ? (
           <span
             aria-hidden
-            className="grid size-11 shrink-0 place-items-center [border-radius:var(--radius-pill)] [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
+            className="grid size-11 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
           >
             {monogram.slice(0, 2)}
           </span>

@@ -389,6 +389,7 @@ export const LABELS_EN: Record<string, string> = {
   整片底色: "Filled area",
   有底色图案: "Tinted",
   问候带: "Greeting band",
+  "右上角的字章": "Monogram at top right",
   圆章里的字: "Monogram",
   "对着人讲的那一句": "The line you say to them",
   "底下那行小字": "Small line under it",

@@ -238,9 +238,10 @@ type Components = {
     figures?: { label: string; value: string }[];
     shape?: "banner" | "bare" | "stacked";
   };
-  SystemBar: { crumbs?: { text?: string }[]; date?: string };
+  SystemBar: { crumbs?: { text?: string }[]; date?: string; monogram?: string };
   SystemShell: {
     crumbs?: { text?: string }[];
+    crumbMonogram?: string;
     sidebar: Slot;
     /** The split shell's second column. See system-shell.tsx. */
     aside: Slot;
@@ -1348,10 +1349,11 @@ export const puckConfig: Config<Components> = {
       fields: {
         crumbs: { label: "你在哪", type: "array", arrayFields: { text: { type: "text" } } },
         date: { label: "日期", type: "text" },
+        monogram: { label: "右上角的字章", type: "text" },
       },
-      defaultProps: { crumbs: [], date: "" },
-      render: ({ crumbs, date }: { crumbs?: { text?: string }[]; date?: string }) => (
-        <SystemBar crumbs={(crumbs ?? []).map((c) => c?.text ?? "")} date={date || undefined} />
+      defaultProps: { crumbs: [], date: "", monogram: "" },
+      render: ({ crumbs, date, monogram }: { crumbs?: { text?: string }[]; date?: string; monogram?: string }) => (
+        <SystemBar crumbs={(crumbs ?? []).map((c) => c?.text ?? "")} date={date || undefined} monogram={monogram || undefined} />
       ),
     },
     SystemShell: {
@@ -1381,13 +1383,14 @@ export const puckConfig: Config<Components> = {
       // therefore overrode all twenty-one registers' preferences forever --
       // measured, three registers rendered a byte-identical rail.
       defaultProps: { crumbs: [], sidebar: [], aside: [], main: [] },
-      render: ({ crumbs, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
+      render: ({ crumbs, crumbMonogram, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
         <SystemShell
           nav={nav ?? "side"}
           navTone={navTone ?? "dark"}
           frame={frame ?? "flush"}
           width={width ?? "wide"}
           crumbs={(crumbs ?? []).map((c) => c?.text ?? "").filter(Boolean)}
+          crumbMonogram={crumbMonogram || undefined}
           sidebar={<Sidebar />}
           aside={<Aside />}
           main={<Main />}

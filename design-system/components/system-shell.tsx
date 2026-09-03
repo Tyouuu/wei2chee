@@ -35,6 +35,7 @@ export function SystemShell({
   nav = "side",
   navTone = "dark",
   crumbs,
+  crumbMonogram,
   frame = "flush",
   width = "wide",
 }: {
@@ -82,6 +83,8 @@ export function SystemShell({
    * 那是系统知道的事，不是客户要往里面摆东西的地方。
    */
   crumbs?: string[]
+  /** 顶上那一条右边的圆头像。见 system-bar.tsx。 */
+  crumbMonogram?: string
   nav?: "side" | "top" | "split"
   /** What the navigation's ground is made of. `"dark"` is the register's own
    *  nav ground; `"light"` runs the navigation on the same paper as the page,
@@ -351,7 +354,7 @@ export function SystemShell({
         >
           {/* 顶栏。在内距里面，所以它跟页面内容左右对齐 ——
               一条跟内容不对齐的横线，看起来像是别人的东西掉进来了。 */}
-          {crumbs?.length ? <SystemBar crumbs={crumbs} /> : null}
+          {crumbs?.length ? <SystemBar crumbs={crumbs} monogram={crumbMonogram} /> : null}
           {main}
         </div>
       </div>

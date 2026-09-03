@@ -439,7 +439,11 @@ const PROBE = (rootSel) => {
         const r = e.getBoundingClientRect();
         const c = getComputedStyle(e);
         const t = (e.innerText || "").trim();
-        return r.height >= 16 && r.height <= 34 && r.width >= 24 && r.width <= 160 &&
+        /* ⚠️ 方形的不算 —— 一颗圆头像的尺寸跟圆角跟状态标签一模一样，
+           而它不是标签。头像改成圆的之后，台账的「缺 状态标签」凭空消失了，
+           那是**一个假的过关**：尺子把头像当成了标签。 */
+        const squareish = Math.abs(r.width - r.height) < 8;
+        return !squareish && r.height >= 16 && r.height <= 34 && r.width >= 24 && r.width <= 160 &&
           parseFloat(c.borderRadius) >= 8 && t.length > 0 && t.length <= 18 && !e.querySelector("svg");
       }).length >= 2),
     看板: has(() => {

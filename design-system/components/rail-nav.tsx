@@ -642,7 +642,7 @@ export function RailNav({
                  **六个参考页每一个都有一颗圆头像，我们六套一个都没有。**
                  我们本来就画了这个字章，只是它是方角的 26px —— 画面上它不读作
                  「一个人」。改成圆的、大一点，跟参考同一个东西。 */}
-              <span className="grid h-[26px] w-[26px] shrink-0 place-items-center [border-radius:var(--radius-pill)] [font-size:var(--text-xs)] text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-border)] [font-weight:var(--fw-semibold)]">
+              <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full [font-size:var(--text-xs)] text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-border)] [font-weight:var(--fw-semibold)]">
                 {initials}
               </span>
               {showLabels && !isTop && (
@@ -685,7 +685,7 @@ export function RailNav({
                  **六个参考页每一个都有一颗圆头像，我们六套一个都没有。**
                  我们本来就画了这个字章，只是它是方角的 26px —— 画面上它不读作
                  「一个人」。改成圆的、大一点，跟参考同一个东西。 */}
-              <span className="grid h-[26px] w-[26px] shrink-0 place-items-center [border-radius:var(--radius-pill)] [font-size:var(--text-xs)] text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-border)] [font-weight:var(--fw-semibold)]">
+              <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full [font-size:var(--text-xs)] text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-border)] [font-weight:var(--fw-semibold)]">
               {initials}
             </span>
             {showLabels && !isTop && (

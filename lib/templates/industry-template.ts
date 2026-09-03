@@ -1652,7 +1652,9 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      而不是三条整页宽的带子往下叠。 */
   /* Studio Admin 的顺序是「四个数字 → 图表卡 → 两张半栏 → 表」，
      那两张半栏是我们缺的一排。 */
-  swiss: ["stats4", "tabbed", "todo|target@half", "table"],
+  /* 进度条：组件清单报「缺 进度条」—— Studio Admin 那张「184 booked / 523 qualified」
+     底下就是一条。我们本来就有这一块（`progress`），只是没排进去。 */
+  swiss: ["stats4", "tabbed", "todo|progress@half", "table"],
   // Friendly and rounded. One figure with its own supporting numbers, the
   // day's list beside it, then the money.
   // Weight. Two enormous figures and the work, in slabs. No chart, no split --
@@ -1680,7 +1682,7 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   /* 🔴 一大块开场 → 一排卡（2026-09-03）。像素那把尺量出来最后一件大的：
      **他们的块是 160–250 宽的卡排成格子，我们的是 1000–1300 宽的整条带。**
      TailAdmin 第一排是「两张小卡 + 目标卡」，不是一条横幅。 */
-  signboard: ["stats4", "trend|target@half", "table"],
+  signboard: ["stats4", "trend|target@half", "progress", "table"],
   // A coloured ground with ivory panels floating on it -- panels want to be
   // few and LARGE, so one figure beside one chart, then one table.
   // Every character the same width. Squares and a ranking are both grids of
@@ -1738,7 +1740,7 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   /* 🔴 加了一排小格子（2026-09-03）。Tabler 那一页第三排就是四个小 tile，
      而它是「最密」这个主张真正的样子：一行放得下好几个不抢戏的数字。 */
   /* Tabler 那一页有两排并排的图，我们只有一条整页宽的。 */
-  counter: ["stats4", "tiles", "trend|target@half", "table"],
+  counter: ["stats4", "tiles", "trend|progress@half", "table"],
   /*
     工作室 IS THE ONLY REGISTER THAT PAIRS NOTHING.
 
@@ -3224,6 +3226,9 @@ export function buildPageLayout(
     content: [
       node("SystemShell", `${pageKey}-shell`, {
         crumbs,
+        /* 顶上那一条右边的圆头像 —— 六个参考页每一页都有，我们六套一个都没有。
+           用他自己的名字，不是一张图库照片。 */
+        crumbMonogram: businessName.slice(0, 2),
         sidebar: [rail],
         aside,
         main: body,
