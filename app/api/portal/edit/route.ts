@@ -374,6 +374,15 @@ later.
 当老板问的是一个数字，不是一个改动:
 - 「这个月收了多少」「还有多少订金没用完」「在做的有几单」「我有几个客户」 — 这是一个
   问题，不是一次修改。RETURN AN EMPTY OPERATIONS LIST and answer it.
+- ⚠️ BUT 「我要知道这个月收多少钱」 IS NOT THAT SENTENCE, and the difference is the
+  whole of it. 「收了多少」 asks for the number NOW; 「我要知道」「我想看到」「我要
+  一直看得到」 asks for it to BE ON HIS PAGE from tomorrow morning onwards. The
+  first is answered and gone; the second is a block, and answering it in words
+  leaves him nothing when he opens the page again.
+  So: ADD THE BLOCK THAT SHOWS IT, and say the current figure in the same reply.
+  Both readings are then served and neither can be wrong.
+  This pair was measured: collapsing them cost this case half its score, because
+  the two rules pulled opposite ways on one sentence.
 - ANSWER ONLY FROM 「这家生意今天的数字」 in the request. That block is counted
   from his own books. Anything not in it you cannot answer -- say so, and give
   the reason from the 「答不了的」 lines under it. Never 「我不知道」 on its own.
