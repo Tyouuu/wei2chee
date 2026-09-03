@@ -27,7 +27,14 @@ import { renderBlockRules } from "@/lib/portal/block-rules";
 import { recordAiUsage } from "@/lib/portal/ai-usage";
 import { AI_MODEL, AI_REASONING_EFFORT } from "@/lib/portal/ai-model";
 import { PALETTE_ROWS } from "@/lib/portal/palettes.generated";
-import { LAYOUT_SETS } from "@/lib/templates/industry-template";
+import {
+  LAYOUT_SETS,
+  tradeLabels,
+  workflowStages,
+  systemLangOf,
+  dashboardRecordModule,
+} from "@/lib/templates/industry-template";
+import { fetchBusinessFacts, renderBusinessFacts } from "@/lib/portal/live-answers";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -362,7 +369,22 @@ later.
   control that LOOKS OPERABLE AND IS NOT: pressing it, typing in it or
   following it does nothing. A number that is not his yet still shows him where
   it will live; a button wired to nothing shows him a feature that will never
-  arrive.`;
+  arrive.
+
+当老板问的是一个数字，不是一个改动:
+- 「这个月收了多少」「还有多少订金没用完」「在做的有几单」「我有几个客户」 — 这是一个
+  问题，不是一次修改。RETURN AN EMPTY OPERATIONS LIST and answer it.
+- ANSWER ONLY FROM 「这家生意今天的数字」 in the request. That block is counted
+  from his own books. Anything not in it you cannot answer -- say so, and give
+  the reason from the 「答不了的」 lines under it. Never 「我不知道」 on its own.
+- NEVER WORK OUT A NEW NUMBER, and never add or subtract two of the given ones.
+  A wrong amount reads exactly like a right one, and he will act on it. This is
+  the money version of the dead-button rule: a figure he cannot check is worse
+  than a refusal he can.
+- When that block says the figures could not be read, say they could not be
+  read. Do not say 0. 「RM 0」 is a sentence he can disprove by opening the page.
+- Quote each figure with the label it arrived under, in his own words. If the
+  block says 「经销商 12」, the answer says 经销商, not 客户.`;
 
 export async function POST(req: NextRequest) {
   // Editing is a signed-in action. Not gated on `paid`: an unpaid customer is
@@ -490,6 +512,63 @@ export async function POST(req: NextRequest) {
     .single();
   const designDoc = buildDesignDoc(project?.style, project?.palette);
 
+  /*
+    HIS OWN FIGURES, READ AS HIM.
+
+    The sixteenth 「能力有、线没接」: 总览's four numbers have been counted from
+    his own books since 2026-09-01, and the assistant could not see one of
+    them. 「这个月收了多少」 was being answered by a model looking at a page
+    description -- so the best case was a guess and the worst was a number.
+
+    ⚠️ THE SESSION CLIENT, NOT THE SERVICE ROLE. Everything above uses the
+    service role, which is right for reading the project row. It is wrong
+    here, and the difference is not stylistic: a 师傅 added under 员工帐号
+    cannot see 收款, and the only thing enforcing that is row-level security
+    on HIS connection. The service role carries no identity, so it would
+    answer him -- politely, in one sentence, with his boss's month.
+
+    Bounded by the same rules as the page, so a figure that is wrong here is
+    wrong there too and one fix covers both.
+  */
+  /*
+    🔴 NOT A COLUMN ON projects, AND THE FIRST VERSION OF THIS BLOCK SAID IT WAS.
+
+    It selected `business_context` beside style and palette. There is no such
+    column, and PostgREST fails the WHOLE query for one bad name -- so `project`
+    came back null and took the design brief and the record-writing path down
+    with it. Silently. The route still answered 200 and the assistant still
+    replied in fluent sentences, about a page it could no longer see.
+
+    tsc was clean. 814 tests passed. The only thing that found it was asking
+    the assistant a real question as a real customer, which is what 重点 26 is
+    for and why it is written the way it is.
+
+    The context lives behind get_my_business_context (20260820120000), which is
+    security definer and resolves the project from auth.uid() -- so it needs
+    the CUSTOMER'S session, exactly like add_pipeline_record further down.
+  */
+  const asReader = await createSessionSupabaseClient();
+  const { data: ctxRow } = await asReader.rpc("get_my_business_context");
+  const ctx = (ctxRow ?? null) as BusinessContext | null;
+  const pageRefs = (Array.isArray(pages) ? pages : []).map((p) => ({
+    key: String(p.key),
+    label: String(p.label ?? ""),
+  }));
+  let facts: Awaited<ReturnType<typeof fetchBusinessFacts>> = null;
+  if (project?.id && ctx) {
+    const nouns = tradeLabels(ctx, pageRefs);
+    facts = await fetchBusinessFacts(
+      asReader,
+      project.id as string,
+      pageRefs.map((r) => r.key),
+      { customer: nouns.customer, pipeline: nouns.order },
+      dashboardRecordModule(pageRefs),
+      workflowStages(ctx),
+      systemLangOf(ctx),
+    );
+  }
+  const factsBlock = renderBusinessFacts(facts);
+
   const pageList = (Array.isArray(pages) ? pages : [])
     .map((p) => `${p.key} ("${p.label}")`)
     .join(", ");
@@ -548,7 +627,7 @@ ${designDoc}
 ` : `明暗（从配色量出来的）: 现在没有任何一套配色是深底的，每一套的底都近白。
 「太亮了」只能用更暗的风格回答，拿配色回答等于承诺一个他看不到的变化。
 `}
-Blocks currently on this page:
+${factsBlock ? `${factsBlock}\n\n` : ""}Blocks currently on this page:
 ${describeLayout(layout, here)}
 ${recent ? `\n刚才这段对话里发生过的事（最新的在最下面）:\n${recent}\n` : ""}
 The business owner asked:
