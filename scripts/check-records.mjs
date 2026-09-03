@@ -1345,6 +1345,101 @@ try {
   });
   check("别人的货点不了", !!countNotMine);
 
+  /* ── 他欠多少，欠多久 ──────────────────────────────────────────────
+     20260904060000。 */
+  console.log("\n⑲ 欠多少 · 欠多久 · 额度");
+
+  const { data: debtor } = await party({ in_name: "欠钱的批发客" });
+  await c.rpc("update_directory_entry", {
+    in_id: debtor.id, in_name: "欠钱的批发客",
+  });
+  /* 🔴 额度走那支人按的函式，不是直接 update —— 表单走的就是它。 */
+  const { data: limited, error: limitErr } = await c.rpc("update_directory_entry", {
+    in_id: debtor.id, in_credit_limit_cents: 2_000_000,
+  });
+  check("额度存得进去", !limitErr && Number(limited?.credit_limit_cents) === 2_000_000,
+    limitErr?.message ?? `${limited?.credit_limit_cents}`);
+  /* 改别的栏位的时候，额度不可以被顺手抹掉 —— null = 不要动。 */
+  const { data: keptLimit } = await c.rpc("update_directory_entry", {
+    in_id: debtor.id, in_phone: "012-000 0000",
+  });
+  check("改电话不会把额度弄丢", Number(keptLimit?.credit_limit_cents) === 2_000_000,
+    `${keptLimit?.credit_limit_cents}`);
+
+  const { data: oldBill } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "上个月那车",
+    in_party: "欠钱的批发客", in_party_id: debtor.id, in_amount_cents: 3_000_000,
+    in_issued_on: "2026-07-01",
+  });
+  const { data: newBill } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "这个礼拜",
+    in_party: "欠钱的批发客", in_party_id: debtor.id, in_amount_cents: 500_000,
+  });
+
+  const debts = async () => {
+    const { data } = await c.rpc("party_debts", { in_project_id: P });
+    return (data ?? []).find((d) => d.party_id === debtor.id);
+  };
+  let owing = await debts();
+  check("欠款是两张单加起来", Number(owing?.owed_cents) === 3_500_000, JSON.stringify(owing));
+  /* 🔴 最老的那一笔多久了。7 月 1 号到今天，六十几天。 */
+  check("讲得出最老的那一笔欠多久", Number(owing?.oldest_days) > 55, `${owing?.oldest_days} 天`);
+  check("额度读得回来", Number(owing?.limit_cents) === 2_000_000, `${owing?.limit_cents}`);
+
+  /* 收了一笔，欠款要跟着掉。 */
+  const { data: partPay } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 1_000_000, in_party: "欠钱的批发客",
+  });
+  await c.rpc("set_payment_allocations", {
+    in_entry_id: partPay.id,
+    in_rows: [{ record_id: oldBill.id, amount_cents: 1_000_000 }],
+  });
+  owing = await debts();
+  check("收了一百万，欠款掉到两百五", Number(owing?.owed_cents) === 2_500_000, JSON.stringify(owing));
+
+  /* 🔴 冲正之后，那笔钱不算收到 —— 欠款要回去。
+     这一条同时在验：SQL 那一支跟 lib/portal/allocations.ts 讲的是同一句话。 */
+  await c.rpc("reverse_ledger_entry", { in_entry_id: partPay.id });
+  owing = await debts();
+  check("冲正之后欠款回到三百五",
+    Number(owing?.owed_cents) === 3_500_000, JSON.stringify(owing));
+
+  /* 收齐了就不该再出现在名单上 —— 一个不欠钱的客户不是一笔欠款。 */
+  const { data: payAll } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 3_500_000, in_party: "欠钱的批发客",
+  });
+  await c.rpc("set_payment_allocations", {
+    in_entry_id: payAll.id,
+    in_rows: [
+      { record_id: oldBill.id, amount_cents: 3_000_000 },
+      { record_id: newBill.id, amount_cents: 500_000 },
+    ],
+  });
+  check("收齐了就不在欠款名单上", !(await debts()), JSON.stringify(await debts()));
+
+  /* 进货单是我欠人家，不算人家欠我。 */
+  const { data: supplier } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "suppliers", in_name: "云石厂 Z",
+  });
+  await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases", in_title: "叫货",
+    in_party: "云石厂 Z", in_party_id: supplier.id, in_amount_cents: 900_000,
+  });
+  const { data: allDebts } = await c.rpc("party_debts", { in_project_id: P });
+  check("进货单不算在他欠我里面",
+    !(allDebts ?? []).some((x) => x.party_id === supplier.id),
+    JSON.stringify(allDebts));
+
+  /* 他把那一格清空 = 不设上限，而 null 是「不要动」——
+     20260903010000 的日子、20260903070000 的工地，同一个坑第三次。 */
+  const { data: noLimit } = await c.rpc("update_directory_entry", {
+    in_id: debtor.id, in_clear_credit_limit: true,
+  });
+  check("他拿得掉那个额度", noLimit?.credit_limit_cents === null,
+    `${noLimit?.credit_limit_cents}`);
+
   /* 单收起来了，照片跟着走 —— 一张挂在不存在的单上的照片，没有人找得到它。 */
   await c.from("pipeline_records").delete().eq("id", shotJob.id);
   const { count: photosLeftAfterDoc } = await c

@@ -72,6 +72,7 @@ export default async function NewRecordPage({
           trade={ctx.trade}
           openDocuments={ctx.openDocuments}
           partyAddresses={ctx.partyAddresses}
+          partyDebts={ctx.partyDebts}
           backHref={ctx.backHref}
           /* Only the strings. `heading` is a function, and a function cannot
              cross from a server component to a client one -- it renders as a

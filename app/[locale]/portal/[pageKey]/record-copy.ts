@@ -196,6 +196,12 @@ export type RecordFormCopy = {
   /* 并排的时候用的短字。完整那一句留给 aria-label。 */
   packShort: string;
   packLooseShort: string;
+  /* 他欠多少、欠多久、额度（20260904060000）。
+     ⚠️ 额度是**一句话，不是一道门** —— 超过了照样开得了单。 */
+  creditLimit: string;
+  owesAlready: string;
+  owesDays: string;
+  overLimit: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -391,6 +397,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       packThatIs: "也就是",
       packShort: "几箱",
       packLooseShort: "另外几个",
+      creditLimit: "最多让他欠多少（可以不填）",
+      owesAlready: "他已经欠",
+      owesDays: "最老的一笔 {n} 天",
+      overLimit: "超过你写的额度",
     },
   },
   en: {
@@ -552,6 +562,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       packThatIs: "that is",
       packShort: "Packs",
       packLooseShort: "Loose",
+      creditLimit: "Credit limit (optional)",
+      owesAlready: "Already owes",
+      owesDays: "oldest is {n} days",
+      overLimit: "over the limit you set",
     },
   },
 };

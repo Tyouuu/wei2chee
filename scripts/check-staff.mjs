@@ -396,6 +396,36 @@ try {
     back?.active === true && (backJobs.data ?? []).length === 2,
     `${(backJobs.data ?? []).length} rows`,
   );
+
+  /* ── 🔴 「这个客户欠多少」也是钱 ───────────────────────────────────────
+     `party_debts` 是 security definer，所以它**绕过 RLS** —— 它 join 的
+     `ledger_allocations` 是老板一个人的。第一版我把它的守卫写成
+     `works_here`，那样一个师傅打这一支就学得到每一个客户欠多少。
+     在推上去之前改成 `sees_money`，而这一条是让它不可以再改回去。 */
+
+  /* ⚠️ **先造一笔真的欠款。** 第一版没有造，於是这一段在守卫坏掉的时候
+     照样全绿 —— 因为那个测试专案里根本没有人欠钱，**老板跟师傅都拿回 0 行**。
+     一把量不到的尺回报的是沉默，不是警报。
+     故意把 `party_debts` 改回 `works_here` 推上去，才看到这件事。 */
+  const { data: owingParty } = await owner.client.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "欠钱的",
+  });
+  await owner.client.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "还没收的一单",
+    in_party: "欠钱的", in_party_id: owingParty.id, in_amount_cents: 1_500_000,
+  });
+
+  const ownerDebts = await owner.client.rpc("party_debts", { in_project_id: P });
+  const staffDebts = await S.rpc("party_debts", { in_project_id: P });
+  /* 老板那一边先要真的看得到，这一段才量得到东西。 */
+  check("老板问得到「谁欠多少」（不然下面那一条是空的）",
+    (ownerDebts.data ?? []).length >= 1,
+    `拿回 ${(ownerDebts.data ?? []).length} 行 · ${ownerDebts.error?.message ?? ""}`);
+  check("师傅问不到「谁欠多少」",
+    (staffDebts.data ?? []).length === 0,
+    `拿回 ${(staffDebts.data ?? []).length} 行 · ${staffDebts.error?.message ?? ""}`);
+
+
 } catch (e) {
   failures.push(`threw: ${e.message}`);
   console.log(`\n  FAIL  ${e.message}`);

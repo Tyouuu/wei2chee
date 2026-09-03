@@ -22,7 +22,7 @@ import {
   addressesForDb,
   type AddressRow,
 } from "./address-editor";
-import type { PartyAddress } from "../record-context";
+import type { PartyAddress, PartyDebt } from "../record-context";
 import { JobPhotos, type JobPhoto } from "./job-photos";
 import { ChangeTrail } from "./change-trail";
 import { Stocktake } from "./stocktake";
@@ -109,6 +109,7 @@ export function NewRecordForm({
   trade,
   openDocuments,
   partyAddresses,
+  partyDebts,
   photos,
   changes,
   settlement,
@@ -191,6 +192,8 @@ export function NewRecordForm({
   openDocuments?: readonly OpenDocument[];
   /** 这一家所有对象的地址。只有走单那几页拿得到 —— 名册页自己在编辑它们。 */
   partyAddresses?: readonly PartyAddress[];
+  /** 谁欠我多少。只有走单那几页、只有看得到钱的人拿得到。 */
+  partyDebts?: Readonly<Record<string, PartyDebt>>;
   /** 工地的照片。只有走单那几页有，而且只有存过的单才有地方挂。 */
   photos?: readonly JobPhoto[];
   /** 这一张被改过什么。⚠️ null = **没有问**（他看不到这本帐），
@@ -278,6 +281,12 @@ export function NewRecordForm({
      （'that address belongs to somebody else'），而让他保存之后才知道，
      比现在当成没挑糟。 */
   const siteOk = sitesForParty.some((a) => a.id === siteId) ? siteId : "";
+  /* 🔴 他正要替一个已经欠钱的客户再开一张单。
+     [任务 67] 量到 SQL Account 把「账龄 · 信用额度」列成 Customer 那一栏的卖点 ——
+     一个批发商每天在做的判断就是这一句。
+     ⚠️ **不挡他开单**：那个额度是他自己随手写的一个数字，
+     而「这家老客户超一点没关系」是真的。我们讲事实，判断留给他。 */
+  const debt = chosenParty ? partyDebts?.[chosenParty] : undefined;
   /* 🔴 HOW MUCH IS LEFT IS NOT HIS TO TYPE, once the item exists.
      It is the sum of the movements (20260901070000), so a box here would be
      overwritten by the next render -- the same control-that-lies the money
@@ -360,6 +369,9 @@ export function NewRecordForm({
              only person who knows it types it in. */
           { key: "reg_no", label: copy.regNo },
           { key: "tax_id", label: copy.taxId },
+          /* 最多让他欠多少。收在这里而不是第一层，因为大部分生意不用它 ——
+             它是批发那一行的东西（任务 67）。 */
+          { key: "credit_limit", label: copy.creditLimit, inputMode: "tel" },
           { key: "note", label: copy.note },
         ]
       : [];
@@ -480,6 +492,10 @@ export function NewRecordForm({
             in_status: (values.status ?? "").trim(),
             in_note: (values.note ?? "").trim(),
             in_extra: extra,
+            /* 最多让他欠多少。空的就是「不设上限」—— 而 null 的意思是
+               「这一栏不要动」，所以要明确讲清空（20260904090000）。 */
+            in_credit_limit_cents: senFrom(values.credit_limit ?? "") ?? null,
+            in_clear_credit_limit: !(values.credit_limit ?? "").trim(),
           })
         : isLedger
         ? await supabase.rpc("update_ledger_words", {
@@ -877,6 +893,33 @@ export function NewRecordForm({
               <option key={x.id} value={x.name} />
             ))}
           </datalist>
+        ) : null}
+
+        {/* 🔴 他正要替一个已经欠钱的客户再开一张单。
+            画在这一格底下，因为那是他挑完人、还没写金额的那一刻 ——
+            [任务 67] 量到 SQL Account 把「账龄 · 信用额度」列成 Customer
+            那一栏的卖点，而一个批发商每天在做的判断就是这一句。
+
+            ⚠️ 超过额度**不挡他开单**，也不是红字：那个额度是他自己随手写的
+            一个数字，而「这家老客户超一点没关系」是真的。
+            只有超过额度那半句用醒目色 —— 那一句是他自己讲过的话。 */}
+        {/* ⚠️ `key === "secondary"` —— **只有对方那一格**。
+            `box()` 是每一格共用的，而第一版把这一句放在它结尾、没有条件，
+            所以同一句「他已经欠 RM 30,000」印在「工程」「客户」「报价」
+            三格底下。读数全绿，看图一眼就看到。 */}
+        {key === "secondary" && debt && debt.owedCents > 0 ? (
+          <span className="[font-size:var(--text-xs)] tabular-nums text-[color:var(--color-on-canvas-dim)]">
+            {copy.owesAlready} {ringgitOf(debt.owedCents)}
+            {debt.oldestDays != null
+              ? ` · ${copy.owesDays.replace("{n}", String(debt.oldestDays))}`
+              : ""}
+            {debt.limitCents != null && debt.owedCents > debt.limitCents ? (
+              <span className="[font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]">
+                {" · "}
+                {copy.overLimit}
+              </span>
+            ) : null}
+          </span>
         ) : null}
       </label>
     );

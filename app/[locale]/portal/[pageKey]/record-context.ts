@@ -71,6 +71,19 @@ export type RecordPageContext = {
   /** 这一家所有客户/供应商的地址，给走单那几页挑工地用。
    *  一个客户只有一个地址的时候不用挑 —— 那时候画面上什么都不出现。 */
   partyAddresses: PartyAddress[];
+  /** 每一个对象欠多少、欠多久、额度多少。
+   *  ⚠️ **只有看得到钱的人拿得到**（`party_debts` 是 sees_money）——
+   *  空物件的意思是「没有问」或者「没有人欠钱」，画面上两个都不该画。 */
+  partyDebts: Record<string, PartyDebt>;
+};
+
+/** 一个对象欠我多少。全部是算出来的，一栏都没有存（除了额度）。 */
+export type PartyDebt = {
+  owedCents: number;
+  /** 最老的那一笔还没收齐的单，欠了几天。null = 那几张单都没有日期。 */
+  oldestDays: number | null;
+  /** 他自己写的额度。null = 没写，那是常态。 */
+  limitCents: number | null;
 };
 
 /** 一个对象的一个地址。给「这张单是哪一个工地的」那个下拉。 */
@@ -339,6 +352,27 @@ export async function loadRecordPage(
     }));
   }
 
+  /* ── 谁欠我多少 ────────────────────────────────────────────────────────
+     只在走单那几页问（开单那一刻才有用），而且只问看得到钱的人。 */
+  let partyDebts: Record<string, PartyDebt> = {};
+  if (shape === "pipeline" && workspace.role === "owner") {
+    const { data: debtRows } = await supabase.rpc("party_debts", {
+      in_project_id: project.id,
+    });
+    partyDebts = Object.fromEntries(
+      ((debtRows ?? []) as {
+        party_id: string; owed_cents: number; oldest_days: number | null; limit_cents: number | null;
+      }[]).map((r) => [
+        r.party_id,
+        {
+          owedCents: Number(r.owed_cents ?? 0),
+          oldestDays: r.oldest_days == null ? null : Number(r.oldest_days),
+          limitCents: r.limit_cents == null ? null : Number(r.limit_cents),
+        },
+      ]),
+    );
+  }
+
   return {
     locale,
     pageKey,
@@ -358,6 +392,7 @@ export async function loadRecordPage(
     role: workspace.role,
     openDocuments,
     partyAddresses,
+    partyDebts,
     /* 这一行是什么生意 —— 分期付款表拿它去建议「订金三成 · 动工四成 ·
        完工三成」，而那是一颗他要按的按钮，不是一个预设。 */
     trade: businessContext.industry?.slug ?? null,

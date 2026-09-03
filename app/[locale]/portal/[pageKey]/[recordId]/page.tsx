@@ -101,7 +101,7 @@ export default async function EditRecordPage({
   if (ctx.isDirectory) {
     const { data } = await supabase
       .from("directory_entries")
-      .select("id, name, contact_person, phone, whatsapp, email, region, address, reg_no, tax_id, status, note, extra, archived_at")
+      .select("id, name, contact_person, phone, whatsapp, email, region, address, reg_no, tax_id, status, note, credit_limit_cents, extra, archived_at")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -118,6 +118,9 @@ export default async function EditRecordPage({
       tax_id: data.tax_id ?? "",
       status: data.status ?? "",
       note: data.note ?? "",
+      /* 读得回来，不然他每次打开那一格都是空的 —— 而空的意思是
+         「不设上限」，所以那会在他下一次保存的时候把额度清掉。 */
+      credit_limit: data.credit_limit_cents == null ? "" : ringgit(data.credit_limit_cents) ?? "",
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
@@ -553,6 +556,7 @@ export default async function EditRecordPage({
           backHref={ctx.backHref}
           openDocuments={ctx.openDocuments}
           partyAddresses={ctx.partyAddresses}
+          partyDebts={ctx.partyDebts}
           photos={photos}
           changes={changes}
           record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, docNo, dueOn }}
