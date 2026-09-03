@@ -50,7 +50,9 @@ const SHARED_SAMPLE = /\b71,?300\b/;
 
 const fails = [];
 const notes = [];
+const kinds = new Set();
 const say = (ok, name, detail = "") => {
+  kinds.add(name.split(" ")[0]);
   if (ok) console.log(`  PASS  ${name}${detail ? `  ${detail}` : ""}`);
   else { fails.push(name); console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ""}`); }
 };
@@ -223,18 +225,53 @@ for (const reg of phones) {
        ".topbar .co2", ".fbar .day", ".zbar .lhs"]
       .map((q) => px(ph.querySelector(q))));
 
+    /* ⑫ 🔴 那个大数字不准换行。招牌那一颗放大到 76px 之后断成「RM / 12,400」——
+       一个断成两行的金额读起来是坏掉的，而参考那一页是一行。
+       用 getClientRects() 数行盒，不是拿字数去猜。 */
+    /* ⚠️ 只判**数字**，不判标题。夜巡的「Taman Desa 3-bedroom refit」跟问答的
+       那一句问题**本来就该换行**（参考那两页也是两行）—— 第一版把它们一起算进来，
+       报了两个假的错。一个断成两行的金额是坏的，一个断成两行的句子不是。 */
+    const wrapped = [".xfig .n", ".sqfig", ".qbig", ".amt2", ".zbig .v3", ".qlast .v4"]
+      .map((q) => ph.querySelector(q)).filter(Boolean)
+      /* ⚠️ `el.getClientRects()` 回的是**元素的框**，不是**行盒** —— 招牌那一颗
+         明明断成两行，它照样回 1，於是这一项一片绿。要行盒得用 Range
+         （`align-site` 量墨迹那一轮学到的同一件事）。 */
+      .filter((e) => {
+        if (parseFloat(getComputedStyle(e).fontSize) < 30) return false;
+        const rg = document.createRange(); rg.selectNodeContents(e);
+        return rg.getClientRects().length > 1;
+      })
+      .map((e) => e.textContent.trim().slice(0, 14));
+
     /* ⑧ 🔴 拿共用的示例数字当道具 */
     const propped = shared.test(ph.innerText);
 
     /* ⑨ 画面上的中文 —— 系统语言是英文的时候一个都不该有（重点 22d） */
     const cjk = (ph.innerText.match(/[一-鿿]/g) || []).length;
 
+    /* ⑪ 🔴 底栏不准把一个大字切成两半 —— 用眼睛看出来的，读数当时全绿。
+       台账的「RM 96,240」正好落在导航条上缘，**被切成上下两半**，
+       而一个断掉的数字读起来是坏掉的，不是「还可以往下滚」。
+       只判大字（≥20px）：小字被滚动切开是正常的，大字被切开是画面坏了。 */
+    const navTop = (() => { const n = ph.querySelector(".nav"); return n ? n.getBoundingClientRect().top : null; })();
+    const sliced = [];
+    if (navTop != null) ph.querySelectorAll("*").forEach((e) => {
+      if (e.closest(".nav")) return;
+      if (![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) return;
+      if (parseFloat(getComputedStyle(e).fontSize) < 20) return;
+      const r = e.getBoundingClientRect();
+      if (r.height < 6) return;
+      const cut = r.bottom - navTop;
+      if (cut > r.height * 0.25 && cut < r.height * 0.95)
+        sliced.push(e.textContent.trim().slice(0, 16));
+    });
+
     /* ⑩ 地色跟主色，从画面上读，不是从档案里读 */
     const canvas = getComputedStyle(ph).backgroundColor;
     const acc = ph.querySelector(".fab,.hdbtn");
     const primary = acc ? getComputedStyle(acc).backgroundColor : null;
 
-    return { small, eaten: [...eaten], gap, low: [...new Set(low)], hero, title, propped, cjk,
+    return { small, eaten: [...eaten], gap, low: [...new Set(low)], hero, title, propped, cjk, sliced, wrapped,
       canvas, primary, rows: ph.querySelectorAll(".li").length,
       rowH: (() => { const r = ph.querySelector(".li"); return r ? Math.round(r.getBoundingClientRect().height) : 0; })(),
       radius: Math.round(parseFloat(getComputedStyle(ph.querySelector(".hero,.blk,.list.boxed,.paper") || ph).borderRadius) || 0) };
@@ -243,6 +280,8 @@ for (const reg of phones) {
   say(m.small.length === 0, `每一颗都 ≥ ${TAP_MIN}px`, m.small.slice(0, 4).join(" · "));
   say(m.eaten.length === 0, "浮动按钮没有吃掉字", m.eaten.slice(0, 3).join(" · "));
   say(m.gap <= VOID_MAX, `清单底下的空 ≤ ${VOID_MAX}px`, `${m.gap}px`);
+  say(m.sliced.length === 0, "底栏没有把大字切成两半", m.sliced.slice(0, 3).join(" · "));
+  say(m.wrapped.length === 0, "大数字没有断成两行", m.wrapped.join(" · "));
   say(m.low.length === 0, `每一段字都 ≥ ${CONTRAST_MIN}:1`, m.low.slice(0, 4).join(" · "));
   say(!m.propped, "没有拿共用的示例总数当道具", m.propped ? "画面上出现 RM 71,300" : "");
   say(m.cjk === 0, "英文系统里没有中文", m.cjk ? `${m.cjk} 个` : "");
@@ -273,12 +312,60 @@ say(scriptErrors.length === 0, "没有脚本错", scriptErrors.slice(0, 2).join(
    只是搬到手机上：手机没有侧栏、几乎没有表格、没有整条分区色带，
    那三根轴换成了**底栏 · 清单行 · 主要动作在哪**。
    它只能**否决**：两套七根重叠 ≥ 5 就是太像；全部不同也可以很难看。 */
+/* ⚠️ 加了第八根轴之后**没有把门槛跟着放宽**（4/8 比 4/7 更严）——
+   这一根是因为尺子放过了四套糊在一起的才加的，加完顺手放宽等於白加。 */
 const MAX_SHARED = 4;
+
+/* ── 第八根轴：**画面上有多少不是白的** ────────────────────────────────
+   🔴 老板 2026-09-03 用眼睛看完十五套：`我要的有特点就是眼睛一看就是不一样的`，
+   而他指出**四套糊在一起**（图纸 · 瑞士 · 招牌 · 早课）——
+   当时那七根轴判它们全部 ≤ 4/7，**一片绿**。
+
+   去量才知道原因：一眼分得出来的那十一套，每一套都有**一大块颜色或一块深色的地**
+   （蓝栏 · 黑底 · 绿顶 · 粉顶 · 深色大卡），糊在一起的那四套一块都没有。
+   **「一眼不一样」主要来自大面积，而那七根轴一根都没在量面积。**
+
+   量法**照抄 `check:register-colour`**（[任务 39](docs/founder-tasks.md) 用一整天
+   换来的那一条：按**面积**算，不是按声明次数）。多问一句「深不深」，
+   因为一块近黑的地在眼睛里跟一块颜色是同一件事，在彩度上却是 0。 */
+/* 量法：**每一颗像素离纯白有多远**（OKLab 的距离）。
+
+   ⚠️ 第一版只数「彩度 > 0.035」，而它读不到**淡色块** ——
+   图纸那张填满的淡蓝卡（#e5eefe）彩度只有 0.02，整屏因此报 4.7%「安静」，
+   炉那一整片淡色时间格更惨，报 0.6%。**眼睛明明看得到那几块。**
+   离白的距离同时吃三种：饱和的颜色 · 深色的地 · 淡色块 —— 那正好是
+   「一眼看得到有东西」的三种来源。 */
+const WHITE_FAR = 0.05;
+function okl3(r8, g8, b8) {
+  const f = (v) => { const c = v / 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  const r = f(r8), g = f(g8), b = f(b8);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s2 = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s2,
+          1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s2,
+          0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s2];
+}
+async function loudArea(buf) {
+  const { data, info } = await sharp(buf).resize({ width: 200 }).raw().toBuffer({ resolveWithObject: true });
+  const ch = info.channels; let far = 0, col = 0, dark = 0, n = 0;
+  for (let i = 0; i < data.length; i += ch) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    n++;
+    const [L, A, B] = okl3(r, g, b);
+    if (Math.hypot(1 - L, A, B) > WHITE_FAR) far++;
+    if (Math.hypot(A, B) > 0.035) col++;
+    if (0.2126 * r + 0.7152 * g + 0.0722 * b < 110) dark++;
+  }
+  return { col: (col / n) * 100, dark: (dark / n) * 100, loud: (far / n) * 100 };
+}
+const loudBand = (v) => v < 14 ? "安静" : v < 30 ? "一块" : v < 55 ? "大片" : "满屏";
 /* 🔴 **每一页都要量，不是只量第一屏。**
    实测 2026-09-03：十套的第一屏重叠只有 4/7，翻到**第二页**却是十套里八套
    同一张清单 —— 而这一项当时只看第一屏，所以它一片绿。
    「太一样」发生在第二页，尺子却站在第一页。 */
 const prints = [];
+const loudRead = [];
 const pageCount = await p.$$eval(SEL + " .nav button", (b2) => b2.length ? Math.max(...[...new Set(b2.map((x) => x.closest(".phone").querySelectorAll(".nav button").length))]) : 0);
 for (let page = 0; page < Math.min(pageCount, 4); page++) {
   if (page) {
@@ -311,6 +398,7 @@ for (let page = 0; page < Math.min(pageCount, 4); page++) {
       : has(".wopt") ? "选项行"
       : has(".fblk") ? "色块" : has(".sqrow") ? "方图标＋两行数字"
       : has(".xrow") ? "圆点＋两栏数字" : has(".nrow") ? "下划线"
+      : has(".bcard") ? "作品卡" : has(".kstage .four") ? "四格状态"
       : has(".gitem") ? "卡片" : has(".li.dense") ? "密" : has(".li .av") ? "头像"
       : has(".li .dot") ? "圆点" : has(".qr") ? "方块色标" : "无";
     const act = has(".tadd") ? "加一张" : has(".hbtns") ? "两颗大按钮"
@@ -335,10 +423,29 @@ for (let page = 0; page < Math.min(pageCount, 4); page++) {
       reg: ph.dataset.reg,
       hero, row, act, zone,
       tabs: ph.querySelectorAll(".nav button").length,
-      radius: Math.round(parseFloat(getComputedStyle(ph.querySelector(".hero,.xcard,.qdoc,.bcard,.gitem,.fblk,.list.boxed") || ph).borderRadius) || 0),
-      dense: (() => { const r = ph.querySelector(".li,.xrow,.nrow,.sqrow,.q,.fblk,.qr"); return r ? Math.round(r.getBoundingClientRect().height / 8) * 8 : 0; })(),
+      /* 🔴 第三次瞎：找不到那几个类名就退回**手机框自己**，而框的圆角是 26px ——
+         於是十五套里十套一起报 r=26，那一根轴等於没有在量。
+         改成读这一套自己宣告的 --rl（那才是它的圆角身份，退不回别人的框）。 */
+      radius: Math.round(parseFloat(
+        getComputedStyle(ph).getPropertyValue("--rl") ||
+        getComputedStyle(ph).getPropertyValue("--r") || "0") || 0),
+      /* 🔴 同一种瞎：清单少了八种形状，於是八套一起报 d=0。
+         一根量不到就回 0 的轴，跟一根「量过了刚好都一样」的轴长得一模一样。 */
+      dense: (() => {
+        const r = ph.querySelector(".li,.xrow,.nrow,.sqrow,.q,.fblk,.qr,.tcard,.hposter,"
+          + ".ltile,.wopt,.dgrid button,.bcard,.gitem,.kstage .four button,.kdots button,.zbento .zwarn");
+        return r ? Math.round(r.getBoundingClientRect().height / 8) * 8 : 0; })(),
     };
   }), SEL);
+  /* 量面积：一支手机一张图，缩到 200px 宽再数 —— 数的是比例不是像素数 */
+  for (const g of got) {
+    const one3 = phones.length === 1 ? SEL : `${SEL}[data-reg="${g.reg}"]`;
+    const el = await p.$(one3);
+    const a = el ? await loudArea(await el.screenshot({ type: "png" })) : { col: 0, dark: 0, loud: 0 };
+    g.loudPct = a.loud; g.colPct = a.col; g.darkPct = a.dark;
+    g.loud = loudBand(a.loud);
+    if (page === 0) loudRead.push(`  读数  ${g.reg.padEnd(10)} 第一屏不是白的：${a.loud.toFixed(1).padStart(5)}%（颜色 ${a.col.toFixed(1)}% · 深 ${a.dark.toFixed(1)}%）→ ${g.loud}`);
+  }
   got.forEach((g) => prints.push({ ...g, reg: g.reg + "·p" + (page + 1) }));
 }
 /* 回到第一页，不要让下一个跑的人拿到别人翻过的状态 */
@@ -348,21 +455,29 @@ for (const reg of phones) {
 }
 await p.waitForTimeout(200);
 
-console.log("──── 两两之间有几根轴一样（七根：首屏主角 · 清单行 · 主要动作 · 分区 · 底栏 · 圆角 · 密度）");
+/* ⚠️ `--why` 把八根轴逐套印出来。这把尺**瞎过两次**（认不得新类名 → 报「一模一样」），
+   而两次都是靠人去读代码才发现的。它肯讲它看到什么，下一次就用不着读代码。 */
+if (process.argv.includes("--why")) {
+  console.log("──── 尺子看到的八根轴（--why）");
+  prints.forEach((x) => console.log(`  ${x.reg.padEnd(14)} hero=${String(x.hero).padEnd(10)} row=${String(x.row).padEnd(12)} act=${String(x.act).padEnd(9)} zone=${String(x.zone).padEnd(8)} tabs=${x.tabs} r=${x.radius} d=${x.dense} loud=${x.loud}`));
+}
+console.log("──── 第一屏有多少不是白的（这一根是眼睛在看的那一根）");
+loudRead.sort().forEach((l) => console.log(l));
+console.log("──── 两两之间有几根轴一样（八根：首屏主角 · 清单行 · 主要动作 · 分区 · 底栏 · 圆角 · 密度 · 不是白的面积）");
 const pairs = [];
 for (let i = 0; i < prints.length; i++) for (let j = i + 1; j < prints.length; j++) {
   const a2 = prints[i], b2 = prints[j];
   /* 只比同一页 —— 拿 A 的第一页去比 B 的第三页没有意义 */
   if (a2.reg.split("·p")[1] !== b2.reg.split("·p")[1]) continue;
-  const same = ["hero", "row", "act", "zone", "tabs", "radius", "dense"].filter((k) => a2[k] === b2[k]);
+  const same = ["hero", "row", "act", "zone", "tabs", "radius", "dense", "loud"].filter((k) => a2[k] === b2[k]);
   if (same.length >= 3) pairs.push({ a: a2.reg, b: b2.reg, n: same.length, same });
 }
 pairs.sort((x, y) => y.n - x.n);
 if (!pairs.length) console.log("  没有任何一对重叠到 3 根");
 pairs.slice(0, 8).forEach((x) =>
-  console.log(`  ${x.n >= MAX_SHARED + 1 ? "⚠️" : "  "} ${x.a} · ${x.b}  重叠 ${x.n}/7  （${x.same.join(" ")}）`));
+  console.log(`  ${x.n >= MAX_SHARED + 1 ? "⚠️" : "  "} ${x.a} · ${x.b}  重叠 ${x.n}/8  （${x.same.join(" ")}）`));
 const tooAlike = pairs.filter((x) => x.n > MAX_SHARED);
-say(tooAlike.length === 0, `任何两套重叠 ≤ ${MAX_SHARED}/7`,
+say(tooAlike.length === 0, `任何两套重叠 ≤ ${MAX_SHARED}/8`,
   tooAlike.map((x) => `${x.a}·${x.b} ${x.n}`).join(" · "));
 
 fs.mkdirSync(OUT, { recursive: true });
@@ -370,7 +485,7 @@ const shot = `${OUT}/align-app.jpg`;
 await p.screenshot({ path: shot, fullPage: true, type: "jpeg", quality: 74 });
 await b.close();
 
-console.log(`\n判：${fails.length ? `${fails.length} 项没过` : "六件都没有再犯"}`);
+console.log(`\n判：${fails.length ? `${fails.length} 项没过` : `${kinds.size} 件都没有再犯`}`);
 console.log(notes.map((n) => "  ⚪ " + n).join("\n"));
 console.log(`⚠️ 全绿只表示**这几件没有再犯**。像不像要用眼睛看 ${shot}。`);
 process.exit(fails.length ? 1 : 0);

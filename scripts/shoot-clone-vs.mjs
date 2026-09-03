@@ -27,12 +27,25 @@ if (!PAGE) { console.error("用法: node scripts/shoot-clone-vs.mjs --page <我�
 /* 一套风格 · 它抄的那个 app · 商店的包名 · 取第几张
    （第几张是**用眼睛挑的** —— 挑那一张真的画着界面的，不是行销大标题那一张） */
 const PAIRS = [
-  { reg: "ledger",    zh: "台账", app: "Xero",        id: "com.xero.touch",       pick: 0, take: "一个大数字压住整屏" },
-  { reg: "hearth",    zh: "炉",   app: "Fresha",      id: "com.fresha.Business",  pick: 4, take: "色块日程表" },
-  { reg: "counter",   zh: "中台", app: "Zoho Books",  id: "com.zoho.books",       pick: 0, take: "两格并排＋捷径格子" },
-  { reg: "blueprint", zh: "图纸", app: "QuickBooks",  id: "com.intuit.quickbooks", pick: 4, take: "按状态分组的清单" },
-  { reg: "swiss",     zh: "瑞士", app: "Notion",      id: "notion.id",            pick: 2, take: "什么都没有，只有段落标题" },
-  { reg: "signboard", zh: "招牌", app: "Square",      id: "com.squareup",         pick: 2, take: "一屏只有一件事" },
+  { reg: "ledger",    zh: "台账", app: "Xero",       id: "com.xero.touch",        pick: 0, take: "一个大数字压住整屏" },
+  { reg: "hearth",    zh: "炉",   app: "Fresha",     id: "com.fresha.Business",   pick: 4, take: "色块日程表" },
+  { reg: "counter",   zh: "中台", app: "Zoho Books", id: "com.zoho.books",        pick: 0, take: "两格并排＋捷径格子" },
+  { reg: "blueprint", zh: "图纸", app: "QuickBooks", id: "com.intuit.quickbooks", pick: 0, take: "问候＋提醒条＋帐户卡" },
+  { reg: "swiss",     zh: "瑞士", app: "Notion",     id: "notion.id",             pick: 2, take: "满幅封面＋段落标题" },
+  { reg: "signboard", zh: "招牌", app: "Square",     id: "com.squareup",          pick: 2, take: "一屏只有一件事" },
+  /* ⚠️ 候选 7–12 里有五套的参考**不在商店页上** —— 商店页给的是行销版
+     （一句大标题压一台斜着的手机），而这五套抄的是 Mobbin 收的**真界面**。
+     所以它们的参考读的是本地那五张裁图（`.screenshots/clone/pf-*.png`）。
+     两种来源要分开讲，不然下一个人会去商店找一张根本不存在的图。 */
+  { reg: "cand7",  zh: "站台",  app: "Klarna",   local: "pf-6.png", take: "有色顶区＋彩色圆图标＋四格状态导航" },
+  { reg: "cand8",  zh: "早课",  app: "Brilliant", local: "pf-4.png", take: "星期圆点＋一张填满的行动卡" },
+  { reg: "cand9",  zh: "分店",  app: "Gametime", local: "pf-1.png", take: "店名当大标题带⌄＋横滑卡片" },
+  { reg: "cand10", zh: "入口墙", app: "Gojek",    local: "pf-2.png", take: "有色顶区＋一整片圆图标墙" },
+  { reg: "cand11", zh: "看板",  app: "Trello",   id: "com.trello",            pick: 2, take: "一整片有色的栏，白卡叠上面" },
+  { reg: "cand12", zh: "夜巡",  app: "Hulu",     local: "pf-7.png", take: "深色的地＋满幅主视觉" },
+  { reg: "cand13", zh: "货架",  app: "Loyverse", id: "com.loyverse.sale",     pick: 0, take: "有色顶栏＋分半动作条＋照片方块" },
+  { reg: "cand14", zh: "面板",  app: "Tesla",    local: "pf-tesla.png", take: "深色＋大图＋一整片控制图标" },
+  { reg: "cand15", zh: "问答",  app: "Wise",     id: "com.transferwise.android", pick: 2, take: "一个问题＋一列选项" },
 ];
 
 fs.mkdirSync(OUT, { recursive: true });
@@ -41,6 +54,15 @@ const bad = [];
 
 /* ── ① 去商店抓原图 ─────────────────────────────────────────────────── */
 async function refShot(pair) {
+  /* 本地那五张：Mobbin 收的真界面，商店页上没有。 */
+  if (pair.local) {
+    const f = `${OUT}/${pair.local}`;
+    if (!fs.existsSync(f)) { bad.push(`${pair.app} 本地参考不见了：${f}`); return null; }
+    const buf = fs.readFileSync(f);
+    const meta = await sharp(buf).metadata();
+    if (!meta.width || meta.width < 300) { bad.push(`${pair.app} 本地参考只有 ${meta.width}px 宽`); return null; }
+    return { buf, n: Number(pair.local.replace(/\D/g, "")) - 1, total: 7, w: meta.width, h: meta.height, from: "Mobbin 收的真界面" };
+  }
   const p = await b.newPage({ viewport: { width: 1440, height: 1100 } });
   try {
     await p.goto(`https://play.google.com/store/apps/details?id=${pair.id}&hl=en`,
@@ -65,7 +87,7 @@ async function refShot(pair) {
     await q.close();
     const meta = await sharp(buf).metadata();
     if (!meta.width || meta.width < 400) { bad.push(`${pair.app} 抓到的图只有 ${meta.width}px 宽 —— 太小`); return null; }
-    return { buf, n, total: urls.length, w: meta.width, h: meta.height };
+    return { buf, n, total: urls.length, w: meta.width, h: meta.height, from: "商店页（行销版）" };
   } catch (e) {
     await p.close().catch(() => {});
     bad.push(`${pair.app} ${String(e.message ?? e).slice(0, 50)}`);
@@ -100,7 +122,7 @@ for (const pair of PAIRS) {
   const svg = `<svg width="${W}" height="${TOT}" xmlns="http://www.w3.org/2000/svg">
     <text x="${PAD}" y="34" font-family="system-ui" font-size="25" font-weight="700" fill="#111">${esc(pair.zh)} ${pair.reg}</text>
     <text x="${PAD}" y="62" font-family="system-ui" font-size="15" fill="#555">抄 ${esc(pair.app)} · 拿的是「${esc(pair.take)}」</text>
-    <text x="${PAD}" y="${LABEL - 8}" font-family="ui-monospace,monospace" font-size="14" fill="#777">它 · ${esc(pair.app)}${ref ? ` （第 ${ref.n + 1}/${ref.total} 张）` : " —— 抓不到"}</text>
+    <text x="${PAD}" y="${LABEL - 8}" font-family="ui-monospace,monospace" font-size="14" fill="#777">它 · ${esc(pair.app)}${ref ? ` （第 ${ref.n + 1}/${ref.total} 张 · ${esc(ref.from)}）` : " —— 抓不到"}</text>
     <text x="${PAD + tm.width + GAP}" y="${LABEL - 8}" font-family="ui-monospace,monospace" font-size="14" fill="#777">我们 · ${esc(pair.zh)}</text>
   </svg>`;
 
@@ -120,5 +142,5 @@ await b.close();
 
 console.log(`\n一套一张，${OUT}/vs-<风格>.jpg`);
 if (bad.length) { console.log("\n🔴 " + bad.join("\n🔴 ")); console.log("\n判：抓不到就是失败，不是「这一套很简单」"); process.exit(1); }
-console.log("判：六套的参考都抓到了");
+console.log(`判：${PAIRS.length} 套的参考都抓到了`);
 console.log("⚠️ 这支脚本只负责把两张摆在一起。**像不像是眼睛判的，它不判。**");
