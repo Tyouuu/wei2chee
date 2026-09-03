@@ -2165,16 +2165,29 @@ function buildQuotations(
       actionLabel: c.dashboard.primaryAction(c.quotations.title),
       actionHref: `/${locale}/portal/quotations/new`,
     }),
-    filterChips(
-      "quotations-filters",
-      c.quotations.filterKind,
-      [c.quotations.filterValue],
-      lang,
-    ),
-    node("DatePicker", "quotations-date", {
-      name: "quotation-date",
-      placeholder: c.quotations.datePlaceholder,
-      allowClear: true,
+    /* 🔴 两行併成一行（2026-09-03）。老板：`你放大来开 很多东西没复刻到`。
+       放大到两倍并排一看，最大的一件不是颜色也不是字：
+       **shadcn 那一页的工具条是一行**（筛一个字 · 两个分面 · 换栏位），
+       而我们是**三行**：筛选条一行、日期一行、表格自己的搜索又一行。
+       三行往下叠的东西，读起来是三件事；一行读起来是一条工具条。 */
+    node("Columns", "quotations-toolbar", {
+      layout: "wide-left",
+      a: [
+        filterChips(
+          "quotations-filters",
+          c.quotations.filterKind,
+          [c.quotations.filterValue],
+          lang,
+        ),
+      ],
+      b: [
+        node("DatePicker", "quotations-date", {
+          name: "quotation-date",
+          placeholder: c.quotations.datePlaceholder,
+          allowClear: true,
+        }),
+      ],
+      c: [],
     }),
     /* A quotation is not a list that happens to have a document -- it IS the
        document. Showing the paper beside the list is the arrangement the
