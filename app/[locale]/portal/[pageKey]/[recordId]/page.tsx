@@ -9,6 +9,7 @@ import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, type DocumentSettlement } from "@/lib/portal/allocations";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { PartyHistory } from "../new/party-history";
+import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import type { JobPhoto } from "../new/job-photos";
 import { showChanges, type ShownChange, type ChangeRow } from "@/lib/portal/change-log";
 import { priceSchedule } from "@/lib/portal/payment-terms";
@@ -89,6 +90,8 @@ export default async function EditRecordPage({
   /* 哪一间店。读得回来，不然他每次打开都是「不分店」——
      而那会在下一次保存的时候把分店清掉。 */
   let branchId: string | null = null;
+  /* 那笔钱是谁做的（20260904120000）。 */
+  let doneBy: string | null = null;
   /* 工地的照片。⚠️ 网址是签出来的、会过期的 —— 桶是 private 的，
      因为那是他客户家里，不是官网（20260904010000）。 */
   let photos: JobPhoto[] = [];
@@ -102,6 +105,15 @@ export default async function EditRecordPage({
   let visits = 0;
   let lastOn: string | null = null;
   let spentCents: number | null = null;
+  /* 师傅那一页：他的抽成，跟这个月他做了多少（20260904120000）。
+     ⚠️ `null` = **没有问**（这一页不是师傅、或者读的人看不到钱），
+     不是「没有抽成」—— 那两句在画面上要长得不一样。 */
+  let tiers: CommissionTier[] | null = null;
+  /* 这个月算在他名下的收款。⚠️ 它同时喂两个地方：底下那一段，
+     跟表单里那一格「本月业绩」—— 而那一格从今天起是**锁住**的，
+     因为它现在是算出来的（模板本来就把那一栏叫「This month」，
+     而它到今天为止是一个他自己打字进去的框）。 */
+  let earnedCents = 0;
   /* 单据那一边：这张单收到多少、还欠多少。
      ⚠️ null 的意思是**没有问**（他看不到钱），不是「零」—— 画面照这个
      决定要不要画那一整段。 */
@@ -216,6 +228,42 @@ export default async function EditRecordPage({
       spentCents = (spentRows ?? []).reduce(
         (n: number, r: { amount_cents: number | null }) => n + (r.amount_cents ?? 0),
         0,
+      );
+    }
+
+    /* ── 师傅那一页：抽成跟这个月 ──────────────────────────────────────
+       🔴 只在 `staff` 那一页，而且只问看得到钱的人。佣金是薪水，
+       而薪水在这个 schema 里从来不是共用的（commission_tiers 的 policy
+       就是 sees_money，`staff_earnings` 第一行也是）。 */
+    if (ctx.role === "owner" && pageKey === "staff") {
+      const month = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kuala_Lumpur",
+        year: "numeric",
+        month: "2-digit",
+      })
+        .format(new Date())
+        .slice(0, 7);
+      const [{ data: tierRows }, { data: earnRows }] = await Promise.all([
+        supabase
+          .from("commission_tiers")
+          .select("id, from_cents, percent")
+          .eq("party_id", recordId)
+          .order("from_cents"),
+        supabase.rpc("staff_earnings", { in_project_id: ctx.projectId, in_month: month }),
+      ]);
+      tiers = ((tierRows ?? []) as { id: string; from_cents: number; percent: number }[]).map(
+        (t) => ({
+          id: t.id,
+          /* 存的是分，他打的是块。「500000」在那个框里对他没有意义。 */
+          from: String(Number(t.from_cents) / 100),
+          /* 「10.00」回来是 numeric(5,2)；他打的是 10。 */
+          percent: String(Number(t.percent)),
+        }),
+      );
+      earnedCents = Number(
+        ((earnRows ?? []) as { party_id: string; earned_cents: number }[]).find(
+          (r) => r.party_id === recordId,
+        )?.earned_cents ?? 0,
       );
     }
 
@@ -360,7 +408,7 @@ export default async function EditRecordPage({
   } else if (ctx.shape === "ledger") {
     const { data } = await supabase
       .from("ledger_entries")
-      .select("id, doc_no, note, party, amount_cents, adjusts_id, branch_id, extra")
+      .select("id, doc_no, note, party, amount_cents, adjusts_id, branch_id, done_by, extra")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -380,6 +428,9 @@ export default async function EditRecordPage({
       .maybeSingle();
     reversed = !!cancels || !!data.adjusts_id;
     branchId = data.branch_id ?? null;
+    /* 读得回来，不然他每次打开都是「没有指定」—— 而那会在下一次保存的
+       时候把「谁做的」清掉，而他不会知道自己刚刚删掉了一个人的业绩。 */
+    doneBy = data.done_by ?? null;
 
     /* 这笔钱已经分摊给哪几张单。⚠️ `ledger_allocations` 是 sees_money，
        所以一个师傅拿回来的是空的 —— 而他根本打不开这一页
@@ -621,9 +672,12 @@ export default async function EditRecordPage({
           partyAddresses={ctx.partyAddresses}
           partyDebts={ctx.partyDebts}
           branches={ctx.branches}
+          staff={ctx.staff}
+          earnedLocked={pageKey === "staff"}
+          earnedValue={tiers ? ringgit(earnedCents) ?? "RM 0" : null}
           photos={photos}
           changes={changes}
-          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, branchId, docNo, dueOn }}
+          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, branchId, docNo, dueOn, doneBy }}
           settlement={settlement}
           copy={copy.form}
         />
@@ -631,7 +685,12 @@ export default async function EditRecordPage({
         {/* 他的单子。画在表单**底下**，因为它是读的，不是填的 ——
             而一个客户页上的第二颗「保存」会让他不知道按哪一颗。
             ⚠️ 只在名册页上。 */}
-        {ctx.isDirectory ? (
+        {/* ⚠️ 师傅那一页不画这两段。
+            两段读的都是 `party_id`，而 `party_id` 只会是客户或供应商 ——
+            一个师傅永远不会是一张单的对方。所以在他那一页上，
+            这两段**永远**写着「还没有来过」跟「还没有单」，
+            而一段永远说同一句话的段落，读起来是这一页没做完。 */}
+        {ctx.isDirectory && pageKey !== "staff" ? (
           <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
             <PartyHistory
               visits={visits}
@@ -642,6 +701,20 @@ export default async function EditRecordPage({
             <div className="mt-6">
               <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
             </div>
+          </div>
+        ) : null}
+
+        {/* 师傅那一页多一段：他的抽成，跟这个月他做了多少。
+            ⚠️ `tiers === null` 的意思是**没有问**（不是师傅页，或者
+            读的人看不到钱）—— 那时候整段不画，而不是画一份空的抽成。 */}
+        {tiers ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <CommissionPanel
+              partyId={recordId}
+              tiers={tiers}
+              earnedCents={earnedCents}
+              copy={copy.form}
+            />
           </div>
         ) : null}
       </main>

@@ -1532,6 +1532,150 @@ try {
     .from("record_photos").select("id", { count: "exact", head: true }).eq("record_id", shotJob.id);
   check("单删了，照片那几行跟着走", photosLeftAfterDoc === 0, `${photosLeftAfterDoc} 张`);
 
+  /* ── 阶梯佣金：头五千一成，之后一成半 ──────────────────────────────
+     [任务 67] 实查 Aoikumo 有 20 多种佣金算法，Tunai 的头条里也有阶梯。
+     一个沙龙老板每个月要算一次，而今天他是在纸上算的。
+
+     🔴 这一段真正守的只有一件事：**分段算，不是整笔跳档**。
+     八千块、0–5000 抽一成、5000 以上抽一成半：
+       分段（对的）5000×10% + 3000×15% = 950
+       整笔（错的）8000×15%            = 1200
+     差 250 块，而那 250 块每个月都会有人来吵。
+     lib/portal/commission.ts 那一份浏览器算术用的是同一组数字 ——
+     两边给不一样的答案，这几行就红。 */
+  console.log("\n㉒ 阶梯佣金");
+
+  const { data: stylist } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "staff", in_name: "Aida",
+  });
+  check("师傅写得进名册", !!stylist?.id);
+
+  const { data: tiers, error: tierErr } = await c.rpc("set_commission_tiers", {
+    in_party_id: stylist.id,
+    in_tiers: [
+      { from_cents: 0, percent: 10 },
+      { from_cents: 500000, percent: 15 },
+    ],
+  });
+  check("两档写得进去", (tiers ?? []).length === 2, tierErr?.message?.slice(0, 90));
+  check("而且按起点排回来", Number((tiers ?? [])[0]?.from_cents) === 0);
+
+  /* 两档同一个起点是一次打错，不是两档。 */
+  const { error: sameStart } = await c.rpc("set_commission_tiers", {
+    in_party_id: stylist.id,
+    in_tiers: [{ from_cents: 0, percent: 10 }, { from_cents: 0, percent: 15 }],
+  });
+  check("两档不准从同一个数字开始", !!sameStart);
+  /* 🔴 而且被拒之后，本来那两档还在 —— 一份被拒绝的编辑不可以顺手清空。 */
+  const { count: tiersLeft } = await c
+    .from("commission_tiers").select("id", { count: "exact", head: true })
+    .eq("party_id", stylist.id);
+  check("被拒之后原本那两档还在", tiersLeft === 2, `${tiersLeft} 档`);
+
+  const { error: tooManyTiers } = await c.rpc("set_commission_tiers", {
+    in_party_id: stylist.id,
+    in_tiers: Array.from({ length: 7 }, (_, i) => ({ from_cents: i * 100000, percent: 5 })),
+  });
+  check("七档挡下来", !!tooManyTiers);
+
+  /* 🔴 客户没有佣金。一个挂在客户身上的抽成，在画面上完全正常，
+     而它会让下个月那张表算出一个没有人拿得到的数字。 */
+  const { data: someCustomer } = await party({ in_name: "Commission probe" });
+  const { error: notStaff } = await c.rpc("set_commission_tiers", {
+    in_party_id: someCustomer.id, in_tiers: [{ from_cents: 0, percent: 10 }],
+  });
+  check("客户身上写不了佣金", !!notStaff);
+
+  /* 八千块，挂在 Aida 身上。 */
+  const { data: earned8k, error: earnErr } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 800000, in_party: "", in_done_by: stylist.id,
+  });
+  check("那笔钱记得住是谁做的", earned8k?.done_by === stylist.id, earnErr?.message?.slice(0, 90));
+
+  const { error: notStaffOnMoney } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 100, in_party: "", in_done_by: someCustomer.id,
+  });
+  check("一个客户当不了「谁做的」", !!notStaffOnMoney);
+
+  const thisMonth = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kuala_Lumpur", year: "numeric", month: "2-digit",
+  }).format(new Date()).slice(0, 7);
+
+  const { data: pay1, error: payErr } = await c.rpc("staff_earnings", {
+    in_project_id: P, in_month: thisMonth,
+  });
+  const aida = (pay1 ?? []).find((r) => r.party_id === stylist.id);
+  check("月底那张表算得出她做了多少", Number(aida?.earned_cents) === 800000,
+    `${JSON.stringify(pay1)} ${payErr?.message ?? ""}`.slice(0, 140));
+  /* 🔴 这一行就是整段的理由。 */
+  check("分段算：5000×10% + 3000×15% = 950，不是 8000×15% = 1200",
+    Number(aida?.commission_cents) === 95000, `${aida?.commission_cents}`);
+
+  /* 冲正过的不算她赚的 —— 一笔退回去的钱不是业绩。
+     ⚠️ 参数叫 `in_entry_id` 不是 `in_id`。第一版我写了 `in_id`，
+     PostgREST 找不到那支函式、回一个我没有读的错，於是这一条红了 ——
+     **产品是对的，我的呼叫是错的**。所以下面那一句要看错误，不要只看结果。 */
+  const { error: undoErr } = await c.rpc("reverse_ledger_entry", { in_entry_id: earned8k.id });
+  check("冲正开得出来", !undoErr, undoErr?.message?.slice(0, 90));
+  const { data: pay2 } = await c.rpc("staff_earnings", {
+    in_project_id: P, in_month: thisMonth,
+  });
+  check("冲正过的那一笔不算她赚的",
+    !(pay2 ?? []).some((r) => r.party_id === stylist.id), JSON.stringify(pay2));
+
+  /* 上个月的钱不算这个月的佣金 —— 一张按月算的表，日子错一天就错一整档。 */
+  const { data: lastMonthPay } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 700000, in_party: "", in_done_by: stylist.id,
+    in_entry_on: `${thisMonth}-01`,
+  });
+  const prev = new Date(`${thisMonth}-01T00:00:00Z`);
+  prev.setUTCMonth(prev.getUTCMonth() - 1);
+  const lastMonth = prev.toISOString().slice(0, 7);
+  const { data: payPrev } = await c.rpc("staff_earnings", {
+    in_project_id: P, in_month: lastMonth,
+  });
+  check("这个月一号收的钱不会算进上个月",
+    !(payPrev ?? []).some((r) => r.party_id === stylist.id), JSON.stringify(payPrev));
+
+  /* 挑错人是打字错误，不是一笔要留痕迹的更正 —— 改得回来，也拿得掉。 */
+  const { data: reassigned } = await c.rpc("update_ledger_words", {
+    in_id: lastMonthPay.id, in_done_by: null,
+  });
+  check("不传的时候那一栏不动", reassigned?.done_by === stylist.id, `${reassigned?.done_by}`);
+  const { data: cleared } = await c.rpc("update_ledger_words", {
+    in_id: lastMonthPay.id, in_clear_done_by: true,
+  });
+  check("讲清空才真的清空", cleared?.done_by === null, `${cleared?.done_by}`);
+  /* 🔴 这个坑这个 schema 犯过三次（due_on · 工地 · 分店）：null 的意思是
+     「这一栏不要动」，所以少了一个明确的清空参数，一个名字挂上去就
+     永远拿不下来。 */
+
+  /* 没有档就是没有佣金，不是报错 —— 大部分师傅本来就没有抽成。 */
+  const { data: hourly } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "staff", in_name: "Ah Seng",
+  });
+  await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 300000, in_party: "", in_done_by: hourly.id,
+  });
+  const { data: pay3 } = await c.rpc("staff_earnings", {
+    in_project_id: P, in_month: thisMonth,
+  });
+  const seng = (pay3 ?? []).find((r) => r.party_id === hourly.id);
+  check("没写档的师傅照样看得到他做了多少", Number(seng?.earned_cents) === 300000);
+  check("而佣金是零，不是报错", Number(seng?.commission_cents) === 0, `${seng?.commission_cents}`);
+
+  /* 🔴 它**不会自己写一笔佣金出去**。替他记一笔他没有讲过要付的钱，
+     是在他的帐上凭空多一笔支出。 */
+  const { count: payouts } = await c
+    .from("ledger_entries").select("id", { count: "exact", head: true })
+    .eq("module_key", "commissions");
+  check("算给他看，不替他记一笔佣金出去", payouts === 0, `${payouts} 笔`);
+
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

@@ -213,6 +213,29 @@ export type RecordFormCopy = {
   /* 哪一间店（20260904100000）。两间以上才出现。 */
   branch: string;
   branchAny: string;
+  /* 那笔钱是谁做的，跟他的抽成（20260904120000）。
+     ⚠️ 没有师傅的时候一个字都不出现 —— 一人公司占我们客户的大多数。 */
+  doneBy: string;
+  doneByNone: string;
+  tiersHeading: string;
+  tiersLede: string;
+  tiersFrom: string;
+  tiersPercent: string;
+  tiersAdd: string;
+  tiersRemove: string;
+  tiersNone: string;
+  tiersFirst: string;
+  tiersThen: string;
+  tiersOnwards: string;
+  tiersJoin: string;
+  tiersDuplicate: string;
+  tiersSaved: string;
+  tiersTooMany: string;
+  tiersBadPercent: string;
+  earnedCommission: string;
+  earnedNone: string;
+  earnedNotPaid: string;
+  earnedDerived: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -419,6 +442,27 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       historyNone: "还没有来过。",
       branch: "哪一间店",
       branchAny: "不分店",
+      doneBy: "谁做的",
+      doneByNone: "没有指定",
+      tiersHeading: "他的抽成",
+      tiersLede: "分段算：头一段一个比例，超过的那一段另一个。",
+      tiersFrom: "从",
+      tiersPercent: "抽 %",
+      tiersAdd: "加一档",
+      tiersRemove: "拿掉",
+      tiersNone: "还没有写抽成，所以他的佣金是零。",
+      tiersFirst: "头 {amount} 抽 {percent}",
+      tiersThen: "全部抽 {percent}",
+      tiersOnwards: "{amount} 以上抽 {percent}",
+      tiersJoin: " · ",
+      tiersDuplicate: "两档不可以从同一个数字开始。",
+      tiersSaved: "存好了",
+      tiersTooMany: "最多六档 —— 再多没有人算得清楚自己在第几档。",
+      tiersBadPercent: "比例要在 0 到 100 之间。",
+      earnedCommission: "这个月的抽成",
+      earnedNone: "这个月还没有算在他名下的收款，所以是零。",
+      earnedNotPaid: "这只是算给你看的。要付出去，去开销那一页记一笔。",
+      earnedDerived: "这一格是收款那边算出来的，改不了。",
     },
   },
   en: {
@@ -591,6 +635,27 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       historyNone: "Nothing yet.",
       branch: "Which branch",
       branchAny: "No particular branch",
+      doneBy: "Who did it",
+      doneByNone: "Nobody in particular",
+      tiersHeading: "Their commission",
+      tiersLede: "Band by band: one rate up to a figure, another above it.",
+      tiersFrom: "From",
+      tiersPercent: "Rate %",
+      tiersAdd: "Add a band",
+      tiersRemove: "Remove",
+      tiersNone: "No bands yet, so their commission is nil.",
+      tiersFirst: "first {amount} at {percent}",
+      tiersThen: "{percent} on everything",
+      tiersOnwards: "{amount} and above at {percent}",
+      tiersJoin: " · ",
+      tiersDuplicate: "Two bands cannot start at the same figure.",
+      tiersSaved: "Saved",
+      tiersTooMany: "Six bands at most. Past that, nobody can follow which one they are in.",
+      tiersBadPercent: "The rate has to be between 0 and 100.",
+      earnedCommission: "Commission this month",
+      earnedNone: "Nil. No money is credited to them this month.",
+      earnedNotPaid: "This is worked out for you, not paid. Record it on the expenses page when you pay it.",
+      earnedDerived: "Worked out from the payments credited to them. Not typed.",
     },
   },
 };

@@ -138,7 +138,7 @@ export function AddressEditor({
       <button
         type="button"
         onClick={() => onChange([...rows, blankAddress()])}
-        className="self-start [border-radius:var(--radius-md)] border border-dashed px-3 py-2 [font-size:var(--text-sm)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)] hover:[border-color:var(--color-primary)] hover:text-[color:var(--color-on-canvas)]"
+        className="inline-flex min-h-11 items-center self-start [border-radius:var(--radius-md)] border border-dashed px-3 [font-size:var(--text-sm)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)] hover:[border-color:var(--color-primary)] hover:text-[color:var(--color-on-canvas)]"
       >
         ＋ {copy.addrAdd}
       </button>

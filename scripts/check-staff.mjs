@@ -425,6 +425,47 @@ try {
     (staffDebts.data ?? []).length === 0,
     `拿回 ${(staffDebts.data ?? []).length} 行 · ${staffDebts.error?.message ?? ""}`);
 
+  /* ── 🔴 佣金也是薪水 ─────────────────────────────────────────────────
+     一个师傅看不到自己抽几成 —— 那听起来不近人情，直到你想到
+     **他也看不到别人抽几成**。这一张表就是薪水，而薪水在这个 schema 里
+     从来不是共用的。
+
+     ⚠️ 照上一段学到的：**先造一份真的佣金**。没有的话，守卫坏掉的时候
+     老板跟师傅都拿回 0 行，这一段照样全绿。 */
+  const { data: aida } = await owner.client.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "staff", in_name: "Aida",
+  });
+  await owner.client.rpc("set_commission_tiers", {
+    in_party_id: aida.id, in_tiers: [{ from_cents: 0, percent: 10 }],
+  });
+  await owner.client.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 500_000, in_party: "", in_done_by: aida.id,
+  });
+  const month = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kuala_Lumpur", year: "numeric", month: "2-digit",
+  }).format(new Date()).slice(0, 7);
+
+  const ownerTiers = await owner.client.from("commission_tiers").select("id");
+  const staffTiers = await S.from("commission_tiers").select("id");
+  check("老板看得到那份佣金办法（不然下面那一条是空的）",
+    (ownerTiers.data ?? []).length >= 1,
+    `拿回 ${(ownerTiers.data ?? []).length} 行 · ${ownerTiers.error?.message ?? ""}`);
+  check("师傅看不到任何人的佣金办法",
+    (staffTiers.data ?? []).length === 0,
+    `拿回 ${(staffTiers.data ?? []).length} 行`);
+
+  const ownerPay = await owner.client.rpc("staff_earnings", { in_project_id: P, in_month: month });
+  const staffPay = await S.rpc("staff_earnings", { in_project_id: P, in_month: month });
+  check("老板算得出这个月谁做了多少（不然下面那一条是空的）",
+    (ownerPay.data ?? []).length >= 1,
+    `拿回 ${(ownerPay.data ?? []).length} 行 · ${ownerPay.error?.message ?? ""}`);
+  /* 🔴 `staff_earnings` 是 security definer，所以它**绕过 RLS**。
+     它的守卫是函式第一行那句 sees_money，跟 party_debts 同一条。 */
+  check("师傅算不出别人这个月做了多少",
+    (staffPay.data ?? []).length === 0,
+    `拿回 ${(staffPay.data ?? []).length} 行`);
+
 
 } catch (e) {
   failures.push(`threw: ${e.message}`);

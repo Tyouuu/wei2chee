@@ -78,6 +78,10 @@ export type RecordPageContext = {
   /** 还在营业的分店。**只有两间以上才有意义** —— 一间店的生意占绝大多数，
    *  而一个只有一个选项的下拉是一个假的控件。 */
   branches: { id: string; name: string }[];
+  /** 这一家的师傅。给钱那几页的「谁做的」挑（佣金算在那上面）。
+   *  **一个人都没有的时候是空的，而空的意思是画面上什么都不出现** ——
+   *  一人公司占我们客户的大多数，而一个只有「没有指定」的下拉是个假控件。 */
+  staff: { id: string; name: string }[];
 };
 
 /** 一个对象欠我多少。全部是算出来的，一栏都没有存（除了额度）。 */
@@ -389,6 +393,20 @@ export async function loadRecordPage(
     branches = (brRows ?? []) as { id: string; name: string }[];
   }
 
+  /* 这一家的师傅。只有钱那几页要 —— 佣金算在收到的钱上（20260904120000）。
+     ⚠️ 名册页自己不用：一个师傅的页面是**建立**他的地方，不是挑他的地方。 */
+  let staff: { id: string; name: string }[] = [];
+  if (shape === "ledger") {
+    const { data: staffRows } = await supabase
+      .from("directory_entries")
+      .select("id, name")
+      .eq("project_id", project.id)
+      .eq("module_key", "staff")
+      .is("archived_at", null)
+      .order("name");
+    staff = (staffRows ?? []) as { id: string; name: string }[];
+  }
+
   return {
     locale,
     pageKey,
@@ -410,6 +428,7 @@ export async function loadRecordPage(
     partyAddresses,
     partyDebts,
     branches,
+    staff,
     /* 这一行是什么生意 —— 分期付款表拿它去建议「订金三成 · 动工四成 ·
        完工三成」，而那是一颗他要按的按钮，不是一个预设。 */
     trade: businessContext.industry?.slug ?? null,

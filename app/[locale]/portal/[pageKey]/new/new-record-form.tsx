@@ -111,6 +111,9 @@ export function NewRecordForm({
   partyAddresses,
   partyDebts,
   branches,
+  staff,
+  earnedValue,
+  earnedLocked,
   photos,
   changes,
   settlement,
@@ -161,6 +164,8 @@ export function NewRecordForm({
     siteAddressId?: string | null;
     /** 哪一间店。 */
     branchId?: string | null;
+    /** 那笔钱是谁做的。⚠️ 挑错人改得回来 —— 那不是钱，是一句关於谁的话。 */
+    doneBy?: string | null;
     /** Its own document number, for the preview. Never present on a new one --
      *  next_doc_no() issues it inside the write, so anything shown before that
      *  would be a guess printed where the real number goes. */
@@ -200,6 +205,21 @@ export function NewRecordForm({
   /** 还在营业的分店。⚠️ 两间以上才画那个下拉 ——
    *  一个只有一个选项的下拉是一个假的控件，而一间店的生意占绝大多数。 */
   branches?: readonly { id: string; name: string }[];
+  /** 这一家的师傅，给「谁做的」挑。⚠️ **一个人都没有就整个不画** ——
+   *  一人公司占我们客户的大多数，而佣金是沙龙跟零售的东西（任务 67）。 */
+  staff?: readonly { id: string; name: string }[];
+  /** 师傅那一页的「本月业绩」。
+   *
+   *  🔴 那一栏的名字模板自己就叫「This month / 本月业绩」，而它到今天为止
+   *  是**一个他自己打字进去的框** —— 而底下那一段现在从收款算得出同一个
+   *  数字。两个都留着，就是同一张页面上两个真相，而且没有任何东西讲
+   *  哪一个是对的。所以这一格锁住，跟库存那一格「架上有几个」同一条：
+   *  **一个是加起来的数字，就不该有人打得进去。**
+   *
+   *  ⚠️ `earnedValue === null` 的意思是**没有问**（读的人看不到钱），
+   *  不是「零」—— 那时候格子照样锁住，只是里面空的。 */
+  earnedValue?: string | null;
+  earnedLocked?: boolean;
   /** 工地的照片。只有走单那几页有，而且只有存过的单才有地方挂。 */
   photos?: readonly JobPhoto[];
   /** 这一张被改过什么。⚠️ null = **没有问**（他看不到这本帐），
@@ -276,6 +296,10 @@ export function NewRecordForm({
      因为没有任何东西填得进去（20260904110000）。 */
   const [branchId, setBranchId] = useState<string>(record?.branchId ?? "");
   const manyBranches = (branches?.length ?? 0) > 1;
+  /* 那笔钱是谁做的。⚠️ 跟分店不一样，**一个师傅也要画** ——
+     一间店只有一个是常态，而一个人做的活还是要挂在他名下才算得出佣金。 */
+  const [doneBy, setDoneBy] = useState<string>(record?.doneBy ?? "");
+  const anyStaff = (staff?.length ?? 0) > 0;
 
   /* 这个客户的地址。⚠️ 用的是**跟保存时同一条**认人规矩：完全相符、
      而且只有一个 —— 两个同名的客户不准猜（20260901060000）。
@@ -514,6 +538,11 @@ export function NewRecordForm({
                「what this was for」, which is the only part of a payment a
                person may rewrite. */
             in_note: title,
+            /* 挑错人是打字错误，不是一笔要留痕迹的更正 —— 改得回来。
+               而 null 的意思是「这一栏不要动」，所以清空要另外讲
+               （due_on · 工地 · 分店，同一个坑第四次）。 */
+            in_done_by: doneBy || null,
+            in_clear_done_by: !doneBy,
           })
         : await supabase.rpc("update_pipeline_record", {
             in_id: record.id,
@@ -750,6 +779,9 @@ export function NewRecordForm({
           /* 🔴 钱那一边也要收 —— 只在报价单上填得了分店、收款填不了，
              就是他月底问「Puchong 收了多少」的时候答不出来。 */
           in_branch_id: branchId || null,
+          /* 谁做的。佣金算在这上面（20260904120000）——
+             没有它，月底那张表是空的。 */
+          in_done_by: doneBy || null,
         })
       : await supabase.rpc("add_pipeline_record", {
           in_project_id: projectId,
@@ -881,6 +913,30 @@ export function NewRecordForm({
         {(branches ?? []).map((b) => (
           <option key={b.id} value={b.id}>
             {b.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  /* 那笔钱是谁赚的。⚠️ 一个师傅也画（不像分店要两间以上）——
+     一间店一个人是常态，而那一个人的活还是要挂在他名下，
+     不然月底那张佣金表是空的。 */
+  const doneByPicker = (
+    <label className="flex flex-col gap-1.5">
+      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+        {copy.doneBy}
+      </span>
+      <select
+        aria-label={copy.doneBy}
+        value={doneBy}
+        onChange={(e) => setDoneBy(e.target.value)}
+        className="ds-control h-11 w-full [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]"
+      >
+        <option value="">{copy.doneByNone}</option>
+        {(staff ?? []).map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
           </option>
         ))}
       </select>
@@ -1059,6 +1115,26 @@ export function NewRecordForm({
                   </option>
                 ))}
               </select>
+            </label>
+          );
+        }
+        /* 师傅那一页的「本月业绩」。跟库存那一格同一条：算出来的数字
+           没有人打得进去。 */
+        if (earnedLocked && c.kind === "amount") {
+          return (
+            <label key={c.key} className="flex flex-col gap-1.5">
+              <span className={labelText}>{c.label}</span>
+              <input
+                value={earnedValue ?? ""}
+                readOnly
+                aria-readonly
+                aria-label={c.label}
+                onChange={() => {}}
+                className={`${control} opacity-60`}
+              />
+              <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                {copy.earnedDerived}
+              </span>
             </label>
           );
         }
@@ -1386,7 +1462,9 @@ export function NewRecordForm({
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
-            className="self-start [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline"
+            /* ⚠️ `min-h-11`：一颗只有一行字的按钮画出来只有 21px 高，
+               而工地上那根拇指按不准 21px。shoot:commission 在 390 量到的。 */
+            className="inline-flex min-h-11 items-center self-start [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline"
           >
             {open ? copy.less : isCatalog ? copy.moreStock : copy.more}
           </button>
@@ -1398,6 +1476,7 @@ export function NewRecordForm({
           「金额跟日子锁住了」，而分摊是这一页上他还改得动的东西 ——
           一句「不能改」底下接一个可以改的东西，读起来是坏的。 */}
       {isLedger && manyBranches ? branchPicker : null}
+      {isLedger && anyStaff ? doneByPicker : null}
 
       {canAllocate ? (
         <AllocationEditor
@@ -1487,7 +1566,7 @@ export function NewRecordForm({
                 type="button"
                 disabled={busy}
                 onClick={correct}
-                className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline disabled:opacity-40"
+                className="inline-flex min-h-11 items-center [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline disabled:opacity-40"
               >
                 {busy ? copy.archiving : record.archivedAt ? copy.unarchive : copy.archive}
               </button>
