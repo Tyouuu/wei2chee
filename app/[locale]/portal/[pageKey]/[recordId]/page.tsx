@@ -8,6 +8,7 @@ import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, type DocumentSettlement } from "@/lib/portal/allocations";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
+import { PartyHistory } from "../new/party-history";
 import type { JobPhoto } from "../new/job-photos";
 import { showChanges, type ShownChange, type ChangeRow } from "@/lib/portal/change-log";
 import { priceSchedule } from "@/lib/portal/payment-terms";
@@ -93,6 +94,11 @@ export default async function EditRecordPage({
   /* 客户页那一边：他有几单，还欠多少。 */
   let jobs: PartyJob[] = [];
   let owing: number | null = null;
+  /* 他来过几次、上一次什么时候、一共多少。
+     ⚠️ 前两个不是钱（师傅要知道这位是熟客），第三个是。 */
+  let visits = 0;
+  let lastOn: string | null = null;
+  let spentCents: number | null = null;
   /* 单据那一边：这张单收到多少、还欠多少。
      ⚠️ null 的意思是**没有问**（他看不到钱），不是「零」—— 画面照这个
      决定要不要画那一整段。 */
@@ -157,6 +163,58 @@ export default async function EditRecordPage({
         page: j.module_key,
       }),
     );
+
+    /* ── 他来过几次 ────────────────────────────────────────────────────
+       🔴 **含收起来的**：一件做完收档的工作，还是来过一次。
+       上面那份 `jobs` 是「在跑的」，故意排掉了收起来的 —— 两个问题，
+       两个查询，而不是拿同一份清单去回答两句不一样的话。
+
+       ⚠️ 沙龙的「来过」是预约，不是报价单。所以两张表都数。 */
+    const [{ count: jobCount }, { count: bookCount }] = await Promise.all([
+      supabase
+        .from("pipeline_records")
+        .select("id", { count: "exact", head: true })
+        .eq("party_id", recordId),
+      supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("party_id", recordId),
+    ]);
+    visits = (jobCount ?? 0) + (bookCount ?? 0);
+
+    if (visits > 0) {
+      const [{ data: lastJob }, { data: lastBook }] = await Promise.all([
+        supabase
+          .from("pipeline_records")
+          .select("issued_on")
+          .eq("party_id", recordId)
+          .order("issued_on", { ascending: false })
+          .limit(1),
+        supabase
+          .from("appointments")
+          .select("starts_at")
+          .eq("party_id", recordId)
+          .order("starts_at", { ascending: false })
+          .limit(1),
+      ]);
+      const days = [
+        (lastJob ?? [])[0]?.issued_on ?? null,
+        ((lastBook ?? [])[0]?.starts_at ?? "").slice(0, 10) || null,
+      ].filter(Boolean) as string[];
+      lastOn = days.length ? days.sort().at(-1) ?? null : null;
+    }
+
+    /* 「一共多少」是钱。 */
+    if (ctx.role === "owner") {
+      const { data: spentRows } = await supabase
+        .from("pipeline_records")
+        .select("amount_cents")
+        .eq("party_id", recordId);
+      spentCents = (spentRows ?? []).reduce(
+        (n: number, r: { amount_cents: number | null }) => n + (r.amount_cents ?? 0),
+        0,
+      );
+    }
 
     if (ctx.role === "owner" && jobIds.length) {
       const { data: allocRows } = await supabase
@@ -569,7 +627,15 @@ export default async function EditRecordPage({
             ⚠️ 只在名册页上。 */}
         {ctx.isDirectory ? (
           <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
+            <PartyHistory
+              visits={visits}
+              lastOn={lastOn}
+              spentCents={spentCents}
+              copy={copy.form}
+            />
+            <div className="mt-6">
+              <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
+            </div>
           </div>
         ) : null}
       </main>

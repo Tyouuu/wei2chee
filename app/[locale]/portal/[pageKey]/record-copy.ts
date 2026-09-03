@@ -202,6 +202,14 @@ export type RecordFormCopy = {
   owesAlready: string;
   owesDays: string;
   overLimit: string;
+  /* 这个客人来过几次、一共多少、上次什么时候。
+     ⚠️ **没有积分、没有等级** —— 那是一套他还没有决定的方案，
+     而替他发明一套，就是在他的系统里宣布一件他没有讲过的事。 */
+  historyHeading: string;
+  historyVisits: string;
+  historySpent: string;
+  historyLast: string;
+  historyNone: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -401,6 +409,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       owesAlready: "他已经欠",
       owesDays: "最老的一笔 {n} 天",
       overLimit: "超过你写的额度",
+      historyHeading: "他来过几次",
+      historyVisits: "{n} 次",
+      historySpent: "一共",
+      historyLast: "上一次",
+      historyNone: "还没有来过。",
     },
   },
   en: {
@@ -566,6 +579,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       owesAlready: "Already owes",
       owesDays: "oldest is {n} days",
       overLimit: "over the limit you set",
+      historyHeading: "How often they come",
+      historyVisits: "{n} times",
+      historySpent: "worth",
+      historyLast: "last one",
+      historyNone: "Nothing yet.",
     },
   },
 };

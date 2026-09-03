@@ -155,6 +155,15 @@ try {
       addrValues.some((v) => /Jalan Sekolah/.test(v)),
     addrValues.join(" | "));
   say("而且只有一个勾着「帐单寄这里」", billingChecked === 1, `勾了 ${billingChecked} 个`);
+  /* 🔴 他来过几次。含收起来的 —— 一件做完收档的工作，还是来过一次。
+     ⚠️ **没有积分、没有等级**：那是他还没有决定的一套方案，
+     而替他发明一套等级，是在他的系统里宣布一件他没有讲过的事。 */
+  say("客户页上讲得出他来过几次",
+    /How often they come/i.test(partyBody) && /2 times/.test(partyBody),
+    partyBody.replace(/\s+/g, " ").slice(0, 500));
+  say("而且讲得出一共多少、上一次什么时候",
+    /worth RM 56,500/.test(partyBody) && /last one 2026-/.test(partyBody),
+    partyBody.replace(/\s+/g, " ").slice(0, 500));
   say("客户页上看得到他的单子",
     /Their jobs/i.test(partyBody) && /Kitchen at Klang/.test(partyBody),
     partyBody.replace(/\s+/g, " ").slice(0, 400));
