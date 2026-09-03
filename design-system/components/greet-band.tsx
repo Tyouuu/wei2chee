@@ -64,7 +64,8 @@ export function GreetBand({
         look === "stacked" ? "flex-col [gap:var(--gap-stack)]" : "flex-wrap items-center justify-between [gap:var(--gap-section)]"
       }`}
     >
-      <div className="flex min-w-0 items-center [gap:var(--gap-inline)]">
+      {/* 圆章跟那一句都是**他自己的名字** —— 英文页上出现中文是对的。 */}
+      <div data-their-words className="flex min-w-0 items-center [gap:var(--gap-inline)]">
         {monogram ? (
           <span
             aria-hidden

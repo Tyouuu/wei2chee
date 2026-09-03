@@ -100,6 +100,9 @@ export function SystemBar({
         {monogram ? (
           <span
             aria-hidden
+            /* 这两个字是**他自己的名字** —— `check:en` 会把它当成英文页上的中文，
+               而它本来就该是中文。跟 console 那两处同一个做法。 */
+            data-their-words
             className="grid size-7 shrink-0 place-items-center rounded-full [background:var(--color-primary-soft)] [color:var(--color-primary)] [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]"
           >
             {monogram.slice(0, 2)}
