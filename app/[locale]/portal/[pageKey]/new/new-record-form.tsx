@@ -7,6 +7,7 @@ import type { TableColumn } from "@/lib/portal/table-model";
 import type { RecordFormCopy } from "../record-copy";
 import { LineEditor, blankLine, senOf, totalOf, ringgitOf, type Line } from "./line-editor";
 import { DocumentPreview } from "./document-preview";
+import { validityKindOf, defaultDueOn } from "@/lib/portal/record-validity";
 
 /**
  * 加一单 — the form a person fills in.
@@ -127,6 +128,10 @@ export function NewRecordForm({
      *  next_doc_no() issues it inside the write, so anything shown before that
      *  would be a guess printed where the real number goes. */
     docNo?: string | null;
+    /** 有效期 / 期限 / 预计到货 -- one column, three meanings, see
+     *  lib/portal/record-validity.ts. Empty string and null both mean he has
+     *  not set one; they are not different states to him. */
+    dueOn?: string | null;
   };
   columns: TableColumn[];
   /** The module's own noun -- 报价单, 进货单 -- for the head of the document. */
@@ -163,6 +168,15 @@ export function NewRecordForm({
   const isCatalog = shape === "catalog";
   const isReconcile = shape === "reconcile";
   const isCalendar = shape === "calendar";
+
+  /* 单据上的那个日子。哪一个字，由模块决定 —— 报价单是有效期，进货单是
+     预计到货，两句话不一样（lib/portal/record-validity.ts）。
+     ⚠️ 只有报价单有预设（+30 天，照 ERPNext）。替他猜一个交货日填进去，
+     比留白更糟：留白他会去填，一个猜的他会以为是真的。 */
+  const dateKind = validityKindOf(moduleKey);
+  const [dueOn, setDueOn] = useState<string>(
+    record ? record.dueOn ?? "" : defaultDueOn(dateKind, today) ?? "",
+  );
   /* 🔴 HOW MUCH IS LEFT IS NOT HIS TO TYPE, once the item exists.
      It is the sum of the movements (20260901070000), so a box here would be
      overwritten by the next render -- the same control-that-lies the money
@@ -373,6 +387,11 @@ export function NewRecordForm({
             /* He cleared the name box: detach it, rather than silently
                keeping whoever it used to be attached to. */
             in_clear_party: !party && !partyId,
+            in_due_on: dueOn || null,
+            /* 同一个形状：他把日期删掉，就要真的删掉。函式那边 null 的意思是
+               「这一栏不要动」，所以少了这一句，一个日子填进去就永远拿不掉
+               （20260903010000）。 */
+            in_clear_due_on: !!dateKind && !dueOn,
           });
       if (fixErr) {
         setError(`${copy.failed}${fixErr.message ? ` — ${fixErr.message}` : ""}`);
@@ -553,6 +572,7 @@ export function NewRecordForm({
           in_stage: (values.status ?? "").trim() || null,
           in_extra: extra,
           in_idempotency_key: idempotencyKey,
+          in_due_on: dueOn || null,
         });
 
     if (err) {
@@ -688,6 +708,22 @@ export function NewRecordForm({
         status: values.status,
       }}
       lines={lines}
+      /* 有效期要印在那张纸上，不是只留在表单里 —— 一张没有印有效期的
+         报价单，是一个永远有效的价钱。他填了才出现（重点：没填的东西
+         不上线，一个占位符比一个诚实的空白更糟）。 */
+      validity={
+        dateKind && dueOn
+          ? {
+              label:
+                dateKind === "validTill"
+                  ? copy.validTill
+                  : dateKind === "deadline"
+                  ? copy.deadline
+                  : copy.expected,
+              value: dueOn,
+            }
+          : null
+      }
       labels={{
         primary: columns.find((c) => c.key === "primary")?.label,
         secondary: columns.find((c) => c.key === "secondary")?.label,
@@ -776,6 +812,35 @@ export function NewRecordForm({
           </div>
         );
       })}
+
+      {dateKind ? (
+        <label className="flex flex-col gap-1.5">
+          <span className={labelText}>
+            {dateKind === "validTill"
+              ? copy.validTill
+              : dateKind === "deadline"
+              ? copy.deadline
+              : copy.expected}
+          </span>
+          <input
+            type="date"
+            value={dueOn}
+            onChange={(e) => setDueOn(e.target.value)}
+            className={control}
+          />
+          {/* 清空那颗。手机上的日期控件不一定给得了「清掉」这个动作,
+              而一个填了就拿不掉的日子,是我们自己造的死结。 */}
+          {dueOn ? (
+            <button
+              type="button"
+              onClick={() => setDueOn("")}
+              className="self-start [font-size:var(--text-xs)] underline text-[color:var(--color-on-canvas-dim)]"
+            >
+              {copy.dateClear}
+            </button>
+          ) : null}
+        </label>
+      ) : null}
 
       {isCalendar ? (
         <div className="flex flex-col gap-4">

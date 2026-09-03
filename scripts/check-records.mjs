@@ -744,6 +744,39 @@ try {
   const { error: notPo } = await c.rpc("receive_purchase", { in_record_id: notAPo.id });
   check("报价单收不了货", !!notPo);
 
+  /* ── 有效期：一个他填得上、也拿得掉的日子 ────────────────────────────
+     `due_on` 从建表那天就在，两支 RPC 都收 in_due_on —— 而到 2026-09-03
+     零个 TypeScript 传过它（第十六次「能力有、线没接」）。这一段用真的客户
+     身分把那条线打一次，因为 supabase db push 成功证明不了任何事：
+     plpgsql 到执行才解析名字。 */
+  const { data: dated, error: dateErr } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "有效期测试",
+    in_amount_cents: 120000, in_due_on: "2026-10-03",
+  });
+  check("开单的时候填得上有效期", !dateErr && dated?.due_on === "2026-10-03",
+    dateErr?.message ?? `拿回来的是 ${dated?.due_on}`);
+
+  if (dated?.id) {
+    const { data: moved } = await c.rpc("update_pipeline_record", {
+      in_id: dated.id, in_due_on: "2026-11-30",
+    });
+    check("改得了那个日子", moved?.due_on === "2026-11-30", `拿回来的是 ${moved?.due_on}`);
+
+    /* 只改别的栏位的时候，日子不可以被顺手抹掉 —— null 的意思是「不要动」。 */
+    const { data: kept } = await c.rpc("update_pipeline_record", {
+      in_id: dated.id, in_title: "改个名字",
+    });
+    check("改名字不会把日子弄丢", kept?.due_on === "2026-11-30", `拿回来的是 ${kept?.due_on}`);
+
+    /* 🔴 这一条是 20260903010000 唯一要修的那个洞：在它之前，
+       一个日子填进去就永远拿不掉，因为 coalesce(null, due_on) 读成「不要动」。 */
+    const { data: cleared, error: clearErr } = await c.rpc("update_pipeline_record", {
+      in_id: dated.id, in_clear_due_on: true,
+    });
+    check("他删得掉那个日子", !clearErr && cleared?.due_on === null,
+      clearErr?.message ?? `拿回来的是 ${cleared?.due_on}`);
+  }
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

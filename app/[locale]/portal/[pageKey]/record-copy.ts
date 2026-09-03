@@ -92,7 +92,32 @@ export type RecordFormCopy = {
   bookKindBlock: string;
   bookRequired: string;
   bookTaken: string;
+  /* 单据上的那个日子。同一栏 `due_on`，三种意思，所以三个字 —— 一张报价单的
+     「有效期」跟一张进货单的「预计到货」不是同一句话
+     （lib/portal/record-validity.ts）。 */
+  validTill: string;
+  deadline: string;
+  expected: string;
+  dateClear: string;
+  pastDueValid: string;
+  pastDueDeadline: string;
+  pastDueExpected: string;
 };
+
+/* 🔴 这个物件里一个函式都不可以有。
+ *
+ * `copy.form` 是从伺服器那一棵树传给浏览器那个表单的，而函式过不去 ——
+ * Next 会丢 "Functions cannot be passed directly to Client Components"，
+ * 整页变成「Something broke here.」。
+ *
+ * 2026-09-03 我在这里加了一个 `daysLeft: (n) => string`（想讲「过了 12 天」，
+ * 那确实比「2026-08-22」好读），tsc 干净、843 个单元测试全过、122 条真的
+ * 呼叫全过 —— **打开那一页才看到它整页是坏的**（重点 7l）。
+ *
+ * 外面那一层的 `heading: (page) => string` 是函式没错，但那一个只在伺服器上
+ * 用掉。分界就在这一行：跨过去的只能是字串。
+ *
+ * 要天数的时候，放一个带位置的字串（「过了 {n} 天」），在浏览器那边填。 */
 
 type RecordCopy = {
   heading: (page: string) => string;
@@ -192,6 +217,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       bookKindBlock: "不接单（休息、请假）",
       bookRequired: "要写是哪一位客人。不接单的时段不用写。",
       bookTaken: "那个时段已经有人了。",
+      validTill: "有效期到",
+      deadline: "期限",
+      expected: "预计到货",
+      dateClear: "不设日期",
+      pastDueValid: "过期",
+      pastDueDeadline: "逾期",
+      pastDueExpected: "还没到",
     },
   },
   en: {
@@ -273,6 +305,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       bookKindBlock: "Not taking bookings (break, leave)",
       bookRequired: "Say which customer. Time off does not need one.",
       bookTaken: "That time is already taken.",
+      validTill: "Valid until",
+      deadline: "Due",
+      expected: "Expected",
+      dateClear: "No date",
+      pastDueValid: "Expired",
+      pastDueDeadline: "Overdue",
+      pastDueExpected: "Not arrived",
     },
   },
 };

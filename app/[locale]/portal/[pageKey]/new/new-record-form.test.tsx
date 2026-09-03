@@ -87,12 +87,60 @@ describe("改这一单, on a money page", () => {
 describe("改这一单, on a document page", () => {
   const record = { id: "r1", values: { primary: "翻新", secondary: "陈先生", amount: "RM 48,500" }, archivedAt: null };
 
+  /* 四格，不是三格：2026-09-03 报价单多了「有效期到」那一格。
+     数量留着不改成 every()，因为它同时在守另一件事 —— 一格消失了这里会红。 */
   it("lets him fix every box, because a quotation is a working document", () => {
     expect(boxes(form({ shape: "pipeline", moduleKey: "quotations", record }))).toEqual([
       false,
       false,
       false,
+      false,
     ]);
+  });
+
+  /* 有效期那一格。ERPNext 的 Quotation 有 `valid_till`，而我们的 `due_on`
+     从建表那天就在、两支 RPC 都收 —— 只是没有人传（第十六次「能力有、线没接」）。 */
+  it("asks a quotation how long the price stands", () => {
+    const html = form({ shape: "pipeline", moduleKey: "quotations", record });
+    expect(html).toContain(RECORD_COPY.zh.form.validTill);
+    expect(html).toContain('type="date"');
+  });
+
+  it("calls it 预计到货 on a purchase order — the same column is not the same sentence", () => {
+    const html = form({ shape: "pipeline", moduleKey: "purchases", record });
+    expect(html).toContain(RECORD_COPY.zh.form.expected);
+    expect(html).not.toContain(RECORD_COPY.zh.form.validTill);
+  });
+
+  /* 一个填了就拿不掉的日子，是我们自己造的死结 —— 手机上的日期控件不一定
+     给得了「清掉」这个动作。 */
+  it("gives him a way to take the date back off", () => {
+    const html = form({
+      shape: "pipeline",
+      moduleKey: "quotations",
+      record: { ...record, dueOn: "2026-10-03" },
+    });
+    expect(html).toContain("2026-10-03");
+    expect(html).toContain(RECORD_COPY.zh.form.dateClear);
+  });
+
+  /* 用眼睛看那张图才看到的：右边那张「印出来长这样」当时没有有效期，
+     而一张没有印有效期的报价单，是一个永远有效的价钱。
+     数字当时全绿 —— 122 条真的呼叫、843 个测试、tsc 干净（重点 7l）。 */
+  it("prints the validity on the paper, not just in the form", () => {
+    const html = form({
+      shape: "pipeline",
+      moduleKey: "quotations",
+      record: { ...record, dueOn: "2026-10-03" },
+    });
+    const paper = html.slice(html.indexOf(RECORD_COPY.zh.form.previewLabel));
+    expect(paper).toContain("2026-10-03");
+  });
+
+  it("does not put a date box on a money page — a receipt has no validity", () => {
+    const html = form({ shape: "ledger", moduleKey: "payments", record });
+    expect(html).not.toContain(RECORD_COPY.zh.form.validTill);
+    expect(html).not.toContain(RECORD_COPY.zh.form.deadline);
   });
 
   it("offers 收起来 and never a delete", () => {

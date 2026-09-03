@@ -73,6 +73,7 @@ export function DocumentPreview({
   copy,
   dateLabel,
   today,
+  validity,
 }: {
   /** The module's own noun -- 报价单, 进货单, 订单 -- never a word of ours. */
   title: string;
@@ -86,6 +87,9 @@ export function DocumentPreview({
   copy: RecordFormCopy;
   dateLabel: string;
   today: string;
+  /** 有效期 / 期限 / 预计到货 —— 印出来那张纸上最要紧的一行之一。
+   *  一张没有印有效期的报价单，是一个永远有效的价钱。 */
+  validity?: { label: string; value: string } | null;
 }) {
   const filled = lines.filter((l) => l.description.trim());
   const lineTotal = totalOf(filled);
@@ -130,6 +134,7 @@ export function DocumentPreview({
             [
               [labels.secondary, values.secondary],
               [dateLabel, today],
+              ...(validity ? ([[validity.label, validity.value]] as const) : []),
               [labels.status, values.status],
             ] as const
           ).map(([label, value], i) =>

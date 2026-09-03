@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StatusTone } from "@/lib/templates/copy/types";
+import { isPastDue } from "./record-validity";
 
 /**
  * The customer's own rows, put into the page that was going to show samples.
@@ -105,6 +106,8 @@ type PipelineRecord = {
   party: string | null;
   amount_cents: number | null;
   stage: string | null;
+  /** 有效期 / 期限 / 预计到货 —— 同一栏，三种意思（record-validity.ts）。 */
+  due_on?: string | null;
   extra?: unknown;
 };
 
@@ -145,16 +148,35 @@ export function rowsFromRecords(
   records: PipelineRecord[],
   workflow: string[],
   href?: (id: string) => string,
+  today?: string,
 ): LiveRow[] {
-  return records.map((r) => ({
-    ...(href && r.id ? { href: href(r.id) } : {}),
-    primary: (r.title ?? "").trim() || (r.party ?? "").trim(),
-    secondary: (r.party ?? "").trim() || undefined,
-    amount: ringgit(r.amount_cents),
-    tone: toneForStage((r.stage ?? "").trim(), workflow),
-    status: (r.stage ?? "").trim(),
-    extra: extraCells(r.extra),
-  }));
+  return records.map((r) => {
+    /* ⚠️ 这一行的日子过了，而它还开着 —— 一张过期的报价单、一张逾期的工程单、
+       一张还没到的进货单。**算出来的，不存**：一个存起来的旗子在排程没跑的
+       那一天就在说谎（record-validity.ts 的档头写了为什么）。
+
+       为什么让它盖过 toneForStage：`negative` 在这张表上今天没有别的来源
+       （toneForStage 只吐 positive / warning / neutral），所以红色只代表
+       一件事 —— 这个日子过了。而那是老板扫一整页的时候唯一要先看到的。
+
+       ⚠️ 它现在只有颜色，没有字。要一个「过期」的词，得改 RecordTable，
+       而那是风格库那一层（重点 22c），不是这个 session 的地盘。已记进任务档。 */
+    const overdue = isPastDue({
+      dueOn: r.due_on,
+      stage: r.stage,
+      workflow,
+      today,
+    });
+    return {
+      ...(href && r.id ? { href: href(r.id) } : {}),
+      primary: (r.title ?? "").trim() || (r.party ?? "").trim(),
+      secondary: (r.party ?? "").trim() || undefined,
+      amount: ringgit(r.amount_cents),
+      tone: overdue ? ("negative" as const) : toneForStage((r.stage ?? "").trim(), workflow),
+      status: (r.stage ?? "").trim(),
+      extra: extraCells(r.extra),
+    };
+  });
 }
 
 /* ── THE OTHER SHAPE ────────────────────────────────────────────────────────
@@ -976,7 +998,7 @@ export async function fetchLiveRows(
     if (PIPELINE_MODULES.has(moduleKey)) {
       const { data, error } = await supabase
         .from("pipeline_records")
-        .select("id, title, party, amount_cents, stage, extra")
+        .select("id, title, party, amount_cents, stage, due_on, extra")
         .eq("project_id", projectId)
         .eq("module_key", moduleKey)
         .is("archived_at", null)

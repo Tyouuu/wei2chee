@@ -54,6 +54,8 @@ export default async function EditRecordPage({
   /* 逐项. Read back in the order he wrote them -- a quotation whose lines come
      back shuffled is a different quotation. */
   let docNo: string | null = null;
+  /* 有效期 / 期限 / 预计到货 —— 同一栏 due_on，字由模块决定。 */
+  let dueOn: string | null = null;
   let lines: {
     description: string;
     qty: string;
@@ -214,7 +216,7 @@ export default async function EditRecordPage({
       /* doc_no for the preview's head. It exists on a saved document and
          never on a new one -- next_doc_no() issues it inside the write -- so
          this is the only place it can honestly come from. */
-      .select("id, doc_no, title, party, amount_cents, stage, extra, archived_at")
+      .select("id, doc_no, title, party, amount_cents, stage, due_on, extra, archived_at")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -227,6 +229,7 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     docNo = data.doc_no ?? null;
+    dueOn = data.due_on ?? null;
     archivedAt = data.archived_at;
 
     const { data: rows } = await supabase
@@ -283,7 +286,7 @@ export default async function EditRecordPage({
           today={todayInMalaysia()}
           stages={ctx.stages}
           backHref={ctx.backHref}
-          record={{ id: recordId, values, archivedAt, reversed, lines, docNo }}
+          record={{ id: recordId, values, archivedAt, reversed, lines, docNo, dueOn }}
           copy={copy.form}
         />
       </main>
