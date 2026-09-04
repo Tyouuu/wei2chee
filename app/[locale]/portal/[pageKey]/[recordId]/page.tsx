@@ -10,6 +10,7 @@ import { reversedIds, settleDocument, type DocumentSettlement } from "@/lib/port
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { PartyHistory } from "../new/party-history";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
+import { PackagesPanel, type PackageRow } from "../new/packages-panel";
 import type { JobPhoto } from "../new/job-photos";
 import { showChanges, type ShownChange, type ChangeRow } from "@/lib/portal/change-log";
 import { priceSchedule } from "@/lib/portal/payment-terms";
@@ -108,6 +109,10 @@ export default async function EditRecordPage({
   /* 师傅那一页：他的抽成，跟这个月他做了多少（20260904120000）。
      ⚠️ `null` = **没有问**（这一页不是师傅、或者读的人看不到钱），
      不是「没有抽成」—— 那两句在画面上要长得不一样。 */
+  /* 他的套票。⚠️ `null` = **没有问**（这一页不是客户页），不是「他没有套票」。
+     ⚠️ 而它**不看 role** —— 一个师傅要跟客人讲「你还剩三次」，
+     而那张表上没有金额（20260904190000 的档头）。 */
+  let packages: PackageRow[] | null = null;
   let tiers: CommissionTier[] | null = null;
   /* 这个月算在他名下的收款。⚠️ 它同时喂两个地方：底下那一段，
      跟表单里那一格「本月业绩」—— 而那一格从今天起是**锁住**的，
@@ -229,6 +234,30 @@ export default async function EditRecordPage({
         (n: number, r: { amount_cents: number | null }) => n + (r.amount_cents ?? 0),
         0,
       );
+    }
+
+    /* ── 客户那一页：他还剩几次 ────────────────────────────────────────
+       剩几次是 `package_balance` 数出来的，不是存起来的一栏。
+       ⚠️ 只在客户页 —— 套票是卖给客人的（资料库那边也是这样挡的）。 */
+    if (pageKey === "customers") {
+      const { data: packRows } = await supabase
+        .from("package_balance")
+        .select("package_id, name, sessions_total, sessions_left, sold_on, expires_on, expired")
+        .eq("party_id", recordId)
+        .is("archived_at", null)
+        .order("sold_on", { ascending: false });
+      packages = ((packRows ?? []) as {
+        package_id: string; name: string | null; sessions_total: number;
+        sessions_left: number; sold_on: string; expires_on: string | null; expired: boolean;
+      }[]).map((x) => ({
+        id: x.package_id,
+        name: x.name ?? "",
+        total: Number(x.sessions_total),
+        left: Number(x.sessions_left),
+        soldOn: x.sold_on,
+        expiresOn: x.expires_on,
+        expired: !!x.expired,
+      }));
     }
 
     /* ── 师傅那一页：抽成跟这个月 ──────────────────────────────────────
@@ -701,6 +730,15 @@ export default async function EditRecordPage({
             <div className="mt-6">
               <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
             </div>
+          </div>
+        ) : null}
+
+        {/* 客户那一页多一段：他还剩几次。
+            ⚠️ `packages === null` 的意思是**没有问**（这一页不是客户页）——
+            那时候整段不画，而不是画一份空的套票。 */}
+        {packages ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <PackagesPanel partyId={recordId} rows={packages} copy={copy.form} />
           </div>
         ) : null}
 

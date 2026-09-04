@@ -94,7 +94,8 @@
     "zoom:clone": "node scripts/zoom-clone.mjs",
     "check:answers": "node scripts/check-answers.mjs",
     "check:site-identity": "node scripts/check-site-identity.mjs",
-    "shoot:commission": "node scripts/shoot-commission.mjs"
+    "shoot:commission": "node scripts/shoot-commission.mjs",
+    "shoot:packages": "node scripts/shoot-packages.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

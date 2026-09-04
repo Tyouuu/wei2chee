@@ -1677,6 +1677,119 @@ try {
   check("算给他看，不替他记一笔佣金出去", payouts === 0, `${payouts} 笔`);
 
 
+  /* ⚠️ 裸区块：这一段自己的 const 只活在里面。
+     这个档案已经一千七百行，而每一段都在同一个函式作用域里 ——
+     再加一段就要替四个变数改名去闪别人。 */
+  {
+  /* ── 套票：卖十次，用了七次，还剩三次 ──────────────────────────────
+     [任务 67] 两家本地对手（Tunai · Aoikumo）的头条里都有它，
+     [任务 44] 说签沙龙之前要问清楚的四件、第一件就是它。
+
+     🔴 这一段真正守的是**「还剩几次」没有被存起来**：
+     它是总次数减掉打卡那几行数出来的，跟「架上有几个」同一条。
+     一个存起来的次数，是任何东西都写得进去的数字。 */
+  console.log("\n㉓ 套票");
+
+  const { data: her } = await party({ in_name: "Puan Aminah" });
+  const { data: pack, error: packErr } = await c.rpc("add_service_package", {
+    in_party_id: her.id, in_name: "10 次洗剪吹", in_sessions_total: 10,
+  });
+  check("套票卖得出去", !!pack?.id, packErr?.message?.slice(0, 90));
+
+  const bal = async (id) => {
+    const { data } = await c.from("package_balance").select("*").eq("package_id", id).maybeSingle();
+    return data;
+  };
+  check("刚卖出去，十次都在", Number((await bal(pack.id))?.sessions_left) === 10);
+
+  await c.rpc("use_package_session", { in_package_id: pack.id });
+  check("用掉一次，剩九次", Number((await bal(pack.id))?.sessions_left) === 9);
+
+  /* 🔴 两个前台同一瞬间替同一个客人打卡。剩几次在资料库里算，
+     所以第二个要排队等第一个 —— 而不是两个都读到同一个数。 */
+  const twoAtOnce = await Promise.all([
+    c.rpc("use_package_session", { in_package_id: pack.id }),
+    c.rpc("use_package_session", { in_package_id: pack.id }),
+  ]);
+  const bothWorked = twoAtOnce.every((r) => !r.error);
+  check("两个前台同时打卡，两次都记下来了", bothWorked,
+    twoAtOnce.map((r) => r.error?.message ?? "ok").join(" | "));
+  check("而且刚好掉两次，不是一次也不是三次",
+    Number((await bal(pack.id))?.sessions_left) === 7, `${(await bal(pack.id))?.sessions_left}`);
+
+  /* 用完了就是用完了。 */
+  for (let i = 0; i < 7; i += 1) await c.rpc("use_package_session", { in_package_id: pack.id });
+  check("十次用完，剩零次", Number((await bal(pack.id))?.sessions_left) === 0);
+  const { error: overUsed } = await c.rpc("use_package_session", { in_package_id: pack.id });
+  check("第十一次挡下来", !!overUsed, "居然还能用");
+  check("而且讲的是人话，不是资料库的错",
+    /used up|sell a new one/i.test(overUsed?.message ?? ""), overUsed?.message?.slice(0, 90));
+
+  /* 打错了要退得回来 —— 一次打卡不是一笔钱，删掉那一行就好。 */
+  const { data: uses } = await c
+    .from("package_uses").select("id").eq("package_id", pack.id).limit(1);
+  await c.rpc("undo_package_use", { in_use_id: uses[0].id });
+  check("退回一次，剩数回来了", Number((await bal(pack.id))?.sessions_left) === 1);
+
+  /* 手机上网路慢，他会按两次。 */
+  const onceKey = crypto.randomUUID();
+  await c.rpc("use_package_session", { in_package_id: pack.id, in_idempotency_key: onceKey });
+  await c.rpc("use_package_session", { in_package_id: pack.id, in_idempotency_key: onceKey });
+  check("同一次按两下，只掉一次", Number((await bal(pack.id))?.sessions_left) === 0);
+
+  /* 🔴 套票是卖给**客人**的。挂在供应商或师傅身上的，画面上完全正常，
+     而它会让「他还剩几次」出现在一个永远不会来消费的人身上。 */
+  const { data: notACustomer } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "suppliers", in_name: "套票不该挂的那一家",
+  });
+  const { error: wrongSide } = await c.rpc("add_service_package", {
+    in_party_id: notACustomer.id, in_name: "10 次", in_sessions_total: 10,
+  });
+  check("供应商身上卖不了套票", !!wrongSide);
+
+  /* ⚠️ **过期不挡，只讲**（跟报价单过期同一条）——
+     过期是日历的事实，通不通融是老板的判断，而一间沙龙常常通融。 */
+  const { data: stale } = await c.rpc("add_service_package", {
+    in_party_id: her.id, in_name: "去年的套票", in_sessions_total: 3,
+    in_sold_on: "2026-01-01", in_expires_on: "2026-02-01",
+  });
+  const staleBal = await bal(stale.id);
+  check("过期讲得出来", staleBal?.expired === true, JSON.stringify(staleBal));
+  const { error: staleUse } = await c.rpc("use_package_session", { in_package_id: stale.id });
+  check("但过期不挡他 —— 通不通融是他的判断", !staleUse, staleUse?.message?.slice(0, 80));
+
+  const { error: badDates } = await c.rpc("add_service_package", {
+    in_party_id: her.id, in_name: "倒过来的", in_sessions_total: 3,
+    in_sold_on: "2026-06-01", in_expires_on: "2026-05-01",
+  });
+  check("到期日早过卖出日，挡下来", !!badDates);
+
+  const { error: noName } = await c.rpc("add_service_package", {
+    in_party_id: her.id, in_name: "   ", in_sessions_total: 3,
+  });
+  check("没有名字的套票开不了", !!noName);
+  const { error: noSessions } = await c.rpc("add_service_package", {
+    in_party_id: her.id, in_name: "几次？", in_sessions_total: 0,
+  });
+  check("零次的套票开不了", !!noSessions);
+
+  /* 收起来之后不能再用 —— 一张收起来的套票是历史，不是一张还能刷的卡。 */
+  const { data: shelved } = await c.rpc("add_service_package", {
+    in_party_id: her.id, in_name: "收起来的", in_sessions_total: 5,
+  });
+  await c.rpc("set_package_archived", { in_id: shelved.id, in_archived: true });
+  const { error: onShelf } = await c.rpc("use_package_session", { in_package_id: shelved.id });
+  check("收起来的套票刷不了", !!onShelf);
+
+  /* 🔴 价钱不在这张表上 —— 那是这一整件事的设计。
+     一个师傅要看得到「还剩三次」，而他不该看得到那张套票卖多少。 */
+  const { data: shape } = await c.from("service_packages").select("*").eq("id", pack.id).single();
+  check("套票那一行上没有金额那一栏（钱住在付款那一笔上）",
+    !Object.keys(shape).some((k) => /amount|price|cents/.test(k)),
+    Object.keys(shape).join(","));
+
+
+  }
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

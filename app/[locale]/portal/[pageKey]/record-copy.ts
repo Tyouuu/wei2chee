@@ -236,6 +236,25 @@ export type RecordFormCopy = {
   earnedNone: string;
   earnedNotPaid: string;
   earnedDerived: string;
+  /* 套票（20260904190000）。只在客户那一页，而且**师傅也看得到** ——
+     他要跟客人讲「你还剩三次」。价钱不在这张表上，所以这不是把钱交出去。 */
+  packHeading: string;
+  packLede: string;
+  packNone: string;
+  packLeft: string;
+  packUsedUp: string;
+  packExpired: string;
+  packExpiresOn: string;
+  packSoldOn: string;
+  packUse: string;
+  packUsing: string;
+  packUndo: string;
+  packPutAway: string;
+  packName: string;
+  packSessions: string;
+  packExpiry: string;
+  packSell: string;
+  packSelling: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -463,6 +482,23 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       earnedNone: "这个月还没有算在他名下的收款，所以是零。",
       earnedNotPaid: "这只是算给你看的。要付出去，去开销那一页记一笔。",
       earnedDerived: "这一格是收款那边算出来的，改不了。",
+      packHeading: "套票",
+      packLede: "卖几次，用一次扣一次。剩几次是数出来的，没有人改得了。",
+      packNone: "还没有卖过套票给他。",
+      packLeft: "还剩 {n} 次",
+      packUsedUp: "用完了",
+      packExpired: "过期了",
+      packExpiresOn: "到期",
+      packSoldOn: "卖出",
+      packUse: "用掉一次",
+      packUsing: "记着…",
+      packUndo: "退回上一次",
+      packPutAway: "收起来",
+      packName: "叫什么（10 次洗剪吹）",
+      packSessions: "几次",
+      packExpiry: "到期（可以不填）",
+      packSell: "卖一张",
+      packSelling: "开着…",
     },
   },
   en: {
@@ -656,6 +692,23 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       earnedNone: "Nil. No money is credited to them this month.",
       earnedNotPaid: "This is worked out for you, not paid. Record it on the expenses page when you pay it.",
       earnedDerived: "Worked out from the payments credited to them. Not typed.",
+      packHeading: "Packages",
+      packLede: "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
+      packNone: "No package sold to them yet.",
+      packLeft: "{n} left",
+      packUsedUp: "Used up",
+      packExpired: "Expired",
+      packExpiresOn: "Expires",
+      packSoldOn: "Sold",
+      packUse: "Use one",
+      packUsing: "Recording...",
+      packUndo: "Undo the last one",
+      packPutAway: "Put away",
+      packName: "What it is (10 wash and blow)",
+      packSessions: "Sessions",
+      packExpiry: "Expires (optional)",
+      packSell: "Sell one",
+      packSelling: "Opening...",
     },
   },
 };

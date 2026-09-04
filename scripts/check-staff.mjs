@@ -467,6 +467,35 @@ try {
     (staffPay.data ?? []).length === 0,
     `拿回 ${(staffPay.data ?? []).length} 行`);
 
+  /* ── 🔴 套票是唯一一样「师傅看得到」的客人资料 ───────────────────────
+     一个前台要跟客人讲「你还剩三次」，不然这一整件事没有用。
+     而那张表上**没有金额那一栏** —— 价钱住在付款那一笔上，那是 sees_money。
+     所以这不是把钱交出去，是那条界线自己长出来的结果（20260904190000）。 */
+  const { data: sheBought } = await owner.client.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "买了套票的",
+  });
+  await owner.client.rpc("add_service_package", {
+    in_party_id: sheBought.id, in_name: "10 次洗剪吹", in_sessions_total: 10,
+  });
+
+  const ownerPacks = await owner.client.from("package_balance").select("*").eq("party_id", sheBought.id);
+  const staffPacks = await S.from("package_balance").select("*").eq("party_id", sheBought.id);
+  check("老板看得到那张套票（不然下面那一条是空的）",
+    (ownerPacks.data ?? []).length === 1,
+    `拿回 ${(ownerPacks.data ?? []).length} 行 · ${ownerPacks.error?.message ?? ""}`);
+  check("🔴 师傅也看得到「还剩几次」—— 不然他没办法招呼客人",
+    Number((staffPacks.data ?? [])[0]?.sessions_left) === 10,
+    `拿回 ${(staffPacks.data ?? []).length} 行 · ${staffPacks.error?.message ?? ""}`);
+  /* 而那一行上没有钱。 */
+  check("而那一行上没有任何金额",
+    !Object.keys((staffPacks.data ?? [])[0] ?? {}).some((k) => /amount|price|cents/.test(k)),
+    Object.keys((staffPacks.data ?? [])[0] ?? {}).join(","));
+  /* 师傅打得了卡 —— 客人来了是他在前台。 */
+  const { error: staffPunch } = await S.rpc("use_package_session", {
+    in_package_id: (staffPacks.data ?? [])[0]?.package_id,
+  });
+  check("师傅打得了卡", !staffPunch, staffPunch?.message?.slice(0, 80));
+
 
 } catch (e) {
   failures.push(`threw: ${e.message}`);
