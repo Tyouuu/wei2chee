@@ -95,6 +95,40 @@ try {
   say("师傅页上没有套票那一段", !/No package sold to them yet/i.test(staffText),
     staffText.slice(0, 200));
 
+  /* ── 他先付了、还没用掉的钱 ────────────────────────────────────────
+     🔴 这个数字从 20260903030000 起就算得出来，而到 2026-09-04 为止
+     **全 app 零个消费端** —— 任务 61 · 67 · 44 三天各要过它一次。
+     这几条守的就是它真的画出来了。 */
+  await api.rpc("add_ledger_entry", {
+    in_project_id: proj.id, in_module_key: "payments",
+    in_amount_cents: 100000, in_party: "Puan Aminah", in_party_id: her.id,
+  });
+  await page.goto(`${BASE}/en/portal/customers/${her.id}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  await hide();
+  await page.screenshot({ path: `${OUT}/5-credit.png`, fullPage: true });
+  const credit = (await page.locator("body").innerText()).replace(/\s+/g, " ");
+  console.log("拍到  5-credit");
+  say("先付的那一千块画出来了", /RM 1,000/.test(credit), credit.slice(0, 400));
+  say("而且讲得出是哪一笔付的", /From RC-/.test(credit), credit.slice(0, 400));
+
+  /* 分摊掉之后余额要归零 —— 一个不会跟着动的余额，是一个明天就变假的数字。 */
+  const { data: aJob } = await api.rpc("add_pipeline_record", {
+    in_project_id: proj.id, in_module_key: "quotations", in_title: "Colour treatment",
+    in_party: "Puan Aminah", in_party_id: her.id, in_amount_cents: 100000,
+  });
+  const { data: theEntry } = await api
+    .from("ledger_entries").select("id").eq("party_id", her.id).eq("direction", "in").limit(1).maybeSingle();
+  await api.rpc("set_payment_allocations", {
+    in_entry_id: theEntry.id,
+    in_rows: [{ record_id: aJob.id, amount_cents: 100000 }],
+  });
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  const after = (await page.locator("body").innerText()).replace(/\s+/g, " ");
+  say("分摊给那张单之后，余额自己归零",
+    /everything they have paid is accounted for/i.test(after), after.slice(0, 400));
+
   /* ② 真的卖一张十次的。 */
   await page.goto(`${BASE}/en/portal/customers/${her.id}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1400);

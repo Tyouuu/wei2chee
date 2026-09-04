@@ -6,7 +6,7 @@ import { RECORD_COPY } from "../record-copy";
 import { todayInMalaysia } from "@/lib/portal/live-months";
 import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
-import { reversedIds, settleDocument, type DocumentSettlement } from "@/lib/portal/allocations";
+import { reversedIds, settleDocument, unallocatedOf, type DocumentSettlement } from "@/lib/portal/allocations";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { PartyHistory } from "../new/party-history";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
@@ -113,6 +113,12 @@ export default async function EditRecordPage({
      ⚠️ 而它**不看 role** —— 一个师傅要跟客人讲「你还剩三次」，
      而那张表上没有金额（20260904190000 的档头）。 */
   let packages: PackageRow[] | null = null;
+  /* 他先付了、还没用掉的钱。
+     🔴 **这个数字从 20260903030000 起就算得出来，而到今天为止全 app
+     零个消费端** —— [任务 61 · 67 · 44] 三天各自要过它一次，
+     每一次的答案都是「那只是一个减法」，然后没有人把它画出来。
+     ⚠️ `null` = 没有问（不是客户页，或者读的人看不到钱），不是「零」。 */
+  let credit: { cents: number; from: { id: string; label: string; cents: number }[] } | null = null;
   let tiers: CommissionTier[] | null = null;
   /* 这个月算在他名下的收款。⚠️ 它同时喂两个地方：底下那一段，
      跟表单里那一格「本月业绩」—— 而那一格从今天起是**锁住**的，
@@ -234,6 +240,38 @@ export default async function EditRecordPage({
         (n: number, r: { amount_cents: number | null }) => n + (r.amount_cents ?? 0),
         0,
       );
+    }
+
+    /* ── 客户那一页：他先付了、还没用掉的钱 ────────────────────────────
+       🔴 只问看得到钱的人。师傅拿回来的是空的，而空的会画成
+       「他没有余额」—— 对一个刚付了一千块的客人撒谎。所以问都不问。
+       ⚠️ 冲正过的那几笔不算（`countsAsReceived` 同一条规矩）。 */
+    if (ctx.role === "owner") {
+      const { data: paid } = await supabase
+        .from("ledger_entries")
+        .select("id, doc_no, note, entry_on, amount_cents, allocated_cents, adjusts_id, module_key")
+        .eq("party_id", recordId)
+        .eq("direction", "in")
+        .order("entry_on", { ascending: false });
+      const rows = (paid ?? []) as {
+        id: string; doc_no: string | null; note: string | null; entry_on: string;
+        amount_cents: number | null; allocated_cents: number | null;
+        adjusts_id: string | null; module_key: string;
+      }[];
+      const gone = reversedIds(rows);
+      const holding = rows
+        .filter((e) => !e.adjusts_id && !gone.has(e.id))
+        .map((e) => ({
+          id: e.id,
+          label: [e.doc_no, e.entry_on].filter(Boolean).join(" · "),
+          href: `/${locale}/portal/${e.module_key}/${e.id}`,
+          cents: unallocatedOf(e),
+        }))
+        .filter((e) => e.cents > 0);
+      credit = {
+        cents: holding.reduce((n, e) => n + e.cents, 0),
+        from: holding,
+      };
     }
 
     /* ── 客户那一页：他还剩几次 ────────────────────────────────────────
@@ -730,6 +768,41 @@ export default async function EditRecordPage({
             <div className="mt-6">
               <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
             </div>
+          </div>
+        ) : null}
+
+        {/* 客户那一页多一段：他先付了、还没用掉的钱。
+            ⚠️ `credit === null` = 没有问（读的人看不到钱），整段不画；
+            而 `cents === 0` 是**问过了，答案是零** —— 那一句要讲出来，
+            因为「没有余额」跟「我不知道」在画面上必须长得不一样。 */}
+        {credit && ctx.isDirectory && pageKey === "customers" ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+              {copy.form.creditHeading}
+            </h2>
+            {credit.cents > 0 ? (
+              <>
+                <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
+                  {ringgit(credit.cents)}
+                </div>
+                <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                  {copy.form.creditLede}
+                </p>
+                {/* 来自哪几笔 —— 一个总数答不了「那是哪一次付的」，
+                    而那正是他下一句会问的。 */}
+                <ul className="mt-3 flex flex-col gap-1">
+                  {credit.from.map((e) => (
+                    <li key={e.id} className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                      {copy.form.creditFrom} {e.label} — {ringgit(e.cents)}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                {copy.form.creditNone}
+              </p>
+            )}
           </div>
         ) : null}
 

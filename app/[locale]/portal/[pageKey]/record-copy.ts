@@ -255,6 +255,12 @@ export type RecordFormCopy = {
   packExpiry: string;
   packSell: string;
   packSelling: string;
+  /* 预付余额（20260903030000 算得出来，到 2026-09-04 才有落点）。
+     ⚠️ 这是**钱**，只有老板；套票是**次数**，师傅也看得到。两个不同的东西。 */
+  creditHeading: string;
+  creditLede: string;
+  creditNone: string;
+  creditFrom: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -499,6 +505,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       packExpiry: "到期（可以不填）",
       packSell: "卖一张",
       packSelling: "开着…",
+      creditHeading: "他先付了、还没用掉的钱",
+      creditLede: "已经收到、还没有分摊给任何一张单的部分。下一张单开出来就可以扣它。",
+      creditNone: "没有 —— 他付过的钱都分摊掉了。",
+      creditFrom: "来自",
     },
   },
   en: {
@@ -709,6 +719,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       packExpiry: "Expires (optional)",
       packSell: "Sell one",
       packSelling: "Opening...",
+      creditHeading: "Paid, not yet used",
+      creditLede: "Money received and not yet put against any document. The next one you raise can draw on it.",
+      creditNone: "None -- everything they have paid is accounted for.",
+      creditFrom: "From",
     },
   },
 };
