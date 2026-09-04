@@ -456,7 +456,12 @@ export function RecordTable(props: {
                   return (
                     <td
                       key={col.key}
-                      className={`${bodyCell} text-right tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)]`}
+                      /* 🔴 `whitespace-nowrap`：一个断成两行的金额，读起来是一个错的数字。
+                         实测 390 的报价单页：`RM 48,500` 被折成「RM」跟「48,500」两行。
+                         宽度不够的时候宁可让整张表横着滑 —— 表本来就会滑，
+                         而一个断开的金额没有任何地方讲得清楚它其实是一个数。
+                         （同一条守卫 2026-09-03 在手机那几张 demo 上装过一次。） */
+                      className={`${bodyCell} whitespace-nowrap text-right tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)]`}
                     >
                       {value}
                     </td>

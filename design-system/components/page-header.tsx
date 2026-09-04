@@ -86,7 +86,11 @@ export function PageHeader({
         ruled ? "[border-bottom:var(--hairline)_solid_var(--color-ink-800)] [padding-bottom:var(--gap-stack)]" : "",
       ].join(" ")}
     >
-      <div className="min-w-0">
+      {/* `data-page-title`：给外面一个抓得到的把手。手机上那个壳顶上
+          已经有一条写着页名的带子，所以这一格在那里是同一句话的第三次
+          （面包屑 · 带子 · 这里）—— 见 mobile-editor.tsx。
+          动作那一颗留着，它不是标题。 */}
+      <div data-page-title className="min-w-0">
         <h1 className="ds-display flex items-center [gap:var(--gap-inline)] [font-size:var(--text-title)] tracking-[var(--tracking-title)] text-[color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]">
           {title}
           {meta}

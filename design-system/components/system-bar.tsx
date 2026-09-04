@@ -114,6 +114,9 @@ export function SystemBar({
   const wide = bleed && axis !== "top"
   return (
     <div
+      /* `data-shell-bar`：给外面一个抓得到的把手 —— 手机上那个壳自己有一条
+         写着页名的带子，这一条在那里是重复的。见 mobile-editor.tsx。 */
+      data-shell-bar
       className={`flex w-full shrink-0 items-center justify-between [gap:var(--gap-inline)] ${
         wide
           ? "h-12 [padding-inline:var(--pad-card-lg)] [border-bottom:var(--hairline)_solid_var(--border-subtle)]"

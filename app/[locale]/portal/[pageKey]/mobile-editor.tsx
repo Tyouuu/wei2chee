@@ -171,10 +171,24 @@ export function MobileEditor({
 
               ⚠️ 只在这个壳里藏 —— 师傅那一边（`work-view.tsx` 直接渲染）
               照旧有那条侧栏，而那条侧栏在窄屏本来的毛病记在任务档里。 */}
+          {/* 🔴 这一条穿的是**工作台那一套**，不是编辑器的深色壳。
+              老板 2026-09-04：`要贴合我们在桌面的设计感`。
+
+              桌面上换页的那条侧栏是**浅色的**（`--color-nav-bg` 在系统那一套
+              是白的），配一条细线跟一个近黑的「你在这一页」。这一条做的是
+              同一件事，所以穿同一套 token —— 而不是再叠一条黑带。
+              上面那两格（用 / 改设计）留在深色：那是 Formae 自己的壳，
+              不是他的系统。 */}
+          <StyleScope
+            register={style}
+            palette={palette}
+            data-surface={deskSurface(pageKey)}
+            className="shrink-0"
+          >
           <div
             role="tablist"
             aria-label={t("phoneUse")}
-            className="flex shrink-0 items-stretch gap-1 overflow-x-auto border-b px-2 [border-color:var(--color-ink-800)]"
+            className="flex items-stretch gap-1 overflow-x-auto px-2 [background-color:var(--color-nav-bg)] [border-bottom:var(--hairline)_solid_var(--color-nav-border)]"
           >
             {navPages.map((page) => {
               const on = page.key === pageKey;
@@ -188,8 +202,8 @@ export function MobileEditor({
                      一个折成两行的页名会把整条带子撑高一倍。 */
                   className={`flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 [font-size:var(--text-sm)] ${
                     on
-                      ? "[border-color:var(--color-primary)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]"
-                      : "border-transparent [color:var(--color-paper-dim)]"
+                      ? "[border-color:var(--color-primary)] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]"
+                      : "border-transparent [color:var(--color-nav-fg-dim)]"
                   }`}
                 >
                   {page.label}
@@ -197,10 +211,22 @@ export function MobileEditor({
               );
             })}
           </div>
+          </StyleScope>
 
         {/* 他自己的系统，会重排、点得到、跟师傅看到的是同一支组件。
             ⚠️ 没有 `pointer-events-none` —— 那正是这一格存在的理由。 */}
-        <div className="min-h-0 flex-1 overflow-y-auto [&_aside[data-nav=side]]:hidden">
+        {/* 藏掉的三样都是**同一句话的第二、第三次**，不是拿掉功能：
+            侧栏（上面那一段讲了）· 面包屑（`Day to day / Clients`）·
+            页面大标题跟那一句说明。上面那条带子已经写着他在哪一页。
+            实测 390：他自己的第一行资料本来从 **463px** 才开始 ——
+            一屏 844，前面 55% 是壳跟标签，而同一页出现三次「Clients」。
+
+            ⚠️ **标题留着，只藏那一句说明。** 试过连标题一起藏，看图当场看到
+            「加一个客户」那颗孤零零挂在左上角、右边一大片空 ——
+            那正是 `align:admin` 那把尺自己在抓的「孤单的按钮」。
+            桌面上那一行本来就是「标题在左、动作在右」，留着标题才是
+            **贴合桌面**，而不是少一样东西。 */}
+        <div className="min-h-0 flex-1 overflow-y-auto [&_aside[data-nav=side]]:hidden [&_[data-shell-bar]]:hidden [&_[data-page-title]>p]:hidden">
           <WorkView
             data={appState.data as Data}
             pageKey={pageKey}
