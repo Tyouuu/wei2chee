@@ -108,7 +108,8 @@
     "shoot:commission": "node scripts/shoot-commission.mjs",
     "shoot:packages": "node scripts/shoot-packages.mjs",
     "align:pages": "node scripts/align-pages.mjs",
-    "check:contracts": "node scripts/check-contracts.mjs"
+    "check:contracts": "node scripts/check-contracts.mjs",
+    "check:shared-record": "node scripts/check-shared-record.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
