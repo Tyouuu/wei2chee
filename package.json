@@ -63,6 +63,7 @@
     "shoot:allocations": "node scripts/shoot-allocations.mjs",
     "check:records": "node scripts/check-records.mjs",
     "shoot:payment": "node scripts/shoot-payment.mjs",
+    "audit:demo": "node scripts/audit-demo.mjs",
     "check:delivery": "node scripts/check-delivery.mjs",
     "check:payment": "node scripts/check-payment.mjs",
     "check:receipt": "node scripts/check-receipt.mjs",
