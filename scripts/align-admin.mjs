@@ -165,10 +165,28 @@ const PROBE = (rootSel) => {
       return r.width >= 70 && r.height >= 24;
     });
     if (draws.length) return "图";
+    /* 🔴 2026-09-04：这一条本来看不见马币，而这个产品每一页的钱都是马币。
+       旧的规则是「开头不可以有字母」（`^[^a-zA-Z]*`），於是：
+         「$1,250.00」算数字 ✅   「1,234」算 ✅
+         **「RM 71,300」不算** ❌  —— R 跟 M 是字母
+         **「4.5%」也不算** ❌     —— % 不在允许的字元里
+       后果是尺子对我们**每一页的钱**都报「数字块 0 个」，然后
+       「第一块是数字 / 最大的是数字 / 组成」三项跟着一起红 ——
+       **四项红，一个真正的差异都没有。**
+       ⚠️ 这不是把门槛放宽让自己过。它是一个量测错误：
+       眼睛看得到那四张卡上面就是数字，尺子看不到（[重点 24](../docs/founder-points.md)）。
+       修法是先剥掉币别前缀再判，并且允许结尾的百分号 ——
+       改完**参考那一边也从 3 变 4**（他们的「4.5%」本来也被漏掉了）。 */
     const nums = [...e.querySelectorAll("*")].filter((n) => {
-      const t = (n.childNodes.length === 1 && n.textContent) || "";
-      return /^[^a-zA-Z]*[\d][\d,. ]{0,}$/.test(t.trim()) &&
-        t.trim().length >= 2 &&
+      const raw = ((n.childNodes.length === 1 && n.textContent) || "").trim();
+      const t = raw.replace(/^(?:RM|MYR|USD|SGD|IDR|THB|PHP|VND)\s*/i, "");
+      return /^[^a-zA-Z]*[\d][\d,. ]*%?$/.test(t) &&
+        /* 长度门槛从 2 降到 1（2026-09-04）：我们那一排是
+           「RM 71,300 · 4 · 2 · RM 31,200」，**中间两个是一位数**，
+           於是四张一模一样的卡里只有两张被算成数字块。
+           一个**独占一个文字节点、而且画在 17px 以上**的数字，
+           一位数也是数字 —— 那两个条件已经把噪音挡掉了。 */
+        raw.length >= 1 &&
         parseFloat(getComputedStyle(n).fontSize) >= 17;
     });
     if (nums.length) return "数字";
@@ -197,7 +215,15 @@ const PROBE = (rootSel) => {
   }
   /* 只算真的铺开的那几级 —— 一个只出现过三个字的字级不是一级，是一次例外。 */
   const steps = [...sizes.entries()].filter(([, n]) => n >= 8).length;
-  const biggestIsNumber = /^[^a-zA-Z一-龥]*[\d]/.test(biggest.text);
+  /* 🔴 同一个马币 bug 的第二份（2026-09-04）。上面 `kindOf` 里那一条修好了，
+     这一条没有 —— 而它们问的是同一件事：**这串字是不是一个数字**。
+     於是「数字块几个」变绿之后，「最大的是数字」还红着，
+     因为整页最大的那串字是 `RM 71,300`，而 R 是字母。
+     **修一个实例不等於修那个形状** —— 这个仓库栽在这上面很多次。
+     两处现在剥同一批币别前缀。 */
+  const biggestIsNumber = /^[^a-zA-Z一-龥]*[\d]/.test(
+    biggest.text.replace(/^(?:RM|MYR|USD|SGD|IDR|THB|PHP|VND)\s*/i, ""),
+  );
 
   // ---- 卡片：圆角、内距、有几成带阴影、有几成带细边 ------------------------
   const cards = all
@@ -726,6 +752,14 @@ async function main() {
        那也是我们的家具，不是这一套风格的设计。 */
     await p.mouse.move(4, 4);
     await p.waitForTimeout(400);
+    /* 🔴 藏掉 Next 的开发浮标（2026-09-04）。它是右下角那颗红色的「N 2 Issues」，
+       **只存在於 `next dev`，客户永远看不到** —— 而它压在参考页那一角
+       （他们那里是侧栏底下的作者卡片）。
+       `check:reachable` 早就在跳过它了，理由一模一样：
+       **一把每次跑都把开发工具算进画面的尺，量的不是产品。** */
+    await p.addStyleTag({
+      content: "nextjs-portal,[data-nextjs-toast],[data-nextjs-dev-tools-button]{display:none!important}",
+    }).catch(() => {});
     const ours = await p.evaluate(PROBE, OURS_ROOT);
     if (ours.error) { console.log(`${reg}: ${ours.error}`); failed++; continue; }
     const oursShot = await p.locator(OURS_ROOT).first().screenshot({ type: "png" });

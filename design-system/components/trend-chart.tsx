@@ -287,7 +287,17 @@ export function TrendChart({
 
   const axis = (
     <>
-      <CartesianGrid vertical={false} strokeDasharray="3 3" />
+      {/* 🔴 面积那一种用**实线**，不是虚线（2026-09-04）。
+          源代码：`<CartesianGrid vertical={false} strokeOpacity={0.5} />`
+          —— 只有横线（我们本来就是），但那几条是**实的、半透明的**。
+          虚线读起来像「这是估的」，实线读起来像「这是格线」，而他们那一页是后者。
+          ⚠️ 只绑在 `area` 上，不改另外三种：柱状跟折线是别的风格照别的参考做的，
+          一条改动扫过四种图，等於拿一个参考去覆盖另外三个。 */}
+      {kind === "area" ? (
+        <CartesianGrid vertical={false} strokeOpacity={0.5} />
+      ) : (
+        <CartesianGrid vertical={false} strokeDasharray="3 3" />
+      )}
       <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
       {/* A SCALE DOWN THE LEFT.
           Every admin dashboard the founder sent has one -- shadcn-admin reads

@@ -1737,7 +1737,16 @@ export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
      那两张半栏是我们缺的一排。 */
   /* 进度条：组件清单报「缺 进度条」—— Studio Admin 那张「184 booked / 523 qualified」
      底下就是一条。我们本来就有这一块（`progress`），只是没排进去。 */
-  swiss: ["stats4", "tabbed", "todo|progress@half", "table"],
+  /* 🔴 三块，照 arhamkhnz 门面页的 `page.tsx`（2026-09-04）：
+       <MetricCards /> <PerformanceOverview /> <SubscriberOverview />
+     —— **四张数字卡 → 一张整页宽的图表卡 → 一张带抬头的表。就这三块。**
+
+     它本来是四块，而且中间那一块是**三个页签**（走势 / 占比 / 流程）。
+     那是 2026-09-03 照它的 **CRM** 页写的，注解还留着；但老板 9-04 挑的是
+     这一套的**门面**，而门面那一张图表卡不是页签 —— 是一张图，
+     头上带两个下拉跟一颗描边按钮。
+     ⚠️ 页签那个做法本身没有错，它只是**另一页的**做法。 */
+  swiss: ["stats4", "trend", "table"],
   // Friendly and rounded. One figure with its own supporting numbers, the
   // day's list beside it, then the money.
   // Weight. Two enormous figures and the work, in slabs. No chart, no split --

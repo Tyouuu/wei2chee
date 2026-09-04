@@ -242,7 +242,17 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       ActionButton: "default",
       Tag: "default",
       Divider: "normal",
-      TrendChart: "bar",
+      /* 🔴 折线，不是柱状（2026-09-04）。这一改是被守卫逼出来的，理由要写清楚，
+         不然下一个人会以为是随手挑的：
+         瑞士 换成面积图之后，图纸 跟 中台 变成 7 根轴一样（上限 6）。
+         **根因不是那一改** —— 图纸 跟 中台 **两套都抄 Tabler**（一个抄它的单据页、
+         一个抄它的仪表盘），本来就近。
+         而 **图纸 的参考页（Tabler · Invoice）一张图都没有** ——
+         所以这一根轴没有任何东西钉着它，柱状是当初随便落的。
+         折线是六套里没有人拿的那一个，拿它拉开是这根轴存在的用途。
+         ⚠️ 如果哪天 图纸 换一个有图表的参考，**这一条要跟着那个参考改**，
+         不是守着「因为别人没拿」。 */
+      TrendChart: "line",
       /* 🔴 侧栏 → 顶栏（2026-09-03）。Tabler 的单据页是**顶栏 + 一张居中的纸**，
          而我做成了侧栏。同一个错的另一半。 */
       SystemShell: "top-light-centred",
@@ -295,7 +305,14 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       ActionButton: "default",
       Tag: "outline",
       Divider: "tight",
-      TrendChart: "area",
+      /* 🔴 柱状，不是面积（2026-09-04）。瑞士 今天照 arhamkhnz 换成面积图之后，
+         守卫报「瑞士 跟 中台 有 7 根轴一样」（上限 6）—— 而解法不是把上限放宽，
+         是去看**中台自己的参考**画哪一种。
+         Tabler 的首页实拍（`.screenshots/admins/tabler.jpg`）：
+         ACTIVE SUBSCRIPTIONS 那张卡是**一排柱子**，SALES 是进度条，
+         ACTIVE USERS 是半圆表 —— 面积只在 REVENUE 那一张小卡上。
+         **它的图表语言是柱状，面积是 arhamkhnz 的。** 两边各自回到自己的参考。 */
+      TrendChart: "bar",
       /* 🔴 侧栏 → 顶栏（2026-09-03）。Tabler 的仪表盘是顶栏，不是侧栏。
          「中台要暗侧栏因为像 Autocount」是我写的，参考不是。 */
       SystemShell: "top-light",
@@ -376,7 +393,11 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       ActionButton: "outline",
       Tag: "outline",
       Divider: "normal",
-      TrendChart: "bar",
+      /* 🔴 面积图，不是柱状（2026-09-04）。源代码是 `ComposedChart` 配 `Area`＋`Line`：
+         渐层填充从 0.36 淡到 0.04、`CartesianGrid vertical={false}`（**只有横格线**）、
+         x 轴不画轴线也不画刻度线。柱状图是另一种东西 —— 柱子讲「一根一根比」，
+         面积讲「一条线走过来」，而他们那一页讲的是后者。 */
+      TrendChart: "area",
       /* 🔴 "side-light-bar"（2026-09-04）：他们的外壳是侧栏 ＋ 一条 48px 的横梁，
          而且内容置中那一条要拿掉 —— 他们的内容是满宽的（`p-6` 之后就到边）。 */
       SystemShell: "side-light-bar",
