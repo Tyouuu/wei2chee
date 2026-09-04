@@ -53,6 +53,20 @@ const MATE = `对帐测试乙-${Date.now().toString().slice(-6)}`;
 const MATE_AMOUNT = 1234;
 const TOTAL = AMOUNT + MATE_AMOUNT;
 
+/* ── 谁欠他钱 ────────────────────────────────────────────────────────────
+   两个欠款人，**故意一个欠得多、一个欠得久**：
+
+     大的  RM 9,800，五天前的单
+     旧的  RM   350，两百天前的单
+
+   一个只会照金额排的助手，会把「谁欠我最久」答成大的那一个。
+   这两笔的存在就是为了让那一题有一个会错的答案。 */
+const DEBT_BIG = { mark: `欠款测试甲-${Date.now().toString().slice(-6)}`, rm: 9800, daysAgo: 5 };
+const DEBT_OLD = { mark: `欠款测试乙-${Date.now().toString().slice(-6)}`, rm: 350, daysAgo: 200 };
+/** 建过的对象跟单据，清理的时候按 id 删 —— 有单指着的客户删不掉，所以单先走。 */
+const madeParties = [];
+const madeDocs = [];
+
 const rows = [];
 const fail = (name, why) => { rows.push({ name, ok: false, why }); console.log(`FAIL  ${name} — ${why}`); };
 const pass = (name, note) => { rows.push({ name, ok: true, why: note }); console.log(`PASS  ${name}${note ? " — " + note : ""}`); };
@@ -180,6 +194,60 @@ try {
     else pass("问问题不准动页面");
   }
 
+  /* ── 二点五 · 谁欠他钱，谁欠最久 ───────────────────────────────────
+     `party_debts` 从 20260904060000 起就算得出来，而它到 2026-09-05 只被
+     **开单那一页**用来讲一句「他已经欠你 RM X」。整家的那一份没有任何地方
+     问得出来 —— 这一段就是那条线接上之后的证据。 */
+  const dayBefore = (n) =>
+    new Date(Date.now() + 8 * 3600 * 1000 - n * 86400 * 1000).toISOString().slice(0, 10);
+
+  for (const d of [DEBT_BIG, DEBT_OLD]) {
+    const [party] = await fetch(`${DB}/rest/v1/directory_entries`, {
+      method: "POST",
+      headers: { ...head, Prefer: "return=representation" },
+      body: JSON.stringify([{ project_id: pid, module_key: "customers", name: d.mark }]),
+    }).then((r) => r.json());
+    if (!party?.id) { fail("种得起一个欠钱的客户", `${d.mark} 建不起来`); break; }
+    madeParties.push(party.id);
+    const [doc] = await fetch(`${DB}/rest/v1/pipeline_records`, {
+      method: "POST",
+      headers: { ...head, Prefer: "return=representation" },
+      body: JSON.stringify([{
+        project_id: pid, module_key: "quotations",
+        doc_no: `DBT-${Date.now().toString().slice(-8)}-${d.rm}`,
+        title: `${d.mark} 的单`, party: d.mark, party_id: party.id,
+        amount_cents: d.rm * 100, issued_on: dayBefore(d.daysAgo),
+      }]),
+    }).then((r) => r.json());
+    if (doc?.id) madeDocs.push(doc.id);
+  }
+
+  if (madeDocs.length === 2) {
+    pass("种得起两笔欠款", `${DEBT_BIG.rm} · ${DEBT_OLD.rm}`);
+
+    const who = await ask(p, "谁欠我钱", "dashboard");
+    console.log(`
+问：谁欠我钱
+答：${who.said}`);
+    const bigMoney = /9,?800/.test(who.said);
+    if (who.said.includes(DEBT_BIG.mark) && bigMoney)
+      pass("答得出谁欠他钱", `点到了 ${DEBT_BIG.mark} 跟 RM 9,800`);
+    else fail("答得出谁欠他钱", `「${who.said}」`);
+
+    /* 🔴 这一条才是这一段真正在守的东西：欠最久的那一个**欠得最少**。
+       一个照金额排的答案会答错，而那正是他要打电话的那个人。 */
+    const oldest = await ask(p, "谁欠我最久", "dashboard");
+    console.log(`
+问：谁欠我最久
+答：${oldest.said}`);
+    if (oldest.said.includes(DEBT_OLD.mark))
+      pass("欠最久的那一个不是欠最多的那一个", `点到了 ${DEBT_OLD.mark}`);
+    else fail("欠最久的那一个不是欠最多的那一个", `「${oldest.said}」`);
+
+    if (who.applied > 0) fail("问欠款不准动页面", `动了 ${who.applied} 处`);
+    else pass("问欠款不准动页面");
+  }
+
   /* ── 三 · 答不了的，要讲原因，而且不准编一个数字 ─────────────────── */
   /*
     ⚠️ 「不准给数字」是我第一版写的，而它是错的，而且是同一个毛病的第二次：
@@ -210,6 +278,20 @@ try {
   }
 } finally {
   /* 建过的一律删掉。留一笔在他自己的预览帐上，等於我们改了他的数字。 */
+  /* 🔴 顺序：单先删，客户才删得掉 —— 有帐的客户是 on delete restrict，
+     那条规矩 8-31 就立了，而这里正好是它第一次挡到我们自己。 */
+  for (const id of madeDocs) {
+    await fetch(`${DB}/rest/v1/pipeline_records?id=eq.${id}`, {
+      method: "DELETE", headers: head,
+    }).catch(() => {});
+  }
+  for (const id of madeParties) {
+    await fetch(`${DB}/rest/v1/directory_entries?id=eq.${id}`, {
+      method: "DELETE", headers: head,
+    }).catch(() => {});
+  }
+  console.log(`清掉 ${madeDocs.length} 张单 · ${madeParties.length} 个客户`);
+
   const gone = await fetch(
     `${DB}/rest/v1/ledger_entries?or=(party.eq.${encodeURIComponent(MARK)},party.eq.${encodeURIComponent(MATE)})`,
     { method: "DELETE", headers: { ...head, Prefer: "return=representation" } },

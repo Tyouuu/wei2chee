@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchLiveStats, nowInMalaysia } from "./live-stats";
 import { buildProfit, signedRinggit, type ProfitFact } from "./profit";
 import { ringgit } from "./live-rows";
+import { describeOwing, fetchPartyOwing, type OwingRead } from "./debts";
+import type { WorkspaceRole } from "./workspace";
 
 /**
  * WHAT THE ASSISTANT MAY SAY ABOUT HIS MONEY.
@@ -88,24 +90,37 @@ const WORDS = {
  * the same defect as claiming something it cannot, wearing the other face.
  */
 const GAPS = {
-  zh: [
+  zh: {
     /* ⚠️ 「赚多少」2026-09-04 从这里退休了 —— 20260904200000 给了开销一个
        类别跟一个单，所以那个数字现在数得出来，就在下面的 figures 里。
        留下来的是它窄掉之后剩的那一半：**单张的利润页面上看得到，
        而助手还查不了单张**。一条过期的「答不了」，是助手拒绝回答一件
        产品已经做得到的事。 */
-    "某一单赚多少 —— 那一单自己的页面上写着，而这里查不了单张",
-    "某一个客户欠多少 / 某一张单的细节 —— 按客户查那一支还没做",
-    "库存还剩多少 —— 这几个数字里不含库存",
-    "上面没有的任何数字 —— 不要自己相加减凑一个出来",
-  ],
-  en: [
-    "What one job made — it is written on that job's own page, but this panel cannot look up a single document",
-    "What one customer owes, or the detail of one document — the per-customer lookup does not exist yet",
-    "Stock on hand — not among these figures",
-    "Any figure not listed above — never add or subtract two of them to make a new one",
-  ],
+    job: "某一单赚多少 —— 那一单自己的页面上写着，而这里查不了单张",
+    /* ⚠️ 「某一个客户欠多少」2026-09-05 从这里退休了一半 —— 欠款清单在
+       上面了（`party_debts`）。剩下的是**单张**：一张单的逐项、分期、
+       分摊，这里还查不了。 */
+    doc: "某一张单的细节（逐项 · 分期 · 分摊）—— 单张查询那一支还没做",
+    stock: "库存还剩多少 —— 这几个数字里不含库存",
+    nothingElse: "上面没有的任何数字 —— 不要自己相加减凑一个出来",
+    /* 🔴 只在**没有问到**欠款的时候才出现。有问到的时候它是假的，
+       而一条过期的「答不了」跟一句宣称做了却没做，是同一个缺陷的两张脸。 */
+    owingUnread:
+      "谁欠他钱 —— 这一次没有读到（要嘛他不是老板，要嘛那一支查询失败了）。不要讲「没有人欠你钱」",
+  },
+  en: {
+    job: "What one job made — it is written on that job's own page, but this panel cannot look up a single document",
+    doc: "The detail of one document (line items, instalments, allocations) — the single-document lookup does not exist yet",
+    stock: "Stock on hand — not among these figures",
+    nothingElse:
+      "Any figure not listed above — never add or subtract two of them to make a new one",
+    owingUnread:
+      "Who owes him money — not read this time (either he is not the owner, or that query failed). Never say that nobody owes him",
+  },
 } as const;
+
+/** 永远成立的那几条。`owingUnread` 不在里面 —— 它跟着这一次的读数走。 */
+const ALWAYS_GAPS = ["job", "doc", "stock", "nothingElse"] as const;
 
 /** At most this many trend points reach the prompt. Six is what the chart
  *  under the tiles already shows, so the assistant and the picture cannot
@@ -138,6 +153,18 @@ export type BusinessFacts = {
    */
   rows: { doc: string; party: string; amount: string; on: string; stage?: string }[];
   trend: { label: string; value: number }[];
+  /**
+   * 谁欠他钱。
+   *
+   * 🔴 **三种，不是两种**（见 `lib/portal/debts.ts` 的档头）：
+   *   null   没有问 / 读失败  -> 一个字都不要讲，而且 gaps 会多一行
+   *   []     问了，没有人欠   -> 可以讲「都收齐了」
+   *   [...]  这几个人欠
+   *
+   * 混掉第一跟第二种，就是对一个师傅讲「没有人欠你钱」，
+   * 而他老板的帐上挂着三万。
+   */
+  owing: OwingRead;
   lang: "zh" | "en";
   /** True when the read itself failed, as opposed to succeeding and finding
    *  nothing. The prompt must say different things about those two, because
@@ -166,6 +193,14 @@ export async function fetchBusinessFacts(
   nouns: { customer: string; pipeline: string },
   pipelineModule: string | null,
   workflow: string[],
+  /**
+   * 谁在问。
+   *
+   * ⚠️ **必填，而且没有预设**。写成「预设 owner」在测试里会全绿，
+   * 而在一个师傅面前会把他老板的欠款清单念出来；写成「零行就是没有人欠」
+   * 会在同一个人面前说谎。两个都是这一行避掉的。
+   */
+  role: WorkspaceRole,
   lang: "zh" | "en" = "en",
   at: Date = new Date(),
 ): Promise<BusinessFacts | null> {
@@ -187,7 +222,15 @@ export async function fetchBusinessFacts(
      Collapsing the first two is how a product ends up telling an owner his
      month is empty because a query timed out. */
   if (stats === undefined) {
-    return { asOf: malaysianDate(at), figures: [], rows: [], trend: [], lang, unread: true };
+    return {
+      asOf: malaysianDate(at),
+      figures: [],
+      rows: [],
+      trend: [],
+      owing: null,
+      lang,
+      unread: true,
+    };
   }
   /* ⚠️ NOT null. A read that succeeded and found nothing is a FACT about
      his month -- 「你还没有任何记录」 -- and it has to reach the model, because
@@ -198,7 +241,15 @@ export async function fetchBusinessFacts(
      This was a real bug in the first version of this file: returning null here
      meant the 「还没有记录」 sentence below could never be rendered. */
   if (!stats || !stats.tiles.length) {
-    return { asOf: malaysianDate(at), figures: [], rows: [], trend: [], lang, unread: false };
+    return {
+      asOf: malaysianDate(at),
+      figures: [],
+      rows: [],
+      trend: [],
+      owing: null,
+      lang,
+      unread: false,
+    };
   }
 
   return {
@@ -213,6 +264,7 @@ export async function fetchBusinessFacts(
     ],
     rows: await fetchRecentRows(supabase, projectId),
     trend: stats.trend.slice(-TREND_CAP),
+    owing: await fetchPartyOwing(supabase, projectId, role, lang),
     lang,
     unread: false,
   };
@@ -354,7 +406,7 @@ function malaysianDate(at: Date): string {
  */
 export function renderBusinessFacts(facts: BusinessFacts | null): string {
   const w = WORDS[facts?.lang ?? "en"];
-  const gaps = GAPS[facts?.lang ?? "en"];
+  const g = GAPS[facts?.lang ?? "en"];
 
   if (!facts) return "";
   if (facts.unread) return w.unread;
@@ -384,16 +436,32 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
       ]
     : [];
 
+  /* 谁欠他钱。**空阵列跟 null 在这里就分开了** —— 见 `debts.ts` 的档头。 */
+  const owing = describeOwing(facts.owing, facts.lang);
+
+  /* 🔴 这一次答不了的，跟永远答不了的，放在同一段但来源不同。
+     `owingUnread` 只在没有读到欠款的时候出现 —— 读到了还留着它，
+     就是助手拒绝回答一件它手上已经有答案的事。 */
+  const gaps = [
+    ...ALWAYS_GAPS.map((k) => g[k]),
+    ...(facts.owing == null ? [g.owingUnread] : []),
+  ];
+
   return [
     w.heading.replace("<at>", facts.asOf),
     ...lines,
+    ...(owing.length ? ["", ...owing] : []),
     ...receipt,
     "",
     `${w.cannot}:`,
-    ...gaps.map((g) => `- ${g}`),
+    ...gaps.map((line) => `- ${line}`),
   ].join("\n");
 }
 
 /** Exported for the guard: a gap line that names nothing is an apology, and
  *  an apology teaches the model to stop answering. */
 export const BUSINESS_FACT_GAPS = GAPS;
+
+/** Exported for the guard: which of them are always true, and which one only
+ *  appears when this particular read came back empty-handed. */
+export const BUSINESS_FACT_ALWAYS_GAPS = ALWAYS_GAPS;

@@ -35,6 +35,7 @@ import {
   dashboardRecordModule,
 } from "@/lib/templates/industry-template";
 import { fetchBusinessFacts, renderBusinessFacts } from "@/lib/portal/live-answers";
+import type { WorkspaceRole } from "@/lib/portal/workspace";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -571,6 +572,15 @@ export async function POST(req: NextRequest) {
   let facts: Awaited<ReturnType<typeof fetchBusinessFacts>> = null;
   if (project?.id && ctx) {
     const nouns = tradeLabels(ctx, pageRefs);
+    /* 谁在问。**必须问出来，不可以从「读回几行」推**：`party_debts` 对一个
+       师傅回的是零行，跟「每一张单都收齐了」长得一模一样，而把两个混成一个
+       就是对着一个师傅讲「没有人欠你钱」。见 lib/portal/debts.ts 的档头。
+
+       ⚠️ 不用 `loadWorkspace()` —— 那一支在没有登入的时候 `redirect()`，
+       而在一个 API route 里那会变成一个抛出来的例外，不是一个答案。 */
+    const { data: wsRow } = await asReader.rpc("my_workspace");
+    const role: WorkspaceRole =
+      (wsRow as { role?: string }[] | null)?.[0]?.role === "staff" ? "staff" : "owner";
     facts = await fetchBusinessFacts(
       asReader,
       project.id as string,
@@ -578,6 +588,7 @@ export async function POST(req: NextRequest) {
       { customer: nouns.customer, pipeline: nouns.order },
       dashboardRecordModule(pageRefs),
       workflowStages(ctx),
+      role,
       systemLangOf(ctx),
     );
   }

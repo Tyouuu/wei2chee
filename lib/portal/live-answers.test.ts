@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  BUSINESS_FACT_ALWAYS_GAPS,
   renderBusinessFacts,
   BUSINESS_FACT_GAPS,
   type BusinessFacts,
@@ -14,6 +15,9 @@ const withFigures = (over: Partial<BusinessFacts> = {}): BusinessFacts => ({
   asOf: "2026-09-03",
   lang: "zh",
   unread: false,
+  /* 预设是「问了，没有人欠」—— 不是 null。null 是「没有问」，
+     而一个预设成「没有问」的夹具会让下面每一条 owing 的断言量到空气。 */
+  owing: [],
   figures: [
     { label: "本月收到", value: "RM 12,340", previous: "RM 9,800" },
     { label: "还没用完的订金", value: "RM 3,000" },
@@ -70,8 +74,8 @@ describe("答不了的那几行", () => {
   it("有数字的时候一定跟着出现", () => {
     const out = renderBusinessFacts(withFigures());
     expect(out).toContain("答不了的");
-    for (const gap of BUSINESS_FACT_GAPS.zh) {
-      expect(out).toContain(gap);
+    for (const key of BUSINESS_FACT_ALWAYS_GAPS) {
+      expect(out).toContain(BUSINESS_FACT_GAPS.zh[key]);
     }
   });
 
@@ -83,14 +87,16 @@ describe("答不了的那几行", () => {
      而那正是让老板不再问的那一句。 */
   it("每一行都带原因，不是光讲还没做", () => {
     for (const lang of ["zh", "en"] as const) {
-      for (const gap of BUSINESS_FACT_GAPS[lang]) {
+      for (const gap of Object.values(BUSINESS_FACT_GAPS[lang])) {
         expect(gap, `「${gap}」没有讲为什么`).toMatch(/——|—/);
       }
     }
   });
 
   it("两种语言的条数一样，不然英文的老板少听到一个洞", () => {
-    expect(BUSINESS_FACT_GAPS.en.length).toBe(BUSINESS_FACT_GAPS.zh.length);
+    expect(Object.keys(BUSINESS_FACT_GAPS.en).sort()).toEqual(
+      Object.keys(BUSINESS_FACT_GAPS.zh).sort(),
+    );
   });
 });
 
@@ -167,5 +173,58 @@ describe("总额底下的那几笔", () => {
     const out = renderBusinessFacts(withFigures({ rows: many }));
     const listed = out.split("\n").filter((l) => l.startsWith("- RC-")).length;
     expect(listed).toBeLessThanOrEqual(10);
+  });
+});
+
+describe("谁欠他钱", () => {
+  it("欠款清单进得了提示词，带名字、金额、欠几天", () => {
+    const out = renderBusinessFacts(
+      withFigures({
+        owing: [
+          {
+            partyId: "a",
+            name: "陈先生",
+            owedCents: 3_000_00,
+            oldestDays: 62,
+            limitCents: null,
+          },
+        ],
+      }),
+    );
+    expect(out).toContain("陈先生");
+    expect(out).toContain("RM 3,000");
+    expect(out).toContain("62 天");
+  });
+
+  /* 🔴 这一条守的是这一整件事：`party_debts` 对一个师傅回零行，
+     跟「每一张单都收齐了」长得一模一样。混掉了，助手就会对着一个师傅
+     讲「没有人欠你钱」，而他老板的帐上挂着三万。 */
+  it("没有问（null）的时候，一个字都不讲，而且明写不准说没有人欠", () => {
+    const out = renderBusinessFacts(withFigures({ owing: null }));
+    expect(out).not.toContain("没有人欠他钱");
+    expect(out).toContain(BUSINESS_FACT_GAPS.zh.owingUnread);
+  });
+
+  it("问了而没有人欠，讲得出「都收齐了」", () => {
+    const out = renderBusinessFacts(withFigures({ owing: [] }));
+    expect(out).toContain("没有人欠他钱");
+  });
+
+  /* ⚠️ 一条过期的「答不了」，是助手拒绝回答一件它手上已经有答案的事 ——
+     跟宣称做了却没做，是同一个缺陷的两张脸。 */
+  it("读到了之后，那一行「答不了」要退休", () => {
+    const out = renderBusinessFacts(
+      withFigures({
+        owing: [
+          { partyId: "a", name: "陈先生", owedCents: 100, oldestDays: 1, limitCents: null },
+        ],
+      }),
+    );
+    expect(out).not.toContain(BUSINESS_FACT_GAPS.zh.owingUnread);
+  });
+
+  it("「某一个客户欠多少」已经不在答不了的名单里了", () => {
+    const all = Object.values(BUSINESS_FACT_GAPS.zh).join("\n");
+    expect(all).not.toContain("按客户查那一支还没做");
   });
 });
