@@ -30,7 +30,7 @@
  * ⚠️ 第一版没有登入就直接量，四页全部回了一整行读数，而四页都是**登入页**——
  * 是把 h1 印出来才看到的。所以这里每一次都印 h1，而且停在登入页要红。
  */
-import { readFileSync, mkdirSync } from "node:fs";
+import { readFileSync, mkdirSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { chromium } from "playwright";
@@ -48,7 +48,10 @@ const env = Object.fromEntries(
 
 const BASE = "http://localhost:3000";
 const OUT = fileURLToPath(new URL("../.screenshots/phone/", import.meta.url));
-mkdirSync(OUT, { recursive: true });
+/* 先清掉上一次的。旧的图会留在同一个资料夹里，而**它们看起来跟今天的一模一样**
+   —— 2026-09-05 就有两张 9-02 拍的留着，其中一张是登入页。 */
+  rmSync(OUT, { recursive: true, force: true });
+  mkdirSync(OUT, { recursive: true });
 
 const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
@@ -173,14 +176,21 @@ try {
   for (const [name, path, label] of PAGES) {
     await page.goto(`${BASE}${path}`, { waitUntil: "networkidle", timeout: 90000 });
     await page.waitForTimeout(2500);
+    /* 开发时那颗红色的「2 Issues」浮在左下角，正好压住底栏头两格 ——
+       客户永远看不到它，而它会印在给他看的那张图上。 */
+    await page.addStyleTag({ content: "nextjs-portal{display:none!important}" }).catch(() => {});
     const m = await page.evaluate(() => {
       const vw = innerWidth, vh = innerHeight;
       const els = [...document.querySelectorAll("*")];
       /* ① 一条贴底、满宽、矮、里面三个以上按得动的 */
+      /* 🔴 不问它**怎么做到**贴底的，只问它**是不是**贴底。
+         第一版要求 `position: fixed | sticky`，而我们那条是 flex 撑到底的
+         —— 画面上它就在下缘，读数却报「无」。
+         [重点 24](../docs/founder-points.md)：量的要是画面上的东西。
+         一把在验实作方式的尺，会把一个做对了的画面判成没做。 */
       const bottomBar = els.some((e) => {
-        const r = e.getBoundingClientRect(), c = getComputedStyle(e);
-        return (c.position === "fixed" || c.position === "sticky") &&
-          r.bottom > vh - 90 && r.width > vw * 0.8 && r.height > 36 && r.height < 110 &&
+        const r = e.getBoundingClientRect();
+        return r.bottom >= vh - 4 && r.width > vw * 0.8 && r.height > 36 && r.height < 110 &&
           e.querySelectorAll("a,button").length >= 3;
       });
       /* ② 整页最大的那个数字 */

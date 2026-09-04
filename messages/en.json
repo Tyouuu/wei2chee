@@ -469,7 +469,8 @@
         "cantTake": "Couldn't take that one"
       },
       "phoneUse": "My system",
-      "phoneDesign": "Change design"
+      "phoneDesign": "Change design",
+      "phoneMore": "More"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

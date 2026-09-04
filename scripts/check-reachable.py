@@ -97,10 +97,25 @@ CHECK = r"""
     }
     if (r.bottom < 0 || r.top > vh) continue;
 
-    const x = Math.min(vw - 1, Math.max(1, r.left + r.width / 2));
-    const y = Math.min(vh - 1, Math.max(1, r.top + r.height / 2));
+    // 🔴 打在**它露出来的那一块**的中点，不是「它的中点再夹到视窗边」。
+    //
+    // 旧写法把中点夹到 `vh - 1`。一个 220px 高、下缘在折线以下的走势图，
+    // 测试点就落在视窗最下缘 —— **而底栏正好在那里**。
+    // 2026-09-05 实测：底栏一做出来，那张图就被报成「被底栏盖住」，
+    // 而画面上它离底栏还有一整段。**只要页面底下有一条 bar，
+    // 每一个又高又超出折线的控件都会被这样误报。**
+    const vy0 = Math.max(r.top, 0), vy1 = Math.min(r.bottom, vh);
+    const vx0 = Math.max(r.left, 0), vx1 = Math.min(r.right, vw);
+    const x = Math.min(vw - 1, Math.max(1, (vx0 + vx1) / 2));
+    const y = Math.min(vh - 1, Math.max(1, (vy0 + vy1) / 2));
     const hit = document.elementFromPoint(x, y);
     if (!hit || hit === el || el.contains(hit) || hit.contains(el)) continue;
+    // 打到的东西**整个装在这个控件里面**，那就是它自己的一部分。
+    // 用几何判，不用 DOM 判：走势图是 SVG，`el.contains(<path>)` 在那一层
+    // 不成立，於是一张图会被报成「自己盖住自己」。
+    // 真的盖住它的东西（一条底栏）不会整个装在它里面。
+    const h = hit.getBoundingClientRect();
+    if (h.left >= r.left - 1 && h.right <= r.right + 1 && h.top >= r.top - 1 && h.bottom <= r.bottom + 1) continue;
     // The Next.js dev overlay is not part of the product -- it exists only
     // under `next dev`, and nobody it reports on will ever meet it. A ruler
     // that cries wolf every run is a ruler nobody reads.

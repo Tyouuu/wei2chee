@@ -469,7 +469,8 @@
         "cantTake": "拿不到这张"
       },
       "phoneUse": "我的系统",
-      "phoneDesign": "改设计"
+      "phoneDesign": "改设计",
+      "phoneMore": "更多"
     },
     "home": {
       "eyebrow": "你的系统",
