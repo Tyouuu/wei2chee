@@ -291,3 +291,55 @@ describe("逐项明细", () => {
     expect(quote({})).toContain(RECORD_COPY.zh.form.lineAdd);
   });
 });
+
+/* 短的那几格并排 —— 名字那一格占整行。
+ *
+ * `align:pages` 2026-09-05 判「开一张单」这一页：**一屏几块 8 对 1**。
+ * 并排图看得很清楚：参考那一页（arhamkhnz 的 dashboard/invoice）把成对的
+ * 东西摆成一行（发出日期／到期日 · 税／折扣），而我们一栏到底 ——
+ * 五个框就占满一屏，明细跟分期表全部要滚下去才看得到。
+ *
+ * ⚠️ 这一条量的是**哪几格被标成半行**，不是它们画出来多宽：
+ * 宽度是容器查询决定的（手机上整张表是 390，`@3xl` 不成立，自己回到一栏），
+ * 而在 jsdom 里没有容器宽度可以量 —— 量一个量不到的东西，就是一把
+ * 「读数漂亮而画面是坏的」的尺。宽度是用眼睛在 1400 跟 390 各看过一次的。
+ */
+describe("短的那几格占半行", () => {
+  const halves = (html: string) => (html.match(/data-half=""/g) ?? []).length;
+
+  it("金额跟状态都是半行", () => {
+    const html = form({
+      moduleKey: "quotations",
+      shape: "pipeline",
+      columns: [...columns, { key: "status", label: "Status", kind: "status" as const }],
+      stages: ["等回覆", "已确认"],
+    });
+    /* 金额 · 状态 · 有效期 —— 走单那一页三格都短。 */
+    expect(halves(html)).toBe(3);
+  });
+
+  it("没有状态那一栏的时候，只有金额", () => {
+    /* ⚠️ 状态那一格是**这张表有没有那一栏**决定的，不是有没有流程 ——
+       第一版这一条写成「有 stages 就有两格」，而它红了：那份栏位清单里
+       根本没有状态。红的是我的期望，不是产品。 */
+    expect(halves(form({ stages: ["等回覆", "已确认"] }))).toBe(1);
+  });
+
+  it("名字那一格不是 —— 一个工程的名字要写得下", () => {
+    const html = form();
+    /* 第一格是名字，而它前面不可以有 data-half。 */
+    const upToFirstBox = html.slice(0, html.indexOf("For</span>"));
+    expect(upToFirstBox).not.toContain('data-half=""');
+  });
+
+  it("一栏都不短的时候，一格都不标", () => {
+    expect(
+      halves(
+        form({
+          columns: [{ key: "primary", label: "For", kind: "text" as const }],
+          stages: [],
+        }),
+      ),
+    ).toBe(0);
+  });
+});

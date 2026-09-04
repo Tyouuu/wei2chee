@@ -1065,7 +1065,13 @@ export function NewRecordForm({
   const labelText =
     "[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]";
 
-  function box(key: string, label: string, inputMode?: "tel" | "email" | "decimal") {
+  /** 一格。`half` = 这一格只占半行 —— 见表单那一行的 grid 上面那段注解。 */
+  function box(
+    key: string,
+    label: string,
+    inputMode?: "tel" | "email" | "decimal",
+    half?: boolean,
+  ) {
     /* The party box offers his own customers. A `datalist` and not a select:
        a new customer typed straight in still has to work -- an owner writing a
        quotation for somebody he has not filed yet must not be stopped, and the
@@ -1087,7 +1093,7 @@ export function NewRecordForm({
       (key === "amount" && totalFromLines !== null);
     const shown = key === "amount" && totalFromLines !== null ? totalFromLines : values[key] ?? "";
     return (
-      <label key={key} className="flex flex-col gap-1.5">
+      <label key={key} data-half={half ? "" : undefined} className="flex flex-col gap-1.5">
         <span className={labelText}>{label}</span>
         <input
           inputMode={inputMode}
@@ -1252,11 +1258,27 @@ export function NewRecordForm({
         **一张白卡**，纸在右边、表单在左边，两块对称。
         没有卡的时候，左边读起来不是「一份要填的东西」，是「一些散落的框」，
         而右边那张纸有边有影，两边看起来像两个不同的产品。 */}
-    <form id={FORM_ID} onSubmit={submit} className="ds-card flex flex-col gap-4 [padding:var(--pad-card-lg)]">
+    {/* 🔴 短的那几格并排（2026-09-05，对着 arhamkhnz 的 dashboard/invoice 看）。
+
+        `align:pages` 判这一页「一屏几块 8 对 1」。并排图看得很清楚：
+        他们把成对的东西摆成一行（发出日期／到期日 · 税／折扣），而我们是
+        **一栏到底** —— 五个框就占满一屏，明细跟分期表全部要滚下去才看得到。
+
+        规矩只有一句：**名字那一格占整行，短的那几格占半行。**
+        短的是数字 · 日期 · 状态 · 电话 —— 一个日期栏拉到 500px 宽，
+        多出来的那 400px 不是给他填的地方，是他要多走的一段路。
+
+        ⚠️ 用容器宽度不用视窗宽度：手机上这张表是整个屏幕宽，容器就是 390，
+        `@3xl` 不成立，於是它自己回到一栏到底 —— 那在手机上是对的。 */}
+    <form
+      id={FORM_ID}
+      onSubmit={submit}
+      className="ds-card grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1 [padding:var(--pad-card-lg)]"
+    >
       {shown.map((c) => {
         if (c.key === "status" && stages.length) {
           return (
-            <label key={c.key} className="flex flex-col gap-1.5">
+            <label key={c.key} data-half="" className="flex flex-col gap-1.5">
               <span className={labelText}>{c.label}</span>
               <select
                 value={values.status ?? ""}
@@ -1277,7 +1299,7 @@ export function NewRecordForm({
            没有人打得进去。 */
         if (earnedLocked && c.kind === "amount") {
           return (
-            <label key={c.key} className="flex flex-col gap-1.5">
+            <label key={c.key} data-half="" className="flex flex-col gap-1.5">
               <span className={labelText}>{c.label}</span>
               <input
                 value={earnedValue ?? ""}
@@ -1348,6 +1370,9 @@ export function NewRecordForm({
              「RM 48,500」 and a number input silently discards the whole
              value. The parser handles the ringgit sign and the commas. */
           c.kind === "amount" ? "decimal" : undefined,
+          /* 金额是短的那一种。名字不是 —— 一个工程的名字要写得下
+             「Taman Desa 三房翻新」。 */
+          c.kind === "amount",
         );
         /* The two numbers go directly under the name, because on a directory
            page they are the reason the row exists. */
@@ -1355,25 +1380,33 @@ export function NewRecordForm({
           /* Where it is and what it is counted in, directly under the name --
              on a shelf those two ARE the row. */
           return (
-            <div key="name-and-shelf" className="flex flex-col gap-4">
+            <div
+              key="name-and-shelf"
+              className="grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1"
+            >
               {node}
-              {box("location", copy.stockWhere)}
-              {box("unit", copy.stockUnit)}
+              {box("location", copy.stockWhere, undefined, true)}
+              {box("unit", copy.stockUnit, undefined, true)}
             </div>
           );
         }
         if (!isDirectory || c.key !== "primary") return node;
         return (
-          <div key="name-and-numbers" className="flex flex-col gap-4">
+          <div
+            key="name-and-numbers"
+            className="grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1"
+          >
             {node}
-            {box("whatsapp", copy.whatsapp, "tel")}
-            {box("phone", copy.phone, "tel")}
+            {/* 两个号码本来就是一对，而且两个都短。 */}
+            {box("whatsapp", copy.whatsapp, "tel", true)}
+            {box("phone", copy.phone, "tel", true)}
           </div>
         );
       })}
 
       {dateKind ? (
-        <label className="flex flex-col gap-1.5">
+        /* 日期是短的那一种 —— 参考那一页把发出日期跟到期日摆成一行。 */
+        <label data-half="" className="flex flex-col gap-1.5">
           <span className={labelText}>
             {dateKind === "validTill"
               ? copy.validTill
