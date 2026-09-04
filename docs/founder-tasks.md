@@ -9648,6 +9648,33 @@ https://www.ssm.com.my/    → 200                        (大网站活着)
 网址会过期，方法不会。这跟这个仓库那条「一个来源要留下落点」是同一件事的另一面 ——
 **任何我抄下来的常数都会过期，除非旁边写着「怎么自己查」。**
 
+##### 🔴 启用帐号一定要出门 —— 我「先试网上」那句是错的，收回
+> `这个呢`（配一张 SSM4U 跳出「activating your SSM4U account」的截图）
+
+**帐号开好了，但没启用就打不开注册商号那些功能。**
+
+读了 **SSM 自己的操作手册**（`SSM4U_User_Manual.pdf`，抓下来用 pdftotext 读的原文）：
+
+| 手册怎么写 | 给谁 |
+|---|---|
+| 「**Online Account Activation** — Users who are registered with the ID type **'Foreigner National ID'** are required to activate their SSM4U account via online」 | **外国人身份证** |
+| 「Users registered with **MyKAD**… are **advised to activate their SSM4U account at the SSM counter**」+「place their **thumb on the card reader**」 | **他** |
+
+→ **拿 MyKad 的人要把证插进读卡机再按指纹，那件事在家做不了。**
+我 9-04 早些时候写的「先试网上那条（自拍＋身份证照片）」是**照搜寻结果的摘要写的**，
+而那段摘要把三种身份的路径混在一起讲。**读原文才分得开。**
+
+**给他的答案是去 Tap.It 自助站，不是 SSM 办事处**：同一件事，而
+**Tap.It 开到晚上 10 点**（SSM 柜台 8:15–4:15，还要抽号码）。
+Tap.It 设在 **CelcomDigi 门市**里，怡保有好几间（Ipoh Parade · Aeon Kinta City ·
+Lotus Ipoh · Taman Ipoh Jaya · Gunung Rapat）。
+⚠️ **那份州属名单的 PDF 排版是乱的**（店名跟地址错开一行），
+所以我**没有替他配对哪一间对哪个地址** —— 叫他去之前先打一通问「有没有 SSM Tap.It」。
+
+⚠️ 教训跟上一条同一家：**搜寻结果的摘要会把不同人的路径合并成一句话。**
+一个「可以网上做」的答案，配一个「而你不行」的身份，等於把他送去撞墙。
+**问「怎么做」的时候，要读那份写给做这件事的人看的原文。**
+
 ##### 还要问一句的
 - [ ] **地方政府的营业执照（lesen perniagaan）** —— 在家做的软件生意有些市政局要、
       有些不要，各地不一样。**我没查他那一区的。**
