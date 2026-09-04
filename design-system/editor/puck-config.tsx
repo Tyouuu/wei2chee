@@ -252,6 +252,8 @@ type Components = {
     nav?: "side" | "top" | "split";
     frame?: "flush" | "inset" | "floating";
     width?: "wide" | "centred";
+    /** 面包屑那一条横不横过整个内容区。见 system-shell.tsx 的 `bar`。 */
+    bar?: "inline" | "bleed";
     // `deep` is the only one of the three that is reliably dark -- see the
     // navTone note in design-system/components/system-shell.tsx.
     navTone?: "dark" | "light" | "deep";
@@ -1389,12 +1391,13 @@ export const puckConfig: Config<Components> = {
       // therefore overrode all twenty-one registers' preferences forever --
       // measured, three registers rendered a byte-identical rail.
       defaultProps: { crumbs: [], sidebar: [], aside: [], main: [] },
-      render: ({ crumbs, crumbMonogram, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width }) => (
+      render: ({ crumbs, crumbMonogram, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width, bar }) => (
         <SystemShell
           nav={nav ?? "side"}
           navTone={navTone ?? "dark"}
           frame={frame ?? "flush"}
           width={width ?? "wide"}
+          bar={bar ?? "inline"}
           crumbs={(crumbs ?? []).map((c) => c?.text ?? "").filter(Boolean)}
           crumbMonogram={crumbMonogram || undefined}
           sidebar={<Sidebar />}

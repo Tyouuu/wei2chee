@@ -956,7 +956,7 @@
   --color-table-head-bg: var(--color-ink-900);
   --color-table-bg: transparent;
   --color-table-head-fg: var(--color-paper);
-  --color-canvas: #f7f7f8;
+  --color-canvas: #ffffff;
   --color-ink-950: #e4e4e7;
   --color-ink-900: #ffffff;
   --color-ink-850: #fafafa;
@@ -1041,11 +1041,11 @@
   --text-hero: 38px;
   --leading-tight: 1.25;
   --leading-body: 1.7;
-  --radius-xs: 0px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-control: 0px;
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-control: 8px;
   --radius-pill: 0px;
   --pad-card: 18px;
   --pad-card-lg: 26px;

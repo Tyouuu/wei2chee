@@ -385,6 +385,11 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "top-light-centred", label: "顶部 · 白底 · 内容置中", props: { nav: "top", navTone: "light", width: "centred" } },
     { id: "split-inset", label: "左边 · 两栏 · 页面内嵌", props: { nav: "split", navTone: "deep", frame: "inset" } },
     { id: "side-float-light-centred", label: "左边 · 白底 · 浮起 · 置中", props: { nav: "side", navTone: "light", frame: "floating", width: "centred" } },
+    /* 🔴 2026-09-04 加的。老板挑了 arhamkhnz 当我们系统唯一的样子，
+       而它的外壳是**侧栏 ＋ 一条横梁**：`<header h-12 border-b>` 在
+       `<div p-6>{children}</div>` 上面。面包屑那一条因此**横过整个内容区**，
+       内容自己另外缩 24px —— 两层内距。我们本来两者共用一层。 */
+    { id: "side-light-bar", label: "左边 · 白底 · 一条横梁", props: { nav: "side", navTone: "light", bar: "bleed" } },
   ],
 
   // ------------------------------------------------- 已经有轴、却接不到的六个

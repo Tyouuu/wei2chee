@@ -35,6 +35,7 @@ export function SystemBar({
   date,
   monogram,
   axis: axisProp,
+  bleed = false,
 }: {
   /** 从大到小：分组、页名。空的就不画。 */
   crumbs?: string[]
@@ -63,6 +64,20 @@ export function SystemBar({
    * 现在由外面明讲，context 只当后备。
    */
   axis?: "side" | "top"
+  /**
+   * 这一条**长在内容的内距里面**，还是**横过整个内容区**。
+   *
+   * 🔴 2026-09-04 加的，逐字照 arhamkhnz 的 `dashboard/layout.tsx`：
+   *   <header className="flex h-12 shrink-0 items-center gap-2 border-b …">
+   *     <div className="flex w-full items-center justify-between px-4 lg:px-6">
+   * 也就是 **48px 高 · 有下边线 · 横过整个内容区 · 里面自己 24px 内距**，
+   * 而内容那一块另外有 `p-6` —— **两层内距，不是一层**。
+   *
+   * 我们本来只有 `inline` 那一种：面包屑跟内容左右对齐、上下用内距拉开。
+   * 那读起来是「内容的第一行」；他们那一条读起来是「这个视窗的横梁」。
+   * **换个配色两者还是两个东西**，所以它是一根轴不是一个数值（重点 7c）。
+   */
+  bleed?: boolean
 }) {
   const ctxAxis = useContext(NavAxisContext)
   const axis = axisProp ?? ctxAxis
@@ -75,12 +90,20 @@ export function SystemBar({
      Tabler 自己那一页也只有一颗（而且带着名字跟职称）。 */
   const wantsFace = Boolean(monogram) && axis !== "top"
   if (!shown.length && !date && !wantsFace) return null
+  /* 满幅那一种：固定 48px 高、自己的左右内距、一条下边线横过整个内容区。
+     ⚠️ 侧栏在上面的时候**不给**满幅：那会跟顶栏叠成两条横梁，
+     而参考页只有一条。 */
+  const wide = bleed && axis !== "top"
   return (
     <div
-      className={`flex w-full shrink-0 items-center justify-between [gap:var(--gap-inline)] [padding-block:var(--pad-control-y)] ${
-        /* 侧栏在上面的时候这一条会跟它叠成两条横线，所以那种版式下它靠内距
-           跟页面拉开，不再画自己的下缘线。 */
-        axis === "top" ? "" : "[border-bottom:var(--hairline)_solid_var(--border-subtle)]"
+      className={`flex w-full shrink-0 items-center justify-between [gap:var(--gap-inline)] ${
+        wide
+          ? "h-12 [padding-inline:var(--pad-card-lg)] [border-bottom:var(--hairline)_solid_var(--border-subtle)]"
+          : `[padding-block:var(--pad-control-y)] ${
+              /* 侧栏在上面的时候这一条会跟它叠成两条横线，所以那种版式下它靠内距
+                 跟页面拉开，不再画自己的下缘线。 */
+              axis === "top" ? "" : "[border-bottom:var(--hairline)_solid_var(--border-subtle)]"
+            }`
       }`}
     >
       <nav

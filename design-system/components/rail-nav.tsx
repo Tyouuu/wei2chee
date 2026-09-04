@@ -293,7 +293,16 @@ export function RailNav({
             // A tree spends 18px on the indent, so it needs them back.
             : isTree
               ? "@3xl:w-[240px] [padding-inline:8px]"
-              : "@3xl:w-[228px] [padding-inline:10px]"
+              /* 🔴 `action` 是 272px（2026-09-04）。逐字来自 arhamkhnz 的
+                 `dashboard/layout.tsx`：`--sidebar-width: calc(var(--spacing) * 68)`
+                 = 0.25rem × 68 = **17rem = 272px**（我们的尺子量他们量到 271）。
+                 它比其余几种宽，而那不是随便宽的：这一种顶上要放一颗
+                 **整条宽的实心按钮**，按钮里要装得下一个动词加一个名词
+                 （「加一张报价单」）—— 220px 装不下就会截字，而
+                 [任务 17](../../docs/founder-tasks.md) 记过截字的代价。 */
+              : isAction
+                ? "@3xl:w-[272px] [padding-inline:12px]"
+                : "@3xl:w-[228px] [padding-inline:10px]"
       }`
 
   return (

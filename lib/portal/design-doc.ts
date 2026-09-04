@@ -377,7 +377,9 @@ export const STYLE_BRIEFS: Record<StyleName, StyleBrief> = {
       Tag: "outline",
       Divider: "normal",
       TrendChart: "bar",
-      SystemShell: "side-light-centred",
+      /* 🔴 "side-light-bar"（2026-09-04）：他们的外壳是侧栏 ＋ 一条 48px 的横梁，
+         而且内容置中那一条要拿掉 —— 他们的内容是满宽的（`p-6` 之后就到边）。 */
+      SystemShell: "side-light-bar",
       /* 🔴 "action" 不是 "quiet"（2026-09-04）。它的参考侧栏顶上是一颗黑色实心的
          Quick Create，而这一套的总览**不画页面标题**（HEADLESS_DASHBOARD），
          所以主要动作只剩这一个家。两件事绑在一起，守卫盯着。 */

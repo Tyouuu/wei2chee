@@ -182,8 +182,13 @@ function Tile({
            会变成一层淡玫瑰，而那正是[任务 100c](../../docs/founder-tasks.md)
            刚压下去的有色面积。**抄的是那一笔的作用，不是那个变数名。** */
         : look === "chip"
+          /* 内距 16px、不是风格自己的 `--pad-card`：源代码写死
+             `--card-spacing: --spacing(4)` = 16px，而瑞士的是 18。
+             差 2px 听起来没什么，但它乘以四张卡的左右两边，
+             正好是「数字跟药丸挤不挤得下同一行」的那几个像素。 */
           ? "[background:linear-gradient(to_top,color-mix(in_oklab,var(--color-on-canvas)_4%,var(--card)),var(--card))]" +
-            " [border-radius:var(--radius)] [padding:var(--pad-card)]" +
+            /* 卡片是 `rounded-xl`（= --radius + 4），不是 --radius 本身 */
+            " [border-radius:var(--radius-lg)] p-4" +
             " [box-shadow:0_0_0_1px_color-mix(in_oklab,var(--color-on-canvas)_10%,transparent)]"
         : "[background:var(--card)] [border-radius:var(--radius)] [padding:var(--pad-card)] [box-shadow:var(--shadow-card)] [border:var(--border-card-width)_solid_var(--border-subtle)]"
 
@@ -298,8 +303,14 @@ function Tile({
         width and the sparkline drops to the next line when there is not enough
         room for both. The spark is the decoration; the figure is the point.
       */}
+      {/* 🔴 `chip` 这一行照源代码：`flex flex-wrap items-center gap-2`
+          —— **对齐是 center 不是 baseline，缝是 8px 不是风格的 10px**。
+          baseline 会把药丸的底跟数字的底对齐，而药丸是一个有高度的方块，
+          於是它整个往下掉半个字高；他们那一颗是**跟数字垂直居中**的。 */}
       <div
-        className={`mt-2 flex flex-wrap items-baseline [gap:var(--gap-inline)] ${
+        className={`mt-2 flex flex-wrap ${
+          look === "chip" ? "items-center gap-2" : "items-baseline [gap:var(--gap-inline)]"
+        } ${
           /* TailAdmin 把数字跟药丸推到两边 —— 数字靠左、涨跌靠右，
              中间那一段空白就是这张卡的呼吸。 */
           look === "iconed" ? "justify-between" : ""

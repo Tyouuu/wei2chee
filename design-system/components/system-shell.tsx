@@ -38,6 +38,7 @@ export function SystemShell({
   crumbMonogram,
   frame = "flush",
   width = "wide",
+  bar = "inline",
 }: {
   sidebar: ReactNode
   /**
@@ -126,6 +127,15 @@ export function SystemShell({
    * that everything fits on one screen.
    */
   width?: "wide" | "centred"
+  /**
+   * 面包屑那一条长在哪里 —— 内容的内距**里面**，还是横过整个内容区。
+   *
+   * 🔴 2026-09-04。他们的 `layout.tsx` 是 `<header h-12 border-b>` 在
+   * `<div p-6>{children}</div>` **上面**，所以那条线横过整个内容区，
+   * 而内容自己另外缩 24px。我们本来两者都在同一个内距里，
+   * 於是那条线跟着内容缩进去，看起来像内容的第一行而不是视窗的横梁。
+   */
+  bar?: "inline" | "bleed"
 }) {
   const isTop = nav === "top"
   // A split shell is a side rail that happens to have a column beside it.
@@ -347,14 +357,20 @@ export function SystemShell({
             : { backgroundColor: "var(--color-canvas)" }
         }
       >
+        {/* 满幅那一条：画在内距**外面**，所以它横过整个内容区（照他们的 layout.tsx）。 */}
+        {bar === "bleed" && crumbs?.length ? (
+          <SystemBar crumbs={crumbs} monogram={crumbMonogram} axis={isTop ? "top" : "side"} bleed />
+        ) : null}
         <div
           className={`flex min-w-0 flex-1 flex-col [gap:var(--gap-stack)] [padding:var(--pad-card-lg)] ${
             width === "centred" ? "mx-auto w-full [max-width:96ch]" : ""
           }`}
         >
-          {/* 顶栏。在内距里面，所以它跟页面内容左右对齐 ——
+          {/* 内嵌那一种：在内距里面，所以它跟页面内容左右对齐 ——
               一条跟内容不对齐的横线，看起来像是别人的东西掉进来了。 */}
-          {crumbs?.length ? <SystemBar crumbs={crumbs} monogram={crumbMonogram} axis={isTop ? "top" : "side"} /> : null}
+          {bar !== "bleed" && crumbs?.length ? (
+            <SystemBar crumbs={crumbs} monogram={crumbMonogram} axis={isTop ? "top" : "side"} />
+          ) : null}
           {main}
         </div>
       </div>

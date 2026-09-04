@@ -70,7 +70,14 @@
      a wider spread than either sibling (Ledger: 1.000-0.7017, Hearth:
      0.9779-0.6613), because the border steps are meant to read as ruled lines on
      a drafting sheet, not just a soft edge. */
-  --color-canvas: #f7f7f8;
+  /* 🔴 纯白（2026-09-04）。参考的 `globals.css` 写着
+     `--background: oklch(1 0 0)` 跟 `--card: oklch(1 0 0)` —— **地跟卡是同一个纯白**，
+     分开它们的只有一圈 1px 的环。我们本来是 #f7f7f8，於是在一个白色的内容区上
+     四张卡变成四块灰方块，而参考那四张是白的。
+     ⚠️ 这一格同时穿在**官网**上，而瑞士的官网抄的是 Leah Webb ——
+     那一页本来就是「全白 · 只有细线分段 · 整页零个色块」，所以两边都更准，
+     不是拿一边换一边。 */
+  --color-canvas: #ffffff;
   --color-ink-950: #e4e4e7;
   --color-ink-900: #ffffff;
   --color-ink-850: #fafafa;
@@ -539,11 +546,25 @@
   --leading-body: 1.7;
 
   /* ---- SHAPE AXIS: medium ------------------------------------------------- */
-  --radius-xs: 0px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-control: 0px;
+  /* 🔴 圆角照 arhamkhnz 的源代码（2026-09-04，老板挑了这一套当系统唯一的样子）。
+     他们的 `globals.css` 写着 `--radius: 0.625rem` = **10px**，然后一整套是
+       sm = radius−4 = 6 · md = radius−2 = 8 · lg = radius = 10 · **xl = radius+4 = 14**
+     而卡片用的是 `rounded-xl`，所以**卡片是 14px**。
+
+     ── 为什么这里可以改，而这一改不会弄坏它的官网 ──────────────────────────
+     这几个数值本来全部是 0，理由写在这个档案上面：那是 Leah Webb（它的**官网**参考）
+     的身份 —— 全白、只有细线分段。**而官网那一层早就有自己的绝对值出口**
+     （`--site-radius-abs: 20px`），一个字都不读这几个 `--radius-*`。
+     所以工作台照系统的参考走、官网照官网的参考走，两边各自对齐，不是拿一边换一边。
+
+     ⚠️ `--radius-pill` 故意留 0：他们的药丸是 `rounded-md`（8px）不是真的胶囊，
+     但这个变数在别的地方（状态点 · 分段控件）被当成「胶囊」用，
+     动它要另外量一轮。**记下来，留给调整那一轮。** */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-control: 8px;
   --radius-pill: 0px;
 
   /* ---- DENSITY AXIS: comfortable ------------------------------------------ */
