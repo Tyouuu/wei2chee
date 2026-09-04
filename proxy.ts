@@ -93,5 +93,15 @@ export const config = {
   // prefix in a URL that business prints on a name card -- and there is no
   // locale to choose anyway, because the page speaks whatever language that
   // business's system speaks.
-  matcher: ["/((?!api|_next|auth|s/|.*\\..*).*)"],
+  // `icon` / `apple-icon` / `manifest` 是 Next 自己的图标跟清单路由，
+  // 而它们**没有副檔名** —— 上面那条“带点就放行”只挡得住有点的
+  // (`favicon.ico` · `robots.txt` · `sitemap.xml` 都是靠它逃掉的)，
+  // 所以这几条会被 307 到 `/en/apple-icon`，而那个网址底下没有东西。
+  //
+  // 实测 2026-09-04：`/apple-icon` → 307 → `/en/apple-icon`。
+  // 后果不是少一张图：**iOS 加到主画面的时候找不到图标，
+  // 就会去截一张网页的图缩成 180px** —— 一片灰。
+  // 而那正好是「桌面图标」这件事唯一给他看的东西（任务 141）。
+  // 任务 46b 把它记成「回 404」，记了三天没人动。
+  matcher: ["/((?!api|_next|auth|s/|icon|apple-icon|manifest|.*\\..*).*)"],
 };

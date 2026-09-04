@@ -60,13 +60,19 @@ export async function generateMetadata({
       locale: zh ? "zh_CN" : "en_MY",
     },
     twitter: { card: "summary_large_image", title, description },
-    icons: {
-      icon: "/favicon.ico",
-      // WhatsApp and iOS home-screen bookmarks both reach for this one; without
-      // it iOS screenshots the page and uses that, which at this size is a
-      // grey smear.
-      apple: "/apple-icon.png",
-    },
+    /* 🔴 图标不在这里手写了。
+     *
+     * 这一格本来写着 `apple: "/apple-icon.png"`，旁边那句注解还写着
+     * 它是为了防「iOS 找不到图标就去截一张网页的图」——
+     * **而那个网址从来不存在**。实测 2026-09-04：
+     * `/apple-icon.png` → **404**，而真正服务的是 `/apple-icon`。
+     *
+     * 一句手写的路径去猜框架自己的路由叫什么 —— 而且它还会
+     * **盖掉框架本来会自己写对的那一行**。拿掉之后，
+     * `app/favicon.ico` 跟 `app/apple-icon.tsx` 两个档案自己会被写进页面，
+     * 而那两个网址永远是对的。
+     *
+     * 这个仓库栽在「第二份手写拷贝」上至少六次，这是第七次。 */
   };
 }
 
