@@ -62,18 +62,28 @@ const env = Object.fromEntries(
 const EMAIL = "tianyou.demo@formae.test";
 const PASSWORD = "FormaeDemo2026!";
 const SLUG = "xingfa-reno";
-/* 🔴 装修那一行的第一张是**台账**（任务 35），而这里用第二张**満図**。
-   理由是量出来的，不是喜好：六套风格的公开第一屏，h1 对底的对比度 ——
+/* 🔴 装修那一行的第一张是**台账**（任务 35），而这里用**图纸**。
+   两个理由，两个都是量出来的，不是喜好：
 
-     ledger    1.32   🔴 深蓝压在深棕上，读不到
-     signboard 1.18   🔴
-     hearth   13.62   ✅
-     blueprint15.54 · swiss 16.97 · counter 17.02
+   ① 公开第一屏那句大标题读不读得到（h1 对底）
+        ledger 1.32 🔴 · signboard 1.18 🔴
+        hearth 13.62 · blueprint 15.54 · swiss 16.97 · counter 17.02
+      台账那一屏是**看不见的**，而[重点 11](docs/founder-points.md) 说那一屏就是产品。
 
-   台账那一屏是**看不见的**，而[重点 11](docs/founder-points.md) 说那一屏就是产品。
-   那两套要修，但那是风格层（[重点 22c](docs/founder-points.md)），不是这里 ——
-   已经登记。这个 demo 先用读得到的那一套。 */
-const REGISTER = "hearth";
+   ② 官网上有没有**询价表格**（`dropBlocks` 里有没有 website-form）
+        ledger 有 · blueprint 有 · swiss 有
+        hearth 没有 · counter 没有 · signboard 没有
+
+   ⚠️ 我第一版选了 hearth（只看了①），结果那个 demo 站**没有询价表格** ——
+   而「客人从官网询价、一按变成报价单」正是这个产品唯一讲得出口的那一件
+   （[任务 89](docs/founder-tasks.md#89)）。一个示范不出那件事的示范站，
+   等於把最值钱的那一段藏起来。
+   両条都过的只有 **blueprint** 跟 **swiss**，取图纸（它的主张是「中规中矩、
+   要人信任」，对一个装修承包商比较对）。
+
+   ⚠️ 台账跟招牌那两套要修，但那是风格层（[重点 22c](docs/founder-points.md)），
+   不是这里 —— 已经登记。 */
+const REGISTER = "blueprint";
 /* 「你的报价发出去之后没人跟，钱卡在确认这一步。」—— 就是这一个 demo
    当初的那份分析（[任务 18] 里那句「Watch this: 报价追不动」）。 */
 const LEAD_SUMMARY = "你的报价发出去之后没人跟";
@@ -112,7 +122,7 @@ const lead = (leads ?? []).find((l) => l.id === match.lead_id);
 say(`要建：${EMAIL}`);
 say(`  问卷    ${lead.id}`);
 say(`  分析    ${match.summary.slice(0, 40)}…`);
-say(`  风格    ${REGISTER}（存档里是 tile，已经砍掉；台账的第一屏量出来 1.32:1，读不到）`);
+say(`  风格    ${REGISTER}（台账第一屏 1.32:1 读不到；満図 官网没有询价表格）`);
 say(`  网址    /s/${SLUG}`);
 say(`  官网    从 ${BACKUP} 放回去（${JSON.stringify(saved.layout_json).length} bytes）`);
 if (!WRITE) {
