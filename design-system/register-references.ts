@@ -116,10 +116,18 @@ export const REGISTER_REFERENCES: Record<RegisterKey, RegisterReference> = {
   /* 印出来给人看的那一套。一张纸是一栏的。 */
   swiss: {
     zh: "瑞士",
-    reference: "Studio Admin · CRM",
+    /* 🔴 2026-09-04 从 CRM 那一页换到**门面**（`/dashboard/default`）。
+       老板那天挑了这一套当我们系统唯一的样子（`这套吧 这套很好看`），
+       而对齐要拿**同一种页**去对：我们的总览对他们的总览。
+       CRM 那一页是「一条流程的概览」，门面才是「打开系统第一眼看到的那一页」。
+
+       ⚠️ 换了页，卡片就换了一种：CRM 那一页的 KPI **一个图标都没有**，
+       门面那一页每张卡头上都有一个 28px 的灰方块。两种都是真的，
+       是我之前拿错了页 —— 而那个差别在缩图上看不出来。 */
+    reference: "Studio Admin · 门面",
     source: "arhamkhnz/next-shadcn-admin-dashboard · MIT · ★3.0k",
-    url: "https://next-shadcn-admin-dashboard.vercel.app/dashboard/crm",
-    shot: "arham-crm.jpg",
+    url: "https://next-shadcn-admin-dashboard.vercel.app/dashboard/default",
+    shot: "arham-default.jpg",
     takes:
       "每一个数字底下都带着「上个月是多少」，图表卡自己讲结论。" +
       "字级阶梯十级，而整页最大的东西是一个数字不是一个词。",

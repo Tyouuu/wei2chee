@@ -711,6 +711,21 @@ async function main() {
     await p.waitForTimeout(3000);
     await p.goto(`${BASE}${ref.ourPage}`, { waitUntil: "networkidle", timeout: 120000 });
     await p.waitForTimeout(6500);
+    /* 🔴 关掉那张「这是一份草稿」的黑卡（2026-09-04）。
+       它固定在右上角，而**每一个参考页的右上角都是有东西的**（头像 · 图标 ·
+       名字）—— 不关掉，那一角永远在比一张我们的编辑器家具跟他们的设计。
+       它故意不记住（见 draft-notice.tsx 的档头），所以每一页都要关一次。
+       `zoom:admin` 从第一天就在关，而这把尺没有 —— 两支脚本拍同一页，
+       一支的图上有那张黑卡，一支没有。 */
+    await p
+      .getByRole("button", { name: /got it, hide this/i })
+      .first()
+      .click({ timeout: 3000 })
+      .catch(() => {});
+    /* 指标移开：停在原地编辑器会画出那条橘色的「＋ 加一段」分隔线，
+       那也是我们的家具，不是这一套风格的设计。 */
+    await p.mouse.move(4, 4);
+    await p.waitForTimeout(400);
     const ours = await p.evaluate(PROBE, OURS_ROOT);
     if (ours.error) { console.log(`${reg}: ${ours.error}`); failed++; continue; }
     const oursShot = await p.locator(OURS_ROOT).first().screenshot({ type: "png" });

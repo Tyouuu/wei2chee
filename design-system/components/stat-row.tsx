@@ -167,6 +167,24 @@ function Tile({
       ? `[padding:var(--pad-card)] ${first ? "" : "@2xl:[border-left:var(--hairline)] @2xl:[border-color:var(--border-subtle)]"}`
       : look === "boxed" || look === "iconed"
         ? "[background:var(--card)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius)] [padding:var(--pad-card)]"
+        /* 🔴 `chip` 的卡壳照 arhamkhnz 的源代码重做（2026-09-04，老板挑了这一套）。
+           他们那一行是：
+             bg-linear-to-t from-primary/5 to-card · shadow-xs · ring-1 ring-foreground/10
+           三件事，而我们本来一件都没有：
+             · **一道从下往上的渐层**，底部是主色 5% —— 这是那四张卡最容易漏掉的一笔，
+               因为它太淡，缩图上完全看不出来，1:1 才看得到
+             · **`ring-1` 不是 border 也不是 shadow** —— Tailwind 的 ring 是用
+               box-shadow 实作的，所以我们的尺子把它读成「他们 90% 有阴影」。
+               **那不是阴影，那是一圈 1px 的环。** 源代码读得到，尺子读不到
+             · 环的颜色是 `foreground/10` —— 前景色一成，不是边框色
+           ⚠️ 渐层用**中性**的字色不用主色：他们的 primary 是 `oklch(0.205 0 0)`，
+           **彩度 0**，所以 `primary/5` 画出来是一层灰。照抄 `--color-primary`
+           会变成一层淡玫瑰，而那正是[任务 100c](../../docs/founder-tasks.md)
+           刚压下去的有色面积。**抄的是那一笔的作用，不是那个变数名。** */
+        : look === "chip"
+          ? "[background:linear-gradient(to_top,color-mix(in_oklab,var(--color-on-canvas)_4%,var(--card)),var(--card))]" +
+            " [border-radius:var(--radius)] [padding:var(--pad-card)]" +
+            " [box-shadow:0_0_0_1px_color-mix(in_oklab,var(--color-on-canvas)_10%,transparent)]"
         : "[background:var(--card)] [border-radius:var(--radius)] [padding:var(--pad-card)] [box-shadow:var(--shadow-card)] [border:var(--border-card-width)_solid_var(--border-subtle)]"
 
   const span = lead ? "@2xl:col-span-2 @5xl:col-span-2" : ""
@@ -187,6 +205,22 @@ function Tile({
           ⚠️ 底色用中性的 `--color-ink-850`，不用主色 —— 招牌的主色是那个红，
           四张卡各挂一个红方块，等於把[任务 100c](../../docs/founder-tasks.md)
           刚压下去的有色面积再加回来。TailAdmin 自己那四个也是灰的。 */}
+      {/* 🔴 `chip` 的图标（2026-09-04）。老板挑的是这一套，而我们本来是照它的
+          **CRM** 那一页做的 —— 那一页确实一个图标都没有。
+          但他指的是这一套的**门面**（`/dashboard/default`），而那一页每张卡头上
+          都有一个方块，源代码逐字是：
+            size-7 rounded-lg border bg-muted text-muted-foreground，图标 size-4
+          28px 的方块、16px 的图标、**灰底灰图标**，自己一行，标签在它下面。
+          ⚠️ 跟 `iconed`（TailAdmin）那个 44px 的方块不是同一个东西：
+          那个大、那个把数字跟药丸推到两边；这个小、数字跟药丸黏在一起。 */}
+      {look === "chip" && icon ? (
+        <span
+          className="mb-2 grid h-7 w-7 place-items-center [background:var(--color-canvas)] [border:1px_solid_var(--border)] [border-radius:var(--radius-sm)] text-[color:var(--color-on-canvas-dim)]"
+          aria-hidden
+        >
+          {icon}
+        </span>
+      ) : null}
       {look === "iconed" && icon ? (
         <span
           className="mb-3 grid h-11 w-11 place-items-center [background:var(--color-ink-850)] [border-radius:var(--radius-sm)] text-[color:var(--color-paper-dim)]"
@@ -271,8 +305,27 @@ function Tile({
           look === "iconed" ? "justify-between" : ""
         }`}
       >
+        {/* 🔴 `chip` 的数字**不上状态色**（2026-09-04）。
+            参考那四张卡的数字全部是近黑，颜色只出现在**药丸**上：
+            「1,234」是黑的，旁边一颗红药丸写 -20%，底下一句
+            「Acquisition needs attention」。**警告在药丸跟那句话里，不在数字上。**
+            我们本来把「还没收的 RM 31,200」整个印成红的、「等回覆 2」印成黄的 ——
+            一排四张卡就有两块颜色，而参考那一排一块都没有。
+            ⚠️ 讲清楚代价：**红色本来在传一件真的事**（这笔钱超过 30 天没收）。
+            换掉之后传那件事的是底下那句「Over 30 days」，跟参考同一个做法。
+            要把红色拿回来，就是这一行改回 `tile.tone`。
+
+            🔴 `chip` 的数字用 `font-medium` 不是 semibold（2026-09-04，源代码逐字）：
+              font-medium text-3xl tabular-nums leading-none tracking-tight
+            他们那个数字**没有很粗**，撑起它的是 30px 跟收紧的字距，不是字重。
+            照 semibold 画出来会比参考重一档 —— 而那一档在缩图上看不出来，
+            1:1 并排才看得到。 */}
         <span
-          className={`tnum shrink-0 leading-none [font-weight:var(--fw-semibold)] ${TONE_FG[tile.tone ?? "normal"]}`}
+          className={`tnum shrink-0 leading-none ${
+            look === "chip"
+              ? "[font-weight:var(--fw-medium)] [letter-spacing:-0.02em]"
+              : "[font-weight:var(--fw-semibold)]"
+          } ${TONE_FG[look === "chip" ? "normal" : (tile.tone ?? "normal")]}`}
           style={{ fontSize: valueSize }}
         >
           {tile.value}
@@ -299,8 +352,13 @@ function Tile({
           {tile.deltaLabel && <span className="truncate">{tile.deltaLabel}</span>}
         </div>
       )}
+      {/* 🔴 底下那一句他们是 `text-sm`（14px），我们本来是 `--text-xs`（12px）。
+          源代码：`<p className="text-muted-foreground text-sm">`。
+          两级的差别在缩图上看不见，而它是「一张卡有几级字」的一级。 */}
       {(look === "chip" || look === "iconed") && (tile.previous || tile.deltaLabel) && (
-        <p className="mt-1.5 [font-size:var(--text-xs)] [line-height:var(--leading-body)] text-[color:var(--color-on-canvas-dim)]">
+        <p className={`mt-1.5 [line-height:var(--leading-body)] text-[color:var(--color-on-canvas-dim)] ${
+          look === "chip" ? "[font-size:var(--text-sm)]" : "[font-size:var(--text-xs)]"
+        }`}>
           {tile.previous ? (
             <>
               <span className="tnum [color:var(--color-on-canvas)] [font-weight:var(--fw-medium)]">

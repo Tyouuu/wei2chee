@@ -369,9 +369,18 @@ export function RailNav({
         <Link
           href={actionHref || "#"}
           className="mb-3 flex items-center justify-center gap-1.5 [border-radius:var(--radius-control)] px-3 [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] transition-opacity [transition-duration:var(--dur-fast)] hover:opacity-90"
+          /* 🔴 用侧栏自己的**墨色**，不用主色（2026-09-04）。
+             参考那一颗（arhamkhnz 的 Quick Create）是 `bg-primary`，
+             而他们的 `--primary` 是 `oklch(0.205 0 0)` —— **彩度 0，就是近黑**。
+             我们本来用 `--color-nav-accent`，那是这一套风格的品牌色，
+             画出来是一颗蓝紫色的按钮：整条侧栏唯一一块颜色，而参考那一条
+             整条只有黑白灰。
+             ⚠️ 「墨色」在深侧栏上会是近白，浅侧栏上会是近黑 —— 两边都是
+             「这条侧栏自己的字色」，所以这一条对深浅两种侧栏都成立，
+             不是只为一套风格写的特例。 */
           style={{
             height: "var(--control-h)",
-            backgroundColor: "var(--color-nav-accent)",
+            backgroundColor: "var(--color-nav-fg)",
             color: "var(--color-nav-bg)",
           }}
         >

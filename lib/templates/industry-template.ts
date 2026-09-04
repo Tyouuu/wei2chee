@@ -1520,9 +1520,28 @@ function buildDashboard(
 
   const plan = dashboardComposition(style, layout);
 
+  /* 🔴 总览这一页要不要页面标题 —— 这是**风格的决定**，2026-09-04 加的。
+     老板挑了 arhamkhnz 当我们系统唯一的样子，而它的 `page.tsx` 全档就三行：
+       <MetricCards /> <PerformanceOverview /> <SubscriberOverview />
+     **一个标题都没有。** 打开就是四张卡。
+     它的面包屑在顶栏，主要动作是侧栏顶上那颗黑色的 Quick Create。
+
+     而我们本来在每一页顶上放「Overview + 一句说明 + 一颗按钮」，
+     所以尺子报「顺序：参考 数字→数字→数字，我们 其他→其他→图」——
+     **差的不是尺寸，是我们比他们多一整块。**
+
+     ⚠️ **这一条跟侧栏那颗按钮是绑在一起的，不可以只做一半。**
+     标题那一块装着这门生意的主要动作（「加一张报价单」）；拿掉标题而不给
+     那颗按钮一个新家，就是把产品唯一的主要动作删掉 —— 那比不像更糟。
+     所以下面那条守卫盯着：**声明了不要标题，就必须用 `action` 那个侧栏。**
+     （`RailNav` 的 `action` 变体本来就是 8-26 照他们那颗 Quick Create 做的，
+     注解白纸黑字写着，而**在这之前六套没有一套在用它** —— 这个仓库
+     第十七次「能力有、线没接」。） */
+  const headless = HEADLESS_DASHBOARD.has(style ?? "");
+
   return layerFirst([
     railNav(labels, brand, name, "dashboard", locale, pages, lang),
-    node("PageHeader", "dashboard-header", {
+    ...(headless ? [] : [node("PageHeader", "dashboard-header", {
       title: c.dashboard.title,
       subtitle,
       // WHY A BUTTON AND NOT A TOP BAR: three of the four things a competitor's
@@ -1543,7 +1562,7 @@ function buildDashboard(
           ["quotations", "bookings", "orders", "projects"].includes(p.key),
         )?.key ?? "customers"
       }`,
-    }),
+    })]),
     // An unknown role is skipped rather than thrown: a composition naming a
     // block this page cannot build should cost that block, not the page.
     ...plan.map(compose).filter((n): n is PuckNode => Boolean(n)),
@@ -1625,6 +1644,20 @@ function headlineDelta(spark: number[] | undefined): number | null {
   if (!prev) return null;
   return ((curr - prev) / Math.abs(prev)) * 100;
 }
+
+/**
+ * 哪几套风格的**总览**不画页面标题 —— 因为它抄的那一页没有。
+ *
+ * 只有一套，而这是结论不是占位（[任务 32](../../docs/founder-tasks.md) 那一条：
+ * 一个字段系统服务一个值就是过度工程）。arhamkhnz 的门面页整档三行，
+ * 没有标题；shadcn 的 Tasks、Tabler、Ant、TailAdmin 每一页都有标题。
+ *
+ * ⚠️ **进这份名单的风格，`RailNav` 必须是 `action`。**
+ * 标题那一块装着主要动作；拿掉标题就要给那颗按钮一个新家，而 `action` 那个
+ * 侧栏顶上正好有一个 —— 那本来就是照同一个参考做的。
+ * `headless-needs-rail-action.test.ts` 盯着这一条，故意弄坏看过它红。
+ */
+export const HEADLESS_DASHBOARD = new Set(["swiss"]);
 
 export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
   // A ledger is a table. It opens on one, and the figures come after -- which
