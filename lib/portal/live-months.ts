@@ -86,6 +86,7 @@ const WORDS = {
     up: "增长",
     down: "下滑",
     spent: "本月花掉",
+    commissionOut: "本月佣金",
     earned: "本月赚",
     /* ⚠️ 「赚」不是「净利」。我们算的是收付实现制 -- 这个月真的进来的钱减
        真的花出去的钱 -- 而「净利」是一个有准确会计定义的词，指的不是它。
@@ -118,6 +119,7 @@ const WORDS = {
     up: "Up",
     down: "Down",
     spent: "Spent this month",
+    commissionOut: "Commission this month",
     earned: "Kept this month",
     earnedHow: "What came in, less what went out",
     noSpend: "No expenses recorded yet",
@@ -445,6 +447,116 @@ export function todayInMalaysia(at: Date = new Date()): string {
  * prints zeroes across a page every time a query fails, and a lie is worse
  * than a demonstration.
  */
+/**
+ * 收款 · 开销 · 佣金那三页顶上的那个数字。
+ *
+ * ── 🔴 为什么非做不可 ─────────────────────────────────────────────────────
+ *
+ * `npm run shoot:phone` 2026-09-05 对着真的产品跑：**收款那一页顶上印着
+ * `RM 71,300`** —— 那是 `sample-system.ts` 里每一家公司共用的那个示例总数。
+ * 底下那张表早就是他自己的行了（8-31 起），而**头上那个数字还是别人的**。
+ *
+ * 一桌示例会自己招认（陈先生、李太太）；**一个总数只是一个数字，看起来就是他的**。
+ * 总览那一页 2026-08-31 就是为了这一句修的 —— 而收款 · 开销 · 佣金三页
+ * 从那天起被记在「还欠」里（[任务 94](../../docs/founder-tasks.md)），没有人回来接。
+ *
+ * ⚠️ 而它还连着第二件：手机那四条通则里「一个大数字当主角」那一条，
+ * **唯一过关的一页就是收款，而它过关靠的正是这个假数字**。
+ * 一条靠另一条的洞才过关的检查，等於没过。
+ *
+ * ── 它故意比 `buildMonthlyReport` 少 ──────────────────────────────────────
+ *
+ * 报表那一页要答「赚多少」，所以它两个方向都读、还要分类别。
+ * 这三页各自只讲**自己那一个模块**的一件事：这个月进来（或出去）多少、几笔。
+ * 「还没用完的订金」故意不放 —— 总览已经有那一格，
+ * 同一个数字在两页各算一次，就是两份会漂移的真相。
+ */
+export function buildLedgerHeadline(input: {
+  lang: MonthLang;
+  now: { y: number; m: number };
+  moduleKey: string;
+  ledger: MonthFact[];
+}): LiveStats | null {
+  const w = WORDS[input.lang] ?? WORDS.zh;
+  if (!input.ledger.length) return null;
+
+  /* 冲正过的不算 —— 跟报表那一页同一条规矩，同一段程式的形状。
+     一笔退回去的收款在这之前照样算进这个月。 */
+  const dead = new Set(input.ledger.map((e) => e.adjusts_id).filter(Boolean) as string[]);
+  const live = input.ledger.filter((e) => !e.adjusts_id && !dead.has(e.id));
+  if (!live.length) return null;
+
+  const months = lastSixMonths(input.now);
+  const totals = months.map((m) => {
+    const rows = live.filter((e) => {
+      const ym = ymOf(e.entry_on);
+      return !!ym && ym.y === m.y && ym.m === m.m;
+    });
+    return { ...m, cents: rows.reduce((n, e) => n + (e.amount_cents ?? 0), 0), count: rows.length };
+  });
+  const thisMonth = totals[totals.length - 1];
+
+  /* 每一页用它自己的动词。佣金不用「花掉」—— 它确实是出去的钱，
+     但一个老板不会把发给师傅的抽成叫「开销」。 */
+  const label =
+    input.moduleKey === "payments" ? w.received
+    : input.moduleKey === "commission" ? w.commissionOut
+    : w.spent;
+
+  return {
+    tiles: [
+      {
+        label,
+        value: ringgit(thisMonth.cents) ?? "RM 0",
+        deltaLabel: w.vsLast,
+        tone: input.moduleKey === "payments" ? "good" : "normal",
+        spark: totals.map((t) => t.cents / 100),
+        icon: "payments",
+      },
+      {
+        label: w.entries,
+        value: w.count(thisMonth.count),
+        deltaLabel: w.cash,
+        tone: "normal",
+        icon: "reconciliation",
+      },
+    ],
+    trend: totals.map((t) => ({ label: w.month(t.m), value: Math.round(t.cents / 100) })),
+  };
+}
+
+/**
+ * 读那三页的那一个数字。
+ *
+ * ⚠️ `undefined` 是「读不到」，页面原样不动；`null` 才是「他真的还没有」。
+ * 两个合成一个，就是每一次查询失败都在他的第一屏印 RM 0 —— 那是说谎，不是降级。
+ */
+export async function fetchLedgerHeadline(
+  supabase: SupabaseClient,
+  projectId: string,
+  moduleKey: string,
+  lang: MonthLang = "zh",
+  at: Date = new Date(),
+): Promise<LiveStats | null | undefined> {
+  try {
+    const { data, error } = await supabase
+      .from("ledger_entries")
+      .select("id, adjusts_id, direction, category, amount_cents, entry_on")
+      .eq("project_id", projectId)
+      /* 只读这一页自己那个模块 —— 收款那一页不该把开销算进去。 */
+      .eq("module_key", moduleKey);
+    if (error) return undefined;
+    return buildLedgerHeadline({
+      lang,
+      now: nowInMalaysia(at),
+      moduleKey,
+      ledger: (data ?? []) as MonthFact[],
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 export async function fetchMonthlyPage(
   supabase: SupabaseClient,
   projectId: string,

@@ -2,7 +2,7 @@ import { fetchLiveRows, withLiveRows, moduleHasEverHadRows } from "@/lib/portal/
 import { SITE_PAGE_KEY, canvasRegister } from "@/lib/portal/system-register";
 import { fetchLiveStats, withLiveStats } from "@/lib/portal/live-stats";
 import { fetchReconcileFacts, withReconcileAlert } from "@/lib/portal/live-reconcile";
-import { fetchMonthlyPage } from "@/lib/portal/live-months";
+import { fetchLedgerHeadline, fetchMonthlyPage } from "@/lib/portal/live-months";
 import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -301,6 +301,21 @@ export default async function PortalEditorPage({
       initialData = withLiveStats(initialData, facts?.stats ?? null);
       initialData = withReconcileAlert(initialData, facts?.alert ?? null);
     }
+  }
+
+  /* 🔴 收款 · 开销 · 佣金那三页顶上的数字。
+     底下那张表 8-31 起就是他自己的行了，而**头上那个数字还是
+     `RM 71,300`** —— 每一家公司共用的那个示例总数。
+     一桌示例会自己招认；一个总数只是一个数字，看起来就是他的。
+     见 lib/portal/live-months.ts 的 `buildLedgerHeadline`。 */
+  if (MODULE_BY_KEY[pageKey]?.shape === "ledger") {
+    const head = await fetchLedgerHeadline(
+      supabase,
+      project.id,
+      pageKey,
+      systemLangOf(businessContext),
+    );
+    initialData = withLiveStats(initialData, head);
   }
 
   const asksOnly = MODULE_BY_KEY[pageKey]?.shape;
