@@ -109,6 +109,7 @@
     "shoot:packages": "node scripts/shoot-packages.mjs",
     "align:pages": "node scripts/align-pages.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",
+    "check:handoff": "node scripts/check-handoff.mjs",
     "check:shared-record": "node scripts/check-shared-record.mjs",
     "check:referrals": "node scripts/check-referrals.mjs",
     "check:vehicles": "node scripts/check-vehicles.mjs",

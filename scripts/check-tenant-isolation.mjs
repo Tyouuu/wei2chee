@@ -228,16 +228,29 @@ try {
 
   console.log("\nSecurity-definer functions (these bypass RLS by design):");
 
-  // save_project_page must refuse an unpaid caller. This is the paywall's only
-  // real enforcement point.
+  // 2026-09-05: this used to assert that save_project_page REFUSES an unpaid
+  // caller -- "the paywall's only real enforcement point". That wall is gone
+  // (20260905410000): "pay to save your design" belonged to the RM500-spec
+  // model, and it fired at the exact second a merchant was most impressed,
+  // covering the canvas to ask for money nobody had yet named a price for.
+  //
+  // The isolation question was never the payment one, though, and it still
+  // stands: an unpaid customer can now write -- so prove the write lands on
+  // their OWN rows and nowhere near B's.
+  const unpaidMarker = `unpaid-${stamp}`;
   const { error: saveUnpaid } = await a.client.rpc("save_project_page", {
     target_page_key: "dashboard",
-    new_layout: { root: {}, content: [] },
+    new_layout: { root: {}, content: [{ type: "PageHeader", props: { id: unpaidMarker, title: unpaidMarker } }] },
   });
+  check("save_project_page accepts an unpaid customer", !saveUnpaid, saveUnpaid?.message);
+
+  const { data: bAfterUnpaid } = await admin
+    .from("project_pages")
+    .select("layout_json")
+    .eq("project_id", bProject.id);
   check(
-    "save_project_page refuses an unpaid customer",
-    Boolean(saveUnpaid) && /payment required/i.test(saveUnpaid?.message ?? ""),
-    saveUnpaid?.message,
+    "an unpaid save touches nothing of B's",
+    !JSON.stringify(bAfterUnpaid ?? []).includes(unpaidMarker),
   );
 
   // Mark A paid, then confirm the save lands on A's rows and only A's.
