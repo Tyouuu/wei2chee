@@ -2,9 +2,6 @@ import { mainColumn, walkNodes, type PuckLayout, type PuckNode } from "@/lib/por
 import {
   dashboardComposition,
   COMPOSITION_ROLES,
-  LAYOUT_SETS,
-  SPLIT_REGISTERS,
-  type LayoutSet,
 } from "@/lib/templates/industry-template";
 
 /**
@@ -68,39 +65,18 @@ const ROLE_ID: Record<string, string> = {
   table: "dashboard-recent",
 };
 
-/**
- * The narrow blocks, and the reason this list has to exist here.
- *
- * 台账 and 中台 are SPLIT registers: system-shell.tsx pins a 19rem aside beside
- * the page and fills it by taking narrow blocks OFF THE FRONT of the stack.
- * That is why 台账's composition opens `["todo", "ranking", "table", ...]` --
- * the first two are the aside, and the table is what the page itself opens on.
- *
- * Apply that order literally to a register that has no aside and 「表格先行」
- * puts 今天要跟的 first and the table third. The button would be lying about
- * its own name, which is the same class of defect this file exists to fix.
- *
- * The component names match system-shell.tsx's own NARROW set; the roles are
- * the composition's word for the same three blocks.
- */
-const NARROW_ROLES = new Set(["todo", "ranking", "share", "progress"]);
-
 /** Every id a composition can name, in the order it names them. `a|b@half`
  *  puts two blocks side by side; for ORDER, both simply come next. */
-export function orderFor(style?: string | null, layout?: string | null): string[] {
-  const entries = [...dashboardComposition(style, layout)];
+export function orderFor(layout?: string | null): string[] {
+  /* 🔴 2026-09-04：这里本来还有一段重排 —— 一个为**分栏侧栏**写的排法，
+     被套到一套不分栏的风格上时，要把开头那几块窄的推到最后，不然它们会
+     变成整页宽的横带。
 
-  /* The composition's own register vs the one it is being applied to. A named
-     arrangement points at a register (LAYOUT_SETS.table -> ledger); an unnamed
-     one IS the register. */
-  const source = (layout && LAYOUT_SETS[layout as LayoutSet]) || style || "";
-  if (SPLIT_REGISTERS.has(source) && !SPLIT_REGISTERS.has(style ?? "")) {
-    const leadIsNarrow = (e: string) =>
-      e.split("@")[0].split("|").every((r) => NARROW_ROLES.has(r.trim()));
-    let take = 0;
-    while (take < entries.length - 1 && leadIsNarrow(entries[take])) take++;
-    if (take > 0) entries.push(...entries.splice(0, take));
-  }
+     那一段拿掉了，而且不是因为它错：系统收成一套之后
+     （[任务 120](../../docs/founder-tasks.md)），排法不再指向别人的风格，
+     而「表格先行」那一行现在**本来就是摊平写的**。执行时替它重排，
+     跟写在纸上是同一个结果 —— 而写在纸上看得见。 */
+  const entries = [...dashboardComposition(layout)];
 
   const ids: string[] = [];
   for (const entry of entries) {
@@ -146,7 +122,6 @@ function rankOf(node: PuckNode, rank: Map<string, number>): number {
  */
 export function relayout(
   layoutData: PuckLayout,
-  style?: string | null,
   arrangement?: string | null,
 ): PuckLayout {
   /* THE BLOCKS ARE IN THE SHELL'S `main` SLOT, NOT AT THE TOP LEVEL.
@@ -158,7 +133,7 @@ export function relayout(
   const content = mainColumn(layoutData);
   if (!content || content.length < 2) return layoutData;
 
-  const order = orderFor(style, arrangement);
+  const order = orderFor(arrangement);
   if (!order.length) return layoutData;
 
   /* The shell and the page header do not move. A dashboard is one SystemShell

@@ -441,7 +441,7 @@ export function AiAssistant({
         */
         if (result.design?.layout) {
           const base = result.layout as unknown as PuckLayout;
-          const moved = relayout(base, result.design.style ?? activeStyle, result.design.layout);
+          const moved = relayout(base, result.design.layout);
           if (moved !== base) {
             dispatch({ type: "setData", data: moved as unknown as Data, recordHistory: true });
           }

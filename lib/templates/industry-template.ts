@@ -1,4 +1,5 @@
 import type { PuckNode } from "@/lib/templates/puck-node";
+import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
 import { composeSite } from "@/lib/templates/site-composition";
 import {
   landingTemplateFor,
@@ -792,6 +793,24 @@ function workflowStrip(
 // The five page templates
 // ---------------------------------------------------------------------------
 
+/**
+ * 他自己那一句 —— 两分钟问卷问出来、AI 写下来的那一行。
+ *
+ * ⚠️ **没有跨语言凑合**，而这是第一次用英文渲染逼出来的更正：`summary_en`
+ * 缺的时候退回中文的 `summary`，会在一个英文系统的第一屏放一句中文。
+ * 拿不到就回 undefined，让呼叫的人自己决定要不要退回一句通用的话。
+ *
+ * 🔴 2026-09-04 抽出来。总览照 arhamkhnz 拿掉页面标题之后，这一句本来
+ * **没有家了** —— 它是整个产品唯一一句证明「我们真的听了你讲那两分钟」的话，
+ * 而一个算出来却到不了画面的值正是这个仓库犯过十七次的那件事。
+ * 现在顶栏那一条右边也读它（`crumbNote`），所以它只能有一份。
+ */
+export function ownSummaryOf(ctx: BusinessContext, lang: SystemLang): string | undefined {
+  return lang === "en"
+    ? ctx.analysis?.summary_en?.trim()
+    : ctx.analysis?.summary?.trim();
+}
+
 function buildDashboard(
   ctx: BusinessContext,
   name: string,
@@ -825,10 +844,7 @@ function buildDashboard(
   // sentence under an English heading, on the first screen of the system. A
   // generic English line loses this business's own words; a Chinese line in an
   // English page loses the reader. The generic line wins.
-  const ownSummary =
-    lang === "en"
-      ? ctx.analysis?.summary_en?.trim()
-      : ctx.analysis?.summary?.trim();
+  const ownSummary = ownSummaryOf(ctx, lang);
   const subtitle = ownSummary || c.dashboard.subtitle(industryName(industry, lang));
 
   // WHY THE HERO CARD IS NO LONGER HERE, 2026-08-25.
@@ -1518,7 +1534,7 @@ function buildDashboard(
     });
   };
 
-  const plan = dashboardComposition(style, layout);
+  const plan = dashboardComposition(layout);
 
   /* 🔴 总览这一页要不要页面标题 —— 这是**风格的决定**，2026-09-04 加的。
      老板挑了 arhamkhnz 当我们系统唯一的样子，而它的 `page.tsx` 全档就三行：
@@ -1537,7 +1553,7 @@ function buildDashboard(
      （`RailNav` 的 `action` 变体本来就是 8-26 照他们那颗 Quick Create 做的，
      注解白纸黑字写着，而**在这之前六套没有一套在用它** —— 这个仓库
      第十七次「能力有、线没接」。） */
-  const headless = HEADLESS_DASHBOARD.has(style ?? "");
+  const headless = HEADLESS_DASHBOARD.has(SYSTEM_REGISTER);
 
   return layerFirst([
     railNav(labels, brand, name, "dashboard", locale, pages, lang),
@@ -1657,207 +1673,46 @@ function headlineDelta(spark: number[] | undefined): number | null {
  * 侧栏顶上正好有一个 —— 那本来就是照同一个参考做的。
  * `headless-needs-rail-action.test.ts` 盯着这一条，故意弄坏看过它红。
  */
-export const HEADLESS_DASHBOARD = new Set(["swiss"]);
+/* 🔴 2026-09-04：系统只有一套样子了，所以这份名单只有一个成员，而且永远
+   只会有一个。留着它而不是写成 `true`，是为了让 `headless-needs-rail-action`
+   那条守卫还量得到「这一套的侧栏必须是 action」—— 拿掉标题就要给那颗
+   主要动作一个新家，而那条绑定跟风格有几套无关。 */
+export const HEADLESS_DASHBOARD = new Set([SYSTEM_REGISTER]);
+
+/**
+ * 工作台的**排法** —— 哪几块，什么顺序。
+ *
+ * 🔴 2026-09-04 这张表换了钥匙：以前一行是一套**风格**，现在一行是一种**排法**。
+ * 老板：`我现在只需要你一个UI风格for 我的system only` · `做好一套就可以了`。
+ *
+ * 系统只有一套样子了（`SYSTEM_REGISTER`），所以「你是哪一套风格」不再是一个问题。
+ * 还留着的那个问题是「你想一进来先看到什么」—— 而那本来就是编辑器里那三颗
+ * 「排法」按钮问的事（`LAYOUT_SETS`）。它们从今天起指的是这里的键，
+ * 不再指别的风格的名字。
+ *
+ * ⚠️ **砍掉的是 blueprint 跟 counter 那两行。** 它们只被自己那一套风格用，
+ * 而那个用途没有了；台账 / 招牌 / 炉 那三行留着，**因为它们是那三颗按钮的落点**，
+ * 不是因为那三套风格还在管工作台。
+ *
+ * ⚠️ **「表格先行」那一行摊平了。** 它本来靠 `SPLIT_REGISTERS` 的侧栏吃掉开头
+ * 两块窄的（`todo` · `ranking`）；系统那一套不是分栏的壳，所以那两块直接写在
+ * 后面 —— 跟 `relayout` 以前在执行时替它做的重排一模一样，只是现在写在纸上。
+ */
+export const SYSTEM_COMPOSITION = ["stats4", "trend", "table"];
 
 export const DASHBOARD_COMPOSITION: Record<string, string[]> = {
-  // A ledger is a table. It opens on one, and the figures come after -- which
-  // is the order a person who reads forty rows a day actually wants. The split
-  // is at the BOTTOM, where two small things belong beside each other rather
-  // than as two more full-width bands under a table that is already long.
-  /*
-    THE TWO SPLIT REGISTERS LEAD WITH A NARROW BLOCK, and that is not
-    decoration -- it is what fills the second column. See SPLIT_REGISTERS and
-    the shell note in system-shell.tsx: the aside takes narrow blocks off the
-    front of the stack, so a composition with none of them renders as an
-    ordinary side shell and the third skeleton quietly never appears.
-
-    台账: the list you scan pinned left, the ledger itself on the right.
-  */
-  /* 🔴 走势图从半栏改成整栏（2026-09-02）。它现在是 `sum` 那一种 ——
-     图在左、结论在右 —— 而那需要整行的宽度；塞在半栏里，结论那一栏会掉到
-     图下面，变成一个上下叠起来的东西，那不是 Studio Admin 那一格。
-     流程条自己一行，它本来就是一条横的。 */
-  ledger: ["todo", "ranking", "table", "stats4", "trend", "flow"],
-  // A shopfront: what is happening today, with the money beside it rather than
-  // under it -- the owner glances right, not down.
-  /*
-    炉 REBALANCED. It was ["todo|stats2", "trend", "table"] -- a three-item list
-    beside two stat cards in the other half, and because a Columns cell
-    stretches its child to the row's height, the two cards came out tall,
-    empty, and narrow enough that 「RM 71,300」 printed as 「RM …」. Screenshotted
-    2026-08-26.
-
-    The money goes across the top where two wide cards read at a glance, and
-    the list gets a full half beside the trend. Same argument -- 「今天要跟的，
-    钱在旁边」 -- laid out so both halves are worth looking at.
-  */
-  /* 🔴 炉 现在从「今天要做什么」开场，不是从钱开场（2026-09-02）。
-     抄的是 Ant Design Pro 的**工作台**那一页：它开场是一句问候加一张
-     「进行中的项目」清单，数字是小的、在旁边的。老板 9-02:「重点去复刻」。
-
-     这一套的客人是美容院、沙龙 —— 前台就是店面，开系统的那一刻店里有客人。
-     那一刻他要的是「等一下谁来、哪一单要跟」，不是本月收了多少。
-     钱没有被挪走，它退到下面一整行，两张卡都够宽
-     （上一版把 stats2 塞进半栏，「RM 71,300」印成「RM …」，
-     那个教训在下面几行还留着）。 */
-  /* 🔴 开场加一条问候带（2026-09-03）。原尺寸并排看，炉跟 Ant 工作台最大的
-     一个差别不是颜色也不是间距：**他们那一页开场是一条问候带**，我们直接进卡片。
-     那一条是「工作台」这个页型的签名，也正好是炉那句主张的样子：
-     开系统的那一刻，客人就站在旁边。 */
-  /* 🔴 加了「快捷入口」（2026-09-03）。Ant 那一页右边那张
-     「快速开始 / 便捷导航」是我们整个库里没有的一种东西 ——
-     不是清单（没有内容）、不是指标（没有数字），是一排**通往别处的门**。 */
-  hearth: ["greet", "todo|quick@wide-left", "stats2", "table"],
-  // The neutral one, and the only one that should read as "a bit of
-  // everything". Chart left, the day's list beside it: the most ordinary
-  // arrangement there is, which is the point of this register.
-  blueprint: ["stats4", "trend|todo", "share|flow@wide-right", "table"],
-  // For an owner who cannot read the others. Two figures at 17px base, no
-  // chart -- and NO SPLIT: half of 1400 at this type size is four words a
-  // line. Single column is the register's whole argument.
-  // Looks like the POS they already run: the filled table head is the object,
-  // so the table leads, then the month's progress with the figures beside it.
-  // Black, white and one red on a PRINTED SHEET. A printed sheet is one
-  // column. No split -- this is the register where restraint is the design.
-  /* 🔴 瑞士 拿掉分栏，变成一栏（2026-09-02）。
-     它的主张是「印在纸上最好看的一套」，而**一张印出来的纸是一栏的** ——
-     分栏是萤幕的东西，不是纸的东西。它跟 图纸 本来都是
-     「四个数字 → 一个带分栏的走势」开场，两套的侧栏底色在 token 里又一模一样，
-     所以摆在一起像同一页。
-
-     一栏之后它是全库唯一一套从上到下不分左右的：数字、表、走势、流程，
-     一件一件往下读 —— 跟一张 A4 的读法一样。圆饼也拿掉了：
-     一张纸上没有人会去量一个圆的角度。 */
-  /* 🔴 走势 + 流程两块 → 一张带页签的卡（2026-09-03）。
-     参考（Studio Admin CRM）的顺序是「四个数字 → 一张图表卡 → 表」，
-     而那张图表卡**头上带控件**（换区间），不是一张光秃秃的图。
-     我们把走势 · 占比 · 流程收进同一张卡的三个页签 —— 一张卡回答三个问题，
-     而不是三条整页宽的带子往下叠。 */
-  /* Studio Admin 的顺序是「四个数字 → 图表卡 → 两张半栏 → 表」，
-     那两张半栏是我们缺的一排。 */
-  /* 进度条：组件清单报「缺 进度条」—— Studio Admin 那张「184 booked / 523 qualified」
-     底下就是一条。我们本来就有这一块（`progress`），只是没排进去。 */
-  /* 🔴 三块，照 arhamkhnz 门面页的 `page.tsx`（2026-09-04）：
+  /* 跟着系统走 —— arhamkhnz 门面页的 `page.tsx` 全档三行：
        <MetricCards /> <PerformanceOverview /> <SubscriberOverview />
-     —— **四张数字卡 → 一张整页宽的图表卡 → 一张带抬头的表。就这三块。**
-
-     它本来是四块，而且中间那一块是**三个页签**（走势 / 占比 / 流程）。
-     那是 2026-09-03 照它的 **CRM** 页写的，注解还留着；但老板 9-04 挑的是
-     这一套的**门面**，而门面那一张图表卡不是页签 —— 是一张图，
-     头上带两个下拉跟一颗描边按钮。
-     ⚠️ 页签那个做法本身没有错，它只是**另一页的**做法。 */
-  swiss: ["stats4", "trend", "table"],
-  // Friendly and rounded. One figure with its own supporting numbers, the
-  // day's list beside it, then the money.
-  // Weight. Two enormous figures and the work, in slabs. No chart, no split --
-  // a slab that is half a page wide stops being a slab.
-  // Translucent panels want something behind them to see through, and two
-  // panels side by side show more edges than one.
-  // Lights off. An ops console: the figure and its chart side by side at the
-  // top, then the queue.
-  // A shop sign. The name and the number are the sign; the rest is small and
-  // under it. A sign does not have two halves.
-  // 招牌 was three blocks and most of the first screen was white. The share
-  // and the workflow pair up instead of the workflow standing alone at the
-  // bottom, which is what left the page looking unfinished rather than bold.
-  /* 🔴 招牌重排（2026-09-03）。老板看着我们跟 TailAdmin 并排问
-     「为什么每一张都差别那么大」，而尺子当时说四种全对 —— 因为它把大半张
-     参考页判成「其他」。分类器修好之后读数是：**他们四张图，我们零张。**
-
-     TailAdmin 那一页由「两张小卡 → 柱状图 → 半圆环目标卡 → 面积图 → 表」
-     组成。我们拿得出来的图只有两种（走势、占比），所以对不到四张，
-     但从零张变两张是画面上看得见的差别。
-     招牌的身份保住：一个大数字开场、颜色少、字大。 */
-  /* 🔴 share → target（2026-09-03）。TailAdmin 那一页中间那张是
-     **Monthly Target：一个半圆表加底下三个小数字**，不是一个光秃秃的圆环。
-     老板：`总之找抄就是了`—— 卡住的不是力气是零件，所以补了 `target` 这个拼法。 */
-  /* 🔴 一大块开场 → 一排卡（2026-09-03）。像素那把尺量出来最后一件大的：
-     **他们的块是 160–250 宽的卡排成格子，我们的是 1000–1300 宽的整条带。**
-     TailAdmin 第一排是「两张小卡 + 目标卡」，不是一条横幅。 */
-  /* 🔴 `half` → `wide-left`（2026-09-03，放大两倍量的）。TailAdmin 那一页
-     左边那张「Monthly Sales」是**宽的**，右边的目标卡是窄的一条 ——
-     对半分的时候两块一样宽，那张图就不再是这一页的主角。 */
-  signboard: ["stats4", "trend|target@wide-left", "progress", "table"],
-  // A coloured ground with ivory panels floating on it -- panels want to be
-  // few and LARGE, so one figure beside one chart, then one table.
-  // Every character the same width. Squares and a ranking are both grids of
-  // fixed cells, so they sit beside each other without either one reflowing.
-  /*
-    码 LOSES THE HEATMAP, and so does 台账 below.
-
-    ActivitySquares is a contribution graph -- 364 small squares, a GitHub
-    idiom. On the contact sheet it renders as a grey mush, and the honest
-    question is not whether it is pretty: 「好不好看 才是重點啊 就是市場實用度
-    也是一個很重要的重點」. A renovation contractor cannot read it. He cannot
-    even tell what a square means.
-
-    码's identity is the monospace, the ruled grid table and the quiet rail --
-    none of which the heatmap was carrying. It keeps all of that and gains a
-    chart somebody can read. The block stays in the library for anyone who
-    wants it; no register leads with it any more.
-  */
-  /*
-    码 PAIRS THE CHART WITH THE PIPELINE, NOT WITH THE RANKING.
-
-    Photographed 2026-08-26: the ranking is three rows and the chart is 420,
-    so the right-hand cell ran 170px of bare ground under a list that had
-    nothing more to say. A pair only works when both sides have comparable
-    content; a top-three list never will against a chart. The workflow is six
-    stages and wraps to two rows, which is the same order of height.
-  */
-  // A patterned floor wants flat cards above it, in a rhythm -- and a rhythm
-  // needs a row of two, not a column of one.
-  // The sticker. Big, playful, board-shaped, with the chart squeezed beside it.
-  // Tabler / AdminLTE, and now actually shaped like them: four tiles, then the
-  // chart with the ranking BESIDE it -- which is the arrangement every one of
-  // those templates uses and the one we did not have.
-  // Ant Design Pro: the list is the day, so the table is first-class and
-  // early. Then the same chart-and-ranking pair their own dashboard opens on.
-  // 中台: Ant Design Pro's list pages all carry a second column. Share first,
-  // because 「钱卡在哪一段」 is the question this register is opened with.
-  /* 🔴 中台 减到三块（2026-09-02）。老板：「还是不够明显 就是每一套都是有特点的」。
-     它本来有六块 —— 圆饼、今天要跟的、四个数字、表、走势、流程 ——
-     跟 图纸 一模一样的「什么都有一点」，而那是**图纸**的主张，不是它的。
-
-     它自己的主张写着「开系统就是在里面做事，不是在里面看事」。
-     一个在里面做事的人不看圆饼，也不看六个月的走势 —— 他看**今天这张表**。
-     所以：表在最前面而且最长，数字在下面，流程收尾。**没有图。**
-     少掉的那几块不是被删了，是让给了行数：同一屏它现在放得下最多的记录，
-     而那正是 Autocount、进销存那一类真正在做的事。 */
-  /* 🔴 中台重排（2026-09-03）。参考（Tabler 仪表盘）读出来 **10 张图**，
-     我们 0 张 —— 六对里最大的一个洞。
-
-     ⚠️ 这一条推翻我自己 9-02 写的那句「中台一张图都没有」。
-     那句话是我写的，参考不是；老板要的是尽量复刻。所以中台改成
-     **一排带小走势的数字卡开场**（Tabler 的招牌排法），再一张宽图，
-     然后才是它最长的那张表。
-     密度没有让掉：小走势卡是这一页最省地方的图，一行四张不多占一行。 */
-  /* 🔴 加了一排小格子（2026-09-03）。Tabler 那一页第三排就是四个小 tile，
-     而它是「最密」这个主张真正的样子：一行放得下好几个不抢戏的数字。 */
-  /* Tabler 那一页有两排并排的图，我们只有一条整页宽的。 */
-  /* 🔴 进度条 → 圆环（2026-09-03）。组件清单报「缺 圆环」，而 Tabler 那一页
-     右上角那个 78% 就是一个环，不是一条。中台是六套里唯一没有环的，
-     而它的参考有 —— 那不是我们的克制，是漏掉的一件。
-     顺便让图占宽的那一边（Tabler 的两排图也是左宽右窄）。 */
-  /* 🔴 快捷入口摆**整条**，不摆在图旁边（2026-09-03 看图改的）。
-     并排的时候两格一样高，而四个图标撑不满一张跟折线图一样高的卡 ——
-     半空的卡跟中台「最密」那句主张正好相反。整条一排四个图标才是
-     Odoo / Zoho 那道模块墙的样子。 */
-  counter: ["stats4", "tiles", "trend|share@wide-left", "quick", "table"],
-  /*
-    工作室 IS THE ONLY REGISTER THAT PAIRS NOTHING.
-
-    Read off arhamkhnz/next-shadcn-admin-dashboard's own default dashboard on
-    2026-08-26: MetricCards, then one full-width chart, then one full-width
-    table. Three objects, each the width of the page, with a lot of air between
-    them. Every other register here squeezes two things into a row somewhere.
-
-    That is the composition matching the token file rather than decorating it.
-    A register whose whole argument is 52px rows and 28px padding cannot then
-    put a chart in half a page -- the roominess would stop at the first pair.
-    It is also the cost: four blocks stacked is more scrolling than 台账's
-    six, which is the trade named in tokens/studio.css.
-  */
+     四张数字卡 → 一张整页宽的图表卡 → 一张带抬头的表。就这三块。 */
+  follow: SYSTEM_COMPOSITION,
+  /* 表格先行 —— 一天读四十行的人要的是行，数字排在它后面。
+     两块窄的（今天要跟的 · 排行）压在最底，那是它们本来在侧栏里的位置。 */
+  table: ["table", "stats4", "trend", "flow", "todo", "ranking"],
+  /* 一个大数字 —— 数字跟它的目标开场，其余都小、都在底下。 */
+  hero: ["stats4", "trend|target@wide-left", "progress", "table"],
+  /* 今天要做什么 —— 开系统的那一刻店里有客人，他要的是「等一下谁来」，
+     不是本月收了多少。钱退到下面一整行，两张卡都够宽。 */
+  today: ["greet", "todo|quick@wide-left", "stats2", "table"],
 };
 
 
@@ -1899,12 +1754,16 @@ export const COMPOSITION_ROLES = new Set([
  * can never drift into disagreeing about the same shape.
  */
 export const LAYOUT_SETS = {
+  /* 🔴 2026-09-04：这三个值以前指的是**别的风格的名字**（table -> ledger）。
+     系统收成一套之后那三套风格不再管工作台，所以它们改成指
+     `DASHBOARD_COMPOSITION` 自己的键 —— 一颗按钮指的是一种排法，
+     不是一套客人从来没打开过的风格。 */
   /** A ledger is a table, and a person who reads forty rows a day wants rows. */
-  table: "ledger",
+  table: "table",
   /** One figure and a great deal of air, then the work. */
-  hero: "signboard",
+  hero: "hero",
   /** What is happening today first, the money after it. */
-  today: "hearth",
+  today: "today",
   /* 看板 IS GONE, and deliberately rather than by omission.
      It named 粗野's shape -- the day as columns rather than as a list -- and
      粗野 was culled on 2026-08-27. Pointing it at a survivor would have left a
@@ -1924,13 +1783,9 @@ export type LayoutSet = keyof typeof LAYOUT_SETS;
  * the register, which is what every account had before 2026-08-25 and what
  * most should keep.
  */
-export function dashboardComposition(
-  style?: string | null,
-  layout?: string | null,
-): string[] {
+export function dashboardComposition(layout?: string | null): string[] {
   const named = layout && LAYOUT_SETS[layout as LayoutSet];
-  const key = named || style;
-  return (key && DASHBOARD_COMPOSITION[key]) || DASHBOARD_COMPOSITION.blueprint;
+  return (named && DASHBOARD_COMPOSITION[named]) || SYSTEM_COMPOSITION;
 }
 
 /**
@@ -3288,7 +3143,10 @@ export function buildPageLayout(
     in a 19rem column is a record table with one visible column. So the split
     takes from the front of the stack only while the block is a narrow one.
   */
-  const split = SPLIT_REGISTERS.has(style ?? "");
+  /* 系统那一套的壳，不是客户挑的那一套 —— 见 SYSTEM_REGISTER。
+     今天它解出来是 false（swiss 不分栏），而这一段留着不是死码：
+     哪天系统那一套改成分栏的壳，它就是现成的。 */
+  const split = SPLIT_REGISTERS.has(SYSTEM_REGISTER);
   let aside: unknown[] = [];
   let body = rest;
   if (split) {
@@ -3359,6 +3217,11 @@ export function buildPageLayout(
     content: [
       node("SystemShell", `${pageKey}-shell`, {
         crumbs,
+        /* 🔴 只有总览给这一句（2026-09-04）。其余每一页的页面标题底下本来就有
+           自己的说明，两个都画就是同一屏讲两次。见 system-bar.tsx 的 `note`。
+           ⚠️ 拿不到他自己那一句就**什么都不画** —— 这一条横梁上放一句通用的
+           「装修/承包商 的系统」是杂讯，不是资讯。 */
+        crumbNote: pageKey === "dashboard" ? ownSummaryOf(ctx, lang) : undefined,
         /* 顶上那一条右边的圆头像 —— 六个参考页每一页都有，我们六套一个都没有。
            用他自己的名字，不是一张图库照片。 */
         crumbMonogram: businessName.slice(0, 2),
@@ -3432,7 +3295,11 @@ export const STRIP_REGISTERS = { has: (_style: string) => true };
  * its own `SystemShell` preference said `side-dark`. The set now agrees with
  * what each register declares about itself.
  */
-export const SPLIT_REGISTERS = new Set(["ledger"]);
+/* 🔴 2026-09-04 清空了，而且是被守卫逼的（industry-template.test.ts）。
+   `ledger` 在这里写了两个星期，而系统收成一套之后它对工作台一点作用都没有
+   —— 一份读起来像还在生效的名单。分栏的壳还在（buildDashboard 那一段），
+   哪天系统那一套要用它，把 SYSTEM_REGISTER 放进来就是。 */
+export const SPLIT_REGISTERS = new Set<string>();
 
 /**
  * True when a `project_pages.layout_json` has never been written to -- the

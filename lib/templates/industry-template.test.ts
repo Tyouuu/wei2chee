@@ -12,7 +12,9 @@ import {
   DASHBOARD_COMPOSITION,
   COMPOSITION_ROLES,
   SPLIT_REGISTERS,
+  SYSTEM_COMPOSITION,
 } from "./industry-template";
+import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { walkNodes, type PuckNode } from "@/lib/portal/layout-ops";
 import { MOVABLE } from "@/lib/templates/site-composition";
@@ -123,21 +125,30 @@ describe("buildPageLayout", () => {
   });
 
   it("puts the AI's own summary on the first screen the customer sees", () => {
-    const zh = contentOf(renovationZh, "dashboard").find((n) => n.type === "PageHeader");
-    expect(zh?.props.subtitle).toBe("你的报价到收订金之间拖太久了。");
+    /* 🔴 2026-09-04 换了地方，没有换事实。总览照 arhamkhnz 拿掉了页面标题，
+       而那一句本来住在标题底下。它现在画在顶上那一条横梁的右边
+       （`SystemShell.crumbNote` → `SystemBar.note`）——
+       **不是消失了**，那会是这个仓库第十八次「算出来却到不了画面」。 */
+    const noteOf = (ctx: BusinessContext) =>
+      (buildPageLayout("dashboard", ctx, "兴发装修", "zh") as unknown as
+        { content: PuckNode[] }).content[0]?.props?.crumbNote;
+
+    expect(noteOf(renovationZh)).toBe("你的报价到收订金之间拖太久了。");
 
     // The default pairing: the owner read their analysis in Chinese and the
     // system is built in English, so the summary has to come from the
     // model's English field rather than being dropped for a generic line.
-    const en = contentOf(renovation, "dashboard").find((n) => n.type === "PageHeader");
-    expect(en?.props.subtitle).toBe(
+    expect(noteOf(renovation)).toBe(
       "Too long a gap between your quote and the deposit.",
     );
   });
 
   it("puts the AI's recommended workflow into the pipeline component", () => {
+      /* 🔴 2026-09-04：从总览搬到订单那一页。总览照 arhamkhnz 收成三块
+         （四张数字卡 → 图表卡 → 表），流程条不在上面了 —— 而它本来就该在
+         订单那一页：那是客户一天里真的在推动一张单的地方。 */
     const stagesOf = (ctx: BusinessContext) => {
-      const strip = contentOf(ctx, "dashboard").find((n) => n.type === "WorkflowStrip");
+      const strip = contentOf(ctx, "orders").find((n) => n.type === "WorkflowStrip");
       return (strip?.props.stages as { label: string }[]).map((s) => s.label);
     };
     expect(stagesOf(renovationZh)).toEqual(["客户", "报价", "订金", "施工", "尾款"]);
@@ -155,8 +166,11 @@ describe("buildPageLayout", () => {
   });
 
   it("falls back to the industry's own workflow, translated, with no analysis", () => {
+      /* 🔴 2026-09-04：从总览搬到订单那一页。总览照 arhamkhnz 收成三块
+         （四张数字卡 → 图表卡 → 表），流程条不在上面了 —— 而它本来就该在
+         订单那一页：那是客户一天里真的在推动一张单的地方。 */
     const stagesOf = (ctx: BusinessContext) => {
-      const strip = contentOf(ctx, "dashboard").find((n) => n.type === "WorkflowStrip");
+      const strip = contentOf(ctx, "orders").find((n) => n.type === "WorkflowStrip");
       return (strip?.props.stages as { label: string }[]).map((s) => s.label);
     };
     expect(
@@ -568,17 +582,28 @@ describe("DASHBOARD_COMPOSITION", () => {
     expect(bad).toEqual([]);
   });
 
-  it("every split register leads with a block the aside can actually take", () => {
-    // A split shell whose composition has no narrow block renders as an
-    // ordinary side shell, and the third skeleton silently never appears.
-    const NARROW_ROLES = new Set(["todo", "ranking", "share"]);
-    for (const style of SPLIT_REGISTERS) {
-      const entries = DASHBOARD_COMPOSITION[style] ?? [];
-      const roles = entries.flatMap((e) => e.split("@")[0].split("|"));
-      expect(
-        roles.some((r) => NARROW_ROLES.has(r)),
-        `${style} is on the split shell with nothing narrow to put in the second column`,
-      ).toBe(true);
+  it("分栏的壳，只有系统那一套说得上话", () => {
+    /* 🔴 2026-09-04 换了问题，而不是把它删掉。
+       本来问的是「每一套分栏的风格，它的排法有没有窄块可以塞进侧栏」——
+       那时候一套风格就是一行排法。现在工作台只有一套样子
+       （见 lib/portal/system-register.ts），排法不再跟风格绑在一起。
+
+       还成立的那一半是这个：**`SPLIT_REGISTERS` 现在只对系统那一套有意义**。
+       它写着别的风格的名字不会有任何后果，但那是一份读起来像还在生效的名单
+       —— 而这个仓库栽在「活得比它描述的东西久的名单」上至少五次。 */
+    const claimed = [...SPLIT_REGISTERS].filter((s) => s !== SYSTEM_REGISTER);
+    expect(
+      claimed,
+      `SPLIT_REGISTERS 里的 ${claimed.join(" · ")} 已经不管工作台了 —— ` +
+        `分栏的壳只有 SYSTEM_REGISTER 用得上，其余的名字要嘛拿掉、要嘛写下为什么留着。`,
+    ).toEqual([]);
+
+    /* 而如果哪天系统那一套真的搬上分栏的壳，开场那一块必须是窄的 ——
+       不然侧栏那一栏是空的，而外壳会静静地退回成一般的侧栏。 */
+    if (SPLIT_REGISTERS.has(SYSTEM_REGISTER)) {
+      const NARROW_ROLES = new Set(["todo", "ranking", "share"]);
+      const roles = SYSTEM_COMPOSITION.flatMap((e) => e.split("@")[0].split("|"));
+      expect(roles.some((r) => NARROW_ROLES.has(r))).toBe(true);
     }
   });
 });

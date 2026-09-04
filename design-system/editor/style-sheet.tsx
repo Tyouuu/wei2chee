@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { siteSkeleton } from "@/lib/templates/site-composition";
 import Link from "next/link";
 import { Sheet } from "@/design-system/editor/sheet";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
@@ -241,7 +242,24 @@ export function StyleSheet({
                     Its own docblock says the tile IS the product. It just was
                     not being used here.
                   */}
-                  <StyleScope register={name} palette={palette} className="block">
+                  {/* 🔴 官网那一页要穿官网的框（2026-09-04）。缩图从「客户的四页系统」
+          换成「客户的官网」之后，少了这个框画出来的是**另一页** ——
+          没有版心、没有节奏、标题是工作台的尺寸。`.ds-site` 跟这几个
+          data 属性是 app/s/[slug]/public-site.tsx 上线时就在用的同一组，
+          从那里抄过来，不是新发明的。 */}
+                  <StyleScope
+                    register={name}
+                    palette={palette}
+                    data-ground={siteSkeleton(name).ground ?? "page"}
+                    data-pattern={siteSkeleton(name).pattern}
+                    data-measure={siteSkeleton(name).measure ?? "normal"}
+                    data-rhythm={siteSkeleton(name).rhythm ?? "normal"}
+                    data-figure={siteSkeleton(name).figure ?? "normal"}
+                    data-copy={siteSkeleton(name).copy ?? "normal"}
+                    data-steps={siteSkeleton(name).steps}
+                    data-frame={siteSkeleton(name).frame ?? "none"}
+                    className="block"
+                  >
                     <PageReel pages={pages_} />
                   </StyleScope>
                 </button>
@@ -313,7 +331,7 @@ export function StyleSheet({
 function PageReel({ pages }: { pages: { key: string; label: string; data: Data }[] }) {
   if (!pages.length) return null;
   return (
-    <span className="block">
+    <span className="ds-site block">
       <PagePreview data={pages[0].data} strip={pages.slice(1).map((p) => p.data)} />
     </span>
   );

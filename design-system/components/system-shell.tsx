@@ -35,6 +35,7 @@ export function SystemShell({
   nav = "side",
   navTone = "dark",
   crumbs,
+  crumbNote,
   crumbMonogram,
   frame = "flush",
   width = "wide",
@@ -84,6 +85,8 @@ export function SystemShell({
    * 那是系统知道的事，不是客户要往里面摆东西的地方。
    */
   crumbs?: string[]
+  /** 顶上那一条右边那句关於他这门生意的话 —— 只有总览给。见 system-bar.tsx。 */
+  crumbNote?: string
   /** 顶上那一条右边的圆头像。见 system-bar.tsx。 */
   crumbMonogram?: string
   nav?: "side" | "top" | "split"
@@ -359,7 +362,7 @@ export function SystemShell({
       >
         {/* 满幅那一条：画在内距**外面**，所以它横过整个内容区（照他们的 layout.tsx）。 */}
         {bar === "bleed" && crumbs?.length ? (
-          <SystemBar crumbs={crumbs} monogram={crumbMonogram} axis={isTop ? "top" : "side"} bleed />
+          <SystemBar crumbs={crumbs} note={crumbNote} monogram={crumbMonogram} axis={isTop ? "top" : "side"} bleed />
         ) : null}
         <div
           className={`flex min-w-0 flex-1 flex-col [gap:var(--gap-stack)] [padding:var(--pad-card-lg)] ${
@@ -369,7 +372,7 @@ export function SystemShell({
           {/* 内嵌那一种：在内距里面，所以它跟页面内容左右对齐 ——
               一条跟内容不对齐的横线，看起来像是别人的东西掉进来了。 */}
           {bar !== "bleed" && crumbs?.length ? (
-            <SystemBar crumbs={crumbs} monogram={crumbMonogram} axis={isTop ? "top" : "side"} />
+            <SystemBar crumbs={crumbs} note={crumbNote} monogram={crumbMonogram} axis={isTop ? "top" : "side"} />
           ) : null}
           {main}
         </div>

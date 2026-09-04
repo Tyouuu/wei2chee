@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { siteSkeleton } from "@/lib/templates/site-composition";
 import { useTranslations } from "next-intl";
 import { Render, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -554,11 +555,26 @@ function PageReel({
        register's near-black --color-paper would print the caption below it
        black on the portal's dark card. */
     <div className="flex h-full flex-col">
+      {/* 🔴 官网那一页要穿官网的框（2026-09-04）。缩图从「客户的四页系统」
+          换成「客户的官网」之后，少了这个框画出来的是**另一页** ——
+          没有版心、没有节奏、标题是工作台的尺寸。`.ds-site` 跟这几个
+          data 属性是 app/s/[slug]/public-site.tsx 上线时就在用的同一组，
+          从那里抄过来，不是新发明的。 */}
       <StyleScope
         register={register}
+        data-ground={siteSkeleton(register).ground ?? "page"}
+        data-pattern={siteSkeleton(register).pattern}
+        data-measure={siteSkeleton(register).measure ?? "normal"}
+        data-rhythm={siteSkeleton(register).rhythm ?? "normal"}
+        data-figure={siteSkeleton(register).figure ?? "normal"}
+        data-copy={siteSkeleton(register).copy ?? "normal"}
+        data-steps={siteSkeleton(register).steps}
+        data-frame={siteSkeleton(register).frame ?? "none"}
         className="ds-ground min-h-0 flex-1 overflow-hidden [background-color:var(--color-canvas)]"
       >
-        <PagePreview data={pages[0].data} strip={pages.slice(1).map((p) => p.data)} />
+        <div className="ds-site flex flex-col">
+          <PagePreview data={pages[0].data} strip={pages.slice(1).map((p) => p.data)} />
+        </div>
       </StyleScope>
       {pages.length > 1 ? (
         <span className="shrink-0 pt-2 [color:var(--color-paper-dim)] [font-size:11px]">

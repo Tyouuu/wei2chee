@@ -81,6 +81,7 @@
     "check:bookings": "node scripts/check-bookings.mjs",
     "shoot:objects": "node scripts/shoot-objects.mjs",
     "align:admin": "node scripts/align-admin.mjs",
+    "shoot:one-register": "node scripts/shoot-one-register.mjs",
     "shoot:appui": "node scripts/shoot-appui.mjs",
     "shoot:phone": "node scripts/shoot-phone.mjs",
     "pick:appui": "node scripts/pick-appui.mjs",

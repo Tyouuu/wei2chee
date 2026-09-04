@@ -1,4 +1,7 @@
 import { StyleScope } from "@/design-system/editor/style-scope";
+/* 这三页只有工作台会开 —— 加一单 · 改这一单 · 搬旧资料。
+   客户挑的那一套（`ctx.style`）从 2026-09-04 起只管官网。 */
+import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
 import { loadRecordPage } from "../record-context";
 import { RECORD_COPY } from "../record-copy";
 import { ImportForm } from "./import-form";
@@ -60,7 +63,7 @@ export default async function ImportPage({
   }
 
   return (
-    <StyleScope register={ctx.style} palette={ctx.palette} className="min-h-screen">
+    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} className="min-h-screen">
       <main className="mx-auto w-full max-w-[760px] px-6 py-10">
         <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
           {copy.form.importHeading} · {ctx.title}

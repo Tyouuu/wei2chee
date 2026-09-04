@@ -2,13 +2,14 @@ import { describe, it, expect } from "vitest";
 import { relayout, orderFor, ROLE_IDS, KNOWN_ROLES } from "./relayout";
 import { buildPageLayout, LAYOUT_SETS, type BusinessContext } from "@/lib/templates/industry-template";
 import { mainColumn, walkNodes, type PuckLayout } from "@/lib/portal/layout-ops";
-import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
+import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
 
-/* READ, NOT KEPT. Two hand-written copies of the register list stood here for
-   about a minute before style-order.test.ts failed the build over them -- the
-   sixth time in this repo that a second copy of a list was written, and the
-   sixth time the guard caught it. */
-const ALL_STYLES = STYLE_ORDER as readonly string[];
+/* 🔴 2026-09-04：这份清单本来是**六套风格**，现在是**四种排法**。
+   系统收成一套之后（见 lib/portal/system-register.ts），一张工作台长什么样
+   不再跟客户挑的风格有关；还会变的只有「你想先看到什么」。
+   读的是 LAYOUT_SETS 本人，不是再抄一份 —— 这个仓库栽在第二份手写清单上
+   至少六次。 */
+const ALL_ARRANGEMENTS = [null, ...Object.keys(LAYOUT_SETS)] as const;
 
 /**
  * 换排法 on a page that is already saved.
@@ -28,8 +29,10 @@ const renovation: BusinessContext = {
   },
 };
 
-const saved = (style: string) =>
-  buildPageLayout("dashboard", renovation, "兴发装修", "zh", undefined, style) as unknown as PuckLayout;
+const saved = (arrangement: string | null = null) =>
+  buildPageLayout(
+    "dashboard", renovation, "兴发装修", "zh", undefined, SYSTEM_REGISTER, arrangement,
+  ) as unknown as PuckLayout;
 
 /* WALKED, NOT READ OFF THE TOP. A page's blocks are nested -- in a Panel that
    gives a section a surface, or in a Columns that puts two side by side -- so
@@ -64,14 +67,14 @@ describe("the role map stays honest", () => {
        ranking. On 2026-08-27 the library went from fourteen registers to six,
        台账 became the only one that orders it, and the ruler started reporting
        that nothing builds a block it builds on every renovation dashboard. */
-    const anywhere = (style: string) =>
-      walkNodes((saved(style).content ?? []) as never).map((n) => String(n.props?.id ?? ""));
-    const produced = new Set(anywhere("blueprint"));
+    const anywhere = (arrangement: string | null) =>
+      walkNodes((saved(arrangement).content ?? []) as never).map((n) => String(n.props?.id ?? ""));
+    const produced = new Set(anywhere("table"));
     // Not every register's page contains every block, so this asserts the
     // reverse: nothing in the map is a name the builder never emits.
     const built = new Set<string>();
-    for (const style of ALL_STYLES) {
-      for (const id of anywhere(style)) built.add(id);
+    for (const arrangement of ALL_ARRANGEMENTS) {
+      for (const id of anywhere(arrangement)) built.add(id);
     }
     expect(produced.size).toBeGreaterThan(2);
     /* Only the roles a composition actually USES. `activity` is in
@@ -79,8 +82,8 @@ describe("the role map stays honest", () => {
        it -- asserting on the whole map would fail on a role that is simply
        spare rather than on one that is wrong. */
     const used = new Set<string>();
-    for (const style of ALL_STYLES) {
-      for (const id of orderFor(style, null)) used.add(id);
+    for (const arrangement of ALL_ARRANGEMENTS) {
+      for (const id of orderFor(arrangement)) used.add(id);
     }
     expect(used.size).toBeGreaterThan(5);
     for (const id of used) {
@@ -91,16 +94,15 @@ describe("the role map stays honest", () => {
 
 describe("relayout", () => {
   it("puts the table first for 表格先行", () => {
-    /* 台账's composition opens with two NARROW blocks because 台账 has a split
-       aside that takes them; applied to a register with no aside, a literal
-       copy would put 今天要跟的 first and the table third -- a button lying
-       about its own name. orderFor rotates them. */
-    const page = saved("hearth");
+    /* 「表格先行」这四个字就是这颗按钮的全部承诺。以前它靠 orderFor 在执行时
+       把两块窄的转到后面才做到；现在那个顺序直接写在排法表里
+       （见 DASHBOARD_COMPOSITION 的注解）。两种做法要给同一个答案。 */
+    const page = saved();
     const before = ids(page);
     expect(before).toContain("dashboard-recent");
 
-    const after = ids(relayout(page, "hearth", "table"));
-    const wanted = orderFor("hearth", "table").filter((id) => before.includes(id));
+    const after = ids(relayout(page, "table"));
+    const wanted = orderFor("table").filter((id) => before.includes(id));
     expect(wanted[0]).toBe("dashboard-recent");
     // The table is the first of the composition's blocks to appear, wherever
     // its wrapper sits.
@@ -109,18 +111,18 @@ describe("relayout", () => {
 
   it("keeps every block, adds none", () => {
     for (const arrangement of Object.keys(LAYOUT_SETS)) {
-      const page = saved("hearth");
-      const after = relayout(page, "hearth", arrangement);
+      const page = saved();
+      const after = relayout(page, arrangement);
       expect(ids(after).sort(), arrangement).toEqual(ids(page).sort());
     }
   });
 
   it("leaves a block the customer added at the end rather than in the middle", () => {
-    const page = saved("hearth");
+    const page = saved();
     const column = mainColumn(page);
     column.push({ type: "NoteField", props: { id: "mine", label: "我加的" } } as never);
 
-    const after = topIds(relayout(page, "hearth", "table"));
+    const after = topIds(relayout(page, "table"));
     expect(after).toContain("mine");
     // Unranked blocks sort after everything the composition names, and the
     // sort is stable, so it stays last rather than being shuffled into an
@@ -131,12 +133,12 @@ describe("relayout", () => {
   it("returns the same object when nothing moved", () => {
     // The guard that stops an identical state being pushed onto the undo
     // stack: pressing the arrangement you are already on must not add a step.
-    const page = saved("ledger");
-    expect(relayout(page, "ledger", "table")).toBe(page);
+    const page = saved("table");
+    expect(relayout(page, "table")).toBe(page);
   });
 
   it("does nothing to a page with one block", () => {
     const thin = { root: {}, content: [{ type: "PageHeader", props: { id: "h" } }] } as PuckLayout;
-    expect(relayout(thin, "ledger", "table")).toBe(thin);
+    expect(relayout(thin, "table")).toBe(thin);
   });
 });

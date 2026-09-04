@@ -70,6 +70,7 @@ import {
 } from "@/app/[locale]/style-picker/style-column";
 import { scopeClasses, PALETTES } from "@/lib/portal/palettes";
 import { RegisterProvider } from "@/design-system/editor/style-scope";
+import { canvasRegister } from "@/lib/portal/system-register";
 import { siteSkeleton } from "@/lib/templates/site-composition";
 
 // Same lookup app/[locale]/style-picker/style-column.tsx uses internally
@@ -241,6 +242,15 @@ export function PortalEditor({
   // the styles page is: what the round trip confirms is persistence, not
   // appearance.
   const [activeStyle, setActiveStyle] = useState<StyleName>(style);
+
+  /* 🔴 画布穿哪一套 —— 2026-09-04 起工作台跟官网不再穿同一套。
+     老板：`我现在只需要你一个UI风格for 我的system only` · `做好一套就可以了`。
+
+     `activeStyle` 还是客户自己挑的那一套，而它现在只管**一个**画面：官网。
+     其余每一页都是工作台，一律 `SYSTEM_REGISTER`。
+     分界线就是这一档里已经用了十几处的那个判断（`pageKey === "website"`），
+     不是新发明的一根轴。见 lib/portal/system-register.ts。 */
+  const canvasStyle = canvasRegister(pageKey, activeStyle);
   // Optimistic like the register beside it: 重掷 moves BOTH axes and the
   // canvas has to repaint on the press, not on the round trip.
   const [activePalette, setActivePalette] = useState<string | null>(palette);
@@ -1018,7 +1028,7 @@ export function PortalEditor({
                     <div className="w-full overflow-hidden rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-950)] transition-colors group-hover/add:[border-color:var(--color-ink-700)]">
                       <LivePreview
                         name={name}
-                        style={activeStyle}
+                        style={canvasStyle}
                         palette={activePalette}
                         // The tile shows the block as it will ARRIVE, so its
                         // sample content follows the CUSTOMER'S system language
@@ -1136,7 +1146,7 @@ export function PortalEditor({
                 puck: ({ children }) =>
                   narrow ? (
                     <MobileEditor pageKey={pageKey}
-                      style={activeStyle}
+                      style={canvasStyle}
                       palette={activePalette}
                       locale={locale}
                       navPages={navPages}
@@ -1188,7 +1198,7 @@ export function PortalEditor({
                 // was selected. It floats at the foot of the canvas now -- see
                 // the `preview` override below.
                 fields: ({ children }) => (
-                  <BlockSheets style={activeStyle} palette={activePalette}>
+                  <BlockSheets style={canvasStyle} palette={activePalette}>
                     {children}
                   </BlockSheets>
                 ),
@@ -1268,7 +1278,7 @@ export function PortalEditor({
                       data-copy={pageKey === "website" ? (siteSkeleton(activeStyle).copy ?? "normal") : undefined}
                       data-steps={pageKey === "website" ? (siteSkeleton(activeStyle).steps) : undefined}
                       data-frame={pageKey === "website" ? (siteSkeleton(activeStyle).frame ?? "none") : undefined}
-                      className={`ds-ground ${scopeClasses(activeStyle, activePalette)} ${
+                      className={`ds-ground ${scopeClasses(canvasStyle, activePalette)} ${
                         pageKey === "website" ? "ds-site" : ""
                       } h-full [background-color:var(--color-canvas)]`}
                     >
@@ -1289,7 +1299,7 @@ export function PortalEditor({
                         Announcing it here rather than in StyleScope is what makes
                         换个款式 relayout the page on the same click that repaints
                         it -- CanvasGutter needs the classes on itself. */}
-                      <RegisterProvider style={activeStyle}>
+                      <RegisterProvider style={canvasStyle}>
                         <SystemLangProvider lang={systemLang}>
                           {children}
                         </SystemLangProvider>

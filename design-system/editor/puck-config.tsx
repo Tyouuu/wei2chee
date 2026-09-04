@@ -242,6 +242,8 @@ type Components = {
   SystemBar: { crumbs?: { text?: string }[]; date?: string; monogram?: string };
   SystemShell: {
     crumbs?: { text?: string }[];
+    /** 总览顶栏右边那句关於他这门生意的话。见 system-bar.tsx 的 `note`。 */
+    crumbNote?: string;
     crumbMonogram?: string;
     sidebar: Slot;
     /** The split shell's second column. See system-shell.tsx. */
@@ -1391,7 +1393,7 @@ export const puckConfig: Config<Components> = {
       // therefore overrode all twenty-one registers' preferences forever --
       // measured, three registers rendered a byte-identical rail.
       defaultProps: { crumbs: [], sidebar: [], aside: [], main: [] },
-      render: ({ crumbs, crumbMonogram, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width, bar }) => (
+      render: ({ crumbs, crumbNote, crumbMonogram, sidebar: Sidebar, aside: Aside, main: Main, nav, navTone, frame, width, bar }) => (
         <SystemShell
           nav={nav ?? "side"}
           navTone={navTone ?? "dark"}
@@ -1399,6 +1401,7 @@ export const puckConfig: Config<Components> = {
           width={width ?? "wide"}
           bar={bar ?? "inline"}
           crumbs={(crumbs ?? []).map((c) => c?.text ?? "").filter(Boolean)}
+          crumbNote={crumbNote || undefined}
           crumbMonogram={crumbMonogram || undefined}
           sidebar={<Sidebar />}
           aside={<Aside />}

@@ -19,16 +19,28 @@ import {
 import { buildPageLayout } from "@/lib/templates/industry-template";
 import { normalizeTable } from "./table-model";
 
+const renovation = {
+  industry: {
+    slug: "renovation",
+    name_zh: "装修/承包商",
+    labels: { customer: "客户", order: "项目", staff: "师傅" },
+    default_workflow: ["Customer", "Quotation", "Project", "Payment"],
+    suggested_modules: [],
+  },
+};
+
 const page = () =>
-  buildPageLayout("dashboard", {
-    industry: {
-      slug: "renovation",
-      name_zh: "装修/承包商",
-      labels: { customer: "客户", order: "项目", staff: "师傅" },
-      default_workflow: ["Customer", "Quotation", "Project", "Payment"],
-      suggested_modules: [],
-    },
-  }) as unknown as PuckLayout;
+  buildPageLayout("dashboard", renovation) as unknown as PuckLayout;
+
+/**
+ * 一张**模块页**，给那几条要「页面标题」跟「流程条」的测试用。
+ *
+ * 🔴 2026-09-04：它们本来全部拿总览当道具。总览照 arhamkhnz 收成三块
+ * （四张数字卡 → 图表卡 → 表），**页面标题跟流程条都不在上面了**，
+ * 而这几条测试问的从来不是「总览有什么」，是「改一块藏在插槽里的东西改不改得到」。
+ * 换一张有那两块的页，题目一个字都没变。
+ */
+const orders = () => buildPageLayout("orders", renovation) as unknown as PuckLayout;
 
 const ids = (l: PuckLayout) => walkNodes(l.content).map((n) => String(n.props.id));
 
@@ -38,7 +50,7 @@ const tableOf = (l: PuckLayout, id: string) =>
 describe("describeLayout", () => {
   it("reaches blocks nested inside the shell's slots", () => {
     const described = describeLayout(page());
-    expect(described).toContain("dashboard-header");
+    expect(described).toContain("dashboard-stats");
     expect(described).toContain("dashboard-recent");
     expect(described).toContain("dashboard-rail");
   });
@@ -51,12 +63,12 @@ describe("describeLayout", () => {
 describe("applyLayoutOps", () => {
   it("renames text on a nested block", () => {
     const ops: LayoutOp[] = [
-      { op: "set_text", target_id: "dashboard-header", field: "title", value: "我的工地" },
+      { op: "set_text", target_id: "orders-header", field: "title", value: "我的工地" },
     ];
-    const { layout, applied, skipped } = applyLayoutOps(page(), ops);
+    const { layout, applied, skipped } = applyLayoutOps(orders(), ops);
     expect(applied).toBe(1);
     expect(skipped).toEqual([]);
-    const header = walkNodes(layout.content).find((n) => n.props.id === "dashboard-header");
+    const header = walkNodes(layout.content).find((n) => n.props.id === "orders-header");
     expect(header!.props.title).toBe("我的工地");
   });
 
@@ -89,14 +101,14 @@ describe("applyLayoutOps", () => {
 
   // Partial success is the normal case, not an edge case.
   it("applies the good operations even when one in the middle is bad", () => {
-    const { layout, applied, skipped } = applyLayoutOps(page(), [
-      { op: "set_text", target_id: "dashboard-header", field: "title", value: "一" },
+    const { layout, applied, skipped } = applyLayoutOps(orders(), [
+      { op: "set_text", target_id: "orders-header", field: "title", value: "一" },
       { op: "set_text", target_id: "nope", field: "title", value: "二" },
-      { op: "set_text", target_id: "dashboard-header", field: "subtitle", value: "三" },
+      { op: "set_text", target_id: "orders-header", field: "subtitle", value: "三" },
     ]);
     expect(applied).toBe(2);
     expect(skipped).toHaveLength(1);
-    const header = walkNodes(layout.content).find((n) => n.props.id === "dashboard-header");
+    const header = walkNodes(layout.content).find((n) => n.props.id === "orders-header");
     expect(header!.props.subtitle).toBe("三");
   });
 
@@ -275,11 +287,11 @@ describe("applyLayoutOps", () => {
   });
 
   it("replaces a workflow's stages", () => {
-    const { layout, applied } = applyLayoutOps(page(), [
-      { op: "set_workflow", target_id: "dashboard-workflow", stages: ["询问", "报价", "施工"] },
+    const { layout, applied } = applyLayoutOps(orders(), [
+      { op: "set_workflow", target_id: "orders-workflow", stages: ["询问", "报价", "施工"] },
     ]);
     expect(applied).toBe(1);
-    const strip = walkNodes(layout.content).find((n) => n.props.id === "dashboard-workflow")!;
+    const strip = walkNodes(layout.content).find((n) => n.props.id === "orders-workflow")!;
     expect((strip.props.stages as { label: string }[]).map((s) => s.label)).toEqual([
       "询问",
       "报价",

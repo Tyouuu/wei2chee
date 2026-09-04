@@ -60,7 +60,7 @@ export function LayoutSync() {
       const detail = (e as CustomEvent<LayoutSyncDetail>).detail;
       if (!detail) return;
       const before = appState.data as unknown as PuckLayout;
-      const after = relayout(before, detail.style, detail.layout);
+      const after = relayout(before, detail.layout);
       // `relayout` returns the same object when nothing moved, so this is also
       // the guard against pushing an identical state onto the undo stack.
       if (after === before) return;

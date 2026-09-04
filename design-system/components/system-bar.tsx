@@ -32,6 +32,7 @@ import { NavAxisContext } from "./nav-axis"
  */
 export function SystemBar({
   crumbs = [],
+  note,
   date,
   monogram,
   axis: axisProp,
@@ -78,6 +79,23 @@ export function SystemBar({
    * **换个配色两者还是两个东西**，所以它是一根轴不是一个数值（重点 7c）。
    */
   bleed?: boolean
+  /**
+   * 一句关於**他这门生意**的话，画在面包屑右边。
+   *
+   * 🔴 2026-09-04 加的，而它是一次**适应**不是一次复刻（老板：`看看要怎么去
+   * 调整适应我们的情况`）。参考页的横梁上是搜索框跟四颗圆钮；我们没有那四件
+   * （搜索今天找不到东西，[任务 15](../../docs/founder-tasks.md)），
+   * 而我们有他们永远不会有的一件：**两分钟问卷问出来的那一句**
+   * （「你的报价到收订金之间拖太久了。」）。
+   *
+   * 它本来住在总览的页面标题里。总览照参考拿掉标题之后，那一句**没有家了**
+   * —— 而它是整个产品唯一一句证明「我们真的听了你讲那两分钟」的话。
+   * 一个算出来却到不了画面的值，正是这个仓库犯过十七次的那件事。
+   *
+   * ⚠️ **只有总览给它**。其余每一页的页面标题底下本来就有自己的说明，
+   * 两个都画就是同一屏讲两次。
+   */
+  note?: string
 }) {
   const ctxAxis = useContext(NavAxisContext)
   const axis = axisProp ?? ctxAxis
@@ -89,7 +107,7 @@ export function SystemBar({
      在 1000px 高的画面里常常掉到折线以下，等於没有。顶栏那几套没有这个问题。
      Tabler 自己那一页也只有一颗（而且带着名字跟职称）。 */
   const wantsFace = Boolean(monogram) && axis !== "top"
-  if (!shown.length && !date && !wantsFace) return null
+  if (!shown.length && !date && !wantsFace && !note) return null
   /* 满幅那一种：固定 48px 高、自己的左右内距、一条下边线横过整个内容区。
      ⚠️ 侧栏在上面的时候**不给**满幅：那会跟顶栏叠成两条横梁，
      而参考页只有一条。 */
@@ -129,6 +147,11 @@ export function SystemBar({
           </span>
         ))}
       </nav>
+      {note ? (
+        <span className="hidden min-w-0 flex-1 truncate text-right [color:var(--color-on-canvas-dim)] [font-size:var(--text-xs)] md:block">
+          {note}
+        </span>
+      ) : null}
       <div className="flex shrink-0 items-center [gap:var(--gap-inline)]">
         {date ? (
           <span className="tnum [font-size:var(--text-xs)] [color:var(--color-on-canvas-dim)]">

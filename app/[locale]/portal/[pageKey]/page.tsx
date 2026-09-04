@@ -1,4 +1,5 @@
 import { fetchLiveRows, withLiveRows, moduleHasEverHadRows } from "@/lib/portal/live-rows";
+import { SITE_PAGE_KEY, canvasRegister } from "@/lib/portal/system-register";
 import { fetchLiveStats, withLiveStats } from "@/lib/portal/live-stats";
 import { fetchReconcileFacts, withReconcileAlert } from "@/lib/portal/live-reconcile";
 import { fetchMonthlyPage } from "@/lib/portal/live-months";
@@ -365,7 +366,15 @@ export default async function PortalEditorPage({
     glance, not the whole system, and seventeen tiles times seven pages is a
     hundred and nineteen scaled page renders in one sheet.
   */
-  const previewPages = pageRefs.slice(0, 4).map((ref) => {
+  /* 🔴 2026-09-04：这几张缩图只放**官网**那一页了。
+     老板：`我现在只需要你一个UI风格for 我的system only` · `做好一套就可以了`。
+
+     以前它播四页（总览 · 客户 · 报价单 · 收款），因为「一套风格是关於一整套
+     系统的决定」。**那句话今天不成立了** —— 换一套风格只会换官网。
+     还播四页的话，四张里有三张不管你选哪一套都一模一样，
+     而缩图正是客人拿来做决定的东西：一张不会变的缩图，会让他以为这个选择没用。
+     见 lib/portal/system-register.ts。 */
+  const previewPages = pageRefs.filter((r) => r.key === SITE_PAGE_KEY).map((ref) => {
     const row = (pageRows ?? []).find(
       (r: { page_key: string }) => r.page_key === ref.key,
     );
@@ -398,7 +407,8 @@ export default async function PortalEditorPage({
     return (
       <WorkView
         data={hideMoneyFromRail(initialData, workspace.role) as unknown as Data}
-        style={project.style as StyleName}
+        /* 师傅看到的也是系统那一套。见 lib/portal/system-register.ts。 */
+        style={canvasRegister(pageKey, project.style as StyleName)}
         palette={(project.palette as string | null) ?? null}
         corners={Number(project.corners ?? 1)}
         systemLang={systemLangOf(businessContext)}

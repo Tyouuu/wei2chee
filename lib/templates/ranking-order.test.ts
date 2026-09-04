@@ -10,23 +10,29 @@
  * ⚠️ 这一类在缩图上看不出来 —— 四行字加四个金额，形状完全正常。
  */
 import { describe, expect, it } from "vitest";
-import { buildPageLayout } from "@/lib/templates/industry-template";
+import { buildPageLayout, LAYOUT_SETS } from "@/lib/templates/industry-template";
 import { walkNodes, type PuckLayout } from "@/lib/portal/layout-ops";
-import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
+import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
+
+/* 🔴 2026-09-04：本来是「六套风格」，现在是「四种排法」。
+   系统只有一套样子了（见 lib/portal/system-register.ts），
+   而这张榜在哪几种排法上画得出来，才是还会变的那件事。 */
+const ARRANGEMENTS = [null, ...Object.keys(LAYOUT_SETS)] as const;
 
 const num = (s: unknown) => Number(String(s ?? "").replace(/[^0-9.]/g, ""));
 
 describe("排行榜的顺序", () => {
   it("六套里至少有一套真的画了这张榜 —— 一套都没有的话下面会假装通过", () => {
-    const found = STYLE_ORDER.some((reg) => {
-      const l = buildPageLayout("dashboard", {}, "兴发", "en", [{ key: "dashboard" }], reg, null) as unknown as PuckLayout;
+    const found = ARRANGEMENTS.some((arr) => {
+      const l = buildPageLayout("dashboard", {}, "兴发", "en", [{ key: "dashboard" }], SYSTEM_REGISTER, arr) as unknown as PuckLayout;
       return walkNodes(l.content).some((n) => n.type === "RankList");
     });
     expect(found).toBe(true);
   });
 
-  it.each([...STYLE_ORDER])("%s 的榜是从大排到小", (reg) => {
-    const l = buildPageLayout("dashboard", {}, "兴发", "en", [{ key: "dashboard" }], reg, null) as unknown as PuckLayout;
+  it.each([...ARRANGEMENTS])("%s 的榜是从大排到小", (arr) => {
+    const reg = arr ?? "follow";
+    const l = buildPageLayout("dashboard", {}, "兴发", "en", [{ key: "dashboard" }], SYSTEM_REGISTER, arr) as unknown as PuckLayout;
     for (const n of walkNodes(l.content)) {
       if (n.type !== "RankList") continue;
       const rows = (n.props.rows ?? []) as { name?: string; amount?: string }[];
