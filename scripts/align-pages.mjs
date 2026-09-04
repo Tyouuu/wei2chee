@@ -45,7 +45,7 @@
  */
 import { chromium } from "playwright";
 import { measureImage } from "./probe-image.mjs";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { config as loadEnv } from "dotenv";
 import { createRequire } from "node:module";
@@ -57,6 +57,11 @@ const BASE = process.env.ALIGN_BASE || "http://localhost:3000";
 const EMAIL = process.env.DEMO_EMAIL || "tianyou.demo@formae.test";
 const PASS = process.env.DEMO_PASSWORD || "FormaeDemo2026!";
 const OURS_ROOT = '[class*="_PuckCanvas-root"]';
+/** 借走的版面暂存在这里。**在动资料库之前先写它**，见 `borrowGeneratedPages`。 */
+const STASH = "scratchpad/_borrowed.json";
+/** 借出去的那几页。**放在模组层**，因为「还回去」有三条路要走得到它：
+ *  正常跑完 · 抛错 · Ctrl-C。少接一条，就是一次借了不还。 */
+let loan = { borrowed: [], restore: async () => {}, ok: true };
 
 /**
  * 哪一页对哪一页 —— 配对读的是「这一页在回答什么问题」，不是名字。
@@ -125,36 +130,90 @@ function row(label, theirs, ours, judge) {
   return { label, theirs, ours, verdict };
 }
 
-/** 哪几页在资料库里存过版面 —— 存过的那几页，产生器画的东西到不了画面。
+/** 🔴 把冻住的那几页**借出来**：量之前清成产生器那一版，量完原样放回去。
  *
- *  连不上就回 `null`，**不是回空阵列**：「问过了，没有冻住的」跟
- *  「问不到」在报告里长得一模一样，而这个仓库被这个形状骗过至少四次。 */
-async function frozenPages(keys) {
+ *  为什么不是「印一句警告就算了」（那是这把尺 2026-09-05 早上的版本）——
+ *  一句警告只是把问题转述给读的人，而读的人没有办法在跑之前先清一页、
+ *  跑完再填回去。**结果就是每一次跑都在量一张过期的页，然后每一次都读到
+ *  同一句警告。** 一把每跑一次都喊一次狼的尺没有人看
+ *  （`check:upstream` 因为同一件事被修过）。
+ *
+ *  ⚠️ 而「不自己清」那条顾虑是真的：一个冻住的版面里可能有客户真的改过的字。
+ *  所以这里不是**清掉**，是**借走**：
+ *
+ *    1. 先把原本那几张版面**写到磁碟上**（在动资料库之前，不是之后）
+ *    2. 才清成 `{}`
+ *    3. 量完 / 出错 / 被 Ctrl-C，一律写回去，然后把磁碟上那份删掉
+ *
+ *  第 1 步的顺序是重点：跑到一半断电，那份存档还在 `_borrowed.json`，
+ *  下一次跑会先看到它并且**拒绝再借**，叫人先还回去。
+ *  一个「清了、还没还」的中间状态如果没有留下痕迹，它跟「本来就是空的」
+ *  在资料库里长得一模一样 —— 而这个仓库栽在这个形状上至少四次。
+ *
+ *  ⚠️ 它只碰这一个 demo 帐号的 project（`DEMO_EMAIL`），而且是直接写表
+ *  （service role），不走 `save_project_page` —— 所以**不会产生版本记录**，
+ *  借跟还在他的「改动历史」上都不留一行。那是对的：那两次写入不是他做的。
+ *
+ *  ⚠️ 实测：借完再还，那一栏**一个字节都没变，连 `updated_at` 都没被推**
+ *  （那一栏没有触发器，直接写表不会动它）。所以借跟还在他那边不留痕迹 ——
+ *  而这一句是量出来的，不是推出来的：我第一版写的是「updated_at 会被推到今天」。
+ */
+async function borrowGeneratedPages(keys) {
+  const noop = { borrowed: [], restore: async () => {}, ok: true };
+  let db, projectId;
   try {
     loadEnv({ path: ".env.local" });
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) return null;
-    const db = createClient(url, key);
+    if (!url || !key) return { ...noop, ok: false };
+    db = createClient(url, key);
     const { data: acct } = await db.from("accounts").select("id").eq("email", EMAIL).maybeSingle();
-    if (!acct) return null;
+    if (!acct) return { ...noop, ok: false };
     const { data: proj } = await db.from("projects").select("id").eq("account_id", acct.id).limit(1).maybeSingle();
-    if (!proj) return null;
-    const { data, error } = await db
-      .from("project_pages")
-      .select("page_key,layout_json")
-      .eq("project_id", proj.id);
-    if (error || !data) return null;
-    const saved = new Set(
-      data
-        .filter((r) => JSON.stringify(r.layout_json ?? {}).length > 40)
-        .map((r) => r.page_key),
-    );
-    /* `quotations/new` 那种子页没有自己的一行，看它的母页。 */
-    return keys.filter((k) => saved.has(k.split("/")[0]));
+    if (!proj) return { ...noop, ok: false };
+    projectId = proj.id;
   } catch {
-    return null;
+    return { ...noop, ok: false };
   }
+
+  /* 上一次跑借走了、还没还 —— 先还，不要再借一次。 */
+  if (existsSync(STASH)) {
+    const held = JSON.parse(readFileSync(STASH, "utf8"));
+    for (const r of held.rows) {
+      await db.from("project_pages").update({ layout_json: r.layout_json }).eq("project_id", held.projectId).eq("page_key", r.page_key);
+    }
+    rmSync(STASH);
+    console.log(`↩️ 上一次跑没有还回去，已经还了 ${held.rows.length} 页：${held.rows.map((r) => r.page_key).join(" · ")}`);
+  }
+
+  /* `quotations/new` 那种子页没有自己的一行，看它的母页。 */
+  const wanted = [...new Set(keys.map((k) => k.split("/")[0]))];
+  const { data, error } = await db
+    .from("project_pages")
+    .select("page_key,layout_json")
+    .eq("project_id", projectId)
+    .in("page_key", wanted);
+  if (error || !data) return { ...noop, ok: false };
+
+  const rows = data.filter((r) => JSON.stringify(r.layout_json ?? {}).length > 40);
+  if (!rows.length) return noop;
+
+  writeFileSync(STASH, JSON.stringify({ projectId, at: new Date().toISOString(), rows }, null, 1));
+  for (const r of rows) {
+    await db.from("project_pages").update({ layout_json: {} }).eq("project_id", projectId).eq("page_key", r.page_key);
+  }
+
+  let returned = false;
+  const restore = async () => {
+    if (returned) return;
+    returned = true;
+    for (const r of rows) {
+      await db.from("project_pages").update({ layout_json: r.layout_json }).eq("project_id", projectId).eq("page_key", r.page_key);
+    }
+    if (existsSync(STASH)) rmSync(STASH);
+    console.log(`\n↩️ 借走的 ${rows.length} 页已经原样放回去：${rows.map((r) => r.page_key).join(" · ")}`);
+  };
+  return { borrowed: rows.map((r) => r.page_key), restore, ok: true };
 }
 
 async function main() {
@@ -166,20 +225,17 @@ async function main() {
   }
   mkdirSync(OUT, { recursive: true });
 
-  /* 🔴 先问：这几页里有哪几页是冻住的。见档头。 */
-  const frozen = await frozenPages(pairs.map((p) => p[0]));
-  if (frozen === null) {
-    console.log("⚠️ 连不上资料库，问不到哪几页是冻住的 —— 下面的读数可能量的是一张存过的版面。");
-  } else if (frozen.length) {
-    console.log(
-      `
-🔴 这几页是**冻住的**（资料库里存过版面，产生器画的东西到不了）：${frozen.join(" · ")}
-` +
-        `   下面关於「有哪几块 · 什么顺序」的读数量的是那一张存过的页。
-` +
-        `   要量今天的产生器，先把那一页的 layout_json 清成 {}（那是一个决定，这把尺不替你做）。`,
-    );
+  /* 🔴 先把冻住的那几页借出来 —— 量产生器那一版，量完放回去。见档头。 */
+  loan = await borrowGeneratedPages(pairs.map((p) => p[0]));
+  if (!loan.ok) {
+    console.log("⚠️ 连不上资料库，借不了冻住的那几页 —— 下面的读数可能量的是一张存过的版面。");
+  } else if (loan.borrowed.length) {
+    console.log(`📄 借走 ${loan.borrowed.length} 页存过的版面，量的是产生器那一版：${loan.borrowed.join(" · ")}`);
   }
+  /* Ctrl-C 也要还。`restore` 自己挡重复，所以三条路都可以叫它。 */
+  const bail = () => { void loan.restore().finally(() => process.exit(130)); };
+  process.once("SIGINT", bail);
+  process.once("SIGTERM", bail);
 
   const browser = await chromium.launch();
   /* 🔴 视窗对齐他们那张图：**1400×950，一倍**。
@@ -310,6 +366,8 @@ async function main() {
       .toFile(sheet);
   }
 
+  await loan.restore();
+
   writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 1));
   const total = report.reduce((n, r) => n + r.bad.length, 0);
   console.log(`\n判：${report.length} 页 · ${total} 项明显不如人 · ${failed} 页量不到`);
@@ -318,4 +376,10 @@ async function main() {
   if (failed) process.exit(1);
 }
 
-main();
+main().catch(async (err) => {
+  /* 抛错也要还 —— 一次借了不还，下一次跑读到的就是一张空的页，
+     而那跟「这个客户还没建过这一页」在资料库里长得一模一样。 */
+  await loan.restore();
+  console.error(err);
+  process.exit(1);
+});
