@@ -109,7 +109,8 @@
     "shoot:packages": "node scripts/shoot-packages.mjs",
     "align:pages": "node scripts/align-pages.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",
-    "check:shared-record": "node scripts/check-shared-record.mjs"
+    "check:shared-record": "node scripts/check-shared-record.mjs",
+    "check:referrals": "node scripts/check-referrals.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
