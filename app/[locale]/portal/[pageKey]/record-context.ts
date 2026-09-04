@@ -82,6 +82,15 @@ export type RecordPageContext = {
    *  **一个人都没有的时候是空的，而空的意思是画面上什么都不出现** ——
    *  一人公司占我们客户的大多数，而一个只有「没有指定」的下拉是个假控件。 */
   staff: { id: string; name: string }[];
+  /** 这一家自己开过的单，给一笔开销挂上去用（成本）。
+   *  ⚠️ **不是 `openDocuments`**：那一份是「还没收齐的、可以分摊的单」，
+   *  在开销页上还被过滤成只剩进货单。一笔水泥的成本属於一张**卖出去**的单，
+   *  而且那张单收齐了也照样属於它。两份清单，两个问题。 */
+  jobsForCost: { id: string; docNo: string; title: string; party: string }[];
+  /** 他自己打过的类别。**没有建议清单** —— 任务 117 立过那一条：
+   *  没有量过的行业就不建议，猜一份科目表比留白更糟。
+   *  所以第一次是空的，而那是诚实的；他打第二笔的时候就有了。 */
+  categories: string[];
 };
 
 /** 一个对象欠我多少。全部是算出来的，一栏都没有存（除了额度）。 */
@@ -407,6 +416,49 @@ export async function loadRecordPage(
     staff = (staffRows ?? []) as { id: string; name: string }[];
   }
 
+  /* ── 一笔开销属於哪一单，跟他自己打过哪些类别 ─────────────────────────
+     两个都只在钱那几页问。⚠️ 而且只问看得到钱的人：`ledger_entries` 是
+     sees_money，一个师傅拿回来的是空的 —— 而空的会画成「他从来没写过类别」。 */
+  let jobs: RecordPageContext["jobsForCost"] = [];
+  let categories: string[] = [];
+  if (shape === "ledger" && workspace.role === "owner") {
+    const [{ data: jobRows }, { data: catRows }] = await Promise.all([
+      supabase
+        .from("pipeline_records")
+        .select("id, doc_no, title, party")
+        .eq("project_id", project.id)
+        .is("archived_at", null)
+        /* 进货单不在里面：一张进货单**本身就是**成本，不是一个成本挂得上去的
+           工作。把它列进来，他会开始把水泥挂在买水泥那张单上。 */
+        .neq("module_key", "purchases")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabase
+        .from("ledger_entries")
+        .select("category")
+        .eq("project_id", project.id)
+        .neq("category", "")
+        .order("created_at", { ascending: false })
+        .limit(400),
+    ]);
+    jobs = (jobRows ?? []).map((r) => ({
+      id: r.id as string,
+      docNo: (r.doc_no as string) ?? "",
+      title: (r.title as string) ?? "",
+      party: (r.party as string) ?? "",
+    }));
+    /* 最近用过的在前，重复的只留一次 —— 一个下拉里出现三次「材料」，
+       读起来是这份清单坏了。 */
+    const seen = new Set<string>();
+    for (const r of catRows ?? []) {
+      const c = ((r.category as string) ?? "").trim();
+      if (c && !seen.has(c)) {
+        seen.add(c);
+        categories.push(c);
+      }
+    }
+  }
+
   return {
     locale,
     pageKey,
@@ -429,6 +481,8 @@ export async function loadRecordPage(
     partyDebts,
     branches,
     staff,
+    jobsForCost: jobs,
+    categories,
     /* 这一行是什么生意 —— 分期付款表拿它去建议「订金三成 · 动工四成 ·
        完工三成」，而那是一颗他要按的按钮，不是一个预设。 */
     trade: businessContext.industry?.slug ?? null,

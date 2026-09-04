@@ -17,6 +17,7 @@ import {
 } from "./allocation-editor";
 import type { OpenDocument } from "../record-context";
 import type { DocumentSettlement } from "@/lib/portal/allocations";
+import { signedRinggit } from "@/lib/portal/profit";
 import {
   AddressEditor,
   addressesForDb,
@@ -112,11 +113,14 @@ export function NewRecordForm({
   partyDebts,
   branches,
   staff,
+  jobs,
+  categories,
   earnedValue,
   earnedLocked,
   photos,
   changes,
   settlement,
+  earned,
   backHref,
   copy,
 }: {
@@ -166,6 +170,10 @@ export function NewRecordForm({
     branchId?: string | null;
     /** 那笔钱是谁做的。⚠️ 挑错人改得回来 —— 那不是钱，是一句关於谁的话。 */
     doneBy?: string | null;
+    /** 这笔钱是干什么的（他自己的词）。 */
+    category?: string | null;
+    /** 这笔开销属於哪一单。⚠️ 只有出去的钱有 —— 进来的钱走分摊。 */
+    jobId?: string | null;
     /** Its own document number, for the preview. Never present on a new one --
      *  next_doc_no() issues it inside the write, so anything shown before that
      *  would be a guess printed where the real number goes. */
@@ -208,6 +216,10 @@ export function NewRecordForm({
   /** 这一家的师傅，给「谁做的」挑。⚠️ **一个人都没有就整个不画** ——
    *  一人公司占我们客户的大多数，而佣金是沙龙跟零售的东西（任务 67）。 */
   staff?: readonly { id: string; name: string }[];
+  /** 这一家开过的单，给一笔开销挂上去。 */
+  jobs?: readonly { id: string; docNo: string; title: string; party: string }[];
+  /** 他自己打过的类别。空的是常态，也是诚实的 —— 我们不发明科目表。 */
+  categories?: readonly string[];
   /** 师傅那一页的「本月业绩」。
    *
    *  🔴 那一栏的名字模板自己就叫「This month / 本月业绩」，而它到今天为止
@@ -228,6 +240,15 @@ export function NewRecordForm({
   /** 这张单收到多少。⚠️ null = **没有问**（他看不到钱），不是零 ——
    *  所以那一整段不画，而不是画一个 RM 0。 */
   settlement?: DocumentSettlement | null;
+  /** 这一单赚多少。
+   *  ⚠️ `null` = **没有问**（不是一张有钱的单，或者读的人看不到钱），
+   *  不是「没赚」-- 那两句在画面上要长得不一样，所以 null 的时候整段不画。 */
+  earned?: {
+    paidCents: number;
+    costCents: number;
+    profitCents: number;
+    byCategory: { name: string | null; cents: number }[];
+  } | null;
   backHref: string;
   copy: RecordFormCopy;
 }) {
@@ -300,6 +321,14 @@ export function NewRecordForm({
      一间店只有一个是常态，而一个人做的活还是要挂在他名下才算得出佣金。 */
   const [doneBy, setDoneBy] = useState<string>(record?.doneBy ?? "");
   const anyStaff = (staff?.length ?? 0) > 0;
+  /* 这笔钱是干什么的，跟它属於哪一单。20260904200000 --
+     这两格是「这个月赚多少」算得出来的原因。 */
+  const [category, setCategory] = useState<string>(record?.category ?? "");
+  const [jobId, setJobId] = useState<string>(record?.jobId ?? "");
+  /* 🔴 挂单**只有出去的钱**。进来的钱靠分摊回答「这一单收了多少」，
+     再给它一个 job_id，同一个问题就有两个答案 -- 资料库那边会拒绝，
+     而让他填完、保存了才知道，比现在不画糟。 */
+  const spendsMoney = isLedger && moduleKey !== "payments";
 
   /* 这个客户的地址。⚠️ 用的是**跟保存时同一条**认人规矩：完全相符、
      而且只有一个 —— 两个同名的客户不准猜（20260901060000）。
@@ -543,6 +572,13 @@ export function NewRecordForm({
                （due_on · 工地 · 分店，同一个坑第四次）。 */
             in_done_by: doneBy || null,
             in_clear_done_by: !doneBy,
+            /* 类别改得了 -- 它不是钱，是一句关於这笔钱的话。
+               ⚠️ 空字串是「清空」，不是「不要动」：`coalesce` 在资料库那边
+               看的是 null，而 `""` 是一个他真的打出来的值。 */
+            in_category: category.trim(),
+            /* 挂错单跟挂错人一样。清空要另一个参数讲（同一个坑第五次）。 */
+            in_job_id: (spendsMoney && jobId) || null,
+            in_clear_job_id: spendsMoney && !jobId,
           })
         : await supabase.rpc("update_pipeline_record", {
             in_id: record.id,
@@ -782,6 +818,10 @@ export function NewRecordForm({
           /* 谁做的。佣金算在这上面（20260904120000）——
              没有它，月底那张表是空的。 */
           in_done_by: doneBy || null,
+          /* 这笔钱是干什么的。 */
+          in_category: category.trim() || "",
+          /* 属於哪一单。⚠️ 只有出去的钱送 -- 见 spendsMoney。 */
+          in_job_id: (spendsMoney && jobId) || null,
         })
       : await supabase.rpc("add_pipeline_record", {
           in_project_id: projectId,
@@ -940,6 +980,61 @@ export function NewRecordForm({
           </option>
         ))}
       </select>
+    </label>
+  );
+
+  /* 这笔钱是干什么的。
+     🔴 `datalist` 不是 `select`，而理由跟客户那个框一样：**他自己的词就是
+     产品**。一个固定清单等於逼全马来西亚的生意走同一份科目表，
+     而一个新类别打进去就要能用。
+     ⚠️ 而且这份清单是**他自己打过的**，不是我们编的 -- 任务 117 立过那一条：
+     没有量过的行业就不建议。所以第一次是空的，那是诚实的。 */
+  const categoryBox = (
+    <label className="flex flex-col gap-1.5">
+      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+        {copy.category}
+      </span>
+      <input
+        aria-label={copy.category}
+        value={category}
+        list={categories?.length ? "money-category-list" : undefined}
+        onChange={(e) => setCategory(e.target.value)}
+        placeholder={copy.categoryHint}
+        className="ds-control h-11 w-full [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]"
+      />
+      {categories?.length ? (
+        <datalist id="money-category-list">
+          {categories.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      ) : null}
+    </label>
+  );
+
+  /* 这笔开销属於哪一单。⚠️ 一张单都没有的时候整个不画 --
+     一个只有「没有指定」的下拉是一个假控件。 */
+  const jobPicker = (
+    <label className="flex flex-col gap-1.5">
+      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+        {copy.forJob}
+      </span>
+      <select
+        aria-label={copy.forJob}
+        value={jobId}
+        onChange={(e) => setJobId(e.target.value)}
+        className="ds-control h-11 w-full [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]"
+      >
+        <option value="">{copy.forJobNone}</option>
+        {(jobs ?? []).map((j) => (
+          <option key={j.id} value={j.id}>
+            {[j.docNo, j.title || j.party].filter(Boolean).join(" · ")}
+          </option>
+        ))}
+      </select>
+      <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+        {copy.forJobWhy}
+      </span>
     </label>
   );
 
@@ -1451,6 +1546,61 @@ export function NewRecordForm({
                 </span>
               </div>
             ) : null}
+
+            {/* ── 这一单赚多少 ──────────────────────────────────────────
+                🔴 他**还没有挂过任何开销**的时候，不写「赚 RM X」——
+                那时候「赚」会等於「收到」，而这一页在宣称一件它不知道的事：
+                这一单的成本我们一个字都没有。换成一句告诉他怎么让它算得出来。 */}
+            {earned ? (
+              earned.costCents > 0 ? (
+                <>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                      {copy.jobSpent}
+                    </span>
+                    <span className="[font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas)]">
+                      {ringgitOf(earned.costCents)}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-4 border-t [border-color:var(--color-ink-800)] pt-2">
+                    <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+                      {copy.jobEarned}
+                    </span>
+                    <span
+                      className={`[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] tabular-nums ${
+                        earned.profitCents < 0
+                          ? "text-[color:var(--color-clay-bright)]"
+                          : "text-[color:var(--color-on-canvas)]"
+                      }`}
+                    >
+                      {signedRinggit(earned.profitCents) ?? "RM 0"}
+                    </span>
+                  </div>
+                  {/* 🔴 这一单还没收齐的时候，上面那一行讲的是
+                      **到目前为止的现金**，不是这一单最后赚多少 ——
+                      而那一行是加粗的、人真正会读的那一行。看图才看到的。 */}
+                  {settlement && settlement.outstandingCents > 0 ? (
+                    <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                      {copy.jobKeptSoFar}
+                    </p>
+                  ) : null}
+                  {earned.byCategory.length ? (
+                    <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                      {earned.byCategory
+                        .map(
+                          (c) =>
+                            `${c.name ?? copy.jobNoCategory} ${ringgitOf(c.cents)}`,
+                        )
+                        .join(" · ")}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                  {copy.jobNoCosts}
+                </p>
+              )
+            ) : null}
           </div>
         ) : null}
         </>
@@ -1475,6 +1625,8 @@ export function NewRecordForm({
       {/* 这笔钱付了哪几张单。⚠️ 画在 moneyFixed 上面：那一句讲的是
           「金额跟日子锁住了」，而分摊是这一页上他还改得动的东西 ——
           一句「不能改」底下接一个可以改的东西，读起来是坏的。 */}
+      {isLedger ? categoryBox : null}
+      {spendsMoney && (jobs?.length ?? 0) > 0 ? jobPicker : null}
       {isLedger && manyBranches ? branchPicker : null}
       {isLedger && anyStaff ? doneByPicker : null}
 

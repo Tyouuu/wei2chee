@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchLiveStats } from "./live-stats";
+import { fetchLiveStats, nowInMalaysia } from "./live-stats";
+import { buildProfit, signedRinggit, type ProfitFact } from "./profit";
+import { ringgit } from "./live-rows";
 
 /**
  * WHAT THE ASSISTANT MAY SAY ABOUT HIS MONEY.
@@ -87,13 +89,18 @@ const WORDS = {
  */
 const GAPS = {
   zh: [
-    "赚多少 / 某一单的利润 —— 开销今天还挂不到某一单工程上，所以算不出来",
+    /* ⚠️ 「赚多少」2026-09-04 从这里退休了 —— 20260904200000 给了开销一个
+       类别跟一个单，所以那个数字现在数得出来，就在下面的 figures 里。
+       留下来的是它窄掉之后剩的那一半：**单张的利润页面上看得到，
+       而助手还查不了单张**。一条过期的「答不了」，是助手拒绝回答一件
+       产品已经做得到的事。 */
+    "某一单赚多少 —— 那一单自己的页面上写着，而这里查不了单张",
     "某一个客户欠多少 / 某一张单的细节 —— 按客户查那一支还没做",
     "库存还剩多少 —— 这几个数字里不含库存",
     "上面没有的任何数字 —— 不要自己相加减凑一个出来",
   ],
   en: [
-    "Profit, on the month or on one job — expenses cannot yet be attached to a job, so it cannot be worked out",
+    "What one job made — it is written on that job's own page, but this panel cannot look up a single document",
     "What one customer owes, or the detail of one document — the per-customer lookup does not exist yet",
     "Stock on hand — not among these figures",
     "Any figure not listed above — never add or subtract two of them to make a new one",
@@ -196,16 +203,78 @@ export async function fetchBusinessFacts(
 
   return {
     asOf: malaysianDate(at),
-    figures: stats.tiles.map((t) => ({
-      label: t.label,
-      value: t.value,
-      previous: t.previous,
-    })),
+    figures: [
+      ...stats.tiles.map((t) => ({
+        label: t.label,
+        value: t.value,
+        previous: t.previous,
+      })),
+      ...(await fetchProfit(supabase, projectId, lang, at)),
+    ],
     rows: await fetchRecentRows(supabase, projectId),
     trend: stats.trend.slice(-TREND_CAP),
     lang,
     unread: false,
   };
+}
+
+/**
+ * 花掉多少、赚多少 -- 这个月。
+ *
+ * 🔴 这两个数字是 `live-answers` 存在过的最长的一条缝：GAPS 的第一行从
+ * 这个档案写出来那天就是「赚多少 -- 算不出来」，而 20260904200000 之后
+ * 它算得出来了。这一支就是让那一行退休的东西。
+ *
+ * ⚠️ 一份定义，不是两份。它呼叫 `buildProfit`，跟 `报表` 那一页画那两格
+ * 用的是同一支 -- 不然助手讲的数字跟他画面上那一格会不一样，
+ * 而那是这个仓库最贵的一种错。
+ *
+ * ⚠️ 走**呼叫者自己的连线**（跟这个档案其余每一个读一样）：
+ * `ledger_entries` 是 sees_money，所以一个师傅拿回来的是空的 --
+ * 而空的会算成「这个月赚了全额」。所以读不到就一格都不给，不是给 0。
+ *
+ * ⚠️ 他从来没记过开销的时候**不给「赚」那一格**，跟 `报表` 同一条：
+ * 那时候「赚」等於「收到」，而那是宣称一件我们不知道的事。
+ */
+async function fetchProfit(
+  supabase: SupabaseClient,
+  projectId: string,
+  lang: "zh" | "en",
+  at: Date,
+): Promise<BusinessFacts["figures"]> {
+  try {
+    const { data, error } = await supabase
+      .from("ledger_entries")
+      .select("id, direction, amount_cents, entry_on, category, adjusts_id")
+      .eq("project_id", projectId);
+    if (error || !data?.length) return [];
+
+    const now = nowInMalaysia(at);
+    const slice = buildProfit(data as unknown as ProfitFact[], now);
+    const everSpent = (data as { direction?: string | null }[]).some(
+      (e) => (e.direction ?? "in") === "out",
+    );
+    if (!everSpent) return [];
+
+    const w =
+      lang === "en"
+        ? { spent: "Spent this month", earned: "Kept this month", on: "Biggest" }
+        : { spent: "本月花掉", earned: "本月赚", on: "最大一笔" };
+    const top = slice.byCategory[0];
+    return [
+      {
+        label: w.spent,
+        value: ringgit(slice.outCents) ?? "RM 0",
+        previous: top
+          ? `${w.on}: ${top.name ?? (lang === "en" ? "not categorised" : "没写类别")} ${ringgit(top.cents) ?? ""}`
+          : undefined,
+      },
+      { label: w.earned, value: signedRinggit(slice.profitCents) ?? "RM 0" },
+    ];
+  } catch {
+    /* 读不到就一格都不给。给一个 0 出去，助手会照着讲。 */
+    return [];
+  }
 }
 
 /**

@@ -217,6 +217,18 @@ export type RecordFormCopy = {
      ⚠️ 没有师傅的时候一个字都不出现 —— 一人公司占我们客户的大多数。 */
   doneBy: string;
   doneByNone: string;
+  /* 这笔钱是干什么的，跟它属於哪一单。 */
+  category: string;
+  categoryHint: string;
+  forJob: string;
+  forJobNone: string;
+  forJobWhy: string;
+  /* 这一单赚多少。 */
+  jobSpent: string;
+  jobEarned: string;
+  jobNoCosts: string;
+  jobNoCategory: string;
+  jobKeptSoFar: string;
   tiersHeading: string;
   tiersLede: string;
   tiersFrom: string;
@@ -469,6 +481,24 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       branchAny: "不分店",
       doneBy: "谁做的",
       doneByNone: "没有指定",
+      category: "这笔钱是干什么的",
+      /* ⚠️ 提示里那几个词是**例子**，不是预设 —— 打进框里的是他自己的词。
+         给一份固定清单，等於逼每一门生意走同一份科目表。 */
+      categoryHint: "材料 · 工钱 · 车油 · 租金",
+      forJob: "这笔算在哪一单上",
+      forJobNone: "不算在任何一单上",
+      forJobWhy: "填了，那一单才算得出赚多少。",
+      jobSpent: "这一单花掉",
+      /* ⚠️ 「赚」不是「毛利」也不是「净利」-- 那两个是有会计定义的词，
+         而我们算的是「收到的减挂在它身上的开销」。用日常的字。 */
+      jobEarned: "这一单赚",
+      jobNoCosts: "还没有开销挂在这一单上，所以算不出它赚多少。在开销那一页记一笔，选这一单。",
+      jobNoCategory: "没写类别",
+      /* 🔴 看图才看到的：「This job kept RM 6,550」就写在
+         「Still owed RM 33,950」底下，而那一行是加粗的、人真正会读的那一行。
+         一个承包商看到一张 RM 48,500 的单写着「赚 RM 6,550」，
+         会以为这一单几乎没赚 —— 而实际上他只收了三成。 */
+      jobKeptSoFar: "这一单还没收齐，所以这是到目前为止的。",
       tiersHeading: "他的抽成",
       tiersLede: "分段算：头一段一个比例，超过的那一段另一个。",
       tiersFrom: "从",
@@ -683,6 +713,16 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       branchAny: "No particular branch",
       doneBy: "Who did it",
       doneByNone: "Nobody in particular",
+      category: "What this was for",
+      categoryHint: "Materials · Labour · Fuel · Rent",
+      forJob: "Which job this belongs to",
+      forJobNone: "Not against a job",
+      forJobWhy: "Fill this in and that job can say what it made.",
+      jobSpent: "Spent on this job",
+      jobEarned: "This job kept",
+      jobNoCosts: "No expenses are filed against this job yet, so it cannot say what it made. Record one on the expenses page and pick this job.",
+      jobNoCategory: "Not categorised",
+      jobKeptSoFar: "This job is not fully paid yet, so this is what it has kept so far.",
       tiersHeading: "Their commission",
       tiersLede: "Band by band: one rate up to a figure, another above it.",
       tiersFrom: "From",

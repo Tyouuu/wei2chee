@@ -1790,6 +1790,147 @@ try {
 
 
   }
+
+  /* ── 这笔钱是干什么的、属於哪一单 ──────────────────────────────────────
+     20260904200000。这一段守两件，第二件是我自己一天前造的：
+
+     ① 一笔开销挂得上一张单，而且那**不是**一笔分摊
+        —— 报一笔 RM 3,000 的水泥，不可以让那张单看起来收到了 RM 3,000
+     ② 进来的钱不准挂 job_id，要走分摊
+        —— 同一个问题两个答案，而两个答案迟早会不一样 */
+  {
+  console.log("\n㉔ 这笔钱是干什么的");
+
+  const { data: him } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "陈老板",
+  });
+  const { data: theJob } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "Taman Desa 三房翻新",
+    in_party: "陈老板", in_party_id: him.id, in_amount_cents: 4_850_000,
+  });
+
+  const { data: cement, error: cementErr } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "expenses", in_amount_cents: 300_000,
+    in_party: "建材行 A", in_category: "材料", in_job_id: theJob.id,
+  });
+  check("一笔开销挂得上一张单", cement?.job_id === theJob.id,
+    cementErr?.message?.slice(0, 100) ?? JSON.stringify(cement?.job_id));
+  check("而且那笔钱记得住它是干什么的", cement?.category === "材料", cement?.category);
+
+  /* 🔴 这一条守的就是我一天前造的那个。 */
+  const { data: jobNow } = await c
+    .from("pipeline_records").select("id").eq("id", theJob.id).single();
+  const { count: allocCount } = await c
+    .from("ledger_allocations").select("id", { count: "exact", head: true })
+    .eq("record_id", theJob.id);
+  check("🔴 报一笔水泥，那张单没有因此收到钱", allocCount === 0, `${allocCount} 笔分摊`);
+  check("而且那笔开销自己没有被算成已入账",
+    Number(cement?.allocated_cents) === 0 && !cement?.against_id,
+    JSON.stringify({ allocated: cement?.allocated_cents, against: cement?.against_id }));
+  void jobNow;
+
+  /* ② 进来的钱走分摊，不走 job_id —— 而且要讲得出该怎么做。 */
+  const { error: inWithJob } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_amount_cents: 100_000,
+    in_party: "陈老板", in_job_id: theJob.id,
+  });
+  check("进来的钱不准挂在某一单上（要走分摊）", !!inWithJob,
+    "一笔 in 带着 job_id 被收下了 —— 同一个问题会有两个答案");
+  check("而且讲得出该怎么做，不是一句资料库的错",
+    /allocating/i.test(inWithJob?.message ?? ""), inWithJob?.message?.slice(0, 120));
+
+  /* 别人的单挂不上来。 */
+  const { data: other } = await admin.auth.admin.createUser({
+    email: `gl-other-${Date.now()}@formae.test`, password: `Gl-${Date.now()}-x!`,
+    email_confirm: true,
+  });
+  const { data: hisProject } = await admin
+    .from("projects").select("id").eq("account_id", other.user.id).single();
+  const { data: hisJob } = await admin
+    .from("pipeline_records")
+    .insert({ project_id: hisProject.id, module_key: "quotations", title: "别人的单",
+              doc_no: `X-${Date.now()}` })
+    .select("id").single();
+  const { error: notMine } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "expenses", in_amount_cents: 1000,
+    in_job_id: hisJob.id,
+  });
+  check("别人的单挂不上来", !!notMine, notMine?.message?.slice(0, 90));
+  /* 用完就删 —— 一支在他自己的资料库里留下假帐号的尺子，不值得用。 */
+  await dropThrowaway(admin, other.user.id);
+
+  /* 挂错单是一次打字错误，改得回来 —— 而清空要另一个参数讲。
+     少了它，一个单挂上去就永远拿不下来（这个 schema 犯过四次）。 */
+  const { data: moved } = await c.rpc("update_ledger_words", {
+    in_id: cement.id, in_category: "工钱",
+  });
+  check("类别改得了", moved?.category === "工钱", moved?.category);
+  check("而且改类别没有把那一单顺手弄掉", moved?.job_id === theJob.id, moved?.job_id);
+
+  const { data: cleared } = await c.rpc("update_ledger_words", {
+    in_id: cement.id, in_clear_job_id: true,
+  });
+  check("挂错的单拿得下来", cleared?.job_id === null, cleared?.job_id);
+
+  const { data: reput } = await c.rpc("update_ledger_words", {
+    in_id: cement.id, in_job_id: theJob.id,
+  });
+  check("再挂回去也可以", reput?.job_id === theJob.id, reput?.job_id);
+
+  /* 🔴 一笔进来的钱，改的时候也不准挂单。 */
+  const { data: someIn } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_amount_cents: 50_000,
+    in_party: "陈老板",
+  });
+  const { error: inUpdJob } = await c.rpc("update_ledger_words", {
+    in_id: someIn.id, in_job_id: theJob.id,
+  });
+  check("改一笔进来的钱，一样不准挂单", !!inUpdJob, inUpdJob?.message?.slice(0, 100));
+
+  /* 类别长度截断，跟 method 同一条。 */
+  const { data: longCat } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "expenses", in_amount_cents: 100,
+    in_category: "材".repeat(90),
+  });
+  check("很长的类别被截短，不是被拒绝", (longCat?.category ?? "").length === 60,
+    `${(longCat?.category ?? "").length}`);
+
+  /* 空白不是一个类别。 */
+  const { data: blankCat } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "expenses", in_amount_cents: 100,
+    in_category: "   ",
+  });
+  check("空白不会变成一个叫「 」的类别", blankCat?.category === "", `[${blankCat?.category}]`);
+
+  /* 那张单删掉，那笔开销还在 —— 钱发生过。 */
+  const { data: doomed } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "会被删掉的",
+  });
+  const { data: onDoomed } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "expenses", in_amount_cents: 7_000,
+    in_category: "车油", in_job_id: doomed.id,
+  });
+  await admin.from("pipeline_records").delete().eq("id", doomed.id);
+  const { data: orphan } = await c
+    .from("ledger_entries").select("id, job_id, amount_cents").eq("id", onDoomed.id).maybeSingle();
+  check("单删掉了，那笔开销还在（钱发生过）",
+    !!orphan && Number(orphan.amount_cents) === 7_000, JSON.stringify(orphan));
+  check("只是它不再属於任何一单", orphan?.job_id === null, orphan?.job_id);
+
+  /* ── 赚多少，从这一家自己的书数出来 ──────────────────────────────── */
+  const { data: book } = await c
+    .from("ledger_entries")
+    .select("id, direction, amount_cents, entry_on, category, adjusts_id")
+    .eq("project_id", P);
+  const dead = new Set((book ?? []).map((e) => e.adjusts_id).filter(Boolean));
+  const live = (book ?? []).filter((e) => !e.adjusts_id && !dead.has(e.id));
+  const sum = (d) => live.filter((e) => e.direction === d)
+    .reduce((n, e) => n + Number(e.amount_cents ?? 0), 0);
+  check("收进来的、花出去的，两边都数得出来", sum("in") > 0 && sum("out") > 0,
+    `in=${sum("in")} out=${sum("out")}`);
+  check("而且赚多少就是那两个的差", sum("in") - sum("out") === sum("in") - sum("out"));
+  }
+
 } catch (err) {
   console.error(`\nthrew: ${err.message}`);
   failures.push(err.message);

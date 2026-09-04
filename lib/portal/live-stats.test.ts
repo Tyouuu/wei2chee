@@ -22,7 +22,15 @@ const base = {
   customers: 0,
 };
 
-const paid = (entry_on: string, amount: number, allocated = amount): LedgerFact => ({
+let seq = 0;
+const paid = (
+  entry_on: string,
+  amount: number,
+  allocated = amount,
+  adjusts_id: string | null = null,
+): LedgerFact => ({
+  id: `e${++seq}`,
+  adjusts_id,
   module_key: "payments",
   direction: "in",
   amount_cents: amount,

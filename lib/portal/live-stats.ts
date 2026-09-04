@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { countsAsReceived, reversedIds } from "./allocations";
 import { ringgit } from "./live-rows";
 import { LEDGER_MODULES, PIPELINE_MODULES, DIRECTORY_MODULES } from "./shape-state";
 
@@ -104,6 +105,13 @@ const WORDS = {
 } as const;
 
 export type LedgerFact = {
+  /* 🔴 `id` 跟 `adjusts_id` 是**必填的，而那是刻意的**。
+     一笔冲正长的样子是「另一笔的 adjusts_id 指着它」，所以没有这两栏
+     就分不出「收到了」跟「收到过又退回去了」—— 而少了它们的时候，
+     算出来的月结**看起来完全正常**。
+     写成必填，忘了 select 就是一个编译错误，不是一个静静变大的数字。 */
+  id: string;
+  adjusts_id: string | null;
   module_key: string;
   direction: string | null;
   amount_cents: number | null;
@@ -198,7 +206,15 @@ export function buildLiveStats(input: {
     return !!ym && ym.y === now.y && ym.m === now.m;
   };
 
-  const money = input.ledger.filter((e) => (e.direction ?? "in") === "in");
+  /* 🔴 冲正过的不算，两种都不算：自己是冲正的，跟已经被冲正的。
+     在这之前「本月收到」把一笔退回去的钱照样算成收入 —— 而画面上
+     那张表自己已经把它标成「已冲正」了，也就是同一页两个答案。 */
+  const settled = reversedIds(input.ledger);
+  const money = input.ledger.filter(
+    (e) =>
+      (e.direction ?? "in") === "in" &&
+      countsAsReceived({ id: e.id, adjusts_id: e.adjusts_id, reversed: settled.has(e.id) }),
+  );
   const receivedByMonth = months.map(
     (m) =>
       money
@@ -496,7 +512,7 @@ export async function fetchLiveStats(
     const [ledger, pipeline, customers] = await Promise.all([
       supabase
         .from("ledger_entries")
-        .select("module_key, direction, amount_cents, allocated_cents, entry_on")
+        .select("id, adjusts_id, module_key, direction, amount_cents, allocated_cents, entry_on")
         .eq("project_id", projectId),
       supabase
         .from("pipeline_records")

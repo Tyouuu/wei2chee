@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ringgit, type LiveRow } from "./live-rows";
+import { buildProfit, signedRinggit, type ProfitFact } from "./profit";
 import {
   lastSixMonths,
   nowInMalaysia,
@@ -62,6 +63,12 @@ export type PartyFact = {
 };
 
 export type MonthFact = {
+  /* 🔴 必填，同 LedgerFact 的理由：没有这两栏就分不出「收到了」跟
+     「收到过又退回去了」，而少了它们算出来的月结看起来完全正常。 */
+  id: string;
+  adjusts_id: string | null;
+  direction: string | null;
+  category: string | null;
   amount_cents: number | null;
   entry_on: string | null;
 };
@@ -78,6 +85,15 @@ const WORDS = {
     month: (m: number) => `${m}月`,
     up: "增长",
     down: "下滑",
+    spent: "本月花掉",
+    earned: "本月赚",
+    /* ⚠️ 「赚」不是「净利」。我们算的是收付实现制 -- 这个月真的进来的钱减
+       真的花出去的钱 -- 而「净利」是一个有准确会计定义的词，指的不是它。
+       用日常的字，是为了不宣称一件我们没有做到的事。 */
+    earnedHow: "收到的减花掉的",
+    noSpend: "还没记过开销",
+    biggest: (name: string, amount: string) => `最大一笔：${name} ${amount}`,
+    uncategorised: "没写类别",
     flat: "持平",
     none: "上个月没有",
     top: "顶级",
@@ -101,6 +117,12 @@ const WORDS = {
     month: (m: number) => SHORT_EN[m - 1] ?? "",
     up: "Up",
     down: "Down",
+    spent: "Spent this month",
+    earned: "Kept this month",
+    earnedHow: "What came in, less what went out",
+    noSpend: "No expenses recorded yet",
+    biggest: (name: string, amount: string) => `Biggest: ${name} ${amount}`,
+    uncategorised: "Not categorised",
     flat: "Flat",
     none: "Nothing last month",
     top: "Top",
@@ -134,6 +156,12 @@ export function buildMonthlyReport(input: {
   const w = WORDS[input.lang] ?? WORDS.zh;
   if (!input.ledger.length) return null;
 
+  /* 🔴 冲正过的不算 -- 而在这一页它比在别处更要紧，因为这一页整栏都是钱。
+     一笔退回去的收款在这之前照样算成营业额。 */
+  const dead = new Set(input.ledger.map((e) => e.adjusts_id).filter(Boolean) as string[]);
+  const live = input.ledger.filter((e) => !e.adjusts_id && !dead.has(e.id));
+  const income = live.filter((e) => (e.direction ?? "in") === "in");
+
   /* The same six the chart draws, so the last bar and the first row of the
      table are the same month. Two spans would let them disagree.
 
@@ -146,7 +174,7 @@ export function buildMonthlyReport(input: {
   const months7 = [before(months[0]), ...months];
 
   const totals = months7.map((m) => {
-    const rows = input.ledger.filter((e) => {
+    const rows = income.filter((e) => {
       const ym = ymOf(e.entry_on);
       return !!ym && ym.y === m.y && ym.m === m.m;
     });
@@ -202,16 +230,53 @@ export function buildMonthlyReport(input: {
       tone: "normal",
       icon: "reconciliation",
     },
-    {
-      label: w.average,
-      /* Averaged in cents and then formatted once, so 「平均一笔」 of three
-         payments is a real average rather than a rounded one shown as exact. */
-      value:
-        ringgit(thisMonth.count ? Math.round(thisMonth.cents / thisMonth.count) : 0) ?? "RM 0",
-      tone: "normal",
-      icon: "quotations",
-    },
   ];
+
+  /* ⚠️ 「平均一笔」拿掉了，位子让给「花掉」跟「赚」。
+     一个承包商一个月三笔收款，那个平均数几乎不讲任何事；而「赚多少」
+     是他打开这一页的那个问题。四格已经是一行放得下的上限，
+     所以这是一个取舍，不是一次顺手删除。 */
+
+  /* ── 花掉多少，跟赚多少 ────────────────────────────────────────────────
+     这两格是 20260904200000 那一整支的目的：`live-answers` 的 GAPS 第一行
+     从写出来那天就是「赚多少 -- 算不出来」，而这里是它算得出来的地方。 */
+  const spend = buildProfit(input.ledger as unknown as ProfitFact[], {
+    y: thisMonth.y,
+    m: thisMonth.m,
+  });
+  /* 这一家有没有**记过**开销 -- 不是这个月有没有，是这几个月里有没有。 */
+  const everSpent = live.some((e) => (e.direction ?? "in") === "out");
+  const top = spend.byCategory[0];
+
+  tiles.push({
+    label: w.spent,
+    value: ringgit(spend.outCents) ?? "RM 0",
+    /* 类别的分布，塞在这一格的副标里 -- 一整块「钱花在哪」要动版面，
+       而版面是别人的地盘。最大的那一笔已经答掉他八成的问题。 */
+    deltaLabel: everSpent
+      ? top
+        ? w.biggest(top.name ?? w.uncategorised, ringgit(top.cents) ?? "RM 0")
+        : undefined
+      : w.noSpend,
+    tone: "normal",
+    icon: "expenses",
+  });
+
+  /* 🔴 他从来没记过一笔开销的时候，**不画这一格**。
+     那时候「赚」会等於「收到」，而那是这一页在宣称一件它不知道的事 --
+     他的成本我们一个字都没有。等他记了第一笔，这一格自己出现。 */
+  if (everSpent) {
+    tiles.push({
+      label: w.earned,
+      /* 亏钱的月份是负的，不夹成 0 -- 夹了就是替他把坏消息藏起来，
+         而那正是他打开这一页要看的那一件。 */
+      value: signedRinggit(spend.profitCents) ?? "RM 0",
+      /* 定义写在画面上，不是只写在这份注解里（任务 80）。 */
+      deltaLabel: w.earnedHow,
+      tone: spend.profitCents < 0 ? "warn" : "good",
+      icon: "reports",
+    });
+  }
 
   return {
     stats: { tiles, trend: shown.map((t) => ({ label: w.month(t.m), value: t.cents / 100 })) },
@@ -390,11 +455,12 @@ export async function fetchMonthlyPage(
   const now = nowInMalaysia(at);
   try {
     if (shape === "report") {
+      /* 🔴 两个方向都读，不再只读 in：这一页现在要答「赚多少」，
+         而少了 out 那一半它只答得出「收多少」。 */
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("amount_cents, entry_on")
-        .eq("project_id", projectId)
-        .eq("direction", "in");
+        .select("id, adjusts_id, direction, category, amount_cents, entry_on")
+        .eq("project_id", projectId);
       if (error) return undefined;
       return buildMonthlyReport({ lang, now, ledger: (data ?? []) as MonthFact[] });
     }
@@ -405,12 +471,18 @@ export async function fetchMonthlyPage(
        still gets a ranking rather than an empty page. */
     const ledger = await supabase
       .from("ledger_entries")
-      .select("party, party_id, amount_cents, entry_on")
+      .select("id, adjusts_id, party, party_id, amount_cents, entry_on")
       .eq("project_id", projectId)
       .eq("direction", "in");
     if (ledger.error) return undefined;
 
-    let facts: PartyFact[] = (ledger.data ?? []).map((r) => ({
+    /* 一笔自己是冲正的 in（退款的反向）不算 -- 一个客户不该因为一笔
+       退回去的钱排在第一。
+       ⚠️ 「已经被冲正」在这里查不到，因为冲正一笔收款写出来的是一笔 out，
+       而这个查询只读 in。写下来，不要假装这一行做完了整件事。 */
+    let facts: PartyFact[] = (ledger.data ?? [])
+      .filter((r) => !(r as { adjusts_id?: string | null }).adjusts_id)
+      .map((r) => ({
       party: (r as { party?: string }).party ?? "",
       party_id: (r as { party_id?: string | null }).party_id ?? null,
       amount_cents: (r as { amount_cents?: number | null }).amount_cents ?? null,

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { buildMonthlyReport, buildRanking, daysBetween } from "./live-months";
+import { buildMonthlyReport, buildRanking, daysBetween, type MonthFact } from "./live-months";
 import { READS_SHAPES, SHAPE_STATE, isLiveShape, isRealShape } from "./shape-state";
 import { MODULE_CATALOG } from "./module-catalog";
 
@@ -13,7 +13,30 @@ import { MODULE_CATALOG } from "./module-catalog";
  */
 
 const now = { y: 2026, m: 9 };
-const at = (entry_on: string, ringgit: number) => ({
+let seq = 0;
+const at = (entry_on: string, ringgit: number): MonthFact => ({
+  id: `m${++seq}`,
+  adjusts_id: null,
+  direction: "in",
+  category: null,
+  entry_on,
+  amount_cents: ringgit * 100,
+});
+/* 花出去的一笔，给「赚多少」那两格用。 */
+const spent = (entry_on: string, ringgit: number, category: string | null = null): MonthFact => ({
+  id: `s${++seq}`,
+  adjusts_id: null,
+  direction: "out",
+  category,
+  entry_on,
+  amount_cents: ringgit * 100,
+});
+/* 一笔冲正：方向跟原本那笔相反，adjusts_id 指着它。 */
+const undo = (entry_on: string, ringgit: number, undoes: string): MonthFact => ({
+  id: `u${++seq}`,
+  adjusts_id: undoes,
+  direction: "out",
+  category: null,
   entry_on,
   amount_cents: ringgit * 100,
 });
@@ -123,9 +146,10 @@ describe("报表 -- money that arrived, by month", () => {
       expect(r.stats.tiles[1].value).not.toMatch(/RM/);
     });
 
-    it("averages in cents and formats once", () => {
-      expect(r.stats.tiles[2].value).toBe("RM 250");
-    });
+    /* ⚠️ 「平均一笔」那一格 2026-09-04 拿掉了，位子让给「花掉」跟「赚」。
+       一个承包商一个月三笔收款，那个平均数几乎不讲任何事。
+       所以这里少了一条测试，而它是**跟着那一格一起走的**，
+       不是一条被放宽的断言。 */
 
     it("brings its own icons rather than borrowing the dashboard's", () => {
       /* Positional icons are right on 总览, where the four tiles are always
@@ -134,7 +158,8 @@ describe("报表 -- money that arrived, by month", () => {
       expect(r.stats.tiles.map((t) => t.icon)).toEqual([
         "payments",
         "reconciliation",
-        "quotations",
+        /* 「花掉」永远画；「赚」只在他记过开销之后 -- 见底下那一段。 */
+        "expenses",
       ]);
     });
 
@@ -152,6 +177,102 @@ describe("报表 -- money that arrived, by month", () => {
     const en = buildMonthlyReport({ lang: "en", now, ledger: [at("2026-09-02", 10)] })!;
     expect(en.rows[0].primary).toBe("September 2026");
     expect(en.stats.tiles[0].label).toBe("Received this month");
+  });
+
+  /* ── 赚多少（20260904200000） ────────────────────────────────────────── */
+  describe("赚多少", () => {
+    it("🔴 a payment that was reversed is not turnover", () => {
+      /* 画面上那张表已经把它标成「已冲正」了。同一页两个答案，
+         而这一页的整栏都是钱。 */
+      /* ⚠️ 指着**它真的那个 id**，不是一个我数出来的 'm1'。
+         seq 是整个档案共用的，所以写死一个 id 的测试会因为别人在
+         上面加了一个 fixture 而变绿 -- 那种测试比没有更糟。 */
+      const taken = at("2026-09-02", 500);
+      const r = buildMonthlyReport({
+        lang: "zh",
+        now,
+        ledger: [taken, undo("2026-09-03", 500, taken.id)],
+      })!;
+      expect(r.rows[0].amount).toBe("RM 0");
+    });
+
+    it("does not draw 「赚」 for a business that has never recorded a cost", () => {
+      /* 那时候「赚」会等於「收到」-- 而那是这一页在宣称一件它不知道的事。 */
+      const r = buildMonthlyReport({ lang: "zh", now, ledger: [at("2026-09-02", 900)] })!;
+      expect(r.stats.tiles.map((t) => t.label)).not.toContain("本月赚");
+      expect(r.stats.tiles.find((t) => t.label === "本月花掉")?.deltaLabel).toBe("还没记过开销");
+    });
+
+    it("draws it the moment he records his first expense", () => {
+      const r = buildMonthlyReport({
+        lang: "zh",
+        now,
+        ledger: [at("2026-09-02", 900), spent("2026-09-03", 200, "材料")],
+      })!;
+      const earned = r.stats.tiles.find((t) => t.label === "本月赚");
+      expect(earned?.value).toBe("RM 700");
+      /* 定义写在画面上，不是只写在注解里。 */
+      expect(earned?.deltaLabel).toBe("收到的减花掉的");
+    });
+
+    it("names the biggest thing he spent on", () => {
+      const r = buildMonthlyReport({
+        lang: "zh",
+        now,
+        ledger: [
+          at("2026-09-02", 900),
+          spent("2026-09-03", 80, "车油"),
+          spent("2026-09-04", 500, "材料"),
+        ],
+      })!;
+      expect(r.stats.tiles.find((t) => t.label === "本月花掉")?.deltaLabel)
+        .toBe("最大一笔：材料 RM 500");
+    });
+
+    it("calls what has no category 「没写类别」 rather than hiding it", () => {
+      const r = buildMonthlyReport({
+        lang: "zh",
+        now,
+        ledger: [at("2026-09-02", 900), spent("2026-09-03", 300)],
+      })!;
+      expect(r.stats.tiles.find((t) => t.label === "本月花掉")?.deltaLabel)
+        .toBe("最大一笔：没写类别 RM 300");
+    });
+
+    it("🔴 says a losing month is losing, and marks it", () => {
+      const r = buildMonthlyReport({
+        lang: "zh",
+        now,
+        ledger: [at("2026-09-02", 100), spent("2026-09-03", 400, "材料")],
+      })!;
+      const earned = r.stats.tiles.find((t) => t.label === "本月赚");
+      expect(earned?.value).toBe("-RM 300");
+      expect(earned?.tone).toBe("warn");
+    });
+
+    it("counts spending in the month it happened, not the whole book", () => {
+      const r = buildMonthlyReport({
+        lang: "zh",
+        now,
+        ledger: [
+          at("2026-09-02", 900),
+          spent("2026-09-03", 100, "材料"),
+          spent("2026-07-03", 5000, "材料"),
+        ],
+      })!;
+      expect(r.stats.tiles.find((t) => t.label === "本月花掉")?.value).toBe("RM 100");
+    });
+
+    it("speaks the system's language here too", () => {
+      const en = buildMonthlyReport({
+        lang: "en",
+        now,
+        ledger: [at("2026-09-02", 900), spent("2026-09-03", 200, "Materials")],
+      })!;
+      expect(en.stats.tiles.map((t) => t.label)).toContain("Kept this month");
+      expect(en.stats.tiles.find((t) => t.label === "Spent this month")?.deltaLabel)
+        .toBe("Biggest: Materials RM 200");
+    });
   });
 });
 

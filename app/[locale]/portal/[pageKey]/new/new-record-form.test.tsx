@@ -52,9 +52,23 @@ const form = (over: Partial<Parameters<typeof NewRecordForm>[0]> = {}) =>
     />,
   );
 
-/** The inputs, in order, with whether each one is locked. */
+/**
+ * The TABLE-COLUMN boxes, in order, with whether each one is locked.
+ *
+ * ⚠️ 认的是「这一格是不是这张表自己的一栏」，不是位置。
+ * `box()` 画出来的那几格**没有 `aria-label`**（字是旁边一个 `<span>`），
+ * 而后来加上去的控件（类别 · 谁做的 · 哪一间店 · 工地）都有。
+ *
+ * 为什么不按位置数：第一版是「第一格之后全部锁住」，於是
+ * 2026-09-04 加了一个**存得进去**的类别框，它就红了。而这条规矩守的
+ * 从来不是「只有一格能打字」，是**存不进去的框不准打字**。
+ */
 const boxes = (html: string) =>
-  [...html.matchAll(/<input\b[^>]*>/g)].map((m) => m[0].includes("readonly"));
+  [...html.matchAll(/<input[^>]*>/g)]
+    .filter((m) => !m[0].includes("aria-label"))
+    /* ⚠️ 打中的是 `aria-readonly="true"` —— React 把 `readOnly` 原样吐出来，
+       小写的比对对不上它。写下来免得下一个人「修」掉它。 */
+    .map((m) => m[0].includes("aria-readonly"));
 
 describe("改这一单, on a money page", () => {
   const record = { id: "r1", values: { primary: "订金", secondary: "陈先生", amount: "RM 3,000" }, archivedAt: null };
@@ -67,6 +81,40 @@ describe("改这一单, on a money page", () => {
     // 「陈先生」 and 「RM 3,000」 are shown and locked: he opened the row to see
     // them, and the way to change them is a reversal.
     expect(boxes(form({ record })).slice(1)).toEqual([true, true]);
+  });
+
+  /* ── 这笔钱是干什么的、属於哪一单（20260904200000）────── */
+  it("lets him say what the money was for, because that one CAN be saved", () => {
+    const html = form({ record, moduleKey: "expenses" });
+    const box =
+      new RegExp(`<input[^>]*aria-label="${RECORD_COPY.zh.form.category}"[^>]*>`).exec(html)?.[0] ??
+      "";
+    expect(box).not.toBe("");
+    /* 一个画出来却打不了字的框，跟一个打了字存不进去的框，
+       是同一个毛病的两张脸。 */
+    expect(box).not.toContain("aria-readonly");
+  });
+
+  it("does not offer the job picker where money comes IN", () => {
+    /* 进来的钱靠分摊回答「这一单收了多少」。再给它一个 job_id，
+       同一个问题就有两个答案 —— 资料库那边会拒绝，
+       而画一个会被拒绝的控件，比不画糟。 */
+    const jobs = [
+      { id: "j1", docNo: "QT-2026-0001", title: "翻新", party: "陈先生" },
+    ];
+    expect(form({ record, moduleKey: "payments", jobs })).not.toContain(
+      RECORD_COPY.zh.form.forJob,
+    );
+    expect(form({ record, moduleKey: "expenses", jobs })).toContain(
+      RECORD_COPY.zh.form.forJob,
+    );
+  });
+
+  it("draws no job picker at all when there is no job to pick", () => {
+    /* 一个只有「不算在任何一单上」的下拉是一个假控件。 */
+    expect(form({ record, moduleKey: "expenses", jobs: [] })).not.toContain(
+      RECORD_COPY.zh.form.forJob,
+    );
   });
 
   it("says why, next to the boxes it locked", () => {
