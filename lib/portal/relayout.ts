@@ -73,7 +73,7 @@ export function orderFor(layout?: string | null): string[] {
      变成整页宽的横带。
 
      那一段拿掉了，而且不是因为它错：系统收成一套之后
-     （[任务 120](../../docs/founder-tasks.md)），排法不再指向别人的风格，
+     （[任务 138](../../docs/founder-tasks.md)），排法不再指向别人的风格，
      而「表格先行」那一行现在**本来就是摊平写的**。执行时替它重排，
      跟写在纸上是同一个结果 —— 而写在纸上看得见。 */
   const entries = [...dashboardComposition(layout)];

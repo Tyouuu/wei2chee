@@ -19,10 +19,16 @@
  *
  * ⚠️ 跑完把风格放回原本那一套 —— 一把每跑一次就悄悄改老板自己预览帐号的尺，
  * 是有代价的尺。
+ *
+ * 🔴 **而「跑完放回去」不够，2026-09-04 实测**：从别的地方把它中断（管线被
+ * `head` 关掉、Ctrl-C），`finally` 根本不会跑，於是 demo 帐号留在 `hearth`
+ * ——「兴发装修工程」的官网当场换了一套风格，而没有任何人会知道。
+ * 所以原本那一套先写进一个小档案，**下一次开跑先看它还在不在**：
+ * 在，就是上一次没有收尾，先放回去再开始。
  */
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, mkdirSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { createHash } from "node:crypto";
 
 const env = Object.fromEntries(
@@ -41,19 +47,41 @@ mkdirSync(OUT, { recursive: true });
 
 const EMAIL = "tianyou.demo@formae.test";
 const PASSWORD = "FormaeDemo2026!";
-const REGISTERS = ["ledger", "hearth", "blueprint", "swiss", "signboard", "counter"];
+/* 🔴 读的，不是抄的。第一版在这里手写了六个名字，而 `style-order.test.ts`
+   那条守卫抓的就是「第二份手写名单」—— 这个仓库栽在它上面至少六次
+   （最贵的一次：`build-style-scope.mjs` 藏了自己那份，於是新加一套风格
+   接通了九张型别表跟一个 migration，画出来的页面身上一个 token 都没有）。
+   是另一个 session 提交完他自己的东西之后指出来的，不是我自己发现的。 */
+const REGISTERS = (() => {
+  const src = readFileSync("app/[locale]/style-picker/style-column.tsx", "utf8");
+  const block = src.match(/export const STYLE_ORDER[^=]*=\s*\[([^\]]*)\]/);
+  if (!block) throw new Error("STYLE_ORDER 找不到了 —— style-column.tsx 搬家了？");
+  return [...block[1].matchAll(/"([a-z]+)"/g)].map((m) => m[1]);
+})();
 
 const api = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
   auth: { persistSession: false },
 });
 
+const MARK = `${OUT}/.was`;
+
 let browser, original = null, projectId = null;
 try {
   const { error } = await api.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
   if (error) throw new Error(`signIn: ${error.message}`);
+  /* 上一次没有收尾的话，先把它放回去，再读现在这一套 —— 顺序反了就会把
+     「上一次留下来的那一套」当成原本那一套存起来。 */
+  if (existsSync(MARK)) {
+    const stale = readFileSync(MARK, "utf8").trim();
+    if (stale) {
+      await api.rpc("set_project_style", { new_style: stale });
+      console.log(`上一次没有收尾 —— 先放回 ${stale}`);
+    }
+  }
   const { data: proj } = await api.from("projects").select("id, style").single();
   projectId = proj.id;
   original = proj.style;
+  writeFileSync(MARK, original ?? "");
   console.log(`原本那一套：${original}\n`);
 
   browser = await chromium.launch();

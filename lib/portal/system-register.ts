@@ -15,7 +15,7 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
  * **工作台不是那件事。** 一个老板一个礼拜之后就不看后台的漆了，
  * 而每加一个零件我们要做六次。所以后台收敛成一套，而那一套是他自己挑的：
  * `arhamkhnz/next-shadcn-admin-dashboard`（MIT · 同一个栈 · 有源代码）,
- * 逐项复刻在 [任务 120](../../docs/founder-tasks.md)。
+ * 逐项复刻在 [任务 138](../../docs/founder-tasks.md)。
  *
  * ── 为什么是一个常数，不是「把六套的后台层调成一样」 ────────────────────
  *

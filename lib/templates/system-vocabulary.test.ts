@@ -53,7 +53,7 @@ const instances = new Map<string, PuckNode[]>();
 function componentsOnEveryPage(): Map<string, string[]> {
   const seen = new Map<string, string[]>();
   for (const [slug, keys] of Object.entries(PAGES_FOR_INDUSTRY)) {
-    const ctx: BusinessContext = { industry: { slug, name_zh: slug, labels: {}, default_workflow: [], suggested_modules: [] } };
+    const ctx: BusinessContext = { industry: { slug, name_zh: slug, labels: { customer: "客户", order: "单", staff: "师傅" }, default_workflow: [], suggested_modules: [] } };
     const refs = keys.map((k) => ({ key: k }));
     for (const key of keys) {
       /* 官网不算 —— 那一页的样子还跟着客户挑的风格走，而这条守卫问的是

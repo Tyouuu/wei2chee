@@ -1,12 +1,16 @@
 import { notFound } from "next/navigation";
 import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
 import { StyleScope } from "@/design-system/editor/style-scope";
+/* 这三页只有工作台会开 —— 加一单 · 改这一单 · 搬旧资料。
+   客户挑的那一套（`ctx.style`）从 2026-09-04 起只管官网。 */
+import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
 import { loadRecordPage } from "../record-context";
 import { RECORD_COPY } from "../record-copy";
 import { todayInMalaysia } from "@/lib/portal/live-months";
 import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, unallocatedOf, type DocumentSettlement } from "@/lib/portal/allocations";
+import { jobProfit, type ProfitFact } from "@/lib/portal/profit";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { PartyHistory } from "../new/party-history";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
@@ -93,6 +97,11 @@ export default async function EditRecordPage({
   let branchId: string | null = null;
   /* 那笔钱是谁做的（20260904120000）。 */
   let doneBy: string | null = null;
+  /* 这笔钱是干什么的、属於哪一单（20260904200000）。
+     ⚠️ 两个都要读得回来，不然他每次打开都是空的 —— 而那会在下一次保存
+     的时候把它们清掉，而他不会知道自己刚刚把一笔成本从那一单上拿掉了。 */
+  let category: string | null = null;
+  let jobId: string | null = null;
   /* 工地的照片。⚠️ 网址是签出来的、会过期的 —— 桶是 private 的，
      因为那是他客户家里，不是官网（20260904010000）。 */
   let photos: JobPhoto[] = [];
@@ -129,6 +138,16 @@ export default async function EditRecordPage({
      ⚠️ null 的意思是**没有问**（他看不到钱），不是「零」—— 画面照这个
      决定要不要画那一整段。 */
   let settlement: DocumentSettlement | null = null;
+  /* 这一单赚多少 -- 收到的减挂在它身上的开销（20260904200000）。
+     ⚠️ `null` = **没有问**（这一页不是一张单，或者读的人看不到钱），
+     不是「没赚」。`ledger_entries` 是 sees_money，所以一个师傅拿回来的是
+     空的，而空的会算成「这一单赚了全额」-- 那时候整段不画，不是画 0。 */
+  let earned: {
+    paidCents: number;
+    costCents: number;
+    profitCents: number;
+    byCategory: { name: string | null; cents: number }[];
+  } | null = null;
 
   if (ctx.isDirectory) {
     const { data } = await supabase
@@ -475,7 +494,7 @@ export default async function EditRecordPage({
   } else if (ctx.shape === "ledger") {
     const { data } = await supabase
       .from("ledger_entries")
-      .select("id, doc_no, note, party, amount_cents, adjusts_id, branch_id, done_by, extra")
+      .select("id, doc_no, note, party, amount_cents, adjusts_id, branch_id, done_by, category, job_id, extra")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -498,6 +517,8 @@ export default async function EditRecordPage({
     /* 读得回来，不然他每次打开都是「没有指定」—— 而那会在下一次保存的
        时候把「谁做的」清掉，而他不会知道自己刚刚删掉了一个人的业绩。 */
     doneBy = data.done_by ?? null;
+    category = data.category ?? null;
+    jobId = data.job_id ?? null;
 
     /* 这笔钱已经分摊给哪几张单。⚠️ `ledger_allocations` 是 sees_money，
        所以一个师傅拿回来的是空的 —— 而他根本打不开这一页
@@ -631,6 +652,26 @@ export default async function EditRecordPage({
       });
     }
 
+    /* ── 这一单赚多少 ──────────────────────────────────────────────────
+       收到的那一边来自分摊（settleDocument 已经算好），花掉的那一边来自
+       挂在这张单上的开销。两边不是同一个机制，理由写在 profit.ts。
+       ⚠️ 只在**有钱**的单上算：一张任务单没有金额，一个「赚 RM 0」
+       印在它底下，讲的是一件它从来不是的事。 */
+    if (settlement && (data.amount_cents ?? 0) > 0) {
+      const { data: costRows } = await supabase
+        .from("ledger_entries")
+        .select("id, direction, amount_cents, entry_on, category, adjusts_id")
+        .eq("job_id", recordId);
+      /* ⚠️ 读不到就不画（`costRows` 是 undefined），跟读到空阵列不一样：
+         空阵列是「这一单还没有成本」，读不到是「我们没问出来」。 */
+      if (costRows) {
+        earned = jobProfit({
+          paidCents: settlement.paidCents,
+          costs: costRows as unknown as ProfitFact[],
+        });
+      }
+    }
+
     /* Whether goods from THIS order are already on a shelf. Read from the
        movements and not from the stage: the stage is a word the owner can type
        and change, the movements are the fact. */
@@ -708,7 +749,7 @@ export default async function EditRecordPage({
   }
 
   return (
-    <StyleScope register={ctx.style} palette={ctx.palette} className="min-h-screen">
+    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} className="min-h-screen">
       {/* Wider when there is a document beside the form. A quotation is the
           only thing this system makes that somebody outside the business
           reads, and 560px cannot hold the form and the paper. */}
@@ -740,12 +781,15 @@ export default async function EditRecordPage({
           partyDebts={ctx.partyDebts}
           branches={ctx.branches}
           staff={ctx.staff}
+          jobs={ctx.jobsForCost}
+          categories={ctx.categories}
           earnedLocked={pageKey === "staff"}
           earnedValue={tiers ? ringgit(earnedCents) ?? "RM 0" : null}
           photos={photos}
           changes={changes}
-          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, branchId, docNo, dueOn, doneBy }}
+          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, branchId, docNo, dueOn, doneBy, category, jobId }}
           settlement={settlement}
+          earned={earned}
           copy={copy.form}
         />
 

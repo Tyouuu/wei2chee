@@ -1,4 +1,7 @@
 import { StyleScope } from "@/design-system/editor/style-scope";
+/* 这三页只有工作台会开 —— 加一单 · 改这一单 · 搬旧资料。
+   客户挑的那一套（`ctx.style`）从 2026-09-04 起只管官网。 */
+import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
 import { loadRecordPage } from "../record-context";
 import { NewRecordForm } from "./new-record-form";
 import { RECORD_COPY } from "../record-copy";
@@ -42,7 +45,7 @@ export default async function NewRecordPage({
        just left, one click away, has to look like it.
 
        Found by looking at the screenshot. Every check passed first. */
-    <StyleScope register={ctx.style} palette={ctx.palette} className="min-h-screen">
+    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} className="min-h-screen">
       {/* Wider when there is a document beside the form -- 560px cannot
           hold both. Narrow everywhere else: a name list and a shelf make no
           paper, and a wide column of short boxes reads as a form with
@@ -75,6 +78,8 @@ export default async function NewRecordPage({
           partyDebts={ctx.partyDebts}
           branches={ctx.branches}
           staff={ctx.staff}
+          jobs={ctx.jobsForCost}
+          categories={ctx.categories}
           backHref={ctx.backHref}
           /* Only the strings. `heading` is a function, and a function cannot
              cross from a server component to a client one -- it renders as a
