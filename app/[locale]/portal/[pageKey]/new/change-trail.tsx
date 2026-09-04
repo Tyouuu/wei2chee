@@ -1,6 +1,7 @@
 "use client";
 
 import type { RecordFormCopy } from "../record-copy";
+import { FormSection } from "./form-section";
 import type { ShownChange } from "@/lib/portal/change-log";
 
 /**
@@ -37,10 +38,7 @@ export function ChangeTrail({
   if (!rows) return null;
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-        {copy.changes}
-      </span>
+    <FormSection title={copy.changes}>
 
       {rows.length === 0 ? (
         <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
@@ -78,6 +76,6 @@ export function ChangeTrail({
           ))}
         </div>
       )}
-    </div>
+    </FormSection>
   );
 }

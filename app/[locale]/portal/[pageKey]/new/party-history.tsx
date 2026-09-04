@@ -1,6 +1,7 @@
 "use client";
 
 import type { RecordFormCopy } from "../record-copy";
+import { FormSection } from "./form-section";
 import { ringgitOf } from "./line-editor";
 
 /**
@@ -44,10 +45,7 @@ export function PartyHistory({
   copy: RecordFormCopy;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-        {copy.historyHeading}
-      </span>
+    <FormSection title={copy.historyHeading}>
       {visits === 0 ? (
         <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
           {copy.historyNone}
@@ -69,6 +67,6 @@ export function PartyHistory({
           ) : null}
         </span>
       )}
-    </div>
+    </FormSection>
   );
 }

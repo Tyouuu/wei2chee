@@ -1,6 +1,7 @@
 "use client";
 
 import type { RecordFormCopy } from "../record-copy";
+import { FormSection } from "./form-section";
 import type { OpenDocument } from "../record-context";
 import { senOf, ringgitOf } from "./line-editor";
 
@@ -75,10 +76,7 @@ export function AllocationEditor({
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-        {copy.allocations}
-      </span>
+    <FormSection title={copy.allocations}>
 
       {/* 🔴 一张单都没有的时候，讲出来为什么，不要画一个空的下拉。
           「没有单可以分」跟「读不到」在画面上长得一模一样，而这一句分得开。 */}
@@ -199,6 +197,6 @@ export function AllocationEditor({
           ) : null}
         </div>
       ) : null}
-    </div>
+    </FormSection>
   );
 }

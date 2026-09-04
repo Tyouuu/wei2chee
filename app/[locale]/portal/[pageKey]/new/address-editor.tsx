@@ -1,6 +1,7 @@
 "use client";
 
 import type { RecordFormCopy } from "../record-copy";
+import { FormSection } from "./form-section";
 
 /**
  * 帐单一个地方，工地另一个，而且可能有两三个工地。
@@ -78,10 +79,7 @@ export function AddressEditor({
     );
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-        {copy.addresses}
-      </span>
+    <FormSection title={copy.addresses}>
 
       {rows.map((row, i) => (
         <div
@@ -142,6 +140,6 @@ export function AddressEditor({
       >
         ＋ {copy.addrAdd}
       </button>
-    </div>
+    </FormSection>
   );
 }

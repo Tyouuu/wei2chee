@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { RecordFormCopy } from "../record-copy";
+import { FormSection } from "./form-section";
 
 /**
  * 工地的照片。
@@ -148,10 +149,7 @@ export function JobPhotos({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-        {copy.photos}
-      </span>
+    <FormSection title={copy.photos}>
 
       {/* 🔴 还没存过的单，讲出来为什么不能挂，不要画一颗按下去会失败的按钮。 */}
       {!recordId ? (
@@ -233,6 +231,6 @@ export function JobPhotos({
           {error}
         </p>
       ) : null}
-    </div>
+    </FormSection>
   );
 }

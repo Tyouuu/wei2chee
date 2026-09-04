@@ -763,13 +763,12 @@ export default async function EditRecordPage({
           ctx.shape === "pipeline" ? "max-w-[1080px]" : "max-w-[560px]"
         }`}
       >
-        <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-          {copy.editHeading(ctx.title)}
-        </h1>
-        <p className="mt-1 mb-7 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-          {archivedAt ? copy.form.archived : copy.editLede}
-        </p>
+        {/* 🔴 标题跟那一句说明交给表单画（2026-09-04）。参考页的主要动作
+            在标题右边，而那颗按钮要知道「现在正在存」—— 这一页是伺服器画的，
+            读不到那件事。所以标题跟按钮住在一起。 */}
         <NewRecordForm
+          heading={copy.editHeading(ctx.title)}
+          lede={archivedAt ? copy.form.archived : copy.editLede}
           projectId={ctx.projectId}
           moduleKey={ctx.pageKey}
           received={received}

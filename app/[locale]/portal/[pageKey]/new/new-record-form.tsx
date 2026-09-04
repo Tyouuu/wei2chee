@@ -96,6 +96,9 @@ function senFrom(text: string): number | undefined {
 }
 
 
+/** 标题旁边那颗按钮要指得到这张表单，而它画在表单外面。 */
+const FORM_ID = "record-form";
+
 export function NewRecordForm({
   projectId,
   moduleKey,
@@ -123,6 +126,8 @@ export function NewRecordForm({
   settlement,
   earned,
   backHref,
+  heading,
+  lede,
   copy,
 }: {
   projectId: string;
@@ -253,6 +258,20 @@ export function NewRecordForm({
     byCategory: { name: string | null; cents: number }[];
   } | null;
   backHref: string;
+  /**
+   * 这一页的标题跟那一句说明。
+   *
+   * 🔴 **为什么它们从页面搬进这个元件里**（2026-09-04，照 arhamkhnz 的
+   * `dashboard/invoice`）：参考页的主要动作在**标题右边**，不在表单底下。
+   * 而那颗按钮要知道「现在正在存」（存的时候变成「保存中…」并且按不下去），
+   * 那件事只有这个元件知道 —— 页面是伺服器画的，读不到它。
+   *
+   * 所以标题跟按钮住在一起。⚠️ 传进来的是**算好的字**，不是产生它的函式：
+   * 函式过不了从伺服器到浏览器那一关，页面第一次打开就是一片「出错了」，
+   * 而这件事就是这样被发现的（见页面档里那段注解）。
+   */
+  heading?: string;
+  lede?: React.ReactNode;
   copy: RecordFormCopy;
 }) {
   const router = useRouter();
@@ -1194,14 +1213,46 @@ export function NewRecordForm({
     />
   ) : null;
 
+  /* 存档那颗。同一颗画两个地方，宽的时候在标题右边、窄的时候在表单底下 ——
+     两个地方永远只有一个看得见（另一个是 display:none，读屏也读不到它）。
+
+     ⚠️ **窄的时候不放上面**，而这是判断不是偷懒：参考页那张表单只有八格，
+     我们这一张有明细 · 分期 · 照片 · 分摊，手机上要滚很久。一个滚到底
+     填完最后一格的人，要再滚回最上面才存得了 —— 那不是复刻，那是把一个
+     在 1440 成立的决定，搬到一个它不成立的宽度上。 */
+  const saveButton = (
+    <button
+      type="submit"
+      form={FORM_ID}
+      disabled={busy}
+      className="inline-flex h-11 shrink-0 items-center [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [color:var(--color-on-primary)] [background-color:var(--color-primary)] transition-colors [transition-duration:var(--dur)] hover:[background-color:var(--color-primary-deep)] disabled:opacity-60"
+    >
+      {busy ? copy.saving : copy.save}
+    </button>
+  );
+
   return (
+    <>
+    {heading ? (
+      <div className="mb-7 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            {heading}
+          </h1>
+          <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+            {lede}
+          </p>
+        </div>
+        <div className="hidden @3xl:block">{saveButton}</div>
+      </div>
+    ) : null}
     <div className={paper ? "grid gap-8 lg:grid-cols-2 lg:gap-10" : undefined}>
     {/* 🔴 表单住进一张卡里（2026-09-04，照 arhamkhnz 的 dashboard/invoice）。
         它本来是一串标签跟输入框直接躺在页面的地上 —— 而参考页那一边是
         **一张白卡**，纸在右边、表单在左边，两块对称。
         没有卡的时候，左边读起来不是「一份要填的东西」，是「一些散落的框」，
         而右边那张纸有边有影，两边看起来像两个不同的产品。 */}
-    <form onSubmit={submit} className="ds-card flex flex-col gap-4 [padding:var(--pad-card-lg)]">
+    <form id={FORM_ID} onSubmit={submit} className="ds-card flex flex-col gap-4 [padding:var(--pad-card-lg)]">
       {shown.map((c) => {
         if (c.key === "status" && stages.length) {
           return (
@@ -1666,13 +1717,12 @@ export function NewRecordForm({
       ) : null}
 
       <div className="mt-2 flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={busy}
-          className="inline-flex h-11 shrink-0 items-center [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [color:var(--color-on-primary)] [background-color:var(--color-primary)] transition-colors [transition-duration:var(--dur)] hover:[background-color:var(--color-primary-deep)] disabled:opacity-60"
-        >
-          {busy ? copy.saving : copy.save}
-        </button>
+        {/* 🔴 底下这一颗，在**有纸的那几页留着**（报价单 · 订单 · 进货单）。
+            看图量的：那一张填完是 1,400px 高，滚到最后一格的人眼前只剩一颗
+            「取消」—— 一张长表最底下最显眼的东西是取消，那是一个陷阱。
+            短的那几页（客户 · 收款 · 货品）只有上面那一颗，跟参考页一样：
+            那几页一屏就看得完，两颗存档会同时出现在眼睛里。 */}
+        <div className={heading && !paper ? "@3xl:hidden" : undefined}>{saveButton}</div>
         <a href={backHref} className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)] underline">
           {copy.cancel}
         </a>
@@ -1738,5 +1788,6 @@ export function NewRecordForm({
     </form>
     {paper}
     </div>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import type { RecordFormCopy } from "../record-copy";
+import { FormSection } from "./form-section";
 import { ringgitOf } from "./line-editor";
 
 /**
@@ -48,20 +49,22 @@ export function PartyJobs({
   copy: RecordFormCopy;
 }) {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-4">
-        <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-          {copy.theirJobs}
-        </span>
-        {owing != null && owing > 0 ? (
+    <FormSection
+      title={copy.theirJobs}
+      /* 「他还欠多少」画在标题右边 —— 那一段自己的一句话，跟明细那一段的
+         「＋ 加一行」站同一个位子。⚠️ `owing` 是 null 的意思是**没有问**
+         （师傅看不到钱），不是零，所以整句不画。 */
+      action={
+        owing != null && owing > 0 ? (
           <span className="[font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas-dim)]">
             {copy.theirOwing}{" "}
             <span className="[font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
               {ringgitOf(owing)}
             </span>
           </span>
-        ) : null}
-      </div>
+        ) : null
+      }
+    >
 
       {jobs.length === 0 ? (
         <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
@@ -93,6 +96,6 @@ export function PartyJobs({
           ))}
         </div>
       )}
-    </div>
+    </FormSection>
   );
 }

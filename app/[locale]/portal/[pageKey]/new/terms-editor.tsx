@@ -1,6 +1,7 @@
 "use client";
 
 import type { RecordFormCopy } from "../record-copy";
+import { FormSection, sectionAdd } from "./form-section";
 import { priceSchedule, type PaymentTerm } from "@/lib/portal/payment-terms";
 import { senOf, ringgitOf } from "./line-editor";
 
@@ -110,10 +111,29 @@ export function TermsEditor({
   const priced = priceRows(rows, totalCents);
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-        {copy.terms}
-      </span>
+    <FormSection
+      title={copy.terms}
+      /* 「＋ 加一期」跟「照这一行的惯例填」搬到标题右边 —— 跟明细那一段
+         同一个做法，因为在参考页上每一段都是同一个形状。 */
+      action={
+        <>
+          <button type="button" onClick={() => onChange([...rows, blankTerm()])} className={sectionAdd}>
+            ＋ {copy.termAdd}
+          </button>
+          {/* 这一行的惯例。⚠️ 是一颗他要按的按钮，不是一个预设 ——
+              一份他没有同意过的付款办法印在客人手上那张纸上，比没有分期表严重。 */}
+          {suggested && rows.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => onChange(suggested.map((t) => ({ ...t })))}
+              className="inline-flex min-h-9 items-center [border-radius:var(--radius-md)] border px-3 [font-size:var(--text-sm)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)] hover:[border-color:var(--color-primary)] hover:text-[color:var(--color-on-canvas)]"
+            >
+              {copy.termSuggest}
+            </button>
+          ) : null}
+        </>
+      }
+    >
 
       {rows.map((row, i) => {
         /* termsForDb 会丢掉写不完整的行，所以位置对不上 —— 用名字对回来。 */
@@ -194,33 +214,11 @@ export function TermsEditor({
         );
       })}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onChange([...rows, blankTerm()])}
-          className="[border-radius:var(--radius-md)] border border-dashed px-3 py-2 [font-size:var(--text-sm)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)] hover:[border-color:var(--color-primary)] hover:text-[color:var(--color-on-canvas)]"
-        >
-          ＋ {copy.termAdd}
-        </button>
-
-        {/* 这一行的惯例。⚠️ 是一颗他要按的按钮，不是一个预设 ——
-            一份他没有同意过的付款办法印在客人手上那张纸上，比没有分期表严重。 */}
-        {suggested && rows.length === 0 ? (
-          <button
-            type="button"
-            onClick={() => onChange(suggested.map((t) => ({ ...t })))}
-            className="[border-radius:var(--radius-md)] border px-3 py-2 [font-size:var(--text-sm)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)] hover:[border-color:var(--color-primary)] hover:text-[color:var(--color-on-canvas)]"
-          >
-            {copy.termSuggest}
-          </button>
-        ) : null}
-
-        {priced.terms.length && priced.documentCents != null ? (
-          <span className="ml-auto [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-on-canvas)]">
-            {copy.lineTotal} {ringgitOf(priced.totalCents)}
-          </span>
-        ) : null}
-      </div>
+      {priced.terms.length && priced.documentCents != null ? (
+        <span className="self-end [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-on-canvas)]">
+          {copy.lineTotal} {ringgitOf(priced.totalCents)}
+        </span>
+      ) : null}
 
       {/* 🔴 加不起来就讲出来。不偷偷补，也不挡他保存 —— 一张写到一半的
           分期表是常态（订金先谈好，余额下星期再算）。
@@ -235,6 +233,6 @@ export function TermsEditor({
           {copy.termMismatch} {ringgitOf(Math.abs(priced.differenceCents ?? 0))}
         </p>
       ) : null}
-    </div>
+    </FormSection>
   );
 }

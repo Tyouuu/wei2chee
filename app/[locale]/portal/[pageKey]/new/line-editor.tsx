@@ -1,6 +1,7 @@
 "use client";
 
 import type { RecordFormCopy } from "../record-copy";
+import { FormSection, sectionAdd } from "./form-section";
 
 /**
  * 逐项明细 — the lines of one document, edited as a block.
@@ -67,6 +68,10 @@ export function ringgitOf(cents: number): string {
   })}`;
 }
 
+/** 每一格上面那个小名字。参考页上它是一行灰色小字，不是大写字母。 */
+const cell =
+  "[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]";
+
 const control =
   "ds-control h-10 w-full min-w-0 [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]";
 
@@ -97,24 +102,42 @@ export function LineEditor({
   const total = totalOf(lines);
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-        {copy.lines}
-      </span>
-
+    <FormSection
+      title={copy.lines}
+      /* 「＋ 加一行」搬到标题右边（2026-09-04，照 arhamkhnz 的
+         `Invoice Items ＋Add Item`）。它本来画在明细底下，跟内容一样重 ——
+         一段的动作跟一段的内容长得一样，读起来就是分不出哪一句是标题。 */
+      action={
+        <button type="button" onClick={() => onChange([...lines, blankLine()])} className={sectionAdd}>
+          ＋ {copy.lineAdd}
+        </button>
+      }
+    >
       {lines.map((line, i) => (
         <div
           key={i}
           className="flex flex-col gap-2 [border-radius:var(--radius-md)] border p-3 [border-color:var(--color-ink-800)]"
         >
-          <div className="flex items-start gap-2">
-            <input
-              aria-label={copy.lineWhat}
-              placeholder={copy.lineWhat}
-              value={line.description}
-              onChange={(e) => set(i, { description: e.target.value })}
-              className={control}
-            />
+          {/* 🔴 每一格的名字画在框**外面**，不是当提示字画在框里面。
+              提示字一打字就不见了 —— 所以一张填好的单，五个框一个名字都没有，
+              而那正是参考页上那一行 Description / Units / Unit cost / Line Total
+              在回答的事。
+
+              ⚠️ 参考页是**一行一列、上面一条共用的表头**，我们做不到：
+              量过，这张卡的内容宽只有 ~470px（1080 的版面对半再扣内距），
+              而我们比他们多一个「单位」栏（他们的 Units 是数量，我们的
+              「单位」是包/箱）。五栏挤进 470px，最长的那一栏只剩 90px。
+              所以名字跟着框走，一行明细就是一小张表。 */}
+          <div className="flex items-end gap-2">
+            <label className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className={cell}>{copy.lineWhat}</span>
+              <input
+                aria-label={copy.lineWhat}
+                value={line.description}
+                onChange={(e) => set(i, { description: e.target.value })}
+                className={control}
+              />
+            </label>
             <button
               type="button"
               aria-label={copy.lineRemove}
@@ -124,58 +147,61 @@ export function LineEditor({
               ×
             </button>
           </div>
-          {/* 数量 · 单位 · 单价 · 金额 on one row at 390px too: four narrow
-              boxes read as one line of a quotation, which is what they are. */}
-          <div className="flex items-center gap-2">
-            <input
-              aria-label={copy.lineQty}
-              placeholder={copy.lineQty}
-              inputMode="decimal"
-              value={line.qty}
-              onChange={(e) => set(i, { qty: e.target.value })}
-              className={`${control} basis-[18%]`}
-            />
-            <input
-              aria-label={copy.lineUnit}
-              placeholder={copy.lineUnit}
-              value={line.unit}
-              onChange={(e) => set(i, { unit: e.target.value })}
-              className={`${control} basis-[18%]`}
-            />
-            <input
-              aria-label={copy.linePrice}
-              placeholder={copy.linePrice}
-              inputMode="decimal"
-              value={line.unitPrice}
-              onChange={(e) => set(i, { unitPrice: e.target.value })}
-              className={`${control} basis-[30%]`}
-            />
-            <input
-              aria-label={copy.lineAmount}
-              placeholder={copy.lineAmount}
-              inputMode="decimal"
-              value={line.amount}
-              onChange={(e) => set(i, { amount: e.target.value })}
-              className={`${control} basis-[34%]`}
-            />
+          {/* 🔴 手机上排成两排两个，不是四个挤在一行。
+              **那一行本来是故意的**（「四个窄框读起来就是一行报价」），
+              而看图看到它的代价：390 的时候「lot」被切成「lo」、
+              「RM 3,000」被切成「RM 3,00」——**一个被切断的金额，
+              读起来是一个错的数字**，比多占一排严重得多。
+              宽的时候还是一行，那一句原话在那个宽度上是对的。 */}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end">
+            <label className="flex min-w-0 flex-col gap-1 sm:basis-[18%]">
+              <span className={cell}>{copy.lineQty}</span>
+              <input
+                aria-label={copy.lineQty}
+                inputMode="decimal"
+                value={line.qty}
+                onChange={(e) => set(i, { qty: e.target.value })}
+                className={control}
+              />
+            </label>
+            <label className="flex min-w-0 flex-col gap-1 sm:basis-[18%]">
+              <span className={cell}>{copy.lineUnit}</span>
+              <input
+                aria-label={copy.lineUnit}
+                value={line.unit}
+                onChange={(e) => set(i, { unit: e.target.value })}
+                className={control}
+              />
+            </label>
+            <label className="flex min-w-0 flex-col gap-1 sm:basis-[30%]">
+              <span className={cell}>{copy.linePrice}</span>
+              <input
+                aria-label={copy.linePrice}
+                inputMode="decimal"
+                value={line.unitPrice}
+                onChange={(e) => set(i, { unitPrice: e.target.value })}
+                className={control}
+              />
+            </label>
+            <label className="flex min-w-0 flex-col gap-1 sm:basis-[34%]">
+              <span className={cell}>{copy.lineAmount}</span>
+              <input
+                aria-label={copy.lineAmount}
+                inputMode="decimal"
+                value={line.amount}
+                onChange={(e) => set(i, { amount: e.target.value })}
+                className={control}
+              />
+            </label>
           </div>
         </div>
       ))}
 
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onChange([...lines, blankLine()])}
-          className="[border-radius:var(--radius-md)] border border-dashed px-3 py-2 [font-size:var(--text-sm)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)] hover:[border-color:var(--color-primary)] hover:text-[color:var(--color-on-canvas)]"
-        >
-          ＋ {copy.lineAdd}
-        </button>
-        {lines.length ? (
-          <span className="ml-auto [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)] tabular-nums">
-            {copy.lineTotal} {ringgitOf(total)}
-          </span>
-        ) : null}
-      </div>
-    </div>
+      {lines.length ? (
+        <span className="self-end [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)] tabular-nums">
+          {copy.lineTotal} {ringgitOf(total)}
+        </span>
+      ) : null}
+    </FormSection>
   );
 }
