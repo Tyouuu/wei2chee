@@ -152,6 +152,92 @@ try {
     again.find((r) => r.record_id === po.id)?.problem === "arrived_not_paid",
     again.find((r) => r.record_id === po.id)?.problem);
 
+  /* ── ⑦ 叫 100，来 90 ──────────────────────────────────────────────── */
+  console.log("\n⑦ 叫 100 包，来 90 包");
+  const { data: po3 } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases",
+    in_title: "Second load", in_party: "Seng Huat", in_amount_cents: 185_000,
+  });
+  const { data: lines3 } = await c.rpc("set_record_lines", {
+    in_record_id: po3.id,
+    in_lines: [{ description: "Cement 50kg", qty: "100", unit: "bags",
+                 unit_price_cents: "1850", amount_cents: "185000" }],
+  });
+  const line3 = lines3[0].id;
+
+  const { data: half } = await c.rpc("receive_purchase", {
+    in_record_id: po3.id,
+    in_received: [{ line_id: line3, qty: 90 }],
+  });
+  const h = (half ?? [])[0];
+  check("🔴 只收 90，不是照单上的 100", Number(h?.moved) === 1 && Number(h?.short) === 1,
+    JSON.stringify(h));
+  check("🔴 而且单**没有**变成「到货了」（还差 10）",
+    !/Received|到货/.test(h?.stage ?? ""), h?.stage);
+
+  const onShelf = async () => {
+    const { data } = await c.from("stock_on_hand").select("name, on_hand").eq("project_id", P);
+    return Number((data ?? []).find((r) => r.name === "Cement 50kg")?.on_hand ?? NaN);
+  };
+  const after90 = await onShelf();
+
+  /* 🔴 「叫了多少」没有被覆盖掉 —— 那正是今天他要手改单才做得到的事。 */
+  const { data: keptLines } = await c
+    .from("record_lines").select("qty").eq("record_id", po3.id);
+  check("🔴 单上还是写着叫了 100（他没有被逼去改掉它）",
+    Number(keptLines?.[0]?.qty) === 100, `${keptLines?.[0]?.qty}`);
+
+  /* 下个礼拜剩下那 10 包来了。 */
+  const { data: rest } = await c.rpc("receive_purchase", { in_record_id: po3.id });
+  const r2 = (rest ?? [])[0];
+  check("🔴 剩下那 10 包收得进来（一行不只准一笔了）",
+    Number(r2?.moved) === 1 && Number(r2?.short) === 0, JSON.stringify(r2));
+  check("这一次才走到「到货了」", /Received|到货/.test(r2?.stage ?? ""), r2?.stage);
+  check("架上刚好多了 100（90 + 10）", (await onShelf()) === after90 + 10,
+    `${await onShelf()} vs ${after90}`);
+
+  /* 再按一次，什么都不该再进。 */
+  const { data: r3 } = await c.rpc("receive_purchase", { in_record_id: po3.id });
+  check("收齐之后再按，一件都不动", Number((r3 ?? [])[0]?.moved) === 0,
+    JSON.stringify(r3));
+
+  /* 同一次按两下（同一把钥匙）—— 只进一次。 */
+  const { data: po4 } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases",
+    in_title: "Third load", in_party: "Seng Huat", in_amount_cents: 10_000,
+  });
+  const { data: lines4 } = await c.rpc("set_record_lines", {
+    in_record_id: po4.id,
+    in_lines: [{ description: "Cement 50kg", qty: "5", unit: "bags" }],
+  });
+  const key = crypto.randomUUID();
+  const before4 = await onShelf();
+  await c.rpc("receive_purchase", {
+    in_record_id: po4.id, in_received: [{ line_id: lines4[0].id, qty: 5 }],
+    in_idempotency_key: key,
+  });
+  await c.rpc("receive_purchase", {
+    in_record_id: po4.id, in_received: [{ line_id: lines4[0].id, qty: 5 }],
+    in_idempotency_key: key,
+  });
+  check("🔴 同一次按两下，只进一次", (await onShelf()) === before4 + 5,
+    `${await onShelf()} vs ${before4}`);
+
+  /* 来多了也照收，然后讲出来。 */
+  const { data: po5 } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases",
+    in_title: "Over load", in_party: "Seng Huat", in_amount_cents: 10_000,
+  });
+  const { data: lines5 } = await c.rpc("set_record_lines", {
+    in_record_id: po5.id,
+    in_lines: [{ description: "Cement 50kg", qty: "5", unit: "bags" }],
+  });
+  const { data: overGot } = await c.rpc("receive_purchase", {
+    in_record_id: po5.id, in_received: [{ line_id: lines5[0].id, qty: 8 }],
+  });
+  check("🔴 供应商多送了也照收，然后讲出来",
+    Number((overGot ?? [])[0]?.over) === 1, JSON.stringify(overGot));
+
   /* ── ⑥ 谁看得到 ───────────────────────────────────────────────────── */
   console.log("\n⑥ 谁看得到");
   /* ⚠️ 第一版我拿 `po2` 来测「不是进货单」—— 而 po2 就是一张进货单，
