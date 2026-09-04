@@ -497,6 +497,55 @@ try {
   check("师傅打得了卡", !staffPunch, staffPunch?.message?.slice(0, 80));
 
 
+  // ⓪ 🔴 NULL 不是 FALSE ───────────────────────────────────
+  //
+  // 2026-09-04，做薪资地基的时候撞到的一个**已经上线的洞**：
+  //
+  //     sees_money = my_role(...) = 'owner'
+  //
+  // 一个不属於这个专案的人，`my_role` 回 null，而 **`null = 'owner'` 是 null**。
+  // 然后 `if not null then raise` —— **什么都不做。守卫是开着的。**
+  //
+  // 实测到的：一个陌生人改掉了别人师傅的薪水，**而且把那个人的
+  // 公积金类别清成了 null** —— 下一次发薪那个人一分公积金都不会被扣。
+  //
+  // ⚠️ `works_here` 没事，而那是这件事里最要紧的一句：
+  // 它是 `is not null`，永远回真正的布林。**一个字的差别，两种失败方向。**
+  //
+  // 而 policy 那一边一直是安全的：RLS 把 null 当成「不给」（失败方向是关的），
+  // 而 plpgsql 把 null 当成「不用挡」（失败方向是开的）。同一支函式，两个相反的结果。
+  console.log("");
+  console.log("⓪ null 不是 false");
+
+  const smStranger = await O.rpc("sees_money", { in_project_id: P });
+  check("🔴 陌生人问 sees_money，拿到的是 false，不是 null",
+    smStranger.data === false, JSON.stringify(smStranger.data));
+  const whStranger = await O.rpc("works_here", { in_project_id: P });
+  check("works_here 也一样", whStranger.data === false, JSON.stringify(whStranger.data));
+
+  /* 两支已经上线的、用同一个形状守门的函式。
+     它们在 2026-09-04 之前对陌生人是开着的。 */
+  const { error: strangerBranch } = await O.rpc("add_branch", {
+    in_project_id: P, in_name: "Stranger's shop",
+  });
+  check("🔴 陌生人开不了我的分店", !!strangerBranch,
+    "a stranger opened a branch in my business");
+
+  /* ⚠️ 这一条**没有**跟着红过，而那是一件值得写下来的事：
+     `set_commission_tiers` 用的是 `select exists (... where sees_money(...))`，
+     而 **WHERE 里的 null 是「不符合」** —— 失败方向是关的。
+     只有 `if not sees_money(...) then raise` 那个形状会开。
+     所以它是一条**性质**的断言，不是那个洞的回归守卫 ——
+     真正守那个洞的是上面第一条（sees_money 回 false 不回 null）。 */
+  const { error: strangerTiers } = await O.rpc("set_commission_tiers", {
+    in_party_id: (await admin.from("directory_entries").select("id")
+      .eq("project_id", P).eq("module_key", "staff").limit(1).single()).data?.id,
+    in_tiers: [{ from_cents: 0, percent: 99 }],
+  });
+  check("🔴 陌生人设不了我师傅的抽成", !!strangerTiers,
+    "a stranger set my staff's commission");
+
+
 } catch (e) {
   failures.push(`threw: ${e.message}`);
   console.log(`\n  FAIL  ${e.message}`);
