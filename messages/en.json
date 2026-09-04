@@ -305,9 +305,12 @@
       "recommendedBadge": "Suits your industry"
     },
     "editor": {
-      "paywallTitle": "Your design is ready",
-      "paywallBody": "Pay to save your design.",
-      "paywallCta": "Contact us to pay",
+      "handoffTitle": "Hand it to us",
+      "handoffBody": "Your design is saved. Tell us anything else you want and we will see it.",
+      "handoffPhoneLabel": "Your WhatsApp number (optional)",
+      "handoffNoteLabel": "Anything else you want? (optional)",
+      "handoffSend": "Send it",
+      "handoffSending": "Sending...",
       "backToEditing": "Back to editing",
       "saveSuccess": "Saved",
       "saveError": "Save failed, please try again.",
@@ -723,6 +726,8 @@
         "building": "Building",
         "live": "Live"
       },
+      "handoffsTitle": "Handed to us",
+      "noHandoffs": "Nobody has pressed hand-it-over yet.",
       "customersTitle": "Customers",
       "noCustomers": "No customers yet.",
       "colBusiness": "Business",

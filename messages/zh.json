@@ -305,9 +305,12 @@
       "recommendedBadge": "适合你的行业"
     },
     "editor": {
-      "paywallTitle": "你的设计已经准备好了",
-      "paywallBody": "付款后即可保存你的设计。",
-      "paywallCta": "联系我们付款",
+      "handoffTitle": "交给我们建",
+      "handoffBody": "你的设计已经存好了。还想要什么写在这里，我们会看到。",
+      "handoffPhoneLabel": "你的 WhatsApp 号码（可以不填）",
+      "handoffNoteLabel": "还想要什么功能？（可以不填）",
+      "handoffSend": "送出",
+      "handoffSending": "送出中…",
       "backToEditing": "返回编辑",
       "saveSuccess": "已保存",
       "saveError": "保存失败，请重试。",
@@ -723,6 +726,8 @@
         "building": "建设中",
         "live": "已上线"
       },
+      "handoffsTitle": "交给我们建的",
+      "noHandoffs": "还没有人按过「交给我们建」。",
       "customersTitle": "客户",
       "noCustomers": "还没有客户。",
       "colBusiness": "生意",

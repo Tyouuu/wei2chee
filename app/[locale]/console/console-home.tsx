@@ -29,6 +29,19 @@ type Customer = {
   updated_at: string | null;
 };
 
+/** 一次「交给我去建」。见 20260905410000 · 任务 159。 */
+type Handoff = {
+  id: string;
+  project_id: string;
+  business_name: string | null;
+  owner_name: string | null;
+  email: string;
+  contact_phone: string | null;
+  stage: string;
+  note: string | null;
+  created_at: string;
+};
+
 const money = (n: number) => `RM ${Number(n || 0).toLocaleString("en-MY")}`;
 
 /*
@@ -91,10 +104,12 @@ export function ConsoleHome({
   locale,
   overview,
   customers,
+  handoffs,
 }: {
   locale: string;
   overview: Record<string, unknown>;
   customers: Customer[];
+  handoffs: Handoff[];
 }) {
   const t = useTranslations("portal.console");
   const router = useRouter();
@@ -311,6 +326,66 @@ export function ConsoleHome({
                 })}
               </p>
             </>
+          )}
+        </section>
+
+        {/* 谁按了「交给我去建」。
+            🔴 这一段排在客户名单**前面**，因为它是唯一一份「现在要我做事」
+            的清单 —— 客户名单是存量，这一份是待办。
+            号码画出来是因为那是我们拿不到第二次的东西（任务 48）：
+            注册只有 email，而这个市场的管道是 WhatsApp。 */}
+        <section className="mt-9">
+          <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+            {t("handoffsTitle")}
+            <span className="ml-2 opacity-60">{handoffs.length}</span>
+          </h2>
+
+          {handoffs.length === 0 ? (
+            <p className="mt-4 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+              {t("noHandoffs")}
+            </p>
+          ) : (
+            <ul className="mt-4 flex flex-col gap-2">
+              {handoffs.map((h) => (
+                <li
+                  key={h.id}
+                  className="rounded-[var(--radius-md)] border px-4 py-3 [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]"
+                >
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <Link
+                      href={`/${locale}/console/${h.project_id}`}
+                      className="[font-weight:var(--fw-semibold)] hover:underline"
+                    >
+                      {h.business_name || h.owner_name || h.email}
+                    </Link>
+                    {/* 有号码就画一条打得出去的连结，没有就画 email —— 
+                        一个假的号码比没有号码糟，所以跳过的那一格留空。 */}
+                    {h.contact_phone ? (
+                      <a
+                        href={`https://wa.me/${h.contact_phone.replace(/[^\d]/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="[font-family:var(--font-numeric)] [font-size:var(--text-sm)] [color:var(--color-jade-bright)] hover:underline"
+                      >
+                        {h.contact_phone}
+                      </a>
+                    ) : (
+                      <span className="[font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
+                        {h.email}
+                      </span>
+                    )}
+                    <span className="ml-auto [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                      {fmtDate(h.created_at)}
+                    </span>
+                  </div>
+                  {h.note ? (
+                    <p className="mt-1.5 whitespace-pre-wrap [font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
+                      {h.note}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 

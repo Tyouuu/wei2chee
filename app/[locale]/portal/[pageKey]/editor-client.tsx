@@ -86,7 +86,7 @@ const CANVAS_SCOPE_CLASS: Record<StyleName, string> = {
   counter: styles.counter,
 };
 
-type SaveState = "idle" | "saving" | "saved" | "error" | "paywall";
+type SaveState = "idle" | "saving" | "saved" | "error";
 
 /** The order the eight registers are offered in, oldest and plainest first --
  *  the same order /portal/styles uses, so a customer who has seen that page
@@ -152,10 +152,13 @@ export function PortalEditor({
    * with no link back to the signup email, so without this the founder gets
    * an anonymous "I want to pay" message and no way to find the account. */
   accountEmail: string;
-  /** projects.paid (Task 1) -- save_project_page raises "payment required"
-   * server-side for an unpaid project (the real enforcement), but the
-   * paywall interstitial below is shown client-side off this prop so an
-   * unpaid customer sees a purpose-built CTA instead of a raw error. */
+  /** projects.paid.
+   *
+   * 🔴 2026-09-05：这一栏**不再挡任何人保存**（20260905410000 拆掉了
+   * save_project_page 里那个 payment required，理由见任务 159）。
+   * 它还留着，因为还有两个读者：console 算营收，跟那条
+   * 「stage='paid' 就一定 paid」的约束 —— 它现在只记着
+   * 「这一单收到钱了没有」，不再决定客户做得了什么。 */
   paid: boolean;
   initialData: Record<string, unknown>;
   /** True when `initialData` is the system generated from the customer's own
@@ -238,6 +241,10 @@ export function PortalEditor({
   // just on mount. Doesn't need to survive a reload: the Deploy button is a
   // WhatsApp handoff a customer clicks once, right after saving.
   const [hasSavedOnce, setHasSavedOnce] = useState(false);
+  /** 交接：idle → asking（问一格号码、一句想要什么）→ sending */
+  const [handoff, setHandoff] = useState<"idle" | "asking" | "sending">("idle");
+  const [handoffPhone, setHandoffPhone] = useState("");
+  const [handoffNote, setHandoffNote] = useState("");
 
   // THE STYLE IS CHANGED HERE AGAIN, AND WITHOUT LEAVING THE PAGE.
   //
@@ -569,8 +576,16 @@ export function PortalEditor({
   // device-local copy in the old shape. The null test stays OUTSIDE the upgrade
   // -- `upgradeLayout({})` returns `{}`, which is truthy, and would quietly turn
   // "no draft on this device" into an empty canvas.
+  //
+  // 🔴 2026-09-05：这一条的钥匙从 `!paid` 换成 `isGeneratedDraft`。
+  // 上面整段讲的前提（「没付款的客户没有伺服器保存」）从今天起是假的 ——
+  // 20260905410000 把那道闸拆了，**每一个人都存得进伺服器**。
+  // 而它描述的那个 bug（一份过期的本机草稿赢过比较新的伺服器那一行）
+  // 从今天起会咬到没付款的客户，因为他们也有伺服器那一行了。
+  // 所以问的换成「伺服器上那一行是不是还只是自动生成的初稿」——
+  // 那才是「本机这一份是唯一的东西」真正的条件。
   const localDraft =
-    hydrated && !paid ? readLocalDraft(projectId, pageKey) : null;
+    hydrated && isGeneratedDraft ? readLocalDraft(projectId, pageKey) : null;
   const startingData = localDraft
     ? (upgradeLayout(localDraft, systemLang) as Data)
     : (initialData as Data);
@@ -589,11 +604,11 @@ export function PortalEditor({
     // than no indicator: it asserts something untrue about their data.
     setSaveState((prev) => (prev === "saved" ? "idle" : prev));
 
-    // AUTOSAVE. Paid only, and not defensively: an unpaid customer has no
-    // server-side save at all (save_project_page raises "payment required"), so
-    // a background attempt would either throw on a timer or -- worse -- raise
-    // the paywall overlay over a canvas the customer is in the middle of
-    // editing, without them having pressed anything.
+    // AUTOSAVE.
+    //
+    // 🔴 2026-09-05：「只有付款的才自动保存」那一条拿掉了。它的理由
+    // （没付款的人根本存不进去）在 20260905410000 之后不成立。
+    // 剩下的那一半（还没有第一次手动保存之前不自动保存）留着，理由在下面。
     //
     // 2.5s after the last change, not on an interval: an interval fires in the
     // middle of a drag and mid-word while someone is typing a column heading.
@@ -613,7 +628,7 @@ export function PortalEditor({
     // The first save is the moment a customer accepts the draft as their own;
     // autosave protects work from then on, and does not manufacture that moment
     // on their behalf.
-    if (!paid || (isGeneratedDraft && !hasSavedOnce)) return;
+    if (isGeneratedDraft && !hasSavedOnce) return;
     if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     autosaveTimer.current = window.setTimeout(() => {
       autosaveTimer.current = null;
@@ -684,16 +699,52 @@ export function PortalEditor({
   }
 
   async function handleSaveClick(data: Data) {
-    if (!paid) {
-      setSaveState("paywall");
-      return;
-    }
+    // 🔴 2026-09-05：这里本来有一支 `if (!paid) setSaveState("paywall")`。
+    // 那面墙是 A' 那一套的（RM500 规格书），而 2026-09-03 定案换成
+    // 卖一套系统收年费 —— 没有人会为了保存一份草稿付钱。
+    // 而它真正的代价在那一秒钟上：老板上门 demo 到最兴奋的时候，
+    // 画面盖起来跟客户要钱，而价钱还没有人讲过。见任务 159。
     // A queued autosave of an older snapshot must not land after this one.
     if (autosaveTimer.current) {
       window.clearTimeout(autosaveTimer.current);
       autosaveTimer.current = null;
     }
     await persist(data, false);
+  }
+
+  /**
+   * 「交给我们建」按下去 —— 先保存，再问一格，最后才开 WhatsApp。
+   *
+   * 🔴 **顺序有意义，而且它就是这一整件事的重点。**
+   * 这颗按钮以前只开一个 WhatsApp 视窗。**客户没按送出，我们永远不知道
+   * 有人交接过** —— 一则要客户自己按送出的讯息，就是一个会漏的漏斗，
+   * 而它漏的正好是我们最看不见的那一次：他回家自己按的那一次。
+   * 上门那一群漏了还救得回来（人就在旁边）；广告进来那一群，
+   * `handoff_requests` 那一行是唯一的线索。见任务 158 · 159。
+   *
+   * 先保存，是因为交出去的必须是他画面上看到的那一版。
+   */
+  async function openHandoff(data: Data) {
+    await handleSaveClick(data);
+    setHandoff("asking");
+  }
+
+  async function sendHandoff() {
+    setHandoff("sending");
+    const note = handoffNote.trim();
+    try {
+      const supabase = createBrowserSupabaseClient();
+      // 🔴 先写库。RPC 失败也照样开 WhatsApp —— 一个按下去什么都没发生的
+      // 按钮，比一行没写下来更糟；而讯息里带着同样的内容，他还是收得到。
+      await supabase.rpc("request_handoff", {
+        in_note: note || null,
+        in_phone: handoffPhone.trim() || null,
+      });
+    } catch {
+      /* 见上面：写不进去不挡他把话讲出去 */
+    }
+    window.open(deployWhatsappHref(note), "_blank", "noopener,noreferrer");
+    setHandoff("idle");
   }
 
   async function handleSignOut() {
@@ -712,13 +763,18 @@ export function PortalEditor({
   // the exact value to search Supabase Studio by.
   const identityLine = `\n\n账号邮箱: ${accountEmail}\n项目编号: ${projectId}`;
 
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    "我的设计已经准备好了，我想付款保存" + identityLine,
-  )}`;
+  // 「我想付款保存」那一条随着那面墙一起没了（任务 159）。
+  //
+  // 交接那一条带上他写的那句话 —— 他在这里打了一次，不要他在 WhatsApp
+  // 再打第二次（重点 29：量他要打几个字）。
+  const deployWhatsappHref = (note: string) =>
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+      "我的系统设计已经确定了，请开始帮我建系统" +
+        (note.trim() ? `
 
-  const deployWhatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    "我的系统设计已经确定了，请开始帮我建系统" + identityLine,
-  )}`;
+我还想要：${note.trim()}` : "") +
+        identityLine,
+    )}`;
 
   // THE TOP BAR'S CONTENT, HANDED TO EditorChrome RATHER THAN DRAWN HERE.
   //
@@ -822,30 +878,20 @@ export function PortalEditor({
         opening their system for the first time could not see where any of
         this was going. Durable's Publish is lit from the first second, and
         that is most of what makes its editor feel like it has an end.
-        Before the first save it is the same button in a quieter treatment
-        and it does the step that has to come first -- it saves -- rather
-        than being disabled, which would answer the question with nothing. */}
-      {hasSavedOnce ? (
-        <a
-          href={deployWhatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-md px-3 py-1.5 [font-size:var(--text-xs)] text-[color:var(--color-on-primary)] [background-color:var(--color-jade)] [font-weight:var(--fw-semibold)]"
-        >
-          {t("deployCta")}
-        </a>
-      ) : (
-        <button
-          type="button"
-          onClick={() =>
-            void handleSaveClick(latestData.current ?? (startingData as Data))
-          }
-          title={t("deployNeedsSave")}
-          className="rounded-md border px-3 py-1.5 [font-size:var(--text-xs)] [border-color:var(--color-jade)] [color:var(--color-jade-bright)] [font-weight:var(--fw-semibold)] hover:[background-color:var(--color-ink-850)]"
-        >
-          {t("deployCta")}
-        </button>
-      )}
+
+        🔴 2026-09-05：以前这里分两颗 —— 存过的给一条 WhatsApp 连结，
+        没存过的给一颗「先去保存」。那个分岔是那道付款闸留下的形状。
+        保存不再收钱之后它就是一颗按钮一条路：**保存 → 问一格 → 开 WhatsApp**，
+        而中间那一步会在资料库里留下一行（任务 159）。 */}
+      <button
+        type="button"
+        onClick={() =>
+          void openHandoff(latestData.current ?? (startingData as Data))
+        }
+        className="rounded-md px-3 py-1.5 [font-size:var(--text-xs)] text-[color:var(--color-on-primary)] [background-color:var(--color-jade)] [font-weight:var(--fw-semibold)]"
+      >
+        {t("deployCta")}
+      </button>
     </>
   );
 
@@ -926,49 +972,66 @@ export function PortalEditor({
           edit. Disappears the moment they save, because from then on the canvas
           is genuinely their own work. */}
 
-        {/* Fix round 2 (post-review): the paywall is an OVERLAY over a
-          still-mounted <Puck>, not a branch that replaces it. It used to be
-          `saveState === "paywall" ? <paywall/> : <Puck/>`, which unmounted
-          the canvas at exactly the moment a customer clicked Save -- so the
-          only thing standing between a free-tier customer and losing their
-          whole in-progress design was local-draft.ts, which is explicitly
-          best-effort and silently drops writes when localStorage is
-          unavailable (private browsing, quota exceeded). Keeping Puck
-          mounted means its own internal state holds the work regardless of
-          whether localStorage did anything at all.
-
-          Side effect worth noting: the `hydrated` remount below is now the
-          ONLY thing that ever remounts Puck in this file. "Back to editing"
-          no longer re-reads the local draft (it can't -- nothing remounts),
-          and doesn't need to: Puck still has the customer's latest edit. */}
+        {/* 交接那一格，画在还挂着的 Puck 上面，不是取代它。
+          这个形状是从那面付款墙继承下来的，而它当初解的问题今天还在：
+          用分支写成 `x ? <对话框/> : <Puck/>` 会在客户按下按钮的那一刻
+          把画布卸载掉，於是他做到一半的东西只剩 local-draft.ts 撑着 ——
+          而那一支是尽力而为的，localStorage 不能用的时候（无痕、配额满）
+          它静静地什么都不写。盖在上面，Puck 自己的状态就还在。 */}
         <div className="relative min-h-0 flex-1">
-          {saveState === "paywall" ? (
-            // `absolute inset-0` + an opaque token background (--color-canvas
-            // resolves against this component's own `.ledger` chrome scope) --
-            // fully obscures the canvas rather than dimming it, and swallows
-            // every pointer event that would otherwise reach Puck underneath.
-            <div className="ds-ground absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center [background-color:var(--color-canvas)]">
-              <h2 className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-                {t("paywallTitle")}
-              </h2>
-              <p className="[font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
-                {t("paywallBody")}
-              </p>
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 rounded-lg px-4 py-2.5 [font-size:var(--text-sm)] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)]"
-              >
-                {t("paywallCta")}
-              </a>
-              <button
-                type="button"
-                onClick={() => setSaveState("idle")}
-                className="[font-size:var(--text-sm)] underline [color:var(--color-paper-dim)]"
-              >
-                {t("backToEditing")}
-              </button>
+          {handoff !== "idle" ? (
+            <div className="ds-ground absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 [background-color:var(--color-canvas)]">
+              <div className="w-full max-w-sm">
+                <h2 className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                  {t("handoffTitle")}
+                </h2>
+                <p className="mt-1 [font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
+                  {t("handoffBody")}
+                </p>
+
+                {/* 两格都可以跳过（重点 29）。号码是我们拿不到第二次的那一样：
+                  注册只有 email，而这个市场的管道是 WhatsApp（任务 48）。
+                  问它的时机是这一刻，因为他自己想要我们联络他。 */}
+                <label className="mt-4 block [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                  {t("handoffPhoneLabel")}
+                </label>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={handoffPhone}
+                  onChange={(e) => setHandoffPhone(e.target.value)}
+                  placeholder="012-345 6789"
+                  className="mt-1 w-full rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-line)]"
+                />
+
+                <label className="mt-3 block [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                  {t("handoffNoteLabel")}
+                </label>
+                <textarea
+                  rows={3}
+                  value={handoffNote}
+                  onChange={(e) => setHandoffNote(e.target.value)}
+                  className="mt-1 w-full resize-none rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-line)]"
+                />
+
+                <div className="mt-4 flex items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={handoff === "sending"}
+                    onClick={() => void sendHandoff()}
+                    className="rounded-lg px-4 py-2.5 [font-size:var(--text-sm)] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] disabled:opacity-60"
+                  >
+                    {handoff === "sending" ? t("handoffSending") : t("handoffSend")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHandoff("idle")}
+                    className="[font-size:var(--text-sm)] underline [color:var(--color-paper-dim)]"
+                  >
+                    {t("backToEditing")}
+                  </button>
+                </div>
+              </div>
             </div>
           ) : null}
           {/* THE 84px THE EDITOR WAS TOO TALL.
