@@ -110,7 +110,8 @@
     "align:pages": "node scripts/align-pages.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",
     "check:shared-record": "node scripts/check-shared-record.mjs",
-    "check:referrals": "node scripts/check-referrals.mjs"
+    "check:referrals": "node scripts/check-referrals.mjs",
+    "check:vehicles": "node scripts/check-vehicles.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
