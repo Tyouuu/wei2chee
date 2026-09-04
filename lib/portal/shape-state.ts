@@ -93,7 +93,22 @@ export const SHAPE_STATE: Record<ModuleShape, ShapeState> = {
      a second place to hold the same number is a second number that goes
      stale. What is still open is what a no-show COSTS -- a commercial rule the
      founder has to settle, and until he does this records what happened and
-     touches no money. */
+     touches no money.
+
+     ⚠️⚠️ 2026-09-04 加了 `service_packages`，而它**没有推翻上面那一段** ——
+     两件事都叫「套票」，而它们是两个东西：
+
+       预付余额（钱）  他先付 RM 1,000，之后一笔一笔扣
+                       = 那笔收款的**未分摊金额**。不存第二份，上面那段成立
+       套票（次数）    他买「10 次洗剪吹」，来一次扣一次
+                       = `service_packages` ＋ `package_uses` 数出来的
+
+     Tunai 卖的是后者（「套票／次数追踪」），Aoikumo 两个都卖（e-Wallet ＋ 套票）。
+     🔴 而 `service_packages` **一栏金额都没有**，正是为了不让那个数字有第二份 ——
+     价钱住在付款那一笔上。见 20260904190000 的档头。
+
+     ⚠️ 还欠：**预付余额（钱那一半）算得出来，但画面上还是没有落点** ——
+     `unallocatedOf` 到今天为止全 app 零个消费端。 */
   calendar: "live",
 
   landing: "drawn",
