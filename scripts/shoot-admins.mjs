@@ -35,6 +35,26 @@ const SITES = [
   ["arham-finance",   "https://next-shadcn-admin-dashboard.vercel.app/dashboard/finance",     "arhamkhnz · MIT"],
   ["arham-default",   "https://next-shadcn-admin-dashboard.vercel.app/dashboard/default",     "arhamkhnz · MIT"],
   ["arham-logistics", "https://next-shadcn-admin-dashboard.vercel.app/dashboard/logistics",   "arhamkhnz · MIT"],
+
+  /* 🔴 2026-09-04 老板挑了这一套当我们系统唯一的样子，所以它**全部十一页**都要拍。
+     ⚠️ 而这一轮抓到一件：`arham-invoice` / `arham-kanban` 两张旧截图是
+     **「Page not found」**，我一度把它们算进「十二张死掉的模板」里回报给他。
+     去打才知道**部署活得好好的**（仓库 2026-09-03 还在推，首页回 200）——
+     是它把路径从 `/pages/*` 搬到了 `/dashboard/*`。
+     **一张 404 的截图，跟一个真的停掉的模板，在档名跟读数上长得一模一样**，
+     而分辨的方法只有一个：去打那个网址看它回几。
+     这两页从来没有任何脚本管过，所以网址过期了三个月没有人知道 —— 现在管了。 */
+  ["arham-invoice",    "https://next-shadcn-admin-dashboard.vercel.app/dashboard/invoice",                   "arhamkhnz · MIT"],
+  ["arham-kanban",     "https://next-shadcn-admin-dashboard.vercel.app/dashboard/kanban",                    "arhamkhnz · MIT"],
+  ["arham-tasks",      "https://next-shadcn-admin-dashboard.vercel.app/dashboard/tasks",                     "arhamkhnz · MIT"],
+  ["arham-users",      "https://next-shadcn-admin-dashboard.vercel.app/dashboard/users",                     "arhamkhnz · MIT"],
+  ["arham-academy",    "https://next-shadcn-admin-dashboard.vercel.app/dashboard/academy",                   "arhamkhnz · MIT"],
+  ["arham-e-commerce", "https://next-shadcn-admin-dashboard.vercel.app/dashboard/e-commerce",                "arhamkhnz · MIT"],
+  ["arham-analytics",  "https://next-shadcn-admin-dashboard.vercel.app/dashboard/analytics",                 "arhamkhnz · MIT"],
+  ["arham-productivity","https://next-shadcn-admin-dashboard.vercel.app/dashboard/productivity",              "arhamkhnz · MIT"],
+  ["arham-infrastructure","https://next-shadcn-admin-dashboard.vercel.app/dashboard/infrastructure",            "arhamkhnz · MIT"],
+  ["arham-file-manager","https://next-shadcn-admin-dashboard.vercel.app/dashboard/file-manager",              "arhamkhnz · MIT"],
+  ["arham-patient-monitoring","https://next-shadcn-admin-dashboard.vercel.app/dashboard/patient-monitoring",        "arhamkhnz · MIT"],
   ["shadcn-admin",    "https://shadcn-admin.netlify.app/",                                     "satnaing · MIT"],
   ["antd-pro",        "https://preview.pro.ant.design/dashboard/analysis",                     "ant-design · MIT"],
   ["tabler-users",    "https://preview.tabler.io/users.html",                                  "tabler · MIT"],

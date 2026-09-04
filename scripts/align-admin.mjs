@@ -34,6 +34,7 @@ import { chromium } from "playwright";
 import { measureImage } from "./probe-image.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 const require = createRequire(import.meta.url);
 const sharp = require("sharp");
 
@@ -466,6 +467,64 @@ const PROBE = (rootSel) => {
     地图: has(() => svgs.some((sv) => sv.querySelectorAll("path").length >= 40)),
   };
 
+  // ---- 动效 ---------------------------------------------------------------
+  /* 🔴 2026-09-04 补的第五根轴。在这之前这把尺只有四根（版面 · 字体 · 颜色 · 留白），
+     而 [重点 7i](../docs/founder-points.md) 白纸黑字写着「缺一根就是没抄完」。
+     抄手机那十五套的时候动效永远印「量不到」，因为那边只有商店的静图；
+     后台这一边参考页是**活的**，所以量得到 —— 没有借口。
+
+     量法**逐字照抄 `align-site.mjs` 的动效那一段**，不自己另外发明一把：
+     两把尺量同一件事却给不同的读数，比没有读数更糟。 */
+  const durations = [];
+  const easings = [];
+  const moved = new Set();
+  const anims = new Set();
+  for (const e of all) {
+    const c = getComputedStyle(e);
+    for (const d of (c.transitionDuration || "").split(",")) {
+      const t = d.trim();
+      const ms = t.endsWith("ms") ? parseFloat(t) : parseFloat(t) * 1000;
+      if (ms > 0) durations.push(Math.round(ms));
+    }
+    for (const f of (c.transitionTimingFunction || "").split(/,(?![^(]*\))/)) {
+      const v = f.trim();
+      if (v) easings.push(v);
+    }
+    for (const q of (c.transitionProperty || "").split(",")) {
+      const v = q.trim();
+      if (v && v !== "all" && v !== "none") moved.add(v);
+    }
+    if (c.animationName && c.animationName !== "none") {
+      for (const n of c.animationName.split(",")) {
+        const v = n.trim();
+        if (v && v !== "none") anims.add(v);
+      }
+    }
+  }
+  /* 时长分级，跟官网那把尺同一套门槛。 */
+  const tierOf = (ms) =>
+    ms < 100 ? "micro" : ms < 200 ? "small" : ms < 350 ? "medium" : ms < 600 ? "large" : "xl";
+  const tierCount = {};
+  for (const ms of durations) tierCount[tierOf(ms)] = (tierCount[tierOf(ms)] || 0) + 1;
+  const topTier = Object.entries(tierCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const topEase = Object.entries(
+    easings.reduce((m, v) => ((m[v] = (m[v] || 0) + 1), m), {}),
+  ).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+  /* 有没有理会「减少动效」。**只有读样式表才看得到一条现在没有生效的条件** ——
+     跨网域的样式表读 .cssRules 会抛，那不是失败，那是一份我们看不到的表，
+     所以分开数：读到几份、被挡几份。**「看不到」跟「没有」不是同一句话。** */
+  let reducedMotion = false, sheetsRead = 0, sheetsBlocked = 0;
+  for (const sheet of document.styleSheets) {
+    try {
+      const rules = sheet.cssRules || [];
+      sheetsRead++;
+      for (const rule of rules) {
+        if (rule.conditionText && /prefers-reduced-motion/.test(rule.conditionText)) reducedMotion = true;
+      }
+    } catch { sheetsBlocked++; }
+  }
+
   // ---- 一屏塞了多少字 -----------------------------------------------------
   const words = (root.innerText.match(/\S+/g) || []).length;
 
@@ -504,6 +563,14 @@ const PROBE = (rootSel) => {
     tableFoot,
     tools,
     words,
+    motionN: durations.length,
+    motionTier: topTier,
+    motionMs: durations.length ? Math.round(durations.slice().sort((a, b) => a - b)[Math.floor(durations.length / 2)]) : null,
+    motionEase: topEase,
+    motionProps: [...moved].sort().slice(0, 6).join(" "),
+    motionKeyframes: anims.size,
+    reducedMotion,
+    sheetsBlocked,
     height: Math.round(root.scrollHeight),
   };
 };
@@ -553,7 +620,10 @@ function line(name, ref, ours, verdict) {
 }
 
 /** 差多少算差。**每一条门槛都写着它为什么是这个数**，不然下一个人只能猜。 */
-function judge(name, ref, ours) {
+/* ⚠️ **导出，因为它要被考。** 这把尺 2026-09-03 一天里错了八次，八次都是
+   人看 1:1 的图才发现的（见 `design-system/__tests__/probe-image.test.ts` 的档头）。
+   判断那一层现在有 `align-admin-judge.test.ts` 盯着，每一条都故意弄坏看过它红。 */
+export function judge(name, ref, ours) {
   if (ref == null || ours == null) return "?";
   const near = (tol) => (Math.abs(ref - ours) <= tol ? "ok" : "差");
   switch (name) {
@@ -581,6 +651,14 @@ function judge(name, ref, ours) {
     case "栏能不能排": return ref > 0 && ours === 0 ? "差" : "ok";
     // 工具条：差两件以上就是「这一页能不能拿来做事」的差别
     case "工具条几件": return near(2);
+    /* ── 动效（2026-09-04 补的第五根轴）─────────────────────────────────
+       ⚠️ 这三条的门槛都比尺寸那几条**松**，而且是故意的：
+       动效上「有没有」远比「差几毫秒」重要。一个完全不动的页面跟一个会动的
+       页面是两种东西；而 240ms 对 300ms，没有人分得出来。 */
+    // 会动的地方：他们动我们完全不动 = 差。数量差多少不判 —— 那是内容多寡
+    case "动效几处": return ref > 0 && ours === 0 ? "差" : "ok";
+    // 时长：差 80ms 以内看不出来（官网那把尺的分级里，那还在同一级内）
+    case "动的时长": return near(80);
     default: return "?";
   }
 }
@@ -708,6 +786,24 @@ async function main() {
       ["表格页尾", theirs.tableFoot, ours.tableFoot, theirs.tableFoot === ours.tableFoot ? "ok" : "差"],
       ["工具条几件", theirs.tools, ours.tools, judge("工具条几件", theirs.tools, ours.tools)],
       ["一屏字数", theirs.words, ours.words, judge("一屏字数", theirs.words, ours.words)],
+      /* ── 动效 ────────────────────────────────────────────────────────
+         🔴 2026-09-04 之前这把尺只有四根轴，而 [重点 7i] 说缺一根就是没抄完。
+         后台这一边参考页是活的，所以量得到 —— 抄手机那边只有静图，量不到。 */
+      ["动效几处", theirs.motionN, ours.motionN, judge("动效几处", theirs.motionN, ours.motionN)],
+      ["动的时长", theirs.motionMs, ours.motionMs, judge("动的时长", theirs.motionMs, ours.motionMs)],
+      ["动效分级", theirs.motionTier, ours.motionTier, theirs.motionTier === ours.motionTier ? "ok" : "看图"],
+      ["缓动", theirs.motionEase, ours.motionEase, "看图"],
+      ["动什么", theirs.motionProps || "—", ours.motionProps || "—", "看图"],
+      ["会跑的动画", theirs.motionKeyframes, ours.motionKeyframes, "看图"],
+      /* ⚠️ **被挡住的样式表要讲出来。** 跨网域的表读不到规则，於是「有没有理会
+         减少动效」会读成 false —— 而**「看不到」跟「没有」不是同一句话**。
+         这个仓库被「量不到却印一个漂亮数字」的尺骗过至少四次，所以这里
+         宁可印「读不到」也不印「没有」。 */
+      ["减少动效",
+        theirs.sheetsBlocked ? `读不到（${theirs.sheetsBlocked} 份表被挡）` : (theirs.reducedMotion ? "有" : "没有"),
+        ours.sheetsBlocked ? `读不到（${ours.sheetsBlocked} 份表被挡）` : (ours.reducedMotion ? "有" : "没有"),
+        theirs.sheetsBlocked || ours.sheetsBlocked ? "?"
+          : (theirs.reducedMotion && !ours.reducedMotion ? "差" : "ok")],
       /* 这两条不跟参考比 —— 它们是**画坏了**，参考有几个不影响我们有没有。 */
       ["孤单的按钮", theirs.lonely, ours.lonely, ours.lonely > 0 ? "差" : "ok"],
       /* ⚠️ 只在**他们那一页填满了而我们没有**的时候才算差。
@@ -825,4 +921,9 @@ h2{font-size:15px;letter-spacing:.08em;color:#00beb7;margin:26px 0 8px}img{width
   }
 }
 
-await main();
+/* 只有真的被拿去跑的时候才动手 —— 被 import 的时候不要。
+   测试要 import 上面那个 `judge`，而一个 import 就跑起整支尺子的档案，
+   等於没办法考它。 */
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  await main();
+}
