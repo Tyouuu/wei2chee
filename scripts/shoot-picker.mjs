@@ -48,7 +48,7 @@ try {
   await p.fill('input[type="password"]', "FormaeDemo2026!");
   await p.click('button[type="submit"]');
   await p.waitForURL(/portal/, { timeout: 90000 });
-  await p.goto("http://localhost:3000/en/portal/website", { waitUntil: "networkidle", timeout: 240000 });
+  await p.goto("http://localhost:3000/en/portal/website?design=1", { waitUntil: "networkidle", timeout: 240000 });
   await p.waitForTimeout(9000);
 
   const hero = p.locator("[data-puck-component]").filter({ has: p.locator("h1") }).first();

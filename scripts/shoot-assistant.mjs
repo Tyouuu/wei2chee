@@ -38,7 +38,7 @@ try {
   await p.click('button[type="submit"]');
   await p.waitForURL(/portal/, { timeout: 90000 });
 
-  await p.goto(`${BASE}/zh/portal/dashboard`, { waitUntil: "networkidle", timeout: 180000 });
+  await p.goto(`${BASE}/zh/portal/dashboard?design=1`, { waitUntil: "networkidle", timeout: 180000 });
   await p.waitForTimeout(8000);
 
   /*

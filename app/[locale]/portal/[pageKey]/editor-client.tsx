@@ -126,6 +126,7 @@ export function PortalEditor({
   paid,
   initialData,
   isGeneratedDraft,
+  systemHref,
   locale,
   navPages,
   style,
@@ -163,6 +164,17 @@ export function PortalEditor({
    * "we drafted this for you, change anything" and real saved data, which is the
    * difference between feeling understood and feeling misled. */
   isGeneratedDraft: boolean;
+  /** 「← 我的系统」要去哪 —— 伺服器给的，`null` 就不画那一条。
+   *
+   *  🔴 **规矩不在这里再算一次。** 第一版写的是 `isGeneratedDraft ? null : …`,
+   *  而那问的是**这一页**保存过没有；决定「有没有一个他的系统可以回去」的是
+   *  **整套系统**接受了没有（见 page.tsx）。两个问题在 demo 上刚好不一样：
+   *  客户那一页从来没保存过，而这个专案已经保存过三页 —— 於是返回那一条
+   *  没有画出来，而目的地明明在。
+   *
+   *  同一条规矩写在两个地方，第二份迟早会漂 —— 这个仓库栽在这个形状上
+   *  至少六次。所以伺服器算一次，这里只画。 */
+  systemHref: string | null;
   /** next-intl's active locale. Needed because this component links between the
    * portal pages, and those routes are locale-prefixed. */
   locale: string;
@@ -735,6 +747,23 @@ export function PortalEditor({
   // one press away in 更多, which is where Durable keeps the same class of thing.
   const topNav = (
     <>
+      {/* 🔴 「← 我的系统」回来了，而且这一次它有一个真的目的地。
+          上面那段注解写着它当初被砍掉的理由：十五个控件挤在 50px 里。
+          砍它是对的 —— 那时候点下去只是回到另一个编辑器。
+          2026-09-05 起 `/portal/<key>` 默认就是他的系统，所以这一条是
+          「离开设计模式」，不是「换一页」。见 page.tsx 那一段。
+
+          ⚠️ 一份还没保存过的草稿不画它 —— 那时候还没有一个「他的系统」
+          可以回去，按下去只会回到同一个编辑器。一颗回到原地的返回键，
+          跟一颗按不动的按钮是同一个毛病。 */}
+      {systemHref ? (
+        <a
+          href={systemHref}
+          className="shrink-0 rounded-md px-2.5 py-1.5 text-sm [color:var(--color-ink-300)] hover:[color:var(--color-paper)]"
+        >
+          ← {t("backToSystem")}
+        </a>
+      ) : null}
       <BarMenu
         label={
           <span className="[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">

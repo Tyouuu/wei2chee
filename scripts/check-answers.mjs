@@ -157,7 +157,7 @@ try {
     pass("种得起一笔真的收款", `${check.length} 笔 · ${check[0].amount_cents} 分`);
 
     /* ── 二 · 问这个月收了多少，答案里要有那个数字 ─────────────────── */
-    await p.goto(`${BASE}/zh/portal/dashboard`, { waitUntil: "networkidle", timeout: 180000 });
+    await p.goto(`${BASE}/zh/portal/dashboard?design=1`, { waitUntil: "networkidle", timeout: 180000 });
     const money = await ask(p, "这个月收了多少", "dashboard");
     console.log(`\n问：这个月收了多少\n答：${money.said}`);
 

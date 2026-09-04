@@ -17,7 +17,7 @@ import type { SystemLang } from "@/lib/system-lang";
 import { deskSurface } from "@/lib/portal/system-register";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
 import { railIcon } from "@/design-system/components/rail-icons";
-import { WorkView } from "./work-view";
+import { SystemView } from "./system-view";
 
 /**
  * THE EDITOR ON A PHONE.
@@ -161,155 +161,22 @@ export function MobileEditor({
       </div>
 
       {tab === "use" ? (
-        <>
-          {/* 🔴 换页由这个壳自己管，页面里那条侧栏在窄屏不画。
-
-              量出来的理由（390px，2026-09-04）：那条 `aside` 在窄屏是一列
-              flex，里面排着招牌、一颗整条宽的按钮、他每一页的连结、通知帐号
-              三个带字的项目 —— 加起来 993px。它撑着 **180px 高的白**，
-              而**装着页面连结的那一格宽度是 0**：他的页一个都画不出来。
-              把它挤进 390 试过三种排法（换行 · 自己占一行 · 藏掉标签），
-              每一种都是在替一个桌面的东西发明一个手机的版本 ——
-              而那正是 `PHONE_COMPOSITION`（[任务 107](../../../../docs/founder-tasks.md)）
-              该做的事，不是这一格该顺手做的。
-
-              所以这一格照那 16 个真的老板端 app 的做法：**页面在顶上一条
-              横着滑的带子**，招牌跟通知留给桌面。他在哪一页，底下那条
-              面包屑本来就写着。
-
-              ⚠️ 只在这个壳里藏 —— 师傅那一边（`work-view.tsx` 直接渲染）
-              照旧有那条侧栏，而那条侧栏在窄屏本来的毛病记在任务档里。 */}
-          {/* 🔴 这一条穿的是**工作台那一套**，不是编辑器的深色壳。
-              老板 2026-09-04：`要贴合我们在桌面的设计感`。
-
-              桌面上换页的那条侧栏是**浅色的**（`--color-nav-bg` 在系统那一套
-              是白的），配一条细线跟一个近黑的「你在这一页」。这一条做的是
-              同一件事，所以穿同一套 token —— 而不是再叠一条黑带。
-              上面那两格（用 / 改设计）留在深色：那是 Formae 自己的壳，
-              不是他的系统。 */}
-
-        {/* 他自己的系统，会重排、点得到、跟师傅看到的是同一支组件。
-            ⚠️ 没有 `pointer-events-none` —— 那正是这一格存在的理由。 */}
-        {/* 藏掉的三样都是**同一句话的第二、第三次**，不是拿掉功能：
-            侧栏（上面那一段讲了）· 面包屑（`Day to day / Clients`）·
-            页面大标题跟那一句说明。上面那条带子已经写着他在哪一页。
-            实测 390：他自己的第一行资料本来从 **463px** 才开始 ——
-            一屏 844，前面 55% 是壳跟标签，而同一页出现三次「Clients」。
-
-            ⚠️ **标题留着，只藏那一句说明。** 试过连标题一起藏，看图当场看到
-            「加一个客户」那颗孤零零挂在左上角、右边一大片空 ——
-            那正是 `align:admin` 那把尺自己在抓的「孤单的按钮」。
-            桌面上那一行本来就是「标题在左、动作在右」，留着标题才是
-            **贴合桌面**，而不是少一样东西。 */}
-        {/* `pb-16`：底下那一条不可以吃掉最后一块。
-            `check:reachable` 在 390 报「走势图 covered by 底栏」—— 一个飘在
-            内容上、又不让内容躲开的东西，吃掉的正好是页面最后那一样。
-            同一条我 9-03 在手机那几张 demo 上写过一次（那次是右下角那颗圆钮
-            盖住 `RM 5,400`）。 */}
-        <div className="min-h-0 flex-1 overflow-y-auto pb-16 [&_aside[data-nav=side]]:hidden [&_[data-shell-bar]]:hidden [&_[data-page-title]>p]:hidden">
-          <WorkView
-            data={appState.data as Data}
-            pageKey={pageKey}
-            style={style}
-            palette={palette}
-            corners={corners}
-            systemLang={systemLang}
-            fill
-          />
-        </div>
-
-        {/* ─────────────────────────────────────────────────────────────────
-            🔴 换页在**底下**，不是顶上。
-
-            2026-09-02 量了 16 个专业老板端 app（ServiceM8 · Jobber ·
-            Housecall · Fresha · Booksy · Xero · QuickBooks · Zoho · Square ·
-            Loyverse · Odoo · monday · Asana · Trello · Notion · Shopee 卖家）
-            —— **16 个里 16 个都有一条底部分页列**，而且是 3–5 格。
-            9-04 我把它做在顶上，`shoot:phone` 当天就报「① 底部一条分页列 无」。
-
-            为什么是底下：**他的拇指在底下。** 一个在工地上单手拿着手机的人，
-            够得到的是下缘那一条，不是上缘。
-
-            ⚠️ 三格以上五格以内，多的收进「更多」—— 那 16 个没有一个超过五格，
-            而我们最多的一个客户开到八页。 */}
-        <StyleScope
-          register={style}
+        /* 他的系统 —— 跟老板打开 `/portal/<key>` 看到的是**同一支组件**。
+           见 system-view.tsx 那段档头：桌面改成默认进「用」之后，
+           在伺服器那一边再写一份手机壳，就是第七次「第二份手写拷贝」。 */
+        <SystemView
+          data={appState.data as Data}
+          pageKey={pageKey}
+          style={style}
           palette={palette}
-          data-surface={deskSurface(pageKey)}
-          className="shrink-0"
-        >
-          {more ? (
-            /* 剩下那几页。画在底栏上面，不是盖住它 —— 一个盖住自己入口的
-               面板，关掉它的那颗按钮就在被盖住的那一格里。 */
-            <div className="max-h-[46vh] overflow-y-auto [background-color:var(--color-canvas)] [border-top:var(--hairline)_solid_var(--color-ink-800)]">
-              {rest.map((page) => (
-                <Link
-                  key={page.key}
-                  href={`/${locale}/portal/${page.key}`}
-                  onClick={() => setMore(false)}
-                  className={`flex min-h-12 items-center [gap:var(--gap-inline)] [padding-inline:var(--pad-card-lg)] [font-size:var(--text-sm)] [border-bottom:var(--hairline)_solid_var(--color-ink-800)] ${
-                    page.key === pageKey
-                      ? "[color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]"
-                      : "[color:var(--color-on-canvas-dim)]"
-                  }`}
-                >
-                  <span className="grid h-5 w-5 shrink-0 place-items-center">
-                    {railIcon(page.key, "h-[18px] w-[18px]")}
-                  </span>
-                  {page.label}
-                </Link>
-              ))}
-            </div>
-          ) : null}
-
-          <nav
-            aria-label={t("phoneUse")}
-            className="flex items-stretch [background-color:var(--color-canvas)] [border-top:var(--hairline)_solid_var(--color-ink-800)]"
-          >
-            {front.map((page) => {
-              const on = page.key === pageKey && !more;
-              return (
-                <Link
-                  key={page.key}
-                  href={`/${locale}/portal/${page.key}`}
-                  onClick={() => setMore(false)}
-                  aria-current={on ? "page" : undefined}
-                  /* 每一格至少 56px 高、平分整条宽 —— 那 16 个都是这样，
-                     而 44px 是拇指按得准的下限，图标加字要再高一点。 */
-                  className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center [gap:2px] border-t-2 px-1 [font-size:var(--text-micro)] ${
-                    on
-                      ? "[border-color:var(--color-primary)] [color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]"
-                      : "border-transparent [color:var(--color-on-canvas-dim)]"
-                  }`}
-                >
-                  {/* 图标**加字**，不是只有图标。我们判 Durable 的时候
-                      白纸黑字写过：没有字的图标＝死掉的按钮。 */}
-                  <span className="grid h-5 w-5 place-items-center">
-                    {railIcon(page.key, "h-[19px] w-[19px]")}
-                  </span>
-                  <span className="w-full truncate text-center">{page.label}</span>
-                </Link>
-              );
-            })}
-            {rest.length ? (
-              <button
-                type="button"
-                onClick={() => setMore((v) => !v)}
-                aria-expanded={more}
-                className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center [gap:2px] px-1 [font-size:var(--text-micro)] ${
-                  more
-                    ? "[color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]"
-                    : "[color:var(--color-on-canvas-dim)]"
-                }`}
-              >
-                <span className="grid h-5 w-5 place-items-center [font-size:var(--text-lg)] leading-none">···</span>
-                <span className="w-full truncate text-center">{t("phoneMore")}</span>
-              </button>
-            ) : null}
-          </nav>
-        </StyleScope>
-        </>
+          corners={corners}
+          systemLang={systemLang}
+          locale={locale}
+          navPages={navPages}
+          variant="phone"
+        />
       ) : (
+
         <>
       <p className="shrink-0 border-b px-4 py-2 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
         {t("mobileHint")}

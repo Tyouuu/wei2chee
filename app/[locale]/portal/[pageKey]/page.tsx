@@ -9,10 +9,12 @@ import {
   createSessionSupabaseClient,
   getSessionUser,
 } from "@/lib/supabase/server-session";
+import { frontDoor } from "@/lib/portal/front-door";
+import { getTranslations } from "next-intl/server";
 import { PortalEditor } from "./editor-client";
 import type { Data } from "@puckeditor/core";
 import { canOpenModule, hideMoneyFromRail, loadWorkspace } from "@/lib/portal/workspace";
-import { WorkView } from "./work-view";
+import { SystemView } from "./system-view";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { applyLayoutOps, type PuckLayout } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
@@ -42,10 +44,10 @@ export default async function PortalEditorPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; pageKey: string }>;
-  searchParams: Promise<{ add?: string; tpl?: string }>;
+  searchParams: Promise<{ add?: string; tpl?: string; design?: string }>;
 }) {
   const { locale, pageKey } = await params;
-  const { add, tpl } = await searchParams;
+  const { add, tpl, design } = await searchParams;
   // Cheap shape check only. The REAL check is against the pages this account
   // actually has, further down -- a business whose trade has no quotations
   // must 404 on /portal/quotations rather than render an empty one.
@@ -412,15 +414,55 @@ export default async function PortalEditorPage({
     };
   });
 
-  /* ① A SUPERVISOR GETS THE PAGE, NOT THE EDITOR.
+  /* ① 老板打开的是他的系统，不是编辑器 —— 除非他按「改设计」。
+
+     🔴 量出来的，2026-09-05：在编辑器里打开报价单，画布里有 **10 个真的
+     连结**（他自己的侧栏、他的六页、「加一单」），**一个都点不动**，
+     连 Playwright 的 `force` 都走不过去 —— Puck 把画布上每一次点击都收去
+     当「选中这一块」。也就是说他每天要做的每一件事，都锁在一把施工工具后面。
+
+     老板 2026-09-05：`编辑器跟这套 system 都在我的 formae 里面
+     我好像是做了两套产品 能不能融合呢`。**不是两套产品，是一个产品
+     把它的施工工具当成了正门。** 融合的做法不是合成一个画面，是把顺序
+     倒过来：默认进「用」，「改设计」是一颗按钮。
+
+     分界线不是新发明的，它就写在下面自动保存那一段的注解上 ——
+     **第一次保存是他接受这份草稿变成自己的东西的那一刻**。在那之前
+     打开的是编辑器（那是「看看你的系统、改改看」，也是我们卖的那一屏）；
+     在那之后每一次打开的是他的系统。
+
+     ⚠️ 手机上 2026-09-04 就是这样做的（`mobile-editor.tsx` 那两格，
+     默认停在「用」）。桌面晚了一天，而且这一条把两边收敛成同一个决定。
+
+     ⚠️ `?add=` / `?tpl=` 也进编辑器 —— 那两个参数本身就是「加一块」
+     跟「套一个模版」，它们的目的地就是设计。
+
+     ── 而师傅永远只有这一边 ──────────────────────────────────────────────
 
      Everything above this line was work he needs -- the generated layout, his
      boss's real rows, the trade's own words. Everything below it is the
      owner's tool. See work-view.tsx for why offering it to him and refusing
      each control at the server is the worse of the two answers. */
-  if (!workspace.isOwner) {
+  /* 🔴 问的是**整套系统**接受了没有，不是这一页保存过没有。
+     他只按过一次保存（比方说官网那一页），那一刻他接受的是这套系统 ——
+     而按每一页问，会变成「报价单进系统、客户页进编辑器」：**同一个人、
+     同一天、两个正门**，那正是他讲的「两套产品」再来一次，只是换个形状。
+
+     ⚠️ 代价写出来：他因此不会在每一页上看到那张「这是自动生成的初稿」
+     的黑卡 —— 那一屏是我们卖东西的那一屏（[重点 11](../../../../docs/founder-points.md)）。
+     判断是：那一刻发生在问卷做完、他还没保存过任何东西的时候，
+     而到他保存过之后，他已经是客户了。 */
+  const acceptedAsHis = (pageRows ?? []).some(
+    (r: { layout_json: unknown }) =>
+      !isUngeneratedLayout((r.layout_json as Record<string, unknown>) ?? {}),
+  );
+  /* 规矩住在 lib/portal/front-door.ts —— 它有三个消费端，写三次就会漂。 */
+  const door = frontDoor({ isOwner: workspace.isOwner, acceptedAsHis, design, add, tpl });
+
+  if (door === "system") {
+    const t = await getTranslations({ locale, namespace: "portal.editor" });
     return (
-      <WorkView
+      <SystemView
         pageKey={pageKey}
         data={hideMoneyFromRail(initialData, workspace.role) as unknown as Data}
         /* 师傅看到的也是系统那一套。见 lib/portal/system-register.ts。 */
@@ -428,10 +470,26 @@ export default async function PortalEditorPage({
         palette={(project.palette as string | null) ?? null}
         corners={Number(project.corners ?? 1)}
         systemLang={systemLangOf(businessContext)}
+        locale={locale}
+        navPages={pageRefs.map((ref) => ({
+          key: ref.key,
+          label: pageLabel(
+            ref,
+            tradeLabels(businessContext, pageRefs),
+            systemLangOf(businessContext),
+          ),
+        }))}
+        /* 宽的时候画侧栏，窄的时候藏起来换成底栏 —— 同一支组件。
+           见 system-view.tsx。 */
+        variant="responsive"
+        designHref={workspace.isOwner ? `/${locale}/portal/${pageKey}?design=1` : undefined}
+        designLabel={t("openDesign")}
       />
     );
   }
 
+  /* 下面是老板的工具 —— 而它现在有两个入口：一份还没保存过的草稿，
+     或者他自己按了「改设计」。上面那一段写着为什么。 */
   return (
     <PortalEditor
       pageKey={pageKey}
@@ -456,6 +514,9 @@ export default async function PortalEditorPage({
        * guessed this for you, change anything" and a customer assuming these
        * are real records. */
       isGeneratedDraft={isUngeneratedLayout(savedLayout)}
+      /* 有一个「他的系统」可以回去，才画那一条。同一个 `acceptedAsHis`，
+         算一次。 */
+      systemHref={acceptedAsHis ? `/${locale}/portal/${pageKey}` : null}
       locale={locale}
       navPages={pageRefs.map((ref) => ({
         key: ref.key,

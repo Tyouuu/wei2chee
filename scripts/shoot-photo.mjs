@@ -62,7 +62,7 @@ try {
   await p.click('button[type="submit"]');
   await p.waitForURL(/portal/, { timeout: 60000 });
 
-  await p.goto("http://localhost:3000/zh/portal/website", { waitUntil: "networkidle", timeout: 180000 });
+  await p.goto("http://localhost:3000/zh/portal/website?design=1", { waitUntil: "networkidle", timeout: 180000 });
   await p.waitForTimeout(8000);
 
   // Select the hero, then open its panel. The toolbar button is the owner's

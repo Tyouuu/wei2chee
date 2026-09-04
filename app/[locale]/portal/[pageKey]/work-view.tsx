@@ -47,6 +47,8 @@ export function WorkView({
   corners,
   systemLang,
   fill,
+  designHref,
+  designLabel,
 }: {
   data: Data;
   /** 哪一页 —— 只用来问 `deskSurface()`。官网那一页穿客户自己的主色，
@@ -74,6 +76,23 @@ export function WorkView({
    *  ⚠️ 底色留在外面那一层（`min-h-full`），不然内容短的时候底下会露出
    *  壳自己的颜色。 */
   fill?: boolean;
+  /** 老板看这一页的时候，这里是他进「改设计」的门。师傅拿不到它。
+   *
+   *  🔴 **为什么是一条连结、而且只有一条。** 2026-09-05 量的：在编辑器里
+   *  打开报价单，画布里有 **10 个真的连结**（他自己的侧栏、他的页面、
+   *  「加一单」），**一个都点不动** —— Puck 把画布上每一次点击都收去当
+   *  「选中这一块」，连 `force` 都走不过去。老板每天要做的事全部在那十个
+   *  连结后面，而正门是一把施工工具。
+   *
+   *  所以这一页现在是正门，而设计是他按一下才进去的一个模式。
+   *  这一条跟手机上那两格（`mobile-editor.tsx`，2026-09-04）是同一个决定，
+   *  桌面只是晚了一天。
+   *
+   *  ⚠️ 它跟着 **Formae 的介面语言**（`locale`）走，不是跟着他系统的语言 ——
+   *  这一颗是我们的工具，不是他系统里的字。所以字是从伺服器传下来的，
+   *  这个组件自己不查字典。 */
+  designHref?: string;
+  designLabel?: string;
 }) {
   return (
     <StyleScope
@@ -82,7 +101,18 @@ export function WorkView({
       register={style}
       palette={palette}
       style={cornerCapture}
-      className={`ds-ground [background-color:var(--color-canvas)] ${fill ? "min-h-full" : "min-h-screen"}`}
+      /* 🔴 `pb-*` 只在有那颗药丸的时候加，而且加在**上过色的这一层里面**。
+         看图看到的：390 上那颗「改设计」压在最后一行的状态上（`In progress`
+         被吃掉一半）。加在外面那一层会露出壳自己的颜色，所以加在这里。
+         同一条这个仓库写过三次 —— 一个飘在内容上、又不让内容躲开的东西，
+         吃掉的永远是最后那一样。 */
+      /* `max-lg:pb-16` 加在**上过色的这一层里面**，不是外面 —— 窄屏底下那条
+         分页列是 `fixed` 的，而外层的 padding 会在页尾露出一条没上色的地。
+         而最低高度要**扣掉**那 4rem，不然「一整屏 ＋ 64px」永远比一屏高，
+         内容装得下的页面也会多出一段可以滚的空白。`dvh` 不是 `vh`：
+         手机浏览器的网址列会伸缩，`vh` 量的是它伸出去之前那个高度。
+         `lg:pb-24` 只在有那颗浮着的药丸的时候才要。 */
+      className={`ds-ground [background-color:var(--color-canvas)] ${fill ? "min-h-full" : "lg:min-h-screen max-lg:min-h-[calc(100dvh-4rem)] max-lg:pb-16"} ${designHref ? "lg:pb-24" : ""}`}
     >
       <SystemLangProvider lang={systemLang}>
         {/* ⚠️ A FLEX COLUMN, NOT `[&>*]:min-h-screen`. That was the first
@@ -111,12 +141,38 @@ export function WorkView({
           className={
             fill
               ? "flex flex-col [&>*]:flex-1"
-              : "flex min-h-screen flex-col [&>*]:flex-1 [&>*>*]:min-h-screen"
+              : /* 窄屏那条 4rem 的底栏是 `fixed` 的，所以这一整条链子都要扣掉它 ——
+                   只扣最外面那一层，里面还写着一整屏，加起来还是比一屏高 64px，
+                   於是每一页都多出一段滚得动的空白。三层写同一个数字听起来很蠢，
+                   而它就是 `min-height` 百分比链子的样子（档头那两段讲的是同一件事）。 */
+                "flex flex-col lg:min-h-screen max-lg:min-h-[calc(100dvh-4rem)] [&>*]:flex-1 lg:[&>*>*]:min-h-screen max-lg:[&>*>*]:min-h-[calc(100dvh-4rem)]"
           }
           style={cornerApply(corners)}
         >
           <Render config={puckConfig} data={data} />
         </div>
+        {designHref ? (
+          <a
+            href={designHref}
+            /* 🔴 **只有宽的时候才有这一颗。窄屏它住在底栏的「更多」里面。**
+
+               窄屏试过两版，两版都错，而且读数全绿、看图才分得出来：
+               ① `fixed bottom-5` —— 压在最后一行的状态上（`In progress`
+                  被吃掉一半）
+               ② 加 `pb-28` 想让内容躲开 —— **padding 只在下面加空间，
+                  内容一个像素都不会往上移**，画面跟①一模一样
+               ③ 改成排在页面最后 —— 掉到那条 `fixed` 底栏**底下**去了
+               一个飘在内容上、又不让内容躲开的东西，吃掉的永远是最后那一样，
+               而这个仓库写过三次。第四次的答案不是再挪一次位子，是
+               **它本来就不该浮在一个已经有底栏的画面上** —— 见 system-view.tsx。
+
+               宽的时候留着：右下角，跟编辑器里那颗「用讲的改」同一个位子，
+               而那一边没有底栏。 */
+            className="max-lg:hidden lg:fixed lg:bottom-5 lg:right-5 lg:z-40 rounded-full border [border-color:var(--color-ink-700)] [background-color:var(--color-ink-900)] [color:var(--color-paper)] px-4 py-2.5 text-sm [font-weight:var(--fw-medium)] shadow-lg"
+          >
+            {designLabel}
+          </a>
+        ) : null}
       </SystemLangProvider>
     </StyleScope>
   );

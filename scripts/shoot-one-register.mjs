@@ -7,7 +7,7 @@
  * ── 它量什么 ──────────────────────────────────────────────────────────────
  * 同一个帐号，把 `projects.style` 轮流换成六套，每一套拍两张：
  *   工作台（`/portal`）—— **六张必须一模一样**，不然这件事没有做到
- *   官网（`/portal/website`）—— **六张必须不一样**，不然是把该留的也砍掉了
+ *   官网（`/portal/website?design=1`）—— **六张必须不一样**，不然是把该留的也砍掉了
  *
  * ⚠️ **比的不是像素，而这一条是第一版栽出来的。** 第一版拿整张图的 sha1 比，
  * 六张全部不同 —— 而裁出来两张摆在一起，除了走势图的**进场动画停在不同一帧**
@@ -97,7 +97,7 @@ try {
     const { error: sErr } = await api.rpc("set_project_style", { new_style: reg });
     if (sErr) throw new Error(`set_project_style ${reg}: ${sErr.message}`);
 
-    for (const [what, path] of [["desk", "/en/portal/dashboard"], ["site", "/en/portal/website"]]) {
+    for (const [what, path] of [["desk", "/en/portal/dashboard?design=1"], ["site", "/en/portal/website?design=1"]]) {
       await page.goto(`${BASE}${path}`, { waitUntil: "networkidle", timeout: 180000 });
       await page.waitForTimeout(2500);
       await page.addStyleTag({ content: "nextjs-portal{display:none!important}" }).catch(() => {});

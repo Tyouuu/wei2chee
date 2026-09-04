@@ -73,7 +73,7 @@ for (const reg of REGISTERS) {
   // whole point of this gate is that it cannot pass by measuring nothing.
   if (hit === "miss") { console.log(reg, "NOT FOUND"); missing.push(reg); continue; }
   await p.waitForTimeout(3500);
-  await p.goto("http://localhost:3000/zh/portal/dashboard", { waitUntil: "networkidle", timeout: 120000 });
+  await p.goto("http://localhost:3000/zh/portal/dashboard?design=1", { waitUntil: "networkidle", timeout: 120000 });
   await p.waitForTimeout(6500);
   const shape = await p.evaluate(() => {
     const canvas = document.querySelector("[data-editor-canvas]");

@@ -470,7 +470,9 @@
       },
       "phoneUse": "我的系统",
       "phoneDesign": "改设计",
-      "phoneMore": "更多"
+      "phoneMore": "更多",
+      "openDesign": "改设计",
+      "backToSystem": "我的系统"
     },
     "home": {
       "eyebrow": "你的系统",

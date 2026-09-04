@@ -152,7 +152,13 @@ const CASES = [
     ask: "把最上面那个标题改成「本月总览」",
     changed: true,
     gains: ["本月总览"],
-    touches: ["dashboard-header"],
+    /* 🔴 同一块过期的东西：`dashboard-header` 2026-09-04 就没了。
+       这一题的**问法不用改** —— 「最上面那个标题」现在指的是走势图那张卡，
+       而模型读对了。要改的是期望。
+       ⚠️ 而它的祖先（`dashboard-shell`）本来就不该被算进去，这把尺自己有那条
+       规则；上一版它没生效，是因为 `touches` 指着一块**不存在的**东西，
+       於是「谁是它的祖先」问不出答案。 */
+    touches: ["dashboard-trend"],
   },
   {
     name: "加一栏 · 师傅",
@@ -265,11 +271,18 @@ const CASES = [
       Clicked, not passed as a parameter: whether `selected` survives the trip
       from Puck's state into the request body is exactly what is under test.
     */
-    name: "很少字 · 点着标题说短一点",
-    click: "dashboard-header",
+    name: "很少字 · 点着一块说短一点",
+    /* 🔴 本来点的是 `dashboard-header`，而**那一块 2026-09-04 就不存在了** ——
+       总览照参考页拿掉了页面标题（`HEADLESS_DASHBOARD`，commit 69778cc）。
+       从那天到 09-05 这把尺一次都没有人跑过，所以它安静地挂着：
+       `locator.click: Timeout 30000ms exceeded`。
+       **一把没有人跑的尺，跟一把没有的尺是同一件事。**
+       改点「最近的工程」那张表的标题 —— 它一样是一块带字的东西，
+       而这一题问的从来不是哪一块，是**浏览器有没有把「哪一块」送出去**。 */
+    click: "dashboard-recent",
     ask: "短一点",
     changed: true,
-    touches: ["dashboard-header"],
+    touches: ["dashboard-recent"],
   },
   {
     /*
@@ -437,7 +450,7 @@ function movedBlocks(before, after) {
 }
 
 async function openEditor(p, page = "dashboard") {
-  await p.goto(`${BASE}/zh/portal/${page}`, { waitUntil: "networkidle", timeout: 180000 });
+  await p.goto(`${BASE}/zh/portal/${page}?design=1`, { waitUntil: "networkidle", timeout: 180000 });
   await p.waitForSelector(CANVAS, { timeout: 60000 });
   // The canvas renders progressively; a read taken too early diffs against a
   // half-drawn page and every case "changes".

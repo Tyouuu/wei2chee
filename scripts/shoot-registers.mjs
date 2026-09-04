@@ -111,7 +111,7 @@ for (const reg of REGISTERS) {
   }, reg);
   if (hit === "miss") { console.log(reg.padEnd(11), "NOT FOUND"); continue; }
   await p.waitForTimeout(3500);
-  await p.goto("http://localhost:3000/zh/portal/dashboard", { waitUntil: "networkidle", timeout: 120000 });
+  await p.goto("http://localhost:3000/zh/portal/dashboard?design=1", { waitUntil: "networkidle", timeout: 120000 });
   // The same settle the structure gate uses. Shorter and the chart has not
   // drawn, which is the one thing on this page a screenshot exists to show.
   await p.waitForTimeout(6500);

@@ -268,7 +268,7 @@ async function main() {
       continue;
     }
 
-    const resp = await page.goto(`${BASE}/en/portal/${key}`, { waitUntil: "networkidle", timeout: 180000 });
+    const resp = await page.goto(`${BASE}/en/portal/${key}?design=1`, { waitUntil: "networkidle", timeout: 180000 });
     /* 「这个帐号没有开这一页」跟「画布坏了」是两件事，而第一版把两件事报成
        同一句。判它的是**回码**，不是页面上有没有某几个字 —— 这个仓库被
        「grep 一句话」骗过：那句 404 的字在每一页的原始码里都有。 */

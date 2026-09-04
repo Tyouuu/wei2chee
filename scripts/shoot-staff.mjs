@@ -127,15 +127,15 @@ try {
   console.log("\n老板看到的：");
   const oPage = await signIn(ownerCtx, OWNER);
   const oHome = await shoot(oPage, "/en/portal", "owner-home");
-  await shoot(oPage, "/en/portal/quotations", "owner-quotations");
-  const oMoney = await shoot(oPage, "/en/portal/payments", "owner-payments");
+  await shoot(oPage, "/en/portal/quotations?design=1", "owner-quotations");
+  const oMoney = await shoot(oPage, "/en/portal/payments?design=1", "owner-payments");
   await shoot(oPage, "/en/portal/account", "owner-account");
 
   console.log("\n师傅看到的：");
   const sPage = await signIn(staffCtx, staff);
   const sHome = await shoot(sPage, "/en/portal", "staff-home");
-  const sQuotes = await shoot(sPage, "/en/portal/quotations", "staff-quotations");
-  const sMoney = await shoot(sPage, "/en/portal/payments", "staff-payments");
+  const sQuotes = await shoot(sPage, "/en/portal/quotations?design=1", "staff-quotations");
+  const sMoney = await shoot(sPage, "/en/portal/payments?design=1", "staff-payments");
   await shoot(sPage, "/en/portal/account", "staff-account");
 
   console.log("\n判：");

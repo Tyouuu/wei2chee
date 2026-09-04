@@ -470,7 +470,9 @@
       },
       "phoneUse": "My system",
       "phoneDesign": "Change design",
-      "phoneMore": "More"
+      "phoneMore": "More",
+      "openDesign": "Change design",
+      "backToSystem": "My system"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

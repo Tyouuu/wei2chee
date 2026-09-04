@@ -96,7 +96,7 @@ try {
     await p.click('button[type="submit"]');
     await p.waitForURL("**/portal**", { timeout: 30000 });
 
-    await p.goto(`${BASE}/en/portal/customers`, { waitUntil: "networkidle" });
+    await p.goto(`${BASE}/en/portal/customers?design=1`, { waitUntil: "networkidle" });
     await p.screenshot({ path: `${OUT}/list-${name}.png`, fullPage: true });
 
     await p.goto(`${BASE}/en/portal/customers/new`, { waitUntil: "networkidle" });
@@ -129,7 +129,7 @@ try {
   await list.fill('input[type="password"]', PASSWORD);
   await list.click('button[type="submit"]');
   await list.waitForURL("**/portal**", { timeout: 30000 });
-  await list.goto(`${BASE}/en/portal/customers`, { waitUntil: "networkidle" });
+  await list.goto(`${BASE}/en/portal/customers?design=1`, { waitUntil: "networkidle" });
   const table = await list
     .locator("table")
     .first()

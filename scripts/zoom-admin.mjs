@@ -31,10 +31,10 @@ const OURS_ROOT = '[class*="_PuckCanvas-root"]';
 
 /** 他每天真的会开的那几页。第一页是总览，其余按客户开得多不多排。 */
 const PAGES = [
-  ["dashboard", "/en/portal/dashboard", "总览"],
-  ["quotations", "/en/portal/quotations", "报价单"],
-  ["customers", "/en/portal/customers", "客户"],
-  ["payments", "/en/portal/payments", "收款"],
+  ["dashboard", "/en/portal/dashboard?design=1", "总览"],
+  ["quotations", "/en/portal/quotations?design=1", "报价单"],
+  ["customers", "/en/portal/customers?design=1", "客户"],
+  ["payments", "/en/portal/payments?design=1", "收款"],
 ];
 
 /** 一段多高（**物理像素**）。1000 物理 = 500 CSS，一屏看得完。 */

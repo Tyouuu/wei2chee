@@ -113,7 +113,7 @@ await p.fill('input[type="password"]', "FormaeDemo2026!");
 await p.click('button[type="submit"]');
 await p.waitForURL(/portal/, { timeout: 40000 });
 
-for (const [tag, url] of [["quotations", "/zh/portal/quotations"], ["website", "/zh/portal/website"]]) {
+for (const [tag, url] of [["quotations", "/zh/portal/quotations?design=1"], ["website", "/zh/portal/website?design=1"]]) {
   await p.goto("http://localhost:3000" + url, { waitUntil: "networkidle", timeout: 120000 });
   await p.waitForTimeout(8000);
   const { out, patterned } = await p.evaluate(AUDIT);

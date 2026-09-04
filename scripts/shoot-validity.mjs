@@ -50,7 +50,7 @@ try {
   /* 这个 demo 帐号没有进货单那一页,所以拿工程单验「同一栏,不同的字」——
      期限 vs 有效期。挑一个它真的有的页面,不是挑一个我希望它有的。 */
   await shoot(wide, "/en/portal/projects/new", "project-new");
-  await shoot(wide, "/en/portal/quotations", "quote-list");
+  await shoot(wide, "/en/portal/quotations?design=1", "quote-list");
 
   /* 🔴 空的表单看不出分期表对不对。真的填一份：打一个金额、按「照惯例填」，
      然后看右边那张纸上印出来的三期是不是 14,550 / 19,400 / 14,550。 */

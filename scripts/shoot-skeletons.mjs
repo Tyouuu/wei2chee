@@ -108,7 +108,7 @@ try {
 
   for (const style of WANTED) {
     await db.from("projects").update({ style }).eq("id", project.id);
-    await p.goto("http://localhost:3000/zh/portal/website", { waitUntil: "networkidle", timeout: 180000 });
+    await p.goto("http://localhost:3000/zh/portal/website?design=1", { waitUntil: "networkidle", timeout: 180000 });
     await p.waitForTimeout(7000);
     /* CLIP, DO NOT ASK THE ELEMENT FOR ITS OWN PICTURE.
 

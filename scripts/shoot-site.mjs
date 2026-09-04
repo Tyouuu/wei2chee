@@ -37,7 +37,7 @@ await wide.fill('input[type="email"]', "tianyou.demo@formae.test");
 await wide.fill('input[type="password"]', "FormaeDemo2026!");
 await wide.click('button[type="submit"]');
 await wide.waitForURL(/portal/, { timeout: 60000 });
-await wide.goto("http://localhost:3000/zh/portal/website", { waitUntil: "networkidle", timeout: 120000 });
+await wide.goto("http://localhost:3000/zh/portal/website?design=1", { waitUntil: "networkidle", timeout: 120000 });
 await wide.waitForTimeout(6000);
 await wide.screenshot({ path: ".screenshots/site/editor.png" });
 console.log("ok   editor");
