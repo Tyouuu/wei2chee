@@ -1313,7 +1313,32 @@ export function PortalEditor({
                         reads itself is a cycle and CSS drops the lot. Third
                         time in this codebase; see corners.tsx. */}
                     <div className="h-full" style={cornerCapture}>
-                    <div className="h-full" style={cornerApply(activeCorners)}>
+                    {/* 🔴 `[&>*]:h-full` —— 少了它，一页短的时候画面下半是灰的。
+                        实测 2026-09-05（工程那一页拿掉底下那张表之后）：外面这层
+                        底 814px，而里面那个壳只有 617 —— 底下 197px 露出画布自己
+                        的灰。壳自己要的是 `min-height:100%`，而**百分比要爸爸有一个
+                        写出来的高度**；中间隔着 Puck 自己那一层包装，它的高度是 auto，
+                        於是那个百分比没有东西可以算，壳就退回内容的高度。
+                        `work-view.tsx` 里那一大段注解讲的是同一件事，从另一边遇到的。 */}
+                    <div
+                      /* 🔴 一页短的时候，画面下半是灰的 —— 2026-09-05 实测。
+
+                         工程那一页拿掉底下那张重复的表之后：外面这层底 814px，
+                         而里面那个壳只有 617 —— 底下 197px 露出画布自己的灰，
+                         **连左边那条侧栏也跟着断在半空**，看起来就是坏的。
+
+                         壳自己要的是 `min-height:100%`，而**百分比要爸爸有一个
+                         写出来的高度**。量出来断在哪：Puck 的 DropZone 是 814
+                         （有高度），而它**每一项外面那一层包装**（一个没有 class
+                         的 div）是 auto —— 那个百分比就没有东西可以算，壳退回内容高。
+
+                         所以这一条只补那一层。`work-view.tsx` 里那一大段注解讲的是
+                         同一件事，从另一边遇到的（那边的答案是给壳一个 vh 的最小值，
+                         这边不行：画布上面还有一条外壳，`100vh` 会多出一条卷轴）。 */
+                      data-canvas-fill=""
+                      className="h-full"
+                      style={cornerApply(activeCorners)}
+                    >
                       {/* Everything inside the canvas is the CUSTOMER'S system
                         and speaks their system language; everything outside it
                         is Formae and speaks the owner's. The provider sits at

@@ -112,7 +112,13 @@ describe("buildPageLayout", () => {
     // the layout at all.
     const zh = JSON.stringify(contentOf(renovationZh, "projects"));
     expect(zh).toContain("项目");
-    expect(zh).toContain("师傅");
+    /* 🔴 「师傅」搬到它真的出现的那一页（2026-09-05）。
+       在这之前它出现在工程页上，而唯一说出它的是一个「All crew」的下拉 ——
+       **那个下拉什么都不筛**（一张走单记录上没有师傅那一栏），
+       而它的选项「师傅 A」「师傅 B」是编出来的两个人名。
+       这一条要守的是「这一行自己的词有没有到得了版面」，不是
+       「那个词有没有被印在某个地方」—— 所以它现在问的是师傅自己那一页。 */
+    expect(JSON.stringify(contentOf(renovationZh, "staff"))).toContain("师傅");
 
     // The same guarantee in the DEFAULT language. A contractor's order is a
     // Project and their people are the Crew -- not the catalogue's generic
@@ -120,7 +126,7 @@ describe("buildPageLayout", () => {
     // silently produce.
     const en = JSON.stringify(contentOf(renovation, "projects"));
     expect(en).toContain("Project");
-    expect(en).toContain("Crew");
+    expect(JSON.stringify(contentOf(renovation, "staff"))).toContain("Crew");
     expect(en).not.toContain("项目");
   });
 
@@ -200,7 +206,22 @@ describe("buildPageLayout", () => {
     for (const key of SHELL_PAGES) {
       const content = contentOf({}, key);
       expect(content.length, `${key} should not be empty`).toBeGreaterThan(2);
-      expect(content.some((n) => n.type === "RecordTable")).toBe(true);
+      /* 🔴 「有一张表」换成「他的记录看得到」（2026-09-05）。
+         原本这一条写死 RecordTable，而那等於写死「每一页都是一张表」——
+         正是 2026-09-02 起在拆的那件事（看板 · 单据 · 行事历 · 左清单右详情）。
+         工程跟任务从今天起**只有板**，理由是它们本来是同一批记录画两次。
+         要守的那句话没有变：一个没填过问卷的人，打开每一页都要看得到东西。 */
+      const SHOWS_RECORDS = new Set(["RecordTable", "TaskBoard", "DaySchedule"]);
+      const shows = (nodes: { type: string; props: Record<string, unknown> }[]): boolean =>
+        nodes.some(
+          (n) =>
+            SHOWS_RECORDS.has(n.type) ||
+            /* 左清单右详情 · 单据：那张表装在 Columns 的插槽里。 */
+            Object.values(n.props ?? {}).some(
+              (v) => Array.isArray(v) && shows(v as { type: string; props: Record<string, unknown> }[]),
+            ),
+        );
+      expect(shows(content), `${key} 上看不到他的任何一笔记录`).toBe(true);
     }
   });
 

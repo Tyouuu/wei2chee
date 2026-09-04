@@ -2264,27 +2264,25 @@ function buildProjects(
 
        Live rows land in the column their own status names -- live-rows.ts has
        filled TaskBoard since it was written, and until today no page used it. */
+    /* 🔴 板就是这一页，底下那张表拿掉了（2026-09-05）。
+
+       在这之前这一页是**看板加一张一模一样的表**：同一批七笔画两次，
+       上面一次下面一次。参考那一页（Studio Admin 的 Kanban）只有板 ——
+       而「同一行印两次同一个数字」正是[印那一套风格被砍掉](../../docs/founder-tasks.md)
+       的理由。
+
+       ⚠️ 拿掉那张表要先补上它唯一不可替代的东西：**第一格是连结**。
+       卡片从今天起点得进那一单（`board-blocks.tsx`），示例照旧点不动。
+
+       ⚠️ **诚实讲丢掉了什么**：表格上面那个搜索框。七笔不用搜，七十笔要 ——
+       那时候要的是参考那一页顶上那条工具条（Board／List／Table ＋ 搜索），
+       不是把这张表装回来。
+
+       🔴 那个「All crew」的下拉也一起拿掉了，理由不一样：**它什么都不筛**。
+       一张走单记录上没有师傅那一栏，所以它连筛的对象都没有；而它的选项
+       「师傅 A」「师傅 B」是**编出来的两个人名**。一个筛不了东西的筛子，
+       就是这个仓库一直在禁的那种死掉的控件。 */
     boardNode("projects", ctx, sample.records),
-    node("Listbox", "projects-staff", {
-      name: "assigned-staff",
-      placeholder: c.projects.staffPlaceholder(labels.staff),
-      options: [
-        { label: c.projects.allStaff(labels.staff), value: "all" },
-        { label: `${labels.staff} A`, value: "a" },
-        { label: `${labels.staff} B`, value: "b" },
-      ],
-    }),
-    recordTable(
-      "projects-list",
-      c.projects.caption(labels.order),
-      {
-        primary: labels.order,
-        secondary: labels.customer,
-        amount: c.col.amount,
-        status: c.col.progress,
-      },
-      sample.records,
-    ),
   ];
 }
 
@@ -2593,7 +2591,9 @@ function boardNode(
     cards: rows.slice(0, 9).map((r, i) => ({
       title: r.primary,
       stage: stages[i % Math.max(stages.length, 1)] ?? "",
-      note: [r.secondary, r.amount].filter(Boolean).join(" · "),
+      /* 对方一行、金额自己一行靠右 —— 跟表格那两栏同一条。 */
+      note: r.secondary ?? "",
+      amount: r.amount ?? "",
     })),
   });
 }
@@ -2879,8 +2879,9 @@ function buildFromShape(
          Keying the arrangement off `shape` alone is what produced sixteen
          copies of one page; keying it off what the page is FOR is the repair.
          报价单, 订单 and 工程 have their own builders below. */
+      /* 任务也是板，而且同样**只有板** —— 见 buildProjects 里那一段。 */
       if (pageKey === "tasks") {
-        return [...head, boardNode(pageKey, ctx, copy.rows), ...table];
+        return [...head, boardNode(pageKey, ctx, copy.rows)];
       }
       if (pageKey === "purchases") {
         return [

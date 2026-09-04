@@ -1225,7 +1225,12 @@ function fill(
       cards: rows.slice(0, 12).map((r) => ({
         title: r.primary,
         stage: r.status || columns[0] || "",
-        note: [r.secondary, r.amount].filter(Boolean).join(" · "),
+        /* 金额从这一行搬到卡片自己那一行（2026-09-05）—— 靠右、不断行，
+           跟表格那一栏同一条。`note` 剩下的就是对方。 */
+        note: r.secondary ?? "",
+        amount: r.amount ?? "",
+        /* 这一单自己那一页。工程那一页的表格拿掉了，所以卡片是唯一的入口。 */
+        href: r.href,
       })),
     };
   }

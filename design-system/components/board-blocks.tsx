@@ -32,7 +32,15 @@ import { Rating, RatingButton } from "@/components/kibo-ui/rating";
 
 /* ------------------------------------------------------------------ 看板 */
 
-export type BoardCard = { title: string; stage: string; note?: string };
+export type BoardCard = {
+  title: string
+  stage: string
+  note?: string
+  /** 金额自己一行、靠右 —— 跟表格那一栏同一条：断成两行的金额读起来是错的。 */
+  amount?: string
+  /** 这一单自己那一页。只有真的记录有（`live-rows.ts` 给的），示例没有。 */
+  href?: string
+}
 
 export function TaskBoard({
   stages,
@@ -58,8 +66,14 @@ export function TaskBoard({
       name: c.title,
       column: hit ? hit.id : (columns[0]?.id ?? "col0"),
       note: c.note ?? "",
+      amount: c.amount ?? "",
+      href: c.href ?? "",
     };
   });
+  /* 每一栏几张 —— 参考那一页每一个栏名底下就写着「5 tasks」。
+     一个看得见的数字，跟表格底下那一行「显示 7 笔」是同一件事。 */
+  const count = new Map<string, number>();
+  for (const d of data) count.set(d.column, (count.get(d.column) ?? 0) + 1);
 
   if (!columns.length) return null;
 
@@ -75,16 +89,51 @@ export function TaskBoard({
     <KanbanProvider id={boardId} columns={columns} data={data} onDataChange={() => {}}>
       {(column) => (
         <KanbanBoard id={column.id} key={column.id}>
-          <KanbanHeader>{column.name}</KanbanHeader>
+          <KanbanHeader>
+            <span className="flex items-baseline [gap:var(--gap-inline)]">
+              <span>{column.name}</span>
+              <span className="tnum [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [font-weight:var(--fw-regular)]">
+                {count.get(column.id) ?? 0}
+              </span>
+            </span>
+          </KanbanHeader>
           <KanbanCards id={column.id}>
             {(item) => (
               <KanbanCard key={item.id} id={item.id} name={item.name} column={item.column}>
-                <p className="m-0 [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
-                  {item.name}
-                </p>
+                {/*
+                  🔴 卡片是「打开这一单」的入口（2026-09-05）。
+
+                  工程那一页本来是**看板加一张一模一样的表**：同一批七笔画两次。
+                  参考那一页（Studio Admin 的 Kanban）只有板 —— 而「同一行印两次
+                  同一个数字」正是[印那一套风格被砍掉的理由](../../docs/founder-tasks.md)。
+                  拿掉那张表就要把它唯一不可替代的东西补上：**表格第一格是连结**。
+
+                  一个连结，不是一颗按钮：这块也画在风格画廊、几百张缩图跟纸上，
+                  那些地方没有 session。示例没有 href，所以示范的板点不动 ——
+                  跟表格同一条规矩。
+                  ⚠️ 能点得下去是因为同一天给 dnd 的感应器加了 6px 的启动门槛。
+                */}
+                {typeof item.href === "string" && item.href ? (
+                  <a
+                    href={item.href}
+                    className="m-0 block [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] underline decoration-[color:var(--color-ink-700)] underline-offset-[3px] hover:decoration-[color:var(--color-primary)]"
+                  >
+                    {item.name}
+                  </a>
+                ) : (
+                  <p className="m-0 [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+                    {item.name}
+                  </p>
+                )}
                 {typeof item.note === "string" && item.note ? (
                   <p className="m-0 mt-0.5 [font-size:var(--text-xs)] text-muted-foreground">
                     {item.note}
+                  </p>
+                ) : null}
+                {typeof item.amount === "string" && item.amount ? (
+                  /* 金额自己一行、靠右、不断行 —— 跟表格那一栏同一条。 */
+                  <p className="m-0 mt-1 whitespace-nowrap text-right tabular-nums [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+                    {item.amount}
                   </p>
                 ) : null}
               </KanbanCard>

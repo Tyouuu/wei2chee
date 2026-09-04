@@ -212,9 +212,15 @@ export const KanbanProvider = <
 }: KanbanProviderProps<T, C>) => {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
+  /* 🔴 本地补丁（2026-09-05）：要按得下去，先要按得动。
+     原本两个感应器**没有启动门槛**，所以一次 mousedown 就开始拖，
+     卡片里那个连结的 click 会被吞掉 —— 而我们的看板卡从今天起是
+     「点进去改这一单」的入口（工程那一页的表格拿掉了）。
+     6px / 长按 120ms 是 dnd-kit 自己文件给的那一组，
+     拖还是拖得动，而**一次干净的点击就是一次点击**。 */
   const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 6 } }),
     useSensor(KeyboardSensor)
   );
 
