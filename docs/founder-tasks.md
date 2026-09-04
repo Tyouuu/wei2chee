@@ -10740,6 +10740,71 @@ lint 0 error · `check:en` **0** · `check:reachable` 两个宽度 **0 个点不
 - [ ] **「Quote date」那个日期选择器占一整行，而它是空的**
 - [ ] 客户页的名字会折成三行（「Hup Seng Trading」）
 
+
+#### 141e. 手机上一行一笔，不是一张表 —— 深度研究 ＋ 做完（2026-09-04）
+> `就是在手机看表格还是很难的东西 你应该是要帮我深度研究App是如何设计跟摆放 是更加的合理`
+
+##### 🔴 Apple 自己的指南就是这么写的（读的是原文，不是别人写的评测）
+`developer.apple.com/design/human-interface-guidelines/lists-and-tables`
+（页面是 JS 渲染的，抓的是它自己的 JSON 端点）：
+
+> **`Keep item text succinct so row content is comfortable to read.`**
+> `… If each item consists of a large amount of text, consider alternatives
+> that help you avoid displaying over-large table rows. For example,`
+> **`you could list item titles only, letting people choose an item to reveal
+> its content in a detail view.`**
+
+> **`Consider ways to preserve readability of text that might otherwise get
+> clipped or truncated.`**
+
+⚠️ **而它讲多栏表格的地方，配的全部是桌面才有的东西**：
+`Let people resize columns` · `Consider using alternating row colors in a
+multicolumn table` · `let people click a column heading to sort` ——
+**三样在 390px 上一样都没有。**
+它对多栏表格的定位也写得很清楚：`Apps that offer productivity tasks often use
+a table…`（生产力工具），而 iOS 的 List 是 `rows of data arranged in a
+**single column**`。
+
+##### 实拍的两个同行，形状一模一样（`.screenshots/appui/`）
+| | 那一行长什么样 |
+|---|---|
+| **ServiceM8**（上门服务 · 我们最大的市场） | 左边一颗状态圆点 · 时间粗体 · 客户名 · 一行小灰字，**单号靠右**。上面按日期分组（Wednesday / Thursday） |
+| **QuickBooks** | 名字 ＋ 一行小灰字（`12 pending`），**金额靠右**。⚠️ 它唯一画成**表格**的那一屏是**报表**，不是记录清单 |
+
+⚠️ 次要来源（几篇 UX 文章）也是同一个结论（「stacked list 是手机上最好的那一种」），
+**但那是二手的**，上面两条才是可以复查的。
+
+##### 做出来的那一行
+```
+Taman Desa 3-room reno              RM 48,500
+Mr Tan                          ● Confirmed
+```
+标题装不下就切（Apple 那一条讲的就是这个，切掉的点进去看得到）·
+金额靠右不断行 · 状态是小圆点加词 · **整行都点得到**（拇指按不准一句字里的那几个字）。
+
+##### 🔴 它是同一份栏位投影出来的，不是第二份手写清单
+第一栏当标题 · 金额靠右 · 状态在第二行右边 · **其余每一栏用「·」串成第二行**。
+**客户自己加一栏，它自己会出现在手机上**，不用有人回来改这里 ——
+这个仓库栽在「第二份手写拷贝」上至少六次。
+
+##### 一条守卫，而且那个「2」是要守的东西
+同一笔记录现在在版面里有两份（表格的 `<td>` ＋ 手机那一行的 `<span>`），
+哪一份画出来由容器宽度决定。`record-table-states.test.tsx` 写成
+`toHaveLength(2)` 而不是 `getAllBy(...)[0]` —— 哪天有人多加第三份、
+或者把其中一份删掉，这里会红。
+
+##### 验收
+1043 个测试 · tsc 干净 · lint 0 error · `check:en` **0** ·
+`check:reachable` 两个宽度 **0 个点不到** · `align:admin swiss` 还是 1 项（没变）·
+**390 三页都用眼睛看过**
+
+##### 还欠（看得到，这一轮没动 —— 不是我的地盘）
+- [ ] 🔴 **「FILTERED BY 状态：等回覆 ×」** —— 它在手机上现在是整页最吵的一样东西，
+      而它**同时说两个谎**：说清单被筛过了（画面上七笔全在），而那个 × 指向 `#`。
+      [任务 111](#111) · [任务 94](#94) 都记过。落在产生页面那一层
+- [ ] **「Quote date」那个日期选择器占一整行，而它是空的**
+- [ ] **手机上还没有分组**（ServiceM8 按日期分组）—— 七笔不用分，七十笔要
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**

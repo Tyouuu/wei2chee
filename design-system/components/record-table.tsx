@@ -175,6 +175,17 @@ export function RecordTable(props: {
   /** 状态是哪一栏。分段讲的是状态，所以按栏的**种类**找，不是按栏名找
    *  —— 栏名是老板自己取的，他随时可以改成「到哪一步」。 */
   const statusKey = columns.find((c) => c.kind === "status")?.key
+  /* 手机上那一行读的是**同一份 `columns`**：第一栏当标题、金额靠右、
+     状态在第二行右边、其余的用「·」串成第二行。客户自己加一栏，
+     它自己会出现，不用有人回来改这里。 */
+  const phoneTitle =
+    columns.find((c) => c.key === "primary") ??
+    columns.find((c) => c.kind !== "status" && c.kind !== "amount") ??
+    columns[0]
+  const phoneAmount = columns.find((c) => c.kind === "amount")
+  const phoneRest = columns.filter(
+    (c) => c.key !== phoneTitle?.key && c.kind !== "amount" && c.kind !== "status",
+  )
 
   const q = query.trim().toLowerCase()
   const searched =
@@ -310,6 +321,96 @@ export function RecordTable(props: {
           column past the right edge, so the customer's own action appeared to do
           nothing. The grid scrolls to show it. Measured, not assumed — this was
           visible in the first browser check of the column editor. */}
+      {/* ─────────────────────────────────────────────────────────────────
+          手机上一行一笔，不是一张表。
+
+          老板 2026-09-04：`就是在手机看表格还是很难的东西`。他讲对了，
+          而 Apple 自己的指南就是这么写的（`Lists and tables`，原文）：
+
+            「**Keep item text succinct so row content is comfortable to read.**
+             … If each item consists of a large amount of text, consider
+             alternatives that help you avoid displaying over-large table rows.
+             For example, **you could list item titles only, letting people
+             choose an item to reveal its content in a detail view.**」
+            「**Consider ways to preserve readability of text that might
+             otherwise get clipped or truncated.**」
+
+          而它讲多栏表格的地方，配的全部是**桌面才有的东西**：可以拉宽的栏、
+          隔行底色、点栏头排序 —— 那三样在 390px 上一样都没有。
+
+          实拍的两个同行也是同一个形状（`.screenshots/appui/`）：
+          · **ServiceM8**：左边一颗状态圆点 · 时间粗体 · 客户 · 一行小灰字，单号靠右
+          · **QuickBooks**：名字加一行小灰字，金额靠右 —— 而它唯一画成表格的
+            那一屏是**报表**，不是记录清单
+
+          ⚠️ **这一行是同一份栏位投影出来的，不是第二份手写清单。**
+          客户自己加一栏，它自己会出现在第二行 —— 这个仓库栽在
+          「第二份手写拷贝」上至少六次。 */}
+      {rows.length > 0 ? (
+        <ul className="flex flex-col @3xl:hidden">
+          {rows.map((row, i) => {
+            const title = String(row.cells?.[phoneTitle.key] ?? "")
+            const amount = phoneAmount ? String(row.cells?.[phoneAmount.key] ?? "") : ""
+            const status = statusKey ? String(row.cells?.[statusKey] ?? "") : ""
+            const tone = (statusKey ? row.tones?.[statusKey] : undefined) as StatusTone | undefined
+            const rest = phoneRest
+              .map((c) => String(row.cells?.[c.key] ?? "").trim())
+              .filter(Boolean)
+              .join(" · ")
+            const body = (
+              <>
+                <span className="flex items-baseline [gap:var(--gap-inline)]">
+                  {/* 标题一行到底，装不下就切 —— Apple 那一条讲的就是这个。
+                      切掉的部分点进去看得到，而一个折成三行的标题会把
+                      每一笔的高度撑到不一样，清单就扫不动了。 */}
+                  <span className="min-w-0 flex-1 truncate [color:var(--color-paper)] [font-weight:var(--fw-medium)]">
+                    {title}
+                  </span>
+                  {amount ? (
+                    <span className="shrink-0 whitespace-nowrap tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)]">
+                      {amount}
+                    </span>
+                  ) : null}
+                </span>
+                {rest || status ? (
+                  <span className="flex items-center [gap:var(--gap-inline)] [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                    <span className="min-w-0 flex-1 truncate">{rest}</span>
+                    {status ? (
+                      <span className="shrink-0">
+                        <StatusDot tone={tone ?? "neutral"} label={status} />
+                      </span>
+                    ) : null}
+                  </span>
+                ) : null}
+              </>
+            )
+            /* 整行都点得到 —— 一个拇指按不准一句字里的那几个字。
+               ⚠️ 跟表格那边同一条规矩：只有真的记录有 `href`，
+               示例资料没有，所以画廊跟纸上它照样是死的。 */
+            return (
+              <li
+                key={i}
+                className="[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
+              >
+                {row.href ? (
+                  <a
+                    href={row.href}
+                    className="flex min-h-14 flex-col justify-center [gap:2px] [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)]"
+                  >
+                    {body}
+                  </a>
+                ) : (
+                  <div className="flex min-h-14 flex-col justify-center [gap:2px] [padding-inline:var(--pad-cell-x)] [padding-block:var(--pad-cell-y)]">
+                    {body}
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      ) : null}
+
+      <div className={rows.length > 0 ? "hidden @3xl:block" : undefined}>
       <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
       <table
         className="w-full border-collapse [background-color:var(--color-table-bg)] [font-size:var(--text-sm)]"
@@ -535,6 +636,7 @@ export function RecordTable(props: {
         </tbody>
       </table>
     </DataGrid>
+      </div>
 
       {/* 表格底下那一条。
           🔴 组件清单 2026-09-03 报「缺 表格页尾」—— 参考那几页表格底下都有一条

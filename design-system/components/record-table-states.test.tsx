@@ -32,9 +32,16 @@ const MODEL: TableModel = {
 };
 
 describe("一张表的三种状态", () => {
-  it("有资料就画资料", () => {
+  it("有资料就画资料 —— 两份：宽的画表格，手机上画清单", () => {
     render(<RecordTable gridId="t1" caption="Recent projects" table={MODEL} />);
-    expect(screen.getByText("Taman Desa 3-room reno")).toBeTruthy();
+    /* 🔴 `getAllByText`，而且这个「2」是要守的东西不是要绕过的东西。
+       2026-09-04 起同一笔记录在版面里有两份：一份是表格的 `<td>`，
+       一份是手机上那一行的 `<span>`。哪一份画出来由容器宽度决定
+       （`@3xl`），所以真的画面上永远只看得到一份 —— 但 jsdom 没有排版，
+       两份都在。
+       写成 `toHaveLength(2)` 而不是 `getAllBy(...)[0]`：哪一天有人
+       多加第三份，或者把其中一份删掉，这里会红。 */
+    expect(screen.getAllByText("Taman Desa 3-room reno")).toHaveLength(2);
   });
 
   it("🔴 一行都没有的时候要讲一句话，不是留一片空白", () => {
