@@ -10304,6 +10304,70 @@ null   没有问（不是老板）/ 读失败  -> 一个字都不讲，而且明
 但客人一听「app」就会去商店搜，搜不到就以为我们在骗他。
 讲「**在手机桌面上按一下就打开**」。
 
+
+#### 141b. 可行性跟同行做法 —— 实查完了（2026-09-04 他交办）
+> `你去帮我深度研究一下可行性跟主流有多少人是这样做 就是我的竞争对手有没有这样做
+> 还是采取不同的方法 采取了什么方法跟我讲一下优点跟缺点`
+
+实拍报告：https://claude.ai/code/artifact/59a1cdec-0c32-453f-bc5e-4ea2725b6882
+
+##### 🔴 结论一：**13 家同行，13 家都有 app**
+Tunai（安卓四支）· Aoikumo（三支，两个平台）· StoreHub（至少四支）·
+SQL X-Mobile · AutoCount Mobile · Bukku MiniPOS（三个商店）· Financio ·
+Fresha · Booksy · Jobber · Housecall Pro · ServiceM8（**苹果好、安卓那支叫 Lite 评分低**）·
+Xero · QuickBooks · Zoho Books · Wix（卖「你自己牌子的 app」，**要送审**，苹果 US$99/年 + Google US$25）。
+
+⚠️ **我上一则跟他讲错一句，当场收回了**：我看 Tunai 官网写
+`runs on any tablet, phone, or computer with a browser` 就说他们只有网页 ——
+**商店上有四支**。那句话讲的是「不用装东西也能用」，不是「我们没有 app」。
+
+##### 🟢 结论二：唯一两边都做的那一家，推荐图标那一边
+**Odoo 官方说明书原文**（`odoo.com/documentation/19.0/administration/mobile.html`，
+2026-09-04 读的）：
+> `Two kind of Odoo mobile app exist: the progressive web app (PWA) and store apps.`
+> **`Using the PWA is recommended.`**
+> PWA 的好处它列三条：`Quick access by adding the PWA to a device's home screen` ·
+> `Seamless and borderless navigation experience` · `Push notifications`
+> 讲到商店那两支只补一句：`they are not compatible with SSO authentication`
+
+⚠️ **但不要把它读成「大家在往这边走」** —— 它是 13 家里的 1 家，而且两种都给。
+真实的画面是：**做 app 是常态，图标是那个最大的额外给的一条路。**
+
+##### 技术可行性：四条，全部读原文
+| | |
+|---|---|
+| ① **我们这套框架自己带说明书** | `node_modules/next/dist/docs/01-app/02-guides/progressive-web-apps.md` —— 官方的一整章，`app/manifest.ts` 一个档案 ＋ 两张图。它自己写的好处是 `Deploy updates instantly without waiting for app store approval` |
+| ② 🟢 **苹果今年把规矩改宽了** | Safari 26 官方公告：`By default, every website added to the Home Screen opens as a web app` · `there are now zero requirements for "installability" in Safari`。以前要设定档才算数，**现在不用** |
+| ③ 🟢 **「七天被清掉」不成立** | WebKit 为**主画面上的 web app** 加了一条明确豁免（`an explicit exception for the first-party domain of home screen web applications`）。反过来讲：**装了图标比放在浏览器里更不容易被登出** |
+| ④ 通知 | iOS 16.4+ 收得到，**但只有装到主画面那一种**。安卓本来就可以 |
+
+##### 🔴 真正的风险只有一个：他会不会自己去按
+**Statcounter 马来西亚 · 手机 · 2026-08 实数：安卓 54.12% · 苹果 45.86%。**
+- **安卓那一半可以自己弹按钮**（`beforeinstallprompt`：要加密 · 点过一下 · 停留 30 秒，都自然会发生）
+- 🔴 **苹果那一半没有那个东西，永远只能教** —— 所以那三步一定要画成图
+- ⚠️ 那个数字的限制：Statcounter 数的是**网页浏览量**，偏向比较新的机。
+  工地上那一群实际安卓比例可能更高，**但我没有那个数字**
+
+##### 查不到的（写下来，不要用推的）
+- 🔴 **实际装机率** —— 业界基本上不公开。搜到的全部是软件公司自己的行销文
+  （「85%」「98%」那种），没有一个可以复查。**只能上线之后自己量**
+- SQL Account / AutoCount 的商店页（网站写着有手机端，商店那一页我没读到）
+- Tunai 的苹果那一边（只查到安卓四支）
+
+##### ⚠️ 我顶自己的一句
+**13 家做 app 本身是一个讯号。** 他们不是不知道图标那条路（Odoo 知道，还两边都给），
+照样做 app，是因为 app 有两样图标永远拿不到的：**商店里搜得到** ·
+**「我们公司有 app」这句话**。
+→ 诚实的讲法是：**图标是先给他一个能用的东西，不是永远不做 app。**
+等他真的有客人开口、公司也注册好了再做，而那时候后面那一半（资料 · 权限 · 单号）本来就在。
+
+##### 顺序不变（[任务 105](#105) ① 那一条现在有证据了）
+1. **手机上给老板 `WorkView`** —— 图标装了打开是编辑器，比没有图标糟
+2. 图标跟名字（顺手补掉 `/apple-icon` 那个 404）
+3. 安卓弹按钮 · 苹果给三张图
+4. 装了之后才推通知 ——「有人问价钱了」是唯一一个他会为它去装图标的理由
+   （而[任务 59](#59) 那条「询价进来不会通知他」还欠着）
+
 ## 已完成
 
 - **2026-08-25** — **箭头接通了：官网表格 → 系统出单，是真的了。**
