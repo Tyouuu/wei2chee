@@ -15,6 +15,7 @@ import chrome from "../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import type { SystemLang } from "@/lib/system-lang";
 import { deskSurface } from "@/lib/portal/system-register";
+import { SystemLangProvider } from "@/design-system/system-lang-context";
 import { WorkView } from "./work-view";
 
 /**
@@ -254,9 +255,16 @@ export function MobileEditor({
                   unreadable. Swiping keeps both the proportions and the type
                   size, which is how every phone preview of a desktop layout
                   works. */}
-              <div className="pointer-events-none w-[900px]">
-                <Render config={puckConfig} data={appState.data as Data} />
-              </div>
+              {/* 🔴 `SystemLangProvider` —— 看图才看到的：这一张预览里
+                  搜索框写着「在这里筛选」，而这个客户的系统是英文的。
+                  `work-view.tsx` 一直有包这一层，这一张没有，所以组件
+                  退回自己的预设（中文）。`check:en` 量不到它 ——
+                  它只在手机那一格里画得出来，而那把尺是在桌面宽度跑的。 */}
+              <SystemLangProvider lang={systemLang}>
+                <div className="pointer-events-none w-[900px]">
+                  <Render config={puckConfig} data={appState.data as Data} />
+                </div>
+              </SystemLangProvider>
             </div>
           </StyleScope>
         </div>
