@@ -4,22 +4,18 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { WHATSAPP_NUMBER } from "@/lib/brand";
 import { SettingsDialog } from "../settings-dialog";
 import type { SystemLang } from "@/lib/system-lang";
 import { AddPageDialog } from "../add-page-dialog";
 import { CommandBar, FindButton } from "./command-bar";
 import chrome from "../chrome.module.css";
 import {
-  IconBlocks,
-  IconHandoff,
   IconHome,
   IconPages,
   IconPlus,
   IconSettings,
   IconSpec,
   IconStyles,
-  IconTemplates,
 } from "./shell-icons";
 
 /**
@@ -276,10 +272,6 @@ export function PortalShell({
   // prefix, and the home route has no trailing segment to compare against.
   const is = (suffix: string) => pathname === `${base}${suffix}`;
 
-  const handoffHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `我的系统设计已经确定了，请开始帮我建系统（账号：${accountEmail}）`,
-  )}`;
-
   return (
     <div className={`${chrome.chrome} ${chrome.workbench} flex min-h-screen`}>
       {/* THE RAIL IS A DRAWER ON A PHONE.
@@ -415,6 +407,13 @@ export function PortalShell({
               >
                 {sitePage.label}
               </NavRow>
+              {/* The register is a decision about the PUBLIC site now — since
+                  2026-09-04 every workbench page wears one system register, so
+                  this row stopped being about 「my system's look」 and became
+                  「what my shopfront looks like」. It belongs to 官网. */}
+              <NavRow href={`${base}/styles`} active={is("/styles")} icon={<IconStyles />}>
+                {t("styles")}
+              </NavRow>
               <NavRow
                 href={`${base}/enquiries`}
                 active={is("/enquiries")}
@@ -432,32 +431,33 @@ export function PortalShell({
             </>
           )}
 
-          {isOwner && (
-            <>
-          <SectionLabel>{t("librarySection")}</SectionLabel>
-          <NavRow href={`${base}/library`} active={is("/library")} icon={<IconBlocks />}>
-            {t("library")}
-          </NavRow>
-          <NavRow href={`${base}/templates`} active={is("/templates")} icon={<IconTemplates />}>
-            {t("templates")}
-          </NavRow>
-          <NavRow href={`${base}/sections`} active={is("/sections")} icon={<IconTemplates />}>
-            {t("sections")}
-          </NavRow>
-          <NavRow href={`${base}/styles`} active={is("/styles")} icon={<IconStyles />}>
-            {t("styles")}
-          </NavRow>
+          {/* 🔴 SIX ROWS USED TO SIT HERE AND THEY WERE THE 「四不像」.
 
-          <SectionLabel>{t("deliverSection")}</SectionLabel>
-          <NavRow href={`${base}/spec`} active={is("/spec")} icon={<IconSpec />}>
-            {t("spec")}
-          </NavRow>
-          <NavRow href={handoffHref} external icon={<IconHandoff />}>
-            {t("handoff")}
-          </NavRow>
-            </>
-          )}
+              「我的formae现在感觉不伦不类啊」(2026-09-05), and the count says
+              why: 组件库 · 模板库 · 版段库 · 风格库 · 需求书 · 交付 — six rows
+              of a SECOND product wedged between the customer's own system and
+              his public site. The first three are 21st.dev, a gallery built
+              for engineers to browse; a renovation contractor does not shop
+              for 69 components and 216 sections. We copied 21st.dev's gallery
+              and copied its USERS along with it, and its users are us.
 
+              交付 went with them for a harder reason: it opened a WhatsApp
+              chat with a placeholder number, carrying a hardcoded Chinese
+              sentence 「请开始帮我建系统」 — a dead button, in the wrong
+              language, describing the superseded A' concept where the customer
+              tuned a design and handed it back for us to build. Since
+              2026-09-03 we sell a system on an annual fee; there is no
+              handover.
+
+              风格 and 需求书 did not die, they moved to where they belong:
+              the register now governs the PUBLIC SITE only (the workbench
+              collapsed to one on 2026-09-04), so it sits inside 官网; and the
+              specification is a reference document about what he bought, so
+              it sits by the account, not in the daily list.
+
+              ⚠️ The pages themselves are untouched — /library, /templates,
+              /sections all still render at their URLs. This removes them from
+              the rail, not from the product. */}
           {/* THE CONSOLE USED TO BE TWO ROWS HERE, AND THAT WAS THE BUG.
 
               「感覺我的平台有點四不像」. Reaching the admin panel meant scrolling
@@ -476,6 +476,14 @@ export function PortalShell({
               is two fields. 我的账号 is about the PERSON — password, email,
               exporting their data, deleting it — and is a page because none of
               that belongs in a popup. */}
+          {/* 需求书 is not a page he opens daily — it is the written answer to
+              「我买的这套包含什么」. It sits with the account for the same
+              reason 我的账号 does: it is about the arrangement, not the work. */}
+          {isOwner && (
+            <NavRow href={`${base}/spec`} active={is("/spec")} icon={<IconSpec />}>
+              {t("spec")}
+            </NavRow>
+          )}
           {isOwner && (
           <button
             type="button"
