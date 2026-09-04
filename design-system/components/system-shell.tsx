@@ -301,7 +301,20 @@ export function SystemShell({
           extra column sits beside the page, not inside the navigation. */}
       <NavAxisProvider value={isTop ? "top" : "side"}>
         <div
-          className={`${
+          /* 🔴 `min-w-0`：窄屏那一条侧栏是靠 `overflow-x-auto` 滚的，
+             而一个 flex 项目的 `min-width` 预设是 `auto`（不准缩到比内容窄）,
+             所以那一条会直接长出去而不是滚。2026-09-04 在 390px 量到：
+             这一格 390，里面那条 `aside` 993，`clientWidth` 也是 993 ——
+             **六个页面连结在画面外，而且到不了**。
+
+             ⚠️ `[&>*]:min-w-0` 是必要的第二半：`sidebar` 是 Puck 的插槽，
+             它自己会包一层**我们改不到 class 的 div**，而那一层同样是
+             flex 项目、同样 `min-width:auto`。只修 `aside` 跟只修这一格
+             都量出来没有变化（993 → 993 → 993），两层一起才是 390。
+
+             宽屏不受影响：
+             那边宽度是 `@3xl:w-[220px]` 那几条写死的，`shrink-0` 也还在。 */
+          className={`min-w-0 [&>*]:min-w-0 ${
             isTop ? "flex w-full shrink-0" : "flex w-full shrink-0 @3xl:w-auto"
           } ${
             floating

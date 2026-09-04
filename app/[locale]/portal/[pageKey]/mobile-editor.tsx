@@ -1,6 +1,8 @@
 "use client";
 
 import { Render, usePuck, type Data } from "@puckeditor/core";
+import Link from "next/link";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 // Renders through the register-aware config, so a block nobody has
 // touched takes the shape THIS register prefers. See
@@ -11,6 +13,9 @@ import { StyleScope } from "@/design-system/editor/style-scope";
 import { AiAssistant, type Turn } from "./ai-assistant";
 import chrome from "../chrome.module.css";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import type { SystemLang } from "@/lib/system-lang";
+import { deskSurface } from "@/lib/portal/system-register";
+import { WorkView } from "./work-view";
 
 /**
  * THE EDITOR ON A PHONE.
@@ -44,17 +49,44 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
  * provider (through the `puck` override) rather than beside it: the assistant
  * reads and dispatches the same live canvas state either way, so an edit made
  * on a phone is the same edit, on the same undo stack.
+ *
+ * ── 2026-09-04：还差第三件，而它才是他每天在手机上要做的那一件 ──────────
+ *
+ * 上面那两条讲的都是「改」。而一个老板在工地上掏出手机，八成不是要改设计,
+ * 是要**用**：查一张单、看客户欠多少、当场加一笔。
+ *
+ * 那件事这一页做不到，而且是明写着做不到的 —— 下面那个预览挂着
+ * `pointer-events-none`，注解写的理由是「里面每一个连结都属於一套还不存在的系统」。
+ * **那句话在 2026-08-30 之后就过期了**：十二个模块会写真资料，表格第一格是
+ * 「改这一单」的连结，表头那颗「加一单」是真的路由，两条都检查自己的权限。
+ * 一个理由过期了的禁用，跟一颗按不动的按钮是同一个缺陷的两面。
+ *
+ * 所以手机上现在是两格：
+ *
+ *   用  —— 他自己的系统，会重排、点得到、跟师傅看到的是同一支组件
+ *          （`work-view.tsx`，本来只画给师傅）。**预设停在这一格。**
+ *   改  —— 上面写的那两条，一个字都没有拿掉。
+ *
+ * ⚠️ **为什么不是把预览的 `pointer-events-none` 拿掉就好**：那个预览是
+ * 「桌面版面的一张照片」，900px 宽、用滑的。要点一行记录得先滑过去，
+ * 而他要的是查一张单，不是参观自己的版面。**两件事，两格。**
  */
 export function MobileEditor({
   pageKey,
   style,
   palette,
+  corners,
+  systemLang,
   locale,
   navPages,
   isGeneratedDraft,
+  onOpenSystem,
 }: {
   style: StyleName;
   palette: string | null;
+  /** 圆角倍数跟系统语言 —— 「用」那一格要拿它们画出跟师傅一模一样的页。 */
+  corners: number;
+  systemLang: SystemLang;
   locale: string;
   navPages: { key: string; label: string }[];
   /** Straight through to the assistant, which sends it to the route: a table
@@ -63,6 +95,14 @@ export function MobileEditor({
   /** Passed straight through to the assistant: 排法 only applies to a page that
    *  has never been saved, and the route has to be told which this is. */
   isGeneratedDraft: boolean;
+  /** 🔴 切到「用」那一格之前，把还没写下去的那一次自动保存先写掉。
+   *
+   *  「用」那一格里的每一行都是**连结**，点下去会离开这个编辑器 ——
+   *  而 `editor-client.tsx` 的自动保存是「最后一次改动之后 2.5 秒」，
+   *  而且它自己有一个 effect 在卸载的时候把那个计时器清掉。
+   *  所以在这一格出现之前，一次 AI 改动之后两秒内点走 = 那次改动静静不见。
+   *  这是这一格新带进来的风险，所以补在这一格里。 */
+  onOpenSystem: () => void;
 }) {
   const t = useTranslations("portal.editor");
   // The live canvas, not a copy threaded down: this component renders inside
@@ -70,8 +110,109 @@ export function MobileEditor({
   // it on the same frame.
   const { appState } = usePuck();
 
+  /* 预设停在「用」。一个人打开自己的系统，第一件事是看它，不是改它 ——
+     而这一格也正是桌面图标点下去该开的那一页（[任务 141](../../../../docs/founder-tasks.md)）。 */
+  const [tab, setTab] = useState<"use" | "design">("use");
+
+  const tabClass = (on: boolean) =>
+    /* 44px：拇指按得到。整格可按，不是只有那两个字 —— shoot:commission 在 390
+       量到过一排 21px 的目标。 */
+    `min-h-11 flex-1 border-b-2 px-4 [font-size:var(--text-sm)] ${
+      on
+        ? "[border-color:var(--color-primary)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]"
+        : "border-transparent [color:var(--color-paper-dim)]"
+    }`;
+
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <div role="tablist" className="flex shrink-0 border-b [border-color:var(--color-ink-800)]">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "use"}
+          className={tabClass(tab === "use")}
+          onClick={() => {
+            /* 先把还没写下去的那一次写掉，再让他看到一堆点得走的连结。
+               见上面 onOpenSystem 的注解。 */
+            onOpenSystem();
+            setTab("use");
+          }}
+        >
+          {t("phoneUse")}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "design"}
+          className={tabClass(tab === "design")}
+          onClick={() => setTab("design")}
+        >
+          {t("phoneDesign")}
+        </button>
+      </div>
+
+      {tab === "use" ? (
+        <>
+          {/* 🔴 换页由这个壳自己管，页面里那条侧栏在窄屏不画。
+
+              量出来的理由（390px，2026-09-04）：那条 `aside` 在窄屏是一列
+              flex，里面排着招牌、一颗整条宽的按钮、他每一页的连结、通知帐号
+              三个带字的项目 —— 加起来 993px。它撑着 **180px 高的白**，
+              而**装着页面连结的那一格宽度是 0**：他的页一个都画不出来。
+              把它挤进 390 试过三种排法（换行 · 自己占一行 · 藏掉标签），
+              每一种都是在替一个桌面的东西发明一个手机的版本 ——
+              而那正是 `PHONE_COMPOSITION`（[任务 107](../../../../docs/founder-tasks.md)）
+              该做的事，不是这一格该顺手做的。
+
+              所以这一格照那 16 个真的老板端 app 的做法：**页面在顶上一条
+              横着滑的带子**，招牌跟通知留给桌面。他在哪一页，底下那条
+              面包屑本来就写着。
+
+              ⚠️ 只在这个壳里藏 —— 师傅那一边（`work-view.tsx` 直接渲染）
+              照旧有那条侧栏，而那条侧栏在窄屏本来的毛病记在任务档里。 */}
+          <div
+            role="tablist"
+            aria-label={t("phoneUse")}
+            className="flex shrink-0 items-stretch gap-1 overflow-x-auto border-b px-2 [border-color:var(--color-ink-800)]"
+          >
+            {navPages.map((page) => {
+              const on = page.key === pageKey;
+              return (
+                <Link
+                  key={page.key}
+                  href={`/${locale}/portal/${page.key}`}
+                  role="tab"
+                  aria-selected={on}
+                  /* 44px：拇指按得到。`whitespace-nowrap` 因为这一条是滑的，
+                     一个折成两行的页名会把整条带子撑高一倍。 */
+                  className={`flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 [font-size:var(--text-sm)] ${
+                    on
+                      ? "[border-color:var(--color-primary)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]"
+                      : "border-transparent [color:var(--color-paper-dim)]"
+                  }`}
+                >
+                  {page.label}
+                </Link>
+              );
+            })}
+          </div>
+
+        {/* 他自己的系统，会重排、点得到、跟师傅看到的是同一支组件。
+            ⚠️ 没有 `pointer-events-none` —— 那正是这一格存在的理由。 */}
+        <div className="min-h-0 flex-1 overflow-y-auto [&_aside[data-nav=side]]:hidden">
+          <WorkView
+            data={appState.data as Data}
+            pageKey={pageKey}
+            style={style}
+            palette={palette}
+            corners={corners}
+            systemLang={systemLang}
+            fill
+          />
+        </div>
+        </>
+      ) : (
+        <>
       <p className="shrink-0 border-b px-4 py-2 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
         {t("mobileHint")}
       </p>
@@ -103,7 +244,7 @@ export function MobileEditor({
               Keeping the clip on this outer div preserves the rounded corners
               the mount exists for; the scroll moves one level in, where nothing
               overrides it. */}
-          <StyleScope register={style} palette={palette} data-surface={pageKey === "website" ? undefined : "desk"} className="ds-ground [background-color:var(--color-canvas)]">
+          <StyleScope register={style} palette={palette} data-surface={deskSurface(pageKey)} className="ds-ground [background-color:var(--color-canvas)]">
             <div className="h-full overflow-x-auto">
               {/* COMPOSED AT A DESKTOP WIDTH AND SWIPED, not reflowed and not
                   scaled. Reflowing puts a five-column table and a 180px rail
@@ -147,6 +288,8 @@ export function MobileEditor({
           compact
         />
       </div>
+        </>
+      )}
     </div>
   );
 }

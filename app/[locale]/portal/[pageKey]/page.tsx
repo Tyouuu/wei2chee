@@ -406,6 +406,7 @@ export default async function PortalEditorPage({
   if (!workspace.isOwner) {
     return (
       <WorkView
+        pageKey={pageKey}
         data={hideMoneyFromRail(initialData, workspace.role) as unknown as Data}
         /* 师傅看到的也是系统那一套。见 lib/portal/system-register.ts。 */
         style={canvasRegister(pageKey, project.style as StyleName)}

@@ -467,7 +467,9 @@
         "uploadFailed": "Upload failed",
         "offline": "Can't reach the library",
         "cantTake": "Couldn't take that one"
-      }
+      },
+      "phoneUse": "My system",
+      "phoneDesign": "Change design"
     },
     "home": {
       "eyebrow": "YOUR SYSTEM",

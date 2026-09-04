@@ -51,3 +51,20 @@ export function canvasRegister(
   if (pageKey === SITE_PAGE_KEY) return siteStyle ?? SYSTEM_REGISTER;
   return SYSTEM_REGISTER;
 }
+
+/**
+ * 这一块画布是不是工作台。
+ *
+ * `[data-surface="desk"]` 是 `globals.css` 里那一段：工作台的主要动作用近黑，
+ * 而客户官网那一页照旧穿他自己那一套的主色（[任务 139](../../docs/founder-tasks.md)）。
+ *
+ * ⚠️ **它跟 `canvasRegister` 是同一条分界线，所以住在同一个档案里。**
+ * 2026-09-04 之前这个判断被手写了三份（`editor-client` · `mobile-editor` ·
+ * `work-view` 少写了那一份，所以师傅打开官网那一页会看到工作台的颜色）。
+ * 这个仓库栽在「第二份手写拷贝」上至少六次。
+ *
+ * @returns `"desk"`，或者 `undefined`（官网那一页 —— 属性根本不出现）
+ */
+export function deskSurface(pageKey: string): "desk" | undefined {
+  return pageKey === SITE_PAGE_KEY ? undefined : "desk";
+}

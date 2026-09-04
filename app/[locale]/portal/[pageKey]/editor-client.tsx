@@ -70,7 +70,7 @@ import {
 } from "@/app/[locale]/style-picker/style-column";
 import { scopeClasses, PALETTES } from "@/lib/portal/palettes";
 import { RegisterProvider } from "@/design-system/editor/style-scope";
-import { canvasRegister } from "@/lib/portal/system-register";
+import { canvasRegister, deskSurface } from "@/lib/portal/system-register";
 import { siteSkeleton } from "@/lib/templates/site-composition";
 
 // Same lookup app/[locale]/style-picker/style-column.tsx uses internally
@@ -607,6 +607,26 @@ export function PortalEditor({
       autosaveTimer.current = null;
       void persist(data, true);
     }, 2500);
+  }
+
+  /** 🔴 把还没写下去的那一次自动保存，立刻写掉。
+   *
+   *  自动保存是「最后一次改动之后 2.5 秒」，而上面那个 effect 在这个组件
+   *  卸载的时候会把计时器清掉 —— 那条规矩本身是对的（一次排队中的写入
+   *  不可以落在一个已经离开的页面上）。代价是：**在那 2.5 秒里离开，
+   *  那次改动就静静不见了。**
+   *
+   *  在手机长出「用」那一格之前，编辑器里没有任何东西点得走，所以这个洞
+   *  碰不到人。现在那一格里每一行都是连结，所以切过去之前先冲一次。
+   *
+   *  ⚠️ 没有改成「卸载的时候写」—— 那会让一次导航等一次网络往返，
+   *  而且它要写的是一个我们已经决定不要信任的时机（组件都在拆了）。 */
+  function flushAutosave() {
+    if (!autosaveTimer.current) return;
+    window.clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = null;
+    const pending = latestData.current;
+    if (pending) void persist(pending, true);
   }
 
   /** The write itself. Shared by the Save button, ⌘S and the autosave timer, so
@@ -1148,9 +1168,12 @@ export function PortalEditor({
                     <MobileEditor pageKey={pageKey}
                       style={canvasStyle}
                       palette={activePalette}
+                      corners={corners}
+                      systemLang={systemLang}
                       locale={locale}
                       navPages={navPages}
                       isGeneratedDraft={isGeneratedDraft}
+                      onOpenSystem={flushAutosave}
                     />
                   ) : (
                     // Wrapped rather than returned bare: Puck's RenderFunc is
@@ -1279,7 +1302,7 @@ export function PortalEditor({
                       data-steps={pageKey === "website" ? (siteSkeleton(activeStyle).steps) : undefined}
                       data-frame={pageKey === "website" ? (siteSkeleton(activeStyle).frame ?? "none") : undefined}
                       /* 工作台自己的主要动作颜色 —— 官网那一页不挂。见 globals.css。 */
-                      data-surface={pageKey === "website" ? undefined : "desk"}
+                      data-surface={deskSurface(pageKey)}
                       className={`ds-ground ${scopeClasses(canvasStyle, activePalette)} ${
                         pageKey === "website" ? "ds-site" : ""
                       } h-full [background-color:var(--color-canvas)]`}

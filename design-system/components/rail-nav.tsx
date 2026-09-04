@@ -285,7 +285,16 @@ export function RailNav({
 
   const shell = isTop
     ? "flex w-full shrink-0 items-center gap-3 border-b [padding-inline:14px] [padding-block:8px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)]"
-    : `flex shrink-0 border-r [padding-block:10px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)] w-full flex-row items-center gap-1 overflow-x-auto border-b border-r-0 @3xl:h-full @3xl:min-h-full @3xl:flex-col @3xl:items-stretch @3xl:overflow-x-visible @3xl:border-r @3xl:border-b-0 ${
+    : /* 🔴 `min-w-0` —— 没有它，窄屏这一条根本不会滚，它会直接长出去。
+         这一条是 flex 项目，而 flex 项目的 `min-width` 预设是 `auto`，
+         意思是「不准缩到比里面的东西还窄」。里面是一排不换行的连结，
+         所以 `w-full` 写了等於没写：2026-09-04 在 390px 量到
+         这条 `aside` 是 **993px 宽**，而 `clientWidth` 也是 993 ——
+         它没有在滚，它是真的那么宽，而外面那一层把多出来的 603px 剪掉了。
+         **六个页面连结在画面外，而且没有任何方法到得了。**
+         `overflow-x-auto` 一直都写在这里，只是永远没有机会生效。
+         宽屏不受影响：`@3xl:` 那几条把宽度写死，`min-width:0` 不会去碰它们。 */
+      `flex min-w-0 shrink-0 border-r [padding-block:10px] [background-color:var(--color-nav-bg)] [border-color:var(--color-nav-border)] w-full flex-row items-center gap-1 overflow-x-auto border-b border-r-0 @3xl:h-full @3xl:min-h-full @3xl:flex-col @3xl:items-stretch @3xl:overflow-x-visible @3xl:border-r @3xl:border-b-0 ${
         isCompact
           ? "@3xl:w-[76px] [padding-inline:6px]"
           : isQuiet

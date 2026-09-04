@@ -61,9 +61,29 @@ const TEMPLATE: Record<ColumnsLayout, string> = {
  * Hence three levels rather than one: the slot's own wrapper, Puck's item
  * wrapper, and the block. Each is inert when nothing above it has a height,
  * which is every use outside a split.
+ *
+ * 🔴 `:only-child` ON THE DEEPEST LEVEL, and it is load-bearing.
+ *
+ * That chain counts three wrappers because the EDITOR has three. `<Render>`
+ * has two -- Puck adds no per-item wrapper outside the editor -- so on a
+ * published page, in the supervisor's view, and on a phone, the third level
+ * lands one box too deep: on the SECTIONS INSIDE the block rather than on the
+ * block.
+ *
+ * Measured at 390 on the clients page, 2026-09-04. RecordTable stacks four
+ * sections whose natural heights are 24 / 38 / 606 / 20. With `h-full` on each
+ * of them, the flex column takes its height from content (736) and then hands
+ * every child `height: 736` -- so flexbox shrinks them back to 173 / 173 / 174
+ * / 186. **Seven customers ended up inside a 174px window with its own
+ * scrollbar, under 321px of blank.**
+ *
+ * The comment above already stated the intent -- "inert when nothing above it
+ * has a height" -- and `height: 100%` does not deliver it here, because the
+ * height it copies is one the content itself produced. `:only-child` does:
+ * a block is the only thing in its wrapper, a block's own sections never are.
  */
 const CELL =
-  "min-w-0 flex flex-col [&>*]:flex-1 [&>*>*]:h-full [&>*>*>*]:h-full";
+  "min-w-0 flex flex-col [&>*]:flex-1 [&>*>*]:h-full [&>*>*>*:only-child]:h-full";
 
 export function Columns({
   layout = "half",
