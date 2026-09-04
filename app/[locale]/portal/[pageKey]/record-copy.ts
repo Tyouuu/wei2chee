@@ -67,6 +67,8 @@ export type RecordFormCopy = {
      somebody outside the business reads; a name list and a shelf do not. */
   previewLabel: string;
   previewDate: string;
+  /** 那张纸上单号那一格的抬头。见 new/document-preview.tsx。 */
+  previewNumber: string;
   previewNoNumber: string;
   /* 对账. Its row is a COMPARISON rather than a thing, so none of its
      boxes come from the table's columns -- see the note in the form. */
@@ -367,6 +369,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       receiveDone: "这张单的货已经在库存里了。要更正就去库存记一笔进或出。",
       previewLabel: "印出来的样子",
       previewDate: "日期",
+      previewNumber: "单号",
       previewNoNumber: "单号要保存了才有 —— 它是系统发的，不是猜的。",
       reconPeriod: "哪一个月",
       reconSource: "谁给的总数",
@@ -599,6 +602,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       receiveDone: "The goods on this order are already in your stock. Correct it with a stock movement.",
       previewLabel: "As it prints",
       previewDate: "Date",
+      previewNumber: "No.",
       previewNoNumber: "The number is issued when you save — it is not guessed.",
       reconPeriod: "Which month",
       reconSource: "Who gave the figure",

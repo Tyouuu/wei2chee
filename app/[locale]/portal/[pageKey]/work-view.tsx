@@ -58,6 +58,8 @@ export function WorkView({
 }) {
   return (
     <StyleScope
+      /* 工作台自己的主要动作颜色。见 globals.css。 */
+      data-surface="desk"
       register={style}
       palette={palette}
       style={cornerCapture}

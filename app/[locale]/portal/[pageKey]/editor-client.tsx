@@ -1278,6 +1278,8 @@ export function PortalEditor({
                       data-copy={pageKey === "website" ? (siteSkeleton(activeStyle).copy ?? "normal") : undefined}
                       data-steps={pageKey === "website" ? (siteSkeleton(activeStyle).steps) : undefined}
                       data-frame={pageKey === "website" ? (siteSkeleton(activeStyle).frame ?? "none") : undefined}
+                      /* 工作台自己的主要动作颜色 —— 官网那一页不挂。见 globals.css。 */
+                      data-surface={pageKey === "website" ? undefined : "desk"}
                       className={`ds-ground ${scopeClasses(canvasStyle, activePalette)} ${
                         pageKey === "website" ? "ds-site" : ""
                       } h-full [background-color:var(--color-canvas)]`}

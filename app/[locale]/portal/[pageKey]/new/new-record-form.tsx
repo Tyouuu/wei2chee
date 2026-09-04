@@ -115,6 +115,7 @@ export function NewRecordForm({
   staff,
   jobs,
   categories,
+  businessName,
   earnedValue,
   earnedLocked,
   photos,
@@ -220,6 +221,8 @@ export function NewRecordForm({
   jobs?: readonly { id: string; docNo: string; title: string; party: string }[];
   /** 他自己打过的类别。空的是常态，也是诚实的 —— 我们不发明科目表。 */
   categories?: readonly string[];
+  /** 他的公司名 —— 那张纸的抬头。见 document-preview.tsx。 */
+  businessName?: string | null;
   /** 师傅那一页的「本月业绩」。
    *
    *  🔴 那一栏的名字模板自己就叫「This month / 本月业绩」，而它到今天为止
@@ -1121,6 +1124,7 @@ export function NewRecordForm({
   const paper = isPipeline ? (
     <DocumentPreview
       title={title}
+      businessName={businessName}
       docNo={record?.docNo ?? null}
       values={{
         primary: values.primary,
@@ -1192,7 +1196,12 @@ export function NewRecordForm({
 
   return (
     <div className={paper ? "grid gap-8 lg:grid-cols-2 lg:gap-10" : undefined}>
-    <form onSubmit={submit} className="flex flex-col gap-4">
+    {/* 🔴 表单住进一张卡里（2026-09-04，照 arhamkhnz 的 dashboard/invoice）。
+        它本来是一串标签跟输入框直接躺在页面的地上 —— 而参考页那一边是
+        **一张白卡**，纸在右边、表单在左边，两块对称。
+        没有卡的时候，左边读起来不是「一份要填的东西」，是「一些散落的框」，
+        而右边那张纸有边有影，两边看起来像两个不同的产品。 */}
+    <form onSubmit={submit} className="ds-card flex flex-col gap-4 [padding:var(--pad-card-lg)]">
       {shown.map((c) => {
         if (c.key === "status" && stages.length) {
           return (

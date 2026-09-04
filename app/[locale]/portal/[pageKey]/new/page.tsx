@@ -2,6 +2,7 @@ import { StyleScope } from "@/design-system/editor/style-scope";
 /* 这三页只有工作台会开 —— 加一单 · 改这一单 · 搬旧资料。
    客户挑的那一套（`ctx.style`）从 2026-09-04 起只管官网。 */
 import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
+import { RecordShell } from "../record-shell";
 import { loadRecordPage } from "../record-context";
 import { NewRecordForm } from "./new-record-form";
 import { RECORD_COPY } from "../record-copy";
@@ -45,13 +46,20 @@ export default async function NewRecordPage({
        just left, one click away, has to look like it.
 
        Found by looking at the screenshot. Every check passed first. */
-    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} className="min-h-screen">
+    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} data-surface="desk" className="min-h-screen">
+      {/* 🔴 2026-09-04：这一页搬进系统的外壳里。老板：`不要设计看起来是好像
+          两个人做得一样 一定要统一设计`。它本来是一张浮在灰底上的表单 ——
+          系统每一页都有侧栏跟顶栏，只有它没有，而客户是从系统里点进来的。
+          见 record-shell.tsx。 */}
+      <RecordShell ctx={ctx}>
       {/* Wider when there is a document beside the form -- 560px cannot
           hold both. Narrow everywhere else: a name list and a shelf make no
           paper, and a wide column of short boxes reads as a form with
-          something missing from it. */}
+          something missing from it.
+          ⚠️ 左右的内距交给外壳了（`--pad-card-lg`）—— 两层内距会把这一页
+          推得比系统其他每一页都窄。 */}
       <main
-        className={`mx-auto w-full px-6 py-10 ${
+        className={`w-full ${
           ctx.shape === "pipeline" ? "max-w-[1080px]" : "max-w-[560px]"
         }`}
       >
@@ -78,6 +86,7 @@ export default async function NewRecordPage({
           partyDebts={ctx.partyDebts}
           branches={ctx.branches}
           staff={ctx.staff}
+          businessName={ctx.businessName}
           jobs={ctx.jobsForCost}
           categories={ctx.categories}
           backHref={ctx.backHref}
@@ -111,6 +120,7 @@ export default async function NewRecordPage({
           ) : null}
         </p>
       </main>
+      </RecordShell>
     </StyleScope>
   );
 }

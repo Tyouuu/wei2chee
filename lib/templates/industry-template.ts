@@ -524,7 +524,18 @@ const node = (
  * disconnected canvases, which was a real complaint about the first version
  * of the editor. Labels use the business's own nouns.
  */
-function railNav(
+/**
+ * 🔴 2026-09-04 export 出去了。
+ *
+ * 老板：`不要设计看起来是好像两个人做得一样 一定要统一设计`。
+ * 「加一单 · 改这一单 · 搬旧资料」那三页**没有侧栏也没有顶栏** ——
+ * 整个系统只有它们长这样，而客户是从系统里点进去的，一进去导航就不见了。
+ *
+ * 那三页不是 Puck 画的，是普通的 React。所以它们要的是**同一份侧栏的资料**，
+ * 不是第二份手写的清单（这个仓库栽在第二份清单上至少六次）。
+ * 这一支回传 Puck 节点，那几页读它的 `props` 直接喂给 `<RailNav />`。
+ */
+export function railNavNode(
   labels: IndustryLabels,
   brandLabel: string,
   businessName: string,
@@ -632,7 +643,8 @@ function railNav(
  * that is the end of the month; 官网 is alone because it is the only page whose
  * reader is a stranger.
  */
-function navGroup(key: string, pageCount: number, c: Chrome): string {
+/* 记录页那三页也要同一条面包屑跟同一份分组词 —— 见 record-context.ts。 */
+export function navGroup(key: string, pageCount: number, c: Chrome): string {
   if (pageCount < 6) return "";
   const g = c.rail.groups;
   switch (key) {
@@ -1556,7 +1568,7 @@ function buildDashboard(
   const headless = HEADLESS_DASHBOARD.has(SYSTEM_REGISTER);
 
   return layerFirst([
-    railNav(labels, brand, name, "dashboard", locale, pages, lang),
+    railNavNode(labels, brand, name, "dashboard", locale, pages, lang),
     ...(headless ? [] : [node("PageHeader", "dashboard-header", {
       title: c.dashboard.title,
       subtitle,
@@ -2054,7 +2066,7 @@ function buildCustomers(
   const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "customers", locale, pages, lang),
+    railNavNode(labels, brand, name, "customers", locale, pages, lang),
     node("PageHeader", "customers-header", {
       title: c.customers.title(labels.customer),
       subtitle: c.customers.subtitle(labels.customer),
@@ -2116,7 +2128,7 @@ function buildQuotations(
   const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "quotations", locale, pages, lang),
+    railNavNode(labels, brand, name, "quotations", locale, pages, lang),
     node("PageHeader", "quotations-header", {
       title: c.quotations.title,
       subtitle: c.quotations.subtitle(labels.customer),
@@ -2202,7 +2214,7 @@ function buildProjects(
   const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "projects", locale, pages, lang),
+    railNavNode(labels, brand, name, "projects", locale, pages, lang),
     node("PageHeader", "projects-header", {
       title: c.projects.title(labels.order),
       // The bottleneck the AI actually identified, named on the page whose job
@@ -2264,7 +2276,7 @@ function buildPayments(
   const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "payments", locale, pages, lang),
+    railNavNode(labels, brand, name, "payments", locale, pages, lang),
     node("PageHeader", "payments-header", {
       title: c.payments.title,
       subtitle: c.payments.subtitle(labels.customer),
@@ -2343,7 +2355,7 @@ function buildBookings(
   const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "bookings", locale, pages, lang),
+    railNavNode(labels, brand, name, "bookings", locale, pages, lang),
     node("PageHeader", "bookings-header", {
       title: c.bookings.title,
       subtitle: c.bookings.subtitle(labels.staff),
@@ -2398,7 +2410,7 @@ function buildOrders(
   const sample = sampleFor(industry.slug, lang);
 
   return [
-    railNav(labels, brand, name, "orders", locale, pages, lang),
+    railNavNode(labels, brand, name, "orders", locale, pages, lang),
     node("PageHeader", "orders-header", {
       title: c.orders.title(labels.order),
       subtitle: (() => {
@@ -2743,7 +2755,7 @@ function buildFromShape(
   const title = ownTitle?.trim() || copy.title;
 
   const head: PuckNode[] = [
-    railNav(labels, brand, name, pageKey, locale, pages, lang),
+    railNavNode(labels, brand, name, pageKey, locale, pages, lang),
     node("PageHeader", `${pageKey}-header`, {
       title,
       subtitle: copy.subtitle,
@@ -2989,7 +3001,7 @@ function buildCustomPage(
   const brand = displayBusinessName(ctx);
 
   return [
-    railNav(labels, brand, name, pageId, locale, pages, lang),
+    railNavNode(labels, brand, name, pageId, locale, pages, lang),
     node("PageHeader", `${pageId}-header`, {
       title,
       subtitle: c.custom.subtitle,

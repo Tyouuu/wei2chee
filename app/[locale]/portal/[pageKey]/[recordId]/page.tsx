@@ -4,6 +4,7 @@ import { StyleScope } from "@/design-system/editor/style-scope";
 /* 这三页只有工作台会开 —— 加一单 · 改这一单 · 搬旧资料。
    客户挑的那一套（`ctx.style`）从 2026-09-04 起只管官网。 */
 import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
+import { RecordShell } from "../record-shell";
 import { loadRecordPage } from "../record-context";
 import { RECORD_COPY } from "../record-copy";
 import { todayInMalaysia } from "@/lib/portal/live-months";
@@ -749,12 +750,16 @@ export default async function EditRecordPage({
   }
 
   return (
-    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} className="min-h-screen">
+    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} data-surface="desk" className="min-h-screen">
+      {/* 🔴 2026-09-04：搬进系统的外壳里。老板：`不要设计看起来是好像两个人
+          做得一样 一定要统一设计`。见 record-shell.tsx。 */}
+      <RecordShell ctx={ctx}>
       {/* Wider when there is a document beside the form. A quotation is the
           only thing this system makes that somebody outside the business
-          reads, and 560px cannot hold the form and the paper. */}
+          reads, and 560px cannot hold the form and the paper.
+          ⚠️ 左右的内距交给外壳了 —— 两层内距会把这一页推得比别页窄。 */}
       <main
-        className={`mx-auto w-full px-6 py-10 ${
+        className={`w-full ${
           ctx.shape === "pipeline" ? "max-w-[1080px]" : "max-w-[560px]"
         }`}
       >
@@ -873,6 +878,7 @@ export default async function EditRecordPage({
           </div>
         ) : null}
       </main>
+      </RecordShell>
     </StyleScope>
   );
 }

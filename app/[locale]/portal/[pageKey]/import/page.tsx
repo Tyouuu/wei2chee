@@ -2,6 +2,7 @@ import { StyleScope } from "@/design-system/editor/style-scope";
 /* 这三页只有工作台会开 —— 加一单 · 改这一单 · 搬旧资料。
    客户挑的那一套（`ctx.style`）从 2026-09-04 起只管官网。 */
 import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
+import { RecordShell } from "../record-shell";
 import { loadRecordPage } from "../record-context";
 import { RECORD_COPY } from "../record-copy";
 import { ImportForm } from "./import-form";
@@ -63,8 +64,11 @@ export default async function ImportPage({
   }
 
   return (
-    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} className="min-h-screen">
-      <main className="mx-auto w-full max-w-[760px] px-6 py-10">
+    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} data-surface="desk" className="min-h-screen">
+      {/* 🔴 2026-09-04：搬进系统的外壳里。老板：`不要设计看起来是好像两个人
+          做得一样 一定要统一设计`。见 record-shell.tsx。 */}
+      <RecordShell ctx={ctx}>
+      <main className="w-full max-w-[760px]">
         <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
           {copy.form.importHeading} · {ctx.title}
         </h1>
@@ -81,6 +85,7 @@ export default async function ImportPage({
           copy={copy.form}
         />
       </main>
+      </RecordShell>
     </StyleScope>
   );
 }

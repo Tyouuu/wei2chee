@@ -3,6 +3,9 @@
 import type { RecordFormCopy } from "../record-copy";
 import { ringgitOf, senOf, totalOf, type Line } from "./line-editor";
 
+/** 没填的那一格。一个占位符比一个诚实的空白更糟 —— 见档头。 */
+const EMPTY = "—";
+
 /**
  * The paper, beside the form that is filling it in.
  *
@@ -76,6 +79,7 @@ export function DocumentPreview({
   validity,
   site,
   schedule,
+  businessName,
 }: {
   /** The module's own noun -- 报价单, 进货单, 订单 -- never a word of ours. */
   title: string;
@@ -92,6 +96,11 @@ export function DocumentPreview({
   /** 有效期 / 期限 / 预计到货 —— 印出来那张纸上最要紧的一行之一。
    *  一张没有印有效期的报价单，是一个永远有效的价钱。 */
   validity?: { label: string; value: string } | null;
+  /** 他的公司名 —— 那张纸的抬头。
+   *  🔴 2026-09-04 加的。一张只写着「Quotations」的纸，收到的人看不出是谁开的。
+   *  ⚠️ 只有名字，没有地址税号：所以它画成**抬头**，不画成一栏寄件人资料 ——
+   *  一栏只有一行的寄件人栏，看起来是一份填了一半的表。 */
+  businessName?: string | null;
   /** 哪一个工地。🔴 印在那张纸上，因为它就是给对方看的那一句 ——
    *  一张讲不出去哪里的报价单，师傅拿着它开不出门。 */
   site?: { label: string; value: string } | null;
@@ -109,8 +118,37 @@ export function DocumentPreview({
   const total = filled.length ? lineTotal : typed;
 
   const row = "flex items-baseline justify-between gap-4 py-1.5";
-  const key = "[font-size:var(--text-xs)] uppercase [letter-spacing:0.06em] text-[color:var(--color-on-canvas-dim)]";
-  const val = "[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-paper)]";
+
+  /* 2026-09-04 这张纸重排了一次，照 arhamkhnz 的 `dashboard/invoice`
+     （老板挑的那一套，MIT，实拍在 .screenshots/admins/arham-invoice.jpg）。
+     内容一个字都没有换 —— 换的是它长得像不像一张要递给别人的纸。
+
+     逐项对着原尺寸比出来的五件：
+       一 一张**白纸浮在灰垫子上**，不是一张贴着栏边的卡。那个垫子就是
+          「这是一份文件」这句话本身；没有它，纸跟表单是同一个平面
+       二 抬头**两边**：左边是他的公司名，右边是这张纸叫什么（大写、拉开字距）
+       三 单号/日期那几项**并排成两栏**，不是标签左值右一行一行往下掉
+       四 明细表头是**一条灰带**，不是一条细线
+       五 合计**靠右缩成半栏**，上面一条线，最后一行加粗 —— 一整行拉满的合计
+          读起来是表格的最后一行，不是这张纸的结论
+
+     ⚠️ **没有 Print / Download PDF 那两颗。** 参考页上有，而我们的列印规则
+     （globals.css 的 `@media print`）只认 `[data-editor-canvas]`，这一页不在
+     里面 —— 按下去印出来的会是整个表单。这个档案原本的注解就写着这一条，
+     它还成立。要加那颗按钮，先把列印规则铺到这一页。 */
+  const label =
+    "[font-size:var(--text-xs)] uppercase [letter-spacing:0.06em] text-[color:var(--color-on-canvas-dim)]";
+  const value = "[font-size:var(--text-sm)] text-[color:var(--color-paper)]";
+  const money =
+    "[font-size:var(--text-sm)] [font-variant-numeric:tabular-nums] text-[color:var(--color-paper)]";
+
+  /** 单号 . 日期 . 有效期 . 工地 —— 有什么印什么，没有的不占位子。 */
+  const meta: readonly (readonly [string, string | undefined])[] = [
+    ...(docNo ? ([[copy.previewNumber, docNo]] as const) : []),
+    [dateLabel, today] as const,
+    ...(validity ? ([[validity.label, validity.value]] as const) : []),
+    ...(site ? ([[site.label, site.value]] as const) : []),
+  ];
 
   return (
     <aside
@@ -120,109 +158,133 @@ export function DocumentPreview({
          behaviour that would make this decorative. */
       className="lg:sticky lg:top-10 self-start w-full"
     >
-      <p className="mb-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-        {copy.previewLabel}
-      </p>
-
-      <div className="ds-card p-6">
-        <div className="flex items-start justify-between gap-4">
-          <span className="ds-display [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] text-[color:var(--color-paper)]">
-            {title}
+      <div className="ds-card overflow-hidden p-0">
+        {/* 抬头那一条 —— 参考页上它带着 Print / Download PDF；我们那两颗
+            还不能按，所以这里只有它的名字。 */}
+        <div className="flex items-center justify-between gap-4 border-b border-[color:var(--color-ink-800)] [padding:var(--pad-control-y)_var(--pad-card-lg)]">
+          <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-paper)]">
+            {copy.previewLabel}
           </span>
-          {/* Only when it exists. See the note above about guessing. */}
-          {docNo ? (
-            <span className="[font-size:var(--text-sm)] [font-variant-numeric:tabular-nums] text-[color:var(--color-on-canvas-dim)]">
-              {docNo}
-            </span>
-          ) : null}
         </div>
 
-        <div className="mt-4 border-t border-[color:var(--color-ink-800)] pt-2">
-          {(
-            [
-              [labels.secondary, values.secondary],
-              [dateLabel, today],
-              ...(validity ? ([[validity.label, validity.value]] as const) : []),
-              ...(site ? ([[site.label, site.value]] as const) : []),
-              [labels.status, values.status],
-            ] as const
-          ).map(([label, value], i) =>
-            label ? (
-              <div key={i} className={row}>
-                <span className={key}>{label}</span>
-                <span className={val}>{value?.trim() || "—"}</span>
-              </div>
-            ) : null,
-          )}
-        </div>
+        {/* 垫子。纸浮在上面。 */}
+        <div className="[background:color-mix(in_oklab,var(--color-on-canvas)_5%,var(--card))] p-5">
+          <div
+            /* 印的时候只印这一块。**今天还没有那条规则** —— 这个属性先立在
+               这里，等列印那一轮接上去。 */
+            data-print-sheet
+            className="[background-color:var(--card)] [border-radius:var(--radius-md)] [box-shadow:0_1px_2px_color-mix(in_oklab,var(--color-on-canvas)_14%,transparent)] [padding:28px]"
+          >
+            {/* 二 抬头两边：他的公司名 / 这张纸叫什么 */}
+            <div className="flex items-start justify-between gap-6">
+              <span className="ds-display [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] text-[color:var(--color-paper)]">
+                {businessName?.trim() || EMPTY}
+              </span>
+              <span className="ds-display [font-size:var(--text-lg)] uppercase [letter-spacing:0.14em] text-[color:var(--color-on-canvas-dim)]">
+                {title}
+              </span>
+            </div>
 
-        {/* WHAT IT IS FOR, given the width of a heading rather than a row: on
-            every one of these documents the first column is the thing being
-            quoted, and it is what the person receiving it reads first. */}
-        <p className="mt-4 [font-size:var(--text-base)] [font-weight:var(--fw-medium)] text-[color:var(--color-paper)]">
-          {values.primary?.trim() || "—"}
-        </p>
-
-        {filled.length ? (
-          <table className="mt-4 w-full border-collapse [font-size:var(--text-sm)]">
-            <thead>
-              <tr className="border-b border-[color:var(--color-ink-800)] text-left">
-                <th className={`${key} py-1.5 font-normal`}>{copy.lineWhat}</th>
-                <th className={`${key} py-1.5 text-right font-normal`}>{copy.lineQty}</th>
-                <th className={`${key} py-1.5 text-right font-normal`}>{copy.lineAmount}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filled.map((l, i) => (
-                <tr key={i} className="border-b border-[color:var(--color-ink-800)]">
-                  <td className="py-1.5 pr-3 text-[color:var(--color-paper)]">
-                    {l.description}
-                    {l.unit.trim() ? (
-                      <span className="text-[color:var(--color-on-canvas-dim)]"> · {l.unit}</span>
-                    ) : null}
-                  </td>
-                  <td className="py-1.5 text-right [font-variant-numeric:tabular-nums] text-[color:var(--color-on-canvas-dim)]">
-                    {l.qty.trim() || "—"}
-                  </td>
-                  <td className="py-1.5 text-right [font-variant-numeric:tabular-nums] text-[color:var(--color-paper)]">
-                    {senOf(l.amount) != null ? ringgitOf(senOf(l.amount) as number) : "—"}
-                  </td>
-                </tr>
+            {/* 三 并排两栏 */}
+            <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3">
+              {meta.map(([l, v], i) => (
+                <div key={i} className="flex flex-col gap-0.5">
+                  <span className={label}>{l}</span>
+                  <span className={value}>{v?.trim() || EMPTY}</span>
+                </div>
               ))}
-            </tbody>
-          </table>
-        ) : null}
+            </div>
 
-        <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-[color:var(--color-ink-800)] pt-3">
-          <span className={key}>{labels.amount ?? copy.lineTotal}</span>
-          <span className="ds-display [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [font-variant-numeric:tabular-nums] text-[color:var(--color-paper)]">
-            {total ? ringgitOf(total) : "—"}
-          </span>
-        </div>
-
-        {/* 🔴 分期付款表印在总额底下 —— 那是客人看完金额之后立刻要问的一句
-            「怎么付」，而在这一行那是合约条款不是附注。
-            比例跟金额都印：「订金 30%」告诉他为什么是这个数，
-            「RM 14,550」告诉他要转多少。 */}
-        {schedule?.length ? (
-          <div className="mt-3 border-t border-[color:var(--color-ink-800)] pt-3">
-            <p className={`${key} mb-1.5`}>{copy.terms}</p>
-            {schedule.map((s, i) => (
-              <div key={i} className={row}>
-                <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)]">
-                  {s.description}
-                  {s.portionText ? (
-                    <span className="text-[color:var(--color-on-canvas-dim)]"> · {s.portionText}</span>
-                  ) : null}
-                  {s.due ? (
-                    <span className="text-[color:var(--color-on-canvas-dim)]"> · {s.due}</span>
-                  ) : null}
-                </span>
-                <span className={`${val} [font-variant-numeric:tabular-nums]`}>{s.amountText}</span>
+            {/* 给谁 —— 用他自己那一栏的名字当抬头，不是我们发明的 BILL TO。
+                ⚠️ 「他自己」那一半就是上面的公司名，不另外画一栏：
+                我们只有名字，没有地址跟税号，画一个只有一行的寄件人栏
+                看起来是一份填了一半的表。 */}
+            {labels.secondary ? (
+              <div className="mt-5 border-t border-[color:var(--color-ink-800)] pt-4">
+                <span className={label}>{labels.secondary}</span>
+                <p className="mt-1 [font-size:var(--text-base)] [font-weight:var(--fw-medium)] text-[color:var(--color-paper)]">
+                  {values.secondary?.trim() || EMPTY}
+                </p>
               </div>
-            ))}
+            ) : null}
+
+            {/* WHAT IT IS FOR, given the width of a heading rather than a row: on
+                every one of these documents the first column is the thing being
+                quoted, and it is what the person receiving it reads first. */}
+            <p className="mt-5 [font-size:var(--text-base)] text-[color:var(--color-paper)]">
+              {values.primary?.trim() || EMPTY}
+            </p>
+
+            {filled.length ? (
+              <table className="mt-4 w-full border-collapse [font-size:var(--text-sm)]">
+                <thead>
+                  {/* 四 一条灰带，不是一条线 */}
+                  <tr className="[background:color-mix(in_oklab,var(--color-on-canvas)_6%,var(--card))] text-left">
+                    <th className={`${label} px-2 py-2 font-normal`}>{copy.lineWhat}</th>
+                    <th className={`${label} px-2 py-2 text-right font-normal`}>{copy.lineQty}</th>
+                    <th className={`${label} px-2 py-2 text-right font-normal`}>{copy.lineAmount}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filled.map((l, i) => (
+                    <tr key={i} className="border-b border-[color:var(--color-ink-800)]">
+                      <td className="px-2 py-2 text-[color:var(--color-paper)]">
+                        {l.description}
+                        {l.unit.trim() ? (
+                          <span className="text-[color:var(--color-on-canvas-dim)]"> · {l.unit}</span>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-2 text-right [font-variant-numeric:tabular-nums] text-[color:var(--color-on-canvas-dim)]">
+                        {l.qty.trim() || EMPTY}
+                      </td>
+                      <td className={`px-2 py-2 text-right ${money}`}>
+                        {senOf(l.amount) != null ? ringgitOf(senOf(l.amount) as number) : EMPTY}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+
+            {/* 五 合计靠右缩成半栏 */}
+            <div className="mt-5 flex justify-end">
+              <div className="w-full max-w-[62%]">
+                <div className="flex items-baseline justify-between gap-4 border-t-2 border-[color:var(--color-paper)] pt-2.5">
+                  <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] uppercase [letter-spacing:0.06em] text-[color:var(--color-paper)]">
+                    {labels.amount ?? copy.lineTotal}
+                  </span>
+                  <span className="ds-display [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [font-variant-numeric:tabular-nums] text-[color:var(--color-paper)]">
+                    {total ? ringgitOf(total) : EMPTY}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 分期付款表印在总额底下 —— 那是客人看完金额之后立刻要问的一句
+                「怎么付」，而在这一行那是合约条款不是附注。
+                比例跟金额都印：「订金 30%」告诉他为什么是这个数，
+                「RM 14,550」告诉他要转多少。 */}
+            {schedule?.length ? (
+              <div className="mt-5 border-t border-[color:var(--color-ink-800)] pt-3">
+                <p className={`${label} mb-1.5`}>{copy.terms}</p>
+                {schedule.map((s, i) => (
+                  <div key={i} className={row}>
+                    <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)]">
+                      {s.description}
+                      {s.portionText ? (
+                        <span className="text-[color:var(--color-on-canvas-dim)]"> · {s.portionText}</span>
+                      ) : null}
+                      {s.due ? (
+                        <span className="text-[color:var(--color-on-canvas-dim)]"> · {s.due}</span>
+                      ) : null}
+                    </span>
+                    <span className={`${money} [font-weight:var(--fw-medium)]`}>{s.amountText}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </div>
 
       {/* Said once, under the paper, in the owner's own language. Without it a

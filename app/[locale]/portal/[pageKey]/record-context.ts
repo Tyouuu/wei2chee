@@ -14,10 +14,14 @@ import {
   systemLangOf,
   tradeLabels,
   stagesForModule,
+  railNavNode,
+  displayBusinessName,
+  navGroup,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
+import { chrome } from "@/lib/templates/copy";
 import { MODULE_BY_KEY, type ModuleShape } from "@/lib/portal/module-catalog";
 import { isLiveShape } from "@/lib/portal/shape-state";
 import type { TableColumn } from "@/lib/portal/table-model";
@@ -57,6 +61,22 @@ export type RecordPageContext = {
   stages: string[];
   /** 这一行是什么生意，给分期付款表建议惯例用。 */
   trade: string | null;
+  /** 他的公司名 —— 那张纸的抬头。见 new/document-preview.tsx。 */
+  businessName: string | null;
+  /**
+   * 这一页的外壳 —— 侧栏那几行，跟顶栏那条面包屑。
+   *
+   * 🔴 2026-09-04 加的。老板：`不要设计看起来是好像两个人做得一样 一定要统一设计`。
+   * 「加一单 · 改这一单 · 搬旧资料」三页本来**没有侧栏也没有顶栏** ——
+   * 整个系统只有它们长这样，而客户是从系统里点进去的：一进去导航就不见了，
+   * 唯一的出路是「取消」。
+   *
+   * ⚠️ 侧栏那几行是**读**产生器的（`railNavNode`），不是在这里重写一份 ——
+   * 一份手写的导航清单会在客户加一页的那天变成假的。
+   */
+  rail: Record<string, unknown>;
+  /** 顶栏那条面包屑：分组词 · 这一页的名字。跟系统每一页同一个来源。 */
+  crumbs: string[];
   /** Who a record can be attached to. Empty on a directory page, which is
    *  where a party is created rather than chosen. */
   parties: { id: string; name: string }[];
@@ -420,7 +440,7 @@ export async function loadRecordPage(
      两个都只在钱那几页问。⚠️ 而且只问看得到钱的人：`ledger_entries` 是
      sees_money，一个师傅拿回来的是空的 —— 而空的会画成「他从来没写过类别」。 */
   let jobs: RecordPageContext["jobsForCost"] = [];
-  let categories: string[] = [];
+  const categories: string[] = [];
   if (shape === "ledger" && workspace.role === "owner") {
     const [{ data: jobRows }, { data: catRows }] = await Promise.all([
       supabase
@@ -483,6 +503,23 @@ export async function loadRecordPage(
     staff,
     jobsForCost: jobs,
     categories,
+    /* 他的公司名 —— 那张纸的抬头。2026-09-04：一张只写着「Quotations」的
+       报价单，收到的人看不出是谁开的。`identity.business_name` 本来就在
+       context 里，只是从来没有人往这一页传。 */
+    businessName: businessContext.identity?.business_name ?? null,
+    rail: (railNavNode(
+      labels,
+      displayBusinessName(businessContext),
+      displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
+      pageKey,
+      locale,
+      pageRefs,
+      lang,
+    ) as unknown as { props: Record<string, unknown> }).props,
+    crumbs: [
+      navGroup(pageKey, pageRefs.length, chrome(lang)),
+      pageLabel({ key: pageKey, title: page.title ?? null }, labels, lang),
+    ].filter(Boolean) as string[],
     /* 这一行是什么生意 —— 分期付款表拿它去建议「订金三成 · 动工四成 ·
        完工三成」，而那是一颗他要按的按钮，不是一个预设。 */
     trade: businessContext.industry?.slug ?? null,

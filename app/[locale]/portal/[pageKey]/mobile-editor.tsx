@@ -103,7 +103,7 @@ export function MobileEditor({
               Keeping the clip on this outer div preserves the rounded corners
               the mount exists for; the scroll moves one level in, where nothing
               overrides it. */}
-          <StyleScope register={style} palette={palette} className="ds-ground [background-color:var(--color-canvas)]">
+          <StyleScope register={style} palette={palette} data-surface={pageKey === "website" ? undefined : "desk"} className="ds-ground [background-color:var(--color-canvas)]">
             <div className="h-full overflow-x-auto">
               {/* COMPOSED AT A DESKTOP WIDTH AND SWIPED, not reflowed and not
                   scaled. Reflowing puts a five-column table and a 180px rail
