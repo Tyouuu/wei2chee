@@ -113,6 +113,12 @@ try {
   await page.screenshot({ path: `${OUT}/1-editor.png`, fullPage: false });
 
   // ① 按保存 —— 不可以出现那面墙
+  // ⚠️ 「保存设计」2026-09-05 从顶栏搬进「更多」—— 它跟「交给我们建」并排，
+  // 两颗都写着「设计」，而后者自己会先存。要先打开那个选单。
+  // ⚠️ 「更多」是 <details>/<summary> 不是 button（bar-menu.tsx 讲了为什么：
+  // Puck 每一次画布变动都重建 header，而一个 state 里的布林值会卡在开着）。
+  await page.locator("summary").filter({ hasText: /More|更多/ }).first().click();
+  await page.waitForTimeout(600);
   const saveBtn = page.getByRole("button", { name: /save design|保存设计/i }).first();
   await saveBtn.click({ timeout: 30000 });
   await page.waitForTimeout(2500);

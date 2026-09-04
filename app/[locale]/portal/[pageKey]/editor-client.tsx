@@ -899,6 +899,21 @@ export function PortalEditor({
   // EditorChrome inside its own bar so undo/redo/save stay beside it.
   const overflowMenu = (
     <BarMenu label={<span>{t("moreMenu")}</span>} align="end">
+      {/* 🔴 「保存设计」从顶栏搬到这里（2026-09-05）—— 理由写在
+        editor-chrome.tsx 那颗按钮原本的位置上：它跟「交给我们建」并排，
+        两颗都写着「设计」，而后者自己会先保存。
+        用 `latestData.current`，跟旁边那颗交接按钮同一个来源 ——
+        这一层在 Puck 的提供者外面，问不到画布，所以那个 ref 就是为这件事在的。 */}
+      <button
+        type="button"
+        onClick={() =>
+          void handleSaveClick(latestData.current ?? (startingData as Data))
+        }
+        className={barMenuItem}
+      >
+        {t("saveCta")}
+      </button>
+
       <Link href={`/${locale}/portal`} className={barMenuItem}>
         <span aria-hidden="true">←</span>
         {t("backHome")}

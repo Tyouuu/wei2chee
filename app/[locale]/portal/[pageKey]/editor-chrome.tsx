@@ -67,10 +67,13 @@ export function EditorChrome({
   historyOpen: boolean;
   onOpenHistory: () => void;
   onCloseHistory: () => void;
-  /** History is a paid-tier surface for the same reason saving is: a free
-   *  customer has no server-side copy of anything, so there is no history to
-   *  show and a button leading to a permanently empty list is a worse answer
-   *  than no button. */
+  /** 🔴 2026-09-05：这一栏**不再挡历史**。
+   *  原本的理由是「没付款的客户根本没有伺服器副本，所以没有历史可看，
+   *  而一颗永远通往空清单的按钮比没有按钮更糟」—— 那句话在
+   *  20260905410000 之后是假的：没付款的人存得进伺服器，
+   *  `save_project_page` 照样替他写版本历史，`restore_page_version`
+   *  照样退得回去（`check:handoff` ③ 验过）。
+   *  **一个存得进去、看不到历史的编辑器，才是那句话真正在描述的东西。** */
   paid: boolean;
   pageKey: string;
   locale: string;
@@ -207,15 +210,13 @@ export function EditorChrome({
 
       {overflow}
 
-      {paid ? (
-        <button
-          type="button"
-          onClick={onOpenHistory}
-          className="rounded-md px-2.5 py-1.5 [font-size:var(--text-xs)] transition-colors [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
-        >
-          {t("historyCta")}
-        </button>
-      ) : null}
+      <button
+        type="button"
+        onClick={onOpenHistory}
+        className="rounded-md px-2.5 py-1.5 [font-size:var(--text-xs)] transition-colors [color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+      >
+        {t("historyCta")}
+      </button>
 
       <VersionHistoryDialog
         open={historyOpen}
@@ -252,15 +253,15 @@ export function EditorChrome({
       {publish}
       {finish}
 
-      <button
-        type="button"
-        onClick={() => onSave(appState.data as Data)}
-        disabled={saving}
-        title={t("saveShortcut")}
-        className="rounded-md px-3.5 py-1.5 [font-size:var(--text-sm)] transition-colors disabled:opacity-60 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] enabled:hover:[background-color:var(--color-primary-deep)]"
-      >
-        {saving ? t("saving") : t("saveCta")}
-      </button>
+      {/* 🔴 2026-09-05：「保存设计」从顶栏搬进「更多」。
+        它跟旁边那颗「确认设计，交给我们建系统」并排，两颗都写着「设计」，
+        而 9-05 之后「交给我们建」**自己会先保存** —— 两颗按钮做重叠的事，
+        一个装修老板分不出该按哪一颗，而那正好是他上门 demo 的最后一秒。
+
+        拿掉它不会掉东西：第一次保存之后**自动保存接手**（左边那一格会写
+        「已保存 15:04」），Ctrl/⌘+S 照旧（就在这个档案上面那支 effect），
+        而「更多」里还有一颗写出来的。这是 Google 文件 / Figma / Notion
+        的形状 —— 少一个要他决定的东西。 */}
     </div>
   );
 }
