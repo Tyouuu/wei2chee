@@ -9,11 +9,12 @@
       "where": "components/ui/, components/blocks/, design-system/tokens/pop.css",
       "takenAt": "64e77583",
       "takenOn": "2026-08-23",
-      "note": "Same stack: Next.js 16, Tailwind v4, shadcn on Radix. Its 25 screens are still unmined.",
+      "note": "Same stack: Next.js 16, Tailwind v4, shadcn on Radix. 2026-09-04 起它是**工作台唯一的那一套样子**（SYSTEM_REGISTER，任务 120/132）—— 门面页逐块复刻过，另外 14 页拍在 .screenshots/admins/arham-*.jpg（e-commerce 是死页）。MIT 允许 use/copy/modify/publish/sublicense **and sell**；我们没有贴它的代码，每一块用自己的 token 重建，所以连附版权声明那个条件都还没触发 —— 真的贴代码的那天要附。",
       "appliedTo": [
         "粗野",
         "工作室",
-        "中台"
+        "中台",
+        "工作台那一套（SYSTEM_REGISTER）"
       ]
     },
     {
