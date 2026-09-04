@@ -62,6 +62,7 @@
     "shoot:addresses": "node scripts/shoot-addresses.mjs",
     "shoot:allocations": "node scripts/shoot-allocations.mjs",
     "check:records": "node scripts/check-records.mjs",
+    "check:receipt": "node scripts/check-receipt.mjs",
     "shoot:directory": "node scripts/shoot-directory.mjs",
     "shoot:scroll": "node scripts/shoot-scroll.mjs",
     "check:sticky": "node scripts/check-sticky.mjs",
