@@ -113,7 +113,8 @@
     "check:shared-record": "node scripts/check-shared-record.mjs",
     "check:referrals": "node scripts/check-referrals.mjs",
     "check:vehicles": "node scripts/check-vehicles.mjs",
-    "check:batches": "node scripts/check-batches.mjs"
+    "check:batches": "node scripts/check-batches.mjs",
+    "check:delivery-note": "node scripts/check-delivery-note.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
