@@ -26,10 +26,28 @@
  * 过不过看它写出来的那张并排图。
  *
  * ⚠️ **参考图读不到就是失败，不是通过。**
+ *
+ * 🔴 **而它还会打一张冻住的页，2026-09-05 抓到的。**
+ *
+ * 编辑器有自动保存（任何改动之后 2.5 秒），而**这把尺自己在开编辑器** ——
+ * 於是它跑过的每一页都被存进 `project_pages.layout_json`，而 `page.tsx`
+ * 只要那一栏有东西就读它、不再问产生器。
+ *
+ * 结果：**组件层的改动照样生效（所以没有人发现），而「这一页有哪几块」
+ * 的改动永远到不了这把尺。** 实测那天 demo 有五页是冻住的
+ * （报价单 · 工程 · 收款 · 官网 · 客户），而这把尺量过其中四页，
+ * 一本正经地印出读数。同一件事[任务 138](../docs/founder-tasks.md)
+ * 在总览那一页上抓过一次，那时候的修法是清掉那一页。
+ *
+ * 所以现在**开跑之前先问资料库**：哪几页是冻住的，印出来。
+ * ⚠️ 它不自己清 —— 一个冻住的版面里可能有客户真的改过的字，
+ * 而清掉是一个决定，不是一个 merge（`check:upstream` 同一条）。
  */
 import { chromium } from "playwright";
 import { measureImage } from "./probe-image.mjs";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { createClient } from "@supabase/supabase-js";
+import { config as loadEnv } from "dotenv";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const sharp = require("sharp");
@@ -107,6 +125,38 @@ function row(label, theirs, ours, judge) {
   return { label, theirs, ours, verdict };
 }
 
+/** 哪几页在资料库里存过版面 —— 存过的那几页，产生器画的东西到不了画面。
+ *
+ *  连不上就回 `null`，**不是回空阵列**：「问过了，没有冻住的」跟
+ *  「问不到」在报告里长得一模一样，而这个仓库被这个形状骗过至少四次。 */
+async function frozenPages(keys) {
+  try {
+    loadEnv({ path: ".env.local" });
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return null;
+    const db = createClient(url, key);
+    const { data: acct } = await db.from("accounts").select("id").eq("email", EMAIL).maybeSingle();
+    if (!acct) return null;
+    const { data: proj } = await db.from("projects").select("id").eq("account_id", acct.id).limit(1).maybeSingle();
+    if (!proj) return null;
+    const { data, error } = await db
+      .from("project_pages")
+      .select("page_key,layout_json")
+      .eq("project_id", proj.id);
+    if (error || !data) return null;
+    const saved = new Set(
+      data
+        .filter((r) => JSON.stringify(r.layout_json ?? {}).length > 40)
+        .map((r) => r.page_key),
+    );
+    /* `quotations/new` 那种子页没有自己的一行，看它的母页。 */
+    return keys.filter((k) => saved.has(k.split("/")[0]));
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   const want = process.argv.slice(2).filter((a) => !a.startsWith("-"));
   const pairs = want.length ? PAIRS.filter((p) => want.includes(p[0])) : PAIRS;
@@ -115,6 +165,21 @@ async function main() {
     process.exit(1);
   }
   mkdirSync(OUT, { recursive: true });
+
+  /* 🔴 先问：这几页里有哪几页是冻住的。见档头。 */
+  const frozen = await frozenPages(pairs.map((p) => p[0]));
+  if (frozen === null) {
+    console.log("⚠️ 连不上资料库，问不到哪几页是冻住的 —— 下面的读数可能量的是一张存过的版面。");
+  } else if (frozen.length) {
+    console.log(
+      `
+🔴 这几页是**冻住的**（资料库里存过版面，产生器画的东西到不了）：${frozen.join(" · ")}
+` +
+        `   下面关於「有哪几块 · 什么顺序」的读数量的是那一张存过的页。
+` +
+        `   要量今天的产生器，先把那一页的 layout_json 清成 {}（那是一个决定，这把尺不替你做）。`,
+    );
+  }
 
   const browser = await chromium.launch();
   /* 🔴 视窗对齐他们那张图：**1400×950，一倍**。

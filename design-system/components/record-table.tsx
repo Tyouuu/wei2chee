@@ -102,6 +102,24 @@ export function RecordTable(props: {
    */
   filters?: string[]
   /**
+   * 「这张清单上有哪几种状态」自己算出来，而不是有人写进去。
+   *
+   * 🔴 这一根轴存在是因为写进去的那一种会说谎。产生页面的那一层只看得到
+   * **示例资料**，而客户第一笔真记录一进来示例就整批消失（8-30 他自己定的）
+   * —— 於是一排照示例状态刻出来的分段，会在他自己的资料上一格都筛不到，
+   * 而它长得跟一排会筛的一模一样。任务 111 记着的那个
+   * 「FILTERED BY 状态：等回覆 ×」就是同一个形状。
+   * `live-rows.ts` 从来不碰 `filters`，所以那份清单没有人会去更新。
+   *
+   * 自己算就永远对得上：示例的时候是示例的状态，真资料的时候是他自己的状态。
+   *
+   * ⚠️ **两个条件都要满足才画**，不然它不是筛选是杂讯：
+   *   ① 至少有一种状态**出现不止一次** —— 每一行都是自己一格的时候，
+   *      那一排分段只是把这张表又抄了一遍（実测：美容那七行是七种状态）
+   *   ② 不超过六格 —— 参考那一页是四个下拉，一排八格会自己折行
+   */
+  segments?: boolean
+  /**
    * THE TABLE'S OWN FURNITURE -- a third axis, and the one shadcn's task table
    * is entirely made of.
    *
@@ -124,8 +142,21 @@ export function RecordTable(props: {
    * one visible row is the same lie in the other direction.
    */
   tools?: "chips" | "search" | "none"
+  /**
+   * 这一张清单上的第一栏是**一个人（或一家店）**，不是一件事。
+   *
+   * 🔴 这不是一根版式轴，所以它不问 register。参考那一页（Studio Admin 的
+   * Users）每一行左边有一颗头像，而**同一行照样有状态药丸** —— 我们本来的
+   * `row: "avatar"` 一个 prop 管两件事：它把头像画在**联络那一格**旁边，
+   * 而且顺手把状态从药丸降成一个圆点。这个仓库为「两根轴共用一个键」
+   * 栽过两次，注解就写在上面三十行。
+   *
+   * 所以头像跟着**资料**走：一张名册的第一栏是一个名字，一张报价单的第一栏
+   * 是一件工程 —— 那是关於这张表在讲什么，不是关於它好不好看。
+   */
+  faces?: boolean
 }) {
-  const { gridId, caption, look, row, filters, tools } = props
+  const { gridId, caption, look, row, filters: given, tools, faces, segments } = props
   const w = useSystemWords()
   // Absent means "follow the register", not "plain" -- see style-scope.tsx.
   /*
@@ -175,6 +206,8 @@ export function RecordTable(props: {
   /** 状态是哪一栏。分段讲的是状态，所以按栏的**种类**找，不是按栏名找
    *  —— 栏名是老板自己取的，他随时可以改成「到哪一步」。 */
   const statusKey = columns.find((c) => c.kind === "status")?.key
+  /* 明确写进来的赢 —— 总览那一张是有人挑过的。其余的自己算，见上面 `segments`。 */
+  const filters = given?.length ? given : segments ? autoSegments(allRows, statusKey) : undefined
   /* 手机上那一行读的是**同一份 `columns`**：第一栏当标题、金额靠右、
      状态在第二行右边、其余的用「·」串成第二行。客户自己加一栏，
      它自己会出现，不用有人回来改这里。 */
@@ -618,16 +651,28 @@ export function RecordTable(props: {
                       answers to one question, and the underline would fight
                       the amount column's alignment.
                     */}
-                    {row.href && col.key === "primary" && value ? (
-                      <a
-                        href={row.href}
-                        className="underline decoration-[color:var(--color-ink-700)] underline-offset-[3px] hover:decoration-[color:var(--color-primary)]"
-                      >
-                        {value}
-                      </a>
-                    ) : (
-                      value
-                    )}
+                    {(() => {
+                      const label =
+                        row.href && col.key === "primary" && value ? (
+                          <a
+                            href={row.href}
+                            className="underline decoration-[color:var(--color-ink-700)] underline-offset-[3px] hover:decoration-[color:var(--color-primary)]"
+                          >
+                            {value}
+                          </a>
+                        ) : (
+                          value
+                        )
+                      /* 头像只画在第一栏，而且只在这张表说自己是一张名册的时候。
+                         名字是空的就不画 —— 一颗没有字的圆圈是一个装饰。 */
+                      if (!faces || col.key !== "primary" || !value) return label
+                      return (
+                        <span className="flex items-center [gap:var(--gap-inline)]">
+                          <Avatar name={String(value)} size={24} />
+                          <span className="truncate">{label}</span>
+                        </span>
+                      )
+                    })()}
                   </td>
                 )
               })}
@@ -741,6 +786,24 @@ function Pill({ tone, label }: { tone: StatusTone; label: string }) {
       {label}
     </span>
   )
+}
+
+/** 这张清单上真的有的那几种状态。见 RecordTable 的 `segments`。 */
+function autoSegments(
+  rows: { cells?: Record<string, string> }[],
+  statusKey: string | undefined,
+): string[] | undefined {
+  if (!statusKey) return undefined
+  const count = new Map<string, number>()
+  for (const r of rows) {
+    const v = String(r.cells?.[statusKey] ?? "").trim()
+    if (v) count.set(v, (count.get(v) ?? 0) + 1)
+  }
+  const labels = [...count.keys()]
+  if (labels.length < 2 || labels.length > 6) return undefined
+  /* 每一格都只有一行 = 这一排是这张表的第二份拷贝，不是一个筛子。 */
+  if (![...count.values()].some((n) => n > 1)) return undefined
+  return labels
 }
 
 /** The segment row. Lifted out because the toolbar draws it in one of two

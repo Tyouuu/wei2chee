@@ -702,6 +702,10 @@ function recordTable(
    *  whose whole content IS this table the segments duplicate the page's own
    *  filter row, and two filter controls that do not agree is worse than one. */
   filters?: string[],
+  /** 这一张清单的第一栏是一个人／一家店，不是一件事。见 record-table.tsx。 */
+  faces?: boolean,
+  /** 上面那一排分段自己从行里算 —— 见 record-table.tsx 的 `segments`。 */
+  segments?: boolean,
 ): PuckNode {
   // Columns are an array, not four props -- see lib/portal/table-model.ts. The
   // built-in keys are deliberately the old prop names, so a generated table and
@@ -723,6 +727,8 @@ function recordTable(
   return node("RecordTable", id, {
     gridId: id,
     caption,
+    ...(faces ? { faces: true } : {}),
+    ...(segments ? { segments: true } : {}),
     ...(filters?.length ? { filters: filters.map((label) => ({ label })) } : {}),
     table: {
       columns,
@@ -2084,35 +2090,55 @@ function buildCustomers(
        两个一样的控件摆在一起，其中大的那个是假的 —— 这正是这个仓库禁的那种
        「画一颗按不动的按钮」，只是它长得像搜索框。
        参考那一页（shadcn Tasks）也只有一个，而且它是真的会筛的那一个。 */
-    /* A NAME LIST EXISTS SO SOMEBODY CAN BE OPENED. Task 81 has recorded the
-       missing customer detail page since 2026-08-31; this is not that page,
-       and it is the half of it that can be honest today -- the one selected,
-       beside the list, in the module's own nouns. */
-    besideNode(
-      "customers",
-      [
-        recordTable(
-          "customers-list",
-          c.customers.caption(labels.customer),
-          {
-            primary: labels.customer,
-            secondary: c.col.contact,
-            status: c.col.status,
-          },
-          sample.customers,
-        ),
-      ],
-      [
-        detailNode(
-          "customers",
-          { primary: labels.customer, secondary: c.col.contact, status: c.col.status },
-          sample.customers[0],
-          c,
-        ),
-      ],
+    /* 🔴 整页一张表，不再是「左清单右详情」（2026-09-05）。
+
+       那个排法本来的理由写在这里：「A NAME LIST EXISTS SO SOMEBODY CAN BE
+       OPENED… this is not that page, and it is the half of it that can be
+       honest today」—— 也就是**客户详情页还不存在**，所以先在旁边放一格。
+       **那一页 2026-09-03 上线了**（[任务 119](../../docs/founder-tasks.md)：
+       他有几单在跑 · 他还欠我多少），而表格第一格从 8-31 起就是连到它的连结。
+
+       於是那一格变成两件事：它把一个已经存在的页面画了半个，而且它只画
+       **第一行**那一个人 —— 一个老板打开客户名单，右边那一整条讲的是一个
+       他没有挑过的人，底下留一大片空。`align:pages` 量出来「缝是他们的
+       12.3 倍」，那一片空就是它。
+
+       ⚠️ **左清单右详情没有被推翻**，供应商跟师傅还是那个排法（照他们的
+       Logistics 那一页）。换掉的只有客户 —— 而客户对上的本来就是他们的
+       **Users**，一张整页宽、能筛能搜的名册。 */
+    recordTable(
+      "customers-list",
+      c.customers.caption(labels.customer),
+      {
+        primary: labels.customer,
+        secondary: c.col.contact,
+        status: c.col.status,
+      },
+      sample.customers,
+      /* 明确的那一排留空 —— 见下面那个 `true`。 */
+      undefined,
+      /* 第一栏是一个人。 */
+      true,
+      /* 🔴 分面筛选，而且**是那张表自己从行里算出来的**，不是这里刻进去的。
+
+         刻进去的那一种会说谎：这一层只看得到**示例资料**，而客户第一笔真
+         记录一进来示例就整批消失 —— 那一排照示例刻的分段，会在他自己的
+         客户名单上一格都筛不到，而它长得跟一排会筛的一模一样。
+         `live-rows.ts` 从来不碰 `filters`，所以没有人会去更新它。
+
+         参考那一页在标题底下有一整排（Role / Team / Status / Workspace）。
+         我们只有一根轴能诚实地筛：状态。三个假的下拉不是三倍的功能。
+
+         ⚠️ `recordTable` 上面写着「Only the dashboard passes them: 在一张
+         整页就是这张表的页上，分段会跟页面自己的筛选条重复」—— 客户这一页
+         **没有筛选条**（那一排 FilterChips 从来没有画在这里），所以那句话
+         讲的情况在这里不成立。 */
+      true,
     ),
   ];
 }
+
+
 
 function buildQuotations(
   ctx: BusinessContext,
@@ -2813,6 +2839,13 @@ function buildFromShape(
     recordTable(`${pageKey}-table`, title, copy.columns, copy.rows),
   ];
 
+  /* 名册那一种的同一张表，第一栏带一颗头像 —— 那一栏是一个人／一家店。
+     供应商跟师傅照旧是「左清单右详情」（他们的 Logistics 那一页），
+     换掉排法的只有客户。 */
+  const dirTable = [
+    recordTable(`${pageKey}-table`, title, copy.columns, copy.rows, undefined, true),
+  ];
+
   const upload = copy.upload
     ? [
         node("FileUploadField", `${pageKey}-upload`, {
@@ -2832,7 +2865,7 @@ function buildFromShape(
       return [
         ...head,
         ...search,
-        besideNode(pageKey, table, [detailNode(pageKey, copy.columns, copy.rows[0], c)]),
+        besideNode(pageKey, dirTable, [detailNode(pageKey, copy.columns, copy.rows[0], c)]),
       ];
 
     case "catalog":
