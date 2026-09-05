@@ -9804,6 +9804,37 @@ Lotus Ipoh · Taman Ipoh Jaya · Gunung Rapat）。
 所以他站在对的页面上，看到一个我说过已经死掉的名字。
 → **一个服务改版，网址会死，牌子常常不会。以后讲「那个东西没了」要分清楚讲的是网址还是名字。**
 
+##### ✅ ezBiz 那一页的原文 —— 三个数字对上了，两件我没讲过（2026-09-06）
+他按进第一张卡，页面第一句就写着他的条款同意已经登记
+（`Persetujuan terhadap terma dan syarat oleh Tuan/Puan GOH TIAN YOU … telah didaftarkan`）。
+下面整页是 SSM 自己写的说明，**所以以下不是查来的，是他们的原文**：
+
+| 我 9-05 讲的 | 他们自己写的 |
+|---|---|
+| 商号名 RM 60 一年 | ✅ `Trade Name = RM60.00 per year` |
+| 本人名 RM 30 一年 | ✅ `Personal Name = RM30.00 per year` |
+| 证 1–2 个工作天 | 🔴 **更快**：`Within one working day (24 hours) after application is received` |
+
+**两件我从来没讲过，而第二件会让他丢掉那张证：**
+- **多一个分店 RM 5 一年** —— 他现在不用
+- 🔴 **`Certificate & Business Info will only be available for downloading
+  within 90 days after the application is approved`** ——
+  **那张证只给下载 90 天。** 过了要再花 RM 10 买一次 business information。
+  → **批下来那一天就下载存好**，而且要用它去开银行户口
+
+另外三条照抄下来，免得下一轮又去查：
+- 被 query 了要**30 天内**在 ezBiz 里回，不回就作废
+- 付款只有**信用卡跟 FPX**（网上银行）
+- **只做西马跟联邦直辖区** —— 怡保在霹雳，没问题。而且它自己写着
+  `Not applicable for SDN BHD and LLP` —— 跟 9-04 那个决定对得上
+
+⚠️ **两份手册我不知道是什么，不要猜**：`Business Registration (SPPP)` 跟
+`Business Registration (S1O1P)` —— 名字缩写我读不出来。
+**没有叫他去点**，除非画面上自己要求。
+
+⚠️ 这一页只是说明，**「新注册」那个入口不在这一页的正文里** ——
+要在选单里找（Perkhidmatan / Services 那一类）。**我没看过那个选单，等他截图。**
+
 ##### 还要问一句的
 - [ ] **地方政府的营业执照（lesen perniagaan）** —— 在家做的软件生意有些市政局要、
       有些不要，各地不一样。**我没查他那一区的。**
