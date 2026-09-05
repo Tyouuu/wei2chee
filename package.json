@@ -108,6 +108,7 @@
     "check:answers": "node scripts/check-answers.mjs",
     "check:site-identity": "node scripts/check-site-identity.mjs",
     "shoot:commission": "node scripts/shoot-commission.mjs",
+    "shoot:period-lock": "node scripts/shoot-period-lock.mjs",
     "shoot:packages": "node scripts/shoot-packages.mjs",
     "align:pages": "node scripts/align-pages.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",

@@ -261,6 +261,15 @@ export type RecordFormCopy = {
   /* 他是自己人还是下游（20260905720000）。**只有下游才讲** ——
      一个员工旁边写「他是员工」是杂讯。 */
   rateKindDownstream: string;
+  /* 对完帐，把那个月关起来（20260902020000 + 20260905740000）。
+     🔴 关起来之后什么改不了，一定要在他按下去之前讲 —— 那是四个洞里
+     唯一一个「收紧」，而收紧会挡到每一条写入路径，
+     画面上只看得到「存不了」。 */
+  settleHeading: string;
+  settleLede: string;
+  settleClose: string;
+  settleClosed: string;
+  settleReopen: string;
   /* 套票（20260904190000）。只在客户那一页，而且**师傅也看得到** ——
      他要跟客人讲「你还剩三次」。价钱不在这张表上，所以这不是把钱交出去。 */
   packHeading: string;
@@ -538,6 +547,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       rateStartsNext: "现在存，下个月才算。要这个月就算，把日子写成这个月一号。",
       rateHistory: "以前的",
       rateKindDownstream: "下游经销商 —— 不是你的员工。",
+      settleHeading: "对完了没有",
+      settleLede: "对完了就把这个月关起来。关了之后，这个月这一边的钱改不了 —— 要改就重开、改完再关。",
+      settleClose: "把这个月关起来",
+      settleClosed: "{date} 关起来了。这个月这一边的钱改不了 —— 要改，先重开这个月。",
+      settleReopen: "重开这个月",
       packHeading: "套票",
       packLede: "卖几次，用一次扣一次。剩几次是数出来的，没有人改得了。",
       packNone: "还没有卖过套票给他。",
@@ -769,6 +783,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       rateStartsNext: "Saved today, this starts next month. To change this month, set the date to the 1st.",
       rateHistory: "Earlier",
       rateKindDownstream: "A downstream dealer -- not on your payroll.",
+      settleHeading: "Signed off",
+      settleLede: "Close the month once it agrees. After that, money on this side of the month cannot change -- reopen it, correct it, close it again.",
+      settleClose: "Close this month",
+      settleClosed: "Closed on {date}. Money on this side of the month cannot change -- reopen it first.",
+      settleReopen: "Reopen this month",
       packHeading: "Packages",
       packLede: "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
       packNone: "No package sold to them yet.",

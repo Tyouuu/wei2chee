@@ -13,6 +13,7 @@ import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, unallocatedOf, type DocumentSettlement } from "@/lib/portal/allocations";
 import { jobProfit, type ProfitFact } from "@/lib/portal/profit";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
+import { SettleMonth } from "../new/settle-month";
 import { PartyHistory } from "../new/party-history";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { PackagesPanel, type PackageRow } from "../new/packages-panel";
@@ -142,6 +143,12 @@ export default async function EditRecordPage({
      RM 950：**同一页两个答案，而看得见的那个是错的。**
      ⚠️ null = 没有问（不是这几页，或者读的人看不到钱）。 */
   let commissionCents: number | null = null;
+  /* 这个月对完了没有（20260902020000）。
+     🔴 `set_reconciliation_settled` 从 9-02 就在，而到 9-05 为止
+     **全 app 零个呼叫** —— 他关不了一个月，也重开不了，
+     於是 20260905740000 那道期间锁既看不见也碰不到。
+     ⚠️ null = 没有问（不是对帐那一页），不是「还没关」。 */
+  let settledAt: string | null | undefined = undefined;
   /* 他是自己人还是下游（20260905720000）。**放宽那条守卫的时候，
      保护那件事的责任就搬到这一栏上** —— 读的人分不出来，
      原本那条守卫在防的事就真的没有人在防了。 */
@@ -541,7 +548,7 @@ export default async function EditRecordPage({
        the ledger and there is deliberately no column holding it. */
     const { data } = await supabase
       .from("reconciliations")
-      .select("id, period, source, direction, their_cents, reference, note, extra, archived_at")
+      .select("id, period, source, direction, their_cents, reference, note, extra, archived_at, settled_at")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -560,6 +567,7 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+    settledAt = data.settled_at ?? null;
   } else if (ctx.shape === "ledger") {
     const { data } = await supabase
       .from("ledger_entries")
@@ -919,6 +927,15 @@ export default async function EditRecordPage({
                 {copy.form.creditNone}
               </p>
             )}
+          </div>
+        ) : null}
+
+        {/* 对帐那一页多一段：这个月对完了没有，跟关起来 / 重开。
+            ⚠️ `undefined` 的意思是**没有问**（不是对帐那一页）——
+            `null` 是问了、还没关。两个在画面上是不一样的事。 */}
+        {settledAt !== undefined ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <SettleMonth id={recordId} settledAt={settledAt} copy={copy.form} />
           </div>
         ) : null}
 
