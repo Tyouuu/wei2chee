@@ -77,6 +77,9 @@ const AREAS = {
   penang: [5.24, 100.24, 5.48, 100.53],
   johor: [1.42, 103.60, 1.60, 103.82],
   ipoh: [4.53, 101.03, 4.68, 101.16],
+  // 怡保市区之外还有一整条近打谷 —— 万里望、务边、华都牙也、金宝，
+  // 开车都在半小时内。他人在这里，所以这一格才是他真正走得到的范围。
+  kinta: [4.38, 100.94, 4.78, 101.26],
   kk: [5.90, 116.02, 6.05, 116.18],
 };
 const area = String(flag("area", "kl")).toLowerCase();
@@ -112,7 +115,7 @@ const TRADES = [
 ];
 
 const CHAINS =
-  /99 ?speed|watsons|guardian|7-?eleven|kk ?super|mydin|tesco|lotus|aeon|giant|shell|petronas|petron|caltex|mcdonald|kfc|starbucks|zus |家乐福|celcom|maxis|digi|u ?mobile|unifi/i;
+  /99 ?speed|watsons|guardian|7-?eleven|kk ?super|mydin|tesco|lotus|aeon|giant|shell|petronas|petron|caltex|mcdonald|kfc|starbucks|zus |家乐福|celcom|maxis|digi|u ?mobile|unifi|huawei|samsung|xiaomi|oppo|vivo|realme|altel|yes ?4g|tune ?talk|senheng|senq|courts|harvey ?norman|machines/i;
 
 const q = TRADES.map(
   ([t]) => `node["${t}"](${bbox.join(",")});way["${t}"](${bbox.join(",")});`,
