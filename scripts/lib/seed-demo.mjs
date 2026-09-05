@@ -72,19 +72,44 @@ export async function openAllPages(api, { quiet = false } = {}) {
  * 但道具照样照那条走 —— 一张图上出现一个编出来的人名，他会拿去讲话。
  */
 const SHOWROOM = {
-  parties: ["Hup Seng Trading", "KL Metalworks", "Seri Jaya Hardware", "Lim Brothers Renovation", "Pantai Interiors"],
-  suppliers: ["Chin Hin Cement", "Ann Joo Steel", "Nippon Paint Depot", "Sunway Tiles"],
-  crew: ["Site crew A", "Site crew B", "Wiring team"],
+  /* 🔴 十二个，不是五个（2026-09-05）。
+     `align:pages` 拿这一份跟参考那十五张比，而参考那几页**一屏满满的**
+     （他们的名册十一行）。我们种五行，於是十页里五页报「底下 26–41% 是空的」
+     —— 而那量到的是**行数**，不是排版。两边行数不一样，那一项永远红，
+     而一个永远不会变绿的读数没有人会读。
+     ⚠️ 拍照那一支照旧只种五行：那一张是**给人看的**，五行读得完。 */
+  parties: [
+    "Hup Seng Trading", "KL Metalworks", "Seri Jaya Hardware", "Lim Brothers Renovation",
+    "Pantai Interiors", "Kepong Timber Yard", "Sentul Glass Works", "Bandar Utama Cabinets",
+    "Wangsa Tiles Depot", "Damansara Steel Supply", "Klang Valley Roofing", "Subang Marble House",
+  ],
+  suppliers: [
+    "Chin Hin Cement", "Ann Joo Steel", "Nippon Paint Depot", "Sunway Tiles",
+    "Hume Concrete", "Southern Wire", "Kedah Timber Mill", "Selangor Glass Trading",
+  ],
+  crew: ["Site crew A", "Site crew B", "Wiring team", "Tiling team", "Painting team", "Plumbing team"],
   /* 一个真的客户会填电话跟地区 —— 只给名字的话，「联络方式」跟「状态」
      两整栏是空的，而那两栏正好是那一页三栏里的两栏。
      ⚠️ 号码全部是 `xxxx` 结尾的假号码：一个看起来像真的号码，
      他会拿去打。 */
-  phones: ["013-2xx xxxx", "012-3xx xxxx", "016-8xx xxxx", "019-4xx xxxx", "011-2xx xxxx"],
-  regions: ["Taman Desa", "Bukit Jalil", "Cheras", "Sri Petaling", "Ampang"],
-  states: ["In progress", "To follow up", "New", "In progress", "To follow up"],
+  phones: [
+    "013-2xx xxxx", "012-3xx xxxx", "016-8xx xxxx", "019-4xx xxxx", "011-2xx xxxx",
+    "017-6xx xxxx", "014-9xx xxxx", "018-3xx xxxx", "010-7xx xxxx", "015-4xx xxxx",
+    "013-8xx xxxx", "012-5xx xxxx",
+  ],
+  regions: [
+    "Taman Desa", "Bukit Jalil", "Cheras", "Sri Petaling", "Ampang", "Kepong",
+    "Sentul", "Bandar Utama", "Wangsa Maju", "Damansara", "Klang", "Subang Jaya",
+  ],
+  states: [
+    "In progress", "To follow up", "New", "In progress", "To follow up", "New",
+    "In progress", "New", "To follow up", "In progress", "New", "To follow up",
+  ],
   jobs: [
     "Taman Desa 3-room repaint", "Bangsar kitchen fitout", "Puchong shoplot rewire",
-    "Cheras bathroom retile", "Setapak office partition",
+    "Cheras bathroom retile", "Setapak office partition", "Kepong terrace roofing",
+    "Sentul cafe shopfront", "Bandar Utama wardrobe set", "Wangsa Maju floor screed",
+    "Damansara balcony grille", "Klang warehouse lighting", "Subang staircase railing",
   ],
   items: [
     ["Cement 50kg", "bags", 1850, 128],
@@ -93,9 +118,21 @@ const SHOWROOM = {
     ["Emulsion paint 18L", "pails", 18900, 24],
     ["Wall tile 300x600", "boxes", 4200, 6],
     ["PVC conduit 20mm", "lengths", 780, 410],
+    ["Plywood 12mm", "sheets", 5600, 72],
+    ["Skim coat 20kg", "bags", 2350, 96],
+    ["Copper cable 2.5mm", "rolls", 24500, 18],
+    ["Door frame set", "sets", 16800, 11],
+    ["Floor tile 600x600", "boxes", 5800, 43],
+    ["Silicone sealant", "tubes", 950, 220],
   ],
-  amounts: [48500_00, 12750_00, 96240_00, 7300_00, 21980_00],
-  paid: [3000_00, 12750_00, 8400_00, 1200_00, 5500_00],
+  amounts: [
+    48500_00, 12750_00, 96240_00, 7300_00, 21980_00, 15400_00,
+    33800_00, 8950_00, 27600_00, 61200_00, 4380_00, 19750_00,
+  ],
+  paid: [
+    3000_00, 12750_00, 8400_00, 1200_00, 5500_00, 2400_00,
+    9800_00, 8950_00, 6300_00, 15000_00, 4380_00, 3900_00,
+  ],
   /* 🔴 阶段要**明写**。它平常是从他问卷那份分析来的
      （`add_pipeline_record` → `analysis_results.after_workflow`），
      而一个用管理钥匙直接开的帐号没有问卷 —— 於是每一行的「状态」是空的，
@@ -111,11 +148,16 @@ const SHOWROOM = {
      单据真正在的阶段，一单都不丢），**而我的道具让它看起来像坏的**。
      用它自己那份（chrome.ts 的 STAGE_EN：Enquiry · Quote · Build · Paid）。 */
   stages: {
-    quotations: ["Quote", "Approved", "Quote", "Approved", "Enquiry"],
-    orders: ["Order", "Deposit", "Build", "Order", "Deposit"],
-    projects: ["Build", "Progress", "Build", "Balance", "Enquiry"],
-    tasks: ["Enquiry", "Build", "Progress", "Build", "Enquiry"],
-    purchases: ["Ordered", "Received", "Paid", "Ordered", "Received"],
+    quotations: ["Quote", "Approved", "Quote", "Approved", "Enquiry", "Quote",
+                 "Approved", "Enquiry", "Quote", "Approved", "Enquiry", "Quote"],
+    orders: ["Order", "Deposit", "Build", "Order", "Deposit", "Build",
+             "Order", "Deposit", "Build", "Order", "Deposit", "Build"],
+    projects: ["Build", "Progress", "Build", "Balance", "Enquiry", "Quote",
+               "Approved", "Deposit", "Build", "Progress", "Balance", "Build"],
+    tasks: ["Enquiry", "Build", "Progress", "Build", "Enquiry", "Quote",
+            "Approved", "Deposit", "Progress", "Build", "Enquiry", "Build"],
+    purchases: ["Ordered", "Received", "Paid", "Ordered", "Received", "Paid",
+                "Ordered", "Received", "Paid", "Ordered", "Received", "Paid"],
   },
 };
 
@@ -283,11 +325,28 @@ export async function seedEveryShape(
       in_their_cents: paid(i),
     }));
   }
+  /* 🔴 上班时间，不是「现在开始每小时一个」（2026-09-05）。
+   *
+   * 原本是 `Date.now() + (i+1) 小时`，而这一支常常在晚上跑 ——
+   * 於是那一页画出 **21:32 · 22:32 · 23:32 · 00:33 · 01:33 · 03:33**：
+   * **一间沙龙半夜三点在做交屋走查。**
+   * 那是道具没摆好，不是产品坏了，**而拍出来一模一样** ——
+   * 而这一页正是老板会拿去给沙龙老板看的那一页。
+   *
+   * 一天排九点到下午五点，一小时一个，排满就换下一天。
+   * ⚠️ 从**今天**排起，不是从明天 —— 那一页的标题就是「今天」，
+   * 而一个今天空着的行事历，跟一个坏掉的行事历长得一模一样。 */
+  const OPEN_HOUR = 9;
+  const SLOTS_A_DAY = 8; // 09:00 – 17:00
   for (let i = 0; i < N; i++) {
+    const day = Math.floor(i / SLOTS_A_DAY);
+    const at = new Date();
+    at.setHours(OPEN_HOUR + (i % SLOTS_A_DAY), 0, 0, 0);
+    at.setDate(at.getDate() + day);
     await seed("bookings", () => api.rpc("add_appointment", {
       in_project_id: P, in_module_key: "bookings",
-      in_starts_at: new Date(Date.now() + (i + 1) * 3600e3).toISOString(),
-      in_ends_at: new Date(Date.now() + (i + 1) * 3600e3 + 3600e3).toISOString(),
+      in_starts_at: at.toISOString(),
+      in_ends_at: new Date(at.getTime() + 3600e3).toISOString(),
       in_party: party(i),
       in_service: showroom ? ["Site measurement", "Handover walkthrough", "Defect check", "Colour selection", "Final inspection"][i % 5] : `${mark} service`,
     }));
