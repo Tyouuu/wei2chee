@@ -141,7 +141,8 @@
     "shoot:booking": "node scripts/shoot-booking.mjs",
     "shoot:vehicles": "node scripts/shoot-vehicles.mjs",
     "check:motion": "node scripts/check-motion.mjs",
-    "check:returns": "node scripts/check-returns.mjs"
+    "check:returns": "node scripts/check-returns.mjs",
+    "check:payables": "node scripts/check-payables.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
