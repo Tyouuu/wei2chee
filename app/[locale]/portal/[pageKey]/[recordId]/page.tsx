@@ -12,6 +12,7 @@ import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, unallocatedOf, type DocumentSettlement } from "@/lib/portal/allocations";
 import { jobProfit, type ProfitFact } from "@/lib/portal/profit";
+import { AppointmentStatus } from "../new/appointment-status";
 import { PartyStatement } from "../new/party-statement";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { SettleMonth } from "../new/settle-month";
@@ -140,6 +141,12 @@ export default async function EditRecordPage({
      零个消费端** —— [任务 61 · 67 · 44] 三天各自要过它一次，
      每一次的答案都是「那只是一个减法」，然后没有人把它画出来。
      ⚠️ `null` = 没有问（不是客户页，或者读的人看不到钱），不是「零」。 */
+  /* 🔴 预约那一页：他来了没有。null = 不是预约那一页。 */
+  let apptStatus: string | null = null;
+  /* 🔴 他按下去之前要知道这是**哪一张**预约。标题只写「Edit · Bookings」
+     （十八页都一样），而客人的名字在表单卡里、要滑过四个格子才看得到。
+     ⚠️ 空的就不印 —— 一个挡起来的休息时段本来就没有客人。 */
+  let apptWho: string | null = null;
   let credit: { cents: number; from: { id: string; label: string; cents: number }[] } | null = null;
   let tiers: CommissionTier[] | null = null;
   /* 🔴 这个月那个数字是照**哪一份**办法算的（20260905640000）。
@@ -588,7 +595,7 @@ export default async function EditRecordPage({
   } else if (ctx.shape === "calendar") {
     const { data } = await supabase
       .from("appointments")
-      .select("id, starts_at, ends_at, kind, party, service, note, extra, archived_at")
+      .select("id, starts_at, ends_at, kind, party, service, status, note, extra, archived_at")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -619,6 +626,9 @@ export default async function EditRecordPage({
     };
     const from = parts(data.starts_at);
     const to = parts(data.ends_at);
+    apptStatus = String((data as { status?: string }).status ?? "booked");
+    apptWho =
+      [data.party, data.service].filter((x) => String(x ?? "").trim()).join(" · ") || null;
     Object.assign(values, {
       day: from.day,
       from: from.time,
@@ -990,6 +1000,15 @@ export default async function EditRecordPage({
         <NewRecordForm
           heading={copy.editHeading(ctx.title)}
           lede={archivedAt ? copy.form.archived : copy.editLede}
+          /* 🔴 他来了没有 —— **标题底下、表单卡上面**。
+             在表单底下：客人站在面前，而他要滑过八个不用碰的格子。
+             在标题上面（我第一版）：他还没看到这是哪一张预约就先按了。
+             两个看图看出来的，而第二个更严重。 */
+          afterHeading={
+            apptStatus ? (
+              <AppointmentStatus id={recordId} status={apptStatus} who={apptWho} copy={copy.form} />
+            ) : null
+          }
           projectId={ctx.projectId}
           moduleKey={ctx.pageKey}
           received={received}

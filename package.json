@@ -127,6 +127,7 @@
     "check:delivery-note": "node scripts/check-delivery-note.mjs",
     "check:rentals": "node scripts/check-rentals.mjs",
     "shoot:statement": "node scripts/shoot-statement.mjs",
+    "shoot:appointment": "node scripts/shoot-appointment.mjs",
     "shoot:less-typing": "node scripts/shoot-less-typing.mjs",
     "shoot:handoff": "node scripts/shoot-handoff.mjs",
     "check:accounts": "node scripts/check-accounts.mjs",

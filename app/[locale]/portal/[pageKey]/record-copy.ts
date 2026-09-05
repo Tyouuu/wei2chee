@@ -61,6 +61,13 @@ export type RecordFormCopy = {
   statementUnread: string;
   /** 带 {amount}。期末余额底下那一句——两个数字要一起讲 */
   statementDeposit: string;
+  /** 他来了没有。只在预约那一页，而且**一分钱都不碰**（[任务 100]） */
+  apptHeading: string;
+  apptBooked: string;
+  apptCame: string;
+  apptNoShow: string;
+  apptCancelled: string;
+  apptLede: string;
   lineRemove: string;
   lineTotal: string;
   amountFromLines: string;
@@ -449,6 +456,12 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       statementQuiet: "这个月没有来往。",
       statementUnread: "这一段读不到。",
       statementDeposit: "另外他那边还有 {amount} 的订金没有扣。",
+      apptHeading: "他来了没有",
+      apptBooked: "还没来",
+      apptCame: "来了",
+      apptNoShow: "没来",
+      apptCancelled: "取消了",
+      apptLede: "「没来」只是记下来，不会动任何一笔钱。要不要扣是你决定。",
       lineRemove: "删掉这一行",
       lineTotal: "合计",
       amountFromLines: "有逐项的时候，上面的金额是这几行加起来的。",
@@ -748,6 +761,12 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       statementQuiet: "Nothing happened this month.",
       statementUnread: "This part could not be read.",
       statementDeposit: "He also has {amount} paid and not yet applied.",
+      apptHeading: "Did they turn up",
+      apptBooked: "Not yet",
+      apptCame: "Came",
+      apptNoShow: "No show",
+      apptCancelled: "Cancelled",
+      apptLede: "No show is only recorded here. It moves no money — whether to charge is yours to decide.",
       lineRemove: "Remove this line",
       lineTotal: "Total",
       amountFromLines: "With line items, the amount above is their total.",

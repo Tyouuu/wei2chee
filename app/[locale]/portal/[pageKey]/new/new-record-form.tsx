@@ -129,6 +129,7 @@ export function NewRecordForm({
   backHref,
   heading,
   lede,
+  afterHeading,
   copy,
 }: {
   projectId: string;
@@ -273,6 +274,20 @@ export function NewRecordForm({
    */
   heading?: string;
   lede?: React.ReactNode;
+  /**
+   * 🔴 画在**标题底下、表单卡上面**的一段。
+   *
+   * 今天只有一个用它：预约那一页的「他来了没有」。
+   *
+   * 这一页其余每一段都在表单**底下**，因为那几段是读的。
+   * 而那四颗是写的，而且是一间沙龙柜台一天按最多次的那一下 ——
+   * 放在一张一千像素高的表单底下，客人站在面前而他要滑到底。
+   *
+   * ⚠️ **而它不可以在标题上面。** 我第一版就是那样搬的，
+   *    看图当场看到：他还没看到这是哪一张预约，就先按了「来了」。
+   *    那比原本要滑到底严重。
+   */
+  afterHeading?: React.ReactNode;
   copy: RecordFormCopy;
 }) {
   const router = useRouter();
@@ -964,7 +979,12 @@ export function NewRecordForm({
             ? "set_directory_archived"
             : isCatalog
               ? "set_catalog_archived"
-              : "set_pipeline_archived",
+              : /* 🔴 预约也有自己那一支，而这条链本来没有它 ——
+                 那颗「收起来」在预约那一页画得出来，而按下去
+                 打的是 `set_pipeline_archived`，那支函式根本找不到这一行。 */
+                isCalendar
+                ? "set_appointment_archived"
+                : "set_pipeline_archived",
           { in_id: record.id, in_archived: !record.archivedAt },
         );
     if (err) {
@@ -1270,6 +1290,7 @@ export function NewRecordForm({
         <div className="hidden @3xl:block">{saveButton}</div>
       </div>
     ) : null}
+    {afterHeading ? <div className="mb-7">{afterHeading}</div> : null}
     <div className={paper ? "grid gap-8 lg:grid-cols-2 lg:gap-10" : undefined}>
     {/* 🔴 表单住进一张卡里（2026-09-04，照 arhamkhnz 的 dashboard/invoice）。
         它本来是一串标签跟输入框直接躺在页面的地上 —— 而参考页那一边是
