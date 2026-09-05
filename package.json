@@ -65,6 +65,7 @@
     "check:records": "node scripts/check-records.mjs",
     "shoot:payment": "node scripts/shoot-payment.mjs",
     "audit:demo": "node scripts/audit-demo.mjs",
+    "shoot:pages": "node scripts/shoot-pages.mjs",
     "check:public-booking": "node scripts/check-public-booking.mjs",
     "check:statement": "node scripts/check-statement.mjs",
     "check:branch-stock": "node scripts/check-branch-stock.mjs",

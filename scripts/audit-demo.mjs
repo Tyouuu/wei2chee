@@ -30,6 +30,7 @@ import { chromium } from "playwright";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { dropThrowaway } from "./lib/throwaway.mjs";
+import { moduleKeys, moduleLabels, openAllPages, seedEveryShape } from "./lib/seed-demo.mjs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -48,15 +49,10 @@ mkdirSync(OUT, { recursive: true });
 
 /* 目录里那十八个。**从产品自己的档案读出来**，不是手抄一份 ——
    这个仓库栽在「第二份手写清单」上至少五次。 */
-const CATALOGUE = readFileSync("lib/portal/module-catalog.ts", "utf8");
-const KEYS = [
-  ...new Set((CATALOGUE.match(/key: "[a-z_]+"/g) ?? []).map((m) => m.slice(6, -1))),
-];
-/** 每一页在英文系统里叫什么。**从目录读出来**，不是手抄。 */
-const LABELS = Object.fromEntries(
-  [...CATALOGUE.matchAll(/key: "([a-z_]+)",\s*\n\s*label: "[^"]*",\s*\n\s*labelEn: "([^"]*)"/g)]
-    .map((m) => [m[1], m[2]]),
-);
+/* 十八个 key 跟它们的英文名字，**从产品自己的目录读出来**。
+   开页跟种资料那两段跟 `shoot-pages.mjs` 共用一份 —— 见 lib/seed-demo.mjs。 */
+const KEYS = moduleKeys();
+const LABELS = moduleLabels();
 
 /* 示范资料里最认得出来的几句。它们出现在一页**有真资料**的画面上，
    就是他会指着讲错话的地方。 */
@@ -126,83 +122,22 @@ try {
   if (!P) throw new Error("注册没有开出一个 project");
   await api.rpc("set_project_style", { new_style: "ledger" });
 
-  /* ── 每一页都开出来 ────────────────────────────────────────────────── */
-  const opened = [];
-  for (const key of KEYS) {
-    if (key === "dashboard" || key === "website") { opened.push(key); continue; }
-    /* ⚠️ **不传标题** —— 让它用模块自己的名字，那才是一个真的客户拿到的。
-       第一版传了 key 当标题，於是侧栏上出现「purchases」这种小写的字，
-       而那是**我造的**，不是产品的毛病。一个道具的错，会被读成产品的错。 */
-    const { error } = await api.rpc("add_project_page", {
-      requested_key: key, new_title: LABELS[key] ?? key,
-    });
-    if (error) console.log(`  ⚠️  开不了 ${key} — ${error.message.slice(0, 70)}`);
-    else opened.push(key);
-  }
-  console.log(`开了 ${opened.length} / ${KEYS.length} 页\n`);
-
-  /* ── 每一种零件种一笔带记号的真资料 ───────────────────────────────── */
-  const seeded = new Set();
-  const seed = async (key, fn) => {
-    if (!opened.includes(key)) return;
-    try {
-      const { error } = await fn();
-      if (error) console.log(`  ⚠️  种不进 ${key} — ${error.message.slice(0, 80)}`);
-      else seeded.add(key);
-    } catch (e) {
-      console.log(`  ⚠️  种不进 ${key} — ${String(e).slice(0, 80)}`);
-    }
-  };
-
-  const { data: cust } = await api.rpc("add_directory_entry", {
-    in_project_id: P, in_module_key: "customers", in_name: `${MARK} Customer`,
-  });
-  if (cust?.id) seeded.add("customers");
-  await seed("suppliers", () => api.rpc("add_directory_entry", {
-    in_project_id: P, in_module_key: "suppliers", in_name: `${MARK} Supplier`,
-  }));
-  const { data: crew } = await api.rpc("add_directory_entry", {
-    in_project_id: P, in_module_key: "staff", in_name: `${MARK} Crew`,
-  });
-  if (crew?.id) seeded.add("staff");
-
-  for (const key of ["quotations", "orders", "projects", "tasks", "purchases"]) {
-    await seed(key, () => api.rpc("add_pipeline_record", {
-      in_project_id: P, in_module_key: key,
-      in_title: `${MARK} ${key}`, in_party: `${MARK} Customer`,
-      in_party_id: key === "purchases" ? null : cust?.id,
-      in_amount_cents: 4_850_00,
-    }));
-  }
-  for (const key of ["payments", "expenses", "commission"]) {
-    await seed(key, () => api.rpc("add_ledger_entry", {
-      in_project_id: P, in_module_key: key,
-      in_amount_cents: 1_234_00, in_party: `${MARK} Customer`,
-      in_note: `${MARK} note`,
-    }));
-  }
-  await seed("inventory", () => api.rpc("add_catalog_item", {
-    in_project_id: P, in_module_key: "inventory",
-    in_name: `${MARK} Cement`, in_unit: "bags", in_price_cents: 1850,
-  }));
-  /* 对帐要种，才分得出「正确地在示范」跟「根本读不到他的」——
-     那两件在画面上长得一模一样，而只有种一笔才问得出来。 */
-  await seed("reconciliation", () => api.rpc("add_reconciliation", {
-    in_project_id: P, in_module_key: "reconciliation",
-    in_period: new Date().toISOString().slice(0, 8) + "01",
-    in_source: `${MARK} Bank`, in_their_cents: 1_234_00,
-  }));
-  await seed("bookings", () => api.rpc("add_appointment", {
-    in_project_id: P, in_module_key: "bookings",
-    in_starts_at: new Date(Date.now() + 3600e3).toISOString(),
-    in_ends_at: new Date(Date.now() + 7200e3).toISOString(),
-    in_party: `${MARK} Customer`, in_service: `${MARK} service`,
-  }));
-  console.log(`种了 ${seeded.size} 种零件的真资料，记号 ${MARK}\n`);
+  /* ── 每一页都开出来 · 每一种零件种一笔带记号的真资料 ─────────────── */
+  const { opened } = await openAllPages(api);
+  console.log(`开了 ${opened.length} / ${KEYS.length} 页
+`);
+  const seeded = await seedEveryShape(api, P, MARK, opened);
+  console.log(`种了 ${seeded.size} 种零件的真资料，记号 ${MARK}
+`);
 
   /* ── 一页一页打开 ──────────────────────────────────────────────────── */
   browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
+  /* 🔴 **两倍解析度、整页。** 缩图上看不到的东西，1:1 上一眼就看到 ——
+     而他要拿这些图去判「我要做什么」，一张糊的图答不了那个问题。 */
+  const page = await browser.newPage({
+    viewport: { width: 1440, height: 1100 },
+    deviceScaleFactor: 2,
+  });
   await page.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
@@ -218,7 +153,7 @@ try {
       await page.waitForTimeout(900);
       text = await page.evaluate(() => document.body.innerText);
       ok = (res?.status() ?? 0) < 400 && !/Something broke|Page not found/i.test(text);
-      await page.screenshot({ path: `${OUT}/${key}.png`, fullPage: false });
+      await page.screenshot({ path: `${OUT}/${key}.png`, fullPage: true });
     } catch (e) {
       text = String(e).slice(0, 120);
     }
