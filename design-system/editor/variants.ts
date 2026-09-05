@@ -322,6 +322,9 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "chips", label: "标题旁边一排分段", props: { tools: "chips" } },
     { id: "search", label: "自己一行 · 搜索框 + 分段", props: { tools: "search" } },
     { id: "none", label: "只有标题跟条数", props: { tools: "none" } },
+    /* 第四种（2026-09-05）。出处 arhamkhnz 的 `users` 那一页：
+       搜索跟按钮**在标题那一行**。它跟 `search` 的差别不是漆，是**少一行**。 */
+    { id: "inline", label: "全部挤在标题那一行", props: { tools: "inline" } },
   ],
 
   // ---------------------------------------------------------------- 分栏

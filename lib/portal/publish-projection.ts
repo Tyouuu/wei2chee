@@ -1,4 +1,5 @@
 import type { PuckLayout, PuckNode } from "@/lib/portal/layout-ops";
+import { pruneDeadAnchors } from "./anchor-prune";
 import { puckConfig } from "@/design-system/editor/puck-config";
 
 /**
@@ -353,11 +354,16 @@ function project(node: PuckNode): PuckNode {
 
 /** The saved layout with every owner-facing annotation removed. */
 export function forPublication(layout: PuckLayout): PuckLayout {
-  return {
+  /* 🔴 **拿掉段之后，指向它的连结也要拿掉。**
+     这一支会删整段（空的照片框 · 每一行都是 `RM —` 的价目表），
+     而导航是另外产生的三条写死的锚点 —— 於是客户唯一那个上线的官网上
+     四条连结全部按不动，其中一条是**整页唯一的转换按钮**。
+     见 lib/portal/anchor-prune.ts。 */
+  return pruneDeadAnchors({
     ...layout,
     content: (layout.content ?? [])
       .filter((n) => !isEmptyOnPublish(n) && !isAllPlaceholder(n))
       .map(project)
       .filter((n) => !hasNothingLeft(n)),
-  };
+  });
 }

@@ -69,6 +69,7 @@ export function EnquiryForm({
   landsInAfter,
   note,
   look = "card",
+  anchor,
 }: {
   heading: ReactNode;
   blurb?: ReactNode;
@@ -102,6 +103,8 @@ export function EnquiryForm({
    *          ending in a tall stack of inputs.
    */
   look?: "card" | "plain" | "split";
+  /** 这一块在资料里的 id。顶栏跟第一屏那几颗按钮指的是它。 */
+  anchor?: string
 }) {
   const base = useId();
   const w = useSystemWords();
@@ -176,6 +179,12 @@ export function EnquiryForm({
     /* id="ask" —— 页面上别处的按钮要有地方去。瑞士 那三张服务卡上的
        「View Details」如果不连到任何东西，就是一颗画出来的死按钮。 */
     <section id="ask" className="[padding-block:var(--pad-card-lg)] [padding-inline:var(--pad-card-lg)]">
+      {/* 🔴 这一块有**两个名字**，而在 2026-09-05 之前只画得出一个。
+          组件里面四处「View Details」指的是写死的 `#ask`（上面那一行），
+          而顶栏 · 页脚 · 第一屏那三颗按钮指的是它在资料里的 id
+          （`website-form`）—— 於是那三颗从来没有落点。
+          两个都画出来，两边都通。见 lib/portal/anchor-prune.ts。 */}
+      {anchor && anchor !== "ask" ? <span id={anchor} aria-hidden /> : null}
       <div
         className={[
           boxed

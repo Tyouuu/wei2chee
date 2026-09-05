@@ -75,6 +75,13 @@ const SHOWROOM = {
   parties: ["Hup Seng Trading", "KL Metalworks", "Seri Jaya Hardware", "Lim Brothers Renovation", "Pantai Interiors"],
   suppliers: ["Chin Hin Cement", "Ann Joo Steel", "Nippon Paint Depot", "Sunway Tiles"],
   crew: ["Site crew A", "Site crew B", "Wiring team"],
+  /* 一个真的客户会填电话跟地区 —— 只给名字的话，「联络方式」跟「状态」
+     两整栏是空的，而那两栏正好是那一页三栏里的两栏。
+     ⚠️ 号码全部是 `xxxx` 结尾的假号码：一个看起来像真的号码，
+     他会拿去打。 */
+  phones: ["013-2xx xxxx", "012-3xx xxxx", "016-8xx xxxx", "019-4xx xxxx", "011-2xx xxxx"],
+  regions: ["Taman Desa", "Bukit Jalil", "Cheras", "Sri Petaling", "Ampang"],
+  states: ["In progress", "To follow up", "New", "In progress", "To follow up"],
   jobs: [
     "Taman Desa 3-room repaint", "Bangsar kitchen fitout", "Puchong shoplot rewire",
     "Cheras bathroom retile", "Setapak office partition",
@@ -163,18 +170,32 @@ export async function seedEveryShape(
   for (let i = 0; i < N; i++) {
     const { data } = await api.rpc("add_directory_entry", {
       in_project_id: P, in_module_key: "customers", in_name: party(i),
+      ...(showroom
+        ? {
+            in_phone: SHOWROOM.phones[i % SHOWROOM.phones.length],
+            in_region: SHOWROOM.regions[i % SHOWROOM.regions.length],
+            in_status: SHOWROOM.states[i % SHOWROOM.states.length],
+          }
+        : {}),
     });
     if (data?.id) { custIds.push(data.id); seeded.add("customers"); }
   }
   for (let i = 0; i < N; i++) {
     await seed("suppliers", () => api.rpc("add_directory_entry", {
       in_project_id: P, in_module_key: "suppliers", in_name: supplier(i),
+      ...(showroom
+        ? {
+            in_phone: SHOWROOM.phones[(i + 2) % SHOWROOM.phones.length],
+            in_region: SHOWROOM.regions[(i + 1) % SHOWROOM.regions.length],
+          }
+        : {}),
     }));
   }
   const crewIds = [];
   for (let i = 0; i < Math.min(N, 3); i++) {
     const { data } = await api.rpc("add_directory_entry", {
       in_project_id: P, in_module_key: "staff", in_name: crewName(i),
+      ...(showroom ? { in_phone: SHOWROOM.phones[(i + 1) % SHOWROOM.phones.length] } : {}),
     });
     if (data?.id) { crewIds.push(data.id); seeded.add("staff"); }
   }

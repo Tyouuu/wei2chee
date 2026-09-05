@@ -246,10 +246,17 @@ const hero = (
           : {}),
       };
     })(),
+    /* 🔴 这两条本来是字面的 `"#"`（2026-09-05 在真的上线页面上量到的）——
+       **不是产生器算错，是从写出来那天起就是两颗按不动的按钮**，
+       而它们是第一屏上仅有的两颗。这个仓库禁的第一条就是这个。
+
+       每一颗指它自己真正的落点：「问价」去询价那一块，
+       「看作品」去服务那一段。那一段被拿掉的时候，
+       `pruneDeadAnchorsIn` 会把整颗按钮拿掉，而不是留一颗指不到的。 */
     primaryLabel: c.words.whatsapp,
-    primaryHref: "#",
+    primaryHref: "#website-form",
     secondaryLabel: c.words.seeWork,
-    secondaryHref: "#",
+    secondaryHref: "#website-services",
     proof: c.proof,
     ...(figure
       ? {
@@ -664,6 +671,10 @@ const promiseList = (c: LandingContent) =>
   eight departments. Every template emits the services list, a price section and
   the form, so those three are the ones every bar can honestly point at.
 */
+/* 这三条是**这一页可能有的落点**，不是保证有的。
+   有几套风格故意不放价目表跟询价（`site-composition` 的 `dropBlocks`），
+   发布的时候还会再拿掉一次（每一行都是 `RM —` 的价目表 —— 任务 19）。
+   指不到的那几条由 `pruneDeadAnchorsIn` 拿掉，产生跟发布两边各跑一次。 */
 const anchors = (c: LandingContent) => [
   { label: c.words.sections.work.heading, href: "#website-services" },
   { label: c.words.sections.prices.heading, href: "#website-prices" },
@@ -676,7 +687,12 @@ const bar = (c: LandingContent, links: { label: string; href: string }[]) => {
     brand: c.brand,
     links,
     actionLabel: c.words.askShort,
-    actionHref: phone && phone.placeholder !== true ? `tel:${phone.value}` : "#enquiry",
+    /* 🔴 `#enquiry` **从来不存在**（2026-09-05 实测：那一页真的有的 id
+       只有 `ask` 加四个表单栏位自动产生的编号）。而这颗是**整页唯一的
+       转换按钮** —— 它从写出来那天起按下去什么都不会发生。
+       询价那一块的 id 是 `website-form`；连那一块也被拿掉的时候，
+       `pruneDeadAnchorsIn` 会把整颗按钮拿掉。 */
+    actionHref: phone && phone.placeholder !== true ? `tel:${phone.value}` : "#website-form",
   });
 };
 
@@ -691,7 +707,7 @@ const foot = (c: LandingContent, links: { label: string; href: string }[]) => {
        large nav and one button. */
     links,
     askLabel: c.words.askShort,
-    askHref: phone && phone.placeholder !== true ? `tel:${phone.value}` : "#enquiry",
+    askHref: phone && phone.placeholder !== true ? `tel:${phone.value}` : "#website-form",
     // The same rows the contact section carries, and the same placeholder flag
     // -- a foot that prints 「WhatsApp 012-345 6789」 is the exact failure this
     // module was built to stop, one screen further down.

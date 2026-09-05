@@ -57,6 +57,7 @@ export function SiteFeatures({
   noteHeading,
   photo,
   photoAlt,
+  anchor,
 }: {
   heading?: string
   note?: string
@@ -92,6 +93,10 @@ export function SiteFeatures({
   /** 清单配照片 only: the picture that stands beside the list. */
   photo?: string
   photoAlt?: string
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   if (!items?.length) return null
 
@@ -118,7 +123,7 @@ export function SiteFeatures({
        inside a single filled rectangle instead of floating as three objects --
        which is what stops a page reading as a grid of widgets. */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {title}
         <ul className="grid overflow-hidden [background:var(--color-block,var(--color-primary-soft))] [border-radius:var(--radius-lg)] @2xl:grid-cols-3">
           {items.map((f, i) => (
@@ -159,7 +164,7 @@ export function SiteFeatures({
       which is the other reason a contractor's page uses one.
     */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {/* ⚠️ 这一段的标题坐在**左栏里**，不是一条通栏的深带。
             Newel 的 Our Services 量出来在 9%–46%，跟底下那份清单同一栏；
             我们那一条横过整页 6%–94%，於是这一段的顺序变成 字→图，
@@ -261,7 +266,7 @@ export function SiteFeatures({
     */
     const STEP = [0.62, 1, 0.78]
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {noteHeading || note ? (
           <p className="mb-6 text-center [color:var(--color-primary)] [font-size:var(--text-sm)]">
             {noteHeading || note}
@@ -341,7 +346,7 @@ export function SiteFeatures({
       写进 prompt 的那条规矩里点名禁止的东西。
     */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {heading || note ? (
           <div className="mb-12 grid [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] @3xl:items-start">
             {heading ? (
@@ -436,7 +441,7 @@ export function SiteFeatures({
     ]
 
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {heading ? (
           <h2 className="ds-display mb-10 [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
         ) : null}
@@ -483,7 +488,7 @@ export function SiteFeatures({
       shapes left our page reading as a repeat.
     */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {heading ? (
           <div className="mb-10">
             <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
@@ -546,7 +551,7 @@ export function SiteFeatures({
       a restyling of somebody else's.
     */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         <div className="mb-10 grid [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] @3xl:items-end">
           {heading ? (
             <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
@@ -732,6 +737,7 @@ export function SiteTestimonials({
   heading,
   items,
   shape = "cards",
+  anchor,
 }: {
   heading?: string
   /** `stars` is optional and defaults to five: a business putting a review on
@@ -758,6 +764,10 @@ export function SiteTestimonials({
    * shapes make two different arguments about how it is shown.
    */
   shape?: "cards" | "ruled" | "boxed" | "stagger" | "celled"
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   if (!items?.length) return null
 
@@ -775,7 +785,7 @@ export function SiteTestimonials({
       对不上从来不是留白不够 —— 是排法根本不是同一种（重点 7l：先看图）。
     */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {heading ? (
           <h2 className="ds-display mb-12 [color:var(--color-paper)] [font-weight:var(--fw-regular,400)]">
             {heading}
@@ -811,7 +821,7 @@ export function SiteTestimonials({
       我们原本是三个各自带框、中间留缝的盒子。同样三则评价，读起来一个是
       「一份名单」，一个是「三张贴在墙上的纸」。 */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {heading ? (
           <h2 className="ds-display mb-0 text-center [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
             {heading}
@@ -845,7 +855,7 @@ export function SiteTestimonials({
       every one of them says nothing a contractor could not have typed.
     */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {heading ? (
           <h2 className="ds-display mb-8 text-center [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
             {heading}
@@ -974,6 +984,7 @@ export function SiteCta({
   shape = "band",
   photo,
   photoAlt,
+  anchor,
 }: {
   heading: string
   note?: string
@@ -1010,6 +1021,10 @@ export function SiteCta({
   /** The panel shape's other half. Empty falls back to a tint of the ground. */
   photo?: string
   photoAlt?: string
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   const buttons = (onColour: boolean) =>
     primaryLabel || secondaryLabel ? (
@@ -1208,6 +1223,7 @@ export function SiteCreds({
   shape = "strip",
   rating,
   items,
+  anchor,
 }: {
   heading?: string
   /** What the OWNER is asked for while this is still empty. It is never
@@ -1221,6 +1237,10 @@ export function SiteCreds({
   shape?: "strip" | "badges" | "rating" | "logos"
   rating?: { score?: string; count?: string; source?: string; placeholder?: boolean }
   items?: { label: string; note?: string; photo?: string; placeholder?: boolean }[]
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   const real = (items ?? []).filter((i) => i.label?.trim())
   const hasRating = Boolean(rating?.score?.trim())
@@ -1267,7 +1287,7 @@ export function SiteCreds({
       的故事。
     */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {heading ? (
           <h2 className="ds-display mb-10 [color:var(--color-on-primary)] [font-weight:var(--fw-regular,400)]">
             {heading}
@@ -1408,6 +1428,7 @@ export function SiteGallery({
   items,
   moreLabel,
   moreHref,
+  anchor,
 }: {
   heading?: string
   note?: string
@@ -1416,6 +1437,10 @@ export function SiteGallery({
   /** 「看全部」. Their mosaic ends with one small button and nothing else. */
   moreLabel?: string
   moreHref?: string
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   const shots = items ?? []
   if (!shots.length) return null
@@ -1507,7 +1532,7 @@ export function SiteGallery({
        两张竖的并排、一张满宽、两张横的并排 —— 这才是那个节奏。 */
     const RATIO = ["9 / 10", "9 / 10", "4 / 3", "4 / 3", "4 / 3"]
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {heading ? (
           <h2 className="ds-display mb-8 text-center [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
             {heading}
@@ -1695,6 +1720,7 @@ export function SiteStory({
   photoAlt,
   bandHeading,
   points,
+  anchor,
 }: {
   heading?: string
   /** What the OWNER is asked for while the body is still empty. Never
@@ -1716,6 +1742,10 @@ export function SiteStory({
   photo?: string
   photoAlt?: string
   points?: { label: string }[]
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   const marks = (points ?? []).filter((p) => p.label?.trim())
 
@@ -1985,6 +2015,7 @@ export function SiteTeam({
   hint,
   shape = "cards",
   members,
+  anchor,
 }: {
   heading?: string
   note?: string
@@ -1994,6 +2025,10 @@ export function SiteTeam({
    *  line with the name beside them. The register chooses. */
   shape?: "cards" | "plain" | "row"
   members?: { name: string; role?: string; years?: string; photo?: string }[]
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   const real = (members ?? []).filter((m) => m.name?.trim())
 
@@ -2137,6 +2172,7 @@ export function SiteStatement({
   body,
   attribution,
   shape = "centre",
+  anchor,
 }: {
   body?: string
   /** Optional -- the business name under the line, the way a signed statement
@@ -2146,6 +2182,10 @@ export function SiteStatement({
    *  the line set left · `quote` oversized with a hanging opening mark. The
    *  register chooses; see design-doc.ts. */
   shape?: "centre" | "rule" | "quote"
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   const line = body?.trim()
   if (!line) return null
@@ -2186,7 +2226,7 @@ export function SiteStatement({
 
   if (shape === "rule") {
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         <div className="[border-top:var(--hairline)_solid_var(--border-subtle)] [padding-block-start:calc(var(--pad-card-lg)*1.6)]">
           <p style={size} className="ds-display max-w-[34ch] [color:var(--color-paper)] [font-weight:var(--fw-medium)] [text-wrap:balance]">
             {line}
@@ -2278,6 +2318,7 @@ export function SiteBand({
   line,
   hint,
   height = "tall",
+  anchor,
 }: {
   photo?: string
   photoAlt?: string
@@ -2287,6 +2328,10 @@ export function SiteBand({
   hint?: string
   /** `tall` a band you scroll through · `short` a rule made of photograph. */
   height?: "tall" | "short"
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   if (!photo?.trim()) {
     if (!hint) return null
@@ -2380,6 +2425,7 @@ export function SiteWoven({
   photos,
   hint,
   shape = "woven",
+  anchor,
 }: {
   heading?: string
   note?: string
@@ -2399,6 +2445,10 @@ export function SiteWoven({
    * contractor's About page does before it shows you the work.
    */
   shape?: "woven" | "band" | "columns" | "scatter"
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   const marks = (points ?? []).filter((p) => p.label?.trim())
   const shots = (photos ?? []).filter((p) => p?.trim())
@@ -2566,7 +2616,7 @@ export function SiteWoven({
 
   if (shape === "band") {
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {heading ? (
           <h2 className="ds-display mb-6 [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
         ) : null}
@@ -2635,7 +2685,7 @@ export function SiteWoven({
   )
 
   return (
-    <section className="@container" data-wide="">
+    <section id={anchor} className="@container" data-wide="">
       {heading ? (
         <div className="mb-10 max-w-[46ch]">
           <h2 className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{heading}</h2>
@@ -2701,11 +2751,16 @@ export function SiteSteps({
   note,
   steps,
   shape = "ruled",
+  anchor,
 }: {
   heading?: string
   note?: string
   steps?: { label: string; value?: string }[]
   shape?: "ruled" | "numbered" | "across" | "carded"
+  /** 页面上指向这一段的那条锚点。**没有就不画属性** ——
+   *  一个没有人指的区段不需要 id，而一个有人指、却没有 id 的区段，
+   *  就是画面上一条按了什么都不会发生的连结。 */
+  anchor?: string
 }) {
   const rows = (steps ?? []).filter((s) => s.label?.trim())
   if (!rows.length) return null
@@ -2735,7 +2790,7 @@ export function SiteSteps({
       reference's own way of separating two rows of cards.
     */
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {title}
         <ol className="grid [gap:var(--gap-stack)] @2xl:grid-cols-3">
           {rows.map((s, i) => (
@@ -2763,7 +2818,7 @@ export function SiteSteps({
 
   if (shape === "across") {
     return (
-      <section className="@container" data-wide="">
+      <section id={anchor} className="@container" data-wide="">
         {title}
         <ol className="grid [gap:var(--gap-stack)] @2xl:grid-cols-4">
           {rows.map((s, i) => (

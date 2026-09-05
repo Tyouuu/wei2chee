@@ -154,7 +154,7 @@ export function RecordTable(props: {
    * ⚠️ And the count follows the filter. A heading that says 「3 records」 over
    * one visible row is the same lie in the other direction.
    */
-  tools?: "chips" | "search" | "none"
+  tools?: "chips" | "search" | "none" | "inline"
   /**
    * 这一张清单上的第一栏是**一个人（或一家店）**，不是一件事。
    *
@@ -204,7 +204,7 @@ export function RecordTable(props: {
   /* A THIRD KEY, not a third read of "RecordTable". The comment above says why:
      a register's preference is looked up under the axis name, so two axes on
      one component sharing a key means the second silently finds nothing. */
-  const toolsPref = useRegisterProp<"chips" | "search" | "none">("RecordTableTools", "tools")
+  const toolsPref = useRegisterProp<"chips" | "search" | "none" | "inline">("RecordTableTools", "tools")
   const toolShape = tools ?? toolsPref ?? "chips"
 
   const [query, setQuery] = useState("")
@@ -348,6 +348,28 @@ export function RecordTable(props: {
 
           The count is derived, never given: a caller who passes a number and a
           list can disagree with itself, and it is the list that is on screen. */}
+      {/* 🔴 `inline` —— 表名 · 条数 · 搜索 · 分段**全部同一行**（2026-09-05）。
+          出处 arhamkhnz 的 `users` 那一页：搜索跟四颗按钮在标题那一行，
+          而我们本来是「表名 ＋ 条数」一行、「搜索 ＋ 分段」再一行。省一行。
+
+          ⚠️ **第一版把表名整个藏掉了**（参考那一页确实没有第二个标题），
+          而 `site-fields.test.tsx` 当场红：`customers/RecordTable.caption`
+          变成一个**存得住、画不出来**的字段 —— 那是这个仓库最核心的那条守卫，
+          不可以为了少一个重复的字去弱化它。表名留着，只是搬上来。 */}
+      {toolShape === "inline" ? (
+        <div className="flex flex-wrap items-center [gap:var(--gap-inline)]">
+          <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+            {caption}
+          </span>
+          <span className="tnum [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+            {w.rowCount(rows.length)}
+          </span>
+          <SearchField value={query} onChange={setQuery} label={w.tableSearch} />
+          {filters?.length ? (
+            <Segments filters={filters} all={w.filterAll} picked={seg} onPick={setSeg} />
+          ) : null}
+        </div>
+      ) : (
       <div className="flex flex-wrap items-center [gap:var(--gap-inline)]">
         <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
           {caption}
@@ -359,6 +381,7 @@ export function RecordTable(props: {
           <Segments filters={filters} all={w.filterAll} picked={seg} onPick={setSeg} />
         ) : null}
       </div>
+      )}
 
       {/* THE TOOLBAR, ON ITS OWN LINE. shadcn's task table puts the field and
           the segments under the heading rather than beside it, and that one
@@ -367,19 +390,7 @@ export function RecordTable(props: {
           title; a control on its own line is a place to work. */}
       {toolShape === "search" ? (
         <div className="flex flex-wrap items-center [gap:var(--gap-inline)]">
-          <label className="flex min-w-0 flex-1 items-center gap-2 [background:var(--color-ink-900)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] sm:max-w-[22rem]">
-            <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-              <circle cx="9" cy="9" r="5.5" />
-              <path d="m13.5 13.5 3 3" strokeLinecap="round" />
-            </svg>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={w.tableSearch}
-              aria-label={w.tableSearch}
-              className="w-full bg-transparent [padding-block:var(--pad-control-y)] [font-size:var(--text-xs)] [color:var(--color-paper)] outline-none placeholder:[color:var(--color-paper-dim)]"
-            />
-          </label>
+          <SearchField value={query} onChange={setQuery} label={w.tableSearch} />
           {filters?.length ? (
             <Segments filters={filters} all={w.filterAll} picked={seg} onPick={setSeg} />
           ) : null}
@@ -899,6 +910,34 @@ function Pill({ tone, label }: { tone: StatusTone; label: string }) {
     >
       {label}
     </span>
+  )
+}
+
+/** 那个**真的会筛**的框。两种排法（自己一行 · 跟标题同一行）画的是同一个框，
+ *  所以它只有一份 —— 抄第二份，两处迟早会漂。 */
+function SearchField({
+  value,
+  onChange,
+  label,
+}: {
+  value: string
+  onChange: (v: string) => void
+  label: string
+}) {
+  return (
+    <label className="flex min-w-0 flex-1 items-center gap-2 [background:var(--color-ink-900)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] sm:max-w-[22rem]">
+      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+        <circle cx="9" cy="9" r="5.5" />
+        <path d="m13.5 13.5 3 3" strokeLinecap="round" />
+      </svg>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={label}
+        aria-label={label}
+        className="w-full bg-transparent [padding-block:var(--pad-control-y)] [font-size:var(--text-xs)] [color:var(--color-paper)] outline-none placeholder:[color:var(--color-paper-dim)]"
+      />
+    </label>
   )
 }
 

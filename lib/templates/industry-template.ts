@@ -1,5 +1,6 @@
 import type { PuckNode } from "@/lib/templates/puck-node";
 import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
+import { pruneDeadAnchorsIn } from "@/lib/portal/anchor-prune";
 import { composeSite } from "@/lib/templates/site-composition";
 import {
   landingTemplateFor,
@@ -714,6 +715,9 @@ function recordTable(
   look?: "cards",
   /** 一组一张表 —— 对帐那一页一家上游一组。见 record-table.tsx 的 `grouped`。 */
   grouped?: boolean,
+  /** 工具条摆哪里。**逐页的选择** —— 参考那一套自己就分两种（`tasks` 自己一行，
+   *  `users` 在标题那一行）。不写就跟风格走。 */
+  tools?: "chips" | "search" | "none" | "inline",
 ): PuckNode {
   // Columns are an array, not four props -- see lib/portal/table-model.ts. The
   // built-in keys are deliberately the old prop names, so a generated table and
@@ -739,6 +743,7 @@ function recordTable(
     ...(segments ? { segments: true } : {}),
     ...(look ? { look } : {}),
     ...(grouped ? { grouped: true } : {}),
+    ...(tools ? { tools } : {}),
     ...(filters?.length ? { filters: filters.map((label) => ({ label })) } : {}),
     table: {
       columns,
@@ -2059,7 +2064,13 @@ function buildWebsite(
     page, where the system IS what we sell. Recorded in founder-tasks.md so it
     is used rather than left to rot.
   */
-  return composed;
+  /* 🔴 **组版会拿掉整段，而导航那三条是写死的。**
+     有几套风格故意不放价目表跟询价（`dropBlocks`），而顶栏跟页脚照旧
+     指向 `#website-prices` · `#website-form` —— 於是画面上多出几条
+     按下去什么都不会发生的连结，而且看不出来。
+     发布那一边还会再拿掉一次，所以那一边也跑同一支。
+     见 lib/portal/anchor-prune.ts。 */
+  return pruneDeadAnchorsIn(composed);
 }
 
 function buildCustomers(
@@ -2138,6 +2149,17 @@ function buildCustomers(
          **没有筛选条**（那一排 FilterChips 从来没有画在这里），所以那句话
          讲的情况在这里不成立。 */
       true,
+      /* 不换形状。 */
+      undefined,
+      /* 不分组。 */
+      undefined,
+      /* 🔴 工具条在标题那一行 —— 照 `up-users`。
+         我们本来是「表名 ＋ 条数」一行、「搜索 ＋ 分段」再一行，
+         而**第一行写的是页面标题已经写过的那个字**
+         （页面「客户名单」，表上「客户」）。一行省下来，一个重复也去掉。
+         ⚠️ 供应商跟师傅**不跟这一条** —— 那两页是左清单右详情，
+         清单只有半页宽，挤同一行会折行。参考那一套自己也分两种。 */
+      "inline",
     ),
   ];
 }
@@ -2507,33 +2529,6 @@ function buildOrders(
 // have per-trade sample data the generic path cannot reproduce, and rewriting
 // working templates to prove a point is how a refactor breaks a product.
 
-function heroNode(id: string, locale: string, copy: ModuleCopy): PuckNode[] {
-  if (!copy.hero) return [];
-  return [
-    node("HeroCard", `${id}-hero`, {
-      label: copy.hero.label,
-      value: copy.hero.value,
-      href: `/${locale}/portal/dashboard`,
-      /* 🔴 这里本来写着 `chgSuffix: copy.hero.suffix`，2026-09-03 拿掉了。
-         `ModuleCopy.hero` 里**没有涨跌这个东西** —— 只有标签、数字、
-         一句后缀跟几个小数字。所以开销 · 佣金 · 对帐 · 报表四页印出来是
-         「RM 71,300　vs last month」，中间什么都没有。
-         `hero-card.tsx` 现在也不肯单独画那半句了（那是守形状的那一层），
-         这里是不再写出来（这是守来源的那一层）。
-         ⚠️ 哪一天 `ModuleCopy.hero` 真的带了涨跌，两半一起加回来。 */
-      stats: copy.hero.stats.map((st) => ({
-        ...st,
-        href: `/${locale}/portal/dashboard`,
-      })),
-      // No sparkline: HeroCard draws an all-zero series as nothing, and these
-      // modules carry their trend in a real chart below rather than as a shape
-      // behind the number.
-      spark: [],
-      sparkLabel: "",
-    }),
-  ];
-}
-
 /* ──────────────────────────────────────────────────────────────────────────
    钱那三页的骨架 —— 收款 · 开销 · 佣金。一份，两条路共用。
 
@@ -2728,19 +2723,6 @@ function reconcileStats(id: string, copy: ModuleCopy): PuckNode[] {
       ].slice(0, 4),
       /* 写进 props 就赢过风格 —— 跟货架、钱那几页同一条（任务 134）。 */
       layout: "lead",
-    }),
-  ];
-}
-
-function trendNode(id: string, copy: ModuleCopy): PuckNode[] {
-  if (!copy.trend) return [];
-  return [
-    node("TrendChart", `${id}-trend`, {
-      title: copy.trend.title,
-      caption: copy.trend.caption,
-      kind: "bar",
-      unit: copy.trend.unit,
-      points: copy.trend.points,
     }),
   ];
 }
@@ -3065,6 +3047,7 @@ function buildFromShape(
   const dirTable = [
     recordTable(`${pageKey}-table`, title, copy.columns, copy.rows, undefined, true),
   ];
+
 
   const upload = copy.upload
     ? [

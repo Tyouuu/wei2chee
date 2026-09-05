@@ -509,6 +509,10 @@ type Components = {
     // 一组一张表（对帐那一页：一家上游一组）。两组以上才分。
     // 见 record-table.tsx 里 `grouped` 上面那一段。
     grouped?: boolean;
+    /* 工具条摆哪里。**逐页的选择，不是风格的口味** —— 参考那一套自己就分两种：
+       `tasks` 那一页工具条自己一行，`users` 那一页在标题那一行。
+       不写就跟风格走（`useRegisterProp`）。见 record-table.tsx 的 `tools`。 */
+    tools?: "chips" | "search" | "none" | "inline";
     // Objects rather than bare strings: Puck's array field edits item PROPS,
     // so a list of strings has nothing for its editor to bind to.
     filters?: { label: string }[];
@@ -1908,8 +1912,8 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { items: [] },
-      render: ({ heading, note, items, shape, noteHeading, photo, photoAlt }) => (
-        <SiteFeatures heading={heading} note={note} items={items}           shape={shape}
+      render: ({ id, heading, note, items, shape, noteHeading, photo, photoAlt }) => (
+        <SiteFeatures anchor={id} heading={heading} note={note} items={items}           shape={shape}
         noteHeading={noteHeading} photo={photo} photoAlt={photoAlt} />
       ),
     },
@@ -1949,7 +1953,7 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { items: [] },
-      render: ({ heading, items , shape}) => <SiteTestimonials heading={heading} items={items} shape={shape} />,
+      render: ({ id, heading, items , shape}) => <SiteTestimonials anchor={id} heading={heading} items={items} shape={shape} />,
     },
 
     SiteGallery: {
@@ -1998,8 +2002,8 @@ export const puckConfig: Config<Components> = {
         where the fallback belongs, and it is there.
       */
       defaultProps: { items: [] },
-      render: ({ heading, note, shape, items, moreLabel, moreHref }) => (
-        <SiteGallery heading={heading} note={note} shape={shape} items={items} moreLabel={moreLabel} moreHref={moreHref} />
+      render: ({ id, heading, note, shape, items, moreLabel, moreHref }) => (
+        <SiteGallery anchor={id} heading={heading} note={note} shape={shape} items={items} moreLabel={moreLabel} moreHref={moreHref} />
       ),
     },
 
@@ -2047,8 +2051,8 @@ export const puckConfig: Config<Components> = {
         where the fallback belongs, and it is there.
       */
       defaultProps: { points: [] },
-      render: ({ heading, hint, body, shape, photo, photoAlt, points }) => (
-        <SiteStory
+      render: ({ id, heading, hint, body, shape, photo, photoAlt, points }) => (
+        <SiteStory anchor={id}
           heading={heading}
           hint={hint}
           body={body}
@@ -2086,8 +2090,8 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { steps: [] },
-      render: ({ heading, note, steps, shape }) => (
-        <SiteSteps heading={heading} note={note} steps={steps} shape={shape} />
+      render: ({ id, heading, note, steps, shape }) => (
+        <SiteSteps anchor={id} heading={heading} note={note} steps={steps} shape={shape} />
       ),
     },
 
@@ -2117,8 +2121,8 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { points: [] },
-      render: ({ heading, note, points, photos, hint , shape}) => (
-        <SiteWoven heading={heading} note={note} points={points} photos={photos} hint={hint} shape={shape} />
+      render: ({ id, heading, note, points, photos, hint , shape}) => (
+        <SiteWoven anchor={id} heading={heading} note={note} points={points} photos={photos} hint={hint} shape={shape} />
       ),
     },
 
@@ -2145,8 +2149,8 @@ export const puckConfig: Config<Components> = {
       /* No `height` in defaultProps -- an absent prop is the only way to say
          「follow the register」. See SiteStory for the long version. */
       defaultProps: {},
-      render: ({ photo, photoAlt, line, hint, height }) => (
-        <SiteBand photo={photo} photoAlt={photoAlt} line={line} hint={hint} height={height} />
+      render: ({ id, photo, photoAlt, line, hint, height }) => (
+        <SiteBand anchor={id} photo={photo} photoAlt={photoAlt} line={line} hint={hint} height={height} />
       ),
     },
 
@@ -2171,8 +2175,8 @@ export const puckConfig: Config<Components> = {
          with the owner's own pitch, and a defaultProps sentence would be a
          sentence about somebody else's business sitting on his page. */
       defaultProps: {},
-      render: ({ body, attribution, shape }) => (
-        <SiteStatement body={body} attribution={attribution} shape={shape} />
+      render: ({ id, body, attribution, shape }) => (
+        <SiteStatement anchor={id} body={body} attribution={attribution} shape={shape} />
       ),
     },
 
@@ -2213,8 +2217,8 @@ export const puckConfig: Config<Components> = {
       /* No `shape`: an absent prop is the only way to say 「follow the
          register」. See design-doc.test.ts. */
       defaultProps: { members: [] },
-      render: ({ heading, note, hint, shape, members }) => (
-        <SiteTeam heading={heading} note={note} hint={hint} shape={shape} members={members} />
+      render: ({ id, heading, note, hint, shape, members }) => (
+        <SiteTeam anchor={id} heading={heading} note={note} hint={hint} shape={shape} members={members} />
       ),
     },
 
@@ -2265,8 +2269,8 @@ export const puckConfig: Config<Components> = {
         where the fallback belongs, and it is there.
       */
       defaultProps: { items: [] },
-      render: ({ heading, hint, shape, rating, items }) => (
-        <SiteCreds heading={heading} hint={hint} shape={shape} rating={rating} items={items} />
+      render: ({ id, heading, hint, shape, rating, items }) => (
+        <SiteCreds anchor={id} heading={heading} hint={hint} shape={shape} rating={rating} items={items} />
       ),
     },
 
@@ -2299,8 +2303,8 @@ export const puckConfig: Config<Components> = {
         photoAlt: { label: "照片说明（给看不到的人）", type: "text" },
       },
       defaultProps: { heading: "要不要先问个价？" },
-      render: ({ heading, note, primaryLabel, primaryHref, secondaryLabel, secondaryHref, shape, photo, photoAlt }) => (
-        <SiteCta
+      render: ({ id, heading, note, primaryLabel, primaryHref, secondaryLabel, secondaryHref, shape, photo, photoAlt }) => (
+        <SiteCta anchor={id}
           heading={heading}
           note={note}
           primaryLabel={primaryLabel}
@@ -2622,6 +2626,9 @@ export const puckConfig: Config<Components> = {
         look,
       }) => (
         <EnquiryForm
+          /* 那一块在资料里的 id —— 顶栏 · 页脚 · 第一屏那几颗按钮指的是它。
+             漏掉这一行，那几颗就是按了什么都不会发生的按钮。 */
+          anchor={id}
           look={look ?? "card"}
           heading={
             <Inline id={id} field="heading">
@@ -2848,8 +2855,8 @@ export const puckConfig: Config<Components> = {
       /* ⚠️ 每一个 prop 都要在这一行传下去。任务 18 那次「筛选条件 / 清空全部」
          就是死在这里：产生页面的那一层老早就传了两个标签，而这一行的解构
          少接了它们，组件退回自己的预设 —— 而画面上完全正常。 */
-      render: ({ gridId, caption, table, look, row, faces, segments, grouped, filters }) => (
-        <RecordTable gridId={gridId} caption={caption} table={table} look={look} row={row} faces={faces} segments={segments} grouped={grouped} filters={filters?.map((f) => f.label)} />
+      render: ({ gridId, caption, table, look, row, faces, segments, grouped, tools, filters }) => (
+        <RecordTable gridId={gridId} caption={caption} table={table} look={look} row={row} faces={faces} segments={segments} grouped={grouped} tools={tools} filters={filters?.map((f) => f.label)} />
       ),
     },
     WorkflowStrip: {
