@@ -130,6 +130,24 @@ export default async function EditRecordPage({
      ⚠️ `null` = 没有问（不是客户页，或者读的人看不到钱），不是「零」。 */
   let credit: { cents: number; from: { id: string; label: string; cents: number }[] } | null = null;
   let tiers: CommissionTier[] | null = null;
+  /* 🔴 这个月那个数字是照**哪一份**办法算的（20260905640000）。
+     没有它，他把 2% 改成 3%、按了保存，而画面上那个数字一分都不动 ——
+     而那正是这一整件事在保护的东西。不讲，它看起来就是坏的。
+     ⚠️ null = 从来没有人记过世代（只可能是有人绕过那支函式直接写表）。 */
+  let rateFrom: string | null = null;
+  /* 🔴 **这个月的抽成，由资料库算。**
+     浏览器那一份算的是「照他现在打的这几档」，而这个月用的是
+     **这个月那一份办法** —— 世代一落地，两份就分开了。
+     他把 15% 改成 30%，浏览器当场跳到 RM 1,400，而月底真正会付的是
+     RM 950：**同一页两个答案，而看得见的那个是错的。**
+     ⚠️ null = 没有问（不是这几页，或者读的人看不到钱）。 */
+  let commissionCents: number | null = null;
+  /* 他是自己人还是下游（20260905720000）。**放宽那条守卫的时候，
+     保护那件事的责任就搬到这一栏上** —— 读的人分不出来，
+     原本那条守卫在防的事就真的没有人在防了。 */
+  let rateKind: string | null = null;
+  /* 改过几次。只回日子跟那一份的档，画面自己组一句话。 */
+  let rateHistory: { from: string; tiers: { fromCents: number; percent: number }[] }[] = [];
   /* 这个月算在他名下的收款。⚠️ 它同时喂两个地方：底下那一段，
      跟表单里那一格「本月业绩」—— 而那一格从今天起是**锁住**的，
      因为它现在是算出来的（模板本来就把那一栏叫「This month」，
@@ -322,7 +340,12 @@ export default async function EditRecordPage({
        🔴 只在 `staff` 那一页，而且只问看得到钱的人。佣金是薪水，
        而薪水在这个 schema 里从来不是共用的（commission_tiers 的 policy
        就是 sees_money，`staff_earnings` 第一行也是）。 */
-    if (ctx.role === "owner" && pageKey === "staff") {
+    /* 🔴 **不再只问师傅那一页。** 抽成 20260905720000 放宽到下游经销商
+       之后，一个下游在名册上是**客户**——只问 staff 那一页，等於那笔抽成
+       算得出来而永远没有人看得到（这个仓库犯过二十次的那一件）。
+       ⚠️ 而客户页不可以每一个人都画一段抽成：**问完之后没有档也没有钱的，
+       整段收回 null**（下面那一句），不是画一份空的。 */
+    if (ctx.role === "owner" && (pageKey === "staff" || pageKey === "customers" || pageKey === "suppliers")) {
       const month = new Intl.DateTimeFormat("en-CA", {
         timeZone: "Asia/Kuala_Lumpur",
         year: "numeric",
@@ -330,13 +353,22 @@ export default async function EditRecordPage({
       })
         .format(new Date())
         .slice(0, 7);
-      const [{ data: tierRows }, { data: earnRows }] = await Promise.all([
+      const [{ data: tierRows }, { data: earnRows }, { data: schemeRows }] = await Promise.all([
         supabase
           .from("commission_tiers")
           .select("id, from_cents, percent")
           .eq("party_id", recordId)
           .order("from_cents"),
         supabase.rpc("staff_earnings", { in_project_id: ctx.projectId, in_month: month }),
+        /* 世代。只加不改的一张表，所以按日子倒着排就是「改过几次」。
+           ⚠️ 六份就够了 —— 一份读不完的历史没有人看。 */
+        supabase
+          .from("commission_schemes")
+          .select("effective_from, tiers, created_at")
+          .eq("party_id", recordId)
+          .order("effective_from", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(24),
       ]);
       tiers = ((tierRows ?? []) as { id: string; from_cents: number; percent: number }[]).map(
         (t) => ({
@@ -347,11 +379,47 @@ export default async function EditRecordPage({
           percent: String(Number(t.percent)),
         }),
       );
-      earnedCents = Number(
-        ((earnRows ?? []) as { party_id: string; earned_cents: number }[]).find(
-          (r) => r.party_id === recordId,
-        )?.earned_cents ?? 0,
-      );
+      const mine = ((earnRows ?? []) as {
+        party_id: string; earned_cents: number; commission_cents: number;
+        rate_from: string | null; kind: string | null;
+      }[]).find((r) => r.party_id === recordId);
+      earnedCents = Number(mine?.earned_cents ?? 0);
+      commissionCents = mine ? Number(mine.commission_cents) : null;
+      rateFrom = mine?.rate_from ?? null;
+      rateKind = mine?.kind ?? null;
+      /* 🔴 **同一天只留最后存的那一份。**
+         那张表是只加不改的，所以同一天存两次就有两行 —— 而资料库
+         只认后存的那一份（20260905770000）。两行都列出来，
+         等於画面在讲一份已经作废的办法，而他没有办法分出是哪一份。
+         已经按日子跟时间倒着排，所以第一次看到那个日子就是那一份。 */
+      const seenDay = new Set<string>();
+      rateHistory = ((schemeRows ?? []) as { effective_from: string; tiers: unknown }[])
+        .filter((r) => {
+          if (seenDay.has(r.effective_from)) return false;
+          seenDay.add(r.effective_from);
+          return true;
+        })
+        .slice(0, 6)
+        .map((r) => ({
+          from: r.effective_from,
+          tiers: (Array.isArray(r.tiers) ? r.tiers : []).map((t) => {
+            const row = t as { from_cents?: unknown; percent?: unknown };
+            return { fromCents: Number(row.from_cents ?? 0), percent: Number(row.percent ?? 0) };
+          }),
+        }));
+
+      /* 🔴 **问完了，没有档也没有钱，就整段收回。**
+         师傅那一页照旧永远画（那一页存在的理由就是他的薪水）；
+         而客户跟供应商那两页上，绝大多数人跟抽成没有关系 ——
+         替每一个客户画一段空的抽成，就是[任务 133] 那句
+         「一段永远说同一句话的段落，读起来是没做完」。 */
+      if (pageKey !== "staff" && !tiers.length && earnedCents === 0) {
+        tiers = null;
+        rateFrom = null;
+        rateKind = null;
+        commissionCents = null;
+        rateHistory = [];
+      }
     }
 
     if (ctx.role === "owner" && jobIds.length) {
@@ -872,6 +940,10 @@ export default async function EditRecordPage({
               partyId={recordId}
               tiers={tiers}
               earnedCents={earnedCents}
+              commissionCents={commissionCents}
+              rateFrom={rateFrom}
+              kind={rateKind}
+              history={rateHistory}
               copy={copy.form}
             />
           </div>

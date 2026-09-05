@@ -215,6 +215,122 @@ try {
   });
   say("手机上每一颗都按得稳（≥40px）", small.length === 0, small.join(" · "));
 
+  /* == (7) 佣金率的世代，跟下游经销商（20260905640000 . 720000 . 770000）=====
+     🔴 **这一段是那四个洞的「最后一寸」。** 那两支函式 9-05 就是真的了，
+     而在这之前**画面上没有任何一个地方读得到它们** ——
+     他打开浏览器找不到它，那就是这个仓库犯过二十次的那件事。
+
+     两种情况要分开测，因为它们的答案是相反的，而两个都是对的：
+       A · 这个月之前一份办法都没有 -> 用他**最后一次讲的**那一份
+       B · 这个月一号之前就有一份   -> 用**一号那一份**，今天改了也不动
+     B 才是走 vibe-dealer 那一次量到的洞（上个月 RM 760 变 RM 1,140）。 */
+  const firstOfMonth = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kuala_Lumpur", year: "numeric", month: "2-digit",
+  }).format(new Date()) + "-01";
+
+  await page.goto(`${BASE}/en/portal/staff/${aida.id}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  const gen1 = (await page.locator("body").innerText()).replace(/\s+/g, " ");
+  say("讲得出这个月是照哪一份办法算的",
+    /worked out on the rates set from/i.test(gen1), gen1.slice(0, 320));
+  const dateBoxes = await page.getByLabel("In force from").count();
+  say("有一个「从哪天起」的框", dateBoxes === 1, `${dateBoxes} 个`);
+  say("而且讲得出现在存是下个月才算",
+    /starts next month/i.test(gen1), gen1.slice(0, 320));
+
+  /* ── A · 同一天改回来，算后面那一次（20260905770000）───────────────────
+     🔴 **这一条是用眼睛看那张图看出来的，尺子一条都没红。**
+     「Earlier」那一段把同一天存过的两份都列出来，而资料库只认一份 ——
+     去查它认哪一份，才看到两条退路的排序是反的：他今天第一次写抽成
+     打错了、当天改回来，**这个月用的会是他打错的那一份**。
+     现在两条都取「他最后一次讲的」，所以 5000x10% + 3000x30% = RM 1,400。 */
+  await page.getByLabel("Rate % 2").fill("30");
+  await page.getByRole("button", { name: /^Save$/i }).last().click();
+  await page.waitForTimeout(3000);
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  await hide();
+  await page.screenshot({ path: `${OUT}/7-same-day-fix.png`, fullPage: true });
+  console.log("拍到  7-same-day-fix");
+  const sameDay = (await page.locator("body").innerText()).replace(/\s+/g, " ");
+  say("🔴 之前一份都没有的时候，同一天改回来就算他最后讲的那一份（RM 1,400）",
+    /RM 1,400/.test(sameDay), sameDay.slice(0, 460));
+  /* 而「以前的」只留一行 —— 同一天存两次，作废的那一份不可以还列在上面。 */
+  const earlierLines = (sameDay.match(/2026-\d\d-\d\d — first RM/g) ?? []).length;
+  say("同一天存两次，「以前的」只留最后那一份",
+    earlierLines <= 1, `列了 ${earlierLines} 行`);
+
+  /* ── B · 这个月一号就有一份 -> 今天改，这个月一分都不动 ─────────────────
+     这才是那个洞：改之前上个月本来 RM 760，改一次率变 RM 1,140。 */
+  const { error: backErr } = await api.rpc("set_commission_tiers", {
+    in_party_id: aida.id,
+    in_tiers: [{ from_cents: 0, percent: 10 }, { from_cents: 500000, percent: 15 }],
+    in_effective_from: firstOfMonth,
+  });
+  say("一号那一份写得进去", !backErr, backErr?.message);
+
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  const onFirst = (await page.locator("body").innerText()).replace(/\s+/g, " ");
+  say("这个月回到一号那一份（RM 950）", /RM 950/.test(onFirst), onFirst.slice(0, 460));
+
+  await page.getByLabel("Rate % 2").fill("50");
+  await page.getByRole("button", { name: /^Save$/i }).last().click();
+  await page.waitForTimeout(3000);
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  await hide();
+  await page.screenshot({ path: `${OUT}/8-month-does-not-move.png`, fullPage: true });
+  console.log("拍到  8-month-does-not-move");
+  const held = (await page.locator("body").innerText()).replace(/\s+/g, " ");
+  say("🔴 今天把率改成 50%，这个月会付的还是 RM 950 —— 一分都没动",
+    /RM 950/.test(held), held.slice(0, 460));
+  say("而他打的那一份也讲出来了，不是偷偷换掉",
+    /would come to RM 2,000/i.test(held), held.slice(0, 500));
+  say("那两档确实存进去了（下个月才算）",
+    (await page.getByLabel("Rate % 2").inputValue()) === "50", "读不回 50");
+  say("而且改过几次看得到", /Earlier/i.test(held), held.slice(0, 500));
+
+  /* 而他要改的正好是这个月的时候，那个框就是出口。 */
+  await page.getByLabel("In force from").fill(firstOfMonth);
+  await page.getByRole("button", { name: /^Save$/i }).last().click();
+  await page.waitForTimeout(3000);
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  await hide();
+  await page.screenshot({ path: `${OUT}/9-from-the-first.png`, fullPage: true });
+  console.log("拍到  9-from-the-first");
+  const moved = (await page.locator("body").innerText()).replace(/\s+/g, " ");
+  say("写成这个月一号，数字就动了（RM 2,000）",
+    /RM 2,000/.test(moved), moved.slice(0, 460));
+
+  /* 🔴 下游经销商（洞〇）：抽成 9-05 放宽到他身上，而客户那一页
+     **从来没有问过那一支**，所以那笔抽成算得出来而永远没有人看得到。 */
+  const { error: dErr } = await api.rpc("set_commission_tiers", {
+    in_party_id: cust.id,
+    in_tiers: [{ from_cents: 0, percent: 6 }],
+    in_effective_from: firstOfMonth,
+  });
+  say("下游经销商身上写得了抽成办法", !dErr, dErr?.message);
+  const { error: mErr } = await api.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_direction: "in",
+    in_amount_cents: 1000000, in_party: "Celcom",
+    in_entry_on: firstOfMonth, in_done_by: cust.id, in_note: "downstream",
+  });
+  say("那笔钱挂得到下游经销商头上", !mErr, mErr?.message);
+
+  await page.goto(`${BASE}/en/portal/customers/${cust.id}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  await hide();
+  await page.screenshot({ path: `${OUT}/10-downstream.png`, fullPage: true });
+  console.log("拍到  10-downstream");
+  const down = (await page.locator("body").innerText()).replace(/\s+/g, " ");
+  say("🔴 下游经销商的抽成，在他自己那一页上看得到",
+    /Their commission/i.test(down) && /RM 600/.test(down), down.slice(0, 460));
+  say("而且分得出他是下游，不是员工",
+    /downstream dealer/i.test(down), down.slice(0, 460));
+
+
   /* ⑤ 改错人改得回来 —— 那不是钱，是一句关於谁的话。 */
   await page.goto(`${BASE}/en/portal/payments/${paid.id}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1500);

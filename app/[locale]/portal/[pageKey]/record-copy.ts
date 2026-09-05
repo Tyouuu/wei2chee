@@ -250,6 +250,17 @@ export type RecordFormCopy = {
   earnedNone: string;
   earnedNotPaid: string;
   earnedDerived: string;
+  /* 佣金率的世代（20260905640000）。**这三句一定要画出来**，
+     不然他把 2% 改成 3%、按了保存，而这个月那个数字一分都不动 ——
+     读起来像功能坏了，而它正是这一整件事在保护的东西。 */
+  rateInForce: string;
+  rateYoursNow: string;
+  rateFromLabel: string;
+  rateStartsNext: string;
+  rateHistory: string;
+  /* 他是自己人还是下游（20260905720000）。**只有下游才讲** ——
+     一个员工旁边写「他是员工」是杂讯。 */
+  rateKindDownstream: string;
   /* 套票（20260904190000）。只在客户那一页，而且**师傅也看得到** ——
      他要跟客人讲「你还剩三次」。价钱不在这张表上，所以这不是把钱交出去。 */
   packHeading: string;
@@ -521,6 +532,12 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       earnedNone: "这个月还没有算在他名下的收款，所以是零。",
       earnedNotPaid: "这只是算给你看的。要付出去，去开销那一页记一笔。",
       earnedDerived: "这一格是收款那边算出来的，改不了。",
+      rateInForce: "这个月照 {date} 那一份算。",
+      rateYoursNow: "你现在打的这一份算出来是 {amount}。",
+      rateFromLabel: "从哪天起",
+      rateStartsNext: "现在存，下个月才算。要这个月就算，把日子写成这个月一号。",
+      rateHistory: "以前的",
+      rateKindDownstream: "下游经销商 —— 不是你的员工。",
       packHeading: "套票",
       packLede: "卖几次，用一次扣一次。剩几次是数出来的，没有人改得了。",
       packNone: "还没有卖过套票给他。",
@@ -746,6 +763,12 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       earnedNone: "Nil. No money is credited to them this month.",
       earnedNotPaid: "This is worked out for you, not paid. Record it on the expenses page when you pay it.",
       earnedDerived: "Worked out from the payments credited to them. Not typed.",
+      rateInForce: "This month is worked out on the rates set from {date}.",
+      rateYoursNow: "The bands you have typed would come to {amount}.",
+      rateFromLabel: "In force from",
+      rateStartsNext: "Saved today, this starts next month. To change this month, set the date to the 1st.",
+      rateHistory: "Earlier",
+      rateKindDownstream: "A downstream dealer -- not on your payroll.",
       packHeading: "Packages",
       packLede: "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
       packNone: "No package sold to them yet.",

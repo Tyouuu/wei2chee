@@ -39,6 +39,10 @@ export function CommissionPanel({
   partyId,
   tiers: saved,
   earnedCents,
+  commissionCents,
+  rateFrom,
+  kind,
+  history,
   copy,
 }: {
   partyId: string;
@@ -46,6 +50,19 @@ export function CommissionPanel({
   /** 这个月算在他名下的收款。⚠️ **0 跟「没有」是同一件事** ——
    *  两个都表示这个月他名下没有钱，画面上讲同一句话。 */
   earnedCents: number;
+  /** 🔴 **这个月的抽成，资料库算的那一个。**
+   *  浏览器那一份（`commissionOn`）算的是「照他现在打的这几档」——
+   *  而这个月用的是**这个月那一份办法**。两个不一样的时候，
+   *  月底真正会付的是这一个。null = 没有问，那时候整格不画。 */
+  commissionCents: number | null;
+  /** 上面那个数字是照**哪一份**办法算的（20260905640000）。
+   *  ⚠️ null = 从来没有人记过世代，那时候整句不画 —— 一句
+   *  「照 null 那一份算」比不讲更糟。 */
+  rateFrom: string | null;
+  /** 'staff' / 'customers' / 'suppliers'（20260905720000）。 */
+  kind: string | null;
+  /** 改过几次，日子倒着排。 */
+  history: readonly { from: string; tiers: readonly { fromCents: number; percent: number }[] }[];
   copy: RecordFormCopy;
 }) {
   const router = useRouter();
@@ -53,6 +70,10 @@ export function CommissionPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  /* 从哪天起。**空的就是今天** —— 也就是下个月才算。
+     ⚠️ 故意不预填今天：一个预填的日子看起来像我们替他决定了生效日，
+     而生效日正好是这一整件事唯一要他自己讲的东西。 */
+  const [from, setFrom] = useState("");
 
   /* 他打到一半的东西也要算得出来 —— 一个只在保存后才更新的数字，
      他会以为是坏的。看不懂的那一行当零，不是整个不算。 */
@@ -83,7 +104,11 @@ export function CommissionPanel({
     join: copy.tiersJoin,
   });
 
-  const commission = commissionOn(earnedCents, parsed);
+  /* 他现在打的这几档算出来是多少 —— **只是预览**，不是这个月会付的。 */
+  const preview = commissionOn(earnedCents, parsed);
+  /* 这个月会付的。资料库没有回（没有问）就退回预览 ——
+     一格空白比一个稍微不准的数字更难懂。 */
+  const commission = commissionCents ?? preview;
 
 
   async function save() {
@@ -95,12 +120,16 @@ export function CommissionPanel({
       const { error: err } = await createBrowserSupabaseClient().rpc("set_commission_tiers", {
         in_party_id: partyId,
         in_tiers: parsed.map((t) => ({ from_cents: t.fromCents, percent: t.percent })),
+        /* 空的送 null，不送空字串 —— 那一支的预设是 null，
+           而一个空字串会被当成一个坏日期。 */
+        in_effective_from: from || null,
       });
       if (err) {
         setError(err.message);
         return;
       }
       setJustSaved(true);
+      setFrom("");
       router.refresh();
     } finally {
       setBusy(false);
@@ -136,7 +165,30 @@ export function CommissionPanel({
             <p className={`mt-1 ${dim}`}>
               {earnedCents > 0 ? copy.earnedNotPaid : copy.earnedNone}
             </p>
+            {/* 🔴 **这个数字是照哪一份办法算的。**
+                没有这一句，他把 2% 改成 3%、按了保存，而这个数字一分都不动
+                —— 那正是这一整件事在保护的东西（上个月讲好的率不会再动），
+                而画面上不讲，它看起来就是坏的。
+                ⚠️ `rateFrom` 是 null 的时候整句不画：一句
+                「照 null 那一份算」比不讲更糟。 */}
+            {rateFrom ? (
+              <p className={`mt-1 ${dim}`}>{copy.rateInForce.replace("{date}", rateFrom)}</p>
+            ) : null}
+            {/* 🔴 他打的那一份跟这个月那一份不一样的时候，**两个都要写出来**。
+                只写上面那个，他会以为他刚才改的没有存进去；
+                只写他打的那个，那就是这个月会付多少这件事在说谎。 */}
+            {commissionCents !== null && preview !== commission ? (
+              <p className={`mt-1 ${dim}`}>{copy.rateYoursNow.replace("{amount}", rm(preview))}</p>
+            ) : null}
           </div>
+        ) : null}
+
+        {/* 他是下游，不是员工（20260905720000）。
+            ⚠️ **只有下游才讲** —— 一个员工旁边写「他是员工」是杂讯。
+            而这一句就是放宽那条守卫之后，把「不要把客户算成员工」
+            那件事接住的地方。 */}
+        {kind && kind !== "staff" ? (
+          <p className={`mt-2 ${dim}`}>{copy.rateKindDownstream}</p>
         ) : null}
 
         {rows.length ? (
@@ -180,6 +232,20 @@ export function CommissionPanel({
         ) : (
           <p className={`mt-3 ${dim}`}>{copy.tiersNone}</p>
         )}
+
+        {/* 从哪天起。**这一格才是「上个月不会再动」真正的出口** ——
+            没有它，他唯一能做的就是改了然后等下个月。 */}
+        <label className="mt-3 flex max-w-56 flex-col gap-1">
+          <span className={dim}>{copy.rateFromLabel}</span>
+          <input
+            type="date"
+            aria-label={copy.rateFromLabel}
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className={control}
+          />
+        </label>
+        <p className={`mt-1 ${dim}`}>{copy.rateStartsNext}</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <button
@@ -227,6 +293,31 @@ export function CommissionPanel({
           >
             {error}
           </p>
+        ) : null}
+
+        {/* 改过几次。⚠️ **两份以上才画** —— 只有一份的时候它讲的是
+            「从来没有改过」，而那件事上面那一句（这个月照哪一份算）
+            已经讲完了，再画一次是杂讯。 */}
+        {history.length > 1 ? (
+          <div className="mt-4 border-t pt-3 [border-color:var(--color-ink-800)]">
+            <div className={dim}>{copy.rateHistory}</div>
+            <ul className="mt-1 flex flex-col gap-1">
+              {history.map((h) => (
+                <li key={h.from} className={dim}>
+                  {h.from} — {tierPhrase(
+                    h.tiers.map((t) => ({ fromCents: t.fromCents, percent: t.percent })),
+                    rm,
+                    {
+                      first: copy.tiersFirst,
+                      then: copy.tiersThen,
+                      from: copy.tiersOnwards,
+                      join: copy.tiersJoin,
+                    },
+                  ) ?? copy.tiersNone}
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </div>
     </div>
