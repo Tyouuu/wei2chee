@@ -9778,6 +9778,18 @@ Lotus Ipoh · Taman Ipoh Jaya · Gunung Rapat）。
 一个「可以网上做」的答案，配一个「而你不行」的身份，等於把他送去撞墙。
 **问「怎么做」的时候，要读那份写给做这件事的人看的原文。**
 
+##### ✅ 帐号 2026-09-05 21:23 启用了（他自己去按的指纹）—— 下一步是登进去注册商号
+邮件原文：`your account of SSM4U account has been activated. Please use the registered login ID.`
+所以 SSM4U 那一段走完了，接下来是**在里面注册个人商号**（照 9-04 定的：先开 Enterprise）。
+给他的顺序（一次只做一步，做完再看下一步）：
+1. **登入 `www.ssm4u.com.my`** —— 从 `www.ssm.com.my` 官网点过去，不要搜寻结果
+2. 找**注册商号**那一栏（马来文 Pendaftaran Perniagaan / 英文 Business Registration），**不是**公司（Company / Syarikat）
+3. 挑**用商号名**（Trade name，RM 60/年），填 2–3 个备选名字
+4. 行业码填 **62010 电脑程式设计** —— 我照 MSIC 2008 认的，**他在画面上搜 `programming` 对一次**；第二个可填 63110（资料托管）
+5. **年数选 1 年** —— 明年要转 Sdn Bhd，多付的是丢掉的
+⚠️ 我没有登进去过他的帐号，**按钮的确切字我没看过**，上面是照 SSM 自己的操作手册讲的。
+⚠️ 证下来之后：拿去开银行户口（**户口名字要跟证上一模一样**）· 手机日历设明年到期前一个月的提醒 · MyIPO 商标是另一件事。
+
 ##### 还要问一句的
 - [ ] **地方政府的营业执照（lesen perniagaan）** —— 在家做的软件生意有些市政局要、
       有些不要，各地不一样。**我没查他那一区的。**
