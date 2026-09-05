@@ -1579,13 +1579,19 @@ try {
   });
   check("七档挡下来", !!tooManyTiers);
 
-  /* 🔴 客户没有佣金。一个挂在客户身上的抽成，在画面上完全正常，
-     而它会让下个月那张表算出一个没有人拿得到的数字。 */
+  /* 🔴 **这两条 2026-09-05 反过来了，而反过来的理由要写在这里**（洞〇）：
+     一门经销生意的抽成本来就是给**下游经销商**的，而经销商在名册上是客户。
+     20260905720000 放宽了，20260905730000 补好。
+
+     ⚠️ 原本那条守卫在保护的是「月底那张表不要把客户算成员工」——
+     **那件事没有不见，它搬到 `staff_earnings` 回传的 `kind` 那一栏**，
+     所以底下多一条在量它。**拿掉一条守卫而不接住它守的那件事，
+     那不是放宽，那是拆掉。** */
   const { data: someCustomer } = await party({ in_name: "Commission probe" });
   const { error: notStaff } = await c.rpc("set_commission_tiers", {
     in_party_id: someCustomer.id, in_tiers: [{ from_cents: 0, percent: 10 }],
   });
-  check("客户身上写不了佣金", !!notStaff);
+  check("下游经销商身上写得了佣金", !notStaff, notStaff?.message?.slice(0, 90));
 
   /* 八千块，挂在 Aida 身上。 */
   const { data: earned8k, error: earnErr } = await c.rpc("add_ledger_entry", {
@@ -1594,11 +1600,22 @@ try {
   });
   check("那笔钱记得住是谁做的", earned8k?.done_by === stylist.id, earnErr?.message?.slice(0, 90));
 
-  const { error: notStaffOnMoney } = await c.rpc("add_ledger_entry", {
+  const { data: dealerEarned, error: notStaffOnMoney } = await c.rpc("add_ledger_entry", {
     in_project_id: P, in_module_key: "payments",
     in_amount_cents: 100, in_party: "", in_done_by: someCustomer.id,
   });
-  check("一个客户当不了「谁做的」", !!notStaffOnMoney);
+  check("一个下游经销商当得了「谁做的」", !notStaffOnMoney && dealerEarned?.done_by === someCustomer.id,
+    notStaffOnMoney?.message?.slice(0, 90));
+
+  /* 🔴 而**收起来的人、别家的人，还是当不了** —— 放宽的只有「哪一种人」，
+     没有松「哪一家的人」。 */
+  const { data: shelved } = await party({ in_name: "Shelved probe" });
+  await c.rpc("set_directory_archived", { in_id: shelved.id, in_archived: true });
+  const { error: shelvedErr } = await c.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments",
+    in_amount_cents: 100, in_party: "", in_done_by: shelved.id,
+  });
+  check("收起来的人还是当不了「谁做的」", !!shelvedErr, "居然让它过了");
 
   const thisMonth = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kuala_Lumpur", year: "numeric", month: "2-digit",

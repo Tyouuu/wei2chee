@@ -291,6 +291,43 @@ async function main() {
     Number(chanRow?.commission_cents) === 60000, `${chanRow?.commission_cents}`);
   check("而且老实讲它没有世代可以照", chanRow?.rate_from === null, `${chanRow?.rate_from}`);
 
+  // ── ⑩b 下游经销商也抽成，而读的人分得出来 ────────────────────────────
+  console.log("\n⑩b 洞〇：下游经销商也抽成");
+
+  const { data: sub } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "Sunrise Mobile (downstream)",
+  });
+  const { error: subTierErr } = await C.rpc("set_commission_tiers", {
+    in_party_id: sub.id,
+    in_tiers: [{ from_cents: 0, percent: 6 }],
+    in_effective_from: firstOf(-1),
+  });
+  check("经销商身上写得了一份抽成办法", !subTierErr, subTierErr?.message);
+  await C.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_direction: "in",
+    in_amount_cents: 1000000, in_party: "Sunrise Mobile (downstream)",
+    in_entry_on: midOf(-1), in_done_by: sub.id,
+  });
+  const subRow = await earnings(C, P, -1, sub.id);
+  check("🔴 抽成算得到他头上（6% = RM 600）",
+    Number(subRow?.commission_cents) === 60000, `${subRow?.commission_cents}`);
+
+  /* 🔴 原本那条守卫在保护「月底那张表不要把客户算成员工」。
+     那件事没有不见 —— 它搬到这一栏上，所以这里必须量得到。 */
+  const aidaRow = await earnings(C, P, -1, AIDA);
+  check("🔴 而读的人分得出来：他是下游", subRow?.kind === "customers", `${subRow?.kind}`);
+  check("🔴 她是自己人", aidaRow?.kind === "staff", `${aidaRow?.kind}`);
+
+  const { data: shelved } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "Closed shop",
+  });
+  await C.rpc("set_directory_archived", { in_id: shelved.id, in_archived: true });
+  const { error: shelvedErr } = await C.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_direction: "in",
+    in_amount_cents: 100, in_party: "x", in_done_by: shelved.id,
+  });
+  check("收起来的人还是当不了「谁做的」", !!shelvedErr, "居然让它过了");
+
   // ── ⑪ 师傅看不到（＋控制组）──────────────────────────────────────────
   console.log("\n⑪ 师傅看不到，而老板看得到");
 
