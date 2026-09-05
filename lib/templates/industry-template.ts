@@ -745,29 +745,23 @@ function recordTable(
   });
 }
 
-function filterChips(
-  id: string,
-  kind: string,
-  values: string[],
-  lang: SystemLang,
-): PuckNode {
-  // FilterChip is {label, value, removeHref}: it shows what is CURRENTLY
-  // narrowing a list, each chip removable. That is a different thing from a
-  // pipeline -- workflow stages go to WorkflowStrip below, not here, because
-  // six stages rendered as six removable chips read as six applied filters.
-  // FilterChips is a server component and cannot read the language context, so
-  // its two chrome strings are passed rather than defaulted. They land in the
-  // saved layout, which also makes them editable -- a customer who wants
-  // 「已套用」 instead of 「筛选条件」 changes it like any other text.
-  const c = chrome(lang);
-  return node("FilterChips", id, {
-    chips: values.map((value) => ({ label: kind, value, removeHref: "#" })),
-    clearAllHref: "#",
-    filteredByLabel: c.filter.filteredBy,
-    clearAllLabel: c.filter.clearAll,
-  });
-}
+/*
+  🔴 `filterChips()` 被拿掉了（2026-09-05）。
 
+  它产的每一颗 chip 都是 `removeHref: "#"`，`clearAllHref` 也是 `"#"`。
+  所以那一行同时讲两句不是真的话 ——「已筛选：等回覆」，而底下那张表七行
+  一行都没少；那颗 × 按下去什么都不会发生。**一个按不动的控件是缺陷，
+  不是装饰**（任务 15 的假 ⌘K、任务 94 · 111 都记过同一件）。
+
+  取代它的不是另一排刻死的分段，是那张表**自己从行里算出来的**那一排
+  （`recordTable(..., segments)` → `record-table.tsx` 的 `autoSegments`）。
+  差别是：刻在这一层的只看得到示例，而客户第一笔真记录一进来示例就整批
+  消失；表自己算的那一排永远是他手上真的有的那几种状态。
+
+  `FilterChips` 这个组件**没有删** —— 它本身是对的，只是要有人把网址接上
+  才有资格出现。`layout-upgrade.ts` 会把已经存过的、每一颗都指着 "#" 的
+  那一排拿掉；接过网址的那一种一个都不碰。
+*/
 
 /**
  * The bottleneck's name in the system's language, or nothing.
@@ -2165,30 +2159,14 @@ function buildQuotations(
       actionLabel: c.dashboard.primaryAction(c.quotations.title),
       actionHref: `/${locale}/portal/quotations/new`,
     }),
-    /* 🔴 两行併成一行（2026-09-03）。老板：`你放大来开 很多东西没复刻到`。
-       放大到两倍并排一看，最大的一件不是颜色也不是字：
-       **shadcn 那一页的工具条是一行**（筛一个字 · 两个分面 · 换栏位），
-       而我们是**三行**：筛选条一行、日期一行、表格自己的搜索又一行。
-       三行往下叠的东西，读起来是三件事；一行读起来是一条工具条。 */
-    node("Columns", "quotations-toolbar", {
-      layout: "wide-left",
-      a: [
-        filterChips(
-          "quotations-filters",
-          c.quotations.filterKind,
-          [c.quotations.filterValue],
-          lang,
-        ),
-      ],
-      b: [
-        node("DatePicker", "quotations-date", {
-          name: "quotation-date",
-          placeholder: c.quotations.datePlaceholder,
-          allowClear: true,
-        }),
-      ],
-      c: [],
-    }),
+    /* 🔴 那一条工具条整个拿掉了（2026-09-05）。它两半都是空的：
+       左边是一颗按不动的筛选 chip，右边是一个没有接到任何东西的日期选择器
+       —— 选一个日期，表格一行都不会变。
+
+       而 2026-09-03 那一轮想要的东西（shadcn 那一页的**一行**工具条：
+       一个会筛的框 · 两个分面）本来就在那张表自己身上：`tools: "search"`
+       是这一套风格自己的偏好，配上底下那个 `segments` 就是同一条工具条，
+       而且两半都真的会筛。 */
     /* A quotation is not a list that happens to have a document -- it IS the
        document. Showing the paper beside the list is the arrangement the
        founder pointed at, and it is the one page in the system whose output
@@ -2206,6 +2184,11 @@ function buildQuotations(
             status: c.col.status,
           },
           sample.records,
+          /* 明确的那一排留空，第一栏不是人 —— 见下面那个 `true`。 */
+          undefined,
+          undefined,
+          /* 会筛的那一排，那张表自己从行里算。见 `customers-list` 上面那一段。 */
+          true,
         ),
       ],
       [
@@ -2454,7 +2437,6 @@ function buildOrders(
       workflowStages(ctx),
       1,
     ),
-    filterChips("orders-filters", c.orders.filterKind, [c.orders.filterValue], lang),
     recordTable(
       "orders-list",
       c.orders.caption(labels.order),
@@ -2465,6 +2447,10 @@ function buildOrders(
         status: c.col.status,
       },
       sample.records,
+      undefined,
+      undefined,
+      /* 换掉那一行按不动的筛选 chip —— 见档案上面 `filterChips` 那一段。 */
+      true,
     ),
   ];
 }
@@ -2816,17 +2802,6 @@ function buildFromShape(
       ]
     : [];
 
-  const filter = copy.filter
-    ? [
-        filterChips(
-          `${pageKey}-filters`,
-          copy.filter.kind,
-          [copy.filter.value],
-          lang,
-        ),
-      ]
-    : [];
-
   const month = [
     node("MonthPicker", `${pageKey}-month`, {
       name: `${pageKey}-month`,
@@ -2836,7 +2811,10 @@ function buildFromShape(
   ];
 
   const table = [
-    recordTable(`${pageKey}-table`, title, copy.columns, copy.rows),
+    /* 最后那个 `true` 换掉了那一行按不动的筛选 chip —— 见档案上面
+       `filterChips` 那一段。那张表自己从行里算它真的有的那几种状态；
+       算不出来（没有状态栏 · 只有一种 · 每一种都只有一行）就不画。 */
+    recordTable(`${pageKey}-table`, title, copy.columns, copy.rows, undefined, undefined, true),
   ];
 
   /* 名册那一种的同一张表，第一栏带一颗头像 —— 那一栏是一个人／一家店。
@@ -2869,7 +2847,7 @@ function buildFromShape(
       ];
 
     case "catalog":
-      return [...head, ...search, ...filter, ...table];
+      return [...head, ...search, ...table];
 
     case "pipeline":
       /* THE FIVE PIPELINE MODULES DO NOT SHARE A QUESTION.
@@ -2886,7 +2864,6 @@ function buildFromShape(
       if (pageKey === "purchases") {
         return [
           ...head,
-          ...filter,
           besideNode(pageKey, table, [
             documentNode(pageKey, copy.title, copy.columns, copy.rows[0], c),
           ]),
@@ -2904,7 +2881,6 @@ function buildFromShape(
           stagesForModule(ctx, pageKey),
           1,
         ),
-        ...filter,
         ...table,
       ];
 
@@ -2927,7 +2903,7 @@ function buildFromShape(
       ];
 
     case "leaderboard":
-      return [...head, ...filter, ...trendNode(pageKey, copy), ...table];
+      return [...head, ...trendNode(pageKey, copy), ...table];
 
     case "reconcile":
       return [

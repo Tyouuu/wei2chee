@@ -262,7 +262,6 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
             status: "Slipping",
           },
         ],
-        filter: { kind: "Window", value: "Last 90 days" },
         trend: {
           title: "Active count",
           caption: "Top and Active added together, by month.",
@@ -425,7 +424,6 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
           },
         ],
         searchPlaceholder: "Search by name or code",
-        filter: { kind: "Status", value: "Running low" },
       };
 
     case "tasks":
@@ -461,7 +459,6 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
             status: "Done",
           },
         ],
-        filter: { kind: "Status", value: "To do" },
       };
 
     default:

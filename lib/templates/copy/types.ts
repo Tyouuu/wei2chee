@@ -121,8 +121,9 @@ export type ModuleCopy = {
   };
   /** Directory / catalog shapes: what the search box says. */
   searchPlaceholder?: string;
-  /** Catalog / leaderboard / pipeline shapes: the filter already applied. */
-  filter?: { kind: string; value: string };
+  /* `filter` 拿掉了（2026-09-05）。它讲的是「这张清单已经被这样筛过了」，
+     而没有任何东西真的筛过 —— 见 industry-template.ts 里 `filterChips` 那一段。
+     那件事现在由表格自己那一排分段做，而那一排是从行里算的，不写在 copy 里。 */
   /** Ledger shape: what the upload field is for. Omitted where a module has no
    *  paperwork -- 佣金 is calculated, not evidenced. */
   upload?: { label: string; hint: string };

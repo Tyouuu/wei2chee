@@ -256,7 +256,6 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
             status: "退步中",
           },
         ],
-        filter: { kind: "时间窗口", value: "近 90 天" },
         trend: {
           title: "活跃人数变化",
           caption: "顶级和活跃加起来的人数，按月看。",
@@ -419,7 +418,6 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
           },
         ],
         searchPlaceholder: "搜索货品名称或编号",
-        filter: { kind: "状态", value: "快没了" },
       };
 
     case "tasks":
@@ -455,7 +453,6 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
             status: "已完成",
           },
         ],
-        filter: { kind: "状态", value: "待办" },
       };
 
     default:

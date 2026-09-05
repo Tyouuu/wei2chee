@@ -7,10 +7,13 @@
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
+import { demoProject } from "./lib/demo-project.mjs";
 config({ path: ".env.local", quiet: true });
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
-const { data: proj } = await db.from("projects").select("account_id").eq("id", process.env.DEMO_PROJECT_ID || "37f2b188-5899-48ab-8650-11cefa5f98d2").single();
-const { data: acct } = await db.from("accounts").select("email").eq("id", proj.account_id).single();
+const demo = await demoProject(db);
+const PROJECT = demo.id;
+const proj = demo;
+const acct = { email: demo.email };
 
 const fails = [];
 const ok = (n, c, d = "") => (c ? console.log(`  PASS  ${n}`) : (fails.push(n), console.log(`  FAIL  ${n}  ${d}`)));
@@ -60,6 +63,59 @@ const emptyWords = await p.evaluate(() => {
   return tb ? tb.innerText.length : -1;
 });
 ok("表格本来有内容（对照用）", emptyWords > 0, String(emptyWords));
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   一句「已筛选」，要么是真的，要么不准印。
+
+   2026-09-05 之前，五页的表头上都有这一行：
+
+       FILTERED BY  状态：等回覆  ×      ← 底下那张表七行，一行都没少
+                                        ← 那颗 × 指着 "#"
+
+   一行同时讲两句不是真的话，加一个按不动的东西。而**这一支尺子当时是全绿的**
+   —— 它只走总览那一页，而总览没有那一行。所以它现在多走几页，
+   而且问的是最笨的那个问题：**这一页上有没有一个连结哪里都不去。**
+   ──────────────────────────────────────────────────────────────────────── */
+const MODULE_PAGES = ["quotations", "customers", "payments", "projects"];
+for (const key of MODULE_PAGES) {
+  const res = await p
+    .goto(`http://localhost:3000/en/portal/${key}`, { waitUntil: "networkidle", timeout: 180000 })
+    .catch(() => null);
+  /* 这个帐号没有开这一页 —— 跳过，不当成过也不当成不过。 */
+  if (!res || res.status() >= 400) {
+    console.log(`  SKIP  ${key} —— 这个帐号没有这一页`);
+    continue;
+  }
+  await p.waitForTimeout(5000);
+
+  const deadLinks = await p.locator('main a[href="#"]').count();
+  ok(`${key} · 没有一个连结指着「哪里都不去」`, deadLinks === 0, `${deadLinks} 个`);
+
+  /* 印着「已筛选」就要真的筛过 —— 画面上的行数一定要比它自己report 的总数少。 */
+  const saysFiltered = await p.getByText(/filtered by|筛选条件/i).count();
+  if (saysFiltered) {
+    const shown = await p.locator("table tbody tr").count();
+    const body = await p.locator("body").innerText();
+    const total = Number(body.match(/(\d+)\s*records?/i)?.[1] ?? "0");
+    ok(
+      `${key} · 说了「已筛选」就真的筛过`,
+      total > 0 && shown < total,
+      `画面上 ${shown} 行 / 一共 ${total} 行`,
+    );
+  }
+
+  /* 那一排分段按下去，行数一定要变 —— 一排按不动的分段跟一排会筛的，长得一模一样。 */
+  const segs = p.locator('[role="group"] button[aria-pressed]');
+  const n = await segs.count();
+  if (n > 1) {
+    const was = await p.locator("table tbody tr").count();
+    await segs.nth(1).click();
+    await p.waitForTimeout(800);
+    const now = await p.locator("table tbody tr").count();
+    ok(`${key} · 那一排分段真的会筛`, now < was && now > 0, `${was} → ${now}`);
+  }
+}
 
 await b.close();
 console.log(fails.length ? `\n🔴 ${fails.length} 条没过` : "\n全过");

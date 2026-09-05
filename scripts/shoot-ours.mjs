@@ -14,6 +14,7 @@
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
+import { demoProject } from "./lib/demo-project.mjs";
 import fs from "node:fs";
 
 config({ path: ".env.local", quiet: true });
@@ -21,9 +22,10 @@ const BASE = process.env.ALIGN_BASE || "http://localhost:3000";
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { persistSession: false } });
 
-const PROJECT = process.env.DEMO_PROJECT_ID || "37f2b188-5899-48ab-8650-11cefa5f98d2";
-const { data: proj } = await db.from("projects").select("account_id").eq("id", PROJECT).single();
-const { data: acct } = await db.from("accounts").select("email").eq("id", proj.account_id).single();
+const demo = await demoProject(db);
+const PROJECT = demo.id;
+const proj = demo;
+const acct = { email: demo.email };
 
 const OUT = ".screenshots/ours";
 fs.mkdirSync(OUT, { recursive: true });

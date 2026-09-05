@@ -25,6 +25,11 @@ import { DEFAULT_SYSTEM_LANG, type SystemLang } from "@/lib/system-lang";
 
 type Node = { type?: string; props?: Record<string, unknown> };
 
+/** 这一趟有没有拿掉过一排按不动的筛选。见 `isDeadFilterRow` 跟
+ *  `turnOnRealSegments` —— 拿掉一个控件之后要把会动的那个放回去，
+ *  不然那一页只是少了一样东西。单执行绪、一趟一设，`upgradeLayout` 开头归零。 */
+let droppedFilterRow = false;
+
 const isNode = (v: unknown): v is Node =>
   typeof v === "object" && v !== null && typeof (v as Node).type === "string";
 
@@ -35,7 +40,36 @@ const isNode = (v: unknown): v is Node =>
  *  flatMap rather than map since 2026-08-25: one upgrade turns a single node
  *  into two. See splitHeroCard. */
 function upgradeNodeList(nodes: unknown[], lang: SystemLang): unknown[] {
-  return nodes.flatMap((n) => (isNode(n) ? splitHeroCard(upgradeNode(n, lang), lang) : [n]));
+  return nodes.flatMap((n) => {
+    if (!isNode(n)) return [n];
+    if (isDeadFilterRow(n) || isToolbarBuiltRoundOne(n)) {
+      droppedFilterRow = true;
+      return [];
+    }
+    return splitHeroCard(upgradeNode(n, lang), lang);
+  });
+}
+
+/**
+ * 一排每一颗都指着 "#" 的筛选 chip —— 拿掉，不升级。
+ *
+ * 那是 2026-09-05 之前的产生器造的（`industry-template.ts` 的 `filterChips`）：
+ * 它同时讲两句不是真的话 ——「已筛选：等回覆」，而底下那张表一行都没少；
+ * 那颗 × 按下去什么都不会发生。**一个按不动的控件是缺陷，不是装饰。**
+ *
+ * ⚠️ 这是这个档案里唯一一个**删东西**的升级，所以门槛写得很窄：
+ * **每一颗**的 `removeHref` 都要是 "#"（或空的）才算。有人真的把网址接上去
+ * 的那一排 —— 客户自己接的、以后我们接的 —— 一个都不碰。
+ * 「他挑过的版面是他的」那条规矩没有被推翻：他从来没有挑过这一排，是我们塞的。
+ */
+function isDeadFilterRow(node: Node): boolean {
+  if (node.type !== "FilterChips") return false;
+  const chips = node.props?.chips;
+  if (!Array.isArray(chips) || chips.length === 0) return false;
+  const dead = (v: unknown) => v === undefined || v === null || v === "" || v === "#";
+  return chips.every(
+    (c) => typeof c === "object" && c !== null && dead((c as { removeHref?: unknown }).removeHref),
+  );
 }
 
 /*
@@ -180,6 +214,55 @@ function upgradeNode(node: Node, lang: SystemLang): Node {
   return { ...node, props };
 }
 
+/**
+ * 那一整条工具条 —— 连它旁边那个选日期的一起拿掉。
+ *
+ * 2026-09-03 那一轮把「筛选条一行 · 日期一行 · 表格自己的搜索又一行」併成
+ * 一条 `Columns`，想要的是参考页那种**一行**工具条。做出来的两半都是空的：
+ * 左边那颗筛选按不动（见 `isDeadFilterRow`），右边那个选日期的**挑完
+ * 一个日子，七行还是七行、网址一个字都没变**（2026-09-05 在真的浏览器里量的）。
+ *
+ * 只拿掉左边那一半，会在那一页上留一个空格子。而它想要的那条工具条现在
+ * 就在那张表自己身上（一个会筛的框 ＋ 一排从行里算出来的分段），所以整条
+ * 拿掉，不是补一半。
+ *
+ * ⚠️ 门槛写得窄：**要真的装着一排按不动的筛选**才算。一条有人接过网址的
+ * 工具条一个都不碰。
+ */
+function isToolbarBuiltRoundOne(node: Node): boolean {
+  if (node.type !== "Columns") return false;
+  for (const v of Object.values(node.props ?? {})) {
+    if (Array.isArray(v) && v.some((c) => isNode(c) && isDeadFilterRow(c))) return true;
+  }
+  return false;
+}
+
+/**
+ * 把「会筛的那一排」接到刚刚少了一排假筛选的那一页上。
+ *
+ * `isDeadFilterRow` 拿掉的是一句印上去的话；不补一句真的，那一页就只是
+ * 少了一样东西 —— 而少的那一样正好是老板在一张七行的表上要用的。
+ *
+ * 补的不是另一排刻死的字：`segments: true` 只是叫那张表**自己从它手上的行
+ * 里算**它真的有的那几种状态（`record-table.tsx` 的 `autoSegments`）。
+ * 算不出来就不画（没有状态栏 · 只有一种 · 每一种都只有一行 —— 那一排会
+ * 变成这张表的第二份拷贝）。所以它讲不了谎，也不用有人回来更新它。
+ *
+ * ⚠️ **有人明确挑过的那一排（`filters`）赢** —— 总览那一张是挑过的。
+ * 这里只碰没有 `filters` 的表。
+ */
+function turnOnRealSegments(nodes: unknown[]): unknown[] {
+  return nodes.map((n) => {
+    if (!isNode(n)) return n;
+    const props: Record<string, unknown> = { ...(n.props ?? {}) };
+    for (const [k, v] of Object.entries(props)) {
+      if (Array.isArray(v) && v.some(isNode)) props[k] = turnOnRealSegments(v);
+    }
+    if (n.type === "RecordTable" && !Array.isArray(props.filters)) props.segments = true;
+    return { ...n, props };
+  });
+}
+
 export function upgradeLayout<T extends { content?: unknown }>(
   layout: T,
   /** `projects.system_language` -- the language the customer's SYSTEM speaks,
@@ -189,5 +272,8 @@ export function upgradeLayout<T extends { content?: unknown }>(
   lang: SystemLang = DEFAULT_SYSTEM_LANG,
 ): T {
   if (!layout || !Array.isArray(layout.content)) return layout;
-  return { ...layout, content: upgradeNodeList(layout.content, lang) };
+  droppedFilterRow = false;
+  const content = upgradeNodeList(layout.content, lang);
+  /* 拿掉那一排的页面，把会筛的那一排接上 —— 见下面。 */
+  return { ...layout, content: droppedFilterRow ? turnOnRealSegments(content) : content };
 }

@@ -129,6 +129,58 @@ describe("upgradeLayout", () => {
     expect(out.content[1].props.filteredByLabel).toBe("Showing");
   });
 
+  it("🔴 拿掉每一颗都指着 \"#\" 的那一排 —— 那不是筛子，是一句印上去的话", () => {
+    const page = {
+      content: [
+        {
+          type: "FilterChips",
+          props: { chips: [{ label: "状态", value: "等回覆", removeHref: "#" }], clearAllHref: "#" },
+        },
+        { type: "RecordTable", props: {} },
+      ],
+    };
+    const out = upgradeLayout(page, "en") as typeof page;
+    expect(out.content.map((n) => n.type)).toEqual(["RecordTable"]);
+    /* 拿掉一个控件就要把会动的那个放回去，不然那一页只是少了一样东西。 */
+    expect((out.content[0].props as Record<string, unknown>).segments).toBe(true);
+  });
+
+  it("没有那一排的页面，不会凭空多一排分段", () => {
+    const page = { content: [{ type: "RecordTable", props: {} }] };
+    const out = upgradeLayout(page, "en") as typeof page;
+    expect((out.content[0].props as Record<string, unknown>).segments).toBeUndefined();
+  });
+
+  it("有人明确挑过的那一排赢", () => {
+    const page = {
+      content: [
+        { type: "FilterChips", props: { chips: [{ removeHref: "#" }], clearAllHref: "#" } },
+        { type: "RecordTable", props: { filters: [{ label: "Open" }] } },
+      ],
+    };
+    const out = upgradeLayout(page, "en") as typeof page;
+    expect((out.content[0].props as Record<string, unknown>).segments).toBeUndefined();
+  });
+
+  it("接过网址的那一排一个都不碰", () => {
+    const page = {
+      content: [
+        {
+          type: "FilterChips",
+          props: {
+            chips: [
+              { label: "Status", value: "Open", removeHref: "/portal/orders" },
+              { label: "Region", value: "KL", removeHref: "#" },
+            ],
+            clearAllHref: "/portal/orders",
+          },
+        },
+      ],
+    };
+    const out = upgradeLayout(page, "en") as typeof page;
+    expect(out.content).toHaveLength(1);
+  });
+
   it("leaves the input untouched", () => {
     const before = JSON.stringify(saved);
     upgradeLayout(saved);

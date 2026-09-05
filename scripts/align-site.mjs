@@ -25,6 +25,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { chromium } from "playwright";
 import { config } from "dotenv";
+import { demoProject } from "./lib/demo-project.mjs";
 import fs from "node:fs";
 import { execSync } from "node:child_process";
 
@@ -210,7 +211,10 @@ if (!url) {
   process.exit(1);
 }
 
-const PROJECT = process.env.DEMO_PROJECT_ID || "37f2b188-5899-48ab-8650-11cefa5f98d2";
+const demo = await demoProject(db);
+const PROJECT = demo.id;
+const proj = demo;
+const acct = { email: demo.email };
 const OUT = ".screenshots/align";
 fs.mkdirSync(OUT, { recursive: true });
 
