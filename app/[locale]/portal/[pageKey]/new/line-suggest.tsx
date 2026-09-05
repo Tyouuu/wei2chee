@@ -91,6 +91,11 @@ export function useLineSuggestions({
   const [units, setUnits] = useState<string[]>([]);
   const [lastLines, setLastLines] = useState<Line[] | null>(null);
   const [lastFrom, setLastFrom] = useState<{ docNo: string; on: string } | null>(null);
+  /* 🔴 那几行是**哪一个客人**的。
+     第一版是在那支 effect 里同步 `setLastLines(null)` 把它洗掉，而 React 19
+     的 lint 直接报 error（cascading renders）。改成记住它属於谁，对不上就不给 ——
+     **一份算得出来的值，比一份要有人去清掉的状态安全。** */
+  const [lastFor, setLastFor] = useState<string | null>(null);
 
   /* 货架跟单位：一个专案问一次 */
   useEffect(() => {
@@ -127,11 +132,7 @@ export function useLineSuggestions({
 
   /* 上次卖给这个客人什么：他换一个客人就重问 */
   useEffect(() => {
-    if (!enabled || !partyId) {
-      setLastLines(null);
-      setLastFrom(null);
-      return;
-    }
+    if (!enabled || !partyId) return;
     let alive = true;
     void (async () => {
       const { data, error } = await createBrowserSupabaseClient().rpc("last_lines_for_party", {
@@ -140,6 +141,7 @@ export function useLineSuggestions({
         p_module_key: moduleKey,
       });
       if (!alive) return;
+      setLastFor(partyId);
       if (error || !data?.length) {
         setLastLines(null);
         setLastFrom(null);
@@ -165,7 +167,15 @@ export function useLineSuggestions({
     };
   }, [projectId, partyId, moduleKey, enabled]);
 
-  return { items, units, lastLines, lastFrom };
+  /* 🔴 换了客人，上一个客人那几行**当场不算数** —— 不用等那支查询回来。
+     一份还没洗掉的旧清单，按下去会把另一个人的单整批填进这一张。 */
+  const mine = enabled && !!partyId && lastFor === partyId;
+  return {
+    items,
+    units,
+    lastLines: mine ? lastLines : null,
+    lastFrom: mine ? lastFrom : null,
+  };
 }
 
 /**

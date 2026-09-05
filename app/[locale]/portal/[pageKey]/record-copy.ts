@@ -68,6 +68,21 @@ export type RecordFormCopy = {
   apptNoShow: string;
   apptCancelled: string;
   apptLede: string;
+  /** 这一单是谁介绍的。只给看得到钱的人（[任务 156]） */
+  refHeading: string;
+  refLede: string;
+  refWho: string;
+  refWhoBlank: string;
+  refKindPortion: string;
+  refKindAmount: string;
+  refPortion: string;
+  refAmount: string;
+  /** 带 {amount}。资料库算出来的，不是画面重算 */
+  refSoFar: string;
+  /** 带 {name}。名字对不上就不猜（[任务 89]） */
+  refUnknown: string;
+  refClear: string;
+  refSave: string;
   lineRemove: string;
   lineTotal: string;
   amountFromLines: string;
@@ -462,6 +477,18 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       apptNoShow: "没来",
       apptCancelled: "取消了",
       apptLede: "「没来」只是记下来，不会动任何一笔钱。要不要扣是你决定。",
+      refHeading: "这一单是谁介绍的",
+      refLede: "比例算在「已经收到的钱」上，不是单上那个总数。真的给了多少，是从你记的开销加出来的 —— 这一段不会替你记一笔。",
+      refWho: "谁介绍的",
+      refWhoBlank: "打他的名字",
+      refKindPortion: "按比例",
+      refKindAmount: "一个数目",
+      refPortion: "抽几 %",
+      refAmount: "答应给多少",
+      refSoFar: "照到今天收到的钱算，这一单欠他 {amount}。",
+      refUnknown: "名册里没有「{name}」。先把他建进名册，再回来挂上去。",
+      refClear: "没有人介绍",
+      refSave: "记下来",
       lineRemove: "删掉这一行",
       lineTotal: "合计",
       amountFromLines: "有逐项的时候，上面的金额是这几行加起来的。",
@@ -767,6 +794,18 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       apptNoShow: "No show",
       apptCancelled: "Cancelled",
       apptLede: "No show is only recorded here. It moves no money — whether to charge is yours to decide.",
+      refHeading: "Who sent this one in",
+      refLede: "A percentage is worked out on the money already received, not the figure on the document. What has actually been handed over is summed from the expenses you record — this section records none.",
+      refWho: "Who introduced them",
+      refWhoBlank: "Type their name",
+      refKindPortion: "A percentage",
+      refKindAmount: "A figure",
+      refPortion: "Per cent",
+      refAmount: "Promised",
+      refSoFar: "On the money received so far, this job owes him {amount}.",
+      refUnknown: "There is no “{name}” in your directory. Add them first, then come back and attach them.",
+      refClear: "Nobody introduced them",
+      refSave: "Record it",
       lineRemove: "Remove this line",
       lineTotal: "Total",
       amountFromLines: "With line items, the amount above is their total.",

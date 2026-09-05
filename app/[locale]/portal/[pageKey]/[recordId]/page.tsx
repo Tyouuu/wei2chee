@@ -28,6 +28,7 @@ import { PIPELINE_MODULES } from "@/lib/portal/shape-state";
 import { SITE_URL } from "@/lib/site-url";
 import { PartyHistory } from "../new/party-history";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
+import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import { PackagesPanel, type PackageRow } from "../new/packages-panel";
 import type { JobPhoto } from "../new/job-photos";
 import { showChanges, type ShownChange, type ChangeRow } from "@/lib/portal/change-log";
@@ -188,6 +189,19 @@ export default async function EditRecordPage({
   let runs: DeliveryRun[] | undefined = undefined;
   let shortfall: Shortfall[] = [];
   let shareRef: string | null | undefined = undefined;
+  /* 这一单是谁介绍的（[任务 156] · 20260905260000）。
+     ⚠️ `undefined` = **没有问** —— 不是走单那几页，或者读的人看不到钱。
+     `null` 是问了、没有人介绍。**两个在画面上是不一样的事。** */
+  let referral:
+    | {
+        id: string | null;
+        name: string | null;
+        portion: number | null;
+        amountCents: number | null;
+        promised: string | null;
+        people: ReferralOption[];
+      }
+    | undefined = undefined;
   let shareAnswer: { answer: string | null; name: string | null; at: string | null; note: string | null } = {
     answer: null, name: null, at: null, note: null,
   };
@@ -717,7 +731,7 @@ export default async function EditRecordPage({
       /* doc_no for the preview's head. It exists on a saved document and
          never on a new one -- next_doc_no() issues it inside the write -- so
          this is the only place it can honestly come from. */
-      .select("id, doc_no, title, party, amount_cents, stage, due_on, site_address_id, branch_id, extra, archived_at, share_ref, answer, answered_name, answered_at, answer_note")
+      .select("id, doc_no, title, party, amount_cents, stage, due_on, site_address_id, branch_id, extra, archived_at, share_ref, answer, answered_name, answered_at, answer_note, referrer_id, referral_portion, referral_amount_cents")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -776,6 +790,60 @@ export default async function EditRecordPage({
         name: data.answered_name ?? null,
         at: data.answered_at ?? null,
         note: data.answer_note ?? null,
+      };
+    }
+
+    /* ── 这一单是谁介绍的（[任务 156] · 20260905260000）──────────────────
+       🔴 只在**走单**那几页，只给老板，而且只在还没收起来的单上。
+       ⚠️ 收起来的单不画：一笔挂在收起来的单上的介绍费，`referrals_owing`
+          自己就不算它（`archived_at is null`）—— 画一格改得动而算不进去的
+          比例，是这一页在说谎。
+       ⚠️ `undefined` 是**没有问**，`null` 是问了没有人介绍。 */
+    if (!data.archived_at && ctx.role === "owner" && PIPELINE_MODULES.has(pageKey)) {
+      /* 挑得到的人：三种名册都要。谁介绍谁是他的生意 ——
+         `set_record_referral` 那一支也只查「同一家公司」，不查是哪一种。 */
+      const { data: people } = await supabase
+        .from("directory_entries")
+        .select("id, name")
+        .eq("project_id", ctx.projectId)
+        .is("archived_at", null)
+        .order("name")
+        .limit(500);
+
+      let name: string | null = null;
+      let promised: string | null = null;
+      if (data.referrer_id) {
+        /* 🔴 那个数字**只从资料库拿**。`referred_jobs` 跟 `referrals_owing`
+           用同一段 SQL 算 promised —— 在这一页拿 received × portion 再算一次，
+           就是同一个问题两个答案（这个仓库栽过至少八次）。 */
+        const [{ data: whoRow }, { data: jobRows }] = await Promise.all([
+          supabase
+            .from("directory_entries")
+            .select("name")
+            .eq("id", data.referrer_id)
+            .maybeSingle(),
+          supabase.rpc("referred_jobs", {
+            in_project_id: ctx.projectId,
+            in_referrer_id: data.referrer_id,
+          }),
+        ]);
+        name = (whoRow as { name?: string } | null)?.name ?? null;
+        const mine = ((jobRows ?? []) as { record_id: string; promised_cents: number | null }[]).find(
+          (j) => j.record_id === recordId,
+        );
+        promised = mine ? ringgit(mine.promised_cents ?? 0) ?? null : null;
+      }
+
+      referral = {
+        id: data.referrer_id ?? null,
+        name,
+        portion: data.referral_portion == null ? null : Number(data.referral_portion),
+        amountCents: data.referral_amount_cents == null ? null : Number(data.referral_amount_cents),
+        promised,
+        people: ((people ?? []) as { id: string; name: string }[]).map((x) => ({
+          id: x.id,
+          name: x.name,
+        })),
       };
     }
     Object.assign(values, {
@@ -1156,6 +1224,24 @@ export default async function EditRecordPage({
               requests={partyRequests}
               landsIn={landsIn}
               landsInLabel={landsInLabel}
+              copy={copy.form}
+            />
+          </div>
+        ) : null}
+
+        {/* 走单那几页多一段：这一单是谁介绍的。
+            ⚠️ `undefined` = 没有问（不是走单那几页 · 收起来了 ·
+            或者读的人看不到钱）—— 那时候整段不画。 */}
+        {referral ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <ReferralPanel
+              recordId={recordId}
+              referrerId={referral.id}
+              referrerName={referral.name}
+              portion={referral.portion}
+              amountCents={referral.amountCents}
+              promised={referral.promised}
+              people={referral.people}
               copy={copy.form}
             />
           </div>
