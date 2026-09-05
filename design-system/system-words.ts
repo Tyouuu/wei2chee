@@ -128,6 +128,29 @@ export type SystemWords = {
     phone: { label: string; placeholder: string };
     detail: { label: string; placeholder: string };
   };
+  /** 客人自己在官网上订一个时段 —— 跟询价一样，**这几个字是陌生人读的**，
+   *  所以两种语言都写在这里，一个字都不留给页面去猜。 */
+  booking: {
+    pickDay: string;
+    pickTime: string;
+    taken: string;
+    noneLeft: string;
+    submit: string;
+    sending: string;
+    /** "Booked — {time} on {day}. We will confirm." */
+    booked: (when: string) => string;
+    /** 那一段刚被别人订走了。**这是常态不是错误** —— 两个人看着同一个
+     *  星期六早上仅剩的三个空档，同时按下去。 */
+    clash: string;
+    past: string;
+    tooFar: string;
+    failed: string;
+    /** 编辑器里没有网址，所以订不了 —— 而假装订得了，跟一颗按不动的按钮
+     *  是同一件事。 */
+    previewOnly: string;
+    /** 「订了之后你的系统会多一个预约」—— 那条箭头，跟询价那一块同一句。 */
+    arrow: (record: string) => [string, string];
+  };
 };
 
 const EN: SystemWords = {
@@ -220,6 +243,24 @@ const EN: SystemWords = {
       placeholder: "3-room renovation, roughly how much?",
     },
   },
+  booking: {
+    pickDay: "Pick a day",
+    pickTime: "Pick a time",
+    taken: "Taken",
+    noneLeft: "Nothing left on this day — try another one.",
+    submit: "Book this time",
+    sending: "Booking...",
+    booked: (when) => `Booked — ${when}. We will confirm with you.`,
+    clash: "That time was just taken. Pick another one.",
+    past: "That time has passed. Pick a later one.",
+    tooFar: "That is too far ahead. Pick a nearer day.",
+    failed: "That did not go through. Try again, or message us directly.",
+    previewOnly: "This is the preview — nothing was booked. On your live site it becomes a real slot.",
+    arrow: (record) => [
+      "Pick a time and it becomes a ",
+      `${record} in your system — nobody has to write it down.`,
+    ],
+  },
 };
 
 const ZH: SystemWords = {
@@ -305,6 +346,21 @@ const ZH: SystemWords = {
     name: { label: "怎么称呼", placeholder: "陈先生" },
     phone: { label: "电话 / WhatsApp", placeholder: "012-345 6789" },
     detail: { label: "想做什么", placeholder: "三房翻新，想问大概多少" },
+  },
+  booking: {
+    pickDay: "挑一天",
+    pickTime: "挑一个时间",
+    taken: "已订",
+    noneLeft: "这一天满了 —— 换一天试试。",
+    submit: "订这个时间",
+    sending: "订着...",
+    booked: (when) => `订好了 —— ${when}。我们会跟你确认。`,
+    clash: "这个时段刚被订走了，换一个。",
+    past: "这个时间已经过了，挑一个后面的。",
+    tooFar: "太远了，挑近一点的日子。",
+    failed: "没有送出去。再试一次，或者直接讯息我们。",
+    previewOnly: "这是预览 —— 没有真的订。上线之后它会变成一个真的时段。",
+    arrow: (record) => ["挑一个时间 → 你的系统会多一个", `${record}，不用有人抄下来。`],
   },
 };
 

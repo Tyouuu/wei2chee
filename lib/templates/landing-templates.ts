@@ -138,6 +138,19 @@ export type LandingContent = {
    * contradicted the only thing this product claims.
    */
   enquiryFields: { label: string; kind: string }[];
+  /**
+   * 客人自己订得了时段的那一页 —— 没有就是 null。
+   *
+   * 🔴 **null 是一个真的答案，不是漏掉的那一种。** 一个装修承包商的官网上
+   * 不该有订时段：他没有一页在收预约，而 `submit_site_booking` 对这种生意
+   * 回的就是 `not_found`。**画一颗按下去一定失败的按钮，正是这个仓库
+   * 禁的第一条。**
+   *
+   * ⚠️ 而这一条同时决定「预约时段」那一套模版底下放什么：
+   * 有这一页就放真的挑时段，没有就退回那张询价表 ——
+   * 两条路只留一条，不然同一个意思会落进两个收件匣。
+   */
+  booksIn: string | null;
   /** Three checkable facts. */
   proof: { value: string; label: string }[];
   /** `placeholder` marks a row still holding the seeded value -- it is what
@@ -180,6 +193,47 @@ const node = (
  * -- and for why "no stock photos", which this file already argued and was
  * right about, never meant "nothing visual at all".
  */
+/**
+ * 客人自己挑一个时段 —— 「预约时段」那一套模版底下的那一块。
+ *
+ * 🔴 它取代那张询价表，不是加在它旁边。
+ *
+ * 两块并排就是**同一个意思落进两个收件匣**：挑时段写进 `appointments`，
+ * 询价写进 `site_enquiries`，而老板要在两个地方各看一次才知道今天有几个
+ * 客人。任务 96 记的就是这一句 ——「『预约时段』模版的表单换成真的挑时段」。
+ *
+ * ⚠️ 而它只在这门生意**真的有一页在收预约**的时候画。没有就退回询价表 ——
+ * `submit_site_booking` 对没有那一页的生意回 `not_found`，
+ * 而一颗按下去一定失败的按钮，是这个仓库禁的第一条。
+ */
+const slots = (c: LandingContent) => {
+  const t = c.words.byTemplate.booking ?? c.words.byTemplate.quote;
+  return node("SiteBooking", "website-booking", {
+    /* 🔴 **不是 `formHeading`**。那两句讲的是「留个电话跟想约的时间，
+       我们确认了回你」—— 而这一块做的是**自己挑一格**。
+       留着旧的那两句，就是那一页在描述一个它已经不是的机制。
+       看图才看到的：读数当时全绿。 */
+    heading: t.bookHeading ?? t.formHeading,
+    blurb: t.bookBlurb ?? t.formBlurb,
+    /* 按钮上那个字也不拿询价那一个（「Request a slot」）——
+       他刚挑好一格，那一颗要讲的是「订这个时间」。
+       不给就用那一块自己的字（两种语言都在 SYSTEM_WORDS.booking）。 */
+    /* 那条箭头。跟询价那一块同一个位子，换一个动词。 */
+    landsIn: c.booksIn ?? "",
+    landsInBadge: c.words.arrowBadge,
+    /* ⚠️ **不放「通常一天内回覆」那一句** —— 那是留言那一块的话。
+       在一颗「订这个时间」底下，它会让人分不清那一格到底留住了没有，
+       而那一块自己订完之后就讲了「我们先留着，然后跟你确认」。 */
+    /* ⚠️ 九点到六点是**预设不是宣称** —— 我们没有一个地方存着他真正的
+       营业时间（那一段 `hours` 是他自己打的字，机器读不了）。
+       编辑器里那四格摆在明处，他一眼看到不对就改。 */
+    openHour: 9,
+    closeHour: 18,
+    slotMinutes: 60,
+    days: 7,
+  });
+};
+
 const hero = (
   c: LandingContent,
   layout: string,
@@ -842,7 +896,8 @@ export const LANDING_TEMPLATES: LandingTemplate[] = [
       cta(c),
       hours(c),
       faq(c),
-      form(c, "booking"),
+      /* 有一页在收预约就给真的挑时段，没有就退回那张询价表 —— 见 `slots`。 */
+      c.booksIn ? slots(c) : form(c, "booking"),
       contact(c),
       foot(c, anchors(c)),
       ...floating(c),

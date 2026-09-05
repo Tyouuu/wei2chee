@@ -1977,6 +1977,20 @@ export function landingContentFor(
           )
         : labels.customer;
 
+  /*
+    客人自己订得了时段的那一页 —— 没有就是 null。
+
+    🔴 **读的是这门生意真的有没有一页在收预约**，不是它属於哪一行。
+    `submit_site_booking` 对没有那一页的生意回 `not_found`（它自己去查
+    `is_calendar_module`），所以画一颗按下去一定失败的按钮，
+    正是这个仓库禁的第一条。
+
+    ⚠️ 一间美容院的开局有 `bookings`，而 AI 是可以不给的 ——
+    所以这里问的是**他手上这几页**，不是那张行业预设表。
+  */
+  const booksPage = pages.find((p) => MODULE_BY_KEY[p.key]?.shape === "calendar");
+  const booksIn = booksPage ? pageLabel(booksPage, labels, lang) : null;
+
   // The questions this trade actually needs answered. The model writes both
   // languages; the system's own language picks one, with no cross-language
   // fallback -- a Chinese question under an English heading on a page a
@@ -2041,6 +2055,7 @@ export function landingContentFor(
     services,
     stages: workflowStages(ctx),
     landsIn,
+    booksIn,
     enquiryFields,
     proof: t.proof,
     contact: t.contact,

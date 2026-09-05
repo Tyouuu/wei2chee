@@ -110,6 +110,17 @@ export type LandingCopy = {
         formHeading: string;
         formBlurb: string;
         submit: string;
+        /** 🔴 客人**自己挑一个时段**那一块的字。
+         *
+         *  跟 `formHeading` / `formBlurb` 不是同一句：那两句讲的是
+         *  **留一句话**（「留个电话跟想约的时间，我们确认了回你」），
+         *  而那一块做的是**占一个钟头**。留着旧的那两句，就是那一页
+         *  在描述一个它已经不是的机制 —— 而那是这个仓库犯过二十次的
+         *  那件事，只是方向反过来：**功能比它自己讲的强**。
+         *
+         *  只有「预约时段」那一套用得到，所以是可选的。 */
+        bookHeading?: string;
+        bookBlurb?: string;
       }
     >;
     /**
@@ -334,6 +345,8 @@ const EN: LandingCopy = {
         formHeading: "When would suit you?",
         formBlurb: "Leave a number and a time. We confirm and come back to you.",
         submit: "Request a slot",
+        bookHeading: "Pick a time that suits you",
+        bookBlurb: "Choose a day and a slot. We hold it and confirm with you.",
       },
       order: {
         services: "What we have",
@@ -576,6 +589,8 @@ const ZH: LandingCopy = {
         formHeading: "想约什么时候？",
         formBlurb: "留个电话跟想约的时间，我们确认了回你。",
         submit: "预约",
+        bookHeading: "挑一个方便的时间",
+        bookBlurb: "挑一天、挑一格，我们先留着，然后跟你确认。",
       },
       order: {
         services: "有什么",

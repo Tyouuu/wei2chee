@@ -62,7 +62,7 @@ function anchorOf(href: unknown): string | null {
      而 `site-hero.tsx` 里有十处 `href={primaryHref || "#"}`：
      少一个 href，画出来就是一颗死按钮。`quick-links` 跟 `rail-nav`
      早就在挡这个字串了，官网那一边没有。 */
-  if (href === "#") return "dead";
+  if (href === "#") return DEAD;
   return typeof href === "string" && href.startsWith("#") && href.length > 1
     ? href.slice(1)
     : null;
@@ -74,8 +74,17 @@ function anchorOf(href: unknown): string | null {
  * 🔴 **`#enquiry` 从来不存在** —— 询价那一块的 id 是 `website-form`。
  * 它是这四条里最贵的一条：那颗按钮是整页唯一的转换按钮，而它从写出来
  * 那天起按下去什么都不会发生。
+ *
+ * 🔴 **「预约时段」那一套模版底下没有询价表** —— 有一页在收预约的生意
+ * 拿到的是真的挑时段那一块（`website-booking`，见 landing-templates 的
+ * `slots`）。所以只认 `website-form` 的话，那一套模版上顶栏 · 页脚 ·
+ * 第一屏那三颗按钮会**整颗被拿掉** —— 而那正是这支档案存在要防的事，
+ * 只是换了一个方向。
+ *
+ * ⚠️ 顺序有意义：有询价表就去询价表（那是「问一句话」），
+ * 没有才去挑时段（那是「占一个钟头」）。
  */
-const ASK_FALLBACK = "website-form";
+const ASK_FALLBACKS = ["website-form", "website-booking"] as const;
 
 function pruneNode(node: PuckNode, ids: Set<string>): PuckNode {
   let props = node.props ?? {};
@@ -110,8 +119,9 @@ function pruneNode(node: PuckNode, ids: Set<string>): PuckNode {
       : key === "secondaryHref" ? "secondaryLabel"
       : "moreLabel";
     const isAsk = key === "actionHref" || key === "askHref" || key === "primaryHref";
-    if (isAsk && ids.has(ASK_FALLBACK)) {
-      props = { ...props, [key]: `#${ASK_FALLBACK}` };
+    const landing = ASK_FALLBACKS.find((f) => ids.has(f));
+    if (isAsk && landing) {
+      props = { ...props, [key]: `#${landing}` };
     } else {
       props = { ...props, [key]: undefined, [label]: undefined };
     }

@@ -32,6 +32,7 @@ import {
 } from "@/design-system/components/site-sections";
 import { SiteBlock, SITE_BLOCK_OPTIONS } from "@/design-system/editor/site-block";
 import { EnquiryForm } from "@/design-system/components/enquiry-form";
+import { SiteBooking } from "@/design-system/components/site-booking";
 import { TableFieldEditor } from "@/design-system/editor/table-field";
 import { type TableModel } from "@/lib/portal/table-model";
 import { DatePicker } from "@/design-system/components/date-picker";
@@ -460,6 +461,25 @@ type Components = {
     note?: string;
     look?: "card" | "plain" | "split";
   };
+  /** 客人自己在官网上订一个时段 —— 陌生人做得了的第四件事。
+   *  见 design-system/components/site-booking.tsx。 */
+  SiteBooking: {
+    heading: string;
+    blurb?: string;
+    submitLabel?: string;
+    landsIn?: string;
+    landsInBadge?: string;
+    landsInBefore?: string;
+    landsInAfter?: string;
+    note?: string;
+    /** ⚠️ 营业时间是他的，不是我们的 —— 这三个是**预设不是宣称**，
+     *  编辑器里改得动。见那个组件的档头。 */
+    openHour?: number;
+    closeHour?: number;
+    slotMinutes?: number;
+    days?: number;
+    boxed?: boolean;
+  };
   EmptyState: { variant: "empty" | "filtered" | "cleared"; title: string; description?: string };
   StatusDot: { tone: "positive" | "warning" | "negative" | "neutral"; label: string };
   HeroCard: {
@@ -759,7 +779,7 @@ export const puckConfig: Config<Components> = {
     },
     site: {
       title: "官网(客人看的)",
-      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteBand", "SiteWoven", "SiteSteps", "SiteStatement", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "EnquiryForm", "SiteFoot", "FloatingContact"],
+      components: ["SiteBar", "SiteHero", "SiteGallery", "SiteBand", "SiteWoven", "SiteSteps", "SiteStatement", "SiteStory", "SiteTeam", "SiteFeatures", "SiteCreds", "SiteTestimonials", "SiteCta", "SiteBooking", "EnquiryForm", "SiteFoot", "FloatingContact"],
       defaultExpanded: false,
     },
     // The pulled catalogue. One entry, because SiteBlock IS the catalogue --
@@ -2572,6 +2592,54 @@ export const puckConfig: Config<Components> = {
           secondaryHref={secondaryHref}
           proof={proof}
                   brand={brand}
+        />
+      ),
+    },
+    SiteBooking: {
+      label: "自己订时段",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        blurb: { label: "说明", type: "textarea" },
+        submitLabel: { label: "按钮上写什么", type: "text" },
+        /* 那条箭头，跟询价那一块同一个位子：这一块存在的理由就是它。 */
+        landsIn: { label: "订完变成哪一页的预约", type: "text" },
+        /* ⚠️ 营业时间是他的。**这三个摆在明处，不是收在进阶里** ——
+           一个订位页开着别人的营业时间，是它讲得出的最贵的一句错话。 */
+        openHour: { label: "几点开门", type: "number" },
+        closeHour: { label: "几点关门", type: "number" },
+        slotMinutes: { label: "一格几分钟", type: "number" },
+        days: { label: "让人订多少天以内", type: "number" },
+        note: { label: "按钮旁边那一句", type: "text" },
+      },
+      defaultProps: {
+        heading: "挑一个时间",
+        openHour: 9,
+        closeHour: 18,
+        slotMinutes: 60,
+        days: 7,
+      },
+      render: ({
+        id, heading, blurb, submitLabel, landsIn,
+        landsInBadge, landsInBefore, landsInAfter, note,
+        openHour, closeHour, slotMinutes, days, boxed,
+      }) => (
+        <SiteBooking
+          /* 那一块在资料里的 id —— 顶栏跟第一屏那几颗按钮指的是它。
+             漏掉这一行，那几颗就是按了什么都不会发生的按钮。 */
+          anchor={id}
+          heading={heading}
+          blurb={blurb}
+          submitLabel={submitLabel}
+          landsIn={landsIn}
+          landsInBadge={landsInBadge}
+          landsInBefore={landsInBefore}
+          landsInAfter={landsInAfter}
+          note={note}
+          openHour={openHour}
+          closeHour={closeHour}
+          slotMinutes={slotMinutes}
+          days={days}
+          boxed={boxed}
         />
       ),
     },
