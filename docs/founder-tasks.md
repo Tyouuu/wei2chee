@@ -9939,6 +9939,34 @@ Lotus Ipoh · Taman Ipoh Jaya · Gunung Rapat）。
 去答一个**表格的字面问题**，而表格是政府写的，用的是它自己的定义。
 → **答一格政府表格之前，先问「它这个词是它自己定义的，还是我行业里的意思」。**
 
+##### ✅ SSM 的取名规矩读到原文了 —— 四条，两条他一定会撞（2026-09-06）
+> `因为我女朋友加Weichee 可是她也开了公司 所以我想要好像Way to see 一样 可是这样 Wei 2 C`
+> `的话就很丑了`
+
+**这一次不是搜寻摘要，是 SSM 自己那份 PDF 的原文**
+（`ssm.com.my/…/garis_panduan_pendaftaran_nama_perniagaan_-_new.pdf`，
+抓下来用 pdftotext 读的）。抄进来，免得下一轮又去查。
+
+| | 原文 | 对他的意思 |
+|---|---|---|
+| **数字** | `(h) Penggunaan angka/nombor (Numeric) dibenarkan bagi penggunaan yang bersesuaian` · 例子 `123 Maju Enterprise` · `Maju Hijau 1 Enterprise` | 🔴 **允许，而两个例子的数字都是独立一个字** —— 没有一个例子把数字塞在字中间。所以 `Wei2Chee` 会变成 `WEI 2 CHEE`，**「Way to see」那个双关活不过来**（他自己在画面上看到了） |
+| 🔴 **造出来的字** | `4.1(b) Sekiranya nama mengandungi perkataan yang bukan dari Bahasa Malaysia atau Bahasa Inggeris atau rekaan, makna atau asal usul perkataan tersebut hendaklah diberikan` | **不是马来文/英文的字，或者自己造的，要写它的意思跟来源。** `Formae` 要写（拉丁文 `forma` 形式的复数）· `Wei2Chee` 也要写，**而它的来源是「女朋友的名字」，那句话写在政府表格上比较难讲** |
+| **不可以太笼统** | `4.2 … mestilah mempunyai nama identiti dan tidak terlalu umum` · 坏例子 `Technology Resources` | 要「身份词 + 生意类型」，像它自己举的 `ABS Unggul Enterprise` · `Lucky Star Catering`。→ **`FORMAE ENTERPRISE`，不是单一个 `FORMAE`** |
+| **语序** | `4.1(a) Padu Construction bukan Construction Padu` | 身份词在前，生意类型在后 |
+
+**撞名那一条（4.3）**：只差以下东西才算「一样」——
+`&`／`N`／`and` · `.`／`-` · 同义词（`Builder = Build`）· 单复数词缀
+（`ABC Service = ABC Services`）· `New`／`Baru`。
+🟢 **数字不在那份清单里**，而 (f) 明写字母或排列不同就算不同
+（`MCY Tech ≠ MYC Tech`）→ **`WEI 2 CHEE` 跟她的 `WEICHEE` 应该算不同。**
+⚠️ **但她开的是公司，公司名走另一份规矩**（`Garis Panduan Nama Syarikat`），
+**两边会不会互相挡，这一份没讲，我不知道。**
+
+**我的建议还是 `FORMAE ENTERPRISE`，而这次的理由是新的、也是他自己发现的那一条：**
+**他要的那个名字，SSM 存不下来** —— 双关活不过大写加空格。
+而 Wei2Chee 不用丢：**域名 · 品牌 · 签名档 · 他跟人讲的那个故事，全部不用 SSM 批准。**
+商号名只是法人名字。
+
 ##### 还要问一句的
 - [ ] **地方政府的营业执照（lesen perniagaan）** —— 在家做的软件生意有些市政局要、
       有些不要，各地不一样。**我没查他那一区的。**
