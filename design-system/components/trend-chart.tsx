@@ -35,6 +35,18 @@ import { useSystemWords } from "@/design-system/system-lang-context"
    那个百分比换一个位置回来。 */
 export type TrendKind = "bar" | "line" | "area" | "sum"
 
+/**
+ * 这一种画的是不是柱子。
+ *
+ * 🔴 **抽出来是因为守卫问不到它。** recharts 在 jsdom 里量到 0×0，
+ * 整张图一个节点都不画 —— 所以「它画的是柱状还是面积」在测试里
+ * **看 DOM 是看不出来的**，那一条会永远是绿的（实测：把 `sum` 改回面积，
+ * 那条断言照样过）。**一把量不到就闭嘴的尺，跟一把量过了的尺长得一模一样。**
+ *
+ * 所以那个判断住在这里，组件跟守卫问的是同一支。
+ */
+export const drawsBars = (kind?: TrendKind) => kind === "bar" || kind === "sum"
+
 export type TrendPoint = {
   /** The period in the owner's own words — "1月", "第一季", "上周". */
   label: string
@@ -84,6 +96,15 @@ export type TrendChartProps = {
    * 不长开关，画出来跟以前一个像素都不差。
    */
   captionTemplate?: string
+  /**
+   * 「图 + 结论」那一栏里，大数字底下那一句 —— 它讲的是**那个总数**是什么。
+   *
+   * 🔴 只有 `sum` 用得到，而且**它跟 `caption` 是两句话**。第一版这里印的是
+   * `caption`，於是同一张卡上同一句话出现两次（卡头一次、大数字底下一次）。
+   * 参考那一页两句是分开的：卡头是「Qualified Lead Flow」，
+   * 结论那一栏是「Total qualified leads captured over the last 12 months.」
+   */
+  summary?: string
 }
 
 /** A 14px radius belongs on a card, not on a 40px-wide bar, where it reads as a
@@ -242,6 +263,7 @@ export function TrendChart({
   points,
   ranges,
   captionTemplate,
+  summary,
 }: TrendChartProps) {
   const w = useSystemWords()
   const hostRef = useRef<HTMLElement>(null)
@@ -429,7 +451,12 @@ export function TrendChart({
         className="aspect-auto w-full"
         style={{ height: plotHeight }}
       >
-        {kind === "bar" ? (
+        {/* 🔴 `sum` 画的是**柱状**，不是面积（2026-09-05 看图才看到的）。
+            出处 `crm` 那一页的 Qualified Lead Flow：图在左、结论在右，
+            而那张图是一排柱子。它以前掉进最后那一支 `AreaChart`，
+            於是页面上写着「一根就是一个月」而画出来是一条面积 ——
+            **说明跟画面互相打架，而它从写出来那天就没有任何一页用过它。** */}
+        {drawsBars(kind) ? (
           <BarChart data={data} margin={{ left: 0, right: 4, top: 4 }}>
             {axis}
             {/* maxBarSize: six periods across a full-width card gave 90px
@@ -482,9 +509,15 @@ export function TrendChart({
                   {unit ? `${unit} ` : ""}
                   {total.toLocaleString("en-MY")}
                 </span>
-                {caption ? (
+                {/* 🔴 **这里不可以重印上面那句说明。**
+                    卡头已经印过一次 `caption` 了，而这一栏再印一次，
+                    同一张卡上同一句话出现两次（实拍：「一根就是一个月。」
+                    左上一次、大数字底下一次）。
+                    这一栏要讲的是**那个总数**是什么，那是另一句话 ——
+                    没有那一句就什么都不讲，重复比空白糟。 */}
+                {summary ? (
                   <p className="mt-1 max-w-[34ch] [color:var(--color-on-canvas-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
-                    {caption}
+                    {summary}
                   </p>
                 ) : null}
               </div>

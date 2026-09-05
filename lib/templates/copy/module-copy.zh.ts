@@ -236,6 +236,7 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
         trend: {
           title: "近六个月营业额",
           caption: "每一根是一个月的总额。",
+          summary: "最近六个月的营业额加起来。",
           unit: "RM",
           points: [
             { label: "3月", value: 42000 },
@@ -282,6 +283,14 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
             status: "退步中",
           },
         ],
+        hero: {
+          label: "有来往的",
+          value: "34",
+          suffix: "近 90 天",
+          stats: [
+            { label: "退步中", value: "5", tone: "caution" },
+          ],
+        },
         trend: {
           title: "活跃人数变化",
           caption: "顶级和活跃加起来的人数，按月看。",

@@ -242,6 +242,7 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
         trend: {
           title: "Turnover, last six months",
           caption: "Each bar is one month.",
+          summary: "Turnover added up over the last six months.",
           unit: "RM",
           points: [
             { label: "Mar", value: 42000 },
@@ -288,6 +289,14 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
             status: "Slipping",
           },
         ],
+        hero: {
+          label: "Dealt with",
+          value: "34",
+          suffix: "Last 90 days",
+          stats: [
+            { label: "Slipping", value: "5", tone: "caution" },
+          ],
+        },
         trend: {
           title: "Active count",
           caption: "Top and Active added together, by month.",

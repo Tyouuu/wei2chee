@@ -2645,6 +2645,70 @@ function moneyNodes(opts: {
   return [stats, ...middle];
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   一条 KPI 带 —— 报表 · 排行。出处 arhamkhnz 的 `analytics` 跟 `crm`。
+
+   钱那三页是**一个矩形切成格**（`quad`），这两页是**几张分开的卡排成一条**
+   （`chip`：一道从下往上的淡渐层 ＋ 一圈 1px 的环 ＋ 涨跌做成药丸）——
+   那是参考自己的分法，不是我们挑的漆：
+   `finance` 的四个数字装在同一个框里，`analytics` 的五个是五张卡。
+
+   🔴 **格数只给这份资料填得满的那么多。** `withLiveStats` 是
+   `stats.tiles.slice(0, 这里的格数)` —— 报表最多四个事实
+   （收到 · 几笔 · 花掉 · 赚），排行两个（有来往的 · 退步中）。
+   多给一格，他记下第一笔之后那一格就自己消失。
+────────────────────────────────────────────────────────────────────────── */
+function kpiStrip(id: string, copy: ModuleCopy, room: number): PuckNode[] {
+  if (!copy.hero) return [];
+  const tiles = [
+    {
+      label: copy.hero.label,
+      value: copy.hero.value,
+      deltaLabel: copy.hero.suffix,
+      iconName: "payments",
+    },
+    ...copy.hero.stats.map((st, i) => ({
+      label: st.label,
+      value: st.value,
+      deltaLabel: st.sub ?? "",
+      iconName: ["reconciliation", "expenses", "reports"][i] ?? "dashboard",
+    })),
+  ].slice(0, room);
+  return [
+    node("StatRow", `${id}-stats`, {
+      tiles,
+      /* 写进 props 就赢过风格 —— 跟货架那一片格子、钱那一个矩形同一条：
+         这是**这几页**照参考做的决定，不是这一套风格的口味。见任务 134。 */
+      layout: "chip",
+    }),
+  ];
+}
+
+/** 报表跟排行那张图。报表用「图 + 结论」，排行用柱状 —— 见上面那一段。 */
+function reportChart(
+  id: string,
+  copy: ModuleCopy,
+  c: ReturnType<typeof chrome>,
+): PuckNode[] {
+  if (!copy.trend) return [];
+  return [
+    node("TrendChart", `${id}-trend`, {
+      title: copy.trend.title,
+      caption: copy.trend.caption,
+      /* 结论那一栏那一句 —— **跟卡头那句是两句话**。不给就不画，
+         重印一次比空白糟（实拍：同一张卡上「一根就是一个月。」出现两次）。 */
+      summary: copy.trend.summary,
+      kind: id === "reports" ? "sum" : "bar",
+      unit: copy.trend.unit,
+      /* 最大的那一格一定要等於全部 —— 那个开关的预设是最大的一格，
+         写小了就是一张默默丢掉资料的图（钱那三页踩过一次）。 */
+      ranges: [3, 6, copy.trend.points.length],
+      captionTemplate: c.dashboard.trendCaption,
+      points: copy.trend.points,
+    }),
+  ];
+}
+
 function trendNode(id: string, copy: ModuleCopy): PuckNode[] {
   if (!copy.trend) return [];
   return [
@@ -3073,17 +3137,26 @@ function buildFromShape(
         ...upload,
       ];
 
+    /* 报表 —— 照 `analytics` 那一张：一条 KPI 带（五张卡各带涨跌跟
+       「上个月是多少」），底下一张大图。而那张图用 `crm` 的
+       **图在左、结论在右**：结论那一栏的总数 · 最后一期 · 占比，
+       全部是那几个点自己算出来的，没有新资料也没有编出来的目标。
+       ⚠️ 只有钱看得懂那个总数 —— 排行那一页的点是**人数**，
+       六个月的人数加起来不是一件事，所以那一页不用它。 */
     case "report":
       return [
         ...head,
         ...month,
-        ...heroNode(pageKey, locale, copy),
-        ...trendNode(pageKey, copy),
+        ...kpiStrip(pageKey, copy, 4),
+        ...reportChart(pageKey, copy, c),
         ...table,
       ];
 
+    /* 排行 —— 同一条 KPI 带（这一页只有两个事实：有来往的 · 退步中），
+       而图是普通的柱状加一个「看多久」的开关：它数的是**人**，
+       把六个月的人数加起来不是一件事。 */
     case "leaderboard":
-      return [...head, ...trendNode(pageKey, copy), ...table];
+      return [...head, ...kpiStrip(pageKey, copy, 2), ...reportChart(pageKey, copy, c), ...table];
 
     case "reconcile":
       return [

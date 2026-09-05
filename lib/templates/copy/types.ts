@@ -116,6 +116,9 @@ export type ModuleCopy = {
   trend?: {
     title: string;
     caption: string;
+    /** 「图 + 结论」那一栏里，大数字底下那一句。**跟 `caption` 是两句话** ——
+     *  卡头讲这张图是什么，这一句讲那个总数是什么。见 trend-chart.tsx。 */
+    summary?: string;
     unit: string;
     points: { label: string; value: number }[];
   };
