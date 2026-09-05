@@ -9835,6 +9835,28 @@ Lotus Ipoh · Taman Ipoh Jaya · Gunung Rapat）。
 ⚠️ 这一页只是说明，**「新注册」那个入口不在这一页的正文里** ——
 要在选单里找（Perkhidmatan / Services 那一类）。**我没看过那个选单，等他截图。**
 
+##### ✅ 那个选单看到了 —— 路径写下来，免得下一轮又问（2026-09-06）
+顶栏四条：`MY BUSINESS SERVICES` · `MY PAYMENT HISTORY` · `OTHER SERVICES` · `USER PROFILE`。
+第一条摊开是四栏：
+
+| Renewal Service | **Business Registration** | Business Changes | Business Termination |
+|---|---|---|---|
+| Renewal By Owner | 🔴 **New Business Registration** | New Business Changes | New Business Termination |
+| Renewal Status / History | Registration Partner Verification | Changes Partner Verification | Termination Partner Verification |
+| | Registration Status / History | Changes Status / History | Termination Status / History |
+
+→ **`MY BUSINESS SERVICES` → `Business Registration` → `New Business Registration`。**
+（`Registration Partner Verification` 是合伙人去确认的，一个人的商号用不到；
+`Registration Status / History` 是送出去之后回来看进度的那一条。）
+
+⚠️ **我上一则把他讲糊涂了，记下来**：我在「现在去找入口」那一段里，
+塞了一句「批下来那天就下载存好」的**未来式**提醒，
+他当场问「**我现在要下载什么嘛**」。
+→ **一步一步走的时候，不要在这一步里夹下一步的注意事项。**
+那句 90 天的提醒是对的，位置是错的 —— 它该在他按下送出之后才出现。
+（这跟[重点 22](./founder-points.md) 讲的「先给答案、不要塞别的」是同一条，
+只是这一次塞进去的不是废话，是一句真的、但还不到时候的话。）
+
 ##### 还要问一句的
 - [ ] **地方政府的营业执照（lesen perniagaan）** —— 在家做的软件生意有些市政局要、
       有些不要，各地不一样。**我没查他那一区的。**
