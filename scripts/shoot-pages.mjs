@@ -23,7 +23,7 @@
 import { chromium } from "playwright";
 import { readFileSync, mkdirSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { dropThrowaway } from "./lib/throwaway.mjs";
+import { dropThrowaway, dropThrowawayOnExit } from "./lib/throwaway.mjs";
 import { moduleLabels, openAllPages, seedEveryShape } from "./lib/seed-demo.mjs";
 
 const env = Object.fromEntries(
@@ -61,6 +61,9 @@ if (!ping || ping.status >= 400) {
 }
 
 let userId = null;
+/* 🔴 被 Ctrl-C、被杀、或者输出接给 `head` 的时候，`finally` 不会跑 ——
+   而那一次留下的是一个种了 25 张单的帐号，混在老板的「客户数」里。 */
+dropThrowawayOnExit(admin, () => userId);
 let browser;
 const shot = [];
 

@@ -54,3 +54,52 @@ export async function dropThrowaways(admin, userIds) {
   }
   return stuck;
 }
+
+/**
+ * 跑到一半被杀掉的时候，也要把它删掉。
+ *
+ * ── 为什么（2026-09-05）──────────────────────────────────────────────────
+ *
+ * `finally` 只在**程式自己走完或抛错**的时候跑。而实际发生的是：
+ * 我把输出接给 `head -14`，`head` 读够了就把管子关掉 ——
+ * **进程当场死掉，`finally` 一行都没跑**，於是那个种了
+ * 25 张单 · 15 笔钱 · 13 个人的临时帐号留在库里。
+ *
+ * 🔴 而它的代价不是「多一行垃圾」：`console_overview` 的「客户数」数的就是
+ * `accounts`，而那是[老板拿来决定下一件做什么的那张后台](../../docs/founder-tasks.md#43)。
+ * 那一天全系统体检把它读成「今天 05:48 那个帐号」，还得逐个查才分得出
+ * 那是垃圾还是一个真的客户。
+ *
+ * ⚠️ 三个讯号都要接，因为它们是三件不同的事：
+ *   · `SIGINT` —— 他按 Ctrl-C
+ *   · `SIGTERM` —— 别人杀它
+ *   · `EPIPE`  —— **接给 `head` / `tail` 的那一种**，最容易忘，而我就是这样漏的
+ *
+ * @param {import("@supabase/supabase-js").SupabaseClient} admin
+ * @param {() => (string | null | undefined)} currentUserId 现在建到哪一个
+ */
+export function dropThrowawayOnExit(admin, currentUserId) {
+  let bailing = false;
+  const bail = async (why) => {
+    if (bailing) return;
+    bailing = true;
+    const id = currentUserId();
+    if (id) {
+      console.error(`
+⚠️  被 ${why} 中断了 —— 先把临时帐号删掉再走`);
+      await dropThrowaway(admin, id);
+    }
+    process.exit(130);
+  };
+  process.on("SIGINT", () => void bail("Ctrl-C"));
+  process.on("SIGTERM", () => void bail("SIGTERM"));
+  /* 管子被关掉（`| head`）。Node 把它变成写入时的 EPIPE，
+     而没有人接的话就是一个未捕捉的例外 —— 进程死，`finally` 不跑。 */
+  process.stdout.on("error", (e) => {
+    if (e && e.code === "EPIPE") void bail("输出的管子被关掉");
+  });
+  process.on("uncaughtException", (e) => {
+    if (e && e.code === "EPIPE") void bail("输出的管子被关掉");
+    else throw e;
+  });
+}

@@ -29,7 +29,7 @@
 import { chromium } from "playwright";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { dropThrowaway } from "./lib/throwaway.mjs";
+import { dropThrowaway, dropThrowawayOnExit } from "./lib/throwaway.mjs";
 import { moduleKeys, moduleLabels, openAllPages, seedEveryShape } from "./lib/seed-demo.mjs";
 
 const env = Object.fromEntries(
@@ -89,6 +89,9 @@ const api = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_
 });
 
 let userId = null;
+/* 🔴 被 Ctrl-C、被杀、或者输出接给 `head` 的时候，`finally` 不会跑 ——
+   而那一次留下的是一个种了 25 张单的帐号，混在老板的「客户数」里。 */
+dropThrowawayOnExit(admin, () => userId);
 let browser;
 const rows = [];
 
