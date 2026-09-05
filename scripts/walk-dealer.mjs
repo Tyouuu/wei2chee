@@ -327,10 +327,31 @@ try {
   const { data: peek, error: peekErr } = await anon.from("directory_entries").select("id").limit(1);
   const noLeak = !!peekErr || (peek?.length ?? 0) === 0;
   say("路人读不到名册（这一半是对的）", noLeak, peekErr ? "读不到" : `${peek?.length ?? 0} 行`);
+  /* 20260905680000 起：一个经销商一条连结，他自己讲得出「我要货」。
+     ⚠️ 用**真的 anon 钥匙**打，不是用老板的登入 —— 挡在外面那道门，
+     只有站在外面才试得出来。 */
+  const { data: portalRef } = await api.rpc("open_party_portal", {
+    in_party_id: ids[DEALERS[0].name],
+  });
+  const { data: submitted } = await anon.rpc("submit_party_request", {
+    in_ref: portalRef,
+    in_what: "下一批卡帮我留 200 张，我转了 RM 5,000",
+    in_qty: 200,
+    in_amount_cents: 500000,
+  });
+  const { data: theInbox } = await api.rpc("party_requests_of", { in_project_id: P });
   say(
     "🔴 经销商自己提交得了「我要货」",
-    false,
-    "没有任何一支给路人的函式收得了它 —— 外面只有看那一页 · 留一句话 · 订一个时段",
+    submitted === "ok" && (theInbox ?? []).length >= 1,
+    `${submitted} · 收件匣 ${(theInbox ?? []).length} 笔`,
+  );
+  const { data: whatHeSees } = await anon.rpc("party_portal", { in_ref: portalRef });
+  say(
+    "而他自己那一页看得到，却看不到别人的",
+    whatHeSees?.found === true &&
+      (whatHeSees?.requests ?? []).length === 1 &&
+      !JSON.stringify(whatHeSees).includes(DEALERS[1].name),
+    `${(whatHeSees?.requests ?? []).length} 笔`,
   );
 
   console.log(`\n── 十个零件，这门生意用得到几个 ───────────────────────────`);

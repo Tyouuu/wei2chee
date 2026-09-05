@@ -120,7 +120,8 @@
     "shoot:handoff": "node scripts/shoot-handoff.mjs",
     "check:accounts": "node scripts/check-accounts.mjs",
     "check:tax": "node scripts/check-tax.mjs",
-    "check:commission-history": "node scripts/check-commission-history.mjs"
+    "check:commission-history": "node scripts/check-commission-history.mjs",
+    "check:party-portal": "node scripts/check-party-portal.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
