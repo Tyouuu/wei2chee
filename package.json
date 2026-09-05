@@ -110,6 +110,7 @@
     "shoot:commission": "node scripts/shoot-commission.mjs",
     "shoot:period-lock": "node scripts/shoot-period-lock.mjs",
     "shoot:party-portal": "node scripts/shoot-party-portal.mjs",
+    "shoot:shared-record": "node scripts/shoot-shared-record.mjs",
     "shoot:packages": "node scripts/shoot-packages.mjs",
     "align:pages": "node scripts/align-pages.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",

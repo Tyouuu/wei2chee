@@ -239,7 +239,18 @@ try {
   const oldRef = oldShared?.share_ref;
   const { data: oldSeen } = await stranger.rpc("public_shared_record", { in_ref: oldRef });
   check("打得开，而且写着过期了", oldSeen?.[0]?.is_expired === true, `${oldSeen?.[0]?.is_expired}`);
-  check("那颗同意不给按", oldSeen?.[0]?.can_answer === false, `${oldSeen?.[0]?.can_answer}`);
+  /* 🔴 **这一条 2026-09-05 改过一次，理由写下来。**
+     它本来断言 `can_answer === false`。而**这一份档案自己就写着那个矛盾** ——
+     再往下三行就是「🔴 但『我要改一点』照旧准 —— 想问一句的人不该没有
+     地方讲」，而 `can_answer` 是画面拿来决定**要不要画那整张表单**的。
+     於是一张过期的报价单，屋主连问一句的地方都没有，
+     而资料库那一边是准的：**读跟写讲的不是同一件事。**
+     20260905790000 把过期从 `can_answer` 里拿掉；过期照旧回在
+     `is_expired` 上，画面拿它去把「同意」那一颗变灰（shoot:shared-record 在量）。 */
+  check("过期了他还是讲得出「我要改一点」", oldSeen?.[0]?.can_answer === true,
+    `${oldSeen?.[0]?.can_answer}`);
+  check("而画面拿得到「过期了」这件事", oldSeen?.[0]?.is_expired === true,
+    `${oldSeen?.[0]?.is_expired}`);
   const { data: lateYes } = await stranger.rpc("answer_shared_record", {
     in_ref: oldRef, in_answer: "accepted", in_name: "Mr Tan",
   });

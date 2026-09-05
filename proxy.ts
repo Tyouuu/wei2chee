@@ -87,6 +87,8 @@ export const config = {
   // particular -- must never touch /auth/*. Without this exclusion,
   // next-intl 307-redirects /auth/confirm to /zh/auth/confirm, which has
   // no matching route and breaks every real confirmation link.
+  // `r/` 也一样：/r/<号码> 是那门生意寄给他客人的一张报价单，而它穿的是
+  // 那家公司自己的漆。被 307 成 /zh/r/<号码> 就是那条连结在屋主手上死掉的方式。
   // `p/` 跟 `s/` 是同一件事：/p/<号码> 是一条发给某一个经销商的连结，
   // 打开它的人从来没有听过 Formae，而这一页讲的是那套系统自己的语言。
   // 被 307 成 /zh/p/<号码> 就是那条连结在他手上会死掉的方式。
@@ -106,5 +108,5 @@ export const config = {
   // 就会去截一张网页的图缩成 180px** —— 一片灰。
   // 而那正好是「桌面图标」这件事唯一给他看的东西（任务 141）。
   // 任务 46b 把它记成「回 404」，记了三天没人动。
-  matcher: ["/((?!api|_next|auth|s/|p/|icon|apple-icon|manifest|.*\\..*).*)"],
+  matcher: ["/((?!api|_next|auth|s/|p/|r/|icon|apple-icon|manifest|.*\\..*).*)"],
 };

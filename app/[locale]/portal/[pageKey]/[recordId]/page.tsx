@@ -15,6 +15,8 @@ import { jobProfit, type ProfitFact } from "@/lib/portal/profit";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { SettleMonth } from "../new/settle-month";
 import { PartyPortalPanel, type PartyRequest } from "../new/party-portal-panel";
+import { ShareRecordPanel } from "../new/share-record-panel";
+import { isShareableModule } from "@/lib/portal/shared-record";
 import { PIPELINE_MODULES } from "@/lib/portal/shape-state";
 import { SITE_URL } from "@/lib/site-url";
 import { PartyHistory } from "../new/party-history";
@@ -160,6 +162,15 @@ export default async function EditRecordPage({
   let partyRequests: PartyRequest[] = [];
   let landsIn: string | null = null;
   let landsInLabel: string | null = null;
+  /* 一条发给客人的连结，跟他答了什么（20260905230000）。
+     🔴 四支函式 9-05 就做好了，而画面上一个入口都没有 ——
+     而它同时是[任务 155] 那两句：「客人线上按同意」跟
+     「客人自己看得到这一单」底下是同一页。
+     ⚠️ `undefined` = 没有问（不是那几种单），不是「还没开」。 */
+  let shareRef: string | null | undefined = undefined;
+  let shareAnswer: { answer: string | null; name: string | null; at: string | null; note: string | null } = {
+    answer: null, name: null, at: null, note: null,
+  };
   /* 他是自己人还是下游（20260905720000）。**放宽那条守卫的时候，
      保护那件事的责任就搬到这一栏上** —— 读的人分不出来，
      原本那条守卫在防的事就真的没有人在防了。 */
@@ -683,11 +694,26 @@ export default async function EditRecordPage({
       /* doc_no for the preview's head. It exists on a saved document and
          never on a new one -- next_doc_no() issues it inside the write -- so
          this is the only place it can honestly come from. */
-      .select("id, doc_no, title, party, amount_cents, stage, due_on, site_address_id, branch_id, extra, archived_at")
+      .select("id, doc_no, title, party, amount_cents, stage, due_on, site_address_id, branch_id, extra, archived_at, share_ref, answer, answered_name, answered_at, answer_note")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
     if (!data) notFound();
+
+    /* ── 一条发给客人的连结，跟他答了什么（20260905230000 · 510000）──────
+       🔴 只有**客人本来就是另一方**的那几种单：报价单 · 订单 · 工程。
+       「任务」是内部的 ——「打给供应商问货几时到」不是给客人读的，
+       而 `is_answerable_module` 在资料库那一边也是这样判的。
+       ⚠️ 收起来的单不画：一条连到一张收起来的单的连结，打开是死的。 */
+    if (!data.archived_at && isShareableModule(pageKey)) {
+      shareRef = data.share_ref ?? null;
+      shareAnswer = {
+        answer: data.answer ?? null,
+        name: data.answered_name ?? null,
+        at: data.answered_at ?? null,
+        note: data.answer_note ?? null,
+      };
+    }
     Object.assign(values, {
       primary: data.title ?? "",
       secondary: data.party ?? "",
@@ -992,6 +1018,23 @@ export default async function EditRecordPage({
                 {copy.form.creditNone}
               </p>
             )}
+          </div>
+        ) : null}
+
+        {/* 单据那一页多一段：发给客人的那条连结，跟他答了什么。
+            ⚠️ `undefined` = 没有问（不是那几种单，或者已经收起来了）。 */}
+        {shareRef !== undefined ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <ShareRecordPanel
+              recordId={recordId}
+              shareRef={shareRef}
+              origin={SITE_URL}
+              answer={shareAnswer.answer}
+              answeredName={shareAnswer.name}
+              answeredAt={shareAnswer.at}
+              answerNote={shareAnswer.note}
+              copy={copy.form}
+            />
           </div>
         ) : null}
 

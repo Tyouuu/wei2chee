@@ -285,6 +285,18 @@ export type RecordFormCopy = {
   portalDone: string;
   portalDropped: string;
   portalNowhere: string;
+  /* 一条发给客人的连结，跟他答了什么（20260905230000 · 510000）。 */
+  shareHeading: string;
+  shareLede: string;
+  shareOpen: string;
+  shareLink: string;
+  shareCopy: string;
+  shareCopied: string;
+  shareStop: string;
+  shareNoAnswer: string;
+  shareAccepted: string;
+  shareChanges: string;
+  shareStageHint: string;
   /* 套票（20260904190000）。只在客户那一页，而且**师傅也看得到** ——
      他要跟客人讲「你还剩三次」。价钱不在这张表上，所以这不是把钱交出去。 */
   packHeading: string;
@@ -581,6 +593,17 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       portalDone: "已经开单了 {doc}",
       portalDropped: "丢掉了",
       portalNowhere: "这个系统里还没有一页可以放单。",
+      shareHeading: "发给客人看",
+      shareLede: "一条连结，他自己在手机上打得开：看得到这一张、按得了同意、也讲得出想改哪里。他看不到你的成本，也看不到他的其他单。",
+      shareOpen: "开一条连结给客人",
+      shareLink: "客人那条连结",
+      shareCopy: "复制",
+      shareCopied: "复制好了 —— 贴进 WhatsApp 发给他",
+      shareStop: "收回这条连结",
+      shareNoAnswer: "他还没有答。",
+      shareAccepted: "{name} 在 {date} 按了同意。",
+      shareChanges: "{name} 在 {date} 讲了想改的地方。",
+      shareStageHint: "这一单走到哪还是你自己决定 —— 他按同意不会把它搬走。",
       packHeading: "套票",
       packLede: "卖几次，用一次扣一次。剩几次是数出来的，没有人改得了。",
       packNone: "还没有卖过套票给他。",
@@ -831,6 +854,17 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       portalDone: "Already opened as {doc}",
       portalDropped: "Dropped",
       portalNowhere: "There is no page in this system that can hold an order yet.",
+      shareHeading: "Send it to the customer",
+      shareLede: "One link he opens on his own phone: he reads this one, accepts it, or says what he wants changed. He cannot see your costs, and he cannot see his other jobs.",
+      shareOpen: "Open a link for the customer",
+      shareLink: "The customer's link",
+      shareCopy: "Copy",
+      shareCopied: "Copied -- paste it to him on WhatsApp",
+      shareStop: "Take the link back",
+      shareNoAnswer: "He has not answered yet.",
+      shareAccepted: "{name} accepted on {date}.",
+      shareChanges: "{name} asked for a change on {date}.",
+      shareStageHint: "Where this job sits is still your call -- his accepting does not move it.",
       packHeading: "Packages",
       packLede: "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
       packNone: "No package sold to them yet.",
