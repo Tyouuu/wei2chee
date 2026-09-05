@@ -554,7 +554,7 @@ const node = (
  * ⚠️ 而**他自己改过的名字永远赢** —— 那是他打进去的字，
  * 两页都叫「工程」是他的决定，不是我们的 bug。
  */
-function navLabels(
+export function navLabels(
   pages: PageRef[],
   labels: IndustryLabels,
   lang: SystemLang,

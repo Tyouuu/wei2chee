@@ -6,7 +6,7 @@ import { SystemLangProvider } from "@/design-system/system-lang-context";
 import {
   displayBusinessName,
   displayOwnerName,
-  pageLabel,
+  navLabels,
   sortPages,
   systemLangOf,
   tradeLabels,
@@ -130,7 +130,7 @@ export default async function PortalAppLayout({
      ⚠️ 所以它们**按有没有资料**决定画不画，而不是按角色。
      那会留下一个「一台车都还没有的车厂看不到入口」的洞 ——
      补它的是「加一单」那一页底下那条架子，第一次从那里进去。 */
-  const [{ count: vehicleCount }, { count: contractCount }] = project
+  const [{ count: vehicleCount }, { count: contractCount }, { count: batchCount }, { count: rentalCount }] = project
     ? await Promise.all([
         supabase
           .from("vehicles")
@@ -142,8 +142,20 @@ export default async function PortalAppLayout({
           .select("id", { count: "exact", head: true })
           .eq("project_id", project.id)
           .is("archived_at", null),
+        /* 批号 · 借出去的 —— 同一条：绝大多数五金店没有批号，
+           绝大多数装修公司不出租东西。 */
+        supabase
+          .from("stock_batches")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", project.id),
+        supabase
+          .from("rentals")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", project.id)
+          .is("returned_on", null)
+          .is("archived_at", null),
       ])
-    : [{ count: 0 }, { count: 0 }];
+    : [{ count: 0 }, { count: 0 }, { count: 0 }, { count: 0 }];
 
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
@@ -169,20 +181,32 @@ export default async function PortalAppLayout({
          Filtered by SHAPE, not by a list of page keys, so 佣金 -- catalogued
          into the ledger shape after 收款 and 开销 -- is covered without
          anybody remembering to add it. */
-      pages={pageRefs
-        .filter((ref) => canOpenModule(workspace?.role ?? "owner", ref.key))
-        .map((ref) => ({
-          key: ref.key,
-          label: pageLabel(
-            ref,
-            tradeLabels(businessContext, pageRefs),
-            systemLangOf(businessContext),
-          ),
-        }))}
+      /* 🔴 **两行同名的 bug 也在这一条侧栏上。**
+
+         [任务 199] 修的是**客户系统自己那一条**侧栏（`railNavNode`），
+         而这一条是 Formae 自己的壳，当时还在逐页叫 `pageLabel` ——
+         于是一个同时开了「工程」跟「订单」的生意，
+         在这里看到**两行都写着 Orders**（2026-09-06 一张图抳到）。
+
+         同一条规则，两个侧栏共用一支函式 ——
+         第二份手写的同一条规则是这个仓库栽过八次的那件事。 */
+      pages={(() => {
+        const shown = pageRefs.filter((ref) =>
+          canOpenModule(workspace?.role ?? "owner", ref.key),
+        );
+        const labels = navLabels(
+          shown,
+          tradeLabels(businessContext, pageRefs),
+          systemLangOf(businessContext),
+        );
+        return shown.map((ref, i) => ({ key: ref.key, label: labels[i] }));
+      })()}
       sitePublished={Boolean(project?.site_published)}
       enquiryCount={enquiryCount ?? 0}
       hasVehicles={(vehicleCount ?? 0) > 0}
       hasContracts={(contractCount ?? 0) > 0}
+      hasBatches={(batchCount ?? 0) > 0}
+      hasRentals={(rentalCount ?? 0) > 0}
       paid={Boolean(project?.paid)}
     >
       {/* Inside the shell, not around it. PortalShell is FORMAE -- dark chrome,

@@ -70,6 +70,8 @@ const PAGES = [
   ["pay", "/en/portal/payroll", "customer"],
   ["tax", "/en/portal/tax", "customer"],
   ["plates", "/en/portal/vehicles", "customer"],
+  ["shelf life", "/en/portal/expiry", "customer"],
+  ["out on loan", "/en/portal/rentals", "customer"],
   /* 改这一单. Its URL carries a RECORD id, so the same trap as
      console-customer one level deeper -- and it carries its own hard-coded
      copy block (地址 · 公司注册号 · 冲正 · 收起来), which is precisely the

@@ -23,6 +23,8 @@ import {
   IconWallet,
   IconBook,
   IconPercent,
+  IconHourglass,
+  IconOut,
 } from "./shell-icons";
 
 /**
@@ -193,6 +195,8 @@ export function PortalShell({
   enquiryCount,
   hasVehicles,
   hasContracts,
+  hasBatches,
+  hasRentals,
   paid,
   isOwner,
 }: {
@@ -223,6 +227,8 @@ export function PortalShell({
       补它的是「加一单」那一页底下那条架子，第一次从那里进去。 */
   hasVehicles: boolean;
   hasContracts: boolean;
+  hasBatches: boolean;
+  hasRentals: boolean;
   paid: boolean;
   /** 🔴 An OWNER adjusts the business; a 师傅 works in it.
 
@@ -474,6 +480,16 @@ export function PortalShell({
           {hasVehicles && (
             <NavRow href={`${base}/vehicles`} active={is("/vehicles")} icon={<IconCar />}>
               {t("vehicles")}
+            </NavRow>
+          )}
+          {hasBatches && (
+            <NavRow href={`${base}/expiry`} active={is("/expiry")} icon={<IconHourglass />}>
+              {t("expiry")}
+            </NavRow>
+          )}
+          {hasRentals && (
+            <NavRow href={`${base}/rentals`} active={is("/rentals")} icon={<IconOut />}>
+              {t("rentals")}
             </NavRow>
           )}
           {isOwner && (

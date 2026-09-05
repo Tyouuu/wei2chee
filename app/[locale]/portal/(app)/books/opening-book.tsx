@@ -1,5 +1,6 @@
 "use client";
 
+import { deskBtn, deskDim, deskField } from "../desk-kit";
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -117,8 +118,7 @@ export function OpeningBook({
     }
   }
 
-  const field =
-    "min-h-11 w-full [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none";
+  const field = deskField;
 
   return (
     <div className="flex flex-col">

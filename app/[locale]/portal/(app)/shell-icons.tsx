@@ -198,3 +198,22 @@ export function IconPercent({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 快过期的 —— 一个沙漏。 */
+export function IconHourglass({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M6 3.4h8M6 16.6h8M6.6 3.4v2.3L10 9l3.4-3.3V3.4M6.6 16.6v-2.3L10 11l3.4 3.3v2.3" />
+    </svg>
+  );
+}
+
+/** 借出去的 —— 一个盒子带一支向外的箭。 */
+export function IconOut({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M10.4 3.4H4.6a1.2 1.2 0 0 0-1.2 1.2v10.8a1.2 1.2 0 0 0 1.2 1.2h10.8a1.2 1.2 0 0 0 1.2-1.2V9.6" />
+      <path d="M12.4 3.4h4.2v4.2M16.6 3.4 10 10" />
+    </svg>
+  );
+}

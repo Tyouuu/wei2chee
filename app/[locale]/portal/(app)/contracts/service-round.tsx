@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { Section } from "../section";
+import { deskBtn, deskDim, deskField } from "../desk-kit";
 
 /**
  * 这一轮要去哪几家，跟签一份新的。
@@ -148,9 +149,8 @@ export function ServiceRound({
     }
   }
 
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
-  const btn =
-    "inline-flex min-h-11 items-center justify-center [background-color:var(--color-ink-900)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:calc(var(--pad-control-x)*1.1)] disabled:opacity-60";
+  const dim = deskDim;
+  const btn = deskBtn();
 
   return (
     <>
@@ -193,7 +193,7 @@ export function ServiceRound({
                         type="button"
                         disabled={busy === k}
                         onClick={() => undo(d)}
-                        className={btn}
+                        className={deskBtn("danger")}
                       >
                         {words.undo}
                       </button>
@@ -204,7 +204,7 @@ export function ServiceRound({
                         type="button"
                         disabled={busy === k}
                         onClick={() => log(d, "done")}
-                        className={btn}
+                        className={deskBtn("primary")}
                       >
                         {words.done}
                       </button>
@@ -261,7 +261,7 @@ export function ServiceRound({
                 <span className="[font-weight:var(--fw-semibold)]">{e.party}</span>
                 {e.title && <span className={dim}>{e.title}</span>}
                 <span className="min-w-0 flex-1" />
-                <span className={dim}>{words.visitsDone.replace("{n}", String(e.visits_done))}</span>
+                <span className={dim}>{words.visitsDone.replace("%n", String(e.visits_done))}</span>
                 {/* 🔴 已经过期的排在最前面（资料库排的），而它读起来要
                     跟「还有几天」不一样 —— 那是他今天就该打的那一通。 */}
                 <span
@@ -270,8 +270,8 @@ export function ServiceRound({
                   }`}
                 >
                   {e.days_left < 0
-                    ? words.endedAgo.replace("{n}", String(Math.abs(e.days_left)))
-                    : words.daysLeft.replace("{n}", String(e.days_left))}
+                    ? words.endedAgo.replace("%n", String(Math.abs(e.days_left)))
+                    : words.daysLeft.replace("%n", String(e.days_left))}
                 </span>
               </li>
             ))}
@@ -307,8 +307,7 @@ function NewContract({
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState("");
 
-  const field =
-    "min-h-11 w-full [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]";
+  const field = deskField;
 
   async function sign() {
     if (busy) return;
@@ -396,7 +395,7 @@ function NewContract({
             />
           </label>
           <div className="flex items-center gap-3">
-            <button type="button" disabled={busy} onClick={sign} className={btn}>
+            <button type="button" disabled={busy} onClick={sign} className={deskBtn("primary")}>
               {busy ? words.signing : words.sign}
             </button>
             {said && (

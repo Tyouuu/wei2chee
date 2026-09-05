@@ -88,7 +88,15 @@ try {
   const pid = proj.id;
   await api.rpc("set_project_style", { new_style: "swiss" });
   for (const k of ["customers", "quotations", "payments", "staff"]) {
-    await api.rpc("add_project_page", { new_page_key: k });
+    /* ⚠️ 签名是 `(requested_key, new_title)` —— 旧的 `new_page_key` 已经不在了
+       （20260905110000）。而 PostgREST 找不到那支函式只是回一个 error，
+       **不抛** —— 于是没有添加到的那几页静静地不存在，
+       而它下面那一条红看起来像产品坏了。 */
+    const { error: pgErr } = await api.rpc("add_project_page", {
+      requested_key: k,
+      new_title: "",
+    });
+    if (pgErr && !/already/i.test(pgErr.message)) console.log(`  ⚪ 台面：${k} — ${pgErr.message}`);
   }
 
   /* 一个客户 · 一个师傅 —— 保养合约要一个人，薪水要一个人。 */
@@ -374,7 +382,13 @@ try {
   await page.screenshot({ path: `${OUT}/10-tax-check.png`, fullPage: true });
 
   /* 这一张单的税率。 */
-  await page.getByLabel("Rate (%)").last().fill("8");
+  /* 🔴 挑明白那一张 —— 下拉里排第一的是**最新**那一张，
+     而保养合约那一段刚刚又开了一张。我第一版没挑，
+     于是税率写到了另外那一张上，而断言去问我自己那一张 ——
+     **第二十一次红的是我的道具。** */
+  await page.locator("select").last().selectOption(jobId);
+  await page.waitForTimeout(600);
+  await page.getByLabel(/Tax on this one/i).fill("8");
   await page.getByRole("button", { name: /Put it on this one/i }).click();
   await page.waitForTimeout(3000);
   const { data: rec2 } = await admin

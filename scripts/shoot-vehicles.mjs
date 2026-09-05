@@ -76,7 +76,15 @@ try {
   if (!proj?.id) throw new Error("注册没有开出一个 project");
   await api.rpc("set_project_style", { new_style: "swiss" });
   for (const k of ["customers", "quotations", "payments"]) {
-    await api.rpc("add_project_page", { new_page_key: k });
+    /* ⚠️ 签名是 `(requested_key, new_title)` —— 旧的 `new_page_key` 已经不在了
+       （20260905110000）。而 PostgREST 找不到那支函式只是回一个 error，
+       **不抛** —— 于是没有添加到的那几页静静地不存在，
+       而它下面那一条红看起来像产品坏了。 */
+    const { error: pgErr } = await api.rpc("add_project_page", {
+      requested_key: k,
+      new_title: "",
+    });
+    if (pgErr && !/already/i.test(pgErr.message)) console.log(`  ⚪ 台面：${k} — ${pgErr.message}`);
   }
   /* 一个车主，好让那一格挑得到东西。 */
   const { data: owner } = await api.rpc("add_directory_entry", {

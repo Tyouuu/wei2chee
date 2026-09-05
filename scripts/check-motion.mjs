@@ -66,6 +66,8 @@ const PAGES = [
   "contracts",
   "payroll",
   "tax",
+  "expiry",
+  "rentals",
 ];
 
 let userId = null;

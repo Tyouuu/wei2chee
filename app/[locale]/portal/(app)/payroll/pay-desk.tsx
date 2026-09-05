@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { ringgit } from "@/lib/portal/live-rows";
 import { Section } from "../section";
+import { deskBtn, deskDim, deskField } from "../desk-kit";
 
 /**
  * 开一次薪水，改几笔，发出去。
@@ -72,11 +73,9 @@ export function PayDesk({
   words: Words;
 }) {
   const router = useRouter();
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
-  const btn =
-    "inline-flex min-h-11 items-center justify-center [background-color:var(--color-ink-900)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:calc(var(--pad-control-x)*1.1)] disabled:opacity-60";
-  const field =
-    "min-h-11 w-full [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]";
+  const dim = deskDim;
+  const btn = deskBtn();
+  const field = deskField;
 
   const withTerms = staff.filter((s) => s.hasTerms).length;
 
@@ -197,7 +196,7 @@ function NoRun({
               className={`${field} tabular-nums`}
             />
           </label>
-          <button type="button" disabled={busy} onClick={open} className={btn}>
+          <button type="button" disabled={busy} onClick={open} className={deskBtn("primary")}>
             {busy ? words.opening : words.open}
           </button>
           {said && (
@@ -448,10 +447,20 @@ function OpenRun({
           </div>
           <span className="min-w-0 flex-1" />
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" disabled={busy === "run"} onClick={discard} className={btn}>
+            <button
+              type="button"
+              disabled={busy === "run"}
+              onClick={discard}
+              className={deskBtn("danger")}
+            >
               {words.discard}
             </button>
-            <button type="button" disabled={busy === "run"} onClick={pay} className={btn}>
+            <button
+              type="button"
+              disabled={busy === "run"}
+              onClick={pay}
+              className={deskBtn("primary")}
+            >
               {busy === "run" ? words.paying : words.payIt}
             </button>
             {said.run && (

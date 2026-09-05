@@ -82,6 +82,7 @@
     "shoot:months": "node scripts/shoot-months.mjs",
     "shoot:staff": "node scripts/shoot-staff.mjs",
     "shoot:tools": "node scripts/shoot-tools.mjs",
+    "shoot:shelf": "node scripts/shoot-shelf.mjs",
     "shoot:fonts": "node scripts/shoot-fonts.mjs",
     "shoot:inbox": "node scripts/shoot-inbox.mjs",
     "check:consistency": "node scripts/check-consistency.mjs",

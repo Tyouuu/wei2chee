@@ -150,6 +150,8 @@ PAGES = [
     ("pay", "/en/portal/payroll"),
     ("tax", "/en/portal/tax"),
     ("plates", "/en/portal/vehicles"),
+    ("shelf life", "/en/portal/expiry"),
+    ("out on loan", "/en/portal/rentals"),
     ("legal", "/en/legal/terms"),
 ]
 

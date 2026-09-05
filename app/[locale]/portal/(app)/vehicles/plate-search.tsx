@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { deskBtn, deskField } from "../desk-kit";
 
 /**
  * 柜台上打一个车牌，看到这台车的上一次。
@@ -94,11 +95,24 @@ export function PlateSearch({
     everyKmHint: string;
     noOwner: string;
     registered: string;
+    edit: string;
+    editCancel: string;
+    save: string;
+    saving: string;
+    saved: string;
+    archive: string;
   };
 }) {
   const [plate, setPlate] = useState("");
   const [state, setState] = useState<"idle" | "looking" | "none" | "failed">("idle");
   const [found, setFound] = useState<Found | null>(null);
+  /* 改这一台。⚠️ **默认收起来** —— 柜台上打开这一页是要**查**一台车，
+     不是要改它；一进来就摊开五个框，会把那个大车牌挤出第一屏。 */
+  const [editing, setEditing] = useState(false);
+  const [editDescr, setEditDescr] = useState("");
+  const [editEvery, setEditEvery] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
+  const [editSaid, setEditSaid] = useState("");
   const [visits, setVisits] = useState<Visit[]>([]);
   const [descr, setDescr] = useState("");
   const [ownerId, setOwnerId] = useState("");
@@ -188,6 +202,63 @@ export function PlateSearch({
   }
 
   const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+
+  async function saveEdit() {
+    if (!found || editBusy) return;
+    setEditBusy(true);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase.rpc("update_vehicle", {
+        in_vehicle_id: found.vehicle_id,
+        in_descr: editDescr.trim(),
+        /* 🔴 空的间隔要**清掉**，不是留着旧的 ——
+           `in_service_every_km` 的 null 意思是「这一格不动」，
+           而他把那一格清空意思是「以后不管里程」。
+           两件事，而那支函式自己给了第二个参数。 */
+        in_service_every_km: editEvery ? Number(editEvery) : null,
+        in_clear_service_every_km: editEvery === "",
+      });
+      if (error) {
+        setEditSaid(words.failed);
+        return;
+      }
+      setFound({
+        ...found,
+        descr: editDescr.trim(),
+        service_every_km: editEvery ? Number(editEvery) : null,
+      });
+      setEditSaid(words.saved);
+      setEditing(false);
+    } catch {
+      setEditSaid(words.failed);
+    } finally {
+      setEditBusy(false);
+    }
+  }
+
+  async function archive() {
+    if (!found || editBusy) return;
+    setEditBusy(true);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase.rpc("set_vehicle_archived", {
+        in_vehicle_id: found.vehicle_id,
+        in_archived: true,
+      });
+      if (error) {
+        setEditSaid(words.failed);
+        return;
+      }
+      /* 收起来之后这一页就没有它了 ——
+         而它做过的那几张单一张都没有动。 */
+      setFound(null);
+      setEditing(false);
+    } catch {
+      setEditSaid(words.failed);
+    } finally {
+      setEditBusy(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -293,6 +364,59 @@ export function PlateSearch({
                 {[found.descr, found.made_year].filter(Boolean).join(" · ")}
               </div>
             )}
+            {/* 改这一台 · 收起来。⚙️ 这两颗只在**找到一台车**之后画。 */}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setEditing((v) => !v)}
+                className={SMALL_BTN}
+              >
+                {editing ? words.editCancel : words.edit}
+              </button>
+              {editSaid && (
+                <span aria-live="polite" className={dim}>
+                  {editSaid}
+                </span>
+              )}
+            </div>
+            {editing && (
+              <div className="mt-3 grid gap-3 md:grid-cols-[1fr_10rem_auto_auto] md:items-end">
+                <label className="grid gap-1">
+                  <span className={dim}>{words.what}</span>
+                  <input
+                    value={editDescr}
+                    onChange={(e) => setEditDescr(e.target.value)}
+                    className={FIELD}
+                  />
+                </label>
+                <label className="grid gap-1">
+                  <span className={dim}>{words.everyKm}</span>
+                  <input
+                    value={editEvery}
+                    inputMode="numeric"
+                    onChange={(e) => setEditEvery(e.target.value.replace(/[^0-9]/g, ""))}
+                    className={`${FIELD} text-right tabular-nums`}
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={editBusy}
+                  onClick={saveEdit}
+                  className={SMALL_BTN}
+                >
+                  {editBusy ? words.saving : words.save}
+                </button>
+                {/* ⚠️ 收起来不是删掉 —— 它做过的那几张单还在书上。 */}
+                <button
+                  type="button"
+                  disabled={editBusy}
+                  onClick={archive}
+                  className={SMALL_BTN}
+                >
+                  {words.archive}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-x-10 gap-y-4">
@@ -371,8 +495,9 @@ export function PlateSearch({
   );
 }
 
-const FIELD =
-  "min-h-11 w-full [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-base)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none";
+const SMALL_BTN = deskBtn();
+
+const FIELD = deskField;
 
 function Field({
   label,

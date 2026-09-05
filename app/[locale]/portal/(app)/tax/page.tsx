@@ -1,3 +1,5 @@
+import { StyleScope } from "@/design-system/editor/style-scope";
+import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
@@ -69,6 +71,13 @@ export default async function TaxPage() {
   if (workspace.role !== "owner") notFound();
 
   const supabase = await createSessionSupabaseClient();
+  /* 他自己那一套配色 —— 跟记录页同一个来源。 */
+  const { data: paletteRow } = await supabase
+    .from("projects")
+    .select("palette")
+    .eq("id", workspace.projectId)
+    .maybeSingle();
+  const palette = (paletteRow?.palette as string | null) ?? null;
   const q = thisQuarter();
 
   const [{ data: profRows }, { data: sstRows }, { data: pageRows }] = await Promise.all([
@@ -107,8 +116,25 @@ export default async function TaxPage() {
   const str = (k: string) => (typeof prof?.[k] === "string" ? (prof[k] as string) : "");
   const sst = ((sstRows ?? []) as SstRow[])[0] ?? null;
 
+  /* 🔴 **这一页穿的是他的系统，不是 Formae 的壳。**
+
+     老板 2026-09-06 看着薪水那一页：
+     「不是這個黑色的那個白色的啊 我們的system的Ui啊」—— 他对了。
+     **深色是 Formae 的建造工具，浅色是他的系统**，
+     而这一页是他每天拿来跑生意的，跟报价单那几页是同一件事。
+
+     ⚠️ **连 `PageBar` 一起包进去** —— 只包内容会变成
+     一条深色的横梁配一张白纸，那比两边都深色更像坏了。
+
+     ⚠️ class 字串一个字都不用改：同一批 token 名字在两边都在，
+     只是在 scope 里面解析成浅色那一套。 */
   return (
-    <>
+    <StyleScope
+      register={SYSTEM_REGISTER}
+      palette={palette}
+      data-surface="desk"
+      className="min-h-screen [background-color:var(--color-canvas)]"
+    >
       <PageBar title={t("tax.title")} subtitle={t("tax.lede")} />
       <PageBody>
         <TaxDesk
@@ -198,6 +224,6 @@ export default async function TaxPage() {
           }}
         />
       </PageBody>
-    </>
+    </StyleScope>
   );
 }

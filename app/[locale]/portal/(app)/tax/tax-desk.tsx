@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { ringgit } from "@/lib/portal/live-rows";
 import { Section } from "../section";
+import { deskBtn, deskDim, deskField } from "../desk-kit";
 
 /**
  * 税那一页的三段。
@@ -75,11 +76,9 @@ export function TaxDesk({
   docs: { id: string; label: string; rate: string }[];
   words: Words;
 }) {
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
-  const btn =
-    "inline-flex min-h-11 items-center justify-center [background-color:var(--color-ink-900)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:calc(var(--pad-control-x)*1.1)] disabled:opacity-60";
-  const field =
-    "min-h-11 w-full [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]";
+  const dim = deskDim;
+  const btn = deskBtn();
+  const field = deskField;
 
   const [p, setP] = useState<Profile>(profile);
   const [busy, setBusy] = useState<string | null>(null);
@@ -196,7 +195,12 @@ export function TaxDesk({
           />
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button type="button" disabled={busy === "who"} onClick={() => saveProfile("who")} className={btn}>
+          <button
+            type="button"
+            disabled={busy === "who"}
+            onClick={() => saveProfile("who")}
+            className={deskBtn("primary")}
+          >
             {busy === "who" ? words.saving : words.save}
           </button>
           {said.who && (
@@ -237,7 +241,12 @@ export function TaxDesk({
           </label>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button type="button" disabled={busy === "sst"} onClick={() => saveProfile("sst")} className={btn}>
+          <button
+            type="button"
+            disabled={busy === "sst"}
+            onClick={() => saveProfile("sst")}
+            className={deskBtn("primary")}
+          >
             {busy === "sst" ? words.saving : words.save}
           </button>
           {said.sst && (
@@ -417,7 +426,12 @@ function DocCheck({
         <button type="button" disabled={busy} onClick={() => applyRate(true)} className={btn}>
           {words.clearRate}
         </button>
-        <button type="button" disabled={busy} onClick={() => check()} className={btn}>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => check()}
+          className={deskBtn("primary")}
+        >
           {busy ? words.checking : words.check}
         </button>
         {said && (
