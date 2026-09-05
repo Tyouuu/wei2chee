@@ -45,6 +45,23 @@ export const blankLine = (): Line => ({
   amount: "",
 });
 
+/**
+ * 整张明细他还一个字都没碰过。
+ *
+ * 🔴 「照上次那一张」只在这个时候给 —— 不然按下去会把他刚打的东西盖掉，
+ *    而那是这个仓库最不能出的一种错（他不会知道少了什么）。
+ */
+export function linesBlank(lines: Line[]): boolean {
+  return lines.every(
+    (l) =>
+      !l.description.trim() &&
+      !l.qty.trim() &&
+      !l.unit.trim() &&
+      !l.unitPrice.trim() &&
+      !l.amount.trim(),
+  );
+}
+
 /** RM 48,500 · 48500.50 -> sen. Same reading as the form's own senFrom. */
 export function senOf(text: string): number | undefined {
   const m = (text ?? "").replace(/[, ]/g, "").match(/-?\d+(\.\d{1,2})?/);
@@ -68,6 +85,24 @@ export function ringgitOf(cents: number): string {
   })}`;
 }
 
+/**
+ * 他自己以前的东西 —— 货架 · 单位 · 上次那一张（[任务 150]）。
+ *
+ * ⚠️ 型别写在这里而不是从 `line-suggest` 汇入，因为**那一支已经汇入这里**
+ *    （它要 `Line` 跟 `blankLine`）。两个档案互相汇入，打包的时候是一个圈。
+ */
+export type LineSuggest = {
+  /** 他自己的货架。null = 还没抓完 */
+  items: { name: string; unit: string; priceCents: number | null; onHand: number | null }[] | null;
+  /** 他打过的单位，用得最多的排前面 */
+  units: string[];
+  /** 上次卖给这个客人那几行。null = 没有上一张 */
+  lastLines: Line[] | null;
+  lastFrom: { docNo: string; on: string } | null;
+  /** 挑了一件货 → 填**空的**那几格。回 undefined = 不是货架上的东西 */
+  fill: (line: Line) => Partial<Line> | undefined;
+};
+
 /** 每一格上面那个小名字。参考页上它是一行灰色小字，不是大写字母。 */
 const cell =
   "[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]";
@@ -79,10 +114,17 @@ export function LineEditor({
   lines,
   onChange,
   copy,
+  suggest,
 }: {
   lines: Line[];
   onChange: (lines: Line[]) => void;
   copy: RecordFormCopy;
+  /**
+   * 他自己的货架 · 他打过的单位 · 上次卖给这个客人那几行（[任务 150]）。
+   * ⚠️ **可以不给** —— 收款那几页没有逐项，官网那一页更没有。
+   *    不给就跟以前一模一样：每一格都是空的，他自己打。
+   */
+  suggest?: LineSuggest;
 }) {
   const set = (i: number, patch: Partial<Line>) => {
     const next = lines.map((l, j) => (j === i ? { ...l, ...patch } : l));
@@ -101,6 +143,19 @@ export function LineEditor({
 
   const total = totalOf(lines);
 
+  /* 他挑了一件货架上的东西 → 单位跟单价补进**空的**那几格。
+     🔴 已经打了字的一格不动 —— 目录上的价是他平常卖的价，
+     这一单谈的价是这一单的（[任务 144]）。 */
+  const describe = (i: number, description: string) => {
+    const patch: Partial<Line> = { description };
+    const extra = suggest?.fill({ ...lines[i], description });
+    set(i, extra ? { ...patch, ...extra } : patch);
+  };
+
+  const shelfId = "ln-shelf";
+  const unitId = "ln-units";
+  const canUseLast = !!suggest?.lastLines?.length && linesBlank(lines);
+
   return (
     <FormSection
       title={copy.lines}
@@ -108,9 +163,29 @@ export function LineEditor({
          `Invoice Items ＋Add Item`）。它本来画在明细底下，跟内容一样重 ——
          一段的动作跟一段的内容长得一样，读起来就是分不出哪一句是标题。 */
       action={
-        <button type="button" onClick={() => onChange([...lines, blankLine()])} className={sectionAdd}>
-          ＋ {copy.lineAdd}
-        </button>
+        <div className="flex items-center gap-3">
+          {/* 🔴 「照上次那一张」—— 一张同样的单，改之前要打 42 个字，
+              现在挑一次（[任务 150] 数过）。
+              而它**只在整张还空着的时候出现**：按下去是整批换掉，
+              出现在一张打了一半的单上就是一颗会吃掉他的字的按钮。 */}
+          {canUseLast && suggest?.lastLines ? (
+            <button
+              type="button"
+              onClick={() => onChange(suggest.lastLines as Line[])}
+              className={sectionAdd}
+              title={
+                suggest.lastFrom
+                  ? `${suggest.lastFrom.docNo} · ${suggest.lastFrom.on}`
+                  : undefined
+              }
+            >
+              {copy.lineUseLast}
+            </button>
+          ) : null}
+          <button type="button" onClick={() => onChange([...lines, blankLine()])} className={sectionAdd}>
+            ＋ {copy.lineAdd}
+          </button>
+        </div>
       }
     >
       {lines.map((line, i) => (
@@ -131,10 +206,14 @@ export function LineEditor({
           <div className="flex items-end gap-2">
             <label className="flex min-w-0 flex-1 flex-col gap-1">
               <span className={cell}>{copy.lineWhat}</span>
+              {/* 🔴 用 datalist 不用下拉：**他自己打的一句话照样打得进去**。
+                  「拆除旧厨房」不在任何人的货架上，而那是装修每一张单的第一行。
+                  一个只准从清单里挑的框，会把这一整页对装修变成不能用。 */}
               <input
                 aria-label={copy.lineWhat}
+                list={suggest?.items?.length ? shelfId : undefined}
                 value={line.description}
-                onChange={(e) => set(i, { description: e.target.value })}
+                onChange={(e) => describe(i, e.target.value)}
                 className={control}
               />
             </label>
@@ -168,6 +247,7 @@ export function LineEditor({
               <span className={cell}>{copy.lineUnit}</span>
               <input
                 aria-label={copy.lineUnit}
+                list={suggest?.units.length ? unitId : undefined}
                 value={line.unit}
                 onChange={(e) => set(i, { unit: e.target.value })}
                 className={control}
@@ -201,6 +281,41 @@ export function LineEditor({
         <span className="self-end [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)] tabular-nums">
           {copy.lineTotal} {ringgitOf(total)}
         </span>
+      ) : null}
+
+      {/* 🔴 看图才看到的：**画面上没有任何东西说那个货架在**。
+          浏览器要等他打了字才把清单冒出来，所以一个不知道要打字的老板
+          永远不会发现它 —— 而那跟没有接是同一件事。
+
+          ⚠️ 只在他真的有货架的时候画。装修那一行开局没有库存那一页
+          （`PAGES_FOR_INDUSTRY.renovation` 里没有 inventory），
+          对他讲「打前几个字会有东西出来」是一句假话。 */}
+      {suggest?.items?.length ? (
+        <span className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
+          {copy.lineShelfHint}
+        </span>
+      ) : null}
+
+      {/* 他自己的货架跟他自己打过的单位。
+          🔴 架上没货的排在**后面**（[任务 150]）—— 一个卖完的排第一，
+             是让他每一次都要滑过去。
+          ⚠️ 只画名字，**不画价钱** —— 那一格里的字会被原样填进「是什么」，
+             而「水泥 50kg · RM 18.50」不是一个货品名。 */}
+      {suggest?.items?.length ? (
+        <datalist id={shelfId}>
+          {[...suggest.items]
+            .sort((a, b) => Number((b.onHand ?? 0) > 0) - Number((a.onHand ?? 0) > 0))
+            .map((it) => (
+              <option key={it.name} value={it.name} />
+            ))}
+        </datalist>
+      ) : null}
+      {suggest?.units.length ? (
+        <datalist id={unitId}>
+          {suggest.units.map((u) => (
+            <option key={u} value={u} />
+          ))}
+        </datalist>
       ) : null}
     </FormSection>
   );

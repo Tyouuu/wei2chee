@@ -6,6 +6,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { TableColumn } from "@/lib/portal/table-model";
 import type { RecordFormCopy } from "../record-copy";
 import { LineEditor, blankLine, senOf, totalOf, ringgitOf, type Line } from "./line-editor";
+import { useLineSuggestions, fillFromShelf } from "./line-suggest";
 import { DocumentPreview } from "./document-preview";
 import { validityKindOf, defaultDueOn } from "@/lib/portal/record-validity";
 import { TermsEditor, termsForDb, blankTerm, priceRows, type TermRow } from "./terms-editor";
@@ -361,6 +362,23 @@ export function NewRecordForm({
     const hits = parties.filter((x) => x.name.trim().toLowerCase() === typed);
     return hits.length === 1 ? hits[0].id : null;
   })();
+  /* 🔴 不要再让他把同一行字打第二次（[任务 150] · [重点 29]）。
+     他自己的货架 · 他打过的单位 · 上次卖给这个客人那几行 ——
+     三支函式 20260905 就做好了，而画面上一个入口都没有。
+
+     ⚠️ 用的是**跟上面同一个** `chosenParty`：认人的规矩只有一条，
+     不然「上次那一张」会拿另一个人的单来填。 */
+  const suggestions = useLineSuggestions({
+    projectId,
+    partyId: chosenParty,
+    moduleKey,
+    enabled: isPipeline,
+  });
+  const lineSuggest = {
+    ...suggestions,
+    fill: (l: Line) => fillFromShelf(l, suggestions.items),
+  };
+
   const sitesForParty = (partyAddresses ?? []).filter((a) => a.partyId === chosenParty);
   /* 🔴 他换了客户，上一个客户的工地就不再属於这一张单。资料库会拒绝
      （'that address belongs to somebody else'），而让他保存之后才知道，
@@ -1573,7 +1591,7 @@ export function NewRecordForm({
 
           {manyBranches ? branchPicker : null}
 
-          <LineEditor lines={lines} onChange={setLines} copy={copy} />
+          <LineEditor lines={lines} onChange={setLines} copy={copy} suggest={lineSuggest} />
           {totalFromLines ? (
             <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
               {copy.amountFromLines}

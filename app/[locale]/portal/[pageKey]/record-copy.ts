@@ -43,6 +43,10 @@ export type RecordFormCopy = {
   linePrice: string;
   lineAmount: string;
   lineAdd: string;
+  /** 「照上次那一张」—— 只在整张明细还空着的时候画（[任务 150]） */
+  lineUseLast: string;
+  /** 只在他真的有货架的时候画 —— 不然那是一句假话 */
+  lineShelfHint: string;
   lineRemove: string;
   lineTotal: string;
   amountFromLines: string;
@@ -417,6 +421,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       linePrice: "单价",
       lineAmount: "金额",
       lineAdd: "加一行",
+      lineUseLast: "照上次那一张",
+      lineShelfHint: "在「是什么」打前几个字，你自己的货会出来。",
       lineRemove: "删掉这一行",
       lineTotal: "合计",
       amountFromLines: "有逐项的时候，上面的金额是这几行加起来的。",
@@ -702,6 +708,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       linePrice: "Unit price",
       lineAmount: "Amount",
       lineAdd: "Add a line",
+      lineUseLast: "Same as last time",
+      lineShelfHint: "Start typing in What it is — your own items come up.",
       lineRemove: "Remove this line",
       lineTotal: "Total",
       amountFromLines: "With line items, the amount above is their total.",
