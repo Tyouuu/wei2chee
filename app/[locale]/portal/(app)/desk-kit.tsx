@@ -32,7 +32,7 @@
 
 /** 一个打字的格子。高度 44px：手机上拇指按得稳的下限。 */
 export const deskField =
-  "min-h-11 w-full [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] " +
+  "min-h-11 w-full [background-color:var(--color-ink-900)] [border-radius:var(--radius-control)] " +
   "[border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] " +
   "[font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] " +
   "outline-none focus-visible:[border-color:var(--color-primary)]";
@@ -67,3 +67,60 @@ export function deskBtn(kind: "primary" | "quiet" | "danger" = "quiet") {
 
 /** 一段说明字。整个工作台只有一种。 */
 export const deskDim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+
+/**
+ * 一张卡。
+ *
+ * ── 为什么工作台上要有卡，而平台那一边没有（2026-09-06）─────────────────
+ *
+ * 老板：**「我不要一直都是相同的组件」**。而量出来他是对的 ——
+ * 我那十页全部是同一根骨架：眉标 · 一条细线 · 一串行。
+ *
+ * 他挑的那一套参考不是这样排的：**它把一页切成几张白卡浮在浅灰的地上**，
+ * 而每一张卡自己带一个头（标题在左、这一张自己的动作在右）。
+ * `Section` 那条细线是**平台**的语气，卡片是**产品**的语气。
+ *
+ * `.ds-card` 是这一套 token 本来就有的面，只是工作台这一边从来没有人用。
+ */
+export function DeskCard({
+  title,
+  action,
+  children,
+  className = "",
+}: {
+  title?: string;
+  /** 这一张卡自己的动作，右对齐在卡头上。 */
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`ds-card [border-radius:var(--radius-lg)] ${className}`}>
+      {(title || action) && (
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 [border-color:var(--color-ink-800)]">
+          {title && (
+            <h2 className="[font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)]">
+              {title}
+            </h2>
+          )}
+          {action}
+        </header>
+      )}
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+/** 一张**印出来的纸**，浮在一块灰垫子上。
+ *
+ *  参考页把预览做成这个样子，而那不是装饰：一张纸跟一张表单摆在一起的时候，
+ *  垫子是唯一告诉他「右边这个是要拿给别人的东西」的东西。 */
+export function DeskSheet({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="[background-color:var(--color-ink-950)] [border-radius:var(--radius-md)] p-4 sm:p-6">
+      <div className="[background-color:var(--color-ink-900)] [border-radius:var(--radius-sm)] [box-shadow:var(--shadow-card,0_1px_2px_rgba(0,0,0,0.06))] p-5 sm:p-7">
+        {children}
+      </div>
+    </div>
+  );
+}

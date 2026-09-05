@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { Section } from "../section";
-import { deskBtn, deskDim, deskField } from "../desk-kit";
+import { DeskCard, deskBtn, deskDim, deskField } from "../desk-kit";
 
 /**
  * 快过期的，跟一批货进来了。
@@ -126,43 +125,55 @@ export function ShelfLife({
 
   return (
     <>
-      <Section label={words.soonLabel} count={soon.length || undefined}>
-        <p className={`mb-4 ${dim}`}>{soon.length ? words.soonLede : words.soonNone}</p>
+      {/* 🔴 **这一段是一片格子，不是一串行。**
+
+          老板：「我不要一直都是相同的组件」。而这一段问的问题跟别的清单
+          不一样 —— 他要的是**一眼扫过去哪一盒最急**，而一串等宽的行
+          没有办法让「还有 3 天」比「还有 60 天」跳出来。
+
+          骨架抄的是他挑的那一套的 `file-manager`（一件东西一张小卡，
+          那个数字最大），只是这里最大的那个数字是**还有几天**。 */}
+      <DeskCard title={words.soonLabel}>
+        <p className={`mb-5 ${dim}`}>{soon.length ? words.soonLede : words.soonNone}</p>
         {soon.length > 0 && (
-          <ul className="flex flex-col">
-            {soon.map((b) => (
-              <li
-                key={b.batch_id}
-                className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t py-3 [border-color:var(--color-ink-800)]"
-              >
-                <span className="[font-weight:var(--fw-semibold)]">{b.item_name}</span>
-                <span className={`tabular-nums ${dim}`}>{b.code}</span>
-                {b.location && <span className={dim}>{b.location}</span>}
-                <span className="min-w-0 flex-1" />
-                <span className={`tabular-nums ${dim}`}>
-                  {b.on_hand} {b.unit}
-                </span>
-                {/* 🔴 已经过期的读起来要跟「还有几天」不一样。 */}
-                <span
-                  className={`tabular-nums [font-size:var(--text-sm)] ${
-                    b.days_left != null && b.days_left < 0
-                      ? "text-[color:var(--color-clay-bright)]"
-                      : ""
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {soon.map((b) => {
+              const late = b.days_left != null && b.days_left < 0;
+              return (
+                <li
+                  key={b.batch_id}
+                  className={`flex flex-col gap-1 [border-radius:var(--radius-md)] [border:var(--hairline)_solid_var(--color-ink-800)] p-4 ${
+                    late ? "[border-color:var(--color-clay-bright)]" : ""
                   }`}
                 >
-                  {b.days_left == null
-                    ? words.noExpiry
-                    : b.days_left < 0
-                      ? words.gone.replace("%n", String(Math.abs(b.days_left)))
-                      : words.daysLeft.replace("%n", String(b.days_left))}
-                </span>
-              </li>
-            ))}
+                  <span className="[font-weight:var(--fw-semibold)]">{b.item_name}</span>
+                  {/* 那个数字最大 —— 这一格的答案就是它。 */}
+                  <span
+                    className={`tabular-nums [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] ${
+                      late ? "text-[color:var(--color-clay-bright)]" : ""
+                    }`}
+                  >
+                    {b.days_left == null
+                      ? words.noExpiry
+                      : late
+                        ? words.gone.replace("%n", String(Math.abs(b.days_left)))
+                        : words.daysLeft.replace("%n", String(b.days_left))}
+                  </span>
+                  <span className={`tabular-nums ${dim}`}>
+                    {[b.code, `${b.on_hand} ${b.unit}`.trim(), b.location]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
-      </Section>
+      </DeskCard>
 
-      <Section label={words.batchesLabel}>
+      <div className="h-5" />
+
+      <DeskCard title={words.batchesLabel}>
         <p className={`mb-4 ${dim}`}>{words.batchesLede}</p>
         {items.length === 0 ? (
           <p className={dim}>{words.noItems}</p>
@@ -261,7 +272,7 @@ export function ShelfLife({
             )}
           </>
         )}
-      </Section>
+      </DeskCard>
     </>
   );
 }

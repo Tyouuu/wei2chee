@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { ringgit } from "@/lib/portal/live-rows";
-import { Section } from "../section";
-import { deskBtn, deskDim, deskField } from "../desk-kit";
+import { DeskCard, DeskSheet, deskBtn, deskDim, deskField } from "../desk-kit";
 
 /**
  * 开一次薪水，改几笔，发出去。
@@ -106,6 +105,8 @@ export function PayDesk({
         />
       )}
 
+      <div className="h-5" />
+
       <PayTerms
         staff={staff}
         law={law}
@@ -169,7 +170,7 @@ function NoRun({
   }
 
   return (
-    <Section label={words.runLabel}>
+    <DeskCard title={words.runLabel}>
       <p className={`mb-4 ${dim}`}>{words.noRun}</p>
       {/* 🔴 一个人都没有底薪的时候，开出来的是一张**空的**薪水单
           （`open_pay_run` 是照 `staff_pay_terms` 长出每一行的）——
@@ -206,11 +207,25 @@ function NoRun({
           )}
         </div>
       )}
-    </Section>
+    </DeskCard>
   );
 }
 
-/** 开着的那一张。 */
+/**
+ * 开着的那一张 —— 左边改，右边看。
+ *
+ * ── 骨架抄的是 `invoice` 那一页 ────────────────────────────────────────
+ *
+ * 他挑的那一套（arhamkhnz）的开发票页是**两张卡并排**：左边填，右边一张
+ * 叫 Preview 的卡，里面是一张浮在灰垫子上的纸，卡头右边是 Print / PDF。
+ *
+ * 🔴 而这不是为了好看。**一张薪资单是要拿给工人的东西** ——
+ * 我第一版把它画成一串可以打字的行，於是他按「发出去」之前，
+ * 整个画面上没有任何一个东西长得像那张纸。
+ *
+ * ⚠️ 右边那一张跟着**左边选中的那个人**走 —— 一个只能预览第一个人的
+ * 预览，在第二个人身上就是一句没有用的真话。
+ */
 function OpenRun({
   run,
   slips,
@@ -232,6 +247,7 @@ function OpenRun({
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [said, setSaid] = useState<Record<string, string>>({});
+  const [picked, setPicked] = useState(slips[0]?.id ?? "");
   const [draft, setDraft] = useState<Record<string, { label: string; amount: string }[]>>(() =>
     Object.fromEntries(
       slips.map((s) => [
@@ -245,6 +261,7 @@ function OpenRun({
   /* 🔴 他真正掏出去的是**实发加雇主那一份** —— 一个只看实发的老板，
      会少算掉公积金雇主的 12–13%，而那笔钱一样从他的户口出去。 */
   const totalCost = slips.reduce((n, s) => n + s.net + s.deduction + s.employer, 0);
+  const sheet = slips.find((s) => s.id === picked) ?? slips[0] ?? null;
 
   async function saveLines(slipId: string) {
     if (busy) return;
@@ -275,12 +292,12 @@ function OpenRun({
     }
   }
 
-  async function pay() {
+  async function run_(fn: "pay_pay_run" | "discard_pay_run") {
     if (busy) return;
     setBusy("run");
     try {
       const supabase = createBrowserSupabaseClient();
-      const { error } = await supabase.rpc("pay_pay_run", { in_run_id: run.id });
+      const { error } = await supabase.rpc(fn, { in_run_id: run.id });
       if (error) {
         setSaid((s) => ({ ...s, run: words.failed }));
         return;
@@ -293,146 +310,132 @@ function OpenRun({
     }
   }
 
-  async function discard() {
-    if (busy) return;
-    setBusy("run");
-    try {
-      const supabase = createBrowserSupabaseClient();
-      const { error } = await supabase.rpc("discard_pay_run", { in_run_id: run.id });
-      if (error) {
-        setSaid((s) => ({ ...s, run: words.failed }));
-        return;
-      }
-      onChanged();
-    } catch {
-      setSaid((s) => ({ ...s, run: words.failed }));
-    } finally {
-      setBusy(null);
-    }
+  if (slips.length === 0) {
+    return (
+      <DeskCard title={words.runLabel}>
+        <p className={dim}>{words.noTerms}</p>
+      </DeskCard>
+    );
   }
 
   return (
-    <Section
-      label={words.runLabel}
-      count={slips.length || undefined}
-      action={
-        <span className={`tabular-nums ${dim}`}>
-          {run.period_from} — {run.period_to}
-        </span>
-      }
-    >
-      <p className={`mb-5 ${dim}`}>{words.runLede}</p>
-      {/* 🔴 法律那几张表还没有人核对过的时候，这一页会把每一张单
-          画成一分法定扣款都没有 —— 而那跟「刚好是零」在画面上一模一样。
-          讲出来，而且讲清楚那是我们要去做的。 */}
-      {!lawReady && (
-        <p className="mb-5 [font-size:var(--text-sm)] text-[color:var(--color-clay-bright)]">
-          {words.noLaw}
-        </p>
-      )}
+    <div className="grid gap-5 xl:grid-cols-2">
+      {/* ── 左：这一次的薪水 ─────────────────────────────────────────── */}
+      <DeskCard
+        title={words.runLabel}
+        action={
+          <span className={`tabular-nums ${dim}`}>
+            {run.period_from} — {run.period_to}
+          </span>
+        }
+      >
+        <p className={`mb-4 ${dim}`}>{words.runLede}</p>
+        {/* 🔴 法律那几张表还没有人核对过的时候，这一页会把每一张单
+            画成一分法定扣款都没有 —— 而那跟「刚好是零」在画面上一模一样。 */}
+        {!lawReady && (
+          <p className="mb-4 [font-size:var(--text-sm)] text-[color:var(--color-clay-bright)]">
+            {words.noLaw}
+          </p>
+        )}
 
-      {slips.length === 0 ? (
-        <p className={dim}>{words.noTerms}</p>
-      ) : (
         <ul className="flex flex-col">
-          {slips.map((s) => (
-            <li key={s.id} className="border-t py-4 [border-color:var(--color-ink-800)]">
-              <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
-                <span className="[font-weight:var(--fw-semibold)]">{s.name}</span>
-                <span className="min-w-0 flex-1" />
-                {/* 实发最大 —— 那是工人问的那一个数字。 */}
-                <span className={dim}>{words.takesHome}</span>
-                <span className="tabular-nums [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-                  {rm(s.net)}
-                </span>
-              </div>
+          {slips.map((s) => {
+            const open = s.id === picked;
+            return (
+              <li key={s.id} className="border-t py-4 [border-color:var(--color-ink-800)]">
+                {/* 整行按得到 —— 柜台上拇指按不准一句字里的那几个字。 */}
+                <button
+                  type="button"
+                  onClick={() => setPicked(s.id)}
+                  className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1 text-left"
+                >
+                  <span
+                    className={`[font-weight:var(--fw-semibold)] ${
+                      open ? "" : "text-[color:var(--color-on-canvas-dim)]"
+                    }`}
+                  >
+                    {s.name}
+                  </span>
+                  <span className="min-w-0 flex-1" />
+                  <span className={dim}>{words.takesHome}</span>
+                  <span className="tabular-nums [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                    {rm(s.net)}
+                  </span>
+                </button>
 
-              {/* 他打的那几笔。 */}
-              <div className="mt-3 flex flex-col gap-2">
-                {(draft[s.id] ?? []).map((l, i) => (
-                  <div key={i} className="grid gap-2 sm:grid-cols-[1fr_9rem]">
-                    <input
-                      value={l.label}
-                      placeholder={words.lineLabel}
-                      onChange={(e) =>
-                        setDraft((d) => ({
-                          ...d,
-                          [s.id]: (d[s.id] ?? []).map((x, j) =>
-                            j === i ? { ...x, label: e.target.value } : x,
-                          ),
-                        }))
-                      }
-                      className={field}
-                      aria-label={words.lineLabel}
-                    />
-                    <input
-                      value={l.amount}
-                      inputMode="decimal"
-                      placeholder={words.lineAmount}
-                      onChange={(e) =>
-                        setDraft((d) => ({
-                          ...d,
-                          [s.id]: (d[s.id] ?? []).map((x, j) =>
-                            j === i ? { ...x, amount: e.target.value.replace(/[^0-9.]/g, "") } : x,
-                          ),
-                        }))
-                      }
-                      className={`${field} text-right tabular-nums`}
-                      aria-label={words.lineAmount}
-                    />
+                {/* 只摊开选中那一个 —— 五个人五张表单，一屏读不完。 */}
+                {open && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    {(draft[s.id] ?? []).map((l, i) => (
+                      <div key={i} className="grid gap-2 sm:grid-cols-[1fr_9rem]">
+                        <input
+                          value={l.label}
+                          placeholder={words.lineLabel}
+                          onChange={(e) =>
+                            setDraft((d) => ({
+                              ...d,
+                              [s.id]: (d[s.id] ?? []).map((x, j) =>
+                                j === i ? { ...x, label: e.target.value } : x,
+                              ),
+                            }))
+                          }
+                          className={field}
+                          aria-label={words.lineLabel}
+                        />
+                        <input
+                          value={l.amount}
+                          inputMode="decimal"
+                          placeholder={words.lineAmount}
+                          onChange={(e) =>
+                            setDraft((d) => ({
+                              ...d,
+                              [s.id]: (d[s.id] ?? []).map((x, j) =>
+                                j === i
+                                  ? { ...x, amount: e.target.value.replace(/[^0-9.]/g, "") }
+                                  : x,
+                              ),
+                            }))
+                          }
+                          className={`${field} text-right tabular-nums`}
+                          aria-label={words.lineAmount}
+                        />
+                      </div>
+                    ))}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDraft((d) => ({
+                            ...d,
+                            [s.id]: [...(d[s.id] ?? []), { label: "", amount: "" }],
+                          }))
+                        }
+                        className={btn}
+                      >
+                        {words.addLine}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy === s.id}
+                        onClick={() => saveLines(s.id)}
+                        className={btn}
+                      >
+                        {busy === s.id ? words.saving : words.save}
+                      </button>
+                      {said[s.id] && (
+                        <span aria-live="polite" className={dim}>
+                          {said[s.id]}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                ))}
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDraft((d) => ({ ...d, [s.id]: [...(d[s.id] ?? []), { label: "", amount: "" }] }))
-                    }
-                    className={btn}
-                  >
-                    {words.addLine}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy === s.id}
-                    onClick={() => saveLines(s.id)}
-                    className={btn}
-                  >
-                    {busy === s.id ? words.saving : words.save}
-                  </button>
-                  {said[s.id] && (
-                    <span aria-live="polite" className={dim}>
-                      {said[s.id]}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* 🔴 法定那几笔只印不改 —— 见档头。而且**讲出它是照法律表算的**，
-                  不然一个跟他自己算的数字对不上的扣款，读起来像我们算错了。 */}
-              {s.taken.length > 0 && (
-                <div className={`mt-3 flex flex-wrap gap-x-5 gap-y-1 ${dim}`}>
-                  <span>{words.takenAway}</span>
-                  {s.taken.map((d, i) => (
-                    <span key={i} className="tabular-nums">
-                      {d.label} {rm(d.amount)}
-                    </span>
-                  ))}
-                  <span className="opacity-70">{words.byLaw}</span>
-                </div>
-              )}
-              {s.employer > 0 && (
-                <p className={`mt-1 tabular-nums ${dim}`}>
-                  {words.youAlsoPay} {rm(s.employer)}
-                </p>
-              )}
-            </li>
-          ))}
+                )}
+              </li>
+            );
+          })}
         </ul>
-      )}
 
-      {slips.length > 0 && (
-        <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-4 border-t pt-5 [border-color:var(--color-ink-700)]">
+        <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-4 border-t pt-5 [border-color:var(--color-ink-700)]">
           <div>
             <div className={dim}>{words.totalNet}</div>
             <div className="mt-0.5 tabular-nums [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)]">
@@ -450,7 +453,7 @@ function OpenRun({
             <button
               type="button"
               disabled={busy === "run"}
-              onClick={discard}
+              onClick={() => run_("discard_pay_run")}
               className={deskBtn("danger")}
             >
               {words.discard}
@@ -458,7 +461,7 @@ function OpenRun({
             <button
               type="button"
               disabled={busy === "run"}
-              onClick={pay}
+              onClick={() => run_("pay_pay_run")}
               className={deskBtn("primary")}
             >
               {busy === "run" ? words.paying : words.payIt}
@@ -470,13 +473,66 @@ function OpenRun({
             )}
           </div>
         </div>
-      )}
-      {slips.length > 0 && (
         <p className={`mt-4 ${dim}`}>
           {words.payHint} {words.discardHint}
         </p>
-      )}
-    </Section>
+      </DeskCard>
+
+      {/* ── 右：那一张纸 ─────────────────────────────────────────────── */}
+      <DeskCard title={words.slipLabel} className="self-start">
+        {sheet ? (
+          <DeskSheet>
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <span className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                {sheet.name}
+              </span>
+              <span className={`tabular-nums ${dim}`}>
+                {run.period_from} — {run.period_to}
+              </span>
+            </div>
+
+            <dl className="mt-6 flex flex-col">
+              {sheet.earnings.map((e, i) => (
+                <Line key={`e${i}`} label={e.label || words.lineLabel} value={rm(e.amount)} />
+              ))}
+              {sheet.earnings.length === 0 && (
+                <Line label={words.earns} value={rm(sheet.gross)} />
+              )}
+              {sheet.taken.map((d, i) => (
+                <Line key={`d${i}`} label={d.label} value={`− ${rm(d.amount)}`} dim />
+              ))}
+            </dl>
+
+            <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3 border-t pt-4 [border-color:var(--color-ink-700)]">
+              <span className="[font-weight:var(--fw-semibold)]">{words.takesHome}</span>
+              <span className="tabular-nums [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)]">
+                {rm(sheet.net)}
+              </span>
+            </div>
+            {sheet.employer > 0 && (
+              <p className={`mt-3 tabular-nums ${dim}`}>
+                {words.youAlsoPay} {rm(sheet.employer)}
+              </p>
+            )}
+            {/* ⚠️ 那几笔法定的从哪来，印在纸上 —— 一个跟他自己算的对不上的
+                扣款，读起来像我们算错了。 */}
+            {sheet.taken.length > 0 && <p className={`mt-1 ${dim}`}>{words.byLaw}</p>}
+          </DeskSheet>
+        ) : (
+          <p className={dim}>{words.noTerms}</p>
+        )}
+      </DeskCard>
+    </div>
+  );
+}
+
+/** 那张纸上的一行。 */
+function Line({ label, value, dim }: { label: string; value: string; dim?: boolean }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-3 border-t py-2 [border-color:var(--color-ink-800)]">
+      <dt className={dim ? deskDim : "[font-size:var(--text-sm)]"}>{label}</dt>
+      <dd className={`tabular-nums [font-size:var(--text-sm)] ${dim ? deskDim : ""}`}>{value}</dd>
+    </div>
   );
 }
 
@@ -538,14 +594,14 @@ function PayTerms({
 
   if (staff.length === 0) {
     return (
-      <Section label={words.termsLabel}>
+      <DeskCard title={words.termsLabel}>
         <p className={dim}>{words.noStaff}</p>
-      </Section>
+      </DeskCard>
     );
   }
 
   return (
-    <Section label={words.termsLabel} count={staff.length}>
+    <DeskCard title={words.termsLabel}>
       <p className={`mb-4 ${dim}`}>{words.termsLede}</p>
       <div className="flex flex-col">
         {rows.map((r) => (
@@ -642,6 +698,6 @@ function PayTerms({
           </div>
         ))}
       </div>
-    </Section>
+    </DeskCard>
   );
 }

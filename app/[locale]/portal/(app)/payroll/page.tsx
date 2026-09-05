@@ -253,6 +253,7 @@ export default async function PayrollPage() {
           lawReady={lawReady}
           words={{
             runLabel: t("payroll.runLabel"),
+            slipLabel: t("payroll.slipLabel"),
             runLede: t("payroll.runLede"),
             noRun: t("payroll.noRun"),
             noStaff: t("payroll.noStaff"),

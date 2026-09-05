@@ -299,9 +299,18 @@ try {
   if ((runs ?? []).length === 1) ok("开出来一张薪水单");
   else no("薪水单没开出来", JSON.stringify(runs));
 
-  const pay1 = await page.locator("body").innerText();
-  if (/Ah Meng/.test(pay1)) ok("那个人出现在薪水单上");
-  else no("薪水单上没有那个人", pay1.slice(0, 200));
+  /* ⚠️ 重新载入，不等 `router.refresh()` —— 开发模式下那一次
+     重画要等编译，而一把因为编译慢而红的尺，跟一把抳到
+     bug 的尺在报告里长得一模一样。 */
+  await open("payroll");
+
+  /* 🔴 只量**那一张卡**，不量整页 —— “Ah Meng” 同时在底下
+     「每个人的底薪」那一卡上，拿整页去匹配会在一张**空的**
+     薪水单上报 PASS。保养合约那一轮它已经骗过我一次。 */
+  const runCard = page.locator("section").first();
+  const pay1 = await runCard.innerText().catch(() => "");
+  if (/Ah Meng/.test(pay1)) ok("那个人出现在那一张薪水单上");
+  else no("那一张薪水单上没有那个人", pay1.slice(0, 200));
   /* 🔴 法定那几笔是算出来的 —— 他一个字都没打，而它们要在。 */
   const { data: slips } = await admin
     .from("payslips")

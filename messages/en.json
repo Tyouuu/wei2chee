@@ -1074,7 +1074,7 @@
     "payroll": {
       "title": "Pay",
       "lede": "What each person takes home, and what it costs you.",
-      "runLabel": "THIS PAY RUN",
+      "runLabel": "This pay run",
       "runLede": "Add what they earned. What the law takes is worked out from the current tables — you do not type it.",
       "noRun": "No run open. Pick the period and open one.",
       "noStaff": "Add your people to the staff list first.",
@@ -1103,7 +1103,7 @@
       "discard": "Throw it away",
       "discardHint": "Throwing it away is only possible before it is paid.",
       "paid": "Paid",
-      "termsLabel": "WHAT EACH PERSON IS ON",
+      "termsLabel": "What each person is on",
       "termsLede": "Changes once or twice a year, so it sits at the bottom.",
       "basis": "Paid",
       "monthly": "Monthly",
@@ -1115,7 +1115,8 @@
       "epf": "EPF",
       "socso": "SOCSO",
       "eis": "EIS",
-      "notApplicable": "Not applicable"
+      "notApplicable": "Not applicable",
+      "slipLabel": "The payslip"
     },
     "tax": {
       "title": "Tax",
@@ -1167,13 +1168,13 @@
     "expiry": {
       "title": "Shelf life",
       "lede": "What is about to expire, and which batch is on the shelf.",
-      "soonLabel": "ABOUT TO EXPIRE",
+      "soonLabel": "About to expire",
       "soonLede": "Oldest first. Anything already past its date is the first thing to take off the shelf.",
       "soonNone": "Nothing expiring in the next 90 days.",
       "gone": "expired %n days ago",
       "daysLeft": "%n days left",
       "left": "left",
-      "batchesLabel": "A BATCH CAME IN",
+      "batchesLabel": "A batch came in",
       "batchesLede": "Record the batch when the goods arrive. How many are left is counted from the movements — there is no box here to type it into.",
       "noItems": "Add an item to your shelf first.",
       "item": "Item",

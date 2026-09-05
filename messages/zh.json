@@ -1115,7 +1115,8 @@
       "epf": "公积金",
       "socso": "社险",
       "eis": "就业保险",
-      "notApplicable": "不适用"
+      "notApplicable": "不适用",
+      "slipLabel": "那一张薪资单"
     },
     "tax": {
       "title": "税",
