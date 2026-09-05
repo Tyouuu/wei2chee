@@ -119,7 +119,8 @@
     "check:rentals": "node scripts/check-rentals.mjs",
     "shoot:handoff": "node scripts/shoot-handoff.mjs",
     "check:accounts": "node scripts/check-accounts.mjs",
-    "check:tax": "node scripts/check-tax.mjs"
+    "check:tax": "node scripts/check-tax.mjs",
+    "check:commission-history": "node scripts/check-commission-history.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
