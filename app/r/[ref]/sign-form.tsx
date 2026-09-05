@@ -25,7 +25,10 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 const WORDS = {
   en: {
-    name: "Your name",
+    /* 🔴 **不可以也叫「Your name」。** 同一页上答覆那一段已经有一个了 ——
+       两个一模一样的标签，读屏软件念出来是同一句，而拿键盘的人分不出
+       自己在填哪一个。（我自己的尺也被这个骗过一次。） */
+    name: "Who is signing",
     sign: "I received this",
     signing: "Sending...",
     incomplete: "Write your name first.",
@@ -34,7 +37,7 @@ const WORDS = {
     failed: "It did not go through. Try again.",
   },
   zh: {
-    name: "你的名字",
+    name: "签收人",
     sign: "我收到了",
     signing: "送出去中…",
     incomplete: "先写你的名字。",

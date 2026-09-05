@@ -297,6 +297,22 @@ export type RecordFormCopy = {
   shareAccepted: string;
   shareChanges: string;
   shareStageHint: string;
+  /* 送出去了几趟（20260905500000）。 */
+  runHeading: string;
+  runLede: string;
+  runNone: string;
+  runOpen: string;
+  runSend: string;
+  runHandover: string;
+  runSendHint: string;
+  runHandoverHint: string;
+  runDriver: string;
+  runReceivedBy: string;
+  runNoGoods: string;
+  runSigned: string;
+  runNotSigned: string;
+  runTakeBack: string;
+  runStillOwed: string;
   /* 套票（20260904190000）。只在客户那一页，而且**师傅也看得到** ——
      他要跟客人讲「你还剩三次」。价钱不在这张表上，所以这不是把钱交出去。 */
   packHeading: string;
@@ -604,6 +620,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       shareAccepted: "{name} 在 {date} 按了同意。",
       shareChanges: "{name} 在 {date} 讲了想改的地方。",
       shareStageHint: "这一单走到哪还是你自己决定 —— 他按同意不会把它搬走。",
+      runHeading: "送出去了几趟",
+      runLede: "一张单可以分几车出。送出去的时候架上自己会少，而客人在他自己那条连结上签收。",
+      runNone: "还没有送过。",
+      runOpen: "开一趟",
+      runSend: "送出去",
+      runHandover: "交了",
+      runSendHint: "按下去，上面还欠的那几行会照数量出货，架上跟着少。",
+      runHandoverHint: "这一单没有货要出，所以这一趟只记「交了」—— 装修交屋、服务做完就是这样。",
+      runDriver: "谁去送",
+      runReceivedBy: "谁收的",
+      runNoGoods: "没有货，只是交了",
+      runSigned: "{name} 在 {date} 自己签了",
+      runNotSigned: "他还没有自己签",
+      runTakeBack: "收起这一趟",
+      runStillOwed: "还欠",
       packHeading: "套票",
       packLede: "卖几次，用一次扣一次。剩几次是数出来的，没有人改得了。",
       packNone: "还没有卖过套票给他。",
@@ -865,6 +896,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       shareAccepted: "{name} accepted on {date}.",
       shareChanges: "{name} asked for a change on {date}.",
       shareStageHint: "Where this job sits is still your call -- his accepting does not move it.",
+      runHeading: "Deliveries",
+      runLede: "One job can go out on several lorries. What goes out comes off the shelf, and the customer signs on his own link.",
+      runNone: "Nothing has gone out yet.",
+      runOpen: "Open a run",
+      runSend: "Send it out",
+      runHandover: "Handed over",
+      runSendHint: "This sends what is still owed above, and the shelf drops by the same amount.",
+      runHandoverHint: "Nothing on this job comes off a shelf, so this run just records the handover -- a refit finished, a service done.",
+      runDriver: "Who took it",
+      runReceivedBy: "Who received it",
+      runNoGoods: "no goods, handed over",
+      runSigned: "{name} signed for it on {date}",
+      runNotSigned: "He has not signed for it himself",
+      runTakeBack: "Put this run away",
+      runStillOwed: "Still owed",
       packHeading: "Packages",
       packLede: "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
       packNone: "No package sold to them yet.",

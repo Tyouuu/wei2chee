@@ -16,6 +16,11 @@ import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { SettleMonth } from "../new/settle-month";
 import { PartyPortalPanel, type PartyRequest } from "../new/party-portal-panel";
 import { ShareRecordPanel } from "../new/share-record-panel";
+import {
+  DeliveryPanel,
+  type DeliveryRun,
+  type Shortfall,
+} from "../new/delivery-panel";
 import { isShareableModule } from "@/lib/portal/shared-record";
 import { PIPELINE_MODULES } from "@/lib/portal/shape-state";
 import { SITE_URL } from "@/lib/site-url";
@@ -167,6 +172,13 @@ export default async function EditRecordPage({
      而它同时是[任务 155] 那两句：「客人线上按同意」跟
      「客人自己看得到这一单」底下是同一页。
      ⚠️ `undefined` = 没有问（不是那几种单），不是「还没开」。 */
+  /* 送出去了几趟（20260905500000）。
+     🔴 五支函式 9-05 就做好了，而画面上一个入口都没有 —— 而且
+     客人那一页**已经画得出签收那一颗**，老板却开不了一趟货，
+     所以那颗按钮永远不会出现。**半条线跟没有线是同一件事。**
+     ⚠️ `undefined` = 没有问（不是订单／工程那两页）。 */
+  let runs: DeliveryRun[] | undefined = undefined;
+  let shortfall: Shortfall[] = [];
   let shareRef: string | null | undefined = undefined;
   let shareAnswer: { answer: string | null; name: string | null; at: string | null; note: string | null } = {
     answer: null, name: null, at: null, note: null,
@@ -705,6 +717,47 @@ export default async function EditRecordPage({
        「任务」是内部的 ——「打给供应商问货几时到」不是给客人读的，
        而 `is_answerable_module` 在资料库那一边也是这样判的。
        ⚠️ 收起来的单不画：一条连到一张收起来的单的连结，打开是死的。 */
+    /* ── 送出去了几趟 ────────────────────────────────────────────────
+       🔴 **只有订单跟工程。** 一张报价单还没有答应，没有东西可以送；
+       `open_delivery_run` 自己也会拒绝它，而画一颗按下去一定失败的按钮
+       正是这个仓库禁的那一种。 */
+    if (!data.archived_at && (pageKey === "orders" || pageKey === "projects")) {
+      const [{ data: runRows }, { data: shortRows }] = await Promise.all([
+        supabase.rpc("deliveries_of", { in_record_id: recordId }),
+        supabase.rpc("delivery_shortfall", { in_record_id: recordId }),
+      ]);
+      runs = ((runRows ?? []) as {
+        id: string; run_on: string | null; driver: string | null; received_by: string | null;
+        signed_at: string | null; signed_name: string | null; note: string | null; lines: unknown;
+      }[]).map((r) => ({
+        id: r.id,
+        runOn: r.run_on,
+        driver: r.driver,
+        receivedBy: r.received_by,
+        signedAt: r.signed_at,
+        signedName: r.signed_name,
+        note: r.note,
+        lines: (Array.isArray(r.lines) ? r.lines : []).map((l) => {
+          const x = l as { description?: unknown; qty?: unknown; unit?: unknown };
+          return {
+            description: typeof x.description === "string" ? x.description : null,
+            qty: x.qty == null ? null : Number(x.qty),
+            unit: typeof x.unit === "string" ? x.unit : null,
+          };
+        }),
+      }));
+      shortfall = ((shortRows ?? []) as {
+        description: string | null; unit: string | null;
+        ordered: number; gone: number; still: number;
+      }[]).map((r) => ({
+        description: r.description,
+        unit: r.unit,
+        ordered: Number(r.ordered),
+        gone: Number(r.gone),
+        still: Number(r.still),
+      }));
+    }
+
     if (!data.archived_at && isShareableModule(pageKey)) {
       shareRef = data.share_ref ?? null;
       shareAnswer = {
@@ -1018,6 +1071,19 @@ export default async function EditRecordPage({
                 {copy.form.creditNone}
               </p>
             )}
+          </div>
+        ) : null}
+
+        {/* 订单 / 工程那一页多一段：送出去了几趟。
+            ⚠️ `undefined` = 没有问（不是那两页，或者已经收起来了）。 */}
+        {runs !== undefined ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <DeliveryPanel
+              recordId={recordId}
+              runs={runs}
+              shortfall={shortfall}
+              copy={copy.form}
+            />
           </div>
         ) : null}
 
