@@ -117,6 +117,14 @@ export default async function NewRecordPage({
               {copy.form.branch}
             </a>
           ) : null}
+          {/* 谁欠我钱。⚠️ **只有老板** —— 那一页对师傅是 404，
+              而一条通往 404 的连结比没有连结糟。
+              `party_aging` 自己也是 sees_money。 */}
+          {ctx.role === "owner" ? (
+            <a href={`/${locale}/portal/owing`} className="underline">
+              {copy.form.owingLink}
+            </a>
+          ) : null}
         </p>
       </main>
       </RecordShell>

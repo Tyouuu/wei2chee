@@ -924,6 +924,23 @@
       "on": "Switch back on",
       "offLabel": "closed",
       "none": "Just the one shop. Open a second one here when there is one."
+    },
+    "owing": {
+      "title": "Who owes me",
+      "lede": "Every customer with money outstanding, and how long it has been outstanding. Worked out from the jobs and the payments -- nothing here is typed.",
+      "label": "OUTSTANDING",
+      "none": "Nobody owes you anything right now.",
+      "total": "Owed to you",
+      "overdue": "Over 60 days",
+      "who": "Who",
+      "current": "This month",
+      "d30": "1 month",
+      "d60": "2 months",
+      "d90": "3 months",
+      "older": "Older",
+      "rowTotal": "Total",
+      "unknown": "Not on a customer",
+      "note": "Sorted by the largest. The one to ring is usually not the largest -- look at the last two columns."
     }
   },
   "explainer": {

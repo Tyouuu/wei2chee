@@ -113,6 +113,7 @@
     "shoot:party-portal": "node scripts/shoot-party-portal.mjs",
     "shoot:shared-record": "node scripts/shoot-shared-record.mjs",
     "shoot:delivery": "node scripts/shoot-delivery.mjs",
+    "shoot:owing": "node scripts/shoot-owing.mjs",
     "shoot:packages": "node scripts/shoot-packages.mjs",
     "align:pages": "node scripts/align-pages.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",
