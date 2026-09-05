@@ -9992,6 +9992,40 @@ Lotus Ipoh · Taman Ipoh Jaya · Gunung Rapat）。
 **前者是查得到的事实，后者是我的意见** —— 混在一起讲，他没办法分开判。
 下一次讲名字、讲设计、讲任何他有主张的东西，**规矩归规矩，意见归意见，分两段讲。**
 
+##### 🔴 他挑了一个会害到他的行业码 —— 47912（2026-09-06）
+> `你填`（配一张画面：`Business Code 47912 · RETAIL SALE OF ANY KIND OF PRODUCT OVER THE INTERNET`）
+
+**那是「网上零售任何产品」—— 卖货的。他卖的是系统跟服务，不是货。**
+
+🔴 **留着它的代价不是分类不好看，是一条已经记过两次的钱**：
+[任务 88](#88) · [任务 153](#153) 的 MDEC 数码补助**按行业审**，
+而一个登记成**网上零售**的生意，去申请 IT 类的补助或者方案商资格，**对不上**。
+⚠️ 而且[任务 153](#153) 已经量过：那条路他今年走不了（要 MD Status）——
+**但那是「今年不行」，不是「以后不做」，而行业码改一次要 RM 20。**
+
+**查证过的三个（不是猜的，读了 MSIC 2008 的定义）：**
+| 码 | 是什么 | 对他哪一半 |
+|---|---|---|
+| **62010** | Computer programming activities —— 写 · 改 · 测试 · 维护软件 | **主要那个** |
+| 62020 | Information technology consultancy activities | 上门谈、帮他规划要哪几页 |
+| **63110** | Data processing, hosting and related activities | **他帮客户托管系统跟官网，就是这个** |
+
+→ **这一条同时关掉 9-06 早些时候那个 ⚠️**（「62010 是我照 MSIC 2008 认的，
+要他在画面上对一次」）—— 现在读过定义了。
+⚠️ **画面上搜出来还是要读一次说明再按**，代码表偶尔会改。
+
+**那个 `Types Of Business` 的框，我给他的原文：**
+```
+COMPUTER PROGRAMMING, DEVELOPMENT OF BUSINESS MANAGEMENT SYSTEMS AND WEBSITES
+FOR SMALL AND MEDIUM ENTERPRISES, SOFTWARE HOSTING AND MAINTENANCE SERVICES,
+AND INFORMATION TECHNOLOGY CONSULTANCY
+```
+（照它自己例子的写法：`Retail Sale Of Food Products, Electrical Installation
+And Wholesale Of Clothing` —— 一串用逗号分开的生意活动，不是一段介绍。）
+
+⚠️ **这一格跟「Is Online Seller = YES」不冲突** —— 那一格问的是**管道**
+（他从网上做生意），这一格问的是**做什么**（写软件、托管），两件事。
+
 ##### 还要问一句的
 - [ ] **地方政府的营业执照（lesen perniagaan）** —— 在家做的软件生意有些市政局要、
       有些不要，各地不一样。**我没查他那一区的。**
