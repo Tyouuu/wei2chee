@@ -36,9 +36,16 @@ import { ringgitOf } from "./line-editor";
  * ── 订金**不算进**期末余额 ────────────────────────────────────────────────
  *
  * [任务 147] 故意弄坏过一次，红出来是：对帐单说他欠 RM 10,000，
- * 系统说 RM 13,000。这一行的讲法本来就是两个数字：
+ * 系统说 RM 13,000。
+ *
+ * 🔴 **而两个数字要一起讲。** 看图才看到的：
+ * 只写「期末 RM 60,500」而不提正上方那一段的 RM 20,000，
+ * 那张纸发出去客人会回一句「我付过两万了」。
+ * [任务 147] 的原话就是两句：
  * 「你还欠 RM 45,500，另外你那边有 RM 3,000 的订金还没扣。」
- * 订金那一半在旁边那一段，这里不碰。
+ *
+ * ⚠️ 数字本身还是旁边那一段算的（`credit.cents` 传进来）——
+ *    这里不重算，同一个问题只能有一个答案。
  */
 
 type Row = {
@@ -66,10 +73,26 @@ const thisMonth = () => {
 export function PartyStatement({
   projectId,
   partyId,
+  depositCents,
   copy,
 }: {
   projectId: string;
   partyId: string;
+  /**
+   * 🔴 他先付了、还没用掉的那笔钱。
+   *
+   * 它**不算进期末余额**（[任务 147] 故意弄坏过一次，
+   * 红出来是：对帐单说他欠 RM 10,000，系统说 RM 13,000）——
+   * 而它**一定要跟期末余额一起讲出来**。
+   *
+   * 看图才看到的：只写「期末 RM 60,500」而不提那两万，
+   * 那张纸发出去客人会回一句「我付过两万了」。
+   * [任务 147] 的原话就是两个数字：
+   * 「你还欠 RM 45,500，另外你那边有 RM 3,000 的订金还没扣。」
+   *
+   * 0 = 没有订金，那一句不画。
+   */
+  depositCents: number;
   copy: RecordFormCopy;
 }) {
   const [month, setMonth] = useState(thisMonth);
@@ -142,7 +165,55 @@ export function PartyStatement({
           {opening ? ` · ${copy.statementOpening} ${ringgitOf(opening.runningCents)}` : ""}
         </span>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+          {/* 🔴 手机上一行一笔，不是一张五栏的表。
+              看图才看到的：390 的时候那张表被切掉，
+              **而被切掉的正好是「期末余额」那一栏** ——
+              他打开这一页要看的就是那一个数字。
+              [任务 141e] 已经定过同一条：手机上一行一笔。 */}
+          <ul className="flex flex-col gap-3 sm:hidden">
+            {opening ? (
+              <li className="flex items-baseline justify-between gap-3 [font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas-dim)]">
+                <span>{copy.statementOpening}</span>
+                <span>{ringgitOf(opening.runningCents)}</span>
+              </li>
+            ) : null}
+            {moves.map((r, i) => (
+              <li
+                key={i}
+                className="flex flex-col gap-0.5 border-t pt-3 [border-color:var(--color-ink-800)]"
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas)]">
+                    {[r.docNo, r.title].filter(Boolean).join(" · ") || "—"}
+                  </span>
+                  <span className="shrink-0 [font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas)]">
+                    {ringgitOf(r.chargeCents || r.creditCents)}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 [font-size:var(--text-xs)] tabular-nums text-[color:var(--color-on-canvas-dim)]">
+                  <span>
+                    {r.onDate}
+                    {r.creditCents ? ` · ${copy.statementPaid}` : ""}
+                  </span>
+                  <span>
+                    {copy.statementRunning} {ringgitOf(r.runningCents)}
+                  </span>
+                </div>
+              </li>
+            ))}
+            <li className="flex items-baseline justify-between gap-3 border-t-2 pt-3 [border-color:var(--color-ink-700)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-on-canvas)]">
+              <span>{copy.statementClosing}</span>
+              <span>{closing == null ? "—" : ringgitOf(closing)}</span>
+            </li>
+            {depositCents > 0 ? (
+              <li className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
+                {copy.statementDeposit.replace("{amount}", ringgitOf(depositCents))}
+              </li>
+            ) : null}
+          </ul>
+
+          <div className="hidden overflow-x-auto sm:block">
           <table className="w-full min-w-[30rem] border-collapse [font-size:var(--text-sm)] tabular-nums">
             <thead>
               <tr className="text-left text-[color:var(--color-on-canvas-dim)]">
@@ -192,9 +263,22 @@ export function PartyStatement({
                 </td>
                 <td className="py-2 text-right">{closing == null ? "—" : ringgitOf(closing)}</td>
               </tr>
+              {/* 🔴 两个数字要一起讲。只写期末不提订金，
+                  那张纸发出去客人会回一句「我付过了」。 */}
+              {depositCents > 0 ? (
+                <tr>
+                  <td
+                    className="pt-1 [font-size:var(--text-xs)] [font-weight:var(--fw-regular)] text-[color:var(--color-on-canvas-dim)]"
+                    colSpan={5}
+                  >
+                    {copy.statementDeposit.replace("{amount}", ringgitOf(depositCents))}
+                  </td>
+                </tr>
+              ) : null}
             </tfoot>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </FormSection>
   );

@@ -59,6 +59,8 @@ export type RecordFormCopy = {
   statementClosing: string;
   statementQuiet: string;
   statementUnread: string;
+  /** 带 {amount}。期末余额底下那一句——两个数字要一起讲 */
+  statementDeposit: string;
   lineRemove: string;
   lineTotal: string;
   amountFromLines: string;
@@ -446,6 +448,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       statementClosing: "期末余额",
       statementQuiet: "这个月没有来往。",
       statementUnread: "这一段读不到。",
+      statementDeposit: "另外他那边还有 {amount} 的订金没有扣。",
       lineRemove: "删掉这一行",
       lineTotal: "合计",
       amountFromLines: "有逐项的时候，上面的金额是这几行加起来的。",
@@ -744,6 +747,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       statementClosing: "Closing balance",
       statementQuiet: "Nothing happened this month.",
       statementUnread: "This part could not be read.",
+      statementDeposit: "He also has {amount} paid and not yet applied.",
       lineRemove: "Remove this line",
       lineTotal: "Total",
       amountFromLines: "With line items, the amount above is their total.",

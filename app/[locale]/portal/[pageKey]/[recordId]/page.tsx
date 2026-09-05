@@ -1087,7 +1087,12 @@ export default async function EditRecordPage({
             读起来是「这个客人什么都没欠」。 */}
         {credit && ctx.isDirectory && pageKey === "customers" ? (
           <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <PartyStatement projectId={ctx.projectId} partyId={recordId} copy={copy.form} />
+            <PartyStatement
+              projectId={ctx.projectId}
+              partyId={recordId}
+              depositCents={credit.cents}
+              copy={copy.form}
+            />
           </div>
         ) : null}
 
