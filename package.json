@@ -26,6 +26,7 @@
     "check:upstream": "node scripts/check-upstream.mjs",
     "check:ai-cost": "node scripts/ai-cost.mjs",
     "find:prospects": "node scripts/find-prospects.mjs",
+    "walk:dealer": "node scripts/walk-dealer.mjs",
     "backfill:analysis-en": "node scripts/backfill-analysis-en.mjs",
     "eval:editor": "tsx scripts/eval-editor.mjs",
     "eval:browser": "node scripts/eval-browser.mjs",
