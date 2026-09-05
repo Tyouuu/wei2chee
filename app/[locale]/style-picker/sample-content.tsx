@@ -6,7 +6,6 @@ import { PageHeader } from "@/design-system/components/page-header";
 import { EmptyState } from "@/design-system/components/empty-state";
 import { DataGrid } from "@/design-system/components/data-grid";
 import { StatusDot, type StatusTone } from "@/design-system/components/status-dot";
-import { FilterChips } from "@/design-system/components/filter-chips";
 
 type RowStatus = "paid" | "pending" | "overdue";
 type Row = { date: string; description: string; amount: string; status: RowStatus };
@@ -58,13 +57,16 @@ export function SampleContent() {
     <div className="flex flex-col gap-5">
       <PageHeader title={t("pageHeaderTitle")} subtitle={t("pageHeaderSubtitle")} />
 
-      <FilterChips
-        chips={[{ label: t("filterLabel"), value: t("filterValue"), removeHref: "#" }]}
-        clearAllHref="#"
-        filteredByLabel={t("filteredBy")}
-        clearAllLabel={t("clearAll")}
-      />
+      {/* 🔴 那一排「已筛选：等回覆 ×」拿掉了（2026-09-05）。
 
+          它印在**一个新客户看到的第一屏**上，而底下那张表六行一行都没少
+          （Paid · Pending · Overdue 三种都在），那颗 × 指着 "#"。
+          一句在第一屏上就查得出来是假的话，比少一个零件贵得多。
+
+          样板本来就已经在示范这一套风格怎么画标题、表格、状态点、
+          输入框跟空的时候那一格 —— 多这一排只多一句不成立的话。
+          产生器那一边同一天一起拿掉了，见 industry-template.ts 的
+          `filterChips` 那一段。 */}
       <DataGrid id="style-picker-sample" label={t("dataGridLabel")}>
         {/* --text-sm, not a literal: 大字 runs its body at 15px here and 13px
             hard-coded meant the one register whose entire axis is TYPE SIZE

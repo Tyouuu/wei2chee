@@ -498,7 +498,7 @@ type Components = {
     caption: string;
     table: TableModel;
     // Set by the 换个款式 picker, not by a field. See variants.ts.
-    look?: "plain" | "compact" | "zebra" | "grid";
+    look?: "plain" | "compact" | "zebra" | "grid" | "cards";
     row?: "plain" | "pill" | "avatar";
     // 这一栏是一个人还是一件事 —— 关於资料，不是关於版式，所以不问 register
     // 也不给编辑器一个框。见 record-table.tsx 里 `faces` 上面那一段。

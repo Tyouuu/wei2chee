@@ -706,6 +706,12 @@ function recordTable(
   faces?: boolean,
   /** 上面那一排分段自己从行里算 —— 见 record-table.tsx 的 `segments`。 */
   segments?: boolean,
+  /** 🔴 写进来就赢过风格，而这里是**故意的**（跟 `Columns` 的排法同一条，
+   *  见 system-vocabulary.test.ts 的第二种例外）：
+   *  「库存这一页画成一片格子」讲的是**这一页在问什么**，不是这一套风格
+   *  长什么样。五金店老板扫的是「架上还有几包」——
+   *  那是一个数字，不是四栏字。风格照旧决定颜色、圆角、字。 */
+  look?: "cards",
 ): PuckNode {
   // Columns are an array, not four props -- see lib/portal/table-model.ts. The
   // built-in keys are deliberately the old prop names, so a generated table and
@@ -729,6 +735,7 @@ function recordTable(
     caption,
     ...(faces ? { faces: true } : {}),
     ...(segments ? { segments: true } : {}),
+    ...(look ? { look } : {}),
     ...(filters?.length ? { filters: filters.map((label) => ({ label })) } : {}),
     table: {
       columns,
@@ -2810,6 +2817,11 @@ function buildFromShape(
     }),
   ];
 
+  /* 🔴 货架画成一片格子，不是一张表 —— 见 `recordTable` 的 `look`。 */
+  const shelf = [
+    recordTable(`${pageKey}-table`, title, copy.columns, copy.rows, undefined, undefined, true, "cards"),
+  ];
+
   const table = [
     /* 最后那个 `true` 换掉了那一行按不动的筛选 chip —— 见档案上面
        `filterChips` 那一段。那张表自己从行里算它真的有的那几种状态；
@@ -2847,7 +2859,14 @@ function buildFromShape(
       ];
 
     case "catalog":
-      return [...head, ...search, ...table];
+      /* 🔴 上面那个「按名字或编号找」拿掉了（2026-09-05）。
+         在真的浏览器里按过：**点开 0 个选项，选完画面一个字都没变**
+         —— 而它就压在那张表自己那个会筛的框上面。
+         **一页两个搜索框，而上面那个是假的。**
+         剩下的那一个是真的（打字行数就变少，`check:table-search` 在守）。
+         ⚠️ 名册那三页（客户 · 供应商 · 师傅）也是同一个 Combobox，
+         那三页还没动 —— 见任务档。 */
+      return [...head, ...shelf];
 
     case "pipeline":
       /* THE FIVE PIPELINE MODULES DO NOT SHARE A QUESTION.

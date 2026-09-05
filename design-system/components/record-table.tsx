@@ -70,7 +70,7 @@ export function RecordTable(props: {
    *  twenty jobs rather than five; `zebra` is the banded look every business
    *  owner already reads in Excel; `grid` rules the columns as well, for a
    *  table that is being copied from or checked against paper. */
-  look?: "plain" | "compact" | "zebra" | "grid"
+  look?: "plain" | "compact" | "zebra" | "grid" | "cards"
   /**
    * WHAT A ROW CONTAINS -- a second, independent axis.
    *
@@ -178,7 +178,7 @@ export function RecordTable(props: {
     there was no eslint config in the repository, so `react-hooks/rules-of-hooks`
     has been switched off for this codebase's entire life.
   */
-  const lookPref = useRegisterProp<"plain" | "compact" | "zebra" | "grid">("RecordTable", "look")
+  const lookPref = useRegisterProp<"plain" | "compact" | "zebra" | "grid" | "cards">("RecordTable", "look")
   const shown = look ?? lookPref ?? "plain"
   // "RecordTableRow", NOT "RecordTable". A register's preference is a VARIANT
   // ID, and the id is looked up in VARIANTS under the same key -- so two axes
@@ -443,7 +443,68 @@ export function RecordTable(props: {
         </ul>
       ) : null}
 
-      <div className={rows.length > 0 ? "hidden @3xl:block" : undefined}>
+      {/* ─────────────────────────────────────────────────────────────────
+          一片格子，不是一张表。
+
+          老板 2026-09-05：`我不要一直都是同个组件`。量出来他讲的是真的：
+          **十七页里有十六页画的是这一张表**，而其中十一页的骨架
+          一个字都不差 —— 标题 → 筛一下 → 一张表。
+
+          🔴 而修法不是再造一个新零件。同一批行、同一个搜索、同一排分段，
+          换一个**形状**就够了 —— 这正是这套系统本来就有的那根轴
+          （register 挑每一块长什么样，见 design-doc.ts）。
+          再造一个零件要再接一次投影、再写一次筛选、再验一次手机，
+          而那三样这里都已经是对的。
+
+          抄的是参考那一套的 `file-manager`（`.screenshots/upstream/`）：
+          **每一件东西一张卡，名字在上、那个数字大、一行小字在底下**。
+          一间五金店的老板扫的是「架上还有几包」，不是一行一行读四栏字。
+
+          ⚠️ 一样东西都没有多画：第一栏当名字、金额那一栏当那个大数字、
+          状态画成一颗药丸、其余的用「·」串成底下那一行 ——
+          **跟手机那一行读的是同一份 `columns`**。客户自己加一栏，
+          它自己会出现，不用有人回来改这里。 */}
+      {shown === "cards" && rows.length > 0 ? (
+        <div className="hidden grid-cols-2 @3xl:grid @5xl:grid-cols-3 @7xl:grid-cols-4 [gap:var(--gap-inline)]">
+          {rows.map((row, i) => {
+            const title = String(row.cells?.[phoneTitle.key] ?? "")
+            const amount = phoneAmount ? String(row.cells?.[phoneAmount.key] ?? "") : ""
+            const status = statusKey ? String(row.cells?.[statusKey] ?? "") : ""
+            const tone = (statusKey ? row.tones?.[statusKey] : undefined) as StatusTone | undefined
+            const rest = phoneRest
+              .map((c) => String(row.cells?.[c.key] ?? "").trim())
+              .filter(Boolean)
+              .join(" · ")
+            return (
+              <div
+                key={i}
+                className="flex flex-col [gap:var(--gap-inline)] [background:var(--color-table-bg)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-card)] [padding:var(--pad-card)]"
+              >
+                <span className="truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+                  {title}
+                </span>
+                {amount ? (
+                  /* 那个数字是这张卡的主角，所以它比标题大 ——
+                     跟 `stat-row` 那一条同一个道理（见 stat-outranks-heading）。 */
+                  <span className="tnum [color:var(--color-paper)] [font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] [line-height:1.1]">
+                    {amount}
+                  </span>
+                ) : null}
+                <span className="flex flex-wrap items-center [gap:var(--gap-inline)]">
+                  {status ? <StatusDot tone={tone ?? "neutral"} label={status} /> : null}
+                  {rest ? (
+                    <span className="min-w-0 flex-1 truncate [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                      {rest}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      ) : null}
+
+      <div className={rows.length > 0 && shown !== "cards" ? "hidden @3xl:block" : shown === "cards" ? "hidden" : undefined}>
       <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
       <table
         className="w-full border-collapse [background-color:var(--color-table-bg)] [font-size:var(--text-sm)]"

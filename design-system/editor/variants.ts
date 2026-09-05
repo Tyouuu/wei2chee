@@ -288,6 +288,12 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "compact", label: "紧凑（一页看更多）", props: { look: "compact" } },
     { id: "zebra", label: "隔行底色", props: { look: "zebra" } },
     { id: "grid", label: "有格线", props: { look: "grid" } },
+    /* 🔴 第五个，而它不是「另一种分隔行的方式」—— 它根本不画表格。
+       老板 2026-09-05：`我不要一直都是同个组件`。量出来十七页里
+       十六页画的是这一张表，其中十一页骨架一个字都不差。
+       抄的是参考那一套的 `file-manager`：一件东西一张卡，那个数字最大。
+       一间五金店扫的是「架上还有几包」，不是一行一行读四栏字。 */
+    { id: "cards", label: "一件一张卡", props: { look: "cards" } },
   ],
 
   // A SECOND AXIS ON THE SAME COMPONENT, and deliberately so. `RecordTable`
