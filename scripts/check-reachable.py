@@ -141,6 +141,8 @@ PAGES = [
     # whatever page he came from -- so its height is not something anyone can
     # predict from the source. Added the day 客户 became a real table.
     ("new record", "/en/portal/customers/new"),
+    # 要跟的事 -- 一格做完，那一页要走得进这份清单（任务 177）。
+    ("to chase", "/en/portal/today"),
     ("legal", "/en/legal/terms"),
 ]
 

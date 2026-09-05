@@ -117,6 +117,11 @@ export default async function NewRecordPage({
               {copy.form.branch}
             </a>
           ) : null}
+          {/* 要跟的事。⚠️ **不挡师傅** —— 「明天去工地量尺寸」是他一天的
+              工作，而 `follow_ups_due` 是 works_here。跟谁欠我钱正好相反。 */}
+          <a href={`/${locale}/portal/today`} className="underline">
+            {copy.form.todayLink}
+          </a>
           {/* 谁欠我钱。⚠️ **只有老板** —— 那一页对师傅是 404，
               而一条通往 404 的连结比没有连结糟。
               `party_aging` 自己也是 sees_money。 */}

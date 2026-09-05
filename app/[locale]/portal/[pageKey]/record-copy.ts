@@ -387,6 +387,19 @@ export type RecordFormCopy = {
   creditLede: string;
   creditNone: string;
   creditFrom: string;
+  /* 这一单的下一步（20260905800000）。走单那几页都有。 */
+  nextHeading: string;
+  nextLede: string;
+  nextWhat: string;
+  nextPlaceholder: string;
+  nextWhen: string;
+  nextSave: string;
+  nextChange: string;
+  nextDone: string;
+  nextDrop: string;
+  nextOn: string;
+  nextLate: string;
+  todayLink: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -744,6 +757,18 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       creditLede: "已经收到、还没有分摊给任何一张单的部分。下一张单开出来就可以扣它。",
       creditNone: "没有 —— 他付过的钱都分摊掉了。",
       creditFrom: "来自",
+      nextHeading: "下一步",
+      nextLede: "这一单接下来你要做的那一件。一张单只有一个 —— 做完了才写下一个。",
+      nextWhat: "要做什么",
+      nextPlaceholder: "打电话问他决定了没有",
+      nextWhen: "哪一天",
+      nextSave: "记下来",
+      nextChange: "改成这个",
+      nextDone: "做完了",
+      nextDrop: "不跟了",
+      nextOn: "{date}",
+      nextLate: "逾期 {n} 天（{date}）",
+      todayLink: "要跟的事",
     },
   },
   en: {
@@ -1059,6 +1084,18 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       creditLede: "Money received and not yet put against any document. The next one you raise can draw on it.",
       creditNone: "None -- everything they have paid is accounted for.",
       creditFrom: "From",
+      nextHeading: "Next step",
+      nextLede: "The one thing you do next on this document. One at a time — write the next one when this is done.",
+      nextWhat: "What you will do",
+      nextPlaceholder: "Call and ask if they have decided",
+      nextWhen: "On",
+      nextSave: "Note it down",
+      nextChange: "Change it to this",
+      nextDone: "Done",
+      nextDrop: "Not chasing this",
+      nextOn: "{date}",
+      nextLate: "{n} days late ({date})",
+      todayLink: "To chase",
     },
   },
 };

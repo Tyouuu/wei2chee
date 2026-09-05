@@ -27,6 +27,7 @@ import { isShareableModule } from "@/lib/portal/shared-record";
 import { PIPELINE_MODULES } from "@/lib/portal/shape-state";
 import { SITE_URL } from "@/lib/site-url";
 import { PartyHistory } from "../new/party-history";
+import { FollowUpPanel } from "../new/follow-up-panel";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import { ReferredJobs, type ReferralTally, type ReferredJob } from "../new/referred-jobs";
@@ -190,6 +191,15 @@ export default async function EditRecordPage({
      客人那一页**已经画得出签收那一颗**，老板却开不了一趟货，
      所以那颗按钮永远不会出现。**半条线跟没有线是同一件事。**
      ⚠️ `undefined` = 没有问（不是订单／工程那两页）。 */
+  /* 这一单的下一步（20260905800000）。
+     🔴 Pipedrive 整个产品就是 `Processes, pipeline and activities`，
+     而我们逐条查过自己的库：这一格是**整片空白**。一个承包商手上
+     十二张报价单，今天没有任何地方写着星期五要打给谁。
+     ⚠️ `undefined` = 没有问（不是走单那几页）。 */
+  let followUp:
+    | { id: string; what: string; dueOn: string; daysLate: number }
+    | null
+    | undefined = undefined;
   let runs: DeliveryRun[] | undefined = undefined;
   let shortfall: Shortfall[] = [];
   let shareRef: string | null | undefined = undefined;
@@ -800,6 +810,21 @@ export default async function EditRecordPage({
       .maybeSingle();
     if (!data) notFound();
 
+    /* ── 这一单的下一步（20260905800000）───────────────────────────────
+       🔴 **收起来的单不问。** `set_follow_up` 自己会拒绝它，
+       而画一颗按下去一定失败的按钮正是这个仓库禁的那一种。 */
+    if (!data.archived_at) {
+      const { data: fuRows } = await supabase.rpc("follow_up_of", {
+        in_record_id: recordId,
+      });
+      const fu = ((fuRows ?? []) as {
+        id: string; what: string; due_on: string; days_late: number;
+      }[])[0];
+      followUp = fu
+        ? { id: fu.id, what: fu.what, dueOn: fu.due_on, daysLate: Number(fu.days_late) }
+        : null;
+    }
+
     /* ── 一条发给客人的连结，跟他答了什么（20260905230000 · 510000）──────
        🔴 只有**客人本来就是另一方**的那几种单：报价单 · 订单 · 工程。
        「任务」是内部的 ——「打给供应商问货几时到」不是给客人读的，
@@ -1243,6 +1268,15 @@ export default async function EditRecordPage({
               depositCents={credit.cents}
               copy={copy.form}
             />
+          </div>
+        ) : null}
+
+        {/* 走单那几页多一段：这一单的下一步。
+            排在这几段的最前面 —— 那是他读完这张单**接着要做**的那件事。
+            ⚠️ `undefined` = 没有问（不是走单那几页，或者已经收起来了）。 */}
+        {followUp !== undefined ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <FollowUpPanel recordId={recordId} open={followUp} copy={copy.form} />
           </div>
         ) : null}
 

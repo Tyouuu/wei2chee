@@ -135,7 +135,8 @@
     "check:tax": "node scripts/check-tax.mjs",
     "check:commission-history": "node scripts/check-commission-history.mjs",
     "check:party-portal": "node scripts/check-party-portal.mjs",
-    "check:period-lock": "node scripts/check-period-lock.mjs"
+    "check:period-lock": "node scripts/check-period-lock.mjs",
+    "shoot:follow-ups": "node scripts/shoot-follow-ups.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

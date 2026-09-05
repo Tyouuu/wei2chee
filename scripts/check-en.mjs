@@ -58,6 +58,10 @@ const PAGES = [
      photo picker in: 15 hardcoded Chinese strings behind two clicks and a
      network request, so this crawler had never opened it. */
   ["new record", "/en/portal/customers/new", "customer"],
+  /* 要跟的事（20260905800000）。[任务 177] 量出来的那个洞就是这一行：
+     一格功能做完了，而那一页不在这份清单上 —— 於是这把尺看得到画面，
+     只是从来没走到那几页。**一格做完，那一页要走得进这份清单。** */
+  ["to chase", "/en/portal/today", "customer"],
   /* 改这一单. Its URL carries a RECORD id, so the same trap as
      console-customer one level deeper -- and it carries its own hard-coded
      copy block (地址 · 公司注册号 · 冲正 · 收起来), which is precisely the
