@@ -147,7 +147,8 @@
     "check:supplier-returns": "node scripts/check-supplier-returns.mjs",
     "check:serials": "node scripts/check-serials.mjs",
     "check:nudges": "node scripts/check-nudges.mjs",
-    "check:closable": "node scripts/check-closable.mjs"
+    "check:closable": "node scripts/check-closable.mjs",
+    "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
