@@ -121,6 +121,30 @@ export default async function PortalAppLayout({
         .eq("status", "new")
     : { count: 0 };
 
+  /* 🔴 两个只数不读的计数，为了两条**跟行业走**的工具连结。
+
+     车牌跟保养合约不是每一行都有的：一间沙龙没有车，一家五金店不做定期保养。
+     而侧栏上一条永远用不到的连结，就是他讲过的「四不像」那件事的第 N 次
+     ——[任务 20](../../../../docs/founder-tasks.md#20) 砍掉六行就是这个理由。
+
+     ⚠️ 所以它们**按有没有资料**决定画不画，而不是按角色。
+     那会留下一个「一台车都还没有的车厂看不到入口」的洞 ——
+     补它的是「加一单」那一页底下那条架子，第一次从那里进去。 */
+  const [{ count: vehicleCount }, { count: contractCount }] = project
+    ? await Promise.all([
+        supabase
+          .from("vehicles")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", project.id)
+          .is("archived_at", null),
+        supabase
+          .from("service_contracts")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", project.id)
+          .is("archived_at", null),
+      ])
+    : [{ count: 0 }, { count: 0 }];
+
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
 
@@ -157,6 +181,8 @@ export default async function PortalAppLayout({
         }))}
       sitePublished={Boolean(project?.site_published)}
       enquiryCount={enquiryCount ?? 0}
+      hasVehicles={(vehicleCount ?? 0) > 0}
+      hasContracts={(contractCount ?? 0) > 0}
       paid={Boolean(project?.paid)}
     >
       {/* Inside the shell, not around it. PortalShell is FORMAE -- dark chrome,

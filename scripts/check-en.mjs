@@ -62,6 +62,14 @@ const PAGES = [
      一格功能做完了，而那一页不在这份清单上 —— 於是这把尺看得到画面，
      只是从来没走到那几页。**一格做完，那一页要走得进这份清单。** */
   ["to chase", "/en/portal/today", "customer"],
+  /* 帐 · 保养合约 · 薪水 · 税（2026-09-06）。
+     同上一行同一个理由：**一格做完，那一页要走得进这份清单**。
+     四页里三页只有老板打得开，而这一支本来就是拿老板登入的。 */
+  ["books", "/en/portal/books", "customer"],
+  ["service contracts", "/en/portal/contracts", "customer"],
+  ["pay", "/en/portal/payroll", "customer"],
+  ["tax", "/en/portal/tax", "customer"],
+  ["plates", "/en/portal/vehicles", "customer"],
   /* 改这一单. Its URL carries a RECORD id, so the same trap as
      console-customer one level deeper -- and it carries its own hard-coded
      copy block (地址 · 公司注册号 · 冲正 · 收起来), which is precisely the

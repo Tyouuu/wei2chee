@@ -143,6 +143,13 @@ PAGES = [
     ("new record", "/en/portal/customers/new"),
     # 要跟的事 -- 一格做完，那一页要走得进这份清单（任务 177）。
     ("to chase", "/en/portal/today"),
+    # 帐 · 保养合约 · 薪水 · 税 · 车牌（2026-09-06）。
+    # 一格做完，那一页要走得进这份清单 —— [任务 177]。
+    ("books", "/en/portal/books"),
+    ("service contracts", "/en/portal/contracts"),
+    ("pay", "/en/portal/payroll"),
+    ("tax", "/en/portal/tax"),
+    ("plates", "/en/portal/vehicles"),
     ("legal", "/en/legal/terms"),
 ]
 

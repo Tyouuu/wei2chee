@@ -124,3 +124,77 @@ export function IconPlus({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/* ── 他自己的工具（2026-09-06）────────────────────────────────────────────
+   六件事，六个形状。⚠️ 全部照上面那一套：20×20 · 1.7 · currentColor ——
+   一个粗细不一样的图标，在一排十七像素的行里一眼就看得出来。 */
+
+/** 要跟的事 —— 一个钟。 */
+export function IconClock({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="10" cy="10" r="7" />
+      <path d="M10 6v4.2l2.8 1.7" />
+    </svg>
+  );
+}
+
+/** 谁欠我钱 —— 一个硬币。 */
+export function IconCoin({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="10" cy="10" r="7" />
+      <path d="M10 6.4v7.2M12.1 8.1a2.2 2.2 0 0 0-2.1-1.2c-1.2 0-2.1.7-2.1 1.7s.9 1.5 2.1 1.5 2.1.5 2.1 1.5-.9 1.7-2.1 1.7a2.2 2.2 0 0 1-2.1-1.2" />
+    </svg>
+  );
+}
+
+/** 保养合约 —— 一把扳手。 */
+export function IconWrench({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M13.4 3.4a3.9 3.9 0 0 0-4.6 5.2L3.6 13.8a1.6 1.6 0 0 0 2.3 2.3l5.2-5.2a3.9 3.9 0 0 0 5.2-4.6l-2.3 2.3-2.1-.6-.6-2.1Z" />
+    </svg>
+  );
+}
+
+/** 车牌 —— 一辆车。 */
+export function IconCar({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M3.4 12.2h13.2M4.6 12.2l1.3-4a1.6 1.6 0 0 1 1.5-1.1h5.2a1.6 1.6 0 0 1 1.5 1.1l1.3 4v3.1h-2.2v-1.4H6.8v1.4H4.6Z" />
+      <path d="M6.9 13.6h.01M13.1 13.6h.01" />
+    </svg>
+  );
+}
+
+/** 薪水 —— 一个钱包。 */
+export function IconWallet({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M3.4 6.6a1.4 1.4 0 0 1 1.4-1.4h9.1v2.6M3.4 6.6v7.4a1.4 1.4 0 0 0 1.4 1.4h10.4a1.2 1.2 0 0 0 1.2-1.2v-1.5M3.4 6.6a1.4 1.4 0 0 0 1.4 1.4h10.6a1.2 1.2 0 0 1 1.2 1.2v1.6" />
+      <path d="M13.6 10.8h3v2.1h-3a1.05 1.05 0 0 1 0-2.1Z" />
+    </svg>
+  );
+}
+
+/** 帐 —— 一本摊开的簿子。 */
+export function IconBook({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M10 5.6C8.7 4.5 6.9 4 4.4 4.2v9.6c2.5-.2 4.3.3 5.6 1.4 1.3-1.1 3.1-1.6 5.6-1.4V4.2c-2.5-.2-4.3.3-5.6 1.4Z" />
+      <path d="M10 5.6v9.6" />
+    </svg>
+  );
+}
+
+/** 税 —— 一个百分比。 */
+export function IconPercent({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M14.6 5.4 5.4 14.6" />
+      <circle cx="7" cy="7" r="1.9" />
+      <circle cx="13" cy="13" r="1.9" />
+    </svg>
+  );
+}

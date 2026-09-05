@@ -52,7 +52,21 @@ const api = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_
 
 /** 走整个壳里那几页。**每一页都用同一个 `PageBody`**，所以一页坏就是全部坏 ——
  *  而列几页而不是一页，是为了让那句判语讲得出规模。 */
-const PAGES = ["", "owing", "today", "branches", "enquiries", "vehicles", "styles"];
+const PAGES = [
+  "",
+  "owing",
+  "today",
+  "branches",
+  "enquiries",
+  "vehicles",
+  "styles",
+  /* 2026-09-06 新的四扇 —— 它们跟其余每一页用同一个 `PageBody`，
+     所以一页坏就是全部坏；列出来是为了让那句判语讲得出规模。 */
+  "books",
+  "contracts",
+  "payroll",
+  "tax",
+];
 
 let userId = null;
 dropThrowawayOnExit(admin, () => userId);

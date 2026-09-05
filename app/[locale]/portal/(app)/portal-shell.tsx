@@ -16,6 +16,13 @@ import {
   IconSettings,
   IconSpec,
   IconStyles,
+  IconClock,
+  IconCoin,
+  IconWrench,
+  IconCar,
+  IconWallet,
+  IconBook,
+  IconPercent,
 } from "./shell-icons";
 
 /**
@@ -184,6 +191,8 @@ export function PortalShell({
   pages,
   sitePublished,
   enquiryCount,
+  hasVehicles,
+  hasContracts,
   paid,
   isOwner,
 }: {
@@ -205,6 +214,15 @@ export function PortalShell({
   sitePublished: boolean;
   /** Enquiries posted through the public site. */
   enquiryCount: number;
+  /** 🔴 两条跟行业走的工具，按**有没有资料**决定画不画。
+
+      一间沙龙没有车，一家五金店不做定期保养 —— 而侧栏上一条永远用不到的
+      连结，就是他讲过的「四不像」那件事的第 N 次（任务 20 砍掉六行的理由）。
+
+      ⚠️ 而那留下一个洞：一台车都还没有的车厂看不到入口。
+      补它的是「加一单」那一页底下那条架子，第一次从那里进去。 */
+  hasVehicles: boolean;
+  hasContracts: boolean;
   paid: boolean;
   /** 🔴 An OWNER adjusts the business; a 师傅 works in it.
 
@@ -427,6 +445,50 @@ export function PortalShell({
                 }
               >
                 {t("enquiries")}
+              </NavRow>
+            </>
+          )}
+
+          {/* 他自己的工具。
+
+              ⚠️ 这一组跟 2026-09-05 砍掉的那六行正好相反：那六行（组件库 ·
+              模板库 · 版段库 …）是**我们的**东西摆在他的侧栏上；
+              这几行每一行都是**他自己生意上的一件事**。
+
+              🔴 而它们到 2026-09-06 为止全部没有入口：六十多支函式建好了 ·
+              用真身分验过了 · 守卫红过了，而他打开浏览器找不到那颗按钮 ——
+              而一个做完而没有人碰得到的功能，跟没做是同一件事。
+
+              ⚠️ 每一行都按它那一页自己的守卡挡一次 ——
+              钱那几页（欠钱 · 薪水 · 帐 · 税）对师傅是 404，
+              **而一条通往 404 的连结比没有连结糟**。 */}
+          <SectionLabel>{t("toolsSection")}</SectionLabel>
+          <NavRow href={`${base}/today`} active={is("/today")} icon={<IconClock />}>
+            {t("today")}
+          </NavRow>
+          {hasContracts && (
+            <NavRow href={`${base}/contracts`} active={is("/contracts")} icon={<IconWrench />}>
+              {t("contracts")}
+            </NavRow>
+          )}
+          {hasVehicles && (
+            <NavRow href={`${base}/vehicles`} active={is("/vehicles")} icon={<IconCar />}>
+              {t("vehicles")}
+            </NavRow>
+          )}
+          {isOwner && (
+            <>
+              <NavRow href={`${base}/owing`} active={is("/owing")} icon={<IconCoin />}>
+                {t("owing")}
+              </NavRow>
+              <NavRow href={`${base}/payroll`} active={is("/payroll")} icon={<IconWallet />}>
+                {t("payroll")}
+              </NavRow>
+              <NavRow href={`${base}/books`} active={is("/books")} icon={<IconBook />}>
+                {t("books")}
+              </NavRow>
+              <NavRow href={`${base}/tax`} active={is("/tax")} icon={<IconPercent />}>
+                {t("tax")}
               </NavRow>
             </>
           )}

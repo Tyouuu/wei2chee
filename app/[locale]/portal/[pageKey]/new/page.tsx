@@ -130,6 +130,19 @@ export default async function NewRecordPage({
               {copy.form.owingLink}
             </a>
           ) : null}
+          {/* 🔴 车牌跟保养合约**在侧栏上是按有没有资料画的**（见 portal-shell），
+              所以一间还没登记过任何一台车的车厂，在侧栏上看不到它们 ——
+              而那正是他最需要第一个入口的那一刻。这一条就是那个入口。
+
+              放在这里跟搬旧资料 · 分店同一个理由：**这里是他想到那件事的时刻**
+              —— 一个打开「加一单」、发现自己要记的其实是一台车或者一份合约的人，
+              正好在看这一页。 */}
+          <a href={`/${locale}/portal/vehicles`} className="underline">
+            {copy.form.vehiclesLink}
+          </a>
+          <a href={`/${locale}/portal/contracts`} className="underline">
+            {copy.form.contractsLink}
+          </a>
         </p>
       </main>
       </RecordShell>
