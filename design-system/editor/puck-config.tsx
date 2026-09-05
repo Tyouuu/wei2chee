@@ -506,6 +506,9 @@ type Components = {
     // 分段自己从这张表的行算出来 —— 写死的那一种会在客户的真资料上一格都筛不到。
     // 见 record-table.tsx 里 `segments` 上面那一段。
     segments?: boolean;
+    // 一组一张表（对帐那一页：一家上游一组）。两组以上才分。
+    // 见 record-table.tsx 里 `grouped` 上面那一段。
+    grouped?: boolean;
     // Objects rather than bare strings: Puck's array field edits item PROPS,
     // so a list of strings has nothing for its editor to bind to.
     filters?: { label: string }[];
@@ -2845,8 +2848,8 @@ export const puckConfig: Config<Components> = {
       /* ⚠️ 每一个 prop 都要在这一行传下去。任务 18 那次「筛选条件 / 清空全部」
          就是死在这里：产生页面的那一层老早就传了两个标签，而这一行的解构
          少接了它们，组件退回自己的预设 —— 而画面上完全正常。 */
-      render: ({ gridId, caption, table, look, row, faces, segments, filters }) => (
-        <RecordTable gridId={gridId} caption={caption} table={table} look={look} row={row} faces={faces} segments={segments} filters={filters?.map((f) => f.label)} />
+      render: ({ gridId, caption, table, look, row, faces, segments, grouped, filters }) => (
+        <RecordTable gridId={gridId} caption={caption} table={table} look={look} row={row} faces={faces} segments={segments} grouped={grouped} filters={filters?.map((f) => f.label)} />
       ),
     },
     WorkflowStrip: {

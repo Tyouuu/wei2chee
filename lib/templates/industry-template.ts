@@ -712,6 +712,8 @@ function recordTable(
    *  长什么样。五金店老板扫的是「架上还有几包」——
    *  那是一个数字，不是四栏字。风格照旧决定颜色、圆角、字。 */
   look?: "cards",
+  /** 一组一张表 —— 对帐那一页一家上游一组。见 record-table.tsx 的 `grouped`。 */
+  grouped?: boolean,
 ): PuckNode {
   // Columns are an array, not four props -- see lib/portal/table-model.ts. The
   // built-in keys are deliberately the old prop names, so a generated table and
@@ -736,6 +738,7 @@ function recordTable(
     ...(faces ? { faces: true } : {}),
     ...(segments ? { segments: true } : {}),
     ...(look ? { look } : {}),
+    ...(grouped ? { grouped: true } : {}),
     ...(filters?.length ? { filters: filters.map((label) => ({ label })) } : {}),
     table: {
       columns,
@@ -2709,6 +2712,26 @@ function reportChart(
   ];
 }
 
+/** 对帐那四个数字。第一个最大 —— 见 `reconcile` 那一段。 */
+function reconcileStats(id: string, copy: ModuleCopy): PuckNode[] {
+  if (!copy.hero) return [];
+  return [
+    node("StatRow", `${id}-stats`, {
+      tiles: [
+        { label: copy.hero.label, value: copy.hero.value, deltaLabel: copy.hero.suffix, iconName: "reconciliation" },
+        ...copy.hero.stats.map((st, i) => ({
+          label: st.label,
+          value: st.value,
+          deltaLabel: st.sub ?? "",
+          iconName: ["payments", "quotations", "reports"][i] ?? "dashboard",
+        })),
+      ].slice(0, 4),
+      /* 写进 props 就赢过风格 —— 跟货架、钱那几页同一条（任务 134）。 */
+      layout: "lead",
+    }),
+  ];
+}
+
 function trendNode(id: string, copy: ModuleCopy): PuckNode[] {
   if (!copy.trend) return [];
   return [
@@ -3034,6 +3057,11 @@ function buildFromShape(
   /* 名册那一种的同一张表，第一栏带一颗头像 —— 那一栏是一个人／一家店。
      供应商跟师傅照旧是「左清单右详情」（他们的 Logistics 那一页），
      换掉排法的只有客户。 */
+  /* 一组一张表 —— 只有对帐用。两组以上才真的分（见 record-table.tsx）。 */
+  const groupedTable = [
+    recordTable(`${pageKey}-table`, title, copy.columns, copy.rows, undefined, undefined, true, undefined, true),
+  ];
+
   const dirTable = [
     recordTable(`${pageKey}-table`, title, copy.columns, copy.rows, undefined, true),
   ];
@@ -3158,11 +3186,22 @@ function buildFromShape(
     case "leaderboard":
       return [...head, ...kpiStrip(pageKey, copy, 2), ...reportChart(pageKey, copy, c), ...table];
 
+    /* 对帐 —— 照 `infrastructure` 那一张，而**只落地了一半，理由写在这里**。
+       ✅ 数字用「第一个最大」：这一页的答案就是「差多少」，其余三个
+          （我们的 · 他们的 · 几笔）是拿来解释它的。这个档案自己在下面
+          写过同一句：**它是整个系统里唯一一页，答案就是整页**。
+       🔴 **一组一张表今天画不出来** —— 那一页没有一个可以分组的栏：
+          `rowsFromReconciliations` 把月份跟上游黏成同一格
+          （`primary: "Aug 2026 · Maybank current account"`），而说明那一栏
+          是「RM 0 · 0 entries」，三行一模一样 → 一组 → 正确地不分。
+          `grouped` 照旧传下去（它自己会判两组以上才分），所以**上游变成
+          自己一栏的那一天它就自己开始工作**。那一栏在算钱那一层，
+          已经交给功能地基那一边。 */
     case "reconcile":
       return [
         ...head,
         ...month,
-        ...heroNode(pageKey, locale, copy),
+        ...reconcileStats(pageKey, copy),
         // The variance statement is an Alert rather than a paragraph because
         // 「对得上 / 对不上」 is a STATE, and a state the owner checks once a
         // month should be readable without being read. It is the one place in
@@ -3176,7 +3215,7 @@ function buildFromShape(
               }),
             ]
           : []),
-        ...table,
+        ...groupedTable,
       ];
 
     /* 预约 is the one module whose primary axis is time rather than a row, and

@@ -6,7 +6,7 @@
 // else here needs the client; the props are all serialisable data.
 "use client"
 
-import { useState, type CSSProperties } from "react"
+import { Fragment, useState, type CSSProperties } from "react"
 import { useRegisterProp } from "@/design-system/editor/style-scope"
 import { DataGrid } from "./data-grid"
 import { useSystemWords } from "@/design-system/system-lang-context"
@@ -87,6 +87,19 @@ export function RecordTable(props: {
    */
   row?: "plain" | "pill" | "avatar"
   /**
+   * 一组一张表 —— 出处 arhamkhnz 的 `infrastructure`：每一个专案自己一个
+   * 标题、自己一段表身，而不是一整张平表配一个「专案」栏。
+   *
+   * 分的是**说明那一栏**（`kind: "detail"`）。对帐那一页那一栏是上游是谁
+   * （哪一家银行、哪一个电信商），而一个经销商每个月要跟三家对 ——
+   * 三家的数字混在一张表里，他要用眼睛自己分组。
+   *
+   * ⚠️ **只有两组以上才分。** 一组的时候画一个组标题，就是在一张表上面
+   * 加一行没有作用的字 —— 跟那一排只有一个选项的分段是同一个毛病
+   * （见 `segments`）。
+   */
+  grouped?: boolean
+  /**
    * Segment labels shown above the table, after an "All" the component adds
    * itself. Empty or absent means no segment row, which is right for a table
    * that is already the whole of its page.
@@ -156,7 +169,7 @@ export function RecordTable(props: {
    */
   faces?: boolean
 }) {
-  const { gridId, caption, look, row, filters: given, tools, faces, segments } = props
+  const { gridId, caption, look, row, filters: given, tools, faces, segments, grouped } = props
   const w = useSystemWords()
   // Absent means "follow the register", not "plain" -- see style-scope.tsx.
   /*
@@ -206,6 +219,10 @@ export function RecordTable(props: {
   /** 状态是哪一栏。分段讲的是状态，所以按栏的**种类**找，不是按栏名找
    *  —— 栏名是老板自己取的，他随时可以改成「到哪一步」。 */
   const statusKey = columns.find((c) => c.kind === "status")?.key
+  /* 一组一张表。分的是说明那一栏，而且**两组以上才分** ——
+     见 `grouped`。顺序照第一次出现，不重排：一张突然自己换过顺序的表，
+     读起来像资料变了。 */
+  const groupKey = columns.find((c) => c.kind === "detail")?.key
   /* 明确写进来的赢 —— 总览那一张是有人挑过的。其余的自己算，见上面 `segments`。 */
   const filters = given?.length ? given : segments ? autoSegments(allRows, statusKey) : undefined
   /* 手机上那一行读的是**同一份 `columns`**：第一栏当标题、金额靠右、
@@ -269,6 +286,25 @@ export function RecordTable(props: {
     setSort((s) =>
       !s || s.key !== key ? { key, dir: "asc" } : s.dir === "asc" ? { key, dir: "desc" } : null,
     )
+
+  /* ── 一组一张表 ────────────────────────────────────────────────────────
+     出处 arhamkhnz 的 `infrastructure`：每一个专案自己一个标题、自己一段表身。
+
+     ⚠️ **两组以上才分。** 一组的时候画一个组标题，就是在一张表上面加一行
+     没有作用的字 —— 跟那一排只有一个选项的分段是同一个毛病。
+     顺序照第一次出现，不重排：一张突然自己换过顺序的表，读起来像资料变了。 */
+  const groups = (() => {
+    const flat = [{ label: null as string | null, rows: rows.map((row, i) => ({ row, i })) }]
+    if (!grouped || !groupKey) return flat
+    const by = new Map<string, { row: (typeof rows)[number]; i: number }[]>()
+    rows.forEach((row, i) => {
+      const key = String(row.cells?.[groupKey] ?? "").trim()
+      if (!by.has(key)) by.set(key, [])
+      by.get(key)!.push({ row, i })
+    })
+    if (by.size < 2) return flat
+    return [...by.entries()].map(([label, rs]) => ({ label, rows: rs }))
+  })()
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE
   // TRACKING under Ledger (--label-transform: uppercase), plain sentence case
@@ -612,7 +648,22 @@ export function RecordTable(props: {
               </td>
             </tr>
           ) : null}
-          {rows.map((row, i) => (
+          {groups.map((g) => (
+            <Fragment key={`g:${g.label ?? ""}`}>
+              {/* 组标题。整行跨栏 —— 参考那一页每一组自己一个标题，
+                  而不是一整张平表配一个「哪一组」栏。 */}
+              {g.label !== null ? (
+                <tr>
+                  <th
+                    scope="colgroup"
+                    colSpan={columns.length}
+                    className="[background:var(--color-ink-850)] [padding-inline:var(--pad-cell-x)] [padding-block:calc(var(--pad-cell-y)*0.85)] text-left [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)]"
+                  >
+                    {g.label || "—"}
+                  </th>
+                </tr>
+              ) : null}
+              {g.rows.map(({ row, i }) => (
             <tr
               key={i}
               className={
@@ -738,6 +789,8 @@ export function RecordTable(props: {
                 )
               })}
             </tr>
+              ))}
+            </Fragment>
           ))}
         </tbody>
       </table>

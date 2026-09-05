@@ -245,12 +245,23 @@ export async function seedEveryShape(
 
   /* 对帐要种，才分得出「正确地在示范」跟「根本读不到他的」——
      那两件在画面上长得一模一样，而只有种一笔才问得出来。 */
-  await seed("reconciliation", () => api.rpc("add_reconciliation", {
-    in_project_id: P, in_module_key: "reconciliation",
-    in_period: new Date().toISOString().slice(0, 8) + "01",
-    in_source: showroom ? "Maybank current account" : `${mark} Bank`,
-    in_their_cents: paid(0),
-  }));
+  /* 🔴 拍照要**几家上游**，不是一家 —— 对帐那一页 9-05 起是「一组一张表」，
+     而只有一组的时候它正确地不分组。一家上游拍出来看不到那个设计。
+     尺子那一边照旧一笔（记号那一笔就够）。 */
+  const banks = showroom
+    ? ["Maybank current account", "CIMB business", "Public Bank"]
+    : [`${mark} Bank`];
+  for (let i = 0; i < banks.length; i++) {
+    await seed("reconciliation", () => api.rpc("add_reconciliation", {
+      in_project_id: P, in_module_key: "reconciliation",
+      /* 每一家自己一个月份，不然同一个期间同一家会撞。 */
+      in_period: new Date(new Date().getFullYear(), new Date().getMonth() - i, 1)
+        .toISOString()
+        .slice(0, 8) + "01",
+      in_source: banks[i],
+      in_their_cents: paid(i),
+    }));
+  }
   for (let i = 0; i < N; i++) {
     await seed("bookings", () => api.rpc("add_appointment", {
       in_project_id: P, in_module_key: "bookings",
