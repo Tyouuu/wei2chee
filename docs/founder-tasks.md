@@ -14505,6 +14505,8 @@ tsc 干净 · **lint 0 error**（本来 1 个）· **1440 跟 390 都用眼睛�
 
 [重点 7b](./founder-points.md) 的授权：站高一点顶回去。
 - [x] 报告：https://claude.ai/code/artifact/acd1bb11-c50c-4bf4-9a5c-82f8137f127b
+  ⚠️ **要交给别的 session 就交这一份**：它的第〇节是[任务 204](#204)那份报告的全文摘要，下面是 206 自己的。
+  仓库里读：`grep -n "### 204\." docs/founder-tasks.md` · `grep -n "### 206\." docs/founder-tasks.md`
 
 #### 现在的概念，四根柱验出来只有一根站得住
 ① 钱经过我们 —— **半根**（客人找得到他，钱没经过我们）· ② 资料自己进来 —— 三条 ·
