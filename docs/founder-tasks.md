@@ -10026,6 +10026,35 @@ And Wholesale Of Clothing` —— 一串用逗号分开的生意活动，不是�
 ⚠️ **这一格跟「Is Online Seller = YES」不冲突** —— 那一格问的是**管道**
 （他从网上做生意），这一格问的是**做什么**（写软件、托管），两件事。
 
+##### ✅ Business Information 那一页填完了 —— 实际登记的内容（2026-09-06）
+> `可以了`（画面：47912 已经删掉，`62010 AKTIVITI PENGATURCARAAN KOMPUTER
+> (COMPUTER PROGRAMMING ACTIVITIES)` 一个码）
+
+**这一段是他真的登记下去的东西，不是我建议的版本 —— 以后对帐、报税、
+申请闸道或补助，看的是这一段：**
+
+| 那一格 | 他填的 |
+|---|---|
+| `Name Type` | TRADE NAME |
+| 那个免费计划 | Not Applicable |
+| `Is Online Seller` | **YES** |
+| `Business Name` | 他自己决定的那个（`WEI 2 C…` 那一系）—— **收到确认再回来补** |
+| **`Types Of Business`** | `COMPUTER PROGRAMMING, DEVELOPMENT OF BUSINESS MANAGEMENT SYSTEMS AND WEBSITES FOR SMALL AND MEDIUM ENTERPRISES, MOBILE APPLICATION DEVELOPMENT, SOFTWARE HOSTING AND MAINTENANCE SERVICES, AND INFORMATION TECHNOLOGY CONSULTANCY` |
+| **`Business Code`** | **62010 一个** |
+
+🟢 **47912 那个零售码删掉了。**
+⚠️ **63110（托管）他没加** —— 我讲过一次，他没有回头去加，**不再讲第二次**。
+描述那一段本来就写着 `SOFTWARE HOSTING AND MAINTENANCE SERVICES`，
+而那一页自己写着 `at least one business code`，所以一个是够的。
+以后要加是 RM 20（`Change of business particulars`）。
+
+🔴 **一件操作上的事，写下来免得下一轮又卡**：
+**那个 `Add Business Code` 的框搜的是「文字」，不是「号码」。**
+他打 `62010` 回 0 笔、打 `63110` 回 0 笔 —— 而框上就写着 `Keyword`。
+搜 `COMPUTER` 才出来。清单是**双语一行**
+（`AKTIVITI PENGATURCARAAN KOMPUTER (COMPUTER PROGRAMMING ACTIVITIES)`），
+所以马来文英文都搜得到。
+
 ##### 还要问一句的
 - [ ] **地方政府的营业执照（lesen perniagaan）** —— 在家做的软件生意有些市政局要、
       有些不要，各地不一样。**我没查他那一区的。**
