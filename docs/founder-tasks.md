@@ -9790,6 +9790,20 @@ Lotus Ipoh · Taman Ipoh Jaya · Gunung Rapat）。
 ⚠️ 我没有登进去过他的帐号，**按钮的确切字我没看过**，上面是照 SSM 自己的操作手册讲的。
 ⚠️ 证下来之后：拿去开银行户口（**户口名字要跟证上一模一样**）· 手机日历设明年到期前一个月的提醒 · MyIPO 商标是另一件事。
 
+##### 🔴 而「ezBiz 已经死了」那句话要收窄 —— 名字还在，死的只有那条网址（2026-09-06）
+他登进去之后截图问「哪一个」：SSM4U 首页 **Main Services 六张卡**，
+第一张的标志就是 **ezBiz Online**，底下写着
+`Start business with SSM · Business Registration · Business Changes · Business Renewal · Business Termination`。
+
+**注册商号就是那一张，按它的 View Details。** 第二张 CRS 是开公司（Sdn Bhd），不是他要的。
+
+⚠️ **而这一件差点让他不敢按**：我 9-05 跟他讲「ezBiz 2026-05-24 停用，换成 SSM4U」——
+**那句话对的是网址**（`ezbiz.ssm.com.my` 真的不回话），
+**而 ezBiz 这个名字还在，它现在是 SSM4U 里面「注册商号」那个服务的名字。**
+我给他的防假站规矩是「从 `www.ssm.com.my` 点过去」，
+所以他站在对的页面上，看到一个我说过已经死掉的名字。
+→ **一个服务改版，网址会死，牌子常常不会。以后讲「那个东西没了」要分清楚讲的是网址还是名字。**
+
 ##### 还要问一句的
 - [ ] **地方政府的营业执照（lesen perniagaan）** —— 在家做的软件生意有些市政局要、
       有些不要，各地不一样。**我没查他那一区的。**
