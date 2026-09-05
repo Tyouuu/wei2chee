@@ -6,7 +6,8 @@ import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
 import { loadWorkspace } from "@/lib/portal/workspace";
 import { ringgit } from "@/lib/portal/live-rows";
 import { PageBar } from "../page-bar";
-import { PageBody, Section } from "../section";
+import { PageBody } from "../section";
+import { DeskCard } from "../desk-kit";
 import { OpeningBook } from "./opening-book";
 
 /**
@@ -156,17 +157,20 @@ export default async function BooksPage() {
       <PageBar title={t("books.title")} subtitle={t("books.lede")} />
       <PageBody>
         {pos && (
-          <Section label={t("books.positionLabel")}>
-            {/* ① 先给答案。这五个数字是他打开这一页真正要看的东西，
-                而试算表是「怎么算出来的」。 */}
-            <div className="flex flex-wrap gap-x-12 gap-y-6">
-              <Big label={t("books.cash")} value={rm(Number(pos.cash_cents))} lead />
-              <Big label={t("books.receivable")} value={rm(Number(pos.receivable_cents))} />
-              <Big label={t("books.payable")} value={rm(Number(pos.payable_cents))} />
-              <Big label={t("books.deposits")} value={rm(Number(pos.deposits_cents))} />
+          /* 🔴 **一个矩形切成格，不是五个数字浮在留白上。**
+
+             老板：「我不要一直都是相同的组件」。而这五个数字是**一组**
+             （它们加起来就是这一天的位置），所以它们该住在同一个框里 ——
+             骨架抄的是他挑的那一套的 `finance`（[任务 193] 拿过同一个）。 */
+          <DeskCard title={t("books.positionLabel")}>
+            <div className="grid divide-y [border-radius:var(--radius-md)] [border:var(--hairline)_solid_var(--color-ink-800)] [divide-color:var(--color-ink-800)] sm:grid-cols-3 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
+              <Cell label={t("books.cash")} value={rm(Number(pos.cash_cents))} lead />
+              <Cell label={t("books.receivable")} value={rm(Number(pos.receivable_cents))} />
+              <Cell label={t("books.payable")} value={rm(Number(pos.payable_cents))} />
+              <Cell label={t("books.deposits")} value={rm(Number(pos.deposits_cents))} />
               {/* 🔴 少一件货的成本，整个存货就算不出来 —— 而**偷偷当成 0**
                   就是一份看起来没问题的资产负债表。讲出来差几件。 */}
-              <Big
+              <Cell
                 label={t("books.inventory")}
                 value={
                   pos.inventory_known
@@ -176,13 +180,15 @@ export default async function BooksPage() {
                 muted={!pos.inventory_known}
               />
             </div>
-            <p className="mt-6 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+            <p className={`mt-4 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]`}>
               {t("books.asOf", { date: pos.as_of })} · {t("books.cashBasis")}
             </p>
-          </Section>
+          </DeskCard>
         )}
 
-        <Section label={t("books.trialLabel")} count={rows.length}>
+        <div className="h-5" />
+
+        <DeskCard title={t("books.trialLabel")}>
           {/* ② 平不平是一句话。他看这一页唯一要确认的就是它，
               而一行「合计」要他自己去比两个数字。 */}
           <p
@@ -224,9 +230,11 @@ export default async function BooksPage() {
           <p className="mt-5 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
             {t("books.notAccrual")}
           </p>
-        </Section>
+        </DeskCard>
 
-        <Section label={t("books.openingLabel")}>
+        <div className="h-5" />
+
+        <DeskCard title={t("books.openingLabel")}>
           <p className="mb-5 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
             {t("books.openingLede")}
           </p>
@@ -246,13 +254,13 @@ export default async function BooksPage() {
               noDate: t("books.noDate"),
             }}
           />
-        </Section>
+        </DeskCard>
       </PageBody>
     </StyleScope>
   );
 }
 
-/** 位置那几个数字。第一个大一号 —— 这一页的答案是「今天手上有多少现金」。
+/** 那个矩形里的一格。
  *
  *  ⚠️ **不要用 `--text-hero`** —— 在这个壳里它解析成官网第一屏那个
  *  `clamp(2.75rem, 7.4vw, 5rem)`（44–80px），不是风格档里那个 38px。
@@ -261,7 +269,7 @@ export default async function BooksPage() {
  *  ⚠️ 而三种大小是**挑出来的一个 class**，不是接起来的三段 ——
  *  同一个元素上两个 arbitrary 字级，赢的是**档案里后面那一条**，
  *  不是字串里后面那一个（`w-full` 赢 `w-[110px]` 那次学的）。 */
-function Big({
+function Cell({
   label,
   value,
   lead,
@@ -278,7 +286,7 @@ function Big({
       ? "[font-size:var(--text-stat)] [font-weight:var(--fw-semibold)]"
       : "[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]";
   return (
-    <div>
+    <div className="p-4">
       <div className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
         {label}
       </div>

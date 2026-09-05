@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { Section } from "../section";
-import { deskBtn, deskDim, deskField } from "../desk-kit";
+import { DeskCard, deskBtn, deskDim, deskField } from "../desk-kit";
 
 /**
  * 借出去的，跟借一样东西出去。
@@ -54,6 +53,20 @@ export function OutOnLoan({
   const [rows, setRows] = useState(out);
   const [busy, setBusy] = useState<string | null>(null);
   const [said, setSaid] = useState<Record<string, string>>({});
+
+  /* 一趟东西挂在一张单上，而那张单答得出「在谁那里」——
+     所以分组的键是那张单，显示的是那张单上的人。 */
+  const groups = (() => {
+    const by = new Map<string, { key: string; who: string; doc: string | null; items: Out[] }>();
+    for (const r of rows) {
+      const key = r.record_id;
+      if (!by.has(key))
+        by.set(key, { key, who: r.party || words.someone, doc: r.doc_no, items: [] });
+      by.get(key)!.items.push(r);
+    }
+    return [...by.values()];
+  })();
+  const late = rows.filter((r) => r.days_over > 0).length;
 
   const [jobId, setJobId] = useState(jobs[0]?.id ?? "");
   const [what, setWhat] = useState("");
@@ -115,52 +128,80 @@ export function OutOnLoan({
 
   return (
     <>
-      <Section label={words.outLabel} count={rows.length || undefined}>
-        <p className={`mb-4 ${dim}`}>{rows.length ? words.outLede : words.outNone}</p>
-        {rows.length > 0 && (
-          <ul className="flex flex-col">
-            {rows.map((r) => (
-              <li
-                key={r.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t py-3 [border-color:var(--color-ink-800)]"
-              >
-                <span className="[font-weight:var(--fw-semibold)]">{r.descr}</span>
-                <span className={`tabular-nums ${dim}`}>×{r.qty}</span>
-                {r.party && <span className={dim}>{r.party}</span>}
-                {r.doc_no && <span className={`tabular-nums ${dim}`}>{r.doc_no}</span>}
-                <span className="min-w-0 flex-1" />
-                {/* 🔴 逾期几天讲出来，收不收钱是他的判断 —— 见档头。 */}
-                {r.days_over > 0 ? (
-                  <span className="tabular-nums [font-size:var(--text-sm)] text-[color:var(--color-clay-bright)]">
-                    {words.overdue.replace("%n", String(r.days_over))}
-                  </span>
-                ) : (
-                  <span className={`tabular-nums ${dim}`}>
-                    {r.due_back_on
-                      ? `${words.dueBack} ${r.due_back_on}`
-                      : words.noDueDate}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  disabled={busy === r.id}
-                  onClick={() => back(r)}
-                  className={btn}
-                >
-                  {busy === r.id ? words.returning : words.back}
-                </button>
-                {said[r.id] && (
-                  <span aria-live="polite" className={dim}>
-                    {said[r.id]}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
+      {/* 🔴 **按「在谁那里」分组，不是一串平的行。**
 
-      <Section label={words.lendLabel}>
+          老板：「我不要一直都是相同的组件」。而这一页问的是
+          **「什么在外面、在谁那里」** —— 一串平的行答得了前半句，
+          答不了后半句：他要打一通电话，而电话是打给**一个人**，
+          不是打给一件东西。
+
+          骨架抄的是他挑的那一套的 `infrastructure`（顶上一排摘要，
+          底下一组一张表）。[任务 195] 想在对帐那一页用它，
+          而对帐那一边**没有一栏可以分组** —— 这一页有。 */}
+      <DeskCard title={words.outLabel}>
+        <p className={`mb-4 ${dim}`}>{rows.length ? words.outLede : words.outNone}</p>
+
+        {rows.length > 0 && (
+          <>
+            {/* 顶上一排摘要 —— 他站在柜台前先问的是这两个数。 */}
+            <div className="mb-5 flex flex-wrap gap-2">
+              <Pill>{words.pieces.replace("%n", String(rows.length))}</Pill>
+              {late > 0 && <Pill tone="late">{words.lateCount.replace("%n", String(late))}</Pill>}
+              <Pill>{words.people.replace("%n", String(groups.length))}</Pill>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              {groups.map((g) => (
+                <div key={g.key}>
+                  <div className="mb-1 flex flex-wrap items-baseline gap-x-3">
+                    <span className="[font-weight:var(--fw-semibold)]">{g.who}</span>
+                    {g.doc && <span className={`tabular-nums ${dim}`}>{g.doc}</span>}
+                  </div>
+                  <ul className="flex flex-col">
+                    {g.items.map((r) => (
+                      <li
+                        key={r.id}
+                        className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t py-3 [border-color:var(--color-ink-800)]"
+                      >
+                        <span>{r.descr}</span>
+                        <span className={`tabular-nums ${dim}`}>×{r.qty}</span>
+                        <span className="min-w-0 flex-1" />
+                        {/* 🔴 逾期几天讲出来，收不收钱是他的判断 —— 见档头。 */}
+                        {r.days_over > 0 ? (
+                          <span className="tabular-nums [font-size:var(--text-sm)] text-[color:var(--color-clay-bright)]">
+                            {words.overdue.replace("%n", String(r.days_over))}
+                          </span>
+                        ) : (
+                          <span className={`tabular-nums ${dim}`}>
+                            {r.due_back_on ? `${words.dueBack} ${r.due_back_on}` : words.noDueDate}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          disabled={busy === r.id}
+                          onClick={() => back(r)}
+                          className={btn}
+                        >
+                          {busy === r.id ? words.returning : words.back}
+                        </button>
+                        {said[r.id] && (
+                          <span aria-live="polite" className={dim}>
+                            {said[r.id]}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </DeskCard>
+
+      <div className="h-5" />
+
+      <DeskCard title={words.lendLabel}>
         <p className={`mb-4 ${dim}`}>{words.lendLede}</p>
         {/* 🔴 一张单都没有就不画那几格 —— 借出去的东西挂在一张单上，
             而一个挑不到单的表单是一颗按不动的按钮。 */}
@@ -225,7 +266,22 @@ export function OutOnLoan({
             <p className={`mt-3 ${dim}`}>{words.depositNote}</p>
           </>
         )}
-      </Section>
+      </DeskCard>
     </>
+  );
+}
+
+/** 顶上那一排摘要。参考页的 `infrastructure` 用它把一整页压成三个数。 */
+function Pill({ children, tone }: { children: React.ReactNode; tone?: "late" }) {
+  return (
+    <span
+      className={`inline-flex items-center [border-radius:999px] [border:var(--hairline)_solid_var(--color-ink-800)] px-3 py-1 [font-size:var(--text-sm)] tabular-nums ${
+        tone === "late"
+          ? "[border-color:var(--color-clay-bright)] text-[color:var(--color-clay-bright)]"
+          : ""
+      }`}
+    >
+      {children}
+    </span>
   );
 }

@@ -140,6 +140,10 @@ export default async function RentalsPage() {
           }))}
           words={{
             outLabel: t("rentals.outLabel"),
+            pieces: t("rentals.pieces"),
+            lateCount: t("rentals.lateCount"),
+            people: t("rentals.people"),
+            someone: t("rentals.someone"),
             outLede: t("rentals.outLede"),
             outNone: t("rentals.outNone"),
             overdue: t("rentals.overdue"),

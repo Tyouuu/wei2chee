@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { Section } from "../section";
-import { deskBtn, deskDim, deskField } from "../desk-kit";
+import { DeskCard, deskBtn, deskDim, deskField } from "../desk-kit";
 
 /**
  * 这一轮要去哪几家，跟签一份新的。
@@ -83,6 +82,20 @@ export function ServiceRound({
   const [busy, setBusy] = useState<string | null>(null);
   const [said, setSaid] = useState<Record<string, string>>({});
   const [makeJobIn, setMakeJobIn] = useState<string>(jobPages[0]?.key ?? "");
+  const field = deskField;
+
+  /* 一条路线是**按天**排的。⚠️ 顺序照资料库给的（逾期的在前），
+     所以这里只分段，不重排 —— 重排一次就要在两个地方维护同一条规则。 */
+  const days = (() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const by = new Map<string, { on: string; late: boolean; items: Due[] }>();
+    for (const d of rows) {
+      if (!by.has(d.due_on))
+        by.set(d.due_on, { on: d.due_on, late: d.due_on < today, items: [] });
+      by.get(d.due_on)!.items.push(d);
+    }
+    return [...by.values()];
+  })();
 
   async function log(d: Due, status: "done" | "skip") {
     const k = keyOf(d);
@@ -154,103 +167,131 @@ export function ServiceRound({
 
   return (
     <>
-      <Section label={words.roundLabel} count={rows.length || undefined}>
-        <p className={`mb-4 ${dim}`}>{rows.length ? words.roundLede : words.roundNone}</p>
-        {rows.length > 0 && (
-          <ul className="flex flex-col">
-            {rows.map((d) => {
-              const k = keyOf(d);
-              return (
-                <li
-                  key={k}
-                  className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t py-3 [border-color:var(--color-ink-800)]"
-                >
-                  <span className="tabular-nums [font-size:var(--text-sm)]">{d.due_on}</span>
-                  <span className="[font-weight:var(--fw-semibold)]">{d.party}</span>
-                  {d.title && <span className={dim}>{d.title}</span>}
-                  {/* 逾期讲出来。⚠️ 只有还没做的才算逾期 —— 一次做完的上门
-                      不管当初迟了多久，都不再是一件要追的事。 */}
-                  {d.overdue && !logged(d) && (
-                    <span className="[font-size:var(--text-sm)] text-[color:var(--color-clay-bright)]">
-                      {words.overdue}
-                    </span>
-                  )}
-                  <span className="min-w-0 flex-1" />
-                  {logged(d) ? (
-                    <>
-                      <span className={dim}>
-                        {d.status === "done" ? words.wasDone : words.wasSkipped}
-                      </span>
-                      {d.record_id && jobPages.length > 0 && (
-                        <a
-                          href={`/${locale}/portal/${jobPages[0].key}/${d.record_id}`}
-                          className="[font-size:var(--text-sm)] underline"
-                        >
-                          {words.openJob}
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        disabled={busy === k}
-                        onClick={() => undo(d)}
-                        className={deskBtn("danger")}
+      {/* 🔴 **按日子分段，不是一串平的行。**
+
+          老板：「我不要一直都是相同的组件」。而这一页问的是
+          **「这一轮要去哪几家」** —— 那是一条路线，不是一份名单：
+          他今天出门要知道**今天有哪几家**，明天有哪几家。
+
+          骨架抄的是他挑的那一套的 `productivity`（按天分段的行程），
+          而不是那一串到处都在用的记录行。 */}
+      <DeskCard title={words.roundLabel}>
+        <p className={`mb-5 ${dim}`}>{rows.length ? words.roundLede : words.roundNone}</p>
+
+        {days.length > 0 && (
+          <div className="flex flex-col gap-6">
+            {days.map((day) => (
+              <div key={day.on}>
+                {/* 那一天。⚠️ 已经过去而且还没做的那几天，读起来要不一样 ——
+                    那是他今天真的要补的。 */}
+                <div className="mb-1 flex flex-wrap items-baseline gap-x-3">
+                  <span
+                    className={`tabular-nums [font-weight:var(--fw-semibold)] ${
+                      day.late ? "text-[color:var(--color-clay-bright)]" : ""
+                    }`}
+                  >
+                    {day.on}
+                  </span>
+                  {/* 🔴 只印数字，不挂词 —— 「1 stops」是英文复数变形的坑，
+                      而这一套本来就有一个做法：数字骑在标题旁边。 */}
+                  <span className={`tabular-nums ${dim}`}>{day.items.length}</span>
+                </div>
+                <ul className="flex flex-col">
+                  {day.items.map((d) => {
+                    const k = keyOf(d);
+                    return (
+                      <li
+                        key={k}
+                        className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t py-3 [border-color:var(--color-ink-800)]"
                       >
-                        {words.undo}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        disabled={busy === k}
-                        onClick={() => log(d, "done")}
-                        className={deskBtn("primary")}
-                      >
-                        {words.done}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy === k}
-                        onClick={() => log(d, "skip")}
-                        className={btn}
-                      >
-                        {words.skip}
-                      </button>
-                    </>
-                  )}
-                  {said[k] && (
-                    <span aria-live="polite" className={dim}>
-                      {said[k]}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                        <span className="[font-weight:var(--fw-semibold)]">{d.party}</span>
+                        {d.title && <span className={dim}>{d.title}</span>}
+                        <span className="min-w-0 flex-1" />
+                        {logged(d) ? (
+                          <>
+                            <span className={dim}>
+                              {d.status === "done" ? words.wasDone : words.wasSkipped}
+                            </span>
+                            {d.record_id && jobPages.length > 0 && (
+                              <a
+                                href={`/${locale}/portal/${jobPages[0].key}/${d.record_id}`}
+                                className="[font-size:var(--text-sm)] underline"
+                              >
+                                {words.openJob}
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              disabled={busy === k}
+                              onClick={() => undo(d)}
+                              className={deskBtn("danger")}
+                            >
+                              {words.undo}
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              disabled={busy === k}
+                              onClick={() => log(d, "done")}
+                              className={deskBtn("primary")}
+                            >
+                              {words.done}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy === k}
+                              onClick={() => log(d, "skip")}
+                              className={btn}
+                            >
+                              {words.skip}
+                            </button>
+                          </>
+                        )}
+                        {said[k] && (
+                          <span aria-live="polite" className={dim}>
+                            {said[k]}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
+
         {/* 「顺手开一张单」开在哪。⚠️ 一页都没有的时候整段不画 ——
             那时候那颗按钮开不出任何东西，而 `log_service_visit` 会抛。 */}
         {rows.length > 0 && jobPages.length > 0 && (
-          <label className={`mt-4 flex flex-wrap items-center gap-3 ${dim}`}>
+          <label className={`mt-5 flex flex-wrap items-center gap-3 ${dim}`}>
             {words.makeJob}
-            <select
-              value={makeJobIn}
-              onChange={(e) => setMakeJobIn(e.target.value)}
-              className="min-h-11 [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]"
-            >
-              {jobPages.map((p) => (
-                <option key={p.key} value={p.key}>
-                  {p.label}
-                </option>
-              ))}
-              <option value="">{words.noJob}</option>
-            </select>
+            {/* ⚠️ 不写 `w-auto` —— 它跟 `field` 自己的 `w-full` 都是 width，
+                赢的是档案里后面那一条。用一个有上限的盒子包起来才稳。 */}
+            <span className="inline-block w-full max-w-[16rem]">
+              <select
+                value={makeJobIn}
+                onChange={(e) => setMakeJobIn(e.target.value)}
+                className={field}
+              >
+                {jobPages.map((p) => (
+                  <option key={p.key} value={p.key}>
+                    {p.label}
+                  </option>
+                ))}
+                <option value="">{words.noJob}</option>
+              </select>
+            </span>
           </label>
         )}
-      </Section>
+      </DeskCard>
+
+      <div className="h-5" />
 
       {ending.length > 0 && (
-        <Section label={words.endingLabel} count={ending.length}>
+        <DeskCard title={words.endingLabel}>
           <p className={`mb-4 ${dim}`}>{words.endingLede}</p>
           <ul className="flex flex-col">
             {ending.map((e) => (
@@ -276,8 +317,10 @@ export function ServiceRound({
               </li>
             ))}
           </ul>
-        </Section>
+        </DeskCard>
       )}
+
+      <div className="h-5" />
 
       <NewContract projectId={projectId} parties={parties} words={words} btn={btn} dim={dim} />
     </>
@@ -341,7 +384,7 @@ function NewContract({
   }
 
   return (
-    <Section label={words.newLabel}>
+    <DeskCard title={words.newLabel}>
       <p className={`mb-4 ${dim}`}>{words.newLede}</p>
       {parties.length === 0 ? (
         <p className={dim}>{words.noCustomers}</p>
@@ -407,6 +450,6 @@ function NewContract({
         </div>
       )}
       <p className={`mt-3 ${dim}`}>{words.endsOnHint}</p>
-    </Section>
+    </DeskCard>
   );
 }

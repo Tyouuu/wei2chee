@@ -410,6 +410,17 @@ try {
 
   // ── ⑤ 侧栏上真的看得到（一条按得到的连结）─────────────────────────────
   await open("");
+  /* ⚠️ 等那一条侧栏真的画出来 —— 开发模式下第一次编译
+     可能比那个固定的等待长，而一把因为编译慢而红的尺，
+     跟一把抳到 bug 的尺在报告里长得一模一样，
+     而一把时不时叫一声的尺没有人会看。 */
+  await page
+    .locator("nav")
+    .first()
+    .getByText(/Books/i)
+    .first()
+    .waitFor({ timeout: 60000 })
+    .catch(() => {});
   const rail = await page.locator("nav").first().innerText();
   for (const [label, path] of [
     ["Books", "books"],
