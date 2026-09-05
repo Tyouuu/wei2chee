@@ -1,0 +1,11 @@
+-- 故意弄坏：把 `follow_ups.created_by` 那个外键拿掉。
+--
+-- 那正是 2026-09-06 之前它真实的样子（档案里写着有，资料库里没有），
+-- 而这个仓库跑了一整天都没有人看得出来 —— 直到有一支尺子去问资料库。
+--
+-- 弄坏之后 `npm run check:closable` 该红两条:
+--   · 「谁做的」那一栏变成光秃秃的 uuid
+--   · 删掉那个员工之后，那一栏还握着他的 id
+--
+-- 20260906240000 弄坏 · 20260906250000 改回去，两支都留在历史里。
+alter table public.follow_ups drop constraint if exists follow_ups_created_by_fkey;
