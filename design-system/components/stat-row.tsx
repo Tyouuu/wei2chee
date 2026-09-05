@@ -91,7 +91,7 @@ export type StatTile = {
   previous?: string
 }
 
-export type StatRowLayout = "tinted" | "boxed" | "rule" | "lead" | "chip" | "iconed"
+export type StatRowLayout = "tinted" | "boxed" | "rule" | "lead" | "chip" | "iconed" | "quad"
 
 // The VALUE only takes a colour when the colour is a reading of the figure and
 // not a decoration. A headline total painted green says "up" -- which nothing
@@ -123,20 +123,29 @@ export function StatRow({
   const cols =
     look === "lead"
       ? "grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-5"
-      : tiles.length >= 4
-        ? "grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-4"
-        : tiles.length === 3
-          ? "grid-cols-1 @2xl:grid-cols-3"
-          : "grid-cols-1 @2xl:grid-cols-2"
+      /* `quad` 永远两栏，就算有四格 —— 参考那一页的数字区是 **2×2**，
+         不是一条四格。把它摊成一行，剩下的就只是「有框」再来一次。 */
+      : look === "quad"
+        ? "grid-cols-1 @2xl:grid-cols-2"
+        : tiles.length >= 4
+          ? "grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-4"
+          : tiles.length === 3
+            ? "grid-cols-1 @2xl:grid-cols-3"
+            : "grid-cols-1 @2xl:grid-cols-2"
 
-  const gap = look === "rule" ? "gap-0" : "[gap:var(--gap-stack)]"
+  /* `quad` 的缝就是那几条线：一格 1px 的空隙，让底下那层线色透出来。
+     这样格线永远接得上，而且不用替每一格算「左边要不要画线」。
+     （portal 首页那一排数字用的是同一个写法。） */
+  const gap = look === "rule" ? "gap-0" : look === "quad" ? "gap-px" : "[gap:var(--gap-stack)]"
 
   return (
     <div
       className={`grid ${cols} ${gap} ${
         look === "rule"
           ? "[border-top:var(--hairline)] [border-bottom:var(--hairline)] [border-color:var(--border-subtle)]"
-          : ""
+          : look === "quad"
+            ? "overflow-hidden [background:var(--border-subtle)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius)]"
+            : ""
       }`}
     >
       {tiles.map((t, i) => (
@@ -163,7 +172,14 @@ function Tile({
   // a register that has no shadows must not be handed a raised tile, and one
   // with no borders must not be handed a boxed one.
   const shell =
-    look === "rule"
+    /* 🔴 一个矩形切成格，不是几张卡并排 —— 出处 arhamkhnz 的 `finance`
+       那一页（Net worth · Available cash · Monthly spend · Savings rate
+       装在同一个方框里，靠细线分开）。差别不是圆角也不是阴影，是
+       **它们共用一个框**：四个数字读起来是一件事的四面，
+       而四张卡读起来是四件不相干的事。 */
+    look === "quad"
+      ? "[background:var(--card)] [padding:var(--pad-card)]"
+    : look === "rule"
       ? `[padding:var(--pad-card)] ${first ? "" : "@2xl:[border-left:var(--hairline)] @2xl:[border-color:var(--border-subtle)]"}`
       : look === "boxed" || look === "iconed"
         ? "[background:var(--card)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius)] [padding:var(--pad-card)]"
@@ -244,7 +260,10 @@ function Tile({
             我们画的是一个上了主色的方块，四张卡就是四块颜色，
             而瑞士的主色是玫瑰色 —— 那正好是[任务 100c](../../docs/founder-tasks.md)
             刚压下去的有色面积。 */}
-        {icon && look !== "rule" && look !== "boxed" && look !== "iconed" && look !== "chip" ? (
+        {/* 🔴 `quad` 也不画。参考那一页的四格里**一个图标都没有** ——
+            那个矩形靠格线读成一件事的四面，每一格再放一个上了色的方块，
+            就是在同一个框里又画四个东西。 */}
+        {icon && look !== "rule" && look !== "boxed" && look !== "iconed" && look !== "chip" && look !== "quad" ? (
           <span
             className="grid h-[30px] w-[30px] flex-none place-items-center [border-radius:var(--radius-sm)] [background:var(--color-primary-soft)] text-[color:var(--color-primary)]"
             aria-hidden

@@ -2306,27 +2306,51 @@ function buildPayments(
       placeholder: c.payments.monthPlaceholder,
       allowClear: true,
     }),
-    node("HeroCard", "payments-hero", {
-      label: sample.heroLabel,
-      value: sample.heroValue,
-      href: `/${locale}/portal/payments`,
-      /* 跟总览那张卡同一个来源 —— 两处讲同一个月，不可以给出两个答案。
-         漏掉它的后果不是少一行字，是「RM 71,300  vs last month」，
-         中间什么都没有（hero-card.tsx 里那段注解讲的就是这个）。 */
-      chg: headlineDelta(sample.heroSpark),
-      chgSuffix: sample.heroSuffix,
-      // Every supporting stat links back into the system rather than nowhere:
-      // the number a business owner reacts to ("RM 31,200 已做未收") should be
-      // the thing that takes them to the page where they act on it.
-      stats: sample.heroStats.map((st) => ({
-        ...st,
-        href: `/${locale}/portal/payments`,
-      })),
-      spark: sample.heroSpark.map((n) => ({ n })),
-      /* 🔴 `.replace("{n}", ...)` 漏了（2026-09-03 放大两倍看到的）：
-         收款那一页的图底下**原样印着「Last {n} periods」** —— 一个大括号
-         留在客户看得到的画面上。总览那一处从写出来就替换了，这一处没有。 */
-      sparkLabel: c.dashboard.sparkLabel.replace("{n}", String(sample.heroSpark.length)),
+    ...moneyNodes({
+      id: "payments",
+      /* 两格，不是四格 —— `buildLedgerHeadline` 今天回两个事实
+         （这个月收到多少 · 几笔），而给四格只填得了两格，就是一个
+         「他记下第一笔之后自己少两格」的画面。
+         ⚠️ 还有两个事实是**算得出来而还没算的**：还没用完的订金、最大的一笔。
+         那在算钱那一层（`live-months.ts`），不是这里。 */
+      tiles: [
+        {
+          label: sample.heroLabel,
+          value: sample.heroValue,
+          deltaLabel: sample.heroSuffix,
+          iconName: "payments",
+        },
+        {
+          label: sample.heroStats[0]?.label ?? c.col.status,
+          value: sample.heroStats[0]?.value ?? "",
+          deltaLabel: sample.heroStats[0]?.sub ?? "",
+          iconName: "reconciliation",
+        },
+      ],
+      trend: {
+        title: c.money.trendTitle,
+        caption: c.money.trendCaption,
+        unit: "RM",
+        /* 🔴 最后六个月，不是十二个。真资料那边（`buildLedgerHeadline`）
+           就是六个月，而示例给十二个的时候，同一张图在「还没有资料」跟
+           「有资料」两种状态下是两个不同的东西。 */
+        points: sample.heroSpark.slice(-6).map((value, i, all) => {
+          /* 最近几个月的名字，跟总览那张图同一个算法。 */
+          const d = new Date();
+          d.setDate(1);
+          d.setMonth(d.getMonth() - (all.length - 1 - i));
+          return {
+            label:
+              lang === "zh"
+                ? `${d.getMonth() + 1}月`
+                : d.toLocaleDateString("en-US", { month: "short" }),
+            value,
+          };
+        }),
+      },
+      rankHeading: c.money.topPaid,
+      rows: sample.records,
+      captionTemplate: c.dashboard.trendCaption,
     }),
     recordTable(
       "payments-list",
@@ -2505,6 +2529,120 @@ function heroNode(id: string, locale: string, copy: ModuleCopy): PuckNode[] {
       sparkLabel: "",
     }),
   ];
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   钱那三页的骨架 —— 收款 · 开销 · 佣金。一份，两条路共用。
+
+   ── 为什么要有这一支（2026-09-05）────────────────────────────────────────
+
+   十七页里六页长得一模一样（月份 → 一个大数字 → 一张表），而钱那三页是其中
+   最像的一组。老板 9-05 指着它讲了两次：`我不要一直都是同个组件` ·
+   `这一点很重要`。
+
+   ⚠️ 而它们其实是**两条不同的代码路径**画出同一张脸：收款有自己的
+   `buildPayments`，开销跟佣金走 `buildFromShape` 的 `ledger`。
+   所以骨架抽成这一支 —— 不抽的话就是第二份手抄，而这个仓库栽在那上面
+   至少八次（489 个区块名、九份小标题、九个 uuid…）。
+
+   ── 抄的是 arhamkhnz 的 `finance` 那一页，而且只抄拿得到资料的那三样 ────
+
+   | 参考那一页有的 | 我们 |
+   |---|---|
+   | **一个矩形切成格**的数字区 | ✅ `StatRow` 的 `quad` |
+   | 带**比例条**的三栏（Income sources） | ✅ `RankList` 的 `bars` |
+   | 折线图 ＋ **卡头上的期间开关** | ✅ 而且那份资料**早就算好、从来没画过** |
+   | 分页签（Dashboard/Accounts/Transactions） | ❌ 我们这三页没有第二个视图可以切 —— 画一排切不了东西的分页签就是死控件 |
+   | 带按钮的提示卡（Credit score updated） | ❌ 没有一个真的动作可以放在那颗按钮上 |
+   | 圆环 ＋ 图例 | ❌ 这三页的行只有一种状态，画出来是**一整片扇形** |
+   | 底下三张小卡（钱包 · 待缴 · 转账） | ❌ 没有资料 |
+
+   🔴 那张图是这一轮最大的一件，而且它不是新做的：`buildLedgerHeadline`
+   从写出来那天就在算**六个月的走势**，而这三页从来没有画过它 ——
+   算好了、投影送过来了、然后丢掉。这个仓库第二十一次「能力有、线没接」。
+────────────────────────────────────────────────────────────────────────── */
+function moneyNodes(opts: {
+  id: string;
+  /** 那两格数字。**只给真的填得满的格数** —— `buildLedgerHeadline` 今天
+   *  回两个事实（这个月多少 · 几笔），而 `withLiveStats` 是
+   *  `tiles.slice(0, 这里的格数)`。给四格、只填得了两格，就是一个
+   *  「他记下第一笔之后自己少两格」的画面。 */
+  tiles: { label: string; value: string; deltaLabel?: string; iconName?: string }[];
+  trend?: { title: string; caption: string; unit?: string; points: { label: string; value: number }[] };
+  /** 比例条那一栏的标题：谁付得最多 · 钱给了谁 · 谁抽得最多。 */
+  rankHeading: string;
+  rows: {
+    primary: string;
+    secondary?: string;
+    amount?: string;
+    tone: StatusTone;
+    status: string;
+  }[];
+  captionTemplate: string;
+}): PuckNode[] {
+  const { id, tiles, trend, rankHeading, rows, captionTemplate } = opts;
+
+  const stats = node("StatRow", `${id}-stats`, {
+    tiles,
+    /* 写进 props 就赢过风格 —— 而这里是**故意的**，跟货架那一片格子同一条：
+       「一个矩形切成格」是**这几页**照参考做的决定，不是这一套风格的口味。
+       见任务 134。 */
+    layout: "quad",
+  });
+
+  const chart = trend
+    ? [
+        node("TrendChart", `${id}-trend`, {
+          title: trend.title,
+          caption: trend.caption.replace("{n}", String(trend.points.length)),
+          kind: "bar",
+          unit: trend.unit,
+          /* 卡头上那个「看多久」。**它是真的会换的** —— 按 3 就真的只画
+             最近三根，底下那句说明的数字跟着变。一个按了没反应的下拉，
+             正是这个仓库禁的那种东西。
+
+             🔴 **最大的那一格一定要等於全部**：那个开关的预设是最大的一格，
+             所以写 `[3, 6]` 配十二个点，一进来就只画最后六根 ——
+             一张默默丢掉一半资料的图，而画面上没有任何东西会讲。
+             （看图才看到的：说明写「Last 12 periods」，图上六根。） */
+          ranges: [3, 6, trend.points.length],
+          captionTemplate,
+          points: trend.points,
+        }),
+      ]
+    : [];
+
+  /* 比例条读的是**这一页自己的行**（`live-rows.ts` 的 RankList 就是这样填的：
+     按金额排、取前五、`name` 用 secondary 再退回 primary）。这里照它排一次，
+     所以「还没有资料的样子」跟「有资料的样子」不会是两个不同的东西。 */
+  const rank = node("RankList", `${id}-top`, {
+    /* 标题在外面那张卡上 —— 参考那一页两块都是卡，一边有卡一边没有，
+       读起来像其中一块还没做完。 */
+    heading: "",
+    shape: "bars",
+    rows: [...rows]
+      .slice(0, 5)
+      .map((r) => ({
+        name: r.secondary || r.primary,
+        sub: r.secondary ? r.primary : r.status,
+        amount: r.amount ?? "",
+      })),
+  });
+
+  const rankCard = node("Panel", `${id}-top-card`, {
+    title: rankHeading,
+    description: "",
+    look: "card",
+    body: [rank],
+  });
+
+  /* 图在左、比例条在右 —— 参考那一页第二排就是这个比例。
+     没有图的时候不画那一栏（一个只有右边的两栏，是一栏加一个空位）。 */
+  const middle = trend
+    ? [node("Columns", `${id}-money-split`, { layout: "wide-left", a: chart, b: [rankCard], c: [] })]
+    : [rankCard];
+
+  return [stats, ...middle];
 }
 
 function trendNode(id: string, copy: ModuleCopy): PuckNode[] {
@@ -2903,11 +3041,34 @@ function buildFromShape(
         ...table,
       ];
 
+    /* 开销 · 佣金 —— 跟收款同一个骨架，同一支 `moneyNodes`。
+       它们本来是两条路画出同一张脸（收款有自己的 `buildPayments`），
+       而那张脸就是老板指着讲「不要一直都是同个组件」的那一张。 */
     case "ledger":
       return [
         ...head,
         ...month,
-        ...heroNode(pageKey, locale, copy),
+        ...moneyNodes({
+          id: pageKey,
+          tiles: [
+            {
+              label: copy.hero?.label ?? title,
+              value: copy.hero?.value ?? "",
+              deltaLabel: copy.hero?.suffix ?? "",
+              iconName: "payments",
+            },
+            {
+              label: copy.hero?.stats?.[0]?.label ?? c.col.status,
+              value: copy.hero?.stats?.[0]?.value ?? "",
+              deltaLabel: copy.hero?.stats?.[0]?.sub ?? "",
+              iconName: "reconciliation",
+            },
+          ],
+          trend: copy.trend,
+          rankHeading: pageKey === "commission" ? c.money.topEarned : c.money.topSpent,
+          rows: copy.rows,
+          captionTemplate: c.dashboard.trendCaption,
+        }),
         ...table,
         ...upload,
       ];

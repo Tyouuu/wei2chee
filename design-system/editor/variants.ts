@@ -474,6 +474,11 @@ export const VARIANTS: Record<string, Variant[]> = {
        2026-09-03 放大两倍并排才看清楚它跟 `boxed` 差在哪 —— 不是圆角不是边框，
        是**卡片里有三行还是两行**。 */
     { id: "iconed", label: "图标一行 + 数字配药丸", props: { layout: "iconed" } },
+    /* 第七种（2026-09-05）。出处 arhamkhnz 的 `finance` 那一页：
+       四个数字装在**同一个矩形**里，靠细线切成 2×2。
+       它跟 `boxed` 的差别不是圆角不是阴影 —— 是**共用一个框**：
+       四张卡读起来是四件不相干的事，一个矩形里的四格读起来是一件事的四面。 */
+    { id: "quad", label: "一个矩形切成格", props: { layout: "quad" } },
   ],
 
   SmallStat: [
@@ -556,6 +561,11 @@ export const VARIANTS: Record<string, Variant[]> = {
     { id: "plain", label: "编号 + 一行字", props: { shape: "plain" } },
     { id: "badge", label: "奖牌编号 · 金额靠右", props: { shape: "badge" } },
     { id: "person", label: "头像 + 两行 · 金额靠右", props: { shape: "person" } },
+    /* 第四种（2026-09-05）。出处 arhamkhnz 的 `finance` 那一页
+       「Income sources」：名字 · 占几成 ／ 金额靠右 ／ 底下一条比例条。
+       另外三种回答「谁排第几」，这一种回答**「这一份有多大」** ——
+       一个老板看排行是要挑人打电话，看比例条是要知道钱集中在谁身上。 */
+    { id: "bars", label: "名字 + 比例条", props: { shape: "bars" } },
   ],
 
   MarkList: [

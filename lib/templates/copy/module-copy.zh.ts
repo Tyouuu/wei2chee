@@ -113,6 +113,19 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
             { label: "计算中", value: "RM 415" },
           ],
         },
+        trend: {
+          title: "最近六个月的佣金",
+          caption: "一根就是一个月。",
+          unit: "RM",
+          points: [
+            { label: "4月", value: 1820 },
+            { label: "5月", value: 2460 },
+            { label: "6月", value: 2110 },
+            { label: "7月", value: 3050 },
+            { label: "8月", value: 2740 },
+            { label: "9月", value: 2515 },
+          ],
+        },
       };
 
     case "expenses":
@@ -156,6 +169,19 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
             { label: "已付", value: "RM 20,400" },
             { label: "待付", value: "RM 640", tone: "caution" },
             { label: "没单据", value: "1 笔", tone: "warn" },
+          ],
+        },
+        trend: {
+          title: "最近六个月花掉",
+          caption: "一根就是一个月。",
+          unit: "RM",
+          points: [
+            { label: "4月", value: 14600 },
+            { label: "5月", value: 19200 },
+            { label: "6月", value: 16800 },
+            { label: "7月", value: 23400 },
+            { label: "8月", value: 21100 },
+            { label: "9月", value: 18700 },
           ],
         },
         upload: {

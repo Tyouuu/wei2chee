@@ -177,6 +177,40 @@ export type Chrome = {
     uploadHint: string;
   };
 
+  /**
+   * 钱那三页共用的几句 —— 收款 · 开销 · 佣金。
+   *
+   * 出处：arhamkhnz 的 `finance` 那一页右上角「Income sources」。
+   * 那不是一张排行榜（谁排第几），是**「这一份有多大」**：
+   * 一个老板看排行是要挑人打电话，看比例条是要知道钱集中在谁身上。
+   */
+  money: {
+    /**
+     * 那一栏比例条的标题。
+     *
+     * 🔴 **它讲的是「最大的几笔」，不是「谁拿走最多」。** 第一版写的是
+     * 「钱给了谁」，而那一块画出来是**一笔一笔**（`live-rows.ts` 的 RankList
+     * 按金额排、取前五，不合并同一个人）—— 於是同一家「Chin Hin Cement」
+     * 在同一栏里出现两次，18% 一次、10% 一次。
+     * 那两笔都是真的，**错的是标题**：一句承诺了合并的话配一份没合并的清单。
+     * （[任务 80](../../docs/founder-tasks.md)：对的数字配错的标签，比空白更糟。）
+     */
+    topPaid: string;
+    topSpent: string;
+    topEarned: string;
+    /** 收款那张图自己的标题。开销跟佣金用它们 copy 里的那一句。 */
+    trendTitle: string;
+    /**
+     * 那张图底下那句说明。
+     *
+     * 🔴 **里面不准有数字。** 第一版用的是总览那一句「最近 {n} 期」，
+     * 填的是**示例**那份点数（12），而真资料那边只有 6 个月 ——
+     * 於是画面上写着「Last 12 periods」，图上六根。
+     * 投影只换点不换那句话，所以那句话必须对**任何**点数都成立。
+     */
+    trendCaption: string;
+  };
+
   bookings: {
     title: string;
     subtitle: (staff: string) => string;
@@ -342,6 +376,14 @@ const EN: Chrome = {
     uploadHint: "Upload the transfer screenshot or receipt (JPG / PNG / PDF)",
   },
 
+  money: {
+    topPaid: "Biggest receipts",
+    topSpent: "Biggest spends",
+    topEarned: "Biggest commissions",
+    trendTitle: "Received, month by month",
+    trendCaption: "Each bar is one month.",
+  },
+
   bookings: {
     title: "Bookings",
     subtitle: (staff) =>
@@ -501,6 +543,14 @@ const ZH: Chrome = {
     itemColumn: "收款项目",
     uploadLabel: "付款凭证",
     uploadHint: "上传银行转账截图或收据（JPG / PNG / PDF）",
+  },
+
+  money: {
+    topPaid: "收到最大的几笔",
+    topSpent: "花掉最大的几笔",
+    topEarned: "最大的几笔佣金",
+    trendTitle: "逐月收到",
+    trendCaption: "一根就是一个月。",
   },
 
   bookings: {

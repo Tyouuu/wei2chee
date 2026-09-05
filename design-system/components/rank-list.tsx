@@ -56,7 +56,15 @@ export type RankRow = {
   href?: string
 }
 
-export type RankShape = "plain" | "badge" | "person"
+export type RankShape = "plain" | "badge" | "person" | "bars"
+
+/** 「RM 48,500」 → 48500。**只拿来算那条比例条有多长**，画出来的永远是
+ *  那个字串本身 —— 他自己的货币、他自己的写法。 */
+function sizeOf(amount: string | undefined): number {
+  if (!amount) return 0
+  const n = Number(String(amount).replace(/[^\d.-]/g, ""))
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
 
 /** The top three get a colour; the rest are ink. Every reference does this and
  *  the reason is that a leaderboard where row nine looks like row one is a
@@ -80,6 +88,13 @@ export function RankList({
   const look: RankShape = shape ?? "plain"
   if (!rows?.length) return null
 
+  /* `bars` 那一种要知道「这一行占多少」，而一行看不到别的行 ——
+     所以占比在这里算，算完传下去。
+     ⚠️ **一个数字都读不出来就不画条**：一排全长的空条不是资讯，是噪音。 */
+  const sizes = rows.map((r) => sizeOf(r.amount))
+  const top = Math.max(0, ...sizes)
+  const sum = sizes.reduce((a, b) => a + b, 0)
+
   return (
     <section className="flex flex-col [gap:var(--gap-inline)]">
       {heading ? (
@@ -102,7 +117,13 @@ export function RankList({
                 : ""
             }
           >
-            <Row row={r} rank={i + 1} look={look} />
+            <Row
+              row={r}
+              rank={i + 1}
+              look={look}
+              fill={top > 0 ? sizes[i] / top : 0}
+              share={sum > 0 ? sizes[i] / sum : 0}
+            />
           </li>
         ))}
       </ol>
@@ -110,7 +131,21 @@ export function RankList({
   )
 }
 
-function Row({ row, rank, look }: { row: RankRow; rank: number; look: RankShape }) {
+function Row({
+  row,
+  rank,
+  look,
+  fill,
+  share,
+}: {
+  row: RankRow
+  rank: number
+  look: RankShape
+  /** 相对最大那一行的长度，0–1。条子有多长。 */
+  fill: number
+  /** 占全部的几成，0–1。名字旁边那个百分比。 */
+  share: number
+}) {
   const body =
     look === "plain" ? (
       // A numbered statement. What a ranking looks like when it is read as
@@ -148,6 +183,52 @@ function Row({ row, rank, look }: { row: RankRow; rank: number; look: RankShape 
         {row.amount ? (
           <span className="tnum flex-none [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
             {row.amount}
+          </span>
+        ) : null}
+      </span>
+    ) : look === "bars" ? (
+      /* 🔴 出处 arhamkhnz 的 `finance` 那一页右上角「Income sources」：
+         **一行字 ＋ 一条比例条**，字是「名字 · 占几成」，金额靠右。
+
+         它跟另外三种的差别不是漆：那三种回答「谁排第几」，这一种回答
+         **「这一份有多大」** —— 一个老板看排行是要挑人打电话，
+         看比例条是要知道钱集中在谁身上。两个问题，两个物件。
+
+         ⚠️ 条子用**中性的墨色**不用主色：参考那三条就是深灰到浅灰，
+         而这几页每一行都上主色，等於整页多一大片颜色
+         （[任务 100c](../../docs/founder-tasks.md) 刚把那件事压下去）。 */
+      <span className="flex min-w-0 flex-col gap-1 [padding-block:calc(var(--pad-card)*0.45)]">
+        <span className="flex min-w-0 items-baseline [gap:var(--gap-inline)]">
+          <span className="min-w-0 flex-1 truncate [font-size:var(--text-sm)]">
+            {row.name}
+            {share > 0 ? (
+              <span className="tnum [font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
+                {" · "}
+                {Math.round(share * 100)}%
+              </span>
+            ) : null}
+          </span>
+          {row.amount ? (
+            <span className="tnum flex-none [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+              {row.amount}
+            </span>
+          ) : null}
+        </span>
+        {fill > 0 ? (
+          <span
+            aria-hidden
+            className="block h-[6px] w-full overflow-hidden [border-radius:var(--radius-sm)] [background:var(--border-subtle)]"
+          >
+            <span
+              className="block h-full [border-radius:var(--radius-sm)]"
+              style={{
+                width: `${Math.max(3, Math.round(fill * 100))}%`,
+                background:
+                  rank === 1
+                    ? "var(--color-on-canvas)"
+                    : `color-mix(in oklab, var(--color-on-canvas) ${rank === 2 ? 55 : 30}%, var(--border-subtle))`,
+              }}
+            />
           </span>
         ) : null}
       </span>

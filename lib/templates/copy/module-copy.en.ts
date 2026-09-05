@@ -117,6 +117,19 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
             { label: "Calculating", value: "RM 415" },
           ],
         },
+        trend: {
+          title: "Commission, last six months",
+          caption: "Each bar is one month.",
+          unit: "RM",
+          points: [
+            { label: "Apr", value: 1820 },
+            { label: "May", value: 2460 },
+            { label: "Jun", value: 2110 },
+            { label: "Jul", value: 3050 },
+            { label: "Aug", value: 2740 },
+            { label: "Sep", value: 2515 },
+          ],
+        },
       };
 
     case "expenses":
@@ -161,6 +174,19 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
             { label: "Paid", value: "RM 20,400" },
             { label: "Unpaid", value: "RM 640", tone: "caution" },
             { label: "No receipt", value: "1", tone: "warn" },
+          ],
+        },
+        trend: {
+          title: "Spent, last six months",
+          caption: "Each bar is one month.",
+          unit: "RM",
+          points: [
+            { label: "Apr", value: 14600 },
+            { label: "May", value: 19200 },
+            { label: "Jun", value: 16800 },
+            { label: "Jul", value: 23400 },
+            { label: "Aug", value: 21100 },
+            { label: "Sep", value: 18700 },
           ],
         },
         upload: {
