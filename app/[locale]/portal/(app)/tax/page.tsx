@@ -80,20 +80,25 @@ export default async function TaxPage() {
   const palette = (paletteRow?.palette as string | null) ?? null;
   const q = thisQuarter();
 
-  const [{ data: profRows }, { data: sstRows }, { data: pageRows }] = await Promise.all([
-    supabase.from("tax_profile").select("*").eq("project_id", workspace.projectId).maybeSingle(),
-    supabase.rpc("sst_return", {
-      in_project_id: workspace.projectId,
-      in_from: q.from,
-      in_to: q.to,
-    }),
-    supabase
-      .from("project_pages")
-      /* 🔴 `page_key`，不是 `key` —— 见 contracts/page.tsx 的同一条。 */
-      .select("page_key, sort_order")
-      .eq("project_id", workspace.projectId)
-      .order("sort_order"),
-  ]);
+  const [{ data: profRows }, { data: sstRows }, { data: pageRows }] =
+    await Promise.all([
+      supabase
+        .from("tax_profile")
+        .select("*")
+        .eq("project_id", workspace.projectId)
+        .maybeSingle(),
+      supabase.rpc("sst_return", {
+        in_project_id: workspace.projectId,
+        in_from: q.from,
+        in_to: q.to,
+      }),
+      supabase
+        .from("project_pages")
+        /* 🔴 `page_key`，不是 `key` —— 见 contracts/page.tsx 的同一条。 */
+        .select("page_key, sort_order")
+        .eq("project_id", workspace.projectId)
+        .order("sort_order"),
+    ]);
 
   /* 拿来试的那几张单，只从走单那几页拿 —— `einvoice_readiness` 收的是
      一张 `pipeline_records`，而名册跟收款上没有那种东西。 */
@@ -113,7 +118,8 @@ export default async function TaxPage() {
     : { data: [] };
 
   const prof = (profRows ?? null) as Record<string, unknown> | null;
-  const str = (k: string) => (typeof prof?.[k] === "string" ? (prof[k] as string) : "");
+  const str = (k: string) =>
+    typeof prof?.[k] === "string" ? (prof[k] as string) : "";
   const sst = ((sstRows ?? []) as SstRow[])[0] ?? null;
 
   /* 🔴 **这一页穿的是他的系统，不是 Formae 的壳。**
@@ -171,15 +177,19 @@ export default async function TaxPage() {
                 }
               : null
           }
-          docs={((docRows ?? []) as {
-            id: string;
-            doc_no: string | null;
-            title: string | null;
-            party: string | null;
-            tax_rate: number | string | null;
-          }[]).map((d) => ({
+          docs={(
+            (docRows ?? []) as {
+              id: string;
+              doc_no: string | null;
+              title: string | null;
+              party: string | null;
+              tax_rate: number | string | null;
+            }[]
+          ).map((d) => ({
             id: d.id,
-            label: [d.doc_no, d.title || d.party].filter(Boolean).join(" · ") || d.id.slice(0, 8),
+            label:
+              [d.doc_no, d.title || d.party].filter(Boolean).join(" · ") ||
+              d.id.slice(0, 8),
             rate: d.tax_rate == null ? "" : String(d.tax_rate),
           }))}
           words={{
@@ -220,7 +230,22 @@ export default async function TaxPage() {
             rateOnDoc: t("tax.rateOnDoc"),
             applyRate: t("tax.applyRate"),
             clearRate: t("tax.clearRate"),
+            /* 🔴 这五个从写出来那天就没有传下去（2026-09-06 量到）——
+               所以「看看那一份」那颗按钮**整颗没有字**，而底下那张单据的
+               四行标题是空白的。它只在「一张单什么都不缺」的时候才画得出来，
+               而尺子从来没走到那一步。`words-reach.test.ts` 现在守着这一类。 */
+            lookAtIt: t("tax.lookAtIt"),
+            supplier: t("tax.supplier"),
+            buyer: t("tax.buyer"),
+            lineCount: t("tax.lineCount"),
+            grossTotal: t("tax.grossTotal"),
             notSent: t("tax.notSent"),
+            whoState: t("tax.whoState"),
+            whoDone: t("tax.whoDone"),
+            sstOn: t("tax.sstOn"),
+            sstOff: t("tax.sstOff"),
+            checkState: t("tax.checkState"),
+            checkNone: t("tax.checkNone"),
           }}
         />
       </PageBody>

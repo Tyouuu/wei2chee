@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { ringgit } from "@/lib/portal/live-rows";
-import { Section } from "../section";
-import { deskBtn, deskDim, deskField } from "../desk-kit";
+import { DeskCard, deskBtn, deskDim, deskField } from "../desk-kit";
 
 /**
  * 税那一页的三段。
@@ -19,12 +18,42 @@ import { deskBtn, deskDim, deskField } from "../desk-kit";
  *
  * `einvoice_readiness` 一条一条回「哪一格 · 缺什么」，而那正是他要拿去
  * 补的那份清单。一句「这张单还不能送」答不了他下一步该做什么。
+ *
+ * ── 为什么这一页是「左边一列 · 右边一段」（2026-09-06）──────────────────
+ *
+ * 老板：**「我不要一直都是相同的组件」**。而这一页比别页更该换 ——
+ * 它其实是**两件事**黏在一起：
+ *
+ *   十三个格子   **填一次**，之后一年不碰
+ *   拿一张单试   **他每一次回来要做的那一件**
+ *
+ * 摊平之后那两件一样长，而他要做的那一件**排在最底下**，
+ * 要滚过十三个他已经填好的格子才看得到。
+ *
+ * ⚠️ 而左边那一列不是三个字，是**三句状态** ——
+ * 一个只写着三个名字的清单，答不了「哪一段还没好」，
+ * 而那正好是他打开这一页要问的第一句。
  */
 
 type Words = Record<string, string>;
 type Profile = Record<string, string>;
 
 const rm = (cents: number) => ringgit(cents) ?? "RM 0";
+
+/** 「这门生意是谁」那一段的十格。左边那一列数的就是它 ——
+ *  第二份手写清单是这个仓库栽过八次的那件事。 */
+const WHO_FIELDS = [
+  "tin",
+  "reg_no",
+  "msic_code",
+  "msic_name",
+  "address_line",
+  "postcode",
+  "city",
+  "state",
+  "phone",
+  "email",
+] as const;
 
 /** 一格。
  *
@@ -50,7 +79,11 @@ function Field({
   return (
     <label className={`grid gap-1 ${wide ? "sm:col-span-2" : ""}`}>
       <span className={dim}>{label}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className={field} />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={field}
+      />
     </label>
   );
 }
@@ -81,6 +114,14 @@ export function TaxDesk({
   const field = deskField;
 
   const [p, setP] = useState<Profile>(profile);
+  /** 🔴 先开哪一段是**量出来的**，不是挑一个。
+   *
+   *  他第一次打开这一页什么都没填，而那时候「拿一张单试」的答案是
+   *  「每一样都缺」—— 一句真话，而它答不了他下一步该做什么。
+   *  所以：还没填 → 先开填的那一段；填过了 → 先开他回来要做的那一件。 */
+  const [tab, setTab] = useState<"who" | "sst" | "check">(
+    !(profile.tin ?? "").trim() || docs.length === 0 ? "who" : "check",
+  );
   const [busy, setBusy] = useState<string | null>(null);
   const [said, setSaid] = useState<Record<string, string>>({});
 
@@ -117,179 +158,250 @@ export function TaxDesk({
     }
   }
 
+  /** 左边那一列讲的是**这一段还差什么**，不是三个字。
+   *
+   *  ⚠️ 三句全部读**画面上现在这一份**（`p` / `docs`），不读伺服器 ——
+   *  它描述的是他眼前这张表单的内容，所以永远不会跟画面对不上。
+   *  读伺服器的话，他按完保存那一行会停在旧的答案上。 */
+  const stillEmpty = WHO_FIELDS.filter((k) => !(p[k] ?? "").trim()).length;
+  const tabs = [
+    {
+      k: "who" as const,
+      title: words.whoLabel,
+      state:
+        stillEmpty === 0
+          ? words.whoDone
+          : words.whoState.replace("%n", String(stillEmpty)),
+    },
+    {
+      k: "sst" as const,
+      title: words.sstLabel,
+      state: (p.sst_no ?? "").trim()
+        ? words.sstOn.replace("%n", (p.sst_rate ?? "").trim() || "0")
+        : words.sstOff,
+    },
+    {
+      k: "check" as const,
+      title: words.checkLabel,
+      state: docs.length
+        ? words.checkState.replace("%n", String(docs.length))
+        : words.checkNone,
+    },
+  ];
+
   return (
-    <>
-      <Section label={words.whoLabel}>
-        <p className={`mb-4 ${dim}`}>{words.whoLede}</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Field
-            value={p.tin ?? ""}
-            label={words.tin}
-            onChange={(v) => set("tin", v)}
-            dim={dim}
-            field={field}
-          />
-          <Field
-            value={p.reg_no ?? ""}
-            label={words.regNo}
-            onChange={(v) => set("reg_no", v)}
-            dim={dim}
-            field={field}
-          />
-          <Field
-            value={p.msic_code ?? ""}
-            label={words.msicCode}
-            onChange={(v) => set("msic_code", v)}
-            dim={dim}
-            field={field}
-          />
-          <Field
-            value={p.msic_name ?? ""}
-            label={words.msicName}
-            onChange={(v) => set("msic_name", v)}
-            dim={dim}
-            field={field}
-          />
-          <Field
-            value={p.address_line ?? ""}
-            label={words.addressLine}
-            onChange={(v) => set("address_line", v)}
-            wide
-            dim={dim}
-            field={field}
-          />
-          <Field
-            value={p.postcode ?? ""}
-            label={words.postcode}
-            onChange={(v) => set("postcode", v)}
-            dim={dim}
-            field={field}
-          />
-          <Field
-            value={p.city ?? ""}
-            label={words.city}
-            onChange={(v) => set("city", v)}
-            dim={dim}
-            field={field}
-          />
-          <Field
-            value={p.state ?? ""}
-            label={words.state}
-            onChange={(v) => set("state", v)}
-            dim={dim}
-            field={field}
-          />
-          <Field
-            value={p.phone ?? ""}
-            label={words.phone}
-            onChange={(v) => set("phone", v)}
-            dim={dim}
-            field={field}
-          />
-          <Field
-            value={p.email ?? ""}
-            label={words.email}
-            onChange={(v) => set("email", v)}
-            dim={dim}
-            field={field}
-          />
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            disabled={busy === "who"}
-            onClick={() => saveProfile("who")}
-            className={deskBtn("primary")}
-          >
-            {busy === "who" ? words.saving : words.save}
-          </button>
-          {said.who && (
-            <span aria-live="polite" className={dim}>
-              {said.who}
-            </span>
-          )}
-        </div>
-      </Section>
+    <div className="grid gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
+      <nav className="flex flex-col gap-1 lg:sticky lg:top-4">
+        {tabs.map((x) => {
+          const on = tab === x.k;
+          return (
+            <button
+              key={x.k}
+              type="button"
+              onClick={() => setTab(x.k)}
+              aria-current={on ? "page" : undefined}
+              className={
+                "grid min-h-11 gap-0.5 px-4 py-3 text-left transition-colors " +
+                "[border-radius:var(--radius-md)] " +
+                (on
+                  ? "[background-color:var(--color-ink-900)] [box-shadow:inset_2px_0_0_var(--color-primary)]"
+                  : "hover:[background-color:var(--color-ink-950)]")
+              }
+            >
+              <span
+                className={
+                  on
+                    ? "[font-weight:var(--fw-semibold)] [color:var(--color-paper)]"
+                    : "[font-weight:var(--fw-medium)]"
+                }
+              >
+                {x.title}
+              </span>
+              <span className={dim}>{x.state}</span>
+            </button>
+          );
+        })}
+      </nav>
 
-      <Section label={words.sstLabel}>
-        <p className={`mb-4 ${dim}`}>{words.sstLede}</p>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Field
-            value={p.sst_no ?? ""}
-            label={words.sstNo}
-            onChange={(v) => set("sst_no", v)}
-            dim={dim}
-            field={field}
-          />
-          <label className="grid gap-1">
-            <span className={dim}>{words.sstFrom}</span>
-            <input
-              type="date"
-              value={p.sst_from ?? ""}
-              onChange={(e) => set("sst_from", e.target.value)}
-              className={`${field} tabular-nums`}
+      {tab === "who" && (
+        <DeskCard title={words.whoLabel} titleWideOnly>
+          <p className={`mb-4 ${dim}`}>{words.whoLede}</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Field
+              value={p.tin ?? ""}
+              label={words.tin}
+              onChange={(v) => set("tin", v)}
+              dim={dim}
+              field={field}
             />
-          </label>
-          <label className="grid gap-1">
-            <span className={dim}>{words.sstRate}</span>
-            <input
-              value={p.sst_rate ?? ""}
-              inputMode="decimal"
-              onChange={(e) => set("sst_rate", e.target.value.replace(/[^0-9.]/g, ""))}
-              className={`${field} text-right tabular-nums`}
+            <Field
+              value={p.reg_no ?? ""}
+              label={words.regNo}
+              onChange={(v) => set("reg_no", v)}
+              dim={dim}
+              field={field}
             />
-          </label>
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            disabled={busy === "sst"}
-            onClick={() => saveProfile("sst")}
-            className={deskBtn("primary")}
-          >
-            {busy === "sst" ? words.saving : words.save}
-          </button>
-          {said.sst && (
-            <span aria-live="polite" className={dim}>
-              {said.sst}
-            </span>
-          )}
-        </div>
-
-        {/* 🔴 还没登记就不画那几个数字 —— 见档头。 */}
-        {sst && !sst.registered ? (
-          <p className={`mt-6 ${dim}`}>{words.notRegistered}</p>
-        ) : sst ? (
-          <div className="mt-6 flex flex-wrap gap-x-10 gap-y-4 border-t pt-5 [border-color:var(--color-ink-800)]">
-            <div>
-              <div className={dim}>{words.taxCollected}</div>
-              <div className="mt-0.5 tabular-nums [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)]">
-                {rm(sst.tax)}
-              </div>
-            </div>
-            <div>
-              <div className={dim}>{words.taxable}</div>
-              <div className="mt-0.5 tabular-nums [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-                {rm(sst.taxable)}
-              </div>
-            </div>
-            <div>
-              <div className={dim}>{words.documents}</div>
-              <div className="mt-0.5 tabular-nums [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-                {sst.documents}
-              </div>
-            </div>
-            <div className="w-full">
-              <p className={dim}>
-                {words.thisPeriod} {period.from} — {period.to}
-              </p>
-            </div>
+            <Field
+              value={p.msic_code ?? ""}
+              label={words.msicCode}
+              onChange={(v) => set("msic_code", v)}
+              dim={dim}
+              field={field}
+            />
+            <Field
+              value={p.msic_name ?? ""}
+              label={words.msicName}
+              onChange={(v) => set("msic_name", v)}
+              dim={dim}
+              field={field}
+            />
+            <Field
+              value={p.address_line ?? ""}
+              label={words.addressLine}
+              onChange={(v) => set("address_line", v)}
+              wide
+              dim={dim}
+              field={field}
+            />
+            <Field
+              value={p.postcode ?? ""}
+              label={words.postcode}
+              onChange={(v) => set("postcode", v)}
+              dim={dim}
+              field={field}
+            />
+            <Field
+              value={p.city ?? ""}
+              label={words.city}
+              onChange={(v) => set("city", v)}
+              dim={dim}
+              field={field}
+            />
+            <Field
+              value={p.state ?? ""}
+              label={words.state}
+              onChange={(v) => set("state", v)}
+              dim={dim}
+              field={field}
+            />
+            <Field
+              value={p.phone ?? ""}
+              label={words.phone}
+              onChange={(v) => set("phone", v)}
+              dim={dim}
+              field={field}
+            />
+            <Field
+              value={p.email ?? ""}
+              label={words.email}
+              onChange={(v) => set("email", v)}
+              dim={dim}
+              field={field}
+            />
           </div>
-        ) : null}
-      </Section>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              disabled={busy === "who"}
+              onClick={() => saveProfile("who")}
+              className={deskBtn("primary")}
+            >
+              {busy === "who" ? words.saving : words.save}
+            </button>
+            {said.who && (
+              <span aria-live="polite" className={dim}>
+                {said.who}
+              </span>
+            )}
+          </div>
+        </DeskCard>
+      )}
 
-      <DocCheck docs={docs} words={words} dim={dim} btn={btn} field={field} />
-    </>
+      {tab === "sst" && (
+        <DeskCard title={words.sstLabel} titleWideOnly>
+          <p className={`mb-4 ${dim}`}>{words.sstLede}</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field
+              value={p.sst_no ?? ""}
+              label={words.sstNo}
+              onChange={(v) => set("sst_no", v)}
+              dim={dim}
+              field={field}
+            />
+            <label className="grid gap-1">
+              <span className={dim}>{words.sstFrom}</span>
+              <input
+                type="date"
+                value={p.sst_from ?? ""}
+                onChange={(e) => set("sst_from", e.target.value)}
+                className={`${field} tabular-nums`}
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className={dim}>{words.sstRate}</span>
+              <input
+                value={p.sst_rate ?? ""}
+                inputMode="decimal"
+                onChange={(e) =>
+                  set("sst_rate", e.target.value.replace(/[^0-9.]/g, ""))
+                }
+                className={`${field} text-right tabular-nums`}
+              />
+            </label>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              disabled={busy === "sst"}
+              onClick={() => saveProfile("sst")}
+              className={deskBtn("primary")}
+            >
+              {busy === "sst" ? words.saving : words.save}
+            </button>
+            {said.sst && (
+              <span aria-live="polite" className={dim}>
+                {said.sst}
+              </span>
+            )}
+          </div>
+
+          {/* 🔴 还没登记就不画那几个数字 —— 见档头。 */}
+          {sst && !sst.registered ? (
+            <p className={`mt-6 ${dim}`}>{words.notRegistered}</p>
+          ) : sst ? (
+            <div className="mt-6 flex flex-wrap gap-x-10 gap-y-4 border-t pt-5 [border-color:var(--color-ink-800)]">
+              <div>
+                <div className={dim}>{words.taxCollected}</div>
+                <div className="mt-0.5 tabular-nums [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)]">
+                  {rm(sst.tax)}
+                </div>
+              </div>
+              <div>
+                <div className={dim}>{words.taxable}</div>
+                <div className="mt-0.5 tabular-nums [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                  {rm(sst.taxable)}
+                </div>
+              </div>
+              <div>
+                <div className={dim}>{words.documents}</div>
+                <div className="mt-0.5 tabular-nums [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                  {sst.documents}
+                </div>
+              </div>
+              <div className="w-full">
+                <p className={dim}>
+                  {words.thisPeriod} {period.from} — {period.to}
+                </p>
+              </div>
+            </div>
+          ) : null}
+        </DeskCard>
+      )}
+
+      {tab === "check" && (
+        <DocCheck docs={docs} words={words} dim={dim} btn={btn} field={field} />
+      )}
+    </div>
   );
 }
 
@@ -309,7 +421,9 @@ function DocCheck({
 }) {
   const [id, setId] = useState(docs[0]?.id ?? "");
   const [rate, setRate] = useState(docs[0]?.rate ?? "");
-  const [missing, setMissing] = useState<{ what: string; missing: string }[] | null>(null);
+  const [missing, setMissing] = useState<
+    { what: string; missing: string }[] | null
+  >(null);
   const [sheet, setSheet] = useState<Payload | null>(null);
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState("");
@@ -321,7 +435,9 @@ function DocCheck({
     setBusy(true);
     try {
       const supabase = createBrowserSupabaseClient();
-      const { data, error } = await supabase.rpc("einvoice_payload", { in_record_id: id });
+      const { data, error } = await supabase.rpc("einvoice_payload", {
+        in_record_id: id,
+      });
       if (error) {
         setSaid(words.failed);
         return;
@@ -340,7 +456,9 @@ function DocCheck({
     setSaid("");
     try {
       const supabase = createBrowserSupabaseClient();
-      const { data, error } = await supabase.rpc("einvoice_readiness", { in_record_id: forId });
+      const { data, error } = await supabase.rpc("einvoice_readiness", {
+        in_record_id: forId,
+      });
       if (error) {
         setSaid(words.failed);
         return;
@@ -381,17 +499,33 @@ function DocCheck({
 
   if (docs.length === 0) {
     return (
-      <Section label={words.checkLabel}>
+      <DeskCard title={words.checkLabel} titleWideOnly>
         <p className={dim}>{words.noDocs}</p>
-      </Section>
+      </DeskCard>
     );
   }
 
   return (
-    <Section label={words.checkLabel}>
+    <DeskCard
+      title={words.checkLabel}
+      titleWideOnly
+      action={
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => check()}
+          className={deskBtn("primary")}
+        >
+          {busy ? words.checking : words.check}
+        </button>
+      }
+    >
       <p className={`mb-4 ${dim}`}>{words.checkLede}</p>
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="grid min-w-[16rem] flex-1 gap-1">
+      {/* 🔴 哪一张单**自己占一行**。它跟税率那两颗挤在同一行的时候，
+          「Tax on this one (%)」那个标签会折成两行，而一个被挤断的标签
+          读起来是坏的。 */}
+      <div className="grid gap-3">
+        <label className="grid gap-1">
           <span className={dim}>{words.pickDoc}</span>
           <select
             value={id}
@@ -411,34 +545,48 @@ function DocCheck({
             ))}
           </select>
         </label>
-        <label className="grid w-28 gap-1">
-          <span className={dim}>{words.rateOnDoc}</span>
-          <input
-            value={rate}
-            inputMode="decimal"
-            onChange={(e) => setRate(e.target.value.replace(/[^0-9.]/g, ""))}
-            className={`${field} text-right tabular-nums`}
-          />
-        </label>
-        <button type="button" disabled={busy} onClick={() => applyRate(false)} className={btn}>
-          {words.applyRate}
-        </button>
-        <button type="button" disabled={busy} onClick={() => applyRate(true)} className={btn}>
-          {words.clearRate}
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => check()}
-          className={deskBtn("primary")}
-        >
-          {busy ? words.checking : words.check}
-        </button>
-        {said && (
-          <span aria-live="polite" className={dim}>
-            {said}
-          </span>
-        )}
+        <div className="flex flex-wrap items-end gap-3">
+          {/* 🔴 宽度给**输入框**，不给整个 label。给 label 的话
+              「Tax on this one (%)」会折成两行 —— 而一个被折断的标签
+              读起来是坏的。 */}
+          <label className="grid gap-1">
+            <span className={dim}>{words.rateOnDoc}</span>
+            {/* ⚠️ 宽度加在**外面那个框**上，不是加在 `${field}` 后面 ——
+                `deskField` 里已经有一个 `w-full`，而两个 width 是**档案里
+                谁在后面**决定的，不是字串里谁在后面。同一个坑三天前踩过。 */}
+            <span className="inline-block w-28">
+              <input
+                value={rate}
+                inputMode="decimal"
+                onChange={(e) =>
+                  setRate(e.target.value.replace(/[^0-9.]/g, ""))
+                }
+                className={`${field} text-right tabular-nums`}
+              />
+            </span>
+          </label>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => applyRate(false)}
+            className={btn}
+          >
+            {words.applyRate}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => applyRate(true)}
+            className={btn}
+          >
+            {words.clearRate}
+          </button>
+          {said && (
+            <span aria-live="polite" className={dim}>
+              {said}
+            </span>
+          )}
+        </div>
       </div>
 
       {missing !== null && (
@@ -447,7 +595,12 @@ function DocCheck({
             <>
               <div className="flex flex-wrap items-center gap-4">
                 <p className="[font-size:var(--text-base)]">{words.ready}</p>
-                <button type="button" disabled={busy} onClick={look} className={btn}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={look}
+                  className={btn}
+                >
                   {words.lookAtIt}
                 </button>
               </div>
@@ -455,14 +608,18 @@ function DocCheck({
             </>
           ) : (
             <>
-              <p className={`mb-3 [font-size:var(--text-base)]`}>{words.stillMissing}</p>
+              <p className={`mb-3 [font-size:var(--text-base)]`}>
+                {words.stillMissing}
+              </p>
               <ul className="flex flex-col">
                 {missing.map((m, i) => (
                   <li
                     key={i}
                     className="flex flex-wrap gap-x-4 gap-y-1 border-t py-2 [border-color:var(--color-ink-800)]"
                   >
-                    <span className="[font-weight:var(--fw-medium)]">{m.what}</span>
+                    <span className="[font-weight:var(--fw-medium)]">
+                      {m.what}
+                    </span>
                     <span className={dim}>{m.missing}</span>
                   </li>
                 ))}
@@ -475,7 +632,7 @@ function DocCheck({
       {/* 🔴 讲清楚它还不是什么 —— 见页面档头。一份看起来完整的东西，
           会让他以为已经报过税了。 */}
       <p className={`mt-6 ${dim}`}>{words.notSent}</p>
-    </Section>
+    </DeskCard>
   );
 }
 
@@ -483,7 +640,12 @@ type Payload = {
   supplier?: { name?: string; tin?: string; sstNumber?: string | null };
   buyer?: { name?: string; tin?: string | null } | null;
   lines?: unknown[];
-  totals?: { netCents?: number; taxCents?: number; grossCents?: number; taxRate?: number | null };
+  totals?: {
+    netCents?: number;
+    taxCents?: number;
+    grossCents?: number;
+    taxRate?: number | null;
+  };
   notReadyBecause?: Record<string, string>;
 };
 
@@ -491,9 +653,18 @@ type Payload = {
  *
  *  🔴 「还不能送」那两句**从单据自己身上读**，不在这里再写一次 ——
  *  第二份手写的句子，是这个仓库栽过八次的那件事。 */
-function Sheet({ sheet, words, dim }: { sheet: Payload; words: Words; dim: string }) {
+function Sheet({
+  sheet,
+  words,
+  dim,
+}: {
+  sheet: Payload;
+  words: Words;
+  dim: string;
+}) {
   const t = sheet.totals ?? {};
-  const row = "flex flex-wrap gap-x-4 gap-y-1 border-t py-2 [border-color:var(--color-ink-800)]";
+  const row =
+    "flex flex-wrap gap-x-4 gap-y-1 border-t py-2 [border-color:var(--color-ink-800)]";
   return (
     <div className="mt-4">
       <div className={row}>
@@ -507,11 +678,15 @@ function Sheet({ sheet, words, dim }: { sheet: Payload; words: Words; dim: strin
         <span className={dim}>{sheet.buyer?.tin ?? ""}</span>
       </div>
       <div className={row}>
-        <span className="[font-weight:var(--fw-medium)]">{words.lineCount}</span>
+        <span className="[font-weight:var(--fw-medium)]">
+          {words.lineCount}
+        </span>
         <span className="tabular-nums">{(sheet.lines ?? []).length}</span>
       </div>
       <div className={row}>
-        <span className="[font-weight:var(--fw-medium)]">{words.grossTotal}</span>
+        <span className="[font-weight:var(--fw-medium)]">
+          {words.grossTotal}
+        </span>
         <span className="tabular-nums">{rm(Number(t.grossCents ?? 0))}</span>
         <span className={`tabular-nums ${dim}`}>
           {words.taxCollected} {rm(Number(t.taxCents ?? 0))}

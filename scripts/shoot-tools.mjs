@@ -352,12 +352,33 @@ try {
   // ── ④ 税 ───────────────────────────────────────────────────────────────
   if ((await open("tax")) === 200) ok("税那一页打得开");
   else no("税那一页打不开");
-  const tax0 = await page.locator("body").innerText();
+  /* 左边那一列：三段，而且每一段自己讲状态。 */
+  const taxTabs = page.getByRole("button", {
+    name: /Who this business is|^SST|Check one document/i,
+  });
+  if ((await taxTabs.count()) === 3) ok("左边那一列三段都在");
+  else no("左边那一列不是三段", String(await taxTabs.count()));
+
+  /* 🔴 什么都还没填的时候先开「这门生意是谁」——
+     那时候「拿一张单试」的答案是「每一样都缺」，一句真话而它答不了
+     他下一步该做什么。 */
+  if (await page.getByLabel("Tax number (TIN)").isVisible())
+    ok("🔴 还没填的时候先开填的那一段");
+  else no("🔴 还没填却先开了别段");
+
   /* 🔴 还没登记 SST 就不画那几个数字 —— 一张写着「SST RM 0.00」的单，
-     是在讲一件他没有资格讲的话。 */
-  if (/Not registered/i.test(tax0)) ok("🔴 还没登记就讲出来，不画一个 RM 0");
-  else no("🔴 还没登记却画了税额", tax0.slice(0, 200));
+     是在讲一件他没有资格讲的话。
+     ⚠️ 问的是**那一张卡**，不是整页：左边那一列现在也写着
+     「Not registered」，拿整页去问会变成在量那一行字，不是量那一段。 */
+  await page.getByRole("button", { name: /^SST/i }).click();
+  await page.waitForTimeout(400);
+  const sstCard = await page.locator("section.ds-card").first().innerText();
+  if (/Not registered/i.test(sstCard)) ok("🔴 还没登记就讲出来，不画一个 RM 0");
+  else no("🔴 还没登记却画了税额", sstCard.slice(0, 200));
   await page.screenshot({ path: `${OUT}/9-tax-empty.png`, fullPage: true });
+
+  await page.getByRole("button", { name: /Who this business is/i }).click();
+  await page.waitForTimeout(400);
 
   await page.getByLabel("Tax number (TIN)").fill("C1234567890");
   await page.getByLabel("SSM number").fill("202601234567");
@@ -372,6 +393,15 @@ try {
   else no("纳税人编号没写进去", JSON.stringify(prof));
 
   await open("tax");
+  /* 🔴 填过了就先开他回来要做的那一件 —— 不用他自己去点。
+     ⚠️ 问的是**开着那一张卡自己的抬头**。第一版问
+     `getByLabel(/^Document$/)`，而一个包着 select 的 label，
+     它的名字里连每一个选项的字都算进去 —— 於是那一条红了，
+     而画面是对的（底下写税率那几步只有在这一段里才做得到）。
+     **第二十二次红的是我的尺。** */
+  const taxOpen = await page.locator("section.ds-card h2").first().innerText();
+  if (/Check one document/i.test(taxOpen)) ok("🔴 填过了先开拿一张单试那一段");
+  else no("🔴 填过了还是开在填的那一段", taxOpen);
   /* 🔴 那一张单要真的出现在下拉里 ——
      它不在的时候画面写着「还没有单」，而那句话是假的：
      `project_pages.key` 这个欄位名不存在，PostgREST 回 400，

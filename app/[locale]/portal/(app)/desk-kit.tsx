@@ -66,7 +66,8 @@ export function deskBtn(kind: "primary" | "quiet" | "danger" = "quiet") {
 }
 
 /** 一段说明字。整个工作台只有一种。 */
-export const deskDim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+export const deskDim =
+  "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
 
 /**
  * 一张卡。
@@ -87,19 +88,36 @@ export function DeskCard({
   action,
   children,
   className = "",
+  titleWideOnly = false,
 }: {
   title?: string;
   /** 这一张卡自己的动作，右对齐在卡头上。 */
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  /**
+   * 🔴 窄的时候不画这个抬头 —— **左边那一列已经是它了**。
+   *
+   * 一页分成「左边挑一段 · 右边画那一段」的时候，宽萤幕上那两个抬头
+   * 是并排的（分页签 → 那一段）；**到了 390 它们上下叠在一起**，
+   * 变成同一句话连印两次。而「同一屏印两次同一件事」正是这个仓库
+   * 砍掉过一整套风格的理由。
+   */
+  titleWideOnly?: boolean;
 }) {
   return (
-    <section className={`ds-card [border-radius:var(--radius-lg)] ${className}`}>
+    <section
+      className={`ds-card [border-radius:var(--radius-lg)] ${className}`}
+    >
       {(title || action) && (
         <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 [border-color:var(--color-ink-800)]">
           {title && (
-            <h2 className="[font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)]">
+            <h2
+              className={
+                "[font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)] " +
+                (titleWideOnly ? "max-lg:hidden" : "")
+              }
+            >
               {title}
             </h2>
           )}

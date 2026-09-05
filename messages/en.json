@@ -1121,7 +1121,7 @@
     "tax": {
       "title": "Tax",
       "lede": "Who this business is to the tax office, what SST you collected, and what a document is still missing.",
-      "whoLabel": "WHO THIS BUSINESS IS",
+      "whoLabel": "Who this business is",
       "whoLede": "This is the top half of every e-Invoice. Fill it once.",
       "tin": "Tax number (TIN)",
       "regNo": "SSM number",
@@ -1147,7 +1147,7 @@
       "taxable": "Taxable",
       "taxCollected": "Tax collected",
       "documents": "Documents",
-      "checkLabel": "CHECK ONE DOCUMENT",
+      "checkLabel": "Check one document",
       "checkLede": "Pick a job and see exactly what is still missing before it could go to the tax office.",
       "pickDoc": "Document",
       "noDocs": "No documents yet.",
@@ -1163,7 +1163,13 @@
       "buyer": "To",
       "lineCount": "Lines",
       "grossTotal": "Total with tax",
-      "notSent": "Nothing here is sent anywhere. Sending to LHDN needs a registered company, a certificate from them and a signing key — none of which exist yet, so we do not pretend the line is connected."
+      "notSent": "Nothing here is sent anywhere. Sending to LHDN needs a registered company, a certificate from them and a signing key — none of which exist yet, so we do not pretend the line is connected.",
+      "whoState": "%n still empty",
+      "whoDone": "All filled in",
+      "sstOn": "Charging %n%",
+      "sstOff": "Not registered",
+      "checkState": "%n to check",
+      "checkNone": "None yet"
     },
     "expiry": {
       "title": "Shelf life",
