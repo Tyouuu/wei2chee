@@ -53,13 +53,41 @@ const RISE = {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/**
+ * 🔴 **把动效关掉，不是把变体拿掉（2026-09-05）。**
+ *
+ * 在这之前 `PageBody` 是 `initial={still ? false : "hidden"}`，
+ * 而 `Rise` 是 `variants={still ? undefined : RISE}`。看起来对，而它让
+ * **每一个开着「减少动效」的人，打开任何一页都是一张空白页。**
+ *
+ * 实测四页（谁欠我钱 · 今天要跟的 · 分店 · 询价），四页都中：
+ * 那一层 `div` 停在 `opacity: 0` 加 `translateY(10px)`。
+ *
+ * 为什么：`useReducedMotion()` **第一次画回的是 `null`**（伺服器那一边
+ * 读不到那个设定）。所以第一帧 `still` 是假的 → 套上 `hidden`；
+ * 挂载之后它变成 `true` → `variants` 被换成 `undefined` →
+ * **再也没有任何东西认得 `show`**，那个元素就停在 hidden 上。
+ *
+ * ⚠️ 而 Playwright 的断言全部会过：**`opacity: 0` 在它眼里是「看得见」**
+ * （它只看 `display` · `visibility` · 有没有面积）。抓到它的是一张图。
+ *
+ * 修法：**变体永远在，只把时间改成 0。** 「减少动效」要的是不要动，
+ * 不是不要出现。
+ */
 export function PageBody({ children }: { children: ReactNode }) {
   const still = useReducedMotion();
   return (
     <motion.div
-      initial={still ? false : "hidden"}
+      initial="hidden"
       animate="show"
-      variants={{ show: { transition: { staggerChildren: 0.05, delayChildren: 0.02 } } }}
+      variants={{
+        hidden: {},
+        show: {
+          transition: still
+            ? { staggerChildren: 0, delayChildren: 0 }
+            : { staggerChildren: 0.05, delayChildren: 0.02 },
+        },
+      }}
       className={PAGE_PADDING}
     >
       {children}
@@ -74,8 +102,9 @@ export function Rise({ children, className }: { children: ReactNode; className?:
   const still = useReducedMotion();
   return (
     <motion.div
-      variants={still ? undefined : RISE}
-      transition={{ duration: 0.32, ease: EASE }}
+      /* 🔴 变体永远给 —— 拿掉它，这一块会停在 hidden 上。见 PageBody 的档头。 */
+      variants={RISE}
+      transition={still ? { duration: 0 } : { duration: 0.32, ease: EASE }}
       className={className}
     >
       {children}

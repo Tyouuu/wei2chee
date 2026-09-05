@@ -137,6 +137,9 @@
     "check:party-portal": "node scripts/check-party-portal.mjs",
     "check:period-lock": "node scripts/check-period-lock.mjs",
     "shoot:follow-ups": "node scripts/shoot-follow-ups.mjs",
+    "shoot:booking": "node scripts/shoot-booking.mjs",
+    "shoot:vehicles": "node scripts/shoot-vehicles.mjs",
+    "check:motion": "node scripts/check-motion.mjs",
     "check:returns": "node scripts/check-returns.mjs"
   },
   "dependencies": {
