@@ -12,6 +12,7 @@ import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, unallocatedOf, type DocumentSettlement } from "@/lib/portal/allocations";
 import { jobProfit, type ProfitFact } from "@/lib/portal/profit";
+import { PartyStatement } from "../new/party-statement";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { SettleMonth } from "../new/settle-month";
 import { PartyPortalPanel, type PartyRequest } from "../new/party-portal-panel";
@@ -1071,6 +1072,22 @@ export default async function EditRecordPage({
                 {copy.form.creditNone}
               </p>
             )}
+          </div>
+        ) : null}
+
+        {/* 客户那一页再多一段：月结对帐单。
+            八个行业每个月都要跟某一个人对一次帐，而今天他是把
+            WhatsApp 往上滑、一张一张单自己加。[任务 147] 把算术做完了，
+            而它自己的收尾写着「**那张纸不存在**」。
+
+            🔴 用跟旁边那一段同一个闸（credit）——
+            它在看不到钱的人那一边是 null。
+            party_statement 自己也是 sees_money 的，一个师傅打它
+            拿回来是**零行** —— 而零行会画成一张空的对帐单，
+            读起来是「这个客人什么都没欠」。 */}
+        {credit && ctx.isDirectory && pageKey === "customers" ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <PartyStatement projectId={ctx.projectId} partyId={recordId} copy={copy.form} />
           </div>
         ) : null}
 

@@ -47,6 +47,18 @@ export type RecordFormCopy = {
   lineUseLast: string;
   /** 只在他真的有货架的时候画 —— 不然那是一句假话 */
   lineShelfHint: string;
+  /** 月结对帐单（[任务 147]）。只在客户那一页、而且只给看得到钱的人 */
+  statementHeading: string;
+  statementMonth: string;
+  statementOn: string;
+  statementWhat: string;
+  statementCharge: string;
+  statementPaid: string;
+  statementRunning: string;
+  statementOpening: string;
+  statementClosing: string;
+  statementQuiet: string;
+  statementUnread: string;
   lineRemove: string;
   lineTotal: string;
   amountFromLines: string;
@@ -423,6 +435,17 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       lineAdd: "加一行",
       lineUseLast: "照上次那一张",
       lineShelfHint: "在「是什么」打前几个字，你自己的货会出来。",
+      statementHeading: "月结对帐单",
+      statementMonth: "哪一个月",
+      statementOn: "日期",
+      statementWhat: "是什么",
+      statementCharge: "应收",
+      statementPaid: "已付",
+      statementRunning: "结余",
+      statementOpening: "期初",
+      statementClosing: "期末余额",
+      statementQuiet: "这个月没有来往。",
+      statementUnread: "这一段读不到。",
       lineRemove: "删掉这一行",
       lineTotal: "合计",
       amountFromLines: "有逐项的时候，上面的金额是这几行加起来的。",
@@ -710,6 +733,17 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       lineAdd: "Add a line",
       lineUseLast: "Same as last time",
       lineShelfHint: "Start typing in What it is — your own items come up.",
+      statementHeading: "Monthly statement",
+      statementMonth: "Which month",
+      statementOn: "Date",
+      statementWhat: "What it is",
+      statementCharge: "Charged",
+      statementPaid: "Paid",
+      statementRunning: "Balance",
+      statementOpening: "Brought forward",
+      statementClosing: "Closing balance",
+      statementQuiet: "Nothing happened this month.",
+      statementUnread: "This part could not be read.",
       lineRemove: "Remove this line",
       lineTotal: "Total",
       amountFromLines: "With line items, the amount above is their total.",
