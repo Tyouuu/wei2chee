@@ -29,6 +29,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { PartyHistory } from "../new/party-history";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
+import { ReferredJobs, type ReferralTally, type ReferredJob } from "../new/referred-jobs";
 import { PackagesPanel, type PackageRow } from "../new/packages-panel";
 import type { JobPhoto } from "../new/job-photos";
 import { showChanges, type ShownChange, type ChangeRow } from "@/lib/portal/change-log";
@@ -124,6 +125,9 @@ export default async function EditRecordPage({
   let changes: ShownChange[] | null = null;
   /* 客户页那一边：他有几单，还欠多少。 */
   let jobs: PartyJob[] = [];
+  /* 他替我带过几单。`null` = **没有带过**（或者读的人看不到钱）——
+     那时候整段不画，不是画一份 0 单。 */
+  let sent: { tally: ReferralTally; jobs: ReferredJob[] } | null = null;
   let owing: number | null = null;
   /* 他来过几次、上一次什么时候、一共多少。
      ⚠️ 前两个不是钱（师傅要知道这位是熟客），第三个是。 */
@@ -313,6 +317,65 @@ export default async function EditRecordPage({
     }
 
     /* 他的地址。帐单一个地方，工地另一个（20260903060000）。 */
+
+    /* ── 他替我带过几单，我还欠他多少（[任务 156] · 20260905260000）───────
+       🔴 只给老板：一笔答应给出去的钱是钱，而 20260905280000 把守卫从
+          `works_here` 改回 `sees_money` 的时候，`check:referrals` 当场红了
+          「师傅算不出老板给了谁多少介绍费」。
+       ⚠️ 一单都没带过就整段不画 —— 不是画一份「0 单 · RM 0」。
+          绝大多数客户从来没有介绍过人，而一段永远写着 0 的区块，
+          读起来是这一页没做完。 */
+    if (ctx.role === "owner") {
+      const [{ data: owingRows }, { data: sentRows }] = await Promise.all([
+        supabase.rpc("referrals_owing", { in_project_id: ctx.projectId }),
+        supabase.rpc("referred_jobs", {
+          in_project_id: ctx.projectId,
+          in_referrer_id: recordId,
+        }),
+      ]);
+      const mine = ((owingRows ?? []) as {
+        referrer_id: string; jobs: number | null; received_cents: number | null;
+        promised_cents: number | null; paid_cents: number | null; owing_cents: number | null;
+      }[]).find((r) => r.referrer_id === recordId);
+      const rows = (sentRows ?? []) as {
+        record_id: string; doc_no: string | null; title: string | null;
+        party: string | null; received_cents: number | null; promised_cents: number | null;
+      }[];
+
+      if (mine && rows.length) {
+        /* `referred_jobs` 不回是哪一页 —— 那几个 id 在手上，一句就问得到。
+           一条连不过去的连结，跟一颗按不动的按钮是同一件事。 */
+        const { data: whereRows } = await supabase
+          .from("pipeline_records")
+          .select("id, module_key")
+          .in("id", rows.map((r) => r.record_id));
+        const pageOf = new Map(
+          ((whereRows ?? []) as { id: string; module_key: string }[]).map((w) => [w.id, w.module_key]),
+        );
+
+        sent = {
+          tally: {
+            jobs: Number(mine.jobs ?? 0),
+            received: ringgit(mine.received_cents ?? 0) ?? "",
+            promised: ringgit(mine.promised_cents ?? 0) ?? "",
+            paid: ringgit(mine.paid_cents ?? 0) ?? "",
+            owing: ringgit(mine.owing_cents ?? 0) ?? "",
+          },
+          jobs: rows
+            .filter((r) => pageOf.has(r.record_id))
+            .map((r) => ({
+              id: r.record_id,
+              href: `/${locale}/portal/${pageOf.get(r.record_id)}/${r.record_id}`,
+              docNo: r.doc_no ?? "",
+              title: r.title ?? "",
+              party: r.party ?? "",
+              received: ringgit(r.received_cents ?? 0) ?? "",
+              promised: ringgit(r.promised_cents ?? 0) ?? "",
+            })),
+        };
+      }
+    }
+
     const { data: addrRows } = await supabase
       .from("directory_addresses")
       .select("id, label, line, region, is_billing")
@@ -1253,6 +1316,14 @@ export default async function EditRecordPage({
         {settledAt !== undefined ? (
           <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
             <SettleMonth id={recordId} settledAt={settledAt} copy={copy.form} />
+          </div>
+        ) : null}
+
+        {/* 客户 / 供应商 / 师傅那一页多一段：他替我带过几单。
+            ⚠️ `null` = 没有带过（或者读的人看不到钱）—— 整段不画。 */}
+        {sent ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <ReferredJobs tally={sent.tally} jobs={sent.jobs} copy={copy.form} />
           </div>
         ) : null}
 

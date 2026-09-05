@@ -82,6 +82,13 @@ export type RecordFormCopy = {
   /** 带 {name}。名字对不上就不猜（[任务 89]） */
   refUnknown: string;
   refClear: string;
+  /** 他替我带过几单（[任务 156]）。只在他真的带过的时候画 */
+  sentHeading: string;
+  sentLede: string;
+  sentOwing: string;
+  sentJobs: string;
+  sentPromised: string;
+  sentPaid: string;
   refSave: string;
   lineRemove: string;
   lineTotal: string;
@@ -488,6 +495,12 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       refSoFar: "照到今天收到的钱算，这一单欠他 {amount}。",
       refUnknown: "名册里没有「{name}」。先把他建进名册，再回来挂上去。",
       refClear: "没有人介绍",
+      sentHeading: "他替你带过的单",
+      sentLede: "“给了多少”是从你记的开销加出来的：钱出去 · 收款人是他 · 而且挂在这几单其中一单上。",
+      sentOwing: "还欠他",
+      sentJobs: "带过几单",
+      sentPromised: "答应给",
+      sentPaid: "已经给了",
       refSave: "记下来",
       lineRemove: "删掉这一行",
       lineTotal: "合计",
@@ -805,6 +818,12 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       refSoFar: "On the money received so far, this job owes him {amount}.",
       refUnknown: "There is no “{name}” in your directory. Add them first, then come back and attach them.",
       refClear: "Nobody introduced them",
+      sentHeading: "Jobs he sent you",
+      sentLede: "What has been handed over is summed from the expenses you record: money out, paid to him, and attached to one of these jobs.",
+      sentOwing: "Still owed",
+      sentJobs: "Jobs sent",
+      sentPromised: "Promised",
+      sentPaid: "Handed over",
       refSave: "Record it",
       lineRemove: "Remove this line",
       lineTotal: "Total",

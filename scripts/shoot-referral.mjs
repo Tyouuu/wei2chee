@@ -258,6 +258,53 @@ try {
         JSON.stringify(stillMing),
       );
 
+      /* ── 阿明自己那一页：他替我带过几单，我还欠他多少 ─────────────
+         🔴 那才是他真正的动作 —— 打给阿明之前先看一眼，而不是逐张单对帐。 */
+      await page.goto(`${BASE}/en/portal/customers/${senderId}`, {
+        waitUntil: "networkidle",
+        timeout: 180000,
+      });
+      await page.waitForTimeout(2000);
+      const his = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+      say("🔴 阿明那一页写着他带过的单", /Jobs he sent you/i.test(his), his.slice(0, 200));
+      await page.screenshot({ path: `${OUT}/4-referrer.png`, fullPage: true });
+      /* 一分钱都还没给他，所以「还欠」就是「答应给」 —— 而两个数字
+         都要从资料库那一支来，不是这一页自己算的。 */
+      const { data: owingRows } = await api.rpc("referrals_owing", { in_project_id: proj.id });
+      const mineRow = (owingRows ?? []).find((r) => r.referrer_id === senderId);
+      const owed = /Still owed RM ([0-9,]+(?:\.[0-9]{2})?)/i.exec(his);
+      say(
+        "🔴 「还欠他」就是资料库算的那一个",
+        owed && Math.round(Number(owed[1].replace(/,/g, "")) * 100) === Number(mineRow?.owing_cents),
+        `画面 ${owed?.[1]} · 资料库 ${mineRow?.owing_cents} sen`,
+      );
+      /* 点得进那一张单 —— 一条连不过去的连结跟一颗按不动的按钮是同一件事 */
+      const href = await page
+        .locator(`main a[href$="/${jobId}"]`)
+        .first()
+        .getAttribute("href")
+        .catch(() => null);
+      say("那一行点得进那张单", !!href && href.includes("/quotations/"), String(href));
+
+      /* 🔴 而买家那一页不可以有这一段 —— 她一单都没有介绍过 */
+      await page.goto(`${BASE}/en/portal/customers/${buyerId}`, {
+        waitUntil: "networkidle",
+        timeout: 180000,
+      });
+      await page.waitForTimeout(1500);
+      const hers = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+      say(
+        "🔴 没有带过单的客户整段不画，不是一份 0 单",
+        !/Jobs he sent you/i.test(hers),
+        hers.slice(0, 200),
+      );
+
+      await page.goto(`${BASE}/en/portal/quotations/${jobId}`, {
+        waitUntil: "networkidle",
+        timeout: 180000,
+      });
+      await page.waitForTimeout(1500);
+
       /* ── 清掉，三栏一起走 ───────────────────────────────────────── */
       await page.getByRole("button", { name: /^Nobody introduced them$/ }).click();
       await page.waitForTimeout(2500);
