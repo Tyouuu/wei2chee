@@ -270,6 +270,21 @@ export type RecordFormCopy = {
   settleClose: string;
   settleClosed: string;
   settleReopen: string;
+  /* 一条发给这个经销商的连结，跟他送进来的那几笔（20260905680000）。 */
+  portalHeading: string;
+  portalLede: string;
+  portalOpen: string;
+  portalLink: string;
+  portalCopy: string;
+  portalCopied: string;
+  portalClose: string;
+  portalInbox: string;
+  portalInboxNone: string;
+  portalTurn: string;
+  portalDrop: string;
+  portalDone: string;
+  portalDropped: string;
+  portalNowhere: string;
   /* 套票（20260904190000）。只在客户那一页，而且**师傅也看得到** ——
      他要跟客人讲「你还剩三次」。价钱不在这张表上，所以这不是把钱交出去。 */
   packHeading: string;
@@ -552,6 +567,20 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       settleClose: "把这个月关起来",
       settleClosed: "{date} 关起来了。这个月这一边的钱改不了 —— 要改，先重开这个月。",
       settleReopen: "重开这个月",
+      portalHeading: "他自己那条连结",
+      portalLede: "发一条连结给他，他就自己讲得出「我要什么」，不用你照他的讯息重打一次。他看得到的只有你的公司名跟他自己送过的那几笔。",
+      portalOpen: "开一条连结给他",
+      portalLink: "他那条连结",
+      portalCopy: "复制",
+      portalCopied: "复制好了 —— 贴进 WhatsApp 发给他",
+      portalClose: "关掉这条连结",
+      portalInbox: "他送进来的",
+      portalInboxNone: "他还没有送过东西。",
+      portalTurn: "开成一张{page}",
+      portalDrop: "丢掉",
+      portalDone: "已经开单了 {doc}",
+      portalDropped: "丢掉了",
+      portalNowhere: "这个系统里还没有一页可以放单。",
       packHeading: "套票",
       packLede: "卖几次，用一次扣一次。剩几次是数出来的，没有人改得了。",
       packNone: "还没有卖过套票给他。",
@@ -788,6 +817,20 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       settleClose: "Close this month",
       settleClosed: "Closed on {date}. Money on this side of the month cannot change -- reopen it first.",
       settleReopen: "Reopen this month",
+      portalHeading: "Their own link",
+      portalLede: "Send them a link and they say what they need themselves, instead of you retyping their message. All they see is your business name and what they have sent.",
+      portalOpen: "Open a link for them",
+      portalLink: "Their link",
+      portalCopy: "Copy",
+      portalCopied: "Copied -- paste it to them on WhatsApp",
+      portalClose: "Close this link",
+      portalInbox: "What they have sent",
+      portalInboxNone: "They have not sent anything yet.",
+      portalTurn: "Open it as {page}",
+      portalDrop: "Drop",
+      portalDone: "Already opened as {doc}",
+      portalDropped: "Dropped",
+      portalNowhere: "There is no page in this system that can hold an order yet.",
       packHeading: "Packages",
       packLede: "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
       packNone: "No package sold to them yet.",

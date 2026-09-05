@@ -14,6 +14,9 @@ import { reversedIds, settleDocument, unallocatedOf, type DocumentSettlement } f
 import { jobProfit, type ProfitFact } from "@/lib/portal/profit";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { SettleMonth } from "../new/settle-month";
+import { PartyPortalPanel, type PartyRequest } from "../new/party-portal-panel";
+import { PIPELINE_MODULES } from "@/lib/portal/shape-state";
+import { SITE_URL } from "@/lib/site-url";
 import { PartyHistory } from "../new/party-history";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { PackagesPanel, type PackageRow } from "../new/packages-panel";
@@ -149,6 +152,14 @@ export default async function EditRecordPage({
      於是 20260905740000 那道期间锁既看不见也碰不到。
      ⚠️ null = 没有问（不是对帐那一页），不是「还没关」。 */
   let settledAt: string | null | undefined = undefined;
+  /* 一条发给这个经销商的连结，跟他送进来的那几笔（20260905680000）。
+     🔴 六支函式 9-05 就是真的了，而画面上一个入口都没有 ——
+     一条没有人发得出去的连结，跟一条不存在的连结是同一件事。
+     ⚠️ `undefined` = 没有问（不是名册那一页）。 */
+  let portalRef: string | null | undefined = undefined;
+  let partyRequests: PartyRequest[] = [];
+  let landsIn: string | null = null;
+  let landsInLabel: string | null = null;
   /* 他是自己人还是下游（20260905720000）。**放宽那条守卫的时候，
      保护那件事的责任就搬到这一栏上** —— 读的人分不出来，
      原本那条守卫在防的事就真的没有人在防了。 */
@@ -178,7 +189,7 @@ export default async function EditRecordPage({
   if (ctx.isDirectory) {
     const { data } = await supabase
       .from("directory_entries")
-      .select("id, name, contact_person, phone, whatsapp, email, region, address, reg_no, tax_id, status, note, credit_limit_cents, extra, archived_at")
+      .select("id, name, contact_person, phone, whatsapp, email, region, address, reg_no, tax_id, status, note, credit_limit_cents, portal_ref, extra, archived_at")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -201,6 +212,60 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+
+    /* ── 他自己那条连结，跟他送进来的那几笔（20260905680000）────────────
+       🔴 **只有客户跟供应商**。师傅有登入，走里面那条路 ——
+       `open_party_portal` 自己就会拒绝一个 staff，而画一颗按下去
+       一定失败的按钮，正是这个仓库禁的那一种。
+       ⚠️ 收起来的人也不画：一条连到一个已经收起来的人的连结，
+       打开是死的，而画面上会看起来像它还能用。 */
+    if ((pageKey === "customers" || pageKey === "suppliers") && !data.archived_at) {
+      portalRef = data.portal_ref ?? null;
+      /* 「一按变单」开在哪一页。**从他自己有的那几页里挑第一个走单的** ——
+         写死 "orders" 会在一个只开了报价单的系统上开出一张到不了的单。
+         🔴 一页都没有就回 null，而画面**不画那颗按钮**：
+         一颗按下去一定失败的按钮，就是这个仓库禁的那一种。 */
+      /* ⚠️ 那一栏叫 `sort_order`，不是 `position`。第一版写错，
+         而一个坏栏位名让**整个查询报错**、静静回 null ——
+         於是那颗按钮永远不画，看起来像这个系统没有能放单的页。
+         `record-context.ts` 读同一张表用的就是 `sort_order`。 */
+      const { data: pageRows, error: pageErr } = await supabase
+        .from("project_pages")
+        .select("page_key, title, sort_order")
+        .eq("project_id", ctx.projectId)
+        .order("sort_order");
+      if (pageErr) console.error("project_pages:", pageErr.message);
+      const holder = ((pageRows ?? []) as { page_key: string; title: string | null }[]).find(
+        (r) => PIPELINE_MODULES.has(r.page_key),
+      );
+      landsIn = holder?.page_key ?? null;
+      landsInLabel = holder?.title ?? holder?.page_key ?? null;
+      /* `in_open_only: false` —— 已经开成单的、丢掉的都要看得到。
+         一笔送进来之后消失的请求，读起来像系统把它吃掉了。 */
+      const { data: reqRows } = await supabase.rpc("party_requests_of", {
+        in_project_id: ctx.projectId,
+        in_open_only: false,
+      });
+      partyRequests = ((reqRows ?? []) as {
+        id: string; party_id: string; what: string; qty: number | null;
+        amount_cents: number | null; contact: string | null; status: string;
+        /* ⚠️ 它叫 `asked_on`，不是 `created_at` —— 第一版写错，
+           而那一栏 undefined 之后 `.slice()` 把整页炸掉，
+           画面上写的是「Something broke here」。 */
+        doc_no: string | null; asked_on: string;
+      }[])
+        .filter((r) => r.party_id === recordId)
+        .map((r) => ({
+          id: r.id,
+          what: r.what,
+          qty: r.qty == null ? null : Number(r.qty),
+          amountCents: r.amount_cents == null ? null : Number(r.amount_cents),
+          contact: r.contact ?? "",
+          status: r.status,
+          docNo: r.doc_no,
+          createdAt: r.asked_on,
+        }));
+    }
 
     /* 他的地址。帐单一个地方，工地另一个（20260903060000）。 */
     const { data: addrRows } = await supabase
@@ -927,6 +992,22 @@ export default async function EditRecordPage({
                 {copy.form.creditNone}
               </p>
             )}
+          </div>
+        ) : null}
+
+        {/* 客户 / 供应商那一页多一段：他自己那条连结，跟他送进来的那几笔。
+            ⚠️ `undefined` = 没有问（不是那两页，或者他已经收起来了）。 */}
+        {portalRef !== undefined ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <PartyPortalPanel
+              partyId={recordId}
+              portalRef={portalRef}
+              origin={SITE_URL}
+              requests={partyRequests}
+              landsIn={landsIn}
+              landsInLabel={landsInLabel}
+              copy={copy.form}
+            />
           </div>
         ) : null}
 

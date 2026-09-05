@@ -304,7 +304,27 @@ async function main() {
   check("看不到我们自己人", !flat.includes("Faizal"), flat.slice(0, 200));
   check("🔴 一个 id 都没有", !flat.includes(dealer.id) && !flat.includes(P) &&
     !flat.includes(doc.id), "有 id 漏出去");
-  check("看不到单号", !flat.includes(String(doc.doc_no)), flat.slice(0, 200));
+  /* 🔴 **这一条 2026-09-05 换过一次，理由写下来，而且换成更严的一条。**
+     它本来写「看不到单号」。而接画面的时候看到那句「已经开单了」
+     **讲不出是哪一张** —— 他下一句要问的正好是那一句，於是他回到
+     WhatsApp 上问，而这一整件事存在的理由就是不要他回去问。
+     20260905780000 把**他自己那一笔**变出来的单号加进去了。
+
+     判准是这一句：**那个单号会印在那门生意寄给他的那张纸上** ——
+     那张单的对方就是他（`record_from_request` 把 `party_id` 设成他）。
+     所以它不是新的资讯，是同一张纸上的同一个号码。
+
+     ⚠️ 而边界没有放松，是**移到更准的地方**：他看得到自己那一张，
+     **看不到别人那一张** —— 下面那一条就是在量这件事。 */
+  check("看得到自己那一张的单号", flat.includes(String(doc.doc_no)), flat.slice(0, 300));
+
+  /* 🔴 别人那一张的单号不可以出现。少了这一条，上面那一条就只是放宽。 */
+  const { data: notHis } = await C.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "orders", in_party: "Kedai Telefon Ah Seng",
+  });
+  const { data: leak2 } = await stranger.rpc("party_portal", { in_ref: ref3 });
+  check("🔴 而别人那一张的单号看不到",
+    !JSON.stringify(leak2).includes(String(notHis?.doc_no)), `${notHis?.doc_no}`);
   /* ⚠️ 故意没有的两样，写下来免得下一轮当成漏做（migration 档头也写了）：
      他欠多少（那是 sees_money 的）· 他的单走到哪（那是一张单一个门牌）。 */
   check("🔴 看不到他欠多少", !/owe|outstanding|balance|欠/i.test(flat), flat.slice(0, 200));
