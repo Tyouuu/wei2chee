@@ -211,6 +211,52 @@ try {
   });
   check("按太久要挡（一年以上不叫先别提）", !!tooLong, "居然让它过了");
 
+  /* ── ⑧ 🔴 有人在官网上订了，而他还没看过 ──────────── */
+  console.log("\n⑧ 🔴 官网来的预约，他还没看过");
+  /* ⚙ 这一笔是用老板身分建的，只是把来源标成官网 ——
+     陆上那一整条（陌生人那把钥匙 → `submit_site_booking`）
+     `check:public-booking` 已经走完了；这一段验的是
+     「来源是官网 ⬛ 而他没看过」那一条规则。 */
+  const soon = new Date(Date.now() + 36e5 * 26).toISOString();
+  const later = new Date(Date.now() + 36e5 * 27).toISOString();
+  /* ⚠️ `add_appointment` 回的是**一个 uuid**，不是一整行。
+     第一版写 `bk.id` —— 那是 undefined，而 `has()` 拿 undefined 去比
+     会**配上任何一行**：两条断言因此是**假的绿**。 */
+  const { data: bk, error: bkErr } = await C.rpc("add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: soon, in_ends_at: later,
+    in_party: "Mr Ong", in_service: "Colour and cut", in_source: "website",
+  });
+  check("预约建得起来", !bkErr && !!bk, bkErr?.message ?? "没回 id");
+  check("🔴 他还没看过 → 讲",
+    has(await nudges(), "booking_unseen", bk),
+    JSON.stringify((await nudges()).map((r) => r.kind)));
+  check("而且讲得出是谁、做什么",
+    (await nudges()).some((r) => r.kind === "booking_unseen"
+      && r.party === "Mr Ong" && r.title === "Colour and cut"),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "booking_unseen")));
+
+  /* 他自己在柜台打的那一笔，他本来就知道 —— 不讲。 */
+  const { data: own, error: ownErr } = await C.rpc("add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: new Date(Date.now() + 36e5 * 30).toISOString(),
+    in_ends_at: new Date(Date.now() + 36e5 * 31).toISOString(),
+    in_party: "Walk in", in_service: "Trim",
+  });
+  check("道具：柜台那一笔也建得起来", !ownErr && !!own, ownErr?.message ?? "没回 id");
+  check("🔴 他自己打的那一笔不讲（他本来就知道）",
+    !has(await nudges(), "booking_unseen", own),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "booking_unseen")
+      .map((r) => r.party)));
+
+  const { data: cleared, error: mkErr } = await C.rpc("mark_bookings_seen", {
+    in_project_id: P,
+  });
+  check("按掉那一排", !mkErr && Number(cleared) === 1,
+    mkErr?.message ?? `${cleared}`);
+  check("🔴 按了就不讲了",
+    !has(await nudges(), "booking_unseen", bk), "按了还在讲");
+
   /* ── ⑧ 🔴 师傅 ───────────────────────────────────────────────────── */
   console.log("\n⑧ 🔴 师傅");
   /* 先把补货线那一条弄回来，师傅那一边才有东西可以看。 */
@@ -235,6 +281,26 @@ try {
     crewSees.some((r) => r.kind === "below_reorder")
       && crewSees.some((r) => r.kind === "contract_due"),
     JSON.stringify(crewSees.map((r) => r.kind)));
+  /* 🔴 而官网来的预约他**看得到** —— 前台要知道今天谁要来。
+     看得到跟按得掉是两件事：一个师傅按掉那个徽章，
+     老板就再也不知道有人订过。 */
+  const { data: bk2, error: bk2Err } = await C.rpc("add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: new Date(Date.now() + 36e5 * 40).toISOString(),
+    in_ends_at: new Date(Date.now() + 36e5 * 41).toISOString(),
+    in_party: "Mrs Chan", in_service: "Perm", in_source: "website",
+  });
+  check("道具：第二笔官网预约建得起来", !bk2Err && !!bk2,
+    bk2Err?.message ?? "没回 id");
+  const crewSees2 = await nudges(crew.client);
+  check("🔴 师傅看得到官网来的预约（前台的工作）",
+    crewSees2.some((r) => r.kind === "booking_unseen" && r.subject_id === bk2),
+    JSON.stringify(crewSees2.map((r) => r.kind)));
+  const { error: crewClear } = await crew.client.rpc("mark_bookings_seen", {
+    in_project_id: P,
+  });
+  check("🔴 而他按不掉那个徽章", !!crewClear, "居然按得掉");
+
   check("🔴 金额那一栏对他是空的（不是 0）",
     crewSees.every((r) => r.amount_cents === null),
     JSON.stringify(crewSees.map((r) => r.amount_cents)));

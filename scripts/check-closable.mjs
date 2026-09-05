@@ -70,6 +70,11 @@ const TRACKED = [
   ["vehicles", "created_by"],
 ];
 
+/* 关公司那一段要数到的表 —— 比上面多一张：
+   `appointments` 没有「谁做的」那种栏（[任务 213] 拿掉了），
+   而它正好是那一轮把帐号锁住的那张。 */
+const CLEARED = [...TRACKED.map(([t]) => t), "appointments"];
+
 try {
   /* ── ⓪ 🔴 每一栏「谁做的」都要放得开那个人 ─────────────────────────
      这一条才是这一支真正的守卫 —— 上面那两段量的是**今天这十一张表**，
@@ -184,6 +189,20 @@ try {
     in_record_id: order.id, in_descr: "折叠桌 ×10", in_qty: 10,
   });
 
+  /* 🔴 官网来的预约 —— `appointments`。
+     这一行是 2026-09-06 补的，而它的理由值得写下来：
+     那一天我给 `appointments` 加了一栏 `seen_by`，
+     而它把一个帐号锁住了 —— **因为这一支从来没有种过那张表**，
+     所以那个洞在它眼皮底下过了一整轮。
+     一张没有被种过的表，跟一张没有问题的表，在报告里一模一样。 */
+  await said("add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: new Date(Date.now() + 36e5 * 26).toISOString(),
+    in_ends_at: new Date(Date.now() + 36e5 * 27).toISOString(),
+    in_party: "Mr Ong", in_service: "Colour and cut", in_source: "website",
+  });
+  await C.rpc("mark_bookings_seen", { in_project_id: P });
+
   /* 先别提 —— nudge_snoozes.by_who */
   await W.rpc("snooze_nudge", {
     in_project_id: P, in_kind: "below_reorder", in_subject_id: item.id, in_days: 7,
@@ -223,11 +242,11 @@ try {
 
   const { data: gone } = await admin.from("projects").select("id").eq("id", P);
   check("那家公司真的不在了", (gone ?? []).length === 0, `${gone?.length}`);
-  for (const [t] of TRACKED) {
+  for (const t of CLEARED) {
     const { data: left } = await admin.from(t).select("id").eq("project_id", P).limit(1);
     if ((left ?? []).length) bad.push(`${t} 还留着行`);
   }
-  check("🔴 那十一张表一行都没有留下", !bad.some((b) => b.includes("还留着行")),
+  check(`🔴 那 ${CLEARED.length} 张表一行都没有留下`, !bad.some((b) => b.includes("还留着行")),
     bad.filter((b) => b.includes("还留着行")).join(" · "));
 } catch (e) {
   /* 🔴 抛了例外要算没过。第一版没有这一段，於是它中途炸掉、
