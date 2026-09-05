@@ -10055,6 +10055,32 @@ And Wholesale Of Clothing` —— 一串用逗号分开的生意活动，不是�
 （`AKTIVITI PENGATURCARAAN KOMPUTER (COMPUTER PROGRAMMING ACTIVITIES)`），
 所以马来文英文都搜得到。
 
+##### ✅ 结帐那一页 —— 是 RM 70 不是 RM 60（2026-09-06）
+> `要附上什么文件吗`
+
+**费用明细（他画面上的原文）：**
+| | | |
+|---|---|---|
+| Registration of Business | 1 Year(s) | **60.00** |
+| Branches | 1 Year(s) | 0.00 |
+| **Business Info** | 1 | **10.00** |
+| | **Total** | 🔴 **70.00** |
+
+🔴 **我一路跟他讲 RM 60，实际是 RM 70** —— `Business Info` 那 RM 10 自己加进去了。
+⚠️ **能不能拿掉我不确定**，而我建议留着：
+**开银行户口通常要的不只是那张证书，还有这份资料印本**（上面有东主 · 地址 ·
+生意类型 · 行业码），收款闸道审核也常要。而且它跟证书**共用那个 90 天下载窗口**。
+
+**附件：不用。** 那一段自己写着 `(if applicable)`。要附的只有两种情况，两种他都不是：
+- 名字里有需要部长批准的字（`2(b)`：`perlu melengkapkan maklumat dan melampirkan
+  dokumen sokongan untuk kelulusan YB Menteri`）
+- 申请了那个免费计划要证明 —— 他选了 `Not Applicable`
+
+**`Preview` 是灰的，因为那个声明还没勾。** 而那段声明不是形式：
+`section 12(1)(d) Registration of Business Act 1956` —— 资料不实
+**最高罚 RM 50,000 或坐牢两年**。
+→ **勾了之后 Preview，逐项对一次再付钱**，特别是名字 · 地址 · 身份证号。
+
 ##### 还要问一句的
 - [ ] **地方政府的营业执照（lesen perniagaan）** —— 在家做的软件生意有些市政局要、
       有些不要，各地不一样。**我没查他那一区的。**
