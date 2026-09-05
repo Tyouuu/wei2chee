@@ -536,6 +536,60 @@ const node = (
  * 不是第二份手写的清单（这个仓库栽在第二份清单上至少六次）。
  * 这一支回传 Puck 节点，那几页读它的 `props` 直接喂给 `<RailNav />`。
  */
+/**
+ * 侧栏上每一页的名字，而且**没有两个一样的**。
+ *
+ * 🔴 实拍（2026-09-05）：同一条侧栏上「Orders」出现两次 ——
+ * 一个在「日常」，一个在「工作」，两个指到两页不同的东西。
+ *
+ * 根因：`工程` 跟 `订单` 两个 key **都拿这门生意自己那个词**
+ * （`labels.order`）。对只开其中一页的生意那是对的，而八个行业的开局
+ * 也确实没有一个同时给两页 —— 所以它只在他自己加了第二页的时候现形，
+ * 而那正是没有人会去测的那一种情况。
+ *
+ * ⚠️ 修法**不是列一份「这两个 key 会撞」的名单**（这个仓库栽在手写名单上
+ * 至少八次）。是一条规则：**撞到了，后来的那一个退回目录自己的词。**
+ * 谁先谁后照的是侧栏本来的顺序，所以「哪一页拿到他自己的词」是稳定的。
+ *
+ * ⚠️ 而**他自己改过的名字永远赢** —— 那是他打进去的字，
+ * 两页都叫「工程」是他的决定，不是我们的 bug。
+ */
+function navLabels(
+  pages: PageRef[],
+  labels: IndustryLabels,
+  lang: SystemLang,
+): string[] {
+  /* 第一轮：每一页先拿目录自己那个词。目录里那些词本来就是互不相同的，
+     所以这一轮出来一定不会撞。 */
+  const catalogue = pages.map((page) => {
+    const archetype = MODULE_BY_KEY[page.key];
+    return archetype ? moduleLabel(archetype, lang) : chrome(lang).newPage;
+  });
+  const reserved = new Set(catalogue);
+
+  /* 第二轮：想拿这门生意自己那个词的，**没有撞到别人才给**。
+     ⚠️ 这个顺序不能反过来 —— 先给生意的词、撞了再退回目录，会退到
+     另一页刚拿走的那个字上：实测英文那一轮 `订单` 退回「Orders」之前
+     先拿了「Projects」，而「Projects」正是 `工程` 的目录词，
+     於是退一步还是撞。 */
+  const taken = new Set<string>();
+  return pages.map((page, i) => {
+    const own = page.title?.trim();
+    /* 他自己打的字永远赢 —— 两页都叫「工程」是他的决定，不是我们的 bug。 */
+    if (own) {
+      taken.add(own);
+      return own;
+    }
+    const wanted = pageLabel(page, labels, lang);
+    const mine = catalogue[i];
+    const freeToTake =
+      wanted === mine || (!taken.has(wanted) && !reserved.has(wanted));
+    const label = freeToTake ? wanted : mine;
+    taken.add(label);
+    return label;
+  });
+}
+
 export function railNavNode(
   labels: IndustryLabels,
   brandLabel: string,
@@ -546,6 +600,11 @@ export function railNavNode(
   lang: SystemLang,
 ): PuckNode {
   const c = chrome(lang);
+  /* 这一页自己有没有一颗「加一单」。有的话侧栏那一颗不画 —— 见底下那一段。
+     读的是 `isLiveShape`，跟每一页的表头读的是同一支，所以一个形状哪天
+     变成真的，两边同一次改动一起动。 */
+  const ownShape = MODULE_BY_KEY[activePage]?.shape;
+  const hasOwnAction = !!ownShape && isLiveShape(ownShape);
   // RailNav derives its own active state from `usePathname()` and each item's
   // href -- there is no `active` prop. The hrefs therefore have to match the
   // real route shape INCLUDING next-intl's locale prefix (`/zh/portal/...`),
@@ -568,11 +627,11 @@ export function railNavNode(
     // A custom page has no entry in RAIL_ICONS, so `railIcon` returns null and
     // the row renders text-only -- the degradation the icon registry was built
     // to have, now actually exercised.
-    items: pages.map((page) => ({
-      label: pageLabel(page, labels, lang),
-      href: `/${locale}/portal/${page.key}`,
-      group: navGroup(page.key, pages.length, c),
-      iconName: page.key,
+    items: navLabels(pages, labels, lang).map((label, i) => ({
+      label,
+      href: `/${locale}/portal/${pages[i].key}`,
+      group: navGroup(pages[i].key, pages.length, c),
+      iconName: pages[i].key,
     })),
     // These two used to be `notificationsHref: "#"` / `accountHref: "#"` --
     // real links that went nowhere, and that the customer could neither rename
@@ -596,24 +655,39 @@ export function railNavNode(
       Switch to 工作室, rename it, switch to 台账 and back -- the name is still
       there, because it was never the register's to hold.
 
-      It is the SAME action PageHeader already offers, deliberately. Studio
-      Admin's rail leads with 「Quick Create」 and their pages carry their own
-      buttons too; the rail's copy is the standing offer, the page's is the one
-      for the page you are on.
+      🔴 而它只在**这一页自己没有那颗按钮**的时候才画（2026-09-05）。
+
+      在这之前它是无条件写进去的，理由写在上一段：Studio Admin 的侧栏也是
+      一颗常驻的「Quick Create」。**而他们那一颗不讲页面的名字，我们这一颗讲。**
+      实拍：站在**进货单**那一页，侧栏顶上一颗黑的写着「＋ New quotations」，
+      而同一屏的右上角另一颗黑的写着「New purchase orders」——
+      **两颗一样重的按钮，去两个不同的地方，而其中一颗讲的是别的页。**
+
+      两条路都试过，两条都更糟：
+        · 让它跟着这一页走 → 同一屏上两颗一模一样的按钮，他要先决定按哪一颗
+        · 把字改成「新增」 → 一个不讲自己要去哪的主要动作
+
+      所以留下它本来的身份（**常驻的那一个提议**），只是**在已经有提议的
+      页面上不再重复讲一次**。它照旧无条件写进版面 —— 换一套风格不会
+      弄丢它的名字（上一段那个理由没有变）。
     */
-    actionLabel: c.dashboard.primaryAction(
-      pageLabel(
-        pages.find((p) => ["quotations", "bookings", "orders", "projects"].includes(p.key)) ?? {
-          key: "customers",
-        },
-        labels,
-        lang,
-      ),
-    ),
-    actionHref: `/${locale}/portal/${
-      pages.find((p) => ["quotations", "bookings", "orders", "projects"].includes(p.key))?.key ??
-      "customers"
-    }`,
+    ...(hasOwnAction
+      ? {}
+      : {
+          actionLabel: c.dashboard.primaryAction(
+            pageLabel(
+              pages.find((p) => ["quotations", "bookings", "orders", "projects"].includes(p.key)) ?? {
+                key: "customers",
+              },
+              labels,
+              lang,
+            ),
+          ),
+          actionHref: `/${locale}/portal/${
+            pages.find((p) => ["quotations", "bookings", "orders", "projects"].includes(p.key))?.key ??
+            "customers"
+          }`,
+        }),
     // The account chip identifies the PERSON, so the email local part belongs
     // here and only here -- it is the one place in the system where "who am I
     // signed in as" is the question being answered.
@@ -2875,6 +2949,29 @@ function detailNode(
  * ⚠️ NO PriceTable HERE, though it exists and looks the part. PriceTable is a
  * sales price list -- packages, features, a button -- and putting one on a
  * quotation would print an offer nobody made.
+ *
+ * 🔴 而底下那一段两张纸不一样（2026-09-05）。
+ *
+ * 报价单是**我们卖**，进货单是**我们买** —— 而在这一天之前两张印的是
+ * 同一段，於是一张给建材行的水泥进货单上印着
+ * **「报价 30 天内有效。签名并收到订金后开工。之后另外加的项目另外报价。」**
+ * 那是我们卖东西的条款，讲给供应商听，整段没有一句是对的。
+ *
+ * ⚠️ **我第一版改错了，写下来免得下一个人再走一次**：我把它整段换成一条
+ * 三格的流程（开了单 → 到货了 → 付清了）。而 `module-copy.zh.ts` 里
+ * 早就写着为什么不行 ——「状态是两件事的组合，不是一条直线…一条把两者
+ * 混在一起的流程，讲不出『货到了，钱还没付』，而那是一张采购单大部分
+ * 时间待着的状态」。**一个来源已经判过的东西，不可以被后一个推翻**
+ * （重点 7h）。而且那条流程画在一张纸上，高亮那一格就变成关於**这一单**
+ * 的宣称 —— 实测它跟同一张纸上的状态那一行讲的不是同一句。
+ *
+ * 所以换的是**字**，不是块。两张纸本来就该是同一种块：
+ * 一份印出来给别人看、别人签的东西。
+ *
+ * ⚠️ 而工程/任务 跟 供应商/师傅 那两对**故意不改**：
+ * 两对各自在问同一句话（「这一件走到哪」·「他们是谁，打开一个看」），
+ * 而参考那一套自己也把它们画成同一页。
+ * **为了不一样而不一样，正是重点 7c 在挡的那件事。**
  */
 function documentNode(
   pageKey: PageId,
@@ -2882,6 +2979,8 @@ function documentNode(
   cols: KindCols,
   first: KindRow | undefined,
   c: Chrome,
+  /** 我们买的那一张。不给就是我们卖的那一张。 */
+  buying = false,
 ): PuckNode {
   return node("Panel", `${pageKey}-doc`, {
     title: c.pageKind.documentHeading(title),
@@ -2893,8 +2992,9 @@ function documentNode(
       }),
       node("TermsBlock", `${pageKey}-terms`, {
         heading: c.pageKind.documentTermsHeading,
-        body: c.pageKind.documentTerms,
-        signLabel: c.pageKind.documentSign,
+        body: buying ? c.pageKind.buyingTerms : c.pageKind.documentTerms,
+        /* 收货的人签，不是客人签。 */
+        signLabel: buying ? c.pageKind.buyingSign : c.pageKind.documentSign,
         dateLabel: c.pageKind.documentDate,
       }),
     ],
@@ -3097,7 +3197,7 @@ function buildFromShape(
         return [
           ...head,
           besideNode(pageKey, table, [
-            documentNode(pageKey, copy.title, copy.columns, copy.rows[0], c),
+            documentNode(pageKey, copy.title, copy.columns, copy.rows[0], c, true),
           ]),
         ];
       }

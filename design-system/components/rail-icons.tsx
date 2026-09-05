@@ -216,6 +216,16 @@ export function IconLifebuoy({ className = "h-[18px] w-[18px]" }: IconProps) {
  * `lib/templates/industry-template.ts` can name one directly. Unknown names
  * resolve to `null` and the item renders text-only, exactly as before.
  */
+export function IconGlobe({ className = "h-[18px] w-[18px]" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18" />
+    </svg>
+  )
+}
+
 export const RAIL_ICONS: Record<string, (p: IconProps) => React.JSX.Element> = {
   dashboard: IconGrid,
   customers: IconUsersRail,
@@ -241,6 +251,16 @@ export const RAIL_ICONS: Record<string, (p: IconProps) => React.JSX.Element> = {
   suppliers: IconUsersRail,
   staff: IconUsersRail,
   inventory: IconShoppingBag,
+  /* 🔴 这两个 key 从目录长出来之后，一直没有人回来加（2026-09-05）。
+     实拍：整条侧栏每一行都有图标，只有「Website」那一行是光的字 ——
+     而 `railIcon` 找不到就回 null，**不会报错，也不会有任何样式变化**。
+     那正是这个仓库栽过至少八次的那种手写名单。
+     现在 `rail-icons.test.tsx` 会因为目录多一个 key 而变红。 */
+  purchases: IconReceipt,
+  /* 唯一一个不是**内部**的去处 —— 陌生人打得开的那一页。
+     所以它是这一份里唯一一个新画的，不是别人的别名：
+     一个地球跟一叠纸在 16px 上分得出来，而那正是这一行要讲的事。 */
+  website: IconGlobe,
   // Footer rows (RailUtilityItem). Named by what they ARE rather than by a
   // route key, because unlike the nav items above these are not pages.
   notifications: IconBell,

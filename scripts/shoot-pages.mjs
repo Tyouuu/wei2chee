@@ -127,7 +127,16 @@ try {
   });
 
   /* ── ③ 一页一页拍，视窗撑到跟内容一样高 ─────────────────────────────── */
-  for (const key of opened) {
+  /* 只看某几页的时候：`ONLY=purchases,quotations npm run shoot:pages`。
+     十八页拍一轮几分钟，而改一页的时候只有那一页要用眼睛看。
+     ⚠️ **筛掉的照旧种进去** —— 一张少了别的模块的页面，
+     侧栏跟数字都会跟真的那一版不一样。 */
+  const only = (process.env.ONLY ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const shooting = only.length ? opened.filter((k) => only.includes(k)) : opened;
+  if (only.length && shooting.length !== only.length) {
+    console.log(`⚠️ 这几页这个帐号没有开：${only.filter((k) => !shooting.includes(k)).join(" · ")}`);
+  }
+  for (const key of shooting) {
     const url = `${BASE}/en/portal/${key}`;
     try {
       await page.goto(url, { waitUntil: "networkidle", timeout: 120000 });

@@ -260,6 +260,19 @@ export type Chrome = {
     documentTerms: string;
     documentSign: string;
     documentDate: string;
+    /** 🔴 进货单那张纸上的字，跟报价单不是同一段。
+     *
+     *  在 2026-09-05 之前两张纸印的是同一段，於是一张给建材行的
+     *  水泥进货单上印着 **「报价 30 天内有效。签名并收到订金后开工。」**
+     *  —— 那是**我们卖东西**的条款，印在**我们买东西**的单上，
+     *  讲给供应商听。整段没有一句是对的。
+     *
+     *  ⚠️ 而这一段刻意**不发明任何事实**：不写送到哪里、不写几时要、
+     *  不写付款条件 —— 那三样是关於这一单的宣称，我们不知道。
+     *  留下的是每一个买东西的人都成立的那一句：**照单点收**。 */
+    buyingTerms: string;
+    /** 收货的人签，不是客人签。见 buyingTerms。 */
+    buyingSign: string;
     dayHeading: string;
   };
 
@@ -425,6 +438,9 @@ const EN: Chrome = {
       "Quoted prices hold for 30 days. Work starts once this is signed and the deposit is received. Anything added later is quoted separately.",
     documentSign: "Signature",
     documentDate: "Date",
+    buyingTerms:
+      "Quantities and prices as listed above. Goods are checked against this order on arrival — tell us at once if anything does not match.",
+    buyingSign: "Received by",
     dayHeading: "Today",
   },
 
@@ -588,6 +604,9 @@ const ZH: Chrome = {
       "报价 30 天内有效。签名并收到订金后开工。之后另外加的项目另外报价。",
     documentSign: "签名",
     documentDate: "日期",
+    buyingTerms:
+      "数量和金额以本单为准。到货时照单点收，数量或规格不对请当场告知。",
+    buyingSign: "收货签名",
     dayHeading: "今天",
   },
 
