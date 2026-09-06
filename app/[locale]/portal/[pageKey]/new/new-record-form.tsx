@@ -614,6 +614,53 @@ export function NewRecordForm({
         return;
       }
 
+      /* ── 🔴 改一件货 ────────────────────────────────────────────────────
+         在这一段之前，`catalog` 掉进底下那个三元的最后一支，
+         也就是 `update_pipeline_record` —— 而那一支第一句就是
+         「照 id 找一张单」，找不到就 `raise 'no such record in your project'`。
+
+         **所以这不是少一扇门，是一颗坏掉的保存**：一个五金店老板打开
+         一件货、把卖价改一改、按保存，读到的是一句资料库的话，
+         而那句话还是假的（那件货就是他的）。他碰得到它的第二天。
+
+         ⚠️ **不送数量** —— 一件已经存在的货，架上有几个是流水加起来的
+         （`stockLocked`，见上面）。送一个数字上去就是那种「他打得进去
+         而下一次渲染会盖掉」的控件。要改数量就去盘一次点。
+
+         ⚠️ **卖价跟进价这里也不送**，跟开一件货那一支保持同一组栏位 ——
+         那两格今天在表单上没有位子，凭空送一个 null 上去不会有事，
+         但送一个「他没打过的空字串」会。 */
+      if (isCatalog) {
+        const num = (k: string) => {
+          const n = Number((values[k] ?? "").replace(/[^0-9.]/g, ""));
+          return Number.isFinite(n) && (values[k] ?? "").trim() !== ""
+            ? n
+            : null;
+        };
+        const { error: itemErr } = await supabase.rpc("update_catalog_item", {
+          in_id: record.id,
+          in_name: title,
+          in_unit: (values.unit ?? "").trim(),
+          in_location: (values.location ?? "").trim(),
+          in_sku: (values.sku ?? "").trim(),
+          in_pack_size: num("pack_size"),
+          in_pack_unit: (values.pack_unit ?? "").trim(),
+          in_reorder_at: num("reorder_at"),
+          in_note: (values.note ?? "").trim(),
+          in_extra: extra,
+        });
+        if (itemErr) {
+          setError(
+            `${copy.failed}${itemErr.message ? ` — ${itemErr.message}` : ""}`,
+          );
+          setBusy(false);
+          return;
+        }
+        router.push(backHref);
+        router.refresh();
+        return;
+      }
+
       const { error: fixErr } = isDirectory
         ? await supabase.rpc("update_directory_entry", {
             in_id: record.id,

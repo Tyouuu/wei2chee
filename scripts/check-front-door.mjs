@@ -137,6 +137,55 @@ try {
   await page.waitForTimeout(2000);
   const noteInSystem = await page.getByText(/starting draft|初稿/i).first().isVisible().catch(() => false);
   ok("🔴 他的系统上没有 —— 它叫他按的那颗 Save 不在这一屏上", !noteInSystem);
+
+  /* ── ⑤ 🔴 「改设计」不准压在他的资料上 ─────────────────────────────────
+     老板 2026-09-06 拍图：那颗药丸盖住第三行的 `RM 3,400`。
+     逐个角量过（`scratchpad/_corner-probe.mjs`，1440×960）：
+       payments · 卷到顶 · 右下角 → <TD> In progress · <TD> To do
+       customers · 卷到顶 · 左下角 → <A> Reports · <A> Ranking
+     **两个角都在盖东西**，盖到哪一样看他卷到哪里 ——
+     所以一张截图有时候照得到、有时候照不到，而它因此活了很久。
+
+     ⚠️ 这一条量的不是「它在不在那个位置」，是**它底下有没有东西** ——
+     换一个角、换一页、内容长一点，位置那种断言就静静地不再守任何东西。
+     两个卷动位置都问，因为这个缺陷只在其中一个出现。 */
+  console.log("\n⑤ 🔴 那颗「改设计」有没有压在他的资料上");
+  for (const key of ["payments", "customers"]) {
+    await page.goto(`${BASE}/en/portal/${key}`, { waitUntil: "networkidle", timeout: 180000 });
+    await page.waitForTimeout(2500);
+    for (const where of ["顶", "底"]) {
+      if (where === "底") {
+        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+        await page.waitForTimeout(800);
+      }
+      const covered = await page.evaluate(() => {
+        const pill = [...document.querySelectorAll("a")].find((e) =>
+          /change design|改设计/i.test(e.textContent || ""),
+        );
+        if (!pill) return { none: true };
+        const r = pill.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) return { hidden: true };
+        const hits = new Set();
+        for (let fx = 0.1; fx <= 0.9; fx += 0.2)
+          for (let fy = 0.25; fy <= 0.75; fy += 0.25)
+            for (const el of document.elementsFromPoint(
+              r.left + r.width * fx,
+              r.top + r.height * fy,
+            )) {
+              if (el === pill || pill.contains(el) || el.contains(pill)) continue;
+              const t = (el.textContent || "").trim();
+              if (t && t.length <= 60) hits.add(t);
+            }
+        return { hits: [...hits].slice(0, 4) };
+      });
+      if (covered.none || covered.hidden) continue;
+      ok(
+        `${key} · 卷到${where}：它底下没有别的字`,
+        covered.hits.length === 0,
+        `盖住 ${JSON.stringify(covered.hits)}`,
+      );
+    }
+  }
 } finally {
   if (browser) await browser.close().catch(() => {});
   if (userId) await dropThrowaway(admin, userId);

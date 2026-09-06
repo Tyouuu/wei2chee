@@ -111,8 +111,11 @@ export function WorkView({
          而最低高度要**扣掉**那 4rem，不然「一整屏 ＋ 64px」永远比一屏高，
          内容装得下的页面也会多出一段可以滚的空白。`dvh` 不是 `vh`：
          手机浏览器的网址列会伸缩，`vh` 量的是它伸出去之前那个高度。
-         `lg:pb-24` 只在有那颗浮着的药丸的时候才要。 */
-      className={`ds-ground [background-color:var(--color-canvas)] ${fill ? "min-h-full" : "lg:min-h-screen max-lg:min-h-[calc(100dvh-4rem)] max-lg:pb-16"} ${designHref ? "lg:pb-24" : ""}`}
+
+         ⚠️ **宽屏那个 `lg:pb-24` 2026-09-07 拿掉了** —— 它当时是要让内容
+         躲开那颗浮着的药丸，而药丸已经排进流里面了（见底下那一段）。
+         留着就是每一页尾巴多 96px 谁都没有要的空白。 */
+      className={`ds-ground [background-color:var(--color-canvas)] ${fill ? "min-h-full" : "lg:min-h-screen max-lg:min-h-[calc(100dvh-4rem)] max-lg:pb-16"}`}
     >
       <SystemLangProvider lang={systemLang}>
         {/* ⚠️ A FLEX COLUMN, NOT `[&>*]:min-h-screen`. That was the first
@@ -152,26 +155,43 @@ export function WorkView({
           <Render config={puckConfig} data={data} />
         </div>
         {designHref ? (
-          <a
-            href={designHref}
-            /* 🔴 **只有宽的时候才有这一颗。窄屏它住在底栏的「更多」里面。**
+          /* 🔴 **它不再浮在他的页面上。宽窄都是。**
 
-               窄屏试过两版，两版都错，而且读数全绿、看图才分得出来：
-               ① `fixed bottom-5` —— 压在最后一行的状态上（`In progress`
-                  被吃掉一半）
-               ② 加 `pb-28` 想让内容躲开 —— **padding 只在下面加空间，
-                  内容一个像素都不会往上移**，画面跟①一模一样
-               ③ 改成排在页面最后 —— 掉到那条 `fixed` 底栏**底下**去了
-               一个飘在内容上、又不让内容躲开的东西，吃掉的永远是最后那一样，
-               而这个仓库写过三次。第四次的答案不是再挪一次位子，是
-               **它本来就不该浮在一个已经有底栏的画面上** —— 见 system-view.tsx。
+             ── 第四版，而前三版全部是同一个毛病 ────────────────────────
+             窄屏试过三版，三版都在吃掉页面最后那一样东西：
+             ① `fixed bottom-5` —— 压在最后一行的状态上
+             ② 加 `pb-28` 想让内容躲开 —— **padding 只在下面加空间，
+                内容一个像素都不会往上移**，画面跟①一模一样
+             ③ 排在页面最后 —— 掉到那条 `fixed` 底栏**底下**去了
+             窄屏的答案是把它收进底栏的「更多」（见 system-view.tsx），
+             而**宽屏当时留着那颗浮的**，理由写的是「那一边没有底栏」。
 
-               宽的时候留着：右下角，跟编辑器里那颗「用讲的改」同一个位子，
-               而那一边没有底栏。 */
-            className="max-lg:hidden lg:fixed lg:bottom-5 lg:right-5 lg:z-40 rounded-full border [border-color:var(--color-ink-700)] [background-color:var(--color-ink-900)] [color:var(--color-paper)] px-4 py-2.5 text-sm [font-weight:var(--fw-medium)] shadow-lg"
-          >
-            {designLabel}
-          </a>
+             ── 🔴 那个理由不成立，而这一次是量出来的 ──────────────────
+             老板 2026-09-06 拍图：**那颗药丸盖住第三行的 `RM 3,400`**。
+             逐个角量过（1440×960，`scratchpad/_corner-probe.mjs`）：
+
+               payments · 卷到顶 · 右下角 → 底下是 <TD> In progress · <TD> To do
+               customers · 卷到顶 · 左下角 → 底下是 <A> Reports · <A> Ranking
+
+             **两个角都在盖东西**，只是盖到哪一样看他卷到哪里 ——
+             一个跟卷动位置有关的缺陷，一张截图有时候照得到有时候照不到，
+             而那正是它活了这么久的原因。
+
+             → 所以答案跟窄屏是同一个，不是再挪一次位子：
+             **一个鲜少按一次的动作，不该永远压在他每天要读的那一栏上。**
+             它排在页面最后，在流里面，**永远不会盖住任何东西**。
+
+             ⚠️ 代价讲出来：他要卷到底才看得到（实测这几页 1206–1245px，
+             视窗 960 —— 一次滑动）。换到的是那两栏永远读得到。 */
+          <div className="max-lg:hidden flex justify-end [padding-block:var(--pad-card-lg)] [padding-inline:var(--pad-card-lg)] [border-top:var(--hairline)_solid_var(--color-ink-800)]">
+            <a
+              href={designHref}
+              className="inline-flex items-center gap-2 rounded-full border [border-color:var(--color-ink-700)] [background-color:var(--color-ink-900)] [color:var(--color-paper)] px-4 py-2.5 text-sm [font-weight:var(--fw-medium)]"
+            >
+              <span aria-hidden="true">✎</span>
+              {designLabel}
+            </a>
+          </div>
         ) : null}
       </SystemLangProvider>
     </StyleScope>

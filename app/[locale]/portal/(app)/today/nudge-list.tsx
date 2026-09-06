@@ -77,6 +77,51 @@ const KIND_LABEL: Record<string, string> = {
   /* 🔴 第十一种（`20260906750000`）—— 又一次守卫先讲话。
      一个学生连着两堂没来，对一间补习中心就是一个快要走掉的客户。 */
   absent_twice: "kind_absent_twice",
+  /* 🔴 第十二种（`20260907010000`）—— 守卫第三次先讲话。
+     一个客人照他自己的节奏早就该回来了，而他没有。
+     ⚠️ 它带的两个数字是**来过几次 · 平常隔几天**，不是库存那两个 ——
+     见底下 `detail()`：一句借来的话正是第十一种上线时印错的那一句。 */
+  party_lapsed: "kind_party_lapsed",
+};
+
+/**
+ * 🔴 那两栏是**借来的**，六种事借去装六样不同的东西。
+ *
+ * `nudges_due` 只有两栏放数字（`qty_left` · `qty_floor`），
+ * 而那一支自己的注解就写着「借同两栏」：
+ *
+ *   below_reorder   架上剩几个 · 补货线
+ *   package_last    套票还剩几次
+ *   rental_overdue  借出去几件
+ *   request_open    他要几件
+ *   absent_twice    缺席几堂
+ *   party_lapsed    来过几次 · 平常隔几天
+ *
+ * ── 在这一段之前只有一句话 ────────────────────────────────────────────
+ *
+ * `leftOf`＝「还剩 N，线是 M」，而**六种里五种借的不是库存**。
+ * 所以今天画出来是：
+ *
+ *   一张剩最后一次的套票   → 「还剩 1，线是 0」
+ *   两百张逾期没还的椅子   → 「还剩 200，线是 0」
+ *   经销商要五十件        → 「还剩 50，线是 0」
+ *   连着两堂没来的学生     → 「还剩 2，线是 0」
+ *
+ * 🔴 **`，线是 0` 在那四种里一次都讲不通**，而它不报错、不会红、
+ * 也不会让页面白掉 —— 那正是它活着的原因。
+ * 抓到它的是 `nudge-kinds.test.ts` 新加的那一条：第十二种加进来的那天，
+ * 它顺手点名了另外三种。
+ *
+ * ⚠️ 认不得的那一种退回 `leftOf`，不是不画 ——
+ * 少一句合身的话，比少一个数字好。
+ */
+const QTY_WORD: Record<string, string> = {
+  below_reorder: "leftOf",
+  package_last: "sessionsLeft",
+  rental_overdue: "qtyOut",
+  request_open: "qtyAsked",
+  absent_twice: "missedLessons",
+  party_lapsed: "visitsEvery",
 };
 
 export function NudgeList({
@@ -157,7 +202,10 @@ export function NudgeList({
     if (n.title && n.title !== n.party) bits.push(n.title);
     if (n.qty_left != null)
       bits.push(
-        t("leftOf", { n: Number(n.qty_left), m: Number(n.qty_floor ?? 0) }),
+        t(QTY_WORD[n.kind] ?? "leftOf", {
+          n: Number(n.qty_left),
+          m: Number(n.qty_floor ?? 0),
+        }),
       );
     if (n.due_on) {
       const late = Number(n.days_late ?? 0);

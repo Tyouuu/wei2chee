@@ -4,7 +4,17 @@ import { NewRecordForm } from "./new-record-form";
 import { RECORD_COPY } from "../record-copy";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }) }));
-vi.mock("@/lib/supabase/client", () => ({ createBrowserSupabaseClient: () => ({ rpc: async () => ({ error: null }) }) }));
+/* 按下保存之后，真正被呼叫的是哪一支。`vi.hoisted` 是因为 `vi.mock`
+   的工厂会被提到档案最上面 —— 一个普通的 const 在那一刻还不存在。 */
+const calledRpcs = vi.hoisted(() => [] as string[]);
+vi.mock("@/lib/supabase/client", () => ({
+  createBrowserSupabaseClient: () => ({
+    rpc: async (name: string) => {
+      calledRpcs.push(name);
+      return { error: null, data: null };
+    },
+  }),
+}));
 
 /**
  * A box he can type in has to be a box that saves.
@@ -419,6 +429,94 @@ describe("填错的时候，那句话在哪里", () => {
           `「${money[i]}」跟「${money[j]}」几乎是同一句`,
         ).toBe(false);
       }
+    }
+  });
+});
+
+/**
+ * 🔴 改一件货，走的是改货那一支。
+ *
+ * ── 这一条守的是什么 ──────────────────────────────────────────────────────
+ *
+ * 那一段本来是三支各自的早退（预约 · 对帐），底下一个三元
+ * （名册 · 钱 · 其余）。而 `catalog` 一支自己的都没有，
+ * 於是它掉进「其余」—— `update_pipeline_record`，
+ * 而那一支第一句就是照 id 找一张单，找不到就报
+ * `no such record in your project`。
+ *
+ * **所以那不是少一扇门，是一颗坏掉的保存**：一个五金店老板打开一件货、
+ * 把卖价改一改、按保存，读到一句资料库的话，而那句话还是假的。
+ *
+ * ⚠️ 量的是**那个形状**不是这一次：底下第二条走过这个表单编辑得了的
+ * 每一种形状，任何一种掉回 `update_pipeline_record` 就红 ——
+ * 「修了一个实例，没修那个形状」这个仓库栽过至少八次。
+ */
+describe("按保存的时候，呼叫的是那个形状自己那一支", () => {
+  const saveAs = async (
+    shape: "catalog" | "directory" | "ledger" | "pipeline",
+    moduleKey: string,
+  ) => {
+    const { render, fireEvent, cleanup } = await import(
+      "@testing-library/react"
+    );
+    calledRpcs.length = 0;
+    const { container } = render(
+      <NewRecordForm
+        projectId="p"
+        moduleKey={moduleKey}
+        shape={shape}
+        parties={[]}
+        columns={columns}
+        title={moduleKey}
+        today="2026-09-02"
+        stages={[]}
+        backHref="/back"
+        copy={RECORD_COPY.en.form}
+        record={{
+          id: "row-1",
+          values: { primary: "Cement 50kg", unit: "bag" },
+          archivedAt: null,
+        }}
+      />,
+    );
+    const el = container.querySelector("form");
+    expect(el, `${shape}: 那一页上没有表单`).not.toBeNull();
+    fireEvent.submit(el as HTMLFormElement);
+    await new Promise((r) => setTimeout(r, 0));
+    cleanup();
+    return [...calledRpcs];
+  };
+
+  it("一件货改的是那件货，不是一张不存在的单", async () => {
+    const rpcs = await saveAs("catalog", "inventory");
+    expect(rpcs, "改一件货没有走 update_catalog_item").toContain(
+      "update_catalog_item",
+    );
+    expect(rpcs, "🔴 一件货掉进了走单那一支").not.toContain(
+      "update_pipeline_record",
+    );
+  });
+
+  it("每一种形状都有自己那一支", async () => {
+    /* 走单本来就该走它 —— 其余每一种掉回去就是这一次的那个洞。 */
+    const own: Record<string, string> = {
+      catalog: "update_catalog_item",
+      directory: "update_directory_entry",
+      ledger: "update_ledger_words",
+      pipeline: "update_pipeline_record",
+    };
+    const moduleOf: Record<string, string> = {
+      catalog: "inventory",
+      directory: "customers",
+      ledger: "payments",
+      pipeline: "quotations",
+    };
+    for (const shape of Object.keys(own) as (keyof typeof moduleOf)[]) {
+      const rpcs = await saveAs(
+        shape as "catalog" | "directory" | "ledger" | "pipeline",
+        moduleOf[shape],
+      );
+      expect(rpcs, `${shape}: 走的不是它自己那一支`).toContain(own[shape]);
     }
   });
 });

@@ -1002,6 +1002,11 @@
       "seenAll": "都看过了",
       "openIt": "打开",
       "leftOf": "还剩 {n}，线是 {m}",
+      "missedLessons": "缺了 {n} 堂",
+      "sessionsLeft": "还剩 {n} 次",
+      "qtyOut": "借出 {n}",
+      "qtyAsked": "要 {n}",
+      "visitsEvery": "来过 {n} 次，平常隔 {m} 天",
       "kind_quote_expiring": "报价快过期",
       "kind_agreed_unpaid": "答应了，订金还没进来",
       "kind_contract_due": "保养该去了",
@@ -1013,7 +1018,8 @@
       "kind_rental_overdue": "借出去过期没还",
       "kind_referral_owing": "介绍费还没给",
       "kind_request_open": "经销商在等回覆",
-      "kind_absent_twice": "连着两堂没来"
+      "kind_absent_twice": "连着两堂没来",
+      "kind_party_lapsed": "好久没来了"
     },
     "vehicles": {
       "title": "车牌",
