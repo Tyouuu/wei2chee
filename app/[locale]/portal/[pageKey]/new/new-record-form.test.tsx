@@ -90,7 +90,11 @@ describe("改这一单, on a money page", () => {
   it("does not let him type into what it cannot save", () => {
     // 「陈先生」 and 「RM 3,000」 are shown and locked: he opened the row to see
     // them, and the way to change them is a reversal.
-    expect(boxes(form({ record })).slice(1)).toEqual([true, true]);
+    /* ⚠️ 三格，不是两格：2026-09-07 钱那几页多了一格日期，而它在**存过之后
+       一样是锁的** —— `update_ledger_words` 不收 entry_on（钱不改，只开一张
+       相反的），所以一格改了存不下去的日期，是同一个说谎的控件。
+       这一条守的从来不是「只有几格」，是**存不进去的框不准打字**。 */
+    expect(boxes(form({ record })).slice(1)).toEqual([true, true, true]);
   });
 
   /* ── 这笔钱是干什么的、属於哪一单（20260904200000）────── */
@@ -332,7 +336,8 @@ describe("短的那几格占半行", () => {
     /* ⚠️ 状态那一格是**这张表有没有那一栏**决定的，不是有没有流程 ——
        第一版这一条写成「有 stages 就有两格」，而它红了：那份栏位清单里
        根本没有状态。红的是我的期望，不是产品。 */
-    expect(halves(form({ stages: ["等回覆", "已确认"] }))).toBe(1);
+    /* ⚠️ 两格：金额 ＋ 那一格日期（2026-09-07 加的，钱那几页都有）。 */
+    expect(halves(form({ stages: ["等回覆", "已确认"] }))).toBe(2);
   });
 
   it("名字那一格不是 —— 一个工程的名字要写得下", () => {
@@ -342,7 +347,9 @@ describe("短的那几格占半行", () => {
     expect(upToFirstBox).not.toContain('data-half=""');
   });
 
-  it("一栏都不短的时候，一格都不标", () => {
+  it("一栏都不短的时候，只剩那一格日期", () => {
+    /* ⚠️ 从 0 变成 1：钱那几页永远有一格日期，而它是短的那一种。
+       这一条量的是**这张表自己那几栏**有没有多标 —— 而它们一格都没有。 */
     expect(
       halves(
         form({
@@ -350,7 +357,7 @@ describe("短的那几格占半行", () => {
           stages: [],
         }),
       ),
-    ).toBe(0);
+    ).toBe(1);
   });
 });
 

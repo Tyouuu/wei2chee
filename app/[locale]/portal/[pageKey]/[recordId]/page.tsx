@@ -757,7 +757,7 @@ export default async function EditRecordPage({
   } else if (ctx.shape === "ledger") {
     const { data } = await supabase
       .from("ledger_entries")
-      .select("id, doc_no, note, party, amount_cents, adjusts_id, branch_id, done_by, category, job_id, extra")
+      .select("id, doc_no, note, party, amount_cents, adjusts_id, branch_id, done_by, category, job_id, entry_on, extra")
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -768,6 +768,10 @@ export default async function EditRecordPage({
       primary: (data.note ?? "").trim() || (data.doc_no ?? ""),
       secondary: data.party ?? "",
       amount: ringgit(data.amount_cents) ?? "",
+      /* 🔴 读得回来，不然打开一笔旧的会看到一格空的日期 —— 而空的意思是
+         「没有日期」，这一笔明明是上个月的。⚠️ 那一格在编辑的时候是锁的：
+         `update_ledger_words` 没有这一栏，钱不改，只开一张相反的。 */
+      entry_on: (data as { entry_on?: string | null }).entry_on ?? "",
     });
     Object.assign(values, ownColumns(data.extra));
     const { data: cancels } = await supabase

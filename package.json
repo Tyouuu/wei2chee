@@ -83,6 +83,7 @@
     "check:staff": "node scripts/check-staff.mjs",
     "shoot:months": "node scripts/shoot-months.mjs",
     "shoot:staff": "node scripts/shoot-staff.mjs",
+    "shoot:receipt": "node scripts/shoot-receipt.mjs",
     "shoot:tools": "node scripts/shoot-tools.mjs",
     "shoot:shelf": "node scripts/shoot-shelf.mjs",
     "shoot:fonts": "node scripts/shoot-fonts.mjs",

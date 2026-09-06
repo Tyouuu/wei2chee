@@ -54,11 +54,16 @@ export function AllocationEditor({
   onChange,
   documents,
   entryCents,
+  spends = false,
   copy,
 }: {
   rows: AllocationRowInput[];
   onChange: (rows: AllocationRowInput[]) => void;
   documents: readonly OpenDocument[];
+  /** 🔴 出去的钱。**同一块画面，两句不一样的话** —— 一笔付给供应商的钱
+   *  剩下的那一部分不是订金，它只是还没算在哪一张进货单上。
+   *  看图才看到的：一张付给五金行的单底下印着「先当订金放着就好」。 */
+  spends?: boolean;
   /** 这笔钱多少，sen。null = 他还没打金额。 */
   entryCents: number | null;
   copy: RecordFormCopy;
@@ -82,7 +87,7 @@ export function AllocationEditor({
           「没有单可以分」跟「读不到」在画面上长得一模一样，而这一句分得开。 */}
       {documents.length === 0 ? (
         <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-          {copy.allocNoDocs}
+          {spends ? copy.allocNoBills : copy.allocNoDocs}
         </p>
       ) : null}
 
@@ -192,7 +197,7 @@ export function AllocationEditor({
             >
               {left < 0
                 ? `${copy.allocOver} ${ringgitOf(-left)}`
-                : `${copy.allocDeposit} ${ringgitOf(left)}`}
+                : `${spends ? copy.allocUnapplied : copy.allocDeposit} ${ringgitOf(left)}`}
             </span>
           ) : null}
         </div>

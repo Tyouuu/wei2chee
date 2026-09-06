@@ -7,6 +7,8 @@ import type { TableColumn } from "@/lib/portal/table-model";
 import type { RecordFormCopy } from "../record-copy";
 import { LineEditor, blankLine, senOf, totalOf, ringgitOf, type Line } from "./line-editor";
 import { useLineSuggestions, fillFromShelf } from "./line-suggest";
+import { ReceiptShot } from "./receipt-shot";
+import type { ReceiptDraft } from "@/lib/portal/receipt-read";
 import { DocumentPreview } from "./document-preview";
 import { validityKindOf, defaultDueOn } from "@/lib/portal/record-validity";
 import { TermsEditor, termsForDb, blankTerm, priceRows, type TermRow } from "./terms-editor";
@@ -368,6 +370,16 @@ export function NewRecordForm({
   /* 这笔钱是干什么的，跟它属於哪一单。20260904200000 --
      这两格是「这个月赚多少」算得出来的原因。 */
   const [category, setCategory] = useState<string>(record?.category ?? "");
+  /* 这一笔的日子。**只有新增的时候填得了** —— `update_ledger_words` 没有
+     这一格，而那是故意的：钱不改，只开一张相反的。
+     ⚠️ 在这一格之前，`add_ledger_entry` 从来没有收过 `in_entry_on`，
+     所以**每一笔开销都是今天**。他月底坐下来处理一叠上个月的收据，
+     三十张全部记在今天 —— 而那本帐是拿去报税的（`live-months` 按这一栏分月）。
+     读得回来，不然打开一笔旧的会看到一格空的日期，而那读起来是「没有日期」。 */
+  const [entryOn, setEntryOn] = useState<string>(record?.values.entry_on ?? "");
+  /* 那张收据在桶里的路径。🔴 读不出来也要留着 —— 照片是他明年查帐要拿出来
+     的那一张，而一个传上去、没有任何一行指着它的档案就是孤儿档。 */
+  const [receiptPath, setReceiptPath] = useState<string>("");
   const [jobId, setJobId] = useState<string>(record?.jobId ?? "");
   /* 🔴 挂单**只有出去的钱**。进来的钱靠分摊回答「这一单收了多少」，
      再给它一个 job_id，同一个问题就有两个答案 -- 资料库那边会拒绝，
@@ -946,6 +958,11 @@ export function NewRecordForm({
           in_category: category.trim() || "",
           /* 属於哪一单。⚠️ 只有出去的钱送 -- 见 spendsMoney。 */
           in_job_id: (spendsMoney && jobId) || null,
+          /* 收据上那个日子。留空就让资料库用今天 —— 见 entryOn 那一段。 */
+          in_entry_on: entryOn || null,
+          /* 那张收据。空字串要变成 null：一个空字串会在那一栏上
+             看起来像「有一张，而它在空的地方」。 */
+          in_receipt_url: receiptPath || null,
         })
       : await supabase.rpc("add_pipeline_record", {
           in_project_id: projectId,
@@ -1398,6 +1415,41 @@ export function NewRecordForm({
       onSubmit={submit}
       className="ds-card grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1 [padding:var(--pad-card-lg)]"
     >
+      {/* 🔴 拍一张收据，下面那几格自己填好。
+      **只画在花钱那几页、而且只在新增的时候** —— 一笔已经存下来的钱，
+      除了那句话什么都改不了（见 box() 里的 `locked`），
+      所以在那上面画一颗会填格子的按钮，就是一颗做不了事的按钮。
+
+      🔴 **而它画在这张卡最上面，不是夹在那几格中间。** 第一版摆在
+      金额底下，看图当场看到那是错的顺序：他手上拿着一张收据，
+      **拍照是第一个动作，不是第四个** —— 而摆在中间，他要先滑过
+      三个空的框才找得到它。Xero · QuickBooks · Zoho 的那几屏
+      也是把它摆在最前面。 */}
+      {spendsMoney && !record ? (
+        <ReceiptShot
+          projectId={projectId}
+          copy={copy}
+          onShot={(path, draft) => {
+            setReceiptPath(path);
+            if (!draft) return;
+            /* ⚠️ **读到什么填什么，读不到的一格都不碰** ——
+               一个把空字串盖上去的实作，会把他自己刚打的字洗掉。 */
+            setValues((v) => {
+              const next = { ...v };
+              const put = (key: string, val: string) => {
+                if (val.trim()) next[key] = val;
+              };
+              put(titleCol?.key ?? "primary", draft.note);
+              put("secondary", draft.party);
+              put("amount", draft.amount);
+              return next;
+            });
+            if (draft.category.trim()) setCategory(draft.category);
+            if (draft.entryOn.trim()) setEntryOn(draft.entryOn);
+          }}
+        />
+      ) : null}
+
       {shown.map((c) => {
         if (c.key === "status" && stages.length) {
           return (
@@ -1841,6 +1893,30 @@ export function NewRecordForm({
       {/* 这笔钱付了哪几张单。⚠️ 画在 moneyFixed 上面：那一句讲的是
           「金额跟日子锁住了」，而分摊是这一页上他还改得动的东西 ——
           一句「不能改」底下接一个可以改的东西，读起来是坏的。 */}
+      {/* 这一笔的日子。⚠️ 存过之后锁住 —— 见 entryOn 那一段。 */}
+      {isLedger ? (
+        <label data-half="" className="flex flex-col gap-1.5">
+          <span className={labelText}>{copy.entryOn}</span>
+          <input
+            type="date"
+            data-field="entry_on"
+            value={entryOn}
+            readOnly={!!record}
+            aria-readonly={record ? true : undefined}
+            tabIndex={record ? -1 : undefined}
+            onChange={(e) => setEntryOn(e.target.value)}
+            className={
+              record ? `${control} cursor-default opacity-60` : control
+            }
+          />
+          {record ? null : (
+            <span className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
+              {copy.entryOnHint}
+            </span>
+          )}
+        </label>
+      ) : null}
+
       {isLedger ? categoryBox : null}
       {spendsMoney && (jobs?.length ?? 0) > 0 ? jobPicker : null}
       {isLedger && manyBranches ? branchPicker : null}
@@ -1852,6 +1928,7 @@ export function NewRecordForm({
           onChange={setAllocs}
           documents={openDocuments ?? []}
           entryCents={senFrom(values.amount ?? "") ?? null}
+          spends={spendsMoney}
           copy={copy}
         />
       ) : null}

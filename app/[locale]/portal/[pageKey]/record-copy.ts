@@ -179,6 +179,13 @@ export type RecordFormCopy = {
   allocDeposit: string;
   allocOver: string;
   allocNoDocs: string;
+  /* 🔴 出去的钱那一边的同两句（20260907）。
+     [任务 209](../../../../docs/founder-tasks.md#209) 之后一笔付出去的钱
+     算得到进货单上了，而这两句话没有跟着分边 —— 於是一张付给五金行的单
+     底下印着「先当订金放着」。**一笔付给供应商的钱不是订金**，
+     而那种「对的数字配错的标签」比空白更糟（[任务 80](#80) 同一条）。 */
+  allocNoBills: string;
+  allocUnapplied: string;
   /* 单据那一边：这张单收到多少、还欠多少。 */
   received: string;
   stillOwed: string;
@@ -209,6 +216,25 @@ export type RecordFormCopy = {
   photoNone: string;
   photoOnlySaved: string;
   photoTooBig: string;
+  /* 🔴 拍一张收据，上面那几格自己填好（20260907）。
+     `/api/receipt` 从 20260905010000 起就通了 —— 而画面上那颗按钮到今天
+     为止不存在。三家最大的记帐软件（Xero · QuickBooks · Zoho）全部把它
+     放在商店页的前两屏，所以它不是加分项，是这一类产品的门面。 */
+  receiptHeading: string;
+  receiptLede: string;
+  receiptPick: string;
+  receiptUploading: string;
+  receiptReading: string;
+  receiptDone: string;
+  receiptAgain: string;
+  receiptTooBig: string;
+  receiptOnlyImages: string;
+  receiptFailed: string;
+  receiptTooMany: string;
+  /* 这一笔的日子。⚠️ **只在新增的时候填得了** —— `update_ledger_words`
+     没有这一格，而那是故意的：钱不改，只开一张相反的。 */
+  entryOn: string;
+  entryOnHint: string;
   /* 谁改了什么（20260904020000）。只画给看得到钱的人 ——
      `rows` 是 null 的意思是「没有问」，不是「没有改过」。 */
   changes: string;
@@ -587,6 +613,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       allocDeposit: "还没分摊，先当订金：",
       allocOver: "分超过这笔钱了，多出",
       allocNoDocs: "现在没有还没收齐的单可以分。这笔钱先当订金放着就好。",
+      allocNoBills: "现在没有还没付清的进货单可以算。这一笔就是一笔开销。",
+      allocUnapplied: "还没算在哪一张进货单上：",
       received: "已收",
       stillOwed: "还欠",
       settledAll: "收齐了",
@@ -611,6 +639,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       photoNone: "这一单还没有照片。",
       photoOnlySaved: "存好这一单，才挂得上照片。",
       photoTooBig: "这张太大了，换一张小一点的",
+      receiptHeading: "拍一张收据",
+      receiptLede: "下面那几格会自己填 —— 按保存的还是你。",
+      receiptPick: "拍一张 / 传一张",
+      receiptUploading: "在传…",
+      receiptReading: "在读这张收据…",
+      receiptDone: "读好了。下面那几格自己对一次，再存。",
+      receiptAgain: "换一张",
+      receiptTooBig: "这张太大了，换一张小一点的",
+      receiptOnlyImages: "只收照片。供应商寄来的 PDF 先截一张图。",
+      receiptFailed:
+        "我们这边读不出来 —— 不是你的照片不好。下面那几格自己填，照片照旧会跟着这一笔存起来。",
+      receiptTooMany: "这一个钟头读得有点多了，等一下再来。",
+      entryOn: "这一笔的日期",
+      entryOnHint:
+        "留空就是今天。收据上是上个月的，就填上个月 —— 不然这个月的帐会多出一笔。",
       changes: "改过什么",
       changesNone: "还没有人改过这一单。",
       changeBlank: "空白",
@@ -925,6 +968,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       allocDeposit: "Not applied yet — held as a deposit:",
       allocOver: "That is more than this payment, by",
       allocNoDocs: "Nothing outstanding to apply this to. It stays a deposit.",
+      allocNoBills:
+        "No unpaid purchase order to put this against. It is simply an expense.",
+      allocUnapplied: "Not against any purchase order yet:",
       received: "Received",
       stillOwed: "Still owed",
       settledAll: "Paid in full",
@@ -949,6 +995,22 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       photoNone: "No photos on this job yet.",
       photoOnlySaved: "Save this job first, then photos can be attached.",
       photoTooBig: "That photo is too large — try a smaller one",
+      receiptHeading: "Snap a receipt",
+      receiptLede: "The boxes below fill themselves — you still press save.",
+      receiptPick: "Take or upload a photo",
+      receiptUploading: "Uploading…",
+      receiptReading: "Reading the receipt…",
+      receiptDone: "Read. Check the boxes below, then save.",
+      receiptAgain: "Try another photo",
+      receiptTooBig: "That photo is too large — try a smaller one",
+      receiptOnlyImages:
+        "Photos only. If the supplier sent a PDF, take a screenshot of it.",
+      receiptFailed:
+        "We could not read it — that is our side, not your photo. Fill the boxes below yourself; the photo is still kept with this entry.",
+      receiptTooMany: "That is a lot of receipts this hour — try again shortly.",
+      entryOn: "Date of this entry",
+      entryOnHint:
+        "Blank means today. If the receipt is from last month, put last month — otherwise this month's books gain an entry that was not there.",
       changes: "What was changed",
       changesNone: "Nobody has changed this one yet.",
       changeBlank: "blank",
