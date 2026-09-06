@@ -31,7 +31,7 @@ import {
 } from "@/lib/portal/build-quote";
 import { tradeLabel } from "@/lib/templates/industry-template";
 import type { PuckLayout } from "@/lib/portal/layout-ops";
-import { WHATSAPP_NUMBER } from "@/lib/brand";
+import { whatsappHref } from "@/lib/brand";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { recordAiUsage } from "@/lib/portal/ai-usage";
@@ -333,9 +333,10 @@ export default async function SystemSpecPage({
     ? await writeProse(spec, industryName, zh ? "zh" : "en", rateSupabase)
     : null;
 
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  /* 🔴 号码还是占位符就整颗不画（2026-09-07）。 */
+  const waHref = whatsappHref(
     `我的系统需求书已经生成了，想谈下一步\n\n账号邮箱: ${user.email}\n项目编号: ${project.id}`,
-  )}`;
+  );
 
   /*
    * SECTION NUMBERS ARE COUNTED, NOT TYPED.
@@ -395,7 +396,7 @@ export default async function SystemSpecPage({
           subtitle={industryName}
         >
           <SpecActions
-            handoffHref={whatsappHref}
+            handoffHref={waHref}
             backHref={`/${locale}/portal/dashboard`}
           />
         </PageBar>

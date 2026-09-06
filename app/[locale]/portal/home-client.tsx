@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { WHATSAPP_NUMBER } from "@/lib/brand";
+import { whatsappHref } from "@/lib/brand";
 import { PagePreview } from "./page-preview";
 import { STYLE_LABEL } from "./(app)/styles/styles-client";
 import { PageBar } from "./(app)/page-bar";
@@ -171,9 +171,13 @@ export function PortalHome({
   }
 
   const identityLine = accountEmail ? `（账号：${accountEmail}）` : "";
-  const deployHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  /* 🔴 号码还是占位符就不画那一颗（2026-09-07）——
+     老板自己去点，它打给 `wa.me/60123456789`。
+     ⚠️ **交接不靠这一颗** —— 「交给我们建」那一条会写进资料库
+     （`request_handoff`，任务 165），讯息送不送得出去都一样。 */
+  const deployHref = whatsappHref(
     "我的系统设计已经确定了，请开始帮我建系统" + identityLine,
-  )}`;
+  );
 
   const draftCount = pages.filter((p) => p.isDraft).length;
 
@@ -189,14 +193,16 @@ export function PortalHome({
             >
               {t("specTitle")}
             </Link>
-            <a
-              href={deployHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-primary-deep)]"
-            >
-              {t("buildCta")}
-            </a>
+            {deployHref && (
+              <a
+                href={deployHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-primary-deep)]"
+              >
+                {t("buildCta")}
+              </a>
+            )}
           </>
         )}
       </PageBar>

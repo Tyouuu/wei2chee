@@ -8,7 +8,7 @@ import "@puckeditor/core/puck.css";
 import "@/design-system/editor/puck-theme.css";
 import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { WHATSAPP_NUMBER } from "@/lib/brand";
+import { whatsappHref } from "@/lib/brand";
 // Renders through the register-aware config, so a block nobody has
 // touched takes the shape THIS register prefers. See
 // design-system/editor/puck-config-client.tsx.
@@ -743,7 +743,12 @@ export function PortalEditor({
     } catch {
       /* 见上面：写不进去不挡他把话讲出去 */
     }
-    window.open(deployWhatsappHref(note), "_blank", "noopener,noreferrer");
+    /* 🔴 号码还是占位符就**不开那个视窗**（2026-09-07，老板自己点出来的）——
+       它开的是 `wa.me/60123456789`，一个不存在的人。
+       ⚠️ 而**交接照样成立**：上面那一行已经写进资料库了，
+       后台那一份清单看得到（任务 165）。少的只是那一则讯息。 */
+    const href = deployWhatsappHref(note);
+    if (href) window.open(href, "_blank", "noopener,noreferrer");
     setHandoff("idle");
   }
 
@@ -768,13 +773,13 @@ export function PortalEditor({
   // 交接那一条带上他写的那句话 —— 他在这里打了一次，不要他在 WhatsApp
   // 再打第二次（重点 29：量他要打几个字）。
   const deployWhatsappHref = (note: string) =>
-    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    whatsappHref(
       "我的系统设计已经确定了，请开始帮我建系统" +
         (note.trim() ? `
 
 我还想要：${note.trim()}` : "") +
         identityLine,
-    )}`;
+    );
 
   // THE TOP BAR'S CONTENT, HANDED TO EditorChrome RATHER THAN DRAWN HERE.
   //

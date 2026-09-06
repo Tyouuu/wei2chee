@@ -22,12 +22,20 @@ import { btn } from "../kit";
  * 一个装修承包商不会去那里找。这个仓库最常犯的错是「能力有、线没接」，
  * 这是同一个形状：**样式写了，按钮没有。**
  *
- * ⚠️ 「交给我们建」按下去打给一个**不存在的号码**（`60123456789`）。
- * 那不是这一轮修的，也不该在这一轮修：老板 8-29 讲过
- * `别改别改 我过后会给你的`（重点 21），而 `npm run check:launch`
- * 已经把它列成上线前的挡路项。**它只差一个环境变数，代码一行都不用动。**
+ * ⚠️ ~~「交给我们建」按下去打给一个不存在的号码~~ ——
+ * **2026-09-07 改了**（老板自己去点出来的）。号码还是他要给的那一样东西
+ * （重点 21：`别改别改 我过后会给你的`），而**在他给之前不画那一颗** ——
+ * 一颗打给 `wa.me/60123456789` 的按钮，按的人会认定这家公司不是真的。
+ * 环境变数一填上去，它自己就回来了。
  */
-export function SpecActions({ handoffHref, backHref }: { handoffHref: string; backHref: string }) {
+export function SpecActions({
+  handoffHref,
+  backHref,
+}: {
+  /** null = 号码还是占位符。**整颗不画** —— 见档头。 */
+  handoffHref: string | null;
+  backHref: string;
+}) {
   const t = useTranslations("portal.spec");
   return (
     <>
@@ -41,17 +49,23 @@ export function SpecActions({ handoffHref, backHref }: { handoffHref: string; ba
       >
         {t("back")}
       </Link>
-      <button type="button" onClick={() => window.print()} className={btn("quiet")}>
+      <button
+        type="button"
+        onClick={() => window.print()}
+        className={btn("quiet")}
+      >
         {t("print")}
       </button>
-      <a
-        href={handoffHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={btn("primary")}
-      >
-        {t("handoff")}
-      </a>
+      {handoffHref && (
+        <a
+          href={handoffHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={btn("primary")}
+        >
+          {t("handoff")}
+        </a>
+      )}
     </>
   );
 }

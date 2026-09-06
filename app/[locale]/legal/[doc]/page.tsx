@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { BRAND_NAME, WHATSAPP_NUMBER } from "@/lib/brand";
+import { BRAND_NAME, whatsappHref } from "@/lib/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import chrome from "@/app/[locale]/portal/chrome.module.css";
 
@@ -78,15 +78,21 @@ export default async function LegalPage({
       </div>
 
       <article className="mt-12">
-        <h1 className="font-serif text-[2rem] leading-tight tracking-[-0.025em]">{t("title")}</h1>
-        <p className="mt-2 text-[13px] text-muted-foreground">{tc("updated")}</p>
+        <h1 className="font-serif text-[2rem] leading-tight tracking-[-0.025em]">
+          {t("title")}
+        </h1>
+        <p className="mt-2 text-[13px] text-muted-foreground">
+          {tc("updated")}
+        </p>
         <p className="mt-6 border-l-2 border-border pl-4 text-[14px] leading-relaxed text-muted-foreground">
           {t("intro")}
         </p>
 
         {sections.map((section) => (
           <section key={section.heading} className="mt-9">
-            <h2 className="text-[16px] font-semibold tracking-[-0.01em]">{section.heading}</h2>
+            <h2 className="text-[16px] font-semibold tracking-[-0.01em]">
+              {section.heading}
+            </h2>
             <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-muted-foreground">
               {section.body}
             </p>
@@ -94,20 +100,29 @@ export default async function LegalPage({
         ))}
 
         <section className="mt-12 border-t border-border pt-6">
-          <p className="text-[13px] leading-relaxed text-muted-foreground">{tc("disclaimer")}</p>
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-block text-[13px] font-medium text-primary underline-offset-4 hover:underline"
-          >
-            {tc("contact")} →
-          </a>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            {tc("disclaimer")}
+          </p>
+          {/* 🔴 号码还是占位符就整颗不画 —— 一条打给不存在的号码的连结，
+              按的人会认定这家公司不是真的（`lib/brand.ts` 的原话）。 */}
+          {whatsappHref() && (
+            <a
+              href={whatsappHref() as string}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-block text-[13px] font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {tc("contact")} →
+            </a>
+          )}
         </section>
       </article>
 
       <p className="mt-12 text-[12px] text-muted-foreground">
-        <Link href={`/${locale}`} className="transition-colors hover:text-foreground">
+        <Link
+          href={`/${locale}`}
+          className="transition-colors hover:text-foreground"
+        >
           ← {BRAND_NAME}
         </Link>
         <span className="mx-2 opacity-40">·</span>
