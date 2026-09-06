@@ -28,6 +28,7 @@ import {
   IconTruck,
   IconCalendar,
   IconClockFace,
+  IconMove,
 } from "./shell-icons";
 
 /**
@@ -221,6 +222,7 @@ export function PortalShell({
   hasRentals,
   hasPurchases,
   hasStaff,
+  twoShops,
   paid,
   isOwner,
 }: {
@@ -257,6 +259,8 @@ export function PortalShell({
   hasPurchases: boolean;
   /** 名册上有没有人 —— 没有人就没有出勤可以记。 */
   hasStaff: boolean;
+  /** 开着的店有没有两间 —— 一间店搬不了货。 */
+  twoShops: boolean;
   paid: boolean;
   /** 🔴 An OWNER adjusts the business; a 师傅 works in it.
 
@@ -575,6 +579,17 @@ export function PortalShell({
                   icon={<IconClockFace />}
                 >
                   {t("rota")}
+                </NavRow>
+              )}
+              {/* 搬货 —— 两间店以上才画。一间店的生意搬不了货，
+                  而一行到不了任何地方的连结是一颗死按钮。 */}
+              {twoShops && (
+                <NavRow
+                  href={`${base}/transfers`}
+                  active={is("/transfers")}
+                  icon={<IconMove />}
+                >
+                  {t("transfers")}
                 </NavRow>
               )}
               {hasPurchases && (

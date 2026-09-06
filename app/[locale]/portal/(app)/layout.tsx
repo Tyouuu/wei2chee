@@ -84,6 +84,16 @@ export default async function PortalAppLayout({
         .eq("project_id", project.id)
     : { data: [] };
 
+  /* 开着的店有几间 —— 搬货那一行只有两间以上才画。
+     ⚠️ 只数**开着的**（那一栏叫 `active`）：关掉的那一间搬不了货。 */
+  const { data: shopRows } = project
+    ? await supabase
+        .from("branches")
+        .select("id")
+        .eq("project_id", project.id)
+        .eq("active", true)
+    : { data: [] };
+
   const pageRefs = sortPages(
     (pageRows ?? []).map(
       (r: {
@@ -225,6 +235,7 @@ export default async function PortalAppLayout({
       hasRentals={(rentalCount ?? 0) > 0}
       hasPurchases={pageRefs.some((r) => r.key === "purchases")}
       hasStaff={pageRefs.some((r) => r.key === "staff")}
+      twoShops={(shopRows ?? []).length >= 2}
       paid={Boolean(project?.paid)}
     >
       {/* Inside the shell, not around it. PortalShell is FORMAE -- dark chrome,

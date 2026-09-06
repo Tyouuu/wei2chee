@@ -659,7 +659,8 @@
       "rentals": "Out on loan",
       "payables": "What you owe",
       "attendance": "Days worked",
-      "rota": "Who is free"
+      "rota": "Who is free",
+      "transfers": "Moving stock"
     },
     "find": {
       "title": "Find anything",
@@ -1310,6 +1311,27 @@
       "fri": "Friday",
       "sat": "Saturday",
       "rosterNote": "Leave both boxes empty for a day off. A shift has to end after it starts."
+    },
+    "transfers": {
+      "title": "Moving stock",
+      "lede": "Send goods from one shop to another. One press writes both halves, so they cannot disagree.",
+      "needTwo": "You only have one shop open, so there is nowhere to move stock to. Open a second one first.",
+      "needItems": "Nothing on your shelf yet.",
+      "formTitle": "Move some",
+      "item": "What",
+      "fromBranch": "From",
+      "toBranch": "To",
+      "qty": "How many",
+      "note": "Note",
+      "move": "Move it",
+      "pastTitle": "Moved before",
+      "none": "Nothing has been moved yet.",
+      "undo": "Undo",
+      "sameBranch": "Pick two different shops.",
+      "saveFailed": "That did not go through.",
+      "shortWarn": "Moved, and that shop was %n short.",
+      "moved": "Moved %n.",
+      "formNote": "If the shop does not have enough, it still moves and says how short it was — the goods really did leave, and it is the number that is wrong."
     }
   },
   "explainer": {

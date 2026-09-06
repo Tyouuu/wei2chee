@@ -497,6 +497,111 @@ try {
   let shops = await open("branches");
   if (/Ipoh Garden/.test(shops) && /Bercham/.test(shops)) ok("两间店都在");
   else no("两间店没有都在", shops.slice(0, 240));
+  // ── ③d 搬货 ───────────────────────────────────────────────────────────
+  /* `transfer_stock` · `transfers_of` · `undo_transfer` —— 三支画面上
+     一个入口都没有（[任务 148] 立分店库存的时候自己写着还欠这一件）。
+     ⚠️ 这一段要在「关掉一间」**之前** —— 只剩一间的时候搬不了货，
+     而那正是这一页自己会讲的那句话。 */
+  const { data: shopRows } = await admin
+    .from("branches")
+    .select("id, name")
+    .eq("project_id", pid)
+    .order("name");
+  const shopA = (shopRows ?? []).find((b) => /Bercham/.test(b.name));
+  const shopB = (shopRows ?? []).find((b) => /Ipoh/.test(b.name));
+  if (shopA && shopB) {
+    /* 先让 Bercham 架上真的有货 —— 一张从空店搬出去的单只测得到「不够」那一半。 */
+    const { error: inErr } = await api.rpc("move_stock", {
+      in_item_id: itemId,
+      in_direction: "in",
+      in_qty: 20,
+      in_reason: "opening",
+      in_branch_id: shopA.id,
+    });
+    if (inErr) no("台面：进不了那一间店的货", inErr.message);
+
+    /* ⚠️ 这一支的 `open()` 回的是**画面上的字**，不是回码 ——
+       我把另一把尺的写法抄了过来，於是它对着一张完全正常的页
+       报「打不开」。判的是那一页自己的抬头。 */
+    const openedTx = await open("transfers");
+    if (/Move some/i.test(openedTx)) ok("搬货那一页打得开");
+    else no("搬货那一页打不开", openedTx.slice(0, 200));
+
+    /* 🔴 两边选同一间 → 按钮是灰的，而且讲得出为什么。 */
+    const sels = page.locator("select");
+    await sels.nth(1).selectOption(shopA.id);
+    await sels.nth(2).selectOption(shopA.id);
+    await page.getByLabel("How many").fill("5");
+    await page.waitForTimeout(500);
+    const moveBtn = page.getByRole("button", { name: /^Move it$/ });
+    if (await moveBtn.isDisabled()) ok("🔴 同一间搬到同一间，按钮按不下去");
+    else no("🔴 同一间照样按得下去");
+    const sameSaid = await page.locator("body").innerText();
+    if (/Pick two different shops/i.test(sameSaid)) ok("而且讲得出为什么");
+    else no("没有讲为什么", sameSaid.slice(0, 200));
+
+    await sels.nth(2).selectOption(shopB.id);
+    await page.waitForTimeout(400);
+    await moveBtn.click();
+    await page.waitForTimeout(3400);
+
+    /* ⚠️ 数的是**那一趟写了几笔**，不是那个理由的字 ——
+       那个词跟着系统语言走，一把认字的尺换一种语言就红。 */
+    const { data: allMv } = await admin
+      .from("stock_moves")
+      .select("qty, direction, branch_id, transfer_id")
+      .eq("project_id", pid)
+      .not("transfer_id", "is", null);
+    if ((allMv ?? []).length === 2) ok("🔴 一次按下去写了两笔（出跟进）");
+    else no("🔴 那一趟不是两笔", JSON.stringify(allMv));
+
+    await open("transfers");
+    const cards = await page.locator('[data-transfers="card"]').count();
+    if (cards === 1) ok("搬过的那一趟画成一张运单卡");
+    else no("那一张卡没画出来", String(cards));
+    const cardText = await page.locator('[data-transfers="card"]').innerText();
+    if (/Bercham/.test(cardText) && /Ipoh Garden/.test(cardText))
+      ok("🔴 从哪里、到哪里，两头都在那一张卡上");
+    else no("🔴 那一张卡上读不出方向", cardText.slice(0, 200));
+    await page.screenshot({ path: `${OUT}/18-transfers.png`, fullPage: true });
+
+    /* 撤销 —— **写两笔反的，不是删掉那一趟**。
+       ⚠️ 那两笔反的走的是 `move_stock`，所以它们身上**没有 transfer_id**；
+       我第一版拿「带 transfer_id 的有几笔」去数，
+       於是对着一次完全正确的撤销报了红。 */
+    const { count: beforeN } = await admin
+      .from("stock_moves")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", pid);
+    await page
+      .getByRole("button", { name: /^Undo$/ })
+      .first()
+      .click();
+    await page.waitForTimeout(3400);
+    const { count: afterN } = await admin
+      .from("stock_moves")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", pid);
+    const { data: still } = await admin
+      .from("stock_moves")
+      .select("id")
+      .eq("project_id", pid)
+      .not("transfer_id", "is", null);
+    if (afterN === (beforeN ?? 0) + 2 && (still ?? []).length === 2)
+      ok("🔴 撤销是写两笔反的，那一趟还在书上");
+    else
+      no(
+        "🔴 撤销之后那几笔不对",
+        `${beforeN} → ${afterN} · 那一趟 ${(still ?? []).length} 笔`,
+      );
+
+    /* ⚠️ 回到分店那一页 —— 下面那一段要按它上面的按钮，
+       而这时候还站在搬货那一页上。 */
+    shops = await open("branches");
+  } else {
+    no("台面：两间店的编号读不到");
+  }
+
   /* 🔴 关掉的那一间排到底下，不是在同一串里划掉。 */
   await page
     .getByRole("button", { name: /Switch off|Switch back on/i })

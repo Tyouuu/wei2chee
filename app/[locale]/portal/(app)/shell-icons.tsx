@@ -277,3 +277,24 @@ export function IconClockFace({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 两个箱子中间一支箭 —— 搬货（从一间店到另一间）。 */
+export function IconMove({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="2.2" y="3.4" width="5" height="5" rx="1" />
+      <rect x="12.8" y="11.6" width="5" height="5" rx="1" />
+      <path d="M8.4 5.9h5.4a2 2 0 0 1 2 2v2.1" />
+      <path d="M13.6 8.4 15.8 10l2.2-1.6" />
+    </svg>
+  );
+}
