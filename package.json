@@ -154,6 +154,7 @@
     "check:visit": "node scripts/check-visit.mjs",
     "check:export": "node scripts/check-export.mjs",
     "check:payroll": "node scripts/check-payroll.mjs",
+    "check:console": "node scripts/check-console.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
