@@ -116,14 +116,18 @@ try {
 
   /* ── ④ 开单，挂上那台车跟里程 ─────────────────────────────── */
   n = acts;
-  const job = await act(C, "开一张单", "add_pipeline_record", {
+  /* 🔴 一次就好 —— 开单的时候顺手挂上车跟里程
+     （[任务 235](../docs/founder-tasks.md#235)，就是这一支走出来的那一件）。 */
+  const job = await act(C, "开一张单，顺手挂车", "add_pipeline_record", {
     in_project_id: P, in_module_key: "quotations", in_title: "Service + brake pads",
     in_party: "Mr Ong", in_party_id: owner?.id, in_amount_cents: 48_000,
+    in_vehicle_id: car?.id, in_odometer_km: 62_000,
   });
-  await act(C, "挂上车跟里程", "set_record_vehicle", {
-    in_record_id: job?.id, in_vehicle_id: car?.id, in_odometer_km: 62_000,
-  });
-  node("开单 ＋ 挂上那台车跟里程", acts - n, !!job?.id, "两次");
+  node("🔴 开单 ＋ 挂上那台车跟里程", acts - n,
+    job?.vehicle_id === car?.id && Number(job?.odometer_km) === 62_000,
+    job?.vehicle_id === car?.id
+      ? "**一次**（本来两次）；车跟里程都在那张单上了"
+      : `挂不上：${job?.vehicle_id} / ${job?.odometer_km}`);
 
   /* ── ⑤ 🔴 里程往回走要挡 ──────────────────────────────────── */
   n = acts;

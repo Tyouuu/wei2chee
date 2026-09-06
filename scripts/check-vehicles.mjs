@@ -238,6 +238,32 @@ try {
   const { data: wHist } = await w.rpc("vehicle_history", { in_vehicle_id: car.id });
   check("师傅也看得到历史", (wHist ?? []).length === 2, `${wHist?.length}`);
 
+  /* ── ⑨b 🔴 开单的时候顺手挂上车跟里程 ─────────
+     `walk:workshop`（[任务 234](../docs/founder-tasks.md#234)）量出来的那一件：
+     一台车进厂，柜台本来就是一句话。 */
+  console.log("\n⑨b 🔴 开单顺手挂车");
+  const { data: oneGo, error: oneErr } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "One press",
+    in_party: "Mr Ong", in_amount_cents: 12_000,
+    in_vehicle_id: car.id, in_odometer_km: 99_000,
+  });
+  check("🔴 一次就把车跟里程都挂上去",
+    !oneErr && oneGo?.vehicle_id === car.id && Number(oneGo?.odometer_km) === 99_000,
+    oneErr?.message ?? `${oneGo?.vehicle_id} / ${oneGo?.odometer_km}`);
+  /* 🔴 而那一段走的是 `set_record_vehicle` 同一支 ——
+     里程往回走那条守卫只有一份，这一条在量它还在。 */
+  const { error: rollErr } = await c.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "Rolled back",
+    in_party: "Mr Ong", in_amount_cents: 12_000,
+    in_vehicle_id: car.id, in_odometer_km: 9_900,
+  });
+  check("🔴 里程往回走，连那张单一起挡下来", !!rollErr,
+    "居然让它过了");
+  const { data: ghost } = await c
+    .from("pipeline_records").select("id").eq("project_id", P).eq("title", "Rolled back");
+  check("🔴 而且那张单没有存下来（一张挂不上车的单比拒绝难发现）",
+    (ghost ?? []).length === 0, `${ghost?.length} 张`);
+
   /* ── ⑨ 别人家 ──────────────────────────────────────────────────────── */
   console.log("\n⑨ 别人家");
   const other = await person("other");
