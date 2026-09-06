@@ -162,6 +162,7 @@
     "check:naming": "node scripts/check-naming.mjs",
     "walk:workshop": "node scripts/walk-workshop.mjs",
     "walk:hardware": "node scripts/walk-hardware.mjs",
+    "walk:tuition": "node scripts/walk-tuition.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {

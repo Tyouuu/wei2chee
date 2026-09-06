@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import type { Data } from "@puckeditor/core";
 import {
   ALWAYS_MODULES,
+  DEFAULT_MODULES_FOR_INDUSTRY,
   MAX_MODULES,
   MODULE_BY_KEY,
   MODULE_CATALOG,
@@ -162,6 +163,40 @@ describe("the default sets, which are the floor when nothing was analysed", () =
 
   it("gives no reason for a fallback recommendation, rather than inventing one", () => {
     for (const m of defaultRecommendations("renovation")) expect(m.why).toBe("");
+  });
+
+  /*
+    A trade with no `pipeline` page cannot answer "who owes me money": the
+    question is computed from pipeline rows minus what has been allocated
+    against them, so with none, the answer is permanently empty and nothing
+    on screen says why.
+
+    `walk:tuition` found education in exactly that state on 2026-09-06 -- it
+    could not open one fee bill -- so the rule below is a real hole turned
+    into a guard, not a preference. A trade that genuinely does not bill goes
+    on the list WITH ITS REASON; a trade that quietly loses its billing page
+    goes red.
+  */
+  const BILLS_NOTHING: Record<string, string> = {
+    beauty: "客人当场付 —— walk:salon 整条钱那一半走的是套票跟柜台收款，"
+      + "而一页她从来不开的单，是一页她每天要滑过去的东西",
+  };
+
+  it("gives every trade that bills a page it can bill on", () => {
+    for (const slug of Object.keys(DEFAULT_MODULES_FOR_INDUSTRY)) {
+      const shapes = defaultModulesForIndustry(slug)
+        .map((k) => MODULE_CATALOG.find((m) => m.key === k)?.shape);
+      const canBill = shapes.includes("pipeline");
+      if (BILLS_NOTHING[slug]) {
+        expect(canBill, `${slug} 说它不开单，而它开局就有一页开得了`).toBe(false);
+      } else {
+        expect(
+          canBill,
+          `${slug} 开局没有一页开得了单 —— 「谁欠我钱」永远是空的。`
+          + `真的不开单就写进 BILLS_NOTHING，连理由一起`,
+        ).toBe(true);
+      }
+    }
   });
 });
 

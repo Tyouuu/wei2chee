@@ -305,7 +305,23 @@ export function catalogForPrompt(): string {
  */
 export const DEFAULT_MODULES_FOR_INDUSTRY: Record<string, string[]> = {
   beauty: ["dashboard", "customers", "bookings", "payments", "website"],
-  education: ["dashboard", "customers", "bookings", "payments", "website"],
+  /*
+    A tuition centre bills. `walk:tuition` walked the default set on
+    2026-09-06 and could not open a single fee bill: `party_debts` counts
+    pipeline rows minus what has been allocated against them, so with no
+    pipeline page at all, "who has not paid this month" is not a hard
+    question, it is an unanswerable one -- and that is the question the
+    owner of a tuition centre asks.
+
+    `orders` rather than `quotations`: nobody quotes a parent. The catalogue
+    describes orders as the shape for a business that does not price each job
+    separately, which is a monthly fee exactly.
+
+    The salon above keeps no billing page on purpose -- `walk:salon` runs its
+    whole money half through packages and counter payments, and a page it
+    never opens is a page it has to skip past.
+  */
+  education: ["dashboard", "customers", "bookings", "orders", "payments", "website"],
   fnb: ["dashboard", "customers", "orders", "payments", "website"],
   retail: ["dashboard", "customers", "orders", "inventory", "payments", "website"],
   wholesale: ["dashboard", "customers", "quotations", "orders", "inventory", "payments", "website"],
