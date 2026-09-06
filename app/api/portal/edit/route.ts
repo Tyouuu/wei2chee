@@ -1,4 +1,10 @@
-import { splitRecordOps, writeRecords, isRecordModule } from "@/lib/portal/record-ops";
+import {
+  splitRecordOps,
+  writeRecords,
+  actOnRecords,
+  isRecordModule,
+} from "@/lib/portal/record-ops";
+import { shapeOfModule } from "@/lib/portal/shape-state";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getSessionUser } from "@/lib/supabase/server-session";
@@ -33,6 +39,7 @@ import {
   workflowStages,
   systemLangOf,
   dashboardRecordModule,
+  stagesForModule,
 } from "@/lib/templates/industry-template";
 import { fetchBusinessFacts, renderBusinessFacts } from "@/lib/portal/live-answers";
 import type { WorkspaceRole } from "@/lib/portal/workspace";
@@ -184,6 +191,18 @@ Record tables:
   least one column.
 - add_table_row's \`cells\` is POSITIONAL: cells[0] is the first column listed,
   cells[1] the second, and so on. Supply one string per column, in that order.
+- Rows on a record page are listed as \`record=<id> 栏="值" …\`. That id is the
+  ONLY way to act on an existing row. A row printed as 「（示例，动不了）」 has
+  no id because it is sample data, not one of the owner's records — you cannot
+  act on it, and you must not pretend to.
+- set_record_status presses the button that row already has: 「陈太太来了」,
+  「这一单收订金了」, 「那张单做完了」. Give record_id and the new status.
+  * The legal statuses are listed above the block list for this page. Use one
+    of those EXACTLY. Do not translate them, do not invent one — a status that
+    is not on that list drops the row off the board.
+  * It changes ONE row. To move three, emit three operations.
+  * If the owner names somebody and two rows match, ask which one. Acting on
+    the wrong row is worse than asking.
 
 Whole pages:
 - You cannot add or delete a page yourself, but you can OFFER to. When the
@@ -569,6 +588,26 @@ export async function POST(req: NextRequest) {
     key: String(p.key),
     label: String(p.label ?? ""),
   }));
+
+  /*
+    这一页的状态只有哪几个 —— 人在表单上看到的那一份。
+
+    ⚠️ 一定要念给模型听，而不是等它猜完再拒绝：`update_pipeline_record` 对
+    stage 一个字都不验，所以「已完成」写得进去，而那一行会从看板上掉下去
+    （任务 95c 量过）。人看到的是一个 `<select>`，选项就是这几个。
+
+    预约那一页不吃这一份：它的四个值是资料库自己挡的，一页一页都一样。
+  */
+  const pageStages = ctx && pageKey ? stagesForModule(ctx, pageKey) : [];
+  const statusLine = (() => {
+    if (!isRecordModule(pageKey)) return "";
+    if (shapeOfModule(String(pageKey)) === "calendar") {
+      return "这一页的状态（set_record_status 只能用这四个之一）: booked(还没来) · done(来了) · no_show(没来) · cancelled(取消了)";
+    }
+    if (!pageStages.length) return "";
+    return `这一页的状态（set_record_status 只能用这里面的）: ${pageStages.join(" · ")}`;
+  })();
+
   let facts: Awaited<ReturnType<typeof fetchBusinessFacts>> = null;
   if (project?.id && ctx) {
     const nouns = tradeLabels(ctx, pageRefs);
@@ -652,7 +691,9 @@ ${designDoc}
 ` : `明暗（从配色量出来的）: 现在没有任何一套配色是深底的，每一套的底都近白。
 「太亮了」只能用更暗的风格回答，拿配色回答等于承诺一个他看不到的变化。
 `}
-${factsBlock ? `${factsBlock}\n\n` : ""}Blocks currently on this page:
+${statusLine ? `${statusLine}
+
+` : ""}${factsBlock ? `${factsBlock}\n\n` : ""}Blocks currently on this page:
 ${describeLayout(layout, here)}
 ${recent ? `\n刚才这段对话里发生过的事（最新的在最下面）:\n${recent}\n` : ""}
 The business owner asked:
@@ -807,6 +848,31 @@ The business owner asked:
     recordSkips.push(...wrote.skipped);
   }
 
+  /*
+    按在一笔已经在的记录上的动作 —— 跟上面那一段同一条规矩，同一个理由。
+
+    ⚠️ 它算进 `recordsWritten`，所以 `refetch` 会打开：把一笔标成「来了」
+    之后，那张表上的状态要当场跟着变。少了这一句，助手说改了而画面不动 ——
+    那正是 founder-points 23 讲的那件事。
+  */
+  const recordNotes: string[] = [];
+  if (split.actOps.length && isRecordModule(pageKey)) {
+    const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient());
+    asCustomerForRows = asCustomer;
+    const acted = await actOnRecords(
+      asCustomer,
+      pageKey as string,
+      split.actOps,
+      /* 人在那个 `<select>` 里看到的同一份。空的表示这一页没有宣告阶段，
+         那时候人也是自由打字，助手跟着放行。 */
+      pageStages,
+    );
+    recordsWritten += acted.written;
+    recordSkips.push(...acted.skipped);
+    recordNotes.push(...acted.notes);
+  }
+
+
   const result = applyLayoutOps(layout, split.layoutOps, preferredVariants(project?.style));
 
   /*
@@ -846,7 +912,13 @@ The business owner asked:
 
   return NextResponse.json({
     layout: result.layout,
-    explanation: parsed.explanation,
+    /* 模型讲完之后，接上**我们做过才知道**的事实。顺手扣掉的那一次套票
+       就是这一种：他按同一颗按钮的时候画面上会写出来，助手按而不讲，
+       就是一次静静少掉的次数。
+
+       ⚠️ 只在真的做成了才有 —— 所以浏览器那一边的 claimStands 不会因为
+       它而把整句话换掉（applied ≥ 1 的时候那一句是站得住的）。 */
+    explanation: [parsed.explanation, ...recordNotes].filter(Boolean).join(" "),
     applied: result.applied,
     /* The new rows are in the database, not in the tree we just returned, so
        the page has to be re-read to show them. Without this the assistant
@@ -1042,6 +1114,7 @@ export const EDIT_JSON_SCHEMA = {
                 "set_workflow",
                 "set_variant",
                 "set_copy",
+                "set_record_status",
               ],
             },
             target_id: { type: ["string", "null"] },
@@ -1068,6 +1141,14 @@ export const EDIT_JSON_SCHEMA = {
               enum: ["positive", "warning", "negative", "neutral", null],
             },
             stages: { type: ["array", "null"], items: { type: "string" } },
+            // set_record_status only. 那一笔自己的编号，从页面上 `record=`
+            // 抄下来的；而那个编号只有真的记录才有（示例行没有 href），所以
+            // 一个示例行天生就指不出来。
+            record_id: { type: ["string", "null"] },
+            // 这一页在用的那几个状态之一。故意不是 enum —— 合法的值是这门
+            // 生意自己的阶段，一页一套，模型从提示里那一行读；编出来的那一个
+            // 会被 record-ops.ts 拒绝，并且把这一页有哪几个念回去。
+            status: { type: ["string", "null"] },
             // Not enum-constrained: the valid ids depend on the block being
             // targeted, which the model reads off that block's own
             // options=[...] listing. A wrong id is dropped by set_variant with
@@ -1094,6 +1175,8 @@ export const EDIT_JSON_SCHEMA = {
             "cells",
             "status_tone",
             "stages",
+            "record_id",
+            "status",
             "variant_id",
           ],
           additionalProperties: false,

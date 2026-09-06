@@ -254,6 +254,44 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
   // because the component could not represent the result. These are what make
   // "tell it what you want and the system changes" true of the most-used
   // component in the product.
+  /*
+    🔴 按下那一行自己的按钮 —— 助手在这之前开得了单，动不了单。
+
+    2026-09-07 量的：`describeLayout` 印一张表的**栏**而一行都不印，所以
+    「陈太太来了」它连那一笔是哪一笔都指不出来。补了行之后缺的才是这个动词。
+
+    ── 为什么是一个具名的动作，不是一个通用的「改某一栏」 ────────────────────
+
+    去看了外面怎么做。401★ 那支 Odoo MCP（MIT）把 `create`/`write`/`unlink`
+    **整个挡掉**，副作用的方法要一份**逐条列出来的允许清单**
+    （`sale.order.action_confirm` 那种），而它自己那张对照表把「直接开放
+    create/write/unlink 或者一个 yolo 旁路」写成别人做错的那一栏。
+    ERPNext 那一支同样把 Submit/Cancel 标成「guarded」。
+
+    所以这里不是 `set_record_field(记录, 栏位, 值)` —— 那正好是他们挡掉的
+    那一支。这是一个具名动作，而且它落到**人按的那一颗按钮同一支 RPC** 上
+    （重点 23），於是权限、防重复、那四个合法状态、单号，全部自动跟着。
+
+    ── 那个值不是自由文字，而这一条不是我们比人严 ──────────────────────────
+
+    人在表单里看到的是一个 `<select>`，选项就是这一页的那几个阶段
+    （new-record-form.tsx，`stages` 是一份封闭清单）。所以把助手限制在同一份
+    清单上，跟那个框**一样严，不是更严** —— set_text 那一条注解讲的
+    「AI 没有理由比它在驱动的那个栏位更受限」在这里不成立，因为那个栏位
+    本来就受限。
+
+    不在清单里 → 拒绝，而且把这一页有哪几个念出来。资料库那一边
+    `update_pipeline_record` 对 stage **一个字都不验**
+    （`left(btrim(in_stage), 60)`），所以一个编出来的阶段会真的写进去，
+    而那一行会从看板上掉下去（任务 95c 量过那件事）。
+  */
+  z.object({
+    op: z.literal("set_record_status"),
+    /** 那一笔自己的编号，从页面上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** 这一页在用的那几个状态之一。60 是资料库那一栏的上限。 */
+    status: z.string().min(1).max(60),
+  }),
   z.object({
     op: z.literal("add_table_column"),
     target_id: z.string().min(1),
@@ -561,6 +599,58 @@ export function hasBlock(layout: PuckLayout, id: string): boolean {
   return walkNodes(layout.content ?? []).some((n) => String(n.props?.id ?? "") === id);
 }
 
+/**
+ * 🔴 一张表的行，跟每一行的记录编号 —— 而在这之前一行都没有印过。
+ *
+ * ── 量出来的，不是推的 ────────────────────────────────────────────────────
+ *
+ * 2026-09-07 拿一张有两笔真行的预约表跑 describeLayout，模型看到的整行是：
+ *
+ *     - id=bookings-table type=RecordTable (记录表格) columns=[…]
+ *
+ * **两笔行，一笔都没有。** 所以「陈太太来了」它答不了 —— 不是因为缺一个操作，
+ * 是因为**它从来没有被给看过一笔他自己的记录**。开得了一张单（那不需要先看到
+ * 任何东西），而按不了任何一张已经在的单上的按钮。
+ *
+ * 外面那一套是同一个形状：401★ 那支 Odoo MCP（MIT）把 create/write/unlink
+ * 整个挡掉，动作走 search_records → execute_method —— **先读到那一笔，
+ * 才动得了它**。我们缺的正好是前半句。
+ *
+ * ── 那个编号从哪里来，以及为什么它天生认得出示例 ──────────────────────────
+ *
+ * 只从 `href` 里认。live-rows.ts 给**真的记录**接一条 /portal/<页>/<编号>，
+ * 而**示例行没有 href** —— 所以「有编号」跟「这是他自己的一笔」是同一件事，
+ * 不用另外写一条规则去分它们。认不出编号的行照样印出来（他看得见它），
+ * 只是没有把手，於是助手动不了它：往拒绝的方向坏。
+ *
+ * ⚠️ 而就算那个编号是旧的、或者根本是模型编出来的，动作那一支 RPC 还是用
+ * **他自己的登入身分**跑，RLS 照样决定 —— 一个不属於他的编号什么都做不成。
+ */
+const RECORD_ID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+
+/** 一页最多印几行。够他指着萤幕上那一笔讲话，而不会让一张四百笔的表把整份
+ *  提示吃掉。多出来的会讲出还有几行 —— 一份静静截断的清单，跟一份本来就
+ *  只有这么多的清单，在模型眼里长得一模一样。 */
+const ROWS_SHOWN = 12;
+
+function describeRows(table: TableModel): string {
+  const rows = table.rows ?? [];
+  if (!rows.length) return "";
+  const shown = rows.slice(0, ROWS_SHOWN).map((r) => {
+    const id = typeof r.href === "string" ? (r.href.match(RECORD_ID)?.[1] ?? null) : null;
+    const words = table.columns
+      .map((c) => {
+        const v = (r.cells ?? {})[c.key];
+        return v ? `${c.label}="${v}"` : "";
+      })
+      .filter(Boolean)
+      .join(" ");
+    return id ? `record=${id} ${words}` : `（示例，动不了）${words}`;
+  });
+  const rest = rows.length > ROWS_SHOWN ? `，另外 ${rows.length - ROWS_SHOWN} 行没列出来` : "";
+  return ` rows(${rows.length}${rest})=[${shown.join(" | ")}]`;
+}
+
 export function describeLayout(layout: PuckLayout, selected?: string | null): string {
   return walkNodes(layout.content ?? [])
     .map((n) => {
@@ -660,10 +750,11 @@ export function describeLayout(layout: PuckLayout, selected?: string | null): st
         }
       }
       if (n.type === "RecordTable") {
-        const cols = normalizeTable(n.props ?? {})
-          .columns.map((c) => `${c.key}:"${c.label}"(${KIND_LABELS[c.kind]})`)
+        const table = normalizeTable(n.props ?? {});
+        const cols = table.columns
+          .map((c) => `${c.key}:"${c.label}"(${KIND_LABELS[c.kind]})`)
           .join(" ");
-        extra = ` columns=[${cols}]`;
+        extra = ` columns=[${cols}]${describeRows(table)}`;
       }
 
       return `- id=${id} type=${n.type} (${label})${texts ? " " + texts : ""}${spare}${photo}${variants}${extra}${here}`;
@@ -1126,6 +1217,19 @@ export function applyLayoutOps(
         }
         node.props.stages = op.stages.map((label) => ({ label, tone: "normal" }));
         applied++;
+        break;
+      }
+
+      /*
+        记录的动作在伺服器那一边做完了（lib/portal/record-ops.ts），理由跟
+        「加一单」一样：那不是一棵他撤销得了的树，是他帐上的一行。
+
+        会走到这里只有一种情况 —— 这一页的行**不是**真的记录（`splitRecordOps`
+        在那种页面上原样放行），那时候要讲出来，不要静静地什么都不做然后
+        让助手回报成功。
+      */
+      case "set_record_status": {
+        skipped.push({ op: op.op, reason: "这一页的行不是记录，没有状态可以改" });
         break;
       }
 

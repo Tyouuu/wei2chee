@@ -179,6 +179,9 @@ export type SplitOps = {
   layoutOps: LayoutOp[];
   /** `add_table_row` operations that are business records on this page. */
   recordOps: LayoutOp[];
+  /** 按在一笔已经存在的记录上的动作。跟 recordOps 分开，因为它们走不同的
+   *  RPC，而且一个是「多一行」、一个是「动他帐上已经有的那一行」。 */
+  actOps: LayoutOp[];
 };
 
 /**
@@ -188,14 +191,16 @@ export type SplitOps = {
  * a layout row, and will be until those shapes have tables of their own.
  */
 export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefined): SplitOps {
-  if (!isRecordModule(pageKey)) return { layoutOps: ops, recordOps: [] };
+  if (!isRecordModule(pageKey)) return { layoutOps: ops, recordOps: [], actOps: [] };
   const layoutOps: LayoutOp[] = [];
   const recordOps: LayoutOp[] = [];
+  const actOps: LayoutOp[] = [];
   for (const op of ops) {
     if (op.op === "add_table_row") recordOps.push(op);
+    else if (op.op === "set_record_status") actOps.push(op);
     else layoutOps.push(op);
   }
-  return { layoutOps, recordOps };
+  return { layoutOps, recordOps, actOps };
 }
 
 export type RecordResult = {
@@ -458,4 +463,174 @@ export function keyFor(requestKey: string, index: number): string {
     ((parseInt(s[16], 16) & 0x3) | 0x8).toString(16) + s.slice(17, 20),
     s.slice(20, 32),
   ].join("-");
+}
+
+/**
+ * 资料库认得的那四个预约状态，一个字都不能多。
+ *
+ * ⚠️ 这是第四份，而另外三份我没有动（两份在画面那一边、而且正在被改）：
+ * `new/appointment-status.tsx` 的 STATES（人按的那四颗）·
+ * `(app)/classes/class-desk.tsx` 的点名 · `live-rows.ts` 里两处 `=== "no_show"`。
+ * 该收敛成这一份 —— 登记，不动手（重点 20）。
+ */
+export const APPOINTMENT_STATES = ["booked", "done", "no_show", "cancelled"] as const;
+
+/**
+ * 为什么这一页的行动不了状态 —— 或者 null，表示动得了。
+ *
+ * 跟 `refuseToWrite` 同一个形状、同一个理由：先问「这一页是哪个形状」，
+ * 再让编译器检查每一个形状都有答案。一条最后一节是猜的 else 链，
+ * 2026-09-07 那天把一句资料库的英文放到了他两页上。
+ *
+ * 每一句拒绝都要讲得出**该去哪里做那件事**。一句只会说「不行」的拒绝，
+ * 是一个比较礼貌的死路。
+ */
+export function refuseToAct(shape: ModuleShape): string | null {
+  switch (shape) {
+    case "pipeline":
+    case "calendar":
+      return null;
+    case "ledger":
+      /* 钱那一栏的状态是从钱算出来的（订金 / 已入账 / 已冲正，live-rows.ts），
+         不是设的。而这个 schema 对钱本来就只有一条路：不改、不删，开一张
+         相反的。 */
+      return "钱记下来就不改了 —— 要更正是开一张冲正，到那一笔上开";
+    case "directory":
+      return "名册上的人没有状态可以按 —— 要改他的资料，点开他那一页";
+    case "catalog":
+      /* 「架上几件」是流水加起来的，第十几次同一个判断。设一个状态上去，
+         那个数字下一次重算就把它盖掉了。 */
+      return "货架上那一栏是数量算出来的 —— 要改架上几件，到货架那一页盘一次";
+    case "reconcile":
+      return "对帐是把一个月签起来，不是设状态 —— 到对帐那一页签";
+    case "overview":
+    case "report":
+    case "leaderboard":
+      return "这一页的行是别的页面加起来的，改不了";
+    case "landing":
+      return "这是给客人看的那一页，不是记录页";
+    default: {
+      const unhandled: never = shape;
+      return `这一页还不能改状态：${String(unhandled)}`;
+    }
+  }
+}
+
+export type ActResult = RecordResult & {
+  /** 顺手发生、而他应该被告知的事。**不是**模型讲的话 —— 是我们做过之后
+   *  知道的事实，所以它接在回覆后面而不用再被查一次。 */
+  notes: string[];
+};
+
+/**
+ * 按下那一行自己的按钮 —— 走人按的那一支 RPC。
+ *
+ * ── 那个值为什么要先验一次 ────────────────────────────────────────────────
+ *
+ * `update_pipeline_record` 对 stage **一个字都不验**（`left(btrim(...), 60)`），
+ * 所以一个编出来的阶段会真的写进那一行，而那一行会从看板上掉下去 ——
+ * 任务 95c 量过那件事。人在表单上看到的是一个 `<select>`，所以验一次是
+ * 跟那个框**一样严，不是更严**。
+ *
+ * ⚠️ 而这一页要是**一个阶段都没有宣告**，人的表单就不是下拉是自由文字 ——
+ * 那时候助手也放行。比它在驱动的那个栏位更受限，是 set_text 那条注解
+ * 明确讲过不要做的事。
+ *
+ * 预约那一边不看这份清单：它的四个值是资料库自己挡的，一页一页都一样。
+ */
+export async function actOnRecords(
+  supabase: SupabaseClient,
+  moduleKey: string,
+  ops: LayoutOp[],
+  /** 这一页的 `<select>` 里有哪几个 —— 人看到的那一份。空的表示这一页没有
+   *  宣告过阶段，那时候人也是自由打字。 */
+  allowedStatuses: string[],
+): Promise<ActResult> {
+  const skipped: RecordResult["skipped"] = [];
+  const notes: string[] = [];
+  let written = 0;
+
+  const shape = shapeOfModule(moduleKey);
+  for (const raw of ops) {
+    const op = raw as { op: string; record_id?: unknown; status?: unknown };
+    const recordId = String(op.record_id ?? "").trim();
+    const status = String(op.status ?? "").trim();
+
+    const refusal = shape === null ? "这一页不是记录页" : refuseToAct(shape);
+    if (refusal) {
+      skipped.push({ op: op.op, reason: refusal });
+      continue;
+    }
+    if (!recordId) {
+      skipped.push({ op: op.op, reason: "没有讲是哪一笔" });
+      continue;
+    }
+    if (!status) {
+      skipped.push({ op: op.op, reason: "没有讲要改成什么" });
+      continue;
+    }
+
+    if (shape === "calendar") {
+      if (!(APPOINTMENT_STATES as readonly string[]).includes(status)) {
+        skipped.push({
+          op: op.op,
+          reason: `预约只有这四个：${APPOINTMENT_STATES.join(" · ")}`,
+        });
+        continue;
+      }
+      const { data, error } = await supabase.rpc("set_appointment_status", {
+        in_id: recordId,
+        in_status: status,
+      });
+      if (error) {
+        skipped.push({ op: op.op, reason: friendly(error.message) });
+        continue;
+      }
+      written += 1;
+      /*
+        🔴 顺手扣掉的那一次要讲出来。
+
+        任务 225 让「客人来了」同时扣一次套票 —— 那是他按那颗按钮时画面上
+        会写出来的事。助手按同一支而不讲，就是一个静静少掉一次的套票，
+        而他要到客人下次来才发现。
+      */
+      const hit = Array.isArray(data) ? data[0] : data;
+      const used = hit as { used_package_id?: unknown; package_name?: unknown; sessions_left?: unknown } | null;
+      if (used?.used_package_id) {
+        notes.push(
+          `顺手扣了「${String(used.package_name ?? "套票")}」一次，还剩 ${String(used.sessions_left ?? "?")} 次。`,
+        );
+      }
+      continue;
+    }
+
+    /* pipeline —— 唯一剩下的那一个（refuseToAct 已经把其余全部挡掉了）。 */
+    if (allowedStatuses.length && !allowedStatuses.includes(status)) {
+      skipped.push({
+        op: op.op,
+        reason: `这一页的状态只有：${allowedStatuses.join(" · ")}`,
+      });
+      continue;
+    }
+    const { error } = await supabase.rpc("update_pipeline_record", {
+      in_id: recordId,
+      in_stage: status,
+    });
+    if (error) {
+      skipped.push({ op: op.op, reason: friendly(error.message) });
+      continue;
+    }
+    written += 1;
+  }
+
+  return { written, skipped, notes };
+}
+
+/** 资料库讲的那一句，换成他读得懂的。认不出来的原样带出去 —— 编一句
+ *  「出了点问题」比一句看不懂的英文更糟：他连拿去问都问不了。 */
+function friendly(message: string): string {
+  if (/no such record in your project/i.test(message)) return "找不到那一笔（或者它不是这一家的）";
+  if (/not a pipeline module/i.test(message)) return "这一页的行不是单据";
+  if (/in_status/i.test(message)) return `预约只有这四个：${APPOINTMENT_STATES.join(" · ")}`;
+  return message;
 }

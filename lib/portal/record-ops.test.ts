@@ -8,6 +8,8 @@ import {
   sortCells,
   phoneFrom,
   refuseToWrite,
+  refuseToAct,
+  actOnRecords,
 } from "./record-ops";
 import { MODULE_CATALOG } from "./module-catalog";
 import type { LayoutOp } from "./layout-ops";
@@ -378,5 +380,138 @@ describe("writeRecords on a directory page", () => {
       () => ["primary", "secondary", "status", "c1"],
     );
     expect(rpc.mock.calls[0][1].in_extra).toEqual({ c1: "会员 88" });
+  });
+});
+
+describe("acting on a row that is already there", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+  const act = (id: string, status: string) =>
+    ({ op: "set_record_status", record_id: id, status }) as unknown as LayoutOp;
+  const ok = () => vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ data: [{}], error: null }));
+
+  it("peels the action out of the layout operations", () => {
+    const split = splitRecordOps([text, row("单"), act("r1", "施工")], "quotations");
+    expect(split.layoutOps).toHaveLength(1);
+    expect(split.recordOps).toHaveLength(1);
+    expect(split.actOps).toHaveLength(1);
+  });
+
+  /* 一个不是记录页的页面，行不是记录 —— 三种全部原样留给浏览器，
+     而 applyLayoutOps 那一边有一个 case 会讲出来。 */
+  it("leaves everything alone on a page whose rows are not records", () => {
+    const split = splitRecordOps([act("r1", "施工")], "dashboard");
+    expect(split.actOps).toEqual([]);
+    expect(split.layoutOps).toHaveLength(1);
+  });
+
+  it("calls the SAME rpc the 「客人来了」 button calls", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], []);
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][0]).toBe("set_appointment_status");
+    expect(rpc.mock.calls[0][1]).toEqual({ in_id: "a-1", in_status: "done" });
+    expect(r.written).toBe(1);
+  });
+
+  it("calls the SAME rpc the stage dropdown calls", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "施工")], ["报价", "施工", "收款"]);
+    expect(rpc.mock.calls[0][0]).toBe("update_pipeline_record");
+    expect(rpc.mock.calls[0][1]).toEqual({ in_id: "q-1", in_stage: "施工" });
+    expect(r.written).toBe(1);
+  });
+
+  /* 🔴 update_pipeline_record 对 stage 一个字都不验，所以编出来的那一个会
+     真的写进那一行，而那一行会从看板上掉下去（任务 95c）。 */
+  it("refuses a stage this page does not use, and never calls the rpc", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "已完成")], ["报价", "施工", "收款"]);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.written).toBe(0);
+    expect(r.skipped[0].reason).toContain("报价");
+    expect(r.skipped[0].reason).toContain("施工");
+  });
+
+  /* 人在那一页看到的是自由文字（`stages.length &&` 才画下拉），所以助手也
+     放行。比它在驱动的那个栏位更受限，是 set_text 那条注解讲过不要做的事。 */
+  it("does not out-restrict a field a person types freely", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "等他回覆")], []);
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(r.written).toBe(1);
+  });
+
+  it("refuses a booking state the database does not have", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "来了")], []);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.skipped[0].reason).toContain("no_show");
+  });
+
+  /* 🔴 任务 225：那一颗按钮顺手扣一次套票，而画面上会写出来。助手按同一支
+     而不讲，就是一次静静少掉的次数，他要到客人下次来才发现。 */
+  it("says out loud when a package session went with it", async () => {
+    const rpc = vi.fn(async () => ({
+      data: [{ status: "done", used_package_id: "p-1", package_name: "洗剪吹十次", sessions_left: 3 }],
+      error: null,
+    }));
+    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], []);
+    expect(r.notes.join("")).toContain("洗剪吹十次");
+    expect(r.notes.join("")).toContain("3");
+  });
+
+  it("says nothing when no package was touched", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], []);
+    expect(r.notes).toEqual([]);
+  });
+
+  it.each([
+    ["payments", "冲正"],
+    ["customers", "名册"],
+    ["inventory", "货架"],
+    ["reconciliation", "对帐"],
+  ])("refuses on %s and says where to go instead", async (moduleKey, sentence) => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), moduleKey, [act("x", "什么")], []);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.skipped[0].reason).toContain(sentence);
+  });
+
+  it("turns the database's own sentence into one he can read", async () => {
+    const rpc = vi.fn(async () => ({ data: null, error: { message: "no such record in your project" } }));
+    const r = await actOnRecords(client(rpc), "quotations", [act("nope", "施工")], []);
+    expect(r.written).toBe(0);
+    expect(r.skipped[0].reason).not.toMatch(/no such record|project/i);
+    expect(r.skipped[0].reason).toContain("找不到");
+  });
+
+  it("refuses when it did not say which row, or what to", async () => {
+    const rpc = ok();
+    const a = await actOnRecords(client(rpc), "quotations", [act("", "施工")], []);
+    const b = await actOnRecords(client(rpc), "quotations", [act("q-1", "")], []);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(a.skipped[0].reason).toContain("哪一笔");
+    expect(b.skipped[0].reason).toContain("改成什么");
+  });
+});
+
+describe("refuseToAct", () => {
+  it("answers for every shape in the catalogue", () => {
+    for (const m of MODULE_CATALOG) expect(() => refuseToAct(m.shape)).not.toThrow();
+  });
+
+  it("lets the two shapes with a status button through", () => {
+    expect(refuseToAct("pipeline")).toBeNull();
+    expect(refuseToAct("calendar")).toBeNull();
+  });
+
+  /* 一句只会说「不行」的拒绝，是一个比较礼貌的死路。 */
+  it("names somewhere to go, in his words", () => {
+    for (const shape of ["ledger", "directory", "catalog", "reconcile"] as const) {
+      const why = refuseToAct(shape);
+      expect(why).toBeTruthy();
+      expect(why).not.toMatch(/pipeline|module|rpc|error|status/i);
+    }
   });
 });
