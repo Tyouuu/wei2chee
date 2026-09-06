@@ -163,6 +163,7 @@
     "walk:workshop": "node scripts/walk-workshop.mjs",
     "walk:hardware": "node scripts/walk-hardware.mjs",
     "walk:tuition": "node scripts/walk-tuition.mjs",
+    "check:timetable": "node scripts/check-timetable.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
