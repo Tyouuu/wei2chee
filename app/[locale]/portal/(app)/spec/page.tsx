@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import OpenAI from "openai";
 import { z } from "zod";
-import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
+import {
+  createSessionSupabaseClient,
+  getSessionUser,
+} from "@/lib/supabase/server-session";
 import {
   PAGE_KEYS,
   buildPageLayout,
@@ -11,9 +14,21 @@ import {
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
-import { displayBusinessName, sortPages, type PageId } from "@/lib/templates/industry-template";
-import { buildSystemSpec, specToText, type SystemSpec } from "@/lib/portal/spec-outline";
-import { buildQuote, formatMyr, moduleLabelFor } from "@/lib/portal/build-quote";
+import {
+  displayBusinessName,
+  sortPages,
+  type PageId,
+} from "@/lib/templates/industry-template";
+import {
+  buildSystemSpec,
+  specToText,
+  type SystemSpec,
+} from "@/lib/portal/spec-outline";
+import {
+  ANNUAL_FEE_MYR,
+  BUILD_FEE_MYR,
+  formatMyr,
+} from "@/lib/portal/build-quote";
 import { tradeLabel } from "@/lib/templates/industry-template";
 import type { PuckLayout } from "@/lib/portal/layout-ops";
 import { WHATSAPP_NUMBER } from "@/lib/brand";
@@ -99,7 +114,9 @@ const proseJsonSchema = (lang: "zh" | "en") =>
               name: {
                 type: "string",
                 description:
-                  lang === "zh" ? "Module name, 2-6 characters." : "Module name, 1-3 words.",
+                  lang === "zh"
+                    ? "Module name, 2-6 characters."
+                    : "Module name, 1-3 words.",
               },
               purpose: {
                 type: "string",
@@ -116,7 +133,10 @@ const proseJsonSchema = (lang: "zh" | "en") =>
         notes: {
           type: "array",
           maxItems: 5,
-          items: { type: "string", description: "One build consideration, one sentence." },
+          items: {
+            type: "string",
+            description: "One build consideration, one sentence.",
+          },
         },
       },
       required: ["overview", "modules", "notes"],
@@ -184,22 +204,24 @@ Hard rules:
         {
           role: "user",
           content:
-
             lang === "zh"
-
               ? `行业：${industryName}\n\n客户设计出来的系统结构：\n\n${specToText(spec, "zh")}`
-
               : `Industry: ${industryName}\n\nThe system this owner designed:\n\n${specToText(spec, "en")}`,
         },
       ],
-      response_format: { type: "json_schema", json_schema: proseJsonSchema(lang) },
+      response_format: {
+        type: "json_schema",
+        json_schema: proseJsonSchema(lang),
+      },
     });
     /* Before the parse, because a reply that will not parse still cost the
        money. Swallows its own errors -- see recordAiUsage. */
     await recordAiUsage(supabase, "spec", AI_MODEL, completion.usage, {
       tookMs: Date.now() - startedAt,
     });
-    return proseSchema.parse(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
+    return proseSchema.parse(
+      JSON.parse(completion.choices[0]?.message?.content ?? "{}"),
+    );
   } catch (err) {
     // Logged, not surfaced: the document below is complete without this.
     console.error("spec prose generation failed", err);
@@ -297,9 +319,6 @@ export default async function SystemSpecPage({
   ) as Record<PageId, PuckLayout>;
 
   const spec = buildSystemSpec(layouts, pageRefs, zh ? "zh" : "en");
-  /* 开发费。算的是**客户真的有的那几页**，不是行业预设 ——
-     一份报价单上多算一个他没有的模块，比少算一个严重得多。 */
-  const quote = buildQuote(spec.pages.map((p) => p.pageKey), Boolean(project.paid));
 
   // Every render of this page would otherwise be an LLM call: a reload, a
   // back-button, a share link opened twice. Capped per account, and going over
@@ -371,172 +390,226 @@ export default async function SystemSpecPage({
           纸上不该有按钮（见 spec-actions.tsx）。搬下来之后那张纸只剩文件。
           ⚠️ `print:hidden` 留在这里，因为顶栏本身在列印时也不该出现。 */}
       <div className="print:hidden">
-        <PageBar title={t("titleOf", { business: businessName })} subtitle={industryName}>
-          <SpecActions handoffHref={whatsappHref} backHref={`/${locale}/portal/dashboard`} />
+        <PageBar
+          title={t("titleOf", { business: businessName })}
+          subtitle={industryName}
+        >
+          <SpecActions
+            handoffHref={whatsappHref}
+            backHref={`/${locale}/portal/dashboard`}
+          />
         </PageBar>
       </div>
       <main
         className={`${chrome.paper} ${chrome.paperSheet} mx-auto my-8 max-w-3xl px-10 py-12 print:my-0 print:max-w-none print:px-0 print:py-0`}
       >
-      <header className="border-b pb-6">
-        <p className="[font-size:var(--text-xs)] tracking-[0.16em] text-muted-foreground uppercase">
-          {t("brand")}
-        </p>
-        <h1 className="mt-2 [font-size:var(--text-title)] font-semibold text-foreground">{t("titleOf", { business: businessName })}</h1>
-        <p className="mt-1 [font-size:var(--text-sm)] text-muted-foreground">
-          {t("meta", { industry: industryName, date: new Date().toISOString().slice(0, 10) })}
-        </p>
-      </header>
-
-      <section className="mt-8">
-        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noPurpose}{sep}{t("secPurpose")}</h2>
-        <p className="mt-2 [font-size:var(--text-sm)] leading-relaxed text-muted-foreground">
-          {prose?.overview ??
-            t("overviewFallback", { business: businessName })}
-        </p>
-      </section>
-
-      {hasFlow && (
-        <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noFlow}{sep}{t("secFlow")}</h2>
-          <p className="mt-2 [font-size:var(--text-sm)] text-foreground">{spec.workflowStages.join(" → ")}</p>
+        <header className="border-b pb-6">
+          <p className="[font-size:var(--text-xs)] tracking-[0.16em] text-muted-foreground uppercase">
+            {t("brand")}
+          </p>
+          <h1 className="mt-2 [font-size:var(--text-title)] font-semibold text-foreground">
+            {t("titleOf", { business: businessName })}
+          </h1>
           <p className="mt-1 [font-size:var(--text-sm)] text-muted-foreground">
-            {t("flowNote")}
+            {t("meta", {
+              industry: industryName,
+              date: new Date().toISOString().slice(0, 10),
+            })}
+          </p>
+        </header>
+
+        <section className="mt-8">
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">
+            {noPurpose}
+            {sep}
+            {t("secPurpose")}
+          </h2>
+          <p className="mt-2 [font-size:var(--text-sm)] leading-relaxed text-muted-foreground">
+            {prose?.overview ??
+              t("overviewFallback", { business: businessName })}
           </p>
         </section>
-      )}
 
-      {hasModules && prose ? (
-        <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noModules}{sep}{t("secModules")}</h2>
-          <ul className="mt-2 space-y-1.5">
-            {prose.modules.map((m) => (
-              <li key={m.name} className="[font-size:var(--text-sm)] text-muted-foreground">
-                <span className="font-semibold text-foreground">{m.name}</span> — {m.purpose}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+        {hasFlow && (
+          <section className="mt-8">
+            <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">
+              {noFlow}
+              {sep}
+              {t("secFlow")}
+            </h2>
+            <p className="mt-2 [font-size:var(--text-sm)] text-foreground">
+              {spec.workflowStages.join(" → ")}
+            </p>
+            <p className="mt-1 [font-size:var(--text-sm)] text-muted-foreground">
+              {t("flowNote")}
+            </p>
+          </section>
+        )}
 
-      {/* 开发费。**2026-09-01 之前这一整段不存在**，而这份文件从第一天就写着
-          「一个模块一个价钱」—— 一个填不出来的承诺，每一单靠 console 手打。
-          老板：`我们每一个模版的开发收多少钱`。算法跟三个数字在
-          lib/portal/build-quote.ts，里面写了为什么按形状不按模块。 */}
-      <section className="mt-8">
-        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noQuote}{sep}{t("secQuote")}</h2>
-        <p className="mt-2 [font-size:var(--text-sm)] text-muted-foreground">{t("quoteNote")}</p>
-        <table className="mt-3 w-full [font-size:var(--text-sm)]">
-          <tbody>
-            <tr className="border-b border-border/60">
-              <td className="py-1.5 text-muted-foreground">{t("quoteBase")}</td>
-              <td className="py-1.5 text-right tabular-nums text-foreground">{formatMyr(quote.baseMyr)}</td>
-            </tr>
-            {quote.lines.map((line) => (
-              <tr key={line.moduleKey} className="border-b border-border/60">
-                <td className="py-1.5 text-muted-foreground">
-                  <span className="text-foreground">{moduleLabelFor(line.moduleKey, zh ? "zh" : "en")}</span>
-                  {" — "}
-                  {line.nth === 1 ? t("quoteFirst") : t("quoteRepeat")}
-                </td>
-                <td className="py-1.5 text-right tabular-nums text-foreground">{formatMyr(line.amountMyr)}</td>
-              </tr>
-            ))}
-            {quote.specCreditMyr > 0 ? (
-              <>
-                <tr className="border-b border-border/60">
-                  <td className="py-1.5 text-muted-foreground">{t("quoteSubtotal")}</td>
-                  <td className="py-1.5 text-right tabular-nums text-foreground">{formatMyr(quote.subtotalMyr)}</td>
-                </tr>
-                <tr className="border-b border-border/60">
-                  <td className="py-1.5 text-muted-foreground">{t("quoteCredit")}</td>
-                  <td className="py-1.5 text-right tabular-nums text-foreground">−{formatMyr(quote.specCreditMyr)}</td>
-                </tr>
-              </>
-            ) : null}
-            <tr>
-              <td className="pt-2 font-semibold text-foreground">{t("quoteTotal")}</td>
-              <td className="pt-2 text-right font-semibold tabular-nums text-foreground">{formatMyr(quote.totalMyr)}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className="mt-3 [font-size:var(--text-sm)] text-muted-foreground">
-          {quote.specCreditMyr > 0 ? t("quoteAfter") : `${t("quoteSpecNote")} ${t("quoteAfter")}`}
-        </p>
-      </section>
-
-      <section className="mt-8">
-        <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noPages}{sep}{t("secPages")}</h2>
-        {spec.pages.map((page) => (
-          <div key={page.pageKey} className="mt-5 border-l-2 pl-4">
-            <h3 className="[font-size:var(--text-base)] font-semibold text-foreground">
-              {page.heading ?? page.title}
-            </h3>
-            {page.subtitle && (
-              <p className="mt-0.5 [font-size:var(--text-sm)] text-muted-foreground">{page.subtitle}</p>
-            )}
-
-            <ul className="mt-2 space-y-1 [font-size:var(--text-sm)] text-muted-foreground">
-              {page.metrics.map((m, i) => (
-                <li key={`m${i}`}>
-                  {t("metric")}: <span className="text-foreground">{m.label}</span>
-                  {m.sample ? ` (${t("sample", { v: m.sample })})` : ""}
+        {hasModules && prose ? (
+          <section className="mt-8">
+            <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">
+              {noModules}
+              {sep}
+              {t("secModules")}
+            </h2>
+            <ul className="mt-2 space-y-1.5">
+              {prose.modules.map((m) => (
+                <li
+                  key={m.name}
+                  className="[font-size:var(--text-sm)] text-muted-foreground"
+                >
+                  <span className="font-semibold text-foreground">
+                    {m.name}
+                  </span>{" "}
+                  — {m.purpose}
                 </li>
               ))}
-              {/* `tbl`, not `t` -- the map parameter was shadowing the
+            </ul>
+          </section>
+        ) : null}
+
+        {/* 他要付的钱。
+          🔴 **2026-09-06 整段换掉。** 老板看着这一段上面那张按模块算的表：
+          `都不要了 跟著新概念`。旧的是「起底 ＋ 每个形状第一个 ＋ 同类再一个
+          ＋ 规格书抵扣」，一单算出来 RM 5,800；而 2026-09-03 换成了
+          **建置费 ＋ 年费**（[任务 109](../../../../../docs/founder-tasks.md#109)）。
+          三天里这份文件一直印着上一套 —— 而它是要交给客户、上面有钱的那一张纸。
+
+          ⚠️ 两行，不是一张表：新概念里**一套系统一个价钱**，
+          跟他开了几页无关，所以没有东西要逐行算。
+          算法跟那两个常数在 lib/portal/build-quote.ts。 */}
+        <section className="mt-8">
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">
+            {noQuote}
+            {sep}
+            {t("secQuote")}
+          </h2>
+          <table className="mt-3 w-full [font-size:var(--text-sm)]">
+            <tbody>
+              <tr className="border-b border-border/60">
+                <td className="py-1.5 text-muted-foreground">
+                  <span className="text-foreground">{t("quoteBuild")}</span>
+                  {" — "}
+                  {t("quoteBuildNote")}
+                </td>
+                <td className="py-1.5 text-right tabular-nums text-foreground">
+                  {formatMyr(BUILD_FEE_MYR)}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-1.5 text-muted-foreground">
+                  <span className="text-foreground">{t("quoteAnnual")}</span>
+                  {" — "}
+                  {t("quoteAnnualNote")}
+                </td>
+                <td className="py-1.5 text-right tabular-nums text-foreground">
+                  {formatMyr(ANNUAL_FEE_MYR)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section className="mt-8">
+          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">
+            {noPages}
+            {sep}
+            {t("secPages")}
+          </h2>
+          {spec.pages.map((page) => (
+            <div key={page.pageKey} className="mt-5 border-l-2 pl-4">
+              <h3 className="[font-size:var(--text-base)] font-semibold text-foreground">
+                {page.heading ?? page.title}
+              </h3>
+              {page.subtitle && (
+                <p className="mt-0.5 [font-size:var(--text-sm)] text-muted-foreground">
+                  {page.subtitle}
+                </p>
+              )}
+
+              <ul className="mt-2 space-y-1 [font-size:var(--text-sm)] text-muted-foreground">
+                {page.metrics.map((m, i) => (
+                  <li key={`m${i}`}>
+                    {t("metric")}:{" "}
+                    <span className="text-foreground">{m.label}</span>
+                    {m.sample ? ` (${t("sample", { v: m.sample })})` : ""}
+                  </li>
+                ))}
+                {/* `tbl`, not `t` -- the map parameter was shadowing the
                   translator, which the compiler caught the moment this section
                   started calling t(). */}
-              {page.tables.map((tbl, i) => (
-                <li key={`t${i}`}>
-                  {t("tablePrefix")}
-                  <span className="text-foreground">{tbl.caption}</span>
-                  {t("tableSuffix")}{" "}
-                  <span className="text-foreground">{tbl.columns.join(" / ")}</span>
-                </li>
-              ))}
-              {page.workflows.map((w, i) =>
-                w.stages.length ? (
-                  <li key={`w${i}`}>
-                    {t("flowPrefix")}<span className="text-foreground">{w.stages.join(" → ")}</span>
+                {page.tables.map((tbl, i) => (
+                  <li key={`t${i}`}>
+                    {t("tablePrefix")}
+                    <span className="text-foreground">{tbl.caption}</span>
+                    {t("tableSuffix")}{" "}
+                    <span className="text-foreground">
+                      {tbl.columns.join(" / ")}
+                    </span>
                   </li>
-                ) : null,
-              )}
-              {page.inputs.map((inp, i) => (
-                <li key={`i${i}`}>
-                  {t("inputPrefix")}<span className="text-foreground">{inp.label}</span> ({inp.kind})
-                </li>
+                ))}
+                {page.workflows.map((w, i) =>
+                  w.stages.length ? (
+                    <li key={`w${i}`}>
+                      {t("flowPrefix")}
+                      <span className="text-foreground">
+                        {w.stages.join(" → ")}
+                      </span>
+                    </li>
+                  ) : null,
+                )}
+                {page.inputs.map((inp, i) => (
+                  <li key={`i${i}`}>
+                    {t("inputPrefix")}
+                    <span className="text-foreground">{inp.label}</span> (
+                    {inp.kind})
+                  </li>
+                ))}
+                {page.metrics.length +
+                  page.tables.length +
+                  page.workflows.length +
+                  page.inputs.length ===
+                  0 && <li>{t("emptyPage")}</li>}
+              </ul>
+            </div>
+          ))}
+        </section>
+
+        {hasVocab && (
+          <section className="mt-8">
+            <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">
+              {noVocab}
+              {sep}
+              {t("secVocab")}
+            </h2>
+            <p className="mt-2 [font-size:var(--text-sm)] text-muted-foreground">
+              {t("vocabNote")}
+            </p>
+            <p className="mt-1.5 [font-size:var(--text-sm)] text-foreground">
+              {spec.vocabulary.join(" · ")}
+            </p>
+          </section>
+        )}
+
+        {hasNotes && prose ? (
+          <section className="mt-8">
+            <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">
+              {noNotes}
+              {sep}
+              {t("secNotes")}
+            </h2>
+            <ul className="mt-2 list-disc space-y-1 pl-5 [font-size:var(--text-sm)] text-muted-foreground">
+              {prose.notes.map((n, i) => (
+                <li key={i}>{n}</li>
               ))}
-              {page.metrics.length + page.tables.length + page.workflows.length + page.inputs.length ===
-                0 && <li>{t("emptyPage")}</li>}
             </ul>
-          </div>
-        ))}
-      </section>
+          </section>
+        ) : null}
 
-      {hasVocab && (
-        <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noVocab}{sep}{t("secVocab")}</h2>
-          <p className="mt-2 [font-size:var(--text-sm)] text-muted-foreground">
-            {t("vocabNote")}
-          </p>
-          <p className="mt-1.5 [font-size:var(--text-sm)] text-foreground">{spec.vocabulary.join(" · ")}</p>
-        </section>
-      )}
-
-      {hasNotes && prose ? (
-        <section className="mt-8">
-          <h2 className="[font-size:var(--text-lg)] font-semibold text-foreground">{noNotes}{sep}{t("secNotes")}</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 [font-size:var(--text-sm)] text-muted-foreground">
-            {prose.notes.map((n, i) => (
-              <li key={i}>{n}</li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <footer className="mt-10 border-t pt-4 [font-size:var(--text-xs)] text-muted-foreground">
-        {t("footer")}
-      </footer>
+        <footer className="mt-10 border-t pt-4 [font-size:var(--text-xs)] text-muted-foreground">
+          {t("footer")}
+        </footer>
       </main>
     </>
   );

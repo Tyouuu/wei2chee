@@ -98,11 +98,24 @@ try {
   let n = 0;
   for (const [path, name] of PAGES) {
     n += 1;
-    const res = await page.goto(`${BASE}/en/portal/${path}`, {
+    /* 🔴 冷的那一次再走一遍。
+       开发服务器第一次编译一条路由要二十秒以上，而在那之前它回的是
+       **一模一样的 404** —— 跟一页真的坏掉长得没有分别。
+       实测：需求书那一页连三次回 404，暖起来之后 200，一个字都没改。
+       ⚠️ 只重试一次，而且**第二次照样不是 200 就照实报** ——
+       一把永远重试到绿为止的尺，量的是耐心不是产品。 */
+    let res = await page.goto(`${BASE}/en/portal/${path}`, {
       waitUntil: "domcontentloaded",
       timeout: 180000,
     });
     await page.waitForTimeout(2600);
+    if ((res?.status() ?? 0) !== 200) {
+      res = await page.goto(`${BASE}/en/portal/${path}`, {
+        waitUntil: "domcontentloaded",
+        timeout: 180000,
+      });
+      await page.waitForTimeout(2600);
+    }
     const m = await page.evaluate(() => {
       const seen = (el) => {
         const r = el.getBoundingClientRect();
@@ -126,7 +139,11 @@ try {
         words: (document.body.innerText.match(/\S+/g) ?? []).length,
       };
     });
-    rows.push({ name, status: res?.status() ?? 0, ...m });
+    /* 🔴 走到哪一页也要记 —— 一个被送去别处的页面，
+       跟一个坏掉的页面在读数上长得一模一样。 */
+    const landed = page.url().replace(BASE, "");
+    rows.push({ name, status: res?.status() ?? 0, landed, ...m });
+    if (!landed.endsWith(`/portal/${path}`)) console.log(`  ⚠️ ${name} → ${landed}`);
     await page.screenshot({ path: `${OUT}/${n}-${name}.png`, fullPage: true });
   }
 
@@ -161,7 +178,7 @@ try {
       `  ${r.name.padEnd(14)} ${String(r.status).padEnd(5)} ${String(r.height).padEnd(6)}` +
         ` ${String(r.firstScreen).padEnd(15)} ${String(r.controls).padEnd(5)}` +
         ` ${String(r.words).padEnd(6)} ${r.wide ? "🔴" : "· "}    ${r.wide390 ? "🔴" : "· "}` +
-        `      ${(r.h1 ?? []).join(" / ") || "—"}`,
+        `      ${r.landed}   ${(r.h1 ?? []).join(" / ") || "—"}`,
     );
   }
   console.log(`\n→ ${OUT}/  ⚠️ 现在去用眼睛看那几张图 —— 这一支只量得出上面那几栏`);
