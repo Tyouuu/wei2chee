@@ -174,12 +174,23 @@ try {
   const br2 = await act(C, "开第二间店", "add_branch", {
     in_project_id: P, in_name: "Menglembu",
   });
+  /* 🔴 他本来就有的货**全部挂在「没有分店」上**（一间店的生意本来就这样）——
+     所以开第二间店那一天的第一件事，是把它们分到第一间店去。
+     [任务 237](../docs/founder-tasks.md#237) 之前这一步根本做不到，
+     而这一节的读数当时是「差 10 罐」。 */
+  const split = one(await act(C, "把本来就有的货分到第一间店", "transfer_stock", {
+    in_item_id: paint?.id, in_from_branch: null, in_to_branch: kl?.id,
+    in_qty: 15,
+  }));
   const moved = one(await act(C, "搬十罐过去", "transfer_stock", {
     in_item_id: paint?.id, in_from_branch: kl?.id, in_to_branch: br2?.id,
     in_qty: 10,
   }));
-  node("开两间店 ＋ 搬十罐过去", acts - n, !!moved?.transfer_id,
-    `三次；而搬那一次是**一个动作两笔**，差 ${moved?.short} 罐`);
+  node("开两间店 ＋ 把货分进去 ＋ 搬十罐过去", acts - n,
+    !!moved?.transfer_id && Number(moved?.short) === 0
+      && Number(split?.short) === 0,
+    `四次；而搬那两次各是**一个动作两笔**，`
+    + `分进去差 ${split?.short} 罐 · 搬过去差 ${moved?.short} 罐`);
 
   /* ── ⑦ 批号 · 效期 ────────────────────────────────────────── */
   n = acts;

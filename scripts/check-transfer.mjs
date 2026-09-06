@@ -186,6 +186,49 @@ try {
     first?.from_name === "Kuala Lumpur" && first?.to_name === "Puchong",
     `${first?.from_name} → ${first?.to_name}`);
 
+  /* ── ⑥b 🔴 开第二间店那一天 ───────────────────────────────────
+     `walk:hardware`（[任务 236](../docs/founder-tasks.md#236)）走出来的：
+     一间本来一间店的生意，它的货**全部挂在「没有分店」上**
+     （[任务 148](../docs/founder-tasks.md#148) 特地留着那个 null），
+     而开第二间店那一天要做的第一件事，就是把它们分到第一间店去。 */
+  console.log("\n⑥b 🔴 开第二间店那一天");
+  const { data: loose } = await C.rpc("add_catalog_item", {
+    in_project_id: P, in_module_key: "inventory", in_name: "River sand",
+    in_unit: "loads",
+  });
+  await C.rpc("move_stock", {
+    in_item_id: loose.id, in_direction: "in", in_qty: 30, in_reason: "进货",
+  });
+  const looseAt = async (branchId) => {
+    const { data } = await C.from("stock_by_branch")
+      .select("item_id, branch_id, on_hand").eq("project_id", P);
+    const r = (data ?? []).find(
+      (x) => x.item_id === loose.id && x.branch_id === branchId);
+    return Number(r?.on_hand ?? 0);
+  };
+  check("道具：那三十车挂在「没有分店」上", (await looseAt(null)) === 30,
+    `${await looseAt(null)}`);
+  const { data: split, error: splitErr } = await C.rpc("transfer_stock", {
+    in_item_id: loose.id, in_from_branch: null, in_to_branch: kl.id,
+    in_qty: 30,
+  });
+  check("🔴 把本来就有的货分到第一间店去",
+    !splitErr && !!split?.[0]?.transfer_id, splitErr?.message);
+  check("🔴 而且不算短缺（那些货本来就在）",
+    Number(split?.[0]?.short) === 0, `${split?.[0]?.short}`);
+  check("分完之后：没分店 0 · 第一间店 30",
+    (await looseAt(null)) === 0 && (await looseAt(kl.id)) === 30,
+    `${await looseAt(null)} / ${await looseAt(kl.id)}`);
+  const { error: bothNull } = await C.rpc("transfer_stock", {
+    in_item_id: loose.id, in_from_branch: null, in_to_branch: null, in_qty: 1,
+  });
+  check("🔴 两头都空 → 挡", !!bothNull, "居然让它过了");
+  const { error: backToNone } = await C.rpc("transfer_stock", {
+    in_item_id: loose.id, in_from_branch: kl.id, in_to_branch: null, in_qty: 1,
+  });
+  check("搬回「没有分店」→ 挡（那是一个他看不出来的状态）",
+    !!backToNone, "居然让它过了");
+
   /* ── ⑦ 别人家 ─────────────────────────────────────────────── */
   console.log("\n⑦ 别人家");
   const other = await person("other");
