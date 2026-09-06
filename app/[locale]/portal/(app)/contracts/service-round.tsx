@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { DeskCard, deskBtn, deskDim, deskField } from "../desk-kit";
 
@@ -47,6 +48,16 @@ type Ending = {
   visits_done: number;
 };
 
+/** 一份还在跑的合约 —— 既不该去、也还没到期的那几份也在里面。 */
+type Live = {
+  id: string;
+  party: string;
+  title: string;
+  everyMonths: number;
+  startsOn: string;
+  endsOn: string | null;
+};
+
 type Words = Record<string, string>;
 
 /** 🔴 **还没记过的那一次，`status` 是 `'due'`，不是 null。**
@@ -66,6 +77,7 @@ export function ServiceRound({
   locale,
   due,
   ending,
+  live,
   parties,
   jobPages,
   words,
@@ -74,6 +86,7 @@ export function ServiceRound({
   locale: string;
   due: Due[];
   ending: Ending[];
+  live: Live[];
   parties: { id: string; name: string }[];
   jobPages: { key: string; label: string }[];
   words: Words;
@@ -81,7 +94,12 @@ export function ServiceRound({
   const [rows, setRows] = useState(due);
   const [busy, setBusy] = useState<string | null>(null);
   const [said, setSaid] = useState<Record<string, string>>({});
+  const router = useRouter();
   const [makeJobIn, setMakeJobIn] = useState<string>(jobPages[0]?.key ?? "");
+  /* 正在改的那一份合约。 */
+  const [editing, setEditing] = useState<string | null>(null);
+  const [everyM, setEveryM] = useState("");
+  const [endsOn, setEndsOn] = useState("");
   const field = deskField;
 
   /* 一条路线是**按天**排的。⚠️ 顺序照资料库给的（逾期的在前），
@@ -109,7 +127,10 @@ export function ServiceRound({
           ? {
               ...r,
               status,
-              done_on: status === "done" ? new Date().toISOString().slice(0, 10) : null,
+              done_on:
+                status === "done"
+                  ? new Date().toISOString().slice(0, 10)
+                  : null,
             }
           : r,
       ),
@@ -125,14 +146,76 @@ export function ServiceRound({
         in_make_job_in: status === "done" && makeJobIn ? makeJobIn : null,
       });
       if (error) throw error;
-      const made = (Array.isArray(data) ? data[0] : data) as { record_id?: string | null } | null;
+      const made = (Array.isArray(data) ? data[0] : data) as {
+        record_id?: string | null;
+      } | null;
       setRows((v) =>
-        v.map((r) => (keyOf(r) === k ? { ...r, record_id: made?.record_id ?? r.record_id } : r)),
+        v.map((r) =>
+          keyOf(r) === k
+            ? { ...r, record_id: made?.record_id ?? r.record_id }
+            : r,
+        ),
       );
     } catch {
       /* 🔴 放回去 —— 见档头。 */
       setRows(before);
       setSaid((s) => ({ ...s, [k]: words.failed }));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /**
+   * 改一份合约：隔几个月一次 · 什么时候停。
+   *
+   * ⚠️ **清空要另外讲。** `in_ends_on` 传 null 是「这一栏不要动」，
+   * 所以「以后不设结束日」要用 `in_clear_ends_on` —— 同一个坑这个仓库
+   * 栽过五次（due_on · 工地 · 分店 · done_by · job_id）。
+   */
+  async function saveContract(c: Live) {
+    if (busy) return;
+    const n = Number(everyM);
+    if (!Number.isFinite(n) || n < 1 || n > 24) {
+      setSaid((v) => ({ ...v, [c.id]: words.everyRange }));
+      return;
+    }
+    setBusy(c.id);
+    setSaid((v) => ({ ...v, [c.id]: "" }));
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase.rpc("update_service_contract", {
+        in_contract_id: c.id,
+        in_every_months: n,
+        in_ends_on: endsOn.trim() || null,
+        in_clear_ends_on: !endsOn.trim(),
+      });
+      if (error) throw error;
+      setEditing(null);
+      router.refresh();
+    } catch {
+      setSaid((v) => ({ ...v, [c.id]: words.failed }));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /* 🔴 **停掉，不是删掉。** 已经做过的那几次保养挂在它身上 ——
+     那是这门生意做过的事，而一份停掉的合约只是不再排下一次。 */
+  async function stopContract(c: Live) {
+    if (busy) return;
+    setBusy(c.id);
+    setSaid((v) => ({ ...v, [c.id]: "" }));
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase.rpc("set_contract_archived", {
+        in_contract_id: c.id,
+        in_archived: true,
+      });
+      if (error) throw error;
+      setEditing(null);
+      router.refresh();
+    } catch {
+      setSaid((v) => ({ ...v, [c.id]: words.failed }));
     } finally {
       setBusy(null);
     }
@@ -144,7 +227,11 @@ export function ServiceRound({
     setBusy(k);
     const before = rows;
     /* 撤销之后回到「还没记过」，而那个字是 `'due'` 不是 null。 */
-    setRows((v) => v.map((r) => (keyOf(r) === k ? { ...r, status: "due", done_on: null } : r)));
+    setRows((v) =>
+      v.map((r) =>
+        keyOf(r) === k ? { ...r, status: "due", done_on: null } : r,
+      ),
+    );
     try {
       const supabase = createBrowserSupabaseClient();
       const { error } = await supabase.rpc("undo_service_visit", {
@@ -176,7 +263,9 @@ export function ServiceRound({
           骨架抄的是他挑的那一套的 `productivity`（按天分段的行程），
           而不是那一串到处都在用的记录行。 */}
       <DeskCard title={words.roundLabel}>
-        <p className={`mb-5 ${dim}`}>{rows.length ? words.roundLede : words.roundNone}</p>
+        <p className={`mb-5 ${dim}`}>
+          {rows.length ? words.roundLede : words.roundNone}
+        </p>
 
         {days.length > 0 && (
           <div className="flex flex-col gap-6">
@@ -194,7 +283,9 @@ export function ServiceRound({
                   </span>
                   {/* 🔴 只印数字，不挂词 —— 「1 stops」是英文复数变形的坑，
                       而这一套本来就有一个做法：数字骑在标题旁边。 */}
-                  <span className={`tabular-nums ${dim}`}>{day.items.length}</span>
+                  <span className={`tabular-nums ${dim}`}>
+                    {day.items.length}
+                  </span>
                 </div>
                 <ul className="flex flex-col">
                   {day.items.map((d) => {
@@ -204,13 +295,17 @@ export function ServiceRound({
                         key={k}
                         className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t py-3 [border-color:var(--color-ink-800)]"
                       >
-                        <span className="[font-weight:var(--fw-semibold)]">{d.party}</span>
+                        <span className="[font-weight:var(--fw-semibold)]">
+                          {d.party}
+                        </span>
                         {d.title && <span className={dim}>{d.title}</span>}
                         <span className="min-w-0 flex-1" />
                         {logged(d) ? (
                           <>
                             <span className={dim}>
-                              {d.status === "done" ? words.wasDone : words.wasSkipped}
+                              {d.status === "done"
+                                ? words.wasDone
+                                : words.wasSkipped}
                             </span>
                             {d.record_id && jobPages.length > 0 && (
                               <a
@@ -290,6 +385,114 @@ export function ServiceRound({
 
       <div className="h-5" />
 
+      {/* 🔴 **每一份还在跑的合约。**
+          在这一段之前这一页只画得出「该去了」跟「快到期了」——
+          而一份跑到一半的合约（既不该去、也还没到期）**画面上到不了**。
+          「一年洗两次改成三次」是这一行每一年都会做的事。 */}
+      {live.length > 0 && (
+        <>
+          <DeskCard title={words.liveLabel}>
+            <p className={`mb-4 ${dim}`}>{words.liveLede}</p>
+            <ul className="flex flex-col">
+              {live.map((c) => (
+                <li
+                  key={c.id}
+                  className="border-t py-3 [border-color:var(--color-ink-800)]"
+                >
+                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                    <span className="[font-weight:var(--fw-semibold)]">
+                      {c.party}
+                    </span>
+                    {c.title && <span className={dim}>{c.title}</span>}
+                    <span className="min-w-0 flex-1" />
+                    <span className={dim}>
+                      {words.everyMonths.replace("%n", String(c.everyMonths))}
+                    </span>
+                    {editing !== c.id && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditing(c.id);
+                          setEveryM(String(c.everyMonths));
+                          setEndsOn(c.endsOn ?? "");
+                        }}
+                        className={btn}
+                      >
+                        {words.editContract}
+                      </button>
+                    )}
+                  </div>
+                  {editing === c.id && (
+                    <div className="mt-3 flex flex-col gap-3 [border-radius:var(--radius-md)] [border:var(--hairline)_solid_var(--input)] p-3">
+                      <div className="flex flex-wrap items-end gap-3">
+                        <label className="flex flex-col gap-1.5">
+                          <span className={dim}>{words.everyLabel}</span>
+                          <span className="inline-block w-24">
+                            <input
+                              type="number"
+                              min="1"
+                              max="24"
+                              value={everyM}
+                              onChange={(e) => setEveryM(e.target.value)}
+                              className={field}
+                            />
+                          </span>
+                        </label>
+                        <label className="flex flex-col gap-1.5">
+                          <span className={dim}>{words.endsLabel}</span>
+                          <input
+                            type="date"
+                            value={endsOn}
+                            onChange={(e) => setEndsOn(e.target.value)}
+                            className={field}
+                          />
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          disabled={busy === c.id || !everyM.trim()}
+                          onClick={() => void saveContract(c)}
+                          className={deskBtn("primary")}
+                        >
+                          {words.save}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy === c.id}
+                          onClick={() => setEditing(null)}
+                          className={btn}
+                        >
+                          {words.cancel}
+                        </button>
+                        <span className="ml-auto">
+                          <button
+                            type="button"
+                            disabled={busy === c.id}
+                            onClick={() => void stopContract(c)}
+                            className={deskBtn("danger")}
+                          >
+                            {words.stopContract}
+                          </button>
+                        </span>
+                      </div>
+                      {/* 🔴 停掉不是删掉 —— 已经做过的那几次保养还在书上。 */}
+                      <p className={dim}>{words.stopContractNote}</p>
+                      {said[c.id] && (
+                        <p className="[color:var(--color-clay-bright)] [font-size:var(--text-sm)]">
+                          {said[c.id]}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </DeskCard>
+          <div className="h-5" />
+        </>
+      )}
+
       {ending.length > 0 && (
         <DeskCard title={words.endingLabel}>
           <p className={`mb-4 ${dim}`}>{words.endingLede}</p>
@@ -299,19 +502,28 @@ export function ServiceRound({
                 key={e.contract_id}
                 className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t py-3 [border-color:var(--color-ink-800)]"
               >
-                <span className="[font-weight:var(--fw-semibold)]">{e.party}</span>
+                <span className="[font-weight:var(--fw-semibold)]">
+                  {e.party}
+                </span>
                 {e.title && <span className={dim}>{e.title}</span>}
                 <span className="min-w-0 flex-1" />
-                <span className={dim}>{words.visitsDone.replace("%n", String(e.visits_done))}</span>
+                <span className={dim}>
+                  {words.visitsDone.replace("%n", String(e.visits_done))}
+                </span>
                 {/* 🔴 已经过期的排在最前面（资料库排的），而它读起来要
                     跟「还有几天」不一样 —— 那是他今天就该打的那一通。 */}
                 <span
                   className={`tabular-nums [font-size:var(--text-sm)] ${
-                    e.days_left < 0 ? "text-[color:var(--color-clay-bright)]" : ""
+                    e.days_left < 0
+                      ? "text-[color:var(--color-clay-bright)]"
+                      : ""
                   }`}
                 >
                   {e.days_left < 0
-                    ? words.endedAgo.replace("%n", String(Math.abs(e.days_left)))
+                    ? words.endedAgo.replace(
+                        "%n",
+                        String(Math.abs(e.days_left)),
+                      )
                     : words.daysLeft.replace("%n", String(e.days_left))}
                 </span>
               </li>
@@ -322,7 +534,13 @@ export function ServiceRound({
 
       <div className="h-5" />
 
-      <NewContract projectId={projectId} parties={parties} words={words} btn={btn} dim={dim} />
+      <NewContract
+        projectId={projectId}
+        parties={parties}
+        words={words}
+        btn={btn}
+        dim={dim}
+      />
     </>
   );
 }
@@ -345,7 +563,9 @@ function NewContract({
   const [partyId, setPartyId] = useState("");
   const [title, setTitle] = useState("");
   const [every, setEvery] = useState("6");
-  const [startsOn, setStartsOn] = useState(() => new Date().toISOString().slice(0, 10));
+  const [startsOn, setStartsOn] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
   const [endsOn, setEndsOn] = useState("");
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState("");
@@ -392,7 +612,11 @@ function NewContract({
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_7rem_9rem_9rem_auto] md:items-end">
           <label className="grid gap-1">
             <span className={dim}>{words.who}</span>
-            <select value={partyId} onChange={(e) => setPartyId(e.target.value)} className={field}>
+            <select
+              value={partyId}
+              onChange={(e) => setPartyId(e.target.value)}
+              className={field}
+            >
               <option value="">{words.pickWho}</option>
               {parties.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -438,7 +662,12 @@ function NewContract({
             />
           </label>
           <div className="flex items-center gap-3">
-            <button type="button" disabled={busy} onClick={sign} className={deskBtn("primary")}>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={sign}
+              className={deskBtn("primary")}
+            >
               {busy ? words.signing : words.sign}
             </button>
             {said && (

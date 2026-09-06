@@ -76,6 +76,11 @@ export function ClassDesk({
   const [marking, setMarking] = useState<{ id: string; title: string } | null>(
     null,
   );
+  /* 正在改的那一个班（跟展开是两件事：展开是看，改是动手）。 */
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editTeacher, setEditTeacher] = useState("");
+  const [editCap, setEditCap] = useState("");
   const [att, setAtt] = useState<Att[]>([]);
 
   /* 一个班摊开：名单 + 一个礼拜几点上。 */
@@ -197,6 +202,56 @@ export function ClassDesk({
     if (data) {
       setNewName("");
       setNewCap("");
+      router.refresh();
+    }
+  };
+
+  /**
+   * 🔴 一个班开出来之后改得了，也关得掉。
+   *
+   * `update_class_group` · `set_contract_archived` 那一类从建出来那天起
+   * **画面上一个入口都没有**（[任务 243](../../../../../docs/founder-tasks.md#243)）。
+   * 而一个老师换人、一个班从八个位子加到十个，是补习中心每一个学期都会做的事
+   * —— 一个开得出来而改不了的班，第二个学期就是错的。
+   *
+   * ⚠️ **清空要另外讲。** `null` 在那一支里是「这一栏不要动」，
+   * 所以「这个班以后没有老师」「不限人数」要用它自己的 `in_clear_*`
+   * —— 同一个坑这个仓库栽过五次（due_on · 工地 · 分店 · done_by · job_id）。
+   */
+  const saveGroup = async (g: Group) => {
+    if (!editName.trim()) return;
+    const data = await run(async () =>
+      sb().rpc("update_class_group", {
+        in_group_id: g.id,
+        in_name: editName.trim(),
+        in_staff_id: editTeacher || null,
+        in_clear_staff: !editTeacher,
+        in_capacity: editCap.trim() ? Number(editCap) : null,
+        in_clear_capacity: !editCap.trim(),
+      }),
+    );
+    if (data) {
+      setEditing(null);
+      router.refresh();
+    }
+  };
+
+  /* 🔴 **关掉，不是删掉。** 一个上过课的班是历史 ——
+     那几堂课、那几次点名都挂在它身上。`class_groups_of` 自己会滤掉
+     关掉的那几个，所以这一页看不到它，而资料还在。 */
+  const closeGroup = async (g: Group) => {
+    const data = await run(async () =>
+      /* ⚠️ 关掉走的是**同一支** —— 那一支自己就收 `in_archived`，
+         不是另外一支。我第一版猜了一个 `set_class_group_archived`，
+         而它根本不存在（这个 session 第九次猜函式名字）。 */
+      sb().rpc("update_class_group", {
+        in_group_id: g.id,
+        in_archived: true,
+      }),
+    );
+    if (data !== null) {
+      setEditing(null);
+      setOpenGroup(null);
       router.refresh();
     }
   };
@@ -410,6 +465,101 @@ export function ClassDesk({
                       )}
                     </button>
 
+                    {/* 🔴 改这个班 / 关掉它。**只在展开的时候画** ——
+                        一份清单上每一行挂两颗按钮，读起来是一份控制台，
+                        而他打开这一页要看的是「这个礼拜要上哪几堂」。 */}
+                    {on && editing !== g.id && (
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(g.id);
+                            setEditName(g.name);
+                            setEditTeacher(g.staffId ?? "");
+                            setEditCap(
+                              g.capacity != null ? String(g.capacity) : "",
+                            );
+                          }}
+                          className={deskBtn()}
+                        >
+                          {words.editGroup}
+                        </button>
+                      </div>
+                    )}
+                    {on && editing === g.id && (
+                      <div className="mt-3 flex flex-col gap-3 [border-radius:var(--radius-md)] [border:var(--hairline)_solid_var(--input)] p-3">
+                        <div className="flex flex-wrap items-end gap-3">
+                          <label className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <span className={deskDim}>{words.name}</span>
+                            <input
+                              type="text"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className={deskField}
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1.5">
+                            <span className={deskDim}>{words.teacher}</span>
+                            <select
+                              value={editTeacher}
+                              onChange={(e) => setEditTeacher(e.target.value)}
+                              className={deskField}
+                            >
+                              <option value="">{words.noTeacher}</option>
+                              {staff.map((x) => (
+                                <option key={x.id} value={x.id}>
+                                  {x.name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="flex flex-col gap-1.5">
+                            <span className={deskDim}>{words.capacity}</span>
+                            <span className="inline-block w-24">
+                              <input
+                                type="number"
+                                min="1"
+                                value={editCap}
+                                onChange={(e) => setEditCap(e.target.value)}
+                                className={deskField}
+                              />
+                            </span>
+                          </label>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <button
+                            type="button"
+                            disabled={busy || !editName.trim()}
+                            onClick={() => void saveGroup(g)}
+                            className={deskBtn("primary")}
+                          >
+                            {words.save}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setEditing(null)}
+                            className={deskBtn()}
+                          >
+                            {words.close}
+                          </button>
+                          {/* 🔴 关掉那一颗排在最后、而且是 danger ——
+                              它旁边那两颗都是「改一改」，而这一颗
+                              会让这个班从这一页上消失。 */}
+                          <span className="ml-auto">
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => void closeGroup(g)}
+                              className={deskBtn("danger")}
+                            >
+                              {words.closeGroup}
+                            </button>
+                          </span>
+                        </div>
+                        <p className={deskDim}>{words.closeGroupNote}</p>
+                      </div>
+                    )}
                     {on && (
                       <div className="mt-4 grid gap-6 lg:grid-cols-2">
                         <div className="flex flex-col gap-3">

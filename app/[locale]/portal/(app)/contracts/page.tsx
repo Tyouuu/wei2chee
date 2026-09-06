@@ -87,29 +87,75 @@ export default async function ContractsPage({
     .eq("id", workspace.projectId)
     .maybeSingle();
   const palette = (paletteRow?.palette as string | null) ?? null;
-  const [{ data: dueRows }, { data: endRows }, { data: partyRows }, { data: pageRows }] =
-    await Promise.all([
-      supabase.rpc("due_visits", { in_project_id: workspace.projectId }),
-      supabase.rpc("contracts_ending", { in_project_id: workspace.projectId, in_within_days: 60 }),
-      supabase
-        .from("directory_entries")
-        .select("id, name")
-        .eq("project_id", workspace.projectId)
-        .eq("module_key", "customers")
-        .is("archived_at", null)
-        .order("name"),
-      supabase
-        .from("project_pages")
-        /* 🔴 那一栏叫 `page_key`。写成 `key` 的时候 PostgREST 回 400，
+  const [
+    { data: dueRows },
+    { data: endRows },
+    { data: partyRows },
+    { data: pageRows },
+    { data: liveRows },
+  ] = await Promise.all([
+    supabase.rpc("due_visits", { in_project_id: workspace.projectId }),
+    supabase.rpc("contracts_ending", {
+      in_project_id: workspace.projectId,
+      in_within_days: 60,
+    }),
+    supabase
+      .from("directory_entries")
+      .select("id, name")
+      .eq("project_id", workspace.projectId)
+      .eq("module_key", "customers")
+      .is("archived_at", null)
+      .order("name"),
+    supabase
+      .from("project_pages")
+      /* 🔴 那一栏叫 `page_key`。写成 `key` 的时候 PostgREST 回 400，
            而 supabase-js 不抛 —— `data` 是 null，这一页就少了「顺手开一张单」
            那个下拉，而画面上完全看得过去。2026-09-06 被一张图抓到。 */
-        .select("page_key, title, sort_order")
-        .eq("project_id", workspace.projectId)
-        .order("sort_order"),
-    ]);
+      .select("page_key, title, sort_order")
+      .eq("project_id", workspace.projectId)
+      .order("sort_order"),
+    /* 🔴 **每一份合约。**
+       在这一段之前这一页只问得到两种：**该去了**（`due_visits`）跟
+       **快到期了**（`contracts_ending`）—— 而一份跑到一半、既不该去
+       也还没到期的合约，**画面上到不了**。於是 `update_service_contract`
+       从建出来那天起没有一个入口（[任务 243](../../../../../docs/founder-tasks.md#243)），
+       而「一年洗两次改成三次」是这一行每一年都会做的事。
+
+       ⚠️ 直接读那张表 —— 它有 RLS，跟上面那两个 `.from()` 同一条路。
+       另开一支只回同一批行的函式，就是同一个问题两个答案。 */
+    supabase
+      .from("service_contracts")
+      .select("id, party_id, title, every_months, starts_on, ends_on")
+      .eq("project_id", workspace.projectId)
+      .is("archived_at", null)
+      .order("starts_on", { ascending: false }),
+  ]);
 
   const due = (dueRows ?? []) as Due[];
   const ending = (endRows ?? []) as Ending[];
+  const nameOf = Object.fromEntries(
+    ((partyRows ?? []) as { id: string; name: string | null }[]).map((r) => [
+      r.id,
+      r.name ?? "",
+    ]),
+  );
+  const live = (
+    (liveRows ?? []) as {
+      id: string;
+      party_id: string;
+      title: string | null;
+      every_months: number;
+      starts_on: string;
+      ends_on: string | null;
+    }[]
+  ).map((c) => ({
+    id: c.id,
+    party: nameOf[c.party_id] ?? "",
+    title: c.title ?? "",
+    everyMonths: Number(c.every_months),
+    startsOn: c.starts_on,
+    endsOn: c.ends_on,
+  }));
 
   /* 「顺手开一张单」要开在哪 —— 只有走单那几页收得下一张单，
      而那是 `is_pipeline_module` 在挡的（`log_service_visit` 会抛）。
@@ -120,7 +166,9 @@ export default async function ContractsPage({
      而侧栏写着「Quotations」—— **同一页在同一屏上两个名字**。 */
   const { data: ctxRow } = await supabase.rpc("get_my_business_context");
   const ctx = (ctxRow as BusinessContext | null) ?? {};
-  const refs = ((pageRows ?? []) as { page_key: string; title: string | null }[]).map((p) => ({
+  const refs = (
+    (pageRows ?? []) as { page_key: string; title: string | null }[]
+  ).map((p) => ({
     key: p.page_key,
     title: p.title,
   }));
@@ -156,6 +204,7 @@ export default async function ContractsPage({
           locale={locale}
           due={due}
           ending={ending}
+          live={live}
           parties={((partyRows ?? []) as { id: string; name: string | null }[])
             .filter((r) => r.name)
             .map((r) => ({ id: r.id, name: r.name as string }))}
@@ -193,6 +242,16 @@ export default async function ContractsPage({
             pickWho: t("contracts.pickWho"),
             noCustomers: t("contracts.noCustomers"),
             failed: t("contracts.failed"),
+            liveLabel: t("contracts.liveLabel"),
+            liveLede: t("contracts.liveLede"),
+            editContract: t("contracts.editContract"),
+            everyLabel: t("contracts.everyLabel"),
+            endsLabel: t("contracts.endsLabel"),
+            stopContract: t("contracts.stopContract"),
+            stopContractNote: t("contracts.stopContractNote"),
+            everyRange: t("contracts.everyRange"),
+            cancel: t("contracts.cancel"),
+            save: t("contracts.save"),
             every: t("contracts.every"),
           }}
         />

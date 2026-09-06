@@ -308,6 +308,79 @@ try {
     no("画面上没有「来过了」那颗按钮 —— 那一行被画成已经记过了");
   }
 
+  /* ── 🔴 每一份合约：改隔多久一次 · 停掉 ──────────────────────────────
+     `update_service_contract` · `set_contract_archived` 从建出来那天起
+     **画面上一个入口都没有**，而这一页原本只问得到「该去了」跟
+     「快到期了」—— 一份跑到一半的合约到不了。
+     「一年洗两次改成三次」是这一行每一年都会做的事。 */
+  await open("contracts");
+  await page.waitForTimeout(1200);
+  const fixOne = page.getByRole("button", { name: /Fix this one/i }).first();
+  if ((await fixOne.count()) > 0) {
+    ok("🔴 每一份合约那一张卡在（跑到一半的那几份到得了）");
+    await fixOne.click();
+    await page.waitForTimeout(900);
+    await page.locator('input[type="number"]').first().fill("3");
+    await page.getByRole("button", { name: /^Save$/ }).first().click();
+    await page.waitForTimeout(3200);
+    const { data: after } = await admin
+      .from("service_contracts")
+      .select("id, every_months, archived_at")
+      .eq("project_id", pid);
+    const one = (after ?? [])[0];
+    if (Number(one?.every_months) === 3) ok("🔴 隔多久一次改得了");
+    else no("🔴 改不了", JSON.stringify(after));
+
+    /* 🔴 先从同一扇门再签一份，才停掉第一份。
+
+       不是为了凑数：**侧栏那一行是「你有这个」，不是「这里可以做这个」**
+       （`hasContracts` 数的是还在跑的那几份），而永远打得开的那扇门
+       在「加一单」底下那条架子上，无条件画。
+       所以停掉唯一那一份之后侧栏少一行是**对的**，
+       ⚠️ 而我 2026-09-07 第一版停完就去量侧栏，量到的是我自己刚做的事。 */
+    await page.getByLabel("For").selectOption({ label: "Hup Seng Trading" });
+    await page.getByLabel("What you do").fill("Service the compressor");
+    await page.getByRole("button", { name: /Sign it/i }).click();
+    await page.waitForTimeout(3200);
+
+    /* 🔴 停掉不是删掉 —— 已经做过的那几次还在。 */
+    await page.getByRole("button", { name: /Fix this one/i }).first().click();
+    await page.waitForTimeout(900);
+    await page
+      .getByRole("button", { name: /Stop this contract/i })
+      .first()
+      .click();
+    await page.waitForTimeout(3200);
+    const { data: stopped } = await admin
+      .from("service_contracts")
+      .select("archived_at")
+      .eq("id", one.id)
+      .single();
+    if (stopped?.archived_at) ok("🔴 停得掉");
+    else no("🔴 停不掉", JSON.stringify(stopped));
+    const { data: keptVisits } = await admin
+      .from("service_visits")
+      .select("status")
+      .eq("project_id", pid);
+    if ((keptVisits ?? []).length >= 1)
+      ok("🔴 而做过的那几次还在 —— 停掉不是删掉");
+    else no("🔴 做过的那几次不见了", JSON.stringify(keptVisits));
+
+    /* 停掉的那一份从清单上走了，而另一份还在 —— 少了后半句，
+       一支把整页弄空的实作也会过。 */
+    /* ⚠️ 用**那几个字**找，不要用「第几个 ul」——
+       第一个 ul 是侧栏，而我 2026-09-07 第一版就是那样量的，
+       於是一份**真的还在**的合约被报成不见了。 */
+    const stillThere = await page
+      .getByText("Service the compressor", { exact: false })
+      .count();
+    if (stillThere > 0)
+      ok("🔴 另一份还在（停掉的是那一份，不是这一页）");
+    else no("🔴 另一份也不见了");
+  } else {
+    no("🔴 每一份合约那一张卡不在 —— 跑到一半的合约到不了");
+  }
+
   // ── ③ 薪水 ─────────────────────────────────────────────────────────────
   if ((await open("payroll")) === 200) ok("薪水那一页打得开");
   else no("薪水那一页打不开");
@@ -752,6 +825,54 @@ try {
   const marked = await page.locator("body").innerText();
   if (/\bMarked\b/.test(marked)) ok("🔴 点完之后那一行写着「点过了」");
   else no("🔴 点完之后状态没变", marked.slice(0, 400));
+  /* 🔴 一个班开出来之后改得了，也关得掉（`update_class_group`，
+     2026-09-07 之前画面上一个入口都没有）。一个老师换人、
+     一个班从八个位子加到十个，是每一个学期都会做的事。 */
+  await page.getByRole("button", { name: /Form 4 Maths/ }).click();
+  await page.waitForTimeout(1800);
+  await page.getByRole("button", { name: /Fix this class/i }).click();
+  await page.waitForTimeout(800);
+  const editCard = page.locator('[data-classes="groups"]');
+  await editCard.locator('input[type="text"]').first().fill("Form 5 Maths");
+  await editCard.locator('input[type="number"]').first().fill("12");
+  await editCard.getByRole("button", { name: /^Save$/ }).first().click();
+  await page.waitForTimeout(3200);
+  const { data: fixed } = await admin
+    .from("class_groups")
+    .select("name, capacity, archived_at")
+    .eq("id", cls[0].id)
+    .single();
+  if (fixed?.name === "Form 5 Maths" && Number(fixed?.capacity) === 12)
+    ok("🔴 改得了名字跟人数");
+  else no("🔴 改不了", JSON.stringify(fixed));
+
+  /* 🔴 关掉不是删掉 —— 上过的课跟点过的名都还在。
+     ⚠️ **不要再点一次那个班** —— 存完之后它还是展开的（展开是浏览器
+     这一边的状态，`router.refresh()` 碰不到它），再点一次是把它收起来。
+     第一版就是这样，於是「改这个班」那颗找不到，看起来像它不见了。 */
+  await page.getByRole("button", { name: /Fix this class/i }).click();
+  await page.waitForTimeout(800);
+  await page.getByRole("button", { name: /Close this class/i }).click();
+  await page.waitForTimeout(3200);
+  const { data: closed } = await admin
+    .from("class_groups")
+    .select("archived_at")
+    .eq("id", cls[0].id)
+    .single();
+  if (closed?.archived_at) ok("🔴 关掉了");
+  else no("🔴 没关掉", JSON.stringify(closed));
+  const { data: keptAtt } = await admin
+    .from("class_attendance")
+    .select("status")
+    .eq("project_id", pid);
+  if ((keptAtt ?? []).length === 1)
+    ok("🔴 而点过的那一次还在 —— 关掉不是删掉");
+  else no("🔴 点过的那一次不见了", JSON.stringify(keptAtt));
+  await open("classes");
+  const afterClose = await page.locator("body").innerText();
+  if (!/Form 5 Maths/.test(afterClose)) ok("关掉之后它不在这一页上");
+  else no("关掉之后它还在这一页上", afterClose.slice(0, 300));
+
   await page.screenshot({ path: `${OUT}/20-classes.png`, fullPage: true });
 
   // ── ④e 「拿走我的资料」 ───────────────────────────────────────────────
