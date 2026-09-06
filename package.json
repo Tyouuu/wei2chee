@@ -120,6 +120,7 @@
     "shoot:packages": "node scripts/shoot-packages.mjs",
     "align:pages": "node scripts/align-pages.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",
+    "map:chains": "node scripts/map-chains.mjs",
     "brief": "node scripts/brief.mjs",
     "check:handoff": "node scripts/check-handoff.mjs",
     "check:shared-record": "node scripts/check-shared-record.mjs",
