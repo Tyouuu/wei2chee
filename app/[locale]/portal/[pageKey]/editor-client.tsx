@@ -1333,7 +1333,12 @@ export function PortalEditor({
                 // was selected. It floats at the foot of the canvas now -- see
                 // the `preview` override below.
                 fields: ({ children }) => (
-                  <BlockSheets style={canvasStyle} palette={activePalette}>
+                  <BlockSheets
+                    style={canvasStyle}
+                    palette={activePalette}
+                    // 换款式 那一栏的预览图是客户的页面，跟他的系统语言。
+                    systemLang={systemLang}
+                  >
                     {children}
                   </BlockSheets>
                 ),

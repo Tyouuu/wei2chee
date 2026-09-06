@@ -8,6 +8,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { usePuck, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { LABELS_EN } from "@/design-system/editor/labels-en";
 import { planDesignChange } from "@/lib/portal/design-change";
 import { claimStands } from "@/lib/portal/claim-check";
 import { suggestionsFor, ASSISTANT_LIMITS } from "@/lib/portal/trade-suggestions";
@@ -609,12 +610,13 @@ export function AiAssistant({
      the three lines were impossible on the page they were shown on -- HAX
      Guideline 1 calls that a task mismatch and puts 「product abandonment」
      next to it. The shape decides which survive and what the first one is. */
+  const panelLocale = useLocale();
   const suggestions = suggestionsFor(
     useTrade(),
-    useLocale(),
+    panelLocale,
     pageKey ? (MODULE_BY_KEY[pageKey]?.shape ?? null) : null,
   );
-  const limits = ASSISTANT_LIMITS[useLocale().startsWith("zh") ? "zh" : "en"];
+  const limits = ASSISTANT_LIMITS[panelLocale.startsWith("zh") ? "zh" : "en"];
 
   /**
    * ONE PRESS, ON THE THING THAT IS SELECTED — the part of Durable that this
@@ -638,9 +640,19 @@ export function AiAssistant({
    * per-turn revert — so nothing here is a second way for the layout to change.
    */
   const blockId = typeof selectedItem?.props?.id === "string" ? selectedItem.props.id : null;
+  /* 🔴 这一行 2026-09-07 改了（老板自己点出来的）：
+     `puckConfig` 里的名字是中文的 —— 中文是唯一真相，英文是它的投影
+     （任务 8）。而这一格一直直接读原文，于是一个英文系统里的面板写着
+     「CHANGE THIS BLOCK · 记录表格」—— 半句英文半句中文。
+     ⚠️ 只借那份对照表，不借 `localisedPuckConfig`：
+     我们要的只有名字，不要它整套包过的 render（跟 command-bar 同一条）。 */
   const blockLabel = selectedItem
-    ? ((puckConfig.components as Record<string, { label?: string }>)[selectedItem.type]?.label ??
-      selectedItem.type)
+    ? (() => {
+        const raw =
+          (puckConfig.components as Record<string, { label?: string }>)[selectedItem.type]
+            ?.label ?? selectedItem.type;
+        return panelLocale === "zh" ? raw : (LABELS_EN[raw] ?? raw);
+      })()
     : null;
   const verbs: { label: string; verb: string }[] = [
     { label: t("aiVerbShorter"), verb: t("aiVerbShorter") },

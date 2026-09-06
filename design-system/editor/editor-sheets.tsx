@@ -6,8 +6,9 @@ import { Sheet } from "@/design-system/editor/sheet";
 import { VariantPicker } from "@/design-system/editor/variant-picker";
 import { useEditorUi } from "@/design-system/editor/editor-ui";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { LABELS_EN } from "./labels-en";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 /**
  * Fields a shop owner should never be shown first.
@@ -51,12 +52,18 @@ function splitFields(children: ReactNode) {
   return { plain, advanced };
 }
 
-/** The block's Chinese name, from the same config the palette reads, so the
- *  sheet title matches the tile the customer added it from. */
-function blockLabel(type: string | undefined): string {
+/** The block's name, from the same config the palette reads, so the sheet
+ *  title matches the tile the customer added it from.
+ *
+ *  🔴 2026-09-07: 这一句本来返的是中文名字，而它是`title=`，
+ *  所以一个英文系统里的面板抬头写着「记录表格」。老板自己点出来的。
+ *  中文是唯一真相，英文是它的投影（任务 8） —— 只借对照表，
+ *  不借 `localisedPuckConfig`：我们要的只有名字。 */
+function blockLabel(type: string | undefined, locale: string): string {
   if (!type) return "";
   const c = (puckConfig.components as Record<string, { label?: string }>)[type];
-  return c?.label ?? type;
+  const raw = c?.label ?? type;
+  return locale === "zh" ? raw : (LABELS_EN[raw] ?? raw);
 }
 
 /**
@@ -73,17 +80,22 @@ function blockLabel(type: string | undefined): string {
 export function BlockSheets({
   style,
   palette,
+  systemLang = "zh",
   children,
 }: {
   style: StyleName;
   palette: string | null;
+  /** The customer's system language, for the preview tiles inside the
+   *  换款式 tab. The sheet itself is Formae's chrome and follows the
+   *  owner's locale; the pictures inside it are the customer's page. */
+  systemLang?: string;
   /** Puck's own fields for the selected block. */
   children: ReactNode;
 }) {
   const t = useTranslations("portal.editor");
   const { selectedItem } = usePuck();
   const { sheet, closeSheet, openSheet, anchor } = useEditorUi();
-  const name = blockLabel(selectedItem?.type);
+  const name = blockLabel(selectedItem?.type, useLocale());
   const { plain, advanced } = splitFields(children);
 
   // Deselecting has to close these, and it is not automatic: the sheet is
@@ -175,7 +187,7 @@ export function BlockSheets({
       </div>
 
       <div hidden={tab !== "design"}>
-        <VariantPicker style={style} palette={palette} />
+        <VariantPicker style={style} palette={palette} systemLang={systemLang} />
       </div>
     </Sheet>
   );
@@ -205,7 +217,9 @@ export function InsertSheet({ children }: { children: ReactNode }) {
           div and the tiles, so the columns cannot be declared here. `data-`
           attribute rather than a class because that stylesheet is global and
           this is the only palette that should be two across. */}
-      <div data-insert-palette className="px-2.5 py-2">{children}</div>
+      <div data-insert-palette className="px-2.5 py-2">
+        {children}
+      </div>
     </Sheet>
   );
 }

@@ -88,6 +88,12 @@ const PAGES = [
      shape 任务 38 found the photo picker in. A record is made for it below and
      removed afterwards. */
   ["edit record", null, "customer"],
+  /* 🔴 编辑器（2026-09-07）。老板自己拍图点出来的：
+     「CHANGE THIS BLOCK · 记录表格」 —— 半句英文半句中文。
+     而这把尺从来没有打开过编辑器 —— 那几百个区块名一直是中文的，
+     而它们要选中一块才画得出来。⚠️ 所以这一页要多按两下：
+     选中一块 → 开那张面板。没按到就是失败，不是「这一页很干净」 */
+  ["editor", "/en/portal/dashboard?design=1", "customer"],
   ["console", "/en/console", "founder"],
   ["console-leads", "/en/console/leads", "founder"],
   /* Resolved at run time -- its URL carries a project id, which is exactly why
@@ -249,6 +255,30 @@ for (const [name, staticPath, as] of wanted) {
   // few hundred live previews. Neither is finished at networkidle.
   await p.waitForTimeout(name === "spec" ? 9000 : name === "console-customer" ? 6000 : name.startsWith("console") ? 2000 : 5000);
 
+  /* 🔴 选中一块，不然编辑器那两块不画.
+     AI 面板的抬头跟「改这一块」那张面板的标题，两个都印区块名。 */
+  if (name === "editor") {
+    const canvas = p.locator("[data-puck-preview] [data-puck-component]").first();
+    if (!(await canvas.isVisible().catch(() => false))) {
+      throw new Error(`editor: ${path} rendered no canvas -- it would have scored zero`);
+    }
+    await canvas.click({ force: true });
+    await p.waitForTimeout(1200);
+    const sheetBtn = p.getByRole("button", { name: /edit text/i }).first();
+    if (!(await sheetBtn.isVisible().catch(() => false))) {
+      throw new Error("editor: nothing selected -- the block toolbar never appeared");
+    }
+    await sheetBtn.click();
+    await p.waitForTimeout(900);
+    /* ⚠️ 换款式 那一栏不是每一块都有（只有一种款式的不画），
+       所以它在就按，不在就算了 —— 而上面那一颗是每一块都有的。 */
+    const variantBtn = p.getByRole("button", { name: /change shape/i }).first();
+    if (await variantBtn.isVisible().catch(() => false)) {
+      await variantBtn.click();
+      await p.waitForTimeout(1200);
+    }
+  }
+
   /* The whole reason the console went unmeasured: notFound() renders a page
      with no Chinese on it, which counts as a clean pass. Refuse to score a
      page we did not actually open. */
@@ -278,7 +308,20 @@ for (const [name, staticPath, as] of wanted) {
       const s = (n.textContent || "").trim();
       if (!s || !/[\u4e00-\u9fff]/.test(s)) continue;
       const el = n.parentElement;
-      if (el && getComputedStyle(el).display === "none") continue;
+      /* 🔴 2026-09-07: this used to ask the DIRECT PARENT for
+         `display: none`, which a closed panel does not have -- the panel
+         itself is hidden three or four levels up, and every string
+         rendered inside it still counted. The editor scored 98 on its
+         first run and 84 of those were in panels nobody had opened:
+         a whole page of blocks the 加一段 drawer keeps mounted.
+         `getClientRects()` asks the only question worth asking -- does
+         this text have a box on the page. Scrolled out of view still
+         has one; inside a closed dialog does not.
+         量到的东西不是画面上的东西 —— 这个仓库第五次。 */
+      if (!el) continue;
+      const box = el.getBoundingClientRect();
+      if (el.getClientRects().length === 0 || box.width === 0 || box.height === 0)
+        continue;
       /* Content a person supplied or that was generated for them and shown to
          them, marked at the render site. Skipping the whole SUBTREE (closest,
          not the parent) is deliberate: their words arrive wrapped in our

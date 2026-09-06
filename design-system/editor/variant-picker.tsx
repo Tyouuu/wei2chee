@@ -1,14 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { usePuck } from "@puckeditor/core";
 import { LivePreview } from "@/design-system/editor/live-preview";
 import { scopeClasses } from "@/lib/portal/palettes";
-import { VARIANTS, activeVariant, type Variant } from "@/design-system/editor/variants";
+import {
+  VARIANTS,
+  activeVariant,
+  type Variant,
+} from "@/design-system/editor/variants";
 import { puckConfig } from "@/design-system/editor/puck-config";
+import { LABELS_EN } from "@/design-system/editor/labels-en";
 import { preferredVariants } from "@/lib/portal/design-doc";
-import { BLOCK_TONES, TONE_SWATCH, type BlockTone } from "@/design-system/editor/block-tone";
+import {
+  BLOCK_TONES,
+  TONE_SWATCH,
+  type BlockTone,
+} from "@/design-system/editor/block-tone";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 
 /**
@@ -75,8 +84,30 @@ function columnsFor(width: number) {
   return Math.max(1, Math.min(3, Math.floor((width + GAP) / (MAX_TILE + GAP))));
 }
 
-export function VariantPicker({ style, palette }: { style: StyleName; palette: string | null }) {
+export function VariantPicker({
+  style,
+  palette,
+  systemLang = "zh",
+}: {
+  style: StyleName;
+  palette: string | null;
+  /** 🔴 2026-09-07: 没有它，每一张预览图里的示例内容
+   *  都是中文的 —— `LivePreview` 的预设就是 `zh`，
+   *  而这一栏一直没有传。一个英文系统的老板换款式，
+   *  看到的是十几张写着中文的图（任务 8 同一条）。 */
+  systemLang?: string;
+}) {
   const t = useTranslations("portal.editor");
+
+  /* 🔴 款式的名字是中文的（2026-09-07）。老板拍图点出
+     「AI 面板在英文系统里印中文」，而查下去同一个形状在这里
+     更大：换款式是这个产品的核心动作，而这一栏
+     读的是 `VARIANTS` 原文，绕过了 `localisedPuckConfig`。
+     ⚠️ 中文是唯一真相，英文是它的投影（任务 8） —— 查不到就掉回中文，
+     那是 labels-en.ts 自己写的正确失败方式。 */
+  const pickerLocale = useLocale();
+  const vName = (raw: string) =>
+    pickerLocale === "zh" ? raw : (LABELS_EN[raw] ?? raw);
   const toneLabel = t("blockTone.label");
   const { selectedItem, dispatch, getSelectorForId } = usePuck();
 
@@ -88,7 +119,9 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setBox(Math.max(0, e.contentRect.width)));
+    const ro = new ResizeObserver(([e]) =>
+      setBox(Math.max(0, e.contentRect.width)),
+    );
     ro.observe(el);
     return () => ro.disconnect();
   }, [selectedItem?.type]);
@@ -118,9 +151,12 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
   // that is the tile that has to be lit, or the picker tells the customer
   // 「一行一条」 while the page in front of them is drawn with gridlines.
   const defaults = {
-    ...((puckConfig.components as Record<string, { defaultProps?: Record<string, unknown> }>)[
-      selectedItem.type
-    ]?.defaultProps ?? {}),
+    ...((
+      puckConfig.components as Record<
+        string,
+        { defaultProps?: Record<string, unknown> }
+      >
+    )[selectedItem.type]?.defaultProps ?? {}),
     ...registerDefaults,
   };
   const active = activeVariant(selectedItem.type, props, defaults);
@@ -190,7 +226,9 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
             Photographed before it was ever shown to anyone. The swatches have
             to be painted in the register the block lives in, which is what this
             wrapper does and what LivePreview below has always done. */}
-        <span className={`flex items-center gap-1.5 ${scopeClasses(style, palette)}`}>
+        <span
+          className={`flex items-center gap-1.5 ${scopeClasses(style, palette)}`}
+        >
           {BLOCK_TONES.map((tn) => {
             const sw = TONE_SWATCH[tn];
             const on = tone === tn;
@@ -248,7 +286,10 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
       <div
         ref={gridRef}
         className="grid"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: GAP }}
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          gap: GAP,
+        }}
       >
         {list.map((v) => {
           const on = active?.id === v.id;
@@ -258,7 +299,7 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
               type="button"
               onClick={() => pick(v)}
               aria-pressed={on}
-              title={v.label}
+              title={vName(v.label)}
               className="group/v flex flex-col gap-1 rounded-[var(--radius-md)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:[outline-color:var(--color-paper-dim)]"
             >
               <span
@@ -268,12 +309,13 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
                   // over the picture. Tinting a preview changes the thing
                   // being previewed, which in a picker whose whole job is
                   // colour and shape defeats itself.
-                  borderColor: on ? "var(--color-paper)" : "var(--color-ink-800)",
+                  borderColor: on
+                    ? "var(--color-paper)"
+                    : "var(--color-ink-800)",
                   borderWidth: on ? 2 : 1,
                   backgroundColor: "var(--color-ink-950)",
                 }}
               >
-
                 {scale > 0 ? (
                   <LivePreview
                     name={selectedItem.type}
@@ -286,11 +328,17 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
                     // canvas swap was correct the whole time, so nothing but
                     // looking at it would have caught this.
                     props={{ ...props, ...v.props }}
+                    systemLang={systemLang}
                     width={frame.w}
                     srcHeight={frame.h}
                     scale={scale}
                     renderPageSized
-                    fallback={<span className="block" style={{ height: frame.h * 0.24 }} />}
+                    fallback={
+                      <span
+                        className="block"
+                        style={{ height: frame.h * 0.24 }}
+                      />
+                    }
                   />
                 ) : (
                   <span className="block" style={{ height: 48 }} />
@@ -307,9 +355,11 @@ export function VariantPicker({ style, palette }: { style: StyleName; palette: s
                 )}
                 <span
                   className="truncate [font-size:var(--text-xs)]"
-                  style={{ color: on ? "var(--color-paper)" : "var(--color-paper-dim)" }}
+                  style={{
+                    color: on ? "var(--color-paper)" : "var(--color-paper-dim)",
+                  }}
                 >
-                  {v.label}
+                  {vName(v.label)}
                 </span>
               </span>
             </button>
