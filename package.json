@@ -152,6 +152,8 @@
     "check:classes": "node scripts/check-classes.mjs",
     "check:rota": "node scripts/check-rota.mjs",
     "check:visit": "node scripts/check-visit.mjs",
+    "check:export": "node scripts/check-export.mjs",
+    "check:payroll": "node scripts/check-payroll.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
