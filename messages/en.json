@@ -1012,7 +1012,8 @@
       "kind_payment_overdue": "Payment past due",
       "kind_rental_overdue": "Out past its return date",
       "kind_referral_owing": "Referral fee not paid yet",
-      "kind_request_open": "A dealer is waiting"
+      "kind_request_open": "A dealer is waiting",
+      "kind_absent_twice": "Missed two lessons in a row"
     },
     "vehicles": {
       "title": "Vehicles",

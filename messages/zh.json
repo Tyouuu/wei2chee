@@ -1012,7 +1012,8 @@
       "kind_payment_overdue": "钱过期没收到",
       "kind_rental_overdue": "借出去过期没还",
       "kind_referral_owing": "介绍费还没给",
-      "kind_request_open": "经销商在等回覆"
+      "kind_request_open": "经销商在等回覆",
+      "kind_absent_twice": "连着两堂没来"
     },
     "vehicles": {
       "title": "车牌",

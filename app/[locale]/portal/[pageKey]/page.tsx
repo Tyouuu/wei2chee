@@ -443,21 +443,16 @@ export default async function PortalEditorPage({
      boss's real rows, the trade's own words. Everything below it is the
      owner's tool. See work-view.tsx for why offering it to him and refusing
      each control at the server is the worse of the two answers. */
-  /* 🔴 问的是**整套系统**接受了没有，不是这一页保存过没有。
-     他只按过一次保存（比方说官网那一页），那一刻他接受的是这套系统 ——
-     而按每一页问，会变成「报价单进系统、客户页进编辑器」：**同一个人、
-     同一天、两个正门**，那正是他讲的「两套产品」再来一次，只是换个形状。
+  /* 🔴 2026-09-07：不再问「保存过没有」了。老板拍的板 ——
+     一个从来没保存过的新老板本来落在编辑器上，而那一屏里
+     **他自己的按钮一颗都按不动**（Puck 把点击收去选块，
+     重试 55 次 30 秒一次都没穿过）。理由写在 front-door.ts 的档头。
 
-     ⚠️ 代价写出来：他因此不会在每一页上看到那张「这是自动生成的初稿」
-     的黑卡 —— 那一屏是我们卖东西的那一屏（[重点 11](../../../../docs/founder-points.md)）。
-     判断是：那一刻发生在问卷做完、他还没保存过任何东西的时候，
-     而到他保存过之后，他已经是客户了。 */
-  const acceptedAsHis = (pageRows ?? []).some(
-    (r: { layout_json: unknown }) =>
-      !isUngeneratedLayout((r.layout_json as Record<string, unknown>) ?? {}),
-  );
+     ⚠️ 代价写出来：那张「这是自动生成的初稿」的黑卡从此只在
+     他自己按了「改设计」之后才出现 —— 而那正好是它变成真话的
+     那一刻：那一屏上真的有一颗「Save design」。 */
   /* 规矩住在 lib/portal/front-door.ts —— 它有三个消费端，写三次就会漂。 */
-  const door = frontDoor({ isOwner: workspace.isOwner, acceptedAsHis, design, add, tpl });
+  const door = frontDoor({ isOwner: workspace.isOwner, design, add, tpl });
 
   if (door === "system") {
     const t = await getTranslations({ locale, namespace: "portal.editor" });
@@ -514,9 +509,9 @@ export default async function PortalEditorPage({
        * guessed this for you, change anything" and a customer assuming these
        * are real records. */
       isGeneratedDraft={isUngeneratedLayout(savedLayout)}
-      /* 有一个「他的系统」可以回去，才画那一条。同一个 `acceptedAsHis`，
-         算一次。 */
-      systemHref={acceptedAsHis ? `/${locale}/portal/${pageKey}` : null}
+      /* 🔴 永远有一个「他的系统」可以回去了（2026-09-07 起编辑器只从
+         「改设计」进来），所以这一条不再有条件。 */
+      systemHref={`/${locale}/portal/${pageKey}`}
       locale={locale}
       navPages={pageRefs.map((ref) => ({
         key: ref.key,

@@ -30,6 +30,7 @@
     "backfill:analysis-en": "node scripts/backfill-analysis-en.mjs",
     "eval:editor": "tsx scripts/eval-editor.mjs",
     "eval:browser": "node scripts/eval-browser.mjs",
+    "check:front-door": "node scripts/check-front-door.mjs",
     "check:en": "node scripts/check-en.mjs",
     "shoot:site": "node scripts/shoot-site.mjs",
     "shoot:market": "node scripts/shoot-market.mjs",

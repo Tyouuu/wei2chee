@@ -2,17 +2,17 @@ import { describe, expect, it } from "vitest";
 import { frontDoor } from "./front-door";
 
 describe("正门开在哪一边", () => {
-  const owner = { isOwner: true, acceptedAsHis: true };
+  const owner = { isOwner: true };
 
-  it("他保存过之后，打开的是他的系统", () => {
+  /* 🔴 2026-09-07 起这一条不再问「保存过没有」。老板拍的板 ——
+     一份还没保存过的草稿本来打开的是编辑器，而那一屏里**他自己的按钮
+     一颗都按不动**（Puck 把点击收去选块，重试 55 次 30 秒一次都没穿过）。
+     见 front-door.ts 的档头。 */
+  it("一进来就是他的系统 —— 保存过没有都一样", () => {
     expect(frontDoor(owner)).toBe("system");
   });
 
-  it("一份他还没保存过的草稿，打开的是编辑器 —— 那是我们卖的那一屏", () => {
-    expect(frontDoor({ isOwner: true, acceptedAsHis: false })).toBe("editor");
-  });
-
-  it("他按了「改设计」就进编辑器", () => {
+  it("他按了「改设计」才进编辑器", () => {
     expect(frontDoor({ ...owner, design: "1" })).toBe("editor");
   });
 
@@ -23,13 +23,19 @@ describe("正门开在哪一边", () => {
 
   /* 🔴 这一条是这支函式真正在守的东西。一个网址参数不可以变成一条绕过角色的路。 */
   it("师傅永远到不了编辑器，带 ?design=1 也不行", () => {
-    expect(frontDoor({ isOwner: false, acceptedAsHis: true, design: "1" })).toBe("system");
-    expect(frontDoor({ isOwner: false, acceptedAsHis: false, design: "1", add: "x", tpl: "y" })).toBe("system");
+    expect(frontDoor({ isOwner: false, design: "1" })).toBe("system");
+    expect(frontDoor({ isOwner: false, design: "1", add: "x", tpl: "y" })).toBe(
+      "system",
+    );
   });
 
-  /* 问的是整套，不是这一页 —— 见档头。这一条用「他只保存过官网那一页」
-     那个真实情况写：客户那一页从来没存过，而他打开它要看到的是他的系统。 */
-  it("整套接受了，一页都没保存过的那几页照样是他的系统", () => {
-    expect(frontDoor({ isOwner: true, acceptedAsHis: true })).toBe("system");
+  /* ⚠️ 这一条钉住的是**没有第二条路**：编辑器只有一个入口，就是那三个参数。
+     少了它，下一个人加一个「新客户第一次进来给编辑器」的条件回去，
+     而这一整件事就是在拆掉那个条件。 */
+  it("除了那三个参数，没有别的东西开得了编辑器", () => {
+    expect(frontDoor({ isOwner: true, design: "0" })).toBe("system");
+    expect(frontDoor({ isOwner: true, design: "", add: "", tpl: "" })).toBe(
+      "system",
+    );
   });
 });

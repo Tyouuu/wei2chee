@@ -74,6 +74,9 @@ const KIND_LABEL: Record<string, string> = {
      而守卫当场就点名了它。那就是这条守卫在做的事：
      资料库那一支会长，而这份对照表不会自己跟着长。 */
   request_open: "kind_request_open",
+  /* 🔴 第十一种（`20260906750000`）—— 又一次守卫先讲话。
+     一个学生连着两堂没来，对一间补习中心就是一个快要走掉的客户。 */
+  absent_twice: "kind_absent_twice",
 };
 
 export function NudgeList({

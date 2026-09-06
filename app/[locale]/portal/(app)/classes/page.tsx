@@ -74,6 +74,15 @@ function todayMyt(): string {
   return new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10);
 }
 
+/* 两星期后。—— 写成函式不是为了好看：React 19 的 lint
+   不允许在 render 里读时钟，而它是对的 —— 一个跟时钟走的值
+   在伺服器跟浏览器上会算出两个答案。 */
+function twoWeeksMyt(): string {
+  return new Date(Date.now() + 8 * 3600_000 + 13 * 864e5)
+    .toISOString()
+    .slice(0, 10);
+}
+
 export default async function ClassesPage({
   params,
 }: {
@@ -106,9 +115,7 @@ export default async function ClassesPage({
   if (!calendarKey) notFound();
 
   const from = todayMyt();
-  const until = new Date(Date.now() + 8 * 3600_000 + 13 * 864e5)
-    .toISOString()
-    .slice(0, 10);
+  const until = twoWeeksMyt();
 
   const [
     { data: dueRows },
