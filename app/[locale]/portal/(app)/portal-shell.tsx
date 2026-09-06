@@ -26,6 +26,7 @@ import {
   IconHourglass,
   IconOut,
   IconTruck,
+  IconCalendar,
 } from "./shell-icons";
 
 /**
@@ -218,6 +219,7 @@ export function PortalShell({
   hasBatches,
   hasRentals,
   hasPurchases,
+  hasStaff,
   paid,
   isOwner,
 }: {
@@ -252,6 +254,8 @@ export function PortalShell({
   hasRentals: boolean;
   /** 他有没有在买东西 —— 没有进货单的生意，「我欠人家的」永远是空的。 */
   hasPurchases: boolean;
+  /** 名册上有没有人 —— 没有人就没有出勤可以记。 */
+  hasStaff: boolean;
   paid: boolean;
   /** 🔴 An OWNER adjusts the business; a 师傅 works in it.
 
@@ -550,6 +554,17 @@ export function PortalShell({
               </NavRow>
               {/* 🔴 买的那一边。**只在他真的在买东西的时候画** ——
                   一条永远打开是空的连结，跟一颗按不动的按钮是同一件事。 */}
+              {/* 出勤 —— 有人在名册上才画。一页永远空着的月历，
+                  读起来是这一页没做完。 */}
+              {hasStaff && (
+                <NavRow
+                  href={`${base}/attendance`}
+                  active={is("/attendance")}
+                  icon={<IconCalendar />}
+                >
+                  {t("attendance")}
+                </NavRow>
+              )}
               {hasPurchases && (
                 <NavRow
                   href={`${base}/payables`}

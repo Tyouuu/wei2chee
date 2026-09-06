@@ -224,6 +224,7 @@ export default async function PortalAppLayout({
       hasBatches={(batchCount ?? 0) > 0}
       hasRentals={(rentalCount ?? 0) > 0}
       hasPurchases={pageRefs.some((r) => r.key === "purchases")}
+      hasStaff={pageRefs.some((r) => r.key === "staff")}
       paid={Boolean(project?.paid)}
     >
       {/* Inside the shell, not around it. PortalShell is FORMAE -- dark chrome,

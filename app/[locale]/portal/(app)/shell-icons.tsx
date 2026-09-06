@@ -238,3 +238,23 @@ export function IconTruck({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 一张月历 —— 出勤（谁哪一天在工地）。 */
+export function IconCalendar({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="2.6" y="4" width="14.8" height="13.4" rx="2" />
+      <path d="M2.6 8.2h14.8M6.8 2.6v2.8M13.2 2.6v2.8" />
+      <path d="M6.4 11.6h1.2M9.4 11.6h1.2M12.4 11.6h1.2M6.4 14.4h1.2M9.4 14.4h1.2" />
+    </svg>
+  );
+}

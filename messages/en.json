@@ -657,7 +657,8 @@
       "tax": "Tax",
       "expiry": "Shelf life",
       "rentals": "Out on loan",
-      "payables": "What you owe"
+      "payables": "What you owe",
+      "attendance": "Days worked"
     },
     "find": {
       "title": "Find anything",
@@ -1258,6 +1259,29 @@
       "pillOldest": "oldest {n, plural, one {# day} other {# days}}",
       "pillBad": "{n, plural, one {# does not add up} other {# do not add up}}",
       "openIt": "Open the order"
+    },
+    "attendance": {
+      "title": "Days worked",
+      "lede": "Who was on site, day by day. A day here is what the pay run counts — a half day counts as half.",
+      "noStaff": "Add someone to your people list first, then their days show up here.",
+      "prev": "Previous month",
+      "next": "Next month",
+      "full": "Full day",
+      "half": "Half day",
+      "absent": "Away",
+      "hours": "Hours",
+      "pickDay": "Pick a day to record it.",
+      "notYet": "That day has not happened yet.",
+      "saveFailed": "That did not save. The day is back to what it was.",
+      "mon": "Mo",
+      "tue": "Tu",
+      "wed": "We",
+      "thu": "Th",
+      "fri": "Fr",
+      "sat": "Sa",
+      "sun": "Su",
+      "summary": "{days, plural, one {# day worked} other {# days worked}} · {logged} recorded",
+      "note": "A half day counts as half. Hours are only for people paid by the hour — leave it blank and nothing is recorded."
     }
   },
   "explainer": {

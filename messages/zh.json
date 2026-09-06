@@ -657,7 +657,8 @@
       "tax": "税",
       "expiry": "效期",
       "rentals": "借出去的",
-      "payables": "我欠人家的"
+      "payables": "我欠人家的",
+      "attendance": "出勤"
     },
     "find": {
       "title": "找东西",
@@ -1258,6 +1259,29 @@
       "pillOldest": "最老 {n} 天",
       "pillBad": "{n} 张对不上",
       "openIt": "打开那张单"
+    },
+    "attendance": {
+      "title": "出勤",
+      "lede": "谁哪一天在工地。这里的一天就是薪水那一页算的那一天 —— 半天算半天。",
+      "noStaff": "先在名册里加人，他的出勤才会出现在这里。",
+      "prev": "上个月",
+      "next": "下个月",
+      "full": "做了",
+      "half": "半天",
+      "absent": "没来",
+      "hours": "几个钟头",
+      "pickDay": "点一天，记下来。",
+      "notYet": "那一天还没到。",
+      "saveFailed": "没记进去，那一天放回原来的样子了。",
+      "mon": "一",
+      "tue": "二",
+      "wed": "三",
+      "thu": "四",
+      "fri": "五",
+      "sat": "六",
+      "sun": "日",
+      "summary": "做了 {days} 天 · 记了 {logged} 天",
+      "note": "半天算半天。「几个钟头」只有按钟点算的人用得上 —— 空着就是没有记时数。"
     }
   },
   "explainer": {

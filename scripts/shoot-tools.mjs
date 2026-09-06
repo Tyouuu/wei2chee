@@ -31,7 +31,13 @@ const env = Object.fromEntries(
     .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
     .map((l) => {
       const i = l.indexOf("=");
-      return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^["']|["']$/g, "")];
+      return [
+        l.slice(0, i).trim(),
+        l
+          .slice(i + 1)
+          .trim()
+          .replace(/^["']|["']$/g, ""),
+      ];
     }),
 );
 
@@ -46,12 +52,20 @@ if (!ping || ping.status >= 400) {
   process.exit(2);
 }
 
-const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
-const api = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
-  auth: { persistSession: false },
-});
+const admin = createClient(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: { persistSession: false },
+  },
+);
+const api = createClient(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  {
+    auth: { persistSession: false },
+  },
+);
 
 let userId = null;
 let staffId = null;
@@ -81,7 +95,10 @@ try {
   });
   if (mkErr) throw new Error(`createUser: ${mkErr.message}`);
   userId = made.user.id;
-  const { error: inErr } = await api.auth.signInWithPassword({ email, password });
+  const { error: inErr } = await api.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (inErr) throw new Error(`signIn: ${inErr.message}`);
   const { data: proj } = await api.from("projects").select("id").single();
   if (!proj?.id) throw new Error("注册没有开出一个 project");
@@ -96,7 +113,8 @@ try {
       requested_key: k,
       new_title: "",
     });
-    if (pgErr && !/already/i.test(pgErr.message)) console.log(`  ⚪ 台面：${k} — ${pgErr.message}`);
+    if (pgErr && !/already/i.test(pgErr.message))
+      console.log(`  ⚪ 台面：${k} — ${pgErr.message}`);
   }
 
   /* 一个客户 · 一个师傅 —— 保养合约要一个人，薪水要一个人。 */
@@ -134,7 +152,10 @@ try {
     viewport: { width: 1400, height: 1000 },
     reducedMotion: "reduce",
   });
-  await page.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.goto(`${BASE}/en/login`, {
+    waitUntil: "networkidle",
+    timeout: 180000,
+  });
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
@@ -166,7 +187,10 @@ try {
   const amounts = page.getByLabel("Amount (RM)");
   await amounts.first().fill("20000");
   await page.getByLabel("As on").first().fill("2026-01-01");
-  await page.getByRole("button", { name: /^Save$/ }).first().click();
+  await page
+    .getByRole("button", { name: /^Save$/ })
+    .first()
+    .click();
   await page.waitForTimeout(2600);
 
   const { data: openRow } = await admin
@@ -174,7 +198,8 @@ try {
     .select("code, amount_cents, as_on")
     .eq("project_id", pid);
   const first = (openRow ?? [])[0];
-  if (first && Number(first.amount_cents) === 2000000) ok("开帐真的写进去了（RM 20,000）");
+  if (first && Number(first.amount_cents) === 2000000)
+    ok("开帐真的写进去了（RM 20,000）");
   else no("开帐没写进去", JSON.stringify(openRow));
 
   await open("books");
@@ -190,7 +215,10 @@ try {
   // ── ② 保养合约 ─────────────────────────────────────────────────────────
   if ((await open("contracts")) === 200) ok("保养合约那一页打得开");
   else no("保养合约那一页打不开");
-  await page.screenshot({ path: `${OUT}/3-contracts-empty.png`, fullPage: true });
+  await page.screenshot({
+    path: `${OUT}/3-contracts-empty.png`,
+    fullPage: true,
+  });
 
   await page.getByLabel("For").selectOption({ label: "Hup Seng Trading" });
   await page.getByLabel("What you do").fill("Clean 3 units");
@@ -229,10 +257,16 @@ try {
      它不在的时候，意思是 `project_pages` 那一句查询静静地失败了
      （欄位名写错→PostgREST 400→supabase-js 不抛→data 是 null），
      而画面上完全看得过去。 */
-  const jobPick = page.locator("select").filter({ hasText: /Quotations|Orders/i });
-  if (await jobPick.count()) ok("🔴 「顺手开一张单」那个下拉在（页面查得到他那几页）");
+  const jobPick = page
+    .locator("select")
+    .filter({ hasText: /Quotations|Orders/i });
+  if (await jobPick.count())
+    ok("🔴 「顺手开一张单」那个下拉在（页面查得到他那几页）");
   else no("🔴 那个下拉不在 —— project_pages 那一句查询静静地失败了");
-  await page.screenshot({ path: `${OUT}/4-contracts-signed.png`, fullPage: true });
+  await page.screenshot({
+    path: `${OUT}/4-contracts-signed.png`,
+    fullPage: true,
+  });
 
   /* 在门口按一下。 */
   const came = page.getByRole("button", { name: /^Came$/ }).first();
@@ -258,7 +292,10 @@ try {
     } else {
       no("按「来过了」没有开出单");
     }
-    await page.screenshot({ path: `${OUT}/5-contracts-came.png`, fullPage: true });
+    await page.screenshot({
+      path: `${OUT}/5-contracts-came.png`,
+      fullPage: true,
+    });
   } else {
     /* 🔴 它不在的时候，意思是那一行被画成「已经记过了」——
        `due_visits` 对一次还没记过的到期回的是 `'due'`，不是 null。 */
@@ -276,26 +313,37 @@ try {
      旁边那一句「Nobody has a rate yet. Set one below, then open the run.」
      本身就包含“open the run”，而我第一版拿整页去匹配，
      于是对着一个完全正确的画面报了红。 */
-  if ((await page.getByRole("button", { name: /Open the run/i }).count()) === 0) ok("🔴 没有人有底薪的时候不画「开一次」");
+  if ((await page.getByRole("button", { name: /Open the run/i }).count()) === 0)
+    ok("🔴 没有人有底薪的时候不画「开一次」");
   else no("🔴 没有人有底薪却画了「开一次」");
-  await page.screenshot({ path: `${OUT}/6-payroll-noterms.png`, fullPage: true });
+  await page.screenshot({
+    path: `${OUT}/6-payroll-noterms.png`,
+    fullPage: true,
+  });
 
   await page.getByLabel("Rate (RM)").first().fill("2500");
-  await page.getByRole("button", { name: /^Save$/ }).first().click();
+  await page
+    .getByRole("button", { name: /^Save$/ })
+    .first()
+    .click();
   await page.waitForTimeout(2600);
 
   const { data: terms } = await admin
     .from("staff_pay_terms")
     .select("rate_cents, basis")
     .eq("project_id", pid);
-  if ((terms ?? [])[0] && Number(terms[0].rate_cents) === 250000) ok("底薪写进去了（RM 2,500）");
+  if ((terms ?? [])[0] && Number(terms[0].rate_cents) === 250000)
+    ok("底薪写进去了（RM 2,500）");
   else no("底薪没写进去", JSON.stringify(terms));
 
   await open("payroll");
   await page.getByRole("button", { name: /Open the run/i }).click();
   await page.waitForTimeout(3600);
 
-  const { data: runs } = await admin.from("pay_runs").select("id, paid_at").eq("project_id", pid);
+  const { data: runs } = await admin
+    .from("pay_runs")
+    .select("id, paid_at")
+    .eq("project_id", pid);
   if ((runs ?? []).length === 1) ok("开出来一张薪水单");
   else no("薪水单没开出来", JSON.stringify(runs));
 
@@ -330,9 +378,11 @@ try {
     .not("confirmed_at", "is", null);
   const lawReady = (laws ?? []).length > 0;
   if (lawReady) {
-    if (slip && Number(slip.deduction_cents) > 0) ok("🔴 公积金社险自己算出来了（他一个字没打）");
+    if (slip && Number(slip.deduction_cents) > 0)
+      ok("🔴 公积金社险自己算出来了（他一个字没打）");
     else no("🔴 法定那几笔是零", JSON.stringify(slip));
-    if (slip && Number(slip.net_cents) < Number(slip.gross_cents)) ok("拿回家的比赚的少");
+    if (slip && Number(slip.net_cents) < Number(slip.gross_cents))
+      ok("拿回家的比赚的少");
     else no("拿回家的没有扣", JSON.stringify(slip));
   } else {
     if (/no statutory deductions/i.test(pay1))
@@ -344,7 +394,10 @@ try {
   /* 发出去 —— 整张锁住，而且记一笔钱出去。 */
   await page.getByRole("button", { name: /Pay it out/i }).click();
   await page.waitForTimeout(3600);
-  const { data: runs2 } = await admin.from("pay_runs").select("paid_at").eq("project_id", pid);
+  const { data: runs2 } = await admin
+    .from("pay_runs")
+    .select("paid_at")
+    .eq("project_id", pid);
   if ((runs2 ?? [])[0]?.paid_at) ok("发出去了，整张锁住");
   else no("发不出去", JSON.stringify(runs2));
   await page.screenshot({ path: `${OUT}/8-payroll-paid.png`, fullPage: true });
@@ -382,7 +435,10 @@ try {
 
   await page.getByLabel("Tax number (TIN)").fill("C1234567890");
   await page.getByLabel("SSM number").fill("202601234567");
-  await page.getByRole("button", { name: /^Save$/ }).first().click();
+  await page
+    .getByRole("button", { name: /^Save$/ })
+    .first()
+    .click();
   await page.waitForTimeout(2600);
   const { data: prof } = await admin
     .from("tax_profile")
@@ -416,7 +472,8 @@ try {
   if (/Still missing|Nothing missing/i.test(tax1)) ok("「还差什么」答得出来");
   else no("「还差什么」没有答案", tax1.slice(0, 200));
   /* 讲清楚它还不是什么。 */
-  if (/Nothing here is sent anywhere/i.test(tax1)) ok("画面上讲出「什么都不会送出去」");
+  if (/Nothing here is sent anywhere/i.test(tax1))
+    ok("画面上讲出「什么都不会送出去」");
   else no("没有讲出它还不是什么");
   await page.screenshot({ path: `${OUT}/10-tax-check.png`, fullPage: true });
 
@@ -438,6 +495,84 @@ try {
   if (rec2 && Number(rec2.tax_rate) === 8) ok("税率写在那一张单上了");
   else no("税率没写上去", JSON.stringify(rec2));
 
+  // ── ④b 出勤 ───────────────────────────────────────────────────────────
+  /* `log_work_day` · `work_days_of` · `days_worked`（20260906550000）——
+     三支画面上一个入口都没有，而少了它，一个按天算的师傅开一次薪
+     拿到的是一张空的薪资单（[任务 228] 的收尾）。 */
+  if ((await open("attendance")) === 200) ok("出勤那一页打得开");
+  else no("出勤那一页打不开");
+
+  /* 一片格子 ← `up-productivity` 那一张月历。 */
+  /* ⚠️ 数的是**一个月的每一天**，不是按得到的那几天 ——
+     我第一版数按钮，而今天是六号，於是它对着一张完全正确的月历
+     报「那一片格子没画出来 — 6」。按不按得到是下面那一条在量的事。 */
+  const dayCells = await page.locator('[data-attendance="day"]').count();
+  const pressable = await page
+    .locator('[data-attendance="grid"] button')
+    .count();
+  if (dayCells >= 28) ok(`那一片格子画出来了 · ${dayCells} 天`);
+  else no("那一片格子没画出来", String(dayCells));
+
+  /* 🔴 明天不是按钮 —— `log_work_day` 自己会拒绝还没发生的日子，
+     而一颗按下去一定失败的按钮是这个仓库禁的第一条。
+     所以按得到的格子数**不可以**等於这个月的天数（除非今天是最后一天）。 */
+  const mytNow = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+  const dayOfMonth = Number(mytNow.slice(8));
+  const inMonth = new Date(
+    Date.UTC(Number(mytNow.slice(0, 4)), Number(mytNow.slice(5, 7)), 0),
+  ).getUTCDate();
+  if (pressable === dayOfMonth) ok("🔴 只有已经过完的那几天按得到");
+  else if (dayOfMonth === inMonth) ok("⚠️ 今天是这个月最后一天，这一条量不到");
+  else
+    no(
+      "🔴 还没到的日子也按得下去",
+      `按得到 ${pressable} · 今天 ${dayOfMonth} 号`,
+    );
+
+  /* 挑一天之前不画那三颗 —— 点一格是「挑那一天」，不是当场改掉它。 */
+  if ((await page.getByRole("button", { name: /^Full day$/ }).count()) === 0)
+    ok("🔴 还没挑一天，那三颗不画");
+  else no("🔴 没挑就画了那三颗");
+
+  await page.locator('[data-attendance="grid"] button').first().click();
+  await page.waitForTimeout(600);
+  await page.getByRole("button", { name: /^Full day$/ }).click();
+  await page.waitForTimeout(3000);
+
+  const { data: wd1 } = await admin
+    .from("work_days")
+    .select("on_date, kind")
+    .eq("project_id", pid);
+  if ((wd1 ?? []).length === 1 && wd1[0].kind === "full")
+    ok("那一天真的记进去了");
+  else no("那一天没记进去", JSON.stringify(wd1));
+
+  /* 🔴 半天算半天，而那个数字是**资料库算的** ——
+     在浏览器里把格子加起来就是同一个问题两个答案。 */
+  await page.locator('[data-attendance="grid"] button').nth(1).click();
+  await page.waitForTimeout(600);
+  await page.getByRole("button", { name: /^Half day$/ }).click();
+  await page.waitForTimeout(3000);
+  await open("attendance");
+  const att = await page.locator("body").innerText();
+  if (/1\.5 days worked/.test(att)) ok("🔴 半天算半天 · 1.5 天");
+  else no("🔴 半天没有算半天", att.slice(0, 300));
+  if (/2 recorded/.test(att)) ok("记了两天");
+  else no("记了几天不对", att.slice(0, 300));
+
+  /* 同一天再记一次是**改**，不是多一行。 */
+  await page.locator('[data-attendance="grid"] button').first().click();
+  await page.waitForTimeout(600);
+  await page.getByRole("button", { name: /^Away$/ }).click();
+  await page.waitForTimeout(3000);
+  const { data: wd2 } = await admin
+    .from("work_days")
+    .select("on_date, kind")
+    .eq("project_id", pid);
+  if ((wd2 ?? []).length === 2) ok("同一天再记一次是改，不是多一行");
+  else no("同一天记出了两行", JSON.stringify(wd2));
+  await page.screenshot({ path: `${OUT}/16-attendance.png`, fullPage: true });
+
   // ── ⑤ 侧栏上真的看得到（一条按得到的连结）─────────────────────────────
   await open("");
   /* ⚠️ 等那一条侧栏真的画出来 —— 开发模式下第一次编译
@@ -455,6 +590,7 @@ try {
   for (const [label, path] of [
     ["Books", "books"],
     ["Pay", "payroll"],
+    ["Days worked", "attendance"],
     ["Tax", "tax"],
     ["Service contracts", "contracts"],
   ]) {
@@ -471,7 +607,10 @@ try {
     viewport: { width: 390, height: 844 },
     reducedMotion: "reduce",
   });
-  await phone.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
+  await phone.goto(`${BASE}/en/login`, {
+    waitUntil: "networkidle",
+    timeout: 180000,
+  });
   await phone.fill('input[type="email"]', email);
   await phone.fill('input[type="password"]', password);
   await phone.click('button[type="submit"]');
@@ -481,6 +620,7 @@ try {
     [13, "contracts"],
     [14, "payroll"],
     [15, "tax"],
+    [17, "attendance"],
   ]) {
     await phone.goto(`${BASE}/en/portal/${path}`, {
       waitUntil: "domcontentloaded",
@@ -493,7 +633,10 @@ try {
     );
     if (!wide) ok(`390 上不横滚 · ${path}`);
     else no(`390 上横滚了 · ${path}`);
-    await phone.screenshot({ path: `${OUT}/${n}-${path}-390.png`, fullPage: true });
+    await phone.screenshot({
+      path: `${OUT}/${n}-${path}-390.png`,
+      fullPage: true,
+    });
   }
 
   // ── ⑦ 反过来那一半：师傅打不开钱那几页 ────────────────────────────────
@@ -504,12 +647,20 @@ try {
     password: matePass,
     email_confirm: true,
   });
-  const { error: invErr } = await api.rpc("add_project_member", { in_email: mateEmail });
+  const { error: invErr } = await api.rpc("add_project_member", {
+    in_email: mateEmail,
+  });
   if (invErr) {
     console.log(`  ⚪ 请不动人（${invErr.message}）—— 师傅那一段跳过`);
   } else {
-    const mp = await browser.newPage({ viewport: { width: 1400, height: 1000 }, reducedMotion: "reduce" });
-    await mp.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
+    const mp = await browser.newPage({
+      viewport: { width: 1400, height: 1000 },
+      reducedMotion: "reduce",
+    });
+    await mp.goto(`${BASE}/en/login`, {
+      waitUntil: "networkidle",
+      timeout: 180000,
+    });
     await mp.fill('input[type="email"]', mateEmail);
     await mp.fill('input[type="password"]', matePass);
     await mp.click('button[type="submit"]');
@@ -520,7 +671,8 @@ try {
       waitUntil: "domcontentloaded",
       timeout: 180000,
     });
-    if ((conRes?.status() ?? 0) === 200) ok("控制组：师傅打得开保养合约（那是他一天的工作）");
+    if ((conRes?.status() ?? 0) === 200)
+      ok("控制组：师傅打得开保养合约（那是他一天的工作）");
     else no("控制组：师傅连保养合约都打不开", String(conRes?.status()));
 
     /* 🔴 量的是**他看不看得到那一页**，不是 HTTP 回多少。
@@ -543,7 +695,11 @@ try {
       if (!marker.test(seen)) ok(`🔴 师傅看不到 ${path}`);
       else no(`🔴 师傅看得到 ${path}`, seen.slice(0, 120));
     }
-    const mateRail = await mp.locator("nav").first().innerText().catch(() => "");
+    const mateRail = await mp
+      .locator("nav")
+      .first()
+      .innerText()
+      .catch(() => "");
     if (!/Books|^Pay$|Tax/m.test(mateRail)) ok("🔴 而侧栏上也不给他那几条连结");
     else no("🔴 侧栏上给了师傅一条通往 404 的连结");
     await mp.screenshot({ path: `${OUT}/16-mate-rail.png`, fullPage: true });
