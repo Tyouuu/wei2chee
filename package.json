@@ -171,7 +171,8 @@
     "check:counter": "node scripts/check-counter.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs",
     "walk:customer": "node scripts/walk-customer.mjs",
-    "walk:friction": "node scripts/walk-friction.mjs"
+    "walk:friction": "node scripts/walk-friction.mjs",
+    "walk:eyesight": "node scripts/walk-eyesight.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
