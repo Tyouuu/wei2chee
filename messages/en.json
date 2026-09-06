@@ -711,7 +711,7 @@
       "zoom": "See {name} full size",
       "close": "Close",
       "landingTitle": "Site layouts",
-      "landingBody": "One business, six ways. Every one below is drawn from your own trade, your own name and your own workflow — 「Use this one」 opens it in the editor, <unsaved>not saved yet</unsaved>, and undo puts it back.",
+      "landingBody": "One business, {n} ways. Every one below is drawn from your own trade, your own name and your own workflow — 「Use this one」 opens it in the editor, <unsaved>not saved yet</unsaved>, and undo puts it back.",
       "use": "Use this one"
     },
     "console": {

@@ -16,7 +16,12 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { StyleScope } from "@/design-system/editor/style-scope";
 import { Specimen, PAGE_SIZED } from "@/design-system/editor/specimen";
 
-type Entry = { name: string; label: string; category: string; props: Record<string, unknown> };
+type Entry = {
+  name: string;
+  label: string;
+  category: string;
+  props: Record<string, unknown>;
+};
 
 /**
  * 组件库 — the gallery a customer browses before they build.
@@ -152,23 +157,31 @@ function Tile({
           through the SAME add_component operation the AI assistant
           uses, so the block lands unsaved, undoable, and behind the
           same paid gate. Without it the library is a brochure. */}
+      {/* 🔴 格子上不印那个内部名字。
+          它原本是抬头底下第二行 —— 「Intake form」底下一行「IntakeForm」，
+          「Terms & signature」底下一行「TermsBlock」。
+
+          一个装修承包商用不了 `SiteBand` 这个字，而更要紧的是：
+          **它长得不像一个编号，它长得像那个抬头印了两次**（同一个词，
+          少一个空格）。八十五格，八十五次。
+
+          它没有丢：搜索照旧认得它（`e.name.includes(q)`），
+          点开放大那一层照旧印着它 —— 那里是它该在的地方，
+          一个抬头旁边的小字，不是一整面墙的第二行。 */}
       <div className="mt-2.5">
         {PAGE_SIZED.has(entry.name) ? (
           <>
             <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
               {entry.label}
             </span>
-            <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
-              {entry.name}
-            </span>
           </>
         ) : (
-          <Link href={`/${locale}/portal/${firstPage}?add=${entry.name}`} className="block">
+          <Link
+            href={`/${locale}/portal/${firstPage}?add=${entry.name}`}
+            className="block"
+          >
             <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] group-hover:underline">
               {entry.label}
-            </span>
-            <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
-              {entry.name}
             </span>
           </Link>
         )}
@@ -265,7 +278,12 @@ export function LibraryClient({
     const out: Entry[] = [];
     for (const [key, cat] of Object.entries(categories)) {
       for (const name of (cat as { components?: string[] }).components ?? []) {
-        const c = (config.components as Record<string, { label?: string; defaultProps?: Record<string, unknown> }>)[name];
+        const c = (
+          config.components as Record<
+            string,
+            { label?: string; defaultProps?: Record<string, unknown> }
+          >
+        )[name];
         if (!c) continue;
         out.push({
           name,
@@ -285,7 +303,10 @@ export function LibraryClient({
           // it follows systemLang, not the interface locale.
           props: {
             ...(c.defaultProps ?? {}),
-            ...(sampleProps(LIBRARY_SAMPLES[name] ?? {}, systemLang) as Record<string, unknown>),
+            ...(sampleProps(LIBRARY_SAMPLES[name] ?? {}, systemLang) as Record<
+              string,
+              unknown
+            >),
             id: `lib-${name}`,
           },
         });
@@ -303,7 +324,8 @@ export function LibraryClient({
     const q = query.trim().toLowerCase();
     if (q) {
       return entries.filter(
-        (e) => e.label.toLowerCase().includes(q) || e.name.toLowerCase().includes(q),
+        (e) =>
+          e.label.toLowerCase().includes(q) || e.name.toLowerCase().includes(q),
       );
     }
     return active ? entries.filter((e) => e.category === active) : entries;
@@ -320,22 +342,30 @@ export function LibraryClient({
 
   const counts = useMemo(() => {
     const map = new Map<string, number>();
-    for (const e of entries) map.set(e.category, (map.get(e.category) ?? 0) + 1);
+    for (const e of entries)
+      map.set(e.category, (map.get(e.category) ?? 0) + 1);
     return map;
   }, [entries]);
 
   const categoryTitle = (key: string) =>
-    ((config.categories ?? {}) as Record<string, { title?: string }>)[key]?.title ?? key;
+    ((config.categories ?? {}) as Record<string, { title?: string }>)[key]
+      ?.title ?? key;
 
-
-  const heading = searching ? query.trim() : active ? categoryTitle(active) : t("filterAll");
+  const heading = searching
+    ? query.trim()
+    : active
+      ? categoryTitle(active)
+      : t("filterAll");
   // 全部 and a search across everything both mix sections with controls, so
   // neither gets the short tile — only a shelf that is controls all the way.
   const short = !searching && active !== null && CONTROL_SHELVES.has(active);
 
   return (
     <>
-      <PageBar title={t("title")} subtitle={t("subtitle", { count: entries.length })} />
+      <PageBar
+        title={t("title")}
+        subtitle={t("subtitle", { count: entries.length })}
+      />
 
       <div className="flex items-start gap-8 px-8 py-7">
         {/* ── THE RAIL ─────────────────────────────────────────────────────
@@ -405,7 +435,9 @@ export function LibraryClient({
                 }`}
               >
                 {categoryTitle(key)}
-                <span className="ml-1.5 [font-family:var(--font-numeric)] tabular-nums opacity-55">{n}</span>
+                <span className="ml-1.5 [font-family:var(--font-numeric)] tabular-nums opacity-55">
+                  {n}
+                </span>
               </button>
             ))}
           </div>
@@ -571,12 +603,19 @@ export function LibraryClient({
             </div>
             <div className={`${chrome.mount} min-h-0 overflow-auto`}>
               <StyleScope
-                register={style} palette={palette} className="ds-ground [background-color:var(--color-canvas)]"
+                register={style}
+                palette={palette}
+                className="ds-ground [background-color:var(--color-canvas)]"
               >
                 <div className="[padding:var(--pad-card-lg)]">
                   <Render
                     config={config}
-                    data={{ root: {}, content: [{ type: zoomed.name, props: zoomed.props }] } as never}
+                    data={
+                      {
+                        root: {},
+                        content: [{ type: zoomed.name, props: zoomed.props }],
+                      } as never
+                    }
                   />
                 </div>
               </StyleScope>
@@ -618,7 +657,9 @@ function RailItem({
         }`}
       >
         <span className="min-w-0 flex-1 truncate">{label}</span>
-        <span className="[font-family:var(--font-numeric)] tabular-nums opacity-55">{n}</span>
+        <span className="[font-family:var(--font-numeric)] tabular-nums opacity-55">
+          {n}
+        </span>
       </button>
     </li>
   );

@@ -173,7 +173,12 @@ export function TemplatesClient({
               placeholder rather than a separate string, and stays bold in both
               languages. */}
           <p className="mt-2 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+            {/* 🔴 那个数字**从清单数出来**，不是写死在句子里。
+                它原本写着「六种做法」，而它右上角的计数印着 **7** ——
+                同一屏两个答案，而多的那一张是后来加的。
+                一句写死的数字，是一句迟早会跟旁边那个数字对不上的话。 */}
             {t.rich("landingBody", {
+              n: landings.length,
               unsaved: (chunks) => (
                 <b className="[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
                   {chunks}
