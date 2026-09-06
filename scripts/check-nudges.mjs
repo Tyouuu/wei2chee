@@ -364,6 +364,40 @@ try {
     Number(rf.find((r) => r.kind === "referral_owing")?.amount_cents) === 12_000,
     `${rf.find((r) => r.kind === "referral_owing")?.amount_cents}`);
 
+  /* ── ⑫ 🔴 经销商提交了一笔，他还没处理 ──────── */
+  console.log("\n⑫ 🔴 经销商提交了一笔");
+  const { data: dealer } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "Kedai Ong",
+  });
+  const { data: portal, error: pErr } = await C.rpc("open_party_portal", {
+    in_party_id: dealer.id,
+  });
+  check("给得出一条连结", !pErr && !!portal, pErr?.message);
+  const ref = portal?.portal_ref ?? portal;
+  const { data: word, error: sErr } = await anon.rpc("submit_party_request", {
+    in_ref: ref, in_what: "要 200 张 SIM", in_qty: 200,
+  });
+  check("陌生人那把钥匙送得出去", !sErr && word === "ok",
+    sErr?.message ?? `${word}`);
+  const rq = await nudges();
+  check("🔴 他还没处理 → 讲",
+    rq.some((r) => r.kind === "request_open"),
+    JSON.stringify(rq.map((r) => r.kind)));
+  check("而且讲得出是谁、要什么",
+    rq.some((r) => r.kind === "request_open" && r.party === "Kedai Ong"
+      && Number(r.qty_left) === 200),
+    JSON.stringify(rq.filter((r) => r.kind === "request_open")));
+
+  /* 一按变单 → 那一条自己消失（`status` 变 done）。 */
+  const { data: mine } = await C.rpc("party_requests_of", { in_project_id: P });
+  const openOne = (mine ?? []).find((r) => r.status === "open");
+  await C.rpc("record_from_request", {
+    in_request_id: openOne.id, in_module_key: "orders",
+  });
+  check("🔴 一按变单就不讲了（不用另外一栏「看过没有」）",
+    !(await nudges()).some((r) => r.kind === "request_open"),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "request_open")));
+
   /* ── ⑧ 🔴 师傅 ───────────────────────────────────────────────────── */
   console.log("\n⑧ 🔴 师傅");
   /* 先把补货线那一条弄回来，师傅那一边才有东西可以看。 */
