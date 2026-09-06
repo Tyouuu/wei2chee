@@ -44,7 +44,19 @@ const BASE = process.env.ALIGN_BASE || "http://localhost:3000";
 const STAMP = Date.now();
 const EMAIL = `walk-${STAMP}@formae.test`;
 const PASSWORD = `Walk!${STAMP}`;
-const OUT = ".screenshots/walk-customer";
+/* 走哪一行 —— TRADE=salon npm run walk:customer
+   ⚠️ 每一行的页面不一样，所以「一天的事」也不一样。一支只走装修的尺，
+   量不到沙龙老板的第一天。 */
+const TRADES = {
+  reno:     { pages: ["customers", "quotations", "payments"], who: "Hin Fatt Renovation", job: "quotations" },
+  salon:    { pages: ["customers", "bookings", "payments"],   who: "Wei Hair Studio",     job: "bookings" },
+  hardware: { pages: ["customers", "inventory", "orders", "payments"], who: "Seng Huat Hardware", job: "orders" },
+  workshop: { pages: ["customers", "projects", "payments"],   who: "Ah Keong Motor",      job: "projects" },
+};
+const TRADE = process.env.TRADE || "reno";
+const T = TRADES[TRADE];
+if (!T) throw new Error(`不认得这一行：${TRADE}（${Object.keys(TRADES).join(" ")}）`);
+const OUT = `.screenshots/walk-customer/${TRADE}`;
 fs.mkdirSync(OUT, { recursive: true });
 
 const admin = createClient(
@@ -123,11 +135,12 @@ try {
   await api.rpc("set_project_style", { new_style: "swiss" });
   await admin
     .from("projects")
-    .update({ business_name: "Hin Fatt Renovation", system_language: "en" })
+    .update({ business_name: T.who, system_language: "en" })
     .eq("id", proj.id);
 
-  for (const key of ["customers", "quotations", "payments"]) {
-    await api.rpc("add_project_page", { requested_key: key, new_title: null });
+  for (const key of T.pages) {
+    const { error } = await api.rpc("add_project_page", { requested_key: key, new_title: null });
+    if (error) flag(ODD, "开页", `${key} 开不出来`, error.message);
   }
 
   browser = await chromium.launch();
@@ -149,6 +162,11 @@ try {
   await page.waitForURL(/portal/, { timeout: 180000 }).catch(() => {});
   await page.waitForTimeout(2500);
   await page.addStyleTag({ content: "nextjs-portal{display:none!important}" }).catch(() => {});
+  /* 🔴 登入没成功就停。上一趟它等了 183 秒还在登入页，而後面每一条
+     「找不到按钮」读到的都是那一页 —— 六条假的发现。
+     **一趟登不进去的走法，跟一个坏掉的产品，在报告里长得一模一样。** */
+  if (!page.url().includes("/portal"))
+    throw new Error(`登入没成功：${((Date.now() - t0) / 1000).toFixed(1)}s 之后还在 ${new URL(page.url()).pathname}`);
   ok("登入", `${((Date.now() - t0) / 1000).toFixed(1)}s 之后落在 ${new URL(page.url()).pathname}`);
   await shot(page, "1-landed");
 
@@ -165,7 +183,7 @@ try {
      因为那是「看看你的系统、改改看」，也是我们卖的那一屏。
      而它的代价从来没有人量过 —— 这一段量它。 */
   step("1b", "第一次打开：那些按钮按不按得动");
-  await page.goto(`${BASE}/en/portal/customers`, { waitUntil: "domcontentloaded", timeout: 180000 });
+  await page.goto(`${BASE}/en/portal/${T.pages[0]}`, { waitUntil: "domcontentloaded", timeout: 180000 });
   await page.waitForTimeout(2500);
   await shot(page, "1b-first-visit");
   {
@@ -187,28 +205,50 @@ try {
   }
 
   /* ── ①c 按一次保存 —— 那一刻起它才是他的系统（front-door.ts） ───────── */
-  step("1c", "按一次保存，正门才换过来");
+  step("1c", "把气泡关掉，再按同一颗");
   {
-    const save = await findControl(page, ["confirm design", "save"]);
-    if (!save) {
-      flag(ODD, "保存", "找不到那颗保存/确认 —— 改用直接存一次");
-    } else {
-      const label = ((await save.innerText().catch(() => "")) || "").replace(/s+/g, " ").trim();
-      ok("保存", `那颗按钮叫「${label}」`);
+    /* 🔴 这一步才是那个证明。第一次按不动，可能是气泡挡的，也可能是画布
+       把点击吃掉了。关掉气泡再按一次就分得开。 */
+    const dismiss = await findControl(page, ["got it", "hide this"]);
+    if (!dismiss) flag(ODD, "气泡", "找不到关掉它的那颗");
+    else {
+      await dismiss.click().catch(() => {});
+      await page.waitForTimeout(1500);
+      await shot(page, "1c-tooltip-gone");
+      const b2 = page.url();
+      const again = await findControl(page, ["new customer", "new ", "add"]);
+      if (!again) flag(ODD, "关掉气泡之后", "按钮不见了");
+      else {
+        await again.click().catch(() => {});
+        await page.waitForTimeout(2500);
+        if (page.url() === b2)
+          flag(BAD, "关掉气泡之后", "🔴 还是不动 —— 不是气泡，是画布把点击吃掉了", b2);
+        else {
+          flag(BAD, "气泡", "🔴 气泡关掉就按得动了 —— 挡他的就是那个气泡");
+          await shot(page, "1c-works-now");
+        }
+      }
     }
-    /* 不按那颗绿的（它会跳去 WhatsApp）。用编辑器自己的保存把这一页收下来。 */
-    /* ⚠️ 参数名先读过原文再写：它叫 target_page_key / new_layout，
-       不是这个仓库到处在用的 in_*。猜名字这个仓库红过八次。 */
-    const { error: sErr } = await api.rpc("save_project_page", {
-      target_page_key: "customers",
-      new_layout: { content: [], root: {} },
-    });
-    if (sErr) flag(ODD, "保存", "存不进去", sErr.message);
+    /* 收下这套系统：存它自己那一份，不是一张空的（上一趟我把那一页清空了）*/
+    const { data: pg } = await api
+      .from("project_pages")
+      .select("layout_json")
+      .eq("page_key", T.pages[0])
+      .maybeSingle();
+    const lay = pg?.layout_json;
+    if (lay && Array.isArray(lay.content) && lay.content.length) {
+      const { error } = await api.rpc("save_project_page", {
+        target_page_key: T.pages[0],
+        new_layout: lay,
+      });
+      if (error) flag(ODD, "收下", "存不进去", error.message);
+      else ok("收下", `存回它自己那一份（${lay.content.length} 块）`);
+    } else flag(ODD, "收下", "读不到那一页自己的版面");
   }
 
   /* ── ② 建一个客户 ──────────────────────────────────────────────────── */
   step(2, "建一个客户（全程用点的）");
-  await page.goto(`${BASE}/en/portal/customers`, { waitUntil: "domcontentloaded", timeout: 180000 });
+  await page.goto(`${BASE}/en/portal/${T.pages[0]}`, { waitUntil: "domcontentloaded", timeout: 180000 });
   await page.waitForTimeout(2200);
   await shot(page, "2-customers-empty");
 
@@ -249,83 +289,105 @@ try {
   }
 
   /* 回客户清单，看它在不在 */
-  await page.goto(`${BASE}/en/portal/customers`, { waitUntil: "domcontentloaded", timeout: 180000 });
+  await page.goto(`${BASE}/en/portal/${T.pages[0]}`, { waitUntil: "domcontentloaded", timeout: 180000 });
   await page.waitForTimeout(2200);
   const list = await seen(page);
   if (list.includes("Puan Aminah")) ok("客户清单", "他在名单上");
   else flag(BAD, "客户清单", "刚建的客户不在名单上", list.slice(0, 160));
 
-  /* ── ③ 开一张报价单 ────────────────────────────────────────────────── */
-  step(3, "开一张报价单");
-  await page.goto(`${BASE}/en/portal/quotations`, { waitUntil: "domcontentloaded", timeout: 180000 });
-  await page.waitForTimeout(2200);
-  await shot(page, "5-quotations");
+  /* ── ③ 开一张单 ──────────────────────────────────────────────────────
+     🔴 上一趟这一段是坏的：我点到的不是「开一张新的」，所以量到的不是那张
+     表单，然后报了三个假的发现。这一次点不到就走网址，**而且把点不到记下来**。 */
+  step(3, `开一张单（${T.job}）`);
+  await page.goto(`${BASE}/en/portal/${T.job}`, { waitUntil: "domcontentloaded", timeout: 180000 });
+  await page.waitForTimeout(2500);
+  await shot(page, "5-list");
 
-  const newQ = await findControl(page, ["new", "add", "\\+"]);
-  if (!newQ) {
-    flag(BAD, "报价单页", "找不到「开一张」的按钮", (await seen(page)).slice(0, 160));
-  } else {
-    await newQ.click();
-    clicks++;
-    await page.waitForTimeout(3000);
-    await shot(page, "6-quote-form");
-
-    const boxes = page.locator("input:visible, textarea:visible");
-    const n = await boxes.count();
-    ok("新报价单", `表单上有 ${n} 个可以打字的框`);
-
-    /* 一个客人在这里要打几个字 —— 重点 29 那把尺 */
-    const required = await page.locator("input[required]:visible, textarea[required]:visible").count();
-    ok("新报价单", `其中 ${required} 个是必填`);
-
-    /* 填：题目、对方、金额 */
-    const fillIf = async (sel, val, why) => {
-      const el = page.locator(sel).first();
-      if (await el.count()) {
-        await el.fill(val);
-        clicks++;
-        return true;
-      }
-      flag(ODD, "新报价单", `找不到${why}那一格`, sel);
-      return false;
-    };
-    await fillIf('input[name*="title" i], input[placeholder*="what" i], input[type=text]:visible', "Kitchen refit", "题目");
-
-    /* 对方：客人会期待它认得刚建的那个客户 */
-    const partyBox = page.locator('input[list], input[name*="party" i], input[placeholder*="who" i]').first();
-    if (await partyBox.count()) {
-      await partyBox.fill("Puan Aminah");
-      clicks++;
-      ok("新报价单", "对方那一格填得了刚建的客户");
+  {
+    let reached = false;
+    const btn = await findControl(page, ["new ", "add "]);
+    if (!btn) {
+      flag(BAD, `${T.job} 页`, "找不到「开一张新的」那颗按钮");
     } else {
-      flag(ODD, "新报价单", "找不到「这一单是谁的」那一格");
+      const label = ((await btn.innerText().catch(() => "")) || "").replace(/\s+/g, " ").trim();
+      const before = page.url();
+      await btn.click().catch(() => {});
+      await page.waitForTimeout(2800);
+      if (page.url() === before) flag(BAD, `${T.job} 页`, `按「${label}」网址没变`, before);
+      else {
+        reached = true;
+        ok(`${T.job} 页`, `按「${label}」走到 ${new URL(page.url()).pathname}`);
+      }
+    }
+    if (!reached) {
+      await page.goto(`${BASE}/en/portal/${T.job}/new`, { waitUntil: "domcontentloaded", timeout: 180000 });
+      await page.waitForTimeout(2800);
+    }
+    await shot(page, "6-form");
+
+    /* 这张表要他打几个字 —— 重点 29 那把尺 */
+    const boxes = page.locator("main input:visible, main textarea:visible");
+    const n = await boxes.count();
+    const req = await page.locator("main input[required]:visible, main textarea[required]:visible").count();
+    ok("那张表", `${n} 个可以打字的框，其中 ${req} 个必填`);
+
+    /* 每一个框都要有一个看得见的名字 —— 没有名字的框，他只能猜 */
+    const nameless = await page.evaluate(() => {
+      const out = [];
+      for (const el of document.querySelectorAll("main input, main textarea")) {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        const lab =
+          (el.labels && el.labels[0]?.innerText) ||
+          el.getAttribute("aria-label") ||
+          el.getAttribute("placeholder") ||
+          "";
+        if (!lab.trim()) out.push(el.getAttribute("name") || el.type || "?");
+      }
+      return out;
+    });
+    if (nameless.length) flag(ODD, "那张表", `${nameless.length} 个框没有看得见的名字`, nameless.slice(0, 5).join(" · "));
+
+    /* 填第一格（表单自己说过：第一格是这一笔在讲什么） */
+    const first = page.locator("main input:visible, main textarea:visible").first();
+    if (await first.count()) {
+      await first.fill("Taman Ipoh 3-room reno");
+      clicks++;
+    } else flag(BAD, "那张表", "一个可以打字的框都没有");
+
+    /* 对方 —— 它认不认得刚建的那个客户 */
+    const party = page.locator('main input[list], main input[name*="party" i]').first();
+    if (await party.count()) {
+      await party.fill("Puan Aminah");
+      clicks++;
+      ok("那张表", "对方那一格填得了刚建的客户");
     }
 
-    const amtBox = page.locator('input[inputmode=decimal], input[type=number], input[name*="amount" i]').first();
-    if (await amtBox.count()) {
-      await amtBox.fill("30100");
+    const amt = page.locator('main input[type=number]:visible, main input[inputmode=decimal]:visible').first();
+    if (await amt.count()) {
+      await amt.fill("30100");
       clicks++;
-    } else flag(ODD, "新报价单", "找不到金额那一格");
+    } else flag(ODD, "那张表", "找不到金额那一格");
 
-    const saveQ = await findControl(page, ["save", "create", "add"]);
-    if (!saveQ) flag(BAD, "新报价单", "找不到「保存」");
+    const save = await findControl(page, ["save"]);
+    if (!save) flag(BAD, "那张表", "找不到「保存」");
     else {
-      await saveQ.click();
+      await save.click();
       clicks++;
       await page.waitForTimeout(3500);
-      await shot(page, "7-quote-saved");
-      const afterQ = await seen(page);
-      if (/QT-|Kitchen refit/i.test(afterQ)) ok("新报价单", "存下来了，画面上看得到");
-      else flag(BAD, "新报价单", "按了保存，画面上找不到那张单", afterQ.slice(0, 200));
+      await shot(page, "7-saved");
+      const after = await seen(page);
+      if (/Taman Ipoh/i.test(after)) ok("那张单", "存下来了，画面上看得到");
+      else flag(BAD, "那张单", "按了保存，画面上找不到它", after.slice(0, 200));
 
-      /* 🔴 单号：一张没有单号的报价单，客人拿到手上无法引用 */
-      if (/QT-\d{4}-\d+/.test(afterQ)) ok("新报价单", `单号 ${/QT-\d{4}-\d+/.exec(afterQ)[0]}`);
-      else flag(ODD, "新报价单", "画面上看不到单号");
+      const no = /\b[A-Z]{2}-\d{4}-\d+/.exec(after);
+      if (no) ok("那张单", `单号 ${no[0]}`);
+      else flag(ODD, "那张单", "画面上看不到单号 —— 客人拿到手上没法引用它");
 
-      /* 🔴 那一颗打印 —— 任务 251 量到的那一件，用眼睛在画面上确认一次 */
-      const printBtn = await findControl(page, ["print", "打印", "download", "pdf"]);
-      if (printBtn) ok("那张纸", "有一颗打印/下载");
-      else flag(BAD, "那张纸", "整页找不到打印或下载 —— 客人要一张报价，他只能截图");
+      /* 🔴 那一颗打印 */
+      const pr = await findControl(page, ["print", "download", "pdf"]);
+      if (pr) ok("那张纸", "有一颗打印或下载");
+      else flag(BAD, "那张纸", "找不到打印或下载 —— 客人要一张，他只能截图");
     }
   }
 
@@ -340,7 +402,14 @@ try {
     clicks++;
     await page.waitForTimeout(3000);
     await shot(page, "8-payment-form");
-    const amt = page.locator('input[inputmode=decimal], input[type=number], input[name*="amount" i]').first();
+    /* 🔴 上一趟只填金额，产品**正确地**拒绝了（「第一格是这一笔在讲什么」）——
+       那一条红是我的尺，不是产品。这一次照它讲的填。 */
+    const firstBox = page.locator("main input:visible, main textarea:visible").first();
+    if (await firstBox.count()) {
+      await firstBox.fill("Deposit from Puan Aminah");
+      clicks++;
+    }
+    const amt = page.locator('main input[type=number]:visible, main input[inputmode=decimal]:visible').first();
     if (await amt.count()) {
       await amt.fill("9030");
       clicks++;
@@ -396,7 +465,7 @@ try {
 
   for (const [path, name] of [
     ["/en/portal", "13-phone-overview"],
-    ["/en/portal/quotations", "14-phone-quotes"],
+    [`/en/portal/${T.job}`, "14-phone-list"],
     ["/en/portal/today", "15-phone-today"],
   ]) {
     await phone.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded", timeout: 180000 });
@@ -426,7 +495,7 @@ try {
   const bad = found.filter((f) => f.level === BAD);
   const odd = found.filter((f) => f.level === ODD);
   const nit = found.filter((f) => f.level === NIT);
-  console.log(`\n判：一天的事按了 ${clicks} 次 · 坏的 ${bad.length} · 怪的 ${odd.length} · 粗糙 ${nit.length}`);
+  console.log(`\n判 · ${TRADE}：一天的事按了 ${clicks} 次 · 坏的 ${bad.length} · 怪的 ${odd.length} · 粗糙 ${nit.length}`);
   console.log(`图：${OUT}/`);
   if (bad.length) {
     console.log("\n🔴 客人会当场看到坏掉的：");
