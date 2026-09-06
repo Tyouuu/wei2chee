@@ -27,7 +27,10 @@ const COPY = {
     eyebrow: "FORMAE / SYS.DESIGN",
     headline: "先看到你的系统，再决定要不要做。",
     sub: "回答几个问题，当场看到一套照你流程做的系统。",
-    /* ⚠️ 月费 2026-09-01 老板定成 **RM 150**（原话：「每个月150吧」）。
+    /* ⚠️ 2026-09-06 换成**建置 RM 1,500 ＋ 年费 RM 1,500** ——
+       老板看着需求书上那张按模块算的表：`都不要了 跟著新概念`
+       （[任务 109](../../docs/founder-tasks.md#109) 9-03 就换了概念，
+       而这张卡跟官网印了三天上一套）。
        作废掉的那几个数字**故意不写在这里** —— `pricing-consistency.test.ts`
        会在每一个客户看得到的档案里搜它们，注解也算，写了这条就红。
        **这张卡是别人把连结贴进 WhatsApp 时跳出来的那张图** ——
@@ -35,13 +38,13 @@ const COPY = {
        改一个价钱要改四个地方（官网 · 登入页 · 需求书 · 这张卡），
        2026-08-25 那次前三个改了、这一个没有 —— 因为它不是「一页」，
        没有人会走到它。`pricing-consistency.test.ts` 现在盯着它。 */
-    facts: ["规格书 RM 500", "托管 RM 150 / 月", "设计阶段免费"],
+    facts: ["建置 RM 1,500", "之后每年 RM 1,500", "设计阶段免费"],
   },
   en: {
     eyebrow: "FORMAE / SYS.DESIGN",
     headline: "See your system before you decide to build it.",
     sub: "Answer a few questions and watch a system built around your own workflow appear.",
-    facts: ["Spec RM 500", "Hosting RM 150 / mo", "Designing is free"],
+    facts: ["Build RM 1,500", "RM 1,500 a year after", "Designing is free"],
   },
 } as const;
 

@@ -5,7 +5,7 @@
     "cta": "See what your business could become",
     "askPlaceholder": "What kind of business do you run? e.g. I am a SIM-card master dealer with 40 dealers; every month I reconcile and work out 2% commission…",
     "askCta": "Start",
-    "proof": "Spec RM 500 · build priced by module · hosting RM 150/mo · designing is free",
+    "proof": "Build RM 1,500 · RM 1,500 a year after · designing is free",
     "shotAlt": "A generated system overview: four figures, a revenue chart, today's follow-ups and a recent-jobs table",
     "shotCaption": "Not a mockup. A real account, built by the same generator — describe your business and this is the page you get.",
     "pill": "LHDN e-Invoice: mandatory above RM1m turnover, fines from 2028",
@@ -271,7 +271,7 @@
     "proofStep1": "Answer a few questions about your business; the AI reads how you actually work today.",
     "proofStep2": "It builds you a first version — your trade's words, your workflow, your tables. Edit it directly, or just tell it what to change.",
     "proofStep3": "When it looks right, we build the real system from your design.",
-    "proofPrice": "Spec RM 500 · build priced by module · hosting RM 150/month. Designing costs nothing, and you can change it as many times as you like.",
+    "proofPrice": "Build RM 1,500, then RM 1,500 a year. Designing costs nothing, and you can change it as many times as you like.",
     "googleCta": "Continue with Google",
     "googlePending": "Redirecting…",
     "googleFailed": "Google sign-in is not configured yet — use email for now.",
@@ -1252,37 +1252,27 @@
       "title": "The price is on this page, not behind a form.",
       "steps": [
         {
-          "label": "Step one · the spec",
-          "amount": "RM 500",
-          "note": "A document you can take to any developer for a quote.",
+          "label": "Step one · the build",
+          "amount": "RM 1,500",
+          "note": "Once. Everything you designed, built for real.",
           "includes": [
-            "which modules, and what each one costs",
-            "how long each one takes",
-            "yours to keep even if you build it elsewhere"
+            "sign-in, roles and the shell",
+            "your public site, with enquiries landing in the system",
+            "the specification, yours to keep"
           ]
         },
         {
-          "label": "Step two · the build",
-          "amount": "Priced by module",
-          "note": "You pay for the modules you actually want.",
-          "includes": [
-            "not a flat fee — you pick the modules",
-            "every module's price is written in the spec first",
-            "you see the total before you decide"
-          ]
-        },
-        {
-          "label": "After · hosting",
-          "amount": "RM 150 / month",
+          "label": "After · every year",
+          "amount": "RM 1,500",
           "note": "Everything after it goes live.",
           "includes": [
             "servers, backups and day-to-day maintenance",
-            "your public site stays up, and enquiries land in the system",
+            "your public site stays up",
             "export your data free, any time"
           ]
         }
       ],
-      "free": "Designing it costs nothing. Build the whole system, see exactly what it looks like, and only then decide whether to pay the RM 500.",
+      "free": "Designing it costs nothing. Build the whole system, see exactly what it looks like, and only then decide whether to go ahead.",
       "cta": "Design one free and see"
     },
     "faq": {
@@ -1368,7 +1358,7 @@
         },
         {
           "heading": "Fees",
-          "body": "Designing: free. Change it as often as you like.\nSpecification: RM 500 — the document that says exactly what will be built, module by module, with a price against each.\nBuild fee: priced by the modules you choose, listed in the spec before you decide.\nHosting: RM 150 per month.\nPayment is by bank transfer; we enable saving on your account once it arrives. There is no online payment yet."
+          "body": "Designing: free. Change it as often as you like, and saving is free too.\nBuild: RM 1,500, once — sign-in, roles, the shell, your public site and every page you designed.\nEvery year after: RM 1,500 — hosting and your public site.\nPayment is by bank transfer. There is no online payment yet."
         },
         {
           "heading": "Your work is yours",
@@ -1404,7 +1394,7 @@
   "receipt": {
     "eyebrow": "THE SPECIFICATION",
     "title": "What you walk away with.",
-    "body": "Not a proposal. A document that names every page, every table and every field, with a price against each module — you read it before you decide anything.",
+    "body": "Not a proposal. A document that names every page, every table and every field — you read it before you decide anything.",
     "pages": "system pages",
     "pagesV": "built from your trade",
     "registers": "registers",
@@ -1412,12 +1402,12 @@
     "langs": "languages",
     "langsV": "English · 中文",
     "time": "describe → see it",
-    "spec": "specification",
-    "specV": "RM 500",
-    "build": "build",
-    "buildV": "priced by module",
-    "hosting": "hosting",
-    "hostingV": "RM 150 / month",
+    "spec": "build",
+    "specV": "RM 1,500",
+    "build": "every year after",
+    "buildV": "RM 1,500",
+    "hosting": "what that covers",
+    "hostingV": "hosting · your site",
     "freeK": "designing it",
     "freeV": "free, as often as you like"
   },
@@ -1465,8 +1455,8 @@
     "s3": "your public site goes live",
     "s4": "a stranger asks for a price",
     "s5": "it lands as a record, in your columns",
-    "figure": "RM 500",
-    "figureCap": "the specification",
+    "figure": "RM 1,500",
+    "figureCap": "to build it",
     "l1": "the spec",
     "l2": "we build it",
     "l3": "your signboard",

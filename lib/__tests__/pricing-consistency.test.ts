@@ -19,7 +19,24 @@ const FILES = ["messages/en.json", "messages/zh.json", "app/[locale]/opengraph-i
    ⚠️ RM199 是 2026-09-01 退役的 —— 老板定成 RM150（原话：「每个月150吧」）。
    它退役得特别值得盯：它同时印在官网、登入页、需求书跟 WhatsApp 那张卡上，
    而上一次改价钱正好漏掉那张卡。 */
-const RETIRED = [/RM ?5,000/, /RM ?100[–-]300/, /RM ?199/];
+const RETIRED = [
+  /RM ?5,000/,
+  /RM ?100[–-]300/,
+  /RM ?199/,
+  /* 🔴 2026-09-06 退役：规格书 RM 500 ＋ 按模块的开发费 ＋ 月费 RM 150。
+     老板看着需求书上那张表：`都不要了 跟著新概念` ——
+     概念 9-03 就换成**建置 RM 1,500 ＋ 年费 RM 1,500**（[任务 109]），
+     而官网 · 登入页 · 那张 WhatsApp 卡印了三天上一套。
+     ⚠️ 「按模块」那两种写法也进来：一个作废的**收费方式**跟一个作废的
+     **数字**一样会误导，而它不是一个数字，正则搜不到。 */
+  /* ⚠️ 后面那个「不是数字」很要紧：`RM 500` 会配上
+     **`RM 500,000`** —— 而那是 SST 的登记门槛，不是我们的价钱。
+     税那一页写着它，第一版当场把一句对的话判红了。 */
+  /RM ?500(?![\d,])/,
+  /RM ?150(?![\d,])/,
+  /priced by module/i,
+  /按模块计/,
+];
 
 describe("定价只有一个真相", () => {
   for (const f of FILES) {
@@ -33,9 +50,11 @@ describe("定价只有一个真相", () => {
   }
 
   it("现行定价的数字都还在（免得有人整段删掉就算过）", () => {
-    const en = readFileSync(resolve("messages/en.json"), "utf8");
-    expect(en).toMatch(/RM ?500/);
-    expect(en).toMatch(/RM ?150/);
+    for (const f of ["messages/en.json", "messages/zh.json"]) {
+      const src = readFileSync(resolve(f), "utf8");
+      /* 建置一次，之后每一年 —— 两个都是 RM 1,500，所以至少要出现两次。 */
+      expect(src.match(/RM ?1,500/g)?.length ?? 0, `${f} 里没有现行的价钱`).toBeGreaterThan(1);
+    }
   });
 });
 
