@@ -158,6 +158,7 @@
     "check:workdays": "node scripts/check-workdays.mjs",
     "check:transfer": "node scripts/check-transfer.mjs",
     "walk:reno": "node scripts/walk-reno.mjs",
+    "walk:salon": "node scripts/walk-salon.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
