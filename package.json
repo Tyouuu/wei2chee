@@ -157,6 +157,7 @@
     "check:console": "node scripts/check-console.mjs",
     "check:workdays": "node scripts/check-workdays.mjs",
     "check:transfer": "node scripts/check-transfer.mjs",
+    "walk:reno": "node scripts/walk-reno.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
