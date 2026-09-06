@@ -160,6 +160,7 @@
     "walk:reno": "node scripts/walk-reno.mjs",
     "walk:salon": "node scripts/walk-salon.mjs",
     "check:naming": "node scripts/check-naming.mjs",
+    "walk:workshop": "node scripts/walk-workshop.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
