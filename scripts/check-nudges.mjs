@@ -402,6 +402,84 @@ const nudges = async (client = C, until = null) => {
     !(await nudges()).some((r) => r.kind === "request_open"),
     JSON.stringify((await nudges()).filter((r) => r.kind === "request_open")));
 
+  /* ── ⑫b 🔴 这个客人不来了 ───────────────────────────────────────────
+     两个条件都来自他自己的历史（20260907020000 档头写着为什么少一个都不行），
+     所以这一段的四个人是**四种节奏**，不是四个不同的天数。 */
+  console.log("\n⑫b 🔴 这个客人不来了");
+  const rhythm = async (name, days) => {
+    const { data: d } = await C.rpc("add_directory_entry", {
+      in_project_id: P, in_module_key: "customers", in_name: name,
+    });
+    for (const n of days) {
+      await C.rpc("add_pipeline_record", {
+        in_project_id: P, in_module_key: "quotations",
+        in_title: `${name} ${n}`, in_party_id: d.id,
+        in_issued_on: day(n), in_amount_cents: 30_000,
+      });
+    }
+    return d.id;
+  };
+  const lapsedFor = async (id) =>
+    (await nudges()).find((r) => r.kind === "party_lapsed" && r.subject_id === id);
+
+  /* 平常隔 30 天，已经 70 天没来 —— 70 > 30×2，而且 70 > 他以前最久的 30。 */
+  const gone30 = await rhythm("Ah Seng", [-130, -100, -70]);
+  /* 平常隔 30 天，才 55 天 —— **还没到他自己的两倍**。 */
+  const still = await rhythm("Ah Kau", [-130, -100, -55]);
+  /* 🔴 平常隔 10 天，可是他以前隔过 360 天，而现在才 30 天 ——
+     过了「两倍」那一关，没过「他从来没隔这么久」那一关。
+     少了第二个条件，一个天天来的客人会在第三天被报成跑掉。 */
+  const patchy = await rhythm("Ah Meng", [-400, -390, -30]);
+  /* 只来过两次 —— 没有「平常」，所以永远不报。 */
+  const twice = await rhythm("Ah Fatt", [-200, -60]);
+
+  check("🔴 平常 30 天、已经 70 天没来 → 讲", !!(await lapsedFor(gone30)), "没讲");
+  check("🔴 才 55 天（不到他自己的两倍）→ 不讲", !(await lapsedFor(still)), "讲了");
+  check(
+    "🔴 过了两倍、而他以前隔过更久 → 不讲",
+    !(await lapsedFor(patchy)),
+    "讲了 —— 少了第二个条件，天天来的客人第三天就会被报成跑掉",
+  );
+  check("🔴 只来过两次（没有节奏）→ 不讲", !(await lapsedFor(twice)), "讲了");
+
+  const lap = await lapsedFor(gone30);
+  check(
+    "讲得出他来过几次 · 平常隔几天",
+    Number(lap?.qty_left) === 3 && Number(lap?.qty_floor) === 30,
+    JSON.stringify(lap),
+  );
+  check(
+    "🔴 「晚了几天」比的是他自己的节奏，不是一个我发明的期限",
+    lap?.due_on === day(-40) && Number(lap?.days_late) === 40,
+    `due_on=${lap?.due_on} days_late=${lap?.days_late} 期望 ${day(-40)} / 40`,
+  );
+  check("讲给客人听，而且找得到人", lap?.audience === "customer" && !!lap?.party_id,
+    `${lap?.audience} / ${lap?.party_id}`);
+  check(
+    "🔴 那一句话里没有折扣、没有日期、没有 RM 0",
+    typeof lap?.body === "string" && lap.body.includes("Ah Seng") &&
+      !/RM|%|discount|off\b|\d{2}\/\d{2}\/\d{4}/i.test(lap.body),
+    lap?.body,
+  );
+
+  /* 供应商很久没叫货不是「跑掉的客人」，那是他自己不想叫。 */
+  const { data: sup } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "suppliers", in_name: "Chin Hin",
+  });
+  for (const n of [-130, -100, -70]) {
+    await C.rpc("add_pipeline_record", {
+      in_project_id: P, in_module_key: "orders", in_title: `买 ${n}`,
+      in_party_id: sup.id, in_issued_on: day(n), in_amount_cents: 30_000,
+    });
+  }
+  check("🔴 供应商不算「跑掉的客人」", !(await lapsedFor(sup.id)), "讲了");
+
+  await C.rpc("snooze_nudge", {
+    in_project_id: P, in_kind: "party_lapsed", in_subject_id: gone30,
+    in_days: 14,
+  });
+  check("按掉之后就不讲了", !(await lapsedFor(gone30)), "还在讲");
+
   /* ── ⑬ 🔴 讲过的那一件，讯号记得住 ───────── */
   console.log("\n⑬ 🔴 上一次跟人家讲是几时");
   const stillThere = (await nudges()).find(
