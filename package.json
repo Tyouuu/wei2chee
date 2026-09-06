@@ -161,6 +161,7 @@
     "walk:salon": "node scripts/walk-salon.mjs",
     "check:naming": "node scripts/check-naming.mjs",
     "walk:workshop": "node scripts/walk-workshop.mjs",
+    "walk:hardware": "node scripts/walk-hardware.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
