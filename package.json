@@ -155,6 +155,7 @@
     "check:export": "node scripts/check-export.mjs",
     "check:payroll": "node scripts/check-payroll.mjs",
     "check:console": "node scripts/check-console.mjs",
+    "check:workdays": "node scripts/check-workdays.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
