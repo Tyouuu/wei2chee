@@ -73,7 +73,7 @@ const TRACKED = [
 /* 关公司那一段要数到的表 —— 比上面多一张：
    `appointments` 没有「谁做的」那种栏（[任务 213] 拿掉了），
    而它正好是那一轮把帐号锁住的那张。 */
-const CLEARED = [...TRACKED.map(([t]) => t), "appointments"];
+const CLEARED = [...TRACKED.map(([t]) => t), "appointments", "messages", "message_settings"];
 
 try {
   /* ── ⓪ 🔴 每一栏「谁做的」都要放得开那个人 ─────────────────────────
@@ -202,6 +202,22 @@ try {
     in_party: "Mr Ong", in_service: "Colour and cut", in_source: "website",
   });
   await C.rpc("mark_bookings_seen", { in_project_id: P });
+
+  /* 🔴 他自己按 WhatsApp 发出去的那一句 —— messages.sent_by。
+     这一行是 2026-09-06 补的，而它的理由跟 `appointments.seen_by`
+     那一行一模一样：那张新表第一次跑就把一个帐号锁住了，
+     **而这一支当时没有种过那张表** ——
+     一张没有被种过的表，跟一张没有问题的表，在报告里一模一样。 */
+  const bossSaid = async (fn, args) => {
+    const { error } = await C.rpc(fn, args);
+    if (error) console.log(`   ⚠️ ${fn}：${error.message}`);
+  };
+  await bossSaid("record_message_sent", {
+    in_project_id: P, in_audience: "customer", in_kind: "quote_sent",
+    in_body: "陈太太，这是你那张报价。",
+    in_subject_id: order.id, in_party_id: cust.id,
+  });
+  await bossSaid("set_message_settings", { in_project_id: P, in_to_customer: true });
 
   /* 先别提 —— nudge_snoozes.by_who */
   await W.rpc("snooze_nudge", {
