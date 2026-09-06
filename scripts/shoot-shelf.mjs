@@ -374,6 +374,14 @@ try {
   });
   if (fuErr) no("台面：跟进那一条写不进去", fuErr.message);
 
+  /* 台面：把补货线拉到架上的数量以上 —— `below_reorder` 一定会长出来。
+     ⚠️ 挑这一种不是随便挑：它**不看日子**，所以不管这支尺子几点跑都成立。 */
+  const { error: roErr } = await admin
+    .from("catalog_items")
+    .update({ reorder_at: 9999 })
+    .eq("project_id", pid);
+  if (roErr) no("台面：补货线设不上去", roErr.message);
+
   let chase = await open("today");
   if (/Call about the balance/.test(chase)) ok("要跟的那一件出现在「要跟的」上");
   else no("「要跟的」上没有它", chase.slice(0, 240));
@@ -385,7 +393,35 @@ try {
     .count();
   if (filterInHead === 1) ok("🔴 「今天 / 这个星期」在卡头上，而且选中的那一个讲得出来");
   else no("🔴 筛子不在卡头上", String(filterInHead));
+  /* 🔴 系统自己看出来的那几件 —— `nudges_due` 从做出来那天就算得出来，
+     而画面上一个入口都没有（2026-09-06 接的）。
+     这个台面本来就借了一样东西出去而且逾期了，所以那一件一定会长出来。 */
+  const nudgeCard = page.locator("section.ds-card").first();
+  const heads = await nudgeCard.locator("h2").count();
+  const nudgeHead = heads ? await nudgeCard.locator("h2").first().innerText() : "";
+  if (/What the system noticed/i.test(nudgeHead)) ok("🔴 「系统看到的」排在他自己写的上面");
+  else no("🔴 那一张卡不在最上面", nudgeHead || "（那一张卡没有画出来）");
+  const nudgeText = heads ? await nudgeCard.innerText() : "";
+  if (/Below the reorder line/i.test(nudgeText)) ok("补货线那一件自己长出来了");
+  else no("补货线那一件没长出来", nudgeText.slice(0, 240));
+  /* 🔴 它讲的是**哪一种事**，不是他自己写的那句话 —— 两份清单真正的差别。 */
+  if (!/Call about the balance/.test(nudgeText)) ok("🔴 它没有把他自己写的那一件混进来");
+  else no("🔴 两份清单混在一起了", nudgeText.slice(0, 240));
+
+  /* ⚠️ 先拍，再按「先不要」—— 按完那一张卡就不见了，
+     而拍一张少了它的图，等於拍不到这一件。 */
   await page.screenshot({ path: `${OUT}/9-today.png`, fullPage: true });
+
+  const wasN = await nudgeCard.locator("li").count();
+  await nudgeCard.getByRole("button", { name: /Not now/i }).first().click();
+  await page.waitForTimeout(2600);
+  const nowN = await page.locator("section.ds-card").first().locator("li").count();
+  if (nowN === wasN - 1) ok("按「先不要」当场少一行");
+  else no("按了没有少一行", `${wasN} → ${nowN}`);
+  await open("today");
+  const stillHushed = await page.locator("body").innerText();
+  if (!/Below the reorder line/i.test(stillHushed)) ok("🔴 重新载入也没有回来（存的是日子，不是一个旗子）");
+  else no("🔴 「先不要」没有留下来");
 
   for (const nm of ["Ipoh Garden", "Bercham"]) {
     const { error: bErr } = await api.rpc("add_branch", { in_project_id: pid, in_name: nm });

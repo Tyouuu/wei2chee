@@ -9,6 +9,7 @@ import { todayMYT } from "@/lib/portal/record-validity";
 import { PageBar } from "../page-bar";
 import { PageBody } from "../section";
 import { DeskCard } from "../desk-kit";
+import { NudgeList, type Nudge } from "./nudge-list";
 
 /**
  * 要跟的事。
@@ -84,6 +85,34 @@ export default async function TodayPage({
   const rows = (data ?? []) as Due[];
   const late = rows.filter((r) => Number(r.days_late) > 0).length;
 
+  /* 🔴 系统自己看出来的那几件（`nudges_due`，[任务 212](../../../../../docs/founder-tasks.md#212)）。
+     六个信号从做出来那天就算得出来，而**画面上一个入口都没有**。
+     它跟他自己写的那一份**同一页** —— 他只会开一个地方。 */
+  const { data: nudgeRows } = await supabase.rpc("nudges_due", {
+    in_project_id: workspace.projectId,
+    in_until: until === "week" ? weekFromMYT() : null,
+  });
+  const nudges = (nudgeRows ?? []) as Nudge[];
+
+  /* 哪一张单在哪一页 —— 只有伺服器这一边知道。
+     ⚠️ 查不到的那一行**不画连结**，不是画一条连不过去的 —— 那跟一颗
+     按不动的按钮是同一件事。 */
+  const recordIds = [
+    ...new Set(nudges.map((n) => n.record_id).filter(Boolean)),
+  ] as string[];
+  const { data: whereRows } = recordIds.length
+    ? await supabase
+        .from("pipeline_records")
+        .select("id, module_key")
+        .in("id", recordIds)
+    : { data: [] };
+  const moduleOf = Object.fromEntries(
+    ((whereRows ?? []) as { id: string; module_key: string }[]).map((r) => [
+      r.id,
+      r.module_key,
+    ]),
+  );
+
   const dim =
     "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
 
@@ -108,6 +137,22 @@ export default async function TodayPage({
     >
       <PageBar title={t("today.title")} subtitle={t("today.lede")} />
       <PageBody>
+        {/* 🔴 系统看到的排在**他自己写的上面** —— 底下那一份是他已经
+            知道的（他自己写的承诺），这一份是他**还不知道的**。
+            一件都没有的时候整张卡不画：一张永远写着「现在没有要看的」的卡，
+            读起来是这一页没做完。 */}
+        {nudges.length > 0 ? (
+          <div className="mb-5">
+            <NudgeList
+              projectId={workspace.projectId}
+              locale={locale}
+              rows={nudges}
+              isOwner={workspace.isOwner}
+              moduleOf={moduleOf}
+            />
+          </div>
+        ) : null}
+
         {/* 🔴 「今天 / 这个星期」是一个**筛子**，不是页脚两条连结。
             它原本是最底下两句底线字，而他要换的时候得先滚到底 ——
             一个筛子的家在它筛的那份清单的**上面**。
