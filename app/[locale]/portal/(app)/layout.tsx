@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
-import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
+import {
+  createSessionSupabaseClient,
+  getSessionUser,
+} from "@/lib/supabase/server-session";
 import { PortalShell } from "./portal-shell";
 import { canOpenModule, loadWorkspace } from "@/lib/portal/workspace";
 import { SystemLangProvider } from "@/design-system/system-lang-context";
@@ -30,7 +33,6 @@ import {
  * means a page that forgets to pass nav data cannot render a rail with holes
  * in it.
  */
-
 
 export default async function PortalAppLayout({
   children,
@@ -83,11 +85,17 @@ export default async function PortalAppLayout({
     : { data: [] };
 
   const pageRefs = sortPages(
-    (pageRows ?? []).map((r: { page_key: string; title: string | null; sort_order: number | null }) => ({
-      key: r.page_key,
-      title: r.title,
-      sortOrder: r.sort_order,
-    })),
+    (pageRows ?? []).map(
+      (r: {
+        page_key: string;
+        title: string | null;
+        sort_order: number | null;
+      }) => ({
+        key: r.page_key,
+        title: r.title,
+        sortOrder: r.sort_order,
+      }),
+    ),
   );
 
   /*
@@ -130,7 +138,12 @@ export default async function PortalAppLayout({
      ⚠️ 所以它们**按有没有资料**决定画不画，而不是按角色。
      那会留下一个「一台车都还没有的车厂看不到入口」的洞 ——
      补它的是「加一单」那一页底下那条架子，第一次从那里进去。 */
-  const [{ count: vehicleCount }, { count: contractCount }, { count: batchCount }, { count: rentalCount }] = project
+  const [
+    { count: vehicleCount },
+    { count: contractCount },
+    { count: batchCount },
+    { count: rentalCount },
+  ] = project
     ? await Promise.all([
         supabase
           .from("vehicles")
@@ -168,7 +181,10 @@ export default async function PortalAppLayout({
       savedBusinessName={businessContext.identity?.business_name ?? null}
       savedOwnerName={businessContext.identity?.owner_name ?? null}
       systemLang={systemLangOf(businessContext)}
-      ownerName={displayOwnerName(businessContext, user.email?.split("@")[0] || "我")}
+      ownerName={displayOwnerName(
+        businessContext,
+        user.email?.split("@")[0] || "我",
+      )}
       isOwner={workspace?.isOwner ?? true}
       /* 🔴 THE MONEY IS NOT IN HIS RAIL.
 
@@ -207,6 +223,7 @@ export default async function PortalAppLayout({
       hasContracts={(contractCount ?? 0) > 0}
       hasBatches={(batchCount ?? 0) > 0}
       hasRentals={(rentalCount ?? 0) > 0}
+      hasPurchases={pageRefs.some((r) => r.key === "purchases")}
       paid={Boolean(project?.paid)}
     >
       {/* Inside the shell, not around it. PortalShell is FORMAE -- dark chrome,

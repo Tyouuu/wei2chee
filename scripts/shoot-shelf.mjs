@@ -29,7 +29,13 @@ const env = Object.fromEntries(
     .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
     .map((l) => {
       const i = l.indexOf("=");
-      return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^["']|["']$/g, "")];
+      return [
+        l.slice(0, i).trim(),
+        l
+          .slice(i + 1)
+          .trim()
+          .replace(/^["']|["']$/g, ""),
+      ];
     }),
 );
 
@@ -44,12 +50,20 @@ if (!ping || ping.status >= 400) {
   process.exit(2);
 }
 
-const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
-const api = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
-  auth: { persistSession: false },
-});
+const admin = createClient(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: { persistSession: false },
+  },
+);
+const api = createClient(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  {
+    auth: { persistSession: false },
+  },
+);
 
 let userId = null;
 dropThrowawayOnExit(admin, () => userId);
@@ -83,7 +97,10 @@ try {
   });
   if (mkErr) throw new Error(`createUser: ${mkErr.message}`);
   userId = made.user.id;
-  const { error: inErr } = await api.auth.signInWithPassword({ email, password });
+  const { error: inErr } = await api.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (inErr) throw new Error(`signIn: ${inErr.message}`);
   const { data: proj } = await api.from("projects").select("id").single();
   if (!proj?.id) throw new Error("注册没有开出一个 project");
@@ -99,7 +116,8 @@ try {
       requested_key: k,
       new_title: "",
     });
-    if (pgErr && !/already/i.test(pgErr.message)) console.log(`  ⚪ 台面：${k} — ${pgErr.message}`);
+    if (pgErr && !/already/i.test(pgErr.message))
+      console.log(`  ⚪ 台面：${k} — ${pgErr.message}`);
   }
 
   const { data: cust, error: cErr } = await api.rpc("add_directory_entry", {
@@ -135,7 +153,10 @@ try {
     viewport: { width: 1400, height: 1000 },
     reducedMotion: "reduce",
   });
-  await page.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.goto(`${BASE}/en/login`, {
+    waitUntil: "networkidle",
+    timeout: 180000,
+  });
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
@@ -160,7 +181,8 @@ try {
   await page.getByRole("button", { name: /Record it/i }).click();
   await page.waitForTimeout(1200);
   const said0 = await page.locator("body").innerText();
-  if (/needs its number/i.test(said0)) ok("🔴 没有批号挡下来，而且讲得出为什么");
+  if (/needs its number/i.test(said0))
+    ok("🔴 没有批号挡下来，而且讲得出为什么");
   else no("🔴 没有批号照样记", said0.slice(0, 120));
 
   await page.getByLabel("Batch").fill("B240915");
@@ -203,7 +225,10 @@ try {
   const list = await page.locator("body").innerText();
   if (/on hand/i.test(list)) ok("「它那几批」答得出来（还剩几件是加出来的）");
   else no("「它那几批」没有答案", list.slice(0, 160));
-  await page.screenshot({ path: `${OUT}/3-expiry-batches.png`, fullPage: true });
+  await page.screenshot({
+    path: `${OUT}/3-expiry-batches.png`,
+    fullPage: true,
+  });
 
   // ── ② 借出去的 ─────────────────────────────────────────────────────────
   body = await open("rentals");
@@ -211,7 +236,9 @@ try {
   else no("空的时候画了别的", body.slice(0, 120));
 
   /* 🔴 没写出去了什么就不准记。 */
-  if ((await page.getByRole("button", { name: /It went out/i }).count()) === 0) {
+  if (
+    (await page.getByRole("button", { name: /It went out/i }).count()) === 0
+  ) {
     no("借一样东西出去那几格没画", body.slice(0, 400));
     throw new Error("stop here");
   }
@@ -259,12 +286,18 @@ try {
   else no("🔴 逾期没有讲出来", body.slice(0, 200));
   /* 🔴 不要用 `/RM/` —— 它打中的是侧栏上的 **FORMAE**（FO-RM-AE）。
      一个子字串比对打中商标，跟一个真的金额在报告里长得一模一样。 */
-  const main = await page.locator("main").innerText().catch(() => body);
+  const main = await page
+    .locator("main")
+    .innerText()
+    .catch(() => body);
   if (!/RM\s?[\d,]/.test(main)) ok("⚠️ 这一页上一分钱都没有（押金住在帐上）");
   else no("这一页上出现了金额", main.slice(0, 200));
   await page.screenshot({ path: `${OUT}/4-rentals-out.png`, fullPage: true });
 
-  await page.getByRole("button", { name: /It came back/i }).first().click();
+  await page
+    .getByRole("button", { name: /It came back/i })
+    .first()
+    .click();
   await page.waitForTimeout(3400);
   const { data: back } = await admin
     .from("rentals")
@@ -289,7 +322,10 @@ try {
   await page.locator("#plate").fill("WB 8888 C");
   await page.getByRole("button", { name: /look it up/i }).click();
   await page.waitForTimeout(2400);
-  await page.getByLabel(/what is it/i).first().fill("Toyota Hilux");
+  await page
+    .getByLabel(/what is it/i)
+    .first()
+    .fill("Toyota Hilux");
   await page.getByRole("button", { name: /register this plate/i }).click();
   await page.waitForTimeout(3400);
 
@@ -298,9 +334,18 @@ try {
   else no("「改这一台」不在");
   await edit.click();
   await page.waitForTimeout(1200);
-  await page.getByLabel(/what is it/i).last().fill("Toyota Hilux 2.4");
-  await page.getByLabel(/service every/i).last().fill("15000");
-  await page.getByRole("button", { name: /^Save$/ }).last().click();
+  await page
+    .getByLabel(/what is it/i)
+    .last()
+    .fill("Toyota Hilux 2.4");
+  await page
+    .getByLabel(/service every/i)
+    .last()
+    .fill("15000");
+  await page
+    .getByRole("button", { name: /^Save$/ })
+    .last()
+    .click();
   await page.waitForTimeout(3000);
 
   const { data: cars } = await admin
@@ -312,7 +357,10 @@ try {
   else no("改的没写进去", JSON.stringify(car));
   if (car?.service_every_km === 15000) ok("保养间隔改到了");
   else no("保养间隔没改到", String(car?.service_every_km));
-  await page.screenshot({ path: `${OUT}/6-vehicle-edited.png`, fullPage: true });
+  await page.screenshot({
+    path: `${OUT}/6-vehicle-edited.png`,
+    fullPage: true,
+  });
 
   await page.getByRole("button", { name: /Change this one/i }).click();
   await page.waitForTimeout(1000);
@@ -366,7 +414,9 @@ try {
   else no("那一条带子没画");
   await page.screenshot({ path: `${OUT}/8-owing.png`, fullPage: true });
 
-  const dueLongAgo = new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10);
+  const dueLongAgo = new Date(Date.now() - 6 * 864e5)
+    .toISOString()
+    .slice(0, 10);
   const { error: fuErr } = await api.rpc("set_follow_up", {
     in_record_id: oldId,
     in_what: "Call about the balance",
@@ -383,7 +433,8 @@ try {
   if (roErr) no("台面：补货线设不上去", roErr.message);
 
   let chase = await open("today");
-  if (/Call about the balance/.test(chase)) ok("要跟的那一件出现在「要跟的」上");
+  if (/Call about the balance/.test(chase))
+    ok("要跟的那一件出现在「要跟的」上");
   else no("「要跟的」上没有它", chase.slice(0, 240));
   if (/days late|day late/i.test(chase)) ok("🔴 逾期几天讲出来了");
   else no("🔴 逾期没有讲出来", chase.slice(0, 240));
@@ -391,21 +442,26 @@ try {
   const filterInHead = await page
     .locator("section.ds-card header a[aria-current='page']")
     .count();
-  if (filterInHead === 1) ok("🔴 「今天 / 这个星期」在卡头上，而且选中的那一个讲得出来");
+  if (filterInHead === 1)
+    ok("🔴 「今天 / 这个星期」在卡头上，而且选中的那一个讲得出来");
   else no("🔴 筛子不在卡头上", String(filterInHead));
   /* 🔴 系统自己看出来的那几件 —— `nudges_due` 从做出来那天就算得出来，
      而画面上一个入口都没有（2026-09-06 接的）。
      这个台面本来就借了一样东西出去而且逾期了，所以那一件一定会长出来。 */
   const nudgeCard = page.locator("section.ds-card").first();
   const heads = await nudgeCard.locator("h2").count();
-  const nudgeHead = heads ? await nudgeCard.locator("h2").first().innerText() : "";
-  if (/What the system noticed/i.test(nudgeHead)) ok("🔴 「系统看到的」排在他自己写的上面");
+  const nudgeHead = heads
+    ? await nudgeCard.locator("h2").first().innerText()
+    : "";
+  if (/What the system noticed/i.test(nudgeHead))
+    ok("🔴 「系统看到的」排在他自己写的上面");
   else no("🔴 那一张卡不在最上面", nudgeHead || "（那一张卡没有画出来）");
   const nudgeText = heads ? await nudgeCard.innerText() : "";
   if (/Below the reorder line/i.test(nudgeText)) ok("补货线那一件自己长出来了");
   else no("补货线那一件没长出来", nudgeText.slice(0, 240));
   /* 🔴 它讲的是**哪一种事**，不是他自己写的那句话 —— 两份清单真正的差别。 */
-  if (!/Call about the balance/.test(nudgeText)) ok("🔴 它没有把他自己写的那一件混进来");
+  if (!/Call about the balance/.test(nudgeText))
+    ok("🔴 它没有把他自己写的那一件混进来");
   else no("🔴 两份清单混在一起了", nudgeText.slice(0, 240));
 
   /* ⚠️ 先拍，再按「先不要」—— 按完那一张卡就不见了，
@@ -413,18 +469,29 @@ try {
   await page.screenshot({ path: `${OUT}/9-today.png`, fullPage: true });
 
   const wasN = await nudgeCard.locator("li").count();
-  await nudgeCard.getByRole("button", { name: /Not now/i }).first().click();
+  await nudgeCard
+    .getByRole("button", { name: /Not now/i })
+    .first()
+    .click();
   await page.waitForTimeout(2600);
-  const nowN = await page.locator("section.ds-card").first().locator("li").count();
+  const nowN = await page
+    .locator("section.ds-card")
+    .first()
+    .locator("li")
+    .count();
   if (nowN === wasN - 1) ok("按「先不要」当场少一行");
   else no("按了没有少一行", `${wasN} → ${nowN}`);
   await open("today");
   const stillHushed = await page.locator("body").innerText();
-  if (!/Below the reorder line/i.test(stillHushed)) ok("🔴 重新载入也没有回来（存的是日子，不是一个旗子）");
+  if (!/Below the reorder line/i.test(stillHushed))
+    ok("🔴 重新载入也没有回来（存的是日子，不是一个旗子）");
   else no("🔴 「先不要」没有留下来");
 
   for (const nm of ["Ipoh Garden", "Bercham"]) {
-    const { error: bErr } = await api.rpc("add_branch", { in_project_id: pid, in_name: nm });
+    const { error: bErr } = await api.rpc("add_branch", {
+      in_project_id: pid,
+      in_name: nm,
+    });
     if (bErr) no(`台面：开不了「${nm}」`, bErr.message);
   }
   let shops = await open("branches");
@@ -443,10 +510,144 @@ try {
   else no("🔴 关掉的那一间还混在开着的那一串里", shops.slice(0, 300));
   await page.screenshot({ path: `${OUT}/10-branches.png`, fullPage: true });
 
+  // ── ③c 我欠人家的 ───────────────────────────────────────────────────────
+  /* `party_payables`（任务 209）跟 `purchase_mismatches`（任务 149）——
+     两支从做出来那天起画面上一个入口都没有，两条任务的收尾自己都写着这句。
+
+     台面全部走**人按的那几支**：开一张进货单、付一部分、不收货。
+     於是这一家欠着尾款，而那一张单同时落在「钱付了货没到」上。 */
+  const { error: ppErr } = await api.rpc("add_project_page", {
+    requested_key: "purchases",
+    new_title: "",
+  });
+  if (ppErr && !/already/i.test(ppErr.message))
+    no("台面：进货单那一页开不了", ppErr.message);
+  /* 🔴 「供应商」那一页是 `add_project_page` **自己跟着开的**（任务 215）——
+     这里不另外开一次，那一条正好在这里被走过一遍。 */
+  const { data: pgRows } = await api
+    .from("project_pages")
+    .select("page_key")
+    .eq("project_id", pid);
+  const keys = (pgRows ?? []).map((r) => r.page_key);
+  if (keys.includes("suppliers"))
+    ok("🔴 加进货单的时候，供应商那一页自己跟着开了");
+  else no("🔴 供应商那一页没有跟着开", keys.join(","));
+
+  const { data: sup, error: sErr } = await api.rpc("add_directory_entry", {
+    in_project_id: pid,
+    in_module_key: "suppliers",
+    in_name: "Chin Hin Cement",
+  });
+  if (sErr) no("台面：供应商建不了", sErr.message);
+  const supId = sup?.id ?? sup;
+
+  const { data: po, error: poErr } = await api.rpc("add_pipeline_record", {
+    in_project_id: pid,
+    in_module_key: "purchases",
+    in_title: "Cement, 200 bags",
+    in_party: "Chin Hin Cement",
+    in_party_id: supId,
+    in_amount_cents: 185000,
+  });
+  if (poErr) no("台面：进货单开不了", poErr.message);
+  const poId = po?.id ?? po;
+
+  /* 🔴 那一张单要有**明细**，不然收货一件东西都不会动 ——
+     而 `purchase_mismatches` 判「到了没有」问的正是架子动过没有
+     （`stock_moves.against_id`）。我第一版只写了一个总额，
+     於是收完货那一张还写着「钱付了货没到」，看起来像画面坏了。 */
+  const { error: lnErr } = await api.rpc("set_record_lines", {
+    in_record_id: poId,
+    in_lines: [
+      {
+        description: "Cement 50kg",
+        qty: 200,
+        unit: "bag",
+        unit_price_cents: 925,
+        item_id: itemId,
+      },
+    ],
+  });
+  if (lnErr) no("台面：明细写不进去", lnErr.message);
+
+  /* 付一部分 —— 出去的钱挂在那张进货单上会**自己写一笔分摊**（任务 209）。 */
+  const { error: payErr } = await api.rpc("add_ledger_entry", {
+    in_project_id: pid,
+    in_module_key: "expenses",
+    in_direction: "out",
+    in_amount_cents: 60000,
+    in_party: "Chin Hin Cement",
+    in_party_id: supId,
+    in_against_id: poId,
+  });
+  if (payErr) no("台面：那一笔付不出去", payErr.message);
+
+  let owe2 = await open("payables");
+  if (/Chin Hin Cement/.test(owe2)) ok("欠的那一家出现在「我欠人家的」上");
+  else no("「我欠人家的」上没有他", owe2.slice(0, 240));
+  /* 1,850 − 600 = 1,250。**画面上那个数字要跟资料库同一个答案** ——
+     在这里自己再算一次，就是同一个问题两个答案。 */
+  const { data: payRows } = await api.rpc("party_payables", {
+    in_project_id: pid,
+  });
+  const owedDb = Number(
+    (payRows ?? []).find((r) => r.party_id === supId)?.owed_cents ?? -1,
+  );
+  const owedText = await page.locator('[data-payables="owed"]').innerText();
+  /* ⚠️ 读的是**欠款那一段**，不是整页 —— 上面那一条警报带上也印着同一个
+     供应商跟「叫了 RM 1,850」，而我第一版从整页去切，切到的是那一句，
+     於是对着一个完全正确的画面报了红。 */
+  const shown = /RM\s?([\d,]+)/.exec(
+    owedText.split("Chin Hin Cement")[1] ?? "",
+  )?.[1];
+  const shownCents = shown ? Number(shown.replace(/,/g, "")) * 100 : -2;
+  if (owedDb > 0 && shownCents === owedDb)
+    ok(`还欠多少跟资料库同一个答案 · RM ${shown}`);
+  else no("画面跟资料库对不上", `画面 ${shownCents} · 资料库 ${owedDb}`);
+
+  /* 🔴 对不上那一张排在**上面** —— 欠多少是一个数字，对不上是一件要做的事。 */
+  /* 一排摘要药丸 ← `up-infrastructure`。 */
+  const pillCount = await page
+    .locator("ul > li", { hasText: /owed|supplier|add up/i })
+    .count();
+  if (pillCount >= 3) ok(`顶上那一排药丸画出来了 · ${pillCount} 颗`);
+  else no("那一排药丸没画出来", String(pillCount));
+
+  /* 🔴 警报带排在**上面** ← `up-patient`，而且它自己带一颗按钮。
+     ⚠️ 问的是**眼睛读到的顺序**，不是 DOM 里第几张 `section.ds-card` ——
+     这个壳自己也用那个类名，所以「第一张卡」答的不是这一页的问题。 */
+  const iBad = owe2.indexOf("Paid, and it never arrived");
+  const iOwe = owe2.indexOf("You owe");
+  if (iBad >= 0 && iOwe > iBad) ok("🔴 那一条警报带排在「欠多少」上面");
+  else no("🔴 顺序不对", `警报 ${iBad} · 欠多少 ${iOwe}`);
+  const alarmBtn = await page
+    .locator('[data-payables="alarm"] a')
+    .first()
+    .innerText()
+    .catch(() => "");
+  if (/Open the order/i.test(alarmBtn))
+    ok("🔴 那一条带子右边有一颗去得了那张单的按钮");
+  else no("🔴 那一条带子上没有按钮", alarmBtn || "（没有）");
+  if (/Paid, and it never arrived/i.test(owe2))
+    ok("🔴 「钱付了货没到」讲出来了");
+  else no("🔴 没有讲是哪一种对不上", owe2.slice(0, 400));
+  await page.screenshot({ path: `${OUT}/16-payables.png`, fullPage: true });
+
+  /* 收了货，那一张就不再是「钱付了货没到」—— 而它照旧欠着尾款。 */
+  const { error: rcErr } = await api.rpc("receive_purchase", {
+    in_record_id: poId,
+  });
+  if (rcErr) no("台面：收不了货", rcErr.message);
+  owe2 = await open("payables");
+  if (!/Paid, and it never arrived/i.test(owe2)) ok("收了货，那一句自己不见了");
+  else no("收了货还写着「钱付了货没到」", owe2.slice(0, 300));
+  if (/Chin Hin Cement/.test(owe2)) ok("而尾款照旧欠着");
+  else no("收了货连欠款也不见了", owe2.slice(0, 240));
+
   // ── ④ 侧栏 ─────────────────────────────────────────────────────────────
   await open("");
   const rail = await page.locator("nav").first().innerText();
-  for (const label of ["Shelf life", "Out on loan"]) {
+  for (const label of ["Shelf life", "Out on loan", "What you owe"]) {
     if (rail.includes(label)) ok(`侧栏上有「${label}」`);
     else no(`侧栏上没有「${label}」`, rail.slice(0, 200));
   }
@@ -457,7 +658,10 @@ try {
     viewport: { width: 390, height: 844 },
     reducedMotion: "reduce",
   });
-  await phone.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
+  await phone.goto(`${BASE}/en/login`, {
+    waitUntil: "networkidle",
+    timeout: 180000,
+  });
   await phone.fill('input[type="email"]', email);
   await phone.fill('input[type="password"]', password);
   await phone.click('button[type="submit"]');
@@ -468,6 +672,7 @@ try {
     [13, "owing"],
     [14, "today"],
     [15, "branches"],
+    [17, "payables"],
   ]) {
     await phone.goto(`${BASE}/en/portal/${path}`, {
       waitUntil: "domcontentloaded",
@@ -479,7 +684,10 @@ try {
     );
     if (!wide) ok(`390 上不横滚 · ${path}`);
     else no(`390 上横滚了 · ${path}`);
-    await phone.screenshot({ path: `${OUT}/${n}-${path}-390.png`, fullPage: true });
+    await phone.screenshot({
+      path: `${OUT}/${n}-${path}-390.png`,
+      fullPage: true,
+    });
   }
 } finally {
   if (browser) await browser.close();

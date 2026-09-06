@@ -656,7 +656,8 @@
       "books": "帐",
       "tax": "税",
       "expiry": "效期",
-      "rentals": "借出去的"
+      "rentals": "借出去的",
+      "payables": "我欠人家的"
     },
     "find": {
       "title": "找东西",
@@ -1237,6 +1238,26 @@
       "lateCount": "逾期 %n 件",
       "people": "%n 张单",
       "someone": "那张单上没有名字"
+    },
+    "payables": {
+      "title": "我欠人家的",
+      "lede": "还欠哪几家，跟哪几张单对不上。从单据跟付款算出来的 —— 这里没有一行是打进去的。",
+      "overpaid": "付超过单上的钱",
+      "paidNotArrived": "钱付了，货没到",
+      "arrivedNotPaid": "货到了，钱还没付",
+      "noDocNo": "没有单号",
+      "orderedPaid": "叫了 {ordered} · 付了 {paid}",
+      "total": "一共欠",
+      "none": "现在没有欠哪一家。",
+      "unknown": "供应商收起来了",
+      "rowNote": "{docs} 张单 · 叫了 {ordered} · 付了 {paid}",
+      "oldest": "最久的 {n} 天",
+      "note": "天数从开单那一天算，不是从「几时要付」—— 一张进货单上的日子是预计到货，不是付款期限。",
+      "pillOwed": "共欠 {amount}",
+      "pillParties": "{n} 家",
+      "pillOldest": "最老 {n} 天",
+      "pillBad": "{n} 张对不上",
+      "openIt": "打开那张单"
     }
   },
   "explainer": {

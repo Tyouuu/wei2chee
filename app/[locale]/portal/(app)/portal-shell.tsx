@@ -25,6 +25,7 @@ import {
   IconPercent,
   IconHourglass,
   IconOut,
+  IconTruck,
 } from "./shell-icons";
 
 /**
@@ -63,7 +64,6 @@ type NavPage = { key: string; label: string };
 
 const ROW =
   "group relative flex items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-[7px] [font-size:var(--text-sm)] transition-colors duration-100";
-
 
 /**
  * 点下去到画面真的换掉之间，那一格自己会讲一句话。
@@ -141,7 +141,12 @@ function NavRow({
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+      >
         {body}
       </a>
     );
@@ -158,9 +163,18 @@ function NavRow({
  *  stranger can reach. */
 function IconGlobe() {
   return (
-    <svg viewBox="0 0 16 16" fill="none" className="h-[15px] w-[15px]" aria-hidden="true">
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      className="h-[15px] w-[15px]"
+      aria-hidden="true"
+    >
       <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M2.4 6.4h11.2M2.4 9.6h11.2" stroke="currentColor" strokeWidth="1.3" />
+      <path
+        d="M2.4 6.4h11.2M2.4 9.6h11.2"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
       <path
         d="M8 2c1.7 1.7 2.5 3.7 2.5 6S9.7 12.3 8 14c-1.7-1.7-2.5-3.7-2.5-6S6.3 3.7 8 2Z"
         stroke="currentColor"
@@ -170,7 +184,13 @@ function IconGlobe() {
   );
 }
 
-function SectionLabel({ children, action }: { children: ReactNode; action?: ReactNode }) {
+function SectionLabel({
+  children,
+  action,
+}: {
+  children: ReactNode;
+  action?: ReactNode;
+}) {
   return (
     <div className="flex items-center justify-between gap-2 px-2.5 pb-1 pt-5">
       <span className="[font-size:var(--text-micro)] uppercase tracking-[0.13em] [color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)] opacity-70">
@@ -197,6 +217,7 @@ export function PortalShell({
   hasContracts,
   hasBatches,
   hasRentals,
+  hasPurchases,
   paid,
   isOwner,
 }: {
@@ -229,6 +250,8 @@ export function PortalShell({
   hasContracts: boolean;
   hasBatches: boolean;
   hasRentals: boolean;
+  /** 他有没有在买东西 —— 没有进货单的生意，「我欠人家的」永远是空的。 */
+  hasPurchases: boolean;
   paid: boolean;
   /** 🔴 An OWNER adjusts the business; a 师傅 works in it.
 
@@ -366,15 +389,15 @@ export function PortalShell({
                  nothing at all is the control this whole change exists to
                  stop drawing. */
               !isOwner ? null : (
-              <button
-                type="button"
-                onClick={() => setAddPageOpen(true)}
-                aria-label={tHome("addPageCta")}
-                title={tHome("addPageCta")}
-                className="grid h-5 w-5 place-items-center rounded-[var(--radius-xs)] [color:var(--color-nav-fg-dim)] hover:[background-color:var(--color-nav-hover)] hover:[color:var(--color-nav-fg)]"
-              >
-                <IconPlus className="h-[13px] w-[13px]" />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setAddPageOpen(true)}
+                  aria-label={tHome("addPageCta")}
+                  title={tHome("addPageCta")}
+                  className="grid h-5 w-5 place-items-center rounded-[var(--radius-xs)] [color:var(--color-nav-fg-dim)] hover:[background-color:var(--color-nav-hover)] hover:[color:var(--color-nav-fg)]"
+                >
+                  <IconPlus className="h-[13px] w-[13px]" />
+                </button>
               )
             }
           >
@@ -435,7 +458,11 @@ export function PortalShell({
                   2026-09-04 every workbench page wears one system register, so
                   this row stopped being about 「my system's look」 and became
                   「what my shopfront looks like」. It belongs to 官网. */}
-              <NavRow href={`${base}/styles`} active={is("/styles")} icon={<IconStyles />}>
+              <NavRow
+                href={`${base}/styles`}
+                active={is("/styles")}
+                icon={<IconStyles />}
+              >
                 {t("styles")}
               </NavRow>
               <NavRow
@@ -469,41 +496,88 @@ export function PortalShell({
               钱那几页（欠钱 · 薪水 · 帐 · 税）对师傅是 404，
               **而一条通往 404 的连结比没有连结糟**。 */}
           <SectionLabel>{t("toolsSection")}</SectionLabel>
-          <NavRow href={`${base}/today`} active={is("/today")} icon={<IconClock />}>
+          <NavRow
+            href={`${base}/today`}
+            active={is("/today")}
+            icon={<IconClock />}
+          >
             {t("today")}
           </NavRow>
           {hasContracts && (
-            <NavRow href={`${base}/contracts`} active={is("/contracts")} icon={<IconWrench />}>
+            <NavRow
+              href={`${base}/contracts`}
+              active={is("/contracts")}
+              icon={<IconWrench />}
+            >
               {t("contracts")}
             </NavRow>
           )}
           {hasVehicles && (
-            <NavRow href={`${base}/vehicles`} active={is("/vehicles")} icon={<IconCar />}>
+            <NavRow
+              href={`${base}/vehicles`}
+              active={is("/vehicles")}
+              icon={<IconCar />}
+            >
               {t("vehicles")}
             </NavRow>
           )}
           {hasBatches && (
-            <NavRow href={`${base}/expiry`} active={is("/expiry")} icon={<IconHourglass />}>
+            <NavRow
+              href={`${base}/expiry`}
+              active={is("/expiry")}
+              icon={<IconHourglass />}
+            >
               {t("expiry")}
             </NavRow>
           )}
           {hasRentals && (
-            <NavRow href={`${base}/rentals`} active={is("/rentals")} icon={<IconOut />}>
+            <NavRow
+              href={`${base}/rentals`}
+              active={is("/rentals")}
+              icon={<IconOut />}
+            >
               {t("rentals")}
             </NavRow>
           )}
           {isOwner && (
             <>
-              <NavRow href={`${base}/owing`} active={is("/owing")} icon={<IconCoin />}>
+              <NavRow
+                href={`${base}/owing`}
+                active={is("/owing")}
+                icon={<IconCoin />}
+              >
                 {t("owing")}
               </NavRow>
-              <NavRow href={`${base}/payroll`} active={is("/payroll")} icon={<IconWallet />}>
+              {/* 🔴 买的那一边。**只在他真的在买东西的时候画** ——
+                  一条永远打开是空的连结，跟一颗按不动的按钮是同一件事。 */}
+              {hasPurchases && (
+                <NavRow
+                  href={`${base}/payables`}
+                  active={is("/payables")}
+                  icon={<IconTruck />}
+                >
+                  {t("payables")}
+                </NavRow>
+              )}
+              <NavRow
+                href={`${base}/payroll`}
+                active={is("/payroll")}
+                icon={<IconWallet />}
+              >
                 {t("payroll")}
               </NavRow>
-              <NavRow href={`${base}/books`} active={is("/books")} icon={<IconBook />}>
+              <NavRow
+                href={`${base}/books`}
+                active={is("/books")}
+                icon={<IconBook />}
+              >
                 {t("books")}
               </NavRow>
-              <NavRow href={`${base}/tax`} active={is("/tax")} icon={<IconPercent />}>
+              <NavRow
+                href={`${base}/tax`}
+                active={is("/tax")}
+                icon={<IconPercent />}
+              >
                 {t("tax")}
               </NavRow>
             </>
@@ -558,21 +632,27 @@ export function PortalShell({
               「我买的这套包含什么」. It sits with the account for the same
               reason 我的账号 does: it is about the arrangement, not the work. */}
           {isOwner && (
-            <NavRow href={`${base}/spec`} active={is("/spec")} icon={<IconSpec />}>
+            <NavRow
+              href={`${base}/spec`}
+              active={is("/spec")}
+              icon={<IconSpec />}
+            >
               {t("spec")}
             </NavRow>
           )}
           {isOwner && (
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            className={`${ROW} w-full [color:var(--color-nav-fg-dim)] hover:[background-color:var(--color-nav-hover)] hover:[color:var(--color-nav-fg)]`}
-          >
-            <span className="shrink-0">
-              <IconSettings />
-            </span>
-            <span className="min-w-0 flex-1 truncate text-left">{t("settings")}</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className={`${ROW} w-full [color:var(--color-nav-fg-dim)] hover:[background-color:var(--color-nav-hover)] hover:[color:var(--color-nav-fg)]`}
+            >
+              <span className="shrink-0">
+                <IconSettings />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-left">
+                {t("settings")}
+              </span>
+            </button>
           )}
           {/* THE ACCOUNT BLOCK.
               This replaces three separate things that used to sit stacked in
@@ -621,12 +701,12 @@ export function PortalShell({
             {/* The plan is what the OWNER is paying. Beside a supervisor's own
                 name it reads as a statement about him, and it is not one. */}
             {isOwner && (
-            <span
-              aria-hidden="true"
-              className="shrink-0 rounded-[var(--radius-xs)] border px-1.5 py-0.5 [border-color:var(--color-nav-border)] [color:var(--color-nav-fg-dim)] [font-size:var(--text-micro)]"
-            >
-              {paid ? t("planPaid") : t("planFree")}
-            </span>
+              <span
+                aria-hidden="true"
+                className="shrink-0 rounded-[var(--radius-xs)] border px-1.5 py-0.5 [border-color:var(--color-nav-border)] [color:var(--color-nav-fg-dim)] [font-size:var(--text-micro)]"
+              >
+                {paid ? t("planPaid") : t("planFree")}
+              </span>
             )}
           </Link>
         </div>
@@ -647,7 +727,14 @@ export function PortalShell({
             aria-expanded={navOpen}
             className="-ml-2.5 grid h-11 w-11 shrink-0 place-items-center rounded-[var(--radius-md)] [color:var(--color-paper)] hover:[background-color:var(--color-ink-850)]"
           >
-            <svg viewBox="0 0 20 20" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <svg
+              viewBox="0 0 20 20"
+              className="h-[18px] w-[18px]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              aria-hidden="true"
+            >
               <path d="M3 5.5h14M3 10h14M3 14.5h14" strokeLinecap="round" />
             </svg>
           </button>

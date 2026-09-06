@@ -72,6 +72,12 @@ const PAGES = [
   ["plates", "/en/portal/vehicles", "customer"],
   ["shelf life", "/en/portal/expiry", "customer"],
   ["out on loan", "/en/portal/rentals", "customer"],
+  /* 谁欠我钱 · 分店 · 我欠人家的（2026-09-06）。同一条：**一格做完，
+     那一页要走得进这份清单** —— 而这三页在今天之前一直没有走进来，
+     所以这把尺看得到画面，只是从来没打开过它们。 */
+  ["who owes you", "/en/portal/owing", "customer"],
+  ["branches", "/en/portal/branches", "customer"],
+  ["what you owe", "/en/portal/payables", "customer"],
   /* 改这一单. Its URL carries a RECORD id, so the same trap as
      console-customer one level deeper -- and it carries its own hard-coded
      copy block (地址 · 公司注册号 · 冲正 · 收起来), which is precisely the

@@ -217,3 +217,24 @@ export function IconOut({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 一辆送货的车 —— 买的那一边（我欠人家的 · 哪几张对不上）。 */
+export function IconTruck({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M2 5.5h9v8H2z" />
+      <path d="M11 8.5h3.2l2.3 2.6v2.4H11z" />
+      <circle cx="5.5" cy="15.5" r="1.6" />
+      <circle cx="14" cy="15.5" r="1.6" />
+    </svg>
+  );
+}

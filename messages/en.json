@@ -559,7 +559,7 @@
       "siteNoAddress": "No address yet",
       "siteOpen": "Edit the website",
       "siteView": "View the live page",
-      "siteEnquiries": "{n} enquiries so far",
+      "siteEnquiries": "{n, plural, one {# enquiry so far} other {# enquiries so far}}",
       "siteEnquiriesNone": "No enquiries yet",
       "siteEnquiriesLink": "Open",
       "deliveryTitle": "Where your system is",
@@ -656,7 +656,8 @@
       "books": "Books",
       "tax": "Tax",
       "expiry": "Shelf life",
-      "rentals": "Out on loan"
+      "rentals": "Out on loan",
+      "payables": "What you owe"
     },
     "find": {
       "title": "Find anything",
@@ -954,7 +955,7 @@
       "payable": "You owe suppliers",
       "deposits": "Held for customers",
       "inventory": "Stock on the shelf",
-      "inventoryUnknown": "{n} items have no cost yet",
+      "inventoryUnknown": "{n, plural, one {# item has no cost yet} other {# items have no cost yet}}",
       "asOf": "As at {date}",
       "cashBasis": "counted when the money moved, not when the job was done",
       "trialLabel": "Trial balance",
@@ -982,7 +983,7 @@
       "title": "To chase",
       "lede": "What the system noticed, and the next steps you wrote down yourself. Overdue first.",
       "late": "Overdue",
-      "lateBy": "{n} days late ({date})",
+      "lateBy": "{n, plural, one {# day late} other {# days late}} ({date})",
       "on": "{date}",
       "none": "Nothing to chase today.",
       "noneWeek": "Nothing to chase this week.",
@@ -1028,7 +1029,7 @@
       "empty": "No cars yet. Type a plate above -- if it is not there, you register it right then.",
       "overdueLabel": "Not in for a while",
       "overdueLede": "Sorted by how long since they were last in. Not by mileage -- we do not know what a car reads today.",
-      "monthsAgo": "{n} months ago",
+      "monthsAgo": "{n, plural, one {# month ago} other {# months ago}}",
       "register": "Register this plate",
       "registering": "Registering...",
       "what": "What is it",
@@ -1237,6 +1238,26 @@
       "lateCount": "%n overdue",
       "people": "%n jobs",
       "someone": "No name on the job"
+    },
+    "payables": {
+      "title": "What you owe",
+      "lede": "Suppliers you still owe, and the orders that do not add up. Worked out from the orders and the payments — nothing here is typed.",
+      "overpaid": "Paid more than the order",
+      "paidNotArrived": "Paid, and it never arrived",
+      "arrivedNotPaid": "Arrived, and not paid yet",
+      "noDocNo": "No number",
+      "orderedPaid": "ordered {ordered} · paid {paid}",
+      "total": "You owe",
+      "none": "You do not owe any supplier right now.",
+      "unknown": "Supplier removed",
+      "rowNote": "{docs, plural, one {# order} other {# orders}} · ordered {ordered} · paid {paid}",
+      "oldest": "oldest is {n, plural, one {# day} other {# days}}",
+      "note": "Counted from the day each order was written, not from a due date — a purchase order's date is when the goods were expected, not when the money is.",
+      "pillOwed": "{amount} owed",
+      "pillParties": "{n, plural, one {# supplier} other {# suppliers}}",
+      "pillOldest": "oldest {n, plural, one {# day} other {# days}}",
+      "pillBad": "{n, plural, one {# does not add up} other {# do not add up}}",
+      "openIt": "Open the order"
     }
   },
   "explainer": {
