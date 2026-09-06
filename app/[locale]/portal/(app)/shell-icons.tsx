@@ -298,3 +298,41 @@ export function IconMove({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 一个讲台 —— 班（一个老师，一屋子学生）。 */
+export function IconClass({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="2.6" y="3" width="14.8" height="9.6" rx="1.6" />
+      <path d="M10 12.6v3M6.4 15.6h7.2" />
+      <path d="M6 6.4h5M6 9h3.4" />
+    </svg>
+  );
+}
+
+/** 一支会转的箭 —— 一页底下还有几件事。 */
+export function IconChevron({ open }: { open?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`h-[13px] w-[13px] transition-transform duration-150 ${open ? "rotate-90" : ""}`}
+      aria-hidden="true"
+    >
+      <path d="M6 3.5 10.5 8 6 12.5" />
+    </svg>
+  );
+}

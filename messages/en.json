@@ -660,7 +660,9 @@
       "payables": "What you owe",
       "attendance": "Days worked",
       "rota": "Who is free",
-      "transfers": "Moving stock"
+      "transfers": "Moving stock",
+      "classes": "Classes",
+      "moreUnder": "More under this page"
     },
     "find": {
       "title": "Find anything",
@@ -864,7 +866,8 @@
       "teamOffLabel": "Switched off",
       "teamOffBody": "They can no longer open anything. What they wrote stays where it is.",
       "tabSecurity": "Sign-in",
-      "tabData": "Your data"
+      "tabData": "Your data",
+      "exportPartial": "Some of your rows could not be read. This file is incomplete — try again, and tell us if it keeps happening."
     },
     "enquiries": "Enquiries from your website",
     "enquiriesBlurb": "What visitors send from your own site lands here — nobody has to retype it. One press turns an enquiry into a job on your own page, with the person added to your customers.",
@@ -1332,6 +1335,47 @@
       "shortWarn": "Moved, and that shop was %n short.",
       "moved": "Moved %n.",
       "formNote": "If the shop does not have enough, it still moves and says how short it was — the goods really did leave, and it is the number that is wrong."
+    },
+    "classes": {
+      "title": "Classes",
+      "lede": "One teacher, a room of students. Lessons for the next two weeks, and who is on each class.",
+      "dueTitle": "Coming up",
+      "noneDue": "No lessons in the next two weeks. Set the hours on a class below and they appear here.",
+      "open": "Open it",
+      "mark": "Take attendance",
+      "notOpen": "Not opened",
+      "openedNotMarked": "Not marked yet",
+      "markedAll": "Marked",
+      "groupsTitle": "Classes",
+      "noGroups": "No classes yet. Add one below.",
+      "addGroup": "Add the class",
+      "name": "Name",
+      "teacher": "Teacher",
+      "capacity": "Seats",
+      "noTeacher": "Nobody yet",
+      "save": "Save",
+      "seats": "%n on the roster",
+      "rosterTitle": "Who is on it",
+      "enrol": "Add",
+      "leave": "Take off",
+      "emptyRoster": "Nobody on this class yet.",
+      "slotsTitle": "When it runs",
+      "slotsNote": "Leave both empty for a day it does not run.",
+      "saveSlots": "Save the hours",
+      "came": "Came",
+      "noShow": "Did not come",
+      "excused": "Excused",
+      "notYet": "not marked",
+      "close": "Close",
+      "saveFailed": "That did not save.",
+      "full": "Full",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
     }
   },
   "explainer": {

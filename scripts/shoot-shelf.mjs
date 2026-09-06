@@ -749,12 +749,39 @@ try {
   if (/Chin Hin Cement/.test(owe2)) ok("而尾款照旧欠着");
   else no("收了货连欠款也不见了", owe2.slice(0, 240));
 
-  // ── ④ 侧栏 ─────────────────────────────────────────────────────────────
+  /* 🔴 新规矩（2026-09-06，老板：「现在太多东西了」）：
+     一件工具住在**它讲的那一页**底下，按那一行右边那支箭就地摊开。
+     ⚠️ **不是「打开那一页」** —— 模块页不在这个壳里，点进去连侧栏都没有了。 */
   await open("");
-  const rail = await page.locator("nav").first().innerText();
-  for (const label of ["Shelf life", "Out on loan", "What you owe"]) {
-    if (rail.includes(label)) ok(`侧栏上有「${label}」`);
-    else no(`侧栏上没有「${label}」`, rail.slice(0, 200));
+  const rail = page.locator('aside[aria-label="Main navigation"]');
+  const railRows = (s) =>
+    s
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+  const homeRows = railRows(await rail.locator("nav").first().innerText());
+  if (!homeRows.includes("Shelf life") && !homeRows.includes("What you owe"))
+    ok("🔴 首页那条侧栏上没有那几件工具");
+  else no("🔴 首页那条侧栏上还挂着工具", homeRows.join(" · "));
+  for (const [pageLabel, labels] of [
+    ["Stock", ["Shelf life", "Out on loan"]],
+    ["Suppliers", ["What you owe"]],
+  ]) {
+    await rail
+      .locator("a", { hasText: new RegExp(`^${pageLabel}$`) })
+      .first()
+      .locator("button")
+      .click();
+    await page.waitForTimeout(400);
+    const here = railRows(await rail.locator("nav").first().innerText());
+    const missing = labels.filter((l) => !here.includes(l));
+    if (missing.length === 0)
+      ok(`🔴 摊开「${pageLabel}」，它底下就有 ${labels.join(" · ")}`);
+    else
+      no(
+        `🔴 「${pageLabel}」底下少了`,
+        `${missing.join(" · ")} — 侧栏：${here.join("/")}`,
+      );
   }
   await page.screenshot({ path: `${OUT}/7-rail.png`, fullPage: true });
 

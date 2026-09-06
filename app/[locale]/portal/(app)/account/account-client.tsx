@@ -94,10 +94,11 @@ export function AccountClient({
    * DATA EXPORT.
    *
    * This business promises that exporting your data is free. Promising it and
-   * not shipping it is worse than never promising it, and this is the whole of
-   * what a customer's data actually is: their pages, their layouts, their
-   * business details. Built in the browser from their own authenticated reads,
-   * so it needs no endpoint and can never return somebody else's rows.
+   * not shipping it is worse than never promising it.
+   *
+   * 🔴 由**资料库自己**列出他的每一张表（`export_my_data` → `his_data_tables`），
+   * 不是这里手写四样 —— 见下面。走他自己的登入身分，所以 RLS 是那一道边界，
+   * 而不是我们写的一句过滤。
    */
   async function exportData() {
     setExporting(true);
@@ -106,37 +107,33 @@ export function AccountClient({
       db.from("projects").select("*").single(),
       db.rpc("get_my_business_context"),
     ]);
+
     /*
-      THE ENQUIRIES ARE THE PART WORTH TAKING.
+      🔴 **每一张带 `project_id` 的表**，不是我们手写的那四样（2026-09-07）。
 
-      This export shipped with the pages and the design and without them, which
-      inverts what the file is for. A layout can be rebuilt; the people who
-      filled in the form on their website cannot. `site_enquiries` is also the
-      only table in this product holding data about the CUSTOMER'S customers --
-      names, phone numbers, what they asked for -- so an export that leaves it
-      out hands somebody their wallpaper and keeps their address book.
+      这一支本来自己去抓四样：专案 · 页面 · 询价 · 照片。而 8-30 之后建的
+      每一张表**一张都不在里面** —— 走单 · 收款 · 名册 · 库存 · 预约 ·
+      逐项 · 分期 · 分摊 · 地址 · 工地照 · 改动 · 套票 · 保养 · 租赁 ·
+      送货 · 退货 · 车 · 班级 · 排班 · 讯息 · 薪水…
 
-      Read through their own session like everything else here, so RLS is what
-      bounds it rather than a filter we wrote.
+      🔴 而它比少一个功能糟：他按下去、拿到一个档案、**以为他的资料在手上**。
+      而「拿走你的资料，免费，随时」是已经写在页面上的承诺（任务 64）。
+
+      `export_my_data` 去**问资料库自己**（`his_data_tables()`），
+      所以下一张表建出来那天它自己就在这个档案里 ——
+      手写一份清单，下一张表建出来的那天它就过期了，而没有任何东西会讲
+      （这个仓库栽在「第二份手写清单」上至少八次）。
     */
-    const [{ data: pages }, { data: enquiries }, { data: photoFiles }] = project
-      ? await Promise.all([
-          db.from("project_pages").select("*").eq("project_id", project.id),
-          db
-            .from("site_enquiries")
-            .select("*")
-            .eq("project_id", project.id)
-            .order("created_at", { ascending: false }),
-          /* Photographs live in storage, not in a row, so the JSON alone would
-             let somebody walk away believing they had everything. The layouts
-             quote public URLs that stop resolving the day hosting does, which
-             is exactly the day this file matters. Listing them by name and URL
-             is what makes them saveable -- we are not zipping binaries into a
-             browser download to achieve it. */
-          db.storage.from("site-photos").list(project.id, { limit: 1000 }),
-        ])
-      : [{ data: [] }, { data: [] }, { data: [] }];
+    const { data: everything, error: exportErr } = project
+      ? await db.rpc("export_my_data", { in_project_id: project.id })
+      : { data: null, error: null };
 
+    /* 照片住在储存空间里，不是一行 —— 所以那一支拿不到它们。
+       而版面里引的公开网址**会在停止托管的那一天失效，正好就是这个档案
+       有用的那一天**，所以要连名字带网址列出来。 */
+    const { data: photoFiles } = project
+      ? await db.storage.from("site-photos").list(project.id, { limit: 1000 })
+      : { data: [] };
     const photos = (photoFiles ?? []).map((f: { name: string }) => {
       const path = `${project?.id}/${f.name}`;
       return {
@@ -148,22 +145,23 @@ export function AccountClient({
     const payload = {
       exported_at: new Date().toISOString(),
       account: { email },
-      project,
       business_context: context,
-      pages,
-      enquiries,
+      /* 🔴 读不到就**讲出来**，不给一个看起来完整的档案 —— 见上面。 */
+      ...(exportErr
+        ? { error: t("exportPartial"), project }
+        : ((everything as Record<string, unknown>) ?? { project })),
       photos,
       /* Named rather than silently absent. Someone reading this file to decide
          whether they have everything deserves to be told what they do not
          have, and why -- an omission a reader has to notice is not disclosure. */
       not_included: {
-        page_versions:
-          "Edit history. Every saved version of every page; the current one is in `pages`.",
         photo_files:
           "The image files themselves. Listed in `photos` with a URL each — download them before hosting ends.",
       },
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

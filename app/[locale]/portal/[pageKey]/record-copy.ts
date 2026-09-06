@@ -113,6 +113,9 @@ export type RecordFormCopy = {
   /* The document preview. Only on the pages that produce a piece of paper
      somebody outside the business reads; a name list and a shelf do not. */
   previewLabel: string;
+  /** 🔴 送去印表机那一颗（2026-09-07）。在这之前整个产品只有规格书那一页
+   *  按得了列印 —— 所以他要给客人一张报价，只能截图。 */
+  printIt: string;
   previewDate: string;
   /** 那张纸上单号那一格的抬头。见 new/document-preview.tsx。 */
   previewNumber: string;
@@ -534,6 +537,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       receiveHint: "按下去，这张单上每一行都会变成库存里的一笔进货。之后这张单的行就不能再改了。",
       receiveDone: "这张单的货已经在库存里了。要更正就去库存记一笔进或出。",
       previewLabel: "印出来的样子",
+      printIt: "印出来",
       previewDate: "日期",
       previewNumber: "单号",
       previewNoNumber: "单号要保存了才有 —— 它是系统发的，不是猜的。",
@@ -871,6 +875,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       receiveHint: "Every line on this order becomes one stock movement. After that its lines cannot be changed.",
       receiveDone: "The goods on this order are already in your stock. Correct it with a stock movement.",
       previewLabel: "As it prints",
+      printIt: "Print",
       previewDate: "Date",
       previewNumber: "No.",
       previewNoNumber: "The number is issued when you save — it is not guessed.",

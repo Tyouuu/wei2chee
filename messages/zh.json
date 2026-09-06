@@ -660,7 +660,9 @@
       "payables": "我欠人家的",
       "attendance": "出勤",
       "rota": "谁有空",
-      "transfers": "搬货"
+      "transfers": "搬货",
+      "classes": "班",
+      "moreUnder": "这一页底下还有"
     },
     "find": {
       "title": "找东西",
@@ -864,7 +866,8 @@
       "teamOffLabel": "已关掉",
       "teamOffBody": "他什么都打不开了。他写过的东西原样留着。",
       "tabSecurity": "登入",
-      "tabData": "你的资料"
+      "tabData": "你的资料",
+      "exportPartial": "有一部分资料读不到，这个档案是不完整的 —— 再按一次；一直这样就告诉我们。"
     },
     "enquiries": "官网来的询价",
     "enquiriesBlurb": "别人从你自己官网填的，都落在这里 —— 不用再打一遍。按一下就变成你那一页上的一张单，那个人也进了你的客户名单。",
@@ -1332,6 +1335,47 @@
       "shortWarn": "搬了，而那一间差 %n 件。",
       "moved": "搬了 %n 件。",
       "formNote": "那一间不够也照样搬，然后讲差多少 —— 货真的搬走了，错的是那个数字。"
+    },
+    "classes": {
+      "title": "班",
+      "lede": "一个老师十个学生。接下来两个礼拜要上的课，跟每一个班有谁。",
+      "dueTitle": "接下来",
+      "noneDue": "接下来两个礼拜没有课。在下面的班上排好几点上，它就会出现在这里。",
+      "open": "开这一堂",
+      "mark": "点名",
+      "notOpen": "还没开",
+      "openedNotMarked": "还没点名",
+      "markedAll": "点过了",
+      "groupsTitle": "班",
+      "noGroups": "还没有班。在下面加一个。",
+      "addGroup": "加这一个班",
+      "name": "名字",
+      "teacher": "老师",
+      "capacity": "几个位子",
+      "noTeacher": "还没有人",
+      "save": "存",
+      "seats": "名单上 %n 个",
+      "rosterTitle": "谁在这个班",
+      "enrol": "加进来",
+      "leave": "拿掉",
+      "emptyRoster": "这个班还没有人。",
+      "slotsTitle": "几时上",
+      "slotsNote": "两格都空着就是那天不上。",
+      "saveSlots": "存这几个时段",
+      "came": "来了",
+      "noShow": "没来",
+      "excused": "请假",
+      "notYet": "还没点",
+      "close": "收起来",
+      "saveFailed": "没存进去。",
+      "full": "满了",
+      "mon": "星期一",
+      "tue": "星期二",
+      "wed": "星期三",
+      "thu": "星期四",
+      "fri": "星期五",
+      "sat": "星期六",
+      "sun": "星期日"
     }
   },
   "explainer": {

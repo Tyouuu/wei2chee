@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -29,6 +29,8 @@ import {
   IconCalendar,
   IconClockFace,
   IconMove,
+  IconClass,
+  IconChevron,
 } from "./shell-icons";
 
 /**
@@ -107,18 +109,21 @@ function NavRow({
   children,
   external,
   trailing,
+  nested,
 }: {
   href: string;
   active?: boolean;
   icon: ReactNode;
   children: ReactNode;
   external?: boolean;
+  /** 缩排 —— 它住在上面那一页底下，不是自己一行。 */
+  nested?: boolean;
   /** A badge or dot at the right end. Used by the 官网 group, where the two
    *  facts an owner opens this product for -- is it live, has anything come in
    *  -- have to be visible without navigating to find out. */
   trailing?: ReactNode;
 }) {
-  const className = `${ROW} ${
+  const className = `${ROW} ${nested ? "ml-6" : ""} ${
     active
       ? "[background-color:var(--color-nav-active)] [color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]"
       : "[color:var(--color-nav-fg-dim)] hover:[background-color:var(--color-nav-hover)] hover:[color:var(--color-nav-fg)]"
@@ -223,6 +228,7 @@ export function PortalShell({
   hasPurchases,
   hasStaff,
   twoShops,
+  hasBookings,
   paid,
   isOwner,
 }: {
@@ -261,6 +267,8 @@ export function PortalShell({
   hasStaff: boolean;
   /** 开着的店有没有两间 —— 一间店搬不了货。 */
   twoShops: boolean;
+  /** 有没有预约那一页 —— 一个班住在它上面。 */
+  hasBookings: boolean;
   paid: boolean;
   /** 🔴 An OWNER adjusts the business; a 师傅 works in it.
 
@@ -285,6 +293,93 @@ export function PortalShell({
   */
   const sitePage = pages.find((p) => p.key === "website") ?? null;
   const systemPages = pages.filter((p) => p.key !== "website");
+
+  /**
+   * 🔴 每一件工具属於哪一页。
+   *
+   * 老板 2026-09-06：**「现在太多东西了」**，而量出来他是对的 ——
+   * 「你的工具」那一组早上七行、晚上十六行，**一天多九行**。
+   * 那不是谁乱加，是**每接一扇门就多一行，而没有人管那一整条要长到多长**。
+   *
+   * 规矩换成一句：**每接一扇门，先问「它属於哪一页」，答不出来才给它自己一行。**
+   *
+   * 「谁欠我钱」不是一页，是他打开**客户**那一页时会问的那一句；
+   * 「我欠人家的」在**供应商**底下；「帐 · 税」在**收款**底下。
+   * 别人也是这样摆的：Xero 的 Bills to pay 在 Business 底下，
+   * QuickBooks 的 Vendors 在 Expenses 底下。**一个问题不是一页。**
+   *
+   * ⚠️ **一页都没有少** —— 它只是住到它讲的那件事底下，
+   * 而那一页没开的时候（`under` 不在他的清单里）它照旧自己一行。
+   */
+  const tools: {
+    key: string;
+    under: string | null;
+    show: boolean;
+    icon: ReactNode;
+  }[] = [
+    /* 今天要跟的跨每一页 —— 它不属於任何一件事，所以它留在最上面。 */
+    { key: "today", under: null, show: true, icon: <IconClock /> },
+    {
+      key: "contracts",
+      under: "customers",
+      show: hasContracts,
+      icon: <IconWrench />,
+    },
+    {
+      key: "vehicles",
+      under: "customers",
+      show: hasVehicles,
+      icon: <IconCar />,
+    },
+    { key: "owing", under: "customers", show: isOwner, icon: <IconCoin /> },
+    {
+      key: "payables",
+      under: "suppliers",
+      show: isOwner && hasPurchases,
+      icon: <IconTruck />,
+    },
+    { key: "books", under: "payments", show: isOwner, icon: <IconBook /> },
+    { key: "tax", under: "payments", show: isOwner, icon: <IconPercent /> },
+    {
+      key: "attendance",
+      under: "staff",
+      show: isOwner && hasStaff,
+      icon: <IconCalendar />,
+    },
+    {
+      key: "rota",
+      under: "staff",
+      show: isOwner && hasStaff,
+      icon: <IconClockFace />,
+    },
+    { key: "payroll", under: "staff", show: isOwner, icon: <IconWallet /> },
+    {
+      key: "expiry",
+      under: "inventory",
+      show: hasBatches,
+      icon: <IconHourglass />,
+    },
+    {
+      key: "transfers",
+      under: "inventory",
+      show: isOwner && twoShops,
+      icon: <IconMove />,
+    },
+    { key: "rentals", under: "inventory", show: hasRentals, icon: <IconOut /> },
+    {
+      key: "classes",
+      under: "bookings",
+      show: isOwner && hasBookings,
+      icon: <IconClass />,
+    },
+  ];
+  const hasPage = (k: string | null) =>
+    k !== null && systemPages.some((p) => p.key === k);
+  const toolsUnder = (k: string) =>
+    tools.filter((x) => x.show && x.under === k);
+  /* 🔴 规矩第四条：答得出「它属於哪一页」的，住在那一页底下；
+     答不出来的（那一页他根本没开）才给它自己一行。 */
+  const homeless = tools.filter((x) => x.show && !hasPage(x.under));
   const tHome = useTranslations("portal.home");
   const pathname = usePathname();
 
@@ -327,6 +422,9 @@ export function PortalShell({
   // `endsWith` rather than `===`: next-intl's pathname carries the locale
   // prefix, and the home route has no trailing segment to compare against.
   const is = (suffix: string) => pathname === `${base}${suffix}`;
+
+  /* 哪一页的工具摊开着。一次只摊一页 —— 全部摊开就是回到那条十四行的清单。 */
+  const [openTools, setOpenTools] = useState<string | null>(null);
 
   return (
     <div className={`${chrome.chrome} ${chrome.workbench} flex min-h-screen`}>
@@ -413,14 +511,51 @@ export function PortalShell({
             {t("systemSection")}
           </SectionLabel>
           {systemPages.map((page) => (
-            <NavRow
-              key={page.key}
-              href={`${base}/${page.key}`}
-              active={is(`/${page.key}`)}
-              icon={<IconPages />}
-            >
-              {page.label}
-            </NavRow>
+            <Fragment key={page.key}>
+              <NavRow
+                href={`${base}/${page.key}`}
+                active={is(`/${page.key}`)}
+                icon={<IconPages />}
+                trailing={
+                  toolsUnder(page.key).length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        /* 那一行本身是一条连结 —— 摊开不该顺便把他带走。 */
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOpenTools((k) => (k === page.key ? null : page.key));
+                      }}
+                      aria-expanded={openTools === page.key}
+                      aria-label={t("moreUnder")}
+                      className="grid h-5 w-5 shrink-0 place-items-center rounded-[var(--radius-xs)] [color:var(--color-nav-fg-dim)] hover:[background-color:var(--color-nav-hover)] hover:[color:var(--color-nav-fg)]"
+                    >
+                      <IconChevron open={openTools === page.key} />
+                    </button>
+                  ) : undefined
+                }
+              >
+                {page.label}
+              </NavRow>
+              {/* 🔴 它属於哪一页，就住在哪一页底下 —— **就地摊开，不用离开**。
+                  ⚠️ 第一版写成「打开那一页才画」，而那**永远不会发生**：
+                  模块页不在这个壳里（`[pageKey]` 是 `(app)` 的兄弟），
+                  点进去连这条侧栏都没有了。一个到不了的入口跟没有入口一样。 */}
+              {toolsUnder(page.key).length > 0 &&
+                (openTools === page.key ||
+                  toolsUnder(page.key).some((x) => is(`/${x.key}`))) &&
+                toolsUnder(page.key).map((x) => (
+                  <NavRow
+                    key={x.key}
+                    nested
+                    href={`${base}/${x.key}`}
+                    active={is(`/${x.key}`)}
+                    icon={x.icon}
+                  >
+                    {t(x.key)}
+                  </NavRow>
+                ))}
+            </Fragment>
           ))}
 
           {/* ── THE PUBLIC SIDE ──────────────────────────────────────────
@@ -503,125 +638,22 @@ export function PortalShell({
 
               ⚠️ 每一行都按它那一页自己的守卡挡一次 ——
               钱那几页（欠钱 · 薪水 · 帐 · 税）对师傅是 404，
-              **而一条通往 404 的连结比没有连结糟**。 */}
-          <SectionLabel>{t("toolsSection")}</SectionLabel>
-          <NavRow
-            href={`${base}/today`}
-            active={is("/today")}
-            icon={<IconClock />}
-          >
-            {t("today")}
-          </NavRow>
-          {hasContracts && (
-            <NavRow
-              href={`${base}/contracts`}
-              active={is("/contracts")}
-              icon={<IconWrench />}
-            >
-              {t("contracts")}
-            </NavRow>
-          )}
-          {hasVehicles && (
-            <NavRow
-              href={`${base}/vehicles`}
-              active={is("/vehicles")}
-              icon={<IconCar />}
-            >
-              {t("vehicles")}
-            </NavRow>
-          )}
-          {hasBatches && (
-            <NavRow
-              href={`${base}/expiry`}
-              active={is("/expiry")}
-              icon={<IconHourglass />}
-            >
-              {t("expiry")}
-            </NavRow>
-          )}
-          {hasRentals && (
-            <NavRow
-              href={`${base}/rentals`}
-              active={is("/rentals")}
-              icon={<IconOut />}
-            >
-              {t("rentals")}
-            </NavRow>
-          )}
-          {isOwner && (
+          {/* 🔴 这一组从十四行收到几行 —— 见 `tools` 那张表上面的注解。
+              留在这里的只有两种：**跨每一页的**（今天要跟的），
+              跟**那一页他根本没开的**（答不出「属於哪一页」）。 */}
+          {homeless.length > 0 && (
             <>
-              <NavRow
-                href={`${base}/owing`}
-                active={is("/owing")}
-                icon={<IconCoin />}
-              >
-                {t("owing")}
-              </NavRow>
-              {/* 🔴 买的那一边。**只在他真的在买东西的时候画** ——
-                  一条永远打开是空的连结，跟一颗按不动的按钮是同一件事。 */}
-              {/* 出勤 —— 有人在名册上才画。一页永远空着的月历，
-                  读起来是这一页没做完。 */}
-              {hasStaff && (
+              <SectionLabel>{t("toolsSection")}</SectionLabel>
+              {homeless.map((x) => (
                 <NavRow
-                  href={`${base}/attendance`}
-                  active={is("/attendance")}
-                  icon={<IconCalendar />}
+                  key={x.key}
+                  href={`${base}/${x.key}`}
+                  active={is(`/${x.key}`)}
+                  icon={x.icon}
                 >
-                  {t("attendance")}
+                  {t(x.key)}
                 </NavRow>
-              )}
-              {/* 谁有空 —— 同一群人，另一个问题：出勤答「他做了几天」，
-                  这一页答「两点到四点他在不在」。 */}
-              {hasStaff && (
-                <NavRow
-                  href={`${base}/rota`}
-                  active={is("/rota")}
-                  icon={<IconClockFace />}
-                >
-                  {t("rota")}
-                </NavRow>
-              )}
-              {/* 搬货 —— 两间店以上才画。一间店的生意搬不了货，
-                  而一行到不了任何地方的连结是一颗死按钮。 */}
-              {twoShops && (
-                <NavRow
-                  href={`${base}/transfers`}
-                  active={is("/transfers")}
-                  icon={<IconMove />}
-                >
-                  {t("transfers")}
-                </NavRow>
-              )}
-              {hasPurchases && (
-                <NavRow
-                  href={`${base}/payables`}
-                  active={is("/payables")}
-                  icon={<IconTruck />}
-                >
-                  {t("payables")}
-                </NavRow>
-              )}
-              <NavRow
-                href={`${base}/payroll`}
-                active={is("/payroll")}
-                icon={<IconWallet />}
-              >
-                {t("payroll")}
-              </NavRow>
-              <NavRow
-                href={`${base}/books`}
-                active={is("/books")}
-                icon={<IconBook />}
-              >
-                {t("books")}
-              </NavRow>
-              <NavRow
-                href={`${base}/tax`}
-                active={is("/tax")}
-                icon={<IconPercent />}
-              >
-                {t("tax")}
-              </NavRow>
+              ))}
             </>
           )}
 

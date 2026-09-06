@@ -1141,16 +1141,19 @@
 
   /* Off the path: gone. Catches the toolbar, the dock, the tooltips and every
      portal appended to <body>, without naming any of them. */
-  :has([data-editor-canvas]) > *:not(:has([data-editor-canvas])):not([data-editor-canvas]) {
+  :has([data-editor-canvas], [data-print-sheet])
+    > *:not(:has([data-editor-canvas], [data-print-sheet])):not(
+      [data-editor-canvas]
+    ):not([data-print-sheet]) {
     display: none !important;
   }
 
   /* On the path: unclipped, unpainted, unpadded. The editor is a stack of
      h-screen / overflow-hidden panes, and left alone they clip the sheet to
      one viewport -- a five-page quotation printed as one page and a fold. */
-  html:has([data-editor-canvas]),
-  body:has([data-editor-canvas]),
-  :has([data-editor-canvas]) {
+  html:has([data-editor-canvas], [data-print-sheet]),
+  body:has([data-editor-canvas], [data-print-sheet]),
+  :has([data-editor-canvas], [data-print-sheet]) {
     display: block !important;
     position: static !important;
     height: auto !important;
@@ -1168,7 +1171,12 @@
     transform: none !important;
   }
 
-  [data-editor-canvas] {
+  [data-editor-canvas],
+  /* 🔴 那张要递给客人的纸（报价单 · 进货单）。2026-09-07 铺上去。
+     在这之前**整个产品只有一个地方按得了列印，而那是规格书那一页** ——
+     所以他今天要给客人一张报价，只能截图，或者照着抄进 WhatsApp。
+     那张纸早就画好了、印出来的样子也写好了，就是没有一颗按钮把它送去印表机。 */
+  [data-print-sheet] {
     height: auto !important;
     overflow: visible !important;
     box-shadow: none !important;

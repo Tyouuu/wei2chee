@@ -104,7 +104,13 @@ try {
   if (!proj?.id) throw new Error("注册没有开出一个 project");
   const pid = proj.id;
   await api.rpc("set_project_style", { new_style: "swiss" });
-  for (const k of ["customers", "quotations", "payments", "staff"]) {
+  for (const k of [
+    "customers",
+    "quotations",
+    "payments",
+    "staff",
+    "bookings",
+  ]) {
     /* ⚠️ 签名是 `(requested_key, new_title)` —— 旧的 `new_page_key` 已经不在了
        （20260905110000）。而 PostgREST 找不到那支函式只是回一个 error，
        **不抛** —— 于是没有添加到的那几页静静地不存在，
@@ -495,6 +501,28 @@ try {
   if (rec2 && Number(rec2.tax_rate) === 8) ok("税率写在那一张单上了");
   else no("税率没写上去", JSON.stringify(rec2));
 
+  // ── ④a 总览那张「客户」卡 ─────────────────────────────────────────────
+  /* 🔴 它数过三种人。老板 2026-09-07 自己去排查，回来讲：
+     「客户 ＋ 供应商 ＋ 师傅加起来，而标签写着『客户』」——
+     **一个错的数字配一个对的标签**，而他看到那个数字不会怀疑它。
+
+     台面：1 个客户 · 1 个师傅 · 1 个供应商。那张卡该写 1，不是 3。 */
+  const { error: supErr } = await api.rpc("add_directory_entry", {
+    in_project_id: pid,
+    in_module_key: "suppliers",
+    in_name: "Chop Wah Kee",
+  });
+  if (supErr) no("台面：供应商建不了", supErr.message);
+
+  await open("dashboard");
+  const board = await page.locator("body").innerText();
+  /* ⚠️ 那张卡的抬头是**他自己的那个词**（`nouns.customer`），
+     所以是「Customer」不是「Customers」—— 我第一版找复数，
+     於是对着一张已经修好的卡报「读不到」。 */
+  const custCard = /\bCustomers?\b\s*\n\s*(\d+)/.exec(board)?.[1] ?? "";
+  if (custCard === "1") ok("🔴 总览那张「客户」卡只数客户");
+  else no("🔴 那张卡数的不只是客户", `画面 ${custCard || "读不到"} · 应该是 1`);
+
   // ── ④b 出勤 ───────────────────────────────────────────────────────────
   /* `log_work_day` · `work_days_of` · `days_worked`（20260906550000）——
      三支画面上一个入口都没有，而少了它，一个按天算的师傅开一次薪
@@ -625,6 +653,145 @@ try {
   else no("🔴 班外那一格没说没排班", outShift.slice(0, 300));
   await page.screenshot({ path: `${OUT}/18-rota.png`, fullPage: true });
 
+  // ── ④d 班 ─────────────────────────────────────────────────────────────
+  /* 十一支画面上一个入口都没有。而少了它，**补习那一行用不了这个产品**：
+     一堂十个学生的课，照旧的做法要开十行预约，而那条不准撞的约束
+     会把第二行到第十行全部拒绝。 */
+  if ((await open("classes")) === 200) ok("班那一页打得开");
+  else no("班那一页打不开");
+
+  /* ⚠️ 在**那一张卡里面**找 —— 「Name」这个字在这个壳里有四个
+     （加一页的对话框、两个设定框），而 `getByLabel` 打到全部。 */
+  const newClass = page.locator('[data-classes="new"]');
+  await newClass.locator('input[type="text"]').fill("Form 4 Maths");
+  await newClass.locator('input[type="number"]').fill("8");
+  await newClass.getByRole("button", { name: /Add the class/i }).click();
+  await page.waitForTimeout(3200);
+
+  const { data: cls } = await admin
+    .from("class_groups")
+    .select("id, name, capacity")
+    .eq("project_id", pid);
+  if ((cls ?? [])[0]?.name === "Form 4 Maths") ok("那一个班开出来了");
+  else no("那一个班没开出来", JSON.stringify(cls));
+
+  /* 摊开：名单空的 → 加一个学生 → 名单上有他。 */
+  await page.getByRole("button", { name: /Form 4 Maths/ }).click();
+  await page.waitForTimeout(2000);
+  const empty = await page.locator("body").innerText();
+  if (/Nobody on this class yet/i.test(empty)) ok("刚开的班，名单是空的");
+  else no("名单不是空的", empty.slice(0, 200));
+
+  await page
+    .locator('[data-classes="groups"] select')
+    .first()
+    .selectOption({ index: 1 });
+  await page.getByRole("button", { name: /^Add$/ }).click();
+  await page.waitForTimeout(3000);
+  const { data: mem } = await admin
+    .from("class_members")
+    .select("party_id, left_on")
+    .eq("group_id", cls[0].id);
+  if ((mem ?? []).filter((m) => !m.left_on).length === 1)
+    ok("一个学生进了名单");
+  else no("学生没进名单", JSON.stringify(mem));
+
+  /* 一个礼拜几点上：星期一 16:00–17:00。 */
+  const slotInputs = page.locator('[data-classes="groups"] input[type="time"]');
+  await slotInputs.nth(0).fill("16:00");
+  await slotInputs.nth(1).fill("17:00");
+  await page.getByRole("button", { name: /Save the hours/i }).click();
+  await page.waitForTimeout(3200);
+  const { data: sl } = await admin
+    .from("class_slots")
+    .select("weekday, starts_at")
+    .eq("group_id", cls[0].id);
+  if ((sl ?? []).length === 1 && sl[0].weekday === 1)
+    ok("那一个时段存进去了（星期一）");
+  else no("那一个时段没存进去", JSON.stringify(sl));
+
+  /* 🔴 排好之后，接下来两个礼拜的课自己长出来 —— 而且带着状态。 */
+  await open("classes");
+  const due0 = await page.locator("body").innerText();
+  if (/Form 4 Maths/.test(due0) && /Not opened/i.test(due0))
+    ok("🔴 接下来那几堂自己长出来，而且写着「还没开」");
+  else no("🔴 那几堂没长出来", due0.slice(0, 400));
+  /* 🔴 印的是**墙上时钟**，不是 UTC —— 我排的是下午四点，
+     而第一版切 ISO 字串印出「08:00」，数字全绿、看图才看到。 */
+  if (/16:00.{0,3}17:00/.test(due0)) ok("🔴 那一堂印的是他排的那个钟点");
+  else no("🔴 那一堂的钟点印错了", due0.slice(0, 400));
+
+  await page
+    .getByRole("button", { name: /^Open it$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(3400);
+  const opened = await page.locator("body").innerText();
+  if (/Not marked yet/i.test(opened))
+    ok("🔴 开出来了，而且**开出来不等於点过名**");
+  else no("🔴 开出来之后状态不对", opened.slice(0, 400));
+
+  await page
+    .getByRole("button", { name: /Take attendance/i })
+    .first()
+    .click();
+  await page.waitForTimeout(2400);
+  await page
+    .locator('[data-classes="attendance"]')
+    .getByRole("button", { name: /^Came$/ })
+    .first()
+    .click();
+  await page.waitForTimeout(3200);
+  const { data: attRows } = await admin
+    .from("class_attendance")
+    .select("status")
+    .eq("project_id", pid);
+  if ((attRows ?? [])[0]?.status === "came") ok("点名真的记进去了");
+  else no("点名没记进去", JSON.stringify(attRows));
+  await open("classes");
+  const marked = await page.locator("body").innerText();
+  if (/\bMarked\b/.test(marked)) ok("🔴 点完之后那一行写着「点过了」");
+  else no("🔴 点完之后状态没变", marked.slice(0, 400));
+  await page.screenshot({ path: `${OUT}/20-classes.png`, fullPage: true });
+
+  // ── ④e 「拿走我的资料」 ───────────────────────────────────────────────
+  /* 🔴 那颗按钮自己去抓四样（专案 · 页面 · 询价 · 照片），而库里 49 张表 ——
+     8-30 之后建的**一张都不在里面**。而「免费，随时」是已经写在页面上的
+     承诺（任务 64）。2026-09-07 换成 `export_my_data`。 */
+  await open("account");
+  await page
+    .getByRole("button", { name: /^Your data$/i })
+    .click()
+    .catch(() => {});
+  await page.waitForTimeout(1200);
+  const dl = page.waitForEvent("download", { timeout: 60000 });
+  await page
+    .getByRole("button", { name: /Download|Export/i })
+    .first()
+    .click();
+  const file = await dl;
+  const path = await file.path();
+  const dump = JSON.parse(readFileSync(path, "utf8"));
+  const keys = Object.keys(dump);
+  /* 🔴 那几张真的会装着他生意的表，一张都不可以少。 */
+  const want = [
+    "pipeline_records",
+    "ledger_entries",
+    "directory_entries",
+    "catalog_items",
+    "appointments",
+  ];
+  const short = want.filter((k) => !(k in dump));
+  if (short.length === 0) ok(`🔴 汇出档里有他每一张表 · ${keys.length} 个`);
+  else
+    no(
+      "🔴 汇出档里少了那几张表",
+      `${short.join(" · ")} — 有的：${keys.join("/")}`,
+    );
+  /* 而照片照旧列出来 —— 那几张网址会在停止托管那天失效。 */
+  if ("photos" in dump) ok("照片照旧列出来");
+  else no("照片不见了", keys.join("/"));
+
   // ── ⑤ 侧栏上真的看得到（一条按得到的连结）─────────────────────────────
   await open("");
   /* ⚠️ 等那一条侧栏真的画出来 —— 开发模式下第一次编译
@@ -638,20 +805,57 @@ try {
     .first()
     .waitFor({ timeout: 60000 })
     .catch(() => {});
-  const rail = await page.locator("nav").first().innerText();
-  for (const [label, path] of [
-    ["Books", "books"],
-    ["Pay", "payroll"],
-    ["Days worked", "attendance"],
-    ["Who is free", "rota"],
-    ["Tax", "tax"],
-    ["Service contracts", "contracts"],
+  /* ⚠️ 认那一条**有名字的** nav —— 模块页对老板打开的是编辑器，
+     而编辑器自己也有一个 nav（Blocks / Outline）。
+     我第一版拿 `nav` 的第一个，於是它读的是那一个，
+     然后回报「侧栏底下少了」，看起来完全像侧栏做坏了。 */
+  const railHome = await page
+    .locator('aside[aria-label="Main navigation"] nav')
+    .first()
+    .innerText();
+  const rows = (s) =>
+    s
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+  /* 🔴 新规矩（2026-09-06，老板：「现在太多东西了」）：
+     一件工具住在**它讲的那一页**底下，打开那一页才画出来。
+     所以站在首页的时候，那几行**不该在**。 */
+  const homeRows = rows(railHome);
+  const hidden = ["Books", "Tax", "Pay", "Days worked", "Who is free"].filter(
+    (l) => !homeRows.includes(l),
+  );
+  if (hidden.length === 5) ok("🔴 首页那条侧栏上没有那几件工具");
+  else no("🔴 首页那条侧栏上还挂着工具", homeRows.join(" · "));
+
+  /* 而按那一行右边那支箭，它们就在那一页底下摊开。
+     ⚠️ **不是「打开那一页」** —— 模块页不在这个壳里，点进去连侧栏都没有了。 */
+  const rail = page.locator('aside[aria-label="Main navigation"]');
+  for (const [pageLabel, labels] of [
+    ["Payments", ["Books", "Tax"]],
+    ["Staff", ["Days worked", "Who is free", "Pay"]],
+    ["Customers", ["Service contracts"]],
+    ["Bookings", ["Classes"]],
   ]) {
-    if (rail.includes(label)) ok(`侧栏上有「${label}」`);
-    else no(`侧栏上没有「${label}」`, path);
+    await rail
+      .locator("a", { hasText: new RegExp(`^${pageLabel}$`) })
+      .first()
+      .locator("button")
+      .click();
+    await page.waitForTimeout(400);
+    const here = rows(await rail.locator("nav").first().innerText());
+    const missing = labels.filter((l) => !here.includes(l));
+    if (missing.length === 0)
+      ok(`🔴 摊开「${pageLabel}」，它底下就有 ${labels.join(" · ")}`);
+    else
+      no(
+        `🔴 「${pageLabel}」底下少了`,
+        `${missing.join(" · ")} — 侧栏：${here.join("/")}`,
+      );
   }
+
   /* ⚠️ 车牌是按有没有资料画的 —— 这个帐号一台车都没有，所以**不该**在。 */
-  if (!rail.includes("Plates")) ok("⚠️ 一台车都没有，车牌那一行不画");
+  if (!railHome.includes("Plates")) ok("⚠️ 一台车都没有，车牌那一行不画");
   else no("一台车都没有却画了车牌");
   await page.screenshot({ path: `${OUT}/11-rail.png`, fullPage: true });
 
@@ -675,6 +879,7 @@ try {
     [15, "tax"],
     [17, "attendance"],
     [19, "rota"],
+    [21, "classes"],
   ]) {
     await phone.goto(`${BASE}/en/portal/${path}`, {
       waitUntil: "domcontentloaded",

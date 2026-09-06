@@ -132,10 +132,11 @@ export function DocumentPreview({
        五 合计**靠右缩成半栏**，上面一条线，最后一行加粗 —— 一整行拉满的合计
           读起来是表格的最后一行，不是这张纸的结论
 
-     ⚠️ **没有 Print / Download PDF 那两颗。** 参考页上有，而我们的列印规则
-     （globals.css 的 `@media print`）只认 `[data-editor-canvas]`，这一页不在
-     里面 —— 按下去印出来的会是整个表单。这个档案原本的注解就写着这一条，
-     它还成立。要加那颗按钮，先把列印规则铺到这一页。 */
+     ⚠️ ~~没有 Print 那一颗~~ —— **2026-09-07 有了**。列印规则铺到
+     `[data-print-sheet]` 上（globals.css 的 `@media print`），
+     所以按下去印出来的只有这一张纸。
+     ⚠️ **Download PDF 还是没有** —— 浏览器的列印对话框里就有「存成 PDF」，
+     而我们自己产一份 PDF 要多装一个东西，印出来的样子还会跟画面上不一样。 */
   const label =
     "[font-size:var(--text-xs)] uppercase [letter-spacing:0.06em] text-[color:var(--color-on-canvas-dim)]";
   const value = "[font-size:var(--text-sm)] text-[color:var(--color-paper)]";
@@ -165,6 +166,20 @@ export function DocumentPreview({
           <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-paper)]">
             {copy.previewLabel}
           </span>
+          {/* 🔴 那颗按钮 —— 2026-09-07。
+              这一段原本写着「我们那两颗还不能按，所以这里只有它的名字」，
+              而它不能按的理由是列印规则只认编辑器的画布。
+              规则今天铺到 `[data-print-sheet]` 上了，所以那个理由没了。
+
+              ⚠️ 它自己不会被印出来：那条规则会把**不在纸这条路上的**
+              每一个兄弟拿掉，而这一条抬头正是其中一个。 */}
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex min-h-9 items-center [border:var(--hairline)_solid_var(--color-ink-800)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:calc(var(--pad-control-x)*1.1)] hover:[border-color:var(--color-primary)]"
+          >
+            {copy.printIt}
+          </button>
         </div>
 
         {/* 垫子。纸浮在上面。 */}

@@ -519,10 +519,19 @@ export async function fetchLiveStats(
         .select("module_key, amount_cents, stage, issued_on")
         .eq("project_id", projectId)
         .is("archived_at", null),
+      /* 🔴 **只数客户**（2026-09-07）。
+         这一句本来没有这一行，於是它数的是名册上**三种人**：
+         客户 ＋ 供应商 ＋ 师傅。老板有 5 个客户 · 4 个供应商 · 3 个师傅，
+         那张卡写着「客户 12」。
+
+         那不是「还没做」，是**一个错的数字配一个对的标签** ——
+         而这个仓库判过：那比一格空白糟得多，因为他看到那个数字
+         不会怀疑它（任务 80 的原话）。9-05 就登记了，两天没有人动。 */
       supabase
         .from("directory_entries")
         .select("id", { count: "exact", head: true })
         .eq("project_id", projectId)
+        .eq("module_key", "customers")
         .is("archived_at", null),
     ]);
 

@@ -159,6 +159,7 @@ PAGES = [
     ("days worked", "/en/portal/attendance"),
     ("who is free", "/en/portal/rota"),
     ("moving stock", "/en/portal/transfers"),
+    ("classes", "/en/portal/classes"),
     ("legal", "/en/legal/terms"),
 ]
 
