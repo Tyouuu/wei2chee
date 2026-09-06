@@ -389,6 +389,27 @@ export type RecordFormCopy = {
   runNotSigned: string;
   runTakeBack: string;
   runStillOwed: string;
+  /* 货退回来了几件（20260905840000 · 20260906070000）。
+     ⚠️ 卖的那一边货**回到架上**，买的那一边货**送回给供应商** ——
+     方向是那张单自己算出来的，这里只换那两句话。 */
+  returnsHeading: string;
+  returnsLede: string;
+  returnsLedeBuy: string;
+  returnsNone: string;
+  returnStart: string;
+  returnQty: string;
+  returnCredit: string;
+  returnReason: string;
+  returnOn: string;
+  returnDo: string;
+  returnBusy: string;
+  returnUndo: string;
+  returnNothing: string;
+  returnBack: string;
+  returnSentBack: string;
+  returnNotOut: string;
+  returnUnknown: string;
+  returnSkipped: string;
   /* 谁欠我钱那一页的入口（20260905140000）。 */
   owingLink: string;
   /** 车牌 · 保养合约 —— 侧栏上按有没有资料画，所以第一次一定要从这里进去。 */
@@ -785,6 +806,26 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       runNotSigned: "他还没有自己签",
       runTakeBack: "收起这一趟",
       runStillOwed: "还欠",
+      returnsHeading: "退回来的",
+      returnsLede:
+        "退几件、退多少钱。货回到架上，他欠你的跟着少。撤销不是删掉 —— 货会再送出去一次。",
+      returnsLedeBuy:
+        "退几件、退多少钱。货送回给供应商，你欠他的跟着少。撤销不是删掉 —— 货会再收回来一次。",
+      returnsNone: "还没有退过。",
+      returnStart: "记一笔退货",
+      returnQty: "退几件",
+      returnCredit: "退多少钱",
+      returnReason: "为什么退",
+      returnOn: "几时退的",
+      returnDo: "记下去",
+      returnBusy: "在记…",
+      returnUndo: "撤销这一笔",
+      returnNothing: "还没有填要退的东西 —— 填一个数量，或者填一个金额。",
+      returnBack: "{n} 行回到架上",
+      returnSentBack: "{n} 行送回去了",
+      returnNotOut: "🔴 {n} 行退得比真的出去过的多",
+      returnUnknown: "{n} 行找不到那件货",
+      returnSkipped: "{n} 行没有数量（一口价那种）",
       owingLink: "谁欠我钱",
       vehiclesLink: "查一台车",
       contractsLink: "保养合约",
@@ -1134,6 +1175,26 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       runNotSigned: "He has not signed for it himself",
       runTakeBack: "Put this run away",
       runStillOwed: "Still owed",
+      returnsHeading: "Came back",
+      returnsLede:
+        "How many, and how much money. The goods go back on the shelf and what they owe you drops. Undo is not delete — the goods go out again.",
+      returnsLedeBuy:
+        "How many, and how much money. The goods go back to the supplier and what you owe drops. Undo is not delete — the goods come back in again.",
+      returnsNone: "Nothing has come back yet.",
+      returnStart: "Record a return",
+      returnQty: "How many",
+      returnCredit: "Money back",
+      returnReason: "Why",
+      returnOn: "Date",
+      returnDo: "Record it",
+      returnBusy: "Recording…",
+      returnUndo: "Undo this one",
+      returnNothing: "Nothing to return yet — put a quantity, or an amount.",
+      returnBack: "{n} back on the shelf",
+      returnSentBack: "{n} sent back",
+      returnNotOut: "🔴 {n} more than ever went out",
+      returnUnknown: "{n} could not be matched to an item",
+      returnSkipped: "{n} had no quantity (priced as one lot)",
       owingLink: "Who owes me",
       vehiclesLink: "Look up a plate",
       contractsLink: "Service contracts",

@@ -23,6 +23,11 @@ import {
   type DeliveryRun,
   type Shortfall,
 } from "../new/delivery-panel";
+import {
+  ReturnsPanel,
+  type PastReturn,
+  type Returnable,
+} from "../new/returns-panel";
 import { isShareableModule } from "@/lib/portal/shared-record";
 import { PIPELINE_MODULES } from "@/lib/portal/shape-state";
 import { SITE_URL } from "@/lib/site-url";
@@ -202,6 +207,9 @@ export default async function EditRecordPage({
     | undefined = undefined;
   let runs: DeliveryRun[] | undefined = undefined;
   let shortfall: Shortfall[] = [];
+  /* 货退回来了几件。⚠️ `undefined` = 没有问（不是那三页，或者已经收起来了）。 */
+  let returns: PastReturn[] | undefined = undefined;
+  let returnable: Returnable[] = [];
   let shareRef: string | null | undefined = undefined;
   /* 这一单是谁介绍的（[任务 156] · 20260905260000）。
      ⚠️ `undefined` = **没有问** —— 不是走单那几页，或者读的人看不到钱。
@@ -875,6 +883,65 @@ export default async function EditRecordPage({
       }));
     }
 
+    /* ── 退回来的（[任务 208] · [210]）────────────────────────────────
+       🔴 **订单 · 工程 · 进货单，不给报价单。** 资料库那边收报价单，
+       而一张报价单还没有人答应，货一件都没有出去过 ——
+       退货那一半永远回 `not_out`，而退钱那一半退的是一笔从来没收过的钱。
+       **不画一颗按下去一定失败的按钮。** */
+    if (
+      !data.archived_at &&
+      (pageKey === "orders" || pageKey === "projects" || pageKey === "purchases")
+    ) {
+      const [{ data: retRows }, { data: lineRows }] = await Promise.all([
+        supabase.rpc("returns_of", { in_record_id: recordId }),
+        /* ⚠️ 自己问一次那几行 —— 上面那一次没有 select `id`，
+           而 `record_return` 要的正是 `line_id`。 */
+        supabase
+          .from("record_lines")
+          .select("id, description, qty, unit")
+          .eq("record_id", recordId)
+          .order("sort_order"),
+      ]);
+      returns = (
+        (retRows ?? []) as {
+          id: string;
+          returned_on: string | null;
+          reason: string | null;
+          credit_cents: number | null;
+          note: string | null;
+          lines: unknown;
+        }[]
+      ).map((r) => ({
+        id: r.id,
+        returnedOn: r.returned_on,
+        reason: r.reason,
+        creditCents: r.credit_cents == null ? null : Number(r.credit_cents),
+        note: r.note,
+        lines: (Array.isArray(r.lines) ? r.lines : []).map((l) => {
+          const x = l as { description?: unknown; qty?: unknown; unit?: unknown };
+          return {
+            description:
+              typeof x.description === "string" ? x.description : null,
+            qty: x.qty == null ? null : Number(x.qty),
+            unit: typeof x.unit === "string" ? x.unit : null,
+          };
+        }),
+      }));
+      returnable = (
+        (lineRows ?? []) as {
+          id: string;
+          description: string | null;
+          qty: number | null;
+          unit: string | null;
+        }[]
+      ).map((l) => ({
+        id: l.id,
+        description: l.description,
+        qty: l.qty == null ? null : Number(l.qty),
+        unit: l.unit,
+      }));
+    }
+
     if (!data.archived_at && isShareableModule(pageKey)) {
       shareRef = data.share_ref ?? null;
       shareAnswer = {
@@ -1292,6 +1359,20 @@ export default async function EditRecordPage({
               recordId={recordId}
               runs={runs}
               shortfall={shortfall}
+              copy={copy.form}
+            />
+          </div>
+        ) : null}
+
+        {/* 订单 · 工程 · 进货单多一段：退回来的。
+          ⚠️ `undefined` = 没有问（不是那三页，或者已经收起来了）。 */}
+        {returns !== undefined ? (
+          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            <ReturnsPanel
+              recordId={recordId}
+              lines={returnable}
+              past={returns}
+              buying={pageKey === "purchases"}
               copy={copy.form}
             />
           </div>
