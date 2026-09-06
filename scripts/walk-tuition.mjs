@@ -66,6 +66,19 @@ async function act(C, what, fn, args) {
 const node = (name, hands, ok, detail) => chain.push({ name, hands, ok, detail });
 
 /* 明天的某一个钟头，用马来西亚的墙上时钟。 */
+/* 几天前的某一个钟头。 */
+const past_slot = (back, hour) => {
+  const d = new Date(Date.now() + 8 * 3600e3);
+  d.setUTCDate(d.getUTCDate() - back);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(),
+    hour - 8, 0, 0)).toISOString();
+};
+/* 几天前那一天。 */
+const day = (back) => {
+  const d = new Date(Date.now() + 8 * 3600e3);
+  d.setUTCDate(d.getUTCDate() - back);
+  return d.toISOString().slice(0, 10);
+};
 const slot = (hour) => {
   const d = new Date(Date.now() + 8 * 3600e3);
   d.setUTCDate(d.getUTCDate() + 1);
@@ -200,11 +213,54 @@ try {
     `${acts - n} 次（开单 · 收钱 · 问）；开在「${billPage}」上，`
     + `${bill?.doc_no ?? "开不了"} 收齐了，名单上还剩 ${(owed ?? []).length} 个`);
 
-  /* ── ⑦ 系统讲的话 ─────────────────────────────────────────── */
-  const { data: sig } = await C.rpc("nudges_due", { in_project_id: P });
-  node("系统算得出来的那几句", 0, Array.isArray(sig),
-    `他不用动手；今天 ${(sig ?? []).length} 句`
-    + "（画面那一边接了一条线在读它）");
+  /* ── ⑦ 🔴 系统讲得出补习自己那两句吗 ──────────────────────────
+     ⚠️ 这两句都要**真的摆一次道具再问**，不是读代码推的。
+     我 2026-09-06 跟他讲「两句都没有人算」—— **那句话错一半**，
+     而拿走一趟量出来之前我不知道。 */
+  n = acts;
+  const late = await act(C, "开一张过了日子的学费单", "add_pipeline_record", {
+    in_project_id: P, in_module_key: billPage ?? "orders",
+    in_title: "Aug fees · Add Maths", in_party: "Aisyah",
+    in_party_id: kids[1]?.id, in_amount_cents: 18_000,
+    in_due_on: day(20),
+  });
+  /* 两堂**已经上过而且点过名**的课，Farah 两堂都没来。
+     ⚠️ 上一堂在明天，而讯号只看已经过去的 —— 所以要另外摆两堂。 */
+  const past = [];
+  for (const back of [14, 7]) {
+    const id = await act(C, "补一堂上过的课", "add_appointment", {
+      in_project_id: P, in_module_key: "bookings",
+      in_starts_at: past_slot(back, 16), in_ends_at: past_slot(back, 18),
+      in_staff_id: teacher?.id, in_group_id: cls?.id, in_service: "Add Maths",
+    });
+    past.push(id);
+    await act(C, "点名 · 来了", "mark_attendance", {
+      in_appointment_id: id, in_party_id: kids[0]?.id, in_status: "came",
+    });
+    await act(C, "点名 · 没来", "mark_attendance", {
+      in_appointment_id: id, in_party_id: kids[9]?.id, in_status: "no_show",
+    });
+  }
+  const sig = await act(C, "问系统有什么要讲", "nudges_due", { in_project_id: P });
+  const feeLate = (sig ?? []).find(
+    (r) => r.kind === "payment_overdue" && r.record_id === late?.id);
+  const drifting = (sig ?? []).find(
+    (r) => r.kind === "absent_twice" && r.title === "Form 4 Add Maths");
+  node("🔴 系统讲得出「学费还没交」跟「连着两堂没来」", acts - n,
+    !!feeLate && !!drifting,
+    `${acts - n} 次（全部是摆道具）；`
+    + `学费${feeLate ? `：${feeLate.party} 欠 RM ${(feeLate.amount_cents / 100).toFixed(0)}`
+      + `、迟了 ${feeLate.days_late} 天` : "**算不出来**"}；`
+    + `${drifting ? `连着没来：${drifting.party}（${drifting.title}）` : "**算不出来**"}`);
+
+  /* ── ⑧ 一堂没来不讲 —— 那是生病 ───────────────────────────── */
+  await C.rpc("mark_attendance", {
+    in_appointment_id: past[1], in_party_id: kids[9]?.id, in_status: "came",
+  });
+  const { data: sig2 } = await C.rpc("nudges_due", { in_project_id: P });
+  const still = (sig2 ?? []).some((r) => r.kind === "absent_twice");
+  node("🔴 上一堂改成来了 → 那一句自己不见了", 0, !still,
+    still ? "还在讲" : "他不用动手；一堂没来是生病，不是要退学");
 
   /* ── 读数 ─────────────────────────────────────────────────── */
   console.log("\n一间补习中心，从开一个班到「今天谁没来」\n");
