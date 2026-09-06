@@ -14,7 +14,19 @@ const env = Object.fromEntries(
 const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
 const stamp = Date.now();
-const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+/* 🔴 日子从**资料库自己的今天**往回数，不是从这台机的 UTC。
+   产品用马来西亚时间，两边差八个钟头 —— 台湾时间午夜到早上八点之间跑，
+   每一个天数都差一天，而那条红看起来完全像产品坏了
+   （2026-09-07 凌晨真的红过一次：「逾期几天是算出来的 — 3」，
+   而产品算的是对的，错的是这一支的道具）。
+   任务 168 · 209 各付过一次学费，这是第三次。 */
+let dbToday = null;
+const day = (n) => {
+  if (!dbToday) throw new Error('还没问过资料库今天几号 —— 拒绝拿这台机的 UTC 去数');
+  const d = new Date(`${dbToday}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
 const bad = [];
 const check = (name, ok, detail) => {
   console.log(`  ${ok ? "PASS" : "FAIL"}  ${name}${ok ? "" : ` — ${detail}`}`);
@@ -38,6 +50,9 @@ try {
   const owner = await person("own");
   const { data: proj } = await admin.from("projects").select("id").eq("account_id", owner.id).single();
   const P = proj.id;
+  const { data: dbNow, error: nowErr } = await admin.rpc("today_myt");
+  if (nowErr || !dbNow) throw new Error(`today_myt: ${nowErr?.message ?? '没回'}`);
+  dbToday = dbNow;
   const C = owner.client;
 
   const { data: quote, error: qErr } = await C.rpc("add_pipeline_record", {

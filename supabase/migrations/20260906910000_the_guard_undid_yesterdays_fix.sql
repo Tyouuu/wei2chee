@@ -1,0 +1,61 @@
+-- 🔴 我 9-06 写的一条守卫，把 9-05 写下来的一个决定推翻了。
+--
+-- ── 症状 ──────────────────────────────────────────────────────────────────
+--
+--   check:follow-ups
+--     FAIL  🔴 整个帐号删得掉（cascade 没有被挡）
+--           — Database error deleting user
+--
+-- 外面那一层只回那一句，问不出是哪一条。推一支临时探针去问资料库
+-- 要原话（20260906900000，跟任务 213 同一招），拿到的是：
+--
+--   23503 | insert or update on table "follow_ups"
+--          violates foreign key constraint "follow_ups_project_id_fkey"
+--
+-- 🔴 **那正是 20260905830000 的档头一字不差写下来的那一句。**
+--
+-- ── 怎么发生的 ────────────────────────────────────────────────────────────
+--
+--   9-05  `20260905830000` **故意拿掉** follow_ups 那两条外键，理由写得很清楚：
+--         `follow_ups` 是唯一一张有**两条 cascade 父路**的表
+--         （project_id → projects，record_id → pipeline_records）。
+--         `created_by` 是 `on delete set null` —— 而那是一次 UPDATE，
+--         它会把那一行每一条外键重新验一遍，而那一刻 projects 那一行
+--         已经在同一句里被删掉了。
+--         它自己写着：**改的是让它不要发生，不是让它失败得好看一点。**
+--
+--   9-06  我在任务 213 写了 `who_did_it_columns`：
+--         「一栏『谁做的』不可以是光秃秃的 uuid，而且它的外键要 set null」。
+--         它对着 `follow_ups.created_by` 报了红。
+--         `20260906210000` 照那个红把两条外键**补了回去** ——
+--         而它红的原因，正是前一天有人故意把它拿掉。
+--
+-- 🔴 **一条守卫不知道有例外，就会把一个写下来的决定当成一个 bug。**
+-- 重点 7h 讲的就是这件事：上一个来源给的东西，除非量出来是错的，否则留着。
+-- 这一次没有量，我只是照守卫的红去修。
+--
+-- ── 为什么照 9-05 那一版走，而不是想一个更聪明的 ──────────────────────────
+--
+-- 试过一条更聪明的：把 `project_id` / `record_id` 那两条外键改成
+-- `deferrable initially deferred` —— 那样 set-null 那次 update 不会当场验，
+-- 而到 commit 的时候那一行早就被 cascade 掉了，两边都保得住。
+--
+-- **没有走那一条**，因为它买到的东西今天是零：
+-- `created_by` / `done_by` **写得进去，而没有任何一个地方读它** ——
+-- 两支回传函式（`follow_ups_due` / `follow_up_of`）都不回它，
+-- 前端那两页也不读。所以「那一栏会不会握着一个已经不存在的人的 id」
+-- 今天不影响任何一个画面，而 deferrable 会把每一次约束违反
+-- 从「当场报错」推到「commit 才报错」（重点 7d-2：挑更简单的那一版）。
+--
+-- ⚠️ 而挡住「我的跟进挂到别人的单上」的，本来就不是这条外键，
+-- 是 `follow_ups_own_project` 那条触发器 —— 它一个字都没有动。
+--
+-- ⚠️ 哪一天真的有画面要印「这一条是谁写的」，那时候再回来看 deferrable，
+-- 而且要连 `record_changes`（同一个判断，20260904020000）一起看。
+
+alter table public.follow_ups
+  drop constraint if exists follow_ups_created_by_fkey,
+  drop constraint if exists follow_ups_done_by_fkey;
+
+-- ⚙ 那支临时探针问完了，删掉。
+drop function if exists public.probe_delete_user(uuid);

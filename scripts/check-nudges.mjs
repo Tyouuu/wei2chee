@@ -511,6 +511,210 @@ const nudges = async (client = C, until = null) => {
     crewSees.every((r) => r.amount_cents === null),
     JSON.stringify(crewSees.map((r) => r.amount_cents)));
 
+
+  /* ── ⑭ 🔴 那一句话 ───────────────────────────────────────────────────
+     十一个讯号算得出来，`messages` 那张表也建好了 ——
+     而 `messages.body` 是 **not null**，所以在这一段之前，
+     **没有任何一个地方知道「这一件事该怎么讲」**，那颗按钮就接不上。
+
+     这一段量的是四件，而第三件是它真正的靶：
+       · 每一条都有一句话、都讲得出讲给谁听、指得出讲给哪一个人
+       · 给客人的那几句带着这门生意的名字，给他自己的那几句不带
+       · 🔴 **那一句里的数字，跟同一行上那个数字一模一样** ——
+         一个照单据总额去催的版本，会跟画面上写的余额分家
+       · 🔴 讲哪一种话，跟这门生意自己的语言走（收讯息的是他的客人） */
+  console.log("\n⑭ 🔴 那一句话");
+
+  const SHOP = `Formae Test Shop ${stamp}`.slice(0, 60);
+  const { error: bizErr } = await C.rpc("update_business_identity", {
+    new_business_name: SHOP, new_owner_name: "Boss",
+  });
+  /* ⚠️ 道具摆完当场问一次 —— 一句不看错误的写入，
+     跟一句没有写过的写入，在报告里长得一模一样（任务 182）。 */
+  check("道具：这门生意有名字了", !bizErr, bizErr?.message);
+
+  const OWNER_KINDS = ["below_reorder", "booking_unseen", "referral_owing", "request_open"];
+
+  /* ⚙ 催款那一条自己摆一次道具 —— 上面那几段跑完之后，
+     谁还在场是那几段的副作用（有的被「先别提」压住、有的被付掉了）。
+     而这一段最要紧的那一条量的是**钱**，
+     所以它要一笔金额是我自己写下的、算得出预期值的单。 */
+  const DUE = 252_000;
+  const { data: bill, error: billErr } = await C.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "orders", in_title: "Second coat",
+    in_party: "Mrs Lim", in_party_id: cust.id, in_amount_cents: DUE,
+    in_due_on: day(-10),
+  });
+  check("道具：一张十天前就该收的单", !billErr && !!bill, billErr?.message);
+
+  /* 🔴 而且**收一部分** —— 少了这一笔，「还欠」正好等於「总额」，
+     两个数字一样，於是底下那条断言会**因为别的理由变绿**：
+     一个照总额去催的坏版本，在那种道具上量不出来。
+     （20260906880000 弄坏之后照样全绿，就是这样发现的。） */
+  const PAID = 100_000;
+  const { error: partErr } = await C.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_direction: "in",
+    in_amount_cents: PAID, in_party: "Mrs Lim", in_party_id: cust.id,
+    in_against_id: bill?.id,
+  });
+  check("道具：那张单先收了一部分", !partErr, partErr?.message);
+  const LEFT = DUE - PAID;
+
+  /* ⚙ 再摆一张**已经过期**的报价 —— 「快到期」那一条本来就含过期的
+     （`due_on <= cutoff`），而那两种情况要用两种讲法。 */
+  const { data: dead, error: deadErr } = await C.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "Porch tiles",
+    in_party: "Mrs Lim", in_party_id: cust.id, in_amount_cents: 90_000,
+    in_due_on: day(-30),
+  });
+  check("道具：一张一个月前就过期的报价", !deadErr && !!dead, deadErr?.message);
+
+  const said = await nudges();
+  check("道具：他自己的跟要跟客人讲的，两边都在场",
+    said.some((r) => OWNER_KINDS.includes(r.kind))
+      && said.some((r) => !OWNER_KINDS.includes(r.kind)),
+    JSON.stringify([...new Set(said.map((r) => r.kind))]));
+
+  check("每一条都有一句话",
+    said.every((r) => typeof r.body === "string" && r.body.trim().length > 0),
+    JSON.stringify(said.filter((r) => !r.body?.trim()).map((r) => r.kind)));
+  /* 一句印着 null 的话，跟一句没有的话，发出去一样丢脸。 */
+  check("🔴 没有一句印出 null 或 undefined",
+    said.every((r) => !/\b(null|undefined|NaN)\b/.test(r.body)),
+    JSON.stringify(said.filter((r) => /\b(null|undefined|NaN)\b/.test(r.body))
+      .map((r) => [r.kind, r.body])));
+
+  /* 🔴 眼睛先看到，才变成这一条（重点 24）。
+     `to_char(3, "FM999,999,990.99")` 回的是 `3.` —— 尾巴的零拿掉了，
+     小数点留着，接一个句号就是 `20..`。
+     一个印成「3.」的数量读起来就是坏的，而二十二条断言全部没看到它。 */
+  /* ⚠️ 第一版写成「数字 · 点 · 任何标点或空白」，而那把
+     `07/08/2026. Let me know` 里那个正常的英文句点也判红了 ——
+     **红的是尺不是产品**。真正的形状窄得多：
+     那个多出来的点，后面接的一定是另一个标点。 */
+  const brokenNum = /\d\.(?=[.,，。])/;
+  check("🔴 没有一句印出「3.」「20..」那种断掉的数字",
+    said.every((r) => !brokenNum.test(r.body)),
+    JSON.stringify(said.filter((r) => brokenNum.test(r.body))
+      .map((r) => [r.kind, r.body])));
+
+  /* 🔴 同一条讯号，两种事实要两种讲法。
+     一个客人在九月六号收到「你的报价到 07/08 就到期了」，
+     读到的是一句自相矛盾的话。 */
+  const deadQuote = said.find(
+    (r) => r.kind === "quote_expiring" && r.subject_id === dead?.id);
+  const liveQuote = said.find(
+    (r) => r.kind === "quote_expiring" && r.subject_id === quote.id);
+  check("道具：过期的跟还没过期的，两张都在场",
+    !!deadQuote && !!liveQuote,
+    JSON.stringify(said.filter((r) => r.kind === "quote_expiring")
+      .map((r) => [r.title, r.days_late])));
+  check("🔴 已经过期那一张，不可以写「还有效到某一天」",
+    !!deadQuote && !/valid until|就到期了/.test(deadQuote.body),
+    deadQuote?.body);
+  check("🔴 而且要给他一条出路（重新报一份）",
+    !!deadQuote && /fresh one|重新报一份/.test(deadQuote.body),
+    deadQuote?.body);
+  check("还没过期那一张，照旧讲有效到哪一天",
+    !!liveQuote && /valid until|就到期了/.test(liveQuote.body),
+    liveQuote?.body);
+
+  check("每一条都讲得出讲给谁听",
+    said.every((r) => r.audience === "owner" || r.audience === "customer"),
+    JSON.stringify(said.map((r) => [r.kind, r.audience])));
+  check("🔴 四件是他自己的事，其余是要跟客人讲的",
+    said.every((r) => (OWNER_KINDS.includes(r.kind) ? r.audience === "owner"
+                                                    : r.audience === "customer")),
+    JSON.stringify(said.map((r) => [r.kind, r.audience])));
+
+  const toCustomer = said.filter((r) => r.audience === "customer");
+  const toOwner = said.filter((r) => r.audience === "owner");
+  check("🔴 给客人的那几句带着这门生意的名字",
+    toCustomer.length > 0 && toCustomer.every((r) => r.body.includes(SHOP)),
+    JSON.stringify(toCustomer.filter((r) => !r.body.includes(SHOP)).map((r) => r.kind)));
+  check("🔴 给他自己看的那几句不带（他知道自己是谁）",
+    toOwner.length > 0 && toOwner.every((r) => !r.body.includes(SHOP)),
+    JSON.stringify(toOwner.filter((r) => r.body.includes(SHOP)).map((r) => r.kind)));
+
+  /* 讲给谁 —— 名字不够，要一个指得到名册的人，不然那颗按钮不知道传给哪个号码。 */
+  const namedCustomer = toCustomer.filter((r) => r.party);
+  check("🔴 讲给客人的那几条，指得出是名册上哪一个人",
+    namedCustomer.length > 0 && namedCustomer.every((r) => !!r.party_id),
+    JSON.stringify(namedCustomer.filter((r) => !r.party_id).map((r) => [r.kind, r.party])));
+
+  /* 🔴 那一句里的钱，跟同一行上那个数字一模一样。
+     一个照**单据总额**去催的版本，画面上写「还欠 RM 25,200」
+     而发出去那一句写「RM 48,500」—— 同一件事两个答案。 */
+  const rm = (cents) => "RM " + (Number(cents) / 100)
+    .toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const dunned = said.find(
+    (r) => r.kind === "payment_overdue" && r.subject_id === bill?.id);
+  check("道具：催款那一条在场，而且带着**还欠**那个数字（不是总额）",
+    !!dunned && Number(dunned.amount_cents) === LEFT,
+    JSON.stringify(dunned ?? said.map((r) => r.kind)));
+  check("🔴 催款那一句里的钱，就是那一行上的那个数字",
+    !!dunned && dunned.body.includes(rm(dunned.amount_cents)),
+    `${dunned?.body} ⟂ ${rm(dunned?.amount_cents)}`);
+
+  /* ⚠️ 系统讲英文 → 那一句一个中文字都不该有。
+     这个帐号出厂就是英文（`system_language` 预设 'en'）。 */
+  const cjk = /[一-鿿]/;
+  check("🔴 系统讲英文，那几句就是英文",
+    said.every((r) => !cjk.test(r.body)),
+    JSON.stringify(said.filter((r) => cjk.test(r.body)).map((r) => [r.kind, r.body])));
+
+  /* ⚙ 语言那一栏是注册那一刻从问卷落下来的，没有一支函式在改它 ——
+     所以这一笔用管理钥匙写，而且当场问一次错误。 */
+  const { error: langErr } = await admin
+    .from("projects").update({ system_language: "zh" }).eq("id", P);
+  check("道具：把这门生意的语言换成华语", !langErr, langErr?.message);
+  const saidZh = await nudges();
+  check("🔴 换成华语，那几句跟着换（跟着生意走，不是跟着介面走）",
+    saidZh.length > 0 && saidZh.every((r) => cjk.test(r.body)),
+    JSON.stringify(saidZh.filter((r) => !cjk.test(r.body)).map((r) => [r.kind, r.body])));
+  const zhDun = saidZh.find(
+    (r) => r.kind === "payment_overdue" && r.subject_id === bill?.id);
+  check("🔴 而华语那一句里的钱还是同一个数字",
+    !!zhDun && zhDun.body.includes(rm(zhDun.amount_cents)),
+    `${zhDun?.body} ⟂ ${rm(zhDun?.amount_cents)}`);
+  const { error: backErr } = await admin
+    .from("projects").update({ system_language: "en" }).eq("id", P);
+  check("道具：语言换回去", !backErr, backErr?.message);
+
+  /* 🔴 两个器官真的接得上：拿那一条自己的话去记一笔，
+     那个讯号当天就知道「讲过了」。 */
+  const toSay = (await nudges()).find((r) => r.kind === "contract_due");
+  check("道具：保养那一条在场", !!toSay, "不在");
+  const { error: sayErr } = await C.rpc("record_message_sent", {
+    in_project_id: P, in_audience: toSay?.audience, in_kind: toSay?.kind,
+    in_body: toSay?.body, in_subject_id: toSay?.subject_id,
+    in_party_id: toSay?.party_id,
+  });
+  check("🔴 那一句原样记得进去（那张表收得下它自己写的话）",
+    !sayErr, sayErr?.message);
+  const afterSaid = (await nudges()).find((r) => r.kind === "contract_due");
+  check("🔴 而那个讯号当天就知道讲过了",
+    afterSaid?.last_told_on === todayMyt(),
+    `${afterSaid?.last_told_on} ⟂ ${todayMyt()}`);
+
+  /* 🔴 印出来给人读。数字判得了「有没有钱、是不是英文」，
+     判不了「这句话像不像人讲的」—— 那只有眼睛判得了（重点 3）。
+     而这几句是要发到他客人手机上的，所以每一次改都要有人读一遍。 */
+  console.log("");
+  for (const r of said) {
+    console.log(`  「${r.audience === "owner" ? "给他自己" : "给客人  "}」 ${r.body}`);
+  }
+  console.log("");
+
+  /* 🔴 师傅看得到的那几句，一个金额都没有 ——
+     金额那一栏对他是空的，而**一段文字里的金额遮不掉**。 */
+  const crewSaid = await nudges(crew.client);
+  check("控制组：师傅看得到几条",
+    crewSaid.length > 0, "他一条都看不到，下面那一条等於量空气");
+  check("🔴 师傅看得到的那几句里，一个金额都没有",
+    crewSaid.every((r) => !/RM\s/.test(r.body)),
+    JSON.stringify(crewSaid.filter((r) => /RM\s/.test(r.body)).map((r) => [r.kind, r.body])));
+
   /* ── ⑨ 别人家 ─────────────────────────────────────────────────────── */
   console.log("\n⑨ 别人家");
   const other = await person("other");

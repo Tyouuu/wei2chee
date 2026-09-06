@@ -89,11 +89,33 @@ try {
   console.log("\n⓪ 🔴 每一栏「谁做的」");
   const { data: cols, error: colErr } = await admin.rpc("who_did_it_columns");
   if (colErr) throw new Error(`who_did_it_columns: ${colErr.message}`);
-  const loose = (cols ?? []).filter((c) => !c.points_at || c.on_delete !== "set null");
+  /* 🔴 一张写下来的例外 —— **连理由一起**，不然下一个人会照红去修，
+     而那正是 2026-09-06 发生过的事：
+     20260905830000 故意拿掉 follow_ups 那两条外键（它是唯一一张
+     有两条 cascade 父路的表，set-null 那次 update 会撞上一个
+     正在同一句里被删掉的 projects 行，於是整个帐号删不掉）——
+     而这一条守卫不知道有例外，把它报成红，
+     20260906210000 就照那个红把外键补了回去，把前一天的修复推翻了。
+     🔴 一条不允许例外的守卫，会逼下一个人去撤销一个写下来的决定。 */
+  const ON_PURPOSE = {
+    "follow_ups.created_by":
+      "20260905830000：唯一一张有两条 cascade 父路的表，有外键整个帐号就删不掉；" +
+      "而那两栏写得进去、没有任何地方读它（20260906910000）",
+    "follow_ups.done_by": "同上",
+  };
+  const loose = (cols ?? []).filter(
+    (c) => !ON_PURPOSE[`${c.tbl}.${c.col}`]
+      && (!c.points_at || c.on_delete !== "set null"));
   check(`🔴 ${cols?.length} 栏，一栏都不是光秃秃的 uuid`,
     loose.length === 0,
     loose.map((c) => `${c.tbl}.${c.col}(${c.points_at ?? "没有外键"} ${c.on_delete ?? ""})`)
       .join(" · "));
+  /* 🔴 而例外那几栏要**真的还在那张表上** —— 一条指着一个已经不存在的
+     栏位的例外，会静静地放过一个真的洞。 */
+  const stale = Object.keys(ON_PURPOSE).filter(
+    (k) => !(cols ?? []).some((c) => `${c.tbl}.${c.col}` === k));
+  check("🔴 写下来的例外，每一条都还指得到一栏真的东西",
+    stale.length === 0, stale.join(" · "));
   /* 控制组 —— 没有这一条，上面那一条在函式坏掉的时候也会绿。 */
   check("控制组：真的量到东西了（不是空的）", (cols ?? []).length >= 15,
     `${cols?.length} 栏`);
@@ -243,9 +265,17 @@ try {
   /* 而他做过的事**一件都不该消失** —— 那是这门生意的历史。 */
   const { data: stillThere } = await admin
     .from("follow_ups").select("id, created_by").eq("project_id", P);
-  check("🔴 他写下的那一条还在（只是不知道是谁写的了）",
-    (stillThere ?? []).length === 1 && stillThere[0].created_by === null,
-    `那一栏是 ${stillThere?.[0]?.created_by} · 师傅是 ${crew.id} · 老板是 ${boss.id}`);
+  check("🔴 他写下的那一条还在", (stillThere ?? []).length === 1,
+    `${stillThere?.length} 条`);
+  /* 🔴 而这一张表的「谁写的」**故意留着一个指不到人的 id**：
+     20260905830000 拿掉了那两条外键，理由是它是唯一一张有两条
+     cascade 父路的表，有外键整个帐号就删不掉（20260906910000 讲全）。
+     所以这一条量的是**那个决定还在**：哪一天有人又把外键补回去，
+     这一栏会变成 null，这一条就红 —— 而红的旁边写着为什么。
+     ⚠️ 那两栏今天没有任何地方读它，所以一个指不到人的 id 不影响画面。 */
+  check("🔴 而「谁写的」照旧留着那个 id（那两条外键是故意没有的）",
+    stillThere?.[0]?.created_by === crew.id,
+    `那一栏是 ${stillThere?.[0]?.created_by} · 师傅是 ${crew.id}`);
   const { data: batch } = await admin
     .from("stock_batches").select("id").eq("project_id", P);
   check("他建的那一批货还在", (batch ?? []).length === 1, `${batch?.length}`);
