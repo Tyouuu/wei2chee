@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { deskBtn, deskField } from "../desk-kit";
 
 /**
  * 他的第二间店。
@@ -53,10 +54,13 @@ export function BranchesClient({
     setError(null);
     setBusy(true);
     try {
-      const { error: err } = await createBrowserSupabaseClient().rpc("add_branch", {
-        in_project_id: projectId,
-        in_name: name.trim(),
-      });
+      const { error: err } = await createBrowserSupabaseClient().rpc(
+        "add_branch",
+        {
+          in_project_id: projectId,
+          in_name: name.trim(),
+        },
+      );
       if (err) {
         setError(err.message);
         return;
@@ -72,10 +76,13 @@ export function BranchesClient({
     setError(null);
     setBusy(true);
     try {
-      const { error: err } = await createBrowserSupabaseClient().rpc("set_branch_active", {
-        in_id: row.id,
-        in_active: !row.active,
-      });
+      const { error: err } = await createBrowserSupabaseClient().rpc(
+        "set_branch_active",
+        {
+          in_id: row.id,
+          in_active: !row.active,
+        },
+      );
       if (err) setError(err.message);
       else router.refresh();
     } finally {
@@ -90,38 +97,52 @@ export function BranchesClient({
           {copy.none}
         </p>
       ) : (
-        <div className="flex flex-col [border-radius:var(--radius-md)] border [border-color:var(--color-ink-800)]">
-          {rows.map((r, i) => (
-            <div
-              key={r.id}
-              className={`flex min-h-12 items-center gap-3 px-3 py-2 [font-size:var(--text-sm)] ${
-                i ? "border-t [border-color:var(--color-ink-800)]" : ""
-              }`}
-            >
-              <span
-                className={
-                  r.active
-                    ? "flex-1 text-[color:var(--color-on-canvas)]"
-                    : "flex-1 text-[color:var(--color-on-canvas-dim)] line-through"
-                }
-              >
-                {r.name}
-              </span>
-              {!r.active ? (
-                <span className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
-                  {copy.offLabel}
-                </span>
-              ) : null}
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void toggle(r)}
-                className="min-h-11 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)] underline disabled:opacity-60"
-              >
-                {r.active ? copy.off : copy.on}
-              </button>
-            </div>
-          ))}
+        /* 🔴 关掉的那几间**排到底下**，不是在同一串里划掉。
+           他打开这一页问的是「我现在有哪几间」——
+           而一条划掉的字混在里面，每一次都要他用眼睛滤一遍。
+           关掉的没有消失（去年那一间做过的单还挂着它），只是不挡路。 */
+        <div className="flex flex-col gap-4">
+          {([true, false] as const).map((active) => {
+            const some = rows.filter((r) => r.active === active);
+            if (some.length === 0) return null;
+            return (
+              <div key={String(active)} className="flex flex-col gap-1.5">
+                {!active ? (
+                  <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                    {copy.offLabel}
+                  </p>
+                ) : null}
+                <div className="flex flex-col [border-radius:var(--radius-md)] border [border-color:var(--color-ink-800)]">
+                  {some.map((r, i) => (
+                    <div
+                      key={r.id}
+                      className={`flex min-h-12 items-center gap-3 px-3 py-2 [font-size:var(--text-sm)] ${
+                        i ? "border-t [border-color:var(--color-ink-800)]" : ""
+                      }`}
+                    >
+                      <span
+                        className={
+                          active
+                            ? "flex-1 [font-weight:var(--fw-medium)] text-[color:var(--color-paper)]"
+                            : "flex-1 text-[color:var(--color-on-canvas-dim)]"
+                        }
+                      >
+                        {r.name}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void toggle(r)}
+                        className="min-h-11 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)] underline disabled:opacity-60"
+                      >
+                        {r.active ? copy.off : copy.on}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -131,20 +152,23 @@ export function BranchesClient({
           placeholder={copy.name}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="ds-control h-11 min-w-0 flex-1 [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]"
+          className={`${deskField} min-w-0 flex-1`}
         />
         <button
           type="button"
           disabled={busy || !name.trim()}
           onClick={() => void add()}
-          className="inline-flex h-11 shrink-0 items-center [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [color:var(--color-on-primary)] [background-color:var(--color-primary)] transition-colors [transition-duration:var(--dur)] hover:[background-color:var(--color-primary-deep)] disabled:opacity-60"
+          className={`${deskBtn("primary")} shrink-0`}
         >
           {busy ? copy.adding : copy.add}
         </button>
       </div>
 
       {error ? (
-        <p role="alert" className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]">
+        <p
+          role="alert"
+          className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]"
+        >
           {error}
         </p>
       ) : null}

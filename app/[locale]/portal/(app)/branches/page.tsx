@@ -5,7 +5,8 @@ import { getTranslations } from "next-intl/server";
 import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
 import { loadWorkspace } from "@/lib/portal/workspace";
 import { PageBar } from "../page-bar";
-import { PageBody, Section } from "../section";
+import { PageBody } from "../section";
+import { DeskCard } from "../desk-kit";
 import { BranchesClient, type BranchRow } from "./branches-client";
 
 /**
@@ -78,7 +79,7 @@ export default async function BranchesPage({
     >
       <PageBar title={t("branches.title")} subtitle={t("branches.lede")} />
       <PageBody>
-        <Section label={t("branches.label")} count={rows.filter((r) => r.active).length}>
+        <DeskCard title={t("branches.label")}>
           <BranchesClient
             projectId={workspace.projectId}
             rows={rows}
@@ -92,7 +93,7 @@ export default async function BranchesPage({
               none: t("branches.none"),
             }}
           />
-        </Section>
+        </DeskCard>
       </PageBody>
     </StyleScope>
   );

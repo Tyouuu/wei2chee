@@ -5,7 +5,8 @@ import { getTranslations } from "next-intl/server";
 import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
 import { loadWorkspace } from "@/lib/portal/workspace";
 import { PageBar } from "../page-bar";
-import { PageBody, Section } from "../section";
+import { PageBody } from "../section";
+import { DeskCard } from "../desk-kit";
 import { PlateSearch } from "./plate-search";
 
 /**
@@ -72,23 +73,27 @@ export default async function VehiclesPage({
     .eq("id", workspace.projectId)
     .maybeSingle();
   const palette = (paletteRow?.palette as string | null) ?? null;
-  const [{ data: overdueRows }, { count: fleet }, { data: partyRows }] = await Promise.all([
-    supabase.rpc("vehicles_overdue", { in_project_id: workspace.projectId, in_months: 6 }),
-    supabase
-      .from("vehicles")
-      .select("id", { count: "exact", head: true })
-      .eq("project_id", workspace.projectId)
-      .is("archived_at", null),
-    /* 车主那一格从**他自己的客户**里挑。⚠️ 只拿客户那一本 ——
+  const [{ data: overdueRows }, { count: fleet }, { data: partyRows }] =
+    await Promise.all([
+      supabase.rpc("vehicles_overdue", {
+        in_project_id: workspace.projectId,
+        in_months: 6,
+      }),
+      supabase
+        .from("vehicles")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", workspace.projectId)
+        .is("archived_at", null),
+      /* 车主那一格从**他自己的客户**里挑。⚠️ 只拿客户那一本 ——
        一台车的车主不会是供应商，也不会是他的师傅。 */
-    supabase
-      .from("directory_entries")
-      .select("id, name")
-      .eq("project_id", workspace.projectId)
-      .eq("module_key", "customers")
-      .is("archived_at", null)
-      .order("name"),
-  ]);
+      supabase
+        .from("directory_entries")
+        .select("id, name")
+        .eq("project_id", workspace.projectId)
+        .eq("module_key", "customers")
+        .is("archived_at", null)
+        .order("name"),
+    ]);
 
   /* 🔴 读不到跟一台都没有，是两件事。`null` 是「问不到」——
      而把它当成 0 会在这一页上写「一台车都还没有」，
@@ -117,11 +122,13 @@ export default async function VehiclesPage({
     >
       <PageBar title={t("vehicles.title")} subtitle={t("vehicles.lede")} />
       <PageBody>
-        <Section label={t("vehicles.lookupLabel")}>
+        <DeskCard title={t("vehicles.lookupLabel")}>
           <PlateSearch
             projectId={workspace.projectId}
             locale={locale}
-            parties={((partyRows ?? []) as { id: string; name: string | null }[])
+            parties={(
+              (partyRows ?? []) as { id: string; name: string | null }[]
+            )
               .filter((r) => r.name)
               .map((r) => ({ id: r.id, name: r.name as string }))}
             words={{
@@ -162,10 +169,10 @@ export default async function VehiclesPage({
               {t("vehicles.empty")}
             </p>
           )}
-        </Section>
+        </DeskCard>
 
         {overdue.length > 0 && (
-          <Section label={t("vehicles.overdueLabel")} count={overdue.length}>
+          <DeskCard title={t("vehicles.overdueLabel")}>
             <p className="mb-4 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
               {t("vehicles.overdueLede")}
             </p>
@@ -206,7 +213,7 @@ export default async function VehiclesPage({
                 </li>
               ))}
             </ul>
-          </Section>
+          </DeskCard>
         )}
       </PageBody>
     </StyleScope>

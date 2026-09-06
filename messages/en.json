@@ -926,19 +926,18 @@
     "branches": {
       "title": "Branches",
       "lede": "One outlet is a name. Jobs and payments can then say which one they belong to.",
-      "label": "OPEN",
+      "label": "Your shops",
       "add": "Open a branch",
       "adding": "Opening…",
       "name": "What you call it (Puchong · Main shop)",
       "off": "Switch off",
       "on": "Switch back on",
-      "offLabel": "closed",
+      "offLabel": "Closed",
       "none": "Just the one shop. Open a second one here when there is one."
     },
     "owing": {
       "title": "Who owes me",
       "lede": "Every customer with money outstanding, and how long it has been outstanding. Worked out from the jobs and the payments -- nothing here is typed.",
-      "label": "OUTSTANDING",
       "none": "Nobody owes you anything right now.",
       "total": "Owed to you",
       "overdue": "Over 60 days",
@@ -950,7 +949,7 @@
       "older": "Older",
       "rowTotal": "Total",
       "unknown": "Not on a customer",
-      "note": "Sorted by the largest. The one to ring is usually not the largest -- look at the last two columns."
+      "note": "Sorted by the largest. The one to ring is usually not the largest — look for the reddest bar."
     },
     "books": {
       "title": "Books",
@@ -988,7 +987,6 @@
     "today": {
       "title": "To chase",
       "lede": "Next steps due and overdue, oldest first. Each one hangs on a document.",
-      "label": "TO CHASE",
       "late": "Overdue",
       "lateBy": "{n} days late ({date})",
       "on": "{date}",
@@ -1000,7 +998,7 @@
     "vehicles": {
       "title": "Vehicles",
       "lede": "Type a plate and see when that car was last in, what was done, and at what mileage.",
-      "lookupLabel": "LOOK UP A PLATE",
+      "lookupLabel": "Look up a plate",
       "plate": "Plate number",
       "platePlaceholder": "WA 1234 A",
       "search": "Look it up",
@@ -1016,7 +1014,7 @@
       "failed": "Could not read that. Try again.",
       "km": "km",
       "empty": "No cars yet. Type a plate above -- if it is not there, you register it right then.",
-      "overdueLabel": "NOT IN FOR A WHILE",
+      "overdueLabel": "Not in for a while",
       "overdueLede": "Sorted by how long since they were last in. Not by mileage -- we do not know what a car reads today.",
       "monthsAgo": "{n} months ago",
       "register": "Register this plate",

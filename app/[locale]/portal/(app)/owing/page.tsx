@@ -6,7 +6,8 @@ import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
 import { loadWorkspace } from "@/lib/portal/workspace";
 import { ringgit } from "@/lib/portal/live-rows";
 import { PageBar } from "../page-bar";
-import { PageBody, Section } from "../section";
+import { PageBody } from "../section";
+import { DeskCard } from "../desk-kit";
 
 /**
  * 谁欠我钱，欠多久。
@@ -74,10 +75,13 @@ export default async function OwingPage({
   ]);
 
   const nameOf = new Map(
-    ((parties ?? []) as { id: string; name: string | null; module_key: string }[]).map((p) => [
-      p.id,
-      { name: p.name ?? "", moduleKey: p.module_key },
-    ]),
+    (
+      (parties ?? []) as {
+        id: string;
+        name: string | null;
+        module_key: string;
+      }[]
+    ).map((p) => [p.id, { name: p.name ?? "", moduleKey: p.module_key }]),
   );
 
   /* 欠最多的排前面 —— 他第一眼要看的就是那一个。
@@ -89,15 +93,65 @@ export default async function OwingPage({
 
   const total = owing.reduce((n, r) => n + Number(r.total_cents), 0);
   const overdue = owing.reduce(
-    (n, r) => n + Number(r.d60_cents) + Number(r.d90_cents) + Number(r.older_cents),
+    (n, r) =>
+      n + Number(r.d60_cents) + Number(r.d90_cents) + Number(r.older_cents),
     0,
   );
 
   /* 🔴 **零就留空。** 一行五个「RM 0」是杂讯，而账龄表存在的全部意义
      就是让眼睛落在**不是零**的那一格上。看图才看到的。 */
   const money = (cents: number) => (cents > 0 ? ringgit(cents) : "");
-  const cell = "py-2 pr-3 text-right tabular-nums whitespace-nowrap";
-  const head = "py-2 pr-3 text-right [font-weight:var(--fw-medium)] whitespace-nowrap";
+
+  /**
+   * 🔴 一条，不是七栏。
+   *
+   * ── 为什么这一页换成一条带子（2026-09-06）────────────────────────────
+   *
+   * 老板：**「我不要一直都是相同的组件」**。而这一页原本是一张
+   * 七栏的表 —— 而他打开它要问的是**一句**话：
+   * **「今天先打给谁」**。
+   *
+   * 七个数字要他自己在脑袋里比一次；一条带子**眼睛一眼就落在
+   * 红的那一段最长的那一行上**，那就是答案。
+   *
+   * ⚠️ 数字没有丢 —— 它们在带子底下那一行，而且**零的那几格不印**：
+   * 一个批发商要的是「31–60 有多少」，不是一排 RM 0。
+   *
+   * ⚠️ 颜色只有两个 —— 还没到期的一个灰，过期的一个红，
+   * 红的越旧越实。五个颜色会变成一条彩虹，而那答不了任何问题。
+   */
+  const BANDS = [
+    {
+      key: "current",
+      label: t("owing.current"),
+      pick: (r: Aging) => Number(r.current_cents),
+      tone: "var(--color-ink-700)",
+    },
+    {
+      key: "d30",
+      label: t("owing.d30"),
+      pick: (r: Aging) => Number(r.d30_cents),
+      tone: "var(--color-paper-dim)",
+    },
+    {
+      key: "d60",
+      label: t("owing.d60"),
+      pick: (r: Aging) => Number(r.d60_cents),
+      tone: "color-mix(in oklab, var(--color-clay-bright) 45%, var(--color-ink-800))",
+    },
+    {
+      key: "d90",
+      label: t("owing.d90"),
+      pick: (r: Aging) => Number(r.d90_cents),
+      tone: "color-mix(in oklab, var(--color-clay-bright) 72%, var(--color-ink-800))",
+    },
+    {
+      key: "older",
+      label: t("owing.older"),
+      pick: (r: Aging) => Number(r.older_cents),
+      tone: "var(--color-clay-bright)",
+    },
+  ] as const;
 
   /* 🔴 **这一页穿的是他的系统，不是 Formae 的壳。**
 
@@ -120,7 +174,9 @@ export default async function OwingPage({
     >
       <PageBar title={t("owing.title")} subtitle={t("owing.lede")} />
       <PageBody>
-        <Section label={t("owing.label")} count={owing.length}>
+        {/* 🔴 不给抬头 —— 这一页只有一张卡，而横梁上已经写着它是什么。
+            一张卡的抬头是拿来分辨几张卡的；只有一张的时候它是重复。 */}
+        <DeskCard>
           {owing.length === 0 ? (
             <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
               {t("owing.none")}
@@ -150,68 +206,79 @@ export default async function OwingPage({
                 ) : null}
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full [font-size:var(--text-sm)]">
-                  <thead>
-                    <tr className="text-left text-[color:var(--color-on-canvas-dim)]">
-                      <th className="py-2 pr-3 [font-weight:var(--fw-medium)]">{t("owing.who")}</th>
-                      <th className={head}>{t("owing.current")}</th>
-                      <th className={head}>{t("owing.d30")}</th>
-                      <th className={head}>{t("owing.d60")}</th>
-                      <th className={head}>{t("owing.d90")}</th>
-                      <th className={head}>{t("owing.older")}</th>
-                      <th className={head}>{t("owing.rowTotal")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {owing.map((r) => {
-                      const who = nameOf.get(r.party_id);
-                      const late =
-                        Number(r.d60_cents) + Number(r.d90_cents) + Number(r.older_cents) > 0;
-                      return (
-                        <tr
-                          key={r.party_id}
-                          className="border-t [border-color:var(--color-ink-800)]"
-                        >
-                          <td className="py-2 pr-3">
-                            {/* 点得进那个人 —— 他看完这一行下一件事就是打给他，
-                                而电话在那一页上。 */}
-                            {who ? (
-                              <a
-                                href={`/${locale}/portal/${who.moduleKey}/${r.party_id}`}
-                                className="underline"
-                              >
-                                {who.name}
-                              </a>
-                            ) : (
-                              t("owing.unknown")
-                            )}
-                          </td>
-                          <td className={cell}>{money(Number(r.current_cents))}</td>
-                          <td className={cell}>{money(Number(r.d30_cents))}</td>
-                          <td className={cell}>{money(Number(r.d60_cents))}</td>
-                          <td className={cell}>{money(Number(r.d90_cents))}</td>
-                          <td className={cell}>{money(Number(r.older_cents))}</td>
-                          <td
-                            className={`${cell} [font-weight:var(--fw-semibold)] ${
-                              late ? "text-[color:var(--color-clay-bright)]" : ""
-                            }`}
+              <ul className="flex flex-col">
+                {owing.map((r) => {
+                  const who = nameOf.get(r.party_id);
+                  const rowTotal = Number(r.total_cents);
+                  const late =
+                    BANDS.slice(2).reduce((n, b) => n + b.pick(r), 0) > 0;
+                  const parts = BANDS.map((b) => ({
+                    ...b,
+                    cents: b.pick(r),
+                  })).filter((b) => b.cents > 0);
+                  return (
+                    <li
+                      key={r.party_id}
+                      className="grid gap-2 border-t py-4 [border-color:var(--color-ink-800)]"
+                    >
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                        {/* 点得进那个人 —— 他看完这一行下一件事就是打给他，
+                            而电话在那一页上。 */}
+                        {who ? (
+                          <a
+                            href={`/${locale}/portal/${who.moduleKey}/${r.party_id}`}
+                            className="[font-weight:var(--fw-medium)] underline"
                           >
-                            {ringgit(Number(r.total_cents))}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            {who.name}
+                          </a>
+                        ) : (
+                          <span>{t("owing.unknown")}</span>
+                        )}
+                        <span
+                          className={`tabular-nums [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] ${
+                            late ? "text-[color:var(--color-clay-bright)]" : ""
+                          }`}
+                        >
+                          {ringgit(rowTotal)}
+                        </span>
+                      </div>
+
+                      {/* 那一条。⚠️ `rowTotal` 一定 > 0（上面滤过），
+                          所以这里的除法不会掉进 0。 */}
+                      <div
+                        aria-hidden="true"
+                        className="flex h-1.5 overflow-hidden [border-radius:var(--radius-pill)] [background-color:var(--color-ink-950)]"
+                      >
+                        {parts.map((b) => (
+                          <span
+                            key={b.key}
+                            style={{
+                              width: `${(b.cents / rowTotal) * 100}%`,
+                              backgroundColor: b.tone,
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      {/* 数字没有丢，只是零的那几格不印。 */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                        {parts.map((b) => (
+                          <span key={b.key} className="tabular-nums">
+                            {b.label} {money(b.cents)}
+                          </span>
+                        ))}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
 
               <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
                 {t("owing.note")}
               </p>
             </div>
           )}
-        </Section>
+        </DeskCard>
       </PageBody>
     </StyleScope>
   );

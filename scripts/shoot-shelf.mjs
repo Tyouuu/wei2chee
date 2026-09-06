@@ -329,6 +329,84 @@ try {
   if (!/Toyota Hilux/.test(after)) ok("收起来之后画面上不再有它");
   else no("收起来了画面上还在");
 
+  // ── ③b 谁欠我钱 · 要跟的 · 分店 ─────────────────────────────────────────
+  /* 三页 2026-09-06 换了骨架，而在这之前没有一把尺打开过它们。
+     台面全部走**人按的那几支**，只有「把日子推回去」用管理钥匙 ——
+     一张单开出来就是今天，而账龄要的是一张放了三个月的单。 */
+  const { data: oldJob, error: ojErr } = await api.rpc("add_pipeline_record", {
+    in_project_id: pid,
+    in_module_key: "orders",
+    in_title: "Chairs, 200",
+    in_party: "Wedding House",
+    in_party_id: custId,
+    in_amount_cents: 480000,
+  });
+  if (ojErr) no("台面：那一张旧单开不出来", ojErr.message);
+  const oldId = oldJob?.id ?? oldJob;
+  const longAgo = new Date(Date.now() - 100 * 864e5).toISOString().slice(0, 10);
+  const { error: backErr } = await admin
+    .from("pipeline_records")
+    .update({ issued_on: longAgo })
+    .eq("id", oldId);
+  if (backErr) no("台面：日子推不回去", backErr.message);
+
+  let owe = await open("owing");
+  if (/Wedding House/.test(owe)) ok("欠钱的那个人出现在「谁欠我钱」上");
+  else no("「谁欠我钱」上没有他", owe.slice(0, 240));
+  if (/RM\s?4,800/.test(owe)) ok("他欠多少写在那一行上");
+  else no("欠多少没写出来", owe.slice(0, 240));
+  /* 🔴 五格里**零的那几格不印** —— 一行五个 RM 0 是杂讯，
+     而账龄表存在的全部意义就是让眼睛落在不是零的那一格上。 */
+  const zeros = (owe.match(/RM 0(?![\d,])/g) ?? []).length;
+  if (zeros === 0) ok("🔴 零的那几格没有印出来");
+  else no("🔴 印了几个 RM 0", String(zeros));
+  /* 那一条带子：过了 90 天那一段是最实的一个红。 */
+  const segs = await page.locator("li div[aria-hidden='true'] > span").count();
+  if (segs >= 1) ok("那一条账龄带真的画出来了");
+  else no("那一条带子没画");
+  await page.screenshot({ path: `${OUT}/8-owing.png`, fullPage: true });
+
+  const dueLongAgo = new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10);
+  const { error: fuErr } = await api.rpc("set_follow_up", {
+    in_record_id: oldId,
+    in_what: "Call about the balance",
+    in_due_on: dueLongAgo,
+  });
+  if (fuErr) no("台面：跟进那一条写不进去", fuErr.message);
+
+  let chase = await open("today");
+  if (/Call about the balance/.test(chase)) ok("要跟的那一件出现在「要跟的」上");
+  else no("「要跟的」上没有它", chase.slice(0, 240));
+  if (/days late|day late/i.test(chase)) ok("🔴 逾期几天讲出来了");
+  else no("🔴 逾期没有讲出来", chase.slice(0, 240));
+  /* 🔴 筛子在清单**上面**，不是页脚两条底线字。 */
+  const filterInHead = await page
+    .locator("section.ds-card header a[aria-current='page']")
+    .count();
+  if (filterInHead === 1) ok("🔴 「今天 / 这个星期」在卡头上，而且选中的那一个讲得出来");
+  else no("🔴 筛子不在卡头上", String(filterInHead));
+  await page.screenshot({ path: `${OUT}/9-today.png`, fullPage: true });
+
+  for (const nm of ["Ipoh Garden", "Bercham"]) {
+    const { error: bErr } = await api.rpc("add_branch", { in_project_id: pid, in_name: nm });
+    if (bErr) no(`台面：开不了「${nm}」`, bErr.message);
+  }
+  let shops = await open("branches");
+  if (/Ipoh Garden/.test(shops) && /Bercham/.test(shops)) ok("两间店都在");
+  else no("两间店没有都在", shops.slice(0, 240));
+  /* 🔴 关掉的那一间排到底下，不是在同一串里划掉。 */
+  await page
+    .getByRole("button", { name: /Switch off|Switch back on/i })
+    .first()
+    .click();
+  await page.waitForTimeout(2600);
+  shops = await page.locator("body").innerText();
+  const closedHead = shops.indexOf("Closed");
+  if (closedHead > 0 && shops.indexOf("Ipoh Garden") > closedHead)
+    ok("🔴 关掉的那一间排到「关了的」底下");
+  else no("🔴 关掉的那一间还混在开着的那一串里", shops.slice(0, 300));
+  await page.screenshot({ path: `${OUT}/10-branches.png`, fullPage: true });
+
   // ── ④ 侧栏 ─────────────────────────────────────────────────────────────
   await open("");
   const rail = await page.locator("nav").first().innerText();
@@ -349,8 +427,11 @@ try {
   await phone.click('button[type="submit"]');
   await phone.waitForURL(/portal/, { timeout: 180000 });
   for (const [n, path] of [
-    [8, "expiry"],
-    [9, "rentals"],
+    [11, "expiry"],
+    [12, "rentals"],
+    [13, "owing"],
+    [14, "today"],
+    [15, "branches"],
   ]) {
     await phone.goto(`${BASE}/en/portal/${path}`, {
       waitUntil: "domcontentloaded",
