@@ -38,8 +38,18 @@ export function PageBar({
         <h1 className="truncate [font-size:var(--text-lg)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)] [letter-spacing:-0.01em]">
           {title}
         </h1>
+        {/* 🔴 副标不再 `truncate`（2026-09-07，老板报的）。
+            它是一句**话**，不是一个名字 —— 切在句子中间的一句话，
+            读起来不是「太长」，是「坏了」，而且它永远不会变成读得懂的。
+            标题照旧 truncate：那是一个名字，切了还认得出来。
+
+            ⚠️ 代价写出来：在 390 上一句长的说明会让这条吸顶的横梁高一到两行。
+            那是对的那一边 —— 他读一次就往下滚，而一句读不完的话，
+            他每一次打开都读不完。 */}
         {subtitle && (
-          <p className="truncate [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">{subtitle}</p>
+          <p className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+            {subtitle}
+          </p>
         )}
       </div>
       {/* 🔴 `shrink-0` 拿掉，换成会换行。
@@ -50,7 +60,9 @@ export function PageBar({
           外层本来就有 `flex-wrap`，这里跟着换行就好；
           其余八个 surface 只会从「挤爆」变成「换一行」，不会更差。 */}
       {children && (
-        <div className="flex flex-wrap items-center justify-end gap-2">{children}</div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {children}
+        </div>
       )}
     </div>
   );

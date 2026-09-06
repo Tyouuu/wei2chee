@@ -582,7 +582,7 @@
       "staffSubline": "下面这几页是{name}的。打开一页就看得到今天的活，也加得了一单。",
       "staffPagesNote": "你打得开的。收款、开销、佣金还是老板一个人的。",
       "cardCtaStaff": "打开",
-      "statPlanNote": "改动会自动保存"
+      "statPlanNote": "保存一次，之后它自己保存"
     },
     "settings": {
       "title": "生意资料",

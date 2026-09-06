@@ -343,3 +343,82 @@ describe("短的那几格占半行", () => {
     ).toBe(0);
   });
 });
+
+/* ─────────────────────────────────────────────────────────────────────────
+   那句红字贴着它讲的那一格。
+
+   ── 老板 2026-09-06 报的 ──────────────────────────────────────────────────
+   「两格的标签几乎一样（For 跟 What this was for），而填错的时候那句红字
+   印在整张表最底下，用『第一格』去指最上面那一格。」
+
+   两件都是真的，而且第二件有别人量过的读数：Baymard —— 错误讯息要**贴着
+   那一格**，而且讲**要求**不讲**违规**。一张填完 1,400px 高的表，
+   把那句话印在最底下，等於要他先读懂一句话，再自己数回去。
+
+   ⚠️ 这一条守的是**位置**，不是那句话写得好不好：那句红字必须跟它讲的
+   那个输入框在同一个 `<label>` 里面。
+   ───────────────────────────────────────────────────────────────────────── */
+describe("填错的时候，那句话在哪里", () => {
+  it("红字跟它讲的那一格在同一个 label 里，不在表的最底下", async () => {
+    const { render, screen, fireEvent, cleanup } = await import(
+      "@testing-library/react"
+    );
+    const { container } = render(
+      <NewRecordForm
+        projectId="p"
+        moduleKey="quotations"
+        shape="pipeline"
+        parties={[]}
+        columns={columns}
+        title="Quotations"
+        today="2026-09-02"
+        stages={[]}
+        backHref="/x"
+        copy={RECORD_COPY.en.form}
+      />,
+    );
+    /* 直接送出那张表 —— 那颗「保存」画在页面的抬头上（`PageBar`），
+       不在这个组件里面，而这一条要量的是送出去之后那句话落在哪。 */
+    const el = container.querySelector("form");
+    expect(el, "这个组件应该画一张 form").not.toBeNull();
+    fireEvent.submit(el as HTMLFormElement);
+    const alert = await screen.findByRole("alert");
+    const box = container.querySelector<HTMLInputElement>(
+      '[data-field="primary"]',
+    ) as HTMLInputElement;
+    expect(box, "第一格应该有 data-field").not.toBeNull();
+    expect(alert.closest("label")).not.toBeNull();
+    expect(alert.closest("label")).toBe(box.closest("label"));
+    /* 而且那一格自己讲得出它是坏的 —— 给读屏的人，也给样式。 */
+    expect(box.getAttribute("aria-invalid")).toBe("true");
+    expect(box.getAttribute("aria-describedby")).toBe(alert.id);
+    cleanup();
+  });
+
+  it("那句话不再用位置去指一个格子", () => {
+    for (const lang of ["en", "zh"] as const) {
+      const c = RECORD_COPY[lang].form;
+      for (const s of [c.required, c.requiredName]) {
+        expect(s, `${lang}: ${s}`).not.toMatch(/第一(格|栏)|first (field|column|box)/);
+      }
+    }
+  });
+
+  it("同一张表上没有两个几乎一样的标签", () => {
+    /* 「For」跟「What this was for」—— 老板报的那一对。
+       ⚠️ 量的是**一个装着另一个**：两句完全不同的话不会互相包含，
+       而一句是另一句的开头或结尾，读起来就是同一格问了两次。 */
+    const c = RECORD_COPY.en.form;
+    const money = [columns[0].label, c.category, c.forJob, c.branch, c.doneBy];
+    for (let i = 0; i < money.length; i++) {
+      for (let j = i + 1; j < money.length; j++) {
+        const a = money[i].toLowerCase();
+        const b = money[j].toLowerCase();
+        expect(
+          a.includes(b) || b.includes(a),
+          `「${money[i]}」跟「${money[j]}」几乎是同一句`,
+        ).toBe(false);
+      }
+    }
+  });
+});

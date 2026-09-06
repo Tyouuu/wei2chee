@@ -298,6 +298,12 @@ export function NewRecordForm({
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* 🔴 那句红字贴着哪一格（2026-09-07）。
+     它本来印在一张 1,400px 高的表最底下，而且用「第一格」
+     去指最上面那一格 —— 他要先读懂一句话，再自己数回去。
+     Baymard：错误要贴着那一格，而且讲**要求**不讲**违规**。
+     空的时候就是老样子（存不下去那种贴不到任何一格）。 */
+  const [errorAt, setErrorAt] = useState<string | null>(null);
 
   const isLedger = shape === "ledger";
   const isDirectory = shape === "directory";
@@ -497,7 +503,20 @@ export function NewRecordForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setErrorAt(null);
     const title = (values[titleCol?.key ?? "primary"] ?? "").trim();
+    /* 贴着哪一格就把光标放回哪一格 —— 一个在手机上
+       滑到底的人，读到那句话之后还要自己滑回去。 */
+    const pointAt = (key: string) => {
+      setErrorAt(key);
+      requestAnimationFrame(() => {
+        const el = document.querySelector<HTMLElement>(`[data-field="${key}"]`);
+        /* ⚠️ `?.()` —— 一个没有它的环境里这一句会抛，
+           而抛在这里会把**那句话也一起吃掉**。 */
+        el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+        el?.focus?.();
+      });
+    };
     /* A reconciliation has no first column to type -- its identity is the month
        and the source. What it cannot be without is WHO GAVE THE FIGURE, which
        is the same check the writer makes and the same sentence the owner
@@ -505,6 +524,7 @@ export function NewRecordForm({
     if (isReconcile) {
       if (!(values.source ?? "").trim()) {
         setError(copy.reconRequired);
+        pointAt("source");
         return;
       }
     } else if (isCalendar) {
@@ -512,10 +532,12 @@ export function NewRecordForm({
          his own shop for lunch would be the form arguing with him. */
       if ((values.kind ?? "booking") !== "block" && !(values.primary ?? "").trim()) {
         setError(copy.bookRequired);
+        pointAt("primary");
         return;
       }
     } else if (!title) {
       setError(isDirectory ? copy.requiredName : copy.required);
+      pointAt(titleCol?.key ?? "primary");
       return;
     }
     setBusy(true);
@@ -1134,6 +1156,9 @@ export function NewRecordForm({
       <label key={key} data-half={half ? "" : undefined} className="flex flex-col gap-1.5">
         <span className={labelText}>{label}</span>
         <input
+          data-field={key}
+          aria-invalid={errorAt === key || undefined}
+          aria-describedby={errorAt === key ? `${key}-why` : undefined}
           inputMode={inputMode}
           list={locked ? undefined : list}
           readOnly={locked}
@@ -1163,6 +1188,18 @@ export function NewRecordForm({
             `box()` 是每一格共用的，而第一版把这一句放在它结尾、没有条件，
             所以同一句「他已经欠 RM 30,000」印在「工程」「客户」「报价」
             三格底下。读数全绿，看图一眼就看到。 */}
+        {/* 🔴 贴着这一格的那句话 —— 见上面 `errorAt`。
+            用 `role="alert"`，因为他可能正看着别的地方。 */}
+        {errorAt === key ? (
+          <span
+            id={`${key}-why`}
+            role="alert"
+            className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]"
+          >
+            {error}
+          </span>
+        ) : null}
+
         {key === "secondary" && debt && debt.owedCents > 0 ? (
           <span className="[font-size:var(--text-xs)] tabular-nums text-[color:var(--color-on-canvas-dim)]">
             {copy.owesAlready} {ringgitOf(debt.owedCents)}
@@ -1782,7 +1819,9 @@ export function NewRecordForm({
           那一段（`changes` 是 null 的时候整段不画）。 */}
       {record ? <ChangeTrail rows={changes ?? null} copy={copy} /> : null}
 
-      {error ? (
+      {/* 存不下去那一类 —— 它不属于任何一格，所以留在按钮旁边。
+          而「这一格要填」那一类已经贴在那一格底下了（`errorAt`）。 */}
+      {error && !errorAt ? (
         <p role="alert" className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]">
           {error}
         </p>

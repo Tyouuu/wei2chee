@@ -582,7 +582,7 @@
       "staffSubline": "The pages below are {name}'s. Open one to see today's work, and add to it.",
       "staffPagesNote": "What you can open. Payments, expenses and commission stay with the owner.",
       "cardCtaStaff": "Open",
-      "statPlanNote": "Changes save automatically"
+      "statPlanNote": "Save once — after that it saves itself"
     },
     "settings": {
       "title": "Business details",
