@@ -292,6 +292,36 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     /** 这一页在用的那几个状态之一。60 是资料库那一栏的上限。 */
     status: z.string().min(1).max(60),
   }),
+  /*
+    记一天工 —— 而它跟上面那一个是**不同的形状**，所以是不同的动词。
+
+    `set_record_status` 动的是那一行自己的一栏。这一支不是：`log_work_day`
+    收的是**一个人跟一个日子**，写进另一张表（work_days），而那一行在名册上
+    是「阿明」不是「阿明九月七号」。
+
+    ── 为什么它不并进 set_record_status ──────────────────────────────────────
+
+    「阿明离职了」跟「阿明今天做了一天」在名册那一页上都长得像改一个状态，
+    而它们是两件事、两张表。外面那一套（401★ 的 Odoo MCP）的做法就是
+    **一个业务动作一个具名的方法，逐条列在允许清单上** —— 一个动词身兼两职，
+    正好是那份清单存在要挡的东西。
+
+    ── 日子：只有今天，而这是故意的 ──────────────────────────────────────────
+
+    没有 `on_date`。资料库那一支自己 `coalesce(in_on_date, today_myt())`，
+    而马来西亚的今天是它算的、不是模型算的 —— 半夜到早上八点那八个钟头，
+    伺服器的今天跟他的今天差一天（20260831030000 同一条）。
+
+    要让模型讲「昨天」，就要它自己推一个日期出来，而那个日期一旦推错，
+    错的是一笔**会变成钱**的出勤。补一天的工到出勤那一页去补（那一页有月历）。
+  */
+  z.object({
+    op: z.literal("log_work_day"),
+    /** 名册上那个人自己的编号，从页面上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** full · half · absent —— 资料库自己挡着的那三个。 */
+    status: z.string().min(1).max(60),
+  }),
   z.object({
     op: z.literal("add_table_column"),
     target_id: z.string().min(1),
@@ -1228,6 +1258,11 @@ export function applyLayoutOps(
         在那种页面上原样放行），那时候要讲出来，不要静静地什么都不做然后
         让助手回报成功。
       */
+      case "log_work_day": {
+        skipped.push({ op: op.op, reason: "这一页记不了一天工 —— 到师傅那一页" });
+        break;
+      }
+
       case "set_record_status": {
         skipped.push({ op: op.op, reason: "这一页的行不是记录，没有状态可以改" });
         break;

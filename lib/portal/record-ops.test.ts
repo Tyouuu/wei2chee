@@ -12,6 +12,7 @@ import {
   actOnRecords,
 } from "./record-ops";
 import { MODULE_CATALOG } from "./module-catalog";
+import { parseLayoutOps } from "./layout-ops";
 import type { LayoutOp } from "./layout-ops";
 
 const row = (...cells: string[]) => ({ op: "add_table_row", target_id: "t", cells }) as unknown as LayoutOp;
@@ -513,5 +514,149 @@ describe("refuseToAct", () => {
       expect(why).toBeTruthy();
       expect(why).not.toMatch(/pipeline|module|rpc|error|status/i);
     }
+  });
+});
+
+/*
+  一份**长得跟模型真的会回的一模一样**的回覆，走完整条缝。
+
+  ── 为什么要这一条 ────────────────────────────────────────────────────────
+
+  上面每一条都是拿手打的操作物件测的。而模型回来的不长那样：strict 的结构化
+  输出要求**每一个** property 都出现，用不到的是 null —— 所以一个
+  set_record_status 会带着 target_id/field/value/cells… 十几个 null 一起到。
+
+  这条缝（模型的 JSON → parseLayoutOps → splitRecordOps → actOps）从来没有
+  被走过一次，而它坏掉的样子是「助手回话了，而什么都没发生」——
+  这个仓库十一次「说了没做」全部落在这种没有人走过的接缝上。
+
+  不呼叫模型：伪造的回覆，每次结果一样，不花钱（任务 23f 的做法）。
+*/
+describe("a reply shaped like the model's own, end to end", () => {
+  /** strict 结构化输出会送的全部栏位，没用到的是 null。 */
+  const asModelSends = (op: string, extra: Record<string, unknown>) => ({
+    op,
+    target_id: null,
+    path: null,
+    field: null,
+    value: null,
+    component: null,
+    after_id: null,
+    before_id: null,
+    title: null,
+    column_key: null,
+    column_label: null,
+    column_kind: null,
+    cells: null,
+    status_tone: null,
+    stages: null,
+    record_id: null,
+    status: null,
+    variant_id: null,
+    ...extra,
+  });
+
+  it("survives the parser and lands in the action pile", () => {
+    const parsed = parseLayoutOps({
+      operations: [
+        asModelSends("set_record_status", { record_id: "a-1", status: "done" }),
+        asModelSends("set_text", { target_id: "h", field: "title", value: "今天" }),
+      ],
+      explanation: "陈太太标成来了。",
+      suggestion: null,
+      design: null,
+    });
+    /* 一条都没有被丢掉 —— 被丢掉会静静地变成「宣称做了而没做」。 */
+    expect(parsed.rejected).toEqual([]);
+    expect(parsed.operations).toHaveLength(2);
+
+    const split = splitRecordOps(parsed.operations, "bookings");
+    expect(split.actOps).toHaveLength(1);
+    expect(split.layoutOps).toHaveLength(1);
+    expect(split.recordOps).toHaveLength(0);
+  });
+
+  it("still reaches the button's own rpc from there", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ data: [{}], error: null }));
+    const parsed = parseLayoutOps({
+      operations: [asModelSends("set_record_status", { record_id: "a-1", status: "done" })],
+      explanation: "好了。",
+    });
+    const split = splitRecordOps(parsed.operations, "bookings");
+    const r = await actOnRecords({ rpc } as never, "bookings", split.actOps, []);
+    expect(rpc.mock.calls[0][0]).toBe("set_appointment_status");
+    expect(r.written).toBe(1);
+  });
+
+  /* 一个模型编出来的编号照样进得了 actOps —— 挡它的不是这里，是那一支 RPC
+     用**他自己的登入身分**跑，works_here 决定。写下来，免得下一个人以为
+     这一层在验编号。 */
+  it("does not pretend to validate the id -- RLS does that", () => {
+    const parsed = parseLayoutOps({
+      operations: [asModelSends("set_record_status", { record_id: "编的", status: "done" })],
+      explanation: "",
+    });
+    expect(splitRecordOps(parsed.operations, "bookings").actOps).toHaveLength(1);
+  });
+});
+
+describe("logging a day on site", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+  const day = (id: string, status: string) =>
+    ({ op: "log_work_day", record_id: id, status }) as unknown as LayoutOp;
+  const ok = () =>
+    vi.fn(async (_n: string, _a: Record<string, unknown>) => ({
+      data: { on_date: "2026-09-07", kind: "full" },
+      error: null,
+    }));
+
+  it("calls the SAME rpc the attendance page calls", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], []);
+    expect(rpc.mock.calls[0][0]).toBe("log_work_day");
+    expect(rpc.mock.calls[0][1]).toEqual({ in_staff_id: "s-1", in_kind: "full" });
+    expect(r.written).toBe(1);
+  });
+
+  /* 🔴 资料库那一支只 select project_id —— 它**不查那个人是不是师傅**，
+     而算佣金那两支是查的。两边不一致，所以挡在这一层。 */
+  it("refuses on any page that is not the staff book", async () => {
+    const rpc = ok();
+    for (const key of ["customers", "suppliers", "quotations"]) {
+      const r = await actOnRecords(client(rpc), key, [day("c-1", "full")], []);
+      expect(r.written).toBe(0);
+      expect(r.skipped[0].reason).toContain("师傅");
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("refuses a kind the database does not have, and lists the three", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "整天")], []);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.skipped[0].reason).toContain("half");
+    expect(r.skipped[0].reason).toContain("absent");
+  });
+
+  /* 哪一天是资料库算的（马来西亚的今天），不是浏览器算的 —— 半夜到早上八点
+     两边差一天，而那正好是他补记昨天工的时段。所以要念出来。 */
+  it("says which day it went to", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], []);
+    expect(r.notes.join("")).toContain("2026-09-07");
+  });
+
+  it("does not say a day when the rpc did not give one", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ data: null, error: null }));
+    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], []);
+    expect(r.written).toBe(1);
+    expect(r.notes).toEqual([]);
+  });
+
+  it("refuses when it did not say who", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "staff", [day("", "full")], []);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.skipped[0].reason).toContain("哪一个师傅");
   });
 });

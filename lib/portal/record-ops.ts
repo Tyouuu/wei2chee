@@ -197,7 +197,7 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
   const actOps: LayoutOp[] = [];
   for (const op of ops) {
     if (op.op === "add_table_row") recordOps.push(op);
-    else if (op.op === "set_record_status") actOps.push(op);
+    else if (op.op === "set_record_status" || op.op === "log_work_day") actOps.push(op);
     else layoutOps.push(op);
   }
   return { layoutOps, recordOps, actOps };
@@ -473,6 +473,9 @@ export function keyFor(requestKey: string, index: number): string {
  * `(app)/classes/class-desk.tsx` 的点名 · `live-rows.ts` 里两处 `=== "no_show"`。
  * 该收敛成这一份 —— 登记，不动手（重点 20）。
  */
+/** 资料库认得的那三种。`log_work_day` 自己 `k not in (...)` 挡着。 */
+export const WORK_DAY_KINDS = ["full", "half", "absent"] as const;
+
 export const APPOINTMENT_STATES = ["booked", "done", "no_show", "cancelled"] as const;
 
 /**
@@ -555,6 +558,51 @@ export async function actOnRecords(
     const op = raw as { op: string; record_id?: unknown; status?: unknown };
     const recordId = String(op.record_id ?? "").trim();
     const status = String(op.status ?? "").trim();
+
+    /*
+      ── 记一天工，而它不是「改那一行的一栏」 ──────────────────────────────
+
+      名册上那一行是「阿明」，而这一支写的是「阿明九月七号」—— 另一张表
+      （work_days）。所以它跟 set_record_status 分开，一个业务动作一个具名的
+      动词（外面那份允许清单就是这个形状）。
+
+      🔴 只在师傅那一页。资料库那一支**没有**检查那个人是不是师傅
+      （`log_work_day` 只 select project_id），而算佣金那两支是有查
+      `module_key = 'staff'` 的 —— 两边不一致，所以这一层先挡着。
+      收紧资料库那一边是「收紧」，要单独做（重点 31），登记。
+    */
+    if (op.op === "log_work_day") {
+      if (moduleKey !== "staff") {
+        skipped.push({ op: op.op, reason: "一天工记在师傅那一页，这一页不是名册" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "没有讲是哪一个师傅" });
+        continue;
+      }
+      if (!(WORK_DAY_KINDS as readonly string[]).includes(status)) {
+        skipped.push({
+          op: op.op,
+          reason: `一天工只有这三个：full(整天) · half(半天) · absent(没来)`,
+        });
+        continue;
+      }
+      const { data, error } = await supabase.rpc("log_work_day", {
+        in_staff_id: recordId,
+        in_kind: status,
+      });
+      if (error) {
+        skipped.push({ op: op.op, reason: friendly(error.message) });
+        continue;
+      }
+      written += 1;
+      /* 哪一天，是**资料库**算的（today_myt），不是浏览器算的 —— 半夜到早上
+         八点那八个钟头两边差一天，而那正好是他补记昨天工的时段。所以把它
+         回报的那一天念出来：他看得到记到哪一天去了。 */
+      const day = (Array.isArray(data) ? data[0] : data) as { on_date?: unknown } | null;
+      if (day?.on_date) notes.push(`记在 ${String(day.on_date)}。`);
+      continue;
+    }
 
     const refusal = shape === null ? "这一页不是记录页" : refuseToAct(shape);
     if (refusal) {

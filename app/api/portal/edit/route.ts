@@ -203,6 +203,12 @@ Record tables:
   * It changes ONE row. To move three, emit three operations.
   * If the owner names somebody and two rows match, ask which one. Acting on
     the wrong row is worse than asking.
+- log_work_day records one person's day on the 师傅 page: 「阿明今天做了一天」,
+  「阿明今天半天」, 「阿明今天没来」. record_id is that person's row; status is
+  full, half or absent — those three words, not a translation of them.
+  * TODAY only. The database decides which day that is, in his timezone. If the
+    owner names another day, say the 出勤 page is where a past day goes; do not
+    work a date out yourself, because a wrong day is wrong pay.
 
 Whole pages:
 - You cannot add or delete a page yourself, but you can OFFER to. When the
@@ -601,6 +607,9 @@ export async function POST(req: NextRequest) {
   const pageStages = ctx && pageKey ? stagesForModule(ctx, pageKey) : [];
   const statusLine = (() => {
     if (!isRecordModule(pageKey)) return "";
+    if (pageKey === "staff") {
+      return "这一页记得了一天工（log_work_day 只能用这三个之一）: full(整天) · half(半天) · absent(没来)。只记今天。";
+    }
     if (shapeOfModule(String(pageKey)) === "calendar") {
       return "这一页的状态（set_record_status 只能用这四个之一）: booked(还没来) · done(来了) · no_show(没来) · cancelled(取消了)";
     }
@@ -1115,6 +1124,7 @@ export const EDIT_JSON_SCHEMA = {
                 "set_variant",
                 "set_copy",
                 "set_record_status",
+                "log_work_day",
               ],
             },
             target_id: { type: ["string", "null"] },
