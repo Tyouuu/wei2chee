@@ -7,7 +7,9 @@ import {
   keyFor,
   sortCells,
   phoneFrom,
+  refuseToWrite,
 } from "./record-ops";
+import { MODULE_CATALOG } from "./module-catalog";
 import type { LayoutOp } from "./layout-ops";
 
 const row = (...cells: string[]) => ({ op: "add_table_row", target_id: "t", cells }) as unknown as LayoutOp;
@@ -130,6 +132,67 @@ describe("writeRecords", () => {
     const r = await writeRecords(client(rpc), "p1", "quotations", [row("A")], "req");
     expect(r.written).toBe(0);
     expect(r.skipped[0].reason).toContain("not your project");
+  });
+
+  /* 🔴 THE TWO LIVE SHAPES THAT HAD NO BRANCH.
+     Measured with a real signed-in identity on 2026-09-07: both reached
+     `add_pipeline_record`, which answered `not a pipeline module: bookings` --
+     an English database sentence on his 预约 page, naming a word he has never
+     heard, for a page that is not the one it names.
+
+     The assertion is BOTH halves: the wrong RPC is not called at all, AND he
+     is told something he can act on. Only checking `written === 0` would have
+     passed on the broken version too. */
+  it.each([
+    ["bookings", "预约那一页"],
+    ["reconciliation", "对帐那一页"],
+  ])("does not send a %s row to the pipeline rpc", async (moduleKey, sentence) => {
+    const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
+    const r = await writeRecords(client(rpc), "p1", moduleKey, [row("陈太太 洗剪吹", "陈太太")], "req");
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.written).toBe(0);
+    expect(r.skipped[0].reason).toContain(sentence);
+    /* And never the database's own words. */
+    expect(r.skipped[0].reason).not.toMatch(/pipeline|module|rpc/i);
+  });
+});
+
+describe("refuseToWrite", () => {
+  /* 🔴 THE POINT OF THE SWITCH IS THE COMPILER, NOT THIS TEST. A shape added
+     to the catalogue with no branch is a BUILD error (`never`), which is what
+     任务 23f gave applyLayoutOps after nine 「说了没做」 of one family --
+     verified 2026-09-07 by deleting the calendar arm:
+       error TS2322: Type '"calendar"' is not assignable to type 'never'.
+     What this test adds is the other direction: that every shape the
+     catalogue actually has gets an answer, and that the four writable ones
+     stay writable. */
+  it("answers for every shape the catalogue has", () => {
+    const shapes = new Set(MODULE_CATALOG.map((m) => m.shape));
+    expect(shapes.size).toBeGreaterThanOrEqual(9);
+    for (const s of shapes) {
+      const r = refuseToWrite(s);
+      expect(r === null || (typeof r === "string" && r.length > 0)).toBe(true);
+    }
+  });
+
+  it("lets the four with a business action through", () => {
+    for (const s of ["pipeline", "ledger", "directory", "catalog"] as const) {
+      expect(refuseToWrite(s)).toBeNull();
+    }
+  });
+
+  /* 预约 refuses because the operation has no slot for WHEN, not because the
+     branch is missing -- so the sentence has to say what to do instead, or it
+     is just a politer dead end. */
+  it("tells him where to go instead", () => {
+    expect(refuseToWrite("calendar")).toContain("预约那一页");
+    expect(refuseToWrite("reconcile")).toContain("对帐那一页");
+  });
+
+  it("never hands back the database's own words", () => {
+    for (const s of new Set(MODULE_CATALOG.map((m) => m.shape))) {
+      expect(refuseToWrite(s) ?? "").not.toMatch(/pipeline|module|rpc|error/i);
+    }
   });
 });
 

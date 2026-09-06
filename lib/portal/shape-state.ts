@@ -137,6 +137,30 @@ export function modulesOfShape(shape: ModuleShape): string[] {
   return MODULE_CATALOG.filter((m) => m.shape === shape).map((m) => m.key);
 }
 
+/**
+ * The shape of one module, from the catalogue. Null when the key is not one of
+ * ours at all.
+ *
+ * 🔴 WHY THIS EXISTS. The assistant's write path asked its question the other
+ * way round -- `LEDGER_MODULES.has(k)`, then `DIRECTORY_MODULES.has(k)`, then
+ * `CATALOG_MODULES.has(k)`, and **anything left over fell through to
+ * `add_pipeline_record`**. Two live shapes have no branch there, so on 预约 and
+ * 对帐 the owner read a raw database sentence in English naming a word he has
+ * never heard (measured 2026-09-07):
+ *
+ *     not a pipeline module: bookings
+ *
+ * An else-chain whose last arm is a guess cannot be made exhaustive. Asking
+ * for the shape lets the switch be checked by the compiler instead, which is
+ * what 任务 23f did for `applyLayoutOps` after nine 「说了没做」 of the same
+ * family: a missing branch becomes a build error rather than something the
+ * owner finds.
+ */
+export function shapeOfModule(key: string | null | undefined): ModuleShape | null {
+  if (!key) return null;
+  return MODULE_CATALOG.find((m) => m.key === key)?.shape ?? null;
+}
+
 /** Every module whose rows are real, derived. Consumed by the projection, by
  *  the assistant's write path and by the console -- one fact, three readers. */
 export const LIVE_MODULES: ReadonlySet<string> = new Set(

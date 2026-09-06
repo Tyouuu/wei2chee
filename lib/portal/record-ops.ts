@@ -35,11 +35,88 @@ import type { LayoutOp } from "./layout-ops";
  */
 
 import {
-  LEDGER_MODULES,
   DIRECTORY_MODULES,
-  CATALOG_MODULES,
   LIVE_MODULES,
+  shapeOfModule,
 } from "./shape-state";
+import type { ModuleShape } from "./module-catalog";
+
+/**
+ * Why a typed row cannot become a record on this shape -- or null when it can.
+ *
+ * ── 🔴 WHAT THIS REPLACED, AND WHAT IT COST ───────────────────────────────
+ *
+ * The routing here used to be three `Set.has` questions and an else: ledger,
+ * directory, catalog, **and everything else is a pipeline record**. Ten shapes
+ * exist and four had a branch, so the two live shapes without one -- 预约 and
+ * 对帐 -- reached `add_pipeline_record`, which refuses them. Measured with a
+ * real signed-in identity on 2026-09-07, what the owner read was:
+ *
+ *     not a pipeline module: bookings
+ *
+ * An English database sentence, on his 预约 page, naming a word he has never
+ * heard, for a page that is not the one it names. A salon owner saying 「帮陈
+ * 太太排明天三点」 gets that.
+ *
+ * ── WHY 预约 AND 对帐 REFUSE RATHER THAN WRITE ────────────────────────────
+ *
+ * 🔴 预约 CANNOT be written from a typed row, and this is a fact about the
+ * operation rather than a gap in the code. An appointment needs two instants;
+ * a row carries `cells`, and the booking row's clock lives in `at` -- a
+ * separate structure the page builds from `starts_at`/`ends_at`. There is no
+ * cell holding a time, so writing one means inventing when. 任务 89 measured
+ * what that costs: 省他的字，不可以拿「猜」来省. And a guessed time is not a
+ * harmless guess here -- appointments collide under a database-level exclusion
+ * (20260902030000), so a wrong instant either books the wrong slot or is
+ * rejected for overlapping something real.
+ *
+ * 🔴 对帐 could be parsed back -- period and source ARE in the first cell --
+ * but only by inverting `monthText` for two languages, which is a second copy
+ * of a formatter that will drift (任务 195 logged that gluing already). And it
+ * buys nothing: a reconciliation is typed once a month on its own page, while
+ * a mis-read month silently settles the wrong one and 20260906 locks a settled
+ * month against further entries. 重点 7d-2: ask what he is really asking, and
+ * whether something smaller answers it. Something smaller does -- not handing
+ * him a database error.
+ *
+ * ── WHY A SWITCH AND NOT ANOTHER ELSE ─────────────────────────────────────
+ *
+ * The `never` in the default is the point. `applyLayoutOps` grew the same
+ * guard in 任务 23f after nine 「说了没做」 of one family: a shape added to the
+ * catalogue with no branch here is now a BUILD error, not something the owner
+ * finds in front of a customer.
+ */
+export function refuseToWrite(shape: ModuleShape): string | null {
+  switch (shape) {
+    /* The four that have a real business action behind them. */
+    case "pipeline":
+    case "ledger":
+    case "directory":
+    case "catalog":
+      return null;
+
+    case "calendar":
+      return "预约要写清楚几点到几点，而这里加一行给不了时间 —— 到预约那一页排一个时段";
+
+    case "reconcile":
+      return "对帐要一个月份跟上游给的那个总数 —— 到对帐那一页加一笔";
+
+    /* 总览 · 报表 · 排行 · 官网 never reach here (isRecordModule gates on the
+       live shapes), and they are written out anyway because the compiler asks
+       for them -- and because the sentence is true if one ever does. */
+    case "overview":
+    case "report":
+    case "leaderboard":
+      return "这一页的数字是别的页面加起来的，不是打进去的";
+    case "landing":
+      return "这是给客人看的那一页，不是记录页";
+
+    default: {
+      const unhandled: never = shape;
+      return `这一页还不能这样加一行：${String(unhandled)}`;
+    }
+  }
+}
 
 export function isRecordModule(pageKey: string | null | undefined): boolean {
   return !!pageKey && LIVE_MODULES.has(pageKey);
@@ -236,9 +313,20 @@ export async function writeRecords(
        guess which quotation 「收了陈先生三千」 belongs to -- guessing wrong
        silently moves money against the wrong job. It lands unallocated, which
        renders as 订金, which is both true and the row he can act on. */
-    const ledger = LEDGER_MODULES.has(moduleKey);
-    const directory = DIRECTORY_MODULES.has(moduleKey);
-    const catalog = CATALOG_MODULES.has(moduleKey);
+    /* 🔴 ASK WHAT SHAPE THIS PAGE IS, then let the compiler check that every
+       shape has an answer -- see refuseToWrite. Asking `Set.has` three times
+       and falling through on the fourth is what put a raw database sentence in
+       front of the owner on two of his pages. */
+    const shape = shapeOfModule(moduleKey);
+    const refusal = shape === null ? "这一页不是记录页" : refuseToWrite(shape);
+    if (refusal) {
+      skipped.push({ op: op.op, reason: refusal });
+      continue;
+    }
+
+    const ledger = shape === "ledger";
+    const directory = shape === "directory";
+    const catalog = shape === "catalog";
 
     /* ── A NOUN IS NOT A DOCUMENT ─────────────────────────────────────────
        The cells arrive the same way on all three shapes because all three
