@@ -241,6 +241,13 @@ try {
   check("🔴 别人家退不了我的货", !!oe, "居然让它过了");
   check("架上没有动", (await onHand("Cement 50kg")) === 87,
     `${await onHand("Cement 50kg")}`);
+} catch (e) {
+  /* 🔴 抛了例外要算没过。没有这一段的尺子，
+     中途炸掉会把 `finally` 里那句「全部过」印出来 ——
+     **一把说谎的尺，跟一把跑完的尺，在报告里长得一模一样**。
+     这个仓库被这个形状骗过四次。 */
+  bad.push(`半路炸了：${e.message}`);
+  console.log(`  FAIL  半路炸了 — ${e.message}`);
 } finally {
   for (const id of people) {
     const { error } = await admin.auth.admin.deleteUser(id);

@@ -257,6 +257,113 @@ try {
   check("🔴 按了就不讲了",
     !has(await nudges(), "booking_unseen", bk), "按了还在讲");
 
+  /* ── ⑨ 🔴 催款 —— 一期的日子过了，钱还没到 ───────── */
+  console.log("\n⑨ 🔴 催款");
+  const { data: job } = await C.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "orders", in_title: "Bathroom",
+    in_party: "Mrs Lim", in_party_id: cust.id, in_amount_cents: 1_000_000,
+  });
+  /* 订金三成，而那一期的日子是**上个礼拜** ——
+     没有发明任何天数，那是他自己写在单上的。 */
+  const { error: tErr } = await C.rpc("set_record_terms", {
+    in_record_id: job.id,
+    in_terms: [
+      { description: "订金", portion: 30, due_on: day(-7) },
+      { description: "完工", portion: 70, due_on: day(30) },
+    ],
+  });
+  check("分期表写得进去", !tErr, tErr?.message);
+  const od = await nudges();
+  check("🔴 过了日子而钱没到 → 讲",
+    has(od, "payment_overdue", job.id),
+    JSON.stringify(od.map((r) => r.kind)));
+  check("🔴 而且讲的是**还差多少**（RM 3,000），不是整张单",
+    Number(od.find((r) => r.kind === "payment_overdue")?.amount_cents) === 300_000,
+    `${od.find((r) => r.kind === "payment_overdue")?.amount_cents}`);
+
+  /* 收了订金 → 那一条自己消失。 */
+  const { data: dep2 } = await C.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_direction: "in",
+    in_amount_cents: 300_000, in_party: "Mrs Lim", in_party_id: cust.id,
+    in_against_id: job.id,
+  });
+  check("🔴 收了订金就不讲了",
+    !has(await nudges(), "payment_overdue", job.id),
+    JSON.stringify((await nudges()).map((r) => r.kind)));
+  await C.rpc("reverse_ledger_entry", { in_entry_id: dep2.id });
+  check("冲正之后又讲了", has(await nudges(), "payment_overdue", job.id),
+    JSON.stringify((await nudges()).map((r) => r.kind)));
+
+  /* 🔴 一张**过期的报价单**不算欠款 ——
+     报价单那个日子是**有效期**，不是付款日。 */
+  const { data: oldQuote } = await C.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "quotations", in_title: "Old quote",
+    in_party: "Mrs Lim", in_party_id: cust.id, in_amount_cents: 700_000,
+    in_due_on: day(-30),
+  });
+  check("🔴 一张过期的报价单不算欠款（那个日子是有效期）",
+    !has(await nudges(), "payment_overdue", oldQuote.id),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "payment_overdue")
+      .map((r) => r.title)));
+
+  /* 🔴 进货单不算 —— 那是我欠人家。 */
+  await C.rpc("add_project_page", { requested_key: "purchases", new_title: "Purchases" });
+  const { data: po } = await C.rpc("add_pipeline_record", {
+    in_project_id: P, in_module_key: "purchases", in_title: "Cement",
+    in_party: "Seng Huat", in_amount_cents: 185_000, in_due_on: day(-20),
+  });
+  check("🔴 进货单不算（那是我欠人家）",
+    !has(await nudges(), "payment_overdue", po.id),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "payment_overdue")
+      .map((r) => r.title)));
+
+  /* ── ⑩ 🔴 借出去的东西该还了 ───────────────── */
+  console.log("\n⑩ 🔴 借出去该还了");
+  const { data: lent, error: lErr } = await C.rpc("lend_item", {
+    in_record_id: job.id, in_descr: "折叠桌 ×10", in_qty: 10,
+    /* ⚙️ 借出去的日子要在归还日之前 —— 第一版没给，
+       它预设是今天，于是那一句正确地拒绝了。 */
+    in_out_on: day(-10), in_due_back_on: day(-3),
+  });
+  check("借得出去", !lErr, lErr?.message);
+  const rd = await nudges();
+  check("🔴 过了归还日还没还 → 讲",
+    rd.some((r) => r.kind === "rental_overdue"),
+    JSON.stringify(rd.map((r) => r.kind)));
+  check("而且讲得出是什么、几件",
+    rd.some((r) => r.kind === "rental_overdue" && Number(r.qty_left) === 10),
+    JSON.stringify(rd.filter((r) => r.kind === "rental_overdue")));
+  await C.rpc("return_rental", { in_rental_id: lent.id, in_qty: 10 });
+  check("🔴 还了就不讲了",
+    !(await nudges()).some((r) => r.kind === "rental_overdue"),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "rental_overdue")));
+
+  /* ── ⑪ 🔴 答应了的介绍费还没给 ─────────────── */
+  console.log("\n⑪ 🔴 介绍费还没给");
+  const { data: ahMing } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "Ah Ming",
+  });
+  const { error: refErr } = await C.rpc("set_record_referral", {
+    in_record_id: job.id, in_referrer_id: ahMing.id, in_portion: 3,
+  });
+  check("记得下是谁介绍的", !refErr, refErr?.message);
+  /* 没收到钱就不欠 —— 比例算的是**收到的钱**。 */
+  check("🔴 客人还没付钱，就不讲",
+    !(await nudges()).some((r) => r.kind === "referral_owing"),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "referral_owing")));
+  await C.rpc("add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_direction: "in",
+    in_amount_cents: 400_000, in_party: "Mrs Lim", in_party_id: cust.id,
+    in_against_id: job.id,
+  });
+  const rf = await nudges();
+  check("🔴 钱进来了 → 讲一句“该给阿明了”",
+    rf.some((r) => r.kind === "referral_owing" && r.subject_id === ahMing.id),
+    JSON.stringify(rf.map((r) => [r.kind, r.party])));
+  check("而且讲得出欠多少（RM 4,000 的 3%）",
+    Number(rf.find((r) => r.kind === "referral_owing")?.amount_cents) === 12_000,
+    `${rf.find((r) => r.kind === "referral_owing")?.amount_cents}`);
+
   /* ── ⑧ 🔴 师傅 ───────────────────────────────────────────────────── */
   console.log("\n⑧ 🔴 师傅");
   /* 先把补货线那一条弄回来，师傅那一边才有东西可以看。 */
@@ -274,7 +381,11 @@ try {
   check("🔴 师傅看不到「报价快到期」",
     !crewSees.some((r) => r.kind === "quote_expiring"),
     JSON.stringify(crewSees.map((r) => r.kind)));
-  check("🔴 师傅也看不到「同意了没付订金」",
+  check("🔴 师傅也看不到「催款」跟「介绍费」",
+    !crewSees.some((r) => r.kind === "payment_overdue" || r.kind === "referral_owing"),
+    JSON.stringify(crewSees.map((r) => r.kind)));
+  /* 🔴 而「借出去该还了」他**看得到** —— 去把东西要回来的是柜台。 */
+    check("🔴 师傅也看不到「同意了没付订金」",
     !crewSees.some((r) => r.kind === "agreed_unpaid"),
     JSON.stringify(crewSees.map((r) => r.kind)));
   check("🔴 而他要做的三种看得到（补货 · 保养 · 套票）",
@@ -317,6 +428,13 @@ try {
   const { data: oRead } = await other.client
     .from("nudge_snoozes").select("id").eq("project_id", P);
   check("🔴 那张表他也读不到", (oRead ?? []).length === 0, `${oRead?.length}`);
+} catch (e) {
+  /* 🔴 抛了例外要算没过。没有这一段的尺子，
+     中途炸掉会把 `finally` 里那句「全部过」印出来 ——
+     **一把说谎的尺，跟一把跑完的尺，在报告里长得一模一样**。
+     这个仓库被这个形状骗过四次。 */
+  bad.push(`半路炸了：${e.message}`);
+  console.log(`  FAIL  半路炸了 — ${e.message}`);
 } finally {
   for (const id of people) {
     const { error } = await admin.auth.admin.deleteUser(id);
