@@ -157,6 +157,7 @@ PAGES = [
     ("branches", "/en/portal/branches"),
     ("what you owe", "/en/portal/payables"),
     ("days worked", "/en/portal/attendance"),
+    ("who is free", "/en/portal/rota"),
     ("legal", "/en/legal/terms"),
 ]
 

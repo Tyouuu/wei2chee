@@ -658,7 +658,8 @@
       "expiry": "Shelf life",
       "rentals": "Out on loan",
       "payables": "What you owe",
-      "attendance": "Days worked"
+      "attendance": "Days worked",
+      "rota": "Who is free"
     },
     "find": {
       "title": "Find anything",
@@ -1282,6 +1283,33 @@
       "sun": "Su",
       "summary": "{days, plural, one {# day worked} other {# days worked}} · {logged} recorded",
       "note": "A half day counts as half. Hours are only for people paid by the hour — leave it blank and nothing is recorded."
+    },
+    "rota": {
+      "title": "Who is free",
+      "lede": "Ask for a day and a time, and see who is on and who is already taken.",
+      "noStaff": "Add someone to your people list first, then their hours show up here.",
+      "day": "Day",
+      "from": "From",
+      "to": "To",
+      "ask": "Ask",
+      "free": "Free",
+      "taken": "Taken",
+      "off": "Not rostered",
+      "noneRostered": "Nobody has hours set yet, so everyone counts as on. Set them below and this answers properly.",
+      "rosterTitle": "Weekly hours",
+      "rosterLede": "The shape of one week. Set it once — it holds until you change it. A day off, or someone away, is a blocked slot in bookings, not a second table here.",
+      "save": "Save the week",
+      "clearDay": "Clear",
+      "saved": "Saved.",
+      "saveFailed": "That did not save.",
+      "sun": "Sunday",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "rosterNote": "Leave both boxes empty for a day off. A shift has to end after it starts."
     }
   },
   "explainer": {

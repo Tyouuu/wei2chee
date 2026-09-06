@@ -258,3 +258,22 @@ export function IconCalendar({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 一个钟面 —— 谁有空（几点到几点，谁在）。 */
+export function IconClockFace({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="10" r="7.4" />
+      <path d="M10 5.8V10l2.8 1.8" />
+    </svg>
+  );
+}

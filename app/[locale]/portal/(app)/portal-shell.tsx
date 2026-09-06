@@ -27,6 +27,7 @@ import {
   IconOut,
   IconTruck,
   IconCalendar,
+  IconClockFace,
 } from "./shell-icons";
 
 /**
@@ -563,6 +564,17 @@ export function PortalShell({
                   icon={<IconCalendar />}
                 >
                   {t("attendance")}
+                </NavRow>
+              )}
+              {/* 谁有空 —— 同一群人，另一个问题：出勤答「他做了几天」，
+                  这一页答「两点到四点他在不在」。 */}
+              {hasStaff && (
+                <NavRow
+                  href={`${base}/rota`}
+                  active={is("/rota")}
+                  icon={<IconClockFace />}
+                >
+                  {t("rota")}
                 </NavRow>
               )}
               {hasPurchases && (

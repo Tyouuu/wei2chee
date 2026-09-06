@@ -573,6 +573,58 @@ try {
   else no("同一天记出了两行", JSON.stringify(wd2));
   await page.screenshot({ path: `${OUT}/16-attendance.png`, fullPage: true });
 
+  // ── ④c 谁有空 ─────────────────────────────────────────────────────────
+  /* `who_is_free` · `staff_hours_of` · `set_staff_hours`（20260906430000）——
+     三支画面上一个入口都没有（[任务 224] 的收尾）。 */
+  if ((await open("rota")) === 200) ok("谁有空那一页打得开");
+  else no("谁有空那一页打不开");
+
+  /* 🔴 一行班都没排 → 每一个人都算有空，而且讲出来。
+     那是 `who_is_free` 自己写在代码里的，理由是 20260902030000 拒绝
+     整套上班时间引擎的那一句：不填也用得了。 */
+  const rota0 = await page.locator("body").innerText();
+  if (/Nobody has hours set yet/i.test(rota0)) ok("🔴 还没排班的时候讲出来了");
+  else no("🔴 还没排班却没讲", rota0.slice(0, 240));
+  if (/\bFree\b/.test(rota0)) ok("🔴 还没排班的时候，人算有空");
+  else no("🔴 还没排班却说没空", rota0.slice(0, 240));
+  const rails = await page.locator('[data-rota="rail"]').count();
+  if (rails >= 1) ok(`一个人一条轨道 · ${rails} 条`);
+  else no("一条轨道都没画");
+
+  /* 排一个礼拜：星期一 10:00–19:00。 */
+  const monInput = page.locator('[data-rota="roster"] li input[type="time"]');
+  await monInput.nth(0).fill("10:00");
+  await monInput.nth(1).fill("19:00");
+  await page.getByRole("button", { name: /Save the week/i }).click();
+  await page.waitForTimeout(3200);
+
+  const { data: hrs } = await admin
+    .from("staff_hours")
+    .select("weekday, starts_at, ends_at")
+    .eq("project_id", pid);
+  if ((hrs ?? []).length === 1 && hrs[0].weekday === 1)
+    ok("那一个礼拜存进去了（星期一）");
+  else no("那一个礼拜没存进去", JSON.stringify(hrs));
+
+  /* 🔴 排完之后它才真的在答问题：同一个星期一，班里跟班外两个答案。
+     ⚠️ 挑的是**下一个星期一**，不是今天 —— 一把只在星期一跑得对的尺，
+     一个礼拜里有六天在说谎。 */
+  const nextMon = (() => {
+    const d = new Date(Date.now() + 8 * 3600e3);
+    d.setUTCDate(d.getUTCDate() + ((8 - d.getUTCDay()) % 7 || 7));
+    return d.toISOString().slice(0, 10);
+  })();
+  await open(`rota?d=${nextMon}&s=14:00&e=15:00`);
+  const inShift = await page.locator("body").innerText();
+  if (/\bFree\b/.test(inShift)) ok("🔴 班里那一格 · 有空");
+  else no("🔴 班里那一格没说有空", inShift.slice(0, 300));
+
+  await open(`rota?d=${nextMon}&s=20:00&e=21:00`);
+  const outShift = await page.locator("body").innerText();
+  if (/Not rostered/i.test(outShift)) ok("🔴 班外那一格 · 没排班");
+  else no("🔴 班外那一格没说没排班", outShift.slice(0, 300));
+  await page.screenshot({ path: `${OUT}/18-rota.png`, fullPage: true });
+
   // ── ⑤ 侧栏上真的看得到（一条按得到的连结）─────────────────────────────
   await open("");
   /* ⚠️ 等那一条侧栏真的画出来 —— 开发模式下第一次编译
@@ -591,6 +643,7 @@ try {
     ["Books", "books"],
     ["Pay", "payroll"],
     ["Days worked", "attendance"],
+    ["Who is free", "rota"],
     ["Tax", "tax"],
     ["Service contracts", "contracts"],
   ]) {
@@ -621,6 +674,7 @@ try {
     [14, "payroll"],
     [15, "tax"],
     [17, "attendance"],
+    [19, "rota"],
   ]) {
     await phone.goto(`${BASE}/en/portal/${path}`, {
       waitUntil: "domcontentloaded",
