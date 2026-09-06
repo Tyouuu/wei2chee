@@ -487,7 +487,7 @@
       "cardEdited": "你改过并保存了",
       "cardCta": "打开来改",
       "styleTitle": "风格",
-      "styleBody": "同一套系统，{n} 种做法。点一下就换，随时可以再换回来——上面每一页的样子会跟着一起变。",
+      "styleBody": "陌生人看到那一页，{n} 个样子。一按就换，随时换回来 —— 你自己每天在用的那几页不会跟着变。",
       "styleTag": {
         "ledger": "紧凑 · 表格多、行数多",
         "hearth": "宽松 · 温和、好读",
@@ -539,13 +539,11 @@
       "statBlocksNote": "拖进页面就能用",
       "statBrowse": "看看",
       "statPlan": "状态",
-      "statPlanPaidNote": "改动会自动保存",
-      "statPlanFreeNote": "可以随便改，保存要先付款",
       "addPageHint": "从模板库挑一个，或者自己起个名字。",
-      "metaPages": "{count} 页系统",
+      "metaPages": "<n>{count}</n> 页系统",
       "metaStyle": "风格",
       "metaChange": "换一个",
-      "metaBlocks": "{count} 个组件可用",
+      "metaBlocks": "<n>{count}</n> 个组件可用",
       "metaBrowse": "看看",
       "metaDrafts": "{count} 页还是初稿",
       "headlineFallback": "你的系统已经建好了。",
@@ -583,7 +581,8 @@
       "staffTitle": "你在这里工作。",
       "staffSubline": "下面这几页是{name}的。打开一页就看得到今天的活，也加得了一单。",
       "staffPagesNote": "你打得开的。收款、开销、佣金还是老板一个人的。",
-      "cardCtaStaff": "打开"
+      "cardCtaStaff": "打开",
+      "statPlanNote": "改动会自动保存"
     },
     "settings": {
       "title": "生意资料",
@@ -676,7 +675,7 @@
     },
     "styles": {
       "title": "风格",
-      "subtitle": "同一套系统，{n} 种做法",
+      "subtitle": "官网的 {n} 个样子",
       "moreComing": "{styles} 种版式 × {palettes} 种配色。版式决定它是一份文件还是一块看板，配色只换颜色 —— 随时换，换回来也行。",
       "paletteTitle": "配色",
       "paletteBody": "版式决定密度、字体、圆角；配色只换颜色。两层加起来，你现在有 {count} 种组合。",

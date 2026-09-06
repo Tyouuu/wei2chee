@@ -21,10 +21,15 @@ import {
  * The style library.
  *
  * WHY IT IS ITS OWN ROUTE. It used to be the third section of a scrolling home
- * page, which meant the control that changes how the customer's entire system
- * looks was something you found by scrolling past your own pages. It is one of
- * the three or four decisions a customer makes about their system; it deserves
- * a destination in the rail, and the rail is what gives it one.
+ * page, which meant the control that changes how his site looks was something
+ * you found by scrolling past your own pages. It is one of the three or four
+ * decisions a customer makes; it deserves a destination in the rail, and the
+ * rail is what gives it one.
+ *
+ * ⚠️ 2026-09-04 起它只管**一个**画面：客户的官网 `/s/<slug>`。
+ * 工作台不再跟着它走（`SYSTEM_REGISTER`，见 lib/portal/system-register.ts）——
+ * 而这一页的字到 2026-09-06 都还写着「上面每一页都会跟着变」。
+ * 一页在描述一个产品已经没有的行为，跟一颗按不动的按钮是同一个缺陷。
  */
 export default async function StylesPage({
   params,

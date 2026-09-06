@@ -27,8 +27,6 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   counter: styles.counter,
 };
 
-
-
 /**
  * The customer's home.
  *
@@ -105,7 +103,13 @@ export function PortalHome({
    *  Threaded from the server rather than fetched again: the same projects row
    *  supplies `style`, and a second query would be a second source of truth. */
   palette: string | null;
-  pages: { pageKey: string; title: string | null; label?: string | null; isDraft: boolean; layout: Data }[];
+  pages: {
+    pageKey: string;
+    title: string | null;
+    label?: string | null;
+    isDraft: boolean;
+    layout: Data;
+  }[];
   /** The address the site answers on, or null before the owner claims one. */
   siteSlug: string | null;
   sitePublished: boolean;
@@ -137,22 +141,31 @@ export function PortalHome({
   const sitePage = pages.find((p) => p.pageKey === "website") ?? null;
   const systemPages = pages.filter((p) => p.pageKey !== "website");
   const siteUrl = siteSlug ? `${origin}/s/${siteSlug}` : "";
-  const offerable = OPTIONAL_MODULES.filter((m) => !have.has(m.key)).slice(0, 6);
+  const offerable = OPTIONAL_MODULES.filter((m) => !have.has(m.key)).slice(
+    0,
+    6,
+  );
 
   /* The server resolves this with the same call the rail uses -- catalogue
      word in the system's own language, the customer's own title on top. What
      used to be here was a seven-name array checked against a seventeen-module
      catalogue, so anything outside it read 「New page」. */
-  const labelFor = (page: { pageKey: string; title: string | null; label?: string | null }) =>
-    page.title?.trim() || page.label?.trim() || t("customPage");
+  const labelFor = (page: {
+    pageKey: string;
+    title: string | null;
+    label?: string | null;
+  }) => page.title?.trim() || page.label?.trim() || t("customPage");
 
   async function removePage(pageKey: string, label: string) {
     if (removing) return;
     if (!window.confirm(t("removeConfirm", { name: label }))) return;
     setRemoving(pageKey);
-    const { error } = await createBrowserSupabaseClient().rpc("remove_project_page", {
-      target_page_key: pageKey,
-    });
+    const { error } = await createBrowserSupabaseClient().rpc(
+      "remove_project_page",
+      {
+        target_page_key: pageKey,
+      },
+    );
     setRemoving(null);
     if (!error) router.refresh();
   }
@@ -169,21 +182,21 @@ export function PortalHome({
       <PageBar title={t("navTitle")}>
         {isOwner && (
           <>
-        <Link
-          href={`/${locale}/portal/spec`}
-          prefetch={false}
-          className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [color:var(--color-paper-dim)] transition-colors hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
-        >
-          {t("specTitle")}
-        </Link>
-        <a
-          href={deployHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-primary-deep)]"
-        >
-          {t("buildCta")}
-        </a>
+            <Link
+              href={`/${locale}/portal/spec`}
+              prefetch={false}
+              className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [color:var(--color-paper-dim)] transition-colors hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+            >
+              {t("specTitle")}
+            </Link>
+            <a
+              href={deployHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-primary-deep)]"
+            >
+              {t("buildCta")}
+            </a>
           </>
         )}
       </PageBar>
@@ -212,7 +225,10 @@ export function PortalHome({
               was never addressed to him. */}
           <h1 className="text-balance [color:var(--color-paper)] [font-family:var(--font-display)] [font-size:var(--text-hero)] [font-weight:var(--fw-regular)] [letter-spacing:var(--tracking-title-lg)] [line-height:1.08]">
             {isOwner
-              ? summary || (industryName ? t("titleWithIndustry", { industry: industryName }) : t("title"))
+              ? summary ||
+                (industryName
+                  ? t("titleWithIndustry", { industry: industryName })
+                  : t("title"))
               : t("staffTitle")}
           </h1>
 
@@ -240,71 +256,98 @@ export function PortalHome({
             as separate statistics, and that is what this is now: one quiet
             line, scannable, with the two things that are actually actionable
             carrying links. */}
+        {/* 🔴 这一行里的连结用 `--color-brand`，不是 `--color-primary`。
+            平台这一边的 `--color-primary` 是 **#f0f2f4 —— 近白**
+            （`chrome.module.css` 自己写着「角色留下来了：primary 在这里是墨」），
+            所以一个「primary 色」的行内连结跟旁边的字**一模一样**：
+            画面上读到的是「Style Swiss change」「91 components available browse」,
+            两句不通的英文，而不是两个按得下去的字。
+            平台的强调色是那个青（侧栏那条线 · 左上角那个 F · 询价那个徽章都在用）。 */}
         {isOwner && (
-        <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
-          <span>
-            <b className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-weight:var(--fw-semibold)] tabular-nums">
-              {pages.length}
-            </b>{" "}
-            {t("metaPages", { count: pages.length }).replace(/^\d+\s*/, "")}
-            {draftCount > 0 && (
-              <span className="[color:var(--color-brass-bright)]">
-                {" · "}
-                {t("metaDrafts", { count: draftCount })}
-              </span>
-            )}
-          </span>
+          <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+            {/* 🔴 数字**留在那句话里**，用 rich text 把它挑出来上色 ——
+              不要把它撕下来再拼回去。
+              原本是「印一个 <b>，再用一条正则把翻译里开头那个
+              数字剪掉」，而英文那一句是 `{count}-page system`：
+              剪完剩下 `-page system`，接回去就是 **「6 -page system」**。
+              那个做法只在「翻译刚好以数字加一个空格开头」的时候成立，
+              而一句翻译什么时候这样开头，不是我们决定得了的。 */}
+            <span>
+              {t.rich("metaPages", {
+                count: pages.length,
+                n: (c) => (
+                  <b className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-weight:var(--fw-semibold)] tabular-nums">
+                    {c}
+                  </b>
+                ),
+              })}
+              {draftCount > 0 && (
+                <span className="[color:var(--color-brass-bright)]">
+                  {" · "}
+                  {t("metaDrafts", { count: draftCount })}
+                </span>
+              )}
+            </span>
 
-          <Dot />
+            <Dot />
 
-          <span>
-            {t("metaStyle")}{" "}
-            <b className="[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
-              {STYLE_LABEL[style]}
-            </b>{" "}
-            <Link
-              href={`/${locale}/portal/styles`}
-              className="[color:var(--color-primary)] hover:underline"
-            >
-              {t("metaChange")}
-            </Link>
-          </span>
+            <span>
+              {t("metaStyle")}{" "}
+              <b className="[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+                {STYLE_LABEL[style]}
+              </b>{" "}
+              <Link
+                href={`/${locale}/portal/styles`}
+                className="[color:var(--color-brand)] underline decoration-from-font underline-offset-2 hover:[color:var(--color-brand-deep)]"
+              >
+                {t("metaChange")}
+              </Link>
+            </span>
 
-          <Dot />
+            <Dot />
 
-          <span>
-            <b className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-weight:var(--fw-semibold)] tabular-nums">
-              {componentCount}
-            </b>{" "}
-            {t("metaBlocks", { count: componentCount }).replace(/^\d+\s*/, "")}{" "}
-            <Link
-              href={`/${locale}/portal/library`}
-              className="[color:var(--color-primary)] hover:underline"
-            >
-              {t("metaBrowse")}
-            </Link>
-          </span>
+            <span>
+              {t.rich("metaBlocks", {
+                count: componentCount,
+                n: (c) => (
+                  <b className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-weight:var(--fw-semibold)] tabular-nums">
+                    {c}
+                  </b>
+                ),
+              })}{" "}
+              <Link
+                href={`/${locale}/portal/library`}
+                className="[color:var(--color-brand)] underline decoration-from-font underline-offset-2 hover:[color:var(--color-brand-deep)]"
+              >
+                {t("metaBrowse")}
+              </Link>
+            </span>
 
-          <Dot />
+            <Dot />
 
-          {/* Plan keeps a pill rather than joining the run of plain text: it is
+            {/* Plan keeps a pill rather than joining the run of plain text: it is
               the one item here that is a STATE rather than a count, and a
               customer scanning for "am I paid up" should not have to read a
               sentence to find it. */}
-          <span
-            className={`rounded-[var(--radius-pill)] px-2.5 py-0.5 [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] ${
-              paid
-                ? "[background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)]"
-                : "[background-color:var(--color-ink-850)] [color:var(--color-brass-bright)]"
-            }`}
-          >
-            {paid ? tShell("planPaid") : tShell("planFree")}
-            {" · "}
-            {paid ? t("statPlanPaidNote") : t("statPlanFreeNote")}
-          </span>
-        </div>
+            <span
+              className={`rounded-[var(--radius-pill)] px-2.5 py-0.5 [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] ${
+                paid
+                  ? "[background-color:var(--color-primary-soft)] [color:var(--color-primary-deep)]"
+                  : "[background-color:var(--color-ink-850)] [color:var(--color-brass-bright)]"
+              }`}
+            >
+              {paid ? tShell("planPaid") : tShell("planFree")}
+              {" · "}
+              {/* 🔴 免费那一档原本写着「可以随便改，保存要先付款」——
+                而那道闸 2026-09-05 就拆掉了（20260905410000，老板：
+                「去除旧的概念吧」）。一页在描述一个产品已经没有的限制，
+                跟一颗按不动的按钮是同一个缺陷的另一张脸，
+                而这一句就印在一个新老板看到的第一屏上。
+                两档现在讲同一句真话，所以只有一句。 */}
+              {t("statPlanNote")}
+            </span>
+          </div>
         )}
-
 
         {/*
           WHERE THEIR SYSTEM IS, ON THE SCREEN THAT ALREADY KNEW.
@@ -328,28 +371,30 @@ export function PortalHome({
           more about a stalled build than 60% ever would.
         */}
         {isOwner && (
-        <section className="mt-8" aria-label={t("deliveryTitle")}>
-          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
-              {t("deliveryTitle")}
-            </h2>
-            {stageChangedAt && (
-              <span className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
-                {t("deliverySince", { date: formatDay(stageChangedAt, locale) })}
-              </span>
-            )}
-          </div>
+          <section className="mt-8" aria-label={t("deliveryTitle")}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+                {t("deliveryTitle")}
+              </h2>
+              {stageChangedAt && (
+                <span className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                  {t("deliverySince", {
+                    date: formatDay(stageChangedAt, locale),
+                  })}
+                </span>
+              )}
+            </div>
 
-          <ol className="mt-3 grid gap-px overflow-hidden rounded-[var(--radius-md)] [background-color:var(--color-ink-800)] sm:grid-cols-3 lg:grid-cols-5">
-            {DELIVERY_STAGES.map((key, i) => {
-              const at = DELIVERY_STAGES.indexOf(stage);
-              const here = key === stage;
-              // Everything before the current step is done. Nothing after it is
-              // predicted -- a future step is drawn as a future step, not as a
-              // thing that is about to happen.
-              const done = at > -1 && i < at;
-              return (
-                /*
+            <ol className="mt-3 grid gap-px overflow-hidden rounded-[var(--radius-md)] [background-color:var(--color-ink-800)] sm:grid-cols-3 lg:grid-cols-5">
+              {DELIVERY_STAGES.map((key, i) => {
+                const at = DELIVERY_STAGES.indexOf(stage);
+                const here = key === stage;
+                // Everything before the current step is done. Nothing after it is
+                // predicted -- a future step is drawn as a future step, not as a
+                // thing that is about to happen.
+                const done = at > -1 && i < at;
+                return (
+                  /*
                   DONE / HERE / NOT YET, CARRIED BY FORM RATHER THAN BY DIMNESS.
 
                   The first cut leaned on colour for all three and measured
@@ -366,35 +411,39 @@ export function PortalHome({
                   says not-yet except the absence of both. Every string on the
                   strip is now readable, which is the floor, not the goal.
                 */
-                <li
-                  key={key}
-                  aria-current={here ? "step" : undefined}
-                  className={`px-4 py-3.5 ${
-                    here
-                      ? "border-l-2 [border-color:var(--color-jade-bright)] [background-color:var(--color-ink-850)]"
-                      : "[background-color:var(--color-ink-900)]"
-                  }`}
-                >
-                  <span
-                    className={`block [font-size:var(--text-micro)] uppercase tracking-[0.12em] [font-weight:var(--fw-semibold)] ${
-                      here ? "[color:var(--color-jade-bright)]" : "[color:var(--color-paper-dim)]"
+                  <li
+                    key={key}
+                    aria-current={here ? "step" : undefined}
+                    className={`px-4 py-3.5 ${
+                      here
+                        ? "border-l-2 [border-color:var(--color-jade-bright)] [background-color:var(--color-ink-850)]"
+                        : "[background-color:var(--color-ink-900)]"
                     }`}
                   >
-                    <span aria-hidden="true">{done ? "✓" : i + 1}</span> ·{" "}
-                    {t(`deliveryStage.${key}`)}
-                  </span>
-                  <span
-                    className={`mt-1.5 block [font-size:var(--text-xs)] [line-height:var(--leading-body)] ${
-                      here ? "[color:var(--color-paper)]" : "[color:var(--color-paper-dim)]"
-                    }`}
-                  >
-                    {t(`deliveryNote.${key}`)}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
+                    <span
+                      className={`block [font-size:var(--text-micro)] uppercase tracking-[0.12em] [font-weight:var(--fw-semibold)] ${
+                        here
+                          ? "[color:var(--color-jade-bright)]"
+                          : "[color:var(--color-paper-dim)]"
+                      }`}
+                    >
+                      <span aria-hidden="true">{done ? "✓" : i + 1}</span> ·{" "}
+                      {t(`deliveryStage.${key}`)}
+                    </span>
+                    <span
+                      className={`mt-1.5 block [font-size:var(--text-xs)] [line-height:var(--leading-body)] ${
+                        here
+                          ? "[color:var(--color-paper)]"
+                          : "[color:var(--color-paper-dim)]"
+                      }`}
+                    >
+                      {t(`deliveryNote.${key}`)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
         )}
 
         {/*
@@ -471,15 +520,15 @@ export function PortalHome({
                     {/* 「Generated draft · not edited yet」 is about the owner's
                         drafting, not about the work in the page. */}
                     {isOwner && (
-                    <span
-                      className={`mt-1 inline-block rounded-[var(--radius-pill)] px-2 py-0.5 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] ${
-                        page.isDraft
-                          ? "[background-color:color-mix(in_oklab,var(--color-brass)_13%,transparent)] [color:var(--color-brass-bright)]"
-                          : "[background-color:color-mix(in_oklab,var(--color-jade)_13%,transparent)] [color:var(--color-jade-bright)]"
-                      }`}
-                    >
-                      {page.isDraft ? t("cardDraft") : t("cardEdited")}
-                    </span>
+                      <span
+                        className={`mt-1 inline-block rounded-[var(--radius-pill)] px-2 py-0.5 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] ${
+                          page.isDraft
+                            ? "[background-color:color-mix(in_oklab,var(--color-brass)_13%,transparent)] [color:var(--color-brass-bright)]"
+                            : "[background-color:color-mix(in_oklab,var(--color-jade)_13%,transparent)] [color:var(--color-jade-bright)]"
+                        }`}
+                      >
+                        {page.isDraft ? t("cardDraft") : t("cardEdited")}
+                      </span>
                     )}
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
@@ -524,25 +573,25 @@ export function PortalHome({
                 21st.dev putting a count beside every category: naming what is
                 available is what makes a library read as deep. */}
             {isOwner && (
-            <li>
-              <Link
-                href={`/${locale}/portal/templates`}
-                className="flex h-full min-h-[220px] flex-col justify-center gap-3 rounded-[var(--radius-lg)] border border-dashed p-7 [border-color:var(--color-ink-700)] transition-colors hover:[border-color:var(--color-primary)]"
-              >
-                <span className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
-                  {t("addPageCta")}
-                </span>
-                <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-                  {t("addPageChips")}
-                </span>
-                {offerable.length > 0 && (
-                  <span className="mt-1 flex flex-wrap gap-2">
-                    {offerable.map((m) => (
-                      <span
-                        key={m.key}
-                        className="rounded-[var(--radius-pill)] border px-3 py-1 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]"
-                      >
-                        {/* `labelEn` has existed on every archetype since the
+              <li>
+                <Link
+                  href={`/${locale}/portal/templates`}
+                  className="flex h-full min-h-[220px] flex-col justify-center gap-3 rounded-[var(--radius-lg)] border border-dashed p-7 [border-color:var(--color-ink-700)] transition-colors hover:[border-color:var(--color-primary)]"
+                >
+                  <span className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
+                    {t("addPageCta")}
+                  </span>
+                  <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                    {t("addPageChips")}
+                  </span>
+                  {offerable.length > 0 && (
+                    <span className="mt-1 flex flex-wrap gap-2">
+                      {offerable.map((m) => (
+                        <span
+                          key={m.key}
+                          className="rounded-[var(--radius-pill)] border px-3 py-1 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]"
+                        >
+                          {/* `labelEn` has existed on every archetype since the
                             catalogue was written and nothing read it, so the
                             English home screen offered 订单 · 预约 · 任务 · 对账
                             to a reader who had chosen English -- the same class
@@ -550,13 +599,13 @@ export function PortalHome({
                             Page names on this screen follow the INTERFACE (see
                             `labelFor` above, which reads portal.editor.pages),
                             so these follow it too. */}
-                        {moduleLabel(m, locale === "zh" ? "zh" : "en")}
-                      </span>
-                    ))}
-                  </span>
-                )}
-              </Link>
-            </li>
+                          {moduleLabel(m, locale === "zh" ? "zh" : "en")}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </Link>
+              </li>
             )}
           </ul>
         </section>
@@ -635,7 +684,11 @@ export function PortalHome({
                       -- so the row renders the path until it knows better
                       rather than flashing a wrong host. */}
                   {siteSlug ? (
-                    <CopyLink url={siteUrl} label={t("siteCopy")} done={t("siteCopied")} />
+                    <CopyLink
+                      url={siteUrl}
+                      label={t("siteCopy")}
+                      done={t("siteCopied")}
+                    />
                   ) : (
                     <p className="mt-2.5 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
                       {t("siteNoAddress")}
@@ -658,7 +711,7 @@ export function PortalHome({
                         {" · "}
                         <Link
                           href={`/${locale}/portal/enquiries`}
-                          className="[color:var(--color-primary)] [font-weight:var(--fw-medium)] hover:underline"
+                          className="[color:var(--color-brand)] [font-weight:var(--fw-medium)] underline decoration-from-font underline-offset-2 hover:[color:var(--color-brand-deep)]"
                         >
                           {t("siteEnquiriesLink")}
                         </Link>
@@ -715,7 +768,15 @@ function Dot() {
  * the path 「/s/xingfa-reno」 and nothing else meant the only way to get a
  * sendable link was to open the page and copy the browser's address bar.
  */
-function CopyLink({ url, label, done }: { url: string; label: string; done: string }) {
+function CopyLink({
+  url,
+  label,
+  done,
+}: {
+  url: string;
+  label: string;
+  done: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {

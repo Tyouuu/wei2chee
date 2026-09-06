@@ -487,7 +487,7 @@
       "cardEdited": "Edited and saved by you",
       "cardCta": "Open and edit",
       "styleTitle": "Style",
-      "styleBody": "One system, {n} ways. Switch with a click and switch back any time — every page above changes with it.",
+      "styleBody": "{n} looks for the site strangers see. Switch with a click and switch back any time — the pages you work in stay as they are.",
       "styleTag": {
         "ledger": "Dense · many rows, many tables",
         "hearth": "Roomy · warm and readable",
@@ -539,13 +539,11 @@
       "statBlocksNote": "Drag any of them onto a page",
       "statBrowse": "Browse",
       "statPlan": "Status",
-      "statPlanPaidNote": "Changes save automatically",
-      "statPlanFreeNote": "Edit freely; saving needs payment",
       "addPageHint": "Pick one from the templates, or name your own.",
-      "metaPages": "{count}-page system",
+      "metaPages": "<n>{count}</n>-page system",
       "metaStyle": "Style",
       "metaChange": "change",
-      "metaBlocks": "{count} components available",
+      "metaBlocks": "<n>{count}</n> components available",
       "metaBrowse": "browse",
       "metaDrafts": "{count} still drafts",
       "headlineFallback": "Your system is built.",
@@ -583,7 +581,8 @@
       "staffTitle": "You work here.",
       "staffSubline": "The pages below are {name}'s. Open one to see today's work, and add to it.",
       "staffPagesNote": "What you can open. Payments, expenses and commission stay with the owner.",
-      "cardCtaStaff": "Open"
+      "cardCtaStaff": "Open",
+      "statPlanNote": "Changes save automatically"
     },
     "settings": {
       "title": "Business details",
@@ -676,7 +675,7 @@
     },
     "styles": {
       "title": "Styles",
-      "subtitle": "One system, {n} ways",
+      "subtitle": "{n} looks for your public site",
       "moreComing": "{styles} layouts × {palettes} palettes. The layout decides whether it is a document or a board; the palette only changes colour — switch any time, and switch back.",
       "paletteTitle": "Colours",
       "paletteBody": "The layout sets density, type and corners; the palette only changes colour. Together that is {count} combinations.",
