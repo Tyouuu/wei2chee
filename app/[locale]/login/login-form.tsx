@@ -27,7 +27,23 @@ export function LoginForm({ locale }: { locale: string }) {
 
     if (signInError) {
       setPending(false);
-      setError(t("errorInvalidCredentials"));
+      /* 🔴 **每一种失败讲同一句话，是一条会把他推去重设密码的路。**
+         2026-09-07 量到的那一串：那颗按钮在下一页来之前就变回「登入」→
+         他以为没反应 → 再按 → 每一次都是真的呼叫 → 被挡下来 →
+         而画面写着「邮箱或密码不正确」→ **他去重设密码**，
+         然后额度用得更快。
+
+         挡下来跟打错密码是两件完全不同的事，而他从画面上分不出来。
+         Supabase 那一边给得出：429 是挡下来的，`.status` 缺了就是
+         连不上（网路断了 · 伺服器倒了）—— 那两种都不是他的密码。 */
+      const status = (signInError as { status?: number }).status;
+      setError(
+        status === 429
+          ? t("errorTooMany")
+          : status === undefined
+            ? t("errorUnreachable")
+            : t("errorInvalidCredentials"),
+      );
       return;
     }
 
@@ -46,7 +62,15 @@ export function LoginForm({ locale }: { locale: string }) {
     */
     const { data: founder } = await supabase.rpc("is_founder");
 
-    setPending(false);
+    /* 🔴 **不要在这里放掉 `pending`。**
+       `router.push` 是非同步的 —— 下一页要一两秒才来，而这一行会让那颗
+       按钮在那一两秒里变回「登入」，看起来完全像没反应。
+       他会再按一次、再一次，而每一次都是一通真的呼叫；按几次就被挡下来，
+       然后画面写「邮箱或密码不正确」，然后他去重设密码。
+
+       登入成功之后这个组件本来就会被换掉，所以「一直转到画面换掉为止」
+       才是对的。⚠️ 代价写出来：万一那一跳没走成，那颗按钮会一直是灰的 ——
+       而那比上面那一串好，因为它不会把他送去重设一个没有坏的密码。 */
     router.push(founder ? "/console" : "/portal");
   }
 

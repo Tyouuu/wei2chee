@@ -254,6 +254,8 @@
     "loginSubmit": "Log in",
     "loginSwitchToSignup": "Don't have an account? Sign up",
     "errorInvalidCredentials": "Incorrect email or password.",
+    "errorTooMany": "Too many tries. Wait a minute, then try again — your password is fine.",
+    "errorUnreachable": "We could not reach the server. Check your connection and try again.",
     "errorEmailTaken": "This email is already registered.",
     "errorGeneric": "Something went wrong, please try again.",
     "confirmPendingTitle": "Confirm your email",

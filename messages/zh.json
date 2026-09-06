@@ -254,6 +254,8 @@
     "loginSubmit": "登录",
     "loginSwitchToSignup": "还没有账号？注册",
     "errorInvalidCredentials": "邮箱或密码不正确。",
+    "errorTooMany": "试太多次了。等一分钟再试 —— 你的密码没有问题。",
+    "errorUnreachable": "连不上伺服器。看一下网路，再试一次。",
     "errorEmailTaken": "这个邮箱已经注册过了。",
     "errorGeneric": "出了点问题，请再试一次。",
     "confirmPendingTitle": "请确认你的邮箱",
