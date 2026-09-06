@@ -150,28 +150,37 @@ const readPage = async (page) => {
 
     /* 🔴 贴在底部那一条会盖住内容 —— 除非内容底下留了它的高度。
        手机上那张纸的最后一段就被它切在半句话上。 */
+    /* 🔴 整条的底栏 **跟** 一颗浮在角落的药丸，两种都要认。
+       第一版只认「宽度超过视窗一半」的整条 —— 於是那颗浮在右下角、
+       盖住第三行金额的「改设计」它完全看不到，而那正是任务 107u 记过的形状。 */
     const bars = [...document.querySelectorAll("*")].filter((el) => {
       const s = getComputedStyle(el);
       if (s.position !== "fixed" && s.position !== "sticky") return false;
       const r = el.getBoundingClientRect();
-      return r.height > 30 && r.bottom > window.innerHeight - 8 && r.width > window.innerWidth * 0.5;
+      return r.height > 22 && r.width > 60 && r.bottom > window.innerHeight - 40;
     });
     let covered = [];
-    if (bars.length) {
-      const top = Math.min(...bars.map((b) => b.getBoundingClientRect().top));
-      covered = [...document.querySelectorAll("p,td,h1,h2,h3,li,span")]
+    for (const bar of bars) {
+      const br = bar.getBoundingClientRect();
+      const hits = [...document.querySelectorAll("p,td,h1,h2,h3,li,span")]
         .filter(vis)
-        /* ⚠️ 底下那一条自己的字当然在它自己里面 —— 第一版把它算成「被盖住的」，
+        /* ⚠️ 那一条自己的字当然在它自己里面 —— 第一版把它算成「被盖住的」，
            於是它对着一个完全正常的底栏报「盖住 2 段字」。
            **一把把家具算成被家具盖住的尺，量的是它自己。** */
-        .filter((el) => !bars.some((b) => b.contains(el)))
+        .filter((el) => !bar.contains(el) && !el.contains(bar))
         .filter((el) => {
           const r = el.getBoundingClientRect();
-          return r.top < window.innerHeight && r.bottom > top + 4 && (el.innerText || "").trim().length > 8;
+          /* 真的叠在一起，不只是同一列 */
+          return (
+            (el.innerText || "").trim().length > 3 &&
+            r.left < br.right - 4 && r.right > br.left + 4 &&
+            r.top < br.bottom - 4 && r.bottom > br.top + 4
+          );
         })
-        .map((el) => (el.innerText || "").replace(/\s+/g, " ").trim().slice(0, 44))
-        .slice(0, 4);
+        .map((el) => (el.innerText || "").replace(/\s+/g, " ").trim().slice(0, 44));
+      covered.push(...hits);
     }
+    covered = [...new Set(covered)].slice(0, 5);
 
     return {
       clickable: clickable.length,
@@ -338,6 +347,8 @@ try {
       flag(ODD, key, `示例资料用的是我们的词，不是他的`, r.placeholders.slice(0, 4).join(" · "));
     if (r.dead.length) flag(BAD, key, `${r.dead.length} 条连结哪里都不去`, r.dead.slice(0, 4).join(" · "));
     if (r.hSpill) flag(BAD, key, "画面横着溢出去了");
+    if (r.covered.length)
+      flag(BAD, key, `浮着的东西盖住 ${r.covered.length} 段内容`, r.covered.slice(0, 3).join(" | "));
     if (r.clipped.length) flag(ODD, key, `${r.clipped.length} 句被切断`, r.clipped.slice(0, 3).join(" | "));
     if (r.h1.length !== 1) flag(ODD, key, `${r.h1.length} 个大标题`, r.h1.slice(0, 3).join(" · "));
     const cjk = ((await seen(page)).match(/[一-鿿]/g) ?? []).length;
