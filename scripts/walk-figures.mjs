@@ -52,7 +52,7 @@
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { dropThrowaway, dropThrowawayOnExit } from "./lib/throwaway.mjs";
+import { dropThrowaways, dropThrowawayOnExit } from "./lib/throwaway.mjs";
 import { openAllPages, seedEveryShape } from "./lib/seed-demo.mjs";
 
 const BASELINE = JSON.parse(
@@ -84,7 +84,8 @@ const api = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_
 });
 
 let userId = null;
-dropThrowawayOnExit(admin, () => userId);
+let crewId = null; /* 第 ④ 段那个师傅 —— 两个都要删掉 */
+dropThrowawayOnExit(admin, () => [userId, crewId]);
 
 let browser;
 const bad = [];
@@ -137,11 +138,16 @@ try {
   /* ── ② 资料库答得出来的那一组数字 ───────────────────────────────────
      🔴 **问出来的，不是我背下来的。** */
   console.log("\n② 资料库答得出哪几个数字");
-  const answers = new Map(); /* 分 -> 它从哪来 */
+  /* 分 -> **它从哪几个地方来**（不是第一个）。
+     🔴 要一整组，是因为第 ④ 段要问「这个数字是不是只有老板看得到」——
+     而一个同时来自单据（师傅看得到）跟帐本（只有老板）的金额，
+     **不是**只有老板看得到的。只记第一个来源，那一段会开始冤枉人。 */
+  const answers = new Map();
   const add = (cents, from) => {
     const n = Number(cents);
     if (!Number.isFinite(n)) return;
-    if (!answers.has(n)) answers.set(n, from);
+    if (!answers.has(n)) answers.set(n, new Set());
+    answers.get(n).add(from);
   };
   /* 零永远算数：一页正确地空着就印 RM 0.00。 */
   add(0, "空的");
@@ -159,7 +165,13 @@ try {
   for (const [tbl, col] of TABLES) {
     /* 有哪几栏是那张表自己的事 —— 由宽到窄试，不猜。 */
     let rows = [];
-    for (const sel of [`${col}, module_key, direction`, `${col}, module_key`, col]) {
+    for (const sel of [
+      `${col}, module_key, direction, party`,
+      `${col}, module_key, direction`,
+      `${col}, module_key, party`,
+      `${col}, module_key`,
+      col,
+    ]) {
       const { data, error } = await api.from(tbl).select(sel).eq("project_id", P);
       if (!error) {
         rows = data ?? [];
@@ -183,10 +195,27 @@ try {
         `${tbl}.${col} 全部加起来`,
       );
     }
-    for (const how of ["module_key", "direction", "both"]) {
+    /* 🔴 **按人加起来的那几个也要算答得出来** —— 2026-09-07 第 ④ 段
+       第一次跑就撞到：师傅在排行那一页看到 RM 19,400，而这把尺报
+       「只有老板看得到（来自 party_debts.owed_cents）」。
+
+       去查才知道**红的是尺不是产品**：排行那一页读不到帐本的时候
+       会退回单据（`live-months.ts` 写着为什么），然后**按人加起来** ——
+       而这里当时只按模块跟方向加，没有按人加。那个数字刚好等於
+       `party_debts.owed_cents`，因为那几张单一分钱都还没分摊，
+       「他还欠」就等於「他一共报了」。
+
+       ⚠️ 修法是**把那个来源加进来**（这把尺自己档头写的第 ② 种），
+       不是把门槛放宽，也不是在这里把排行那一页的算术再写一次。 */
+    for (const how of ["module_key", "direction", "party", "both", "party/direction"]) {
       const by = new Map();
       for (const r of rows) {
-        const k = how === "both" ? `${r.module_key}/${r.direction}` : r[how];
+        const k =
+          how === "both"
+            ? `${r.module_key}/${r.direction}`
+            : how === "party/direction"
+              ? `${r.party}/${r.direction}`
+              : r[how];
         if (k === undefined || String(k).includes("undefined")) continue;
         by.set(k, (by.get(k) ?? 0) + Number(r[col] ?? 0));
       }
@@ -235,6 +264,7 @@ try {
   await page.waitForURL(/portal/, { timeout: 180000 });
 
   let seen = 0;
+  const ownerSeen = new Set(); /* 第 ④ 段的控制组要用 */
   const invented = [];
   /* 对不上的那一页，把它**整页**的金额留下来 —— 一个孤立的数字判不了
      它是凭空的还是算出来的，要看它旁边那几个。 */
@@ -257,6 +287,7 @@ try {
       Math.round(parseFloat(m[1].replace(/,/g, "")) * 100),
     );
     seen += found.length;
+    for (const c of found) ownerSeen.add(c);
     console.log(
       `     ${key.padEnd(16)}${String(found.length).padStart(3)} 个金额  ` +
         `${page.url().replace(BASE, "")}  ${text.replace(/\s+/g, " ").slice(0, 46)}`,
@@ -306,13 +337,150 @@ try {
       console.log(`       ${all.sort((x, y) => x - y).map((c) => rm(c)).join(" · ")}`);
     }
   }
+
+  /* ── ④ 🔴 师傅那一边：他看得到的，有没有一个是只有老板看得到的 ────────
+   *
+   * 上一版这一支写着「只量老板那一边」。而这个产品从 9-01 起有第二种人，
+   * 而且他每天都在用（任务 84）。
+   *
+   * ⚠️ 资料库那一层已经守得很紧（`check:staff` 57 条，用真的登入身分打的）。
+   * 缺的是**画面**那一层：`shoot:staff` 只并排拍过**四页**（任务 84），
+   * 而那之后又建了十几页 —— 任务 177 量到的那个洞就是这一句：
+   * **尺子看得到画面，只是从来没走到新做的那几页。**
+   *
+   * ── 它怎么判（🔴 一份名单都没有）────────────────────────────────────
+   *
+   * 不写「哪几页是钱的页」。产品自己那一支（`canOpenModule`）本来就
+   * **不照页面清单判，照那个模块的形状判** —— 而它的注解写着为什么：
+   * 佣金是後来才进帐本那个形状的，一份手写的清单会放它过去。
+   * 我在这里再抄一份，就是这个仓库栽过至少八次的那件事。
+   *
+   * 所以问的是**那个数字本身**：
+   *
+   *   🔴 **一个只从「只有老板看得到」那几个来源算得出来的金额，
+   *       不可以印在师傅打得开的任何一页上。**
+   *
+   * 「只从」两个字是重点：一张报价单的总额师傅本来就看得到（任务 117），
+   * 而它也会出现在帐本上。同时来自两边的，不算。
+   *
+   * ⚠️ 师傅打不开那一页 → 什么都刮不到 → 过。那比过还好。
+   * ⚠️ 控制组（任务 125 的教训）：**老板自己要真的印过那种数字** ——
+   *    少了它，这一整段量的是空气，而它会一直印「全部过」。 */
+  console.log("\n④ 🔴 师傅那一边");
+
+  const MONEY_ONLY = /^(ledger_entries|ledger_allocations|party_debts|party_payables|referrals_owing)\./;
+  const ownerOnly = new Set(
+    [...answers]
+      .filter(([cents, froms]) => cents !== 0 && [...froms].every((f) => MONEY_ONLY.test(f)))
+      .map(([cents]) => cents),
+  );
+  say(
+    "控制组：老板自己印过只有他看得到的数字",
+    [...ownerOnly].some((c) => ownerSeen.has(c)),
+    `只有老板看得到的有 ${ownerOnly.size} 个，而画面上一个都没印 —— 下面那一条会变成量空气`,
+  );
+
+  const crewEmail = `fig-crew-${STAMP}@formae.test`;
+  const crewPassword = `FigCrew-${STAMP}-x!`;
+  const { data: crewMade, error: crewErr } = await admin.auth.admin.createUser({
+    email: crewEmail,
+    password: crewPassword,
+    email_confirm: true,
+  });
+  if (crewErr) throw new Error(`建师傅: ${crewErr.message}`);
+  crewId = crewMade.user.id;
+  const { error: joinErr } = await api.rpc("add_project_member", { in_email: crewEmail });
+  say("道具：师傅加得进这家公司", !joinErr, joinErr?.message);
+
+  if (!joinErr) {
+    const crewCtx = await browser.newContext({ viewport: { width: 1440, height: 1400 } });
+    const crewPage = await crewCtx.newPage();
+
+    /* 🔴 登不进来要讲清楚是**道具**没摆好，不是产品坏了。
+       这一支一趟建两个帐号，而十分钟里开四个就会撞到那一边的限流
+       （任务 253 撞过同一个）—— 而一份「师傅登不进来」的报告，
+       跟一份「登入坏了」的报告，在画面上长得一模一样。
+       所以：等一下再试一次；还是不行就整段跳过，**不印判决**。 */
+    let crewIn = false;
+    for (const wait of [0, 25000]) {
+      if (wait) await crewPage.waitForTimeout(wait);
+      try {
+        await crewPage.goto(`${BASE}/en/login`, {
+          waitUntil: "domcontentloaded",
+          timeout: 180000,
+        });
+        await crewPage.fill('input[type="email"]', crewEmail);
+        await crewPage.fill('input[type="password"]', crewPassword);
+        await crewPage.click('button[type="submit"]');
+        await crewPage.waitForURL(/portal/, { timeout: 45000 });
+        crewIn = true;
+        break;
+      } catch {
+        /* 再试一次 */
+      }
+    }
+    say(
+      "道具：师傅登得进来",
+      crewIn,
+      "两次都停在登入页 —— 十之八九是同一趟开两个帐号撞到限流。" +
+        "第 ④ 段这一趟没有量到东西，**不要当成师傅那一边没事**",
+    );
+
+    const leaked = [];
+    const shut = [];
+    let crewFigures = 0;
+    for (const key of crewIn ? opened : []) {
+      const url = key === "dashboard" ? `${BASE}/en/portal` : `${BASE}/en/portal/${key}`;
+      const res = await crewPage.goto(url, {
+        waitUntil: "domcontentloaded",
+        timeout: 180000,
+      });
+      await crewPage.waitForTimeout(2200);
+      if ((res?.status() ?? 0) >= 400) {
+        shut.push(key);
+        continue;
+      }
+      const text = await crewPage.evaluate(() => document.body.innerText);
+      if (/log in|sign in/i.test(text.slice(0, 400))) {
+        say(`师傅打得开 ${key}`, false, "被踢回登入页");
+        continue;
+      }
+      const found = [...text.matchAll(/RM\s*(-?[\d,]+(?:\.\d{1,2})?)/g)].map((m) =>
+        Math.round(parseFloat(m[1].replace(/,/g, "")) * 100),
+      );
+      crewFigures += found.length;
+      for (const cents of new Set(found)) {
+        if (ownerOnly.has(cents)) leaked.push([key, cents]);
+      }
+    }
+    await crewCtx.close();
+
+    if (crewIn)
+      console.log(
+        `     打得开 ${opened.length - shut.length} 页 · 关着 ${shut.length} 页` +
+          `${shut.length ? `（${shut.join(" · ")}）` : ""} · 他看到 ${crewFigures} 个金额`,
+      );
+    /* 🔴 登不进来的时候这一条**不印** —— 一条没有量到东西的绿，
+       跟一条真的量过的绿，在报告里长得一模一样。 */
+    if (crewIn)
+      say(
+        "🔴 师傅看得到的金额里，没有一个是只有老板看得到的",
+        leaked.length === 0,
+      /* 🔴 **要讲得出它是从哪里来的。** 一份只说「漏了 RM 19,400」的报告，
+         读的人分不出那是产品漏了，还是这把尺把一个巧合当成漏 ——
+         而这个仓库红过二十几次，其中一半红的是尺不是产品。 */
+      leaked
+        .map(([k, c]) => `${k}:${rm(c)}（来自 ${[...(answers.get(c) ?? [])].join(" · ")}）`)
+        .join(" · "),
+    );
+  }
 } catch (e) {
   /* 🔴 抛了例外要算没过 —— 少了这一段，中途炸掉会印出「全部过」。 */
   bad.push(`半路炸了：${e.message}`);
   console.log(`  FAIL  半路炸了 — ${e.message}`);
 } finally {
   await browser?.close().catch(() => {});
-  await dropThrowaway(admin, userId);
+  await dropThrowaways(admin, [userId, crewId]);
   console.log(`\n判：${bad.length ? `${bad.length} 条没过 — ${bad.join(" · ")}` : "全部过"}\n`);
   process.exitCode = bad.length ? 1 : 0;
 }

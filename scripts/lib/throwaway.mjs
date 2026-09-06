@@ -76,18 +76,25 @@ export async function dropThrowaways(admin, userIds) {
  *   · `EPIPE`  —— **接给 `head` / `tail` 的那一种**，最容易忘，而我就是这样漏的
  *
  * @param {import("@supabase/supabase-js").SupabaseClient} admin
- * @param {() => (string | null | undefined)} currentUserId 现在建到哪一个
+ * ⚠️ 2026-09-07 放宽：那个 getter 回**一个 id 或者一串**都可以。
+ *    有些脚本同时建老板跟师傅两个（`walk:figures` 第 ④ 段就是），
+ *    而只删得掉一个的话，被中断的时候另一个会留在 `accounts` 里 ——
+ *    那正好是这一支存在的理由。
+ *    🔴 它护着的那一条一个字没松：**只删你自己刚刚建的那几个 id**，
+ *    照旧不收 email、不收正则、不列举。
+ *
+ * @param {() => (string | null | undefined | (string | null | undefined)[])} currentUserId
  */
 export function dropThrowawayOnExit(admin, currentUserId) {
   let bailing = false;
   const bail = async (why) => {
     if (bailing) return;
     bailing = true;
-    const id = currentUserId();
-    if (id) {
+    const ids = [currentUserId()].flat().filter(Boolean);
+    if (ids.length) {
       console.error(`
 ⚠️  被 ${why} 中断了 —— 先把临时帐号删掉再走`);
-      await dropThrowaway(admin, id);
+      await dropThrowaways(admin, ids);
     }
     process.exit(130);
   };
