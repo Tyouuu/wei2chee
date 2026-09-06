@@ -75,7 +75,11 @@ try {
     return d.toISOString().slice(0, 10);
   };
 
-  const nudges = async (client = C, until = null) => {
+  /* 马来西亚的今天 —— 这台机器不一定在那个时区。 */
+const todayMyt = () =>
+  new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+
+const nudges = async (client = C, until = null) => {
     const { data, error } = await client.rpc("nudges_due", {
       in_project_id: P, in_until: until,
     });
@@ -397,6 +401,63 @@ try {
   check("🔴 一按变单就不讲了（不用另外一栏「看过没有」）",
     !(await nudges()).some((r) => r.kind === "request_open"),
     JSON.stringify((await nudges()).filter((r) => r.kind === "request_open")));
+
+  /* ── ⑬ 🔴 讲过的那一件，讯号记得住 ───────── */
+  console.log("\n⑬ 🔴 上一次跟人家讲是几时");
+  const stillThere = (await nudges()).find(
+    (r) => r.kind === "quote_expiring" && r.subject_id === quote.id);
+  check("控制组：那一条还在", !!stillThere, "不在了");
+  check("🔴 还没讲过的时候那一栏是空的（不是一个日子）",
+    stillThere?.last_told_on === null, `${stillThere?.last_told_on}`);
+
+  /* 排着等的那一句不算 —— 它还没有发出去。 */
+  await C.rpc("queue_message", {
+    in_project_id: P, in_audience: "customer", in_kind: "quote_expiring",
+    in_body: "你那张报价快到期了", in_subject_id: quote.id,
+  });
+  const queuedOnly = (await nudges()).find(
+    (r) => r.kind === "quote_expiring" && r.subject_id === quote.id);
+  check("🔴 排着等的不算（它还没有发出去）",
+    queuedOnly?.last_told_on === null, `${queuedOnly?.last_told_on}`);
+
+  /* 真的发出去了。 */
+  const { data: toldRow, error: toldErr } = await C.rpc("record_message_sent", {
+    in_project_id: P, in_audience: "customer", in_kind: "quote_expiring",
+    in_body: "陈太太，那张报价后天到期", in_subject_id: quote.id,
+  });
+  check("道具：那一句真的记下去了", !toldErr && !!toldRow?.id, toldErr?.message);
+  const toldId = toldRow?.id;
+  const told = (await nudges()).find(
+    (r) => r.kind === "quote_expiring" && r.subject_id === quote.id);
+  check("🔴 讲过之后，那一栏是今天",
+    told?.last_told_on === todayMyt(), `${told?.last_told_on}`);
+  check("🔴 而那一条讯号**还在**（它是一个日子，不是一条压下去的规矩）",
+    !!told, "它居然不见了");
+
+  /* 🔴 发出去了、而那一头退回来的，不算讲过。
+     ⚠️ 这一条是故意弄坏那一次逆出来的：我原本那一条
+     「排着等的不算」**过关的理由不是我写的那一个** ——
+     排着等的那一行根本没有时间章，所以拿掉那道过滤它照样绿。
+     一条因为别的理由而绿的断言，跟一条真的在守的，在报告里一模一样。 */
+  const { data: bounced } = await C.rpc("record_message_sent", {
+    in_project_id: P, in_audience: "customer", in_kind: "quote_expiring",
+    in_body: "再提醒一次", in_subject_id: quote.id,
+  });
+  await C.rpc("mark_message_failed", {
+    in_message_id: bounced.id, in_reason: "那个号码不在了",
+  });
+  await admin.from("messages").delete().eq("id", toldId);
+  const onlyBounced = (await nudges()).find(
+    (r) => r.kind === "quote_expiring" && r.subject_id === quote.id);
+  check("🔴 发出去而退回来的不算讲过",
+    onlyBounced?.last_told_on === null, `${onlyBounced?.last_told_on}`);
+
+  /* 别人那一件不会跟着变。 */
+  const others = (await nudges()).filter(
+    (r) => !(r.kind === "quote_expiring" && r.subject_id === quote.id));
+  check("讲了这一件，别的那几件那一栏还是空的",
+    others.every((r) => r.last_told_on === null),
+    JSON.stringify(others.map((r) => [r.kind, r.last_told_on])));
 
   /* ── ⑧ 🔴 师傅 ───────────────────────────────────────────────────── */
   console.log("\n⑧ 🔴 师傅");
