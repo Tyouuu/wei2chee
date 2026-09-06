@@ -149,6 +149,7 @@
     "check:nudges": "node scripts/check-nudges.mjs",
     "check:closable": "node scripts/check-closable.mjs",
     "check:messages": "node scripts/check-messages.mjs",
+    "check:classes": "node scripts/check-classes.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs"
   },
   "dependencies": {
