@@ -30,10 +30,17 @@
  * 写死就等於把那一段盖写复制第二份。
  */
 
-/** 一个打字的格子。高度 44px：手机上拇指按得稳的下限。 */
+/**
+ * 一个打字的格子。高度 44px：手机上拇指按得稳的下限。
+ *
+ * 🔴 **边用 `--color-input`，不是卡片那条边。** 2026-09-07 量出来
+ * 六套的框对着自己的底全部是 1.17–1.48 比 1，而门槛（WCAG 1.4.11）是 3。
+ * 那个专给输入框的位子一直就在 token 档里，只是**一个读它的地方都没有**
+ * —— 第二十二次「能力有、线没接」。见 design-system/tokens/swiss.css。
+ */
 export const deskField =
   "min-h-11 w-full [background-color:var(--color-ink-900)] [border-radius:var(--radius-control)] " +
-  "[border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] " +
+  "[border:var(--hairline)_solid_var(--input)] [color:var(--color-paper)] " +
   "[font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] " +
   "outline-none focus-visible:[border-color:var(--color-primary)]";
 

@@ -239,7 +239,7 @@ export function SiteBooking({
   }
 
   const field =
-    "min-h-11 w-full [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--color-ink-800))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none";
+    "min-h-11 w-full [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--input))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none";
   const label =
     "mb-1.5 block [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]";
 
@@ -277,7 +277,7 @@ export function SiteBooking({
                 className={`shrink-0 [border-radius:var(--radius-control)] [font-size:var(--text-sm)] [min-height:44px] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.1)] [transition-duration:var(--dur)] ${
                   on
                     ? "[background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]"
-                    : "[background-color:var(--site-field-bg,var(--color-ink-950))] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)]"
+                    : "[background-color:var(--site-field-bg,var(--color-ink-950))] [border:var(--hairline)_solid_var(--input)] [color:var(--color-paper)]"
                 }`}
               >
                 <span className="block [font-size:var(--text-micro)] [opacity:.75]">
@@ -305,8 +305,8 @@ export function SiteBooking({
                 chosen === s.from.toISOString()
                   ? "[background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)]"
                   : s.off
-                    ? "[background-color:transparent] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [opacity:.55]"
-                    : "[background-color:var(--site-field-bg,var(--color-ink-950))] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)]"
+                    ? "[background-color:transparent] [border:var(--hairline)_solid_var(--input)] [color:var(--color-paper-dim)] [opacity:.55]"
+                    : "[background-color:var(--site-field-bg,var(--color-ink-950))] [border:var(--hairline)_solid_var(--input)] [color:var(--color-paper)]"
               }`}
             >
               <span className="tnum">{s.label}</span>

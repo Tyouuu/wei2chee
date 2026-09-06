@@ -925,7 +925,7 @@ function SearchField({
   label: string
 }) {
   return (
-    <label className="flex min-w-0 flex-1 items-center gap-2 [background:var(--color-ink-900)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] sm:max-w-[22rem]">
+    <label className="flex min-w-0 flex-1 items-center gap-2 [background:var(--color-ink-900)] [border:var(--border-card-width)_solid_var(--input)] [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] sm:max-w-[22rem]">
       <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
         <circle cx="9" cy="9" r="5.5" />
         <path d="m13.5 13.5 3 3" strokeLinecap="round" />

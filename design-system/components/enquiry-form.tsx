@@ -248,7 +248,7 @@ export function EnquiryForm({
                     value={values[i] ?? ""}
                     onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
                     placeholder={f.placeholder}
-                    className="w-full resize-y [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--color-ink-800))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [line-height:var(--leading-body)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
+                    className="w-full resize-y [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--input))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [line-height:var(--leading-body)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
                   />
                 ) : (
                   <input
@@ -258,7 +258,7 @@ export function EnquiryForm({
                     value={values[i] ?? ""}
                     onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
                     placeholder={f.placeholder}
-                    className="min-h-11 w-full [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--color-ink-800))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
+                    className="min-h-11 w-full [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--input))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
                   />
                 )}
               </div>

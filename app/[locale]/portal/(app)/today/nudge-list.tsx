@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { ringgit } from "@/lib/portal/live-rows";
+import { waLink } from "@/lib/portal/wa-link";
 import { DeskCard, deskBtn, deskDim } from "../desk-kit";
 
 /**
@@ -46,6 +47,22 @@ export type Nudge = {
   amount_cents: number | null;
   qty_left: number | null;
   qty_floor: number | null;
+  /** 上一次替这一件事讲话是哪一天。⚠️ 只算**真的发出去的**那几句 ——
+   *  排着等的、退回来的都不算，不然它会讲一件没有发生过的事。 */
+  last_told_on: string | null;
+  /** 这句话是讲给谁听的：`owner`（他自己）还是 `customer`（他的客人）。
+   *  `messages.audience` 那一栏的两个值，一字不差。 */
+  audience: string | null;
+  /** 讲给哪一个人。**没有人可以讲的时候是 null** —— 那正是「补货线破了」
+   *  那一种：那件事只关他自己。 */
+  party_id: string | null;
+  /** 那一句话本身，资料库写好的。
+   *
+   *  🔴 **不在这里再写一次。** `messages.body` 是 not null，所以每一个
+   *  发讯息的地方都要交出一句话；写在画面这一边，就是十一句话散在
+   *  十一个画面里，而**送去审核的模板跟真的发出去的那一句会分家**
+   *  —— 而 Meta 只让你发审过的那一句（[任务 250](../../../../../docs/founder-tasks.md#250)）。 */
+  body: string | null;
 };
 
 /**
@@ -130,6 +147,7 @@ export function NudgeList({
   rows,
   isOwner,
   moduleOf,
+  phoneOf,
 }: {
   projectId: string;
   locale: string;
@@ -137,6 +155,8 @@ export function NudgeList({
   isOwner: boolean;
   /** 哪一张单在哪一页 —— 只有伺服器那一边知道他把它叫什么。 */
   moduleOf: Record<string, string>;
+  /** 那个人的 WhatsApp 号码。**查不到的不在这里面** —— 见底下 `tellHref`。 */
+  phoneOf: Record<string, string>;
 }) {
   /* 直接读字典，不走一个字包 —— 这一份要按每一行填日子跟数量，
      而那正是 ICU 参数在做的事。 */
@@ -189,6 +209,70 @@ export function NudgeList({
         },
       );
       if (error) setSaid(t("saveFailed"));
+      else router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /**
+   * 🔴 这一件事的那一句话，发给那个人 —— 而那条连结要嘛是真的，要嘛不画。
+   *
+   * ── 为什么它今天就成立，而「发出去」那一整件事还卡着 ──────────────
+   *
+   * 系统自己发讯息要一个通过 Meta 商业验证的号码，而那卡在公司
+   * （[任务 11](../../../../../docs/founder-tasks.md#11) ·
+   * [249](../../../../../docs/founder-tasks.md#249)）。
+   * **而这一条不是系统在发，是他自己按的** —— 号码是他客人的，
+   * 从他自己的名册上来；那句话是资料库写好的（`nudges_due.body`）。
+   * `record_message_sent` 从做出来那天起就是为这一条路建的，
+   * 而它到今天为止**一个呼叫端都没有**。
+   *
+   * ── 🔴 四个条件缺一个就不画 ────────────────────────────────────────
+   *
+   *   ① 他是老板     —— 那张表是 `sees_money` 的，师傅按了会被拒
+   *   ② 讲给客人听   —— `owner` 那几条是讲给他自己的，没有人可以发
+   *   ③ 有那个人     —— 「补货线破了」只关他自己，没有对象
+   *   ④ 号码认得出来 —— 见 lib/portal/wa-link.ts。**认不出来就不画**，
+   *      而不是画一颗打给空气的（官网那颗就是那样活了十几天）
+   */
+  function tellHref(n: Nudge): string | null {
+    if (!isOwner || n.audience !== "customer" || !n.party_id || !n.body)
+      return null;
+    return waLink(phoneOf[n.party_id], n.body);
+  }
+
+  /**
+   * 他按了那条连结 —— 记一笔。
+   *
+   * ⚠️ **记的是「他把这句话交出去了」，不是「客人收到了」。**
+   * 他有可能开了 WhatsApp 又把它关掉。而另一条路（另外给一颗
+   * 「我发了」的按钮）他会忘记按，那本帐就永远是空的，
+   * 於是催款那一条会一直讲同一句话。两个都不完美，选会被用的那一个，
+   * 而画面上写的是「9月3日 讲过」——**一句关於他做过什么的话**，
+   * 不是一句关於送达的话。
+   *
+   * ⚠️ 连结自己会开（`target="_blank"`），**不在这里 `window.open`** ——
+   * 一个 `await` 之后才开的分页会被挡下来，而他会以为那颗按钮坏了。
+   */
+  async function told(n: Nudge) {
+    if (busy) return;
+    setBusy(key(n));
+    try {
+      const { error } = await createBrowserSupabaseClient().rpc(
+        "record_message_sent",
+        {
+          in_project_id: projectId,
+          in_audience: "customer",
+          in_kind: n.kind,
+          in_body: n.body,
+          in_subject_id: n.subject_id,
+          in_party_id: n.party_id,
+        },
+      );
+      /* 讯息他已经看到了（那一页开着）—— 所以这里坏掉只是**没记下来**，
+         而那句话要讲清楚是哪一种，不是笼统的一句「存不了」。 */
+      if (error) setSaid(t("tellNotLogged"));
       else router.refresh();
     } finally {
       setBusy(null);
@@ -269,6 +353,15 @@ export function NudgeList({
                 >
                   {detail(n)}
                 </span>
+                {/* 🔴 上一次讲这一件事是哪一天。**只算真的发出去的那几句**
+                    （`nudges_due` 自己滤掉排着等的跟退回来的）——
+                    而它旁边不写「还要不要再讲」：那是一个天数，
+                    而这个仓库刚立过不发明天数那条规矩。 */}
+                {n.last_told_on ? (
+                  <span className={deskDim}>
+                    {t("toldOn", { date: n.last_told_on })}
+                  </span>
+                ) : null}
                 {page && n.record_id ? (
                   <a
                     href={`/${locale}/portal/${page}/${n.record_id}`}
@@ -277,6 +370,20 @@ export function NudgeList({
                     {t("openIt")}
                   </a>
                 ) : null}
+                {(() => {
+                  const href = tellHref(n);
+                  return href ? (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => void told(n)}
+                      className={`${deskDim} min-h-11 underline`}
+                    >
+                      {t("tellThem")}
+                    </a>
+                  ) : null;
+                })()}
                 <button
                   type="button"
                   disabled={busy === key(n)}

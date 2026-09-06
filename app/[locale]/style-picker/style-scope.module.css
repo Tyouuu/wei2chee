@@ -208,7 +208,7 @@
   --destructive: var(--color-clay);
   --destructive-foreground: var(--color-on-primary);
   --border: var(--color-ink-800);
-  --input: var(--color-ink-800);
+  --input: #6b7588;
   --ring: var(--color-primary);
   --radius: var(--radius-md);
   --chart-1: var(--color-primary);
@@ -382,7 +382,7 @@
   --destructive: var(--color-clay);
   --destructive-foreground: var(--color-on-primary);
   --border: var(--color-ink-800);
-  --input: var(--color-ink-800);
+  --input: #697586;
   --ring: var(--color-primary);
   --radius: var(--radius-md);
   --chart-1: var(--color-primary);
@@ -552,7 +552,7 @@
   --destructive: var(--color-clay);
   --destructive-foreground: var(--color-on-primary);
   --border: var(--color-ink-800);
-  --input: var(--color-ink-800);
+  --input: #7c7262;
   --ring: var(--color-primary);
   --radius: var(--radius-md);
   --chart-1: var(--color-primary);
@@ -734,7 +734,7 @@
   --destructive: var(--color-clay);
   --destructive-foreground: var(--color-on-primary);
   --border: var(--color-ink-800);
-  --input: var(--color-ink-800);
+  --input: #697586;
   --ring: var(--color-primary);
   --radius: var(--radius-md);
   --chart-1: var(--color-primary);
@@ -913,7 +913,7 @@
   --destructive: var(--color-clay);
   --destructive-foreground: var(--color-on-primary);
   --border: var(--color-ink-800);
-  --input: var(--color-ink-800);
+  --input: #7c7362;
   --ring: var(--color-primary);
   --radius: var(--radius-md);
   --chart-1: var(--color-primary);
@@ -1090,7 +1090,7 @@
   --destructive: var(--color-clay);
   --destructive-foreground: var(--color-on-primary);
   --border: var(--color-ink-800);
-  --input: var(--color-ink-800);
+  --input: #747480;
   --ring: var(--color-primary);
   --radius: var(--radius-md);
   --chart-1: var(--color-paper);

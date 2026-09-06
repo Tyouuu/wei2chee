@@ -113,6 +113,35 @@ export default async function TodayPage({
     ]),
   );
 
+  /* 🔴 **那句话要发给谁的哪一个号码。**
+     `nudges_due` 回的是 `party_id`，而号码在名册上 —— 只有伺服器这一边
+     问得到。**问不到号码的那一行不画那颗按钮**，不是画一颗按下去打给
+     空气的（[任务 11](../../../../../docs/founder-tasks.md#11) 那颗官网上的
+     WhatsApp 就是那样活了十几天）。
+
+     ⚠️ 优先 `whatsapp` 才是 `phone` —— 他自己 vibe-dealer 那张表 0030
+     写下的理由：**店里那支号码常常不是 WhatsApp 那一支**。 */
+  const partyIds = [
+    ...new Set(nudges.map((n) => n.party_id).filter(Boolean)),
+  ] as string[];
+  const { data: partyRows } = partyIds.length
+    ? await supabase
+        .from("directory_entries")
+        .select("id, whatsapp, phone")
+        .in("id", partyIds)
+    : { data: [] };
+  const phoneOf = Object.fromEntries(
+    (
+      (partyRows ?? []) as {
+        id: string;
+        whatsapp: string | null;
+        phone: string | null;
+      }[]
+    )
+      .map((r) => [r.id, (r.whatsapp || r.phone || "").trim()])
+      .filter(([, v]) => v),
+  ) as Record<string, string>;
+
   const dim =
     "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
 
@@ -149,6 +178,7 @@ export default async function TodayPage({
               rows={nudges}
               isOwner={workspace.isOwner}
               moduleOf={moduleOf}
+              phoneOf={phoneOf}
             />
           </div>
         ) : null}

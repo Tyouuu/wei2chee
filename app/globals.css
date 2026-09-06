@@ -368,7 +368,19 @@
   background-image: var(--surface-image, none);
   border-width: var(--border-card-width, 1px);
   border-style: var(--surface-border-style, solid);
-  border-color: var(--color-ink-800);
+  /* 🔴 **他要打字的框，边比卡片深。** 2026-09-07 量出来六套的框对着
+     自己的底是 1.17–1.48 比 1，而 WCAG 1.4.11 给控件边界的门槛是 3。
+     那个专给输入框的位子（`--input`）一直就在六套 token 档里，
+     而**一个读它的地方都没有** —— 第二十二次「能力有、线没接」。
+     ⚠️ 卡片跟表格那两条线一个字都没动：它们不是他要打字的地方，
+     标准也不管它们，而一起压暗会让整张表变吵。 */
+  /* ⚠️ **`var(--input)`，不是 `var(--color-input)`。**
+     `--color-input: var(--input)` 那一行住在 `@theme` 里，而 `@theme`
+     吐在 `:root` 上 —— 一个 custom property 的替换发生在**它被宣告的地方**，
+     不是被用的地方。所以 `--color-input` 永远等於 `:root` 那个值，
+     **跟着 register 走不了**。实测：改完之后浏览器算出来是
+     `lab(100 0 0 / 0.14)`（白色 14%）—— 白底上的白框，比原本还糟。 */
+  border-color: var(--input);
   border-radius: var(--radius-md);
   backdrop-filter: var(--surface-blur, none);
 }
