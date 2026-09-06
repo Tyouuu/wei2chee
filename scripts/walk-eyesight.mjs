@@ -369,8 +369,24 @@ const keyboardWalk = async (page, steps = 45) => {
           hidden = !!hit && hit !== el && !el.contains(hit) && !hit.contains(el);
         }
         const off = r.bottom < 0 || r.top > window.innerHeight;
+        /* 🔴 记号要认得出是**哪一个**元素，不只是「哪一种」。
+           第一版写 `tagName + innerText`，而一个 `<input>` 的 innerText 是空的 ——
+           於是一张表单上四个文字框的记号全部是 `INPUT:`，一模一样，
+           而「连着八次落在同一个」当场被触发。**那是误报，不是陷阱。**
+           现在用它在整棵树里的序号，那是唯一的。 */
+        const all = [...document.querySelectorAll("*")];
+        const label =
+          (el.innerText || el.getAttribute("aria-label") || el.getAttribute("placeholder") || el.name || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 22) || (el.type ? `${el.type} 框` : el.tagName.toLowerCase());
         return {
-          k: (el.tagName + ":" + ((el.innerText || el.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim().slice(0, 22))),
+          k: `${el.tagName}#${all.indexOf(el)}`,
+          label,
+          /* ⚠️ 日期跟时间的框天生有好几段（日/月/年 · 时/分），Tab 在里面
+             一段一段走，而 `activeElement` 从头到尾是同一个元素。
+             那不是陷阱，所以这几种要放宽。 */
+          multi: ["date", "time", "datetime-local", "month", "week"].includes(el.type),
           ring,
           hidden,
           off,
@@ -379,12 +395,15 @@ const keyboardWalk = async (page, steps = 45) => {
       .catch(() => null);
     if (!at) continue;
     seenAt.push(at.k);
-    if (!at.ring) noRing.push(at.k);
-    if (at.hidden && !at.off) covered.push(at.k);
-    /* 连着八次落在同一个东西上 = 出不去 */
-    const tail = seenAt.slice(-8);
-    if (tail.length === 8 && new Set(tail).size === 1) {
-      trapped = tail[0];
+    if (!at.ring) noRing.push(at.label);
+    if (at.hidden && !at.off) covered.push(at.label);
+    /* 连着 N 次落在**同一个元素**上 = 出不去。
+       一般的框 8 次就够判；日期/时间那几种天生多段，放宽到 12
+       （没有一种日期框有十二段）。 */
+    const need = at.multi ? 12 : 8;
+    const tail = seenAt.slice(-need);
+    if (tail.length === need && new Set(tail).size === 1) {
+      trapped = at.label;
       break;
     }
   }
@@ -498,6 +517,13 @@ try {
       if (r.r < 3) ruleFaint++;
     }
     for (const p of a.pills) pillsAll.push({ key, ...p });
+    /* 🔴 过关的也要印出读数。一份只印判决的报告，答不了
+       「它是不是在读另一个画面」—— 沙龙那一趟报「全过」而装修报「8/8 不及格」，
+       两页用的是同一个组件，而我从判决上分不出是哪一边错了。 */
+    if (a.edges.length)
+      console.log(
+        `  ${key.padEnd(16)} ${a.edges.map((e) => `${e.r}:1${e.where ? `(${e.where[0]})` : "(无框)"}`).join(" ")}`,
+      );
     await shot(page, `1-${key.replace(/\//g, "-")}`);
   }
   console.log(`  量了 ${edgeCount} 个他要打字或要挑东西的框 · ${ruleCount} 条分隔线`);
