@@ -258,6 +258,20 @@ export type RecordFormCopy = {
   matchArrived: string;
   matchPaid: string;
   matchUnpaid: string;
+  /* 这一单借出去的东西（20260905540000 · 任务 168）。
+     ⚠️ `/rentals` 那一页只回还没还的，所以那一页答不了「这一单借过什么」。 */
+  lentHeading: string;
+  lentLede: string;
+  lentDueBack: string;
+  /** 带 {days} */
+  lentOverdue: string;
+  lentBackOn: string;
+  /** 带 {days} */
+  lentWasLate: string;
+  /** 🔴 一条**去哪里**的连结，不是一个动作 —— 「Came back」那一段上面
+   *  已经有一颗「Record a return」，而那一颗做的是另一件事（客人退货）。
+   *  同一屏两句一样的话指两个动作，正是走查在抓的那一类。 */
+  lentGoBack: string;
   /* 谁改了什么（20260904020000）。只画给看得到钱的人 ——
      `rows` 是 null 的意思是「没有问」，不是「没有改过」。 */
   changes: string;
@@ -357,6 +371,10 @@ export type RecordFormCopy = {
   rateFromLabel: string;
   rateStartsNext: string;
   rateHistory: string;
+  /* 哪一份是这个月照着算的（20260905650000 的 `used_this_month`）。
+     ⚠️ 一个字，不是只把它加粗 —— 粗细在灰阶跟列印上分不出来，
+     而这一行讲的是哪一份办法在付钱。 */
+  rateThisOne: string;
   /* 他是自己人还是下游（20260905720000）。**只有下游才讲** ——
      一个员工旁边写「他是员工」是杂讯。 */
   rateKindDownstream: string;
@@ -577,7 +595,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       apptCancelled: "取消了",
       apptLede: "「没来」只是记下来，不会动任何一笔钱。要不要扣是你决定。",
       refHeading: "这一单是谁介绍的",
-      refLede: "比例算在「已经收到的钱」上，不是单上那个总数。真的给了多少，是从你记的开销加出来的 —— 这一段不会替你记一笔。",
+      refLede:
+        "比例算在「已经收到的钱」上，不是单上那个总数。真的给了多少，是从你记的开销加出来的 —— 这一段不会替你记一笔。",
       refWho: "谁介绍的",
       refWhoBlank: "打他的名字",
       refKindPortion: "按比例",
@@ -588,7 +607,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       refUnknown: "名册里没有「{name}」。先把他建进名册，再回来挂上去。",
       refClear: "没有人介绍",
       sentHeading: "他替你带过的单",
-      sentLede: "“给了多少”是从你记的开销加出来的：钱出去 · 收款人是他 · 而且挂在这几单其中一单上。",
+      sentLede:
+        "“给了多少”是从你记的开销加出来的：钱出去 · 收款人是他 · 而且挂在这几单其中一单上。",
       sentOwing: "还欠他",
       sentJobs: "带过几单",
       sentPromised: "答应给",
@@ -601,13 +621,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       stockUnit: "单位（包 · 箱 · 罐）",
       stockOpening: "现在有多少",
       stockOnHand: "现在有",
-      stockDerived: "这个数字是进出加起来的，不在这里改 —— 要改就记一笔进或出。",
+      stockDerived:
+        "这个数字是进出加起来的，不在这里改 —— 要改就记一笔进或出。",
       stockReorder: "剩到多少要提醒我",
       stockPackSize: "一大包几个",
       stockPackUnit: "大包叫什么（箱 · 托）",
       receive: "货到了，进库存",
       receiving: "进中…",
-      receiveHint: "按下去，这张单上每一行都会变成库存里的一笔进货。之后这张单的行就不能再改了。",
+      receiveHint:
+        "按下去，这张单上每一行都会变成库存里的一笔进货。之后这张单的行就不能再改了。",
       receiveDone: "这张单的货已经在库存里了。要更正就去库存记一笔进或出。",
       previewLabel: "印出来的样子",
       printIt: "印出来",
@@ -695,12 +717,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       receiptAgain: "换一张",
       receiptTooBig: "这张太大了，换一张小一点的",
       receiptOnlyImages: "只收照片。供应商寄来的 PDF 先截一张图。",
-      receiptFailed:
-        "我们这边读不出来 —— 不是你的照片不好。下面那几格自己填，照片照旧会跟着这一笔存起来。",
+      receiptFailed: "我们这边读不出来 —— 不是你的照片不好。下面那几格自己填，照片照旧会跟着这一笔存起来。",
       receiptTooMany: "这一个钟头读得有点多了，等一下再来。",
       entryOn: "这一笔的日期",
-      entryOnHint:
-        "留空就是今天。收据上是上个月的，就填上个月 —— 不然这个月的帐会多出一笔。",
+      entryOnHint: "留空就是今天。收据上是上个月的，就填上个月 —— 不然这个月的帐会多出一笔。",
       periodLocked:
         "那个月你已经对完帐签过了，所以这一笔进不去。要补就到对帐那一页把那个月重开，补完再签一次。",
       matchOpen: "这张单还在走。",
@@ -712,6 +732,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       matchArrived: "到了",
       matchPaid: "付了",
       matchUnpaid: "还欠",
+      lentHeading: "这一单借出去的",
+      lentLede: "收尾之前对一次：还没回来的东西，跟已经回来的。",
+      lentDueBack: "该还",
+      lentOverdue: "迟了 {days} 天",
+      lentBackOn: "已还",
+      lentWasLate: "迟了 {days} 天",
+      lentGoBack: "去看借出去的那一页",
       changes: "改过什么",
       changesNone: "还没有人改过这一单。",
       changeBlank: "空白",
@@ -766,7 +793,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       /* ⚠️ 「赚」不是「毛利」也不是「净利」-- 那两个是有会计定义的词，
          而我们算的是「收到的减挂在它身上的开销」。用日常的字。 */
       jobEarned: "这一单赚",
-      jobNoCosts: "还没有开销挂在这一单上，所以算不出它赚多少。在开销那一页记一笔，选这一单。",
+      jobNoCosts:
+        "还没有开销挂在这一单上，所以算不出它赚多少。在开销那一页记一笔，选这一单。",
       jobNoCategory: "没写类别",
       /* 🔴 看图才看到的：「This job kept RM 6,550」就写在
          「Still owed RM 33,950」底下，而那一行是加粗的、人真正会读的那一行。
@@ -795,16 +823,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       rateInForce: "这个月照 {date} 那一份算。",
       rateYoursNow: "你现在打的这一份算出来是 {amount}。",
       rateFromLabel: "从哪天起",
-      rateStartsNext: "现在存，下个月才算。要这个月就算，把日子写成这个月一号。",
+      rateStartsNext:
+        "现在存，下个月才算。要这个月就算，把日子写成这个月一号。",
       rateHistory: "以前的",
+      rateThisOne: "这个月照这一份",
       rateKindDownstream: "下游经销商 —— 不是你的员工。",
       settleHeading: "对完了没有",
-      settleLede: "对完了就把这个月关起来。关了之后，这个月这一边的钱改不了 —— 要改就重开、改完再关。",
+      settleLede:
+        "对完了就把这个月关起来。关了之后，这个月这一边的钱改不了 —— 要改就重开、改完再关。",
       settleClose: "把这个月关起来",
-      settleClosed: "{date} 关起来了。这个月这一边的钱改不了 —— 要改，先重开这个月。",
+      settleClosed:
+        "{date} 关起来了。这个月这一边的钱改不了 —— 要改，先重开这个月。",
       settleReopen: "重开这个月",
       portalHeading: "他自己那条连结",
-      portalLede: "发一条连结给他，他就自己讲得出「我要什么」，不用你照他的讯息重打一次。他看得到的只有你的公司名跟他自己送过的那几笔。",
+      portalLede:
+        "发一条连结给他，他就自己讲得出「我要什么」，不用你照他的讯息重打一次。他看得到的只有你的公司名跟他自己送过的那几笔。",
       portalOpen: "开一条连结给他",
       portalLink: "他那条连结",
       portalCopy: "复制",
@@ -818,7 +851,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       portalDropped: "丢掉了",
       portalNowhere: "这个系统里还没有一页可以放单。",
       shareHeading: "发给客人看",
-      shareLede: "一条连结，他自己在手机上打得开：看得到这一张、按得了同意、也讲得出想改哪里。他看不到你的成本，也看不到他的其他单。",
+      shareLede:
+        "一条连结，他自己在手机上打得开：看得到这一张、按得了同意、也讲得出想改哪里。他看不到你的成本，也看不到他的其他单。",
       shareOpen: "开一条连结给客人",
       shareLink: "客人那条连结",
       shareCopy: "复制",
@@ -829,13 +863,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       shareChanges: "{name} 在 {date} 讲了想改的地方。",
       shareStageHint: "这一单走到哪还是你自己决定 —— 他按同意不会把它搬走。",
       runHeading: "送出去了几趟",
-      runLede: "一张单可以分几车出。送出去的时候架上自己会少，而客人在他自己那条连结上签收。",
+      runLede:
+        "一张单可以分几车出。送出去的时候架上自己会少，而客人在他自己那条连结上签收。",
       runNone: "还没有送过。",
       runOpen: "开一趟",
       runSend: "送出去",
       runHandover: "交了",
       runSendHint: "按下去，上面还欠的那几行会照数量出货，架上跟着少。",
-      runHandoverHint: "这一单没有货要出，所以这一趟只记「交了」—— 装修交屋、服务做完就是这样。",
+      runHandoverHint:
+        "这一单没有货要出，所以这一趟只记「交了」—— 装修交屋、服务做完就是这样。",
       runDriver: "谁去送",
       runReceivedBy: "谁收的",
       runNoGoods: "没有货，只是交了",
@@ -885,11 +921,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       packSell: "卖一张",
       packSelling: "开着…",
       creditHeading: "他先付了、还没用掉的钱",
-      creditLede: "已经收到、还没有分摊给任何一张单的部分。下一张单开出来就可以扣它。",
+      creditLede:
+        "已经收到、还没有分摊给任何一张单的部分。下一张单开出来就可以扣它。",
       creditNone: "没有 —— 他付过的钱都分摊掉了。",
       creditFrom: "来自",
       nextHeading: "下一步",
-      nextLede: "这一单接下来你要做的那一件。一张单只有一个 —— 做完了才写下一个。",
+      nextLede:
+        "这一单接下来你要做的那一件。一张单只有一个 —— 做完了才写下一个。",
       nextWhat: "要做什么",
       nextPlaceholder: "打电话问他决定了没有",
       nextWhen: "哪一天",
@@ -933,9 +971,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       archived: "This one is put away and is not on the list.",
       reverse: "Write a reversal",
       reversing: "Writing…",
-      reverseHint: "Money is not edited. Write the opposite entry and keep both.",
+      reverseHint:
+        "Money is not edited. Write the opposite entry and keep both.",
       reversed: "This entry has already been reversed.",
-      moneyFixed: "The amount, the date and who it is with cannot be edited — write a reversal.",
+      moneyFixed:
+        "The amount, the date and who it is with cannot be edited — write a reversal.",
       lines: "Line items",
       lineWhat: "What it is",
       lineQty: "Qty",
@@ -965,9 +1005,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       apptCame: "Came",
       apptNoShow: "No show",
       apptCancelled: "Cancelled",
-      apptLede: "No show is only recorded here. It moves no money — whether to charge is yours to decide.",
+      apptLede:
+        "No show is only recorded here. It moves no money — whether to charge is yours to decide.",
       refHeading: "Who sent this one in",
-      refLede: "A percentage is worked out on the money already received, not the figure on the document. What has actually been handed over is summed from the expenses you record — this section records none.",
+      refLede:
+        "A percentage is worked out on the money already received, not the figure on the document. What has actually been handed over is summed from the expenses you record — this section records none.",
       refWho: "Who introduced them",
       refWhoBlank: "Type their name",
       refKindPortion: "A percentage",
@@ -975,10 +1017,12 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       refPortion: "Per cent",
       refAmount: "Promised",
       refSoFar: "On the money received so far, this job owes him {amount}.",
-      refUnknown: "There is no “{name}” in your directory. Add them first, then come back and attach them.",
+      refUnknown:
+        "There is no “{name}” in your directory. Add them first, then come back and attach them.",
       refClear: "Nobody introduced them",
       sentHeading: "Jobs he sent you",
-      sentLede: "What has been handed over is summed from the expenses you record: money out, paid to him, and attached to one of these jobs.",
+      sentLede:
+        "What has been handed over is summed from the expenses you record: money out, paid to him, and attached to one of these jobs.",
       sentOwing: "Still owed",
       sentJobs: "Jobs sent",
       sentPromised: "Promised",
@@ -991,19 +1035,23 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       stockUnit: "Unit (bag · box · can)",
       stockOpening: "How many now",
       stockOnHand: "On hand",
-      stockDerived: "This number is the ins and outs added up. Change it by recording a movement, not here.",
+      stockDerived:
+        "This number is the ins and outs added up. Change it by recording a movement, not here.",
       stockReorder: "Tell me when it drops to",
       stockPackSize: "How many in a pack",
       stockPackUnit: "Pack is called (box · pallet)",
       receive: "The goods came in",
       receiving: "Adding…",
-      receiveHint: "Every line on this order becomes one stock movement. After that its lines cannot be changed.",
-      receiveDone: "The goods on this order are already in your stock. Correct it with a stock movement.",
+      receiveHint:
+        "Every line on this order becomes one stock movement. After that its lines cannot be changed.",
+      receiveDone:
+        "The goods on this order are already in your stock. Correct it with a stock movement.",
       previewLabel: "As it prints",
       printIt: "Print",
       previewDate: "Date",
       previewNumber: "No.",
-      previewNoNumber: "The number is issued when you save — it is not guessed.",
+      previewNoNumber:
+        "The number is issued when you save — it is not guessed.",
       reconPeriod: "Which month",
       reconSource: "Who gave the figure",
       reconTheirs: "What they say",
@@ -1012,7 +1060,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       reconOut: "Money out",
       reconNet: "Net (in minus out)",
       reconReference: "Their reference",
-      reconRequired: "Say who gave the figure — without it the row is not about anything.",
+      reconRequired:
+        "Say who gave the figure — without it the row is not about anything.",
       bookDay: "Which day",
       bookFrom: "From",
       bookTo: "Until",
@@ -1039,7 +1088,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       termAdd: "Add a stage",
       termSuggest: "Use the usual split for this trade",
       termMismatch: "These stages do not add up to the document total — off by",
-      termDefaults: { deposit: "Deposit", start: "On start", done: "On completion" },
+      termDefaults: {
+        deposit: "Deposit",
+        start: "On start",
+        done: "On completion",
+      },
       allocations: "What this money paid for",
       allocDocument: "Pick a document",
       allocAmount: "How much",
@@ -1104,18 +1157,30 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       matchArrived: "Arrived",
       matchPaid: "Paid",
       matchUnpaid: "Still owed",
+      lentHeading: "Lent out on this one",
+      lentLede: "Check before you close it: what is still out, and what came back.",
+      lentDueBack: "due back",
+      lentOverdue: "{days} days late",
+      lentBackOn: "back on",
+      lentWasLate: "was {days} days late",
+      lentGoBack: "What is out on loan",
       changes: "What was changed",
       changesNone: "Nobody has changed this one yet.",
       changeBlank: "blank",
       importHeading: "Bring the old records in",
-      importLede: "Select it in Excel, copy, and paste below. The first row must be the column names.",
-      importHeaders: "The first row should have these (any order, and you can leave some out)",
+      importLede:
+        "Select it in Excel, copy, and paste below. The first row must be the column names.",
+      importHeaders:
+        "The first row should have these (any order, and you can leave some out)",
       importCopyHeaders: "Copy this row",
       importPaste: "Paste here",
       importPastePlaceholder: "Copy from Excel and paste it here…",
-      importReadAs: "Read {n} rows. Here are the first few — check every column landed where it should:",
-      importUnmatched: "These columns were not recognised and will not be brought in:",
-      importNoHeaders: "Nothing was recognised — is the first row the column names?",
+      importReadAs:
+        "Read {n} rows. Here are the first few — check every column landed where it should:",
+      importUnmatched:
+        "These columns were not recognised and will not be brought in:",
+      importNoHeaders:
+        "Nothing was recognised — is the first row the column names?",
       importMoreRows: "{n} more rows not shown.",
       importCta: "Bring them in",
       importRunning: "Bringing them in…",
@@ -1123,7 +1188,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       importFailed: "{n} rows did not go in:",
       importRowNo: "Row {n}",
       countHeading: "Stocktake",
-      countLede: "Count the shelf and type what is there. We work out the difference and record it.",
+      countLede:
+        "Count the shelf and type what is there. We work out the difference and record it.",
       countLabel: "How many are on the shelf now",
       countCta: "Record it",
       countRunning: "Recording…",
@@ -1154,9 +1220,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       forJobWhy: "Fill this in and that job can say what it made.",
       jobSpent: "Spent on this job",
       jobEarned: "This job kept",
-      jobNoCosts: "No expenses are filed against this job yet, so it cannot say what it made. Record one on the expenses page and pick this job.",
+      jobNoCosts:
+        "No expenses are filed against this job yet, so it cannot say what it made. Record one on the expenses page and pick this job.",
       jobNoCategory: "Not categorised",
-      jobKeptSoFar: "This job is not fully paid yet, so this is what it has kept so far.",
+      jobKeptSoFar:
+        "This job is not fully paid yet, so this is what it has kept so far.",
       tiersHeading: "Their commission",
       tiersLede: "Band by band: one rate up to a figure, another above it.",
       tiersFrom: "From",
@@ -1170,25 +1238,33 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       tiersJoin: " · ",
       tiersDuplicate: "Two bands cannot start at the same figure.",
       tiersSaved: "Saved",
-      tiersTooMany: "Six bands at most. Past that, nobody can follow which one they are in.",
+      tiersTooMany:
+        "Six bands at most. Past that, nobody can follow which one they are in.",
       tiersBadPercent: "The rate has to be between 0 and 100.",
       earnedCommission: "Commission this month",
       earnedNone: "Nil. No money is credited to them this month.",
-      earnedNotPaid: "This is worked out for you, not paid. Record it on the expenses page when you pay it.",
-      earnedDerived: "Worked out from the payments credited to them. Not typed.",
+      earnedNotPaid:
+        "This is worked out for you, not paid. Record it on the expenses page when you pay it.",
+      earnedDerived:
+        "Worked out from the payments credited to them. Not typed.",
       rateInForce: "This month is worked out on the rates set from {date}.",
       rateYoursNow: "The bands you have typed would come to {amount}.",
       rateFromLabel: "In force from",
-      rateStartsNext: "Saved today, this starts next month. To change this month, set the date to the 1st.",
+      rateStartsNext:
+        "Saved today, this starts next month. To change this month, set the date to the 1st.",
       rateHistory: "Earlier",
+      rateThisOne: "used this month",
       rateKindDownstream: "A downstream dealer -- not on your payroll.",
       settleHeading: "Signed off",
-      settleLede: "Close the month once it agrees. After that, money on this side of the month cannot change -- reopen it, correct it, close it again.",
+      settleLede:
+        "Close the month once it agrees. After that, money on this side of the month cannot change -- reopen it, correct it, close it again.",
       settleClose: "Close this month",
-      settleClosed: "Closed on {date}. Money on this side of the month cannot change -- reopen it first.",
+      settleClosed:
+        "Closed on {date}. Money on this side of the month cannot change -- reopen it first.",
       settleReopen: "Reopen this month",
       portalHeading: "Their own link",
-      portalLede: "Send them a link and they say what they need themselves, instead of you retyping their message. All they see is your business name and what they have sent.",
+      portalLede:
+        "Send them a link and they say what they need themselves, instead of you retyping their message. All they see is your business name and what they have sent.",
       portalOpen: "Open a link for them",
       portalLink: "Their link",
       portalCopy: "Copy",
@@ -1200,9 +1276,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       portalDrop: "Drop",
       portalDone: "Already opened as {doc}",
       portalDropped: "Dropped",
-      portalNowhere: "There is no page in this system that can hold an order yet.",
+      portalNowhere:
+        "There is no page in this system that can hold an order yet.",
       shareHeading: "Send it to the customer",
-      shareLede: "One link he opens on his own phone: he reads this one, accepts it, or says what he wants changed. He cannot see your costs, and he cannot see his other jobs.",
+      shareLede:
+        "One link he opens on his own phone: he reads this one, accepts it, or says what he wants changed. He cannot see your costs, and he cannot see his other jobs.",
       shareOpen: "Open a link for the customer",
       shareLink: "The customer's link",
       shareCopy: "Copy",
@@ -1211,15 +1289,19 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       shareNoAnswer: "He has not answered yet.",
       shareAccepted: "{name} accepted on {date}.",
       shareChanges: "{name} asked for a change on {date}.",
-      shareStageHint: "Where this job sits is still your call -- his accepting does not move it.",
+      shareStageHint:
+        "Where this job sits is still your call -- his accepting does not move it.",
       runHeading: "Deliveries",
-      runLede: "One job can go out on several lorries. What goes out comes off the shelf, and the customer signs on his own link.",
+      runLede:
+        "One job can go out on several lorries. What goes out comes off the shelf, and the customer signs on his own link.",
       runNone: "Nothing has gone out yet.",
       runOpen: "Open a run",
       runSend: "Send it out",
       runHandover: "Handed over",
-      runSendHint: "This sends what is still owed above, and the shelf drops by the same amount.",
-      runHandoverHint: "Nothing on this job comes off a shelf, so this run just records the handover -- a refit finished, a service done.",
+      runSendHint:
+        "This sends what is still owed above, and the shelf drops by the same amount.",
+      runHandoverHint:
+        "Nothing on this job comes off a shelf, so this run just records the handover -- a refit finished, a service done.",
       runDriver: "Who took it",
       runReceivedBy: "Who received it",
       runNoGoods: "no goods, handed over",
@@ -1252,7 +1334,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       contractsLink: "Service contracts",
       serialsLink: "Look up a serial",
       packHeading: "Packages",
-      packLede: "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
+      packLede:
+        "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
       packNone: "No package sold to them yet.",
       packLeft: "{n} left",
       packUsedUp: "Used up",
@@ -1269,11 +1352,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       packSell: "Sell one",
       packSelling: "Opening...",
       creditHeading: "Paid, not yet used",
-      creditLede: "Money received and not yet put against any document. The next one you raise can draw on it.",
+      creditLede:
+        "Money received and not yet put against any document. The next one you raise can draw on it.",
       creditNone: "None -- everything they have paid is accounted for.",
       creditFrom: "From",
       nextHeading: "Next step",
-      nextLede: "The one thing you do next on this document. One at a time — write the next one when this is done.",
+      nextLede:
+        "The one thing you do next on this document. One at a time — write the next one when this is done.",
       nextWhat: "What you will do",
       nextPlaceholder: "Call and ask if they have decided",
       nextWhen: "On",

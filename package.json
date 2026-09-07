@@ -74,6 +74,7 @@
     "check:branch-stock": "node scripts/check-branch-stock.mjs",
     "check:purchase-match": "node scripts/check-purchase-match.mjs",
     "shoot:purchase-match": "node scripts/shoot-purchase-match.mjs",
+    "shoot:record-doors": "node scripts/shoot-record-doors.mjs",
     "check:less-typing": "node scripts/check-less-typing.mjs",
     "check:delivery": "node scripts/check-delivery.mjs",
     "check:payment": "node scripts/check-payment.mjs",

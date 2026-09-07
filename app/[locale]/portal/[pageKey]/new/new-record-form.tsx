@@ -5,13 +5,25 @@ import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { TableColumn } from "@/lib/portal/table-model";
 import type { RecordFormCopy } from "../record-copy";
-import { LineEditor, blankLine, senOf, totalOf, ringgitOf, type Line } from "./line-editor";
+import {
+  LineEditor,
+  blankLine,
+  senOf,
+  totalOf,
+  ringgitOf,
+  type Line,
+} from "./line-editor";
 import { useLineSuggestions, fillFromShelf } from "./line-suggest";
 import { ReceiptShot } from "./receipt-shot";
-import type { ReceiptDraft } from "@/lib/portal/receipt-read";
 import { DocumentPreview } from "./document-preview";
 import { validityKindOf, defaultDueOn } from "@/lib/portal/record-validity";
-import { TermsEditor, termsForDb, blankTerm, priceRows, type TermRow } from "./terms-editor";
+import {
+  TermsEditor,
+  termsForDb,
+  blankTerm,
+  priceRows,
+  type TermRow,
+} from "./terms-editor";
 import { suggestedFor } from "@/lib/portal/payment-terms";
 import {
   AllocationEditor,
@@ -103,9 +115,59 @@ function senFrom(text: string): number | undefined {
   return Number.isFinite(n) ? Math.round(n * 100) : undefined;
 }
 
-
 /** 标题旁边那颗按钮要指得到这张表单，而它画在表单外面。 */
+/** 一页是且只是六种里的一种。写成六个 boolean，就是它们里面有两个同时为真
+ *  的那一天 —— 而那一天没有人看得出来。 */
+export type RecordShape =
+  | "pipeline"
+  | "ledger"
+  | "directory"
+  | "catalog"
+  | "reconcile"
+  | "calendar";
+
 const FORM_ID = "record-form";
+
+/** 这一页的形状是哪一个，「收起来」就打哪一支。
+ *
+ *  ── 🔴 为什么它是一个 switch，不是一串三元 ──────────────────────────────
+ *
+ *  原本那一串写着 directory / catalog / calendar，**其余一律
+ *  `set_pipeline_archived`** —— 而对帐那一页不是走单，所以那一支
+ *  **根本找不到那一行**。那颗「收起来」画得出来、按得下去、什么都不会发生。
+ *
+ *  ⚠️ 而它不是一个新洞：那一串自己的注解就在描述同一件事的上一次
+ *  （预约那一页），只是修了那一个实例，没有修那个形状。
+ *  第三种形状进来的那一天它会再发生一次 —— 除非漏一个就是编译错误。
+ *
+ *  记帐那一边不在这里：钱不收起来，钱只开一张相反的（`reverse_ledger_entry`）。 */
+export function archiveFnFor(
+  shape: Exclude<RecordShape, "ledger">,
+):
+  | "set_directory_archived"
+  | "set_catalog_archived"
+  | "set_appointment_archived"
+  | "set_reconciliation_archived"
+  | "set_pipeline_archived" {
+  switch (shape) {
+    case "directory":
+      return "set_directory_archived";
+    case "catalog":
+      return "set_catalog_archived";
+    case "calendar":
+      return "set_appointment_archived";
+    /* 🔴 20260902020000 起就有这一支，而到 2026-09-07 为止零个呼叫。 */
+    case "reconcile":
+      return "set_reconciliation_archived";
+    case "pipeline":
+      return "set_pipeline_archived";
+    default: {
+      /* 少一个形状就是编译错误，不是他按下去才发现的一句资料库的话。 */
+      const unhandled: never = shape;
+      throw new Error(`no archive function for shape: ${String(unhandled)}`);
+    }
+  }
+}
 
 export function NewRecordForm({
   projectId,
@@ -144,7 +206,7 @@ export function NewRecordForm({
   /** Which of the three live shapes this page is. Not three booleans: a page
    *  is exactly one of them, and a boolean per shape is how two of them end up
    *  true. */
-  shape: "pipeline" | "ledger" | "directory" | "catalog" | "reconcile" | "calendar";
+  shape: RecordShape;
   /** This business's own customers, for the name box. Empty on a directory
    *  page, which is where a party is created rather than chosen. */
   parties: { id: string; name: string }[];
@@ -298,7 +360,9 @@ export function NewRecordForm({
   copy: RecordFormCopy;
 }) {
   const router = useRouter();
-  const [values, setValues] = useState<Record<string, string>>(record?.values ?? {});
+  const [values, setValues] = useState<Record<string, string>>(
+    record?.values ?? {},
+  );
   /* 逐项. Only a document has them -- money is one entry and a person is not a
      list of things. */
   const [lines, setLines] = useState<Line[]>(record?.lines ?? []);
@@ -325,7 +389,7 @@ export function NewRecordForm({
      比留白更糟：留白他会去填，一个猜的他会以为是真的。 */
   const dateKind = validityKindOf(moduleKey);
   const [dueOn, setDueOn] = useState<string>(
-    record ? record.dueOn ?? "" : defaultDueOn(dateKind, today) ?? "",
+    record ? (record.dueOn ?? "") : (defaultDueOn(dateKind, today) ?? ""),
   );
 
   /* 分期付款表。⚠️ 只在有金额的走单上 —— 一张任务单没有钱可以分期，
@@ -334,7 +398,9 @@ export function NewRecordForm({
   const [terms, setTerms] = useState<TermRow[]>(record?.terms ?? []);
   /* 这笔钱付了哪几张单。剩下的那一段是订金 —— 那不是错，是这门生意每天
      在发生的事（lib/portal/allocations.ts）。 */
-  const [allocs, setAllocs] = useState<AllocationRowInput[]>(record?.allocations ?? []);
+  const [allocs, setAllocs] = useState<AllocationRowInput[]>(
+    record?.allocations ?? [],
+  );
   /* 分摊只在钱那几页，而且只有拿得到那份清单的人（看得到钱的老板）。
      ⚠️ 冲正那一笔不给分摊 —— 它是撤销，资料库那边也会拒绝。 */
   const canAllocate = isLedger && !!openDocuments && !record?.reversed;
@@ -346,15 +412,15 @@ export function NewRecordForm({
     record?.addresses?.length
       ? record.addresses
       : (record?.values.address ?? "").trim()
-      ? [
-          {
-            label: "",
-            line: (record?.values.address ?? "").trim(),
-            region: (record?.values.region ?? "").trim(),
-            isBilling: true,
-          },
-        ]
-      : [],
+        ? [
+            {
+              label: "",
+              line: (record?.values.address ?? "").trim(),
+              region: (record?.values.region ?? "").trim(),
+              isBilling: true,
+            },
+          ]
+        : [],
   );
   /* 表格那一行要讲得出他在哪里，而它读的是旧那两栏。所以保存的时候
      从这一行抄回去 —— 勾了帐单的那一行，没有就第一行。 */
@@ -435,7 +501,9 @@ export function NewRecordForm({
     },
   };
 
-  const sitesForParty = (partyAddresses ?? []).filter((a) => a.partyId === chosenParty);
+  const sitesForParty = (partyAddresses ?? []).filter(
+    (a) => a.partyId === chosenParty,
+  );
   /* 🔴 他换了客户，上一个客户的工地就不再属於这一张单。资料库会拒绝
      （'that address belongs to somebody else'），而让他保存之后才知道，
      比现在当成没挑糟。 */
@@ -471,39 +539,44 @@ export function NewRecordForm({
          which is one of its own boxes below. */
       []
     : isReconcile
-    ? /* NONE OF THE TABLE'S COLUMNS. A reconciliation row is a COMPARISON:
+      ? /* NONE OF THE TABLE'S COLUMNS. A reconciliation row is a COMPARISON:
          its first column is the month and the source together, its second is
          our own total, and its status is the gap -- three things the page
          computes and none of them things to type. Its own boxes are below. */
-      []
-    : isDirectory
-    ? tableFields.filter((c) => c.key !== "secondary")
-    : isCatalog
-      /* 「仓库 · 包」 is a composed view of two fields, like a directory's
+        []
+      : isDirectory
+        ? tableFields.filter((c) => c.key !== "secondary")
+        : isCatalog
+          ? /* 「仓库 · 包」 is a composed view of two fields, like a directory's
          contact line -- so it gets two boxes below rather than one here. And
          「充足 / 快没了」 is computed from the quantity and the reorder
          level, so offering a box for it offers to write a value the page then
          overrules. */
-      ? tableFields.filter((c) => c.key !== "secondary" && c.key !== "status")
-      : tableFields;
+            tableFields.filter(
+              (c) => c.key !== "secondary" && c.key !== "status",
+            )
+          : tableFields;
   const titleCol = columns.find((c) => c.key === "primary") ?? shown[0];
 
   /* Collapsed by default and in this order on purpose. A contractor standing
      on a site adds a customer with a name and a number; everything below that
      is true of the record and not of the moment. Measured at 390px, where an
      eight-box form is a scroll before the save button. */
-  const extraContact: { key: string; label: string; inputMode?: "tel" | "email" }[] =
-    isCatalog
-      ? [
-          { key: "reorder_at", label: copy.stockReorder },
-          /* 一箱 = 24 罐. Collapsed because most trades buy and sell in the
+  const extraContact: {
+    key: string;
+    label: string;
+    inputMode?: "tel" | "email";
+  }[] = isCatalog
+    ? [
+        { key: "reorder_at", label: copy.stockReorder },
+        /* 一箱 = 24 罐. Collapsed because most trades buy and sell in the
              same unit; a wholesaler is the one who opens this (任务 61). */
-          { key: "pack_size", label: copy.stockPackSize },
-          { key: "pack_unit", label: copy.stockPackUnit },
-          { key: "sku", label: "SKU" },
-          { key: "note", label: copy.note },
-        ]
-      : isDirectory
+        { key: "pack_size", label: copy.stockPackSize },
+        { key: "pack_unit", label: copy.stockPackUnit },
+        { key: "sku", label: "SKU" },
+        { key: "note", label: copy.note },
+      ]
+    : isDirectory
       ? [
           { key: "contact_person", label: copy.contactPerson },
           { key: "email", label: copy.email, inputMode: "email" },
@@ -545,9 +618,12 @@ export function NewRecordForm({
     const pointAt = (key: string) => {
       setErrorAt(key);
       requestAnimationFrame(() => {
-        const el = document.querySelector<HTMLElement>(`[data-field="${key}"]`);
-        /* ⚠️ `?.()` —— 一个没有它的环境里这一句会抛，
-           而抛在这里会把**那句话也一起吃掉**。 */
+        const el = document.querySelector<HTMLElement>(
+          `[data-field="${key}"]`,
+        );
+        /* ⚠️ `?.()` —— 不是为了测试好跑：一个没有它的环境里
+           这一句会抛，而抛在这里会把**那句话也一起吃掉** ——
+           他按了保存，什么都没发生，也没有任何一句话。 */
         el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
         el?.focus?.();
       });
@@ -565,7 +641,10 @@ export function NewRecordForm({
     } else if (isCalendar) {
       /* A BOOKING IS FOR SOMEBODY; TIME OFF IS NOT. Demanding a name to close
          his own shop for lunch would be the form arguing with him. */
-      if ((values.kind ?? "booking") !== "block" && !(values.primary ?? "").trim()) {
+      if (
+        (values.kind ?? "booking") !== "block" &&
+        !(values.primary ?? "").trim()
+      ) {
         setError(copy.bookRequired);
         pointAt("primary");
         return;
@@ -588,7 +667,9 @@ export function NewRecordForm({
        database uses: attaching a job to the wrong person because two of them
        share a name is worse than leaving it unlinked, and the typed text is
        kept either way. */
-    const hits = parties.filter((x) => x.name.trim().toLowerCase() === party.toLowerCase());
+    const hits = parties.filter(
+      (x) => x.name.trim().toLowerCase() === party.toLowerCase(),
+    );
     const partyId = hits.length === 1 ? hits[0].id : null;
 
     const supabase = createBrowserSupabaseClient();
@@ -631,7 +712,9 @@ export function NewRecordForm({
       if (isReconcile) {
         const { error: rErr } = await supabase.rpc("update_reconciliation", {
           in_id: record.id,
-          in_period: (values.period ?? "").trim() ? `${(values.period ?? "").trim()}-01` : null,
+          in_period: (values.period ?? "").trim()
+            ? `${(values.period ?? "").trim()}-01`
+            : null,
           in_source: (values.source ?? "").trim(),
           in_their_cents: senFrom(values.their ?? "") ?? 0,
           in_direction: (values.direction ?? "in").trim() || "in",
@@ -720,50 +803,52 @@ export function NewRecordForm({
             in_clear_credit_limit: !(values.credit_limit ?? "").trim(),
           })
         : isLedger
-        ? await supabase.rpc("update_ledger_words", {
-            in_id: record.id,
-            /* The note is what the first box holds on a money page -- it is
+          ? await supabase.rpc("update_ledger_words", {
+              in_id: record.id,
+              /* The note is what the first box holds on a money page -- it is
                「what this was for」, which is the only part of a payment a
                person may rewrite. */
-            in_note: title,
-            /* 挑错人是打字错误，不是一笔要留痕迹的更正 —— 改得回来。
+              in_note: title,
+              /* 挑错人是打字错误，不是一笔要留痕迹的更正 —— 改得回来。
                而 null 的意思是「这一栏不要动」，所以清空要另外讲
                （due_on · 工地 · 分店，同一个坑第四次）。 */
-            in_done_by: doneBy || null,
-            in_clear_done_by: !doneBy,
-            /* 类别改得了 -- 它不是钱，是一句关於这笔钱的话。
+              in_done_by: doneBy || null,
+              in_clear_done_by: !doneBy,
+              /* 类别改得了 -- 它不是钱，是一句关於这笔钱的话。
                ⚠️ 空字串是「清空」，不是「不要动」：`coalesce` 在资料库那边
                看的是 null，而 `""` 是一个他真的打出来的值。 */
-            in_category: category.trim(),
-            /* 挂错单跟挂错人一样。清空要另一个参数讲（同一个坑第五次）。 */
-            in_job_id: (spendsMoney && jobId) || null,
-            in_clear_job_id: spendsMoney && !jobId,
-          })
-        : await supabase.rpc("update_pipeline_record", {
-            in_id: record.id,
-            in_title: title,
-            in_party: party,
-            in_party_id: partyId,
-            in_amount_cents: amount ?? null,
-            in_stage: (values.status ?? "").trim() || null,
-            in_extra: extra,
-            /* He cleared the name box: detach it, rather than silently
+              in_category: category.trim(),
+              /* 挂错单跟挂错人一样。清空要另一个参数讲（同一个坑第五次）。 */
+              in_job_id: (spendsMoney && jobId) || null,
+              in_clear_job_id: spendsMoney && !jobId,
+            })
+          : await supabase.rpc("update_pipeline_record", {
+              in_id: record.id,
+              in_title: title,
+              in_party: party,
+              in_party_id: partyId,
+              in_amount_cents: amount ?? null,
+              in_stage: (values.status ?? "").trim() || null,
+              in_extra: extra,
+              /* He cleared the name box: detach it, rather than silently
                keeping whoever it used to be attached to. */
-            in_clear_party: !party && !partyId,
-            in_due_on: dueOn || null,
-            /* 同一个形状：他把日期删掉，就要真的删掉。函式那边 null 的意思是
+              in_clear_party: !party && !partyId,
+              in_due_on: dueOn || null,
+              /* 同一个形状：他把日期删掉，就要真的删掉。函式那边 null 的意思是
                「这一栏不要动」，所以少了这一句，一个日子填进去就永远拿不掉
                （20260903010000）。 */
-            in_clear_due_on: !!dateKind && !dueOn,
-            in_site_address_id: siteOk || null,
-            /* 同一个形状：他把工地拿掉，就要真的拿掉。null 的意思是
+              in_clear_due_on: !!dateKind && !dueOn,
+              in_site_address_id: siteOk || null,
+              /* 同一个形状：他把工地拿掉，就要真的拿掉。null 的意思是
                「这一栏不要动」，少了这一句，一个工地挂上去就永远拿不下来。 */
-            in_clear_site: !siteOk,
-            in_branch_id: branchId || null,
-            in_clear_branch: !branchId,
-          });
+              in_clear_site: !siteOk,
+              in_branch_id: branchId || null,
+              in_clear_branch: !branchId,
+            });
       if (fixErr) {
-        setError(`${copy.failed}${fixErr.message ? ` — ${fixErr.message}` : ""}`);
+        setError(
+          `${copy.failed}${fixErr.message ? ` — ${fixErr.message}` : ""}`,
+        );
         setBusy(false);
         return;
       }
@@ -776,7 +861,9 @@ export function NewRecordForm({
           in_lines: linesForDb(lines),
         });
         if (lineErr) {
-          setError(`${copy.failed}${lineErr.message ? ` — ${lineErr.message}` : ""}`);
+          setError(
+            `${copy.failed}${lineErr.message ? ` — ${lineErr.message}` : ""}`,
+          );
           setBusy(false);
           return;
         }
@@ -784,12 +871,17 @@ export function NewRecordForm({
       /* 地址整份换掉，跟明细/分期同一个形状。空的也写 —— 清空是一次真的编辑。
          ⚠️ 有单指着的地址，资料库那边会拒绝并且讲得出出路（20260903060000）。 */
       if (isDirectory) {
-        const { error: addrErr } = await supabase.rpc("set_directory_addresses", {
-          in_party_id: record.id,
-          in_rows: addressesForDb(addresses),
-        });
+        const { error: addrErr } = await supabase.rpc(
+          "set_directory_addresses",
+          {
+            in_party_id: record.id,
+            in_rows: addressesForDb(addresses),
+          },
+        );
         if (addrErr) {
-          setError(`${copy.failed}${addrErr.message ? ` — ${addrErr.message}` : ""}`);
+          setError(
+            `${copy.failed}${addrErr.message ? ` — ${addrErr.message}` : ""}`,
+          );
           setBusy(false);
           return;
         }
@@ -799,12 +891,17 @@ export function NewRecordForm({
          ⚠️ 只在这一页真的拿得到那份清单的时候才写：一个师傅打不开钱那几页，
          而万一有一天打得开，一次空的写入会把老板分好的全部清掉。 */
       if (isLedger && canAllocate) {
-        const { error: allocErr } = await supabase.rpc("set_payment_allocations", {
-          in_entry_id: record.id,
-          in_rows: allocationsForDb(allocs),
-        });
+        const { error: allocErr } = await supabase.rpc(
+          "set_payment_allocations",
+          {
+            in_entry_id: record.id,
+            in_rows: allocationsForDb(allocs),
+          },
+        );
         if (allocErr) {
-          setError(`${copy.failed}${allocErr.message ? ` — ${allocErr.message}` : ""}`);
+          setError(
+            `${copy.failed}${allocErr.message ? ` — ${allocErr.message}` : ""}`,
+          );
           setBusy(false);
           return;
         }
@@ -817,7 +914,9 @@ export function NewRecordForm({
           in_terms: termsForDb(terms),
         });
         if (termErr) {
-          setError(`${copy.failed}${termErr.message ? ` — ${termErr.message}` : ""}`);
+          setError(
+            `${copy.failed}${termErr.message ? ` — ${termErr.message}` : ""}`,
+          );
           setBusy(false);
           return;
         }
@@ -835,22 +934,27 @@ export function NewRecordForm({
         const n = Number((values[k] ?? "").replace(/[^0-9.]/g, ""));
         return Number.isFinite(n) && (values[k] ?? "").trim() !== "" ? n : null;
       };
-      const { data: item, error: itemErr } = await supabase.rpc("add_catalog_item", {
-        in_project_id: projectId,
-        in_module_key: moduleKey,
-        in_name: title,
-        in_unit: (values.unit ?? "").trim(),
-        in_location: (values.location ?? "").trim(),
-        in_sku: (values.sku ?? "").trim(),
-        in_pack_size: num("pack_size"),
-        in_pack_unit: (values.pack_unit ?? "").trim(),
-        in_reorder_at: num("reorder_at"),
-        in_note: (values.note ?? "").trim(),
-        in_extra: extra,
-        in_idempotency_key: idempotencyKey,
-      });
+      const { data: item, error: itemErr } = await supabase.rpc(
+        "add_catalog_item",
+        {
+          in_project_id: projectId,
+          in_module_key: moduleKey,
+          in_name: title,
+          in_unit: (values.unit ?? "").trim(),
+          in_location: (values.location ?? "").trim(),
+          in_sku: (values.sku ?? "").trim(),
+          in_pack_size: num("pack_size"),
+          in_pack_unit: (values.pack_unit ?? "").trim(),
+          in_reorder_at: num("reorder_at"),
+          in_note: (values.note ?? "").trim(),
+          in_extra: extra,
+          in_idempotency_key: idempotencyKey,
+        },
+      );
       if (itemErr) {
-        setError(`${copy.failed}${itemErr.message ? ` — ${itemErr.message}` : ""}`);
+        setError(
+          `${copy.failed}${itemErr.message ? ` — ${itemErr.message}` : ""}`,
+        );
         setBusy(false);
         return;
       }
@@ -924,7 +1028,9 @@ export function NewRecordForm({
         /* 「2026-08」 from a month input becomes the first of that month. The
            writer rounds it anyway; sending a real date keeps the two ends
            agreeing rather than relying on one of them. */
-        in_period: (values.period ?? "").trim() ? `${(values.period ?? "").trim()}-01` : null,
+        in_period: (values.period ?? "").trim()
+          ? `${(values.period ?? "").trim()}-01`
+          : null,
         in_source: (values.source ?? "").trim(),
         in_their_cents: senFrom(values.their ?? "") ?? 0,
         in_direction: (values.direction ?? "in").trim() || "in",
@@ -962,45 +1068,45 @@ export function NewRecordForm({
           in_idempotency_key: idempotencyKey,
         })
       : isLedger
-      ? await supabase.rpc("add_ledger_entry", {
-          in_project_id: projectId,
-          in_module_key: moduleKey,
-          in_amount_cents: amount ?? 0,
-          in_party: party,
-          in_party_id: partyId,
-          in_note: title,
-          in_extra: extra,
-          in_idempotency_key: idempotencyKey,
-          /* 🔴 钱那一边也要收 —— 只在报价单上填得了分店、收款填不了，
+        ? await supabase.rpc("add_ledger_entry", {
+            in_project_id: projectId,
+            in_module_key: moduleKey,
+            in_amount_cents: amount ?? 0,
+            in_party: party,
+            in_party_id: partyId,
+            in_note: title,
+            in_extra: extra,
+            in_idempotency_key: idempotencyKey,
+            /* 🔴 钱那一边也要收 —— 只在报价单上填得了分店、收款填不了，
              就是他月底问「Puchong 收了多少」的时候答不出来。 */
-          in_branch_id: branchId || null,
-          /* 谁做的。佣金算在这上面（20260904120000）——
+            in_branch_id: branchId || null,
+            /* 谁做的。佣金算在这上面（20260904120000）——
              没有它，月底那张表是空的。 */
-          in_done_by: doneBy || null,
-          /* 这笔钱是干什么的。 */
-          in_category: category.trim() || "",
-          /* 属於哪一单。⚠️ 只有出去的钱送 -- 见 spendsMoney。 */
-          in_job_id: (spendsMoney && jobId) || null,
-          /* 收据上那个日子。留空就让资料库用今天 —— 见 entryOn 那一段。 */
-          in_entry_on: entryOn || null,
-          /* 那张收据。空字串要变成 null：一个空字串会在那一栏上
-             看起来像「有一张，而它在空的地方」。 */
-          in_receipt_url: receiptPath || null,
-        })
-      : await supabase.rpc("add_pipeline_record", {
-          in_project_id: projectId,
-          in_module_key: moduleKey,
-          in_title: title,
-          in_party: party,
-          in_party_id: partyId,
-          in_amount_cents: amount ?? null,
-          in_stage: (values.status ?? "").trim() || null,
-          in_extra: extra,
-          in_idempotency_key: idempotencyKey,
-          in_due_on: dueOn || null,
-          in_site_address_id: siteOk || null,
-          in_branch_id: branchId || null,
-        });
+            in_done_by: doneBy || null,
+            /* 这笔钱是干什么的。 */
+            in_category: category.trim() || "",
+            /* 属於哪一单。⚠️ 只有出去的钱送 -- 见 spendsMoney。 */
+            in_job_id: (spendsMoney && jobId) || null,
+            /* 收据上那个日子。留空就让资料库用今天 —— 见 entryOn 那一段。 */
+            in_entry_on: entryOn || null,
+            /* 那张收据。空字串要变成 null：一个空字串会在那一栏上
+               看起来像「有一张，而它在空的地方」。 */
+            in_receipt_url: receiptPath || null,
+          })
+        : await supabase.rpc("add_pipeline_record", {
+            in_project_id: projectId,
+            in_module_key: moduleKey,
+            in_title: title,
+            in_party: party,
+            in_party_id: partyId,
+            in_amount_cents: amount ?? null,
+            in_stage: (values.status ?? "").trim() || null,
+            in_extra: extra,
+            in_idempotency_key: idempotencyKey,
+            in_due_on: dueOn || null,
+            in_site_address_id: siteOk || null,
+            in_branch_id: branchId || null,
+          });
 
     if (err) {
       /* His own words, then ours. A contractor reading 「duplicate key value
@@ -1031,7 +1137,9 @@ export function NewRecordForm({
         in_rows: addressesForDb(addresses),
       });
       if (addrErr) {
-        setError(`${copy.failed}${addrErr.message ? ` — ${addrErr.message}` : ""}`);
+        setError(
+          `${copy.failed}${addrErr.message ? ` — ${addrErr.message}` : ""}`,
+        );
         setBusy(false);
         return;
       }
@@ -1039,12 +1147,17 @@ export function NewRecordForm({
     if (isLedger && canAllocate && allocs.length && made?.id) {
       /* 🔴 分摊失败要讲出来，不可以吞掉。这笔钱已经记进去了，
          而他以为它已经分给那张单了 —— 那正是「说了没做」的形状。 */
-      const { error: allocErr } = await supabase.rpc("set_payment_allocations", {
-        in_entry_id: made.id,
-        in_rows: allocationsForDb(allocs),
-      });
+      const { error: allocErr } = await supabase.rpc(
+        "set_payment_allocations",
+        {
+          in_entry_id: made.id,
+          in_rows: allocationsForDb(allocs),
+        },
+      );
       if (allocErr) {
-        setError(`${copy.failed}${allocErr.message ? ` — ${allocErr.message}` : ""}`);
+        setError(
+          `${copy.failed}${allocErr.message ? ` — ${allocErr.message}` : ""}`,
+        );
         setBusy(false);
         return;
       }
@@ -1062,9 +1175,12 @@ export function NewRecordForm({
     setError(null);
     if (!record) return;
     setBusy(true);
-    const { error: err } = await createBrowserSupabaseClient().rpc("receive_purchase", {
-      in_record_id: record.id,
-    });
+    const { error: err } = await createBrowserSupabaseClient().rpc(
+      "receive_purchase",
+      {
+        in_record_id: record.id,
+      },
+    );
     setBusy(false);
     if (err) {
       setError(`${copy.failed}${err.message ? ` — ${err.message}` : ""}`);
@@ -1083,19 +1199,10 @@ export function NewRecordForm({
     const supabase = createBrowserSupabaseClient();
     const { error: err } = isLedger
       ? await supabase.rpc("reverse_ledger_entry", { in_entry_id: record.id })
-      : await supabase.rpc(
-          isDirectory
-            ? "set_directory_archived"
-            : isCatalog
-              ? "set_catalog_archived"
-              : /* 🔴 预约也有自己那一支，而这条链本来没有它 ——
-                 那颗「收起来」在预约那一页画得出来，而按下去
-                 打的是 `set_pipeline_archived`，那支函式根本找不到这一行。 */
-                isCalendar
-                ? "set_appointment_archived"
-                : "set_pipeline_archived",
-          { in_id: record.id, in_archived: !record.archivedAt },
-        );
+      : await supabase.rpc(archiveFnFor(shape), {
+          in_id: record.id,
+          in_archived: !record.archivedAt,
+        });
     if (err) {
       setError(`${copy.failed}${err.message ? ` — ${err.message}` : ""}`);
       setBusy(false);
@@ -1223,7 +1330,8 @@ export function NewRecordForm({
        a new customer typed straight in still has to work -- an owner writing a
        quotation for somebody he has not filed yet must not be stopped, and the
        name he types is what the row carries. */
-    const list = key === "secondary" && parties.length ? `${key}-list` : undefined;
+    const list =
+      key === "secondary" && parties.length ? `${key}-list` : undefined;
     /* ── A BOX THAT CANNOT BE SAVED MUST NOT BE TYPEABLE ──────────────────
        On a money page the amount and the counterparty are shown -- he opened
        this row to see what it says -- and update_ledger_words does not accept
@@ -1238,9 +1346,16 @@ export function NewRecordForm({
     const locked =
       (!!record && isLedger && key !== titleCol?.key) ||
       (key === "amount" && totalFromLines !== null);
-    const shown = key === "amount" && totalFromLines !== null ? totalFromLines : values[key] ?? "";
+    const shown =
+      key === "amount" && totalFromLines !== null
+        ? totalFromLines
+        : (values[key] ?? "");
     return (
-      <label key={key} data-half={half ? "" : undefined} className="flex flex-col gap-1.5">
+      <label
+        key={key}
+        data-half={half ? "" : undefined}
+        className="flex flex-col gap-1.5"
+      >
         <span className={labelText}>{label}</span>
         <input
           data-field={key}
@@ -1330,8 +1445,8 @@ export function NewRecordForm({
                 dateKind === "validTill"
                   ? copy.validTill
                   : dateKind === "deadline"
-                  ? copy.deadline
-                  : copy.expected,
+                    ? copy.deadline
+                    : copy.expected,
               value: dueOn,
             }
           : null
@@ -1344,7 +1459,10 @@ export function NewRecordForm({
           ? (() => {
               const a = sitesForParty.find((x) => x.id === siteOk);
               return a
-                ? { label: copy.site, value: [a.label, a.line].filter(Boolean).join(" · ") }
+                ? {
+                    label: copy.site,
+                    value: [a.label, a.line].filter(Boolean).join(" · "),
+                  }
                 : null;
             })()
           : null
@@ -1356,14 +1474,16 @@ export function NewRecordForm({
           ? (() => {
               const total =
                 totalFromLines != null
-                  ? senFrom(totalFromLines) ?? null
-                  : senFrom(values.amount ?? "") ?? null;
+                  ? (senFrom(totalFromLines) ?? null)
+                  : (senFrom(values.amount ?? "") ?? null);
               const priced = priceRows(terms, total);
               return priced.terms.map((t) => ({
                 description: t.description,
                 portionText: t.portion != null ? `${t.portion}%` : "",
                 amountText:
-                  t.portion != null && priced.documentCents == null ? "—" : ringgitOf(t.cents),
+                  t.portion != null && priced.documentCents == null
+                    ? "—"
+                    : ringgitOf(t.cents),
                 due: t.due_on ?? "",
               }));
             })()
@@ -1403,27 +1523,29 @@ export function NewRecordForm({
 
   return (
     <>
-    {heading ? (
-      <div className="mb-7 flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-            {heading}
-          </h1>
-          <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-            {lede}
-          </p>
+      {heading ? (
+        <div className="mb-7 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+              {heading}
+            </h1>
+            <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+              {lede}
+            </p>
+          </div>
+          <div className="hidden @3xl:block">{saveButton}</div>
         </div>
-        <div className="hidden @3xl:block">{saveButton}</div>
-      </div>
-    ) : null}
-    {afterHeading ? <div className="mb-7">{afterHeading}</div> : null}
-    <div className={paper ? "grid gap-8 lg:grid-cols-2 lg:gap-10" : undefined}>
-    {/* 🔴 表单住进一张卡里（2026-09-04，照 arhamkhnz 的 dashboard/invoice）。
+      ) : null}
+      {afterHeading ? <div className="mb-7">{afterHeading}</div> : null}
+      <div
+        className={paper ? "grid gap-8 lg:grid-cols-2 lg:gap-10" : undefined}
+      >
+        {/* 🔴 表单住进一张卡里（2026-09-04，照 arhamkhnz 的 dashboard/invoice）。
         它本来是一串标签跟输入框直接躺在页面的地上 —— 而参考页那一边是
         **一张白卡**，纸在右边、表单在左边，两块对称。
         没有卡的时候，左边读起来不是「一份要填的东西」，是「一些散落的框」，
         而右边那张纸有边有影，两边看起来像两个不同的产品。 */}
-    {/* 🔴 短的那几格并排（2026-09-05，对着 arhamkhnz 的 dashboard/invoice 看）。
+        {/* 🔴 短的那几格并排（2026-09-05，对着 arhamkhnz 的 dashboard/invoice 看）。
 
         `align:pages` 判这一页「一屏几块 8 对 1」。并排图看得很清楚：
         他们把成对的东西摆成一行（发出日期／到期日 · 税／折扣），而我们是
@@ -1435,381 +1557,427 @@ export function NewRecordForm({
 
         ⚠️ 用容器宽度不用视窗宽度：手机上这张表是整个屏幕宽，容器就是 390，
         `@3xl` 不成立，於是它自己回到一栏到底 —— 那在手机上是对的。 */}
-    <form
-      id={FORM_ID}
-      onSubmit={submit}
-      className="ds-card grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1 [padding:var(--pad-card-lg)]"
-    >
-      {/* 🔴 拍一张收据，下面那几格自己填好。
-      **只画在花钱那几页、而且只在新增的时候** —— 一笔已经存下来的钱，
-      除了那句话什么都改不了（见 box() 里的 `locked`），
-      所以在那上面画一颗会填格子的按钮，就是一颗做不了事的按钮。
+        <form
+          id={FORM_ID}
+          onSubmit={submit}
+          className="ds-card grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1 [padding:var(--pad-card-lg)]"
+        >
+          {/* 🔴 拍一张收据，下面那几格自己填好。
+          **只画在花钱那几页、而且只在新增的时候** —— 一笔已经存下来的钱，
+          除了那句话什么都改不了（见 box() 里的 `locked`），
+          所以在那上面画一颗会填格子的按钮，就是一颗做不了事的按钮。
 
-      🔴 **而它画在这张卡最上面，不是夹在那几格中间。** 第一版摆在
-      金额底下，看图当场看到那是错的顺序：他手上拿着一张收据，
-      **拍照是第一个动作，不是第四个** —— 而摆在中间，他要先滑过
-      三个空的框才找得到它。Xero · QuickBooks · Zoho 的那几屏
-      也是把它摆在最前面。 */}
-      {spendsMoney && !record ? (
-        <ReceiptShot
-          projectId={projectId}
-          copy={copy}
-          onShot={(path, draft) => {
-            setReceiptPath(path);
-            if (!draft) return;
-            /* ⚠️ **读到什么填什么，读不到的一格都不碰** ——
-               一个把空字串盖上去的实作，会把他自己刚打的字洗掉。 */
-            setValues((v) => {
-              const next = { ...v };
-              const put = (key: string, val: string) => {
-                if (val.trim()) next[key] = val;
-              };
-              put(titleCol?.key ?? "primary", draft.note);
-              put("secondary", draft.party);
-              put("amount", draft.amount);
-              return next;
-            });
-            if (draft.category.trim()) setCategory(draft.category);
-            if (draft.entryOn.trim()) setEntryOn(draft.entryOn);
-          }}
-        />
-      ) : null}
+          🔴 **而它画在这张卡最上面，不是夹在那几格中间。** 第一版摆在
+          金额底下，看图当场看到那是错的顺序：他手上拿着一张收据，
+          **拍照是第一个动作，不是第四个** —— 而摆在中间，他要先滑过
+          三个空的框才找得到它。Xero · QuickBooks · Zoho 的那几屏
+          也是把它摆在最前面。 */}
+          {spendsMoney && !record ? (
+            <ReceiptShot
+              projectId={projectId}
+              copy={copy}
+              onShot={(path, draft) => {
+                setReceiptPath(path);
+                if (!draft) return;
+                /* ⚠️ **读到什么填什么，读不到的一格都不碰** ——
+                   一个把空字串盖上去的实作，会把他自己刚打的字洗掉。 */
+                setValues((v) => {
+                  const next = { ...v };
+                  const put = (key: string, val: string) => {
+                    if (val.trim()) next[key] = val;
+                  };
+                  put(titleCol?.key ?? "primary", draft.note);
+                  put("secondary", draft.party);
+                  put("amount", draft.amount);
+                  return next;
+                });
+                if (draft.category.trim()) setCategory(draft.category);
+                if (draft.entryOn.trim()) setEntryOn(draft.entryOn);
+              }}
+            />
+          ) : null}
 
-      {shown.map((c) => {
-        if (c.key === "status" && stages.length) {
-          return (
-            <label key={c.key} data-half="" className="flex flex-col gap-1.5">
-              <span className={labelText}>{c.label}</span>
-              <select
-                value={values.status ?? ""}
-                onChange={(e) => setValues((v) => ({ ...v, status: e.target.value }))}
-                className={control}
-              >
-                <option value="">{copy.choose}</option>
-                {stages.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </label>
-          );
-        }
-        /* 师傅那一页的「本月业绩」。跟库存那一格同一条：算出来的数字
+          {shown.map((c) => {
+            if (c.key === "status" && stages.length) {
+              return (
+                <label
+                  key={c.key}
+                  data-half=""
+                  className="flex flex-col gap-1.5"
+                >
+                  <span className={labelText}>{c.label}</span>
+                  <select
+                    value={values.status ?? ""}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, status: e.target.value }))
+                    }
+                    className={control}
+                  >
+                    <option value="">{copy.choose}</option>
+                    {stages.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              );
+            }
+            /* 师傅那一页的「本月业绩」。跟库存那一格同一条：算出来的数字
            没有人打得进去。 */
-        if (earnedLocked && c.kind === "amount") {
-          return (
-            <label key={c.key} data-half="" className="flex flex-col gap-1.5">
-              <span className={labelText}>{c.label}</span>
-              <input
-                value={earnedValue ?? ""}
-                readOnly
-                aria-readonly
-                aria-label={c.label}
-                onChange={() => {}}
-                className={`${control} opacity-60`}
-              />
-              <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                {copy.earnedDerived}
-              </span>
-            </label>
-          );
-        }
-        if (isCatalog && c.kind === "amount") {
-          /* A COUNT, NOT A PRICE -- and read-only once the item exists. */
-          return (
-            <label key={c.key} className="flex flex-col gap-1.5">
-              <span className={labelText}>
-                {stockLocked ? copy.stockOnHand : copy.stockOpening}
-              </span>
-              <input
-                inputMode="decimal"
-                value={values.amount ?? ""}
-                readOnly={stockLocked}
-                aria-readonly={stockLocked || undefined}
-                onChange={(e) => setValues((v) => ({ ...v, amount: e.target.value }))}
-                className={`${control}${stockLocked ? " opacity-60" : ""}`}
-              />
-              {stockLocked ? (
-                <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                  {copy.stockDerived}
-                </span>
-              ) : null}
-              {/* 🔴 那一句「数量是算出来的」讲的是**为什么这一格锁住**，
+            if (earnedLocked && c.kind === "amount") {
+              return (
+                <label
+                  key={c.key}
+                  data-half=""
+                  className="flex flex-col gap-1.5"
+                >
+                  <span className={labelText}>{c.label}</span>
+                  <input
+                    value={earnedValue ?? ""}
+                    readOnly
+                    aria-readonly
+                    aria-label={c.label}
+                    onChange={() => {}}
+                    className={`${control} opacity-60`}
+                  />
+                  <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                    {copy.earnedDerived}
+                  </span>
+                </label>
+              );
+            }
+            if (isCatalog && c.kind === "amount") {
+              /* A COUNT, NOT A PRICE -- and read-only once the item exists. */
+              return (
+                <label key={c.key} className="flex flex-col gap-1.5">
+                  <span className={labelText}>
+                    {stockLocked ? copy.stockOnHand : copy.stockOpening}
+                  </span>
+                  <input
+                    inputMode="decimal"
+                    value={values.amount ?? ""}
+                    readOnly={stockLocked}
+                    aria-readonly={stockLocked || undefined}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, amount: e.target.value }))
+                    }
+                    className={`${control}${stockLocked ? " opacity-60" : ""}`}
+                  />
+                  {stockLocked ? (
+                    <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                      {copy.stockDerived}
+                    </span>
+                  ) : null}
+                  {/* 🔴 那一句「数量是算出来的」讲的是**为什么这一格锁住**，
                   而它到今天为止就停在那里 —— 没有任何画面呼叫得到
                   `move_stock`（新增货品那一次开帐除外）。所以一个货品建好
                   之后，破了三包水泥就再也记不进去。盘点接在那一句底下，
                   因为那一句正好是他读到「那我怎么改」的那一刻。 */}
-              {stockLocked && record ? (
-                <Stocktake
-                  itemId={record.id}
-                  onHand={(() => {
-                    const n = Number((values.amount ?? "").replace(/[^\d.-]/g, ""));
-                    return Number.isFinite(n) ? n : null;
-                  })()}
-                  unit={values.unit ?? ""}
-                  /* 一箱几个。他打了「1 箱 = 24 罐」，从今天起有东西读它。 */
-                  packSize={(() => {
-                    const n = Number((values.pack_size ?? "").replace(/[^\d.]/g, ""));
-                    return Number.isFinite(n) && n > 0 ? n : null;
-                  })()}
-                  packUnit={values.pack_unit ?? ""}
-                  /* 记完把新的数量放回这一格。见 Stocktake 的档头 ——
+                  {stockLocked && record ? (
+                    <Stocktake
+                      itemId={record.id}
+                      onHand={(() => {
+                        const n = Number(
+                          (values.amount ?? "").replace(/[^\d.-]/g, ""),
+                        );
+                        return Number.isFinite(n) ? n : null;
+                      })()}
+                      unit={values.unit ?? ""}
+                      /* 一箱几个。他打了「1 箱 = 24 罐」，从今天起有东西读它。 */
+                      packSize={(() => {
+                        const n = Number(
+                          (values.pack_size ?? "").replace(/[^\d.]/g, ""),
+                        );
+                        return Number.isFinite(n) && n > 0 ? n : null;
+                      })()}
+                      packUnit={values.pack_unit ?? ""}
+                      /* 记完把新的数量放回这一格。见 Stocktake 的档头 ——
                      少了这一句，资料库变了而画面上那个数字不动。 */
-                  onCounted={(n) => setValues((v) => ({ ...v, amount: String(n) }))}
-                  copy={copy}
-                />
-              ) : null}
-            </label>
-          );
-        }
-        const node = box(
-          c.key,
-          c.label,
-          /* `inputMode` and not `type=number`: a contractor types
+                      onCounted={(n) =>
+                        setValues((v) => ({ ...v, amount: String(n) }))
+                      }
+                      copy={copy}
+                    />
+                  ) : null}
+                </label>
+              );
+            }
+            const node = box(
+              c.key,
+              c.label,
+              /* `inputMode` and not `type=number`: a contractor types
              「RM 48,500」 and a number input silently discards the whole
              value. The parser handles the ringgit sign and the commas. */
-          c.kind === "amount" ? "decimal" : undefined,
-          /* 金额是短的那一种。名字不是 —— 一个工程的名字要写得下
+              c.kind === "amount" ? "decimal" : undefined,
+              /* 金额是短的那一种。名字不是 —— 一个工程的名字要写得下
              「Taman Desa 三房翻新」。 */
-          c.kind === "amount",
-        );
-        /* The two numbers go directly under the name, because on a directory
+              c.kind === "amount",
+            );
+            /* The two numbers go directly under the name, because on a directory
            page they are the reason the row exists. */
-        if (isCatalog && c.key === "primary") {
-          /* Where it is and what it is counted in, directly under the name --
+            if (isCatalog && c.key === "primary") {
+              /* Where it is and what it is counted in, directly under the name --
              on a shelf those two ARE the row. */
-          return (
-            <div
-              key="name-and-shelf"
-              className="grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1"
-            >
-              {node}
-              {box("location", copy.stockWhere, undefined, true)}
-              {box("unit", copy.stockUnit, undefined, true)}
-            </div>
-          );
-        }
-        if (!isDirectory || c.key !== "primary") return node;
-        return (
-          <div
-            key="name-and-numbers"
-            className="grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1"
-          >
-            {node}
-            {/* 两个号码本来就是一对，而且两个都短。 */}
-            {box("whatsapp", copy.whatsapp, "tel", true)}
-            {box("phone", copy.phone, "tel", true)}
-          </div>
-        );
-      })}
+              return (
+                <div
+                  key="name-and-shelf"
+                  className="grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1"
+                >
+                  {node}
+                  {box("location", copy.stockWhere, undefined, true)}
+                  {box("unit", copy.stockUnit, undefined, true)}
+                </div>
+              );
+            }
+            if (!isDirectory || c.key !== "primary") return node;
+            return (
+              <div
+                key="name-and-numbers"
+                className="grid gap-4 @3xl:grid-cols-2 [&>*]:col-span-2 [&>[data-half]]:@3xl:col-span-1"
+              >
+                {node}
+                {/* 两个号码本来就是一对，而且两个都短。 */}
+                {box("whatsapp", copy.whatsapp, "tel", true)}
+                {box("phone", copy.phone, "tel", true)}
+              </div>
+            );
+          })}
 
-      {dateKind ? (
-        /* 日期是短的那一种 —— 参考那一页把发出日期跟到期日摆成一行。 */
-        <label data-half="" className="flex flex-col gap-1.5">
-          <span className={labelText}>
-            {dateKind === "validTill"
-              ? copy.validTill
-              : dateKind === "deadline"
-              ? copy.deadline
-              : copy.expected}
-          </span>
-          <input
-            type="date"
-            value={dueOn}
-            onChange={(e) => setDueOn(e.target.value)}
-            className={control}
-          />
-          {/* 清空那颗。手机上的日期控件不一定给得了「清掉」这个动作,
+          {dateKind ? (
+            /* 日期是短的那一种 —— 参考那一页把发出日期跟到期日摆成一行。 */
+            <label data-half="" className="flex flex-col gap-1.5">
+              <span className={labelText}>
+                {dateKind === "validTill"
+                  ? copy.validTill
+                  : dateKind === "deadline"
+                    ? copy.deadline
+                    : copy.expected}
+              </span>
+              <input
+                type="date"
+                value={dueOn}
+                onChange={(e) => setDueOn(e.target.value)}
+                className={control}
+              />
+              {/* 清空那颗。手机上的日期控件不一定给得了「清掉」这个动作,
               而一个填了就拿不掉的日子,是我们自己造的死结。 */}
-          {dueOn ? (
-            <button
-              type="button"
-              onClick={() => setDueOn("")}
-              className="self-start [font-size:var(--text-xs)] underline text-[color:var(--color-on-canvas-dim)]"
-            >
-              {copy.dateClear}
-            </button>
+              {dueOn ? (
+                <button
+                  type="button"
+                  onClick={() => setDueOn("")}
+                  className="self-start [font-size:var(--text-xs)] underline text-[color:var(--color-on-canvas-dim)]"
+                >
+                  {copy.dateClear}
+                </button>
+              ) : null}
+            </label>
           ) : null}
-        </label>
-      ) : null}
 
-      {isCalendar ? (
-        <div className="flex flex-col gap-4">
-          {/* A DAY AND TWO CLOCK TIMES, rather than one datetime box each. A
+          {isCalendar ? (
+            <div className="flex flex-col gap-4">
+              {/* A DAY AND TWO CLOCK TIMES, rather than one datetime box each. A
               salon owner books 「Saturday, 10 to 11」; making him type the date
               twice is the form describing the database instead of the day. */}
-          <label className="flex flex-col gap-1.5">
-            <span className={labelText}>{copy.bookDay}</span>
-            <input
-              type="date"
-              value={values.day ?? today}
-              onChange={(e) => setValues((v) => ({ ...v, day: e.target.value }))}
-              className={control}
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className={labelText}>{copy.bookFrom}</span>
-              <input
-                type="time"
-                value={values.from ?? ""}
-                onChange={(e) => setValues((v) => ({ ...v, from: e.target.value }))}
-                className={control}
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={labelText}>{copy.bookTo}</span>
-              <input
-                type="time"
-                value={values.to ?? ""}
-                onChange={(e) => setValues((v) => ({ ...v, to: e.target.value }))}
-                className={control}
-              />
-            </label>
-          </div>
-          <label className="flex flex-col gap-1.5">
-            <span className={labelText}>{copy.bookKind}</span>
-            <select
-              value={values.kind ?? "booking"}
-              onChange={(e) => setValues((v) => ({ ...v, kind: e.target.value }))}
-              className={control}
-            >
-              <option value="booking">{copy.bookKindBooking}</option>
-              <option value="block">{copy.bookKindBlock}</option>
-            </select>
-          </label>
-          {(values.kind ?? "booking") !== "block" ? (
-            <>
-              {box("primary", copy.bookWho)}
-              {box("service", copy.bookService)}
-            </>
-          ) : null}
-          {/* WHO IS DOING IT, from his own 师傅 page. A plain box and not a
+              <label className="flex flex-col gap-1.5">
+                <span className={labelText}>{copy.bookDay}</span>
+                <input
+                  type="date"
+                  value={values.day ?? today}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, day: e.target.value }))
+                  }
+                  className={control}
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelText}>{copy.bookFrom}</span>
+                  <input
+                    type="time"
+                    value={values.from ?? ""}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, from: e.target.value }))
+                    }
+                    className={control}
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelText}>{copy.bookTo}</span>
+                  <input
+                    type="time"
+                    value={values.to ?? ""}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, to: e.target.value }))
+                    }
+                    className={control}
+                  />
+                </label>
+              </div>
+              <label className="flex flex-col gap-1.5">
+                <span className={labelText}>{copy.bookKind}</span>
+                <select
+                  value={values.kind ?? "booking"}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, kind: e.target.value }))
+                  }
+                  className={control}
+                >
+                  <option value="booking">{copy.bookKindBooking}</option>
+                  <option value="block">{copy.bookKindBlock}</option>
+                </select>
+              </label>
+              {(values.kind ?? "booking") !== "block" ? (
+                <>
+                  {box("primary", copy.bookWho)}
+                  {box("service", copy.bookService)}
+                </>
+              ) : null}
+              {/* WHO IS DOING IT, from his own 师傅 page. A plain box and not a
               picker yet: the staff list is a directory like any other and the
               same datalist the customer box uses would need the staff rows,
               which this form is not given. Recorded rather than guessed. */}
-          {box("staffName", copy.bookStaff)}
-          {box("note", copy.note)}
-        </div>
-      ) : null}
+              {box("staffName", copy.bookStaff)}
+              {box("note", copy.note)}
+            </div>
+          ) : null}
 
-      {isReconcile ? (
-        <div className="flex flex-col gap-4">
-          {/* THE MONTH, and a month input rather than a date one: the row IS a
+          {isReconcile ? (
+            <div className="flex flex-col gap-4">
+              {/* THE MONTH, and a month input rather than a date one: the row IS a
               month, and offering a day would invite a value the writer then
               rounds away. */}
-          <label className="flex flex-col gap-1.5">
-            <span className={labelText}>{copy.reconPeriod}</span>
-            <input
-              type="month"
-              value={values.period ?? ""}
-              onChange={(e) => setValues((v) => ({ ...v, period: e.target.value }))}
-              className={control}
-            />
-          </label>
-          {box("source", copy.reconSource)}
-          {box("their", copy.reconTheirs, "decimal")}
-          {/* WHAT THEIR FIGURE IS ABOUT. Without it a supplier's statement gets
+              <label className="flex flex-col gap-1.5">
+                <span className={labelText}>{copy.reconPeriod}</span>
+                <input
+                  type="month"
+                  value={values.period ?? ""}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, period: e.target.value }))
+                  }
+                  className={control}
+                />
+              </label>
+              {box("source", copy.reconSource)}
+              {box("their", copy.reconTheirs, "decimal")}
+              {/* WHAT THEIR FIGURE IS ABOUT. Without it a supplier's statement gets
               compared against the month's takings and reports a difference that
               is not one -- see the column comment in 20260902020000. */}
-          <label className="flex flex-col gap-1.5">
-            <span className={labelText}>{copy.reconDirection}</span>
-            <select
-              value={values.direction ?? "in"}
-              onChange={(e) => setValues((v) => ({ ...v, direction: e.target.value }))}
-              className={control}
-            >
-              <option value="in">{copy.reconIn}</option>
-              <option value="out">{copy.reconOut}</option>
-              <option value="net">{copy.reconNet}</option>
-            </select>
-          </label>
-          {box("reference", copy.reconReference)}
-          {box("note", copy.note)}
-        </div>
-      ) : null}
+              <label className="flex flex-col gap-1.5">
+                <span className={labelText}>{copy.reconDirection}</span>
+                <select
+                  value={values.direction ?? "in"}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, direction: e.target.value }))
+                  }
+                  className={control}
+                >
+                  <option value="in">{copy.reconIn}</option>
+                  <option value="out">{copy.reconOut}</option>
+                  <option value="net">{copy.reconNet}</option>
+                </select>
+              </label>
+              {box("reference", copy.reconReference)}
+              {box("note", copy.note)}
+            </div>
+          ) : null}
 
-      {/* 他的地址。一格自由文字装不下「帐单一个地方、工地两三个」。 */}
-      {isDirectory ? (
-        <AddressEditor rows={addresses} onChange={setAddresses} copy={copy} />
-      ) : null}
+          {/* 他的地址。一格自由文字装不下「帐单一个地方、工地两三个」。 */}
+          {isDirectory ? (
+            <AddressEditor
+              rows={addresses}
+              onChange={setAddresses}
+              copy={copy}
+            />
+          ) : null}
 
-      {isPipeline ? (
-        <>
-          {/* ── 这张单是哪一个工地的 ──────────────────────────────────
+          {isPipeline ? (
+            <>
+              {/* ── 这张单是哪一个工地的 ──────────────────────────────────
               🔴 只有那个客户**真的有两个以上地址**的时候才出现。
               一个永远只有一个选项的下拉，是一个假的控件；而这个客户只有
               一个地址的时候，「哪一个工地」这个问题本来就没有第二个答案。 */}
-          {sitesForParty.length > 1 ? (
-            <label className="flex flex-col gap-1.5">
-              <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-                {copy.site}
-              </span>
-              <select
-                aria-label={copy.site}
-                value={siteOk}
-                onChange={(e) => setSiteId(e.target.value)}
-                className="ds-control h-11 w-full [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]"
-              >
-                <option value="">{copy.sitePick}</option>
-                {sitesForParty.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {[a.label, a.line].filter(Boolean).join(" · ")}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
+              {sitesForParty.length > 1 ? (
+                <label className="flex flex-col gap-1.5">
+                  <span className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+                    {copy.site}
+                  </span>
+                  <select
+                    aria-label={copy.site}
+                    value={siteOk}
+                    onChange={(e) => setSiteId(e.target.value)}
+                    className="ds-control h-11 w-full [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]"
+                  >
+                    <option value="">{copy.sitePick}</option>
+                    {sitesForParty.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {[a.label, a.line].filter(Boolean).join(" · ")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
 
-          {/* 工地的照片。画在明细上面 —— 师傅打开这一单要看的第一件事
+              {/* 工地的照片。画在明细上面 —— 师傅打开这一单要看的第一件事
               是「上次拆开来长什么样」，不是价钱。 */}
-          <JobPhotos
-            recordId={record?.id ?? null}
-            projectId={projectId}
-            photos={photos ?? []}
-            copy={copy}
-          />
+              <JobPhotos
+                recordId={record?.id ?? null}
+                projectId={projectId}
+                photos={photos ?? []}
+                copy={copy}
+              />
 
-          {manyBranches ? branchPicker : null}
+              {manyBranches ? branchPicker : null}
 
-          <LineEditor lines={lines} onChange={setLines} copy={copy} suggest={lineSuggest} />
-          {totalFromLines ? (
-            <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-              {copy.amountFromLines}
-            </p>
-          ) : null}
+              <LineEditor
+                lines={lines}
+                onChange={setLines}
+                copy={copy}
+                suggest={lineSuggest}
+              />
+              {totalFromLines ? (
+                <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                  {copy.amountFromLines}
+                </p>
+              ) : null}
 
-        {canStage ? (
-          <TermsEditor
-            rows={terms}
-            onChange={setTerms}
-            /* 有明细的时候总数是明细算的，没有的时候是他打的 —— 分期表只要
+              {canStage ? (
+                <TermsEditor
+                  rows={terms}
+                  onChange={setTerms}
+                  /* 有明细的时候总数是明细算的，没有的时候是他打的 —— 分期表只要
                一个总数，不用知道它是哪来的。 */
-            totalCents={totalFromLines != null ? senFrom(totalFromLines) ?? null : senFrom(values.amount ?? "") ?? null}
-            suggested={
-              suggestedFor(trade)?.map((t) => ({
-                ...blankTerm(),
-                /* 那三期的名字用他自己流程里的字，讲不出来就退回通用的那几个。
+                  totalCents={
+                    totalFromLines != null
+                      ? (senFrom(totalFromLines) ?? null)
+                      : (senFrom(values.amount ?? "") ?? null)
+                  }
+                  suggested={
+                    suggestedFor(trade)?.map((t) => ({
+                      ...blankTerm(),
+                      /* 那三期的名字用他自己流程里的字，讲不出来就退回通用的那几个。
                    「订金」在装修是订金，在别的行业可能是别的字。 */
-                description: copy.termDefaults[t.key] ?? t.key,
-                portion: String(t.portion),
-              })) ?? null
-            }
-            /* 哪一期收过钱。⚠️ undefined 的意思是「没有问」，不是「都没收」——
+                      description: copy.termDefaults[t.key] ?? t.key,
+                      portion: String(t.portion),
+                    })) ?? null
+                  }
+                  /* 哪一期收过钱。⚠️ undefined 的意思是「没有问」，不是「都没收」——
                所以师傅那一边整栏不画，不是画一排「未收」。 */
-            paidByTerm={
-              settlement
-                ? Object.fromEntries(
-                    settlement.terms.map((t) => [t.termId, { paidCents: t.paidCents, settled: t.settled }]),
-                  )
-                : undefined
-            }
-            copy={copy}
-          />
-          ) : null}
+                  paidByTerm={
+                    settlement
+                      ? Object.fromEntries(
+                          settlement.terms.map((t) => [
+                            t.termId,
+                            { paidCents: t.paidCents, settled: t.settled },
+                          ]),
+                        )
+                      : undefined
+                  }
+                  copy={copy}
+                />
+              ) : null}
 
-        {/* ── 这张单收到多少 ────────────────────────────────────────────
+              {/* ── 这张单收到多少 ────────────────────────────────────────────
             画在分期表底下，因为它回答的正是分期表提出的那一句：
             「订金收了没有」。
 
@@ -1819,179 +1987,196 @@ export function NewRecordForm({
 
             ⚠️ `settlement` 是 null 的时候整段不画 —— 那代表「没有问」
             （师傅看不到钱），不是「零」。 */}
-        {settlement ? (
-          <div className="flex flex-col gap-1 [border-radius:var(--radius-md)] border p-3 [border-color:var(--color-ink-800)]">
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                {copy.received}
-              </span>
-              <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-on-canvas)]">
-                {settlement.anyPaid ? ringgitOf(settlement.paidCents) : copy.nothingReceived}
-              </span>
-            </div>
-            {settlement.anyPaid ? (
-              <div className="flex items-baseline justify-between gap-4">
-                <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                  {copy.stillOwed}
-                </span>
-                <span className="[font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas)]">
-                  {settlement.settled ? copy.settledAll : ringgitOf(settlement.outstandingCents)}
-                </span>
-              </div>
-            ) : null}
+              {settlement ? (
+                <div className="flex flex-col gap-1 [border-radius:var(--radius-md)] border p-3 [border-color:var(--color-ink-800)]">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                      {copy.received}
+                    </span>
+                    <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-on-canvas)]">
+                      {settlement.anyPaid
+                        ? ringgitOf(settlement.paidCents)
+                        : copy.nothingReceived}
+                    </span>
+                  </div>
+                  {settlement.anyPaid ? (
+                    <div className="flex items-baseline justify-between gap-4">
+                      <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                        {copy.stillOwed}
+                      </span>
+                      <span className="[font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas)]">
+                        {settlement.settled
+                          ? copy.settledAll
+                          : ringgitOf(settlement.outstandingCents)}
+                      </span>
+                    </div>
+                  ) : null}
 
-            {/* ── 这一单赚多少 ──────────────────────────────────────────
+                  {/* ── 这一单赚多少 ──────────────────────────────────────────
                 🔴 他**还没有挂过任何开销**的时候，不写「赚 RM X」——
                 那时候「赚」会等於「收到」，而这一页在宣称一件它不知道的事：
                 这一单的成本我们一个字都没有。换成一句告诉他怎么让它算得出来。 */}
-            {earned ? (
-              earned.costCents > 0 ? (
-                <>
-                  <div className="flex items-baseline justify-between gap-4">
-                    <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                      {copy.jobSpent}
-                    </span>
-                    <span className="[font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas)]">
-                      {ringgitOf(earned.costCents)}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-4 border-t [border-color:var(--color-ink-800)] pt-2">
-                    <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-                      {copy.jobEarned}
-                    </span>
-                    <span
-                      className={`[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] tabular-nums ${
-                        earned.profitCents < 0
-                          ? "text-[color:var(--color-clay-bright)]"
-                          : "text-[color:var(--color-on-canvas)]"
-                      }`}
-                    >
-                      {signedRinggit(earned.profitCents) ?? "RM 0"}
-                    </span>
-                  </div>
-                  {/* 🔴 这一单还没收齐的时候，上面那一行讲的是
+                  {earned ? (
+                    earned.costCents > 0 ? (
+                      <>
+                        <div className="flex items-baseline justify-between gap-4">
+                          <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                            {copy.jobSpent}
+                          </span>
+                          <span className="[font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas)]">
+                            {ringgitOf(earned.costCents)}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline justify-between gap-4 border-t [border-color:var(--color-ink-800)] pt-2">
+                          <span className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+                            {copy.jobEarned}
+                          </span>
+                          <span
+                            className={`[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] tabular-nums ${
+                              earned.profitCents < 0
+                                ? "text-[color:var(--color-clay-bright)]"
+                                : "text-[color:var(--color-on-canvas)]"
+                            }`}
+                          >
+                            {signedRinggit(earned.profitCents) ?? "RM 0"}
+                          </span>
+                        </div>
+                        {/* 🔴 这一单还没收齐的时候，上面那一行讲的是
                       **到目前为止的现金**，不是这一单最后赚多少 ——
                       而那一行是加粗的、人真正会读的那一行。看图才看到的。 */}
-                  {settlement && settlement.outstandingCents > 0 ? (
-                    <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                      {copy.jobKeptSoFar}
-                    </p>
+                        {settlement && settlement.outstandingCents > 0 ? (
+                          <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                            {copy.jobKeptSoFar}
+                          </p>
+                        ) : null}
+                        {earned.byCategory.length ? (
+                          <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                            {earned.byCategory
+                              .map(
+                                (c) =>
+                                  `${c.name ?? copy.jobNoCategory} ${ringgitOf(c.cents)}`,
+                              )
+                              .join(" · ")}
+                          </p>
+                        ) : null}
+                      </>
+                    ) : (
+                      <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                        {copy.jobNoCosts}
+                      </p>
+                    )
                   ) : null}
-                  {earned.byCategory.length ? (
-                    <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                      {earned.byCategory
-                        .map(
-                          (c) =>
-                            `${c.name ?? copy.jobNoCategory} ${ringgitOf(c.cents)}`,
-                        )
-                        .join(" · ")}
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                  {copy.jobNoCosts}
-                </p>
-              )
-            ) : null}
-          </div>
-        ) : null}
-        </>
-      ) : null}
+                </div>
+              ) : null}
+            </>
+          ) : null}
 
-      {extraContact.length ? (
-        <div className="flex flex-col gap-4">
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            aria-expanded={open}
-            /* ⚠️ `min-h-11`：一颗只有一行字的按钮画出来只有 21px 高，
+          {extraContact.length ? (
+            <div className="flex flex-col gap-4">
+              <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                aria-expanded={open}
+                /* ⚠️ `min-h-11`：一颗只有一行字的按钮画出来只有 21px 高，
                而工地上那根拇指按不准 21px。shoot:commission 在 390 量到的。 */
-            className="inline-flex min-h-11 items-center self-start [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline"
-          >
-            {open ? copy.less : isCatalog ? copy.moreStock : copy.more}
-          </button>
-          {open ? extraContact.map((f) => box(f.key, f.label, f.inputMode)) : null}
-        </div>
-      ) : null}
+                className="inline-flex min-h-11 items-center self-start [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline"
+              >
+                {open ? copy.less : isCatalog ? copy.moreStock : copy.more}
+              </button>
+              {open
+                ? extraContact.map((f) => box(f.key, f.label, f.inputMode))
+                : null}
+            </div>
+          ) : null}
 
-      {/* 这笔钱付了哪几张单。⚠️ 画在 moneyFixed 上面：那一句讲的是
+          {/* 这笔钱付了哪几张单。⚠️ 画在 moneyFixed 上面：那一句讲的是
           「金额跟日子锁住了」，而分摊是这一页上他还改得动的东西 ——
           一句「不能改」底下接一个可以改的东西，读起来是坏的。 */}
-      {/* 这一笔的日子。⚠️ 存过之后锁住 —— 见 entryOn 那一段。 */}
-      {isLedger ? (
-        <label data-half="" className="flex flex-col gap-1.5">
-          <span className={labelText}>{copy.entryOn}</span>
-          <input
-            type="date"
-            data-field="entry_on"
-            value={entryOn}
-            readOnly={!!record}
-            aria-readonly={record ? true : undefined}
-            tabIndex={record ? -1 : undefined}
-            onChange={(e) => setEntryOn(e.target.value)}
-            className={
-              record ? `${control} cursor-default opacity-60` : control
-            }
-          />
-          {record ? null : (
-            <span className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
-              {copy.entryOnHint}
-            </span>
-          )}
-          {/* 🔴 那个月签过了就在这里讲 —— 贴着他刚填的那一格，
-          而不是等他按下去之后印在整张表最底下（Baymard 那一条，
-          任务 258 已经为另一句话付过一次学费）。 */}
-          {record ? null : <PeriodLock locked={periodLock} copy={copy} />}
-        </label>
-      ) : null}
+          {/* 这一笔的日子。⚠️ 存过之后锁住 —— 见 entryOn 那一段。 */}
+          {isLedger ? (
+            <label data-half="" className="flex flex-col gap-1.5">
+              <span className={labelText}>{copy.entryOn}</span>
+              <input
+                type="date"
+                data-field="entry_on"
+                value={entryOn}
+                readOnly={!!record}
+                aria-readonly={record ? true : undefined}
+                tabIndex={record ? -1 : undefined}
+                onChange={(e) => setEntryOn(e.target.value)}
+                className={
+                  record ? `${control} cursor-default opacity-60` : control
+                }
+              />
+              {record ? null : (
+                <span className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
+                  {copy.entryOnHint}
+                </span>
+              )}
+              {/* 🔴 那个月签过了就在这里讲 —— 贴着他刚填的那一格，
+              而不是等他按下去之后印在整张表最底下（Baymard 那一条，
+              [任务 258](../../../../../docs/founder-tasks.md#258) 已经为
+              另一句话付过一次学费）。 */}
+              {record ? null : (
+                <PeriodLock locked={periodLock} copy={copy} />
+              )}
+            </label>
+          ) : null}
 
-      {isLedger ? categoryBox : null}
-      {spendsMoney && (jobs?.length ?? 0) > 0 ? jobPicker : null}
-      {isLedger && manyBranches ? branchPicker : null}
-      {isLedger && anyStaff ? doneByPicker : null}
+          {isLedger ? categoryBox : null}
+          {spendsMoney && (jobs?.length ?? 0) > 0 ? jobPicker : null}
+          {isLedger && manyBranches ? branchPicker : null}
+          {isLedger && anyStaff ? doneByPicker : null}
 
-      {canAllocate ? (
-        <AllocationEditor
-          rows={allocs}
-          onChange={setAllocs}
-          documents={openDocuments ?? []}
-          entryCents={senFrom(values.amount ?? "") ?? null}
-          spends={spendsMoney}
-          copy={copy}
-        />
-      ) : null}
+          {canAllocate ? (
+            <AllocationEditor
+              rows={allocs}
+              onChange={setAllocs}
+              documents={openDocuments ?? []}
+              entryCents={senFrom(values.amount ?? "") ?? null}
+              spends={spendsMoney}
+              copy={copy}
+            />
+          ) : null}
 
-      {record && isLedger ? (
-        <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-          {copy.moneyFixed}
-        </p>
-      ) : null}
+          {record && isLedger ? (
+            <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+              {copy.moneyFixed}
+            </p>
+          ) : null}
 
-      {/* 改过什么。画在最后 —— 它是读的，不是填的，而且它是老板才看得到的
+          {/* 改过什么。画在最后 —— 它是读的，不是填的，而且它是老板才看得到的
           那一段（`changes` 是 null 的时候整段不画）。 */}
-      {record ? <ChangeTrail rows={changes ?? null} copy={copy} /> : null}
+          {record ? <ChangeTrail rows={changes ?? null} copy={copy} /> : null}
 
-      {/* 存不下去那一类 —— 它不属于任何一格，所以留在按钮旁边。
-          而「这一格要填」那一类已经贴在那一格底下了（`errorAt`）。 */}
-      {error && !errorAt ? (
-        <p role="alert" className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]">
-          {error}
-        </p>
-      ) : null}
+          {/* 存不下去那一类 —— 它不属于任何一格，所以留在按钮旁边。
+              而“这一格要填”那一类已经贴在那一格底下了（`errorAt`）。 */}
+          {error && !errorAt ? (
+            <p
+              role="alert"
+              className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]"
+            >
+              {error}
+            </p>
+          ) : null}
 
-      <div className="mt-2 flex items-center gap-3">
-        {/* 🔴 底下这一颗，在**有纸的那几页留着**（报价单 · 订单 · 进货单）。
+          <div className="mt-2 flex items-center gap-3">
+            {/* 🔴 底下这一颗，在**有纸的那几页留着**（报价单 · 订单 · 进货单）。
             看图量的：那一张填完是 1,400px 高，滚到最后一格的人眼前只剩一颗
             「取消」—— 一张长表最底下最显眼的东西是取消，那是一个陷阱。
             短的那几页（客户 · 收款 · 货品）只有上面那一颗，跟参考页一样：
             那几页一屏就看得完，两颗存档会同时出现在眼睛里。 */}
-        <div className={heading && !paper ? "@3xl:hidden" : undefined}>{saveButton}</div>
-        <a href={backHref} className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)] underline">
-          {copy.cancel}
-        </a>
+            <div className={heading && !paper ? "@3xl:hidden" : undefined}>
+              {saveButton}
+            </div>
+            <a
+              href={backHref}
+              className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)] underline"
+            >
+              {copy.cancel}
+            </a>
 
-        {/* ── THE TWO CORRECTIONS ────────────────────────────────────────
+            {/* ── THE TWO CORRECTIONS ────────────────────────────────────────
             Pushed to the right, away from 保存: they are not the ordinary
             thing to do on this page, and a destructive-looking action beside
             the primary one gets pressed by accident.
@@ -2000,58 +2185,72 @@ export function NewRecordForm({
             kept -- and 收起来 is the only way anything leaves a list. Neither
             is a delete, and there is no delete: a lost job is next year's
             answer to 「上次我们报多少」. */}
-        {canReceive ? (
-          /* Left of 收起来 and drawn as a real button, because it is the one
+            {canReceive ? (
+              /* Left of 收起来 and drawn as a real button, because it is the one
              thing an owner opens a purchase order to do. Once the goods are in
              it says so instead, rather than offering a press that would be
              refused -- the same rule the money page follows for 冲正. */
-          <span className="ml-auto flex items-center gap-3">
-            {received ? (
-              <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                {copy.receiveDone}
+              <span className="ml-auto flex items-center gap-3">
+                {received ? (
+                  <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                    {copy.receiveDone}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={receive}
+                    title={copy.receiveHint}
+                    className="rounded-[var(--radius-md)] px-3.5 py-2 [font-size:var(--text-sm)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] disabled:opacity-50"
+                  >
+                    {busy ? copy.receiving : copy.receive}
+                  </button>
+                )}
               </span>
-            ) : (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={receive}
-                title={copy.receiveHint}
-                className="rounded-[var(--radius-md)] px-3.5 py-2 [font-size:var(--text-sm)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] disabled:opacity-50"
-              >
-                {busy ? copy.receiving : copy.receive}
-              </button>
-            )}
-          </span>
-        ) : null}
+            ) : null}
 
-        {record ? (
-          <span className={canReceive ? "flex items-center gap-3" : "ml-auto flex items-center gap-3"}>
-            {isLedger ? (
-              <button
-                type="button"
-                disabled={busy || record.reversed}
-                onClick={correct}
-                title={record.reversed ? copy.reversed : copy.reverseHint}
-                className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)] underline disabled:opacity-40 disabled:no-underline"
+            {record ? (
+              <span
+                className={
+                  canReceive
+                    ? "flex items-center gap-3"
+                    : "ml-auto flex items-center gap-3"
+                }
               >
-                {busy ? copy.reversing : record.reversed ? copy.reversed : copy.reverse}
-              </button>
-            ) : (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={correct}
-                className="inline-flex min-h-11 items-center [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline disabled:opacity-40"
-              >
-                {busy ? copy.archiving : record.archivedAt ? copy.unarchive : copy.archive}
-              </button>
-            )}
-          </span>
-        ) : null}
+                {isLedger ? (
+                  <button
+                    type="button"
+                    disabled={busy || record.reversed}
+                    onClick={correct}
+                    title={record.reversed ? copy.reversed : copy.reverseHint}
+                    className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)] underline disabled:opacity-40 disabled:no-underline"
+                  >
+                    {busy
+                      ? copy.reversing
+                      : record.reversed
+                        ? copy.reversed
+                        : copy.reverse}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={correct}
+                    className="inline-flex min-h-11 items-center [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas-dim)] underline disabled:opacity-40"
+                  >
+                    {busy
+                      ? copy.archiving
+                      : record.archivedAt
+                        ? copy.unarchive
+                        : copy.archive}
+                  </button>
+                )}
+              </span>
+            ) : null}
+          </div>
+        </form>
+        {paper}
       </div>
-    </form>
-    {paper}
-    </div>
     </>
   );
 }

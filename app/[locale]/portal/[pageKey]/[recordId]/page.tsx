@@ -10,13 +10,19 @@ import { RECORD_COPY } from "../record-copy";
 import { todayInMalaysia } from "@/lib/portal/live-months";
 import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
-import { reversedIds, settleDocument, unallocatedOf, type DocumentSettlement } from "@/lib/portal/allocations";
+import {
+  reversedIds,
+  settleDocument,
+  unallocatedOf,
+  type DocumentSettlement,
+} from "@/lib/portal/allocations";
 import { jobProfit, type ProfitFact } from "@/lib/portal/profit";
 import { AppointmentStatus } from "../new/appointment-status";
 import {
   PurchaseMatch,
   type PurchaseMatchFacts,
 } from "../new/purchase-match";
+import { RentalsOnJob, type JobRental } from "../new/rentals-on-job";
 import { PartyStatement } from "../new/party-statement";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { SettleMonth } from "../new/settle-month";
@@ -39,10 +45,18 @@ import { PartyHistory } from "../new/party-history";
 import { FollowUpPanel } from "../new/follow-up-panel";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
-import { ReferredJobs, type ReferralTally, type ReferredJob } from "../new/referred-jobs";
+import {
+  ReferredJobs,
+  type ReferralTally,
+  type ReferredJob,
+} from "../new/referred-jobs";
 import { PackagesPanel, type PackageRow } from "../new/packages-panel";
 import type { JobPhoto } from "../new/job-photos";
-import { showChanges, type ShownChange, type ChangeRow } from "@/lib/portal/change-log";
+import {
+  showChanges,
+  type ShownChange,
+  type ChangeRow,
+} from "@/lib/portal/change-log";
 import { priceSchedule } from "@/lib/portal/payment-terms";
 
 /**
@@ -94,6 +108,9 @@ export default async function EditRecordPage({
   /* 这张进货单对不对得上。⚠️ `undefined` = 没有问（不是进货单，或者不是老板），
      而那跟「对得上」是两句话 —— 后者要有人真的去问过。 */
   let match: PurchaseMatchFacts | undefined;
+  /* 这一单借出去的东西。⚠️ 空阵列 = 问过了，这一单一件都没借过 ——
+     而那时候整段不画（见 rentals-on-job.tsx）。 */
+  let lent: JobRental[] = [];
   /* 逐项. Read back in the order he wrote them -- a quotation whose lines come
      back shuffled is a different quotation. */
   let docNo: string | null = null;
@@ -120,7 +137,13 @@ export default async function EditRecordPage({
   /* 钱那一边：这笔钱已经分摊给哪几张单。 */
   let allocations: { recordId: string; termId: string; amount: string }[] = [];
   /* 名册那一边：这个对象的地址。 */
-  let addresses: { id: string; label: string; line: string; region: string; isBilling: boolean }[] = [];
+  let addresses: {
+    id: string;
+    label: string;
+    line: string;
+    region: string;
+    isBilling: boolean;
+  }[] = [];
   /* 走单那一边：这张单是哪一个工地的。 */
   let siteAddressId: string | null = null;
   /* 哪一间店。读得回来，不然他每次打开都是「不分店」——
@@ -167,7 +190,10 @@ export default async function EditRecordPage({
      （十八页都一样），而客人的名字在表单卡里、要滑过四个格子才看得到。
      ⚠️ 空的就不印 —— 一个挡起来的休息时段本来就没有客人。 */
   let apptWho: string | null = null;
-  let credit: { cents: number; from: { id: string; label: string; cents: number }[] } | null = null;
+  let credit: {
+    cents: number;
+    from: { id: string; label: string; cents: number }[];
+  } | null = null;
   let tiers: CommissionTier[] | null = null;
   /* 🔴 这个月那个数字是照**哪一份**办法算的（20260905640000）。
      没有它，他把 2% 改成 3%、按了保存，而画面上那个数字一分都不动 ——
@@ -233,15 +259,31 @@ export default async function EditRecordPage({
         people: ReferralOption[];
       }
     | undefined = undefined;
-  let shareAnswer: { answer: string | null; name: string | null; at: string | null; note: string | null } = {
-    answer: null, name: null, at: null, note: null,
+  let shareAnswer: {
+    answer: string | null;
+    name: string | null;
+    at: string | null;
+    note: string | null;
+  } = {
+    answer: null,
+    name: null,
+    at: null,
+    note: null,
   };
   /* 他是自己人还是下游（20260905720000）。**放宽那条守卫的时候，
      保护那件事的责任就搬到这一栏上** —— 读的人分不出来，
      原本那条守卫在防的事就真的没有人在防了。 */
   let rateKind: string | null = null;
   /* 改过几次。只回日子跟那一份的档，画面自己组一句话。 */
-  let rateHistory: { from: string; tiers: { fromCents: number; percent: number }[] }[] = [];
+  let rateHistory: {
+    from: string;
+    /** 🔴 这个月那个数字照的就是这一份（20260905650000）。
+     *  它跟 `rateFrom` 问的是**同一支、同一个日子**，所以标签跟数字
+     *  分不开 —— 那正是[任务 180] 那一条：一个跟旁边那个数字对不上的
+     *  标签，比没有标签糟。 */
+    usedThisMonth: boolean;
+    tiers: { fromCents: number; percent: number }[];
+  }[] = [];
   /* 这个月算在他名下的收款。⚠️ 它同时喂两个地方：底下那一段，
      跟表单里那一格「本月业绩」—— 而那一格从今天起是**锁住**的，
      因为它现在是算出来的（模板本来就把那一栏叫「This month」，
@@ -265,7 +307,9 @@ export default async function EditRecordPage({
   if (ctx.isDirectory) {
     const { data } = await supabase
       .from("directory_entries")
-      .select("id, name, contact_person, phone, whatsapp, email, region, address, reg_no, tax_id, status, note, credit_limit_cents, portal_ref, extra, archived_at")
+      .select(
+        "id, name, contact_person, phone, whatsapp, email, region, address, reg_no, tax_id, status, note, credit_limit_cents, portal_ref, extra, archived_at",
+      )
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -284,7 +328,10 @@ export default async function EditRecordPage({
       note: data.note ?? "",
       /* 读得回来，不然他每次打开那一格都是空的 —— 而空的意思是
          「不设上限」，所以那会在他下一次保存的时候把额度清掉。 */
-      credit_limit: data.credit_limit_cents == null ? "" : ringgit(data.credit_limit_cents) ?? "",
+      credit_limit:
+        data.credit_limit_cents == null
+          ? ""
+          : (ringgit(data.credit_limit_cents) ?? ""),
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
@@ -295,7 +342,10 @@ export default async function EditRecordPage({
        一定失败的按钮，正是这个仓库禁的那一种。
        ⚠️ 收起来的人也不画：一条连到一个已经收起来的人的连结，
        打开是死的，而画面上会看起来像它还能用。 */
-    if ((pageKey === "customers" || pageKey === "suppliers") && !data.archived_at) {
+    if (
+      (pageKey === "customers" || pageKey === "suppliers") &&
+      !data.archived_at
+    ) {
       portalRef = data.portal_ref ?? null;
       /* 「一按变单」开在哪一页。**从他自己有的那几页里挑第一个走单的** ——
          写死 "orders" 会在一个只开了报价单的系统上开出一张到不了的单。
@@ -311,9 +361,9 @@ export default async function EditRecordPage({
         .eq("project_id", ctx.projectId)
         .order("sort_order");
       if (pageErr) console.error("project_pages:", pageErr.message);
-      const holder = ((pageRows ?? []) as { page_key: string; title: string | null }[]).find(
-        (r) => PIPELINE_MODULES.has(r.page_key),
-      );
+      const holder = (
+        (pageRows ?? []) as { page_key: string; title: string | null }[]
+      ).find((r) => PIPELINE_MODULES.has(r.page_key));
       landsIn = holder?.page_key ?? null;
       landsInLabel = holder?.title ?? holder?.page_key ?? null;
       /* `in_open_only: false` —— 已经开成单的、丢掉的都要看得到。
@@ -322,14 +372,22 @@ export default async function EditRecordPage({
         in_project_id: ctx.projectId,
         in_open_only: false,
       });
-      partyRequests = ((reqRows ?? []) as {
-        id: string; party_id: string; what: string; qty: number | null;
-        amount_cents: number | null; contact: string | null; status: string;
-        /* ⚠️ 它叫 `asked_on`，不是 `created_at` —— 第一版写错，
+      partyRequests = (
+        (reqRows ?? []) as {
+          id: string;
+          party_id: string;
+          what: string;
+          qty: number | null;
+          amount_cents: number | null;
+          contact: string | null;
+          status: string;
+          /* ⚠️ 它叫 `asked_on`，不是 `created_at` —— 第一版写错，
            而那一栏 undefined 之后 `.slice()` 把整页炸掉，
            画面上写的是「Something broke here」。 */
-        doc_no: string | null; asked_on: string;
-      }[])
+          doc_no: string | null;
+          asked_on: string;
+        }[]
+      )
         .filter((r) => r.party_id === recordId)
         .map((r) => ({
           id: r.id,
@@ -360,13 +418,23 @@ export default async function EditRecordPage({
           in_referrer_id: recordId,
         }),
       ]);
-      const mine = ((owingRows ?? []) as {
-        referrer_id: string; jobs: number | null; received_cents: number | null;
-        promised_cents: number | null; paid_cents: number | null; owing_cents: number | null;
-      }[]).find((r) => r.referrer_id === recordId);
+      const mine = (
+        (owingRows ?? []) as {
+          referrer_id: string;
+          jobs: number | null;
+          received_cents: number | null;
+          promised_cents: number | null;
+          paid_cents: number | null;
+          owing_cents: number | null;
+        }[]
+      ).find((r) => r.referrer_id === recordId);
       const rows = (sentRows ?? []) as {
-        record_id: string; doc_no: string | null; title: string | null;
-        party: string | null; received_cents: number | null; promised_cents: number | null;
+        record_id: string;
+        doc_no: string | null;
+        title: string | null;
+        party: string | null;
+        received_cents: number | null;
+        promised_cents: number | null;
       }[];
 
       if (mine && rows.length) {
@@ -375,9 +443,14 @@ export default async function EditRecordPage({
         const { data: whereRows } = await supabase
           .from("pipeline_records")
           .select("id, module_key")
-          .in("id", rows.map((r) => r.record_id));
+          .in(
+            "id",
+            rows.map((r) => r.record_id),
+          );
         const pageOf = new Map(
-          ((whereRows ?? []) as { id: string; module_key: string }[]).map((w) => [w.id, w.module_key]),
+          ((whereRows ?? []) as { id: string; module_key: string }[]).map(
+            (w) => [w.id, w.module_key],
+          ),
         );
 
         sent = {
@@ -422,8 +495,12 @@ export default async function EditRecordPage({
     const jobIds = (jobRows ?? []).map((j: { id: string }) => j.id);
     jobs = (jobRows ?? []).map(
       (j: {
-        id: string; module_key: string; doc_no: string | null;
-        title: string | null; stage: string | null; amount_cents: number | null;
+        id: string;
+        module_key: string;
+        doc_no: string | null;
+        title: string | null;
+        stage: string | null;
+        amount_cents: number | null;
       }) => ({
         id: j.id,
         href: `/${locale}/portal/${j.module_key}/${j.id}`,
@@ -472,7 +549,7 @@ export default async function EditRecordPage({
         (lastJob ?? [])[0]?.issued_on ?? null,
         ((lastBook ?? [])[0]?.starts_at ?? "").slice(0, 10) || null,
       ].filter(Boolean) as string[];
-      lastOn = days.length ? days.sort().at(-1) ?? null : null;
+      lastOn = days.length ? (days.sort().at(-1) ?? null) : null;
     }
 
     /* 「一共多少」是钱。 */
@@ -482,7 +559,8 @@ export default async function EditRecordPage({
         .select("amount_cents")
         .eq("party_id", recordId);
       spentCents = (spentRows ?? []).reduce(
-        (n: number, r: { amount_cents: number | null }) => n + (r.amount_cents ?? 0),
+        (n: number, r: { amount_cents: number | null }) =>
+          n + (r.amount_cents ?? 0),
         0,
       );
     }
@@ -494,14 +572,21 @@ export default async function EditRecordPage({
     if (ctx.role === "owner") {
       const { data: paid } = await supabase
         .from("ledger_entries")
-        .select("id, doc_no, note, entry_on, amount_cents, allocated_cents, adjusts_id, module_key")
+        .select(
+          "id, doc_no, note, entry_on, amount_cents, allocated_cents, adjusts_id, module_key",
+        )
         .eq("party_id", recordId)
         .eq("direction", "in")
         .order("entry_on", { ascending: false });
       const rows = (paid ?? []) as {
-        id: string; doc_no: string | null; note: string | null; entry_on: string;
-        amount_cents: number | null; allocated_cents: number | null;
-        adjusts_id: string | null; module_key: string;
+        id: string;
+        doc_no: string | null;
+        note: string | null;
+        entry_on: string;
+        amount_cents: number | null;
+        allocated_cents: number | null;
+        adjusts_id: string | null;
+        module_key: string;
       }[];
       const gone = reversedIds(rows);
       const holding = rows
@@ -513,8 +598,27 @@ export default async function EditRecordPage({
           cents: unallocatedOf(e),
         }))
         .filter((e) => e.cents > 0);
+      /* 🔴 那个总数问资料库，不在这里再加一次。
+         `party_deposit`（20260905140000）从写出来那天起零个呼叫，
+         而这一页自己拿 `unallocatedOf` 加了一份 —— **同一个问题两份实作**
+         （[任务 216](../../../../../docs/founder-tasks.md#216) 登记过，
+         [任务 229](../../../../../docs/founder-tasks.md#229) 逐句比过：
+         今天两边算出来一样）。而月结那张纸跟「谁欠我钱」读的是资料库那一支，
+         所以这里读同一支，这一页上那个数字才不会跟发出去那张纸分家。
+
+         ⚠️ 底下那几行留着，而且它们**不是**第二份算术：那一支只回一个总数，
+         答不了「那是哪几笔付的」，而那正好是他下一句会问的。
+         🔴 读不到就退回自己加 —— 一个因为读不到而写 RM 0 的余额，
+         对一个刚付了一千块的客人是一句假话。 */
+      const { data: dep } = await supabase.rpc("party_deposit", {
+        p_project_id: ctx.projectId,
+        p_party_id: recordId,
+      });
       credit = {
-        cents: holding.reduce((n, e) => n + e.cents, 0),
+        cents:
+          dep == null
+            ? holding.reduce((n, e) => n + e.cents, 0)
+            : Number(dep),
         from: holding,
       };
     }
@@ -525,14 +629,23 @@ export default async function EditRecordPage({
     if (pageKey === "customers") {
       const { data: packRows } = await supabase
         .from("package_balance")
-        .select("package_id, name, sessions_total, sessions_left, sold_on, expires_on, expired")
+        .select(
+          "package_id, name, sessions_total, sessions_left, sold_on, expires_on, expired",
+        )
         .eq("party_id", recordId)
         .is("archived_at", null)
         .order("sold_on", { ascending: false });
-      packages = ((packRows ?? []) as {
-        package_id: string; name: string | null; sessions_total: number;
-        sessions_left: number; sold_on: string; expires_on: string | null; expired: boolean;
-      }[]).map((x) => ({
+      packages = (
+        (packRows ?? []) as {
+          package_id: string;
+          name: string | null;
+          sessions_total: number;
+          sessions_left: number;
+          sold_on: string;
+          expires_on: string | null;
+          expired: boolean;
+        }[]
+      ).map((x) => ({
         id: x.package_id,
         name: x.name ?? "",
         total: Number(x.sessions_total),
@@ -552,7 +665,12 @@ export default async function EditRecordPage({
        算得出来而永远没有人看得到（这个仓库犯过二十次的那一件）。
        ⚠️ 而客户页不可以每一个人都画一段抽成：**问完之后没有档也没有钱的，
        整段收回 null**（下面那一句），不是画一份空的。 */
-    if (ctx.role === "owner" && (pageKey === "staff" || pageKey === "customers" || pageKey === "suppliers")) {
+    if (
+      ctx.role === "owner" &&
+      (pageKey === "staff" ||
+        pageKey === "customers" ||
+        pageKey === "suppliers")
+    ) {
       const month = new Intl.DateTimeFormat("en-CA", {
         timeZone: "Asia/Kuala_Lumpur",
         year: "numeric",
@@ -560,36 +678,48 @@ export default async function EditRecordPage({
       })
         .format(new Date())
         .slice(0, 7);
-      const [{ data: tierRows }, { data: earnRows }, { data: schemeRows }] = await Promise.all([
-        supabase
-          .from("commission_tiers")
-          .select("id, from_cents, percent")
-          .eq("party_id", recordId)
-          .order("from_cents"),
-        supabase.rpc("staff_earnings", { in_project_id: ctx.projectId, in_month: month }),
-        /* 世代。只加不改的一张表，所以按日子倒着排就是「改过几次」。
-           ⚠️ 六份就够了 —— 一份读不完的历史没有人看。 */
-        supabase
-          .from("commission_schemes")
-          .select("effective_from, tiers, created_at")
-          .eq("party_id", recordId)
-          .order("effective_from", { ascending: false })
-          .order("created_at", { ascending: false })
-          .limit(24),
-      ]);
-      tiers = ((tierRows ?? []) as { id: string; from_cents: number; percent: number }[]).map(
-        (t) => ({
-          id: t.id,
-          /* 存的是分，他打的是块。「500000」在那个框里对他没有意义。 */
-          from: String(Number(t.from_cents) / 100),
-          /* 「10.00」回来是 numeric(5,2)；他打的是 10。 */
-          percent: String(Number(t.percent)),
-        }),
-      );
-      const mine = ((earnRows ?? []) as {
-        party_id: string; earned_cents: number; commission_cents: number;
-        rate_from: string | null; kind: string | null;
-      }[]).find((r) => r.party_id === recordId);
+      const [{ data: tierRows }, { data: earnRows }, { data: schemeRows }] =
+        await Promise.all([
+          supabase
+            .from("commission_tiers")
+            .select("id, from_cents, percent")
+            .eq("party_id", recordId)
+            .order("from_cents"),
+          supabase.rpc("staff_earnings", {
+            in_project_id: ctx.projectId,
+            in_month: month,
+          }),
+          /* 🔴 世代问那一支，不读那张表。
+             `commission_schemes_of`（20260905650000）从写出来那天起零个呼叫，
+             而这一页自己在 TypeScript 里把「同一天只算后存的那一份」
+             重写了一遍 —— **同一个问题两份实作**。
+             而它还多回一样这一页答不出来的：`used_this_month` ——
+             哪一份是这个月那个数字照着算的。那一条正是[任务 180] 的靶：
+             一个跟旁边那个数字对不上的标签，比没有标签糟。 */
+          supabase.rpc("commission_schemes_of", { in_party_id: recordId }),
+        ]);
+      tiers = (
+        (tierRows ?? []) as {
+          id: string;
+          from_cents: number;
+          percent: number;
+        }[]
+      ).map((t) => ({
+        id: t.id,
+        /* 存的是分，他打的是块。「500000」在那个框里对他没有意义。 */
+        from: String(Number(t.from_cents) / 100),
+        /* 「10.00」回来是 numeric(5,2)；他打的是 10。 */
+        percent: String(Number(t.percent)),
+      }));
+      const mine = (
+        (earnRows ?? []) as {
+          party_id: string;
+          earned_cents: number;
+          commission_cents: number;
+          rate_from: string | null;
+          kind: string | null;
+        }[]
+      ).find((r) => r.party_id === recordId);
       earnedCents = Number(mine?.earned_cents ?? 0);
       commissionCents = mine ? Number(mine.commission_cents) : null;
       rateFrom = mine?.rate_from ?? null;
@@ -597,10 +727,24 @@ export default async function EditRecordPage({
       /* 🔴 **同一天只留最后存的那一份。**
          那张表是只加不改的，所以同一天存两次就有两行 —— 而资料库
          只认后存的那一份（20260905770000）。两行都列出来，
-         等於画面在讲一份已经作废的办法，而他没有办法分出是哪一份。
-         已经按日子跟时间倒着排，所以第一次看到那个日子就是那一份。 */
+         等於画面在讲一份已经作废的办法，而他分不出是哪一份。
+
+         ⚠️ 我 2026-09-07 拿掉过这一段，以为 `commission_schemes_of` 会去重 ——
+         **它不会**（它 `select ... from commission_schemes` 全部回，
+         只多算一栏 `used_this_month`）。那把尺当场红：同一天两行都印出来了。
+         它真正给的是**顺序**（`effective_from desc, created_at desc`）——
+         所以某一天第一次看到的那一行，就是资料库会用的那一行。
+         而顺序不可以在这里重排，不然这一句就不成立了。
+
+         ⚠️ 六份就够了 —— 一份读不完的历史没有人看。 */
       const seenDay = new Set<string>();
-      rateHistory = ((schemeRows ?? []) as { effective_from: string; tiers: unknown }[])
+      rateHistory = (
+        (schemeRows ?? []) as {
+          effective_from: string;
+          tiers: unknown;
+          used_this_month: boolean;
+        }[]
+      )
         .filter((r) => {
           if (seenDay.has(r.effective_from)) return false;
           seenDay.add(r.effective_from);
@@ -609,9 +753,13 @@ export default async function EditRecordPage({
         .slice(0, 6)
         .map((r) => ({
           from: r.effective_from,
+          usedThisMonth: !!r.used_this_month,
           tiers: (Array.isArray(r.tiers) ? r.tiers : []).map((t) => {
             const row = t as { from_cents?: unknown; percent?: unknown };
-            return { fromCents: Number(row.from_cents ?? 0), percent: Number(row.percent ?? 0) };
+            return {
+              fromCents: Number(row.from_cents ?? 0),
+              percent: Number(row.percent ?? 0),
+            };
           }),
         }));
 
@@ -634,30 +782,55 @@ export default async function EditRecordPage({
         .from("ledger_allocations")
         .select("entry_id, record_id, term_id, amount_cents")
         .in("record_id", jobIds);
-      const entryIds = [...new Set((allocRows ?? []).map((a: { entry_id: string }) => a.entry_id))];
+      const entryIds = [
+        ...new Set(
+          (allocRows ?? []).map((a: { entry_id: string }) => a.entry_id),
+        ),
+      ];
       const { data: entryRows } = entryIds.length
-        ? await supabase.from("ledger_entries").select("id, adjusts_id").in("id", entryIds)
+        ? await supabase
+            .from("ledger_entries")
+            .select("id, adjusts_id")
+            .in("id", entryIds)
         : { data: [] };
-      const gone = reversedIds((entryRows ?? []) as { id: string; adjusts_id: string | null }[]);
-      const facts = ((entryRows ?? []) as { id: string; adjusts_id: string | null }[]).map((e) => ({
+      const gone = reversedIds(
+        (entryRows ?? []) as { id: string; adjusts_id: string | null }[],
+      );
+      const facts = (
+        (entryRows ?? []) as { id: string; adjusts_id: string | null }[]
+      ).map((e) => ({
         id: e.id,
         adjusts_id: e.adjusts_id,
         reversed: gone.has(e.id),
       }));
-      owing = (jobRows ?? []).reduce((n: number, j: { id: string; amount_cents: number | null }) => {
-        const s = settleDocument({
-          documentCents: j.amount_cents,
-          allocations: ((allocRows ?? []) as {
-            entry_id: string; record_id: string; term_id: string | null; amount_cents: number;
-          }[]).filter((a) => a.record_id === j.id),
-          entries: facts,
-        });
-        return n + s.outstandingCents;
-      }, 0);
+      owing = (jobRows ?? []).reduce(
+        (n: number, j: { id: string; amount_cents: number | null }) => {
+          const s = settleDocument({
+            documentCents: j.amount_cents,
+            allocations: (
+              (allocRows ?? []) as {
+                entry_id: string;
+                record_id: string;
+                term_id: string | null;
+                amount_cents: number;
+              }[]
+            ).filter((a) => a.record_id === j.id),
+            entries: facts,
+          });
+          return n + s.outstandingCents;
+        },
+        0,
+      );
     }
 
     addresses = (addrRows ?? []).map(
-      (a: { id: string; label: string | null; line: string | null; region: string | null; is_billing: boolean | null }) => ({
+      (a: {
+        id: string;
+        label: string | null;
+        line: string | null;
+        region: string | null;
+        is_billing: boolean | null;
+      }) => ({
         id: a.id,
         label: a.label ?? "",
         line: a.line ?? "",
@@ -672,7 +845,9 @@ export default async function EditRecordPage({
        is the only honest way to change a total that is a sum. */
     const { data } = await supabase
       .from("catalog_items")
-      .select("id, name, unit, location, sku, pack_size, pack_unit, reorder_at, note, extra, archived_at")
+      .select(
+        "id, name, unit, location, sku, pack_size, pack_unit, reorder_at, note, extra, archived_at",
+      )
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -690,7 +865,8 @@ export default async function EditRecordPage({
       /* numeric(14,3) comes back as 「24.000」; he typed 24. */
       pack_size: data.pack_size == null ? "" : String(Number(data.pack_size)),
       pack_unit: data.pack_unit ?? "",
-      reorder_at: data.reorder_at == null ? "" : String(Number(data.reorder_at)),
+      reorder_at:
+        data.reorder_at == null ? "" : String(Number(data.reorder_at)),
       note: data.note ?? "",
       amount: hand?.on_hand == null ? "0" : String(Number(hand.on_hand)),
     });
@@ -699,7 +875,9 @@ export default async function EditRecordPage({
   } else if (ctx.shape === "calendar") {
     const { data } = await supabase
       .from("appointments")
-      .select("id, starts_at, ends_at, kind, party, service, status, note, extra, archived_at")
+      .select(
+        "id, starts_at, ends_at, kind, party, service, status, note, extra, archived_at",
+      )
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -718,7 +896,8 @@ export default async function EditRecordPage({
         minute: "2-digit",
         hour12: false,
       }).formatToParts(new Date(iso));
-      const at = (type: string) => got.find((x) => x.type === type)?.value ?? "";
+      const at = (type: string) =>
+        got.find((x) => x.type === type)?.value ?? "";
       /* 24-hour, and Intl says 「24」 for midnight in some locales where a time
          input wants 「00」. en-CA with hour12:false gives 24 for the hour that
          starts a day, which a <input type="time"> refuses outright. */
@@ -732,7 +911,9 @@ export default async function EditRecordPage({
     const to = parts(data.ends_at);
     apptStatus = String((data as { status?: string }).status ?? "booked");
     apptWho =
-      [data.party, data.service].filter((x) => String(x ?? "").trim()).join(" · ") || null;
+      [data.party, data.service]
+        .filter((x) => String(x ?? "").trim())
+        .join(" · ") || null;
     Object.assign(values, {
       day: from.day,
       from: from.time,
@@ -744,14 +925,15 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
-
   } else if (ctx.shape === "reconcile") {
     /* Read from the TABLE and not from the view: what is being edited is what
        the outside said, and our own side is not editable -- it is the sum of
        the ledger and there is deliberately no column holding it. */
     const { data } = await supabase
       .from("reconciliations")
-      .select("id, period, source, direction, their_cents, reference, note, extra, archived_at, settled_at")
+      .select(
+        "id, period, source, direction, their_cents, reference, note, extra, archived_at, settled_at",
+      )
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -764,7 +946,8 @@ export default async function EditRecordPage({
       period: (data.period ?? "").slice(0, 7),
       source: data.source ?? "",
       direction: data.direction ?? "in",
-      their: data.their_cents == null ? "" : String(Number(data.their_cents) / 100),
+      their:
+        data.their_cents == null ? "" : String(Number(data.their_cents) / 100),
       reference: data.reference ?? "",
       note: data.note ?? "",
     });
@@ -774,7 +957,9 @@ export default async function EditRecordPage({
   } else if (ctx.shape === "ledger") {
     const { data } = await supabase
       .from("ledger_entries")
-      .select("id, doc_no, note, party, amount_cents, adjusts_id, branch_id, done_by, category, job_id, entry_on, extra")
+      .select(
+        "id, doc_no, note, party, amount_cents, adjusts_id, branch_id, done_by, category, job_id, entry_on, extra",
+      )
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -813,7 +998,11 @@ export default async function EditRecordPage({
       .eq("entry_id", recordId)
       .order("created_at");
     allocations = (allocRows ?? []).map(
-      (a: { record_id: string; term_id: string | null; amount_cents: number }) => ({
+      (a: {
+        record_id: string;
+        term_id: string | null;
+        amount_cents: number;
+      }) => ({
         recordId: a.record_id,
         termId: a.term_id ?? "",
         amount: ringgit(a.amount_cents) ?? "",
@@ -825,7 +1014,9 @@ export default async function EditRecordPage({
       /* doc_no for the preview's head. It exists on a saved document and
          never on a new one -- next_doc_no() issues it inside the write -- so
          this is the only place it can honestly come from. */
-      .select("id, doc_no, title, party, amount_cents, stage, due_on, site_address_id, branch_id, extra, archived_at, share_ref, answer, answered_name, answered_at, answer_note, referrer_id, referral_portion, referral_amount_cents")
+      .select(
+        "id, doc_no, title, party, amount_cents, stage, due_on, site_address_id, branch_id, extra, archived_at, share_ref, answer, answered_name, answered_at, answer_note, referrer_id, referral_portion, referral_amount_cents",
+      )
       .eq("id", recordId)
       .eq("module_key", pageKey)
       .maybeSingle();
@@ -838,11 +1029,21 @@ export default async function EditRecordPage({
       const { data: fuRows } = await supabase.rpc("follow_up_of", {
         in_record_id: recordId,
       });
-      const fu = ((fuRows ?? []) as {
-        id: string; what: string; due_on: string; days_late: number;
-      }[])[0];
+      const fu = (
+        (fuRows ?? []) as {
+          id: string;
+          what: string;
+          due_on: string;
+          days_late: number;
+        }[]
+      )[0];
       followUp = fu
-        ? { id: fu.id, what: fu.what, dueOn: fu.due_on, daysLate: Number(fu.days_late) }
+        ? {
+            id: fu.id,
+            what: fu.what,
+            dueOn: fu.due_on,
+            daysLate: Number(fu.days_late),
+          }
         : null;
     }
 
@@ -860,10 +1061,18 @@ export default async function EditRecordPage({
         supabase.rpc("deliveries_of", { in_record_id: recordId }),
         supabase.rpc("delivery_shortfall", { in_record_id: recordId }),
       ]);
-      runs = ((runRows ?? []) as {
-        id: string; run_on: string | null; driver: string | null; received_by: string | null;
-        signed_at: string | null; signed_name: string | null; note: string | null; lines: unknown;
-      }[]).map((r) => ({
+      runs = (
+        (runRows ?? []) as {
+          id: string;
+          run_on: string | null;
+          driver: string | null;
+          received_by: string | null;
+          signed_at: string | null;
+          signed_name: string | null;
+          note: string | null;
+          lines: unknown;
+        }[]
+      ).map((r) => ({
         id: r.id,
         runOn: r.run_on,
         driver: r.driver,
@@ -872,18 +1081,28 @@ export default async function EditRecordPage({
         signedName: r.signed_name,
         note: r.note,
         lines: (Array.isArray(r.lines) ? r.lines : []).map((l) => {
-          const x = l as { description?: unknown; qty?: unknown; unit?: unknown };
+          const x = l as {
+            description?: unknown;
+            qty?: unknown;
+            unit?: unknown;
+          };
           return {
-            description: typeof x.description === "string" ? x.description : null,
+            description:
+              typeof x.description === "string" ? x.description : null,
             qty: x.qty == null ? null : Number(x.qty),
             unit: typeof x.unit === "string" ? x.unit : null,
           };
         }),
       }));
-      shortfall = ((shortRows ?? []) as {
-        description: string | null; unit: string | null;
-        ordered: number; gone: number; still: number;
-      }[]).map((r) => ({
+      shortfall = (
+        (shortRows ?? []) as {
+          description: string | null;
+          unit: string | null;
+          ordered: number;
+          gone: number;
+          still: number;
+        }[]
+      ).map((r) => ({
         description: r.description,
         unit: r.unit,
         ordered: Number(r.ordered),
@@ -901,7 +1120,8 @@ export default async function EditRecordPage({
       !data.archived_at &&
       (pageKey === "orders" || pageKey === "projects" || pageKey === "purchases")
     ) {
-      const [{ data: retRows }, { data: lineRows }] = await Promise.all([
+      const [{ data: retRows }, { data: lineRows }, { data: lentRows }] =
+        await Promise.all([
         supabase.rpc("returns_of", { in_record_id: recordId }),
         /* ⚠️ 自己问一次那几行 —— 上面那一次没有 select `id`，
            而 `record_return` 要的正是 `line_id`。 */
@@ -910,7 +1130,32 @@ export default async function EditRecordPage({
           .select("id, description, qty, unit")
           .eq("record_id", recordId)
           .order("sort_order"),
+        /* 🔴 这一单借出去的东西。`rentals_of` 从 20260905540000 起就在，
+           而画面上一个入口都没有 —— 而 `/rentals` 那一页只回**还没还的**，
+           所以它答不了「这一单借过什么、几时还的」，而那正是他收尾这一单
+           的时候问的。 */
+        supabase.rpc("rentals_of", { in_record_id: recordId }),
       ]);
+      lent = (
+        (lentRows ?? []) as {
+          id: string;
+          descr: string;
+          qty: number;
+          out_on: string;
+          due_back_on: string | null;
+          returned_on: string | null;
+          days_over: number;
+        }[]
+      ).map((r) => ({
+        id: r.id,
+        descr: r.descr,
+        /* 「2.000」 回来是 numeric —— 他借的是 2。 */
+        qty: String(Number(r.qty)),
+        outOn: r.out_on,
+        dueBackOn: r.due_back_on,
+        returnedOn: r.returned_on,
+        daysOver: Number(r.days_over),
+      }));
       returns = (
         (retRows ?? []) as {
           id: string;
@@ -967,7 +1212,11 @@ export default async function EditRecordPage({
           自己就不算它（`archived_at is null`）—— 画一格改得动而算不进去的
           比例，是这一页在说谎。
        ⚠️ `undefined` 是**没有问**，`null` 是问了没有人介绍。 */
-    if (!data.archived_at && ctx.role === "owner" && PIPELINE_MODULES.has(pageKey)) {
+    if (
+      !data.archived_at &&
+      ctx.role === "owner" &&
+      PIPELINE_MODULES.has(pageKey)
+    ) {
       /* 挑得到的人：三种名册都要。谁介绍谁是他的生意 ——
          `set_record_referral` 那一支也只查「同一家公司」，不查是哪一种。 */
       const { data: people } = await supabase
@@ -996,17 +1245,24 @@ export default async function EditRecordPage({
           }),
         ]);
         name = (whoRow as { name?: string } | null)?.name ?? null;
-        const mine = ((jobRows ?? []) as { record_id: string; promised_cents: number | null }[]).find(
-          (j) => j.record_id === recordId,
-        );
-        promised = mine ? ringgit(mine.promised_cents ?? 0) ?? null : null;
+        const mine = (
+          (jobRows ?? []) as {
+            record_id: string;
+            promised_cents: number | null;
+          }[]
+        ).find((j) => j.record_id === recordId);
+        promised = mine ? (ringgit(mine.promised_cents ?? 0) ?? null) : null;
       }
 
       referral = {
         id: data.referrer_id ?? null,
         name,
-        portion: data.referral_portion == null ? null : Number(data.referral_portion),
-        amountCents: data.referral_amount_cents == null ? null : Number(data.referral_amount_cents),
+        portion:
+          data.referral_portion == null ? null : Number(data.referral_portion),
+        amountCents:
+          data.referral_amount_cents == null
+            ? null
+            : Number(data.referral_amount_cents),
         promised,
         people: ((people ?? []) as { id: string; name: string }[]).map((x) => ({
           id: x.id,
@@ -1047,7 +1303,7 @@ export default async function EditRecordPage({
       description: t.description ?? "",
       /* 「30.00」 回来是 numeric(5,2)；他打的是 30，看到的也该是 30。 */
       portion: t.portion == null ? "" : String(Number(t.portion)),
-      amount: t.amount_cents == null ? "" : ringgit(t.amount_cents) ?? "",
+      amount: t.amount_cents == null ? "" : (ringgit(t.amount_cents) ?? ""),
       dueOn: t.due_on ?? "",
     }));
     /* ── 工地的照片 ────────────────────────────────────────────────────
@@ -1062,7 +1318,10 @@ export default async function EditRecordPage({
     if ((picRows ?? []).length) {
       const { data: signed } = await supabase.storage
         .from("job-photos")
-        .createSignedUrls((picRows ?? []).map((x: { path: string }) => x.path), 3600);
+        .createSignedUrls(
+          (picRows ?? []).map((x: { path: string }) => x.path),
+          3600,
+        );
       /* ⚠️ 每一个都可能签失败（那个档案不在了），所以型别上 signedUrl 是
          可空的 —— 而它就是可空的，不要断言掉它。 */
       const urlByPath = new Map<string, string>(
@@ -1070,7 +1329,13 @@ export default async function EditRecordPage({
           .filter((x) => !!x.path && !!x.signedUrl)
           .map((x) => [x.path as string, x.signedUrl as string]),
       );
-      photos = ((picRows ?? []) as { id: string; path: string; caption: string | null }[])
+      photos = (
+        (picRows ?? []) as {
+          id: string;
+          path: string;
+          caption: string | null;
+        }[]
+      )
         .map((x) => ({
           id: x.id,
           path: x.path,
@@ -1091,11 +1356,20 @@ export default async function EditRecordPage({
         .from("ledger_allocations")
         .select("entry_id, record_id, term_id, amount_cents")
         .eq("record_id", recordId);
-      const entryIds = [...new Set((allocRows ?? []).map((a: { entry_id: string }) => a.entry_id))];
+      const entryIds = [
+        ...new Set(
+          (allocRows ?? []).map((a: { entry_id: string }) => a.entry_id),
+        ),
+      ];
       const { data: entryRows } = entryIds.length
-        ? await supabase.from("ledger_entries").select("id, adjusts_id").in("id", entryIds)
+        ? await supabase
+            .from("ledger_entries")
+            .select("id, adjusts_id")
+            .in("id", entryIds)
         : { data: [] };
-      const gone = reversedIds((entryRows ?? []) as { id: string; adjusts_id: string | null }[]);
+      const gone = reversedIds(
+        (entryRows ?? []) as { id: string; adjusts_id: string | null }[],
+      );
       /* 每一期今天等於多少 —— 比例存的是 30，不是 RM 14,550。
          `settleDocument` 要这个才答得出「这一期收齐了没有」。 */
       const dueByTerm = Object.fromEntries(
@@ -1112,9 +1386,14 @@ export default async function EditRecordPage({
         dueByTerm,
         documentCents: data.amount_cents,
         allocations: (allocRows ?? []) as {
-          entry_id: string; record_id: string; term_id: string | null; amount_cents: number;
+          entry_id: string;
+          record_id: string;
+          term_id: string | null;
+          amount_cents: number;
         }[],
-        entries: ((entryRows ?? []) as { id: string; adjusts_id: string | null }[]).map((e) => ({
+        entries: (
+          (entryRows ?? []) as { id: string; adjusts_id: string | null }[]
+        ).map((e) => ({
           id: e.id,
           adjusts_id: e.adjusts_id,
           reversed: gone.has(e.id),
@@ -1206,7 +1485,9 @@ export default async function EditRecordPage({
   if (ctx.role === "owner") {
     const { data: changeRows } = await supabase
       .from("record_changes")
-      .select("id, entity, entity_id, label, field, was, now_is, changed_by, created_at")
+      .select(
+        "id, entity, entity_id, label, field, was, now_is, changed_by, created_at",
+      )
       .eq("entity_id", recordId)
       .order("created_at", { ascending: false })
       .limit(30);
@@ -1223,11 +1504,19 @@ export default async function EditRecordPage({
         .map((m) => [m.user_id, (m.email ?? "").split("@")[0]]),
     );
     changes = showChanges(
-      ((changeRows ?? []) as {
-        id: string; entity: string; entity_id: string; label: string | null;
-        field: string; was: string | null; now_is: string | null;
-        changed_by: string | null; created_at: string;
-      }[]).map((r) => ({
+      (
+        (changeRows ?? []) as {
+          id: string;
+          entity: string;
+          entity_id: string;
+          label: string | null;
+          field: string;
+          was: string | null;
+          now_is: string | null;
+          changed_by: string | null;
+          created_at: string;
+        }[]
+      ).map((r) => ({
         id: r.id,
         entity: r.entity as ChangeRow["entity"],
         entityId: r.entity_id,
@@ -1244,7 +1533,15 @@ export default async function EditRecordPage({
         /* 那一页自己的栏名赢：「金额」在报价单上是他自己给它的名字。 */
         labels: Object.fromEntries(
           ctx.columns.map((c) => [
-            c.key === "primary" ? "title" : c.key === "secondary" ? "party" : c.key === "amount" ? "amount_cents" : c.key === "status" ? "stage" : c.key,
+            c.key === "primary"
+              ? "title"
+              : c.key === "secondary"
+                ? "party"
+                : c.key === "amount"
+                  ? "amount_cents"
+                  : c.key === "status"
+                    ? "stage"
+                    : c.key,
             c.label,
           ]),
         ),
@@ -1254,125 +1551,166 @@ export default async function EditRecordPage({
   }
 
   return (
-    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} data-surface="desk" className="min-h-screen">
+    <StyleScope
+      register={SYSTEM_REGISTER}
+      palette={ctx.palette}
+      data-surface="desk"
+      className="min-h-screen"
+    >
       {/* 🔴 2026-09-04：搬进系统的外壳里。老板：`不要设计看起来是好像两个人
           做得一样 一定要统一设计`。见 record-shell.tsx。 */}
       <RecordShell ctx={ctx}>
-      {/* Wider when there is a document beside the form. A quotation is the
+        {/* Wider when there is a document beside the form. A quotation is the
           only thing this system makes that somebody outside the business
           reads, and 560px cannot hold the form and the paper.
           ⚠️ 左右的内距交给外壳了 —— 两层内距会把这一页推得比别页窄。 */}
-      <main
-        className={`w-full ${
-          ctx.shape === "pipeline" ? "max-w-[1080px]" : "max-w-[560px]"
-        }`}
-      >
-        {/* 🔴 标题跟那一句说明交给表单画（2026-09-04）。参考页的主要动作
+        <main
+          className={`w-full ${
+            ctx.shape === "pipeline" ? "max-w-[1080px]" : "max-w-[560px]"
+          }`}
+        >
+          {/* 🔴 标题跟那一句说明交给表单画（2026-09-04）。参考页的主要动作
             在标题右边，而那颗按钮要知道「现在正在存」—— 这一页是伺服器画的，
             读不到那件事。所以标题跟按钮住在一起。 */}
-        <NewRecordForm
-          heading={copy.editHeading(ctx.title)}
-          lede={archivedAt ? copy.form.archived : copy.editLede}
-          /* 🔴 他来了没有 —— **标题底下、表单卡上面**。
+          <NewRecordForm
+            heading={copy.editHeading(ctx.title)}
+            lede={archivedAt ? copy.form.archived : copy.editLede}
+            /* 🔴 他来了没有 —— **标题底下、表单卡上面**。
              在表单底下：客人站在面前，而他要滑过八个不用碰的格子。
              在标题上面（我第一版）：他还没看到这是哪一张预约就先按了。
              两个看图看出来的，而第二个更严重。 */
-          afterHeading={
-            apptStatus ? (
-              <AppointmentStatus id={recordId} status={apptStatus} who={apptWho} copy={copy.form} />
-            ) : match ? (
-              /* 🔴 三个数字在这里，不是第十段 —— 它们是底下那几段
-               （收货 · 退货 · 分摊）的摘要，而一个摘要放在它摘要的
-               东西后面，等於没有摘要。见 purchase-match.tsx。 */
-              <PurchaseMatch facts={match} money={(c) => ringgit(c) ?? "—"} copy={copy.form} />
-            ) : null
-          }
-          projectId={ctx.projectId}
-          moduleKey={ctx.pageKey}
-          received={received}
-          shape={ctx.shape as "pipeline" | "ledger" | "directory" | "catalog" | "reconcile" | "calendar"}
-          parties={ctx.parties}
-          columns={ctx.columns}
-          title={ctx.title}
-          today={todayInMalaysia()}
-          stages={ctx.stages}
-          trade={ctx.trade}
-          backHref={ctx.backHref}
-          openDocuments={ctx.openDocuments}
-          partyAddresses={ctx.partyAddresses}
-          partyDebts={ctx.partyDebts}
-          branches={ctx.branches}
-          staff={ctx.staff}
-          jobs={ctx.jobsForCost}
-          categories={ctx.categories}
-          earnedLocked={pageKey === "staff"}
-          earnedValue={tiers ? ringgit(earnedCents) ?? "RM 0" : null}
-          photos={photos}
-          changes={changes}
-          record={{ id: recordId, values, archivedAt, reversed, lines, terms, allocations, addresses, siteAddressId, branchId, docNo, dueOn, doneBy, category, jobId }}
-          settlement={settlement}
-          earned={earned}
-          copy={copy.form}
-        />
+            afterHeading={
+              apptStatus ? (
+                <AppointmentStatus
+                  id={recordId}
+                  status={apptStatus}
+                  who={apptWho}
+                  copy={copy.form}
+                />
+              ) : match ? (
+                /* 🔴 三个数字在这里，不是第十段 —— 它们是底下那几段
+                 （收货 · 退货 · 分摊）的摘要，而一个摘要放在它摘要的
+                 东西后面，等於没有摘要。见 purchase-match.tsx。 */
+                <PurchaseMatch
+                  facts={match}
+                  money={(c) => ringgit(c) ?? "—"}
+                  copy={copy.form}
+                />
+              ) : null
+            }
+            projectId={ctx.projectId}
+            moduleKey={ctx.pageKey}
+            received={received}
+            shape={
+              ctx.shape as
+                | "pipeline"
+                | "ledger"
+                | "directory"
+                | "catalog"
+                | "reconcile"
+                | "calendar"
+            }
+            parties={ctx.parties}
+            columns={ctx.columns}
+            title={ctx.title}
+            today={todayInMalaysia()}
+            stages={ctx.stages}
+            trade={ctx.trade}
+            backHref={ctx.backHref}
+            openDocuments={ctx.openDocuments}
+            partyAddresses={ctx.partyAddresses}
+            partyDebts={ctx.partyDebts}
+            branches={ctx.branches}
+            staff={ctx.staff}
+            jobs={ctx.jobsForCost}
+            categories={ctx.categories}
+            earnedLocked={pageKey === "staff"}
+            earnedValue={tiers ? (ringgit(earnedCents) ?? "RM 0") : null}
+            photos={photos}
+            changes={changes}
+            record={{
+              id: recordId,
+              values,
+              archivedAt,
+              reversed,
+              lines,
+              terms,
+              allocations,
+              addresses,
+              siteAddressId,
+              branchId,
+              docNo,
+              dueOn,
+              doneBy,
+              category,
+              jobId,
+            }}
+            settlement={settlement}
+            earned={earned}
+            copy={copy.form}
+          />
 
-        {/* 他的单子。画在表单**底下**，因为它是读的，不是填的 ——
+          {/* 他的单子。画在表单**底下**，因为它是读的，不是填的 ——
             而一个客户页上的第二颗「保存」会让他不知道按哪一颗。
             ⚠️ 只在名册页上。 */}
-        {/* ⚠️ 师傅那一页不画这两段。
+          {/* ⚠️ 师傅那一页不画这两段。
             两段读的都是 `party_id`，而 `party_id` 只会是客户或供应商 ——
             一个师傅永远不会是一张单的对方。所以在他那一页上，
             这两段**永远**写着「还没有来过」跟「还没有单」，
             而一段永远说同一句话的段落，读起来是这一页没做完。 */}
-        {ctx.isDirectory && pageKey !== "staff" ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <PartyHistory
-              visits={visits}
-              lastOn={lastOn}
-              spentCents={spentCents}
-              copy={copy.form}
-            />
-            <div className="mt-6">
-              <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
+          {ctx.isDirectory && pageKey !== "staff" ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <PartyHistory
+                visits={visits}
+                lastOn={lastOn}
+                spentCents={spentCents}
+                copy={copy.form}
+              />
+              <div className="mt-6">
+                <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {/* 客户那一页多一段：他先付了、还没用掉的钱。
+          {/* 客户那一页多一段：他先付了、还没用掉的钱。
             ⚠️ `credit === null` = 没有问（读的人看不到钱），整段不画；
             而 `cents === 0` 是**问过了，答案是零** —— 那一句要讲出来，
             因为「没有余额」跟「我不知道」在画面上必须长得不一样。 */}
-        {credit && ctx.isDirectory && pageKey === "customers" ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-              {copy.form.creditHeading}
-            </h2>
-            {credit.cents > 0 ? (
-              <>
-                <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
-                  {ringgit(credit.cents)}
-                </div>
-                <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                  {copy.form.creditLede}
-                </p>
-                {/* 来自哪几笔 —— 一个总数答不了「那是哪一次付的」，
+          {credit && ctx.isDirectory && pageKey === "customers" ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+                {copy.form.creditHeading}
+              </h2>
+              {credit.cents > 0 ? (
+                <>
+                  <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
+                    {ringgit(credit.cents)}
+                  </div>
+                  <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                    {copy.form.creditLede}
+                  </p>
+                  {/* 来自哪几笔 —— 一个总数答不了「那是哪一次付的」，
                     而那正是他下一句会问的。 */}
-                <ul className="mt-3 flex flex-col gap-1">
-                  {credit.from.map((e) => (
-                    <li key={e.id} className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                      {copy.form.creditFrom} {e.label} — {ringgit(e.cents)}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                {copy.form.creditNone}
-              </p>
-            )}
-          </div>
-        ) : null}
+                  <ul className="mt-3 flex flex-col gap-1">
+                    {credit.from.map((e) => (
+                      <li
+                        key={e.id}
+                        className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]"
+                      >
+                        {copy.form.creditFrom} {e.label} — {ringgit(e.cents)}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                  {copy.form.creditNone}
+                </p>
+              )}
+            </div>
+          ) : null}
 
-        {/* 客户那一页再多一段：月结对帐单。
+          {/* 客户那一页再多一段：月结对帐单。
             八个行业每个月都要跟某一个人对一次帐，而今天他是把
             WhatsApp 往上滑、一张一张单自己加。[任务 147] 把算术做完了，
             而它自己的收尾写着「**那张纸不存在**」。
@@ -1382,148 +1720,176 @@ export default async function EditRecordPage({
             party_statement 自己也是 sees_money 的，一个师傅打它
             拿回来是**零行** —— 而零行会画成一张空的对帐单，
             读起来是「这个客人什么都没欠」。 */}
-        {credit && ctx.isDirectory && pageKey === "customers" ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <PartyStatement
-              projectId={ctx.projectId}
-              partyId={recordId}
-              depositCents={credit.cents}
-              copy={copy.form}
-            />
-          </div>
-        ) : null}
+          {credit && ctx.isDirectory && pageKey === "customers" ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <PartyStatement
+                projectId={ctx.projectId}
+                partyId={recordId}
+                depositCents={credit.cents}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 走单那几页多一段：这一单的下一步。
+          {/* 走单那几页多一段：这一单的下一步。
             排在这几段的最前面 —— 那是他读完这张单**接着要做**的那件事。
             ⚠️ `undefined` = 没有问（不是走单那几页，或者已经收起来了）。 */}
-        {followUp !== undefined ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <FollowUpPanel recordId={recordId} open={followUp} copy={copy.form} />
-          </div>
-        ) : null}
+          {followUp !== undefined ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <FollowUpPanel
+                recordId={recordId}
+                open={followUp}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 订单 / 工程那一页多一段：送出去了几趟。
+          {/* 订单 / 工程那一页多一段：送出去了几趟。
             ⚠️ `undefined` = 没有问（不是那两页，或者已经收起来了）。 */}
-        {runs !== undefined ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <DeliveryPanel
-              recordId={recordId}
-              runs={runs}
-              shortfall={shortfall}
-              copy={copy.form}
-            />
-          </div>
-        ) : null}
+          {runs !== undefined ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <DeliveryPanel
+                recordId={recordId}
+                runs={runs}
+                shortfall={shortfall}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 订单 · 工程 · 进货单多一段：退回来的。
-          ⚠️ `undefined` = 没有问（不是那三页，或者已经收起来了）。 */}
-        {returns !== undefined ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <ReturnsPanel
-              recordId={recordId}
-              lines={returnable}
-              past={returns}
-              buying={pageKey === "purchases"}
-              copy={copy.form}
-            />
-          </div>
-        ) : null}
+          {/* 订单 · 工程 · 进货单多一段：退回来的。
+            ⚠️ `undefined` = 没有问（不是那三页，或者已经收起来了）。 */}
+          {returns !== undefined ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <ReturnsPanel
+                recordId={recordId}
+                lines={returnable}
+                past={returns}
+                buying={pageKey === "purchases"}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 单据那一页多一段：发给客人的那条连结，跟他答了什么。
+          {/* 这一单借出去的东西。⚠️ 一件都没借过就整段不画 ——
+            那一页已经九段，一段永远说「没有」的区块读起来是没做完。 */}
+          {lent.length ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <RentalsOnJob
+                rentals={lent}
+                rentalsHref={`/${locale}/portal/rentals`}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
+
+          {/* 单据那一页多一段：发给客人的那条连结，跟他答了什么。
             ⚠️ `undefined` = 没有问（不是那几种单，或者已经收起来了）。 */}
-        {shareRef !== undefined ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <ShareRecordPanel
-              recordId={recordId}
-              shareRef={shareRef}
-              origin={SITE_URL}
-              answer={shareAnswer.answer}
-              answeredName={shareAnswer.name}
-              answeredAt={shareAnswer.at}
-              answerNote={shareAnswer.note}
-              copy={copy.form}
-            />
-          </div>
-        ) : null}
+          {shareRef !== undefined ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <ShareRecordPanel
+                recordId={recordId}
+                shareRef={shareRef}
+                origin={SITE_URL}
+                answer={shareAnswer.answer}
+                answeredName={shareAnswer.name}
+                answeredAt={shareAnswer.at}
+                answerNote={shareAnswer.note}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 客户 / 供应商那一页多一段：他自己那条连结，跟他送进来的那几笔。
+          {/* 客户 / 供应商那一页多一段：他自己那条连结，跟他送进来的那几笔。
             ⚠️ `undefined` = 没有问（不是那两页，或者他已经收起来了）。 */}
-        {portalRef !== undefined ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <PartyPortalPanel
-              partyId={recordId}
-              portalRef={portalRef}
-              origin={SITE_URL}
-              requests={partyRequests}
-              landsIn={landsIn}
-              landsInLabel={landsInLabel}
-              copy={copy.form}
-            />
-          </div>
-        ) : null}
+          {portalRef !== undefined ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <PartyPortalPanel
+                partyId={recordId}
+                portalRef={portalRef}
+                origin={SITE_URL}
+                requests={partyRequests}
+                landsIn={landsIn}
+                landsInLabel={landsInLabel}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 走单那几页多一段：这一单是谁介绍的。
+          {/* 走单那几页多一段：这一单是谁介绍的。
             ⚠️ `undefined` = 没有问（不是走单那几页 · 收起来了 ·
             或者读的人看不到钱）—— 那时候整段不画。 */}
-        {referral ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <ReferralPanel
-              recordId={recordId}
-              referrerId={referral.id}
-              referrerName={referral.name}
-              portion={referral.portion}
-              amountCents={referral.amountCents}
-              promised={referral.promised}
-              people={referral.people}
-              copy={copy.form}
-            />
-          </div>
-        ) : null}
+          {referral ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <ReferralPanel
+                recordId={recordId}
+                referrerId={referral.id}
+                referrerName={referral.name}
+                portion={referral.portion}
+                amountCents={referral.amountCents}
+                promised={referral.promised}
+                people={referral.people}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 对帐那一页多一段：这个月对完了没有，跟关起来 / 重开。
+          {/* 对帐那一页多一段：这个月对完了没有，跟关起来 / 重开。
             ⚠️ `undefined` 的意思是**没有问**（不是对帐那一页）——
             `null` 是问了、还没关。两个在画面上是不一样的事。 */}
-        {settledAt !== undefined ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <SettleMonth id={recordId} settledAt={settledAt} copy={copy.form} />
-          </div>
-        ) : null}
+          {settledAt !== undefined ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <SettleMonth
+                id={recordId}
+                settledAt={settledAt}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 客户 / 供应商 / 师傅那一页多一段：他替我带过几单。
+          {/* 客户 / 供应商 / 师傅那一页多一段：他替我带过几单。
             ⚠️ `null` = 没有带过（或者读的人看不到钱）—— 整段不画。 */}
-        {sent ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <ReferredJobs tally={sent.tally} jobs={sent.jobs} copy={copy.form} />
-          </div>
-        ) : null}
+          {sent ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <ReferredJobs
+                tally={sent.tally}
+                jobs={sent.jobs}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 客户那一页多一段：他还剩几次。
+          {/* 客户那一页多一段：他还剩几次。
             ⚠️ `packages === null` 的意思是**没有问**（这一页不是客户页）——
             那时候整段不画，而不是画一份空的套票。 */}
-        {packages ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <PackagesPanel partyId={recordId} rows={packages} copy={copy.form} />
-          </div>
-        ) : null}
+          {packages ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <PackagesPanel
+                partyId={recordId}
+                rows={packages}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
 
-        {/* 师傅那一页多一段：他的抽成，跟这个月他做了多少。
+          {/* 师傅那一页多一段：他的抽成，跟这个月他做了多少。
             ⚠️ `tiers === null` 的意思是**没有问**（不是师傅页，或者
             读的人看不到钱）—— 那时候整段不画，而不是画一份空的抽成。 */}
-        {tiers ? (
-          <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-            <CommissionPanel
-              partyId={recordId}
-              tiers={tiers}
-              earnedCents={earnedCents}
-              commissionCents={commissionCents}
-              rateFrom={rateFrom}
-              kind={rateKind}
-              history={rateHistory}
-              copy={copy.form}
-            />
-          </div>
-        ) : null}
-      </main>
+          {tiers ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <CommissionPanel
+                partyId={recordId}
+                tiers={tiers}
+                earnedCents={earnedCents}
+                commissionCents={commissionCents}
+                rateFrom={rateFrom}
+                kind={rateKind}
+                history={rateHistory}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
+        </main>
       </RecordShell>
     </StyleScope>
   );
@@ -1537,7 +1903,8 @@ function ownColumns(extra: unknown): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(extra as Record<string, unknown>)) {
     if (typeof v === "string") out[k] = v;
-    else if (typeof v === "number" || typeof v === "boolean") out[k] = String(v);
+    else if (typeof v === "number" || typeof v === "boolean")
+      out[k] = String(v);
   }
   return out;
 }

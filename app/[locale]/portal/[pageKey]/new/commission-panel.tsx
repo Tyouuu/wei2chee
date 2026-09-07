@@ -3,7 +3,12 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { commissionOn, tierProblems, tierPhrase, type Tier } from "@/lib/portal/commission";
+import {
+  commissionOn,
+  tierProblems,
+  tierPhrase,
+  type Tier,
+} from "@/lib/portal/commission";
 import { ringgit } from "@/lib/portal/live-rows";
 import type { RecordFormCopy } from "../record-copy";
 
@@ -62,11 +67,18 @@ export function CommissionPanel({
   /** 'staff' / 'customers' / 'suppliers'（20260905720000）。 */
   kind: string | null;
   /** 改过几次，日子倒着排。 */
-  history: readonly { from: string; tiers: readonly { fromCents: number; percent: number }[] }[];
+  history: readonly {
+    from: string;
+    /** 这个月那个数字照的就是这一份。见 20260905650000。 */
+    usedThisMonth: boolean;
+    tiers: readonly { fromCents: number; percent: number }[];
+  }[];
   copy: RecordFormCopy;
 }) {
   const router = useRouter();
-  const [rows, setRows] = useState<CommissionTier[]>(saved.length ? [...saved] : []);
+  const [rows, setRows] = useState<CommissionTier[]>(
+    saved.length ? [...saved] : [],
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
@@ -80,7 +92,9 @@ export function CommissionPanel({
   const parsed: Tier[] = useMemo(
     () =>
       rows.map((r) => ({
-        fromCents: Math.round((Number(r.from.replace(/[^\d.]/g, "")) || 0) * 100),
+        fromCents: Math.round(
+          (Number(r.from.replace(/[^\d.]/g, "")) || 0) * 100,
+        ),
         percent: Number(r.percent.replace(/[^\d.]/g, "")) || 0,
       })),
     [rows],
@@ -110,20 +124,25 @@ export function CommissionPanel({
      一格空白比一个稍微不准的数字更难懂。 */
   const commission = commissionCents ?? preview;
 
-
   async function save() {
     if (problems.length) return;
     setError(null);
     setBusy(true);
     setJustSaved(false);
     try {
-      const { error: err } = await createBrowserSupabaseClient().rpc("set_commission_tiers", {
-        in_party_id: partyId,
-        in_tiers: parsed.map((t) => ({ from_cents: t.fromCents, percent: t.percent })),
-        /* 空的送 null，不送空字串 —— 那一支的预设是 null，
+      const { error: err } = await createBrowserSupabaseClient().rpc(
+        "set_commission_tiers",
+        {
+          in_party_id: partyId,
+          in_tiers: parsed.map((t) => ({
+            from_cents: t.fromCents,
+            percent: t.percent,
+          })),
+          /* 空的送 null，不送空字串 —— 那一支的预设是 null，
            而一个空字串会被当成一个坏日期。 */
-        in_effective_from: from || null,
-      });
+          in_effective_from: from || null,
+        },
+      );
       if (err) {
         setError(err.message);
         return;
@@ -138,7 +157,8 @@ export function CommissionPanel({
 
   const control =
     "ds-control h-10 w-full min-w-0 [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]";
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
 
   return (
     <div className="flex flex-col gap-4">
@@ -172,13 +192,17 @@ export function CommissionPanel({
                 ⚠️ `rateFrom` 是 null 的时候整句不画：一句
                 「照 null 那一份算」比不讲更糟。 */}
             {rateFrom ? (
-              <p className={`mt-1 ${dim}`}>{copy.rateInForce.replace("{date}", rateFrom)}</p>
+              <p className={`mt-1 ${dim}`}>
+                {copy.rateInForce.replace("{date}", rateFrom)}
+              </p>
             ) : null}
             {/* 🔴 他打的那一份跟这个月那一份不一样的时候，**两个都要写出来**。
                 只写上面那个，他会以为他刚才改的没有存进去；
                 只写他打的那个，那就是这个月会付多少这件事在说谎。 */}
             {commissionCents !== null && preview !== commission ? (
-              <p className={`mt-1 ${dim}`}>{copy.rateYoursNow.replace("{amount}", rm(preview))}</p>
+              <p className={`mt-1 ${dim}`}>
+                {copy.rateYoursNow.replace("{amount}", rm(preview))}
+              </p>
             ) : null}
           </div>
         ) : null}
@@ -202,7 +226,11 @@ export function CommissionPanel({
                     inputMode="decimal"
                     value={r.from}
                     onChange={(e) =>
-                      setRows(rows.map((x, j) => (j === i ? { ...x, from: e.target.value } : x)))
+                      setRows(
+                        rows.map((x, j) =>
+                          j === i ? { ...x, from: e.target.value } : x,
+                        ),
+                      )
                     }
                     className={control}
                   />
@@ -214,7 +242,11 @@ export function CommissionPanel({
                     inputMode="decimal"
                     value={r.percent}
                     onChange={(e) =>
-                      setRows(rows.map((x, j) => (j === i ? { ...x, percent: e.target.value } : x)))
+                      setRows(
+                        rows.map((x, j) =>
+                          j === i ? { ...x, percent: e.target.value } : x,
+                        ),
+                      )
                     }
                     className={control}
                   />
@@ -270,12 +302,16 @@ export function CommissionPanel({
           >
             {busy ? copy.saving : copy.save}
           </button>
-          {justSaved && !busy ? <span className={dim}>{copy.tiersSaved}</span> : null}
+          {justSaved && !busy ? (
+            <span className={dim}>{copy.tiersSaved}</span>
+          ) : null}
         </div>
 
         {/* 一句他读得懂的话。⚠️ `tierPhrase` 没有档的时候回 null，
             不是空字串 —— 空字串会画出一行空的说明。 */}
-        {phrase && !problems.length ? <p className={`mt-3 ${dim}`}>{phrase}</p> : null}
+        {phrase && !problems.length ? (
+          <p className={`mt-3 ${dim}`}>{phrase}</p>
+        ) : null}
 
         {problems.map((p) => (
           <p
@@ -303,9 +339,23 @@ export function CommissionPanel({
             <div className={dim}>{copy.rateHistory}</div>
             <ul className="mt-1 flex flex-col gap-1">
               {history.map((h) => (
-                <li key={h.from} className={dim}>
-                  {h.from} — {tierPhrase(
-                    h.tiers.map((t) => ({ fromCents: t.fromCents, percent: t.percent })),
+                <li
+                  key={h.from}
+                  className={
+                    /* 🔴 哪一份是这个月照着算的 —— 那一份重一档。
+                       少了这一句，一份三行的历史读起来是三份都可能，
+                       而上面那个数字只照其中一份。 */
+                    h.usedThisMonth
+                      ? "[font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]"
+                      : dim
+                  }
+                >
+                  {h.from} —{" "}
+                  {tierPhrase(
+                    h.tiers.map((t) => ({
+                      fromCents: t.fromCents,
+                      percent: t.percent,
+                    })),
                     rm,
                     {
                       first: copy.tiersFirst,
@@ -314,6 +364,9 @@ export function CommissionPanel({
                       join: copy.tiersJoin,
                     },
                   ) ?? copy.tiersNone}
+                  {/* 🔴 一个字，不是只把它加粗 —— 粗细在灰阶跟列印上
+                    分不出来，而这一行讲的是哪一份办法在付钱。 */}
+                  {h.usedThisMonth ? ` · ${copy.rateThisOne}` : ""}
                 </li>
               ))}
             </ul>
