@@ -98,6 +98,7 @@ const PAGES = [
   ["editor", "/en/portal/dashboard?design=1", "customer"],
   ["console", "/en/console", "founder"],
   ["console-leads", "/en/console/leads", "founder"],
+  ["console-law", "/en/console/law", "founder"],
   /* Resolved at run time -- its URL carries a project id, which is exactly why
      it went unmeasured while the other two console screens were fixed twice.
      A page list that can only hold static paths is a page list that silently

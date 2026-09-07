@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -45,6 +46,27 @@ export function ConsoleShell({
   // it is where Overview's rows lead, so leaving the tab unlit there reads as
   // having navigated out of the app.
   const onLeads = pathname.startsWith(`${base}/leads`);
+  const onLaw = pathname.startsWith(`${base}/law`);
+
+  /* 把这条顶栏的高度交给 `PageBar` —— 见下面 `<main>` 上的那一段。
+     写的是 DOM 上的一个 CSS 变数，不是 state：这个值只有排版要用，
+     而经过一次 render 只会让画面多闪一次。 */
+  const headerRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const head = headerRef.current;
+    const main = mainRef.current;
+    if (!head || !main) return;
+    const sync = () =>
+      main.style.setProperty(
+        "--bar-top",
+        `${head.getBoundingClientRect().height}px`,
+      );
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(head);
+    return () => ro.disconnect();
+  }, []);
 
   async function signOut() {
     await createBrowserSupabaseClient().auth.signOut();
@@ -65,8 +87,13 @@ export function ConsoleShell({
      chrome; what it does NOT take is `.workbench`, which is the sidebar
      geometry this shell exists to not have. */
   return (
-    <div className={`${chrome.chrome} min-h-screen [background-color:var(--color-ink-950)] [color:var(--color-paper)]`}>
-      <header className="sticky top-0 z-20 flex flex-wrap items-center gap-x-5 gap-y-3 border-b px-6 py-3 [background-color:var(--color-ink-950)] [border-color:var(--color-ink-800)]">
+    <div
+      className={`${chrome.chrome} min-h-screen [background-color:var(--color-ink-950)] [color:var(--color-paper)]`}
+    >
+      <header
+        ref={headerRef}
+        className="sticky top-0 z-20 flex flex-wrap items-center gap-x-5 gap-y-3 border-b px-6 py-3 [background-color:var(--color-ink-950)] [border-color:var(--color-ink-800)]"
+      >
         <Link href={base} className="flex items-baseline gap-2">
           <span className="[font-size:var(--text-sm)] uppercase tracking-[0.22em] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
             Formae
@@ -79,11 +106,20 @@ export function ConsoleShell({
         </Link>
 
         <nav className="flex items-center gap-1">
-          <Link href={base} className={onLeads ? off : on}>
+          <Link href={base} className={onLeads || onLaw ? off : on}>
             {t("navOverview")}
           </Link>
           <Link href={`${base}/leads`} className={onLeads ? on : off}>
             {t("leadsTitle")}
+          </Link>
+          {/* The statutory rate tables. They are Formae's to maintain and not
+              the customer's -- both writing functions check `is_founder()` on
+              their own first line -- so until this tab existed neither had an
+              entry point anywhere in the product. The customer's payroll page
+              says the same thing in its own header: 「它们的家在 /console，
+              不在这一页」. */}
+          <Link href={`${base}/law`} className={onLaw ? on : off}>
+            {t("navLaw")}
           </Link>
         </nav>
 
@@ -101,7 +137,16 @@ export function ConsoleShell({
         </div>
       </header>
 
-      <main>{children}</main>
+      {/* 🔴 `PageBar` 也是 `sticky top-0`，而这条顶栏也是 —— 两条都停在 0，
+          一滚下去页面那一条就把这里的导航整个盖掉（2026-09-07 那几张图上
+          看得到）。他看不到自己在哪一格，Overview / Leads / Statutory
+          三个连结也点不到。而在这一行之前，console **三页都是这样**。
+
+          ⚠️ 这个高度**量出来，不写死**。第一版我照 class 算了一个
+          57px（`py-3` 24 ＋ 分页 32 ＋ 1px 的线），量出来是 58 ——
+          而更要紧的是这条顶栏 `flex-wrap`：窄屏它会**折成两行**，
+          高度跟着变。一个写死的数字在手机上一定是错的。 */}
+      <main ref={mainRef}>{children}</main>
     </div>
   );
 }

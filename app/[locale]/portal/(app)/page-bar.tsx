@@ -25,8 +25,15 @@ export function PageBar({
   /** Actions, right-aligned. */
   children?: ReactNode;
 }) {
+  /* 🔴 `top` 从一个变数来，预设 0（2026-09-07）。
+     在客户的工作台里它上面没有别的东西，所以 0 是对的。
+     **而 console 那一边它上面还有一条 `sticky top-0` 的顶栏** ——
+     两条都停在 0，一滚下去这一条就把 console 的导航整个盖掉：
+     他看不到自己在哪一格，那三个连结也点不到。
+     console 那一边把 `--bar-top` 设成它自己顶栏的高度
+     （`console-shell.tsx`，那里有一条尺在量它对不对）。 */
   return (
-    <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b px-8 py-3 [background-color:color-mix(in_srgb,var(--color-canvas)_88%,transparent)] [backdrop-filter:blur(8px)] [border-color:var(--color-ink-800)]">
+    <div className="sticky top-[var(--bar-top,0px)] z-20 flex flex-wrap items-center justify-between gap-3 border-b px-8 py-3 [background-color:color-mix(in_srgb,var(--color-canvas)_88%,transparent)] [backdrop-filter:blur(8px)] [border-color:var(--color-ink-800)]">
       <div className="min-w-0">
         {/* 🔴 14px → 20px，2026-09-01。
             `check:consistency` 量出来：十一页里有六页**整页最大的字就是 14px**，

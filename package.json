@@ -76,6 +76,7 @@
     "shoot:purchase-match": "node scripts/shoot-purchase-match.mjs",
     "shoot:record-doors": "node scripts/shoot-record-doors.mjs",
     "shoot:counter": "node scripts/shoot-counter.mjs",
+    "shoot:law": "node scripts/shoot-law.mjs",
     "check:less-typing": "node scripts/check-less-typing.mjs",
     "check:delivery": "node scripts/check-delivery.mjs",
     "check:payment": "node scripts/check-payment.mjs",
