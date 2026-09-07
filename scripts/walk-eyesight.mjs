@@ -52,9 +52,9 @@ const EMAIL = `eye-${STAMP}@formae.test`;
 const PASSWORD = `Eye!${STAMP}`;
 
 const TRADES = {
-  reno: { pages: ["customers", "quotations", "payments", "projects"], who: "Hin Fatt Renovation", job: "quotations" },
-  salon: { pages: ["customers", "bookings", "payments"], who: "Wei Hair Studio", job: "bookings" },
-  hardware: { pages: ["customers", "inventory", "orders", "payments"], who: "Seng Huat Hardware", job: "orders" },
+  reno: { trade: "renovation", pages: ["customers", "quotations", "payments", "projects"], who: "Hin Fatt Renovation", job: "quotations" },
+  salon: { trade: "beauty", pages: ["customers", "bookings", "payments"], who: "Wei Hair Studio", job: "bookings" },
+  hardware: { trade: "retail", pages: ["customers", "inventory", "orders", "payments"], who: "Seng Huat Hardware", job: "orders" },
 };
 const TRADE = process.env.TRADE || "reno";
 const T = TRADES[TRADE];
@@ -69,6 +69,7 @@ const api = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_
   auth: { persistSession: false },
 });
 let userId = null;
+let leadId = null;
 dropThrowawayOnExit?.(admin, () => userId);
 
 const found = [];
@@ -439,6 +440,30 @@ try {
   if (inErr) throw new Error(`signIn: ${inErr.message}`);
   const { data: proj } = await api.from("projects").select("id").single();
   if (!proj?.id) throw new Error("注册没有开出一个 project");
+  /* 🔴 **行业不在 `projects` 上，在问卷上**：
+     `accounts.lead_id → leads.industry_id → industries`（`get_my_business_context`）。
+
+     少了它，这个帐号落在 `GENERIC_SAMPLE_EN` 上 —— 每一张表印的是
+     「Record 001 / Sample content」，而八个行业各自有自己那一套
+     （装修是「Taman Desa 3-bedroom refit · Mr Tan」）。
+     於是这一支报「示例资料用的是我们的词」**四页**，
+     而**产品一个字都没错 —— 错的是台面**：一个真的老板一定走过问卷，
+     那才是他拿得到自己那一行的字的路。
+     [重点 22d](../docs/founder-points.md)：做展示用的假资料，要跟着那个系统自己走。 */
+  const { data: ind } = await admin.from("industries").select("id").eq("slug", T.trade).single();
+  if (!ind?.id) throw new Error(`industries 里没有 ${T.trade}`);
+  const { data: lead, error: ldErr } = await admin
+    .from("leads")
+    .insert({ industry_id: ind.id, language: "en", answers: { note: "walk-eyesight" } })
+    .select("id")
+    .single();
+  if (ldErr) throw new Error(`lead: ${ldErr.message}`);
+  leadId = lead.id;
+  const { error: linkErr } = await admin
+    .from("accounts")
+    .update({ lead_id: lead.id })
+    .eq("id", userId);
+  if (linkErr) throw new Error(`accounts.lead_id: ${linkErr.message}`);
   await admin.from("projects").update({ business_name: T.who, system_language: "en" }).eq("id", proj.id);
 
   browser = await chromium.launch();
@@ -735,4 +760,6 @@ try {
 } finally {
   if (browser) await browser.close().catch(() => {});
   await dropThrowaway(admin, userId);
+  /* 那一笔问卷也要收掉 —— 它挂在 console 的「线索」那张表上。 */
+  if (leadId) await admin.from("leads").delete().eq("id", leadId);
 }

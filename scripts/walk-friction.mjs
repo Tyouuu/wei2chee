@@ -38,9 +38,9 @@ const EMAIL = `fric-${STAMP}@formae.test`;
 const PASSWORD = `Fric!${STAMP}`;
 
 const TRADES = {
-  reno:     { pages: ["customers", "quotations", "payments", "projects"], who: "Hin Fatt Renovation", job: "quotations" },
-  salon:    { pages: ["customers", "bookings", "payments"],               who: "Wei Hair Studio",     job: "bookings" },
-  hardware: { pages: ["customers", "inventory", "orders", "payments"],    who: "Seng Huat Hardware",  job: "orders" },
+  reno:     { trade: "renovation", pages: ["customers", "quotations", "payments", "projects"], who: "Hin Fatt Renovation", job: "quotations" },
+  salon:    { trade: "beauty", pages: ["customers", "bookings", "payments"],               who: "Wei Hair Studio",     job: "bookings" },
+  hardware: { trade: "retail", pages: ["customers", "inventory", "orders", "payments"],    who: "Seng Huat Hardware",  job: "orders" },
 };
 const TRADE = process.env.TRADE || "reno";
 const T = TRADES[TRADE];
@@ -55,6 +55,7 @@ const api = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_
   auth: { persistSession: false },
 });
 let userId = null;
+let leadId = null;
 dropThrowawayOnExit?.(admin, () => userId);
 
 const found = [];
@@ -242,6 +243,30 @@ try {
   if (inErr) throw new Error(`signIn: ${inErr.message}`);
   const { data: proj } = await api.from("projects").select("id").single();
   if (!proj?.id) throw new Error("注册没有开出一个 project");
+  /* 🔴 **行业不在 `projects` 上，在问卷上**：
+     `accounts.lead_id → leads.industry_id → industries`（`get_my_business_context`）。
+
+     少了它，这个帐号落在 `GENERIC_SAMPLE_EN` 上 —— 每一张表印的是
+     「Record 001 / Sample content」，而八个行业各自有自己那一套
+     （装修是「Taman Desa 3-bedroom refit · Mr Tan」）。
+     於是这一支报「示例资料用的是我们的词」**四页**，
+     而**产品一个字都没错 —— 错的是台面**：一个真的老板一定走过问卷，
+     那才是他拿得到自己那一行的字的路。
+     [重点 22d](../docs/founder-points.md)：做展示用的假资料，要跟着那个系统自己走。 */
+  const { data: ind } = await admin.from("industries").select("id").eq("slug", T.trade).single();
+  if (!ind?.id) throw new Error(`industries 里没有 ${T.trade}`);
+  const { data: lead, error: ldErr } = await admin
+    .from("leads")
+    .insert({ industry_id: ind.id, language: "en", answers: { note: "walk-friction" } })
+    .select("id")
+    .single();
+  if (ldErr) throw new Error(`lead: ${ldErr.message}`);
+  leadId = lead.id;
+  const { error: linkErr } = await admin
+    .from("accounts")
+    .update({ lead_id: lead.id })
+    .eq("id", userId);
+  if (linkErr) throw new Error(`accounts.lead_id: ${linkErr.message}`);
   await admin.from("projects").update({ business_name: T.who, system_language: "en" }).eq("id", proj.id);
   /* 🔴 **风格不在这里挑** —— 一个真的客人是登入之后在挑风格那一页挑的，
      而那一页也是他第一天会看到的东西之一。
@@ -521,11 +546,17 @@ try {
     await page.goto(`${BASE}/en/portal/${T.pages[0]}`, { waitUntil: "domcontentloaded", timeout: 180000 });
     await page.waitForTimeout(1800);
     let blind = 0, steps = 0;
+    const blindWho = [];
     for (let i = 0; i < 22; i++) {
       await page.keyboard.press("Tab");
       const s = await page.evaluate(() => {
         const el = document.activeElement;
         if (!el || el === document.body) return null;
+        /* 🔴 `NEXTJS-PORTAL` 是 Next 自己的开发浮标 —— **只存在于 next dev，**
+           **客户永远碰不到它**。它没有焦点环，所以每一次跑都害这一条黄一次。
+           [任务 80](../docs/founder-tasks.md#80) 记过同一件：
+           **一把每一次跑都喊一次狼的尺，没有人会看。** */
+        if (el.tagName === "NEXTJS-PORTAL" || el.closest("nextjs-portal")) return null;
         const st = getComputedStyle(el);
         const ring = st.outlineStyle !== "none" && parseFloat(st.outlineWidth) > 0;
         const shadow = st.boxShadow && st.boxShadow !== "none";
@@ -533,9 +564,10 @@ try {
       });
       if (!s) continue;
       steps++;
-      if (!s.seen) blind++;
+      if (!s.seen) { blind++; blindWho.push(`${s.tag}「${s.t}」`); }
     }
-    if (blind) flag(ODD, "键盘", `${steps} 个停靠点里 ${blind} 个看不出焦点在哪`);
+    /* 🔴 一个「1 个看不出焦点」而不讲**是哪一个**的读数，没有人接得下去。 */
+    if (blind) flag(ODD, "键盘", `${steps} 个停靠点里 ${blind} 个看不出焦点在哪`, blindWho.slice(0, 4).join(" · "));
     else ok("键盘", `${steps} 个停靠点，每一个都看得出焦点在哪`);
   }
 
@@ -592,4 +624,6 @@ try {
 } finally {
   await browser?.close().catch(() => {});
   if (userId) await dropThrowaway(admin, userId);
+  /* 那一笔问卷也要收掉 —— 它挂在 console 的「线索」那张表上。 */
+  if (leadId) await admin.from("leads").delete().eq("id", leadId);
 }

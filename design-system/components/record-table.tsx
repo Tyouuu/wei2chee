@@ -1115,7 +1115,13 @@ function Segments({
             type="button"
             aria-pressed={on}
             onClick={() => onPick(f)}
-            className={`whitespace-nowrap [font-size:var(--text-xs)] [padding-block:2px] [padding-inline:var(--pad-control-x)] ${
+            /* 🔴 **44 只给触控那一边**（2026-09-07）。这一排在 390 上量出来
+               **24px 高** —— 正好卡在 WCAG 2.5.8 的地板上（24），
+               而 Apple 要的是 44。它画在**每一张表**上，
+               而且是他在手机上唯一会去按的筛选。
+               `sm:min-h-0` —— 电脑那一边照旧 24，跟我们抄的那几个参考后台
+               的工具条一样密。 */
+            className={`min-h-11 min-w-11 whitespace-nowrap [font-size:var(--text-xs)] [padding-block:2px] [padding-inline:var(--pad-control-x)] sm:min-h-0 sm:min-w-0 ${
               on
                 ? "[background:var(--color-primary-soft)] [color:var(--color-primary)] [font-weight:var(--fw-medium)]"
                 : "[color:var(--color-paper-dim)] hover:[color:var(--color-paper)]"
