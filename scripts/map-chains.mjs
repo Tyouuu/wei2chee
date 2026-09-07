@@ -131,6 +131,8 @@ const TABLE_CHAIN = {
   pipeline_records: "成交到收款", record_lines: "成交到收款", record_terms: "成交到收款",
   record_changes: "成交到收款", returns: "成交到收款", return_lines: "成交到收款",
   deliveries: "成交到收款", follow_ups: "成交到收款", nudge_snoozes: "成交到收款",
+  /* 餐饮的一桌：客人坐下开一张单 → 点 → 结帐收钱，那就是这一条链。 */
+  dining_tables: "成交到收款",
   /* ③ 叫货到付款 */
   /* （进货单也住在 pipeline_records 上 —— 那一栏归 ② ，不重复算） */
   /* ④ 钱到帐 */

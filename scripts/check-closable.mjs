@@ -73,7 +73,13 @@ const TRACKED = [
 /* 关公司那一段要数到的表 —— 比上面多一张：
    `appointments` 没有「谁做的」那种栏（[任务 213] 拿掉了），
    而它正好是那一轮把帐号锁住的那张。 */
-const CLEARED = [...TRACKED.map(([t]) => t), "appointments", "messages", "message_settings"];
+const CLEARED = [...TRACKED.map(([t]) => t), "appointments", "messages", "message_settings",
+  /* 🔴 `dining_tables` 没有一栏「谁做的」，所以它不在 TRACKED 里 ——
+     而它非种不可：它跟 pipeline_records **互相**挂着一条 on delete set null
+     （桌上坐着哪一张单 ↔ 那一单在哪一桌），也就是关掉一家公司的时候，
+     cascade 会对两张表各发一次 update。那正是 2026-09-06 把一个帐号
+     锁住两次的形状（appointments.seen_by · messages.sent_by）。 */
+  "dining_tables"];
 
 try {
   /* ── ⓪ 🔴 每一栏「谁做的」都要放得开那个人 ─────────────────────────
@@ -240,6 +246,19 @@ try {
     in_subject_id: order.id, in_party_id: cust.id,
   });
   await bossSaid("set_message_settings", { in_project_id: P, in_to_customer: true });
+
+  /* 🔴 三号桌坐着人 —— `dining_tables`。
+     它跟 pipeline_records 互相挂着 on delete set null，所以关掉一家公司的时候
+     两张表会互相发一次 update。种它的理由跟上面两段一模一样。 */
+  await bossSaid("add_dining_table", { in_project_id: P, in_name: "3", in_seats: 4 });
+  const { data: theTable } = await C.from("dining_tables")
+    .select("id").eq("project_id", P).limit(1).single();
+  if (theTable?.id) {
+    await said("seat_table", {
+      in_project_id: P, in_table_id: theTable.id, in_module_key: "orders",
+      in_party: "Walk-in",
+    });
+  }
 
   /* 先别提 —— nudge_snoozes.by_who */
   await W.rpc("snooze_nudge", {

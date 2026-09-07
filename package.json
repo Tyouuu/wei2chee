@@ -184,7 +184,8 @@
     "walk:friction": "node scripts/walk-friction.mjs",
     "walk:eyesight": "node scripts/walk-eyesight.mjs",
     "walk:mistakes": "node scripts/walk-mistakes.mjs",
-    "walk:stranger": "node scripts/walk-stranger.mjs"
+    "walk:stranger": "node scripts/walk-stranger.mjs",
+    "check:tables": "node scripts/check-tables.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
