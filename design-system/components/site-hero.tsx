@@ -1,6 +1,6 @@
-import type { ReactNode } from "react"
-import { HeroFigure, type HeroFigureKind } from "./hero-figure"
-import { TiltStage } from "./tilt-stage"
+import type { ReactNode } from "react";
+import { HeroFigure, type HeroFigureKind } from "./hero-figure";
+import { TiltStage } from "./tilt-stage";
 
 /*
   WHY EVERY <img> IN THIS FILE CARRIES fetchPriority="high" AND NONE CARRY
@@ -12,7 +12,7 @@ import { TiltStage } from "./tilt-stage"
   sections file does the opposite, for the opposite reason -- see the note at
   the top of site-sections.tsx.
 */
-import { SystemMini } from "./system-mini"
+import { SystemMini } from "./system-mini";
 
 /**
  * The first screen of the page a business's own CUSTOMERS see.
@@ -90,16 +90,28 @@ import { SystemMini } from "./system-mini"
  *
  * Read it as: on THIS layout, these words never appear on the first screen.
  */
-const OFF_THE_FIRST_SCREEN: Record<string, { bare: string[]; withPhoto: string[] }> = {
+const OFF_THE_FIRST_SCREEN: Record<
+  string,
+  { bare: string[]; withPhoto: string[] }
+> = {
   left: { bare: ["brand"], withPhoto: ["brand"] },
-  "band-bleed": { bare: ["brand"], withPhoto: ["brand", "phoneLabel", "phoneNumber"] },
+  "band-bleed": {
+    bare: ["brand"],
+    withPhoto: ["brand", "phoneLabel", "phoneNumber"],
+  },
   "band-inset": {
     bare: ["brand"],
     withPhoto: ["brand", "phoneLabel", "phoneNumber", "strip", "primaryLabel"],
   },
   "data-columns": {
     bare: ["brand"],
-    withPhoto: ["brand", "phoneLabel", "phoneNumber", "strip", "secondaryLabel"],
+    withPhoto: [
+      "brand",
+      "phoneLabel",
+      "phoneNumber",
+      "strip",
+      "secondaryLabel",
+    ],
   },
   // The three that open on the business NAME: `{brand || headline}`, and brand
   // is always filled. Note that brand and headline are exactly complementary --
@@ -110,25 +122,35 @@ const OFF_THE_FIRST_SCREEN: Record<string, { bare: string[]; withPhoto: string[]
   },
   "plate-centre": {
     bare: ["brand"],
-    withPhoto: ["headline", "phoneLabel", "phoneNumber", "strip", "primaryLabel", "secondaryLabel"],
+    withPhoto: [
+      "headline",
+      "phoneLabel",
+      "phoneNumber",
+      "strip",
+      "primaryLabel",
+      "secondaryLabel",
+    ],
   },
   // The only one that drops the headline with no picture too.
   "name-figure": {
     bare: ["headline", "phoneLabel", "phoneNumber", "strip"],
     withPhoto: ["headline", "phoneLabel", "phoneNumber", "strip"],
   },
-}
+};
 
-export function heroDeadFields(props: { layout?: string | null; photo?: string | null }): string[] {
+export function heroDeadFields(props: {
+  layout?: string | null;
+  photo?: string | null;
+}): string[] {
   /* `eyebrow` is NOT in here, and that is the point: it is not offered at all
      any more. It was banned from the markup on 2026-08-27 and removed from the
      panel on 2026-08-31; a field nobody can type into does not need a rule
      saying it will not land. site-hero-fields.test.tsx holds the config to
      that. */
-  const dead: string[] = []
-  const row = OFF_THE_FIRST_SCREEN[String(props.layout ?? "")]
-  if (row) dead.push(...(props.photo?.trim() ? row.withPhoto : row.bare))
-  return dead
+  const dead: string[] = [];
+  const row = OFF_THE_FIRST_SCREEN[String(props.layout ?? "")];
+  if (row) dead.push(...(props.photo?.trim() ? row.withPhoto : row.bare));
+  return dead;
 }
 
 export function SiteHero({
@@ -153,21 +175,21 @@ export function SiteHero({
   ground = "page",
 }: {
   /** Where and what, e.g. 「吉隆坡 · 住宅装修」. The line people search by. */
-  eyebrow?: ReactNode
+  eyebrow?: ReactNode;
   /** The business's own name. Only 名牌 prints it -- every other layout leaves
    *  the name to the navigation bar, which is where it belongs unless the name
    *  IS the first screen. */
-  brand?: string
+  brand?: string;
   /** ReactNode, not string, so the editor can make it editable in place. */
-  headline: ReactNode
-  sub?: ReactNode
-  primaryLabel?: string
-  primaryHref?: string
-  secondaryLabel?: string
-  secondaryHref?: string
+  headline: ReactNode;
+  sub?: ReactNode;
+  primaryLabel?: string;
+  primaryHref?: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
   /** Three short facts under the buttons — years in business, how fast they
    *  reply, where they cover. Numbers a stranger can check, not adjectives. */
-  proof?: { value: string; label: string }[]
+  proof?: { value: string; label: string }[];
   /**
    *   left    左对齐 on the page's own ground. The default, and the one that
    *           reads as a working business rather than as a brochure.
@@ -177,7 +199,20 @@ export function SiteHero({
    *   plain   headline and one button. A name card.
    *   split   the words on the left and a FIGURE on the right. See below.
    */
-  layout?: "left" | "band" | "center" | "plain" | "split" | "stage" | "bleed" | "band-bleed" | "name-plate" | "plate-centre" | "name-figure" | "band-inset" | "data-columns"
+  layout?:
+    | "left"
+    | "band"
+    | "center"
+    | "plain"
+    | "split"
+    | "stage"
+    | "bleed"
+    | "band-bleed"
+    | "name-plate"
+    | "plate-centre"
+    | "name-figure"
+    | "band-inset"
+    | "data-columns";
   /**
    * WHAT GOES ON THE RIGHT, AND WHY THERE IS NOW A RIGHT AT ALL.
    *
@@ -210,13 +245,13 @@ export function SiteHero({
    * kitchen. See docs/founder-tasks.md task 21 for why stock is never the
    * default here.
    */
-  photo?: string
-  photoAlt?: string
+  photo?: string;
+  photoAlt?: string;
   /** The customer's OWN dashboard, as a layout, rendered small. The dense,
    *  real object every reference puts on its first screen -- see
    *  buildWebsite in lib/templates/industry-template.ts for why it is this and
    *  not a fuller drawing. */
-  systemPreview?: unknown
+  systemPreview?: unknown;
   /**
    * 开场的地 —— what the first screen is painted on.
    *
@@ -246,8 +281,8 @@ export function SiteHero({
    * whose whole argument is a printed sheet. Offering it as a free choice is
    * how fourteen registers become one.
    */
-  ground?: "page" | "ink"
-  figure?: HeroFigureKind
+  ground?: "page" | "ink";
+  figure?: HeroFigureKind;
   /**
    * THE PHONE NUMBER, PRINTED.
    *
@@ -280,7 +315,7 @@ export function SiteHero({
    * -- 编辑器负责催，公开的页面永远不出现「催」 -- and it is enforced one layer
    * up, in publish-projection.ts, not here.
    */
-  phone?: { label?: string; number: string; href?: string }
+  phone?: { label?: string; number: string; href?: string };
   /**
    * PRICES, IN THE FIRST SCREEN.
    *
@@ -297,7 +332,7 @@ export function SiteHero({
    * say 「the owner has not filled this in」, it says 「this business will not
    * tell you what it costs」, which is worse than having no prices on the page.
    */
-  priceRows?: { label: string; value: string }[]
+  priceRows?: { label: string; value: string }[];
   /**
    * One line above everything: when they are open, or what they promise.
    *
@@ -306,7 +341,7 @@ export function SiteHero({
    * screen: a separate block could be dragged away from it, leaving a strip of
    * opening hours floating above a price list halfway down the page.
    */
-  strip?: string
+  strip?: string;
   /** Passed through to the figure; see hero-figure.tsx. */
   figureData?: {
     /** The business's own name, as a STRING.
@@ -314,15 +349,15 @@ export function SiteHero({
      *  <Inline> node so the owner can type into it, and `typeof headline ===
      *  "string"` is false there -- the figure would draw a blank name on every
      *  screen the owner actually looks at while building the page. */
-    brand?: string
-    services?: { label: string; value: string }[]
-    stages?: string[]
-    landsIn?: string
+    brand?: string;
+    services?: { label: string; value: string }[];
+    stages?: string[];
+    landsIn?: string;
     /** One honest line at the foot of the sheet. */
-    note?: string
-    askLabel?: string
-    sampleLabel?: string
-  }
+    note?: string;
+    askLabel?: string;
+    sampleLabel?: string;
+  };
 }) {
   /*
     舞台 —— THE SHAPE TWELVE CURRENT LANDING PAGES USE AND WE DID NOT.
@@ -349,7 +384,7 @@ export function SiteHero({
     For a contractor the object is not a product screenshot -- it is their
     work. Same shape, their photograph.
   */
-  const stage = layout === "stage"
+  const stage = layout === "stage";
   /*
     照片当地，字压在上面。
 
@@ -377,10 +412,10 @@ export function SiteHero({
     survives whatever they upload. 招牌's red hero printed a phone number in
     red on red; a photo can do worse and there is no token to blame.
   */
-  const bleed = layout === "bleed"
-  const centred = layout === "center"
-  const band = layout === "band"
-  const plain = layout === "plain"
+  const bleed = layout === "bleed";
+  const centred = layout === "center";
+  const band = layout === "band";
+  const plain = layout === "plain";
 
   /*
     ── 标题两个色调 ────────────────────────────────────────────────────────
@@ -406,12 +441,12 @@ export function SiteHero({
     written and a headline with no break simply stays solid.
   */
   const headlineParts = (() => {
-    const t = typeof headline === "string" ? headline.trim() : ""
-    if (!t) return null
-    const i = t.search(/[\n]|(?<=\S)\s+(?=(in|for|that|with|across|to)\b)/i)
-    if (i < 0) return null
-    return [t.slice(0, i).trim(), t.slice(i).trim()]
-  })()
+    const t = typeof headline === "string" ? headline.trim() : "";
+    if (!t) return null;
+    const i = t.search(/[\n]|(?<=\S)\s+(?=(in|for|that|with|across|to)\b)/i);
+    if (i < 0) return null;
+    return [t.slice(0, i).trim(), t.slice(i).trim()];
+  })();
   /* A PLAIN OPENING IS NOT A REASON TO BIN THE PHOTOGRAPH.
 
      Measured on the live page, 2026-08-27: 瑞士 and 中台 open on `plain`, both
@@ -428,8 +463,8 @@ export function SiteHero({
      the page's own measure, framed, ending where the text ends. 瑞士 is a
      document, and a document can carry a plate -- it just does not let it run
      off the edge. */
-  const plainPhoto = plain && Boolean(photo?.trim())
-  const hasPhoto = Boolean(photo?.trim())
+  const plainPhoto = plain && Boolean(photo?.trim());
+  const hasPhoto = Boolean(photo?.trim());
   /* TWO LAYERS, NOT ONE -- see block-tone.ts. Writing
      `--color-paper: var(--color-nav-fg)` beside `--color-nav-fg` is safe, but
      anything that reads a token it also rewrites is a CSS cycle and CSS drops
@@ -454,20 +489,19 @@ export function SiteHero({
      than painting a black rectangle for a picture that is not there. Same
      defensive rule `split` learned when a register asked for two columns on a
      template with no drawn figure. */
-  const bled = bleed && hasPhoto
+  const bled = bleed && hasPhoto;
 
-  const groundStyle =
-    bled
-      ? ({
-          /* NOT the register's nav colour. The scrim is what has to be
+  const groundStyle = bled
+    ? ({
+        /* NOT the register's nav colour. The scrim is what has to be
              trusted, and a scrim tinted 32% toward 招牌's red would put warm
              grey text on a warm grey photograph. */
-          "--tone-bg": "#101215",
-          "--tone-fg": "#ffffff",
-          "--tone-fg-dim": "rgb(255 255 255 / 0.76)",
-          "--tone-line": "rgb(255 255 255 / 0.22)",
-        } as React.CSSProperties)
-      : ground === "ink"
+        "--tone-bg": "#101215",
+        "--tone-fg": "#ffffff",
+        "--tone-fg-dim": "rgb(255 255 255 / 0.76)",
+        "--tone-line": "rgb(255 255 255 / 0.22)",
+      } as React.CSSProperties)
+    : ground === "ink"
       ? ({
           /* 🔴 从 `--ink-*` 拿，**不要在这里再兑一次**（2026-09-07）。
 
@@ -494,16 +528,16 @@ export function SiteHero({
           "--tone-fg-dim": "var(--ink-fg-dim)",
           "--tone-line": "color-mix(in oklab, var(--ink-fg) 16%, transparent)",
         } as React.CSSProperties)
-      : undefined
-  const painted = ground !== "page" || bled
+      : undefined;
+  const painted = ground !== "page" || bled;
   /* A photo is enough to earn the second column on its own. `figure` was the
      only thing that could before, which meant a register asking for the split
      layout on a template with no drawn figure quietly rendered as 左对齐. */
-  const split = layout === "split" && (Boolean(figure) || hasPhoto)
+  const split = layout === "split" && (Boolean(figure) || hasPhoto);
   /* The stage shows its object too, but under the words rather than beside
      them, so it is not a `split` and must not build the two-column grid. */
-  const staged = stage && (Boolean(figure) || hasPhoto)
-  const showProof = !plain && proof && proof.length > 0
+  const staged = stage && (Boolean(figure) || hasPhoto);
+  const showProof = !plain && proof && proof.length > 0;
   /*
     THE THREE FIGURES LEAVE THE WORDS ON 舞台.
 
@@ -517,7 +551,7 @@ export function SiteHero({
     puts its logo row: still on the first screen for anyone who scrolls a
     thumb, no longer competing with the headline.
   */
-  const proofBelow = stage && showProof
+  const proofBelow = stage && showProof;
 
   /*
     TWO ELEMENTS, AND THE FOURTH TIME THIS REPO HAS LEARNED WHY.
@@ -601,9 +635,19 @@ export function SiteHero({
       to look like work worth paying for, and the ask is three sections down.
     */
     return (
-      <section data-bleed="" data-photo-ground="" className="@container relative isolate">
+      <section
+        data-bleed=""
+        data-photo-ground=""
+        className="@container relative isolate"
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img decoding="async" fetchPriority="high" src={photo} alt={photoAlt || ""} className="absolute inset-0 -z-20 block size-full object-cover" />
+        <img
+          decoding="async"
+          fetchPriority="high"
+          src={photo}
+          alt={photoAlt || ""}
+          className="absolute inset-0 -z-20 block size-full object-cover"
+        />
         <span
           aria-hidden
           className="absolute inset-0 -z-10 block"
@@ -614,12 +658,18 @@ export function SiteHero({
              middle the white serif name was unreadable, which is the one thing
              the first screen cannot be. Measured against the brightest
              photograph in the picker, not against theirs. */
-          style={{ background: "linear-gradient(to bottom, rgb(0 0 0 / 0.52), rgb(0 0 0 / 0.42) 45%, rgb(0 0 0 / 0.62))" }}
+          style={{
+            background:
+              "linear-gradient(to bottom, rgb(0 0 0 / 0.52), rgb(0 0 0 / 0.42) 45%, rgb(0 0 0 / 0.62))",
+          }}
         />
         <div className="flex flex-col items-center justify-center text-center [min-block-size:clamp(26rem,92svh,calc(46rem*var(--site-figure,1)))] [padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]">
           <h1
             className="ds-display max-w-[16ch] [color:#fff] [font-weight:var(--fw-regular,400)] [letter-spacing:-0.01em] [line-height:1.06] [text-wrap:balance]"
-            style={{ fontSize: "clamp(2.6rem, calc(6.6vw * var(--site-hero-scale, 1)), calc(5.2rem * var(--site-hero-scale, 1)))" }}
+            style={{
+              fontSize:
+                "clamp(2.6rem, calc(6.6vw * var(--site-hero-scale, 1)), calc(5.2rem * var(--site-hero-scale, 1)))",
+            }}
           >
             {brand || headline}
           </h1>
@@ -630,7 +680,7 @@ export function SiteHero({
           ) : null}
         </div>
       </section>
-    )
+    );
   }
 
   if (layout === "name-figure") {
@@ -656,7 +706,10 @@ export function SiteHero({
       stock photo with a caption.
     */
     return (
-      <section data-bleed="" className="@container [background:var(--site-hero-band,var(--color-canvas))]">
+      <section
+        data-bleed=""
+        className="@container [background:var(--site-hero-band,var(--color-canvas))]"
+      >
         <div className="[padding-block:calc(var(--pad-card-lg)*1.2)_0] [padding-inline:var(--pad-card-lg)]">
           <h1
             /* ⚠️ 大小写跟对齐是**风格自己的**，不是这个版式的。
@@ -668,7 +721,10 @@ export function SiteHero({
                因为那根本不是字体的事，是**大小写**的事。
                一块招牌上没有小写字母。 */
             className="ds-display [color:var(--color-primary)] [font-weight:var(--fw-regular,400)] [letter-spacing:0.01em] [line-height:0.92] [text-wrap:balance] [text-align:var(--site-name-align,center)] [text-transform:var(--site-name-case,none)]"
-            style={{ fontSize: "clamp(2.6rem, calc(9.2vw * var(--site-hero-scale, 1)), calc(7rem * var(--site-hero-scale, 1)))" }}
+            style={{
+              fontSize:
+                "clamp(2.6rem, calc(9.2vw * var(--site-hero-scale, 1)), calc(7rem * var(--site-hero-scale, 1)))",
+            }}
           >
             {brand || headline}
           </h1>
@@ -682,7 +738,10 @@ export function SiteHero({
           <div className="mt-10 grid items-start [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1fr)_minmax(0,26rem)_minmax(0,1fr)]">
             <div className="[border-top:1px_solid_color-mix(in_oklab,var(--color-primary)_50%,transparent)] [padding-top:calc(var(--pad-card-lg)*0.6)]">
               {primaryLabel ? (
-                <a href={primaryHref || "#"} className="[color:var(--color-primary)] [font-size:var(--text-sm)] underline">
+                <a
+                  href={primaryHref || "#"}
+                  className="[color:var(--color-primary)] [font-size:var(--text-sm)] underline"
+                >
                   {primaryLabel}
                 </a>
               ) : null}
@@ -693,19 +752,30 @@ export function SiteHero({
                 src={photo}
                 alt={photoAlt || ""}
                 className="block w-full object-cover"
-                style={{ aspectRatio: "5 / 6", maxHeight: "calc(42rem * var(--site-figure, 1))", minHeight: "clamp(18rem, 58vh, 44rem)" }}
+                style={{
+                  aspectRatio: "5 / 6",
+                  maxHeight: "calc(42rem * var(--site-figure, 1))",
+                  minHeight: "clamp(18rem, 58vh, 44rem)",
+                }}
               />
             ) : (
               /* 占位图 —— 一张风格图要看得到它的形状，就算还没有照片。 */
               <div
                 aria-hidden
                 className="w-full [background:color-mix(in_oklab,var(--color-primary)_18%,var(--color-canvas))]"
-                style={{ aspectRatio: "5 / 6", maxHeight: "calc(42rem * var(--site-figure, 1))", minHeight: "clamp(18rem, 58vh, 44rem)" }}
+                style={{
+                  aspectRatio: "5 / 6",
+                  maxHeight: "calc(42rem * var(--site-figure, 1))",
+                  minHeight: "clamp(18rem, 58vh, 44rem)",
+                }}
               />
             )}
             <div className="[border-top:1px_solid_color-mix(in_oklab,var(--color-primary)_50%,transparent)] [padding-top:calc(var(--pad-card-lg)*0.6)] [text-align:right]">
               {secondaryLabel ? (
-                <a href={secondaryHref || "#"} className="[color:var(--color-primary)] [font-size:var(--text-sm)] underline">
+                <a
+                  href={secondaryHref || "#"}
+                  className="[color:var(--color-primary)] [font-size:var(--text-sm)] underline"
+                >
                   {secondaryLabel}
                 </a>
               ) : null}
@@ -713,7 +783,7 @@ export function SiteHero({
           </div>
         </div>
       </section>
-    )
+    );
   }
 
   if (layout === "name-plate" && hasPhoto) {
@@ -725,16 +795,21 @@ export function SiteHero({
        SHOP is judged on whether it is open — 7 of the 19 trading Malaysian SME
        sites measured on 2026-08-27 run a top strip carrying exactly that — so
        when the page has opening hours, they win the slot. */
-    const fact =
-      strip?.trim()
-        ? { value: strip.trim(), label: "" }
-        : proof && proof.length > 0
-          ? proof[0]
-          : undefined
+    const fact = strip?.trim()
+      ? { value: strip.trim(), label: "" }
+      : proof && proof.length > 0
+        ? proof[0]
+        : undefined;
     return (
-      <section data-bleed="" data-photo-ground="" className="@container relative isolate">
+      <section
+        data-bleed=""
+        data-photo-ground=""
+        className="@container relative isolate"
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img decoding="async" fetchPriority="high"
+        <img
+          decoding="async"
+          fetchPriority="high"
           src={photo}
           alt={photoAlt || ""}
           className="absolute inset-0 -z-20 block size-full object-cover"
@@ -745,7 +820,10 @@ export function SiteHero({
           /* ⚠️ 遮罩轻一档。逐段量出来第 1 段：他们 #dcd2aa 的暖卡其，我们 #000000
              —— 同一个版式，我们那一屏黑掉了，因为这条渐层压在照片上。名字要读得到
              靠的是底部那 0.62，不是整片。 */
-          style={{ background: "linear-gradient(to top, rgb(0 0 0 / 0.60), rgb(0 0 0 / 0.06) 52%, rgb(0 0 0 / 0.12))" }}
+          style={{
+            background:
+              "linear-gradient(to top, rgb(0 0 0 / 0.60), rgb(0 0 0 / 0.06) 52%, rgb(0 0 0 / 0.12))",
+          }}
         />
 
         <div className="flex flex-col justify-end [min-block-size:clamp(26rem,88svh,calc(44rem*var(--site-figure,1)))] [padding-inline:var(--pad-card-lg)] [padding-block:calc(var(--pad-card-lg)*1.4)]">
@@ -762,7 +840,10 @@ export function SiteHero({
                 unmeasured. */}
             <h1
               className="ds-display [color:#fff] [font-weight:var(--fw-semibold)] [letter-spacing:-0.02em] [line-height:0.9] [text-wrap:balance]"
-              style={{ fontSize: "clamp(2.8rem, calc(8.4vw * var(--site-hero-scale, 1)), calc(6.6rem * var(--site-hero-scale, 1)))" }}
+              style={{
+                fontSize:
+                  "clamp(2.8rem, calc(8.4vw * var(--site-hero-scale, 1)), calc(6.6rem * var(--site-hero-scale, 1)))",
+              }}
             >
               {brand || headline}
             </h1>
@@ -774,7 +855,9 @@ export function SiteHero({
                 <p className="[color:rgb(255_255_255_/_0.82)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]">
                   {fact.label ? `${fact.value} · ${fact.label}` : fact.value}
                 </p>
-              ) : <span />}
+              ) : (
+                <span />
+              )}
               {sub ? (
                 <p
                   className="ds-display max-w-[26ch] [color:#fff] [font-weight:var(--fw-medium)] [line-height:1.15] @3xl:justify-self-center @3xl:text-center"
@@ -782,7 +865,9 @@ export function SiteHero({
                 >
                   {sub}
                 </p>
-              ) : <span />}
+              ) : (
+                <span />
+              )}
               {primaryLabel ? (
                 <a
                   href={primaryHref || "#"}
@@ -791,12 +876,14 @@ export function SiteHero({
                   {primaryLabel}
                   <span aria-hidden>&rarr;</span>
                 </a>
-              ) : <span />}
+              ) : (
+                <span />
+              )}
             </div>
           </div>
         </div>
       </section>
-    )
+    );
   }
 
   /* ── 第一屏的字级是一根轴，而且四种版式都要读它 ────────────────────────────
@@ -829,11 +916,17 @@ export function SiteHero({
     */
     return (
       <section data-bleed="" data-photo-ground="" className="@container">
-        <div data-hero-band="" className="[padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]">
+        <div
+          data-hero-band=""
+          className="[padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]"
+        >
           <div className="mx-auto grid w-full max-w-[80rem] items-start [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
             <h1
               className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-regular,400)] [letter-spacing:-0.01em] [line-height:1.16] [text-wrap:balance]"
-              style={{ fontSize: "clamp(2.4rem, calc(5.6vw * var(--site-hero-scale, 1)), calc(4.5rem * var(--site-hero-scale, 1)))" }}
+              style={{
+                fontSize:
+                  "clamp(2.4rem, calc(5.6vw * var(--site-hero-scale, 1)), calc(4.5rem * var(--site-hero-scale, 1)))",
+              }}
             >
               {headline}
             </h1>
@@ -858,7 +951,9 @@ export function SiteHero({
         {/* 缩在版心里，不是满边的 —— 他们的照片跟文字同一条左右边线。 */}
         <div className="mx-auto w-full max-w-[80rem] [padding-inline:var(--pad-card-lg)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img decoding="async" fetchPriority="high"
+          <img
+            decoding="async"
+            fetchPriority="high"
             src={photo}
             alt={photoAlt || ""}
             className="block w-full object-cover"
@@ -866,7 +961,7 @@ export function SiteHero({
           />
         </div>
       </section>
-    )
+    );
   }
 
   if (layout === "data-columns" && hasPhoto) {
@@ -884,13 +979,19 @@ export function SiteHero({
       我们原本是 band-bleed：标题有版心边距、副标在标题**右边**、那排资料在
       **照片下面**。顺序反了，而顺序是这一段的设计。
     */
-    const cols = (proof ?? []).slice(0, 4)
+    const cols = (proof ?? []).slice(0, 4);
     return (
       <section data-bleed="" data-photo-ground="" className="@container">
-        <div data-hero-band="" className="[padding-block:calc(var(--pad-card-lg)*0.9)]">
+        <div
+          data-hero-band=""
+          className="[padding-block:calc(var(--pad-card-lg)*0.9)]"
+        >
           <h1
             className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-bold,700)] [letter-spacing:-0.02em] [line-height:0.92]"
-            style={{ fontSize: "clamp(2.4rem, calc(6.4vw * var(--site-hero-scale, 1)), calc(5rem * var(--site-hero-scale, 1)))" }}
+            style={{
+              fontSize:
+                "clamp(2.4rem, calc(6.4vw * var(--site-hero-scale, 1)), calc(5rem * var(--site-hero-scale, 1)))",
+            }}
           >
             {headline}
           </h1>
@@ -898,13 +999,19 @@ export function SiteHero({
             <dl className="flex flex-wrap [gap:calc(var(--gap-stack)*2.4)]">
               {sub ? (
                 <div className="max-w-[24ch]">
-                  <dd className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.45]">{sub}</dd>
+                  <dd className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.45]">
+                    {sub}
+                  </dd>
                 </div>
               ) : null}
               {cols.map((x) => (
                 <div key={x.label}>
-                  <dt className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.45]">{x.label}:</dt>
-                  <dd className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.45]">{x.value}</dd>
+                  <dt className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.45]">
+                    {x.label}:
+                  </dt>
+                  <dd className="[color:var(--color-paper)] [font-size:var(--text-sm)] [line-height:1.45]">
+                    {x.value}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -922,14 +1029,16 @@ export function SiteHero({
         </div>
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img decoding="async" fetchPriority="high"
+        <img
+          decoding="async"
+          fetchPriority="high"
           src={photo}
           alt={photoAlt || ""}
           className="block w-full object-cover"
           style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
         />
       </section>
-    )
+    );
   }
 
   if (layout === "band-bleed" && hasPhoto) {
@@ -943,18 +1052,26 @@ export function SiteHero({
             panel and on the footer, and that scarcity is what makes it read as
             an accent. Ours painted the opening band with --color-block, so the
             first thing on the page was the loudest colour on it. */}
-        <div data-hero-band="" className="[padding-block:calc(var(--pad-card-lg)*1.15)] [padding-inline:var(--pad-card-lg)]">
+        <div
+          data-hero-band=""
+          className="[padding-block:calc(var(--pad-card-lg)*1.15)] [padding-inline:var(--pad-card-lg)]"
+        >
           <div className="mx-auto grid w-full max-w-[80rem] items-start [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
             <h1
               className="ds-display [color:var(--color-paper)] [font-weight:var(--fw-bold,700)] [letter-spacing:-0.03em] [line-height:0.94] [text-wrap:balance]"
-              style={{ fontSize: "clamp(2.6rem, calc(6.6vw * var(--site-hero-scale, 1)), calc(5.2rem * var(--site-hero-scale, 1)))" }}
+              style={{
+                fontSize:
+                  "clamp(2.6rem, calc(6.6vw * var(--site-hero-scale, 1)), calc(5.2rem * var(--site-hero-scale, 1)))",
+              }}
             >
               {headlineParts ? (
                 <>
                   {headlineParts[0]}{" "}
                   {/* The dimmed half. See `headlineParts` for the six sites
                       this is copied from. */}
-                  <span className="[color:var(--color-paper-dim)]">{headlineParts[1]}</span>
+                  <span className="[color:var(--color-paper-dim)]">
+                    {headlineParts[1]}
+                  </span>
                 </>
               ) : (
                 headline
@@ -971,7 +1088,9 @@ export function SiteHero({
         {/* EDGE TO EDGE, NO RADIUS, NO GAP. The photograph is the ground the
             band is sitting on, not an illustration inside a column. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img decoding="async" fetchPriority="high"
+        <img
+          decoding="async"
+          fetchPriority="high"
           src={photo}
           alt={photoAlt || ""}
           className="block w-full object-cover"
@@ -980,7 +1099,10 @@ export function SiteHero({
 
         {/* MOVED, NOT DELETED. Everything the first screen used to shout sits
             under the picture instead, at the page's own measure. */}
-        {(primaryLabel || secondaryLabel || (proof && proof.length > 0) || strip) ? (
+        {primaryLabel ||
+        secondaryLabel ||
+        (proof && proof.length > 0) ||
+        strip ? (
           <div className="mx-auto w-full max-w-[68rem] [padding-block:calc(var(--pad-card-lg)*1.2)] [padding-inline:var(--pad-card-lg)]">
             {strip ? (
               <p className="mb-6 [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]">
@@ -1011,7 +1133,9 @@ export function SiteHero({
                       <dt className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-base)] [font-variant-numeric:tabular-nums] [font-weight:var(--fw-semibold)]">
                         {x.value}
                       </dt>
-                      <dd className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{x.label}</dd>
+                      <dd className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                        {x.label}
+                      </dd>
                     </div>
                   ))}
                 </dl>
@@ -1020,7 +1144,7 @@ export function SiteHero({
           </div>
         ) : null}
       </section>
-    )
+    );
   }
 
   const shell = (
@@ -1057,7 +1181,8 @@ export function SiteHero({
               "--color-primary": "var(--tone-fg)",
               "--color-primary-deep": "var(--tone-fg)",
               "--color-on-primary": "var(--tone-bg)",
-              "--color-primary-soft": "color-mix(in oklab, var(--tone-fg) 18%, transparent)",
+              "--color-primary-soft":
+                "color-mix(in oklab, var(--tone-fg) 18%, transparent)",
             } as React.CSSProperties)
           : undefined
       }
@@ -1086,10 +1211,14 @@ export function SiteHero({
            heading, which is what made the opening feel like a paragraph rather
            than a screen. `svh` rather than `vh` so a phone's shrinking address
            bar does not leave a gap. */
-        stage ? "[padding-block:calc(var(--pad-card-lg)*2.2)_0] flex flex-col justify-center @3xl:[min-block-size:94svh]" : "",
+        stage
+          ? "[padding-block:calc(var(--pad-card-lg)*2.2)_0] flex flex-col justify-center @3xl:[min-block-size:94svh]"
+          : "",
         /* The photograph is the first screen, so it gets the first screen.
            `isolate` keeps the scrim under the words and out of the page. */
-        bled ? "relative isolate flex flex-col justify-end @3xl:[min-block-size:82svh]" : "",
+        bled
+          ? "relative isolate flex flex-col justify-end @3xl:[min-block-size:82svh]"
+          : "",
       ].join(" ")}
     >
       {/* THE GROUND IS THE PHOTOGRAPH.
@@ -1108,7 +1237,9 @@ export function SiteHero({
       {bled ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img decoding="async" fetchPriority="high"
+          <img
+            decoding="async"
+            fetchPriority="high"
             src={photo}
             alt={photoAlt || ""}
             className="absolute inset-0 -z-20 block size-full object-cover"
@@ -1128,7 +1259,10 @@ export function SiteHero({
           it edge to edge. `-mx` undoes the section's own inline padding rather
           than the section giving it up, so nothing else on the page moves. */}
       {strip ? (
-        <p data-hours-strip="" className="-mt-[calc(var(--pad-card-lg)*2)] mb-[calc(var(--pad-card-lg)*1.5)] [background-color:var(--color-paper)] [color:var(--color-canvas)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [margin-inline:calc(var(--pad-card-lg)*-1)] [padding-block:calc(var(--pad-control-y)*0.9)] [padding-inline:var(--pad-card-lg)] [text-align:center]">
+        <p
+          data-hours-strip=""
+          className="-mt-[calc(var(--pad-card-lg)*2)] mb-[calc(var(--pad-card-lg)*1.5)] [background-color:var(--color-paper)] [color:var(--color-canvas)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [margin-inline:calc(var(--pad-card-lg)*-1)] [padding-block:calc(var(--pad-control-y)*0.9)] [padding-inline:var(--pad-card-lg)] [text-align:center]"
+        >
           {strip}
         </p>
       ) : null}
@@ -1137,26 +1271,26 @@ export function SiteHero({
           hand because the hero opts out of it -- its ground and its strip need
           the full width, its words do not. */}
       <div className="mx-auto w-full max-w-[68rem]">
-      {/* THE GRID EXISTS ONLY WHEN THERE IS A SECOND THING.
+        {/* THE GRID EXISTS ONLY WHEN THERE IS A SECOND THING.
           `display: grid` with one child is not free -- it re-parents the whole
           opening and any max-width inside it starts resolving against a track
           rather than the section. Wrapping unconditionally is how a "harmless"
           layout prop changes five pages that never asked for it. */}
-      <div
-        className={
-          split
-            ? "grid items-center [gap:calc(var(--pad-card-lg)*1.5)] @3xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]"
-            : "contents"
-        }
-      >
-      <div className={split ? "min-w-0" : "contents"}>
-      {/* The headline and the line under it want DIFFERENT measures: a headline
+        <div
+          className={
+            split
+              ? "grid items-center [gap:calc(var(--pad-card-lg)*1.5)] @3xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]"
+              : "contents"
+          }
+        >
+          <div className={split ? "min-w-0" : "contents"}>
+            {/* The headline and the line under it want DIFFERENT measures: a headline
           reads best short, running text at about 46 characters. One container
           capped at the headline's width broke the sub mid-phrase
           (「报价前先上门 / 看」), which is the kind of thing only a render
           shows. */}
-      <div className={centred ? "mx-auto max-w-[62ch]" : "max-w-[62ch]"}>
-        {/* THE EYEBROW IS GONE, AND IT IS A BAN RATHER THAN A PREFERENCE.
+            <div className={centred ? "mx-auto max-w-[62ch]" : "max-w-[62ch]"}>
+              {/* THE EYEBROW IS GONE, AND IT IS A BAN RATHER THAN A PREFERENCE.
 
             pbakaus/impeccable (Apache-2.0, installed at .claude/skills/impeccable
             on 2026-08-27) puts it under Refuse with the note 「This one is a ban,
@@ -1171,75 +1305,75 @@ export function SiteHero({
 
             The prop stays in the signature because saved customer layouts carry
             it; it simply renders nothing. */}
-        <h1
-          className={`ds-display ${centred ? "mx-auto " : ""}max-w-[24ch] text-balance [color:var(--color-paper)] [font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)] [line-height:var(--leading-tight)]`}
-        >
-          {headline}
-        </h1>
-        {sub && (
-          <p
-            className={`${centred ? "mx-auto " : ""}mt-4 max-w-[46ch] [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]`}
-          >
-            {sub}
-          </p>
-        )}
-      </div>
+              <h1
+                className={`ds-display ${centred ? "mx-auto " : ""}max-w-[24ch] text-balance [color:var(--color-paper)] [font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)] [line-height:var(--leading-tight)]`}
+              >
+                {headline}
+              </h1>
+              {sub && (
+                <p
+                  className={`${centred ? "mx-auto " : ""}mt-4 max-w-[46ch] [color:var(--color-paper-dim)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]`}
+                >
+                  {sub}
+                </p>
+              )}
+            </div>
 
-      {(primaryLabel || secondaryLabel) && (
-        <div
-          className={`mt-7 flex flex-wrap [gap:var(--gap-inline)] ${centred ? "justify-center" : ""}`}
-        >
-          {primaryLabel && (
-            <a
-              href={primaryHref || "#"}
-              className="inline-flex min-h-11 items-center [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.6)] [transition-duration:var(--dur)] [transition-property:background-color] hover:[background-color:var(--color-primary-deep)]"
-            >
-              {primaryLabel}
-            </a>
-          )}
-          {/* 名片 keeps one action. Two buttons is a page asking a stranger to
+            {(primaryLabel || secondaryLabel) && (
+              <div
+                className={`mt-7 flex flex-wrap [gap:var(--gap-inline)] ${centred ? "justify-center" : ""}`}
+              >
+                {primaryLabel && (
+                  <a
+                    href={primaryHref || "#"}
+                    className="inline-flex min-h-11 items-center [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.6)] [transition-duration:var(--dur)] [transition-property:background-color] hover:[background-color:var(--color-primary-deep)]"
+                  >
+                    {primaryLabel}
+                  </a>
+                )}
+                {/* 名片 keeps one action. Two buttons is a page asking a stranger to
               make a choice before they have decided to talk to you at all. */}
-          {secondaryLabel && !plain && (
-            <a
-              href={secondaryHref || "#"}
-              className="inline-flex min-h-11 items-center border [border-color:var(--color-ink-800)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-medium)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.6)] [transition-duration:var(--dur)] [transition-property:background-color] hover:[background-color:var(--color-ink-850)]"
-            >
-              {secondaryLabel}
-            </a>
-          )}
-        </div>
-      )}
+                {secondaryLabel && !plain && (
+                  <a
+                    href={secondaryHref || "#"}
+                    className="inline-flex min-h-11 items-center border [border-color:var(--color-ink-800)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-medium)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.6)] [transition-duration:var(--dur)] [transition-property:background-color] hover:[background-color:var(--color-ink-850)]"
+                  >
+                    {secondaryLabel}
+                  </a>
+                )}
+              </div>
+            )}
 
-      {/* The prices, between the words and the buttons -- read before the
+            {/* The prices, between the words and the buttons -- read before the
           decision to press anything, which is the order the reference page
           puts them in. A row whose price is still blank is dropped here rather
           than filtered upstream, so a template that hands over three rows and
           two prices shows two. */}
-      {priceRows && priceRows.some((r) => r.value?.trim()) ? (
-        <ul
-          className={`mt-7 flex flex-col [gap:var(--gap-inline)] ${
-            centred ? "mx-auto max-w-[42ch]" : "max-w-[42ch]"
-          }`}
-        >
-          {priceRows
-            .filter((r) => r.value?.trim())
-            .map((r) => (
-              <li
-                key={r.label}
-                className="flex items-center justify-between [background-color:var(--card)] [border:var(--border-card-width)_solid_var(--border-subtle)] [border-radius:var(--radius-control)] [gap:var(--gap-inline)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]"
+            {priceRows && priceRows.some((r) => r.value?.trim()) ? (
+              <ul
+                className={`mt-7 flex flex-col [gap:var(--gap-inline)] ${
+                  centred ? "mx-auto max-w-[42ch]" : "max-w-[42ch]"
+                }`}
               >
-                <span className="min-w-0 [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
-                  {r.label}
-                </span>
-                <span className="tnum shrink-0 [background-color:var(--color-primary)] [border-radius:var(--radius-pill)] [color:var(--color-on-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [padding-block:2px] [padding-inline:calc(var(--pad-control-x)*0.8)]">
-                  {r.value}
-                </span>
-              </li>
-            ))}
-        </ul>
-      ) : null}
+                {priceRows
+                  .filter((r) => r.value?.trim())
+                  .map((r) => (
+                    <li
+                      key={r.label}
+                      className="flex items-center justify-between [background-color:var(--card)] [border:var(--border-card-width)_solid_var(--border-subtle)] [border-radius:var(--radius-control)] [gap:var(--gap-inline)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]"
+                    >
+                      <span className="min-w-0 [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
+                        {r.label}
+                      </span>
+                      <span className="tnum shrink-0 [background-color:var(--color-primary)] [border-radius:var(--radius-pill)] [color:var(--color-on-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [padding-block:2px] [padding-inline:calc(var(--pad-control-x)*0.8)]">
+                        {r.value}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            ) : null}
 
-      {/*
+            {/*
         THE NUMBER, SET LARGE, BESIDE THE BUTTON RATHER THAN INSTEAD OF IT.
 
         Beside: the button is for somebody on a laptop who would rather type
@@ -1250,107 +1384,80 @@ export function SiteHero({
         「012-345 6789」 is how it is written on every van in the country, and
         normalising it to +60123456789 makes it read as a database field.
       */}
-      {phone?.number ? (
-        <a
-          href={phone.href || `tel:${phone.number.replace(/[^\d+]/g, "")}`}
-          className={`mt-6 inline-flex flex-wrap items-baseline [gap:var(--gap-inline)] ${
-            centred ? "justify-center" : ""
-          }`}
-        >
-          {phone.label ? (
-            <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
-              {phone.label}
-            </span>
-          ) : null}
-          <span className="tnum [color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
-            {phone.number}
-          </span>
-        </a>
-      ) : null}
+            {phone?.number ? (
+              <a
+                href={
+                  phone.href || `tel:${phone.number.replace(/[^\d+]/g, "")}`
+                }
+                /* 🔴 **44 只给触控那一边**（2026-09-07）：量出来 33px，
+             而这一颗按下去是**直接拨号** —— 它就是这一页要他做的那件事
+             （[19 家同行实测](../../docs/founder-tasks.md#26)：15 家第一屏就给号码）。
+             `items-baseline` 让两段字对齐基线，所以高度只有那一行字 ——
+             `min-h-11` 把打得到的范围补回来，而字一个像素都不动。 */
+                className={`mt-6 inline-flex min-h-11 flex-wrap items-baseline [gap:var(--gap-inline)] ${
+                  centred ? "justify-center" : ""
+                }`}
+              >
+                {phone.label ? (
+                  <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+                    {phone.label}
+                  </span>
+                ) : null}
+                <span className="tnum [color:var(--color-primary)] [font-family:var(--font-numeric)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+                  {phone.number}
+                </span>
+              </a>
+            ) : null}
 
-      {showProof && !proofBelow && (
-        <dl
-          className={`mt-9 flex flex-wrap [gap:calc(var(--gap-stack)*2)] ${centred ? "justify-center" : ""}`}
-        >
-          {proof.map((p) => (
-            <div key={p.label}>
-              <dt className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-variant-numeric:tabular-nums] [font-weight:var(--fw-semibold)]">
-                {p.value}
-              </dt>
-              <dd className="mt-0.5 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
-                {p.label}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      )}
-      </div>
+            {showProof && !proofBelow && (
+              <dl
+                className={`mt-9 flex flex-wrap [gap:calc(var(--gap-stack)*2)] ${centred ? "justify-center" : ""}`}
+              >
+                {proof.map((p) => (
+                  <div key={p.label}>
+                    <dt className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-variant-numeric:tabular-nums] [font-weight:var(--fw-semibold)]">
+                      {p.value}
+                    </dt>
+                    <dd className="mt-0.5 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                      {p.label}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
 
-      {/* The figure comes SECOND in the DOM and is moved right by the grid, so
+          {/* The figure comes SECOND in the DOM and is moved right by the grid, so
           a phone reads the claim and the button before the picture -- which is
           the order a stranger needs, and the opposite of what a
           figure-first source would give them. */}
-      {split && hasPhoto && (
-        <TiltStage>
-        <div className="min-w-0">
-          {/* eslint-disable-next-line @next/next/no-img-element -- the src is a
+          {split && hasPhoto && (
+            <TiltStage>
+              <div className="min-w-0">
+                {/* eslint-disable-next-line @next/next/no-img-element -- the src is a
               Supabase storage URL on a bucket Next's optimiser is not
               configured for, and a broken hero image is worse than an
               unoptimised one. */}
-          <img decoding="async" fetchPriority="high"
-            src={photo}
-            alt={photoAlt || ""}
-            className="h-full max-h-[30rem] w-full object-cover [border-radius:var(--radius-lg)]"
-          />
-        </div>
-        </TiltStage>
-      )}
-
-      {split && !hasPhoto && figure && (
-        <TiltStage>
-        <div className="min-w-0">
-          <HeroFigure
-            kind={figure}
-            brand={figureData?.brand ?? (typeof headline === "string" ? headline : "")}
-            services={figureData?.services}
-            stages={figureData?.stages}
-            proof={proof}
-            landsIn={figureData?.landsIn}
-            note={figureData?.note}
-            askLabel={figureData?.askLabel}
-            sampleLabel={figureData?.sampleLabel}
-          />
-        </div>
-        </TiltStage>
-      )}
-      </div>
-
-      {/* THE OBJECT, UNDER THE WORDS AND RUNNING OFF THE BOTTOM.
-          `max-height` at 46vh with the overflow visible is what makes it read
-          as continuing below the fold instead of as a picture that happens to
-          be large -- the property ten of the twelve references share and the
-          one that cannot be measured off a stylesheet. */}
-      {staged ? (
-        <div className="mt-12 overflow-hidden [max-height:52vh]">
-          <TiltStage>
-            {/* WIDER THAN THE WORDS. Their object breathes to the edges of the
-                screen while the sentence above it keeps a readable measure --
-                one column for both is what made ours look boxed in. */}
-            <div className="mx-auto w-full max-w-[78rem]">
-              {hasPhoto ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img decoding="async" fetchPriority="high"
+                <img
+                  decoding="async"
+                  fetchPriority="high"
                   src={photo}
                   alt={photoAlt || ""}
-                  className="w-full object-cover [border-radius:var(--radius-lg)]"
-                  style={{ aspectRatio: "16 / 10" }}
+                  className="h-full max-h-[30rem] w-full object-cover [border-radius:var(--radius-lg)]"
                 />
-              ) : systemPreview ? (
-                <SystemMini data={systemPreview} />
-              ) : figure ? (
+              </div>
+            </TiltStage>
+          )}
+
+          {split && !hasPhoto && figure && (
+            <TiltStage>
+              <div className="min-w-0">
                 <HeroFigure
                   kind={figure}
-                  brand={figureData?.brand ?? (typeof headline === "string" ? headline : "")}
+                  brand={
+                    figureData?.brand ??
+                    (typeof headline === "string" ? headline : "")
+                  }
                   services={figureData?.services}
                   stages={figureData?.stages}
                   proof={proof}
@@ -1359,42 +1466,88 @@ export function SiteHero({
                   askLabel={figureData?.askLabel}
                   sampleLabel={figureData?.sampleLabel}
                 />
-              ) : null}
-            </div>
-          </TiltStage>
+              </div>
+            </TiltStage>
+          )}
         </div>
-      ) : null}
 
-      {proofBelow ? (
-        <dl className="mx-auto mt-10 flex w-full max-w-[68rem] flex-wrap justify-center [gap:calc(var(--gap-stack)*2.4)] [padding-bottom:var(--pad-card-lg)]">
-          {proof!.map((p) => (
-            <div key={p.label} className="text-center">
-              <dt className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-variant-numeric:tabular-nums] [font-weight:var(--fw-semibold)]">
-                {p.value}
-              </dt>
-              <dd className="mt-0.5 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
-                {p.label}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
+        {/* THE OBJECT, UNDER THE WORDS AND RUNNING OFF THE BOTTOM.
+          `max-height` at 46vh with the overflow visible is what makes it read
+          as continuing below the fold instead of as a picture that happens to
+          be large -- the property ten of the twelve references share and the
+          one that cannot be measured off a stylesheet. */}
+        {staged ? (
+          <div className="mt-12 overflow-hidden [max-height:52vh]">
+            <TiltStage>
+              {/* WIDER THAN THE WORDS. Their object breathes to the edges of the
+                screen while the sentence above it keeps a readable measure --
+                one column for both is what made ours look boxed in. */}
+              <div className="mx-auto w-full max-w-[78rem]">
+                {hasPhoto ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    decoding="async"
+                    fetchPriority="high"
+                    src={photo}
+                    alt={photoAlt || ""}
+                    className="w-full object-cover [border-radius:var(--radius-lg)]"
+                    style={{ aspectRatio: "16 / 10" }}
+                  />
+                ) : systemPreview ? (
+                  <SystemMini data={systemPreview} />
+                ) : figure ? (
+                  <HeroFigure
+                    kind={figure}
+                    brand={
+                      figureData?.brand ??
+                      (typeof headline === "string" ? headline : "")
+                    }
+                    services={figureData?.services}
+                    stages={figureData?.stages}
+                    proof={proof}
+                    landsIn={figureData?.landsIn}
+                    note={figureData?.note}
+                    askLabel={figureData?.askLabel}
+                    sampleLabel={figureData?.sampleLabel}
+                  />
+                ) : null}
+              </div>
+            </TiltStage>
+          </div>
+        ) : null}
 
-      {/* THE PLAIN OPENING'S PHOTOGRAPH. Under the words, at the page's own
+        {proofBelow ? (
+          <dl className="mx-auto mt-10 flex w-full max-w-[68rem] flex-wrap justify-center [gap:calc(var(--gap-stack)*2.4)] [padding-bottom:var(--pad-card-lg)]">
+            {proof!.map((p) => (
+              <div key={p.label} className="text-center">
+                <dt className="[color:var(--color-paper)] [font-family:var(--font-numeric)] [font-size:var(--text-lg)] [font-variant-numeric:tabular-nums] [font-weight:var(--fw-semibold)]">
+                  {p.value}
+                </dt>
+                <dd className="mt-0.5 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                  {p.label}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+
+        {/* THE PLAIN OPENING'S PHOTOGRAPH. Under the words, at the page's own
           measure, framed -- not bleeding off the bottom the way 舞台 does and
           not behind the type the way 满图 does. See `plainPhoto` above for the
           measurement that made it necessary. */}
-      {plainPhoto ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img decoding="async" fetchPriority="high"
-          src={photo}
-          alt={photoAlt || ""}
-          className="mx-auto mt-10 block aspect-[16/7] w-full max-w-[68rem] object-cover [border-radius:var(--radius-lg)]"
-        />
-      ) : null}
+        {plainPhoto ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            decoding="async"
+            fetchPriority="high"
+            src={photo}
+            alt={photoAlt || ""}
+            className="mx-auto mt-10 block aspect-[16/7] w-full max-w-[68rem] object-cover [border-radius:var(--radius-lg)]"
+          />
+        ) : null}
       </div>
     </section>
-  )
+  );
 
   /* The capture layer. It only ever READS the register's own tokens, so it can
      never take part in a cycle with the layer that rewrites them. */
@@ -1406,10 +1559,14 @@ export function SiteHero({
      one. See app/globals.css. */
   /* Rendered by `shell` below, at the end of the measured wrapper. */
   return painted ? (
-    <div data-bleed="" data-photo-ground={bled ? "" : undefined} style={groundStyle}>
+    <div
+      data-bleed=""
+      data-photo-ground={bled ? "" : undefined}
+      style={groundStyle}
+    >
       {shell}
     </div>
   ) : (
     shell
-  )
+  );
 }

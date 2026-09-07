@@ -293,6 +293,52 @@ const HITTEST = () => {
   return out;
 };
 
+/**
+ * 🔴 他拇指点得准吗 —— **在上线的那一页上量**。
+ *
+ * `check:consistency` 也在量按钮大小，而它走的是 `/portal/website`，
+ * 也就是**编辑器画布里那一份**。2026-09-07 实测：同一颗「Ask price」
+ * 在那里量出来 **43px**，而它的 class 明明写着 `min-h-11`（44）——
+ * 画布是缩放过的。**一个量在缩放过的预览上的数字，
+ * 跟一个量在真页面上的数字，在报告里长得一模一样。**
+ *
+ * 所以这一条量的是 `/s/<网址名>` —— 那个陌生人真的打开的那一页。
+ * 门槛照 WCAG 2.2 · 2.5.8 的 **24**（那是标准；Apple 的 44 只印读数，
+ * 因为该照哪一个是他的市场判断，不是合规判断）。
+ */
+const TAPS = () => {
+  const vis = (el) => {
+    const r = el.getBoundingClientRect();
+    const s = getComputedStyle(el);
+    return r.width >= 1 && r.height >= 1 && s.visibility !== "hidden" && Number(s.opacity) > 0.05;
+  };
+  const all = [...document.querySelectorAll("a,button,[role=button],summary,select,input,textarea")].filter(vis);
+  const boxes = all.map((el) => {
+    const r = el.getBoundingClientRect();
+    return { el, r, cx: r.left + r.width / 2, cy: r.top + r.height / 2, under: Math.min(r.width, r.height) < 24 };
+  });
+  const tiny = [];
+  let small = 0;
+  for (const b of boxes) {
+    if (Math.min(b.r.width, b.r.height) >= 44) continue;
+    small++;
+    if (!b.under) continue;
+    /* 2.5.8 的例外，照条文算：在每一个未达标目标的框中心画一个直径 24 的圆，
+       圆不可以碰到另一个目标（或者另一个未达标目标的圆）。 */
+    let crowded = false;
+    for (const o of boxes) {
+      if (o.el === b.el || b.el.contains(o.el) || o.el.contains(b.el)) continue;
+      const hit = o.under
+        ? Math.hypot(b.cx - o.cx, b.cy - o.cy) < 24
+        : Math.hypot(Math.max(o.r.left - b.cx, 0, b.cx - o.r.right), Math.max(o.r.top - b.cy, 0, b.cy - o.r.bottom)) < 12;
+      if (hit) { crowded = true; break; }
+    }
+    if (crowded)
+      tiny.push(`${Math.round(b.r.width)}x${Math.round(b.r.height)}「${String(b.el.innerText || b.el.getAttribute("aria-label") || b.el.type || "").trim().slice(0, 18)}」`);
+  }
+  return { small, tiny };
+};
+
 /** 一站四句。 */
 async function askFour(page, where, { form = false } = {}) {
   const a = await page.evaluate(AUDIT);
@@ -306,6 +352,12 @@ async function askFour(page, where, { form = false } = {}) {
 
   if (a.sideways > 2) flag(where, `手机上要横着滑 ${a.sideways}px`);
   else ok(where, "不横滚");
+
+  const taps = await page.evaluate(TAPS);
+  num(where, `${taps.small} 个不到 44（Apple 的建议）`);
+  if (taps.tiny.length)
+    flag(where, `${taps.tiny.length} 个不到 24 而且旁边没空地（WCAG 2.5.8）`, taps.tiny.slice(0, 4).join(" · "));
+  else ok(where, "每一颗都按得准（照 2.5.8 的例外算过）");
 
   if (a.text.length)
     flag(

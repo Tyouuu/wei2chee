@@ -1,5 +1,5 @@
-import Link from "next/link"
-import type { ReactNode } from "react"
+import Link from "next/link";
+import type { ReactNode } from "react";
 
 /**
  * The top bar and the foot of a customer's public website.
@@ -29,12 +29,12 @@ export function SiteBar({
   actionLabel,
   actionHref,
 }: {
-  brand: ReactNode
+  brand: ReactNode;
   /** The page's own sections. Three or four; a small business does not have
    *  eight, and a bar with eight links on it reads as a company that does. */
-  links?: { label: string; href: string }[]
-  actionLabel?: string
-  actionHref?: string
+  links?: { label: string; href: string }[];
+  actionLabel?: string;
+  actionHref?: string;
 }) {
   return (
     <header
@@ -82,14 +82,19 @@ export function SiteBar({
         {actionLabel ? (
           <a
             href={actionHref || "#"}
-            className="inline-flex min-h-9 shrink-0 items-center [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [padding-block:calc(var(--pad-control-y)*0.7)] [padding-inline:var(--pad-control-x)]"
+            /* 🔴 **44 只给触控那一边**（2026-09-07）。
+               `check:consistency` 在 390 量出来：这一颗 **36px**，
+               而它是[19 家同行实测](../../docs/founder-tasks.md#26)里
+               15 家放在第一屏的那一颗 —— **陌生人在手机上唯一会按的**。
+               `@2xl:min-h-9` —— 电脑那一边照旧 36。 */
+            className="inline-flex min-h-11 shrink-0 items-center @2xl:min-h-9 [background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [padding-block:calc(var(--pad-control-y)*0.7)] [padding-inline:var(--pad-control-x)]"
           >
             {actionLabel}
           </a>
         ) : null}
       </div>
     </header>
-  )
+  );
 }
 
 export function SiteFoot({
@@ -103,16 +108,16 @@ export function SiteFoot({
   small,
   copyright,
 }: {
-  brand: ReactNode
-  tagline?: string
+  brand: ReactNode;
+  tagline?: string;
   /** The contact details again — number, address, hours. Rows the owner has
    *  not filled are dropped upstream, so an unfilled foot is a name and a line
    *  rather than a column of dashes. */
-  rows?: { label: string; value: string }[]
+  rows?: { label: string; value: string }[];
   /** The one line at the very bottom. Not a copyright notice by default: a
    *  renovation contractor does not need one, and it is the only line on the
    *  page that would be about lawyers rather than about work. */
-  note?: string
+  note?: string;
   /*
     THE PAGE'S OWN LINKS AGAIN, AND THE ASK ONE LAST TIME.
 
@@ -128,18 +133,18 @@ export function SiteFoot({
     and the ask is the same WhatsApp the hero opens with. Nothing new is
     claimed at the bottom of the page.
   */
-  links?: { label: string; href: string }[]
-  askLabel?: string
-  askHref?: string
+  links?: { label: string; href: string }[];
+  askLabel?: string;
+  askHref?: string;
   /** 社交 / 条款 —— their footer's two small link columns under the rule. */
-  small?: { label: string; href: string }[]
+  small?: { label: string; href: string }[];
   /** © 2026 名字. Always true, never a claim about the world, and the one line
    *  that stops the page ending on nothing. */
-  copyright?: string
+  copyright?: string;
 }) {
-  const filled = (rows ?? []).filter((r) => r.value?.trim())
-  const jumps = (links ?? []).filter((l) => l.label?.trim())
-  const minor = (small ?? []).filter((l) => l.label?.trim())
+  const filled = (rows ?? []).filter((r) => r.value?.trim());
+  const jumps = (links ?? []).filter((l) => l.label?.trim());
+  const minor = (small ?? []).filter((l) => l.label?.trim());
   return (
     /*
       THE FOOT WEARS THE REGISTER'S NAVIGATION COLOURS.
@@ -205,7 +210,9 @@ export function SiteFoot({
               {brand}
             </span>
             {tagline ? (
-              <span className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">{tagline}</span>
+              <span className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">
+                {tagline}
+              </span>
             ) : null}
             {/* ⚠️ 页脚有没有这颗按钮，是**风格**的事。
                 台账 抄的 Newel，页脚是三栏字加一条框起来的底带 —— **一颗按钮
@@ -229,7 +236,9 @@ export function SiteFoot({
                   <dt className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-xs)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
                     {r.label}
                   </dt>
-                  <dd className="[color:var(--color-nav-fg)] [font-size:var(--text-sm)]">{r.value}</dd>
+                  <dd className="[color:var(--color-nav-fg)] [font-size:var(--text-sm)]">
+                    {r.value}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -241,7 +250,11 @@ export function SiteFoot({
                 <a
                   key={l.href + l.label}
                   href={l.href}
-                  className="ds-display [color:var(--color-nav-fg)] [font-size:var(--site-foot-jump,var(--text-title))] [font-weight:var(--fw-semibold)] hover:underline"
+                  /* 顶栏那一排在窄屏是藏起来的（上面那段注解写着为什么），
+                     所以**页脚这几条就是手机上这一页的导航**。
+                     `inline-flex items-center` 是为了让 `min-h` 真的长在
+                     那一条上 —— 一个 inline 的 `<a>` 吃不到高度。 */
+                  className="ds-display inline-flex min-h-11 items-center [color:var(--color-nav-fg)] [font-size:var(--site-foot-jump,var(--text-title))] [font-weight:var(--fw-semibold)] hover:underline @2xl:min-h-0"
                 >
                   {l.label}
                 </a>
@@ -266,7 +279,10 @@ export function SiteFoot({
               <ul className="flex flex-wrap [gap:calc(var(--gap-inline)*1.6)]">
                 {minor.map((l) => (
                   <li key={l.href + l.label}>
-                    <a href={l.href} className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)] hover:underline">
+                    <a
+                      href={l.href}
+                      className="inline-flex min-h-11 items-center [color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)] hover:underline @2xl:min-h-0"
+                    >
                       {l.label}
                     </a>
                   </li>
@@ -274,14 +290,16 @@ export function SiteFoot({
               </ul>
             ) : null}
             {copyright ? (
-              <p className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">{copyright}</p>
+              <p className="[color:var(--color-nav-fg-dim)] [font-size:var(--text-sm)]">
+                {copyright}
+              </p>
             ) : null}
           </div>
         ) : null}
       </div>
     </footer>
-  )
+  );
 }
 
 /** Kept so a hand-written page can still link out; unused by the generator. */
-export const SiteLink = Link
+export const SiteLink = Link;
