@@ -300,7 +300,8 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
   const actOps: LayoutOp[] = [];
   for (const op of ops) {
     if (op.op === "add_table_row") recordOps.push(op);
-    else if (op.op === "set_record_status" || op.op === "log_work_day") actOps.push(op);
+    else if (op.op === "set_record_status" || op.op === "log_work_day" || op.op === "count_stock")
+      actOps.push(op);
     else layoutOps.push(op);
   }
   return { layoutOps, recordOps, actOps, refused: [] };
@@ -693,7 +694,7 @@ export async function actOnRecords(
 
   const shape = shapeOfModule(moduleKey);
   for (const raw of ops) {
-    const op = raw as { op: string; record_id?: unknown; status?: unknown };
+    const op = raw as { op: string; record_id?: unknown; status?: unknown; counted?: unknown };
     const recordId = String(op.record_id ?? "").trim();
     const status = String(op.status ?? "").trim();
 
@@ -709,6 +710,79 @@ export async function actOnRecords(
       `module_key = 'staff'` 的 —— 两边不一致，所以这一层先挡着。
       收紧资料库那一边是「收紧」，要单独做（重点 31），登记。
     */
+    /*
+      ── 盘点 ──────────────────────────────────────────────────────────
+
+      「水泥数出来 84」。两样都是他讲的：哪一件货 · 数出来几个。
+
+      🔴 差几个**不在这里算** —— `count_stock` 自己读现在有多少再写差额，
+      而那是两个人同时盘点的时候唯一挡得住的地方（任务 123）。
+      在这里算一次，就是同一个问题两个答案。
+
+      ⚠️ 那一支自己还挡着：两间店以上没讲哪一间要拒绝（任务 148）·
+      有批号／序号的货在货品那一层拒绝（任务 160 · 211）·
+      那个「盘点」的词跟着系统语言走。**一条都不用在这里重写。**
+    */
+    if (op.op === "count_stock") {
+      if (shape !== "catalog") {
+        skipped.push({ op: op.op, reason: "notShelfPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const said = String(op.counted ?? "").trim();
+      if (!said) {
+        skipped.push({ op: op.op, reason: "noCountSaid" });
+        continue;
+      }
+      /*
+        🔴 0 是一个真的答案（数完发现没有了），而「很多」不是。
+
+        第一版是 `Number(said.replace(/[^0-9.]/g, ""))` —— 而「很多」洗完是
+        空字串，`Number("")` 是 **0**，於是**一句「很多」会把架上清成零**。
+        守卫第一次跑就抓到它。所以先要求里面真的有一个数字。
+      */
+      const digits = said.replace(/[^0-9.]/g, "");
+      const counted = /[0-9]/.test(digits) ? Number(digits) : NaN;
+      if (!Number.isFinite(counted) || counted < 0) {
+        skipped.push({ op: op.op, reason: "countNotANumber", vars: { said } });
+        continue;
+      }
+      const { data, error } = await supabase.rpc("count_stock", {
+        in_item_id: recordId,
+        in_counted: counted,
+        /* 那个词由资料库照 system_language 挑 —— 跟人按那颗按钮同一条
+           （stocktake.tsx 也不传）。 */
+      });
+      if (error) {
+        skipped.push({ op: op.op, ...friendly(error.message) });
+        continue;
+      }
+      const hit = (Array.isArray(data) ? data[0] : data) as
+        | { before?: unknown; counted?: unknown; moved?: unknown }
+        | null;
+      const moved = Number(hit?.moved ?? 0);
+      if (moved === 0) {
+        /* 🔴 一样就什么都不记（一笔 0 的流水是他帐上一行没有发生过的事）——
+           而那要讲出来，不然他不知道刚才那一句到底做了什么。 */
+        notes.push({ op: op.op, reason: "stockSame", vars: { counted: String(counted) } });
+        continue;
+      }
+      written += 1;
+      notes.push({
+        op: op.op,
+        reason: "stockCounted",
+        vars: {
+          before: String(hit?.before ?? "?"),
+          counted: String(counted),
+          moved: (moved > 0 ? "+" : "") + String(moved),
+        },
+      });
+      continue;
+    }
+
     if (op.op === "log_work_day") {
       if (moduleKey !== "staff") {
         skipped.push({ op: op.op, reason: "dayNotStaffPage" });

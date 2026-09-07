@@ -525,7 +525,12 @@
         "dbSaid": "The system said: {detail}",
         "layoutSaved": "This page has been saved, so the arrangement changes by moving blocks",
         "dayLogged": "Logged on {on}.",
-        "packageUsed": "A {name} session went with it — {left} left."
+        "packageUsed": "A {name} session went with it — {left} left.",
+        "notShelfPage": "A stocktake belongs on the shelf page, not this one",
+        "noCountSaid": "It did not say how many were counted",
+        "countNotANumber": "{said} is not a number",
+        "stockCounted": "Was {before} on the shelf, counted {counted} — {moved} recorded.",
+        "stockSame": "Counted {counted}, same as the shelf — nothing recorded."
       }
     },
     "home": {

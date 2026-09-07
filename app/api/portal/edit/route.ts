@@ -211,6 +211,13 @@ Record tables:
   * TODAY only. The database decides which day that is, in his timezone. If the
     owner names another day, say the 出勤 page is where a past day goes; do not
     work a date out yourself, because a wrong day is wrong pay.
+- count_stock is a stocktake on the 货架 page: 「水泥数出来 84」, 「Cement,
+  counted 84」. record_id is that item's row; counted is the number he says.
+  * The DIFFERENCE is worked out by the database, not by you. Never emit a
+    movement; emit what he counted and let it do the subtraction.
+  * 0 is a real answer. A number you were not told is not — if he says an item
+    ran out but gives no count, ask.
+  * Only on the 货架 page. Elsewhere say the shelf page is where a count goes.
 
 Whole pages:
 - You cannot add or delete a page yourself, but you can OFFER to. When the
@@ -609,6 +616,9 @@ export async function POST(req: NextRequest) {
   const pageStages = ctx && pageKey ? stagesForModule(ctx, pageKey) : [];
   const statusLine = (() => {
     if (!isRecordModule(pageKey)) return "";
+    if (shapeOfModule(String(pageKey)) === "catalog") {
+      return "这一页盘得了货（count_stock）：record_id 是那一行，counted 是他数出来几个。差几个由资料库算。";
+    }
     if (pageKey === "staff") {
       return "这一页记得了一天工（log_work_day 只能用这三个之一）: full(整天) · half(半天) · absent(没来)。只记今天。";
     }
@@ -1145,6 +1155,7 @@ export const EDIT_JSON_SCHEMA = {
                 "set_copy",
                 "set_record_status",
                 "log_work_day",
+                "count_stock",
               ],
             },
             target_id: { type: ["string", "null"] },
@@ -1179,6 +1190,9 @@ export const EDIT_JSON_SCHEMA = {
             // 生意自己的阶段，一页一套，模型从提示里那一行读；编出来的那一个
             // 会被 record-ops.ts 拒绝，并且把这一页有哪几个念回去。
             status: { type: ["string", "null"] },
+            // 盘点：他数出来几个。字串 —— 模型别处的数字也是字串，
+            // 而 record-ops.ts 会把它读成数字，读不出来就拒绝并且念回去。
+            counted: { type: ["string", "null"] },
             // Not enum-constrained: the valid ids depend on the block being
             // targeted, which the model reads off that block's own
             // options=[...] listing. A wrong id is dropped by set_variant with
@@ -1207,6 +1221,7 @@ export const EDIT_JSON_SCHEMA = {
             "stages",
             "record_id",
             "status",
+            "counted",
             "variant_id",
           ],
           additionalProperties: false,

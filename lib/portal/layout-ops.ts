@@ -323,6 +323,25 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     /** full · half · absent —— 资料库自己挡着的那三个。 */
     status: z.string().min(1).max(60),
   }),
+  /*
+    盘点 —— 「水泥数出来 84」。
+
+    🔴 **两样都是他讲出来的**：哪一件货（页面上那一行的编号）跟数出来几个。
+    我们一样都没有发明 —— 而那正是这一支敢开给助手的理由
+    （任务 89：省他的字，不可以拿「猜」来省）。
+
+    差几个**在资料库里算**（`count_stock`），不在这里 —— 两个人同时盘点
+    的时候那是唯一挡得住的地方（任务 123）。而它自己还挡着：两间店以上
+    没讲哪一间要拒绝（任务 148）· 有批号／序号的货在货品那一层拒绝
+    （任务 160 · 211）。**那几条守卫一条都不用在这里重写。**
+  */
+  z.object({
+    op: z.literal("count_stock"),
+    /** 货架上那一行自己的编号，从页面上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** 他数出来几个。0 是一个真的答案（数完发现没有了）。 */
+    counted: z.string().min(1).max(20),
+  }),
   z.object({
     op: z.literal("add_table_column"),
     target_id: z.string().min(1),
@@ -1263,6 +1282,12 @@ export function applyLayoutOps(
       */
       case "log_work_day": {
         skipped.push({ op: op.op, reason: "cannotLogDay" });
+        break;
+      }
+      case "count_stock": {
+        /* 走到这里表示这一页不是货架 —— splitRecordOps 只在货架那几页
+           把它拨去写入那一边。 */
+        skipped.push({ op: op.op, reason: "notShelfPage" });
         break;
       }
 

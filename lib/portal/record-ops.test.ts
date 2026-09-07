@@ -732,6 +732,81 @@ describe("a reply shaped like the model's own, end to end", () => {
   });
 });
 
+/*
+  盘点 —— 两样都是他讲的（哪一件货 · 数出来几个），我们一样都没有发明。
+  差几个在资料库里算，不在这里：两个人同时盘点的时候那是唯一挡得住的地方。
+*/
+describe("盘一次货", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+  const count = (id: string, counted: string) =>
+    ({ op: "count_stock", record_id: id, counted }) as unknown as LayoutOp;
+
+  it("送出去的是他数出来那个数，不是差额", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({
+      data: { before: 91, counted: 84, moved: -7 },
+      error: null,
+    }));
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "84")], []);
+    expect(rpc).toHaveBeenCalledWith("count_stock", { in_item_id: "i-1", in_counted: 84 });
+    expect(r.written).toBe(1);
+  });
+
+  /* 🔴 少掉的那七包没有人用眼睛看得出来（任务 123）—— 所以它非讲不可。 */
+  it("讲得出架上本来几个、现在记了多少", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({
+      data: { before: 91, counted: 84, moved: -7 },
+      error: null,
+    }));
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "84")], []);
+    expect(r.notes[0].reason).toBe("stockCounted");
+    expect(r.notes[0].vars).toEqual({ before: "91", counted: "84", moved: "-7" });
+  });
+
+  it("一样的时候不记，而且讲出来", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({
+      data: { before: 84, counted: 84, moved: 0 },
+      error: null,
+    }));
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "84")], []);
+    expect(r.written).toBe(0);
+    expect(r.notes[0].reason).toBe("stockSame");
+  });
+
+  it("数出来 0 是一个真的答案", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({
+      data: { before: 5, counted: 0, moved: -5 },
+      error: null,
+    }));
+    await actOnRecords(client(rpc), "inventory", [count("i-1", "0")], []);
+    expect((rpc.mock.calls[0][1] as Record<string, unknown>).in_counted).toBe(0);
+  });
+
+  it.each(["quotations", "payments", "customers", "bookings"])(
+    "%s 上盘不了货，而且讲得出去哪一页",
+    async (moduleKey) => {
+      const rpc = vi.fn(async () => ({ data: null, error: null }));
+      const r = await actOnRecords(client(rpc), moduleKey, [count("i-1", "84")], []);
+      expect(rpc).not.toHaveBeenCalled();
+      expect(r.skipped[0].reason).toBe("notShelfPage");
+    },
+  );
+
+  it("没讲数出来几个就不动", async () => {
+    const rpc = vi.fn(async () => ({ data: null, error: null }));
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", " ")], []);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.skipped[0].reason).toBe("noCountSaid");
+  });
+
+  it("数出来的不是数字就不动，而且念回去", async () => {
+    const rpc = vi.fn(async () => ({ data: null, error: null }));
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "很多")], []);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.skipped[0].reason).toBe("countNotANumber");
+    expect(r.skipped[0].vars?.said).toBe("很多");
+  });
+});
+
 describe("logging a day on site", () => {
   const client = (rpc: unknown) => ({ rpc }) as never;
   const day = (id: string, status: string) =>

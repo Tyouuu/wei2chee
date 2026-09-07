@@ -525,7 +525,12 @@
         "dbSaid": "系统那边讲：{detail}",
         "layoutSaved": "这一页已经保存过，排法要用搬动区块来换",
         "dayLogged": "记在 {on}。",
-        "packageUsed": "顺手扣了「{name}」一次，还剩 {left} 次。"
+        "packageUsed": "顺手扣了「{name}」一次，还剩 {left} 次。",
+        "notShelfPage": "盘点在货架那一页做 —— 这一页盘不了",
+        "noCountSaid": "没有讲数出来几个",
+        "countNotANumber": "「{said}」不是一个数字",
+        "stockCounted": "架上本来 {before}，数出来 {counted} —— 记了一笔 {moved}。",
+        "stockSame": "数出来 {counted}，跟架上一样 —— 没有记。"
       }
     },
     "home": {

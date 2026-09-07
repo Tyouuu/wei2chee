@@ -102,6 +102,12 @@ export type SkipCode =
   | "notPipeline"
   /** 目录认不得这一页。 */
   | "notARecordPage"
+  /** 盘点只在货架那一页做得了。 */
+  | "notShelfPage"
+  /** 没讲数出来几个。 */
+  | "noCountSaid"
+  /** 数出来那个不是一个数字。`said` */
+  | "countNotANumber"
   /**
    * 🔴 资料库自己那一句，原样。`detail`
    *
@@ -128,7 +134,16 @@ export type SkipCode =
    * 🔴 任务 225 让「客人来了」同时扣一次 —— 助手按同一支而**不讲**，就是一次
    * 静静少掉的套票，而他要到客人下次来才发现。
    */
-  | "packageUsed";
+  | "packageUsed"
+  /**
+   * 盘完了，差几个。`before` · `counted` · `moved`
+   *
+   * 🔴 差几个是**资料库算的** —— 助手不讲出来，他就不知道刚才那一句
+   * 让架上少了七包。而少掉的那七包，没有人用眼睛看得出来（任务 123）。
+   */
+  | "stockCounted"
+  /** 数出来跟系统一样 —— 什么都没记，而那要讲出来。 */
+  | "stockSame";
 
 /** 一件没做成的事，讲给老板听。`vars` 是那一句里的空格。 */
 export type Skip = {
@@ -189,8 +204,13 @@ export const SKIP_CODES = [
   "noSuchRow",
   "notPipeline",
   "notARecordPage",
+  "notShelfPage",
+  "noCountSaid",
+  "countNotANumber",
   "dbSaid",
   "layoutSaved",
   "dayLogged",
   "packageUsed",
+  "stockCounted",
+  "stockSame",
 ] as const satisfies readonly SkipCode[];
