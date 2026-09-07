@@ -87,7 +87,8 @@ describe("applyLayoutOps", () => {
       { op: "add_component", component: "CalendarWidget", after_id: null, title: null },
     ]);
     expect(applied).toBe(0);
-    expect(skipped[0].reason).toContain("CalendarWidget");
+    expect(skipped[0].reason).toBe("noSuchComponent");
+    expect(skipped[0].vars?.name).toBe("CalendarWidget");
     expect(ids(layout)).toEqual(ids(page()));
   });
 
@@ -96,7 +97,8 @@ describe("applyLayoutOps", () => {
       { op: "set_text", target_id: "does-not-exist", field: "title", value: "x" },
     ]);
     expect(applied).toBe(0);
-    expect(skipped[0].reason).toContain("does-not-exist");
+    expect(skipped[0].reason).toBe("notFound");
+    expect(skipped[0].vars?.id).toBe("does-not-exist");
   });
 
   // Partial success is the normal case, not an edge case.
@@ -150,7 +152,7 @@ describe("applyLayoutOps", () => {
       { op: "remove_component", target_id: "dashboard-shell" },
     ]);
     expect(applied).toBe(0);
-    expect(skipped[0].reason).toContain("框架");
+    expect(skipped[0].reason).toBe("frameNoDelete");
     expect(layout.content[0].type).toBe("SystemShell");
   });
 
@@ -175,7 +177,7 @@ describe("applyLayoutOps", () => {
       { op: "add_table_row", target_id: "dashboard-stats", cells: ["x"], status_tone: "neutral" },
     ]);
     expect(applied).toBe(0);
-    expect(skipped[0].reason).toContain("不是记录表格");
+    expect(skipped[0].reason).toBe("notRecordTable");
   });
 
   // The three operations the assistant used to have to refuse. Each one is only
@@ -227,7 +229,7 @@ describe("applyLayoutOps", () => {
       { op: "remove_table_column", target_id: "dashboard-recent", column_key: "c9" },
     ]);
     expect(applied).toBe(0);
-    expect(skipped[0].reason).toContain("没有");
+    expect(skipped[0].reason).toBe("noSuchColumn");
   });
 
   // A table with no columns cannot render and cannot be recovered from -- there
@@ -244,7 +246,7 @@ describe("applyLayoutOps", () => {
       { op: "remove_table_column", target_id: "dashboard-recent", column_key: keys.at(-1)! },
     ]);
     expect(applied).toBe(0);
-    expect(skipped[0].reason).toContain("至少");
+    expect(skipped[0].reason).toBe("minOneColumn");
   });
 
   // Saved layouts predate the array shape and are never rewritten in SQL, so an
@@ -412,7 +414,7 @@ describe("move_component", () => {
       { op: "move_component", target_id: "shell", before_id: null },
     ]);
     expect(out.applied).toBe(0);
-    expect(out.skipped[0].reason).toContain("页面框架");
+    expect(out.skipped[0].reason).toBe("frameNoMove");
   });
 
   it("drops an id that is not on the page instead of emptying the column", () => {
@@ -595,7 +597,8 @@ describe("set_text only writes fields the block actually has", () => {
     expect(r.skipped).toHaveLength(1);
     // The refusal has to reach the customer -- a silent drop is what this was
     // already doing, and is indistinguishable from the bug.
-    expect(r.skipped[0].reason).toContain("title");
+    expect(r.skipped[0].reason).toBe("noSuchField");
+    expect(r.skipped[0].vars?.field).toBe("title");
   });
 
   it("still writes the field the block really has", () => {

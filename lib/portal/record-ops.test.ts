@@ -127,7 +127,7 @@ describe("splitRecordOps", () => {
       expect(split.refused).toHaveLength(1);
       expect(split.refused[0].op).toBe("add_table_row");
       /* 一句只会说「不行」的拒绝，是一个比较礼貌的死路。 */
-      expect(split.refused[0].reason).toContain("别的页面");
+      expect(split.refused[0].reason).toBe("writeAggregated");
       /* 而它不可以是一句资料库的话。 */
       for (const w of ["pipeline", "module", "rpc", "error"]) {
         expect(split.refused[0].reason.toLowerCase()).not.toContain(w);
@@ -164,7 +164,7 @@ describe("writeRecords", () => {
 
   it("calls the SAME rpc the button calls", async () => {
     const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
-    await writeRecords(client(rpc), "p1", "quotations", [row("Taman Desa 三房翻新", "陈先生", "RM 48,500")], "req");
+    await writeRecords(client(rpc), "p1", "quotations", [row("Taman Desa 三房翻新", "陈先生", "RM 48,500")], "req", "开帐");
     expect(rpc).toHaveBeenCalledTimes(1);
     // founder-points 23: not a similar action, not a convenient one -- this one.
     expect(rpc.mock.calls[0][0]).toBe("add_pipeline_record");
@@ -179,17 +179,18 @@ describe("writeRecords", () => {
      refused and said out loud rather than written blank. */
   it("refuses a row that does not say what it is", async () => {
     const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
-    const r = await writeRecords(client(rpc), "p1", "quotations", [row("", "陈先生")], "req");
+    const r = await writeRecords(client(rpc), "p1", "quotations", [row("", "陈先生")], "req", "开帐");
     expect(rpc).not.toHaveBeenCalled();
     expect(r.written).toBe(0);
-    expect(r.skipped[0].reason).toContain("这一单是什么");
+    expect(r.skipped[0].reason).toBe("noSubject");
   });
 
   it("reports a refusal from the database instead of swallowing it", async () => {
     const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: { message: "not your project" } }));
-    const r = await writeRecords(client(rpc), "p1", "quotations", [row("A")], "req");
+    const r = await writeRecords(client(rpc), "p1", "quotations", [row("A")], "req", "开帐");
     expect(r.written).toBe(0);
-    expect(r.skipped[0].reason).toContain("not your project");
+    expect(r.skipped[0].reason).toBe("dbSaid");
+    expect(r.skipped[0].vars?.detail).toContain("not your project");
   });
 
   /* 🔴 THE TWO LIVE SHAPES THAT HAD NO BRANCH.
@@ -202,16 +203,14 @@ describe("writeRecords", () => {
      is told something he can act on. Only checking `written === 0` would have
      passed on the broken version too. */
   it.each([
-    ["bookings", "预约那一页"],
-    ["reconciliation", "对帐那一页"],
-  ])("does not send a %s row to the pipeline rpc", async (moduleKey, sentence) => {
+    ["bookings", "writeCalendar"],
+    ["reconciliation", "writeReconcile"],
+  ])("does not send a %s row to the pipeline rpc", async (moduleKey, code) => {
     const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
-    const r = await writeRecords(client(rpc), "p1", moduleKey, [row("陈太太 洗剪吹", "陈太太")], "req");
+    const r = await writeRecords(client(rpc), "p1", moduleKey, [row("陈太太 洗剪吹", "陈太太")], "req", "开帐");
     expect(rpc).not.toHaveBeenCalled();
     expect(r.written).toBe(0);
-    expect(r.skipped[0].reason).toContain(sentence);
-    /* And never the database's own words. */
-    expect(r.skipped[0].reason).not.toMatch(/pipeline|module|rpc/i);
+    expect(r.skipped[0].reason).toBe(code);
   });
 });
 
@@ -243,8 +242,10 @@ describe("refuseToWrite", () => {
      branch is missing -- so the sentence has to say what to do instead, or it
      is just a politer dead end. */
   it("tells him where to go instead", () => {
-    expect(refuseToWrite("calendar")).toContain("预约那一页");
-    expect(refuseToWrite("reconcile")).toContain("对帐那一页");
+    /* 🔴 那一句现在住在 messages/{en,zh}.json —— 而它要讲得出去哪一页，
+       两种语言都要。见底下那一段 skip-codes 的守卫。 */
+    expect(refuseToWrite("calendar")).toBe("writeCalendar");
+    expect(refuseToWrite("reconcile")).toBe("writeReconcile");
   });
 
   it("never hands back the database's own words", () => {
@@ -376,6 +377,7 @@ describe("writeRecords on a directory page", () => {
       "customers",
       [row("陈先生", "Taman Desa · 013-234 5678", "新客户")],
       "req",
+      "开帐",
       /* The real caller reads these off the page. A customers table is
          三 columns -- 客户 · 联络方式 · 状态 -- not the four a quotation has. */
       () => ["primary", "secondary", "status"],
@@ -392,7 +394,7 @@ describe("writeRecords on a directory page", () => {
     // The blob is the owner's own words. Lifting a number out of it must not
     // throw the rest away -- 「Taman Desa」 is where the job is.
     const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
-    await writeRecords(client(rpc), "p1", "customers", [row("陈先生", "Taman Desa · 013-234 5678")], "req", () => [
+    await writeRecords(client(rpc), "p1", "customers", [row("陈先生", "Taman Desa · 013-234 5678")], "req", "开帐", () => [
       "primary",
       "secondary",
       "status",
@@ -405,7 +407,7 @@ describe("writeRecords on a directory page", () => {
        the dead control block-rules.ts forbids the assistant to draw. The form
        has its own WhatsApp box, where a person says so. */
     const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
-    await writeRecords(client(rpc), "p1", "customers", [row("陈先生", "03-7788 1234")], "req", () => [
+    await writeRecords(client(rpc), "p1", "customers", [row("陈先生", "03-7788 1234")], "req", "开帐", () => [
       "primary",
       "secondary",
       "status",
@@ -415,14 +417,14 @@ describe("writeRecords on a directory page", () => {
 
   it("says the row needs a name, not that it needs a document", async () => {
     const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ error: null }));
-    const out = await writeRecords(client(rpc), "p1", "suppliers", [row("", "016-2 2223333")], "req", () => [
+    const out = await writeRecords(client(rpc), "p1", "suppliers", [row("", "016-2 2223333")], "req", "开帐", () => [
       "primary",
       "secondary",
       "amount",
       "status",
     ]);
     expect(rpc).not.toHaveBeenCalled();
-    expect(out.skipped[0].reason).toBe("没有写名字");
+    expect(out.skipped[0].reason).toBe("noName");
   });
 
   it("still writes this business's own columns", async () => {
@@ -433,6 +435,7 @@ describe("writeRecords on a directory page", () => {
       "customers",
       [row("陈先生", "013-234 5678", "新客户", "会员 88")],
       "req",
+      "开帐",
       () => ["primary", "secondary", "status", "c1"],
     );
     expect(rpc.mock.calls[0][1].in_extra).toEqual({ c1: "会员 88" });
@@ -484,8 +487,9 @@ describe("acting on a row that is already there", () => {
     const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "已完成")], ["报价", "施工", "收款"]);
     expect(rpc).not.toHaveBeenCalled();
     expect(r.written).toBe(0);
-    expect(r.skipped[0].reason).toContain("报价");
-    expect(r.skipped[0].reason).toContain("施工");
+    expect(r.skipped[0].reason).toBe("pageStates");
+    expect(r.skipped[0].vars?.list).toContain("报价");
+    expect(r.skipped[0].vars?.list).toContain("施工");
   });
 
   /* 人在那一页看到的是自由文字（`stages.length &&` 才画下拉），所以助手也
@@ -501,7 +505,8 @@ describe("acting on a row that is already there", () => {
     const rpc = ok();
     const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "来了")], []);
     expect(rpc).not.toHaveBeenCalled();
-    expect(r.skipped[0].reason).toContain("no_show");
+    expect(r.skipped[0].reason).toBe("apptStates");
+    expect(r.skipped[0].vars?.list).toContain("no_show");
   });
 
   /* 🔴 任务 225：那一颗按钮顺手扣一次套票，而画面上会写出来。助手按同一支
@@ -523,23 +528,22 @@ describe("acting on a row that is already there", () => {
   });
 
   it.each([
-    ["payments", "冲正"],
-    ["customers", "名册"],
-    ["inventory", "货架"],
-    ["reconciliation", "对帐"],
-  ])("refuses on %s and says where to go instead", async (moduleKey, sentence) => {
+    ["payments", "actLedger"],
+    ["customers", "actDirectory"],
+    ["inventory", "actCatalog"],
+    ["reconciliation", "actReconcile"],
+  ])("refuses on %s and says where to go instead", async (moduleKey, code) => {
     const rpc = ok();
     const r = await actOnRecords(client(rpc), moduleKey, [act("x", "什么")], []);
     expect(rpc).not.toHaveBeenCalled();
-    expect(r.skipped[0].reason).toContain(sentence);
+    expect(r.skipped[0].reason).toBe(code);
   });
 
   it("turns the database's own sentence into one he can read", async () => {
     const rpc = vi.fn(async () => ({ data: null, error: { message: "no such record in your project" } }));
     const r = await actOnRecords(client(rpc), "quotations", [act("nope", "施工")], []);
     expect(r.written).toBe(0);
-    expect(r.skipped[0].reason).not.toMatch(/no such record|project/i);
-    expect(r.skipped[0].reason).toContain("找不到");
+    expect(r.skipped[0].reason).toBe("noSuchRow");
   });
 
   it("refuses when it did not say which row, or what to", async () => {
@@ -547,8 +551,8 @@ describe("acting on a row that is already there", () => {
     const a = await actOnRecords(client(rpc), "quotations", [act("", "施工")], []);
     const b = await actOnRecords(client(rpc), "quotations", [act("q-1", "")], []);
     expect(rpc).not.toHaveBeenCalled();
-    expect(a.skipped[0].reason).toContain("哪一笔");
-    expect(b.skipped[0].reason).toContain("改成什么");
+    expect(a.skipped[0].reason).toBe("noRecordSaid");
+    expect(b.skipped[0].reason).toBe("noStatusSaid");
   });
 });
 
@@ -680,7 +684,7 @@ describe("logging a day on site", () => {
     for (const key of ["customers", "suppliers", "quotations"]) {
       const r = await actOnRecords(client(rpc), key, [day("c-1", "full")], []);
       expect(r.written).toBe(0);
-      expect(r.skipped[0].reason).toContain("师傅");
+      expect(r.skipped[0].reason).toBe("dayNotStaffPage");
     }
     expect(rpc).not.toHaveBeenCalled();
   });
@@ -689,8 +693,7 @@ describe("logging a day on site", () => {
     const rpc = ok();
     const r = await actOnRecords(client(rpc), "staff", [day("s-1", "整天")], []);
     expect(rpc).not.toHaveBeenCalled();
-    expect(r.skipped[0].reason).toContain("half");
-    expect(r.skipped[0].reason).toContain("absent");
+    expect(r.skipped[0].reason).toBe("dayKinds");
   });
 
   /* 哪一天是资料库算的（马来西亚的今天），不是浏览器算的 —— 半夜到早上八点
@@ -712,6 +715,6 @@ describe("logging a day on site", () => {
     const rpc = ok();
     const r = await actOnRecords(client(rpc), "staff", [day("", "full")], []);
     expect(rpc).not.toHaveBeenCalled();
-    expect(r.skipped[0].reason).toContain("哪一个师傅");
+    expect(r.skipped[0].reason).toBe("noStaffSaid");
   });
 });

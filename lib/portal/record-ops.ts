@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LayoutOp } from "./layout-ops";
+import type { Skip, SkipCode } from "./skip-codes";
 
 /**
  * The assistant's 「加一单」 writes a real row, through the button's own RPC.
@@ -86,7 +87,7 @@ import type { ModuleShape } from "./module-catalog";
  * catalogue with no branch here is now a BUILD error, not something the owner
  * finds in front of a customer.
  */
-export function refuseToWrite(shape: ModuleShape): string | null {
+export function refuseToWrite(shape: ModuleShape): SkipCode | null {
   switch (shape) {
     /* The four that have a real business action behind them. */
     case "pipeline":
@@ -96,10 +97,10 @@ export function refuseToWrite(shape: ModuleShape): string | null {
       return null;
 
     case "calendar":
-      return "预约要写清楚几点到几点，而这里加一行给不了时间 —— 到预约那一页排一个时段";
+      return "writeCalendar";
 
     case "reconcile":
-      return "对帐要一个月份跟上游给的那个总数 —— 到对帐那一页加一笔";
+      return "writeReconcile";
 
     /* 总览 · 报表 · 排行 · 官网 never reach here (isRecordModule gates on the
        live shapes), and they are written out anyway because the compiler asks
@@ -107,13 +108,13 @@ export function refuseToWrite(shape: ModuleShape): string | null {
     case "overview":
     case "report":
     case "leaderboard":
-      return "这一页的数字是别的页面加起来的，不是打进去的";
+      return "writeAggregated";
     case "landing":
-      return "这是给客人看的那一页，不是记录页";
+      return "landingPage";
 
     default: {
       const unhandled: never = shape;
-      return `这一页还不能这样加一行：${String(unhandled)}`;
+      return "writeUnknown";
     }
   }
 }
@@ -247,7 +248,7 @@ export type SplitOps = {
    * 也没有投影，写进版面本来就是它唯一对的做法。这一栏只收
    * 「目录认得、而它没有一个真的业务动作」的那四种。
    */
-  refused: { op: string; reason: string }[];
+  refused: Skip[];
 };
 
 /**
@@ -267,7 +268,7 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
        只挡「加一行」：另外两个动作（改状态 · 记一天工）由 applyLayoutOps
        自己拒绝，而它那两句话跟这一页是哪一种无关，已经是对的。 */
     const kept: LayoutOp[] = [];
-    const refused: { op: string; reason: string }[] = [];
+    const refused: Skip[] = [];
     for (const op of ops) {
       if (op.op === "add_table_row") refused.push({ op: op.op, reason });
       else kept.push(op);
@@ -287,7 +288,7 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
 
 export type RecordResult = {
   written: number;
-  skipped: { op: string; reason: string }[];
+  skipped: Skip[];
 };
 
 /**
@@ -366,6 +367,14 @@ export async function writeRecords(
   ops: LayoutOp[],
   /** Stable per request, so a retried request does not duplicate. */
   requestKey: string,
+  /**
+   * 开帐那一笔在货架流水上写什么。
+   *
+   * 🔴 **必填，而且故意排在选填那一个前面** —— 一个选填的它，等於「忘了传就
+   * 静静写一个空的」，而那正是 2026-09-07 修的这个 bug 的形状。
+   * `live-answers.ts` 为「谁在问」写过同一句话：写成有预设，测试里会全绿。
+   */
+  openingWord: string,
   /** The column keys of the table an op targets, in display order. Null when
    *  the caller cannot resolve it; see sortCells. */
   columnsFor?: (targetId: string) => string[] | null,
@@ -383,7 +392,7 @@ export async function writeRecords(
          a customer page is a sentence about the wrong product. */
       skipped.push({
         op: op.op,
-        reason: DIRECTORY_MODULES.has(moduleKey) ? "没有写名字" : "没有写这一单是什么",
+        reason: DIRECTORY_MODULES.has(moduleKey) ? "noName" : "noSubject",
       });
       continue;
     }
@@ -405,7 +414,7 @@ export async function writeRecords(
        and falling through on the fourth is what put a raw database sentence in
        front of the owner on two of his pages. */
     const shape = shapeOfModule(moduleKey);
-    const refusal = shape === null ? "这一页不是记录页" : refuseToWrite(shape);
+    const refusal: SkipCode | null = shape === null ? "notARecordPage" : refuseToWrite(shape);
     if (refusal) {
       skipped.push({ op: op.op, reason: refusal });
       continue;
@@ -457,7 +466,7 @@ export async function writeRecords(
         in_idempotency_key: keyFor(requestKey, i),
       });
       if (itemErr) {
-        skipped.push({ op: op.op, reason: itemErr.message.slice(0, 80) });
+        skipped.push({ op: op.op, reason: "dbSaid", vars: { detail: itemErr.message.slice(0, 80) } });
         continue;
       }
       const opening = Number(String(amount ?? "").replace(/[^0-9.]/g, ""));
@@ -468,7 +477,12 @@ export async function writeRecords(
           in_item_id: item.id,
           in_direction: "in",
           in_qty: opening,
-          in_reason: "开帐",
+          /* 🔴 跟人按那颗按钮**一模一样**的那个词（new-record-form.tsx 用的是
+             `copy.form.stockOpening`）。2026-09-07 之前这里写死中文「开帐」——
+             所以一间英文系统的五金店，用讲的开一件货带开帐数量，货架流水上
+             留下的是一个中文词，**而且跟他自己按出来的那几笔不是同一个词**。
+             重点 23 一字不差：同一个动作两条路，只修了一条。 */
+          in_reason: openingWord,
           in_idempotency_key: keyFor(`${requestKey}-open`, i),
         });
       }
@@ -510,7 +524,7 @@ export async function writeRecords(
           in_extra: extra,
           in_idempotency_key: keyFor(requestKey, i),
         });
-    if (error) skipped.push({ op: op.op, reason: error.message.slice(0, 80) });
+    if (error) skipped.push({ op: op.op, reason: "dbSaid", vars: { detail: error.message.slice(0, 80) } });
     else written += 1;
   }
 
@@ -570,7 +584,7 @@ export const APPOINTMENT_STATES = ["booked", "done", "no_show", "cancelled"] as 
  * 每一句拒绝都要讲得出**该去哪里做那件事**。一句只会说「不行」的拒绝，
  * 是一个比较礼貌的死路。
  */
-export function refuseToAct(shape: ModuleShape): string | null {
+export function refuseToAct(shape: ModuleShape): SkipCode | null {
   switch (shape) {
     case "pipeline":
     case "calendar":
@@ -579,24 +593,24 @@ export function refuseToAct(shape: ModuleShape): string | null {
       /* 钱那一栏的状态是从钱算出来的（订金 / 已入账 / 已冲正，live-rows.ts），
          不是设的。而这个 schema 对钱本来就只有一条路：不改、不删，开一张
          相反的。 */
-      return "钱记下来就不改了 —— 要更正是开一张冲正，到那一笔上开";
+      return "actLedger";
     case "directory":
-      return "名册上的人没有状态可以按 —— 要改他的资料，点开他那一页";
+      return "actDirectory";
     case "catalog":
       /* 「架上几件」是流水加起来的，第十几次同一个判断。设一个状态上去，
          那个数字下一次重算就把它盖掉了。 */
-      return "货架上那一栏是数量算出来的 —— 要改架上几件，到货架那一页盘一次";
+      return "actCatalog";
     case "reconcile":
-      return "对帐是把一个月签起来，不是设状态 —— 到对帐那一页签";
+      return "actReconcile";
     case "overview":
     case "report":
     case "leaderboard":
-      return "这一页的行是别的页面加起来的，改不了";
+      return "actAggregated";
     case "landing":
-      return "这是给客人看的那一页，不是记录页";
+      return "landingPage";
     default: {
       const unhandled: never = shape;
-      return `这一页还不能改状态：${String(unhandled)}`;
+      return "actUnknown";
     }
   }
 }
@@ -655,17 +669,17 @@ export async function actOnRecords(
     */
     if (op.op === "log_work_day") {
       if (moduleKey !== "staff") {
-        skipped.push({ op: op.op, reason: "一天工记在师傅那一页，这一页不是名册" });
+        skipped.push({ op: op.op, reason: "dayNotStaffPage" });
         continue;
       }
       if (!recordId) {
-        skipped.push({ op: op.op, reason: "没有讲是哪一个师傅" });
+        skipped.push({ op: op.op, reason: "noStaffSaid" });
         continue;
       }
       if (!(WORK_DAY_KINDS as readonly string[]).includes(status)) {
         skipped.push({
           op: op.op,
-          reason: `一天工只有这三个：full(整天) · half(半天) · absent(没来)`,
+          reason: "dayKinds",
         });
         continue;
       }
@@ -674,7 +688,7 @@ export async function actOnRecords(
         in_kind: status,
       });
       if (error) {
-        skipped.push({ op: op.op, reason: friendly(error.message) });
+        skipped.push({ op: op.op, ...friendly(error.message) });
         continue;
       }
       written += 1;
@@ -686,17 +700,17 @@ export async function actOnRecords(
       continue;
     }
 
-    const refusal = shape === null ? "这一页不是记录页" : refuseToAct(shape);
+    const refusal: SkipCode | null = shape === null ? "notARecordPage" : refuseToAct(shape);
     if (refusal) {
       skipped.push({ op: op.op, reason: refusal });
       continue;
     }
     if (!recordId) {
-      skipped.push({ op: op.op, reason: "没有讲是哪一笔" });
+      skipped.push({ op: op.op, reason: "noRecordSaid" });
       continue;
     }
     if (!status) {
-      skipped.push({ op: op.op, reason: "没有讲要改成什么" });
+      skipped.push({ op: op.op, reason: "noStatusSaid" });
       continue;
     }
 
@@ -704,7 +718,8 @@ export async function actOnRecords(
       if (!(APPOINTMENT_STATES as readonly string[]).includes(status)) {
         skipped.push({
           op: op.op,
-          reason: `预约只有这四个：${APPOINTMENT_STATES.join(" · ")}`,
+          reason: "apptStates",
+          vars: { list: APPOINTMENT_STATES.join(" · ") },
         });
         continue;
       }
@@ -713,7 +728,7 @@ export async function actOnRecords(
         in_status: status,
       });
       if (error) {
-        skipped.push({ op: op.op, reason: friendly(error.message) });
+        skipped.push({ op: op.op, ...friendly(error.message) });
         continue;
       }
       written += 1;
@@ -738,7 +753,8 @@ export async function actOnRecords(
     if (allowedStatuses.length && !allowedStatuses.includes(status)) {
       skipped.push({
         op: op.op,
-        reason: `这一页的状态只有：${allowedStatuses.join(" · ")}`,
+        reason: "pageStates",
+          vars: { list: allowedStatuses.join(" · ") },
       });
       continue;
     }
@@ -747,7 +763,7 @@ export async function actOnRecords(
       in_stage: status,
     });
     if (error) {
-      skipped.push({ op: op.op, reason: friendly(error.message) });
+      skipped.push({ op: op.op, ...friendly(error.message) });
       continue;
     }
     written += 1;
@@ -758,9 +774,12 @@ export async function actOnRecords(
 
 /** 资料库讲的那一句，换成他读得懂的。认不出来的原样带出去 —— 编一句
  *  「出了点问题」比一句看不懂的英文更糟：他连拿去问都问不了。 */
-function friendly(message: string): string {
-  if (/no such record in your project/i.test(message)) return "找不到那一笔（或者它不是这一家的）";
-  if (/not a pipeline module/i.test(message)) return "这一页的行不是单据";
-  if (/in_status/i.test(message)) return `预约只有这四个：${APPOINTMENT_STATES.join(" · ")}`;
-  return message;
+function friendly(message: string): { reason: SkipCode; vars?: Record<string, string> } {
+  if (/no such record in your project/i.test(message)) return { reason: "noSuchRow" };
+  if (/not a pipeline module/i.test(message)) return { reason: "notPipeline" };
+  if (/in_status/i.test(message))
+    return { reason: "apptStates", vars: { list: APPOINTMENT_STATES.join(" · ") } };
+  /* 🔴 认不得的那一句是资料库自己讲的，而且它讲英文 —— 包一层，至少让他
+     知道那不是我们在跟他讲话。 */
+  return { reason: "dbSaid", vars: { detail: message.slice(0, 80) } };
 }

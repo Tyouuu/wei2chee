@@ -5,6 +5,7 @@ import { useAssistant } from "./assistant-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import type { Skip } from "@/lib/portal/skip-codes";
 import { usePuck, type Data } from "@puckeditor/core";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { puckConfig } from "@/design-system/editor/puck-config";
@@ -40,13 +41,32 @@ export type PageOffer = {
   blockId?: string;
 };
 
+/**
+ * 一件没做成的事，讲成他读得懂的那一句。
+ *
+ * 🔴 那几句 2026-09-07 之前是**写死的中文**（四十九处），而 portal 的 locale
+ * 跟 `system_language` 预设都是 `en` —— 也就是多数情况下他读到的是中文。
+ * 见 lib/portal/skip-codes.ts 的档头。
+ *
+ * ⚠️ 认不得的代号回代号本身，不回一句空的 —— 一个空白的解释，跟
+ * 「什么都没发生」在他眼前长得一模一样。
+ */
+function sayWhyNot(t: ReturnType<typeof useTranslations>, s: Skip): string {
+  const key = `skipped.${s.reason}`;
+  try {
+    return t(key, (s.vars ?? {}) as never).trim();
+  } catch {
+    return s.reason;
+  }
+}
+
 export type Turn = {
   id: string;
   question: string;
   state: "thinking" | "done" | "failed";
   explanation?: string;
   applied?: number;
-  skipped?: { op: string; reason: string }[];
+  skipped?: Skip[];
   /** The layout as it stood BEFORE this turn ran. This is what makes a single
    *  turn revertible on its own, which the global undo stack cannot do once
    *  the customer has kept working past it. */
@@ -351,7 +371,7 @@ export function AiAssistant({
         layout: Data;
         explanation: string;
         applied: number;
-        skipped: { op: string; reason: string }[];
+        skipped: Skip[];
         suggestion: PageOffer | null;
         /* 风格 / 配色 / 排法 -- not layout, so it is not in `result.layout`
            and is applied through the same RPC the style picker calls. */
@@ -825,7 +845,7 @@ export function AiAssistant({
                       <ul className="flex flex-col gap-0.5">
                         {turn.skipped.map((s, i) => (
                           <li key={i} className="[font-size:var(--text-xs)] [color:var(--color-brass-bright)]">
-                            · {s.reason}
+                            · {sayWhyNot(t, s)}
                           </li>
                         ))}
                       </ul>

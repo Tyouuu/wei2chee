@@ -44,6 +44,8 @@ import {
 import { fetchBusinessFacts, renderBusinessFacts } from "@/lib/portal/live-answers";
 import type { WorkspaceRole } from "@/lib/portal/workspace";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
+import type { Skip } from "@/lib/portal/skip-codes";
+import { RECORD_COPY } from "@/app/[locale]/portal/[pageKey]/record-copy";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -810,7 +812,7 @@ The business owner asked:
   const split = splitRecordOps(parsed.operations, pageKey);
   let recordsWritten = 0;
   let asCustomerForRows: Awaited<ReturnType<typeof createSessionSupabaseClient>> | null = null;
-  const recordSkips: { op: string; reason: string }[] = [];
+  const recordSkips: Skip[] = [];
   /*
     🔴 在总览 · 报表 · 排行上「加一行」，2026-09-07 之前是写进版面的，
     而且回报成功（量出来 applied:1 · skipped:[]）。那一笔不在他的帐本里，
@@ -849,6 +851,8 @@ The business owner asked:
       pageKey as string,
       split.recordOps,
       `${user.id}:${trimmed}`,
+      /* 🔴 跟人按那颗按钮同一个词 —— 见 writeRecords 的 openingWord。 */
+      RECORD_COPY[ctx ? systemLangOf(ctx) : "en"].form.stockOpening,
       /* Which column each cell belongs to, read from the page the customer is
          looking at. A key that is not one of the built-in four is a column
          this business added for itself, and its value goes to `extra` instead
@@ -1000,7 +1004,7 @@ function validDesign(
    *  is something the owner asked for that will not happen, which is exactly
    *  what that list is, and dropping it silently is how this bug read to them
    *  in the first place. */
-  skipped: { op: string; reason: string }[],
+  skipped: Skip[],
 ): { style?: string; palette?: string | null; layout?: string } | null {
   if (!raw || typeof raw !== "object") return null;
   const d = raw as Record<string, unknown>;
@@ -1028,7 +1032,7 @@ function validDesign(
       where it answers 排法 anyway.
     */
     if (canRegenerate) out.layout = layout;
-    else skipped.push({ op: "design.layout", reason: "这一页已经保存过，排法只能用搬动区块来换" });
+    else skipped.push({ op: "design.layout", reason: "layoutSaved" });
   }
 
   return Object.keys(out).length ? out : null;

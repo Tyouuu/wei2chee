@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Skip, SkipCode } from "./skip-codes";
 import { puckConfig } from "@/design-system/editor/puck-config";
 import { heroDeadFields } from "@/design-system/components/site-hero";
 import { VARIANTS, activeVariant } from "@/design-system/editor/variants";
@@ -467,7 +468,7 @@ export function parseLayoutOps(raw: unknown): {
   /** 风格 / 配色 / 排法 -- not layout, so it passes through untouched and the
    *  route validates it against the lists the product renders from. */
   design?: unknown;
-  rejected: { op: string; reason: string }[];
+  rejected: Skip[];
 } {
   const outer = z
     .object({
@@ -480,7 +481,7 @@ export function parseLayoutOps(raw: unknown): {
     .parse(raw);
 
   const operations: LayoutOp[] = [];
-  const rejected: { op: string; reason: string }[] = [];
+  const rejected: Skip[] = [];
   for (const candidate of outer.operations ?? []) {
     const one = layoutOpSchema.safeParse(candidate);
     if (one.success) {
@@ -495,7 +496,8 @@ export function parseLayoutOps(raw: unknown): {
     const issue = one.error.issues[0];
     rejected.push({
       op: name,
-      reason: issue ? `${issue.path.join(".") || "?"}: ${issue.message}` : "格式不对",
+      reason: "badShape",
+      vars: { detail: issue ? `${issue.path.join(".") || "?"}: ${issue.message}` : "" },
     });
   }
 
@@ -904,7 +906,7 @@ export type ApplyResult = {
   /** Operations that could not be applied, each with a plain reason. Surfaced
    *  to the customer rather than swallowed: an edit that silently does nothing
    *  is worse than one that says what it could not do. */
-  skipped: { op: string; reason: string }[];
+  skipped: Skip[];
 };
 
 export function applyLayoutOps(
@@ -930,7 +932,7 @@ export function applyLayoutOps(
       case "set_text": {
         const node = findNode(layout.content, op.target_id);
         if (!node) {
-          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          skipped.push({ op: op.op, reason: "notFound", vars: { id: String(op.target_id) } });
           break;
         }
         /*
@@ -957,8 +959,9 @@ export function applyLayoutOps(
               ? // Declared, but this block's current shape does not put it on
                 // the page. Writing it would be the silent no-op this whole
                 // mechanism exists to stop.
-                `${String(node.type ?? "")} 这一套版式不显示「${op.field}」`
-              : `${String(node.type ?? "")} 没有「${op.field}」这个字段`,
+                "fieldNotShown"
+              : "noSuchField",
+            vars: { type: String(node.type ?? ""), field: String(op.field) },
           });
           break;
         }
@@ -971,7 +974,7 @@ export function applyLayoutOps(
         // The enum check that makes a hallucinated component name a no-op
         // rather than an empty slot on a paying customer's page.
         if (!REGISTERED_COMPONENTS.includes(op.component)) {
-          skipped.push({ op: op.op, reason: `没有这个组件：${op.component}` });
+          skipped.push({ op: op.op, reason: "noSuchComponent", vars: { name: String(op.component) } });
           break;
         }
         const config = COMPONENT_CONFIGS[op.component];
@@ -1019,11 +1022,11 @@ export function applyLayoutOps(
         // never be able to carry out by accident.
         const node = findNode(layout.content, op.target_id);
         if (node?.type === "SystemShell") {
-          skipped.push({ op: op.op, reason: "页面框架不能删除" });
+          skipped.push({ op: op.op, reason: "frameNoDelete" });
           break;
         }
         if (!removeNode(layout.content, op.target_id)) {
-          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          skipped.push({ op: op.op, reason: "notFound", vars: { id: String(op.target_id) } });
           break;
         }
         applied++;
@@ -1045,19 +1048,19 @@ export function applyLayoutOps(
       case "move_component": {
         const node = findNode(layout.content, op.target_id);
         if (!node) {
-          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          skipped.push({ op: op.op, reason: "notFound", vars: { id: String(op.target_id) } });
           break;
         }
         if (node.type === "SystemShell") {
-          skipped.push({ op: op.op, reason: "页面框架不能搬动" });
+          skipped.push({ op: op.op, reason: "frameNoMove" });
           break;
         }
         if (op.before_id === op.target_id) {
-          skipped.push({ op: op.op, reason: "搬到自己前面" });
+          skipped.push({ op: op.op, reason: "moveBeforeSelf" });
           break;
         }
         if (!removeNode(layout.content, op.target_id)) {
-          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          skipped.push({ op: op.op, reason: "notFound", vars: { id: String(op.target_id) } });
           break;
         }
         /*
@@ -1073,7 +1076,7 @@ export function applyLayoutOps(
           if (!home) {
             // Put it back where it was rather than leaving the page short.
             col.push(node);
-            skipped.push({ op: op.op, reason: `找不到 ${op.before_id}` });
+            skipped.push({ op: op.op, reason: "notFound", vars: { id: String(op.before_id) } });
             break;
           }
           col = home.arr;
@@ -1088,7 +1091,7 @@ export function applyLayoutOps(
       case "add_table_row": {
         const table = tableOf(layout, op.target_id);
         if (!table) {
-          skipped.push({ op: op.op, reason: `${op.target_id} 不是记录表格` });
+          skipped.push({ op: op.op, reason: "notRecordTable", vars: { id: String(op.target_id) } });
           break;
         }
         const row = blankRow(table.columns);
@@ -1112,14 +1115,14 @@ export function applyLayoutOps(
       case "add_table_column": {
         const table = tableOf(layout, op.target_id);
         if (!table) {
-          skipped.push({ op: op.op, reason: `${op.target_id} 不是记录表格` });
+          skipped.push({ op: op.op, reason: "notRecordTable", vars: { id: String(op.target_id) } });
           break;
         }
         // Same ceiling the fields panel enforces (table-field.tsx). Stated in
         // both places on purpose: the customer's own limit should not depend on
         // which of the two ways they add a column.
         if (table.columns.length >= 8) {
-          skipped.push({ op: op.op, reason: "表格最多八列" });
+          skipped.push({ op: op.op, reason: "maxColumns" });
           break;
         }
         const key = newColumnKey(table.columns);
@@ -1132,18 +1135,18 @@ export function applyLayoutOps(
       case "remove_table_column": {
         const table = tableOf(layout, op.target_id);
         if (!table) {
-          skipped.push({ op: op.op, reason: `${op.target_id} 不是记录表格` });
+          skipped.push({ op: op.op, reason: "notRecordTable", vars: { id: String(op.target_id) } });
           break;
         }
         const at = table.columns.findIndex((c) => c.key === op.column_key);
         if (at === -1) {
-          skipped.push({ op: op.op, reason: `表格里没有 ${op.column_key} 这一列` });
+          skipped.push({ op: op.op, reason: "noSuchColumn", vars: { key: String(op.column_key) } });
           break;
         }
         // A table with no columns cannot be rendered and cannot be recovered
         // from -- there would be no header to add one back through.
         if (table.columns.length <= 1) {
-          skipped.push({ op: op.op, reason: "表格至少要有一列" });
+          skipped.push({ op: op.op, reason: "minOneColumn" });
           break;
         }
         table.columns.splice(at, 1);
@@ -1158,12 +1161,12 @@ export function applyLayoutOps(
       case "set_table_column": {
         const table = tableOf(layout, op.target_id);
         if (!table) {
-          skipped.push({ op: op.op, reason: `${op.target_id} 不是记录表格` });
+          skipped.push({ op: op.op, reason: "notRecordTable", vars: { id: String(op.target_id) } });
           break;
         }
         const col = table.columns.find((c) => c.key === op.column_key);
         if (!col) {
-          skipped.push({ op: op.op, reason: `表格里没有 ${op.column_key} 这一列` });
+          skipped.push({ op: op.op, reason: "noSuchColumn", vars: { key: String(op.column_key) } });
           break;
         }
         col.label = op.column_label;
@@ -1175,13 +1178,13 @@ export function applyLayoutOps(
       case "set_variant": {
         const node = findNode(layout.content, op.target_id);
         if (!node) {
-          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          skipped.push({ op: op.op, reason: "notFound", vars: { id: String(op.target_id) } });
           break;
         }
         const list = VARIANTS[node.type];
         const variant = list?.find((v) => v.id === op.variant_id);
         if (!variant) {
-          skipped.push({ op: op.op, reason: `${node.type} 没有「${op.variant_id}」这个款式` });
+          skipped.push({ op: op.op, reason: "noSuchVariant", vars: { type: String(node.type), variant: String(op.variant_id) } });
           break;
         }
         // The variant's own props, not the model's. Same object the picker
@@ -1196,17 +1199,17 @@ export function applyLayoutOps(
       case "set_copy": {
         const node = findNode(layout.content, op.target_id);
         if (!node) {
-          skipped.push({ op: op.op, reason: `找不到 ${op.target_id}` });
+          skipped.push({ op: op.op, reason: "notFound", vars: { id: String(op.target_id) } });
           break;
         }
         if (node.type !== "SiteBlock") {
-          skipped.push({ op: op.op, reason: `${node.type} 不是官网版段` });
+          skipped.push({ op: op.op, reason: "notSiteSection", vars: { type: String(node.type) } });
           break;
         }
         const block = typeof node.props.block === "string" ? node.props.block : null;
         const defaults = block ? BLOCK_COPY[block] : undefined;
         if (!defaults) {
-          skipped.push({ op: op.op, reason: `这一段没有可改的字` });
+          skipped.push({ op: op.op, reason: "noProse" });
           break;
         }
         // Walk the DEFAULTS, not the override: the shape a section actually
@@ -1219,7 +1222,7 @@ export function applyLayoutOps(
           shape = (shape as Record<string, unknown>)[part];
         }
         if (typeof shape !== "string") {
-          skipped.push({ op: op.op, reason: `这一段没有「${op.path}」这个位置` });
+          skipped.push({ op: op.op, reason: "noSuchPath", vars: { path: String(op.path) } });
           break;
         }
         // Copy-on-write down the path so a section that has never been edited
@@ -1242,7 +1245,7 @@ export function applyLayoutOps(
       case "set_workflow": {
         const node = findNode(layout.content, op.target_id);
         if (!node || node.type !== "WorkflowStrip") {
-          skipped.push({ op: op.op, reason: `${op.target_id} 不是业务流程` });
+          skipped.push({ op: op.op, reason: "notWorkflow", vars: { id: String(op.target_id) } });
           break;
         }
         node.props.stages = op.stages.map((label) => ({ label, tone: "normal" }));
@@ -1259,12 +1262,12 @@ export function applyLayoutOps(
         让助手回报成功。
       */
       case "log_work_day": {
-        skipped.push({ op: op.op, reason: "这一页记不了一天工 —— 到师傅那一页" });
+        skipped.push({ op: op.op, reason: "cannotLogDay" });
         break;
       }
 
       case "set_record_status": {
-        skipped.push({ op: op.op, reason: "这一页的行不是记录，没有状态可以改" });
+        skipped.push({ op: op.op, reason: "rowsNotRecords" });
         break;
       }
 
@@ -1287,7 +1290,7 @@ export function applyLayoutOps(
         const unhandled: never = op;
         skipped.push({
           op: (unhandled as { op: string }).op,
-          reason: "这个操作还没接上",
+          reason: "notWired",
         });
         break;
       }
