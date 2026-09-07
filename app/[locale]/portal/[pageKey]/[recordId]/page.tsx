@@ -13,6 +13,10 @@ import { ringgit } from "@/lib/portal/live-rows";
 import { reversedIds, settleDocument, unallocatedOf, type DocumentSettlement } from "@/lib/portal/allocations";
 import { jobProfit, type ProfitFact } from "@/lib/portal/profit";
 import { AppointmentStatus } from "../new/appointment-status";
+import {
+  PurchaseMatch,
+  type PurchaseMatchFacts,
+} from "../new/purchase-match";
 import { PartyStatement } from "../new/party-statement";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
 import { SettleMonth } from "../new/settle-month";
@@ -87,6 +91,9 @@ export default async function EditRecordPage({
   let archivedAt: string | null = null;
   let reversed = false;
   let received = false;
+  /* 这张进货单对不对得上。⚠️ `undefined` = 没有问（不是进货单，或者不是老板），
+     而那跟「对得上」是两句话 —— 后者要有人真的去问过。 */
+  let match: PurchaseMatchFacts | undefined;
   /* 逐项. Read back in the order he wrote them -- a quotation whose lines come
      back shuffled is a different quotation. */
   let docNo: string | null = null;
@@ -1144,6 +1151,40 @@ export default async function EditRecordPage({
         .select("id", { count: "exact", head: true })
         .eq("against_id", recordId);
       received = (count ?? 0) > 0;
+
+      /* 🔴 「这张单我叫了多少、到了多少、付了多少 —— 对得上吗？」
+         `purchase_match` 从 20260906070000 起就在，而画面上一个入口都没有。
+         ⚠️ 只问看得到钱的人：那一支自己是 `sees_money`，师傅问它会抛，
+         而一段抛掉的读数会画成「对得上」—— 那是一句假话。 */
+      if (ctx.role === "owner") {
+        const { data: m } = await supabase.rpc("purchase_match", {
+          in_record_id: recordId,
+        });
+        const row = (
+          m as
+            | {
+                ordered_cents: number;
+                paid_cents: number;
+                unpaid_cents: number;
+                lines_total: number;
+                lines_arrived: number;
+                arrived: boolean;
+                overpaid_cents: number;
+              }[]
+            | null
+        )?.[0];
+        if (row) {
+          match = {
+            orderedCents: Number(row.ordered_cents),
+            paidCents: Number(row.paid_cents),
+            unpaidCents: Number(row.unpaid_cents),
+            linesTotal: Number(row.lines_total),
+            linesArrived: Number(row.lines_arrived),
+            arrived: !!row.arrived,
+            overpaidCents: Number(row.overpaid_cents),
+          };
+        }
+      }
     }
 
     lines = (rows ?? []).map((r) => ({
@@ -1239,6 +1280,11 @@ export default async function EditRecordPage({
           afterHeading={
             apptStatus ? (
               <AppointmentStatus id={recordId} status={apptStatus} who={apptWho} copy={copy.form} />
+            ) : match ? (
+              /* 🔴 三个数字在这里，不是第十段 —— 它们是底下那几段
+               （收货 · 退货 · 分摊）的摘要，而一个摘要放在它摘要的
+               东西后面，等於没有摘要。见 purchase-match.tsx。 */
+              <PurchaseMatch facts={match} money={(c) => ringgit(c) ?? "—"} copy={copy.form} />
             ) : null
           }
           projectId={ctx.projectId}

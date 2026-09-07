@@ -51,6 +51,13 @@ const eslintConfig = defineConfig([
        They are .mjs with top-level await and no React in sight, and the
        Next/React rule sets have nothing true to say about them. */
     "scripts/**",
+
+    /* 查东西的时候写的临时档案。2026-09-06 起它已经 gitignore 了
+       （任务 255：596 个未追踪的档案，把 87 个「别人正在改」盖掉了），
+       而 lint 还在看它 —— 於是任何一个人随手丢一个 .cjs 进去，
+       整个仓库的 lint 就红，而那个档案根本不属於这个产品。
+       跟 scripts/** 同一个理由。 */
+    "scratchpad/**",
   ]),
 
   {

@@ -33,37 +33,49 @@ import type { RecordFormCopy } from "../record-copy";
  * 那一支只改字（注解 · 类别 · 谁做的 · 收据），**动不到那个月的总数**，
  * 所以 20260905740000 规矩 ③ 明写它照样过。
  *
+ * ── 🔴 答案要跟着他现在填的那一天走 ──────────────────────────────────────
+ *
+ * 状态存的是「**哪一天**的答案是什么」，不是一个光秃秃的 true。
+ * 他把六月改成八月，上一趟的答案还在飞 —— 一个只存 boolean 的版本，
+ * 会在那两秒里对着八月讲六月那一句，**而画面上完全看不出来**。
+ *
+ * ⚠️ 这一条是 lint 逼出来的：第一版在 effect 里同步 setState
+ * （React 19 的 `set-state-in-effect` 报 error），而修那一条的时候
+ * 才看到底下这个真的毛病。**规则本身讲的是级联渲染，
+ * 而它指着的地方藏着一个会讲错月份的答案。**
+ *
  * ── 方向要跟着这一页走 ──────────────────────────────────────────────────
  *
  * 锁的粒度是「月 × 方向」（规矩 ②：他签的是 Celcom 的「进来多少」，
  * 就只锁「进」）。收款是进，开销跟佣金是出 —— 而这一页哪一种，
  * `spendsMoney` 已经答得出来。
  */
-export function PeriodLock({
+
+/**
+ * @returns `true` 锁着 · `false` 没锁 · `null` **还不知道**
+ *   （没填日子 · 还在问 · 读不到）。三种，不是两种。
+ */
+export function usePeriodLock({
   projectId,
-  /** 他填的那个日子。空的 = 今天，而今天照定义锁不了（规矩 ①）。 */
   on,
   direction,
-  copy,
-  onLocked,
 }: {
   projectId: string;
+  /** 他填的那个日子。空的 = 今天，而今天照定义锁不了（规矩 ①）。 */
   on: string;
   direction: "in" | "out";
-  copy: RecordFormCopy;
-  onLocked: (locked: boolean) => void;
-}) {
-  const [locked, setLocked] = useState<boolean | null>(null);
+}): boolean | null {
+  /* 🔴 答案带着它是**哪一天**的答案。见档头。 */
+  const [answer, setAnswer] = useState<{ on: string; locked: boolean } | null>(
+    null,
+  );
 
   useEffect(() => {
-    let alive = true;
     /* 空的 = 今天。资料库那一支自己会用今天，而今天永远不是
-       「已经过完的月份」—— 所以那一趟问了也是白问。 */
-    if (!on) {
-      setLocked(null);
-      onLocked(false);
-      return;
-    }
+       「已经过完的月份」—— 所以那一趟问了也是白问，而它是他打开
+       每一张收款单都要付的钱。 */
+    if (!on) return;
+    let alive = true;
     const supabase = createBrowserSupabaseClient();
     supabase
       .rpc("is_period_locked", {
@@ -73,18 +85,26 @@ export function PeriodLock({
       })
       .then(({ data, error }) => {
         if (!alive) return;
-        /* 🔴 读不到就是 null，不是 false —— 见档头。 */
-        const answer = error ? null : data === true;
-        setLocked(answer);
-        onLocked(answer === true);
+        /* 🔴 读不到就是「没锁」，不是「锁着」—— 见档头。 */
+        setAnswer({ on, locked: !error && data === true });
       });
     return () => {
       alive = false;
     };
-  }, [projectId, on, direction, onLocked]);
+  }, [projectId, on, direction]);
 
+  if (!on) return null;
+  return answer && answer.on === on ? answer.locked : null;
+}
+
+export function PeriodLock({
+  locked,
+  copy,
+}: {
+  locked: boolean | null;
+  copy: RecordFormCopy;
+}) {
   if (locked !== true) return null;
-
   return (
     <p
       data-period-locked=""

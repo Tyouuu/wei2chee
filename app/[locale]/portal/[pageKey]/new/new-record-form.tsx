@@ -30,7 +30,7 @@ import type { PartyAddress, PartyDebt } from "../record-context";
 import { JobPhotos, type JobPhoto } from "./job-photos";
 import { ChangeTrail } from "./change-trail";
 import { Stocktake } from "./stocktake";
-import { PeriodLock } from "./period-lock";
+import { PeriodLock, usePeriodLock } from "./period-lock";
 import type { ShownChange } from "@/lib/portal/change-log";
 
 /**
@@ -385,15 +385,23 @@ export function NewRecordForm({
   /* 那张收据在桶里的路径。🔴 读不出来也要留着 —— 照片是他明年查帐要拿出来
      的那一张，而一个传上去、没有任何一行指着它的档案就是孤儿档。 */
   const [receiptPath, setReceiptPath] = useState<string>("");
-  /* 那个月他已经对完帐签过了。🔴 **只有确定锁着才是 true** ——
-     读不到回的是 false，因为一个因为读不到而挡住他记帐的画面，
-     比一句迟来的资料库英文糟得多（见 `period-lock.tsx` 的档头）。 */
-  const [periodLocked, setPeriodLocked] = useState(false);
   const [jobId, setJobId] = useState<string>(record?.jobId ?? "");
   /* 🔴 挂单**只有出去的钱**。进来的钱靠分摊回答「这一单收了多少」，
      再给它一个 job_id，同一个问题就有两个答案 -- 资料库那边会拒绝，
      而让他填完、保存了才知道，比现在不画糟。 */
   const spendsMoney = isLedger && moduleKey !== "payments";
+  /* 那个月他已经对完帐签过了。🔴 **只有确定锁着才挡** —— 读不到回的是
+     null，因为一个因为读不到而挡住他记帐的画面，比一句迟来的资料库英文
+     糟得多（见 `period-lock.tsx` 的档头）。
+     ⚠️ 状态住在那支 hook 里，这里不再存第二份 —— 同一件事两个地方
+     就是两个答案，而这个仓库栽在那上面至少八次。 */
+  const periodLock = usePeriodLock({
+    projectId,
+    /* 只有钱那几页、而且只有新增的时候才去问；其余送空字串 = 不问。
+       ⚠️ hook 不可以画在条件里面，所以判断放在参数上。 */
+    on: isLedger && !record ? entryOn : "",
+    direction: spendsMoney ? "out" : "in",
+  });
 
   /* 这个客户的地址。⚠️ 用的是**跟保存时同一条**认人规矩：完全相符、
      而且只有一个 —— 两个同名的客户不准猜（20260901060000）。
@@ -1386,7 +1394,7 @@ export function NewRecordForm({
       form={FORM_ID}
       /* ⚠️ 一颗按下去一定失败的按钮，比一颗灰的糟 —— 而灰的旁边
          一定要讲得出为什么跟出路，那一句就在日期那一格底下。 */
-      disabled={busy || periodLocked}
+      disabled={busy || periodLock === true}
       className="inline-flex h-11 shrink-0 items-center [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [color:var(--color-on-primary)] [background-color:var(--color-primary)] transition-colors [transition-duration:var(--dur)] hover:[background-color:var(--color-primary-deep)] disabled:opacity-60"
     >
       {busy ? copy.saving : copy.save}
@@ -1934,15 +1942,7 @@ export function NewRecordForm({
           {/* 🔴 那个月签过了就在这里讲 —— 贴着他刚填的那一格，
           而不是等他按下去之后印在整张表最底下（Baymard 那一条，
           任务 258 已经为另一句话付过一次学费）。 */}
-          {record ? null : (
-            <PeriodLock
-              projectId={projectId}
-              on={entryOn}
-              direction={spendsMoney ? "out" : "in"}
-              copy={copy}
-              onLocked={setPeriodLocked}
-            />
-          )}
+          {record ? null : <PeriodLock locked={periodLock} copy={copy} />}
         </label>
       ) : null}
 

@@ -246,6 +246,18 @@ export type RecordFormCopy = {
      ⚠️ 只讲在**新增**那一边 —— 改一笔钱走的是只改字的那一支，
      动不到那个月的总数，所以那一条规矩明写它照样过。 */
   periodLocked: string;
+  /* 这张单对不对得上（20260906070000 · 任务 149）。
+     ⚠️ 一个数字都不带 —— 数字是画面上另外那三格，而一句带数字的话
+     要一个函式，而函式过不了伺服器到浏览器那一条线（任务 115 付过学费）。 */
+  matchOpen: string;
+  matchSettled: string;
+  matchOverpaid: string;
+  matchPaidNotArrived: string;
+  matchArrivedNotPaid: string;
+  matchOrdered: string;
+  matchArrived: string;
+  matchPaid: string;
+  matchUnpaid: string;
   /* 谁改了什么（20260904020000）。只画给看得到钱的人 ——
      `rows` 是 null 的意思是「没有问」，不是「没有改过」。 */
   changes: string;
@@ -691,6 +703,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "留空就是今天。收据上是上个月的，就填上个月 —— 不然这个月的帐会多出一笔。",
       periodLocked:
         "那个月你已经对完帐签过了，所以这一笔进不去。要补就到对帐那一页把那个月重开，补完再签一次。",
+      matchOpen: "这张单还在走。",
+      matchSettled: "对得上 —— 货到齐了，钱也付清了。",
+      matchOverpaid: "付多了 —— 跟供应商对一次。",
+      matchPaidNotArrived: "钱付了，货一件都还没到。",
+      matchArrivedNotPaid: "货到了，钱还没付清。",
+      matchOrdered: "叫了",
+      matchArrived: "到了",
+      matchPaid: "付了",
+      matchUnpaid: "还欠",
       changes: "改过什么",
       changesNone: "还没有人改过这一单。",
       changeBlank: "空白",
@@ -1074,6 +1095,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "Blank means today. If the receipt is from last month, put last month — otherwise this month's books gain an entry that was not there.",
       periodLocked:
         "That month is reconciled and signed off, so this entry cannot go in. Reopen the month on the reconciliation page, add it, then sign it off again.",
+      matchOpen: "This order is still running.",
+      matchSettled: "It adds up — everything arrived and it is paid off.",
+      matchOverpaid: "Paid more than ordered — check it with the supplier.",
+      matchPaidNotArrived: "Paid, and nothing has arrived yet.",
+      matchArrivedNotPaid: "Arrived, and it is not paid off yet.",
+      matchOrdered: "Ordered",
+      matchArrived: "Arrived",
+      matchPaid: "Paid",
+      matchUnpaid: "Still owed",
       changes: "What was changed",
       changesNone: "Nobody has changed this one yet.",
       changeBlank: "blank",
