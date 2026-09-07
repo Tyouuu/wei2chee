@@ -43,6 +43,13 @@ export type RecordFormCopy = {
   linePrice: string;
   lineAmount: string;
   lineAdd: string;
+  /**
+   * 🔴 一台一台管的那几件货，号码打在这一行上。
+   * 只在这一件真的开了序号的时候画 —— 一包水泥永远看不到它（[任务 91]）。
+   */
+  lineSerial: string;
+  /** 那一件管序号，而架上一台都没有 —— 跟「不管序号」是两句话 */
+  lineSerialNone: string;
   /** 「照上次那一张」—— 只在整张明细还空着的时候画（[任务 150]） */
   lineUseLast: string;
   /** 只在他真的有货架的时候画 —— 不然那是一句假话 */
@@ -531,6 +538,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       linePrice: "单价",
       lineAmount: "金额",
       lineAdd: "加一行",
+      lineSerial: "哪一台（车架号 · 机身号）",
+      lineSerialNone: "这一件是一台一台管的，而架上一台都没有。",
       lineUseLast: "照上次那一张",
       lineShelfHint: "在「是什么」打前几个字，你自己的货会出来。",
       statementHeading: "月结对帐单",
@@ -907,6 +916,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       linePrice: "Unit price",
       lineAmount: "Amount",
       lineAdd: "Add a line",
+      lineSerial: "Which unit (serial · chassis no.)",
+      lineSerialNone:
+        "This one is tracked unit by unit, and there is none on the shelf.",
       lineUseLast: "Same as last time",
       lineShelfHint: "Start typing in What it is — your own items come up.",
       statementHeading: "Monthly statement",

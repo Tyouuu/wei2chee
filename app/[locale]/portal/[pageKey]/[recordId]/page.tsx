@@ -98,6 +98,8 @@ export default async function EditRecordPage({
     unit: string;
     unitPrice: string;
     amount: string;
+    /** 一台一台管的那几件货，这一行上那个号码。 */
+    batchCode: string;
   }[] = [];
   /* 分期付款表。跟明细一样按他写的顺序读回来 —— 一份读错顺序的分期表
      是另一份付款办法。 */
@@ -1020,7 +1022,9 @@ export default async function EditRecordPage({
 
     const { data: rows } = await supabase
       .from("record_lines")
-      .select("description, qty, unit, unit_price_cents, amount_cents")
+      .select(
+        "description, qty, unit, unit_price_cents, amount_cents, batch_code",
+      )
       .eq("record_id", recordId)
       .order("sort_order");
 
@@ -1150,6 +1154,7 @@ export default async function EditRecordPage({
       unit: r.unit ?? "",
       unitPrice: ringgit(r.unit_price_cents) ?? "",
       amount: ringgit(r.amount_cents) ?? "",
+      batchCode: r.batch_code ?? "",
     }));
   }
 

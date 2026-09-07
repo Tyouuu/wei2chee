@@ -222,6 +222,8 @@ try {
     in_amount_cents: 3200000,
     in_idempotency_key: crypto.randomUUID(),
   });
+  /* ⚠️ 这一行**故意不带号码** —— 那正是他在画面上打完一行之后的样子，
+     而下一段就是这一支尺真正在守的那一件：**他在画面上讲得出是哪一台吗**。 */
   await call("set_record_lines", {
     in_record_id: so.id,
     in_lines: [
@@ -230,31 +232,68 @@ try {
         qty: 1,
         unit: "unit",
         unit_price_cents: 3200000,
-        /* 🔴 序号写在**那一行**上，不是写在出货那一次上
-           （`deliver_record` 读的是 `ln.batch_code`）。
-           ⚠️ 而画面上**没有那一格** —— `line-editor.tsx` 的 `Line`
-           没有 batchCode，所以一台车今天在画面上卖不出去：
-           出货那一支会拒绝，而他没有地方打那个号码。
-           这一支道具用 RPC 摆好它，**那个洞另外登记，不假装它不在**。 */
-        batch_code: CODE,
       },
     ],
   });
-  /* 🔴 一台一台管的货，出货一定要讲哪一台（20260906100000 那条守卫）。 */
-  /* ⚠️ 那几行是靠 line_id 配的，不是靠名字 —— 我第一版送了 description，
-     它回 moved:0 · skipped:1，**而它不报错**：一支把失败写在回传值里的函式，
-     对只看 error 的呼叫端，跟一支成功的函式长得一模一样。 */
+
+  console.log("\n④b 哪一台 —— 在画面上打进去（[任务 275]）");
+  /* 🔴 2026-09-07 之前这一格不存在：一间二手车行
+     **登记那一台 · 进货架 · 开一张单三步都做得了，而最后一步做不了** ——
+     出货被拒绝（'say which serial is going out'），而他没有地方打那个号码。
+
+     ⚠️ 号码读的是**存下来那一行**上的 `batch_code`，不是出货那一次送的 ——
+     `deliver_record` 里那个 `ln` 是 `record_lines` 的那一行（20260906100000）。
+     所以「他打得进去吗」就是「这一台卖不卖得出去」，没有第二条路。 */
+  await page.goto(`${BASE}/en/portal/orders/${so.id}`, {
+    waitUntil: "domcontentloaded",
+    timeout: 240000,
+  });
+  await page.waitForTimeout(3000);
+  const serialBox = page.getByLabel(/Which unit/i).first();
+  ok("🔴 那一行上有一格可以打号码", (await serialBox.count()) > 0);
+  ok(
+    "架上那一台在挑选清单里 —— 17 个字不该要他打",
+    (await page.locator(`datalist option[value="${CODE}"]`).count()) > 0,
+  );
+  /* 一包水泥那一行上不该有它 —— 那一条由单元测试守（`line-suggest.test.tsx`），
+     这里守的是**真的资料库 + 真的浏览器**那一半。 */
+  await serialBox.fill(CODE);
+  /* ⚠️ 拍下来 —— 一格看得懂的框跟一格挤在四个数字中间的框，
+     读数上长得一模一样（[重点 7l]）。 */
+  /* ⚠️ 拍那一块自己，不要自己算裁切框 —— 第一版拿 boundingBox 去裁，
+     而那一格是**填完之后**才长出来的，於是图上那个框被切了一半。 */
+  await page
+    .locator("section")
+    .filter({ hasText: /Line items/ })
+    .first()
+    .screenshot({ path: ".screenshots/serials/4-which-unit.png" });
+  await page.getByRole("button", { name: /^Save|保存/ }).first().click();
+  await page.waitForTimeout(3500);
+
   const { data: soLines } = await api
     .from("record_lines")
-    .select("id")
+    .select("id, batch_code")
     .eq("record_id", so.id);
+  ok(
+    "🔴 按了保存，那一行上真的有那个号码",
+    soLines?.[0]?.batch_code === CODE,
+    String(soLines?.[0]?.batch_code),
+  );
+
+  console.log("\n④c 那一台出得去了");
+  /* ⚠️ 那几行是靠 line_id 配的，不是靠名字 —— 我第一版送了 description，
+     它回 moved:0 · skipped:1，**而它不报错**：一支把失败写在回传值里的函式，
+     对只看 error 的呼叫端，跟一支成功的函式长得一模一样。
+     ⚠️ 而 `in_lines` 里**不送 batch_code** —— 那一支根本不读它。 */
   const went = await call("deliver_record", {
     in_record_id: so.id,
-    in_lines: [{ line_id: soLines[0].id, qty: 1, batch_code: CODE }],
+    in_lines: [{ line_id: soLines[0].id, qty: 1 }],
   });
-  if (Number(went.moved) !== 1) {
-    throw new Error("道具没摆好，那一台没有出去 — " + JSON.stringify(went));
-  }
+  ok(
+    "🔴 出货没有被拒绝 —— 号码是他在画面上讲的",
+    Number(went.moved) === 1,
+    JSON.stringify(went),
+  );
 
   await openPage();
   await page.locator('[data-serial-search] input').first().fill(CODE);
@@ -317,5 +356,5 @@ try {
 }
 
 console.log(`\n判：${pass} 过 ${fail} 没过`);
-console.log("→ .screenshots/serials/  ⚠️ 现在去用眼睛看那三张图");
+console.log("→ .screenshots/serials/  ⚠️ 现在去用眼睛看那四张图");
 process.exitCode = fail ? 1 : 0;

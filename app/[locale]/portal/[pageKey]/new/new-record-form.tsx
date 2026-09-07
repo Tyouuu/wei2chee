@@ -85,6 +85,10 @@ function linesForDb(lines: Line[]) {
       unit: l.unit.trim(),
       unit_price_cents: senOf(l.unitPrice) ?? null,
       amount_cents: senOf(l.amount) ?? 0,
+      /* 🔴 一台一台管的那几件货，号码写在**这一行**上 ——
+         `deliver_record` 读的就是 `ln.batch_code`（20260906100000）。
+         少了它，一间车行前面每一步都做得了，而最后一步出货被拒绝。 */
+      batch_code: l.batchCode.trim() || null,
     }));
 }
 
@@ -410,6 +414,12 @@ export function NewRecordForm({
   const lineSuggest = {
     ...suggestions,
     fill: (l: Line) => fillFromShelf(l, suggestions.items),
+    /* ⚠️ `null` = 这一件不管序号（那一格整个不画）；
+       空阵列 = 管，而架上一台都没有。两句话不一样，所以不塌成一个。 */
+    serialsFor: (description: string) => {
+      const key = description.trim();
+      return key in suggestions.serials ? suggestions.serials[key] : null;
+    },
   };
 
   const sitesForParty = (partyAddresses ?? []).filter((a) => a.partyId === chosenParty);

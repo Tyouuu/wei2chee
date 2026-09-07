@@ -64,6 +64,13 @@ export type LineSuggestions = {
   lastLines: Line[] | null;
   /** 那一张单的单号跟日子 —— 「照上次那一张」要讲得出是哪一张 */
   lastFrom: { docNo: string; on: string } | null;
+  /**
+   * 🔴 一台一台管的那几件货，架上还有哪几个号码。
+   * 键是**货品的名字**（明细那一格里就是名字），值是那几个号码。
+   * ⚠️ **一件不在这张表里 = 它不管序号**，那一格整个不画；
+   * 在表里而阵列是空的 = **管，而架上一台都没有**。两句话不一样。
+   */
+  serials: Record<string, string[]>;
 };
 
 const senOfRow = (v: unknown) => (typeof v === "number" ? v : null);
@@ -96,6 +103,12 @@ export function useLineSuggestions({
      的 lint 直接报 error（cascading renders）。改成记住它属於谁，对不上就不给 ——
      **一份算得出来的值，比一份要有人去清掉的状态安全。** */
   const [lastFor, setLastFor] = useState<string | null>(null);
+  /* 一台一台管的那几件货，跟它们架上那几个号码。⚠️ 预设是空的 object，
+     不是 null —— 「还没问」跟「问了、一件都没有」在这一格上做的事一样：
+     不画。而画错的代价（一张装修单上多五个空框）比晚一秒画大。 */
+  const [serials, setSerials] = useState<Record<string, string[]>>({});
+
+
 
   /* 货架跟单位：一个专案问一次 */
   useEffect(() => {
@@ -124,6 +137,33 @@ export function useLineSuggestions({
       if (!usual.error) {
         setUnits((usual.data ?? []).map((r: Record<string, unknown>) => String(r.unit ?? "")).filter(Boolean));
       }
+      /* 🔴 一台一台管的那几件 —— 先问有没有，再问架上有哪几台。
+         ⚠️ **绝大多数生意这一句回零行，然后就到此为止** ——
+         一家五金店不该为了一格它永远看不到的东西多打几次。 */
+      const tracked = await supabase
+        .from("catalog_items")
+        .select("id, name")
+        .eq("project_id", projectId)
+        .eq("tracks_serial", true)
+        .is("archived_at", null);
+      if (!alive || tracked.error) return;
+      const rows = (tracked.data ?? []) as { id: string; name: string | null }[];
+      if (!rows.length) return;
+      const found: Record<string, string[]> = {};
+      for (const it of rows) {
+        const { data: lots, error } = await supabase.rpc("batches_of", {
+          in_item_id: it.id,
+        });
+        if (!alive) return;
+        /* 读不到就当成「管，而架上没有」—— 那一格照样画得出来，
+           而他手上那个号码照样打得进去。 */
+        found[String(it.name ?? "")] = error
+          ? []
+          : ((lots ?? []) as { code: string; on_hand: number | null }[])
+              .filter((b) => Number(b.on_hand ?? 0) > 0)
+              .map((b) => b.code);
+      }
+      setSerials(found);
     })();
     return () => {
       alive = false;
@@ -154,6 +194,10 @@ export function useLineSuggestions({
           unit: String(r.unit ?? ""),
           unitPrice: priceText(senOfRow(r.unit_price_cents)),
           amount: priceText(senOfRow(r.amount_cents)),
+          /* ⚠️ **不带上一张单的号码** —— 那一台已经卖掉了。
+             一个把上次那台车的车架号填进这一张的实作，
+             会让他把同一台车卖两次，而画面上完全正常。 */
+          batchCode: "",
         })),
       );
       const head = (data as Record<string, unknown>[])[0];
@@ -175,6 +219,7 @@ export function useLineSuggestions({
     units,
     lastLines: mine ? lastLines : null,
     lastFrom: mine ? lastFrom : null,
+    serials,
   };
 }
 

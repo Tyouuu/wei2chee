@@ -13,6 +13,20 @@ vi.mock("@/lib/supabase/client", () => ({
       calledRpcs.push(name);
       return { error: null, data: null };
     },
+    /* ⚠️ 明细那几行的挑选清单（`useLineSuggestions`）会去问一次
+       `catalog_items` —— 一个只有 `rpc` 的替身，会让那一句抛出去，
+       而 vitest 把它算成一个跟这几条断言无关的错误。
+       **回零行，然后那一段自己到此为止**：那正是绝大多数生意的情况。 */
+    from: () => {
+      const chain: Record<string, unknown> = {};
+      for (const k of ["select", "eq", "is", "in", "order", "limit"]) {
+        chain[k] = () => chain;
+      }
+      chain.then = (
+        ok: (r: { data: unknown[]; error: null }) => unknown,
+      ) => ok({ data: [], error: null });
+      return chain;
+    },
   }),
 }));
 
@@ -263,8 +277,22 @@ describe("逐项明细", () => {
     values: { primary: "翻新", secondary: "陈先生", amount: "RM 999" },
     archivedAt: null,
     lines: [
-      { description: "拆除", qty: "", unit: "", unitPrice: "", amount: "RM 3,000" },
-      { description: "油漆", qty: "2.5", unit: "房", unitPrice: "RM 2,000", amount: "RM 5,000" },
+      {
+        description: "拆除",
+        qty: "",
+        unit: "",
+        unitPrice: "",
+        amount: "RM 3,000",
+        batchCode: "",
+      },
+      {
+        description: "油漆",
+        qty: "2.5",
+        unit: "房",
+        unitPrice: "RM 2,000",
+        amount: "RM 5,000",
+        batchCode: "",
+      },
     ],
   };
 

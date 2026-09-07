@@ -35,6 +35,18 @@ export type Line = {
   unit: string;
   unitPrice: string;
   amount: string;
+  /**
+   * 🔴 这一行卖的是**哪一台**。
+   *
+   * `deliver_record` 读的是**那一行上的** `batch_code`（不是出货那一次上的），
+   * 而在这一格之前 `Line` 没有它 —— 所以一间车行做得了前面每一步
+   * （登记那一台 · 进货架 · 开一张单），**最后一步做不了**：
+   * 出货回一句「say which serial is going out」，而他没有地方打那个号码。
+   *
+   * ⚠️ **只在那一行的东西真的是一台一台管的时候才画**（见 `serialsFor`）——
+   * 一张装修报价的每一行多一个空框，是把一个不属於他的东西塞给他。
+   */
+  batchCode: string;
 };
 
 export const blankLine = (): Line => ({
@@ -43,6 +55,7 @@ export const blankLine = (): Line => ({
   unit: "",
   unitPrice: "",
   amount: "",
+  batchCode: "",
 });
 
 /**
@@ -101,6 +114,13 @@ export type LineSuggest = {
   lastFrom: { docNo: string; on: string } | null;
   /** 挑了一件货 → 填**空的**那几格。回 undefined = 不是货架上的东西 */
   fill: (line: Line) => Partial<Line> | undefined;
+  /**
+   * 这一行那件货是不是一台一台管的。
+   * 回 `null` = **不是**（那一格整个不画）；回一个阵列 = 架上还有那几个号码。
+   * ⚠️ 空阵列不是 null：**「是一台一台管的、而架上一台都没有」**
+   * 跟「这件货本来就不管序号」是两句话。
+   */
+  serialsFor: (description: string) => string[] | null;
 };
 
 /** 每一格上面那个小名字。参考页上它是一行灰色小字，不是大写字母。 */
@@ -151,6 +171,10 @@ export function LineEditor({
     const extra = suggest?.fill({ ...lines[i], description });
     set(i, extra ? { ...patch, ...extra } : patch);
   };
+
+  /* ⚠️ 没有 `suggest` 的那几页（收款 · 官网）一格都不画 —— 那一支不在。 */
+  const serialsOf = (description: string) =>
+    suggest?.serialsFor(description) ?? null;
 
   const shelfId = "ln-shelf";
   const unitId = "ln-units";
@@ -274,6 +298,36 @@ export function LineEditor({
               />
             </label>
           </div>
+          {/* 🔴 哪一台。**只有这一行的东西真的是一台一台管的时候才画** ——
+              见 `Line.batchCode` 的档头：少了这一格，一台车卖不出去；
+              而画给每一行，一张装修报价上就多了五个不属於他的空框。
+
+              ⚠️ 号码是**挑的不是打的**：一个车架号 17 个字，
+              而架上还有哪几台是查得到的（[重点 29](../../../../../docs/founder-points.md)）。
+              照旧用 datalist 不用下拉 —— 他手上那张过户文件上的号码，
+              万一还没登记，他照样要打得进去。 */}
+          {serialsOf(line.description) !== null ? (
+            <label className="flex min-w-0 flex-col gap-1">
+              <span className={cell}>{copy.lineSerial}</span>
+              <input
+                aria-label={copy.lineSerial}
+                list={`ln-serial-${i}`}
+                value={line.batchCode}
+                onChange={(e) => set(i, { batchCode: e.target.value })}
+                className={control}
+              />
+              <datalist id={`ln-serial-${i}`}>
+                {(serialsOf(line.description) ?? []).map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+              {/* 🔴 是一台一台管的、而架上一台都没有 —— 讲出来。
+                  一个空的挑选清单跟一个还没载完的清单长得一模一样。 */}
+              {(serialsOf(line.description) ?? []).length === 0 ? (
+                <span className={cell}>{copy.lineSerialNone}</span>
+              ) : null}
+            </label>
+          ) : null}
         </div>
       ))}
 

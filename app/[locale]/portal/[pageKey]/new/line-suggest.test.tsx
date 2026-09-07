@@ -45,7 +45,14 @@ const shelf: ShelfItem[] = [
 ];
 
 const lastTime: Line[] = [
-  { description: "Cement 50kg", qty: "100", unit: "bag", unitPrice: "18.50", amount: "1850.00" },
+  {
+    description: "Cement 50kg",
+    qty: "100",
+    unit: "bag",
+    unitPrice: "18.50",
+    amount: "1850.00",
+    batchCode: "",
+  },
 ];
 
 const suggest = (over: Partial<LineSuggest> = {}): LineSuggest => ({
@@ -54,6 +61,9 @@ const suggest = (over: Partial<LineSuggest> = {}): LineSuggest => ({
   lastLines: lastTime,
   lastFrom: { docNo: "QT-2026-0007", on: "2026-08-12" },
   fill: (l) => fillFromShelf(l, shelf),
+  /* 预设「一件都不管序号」—— 绝大多数生意就是这样，
+     而一份预设带着序号的 fixture 会让每一条断言都在量一个少见的情况。 */
+  serialsFor: () => null,
   ...over,
 });
 
@@ -136,5 +146,57 @@ describe("那两份清单", () => {
        「Cement 50kg · RM 18.50」不是一个货品名。 */
     const list = draw([blankLine()], suggest()).split("<datalist")[1] ?? "";
     expect(list).not.toContain("18.50");
+  });
+});
+
+describe("哪一台", () => {
+  /**
+   * 🔴 一台车在画面上卖不出去（[任务 275](../../../../../docs/founder-tasks.md#275)）。
+   *
+   * `deliver_record` 读的是**这一行**上的 `ln.batch_code`（20260906100000）：
+   * 一件开了序号的货，不讲哪一台就拒绝，理由是它自己写的 ——
+   * **没有任何规则挑得出「对的那一台」**，而序号会印在过户文件上。
+   *
+   * 而 2026-09-07 之前那一行上没有那个框：一间二手车行
+   * **登记那一台 · 进货架 · 开一张单三步都做得了，而最后一步做不了**。
+   */
+  const car = (over: Partial<LineSuggest> = {}) =>
+    suggest({
+      items: [
+        { name: "Myvi 1.3", unit: "unit", priceCents: 2800000, onHand: 1 },
+      ],
+      serialsFor: (d) => (d.trim() === "Myvi 1.3" ? ["PM1234567890ABCDE"] : null),
+      ...over,
+    });
+  const oneLine = (description: string): Line[] => [
+    { ...blankLine(), description },
+  ];
+
+  it("🔴 一台一台管的那一件，行上有地方打号码", () => {
+    const html = draw(oneLine("Myvi 1.3"), car());
+    expect(html).toContain(copy.lineSerial);
+    expect(html).toContain("PM1234567890ABCDE");
+  });
+
+  it("🔴 一包水泥永远看不到那一格", () => {
+    /* [任务 91](#91)：那句「没有人给一包水泥编序号」没有被推翻 ——
+       它就是这一格为什么按件画，不按页画。画给每一行，
+       一张装修报价上会多五个不属於他的空框。 */
+    expect(draw(oneLine("Cement 50kg"), car())).not.toContain(copy.lineSerial);
+    expect(draw([blankLine()], car())).not.toContain(copy.lineSerial);
+  });
+
+  it("🔴 管序号、而架上一台都没有 —— 讲出来，不是画一份空清单", () => {
+    /* 一个空的挑选清单，跟一份还没载完的清单长得一模一样。 */
+    const html = draw(
+      oneLine("Myvi 1.3"),
+      car({ serialsFor: (d) => (d.trim() === "Myvi 1.3" ? [] : null) }),
+    );
+    expect(html).toContain(copy.lineSerial);
+    expect(html).toContain(copy.lineSerialNone);
+  });
+
+  it("架上有的时候不讲那一句", () => {
+    expect(draw(oneLine("Myvi 1.3"), car())).not.toContain(copy.lineSerialNone);
   });
 });
