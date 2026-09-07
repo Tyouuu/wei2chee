@@ -304,7 +304,9 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
       op.op === "set_record_status" ||
       op.op === "log_work_day" ||
       op.op === "count_stock" ||
-      op.op === "receive_purchase"
+      op.op === "receive_purchase" ||
+      op.op === "share_record" ||
+      op.op === "unshare_record"
     )
       actOps.push(op);
     else layoutOps.push(op);
@@ -692,6 +694,14 @@ export async function actOnRecords(
   /** 这一页的 `<select>` 里有哪几个 —— 人看到的那一份。空的表示这一页没有
    *  宣告过阶段，那时候人也是自由打字。 */
   allowedStatuses: string[],
+  /**
+   * 这个站对外的网址，给客人那条连结用。
+   *
+   * 🔴 **必填** —— 一个有预设的它，会在忘了传的时候给出一条贴进 WhatsApp
+   * 打不开的相对网址，而那正是这一支要买的那一件事。来源只有一个：
+   * `lib/site-url.ts` 的 `SITE_URL`（记录页那一边用的也是它）。
+   */
+  origin: string,
 ): Promise<ActResult> {
   const skipped: RecordResult["skipped"] = [];
   const notes: Skip[] = [];
@@ -739,6 +749,46 @@ export async function actOnRecords(
       时候知道的那一件（任务 149 · 151）—— 助手收了货而不讲，
       那个差额要到月底对帐才现形。
     */
+    /*
+      ── 发一条连结给客人 / 收回 ────────────────────────────────────────
+
+      🔴 **那一条网址非讲不可**。助手开了而不给，他就没有东西可以贴进
+      WhatsApp —— 而[重点 9c] 量过：换掉这套系统的代价里第二深的一层，
+      就是「他的客人手上有一条连结」。开了不给，等於没开。
+
+      ⚠️ 只在单据上（报价单 · 订单 · 工程）。一张进货单是给供应商的，
+      而钱那几页跟名册没有一张给客人看的纸。
+    */
+    if (op.op === "share_record" || op.op === "unshare_record") {
+      if (shape !== "pipeline" || moduleKey === "purchases") {
+        skipped.push({ op: op.op, reason: "notShareable" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const { data, error } = await supabase.rpc(op.op, { in_record_id: recordId });
+      if (error) {
+        skipped.push({ op: op.op, ...friendly(error.message) });
+        continue;
+      }
+      written += 1;
+      if (op.op === "unshare_record") {
+        notes.push({ op: op.op, reason: "shareClosed" });
+        continue;
+      }
+      const row = (Array.isArray(data) ? data[0] : data) as { share_ref?: unknown } | null;
+      const ref = String(row?.share_ref ?? "").trim();
+      notes.push(
+        ref
+          ? { op: op.op, reason: "shareOpened", vars: { link: `${origin}/r/${ref}` } }
+          /* 开了而读不回门牌 —— 讲实话，不要给他一条断掉的连结。 */
+          : { op: op.op, reason: "dbSaid", vars: { detail: "no share link came back" } },
+      );
+      continue;
+    }
+
     if (op.op === "receive_purchase") {
       if (moduleKey !== "purchases") {
         skipped.push({ op: op.op, reason: "notPurchasePage" });

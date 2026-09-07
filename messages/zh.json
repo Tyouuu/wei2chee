@@ -535,7 +535,10 @@
         "goodsReceived": "{moved} 行进了货架。",
         "goodsNew": "其中 {created} 件是新开的货品。",
         "goodsMismatch": "有 {short} 行不够、{over} 行多了 —— 罗厘还在的时候看一下。",
-        "goodsNothing": "这张单上没有可以进货架的行。"
+        "goodsNothing": "这张单上没有可以进货架的行。",
+        "notShareable": "一条给客人的连结只开得了在报价单 · 订单 · 工程上",
+        "shareOpened": "连结开好了：{link}",
+        "shareClosed": "那条连结收回了 —— 客人再打开会是一句「这条连结不在用了」。"
       }
     },
     "home": {

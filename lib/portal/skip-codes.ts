@@ -110,6 +110,8 @@ export type SkipCode =
   | "countNotANumber"
   /** 收货只在进货单那一页做得了。 */
   | "notPurchasePage"
+  /** 一条给客人的连结只开得了在单据上。 */
+  | "notShareable"
   /**
    * 🔴 资料库自己那一句，原样。`detail`
    *
@@ -158,7 +160,16 @@ export type SkipCode =
    */
   | "goodsMismatch"
   /** 收货：这张单上没有可以进货架的行。 */
-  | "goodsNothing";
+  | "goodsNothing"
+  /**
+   * 连结开好了。`link`
+   *
+   * 🔴 **那一条网址非讲不可** —— 助手开了而不给，他就没有东西可以贴进
+   * WhatsApp，而那一条连结正是[重点 9c] 换掉这套系统的代价里第二深的一层。
+   */
+  | "shareOpened"
+  /** 收回了。 */
+  | "shareClosed";
 
 /** 一件没做成的事，讲给老板听。`vars` 是那一句里的空格。 */
 export type Skip = {
@@ -223,6 +234,7 @@ export const SKIP_CODES = [
   "noCountSaid",
   "countNotANumber",
   "notPurchasePage",
+  "notShareable",
   "dbSaid",
   "layoutSaved",
   "dayLogged",
@@ -233,4 +245,6 @@ export const SKIP_CODES = [
   "goodsNew",
   "goodsMismatch",
   "goodsNothing",
+  "shareOpened",
+  "shareClosed",
 ] as const satisfies readonly SkipCode[];

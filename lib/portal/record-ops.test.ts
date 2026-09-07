@@ -537,7 +537,7 @@ describe("acting on a row that is already there", () => {
 
   it("calls the SAME rpc the 「客人来了」 button calls", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], []);
+    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], [], "https://x.test");
     expect(rpc).toHaveBeenCalledTimes(1);
     expect(rpc.mock.calls[0][0]).toBe("set_appointment_status");
     expect(rpc.mock.calls[0][1]).toEqual({ in_id: "a-1", in_status: "done" });
@@ -546,7 +546,7 @@ describe("acting on a row that is already there", () => {
 
   it("calls the SAME rpc the stage dropdown calls", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "施工")], ["报价", "施工", "收款"]);
+    const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "施工")], ["报价", "施工", "收款"], "https://x.test");
     expect(rpc.mock.calls[0][0]).toBe("update_pipeline_record");
     expect(rpc.mock.calls[0][1]).toEqual({ in_id: "q-1", in_stage: "施工" });
     expect(r.written).toBe(1);
@@ -556,7 +556,7 @@ describe("acting on a row that is already there", () => {
      真的写进那一行，而那一行会从看板上掉下去（任务 95c）。 */
   it("refuses a stage this page does not use, and never calls the rpc", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "已完成")], ["报价", "施工", "收款"]);
+    const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "已完成")], ["报价", "施工", "收款"], "https://x.test");
     expect(rpc).not.toHaveBeenCalled();
     expect(r.written).toBe(0);
     expect(r.skipped[0].reason).toBe("pageStates");
@@ -568,14 +568,14 @@ describe("acting on a row that is already there", () => {
      放行。比它在驱动的那个栏位更受限，是 set_text 那条注解讲过不要做的事。 */
   it("does not out-restrict a field a person types freely", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "等他回覆")], []);
+    const r = await actOnRecords(client(rpc), "quotations", [act("q-1", "等他回覆")], [], "https://x.test");
     expect(rpc).toHaveBeenCalledTimes(1);
     expect(r.written).toBe(1);
   });
 
   it("refuses a booking state the database does not have", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "来了")], []);
+    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "来了")], [], "https://x.test");
     expect(rpc).not.toHaveBeenCalled();
     expect(r.skipped[0].reason).toBe("apptStates");
     expect(r.skipped[0].vars?.list).toContain("no_show");
@@ -588,7 +588,7 @@ describe("acting on a row that is already there", () => {
       data: [{ status: "done", used_package_id: "p-1", package_name: "洗剪吹十次", sessions_left: 3 }],
       error: null,
     }));
-    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], []);
+    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], [], "https://x.test");
     expect(r.notes[0].reason).toBe("packageUsed");
     expect(r.notes[0].vars?.name).toBe("洗剪吹十次");
     expect(r.notes[0].vars?.left).toBe("3");
@@ -596,7 +596,7 @@ describe("acting on a row that is already there", () => {
 
   it("says nothing when no package was touched", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], []);
+    const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], [], "https://x.test");
     expect(r.notes).toEqual([]);
   });
 
@@ -607,22 +607,22 @@ describe("acting on a row that is already there", () => {
     ["reconciliation", "actReconcile"],
   ])("refuses on %s and says where to go instead", async (moduleKey, code) => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), moduleKey, [act("x", "什么")], []);
+    const r = await actOnRecords(client(rpc), moduleKey, [act("x", "什么")], [], "https://x.test");
     expect(rpc).not.toHaveBeenCalled();
     expect(r.skipped[0].reason).toBe(code);
   });
 
   it("turns the database's own sentence into one he can read", async () => {
     const rpc = vi.fn(async () => ({ data: null, error: { message: "no such record in your project" } }));
-    const r = await actOnRecords(client(rpc), "quotations", [act("nope", "施工")], []);
+    const r = await actOnRecords(client(rpc), "quotations", [act("nope", "施工")], [], "https://x.test");
     expect(r.written).toBe(0);
     expect(r.skipped[0].reason).toBe("noSuchRow");
   });
 
   it("refuses when it did not say which row, or what to", async () => {
     const rpc = ok();
-    const a = await actOnRecords(client(rpc), "quotations", [act("", "施工")], []);
-    const b = await actOnRecords(client(rpc), "quotations", [act("q-1", "")], []);
+    const a = await actOnRecords(client(rpc), "quotations", [act("", "施工")], [], "https://x.test");
+    const b = await actOnRecords(client(rpc), "quotations", [act("q-1", "")], [], "https://x.test");
     expect(rpc).not.toHaveBeenCalled();
     expect(a.skipped[0].reason).toBe("noRecordSaid");
     expect(b.skipped[0].reason).toBe("noStatusSaid");
@@ -715,7 +715,7 @@ describe("a reply shaped like the model's own, end to end", () => {
       explanation: "好了。",
     });
     const split = splitRecordOps(parsed.operations, "bookings");
-    const r = await actOnRecords({ rpc } as never, "bookings", split.actOps, []);
+    const r = await actOnRecords({ rpc } as never, "bookings", split.actOps, [], "https://x.test");
     expect(rpc.mock.calls[0][0]).toBe("set_appointment_status");
     expect(r.written).toBe(1);
   });
@@ -741,6 +741,51 @@ describe("a reply shaped like the model's own, end to end", () => {
   🔴 它回的四个数字非讲不可：「叫了一百到了九十」正是他要在罗厘还没走的
   时候知道的那一件（任务 149 · 151）。
 */
+/*
+  发一条连结给客人 —— 重点 9c 量过：换掉这套系统的代价里第二深的一层，
+  就是「他的客人手上有一条连结」。开了而不给那条网址，等於没开。
+*/
+describe("发一条连结给客人", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+  const sh = (op: string, id: string) => ({ op, record_id: id }) as unknown as LayoutOp;
+
+  it("那一条网址讲出来了", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({
+      data: { id: "q-1", share_ref: "abc123" },
+      error: null,
+    }));
+    const r = await actOnRecords(client(rpc), "quotations", [sh("share_record", "q-1")], [], "https://f.my");
+    expect(rpc).toHaveBeenCalledWith("share_record", { in_record_id: "q-1" });
+    expect(r.notes[0].reason).toBe("shareOpened");
+    expect(r.notes[0].vars?.link).toBe("https://f.my/r/abc123");
+  });
+
+  /* 🔴 开了而读不回门牌 —— 讲实话，不要给他一条断掉的连结。 */
+  it("读不回门牌就不给一条断的", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ data: { id: "q-1" }, error: null }));
+    const r = await actOnRecords(client(rpc), "quotations", [sh("share_record", "q-1")], [], "https://f.my");
+    expect(r.notes[0].reason).toBe("dbSaid");
+  });
+
+  it("收回讲得出客人再打开会看到什么", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ data: { id: "q-1", share_ref: null }, error: null }));
+    const r = await actOnRecords(client(rpc), "quotations", [sh("unshare_record", "q-1")], [], "https://f.my");
+    expect(rpc.mock.calls[0][0]).toBe("unshare_record");
+    expect(r.notes[0].reason).toBe("shareClosed");
+  });
+
+  /* 一张进货单是给供应商的；钱那几页跟名册没有一张给客人看的纸。 */
+  it.each(["purchases", "payments", "customers", "inventory", "bookings"])(
+    "%s 上开不了",
+    async (moduleKey) => {
+      const rpc = vi.fn(async () => ({ data: null, error: null }));
+      const r = await actOnRecords(client(rpc), moduleKey, [sh("share_record", "x")], [], "https://f.my");
+      expect(rpc).not.toHaveBeenCalled();
+      expect(r.skipped[0].reason).toBe("notShareable");
+    },
+  );
+});
+
 describe("收一车货", () => {
   const client = (rpc: unknown) => ({ rpc }) as never;
   const recv = (id: string) => ({ op: "receive_purchase", record_id: id }) as unknown as LayoutOp;
@@ -749,7 +794,7 @@ describe("收一车货", () => {
 
   it("只送那一张单的编号 —— 几件进货架由资料库算", async () => {
     const rpc = back({ moved: 3 });
-    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], []);
+    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], [], "https://x.test");
     expect(rpc).toHaveBeenCalledWith("receive_purchase", { in_record_id: "po-1" });
     expect(r.written).toBe(1);
     expect(r.notes[0].reason).toBe("goodsReceived");
@@ -759,7 +804,7 @@ describe("收一车货", () => {
   /* 🔴 助手收了货而不讲，那个差额要到月底对帐才现形。 */
   it("对不上的那几行要讲出来", async () => {
     const rpc = back({ moved: 2, short: 1, over: 0 });
-    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], []);
+    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], [], "https://x.test");
     const kinds = r.notes.map((n) => n.reason);
     expect(kinds).toContain("goodsMismatch");
     expect(r.notes.find((n) => n.reason === "goodsMismatch")?.vars?.short).toBe("1");
@@ -767,14 +812,14 @@ describe("收一车货", () => {
 
   it("新开的货品要讲出来", async () => {
     const rpc = back({ moved: 2, created: 1 });
-    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], []);
+    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], [], "https://x.test");
     expect(r.notes.map((n) => n.reason)).toContain("goodsNew");
   });
 
   /* 一张没有逐项的单 —— 讲出来，不要假装收了。 */
   it("一行都没进就讲出来，而且不算做成了", async () => {
     const rpc = back({});
-    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], []);
+    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], [], "https://x.test");
     expect(r.written).toBe(0);
     expect(r.notes[0].reason).toBe("goodsNothing");
   });
@@ -783,7 +828,7 @@ describe("收一车货", () => {
     "%s 上收不了货",
     async (moduleKey) => {
       const rpc = back({ moved: 3 });
-      const r = await actOnRecords(client(rpc), moduleKey, [recv("po-1")], []);
+      const r = await actOnRecords(client(rpc), moduleKey, [recv("po-1")], [], "https://x.test");
       expect(rpc).not.toHaveBeenCalled();
       expect(r.skipped[0].reason).toBe("notPurchasePage");
     },
@@ -800,7 +845,7 @@ describe("盘一次货", () => {
       data: { before: 91, counted: 84, moved: -7 },
       error: null,
     }));
-    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "84")], []);
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "84")], [], "https://x.test");
     expect(rpc).toHaveBeenCalledWith("count_stock", { in_item_id: "i-1", in_counted: 84 });
     expect(r.written).toBe(1);
   });
@@ -811,7 +856,7 @@ describe("盘一次货", () => {
       data: { before: 91, counted: 84, moved: -7 },
       error: null,
     }));
-    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "84")], []);
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "84")], [], "https://x.test");
     expect(r.notes[0].reason).toBe("stockCounted");
     expect(r.notes[0].vars).toEqual({ before: "91", counted: "84", moved: "-7" });
   });
@@ -821,7 +866,7 @@ describe("盘一次货", () => {
       data: { before: 84, counted: 84, moved: 0 },
       error: null,
     }));
-    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "84")], []);
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "84")], [], "https://x.test");
     expect(r.written).toBe(0);
     expect(r.notes[0].reason).toBe("stockSame");
   });
@@ -831,7 +876,7 @@ describe("盘一次货", () => {
       data: { before: 5, counted: 0, moved: -5 },
       error: null,
     }));
-    await actOnRecords(client(rpc), "inventory", [count("i-1", "0")], []);
+    await actOnRecords(client(rpc), "inventory", [count("i-1", "0")], [], "https://x.test");
     expect((rpc.mock.calls[0][1] as Record<string, unknown>).in_counted).toBe(0);
   });
 
@@ -839,7 +884,7 @@ describe("盘一次货", () => {
     "%s 上盘不了货，而且讲得出去哪一页",
     async (moduleKey) => {
       const rpc = vi.fn(async () => ({ data: null, error: null }));
-      const r = await actOnRecords(client(rpc), moduleKey, [count("i-1", "84")], []);
+      const r = await actOnRecords(client(rpc), moduleKey, [count("i-1", "84")], [], "https://x.test");
       expect(rpc).not.toHaveBeenCalled();
       expect(r.skipped[0].reason).toBe("notShelfPage");
     },
@@ -847,14 +892,14 @@ describe("盘一次货", () => {
 
   it("没讲数出来几个就不动", async () => {
     const rpc = vi.fn(async () => ({ data: null, error: null }));
-    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", " ")], []);
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", " ")], [], "https://x.test");
     expect(rpc).not.toHaveBeenCalled();
     expect(r.skipped[0].reason).toBe("noCountSaid");
   });
 
   it("数出来的不是数字就不动，而且念回去", async () => {
     const rpc = vi.fn(async () => ({ data: null, error: null }));
-    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "很多")], []);
+    const r = await actOnRecords(client(rpc), "inventory", [count("i-1", "很多")], [], "https://x.test");
     expect(rpc).not.toHaveBeenCalled();
     expect(r.skipped[0].reason).toBe("countNotANumber");
     expect(r.skipped[0].vars?.said).toBe("很多");
@@ -873,7 +918,7 @@ describe("logging a day on site", () => {
 
   it("calls the SAME rpc the attendance page calls", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], []);
+    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], [], "https://x.test");
     expect(rpc.mock.calls[0][0]).toBe("log_work_day");
     expect(rpc.mock.calls[0][1]).toEqual({ in_staff_id: "s-1", in_kind: "full" });
     expect(r.written).toBe(1);
@@ -884,7 +929,7 @@ describe("logging a day on site", () => {
   it("refuses on any page that is not the staff book", async () => {
     const rpc = ok();
     for (const key of ["customers", "suppliers", "quotations"]) {
-      const r = await actOnRecords(client(rpc), key, [day("c-1", "full")], []);
+      const r = await actOnRecords(client(rpc), key, [day("c-1", "full")], [], "https://x.test");
       expect(r.written).toBe(0);
       expect(r.skipped[0].reason).toBe("dayNotStaffPage");
     }
@@ -893,7 +938,7 @@ describe("logging a day on site", () => {
 
   it("refuses a kind the database does not have, and lists the three", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "整天")], []);
+    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "整天")], [], "https://x.test");
     expect(rpc).not.toHaveBeenCalled();
     expect(r.skipped[0].reason).toBe("dayKinds");
   });
@@ -902,21 +947,21 @@ describe("logging a day on site", () => {
      两边差一天，而那正好是他补记昨天工的时段。所以要念出来。 */
   it("says which day it went to", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], []);
+    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], [], "https://x.test");
     expect(r.notes[0].reason).toBe("dayLogged");
     expect(r.notes[0].vars?.on).toBe("2026-09-07");
   });
 
   it("does not say a day when the rpc did not give one", async () => {
     const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ data: null, error: null }));
-    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], []);
+    const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], [], "https://x.test");
     expect(r.written).toBe(1);
     expect(r.notes).toEqual([]);
   });
 
   it("refuses when it did not say who", async () => {
     const rpc = ok();
-    const r = await actOnRecords(client(rpc), "staff", [day("", "full")], []);
+    const r = await actOnRecords(client(rpc), "staff", [day("", "full")], [], "https://x.test");
     expect(rpc).not.toHaveBeenCalled();
     expect(r.skipped[0].reason).toBe("noStaffSaid");
   });

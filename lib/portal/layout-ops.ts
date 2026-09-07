@@ -345,6 +345,21 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     ⚠️ 那一支自己挡着：按两下不会进两次（每一笔锚在造成它的那一行上，
     任务 93）· 收过货的行就锁了 · 序号那种要讲哪一台。
   */
+  /*
+    发一条连结给客人 / 收回。
+
+    🔴 那条门牌**不是那一行的 id**（任务 155）—— 所以收得回来：
+    「收回」当场失效，再开是另一条。而助手只送那一行的编号，
+    门牌由资料库发。
+  */
+  z.object({
+    op: z.literal("share_record"),
+    record_id: z.string().min(1),
+  }),
+  z.object({
+    op: z.literal("unshare_record"),
+    record_id: z.string().min(1),
+  }),
   z.object({
     op: z.literal("receive_purchase"),
     /** 进货单那一行自己的编号，从页面上 `record=` 抄下来的。 */
@@ -1307,6 +1322,11 @@ export function applyLayoutOps(
       }
       case "receive_purchase": {
         skipped.push({ op: op.op, reason: "notPurchasePage" });
+        break;
+      }
+      case "share_record":
+      case "unshare_record": {
+        skipped.push({ op: op.op, reason: "notShareable" });
         break;
       }
 

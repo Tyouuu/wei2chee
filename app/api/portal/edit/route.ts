@@ -45,6 +45,7 @@ import { fetchBusinessFacts, renderBusinessFacts } from "@/lib/portal/live-answe
 import type { WorkspaceRole } from "@/lib/portal/workspace";
 import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
 import type { Skip } from "@/lib/portal/skip-codes";
+import { SITE_URL } from "@/lib/site-url";
 import { RECORD_COPY } from "@/app/[locale]/portal/[pageKey]/record-copy";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -223,6 +224,12 @@ Record tables:
   * The database works out what goes on the shelf from the order's own lines.
     Never emit stock movements yourself.
   * Only on the 进货单 page.
+- share_record opens a link the customer can open himself, on a 报价单 / 订单 /
+  工程 row: 「把这张报价发给陈太太」. unshare_record takes it back.
+  * record_id only. The database issues the address, and it is NOT the row id,
+    so taking it back really does kill it.
+  * The link comes back in the reply. Not on 进货单 (that is the supplier's side),
+    not on money pages and not in the book.
 
 Whole pages:
 - You cannot add or delete a page yourself, but you can OFFER to. When the
@@ -906,6 +913,8 @@ The business owner asked:
       /* 人在那个 `<select>` 里看到的同一份。空的表示这一页没有宣告阶段，
          那时候人也是自由打字，助手跟着放行。 */
       pageStages,
+      /* 给客人那条连结用。来源只有一个 —— 记录页那一边用的也是它。 */
+      SITE_URL,
     );
     recordsWritten += acted.written;
     recordSkips.push(...acted.skipped);
@@ -1162,6 +1171,8 @@ export const EDIT_JSON_SCHEMA = {
                 "log_work_day",
                 "count_stock",
                 "receive_purchase",
+                "share_record",
+                "unshare_record",
               ],
             },
             target_id: { type: ["string", "null"] },

@@ -535,7 +535,10 @@
         "goodsReceived": "{moved} lines went onto the shelf.",
         "goodsNew": "{created} of them are new items on the shelf.",
         "goodsMismatch": "{short} lines short and {over} over — worth checking before the lorry leaves.",
-        "goodsNothing": "Nothing on that order could go onto the shelf."
+        "goodsNothing": "Nothing on that order could go onto the shelf.",
+        "notShareable": "A customer link only opens on a quotation, order or job",
+        "shareOpened": "Here is the link: {link}",
+        "shareClosed": "Link taken back — anyone opening it now sees that it is no longer in use."
       }
     },
     "home": {
