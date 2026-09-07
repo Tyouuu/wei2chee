@@ -523,7 +523,9 @@
         "notPipeline": "这一页的行不是单据",
         "notARecordPage": "这一页不是记录页",
         "dbSaid": "系统那边讲：{detail}",
-        "layoutSaved": "这一页已经保存过，排法要用搬动区块来换"
+        "layoutSaved": "这一页已经保存过，排法要用搬动区块来换",
+        "dayLogged": "记在 {on}。",
+        "packageUsed": "顺手扣了「{name}」一次，还剩 {left} 次。"
       }
     },
     "home": {

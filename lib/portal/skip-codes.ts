@@ -112,7 +112,23 @@ export type SkipCode =
   | "dbSaid"
 
   /* ── 路由 ───────────────────────────────────────────────── */
-  | "layoutSaved";
+  | "layoutSaved"
+
+  /* ── 做成了，而顺手还发生了一件事（notes，接在助手那一句后面）── */
+  /**
+   * 一天工记在哪一天。`on`
+   *
+   * 🔴 那一天是**资料库**算的（today_myt()），不是模型推的 —— 半夜到早上
+   * 八点两边差一天，而那正好是他补记昨天工的时段。所以它要念出来。
+   */
+  | "dayLogged"
+  /**
+   * 顺手扣了一次套票。`name` · `left`
+   *
+   * 🔴 任务 225 让「客人来了」同时扣一次 —— 助手按同一支而**不讲**，就是一次
+   * 静静少掉的套票，而他要到客人下次来才发现。
+   */
+  | "packageUsed";
 
 /** 一件没做成的事，讲给老板听。`vars` 是那一句里的空格。 */
 export type Skip = {
@@ -175,4 +191,6 @@ export const SKIP_CODES = [
   "notARecordPage",
   "dbSaid",
   "layoutSaved",
+  "dayLogged",
+  "packageUsed",
 ] as const satisfies readonly SkipCode[];

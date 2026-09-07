@@ -880,7 +880,7 @@ The business owner asked:
     之后，那张表上的状态要当场跟着变。少了这一句，助手说改了而画面不动 ——
     那正是 founder-points 23 讲的那件事。
   */
-  const recordNotes: string[] = [];
+  const recordNotes: Skip[] = [];
   if (split.actOps.length && isRecordModule(pageKey)) {
     const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient());
     asCustomerForRows = asCustomer;
@@ -943,7 +943,11 @@ The business owner asked:
 
        ⚠️ 只在真的做成了才有 —— 所以浏览器那一边的 claimStands 不会因为
        它而把整句话换掉（applied ≥ 1 的时候那一句是站得住的）。 */
-    explanation: [parsed.explanation, ...recordNotes].filter(Boolean).join(" "),
+    explanation: parsed.explanation,
+    /* 🔴 它们是**代号**，不是句子 —— 词住在 messages/{en,zh}.json，由面板
+       接在那一句后面。2026-09-07 之前这两句是写死的中文，而且是
+       `join(" ")` 进这一句的：换成代号之后再 join，印出来会是 [object Object]。 */
+    notes: recordNotes,
     applied: result.applied,
     /* The new rows are in the database, not in the tree we just returned, so
        the page has to be re-read to show them. Without this the assistant

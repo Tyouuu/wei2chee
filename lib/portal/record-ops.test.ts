@@ -366,6 +366,36 @@ describe("phoneFrom", () => {
   });
 });
 
+/*
+  🔴 2026-09-07：有效期以前**只有表单在填**，那一支 RPC 自己不填 ——
+  所以助手开的报价单永远不会过期，而人按出来的三十天后会。
+  而 `nudges_due` 的第一个讯号就是「报价快到期」，所以那条跟进链整个跳过它。
+*/
+describe("有效期跟人按那颗按钮一样", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+
+  it("报价单带 +30 天，而且是马来西亚的今天", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ error: null }));
+    await writeRecords(client(rpc), "p1", "quotations", [row("Taman Desa", "陈先生")], "req", "开帐");
+    const args = rpc.mock.calls[0][1] as Record<string, unknown>;
+    const due = String(args.in_due_on ?? "");
+    /* 三十天，从马来西亚的今天算起 —— 跟表单同一支函式。 */
+    const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+    const want = new Date(Date.parse(today + "T00:00:00Z") + 30 * 86400000)
+      .toISOString()
+      .slice(0, 10);
+    expect(due).toBe(want);
+  });
+
+  /* ⚠️ 只有报价单有预设。一张工程单的期限是他跟客人谈出来的日子，
+     替他猜一个填进去比留白更糟。 */
+  it.each(["orders", "projects", "tasks", "purchases"])("%s 留白", async (moduleKey) => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ error: null }));
+    await writeRecords(client(rpc), "p1", moduleKey, [row("一件事", "陈先生")], "req", "开帐");
+    expect((rpc.mock.calls[0][1] as Record<string, unknown>).in_due_on).toBeNull();
+  });
+});
+
 describe("writeRecords on a directory page", () => {
   const client = (rpc: unknown) => ({ rpc }) as never;
 
@@ -517,8 +547,9 @@ describe("acting on a row that is already there", () => {
       error: null,
     }));
     const r = await actOnRecords(client(rpc), "bookings", [act("a-1", "done")], []);
-    expect(r.notes.join("")).toContain("洗剪吹十次");
-    expect(r.notes.join("")).toContain("3");
+    expect(r.notes[0].reason).toBe("packageUsed");
+    expect(r.notes[0].vars?.name).toBe("洗剪吹十次");
+    expect(r.notes[0].vars?.left).toBe("3");
   });
 
   it("says nothing when no package was touched", async () => {
@@ -701,7 +732,8 @@ describe("logging a day on site", () => {
   it("says which day it went to", async () => {
     const rpc = ok();
     const r = await actOnRecords(client(rpc), "staff", [day("s-1", "full")], []);
-    expect(r.notes.join("")).toContain("2026-09-07");
+    expect(r.notes[0].reason).toBe("dayLogged");
+    expect(r.notes[0].vars?.on).toBe("2026-09-07");
   });
 
   it("does not say a day when the rpc did not give one", async () => {

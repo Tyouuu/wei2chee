@@ -65,6 +65,8 @@ export type Turn = {
   question: string;
   state: "thinking" | "done" | "failed";
   explanation?: string;
+  /** 做成了，而顺手还发生了一件事。跟 skipped 一样是代号。 */
+  notes?: Skip[];
   applied?: number;
   skipped?: Skip[];
   /** The layout as it stood BEFORE this turn ran. This is what makes a single
@@ -372,6 +374,7 @@ export function AiAssistant({
         explanation: string;
         applied: number;
         skipped: Skip[];
+        notes?: Skip[];
         suggestion: PageOffer | null;
         /* 风格 / 配色 / 排法 -- not layout, so it is not in `result.layout`
            and is applied through the same RPC the style picker calls. */
@@ -495,7 +498,15 @@ export function AiAssistant({
         // The model's own words when they are true; ours when they are not.
         // Not both: a false sentence followed by a correction still reads as
         // 「it worked, but」, and what happened is that it did not work.
-        explanation: honest ? result.explanation || t("aiNoChange") : t("aiClaimedNothing"),
+        /* 🔴 顺手发生的那几件接在后面 —— 那是我们做过才知道的事实，
+           不是模型讲的话，所以它在这里翻译（词住在语言档里）。
+           少了它，一次静静扣掉的套票他要到客人下次来才发现。 */
+        explanation: [
+          honest ? result.explanation || t("aiNoChange") : t("aiClaimedNothing"),
+          ...(honest ? (result.notes ?? []).map((n) => sayWhyNot(t, n)) : []),
+        ]
+          .filter(Boolean)
+          .join(" "),
         applied: result.applied,
         skipped: result.skipped,
         offer: result.suggestion ?? undefined,

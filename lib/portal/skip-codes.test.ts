@@ -93,7 +93,9 @@ describe("助手讲不出的那几句", () => {
           /* 注解不算 —— 那是写给下一个 session 看的（重点 22b）。 */
           if (/^(\/\/|\*|\/\*)/.test(code)) return;
           if (!CJK.test(code)) return;
-          if (/reason:\s*"|reason:\s*`|return\s*"|return\s*`/.test(code)) {
+          /* 🔴 notes 也算 —— 它印在他眼前跟那几句拒绝同一个地方，而我 2026-09-07
+             第一版的守卫只看 reason:，於是漏掉了那两句。 */
+          if (/reason:\s*"|reason:\s*`|return\s*"|return\s*`|notes\.push/.test(code)) {
             bad.push(f.split("/").pop() + ":" + (i + 1) + " " + code.slice(0, 46));
           }
         });

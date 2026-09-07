@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LayoutOp } from "./layout-ops";
 import type { Skip, SkipCode } from "./skip-codes";
+import { defaultDueOn, todayMYT, validityKindOf } from "./record-validity";
 
 /**
  * The assistant's 「加一单」 writes a real row, through the button's own RPC.
@@ -521,6 +522,22 @@ export async function writeRecords(
              which meant 「加一单，已确认的」 quietly started at the first stage
              -- the RPC still falls back to that when this is blank. */
           in_stage: status ?? null,
+          /*
+            🔴 有效期 —— 报价单 +30 天，其余留白。
+
+            2026-09-07 之前**只有表单填它**（new-record-form.tsx 用同一支
+            `defaultDueOn`），而那一支 RPC 自己不填。所以**助手开的报价单
+            永远不会过期**，而人按出来的三十天后会。
+
+            代价不只是少一栏：`nudges_due` 的第一个讯号就是「报价快到期」
+            （任务 212）—— 一张永远不过期的单，**整条跟进链跳过它**。
+            同一个动作两条路，只修了一条。
+
+            ⚠️ 只有报价单有预设。一张工程单的期限是他跟客人谈出来的日子，
+            替他猜一个比留白更糟（record-validity.ts 的档头写着理由）——
+            所以这里问的是那一支，不是自己算一个。
+          */
+          in_due_on: defaultDueOn(validityKindOf(moduleKey), todayMYT()) ?? null,
           in_extra: extra,
           in_idempotency_key: keyFor(requestKey, i),
         });
@@ -617,8 +634,12 @@ export function refuseToAct(shape: ModuleShape): SkipCode | null {
 
 export type ActResult = RecordResult & {
   /** 顺手发生、而他应该被告知的事。**不是**模型讲的话 —— 是我们做过之后
-   *  知道的事实，所以它接在回覆后面而不用再被查一次。 */
-  notes: string[];
+   *  知道的事实，所以它接在回覆后面而不用再被查一次。
+   *
+   * 🔴 跟 skipped 一样是**代号**，词住在 messages/{en,zh}.json ——
+   * 2026-09-07 之前这两句是写死的中文，而它们印在他眼前跟那几句拒绝
+   * 同一个地方。见 skip-codes.ts 的档头。 */
+  notes: Skip[];
 };
 
 /**
@@ -646,7 +667,7 @@ export async function actOnRecords(
   allowedStatuses: string[],
 ): Promise<ActResult> {
   const skipped: RecordResult["skipped"] = [];
-  const notes: string[] = [];
+  const notes: Skip[] = [];
   let written = 0;
 
   const shape = shapeOfModule(moduleKey);
@@ -696,7 +717,7 @@ export async function actOnRecords(
          八点那八个钟头两边差一天，而那正好是他补记昨天工的时段。所以把它
          回报的那一天念出来：他看得到记到哪一天去了。 */
       const day = (Array.isArray(data) ? data[0] : data) as { on_date?: unknown } | null;
-      if (day?.on_date) notes.push(`记在 ${String(day.on_date)}。`);
+      if (day?.on_date) notes.push({ op: op.op, reason: "dayLogged", vars: { on: String(day.on_date) } });
       continue;
     }
 
@@ -742,9 +763,14 @@ export async function actOnRecords(
       const hit = Array.isArray(data) ? data[0] : data;
       const used = hit as { used_package_id?: unknown; package_name?: unknown; sessions_left?: unknown } | null;
       if (used?.used_package_id) {
-        notes.push(
-          `顺手扣了「${String(used.package_name ?? "套票")}」一次，还剩 ${String(used.sessions_left ?? "?")} 次。`,
-        );
+        notes.push({
+          op: op.op,
+          reason: "packageUsed",
+          vars: {
+            name: String(used.package_name ?? ""),
+            left: String(used.sessions_left ?? "?"),
+          },
+        });
       }
       continue;
     }

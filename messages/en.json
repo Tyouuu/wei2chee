@@ -523,7 +523,9 @@
         "notPipeline": "The rows on this page are not documents",
         "notARecordPage": "This is not a record page",
         "dbSaid": "The system said: {detail}",
-        "layoutSaved": "This page has been saved, so the arrangement changes by moving blocks"
+        "layoutSaved": "This page has been saved, so the arrangement changes by moving blocks",
+        "dayLogged": "Logged on {on}.",
+        "packageUsed": "A {name} session went with it — {left} left."
       }
     },
     "home": {
