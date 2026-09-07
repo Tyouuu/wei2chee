@@ -69,8 +69,24 @@ import {
 
 type NavPage = { key: string; label: string };
 
+/* 🔴 **44 只给触控那一边**（2026-09-07）。
+
+   `walk:eyesight` 在 390 量出来：不到 44 的那四十一个里，**最大的一群
+   是这一条侧栏的十三行，35px 高** —— 而在 390 上这条侧栏是一片
+   `fixed inset-y-0` 的抽屉，也就是他真的用拇指去点的那一片。
+   Apple 自己写的是「a button needs a hit region of at least 44x44 pt」，
+   而[重点 24](../../../../docs/founder-points.md) 说判这一页的是**那个陌生人，
+   而他在手机上**；这里更硬：按它的是站在客人后面、单手拿手机的老板。
+
+   ⚠️ 而 `lg:min-h-0` 不是顺手加的。无条件长高，等於电脑上十三行
+   各多 9px = **117px**，把底下那几行推到画面外 —— 而我们抄的那几个
+   参考后台，侧栏行本来就是 35 上下。**触控要 44，滑鼠不要。**
+
+   ⚠️ 那十三行里有一行不是这里画的：⌘K 那一颗在 `command-bar.tsx`，
+   而那个档案现在**在别人手上**（[重点 20](../../../../docs/founder-points.md)）——
+   只登记，没有动。所以这一轮收得掉十二行。 */
 const ROW =
-  "group relative flex items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-[7px] [font-size:var(--text-sm)] transition-colors duration-100";
+  "group relative flex min-h-11 items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-[7px] [font-size:var(--text-sm)] transition-colors duration-100 lg:min-h-0";
 
 /**
  * 点下去到画面真的换掉之间，那一格自己会讲一句话。
@@ -770,7 +786,7 @@ export function PortalShell({
           <Link
             href={`${base}/account`}
             aria-label={t("accountRow")}
-            className={`mt-1 flex items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-2 transition-colors ${
+            className={`mt-1 flex min-h-11 items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-2 transition-colors lg:min-h-0 ${
               is("/account")
                 ? "[background-color:var(--color-nav-active)]"
                 : "hover:[background-color:var(--color-nav-hover)]"

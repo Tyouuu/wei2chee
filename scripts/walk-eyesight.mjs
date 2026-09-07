@@ -638,6 +638,7 @@ try {
   ]) {
     await page.setViewportSize(vp);
     let under24 = [];
+    const small = [];
     let under44 = 0;
     let tiny = 0;
     let total = 0;
@@ -649,11 +650,28 @@ try {
       for (const t of a.targets) {
         total++;
         under44++;
+        small.push(t);
         if (t.under) tiny++;
         if (t.crowded) under24.push({ key, ...t });
       }
     }
     console.log(`  ${label}：${under44} 个不到 44（Apple 的建议）· 其中 ${tiny} 个不到 24（WCAG 的底线）`);
+    /* 🔴 一个「41 个不到 44」而不讲**是哪几个**的读数，没有人接得下去。
+       按大小 × 长相分组印出来 —— 同一个尺寸的一群多半是同一个共用件，
+       改一处就是一群。只印，不判（44 是 Apple 的建议，不是门槛）。 */
+    if (under44) {
+      const by = new Map();
+      for (const t of small) {
+        const k = `${t.w}x${t.h}`;
+        if (!by.has(k)) by.set(k, { n: 0, who: new Set() });
+        const g = by.get(k);
+        g.n++;
+        if (t.t) g.who.add(t.t.slice(0, 14));
+      }
+      const top = [...by].sort((x, y) => y[1].n - x[1].n).slice(0, 8);
+      for (const [k, g] of top)
+        console.log(`     ${String(g.n).padStart(3)} 个 ${k.padEnd(9)} ${[...g.who].slice(0, 4).join(" · ")}`);
+    }
     if (under24.length) {
       flag(
         BAD,

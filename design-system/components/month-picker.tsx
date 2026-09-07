@@ -1,16 +1,21 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { ChevronDown, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
-import { useSystemWords } from "@/design-system/system-lang-context"
+import { useEffect, useRef, useState } from "react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+} from "lucide-react";
+import { useSystemWords } from "@/design-system/system-lang-context";
 
 // Month names follow the system language, so a system switched to English
 // does not still say 「3月」 the moment anyone opens the picker.
 // See design-system/system-words.ts.
 function formatLabel(value: string, months: string[]): string {
-  if (!value) return ""
-  const [y, m] = value.split("-").map(Number)
-  return `${months[m - 1]} ${y}`
+  if (!value) return "";
+  const [y, m] = value.split("-").map(Number);
+  return `${months[m - 1]} ${y}`;
 }
 
 // `today` is "YYYY-MM", the same shape this component's own value already
@@ -20,11 +25,11 @@ function formatLabel(value: string, months: string[]): string {
 // on the same clock.
 function currentYearMonth(today?: string): [number, number] {
   if (today) {
-    const [y, m] = today.split("-").map(Number)
-    return [y, m - 1]
+    const [y, m] = today.split("-").map(Number);
+    return [y, m - 1];
   }
-  const now = new Date()
-  return [now.getFullYear(), now.getMonth()]
+  const now = new Date();
+  return [now.getFullYear(), now.getMonth()];
 }
 
 /**
@@ -43,55 +48,64 @@ export function MonthPicker({
   today,
   submitOnPick = false,
 }: {
-  name: string
-  defaultValue?: string
-  placeholder?: string
-  allowClear?: boolean
-  today?: string
+  name: string;
+  defaultValue?: string;
+  placeholder?: string;
+  allowClear?: boolean;
+  today?: string;
   /**
    * Submit the surrounding form as soon as a month is chosen, instead of
    * waiting for a button beside it. For a picker that is the *only*
    * control in its form, a separate submit button is a second step that
    * says nothing the choice didn't already say.
    */
-  submitOnPick?: boolean
+  submitOnPick?: boolean;
 }) {
-  const w = useSystemWords()
-  const [value, setValue] = useState(defaultValue ?? "")
-  const [open, setOpen] = useState(false)
-  const [viewYear, setViewYear] = useState(() => (defaultValue ? Number(defaultValue.split("-")[0]) : currentYearMonth(today)[0]))
-  const ref = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
+  const w = useSystemWords();
+  const [value, setValue] = useState(defaultValue ?? "");
+  const [open, setOpen] = useState(false);
+  const [viewYear, setViewYear] = useState(() =>
+    defaultValue
+      ? Number(defaultValue.split("-")[0])
+      : currentYearMonth(today)[0],
+  );
+  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
-    document.addEventListener("click", onDocClick)
-    return () => document.removeEventListener("click", onDocClick)
-  }, [])
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, []);
 
-  const [todayY, todayM] = currentYearMonth(today)
-  const selY = value ? Number(value.split("-")[0]) : null
-  const selM = value ? Number(value.split("-")[1]) - 1 : null
+  const [todayY, todayM] = currentYearMonth(today);
+  const selY = value ? Number(value.split("-")[0]) : null;
+  const selM = value ? Number(value.split("-")[1]) - 1 : null;
 
   function closePanel() {
-    setOpen(false)
-    triggerRef.current?.focus()
+    setOpen(false);
+    triggerRef.current?.focus();
   }
 
   function pick(monthIdx: number) {
-    setValue(`${viewYear}-${String(monthIdx + 1).padStart(2, "0")}`)
-    closePanel()
+    setValue(`${viewYear}-${String(monthIdx + 1).padStart(2, "0")}`);
+    closePanel();
     // After the state lands, so the hidden input carries the new month
     // rather than the one it's replacing.
     if (submitOnPick) {
-      requestAnimationFrame(() => triggerRef.current?.form?.requestSubmit())
+      requestAnimationFrame(() => triggerRef.current?.form?.requestSubmit());
     }
   }
 
   return (
-    <div className="relative" ref={ref} onKeyDown={(e) => e.key === "Escape" && closePanel()}>
+    <div
+      className="relative"
+      ref={ref}
+      onKeyDown={(e) => e.key === "Escape" && closePanel()}
+    >
       <input type="hidden" name={name} value={value} />
       <button
         ref={triggerRef}
@@ -99,10 +113,17 @@ export function MonthPicker({
         aria-haspopup="true"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="ds-control flex w-full items-center gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)]"
+        /* 🔴 **44 只给触控那一边**（2026-09-07）：390 上量出来 42px —— 差两个像素。
+           `sm:min-h-0` —— 电脑那一边照旧。 */
+        className="ds-control flex min-h-11 w-full items-center gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-left [font-size:var(--text-sm)] text-[color:var(--color-paper)] transition-colors [transition-duration:var(--dur-fast)] hover:[background-color:var(--color-ink-850)] sm:min-h-0"
       >
-        <CalendarDays aria-hidden="true" className="h-[15px] w-[15px] shrink-0 text-[color:var(--color-paper-dim)]" />
-        <span className={value ? "" : "text-[color:var(--color-paper-dim)]"}>{value ? formatLabel(value, w.months) : (placeholder ?? w.pickMonth)}</span>
+        <CalendarDays
+          aria-hidden="true"
+          className="h-[15px] w-[15px] shrink-0 text-[color:var(--color-paper-dim)]"
+        />
+        <span className={value ? "" : "text-[color:var(--color-paper-dim)]"}>
+          {value ? formatLabel(value, w.months) : (placeholder ?? w.pickMonth)}
+        </span>
         <ChevronDown
           aria-hidden="true"
           className={`ml-auto h-3.5 w-3.5 shrink-0 text-[color:var(--color-paper-dim)] transition-transform [transition-duration:var(--dur-fast)] ${open ? "rotate-180" : ""}`}
@@ -125,7 +146,9 @@ export function MonthPicker({
             >
               <ChevronLeft aria-hidden="true" className="h-3 w-3" />
             </button>
-            <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">{viewYear}</span>
+            <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)] [font-weight:var(--fw-semibold)]">
+              {viewYear}
+            </span>
             <button
               type="button"
               aria-label={w.nextYear}
@@ -137,8 +160,8 @@ export function MonthPicker({
           </div>
           <div className="grid grid-cols-3 gap-1.5 px-3 pb-3">
             {w.months.map((m, i) => {
-              const isToday = viewYear === todayY && i === todayM
-              const isSelected = viewYear === selY && i === selM
+              const isToday = viewYear === todayY && i === todayM;
+              const isSelected = viewYear === selY && i === selM;
               return (
                 <button
                   type="button"
@@ -154,7 +177,7 @@ export function MonthPicker({
                 >
                   {m}
                 </button>
-              )
+              );
             })}
           </div>
           <div className="flex items-center justify-between border-t [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-xs [font-weight:var(--fw-semibold)] [border-color:var(--color-ink-800)]">
@@ -163,8 +186,8 @@ export function MonthPicker({
                 type="button"
                 className="text-[color:var(--color-paper-dim)] hover:underline"
                 onClick={() => {
-                  setValue("")
-                  closePanel()
+                  setValue("");
+                  closePanel();
                 }}
               >
                 Clear
@@ -176,9 +199,9 @@ export function MonthPicker({
               type="button"
               className="text-[color:var(--color-primary-deep)] hover:underline"
               onClick={() => {
-                setViewYear(todayY)
-                setValue(`${todayY}-${String(todayM + 1).padStart(2, "0")}`)
-                closePanel()
+                setViewYear(todayY);
+                setValue(`${todayY}-${String(todayM + 1).padStart(2, "0")}`);
+                closePanel();
               }}
             >
               This month
@@ -187,5 +210,5 @@ export function MonthPicker({
         </div>
       )}
     </div>
-  )
+  );
 }

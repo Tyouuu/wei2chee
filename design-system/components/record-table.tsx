@@ -4,18 +4,22 @@
 // <Render> on the SERVER -- the editor is a client tree, but the saved page is
 // not -- so without this the first paint of every customer page threw. Nothing
 // else here needs the client; the props are all serialisable data.
-"use client"
+"use client";
 
-import { Fragment, useState, type CSSProperties } from "react"
-import { useRegisterProp } from "@/design-system/editor/style-scope"
-import { DataGrid } from "./data-grid"
-import { useSystemWords } from "@/design-system/system-lang-context"
-import { Avatar } from "@/design-system/components/avatar"
-import { CheckCircle2, CircleDashed, CircleOff, Timer } from "lucide-react"
-import { StatusDot, type StatusTone } from "./status-dot"
-import { normalizeTable, type ColumnKind, type TableModel } from "@/lib/portal/table-model"
+import { Fragment, useState, type CSSProperties } from "react";
+import { useRegisterProp } from "@/design-system/editor/style-scope";
+import { DataGrid } from "./data-grid";
+import { useSystemWords } from "@/design-system/system-lang-context";
+import { Avatar } from "@/design-system/components/avatar";
+import { CheckCircle2, CircleDashed, CircleOff, Timer } from "lucide-react";
+import { StatusDot, type StatusTone } from "./status-dot";
+import {
+  normalizeTable,
+  type ColumnKind,
+  type TableModel,
+} from "@/lib/portal/table-model";
 
-export type { TableModel }
+export type { TableModel };
 
 /**
  * A real, Puck-friendly data table for business records (quotations,
@@ -52,25 +56,25 @@ const KIND_MIN: Record<ColumnKind, number> = {
   detail: 120,
   amount: 95,
   status: 95,
-}
+};
 
 export function RecordTable(props: {
-  gridId: string
-  caption: string
-  table?: TableModel
+  gridId: string;
+  caption: string;
+  table?: TableModel;
   /** Legacy four-column shape. Still read (see table-model.ts) so no saved
    *  layout can render blank; never written by anything current. */
-  primaryLabel?: string
-  secondaryLabel?: string
-  amountLabel?: string
-  statusColumnLabel?: string
-  rows?: unknown[]
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  amountLabel?: string;
+  statusColumnLabel?: string;
+  rows?: unknown[];
   /** Set by the 换个款式 picker. `plain` is a rule between rows; `compact`
    *  is the same table at three-quarter height for a page that has to show
    *  twenty jobs rather than five; `zebra` is the banded look every business
    *  owner already reads in Excel; `grid` rules the columns as well, for a
    *  table that is being copied from or checked against paper. */
-  look?: "plain" | "compact" | "zebra" | "grid" | "cards"
+  look?: "plain" | "compact" | "zebra" | "grid" | "cards";
   /**
    * WHAT A ROW CONTAINS -- a second, independent axis.
    *
@@ -85,7 +89,7 @@ export function RecordTable(props: {
    * not on separation -- shadcn-admin puts an initials circle on every row of
    * Recent Sales, Ant Design Pro puts a filled badge on every status.
    */
-  row?: "plain" | "pill" | "avatar"
+  row?: "plain" | "pill" | "avatar";
   /**
    * 一组一张表 —— 出处 arhamkhnz 的 `infrastructure`：每一个专案自己一个
    * 标题、自己一段表身，而不是一整张平表配一个「专案」栏。
@@ -98,7 +102,7 @@ export function RecordTable(props: {
    * 加一行没有作用的字 —— 跟那一排只有一个选项的分段是同一个毛病
    * （见 `segments`）。
    */
-  grouped?: boolean
+  grouped?: boolean;
   /**
    * Segment labels shown above the table, after an "All" the component adds
    * itself. Empty or absent means no segment row, which is right for a table
@@ -113,7 +117,7 @@ export function RecordTable(props: {
    * 跟搜索框叠加，而且**上面那个条数跟着一起变** ——
    * 一个写着「7 records」的标题压在两行上面，是另一个方向的同一句谎。
    */
-  filters?: string[]
+  filters?: string[];
   /**
    * 「这张清单上有哪几种状态」自己算出来，而不是有人写进去。
    *
@@ -131,7 +135,7 @@ export function RecordTable(props: {
    *      那一排分段只是把这张表又抄了一遍（実测：美容那七行是七种状态）
    *   ② 不超过六格 —— 参考那一页是四个下拉，一排八格会自己折行
    */
-  segments?: boolean
+  segments?: boolean;
   /**
    * THE TABLE'S OWN FURNITURE -- a third axis, and the one shadcn's task table
    * is entirely made of.
@@ -154,7 +158,7 @@ export function RecordTable(props: {
    * ⚠️ And the count follows the filter. A heading that says 「3 records」 over
    * one visible row is the same lie in the other direction.
    */
-  tools?: "chips" | "search" | "none" | "inline"
+  tools?: "chips" | "search" | "none" | "inline";
   /**
    * 这一张清单上的第一栏是**一个人（或一家店）**，不是一件事。
    *
@@ -167,10 +171,20 @@ export function RecordTable(props: {
    * 所以头像跟着**资料**走：一张名册的第一栏是一个名字，一张报价单的第一栏
    * 是一件工程 —— 那是关於这张表在讲什么，不是关於它好不好看。
    */
-  faces?: boolean
+  faces?: boolean;
 }) {
-  const { gridId, caption, look, row, filters: given, tools, faces, segments, grouped } = props
-  const w = useSystemWords()
+  const {
+    gridId,
+    caption,
+    look,
+    row,
+    filters: given,
+    tools,
+    faces,
+    segments,
+    grouped,
+  } = props;
+  const w = useSystemWords();
   // Absent means "follow the register", not "plain" -- see style-scope.tsx.
   /*
     THE HOOK IS CALLED UNCONDITIONALLY, THE FALLBACK IS APPLIED AFTER.
@@ -191,65 +205,85 @@ export function RecordTable(props: {
     there was no eslint config in the repository, so `react-hooks/rules-of-hooks`
     has been switched off for this codebase's entire life.
   */
-  const lookPref = useRegisterProp<"plain" | "compact" | "zebra" | "grid" | "cards">("RecordTable", "look")
-  const shown = look ?? lookPref ?? "plain"
+  const lookPref = useRegisterProp<
+    "plain" | "compact" | "zebra" | "grid" | "cards"
+  >("RecordTable", "look");
+  const shown = look ?? lookPref ?? "plain";
   // "RecordTableRow", NOT "RecordTable". A register's preference is a VARIANT
   // ID, and the id is looked up in VARIANTS under the same key -- so two axes
   // on one component need two keys, or the second silently reads the first
   // one's props and finds nothing. This is the same class of failure as the
   // 315 preferences that reached nothing before 2026-08-23, and it is silent
   // in exactly the same way: the table renders, it just renders the default.
-  const rowPref = useRegisterProp<"plain" | "pill" | "avatar" | "mark">("RecordTableRow", "row")
-  const rowShape = row ?? rowPref ?? "plain"
+  const rowPref = useRegisterProp<"plain" | "pill" | "avatar" | "mark">(
+    "RecordTableRow",
+    "row",
+  );
+  const rowShape = row ?? rowPref ?? "plain";
   /* A THIRD KEY, not a third read of "RecordTable". The comment above says why:
      a register's preference is looked up under the axis name, so two axes on
      one component sharing a key means the second silently finds nothing. */
-  const toolsPref = useRegisterProp<"chips" | "search" | "none" | "inline">("RecordTableTools", "tools")
-  const toolShape = tools ?? toolsPref ?? "chips"
+  const toolsPref = useRegisterProp<"chips" | "search" | "none" | "inline">(
+    "RecordTableTools",
+    "tools",
+  );
+  const toolShape = tools ?? toolsPref ?? "chips";
 
-  const [query, setQuery] = useState("")
-  const { columns, rows: allRows } = normalizeTable(props as unknown as Record<string, unknown>)
+  const [query, setQuery] = useState("");
+  const { columns, rows: allRows } = normalizeTable(
+    props as unknown as Record<string, unknown>,
+  );
   /* 没有包 useMemo，这是故意的：React Compiler 报
      `Existing memoization could not be preserved` —— 它看不出
      `normalizeTable(props)` 回来的阵列不会被改，所以整个组件被跳过不优化。
      一张表就那几十行，一次 filter 的成本远低于「让整个组件失去自动优化」。
      手写的 memo 换掉编译器的 memo，是这里最贵的一笔交易。 */
   /** 选中的那一段。`null` 是「全部」—— 组件自己加的那一格。 */
-  const [seg, setSeg] = useState<string | null>(null)
+  const [seg, setSeg] = useState<string | null>(null);
   /** 状态是哪一栏。分段讲的是状态，所以按栏的**种类**找，不是按栏名找
    *  —— 栏名是老板自己取的，他随时可以改成「到哪一步」。 */
-  const statusKey = columns.find((c) => c.kind === "status")?.key
+  const statusKey = columns.find((c) => c.kind === "status")?.key;
   /* 一组一张表。分的是说明那一栏，而且**两组以上才分** ——
      见 `grouped`。顺序照第一次出现，不重排：一张突然自己换过顺序的表，
      读起来像资料变了。 */
-  const groupKey = columns.find((c) => c.kind === "detail")?.key
+  const groupKey = columns.find((c) => c.kind === "detail")?.key;
   /* 明确写进来的赢 —— 总览那一张是有人挑过的。其余的自己算，见上面 `segments`。 */
-  const filters = given?.length ? given : segments ? autoSegments(allRows, statusKey) : undefined
+  const filters = given?.length
+    ? given
+    : segments
+      ? autoSegments(allRows, statusKey)
+      : undefined;
   /* 手机上那一行读的是**同一份 `columns`**：第一栏当标题、金额靠右、
      状态在第二行右边、其余的用「·」串成第二行。客户自己加一栏，
      它自己会出现，不用有人回来改这里。 */
   const phoneTitle =
     columns.find((c) => c.key === "primary") ??
     columns.find((c) => c.kind !== "status" && c.kind !== "amount") ??
-    columns[0]
-  const phoneAmount = columns.find((c) => c.kind === "amount")
+    columns[0];
+  const phoneAmount = columns.find((c) => c.kind === "amount");
   const phoneRest = columns.filter(
-    (c) => c.key !== phoneTitle?.key && c.kind !== "amount" && c.kind !== "status",
-  )
+    (c) =>
+      c.key !== phoneTitle?.key && c.kind !== "amount" && c.kind !== "status",
+  );
 
-  const q = query.trim().toLowerCase()
+  const q = query.trim().toLowerCase();
   const searched =
     q && toolShape === "search"
       ? allRows.filter((r) =>
-          Object.values(r.cells ?? {}).join(" ").toLowerCase().includes(q),
+          Object.values(r.cells ?? {})
+            .join(" ")
+            .toLowerCase()
+            .includes(q),
         )
-      : allRows
+      : allRows;
   const filtered =
     seg && statusKey
       ? searched.filter((r) =>
-          String(r.cells?.[statusKey] ?? "").toLowerCase().includes(seg.toLowerCase()),
+          String(r.cells?.[statusKey] ?? "")
+            .toLowerCase()
+            .includes(seg.toLowerCase()),
         )
-      : searched
+      : searched;
 
   /* ── 点栏头排序 ──────────────────────────────────────────────────────────
      `align:admin` 2026-09-02：**参考那一页四栏可以点着排，我们零栏。**
@@ -262,30 +296,37 @@ export function RecordTable(props: {
 
      ⚠️ 不排就是**他自己的顺序**，那是有意义的顺序（最近的在上面），
      所以第三下点回「不排」，不是在两个方向之间来回。 */
-  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null)
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
+    null,
+  );
   const numeric = (v: string) => {
-    const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""))
-    return Number.isFinite(n) ? n : null
-  }
+    const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
+    return Number.isFinite(n) ? n : null;
+  };
   const rows = (() => {
-    if (!sort) return filtered
-    const col = columns.find((c) => c.key === sort.key)
-    if (!col) return filtered
-    const sign = sort.dir === "asc" ? 1 : -1
+    if (!sort) return filtered;
+    const col = columns.find((c) => c.key === sort.key);
+    if (!col) return filtered;
+    const sign = sort.dir === "asc" ? 1 : -1;
     return [...filtered].sort((a, b) => {
-      const x = String(a.cells?.[sort.key] ?? "")
-      const y = String(b.cells?.[sort.key] ?? "")
+      const x = String(a.cells?.[sort.key] ?? "");
+      const y = String(b.cells?.[sort.key] ?? "");
       if (col.kind === "amount") {
-        const nx = numeric(x), ny = numeric(y)
-        if (nx !== null && ny !== null) return (nx - ny) * sign
+        const nx = numeric(x),
+          ny = numeric(y);
+        if (nx !== null && ny !== null) return (nx - ny) * sign;
       }
-      return x.localeCompare(y, undefined, { numeric: true }) * sign
-    })
-  })()
+      return x.localeCompare(y, undefined, { numeric: true }) * sign;
+    });
+  })();
   const nextSort = (key: string) =>
     setSort((s) =>
-      !s || s.key !== key ? { key, dir: "asc" } : s.dir === "asc" ? { key, dir: "desc" } : null,
-    )
+      !s || s.key !== key
+        ? { key, dir: "asc" }
+        : s.dir === "asc"
+          ? { key, dir: "desc" }
+          : null,
+    );
 
   /* ── 一组一张表 ────────────────────────────────────────────────────────
      出处 arhamkhnz 的 `infrastructure`：每一个专案自己一个标题、自己一段表身。
@@ -294,17 +335,22 @@ export function RecordTable(props: {
      没有作用的字 —— 跟那一排只有一个选项的分段是同一个毛病。
      顺序照第一次出现，不重排：一张突然自己换过顺序的表，读起来像资料变了。 */
   const groups = (() => {
-    const flat = [{ label: null as string | null, rows: rows.map((row, i) => ({ row, i })) }]
-    if (!grouped || !groupKey) return flat
-    const by = new Map<string, { row: (typeof rows)[number]; i: number }[]>()
+    const flat = [
+      {
+        label: null as string | null,
+        rows: rows.map((row, i) => ({ row, i })),
+      },
+    ];
+    if (!grouped || !groupKey) return flat;
+    const by = new Map<string, { row: (typeof rows)[number]; i: number }[]>();
     rows.forEach((row, i) => {
-      const key = String(row.cells?.[groupKey] ?? "").trim()
-      if (!by.has(key)) by.set(key, [])
-      by.get(key)!.push({ row, i })
-    })
-    if (by.size < 2) return flat
-    return [...by.entries()].map(([label, rs]) => ({ label, rows: rs }))
-  })()
+      const key = String(row.cells?.[groupKey] ?? "").trim();
+      if (!by.has(key)) by.set(key, []);
+      by.get(key)!.push({ row, i });
+    });
+    if (by.size < 2) return flat;
+    return [...by.entries()].map(([label, rs]) => ({ label, rows: rs }));
+  })();
 
   // Column heads carry the register's label voice: SMALL CAPS WITH WIDE
   // TRACKING under Ledger (--label-transform: uppercase), plain sentence case
@@ -318,14 +364,16 @@ export function RecordTable(props: {
     // fills it. See design-system/tokens/stamp.css.
     "[border-color:var(--color-ink-800)] [color:var(--color-table-head-fg)] " +
     "[font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] " +
-    "[letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]"
+    "[letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]";
 
   const bodyCell =
     "align-middle [padding-inline:var(--pad-cell-x)] " +
     "[padding-block:var(--row-pad-y,var(--pad-cell-y))] [height:var(--row-height,var(--row-h))]" +
     // Column rules stop before the last cell, or the table grows a right-hand
     // border that does not line up with the card edge behind it.
-    (shown === "grid" ? " [&:not(:last-child)]:border-r [&:not(:last-child)]:[border-color:var(--color-ink-800)]" : "")
+    (shown === "grid"
+      ? " [&:not(:last-child)]:border-r [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
+      : "");
 
   // Computed, not the old flat 440 — but tuned so the DEFAULT four columns
   // still add up to exactly that. The narrowest real case is the editor with a
@@ -334,7 +382,7 @@ export function RecordTable(props: {
   // table. Four columns fit that; a fifth the customer added cannot, and must
   // widen the table and scroll — silently squeezing 状态 in half is the exact
   // defect that has already been fixed twice by widening things.
-  const minWidth = columns.reduce((w, c) => w + KIND_MIN[c.kind], 0)
+  const minWidth = columns.reduce((w, c) => w + KIND_MIN[c.kind], 0);
 
   return (
     <div className="flex flex-col [gap:var(--gap-inline)]">
@@ -364,23 +412,37 @@ export function RecordTable(props: {
           <span className="tnum [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
             {w.rowCount(rows.length)}
           </span>
-          <SearchField value={query} onChange={setQuery} label={w.tableSearch} />
+          <SearchField
+            value={query}
+            onChange={setQuery}
+            label={w.tableSearch}
+          />
           {filters?.length ? (
-            <Segments filters={filters} all={w.filterAll} picked={seg} onPick={setSeg} />
+            <Segments
+              filters={filters}
+              all={w.filterAll}
+              picked={seg}
+              onPick={setSeg}
+            />
           ) : null}
         </div>
       ) : (
-      <div className="flex flex-wrap items-center [gap:var(--gap-inline)]">
-        <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
-          {caption}
-        </span>
-        <span className="tnum [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
-          {w.rowCount(rows.length)}
-        </span>
-        {toolShape === "chips" && filters?.length ? (
-          <Segments filters={filters} all={w.filterAll} picked={seg} onPick={setSeg} />
-        ) : null}
-      </div>
+        <div className="flex flex-wrap items-center [gap:var(--gap-inline)]">
+          <span className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+            {caption}
+          </span>
+          <span className="tnum [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+            {w.rowCount(rows.length)}
+          </span>
+          {toolShape === "chips" && filters?.length ? (
+            <Segments
+              filters={filters}
+              all={w.filterAll}
+              picked={seg}
+              onPick={setSeg}
+            />
+          ) : null}
+        </div>
       )}
 
       {/* THE TOOLBAR, ON ITS OWN LINE. shadcn's task table puts the field and
@@ -390,9 +452,18 @@ export function RecordTable(props: {
           title; a control on its own line is a place to work. */}
       {toolShape === "search" ? (
         <div className="flex flex-wrap items-center [gap:var(--gap-inline)]">
-          <SearchField value={query} onChange={setQuery} label={w.tableSearch} />
+          <SearchField
+            value={query}
+            onChange={setQuery}
+            label={w.tableSearch}
+          />
           {filters?.length ? (
-            <Segments filters={filters} all={w.filterAll} picked={seg} onPick={setSeg} />
+            <Segments
+              filters={filters}
+              all={w.filterAll}
+              picked={seg}
+              onPick={setSeg}
+            />
           ) : null}
         </div>
       ) : null}
@@ -429,14 +500,19 @@ export function RecordTable(props: {
       {rows.length > 0 ? (
         <ul className="flex flex-col @3xl:hidden">
           {rows.map((row, i) => {
-            const title = String(row.cells?.[phoneTitle.key] ?? "")
-            const amount = phoneAmount ? String(row.cells?.[phoneAmount.key] ?? "") : ""
-            const status = statusKey ? String(row.cells?.[statusKey] ?? "") : ""
-            const tone = (statusKey ? row.tones?.[statusKey] : undefined) as StatusTone | undefined
+            const title = String(row.cells?.[phoneTitle.key] ?? "");
+            const amount = phoneAmount
+              ? String(row.cells?.[phoneAmount.key] ?? "")
+              : "";
+            const status = statusKey
+              ? String(row.cells?.[statusKey] ?? "")
+              : "";
+            const tone = (statusKey ? row.tones?.[statusKey] : undefined) as
+              StatusTone | undefined;
             const rest = phoneRest
               .map((c) => String(row.cells?.[c.key] ?? "").trim())
               .filter(Boolean)
-              .join(" · ")
+              .join(" · ");
             const body = (
               <>
                 <span className="flex items-baseline [gap:var(--gap-inline)]">
@@ -463,7 +539,7 @@ export function RecordTable(props: {
                   </span>
                 ) : null}
               </>
-            )
+            );
             /* 整行都点得到 —— 一个拇指按不准一句字里的那几个字。
                ⚠️ 跟表格那边同一条规矩：只有真的记录有 `href`，
                示例资料没有，所以画廊跟纸上它照样是死的。 */
@@ -485,7 +561,7 @@ export function RecordTable(props: {
                   </div>
                 )}
               </li>
-            )
+            );
           })}
         </ul>
       ) : null}
@@ -514,14 +590,19 @@ export function RecordTable(props: {
       {shown === "cards" && rows.length > 0 ? (
         <div className="hidden grid-cols-2 @3xl:grid @5xl:grid-cols-3 @7xl:grid-cols-4 [gap:var(--gap-inline)]">
           {rows.map((row, i) => {
-            const title = String(row.cells?.[phoneTitle.key] ?? "")
-            const amount = phoneAmount ? String(row.cells?.[phoneAmount.key] ?? "") : ""
-            const status = statusKey ? String(row.cells?.[statusKey] ?? "") : ""
-            const tone = (statusKey ? row.tones?.[statusKey] : undefined) as StatusTone | undefined
+            const title = String(row.cells?.[phoneTitle.key] ?? "");
+            const amount = phoneAmount
+              ? String(row.cells?.[phoneAmount.key] ?? "")
+              : "";
+            const status = statusKey
+              ? String(row.cells?.[statusKey] ?? "")
+              : "";
+            const tone = (statusKey ? row.tones?.[statusKey] : undefined) as
+              StatusTone | undefined;
             const rest = phoneRest
               .map((c) => String(row.cells?.[c.key] ?? "").trim())
               .filter(Boolean)
-              .join(" · ")
+              .join(" · ");
             return (
               <div
                 key={i}
@@ -538,7 +619,9 @@ export function RecordTable(props: {
                   </span>
                 ) : null}
                 <span className="flex flex-wrap items-center [gap:var(--gap-inline)]">
-                  {status ? <StatusDot tone={tone ?? "neutral"} label={status} /> : null}
+                  {status ? (
+                    <StatusDot tone={tone ?? "neutral"} label={status} />
+                  ) : null}
                   {rest ? (
                     <span className="min-w-0 flex-1 truncate [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
                       {rest}
@@ -546,190 +629,212 @@ export function RecordTable(props: {
                   ) : null}
                 </span>
               </div>
-            )
+            );
           })}
         </div>
       ) : null}
 
-      <div className={rows.length > 0 && shown !== "cards" ? "hidden @3xl:block" : shown === "cards" ? "hidden" : undefined}>
-      <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
-      <table
-        className="w-full border-collapse [background-color:var(--color-table-bg)] [font-size:var(--text-sm)]"
-        style={
-          shown === "compact"
-            ? ({
-                minWidth: `${minWidth}px`,
-                // Multipliers, not pixels -- see this component's `look` note.
-                // Distinct names: a property that reads itself is a cycle and
-                // CSS discards the whole declaration, which would have left
-                // 紧凑 silently identical to 正常.
-                /* 0.72 → 0.9（2026-09-02）。`align:admin` 拿六套去对它们各自
+      <div
+        className={
+          rows.length > 0 && shown !== "cards"
+            ? "hidden @3xl:block"
+            : shown === "cards"
+              ? "hidden"
+              : undefined
+        }
+      >
+        <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
+          <table
+            className="w-full border-collapse [background-color:var(--color-table-bg)] [font-size:var(--text-sm)]"
+            style={
+              shown === "compact"
+                ? ({
+                    minWidth: `${minWidth}px`,
+                    // Multipliers, not pixels -- see this component's `look` note.
+                    // Distinct names: a property that reads itself is a cycle and
+                    // CSS discards the whole declaration, which would have left
+                    // 紧凑 silently identical to 正常.
+                    /* 0.72 → 0.9（2026-09-02）。`align:admin` 拿六套去对它们各自
                    抄的那一页，**六套的行全部比参考矮**：参考 49–75px，我们 26–52。
                    最矮那一套（台账）画出来只有 26px —— 那不是「密」，
                    那是**挤到不好读**，而且它比号称全库最密的中台还要矮，
                    我们自己那两句主张互相打架。
                    紧凑仍然是紧凑，只是不再把行压掉三成。 */
-                "--row-height": "calc(var(--row-h) * 0.9)",
-                "--row-pad-y": "calc(var(--pad-cell-y) * 0.7)",
-              } as CSSProperties)
-            : { minWidth: `${minWidth}px` }
-        }
-      >
-        <thead>
-          <tr className="sticky top-0 [background-color:var(--color-table-head-bg)]">
-            {columns.map((col) => {
-              const on = sort?.key === col.key
-              return (
-                <th
-                  key={col.key}
-                  className={col.kind === "amount" ? `${headCell} !text-right` : headCell}
-                  aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
-                >
-                  {/* 整个栏头就是那颗按钮 —— 一个只有箭头能点的栏头，
-                      在手机上是一个点不中的目标（`check:reachable` 守着这件事）。 */}
-                  <button
-                    type="button"
-                    onClick={() => nextSort(col.key)}
-                    className={`inline-flex max-w-full items-center gap-1 ${
-                      col.kind === "amount" ? "flex-row-reverse" : ""
-                    } [font:inherit] [letter-spacing:inherit] [text-transform:inherit] [color:inherit]`}
-                  >
-                    <span className="truncate">{col.label}</span>
-                    {/* 没有在排的时候画一个淡的、方向中立的记号，
-                        那是在说「这里可以点」；不画的话没有人知道它能点。 */}
-                    <svg
-                      viewBox="0 0 12 12"
-                      aria-hidden="true"
-                      className="h-2.5 w-2.5 shrink-0"
-                      style={{ opacity: on ? 1 : 0.35 }}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
+                    "--row-height": "calc(var(--row-h) * 0.9)",
+                    "--row-pad-y": "calc(var(--pad-cell-y) * 0.7)",
+                  } as CSSProperties)
+                : { minWidth: `${minWidth}px` }
+            }
+          >
+            <thead>
+              <tr className="sticky top-0 [background-color:var(--color-table-head-bg)]">
+                {columns.map((col) => {
+                  const on = sort?.key === col.key;
+                  return (
+                    <th
+                      key={col.key}
+                      className={
+                        col.kind === "amount"
+                          ? `${headCell} !text-right`
+                          : headCell
+                      }
+                      aria-sort={
+                        on
+                          ? sort.dir === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : "none"
+                      }
                     >
-                      {on ? (
-                        sort.dir === "asc" ? (
-                          <path d="M6 9.5V2.5M3 5.5 6 2.5l3 3" />
-                        ) : (
-                          <path d="M6 2.5v7M3 6.5l3 3 3-3" />
-                        )
-                      ) : (
-                        <path d="M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5" />
-                      )}
-                    </svg>
-                  </button>
-                </th>
-              )
-            })}
-          </tr>
-        </thead>
-        <tbody>
-          {/* 🔴 筛到零行的时候，表格本来是**整个空白的**。
+                      {/* 整个栏头就是那颗按钮 —— 一个只有箭头能点的栏头，
+                      在手机上是一个点不中的目标（`check:reachable` 守着这件事）。 */}
+                      <button
+                        type="button"
+                        onClick={() => nextSort(col.key)}
+                        className={`inline-flex max-w-full items-center gap-1 ${
+                          col.kind === "amount" ? "flex-row-reverse" : ""
+                        } [font:inherit] [letter-spacing:inherit] [text-transform:inherit] [color:inherit]`}
+                      >
+                        <span className="truncate">{col.label}</span>
+                        {/* 没有在排的时候画一个淡的、方向中立的记号，
+                        那是在说「这里可以点」；不画的话没有人知道它能点。 */}
+                        <svg
+                          viewBox="0 0 12 12"
+                          aria-hidden="true"
+                          className="h-2.5 w-2.5 shrink-0"
+                          style={{ opacity: on ? 1 : 0.35 }}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                        >
+                          {on ? (
+                            sort.dir === "asc" ? (
+                              <path d="M6 9.5V2.5M3 5.5 6 2.5l3 3" />
+                            ) : (
+                              <path d="M6 2.5v7M3 6.5l3 3 3-3" />
+                            )
+                          ) : (
+                            <path d="M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5" />
+                          )}
+                        </svg>
+                      </button>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {/* 🔴 筛到零行的时候，表格本来是**整个空白的**。
               实测（`npm run check:table-search`）：打一个找不到的字，tbody 的
               内容是空字串 —— 一个刚打完字的人分不出「找不到」跟「这东西坏了」。
               这跟这个仓库一直在犯的那一类是同一件事：能力做出来了，
               **它讲不出自己发生了什么**。 */}
-          {/* 🔴 一行都还没有 —— 跟「筛不到」是两件不同的事，而这张表本来
+              {/* 🔴 一行都还没有 —— 跟「筛不到」是两件不同的事，而这张表本来
               两件都不会讲：零行的时候它渲染出一个表头加一片空白。
               老板 2026-09-02:「每一个页面 每一页状态 你就没有复刻好」。
               这是一个真实客户第一天打开系统时看到的那一屏，
               而它本来什么都没有说。 */}
-          {rows.length === 0 && !q && !seg ? (
-            <tr>
-              <td
-                colSpan={columns.length}
-                className="[padding-block:var(--pad-card)] [padding-inline:var(--pad-cell-x)] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
-              >
-                {w.tableEmpty}
-              </td>
-            </tr>
-          ) : null}
-          {/* 🔴 分段也会筛到零行，而在这之前这一支只问搜索框（2026-09-03）。
+              {rows.length === 0 && !q && !seg ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="[padding-block:var(--pad-card)] [padding-inline:var(--pad-cell-x)] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
+                  >
+                    {w.tableEmpty}
+                  </td>
+                </tr>
+              ) : null}
+              {/* 🔴 分段也会筛到零行，而在这之前这一支只问搜索框（2026-09-03）。
               按一下「已确认」而一笔都没有的时候，上面那个空状态说
               「还没有记录」、这一支不出声 —— **整个表身是一片空白**。
               这个档案自己在上面写过同一句：一个刚筛完的人，分不出
               「找不到」跟「这东西坏了」。 */}
-          {rows.length === 0 && (q || seg) ? (
-            <tr>
-              <td
-                colSpan={columns.length}
-                className="[padding-block:var(--pad-card)] [padding-inline:var(--pad-cell-x)] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
-              >
-                {w.tableNoMatch(q ? query.trim() : (seg as string))}
-              </td>
-            </tr>
-          ) : null}
-          {groups.map((g) => (
-            <Fragment key={`g:${g.label ?? ""}`}>
-              {/* 组标题。整行跨栏 —— 参考那一页每一组自己一个标题，
-                  而不是一整张平表配一个「哪一组」栏。 */}
-              {g.label !== null ? (
+              {rows.length === 0 && (q || seg) ? (
                 <tr>
-                  <th
-                    scope="colgroup"
+                  <td
                     colSpan={columns.length}
-                    className="[background:var(--color-ink-850)] [padding-inline:var(--pad-cell-x)] [padding-block:calc(var(--pad-cell-y)*0.85)] text-left [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)]"
+                    className="[padding-block:var(--pad-card)] [padding-inline:var(--pad-cell-x)] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
                   >
-                    {g.label || "—"}
-                  </th>
+                    {w.tableNoMatch(q ? query.trim() : (seg as string))}
+                  </td>
                 </tr>
               ) : null}
-              {g.rows.map(({ row, i }) => (
-            <tr
-              key={i}
-              className={
-                // Bands and rules are alternatives, not additions: a zebra
-                // table with a rule under every row is two separators doing
-                // one job, and reads as noise at the row heights these tables
-                // actually run at.
-                shown === "zebra"
-                  ? "even:[background-color:var(--color-ink-850)]"
-                  : "[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
-              }
-            >
-              {columns.map((col) => {
-                const value = row.cells?.[col.key] ?? ""
-                if (col.kind === "status") {
-                  const tone = (row.tones?.[col.key] as StatusTone) ?? "neutral"
-                  return (
-                    <td key={col.key} className={bodyCell}>
-                      {value ? (
-                        rowShape === "pill" ? (
-                          <Pill tone={tone} label={value} />
-                        ) : rowShape === "mark" ? (
-                          <StatusMark tone={tone} label={value} />
-                        ) : (
-                          <StatusDot tone={tone} label={value} />
-                        )
-                      ) : null}
-                    </td>
-                  )
-                }
-                if (col.kind === "amount") {
-                  // --font-numeric is a mono face under Ledger and Blueprint and
-                  // the rounded UI face under Hearth, which deliberately has no
-                  // mono anywhere: a monospaced figure is a precision signal, and
-                  // precision is not that register's job.
-                  return (
-                    <td
-                      key={col.key}
-                      /* 🔴 `whitespace-nowrap`：一个断成两行的金额，读起来是一个错的数字。
+              {groups.map((g) => (
+                <Fragment key={`g:${g.label ?? ""}`}>
+                  {/* 组标题。整行跨栏 —— 参考那一页每一组自己一个标题，
+                  而不是一整张平表配一个「哪一组」栏。 */}
+                  {g.label !== null ? (
+                    <tr>
+                      <th
+                        scope="colgroup"
+                        colSpan={columns.length}
+                        className="[background:var(--color-ink-850)] [padding-inline:var(--pad-cell-x)] [padding-block:calc(var(--pad-cell-y)*0.85)] text-left [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)]"
+                      >
+                        {g.label || "—"}
+                      </th>
+                    </tr>
+                  ) : null}
+                  {g.rows.map(({ row, i }) => (
+                    <tr
+                      key={i}
+                      className={
+                        // Bands and rules are alternatives, not additions: a zebra
+                        // table with a rule under every row is two separators doing
+                        // one job, and reads as noise at the row heights these tables
+                        // actually run at.
+                        shown === "zebra"
+                          ? "even:[background-color:var(--color-ink-850)]"
+                          : "[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
+                      }
+                    >
+                      {columns.map((col) => {
+                        const value = row.cells?.[col.key] ?? "";
+                        if (col.kind === "status") {
+                          const tone =
+                            (row.tones?.[col.key] as StatusTone) ?? "neutral";
+                          return (
+                            <td key={col.key} className={bodyCell}>
+                              {value ? (
+                                rowShape === "pill" ? (
+                                  <Pill tone={tone} label={value} />
+                                ) : rowShape === "mark" ? (
+                                  <StatusMark tone={tone} label={value} />
+                                ) : (
+                                  <StatusDot tone={tone} label={value} />
+                                )
+                              ) : null}
+                            </td>
+                          );
+                        }
+                        if (col.kind === "amount") {
+                          // --font-numeric is a mono face under Ledger and Blueprint and
+                          // the rounded UI face under Hearth, which deliberately has no
+                          // mono anywhere: a monospaced figure is a precision signal, and
+                          // precision is not that register's job.
+                          return (
+                            <td
+                              key={col.key}
+                              /* 🔴 `whitespace-nowrap`：一个断成两行的金额，读起来是一个错的数字。
                          实测 390 的报价单页：`RM 48,500` 被折成「RM」跟「48,500」两行。
                          宽度不够的时候宁可让整张表横着滑 —— 表本来就会滑，
                          而一个断开的金额没有任何地方讲得清楚它其实是一个数。
                          （同一条守卫 2026-09-03 在手机那几张 demo 上装过一次。） */
-                      className={`${bodyCell} whitespace-nowrap text-right tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)]`}
-                    >
-                      {value}
-                    </td>
-                  )
-                }
-                if (col.kind === "detail") {
-                  return (
-                    <td key={col.key} className={`${bodyCell} [color:var(--color-paper-dim)]`}>
-                      {rowShape === "avatar" && value ? (
-                        <span className="flex items-center [gap:var(--gap-inline)]">
-                          {/*
+                              className={`${bodyCell} whitespace-nowrap text-right tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)]`}
+                            >
+                              {value}
+                            </td>
+                          );
+                        }
+                        if (col.kind === "detail") {
+                          return (
+                            <td
+                              key={col.key}
+                              className={`${bodyCell} [color:var(--color-paper-dim)]`}
+                            >
+                              {rowShape === "avatar" && value ? (
+                                <span className="flex items-center [gap:var(--gap-inline)]">
+                                  {/*
                             THE FACE BELONGS TO THE PERSON, NOT TO THE CELL.
 
                             This read `name={value}` -- the DETAIL cell -- so the
@@ -745,21 +850,24 @@ export function RecordTable(props: {
                             whole unit suite were green -- none of them can see
                             two digits of a phone number in a circle.
                           */}
-                          <Avatar name={String(row.cells?.primary || value)} size={24} />
-                          <span className="truncate">{value}</span>
-                        </span>
-                      ) : (
-                        value
-                      )}
-                    </td>
-                  )
-                }
-                return (
-                  <td
-                    key={col.key}
-                    className={`${bodyCell} [color:var(--color-paper)] [font-weight:var(--fw-medium)]`}
-                  >
-                    {/*
+                                  <Avatar
+                                    name={String(row.cells?.primary || value)}
+                                    size={24}
+                                  />
+                                  <span className="truncate">{value}</span>
+                                </span>
+                              ) : (
+                                value
+                              )}
+                            </td>
+                          );
+                        }
+                        return (
+                          <td
+                            key={col.key}
+                            className={`${bodyCell} [color:var(--color-paper)] [font-weight:var(--fw-medium)]`}
+                          >
+                            {/*
                       A REAL RECORD OPENS; A SAMPLE DOES NOT.
 
                       `row.href` is set only by the live-rows projection, so a
@@ -774,38 +882,39 @@ export function RecordTable(props: {
                       answers to one question, and the underline would fight
                       the amount column's alignment.
                     */}
-                    {(() => {
-                      const label =
-                        row.href && col.key === "primary" && value ? (
-                          <a
-                            href={row.href}
-                            className="underline decoration-[color:var(--color-ink-700)] underline-offset-[3px] hover:decoration-[color:var(--color-primary)]"
-                          >
-                            {value}
-                          </a>
-                        ) : (
-                          value
-                        )
-                      /* 头像只画在第一栏，而且只在这张表说自己是一张名册的时候。
+                            {(() => {
+                              const label =
+                                row.href && col.key === "primary" && value ? (
+                                  <a
+                                    href={row.href}
+                                    className="underline decoration-[color:var(--color-ink-700)] underline-offset-[3px] hover:decoration-[color:var(--color-primary)]"
+                                  >
+                                    {value}
+                                  </a>
+                                ) : (
+                                  value
+                                );
+                              /* 头像只画在第一栏，而且只在这张表说自己是一张名册的时候。
                          名字是空的就不画 —— 一颗没有字的圆圈是一个装饰。 */
-                      if (!faces || col.key !== "primary" || !value) return label
-                      return (
-                        <span className="flex items-center [gap:var(--gap-inline)]">
-                          <Avatar name={String(value)} size={24} />
-                          <span className="truncate">{label}</span>
-                        </span>
-                      )
-                    })()}
-                  </td>
-                )
-              })}
-            </tr>
+                              if (!faces || col.key !== "primary" || !value)
+                                return label;
+                              return (
+                                <span className="flex items-center [gap:var(--gap-inline)]">
+                                  <Avatar name={String(value)} size={24} />
+                                  <span className="truncate">{label}</span>
+                                </span>
+                              );
+                            })()}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
-    </DataGrid>
+            </tbody>
+          </table>
+        </DataGrid>
       </div>
 
       {/* 表格底下那一条。
@@ -823,11 +932,13 @@ export function RecordTable(props: {
             borderTopColor: "var(--border-subtle)",
           }}
         >
-          <span className="tnum">{w.tableFoot(rows.length, allRows.length)}</span>
+          <span className="tnum">
+            {w.tableFoot(rows.length, allRows.length)}
+          </span>
         </div>
       ) : null}
     </div>
-  )
+  );
 }
 
 /**
@@ -863,16 +974,20 @@ const MARK_ICON = {
   warning: Timer,
   negative: CircleOff,
   neutral: CircleDashed,
-} as const
+} as const;
 
 function StatusMark({ tone, label }: { tone: StatusTone; label: string }) {
-  const Icon = MARK_ICON[tone] ?? CircleDashed
+  const Icon = MARK_ICON[tone] ?? CircleDashed;
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap [font-size:var(--text-sm)] [color:var(--color-paper)]">
-      <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]" strokeWidth={2} />
+      <Icon
+        aria-hidden="true"
+        className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]"
+        strokeWidth={2}
+      />
       {label}
     </span>
-  )
+  );
 }
 
 const PILL_TONE: Record<string, string> = {
@@ -880,10 +995,10 @@ const PILL_TONE: Record<string, string> = {
   warning: "var(--color-brass-bright)",
   negative: "var(--color-clay-bright)",
   neutral: "var(--color-slate-bright)",
-}
+};
 
 function Pill({ tone, label }: { tone: StatusTone; label: string }) {
-  const c = PILL_TONE[tone] ?? PILL_TONE.neutral
+  const c = PILL_TONE[tone] ?? PILL_TONE.neutral;
   return (
     <span
       className="inline-flex max-w-full items-center truncate whitespace-nowrap [border-radius:var(--radius-control)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [padding-block:2px] [padding-inline:var(--pad-control-x)]"
@@ -910,7 +1025,7 @@ function Pill({ tone, label }: { tone: StatusTone; label: string }) {
     >
       {label}
     </span>
-  )
+  );
 }
 
 /** 那个**真的会筛**的框。两种排法（自己一行 · 跟标题同一行）画的是同一个框，
@@ -920,13 +1035,23 @@ function SearchField({
   onChange,
   label,
 }: {
-  value: string
-  onChange: (v: string) => void
-  label: string
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
 }) {
   return (
-    <label className="flex min-w-0 flex-1 items-center gap-2 [background:var(--color-ink-900)] [border:var(--border-card-width)_solid_var(--input)] [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] sm:max-w-[22rem]">
-      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+    /* 🔴 **44 只给触控那一边**（2026-09-07）：这个框在 390 上量出来 36px 高。
+       `sm:min-h-0` —— 电脑那一边照旧 36，跟我们抄的那几个参考后台的
+       工具条一样密。 */
+    <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2 [background:var(--color-ink-900)] [border:var(--border-card-width)_solid_var(--input)] [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] sm:min-h-0 sm:max-w-[22rem]">
+      <svg
+        viewBox="0 0 20 20"
+        className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden="true"
+      >
         <circle cx="9" cy="9" r="5.5" />
         <path d="m13.5 13.5 3 3" strokeLinecap="round" />
       </svg>
@@ -935,10 +1060,14 @@ function SearchField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={label}
         aria-label={label}
-        className="w-full bg-transparent [padding-block:var(--pad-control-y)] [font-size:var(--text-xs)] [color:var(--color-paper)] outline-none placeholder:[color:var(--color-paper-dim)]"
+        /* 🔴 高度要长在**框自己身上**，不只是外面那个 label。
+           点在 label 上确实会把光标送进来（那是 label 的语意），
+           而尺子量的是这个框自己的盒子 —— 而更要紧的是：
+           **一个量不到的 44，跟一个不存在的 44，在报告里长得一模一样。** */
+        className="min-h-11 w-full bg-transparent [padding-block:var(--pad-control-y)] [font-size:var(--text-xs)] [color:var(--color-paper)] outline-none placeholder:[color:var(--color-paper-dim)] sm:min-h-0"
       />
     </label>
-  )
+  );
 }
 
 /** 这张清单上真的有的那几种状态。见 RecordTable 的 `segments`。 */
@@ -946,17 +1075,17 @@ function autoSegments(
   rows: { cells?: Record<string, string> }[],
   statusKey: string | undefined,
 ): string[] | undefined {
-  if (!statusKey) return undefined
-  const count = new Map<string, number>()
+  if (!statusKey) return undefined;
+  const count = new Map<string, number>();
   for (const r of rows) {
-    const v = String(r.cells?.[statusKey] ?? "").trim()
-    if (v) count.set(v, (count.get(v) ?? 0) + 1)
+    const v = String(r.cells?.[statusKey] ?? "").trim();
+    if (v) count.set(v, (count.get(v) ?? 0) + 1);
   }
-  const labels = [...count.keys()]
-  if (labels.length < 2 || labels.length > 6) return undefined
+  const labels = [...count.keys()];
+  if (labels.length < 2 || labels.length > 6) return undefined;
   /* 每一格都只有一行 = 这一排是这张表的第二份拷贝，不是一个筛子。 */
-  if (![...count.values()].some((n) => n > 1)) return undefined
-  return labels
+  if (![...count.values()].some((n) => n > 1)) return undefined;
+  return labels;
 }
 
 /** The segment row. Lifted out because the toolbar draws it in one of two
@@ -967,11 +1096,11 @@ function Segments({
   picked,
   onPick,
 }: {
-  filters: string[]
-  all: string
+  filters: string[];
+  all: string;
   /** `null` = 全部。 */
-  picked: string | null
-  onPick: (v: string | null) => void
+  picked: string | null;
+  onPick: (v: string | null) => void;
 }) {
   return (
     <div
@@ -979,7 +1108,7 @@ function Segments({
       role="group"
     >
       {[null, ...filters].map((f) => {
-        const on = picked === f
+        const on = picked === f;
         return (
           <button
             key={f ?? "__all"}
@@ -994,8 +1123,8 @@ function Segments({
           >
             {f ?? all}
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

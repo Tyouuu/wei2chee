@@ -1,5 +1,5 @@
-import Link from "next/link"
-import type { ReactNode } from "react"
+import Link from "next/link";
+import type { ReactNode } from "react";
 
 /**
  * The page's identity zone: title, an optional one-line summary of scale,
@@ -26,14 +26,14 @@ export function PageHeader({
   /** ReactNode, not string, so the editor can wrap it in an <Inline> marker
    *  and let the customer retype it on the page. Every existing caller passes
    *  a string, which is a ReactNode. */
-  title: ReactNode
+  title: ReactNode;
   /** One line on the scale of what's below, e.g. "249 records · 44 regions". */
-  subtitle?: ReactNode
+  subtitle?: ReactNode;
   /** Small trailing element beside the title, e.g. a read-only badge. */
-  meta?: ReactNode
+  meta?: ReactNode;
   /** Either a link-style primary action (rendered as a styled link) or any
       other node — a button, a group of buttons — for full control. */
-  action?: { href: string; label: string } | ReactNode
+  action?: { href: string; label: string } | ReactNode;
   /**
    * WHY THIS AXIS EXISTS. Measured 2026-08-23: 43 of 57 components had no
    * alternative look at all, and this one — the first thing on every page —
@@ -50,22 +50,25 @@ export function PageHeader({
    * No default in the signature: absent means "follow the register".
    * See puck-config-client.tsx.
    */
-  layout?: "split" | "stacked" | "centred" | "ruled"
+  layout?: "split" | "stacked" | "centred" | "ruled";
 }) {
-  const stacked = layout === "stacked"
-  const centred = layout === "centred"
-  const ruled = layout === "ruled"
+  const stacked = layout === "stacked";
+  const centred = layout === "centred";
+  const ruled = layout === "ruled";
   const actionNode =
     action && typeof action === "object" && "href" in action ? (
       <Link
         href={action.href}
-        className="inline-flex shrink-0 items-center [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] [color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)]"
+        /* 🔴 **44 只给触控那一边**（2026-09-07）：这一页唯一的主要动作
+           在 390 上量出来 40px 高 —— 差四个像素，而按它的是站在客人后面
+           单手拿手机的老板。`sm:min-h-0` —— 电脑那一边照旧。 */
+        className="inline-flex min-h-11 shrink-0 items-center [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-sm)] [color:var(--color-on-primary)] transition-colors [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] [transition-duration:var(--dur)] [transition-timing-function:var(--ease-out-quad)] hover:[background-color:var(--color-primary-deep)] sm:min-h-0"
       >
         {action.label}
       </Link>
     ) : (
       action
-    )
+    );
 
   return (
     <div
@@ -83,7 +86,9 @@ export function PageHeader({
           : stacked
             ? "flex-col items-start"
             : "items-start justify-between",
-        ruled ? "[border-bottom:var(--hairline)_solid_var(--color-ink-800)] [padding-bottom:var(--gap-stack)]" : "",
+        ruled
+          ? "[border-bottom:var(--hairline)_solid_var(--color-ink-800)] [padding-bottom:var(--gap-stack)]"
+          : "",
       ].join(" ")}
     >
       {/* `data-page-title`：给外面一个抓得到的把手。手机上那个壳顶上
@@ -96,10 +101,12 @@ export function PageHeader({
           {meta}
         </h1>
         {subtitle && (
-          <p className="mt-0.5 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">{subtitle}</p>
+          <p className="mt-0.5 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+            {subtitle}
+          </p>
         )}
       </div>
       {actionNode}
     </div>
-  )
+  );
 }
