@@ -113,7 +113,9 @@ export type LandingContent = {
   /** What they sell, one line. */
   pitch: string;
   /** Three things they do. */
-  services: { label: string; value: string; icon: string }[];
+  /** `placeholder` rows are prompts for the owner: the editor shows them,
+   *  publish-projection strips them. Task 293. */
+  services: { label: string; value: string; icon: string; placeholder?: boolean }[];
   /** Their own workflow stages, from the analysis. */
   stages: string[];
   /**
@@ -287,7 +289,10 @@ const hero = (
           what the aircon company's page does with 「GENERAL SERVICE RM 60」, and
           the reason it is the first thing you see.
         */
-        priceRows: c.services.map((svc) => ({ label: svc.label, value: "" })),
+        // Carries `placeholder` for the same reason the chips do: this map dropped
+        // the flag, so instruction rows reached the published first screen even
+        // after the services band stopped publishing them. Task 293.
+        priceRows: c.services.map((svc) => ({ label: svc.label, value: "", ...(svc.placeholder ? { placeholder: true } : {}) })),
         ...(phone
           ? {
               phoneLabel: c.words.callUs,
@@ -317,7 +322,14 @@ const hero = (
           figure,
           figureData: {
             brand: c.brand,
-            services: c.services.map((s) => ({ label: s.label, value: s.value })),
+            /* FILTERED, NOT FLAGGED. This list is nested inside an object prop,
+               and publish-projection only strips placeholder rows from TOP-LEVEL
+               arrays -- so a flag here would ride all the way onto the live page.
+               The drawn figure is a picture of his quotation: it should only draw
+               what he actually offers. Task 293. */
+            services: c.services
+              .filter((s) => !s.placeholder)
+              .map((s) => ({ label: s.label, value: s.value })),
             stages: c.stages,
             landsIn: c.landsIn,
             // Both already exist in the page's own language: the reply note is
@@ -362,8 +374,14 @@ const services = (c: LandingContent, heading: string, framed = true) =>
 
       Every other shape ignores `note`, so this costs them nothing.
     */
-    noteHeading: c.words.sections.areas.heading,
-    note: c.words.sections.areas.list.slice(0, 4).join(" · "),
+    // Empty when we never learned where he is -- see task 293. An unknown
+    // place printed as a fact is the one failure mode worse than a gap.
+    ...(c.words.sections.areas.list.length
+      ? {
+          noteHeading: c.words.sections.areas.heading,
+          note: c.words.sections.areas.list.slice(0, 4).join(" · "),
+        }
+      : {}),
     items: c.services,
     // Referenced so the parameter is not dead weight to a reader.
     ...(framed ? {} : {}),
@@ -588,12 +606,24 @@ const areas = (c: LandingContent) =>
          same three words twice. Measured 2026-08-27 while looking for why six
          registers had an almost-empty section in the same place. Printing one
          fact twice on one page is what got 印 culled. */
+      /* Both rows carry `placeholder` when the area is unknown, so the editor
+         still prompts for it and publish-projection drops the whole band --
+         「编辑器负责催，公开的页面永远不出现催」, task 19. Flagging only the
+         first would leave the band alive carrying just its footnote. */
       {
         label: "",
-        value: c.words.sections.areas.list.join(" · "),
+        value: c.words.sections.areas.list.length
+          ? c.words.sections.areas.list.join(" · ")
+          : c.words.sections.areas.ask,
         icon: "place",
+        ...(c.words.sections.areas.list.length ? {} : { placeholder: true }),
       },
-      { label: "", value: c.words.sections.areas.note, icon: "tag" },
+      {
+        label: "",
+        value: c.words.sections.areas.note,
+        icon: "tag",
+        ...(c.words.sections.areas.list.length ? {} : { placeholder: true }),
+      },
     ],
   });
 

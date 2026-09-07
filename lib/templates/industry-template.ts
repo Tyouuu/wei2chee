@@ -2016,10 +2016,21 @@ export function landingContentFor(
   const t = landingCopy(lang);
   const services = t.services[industry.slug] ?? t.services.other;
   const promise = t.promise[industry.slug] ?? t.promise.other;
-  const pitch =
-    lang === "zh"
-      ? `${t.joinServices(services.map((x) => x.label))}。${promise}`
-      : `${t.joinServices(services.map((x) => x.label))}. ${promise}`;
+  /* WHICH OF THESE ARE REAL.
+     The 其他 trade ships three rows that are instructions to the owner --
+     「主要服务 · 改成你做的第一件事」 -- and they reached FOUR places on the
+     public page: the headline, the first-screen chips, the statement sentence,
+     and the services band. Flagging the rows only stopped the last one, because
+     the other three read the LABELS, not the rows. Task 293.
+
+     Empty `real` is also the only honest signal that we do not know what this
+     business does: `tradeNoun.other` is a real entry, so `??` never fires. */
+  const real = services.filter((x) => !x.placeholder);
+  const pitch = real.length
+    ? lang === "zh"
+      ? `${t.joinServices(real.map((x) => x.label))}。${promise}`
+      : `${t.joinServices(real.map((x) => x.label))}. ${promise}`
+    : promise;
 
   /*
     THE HEADLINE IS WHAT THEY DO, NOT WHO THEY ARE.
@@ -2039,10 +2050,38 @@ export function landingContentFor(
     The name is not lost: it is in the bar, in the foot, and on the drawn
     figure. It is simply no longer the largest words on the page.
   */
+  /* NO PLACE NAME WHEN WE DO NOT KNOW THE PLACE.
+     The area list was eight hardcoded Klang Valley names and the questionnaire
+     never asks where he is, so every generated page said 吉隆坡 -- including
+     for the 1,225 Ipoh businesses on the prospect list. A wrong place is worse
+     than no place: it tells an Ipoh owner the page was built for someone else.
+     Measured 2026-09-08, task 293. When the area IS known this reads as before. */
+  /* NO AREA, NO TRADE HEADLINE -- THE NAME INSTEAD.
+
+     「Trade plus area in six words」 only works while we know the area. The
+     list was eight hardcoded Klang Valley names nobody was ever asked for, so
+     it is empty now (task 293), and the nouns were written to sit BEHIND a
+     place: dropping 「吉隆坡的」 leaves 「店」 -- one character as the largest
+     words on the page. 「沙龙」 and 「餐厅」 are two.
+
+     So the rule is one line, no per-trade list: with an area, this reads
+     exactly as it did; without one, the largest words are what he is called.
+     That is never wrong, and in this market it usually carries the trade
+     anyway -- 亚成五金, 老友茶餐室, See Chee 电器, Soon Foong 车行. It also
+     folds in the 其他 case: a business whose every service row is still a
+     placeholder has no trade to name either.
+
+     ⚠️ It does repeat the top bar. Measured against the alternative: a
+     stranger who reads 「店」 learns nothing, and one who reads 「吉隆坡的店」
+     in Ipoh learns something false. */
+  const area = t.page.sections.areas.list[0];
+  const noun = t.tradeNoun[industry.slug] ?? t.tradeNounFallback;
   const headline =
-    lang === "zh"
-      ? `${t.page.sections.areas.list[0]}的${t.tradeNoun[industry.slug] ?? t.tradeNounFallback}`
-      : `${tradeLabel(industry, lang)} in ${t.page.sections.areas.list[0]}`;
+    area && real.length
+      ? lang === "zh"
+        ? `${area}的${noun}`
+        : `${tradeLabel(industry, lang)} in ${area}`
+      : brand;
 
   return {
     brand,

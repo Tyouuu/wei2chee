@@ -15,7 +15,7 @@ import type { SystemLang } from "@/lib/system-lang";
  * in Chinese or Malay.
  */
 
-export type ServiceHint = { label: string; value: string; icon: string };
+export type ServiceHint = { label: string; value: string; icon: string; placeholder?: boolean };
 
 export type LandingCopy = {
   /** "Malaysia · Renovation" -- the trade name only, no slash. Several trades
@@ -145,7 +145,8 @@ export type LandingCopy = {
      */
     sections: {
       work: { heading: string; hint: string; shots: string[] };
-      areas: { heading: string; note: string; list: string[] };
+      /** `ask` is what the EDITOR shows when `list` is empty; it never publishes. */
+      areas: { heading: string; note: string; ask: string; list: string[] };
       prices: { heading: string; note: string; askLabel: string; blank: string };
       /** The middle ask. Its own words, not the price note's -- the first
        *  version of this block borrowed 「A guide, not a quote」 and asked
@@ -236,9 +237,9 @@ const EN: LandingCopy = {
       { label: "Functions & catering", value: "Birthdays, company events", icon: "date" },
     ],
     retail: [
-      { label: "In stock", value: "What you can walk out with", icon: "tag" },
-      { label: "Order in", value: "What we can bring in for you", icon: "file" },
-      { label: "Trade price", value: "Separate price for volume", icon: "money" },
+      { label: "In stock", value: "What you can take home today", icon: "work" },
+      { label: "We order in", value: "Not in stock? We bring it in and call you", icon: "file" },
+      { label: "Trade price", value: "By carton or pallet, priced separately", icon: "tag" },
     ],
     wholesale: [
       { label: "Wholesale supply", value: "By carton, by pallet", icon: "company" },
@@ -256,9 +257,9 @@ const EN: LandingCopy = {
       { label: "Ongoing contracts", value: "Monthly or yearly", icon: "file" },
     ],
     other: [
-      { label: "Main service", value: "Change this to the first thing you do", icon: "work" },
-      { label: "Second service", value: "Change this to the second", icon: "file" },
-      { label: "Third service", value: "Change this to the third", icon: "tag" },
+      { label: "Main service", value: "Change this to the first thing you do", icon: "work", placeholder: true },
+      { label: "Second service", value: "Change this to the second", icon: "file", placeholder: true },
+      { label: "Third service", value: "Change this to the third", icon: "tag", placeholder: true },
     ],
   },
   proof: [
@@ -384,7 +385,8 @@ const EN: LandingCopy = {
       areas: {
         heading: "Where we cover",
         note: "Outside these? Message us anyway — we travel for the right job.",
-        list: ["Kuala Lumpur", "Petaling Jaya", "Subang / USJ", "Shah Alam", "Puchong", "Cheras", "Klang", "Ampang"],
+        ask: "Change this to the areas you cover -- it stays off the live page until you do.",
+        list: [] /* never asked -- see task 293 */,
       },
       cta: {
         heading: "Tell us what you need and we will come and look",
@@ -513,9 +515,9 @@ const ZH: LandingCopy = {
       { label: "包场 / 到会", value: "生日、公司活动", icon: "date" },
     ],
     retail: [
-      { label: "现货", value: "店里拿得到的货", icon: "tag" },
-      { label: "订货", value: "没货的可以订", icon: "file" },
-      { label: "批发价", value: "量大另外报价", icon: "money" },
+      { label: "现货", value: "店里有的，今天拿得走", icon: "work" },
+      { label: "帮你叫货", value: "没有的可以订，到了通知你", icon: "file" },
+      { label: "批发价", value: "整箱、整板另外算", icon: "tag" },
     ],
     wholesale: [
       { label: "批发供货", value: "整箱、整板", icon: "company" },
@@ -533,9 +535,9 @@ const ZH: LandingCopy = {
       { label: "长期合约", value: "按月、按年", icon: "file" },
     ],
     other: [
-      { label: "主要服务", value: "改成你做的第一件事", icon: "work" },
-      { label: "第二项", value: "改成第二件", icon: "file" },
-      { label: "第三项", value: "改成第三件", icon: "tag" },
+      { label: "主要服务", value: "改成你做的第一件事", icon: "work", placeholder: true },
+      { label: "第二项", value: "改成第二件", icon: "file", placeholder: true },
+      { label: "第三项", value: "改成第三件", icon: "tag", placeholder: true },
     ],
   },
   proof: [
@@ -628,7 +630,8 @@ const ZH: LandingCopy = {
       areas: {
         heading: "服务范围",
         note: "不在这几区？也可以问 —— 值得做的工我们会跑。",
-        list: ["吉隆坡", "八打灵再也", "梳邦 / USJ", "莎阿南", "蒲种", "蕉赖", "巴生", "安邦"],
+        ask: "换成你做的那几个区 —— 填了才会上线。",
+        list: [] /* 我们从来没问过他在哪。写死巴生谷，对怡保的老板是错的 —— 见任务 293 */,
       },
       cta: {
         heading: "讲一下你要做什么，我们上门看",
