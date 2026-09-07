@@ -56,7 +56,8 @@ export function ReferredJobs({
   jobs: ReferredJob[];
   copy: RecordFormCopy;
 }) {
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
 
   return (
     <div className="flex flex-col gap-4">
@@ -93,7 +94,10 @@ export function ReferredJobs({
       {/* 一行一单，而且点得进去 —— 他要看的下一件事就是那张单 */}
       <ul className="flex flex-col">
         {jobs.map((j) => (
-          <li key={j.id} className="border-t [border-color:var(--color-ink-800)]">
+          <li
+            key={j.id}
+            className="border-t [border-color:var(--color-ink-800)]"
+          >
             <Link
               href={j.href}
               className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5"
@@ -101,7 +105,9 @@ export function ReferredJobs({
               <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas)]">
                 <span className="tabular-nums">{j.docNo}</span>
                 {j.title ? ` · ${j.title}` : ""}
-                {j.party ? <span className={` ${dim}`}>{` · ${j.party}`}</span> : null}
+                {j.party ? (
+                  <span className={` ${dim}`}>{` · ${j.party}`}</span>
+                ) : null}
               </span>
               <span className="[font-size:var(--text-sm)] tabular-nums text-[color:var(--color-on-canvas)]">
                 {/* 收到多少 → 欠他多少。中间那个箭头就是这一段的算术。 */}

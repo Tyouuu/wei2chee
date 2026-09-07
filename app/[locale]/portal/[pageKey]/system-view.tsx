@@ -82,11 +82,14 @@ export function SystemView({
       ? "min-h-0 flex-1 overflow-y-auto pb-16 [&_aside[data-nav=side]]:hidden [&_[data-shell-bar]]:hidden [&_[data-page-title]>p]:hidden"
       : "min-h-screen max-lg:[&_aside[data-nav=side]]:hidden max-lg:[&_[data-shell-bar]]:hidden max-lg:[&_[data-page-title]>p]:hidden";
   /* 底栏在桌面上不画 —— 那里有侧栏。 */
-  const barClass = variant === "phone" ? "shrink-0" : "fixed inset-x-0 bottom-0 z-30 lg:hidden";
+  const barClass =
+    variant === "phone"
+      ? "shrink-0"
+      : "fixed inset-x-0 bottom-0 z-30 lg:hidden";
 
   return (
     <>
-          {/* 🔴 换页由这个壳自己管，页面里那条侧栏在窄屏不画。
+      {/* 🔴 换页由这个壳自己管，页面里那条侧栏在窄屏不画。
 
               量出来的理由（390px，2026-09-04）：那条 `aside` 在窄屏是一列
               flex，里面排着招牌、一颗整条宽的按钮、他每一页的连结、通知帐号
@@ -103,7 +106,7 @@ export function SystemView({
 
               ⚠️ 只在这个壳里藏 —— 师傅那一边（`work-view.tsx` 直接渲染）
               照旧有那条侧栏，而那条侧栏在窄屏本来的毛病记在任务档里。 */}
-          {/* 🔴 这一条穿的是**工作台那一套**，不是编辑器的深色壳。
+      {/* 🔴 这一条穿的是**工作台那一套**，不是编辑器的深色壳。
               老板 2026-09-04：`要贴合我们在桌面的设计感`。
 
               桌面上换页的那条侧栏是**浅色的**（`--color-nav-bg` 在系统那一套
@@ -112,9 +115,9 @@ export function SystemView({
               上面那两格（用 / 改设计）留在深色：那是 Formae 自己的壳，
               不是他的系统。 */}
 
-        {/* 他自己的系统，会重排、点得到、跟师傅看到的是同一支组件。
+      {/* 他自己的系统，会重排、点得到、跟师傅看到的是同一支组件。
             ⚠️ 没有 `pointer-events-none` —— 那正是这一格存在的理由。 */}
-        {/* 藏掉的三样都是**同一句话的第二、第三次**，不是拿掉功能：
+      {/* 藏掉的三样都是**同一句话的第二、第三次**，不是拿掉功能：
             侧栏（上面那一段讲了）· 面包屑（`Day to day / Clients`）·
             页面大标题跟那一句说明。上面那条带子已经写着他在哪一页。
             实测 390：他自己的第一行资料本来从 **463px** 才开始 ——
@@ -125,26 +128,26 @@ export function SystemView({
             那正是 `align:admin` 那把尺自己在抓的「孤单的按钮」。
             桌面上那一行本来就是「标题在左、动作在右」，留着标题才是
             **贴合桌面**，而不是少一样东西。 */}
-        {/* `pb-16`：底下那一条不可以吃掉最后一块。
+      {/* `pb-16`：底下那一条不可以吃掉最后一块。
             `check:reachable` 在 390 报「走势图 covered by 底栏」—— 一个飘在
             内容上、又不让内容躲开的东西，吃掉的正好是页面最后那一样。
             同一条我 9-03 在手机那几张 demo 上写过一次（那次是右下角那颗圆钮
             盖住 `RM 5,400`）。 */}
-        <div className={wrapClass}>
-          <WorkView
-            data={data}
-            pageKey={pageKey}
-            style={style}
-            palette={palette}
-            corners={corners}
-            systemLang={systemLang}
-            fill={variant === "phone"}
-            designHref={designHref}
-            designLabel={designLabel}
-          />
-        </div>
+      <div className={wrapClass}>
+        <WorkView
+          data={data}
+          pageKey={pageKey}
+          style={style}
+          palette={palette}
+          corners={corners}
+          systemLang={systemLang}
+          fill={variant === "phone"}
+          designHref={designHref}
+          designLabel={designLabel}
+        />
+      </div>
 
-        {/* ─────────────────────────────────────────────────────────────────
+      {/* ─────────────────────────────────────────────────────────────────
             🔴 换页在**底下**，不是顶上。
 
             2026-09-02 量了 16 个专业老板端 app（ServiceM8 · Jobber ·
@@ -158,34 +161,34 @@ export function SystemView({
 
             ⚠️ 三格以上五格以内，多的收进「更多」—— 那 16 个没有一个超过五格，
             而我们最多的一个客户开到八页。 */}
-        <StyleScope
-          register={style}
-          palette={palette}
-          data-surface={deskSurface(pageKey)}
-          className={barClass}
-        >
-          {more ? (
-            /* 剩下那几页。画在底栏上面，不是盖住它 —— 一个盖住自己入口的
+      <StyleScope
+        register={style}
+        palette={palette}
+        data-surface={deskSurface(pageKey)}
+        className={barClass}
+      >
+        {more ? (
+          /* 剩下那几页。画在底栏上面，不是盖住它 —— 一个盖住自己入口的
                面板，关掉它的那颗按钮就在被盖住的那一格里。 */
-            <div className="max-h-[46vh] overflow-y-auto [background-color:var(--color-canvas)] [border-top:var(--hairline)_solid_var(--color-ink-800)]">
-              {rest.map((page) => (
-                <Link
-                  key={page.key}
-                  href={`/${locale}/portal/${page.key}`}
-                  onClick={() => setMore(false)}
-                  className={`flex min-h-12 items-center [gap:var(--gap-inline)] [padding-inline:var(--pad-card-lg)] [font-size:var(--text-sm)] [border-bottom:var(--hairline)_solid_var(--color-ink-800)] ${
-                    page.key === pageKey
-                      ? "[color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]"
-                      : "[color:var(--color-on-canvas-dim)]"
-                  }`}
-                >
-                  <span className="grid h-5 w-5 shrink-0 place-items-center">
-                    {railIcon(page.key, "h-[18px] w-[18px]")}
-                  </span>
-                  {page.label}
-                </Link>
-              ))}
-              {/* 🔴 「改设计」住在这里，不是浮在页面上。
+          <div className="max-h-[46vh] overflow-y-auto [background-color:var(--color-canvas)] [border-top:var(--hairline)_solid_var(--color-ink-800)]">
+            {rest.map((page) => (
+              <Link
+                key={page.key}
+                href={`/${locale}/portal/${page.key}`}
+                onClick={() => setMore(false)}
+                className={`flex min-h-12 items-center [gap:var(--gap-inline)] [padding-inline:var(--pad-card-lg)] [font-size:var(--text-sm)] [border-bottom:var(--hairline)_solid_var(--color-ink-800)] ${
+                  page.key === pageKey
+                    ? "[color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]"
+                    : "[color:var(--color-on-canvas-dim)]"
+                }`}
+              >
+                <span className="grid h-5 w-5 shrink-0 place-items-center">
+                  {railIcon(page.key, "h-[18px] w-[18px]")}
+                </span>
+                {page.label}
+              </Link>
+            ))}
+            {/* 🔴 「改设计」住在这里，不是浮在页面上。
                   窄屏那颗浮着的药丸试过三版，三版都在吃掉页面最后那一样东西
                   （见 work-view.tsx）。而它本来就跟这几页是同一类：
                   **Formae 的导航**，不是他系统里的一块。
@@ -193,65 +196,73 @@ export function SystemView({
                   ⚠️ 所以「更多」那一格在有它的时候一定要画 —— 一个客户只开了
                   四页的时候本来没有「更多」，而那样他在手机上就再也进不去
                   改设计了。 */}
-              {designHref ? (
-                <Link
-                  href={designHref}
-                  onClick={() => setMore(false)}
-                  className="flex min-h-12 items-center [gap:var(--gap-inline)] [padding-inline:var(--pad-card-lg)] [font-size:var(--text-sm)] [color:var(--color-on-canvas-dim)]"
-                >
-                  <span className="grid h-5 w-5 shrink-0 place-items-center [font-size:var(--text-lg)] leading-none">✎</span>
-                  {designLabel}
-                </Link>
-              ) : null}
-            </div>
-          ) : null}
+            {designHref ? (
+              <Link
+                href={designHref}
+                onClick={() => setMore(false)}
+                className="flex min-h-12 items-center [gap:var(--gap-inline)] [padding-inline:var(--pad-card-lg)] [font-size:var(--text-sm)] [color:var(--color-on-canvas-dim)]"
+              >
+                <span className="grid h-5 w-5 shrink-0 place-items-center [font-size:var(--text-lg)] leading-none">
+                  ✎
+                </span>
+                {designLabel}
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
 
-          <nav
-            aria-label={t("phoneUse")}
-            className="flex items-stretch [background-color:var(--color-canvas)] [border-top:var(--hairline)_solid_var(--color-ink-800)]"
-          >
-            {front.map((page) => {
-              const on = page.key === pageKey && !more;
-              return (
-                <Link
-                  key={page.key}
-                  href={`/${locale}/portal/${page.key}`}
-                  onClick={() => setMore(false)}
-                  aria-current={on ? "page" : undefined}
-                  /* 每一格至少 56px 高、平分整条宽 —— 那 16 个都是这样，
+        <nav
+          aria-label={t("phoneUse")}
+          className="flex items-stretch [background-color:var(--color-canvas)] [border-top:var(--hairline)_solid_var(--color-ink-800)]"
+        >
+          {front.map((page) => {
+            const on = page.key === pageKey && !more;
+            return (
+              <Link
+                key={page.key}
+                href={`/${locale}/portal/${page.key}`}
+                onClick={() => setMore(false)}
+                aria-current={on ? "page" : undefined}
+                /* 每一格至少 56px 高、平分整条宽 —— 那 16 个都是这样，
                      而 44px 是拇指按得准的下限，图标加字要再高一点。 */
-                  className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center [gap:2px] border-t-2 px-1 [font-size:var(--text-micro)] ${
-                    on
-                      ? "[border-color:var(--color-primary)] [color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]"
-                      : "border-transparent [color:var(--color-on-canvas-dim)]"
-                  }`}
-                >
-                  {/* 图标**加字**，不是只有图标。我们判 Durable 的时候
-                      白纸黑字写过：没有字的图标＝死掉的按钮。 */}
-                  <span className="grid h-5 w-5 place-items-center">
-                    {railIcon(page.key, "h-[19px] w-[19px]")}
-                  </span>
-                  <span className="w-full truncate text-center">{page.label}</span>
-                </Link>
-              );
-            })}
-            {rest.length || designHref ? (
-              <button
-                type="button"
-                onClick={() => setMore((v) => !v)}
-                aria-expanded={more}
-                className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center [gap:2px] px-1 [font-size:var(--text-micro)] ${
-                  more
-                    ? "[color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]"
-                    : "[color:var(--color-on-canvas-dim)]"
+                className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center [gap:2px] border-t-2 px-1 [font-size:var(--text-micro)] ${
+                  on
+                    ? "[border-color:var(--color-primary)] [color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]"
+                    : "border-transparent [color:var(--color-on-canvas-dim)]"
                 }`}
               >
-                <span className="grid h-5 w-5 place-items-center [font-size:var(--text-lg)] leading-none">···</span>
-                <span className="w-full truncate text-center">{t("phoneMore")}</span>
-              </button>
-            ) : null}
-          </nav>
-        </StyleScope>
+                {/* 图标**加字**，不是只有图标。我们判 Durable 的时候
+                      白纸黑字写过：没有字的图标＝死掉的按钮。 */}
+                <span className="grid h-5 w-5 place-items-center">
+                  {railIcon(page.key, "h-[19px] w-[19px]")}
+                </span>
+                <span className="w-full truncate text-center">
+                  {page.label}
+                </span>
+              </Link>
+            );
+          })}
+          {rest.length || designHref ? (
+            <button
+              type="button"
+              onClick={() => setMore((v) => !v)}
+              aria-expanded={more}
+              className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center [gap:2px] px-1 [font-size:var(--text-micro)] ${
+                more
+                  ? "[color:var(--color-on-canvas)] [font-weight:var(--fw-semibold)]"
+                  : "[color:var(--color-on-canvas-dim)]"
+              }`}
+            >
+              <span className="grid h-5 w-5 place-items-center [font-size:var(--text-lg)] leading-none">
+                ···
+              </span>
+              <span className="w-full truncate text-center">
+                {t("phoneMore")}
+              </span>
+            </button>
+          ) : null}
+        </nav>
+      </StyleScope>
     </>
   );
 }

@@ -21,7 +21,13 @@ import { useEditorUi } from "@/design-system/editor/editor-ui";
  *
  * Drag still works exactly as before. This only adds a second way in.
  */
-export function ClickToAdd({ name, children }: { name: string; children: ReactNode }) {
+export function ClickToAdd({
+  name,
+  children,
+}: {
+  name: string;
+  children: ReactNode;
+}) {
   const { dispatch, appState } = usePuck();
   const { sheet, closeSheet } = useEditorUi();
   const down = useRef<{ x: number; y: number } | null>(null);
@@ -39,11 +45,15 @@ export function ClickToAdd({ name, children }: { name: string; children: ReactNo
    *  reason the affordance exists. The end-of-main fallback below is still what
    *  happens when the palette is opened without a target. */
   const destination = () => {
-    if (sheet?.kind === "insert") return { zone: sheet.zone, index: sheet.index };
+    if (sheet?.kind === "insert")
+      return { zone: sheet.zone, index: sheet.index };
     const root = appState.data.content?.[0];
     const id = root?.props?.id;
     if (!root || typeof id !== "string") {
-      return { zone: "root:default-zone", index: appState.data.content?.length ?? 0 };
+      return {
+        zone: "root:default-zone",
+        index: appState.data.content?.length ?? 0,
+      };
     }
     const main = (root.props as Record<string, unknown>).main;
     return {

@@ -36,7 +36,10 @@ describe("讲数量的那几句，数字从清单来", () => {
     ) as Record<string, Record<string, Record<string, unknown>>>;
 
     it.each(MUST_TAKE_A_COUNT)(`${lang} · %s`, (path, from) => {
-      const said = path.reduce<unknown>((o, k) => (o as Record<string, unknown>)[k], dict.portal);
+      const said = path.reduce<unknown>(
+        (o, k) => (o as Record<string, unknown>)[k],
+        dict.portal,
+      );
       expect(typeof said, `${path.join(".")} 不见了`).toBe("string");
       const text = said as string;
 
@@ -48,7 +51,10 @@ describe("讲数量的那几句，数字从清单来", () => {
          那三个字都不是数量。**而原本那个 bug 这一条自己就抓得到** ——
          「六种做法」没有位子放数字。
          一把会把好话判红的尺，会教下一个人去关掉它。 */
-      expect(/\{(count|n)\}/.test(text), `${path.join(".")} 没有位子放 ${from}`).toBe(true);
+      expect(
+        /\{(count|n)\}/.test(text),
+        `${path.join(".")} 没有位子放 ${from}`,
+      ).toBe(true);
     });
   }
 });

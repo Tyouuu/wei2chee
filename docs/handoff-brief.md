@@ -24,8 +24,8 @@
 
 | 档案 | 多大 | 是什么 |
 |---|---|---|
-| `docs/founder-points.md` | 1,042 行 · 30,019 字元 | **老板讲过的原则。** 永远适用，一条都不要跳 |
-| `docs/founder-tasks.md` | 14,348 行 · 500,727 字元 | **只加不改的帐**：每一件事当初为什么这样决定 |
+| `docs/founder-points.md` | 1,049 行 · 31,295 字元 | **老板讲过的原则。** 永远适用，一条都不要跳 |
+| `docs/founder-tasks.md` | 14,733 行 · 499,613 字元 | **只加不改的帐**：每一件事当初为什么这样决定 |
 
 ⚠️ 任务档太大，**贴不进多数工具**。用
 `grep -n "### 156" docs/founder-tasks.md` 去读某一条，不要整份读。
@@ -59,19 +59,30 @@
 2. **动之前先看 `git status`。** 那个档案已经被改过而不是自己改的 → **只登记不动手**
 3. **任务档写编号之前先拿最大的加一**，撞到了**改自己的号，不要改别人的**
 
-### 现在别人手上有（11 个档案，**一个都不要碰**）
+### 现在别人手上有（22 个档案，**一个都不要碰**）
 
-- `M AGENTS.md`
 - `M app/[locale]/portal/[pageKey]/[recordId]/page.tsx`
+- `M app/[locale]/portal/[pageKey]/new/page.tsx`
 - `M app/[locale]/portal/[pageKey]/record-copy.ts`
-- `M app/r/[ref]/sign-form.tsx`
-- `M lib/templates/copy/chrome.ts`
+- `M design-system/editor/labels-en.ts`
+- `M design-system/editor/puck-config.tsx`
+- `M design-system/system-words.ts`
+- `M lib/portal/anchor-prune.ts`
+- `M lib/templates/copy/landing.ts`
 - `M lib/templates/industry-template.ts`
+- `M lib/templates/landing-templates.ts`
+- `M messages/en.json`
+- `M messages/zh.json`
 - `M package.json`
-- `M scripts/shoot-pages.mjs`
-- `?? app/[locale]/portal/[pageKey]/new/delivery-panel.tsx`
-- `?? lib/templates/document-pages.test.ts`
-- `?? scripts/shoot-delivery.mjs`
+- `M scripts/check-en.mjs`
+- `M scripts/check-reachable.py`
+- `?? app/[locale]/portal/(app)/today/`
+- `?? app/[locale]/portal/[pageKey]/new/follow-up-panel.tsx`
+- `?? app/api/site/booking/`
+- `?? design-system/components/site-booking.tsx`
+- `?? lib/templates/site-booking-block.test.ts`
+- `?? scripts/shoot-booking.mjs`
+- `?? scripts/shoot-follow-ups.mjs`
 
 ---
 
@@ -94,12 +105,12 @@
 
 | | 几支 |
 |---|---|
-| 资料库开出去的 | **162** |
-| 画面在呼叫的 | **82** |
-| 🔴 **只有尺子打过的** | **69** |
-| 一个地方都没碰过的 | 11 |
+| 资料库开出去的 | **168** |
+| 画面在呼叫的 | **95** |
+| 🔴 **只有尺子打过的** | **61** |
+| 一个地方都没碰过的 | 12 |
 
-**那 69 支每一支都用真的客户身分验过、每一支都有红过的守卫，
+**那 61 支每一支都用真的客户身分验过、每一支都有红过的守卫，
 而一个老板从头到尾找不到那颗按钮。**
 这是这个仓库的招牌毛病（「能力有、线没接」），而今天它长在最贵的地方。
 
@@ -120,25 +131,25 @@
 
 ### 尺
 
-守卫 **43** 把（`npm run check:*`）· 探针 **71** 把。
+守卫 **44** 把（`npm run check:*`）· 探针 **78** 把。
 ⚠️ **数字只能否决，不能通过** —— 通过要用眼睛看那张图。
 
 ---
 
 ## 五 · 最近做完什么
 
-- `ff9ff4b  Nobody buys a website they already decided against`
-- `07b6422  The only conversion button on the public site finally lands somewhere`
-- `c0bd6ae  The homeowner opens his own quotation, and can say yes to it`
-- `9082bdf  The throwaway account that survived because finally never ran`
-- `9dba1eb  Reconciliation takes half of the infrastructure screen, and says which half`
-- `31c70d0  Reports and ranking take the analytics and crm screens`
-- `dcfc6b1  Task 194: the last inch for all four holes`
-- `d2b6e24  The dealer has a link, and what he says arrives as a row`
-- `9e32a70  The money pages stop being one page drawn three times`
-- `30cee87  Seventy-two functions that work, and no button for any of them`
-- `8e2a83f  He can close a month now, and reopen it`
-- `e7b1f7c  Eighteen pages, shot the way he actually opens them`
+- `333ef28  Task 204 recorded`
+- `bb39057  Task 203, second half`
+- `ddc5e50  Ah Ming's own page, where the call actually gets made`
+- `72973e7  Task 203`
+- `c79a3d6  Who sent this job in, and what was promised`
+- `14c92b3  Task 202, and my 200 steps off the collision`
+- `1d9bd7b  Whether she turned up was printable, and unchangeable`
+- `26c721b  One next thing per document`
+- `24424a1  The page ruler stops measuring how few records the demo account has`
+- `4ecdc1a  Why the statement page cannot join the reachability list`
+- `ff27ce0  Commit each piece as it finishes`
+- `9d4d28d  Twenty-one doors that were already open`
 
 ---
 

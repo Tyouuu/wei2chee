@@ -106,9 +106,12 @@ export function DeliveryPanel({
     setError(null);
     setBusy(id);
     try {
-      const { error: err } = await createBrowserSupabaseClient().rpc("archive_delivery", {
-        in_delivery_id: id,
-      });
+      const { error: err } = await createBrowserSupabaseClient().rpc(
+        "archive_delivery",
+        {
+          in_delivery_id: id,
+        },
+      );
       if (err) {
         setError(err.message);
         return;
@@ -119,7 +122,8 @@ export function DeliveryPanel({
     }
   }
 
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
   const control =
     "ds-control h-10 w-full min-w-0 [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none";
   const ghost =
@@ -142,12 +146,15 @@ export function DeliveryPanel({
           一段永远说同一句话的段落，读起来是没做完。 */}
       {owing.length ? (
         <div>
-          <h3 className={`[font-weight:var(--fw-semibold)] ${dim}`}>{copy.runStillOwed}</h3>
+          <h3 className={`[font-weight:var(--fw-semibold)] ${dim}`}>
+            {copy.runStillOwed}
+          </h3>
           <ul className="mt-1 flex flex-col gap-1">
             {owing.map((s, i) => (
               <li key={i} className={dim}>
                 {s.description} · {String(s.still)}
-                {s.unit ? ` ${s.unit}` : ""} ({String(s.gone)}/{String(s.ordered)})
+                {s.unit ? ` ${s.unit}` : ""} ({String(s.gone)}/
+                {String(s.ordered)})
               </li>
             ))}
           </ul>
@@ -209,7 +216,11 @@ export function DeliveryPanel({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1">
               <span className={dim}>{copy.runDriver}</span>
-              <input value={driver} onChange={(e) => setDriver(e.target.value)} className={control} />
+              <input
+                value={driver}
+                onChange={(e) => setDriver(e.target.value)}
+                className={control}
+              />
             </label>
             <label className="flex flex-col gap-1">
               <span className={dim}>{copy.runReceivedBy}</span>
@@ -228,13 +239,23 @@ export function DeliveryPanel({
               onClick={() => void run(owing.length > 0)}
               className={solid}
             >
-              {busy === "run" ? copy.saving : owing.length > 0 ? copy.runSend : copy.runHandover}
+              {busy === "run"
+                ? copy.saving
+                : owing.length > 0
+                  ? copy.runSend
+                  : copy.runHandover}
             </button>
-            <button type="button" onClick={() => setOpen(false)} className={`min-h-10 underline ${dim}`}>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className={`min-h-10 underline ${dim}`}
+            >
               {copy.cancel}
             </button>
           </div>
-          <p className={dim}>{owing.length > 0 ? copy.runSendHint : copy.runHandoverHint}</p>
+          <p className={dim}>
+            {owing.length > 0 ? copy.runSendHint : copy.runHandoverHint}
+          </p>
         </div>
       ) : (
         <div>

@@ -32,7 +32,11 @@ export type AllocationRowInput = {
   amount: string;
 };
 
-export const blankAllocation = (): AllocationRowInput => ({ recordId: "", termId: "", amount: "" });
+export const blankAllocation = (): AllocationRowInput => ({
+  recordId: "",
+  termId: "",
+  amount: "",
+});
 
 /** 送进资料库的形状。没挑单、或者没写金额的那几行丢掉。 */
 export function allocationsForDb(rows: AllocationRowInput[]) {
@@ -82,7 +86,6 @@ export function AllocationEditor({
 
   return (
     <FormSection title={copy.allocations}>
-
       {/* 🔴 一张单都没有的时候，讲出来为什么，不要画一个空的下拉。
           「没有单可以分」跟「读不到」在画面上长得一模一样，而这一句分得开。 */}
       {documents.length === 0 ? (
@@ -94,7 +97,9 @@ export function AllocationEditor({
       {documents.length
         ? rows.map((row, i) => {
             const doc = byId.get(row.recordId);
-            const owed = doc ? Math.max(0, doc.amountCents - doc.paidCents) : null;
+            const owed = doc
+              ? Math.max(0, doc.amountCents - doc.paidCents)
+              : null;
             return (
               <div
                 key={i}
@@ -110,7 +115,9 @@ export function AllocationEditor({
                     <option value="">{copy.allocDocument}</option>
                     {documents.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {[d.docNo, d.title, d.party].filter(Boolean).join(" · ")}
+                        {[d.docNo, d.title, d.party]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </option>
                     ))}
                   </select>
@@ -137,7 +144,8 @@ export function AllocationEditor({
                        只有他自己打的那一个没有。 */
                     onBlur={(e) => {
                       const sen = senOf(e.target.value);
-                      if (sen != null && sen > 0) set(i, { amount: ringgitOf(sen) ?? e.target.value });
+                      if (sen != null && sen > 0)
+                        set(i, { amount: ringgitOf(sen) ?? e.target.value });
                     }}
                     className={`${control} ${doc && doc.terms.length ? "basis-[40%]" : "basis-full"}`}
                   />
@@ -147,7 +155,13 @@ export function AllocationEditor({
                     <select
                       aria-label={copy.allocTerm}
                       value={row.termId}
-                      onChange={(e) => onChange(rows.map((r, j) => (j === i ? { ...r, termId: e.target.value } : r)))}
+                      onChange={(e) =>
+                        onChange(
+                          rows.map((r, j) =>
+                            j === i ? { ...r, termId: e.target.value } : r,
+                          ),
+                        )
+                      }
                       className={`${control} basis-[60%]`}
                     >
                       <option value="">{copy.allocWholeDoc}</option>
@@ -167,7 +181,8 @@ export function AllocationEditor({
                     RM 48,500」，读起来像他打的东西没有算进去。 */}
                 {doc && owed != null ? (
                   <span className="[font-size:var(--text-xs)] tabular-nums text-[color:var(--color-on-canvas-dim)]">
-                    {copy.allocOwed} {ringgitOf(Math.max(0, owed - (senOf(row.amount) ?? 0)))}
+                    {copy.allocOwed}{" "}
+                    {ringgitOf(Math.max(0, owed - (senOf(row.amount) ?? 0)))}
                   </span>
                 ) : null}
               </div>

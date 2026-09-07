@@ -61,15 +61,22 @@ export function ImportForm({
   const router = useRouter();
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<{ ok: number; failed: { row: number; why: string }[] } | null>(
-    null,
-  );
+  const [done, setDone] = useState<{
+    ok: number;
+    failed: { row: number; why: string }[];
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const sheet = useMemo(() => parseSheet(text), [text]);
-  const mapping = useMemo(() => mapHeaders(sheet.headers, columns), [sheet.headers, columns]);
+  const mapping = useMemo(
+    () => mapHeaders(sheet.headers, columns),
+    [sheet.headers, columns],
+  );
   const own = useMemo(() => new Set(ownKeys), [ownKeys]);
-  const bodyRows = useMemo(() => sheet.rows.filter(rowHasSomething), [sheet.rows]);
+  const bodyRows = useMemo(
+    () => sheet.rows.filter(rowHasSomething),
+    [sheet.rows],
+  );
 
   /** 表头那一行，他自己的字，用 tab 分开 —— 贴回 Excel 就是一排栏。 */
   const template = columns.map((c) => c.label).join("\t");
@@ -101,11 +108,15 @@ export function ImportForm({
           setBusy(false);
           return;
         }
-        const res = data as { ok: number; failed: { row: number; why: string }[] };
+        const res = data as {
+          ok: number;
+          failed: { row: number; why: string }[];
+        };
         ok += res.ok ?? 0;
         /* 行号加回这一批的位移，而且 +2：资料库那边从 1 数，
            而他看的是 Excel 的行号，第一行是表头。 */
-        for (const f of res.failed ?? []) failed.push({ row: start + f.row + 1, why: f.why });
+        for (const f of res.failed ?? [])
+          failed.push({ row: start + f.row + 1, why: f.why });
       }
       setDone({ ok, failed });
       router.refresh();
@@ -190,7 +201,10 @@ export function ImportForm({
               </thead>
               <tbody>
                 {bodyRows.slice(0, 5).map((r, i) => (
-                  <tr key={i} className="border-b [border-color:var(--color-ink-800)]">
+                  <tr
+                    key={i}
+                    className="border-b [border-color:var(--color-ink-800)]"
+                  >
                     {sheet.headers.map((_, j) => (
                       <td
                         key={j}
@@ -217,7 +231,10 @@ export function ImportForm({
       ) : null}
 
       {error ? (
-        <p role="alert" className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]">
+        <p
+          role="alert"
+          className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]"
+        >
           {error}
         </p>
       ) : null}
@@ -257,7 +274,10 @@ export function ImportForm({
         >
           {busy ? copy.importRunning : copy.importCta}
         </button>
-        <a href={backHref} className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)] underline">
+        <a
+          href={backHref}
+          className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)] underline"
+        >
           {copy.cancel}
         </a>
       </div>

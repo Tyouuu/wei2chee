@@ -3,7 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { NewRecordForm } from "./new-record-form";
 import { RECORD_COPY } from "../record-copy";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => {}, refresh: () => {} }),
+}));
 /* 按下保存之后，真正被呼叫的是哪一支。`vi.hoisted` 是因为 `vi.mock`
    的工厂会被提到档案最上面 —— 一个普通的 const 在那一刻还不存在。 */
 const calledRpcs = vi.hoisted(() => [] as string[]);
@@ -95,7 +97,11 @@ const boxes = (html: string) =>
     .map((m) => m[0].includes("aria-readonly"));
 
 describe("改这一单, on a money page", () => {
-  const record = { id: "r1", values: { primary: "订金", secondary: "陈先生", amount: "RM 3,000" }, archivedAt: null };
+  const record = {
+    id: "r1",
+    values: { primary: "订金", secondary: "陈先生", amount: "RM 3,000" },
+    archivedAt: null,
+  };
 
   it("lets him fix what the payment was FOR", () => {
     expect(boxes(form({ record }))[0]).toBe(false);
@@ -115,8 +121,9 @@ describe("改这一单, on a money page", () => {
   it("lets him say what the money was for, because that one CAN be saved", () => {
     const html = form({ record, moduleKey: "expenses" });
     const box =
-      new RegExp(`<input[^>]*aria-label="${RECORD_COPY.zh.form.category}"[^>]*>`).exec(html)?.[0] ??
-      "";
+      new RegExp(
+        `<input[^>]*aria-label="${RECORD_COPY.zh.form.category}"[^>]*>`,
+      ).exec(html)?.[0] ?? "";
     expect(box).not.toBe("");
     /* 一个画出来却打不了字的框，跟一个打了字存不进去的框，
        是同一个毛病的两张脸。 */
@@ -161,19 +168,19 @@ describe("改这一单, on a money page", () => {
 });
 
 describe("改这一单, on a document page", () => {
-  const record = { id: "r1", values: { primary: "翻新", secondary: "陈先生", amount: "RM 48,500" }, archivedAt: null };
+  const record = {
+    id: "r1",
+    values: { primary: "翻新", secondary: "陈先生", amount: "RM 48,500" },
+    archivedAt: null,
+  };
 
   /* 五格，不是四格：9-03 报价单多了「有效期到」，9-04 又多了工地照片那个
      选档案的格子。数量留着不改成 every()，因为它同时在守另一件事 ——
      **一格消失了这里会红**，而这个仓库掉过太多次「那一格还在、只是没人画」。 */
   it("lets him fix every box, because a quotation is a working document", () => {
-    expect(boxes(form({ shape: "pipeline", moduleKey: "quotations", record }))).toEqual([
-      false,
-      false,
-      false,
-      false,
-      false,
-    ]);
+    expect(
+      boxes(form({ shape: "pipeline", moduleKey: "quotations", record })),
+    ).toEqual([false, false, false, false, false]);
   });
 
   /* 有效期那一格。ERPNext 的 Quotation 有 `valid_till`，而我们的 `due_on`
@@ -228,7 +235,11 @@ describe("改这一单, on a document page", () => {
   });
 
   it("offers to put it back when it is already away", () => {
-    const html = form({ shape: "pipeline", moduleKey: "quotations", record: { ...record, archivedAt: "2026-08-31" } });
+    const html = form({
+      shape: "pipeline",
+      moduleKey: "quotations",
+      record: { ...record, archivedAt: "2026-08-31" },
+    });
     expect(html).toContain(RECORD_COPY.zh.form.unarchive);
   });
 });
@@ -270,7 +281,9 @@ describe("逐项明细", () => {
      assertions passed vacuously while the positive one failed. A helper that
      can silently match nothing makes half its tests decorative. */
   const boxWith = (html: string, value: string) =>
-    [...html.matchAll(/<input[^>]*\/?>/g)].map((m) => m[0]).find((t) => t.includes(`value="${value}"`)) ?? null;
+    [...html.matchAll(/<input[^>]*\/?>/g)]
+      .map((m) => m[0])
+      .find((t) => t.includes(`value="${value}"`)) ?? null;
 
   const withLines = {
     id: "r1",
@@ -314,21 +327,33 @@ describe("逐项明细", () => {
   });
 
   it("and leaves it his to type when there are no lines", () => {
-    const html = quote({ record: { id: "r1", values: { primary: "翻新", amount: "RM 999" }, archivedAt: null } });
+    const html = quote({
+      record: {
+        id: "r1",
+        values: { primary: "翻新", amount: "RM 999" },
+        archivedAt: null,
+      },
+    });
     const box = boxWith(html, "RM 999");
     expect(box, "the typed amount is not on the page").not.toBeNull();
     expect(box).not.toContain("readonly");
   });
 
   it("says why, so a greyed box is not a mystery", () => {
-    expect(quote({ record: withLines })).toContain(RECORD_COPY.zh.form.amountFromLines);
+    expect(quote({ record: withLines })).toContain(
+      RECORD_COPY.zh.form.amountFromLines,
+    );
   });
 
   it("offers no lines on a money page or a person", () => {
     // Money is one entry and a person is not a list of things.
     for (const shape of ["ledger", "directory"] as const) {
-      expect(quote({ shape, moduleKey: shape === "ledger" ? "payments" : "customers" }))
-        .not.toContain(RECORD_COPY.zh.form.lineAdd);
+      expect(
+        quote({
+          shape,
+          moduleKey: shape === "ledger" ? "payments" : "customers",
+        }),
+      ).not.toContain(RECORD_COPY.zh.form.lineAdd);
     }
     expect(quote({})).toContain(RECORD_COPY.zh.form.lineAdd);
   });
@@ -353,7 +378,10 @@ describe("短的那几格占半行", () => {
     const html = form({
       moduleKey: "quotations",
       shape: "pipeline",
-      columns: [...columns, { key: "status", label: "Status", kind: "status" as const }],
+      columns: [
+        ...columns,
+        { key: "status", label: "Status", kind: "status" as const },
+      ],
       stages: ["等回覆", "已确认"],
     });
     /* 金额 · 状态 · 有效期 —— 走单那一页三格都短。 */

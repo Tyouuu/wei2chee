@@ -28,15 +28,30 @@ export const LIBRARY_SAMPLES: Record<string, Record<string, unknown>> = {
       ],
       rows: [
         {
-          cells: { primary: "Taman Desa 三房翻新", secondary: "陈先生", amount: "RM 48,500", status: "已确认" },
+          cells: {
+            primary: "Taman Desa 三房翻新",
+            secondary: "陈先生",
+            amount: "RM 48,500",
+            status: "已确认",
+          },
           tones: { status: "positive" as StatusTone },
         },
         {
-          cells: { primary: "Bukit Jalil 厨房改造", secondary: "李太太", amount: "RM 22,800", status: "等确认" },
+          cells: {
+            primary: "Bukit Jalil 厨房改造",
+            secondary: "李太太",
+            amount: "RM 22,800",
+            status: "等确认",
+          },
           tones: { status: "warning" as StatusTone },
         },
         {
-          cells: { primary: "Cheras 店面装修", secondary: "王老板", amount: "RM 96,000", status: "报价中" },
+          cells: {
+            primary: "Cheras 店面装修",
+            secondary: "王老板",
+            amount: "RM 96,000",
+            status: "报价中",
+          },
           tones: { status: "neutral" as StatusTone },
         },
       ],
@@ -50,8 +65,20 @@ export const LIBRARY_SAMPLES: Record<string, Record<string, unknown>> = {
     sparkLabel: "近六个月",
     spark: [{ n: 42 }, { n: 51 }, { n: 47 }, { n: 63 }, { n: 58 }, { n: 71 }],
     stats: [
-      { label: "已确认", value: "3 个", href: "#", tone: "normal", sub: "RM 48,500" },
-      { label: "等回复", value: "2 个", href: "#", tone: "caution", sub: "RM 22,800" },
+      {
+        label: "已确认",
+        value: "3 个",
+        href: "#",
+        tone: "normal",
+        sub: "RM 48,500",
+      },
+      {
+        label: "等回复",
+        value: "2 个",
+        href: "#",
+        tone: "caution",
+        sub: "RM 22,800",
+      },
     ],
   },
 
@@ -117,7 +144,11 @@ export const LIBRARY_SAMPLES: Record<string, Record<string, unknown>> = {
   TextAutocomplete: {
     name: "material",
     placeholder: "输入材料名称",
-    suggestions: [{ value: "石膏板" }, { value: "防水漆" }, { value: "云石台面" }],
+    suggestions: [
+      { value: "石膏板" },
+      { value: "防水漆" },
+      { value: "云石台面" },
+    ],
   },
 
   FileUploadField: {
@@ -144,7 +175,8 @@ export const LIBRARY_SAMPLES: Record<string, Record<string, unknown>> = {
   Alert: {
     variant: "destructive",
     title: "有 2 张报价单超过 7 天没回复",
-    description: "陈先生的 Taman Desa 三房翻新、王老板的 Cheras 店面装修。要不要今天跟一下？",
+    description:
+      "陈先生的 Taman Desa 三房翻新、王老板的 Cheras 店面装修。要不要今天跟一下？",
   },
   Progress: { label: "Taman Desa 三房翻新 · 工程进度", value: 72 },
 

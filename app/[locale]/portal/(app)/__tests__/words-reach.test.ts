@@ -32,7 +32,9 @@ function pagesWithWordBags(): string[] {
     .filter((e) => e.isDirectory())
     .filter((e) => {
       try {
-        return readFileSync(join(BASE, e.name, "page.tsx"), "utf8").includes("words={{");
+        return readFileSync(join(BASE, e.name, "page.tsx"), "utf8").includes(
+          "words={{",
+        );
       } catch {
         return false;
       }
@@ -70,15 +72,20 @@ describe("每一个 words.X 都有人传下去", () => {
 
   it.each(dirs)("%s", (dir) => {
     const missing = [...used(dir)].filter((k) => !given(dir).has(k)).sort();
-    expect(missing, `${dir}/page.tsx 没有传：${missing.join(" · ")}`).toEqual([]);
+    expect(missing, `${dir}/page.tsx 没有传：${missing.join(" · ")}`).toEqual(
+      [],
+    );
   });
 
   /* ⚠️ 反过来那一半**故意不判**：伺服器那一边多传一个字是浪费，
      不是缺陷 —— 而一条会因为多一个字变红的守卫，会教下一个人去关掉它。
      多出来的只印出来。 */
   it("印出来：传了而没有人读的", () => {
-    const extra = dirs.map((d) => [d, [...given(d)].filter((k) => !used(d).has(k))] as const);
-    for (const [d, ks] of extra) if (ks.length) console.log(`  ${d}: ${ks.join(" · ")}`);
+    const extra = dirs.map(
+      (d) => [d, [...given(d)].filter((k) => !used(d).has(k))] as const,
+    );
+    for (const [d, ks] of extra)
+      if (ks.length) console.log(`  ${d}: ${ks.join(" · ")}`);
     expect(true).toBe(true);
   });
 });

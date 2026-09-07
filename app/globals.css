@@ -7,9 +7,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans-latin), "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-  --font-serif: var(--font-serif-latin), "Songti SC", "PMingLiU", Georgia, serif;
-  --font-mono: var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-sans:
+    var(--font-sans-latin), "PingFang SC", "Microsoft YaHei", system-ui,
+    sans-serif;
+  --font-serif:
+    var(--font-serif-latin), "Songti SC", "PMingLiU", Georgia, serif;
+  --font-mono:
+    var(--font-mono-latin), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --font-heading: var(--font-serif);
 
   /* Blueprint palette — see the :root block below for the reasoning. */
@@ -81,7 +85,7 @@
      现在地压到 0.13、卡拉到 0.22，中间再加一阶 —— 一样是黑的，但分得出层。 */
   --ink: oklch(0.13 0.012 265);
   --ink-raised: oklch(0.22 0.014 265);
-  --ink-sunken: oklch(0.10 0.010 265);
+  --ink-sunken: oklch(0.1 0.01 265);
   --paper: oklch(0.96 0.008 85);
 
   /* ⚠️ 品牌主色 2026-08-31 从蓝换成青。老板：「青色呢 我觉得黑色跟青色很好配」。
@@ -104,7 +108,7 @@
      一个暖的灰白压在近黑上；我们原本是 oklch(0.96 0.004 265)，冷而且更亮，
      读起来硬。把色相挪到 85（暖）、亮度收一点，整页立刻不刺眼。
      ⚠️ 只动色相跟亮度，不动结构 —— 对比度 15.8:1 → 13.1:1，还是远高於 4.5。 */
-  --foreground: oklch(0.90 0.016 85);
+  --foreground: oklch(0.9 0.016 85);
   --card: var(--ink-raised);
   --card-foreground: oklch(0.96 0.004 265);
   --popover: var(--ink-raised);
@@ -255,12 +259,12 @@
 .band-cyan {
   --background: oklch(0.72 0.13 190);
   --ink: oklch(0.72 0.13 190);
-  --ink-raised: oklch(0.30 0.055 195);
+  --ink-raised: oklch(0.3 0.055 195);
   --ink-sunken: oklch(0.66 0.125 190);
   --foreground: oklch(0.16 0.02 195);
   --muted-foreground: oklch(0.34 0.03 195);
-  --card: oklch(0.30 0.055 195);
-  --popover: oklch(0.30 0.055 195);
+  --card: oklch(0.3 0.055 195);
+  --popover: oklch(0.3 0.055 195);
   --muted: oklch(0.66 0.125 190);
   --secondary: oklch(0.66 0.125 190);
   --accent: oklch(0.66 0.125 190);
@@ -280,7 +284,7 @@
      现在地压到 0.13、卡拉到 0.22，中间再加一阶 —— 一样是黑的，但分得出层。 */
   --ink: oklch(0.13 0.012 265);
   --ink-raised: oklch(0.22 0.014 265);
-  --ink-sunken: oklch(0.10 0.010 265);
+  --ink-sunken: oklch(0.1 0.01 265);
   --foreground: oklch(0.96 0.004 265);
   --muted-foreground: oklch(0.68 0.015 265);
   --card: oklch(0.22 0.014 265);
@@ -391,7 +395,6 @@
 .ds-ground {
   background-image: var(--canvas-image, none);
 }
-
 
 /* ── A PUBLIC WEBSITE IS NOT A DASHBOARD ────────────────────────────────────
 
@@ -680,8 +683,17 @@
      blocks carry their own frame padding already — is untouched. */
   /* data-toned 除外 —— 颜色刷在它的子元素上，气加在它自己身上就落在颜色外面，
      一条该填满整段的色带上下各留一条白。子元素在 555 行已经拿到同一份气。 */
-  .ds-ground[data-rhythm="flush"] .ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]):not([data-toned]),
-  .ds-ground[data-rhythm="flush"].ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]):not([data-toned]) {
+  .ds-ground[data-rhythm="flush"]
+    .ds-site
+    > *
+    > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not(
+      [data-fixed]
+    ):not([data-toned]),
+  .ds-ground[data-rhythm="flush"].ds-site
+    > *
+    > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not(
+      [data-fixed]
+    ):not([data-toned]) {
     padding-block: var(--site-inner, 0rem);
   }
   .ds-ground[data-figure="large"] .ds-site,
@@ -772,7 +784,10 @@
    errors — the band keeps whatever it had. Same silent shape as the CSS cycle
    this file has hit five times. */
 [data-hero-band] {
-  background: var(--site-hero-band, var(--color-block, var(--color-primary-soft)));
+  background: var(
+    --site-hero-band,
+    var(--color-block, var(--color-primary-soft))
+  );
 }
 
 /* ── 每一块都在一个细框里 ────────────────────────────────────────────────────
@@ -785,9 +800,19 @@
 
    Bled blocks and the chrome are exempt: a frame around a full-bleed hero is a
    line drawn across a photograph, and their page does not do that either. */
-.ds-ground[data-frame="hairline"] .ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]),
-.ds-ground[data-frame="hairline"].ds-site > * > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]) {
-  border: 1px solid var(--site-frame, color-mix(in oklab, var(--color-paper) 22%, transparent));
+.ds-ground[data-frame="hairline"]
+  .ds-site
+  > *
+  > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not(
+    [data-fixed]
+  ),
+.ds-ground[data-frame="hairline"].ds-site
+  > *
+  > *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not(
+    [data-fixed]
+  ) {
+  border: 1px solid
+    var(--site-frame, color-mix(in oklab, var(--color-paper) 22%, transparent));
   padding: calc(var(--pad-card-lg) * 1.35);
 }
 
@@ -811,7 +836,9 @@
    所以这一条唯一的作用是让**整段跑出版心**：台账 第4段因此量到 0%–100%，
    而 Newel 那一段是 5%–95%。一条为了「让带子够宽」写的规则，
    代价是那一整段不再收在框里。 */
-.ds-ground[data-frame="hairline"] .ds-site :has(> h2:not([data-column-heading])) {
+.ds-ground[data-frame="hairline"]
+  .ds-site
+  :has(> h2:not([data-column-heading])) {
   max-width: var(--site-measure);
 }
 
@@ -838,8 +865,19 @@
    so where their page has one hairline ours had two with a seam between them.
    Dropping the top border of every framed block after the first turns the
    whole column back into one continuous grid, which is what that page is. */
-.ds-ground[data-frame="hairline"] .ds-site > * > * + *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]),
-.ds-ground[data-frame="hairline"].ds-site > * > * + *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not([data-fixed]) {
+.ds-ground[data-frame="hairline"]
+  .ds-site
+  > *
+  > *
+  + *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not(
+    [data-fixed]
+  ),
+.ds-ground[data-frame="hairline"].ds-site
+  > *
+  > *
+  + *:not([data-bleed]):not([data-chrome-top]):not([data-chrome-foot]):not(
+    [data-fixed]
+  ) {
   border-top: 0;
 }
 .ds-ground[data-frame="hairline"] .ds-site [data-cells] {
@@ -847,13 +885,22 @@
 }
 @media (min-width: 42rem) {
   .ds-ground[data-frame="hairline"] .ds-site [data-cells] > * + * {
-    border-inline-start: 1px solid var(--site-frame, color-mix(in oklab, var(--color-paper) 22%, transparent));
+    border-inline-start: 1px solid
+      var(
+        --site-frame,
+        color-mix(in oklab, var(--color-paper) 22%, transparent)
+      );
     padding-inline-start: calc(var(--pad-card-lg) * 1.35);
   }
 }
 .ds-ground[data-frame="hairline"] .ds-site h2:not([data-column-heading]),
-.ds-ground[data-frame="hairline"].ds-site .ds-site h2:not([data-column-heading]) {
-  background: var(--site-strip, color-mix(in oklab, #000 24%, var(--color-canvas)));
+.ds-ground[data-frame="hairline"].ds-site
+  .ds-site
+  h2:not([data-column-heading]) {
+  background: var(
+    --site-strip,
+    color-mix(in oklab, #000 24%, var(--color-canvas))
+  );
   margin-block: calc(var(--pad-card-lg) * -1.35) calc(var(--pad-card-lg) * 1.1);
   /* 读一个变量，不写死 —— 手机上那条负边距要收掉，而**用特异度去压它压不动**：
      底下那条 @media 里的覆写跟这一条特异度一模一样（都是 0,4,1），
@@ -890,7 +937,6 @@
   padding-inline: 0;
   width: auto;
 }
-
 
 /* ── A WEBSITE'S TYPE SCALE IS NOT A DASHBOARD'S ────────────────────────────
 
@@ -1394,8 +1440,14 @@
      所以留一个绝对值的出口：设了就用设的，没设还是那个倍数。
      倍数仍然是预设，因为[重点 7c](docs/founder-points.md) 要保住的是「换配色
      它还是不是另一个设计」，而不是「每一套都自己填一个数」。 */
-  --site-radius: var(--site-radius-abs, calc(var(--radius-lg) * var(--site-round, 1.7)));
-  --site-radius-sm: var(--site-radius-sm-abs, calc(var(--radius-md) * var(--site-round, 1.7)));
+  --site-radius: var(
+    --site-radius-abs,
+    calc(var(--radius-lg) * var(--site-round, 1.7))
+  );
+  --site-radius-sm: var(
+    --site-radius-sm-abs,
+    calc(var(--radius-md) * var(--site-round, 1.7))
+  );
   /* The register's own biggest shadow, not a new one. A register that declares
      flat shadows (瑞士 prints on paper, 中台 is a POS screen) stays flat. */
   --site-elevation: var(--shadow-lg);
@@ -1576,10 +1628,18 @@
   .ds-site [data-bleed] > * > :is(p, h1, div, dl) {
     animation: ds-rise 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
   }
-  .ds-site [data-bleed] > * > :nth-child(1) { animation-delay: 0.02s; }
-  .ds-site [data-bleed] > * > :nth-child(2) { animation-delay: 0.08s; }
-  .ds-site [data-bleed] > * > :nth-child(3) { animation-delay: 0.14s; }
-  .ds-site [data-bleed] > * > :nth-child(4) { animation-delay: 0.2s; }
+  .ds-site [data-bleed] > * > :nth-child(1) {
+    animation-delay: 0.02s;
+  }
+  .ds-site [data-bleed] > * > :nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  .ds-site [data-bleed] > * > :nth-child(3) {
+    animation-delay: 0.14s;
+  }
+  .ds-site [data-bleed] > * > :nth-child(4) {
+    animation-delay: 0.2s;
+  }
 
   /* NO SCROLL-TRIGGERED ENTRANCES, AND THE REASON IS A MEASUREMENT.
 
@@ -1650,7 +1710,8 @@
   .ds-site figure img {
     /* 跟着 --site-motion 走，跟进场同一档。0.5s 是这一层最后一个自己决定时长的
        地方，而尺子每一轮都在 ledger / 中台 / 图纸 上把它报成「时长对不上」。 */
-    transition: transform var(--site-motion, 0.5s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+    transition: transform var(--site-motion, 0.5s)
+      var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
   }
   .ds-site figure:hover img {
     transform: scale(1.03);
@@ -1671,7 +1732,8 @@
 }
 [data-tilt] > * {
   transform-style: preserve-3d;
-  transition: transform var(--site-motion, 0.35s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+  transition: transform var(--site-motion, 0.35s)
+    var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1759,7 +1821,11 @@
 
 /* The scrollbar is part of the page on every desktop that shows one. */
 .ds-ground {
-  scrollbar-color: color-mix(in oklab, var(--color-primary) 45%, var(--color-canvas))
+  scrollbar-color: color-mix(
+      in oklab,
+      var(--color-primary) 45%,
+      var(--color-canvas)
+    )
     var(--color-canvas);
   scrollbar-width: thin;
 }
@@ -1796,9 +1862,12 @@
      variables with our old values as the default -- nothing else in the
      library moves differently unless it says so. */
   transition:
-    opacity var(--site-motion, 0.62s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
-    transform var(--site-motion, 0.62s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
-    filter var(--site-motion, 0.62s) var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+    opacity var(--site-motion, 0.62s)
+      var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+    transform var(--site-motion, 0.62s)
+      var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+    filter var(--site-motion, 0.62s)
+      var(--site-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
   will-change: opacity, transform;
 }
 :root[data-reveal-armed] [data-reveal][data-revealed] {
@@ -1912,7 +1981,10 @@
    the one its system pages wear. 台账's工作台 stays navy; its website is brown.
    Registers that say nothing keep the old behaviour exactly. */
 .ds-ground[data-ground="ink"] {
-  --ink-bg: var(--site-ink-bg, color-mix(in oklab, var(--color-nav-bg) 32%, #101215));
+  --ink-bg: var(
+    --site-ink-bg,
+    color-mix(in oklab, var(--color-nav-bg) 32%, #101215)
+  );
   --ink-fg: var(--site-ink-fg, var(--color-nav-fg));
   --ink-fg-dim: var(--site-ink-fg-dim, var(--color-nav-fg-dim));
   /* ⚠️ 「ink」 NO LONGER MEANS 「dark」. It means 「the website states its own
@@ -1927,7 +1999,10 @@
      Captured on THIS element and applied on .ds-site below -- two layers,
      because a rule that both reads and writes --color-primary on one element
      is a cycle, and the whole declaration is dropped silently. Fifth time. */
-  --ink-block: var(--site-ink-block, var(--color-block, var(--color-primary-soft)));
+  --ink-block: var(
+    --site-ink-block,
+    var(--color-block, var(--color-primary-soft))
+  );
   --ink-on-block: var(--site-on-block, var(--ink-fg, var(--color-paper)));
   --ink-primary: var(--site-primary, var(--color-primary));
   --ink-on-primary: var(--site-on-primary, var(--color-on-primary));
@@ -1959,8 +2034,16 @@
      六套逐一量过：62% 只有 图纸 不过；**72% 六套都在 5.03 以上**，
      而且看起来还是比全强度那几行淡。⚠️ 那条 16% 的线不动 ——
      一条线不是字，标准也不管它。 */
-  --color-nav-fg-dim: color-mix(in oklab, var(--site-foot-fg, var(--ink-fg)) 72%, transparent);
-  --color-nav-border: color-mix(in oklab, var(--site-foot-fg, var(--ink-fg)) 16%, transparent);
+  --color-nav-fg-dim: color-mix(
+    in oklab,
+    var(--site-foot-fg, var(--ink-fg)) 72%,
+    transparent
+  );
+  --color-nav-border: color-mix(
+    in oklab,
+    var(--site-foot-fg, var(--ink-fg)) 16%,
+    transparent
+  );
 }
 
 .ds-ground[data-ground="ink"] [data-chrome-top] {
@@ -1990,12 +2073,19 @@
   /* 内嵌面板 —— darker than the ground on 台账's reference (#2c200a against
      #45372a), lighter on a register that says nothing. Read by 清单配照片,
      一条四格 and 三个方框. */
-  --site-panel: var(--site-ink-panel, color-mix(in oklab, var(--ink-fg) 7%, var(--ink-bg)));
+  --site-panel: var(
+    --site-ink-panel,
+    color-mix(in oklab, var(--ink-fg) 7%, var(--ink-bg))
+  );
   --color-block: var(--ink-block);
   --color-on-block: var(--ink-on-block);
   --color-primary: var(--ink-primary);
   --color-on-primary: var(--ink-on-primary);
-  --color-primary-soft: color-mix(in oklab, var(--ink-primary) 12%, var(--ink-bg));
+  --color-primary-soft: color-mix(
+    in oklab,
+    var(--ink-primary) 12%,
+    var(--ink-bg)
+  );
   --color-table-bg: transparent;
   --color-table-head-bg: color-mix(in oklab, var(--ink-bg) 80%, var(--ink-fg));
   --color-table-head-fg: var(--ink-fg-dim);
@@ -2026,7 +2116,11 @@
    instead: still a band, no longer a flash. */
 .ds-ground[data-ground="ink"] [data-hours-strip],
 .ds-ground[data-ground="ink"] [data-hours-strip] {
-  background-color: color-mix(in oklab, var(--ink-bg) 78%, var(--ink-fg)) !important;
+  background-color: color-mix(
+    in oklab,
+    var(--ink-bg) 78%,
+    var(--ink-fg)
+  ) !important;
   color: var(--ink-fg) !important;
 }
 
@@ -2086,8 +2180,15 @@
 }
 .ds-ground[data-pattern="grid"] {
   background-image:
-    linear-gradient(color-mix(in oklab, var(--color-paper) 10%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--color-paper) 10%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      color-mix(in oklab, var(--color-paper) 10%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--color-paper) 10%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 32px 32px;
 }
 /* A pattern is a screen decision. On paper it is toner spent on nothing and it
@@ -2103,13 +2204,25 @@
    见 portal-shell.tsx 的 NavPending —— 走一遍量出来手机上等 1.3 秒
    而画面上什么都没有。延迟 200ms 才开始，预取过的页面根本来不及看到它。 */
 @keyframes nav-pending {
-  from { transform: scaleX(0); opacity: 0.9; }
-  to   { transform: scaleX(1); opacity: 1; }
+  from {
+    transform: scaleX(0);
+    opacity: 0.9;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   @keyframes nav-pending {
-    from { transform: scaleX(1); opacity: 1; }
-    to   { transform: scaleX(1); opacity: 1; }
+    from {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+    to {
+      transform: scaleX(1);
+      opacity: 1;
+    }
   }
 }
 
@@ -2156,7 +2269,6 @@
   --color-primary-soft: #f4f4f5;
   --color-on-primary: #fafafa;
 }
-
 
 /* ─────────────────────────────────────────────────────────────────────────
    编辑器画布：一页短的时候，画面下半不可以是灰的。

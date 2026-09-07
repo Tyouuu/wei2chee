@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { LineEditor, blankLine, linesBlank, type Line, type LineSuggest } from "./line-editor";
+import {
+  LineEditor,
+  blankLine,
+  linesBlank,
+  type Line,
+  type LineSuggest,
+} from "./line-editor";
 import { fillFromShelf, type ShelfItem } from "./line-suggest";
 import { RECORD_COPY } from "../record-copy";
 
@@ -40,8 +46,20 @@ const copy = RECORD_COPY.en.form;
    第一版把它摆在后面，於是那一条断言**拆掉排序也照样绿**：
    一条量不到东西的断言，跟一条真的在守的，在报告里长得一模一样。 */
 const shelf: ShelfItem[] = [
-  { itemId: "i2", name: "River sand", unit: "load", priceCents: 12000, onHand: 0 },
-  { itemId: "i1", name: "Cement 50kg", unit: "bag", priceCents: 1850, onHand: 84 },
+  {
+    itemId: "i2",
+    name: "River sand",
+    unit: "load",
+    priceCents: 12000,
+    onHand: 0,
+  },
+  {
+    itemId: "i1",
+    name: "Cement 50kg",
+    unit: "bag",
+    priceCents: 1850,
+    onHand: 84,
+  },
 ];
 
 const lastTime: Line[] = [
@@ -68,7 +86,9 @@ const suggest = (over: Partial<LineSuggest> = {}): LineSuggest => ({
 });
 
 const draw = (lines: Line[], s?: LineSuggest) =>
-  renderToStaticMarkup(<LineEditor lines={lines} onChange={() => {}} copy={copy} suggest={s} />);
+  renderToStaticMarkup(
+    <LineEditor lines={lines} onChange={() => {}} copy={copy} suggest={s} />,
+  );
 
 describe("上次那一张", () => {
   it("整张空着的时候给", () => {
@@ -82,7 +102,9 @@ describe("上次那一张", () => {
   });
 
   it("这个客人没有上一张就不给", () => {
-    expect(draw([blankLine()], suggest({ lastLines: null }))).not.toContain(copy.lineUseLast);
+    expect(draw([blankLine()], suggest({ lastLines: null }))).not.toContain(
+      copy.lineUseLast,
+    );
   });
 
   it("一支都没接的时候，那一页跟以前一模一样", () => {
@@ -97,16 +119,28 @@ describe("上次那一张", () => {
 describe("挑一件货", () => {
   it("空的那几格填进去", () => {
     const l: Line = { ...blankLine(), description: "Cement 50kg" };
-    expect(fillFromShelf(l, shelf)).toEqual({ unit: "bag", unitPrice: "18.50" });
+    expect(fillFromShelf(l, shelf)).toEqual({
+      unit: "bag",
+      unitPrice: "18.50",
+    });
   });
 
   it("🔴 他已经打的价不准盖掉", () => {
-    const l: Line = { ...blankLine(), description: "Cement 50kg", unitPrice: "17.00" };
+    const l: Line = {
+      ...blankLine(),
+      description: "Cement 50kg",
+      unitPrice: "17.00",
+    };
     expect(fillFromShelf(l, shelf)).toEqual({ unit: "bag" });
   });
 
   it("🔴 单位也一样，打过的不动", () => {
-    const l: Line = { ...blankLine(), description: "Cement 50kg", unit: "包", unitPrice: "17.00" };
+    const l: Line = {
+      ...blankLine(),
+      description: "Cement 50kg",
+      unit: "包",
+      unitPrice: "17.00",
+    };
     expect(fillFromShelf(l, shelf)).toBeUndefined();
   });
 
@@ -116,7 +150,9 @@ describe("挑一件货", () => {
   });
 
   it("货架还没抓回来也不会炸", () => {
-    expect(fillFromShelf({ ...blankLine(), description: "Cement 50kg" }, null)).toBeUndefined();
+    expect(
+      fillFromShelf({ ...blankLine(), description: "Cement 50kg" }, null),
+    ).toBeUndefined();
   });
 });
 
@@ -130,15 +166,21 @@ describe("那两份清单", () => {
 
   it("🔴 卖完的排在后面 —— 排第一是让他每一次都要滑过去", () => {
     const html = draw([blankLine()], suggest());
-    expect(html.indexOf("Cement 50kg")).toBeLessThan(html.indexOf("River sand"));
+    expect(html.indexOf("Cement 50kg")).toBeLessThan(
+      html.indexOf("River sand"),
+    );
   });
 
   it("🔴 有货架才讲「打前几个字」—— 没有的时候那是一句假话", () => {
     /* 装修那一行开局没有库存那一页（`PAGES_FOR_INDUSTRY.renovation`），
        所以 `suggest_items` 回空的。对他讲「你自己的货会出来」就是骗他。 */
     expect(draw([blankLine()], suggest())).toContain(copy.lineShelfHint);
-    expect(draw([blankLine()], suggest({ items: [] }))).not.toContain(copy.lineShelfHint);
-    expect(draw([blankLine()], suggest({ items: null }))).not.toContain(copy.lineShelfHint);
+    expect(draw([blankLine()], suggest({ items: [] }))).not.toContain(
+      copy.lineShelfHint,
+    );
+    expect(draw([blankLine()], suggest({ items: null }))).not.toContain(
+      copy.lineShelfHint,
+    );
   });
 
   it("🔴 清单里只有名字，没有价钱", () => {

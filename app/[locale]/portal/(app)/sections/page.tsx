@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
-import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
+import {
+  createSessionSupabaseClient,
+  getSessionUser,
+} from "@/lib/supabase/server-session";
 import { SectionsClient } from "./sections-client";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 

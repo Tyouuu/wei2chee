@@ -49,31 +49,31 @@ function SectionTile({
   palette: string | null;
 }) {
   return (
-      <li className="group min-w-0">
-        <div
-          className={`${chrome.exhibit} block h-[300px] w-full transition-transform duration-200 group-hover:-translate-y-0.5`}
-        >
-          <Specimen
-            name="SiteBlock"
-            props={{ id: `sec-${name}`, block: name }}
-            style={style}
-            palette={palette}
-            // Composed at the width a marketing section is designed
-            // for. At 620 (the component library's width) a three-tier
-            // pricing grid stacks into one column and stops being the
-            // thing it is.
-            width={1200}
-          />
-        </div>
-        <div className="mt-2.5">
-          <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
-            {BLOCK_META[name]?.title ?? name}
-          </span>
-          <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
-            {name}
-          </span>
-        </div>
-      </li>
+    <li className="group min-w-0">
+      <div
+        className={`${chrome.exhibit} block h-[300px] w-full transition-transform duration-200 group-hover:-translate-y-0.5`}
+      >
+        <Specimen
+          name="SiteBlock"
+          props={{ id: `sec-${name}`, block: name }}
+          style={style}
+          palette={palette}
+          // Composed at the width a marketing section is designed
+          // for. At 620 (the component library's width) a three-tier
+          // pricing grid stacks into one column and stops being the
+          // thing it is.
+          width={1200}
+        />
+      </div>
+      <div className="mt-2.5">
+        <span className="block truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+          {BLOCK_META[name]?.title ?? name}
+        </span>
+        <span className="block truncate [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-xs)]">
+          {name}
+        </span>
+      </div>
+    </li>
   );
 }
 
@@ -109,9 +109,13 @@ export function SectionsClient({
      note: 21st.dev opens on rows, not on one shelf and not on everything. */
   const [active, setActive] = useState<string | null>(null);
 
-  const shelves = useMemo(() => orderShelves(Object.keys(BLOCK_CATEGORIES)), []);
+  const shelves = useMemo(
+    () => orderShelves(Object.keys(BLOCK_CATEGORIES)),
+    [],
+  );
   const total = useMemo(
-    () => Object.values(BLOCK_CATEGORIES).reduce((n, list) => n + list.length, 0),
+    () =>
+      Object.values(BLOCK_CATEGORIES).reduce((n, list) => n + list.length, 0),
     [],
   );
 
@@ -161,7 +165,9 @@ export function SectionsClient({
                   setQuery("");
                   setActive(null);
                 }}
-                aria-current={!searching && active === null ? "true" : undefined}
+                aria-current={
+                  !searching && active === null ? "true" : undefined
+                }
                 className={`flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2.5 py-1.5 text-left transition-colors [font-size:var(--text-xs)] ${
                   !searching && active === null
                     ? "[background-color:var(--color-ink-850)] [color:var(--color-paper)] [font-weight:var(--fw-medium)]"
@@ -191,7 +197,9 @@ export function SectionsClient({
                         : "[color:var(--color-paper-dim)] hover:[background-color:var(--color-ink-900)] hover:[color:var(--color-paper)]"
                     }`}
                   >
-                    <span className="min-w-0 flex-1 truncate">{shelfName(key)}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {shelfName(key)}
+                    </span>
                     <span className="[font-family:var(--font-numeric)] tabular-nums opacity-55">
                       {BLOCK_CATEGORIES[key].length}
                     </span>
@@ -285,7 +293,12 @@ export function SectionsClient({
                   </div>
                   <ul className="grid grid-cols-1 items-start gap-x-4 gap-y-7 md:grid-cols-2 xl:grid-cols-3">
                     {BLOCK_CATEGORIES[key].slice(0, ROW).map((name) => (
-                      <SectionTile key={name} name={name} style={style} palette={palette} />
+                      <SectionTile
+                        key={name}
+                        name={name}
+                        style={style}
+                        palette={palette}
+                      />
                     ))}
                   </ul>
                 </section>
@@ -294,7 +307,12 @@ export function SectionsClient({
           ) : (
             <ul className="mt-6 grid grid-cols-1 items-start gap-x-4 gap-y-7 md:grid-cols-2 xl:grid-cols-3">
               {shown.map((name) => (
-                <SectionTile key={name} name={name} style={style} palette={palette} />
+                <SectionTile
+                  key={name}
+                  name={name}
+                  style={style}
+                  palette={palette}
+                />
               ))}
             </ul>
           )}

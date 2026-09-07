@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
-import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
+import {
+  createSessionSupabaseClient,
+  getSessionUser,
+} from "@/lib/supabase/server-session";
 import { AccountClient, type Member } from "./account-client";
 import { loadWorkspace } from "@/lib/portal/workspace";
 import {
@@ -45,7 +48,10 @@ export default async function AccountPage({
     .single();
 
   const { data: pageRows } = project
-    ? await supabase.from("project_pages").select("page_key, title, sort_order").eq("project_id", project.id)
+    ? await supabase
+        .from("project_pages")
+        .select("page_key, title, sort_order")
+        .eq("project_id", project.id)
     : { data: [] };
 
   const { data: context } = await supabase.rpc("get_my_business_context");
@@ -83,12 +89,16 @@ export default async function AccountPage({
       businessName={displayBusinessName(businessContext)}
       paid={Boolean(project?.paid)}
       stage={(project?.stage as string) ?? "designing"}
-      pageCount={sortPages(
-        (pageRows ?? []).map((r: { page_key: string; title: string | null }) => ({
-          key: r.page_key,
-          title: r.title,
-        })),
-      ).length}
+      pageCount={
+        sortPages(
+          (pageRows ?? []).map(
+            (r: { page_key: string; title: string | null }) => ({
+              key: r.page_key,
+              title: r.title,
+            }),
+          ),
+        ).length
+      }
     />
   );
 }

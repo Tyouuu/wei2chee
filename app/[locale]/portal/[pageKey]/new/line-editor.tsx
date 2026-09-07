@@ -106,7 +106,14 @@ export function ringgitOf(cents: number): string {
  */
 export type LineSuggest = {
   /** 他自己的货架。null = 还没抓完 */
-  items: { name: string; unit: string; priceCents: number | null; onHand: number | null }[] | null;
+  items:
+    | {
+        name: string;
+        unit: string;
+        priceCents: number | null;
+        onHand: number | null;
+      }[]
+    | null;
   /** 他打过的单位，用得最多的排前面 */
   units: string[];
   /** 上次卖给这个客人那几行。null = 没有上一张 */
@@ -206,7 +213,11 @@ export function LineEditor({
               {copy.lineUseLast}
             </button>
           ) : null}
-          <button type="button" onClick={() => onChange([...lines, blankLine()])} className={sectionAdd}>
+          <button
+            type="button"
+            onClick={() => onChange([...lines, blankLine()])}
+            className={sectionAdd}
+          >
             ＋ {copy.lineAdd}
           </button>
         </div>
@@ -358,7 +369,10 @@ export function LineEditor({
       {suggest?.items?.length ? (
         <datalist id={shelfId}>
           {[...suggest.items]
-            .sort((a, b) => Number((b.onHand ?? 0) > 0) - Number((a.onHand ?? 0) > 0))
+            .sort(
+              (a, b) =>
+                Number((b.onHand ?? 0) > 0) - Number((a.onHand ?? 0) > 0),
+            )
             .map((it) => (
               <option key={it.name} value={it.name} />
             ))}

@@ -62,7 +62,10 @@ export default async function ExpiryPage() {
     .maybeSingle();
   const palette = (paletteRow?.palette as string | null) ?? null;
   const [{ data: soonRows }, { data: itemRows }] = await Promise.all([
-    supabase.rpc("expiring_soon", { in_project_id: workspace.projectId, in_days: 90 }),
+    supabase.rpc("expiring_soon", {
+      in_project_id: workspace.projectId,
+      in_days: 90,
+    }),
     supabase
       .from("catalog_items")
       .select("id, name, unit")
@@ -94,7 +97,9 @@ export default async function ExpiryPage() {
       <PageBody>
         <ShelfLife
           soon={(soonRows ?? []) as Expiring[]}
-          items={((itemRows ?? []) as { id: string; name: string; unit: string }[]).map((i) => ({
+          items={(
+            (itemRows ?? []) as { id: string; name: string; unit: string }[]
+          ).map((i) => ({
             id: i.id,
             name: i.name,
             unit: i.unit,

@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -107,12 +114,13 @@ export function CommandBar({
     if (!open || catalogue) return;
     let live = true;
     (async () => {
-      const [{ BLOCK_META }, { puckConfig }, { shelfNames }, { LABELS_EN }] = await Promise.all([
-        import("@/components/blocks"),
-        import("@/design-system/editor/puck-config"),
-        import("./sections/shelves"),
-        import("@/design-system/editor/labels-en"),
-      ]);
+      const [{ BLOCK_META }, { puckConfig }, { shelfNames }, { LABELS_EN }] =
+        await Promise.all([
+          import("@/components/blocks"),
+          import("@/design-system/editor/puck-config"),
+          import("./sections/shelves"),
+          import("@/design-system/editor/labels-en"),
+        ]);
       if (!live) return;
       const shelves = shelfNames(locale);
       /* 🔴 组件的名字在 `puckConfig` 里是中文的 —— 中文是唯一真相，英文是它的
@@ -126,8 +134,14 @@ export function CommandBar({
 
       /* 组件：走 Puck 自己的目录，不另外手写一份清单。
          这个仓库栽在「第二份手写名单」上至少四次。 */
-      const cats = (puckConfig.categories ?? {}) as Record<string, { components?: string[] }>;
-      const comps = puckConfig.components as unknown as Record<string, { label?: string }>;
+      const cats = (puckConfig.categories ?? {}) as Record<
+        string,
+        { components?: string[] }
+      >;
+      const comps = puckConfig.components as unknown as Record<
+        string,
+        { label?: string }
+      >;
       for (const [cat, group] of Object.entries(cats)) {
         for (const name of group.components ?? []) {
           const c = comps[name];
@@ -210,16 +224,52 @@ function Palette({
     }));
     const go: Hit[] = [
       { id: "go:home", label: tShell("home"), kind: "go", href: base },
-      { id: "go:enquiries", label: tShell("enquiries"), kind: "go", href: `${base}/enquiries` },
-      { id: "go:library", label: tShell("library"), kind: "go", href: `${base}/library` },
-      { id: "go:sections", label: tShell("sections"), kind: "go", href: `${base}/sections` },
-      { id: "go:templates", label: tShell("templates"), kind: "go", href: `${base}/templates` },
-      { id: "go:styles", label: tShell("styles"), kind: "go", href: `${base}/styles` },
-      { id: "go:account", label: tShell("account"), kind: "go", href: `${base}/account` },
+      {
+        id: "go:enquiries",
+        label: tShell("enquiries"),
+        kind: "go",
+        href: `${base}/enquiries`,
+      },
+      {
+        id: "go:library",
+        label: tShell("library"),
+        kind: "go",
+        href: `${base}/library`,
+      },
+      {
+        id: "go:sections",
+        label: tShell("sections"),
+        kind: "go",
+        href: `${base}/sections`,
+      },
+      {
+        id: "go:templates",
+        label: tShell("templates"),
+        kind: "go",
+        href: `${base}/templates`,
+      },
+      {
+        id: "go:styles",
+        label: tShell("styles"),
+        kind: "go",
+        href: `${base}/styles`,
+      },
+      {
+        id: "go:account",
+        label: tShell("account"),
+        kind: "go",
+        href: `${base}/account`,
+      },
     ];
     /* 规格书是**买东西的人**才看的东西 —— 师傅打不开它，
        所以不给他一条会撞墙的结果。 */
-    if (isOwner) go.splice(1, 0, { id: "go:spec", label: tShell("spec"), kind: "go", href: `${base}/spec` });
+    if (isOwner)
+      go.splice(1, 0, {
+        id: "go:spec",
+        label: tShell("spec"),
+        kind: "go",
+        href: `${base}/spec`,
+      });
     return [...own, ...go];
   }, [pages, base, tShell, isOwner]);
 
@@ -234,7 +284,11 @@ function Palette({
     return all
       .map((h) => [h, score(h, needle)] as const)
       .filter(([, s]) => s !== Infinity)
-      .sort((a, b) => a[1] - b[1] || KIND_ORDER.indexOf(a[0].kind) - KIND_ORDER.indexOf(b[0].kind))
+      .sort(
+        (a, b) =>
+          a[1] - b[1] ||
+          KIND_ORDER.indexOf(a[0].kind) - KIND_ORDER.indexOf(b[0].kind),
+      )
       .slice(0, 40)
       .map(([h]) => h);
   }, [q, near, catalogue]);
@@ -295,7 +349,9 @@ function Palette({
             setCursor((c) => (flat.length ? (c + 1) % flat.length : 0));
           } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            setCursor((c) => (flat.length ? (c - 1 + flat.length) % flat.length : 0));
+            setCursor((c) =>
+              flat.length ? (c - 1 + flat.length) % flat.length : 0,
+            );
           } else if (e.key === "Enter") {
             e.preventDefault();
             const h = flat[cursor];
@@ -334,7 +390,9 @@ function Palette({
         <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto py-2">
           {flat.length === 0 && (
             <p className="px-4 py-8 text-center [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
-              {catalogue === null ? t("loading") : t("nothing", { q: q.trim() })}
+              {catalogue === null
+                ? t("loading")
+                : t("nothing", { q: q.trim() })}
             </p>
           )}
           {groups.map(([kind, list]) => (
@@ -378,7 +436,9 @@ function Palette({
         <div className="flex shrink-0 items-center justify-between gap-3 border-t px-4 py-2 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-micro)]">
           <span>{t("keys")}</span>
           <span className="tabular-nums">
-            {catalogue === null ? t("loading") : t("scale", { n: near.length + catalogue.length })}
+            {catalogue === null
+              ? t("loading")
+              : t("scale", { n: near.length + catalogue.length })}
           </span>
         </div>
       </div>
@@ -415,7 +475,9 @@ export function FindButton({ onOpen }: { onOpen: () => void }) {
         <circle cx="9" cy="9" r="5.5" />
         <path d="m13.5 13.5 3 3" strokeLinecap="round" />
       </svg>
-      <span className="min-w-0 flex-1 truncate text-left [font-size:var(--text-xs)]">{t("open")}</span>
+      <span className="min-w-0 flex-1 truncate text-left [font-size:var(--text-xs)]">
+        {t("open")}
+      </span>
       <kbd
         aria-hidden="true"
         suppressHydrationWarning

@@ -5,7 +5,18 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { PageBar } from "../page-bar";
-import { Card, CardTitle, Field, FieldRow, DataRow, EmptyState, SplitCard, SplitTab, control, btn } from "../kit";
+import {
+  Card,
+  CardTitle,
+  Field,
+  FieldRow,
+  DataRow,
+  EmptyState,
+  SplitCard,
+  SplitTab,
+  control,
+  btn,
+} from "../kit";
 import { formatDay } from "@/lib/format-date";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 
@@ -45,7 +56,9 @@ export function AccountClient({
   const tShell = useTranslations("portal.shell");
   const router = useRouter();
 
-  const [tab, setTab] = useState<"profile" | "team" | "security" | "data">("profile");
+  const [tab, setTab] = useState<"profile" | "team" | "security" | "data">(
+    "profile",
+  );
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -212,129 +225,171 @@ export function AccountClient({
         )}
 
         <SplitCard
-          nav={tabs.filter((x) => x.show).map((x) => (
-            <SplitTab key={x.id} active={tab === x.id} onClick={() => setTab(x.id)}>
-              {x.label}
-            </SplitTab>
-          ))}
+          nav={tabs
+            .filter((x) => x.show)
+            .map((x) => (
+              <SplitTab
+                key={x.id}
+                active={tab === x.id}
+                onClick={() => setTab(x.id)}
+              >
+                {x.label}
+              </SplitTab>
+            ))}
         >
-        {tab === "profile" && (
-        <>
-        <Section title={t("overview")}>
-          <Row label={t("business")} value={businessName} />
-          {/* ⚠️ BOTH OF THESE COME FROM THE PROJECT THIS PERSON OWNS, and a
+          {tab === "profile" && (
+            <>
+              <Section title={t("overview")}>
+                <Row label={t("business")} value={businessName} />
+                {/* ⚠️ BOTH OF THESE COME FROM THE PROJECT THIS PERSON OWNS, and a
               师傅 owns an empty shell the signup trigger made for him -- so he
               was reading 「Free trial」 and 「Pages 6」 about a project he has
               never opened, one line under a business name that came from
               somewhere else entirely. Two sources on one list is a small lie
               told confidently. What is left is all about the PERSON, which is
               what this page is for. */}
-          {isOwner && (
-            <>
-              <Row label={t("plan")} value={paid ? tShell("planPaid") : tShell("planFree")} />
-              <Row label={t("pages")} value={String(pageCount)} />
+                {isOwner && (
+                  <>
+                    <Row
+                      label={t("plan")}
+                      value={paid ? tShell("planPaid") : tShell("planFree")}
+                    />
+                    <Row label={t("pages")} value={String(pageCount)} />
+                  </>
+                )}
+                <Row
+                  label={t("since")}
+                  value={createdAt ? formatDay(createdAt, locale) : "—"}
+                />
+                <Row
+                  label={t("signInMethod")}
+                  value={
+                    providers.includes("google") ? "Google" : t("methodEmail")
+                  }
+                />
+              </Section>
+
+              {/* LANGUAGE AND SIGN OUT 跟身分同一格 —— 它们讲的都是「你」。 */}
+              <Section title={t("languageTitle")} body={t("languageBody")}>
+                <LocaleSwitcher />
+              </Section>
+              <Section title={t("signOutTitle")} body={t("signOutBody")}>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  disabled={busy !== null}
+                  className={btn("quiet")}
+                >
+                  {busy === "signout" ? t("saving") : t("signOutCta")}
+                </button>
+              </Section>
             </>
           )}
-          <Row label={t("since")} value={createdAt ? formatDay(createdAt, locale) : "—"} />
-          <Row
-            label={t("signInMethod")}
-            value={providers.includes("google") ? "Google" : t("methodEmail")}
-          />
-        </Section>
 
-        {/* LANGUAGE AND SIGN OUT 跟身分同一格 —— 它们讲的都是「你」。 */}
-        <Section title={t("languageTitle")} body={t("languageBody")}>
-          <LocaleSwitcher />
-        </Section>
-        <Section title={t("signOutTitle")} body={t("signOutBody")}>
-          <button type="button" onClick={signOut} disabled={busy !== null} className={btn("quiet")}>
-            {busy === "signout" ? t("saving") : t("signOutCta")}
-          </button>
-        </Section>
-        </>
-        )}
+          {tab === "team" && isOwner && <TeamPanel initial={members} />}
 
-        {tab === "team" && isOwner && <TeamPanel initial={members} />}
-
-        {tab === "security" && (
-        <>
-
-        {hasPassword ? (
-          <Section title={t("passwordTitle")} body={t("passwordBody")}>
-            {/* 🔴 标签从 placeholder 变成看得见的字。
+          {tab === "security" && (
+            <>
+              {hasPassword ? (
+                <Section title={t("passwordTitle")} body={t("passwordBody")}>
+                  {/* 🔴 标签从 placeholder 变成看得见的字。
                 改之前两个框长得一模一样，标签就是框里那句灰字 —— **打了第一个字
                 就不见了**。一个人改到一半被客人打断，回来看到两个空框，
                 分不出哪个是新密码、哪个是再打一次。
                 并排也是抄来的（tabler 的 `row g-3`）：两个短栏位不该各占一整行。 */}
-            <form onSubmit={changePassword} className="flex flex-col gap-4">
-              <FieldRow>
-                <Field label={t("newPassword")} htmlFor="new-password">
-                  <input
-                    id="new-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    minLength={8}
-                    required
-                    autoComplete="new-password"
-                    className={control}
-                  />
-                </Field>
-                <Field label={t("confirmPassword")} htmlFor="confirm-password">
-                  <input
-                    id="confirm-password"
-                    type="password"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    minLength={8}
-                    required
-                    autoComplete="new-password"
-                    className={control}
-                  />
-                </Field>
-              </FieldRow>
-              <button type="submit" disabled={busy !== null} className={`${btn("quiet")} self-start`}>
-                {busy === "password" ? t("saving") : t("changePassword")}
-              </button>
-            </form>
-          </Section>
-        ) : (
-          // Someone who signed up with Google has no password to change, and a
-          // form that cannot work is worse than an explanation.
-          <Section title={t("passwordTitle")} body={t("passwordGoogle")} />
-        )}
+                  <form
+                    onSubmit={changePassword}
+                    className="flex flex-col gap-4"
+                  >
+                    <FieldRow>
+                      <Field label={t("newPassword")} htmlFor="new-password">
+                        <input
+                          id="new-password"
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          minLength={8}
+                          required
+                          autoComplete="new-password"
+                          className={control}
+                        />
+                      </Field>
+                      <Field
+                        label={t("confirmPassword")}
+                        htmlFor="confirm-password"
+                      >
+                        <input
+                          id="confirm-password"
+                          type="password"
+                          value={confirm}
+                          onChange={(e) => setConfirm(e.target.value)}
+                          minLength={8}
+                          required
+                          autoComplete="new-password"
+                          className={control}
+                        />
+                      </Field>
+                    </FieldRow>
+                    <button
+                      type="submit"
+                      disabled={busy !== null}
+                      className={`${btn("quiet")} self-start`}
+                    >
+                      {busy === "password" ? t("saving") : t("changePassword")}
+                    </button>
+                  </form>
+                </Section>
+              ) : (
+                // Someone who signed up with Google has no password to change, and a
+                // form that cannot work is worse than an explanation.
+                <Section
+                  title={t("passwordTitle")}
+                  body={t("passwordGoogle")}
+                />
+              )}
 
-        <Section title={t("emailTitle")} body={t("emailBody")}>
-          <form onSubmit={changeEmail} className="flex max-w-md flex-col gap-4">
-            <Field label={t("newEmail")} htmlFor="new-email">
-              <input
-                id="new-email"
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className={control}
-              />
-            </Field>
-            <button type="submit" disabled={busy !== null} className={`${btn("quiet")} self-start`}>
-              {busy === "email" ? t("saving") : t("changeEmail")}
-            </button>
-          </form>
-        </Section>
+              <Section title={t("emailTitle")} body={t("emailBody")}>
+                <form
+                  onSubmit={changeEmail}
+                  className="flex max-w-md flex-col gap-4"
+                >
+                  <Field label={t("newEmail")} htmlFor="new-email">
+                    <input
+                      id="new-email"
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                      className={control}
+                    />
+                  </Field>
+                  <button
+                    type="submit"
+                    disabled={busy !== null}
+                    className={`${btn("quiet")} self-start`}
+                  >
+                    {busy === "email" ? t("saving") : t("changeEmail")}
+                  </button>
+                </form>
+              </Section>
+            </>
+          )}
 
-        </>
-        )}
+          {tab === "data" && (
+            <>
+              <Section title={t("exportTitle")} body={t("exportBody")}>
+                <button
+                  type="button"
+                  onClick={exportData}
+                  disabled={exporting}
+                  className={btn("quiet")}
+                >
+                  {exporting ? t("exporting") : t("exportCta")}
+                </button>
+              </Section>
 
-        {tab === "data" && (
-        <>
-        <Section title={t("exportTitle")} body={t("exportBody")}>
-          <button type="button" onClick={exportData} disabled={exporting} className={btn("quiet")}>
-            {exporting ? t("exporting") : t("exportCta")}
-          </button>
-        </Section>
-
-        {/* 旧的语言 / 登出那一段搬到「你」那一格去了，原本的注解留在那里。
+              {/* 旧的语言 / 登出那一段搬到「你」那一格去了，原本的注解留在那里。
             LANGUAGE AND SIGN OUT USED TO LIVE HERE.
             They used to be two naked controls in the bottom corner of the
             navigation rail — a switcher and an underlined link, lying loose
@@ -346,39 +401,45 @@ export function AccountClient({
             the rail now carries one account block that leads here, and these
             are rows in a settings page like everything else. */}
 
-        {/* Last, and visually separated. A destructive action placed among
+              {/* Last, and visually separated. A destructive action placed among
             ordinary settings is a destructive action somebody will hit by
             accident. */}
-        <section className="mt-8 rounded-[var(--radius-md)] border p-5 [border-color:var(--color-clay-deep)]">
-          <h2 className="[color:var(--color-clay-bright)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-            {t("deleteTitle")}
-          </h2>
-          <p className="mt-2 max-w-xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-            {t("deleteBody")}
-          </p>
-          <div className="mt-4 flex max-w-sm flex-col gap-3">
-            <Field label={t("deletePlaceholder")} htmlFor="delete-confirm">
-              <input
-                id="delete-confirm"
-                value={deleteConfirm}
-                onChange={(e) => setDeleteConfirm(e.target.value)}
-                className={control}
-              />
-            </Field>
-            <button
-              type="button"
-              onClick={deleteAccount}
-              // Typing the word is the confirmation. A dialog asking "are you
-              // sure" is clicked through without reading; typing DELETE is not.
-              disabled={deleteConfirm.trim().toUpperCase() !== "DELETE" || busy !== null}
-              className={`${btn("danger")} self-start [background-color:var(--color-clay-deep)] [border-color:var(--color-clay-deep)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]`}
-            >
-              {busy === "delete" ? t("saving") : t("deleteCta")}
-            </button>
-          </div>
-        </section>
-        </>
-        )}
+              <section className="mt-8 rounded-[var(--radius-md)] border p-5 [border-color:var(--color-clay-deep)]">
+                <h2 className="[color:var(--color-clay-bright)] [font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                  {t("deleteTitle")}
+                </h2>
+                <p className="mt-2 max-w-xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
+                  {t("deleteBody")}
+                </p>
+                <div className="mt-4 flex max-w-sm flex-col gap-3">
+                  <Field
+                    label={t("deletePlaceholder")}
+                    htmlFor="delete-confirm"
+                  >
+                    <input
+                      id="delete-confirm"
+                      value={deleteConfirm}
+                      onChange={(e) => setDeleteConfirm(e.target.value)}
+                      className={control}
+                    />
+                  </Field>
+                  <button
+                    type="button"
+                    onClick={deleteAccount}
+                    // Typing the word is the confirmation. A dialog asking "are you
+                    // sure" is clicked through without reading; typing DELETE is not.
+                    disabled={
+                      deleteConfirm.trim().toUpperCase() !== "DELETE" ||
+                      busy !== null
+                    }
+                    className={`${btn("danger")} self-start [background-color:var(--color-clay-deep)] [border-color:var(--color-clay-deep)] [color:var(--color-paper)] [font-weight:var(--fw-semibold)]`}
+                  >
+                    {busy === "delete" ? t("saving") : t("deleteCta")}
+                  </button>
+                </div>
+              </section>
+            </>
+          )}
         </SplitCard>
       </div>
     </>
@@ -412,7 +473,6 @@ function Section({
 /* 搬进 ../kit.tsx —— console 那边也在手写同一行。 */
 const Row = DataRow;
 
-
 /** One person who works here, as the owner sees them. */
 export type Member = {
   user_id: string;
@@ -444,7 +504,9 @@ function TeamPanel({ initial }: { initial: Member[] }) {
   const [note, setNote] = useState<{ key: string; ok: boolean } | null>(null);
 
   async function reload() {
-    const { data } = await createBrowserSupabaseClient().rpc("list_project_members");
+    const { data } = await createBrowserSupabaseClient().rpc(
+      "list_project_members",
+    );
     setMembers((data as Member[] | null) ?? []);
   }
 
@@ -452,16 +514,22 @@ function TeamPanel({ initial }: { initial: Member[] }) {
     e.preventDefault();
     setBusy("add");
     setNote(null);
-    const { error } = await createBrowserSupabaseClient().rpc("add_project_member", {
-      in_email: email.trim(),
-    });
+    const { error } = await createBrowserSupabaseClient().rpc(
+      "add_project_member",
+      {
+        in_email: email.trim(),
+      },
+    );
     setBusy(null);
     if (error) {
       /* The one failure with its own answer: he typed a real address for
          somebody who has not signed up. Telling him 「could not add」 there
          would send him back to check a spelling that was right. */
       const first = /no account yet/i.test(error.message ?? "");
-      return setNote({ key: first ? "teamSignUpFirst" : "teamFailed", ok: false });
+      return setNote({
+        key: first ? "teamSignUpFirst" : "teamFailed",
+        ok: false,
+      });
     }
     setEmail("");
     await reload();
@@ -531,7 +599,11 @@ function TeamPanel({ initial }: { initial: Member[] }) {
             className={control}
           />
         </Field>
-        <button type="submit" disabled={busy !== null} className={`${btn("quiet")} self-start`}>
+        <button
+          type="submit"
+          disabled={busy !== null}
+          className={`${btn("quiet")} self-start`}
+        >
           {busy === "add" ? t("teamAdding") : t("teamAdd")}
         </button>
       </form>

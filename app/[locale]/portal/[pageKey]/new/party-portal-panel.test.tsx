@@ -3,7 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PartyPortalPanel, type PartyRequest } from "./party-portal-panel";
 import { RECORD_COPY } from "../record-copy";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => {}, refresh: () => {} }),
+}));
 vi.mock("@/lib/supabase/client", () => ({
   createBrowserSupabaseClient: () => ({ rpc: async () => ({ error: null }) }),
 }));
@@ -38,7 +40,11 @@ const one: PartyRequest[] = [
   },
 ];
 
-const render = (landsIn: string | null, landsInLabel: string | null, requests = one) =>
+const render = (
+  landsIn: string | null,
+  landsInLabel: string | null,
+  requests = one,
+) =>
   renderToStaticMarkup(
     <PartyPortalPanel
       partyId="22222222-2222-4222-8222-222222222222"
@@ -68,11 +74,15 @@ describe("PartyPortalPanel", () => {
   });
 
   it("他自己讲的那句话原样画出来", () => {
-    expect(render("orders", "Orders")).toContain("Keep me 200 cards from the next batch");
+    expect(render("orders", "Orders")).toContain(
+      "Keep me 200 cards from the next batch",
+    );
   });
 
   it("已经开成单的那一笔不再给按第二次", () => {
-    const done: PartyRequest[] = [{ ...one[0], status: "done", docNo: "OR-2026-0007" }];
+    const done: PartyRequest[] = [
+      { ...one[0], status: "done", docNo: "OR-2026-0007" },
+    ];
     const html = render("orders", "Orders", done);
     expect(html).not.toContain("Open it as");
     expect(html).toContain("OR-2026-0007");

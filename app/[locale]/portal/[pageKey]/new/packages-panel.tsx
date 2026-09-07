@@ -101,7 +101,8 @@ export function PackagesPanel({
     }
   }
 
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
   const control =
     "ds-control h-10 w-full min-w-0 [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none focus-visible:[border-color:var(--color-primary)]";
   const quiet =
@@ -195,7 +196,10 @@ export function PackagesPanel({
                   disabled={!!busy}
                   onClick={() =>
                     void run(`away-${r.id}`, () =>
-                      db().rpc("set_package_archived", { in_id: r.id, in_archived: true }),
+                      db().rpc("set_package_archived", {
+                        in_id: r.id,
+                        in_archived: true,
+                      }),
                     )
                   }
                   className={`min-h-11 underline ${dim}`}
@@ -251,7 +255,11 @@ export function PackagesPanel({
           </button>
         </div>
       ) : (
-        <button type="button" onClick={() => setOpen(true)} className={`self-start ${quiet}`}>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={`self-start ${quiet}`}
+        >
           {copy.packSell}
         </button>
       )}

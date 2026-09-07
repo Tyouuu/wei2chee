@@ -89,10 +89,13 @@ export function AppointmentStatus({
     setBusy(next);
     const before = shown;
     setShown(next);
-    const { error: err } = await createBrowserSupabaseClient().rpc("set_appointment_status", {
-      in_id: id,
-      in_status: next,
-    });
+    const { error: err } = await createBrowserSupabaseClient().rpc(
+      "set_appointment_status",
+      {
+        in_id: id,
+        in_status: next,
+      },
+    );
     if (err) {
       /* 🔴 改不了就把画面**放回去**。一颗看起来成功而资料库里没变的按钮，
          比一颗报错的按钮糟得多 —— 他会以为记下来了。 */
@@ -145,7 +148,9 @@ export function AppointmentStatus({
       </span>
 
       {error ? (
-        <span className="[font-size:var(--text-sm)] text-[color:var(--color-clay-bright)]">{error}</span>
+        <span className="[font-size:var(--text-sm)] text-[color:var(--color-clay-bright)]">
+          {error}
+        </span>
       ) : null}
     </FormSection>
   );

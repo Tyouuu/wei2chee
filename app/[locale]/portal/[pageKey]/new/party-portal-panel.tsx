@@ -64,11 +64,18 @@ export function PartyPortalPanel({
 
   const link = portalRef ? `${origin}/p/${portalRef}` : null;
 
-  async function call(name: string, args: Record<string, unknown>, tag: string) {
+  async function call(
+    name: string,
+    args: Record<string, unknown>,
+    tag: string,
+  ) {
     setError(null);
     setBusy(tag);
     try {
-      const { error: err } = await createBrowserSupabaseClient().rpc(name, args);
+      const { error: err } = await createBrowserSupabaseClient().rpc(
+        name,
+        args,
+      );
       if (err) {
         setError(err.message);
         return;
@@ -79,7 +86,8 @@ export function PartyPortalPanel({
     }
   }
 
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
   const ghost =
     "inline-flex h-10 items-center [border-radius:var(--radius-md)] border [border-color:var(--color-ink-800)] [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-on-canvas)] disabled:opacity-60";
   const solid =
@@ -124,7 +132,13 @@ export function PartyPortalPanel({
             <button
               type="button"
               disabled={busy !== null}
-              onClick={() => void call("close_party_portal", { in_party_id: partyId }, "close")}
+              onClick={() =>
+                void call(
+                  "close_party_portal",
+                  { in_party_id: partyId },
+                  "close",
+                )
+              }
               className={`min-h-10 underline ${dim}`}
             >
               {busy === "close" ? copy.saving : copy.portalClose}
@@ -137,7 +151,9 @@ export function PartyPortalPanel({
           <button
             type="button"
             disabled={busy !== null}
-            onClick={() => void call("open_party_portal", { in_party_id: partyId }, "open")}
+            onClick={() =>
+              void call("open_party_portal", { in_party_id: partyId }, "open")
+            }
             className={solid}
           >
             {busy === "open" ? copy.saving : copy.portalOpen}
@@ -148,7 +164,9 @@ export function PartyPortalPanel({
       {/* 他送进来的那几笔。⚠️ 一条连结都还没开的时候这一段照样画 ——
           他关掉连结之后，送过的那几笔一笔不少，而那正是要看得到的事。 */}
       <div className="border-t pt-4 [border-color:var(--color-ink-800)]">
-        <h3 className={`[font-weight:var(--fw-semibold)] ${dim}`}>{copy.portalInbox}</h3>
+        <h3 className={`[font-weight:var(--fw-semibold)] ${dim}`}>
+          {copy.portalInbox}
+        </h3>
         {requests.length === 0 ? (
           <p className={`mt-2 ${dim}`}>{copy.portalInboxNone}</p>
         ) : (
@@ -165,7 +183,9 @@ export function PartyPortalPanel({
                   {r.contact ? ` · ${r.contact}` : ""}
                 </p>
                 {r.status === "done" ? (
-                  <p className={dim}>{copy.portalDone.replace("{doc}", r.docNo ?? "")}</p>
+                  <p className={dim}>
+                    {copy.portalDone.replace("{doc}", r.docNo ?? "")}
+                  </p>
                 ) : r.status === "dropped" ? (
                   <p className={dim}>{copy.portalDropped}</p>
                 ) : (
@@ -185,7 +205,10 @@ export function PartyPortalPanel({
                       >
                         {busy === r.id
                           ? copy.saving
-                          : copy.portalTurn.replace("{page}", landsInLabel ?? landsIn)}
+                          : copy.portalTurn.replace(
+                              "{page}",
+                              landsInLabel ?? landsIn,
+                            )}
                       </button>
                     ) : (
                       <span className={dim}>{copy.portalNowhere}</span>
@@ -194,7 +217,11 @@ export function PartyPortalPanel({
                       type="button"
                       disabled={busy !== null}
                       onClick={() =>
-                        void call("drop_party_request", { in_request_id: r.id }, `drop-${r.id}`)
+                        void call(
+                          "drop_party_request",
+                          { in_request_id: r.id },
+                          `drop-${r.id}`,
+                        )
                       }
                       className={`min-h-10 underline ${dim}`}
                     >

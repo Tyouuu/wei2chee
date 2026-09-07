@@ -46,12 +46,16 @@ type Row = {
 };
 
 /** 数字够不够多到像一支电话。太短的（门牌号、单号）不算。 */
-function contactHref(contact: string): { href: string; kind: "wa" | "mail" | "none" } {
+function contactHref(contact: string): {
+  href: string;
+  kind: "wa" | "mail" | "none";
+} {
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim())) {
     return { href: `mailto:${contact.trim()}`, kind: "mail" };
   }
   const digits = contact.replace(/[^0-9]/g, "");
-  if (digits.length >= 8) return { href: `https://wa.me/${digits}`, kind: "wa" };
+  if (digits.length >= 8)
+    return { href: `https://wa.me/${digits}`, kind: "wa" };
   return { href: "", kind: "none" };
 }
 
@@ -90,12 +94,17 @@ export function EnquiryList({
                  拿它当强调等於没有强调（第一版就是这样，拍出来那条竖线是白的）。 */
               borderColor: "var(--color-ink-800)",
               borderLeftWidth: "2px",
-              borderLeftColor: isNew ? "var(--color-jade)" : "var(--color-ink-800)",
+              borderLeftColor: isNew
+                ? "var(--color-jade)"
+                : "var(--color-ink-800)",
             }}
           >
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               {isNew && (
-                <span className={chrome.annotation} style={{ color: "var(--color-jade-bright)" }}>
+                <span
+                  className={chrome.annotation}
+                  style={{ color: "var(--color-jade-bright)" }}
+                >
                   {t("enquiryNew")}
                 </span>
               )}
@@ -135,13 +144,22 @@ export function EnquiryList({
                 >
                   <span aria-hidden className="[color:var(--color-jade)]">
                     {kind === "wa" ? (
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
                         <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7a11.6 11.6 0 0 1-4.8-4.3c-.4-.6-1-1.5-1-2.9 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .6l-.4.5-.3.3c-.1.2-.2.3 0 .6.2.3.7 1.2 1.6 2 1.1.9 2 1.2 2.3 1.4.2.1.4 0 .5-.1l.8-1c.2-.2.3-.2.6-.1l2 1c.3.1.4.2.5.3v1.2Z" />
                       </svg>
-                    ) : "✉"}
+                    ) : (
+                      "✉"
+                    )}
                   </span>
                   <span className="tabular-nums">
-                    {kind === "wa" ? t("enquiryWhatsApp", { number: r.contact }) : r.contact}
+                    {kind === "wa"
+                      ? t("enquiryWhatsApp", { number: r.contact })
+                      : r.contact}
                   </span>
                 </a>
               )}
@@ -155,11 +173,11 @@ export function EnquiryList({
                 {hasPipeline ? (
                   <>
                     <span className={chrome.annotation}>{r.landsInLabel}</span>
-                  <ConvertEnquiry
-                    enquiryId={r.id}
-                    locale={locale}
-                    converted={r.converted}
-                  />
+                    <ConvertEnquiry
+                      enquiryId={r.id}
+                      locale={locale}
+                      converted={r.converted}
+                    />
                   </>
                 ) : (
                   <span className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">

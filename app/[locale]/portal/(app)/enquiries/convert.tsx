@@ -52,15 +52,24 @@ export function ConvertEnquiry({
   async function convert() {
     setBusy(true);
     setFailed(false);
-    const { data, error } = await createBrowserSupabaseClient().rpc("convert_enquiry", {
-      in_enquiry_id: enquiryId,
-    });
-    const row = (data as { record_id: string; module_key: string; doc_no: string }[] | null)?.[0];
+    const { data, error } = await createBrowserSupabaseClient().rpc(
+      "convert_enquiry",
+      {
+        in_enquiry_id: enquiryId,
+      },
+    );
+    const row = (
+      data as { record_id: string; module_key: string; doc_no: string }[] | null
+    )?.[0];
     setBusy(false);
     /* No row means nothing landed, whatever the call returned. Saying so is
        the whole of 重点 23's claim-check in one line. */
     if (error || !row?.record_id) return setFailed(true);
-    setDone({ recordId: row.record_id, moduleKey: row.module_key, docNo: row.doc_no });
+    setDone({
+      recordId: row.record_id,
+      moduleKey: row.module_key,
+      docNo: row.doc_no,
+    });
     /* The inbox's own count and status change too -- this row is 'done' now. */
     router.refresh();
   }
@@ -81,7 +90,10 @@ export function ConvertEnquiry({
   return (
     <span className="flex items-center gap-2">
       {failed && (
-        <span role="status" className="text-xs [color:var(--color-clay-bright)]">
+        <span
+          role="status"
+          className="text-xs [color:var(--color-clay-bright)]"
+        >
           {t("enquiryConvertFailed")}
         </span>
       )}

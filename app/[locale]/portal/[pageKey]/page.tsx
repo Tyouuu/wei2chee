@@ -1,8 +1,18 @@
-import { fetchLiveRows, withLiveRows, moduleHasEverHadRows } from "@/lib/portal/live-rows";
+import {
+  fetchLiveRows,
+  withLiveRows,
+  moduleHasEverHadRows,
+} from "@/lib/portal/live-rows";
 import { SITE_PAGE_KEY, canvasRegister } from "@/lib/portal/system-register";
 import { fetchLiveStats, withLiveStats } from "@/lib/portal/live-stats";
-import { fetchReconcileFacts, withReconcileAlert } from "@/lib/portal/live-reconcile";
-import { fetchLedgerHeadline, fetchMonthlyPage } from "@/lib/portal/live-months";
+import {
+  fetchReconcileFacts,
+  withReconcileAlert,
+} from "@/lib/portal/live-reconcile";
+import {
+  fetchLedgerHeadline,
+  fetchMonthlyPage,
+} from "@/lib/portal/live-months";
 import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -13,7 +23,11 @@ import { frontDoor } from "@/lib/portal/front-door";
 import { getTranslations } from "next-intl/server";
 import { PortalEditor } from "./editor-client";
 import type { Data } from "@puckeditor/core";
-import { canOpenModule, hideMoneyFromRail, loadWorkspace } from "@/lib/portal/workspace";
+import {
+  canOpenModule,
+  hideMoneyFromRail,
+  loadWorkspace,
+} from "@/lib/portal/workspace";
 import { SystemView } from "./system-view";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { applyLayoutOps, type PuckLayout } from "@/lib/portal/layout-ops";
@@ -75,7 +89,9 @@ export default async function PortalEditorPage({
   const { data: project } = workspace
     ? await supabase
         .from("projects")
-        .select("id, style, palette, paid, site_slug, site_published, corners, layout")
+        .select(
+          "id, style, palette, paid, site_slug, site_published, corners, layout",
+        )
         .eq("id", workspace.projectId)
         .single()
     : { data: null };
@@ -103,11 +119,17 @@ export default async function PortalEditorPage({
     .eq("project_id", project.id);
 
   const pageRefs = sortPages(
-    (pageRows ?? []).map((r: { page_key: string; title: string | null; sort_order: number | null }) => ({
-      key: r.page_key,
-      title: r.title,
-      sortOrder: r.sort_order,
-    })),
+    (pageRows ?? []).map(
+      (r: {
+        page_key: string;
+        title: string | null;
+        sort_order: number | null;
+      }) => ({
+        key: r.page_key,
+        title: r.title,
+        sortOrder: r.sort_order,
+      }),
+    ),
   );
   const page = (pageRows ?? []).find(
     (r: { page_key: string }) => r.page_key === pageKey,
@@ -203,7 +225,8 @@ export default async function PortalEditorPage({
        when there is nothing to show, and it is what keeps 收起来 from looking
        like it deleted his work and restored the demonstration. */
     businessIsLive:
-      liveRows.length === 0 && (await moduleHasEverHadRows(supabase, project.id, pageKey)),
+      liveRows.length === 0 &&
+      (await moduleHasEverHadRows(supabase, project.id, pageKey)),
   });
 
   /*
@@ -339,7 +362,6 @@ export default async function PortalEditorPage({
     }
   }
 
-
   // 「去用它」 from the component library. Applied through the SAME
   // add_component operation the AI assistant emits, so a block arrives in the
   // main column exactly as a drag would: unsaved, on the undo stack, behind the
@@ -391,28 +413,37 @@ export default async function PortalEditorPage({
      还播四页的话，四张里有三张不管你选哪一套都一模一样，
      而缩图正是客人拿来做决定的东西：一张不会变的缩图，会让他以为这个选择没用。
      见 lib/portal/system-register.ts。 */
-  const previewPages = pageRefs.filter((r) => r.key === SITE_PAGE_KEY).map((ref) => {
-    const row = (pageRows ?? []).find(
-      (r: { page_key: string }) => r.page_key === ref.key,
-    );
-    const saved = (row?.layout_json as Record<string, unknown>) ?? {};
-    const data = isUngeneratedLayout(saved)
-      ? (buildPageLayout(
-          ref.key as PageKey,
-          businessContext,
-          displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
-          locale,
-          pageRefs,
-          project.style,
-          (project.layout as string | null) ?? null,
-        ) as unknown as Record<string, unknown>)
-      : upgradeLayout(saved, systemLangOf(businessContext));
-    return {
-      key: ref.key,
-      label: pageLabel(ref, tradeLabels(businessContext, pageRefs), systemLangOf(businessContext)),
-      data,
-    };
-  });
+  const previewPages = pageRefs
+    .filter((r) => r.key === SITE_PAGE_KEY)
+    .map((ref) => {
+      const row = (pageRows ?? []).find(
+        (r: { page_key: string }) => r.page_key === ref.key,
+      );
+      const saved = (row?.layout_json as Record<string, unknown>) ?? {};
+      const data = isUngeneratedLayout(saved)
+        ? (buildPageLayout(
+            ref.key as PageKey,
+            businessContext,
+            displayOwnerName(
+              businessContext,
+              user.email?.split("@")[0] || "我",
+            ),
+            locale,
+            pageRefs,
+            project.style,
+            (project.layout as string | null) ?? null,
+          ) as unknown as Record<string, unknown>)
+        : upgradeLayout(saved, systemLangOf(businessContext));
+      return {
+        key: ref.key,
+        label: pageLabel(
+          ref,
+          tradeLabels(businessContext, pageRefs),
+          systemLangOf(businessContext),
+        ),
+        data,
+      };
+    });
 
   /* ① 老板打开的是他的系统，不是编辑器 —— 除非他按「改设计」。
 
@@ -452,7 +483,12 @@ export default async function PortalEditorPage({
      他自己按了「改设计」之后才出现 —— 而那正好是它变成真话的
      那一刻：那一屏上真的有一颗「Save design」。 */
   /* 规矩住在 lib/portal/front-door.ts —— 它有三个消费端，写三次就会漂。 */
-  const door = frontDoor({ isOwner: workspace.isOwner, design, add, tpl });
+  const door = frontDoor({
+    isOwner: workspace.isOwner,
+    design,
+    add,
+    tpl,
+  });
 
   if (door === "system") {
     const t = await getTranslations({ locale, namespace: "portal.editor" });
@@ -477,7 +513,11 @@ export default async function PortalEditorPage({
         /* 宽的时候画侧栏，窄的时候藏起来换成底栏 —— 同一支组件。
            见 system-view.tsx。 */
         variant="responsive"
-        designHref={workspace.isOwner ? `/${locale}/portal/${pageKey}?design=1` : undefined}
+        designHref={
+          workspace.isOwner
+            ? `/${locale}/portal/${pageKey}?design=1`
+            : undefined
+        }
         designLabel={t("openDesign")}
       />
     );
@@ -532,7 +572,9 @@ export default async function PortalEditorPage({
       palette={(project.palette as string | null) ?? null}
       corners={Number(project.corners ?? 1)}
       layout={(project.layout as string | null) ?? null}
-      previewPages={previewPages as unknown as { key: string; label: string; data: Data }[]}
+      previewPages={
+        previewPages as unknown as { key: string; label: string; data: Data }[]
+      }
       systemLang={systemLangOf(businessContext)}
       /* The library's opening guess. See trade-context.tsx for why it travels
          as a context rather than through the Puck config. */

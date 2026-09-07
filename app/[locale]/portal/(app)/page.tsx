@@ -1,11 +1,18 @@
 import { redirect } from "next/navigation";
 import type { Data } from "@puckeditor/core";
-import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
+import {
+  createSessionSupabaseClient,
+  getSessionUser,
+} from "@/lib/supabase/server-session";
 import { PortalHome } from "../home-client";
 import { REGISTERED_COMPONENTS } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
-import { canOpenModule, hideMoneyFromRail, loadWorkspace } from "@/lib/portal/workspace";
+import {
+  canOpenModule,
+  hideMoneyFromRail,
+  loadWorkspace,
+} from "@/lib/portal/workspace";
 import {
   buildPageLayout,
   displayBusinessName,
@@ -66,7 +73,9 @@ export default async function PortalHomePage({
   const { data: project } = workspace
     ? await supabase
         .from("projects")
-        .select("id, style, palette, paid, stage, stage_changed_at, site_slug, site_published, layout")
+        .select(
+          "id, style, palette, paid, stage, stage_changed_at, site_slug, site_published, layout",
+        )
         .eq("id", workspace.projectId)
         .single()
     : { data: null };
@@ -82,11 +91,17 @@ export default async function PortalHomePage({
   // PageRefs, not keys: a custom page carries the customer's own title, and
   // every label in the rail and on this screen comes from it.
   const pageRefs = sortPages(
-    (pageRows ?? []).map((r: { page_key: string; title: string | null; sort_order: number | null }) => ({
-      key: r.page_key,
-      title: r.title,
-      sortOrder: r.sort_order,
-    })),
+    (pageRows ?? []).map(
+      (r: {
+        page_key: string;
+        title: string | null;
+        sort_order: number | null;
+      }) => ({
+        key: r.page_key,
+        title: r.title,
+        sortOrder: r.sort_order,
+      }),
+    ),
   );
 
   // One call, not one per page: `get_my_business_context` is `security definer`
@@ -98,7 +113,10 @@ export default async function PortalHomePage({
   // name. Until they set one in settings, the email's local part is the least
   // bad stand-in -- better than the full address, which would put a customer's
   // email into every screenshot of their own system.
-  const ownerName = displayOwnerName(businessContext, user.email?.split("@")[0] || "我");
+  const ownerName = displayOwnerName(
+    businessContext,
+    user.email?.split("@")[0] || "我",
+  );
 
   /* 🔴 The money pages are not on his home screen either.
 
@@ -113,7 +131,9 @@ export default async function PortalHomePage({
 
   const pages = visibleRefs.map((ref) => {
     const key = ref.key;
-    const row = (pageRows ?? []).find((r: { page_key: string }) => r.page_key === key);
+    const row = (pageRows ?? []).find(
+      (r: { page_key: string }) => r.page_key === key,
+    );
     const saved = (row?.layout_json as Record<string, unknown>) ?? {};
     const generated = isUngeneratedLayout(saved);
     return {
@@ -145,16 +165,19 @@ export default async function PortalHomePage({
          real one is. */
       layout: hideMoneyFromRail(
         (generated
-        ? buildPageLayout(
-            key,
-            businessContext,
-            ownerName,
-            locale,
-            pageRefs,
-            project.style as string,
-            (project.layout as string | null) ?? null,
-          )
-        : upgradeLayout(saved, systemLangOf(businessContext))) as unknown as Data,
+          ? buildPageLayout(
+              key,
+              businessContext,
+              ownerName,
+              locale,
+              pageRefs,
+              project.style as string,
+              (project.layout as string | null) ?? null,
+            )
+          : upgradeLayout(
+              saved,
+              systemLangOf(businessContext),
+            )) as unknown as Data,
         workspace.role,
       ),
     };
@@ -237,7 +260,9 @@ export default async function PortalHomePage({
        * (`industries.name_en` exists; the RPC does not return it, and the
        * layouts have no locale dimension at all).
        */
-      industryName={locale === "zh" ? (businessContext.industry?.name_zh ?? null) : null}
+      industryName={
+        locale === "zh" ? (businessContext.industry?.name_zh ?? null) : null
+      }
       /**
        * THE PUBLIC SITE IS NOT A PAGE LIKE THE OTHERS.
        *

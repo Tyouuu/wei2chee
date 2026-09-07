@@ -61,19 +61,22 @@ export default async function RentalsPage() {
     .eq("id", workspace.projectId)
     .maybeSingle();
   const palette = (paletteRow?.palette as string | null) ?? null;
-  const [{ data: outRows }, { data: pageRows }, { data: ctxRow }] = await Promise.all([
-    supabase.rpc("rentals_out", { in_project_id: workspace.projectId }),
-    supabase
-      .from("project_pages")
-      /* 🔴 `page_key`，不是 `key` —— 2026-09-06 这个错让两页静静地空掉过。 */
-      .select("page_key, title, sort_order")
-      .eq("project_id", workspace.projectId)
-      .order("sort_order"),
-    supabase.rpc("get_my_business_context"),
-  ]);
+  const [{ data: outRows }, { data: pageRows }, { data: ctxRow }] =
+    await Promise.all([
+      supabase.rpc("rentals_out", { in_project_id: workspace.projectId }),
+      supabase
+        .from("project_pages")
+        /* 🔴 `page_key`，不是 `key` —— 2026-09-06 这个错让两页静静地空掉过。 */
+        .select("page_key, title, sort_order")
+        .eq("project_id", workspace.projectId)
+        .order("sort_order"),
+      supabase.rpc("get_my_business_context"),
+    ]);
 
   const ctx = (ctxRow as BusinessContext | null) ?? {};
-  const refs = ((pageRows ?? []) as { page_key: string; title: string | null }[]).map((p) => ({
+  const refs = (
+    (pageRows ?? []) as { page_key: string; title: string | null }[]
+  ).map((p) => ({
     key: p.page_key,
     title: p.title,
   }));
@@ -101,7 +104,11 @@ export default async function RentalsPage() {
     : { data: [] };
 
   const labelOf = (k: string) =>
-    pageLabel({ key: k, title: refs.find((r) => r.key === k)?.title ?? null }, labels, lang);
+    pageLabel(
+      { key: k, title: refs.find((r) => r.key === k)?.title ?? null },
+      labels,
+      lang,
+    );
 
   /* 🔴 **这一页穿的是他的系统，不是 Formae 的壳。**
 
@@ -126,13 +133,15 @@ export default async function RentalsPage() {
       <PageBody>
         <OutOnLoan
           out={(outRows ?? []) as Out[]}
-          jobs={((jobRows ?? []) as {
-            id: string;
-            doc_no: string | null;
-            title: string | null;
-            party: string | null;
-            module_key: string;
-          }[]).map((j) => ({
+          jobs={(
+            (jobRows ?? []) as {
+              id: string;
+              doc_no: string | null;
+              title: string | null;
+              party: string | null;
+              module_key: string;
+            }[]
+          ).map((j) => ({
             id: j.id,
             label:
               [j.doc_no, j.party || j.title].filter(Boolean).join(" · ") ||

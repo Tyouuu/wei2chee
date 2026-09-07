@@ -76,9 +76,12 @@ export function ReferralPanel({
     amountCents != null ? "amount" : "portion",
   );
   const [pct, setPct] = useState(portion == null ? "" : String(portion));
-  const [flat, setFlat] = useState(amountCents == null ? "" : (amountCents / 100).toFixed(2));
+  const [flat, setFlat] = useState(
+    amountCents == null ? "" : (amountCents / 100).toFixed(2),
+  );
 
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
 
   async function save() {
     setError(null);
@@ -95,12 +98,15 @@ export function ReferralPanel({
     const flatN = flat.trim() === "" ? null : Math.round(Number(flat) * 100);
     setBusy(true);
     try {
-      const { error: err } = await createBrowserSupabaseClient().rpc("set_record_referral", {
-        in_record_id: recordId,
-        in_referrer_id: hit.id,
-        in_portion: kind === "portion" ? pctN : null,
-        in_amount_cents: kind === "amount" ? flatN : null,
-      });
+      const { error: err } = await createBrowserSupabaseClient().rpc(
+        "set_record_referral",
+        {
+          in_record_id: recordId,
+          in_referrer_id: hit.id,
+          in_portion: kind === "portion" ? pctN : null,
+          in_amount_cents: kind === "amount" ? flatN : null,
+        },
+      );
       if (err) {
         setError(err.message);
         return;
@@ -116,10 +122,13 @@ export function ReferralPanel({
     setBusy(true);
     try {
       /* 三栏一起走 —— 留一个没有人的比例，是一笔没有收款人的钱。 */
-      const { error: err } = await createBrowserSupabaseClient().rpc("set_record_referral", {
-        in_record_id: recordId,
-        in_referrer_id: null,
-      });
+      const { error: err } = await createBrowserSupabaseClient().rpc(
+        "set_record_referral",
+        {
+          in_record_id: recordId,
+          in_referrer_id: null,
+        },
+      );
       if (err) {
         setError(err.message);
         return;
@@ -219,7 +228,11 @@ export function ReferralPanel({
             disabled={busy}
             aria-label={kind === "portion" ? copy.refPortion : copy.refAmount}
             value={kind === "portion" ? pct : flat}
-            onChange={(e) => (kind === "portion" ? setPct(e.target.value) : setFlat(e.target.value))}
+            onChange={(e) =>
+              kind === "portion"
+                ? setPct(e.target.value)
+                : setFlat(e.target.value)
+            }
           />
           {kind === "portion" ? <span className={dim}>%</span> : null}
         </div>

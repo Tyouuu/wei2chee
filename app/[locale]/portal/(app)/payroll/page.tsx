@@ -110,25 +110,28 @@ export default async function PayrollPage() {
     .not("confirmed_at", "is", null)
     .order("scheme");
 
-  const [{ data: slipRows }, { data: staffRows }, { data: termRows }] = await Promise.all([
-    run
-      ? supabase
-          .from("payslips")
-          .select("id, staff_id, gross_cents, deduction_cents, employer_cents, net_cents")
-          .eq("run_id", run.id)
-      : Promise.resolve({ data: [] as Slip[] }),
-    supabase
-      .from("directory_entries")
-      .select("id, name")
-      .eq("project_id", workspace.projectId)
-      .eq("module_key", "staff")
-      .is("archived_at", null)
-      .order("name"),
-    supabase
-      .from("staff_pay_terms")
-      .select("staff_id, basis, rate_cents, epf_part, socso_part, eis_part")
-      .eq("project_id", workspace.projectId),
-  ]);
+  const [{ data: slipRows }, { data: staffRows }, { data: termRows }] =
+    await Promise.all([
+      run
+        ? supabase
+            .from("payslips")
+            .select(
+              "id, staff_id, gross_cents, deduction_cents, employer_cents, net_cents",
+            )
+            .eq("run_id", run.id)
+        : Promise.resolve({ data: [] as Slip[] }),
+      supabase
+        .from("directory_entries")
+        .select("id, name")
+        .eq("project_id", workspace.projectId)
+        .eq("module_key", "staff")
+        .is("archived_at", null)
+        .order("name"),
+      supabase
+        .from("staff_pay_terms")
+        .select("staff_id, basis, rate_cents, epf_part, socso_part, eis_part")
+        .eq("project_id", workspace.projectId),
+    ]);
 
   /* 今天还在生效的那几份，按计划分好。 */
   const today = new Date().toISOString().slice(0, 10);
@@ -149,7 +152,10 @@ export default async function PayrollPage() {
      行的顺序跟着人走，所以这里先把名字接上去 —— 一张只有编号的薪水表
      读不出是谁。 */
   const nameById = new Map(
-    ((staffRows ?? []) as { id: string; name: string | null }[]).map((s) => [s.id, s.name ?? ""]),
+    ((staffRows ?? []) as { id: string; name: string | null }[]).map((s) => [
+      s.id,
+      s.name ?? "",
+    ]),
   );
 
   const slips = ((slipRows ?? []) as Slip[]).map((s) => ({
@@ -163,7 +169,9 @@ export default async function PayrollPage() {
   const { data: lineRows } = slipIds.length
     ? await supabase
         .from("payslip_lines")
-        .select("payslip_id, kind, label, amount_cents, schedule_id, sort_order")
+        .select(
+          "payslip_id, kind, label, amount_cents, schedule_id, sort_order",
+        )
         .in("payslip_id", slipIds)
         .order("sort_order")
     : { data: [] };
@@ -212,7 +220,12 @@ export default async function PayrollPage() {
             employer: Number(s.employer_cents),
             net: Number(s.net_cents),
             earnings: lines
-              .filter((l) => l.payslip_id === s.id && l.kind === "earning" && !l.schedule_id)
+              .filter(
+                (l) =>
+                  l.payslip_id === s.id &&
+                  l.kind === "earning" &&
+                  !l.schedule_id,
+              )
               .map((l) => ({ label: l.label, amount: Number(l.amount_cents) })),
             taken: lines
               .filter((l) => l.payslip_id === s.id && l.kind === "deduction")

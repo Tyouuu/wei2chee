@@ -112,7 +112,9 @@ export default async function EnquiriesPage({
   /* The rows a converted enquiry points at, so the link can carry the document
      number and the page it lives on. One query for the page rather than one
      per row. */
-  const doneIds = rows.map((r) => r.converted_record_id).filter(Boolean) as string[];
+  const doneIds = rows
+    .map((r) => r.converted_record_id)
+    .filter(Boolean) as string[];
   const { data: madeRows } = doneIds.length
     ? await supabase
         .from("pipeline_records")
@@ -120,10 +122,10 @@ export default async function EnquiriesPage({
         .in("id", doneIds)
     : { data: [] };
   const madeBy = new Map(
-    ((madeRows as { id: string; module_key: string; doc_no: string }[] | null) ?? []).map((r) => [
-      r.id,
-      r,
-    ]),
+    (
+      (madeRows as
+        { id: string; module_key: string; doc_no: string }[] | null) ?? []
+    ).map((r) => [r.id, r]),
   );
 
   /* 「新的」有几封 —— 从这一次渲染看到的东西数出来，而且要在 mark-read 跑之前。 */
@@ -159,7 +161,9 @@ export default async function EnquiriesPage({
       <PageBar
         title={t("enquiries")}
         subtitle={
-          rows.length ? <InboxCount unread={unread} total={rows.length} /> : undefined
+          rows.length ? (
+            <InboxCount unread={unread} total={rows.length} />
+          ) : undefined
         }
       />
       <PageBody>
@@ -175,7 +179,11 @@ export default async function EnquiriesPage({
               {t("enquiriesEmpty")}
             </p>
           ) : (
-            <EnquiryList rows={shaped} locale={locale} hasPipeline={hasPipeline} />
+            <EnquiryList
+              rows={shaped}
+              locale={locale}
+              hasPipeline={hasPipeline}
+            />
           )}
         </Section>
       </PageBody>

@@ -47,12 +47,20 @@ export function Card({
   pad?: boolean;
 }) {
   return (
-    <div className={`${chrome.sheet} ${pad ? "p-6" : ""} ${className}`}>{children}</div>
+    <div className={`${chrome.sheet} ${pad ? "p-6" : ""} ${className}`}>
+      {children}
+    </div>
   );
 }
 
 /** 卡里面的一段小标题。tabler 的 `CardTitle`，同一个位子。 */
-export function CardTitle({ children, hint }: { children: ReactNode; hint?: string }) {
+export function CardTitle({
+  children,
+  hint,
+}: {
+  children: ReactNode;
+  hint?: string;
+}) {
   return (
     <div className="mb-4">
       <h2 className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
@@ -98,7 +106,9 @@ export function Field({
       </label>
       {children}
       {hint && (
-        <p className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{hint}</p>
+        <p className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+          {hint}
+        </p>
       )}
     </div>
   );
@@ -113,7 +123,9 @@ export function FieldRow({ children }: { children: ReactNode }) {
 export function DataRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b py-2.5 last:border-b-0 [border-color:var(--color-ink-850)]">
-      <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{label}</span>
+      <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+        {label}
+      </span>
       <span className="text-right [color:var(--color-paper)] [font-size:var(--text-sm)]">
         {value}
       </span>
@@ -169,7 +181,6 @@ export function EmptyState({
     </div>
   );
 }
-
 
 /**
  * 一张卡装整页，左边一列小导航，右边才是内容。

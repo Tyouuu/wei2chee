@@ -89,7 +89,12 @@ export function DocumentPreview({
   lines: Line[];
   /** The page's own column headings, so a master dealer's document says 经销商
    *  where a contractor's says 客户. Same rule the detail panel follows. */
-  labels: { primary?: string; secondary?: string; amount?: string; status?: string };
+  labels: {
+    primary?: string;
+    secondary?: string;
+    amount?: string;
+    status?: string;
+  };
   copy: RecordFormCopy;
   dateLabel: string;
   today: string;
@@ -106,7 +111,14 @@ export function DocumentPreview({
   site?: { label: string; value: string } | null;
   /** 分期付款表，已经算好、已经排好版的一行一行。
    *  ⚠️ 这里不算术：算在 lib/portal/payment-terms.ts，那里有测试。 */
-  schedule?: { description: string; portionText: string; amountText: string; due: string }[] | null;
+  schedule?:
+    | {
+        description: string;
+        portionText: string;
+        amountText: string;
+        due: string;
+      }[]
+    | null;
 }) {
   const filled = lines.filter((l) => l.description.trim());
   const lineTotal = totalOf(filled);
@@ -185,8 +197,7 @@ export function DocumentPreview({
         {/* 垫子。纸浮在上面。 */}
         <div className="[background:color-mix(in_oklab,var(--color-on-canvas)_5%,var(--card))] p-5">
           <div
-            /* 印的时候只印这一块。**今天还没有那条规则** —— 这个属性先立在
-               这里，等列印那一轮接上去。 */
+            /* 印的时候只印这一块。规则在 globals.css 的 `@media print`。 */
             data-print-sheet
             className="[background-color:var(--card)] [border-radius:var(--radius-md)] [box-shadow:0_1px_2px_color-mix(in_oklab,var(--color-on-canvas)_14%,transparent)] [padding:28px]"
           >
@@ -235,25 +246,39 @@ export function DocumentPreview({
                 <thead>
                   {/* 四 一条灰带，不是一条线 */}
                   <tr className="[background:color-mix(in_oklab,var(--color-on-canvas)_6%,var(--card))] text-left">
-                    <th className={`${label} px-2 py-2 font-normal`}>{copy.lineWhat}</th>
-                    <th className={`${label} px-2 py-2 text-right font-normal`}>{copy.lineQty}</th>
-                    <th className={`${label} px-2 py-2 text-right font-normal`}>{copy.lineAmount}</th>
+                    <th className={`${label} px-2 py-2 font-normal`}>
+                      {copy.lineWhat}
+                    </th>
+                    <th className={`${label} px-2 py-2 text-right font-normal`}>
+                      {copy.lineQty}
+                    </th>
+                    <th className={`${label} px-2 py-2 text-right font-normal`}>
+                      {copy.lineAmount}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filled.map((l, i) => (
-                    <tr key={i} className="border-b border-[color:var(--color-ink-800)]">
+                    <tr
+                      key={i}
+                      className="border-b border-[color:var(--color-ink-800)]"
+                    >
                       <td className="px-2 py-2 text-[color:var(--color-paper)]">
                         {l.description}
                         {l.unit.trim() ? (
-                          <span className="text-[color:var(--color-on-canvas-dim)]"> · {l.unit}</span>
+                          <span className="text-[color:var(--color-on-canvas-dim)]">
+                            {" "}
+                            · {l.unit}
+                          </span>
                         ) : null}
                       </td>
                       <td className="px-2 py-2 text-right [font-variant-numeric:tabular-nums] text-[color:var(--color-on-canvas-dim)]">
                         {l.qty.trim() || EMPTY}
                       </td>
                       <td className={`px-2 py-2 text-right ${money}`}>
-                        {senOf(l.amount) != null ? ringgitOf(senOf(l.amount) as number) : EMPTY}
+                        {senOf(l.amount) != null
+                          ? ringgitOf(senOf(l.amount) as number)
+                          : EMPTY}
                       </td>
                     </tr>
                   ))}
@@ -287,13 +312,21 @@ export function DocumentPreview({
                     <span className="[font-size:var(--text-sm)] text-[color:var(--color-paper)]">
                       {s.description}
                       {s.portionText ? (
-                        <span className="text-[color:var(--color-on-canvas-dim)]"> · {s.portionText}</span>
+                        <span className="text-[color:var(--color-on-canvas-dim)]">
+                          {" "}
+                          · {s.portionText}
+                        </span>
                       ) : null}
                       {s.due ? (
-                        <span className="text-[color:var(--color-on-canvas-dim)]"> · {s.due}</span>
+                        <span className="text-[color:var(--color-on-canvas-dim)]">
+                          {" "}
+                          · {s.due}
+                        </span>
                       ) : null}
                     </span>
-                    <span className={`${money} [font-weight:var(--fw-medium)]`}>{s.amountText}</span>
+                    <span className={`${money} [font-weight:var(--fw-medium)]`}>
+                      {s.amountText}
+                    </span>
                   </div>
                 ))}
               </div>

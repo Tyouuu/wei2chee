@@ -1,7 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { countsAsReceived, reversedIds } from "./allocations";
 import { ringgit } from "./live-rows";
-import { LEDGER_MODULES, PIPELINE_MODULES, DIRECTORY_MODULES } from "./shape-state";
+import {
+  LEDGER_MODULES,
+  PIPELINE_MODULES,
+  DIRECTORY_MODULES,
+} from "./shape-state";
 
 /**
  * The four numbers on the first screen, worked out from his own books.
@@ -99,7 +103,20 @@ const WORDS = {
     vsLast: "vs last month",
     count: (n: number) => `${n}`,
     month: (m: number) =>
-      ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m - 1] ?? "",
+      [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ][m - 1] ?? "",
     held: "Paid ahead, not yet delivered",
   },
 } as const;
@@ -138,7 +155,9 @@ export type PipelineFact = {
  * `entry_on` and `issued_on` are DATE columns, so they arrive as 「2026-08-31」
  * with no zone at all: read the digits, do not parse them into an instant.
  */
-export function ymOf(date: string | null | undefined): { y: number; m: number } | null {
+export function ymOf(
+  date: string | null | undefined,
+): { y: number; m: number } | null {
   if (!date) return null;
   const m = /^(\d{4})-(\d{2})/.exec(date);
   if (!m) return null;
@@ -146,11 +165,17 @@ export function ymOf(date: string | null | undefined): { y: number; m: number } 
 }
 
 /** The six months ending with this one, oldest first. */
-export function lastSixMonths(now: { y: number; m: number }): { y: number; m: number }[] {
+export function lastSixMonths(now: {
+  y: number;
+  m: number;
+}): { y: number; m: number }[] {
   const out: { y: number; m: number }[] = [];
   for (let back = 5; back >= 0; back -= 1) {
     const idx = now.m - 1 - back;
-    out.push({ y: now.y + Math.floor(idx / 12), m: ((((idx % 12) + 12) % 12) + 1) });
+    out.push({
+      y: now.y + Math.floor(idx / 12),
+      m: (((idx % 12) + 12) % 12) + 1,
+    });
   }
   return out;
 }
@@ -198,7 +223,8 @@ export function buildLiveStats(input: {
      business still gets a page that shows what the numbers WILL be. That is
      the founder's decision of 2026-08-30, and it is the same rule the table
      projection follows. */
-  if (!input.ledger.length && !input.pipeline.length && !input.customers) return null;
+  if (!input.ledger.length && !input.pipeline.length && !input.customers)
+    return null;
 
   const months = lastSixMonths(now);
   const inThisMonth = (d: string | null) => {
@@ -213,7 +239,11 @@ export function buildLiveStats(input: {
   const money = input.ledger.filter(
     (e) =>
       (e.direction ?? "in") === "in" &&
-      countsAsReceived({ id: e.id, adjusts_id: e.adjusts_id, reversed: settled.has(e.id) }),
+      countsAsReceived({
+        id: e.id,
+        adjusts_id: e.adjusts_id,
+        reversed: settled.has(e.id),
+      }),
   );
   const receivedByMonth = months.map(
     (m) =>
@@ -236,12 +266,15 @@ export function buildLiveStats(input: {
        ⚠️ 只有**六个月里真的有两个月**才给 —— 一个刚开张的生意没有上个月，
        而「RM 0 上个月」读起来像一句事实，其实是我们没有资料。 */
     const lastMonth =
-      receivedByMonth.length > 1 ? receivedByMonth[receivedByMonth.length - 2] : null;
+      receivedByMonth.length > 1
+        ? receivedByMonth[receivedByMonth.length - 2]
+        : null;
     tiles.push({
       label: w.received,
       value: ringgit(thisMonth) ?? "RM 0",
       deltaLabel: w.vsLast,
-      previous: lastMonth != null ? (ringgit(lastMonth * 100) ?? undefined) : undefined,
+      previous:
+        lastMonth != null ? (ringgit(lastMonth * 100) ?? undefined) : undefined,
       tone: "good",
       spark: receivedByMonth,
     });
@@ -250,7 +283,8 @@ export function buildLiveStats(input: {
        It is the number 任务 61, 67 and 44 each asked for separately, and this
        is the first screen it has ever appeared on. */
     const held = money.reduce(
-      (n, e) => n + Math.max(0, (e.amount_cents ?? 0) - (e.allocated_cents ?? 0)),
+      (n, e) =>
+        n + Math.max(0, (e.amount_cents ?? 0) - (e.allocated_cents ?? 0)),
       0,
     );
     tiles.push({
@@ -305,7 +339,10 @@ export function buildLiveStats(input: {
 
   return {
     tiles,
-    trend: months.map((m, i) => ({ label: w.month(m.m), value: receivedByMonth[i] })),
+    trend: months.map((m, i) => ({
+      label: w.month(m.m),
+      value: receivedByMonth[i],
+    })),
   };
 }
 
@@ -349,7 +386,12 @@ function mapNodes(nodes: unknown[], stats: LiveStats | null): unknown[] {
         if (!wasLive) return node;
         /* Real once, empty now: zeroes rather than yesterday's totals. The
            labels are kept -- they are still the right questions. */
-        const zeroed = (tiles ?? []).map((t) => ({ ...t, value: zeroLike((t as { value?: unknown }).value), spark: undefined, delta: undefined }));
+        const zeroed = (tiles ?? []).map((t) => ({
+          ...t,
+          value: zeroLike((t as { value?: unknown }).value),
+          spark: undefined,
+          delta: undefined,
+        }));
         return { ...n, props: { ...n.props, tiles: zeroed } };
       }
       /* Only as many tiles as this arrangement was built for: 大字 uses two
@@ -408,7 +450,10 @@ function mapNodes(nodes: unknown[], stats: LiveStats | null): unknown[] {
             ...n.props,
             value: zeroLike(n.props.value),
             spark: [],
-            stats: flat.map((st) => ({ ...st, value: zeroLike((st as { value?: unknown }).value) })),
+            stats: flat.map((st) => ({
+              ...st,
+              value: zeroLike((st as { value?: unknown }).value),
+            })),
           },
         };
       }
@@ -429,7 +474,12 @@ function mapNodes(nodes: unknown[], stats: LiveStats | null): unknown[] {
             label: tl.label,
             value: tl.value,
             sub: tl.deltaLabel ?? "",
-            tone: tl.tone === "bad" ? "warn" : tl.tone === "warn" ? "caution" : undefined,
+            tone:
+              tl.tone === "bad"
+                ? "warn"
+                : tl.tone === "warn"
+                  ? "caution"
+                  : undefined,
             /* The link each stat carried is kept: it points at the page that
                explains the figure, and which page that is has not changed. */
             href: keep[i]?.href,
@@ -443,7 +493,13 @@ function mapNodes(nodes: unknown[], stats: LiveStats | null): unknown[] {
       if (!stats) {
         if (!wasLive) return node;
         const flat = (n.props.points as { label: string }[] | undefined) ?? [];
-        return { ...n, props: { ...n.props, points: flat.map((p) => ({ label: p.label, value: 0 })) } };
+        return {
+          ...n,
+          props: {
+            ...n.props,
+            points: flat.map((p) => ({ label: p.label, value: 0 })),
+          },
+        };
       }
       return {
         ...n,
@@ -460,7 +516,10 @@ function mapNodes(nodes: unknown[], stats: LiveStats | null): unknown[] {
     let changed = false;
     const props: Record<string, unknown> = { ...n.props };
     for (const [key, value] of Object.entries(n.props)) {
-      if (Array.isArray(value) && value.some((v) => v && typeof v === "object" && "type" in (v as object))) {
+      if (
+        Array.isArray(value) &&
+        value.some((v) => v && typeof v === "object" && "type" in (v as object))
+      ) {
         const sub = mapNodes(value, stats);
         if (sub.some((v, i) => v !== value[i])) {
           props[key] = sub;
@@ -512,7 +571,9 @@ export async function fetchLiveStats(
     const [ledger, pipeline, customers] = await Promise.all([
       supabase
         .from("ledger_entries")
-        .select("id, adjusts_id, module_key, direction, amount_cents, allocated_cents, entry_on")
+        .select(
+          "id, adjusts_id, module_key, direction, amount_cents, allocated_cents, entry_on",
+        )
         .eq("project_id", projectId),
       supabase
         .from("pipeline_records")

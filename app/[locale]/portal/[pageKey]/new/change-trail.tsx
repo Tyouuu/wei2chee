@@ -39,7 +39,6 @@ export function ChangeTrail({
 
   return (
     <FormSection title={copy.changes}>
-
       {rows.length === 0 ? (
         <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
           {copy.changesNone}
@@ -56,11 +55,17 @@ export function ChangeTrail({
               <span className="shrink-0 [font-size:var(--text-xs)] tabular-nums text-[color:var(--color-on-canvas-dim)]">
                 {r.when}
               </span>
-              <span className="text-[color:var(--color-on-canvas)]">{r.what}</span>
+              <span className="text-[color:var(--color-on-canvas)]">
+                {r.what}
+              </span>
               {r.isDelete ? null : (
                 <>
-                  <span className="text-[color:var(--color-on-canvas-dim)] line-through">{r.was}</span>
-                  <span className="text-[color:var(--color-on-canvas-dim)]">→</span>
+                  <span className="text-[color:var(--color-on-canvas-dim)] line-through">
+                    {r.was}
+                  </span>
+                  <span className="text-[color:var(--color-on-canvas-dim)]">
+                    →
+                  </span>
                   <span className="[font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
                     {r.nowIs}
                   </span>

@@ -67,7 +67,11 @@ async function shrink(file: File): Promise<{ blob: Blob; ext: string }> {
     /* HEIC · 坏掉的 EXIF · 老浏览器。传原图，见档头。 */
   }
   const ext =
-    file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    file.type === "image/png"
+      ? "png"
+      : file.type === "image/webp"
+        ? "webp"
+        : "jpg";
   return { blob: file, ext };
 }
 
@@ -105,7 +109,10 @@ export function JobPhotos({
          而那一条问的是 works_here：拍照的本来就是工地上那一个。 */
       const { error: upErr } = await supabase.storage
         .from("job-photos")
-        .upload(path, blob, { contentType: blob.type || "image/jpeg", upsert: false });
+        .upload(path, blob, {
+          contentType: blob.type || "image/jpeg",
+          upsert: false,
+        });
       if (upErr) {
         setError(upErr.message);
         setBusy(false);
@@ -137,7 +144,9 @@ export function JobPhotos({
       /* 先删档案，再删这一行。反过来的话，一张照片会留在画面上而它的档案
          已经没了 —— 一张破掉的照片比一个没有人看得到的孤儿档吓人。 */
       await supabase.storage.from("job-photos").remove([photo.path]);
-      const { error: rowErr } = await supabase.rpc("remove_record_photo", { in_id: photo.id });
+      const { error: rowErr } = await supabase.rpc("remove_record_photo", {
+        in_id: photo.id,
+      });
       if (rowErr) {
         setError(rowErr.message);
         return;
@@ -150,7 +159,6 @@ export function JobPhotos({
 
   return (
     <FormSection title={copy.photos}>
-
       {/* 🔴 还没存过的单，讲出来为什么不能挂，不要画一颗按下去会失败的按钮。 */}
       {!recordId ? (
         <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
@@ -227,7 +235,10 @@ export function JobPhotos({
       )}
 
       {error ? (
-        <p role="alert" className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]">
+        <p
+          role="alert"
+          className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]"
+        >
           {error}
         </p>
       ) : null}

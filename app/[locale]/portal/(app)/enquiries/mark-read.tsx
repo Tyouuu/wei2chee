@@ -36,7 +36,9 @@ export function MarkEnquiriesRead({ unread }: { unread: number }) {
     if (ran.current || unread < 1) return;
     ran.current = true;
     (async () => {
-      const { error } = await createBrowserSupabaseClient().rpc("mark_site_enquiries_read");
+      const { error } = await createBrowserSupabaseClient().rpc(
+        "mark_site_enquiries_read",
+      );
       if (!error) router.refresh();
     })();
   }, [unread, router]);

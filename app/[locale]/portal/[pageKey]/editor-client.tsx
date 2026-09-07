@@ -288,14 +288,19 @@ export function PortalEditor({
     // back to the trade's own noun, and only the server knows what that is. So
     // a clear announces nothing and leans on router.refresh() instead.
     const next = editablePages.map((p) =>
-      p.key === key ? { ...p, label: title || p.label, title: title || null } : p,
+      p.key === key
+        ? { ...p, label: title || p.label, title: title || null }
+        : p,
     );
     setEditablePages(next);
     setPagesBusy(true);
-    const { error } = await createBrowserSupabaseClient().rpc("rename_project_page", {
-      target_key: key,
-      new_title: title,
-    });
+    const { error } = await createBrowserSupabaseClient().rpc(
+      "rename_project_page",
+      {
+        target_key: key,
+        new_title: title,
+      },
+    );
     setPagesBusy(false);
     // A rename changes what the RAIL says, and the rail is generated on the
     // server from project_pages -- so the canvas is only correct again after
@@ -316,9 +321,12 @@ export function PortalEditor({
     const ordered = keys.map((k) => byKey.get(k)!).filter(Boolean);
     setEditablePages(ordered);
     setPagesBusy(true);
-    const { error } = await createBrowserSupabaseClient().rpc("reorder_project_pages", {
-      ordered_keys: keys,
-    });
+    const { error } = await createBrowserSupabaseClient().rpc(
+      "reorder_project_pages",
+      {
+        ordered_keys: keys,
+      },
+    );
     setPagesBusy(false);
     if (error) {
       setEditablePages(previous);
@@ -354,9 +362,12 @@ export function PortalEditor({
   async function pickLayout(next: string | null) {
     const previous = activeLayout;
     setActiveLayout(next);
-    const { error } = await createBrowserSupabaseClient().rpc("set_project_layout", {
-      new_layout: next,
-    });
+    const { error } = await createBrowserSupabaseClient().rpc(
+      "set_project_layout",
+      {
+        new_layout: next,
+      },
+    );
     if (error) {
       setActiveLayout(previous);
       return;
@@ -404,9 +415,13 @@ export function PortalEditor({
   async function shuffleStyle() {
     if (shuffling || stylePending) return;
     const otherStyles = STYLE_ORDER.filter((s) => s !== activeStyle);
-    const otherPalettes = PALETTES.map((p) => p.key).filter((k) => k !== activePalette);
-    const nextStyle = otherStyles[Math.floor(Math.random() * otherStyles.length)];
-    const nextPalette = otherPalettes[Math.floor(Math.random() * otherPalettes.length)];
+    const otherPalettes = PALETTES.map((p) => p.key).filter(
+      (k) => k !== activePalette,
+    );
+    const nextStyle =
+      otherStyles[Math.floor(Math.random() * otherStyles.length)];
+    const nextPalette =
+      otherPalettes[Math.floor(Math.random() * otherPalettes.length)];
 
     const previousStyle = activeStyle;
     const previousPalette = activePalette;
@@ -415,10 +430,13 @@ export function PortalEditor({
     setActiveStyle(nextStyle);
     setActivePalette(nextPalette);
 
-    const { error } = await createBrowserSupabaseClient().rpc("set_project_style", {
-      new_style: nextStyle,
-      new_palette: nextPalette,
-    });
+    const { error } = await createBrowserSupabaseClient().rpc(
+      "set_project_style",
+      {
+        new_style: nextStyle,
+        new_palette: nextPalette,
+      },
+    );
     setShuffling(false);
     if (error) {
       setActiveStyle(previousStyle);
@@ -775,9 +793,11 @@ export function PortalEditor({
   const deployWhatsappHref = (note: string) =>
     whatsappHref(
       "我的系统设计已经确定了，请开始帮我建系统" +
-        (note.trim() ? `
+        (note.trim()
+          ? `
 
-我还想要：${note.trim()}` : "") +
+我还想要：${note.trim()}`
+          : "") +
         identityLine,
     );
 
@@ -949,40 +969,40 @@ export function PortalEditor({
        it, asking the library for 「small business」 and offering a renovation
        contractor an aeroplane. Screenshotted 2026-08-27. */
     <TradeProvider trade={trade}>
-    {/* Mounted beside TradeProvider and for the identical reason: the fields
+      {/* Mounted beside TradeProvider and for the identical reason: the fields
         panel is a SIBLING of the canvas, so a provider around the canvas does
         not reach it. What it carries is whether this page's rows are the
         business's own records -- see record-page-context.tsx. */}
-    <RecordPageProvider live={isRecordModule(pageKey)}>
-    <EditorUiProvider>
-      <div
-        // Regression fix: this wrapper (and the header bar inside it) never
-        // painted its own background -- it silently depended on
-        // portal/layout.tsx's shared `--color-canvas` fill, which got
-        // reverted for breaking /portal/style-select's contrast (that page
-        // deliberately keeps the acquisition site's dark theme; this one
-        // never should have shared a wrapper with it). Scoped here instead,
-        // to just this route, so it can't leak into style-select again.
-        // Without it, the header bar's dark-on-light text (--color-paper /
-        // --color-paper-dim, tuned for Ledger's light surfaces) rendered
-        // against the acquisition site's dark <body> showing through --
-        // barely legible, not just unstyled.
-        // Formae's own chrome, no longer Ledger's. The editor used to borrow the
-        // customer's lightest style for its toolbar, palette and panels, which is
-        // why signing in felt like leaving this product and entering a generic
-        // one -- see chrome.module.css for the full argument. `portal-editor-scope`
-        // stays: it maps Puck's own --puck-color-* variables onto whatever
-        // --color-* resolves to here, so Puck's chrome follows automatically.
-        className={`portal-editor-scope ${chrome.chrome} ${chrome.workbench} flex h-screen flex-col`}
-      >
-        {/* `flex-wrap` and a scrolling page list, because this bar is the one
+      <RecordPageProvider live={isRecordModule(pageKey)}>
+        <EditorUiProvider>
+          <div
+            // Regression fix: this wrapper (and the header bar inside it) never
+            // painted its own background -- it silently depended on
+            // portal/layout.tsx's shared `--color-canvas` fill, which got
+            // reverted for breaking /portal/style-select's contrast (that page
+            // deliberately keeps the acquisition site's dark theme; this one
+            // never should have shared a wrapper with it). Scoped here instead,
+            // to just this route, so it can't leak into style-select again.
+            // Without it, the header bar's dark-on-light text (--color-paper /
+            // --color-paper-dim, tuned for Ledger's light surfaces) rendered
+            // against the acquisition site's dark <body> showing through --
+            // barely legible, not just unstyled.
+            // Formae's own chrome, no longer Ledger's. The editor used to borrow the
+            // customer's lightest style for its toolbar, palette and panels, which is
+            // why signing in felt like leaving this product and entering a generic
+            // one -- see chrome.module.css for the full argument. `portal-editor-scope`
+            // stays: it maps Puck's own --puck-color-* variables onto whatever
+            // --color-* resolves to here, so Puck's chrome follows automatically.
+            className={`portal-editor-scope ${chrome.chrome} ${chrome.workbench} flex h-screen flex-col`}
+          >
+            {/* `flex-wrap` and a scrolling page list, because this bar is the one
           thing on the editor that a phone still has to show in full. Measured
           at 390px: the right-hand cluster alone is 493px wide and pushed the
           document to 671px, so the whole editor scrolled sideways under a
           fixed-height layout — the worst combination there is. It wraps to a
           second line instead. */}
 
-        {/* The generated-draft banner. A customer who has just answered a
+            {/* The generated-draft banner. A customer who has just answered a
           questionnaire about their business now opens the editor on a system
           already built from those answers -- their own industry vocabulary,
           their own workflow stages, their own summary line. That is only a good
@@ -992,69 +1012,71 @@ export function PortalEditor({
           edit. Disappears the moment they save, because from then on the canvas
           is genuinely their own work. */}
 
-        {/* 交接那一格，画在还挂着的 Puck 上面，不是取代它。
+            {/* 交接那一格，画在还挂着的 Puck 上面，不是取代它。
           这个形状是从那面付款墙继承下来的，而它当初解的问题今天还在：
           用分支写成 `x ? <对话框/> : <Puck/>` 会在客户按下按钮的那一刻
           把画布卸载掉，於是他做到一半的东西只剩 local-draft.ts 撑着 ——
           而那一支是尽力而为的，localStorage 不能用的时候（无痕、配额满）
           它静静地什么都不写。盖在上面，Puck 自己的状态就还在。 */}
-        <div className="relative min-h-0 flex-1">
-          {handoff !== "idle" ? (
-            <div className="ds-ground absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 [background-color:var(--color-canvas)]">
-              <div className="w-full max-w-sm">
-                <h2 className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-                  {t("handoffTitle")}
-                </h2>
-                <p className="mt-1 [font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
-                  {t("handoffBody")}
-                </p>
+            <div className="relative min-h-0 flex-1">
+              {handoff !== "idle" ? (
+                <div className="ds-ground absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 [background-color:var(--color-canvas)]">
+                  <div className="w-full max-w-sm">
+                    <h2 className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+                      {t("handoffTitle")}
+                    </h2>
+                    <p className="mt-1 [font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
+                      {t("handoffBody")}
+                    </p>
 
-                {/* 两格都可以跳过（重点 29）。号码是我们拿不到第二次的那一样：
+                    {/* 两格都可以跳过（重点 29）。号码是我们拿不到第二次的那一样：
                   注册只有 email，而这个市场的管道是 WhatsApp（任务 48）。
                   问它的时机是这一刻，因为他自己想要我们联络他。 */}
-                <label className="mt-4 block [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
-                  {t("handoffPhoneLabel")}
-                </label>
-                <input
-                  type="tel"
-                  inputMode="tel"
-                  value={handoffPhone}
-                  onChange={(e) => setHandoffPhone(e.target.value)}
-                  placeholder="012-345 6789"
-                  className="mt-1 w-full rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-line)]"
-                />
+                    <label className="mt-4 block [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                      {t("handoffPhoneLabel")}
+                    </label>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      value={handoffPhone}
+                      onChange={(e) => setHandoffPhone(e.target.value)}
+                      placeholder="012-345 6789"
+                      className="mt-1 w-full rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-line)]"
+                    />
 
-                <label className="mt-3 block [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
-                  {t("handoffNoteLabel")}
-                </label>
-                <textarea
-                  rows={3}
-                  value={handoffNote}
-                  onChange={(e) => setHandoffNote(e.target.value)}
-                  className="mt-1 w-full resize-none rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-line)]"
-                />
+                    <label className="mt-3 block [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                      {t("handoffNoteLabel")}
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={handoffNote}
+                      onChange={(e) => setHandoffNote(e.target.value)}
+                      className="mt-1 w-full resize-none rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-line)]"
+                    />
 
-                <div className="mt-4 flex items-center gap-3">
-                  <button
-                    type="button"
-                    disabled={handoff === "sending"}
-                    onClick={() => void sendHandoff()}
-                    className="rounded-lg px-4 py-2.5 [font-size:var(--text-sm)] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] disabled:opacity-60"
-                  >
-                    {handoff === "sending" ? t("handoffSending") : t("handoffSend")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setHandoff("idle")}
-                    className="[font-size:var(--text-sm)] underline [color:var(--color-paper-dim)]"
-                  >
-                    {t("backToEditing")}
-                  </button>
+                    <div className="mt-4 flex items-center gap-3">
+                      <button
+                        type="button"
+                        disabled={handoff === "sending"}
+                        onClick={() => void sendHandoff()}
+                        className="rounded-lg px-4 py-2.5 [font-size:var(--text-sm)] text-[color:var(--color-on-primary)] [background-color:var(--color-primary)] [font-weight:var(--fw-semibold)] disabled:opacity-60"
+                      >
+                        {handoff === "sending"
+                          ? t("handoffSending")
+                          : t("handoffSend")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setHandoff("idle")}
+                        className="[font-size:var(--text-sm)] underline [color:var(--color-paper-dim)]"
+                      >
+                        {t("backToEditing")}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ) : null}
-          {/* THE 84px THE EDITOR WAS TOO TALL.
+              ) : null}
+              {/* THE 84px THE EDITOR WAS TOO TALL.
             Measured: `.Puck` computed to 950px at top 84 in a 950px viewport
             — a 1034px document — because Puck's root is 100vh and it sits
             under Formae's own page tabs and draft banner.
@@ -1069,86 +1091,89 @@ export function PortalEditor({
             takes `h-full` (NOT `flex-1` — its parent is `display: block`, so
             a flex property on it is inert) to inherit that definite height;
             and puck-theme.css overrides `.Puck` from 100vh to 100%. */}
-          {/* ABOVE <Puck>, so the assistant's own state changes cannot
+              {/* ABOVE <Puck>, so the assistant's own state changes cannot
             re-render this component and re-create `overrides`. That identity
             is what React uses to decide whether to remount the `preview`
             subtree -- which is the canvas AND the assistant. */}
-          {/* ABOVE <Puck> for the same reason AssistantProvider is: the
+              {/* ABOVE <Puck> for the same reason AssistantProvider is: the
             device is read by the toggle in the top bar (an `header`
             override) and by the frame around the canvas (a `preview`
             override), and those two are rendered by Puck in different
             places with no common ancestor inside it. */}
-          <DeviceProvider>
-          <AssistantProvider>
-          <div className="h-full">
-            <Puck
-              // Forces exactly one clean remount at the ssr->hydrated
-              // transition above. Puck's own `data` prop is consumed only
-              // once, inside a lazy `useState(() => ...)` initializer deep
-              // in its `PuckProvider` (verified against the installed
-              // 0.23.0 bundle, node_modules/@puckeditor/core/dist/index.js)
-              // -- passing a new `data` value into an already-mounted
-              // `<Puck>` on a later render is a no-op from Puck's own
-              // perspective, so without this `key` change the local draft
-              // would never actually reach the canvas after hydration, even
-              // though `startingData` above is already correct by then.
-              // `hydrated` only flips once, so this only remounts once per
-              // page load. Fix round 2: the paywall used to be a sibling
-              // branch that unmounted this <Puck> on every toggle -- that's
-              // gone now (the paywall is an overlay ABOVE this, always
-              // mounted, see the comment on the wrapping div), so this `key`
-              // is the ONLY thing that ever remounts Puck in this file.
-              key={hydrated ? "hydrated" : "ssr"}
-              // NOTHING IS DOCKED. Both of Puck's side columns are collapsed for
-              // the life of the editor, and neither ever reopens in place.
-              //
-              // The founder put four Durable screenshots beside this editor and
-              // said 「我还是觉得durable的好看更简单操作一点」. Counting what is on
-              // screen at rest explains it: Durable shows one bar; this showed a
-              // nav row, a style row, a draft banner, a toolbar, a 58px icon rail
-              // and a 400px properties column, with the customer's own system
-              // sixth. Measured at 1600px, the canvas was 1212px of it.
-              //
-              // The two columns still RENDER -- `leftSideBarVisible` and
-              // `rightSideBarVisible` only set their grid column to 0 (see
-              // `_PuckLayout--rightSideBarVisible_` in @puckeditor/core's
-              // index.css), the subtrees are untouched. That is what makes this
-              // possible without re-implementing anything: the `fields` and
-              // `drawer` overrides below still receive Puck's own field editors
-              // and its own palette, and portal them into sheets that float over
-              // the canvas only while they are being used.
-              ui={{ leftSideBarVisible: false, rightSideBarVisible: false }}
-              // The config in the OWNER's language. Chinese returns the config
-              // itself; anything else gets the projection built in
-              // puck-config-client.tsx. Memoised there, so this is a stable
-              // identity and does not remount Puck.
-              config={localisedPuckConfig(locale, systemLang)}
-              data={startingData}
-              onChange={handleChange}
-              onPublish={handleSaveClick}
-              // Renders the canvas directly in this document instead of a
-              // `srcdoc` iframe -- see puck-theme.css's now-removed body-leak
-              // comment and task-5a-report.md for why: with the iframe gone,
-              // there's no separate DOM/CSSOM for the `.ledger`/`.hearth`/
-              // `.blueprint` scope classes to fail to reach into. Viewport
-              // switching (Puck's responsive-preview feature, which disabling
-              // the iframe also disables per Puck's own docs) is unused
-              // anywhere in this app -- confirmed via a repo-wide grep, task
-              // 5a's report has the details.
-              iframe={{ enabled: false }}
-              overrides={{
-                // Puck's own toolbar is English and unstyled by this app's
-                // tokens -- replaced wholesale. See editor-chrome.tsx.
-                // A miniature of each block beside its name, so the palette is
-                // browsed by sight rather than by reading fifteen nouns off
-                // identical white rectangles. See component-preview.tsx.
-                // A gallery tile, not a list row: the block renders itself, at
-                // the size it is, in the customer's OWN style -- so 趋势图 is a
-                // chart and 记录表格 is a table, instead of both being two grey
-                // bars. See live-preview.tsx for why the schematics had to go.
-                drawerItem: ({ children, name }) => (
-                  <ClickToAdd name={name}>
-                    {/* ONE CARD, ONE ASPECT RATIO, THE WHOLE BLOCK INSIDE IT.
+              <DeviceProvider>
+                <AssistantProvider>
+                  <div className="h-full">
+                    <Puck
+                      // Forces exactly one clean remount at the ssr->hydrated
+                      // transition above. Puck's own `data` prop is consumed only
+                      // once, inside a lazy `useState(() => ...)` initializer deep
+                      // in its `PuckProvider` (verified against the installed
+                      // 0.23.0 bundle, node_modules/@puckeditor/core/dist/index.js)
+                      // -- passing a new `data` value into an already-mounted
+                      // `<Puck>` on a later render is a no-op from Puck's own
+                      // perspective, so without this `key` change the local draft
+                      // would never actually reach the canvas after hydration, even
+                      // though `startingData` above is already correct by then.
+                      // `hydrated` only flips once, so this only remounts once per
+                      // page load. Fix round 2: the paywall used to be a sibling
+                      // branch that unmounted this <Puck> on every toggle -- that's
+                      // gone now (the paywall is an overlay ABOVE this, always
+                      // mounted, see the comment on the wrapping div), so this `key`
+                      // is the ONLY thing that ever remounts Puck in this file.
+                      key={hydrated ? "hydrated" : "ssr"}
+                      // NOTHING IS DOCKED. Both of Puck's side columns are collapsed for
+                      // the life of the editor, and neither ever reopens in place.
+                      //
+                      // The founder put four Durable screenshots beside this editor and
+                      // said 「我还是觉得durable的好看更简单操作一点」. Counting what is on
+                      // screen at rest explains it: Durable shows one bar; this showed a
+                      // nav row, a style row, a draft banner, a toolbar, a 58px icon rail
+                      // and a 400px properties column, with the customer's own system
+                      // sixth. Measured at 1600px, the canvas was 1212px of it.
+                      //
+                      // The two columns still RENDER -- `leftSideBarVisible` and
+                      // `rightSideBarVisible` only set their grid column to 0 (see
+                      // `_PuckLayout--rightSideBarVisible_` in @puckeditor/core's
+                      // index.css), the subtrees are untouched. That is what makes this
+                      // possible without re-implementing anything: the `fields` and
+                      // `drawer` overrides below still receive Puck's own field editors
+                      // and its own palette, and portal them into sheets that float over
+                      // the canvas only while they are being used.
+                      ui={{
+                        leftSideBarVisible: false,
+                        rightSideBarVisible: false,
+                      }}
+                      // The config in the OWNER's language. Chinese returns the config
+                      // itself; anything else gets the projection built in
+                      // puck-config-client.tsx. Memoised there, so this is a stable
+                      // identity and does not remount Puck.
+                      config={localisedPuckConfig(locale, systemLang)}
+                      data={startingData}
+                      onChange={handleChange}
+                      onPublish={handleSaveClick}
+                      // Renders the canvas directly in this document instead of a
+                      // `srcdoc` iframe -- see puck-theme.css's now-removed body-leak
+                      // comment and task-5a-report.md for why: with the iframe gone,
+                      // there's no separate DOM/CSSOM for the `.ledger`/`.hearth`/
+                      // `.blueprint` scope classes to fail to reach into. Viewport
+                      // switching (Puck's responsive-preview feature, which disabling
+                      // the iframe also disables per Puck's own docs) is unused
+                      // anywhere in this app -- confirmed via a repo-wide grep, task
+                      // 5a's report has the details.
+                      iframe={{ enabled: false }}
+                      overrides={{
+                        // Puck's own toolbar is English and unstyled by this app's
+                        // tokens -- replaced wholesale. See editor-chrome.tsx.
+                        // A miniature of each block beside its name, so the palette is
+                        // browsed by sight rather than by reading fifteen nouns off
+                        // identical white rectangles. See component-preview.tsx.
+                        // A gallery tile, not a list row: the block renders itself, at
+                        // the size it is, in the customer's OWN style -- so 趋势图 is a
+                        // chart and 记录表格 is a table, instead of both being two grey
+                        // bars. See live-preview.tsx for why the schematics had to go.
+                        drawerItem: ({ children, name }) => (
+                          <ClickToAdd name={name}>
+                            {/* ONE CARD, ONE ASPECT RATIO, THE WHOLE BLOCK INSIDE IT.
                         Same card as 组件库 and for the same reason — see
                         design-system/editor/specimen.tsx. What was here was a
                         78px window onto a 168px composition, so every tile in
@@ -1157,288 +1182,333 @@ export function PortalEditor({
                         its number. Screenshotted at 1440 on 2026-08-23, which
                         is the only way that kind of fault ever surfaces —
                         nothing throws and every test stays green. */}
-                    <div className="w-full overflow-hidden rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-950)] transition-colors group-hover/add:[border-color:var(--color-ink-700)]">
-                      <LivePreview
-                        name={name}
-                        style={canvasStyle}
-                        palette={activePalette}
-                        // The tile shows the block as it will ARRIVE, so its
-                        // sample content follows the CUSTOMER'S system language
-                        // rather than the owner's interface. See sample-en.ts.
-                        systemLang={systemLang}
-                        // Composed at 620 and scaled to fit. Two per row now,
-                        // so a shelf of six is one screen instead of six.
-                        width={620}
-                        frameHeight={104}
-                        fallback={
-                          <div className="grid h-[104px] place-items-center">
-                            <ComponentPreview name={name} />
-                          </div>
-                        }
-                      />
-                      <div className="flex w-full items-center justify-between gap-1 border-t [border-color:var(--color-ink-800)] pr-2 [background-color:var(--color-ink-900)]">
-                        <div className="min-w-0 flex-1">{children}</div>
-                        <span
-                          aria-hidden
-                          className="shrink-0 opacity-0 transition-opacity [color:var(--color-paper-dim)] [font-size:var(--text-xs)] group-hover/add:opacity-100"
-                        >
-                          ＋
-                        </span>
-                      </div>
-                    </div>
-                  </ClickToAdd>
-                ),
-                header: () => (
-                  <EditorChrome
-                    nav={topNav}
-                    tools={
-                      <>
-                        <DeviceToggle
-                          desktopLabel={t("deviceDesktop")}
-                          phoneLabel={t("devicePhone")}
-                        />
-                        <StyleButton label={t("styleLabel")} />
-                      </>
-                    }
-                    publish={
-                      // Website only. 收款 and 客户 are the business's own
-                      // working pages -- there is nothing to publish, and a
-                      // greyed-out 发布 on five pages teaches the customer that
-                      // the button is decorative.
-                      pageKey === "website" ? (
-                        <PublishSite
-                          initialSlug={siteSlug}
-                          initialPublished={sitePublished}
-                        />
-                      ) : null
-                    }
-                    finish={finishCta}
-                    overflow={overflowMenu}
-                    saving={saveState === "saving"}
-                    autosaving={autosaving}
-                    onSave={handleSaveClick}
-                    dirty={dirty}
-                    savedAt={savedAt}
-                    historyOpen={historyOpen}
-                    onOpenHistory={() => setHistoryOpen(true)}
-                    onCloseHistory={() => setHistoryOpen(false)}
-                    paid={paid}
-                    pageKey={pageKey}
-                    locale={locale}
-                  />
-                ),
-                // The one supported override point for wrapping just the
-                // canvas's rendered subtree (Puck's own Preview component),
-                // independent of the chrome wrapper above -- reuses the exact
-                // `.scope` + per-style class pairing style-column.tsx already
-                // applies to each of its three comparison columns, so canvas
-                // content resolves var(--color-*) against the CUSTOMER's
-                // chosen style, not Ledger. `h-full` matters here: Puck's own
-                // Preview/frame elements are `height: 100%` all the way down,
-                // which needs an explicit height on this wrapper or the chain
-                // collapses to 0.
-                // `[background-color:var(--color-canvas)]` closes the second
-                // seam: SystemShell is as tall as its content, the canvas is as
-                // tall as the window, and the strip between them was Puck's own
-                // white showing through under the customer's page. Painting this
-                // wrapper in the CUSTOMER's canvas colour -- it sits inside the
-                // style scope, so `--color-canvas` is theirs, not Ledger's --
-                // makes that strip continuous with the page above it.
-                // THE ASSISTANT IS THE RIGHT COLUMN, PERMANENTLY.
-                //
-                // It used to wrap Puck's ENTIRE layout via the `puck` override,
-                // as a flex sibling of everything — which made it a FOURTH
-                // column, and that is precisely why it could not default to
-                // open: four fixed columns at 1440px leave the canvas around
-                // 550px, below what a five-column record table renders without
-                // clipping. So it hid behind a toolbar button, and the founder's
-                // objection followed: 「把这个AI修改放在这里谁会去按啦」.
-                //
-                // Wrapping `fields` instead puts it inside the column Puck
-                // already has. Still three columns. The assistant is simply
-                // always there, and the block's own fields sit underneath it
-                // when something is selected — which is also the honest reading
-                // of what the two are: one edits the page by describing it, the
-                // other edits one block by hand, and they are the same job at
-                // two levels of zoom rather than two modes.
-                //
-                // PUCK'S WHOLE LAYOUT, REPLACED ON A PHONE.
-                //
-                // This override was removed when the assistant moved into the
-                // fields column; it is back for the one thing it is actually the
-                // right tool for. Below 1024px Puck's three columns do not fold,
-                // they compress, and the canvas ends up too narrow to render a
-                // record table at all — so on a phone the whole layout is
-                // replaced rather than squeezed. See mobile-editor.tsx for what
-                // it is replaced WITH, and why that is a split rather than a
-                // fallback.
-                //
-                // Inside the provider, so the assistant is the same assistant
-                // editing the same live canvas on the same undo stack.
-                puck: ({ children }) =>
-                  narrow ? (
-                    <MobileEditor pageKey={pageKey}
-                      style={canvasStyle}
-                      palette={activePalette}
-                      corners={corners}
-                      systemLang={systemLang}
-                      locale={locale}
-                      navPages={navPages}
-                      isGeneratedDraft={isGeneratedDraft}
-                      onOpenSystem={flushAutosave}
-                    />
-                  ) : (
-                    // Wrapped rather than returned bare: Puck's RenderFunc is
-                    // typed to a single element, and `children` is ReactNode.
-                    <>{children}</>
-                  ),
-                // FIELDS ON TOP, ASSISTANT UNDERNEATH, and the order is forced
-                // rather than chosen. Puck renders this column's title bar --
-                // 「整个页面」, or the selected block's name and its breadcrumb --
-                // OUTSIDE this override, permanently above whatever it returns.
-                // Putting the assistant first therefore files it under a heading
-                // that describes the fields, which reads as a mislabelled panel.
-                //
-                // It also lands the composer at the bottom of the column, which
-                // is where every assistant a customer has already used puts it.
-                //
-                // The fields half is capped at half the column and scrolls its
-                // own overflow: a RecordTable's column editor is long enough to
-                // push the assistant off the bottom of the screen entirely, and
-                // an assistant you have to scroll a properties panel to reach is
-                // the buried toolbar button again with extra steps.
-                // PICTURES FIRST, THEN THE FIELDS THAT FINE-TUNE THEM.
-                //
-                // The founder selected 重点数字卡, looked at what appeared, and
-                // said he wanted Durable's version: 「我看到图片 就是我可以替换的
-                // 别的款式 然后我点击就可以替换了」. What was there was 文字 /
-                // 数值 / 链接 / 对比说明 — four inputs that change the CONTENT of
-                // a card whose SHAPE was not offered at all.
-                //
-                // So the picker sits above the fields, outside their scroll area,
-                // and stays put: choosing the shape comes before filling it in,
-                // and it is the choice that has to be visible without scrolling.
-                // It draws nothing at all for a block with no alternatives, which
-                // is most of them — an empty 换个款式 heading on 头像 would be a
-                // worse panel than no heading.
-                // PUCK'S FIELDS, FLOATED. The override still runs with the right
-                // column collapsed to 0px, so `children` is the real field tree
-                // for the selected block -- every field type, every resolver,
-                // unchanged. BlockSheets portals it into the 改文字 sheet and
-                // renders the 换款式 sheet beside it.
-                //
-                // The assistant is no longer passed down here: it used to share
-                // this column 60/40 with the fields, which is what made an empty
-                // 「整个页面」 heading sit above 400px of nothing whenever no block
-                // was selected. It floats at the foot of the canvas now -- see
-                // the `preview` override below.
-                fields: ({ children }) => (
-                  <BlockSheets
-                    style={canvasStyle}
-                    palette={activePalette}
-                    // 换款式 那一栏的预览图是客户的页面，跟他的系统语言。
-                    systemLang={systemLang}
-                  >
-                    {children}
-                  </BlockSheets>
-                ),
-                // THE FLOATING TOOLBAR under the selected block: 换款式 · 改文字,
-                // then Puck's own move/duplicate/delete. Durable's Design / Edit
-                // content pill, which is the third screenshot the founder sent.
-                actionBar: ({ label, children, parentAction }) => (
-                  <BlockToolbar label={label} parentAction={parentAction}>
-                    {children}
-                  </BlockToolbar>
-                ),
-                // ＋ 加一段 in the gap under each block, carrying the position it
-                // will insert at -- so adding no longer means opening a 54-tile
-                // drawer and then dragging the result up from the bottom.
-                componentOverlay: ({
-                  children,
-                  hover,
-                  isSelected,
-                  componentId,
-                }) => (
-                  <InsertAffordance
-                    hover={hover}
-                    isSelected={isSelected}
-                    componentId={componentId}
-                  >
-                    {children}
-                  </InsertAffordance>
-                ),
-                // The palette, in a sheet instead of a column. Same tiles, same
-                // live previews, same click-to-add: only the docking is gone.
-                drawer: ({ children }) => <InsertSheet>{children}</InsertSheet>,
-                // The canvas is the one thing on this screen Formae does not
-                // own, so it is presented as an object rather than as the
-                // background: the customer's style scope re-resolves every token
-                // to their own register inside a frame that stays Formae's. The
-                // token cascade does this by itself -- custom properties inherit
-                // and the nearest defining ancestor wins -- which is why nothing
-                // inside the canvas needed changing.
-                //
-                // The mount is the white plinth it stands on. This is the single
-                // most important of the seven: it is the surface the customer
-                // spends the most time looking at, and the one where their own
-                // dark rail comes closest to Formae's frame.
-                preview: ({ children }) => (
-                  // `relative` so the assistant can be positioned against the
-                  // canvas rather than the window: it has to sit at the foot of
-                  // the customer's page, not the foot of the screen, or it covers
-                  // the browser's own chrome on a short window.
-                  <div
-                  data-editor-canvas
-                  className={`${chrome.mount} relative h-full`}
-                >
-                    {/* Holds a strip clear on the right while a sheet is docked
+                            <div className="w-full overflow-hidden rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-950)] transition-colors group-hover/add:[border-color:var(--color-ink-700)]">
+                              <LivePreview
+                                name={name}
+                                style={canvasStyle}
+                                palette={activePalette}
+                                // The tile shows the block as it will ARRIVE, so its
+                                // sample content follows the CUSTOMER'S system language
+                                // rather than the owner's interface. See sample-en.ts.
+                                systemLang={systemLang}
+                                // Composed at 620 and scaled to fit. Two per row now,
+                                // so a shelf of six is one screen instead of six.
+                                width={620}
+                                frameHeight={104}
+                                fallback={
+                                  <div className="grid h-[104px] place-items-center">
+                                    <ComponentPreview name={name} />
+                                  </div>
+                                }
+                              />
+                              <div className="flex w-full items-center justify-between gap-1 border-t [border-color:var(--color-ink-800)] pr-2 [background-color:var(--color-ink-900)]">
+                                <div className="min-w-0 flex-1">{children}</div>
+                                <span
+                                  aria-hidden
+                                  className="shrink-0 opacity-0 transition-opacity [color:var(--color-paper-dim)] [font-size:var(--text-xs)] group-hover/add:opacity-100"
+                                >
+                                  ＋
+                                </span>
+                              </div>
+                            </div>
+                          </ClickToAdd>
+                        ),
+                        header: () => (
+                          <EditorChrome
+                            nav={topNav}
+                            tools={
+                              <>
+                                <DeviceToggle
+                                  desktopLabel={t("deviceDesktop")}
+                                  phoneLabel={t("devicePhone")}
+                                />
+                                <StyleButton label={t("styleLabel")} />
+                              </>
+                            }
+                            publish={
+                              // Website only. 收款 and 客户 are the business's own
+                              // working pages -- there is nothing to publish, and a
+                              // greyed-out 发布 on five pages teaches the customer that
+                              // the button is decorative.
+                              pageKey === "website" ? (
+                                <PublishSite
+                                  initialSlug={siteSlug}
+                                  initialPublished={sitePublished}
+                                />
+                              ) : null
+                            }
+                            finish={finishCta}
+                            overflow={overflowMenu}
+                            saving={saveState === "saving"}
+                            autosaving={autosaving}
+                            onSave={handleSaveClick}
+                            dirty={dirty}
+                            savedAt={savedAt}
+                            historyOpen={historyOpen}
+                            onOpenHistory={() => setHistoryOpen(true)}
+                            onCloseHistory={() => setHistoryOpen(false)}
+                            paid={paid}
+                            pageKey={pageKey}
+                            locale={locale}
+                          />
+                        ),
+                        // The one supported override point for wrapping just the
+                        // canvas's rendered subtree (Puck's own Preview component),
+                        // independent of the chrome wrapper above -- reuses the exact
+                        // `.scope` + per-style class pairing style-column.tsx already
+                        // applies to each of its three comparison columns, so canvas
+                        // content resolves var(--color-*) against the CUSTOMER's
+                        // chosen style, not Ledger. `h-full` matters here: Puck's own
+                        // Preview/frame elements are `height: 100%` all the way down,
+                        // which needs an explicit height on this wrapper or the chain
+                        // collapses to 0.
+                        // `[background-color:var(--color-canvas)]` closes the second
+                        // seam: SystemShell is as tall as its content, the canvas is as
+                        // tall as the window, and the strip between them was Puck's own
+                        // white showing through under the customer's page. Painting this
+                        // wrapper in the CUSTOMER's canvas colour -- it sits inside the
+                        // style scope, so `--color-canvas` is theirs, not Ledger's --
+                        // makes that strip continuous with the page above it.
+                        // THE ASSISTANT IS THE RIGHT COLUMN, PERMANENTLY.
+                        //
+                        // It used to wrap Puck's ENTIRE layout via the `puck` override,
+                        // as a flex sibling of everything — which made it a FOURTH
+                        // column, and that is precisely why it could not default to
+                        // open: four fixed columns at 1440px leave the canvas around
+                        // 550px, below what a five-column record table renders without
+                        // clipping. So it hid behind a toolbar button, and the founder's
+                        // objection followed: 「把这个AI修改放在这里谁会去按啦」.
+                        //
+                        // Wrapping `fields` instead puts it inside the column Puck
+                        // already has. Still three columns. The assistant is simply
+                        // always there, and the block's own fields sit underneath it
+                        // when something is selected — which is also the honest reading
+                        // of what the two are: one edits the page by describing it, the
+                        // other edits one block by hand, and they are the same job at
+                        // two levels of zoom rather than two modes.
+                        //
+                        // PUCK'S WHOLE LAYOUT, REPLACED ON A PHONE.
+                        //
+                        // This override was removed when the assistant moved into the
+                        // fields column; it is back for the one thing it is actually the
+                        // right tool for. Below 1024px Puck's three columns do not fold,
+                        // they compress, and the canvas ends up too narrow to render a
+                        // record table at all — so on a phone the whole layout is
+                        // replaced rather than squeezed. See mobile-editor.tsx for what
+                        // it is replaced WITH, and why that is a split rather than a
+                        // fallback.
+                        //
+                        // Inside the provider, so the assistant is the same assistant
+                        // editing the same live canvas on the same undo stack.
+                        puck: ({ children }) =>
+                          narrow ? (
+                            <MobileEditor
+                              pageKey={pageKey}
+                              style={canvasStyle}
+                              palette={activePalette}
+                              corners={corners}
+                              systemLang={systemLang}
+                              locale={locale}
+                              navPages={navPages}
+                              isGeneratedDraft={isGeneratedDraft}
+                              onOpenSystem={flushAutosave}
+                            />
+                          ) : (
+                            // Wrapped rather than returned bare: Puck's RenderFunc is
+                            // typed to a single element, and `children` is ReactNode.
+                            <>{children}</>
+                          ),
+                        // FIELDS ON TOP, ASSISTANT UNDERNEATH, and the order is forced
+                        // rather than chosen. Puck renders this column's title bar --
+                        // 「整个页面」, or the selected block's name and its breadcrumb --
+                        // OUTSIDE this override, permanently above whatever it returns.
+                        // Putting the assistant first therefore files it under a heading
+                        // that describes the fields, which reads as a mislabelled panel.
+                        //
+                        // It also lands the composer at the bottom of the column, which
+                        // is where every assistant a customer has already used puts it.
+                        //
+                        // The fields half is capped at half the column and scrolls its
+                        // own overflow: a RecordTable's column editor is long enough to
+                        // push the assistant off the bottom of the screen entirely, and
+                        // an assistant you have to scroll a properties panel to reach is
+                        // the buried toolbar button again with extra steps.
+                        // PICTURES FIRST, THEN THE FIELDS THAT FINE-TUNE THEM.
+                        //
+                        // The founder selected 重点数字卡, looked at what appeared, and
+                        // said he wanted Durable's version: 「我看到图片 就是我可以替换的
+                        // 别的款式 然后我点击就可以替换了」. What was there was 文字 /
+                        // 数值 / 链接 / 对比说明 — four inputs that change the CONTENT of
+                        // a card whose SHAPE was not offered at all.
+                        //
+                        // So the picker sits above the fields, outside their scroll area,
+                        // and stays put: choosing the shape comes before filling it in,
+                        // and it is the choice that has to be visible without scrolling.
+                        // It draws nothing at all for a block with no alternatives, which
+                        // is most of them — an empty 换个款式 heading on 头像 would be a
+                        // worse panel than no heading.
+                        // PUCK'S FIELDS, FLOATED. The override still runs with the right
+                        // column collapsed to 0px, so `children` is the real field tree
+                        // for the selected block -- every field type, every resolver,
+                        // unchanged. BlockSheets portals it into the 改文字 sheet and
+                        // renders the 换款式 sheet beside it.
+                        //
+                        // The assistant is no longer passed down here: it used to share
+                        // this column 60/40 with the fields, which is what made an empty
+                        // 「整个页面」 heading sit above 400px of nothing whenever no block
+                        // was selected. It floats at the foot of the canvas now -- see
+                        // the `preview` override below.
+                        fields: ({ children }) => (
+                          <BlockSheets
+                            style={canvasStyle}
+                            palette={activePalette}
+                            // 换款式 那一栏的预览图是客户的页面，跟他的系统语言。
+                            systemLang={systemLang}
+                          >
+                            {children}
+                          </BlockSheets>
+                        ),
+                        // THE FLOATING TOOLBAR under the selected block: 换款式 · 改文字,
+                        // then Puck's own move/duplicate/delete. Durable's Design / Edit
+                        // content pill, which is the third screenshot the founder sent.
+                        actionBar: ({ label, children, parentAction }) => (
+                          <BlockToolbar
+                            label={label}
+                            parentAction={parentAction}
+                          >
+                            {children}
+                          </BlockToolbar>
+                        ),
+                        // ＋ 加一段 in the gap under each block, carrying the position it
+                        // will insert at -- so adding no longer means opening a 54-tile
+                        // drawer and then dragging the result up from the bottom.
+                        componentOverlay: ({
+                          children,
+                          hover,
+                          isSelected,
+                          componentId,
+                        }) => (
+                          <InsertAffordance
+                            hover={hover}
+                            isSelected={isSelected}
+                            componentId={componentId}
+                          >
+                            {children}
+                          </InsertAffordance>
+                        ),
+                        // The palette, in a sheet instead of a column. Same tiles, same
+                        // live previews, same click-to-add: only the docking is gone.
+                        drawer: ({ children }) => (
+                          <InsertSheet>{children}</InsertSheet>
+                        ),
+                        // The canvas is the one thing on this screen Formae does not
+                        // own, so it is presented as an object rather than as the
+                        // background: the customer's style scope re-resolves every token
+                        // to their own register inside a frame that stays Formae's. The
+                        // token cascade does this by itself -- custom properties inherit
+                        // and the nearest defining ancestor wins -- which is why nothing
+                        // inside the canvas needed changing.
+                        //
+                        // The mount is the white plinth it stands on. This is the single
+                        // most important of the seven: it is the surface the customer
+                        // spends the most time looking at, and the one where their own
+                        // dark rail comes closest to Formae's frame.
+                        preview: ({ children }) => (
+                          // `relative` so the assistant can be positioned against the
+                          // canvas rather than the window: it has to sit at the foot of
+                          // the customer's page, not the foot of the screen, or it covers
+                          // the browser's own chrome on a short window.
+                          <div
+                            data-editor-canvas
+                            className={`${chrome.mount} relative h-full`}
+                          >
+                            {/* Holds a strip clear on the right while a sheet is docked
                       there, so the block being edited reflows beside the panel
                       instead of underneath it. See canvas-gutter.tsx. */}
-                    <CanvasFrame
-                      label={navPages.find((p) => p.key === pageKey)?.label ?? pageKey}
-                    >
-                    <CanvasGutter
-                      /* THE WEBSITE GETS ITS PAGE FRAME HERE TOO.
+                            <CanvasFrame
+                              label={
+                                navPages.find((p) => p.key === pageKey)
+                                  ?.label ?? pageKey
+                              }
+                            >
+                              <CanvasGutter
+                                /* THE WEBSITE GETS ITS PAGE FRAME HERE TOO.
 
                          Without this the owner edits a page that publishes
                          differently from what they were looking at -- no
                          container, no rhythm, dashboard-sized headings -- and
                          the whole promise of this editor is 看到的就是拿到的.
                          See `.ds-site` in app/globals.css. */
-                      /* The register's 开场的地, so the canvas shows the page
+                                /* The register's 开场的地, so the canvas shows the page
                          the visitor gets rather than a dark box on a light
                          one. See app/globals.css. */
-                      data-ground={
-                        pageKey === "website" ? (siteSkeleton(activeStyle).ground ?? "page") : undefined
-                      }
-                      data-pattern={pageKey === "website" ? siteSkeleton(activeStyle).pattern : undefined}
-                      data-measure={pageKey === "website" ? (siteSkeleton(activeStyle).measure ?? "normal") : undefined}
-                      data-rhythm={pageKey === "website" ? (siteSkeleton(activeStyle).rhythm ?? "normal") : undefined}
-                      data-figure={pageKey === "website" ? (siteSkeleton(activeStyle).figure ?? "normal") : undefined}
-                      data-copy={pageKey === "website" ? (siteSkeleton(activeStyle).copy ?? "normal") : undefined}
-                      data-steps={pageKey === "website" ? (siteSkeleton(activeStyle).steps) : undefined}
-                      data-frame={pageKey === "website" ? (siteSkeleton(activeStyle).frame ?? "none") : undefined}
-                      /* 工作台自己的主要动作颜色 —— 官网那一页不挂。见 globals.css。 */
-                      data-surface={deskSurface(pageKey)}
-                      className={`ds-ground ${scopeClasses(canvasStyle, activePalette)} ${
-                        pageKey === "website" ? "ds-site" : ""
-                      } h-full [background-color:var(--color-canvas)]`}
-                    >
-                    {/* Two layers: the outer freezes the register's own radius
+                                data-ground={
+                                  pageKey === "website"
+                                    ? (siteSkeleton(activeStyle).ground ??
+                                      "page")
+                                    : undefined
+                                }
+                                data-pattern={
+                                  pageKey === "website"
+                                    ? siteSkeleton(activeStyle).pattern
+                                    : undefined
+                                }
+                                data-measure={
+                                  pageKey === "website"
+                                    ? (siteSkeleton(activeStyle).measure ??
+                                      "normal")
+                                    : undefined
+                                }
+                                data-rhythm={
+                                  pageKey === "website"
+                                    ? (siteSkeleton(activeStyle).rhythm ??
+                                      "normal")
+                                    : undefined
+                                }
+                                data-figure={
+                                  pageKey === "website"
+                                    ? (siteSkeleton(activeStyle).figure ??
+                                      "normal")
+                                    : undefined
+                                }
+                                data-copy={
+                                  pageKey === "website"
+                                    ? (siteSkeleton(activeStyle).copy ??
+                                      "normal")
+                                    : undefined
+                                }
+                                data-steps={
+                                  pageKey === "website"
+                                    ? siteSkeleton(activeStyle).steps
+                                    : undefined
+                                }
+                                data-frame={
+                                  pageKey === "website"
+                                    ? (siteSkeleton(activeStyle).frame ??
+                                      "none")
+                                    : undefined
+                                }
+                                /* 工作台自己的主要动作颜色 —— 官网那一页不挂。见 globals.css。 */
+                                data-surface={deskSurface(pageKey)}
+                                className={`ds-ground ${scopeClasses(canvasStyle, activePalette)} ${
+                                  pageKey === "website" ? "ds-site" : ""
+                                } h-full [background-color:var(--color-canvas)]`}
+                              >
+                                {/* Two layers: the outer freezes the register's own radius
                         ladder under private names, the inner multiplies them.
                         One element cannot do both -- a custom property that
                         reads itself is a cycle and CSS drops the lot. Third
                         time in this codebase; see corners.tsx. */}
-                    <div className="h-full" style={cornerCapture}>
-                    {/* 🔴 `[&>*]:h-full` —— 少了它，一页短的时候画面下半是灰的。
+                                <div className="h-full" style={cornerCapture}>
+                                  {/* 🔴 `[&>*]:h-full` —— 少了它，一页短的时候画面下半是灰的。
                         实测 2026-09-05（工程那一页拿掉底下那张表之后）：外面这层
                         底 814px，而里面那个壳只有 617 —— 底下 197px 露出画布自己
                         的灰。壳自己要的是 `min-height:100%`，而**百分比要爸爸有一个
                         写出来的高度**；中间隔着 Puck 自己那一层包装，它的高度是 auto，
                         於是那个百分比没有东西可以算，壳就退回内容的高度。
                         `work-view.tsx` 里那一大段注解讲的是同一件事，从另一边遇到的。 */}
-                    <div
-                      /* 🔴 一页短的时候，画面下半是灰的 —— 2026-09-05 实测。
+                                  <div
+                                    /* 🔴 一页短的时候，画面下半是灰的 —— 2026-09-05 实测。
 
                          工程那一页拿掉底下那张重复的表之后：外面这层底 814px，
                          而里面那个壳只有 617 —— 底下 197px 露出画布自己的灰，
@@ -1452,11 +1522,11 @@ export function PortalEditor({
                          所以这一条只补那一层。`work-view.tsx` 里那一大段注解讲的是
                          同一件事，从另一边遇到的（那边的答案是给壳一个 vh 的最小值，
                          这边不行：画布上面还有一条外壳，`100vh` 会多出一条卷轴）。 */
-                      data-canvas-fill=""
-                      className="h-full"
-                      style={cornerApply(activeCorners)}
-                    >
-                      {/* Everything inside the canvas is the CUSTOMER'S system
+                                    data-canvas-fill=""
+                                    className="h-full"
+                                    style={cornerApply(activeCorners)}
+                                  >
+                                    {/* Everything inside the canvas is the CUSTOMER'S system
                         and speaks their system language; everything outside it
                         is Formae and speaks the owner's. The provider sits at
                         exactly that boundary, one layer inside the style scope
@@ -1466,129 +1536,130 @@ export function PortalEditor({
                         Announcing it here rather than in StyleScope is what makes
                         换个款式 relayout the page on the same click that repaints
                         it -- CanvasGutter needs the classes on itself. */}
-                      <RegisterProvider style={canvasStyle}>
-                        <SystemLangProvider lang={systemLang}>
-                          {children}
-                        </SystemLangProvider>
-                      </RegisterProvider>
-                    </div>
-                    </div>
-                    </CanvasGutter>
-                    </CanvasFrame>
-                    {/* Type on the page instead of in a panel. Renders nothing;
+                                    <RegisterProvider style={canvasStyle}>
+                                      <SystemLangProvider lang={systemLang}>
+                                        {children}
+                                      </SystemLangProvider>
+                                    </RegisterProvider>
+                                  </div>
+                                </div>
+                              </CanvasGutter>
+                            </CanvasFrame>
+                            {/* Type on the page instead of in a panel. Renders nothing;
                       it turns the <Inline> spans puck-config leaves in the
                       canvas into editable text. Inside Puck's provider because
                       it dispatches, and inside the preview override because
                       that is the only place that is true. */}
-                    <InlineEditing />
-                    {/* Hears 页面's renames and reorders. Renders nothing. */}
-                    <RailSync />
-                    <LayoutSync />
-                    {/* The draft note now rides the canvas instead of being a
+                            <InlineEditing />
+                            {/* Hears 页面's renames and reorders. Renders nothing. */}
+                            <RailSync />
+                            <LayoutSync />
+                            {/* The draft note now rides the canvas instead of being a
                       band above it -- see draft-notice.tsx for the measurement
                       that motivated the move. */}
-                    {isGeneratedDraft ? (
-                      <DraftNotice
-                        title={t("draftBannerTitle")}
-                        body={t("draftBannerBody")}
-                        dismiss={t("draftDismiss")}
-                      />
-                    ) : null}
-                    <ExitPreview label={t("exitPreview")} />
-                    {/* OUTSIDE the style scope on purpose. The assistant is
+                            {isGeneratedDraft ? (
+                              <DraftNotice
+                                title={t("draftBannerTitle")}
+                                body={t("draftBannerBody")}
+                                dismiss={t("draftDismiss")}
+                              />
+                            ) : null}
+                            <ExitPreview label={t("exitPreview")} />
+                            {/* OUTSIDE the style scope on purpose. The assistant is
                       Formae's, not the customer's -- scoping it would repaint
                       it in whichever register they picked, which is the exact
                       confusion chrome.module.css exists to prevent. */}
-                    <AiDock>
-                      <AiAssistant pageKey={pageKey} 
-                        pages={navPages}
-                        locale={locale}
-                        activeStyle={activeStyle}
-                        isGeneratedDraft={isGeneratedDraft}
-                        // Not a phone here -- but `compact` is the same request
-                        // either way: drop the duplicate header and lay the three
-                        // examples out as a swipeable row rather than a stack.
-                        // Measured docked and non-compact: 385px of the canvas,
-                        // most of it the explanation the composer's placeholder
-                        // already gives.
-                        compact
-                      />
-                    </AiDock>
+                            <AiDock>
+                              <AiAssistant
+                                pageKey={pageKey}
+                                pages={navPages}
+                                locale={locale}
+                                activeStyle={activeStyle}
+                                isGeneratedDraft={isGeneratedDraft}
+                                // Not a phone here -- but `compact` is the same request
+                                // either way: drop the duplicate header and lay the three
+                                // examples out as a swipeable row rather than a stack.
+                                // Measured docked and non-compact: 385px of the canvas,
+                                // most of it the explanation the composer's placeholder
+                                // already gives.
+                                compact
+                              />
+                            </AiDock>
+                          </div>
+                        ),
+                      }}
+                    />
                   </div>
-                ),
-              }}
-            />
-          </div>
-          </AssistantProvider>
-          </DeviceProvider>
-        </div>
-        {/* Every sheet lands here: inside this component's scoped chrome, so the
+                </AssistantProvider>
+              </DeviceProvider>
+            </div>
+            {/* Every sheet lands here: inside this component's scoped chrome, so the
           --color-* tokens they read are Formae's, and after Puck so nothing in
           its layout can clip them. Renders nothing by itself. */}
-        <SheetHost />
-        <PagesSheet
-          pages={editablePages.map((p) => ({
-            key: p.key,
-            label: p.label,
-            title: p.title ?? null,
-          }))}
-          onRename={renamePage}
-          onReorder={reorderPages}
-          busy={pagesBusy}
-          labels={{
-            title: t("pagesLabel"),
-            note: t("pagesNote"),
-            rename: t("pagesRename"),
-            up: t("pagesUp"),
-            down: t("pagesDown"),
-          }}
-        />
-        <StyleSheet
-          active={activeStyle}
-          palette={activePalette}
-          pending={stylePending}
-          failed={styleFailed}
-          onPick={pickStyle}
-          onShuffle={shuffleStyle}
-          shuffling={shuffling}
-          corners={activeCorners}
-          onCorners={pickCorners}
-          layout={activeLayout}
-          onLayout={pickLayout}
-          // Their own pages, played through. See the note on previewPages in
-          // page.tsx for why it is four and not all of them.
-          pages_={previewPages}
-          locale={locale}
-          styles={STYLE_ORDER.map((name) => ({
-            name,
-            tag: tHome(`styleTag.${name}`),
-          }))}
-          labels={{
-            title: t("styleLabel"),
-            current: tHome("styleCurrent"),
-            failed: t("styleFailed"),
-            more: t("styleMore"),
-            shuffle: t("shuffle"),
-            shuffleNote: t("shuffleNote"),
-            corners: t("corners"),
-            layout: t("layoutLabel"),
-            layoutOptions: [
-              { key: null, label: t("layoutFollow") },
-              /* THREE, NOT FIVE. 仪表盘 and 看板 named the shapes of 仪表盘 and
+            <SheetHost />
+            <PagesSheet
+              pages={editablePages.map((p) => ({
+                key: p.key,
+                label: p.label,
+                title: p.title ?? null,
+              }))}
+              onRename={renamePage}
+              onReorder={reorderPages}
+              busy={pagesBusy}
+              labels={{
+                title: t("pagesLabel"),
+                note: t("pagesNote"),
+                rename: t("pagesRename"),
+                up: t("pagesUp"),
+                down: t("pagesDown"),
+              }}
+            />
+            <StyleSheet
+              active={activeStyle}
+              palette={activePalette}
+              pending={stylePending}
+              failed={styleFailed}
+              onPick={pickStyle}
+              onShuffle={shuffleStyle}
+              shuffling={shuffling}
+              corners={activeCorners}
+              onCorners={pickCorners}
+              layout={activeLayout}
+              onLayout={pickLayout}
+              // Their own pages, played through. See the note on previewPages in
+              // page.tsx for why it is four and not all of them.
+              pages_={previewPages}
+              locale={locale}
+              styles={STYLE_ORDER.map((name) => ({
+                name,
+                tag: tHome(`styleTag.${name}`),
+              }))}
+              labels={{
+                title: t("styleLabel"),
+                current: tHome("styleCurrent"),
+                failed: t("styleFailed"),
+                more: t("styleMore"),
+                shuffle: t("shuffle"),
+                shuffleNote: t("shuffleNote"),
+                corners: t("corners"),
+                layout: t("layoutLabel"),
+                layoutOptions: [
+                  { key: null, label: t("layoutFollow") },
+                  /* THREE, NOT FIVE. 仪表盘 and 看板 named the shapes of 仪表盘 and
                  粗野, and both registers were culled on 2026-08-27. A button
                  that stays on the toolbar after the shape behind it is gone
                  lights up, writes the column, and leaves the page exactly as
                  it was -- which is the defect this file spent the week fixing
                  on the other 排法 buttons. See LAYOUT_SETS. */
-              { key: "table", label: t("layoutTable") },
-              { key: "hero", label: t("layoutHero") },
-              { key: "today", label: t("layoutToday") },
-            ],
-          }}
-        />
-      </div>
-    </EditorUiProvider>
-    </RecordPageProvider>
+                  { key: "table", label: t("layoutTable") },
+                  { key: "hero", label: t("layoutHero") },
+                  { key: "today", label: t("layoutToday") },
+                ],
+              }}
+            />
+          </div>
+        </EditorUiProvider>
+      </RecordPageProvider>
     </TradeProvider>
   );
 }

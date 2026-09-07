@@ -13,7 +13,13 @@ import { useTranslations } from "next-intl";
  * **一个画面上两个数字讲不同的话，比两个都错更糟** —— 看的人会以为是自己看错。
  * 所以两边用同一个做法：第一次挂载抓一次，之后不再动。
  */
-export function InboxCount({ unread, total }: { unread: number; total: number }) {
+export function InboxCount({
+  unread,
+  total,
+}: {
+  unread: number;
+  total: number;
+}) {
   const t = useTranslations("portal");
   const [wasUnread] = useState(unread);
   if (!total) return null;

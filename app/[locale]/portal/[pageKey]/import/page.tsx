@@ -26,9 +26,19 @@ import type { SheetColumn } from "@/lib/portal/import-sheet";
 
 /** 内建那几栏在表格上的键，跟送进资料库的键对起来。 */
 const BUILT_IN: Record<string, Record<string, string>> = {
-  pipeline: { primary: "title", secondary: "party", amount: "amount_cents", status: "stage" },
+  pipeline: {
+    primary: "title",
+    secondary: "party",
+    amount: "amount_cents",
+    status: "stage",
+  },
   directory: { primary: "name", secondary: "phone", status: "status" },
-  ledger: { primary: "note", secondary: "party", amount: "amount_cents", status: "" },
+  ledger: {
+    primary: "note",
+    secondary: "party",
+    amount: "amount_cents",
+    status: "",
+  },
 };
 
 export default async function ImportPage({
@@ -64,27 +74,32 @@ export default async function ImportPage({
   }
 
   return (
-    <StyleScope register={SYSTEM_REGISTER} palette={ctx.palette} data-surface="desk" className="min-h-screen">
+    <StyleScope
+      register={SYSTEM_REGISTER}
+      palette={ctx.palette}
+      data-surface="desk"
+      className="min-h-screen"
+    >
       {/* 🔴 2026-09-04：搬进系统的外壳里。老板：`不要设计看起来是好像两个人
           做得一样 一定要统一设计`。见 record-shell.tsx。 */}
       <RecordShell ctx={ctx}>
-      <main className="w-full max-w-[760px]">
-        <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-          {copy.form.importHeading} · {ctx.title}
-        </h1>
-        <p className="mt-1 mb-7 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-          {copy.form.importLede}
-        </p>
-        <ImportForm
-          projectId={ctx.projectId}
-          moduleKey={ctx.pageKey}
-          columns={columns}
-          ownKeys={ownKeys}
-          backHref={ctx.backHref}
-          /* 只有字串。函式过不去 —— 见 record-copy.ts 的档头。 */
-          copy={copy.form}
-        />
-      </main>
+        <main className="w-full max-w-[760px]">
+          <h1 className="ds-display [font-size:var(--text-title)] tracking-[var(--tracking-title)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            {copy.form.importHeading} · {ctx.title}
+          </h1>
+          <p className="mt-1 mb-7 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+            {copy.form.importLede}
+          </p>
+          <ImportForm
+            projectId={ctx.projectId}
+            moduleKey={ctx.pageKey}
+            columns={columns}
+            ownKeys={ownKeys}
+            backHref={ctx.backHref}
+            /* 只有字串。函式过不去 —— 见 record-copy.ts 的档头。 */
+            copy={copy.form}
+          />
+        </main>
       </RecordShell>
     </StyleScope>
   );

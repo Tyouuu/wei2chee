@@ -38,7 +38,12 @@ type RailProps = {
   brandLabel?: string;
   brandHref?: string;
   items?: { label: string; href: string; group: string; iconName?: string }[];
-  utilityItems?: { label: string; href?: string; iconName?: string; showUnreadDot?: boolean }[];
+  utilityItems?: {
+    label: string;
+    href?: string;
+    iconName?: string;
+    showUnreadDot?: boolean;
+  }[];
   userName?: string;
   userRoleLabel?: string;
   /** 侧栏顶上那颗主要动作。这三页**故意不给** —— 见下面。 */
@@ -50,7 +55,11 @@ type RailProps = {
 const shellProps = (() => {
   const want = preferredVariants(SYSTEM_REGISTER).SystemShell;
   const found = VARIANTS.SystemShell?.find((v) => v.id === want)?.props ?? {};
-  return found as { nav?: "side" | "top" | "split"; navTone?: "dark" | "light" | "deep"; bar?: "inline" | "bleed" };
+  return found as {
+    nav?: "side" | "top" | "split";
+    navTone?: "dark" | "light" | "deep";
+    bar?: "inline" | "bleed";
+  };
 })();
 
 export function RecordShell({
@@ -69,14 +78,14 @@ export function RecordShell({
        ⚠️ 这个洞**不是这一轮造成的** —— 每一个模块页的侧栏都读同一个字，
        只是那几页 `check:en` 没有走过。这一轮把它照出来了。 */
     <SystemLangProvider lang={ctx.lang}>
-    <SystemShell
-      nav={shellProps.nav ?? "side"}
-      navTone={shellProps.navTone ?? "dark"}
-      bar={shellProps.bar ?? "inline"}
-      crumbs={ctx.crumbs}
-      crumbMonogram={(ctx.businessName ?? "").slice(0, 2) || undefined}
-      sidebar={
-        /* 🔴 **手机上不画侧栏，而这是量出来才加的。**
+      <SystemShell
+        nav={shellProps.nav ?? "side"}
+        navTone={shellProps.navTone ?? "dark"}
+        bar={shellProps.bar ?? "inline"}
+        crumbs={ctx.crumbs}
+        crumbMonogram={(ctx.businessName ?? "").slice(0, 2) || undefined}
+        sidebar={
+          /* 🔴 **手机上不画侧栏，而这是量出来才加的。**
            `npm run check:reachable` 在 390 报「4 个控件点不到」：
            侧栏在窄屏会摊成一条横的，而那一条**在编辑器外面从来没有被画过**
            （手机上的模块页走的是 `mobile-editor`，它根本不画侧栏）。
@@ -86,23 +95,29 @@ export function RecordShell({
            所以窄屏这里不画它 —— 这跟系统其他每一页在手机上的样子是一致的，
            而「一致」正是这一轮在做的事。回去的路还在：顶栏那条面包屑跟「取消」。
            ⚠️ 真正该修的是那条横的侧栏本身，记在任务档里，不在这一轮动它。 */
-        <div className="hidden @3xl:contents">
-        <RailNav
-          variant={rail.variant as never}
-          brand={{ href: rail.brandHref ?? "#", label: rail.brandLabel ?? "" }}
-          items={rail.items ?? []}
-          utilityItems={rail.utilityItems}
-          user={{ name: rail.userName ?? "", roleLabel: rail.userRoleLabel }}
-          /* ⚠️ **侧栏那颗「加一单」在这三页上不给。**
+          <div className="hidden @3xl:contents">
+            <RailNav
+              variant={rail.variant as never}
+              brand={{
+                href: rail.brandHref ?? "#",
+                label: rail.brandLabel ?? "",
+              }}
+              items={rail.items ?? []}
+              utilityItems={rail.utilityItems}
+              user={{
+                name: rail.userName ?? "",
+                roleLabel: rail.userRoleLabel,
+              }}
+              /* ⚠️ **侧栏那颗「加一单」在这三页上不给。**
              他已经站在加一单那一页上了；一颗把他送回他现在这一页的主要动作，
              不是导航，是一颗按了什么都不会发生的按钮 —— 而那是这个仓库
              明令禁止的那一类。 */
-        />
-        </div>
-      }
-      aside={null}
-      main={children}
-    />
+            />
+          </div>
+        }
+        aside={null}
+        main={children}
+      />
     </SystemLangProvider>
   );
 }

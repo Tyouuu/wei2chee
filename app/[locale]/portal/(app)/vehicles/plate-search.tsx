@@ -104,7 +104,9 @@ export function PlateSearch({
   };
 }) {
   const [plate, setPlate] = useState("");
-  const [state, setState] = useState<"idle" | "looking" | "none" | "failed">("idle");
+  const [state, setState] = useState<"idle" | "looking" | "none" | "failed">(
+    "idle",
+  );
   const [found, setFound] = useState<Found | null>(null);
   /* 改这一台。⚠️ **默认收起来** —— 柜台上打开这一页是要**查**一台车，
      不是要改它；一进来就摊开五个框，会把那个大车牌挤出第一屏。 */
@@ -201,7 +203,8 @@ export function PlateSearch({
     }
   }
 
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
 
   async function saveEdit() {
     if (!found || editBusy) return;
@@ -322,7 +325,9 @@ export function PlateSearch({
             <Field label={words.everyKm} hint={words.everyKmHint}>
               <input
                 value={everyKm}
-                onChange={(e) => setEveryKm(e.target.value.replace(/[^0-9]/g, ""))}
+                onChange={(e) =>
+                  setEveryKm(e.target.value.replace(/[^0-9]/g, ""))
+                }
                 inputMode="numeric"
                 className={FIELD}
               />
@@ -394,7 +399,9 @@ export function PlateSearch({
                   <input
                     value={editEvery}
                     inputMode="numeric"
-                    onChange={(e) => setEditEvery(e.target.value.replace(/[^0-9]/g, ""))}
+                    onChange={(e) =>
+                      setEditEvery(e.target.value.replace(/[^0-9]/g, ""))
+                    }
                     className={`${FIELD} text-right tabular-nums`}
                   />
                 </label>
@@ -425,7 +432,10 @@ export function PlateSearch({
             {found.owner_name && (
               <Fact label={words.owner}>
                 {found.party_id ? (
-                  <a href={`/${locale}/portal/customers/${found.party_id}`} className="underline">
+                  <a
+                    href={`/${locale}/portal/customers/${found.party_id}`}
+                    className="underline"
+                  >
                     {found.owner_name}
                   </a>
                 ) : (
@@ -444,7 +454,9 @@ export function PlateSearch({
                 )}
               </Fact>
             )}
-            {found.last_seen && <Fact label={words.lastSeen}>{found.last_seen}</Fact>}
+            {found.last_seen && (
+              <Fact label={words.lastSeen}>{found.last_seen}</Fact>
+            )}
             {found.last_odometer_km != null && (
               <Fact label={words.lastKm}>
                 {found.last_odometer_km.toLocaleString()} {words.km}
@@ -483,7 +495,11 @@ export function PlateSearch({
                         {v.odometer_km.toLocaleString()} {words.km}
                       </span>
                     )}
-                    {v.issued_on && <span className={`tabular-nums ${dim}`}>{v.issued_on}</span>}
+                    {v.issued_on && (
+                      <span className={`tabular-nums ${dim}`}>
+                        {v.issued_on}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -523,7 +539,13 @@ function Field({
   );
 }
 
-function Fact({ label, children }: { label: string; children: React.ReactNode }) {
+function Fact({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <div className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">

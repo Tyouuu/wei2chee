@@ -59,7 +59,8 @@ export function SettleMonth({
     }
   }
 
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
 
   return (
     <div className="flex flex-col gap-3">
@@ -85,7 +86,11 @@ export function SettleMonth({
               : "inline-flex h-10 items-center [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [color:var(--color-on-primary)] [background-color:var(--color-primary)] disabled:opacity-60"
           }
         >
-          {busy ? copy.saving : settledAt ? copy.settleReopen : copy.settleClose}
+          {busy
+            ? copy.saving
+            : settledAt
+              ? copy.settleReopen
+              : copy.settleClose}
         </button>
       </div>
 

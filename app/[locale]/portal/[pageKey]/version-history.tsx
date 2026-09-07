@@ -76,9 +76,12 @@ export function VersionHistoryDialog({
   async function restore(version: Version) {
     if (busyId) return;
     setBusyId(version.id);
-    const { data, error } = await createBrowserSupabaseClient().rpc("restore_page_version", {
-      version_id: version.id,
-    });
+    const { data, error } = await createBrowserSupabaseClient().rpc(
+      "restore_page_version",
+      {
+        version_id: version.id,
+      },
+    );
     setBusyId(null);
     if (error) {
       setFailed(true);
@@ -115,7 +118,10 @@ export function VersionHistoryDialog({
 
       <div className="mt-5 max-h-[46vh] overflow-y-auto">
         {failed ? (
-          <p role="alert" className="[color:var(--color-clay-bright)] [font-size:var(--text-sm)]">
+          <p
+            role="alert"
+            className="[color:var(--color-clay-bright)] [font-size:var(--text-sm)]"
+          >
             {t("historyFailed")}
           </p>
         ) : versions === null ? (
@@ -145,7 +151,9 @@ export function VersionHistoryDialog({
                   disabled={busyId !== null}
                   className="shrink-0 [border-radius:var(--radius-control)] border px-3 py-1 [border-color:var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-sm)] disabled:opacity-40 enabled:hover:[border-color:var(--color-primary)]"
                 >
-                  {busyId === v.id ? t("historyRestoring") : t("historyRestore")}
+                  {busyId === v.id
+                    ? t("historyRestoring")
+                    : t("historyRestore")}
                 </button>
               </li>
             ))}

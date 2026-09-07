@@ -75,7 +75,8 @@ export function ShareRecordPanel({
     }
   }
 
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
   const ghost =
     "inline-flex h-10 items-center [border-radius:var(--radius-md)] border [border-color:var(--color-ink-800)] [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-on-canvas)] disabled:opacity-60";
   const solid =
@@ -152,7 +153,9 @@ export function ShareRecordPanel({
             {answerNote ? <p className={`mt-1 ${dim}`}>{answerNote}</p> : null}
             {/* 🔴 他同意了，而那一单走到哪还是他自己决定 ——
                 替他把单子从「等回覆」搬走，是替他做了一个他没有做的决定。 */}
-            {answer === "accepted" ? <p className={`mt-1 ${dim}`}>{copy.shareStageHint}</p> : null}
+            {answer === "accepted" ? (
+              <p className={`mt-1 ${dim}`}>{copy.shareStageHint}</p>
+            ) : null}
           </>
         ) : (
           <p className={dim}>{copy.shareNoAnswer}</p>

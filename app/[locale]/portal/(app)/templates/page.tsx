@@ -40,7 +40,6 @@ import {
  * data already fetched, no LLM call and no write.
  */
 
-
 export default async function TemplatesPage({
   params,
 }: {
@@ -128,7 +127,10 @@ export default async function TemplatesPage({
     */
     layout: {
       root: {},
-      content: composeSite(t.build(landingContent), project.style as string | null),
+      content: composeSite(
+        t.build(landingContent),
+        project.style as string | null,
+      ),
     } as unknown as Data,
   }));
 

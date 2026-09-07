@@ -26,7 +26,6 @@ const SCOPE_CLASS: Record<StyleName, string> = {
   counter: styles.counter,
 };
 
-
 /** The name a customer sees. Was two hardcoded ternaries in two files, which is
  *  why a fourth style would have rendered as "Blueprint" in both. */
 export const STYLE_LABEL: Record<StyleName, string> = {
@@ -69,15 +68,30 @@ const TABLE_ONLY = {
           ],
           rows: [
             {
-              cells: { primary: "Taman Desa 三房翻新", secondary: "陈先生", amount: "RM 48,500", status: "已确认" },
+              cells: {
+                primary: "Taman Desa 三房翻新",
+                secondary: "陈先生",
+                amount: "RM 48,500",
+                status: "已确认",
+              },
               tones: { status: "positive" },
             },
             {
-              cells: { primary: "Bukit Jalil 厨房改造", secondary: "李太太", amount: "RM 22,800", status: "等确认" },
+              cells: {
+                primary: "Bukit Jalil 厨房改造",
+                secondary: "李太太",
+                amount: "RM 22,800",
+                status: "等确认",
+              },
               tones: { status: "warning" },
             },
             {
-              cells: { primary: "Cheras 店面装修", secondary: "王老板", amount: "RM 96,000", status: "报价中" },
+              cells: {
+                primary: "Cheras 店面装修",
+                secondary: "王老板",
+                amount: "RM 96,000",
+                status: "报价中",
+              },
               tones: { status: "neutral" },
             },
           ],
@@ -120,9 +134,12 @@ export function StylesClient({
     setActivePalette(next);
     setPalettePending(next ?? "__native__");
     setFailed(false);
-    const { error } = await createBrowserSupabaseClient().rpc("update_project_palette", {
-      new_palette: next,
-    });
+    const { error } = await createBrowserSupabaseClient().rpc(
+      "update_project_palette",
+      {
+        new_palette: next,
+      },
+    );
     setPalettePending(null);
     if (error) {
       setActivePalette(previous);
@@ -139,9 +156,12 @@ export function StylesClient({
     setActive(next);
     setPending(next);
     setFailed(false);
-    const { error } = await createBrowserSupabaseClient().rpc("update_project_style", {
-      new_style: next,
-    });
+    const { error } = await createBrowserSupabaseClient().rpc(
+      "update_project_style",
+      {
+        new_style: next,
+      },
+    );
     setPending(null);
     if (error) {
       setActive(previous);
@@ -160,9 +180,15 @@ export function StylesClient({
           seventeen, and the English said 「five ways」 -- both were written when
           the number was true and neither moved when it changed. Three culls have
           gone past those two strings. */}
-      <PageBar title={t("title")} subtitle={t("subtitle", { n: STYLE_ORDER.length })}>
+      <PageBar
+        title={t("title")}
+        subtitle={t("subtitle", { n: STYLE_ORDER.length })}
+      >
         {failed && (
-          <span role="status" className="[color:var(--color-clay-bright)] [font-size:var(--text-sm)]">
+          <span
+            role="status"
+            className="[color:var(--color-clay-bright)] [font-size:var(--text-sm)]"
+          >
             {tEditor("styleFailed")}
           </span>
         )}
@@ -277,14 +303,19 @@ export function StylesClient({
             </span>
           </div>
           <p className="mt-2 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [line-height:var(--leading-body)]">
-            {t("paletteBody", { count: STYLE_ORDER.length * (PALETTES.length + 1) })}
+            {t("paletteBody", {
+              count: STYLE_ORDER.length * (PALETTES.length + 1),
+            })}
           </p>
           {/* `portal.styles.moreComing` existed and nothing rendered it -- the
               library page reads its own key of the same name. It said 「十种版式
               × 十一种配色」 and had gone past three culls without moving, which is
               what a string nobody draws does. Counted now, and drawn. */}
           <p className="mt-1.5 max-w-2xl [color:var(--color-paper-dim)] [font-size:var(--text-xs)] [line-height:var(--leading-body)]">
-            {t("moreComing", { styles: STYLE_ORDER.length, palettes: PALETTES.length + 1 })}
+            {t("moreComing", {
+              styles: STYLE_ORDER.length,
+              palettes: PALETTES.length + 1,
+            })}
           </p>
 
           {/* FOUR ACROSS AT 1440, matching 21st.dev's Themes grid exactly --
@@ -327,7 +358,6 @@ export function StylesClient({
             ))}
           </ul>
         </section>
-
       </div>
     </div>
   );
@@ -397,13 +427,19 @@ function PaletteCard({
           {label}
         </span>
         {current && (
-          <span className="[color:var(--color-primary)] [font-size:var(--text-xs)]">✓</span>
+          <span className="[color:var(--color-primary)] [font-size:var(--text-xs)]">
+            ✓
+          </span>
         )}
         {pending && (
-          <span className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">…</span>
+          <span className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+            …
+          </span>
         )}
       </span>
-      <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{blurb}</span>
+      <span className="block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+        {blurb}
+      </span>
       {/* WHO IT IS FOR, under the description. Twenty-five colours is a longer
           list than anybody wants to compare one by one, and a business owner
           does not choose a hue -- he recognises his own trade. This is the
@@ -453,7 +489,13 @@ function PaletteCard({
  * colours in this palette or have collapsed into the accent. Measured
  * 2026-08-23: 21 of 25 could not carry status meaning in the accent alone.
  */
-function PaletteSample({ label, dots }: { label: string; dots?: readonly string[] }) {
+function PaletteSample({
+  label,
+  dots,
+}: {
+  label: string;
+  dots?: readonly string[];
+}) {
   return (
     <span
       className="ds-ground relative flex w-full flex-col overflow-hidden [background-color:var(--color-canvas)]"
@@ -496,7 +538,10 @@ function PaletteSample({ label, dots }: { label: string; dots?: readonly string[
           palette or have collapsed into the accent. Measured 2026-08-23: 21 of
           25 could not carry status meaning in the accent alone.
         */}
-        <span className="absolute right-4 top-4 flex items-start gap-[5px]" aria-hidden>
+        <span
+          className="absolute right-4 top-4 flex items-start gap-[5px]"
+          aria-hidden
+        >
           {[
             // The primary leads the ramp: the bars sit on the GROUND half, so
             // it is never painted on its own colour.
@@ -520,7 +565,6 @@ function PaletteSample({ label, dots }: { label: string; dots?: readonly string[
             />
           ))}
         </span>
-
       </span>
 
       {/* THE ACCENT BAND, with the name on it — which also makes the card prove
@@ -573,7 +617,10 @@ function PageReel({
         className="ds-ground min-h-0 flex-1 overflow-hidden [background-color:var(--color-canvas)]"
       >
         <div className="ds-site flex flex-col">
-          <PagePreview data={pages[0].data} strip={pages.slice(1).map((p) => p.data)} />
+          <PagePreview
+            data={pages[0].data}
+            strip={pages.slice(1).map((p) => p.data)}
+          />
         </div>
       </StyleScope>
       {pages.length > 1 ? (

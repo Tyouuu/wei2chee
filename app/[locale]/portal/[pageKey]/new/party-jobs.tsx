@@ -65,7 +65,6 @@ export function PartyJobs({
         ) : null
       }
     >
-
       {jobs.length === 0 ? (
         <p className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
           {copy.noJobsYet}
@@ -88,7 +87,10 @@ export function PartyJobs({
               <span className="min-w-0 flex-1 truncate">
                 {j.title || j.page}
                 {j.stage ? (
-                  <span className="text-[color:var(--color-on-canvas-dim)]"> · {j.stage}</span>
+                  <span className="text-[color:var(--color-on-canvas-dim)]">
+                    {" "}
+                    · {j.stage}
+                  </span>
                 ) : null}
               </span>
               <span className="shrink-0 tabular-nums">{j.amount}</span>

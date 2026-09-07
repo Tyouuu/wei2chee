@@ -57,11 +57,19 @@ export function OutOnLoan({
   /* 一趟东西挂在一张单上，而那张单答得出「在谁那里」——
      所以分组的键是那张单，显示的是那张单上的人。 */
   const groups = (() => {
-    const by = new Map<string, { key: string; who: string; doc: string | null; items: Out[] }>();
+    const by = new Map<
+      string,
+      { key: string; who: string; doc: string | null; items: Out[] }
+    >();
     for (const r of rows) {
       const key = r.record_id;
       if (!by.has(key))
-        by.set(key, { key, who: r.party || words.someone, doc: r.doc_no, items: [] });
+        by.set(key, {
+          key,
+          who: r.party || words.someone,
+          doc: r.doc_no,
+          items: [],
+        });
       by.get(key)!.items.push(r);
     }
     return [...by.values()];
@@ -81,7 +89,9 @@ export function OutOnLoan({
     setRows((v) => v.filter((x) => x.id !== r.id));
     try {
       const supabase = createBrowserSupabaseClient();
-      const { error } = await supabase.rpc("return_rental", { in_rental_id: r.id });
+      const { error } = await supabase.rpc("return_rental", {
+        in_rental_id: r.id,
+      });
       if (error) throw error;
       router.refresh();
     } catch {
@@ -139,14 +149,20 @@ export function OutOnLoan({
           底下一组一张表）。[任务 195] 想在对帐那一页用它，
           而对帐那一边**没有一栏可以分组** —— 这一页有。 */}
       <DeskCard title={words.outLabel}>
-        <p className={`mb-4 ${dim}`}>{rows.length ? words.outLede : words.outNone}</p>
+        <p className={`mb-4 ${dim}`}>
+          {rows.length ? words.outLede : words.outNone}
+        </p>
 
         {rows.length > 0 && (
           <>
             {/* 顶上一排摘要 —— 他站在柜台前先问的是这两个数。 */}
             <div className="mb-5 flex flex-wrap gap-2">
               <Pill>{words.pieces.replace("%n", String(rows.length))}</Pill>
-              {late > 0 && <Pill tone="late">{words.lateCount.replace("%n", String(late))}</Pill>}
+              {late > 0 && (
+                <Pill tone="late">
+                  {words.lateCount.replace("%n", String(late))}
+                </Pill>
+              )}
               <Pill>{words.people.replace("%n", String(groups.length))}</Pill>
             </div>
 
@@ -154,8 +170,12 @@ export function OutOnLoan({
               {groups.map((g) => (
                 <div key={g.key}>
                   <div className="mb-1 flex flex-wrap items-baseline gap-x-3">
-                    <span className="[font-weight:var(--fw-semibold)]">{g.who}</span>
-                    {g.doc && <span className={`tabular-nums ${dim}`}>{g.doc}</span>}
+                    <span className="[font-weight:var(--fw-semibold)]">
+                      {g.who}
+                    </span>
+                    {g.doc && (
+                      <span className={`tabular-nums ${dim}`}>{g.doc}</span>
+                    )}
                   </div>
                   <ul className="flex flex-col">
                     {g.items.map((r) => (
@@ -173,7 +193,9 @@ export function OutOnLoan({
                           </span>
                         ) : (
                           <span className={`tabular-nums ${dim}`}>
-                            {r.due_back_on ? `${words.dueBack} ${r.due_back_on}` : words.noDueDate}
+                            {r.due_back_on
+                              ? `${words.dueBack} ${r.due_back_on}`
+                              : words.noDueDate}
                           </span>
                         )}
                         <button
@@ -212,7 +234,11 @@ export function OutOnLoan({
             <div className="grid gap-3 md:grid-cols-[1fr_1fr_7rem_10rem_auto] md:items-end">
               <label className="grid gap-1">
                 <span className={dim}>{words.onJob}</span>
-                <select value={jobId} onChange={(e) => setJobId(e.target.value)} className={field}>
+                <select
+                  value={jobId}
+                  onChange={(e) => setJobId(e.target.value)}
+                  className={field}
+                >
                   {jobs.map((j) => (
                     <option key={j.id} value={j.id}>
                       {j.label}
@@ -234,7 +260,9 @@ export function OutOnLoan({
                 <input
                   value={qty}
                   inputMode="decimal"
-                  onChange={(e) => setQty(e.target.value.replace(/[^0-9.]/g, ""))}
+                  onChange={(e) =>
+                    setQty(e.target.value.replace(/[^0-9.]/g, ""))
+                  }
                   className={`${field} text-right tabular-nums`}
                 />
               </label>
@@ -272,7 +300,13 @@ export function OutOnLoan({
 }
 
 /** 顶上那一排摘要。参考页的 `infrastructure` 用它把一整页压成三个数。 */
-function Pill({ children, tone }: { children: React.ReactNode; tone?: "late" }) {
+function Pill({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone?: "late";
+}) {
   return (
     <span
       className={`inline-flex items-center [border-radius:999px] [border:var(--hairline)_solid_var(--color-ink-800)] px-3 py-1 [font-size:var(--text-sm)] tabular-nums ${

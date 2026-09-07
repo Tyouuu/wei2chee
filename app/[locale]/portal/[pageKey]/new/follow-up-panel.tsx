@@ -45,11 +45,18 @@ export function FollowUpPanel({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function call(name: string, args: Record<string, unknown>, tag: string) {
+  async function call(
+    name: string,
+    args: Record<string, unknown>,
+    tag: string,
+  ) {
     setError(null);
     setBusy(tag);
     try {
-      const { error: err } = await createBrowserSupabaseClient().rpc(name, args);
+      const { error: err } = await createBrowserSupabaseClient().rpc(
+        name,
+        args,
+      );
       if (err) {
         setError(err.message);
         return;
@@ -60,7 +67,8 @@ export function FollowUpPanel({
     }
   }
 
-  const dim = "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
+  const dim =
+    "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
   const control =
     "ds-control h-10 w-full min-w-0 [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none";
   const ghost =
@@ -92,14 +100,18 @@ export function FollowUpPanel({
             }
           >
             {open.daysLate > 0
-              ? copy.nextLate.replace("{n}", String(open.daysLate)).replace("{date}", open.dueOn)
+              ? copy.nextLate
+                  .replace("{n}", String(open.daysLate))
+                  .replace("{date}", open.dueOn)
               : copy.nextOn.replace("{date}", open.dueOn)}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               disabled={busy !== null}
-              onClick={() => void call("finish_follow_up", { in_id: open.id }, "done")}
+              onClick={() =>
+                void call("finish_follow_up", { in_id: open.id }, "done")
+              }
               className={ghost}
             >
               {busy === "done" ? copy.saving : copy.nextDone}
@@ -108,7 +120,9 @@ export function FollowUpPanel({
             <button
               type="button"
               disabled={busy !== null}
-              onClick={() => void call("drop_follow_up", { in_id: open.id }, "drop")}
+              onClick={() =>
+                void call("drop_follow_up", { in_id: open.id }, "drop")
+              }
               className={`min-h-10 underline ${dim}`}
             >
               {copy.nextDrop}
@@ -147,13 +161,21 @@ export function FollowUpPanel({
             onClick={() =>
               void call(
                 "set_follow_up",
-                { in_record_id: recordId, in_what: what, in_due_on: due || null },
+                {
+                  in_record_id: recordId,
+                  in_what: what,
+                  in_due_on: due || null,
+                },
                 "save",
               )
             }
             className={solid}
           >
-            {busy === "save" ? copy.saving : open ? copy.nextChange : copy.nextSave}
+            {busy === "save"
+              ? copy.saving
+              : open
+                ? copy.nextChange
+                : copy.nextSave}
           </button>
         </div>
       </div>

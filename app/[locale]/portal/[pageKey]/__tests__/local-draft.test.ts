@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { readLocalDraft, writeLocalDraft, localDraftKey } from "../../local-draft";
+import {
+  readLocalDraft,
+  writeLocalDraft,
+  localDraftKey,
+} from "../../local-draft";
 
 describe("local draft safety net", () => {
   beforeEach(() => {
@@ -27,6 +31,8 @@ describe("local draft safety net", () => {
   });
 
   it("produces the expected storage key shape", () => {
-    expect(localDraftKey("proj-1", "dashboard")).toBe("formae-portal-draft:proj-1:dashboard");
+    expect(localDraftKey("proj-1", "dashboard")).toBe(
+      "formae-portal-draft:proj-1:dashboard",
+    );
   });
 });

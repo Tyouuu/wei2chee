@@ -134,7 +134,10 @@ export function MobileEditor({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div role="tablist" className="flex shrink-0 border-b [border-color:var(--color-ink-800)]">
+      <div
+        role="tablist"
+        className="flex shrink-0 border-b [border-color:var(--color-ink-800)]"
+      >
         <button
           type="button"
           role="tab"
@@ -176,19 +179,18 @@ export function MobileEditor({
           variant="phone"
         />
       ) : (
-
         <>
-      <p className="shrink-0 border-b px-4 py-2 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
-        {t("mobileHint")}
-      </p>
+          <p className="shrink-0 border-b px-4 py-2 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+            {t("mobileHint")}
+          </p>
 
-      {/* Their page, full width and scrolling. `pointer-events-none` because
+          {/* Their page, full width and scrolling. `pointer-events-none` because
           this is a picture of a page: every link and control inside it belongs
           to a system that does not exist yet, and a tap that appears to do
           something and does not is worse than one that visibly cannot. */}
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        <div className={chrome.mount}>
-          {/* THE SCROLLER IS A GRANDCHILD OF .mount, NOT ITS CHILD, and that
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            <div className={chrome.mount}>
+              {/* THE SCROLLER IS A GRANDCHILD OF .mount, NOT ITS CHILD, and that
               nesting is the whole point of this div.
 
               chrome.module.css declares `.mount > * { overflow: hidden }` so the
@@ -209,9 +211,14 @@ export function MobileEditor({
               Keeping the clip on this outer div preserves the rounded corners
               the mount exists for; the scroll moves one level in, where nothing
               overrides it. */}
-          <StyleScope register={style} palette={palette} data-surface={deskSurface(pageKey)} className="ds-ground [background-color:var(--color-canvas)]">
-            <div className="h-full overflow-x-auto">
-              {/* COMPOSED AT A DESKTOP WIDTH AND SWIPED, not reflowed and not
+              <StyleScope
+                register={style}
+                palette={palette}
+                data-surface={deskSurface(pageKey)}
+                className="ds-ground [background-color:var(--color-canvas)]"
+              >
+                <div className="h-full overflow-x-auto">
+                  {/* COMPOSED AT A DESKTOP WIDTH AND SWIPED, not reflowed and not
                   scaled. Reflowing puts a five-column table and a 180px rail
                   into 366px, which is not what their system looks like — the
                   first thing they would see is a version of their own page that
@@ -219,22 +226,25 @@ export function MobileEditor({
                   unreadable. Swiping keeps both the proportions and the type
                   size, which is how every phone preview of a desktop layout
                   works. */}
-              {/* 🔴 `SystemLangProvider` —— 看图才看到的：这一张预览里
+                  {/* 🔴 `SystemLangProvider` —— 看图才看到的：这一张预览里
                   搜索框写着「在这里筛选」，而这个客户的系统是英文的。
                   `work-view.tsx` 一直有包这一层，这一张没有，所以组件
                   退回自己的预设（中文）。`check:en` 量不到它 ——
                   它只在手机那一格里画得出来，而那把尺是在桌面宽度跑的。 */}
-              <SystemLangProvider lang={systemLang}>
-                <div className="pointer-events-none w-[900px]">
-                  <Render config={puckConfig} data={appState.data as Data} />
+                  <SystemLangProvider lang={systemLang}>
+                    <div className="pointer-events-none w-[900px]">
+                      <Render
+                        config={puckConfig}
+                        data={appState.data as Data}
+                      />
+                    </div>
+                  </SystemLangProvider>
                 </div>
-              </SystemLangProvider>
+              </StyleScope>
             </div>
-          </StyleScope>
-        </div>
-      </div>
+          </div>
 
-      {/* Half the phone screen, and pinned: on a phone the assistant is not a
+          {/* Half the phone screen, and pinned: on a phone the assistant is not a
           panel beside the work — it IS the work, so it gets a fixed share
           rather than whatever is left over.
 
@@ -251,15 +261,16 @@ export function MobileEditor({
           own system instead of 440. The composer stays pinned to the bottom in
           both, because that is where every assistant a customer has used puts
           it. */}
-      <div className="flex h-[52%] shrink-0 flex-col border-t [border-color:var(--color-ink-800)] sm:h-[38%] md:h-[32%]">
-        <AiAssistant pageKey={pageKey} 
-          pages={navPages}
-          locale={locale}
-          activeStyle={style}
-          isGeneratedDraft={isGeneratedDraft}
-          compact
-        />
-      </div>
+          <div className="flex h-[52%] shrink-0 flex-col border-t [border-color:var(--color-ink-800)] sm:h-[38%] md:h-[32%]">
+            <AiAssistant
+              pageKey={pageKey}
+              pages={navPages}
+              locale={locale}
+              activeStyle={style}
+              isGeneratedDraft={isGeneratedDraft}
+              compact
+            />
+          </div>
         </>
       )}
     </div>

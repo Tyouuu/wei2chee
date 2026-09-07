@@ -41,25 +41,34 @@ export type TermRow = {
   dueOn: string;
 };
 
-export const blankTerm = (): TermRow => ({ description: "", portion: "", amount: "", dueOn: "" });
+export const blankTerm = (): TermRow => ({
+  description: "",
+  portion: "",
+  amount: "",
+  dueOn: "",
+});
 
 /** 送进资料库的形状。空的那几行丢掉 —— 他开了一行没写，不是他要写的一期。 */
 export function termsForDb(rows: TermRow[]) {
-  return rows
-    .filter((r) => r.description.trim())
-    .map((r) => {
-      const pct = r.portion.trim() ? Number(r.portion.replace(/[%\s,]/g, "")) : null;
-      const amt = r.amount.trim() ? senOf(r.amount) ?? null : null;
-      return {
-        description: r.description.trim(),
-        portion: pct != null && Number.isFinite(pct) ? pct : null,
-        amount_cents: pct != null && Number.isFinite(pct) ? null : amt,
-        due_on: r.dueOn || null,
-      };
-    })
-    /* 两个都没有的那一行送出去会被资料库拒绝，而那句拒绝会挡住他整次保存。
+  return (
+    rows
+      .filter((r) => r.description.trim())
+      .map((r) => {
+        const pct = r.portion.trim()
+          ? Number(r.portion.replace(/[%\s,]/g, ""))
+          : null;
+        const amt = r.amount.trim() ? (senOf(r.amount) ?? null) : null;
+        return {
+          description: r.description.trim(),
+          portion: pct != null && Number.isFinite(pct) ? pct : null,
+          amount_cents: pct != null && Number.isFinite(pct) ? null : amt,
+          due_on: r.dueOn || null,
+        };
+      })
+      /* 两个都没有的那一行送出去会被资料库拒绝，而那句拒绝会挡住他整次保存。
        在这里丢掉比较诚实：一行只写了名字，是他还没写完，不是一个错误。 */
-    .filter((t) => t.portion != null || t.amount_cents != null);
+      .filter((t) => t.portion != null || t.amount_cents != null)
+  );
 }
 
 /** 给画面看的：每一期今天等於多少，加不加得起来。 */
@@ -96,7 +105,9 @@ export function TermsEditor({
    * ⚠️ undefined = **没有问**（师傅看不到钱），不是「都没收」——
    * 所以那一整栏不画，而不是画一排「未收」。
    */
-  paidByTerm?: Readonly<Record<string, { paidCents: number; settled: boolean }>>;
+  paidByTerm?: Readonly<
+    Record<string, { paidCents: number; settled: boolean }>
+  >;
   copy: RecordFormCopy;
 }) {
   const set = (i: number, patch: Partial<TermRow>) => {
@@ -117,7 +128,11 @@ export function TermsEditor({
          同一个做法，因为在参考页上每一段都是同一个形状。 */
       action={
         <>
-          <button type="button" onClick={() => onChange([...rows, blankTerm()])} className={sectionAdd}>
+          <button
+            type="button"
+            onClick={() => onChange([...rows, blankTerm()])}
+            className={sectionAdd}
+          >
             ＋ {copy.termAdd}
           </button>
           {/* 这一行的惯例。⚠️ 是一颗他要按的按钮，不是一个预设 ——
@@ -134,10 +149,11 @@ export function TermsEditor({
         </>
       }
     >
-
       {rows.map((row, i) => {
         /* termsForDb 会丢掉写不完整的行，所以位置对不上 —— 用名字对回来。 */
-        const shown = priced.terms.find((t) => t.description === row.description.trim());
+        const shown = priced.terms.find(
+          (t) => t.description === row.description.trim(),
+        );
         /* 这一期收过钱没有。只有存起来的那几期有 id —— 他刚加的一行还不存在，
            所以它永远不会印「已收」，那是对的。 */
         const paid = row.id && paidByTerm ? paidByTerm[row.id] : undefined;
@@ -206,7 +222,9 @@ export function TermsEditor({
                   RM 0 是第三句，而且是错的那一句。 */}
               {paid && (paid.paidCents > 0 || paid.settled) ? (
                 <span className="[font-size:var(--text-xs)] tabular-nums text-[color:var(--color-on-canvas)]">
-                  {paid.settled ? copy.settledAll : `${copy.received} ${ringgitOf(paid.paidCents)}`}
+                  {paid.settled
+                    ? copy.settledAll
+                    : `${copy.received} ${ringgitOf(paid.paidCents)}`}
                 </span>
               ) : null}
             </div>
@@ -228,7 +246,9 @@ export function TermsEditor({
           「这几期加起来跟单上的总数差 RM 12,000」——
           **在骂他没做一件他根本没有开始做的事。**
           「还没写」跟「写错了」是两回事，而红色是留给后者的。 */}
-      {priced.terms.length > 0 && priced.matches === false && priced.documentCents != null ? (
+      {priced.terms.length > 0 &&
+      priced.matches === false &&
+      priced.documentCents != null ? (
         <p className="[font-size:var(--text-xs)] text-[color:var(--color-clay-bright)]">
           {copy.termMismatch} {ringgitOf(Math.abs(priced.differenceCents ?? 0))}
         </p>

@@ -81,22 +81,28 @@ export default async function BooksPage() {
     .maybeSingle();
   const palette = (paletteRow?.palette as string | null) ?? null;
   /* 八个科目要先在，不然第一次打开这一页是空的 —— 而它是幂等的。 */
-  await supabase.rpc("ensure_ledger_accounts", { in_project_id: workspace.projectId });
+  await supabase.rpc("ensure_ledger_accounts", {
+    in_project_id: workspace.projectId,
+  });
 
-  const [{ data: tbRows }, { data: posRows }, { data: accRows }, { data: openRows }] =
-    await Promise.all([
-      supabase.rpc("trial_balance", { in_project_id: workspace.projectId }),
-      supabase.rpc("financial_position", { in_project_id: workspace.projectId }),
-      supabase
-        .from("ledger_accounts")
-        .select("code, name, kind, sort_order")
-        .eq("project_id", workspace.projectId)
-        .order("sort_order"),
-      supabase
-        .from("opening_balances")
-        .select("code, amount_cents, as_on")
-        .eq("project_id", workspace.projectId),
-    ]);
+  const [
+    { data: tbRows },
+    { data: posRows },
+    { data: accRows },
+    { data: openRows },
+  ] = await Promise.all([
+    supabase.rpc("trial_balance", { in_project_id: workspace.projectId }),
+    supabase.rpc("financial_position", { in_project_id: workspace.projectId }),
+    supabase
+      .from("ledger_accounts")
+      .select("code, name, kind, sort_order")
+      .eq("project_id", workspace.projectId)
+      .order("sort_order"),
+    supabase
+      .from("opening_balances")
+      .select("code, amount_cents, as_on")
+      .eq("project_id", workspace.projectId),
+  ]);
 
   const rows = (tbRows ?? []) as Row[];
   const pos = ((posRows ?? []) as Position[])[0] ?? null;
@@ -106,10 +112,13 @@ export default async function BooksPage() {
   const gap = debit - credit;
 
   const openingBy = new Map(
-    ((openRows ?? []) as { code: string; amount_cents: number; as_on: string }[]).map((o) => [
-      o.code,
-      o,
-    ]),
+    (
+      (openRows ?? []) as {
+        code: string;
+        amount_cents: number;
+        as_on: string;
+      }[]
+    ).map((o) => [o.code, o]),
   );
   /* 🔴 **只有这五个开得了帐**（`opening_balances.code` 那条约束）——
      收入 · 费用 · 开帐权益不开帐：收入费用是一段期间发生的事，
@@ -117,23 +126,32 @@ export default async function BooksPage() {
 
      而我第一版把八个都画了出去 —— 于是「Opening」「Money in」「Money out」
      三行各带一颗**永远存不进去的 Save**。尺子全绿，一张图就看到了。 */
-  const OPENABLE = new Set(["cash", "receivable", "inventory", "payable", "deposits"]);
-  const accounts = ((accRows ?? []) as { code: string; name: string; kind: string }[])
+  const OPENABLE = new Set([
+    "cash",
+    "receivable",
+    "inventory",
+    "payable",
+    "deposits",
+  ]);
+  const accounts = (
+    (accRows ?? []) as { code: string; name: string; kind: string }[]
+  )
     .filter((a) => OPENABLE.has(a.code))
     .map((a) => ({
-    code: a.code,
-    name: a.name,
-    kind: a.kind,
-    opening_cents: openingBy.get(a.code)?.amount_cents ?? null,
-    opening_as_on: openingBy.get(a.code)?.as_on ?? null,
-  }));
+      code: a.code,
+      name: a.name,
+      kind: a.kind,
+      opening_cents: openingBy.get(a.code)?.amount_cents ?? null,
+      opening_as_on: openingBy.get(a.code)?.as_on ?? null,
+    }));
 
   /* `ringgit` 拿不到数字的时候回 undefined —— 而这一页每一格都要有字。 */
   const rm = (cents: number) => ringgit(cents) ?? "RM 0";
   /* 🔴 零就留空 —— 见档头 ③。 */
   const money = (cents: number) => (cents > 0 ? rm(cents) : "");
   const cell = "py-2 pr-3 text-right tabular-nums whitespace-nowrap";
-  const head = "py-2 pr-3 text-right [font-weight:var(--fw-medium)] whitespace-nowrap";
+  const head =
+    "py-2 pr-3 text-right [font-weight:var(--fw-medium)] whitespace-nowrap";
 
   /* 🔴 **这一页穿的是他的系统，不是 Formae 的壳。**
 
@@ -164,10 +182,23 @@ export default async function BooksPage() {
              骨架抄的是他挑的那一套的 `finance`（[任务 193] 拿过同一个）。 */
           <DeskCard title={t("books.positionLabel")}>
             <div className="grid divide-y [border-radius:var(--radius-md)] [border:var(--hairline)_solid_var(--color-ink-800)] [divide-color:var(--color-ink-800)] sm:grid-cols-3 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
-              <Cell label={t("books.cash")} value={rm(Number(pos.cash_cents))} lead />
-              <Cell label={t("books.receivable")} value={rm(Number(pos.receivable_cents))} />
-              <Cell label={t("books.payable")} value={rm(Number(pos.payable_cents))} />
-              <Cell label={t("books.deposits")} value={rm(Number(pos.deposits_cents))} />
+              <Cell
+                label={t("books.cash")}
+                value={rm(Number(pos.cash_cents))}
+                lead
+              />
+              <Cell
+                label={t("books.receivable")}
+                value={rm(Number(pos.receivable_cents))}
+              />
+              <Cell
+                label={t("books.payable")}
+                value={rm(Number(pos.payable_cents))}
+              />
+              <Cell
+                label={t("books.deposits")}
+                value={rm(Number(pos.deposits_cents))}
+              />
               {/* 🔴 少一件货的成本，整个存货就算不出来 —— 而**偷偷当成 0**
                   就是一份看起来没问题的资产负债表。讲出来差几件。 */}
               <Cell
@@ -180,7 +211,9 @@ export default async function BooksPage() {
                 muted={!pos.inventory_known}
               />
             </div>
-            <p className={`mt-4 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]`}>
+            <p
+              className={`mt-4 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]`}
+            >
               {t("books.asOf", { date: pos.as_of })} · {t("books.cashBasis")}
             </p>
           </DeskCard>
@@ -204,14 +237,19 @@ export default async function BooksPage() {
             <table className="w-full [font-size:var(--text-sm)]">
               <thead>
                 <tr className="text-left text-[color:var(--color-on-canvas-dim)]">
-                  <th className="py-2 pr-3 [font-weight:var(--fw-medium)]">{t("books.account")}</th>
+                  <th className="py-2 pr-3 [font-weight:var(--fw-medium)]">
+                    {t("books.account")}
+                  </th>
                   <th className={head}>{t("books.debit")}</th>
                   <th className={head}>{t("books.credit")}</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.code} className="border-t [border-color:var(--color-ink-800)]">
+                  <tr
+                    key={r.code}
+                    className="border-t [border-color:var(--color-ink-800)]"
+                  >
                     <td className="py-2 pr-3">{r.name}</td>
                     <td className={cell}>{money(Number(r.debit_cents))}</td>
                     <td className={cell}>{money(Number(r.credit_cents))}</td>
@@ -220,9 +258,15 @@ export default async function BooksPage() {
               </tbody>
               <tfoot>
                 <tr className="border-t-2 [border-color:var(--color-ink-700)]">
-                  <td className="py-2 pr-3 [font-weight:var(--fw-semibold)]">{t("books.total")}</td>
-                  <td className={`${cell} [font-weight:var(--fw-semibold)]`}>{rm(debit)}</td>
-                  <td className={`${cell} [font-weight:var(--fw-semibold)]`}>{rm(credit)}</td>
+                  <td className="py-2 pr-3 [font-weight:var(--fw-semibold)]">
+                    {t("books.total")}
+                  </td>
+                  <td className={`${cell} [font-weight:var(--fw-semibold)]`}>
+                    {rm(debit)}
+                  </td>
+                  <td className={`${cell} [font-weight:var(--fw-semibold)]`}>
+                    {rm(credit)}
+                  </td>
                 </tr>
               </tfoot>
             </table>

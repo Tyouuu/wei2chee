@@ -120,7 +120,8 @@ export function PublishSite({
         setError(t(MESSAGE[result] ?? "publishErrFailed"));
         return false;
       }
-      if (typeof body.slug === "string") setSavedSlug(body.slug.trim().toLowerCase());
+      if (typeof body.slug === "string")
+        setSavedSlug(body.slug.trim().toLowerCase());
       if (typeof body.published === "boolean") setPublished(body.published);
       return true;
     } catch {
@@ -154,7 +155,9 @@ export function PublishSite({
 
       <div
         className="absolute right-0 z-50 mt-1.5 w-[340px] rounded-[var(--radius-lg)] border p-4 [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
-        style={{ boxShadow: "var(--shadow-overlay, 0 14px 34px rgba(6,14,26,.5))" }}
+        style={{
+          boxShadow: "var(--shadow-overlay, 0 14px 34px rgba(6,14,26,.5))",
+        }}
       >
         <h2 className="[color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)]">
           {t("publishTitle")}
@@ -226,11 +229,7 @@ export function PublishSite({
               // Both in one request, in that order: a first publish carries its
               // own address, and sending them separately would fail the publish
               // for having no slug that the same click just supplied.
-              send(
-                published
-                  ? { slug }
-                  : { slug, published: true },
-              )
+              send(published ? { slug } : { slug, published: true })
             }
             className="ml-auto rounded-[var(--radius-md)] px-3.5 py-1.5 [font-size:var(--text-sm)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors disabled:opacity-50 enabled:hover:[background-color:var(--color-primary-deep)]"
           >

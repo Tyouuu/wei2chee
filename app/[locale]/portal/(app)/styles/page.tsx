@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { SITE_PAGE_KEY } from "@/lib/portal/system-register";
 import type { Data } from "@puckeditor/core";
-import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
+import {
+  createSessionSupabaseClient,
+  getSessionUser,
+} from "@/lib/supabase/server-session";
 import { StylesClient } from "./styles-client";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
@@ -65,7 +68,11 @@ export default async function StylesPage({
 
   const pageRefs = sortPages(
     (pageRows ?? []).map(
-      (r: { page_key: string; title: string | null; sort_order: number | null }) => ({
+      (r: {
+        page_key: string;
+        title: string | null;
+        sort_order: number | null;
+      }) => ({
         key: r.page_key,
         title: r.title,
         sortOrder: r.sort_order,
@@ -75,7 +82,10 @@ export default async function StylesPage({
 
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
-  const ownerName = displayOwnerName(businessContext, user.email?.split("@")[0] || "我");
+  const ownerName = displayOwnerName(
+    businessContext,
+    user.email?.split("@")[0] || "我",
+  );
 
   /* 🔴 2026-09-04：这几张缩图只放**官网**那一页了。
      老板：`我现在只需要你一个UI风格for 我的system only` · `做好一套就可以了`。
@@ -85,33 +95,43 @@ export default async function StylesPage({
      还播四页的话，四张里有三张不管你选哪一套都一模一样，
      而缩图正是客人拿来做决定的东西：一张不会变的缩图，会让他以为这个选择没用。
      见 lib/portal/system-register.ts。 */
-  const previewPages = pageRefs.filter((r) => r.key === SITE_PAGE_KEY).map((ref) => {
-    const row = (pageRows ?? []).find((r: { page_key: string }) => r.page_key === ref.key);
-    const saved = (row?.layout_json as Record<string, unknown>) ?? {};
-    const data = isUngeneratedLayout(saved)
-      ? (buildPageLayout(
-          ref.key as PageKey,
-          businessContext,
-          ownerName,
-          locale,
-          pageRefs,
-          project.style as string,
-          (project.layout as string | null) ?? null,
-        ) as unknown as Record<string, unknown>)
-      : upgradeLayout(saved, systemLangOf(businessContext));
-    return {
-      key: ref.key,
-      label: pageLabel(ref, tradeLabels(businessContext, pageRefs), systemLangOf(businessContext)),
-      data,
-    };
-  });
+  const previewPages = pageRefs
+    .filter((r) => r.key === SITE_PAGE_KEY)
+    .map((ref) => {
+      const row = (pageRows ?? []).find(
+        (r: { page_key: string }) => r.page_key === ref.key,
+      );
+      const saved = (row?.layout_json as Record<string, unknown>) ?? {};
+      const data = isUngeneratedLayout(saved)
+        ? (buildPageLayout(
+            ref.key as PageKey,
+            businessContext,
+            ownerName,
+            locale,
+            pageRefs,
+            project.style as string,
+            (project.layout as string | null) ?? null,
+          ) as unknown as Record<string, unknown>)
+        : upgradeLayout(saved, systemLangOf(businessContext));
+      return {
+        key: ref.key,
+        label: pageLabel(
+          ref,
+          tradeLabels(businessContext, pageRefs),
+          systemLangOf(businessContext),
+        ),
+        data,
+      };
+    });
 
   return (
     <StylesClient
       locale={locale}
       style={project.style as StyleName}
       palette={(project.palette as string | null) ?? null}
-      previewPages={previewPages as unknown as { key: string; label: string; data: Data }[]}
+      previewPages={
+        previewPages as unknown as { key: string; label: string; data: Data }[]
+      }
     />
   );
 }

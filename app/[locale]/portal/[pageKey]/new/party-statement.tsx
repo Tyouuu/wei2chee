@@ -104,12 +104,15 @@ export function PartyStatement({
     let alive = true;
     const { from, to } = monthEdges(month);
     void (async () => {
-      const { data, error } = await createBrowserSupabaseClient().rpc("party_statement", {
-        p_project_id: projectId,
-        p_party_id: partyId,
-        p_from: from,
-        p_to: to,
-      });
+      const { data, error } = await createBrowserSupabaseClient().rpc(
+        "party_statement",
+        {
+          p_project_id: projectId,
+          p_party_id: partyId,
+          p_from: from,
+          p_to: to,
+        },
+      );
       if (!alive) return;
       if (error) {
         setFailed(true);
@@ -162,7 +165,9 @@ export function PartyStatement({
             答不了他真正问的那一句「所以他到底欠我多少」。 */
         <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)] tabular-nums">
           {copy.statementQuiet}
-          {opening ? ` · ${copy.statementOpening} ${ringgitOf(opening.runningCents)}` : ""}
+          {opening
+            ? ` · ${copy.statementOpening} ${ringgitOf(opening.runningCents)}`
+            : ""}
         </span>
       ) : (
         <>
@@ -208,75 +213,94 @@ export function PartyStatement({
             </li>
             {depositCents > 0 ? (
               <li className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
-                {copy.statementDeposit.replace("{amount}", ringgitOf(depositCents))}
+                {copy.statementDeposit.replace(
+                  "{amount}",
+                  ringgitOf(depositCents),
+                )}
               </li>
             ) : null}
           </ul>
 
           <div className="hidden overflow-x-auto sm:block">
-          <table className="w-full min-w-[30rem] border-collapse [font-size:var(--text-sm)] tabular-nums">
-            <thead>
-              <tr className="text-left text-[color:var(--color-on-canvas-dim)]">
-                <th className="py-1 pr-3 font-normal [font-size:var(--text-xs)]">{copy.statementOn}</th>
-                <th className="py-1 pr-3 font-normal [font-size:var(--text-xs)]">{copy.statementWhat}</th>
-                <th className="py-1 pr-3 text-right font-normal [font-size:var(--text-xs)]">
-                  {copy.statementCharge}
-                </th>
-                <th className="py-1 pr-3 text-right font-normal [font-size:var(--text-xs)]">
-                  {copy.statementPaid}
-                </th>
-                <th className="py-1 text-right font-normal [font-size:var(--text-xs)]">
-                  {copy.statementRunning}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="text-[color:var(--color-on-canvas)]">
-              {opening ? (
-                <tr className="border-t [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)]">
-                  <td className="py-1.5 pr-3">{opening.onDate}</td>
-                  <td className="py-1.5 pr-3">{copy.statementOpening}</td>
-                  <td className="py-1.5 pr-3 text-right">—</td>
-                  <td className="py-1.5 pr-3 text-right">—</td>
-                  <td className="py-1.5 text-right">{ringgitOf(opening.runningCents)}</td>
+            <table className="w-full min-w-[30rem] border-collapse [font-size:var(--text-sm)] tabular-nums">
+              <thead>
+                <tr className="text-left text-[color:var(--color-on-canvas-dim)]">
+                  <th className="py-1 pr-3 font-normal [font-size:var(--text-xs)]">
+                    {copy.statementOn}
+                  </th>
+                  <th className="py-1 pr-3 font-normal [font-size:var(--text-xs)]">
+                    {copy.statementWhat}
+                  </th>
+                  <th className="py-1 pr-3 text-right font-normal [font-size:var(--text-xs)]">
+                    {copy.statementCharge}
+                  </th>
+                  <th className="py-1 pr-3 text-right font-normal [font-size:var(--text-xs)]">
+                    {copy.statementPaid}
+                  </th>
+                  <th className="py-1 text-right font-normal [font-size:var(--text-xs)]">
+                    {copy.statementRunning}
+                  </th>
                 </tr>
-              ) : null}
-              {moves.map((r, i) => (
-                <tr key={i} className="border-t [border-color:var(--color-ink-800)]">
-                  <td className="py-1.5 pr-3">{r.onDate}</td>
-                  <td className="py-1.5 pr-3">
-                    {[r.docNo, r.title].filter(Boolean).join(" · ") || "—"}
-                  </td>
-                  <td className="py-1.5 pr-3 text-right">
-                    {r.chargeCents ? ringgitOf(r.chargeCents) : "—"}
-                  </td>
-                  <td className="py-1.5 pr-3 text-right">
-                    {r.creditCents ? ringgitOf(r.creditCents) : "—"}
-                  </td>
-                  <td className="py-1.5 text-right">{ringgitOf(r.runningCents)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t-2 [border-color:var(--color-ink-700)] [font-weight:var(--fw-semibold)]">
-                <td className="py-2 pr-3" colSpan={4}>
-                  {copy.statementClosing}
-                </td>
-                <td className="py-2 text-right">{closing == null ? "—" : ringgitOf(closing)}</td>
-              </tr>
-              {/* 🔴 两个数字要一起讲。只写期末不提订金，
-                  那张纸发出去客人会回一句「我付过了」。 */}
-              {depositCents > 0 ? (
-                <tr>
-                  <td
-                    className="pt-1 [font-size:var(--text-xs)] [font-weight:var(--fw-regular)] text-[color:var(--color-on-canvas-dim)]"
-                    colSpan={5}
+              </thead>
+              <tbody className="text-[color:var(--color-on-canvas)]">
+                {opening ? (
+                  <tr className="border-t [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)]">
+                    <td className="py-1.5 pr-3">{opening.onDate}</td>
+                    <td className="py-1.5 pr-3">{copy.statementOpening}</td>
+                    <td className="py-1.5 pr-3 text-right">—</td>
+                    <td className="py-1.5 pr-3 text-right">—</td>
+                    <td className="py-1.5 text-right">
+                      {ringgitOf(opening.runningCents)}
+                    </td>
+                  </tr>
+                ) : null}
+                {moves.map((r, i) => (
+                  <tr
+                    key={i}
+                    className="border-t [border-color:var(--color-ink-800)]"
                   >
-                    {copy.statementDeposit.replace("{amount}", ringgitOf(depositCents))}
+                    <td className="py-1.5 pr-3">{r.onDate}</td>
+                    <td className="py-1.5 pr-3">
+                      {[r.docNo, r.title].filter(Boolean).join(" · ") || "—"}
+                    </td>
+                    <td className="py-1.5 pr-3 text-right">
+                      {r.chargeCents ? ringgitOf(r.chargeCents) : "—"}
+                    </td>
+                    <td className="py-1.5 pr-3 text-right">
+                      {r.creditCents ? ringgitOf(r.creditCents) : "—"}
+                    </td>
+                    <td className="py-1.5 text-right">
+                      {ringgitOf(r.runningCents)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 [border-color:var(--color-ink-700)] [font-weight:var(--fw-semibold)]">
+                  <td className="py-2 pr-3" colSpan={4}>
+                    {copy.statementClosing}
+                  </td>
+                  <td className="py-2 text-right">
+                    {closing == null ? "—" : ringgitOf(closing)}
                   </td>
                 </tr>
-              ) : null}
-            </tfoot>
-          </table>
+                {/* 🔴 两个数字要一起讲。只写期末不提订金，
+                  那张纸发出去客人会回一句「我付过了」。 */}
+                {depositCents > 0 ? (
+                  <tr>
+                    <td
+                      className="pt-1 [font-size:var(--text-xs)] [font-weight:var(--fw-regular)] text-[color:var(--color-on-canvas-dim)]"
+                      colSpan={5}
+                    >
+                      {copy.statementDeposit.replace(
+                        "{amount}",
+                        ringgitOf(depositCents),
+                      )}
+                    </td>
+                  </tr>
+                ) : null}
+              </tfoot>
+            </table>
           </div>
         </>
       )}

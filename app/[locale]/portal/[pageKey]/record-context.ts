@@ -25,7 +25,11 @@ import { chrome } from "@/lib/templates/copy";
 import { MODULE_BY_KEY, type ModuleShape } from "@/lib/portal/module-catalog";
 import { isLiveShape } from "@/lib/portal/shape-state";
 import type { TableColumn } from "@/lib/portal/table-model";
-import { canOpenModule, loadWorkspace, type WorkspaceRole } from "@/lib/portal/workspace";
+import {
+  canOpenModule,
+  loadWorkspace,
+  type WorkspaceRole,
+} from "@/lib/portal/workspace";
 import { reversedIds, settleDocument } from "@/lib/portal/allocations";
 import { priceSchedule } from "@/lib/portal/payment-terms";
 
@@ -197,7 +201,9 @@ export async function loadRecordPage(
     .select("page_key, title, sort_order, layout_json")
     .eq("project_id", project.id);
 
-  const page = (pageRows ?? []).find((r: { page_key: string }) => r.page_key === pageKey);
+  const page = (pageRows ?? []).find(
+    (r: { page_key: string }) => r.page_key === pageKey,
+  );
   /* Not 「this module exists in the catalogue」 -- 「this business has it」. A
      restaurant with no quotations page must not be given a form for one. */
   if (!page) notFound();
@@ -209,7 +215,11 @@ export async function loadRecordPage(
   const savedLayout = (page.layout_json as Record<string, unknown>) ?? {};
   const pageRefs = sortPages(
     (pageRows ?? []).map(
-      (r: { page_key: string; title: string | null; sort_order: number | null }) => ({
+      (r: {
+        page_key: string;
+        title: string | null;
+        sort_order: number | null;
+      }) => ({
         key: r.page_key,
         title: r.title,
         sortOrder: r.sort_order,
@@ -217,19 +227,17 @@ export async function loadRecordPage(
     ),
   );
 
-  const layout = (
-    isUngeneratedLayout(savedLayout)
-      ? buildPageLayout(
-          pageKey as PageKey,
-          businessContext,
-          displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
-          locale,
-          pageRefs,
-          project.style as StyleName,
-          (project.layout as string | null) ?? null,
-        )
-      : upgradeLayout(savedLayout, lang)
-  ) as unknown as PuckLayout;
+  const layout = (isUngeneratedLayout(savedLayout)
+    ? buildPageLayout(
+        pageKey as PageKey,
+        businessContext,
+        displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
+        locale,
+        pageRefs,
+        project.style as StyleName,
+        (project.layout as string | null) ?? null,
+      )
+    : upgradeLayout(savedLayout, lang)) as unknown as PuckLayout;
 
   const table = firstRecordTable(layout);
   /* No table on the page means nothing to write into. The owner removed it,
@@ -272,7 +280,9 @@ export async function loadRecordPage(
       .gt("amount_cents", 0)
       .order("created_at", { ascending: false })
       .limit(200);
-    q = buying ? q.eq("module_key", "purchases") : q.neq("module_key", "purchases");
+    q = buying
+      ? q.eq("module_key", "purchases")
+      : q.neq("module_key", "purchases");
     const { data: docs } = await q;
     const ids = (docs ?? []).map((d: { id: string }) => d.id);
 
@@ -284,7 +294,9 @@ export async function loadRecordPage(
           .in("record_id", ids),
         supabase
           .from("record_terms")
-          .select("id, record_id, description, portion, amount_cents, sort_order")
+          .select(
+            "id, record_id, description, portion, amount_cents, sort_order",
+          )
           .in("record_id", ids)
           .order("sort_order"),
       ]);
@@ -296,12 +308,21 @@ export async function loadRecordPage(
 
       /* 哪几笔钱被冲正了。要问，不能假设 —— 一张退过款的单印着「已收」，
          是他照一个假数字决定要不要开工。 */
-      const entryIds = [...new Set(allocRows.map((a: { entry_id: string }) => a.entry_id))];
+      const entryIds = [
+        ...new Set(allocRows.map((a: { entry_id: string }) => a.entry_id)),
+      ];
       const { data: entryRows } = entryIds.length
-        ? await supabase.from("ledger_entries").select("id, adjusts_id").in("id", entryIds)
+        ? await supabase
+            .from("ledger_entries")
+            .select("id, adjusts_id")
+            .in("id", entryIds)
         : { data: [] };
-      const gone = reversedIds((entryRows ?? []) as { id: string; adjusts_id: string | null }[]);
-      const facts = ((entryRows ?? []) as { id: string; adjusts_id: string | null }[]).map((e) => ({
+      const gone = reversedIds(
+        (entryRows ?? []) as { id: string; adjusts_id: string | null }[],
+      );
+      const facts = (
+        (entryRows ?? []) as { id: string; adjusts_id: string | null }[]
+      ).map((e) => ({
         id: e.id,
         adjusts_id: e.adjusts_id,
         reversed: gone.has(e.id),
@@ -318,14 +339,21 @@ export async function loadRecordPage(
         }) => {
           const mine = allocRows.filter(
             (a: { record_id: string }) => a.record_id === d.id,
-          ) as { entry_id: string; record_id: string; term_id: string | null; amount_cents: number }[];
-          const myTerms = ((termRows ?? []) as {
-            id: string;
+          ) as {
+            entry_id: string;
             record_id: string;
-            description: string | null;
-            portion: number | null;
-            amount_cents: number | null;
-          }[]).filter((t) => t.record_id === d.id);
+            term_id: string | null;
+            amount_cents: number;
+          }[];
+          const myTerms = (
+            (termRows ?? []) as {
+              id: string;
+              record_id: string;
+              description: string | null;
+              portion: number | null;
+              amount_cents: number | null;
+            }[]
+          ).filter((t) => t.record_id === d.id);
           const priced = priceSchedule(
             myTerms.map((t) => ({
               description: t.description ?? "",
@@ -396,9 +424,14 @@ export async function loadRecordPage(
       in_project_id: project.id,
     });
     partyDebts = Object.fromEntries(
-      ((debtRows ?? []) as {
-        party_id: string; owed_cents: number; oldest_days: number | null; limit_cents: number | null;
-      }[]).map((r) => [
+      (
+        (debtRows ?? []) as {
+          party_id: string;
+          owed_cents: number;
+          oldest_days: number | null;
+          limit_cents: number | null;
+        }[]
+      ).map((r) => [
         r.party_id,
         {
           owedCents: Number(r.owed_cents ?? 0),
@@ -491,7 +524,8 @@ export async function loadRecordPage(
     columns: table.columns,
     /* 进货单's stages are its own -- see stagesForModule. The form offers
        what the page actually shows. */
-    stages: shape === "pipeline" ? stagesForModule(businessContext, pageKey) : [],
+    stages:
+      shape === "pipeline" ? stagesForModule(businessContext, pageKey) : [],
     parties: (parties as { id: string; name: string }[] | null) ?? [],
     title: pageLabel({ key: pageKey, title: page.title ?? null }, labels, lang),
     backHref: `/${locale}/portal/${pageKey}`,
@@ -507,15 +541,17 @@ export async function loadRecordPage(
        报价单，收到的人看不出是谁开的。`identity.business_name` 本来就在
        context 里，只是从来没有人往这一页传。 */
     businessName: businessContext.identity?.business_name ?? null,
-    rail: (railNavNode(
-      labels,
-      displayBusinessName(businessContext),
-      displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
-      pageKey,
-      locale,
-      pageRefs,
-      lang,
-    ) as unknown as { props: Record<string, unknown> }).props,
+    rail: (
+      railNavNode(
+        labels,
+        displayBusinessName(businessContext),
+        displayOwnerName(businessContext, user.email?.split("@")[0] || "我"),
+        pageKey,
+        locale,
+        pageRefs,
+        lang,
+      ) as unknown as { props: Record<string, unknown> }
+    ).props,
     crumbs: [
       navGroup(pageKey, pageRefs.length, chrome(lang)),
       pageLabel({ key: pageKey, title: page.title ?? null }, labels, lang),

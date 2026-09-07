@@ -68,7 +68,8 @@ export function Stocktake({
 
   if (onHand == null) return null;
 
-  const num = (t: string) => (t.trim() === "" ? null : Number(t.replace(/[^\d.-]/g, "")));
+  const num = (t: string) =>
+    t.trim() === "" ? null : Number(t.replace(/[^\d.-]/g, ""));
   const loose = num(counted);
   const packCount = num(packs);
   /* 两格都空才叫没填。只打箱数、只打零头，两个都是他真的会做的事。 */
@@ -79,7 +80,8 @@ export function Stocktake({
     : loose;
   const valid = n != null && Number.isFinite(n) && n >= 0;
   const diff = valid ? n - onHand : null;
-  const diffPhrase = diff != null ? packPhrase(diff, packSize, packUnit ?? "", unit) : null;
+  const diffPhrase =
+    diff != null ? packPhrase(diff, packSize, packUnit ?? "", unit) : null;
   const onHandPhrase = packPhrase(onHand, packSize, packUnit ?? "", unit);
 
   async function run() {
@@ -168,13 +170,18 @@ export function Stocktake({
                 `${diff! > 0 ? "+" : "−"}${Math.abs(diff!)}${unit ? ` ${unit}` : ""}` +
                   /* 箱那一句接在后面：他打的是箱，而记进去的是罐 ——
                      两个都印出来，他才看得出自己有没有多打一个零。 */
-                  (byPack && diffPhrase ? ` (${copy.packThatIs} ${diffPhrase})` : ""),
+                  (byPack && diffPhrase
+                    ? ` (${copy.packThatIs} ${diffPhrase})`
+                    : ""),
               )}
         </span>
       ) : null}
 
       {error ? (
-        <p role="alert" className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]">
+        <p
+          role="alert"
+          className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-clay-bright)]"
+        >
           {error}
         </p>
       ) : null}

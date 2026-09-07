@@ -98,7 +98,13 @@ export function PageBody({ children }: { children: ReactNode }) {
 /** A child of PageBody that rises with the stagger. Anything not wrapped in one
  *  of these appears instantly, which is the right default for a page's own
  *  chrome and the wrong one for its content. */
-export function Rise({ children, className }: { children: ReactNode; className?: string }) {
+export function Rise({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   const still = useReducedMotion();
   return (
     <motion.div

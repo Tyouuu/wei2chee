@@ -97,7 +97,10 @@ export function useLineSuggestions({
   const [items, setItems] = useState<ShelfItem[] | null>(null);
   const [units, setUnits] = useState<string[]>([]);
   const [lastLines, setLastLines] = useState<Line[] | null>(null);
-  const [lastFrom, setLastFrom] = useState<{ docNo: string; on: string } | null>(null);
+  const [lastFrom, setLastFrom] = useState<{
+    docNo: string;
+    on: string;
+  } | null>(null);
   /* 🔴 那几行是**哪一个客人**的。
      第一版是在那支 effect 里同步 `setLastLines(null)` 把它洗掉，而 React 19
      的 lint 直接报 error（cascading renders）。改成记住它属於谁，对不上就不给 ——
@@ -107,8 +110,6 @@ export function useLineSuggestions({
      不是 null —— 「还没问」跟「问了、一件都没有」在这一格上做的事一样：
      不画。而画错的代价（一张装修单上多五个空框）比晚一秒画大。 */
   const [serials, setSerials] = useState<Record<string, string[]>>({});
-
-
 
   /* 货架跟单位：一个专案问一次 */
   useEffect(() => {
@@ -135,8 +136,13 @@ export function useLineSuggestions({
         );
       }
       if (!usual.error) {
-        setUnits((usual.data ?? []).map((r: Record<string, unknown>) => String(r.unit ?? "")).filter(Boolean));
+        setUnits(
+          (usual.data ?? [])
+            .map((r: Record<string, unknown>) => String(r.unit ?? ""))
+            .filter(Boolean),
+        );
       }
+
       /* 🔴 一台一台管的那几件 —— 先问有没有，再问架上有哪几台。
          ⚠️ **绝大多数生意这一句回零行，然后就到此为止** ——
          一家五金店不该为了一格它永远看不到的东西多打几次。 */
@@ -175,11 +181,14 @@ export function useLineSuggestions({
     if (!enabled || !partyId) return;
     let alive = true;
     void (async () => {
-      const { data, error } = await createBrowserSupabaseClient().rpc("last_lines_for_party", {
-        p_project_id: projectId,
-        p_party_id: partyId,
-        p_module_key: moduleKey,
-      });
+      const { data, error } = await createBrowserSupabaseClient().rpc(
+        "last_lines_for_party",
+        {
+          p_project_id: projectId,
+          p_party_id: partyId,
+          p_module_key: moduleKey,
+        },
+      );
       if (!alive) return;
       setLastFor(partyId);
       if (error || !data?.length) {
@@ -229,11 +238,15 @@ export function useLineSuggestions({
  * 🔴 已经打了字的一格不动（[任务 144]）。回传 undefined = 没有这件货，
  * 那就是他自己打的一句话（「拆除旧厨房」不在任何人的货架上），什么都不做。
  */
-export function fillFromShelf(line: Line, items: ShelfItem[] | null): Partial<Line> | undefined {
+export function fillFromShelf(
+  line: Line,
+  items: ShelfItem[] | null,
+): Partial<Line> | undefined {
   const hit = (items ?? []).find((i) => i.name === line.description);
   if (!hit) return undefined;
   const patch: Partial<Line> = {};
   if (!line.unit.trim() && hit.unit) patch.unit = hit.unit;
-  if (!line.unitPrice.trim() && hit.priceCents != null) patch.unitPrice = priceText(hit.priceCents);
+  if (!line.unitPrice.trim() && hit.priceCents != null)
+    patch.unitPrice = priceText(hit.priceCents);
   return Object.keys(patch).length ? patch : undefined;
 }

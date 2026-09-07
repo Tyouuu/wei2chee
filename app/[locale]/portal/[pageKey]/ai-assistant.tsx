@@ -12,7 +12,10 @@ import { puckConfig } from "@/design-system/editor/puck-config";
 import { LABELS_EN } from "@/design-system/editor/labels-en";
 import { planDesignChange } from "@/lib/portal/design-change";
 import { claimStands } from "@/lib/portal/claim-check";
-import { suggestionsFor, ASSISTANT_LIMITS } from "@/lib/portal/trade-suggestions";
+import {
+  suggestionsFor,
+  ASSISTANT_LIMITS,
+} from "@/lib/portal/trade-suggestions";
 import { MODULE_BY_KEY } from "@/lib/portal/module-catalog";
 import { useTrade } from "@/design-system/trade-context";
 import { findSelector, type PuckLayout } from "@/lib/portal/layout-ops";
@@ -154,7 +157,8 @@ export function AiAssistant({
    * remounted this panel on every keystroke. Reading them from a provider that
    * editor-client does not re-render is what makes typing possible at all.
    * See assistant-state.tsx for the measurement. */
-  const { turns, setTurns, instruction, setInstruction, busy, setBusy } = useAssistant();
+  const { turns, setTurns, instruction, setInstruction, busy, setBusy } =
+    useAssistant();
   /* The dock's OWN open state, in editor-ui. Note that useAssistant()
      also carries a dockOpen/setDockOpen pair and NOTHING READS IT --
      two providers each claiming in a comment to be where this lives.
@@ -193,13 +197,17 @@ export function AiAssistant({
         .eq("account_id", auth.user.id)
         .single();
       if (!project) return;
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
+      const ext = (file.name.split(".").pop() || "jpg")
+        .toLowerCase()
+        .slice(0, 5);
       const path = `${project.id}/ask-${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage
         .from("site-photos")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (error) return;
-      setImage(supabase.storage.from("site-photos").getPublicUrl(path).data.publicUrl);
+      setImage(
+        supabase.storage.from("site-photos").getPublicUrl(path).data.publicUrl,
+      );
     } finally {
       setUploading(false);
     }
@@ -249,7 +257,10 @@ export function AiAssistant({
   // covered by the panel's own title bar.
   useEffect(() => {
     if (turns.length === 0) return;
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    listRef.current?.scrollTo({
+      top: listRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, [turns]);
 
   async function ask(text: string) {
@@ -258,7 +269,10 @@ export function AiAssistant({
 
     const id = `${Date.now()}`;
     const before = data;
-    setTurns((prev) => [...prev, { id, question: trimmed, state: "thinking", before }]);
+    setTurns((prev) => [
+      ...prev,
+      { id, question: trimmed, state: "thinking", before },
+    ]);
     setInstruction("");
     // Cleared with the question it belonged to: a picture that stayed attached
     // would silently ride along on the next, unrelated request.
@@ -277,7 +291,9 @@ export function AiAssistant({
     setDockOpen(true);
 
     const settle = (patch: Partial<Turn>) =>
-      setTurns((prev) => prev.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
+      setTurns((prev) =>
+        prev.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)),
+      );
 
     /*
       NOTHING USED TO EVER STOP WAITING.
@@ -364,7 +380,11 @@ export function AiAssistant({
         settle({
           state: "failed",
           explanation:
-            res.status === 429 ? t("aiRateLimited") : res.status >= 500 ? t("aiBroke") : t("aiFailed"),
+            res.status === 429
+              ? t("aiRateLimited")
+              : res.status >= 500
+                ? t("aiBroke")
+                : t("aiFailed"),
         });
         return;
       }
@@ -378,7 +398,11 @@ export function AiAssistant({
         suggestion: PageOffer | null;
         /* 风格 / 配色 / 排法 -- not layout, so it is not in `result.layout`
            and is applied through the same RPC the style picker calls. */
-        design: { style?: string; palette?: string | null; layout?: string } | null;
+        design: {
+          style?: string;
+          palette?: string | null;
+          layout?: string;
+        } | null;
         /* True when the route wrote real rows. They are in the database, not
            in `layout`, so the page has to be re-read for them to appear. */
         refetch?: boolean;
@@ -467,7 +491,11 @@ export function AiAssistant({
           const base = result.layout as unknown as PuckLayout;
           const moved = relayout(base, result.design.layout);
           if (moved !== base) {
-            dispatch({ type: "setData", data: moved as unknown as Data, recordHistory: true });
+            dispatch({
+              type: "setData",
+              data: moved as unknown as Data,
+              recordHistory: true,
+            });
           }
         }
       }
@@ -535,7 +563,9 @@ export function AiAssistant({
     // Recorded as its own history step rather than silently rewinding, so the
     // revert is itself undoable.
     dispatch({ type: "setData", data: turn.before, recordHistory: true });
-    setTurns((prev) => prev.map((x) => (x.id === turn.id ? { ...x, reverted: true } : x)));
+    setTurns((prev) =>
+      prev.map((x) => (x.id === turn.id ? { ...x, reverted: true } : x)),
+    );
   }
 
   /**
@@ -552,7 +582,9 @@ export function AiAssistant({
     if (!offer || turn.offerBusy || turn.offerResult) return;
 
     const patch = (p: Partial<Turn>) =>
-      setTurns((prev) => prev.map((x) => (x.id === turn.id ? { ...x, ...p } : x)));
+      setTurns((prev) =>
+        prev.map((x) => (x.id === turn.id ? { ...x, ...p } : x)),
+      );
 
     /*
       OPENING A PICTURE SLOT IS NOT A WRITE.
@@ -569,7 +601,10 @@ export function AiAssistant({
     */
     if (offer.action === "pick_photo") {
       const sel = offer.blockId
-        ? findSelector((appState.data as unknown as PuckLayout).content ?? [], offer.blockId)
+        ? findSelector(
+            (appState.data as unknown as PuckLayout).content ?? [],
+            offer.blockId,
+          )
         : null;
       if (sel) {
         /*
@@ -670,8 +705,9 @@ export function AiAssistant({
    * typed request does — same endpoint, same ops, same transcript entry, same
    * per-turn revert — so nothing here is a second way for the layout to change.
    */
-  const blockId = typeof selectedItem?.props?.id === "string" ? selectedItem.props.id : null;
-  /* 🔴 这一行 2026-09-07 改了（老板自己点出来的）：
+  const blockId =
+    typeof selectedItem?.props?.id === "string" ? selectedItem.props.id : null;
+  /* 🔴 这一行2026-09-07 改了（老板自己点出来的）：
      `puckConfig` 里的名字是中文的 —— 中文是唯一真相，英文是它的投影
      （任务 8）。而这一格一直直接读原文，于是一个英文系统里的面板写着
      「CHANGE THIS BLOCK · 记录表格」—— 半句英文半句中文。
@@ -680,8 +716,9 @@ export function AiAssistant({
   const blockLabel = selectedItem
     ? (() => {
         const raw =
-          (puckConfig.components as Record<string, { label?: string }>)[selectedItem.type]
-            ?.label ?? selectedItem.type;
+          (puckConfig.components as Record<string, { label?: string }>)[
+            selectedItem.type
+          ]?.label ?? selectedItem.type;
         return panelLocale === "zh" ? raw : (LABELS_EN[raw] ?? raw);
       })()
     : null;
@@ -741,7 +778,10 @@ export function AiAssistant({
           and the composer underneath it ended up ON TOP of the suggestions.
           Found by a hit-test sweep: three suggestion buttons reported as
           covered by the textarea. */}
-      <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-3.5 py-3.5">
+      <div
+        ref={listRef}
+        className="min-h-0 flex-1 overflow-y-auto px-3.5 py-3.5"
+      >
         {turns.length === 0 ? (
           /* THE EMPTY STATE IS THE ON-RAMP, so it has to be visible without
              scrolling — a blank box asking a business owner to phrase a
@@ -763,9 +803,13 @@ export function AiAssistant({
           // contextual one.
           <div style={blockId ? { display: "none" } : undefined}>
             {!compact && (
-              <p className="[font-size:var(--text-sm)] leading-relaxed [color:var(--color-paper-dim)]">{t("aiEmptyBody")}</p>
+              <p className="[font-size:var(--text-sm)] leading-relaxed [color:var(--color-paper-dim)]">
+                {t("aiEmptyBody")}
+              </p>
             )}
-            <p className={`[font-size:var(--text-micro)] uppercase tracking-[0.08em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)] ${compact ? "" : "mt-4"}`}>
+            <p
+              className={`[font-size:var(--text-micro)] uppercase tracking-[0.08em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)] ${compact ? "" : "mt-4"}`}
+            >
               {t("aiSuggestTitle")}
             </p>
             <div
@@ -827,7 +871,9 @@ export function AiAssistant({
                 </p>
 
                 {turn.state === "thinking" ? (
-                  <p className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">{t("aiThinking")}</p>
+                  <p className="[font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                    {t("aiThinking")}
+                  </p>
                 ) : (
                   <div className="flex flex-col gap-1.5">
                     <p
@@ -855,7 +901,10 @@ export function AiAssistant({
                     {turn.skipped?.length ? (
                       <ul className="flex flex-col gap-0.5">
                         {turn.skipped.map((s, i) => (
-                          <li key={i} className="[font-size:var(--text-xs)] [color:var(--color-brass-bright)]">
+                          <li
+                            key={i}
+                            className="[font-size:var(--text-xs)] [color:var(--color-brass-bright)]"
+                          >
                             · {sayWhyNot(t, s)}
                           </li>
                         ))}
@@ -905,15 +954,18 @@ export function AiAssistant({
                       browser on 2026-08-27, and about as alarming a sentence as
                       this panel could produce.
                     */}
-                    {turn.offerResult?.ok
-                      && !turn.offerResult.href
-                      && turn.offer?.action === "remove_page" && (
-                      <p className="[font-size:var(--text-xs)] [color:var(--color-jade-bright)]">
-                        {t("aiPageRemoved")}
-                      </p>
-                    )}
+                    {turn.offerResult?.ok &&
+                      !turn.offerResult.href &&
+                      turn.offer?.action === "remove_page" && (
+                        <p className="[font-size:var(--text-xs)] [color:var(--color-jade-bright)]">
+                          {t("aiPageRemoved")}
+                        </p>
+                      )}
                     {turn.offerResult && !turn.offerResult.ok && (
-                      <p role="alert" className="[font-size:var(--text-xs)] [color:var(--color-clay-bright)]">
+                      <p
+                        role="alert"
+                        className="[font-size:var(--text-xs)] [color:var(--color-clay-bright)]"
+                      >
                         {t("aiOfferFailed")}
                       </p>
                     )}
@@ -963,7 +1015,13 @@ export function AiAssistant({
                 type="button"
                 disabled={busy}
                 onClick={() =>
-                  ask(t("aiVerbPrompt", { id: blockId, block: blockLabel ?? "", verb: v.verb }))
+                  ask(
+                    t("aiVerbPrompt", {
+                      id: blockId,
+                      block: blockLabel ?? "",
+                      verb: v.verb,
+                    }),
+                  )
                 }
                 // 44px on a phone, where mobile-editor.tsx makes this assistant the whole
                 // interface and these four buttons are most of what it is for.
@@ -980,7 +1038,11 @@ export function AiAssistant({
         {image ? (
           <div className="mb-2 flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt="" className="h-10 w-14 rounded-[var(--radius-xs)] object-cover" />
+            <img
+              src={image}
+              alt=""
+              className="h-10 w-14 rounded-[var(--radius-xs)] object-cover"
+            />
             <button
               type="button"
               onClick={() => setImage(null)}
@@ -1020,7 +1082,9 @@ export function AiAssistant({
               below it, mobile-editor.tsx renders this assistant as the whole
               interface, and the send button beside it is the real affordance
               there. */}
-          <span className="hidden [font-size:var(--text-micro)] [color:var(--color-paper-dim)] lg:inline">{t("aiEnterHint")}</span>
+          <span className="hidden [font-size:var(--text-micro)] [color:var(--color-paper-dim)] lg:inline">
+            {t("aiEnterHint")}
+          </span>
           <input
             ref={imageRef}
             type="file"

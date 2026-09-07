@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Turn } from "./ai-assistant";
 
 /**
@@ -65,7 +71,16 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
   const [dockOpen, setDockOpen] = useState<boolean | null>(null);
 
   const value = useMemo(
-    () => ({ turns, setTurns, instruction, setInstruction, busy, setBusy, dockOpen, setDockOpen }),
+    () => ({
+      turns,
+      setTurns,
+      instruction,
+      setInstruction,
+      busy,
+      setBusy,
+      dockOpen,
+      setDockOpen,
+    }),
     [turns, instruction, busy, dockOpen],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

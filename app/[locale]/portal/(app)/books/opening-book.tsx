@@ -136,7 +136,11 @@ export function OpeningBook({
           <input
             value={r.name}
             onChange={(e) =>
-              setRows((v) => v.map((x) => (x.code === r.code ? { ...x, name: e.target.value } : x)))
+              setRows((v) =>
+                v.map((x) =>
+                  x.code === r.code ? { ...x, name: e.target.value } : x,
+                ),
+              )
             }
             className={field}
             aria-label={words.name}
@@ -160,7 +164,11 @@ export function OpeningBook({
             type="date"
             value={r.asOn}
             onChange={(e) =>
-              setRows((v) => v.map((x) => (x.code === r.code ? { ...x, asOn: e.target.value } : x)))
+              setRows((v) =>
+                v.map((x) =>
+                  x.code === r.code ? { ...x, asOn: e.target.value } : x,
+                ),
+              )
             }
             className={`${field} tabular-nums`}
             aria-label={words.asOn}

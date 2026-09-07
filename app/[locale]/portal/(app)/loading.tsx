@@ -22,7 +22,10 @@ export default function Loading() {
 
         <div className="mt-7 grid gap-px overflow-hidden rounded-[var(--radius-md)] [background-color:var(--color-ink-800)] sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-[92px] [background-color:var(--color-ink-900)]" />
+            <div
+              key={i}
+              className="h-[92px] [background-color:var(--color-ink-900)]"
+            />
           ))}
         </div>
 

@@ -26,7 +26,9 @@ function kindsFromMigration(): string[] {
     .filter((f) => f.endsWith(".sql"))
     .sort()
     .filter((f) =>
-      readFileSync(join(dir, f), "utf8").includes("create or replace function public.nudges_due"),
+      readFileSync(join(dir, f), "utf8").includes(
+        "create or replace function public.nudges_due",
+      ),
     )
     .pop();
   expect(last, "找不到 nudges_due 那一支 migration").toBeTruthy();
@@ -47,11 +49,15 @@ describe("每一种事都有一句话", () => {
   });
 
   it.each(kinds)("%s 在画面那份对照表里", (kind) => {
-    expect(client, `nudge-list.tsx 没有认得 ${kind}`).toContain(`${kind}: "kind_${kind}"`);
+    expect(client, `nudge-list.tsx 没有认得 ${kind}`).toContain(
+      `${kind}: "kind_${kind}"`,
+    );
   });
 
   it.each(["en", "zh"])("%s 每一种都有字", (lang) => {
-    const dict = JSON.parse(readFileSync(join(ROOT, "messages", `${lang}.json`), "utf8")) as {
+    const dict = JSON.parse(
+      readFileSync(join(ROOT, "messages", `${lang}.json`), "utf8"),
+    ) as {
       portal: { today: Record<string, string> };
     };
     const missing = kinds.filter((k) => !dict.portal.today[`kind_${k}`]);

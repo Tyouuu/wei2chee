@@ -74,13 +74,14 @@ export function AddressEditor({
         j === i
           ? { ...r, ...patch }
           : /* 勾了这一个，别的自己松开。互斥在这里做，不是留给资料库拒绝。 */
-            patch.isBilling ? { ...r, isBilling: false } : r,
+            patch.isBilling
+            ? { ...r, isBilling: false }
+            : r,
       ),
     );
 
   return (
     <FormSection title={copy.addresses}>
-
       {rows.map((row, i) => (
         <div
           key={i}

@@ -65,7 +65,9 @@ export function ShelfLife({
   const [itemId, setItemId] = useState(items[0]?.id ?? "");
   const [code, setCode] = useState("");
   const [expiry, setExpiry] = useState("");
-  const [received, setReceived] = useState(() => new Date().toISOString().slice(0, 10));
+  const [received, setReceived] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState("");
   const [batches, setBatches] = useState<Batch[] | null>(null);
@@ -74,7 +76,9 @@ export function ShelfLife({
     if (!id) return;
     try {
       const supabase = createBrowserSupabaseClient();
-      const { data, error } = await supabase.rpc("batches_of", { in_item_id: id });
+      const { data, error } = await supabase.rpc("batches_of", {
+        in_item_id: id,
+      });
       if (error) {
         setBatches([]);
         return;
@@ -134,7 +138,9 @@ export function ShelfLife({
           骨架抄的是他挑的那一套的 `file-manager`（一件东西一张小卡，
           那个数字最大），只是这里最大的那个数字是**还有几天**。 */}
       <DeskCard title={words.soonLabel}>
-        <p className={`mb-5 ${dim}`}>{soon.length ? words.soonLede : words.soonNone}</p>
+        <p className={`mb-5 ${dim}`}>
+          {soon.length ? words.soonLede : words.soonNone}
+        </p>
         {soon.length > 0 && (
           <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {soon.map((b) => {
@@ -146,7 +152,9 @@ export function ShelfLife({
                     late ? "[border-color:var(--color-clay-bright)]" : ""
                   }`}
                 >
-                  <span className="[font-weight:var(--fw-semibold)]">{b.item_name}</span>
+                  <span className="[font-weight:var(--fw-semibold)]">
+                    {b.item_name}
+                  </span>
                   {/* 那个数字最大 —— 这一格的答案就是它。 */}
                   <span
                     className={`tabular-nums [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] ${
@@ -156,7 +164,10 @@ export function ShelfLife({
                     {b.days_left == null
                       ? words.noExpiry
                       : late
-                        ? words.gone.replace("%n", String(Math.abs(b.days_left)))
+                        ? words.gone.replace(
+                            "%n",
+                            String(Math.abs(b.days_left)),
+                          )
                         : words.daysLeft.replace("%n", String(b.days_left))}
                   </span>
                   <span className={`tabular-nums ${dim}`}>
@@ -234,7 +245,11 @@ export function ShelfLife({
                 >
                   {busy ? words.adding : words.add}
                 </button>
-                <button type="button" onClick={() => look(itemId)} className={btn}>
+                <button
+                  type="button"
+                  onClick={() => look(itemId)}
+                  className={btn}
+                >
                   {words.itsBatches}
                 </button>
                 {said && (
@@ -256,7 +271,9 @@ export function ShelfLife({
                         key={b.batch_id}
                         className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t py-2 [border-color:var(--color-ink-800)]"
                       >
-                        <span className="tabular-nums [font-weight:var(--fw-medium)]">{b.code}</span>
+                        <span className="tabular-nums [font-weight:var(--fw-medium)]">
+                          {b.code}
+                        </span>
                         <span className={`tabular-nums ${dim}`}>
                           {words.onHand} {b.on_hand} {unitOf(itemId)}
                         </span>

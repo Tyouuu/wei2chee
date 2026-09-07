@@ -34,7 +34,12 @@ type Slip = {
   taken: { label: string; amount: number }[];
 };
 
-type Run = { id: string; period_from: string; period_to: string; paid_at: string | null };
+type Run = {
+  id: string;
+  period_from: string;
+  period_to: string;
+  paid_at: string | null;
+};
 
 type Words = Record<string, string>;
 
@@ -176,7 +181,9 @@ function NoRun({
           （`open_pay_run` 是照 `staff_pay_terms` 长出每一行的）——
           所以不画那颗按钮，改成讲出要先做哪一件。 */}
       {!canOpen ? (
-        <p className={dim}>{staffCount === 0 ? words.noStaff : words.noTerms}</p>
+        <p className={dim}>
+          {staffCount === 0 ? words.noStaff : words.noTerms}
+        </p>
       ) : (
         <div className="flex flex-wrap items-end gap-3">
           <label className="grid gap-1">
@@ -197,7 +204,12 @@ function NoRun({
               className={`${field} tabular-nums`}
             />
           </label>
-          <button type="button" disabled={busy} onClick={open} className={deskBtn("primary")}>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={open}
+            className={deskBtn("primary")}
+          >
             {busy ? words.opening : words.open}
           </button>
           {said && (
@@ -248,11 +260,16 @@ function OpenRun({
   const [busy, setBusy] = useState<string | null>(null);
   const [said, setSaid] = useState<Record<string, string>>({});
   const [picked, setPicked] = useState(slips[0]?.id ?? "");
-  const [draft, setDraft] = useState<Record<string, { label: string; amount: string }[]>>(() =>
+  const [draft, setDraft] = useState<
+    Record<string, { label: string; amount: string }[]>
+  >(() =>
     Object.fromEntries(
       slips.map((s) => [
         s.id,
-        s.earnings.map((e) => ({ label: e.label, amount: String(Math.round(e.amount / 100)) })),
+        s.earnings.map((e) => ({
+          label: e.label,
+          amount: String(Math.round(e.amount / 100)),
+        })),
       ]),
     ),
   );
@@ -260,7 +277,10 @@ function OpenRun({
   const totalNet = slips.reduce((n, s) => n + s.net, 0);
   /* 🔴 他真正掏出去的是**实发加雇主那一份** —— 一个只看实发的老板，
      会少算掉公积金雇主的 12–13%，而那笔钱一样从他的户口出去。 */
-  const totalCost = slips.reduce((n, s) => n + s.net + s.deduction + s.employer, 0);
+  const totalCost = slips.reduce(
+    (n, s) => n + s.net + s.deduction + s.employer,
+    0,
+  );
   const sheet = slips.find((s) => s.id === picked) ?? slips[0] ?? null;
 
   async function saveLines(slipId: string) {
@@ -342,7 +362,10 @@ function OpenRun({
           {slips.map((s) => {
             const open = s.id === picked;
             return (
-              <li key={s.id} className="border-t py-4 [border-color:var(--color-ink-800)]">
+              <li
+                key={s.id}
+                className="border-t py-4 [border-color:var(--color-ink-800)]"
+              >
                 {/* 整行按得到 —— 柜台上拇指按不准一句字里的那几个字。 */}
                 <button
                   type="button"
@@ -367,7 +390,10 @@ function OpenRun({
                 {open && (
                   <div className="mt-3 flex flex-col gap-2">
                     {(draft[s.id] ?? []).map((l, i) => (
-                      <div key={i} className="grid gap-2 sm:grid-cols-[1fr_9rem]">
+                      <div
+                        key={i}
+                        className="grid gap-2 sm:grid-cols-[1fr_9rem]"
+                      >
                         <input
                           value={l.label}
                           placeholder={words.lineLabel}
@@ -391,7 +417,13 @@ function OpenRun({
                               ...d,
                               [s.id]: (d[s.id] ?? []).map((x, j) =>
                                 j === i
-                                  ? { ...x, amount: e.target.value.replace(/[^0-9.]/g, "") }
+                                  ? {
+                                      ...x,
+                                      amount: e.target.value.replace(
+                                        /[^0-9.]/g,
+                                        "",
+                                      ),
+                                    }
                                   : x,
                               ),
                             }))
@@ -407,7 +439,10 @@ function OpenRun({
                         onClick={() =>
                           setDraft((d) => ({
                             ...d,
-                            [s.id]: [...(d[s.id] ?? []), { label: "", amount: "" }],
+                            [s.id]: [
+                              ...(d[s.id] ?? []),
+                              { label: "", amount: "" },
+                            ],
                           }))
                         }
                         className={btn}
@@ -493,18 +528,29 @@ function OpenRun({
 
             <dl className="mt-6 flex flex-col">
               {sheet.earnings.map((e, i) => (
-                <Line key={`e${i}`} label={e.label || words.lineLabel} value={rm(e.amount)} />
+                <Line
+                  key={`e${i}`}
+                  label={e.label || words.lineLabel}
+                  value={rm(e.amount)}
+                />
               ))}
               {sheet.earnings.length === 0 && (
                 <Line label={words.earns} value={rm(sheet.gross)} />
               )}
               {sheet.taken.map((d, i) => (
-                <Line key={`d${i}`} label={d.label} value={`− ${rm(d.amount)}`} dim />
+                <Line
+                  key={`d${i}`}
+                  label={d.label}
+                  value={`− ${rm(d.amount)}`}
+                  dim
+                />
               ))}
             </dl>
 
             <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3 border-t pt-4 [border-color:var(--color-ink-700)]">
-              <span className="[font-weight:var(--fw-semibold)]">{words.takesHome}</span>
+              <span className="[font-weight:var(--fw-semibold)]">
+                {words.takesHome}
+              </span>
               <span className="tabular-nums [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)]">
                 {rm(sheet.net)}
               </span>
@@ -516,7 +562,9 @@ function OpenRun({
             )}
             {/* ⚠️ 那几笔法定的从哪来，印在纸上 —— 一个跟他自己算的对不上的
                 扣款，读起来像我们算错了。 */}
-            {sheet.taken.length > 0 && <p className={`mt-1 ${dim}`}>{words.byLaw}</p>}
+            {sheet.taken.length > 0 && (
+              <p className={`mt-1 ${dim}`}>{words.byLaw}</p>
+            )}
           </DeskSheet>
         ) : (
           <p className={dim}>{words.noTerms}</p>
@@ -527,11 +575,23 @@ function OpenRun({
 }
 
 /** 那张纸上的一行。 */
-function Line({ label, value, dim }: { label: string; value: string; dim?: boolean }) {
+function Line({
+  label,
+  value,
+  dim,
+}: {
+  label: string;
+  value: string;
+  dim?: boolean;
+}) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-3 border-t py-2 [border-color:var(--color-ink-800)]">
       <dt className={dim ? deskDim : "[font-size:var(--text-sm)]"}>{label}</dt>
-      <dd className={`tabular-nums [font-size:var(--text-sm)] ${dim ? deskDim : ""}`}>{value}</dd>
+      <dd
+        className={`tabular-nums [font-size:var(--text-sm)] ${dim ? deskDim : ""}`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }
@@ -613,7 +673,11 @@ function PayTerms({
             <select
               value={r.basis}
               onChange={(e) =>
-                setRows((v) => v.map((x) => (x.id === r.id ? { ...x, basis: e.target.value } : x)))
+                setRows((v) =>
+                  v.map((x) =>
+                    x.id === r.id ? { ...x, basis: e.target.value } : x,
+                  ),
+                )
               }
               className={field}
               aria-label={words.basis}
@@ -629,7 +693,12 @@ function PayTerms({
               onChange={(e) =>
                 setRows((v) =>
                   v.map((x) =>
-                    x.id === r.id ? { ...x, rateText: e.target.value.replace(/[^0-9.]/g, "") } : x,
+                    x.id === r.id
+                      ? {
+                          ...x,
+                          rateText: e.target.value.replace(/[^0-9.]/g, ""),
+                        }
+                      : x,
                   ),
                 )
               }
@@ -637,7 +706,12 @@ function PayTerms({
               aria-label={words.rate}
             />
             <div className="flex items-center gap-3">
-              <button type="button" disabled={busy === r.id} onClick={() => save(r.id)} className={btn}>
+              <button
+                type="button"
+                disabled={busy === r.id}
+                onClick={() => save(r.id)}
+                className={btn}
+              >
                 {busy === r.id ? words.saving : words.save}
               </button>
               {said[r.id] && (

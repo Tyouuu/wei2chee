@@ -49,7 +49,9 @@ export function FormSection({
         <span className="shrink-0 [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
           {title}
         </span>
-        {action ? <div className="flex flex-wrap items-center gap-3">{action}</div> : null}
+        {action ? (
+          <div className="flex flex-wrap items-center gap-3">{action}</div>
+        ) : null}
       </div>
       {children}
     </section>
