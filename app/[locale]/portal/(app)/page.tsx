@@ -8,6 +8,7 @@ import { PortalHome } from "../home-client";
 import { REGISTERED_COMPONENTS } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
+import { defaultRegister } from "@/lib/portal/default-register";
 import {
   canOpenModule,
   hideMoneyFromRail,
@@ -81,7 +82,12 @@ export default async function PortalHomePage({
     : { data: null };
 
   if (!project || !workspace) redirect("/login");
-  if (!project.style) redirect("/portal/style-select");
+  /* 🔴 2026-09-08：这里本来是 `if (!project.style) redirect("/portal/style-select")`。
+     老板看到那一页：「沒有這個system style呢 這個已經不要了 舊概念了」——
+     而 2026-09-04 之后工作台只有一套，那一页的预览画的正好是不会跟着变的那一半。
+     照他这一行给一套（资料库 2026-08-27 就填好了），他不用先被问一次。
+     见 lib/portal/default-register.ts。 */
+  const register = await defaultRegister(supabase, project.style);
 
   const { data: pageRows } = await supabase
     .from("project_pages")
@@ -171,7 +177,7 @@ export default async function PortalHomePage({
               ownerName,
               locale,
               pageRefs,
-              project.style as string,
+              register as string,
               (project.layout as string | null) ?? null,
             )
           : upgradeLayout(
@@ -202,7 +208,7 @@ export default async function PortalHomePage({
          had the answer never said it. */
       stage={(project.stage as string | null) ?? "designing"}
       stageChangedAt={(project.stage_changed_at as string | null) ?? null}
-      style={project.style as StyleName}
+      style={register as StyleName}
       palette={(project.palette as string | null) ?? null}
       pages={pages}
       componentCount={REGISTERED_COMPONENTS.length}

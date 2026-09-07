@@ -186,7 +186,8 @@
     "walk:mistakes": "node scripts/walk-mistakes.mjs",
     "walk:stranger": "node scripts/walk-stranger.mjs",
     "check:tables": "node scripts/check-tables.mjs",
-    "check:kitchen": "node scripts/check-kitchen.mjs"
+    "check:kitchen": "node scripts/check-kitchen.mjs",
+    "audit:product": "node scripts/audit-product.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

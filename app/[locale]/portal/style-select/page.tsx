@@ -1,57 +1,28 @@
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
-import { createSessionSupabaseClient, getSessionUser } from "@/lib/supabase/server-session";
-import { StyleSelectClient } from "./style-select-client";
-import {
-  STYLE_ORDER,
-  type StyleName,
-} from "@/app/[locale]/style-picker/style-column";
+import { getSessionUser } from "@/lib/supabase/server-session";
 
 /**
- * The one-time style-selection step a customer sees on first login, before
- * the editor unlocks. Auth guard follows the `getSessionUser()` pattern
- * Task 2 established for server components (this is that helper's first
- * real consumer -- login/page.tsx itself doesn't need it, it's the page
- * that produces the session) -- signed-out visitors bounce to /login.
+ * 「挑一套 system style」那一步没有了 —— 这里只剩一条转向。
  *
- * This page's own chrome (heading, subtitle) deliberately uses the
- * acquisition site's own Tailwind theme (`text-foreground` /
- * `text-muted-foreground`, wired in app/globals.css) rather than any of the
- * three design-system token sets, matching the public `/style-picker`
- * page's own chrome for the same reason: it sits outside any <StyleColumn>
- * scope, so it's the neutral frame the comparison sits inside, not a
- * fourth style competing with the three being compared.
+ * 老板 2026-09-08 看到它的截图：「**沒有這個system style呢 這個已經不要了
+ * 舊概念了**」。他讲对了，而它比一句过时的话严重：
+ *
+ *   · 2026-09-04（[任务 132](../../../../docs/founder-tasks.md)）之后
+ *     `projects.style` **只管一个画面**：客户的官网。工作台收敛成一套。
+ *   · 而这一页被四个入口硬导过来（portal 首页 · 每一个模块页 · 需求书 · 风格库），
+ *     标题写着「Choose your **system** style」，而它那几张预览卡画的是**工作台**
+ *     —— 也就是不管他选哪一套都不会变的那一半。
+ *   · 实测（`npm run shoot:one-register`，2026-09-08）：**工作台 1 种 · 官网 6 种**。
+ *
+ * 挑哪一套官网还是一个真的决定，而它有两个还活着的地方：官网那一页的编辑器里
+ * 那个换风格的面板，跟 `/portal/styles` 的风格库。所以这一条导去风格库。
+ *
+ * ⚠️ **档案留着，不删** —— 一条旧网址可能已经在某个人的书签或者一封信里。
+ * 而 `style-select-client.tsx` 也留着：它那份比较用的文案是 `/style-picker`
+ * 共用的（那一页的注解写着这件事），删掉会一起弄坏那一页。
  */
 export default async function StyleSelectPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-
-  const t = await getTranslations("portal.styleSelect");
-
-  // Which of the three styles suits this business, from the industry it told us
-  // about during the acquisition flow. Advisory only -- the customer still picks
-  // and can pick any of the three -- but asking someone to make an irreversible
-  // choice between three names they have never seen, with no hint at all, was a
-  // real dead end in the journey. Null for an account that signed up without the
-  // questionnaire; the badge is simply omitted then.
-  const supabase = await createSessionSupabaseClient();
-  const { data: context } = await supabase.rpc("get_my_business_context");
-  const recommendation = (context as { industry?: { style_recommendation?: string } } | null)
-    ?.industry?.style_recommendation;
-  // Validated against THE list rather than a copy of it. A recommendation the
-  // picker cannot render is worse than none: the card would be missing from the
-  // grid it is supposed to be highlighted in.
-  const recommended = STYLE_ORDER.includes(recommendation as StyleName)
-    ? (recommendation as StyleName)
-    : null;
-
-  return (
-    <main className="mx-auto max-w-7xl px-6 py-16">
-      <h1 className="[font-size:var(--text-title)] [font-weight:var(--fw-semibold)] text-foreground">{t("title")}</h1>
-      <p className="mt-2 [font-size:var(--text-sm)] text-muted-foreground">{t("subtitle")}</p>
-      <div className="mt-10">
-        <StyleSelectClient recommended={recommended} />
-      </div>
-    </main>
-  );
+  redirect("/portal/styles");
 }

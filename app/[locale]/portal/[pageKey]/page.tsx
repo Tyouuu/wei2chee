@@ -33,6 +33,7 @@ import { upgradeLayout } from "@/lib/portal/layout-upgrade";
 import { applyLayoutOps, type PuckLayout } from "@/lib/portal/layout-ops";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { ALL_LANDING_BY_KEY } from "@/lib/templates/all-landings";
+import { defaultRegister } from "@/lib/portal/default-register";
 import {
   landingContentFor,
   PAGE_KEYS,
@@ -106,7 +107,12 @@ export default async function PortalEditorPage({
      URL is typeable. `notFound()` rather than a redirect, because from where he
      stands there is no such page. */
   if (!canOpenModule(workspace.role, pageKey)) notFound();
-  if (!project.style) redirect("/portal/style-select");
+  /* 🔴 2026-09-08：这里本来是 `if (!project.style) redirect("/portal/style-select")`。
+     老板看到那一页：「沒有這個system style呢 這個已經不要了 舊概念了」——
+     而 2026-09-04 之后工作台只有一套，那一页的预览画的正好是不会跟着变的那一半。
+     照他这一行给一套（资料库 2026-08-27 就填好了），他不用先被问一次。
+     见 lib/portal/default-register.ts。 */
+  const register = await defaultRegister(supabase, project.style);
 
   // Every page this account has, in its own order. Pages are now provisioned
   // per industry (migration 20260820160000), so this is the only honest source
@@ -183,7 +189,7 @@ export default async function PortalEditorPage({
       // is a read-side default until the customer's first save, so the style is
       // known right here -- which is what lets 换风格 re-lay-out the page on the
       // same click that repaints it. See dashboardComposition().
-      project.style,
+      register,
       // 排法 — a NAMED arrangement that overrides the register's own, so an
       // owner can keep 柔和's colours and read 台账's table-first page.
       (project.layout as string | null) ?? null,
@@ -430,7 +436,7 @@ export default async function PortalEditorPage({
             ),
             locale,
             pageRefs,
-            project.style,
+            register,
             (project.layout as string | null) ?? null,
           ) as unknown as Record<string, unknown>)
         : upgradeLayout(saved, systemLangOf(businessContext));
@@ -497,7 +503,7 @@ export default async function PortalEditorPage({
         pageKey={pageKey}
         data={hideMoneyFromRail(initialData, workspace.role) as unknown as Data}
         /* 师傅看到的也是系统那一套。见 lib/portal/system-register.ts。 */
-        style={canvasRegister(pageKey, project.style as StyleName)}
+        style={canvasRegister(pageKey, register as StyleName)}
         palette={(project.palette as string | null) ?? null}
         corners={Number(project.corners ?? 1)}
         systemLang={systemLangOf(businessContext)}
@@ -568,7 +574,7 @@ export default async function PortalEditorPage({
       /** The customer's own chosen style (projects.style, Task 3) -- applies to
        * canvas CONTENT only. Chrome stays Ledger regardless, per Task 5's own
        * reviewed design. */
-      style={project.style as StyleName}
+      style={register as StyleName}
       palette={(project.palette as string | null) ?? null}
       corners={Number(project.corners ?? 1)}
       layout={(project.layout as string | null) ?? null}

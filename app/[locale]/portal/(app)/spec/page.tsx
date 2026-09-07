@@ -40,6 +40,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import chrome from "../../chrome.module.css";
 import { PageBar } from "../page-bar";
 import { SpecActions } from "./spec-actions";
+import { defaultRegister } from "@/lib/portal/default-register";
 
 /**
  * 系统需求书 -- the specification document a customer reads before paying, and
@@ -265,7 +266,12 @@ export default async function SystemSpecPage({
     .eq("account_id", user.id)
     .single();
   if (!project) redirect("/login");
-  if (!project.style) redirect("/portal/style-select");
+  /* 🔴 2026-09-08：这里本来是 `if (!project.style) redirect("/portal/style-select")`。
+     老板看到那一页：「沒有這個system style呢 這個已經不要了 舊概念了」——
+     而 2026-09-04 之后工作台只有一套，那一页的预览画的正好是不会跟着变的那一半。
+     照他这一行给一套（资料库 2026-08-27 就填好了），他不用先被问一次。
+     见 lib/portal/default-register.ts。 */
+  const register = await defaultRegister(supabase, project.style);
 
   const { data: rows } = await supabase
     .from("project_pages")

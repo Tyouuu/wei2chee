@@ -8,6 +8,7 @@ import {
 import { StylesClient } from "./styles-client";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { upgradeLayout } from "@/lib/portal/layout-upgrade";
+import { defaultRegister } from "@/lib/portal/default-register";
 import {
   buildPageLayout,
   displayOwnerName,
@@ -52,7 +53,12 @@ export default async function StylesPage({
     .single();
 
   if (!project) redirect("/login");
-  if (!project.style) redirect("/portal/style-select");
+  /* 🔴 2026-09-08：这里本来是 `if (!project.style) redirect("/portal/style-select")`。
+     老板看到那一页：「沒有這個system style呢 這個已經不要了 舊概念了」——
+     而 2026-09-04 之后工作台只有一套，那一页的预览画的正好是不会跟着变的那一半。
+     照他这一行给一套（资料库 2026-08-27 就填好了），他不用先被问一次。
+     见 lib/portal/default-register.ts。 */
+  const register = await defaultRegister(supabase, project.style);
 
   /*
     THE CUSTOMER'S OWN PAGES, PLAYED THROUGH — the same reel as the editor's
@@ -109,7 +115,7 @@ export default async function StylesPage({
             ownerName,
             locale,
             pageRefs,
-            project.style as string,
+            register as string,
             (project.layout as string | null) ?? null,
           ) as unknown as Record<string, unknown>)
         : upgradeLayout(saved, systemLangOf(businessContext));
@@ -127,7 +133,7 @@ export default async function StylesPage({
   return (
     <StylesClient
       locale={locale}
-      style={project.style as StyleName}
+      style={register as StyleName}
       palette={(project.palette as string | null) ?? null}
       previewPages={
         previewPages as unknown as { key: string; label: string; data: Data }[]
