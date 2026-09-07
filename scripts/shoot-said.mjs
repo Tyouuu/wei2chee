@@ -18,7 +18,7 @@
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { dropThrowawayOnExit } from "./lib/throwaway.mjs";
+import { dropThrowaway, dropThrowawayOnExit } from "./lib/throwaway.mjs";
 import { openAllPages } from "./lib/seed-demo.mjs";
 
 const env = Object.fromEntries(
@@ -323,7 +323,14 @@ try {
     fullPage: false,
   });
 } finally {
-  if (browser) await browser.close();
+  if (browser) await browser.close().catch(() => {});
+  /* 🔴 **跑完也要删。** 第一版只挂了 `dropThrowawayOnExit`（那一支只管
+     被中断的时候），於是它连着跑了八次、在 `accounts` 里留下八个帐号 ——
+     而那张表就是后台那个「客户数」（[任务 129](../docs/founder-tasks.md#129) ·
+     [196](#196)）。
+     ⚠️ 而代价不只是数字难看：**那八个把另一支尺推到了错的分支**
+     —— `shoot:quiet` 那一条「不到五个客户」当天因此判错。 */
+  if (userId) await dropThrowaway(admin, userId);
 }
 
 console.log(`\n判：${pass} 过 ${fail} 没过`);

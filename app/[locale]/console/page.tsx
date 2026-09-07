@@ -34,15 +34,24 @@ export default async function ConsolePage({
   const { data: founder } = await supabase.rpc("is_founder");
   if (!founder) notFound();
 
-  const [{ data: overview }, { data: customers }, { data: handoffs }] =
-    await Promise.all([
-      supabase.rpc("console_overview"),
-      supabase.rpc("console_customers"),
-      // 🔴 「交给我去建」按下去写的那一行（20260905410000）。
-      // 写下来没有人读，就是这个仓库犯过十九次的那件事 —— 而这一行
-      // 是广告进来那一群唯一的线索：讯息送不送得出去，他都看得到。
-      supabase.rpc("console_handoffs"),
-    ]);
+  const [
+    { data: overview },
+    { data: customers },
+    { data: handoffs },
+    { data: quiet },
+  ] = await Promise.all([
+    supabase.rpc("console_overview"),
+    supabase.rpc("console_customers"),
+    // 🔴 「交给我去建」按下去写的那一行（20260905410000）。
+    // 写下来没有人读，就是这个仓库犯过十九次的那件事 —— 而这一行
+    // 是广告进来那一群唯一的线索：讯息送不送得出去，他都看得到。
+    supabase.rpc("console_handoffs"),
+    // 🔴 谁三十天没有打开过（20260906520000 · 任务 227）。
+    // 续约那一天太晚了 —— 能提早看的是「他还在不在开」。
+    // ⚠️ 三十天是那一支自己的预设，这里不再写一次：
+    // 同一个数字两个地方，迟早会分家。
+    supabase.rpc("console_quiet_customers"),
+  ]);
 
   return (
     <ConsoleHome
@@ -50,6 +59,7 @@ export default async function ConsolePage({
       overview={(overview as Record<string, number | Record<string, number>>) ?? {}}
       customers={(customers as never[]) ?? []}
       handoffs={(handoffs as never[]) ?? []}
+      quiet={(quiet as never[]) ?? []}
     />
   );
 }

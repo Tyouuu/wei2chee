@@ -85,6 +85,7 @@
     "shoot:staff": "node scripts/shoot-staff.mjs",
     "shoot:receipt": "node scripts/shoot-receipt.mjs",
     "shoot:returns": "node scripts/shoot-returns.mjs",
+    "shoot:quiet": "node scripts/shoot-quiet.mjs",
     "shoot:said": "node scripts/shoot-said.mjs",
     "shoot:serials": "node scripts/shoot-serials.mjs",
     "shoot:tools": "node scripts/shoot-tools.mjs",

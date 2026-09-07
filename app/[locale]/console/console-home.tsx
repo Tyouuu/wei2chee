@@ -27,6 +27,37 @@ type Customer = {
   founder_note: string | null;
   created_at: string;
   updated_at: string | null;
+  /**
+   * 🔴 **他上一次打开是什么时候** —— 20260906520000 加的，
+   * 而 [任务 227](../../../docs/founder-tasks.md#227) 讲了为什么它非有不可：
+   *
+   * [任务 133](#133) 量过 —— **续约率不是一个指标，它就是这盘生意本身**
+   * （五成续约 ≈ 白做那一套的工）。而**续约那一天太晚了**：
+   * 到那天才知道，已经没得救。能提早看的是**他还在不在开** ——
+   * 三个月不打开的客户，第十二个月不会续。
+   *
+   * ⚠️ 从来没有登入过的回的是「从开户到今天」，不是 null ——
+   * 一个 null 排在最后，会让**最该打那通电话的那一个**看不见。
+   */
+  last_seen_at: string | null;
+  /**
+   * 这个月官网进来几笔。
+   * [重点 9c](../../../docs/founder-points.md) 最深那一根柱子是
+   * 「钱跟客人从那里进来」—— 上个月五笔、这个月零笔，
+   * **不是他不满意，是那条线断了**。
+   */
+  enquiries_this_month: number;
+};
+
+/** 谁安静了 —— `console_quiet_customers`（20260906520000 · 530000）。 */
+type Quiet = {
+  project_id: string;
+  business_name: string | null;
+  email: string;
+  last_seen_at: string | null;
+  days_quiet: number;
+  stage: string;
+  enquiries_this_month: number;
 };
 
 /** 一次「交给我去建」。见 20260905410000 · 任务 159。 */
@@ -105,11 +136,13 @@ export function ConsoleHome({
   overview,
   customers,
   handoffs,
+  quiet,
 }: {
   locale: string;
   overview: Record<string, unknown>;
   customers: Customer[];
   handoffs: Handoff[];
+  quiet: Quiet[];
 }) {
   const t = useTranslations("portal.console");
   const router = useRouter();
@@ -389,6 +422,52 @@ export function ConsoleHome({
           )}
         </section>
 
+        {/* 🔴 谁安静了 —— 三十天没有打开过，最久的排最前面。
+            ⚠️ **空的时候整段不画**，而那跟客户名单那一段不一样：
+            这一份是**一张待办**（跟上面那份交接一样），
+            而一张空的待办就是「现在没有要做的」—— 那不是一个答案，是缺席。
+            ⚠️ 而客户不到五个的时候，这一份不能拿来做决定
+            （[任务 43](#43) · [227](#227) 立过同一条）—— 所以那句话跟着画。 */}
+        {quiet.length > 0 ? (
+          <section className="mt-9">
+            <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
+              {t("quietTitle")}
+              <span className="ml-2 opacity-60">{quiet.length}</span>
+            </h2>
+            <p className="mt-2 [font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
+              {customers.length < ENOUGH_SYSTEMS_TO_DECIDE
+                ? t("quietTooEarly")
+                : t("quietNote")}
+            </p>
+            <ul className="mt-4 flex flex-col gap-2">
+              {quiet.map((q) => (
+                <li
+                  key={q.project_id}
+                  className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-[var(--radius-md)] border px-4 py-3 [border-color:var(--color-ink-800)] [background-color:var(--color-ink-900)]"
+                >
+                  <Link
+                    href={`/${locale}/console/${q.project_id}`}
+                    className="[font-weight:var(--fw-semibold)] hover:underline"
+                  >
+                    {q.business_name || q.email}
+                  </Link>
+                  {/* 🔴 「几天没打开」是他要讲的那一句，所以它是这一行的数字 ——
+                      而一个日期要他自己去减。 */}
+                  <span className="[font-family:var(--font-numeric)] [font-size:var(--text-sm)] [color:var(--color-clay-bright)]">
+                    {t("quietDays", { n: q.days_quiet })}
+                  </span>
+                  <span className="[font-size:var(--text-sm)] [color:var(--color-paper-dim)]">
+                    {t("quietEnquiries", { n: q.enquiries_this_month })}
+                  </span>
+                  <span className="ml-auto [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
+                    {q.last_seen_at ? fmtDate(q.last_seen_at) : t("neverOpened")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         <section className="mt-9">
           <h2 className="[font-size:var(--text-sm)] uppercase tracking-[0.13em] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]">
             {t("customersTitle")}
@@ -404,7 +483,7 @@ export function ConsoleHome({
               <table className="w-full min-w-[880px] border-collapse [font-size:var(--text-sm)]">
                 <thead>
                   <tr className="[background-color:var(--color-ink-900)]">
-                    {["colBusiness", "colIndustry", "colPages", "colStage", "colFees", "colUpdated"].map((k) => (
+                    {["colBusiness", "colIndustry", "colPages", "colStage", "colFees", "colLastSeen", "colEnquiries", "colUpdated"].map((k) => (
                       <th
                         key={k}
                         className="border-b px-4 py-2.5 text-left [font-size:var(--text-micro)] uppercase tracking-[0.12em] [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-weight:var(--fw-semibold)]"
@@ -446,6 +525,15 @@ export function ConsoleHome({
                         {money(c.dev_fee_myr)}
                         <span className="[color:var(--color-ink-700)]"> · </span>
                         {t("perMonth", { amount: money(c.monthly_fee_myr) })}
+                      </td>
+                      {/* 🔴 **他还在不在开** —— 见 `Customer.last_seen_at`。
+                          从来没有登入过的那一个，读到的是「从开户到今天」，
+                          所以它照样有一个数字，不是一格「—」。 */}
+                      <td className="px-4 py-3 tabular-nums [color:var(--color-paper-dim)]">
+                        {c.last_seen_at ? fmtDate(c.last_seen_at) : t("neverOpened")}
+                      </td>
+                      <td className="px-4 py-3 tabular-nums [color:var(--color-paper-dim)]">
+                        {c.enquiries_this_month}
                       </td>
                       <td className="px-4 py-3 tabular-nums [color:var(--color-paper-dim)]">
                         {fmtDate(c.updated_at ?? c.created_at)}
