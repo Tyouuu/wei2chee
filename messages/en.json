@@ -543,7 +543,9 @@
         "notMoneyPage": "A reversal belongs on a money page, not this one",
         "followUpDone": "Marked done: {what}.",
         "followUpDropped": "Dropped: {what}.",
-        "entryReversed": "Opened an opposite entry of RM {amount} — both stay, and the original was not changed."
+        "entryReversed": "Opened an opposite entry of RM {amount} — both stay, and the original was not changed.",
+        "noStepSaid": "It did not say what to do",
+        "followUpSet": "Noted: {what} — on today's list, move the day on that page."
       }
     },
     "home": {

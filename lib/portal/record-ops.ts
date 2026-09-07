@@ -307,6 +307,7 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
       op.op === "receive_purchase" ||
       op.op === "share_record" ||
       op.op === "unshare_record" ||
+      op.op === "set_follow_up" ||
       op.op === "finish_follow_up" ||
       op.op === "drop_follow_up" ||
       op.op === "reverse_ledger_entry"
@@ -712,7 +713,13 @@ export async function actOnRecords(
 
   const shape = shapeOfModule(moduleKey);
   for (const raw of ops) {
-    const op = raw as { op: string; record_id?: unknown; status?: unknown; counted?: unknown };
+    const op = raw as {
+      op: string;
+      record_id?: unknown;
+      status?: unknown;
+      counted?: unknown;
+      what?: unknown;
+    };
     const recordId = String(op.record_id ?? "").trim();
     const status = String(op.status ?? "").trim();
 
@@ -773,6 +780,41 @@ export async function actOnRecords(
       任务 207 立过：只给一颗，他会拿它去关掉一件其实没有做的事，
       而那本帐从此在说谎。
     */
+    /*
+      ── 写下一步 ──────────────────────────────────────────────────────
+      🔴 没有日子这一格 —— 资料库自己排在今天（`coalesce(…, today_myt())`），
+      而那件事**要讲出来**：他说「下个礼拜再跟」而它落在今天那一份清单上，
+      是他看得见、一下就挪得掉的；发明一个日子是他看不见的。
+    */
+    if (op.op === "set_follow_up") {
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const what = String(op.what ?? "").trim();
+      if (!what) {
+        skipped.push({ op: op.op, reason: "noStepSaid" });
+        continue;
+      }
+      /* 下一步挂在一张**单**上（那一支自己 `select … from pipeline_records`）。
+         别的页照样讲得出「这一页的行不是单据」，而不是一句资料库的英文。 */
+      if (shape !== "pipeline") {
+        skipped.push({ op: op.op, reason: "notPipeline" });
+        continue;
+      }
+      const { error } = await supabase.rpc("set_follow_up", {
+        in_record_id: recordId,
+        in_what: what,
+      });
+      if (error) {
+        skipped.push({ op: op.op, ...friendly(error.message) });
+        continue;
+      }
+      written += 1;
+      notes.push({ op: op.op, reason: "followUpSet", vars: { what } });
+      continue;
+    }
+
     if (op.op === "finish_follow_up" || op.op === "drop_follow_up") {
       if (!recordId) {
         skipped.push({ op: op.op, reason: "noRecordSaid" });

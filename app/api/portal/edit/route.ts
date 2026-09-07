@@ -230,6 +230,12 @@ Record tables:
     so taking it back really does kill it.
   * The link comes back in the reply. Not on 进货单 (that is the supplier's side),
     not on money pages and not in the book.
+- set_follow_up writes the one next thing on a document: 「记一下，这一单要打给陈太太」.
+  * record_id is that document, and what is his own words for the thing to do.
+  * There is no date to send and you must not invent one. It lands on today's
+    list and he moves the day on that page. If he named a day, keep his words
+    in what (「星期五打给他」) rather than guessing a date.
+  * One open step per document -- saying it again rewrites that one.
 - finish_follow_up closes the next step written on a document: 「那件事做完了」.
   drop_follow_up removes it instead: 「不跟了」.
   * record_id is the document, not the step. They are two different words and
@@ -1181,6 +1187,7 @@ export const EDIT_JSON_SCHEMA = {
                 "receive_purchase",
                 "share_record",
                 "unshare_record",
+                "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
                 "reverse_ledger_entry",
@@ -1221,6 +1228,9 @@ export const EDIT_JSON_SCHEMA = {
             // 盘点：他数出来几个。字串 —— 模型别处的数字也是字串，
             // 而 record-ops.ts 会把它读成数字，读不出来就拒绝并且念回去。
             counted: { type: ["string", "null"] },
+            // 那一件要做的事，他自己的话。**没有日子那一格** ——
+            // 资料库排在今天，而助手不发明「星期五」（见 layout-ops 那一支的档头）。
+            what: { type: ["string", "null"] },
             // Not enum-constrained: the valid ids depend on the block being
             // targeted, which the model reads off that block's own
             // options=[...] listing. A wrong id is dropped by set_variant with
@@ -1250,6 +1260,7 @@ export const EDIT_JSON_SCHEMA = {
             "record_id",
             "status",
             "counted",
+            "what",
             "variant_id",
           ],
           additionalProperties: false,

@@ -114,6 +114,7 @@ export type SkipCode =
   | "notShareable"
   /** 这一单上没有写着下一步。 */
   | "noFollowUp"
+  | "noStepSaid"
   /** 冲正只在钱那几页做得了。 */
   | "notMoneyPage"
   /**
@@ -178,6 +179,7 @@ export type SkipCode =
   | "followUpDone"
   /** 不跟了。`what` */
   | "followUpDropped"
+  | "followUpSet"
   /**
    * 开了一张相反的。`amount`
    *
@@ -251,6 +253,7 @@ export const SKIP_CODES = [
   "notPurchasePage",
   "notShareable",
   "noFollowUp",
+  "noStepSaid",
   "notMoneyPage",
   "dbSaid",
   "layoutSaved",
@@ -266,5 +269,6 @@ export const SKIP_CODES = [
   "shareClosed",
   "followUpDone",
   "followUpDropped",
+  "followUpSet",
   "entryReversed",
 ] as const satisfies readonly SkipCode[];

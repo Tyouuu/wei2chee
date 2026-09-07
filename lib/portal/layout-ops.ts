@@ -359,6 +359,20 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     所以先问一次再动手 —— 那正是「先读到那一笔，才动得了它」
     （任务 274 从别人那一套抄回来的做法）。一单只有一个下一步，不会挑错。
   */
+  /*
+    写下一步 —— 任务 207 那条链的第一节，而它每一件都是他自己打进去的。
+
+    🔴 **故意没有日子。** `set_follow_up` 的 `in_due_on` 是 `default null`，
+    而资料库自己 `coalesce(…, today_myt())` —— 跟 `log_work_day` 一模一样的
+    形状。所以助手不用发明「星期五」：省他的字，不可以拿猜来省（任务 89），
+    而**排在今天是看得见的那一种错**（他打开那一页就看到，一下就挪得掉），
+    发明一个日子是看不见的那一种。他讲了哪一天，那句话照原样进 `what`。
+  */
+  z.object({
+    op: z.literal("set_follow_up"),
+    record_id: z.string().min(1),
+    what: z.string().min(1),
+  }),
   z.object({
     op: z.literal("finish_follow_up"),
     record_id: z.string().min(1),
@@ -1405,6 +1419,7 @@ export function applyLayoutOps(
         skipped.push({ op: op.op, reason: "notShareable" });
         break;
       }
+      case "set_follow_up":
       case "finish_follow_up":
       case "drop_follow_up": {
         skipped.push({ op: op.op, reason: "notARecordPage" });

@@ -543,7 +543,9 @@
         "notMoneyPage": "冲正在收款 · 开销 · 佣金那几页做 —— 这一页冲不了",
         "followUpDone": "「{what}」记成做完了。",
         "followUpDropped": "「{what}」不跟了。",
-        "entryReversed": "开了一张相反的 RM {amount} —— 两张都留着，原来那一笔没有改过。"
+        "entryReversed": "开了一张相反的 RM {amount} —— 两张都留着，原来那一笔没有改过。",
+        "noStepSaid": "没有讲要做什么",
+        "followUpSet": "记下来了：{what} —— 排在今天，日子在那一页上挪。"
       }
     },
     "home": {

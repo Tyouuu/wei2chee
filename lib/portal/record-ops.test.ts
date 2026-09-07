@@ -750,6 +750,79 @@ describe("a reply shaped like the model's own, end to end", () => {
   🔴 那两支收的是下一步自己的编号，而助手看得到的是那一单，所以先问一次
   再动手。两颗分开不合成一颗：只给一颗，他会拿它去关掉一件其实没有做的事。
 */
+
+/**
+ * 🔴 写下一步 —— 那条链的第一节（任务 207），而它到今天为止只有人按得了。
+ *
+ * 这一支本来被我写进「不做」那一份，理由写的是「它要一个日子」。
+ * **去读那一支才知道那句话是错的**：`in_due_on date default null`，
+ * 而它自己 `coalesce(in_due_on, public.today_myt())` —— 跟 `log_work_day`
+ * 一模一样的形状，而那一支我早就做了。一个照自己写下的字讲出来的理由，
+ * 跟一个量出来的理由，读起来一模一样。
+ */
+describe("写下一步", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+  /* 参数要宣告出来，不然 `mock.calls[0][1]` 在 tsc 那边是一个空 tuple
+     —— 而 vitest 照样绿：那一条会在型别那一层红，不在测试那一层。 */
+  const ok = () =>
+    vi.fn(async (_name: string, _args: Record<string, unknown>) => ({
+      data: null,
+      error: null,
+    }));
+  const step = (id: string, what: string) =>
+    ({ op: "set_follow_up", record_id: id, what }) as unknown as LayoutOp;
+
+  it("送的是那一单跟他自己的话", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(
+      client(rpc), "quotations", [step("q-1", "打给陈太太")], [], "https://f.my",
+    );
+    expect(rpc.mock.calls[0][0]).toBe("set_follow_up");
+    expect(rpc.mock.calls[0][1]).toEqual({ in_record_id: "q-1", in_what: "打给陈太太" });
+    expect(r.written).toBe(1);
+  });
+
+  it("🔴 一个日子都不送 —— 资料库自己排在今天", async () => {
+    const rpc = ok();
+    await actOnRecords(client(rpc), "quotations", [step("q-1", "星期五打给他")], [], "https://f.my");
+    /* 「星期五」留在他自己那句话里，而不是变成一个我们编出来的日期。 */
+    expect(Object.keys(rpc.mock.calls[0][1] as object)).toEqual(["in_record_id", "in_what"]);
+  });
+
+  it("🔴 讲出来它排在今天", async () => {
+    const r = await actOnRecords(
+      client(ok()), "quotations", [step("q-1", "下个礼拜再跟")], [], "https://f.my",
+    );
+    /* 少了这一句，他讲「下个礼拜」而它落在今天那一份清单上，
+       他不知道为什么 —— 而那正是这一支不发明日子换来的代价。 */
+    expect(r.notes[0].reason).toBe("followUpSet");
+    expect(r.notes[0].vars?.what).toBe("下个礼拜再跟");
+  });
+
+  it("没讲要做什么就不动", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "quotations", [step("q-1", "  ")], [], "https://f.my");
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.skipped[0].reason).toBe("noStepSaid");
+  });
+
+  it("没讲是哪一单就不动", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "quotations", [step("", "打给他")], [], "https://f.my");
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.skipped[0].reason).toBe("noRecordSaid");
+  });
+
+  /* 下一步挂在一张单上。收款那一页的行不是单据 —— 而他读到的要是这一句，
+     不是资料库那句 'no such document'。 */
+  it("不是单据那几页，讲得出为什么", async () => {
+    const rpc = ok();
+    const r = await actOnRecords(client(rpc), "payments", [step("p-1", "打给他")], [], "https://f.my");
+    expect(rpc).not.toHaveBeenCalled();
+    expect(r.skipped[0].reason).toBe("notPipeline");
+  });
+});
+
 describe("跟完一件事", () => {
   const client = (rpc: unknown) => ({ rpc }) as never;
   const fu = (op: string, id: string) =>
