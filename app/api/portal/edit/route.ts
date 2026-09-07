@@ -230,6 +230,14 @@ Record tables:
     so taking it back really does kill it.
   * The link comes back in the reply. Not on 进货单 (that is the supplier's side),
     not on money pages and not in the book.
+- finish_follow_up closes the next step written on a document: 「那件事做完了」.
+  drop_follow_up removes it instead: 「不跟了」.
+  * record_id is the document, not the step. They are two different words and
+    must stay two: closing one he has not actually done makes the book lie.
+- reverse_ledger_entry corrects money on a 收款 / 开销 / 佣金 row: 「这一笔
+  记错了」. record_id is that entry.
+  * It does NOT edit or delete. It opens an opposite entry and both stay, so
+    say a reversing entry was opened, never that the figure was changed.
 
 Whole pages:
 - You cannot add or delete a page yourself, but you can OFFER to. When the
@@ -1173,6 +1181,9 @@ export const EDIT_JSON_SCHEMA = {
                 "receive_purchase",
                 "share_record",
                 "unshare_record",
+                "finish_follow_up",
+                "drop_follow_up",
+                "reverse_ledger_entry",
               ],
             },
             target_id: { type: ["string", "null"] },

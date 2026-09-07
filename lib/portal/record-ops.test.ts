@@ -745,6 +745,87 @@ describe("a reply shaped like the model's own, end to end", () => {
   发一条连结给客人 —— 重点 9c 量过：换掉这套系统的代价里第二深的一层，
   就是「他的客人手上有一条连结」。开了而不给那条网址，等於没开。
 */
+/*
+  那件事做完了 / 不跟了 —— 一张单上的下一步（任务 207）。
+  🔴 那两支收的是下一步自己的编号，而助手看得到的是那一单，所以先问一次
+  再动手。两颗分开不合成一颗：只给一颗，他会拿它去关掉一件其实没有做的事。
+*/
+describe("跟完一件事", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+  const fu = (op: string, id: string) =>
+    ({ op, record_id: id }) as unknown as LayoutOp;
+  /** follow_up_of 先回一笔，接着那一支回成功。 */
+  const two = (found: unknown) => {
+    const rpc = vi.fn(async (name: string, _a: Record<string, unknown>) =>
+      name === "follow_up_of" ? { data: found, error: null } : { data: null, error: null },
+    );
+    return rpc;
+  };
+
+  it("先问那一单的下一步，再按它自己的编号", async () => {
+    const rpc = two([{ id: "fu-9", what: "打给陈太太" }]);
+    const r = await actOnRecords(client(rpc), "quotations", [fu("finish_follow_up", "q-1")], [], "https://f.my");
+    expect(rpc.mock.calls[0][0]).toBe("follow_up_of");
+    expect(rpc.mock.calls[0][1]).toEqual({ in_record_id: "q-1" });
+    expect(rpc.mock.calls[1][0]).toBe("finish_follow_up");
+    expect(rpc.mock.calls[1][1]).toEqual({ in_id: "fu-9" });
+    expect(r.written).toBe(1);
+  });
+
+  it("讲得出是哪一件事", async () => {
+    const rpc = two([{ id: "fu-9", what: "打给陈太太" }]);
+    const r = await actOnRecords(client(rpc), "quotations", [fu("finish_follow_up", "q-1")], [], "https://f.my");
+    expect(r.notes[0].reason).toBe("followUpDone");
+    expect(r.notes[0].vars?.what).toBe("打给陈太太");
+  });
+
+  /* 🔴 两句不同的话 —— 做完了不是不跟了。 */
+  it("不跟了走另一支，讲另一句", async () => {
+    const rpc = two([{ id: "fu-9", what: "打给陈太太" }]);
+    const r = await actOnRecords(client(rpc), "quotations", [fu("drop_follow_up", "q-1")], [], "https://f.my");
+    expect(rpc.mock.calls[1][0]).toBe("drop_follow_up");
+    expect(r.notes[0].reason).toBe("followUpDropped");
+  });
+
+  it("那一单上没有下一步就不动", async () => {
+    const rpc = two([]);
+    const r = await actOnRecords(client(rpc), "quotations", [fu("finish_follow_up", "q-1")], [], "https://f.my");
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(r.skipped[0].reason).toBe("noFollowUp");
+  });
+});
+
+/*
+  冲正 —— 钱不改也不删（任务 77）：开一张相反的，两张都留着。
+  所以讲出来的是「多开了一张」，不是「改掉了」。
+*/
+describe("冲正一笔钱", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+  const rev = (id: string) =>
+    ({ op: "reverse_ledger_entry", record_id: id }) as unknown as LayoutOp;
+
+  it("开的是一张相反的，而且讲的是多开了一张", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({
+      data: { id: "rc-2", amount_cents: -300000 },
+      error: null,
+    }));
+    const r = await actOnRecords(client(rpc), "payments", [rev("rc-1")], [], "https://f.my");
+    expect(rpc).toHaveBeenCalledWith("reverse_ledger_entry", { in_entry_id: "rc-1" });
+    expect(r.notes[0].reason).toBe("entryReversed");
+    expect(r.notes[0].vars?.amount).toBe("3000.00");
+  });
+
+  it.each(["quotations", "customers", "inventory", "bookings"])(
+    "%s 上冲不了",
+    async (moduleKey) => {
+      const rpc = vi.fn(async () => ({ data: null, error: null }));
+      const r = await actOnRecords(client(rpc), moduleKey, [rev("x")], [], "https://f.my");
+      expect(rpc).not.toHaveBeenCalled();
+      expect(r.skipped[0].reason).toBe("notMoneyPage");
+    },
+  );
+});
+
 describe("发一条连结给客人", () => {
   const client = (rpc: unknown) => ({ rpc }) as never;
   const sh = (op: string, id: string) => ({ op, record_id: id }) as unknown as LayoutOp;

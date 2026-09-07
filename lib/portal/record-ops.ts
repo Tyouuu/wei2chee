@@ -306,7 +306,10 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
       op.op === "count_stock" ||
       op.op === "receive_purchase" ||
       op.op === "share_record" ||
-      op.op === "unshare_record"
+      op.op === "unshare_record" ||
+      op.op === "finish_follow_up" ||
+      op.op === "drop_follow_up" ||
+      op.op === "reverse_ledger_entry"
     )
       actOps.push(op);
     else layoutOps.push(op);
@@ -759,6 +762,83 @@ export async function actOnRecords(
       ⚠️ 只在单据上（报价单 · 订单 · 工程）。一张进货单是给供应商的，
       而钱那几页跟名册没有一张给客人看的纸。
     */
+    /*
+      ── 那件事做完了 / 不跟了 ──────────────────────────────────────────
+
+      🔴 那两支收的是**下一步自己的编号**，而助手看得到的是**那一单**。
+      所以先问一次再动手 —— 「先读到那一笔，才动得了它」。
+      一单只有一个下一步（唯一索引 20260905800000），所以不会挑错。
+
+      ⚠️ 两颗分开，不合成一颗：「做完了」跟「不跟了」是两句不同的话 ——
+      任务 207 立过：只给一颗，他会拿它去关掉一件其实没有做的事，
+      而那本帐从此在说谎。
+    */
+    if (op.op === "finish_follow_up" || op.op === "drop_follow_up") {
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const { data: found } = await supabase.rpc("follow_up_of", {
+        in_record_id: recordId,
+      });
+      const fu = (Array.isArray(found) ? found[0] : found) as
+        | { id?: unknown; what?: unknown }
+        | null;
+      const fuId = String(fu?.id ?? "").trim();
+      if (!fuId) {
+        skipped.push({ op: op.op, reason: "noFollowUp" });
+        continue;
+      }
+      const { error } = await supabase.rpc(op.op, { in_id: fuId });
+      if (error) {
+        skipped.push({ op: op.op, ...friendly(error.message) });
+        continue;
+      }
+      written += 1;
+      notes.push({
+        op: op.op,
+        reason: op.op === "finish_follow_up" ? "followUpDone" : "followUpDropped",
+        vars: { what: String(fu?.what ?? "") },
+      });
+      continue;
+    }
+
+    /*
+      ── 冲正 ──────────────────────────────────────────────────────────
+
+      🔴 钱不改也不删（任务 77）：开一张相反的，两张都留着。所以讲出来的
+      是「多开了一张」，不是「改掉了」—— 而 refuseToAct 那一句拒绝
+      （「要更正是开一张冲正」）指的就是这一支。
+    */
+    if (op.op === "reverse_ledger_entry") {
+      if (shape !== "ledger") {
+        skipped.push({ op: op.op, reason: "notMoneyPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const { data, error } = await supabase.rpc("reverse_ledger_entry", {
+        in_entry_id: recordId,
+      });
+      if (error) {
+        skipped.push({ op: op.op, ...friendly(error.message) });
+        continue;
+      }
+      written += 1;
+      const made = (Array.isArray(data) ? data[0] : data) as {
+        amount_cents?: unknown;
+      } | null;
+      const sen = Number(made?.amount_cents ?? 0);
+      notes.push({
+        op: op.op,
+        reason: "entryReversed",
+        vars: { amount: sen ? (Math.abs(sen) / 100).toFixed(2) : "?" },
+      });
+      continue;
+    }
+
     if (op.op === "share_record" || op.op === "unshare_record") {
       if (shape !== "pipeline" || moduleKey === "purchases") {
         skipped.push({ op: op.op, reason: "notShareable" });

@@ -538,7 +538,12 @@
         "goodsNothing": "这张单上没有可以进货架的行。",
         "notShareable": "一条给客人的连结只开得了在报价单 · 订单 · 工程上",
         "shareOpened": "连结开好了：{link}",
-        "shareClosed": "那条连结收回了 —— 客人再打开会是一句「这条连结不在用了」。"
+        "shareClosed": "那条连结收回了 —— 客人再打开会是一句「这条连结不在用了」。",
+        "noFollowUp": "这一单上没有写着下一步",
+        "notMoneyPage": "冲正在收款 · 开销 · 佣金那几页做 —— 这一页冲不了",
+        "followUpDone": "「{what}」记成做完了。",
+        "followUpDropped": "「{what}」不跟了。",
+        "entryReversed": "开了一张相反的 RM {amount} —— 两张都留着，原来那一笔没有改过。"
       }
     },
     "home": {

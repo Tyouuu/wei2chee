@@ -352,6 +352,31 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     「收回」当场失效，再开是另一条。而助手只送那一行的编号，
     门牌由资料库发。
   */
+  /*
+    那件事做完了 / 不跟了 —— 一张单上的下一步（任务 207）。
+
+    🔴 那两支 RPC 收的是**下一步自己的编号**，而助手看得到的是**那一单**。
+    所以先问一次再动手 —— 那正是「先读到那一笔，才动得了它」
+    （任务 274 从别人那一套抄回来的做法）。一单只有一个下一步，不会挑错。
+  */
+  z.object({
+    op: z.literal("finish_follow_up"),
+    record_id: z.string().min(1),
+  }),
+  z.object({
+    op: z.literal("drop_follow_up"),
+    record_id: z.string().min(1),
+  }),
+  /*
+    冲正 —— 「这一笔记错了」。
+
+    🔴 钱不改也不删（任务 77）：开一张相反的，两张都留着。所以它不是
+    「改那一笔」，是**多一笔**，而助手讲出来的也要是这句。
+  */
+  z.object({
+    op: z.literal("reverse_ledger_entry"),
+    record_id: z.string().min(1),
+  }),
   z.object({
     op: z.literal("share_record"),
     record_id: z.string().min(1),
@@ -1327,6 +1352,15 @@ export function applyLayoutOps(
       case "share_record":
       case "unshare_record": {
         skipped.push({ op: op.op, reason: "notShareable" });
+        break;
+      }
+      case "finish_follow_up":
+      case "drop_follow_up": {
+        skipped.push({ op: op.op, reason: "notARecordPage" });
+        break;
+      }
+      case "reverse_ledger_entry": {
+        skipped.push({ op: op.op, reason: "notMoneyPage" });
         break;
       }
 

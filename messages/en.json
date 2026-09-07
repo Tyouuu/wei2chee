@@ -538,7 +538,12 @@
         "goodsNothing": "Nothing on that order could go onto the shelf.",
         "notShareable": "A customer link only opens on a quotation, order or job",
         "shareOpened": "Here is the link: {link}",
-        "shareClosed": "Link taken back — anyone opening it now sees that it is no longer in use."
+        "shareClosed": "Link taken back — anyone opening it now sees that it is no longer in use.",
+        "noFollowUp": "There is no next step written on that document",
+        "notMoneyPage": "A reversal belongs on a money page, not this one",
+        "followUpDone": "Marked done: {what}.",
+        "followUpDropped": "Dropped: {what}.",
+        "entryReversed": "Opened an opposite entry of RM {amount} — both stay, and the original was not changed."
       }
     },
     "home": {

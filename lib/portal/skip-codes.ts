@@ -112,6 +112,10 @@ export type SkipCode =
   | "notPurchasePage"
   /** 一条给客人的连结只开得了在单据上。 */
   | "notShareable"
+  /** 这一单上没有写着下一步。 */
+  | "noFollowUp"
+  /** 冲正只在钱那几页做得了。 */
+  | "notMoneyPage"
   /**
    * 🔴 资料库自己那一句，原样。`detail`
    *
@@ -169,7 +173,18 @@ export type SkipCode =
    */
   | "shareOpened"
   /** 收回了。 */
-  | "shareClosed";
+  | "shareClosed"
+  /** 那件事做完了。`what` */
+  | "followUpDone"
+  /** 不跟了。`what` */
+  | "followUpDropped"
+  /**
+   * 开了一张相反的。`amount`
+   *
+   * 🔴 钱不改也不删（任务 77）—— 开一张冲正，两张都留着。所以要讲的是
+   * 「多开了一张」，不是「改掉了」。
+   */
+  | "entryReversed";
 
 /** 一件没做成的事，讲给老板听。`vars` 是那一句里的空格。 */
 export type Skip = {
@@ -235,6 +250,8 @@ export const SKIP_CODES = [
   "countNotANumber",
   "notPurchasePage",
   "notShareable",
+  "noFollowUp",
+  "notMoneyPage",
   "dbSaid",
   "layoutSaved",
   "dayLogged",
@@ -247,4 +264,7 @@ export const SKIP_CODES = [
   "goodsNothing",
   "shareOpened",
   "shareClosed",
+  "followUpDone",
+  "followUpDropped",
+  "entryReversed",
 ] as const satisfies readonly SkipCode[];
