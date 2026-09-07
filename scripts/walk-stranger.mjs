@@ -390,9 +390,29 @@ async function askWhenWrong(page, where, submitName) {
     if (native.length) return { kind: "native", near: 0, msg: native[0].validationMessage.slice(0, 60) };
 
     const fields = [...document.querySelectorAll("input, textarea, select")].filter(seen);
+    /* 🔴 「贴着那一格」量的是**缝**，不是两个上缘的距离 ——
+       一句写在框底下的话，用上缘对上缘量出来是**那个框的高度**，
+       而框越高它看起来离得越远。碰在一起或者叠着就是 0。 */
+    const gap = (a, b) => Math.max(0, Math.round(Math.max(a.top - b.bottom, b.top - a.bottom)));
     /* 🔴 一个栏位的**名字**不是一句错误讯息。第一版的正则在
        「What do you need?」上中了 need，於是它对着一张
        什么错都没报的表单回报「它讲了话」。**红的是尺。** */
+    /* 🔴 **先问那几个宣告自己是错误讯息的元素。**
+       底下那一段为了不把栏位的名字当成错误，跳过了 label 里面的每一个东西 ——
+       而 Baymard 讲的那个位置（**贴着出错那一格**）正好在 label 里面。
+       所以经销商那一页真的讲了话，而尺子看不见它，
+       转头把页面上一句带 need 的**提示**当成了答案：**一次假的绿**。
+       一个 role=alert 是一句话自己宣告「我是那个错误」，跟它站在哪里无关。 */
+    for (const el of document.querySelectorAll("[role=alert], [aria-live]")) {
+      if (!seen(el)) continue;
+      const t = el.textContent.trim();
+      if (!t || t.length > 160) continue;
+      const r1 = el.getBoundingClientRect();
+      let near = Infinity;
+      for (const f of fields) near = Math.min(near, gap(r1, f.getBoundingClientRect()));
+      if (near !== Infinity) return { kind: "text", near, msg: t.slice(0, 80) };
+    }
+
     const labels = new Set([...document.querySelectorAll("label")]);
     let best = null;
     for (const el of document.querySelectorAll("body *")) {
@@ -405,10 +425,7 @@ async function askWhenWrong(page, where, submitName) {
       if (!/requir|cannot be|must |need|missing|invalid|empty|please|不能|必填|请|要填/i.test(t)) continue;
       const r1 = el.getBoundingClientRect();
       let near = Infinity;
-      for (const f of fields) {
-        const r2 = f.getBoundingClientRect();
-        near = Math.min(near, Math.abs(r1.y - r2.y));
-      }
+      for (const f of fields) near = Math.min(near, gap(r1, f.getBoundingClientRect()));
       if (!best || near < best.near) best = { kind: "text", near: Math.round(near), msg: t.slice(0, 80) };
     }
     return best;
@@ -423,8 +440,19 @@ async function askWhenWrong(page, where, submitName) {
     ok(where, `空的送出去挡下来了，而且那句话贴着那一格：「${r.msg}」`);
     return;
   }
-  const tellsHow = /at least|需要|要填|必填|请填|enter|choose|pick|add |必须/i.test(r.msg);
-  if (r.near > 120) flag(where, `那句话离最近那个框 ${r.near}px`, `「${r.msg}」`);
+  const tellsHow = /at least|需要|要填|必填|请填|enter|choose|pick|add |write|type |先写|先填|必须/i.test(r.msg);
+  /* 🔴 **门槛跟着量法一起换了，写下来免得下一轮读成「它自己变绿了」。**
+     旧的量法是两个**上缘**的距离，门槛 120 —— 而那量到的是那个框自己的高度，
+     所以一句贴在框底下的话，框越高它看起来离得越远。
+     新的量法是**缝**（碰在一起就是 0）。
+     ⚠️ 换完那一刻，官网那一条从 206 变成 115 —— **在旧门槛底下，红自己没了**。
+     那不是修好了，是我换了尺。
+
+     24 是这样来的，跟结果无关：这几张表自己的栏与栏之间是 12px（gap-3）。
+     一句离最近那个框比**两个栏距**还远的话，不在任何一格身上，
+     它浮在表里 —— 而 Baymard 讲的是**贴着出错那一格**。
+     经销商那一页量出来 6px（在那一格的 label 里面），官网 115px（整张表底下）。 */
+  if (r.near > 24) flag(where, `那句话离最近那个框 ${r.near}px`, `「${r.msg}」`);
   else ok(where, `讲了，而且离那一格 ${r.near}px：「${r.msg}」`);
   if (!tellsHow) soft(where, "那句话讲的是「哪里错了」，不是「要怎么填」（Baymard）", `「${r.msg}」`);
 }
@@ -467,7 +495,17 @@ async function makeOwner(kind, pages, slug, tradeSlug, style) {
   /* 🔴 道具要像一家真的店（[重点 22d]）。少了公司名，那三页会印
      SQL 里那句后备 `'this business'` —— 而一张写着「this business」的图，
      他一看就问「怎么怪怪的」，然后我要花一轮解释那是道具不是产品。 */
-  await admin.from("projects").update({ company_name: "Hin Fatt Renovation" }).eq("id", proj.id);
+  /* 🔴 那一栏叫 **business_name**，不是 company_name —— 而 company_name
+     **根本不存在**。PostgREST 对一个不存在的栏位只回一个 error、不抛，
+     而这一句从来没有看过它 —— 所以它从写出来那天起一次都没有写进去，
+     三页照样印后备那句「this business」，而报告一片绿。
+     [任务 182] 记过一模一样的一次。**一句不看错误的写入，
+     跟一句没有写过的写入，在报告里长得一模一样。** */
+  const { error: ne } = await admin
+    .from("projects")
+    .update({ business_name: "Hin Fatt Renovation" })
+    .eq("id", proj.id);
+  if (ne) throw new Error(`道具没摆好 —— 公司名写不进去：${ne.message}`);
   await api.rpc("set_project_style", { new_style: style });
   /* 🔴 参数名照**最后一次定义它的那个档案**（20260906340000），不照记忆 ——
      这个仓库为猜名字红过九次，而 `shoot-booking` 里那一句

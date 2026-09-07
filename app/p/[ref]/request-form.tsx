@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -50,7 +50,13 @@ const WORDS = {
   },
 } as const;
 
-export function RequestForm({ refId, lang }: { refId: string; lang: "en" | "zh" }) {
+export function RequestForm({
+  refId,
+  lang,
+}: {
+  refId: string;
+  lang: "en" | "zh";
+}) {
   const w = WORDS[lang];
   const router = useRouter();
   const [what, setWhat] = useState("");
@@ -60,9 +66,20 @@ export function RequestForm({ refId, lang }: { refId: string; lang: "en" | "zh" 
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  /* 那一格空着的时候按下去，把话讲在那一格底下并且把光标送回去。 */
+  const [need, setNeed] = useState(false);
+  const whatRef = useRef<HTMLTextAreaElement>(null);
 
   async function send() {
     if (busy) return;
+    /* 🔴 不再把按钮变灰。一颗按不动又不说为什么的按钮，
+       比一句话糟 —— 按下去才是他学会要填哪一格的那一刻。 */
+    if (!what.trim()) {
+      setNeed(true);
+      whatRef.current?.focus();
+      return;
+    }
+    setNeed(false);
     setNote(null);
     setOk(false);
     setBusy(true);
@@ -72,15 +89,18 @@ export function RequestForm({ refId, lang }: { refId: string; lang: "en" | "zh" 
         return s.trim() && Number.isFinite(n) ? n : null;
       };
       const cents = num(amount);
-      const { data, error } = await createBrowserSupabaseClient().rpc("submit_party_request", {
-        in_ref: refId,
-        in_what: what,
-        in_qty: num(qty),
-        in_amount_cents: cents == null ? null : Math.round(cents * 100),
-        in_contact: contact,
-        /* 按两下只留一笔 —— 手机上双击是常态，不是错。 */
-        in_idempotency_key: crypto.randomUUID(),
-      });
+      const { data, error } = await createBrowserSupabaseClient().rpc(
+        "submit_party_request",
+        {
+          in_ref: refId,
+          in_what: what,
+          in_qty: num(qty),
+          in_amount_cents: cents == null ? null : Math.round(cents * 100),
+          in_contact: contact,
+          /* 按两下只留一笔 —— 手机上双击是常态，不是错。 */
+          in_idempotency_key: crypto.randomUUID(),
+        },
+      );
       if (error) {
         setNote(w.failed);
         return;
@@ -100,29 +120,64 @@ export function RequestForm({ refId, lang }: { refId: string; lang: "en" | "zh" 
     }
   }
 
+  /* 🔴 那条边本来是 `neutral-300` —— 白底上 **1.48:1**，而
+     WCAG 1.4.11 给「使用者介面元件的边界」的门槛是 **3:1**。
+     四个框，四个都是 1.48（2026-09-07 用陌生人的身分量的）。
+
+     ⚠️ 而那正是同一天早上六套风格改掉的那个数字（`9eace1a`）——
+     **这一页拿不到那个修**：它整页不穿那门生意的漆，
+     边的灰是写死在这个档案里的。
+     `#767676` 压白是 4.54:1 —— 跟那一次一样，**没有停在 3 的门槛上**，
+     余地留给日光底下的手机（他的经销商多半站在店门口看）。
+
+     ⚠️ 那一页该不该穿那门生意自己的颜色，是另一件事，而它要动
+     `party_portal`（那一支今天不回风格）—— **不是画面这一边**，只登记。 */
   const box =
-    "h-11 w-full rounded-md border border-neutral-300 px-3 text-sm text-neutral-900 outline-none focus-visible:border-neutral-900";
+    "h-11 w-full rounded-md border border-[#767676] px-3 text-sm text-neutral-900 outline-none focus-visible:border-neutral-900";
 
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1.5">
         <span className="text-sm text-neutral-600">{w.what}</span>
         <textarea
+          ref={whatRef}
           value={what}
-          onChange={(e) => setWhat(e.target.value)}
+          onChange={(e) => {
+            setWhat(e.target.value);
+            if (need) setNeed(false);
+          }}
           rows={3}
-          className="w-full rounded-md border border-neutral-300 p-3 text-sm text-neutral-900 outline-none focus-visible:border-neutral-900"
+          className="w-full rounded-md border border-[#767676] p-3 text-sm text-neutral-900 outline-none focus-visible:border-neutral-900"
         />
+        {/* 🔴 那句话贴着**出错的那一格**，而且讲的是**要什么**，不是**哪里错了**
+            （Baymard）。这一整段之前是「按钮变灰，而画面上不讲少了什么」——
+            一颗按不动又不说为什么的按钮，是这一页最容易让他关掉的东西。
+            portal 那一边 2026-09-07 早上修的是同一件事。 */}
+        {need ? (
+          <span role="alert" className="text-sm font-medium text-red-700">
+            {w.incomplete}
+          </span>
+        ) : null}
       </label>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1.5">
           <span className="text-sm text-neutral-600">{w.qty}</span>
-          <input inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} className={box} />
+          <input
+            inputMode="decimal"
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+            className={box}
+          />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-sm text-neutral-600">{w.amount}</span>
-          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={box} />
+          <input
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className={box}
+          />
         </label>
       </div>
 
@@ -138,7 +193,7 @@ export function RequestForm({ refId, lang }: { refId: string; lang: "en" | "zh" 
 
       <button
         type="button"
-        disabled={busy || !what.trim()}
+        disabled={busy}
         onClick={() => void send()}
         className="inline-flex h-11 items-center justify-center rounded-md bg-neutral-900 px-5 text-sm font-semibold text-white disabled:opacity-50"
       >
