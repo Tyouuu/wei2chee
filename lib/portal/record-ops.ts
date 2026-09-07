@@ -118,6 +118,50 @@ export function refuseToWrite(shape: ModuleShape): string | null {
   }
 }
 
+/**
+ * 这一页上那张表的行，是从别的页面算出来的吗？
+ *
+ * 🔴 这一句决定「加一行」该不该被挡下来，而它跟「这一页加不加得了记录」
+ * 不是同一个问题 —— `refuseToWrite` 答的是后者。两句都是对着同一个
+ * 封闭的形状表逐项写的，少一个就是编译错误。
+ *
+ * 证据在 `app/[locale]/portal/[pageKey]/page.tsx`：总览（recentOf）·
+ * 报表 · 排行 三种都会跑一次 `withLiveRows`，而**官网不会**。
+ *
+ * ⚠️ 所以官网上「加一行」照旧写进版面，而且那是对的：那一页的价目表
+ * 是他自己写的内容，不是他的帐 —— 而既有那条测试（「touches nothing on a
+ * module whose rows are layout」）挡了我一次，它是对的。
+ */
+export function rowsAreProjected(shape: ModuleShape): boolean {
+  switch (shape) {
+    /* 这三页上那张表画的是别的页面的行 —— 写进版面的那一笔要嘛被盖掉，
+       要嘛留在画面上当一个不在任何一份记录里的数字。 */
+    case "overview":
+    case "report":
+    case "leaderboard":
+      return true;
+
+    /* 官网那几块是他自己写的内容。 */
+    case "landing":
+      return false;
+
+    /* 这六种自己有一张真的表，走的是各自的写入函式，到不了这里。 */
+    case "pipeline":
+    case "ledger":
+    case "directory":
+    case "catalog":
+    case "calendar":
+    case "reconcile":
+      return false;
+
+    default: {
+      const unhandled: never = shape;
+      void unhandled;
+      return false;
+    }
+  }
+}
+
 export function isRecordModule(pageKey: string | null | undefined): boolean {
   return !!pageKey && LIVE_MODULES.has(pageKey);
 }
@@ -182,6 +226,28 @@ export type SplitOps = {
   /** 按在一笔已经存在的记录上的动作。跟 recordOps 分开，因为它们走不同的
    *  RPC，而且一个是「多一行」、一个是「动他帐上已经有的那一行」。 */
   actOps: LayoutOp[];
+  /**
+   * 🔴 在这一页上「加一行」根本不成立 —— 而在 2026-09-07 之前它**看起来成立**。
+   *
+   * 量出来的（总览 · 报表 · 排行 · 官网四页）：
+   *
+   *     dashboard  applied:1  skipped:[]   ← 写进了版面，而且回报成功
+   *
+   * 那一笔进的是**版面的 props**，不是他的帐本 —— 而 live-rows 的投影一有真行
+   * 就整个盖掉 `table.rows`。所以那一行要嘛静静消失，要嘛留在画面上当一个
+   * 不在任何一份记录里的数字。**这个档案的档头就在描述这个形状**
+   * （「erased the moment the live-rows projection replaces the table」），
+   * 而 2026-08-30 那一次只把 live 那几页接上了。
+   *
+   * ⚠️ 而 `refuseToWrite` 那四句话早就写好了，它自己的注解写着
+   * 「never reach here」—— 那句话是对的（它们到不了写入那一支），
+   * 而它们也**没有被拒绝**。少的不是句子，是把句子接上去。
+   *
+   * ⚠️ **目录以外的页面不在这里** —— 一个老板自己取名的页面背后没有表、
+   * 也没有投影，写进版面本来就是它唯一对的做法。这一栏只收
+   * 「目录认得、而它没有一个真的业务动作」的那四种。
+   */
+  refused: { op: string; reason: string }[];
 };
 
 /**
@@ -191,7 +257,23 @@ export type SplitOps = {
  * a layout row, and will be until those shapes have tables of their own.
  */
 export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefined): SplitOps {
-  if (!isRecordModule(pageKey)) return { layoutOps: ops, recordOps: [], actOps: [] };
+  if (!isRecordModule(pageKey)) {
+    /* 目录认不得这一页（老板自己取名的），或者官网 -> 它背后没有投影，
+       写进版面本来就是它唯一对的做法。 */
+    const shape = shapeOfModule(pageKey);
+    const reason = shape && rowsAreProjected(shape) ? refuseToWrite(shape) : null;
+    if (!reason) return { layoutOps: ops, recordOps: [], actOps: [], refused: [] };
+    /* 🔴 目录认得，而它没有一个真的业务动作 —— 见 SplitOps.refused。
+       只挡「加一行」：另外两个动作（改状态 · 记一天工）由 applyLayoutOps
+       自己拒绝，而它那两句话跟这一页是哪一种无关，已经是对的。 */
+    const kept: LayoutOp[] = [];
+    const refused: { op: string; reason: string }[] = [];
+    for (const op of ops) {
+      if (op.op === "add_table_row") refused.push({ op: op.op, reason });
+      else kept.push(op);
+    }
+    return { layoutOps: kept, recordOps: [], actOps: [], refused };
+  }
   const layoutOps: LayoutOp[] = [];
   const recordOps: LayoutOp[] = [];
   const actOps: LayoutOp[] = [];
@@ -200,7 +282,7 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
     else if (op.op === "set_record_status" || op.op === "log_work_day") actOps.push(op);
     else layoutOps.push(op);
   }
-  return { layoutOps, recordOps, actOps };
+  return { layoutOps, recordOps, actOps, refused: [] };
 }
 
 export type RecordResult = {

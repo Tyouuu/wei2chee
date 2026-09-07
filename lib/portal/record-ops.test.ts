@@ -10,6 +10,7 @@ import {
   refuseToWrite,
   refuseToAct,
   actOnRecords,
+  rowsAreProjected,
 } from "./record-ops";
 import { MODULE_CATALOG } from "./module-catalog";
 import { parseLayoutOps } from "./layout-ops";
@@ -101,6 +102,60 @@ describe("splitRecordOps", () => {
     const ops = [text, row("A")];
     expect(splitRecordOps(ops, "website").layoutOps).toBe(ops);
     expect(splitRecordOps(ops, "website").recordOps).toHaveLength(0);
+    /* 官网那一页照旧一个字都不挡 —— 它没有投影会盖掉那一行。 */
+    expect(splitRecordOps(ops, "website").refused).toHaveLength(0);
+  });
+
+  /*
+    🔴 2026-09-07 量出来的：站在总览那一页讲「加一笔」，那一笔进的是**版面**，
+    而助手回报成功 ——
+
+        dashboard  applied:1  skipped:[]
+        reports    applied:1  skipped:[]
+        ranking    applied:1  skipped:[]
+
+    而那三页上那张表画的是别的页面的行（page.tsx 各跑一次 withLiveRows），
+    所以那一笔要嘛被盖掉，要嘛留在画面上当一个不在任何一份记录里的数字。
+    这个档案的档头就在描述这个形状，而 2026-08-30 那一次只接了 live 那几页。
+  */
+  for (const page of ["dashboard", "reports", "ranking"]) {
+    it(page + " 上「加一行」要挡下来，而且讲得出为什么", () => {
+      const split = splitRecordOps([text, row("陈太太", "RM 3,000")], page);
+      /* 🔴 最要紧的一条：它不可以掉进版面。 */
+      expect(split.layoutOps).toEqual([text]);
+      expect(split.recordOps).toHaveLength(0);
+      expect(split.refused).toHaveLength(1);
+      expect(split.refused[0].op).toBe("add_table_row");
+      /* 一句只会说「不行」的拒绝，是一个比较礼貌的死路。 */
+      expect(split.refused[0].reason).toContain("别的页面");
+      /* 而它不可以是一句资料库的话。 */
+      for (const w of ["pipeline", "module", "rpc", "error"]) {
+        expect(split.refused[0].reason.toLowerCase()).not.toContain(w);
+      }
+    });
+  }
+
+  it("目录认不得的一页照旧写进版面 —— 那是它唯一对的做法", () => {
+    const ops = [text, row("A")];
+    const split = splitRecordOps(ops, "my_own_page");
+    expect(split.layoutOps).toBe(ops);
+    expect(split.refused).toHaveLength(0);
+  });
+
+  it("记录页照旧走真的帐本，一个都不挡", () => {
+    const split = splitRecordOps([row("A")], "payments");
+    expect(split.recordOps).toHaveLength(1);
+    expect(split.refused).toHaveLength(0);
+  });
+});
+
+describe("rowsAreProjected", () => {
+  it("那三页的行来自别的页面，其余每一种都不是", () => {
+    /* 目录自己那一份，不是手写的第二张形状表。 */
+    const shapes = [...new Set(MODULE_CATALOG.map((m) => m.shape))];
+    expect(shapes.length).toBeGreaterThanOrEqual(9);
+    const projected = shapes.filter((sh) => rowsAreProjected(sh)).sort();
+    expect(projected).toEqual(["leaderboard", "overview", "report"]);
   });
 });
 

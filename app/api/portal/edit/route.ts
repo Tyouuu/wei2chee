@@ -811,6 +811,18 @@ The business owner asked:
   let recordsWritten = 0;
   let asCustomerForRows: Awaited<ReturnType<typeof createSessionSupabaseClient>> | null = null;
   const recordSkips: { op: string; reason: string }[] = [];
+  /*
+    🔴 在总览 · 报表 · 排行上「加一行」，2026-09-07 之前是写进版面的，
+    而且回报成功（量出来 applied:1 · skipped:[]）。那一笔不在他的帐本里，
+    而那三页上那张表画的是别的页面的行，投影一有真行就整个盖掉它。
+    见 SplitOps.refused 跟 rowsAreProjected。（官网不在里面：它那几块是他
+    自己写的内容，没有投影会盖掉，写进版面本来就是对的。）
+
+    ⚠️ 这一句**不能**跟着 isRecordModule 走 —— 它整个存在的理由就是
+    那几页不是记录页。少了它，那几句拒绝写好了没有人读，
+    正是这个仓库犯过二十次的那件事。
+  */
+  recordSkips.push(...split.refused);
   if (split.recordOps.length && project?.id && isRecordModule(pageKey)) {
     /*
       THE CUSTOMER'S OWN SESSION, NOT THE SERVICE ROLE.
