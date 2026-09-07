@@ -235,9 +235,34 @@ async function scratchRecord() {
      not earn is the failure this whole file's header is about. */
   if (error) throw new Error(`scratch record: ${error.message}`);
   scratchRecordId = data?.id ?? null;
+  /* 🔴 **收尾要接在死掉那条路上，不只是跑完那条路。**
+     2026-09-06 这一支中途没跑到底，那一行留在**他的示范帐号**里 ——
+     而一笔真的记录会让整桌示例退场（那是 8-30 定的行为），
+     所以他打开报价单那一页看到的不是七行示例，是**一行叫
+     「check:en scratch」的单**。躺了一天，没有任何东西会讲。
+
+     ⚠️ 而它同时把另一把尺弄红了：`check:table-search` 要表上有两行
+     才筛得动，於是它报三条红，而产品一个字都没错。
+     **一支尺留下来的垃圾，会在别的地方产生一个假的红。**
+
+     所以 `Ctrl-C` · `SIGTERM` · **接给 `head` 那一种（EPIPE）**都要接 ——
+     [任务 196](../docs/founder-tasks.md#196) 就是漏了第三种。 */
+  let done = false;
   scratchCleanup = async () => {
+    if (done) return;
+    done = true;
     await asCustomer.from("pipeline_records").delete().eq("id", scratchRecordId);
   };
+  for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"])
+    process.once(sig, () => {
+      void scratchCleanup().finally(() => process.exit(130));
+    });
+  process.once("uncaughtException", (e) => {
+    void scratchCleanup().finally(() => {
+      console.error(e);
+      process.exit(1);
+    });
+  });
   return scratchRecordId;
 }
 
