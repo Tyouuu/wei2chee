@@ -183,13 +183,18 @@ export function PortalHome({
 
   return (
     <>
+      {/* 🔴 **44 只给触控那一边**（2026-09-07）。`check:consistency` 在 390
+          量出来首页有四颗真的按钮不到 44（规格书 30 · 交给我们建 ·
+          复制网址 28 · 页面卡上那一颗）—— 而这是每一个老板打开的第一页。
+          每一处都是 `min-h-11` ＋ `sm:min-h-0`：**触控要 44，滑鼠不要**，
+          电脑那一边无条件长高会把这几行推开。 */}
       <PageBar title={t("navTitle")}>
         {isOwner && (
           <>
             <Link
               href={`/${locale}/portal/spec`}
               prefetch={false}
-              className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [color:var(--color-paper-dim)] transition-colors hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
+              className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 py-1.5 sm:min-h-0 [font-size:var(--text-xs)] [color:var(--color-paper-dim)] transition-colors hover:[background-color:var(--color-ink-850)] hover:[color:var(--color-paper)]"
             >
               {t("specTitle")}
             </Link>
@@ -198,7 +203,7 @@ export function PortalHome({
                 href={deployHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-[var(--radius-md)] px-3 py-1.5 [font-size:var(--text-xs)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-primary-deep)]"
+                className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 py-1.5 sm:min-h-0 [font-size:var(--text-xs)] [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-semibold)] transition-colors hover:[background-color:var(--color-primary-deep)]"
               >
                 {t("buildCta")}
               </a>
@@ -601,7 +606,7 @@ export function PortalHome({
                       {offerable.map((m) => (
                         <span
                           key={m.key}
-                          className="rounded-[var(--radius-pill)] border px-3 py-1 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]"
+                          className="inline-flex min-h-11 items-center rounded-[var(--radius-pill)] border px-3 py-1 sm:min-h-0 [border-color:var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)]"
                         >
                           {/* `labelEn` has existed on every archetype since the
                             catalogue was written and nothing read it, so the
@@ -735,7 +740,7 @@ export function PortalHome({
                 <div className="flex flex-wrap items-center gap-3">
                   <Link
                     href={`/${locale}/portal/website`}
-                    className="rounded-[var(--radius-control)] px-4 py-2 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] transition-opacity hover:opacity-90"
+                    className="inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-4 py-2 sm:min-h-0 [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] transition-opacity hover:opacity-90"
                   >
                     {t("siteOpen")}
                   </Link>
@@ -814,7 +819,7 @@ function CopyLink({
         type="button"
         onClick={copy}
         disabled={!url}
-        className="shrink-0 rounded-[var(--radius-control)] px-2.5 py-1 [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] transition-colors hover:[color:var(--color-paper)] disabled:opacity-40"
+        className="inline-flex min-h-11 shrink-0 items-center rounded-[var(--radius-control)] px-2.5 py-1 sm:min-h-0 [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper-dim)] [font-size:var(--text-xs)] transition-colors hover:[color:var(--color-paper)] disabled:opacity-40"
       >
         {copied ? done : label}
       </button>

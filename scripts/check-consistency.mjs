@@ -170,8 +170,26 @@ const PROBE = () => {
     .filter((e) => seen(e) && !inChrome(e) && !shrunk(e))
     .filter((e) => {
       const c = getComputedStyle(e);
-      const painted = !/rgba?\\(0, 0, 0, 0\\)|transparent/.test(c.backgroundColor);
-      return painted || parseFloat(c.borderTopWidth) > 0;
+      /* 🔴 **这一条以前是死的**（2026-09-07 查出来）。它写的是 `\\(` ——
+         而 `PROBE` 是一支**真的函式**，不是字串，所以正则看到的是
+         「一个反斜线，然后开一个组」，`rgba(0, 0, 0, 0)` **永远配不上**。
+         於是 `painted` 恒真，**每一个文字连结都被当成按钮数进去** ——
+         首页那两个「change」「browse」是句子里的字，版段库那六个
+         「All 4 →」也是。
+         实测：90 个 → 数到的会掉一大截，而掉的那些本来就不该在里面。
+
+         ⚠️ 而 WCAG 2.2 · 2.5.8 自己就写着这一条例外：
+         **Inline: The target is in a sentence or its size is otherwise
+         constrained by the line-height of non-target text.**
+         一句话里的连结把它拉到 44 高，是把那一行字撑开 —— 不是修好。 */
+      const painted = !/rgba?\(0, 0, 0, 0\)|transparent/.test(c.backgroundColor);
+      if (painted || parseFloat(c.borderTopWidth) > 0) return true;
+      /* 没有底色也没有框 —— 那就问它是不是长在一句话里面：
+         同一个父层还有别的字，它就是 2.5.8 讲的那个 inline 例外。 */
+      const par = e.parentElement;
+      const around = par ? (par.textContent || "").trim().length : 0;
+      const own = (e.textContent || "").trim().length;
+      return !(around > own + 2);
     })
     .map((e) => ({
       h: Math.round(e.getBoundingClientRect().height),
