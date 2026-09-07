@@ -149,6 +149,16 @@ export function IconHash({ className = "h-[17px] w-[17px]" }: IconProps) {
   );
 }
 
+/** 柜台 —— 一个吊牌。扫的就是它身上那个码。 */
+export function IconTag({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M9.4 2.6H3.2a.6.6 0 0 0-.6.6v6.2c0 .16.06.31.18.42l7.4 7.4a.6.6 0 0 0 .85 0l6.2-6.2a.6.6 0 0 0 0-.85l-7.4-7.4a.6.6 0 0 0-.43-.17Z" />
+      <path d="M6.2 6.2h.01" />
+    </svg>
+  );
+}
+
 /** 谁欠我钱 —— 一个硬币。 */
 export function IconCoin({ className = "h-[17px] w-[17px]" }: IconProps) {
   return (

@@ -82,6 +82,7 @@ const PAGES = [
   ["days worked", "/en/portal/attendance", "customer"],
   ["who is free", "/en/portal/rota", "customer"],
   ["moving stock", "/en/portal/transfers", "customer"],
+  ["counter", "/en/portal/counter", "customer"],
   ["classes", "/en/portal/classes", "customer"],
   /* 改这一单. Its URL carries a RECORD id, so the same trap as
      console-customer one level deeper -- and it carries its own hard-coded

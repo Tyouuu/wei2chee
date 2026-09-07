@@ -154,6 +154,7 @@ export default async function PortalAppLayout({
     { count: batchCount },
     { count: rentalCount },
     { count: serialCount },
+    { count: skuCount },
   ] = project
     ? await Promise.all([
         supabase
@@ -187,8 +188,19 @@ export default async function PortalAppLayout({
           .eq("project_id", project.id)
           .eq("tracks_serial", true)
           .is("archived_at", null),
+        /* 🔴 柜台。同一条：**有没有一件货带着一个码** ——
+           一间装修公司的货架上放的是「拆除旧厨房」，没有条码，
+           而一个扫什么都扫不到的柜台不是一个功能，是一行要他跳过的东西。
+           ⚠️ 数的是 `sku` 不是货品数：`scan_item` 配的就是那一栏。 */
+        supabase
+          .from("catalog_items")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", project.id)
+          .not("sku", "is", null)
+          .is("archived_at", null),
       ])
     : [
+        { count: 0 },
         { count: 0 },
         { count: 0 },
         { count: 0 },
@@ -248,6 +260,7 @@ export default async function PortalAppLayout({
       hasVehicles={(vehicleCount ?? 0) > 0}
       hasContracts={(contractCount ?? 0) > 0}
       hasSerials={(serialCount ?? 0) > 0}
+      hasCounter={(skuCount ?? 0) > 0}
       hasBatches={(batchCount ?? 0) > 0}
       hasRentals={(rentalCount ?? 0) > 0}
       hasPurchases={pageRefs.some((r) => r.key === "purchases")}

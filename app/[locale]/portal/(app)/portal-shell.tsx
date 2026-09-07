@@ -32,6 +32,7 @@ import {
   IconClass,
   IconChevron,
   IconHash,
+  IconTag,
 } from "./shell-icons";
 
 /**
@@ -225,6 +226,7 @@ export function PortalShell({
   hasVehicles,
   hasContracts,
   hasSerials,
+  hasCounter,
   hasBatches,
   hasRentals,
   hasPurchases,
@@ -263,6 +265,9 @@ export function PortalShell({
   hasContracts: boolean;
   /** 一台一台管的货 —— 一件都没有的生意看不到那一页。 */
   hasSerials: boolean;
+  /** 货架上有没有一件货带着一个码。一个扫什么都扫不到的柜台
+   *  不是一个功能，是一行要他跳过的东西（[任务 247] 那一条）。 */
+  hasCounter: boolean;
   hasBatches: boolean;
   hasRentals: boolean;
   /** 他有没有在买东西 —— 没有进货单的生意，「我欠人家的」永远是空的。 */
@@ -362,6 +367,14 @@ export function PortalShell({
       under: "inventory",
       show: hasSerials,
       icon: <IconHash />,
+    },
+    /* 🔴 柜台在收钱，所以只有老板 —— 那一支底下记帐那一步会拒绝师傅，
+       而他要填完整篮才知道（那一页自己也挡了同一条）。 */
+    {
+      key: "counter",
+      under: "inventory",
+      show: isOwner && hasCounter,
+      icon: <IconTag />,
     },
     {
       key: "expiry",
