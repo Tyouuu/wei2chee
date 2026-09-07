@@ -153,8 +153,62 @@ try {
   });
   say("而这个月照样记得进去（控制组）", !thisMonthErr, thisMonthErr?.message);
 
-  /* ④ 重开 -> 又改得了。出路只有这一条，而它要真的走得通。 */
-  await reopenBtn.click();
+  /* ④ 🔴 而画面要在他打字之前就讲 —— 20260905740000 自己的收尾写着这一格：
+     「今天他只会在**按下去之后**读到那句英文」。
+     他月底坐下来处理一叠上个月的收据，填完八个格子按保存，
+     读到的是一句资料库的话 —— 这一段量的就是那句话有没有搬到前面。 */
+  const newUrl = `${BASE}/en/portal/payments/new`;
+  await page.goto(newUrl, { waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  const dateBox = page.locator('input[data-field="entry_on"]');
+  say("收款那张新单上有「这一笔的日期」", (await dateBox.count()) === 1, `${await dateBox.count()} 格`);
+
+  /* 控制组：还没填日子（= 今天）的时候一个字都不讲，而且存得了。
+     少了它，下面那一条量的是「那句话永远都在」（任务 125 学到的）。 */
+  const saveBtn = page.getByRole("button", { name: /^Save$/i }).first();
+  say("空着日子的时候不讲那一句（控制组）",
+    (await page.locator("[data-period-locked]").count()) === 0);
+  say("而且那颗保存按得动（控制组）", !(await saveBtn.isDisabled()));
+
+  await dateBox.fill(`${monthOf(-1)}-20`);
+  await page.waitForTimeout(2500);
+  await hide();
+  await page.screenshot({ path: `${OUT}/5-locked-form.png`, fullPage: true });
+  console.log("拍到  5-locked-form");
+  const formText = (await page.locator("body").innerText()).replace(/\s+/g, " ");
+  say("🔴 填上那个月，画面当场讲得出来",
+    (await page.locator("[data-period-locked]").count()) === 1, formText.slice(0, 500));
+  say("而且讲得出出路（重开那个月）", /[Rr]eopen the month/.test(formText), formText.slice(0, 500));
+  /* 🔴 一颗按下去一定失败的按钮，比一颗灰的糟 —— 而灰的旁边一定要讲得出为什么。 */
+  say("🔴 那颗保存变灰了", await saveBtn.isDisabled());
+  /* 那句话要贴着他刚填的那一格，不是印在整张表最底下（Baymard · 任务 258）。 */
+  const gap = await page.evaluate(() => {
+    const box = document.querySelector('input[data-field="entry_on"]');
+    const msg = document.querySelector("[data-period-locked]");
+    if (!box || !msg) return -1;
+    return Math.round(msg.getBoundingClientRect().top - box.getBoundingClientRect().bottom);
+  });
+  say("那句话贴着那一格（≤120px）", gap >= 0 && gap <= 120, `${gap}px`);
+  /* 🔴 而它要**读起来像一句拒绝**，不是多一句提示。
+     第一版用了一个这套风格里不存在的 token（`--color-negative`）——
+     它安静地继承了旁边那句提示的颜色，而画面上什么都不会讲。
+     所以问的是「它跟旁边那句提示是不是同一个颜色」。 */
+  const tone = await page.evaluate(() => {
+    const msg = document.querySelector("[data-period-locked]");
+    const hint = msg?.parentElement?.querySelector("span:last-of-type");
+    if (!msg || !hint) return null;
+    const c = (el) => getComputedStyle(el).color;
+    return { msg: c(msg), hint: c(hint), weight: getComputedStyle(msg).fontWeight };
+  });
+  say("🔴 那句拒绝跟旁边那句提示不是同一个颜色",
+    !!tone && tone.msg !== tone.hint, JSON.stringify(tone));
+  say("而且比提示重一档", !!tone && Number(tone.weight) >= 500, tone?.weight);
+
+  /* ⑤ 重开 -> 又改得了。出路只有这一条，而它要真的走得通。 */
+  await page.goto(url, { waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(1500);
+  const reopenAgain = page.getByRole("button", { name: /^Reopen this month$/i });
+  await reopenAgain.click();
   await page.waitForTimeout(3500);
   await hide();
   await page.screenshot({ path: `${OUT}/3-reopened.png`, fullPage: true });
@@ -169,7 +223,7 @@ try {
   });
   say("🔴 重开之后，那个月又补得进去", !afterErr, afterErr?.message);
 
-  /* ⑤ 手机上按得到 —— 一颗拇指按不准的开关，等於没有那颗开关。 */
+  /* ⑥ 手机上按得到 —— 一颗拇指按不准的开关，等於没有那颗开关。 */
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await phone.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
   await phone.fill('input[type="email"]', EMAIL);

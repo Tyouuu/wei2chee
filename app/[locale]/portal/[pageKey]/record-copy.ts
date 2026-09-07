@@ -242,6 +242,10 @@ export type RecordFormCopy = {
      没有这一格，而那是故意的：钱不改，只开一张相反的。 */
   entryOn: string;
   entryOnHint: string;
+  /* 这个月他已经签过帐了（20260905740000 · 任务 188）。
+     ⚠️ 只讲在**新增**那一边 —— 改一笔钱走的是只改字的那一支，
+     动不到那个月的总数，所以那一条规矩明写它照样过。 */
+  periodLocked: string;
   /* 谁改了什么（20260904020000）。只画给看得到钱的人 ——
      `rows` 是 null 的意思是「没有问」，不是「没有改过」。 */
   changes: string;
@@ -685,6 +689,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       entryOn: "这一笔的日期",
       entryOnHint:
         "留空就是今天。收据上是上个月的，就填上个月 —— 不然这个月的帐会多出一笔。",
+      periodLocked:
+        "那个月你已经对完帐签过了，所以这一笔进不去。要补就到对帐那一页把那个月重开，补完再签一次。",
       changes: "改过什么",
       changesNone: "还没有人改过这一单。",
       changeBlank: "空白",
@@ -1066,6 +1072,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       entryOn: "Date of this entry",
       entryOnHint:
         "Blank means today. If the receipt is from last month, put last month — otherwise this month's books gain an entry that was not there.",
+      periodLocked:
+        "That month is reconciled and signed off, so this entry cannot go in. Reopen the month on the reconciliation page, add it, then sign it off again.",
       changes: "What was changed",
       changesNone: "Nobody has changed this one yet.",
       changeBlank: "blank",

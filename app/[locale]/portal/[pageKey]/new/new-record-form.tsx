@@ -30,6 +30,7 @@ import type { PartyAddress, PartyDebt } from "../record-context";
 import { JobPhotos, type JobPhoto } from "./job-photos";
 import { ChangeTrail } from "./change-trail";
 import { Stocktake } from "./stocktake";
+import { PeriodLock } from "./period-lock";
 import type { ShownChange } from "@/lib/portal/change-log";
 
 /**
@@ -384,6 +385,10 @@ export function NewRecordForm({
   /* 那张收据在桶里的路径。🔴 读不出来也要留着 —— 照片是他明年查帐要拿出来
      的那一张，而一个传上去、没有任何一行指着它的档案就是孤儿档。 */
   const [receiptPath, setReceiptPath] = useState<string>("");
+  /* 那个月他已经对完帐签过了。🔴 **只有确定锁着才是 true** ——
+     读不到回的是 false，因为一个因为读不到而挡住他记帐的画面，
+     比一句迟来的资料库英文糟得多（见 `period-lock.tsx` 的档头）。 */
+  const [periodLocked, setPeriodLocked] = useState(false);
   const [jobId, setJobId] = useState<string>(record?.jobId ?? "");
   /* 🔴 挂单**只有出去的钱**。进来的钱靠分摊回答「这一单收了多少」，
      再给它一个 job_id，同一个问题就有两个答案 -- 资料库那边会拒绝，
@@ -1379,7 +1384,9 @@ export function NewRecordForm({
     <button
       type="submit"
       form={FORM_ID}
-      disabled={busy}
+      /* ⚠️ 一颗按下去一定失败的按钮，比一颗灰的糟 —— 而灰的旁边
+         一定要讲得出为什么跟出路，那一句就在日期那一格底下。 */
+      disabled={busy || periodLocked}
       className="inline-flex h-11 shrink-0 items-center [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [color:var(--color-on-primary)] [background-color:var(--color-primary)] transition-colors [transition-duration:var(--dur)] hover:[background-color:var(--color-primary-deep)] disabled:opacity-60"
     >
       {busy ? copy.saving : copy.save}
@@ -1923,6 +1930,18 @@ export function NewRecordForm({
             <span className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
               {copy.entryOnHint}
             </span>
+          )}
+          {/* 🔴 那个月签过了就在这里讲 —— 贴着他刚填的那一格，
+          而不是等他按下去之后印在整张表最底下（Baymard 那一条，
+          任务 258 已经为另一句话付过一次学费）。 */}
+          {record ? null : (
+            <PeriodLock
+              projectId={projectId}
+              on={entryOn}
+              direction={spendsMoney ? "out" : "in"}
+              copy={copy}
+              onLocked={setPeriodLocked}
+            />
           )}
         </label>
       ) : null}
