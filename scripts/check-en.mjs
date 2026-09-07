@@ -71,6 +71,7 @@ const PAGES = [
   ["tax", "/en/portal/tax", "customer"],
   ["plates", "/en/portal/vehicles", "customer"],
   ["shelf life", "/en/portal/expiry", "customer"],
+  ["serial numbers", "/en/portal/serials", "customer"],
   ["out on loan", "/en/portal/rentals", "customer"],
   /* 谁欠我钱 · 分店 · 我欠人家的（2026-09-06）。同一条：**一格做完，
      那一页要走得进这份清单** —— 而这三页在今天之前一直没有走进来，

@@ -151,6 +151,7 @@ PAGES = [
     ("tax", "/en/portal/tax"),
     ("plates", "/en/portal/vehicles"),
     ("shelf life", "/en/portal/expiry"),
+    ("serial numbers", "/en/portal/serials"),
     ("out on loan", "/en/portal/rentals"),
     # 谁欠我钱 · 分店 · 我欠人家的（2026-09-06）—— 同一条（任务 177）。
     ("who owes you", "/en/portal/owing"),

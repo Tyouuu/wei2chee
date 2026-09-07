@@ -143,6 +143,11 @@ export default async function NewRecordPage({
           <a href={`/${locale}/portal/contracts`} className="underline">
             {copy.form.contractsLink}
           </a>
+          {/* ⚠️ 序号那一页同一条：侧栏上按**有没有一件货开了序号**画，
+            而一间车行第一次要开的那一件，正好是在这一页想到的。 */}
+          <a href={`/${locale}/portal/serials`} className="underline">
+            {copy.form.serialsLink}
+          </a>
         </p>
       </main>
       </RecordShell>

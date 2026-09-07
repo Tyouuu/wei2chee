@@ -31,6 +31,7 @@ import {
   IconMove,
   IconClass,
   IconChevron,
+  IconHash,
 } from "./shell-icons";
 
 /**
@@ -223,6 +224,7 @@ export function PortalShell({
   enquiryCount,
   hasVehicles,
   hasContracts,
+  hasSerials,
   hasBatches,
   hasRentals,
   hasPurchases,
@@ -259,6 +261,8 @@ export function PortalShell({
       补它的是「加一单」那一页底下那条架子，第一次从那里进去。 */
   hasVehicles: boolean;
   hasContracts: boolean;
+  /** 一台一台管的货 —— 一件都没有的生意看不到那一页。 */
+  hasSerials: boolean;
   hasBatches: boolean;
   hasRentals: boolean;
   /** 他有没有在买东西 —— 没有进货单的生意，「我欠人家的」永远是空的。 */
@@ -353,6 +357,12 @@ export function PortalShell({
       icon: <IconClockFace />,
     },
     { key: "payroll", under: "staff", show: isOwner, icon: <IconWallet /> },
+    {
+      key: "serials",
+      under: "inventory",
+      show: hasSerials,
+      icon: <IconHash />,
+    },
     {
       key: "expiry",
       under: "inventory",

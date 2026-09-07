@@ -415,6 +415,7 @@ export type RecordFormCopy = {
   /** 车牌 · 保养合约 —— 侧栏上按有没有资料画，所以第一次一定要从这里进去。 */
   vehiclesLink: string;
   contractsLink: string;
+  serialsLink: string;
   /* 套票（20260904190000）。只在客户那一页，而且**师傅也看得到** ——
      他要跟客人讲「你还剩三次」。价钱不在这张表上，所以这不是把钱交出去。 */
   packHeading: string;
@@ -829,6 +830,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       owingLink: "谁欠我钱",
       vehiclesLink: "查一台车",
       contractsLink: "保养合约",
+      serialsLink: "查一个序号",
       packHeading: "套票",
       packLede: "卖几次，用一次扣一次。剩几次是数出来的，没有人改得了。",
       packNone: "还没有卖过套票给他。",
@@ -1198,6 +1200,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       owingLink: "Who owes me",
       vehiclesLink: "Look up a plate",
       contractsLink: "Service contracts",
+      serialsLink: "Look up a serial",
       packHeading: "Packages",
       packLede: "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
       packNone: "No package sold to them yet.",

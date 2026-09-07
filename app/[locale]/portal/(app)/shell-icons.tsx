@@ -139,6 +139,16 @@ export function IconClock({ className = "h-[17px] w-[17px]" }: IconProps) {
   );
 }
 
+/** 序号 —— 一个井字号。**不是一台车**：车牌那一行已经是一台车了，
+ *  而这一条讲的是「一台一台的号码」，冰箱跟手机也在里面。 */
+export function IconHash({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M7.4 3.5 5.9 16.5M14.1 3.5l-1.5 13M3.4 7.6h13.2M2.8 12.4H16" />
+    </svg>
+  );
+}
+
 /** 谁欠我钱 —— 一个硬币。 */
 export function IconCoin({ className = "h-[17px] w-[17px]" }: IconProps) {
   return (

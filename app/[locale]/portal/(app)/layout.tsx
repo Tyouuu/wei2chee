@@ -153,6 +153,7 @@ export default async function PortalAppLayout({
     { count: contractCount },
     { count: batchCount },
     { count: rentalCount },
+    { count: serialCount },
   ] = project
     ? await Promise.all([
         supabase
@@ -177,8 +178,23 @@ export default async function PortalAppLayout({
           .eq("project_id", project.id)
           .is("returned_on", null)
           .is("archived_at", null),
+        /* 一台一台管的货（20260906100000）。同一条：**怡保 47% 的店要序号**
+           （车行 90 · 电器 19 · 手机店 13），而一家五金店一件都不要 ——
+           所以它跟车牌一样按**有没有资料**决定画不画，不按角色。 */
+        supabase
+          .from("catalog_items")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", project.id)
+          .eq("tracks_serial", true)
+          .is("archived_at", null),
       ])
-    : [{ count: 0 }, { count: 0 }, { count: 0 }, { count: 0 }];
+    : [
+        { count: 0 },
+        { count: 0 },
+        { count: 0 },
+        { count: 0 },
+        { count: 0 },
+      ];
 
   const { data: context } = await supabase.rpc("get_my_business_context");
   const businessContext = (context as BusinessContext | null) ?? {};
@@ -231,6 +247,7 @@ export default async function PortalAppLayout({
       enquiryCount={enquiryCount ?? 0}
       hasVehicles={(vehicleCount ?? 0) > 0}
       hasContracts={(contractCount ?? 0) > 0}
+      hasSerials={(serialCount ?? 0) > 0}
       hasBatches={(batchCount ?? 0) > 0}
       hasRentals={(rentalCount ?? 0) > 0}
       hasPurchases={pageRefs.some((r) => r.key === "purchases")}
