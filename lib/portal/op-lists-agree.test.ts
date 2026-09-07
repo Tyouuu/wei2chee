@@ -7,7 +7,7 @@ import { layoutOpSchema } from "./layout-ops";
   所以先给一把假的再动态载入。这一支一次模型都不呼叫；它只读那份 schema。
 */
 process.env.OPENAI_API_KEY ||= "not-a-real-key-this-suite-calls-nobody";
-const { EDIT_JSON_SCHEMA } = await import("@/app/api/portal/edit/route");
+const { EDIT_JSON_SCHEMA, SYSTEM_PROMPT } = await import("@/app/api/portal/edit/route");
 
 /**
  * 两份手写的操作清单，而在这之前没有任何东西在比对它们。
@@ -90,5 +90,24 @@ describe("the two hand-written op lists agree", () => {
     */
     const missing = Object.keys(props).filter((p) => !required.includes(p));
     expect(missing).toEqual([]);
+  });
+
+  /**
+   * 🔴 第三份手打的清单：提示词。
+   *
+   * 一个动作同时写进 zod 跟送出去那份 schema，而**提示词里一次都没提过**，
+   * 结果不是报错，是那个动作**永远不会被用到** —— 模型说得出它，而没有人
+   * 告诉过它什么时候该说。那正是这个仓库那一类犯过九次的错最安静的一种：
+   * 能力有、线没接，而每一条既有的检查都是绿的。
+   *
+   * 2026-09-07 量的：20 个动作，20 个都在提示词里 —— 所以这一条今天不是在
+   * 修一个洞，是挡住第 21 个。而挡它的成本是一句断言。
+   *
+   * ⚠️ 只问「有没有被提过」，不问「讲得对不对」。后者要真的呼叫模型
+   * （`eval:editor`），而那要花钱，也不是一支单元测试答得了的。
+   */
+  it("names every operation in the prompt too", () => {
+    const unmentioned = [...opEnum].filter((op) => !SYSTEM_PROMPT.includes(op));
+    expect(unmentioned).toEqual([]);
   });
 });
