@@ -757,6 +757,54 @@ function describeRows(table: TableModel): string {
   return ` rows(${rows.length}${rest})=[${shown.join(" | ")}]`;
 }
 
+
+/**
+ * 🔴 看板上那几张卡，跟每一张自己的记录编号。
+ *
+ * ── 量出来的（2026-09-07，逐页跑一次 `describeLayout`）────────────────────
+ *
+ *     projects   装记录的块=[TaskBoard]   印得出行=🔴 否
+ *     tasks      装记录的块=[TaskBoard]   印得出行=🔴 否
+ *
+ * 十八页里十六页印得出行，**而这两页一行都没有** —— 因为 `describeRows` 只
+ * 认得 `RecordTable`，而这两页从 2026-09-02 起是看板。
+ * `live-rows.ts` 那一段自己写着为什么它们没有第二条路：
+ * **「工程那一页的表格拿掉了，所以卡片是唯一的入口」**（任务 152）。
+ *
+ * 🔴 而这两页正好是 `set_record_status` 最自然的用处：
+ * 「把 Taman Desa 那一单移到施工」—— **状态就是那一页上看得见的那几栏**。
+ * 也就是那个动作昨天做出来，在它最该用的两页上没有东西可以指。
+ *
+ * ── 那个编号从哪里来 ──────────────────────────────────────────────────────
+ *
+ * 跟表格那一边同一条，而且是同一个不变量：`BoardCard.href` 的注解自己写着
+ * **「只有真的记录有（live-rows.ts 给的），示例没有」**。所以「有编号」跟
+ * 「这是他自己的一笔」还是同一件事，不用另外写规则去分；认不出的照样印出来
+ * （他看得见它），只是没有把手 —— 往拒绝的方向坏。
+ *
+ * ⚠️ **故意不印那几栏的名字。** 看板的栏是「这门生意宣告的流程 ＋ 那几行
+ * 真正在的阶段」的联集（live-rows.ts），比 `stagesForModule` 那一份宽；而
+ * route 已经拿那一份告诉模型「只能用这里面的」，那也正是人看到的那个下拉。
+ * 在旁边再印一份更宽的，就是同一个问题两个答案，而模型会挑宽的那一个。
+ * 每一张卡自己现在在哪一栏照印 —— 那是关於那一行的事实，而且它让模型看得出
+ * 一张卡已经在它该在的地方（跟 `variant=` 印出来的理由一样）。
+ */
+function describeCards(props: Record<string, unknown>): string {
+  const cards = Array.isArray(props.cards) ? (props.cards as Record<string, unknown>[]) : [];
+  if (!cards.length) return "";
+  const shown = cards.slice(0, ROWS_SHOWN).map((c) => {
+    const href = typeof c.href === "string" ? c.href : "";
+    const id = href ? (href.match(RECORD_ID)?.[1] ?? null) : null;
+    const words = (["stage", "title", "note", "amount"] as const)
+      .map((k) => (typeof c[k] === "string" && c[k] ? `${k}="${c[k] as string}"` : ""))
+      .filter(Boolean)
+      .join(" ");
+    return id ? `record=${id} ${words}` : `（示例，动不了）${words}`;
+  });
+  const rest = cards.length > ROWS_SHOWN ? `，另外 ${cards.length - ROWS_SHOWN} 张没列出来` : "";
+  return ` cards(${cards.length}${rest})=[${shown.join(" | ")}]`;
+}
+
 export function describeLayout(layout: PuckLayout, selected?: string | null): string {
   return walkNodes(layout.content ?? [])
     .map((n) => {
@@ -854,6 +902,9 @@ export function describeLayout(layout: PuckLayout, selected?: string | null): st
           walk({ ...defaults, ...((n.props?.copy ?? {}) as object) }, "");
           extra = ` section=${block} words=[${paths.join(" ")}]`;
         }
+      }
+      if (n.type === "TaskBoard") {
+        extra = describeCards(n.props ?? {});
       }
       if (n.type === "RecordTable") {
         const table = normalizeTable(n.props ?? {});

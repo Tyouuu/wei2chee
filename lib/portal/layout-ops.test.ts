@@ -60,6 +60,79 @@ describe("describeLayout", () => {
   });
 });
 
+
+/**
+ * 🔴 模型看得见的那几行 —— 而在 2026-09-07 之前它一行都看不见，
+ * 而且到今天为止**一条守卫都没有**（`record=` 在测试里出现零次）。
+ *
+ * 两件事一起钉住：表格那一边（昨天做的）跟看板那一边（今天做的）。
+ * 逐页量出来的读数是：十八页十六页印得出行，**而工程 · 任务两页一行都没有**
+ * —— 那两页从 2026-09-02 起只有看板，表格拿掉了（任务 152）。
+ */
+describe("模型看得见的那几行", () => {
+  const withCards = (cards: Record<string, unknown>[]) => {
+    const l = buildPageLayout("projects", renovation) as unknown as PuckLayout;
+    const board = walkNodes(l.content).find((n) => n.type === "TaskBoard")!;
+    board.props.cards = cards;
+    return describeLayout(l);
+  };
+
+  it("看板那两页真的用看板装记录 —— 这一条是那个洞本身", () => {
+    const l = buildPageLayout("projects", renovation) as unknown as PuckLayout;
+    const types = walkNodes(l.content).map((n) => n.type);
+    expect(types).toContain("TaskBoard");
+    /* 表格是它以前的第二条路。拿掉了，所以卡片是唯一的入口 —— 也就是
+       看板不印行的时候，那一页对模型来说是空的。 */
+    expect(types).not.toContain("RecordTable");
+  });
+
+  it("看板上的卡片印得出来", () => {
+    expect(withCards([{ title: "Taman Desa 三房翻新", stage: "施工", note: "陈先生" }])).toContain(
+      "Taman Desa 三房翻新",
+    );
+  });
+
+  it("一张真的卡有把手，一张示例没有", () => {
+    const text = withCards([
+      {
+        title: "真的那一单",
+        stage: "施工",
+        href: "/en/portal/projects/3f2b1a9c-1111-4222-8333-444455556666",
+      },
+      { title: "示例那一张", stage: "报价" },
+    ]);
+    expect(text).toContain("record=3f2b1a9c-1111-4222-8333-444455556666");
+    /* 认不出编号的照样印出来（他看得见它），只是动不了 —— 往拒绝的方向坏。 */
+    expect(text).toContain("示例那一张");
+    expect(text).toMatch(/（示例，动不了）[^|\]]*示例那一张/);
+  });
+
+  it("每一张卡讲得出自己现在在哪一栏", () => {
+    /* `set_record_status` 改的就是这个。少了它，模型看不出一张卡已经在
+       它该在的地方，而一次没有必要的改动照样会写进那本「谁改的」帐。 */
+    expect(withCards([{ title: "一单", stage: "施工" }])).toContain('stage="施工"');
+  });
+
+  it("🔴 不印看板自己那几栏的名字", () => {
+    /* 看板的栏是「宣告的流程 ＋ 那几行真正在的阶段」的联集，比
+       `stagesForModule` 那一份宽；而 route 已经拿那一份告诉模型
+       「只能用这里面的」。在旁边再印一份更宽的，就是同一个问题两个答案。 */
+    const text = withCards([{ title: "一单", stage: "自己打的一个阶段" }]);
+    expect(text).not.toMatch(/stages=\[|栏=\[|columns=\[[^\]]*自己打的一个阶段/);
+  });
+
+  it("表格那一边照旧印得出行跟把手", () => {
+    const l = buildPageLayout("quotations", renovation) as unknown as PuckLayout;
+    const table = walkNodes(l.content).find((n) => n.type === "RecordTable")!;
+    /* 行住在 `props.table.rows`，不是 `props.rows` —— 后者是那四个旧栏位
+       的时代留下来的，`normalizeTable` 只有在没有 `table` 的时候才去读它。 */
+    (table.props.table as { rows: unknown[] }).rows = [
+      { href: "/en/portal/quotations/9a8b7c6d-5555-4666-8777-888899990000", cells: {} },
+    ];
+    expect(describeLayout(l)).toContain("record=9a8b7c6d-5555-4666-8777-888899990000");
+  });
+});
+
 describe("applyLayoutOps", () => {
   it("renames text on a nested block", () => {
     const ops: LayoutOp[] = [
