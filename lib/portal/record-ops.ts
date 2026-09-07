@@ -201,6 +201,25 @@ export function senFrom(text: string | null | undefined): number | undefined {
  * control block-rules.ts forbids the assistant to draw. The form has its own
  * WhatsApp box, where a person says so.
  */
+/**
+ * 一段联络方式里的信箱。
+ *
+ * 🔴 那一格是**一格**（「Taman Desa · 013-234 5678」），而资料库那一边是
+ * 两栏。`phoneFrom` 一直在挑电话，而信箱**从来没有人挑** —— 於是
+ * 「加一个客户 陈先生 chen@abc.com」建出来的那一行，信箱那一栏是空的，
+ * 而人从询价一按变客户的那一条（任务 89）早就分得开。
+ * **同一件事三条路，只修了两条。**
+ *
+ * ⚠️ 只认一个 —— 一格里两个信箱的时候取第一个，跟 `phoneFrom` 同一个做法。
+ */
+export function emailFrom(text: string | null | undefined): string | undefined {
+  if (!text) return undefined;
+  /* 够用就好：一个 @，两边都不是空白，后面有一个点。发明一个更严的
+     正则会挡掉真的信箱，而这里挡掉一个真的比放进一个怪的贵。 */
+  const hit = String(text).match(/[^\s<>()（），,;；·]+@[^\s<>()（），,;；·]+\.[A-Za-z]{2,}/);
+  return hit ? hit[0].replace(/[.,;。，；]+$/, "") : undefined;
+}
+
 export function phoneFrom(text: string | null | undefined): string | undefined {
   if (!text) return undefined;
   /* A run of the characters a Malaysian number is written with. 「+60 12-345
@@ -497,6 +516,8 @@ export async function writeRecords(
           in_module_key: moduleKey,
           in_name: title,
           in_phone: phoneFrom(party) ?? "",
+          /* 🔴 见 emailFrom 的档头：那一格是一格，而资料库是两栏。 */
+          in_email: emailFrom(party) ?? "",
           in_status: status ?? "",
           in_note: party,
           in_extra: extra,

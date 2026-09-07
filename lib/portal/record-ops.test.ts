@@ -7,6 +7,7 @@ import {
   keyFor,
   sortCells,
   phoneFrom,
+  emailFrom,
   refuseToWrite,
   refuseToAct,
   actOnRecords,
@@ -336,6 +337,47 @@ describe("sortCells", () => {
    The half of this that matters is what must NOT be lifted: every false
    positive becomes a phone number in a customer's system that nobody said.
    ──────────────────────────────────────────────────────────────────────────── */
+/*
+  🔴 那一格是一格（「Taman Desa · 013-234 5678」），而资料库是两栏。
+  `phoneFrom` 一直在挑电话，信箱从来没有人挑 —— 而人从询价一按变客户的
+  那一条（任务 89）早就分得开。同一件事三条路，只修了两条。
+*/
+describe("emailFrom", () => {
+  it.each([
+    ["chen@abc.com", "chen@abc.com"],
+    ["陈先生 · chen.wk@abc.com.my", "chen.wk@abc.com.my"],
+    ["Taman Desa · 013-234 5678 · a@b.co", "a@b.co"],
+    ["写完寄 boss@site.io。", "boss@site.io"],
+  ])("%s 里挑得出信箱", (text, want) => {
+    expect(emailFrom(text)).toBe(want);
+  });
+
+  it.each(["013-234 5678", "Taman Desa", "RM 48,500", "@abc", "a@b", ""])(
+    "%s 里没有信箱",
+    (text) => {
+      expect(emailFrom(text)).toBeUndefined();
+    },
+  );
+
+  it("助手建客户的时候真的送出去", async () => {
+    const rpc = vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ error: null }));
+    const client = (r: unknown) => ({ rpc: r }) as never;
+    await writeRecords(
+      client(rpc),
+      "p1",
+      "customers",
+      [{ op: "add_table_row", target_id: "t", cells: ["陈先生", "013-234 5678 · chen@abc.com", "新客户"] } as unknown as LayoutOp],
+      "req",
+      "开帐",
+      () => ["primary", "secondary", "status"],
+    );
+    const args = rpc.mock.calls[0][1] as Record<string, unknown>;
+    expect(args.in_email).toBe("chen@abc.com");
+    /* 而电话照旧挑得到 —— 两栏，不是二选一。 */
+    expect(args.in_phone).toBe("013-234 5678");
+  });
+});
+
 describe("phoneFrom", () => {
   it("reads the three ways a Malaysian number is written", () => {
     expect(phoneFrom("Taman Desa 013-234 5678")).toBe("013-234 5678");
