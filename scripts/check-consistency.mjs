@@ -280,7 +280,21 @@ const xs = [...new Set(ok2.map((r) => r.contentX))].sort((a, c) => a - c);
 const heads = [...new Set(ok2.map((r) => `${r.headPx}/${r.headWeight}`))];
 const bars = ok2.filter((r) => r.hasBar).length;
 const over = rows[390].filter((r) => !r.failed && r.overflowX > 1);
-const thumbs = rows[390].filter((r) => !r.failed).reduce((a, r) => a + r.tapsUnder44, 0);
+/* 🔴 **一个总数会吓人，而它九成不属於他**（2026-09-08 拆开的）。
+   那一天印出来是 **61**，而逐页拆开：
+   素材库 53 · 模板库 1 · 版段库 0 —— **54 个在他到不了的三页上**。
+   那三页 2026-09 就从侧栏拿掉了（`portal-shell.tsx` 写着为什么：
+   一个装修承包商不会去逛 69 个组件），页面还在自己的网址上，
+   而**没有一条路把他带过去**。剩下的七个才在他每天开的那几页。
+
+   所以从今天起分两栏印。**合成一个数，跟一把天天叫狼的尺是同一件事** ——
+   一个大到动不了的数字，没有人会去动它，於是没有人看它。
+   （同一页上「正文左缘」那一行早就是这样做的：排除居中的文件页。） */
+const OFF_MENU = new Set(["library", "templates", "sections"]);
+const live390 = rows[390].filter((r) => !r.failed && !OFF_MENU.has(r.name));
+const away390 = rows[390].filter((r) => !r.failed && OFF_MENU.has(r.name));
+const thumbs = live390.reduce((a, r) => a + r.tapsUnder44, 0);
+const thumbsAway = away390.reduce((a, r) => a + r.tapsUnder44, 0);
 
 console.log("\n── 一个产品，还是十一个 ──");
 console.log(`  正文左缘   ${xs.length} 种   ${xs.join(" · ")}`);
@@ -288,11 +302,15 @@ console.log(`             （排除居中的文件页：${[...CENTRED].join(" ")
 console.log(`  标题       ${heads.length} 种   ${heads.join(" · ")}`);
 console.log(`  顶栏       ${bars}/${ok2.length} 页有`);
 console.log(`  手机横滚   ${over.length} 页   ${over.map((r) => `${r.name}+${r.overflowX}`).join(" ") || "—"}`);
-console.log(`  手机上拇指按不稳的按钮  ${thumbs} 个`);
+console.log(`  手机上拇指按不稳的按钮  ${thumbs} 个（他到得了的页）`);
+console.log(
+  `                          ${thumbsAway} 个在素材库 / 模板库 / 版段库 —— 那三页不在他的侧栏上`,
+);
 /* NAMED, not just counted. See the note beside tapsSmall. */
 for (const r of rows[390]) {
   if (!r.failed && r.tapsSmall?.length) {
-    console.log(`    ${r.name.padEnd(11)} ${r.tapsSmall.join(" · ")}`);
+    const mark = OFF_MENU.has(r.name) ? "（不在侧栏上）" : "";
+    console.log(`    ${r.name.padEnd(11)}${mark} ${r.tapsSmall.join(" · ")}`);
   }
 }
 console.log(
