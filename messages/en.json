@@ -1025,7 +1025,16 @@
       "kind_referral_owing": "Referral fee not paid yet",
       "kind_request_open": "A dealer is waiting",
       "kind_absent_twice": "Missed two lessons in a row",
-      "kind_party_lapsed": "Has not been back"
+      "kind_party_lapsed": "Has not been back",
+      "saidLabel": "What we told people",
+      "saidNothing": "Nothing has been sent to anyone yet.",
+      "saidToYou": "To you",
+      "said_queued": "Waiting",
+      "said_failed": "Did not go",
+      "said_cancelled": "Called off",
+      "sayToMe": "The system may remind me",
+      "sayToCustomers": "The system may write to my customers",
+      "sayNotYet": "Switch one off and the system can no longer line up messages for them. Nothing goes out on its own yet — that needs a WhatsApp number — and anything you send from WhatsApp yourself is still listed above."
     },
     "vehicles": {
       "title": "Vehicles",

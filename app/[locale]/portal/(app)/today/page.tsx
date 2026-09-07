@@ -10,6 +10,8 @@ import { PageBar } from "../page-bar";
 import { PageBody } from "../section";
 import { DeskCard } from "../desk-kit";
 import { NudgeList, type Nudge } from "./nudge-list";
+import { SaidList, type Said } from "./said-list";
+import { formatDay, formatTime } from "@/lib/format-date";
 
 /**
  * 要跟的事。
@@ -141,6 +143,79 @@ export default async function TodayPage({
       .map((r) => [r.id, (r.whatsapp || r.phone || "").trim()])
       .filter(([, v]) => v),
   ) as Record<string, string>;
+
+  /* 🔴 这个系统替他讲过的每一句话，跟那两个开关（[任务 219](#219) 他自己要的）。
+     **只有老板** —— `messages` 那张表是 `sees_money`，理由写在
+     20260906380000 的档头上：`body` 是一段自由文字，而这一行的自由文字里
+     常常有钱（「你还欠我 RM 45,500」），**而一段文字里的金额遮不掉**。
+     所以师傅这一段问都不问 —— 问了拿回来是空的，而空的会画成
+     「系统从来没有替你讲过话」，那是一句假话。 */
+  let said: Said[] = [];
+  let toOwner = true;
+  let toCustomer = true;
+  if (workspace.isOwner) {
+    const [{ data: saidRows }, { data: setRow }] = await Promise.all([
+      supabase
+        .from("messages")
+        .select("id, audience, kind, body, party_id, status, created_at")
+        .eq("project_id", workspace.projectId)
+        .order("created_at", { ascending: false })
+        /* 二十行。他打开这一页是要看「最近讲过什么」，
+           而一份从头列到底的帐读起来是一份报告。 */
+        .limit(20),
+      supabase
+        .from("message_settings")
+        .select("to_owner, to_customer")
+        .eq("project_id", workspace.projectId)
+        .maybeSingle(),
+    ]);
+    /* ⚠️ **一行都还没有的时候，两个都是开的** —— 那张表的预设就是 true
+       （他 2026-09-06 拍板 `兩個都開放`），而这里补上同一个预设，
+       不是画一个「关着」的勾。一个跟资料库讲反了的开关，
+       他按一下才会发现。 */
+    toOwner = setRow?.to_owner ?? true;
+    toCustomer = setRow?.to_customer ?? true;
+    const rowsSaid = (saidRows ?? []) as {
+      id: string;
+      audience: string;
+      kind: string;
+      body: string;
+      party_id: string | null;
+      status: string;
+      created_at: string;
+    }[];
+    /* 讲给谁 —— 名字在名册上。⚠️ 那个人被删掉了（`on delete set null`）
+       的时候这一行照旧要画：**那句话真的讲过**，只是不知道讲给谁了。 */
+    const saidParties = [
+      ...new Set(rowsSaid.map((r) => r.party_id).filter(Boolean)),
+    ] as string[];
+    const { data: nameRows } = saidParties.length
+      ? await supabase
+          .from("directory_entries")
+          .select("id, name")
+          .in("id", saidParties)
+      : { data: [] };
+    const nameOf = Object.fromEntries(
+      ((nameRows ?? []) as { id: string; name: string | null }[]).map((r) => [
+        r.id,
+        r.name ?? "",
+      ]),
+    );
+    said = rowsSaid.map((r) => ({
+      id: r.id,
+      audience: r.audience,
+      kind: r.kind,
+      body: r.body,
+      party: r.party_id ? (nameOf[r.party_id] ?? null) : null,
+      status: r.status,
+      /* 🔴 时间在**伺服器这一边**照马来西亚时间排好。
+         浏览器那一边算，会拿到那台机自己的时区 —— 而这个产品卖的是
+         马来西亚的生意，「下午 2:32」对每一个读它的人要是同一刻
+         （`lib/format-date.ts` 的档头）。 */
+      at: formatTime(r.created_at, locale),
+      on: formatDay(r.created_at, locale),
+    }));
+  }
 
   const dim =
     "[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]";
@@ -293,6 +368,24 @@ export default async function TodayPage({
             </div>
           )}
         </DeskCard>
+
+        {/* 🔴 讲过什么 —— 排在他自己那一份底下。
+            上面两张是**要做的**，这一张是**做过的**：
+            一份做过的帐排在待办上面，会把他今天要做的事推下去。
+            ⚠️ 一句都没讲过的时候**照样画** —— 见 said-list.tsx 的档头：
+            那句话是一个答案，而且那两个开关要有一个家。 */}
+        {workspace.isOwner ? (
+          <div className="mt-5">
+            <DeskCard title={t("today.saidLabel")}>
+              <SaidList
+                projectId={workspace.projectId}
+                rows={said}
+                toOwner={toOwner}
+                toCustomer={toCustomer}
+              />
+            </DeskCard>
+          </div>
+        ) : null}
       </PageBody>
     </StyleScope>
   );

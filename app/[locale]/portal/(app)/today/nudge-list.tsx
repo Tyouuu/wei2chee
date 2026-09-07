@@ -74,7 +74,10 @@ export type Nudge = {
  * 认不得的那一种照样画得出来（印它自己的名字），**不会让整页炸掉** ——
  * 一个少一句话的画面，比一个白掉的画面好。
  */
-const KIND_LABEL: Record<string, string> = {
+/* 🔴 导出，因为「讲过什么」那一份要用**同一批词**（said-list.tsx）——
+   一件事在讯号上叫「报价快过期」，在讲过的帐上就不该叫别的名字。
+   而抄第二份的代价这个仓库付过至少八次。 */
+export const KIND_LABEL: Record<string, string> = {
   quote_expiring: "kind_quote_expiring",
   agreed_unpaid: "kind_agreed_unpaid",
   contract_due: "kind_contract_due",

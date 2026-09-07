@@ -1025,7 +1025,16 @@
       "kind_referral_owing": "介绍费还没给",
       "kind_request_open": "经销商在等回覆",
       "kind_absent_twice": "连着两堂没来",
-      "kind_party_lapsed": "好久没来了"
+      "kind_party_lapsed": "好久没来了",
+      "saidLabel": "讲过什么",
+      "saidNothing": "还没有替你跟任何人讲过话。",
+      "saidToYou": "讲给你听",
+      "said_queued": "排着",
+      "said_failed": "没有出去",
+      "said_cancelled": "取消了",
+      "sayToMe": "系统可以提醒我",
+      "sayToCustomers": "系统可以直接讲给我的客人听",
+      "sayNotYet": "关掉之后，系统就排不了要发给他们的讯息。今天还没有任何东西会自己发出去 —— 那要一个 WhatsApp 号码；而你自己按 WhatsApp 发出去的，照旧记在上面。"
     },
     "vehicles": {
       "title": "车牌",
