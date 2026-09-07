@@ -452,13 +452,22 @@ export function SiteFeatures({
               className="flex flex-col [gap:calc(var(--gap-inline)*0.6)] [min-height:calc(13rem*var(--site-figure,1))] [padding:calc(var(--pad-card-lg)*1.1)]"
               style={{ background: STEP[i % STEP.length].bg, color: STEP[i % STEP.length].fg }}
             >
-              <span className="[font-family:var(--font-numeric)] [font-size:var(--text-xs)] [letter-spacing:var(--tracking-label)] [opacity:0.7]">
+              {/* 🔴 这三行本来带着 0.7 跟 0.84 的透明（2026-09-07 拿掉）。
+                  在一块**有颜色的板**上，字没有地方可以退：量出来
+                  1.0 是 4.75:1，0.84 掉到 3.85，0.7 掉到 **3.08** ——
+                  而那个编号是 12.88px，小字要 4.5。
+                  一个把要读的字调到 3.08 的透明，跟一个拿分隔线的颜色
+                  去写句子是同一件事（[任务 24](../../docs/founder-tasks.md#24)）。
+                  ⚠️ 层次没有丢：编号本来就是 `--text-xs` 加字距、
+                  说明是 `--text-sm`，而标题是 `--text-lg` 加粗 ——
+                  **大小跟字重分得开，不用靠把字调淡。** */}
+              <span className="[font-family:var(--font-numeric)] [font-size:var(--text-xs)] [letter-spacing:var(--tracking-label)]">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <span className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)] [line-height:var(--leading-tight)]">
                 {f.label}
               </span>
-              <span className="[font-size:var(--text-sm)] [line-height:var(--leading-body)] [opacity:0.84]">
+              <span className="[font-size:var(--text-sm)] [line-height:var(--leading-body)]">
                 {f.value}
               </span>
             </li>

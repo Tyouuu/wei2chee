@@ -505,16 +505,30 @@
   --site-ink-block: #dc5a32;
   --site-on-block: #ffffff;
   --site-primary: #dc5a32;
-  --site-on-primary: #ffffff;
+  /* 🔴 白压这个橘只有 3.78:1，而字要 4.5（2026-09-07 逐颗量的）。
+     那颗按钮是「Ask price」跟「Ask on WhatsApp」——
+     整页唯一两颗会带客人给他的。
+
+     ⚠️ **橘一个字都没动。** 那是模版自己的颜色，是这一套的身份
+     （[重点 7j](../../docs/founder-points.md)：颜色照抄）。
+     换掉的是**压在它上面的字**，而那从来不是模版的身份 ——
+     用的是这一套自己替官网宣告的那个字色，不是我另外发明一个黑。
+     4.57:1。 */
+  --site-on-primary: #1b1b17;
   --site-foot-bg: #78320a;
   --site-foot-fg: #f0f0f0;
   --site-plate-1: #788c6e;
   --site-plate-2: #b4a08c;
   --site-plate-3: #dc5a32;
   --site-plate-4: #dcd2aa;
-  --site-plate-1-fg: #ffffff;
+  /* 🔴 一号跟三号本来是白字：白压 #788c6e 是 3.64:1、压 #dc5a32 是 3.78:1，
+     而字要 4.5（2026-09-07 逐段量的）。四块板的颜色一个字都没动 ——
+     那四个颜色就是那一段的设计（[重点 7j](../../docs/founder-points.md)）；
+     换的是压在上面的字，而且用的是二号四号本来就在用的那一个，
+     不是另外发明一个黑。4.75:1 · 4.57:1。 */
+  --site-plate-1-fg: #1b1b17;
   --site-plate-2-fg: #1b1b17;
-  --site-plate-3-fg: #ffffff;
+  --site-plate-3-fg: #1b1b17;
   --site-plate-4-fg: #1b1b17;
   color-scheme: light;
 

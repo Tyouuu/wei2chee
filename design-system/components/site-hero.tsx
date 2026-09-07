@@ -469,10 +469,30 @@ export function SiteHero({
         } as React.CSSProperties)
       : ground === "ink"
       ? ({
-          "--tone-bg": "color-mix(in oklab, var(--color-nav-bg) 32%, #101215)",
-          "--tone-fg": "var(--color-nav-fg)",
-          "--tone-fg-dim": "var(--color-nav-fg-dim)",
-          "--tone-line": "color-mix(in oklab, var(--color-nav-fg) 16%, transparent)",
+          /* 🔴 从 `--ink-*` 拿，**不要在这里再兑一次**（2026-09-07）。
+
+             这四行本来是自己从 `--color-nav-*` 兑出来的，而
+             `.ds-ground[data-ground="ink"]` 早就算过同一件事 ——
+             **同一个问题两个答案，而它们已经分家了。**
+
+             那一边算的时候会先看这一套风格自己替**官网**宣告的地
+             （`--site-ink-bg` / `--site-ink-fg`，2026-08-28 为了整套抄模版
+             加的）；这一边没有，所以它退回侧栏的颜色。而侧栏是**工作台**的，
+             跟官网那一层没有关系：
+
+               图纸 侧栏是白底深蓝字 → 这里兑出来是「深蓝的字压在一块深灰上」
+                    量出来 **1.19:1**，而它就是第一屏那颗「Ask on WhatsApp」。
+                    图纸 自己宣告的官网地是 #f0f0f0 配 #1b1b17，15.16:1。
+
+             六套逐一量过，六套宣告的都是 9.58–19.51:1 的一对 ——
+             也就是说**答案一直都在，只是这一段没有去问**。
+
+             ⚠️ 跟 [任务 36](../../docs/founder-tasks.md#36) 记的是同一个形状：
+             一个 tone 假设了底是浅的，套在深色上就给出一条浅色的东西。 */
+          "--tone-bg": "var(--ink-bg)",
+          "--tone-fg": "var(--ink-fg)",
+          "--tone-fg-dim": "var(--ink-fg-dim)",
+          "--tone-line": "color-mix(in oklab, var(--ink-fg) 16%, transparent)",
         } as React.CSSProperties)
       : undefined
   const painted = ground !== "page" || bled

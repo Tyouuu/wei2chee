@@ -1951,7 +1951,15 @@
 .ds-ground[data-ground="ink"] [data-chrome-foot] {
   --color-nav-bg: var(--site-foot-bg, var(--ink-bg));
   --color-nav-fg: var(--site-foot-fg, var(--ink-fg));
-  --color-nav-fg-dim: color-mix(in oklab, var(--site-foot-fg, var(--ink-fg)) 62%, transparent);
+  /* 🔴 62% → 72%（2026-09-07）。那个 62 是把页脚的字**淡进它自己的地**，
+     而淡到什么程度从来没有人量过：图纸 的页脚是 #f0f0f0 压 #78320a，
+     全强度 8.16:1，淡到 62% 剩 **4.13:1** —— 而那两行是
+     「Malaysia · Renovation & fitout」跟版权那一行，15px 的小字，要 4.5。
+
+     六套逐一量过：62% 只有 图纸 不过；**72% 六套都在 5.03 以上**，
+     而且看起来还是比全强度那几行淡。⚠️ 那条 16% 的线不动 ——
+     一条线不是字，标准也不管它。 */
+  --color-nav-fg-dim: color-mix(in oklab, var(--site-foot-fg, var(--ink-fg)) 72%, transparent);
   --color-nav-border: color-mix(in oklab, var(--site-foot-fg, var(--ink-fg)) 16%, transparent);
 }
 
