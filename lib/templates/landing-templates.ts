@@ -154,7 +154,7 @@ export type LandingContent = {
    */
   booksIn: string | null;
   /** Three checkable facts. */
-  proof: { value: string; label: string }[];
+  proof: { value: string; label: string; placeholder?: boolean }[];
   /** `placeholder` marks a row still holding the seeded value -- it is what
    *  keeps 「012-345 6789」 off a published page. See publish-projection.ts. */
   contact: { label: string; value: string; icon: string; placeholder?: boolean }[];

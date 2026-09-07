@@ -42,7 +42,7 @@ export type LandingCopy = {
   services: Record<string, ServiceHint[]>;
   /** The three figures under the headline. Placeholders that are obviously
    *  placeholders, in the units this trade would actually use. */
-  proof: { value: string; label: string }[];
+  proof: { value: string; label: string; placeholder?: boolean }[];
   /**
    * Contact rows, EVERY ONE OF WHICH IS A PLACEHOLDER.
    *
@@ -244,7 +244,7 @@ const EN: LandingCopy = {
     wholesale: [
       { label: "Wholesale supply", value: "By carton, by pallet", icon: "company" },
       { label: "Terms", value: "Monthly terms for regular accounts", icon: "money" },
-      { label: "Delivery", value: "Own lorries within Klang Valley", icon: "place" },
+      { label: "Delivery", value: "Our own lorries", icon: "place" },
     ],
     education: [
       { label: "Tuition classes", value: "Small group or one-to-one", icon: "person" },
@@ -265,7 +265,7 @@ const EN: LandingCopy = {
   proof: [
     { value: "10 years", label: "In this trade" },
     { value: "24 hours", label: "To reply" },
-    { value: "Klang Valley", label: "We cover" },
+    { value: "Klang Valley", label: "We cover", placeholder: true },
   ],
   contact: [
     { label: "WhatsApp", value: "012-345 6789", icon: "phone", placeholder: true },
@@ -522,7 +522,7 @@ const ZH: LandingCopy = {
     wholesale: [
       { label: "批发供货", value: "整箱、整板", icon: "company" },
       { label: "账期", value: "熟客可谈月结", icon: "money" },
-      { label: "送货", value: "巴生谷内自家车队", icon: "place" },
+      { label: "送货", value: "自家车队送货", icon: "place" },
     ],
     education: [
       { label: "补习班", value: "小班 / 一对一", icon: "person" },
@@ -543,7 +543,7 @@ const ZH: LandingCopy = {
   proof: [
     { value: "10 年", label: "做这一行" },
     { value: "24 小时", label: "内回复" },
-    { value: "巴生谷", label: "服务范围" },
+    { value: "巴生谷", label: "服务范围", placeholder: true },
   ],
   contact: [
     { label: "WhatsApp", value: "012-345 6789", icon: "phone", placeholder: true },

@@ -33,6 +33,9 @@ const NEVER_PUBLISHED = [
   "Change this to the first thing you do", "Change this to the second",
   "吉隆坡", "八打灵再也", "梳邦", "莎阿南",
   "Kuala Lumpur", "Petaling Jaya", "Shah Alam",
+  /* 🔴 第三处，而它躲过了第一轮：那条证据带上的「服务范围 · 巴生谷」在八个
+     行业上都有，而我第一次只搜了那四个市镇名。看实拍才看到的。 */
+  "巴生谷", "Klang Valley",
 ];
 
 const TRADES = ["renovation", "beauty", "fnb", "retail", "wholesale", "education", "services", "other"];
