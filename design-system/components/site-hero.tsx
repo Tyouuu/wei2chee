@@ -153,6 +153,28 @@ export function heroDeadFields(props: {
   return dead;
 }
 
+/**
+ * 一个大到会被切掉的名字 —— 而切掉的正好是第一屏（[重点 11]：那一屏就是产品）。
+ *
+ * 🔴 2026-09-08 实测：招牌那一套照 Toulouse 抄的「名字横跨整页」，
+ * 遇到「HIN FATT RENOVATION」画出来是「HIN FATT / RENOVATIO」——
+ * 第二行只有**一个词**，而一个词换不了行，於是它跑出页面外面。
+ * Toulouse 自己没有这个问题，因为他们的店名是一个八个字母的词。
+ *
+ * `clamp()` 量不到字有多长，所以这里补一条上限：**最长那个词要装得下**。
+ * 0.58em 是一个大写词在展示体上每个字母的宽度，取自这个仓库自己那几套字
+ * （量的是 Archivo Narrow / Questrial / EB Garamond 的大写平均字宽）。
+ * 宁可小一点也不要切掉 —— 一个被切断的店名读起来是坏的，不是「大气」。
+ */
+function nameFits(text: string | undefined, wanted: string): string {
+  const longest = String(text ?? "")
+    .split(/\s+/)
+    .reduce((a, w) => Math.max(a, w.length), 0);
+  if (longest < 6) return wanted;
+  /* 92cqw 留一点边距；容器查询单位，所以它跟着这一屏走不是跟着视窗走。 */
+  return `min(${wanted}, calc(92cqw / ${(longest * 0.58).toFixed(2)}))`;
+}
+
 export function SiteHero({
   eyebrow,
   brand,
@@ -617,7 +639,7 @@ export function SiteHero({
     are now copied from two different templates rather than being one shape
     twice.
   */
-  if (layout === "plate-centre" && hasPhoto) {
+  if (layout === "plate-centre") {
     /*
       ── 满图置中名牌 ──────────────────────────────────────────────────────
 
@@ -634,20 +656,32 @@ export function SiteHero({
       RENOVATION is not selling a same-day callout: the first screen's job is
       to look like work worth paying for, and the ask is three sections down.
     */
+    /* 没有照片的时候：那张图跟遮罩都不画，字色从写死的白换回这一套自己的
+       token（[任务 280](../../docs/founder-tasks.md) 量过每一套自己声明的
+       官网地跟字都在 9.58:1 以上）。骨架一个字都没变 —— 变的只有它靠什么
+       撑住那一屏：有照片靠照片，没照片靠这一套自己的地。 */
+    const plateFg = hasPhoto ? "#fff" : "var(--color-paper)";
+    const plateDim = hasPhoto
+      ? "rgb(255 255 255 / 0.86)"
+      : "var(--color-paper-dim)";
     return (
       <section
         data-bleed=""
         data-photo-ground=""
         className="@container relative isolate"
+        style={hasPhoto ? undefined : { background: "var(--color-canvas)" }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          decoding="async"
-          fetchPriority="high"
-          src={photo}
-          alt={photoAlt || ""}
-          className="absolute inset-0 -z-20 block size-full object-cover"
-        />
+        {hasPhoto ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            decoding="async"
+            fetchPriority="high"
+            src={photo}
+            alt={photoAlt || ""}
+            className="absolute inset-0 -z-20 block size-full object-cover"
+          />
+        ) : null}
+        {hasPhoto ? (
         <span
           aria-hidden
           className="absolute inset-0 -z-10 block"
@@ -663,18 +697,25 @@ export function SiteHero({
               "linear-gradient(to bottom, rgb(0 0 0 / 0.52), rgb(0 0 0 / 0.42) 45%, rgb(0 0 0 / 0.62))",
           }}
         />
+        ) : null}
         <div className="flex flex-col items-center justify-center text-center [min-block-size:clamp(26rem,92svh,calc(46rem*var(--site-figure,1)))] [padding-block:calc(var(--pad-card-lg)*1.6)] [padding-inline:var(--pad-card-lg)]">
           <h1
-            className="ds-display max-w-[16ch] [color:#fff] [font-weight:var(--fw-regular,400)] [letter-spacing:-0.01em] [line-height:1.06] [text-wrap:balance]"
+            className="ds-display max-w-[16ch] [font-weight:var(--fw-regular,400)] [letter-spacing:-0.01em] [line-height:1.06] [text-wrap:balance]"
             style={{
-              fontSize:
+              color: plateFg,
+              fontSize: nameFits(
+                brand || (typeof headline === "string" ? headline : ""),
                 "clamp(2.6rem, calc(6.6vw * var(--site-hero-scale, 1)), calc(5.2rem * var(--site-hero-scale, 1)))",
+              ),
             }}
           >
             {brand || headline}
           </h1>
           {sub ? (
-            <p className="mt-6 max-w-[44ch] [color:rgb(255_255_255_/_0.86)] [font-size:var(--text-lg)] [line-height:var(--leading-body)]">
+            <p
+              className="mt-6 max-w-[44ch] [font-size:var(--text-lg)] [line-height:var(--leading-body)]"
+              style={{ color: plateDim }}
+            >
               {sub}
             </p>
           ) : null}
@@ -723,7 +764,10 @@ export function SiteHero({
             className="ds-display [color:var(--color-primary)] [font-weight:var(--fw-regular,400)] [letter-spacing:0.01em] [line-height:0.92] [text-wrap:balance] [text-align:var(--site-name-align,center)] [text-transform:var(--site-name-case,none)]"
             style={{
               fontSize:
-                "clamp(2.6rem, calc(9.2vw * var(--site-hero-scale, 1)), calc(7rem * var(--site-hero-scale, 1)))",
+                nameFits(
+                  brand || (typeof headline === "string" ? headline : ""),
+                  "clamp(2.6rem, calc(9.2vw * var(--site-hero-scale, 1)), calc(7rem * var(--site-hero-scale, 1)))",
+                ),
             }}
           >
             {brand || headline}
@@ -786,7 +830,7 @@ export function SiteHero({
     );
   }
 
-  if (layout === "name-plate" && hasPhoto) {
+  if (layout === "name-plate") {
     /* THE SLOT TAKES THE TRADE'S OWN FACT, not the same fact everywhere.
 
        Founder, 2026-08-27: 「你要想办法融入进去行业里面」. Copying a shape is half
@@ -800,20 +844,32 @@ export function SiteHero({
       : proof && proof.length > 0
         ? proof[0]
         : undefined;
+    /* 没有照片的时候：那张图跟遮罩都不画，字色从写死的白换回这一套自己的
+       token（[任务 280](../../docs/founder-tasks.md) 量过每一套自己声明的
+       官网地跟字都在 9.58:1 以上）。骨架一个字都没变 —— 变的只有它靠什么
+       撑住那一屏：有照片靠照片，没照片靠这一套自己的地。 */
+    const plateFg = hasPhoto ? "#fff" : "var(--color-paper)";
+    const plateDim = hasPhoto
+      ? "rgb(255 255 255 / 0.86)"
+      : "var(--color-paper-dim)";
     return (
       <section
         data-bleed=""
         data-photo-ground=""
         className="@container relative isolate"
+        style={hasPhoto ? undefined : { background: "var(--color-canvas)" }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          decoding="async"
-          fetchPriority="high"
-          src={photo}
-          alt={photoAlt || ""}
-          className="absolute inset-0 -z-20 block size-full object-cover"
-        />
+        {hasPhoto ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            decoding="async"
+            fetchPriority="high"
+            src={photo}
+            alt={photoAlt || ""}
+            className="absolute inset-0 -z-20 block size-full object-cover"
+          />
+        ) : null}
+        {hasPhoto ? (
         <span
           aria-hidden
           className="absolute inset-0 -z-10 block"
@@ -825,6 +881,7 @@ export function SiteHero({
               "linear-gradient(to top, rgb(0 0 0 / 0.60), rgb(0 0 0 / 0.06) 52%, rgb(0 0 0 / 0.12))",
           }}
         />
+        ) : null}
 
         <div className="flex flex-col justify-end [min-block-size:clamp(26rem,88svh,calc(44rem*var(--site-figure,1)))] [padding-inline:var(--pad-card-lg)] [padding-block:calc(var(--pad-card-lg)*1.4)]">
           <div className="mx-auto w-full max-w-[80rem]">
@@ -839,20 +896,33 @@ export function SiteHero({
                 against their 263px while the 263px equivalent sat right here
                 unmeasured. */}
             <h1
-              className="ds-display [color:#fff] [font-weight:var(--fw-semibold)] [letter-spacing:-0.02em] [line-height:0.9] [text-wrap:balance]"
+              className="ds-display [font-weight:var(--fw-semibold)] [letter-spacing:-0.02em] [line-height:0.9] [text-wrap:balance]"
               style={{
-                fontSize:
+                color: plateFg,
+                fontSize: nameFits(
+                  brand || (typeof headline === "string" ? headline : ""),
                   "clamp(2.8rem, calc(8.4vw * var(--site-hero-scale, 1)), calc(6.6rem * var(--site-hero-scale, 1)))",
+                ),
               }}
             >
               {brand || headline}
             </h1>
 
-            <hr className="mt-8 border-0 [background:rgb(255_255_255_/_0.42)] [block-size:1px]" />
+            <hr
+              className="mt-8 border-0 [block-size:1px]"
+              style={{
+                background: hasPhoto
+                  ? "rgb(255 255 255 / 0.42)"
+                  : "var(--border-strong)",
+              }}
+            />
 
             <div className="mt-6 grid items-center [gap:var(--gap-stack)] @3xl:grid-cols-[minmax(0,auto)_minmax(0,1fr)_minmax(0,auto)]">
               {fact ? (
-                <p className="[color:rgb(255_255_255_/_0.82)] [font-family:var(--font-numeric)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]">
+                <p
+                  className="[font-family:var(--font-numeric)] [font-size:var(--text-sm)] [letter-spacing:var(--tracking-label)]"
+                  style={{ color: plateDim }}
+                >
                   {fact.label ? `${fact.value} · ${fact.label}` : fact.value}
                 </p>
               ) : (
@@ -860,8 +930,8 @@ export function SiteHero({
               )}
               {sub ? (
                 <p
-                  className="ds-display max-w-[26ch] [color:#fff] [font-weight:var(--fw-medium)] [line-height:1.15] @3xl:justify-self-center @3xl:text-center"
-                  style={{ fontSize: "clamp(1.1rem, 2.2vw, 1.75rem)" }}
+                  className="ds-display max-w-[26ch] [font-weight:var(--fw-medium)] [line-height:1.15] @3xl:justify-self-center @3xl:text-center"
+                  style={{ color: plateFg, fontSize: "clamp(1.1rem, 2.2vw, 1.75rem)" }}
                 >
                   {sub}
                 </p>
@@ -899,7 +969,7 @@ export function SiteHero({
      the token file and absent from the page — the shape this repo keeps
      finding. All four read it now, and the vw term scales with it so the
      name still fits its line at 1440. */
-  if (layout === "band-inset" && hasPhoto) {
+  if (layout === "band-inset") {
     /*
       ── 标题左 · 一段话跟一颗药丸在右 · 照片缩在版心里 ─────────────────────
 
@@ -948,23 +1018,41 @@ export function SiteHero({
           </div>
         </div>
 
-        {/* 缩在版心里，不是满边的 —— 他们的照片跟文字同一条左右边线。 */}
-        <div className="mx-auto w-full max-w-[80rem] [padding-inline:var(--pad-card-lg)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            decoding="async"
-            fetchPriority="high"
-            src={photo}
-            alt={photoAlt || ""}
-            className="block w-full object-cover"
-            style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
-          />
-        </div>
+        {/* 缩在版心里，不是满边的 —— 他们的照片跟文字同一条左右边线。
+            没有照片就整块不画，剩下的是**两栏开场**：大标题在左，一段字加
+            一颗描边药丸在右。那跟底下那张通用的（全部靠左堆一列）不是同一个。 */}
+        {hasPhoto ? (
+          <div className="mx-auto w-full max-w-[80rem] [padding-inline:var(--pad-card-lg)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              decoding="async"
+              fetchPriority="high"
+              src={photo}
+              alt={photoAlt || ""}
+              className="block w-full object-cover"
+              style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
+            />
+          </div>
+        ) : null}
       </section>
     );
   }
 
-  if (layout === "data-columns" && hasPhoto) {
+  /* ── 🔴 没有照片的时候，这五个形状塌成同一张 ────────────────────────────
+     2026-09-08 逐个拍出来量的：十三个开场里
+     `bleed · band-bleed · name-plate · plate-centre · band-inset · data-columns`
+     **六张逐像素一模一样**，而 `left`/`plain` 跟它们的差是 0.4–1.7（满分 255）。
+     只有 `name-figure` 真的不一样（18.7）。
+
+     根因是每一个都写着 `&& hasPhoto`，没有照片就整个掉回底下那张通用的。
+     而**模版的预设就是没有照片** —— `landing-templates.ts` 里 `photo: ""`，
+     因为[任务 21](../../docs/founder-tasks.md) 判过不用图库照片。
+     也就是**每一个新客人拿到的，都是塌掉那一份**。
+
+     所以照片从这里起是可选的：有照片照旧是整套抄回来的那个样子，
+     没有照片的时候每一个形状还剩下它自己的骨架 —— 那才是[重点 7c]
+     讲的「换个配色它还是不是另一个设计」。 */
+  if (layout === "data-columns") {
     /*
       ── 标题贴着页缘 · 一排带标签的资料栏 · 一条黑杠 · 然后满边照片 ─────────
 
@@ -1028,20 +1116,22 @@ export function SiteHero({
           </div>
         </div>
 
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          decoding="async"
-          fetchPriority="high"
-          src={photo}
-          alt={photoAlt || ""}
-          className="block w-full object-cover"
-          style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
-        />
+        {hasPhoto ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            decoding="async"
+            fetchPriority="high"
+            src={photo}
+            alt={photoAlt || ""}
+            className="block w-full object-cover"
+            style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
+          />
+        ) : null}
       </section>
     );
   }
 
-  if (layout === "band-bleed" && hasPhoto) {
+  if (layout === "band-bleed") {
     return (
       <section data-bleed="" data-photo-ground="" className="@container">
         {/* THE BAND. Short on purpose -- `padding-block` is a little over one
@@ -1086,16 +1176,22 @@ export function SiteHero({
         </div>
 
         {/* EDGE TO EDGE, NO RADIUS, NO GAP. The photograph is the ground the
-            band is sitting on, not an illustration inside a column. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          decoding="async"
-          fetchPriority="high"
-          src={photo}
-          alt={photoAlt || ""}
-          className="block w-full object-cover"
-          style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
-        />
+            band is sitting on, not an illustration inside a column.
+
+            没有照片的时候这一块不画 —— 剩下的就是「上面一条带、下面一块」
+            的两段横切，而那正好是 dsgninterior.se 的开场（2026-09-08 挑的
+            四个参考之一）。不塞一张图库照片进来顶替：[任务 21] 判过一次。 */}
+        {hasPhoto ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            decoding="async"
+            fetchPriority="high"
+            src={photo}
+            alt={photoAlt || ""}
+            className="block w-full object-cover"
+            style={{ aspectRatio: "16 / 9", maxHeight: "42rem" }}
+          />
+        ) : null}
 
         {/* MOVED, NOT DELETED. Everything the first screen used to shout sits
             under the picture instead, at the page's own measure. */}
