@@ -530,7 +530,12 @@
         "noCountSaid": "It did not say how many were counted",
         "countNotANumber": "{said} is not a number",
         "stockCounted": "Was {before} on the shelf, counted {counted} — {moved} recorded.",
-        "stockSame": "Counted {counted}, same as the shelf — nothing recorded."
+        "stockSame": "Counted {counted}, same as the shelf — nothing recorded.",
+        "notPurchasePage": "Goods are received on the purchase order page, not this one",
+        "goodsReceived": "{moved} lines went onto the shelf.",
+        "goodsNew": "{created} of them are new items on the shelf.",
+        "goodsMismatch": "{short} lines short and {over} over — worth checking before the lorry leaves.",
+        "goodsNothing": "Nothing on that order could go onto the shelf."
       }
     },
     "home": {

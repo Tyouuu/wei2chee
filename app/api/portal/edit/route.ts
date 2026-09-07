@@ -218,6 +218,11 @@ Record tables:
   * 0 is a real answer. A number you were not told is not — if he says an item
     ran out but gives no count, ask.
   * Only on the 货架 page. Elsewhere say the shelf page is where a count goes.
+- receive_purchase marks a purchase order as arrived, on the 进货单 page:
+  「货到了」, 「the cement came」. record_id is that order's row; nothing else.
+  * The database works out what goes on the shelf from the order's own lines.
+    Never emit stock movements yourself.
+  * Only on the 进货单 page.
 
 Whole pages:
 - You cannot add or delete a page yourself, but you can OFFER to. When the
@@ -1156,6 +1161,7 @@ export const EDIT_JSON_SCHEMA = {
                 "set_record_status",
                 "log_work_day",
                 "count_stock",
+                "receive_purchase",
               ],
             },
             target_id: { type: ["string", "null"] },

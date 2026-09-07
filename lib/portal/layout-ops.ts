@@ -335,6 +335,21 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     没讲哪一间要拒绝（任务 148）· 有批号／序号的货在货品那一层拒绝
     （任务 160 · 211）。**那几条守卫一条都不用在这里重写。**
   */
+  /*
+    收货 —— 「货到了」。
+
+    🔴 **一样都不用发明**：人按那颗按钮送的也只有那一张单的编号
+    （new-record-form.tsx 的 `receive()`），几件进货架由资料库照那张单
+    自己的逐项算。
+
+    ⚠️ 那一支自己挡着：按两下不会进两次（每一笔锚在造成它的那一行上，
+    任务 93）· 收过货的行就锁了 · 序号那种要讲哪一台。
+  */
+  z.object({
+    op: z.literal("receive_purchase"),
+    /** 进货单那一行自己的编号，从页面上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+  }),
   z.object({
     op: z.literal("count_stock"),
     /** 货架上那一行自己的编号，从页面上 `record=` 抄下来的。 */
@@ -1288,6 +1303,10 @@ export function applyLayoutOps(
         /* 走到这里表示这一页不是货架 —— splitRecordOps 只在货架那几页
            把它拨去写入那一边。 */
         skipped.push({ op: op.op, reason: "notShelfPage" });
+        break;
+      }
+      case "receive_purchase": {
+        skipped.push({ op: op.op, reason: "notPurchasePage" });
         break;
       }
 

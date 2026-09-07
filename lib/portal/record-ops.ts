@@ -300,7 +300,12 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
   const actOps: LayoutOp[] = [];
   for (const op of ops) {
     if (op.op === "add_table_row") recordOps.push(op);
-    else if (op.op === "set_record_status" || op.op === "log_work_day" || op.op === "count_stock")
+    else if (
+      op.op === "set_record_status" ||
+      op.op === "log_work_day" ||
+      op.op === "count_stock" ||
+      op.op === "receive_purchase"
+    )
       actOps.push(op);
     else layoutOps.push(op);
   }
@@ -723,6 +728,59 @@ export async function actOnRecords(
       有批号／序号的货在货品那一层拒绝（任务 160 · 211）·
       那个「盘点」的词跟着系统语言走。**一条都不用在这里重写。**
     */
+    /*
+      ── 收货 ──────────────────────────────────────────────────────────
+
+      「货到了」。人按那颗按钮送的也只有那一张单的编号，所以这里一样 ——
+      几件进货架由资料库照那张单自己的逐项算。
+
+      🔴 而它回的四个数字**非讲不可**：进了几行 · 开了几件新货 ·
+      几行不够 · 几行多了。「叫了一百到了九十」正是他要在罗厘还没走的
+      时候知道的那一件（任务 149 · 151）—— 助手收了货而不讲，
+      那个差额要到月底对帐才现形。
+    */
+    if (op.op === "receive_purchase") {
+      if (moduleKey !== "purchases") {
+        skipped.push({ op: op.op, reason: "notPurchasePage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const { data, error } = await supabase.rpc("receive_purchase", {
+        in_record_id: recordId,
+      });
+      if (error) {
+        skipped.push({ op: op.op, ...friendly(error.message) });
+        continue;
+      }
+      const hit = (Array.isArray(data) ? data[0] : data) as
+        | { moved?: unknown; created?: unknown; short?: unknown; over?: unknown }
+        | null;
+      const moved = Number(hit?.moved ?? 0);
+      const created = Number(hit?.created ?? 0);
+      const short = Number(hit?.short ?? 0);
+      const over = Number(hit?.over ?? 0);
+      if (moved > 0) written += 1;
+      notes.push(
+        moved > 0
+          ? { op: op.op, reason: "goodsReceived", vars: { moved: String(moved) } }
+          : { op: op.op, reason: "goodsNothing" },
+      );
+      if (created > 0) {
+        notes.push({ op: op.op, reason: "goodsNew", vars: { created: String(created) } });
+      }
+      if (short > 0 || over > 0) {
+        notes.push({
+          op: op.op,
+          reason: "goodsMismatch",
+          vars: { short: String(short), over: String(over) },
+        });
+      }
+      continue;
+    }
+
     if (op.op === "count_stock") {
       if (shape !== "catalog") {
         skipped.push({ op: op.op, reason: "notShelfPage" });

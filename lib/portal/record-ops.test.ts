@@ -736,6 +736,60 @@ describe("a reply shaped like the model's own, end to end", () => {
   盘点 —— 两样都是他讲的（哪一件货 · 数出来几个），我们一样都没有发明。
   差几个在资料库里算，不在这里：两个人同时盘点的时候那是唯一挡得住的地方。
 */
+/*
+  收货 —— 「货到了」。人按那颗按钮送的也只有那一张单的编号。
+  🔴 它回的四个数字非讲不可：「叫了一百到了九十」正是他要在罗厘还没走的
+  时候知道的那一件（任务 149 · 151）。
+*/
+describe("收一车货", () => {
+  const client = (rpc: unknown) => ({ rpc }) as never;
+  const recv = (id: string) => ({ op: "receive_purchase", record_id: id }) as unknown as LayoutOp;
+  const back = (o: Record<string, number>) =>
+    vi.fn(async (_n: string, _a: Record<string, unknown>) => ({ data: { moved: 0, created: 0, short: 0, over: 0, ...o }, error: null }));
+
+  it("只送那一张单的编号 —— 几件进货架由资料库算", async () => {
+    const rpc = back({ moved: 3 });
+    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], []);
+    expect(rpc).toHaveBeenCalledWith("receive_purchase", { in_record_id: "po-1" });
+    expect(r.written).toBe(1);
+    expect(r.notes[0].reason).toBe("goodsReceived");
+    expect(r.notes[0].vars?.moved).toBe("3");
+  });
+
+  /* 🔴 助手收了货而不讲，那个差额要到月底对帐才现形。 */
+  it("对不上的那几行要讲出来", async () => {
+    const rpc = back({ moved: 2, short: 1, over: 0 });
+    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], []);
+    const kinds = r.notes.map((n) => n.reason);
+    expect(kinds).toContain("goodsMismatch");
+    expect(r.notes.find((n) => n.reason === "goodsMismatch")?.vars?.short).toBe("1");
+  });
+
+  it("新开的货品要讲出来", async () => {
+    const rpc = back({ moved: 2, created: 1 });
+    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], []);
+    expect(r.notes.map((n) => n.reason)).toContain("goodsNew");
+  });
+
+  /* 一张没有逐项的单 —— 讲出来，不要假装收了。 */
+  it("一行都没进就讲出来，而且不算做成了", async () => {
+    const rpc = back({});
+    const r = await actOnRecords(client(rpc), "purchases", [recv("po-1")], []);
+    expect(r.written).toBe(0);
+    expect(r.notes[0].reason).toBe("goodsNothing");
+  });
+
+  it.each(["quotations", "inventory", "payments"])(
+    "%s 上收不了货",
+    async (moduleKey) => {
+      const rpc = back({ moved: 3 });
+      const r = await actOnRecords(client(rpc), moduleKey, [recv("po-1")], []);
+      expect(rpc).not.toHaveBeenCalled();
+      expect(r.skipped[0].reason).toBe("notPurchasePage");
+    },
+  );
+});
+
 describe("盘一次货", () => {
   const client = (rpc: unknown) => ({ rpc }) as never;
   const count = (id: string, counted: string) =>

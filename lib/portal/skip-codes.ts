@@ -108,6 +108,8 @@ export type SkipCode =
   | "noCountSaid"
   /** 数出来那个不是一个数字。`said` */
   | "countNotANumber"
+  /** 收货只在进货单那一页做得了。 */
+  | "notPurchasePage"
   /**
    * 🔴 资料库自己那一句，原样。`detail`
    *
@@ -143,7 +145,20 @@ export type SkipCode =
    */
   | "stockCounted"
   /** 数出来跟系统一样 —— 什么都没记，而那要讲出来。 */
-  | "stockSame";
+  | "stockSame"
+  /** 收货：几行进了货架。`moved` */
+  | "goodsReceived"
+  /** 收货：其中几件是新开的货品。`created` */
+  | "goodsNew"
+  /**
+   * 收货：几行对不上。`short` · `over`
+   *
+   * 🔴 非讲不可 —— 「叫了一百到了九十」正是他要在罗厘还没走的时候知道的
+   * 那一件（任务 149 · 151）。
+   */
+  | "goodsMismatch"
+  /** 收货：这张单上没有可以进货架的行。 */
+  | "goodsNothing";
 
 /** 一件没做成的事，讲给老板听。`vars` 是那一句里的空格。 */
 export type Skip = {
@@ -207,10 +222,15 @@ export const SKIP_CODES = [
   "notShelfPage",
   "noCountSaid",
   "countNotANumber",
+  "notPurchasePage",
   "dbSaid",
   "layoutSaved",
   "dayLogged",
   "packageUsed",
   "stockCounted",
   "stockSame",
+  "goodsReceived",
+  "goodsNew",
+  "goodsMismatch",
+  "goodsNothing",
 ] as const satisfies readonly SkipCode[];

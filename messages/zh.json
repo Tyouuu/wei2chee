@@ -530,7 +530,12 @@
         "noCountSaid": "没有讲数出来几个",
         "countNotANumber": "「{said}」不是一个数字",
         "stockCounted": "架上本来 {before}，数出来 {counted} —— 记了一笔 {moved}。",
-        "stockSame": "数出来 {counted}，跟架上一样 —— 没有记。"
+        "stockSame": "数出来 {counted}，跟架上一样 —— 没有记。",
+        "notPurchasePage": "收货在进货单那一页做 —— 这一页收不了",
+        "goodsReceived": "{moved} 行进了货架。",
+        "goodsNew": "其中 {created} 件是新开的货品。",
+        "goodsMismatch": "有 {short} 行不够、{over} 行多了 —— 罗厘还在的时候看一下。",
+        "goodsNothing": "这张单上没有可以进货架的行。"
       }
     },
     "home": {
