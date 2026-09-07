@@ -66,6 +66,12 @@ export type SystemWords = {
    *  outcomes, all of them things a stranger on a phone has to read. */
   sent: string;
   sendIncomplete: string;
+  /** 🔴 **贴在那一格底下**的那一句，跟上面那一句不是同一件事。
+   *  `sendIncomplete` 是**一整次送出**的结果（那一支函式也会回它），
+   *  所以它留在按钮旁边；这一句讲的是**这一格**，所以它长在这一格底下。
+   *  合成一句的代价是它必须同时指两个框，於是只能写成
+   *  「留个称呼和联络方式就可以」—— 而他站在其中一个框前面。 */
+  fieldNeeded: string;
   sendTooMany: string;
   sendFailed: string;
   /** The form is real but this is not the published page, so nothing was
@@ -133,6 +139,11 @@ export type SystemWords = {
   booking: {
     pickDay: string;
     pickTime: string;
+    /** 🔴 跟 `pickTime` 不是同一句，而且不可以一样：`pickTime` 是那一片
+     *  格子**上面的名字**，这一句是他按下去之后**底下**出现的那一句。
+     *  两句一样，画面上就是「Pick a time / 格子 / Pick a time」——
+     *  而一个栏位的名字不是一句错误讯息。 */
+    pickOne: string;
     taken: string;
     noneLeft: string;
     submit: string;
@@ -155,12 +166,32 @@ export type SystemWords = {
 
 const EN: SystemWords = {
   months: [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ],
   monthsShort: [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ],
   weekdays: ["S", "M", "T", "W", "T", "F", "S"],
   pickDate: "Pick a date",
@@ -197,9 +228,11 @@ const EN: SystemWords = {
       : "Part of your system. It switches on once the system is built.",
   sent: "Got it — we will come back to you.",
   sendIncomplete: "A name and a way to reach you, please.",
+  fieldNeeded: "Fill this in — it is how we come back to you.",
   sendTooMany: "A lot has come in just now. Try again in a minute.",
   sendFailed: "That did not go through. Try again, or message us directly.",
-  sendPreviewOnly: "This is the preview — nothing was sent. On your live site it becomes a row in your system.",
+  sendPreviewOnly:
+    "This is the preview — nothing was sent. On your live site it becomes a row in your system.",
   rowCount: (n) => `${n} record${n === 1 ? "" : "s"}`,
   filterAll: "All",
   tableSearch: "Filter these rows…",
@@ -246,6 +279,7 @@ const EN: SystemWords = {
   booking: {
     pickDay: "Pick a day",
     pickTime: "Pick a time",
+    pickOne: "Choose one of the times above.",
     taken: "Taken",
     noneLeft: "Nothing left on this day — try another one.",
     submit: "Book this time",
@@ -255,7 +289,8 @@ const EN: SystemWords = {
     past: "That time has passed. Pick a later one.",
     tooFar: "That is too far ahead. Pick a nearer day.",
     failed: "That did not go through. Try again, or message us directly.",
-    previewOnly: "This is the preview — nothing was booked. On your live site it becomes a real slot.",
+    previewOnly:
+      "This is the preview — nothing was booked. On your live site it becomes a real slot.",
     arrow: (record) => [
       "Pick a time and it becomes a ",
       `${record} in your system — nobody has to write it down.`,
@@ -265,12 +300,32 @@ const EN: SystemWords = {
 
 const ZH: SystemWords = {
   months: [
-    "1月", "2月", "3月", "4月", "5月", "6月",
-    "7月", "8月", "9月", "10月", "11月", "12月",
+    "1月",
+    "2月",
+    "3月",
+    "4月",
+    "5月",
+    "6月",
+    "7月",
+    "8月",
+    "9月",
+    "10月",
+    "11月",
+    "12月",
   ],
   monthsShort: [
-    "一月", "二月", "三月", "四月", "五月", "六月",
-    "七月", "八月", "九月", "十月", "十一月", "十二月",
+    "一月",
+    "二月",
+    "三月",
+    "四月",
+    "五月",
+    "六月",
+    "七月",
+    "八月",
+    "九月",
+    "十月",
+    "十一月",
+    "十二月",
   ],
   weekdays: ["日", "一", "二", "三", "四", "五", "六"],
   pickDate: "选择日期",
@@ -307,16 +362,20 @@ const ZH: SystemWords = {
       : "这是你系统里的功能，系统建好后会启用",
   sent: "收到了 —— 我们会回你。",
   sendIncomplete: "留个称呼和联络方式就可以。",
+  fieldNeeded: "这一格要填 —— 不然我们回不了你。",
   sendTooMany: "刚才进来的有点多，等一分钟再试。",
   sendFailed: "没送出去。再试一次，或者直接找我们。",
-  sendPreviewOnly: "这是预览 —— 没有真的送出。上线之后，这一按会在你的系统里开一行。",
+  sendPreviewOnly:
+    "这是预览 —— 没有真的送出。上线之后，这一按会在你的系统里开一行。",
   rowCount: (n) => `共 ${n} 条`,
   filterAll: "全部",
   tableSearch: "在这些记录里找…",
   tableNoMatch: (q) => `没有配得上「${q}」的记录。`,
   tableEmpty: "这里还没有东西。你记的第一笔会出现在这里。",
   tableFoot: (shown, total) =>
-    shown === total ? `全部 ${total} 笔都在这里` : `显示 ${shown} 笔，一共 ${total} 笔`,
+    shown === total
+      ? `全部 ${total} 笔都在这里`
+      : `显示 ${shown} 笔，一共 ${total} 笔`,
   empty: "还没有资料",
   emptyToday: "今天没有安排",
   emptyPeople: "还没有加人",
@@ -342,7 +401,10 @@ const ZH: SystemWords = {
   enquiry: {
     submit: "送出",
     auto: "自动",
-    arrow: (record) => ["填完送出 → 你的系统会开一张", `${record}，不用有人转抄。`],
+    arrow: (record) => [
+      "填完送出 → 你的系统会开一张",
+      `${record}，不用有人转抄。`,
+    ],
     name: { label: "怎么称呼", placeholder: "陈先生" },
     phone: { label: "电话 / WhatsApp", placeholder: "012-345 6789" },
     detail: { label: "想做什么", placeholder: "三房翻新，想问大概多少" },
@@ -350,6 +412,7 @@ const ZH: SystemWords = {
   booking: {
     pickDay: "挑一天",
     pickTime: "挑一个时间",
+    pickOne: "先挑上面一个时间。",
     taken: "已订",
     noneLeft: "这一天满了 —— 换一天试试。",
     submit: "订这个时间",
@@ -360,7 +423,10 @@ const ZH: SystemWords = {
     tooFar: "太远了，挑近一点的日子。",
     failed: "没有送出去。再试一次，或者直接讯息我们。",
     previewOnly: "这是预览 —— 没有真的订。上线之后它会变成一个真的时段。",
-    arrow: (record) => ["挑一个时间 → 你的系统会多一个", `${record}，不用有人抄下来。`],
+    arrow: (record) => [
+      "挑一个时间 → 你的系统会多一个",
+      `${record}，不用有人抄下来。`,
+    ],
   },
 };
 

@@ -84,6 +84,19 @@ export function SiteBooking({
   const [contact, setContact] = useState("");
   const [what, setWhat] = useState("");
   const [state, setState] = useState<"idle" | "sending" | string>("idle");
+  /* 🔴 那句话贴着**哪一格**（2026-09-07）—— 跟询价那一块同一件事，
+     同一个形状（后台那一边 `74119c7` 的做法）。
+
+     这一块比询价那一块多一种，而它本来是最安静的一种：
+     那颗按钮写着 `!chosen` 就变灰 —— **他还没挑时段的时候，
+     按钮是灰的，而画面上一个字都不讲**。一颗按不动又不说为什么的按钮，
+     跟少一句话不是同一件事：他站在那里不知道少了什么。
+
+     ⚠️ 送不出去那几种（预览 · 刚被订走 · 太多 · 挂了）**贴不到任何一格**，
+     照旧留在按钮旁边。 */
+  const [missAt, setMissAt] = useState<"slot" | "name" | "contact" | null>(
+    null,
+  );
 
   /* 那个已上线的网址是唯一说得出这一块属於哪一门生意的东西，而它已经在
      读的人的网址列里。跟 `EnquiryForm` 读的是同一个地方 —— 同一份版面
@@ -112,12 +125,15 @@ export function SiteBooking({
 
   /* 从今天起的那几天。**从今天，不是明天** —— 一个今天订不了的订位页，
      跟一个坏掉的订位页读起来一样。 */
-  const dayList = Array.from({ length: Math.max(1, Math.min(days, 14)) }, (_, i) => {
-    const d = new Date(today ?? 0);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
+  const dayList = Array.from(
+    { length: Math.max(1, Math.min(days, 14)) },
+    (_, i) => {
+      const d = new Date(today ?? 0);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + i);
+      return d;
+    },
+  );
   /* 🔴 开在**第一个还订得到的那一天**，不是永远开在今天。
    *
    * 实测晚上十一点打开一间沙龙的官网：今天九点到六点**十格全部是灰的**，
@@ -141,7 +157,9 @@ export function SiteBooking({
     let alive = true;
     /* ⚠️ 那三个 setState 全部在 promise 里，不在 effect 本体里 ——
        同步在 effect 里改状态会连着重画两次，而 React 19 的规则会红。 */
-    fetch(`/api/site/booking/slots?slug=${encodeURIComponent(slug)}&day=${dayKey}`)
+    fetch(
+      `/api/site/booking/slots?slug=${encodeURIComponent(slug)}&day=${dayKey}`,
+    )
       .then((r) => r.json())
       .then((j: { taken?: { from: string; to: string }[] }) => {
         if (!alive) return;
@@ -156,7 +174,9 @@ export function SiteBooking({
         setTaken([{ from: "", to: "" }]);
         setLoadingSlots(false);
       });
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [dayKey, today]);
 
   const slots = buildSlots(day, openHour, closeHour, slotMinutes);
@@ -185,9 +205,23 @@ export function SiteBooking({
       return;
     }
     if (!chosen || !name.trim() || !contact.trim()) {
-      setState(w.sendIncomplete);
+      const at = !chosen ? "slot" : !name.trim() ? "name" : "contact";
+      setMissAt(at);
+      setState("idle");
+      requestAnimationFrame(() => {
+        /* ⚠️ `?.()` —— 一个没有它的环境里这一句会抛，
+           而抛在这里会把**那句话也一起吃掉**。 */
+        const el = document.getElementById(
+          at === "slot"
+            ? `${base}-slots`
+            : `${base}-${at === "name" ? "n" : "c"}`,
+        );
+        el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+        if (at !== "slot") el?.focus?.();
+      });
       return;
     }
+    setMissAt(null);
     const pick = rows.find((r) => r.from.toISOString() === chosen);
     if (!pick) {
       setState(w.booking.failed);
@@ -211,26 +245,40 @@ export function SiteBooking({
       const { result } = (await res.json()) as { result?: string };
       if (result === "ok") {
         setState(w.booking.booked(`${fmtDay(day, w)} ${pick.label}`));
-        setName(""); setContact(""); setWhat(""); setChosen(null);
+        setName("");
+        setContact("");
+        setWhat("");
+        setChosen(null);
         /* 订好了就重问一次这一天 —— 不然刚订走的那一格在他自己画面上
            还是空的，而他会以为没订到，再按一次。 */
-        const j = await fetch(`/api/site/booking/slots?slug=${encodeURIComponent(slug)}&day=${dayKey}`)
-          .then((r) => r.json()).catch(() => null);
+        const j = await fetch(
+          `/api/site/booking/slots?slug=${encodeURIComponent(slug)}&day=${dayKey}`,
+        )
+          .then((r) => r.json())
+          .catch(() => null);
         if (j?.taken) setTaken(j.taken);
         return;
       }
       setState(
-        result === "taken" ? w.booking.clash
-          : result === "past" ? w.booking.past
-          : result === "too_far" ? w.booking.tooFar
-          : result === "incomplete" ? w.sendIncomplete
-          : result === "too_many" ? w.sendTooMany
-          : w.booking.failed,
+        result === "taken"
+          ? w.booking.clash
+          : result === "past"
+            ? w.booking.past
+            : result === "too_far"
+              ? w.booking.tooFar
+              : result === "incomplete"
+                ? w.sendIncomplete
+                : result === "too_many"
+                  ? w.sendTooMany
+                  : w.booking.failed,
       );
       if (result === "taken") {
         setChosen(null);
-        const j = await fetch(`/api/site/booking/slots?slug=${encodeURIComponent(slug)}&day=${dayKey}`)
-          .then((r) => r.json()).catch(() => null);
+        const j = await fetch(
+          `/api/site/booking/slots?slug=${encodeURIComponent(slug)}&day=${dayKey}`,
+        )
+          .then((r) => r.json())
+          .catch(() => null);
         if (j?.taken) setTaken(j.taken);
       }
     } catch {
@@ -272,7 +320,10 @@ export function SiteBooking({
               <button
                 key={d.toISOString()}
                 type="button"
-                onClick={() => { setDayIndex(i); setTouched(true); }}
+                onClick={() => {
+                  setDayIndex(i);
+                  setTouched(true);
+                }}
                 aria-pressed={on}
                 className={`shrink-0 [border-radius:var(--radius-control)] [font-size:var(--text-sm)] [min-height:44px] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.1)] [transition-duration:var(--dur)] ${
                   on
@@ -293,13 +344,19 @@ export function SiteBooking({
             被占着的照旧画出来，标着「已订」—— 一个把满掉的时段藏起来的
             页面，让人以为这家店没什么生意。 */}
         <p className={`mt-6 ${label}`}>{w.booking.pickTime}</p>
-        <div className="grid grid-cols-2 [gap:var(--gap-inline)] @md:grid-cols-4">
+        <div
+          id={`${base}-slots`}
+          className="grid grid-cols-2 [gap:var(--gap-inline)] @md:grid-cols-4"
+        >
           {rows.map((s) => (
             <button
               key={s.from.toISOString()}
               type="button"
               disabled={s.off}
-              onClick={() => { setChosen(s.from.toISOString()); setState("idle"); }}
+              onClick={() => {
+                setChosen(s.from.toISOString());
+                setState("idle");
+              }}
               aria-pressed={chosen === s.from.toISOString()}
               className={`min-h-11 [border-radius:var(--radius-control)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [transition-duration:var(--dur)] ${
                 chosen === s.from.toISOString()
@@ -311,11 +368,21 @@ export function SiteBooking({
             >
               <span className="tnum">{s.label}</span>
               {s.off && !s.past && (
-                <span className="block [font-size:var(--text-micro)]">{w.booking.taken}</span>
+                <span className="block [font-size:var(--text-micro)]">
+                  {w.booking.taken}
+                </span>
               )}
             </button>
           ))}
         </div>
+        {missAt === "slot" ? (
+          <span
+            role="alert"
+            className="mt-1.5 block [border-inline-start:2px_solid_var(--border-strong)] [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [line-height:var(--leading-body)] [padding-inline-start:calc(var(--pad-control-x)*0.6)]"
+          >
+            {w.booking.pickOne}
+          </span>
+        ) : null}
         {!loadingSlots && !anyOpen && (
           <p className="mt-3 [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
             {w.booking.noneLeft}
@@ -325,44 +392,95 @@ export function SiteBooking({
         {/* ── 是谁 ───────────────────────────────────────────────────────
             两格必填，第三格随意。第四格换来的是少一个人订完 ——
             要问的其余全部留给订完之后那一通讯息。 */}
-        <form onSubmit={onSubmit} className="mt-6 grid [gap:var(--gap-stack)] @xl:grid-cols-2">
+        <form
+          onSubmit={onSubmit}
+          className="mt-6 grid [gap:var(--gap-stack)] @xl:grid-cols-2"
+        >
           <input
-            type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
             className="absolute h-0 w-0 overflow-hidden opacity-0"
           />
           <div>
-            <label htmlFor={`${base}-n`} className={label}>{w.enquiry.name.label}</label>
+            <label htmlFor={`${base}-n`} className={label}>
+              {w.enquiry.name.label}
+            </label>
             <input
-              id={`${base}-n`} value={name} onChange={(e) => setName(e.target.value)}
-              placeholder={w.enquiry.name.placeholder} className={field}
+              id={`${base}-n`}
+              aria-invalid={missAt === "name" || undefined}
+              aria-describedby={missAt === "name" ? `${base}-n-why` : undefined}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={w.enquiry.name.placeholder}
+              className={field}
             />
+            {missAt === "name" ? (
+              <span
+                id={`${base}-n-why`}
+                role="alert"
+                className="mt-1.5 block [border-inline-start:2px_solid_var(--border-strong)] [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [line-height:var(--leading-body)] [padding-inline-start:calc(var(--pad-control-x)*0.6)]"
+              >
+                {w.fieldNeeded}
+              </span>
+            ) : null}
           </div>
           <div>
-            <label htmlFor={`${base}-c`} className={label}>{w.enquiry.phone.label}</label>
+            <label htmlFor={`${base}-c`} className={label}>
+              {w.enquiry.phone.label}
+            </label>
             <input
-              id={`${base}-c`} type="tel" inputMode="tel" value={contact}
+              id={`${base}-c`}
+              aria-invalid={missAt === "contact" || undefined}
+              aria-describedby={
+                missAt === "contact" ? `${base}-c-why` : undefined
+              }
+              type="tel"
+              inputMode="tel"
+              value={contact}
               onChange={(e) => setContact(e.target.value)}
-              placeholder={w.enquiry.phone.placeholder} className={field}
+              placeholder={w.enquiry.phone.placeholder}
+              className={field}
             />
+            {missAt === "contact" ? (
+              <span
+                id={`${base}-c-why`}
+                role="alert"
+                className="mt-1.5 block [border-inline-start:2px_solid_var(--border-strong)] [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [line-height:var(--leading-body)] [padding-inline-start:calc(var(--pad-control-x)*0.6)]"
+              >
+                {w.fieldNeeded}
+              </span>
+            ) : null}
           </div>
           <div className="@xl:col-span-2">
-            <label htmlFor={`${base}-w`} className={label}>{w.enquiry.detail.label}</label>
+            <label htmlFor={`${base}-w`} className={label}>
+              {w.enquiry.detail.label}
+            </label>
             <input
-              id={`${base}-w`} value={what} onChange={(e) => setWhat(e.target.value)}
-              placeholder={w.enquiry.detail.placeholder} className={field}
+              id={`${base}-w`}
+              value={what}
+              onChange={(e) => setWhat(e.target.value)}
+              placeholder={w.enquiry.detail.placeholder}
+              className={field}
             />
           </div>
 
           <div className="mt-1 flex flex-col items-stretch [gap:var(--gap-inline)] @xl:col-span-2">
             <button
               type="submit"
-              disabled={state === "sending" || !chosen}
+              disabled={state === "sending"}
               className="inline-flex min-h-11 items-center justify-center disabled:opacity-60 [flex-grow:var(--site-submit-grow,0)] [background-color:var(--site-submit-bg,var(--color-primary))] [border-radius:var(--radius-control)] [color:var(--site-submit-fg,var(--color-on-primary))] [font-size:var(--text-base)] [font-weight:var(--fw-semibold)] [padding-block:var(--pad-control-y)] [padding-inline:calc(var(--pad-control-x)*1.6)] [transition-duration:var(--dur)] [transition-property:background-color] hover:[background-color:var(--color-primary-deep)]"
             >
-              {state === "sending" ? w.booking.sending : submitLabel || w.booking.submit}
+              {state === "sending"
+                ? w.booking.sending
+                : submitLabel || w.booking.submit}
             </button>
             {note && (
-              <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{note}</span>
+              <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                {note}
+              </span>
             )}
           </div>
 
@@ -390,7 +508,8 @@ export function SiteBooking({
               <b className="[color:var(--color-paper)] [font-weight:var(--fw-medium)]">
                 「{landsIn}」
               </b>
-              {landsInAfter || w.booking.arrow(landsIn)[1].slice(landsIn.length)}
+              {landsInAfter ||
+                w.booking.arrow(landsIn)[1].slice(landsIn.length)}
             </span>
           </p>
         )}
@@ -401,7 +520,12 @@ export function SiteBooking({
 
 /** 那一天的格子。**算出来的，不是存起来的** —— 换一个开门时间，
  *  昨天那些格子不会跟着变，因为根本没有存过。 */
-function buildSlots(day: Date, openHour: number, closeHour: number, minutes: number) {
+function buildSlots(
+  day: Date,
+  openHour: number,
+  closeHour: number,
+  minutes: number,
+) {
   const step = Math.max(15, Math.min(minutes, 240));
   const from = Math.max(0, Math.min(openHour, 23));
   const to = Math.max(from + 1, Math.min(closeHour, 24));
@@ -419,7 +543,12 @@ function buildSlots(day: Date, openHour: number, closeHour: number, minutes: num
 }
 
 /** 那一天最后一格开始的时间。用来判「今天还订得到吗」。 */
-function lastSlotStart(day: Date, openHour: number, closeHour: number, minutes: number) {
+function lastSlotStart(
+  day: Date,
+  openHour: number,
+  closeHour: number,
+  minutes: number,
+) {
   const slots = buildSlots(day, openHour, closeHour, minutes);
   return slots.length ? slots[slots.length - 1].from.getTime() : 0;
 }

@@ -104,7 +104,7 @@ export function EnquiryForm({
    */
   look?: "card" | "plain" | "split";
   /** 这一块在资料里的 id。顶栏跟第一屏那几颗按钮指的是它。 */
-  anchor?: string
+  anchor?: string;
 }) {
   const base = useId();
   const w = useSystemWords();
@@ -119,6 +119,22 @@ export function EnquiryForm({
   const boxed = look === "card";
   const [values, setValues] = useState<Record<number, string>>({});
   const [state, setState] = useState<"idle" | "sending" | string>("idle");
+  /* 🔴 那句话贴着**哪一格**（2026-09-07）。
+
+     它本来印在整张表**最底下**，量出来离最近那个框 115px，
+     而且要同时指两个框，所以只写得成「留个称呼和联络方式就可以」——
+     一个陌生人在手机上刚滑到底，读完还要自己数回去是哪一格。
+     Baymard（做过真人测试）：错误要**贴着那一格**，
+     而且讲**要求**不讲**违规**。
+
+     ⚠️ 后台那一边 2026-09-07 早上修的是同一件事（`74119c7`），
+     形状照抄：贴着那一格 · 框自己讲得出它是坏的 · 光标跟着回去。
+     **而这一页贵得多** —— 那是一个陌生人，一次，在手机上，
+     而这一块是整个官网上唯一会把钱带进来的地方。
+
+     ⚠️ 送不出去那几种（预览 · 太多 · 挂了 · 收到了）**贴不到任何一格**，
+     所以它们照旧留在按钮旁边。两种混在一格里，就是今天这个样子。 */
+  const [missAt, setMissAt] = useState<number | null>(null);
 
   /** The published address is the only thing that says which business this
    *  form belongs to, and it is already in the reader's address bar. Reading
@@ -144,12 +160,25 @@ export function EnquiryForm({
     const name = (values[0] ?? "").trim();
     const contact = (values[1] ?? "").trim();
     if (!name || !contact) {
-      setState(w.sendIncomplete);
+      /* 空的那一格是哪一个就指哪一个 —— 两个都空的时候指第一个，
+         他填完那一个再按，第二句自己出现在第二格底下。 */
+      const at = !name ? 0 : 1;
+      setMissAt(at);
+      setState("idle");
+      requestAnimationFrame(() => {
+        /* ⚠️ `?.()` —— 一个没有它的环境里这一句会抛，
+           而抛在这里会把**那句话也一起吃掉**。 */
+        const el = document.getElementById(`${base}-${at}`);
+        el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+        el?.focus?.();
+      });
       return;
     }
+    setMissAt(null);
     const answers: Record<string, string> = {};
     rows.forEach((f, i) => {
-      if (i > 1 && (values[i] ?? "").trim()) answers[f.label] = values[i].trim();
+      if (i > 1 && (values[i] ?? "").trim())
+        answers[f.label] = values[i].trim();
     });
 
     setState("sending");
@@ -178,7 +207,10 @@ export function EnquiryForm({
   return (
     /* id="ask" —— 页面上别处的按钮要有地方去。瑞士 那三张服务卡上的
        「View Details」如果不连到任何东西，就是一颗画出来的死按钮。 */
-    <section id="ask" className="[padding-block:var(--pad-card-lg)] [padding-inline:var(--pad-card-lg)]">
+    <section
+      id="ask"
+      className="[padding-block:var(--pad-card-lg)] [padding-inline:var(--pad-card-lg)]"
+    >
       {/* 🔴 这一块有**两个名字**，而在 2026-09-05 之前只画得出一个。
           组件里面四处「View Details」指的是写死的 `#ask`（上面那一行），
           而顶栏 · 页脚 · 第一屏那三颗按钮指的是它在资料里的 id
@@ -187,17 +219,24 @@ export function EnquiryForm({
       {anchor && anchor !== "ask" ? <span id={anchor} aria-hidden /> : null}
       <div
         className={[
-          boxed
-            ? "ds-card [padding:var(--pad-card-lg)]"
+          boxed ? "ds-card [padding:var(--pad-card-lg)]" : "",
+          split
+            ? "grid items-stretch gap-0 md:grid-cols-2 [margin:var(--site-form-bleed,0)]"
             : "",
-          split ? "grid items-stretch gap-0 md:grid-cols-2 [margin:var(--site-form-bleed,0)]" : "",
         ].join(" ")}
       >
         {/* `contents` when not split, so the heading and blurb stay direct
             children of a plain block and nothing about their spacing changes.
             In split mode this becomes the left column. */}
-        <div className={split ? "[padding:calc(var(--pad-card-lg)*1.2)]" : "contents"}>
-          <h2 data-column-heading="" className="ds-display [color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]">
+        <div
+          className={
+            split ? "[padding:calc(var(--pad-card-lg)*1.2)]" : "contents"
+          }
+        >
+          <h2
+            data-column-heading=""
+            className="ds-display [color:var(--color-paper)] [font-size:var(--text-title)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-title)]"
+          >
             {heading}
           </h2>
           {blurb && (
@@ -234,7 +273,10 @@ export function EnquiryForm({
           {rows.map((f, i) => {
             const id = `${base}-${i}`;
             return (
-              <div key={f.label} className={f.kind === "long" ? "@xl:col-span-2" : ""}>
+              <div
+                key={f.label}
+                className={f.kind === "long" ? "@xl:col-span-2" : ""}
+              >
                 <label
                   htmlFor={id}
                   className="mb-1.5 block [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]"
@@ -244,23 +286,61 @@ export function EnquiryForm({
                 {f.kind === "long" ? (
                   <textarea
                     id={id}
+                    aria-invalid={missAt === i || undefined}
+                    aria-describedby={missAt === i ? `${id}-why` : undefined}
                     rows={3}
                     value={values[i] ?? ""}
-                    onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, [i]: e.target.value }))
+                    }
                     placeholder={f.placeholder}
                     className="w-full resize-y [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--input))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [line-height:var(--leading-body)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
                   />
                 ) : (
                   <input
                     id={id}
+                    aria-invalid={missAt === i || undefined}
+                    aria-describedby={missAt === i ? `${id}-why` : undefined}
                     type={f.kind === "phone" ? "tel" : "text"}
                     inputMode={f.kind === "phone" ? "tel" : undefined}
                     value={values[i] ?? ""}
-                    onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, [i]: e.target.value }))
+                    }
                     placeholder={f.placeholder}
                     className="min-h-11 w-full [background-color:var(--site-field-bg,var(--color-ink-950))] [border-radius:var(--site-field-radius,var(--radius-control))] [border:var(--site-field-border,var(--hairline)_solid_var(--input))] [box-shadow:var(--site-field-line,none)] [color:var(--color-paper)] [font-size:var(--text-base)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] placeholder:[color:var(--color-paper-dim)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
                   />
                 )}
+                {/* 🔴 贴着这一格的那句话 —— 见上面 `missAt`。
+                    `role="alert"`，因为他按下按钮的时候多半正看着按钮。
+
+                    ⚠️ **颜色不是红的，而那不是漏做。** 后台那一边用的是
+                    `--color-clay-bright`，我第一版照抄了 —— 然后逐套量出来：
+                    那个 token **官网这一层没有人替它重新指过**
+                    （`.ds-ground[data-ground="ink"] .ds-site` 重新指了地、字、
+                    线、卡、主色，就是没有指状态色），所以它在官网上带着
+                    **工作台**的值，压在那一套自己的官网地上：
+
+                      图纸 5.27 · 満図 5.92 · 瑞士 5.76
+                      🔴 中台 3.91 · 招牌 2.59 · 台账 1.91
+
+                    六套里三套读不到，而 招牌 的官网地本来就是深红
+                    （#500014）—— 一句红字压在红地上，连色相都分不出来。
+
+                    所以用 `--color-paper`：官网这一层它被重新指到
+                    `--site-ink-fg`，而那一对**六套都在 9.58 以上**，
+                    `site-colour-contrast.test.ts` 有一条常驻守卫盯着它。
+                    重量交给字重跟 `role="alert"` —— 颜色本来就不可以是
+                    唯一的讯号（WCAG 1.4.1），而这一格底下只有这一句话。 */}
+                {missAt === i ? (
+                  <span
+                    id={`${id}-why`}
+                    role="alert"
+                    className="mt-1.5 block [border-inline-start:2px_solid_var(--border-strong)] [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] [line-height:var(--leading-body)] [padding-inline-start:calc(var(--pad-control-x)*0.6)]"
+                  >
+                    {w.fieldNeeded}
+                  </span>
+                ) : null}
               </div>
             );
           })}
@@ -329,8 +409,20 @@ export function EnquiryForm({
  */
 function defaultFields(w: SystemWords) {
   return [
-    { label: w.enquiry.name.label, placeholder: w.enquiry.name.placeholder, kind: "text" as const },
-    { label: w.enquiry.phone.label, placeholder: w.enquiry.phone.placeholder, kind: "phone" as const },
-    { label: w.enquiry.detail.label, placeholder: w.enquiry.detail.placeholder, kind: "long" as const },
+    {
+      label: w.enquiry.name.label,
+      placeholder: w.enquiry.name.placeholder,
+      kind: "text" as const,
+    },
+    {
+      label: w.enquiry.phone.label,
+      placeholder: w.enquiry.phone.placeholder,
+      kind: "phone" as const,
+    },
+    {
+      label: w.enquiry.detail.label,
+      placeholder: w.enquiry.detail.placeholder,
+      kind: "long" as const,
+    },
   ];
 }

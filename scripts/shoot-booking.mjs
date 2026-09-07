@@ -179,6 +179,52 @@ try {
   if (free > 0) ok(`看得到 ${free} 个空的时段`);
   else no("一个空时段都看不到", free);
 
+  /* ── ②b 什么都不填就按下去 —— 他知道少了什么吗 ────────────────────
+     2026-09-07 之前这一段是**最安静**的一种：那颗按钮写着 `!chosen`
+     就变灰，所以他还没挑时段的时候按钮按不动，而画面上一个字都不讲。
+     一颗按不动又不说为什么的按钮，跟少一句话不是同一件事。
+     Baymard：错误要**贴着那一格**，讲**要求**不讲**违规**。
+
+     ⚠️ 这一段要排在挑时段前面 —— 挑完再按就送出去了，量不到这一件。 */
+  {
+    const form = page.locator("#website-booking");
+    const btn = form.locator('button[type="submit"]').first();
+    /* 🔴 **答案有三种，不是两种。** 那颗按钮可能是**灰的** ——
+       挡住一次错的送出是对的，而一颗按不动又不说为什么的按钮，
+       他站在那里不知道少了什么。而且拿 click() 去打一颗灰的，
+       Playwright 会等满 30 秒然后把整支尺**炸掉** ——
+       一支死掉的尺不是一支会报告的尺。 */
+    if (await btn.isDisabled().catch(() => false)) {
+      no("什么都不填按下去 —— 按钮是灰的，而画面上没有讲少了什么");
+      await page.screenshot({ path: `${OUT}/0-empty.png`, fullPage: true });
+    } else {
+    await btn.click();
+    await page.waitForTimeout(600);
+    const alerts = form.locator('[role="alert"]');
+    const n = await alerts.count();
+    if (n > 0) {
+      const said = (await alerts.first().innerText()).trim();
+      /* 贴着哪一格：那句话跟时段那一片格子之间的缝。
+         上缘对上缘量出来是那一片格子的高度，所以量的是缝。 */
+      const gap = await page.evaluate(() => {
+        const al = document.querySelector('#website-booking [role="alert"]');
+        const grid = [...document.querySelectorAll("#website-booking div")].find(
+          (d) => d.className.includes("grid-cols-2"),
+        );
+        if (!al || !grid) return -1;
+        const a1 = al.getBoundingClientRect();
+        const b1 = grid.getBoundingClientRect();
+        return Math.max(0, Math.round(Math.max(a1.top - b1.bottom, b1.top - a1.bottom)));
+      });
+      if (gap >= 0 && gap <= 24) ok(`什么都不填按下去，它讲了、而且离那一片格子 ${gap}px：${said.slice(0, 40)}`);
+      else no("那句话没有贴着时段那一片格子", `${gap}px「${said.slice(0, 40)}」`);
+    } else {
+      no("什么都不填按下去，画面上一个字都没有 —— 他不知道少了什么");
+    }
+    await page.screenshot({ path: `${OUT}/0-empty.png`, fullPage: true });
+    }
+  }
+
   /* ── ③④⑤ 挑一格、填、送出 ────────────────────────────────────────── */
   let picked = "";
   if (free > 0) {

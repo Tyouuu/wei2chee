@@ -213,4 +213,74 @@ describe("客人打开那一页，字读不读得到", () => {
       "第一屏那一段读了 --color-nav-bg：侧栏是工作台的颜色，跟官网那一层没有关系（图纸 兑出来是 1.19:1）",
     ).not.toContain("--color-nav-bg");
   });
+
+  /* 🔴 上面那一条只挡住第一屏那一处。这一条挡的是**那一整类**。
+     ── 2026-09-07 又踩了一次 ─────────────────────────────────────────────
+     询价表那句「这一格要填」我照后台那一边用了 `--color-clay-bright`，
+     而官网这一层**没有人替状态色重新指过** —— 於是它带着**工作台**的值
+     压在那一套自己的官网地上：图纸 5.27 · 満図 5.92 · 瑞士 5.76，
+     而 🔴 中台 3.91 · 招牌 2.59 · 台账 1.91。六套里三套读不到。
+
+     两层 ground 区块（`.ds-ground[data-ground="ink"]` 跟它底下的
+     `.ds-site`）重新指过哪些 token 是**读出来的**，不是手抄一份名单 ——
+     哪天那两个区块多指一个状态色，这一条自己就放行。 */
+  it("官网那几块拿来当字色的 token，官网这一层真的重新指过", () => {
+    const css = readFileSync(join(ROOT, "app", "globals.css"), "utf8");
+    const grab = (from: string, to: string) => {
+      const a = css.indexOf(from);
+      expect(a, `globals.css 里找不到 ${from}`).toBeGreaterThan(0);
+      return css.slice(a, css.indexOf(to, a));
+    };
+    const repointed = new Set<string>();
+    for (const part of [
+      grab(
+        '.ds-ground[data-ground="ink"] {',
+        '.ds-ground[data-ground="ink"] [data-chrome-foot]',
+      ),
+      grab('.ds-ground[data-ground="ink"] .ds-site,', "\n}"),
+    ])
+      for (const m of part.matchAll(/^\s*(--[a-z0-9-]+):/gm))
+        repointed.add(m[1]);
+    expect(
+      repointed.has("--color-paper"),
+      "读不到那两个区块 —— 下面每一条都是空过",
+    ).toBe(true);
+
+    /* 顶栏跟页脚有**自己的**一层（`[data-chrome-top]` / `[data-chrome-foot]`），
+       在那里 --color-nav-fg 是从 --site-foot-fg 指过来的。写下来，
+       不然下一个人会以为那是漏的。 */
+    const own = new Set(["--color-nav-fg", "--color-nav-fg-dim"]);
+
+    /* 🔴 **这份名单是手写的，而它第一版漏掉了出事的那一个。**
+       第一版只扫 `site-*.tsx` —— 而那句「这一格要填」住在
+       `enquiry-form.tsx` 里，於是把红色改回去，这一条**照样绿**。
+       一条读起来像在保护什么、而什么都没保护的守卫，这个 session 第四次。
+
+       名单怎么来的：整个官网上，**存在的理由就是那一页**的那几个组件。
+       ⚠️ 而官网页面也画得了工作台的块（`InfoRows` 那一类）——
+       那几个在官网的地上用工作台的 token 是**另一个还没有人量过的问题**，
+       这一条不管它（扫全部会对 hero-card · stat-row · rail-nav 叫狼，
+       它们在工作台上用那几个状态色是对的）。 */
+    const dir = join(ROOT, "design-system", "components");
+    const onTheSite = (f: string) =>
+      f.startsWith("site-") ||
+      f === "enquiry-form.tsx" ||
+      f === "floating-contact.tsx";
+    const stray: string[] = [];
+    for (const f of readdirSync(dir).filter(
+      (x) => x.endsWith(".tsx") && onTheSite(x),
+    )) {
+      const src = readFileSync(join(dir, f), "utf8");
+      for (const m of src.matchAll(/\[color:var\((--[a-z0-9-]+)/g)) {
+        const t = m[1];
+        if (repointed.has(t) || own.has(t)) continue;
+        if (t.startsWith("--site-") || t.startsWith("--ink-")) continue;
+        stray.push(`${f} 用 ${t} 当字色`);
+      }
+    }
+    expect(
+      stray,
+      "官网这一层没有重新指过它，所以它带着工作台的值 —— 那正是那句「这一格要填」在 台账 上 1.91:1 的来源",
+    ).toEqual([]);
+  });
 });

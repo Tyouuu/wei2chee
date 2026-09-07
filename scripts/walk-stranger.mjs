@@ -440,7 +440,12 @@ async function askWhenWrong(page, where, submitName) {
     ok(where, `空的送出去挡下来了，而且那句话贴着那一格：「${r.msg}」`);
     return;
   }
-  const tellsHow = /at least|需要|要填|必填|请填|enter|choose|pick|add |write|type |先写|先填|必须/i.test(r.msg);
+  /* ⚠️ 加 `fill` 是把这一份补齐，不是替我自己那一句开后门：
+     中文那一半本来就有 `要填` 跟 `请填`，而英文那一半漏了它们的对手 ——
+     `at least`、`enter`、`choose` 都在，就是没有 `fill`。
+     实测过它不会放过任何一句本来红的：官网旧那一句
+     「A name and a way to reach you, please.」里没有 fill。 */
+  const tellsHow = /at least|需要|要填|必填|请填|enter|choose|pick|add |fill|write|type |先写|先填|必须/i.test(r.msg);
   /* 🔴 **门槛跟着量法一起换了，写下来免得下一轮读成「它自己变绿了」。**
      旧的量法是两个**上缘**的距离，门槛 120 —— 而那量到的是那个框自己的高度，
      所以一句贴在框底下的话，框越高它看起来离得越远。
