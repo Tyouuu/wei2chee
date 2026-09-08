@@ -81,3 +81,40 @@ describe("预约那一页的一天", () => {
     expect(rows.some((r) => (r.description ?? "").trim().length > 0)).toBe(true);
   });
 });
+
+/* 🔴 同一批预约不准在同一页上画两次。
+ *
+ * 2026-09-09 拍出来看：上面一天摊开六块，**底下一张一模一样的表六行**。
+ * 而「同一行印两次同一件事」是这个仓库判过两次的东西 ——
+ * [任务 17] 为它砍掉一整套风格，[任务 152] 替看板拿掉过一次。
+ *
+ * ⚠️ 它守的是**这一页**，不是「表格不好」：其余每一页那张表就是主角。
+ * 而它成立的条件是日程上的块点得进那一笔（`ScheduleRow.href`）——
+ * 少了那一条，拿掉表格就是拿掉唯一打得开一笔预约的地方。
+ */
+describe("预约那一页不画两次", () => {
+  const tableOf = (slug: string) => {
+    const tree = buildPageLayout("bookings", ctxFor(slug)) as unknown as { content: Node[] };
+    const all = walkNodes(tree.content as never) as unknown as Node[];
+    return all.find((n) => n.type === "RecordTable");
+  };
+
+  it("沙龙的预约页只有那一天，没有底下那张表", () => {
+    expect(dayBlock("beauty"), "那一天要在").toBeTruthy();
+    expect(tableOf("beauty"), "同一批预约不可以再画一张表").toBeUndefined();
+  });
+
+  it("补习那一页也一样", () => {
+    expect(dayBlock("education"), "那一天要在").toBeTruthy();
+    expect(tableOf("education"), "同一批预约不可以再画一张表").toBeUndefined();
+  });
+
+  it("⚠️ 控制组：客户那一页照旧就是一张表", () => {
+    const tree = buildPageLayout("customers", ctxFor("beauty")) as unknown as { content: Node[] };
+    const all = walkNodes(tree.content as never) as unknown as Node[];
+    expect(
+      all.find((n) => n.type === "RecordTable"),
+      "拿掉的只有预约那一页那一张 —— 别的页那张表就是主角",
+    ).toBeTruthy();
+  });
+});

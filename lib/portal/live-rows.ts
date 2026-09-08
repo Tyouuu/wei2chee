@@ -580,6 +580,13 @@ export type AppointmentRow = {
   /* 排在哪一间房 —— 一间 medi spa 订的是房间（20260909020000）。
      跟上面那一栏同一个理由嵌进来：两趟回来的东西要在这里配对。 */
   room?: { name: string | null } | null;
+  /* 🔴 是给谁的。
+     `party` 那一栏是**他打进去的那一串字**，而从名册挑一个客人排的预约
+     那一栏是空的（`party_id` 才有东西）—— 所以 2026-09-09 之前，
+     一笔排给真的客人的预约，日程上那一块**看不到她的名字**，
+     而那正是她打开这一页要看的那一件（拍出来看到的）。
+     ⚠️ 跟上面两栏同一个理由嵌进来，不另外打一趟。 */
+  client?: { name: string | null } | null;
 };
 
 /**
@@ -678,7 +685,12 @@ export function rowsFromAppointments(
         : (r.service ?? "").trim() || (r.party ?? "").trim(),
       secondary: isBlock
         ? ""
-        : [(r.party ?? "").trim(), r.source === "website" ? word.web : ""]
+        : [
+            /* 他自己打的那一串字优先 —— 那是他写下来的；名册那个名字
+               是退路。两个都没有就不印，不要印一个空的分隔点。 */
+            (r.party ?? "").trim() || (r.client?.name ?? "").trim(),
+            r.source === "website" ? word.web : "",
+          ]
             .filter(Boolean)
             .join(" · "),
       tone,
@@ -1117,7 +1129,7 @@ export async function fetchLiveRows(
         .from("appointments")
         .select(
           "id, starts_at, ends_at, kind, party, service, status, source, note, extra,"
-            + " staff:staff_id(name), room:room_id(name)",
+            + " staff:staff_id(name), room:room_id(name), client:party_id(name)",
         )
         .eq("project_id", projectId)
         .eq("module_key", moduleKey)
@@ -1301,8 +1313,16 @@ function fill(
           description: [r.secondary, r.status].filter(Boolean).join(" · "),
           /* 一天摊开的时候这一栏就是分栏的依据。没有派人的照样送过去 ——
              那一块把它们放在最后一栏，不是丢掉。 */
-          ...(r.who ? { who: r.who, tone: r.tone } : {}),
+          ...(r.who ? { who: r.who } : {}),
+          /* 🔴 状态跟「有没有派人」无关。
+             挂在一起的时候，一笔还没派人的预约会画成中性的灰 ——
+             而它明明是已订的，而且她今天要处理的正是它（拍出来看到的）。 */
+          ...(r.tone ? { tone: r.tone } : {}),
           ...(r.where ? { where: r.where } : {}),
+          /* 🔴 点那一块，打开那一笔。示例没有 `href`，所以那一块
+             自己就分得出「这是他的」跟「这是范例」——
+             而它是这一页拿掉底下那张一模一样的表的前提。 */
+          ...(r.href ? { href: r.href } : {}),
         })),
     };
   }

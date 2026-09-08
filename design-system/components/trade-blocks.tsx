@@ -168,6 +168,18 @@ export type ScheduleRow = {
   title: string;
   description?: string;
   /**
+   * 点这一块，打开那一笔。
+   *
+   * 🔴 只有**真的记录**有（`live-rows` 给的），示例没有 —— 跟表格那一边
+   * 同一个不变量，所以不用第二条规则去分。认不出的照样画得出来
+   * （他看得见它），只是点不动 —— **往拒绝的方向坏**。
+   *
+   * ⚠️ 而它是这一页能不能把底下那张一模一样的表拿掉的前提：
+   * [任务 152](../../docs/founder-tasks.md) 替看板拿掉过一次，
+   * 而那一次成立的理由就是卡片上有它。
+   */
+  href?: string;
+  /**
    * 谁做的 —— 一个沙龙的一天是**按人分栏**的，不是一条清单。
    *
    * ⚠️ 选填，而且**一行都没有给的时候这一根轴自己退回原来那几种画法** ——
@@ -231,6 +243,7 @@ export function DaySchedule({
     who: r.who?.trim() || undefined,
     where: r.where?.trim() || undefined,
     tone: r.tone,
+    href: r.href || undefined,
   }));
   const look = shape ?? (framed ? "framed" : "bare");
 
@@ -406,6 +419,7 @@ function DayColumns({
   items: {
     id: string; time: string; endTime?: string; title: string;
     description?: string; who?: string; where?: string; tone?: StatusTone;
+    href?: string;
   }[];
   people: string[];
   empty: string;
@@ -485,7 +499,13 @@ function DayColumns({
               borderBottomColor: "var(--border-subtle)",
             }}
           >
-            <span />
+            {/* 🔴 时刻那一栏黏在左边。
+                手机上四个人要横着滑，而滑过去之后**时刻整栏跟着滑走** ——
+                一张没有时间轴的日程，读起来是一堆浮在空白上的块。
+                抬头这一格跟着黏，不然滑过去它会露出底下的东西。 */}
+            <span
+              className="sticky left-0 z-[2] [background:var(--color-canvas)]"
+            />
             {lanes.map((who) => (
               <span
                 key={who}
@@ -508,8 +528,8 @@ function DayColumns({
             className="relative grid"
             style={{ gridTemplateColumns: cols, height: `${(to - from) * ROW + 10}px` }}
           >
-            {/* 时刻 */}
-            <div className="relative">
+            {/* 时刻 —— 见上面那一段：它黏在左边。 */}
+            <div className="sticky left-0 z-[2] relative [background:var(--color-canvas)]">
               {hours.map((h) => (
                 <span
                   key={h}
@@ -545,34 +565,78 @@ function DayColumns({
                 ))}
                 {placed
                   .filter((x) => x.col === who)
-                  .map((x) => (
-                    <span
-                      key={x.id}
-                      className="absolute inset-x-[3px] overflow-hidden [background:var(--color-primary)] [border-radius:var(--radius-sm)] [color:var(--color-on-primary)] [padding:4px_7px_4px_10px]"
-                      style={{
-                        top: `${top(x.from)}px`,
-                        height: `${Math.max(top(x.to) - top(x.from), 22)}px`,
-                        /* 🔴 状态那一条色带。眯着眼看的时候字全部糊掉，
-                           而她扫这一页找的正是「待确认」那一笔 —— 少了它
-                           每一块长得一模一样。
-                           ⚠️ 只上在**边**上，不上在字上：一句被染色的状态
-                           是整页对比度最低的字，而 `status-dot` 那一支
-                           早就写下了这个判断。 */
-                        borderLeftWidth: x.tone ? "3px" : "0",
-                        borderLeftStyle: "solid",
-                        borderLeftColor: TONE_EDGE[x.tone ?? "neutral"],
-                      }}
-                    >
-                      <span className="block truncate [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]">
-                        {x.title}
-                      </span>
-                      {(x.where || x.description) && (
-                        <span className="block truncate [font-size:var(--text-micro)] opacity-80">
-                          {[x.where, x.description].filter(Boolean).join(" · ")}
+                  .map((x) => {
+                    const h = Math.max(top(x.to) - top(x.from), 22);
+                    /* 🔴 矮的那一块只画一行。
+                       一个 45 分钟的洗吹只有 34px 高，两行装不下 ——
+                       画出来是「Booked」被拦腰切一半，而一个被切一半的字
+                       读起来是这一块坏了（看图看出来的）。
+                       ⚠️ 少掉的那一句不是资讯：状态已经在左边那条色带上，
+                       而那条带子在眯着眼看的时候比字管用。 */
+                    const roomy = h >= 42;
+                    const edge = TONE_EDGE[x.tone ?? "neutral"];
+                    /* 🔴 矮的那一块把「是给谁的」接在同一行上，不是丢掉它。
+                       第一版矮的只留服务名 —— 而一个 45 分钟的洗吹照样是
+                       给某一个人做的，而她扫这一页找的就是那个名字。
+                       ⚠️ 挤不下的时候先丢**状态**，不丢名字：状态已经在
+                       左边那条色带上，而名字没有第二个地方讲。 */
+                    const sub = [x.where, x.description].filter(Boolean).join(" · ");
+                    const tight = [x.where, (x.description ?? "").split(" · ")[0]]
+                      .filter(Boolean)
+                      .join(" · ");
+                    const inner = roomy ? (
+                      <>
+                        <span className="block truncate [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]">
+                          {x.title}
                         </span>
-                      )}
-                    </span>
-                  ))}
+                        {sub && (
+                          <span className="block truncate [color:var(--color-on-canvas-dim)] [font-size:var(--text-micro)]">
+                            {sub}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="block truncate [font-size:var(--text-xs)]">
+                        <span className="[font-weight:var(--fw-semibold)]">{x.title}</span>
+                        {tight && (
+                          <span className="[color:var(--color-on-canvas-dim)]">
+                            {" · "}
+                            {tight}
+                          </span>
+                        )}
+                      </span>
+                    );
+                    /* 🔴 软的底，不是一块实心的砖。
+                       2026-09-08 拍回来的 25 张桌面稿**没有一张**是实心的：
+                       每一块都是一层淡色的底 ＋ 一条它自己颜色的边。
+                       而实心那一版量得出来是坏的 —— 八块近黑并排，
+                       眯着眼看是一整片黑，而这一页存在的意义就是
+                       「哪里还空着」要一眼看得出来。
+                       ⚠️ 淡色兑的是**这一套风格自己的地**，不是一个写死的灰：
+                       换一套风格它跟着那一套走。 */
+                    const box = {
+                      top: `${top(x.from)}px`,
+                      height: `${h}px`,
+                      background: `color-mix(in oklab, ${edge} 14%, var(--color-canvas))`,
+                      borderLeftWidth: "3px",
+                      borderLeftStyle: "solid" as const,
+                      borderLeftColor: edge,
+                    };
+                    const cls =
+                      "absolute inset-x-[3px] block overflow-hidden [border-radius:var(--radius-sm)] [color:var(--color-on-canvas)] [padding:4px_7px_4px_9px]";
+
+                    /* 点得动的只有真的那几笔 —— 示例没有连结，而一颗
+                       按下去什么都不会发生的东西是这个仓库禁的第一条。 */
+                    return x.href ? (
+                      <a key={x.id} href={x.href} className={cls} style={box}>
+                        {inner}
+                      </a>
+                    ) : (
+                      <span key={x.id} className={cls} style={box}>
+                        {inner}
+                      </span>
+                    );
+                  })}
               </div>
             ))}
           </div>

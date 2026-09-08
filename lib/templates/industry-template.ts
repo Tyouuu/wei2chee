@@ -2553,32 +2553,14 @@ function buildBookings(
     }),
     /* THE ONE MODULE WHOSE AXIS IS TIME. A salon owner does not read their day
        as four rows with a date filter above them; the week and the day ARE the
-       page. The staff filter stays underneath with the table, where filtering
-       belongs.
+       page.
 
-       ⚠️ Still a drawing: `calendar` has no table behind it (SHAPE_STATE), so
-       none of this becomes real yet. What changed is the shape. */
+       🔴 2026-09-09：**底下那张一模一样的表拿掉了**。拍出来看是上面六块、
+       底下六行，同一批预约画两次 —— 而那正是 [任务 17] 砍掉一整套风格、
+       [任务 152] 替看板拿掉过一次的那件事。日程上的块现在点得进那一笔
+       （`ScheduleRow.href`），所以拿掉它不会拿掉唯一的入口。
+       ⚠️ 代价：那张表带着的筛选跟搜寻跟着走了 —— 跟 `tasks` 同一个取舍。 */
     ...dayNodes("bookings", sample.records, c),
-    node("Listbox", "bookings-staff", {
-      name: "booking-staff",
-      placeholder: c.bookings.staffPlaceholder(labels.staff),
-      options: [
-        { label: c.bookings.allStaff(labels.staff), value: "all" },
-        { label: `${labels.staff} A`, value: "a" },
-        { label: `${labels.staff} B`, value: "b" },
-      ],
-    }),
-    recordTable(
-      "bookings-list",
-      c.bookings.caption,
-      {
-        primary: c.bookings.serviceColumn,
-        secondary: c.bookings.whenColumn(labels.staff),
-        amount: c.bookings.priceColumn,
-        status: c.col.status,
-      },
-      sample.records,
-    ),
   ];
 }
 
@@ -3457,7 +3439,19 @@ function buildFromShape(
        here becomes real -- what changed is that it now has the shape of a
        diary. */
     case "calendar":
-      return [...head, ...dayNodes(pageKey, copy.rows, c), ...table];
+      /* 🔴 **只有那张日程，底下不再画一张一模一样的表。**
+         2026-09-09 拍出来看：上面六块，底下六行，同一批预约画两次 ——
+         而「同一行印两次同一件事」正是 [任务 17] 砍掉一整套风格的理由，
+         [任务 152] 也替看板拿掉过一次。这一页是第三次。
+
+         而那一次成立的条件在这里也成立了：日程上的块**点得进那一笔**
+         （`ScheduleRow.href`，同一天接的）—— 少了它，拿掉表格就是拿掉
+         这一页唯一打得开一笔预约的地方。
+
+         ⚠️ 代价讲出来：那张表带着筛选跟搜寻，跟着一起走了。
+         她要找「Ms Lim 下一次几时来」今天要去那个客人自己那一页。
+         跟 `tasks` 那一页同一个取舍（见上面 pipeline 那一段）。 */
+      return [...head, ...dayNodes(pageKey, copy.rows, c)];
 
     default:
       return [...head, ...table];
