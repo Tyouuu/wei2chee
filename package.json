@@ -113,6 +113,8 @@
     "shoot:one-register": "node scripts/shoot-one-register.mjs",
     "shoot:appui": "node scripts/shoot-appui.mjs",
     "shoot:pagerefs": "node scripts/shoot-pagerefs.mjs",
+    "shoot:floorplans": "node scripts/shoot-floorplans.mjs",
+    "shoot:concepts": "node scripts/shoot-concepts.mjs",
     "shoot:products": "node scripts/shoot-products.mjs",
     "shoot:productshot": "node scripts/shoot-productshot.mjs",
     "shoot:phone": "node scripts/shoot-phone.mjs",
