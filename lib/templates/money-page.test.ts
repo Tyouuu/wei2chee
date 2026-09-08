@@ -111,11 +111,15 @@ describe("钱那三页照 finance 抄的骨架", () => {
     }
   });
 
-  it("有一条比例条 —— 钱集中在谁身上", () => {
+  /* 🔴 2026-09-08 换掉：右边那一块**三页各一种**（比例条 · 圆环 · 头像）。
+     老板指着三页并排的图讲 `這不是一樣叫什麼`，而这一条原本要求三页都是
+     `bars` —— 也就是它在**要求**它们长一样。
+     它现在守的是那一块**在不在**、有没有装进一张有标题的卡。 */
+  const SIDE = new Set(["RankList", "ShareChart"]);
+  it("有一块讲「钱集中在谁身上」，而且装在一张有标题的卡里", () => {
     for (const c of CASES) {
-      const rank = c.nodes.find((n) => n.type === "RankList");
-      expect(rank, `${c.where} 没有 RankList`).toBeTruthy();
-      expect((rank!.props as { shape?: string }).shape, `${c.where} 不是 bars`).toBe("bars");
+      const rank = c.nodes.find((n) => SIDE.has(n.type));
+      expect(rank, `${c.where} 右边那一块不见了`).toBeTruthy();
       /* 标题要是这一页自己的问题（谁付得最多 · 钱给了谁 · 谁抽得最多），
          不是一句通用的「排行」。它住在外面那张卡上 —— 参考那一页两块都是卡，
          一边有卡一边没有，读起来像其中一块还没做完。 */
@@ -138,13 +142,28 @@ describe("钱那三页照 finance 抄的骨架", () => {
     }
   });
 
-  it("三页用的是同一支骨架，不是三份手抄", () => {
-    const shapes = CASES.map((c) =>
-      typesOf(c.nodes).filter((t) =>
-        ["StatRow", "TrendChart", "RankList", "RecordTable"].includes(t),
-      ).join(">"),
+  /* 🔴 这一条 2026-09-08 反过来了。
+     它本来要求三页画出来一模一样 —— 那是 [任务 193](../../docs/founder-tasks.md)
+     修「两条不同的代码路径画出同一张脸」时立的，而它守的是**代码**那一件。
+     老板要的是画面那一件：`這不是一樣叫什麼`。
+     所以现在守两件，两件都要成立：
+       ① 三页照旧走**同一支** `moneyNodes`（不然又是三份手抄）
+       ② 而**右边那一块三页各一种** —— 那是它们三个不同的问题 */
+  it("三页走同一支骨架，而右边那一块三页各一种", () => {
+    const frame = CASES.map((c) =>
+      typesOf(c.nodes).filter((t) => ["StatRow", "TrendChart", "RecordTable"].includes(t)).join(">"),
     );
-    expect(new Set(shapes).size, `三页画出来的骨架不一样：${[...new Set(shapes)].join(" | ")}`).toBe(1);
+    expect(new Set(frame).size, `骨架不一样：${[...new Set(frame)].join(" | ")}`).toBe(1);
+
+    const sides = new Map<PageKey, string>();
+    for (const c of CASES) {
+      const n = c.nodes.find((x) => SIDE.has(x.type));
+      sides.set(c.key, `${n!.type}:${(n!.props as { shape?: string }).shape ?? "?"}`);
+    }
+    expect(
+      new Set(sides.values()).size,
+      `右边那一块还是同一种：${[...sides].map(([k, v]) => `${k}=${v}`).join(" · ")}`,
+    ).toBe(sides.size);
   });
 
   /* ───────────────────────────────────────────────────────────────────────

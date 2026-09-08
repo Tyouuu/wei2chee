@@ -2695,8 +2695,30 @@ function moneyNodes(opts: {
    *  「他记下第一笔之后自己少两格」的画面。 */
   tiles: { label: string; value: string; deltaLabel?: string; iconName?: string }[];
   trend?: { title: string; caption: string; unit?: string; points: { label: string; value: number }[] };
-  /** 比例条那一栏的标题：谁付得最多 · 钱给了谁 · 谁抽得最多。 */
+  /** 右边那一栏的标题。 */
   rankHeading: string;
+  /**
+   * 🔴 右边那一块长什么样 —— **三页各一种，而且是三个不同的问题**。
+   *
+   * 老板 2026-09-08 指着三页并排的图讲 `這不是一樣叫什麼`。
+   * 我先顶过一次（[任务 199](../../docs/founder-tasks.md) 那条：收款跟开销是
+   * 同一句话的两面），**他用眼睛看，而眼睛说一样** —— 而判像不像只有眼睛
+   * 判得了（[重点 24](../../docs/founder-points.md)）。照他的。
+   *
+   *   `bars`    比例条 —— 收款。「收到最大的几笔」
+   *   `person`  头像两行 —— 佣金。**每一行是一个人**，所以画成人
+   *   `share`   圆环 —— 开销。**它是三种里唯一会合并的那一个**
+   *
+   * 🔴 最后那一条是这一整件事的关键：`RankList` 按金额排、取前五，
+   * **不合并同一个人**（`live-rows.ts`），所以「钱给了哪几家」它答不了 ——
+   * [任务 193](../../docs/founder-tasks.md) 为这件事把标题从「钱给了谁」
+   * 改成了「花掉最大的几笔」。而圆环是照 key 归堆的，**它答得了**。
+   *
+   * ⚠️ [任务 194](../../docs/founder-tasks.md) 判过「这三页不要圆环」，
+   * 理由是**行只有一种状态，画出来是一整片扇形** —— 那讲的是**按状态**分。
+   * 这里按**对方**分（五个供应商就是五瓣），那个理由碰不到它。
+   */
+  side?: "bars" | "person" | "share";
   rows: {
     primary: string;
     secondary?: string;
@@ -2706,7 +2728,7 @@ function moneyNodes(opts: {
   }[];
   captionTemplate: string;
 }): PuckNode[] {
-  const { id, tiles, trend, rankHeading, rows, captionTemplate } = opts;
+  const { id, tiles, trend, rankHeading, rows, captionTemplate, side = "bars" } = opts;
 
   const stats = node("StatRow", `${id}-stats`, {
     tiles,
@@ -2741,19 +2763,38 @@ function moneyNodes(opts: {
   /* 比例条读的是**这一页自己的行**（`live-rows.ts` 的 RankList 就是这样填的：
      按金额排、取前五、`name` 用 secondary 再退回 primary）。这里照它排一次，
      所以「还没有资料的样子」跟「有资料的样子」不会是两个不同的东西。 */
-  const rank = node("RankList", `${id}-top`, {
-    /* 标题在外面那张卡上 —— 参考那一页两块都是卡，一边有卡一边没有，
-       读起来像其中一块还没做完。 */
-    heading: "",
-    shape: "bars",
-    rows: [...rows]
-      .slice(0, 5)
-      .map((r) => ({
-        name: r.secondary || r.primary,
-        sub: r.secondary ? r.primary : r.status,
-        amount: r.amount ?? "",
-      })),
-  });
+  const rank =
+    side === "share"
+      ? /* 圆环 —— 照**对方**归堆，不是照状态。`by` 那一个字是给投影看的
+           （`live-rows.ts` 预设按状态分，而这一页问的是「钱给了哪几家」）。
+           示例这边先照同一条规矩归一次，不然示例跟真资料是两个形状。 */
+        node("ShareChart", `${id}-top`, {
+          shape: "donut",
+          by: "party",
+          unit: "RM",
+          slices: (() => {
+            const by = new Map<string, number>();
+            for (const r of rows) {
+              const key = r.secondary || r.primary;
+              const cents = Number(String(r.amount ?? "").replace(/[^\d]/g, "")) || 0;
+              by.set(key, (by.get(key) ?? 0) + cents / 100);
+            }
+            return [...by.entries()].map(([label, value]) => ({ label, value }));
+          })(),
+        })
+      : node("RankList", `${id}-top`, {
+          /* 标题在外面那张卡上 —— 参考那一页两块都是卡，一边有卡一边没有，
+             读起来像其中一块还没做完。 */
+          heading: "",
+          shape: side,
+          rows: [...rows]
+            .slice(0, 5)
+            .map((r) => ({
+              name: r.secondary || r.primary,
+              sub: r.secondary ? r.primary : r.status,
+              amount: r.amount ?? "",
+            })),
+        });
 
   const rankCard = node("Panel", `${id}-top-card`, {
     title: rankHeading,
@@ -3319,6 +3360,9 @@ function buildFromShape(
           ],
           trend: copy.trend,
           rankHeading: pageKey === "commission" ? c.money.topEarned : c.money.topSpent,
+          /* 见 `side` 上面那一段：开销问「钱给了哪几家」（要合并 → 圆环），
+             佣金那一行是一个人（→ 头像）。 */
+          side: pageKey === "commission" ? "person" : "share",
           rows: copy.rows,
           captionTemplate: c.dashboard.trendCaption,
         }),

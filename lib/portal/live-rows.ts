@@ -1275,10 +1275,17 @@ function fill(
   if (type === "ShareChart") {
     /* 「多少钱卡在哪一段」. Grouped by the row's own status, same as the page
        already does, and the colours are left alone -- they are the register's
-       ramp and have nothing to do with which rows exist. */
+       ramp and have nothing to do with which rows exist.
+
+       🔴 除非那一块自己讲了要照**对方**归堆（`by: "party"`）。开销那一页
+       问的是「钱给了哪几家」，而按状态分在那一页画出来是一整片扇形
+       （[任务 194](../../docs/founder-tasks.md) 就是为这个判过「这三页不要圆环」）。
+       **而它同时是三种右边那一块里唯一会合并的那一个** ——
+       `RankList` 按金额排、取前五、不合并同一个人，所以那个问题只有它答得了。 */
+    const byParty = (props as { by?: string }).by === "party";
     const by = new Map<string, number>();
     for (const r of rows) {
-      const key = r.status || "—";
+      const key = byParty ? r.secondary || r.primary || "—" : r.status || "—";
       by.set(key, (by.get(key) ?? 0) + senOf(r.amount) / 100);
     }
     const old = (props.slices as { color?: string }[] | undefined) ?? [];
