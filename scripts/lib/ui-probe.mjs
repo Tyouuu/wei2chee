@@ -48,15 +48,25 @@ export const AUDIT = () => {
     const l2 = lum(b);
     return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
   };
-  const over = (fg, bg) =>
-    fg.a >= 1
-      ? fg
-      : {
-          r: fg.r * fg.a + bg.r * (1 - fg.a),
-          g: fg.g * fg.a + bg.g * (1 - fg.a),
-          b: fg.b * fg.a + bg.b * (1 - fg.a),
-          a: 1,
-        };
+  /* 🔴 叠出来那一层还剩多少不透明，要算出来，不可以当成 1。
+
+     2026-09-08 抓到的：我们自己那一页第一屏底下那三格证据，
+     一层 55% 的暗压在一层 10% 的白上 —— 这一支把两层叠完就宣布
+     「不透明了」，於是停在一块**浅灰**上，把白字判成 2.61:1，
+     而画面上那三行字压的是这一页近黑的地，读起来好好的。
+     🔴 **而我照那个数字改过一次设计**（把标签从 60% 提到 85%），
+     改的是一个不存在的毛病。
+
+     照标准的 source-over 算：叠完的 alpha 是 `fa + ba*(1-fa)`，
+     颜色要先各自乘上 alpha 再除回去。少了这一步，
+     每一个「半透明压半透明」的地方量出来都偏亮。 */
+  const over = (fg, bg) => {
+    if (fg.a >= 1) return fg;
+    const a = fg.a + bg.a * (1 - fg.a);
+    if (a <= 0) return { r: 0, g: 0, b: 0, a: 0 };
+    const mix = (f, b) => (f * fg.a + b * bg.a * (1 - fg.a)) / a;
+    return { r: mix(fg.r, bg.r), g: mix(fg.g, bg.g), b: mix(fg.b, bg.b), a };
+  };
 
   /* 往上找到第一个真的有底色的祖先。一个透明的框叠在一个透明的卡上，
      真正的地在更上面 —— 只问它自己，会把每一样东西都当成压在白纸上。 */
@@ -77,6 +87,12 @@ export const AUDIT = () => {
     const r = el.getBoundingClientRect();
     if (r.width < 1 || r.height < 1) return false;
     const s = getComputedStyle(el);
+    /* 🔴 给读屏用的那一段（`sr-only`）人看不到 —— 1×1 而且被裁掉。
+       2026-09-08 它把我们自己那一页上三段 `sr-only` 判成读不到，
+       而那三段本来就不该被人读到。 */
+    if (r.width <= 2 && r.height <= 2) {
+      if (s.clip === "rect(0px, 0px, 0px, 0px)" || /inset\(50%\)/.test(s.clipPath)) return false;
+    }
     return s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) > 0.05;
   };
 

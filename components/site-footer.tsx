@@ -72,7 +72,13 @@ export function SiteFooter() {
               footer. Choosing a language is not a decision anyone makes in
               their first second on a page, and a control for it in the top bar
               says otherwise. */}
-          <LocaleSwitcher />
+          {/* 🔴 `tone` 不给就走 paper 那一档，而那一档的后备
+              （`#5b6d82` 配 `#14273d`）是**给白纸写的** —— 页脚坐在这一页
+              自己的近黑底上，2026-09-08 量出来 **3.66:1**（要 4.5）。
+              `page` 是这个组件自己就有的那一档：它读这一页自己的
+              `--muted-foreground`（**6.73:1**），而且交接那一段在改这几个
+              token 的时候它会跟着一起变。**不是换一个颜色，是讲清楚它站在哪。** */}
+          <LocaleSwitcher tone="page" />
           <Link href={`/${locale}/login`} className="transition-colors hover:text-foreground">
             {t("signIn")}
           </Link>

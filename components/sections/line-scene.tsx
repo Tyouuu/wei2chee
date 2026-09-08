@@ -204,7 +204,12 @@ export function LineScene({
               <li
                 key={s}
                 className="flex gap-3 break-inside-avoid border-b border-border/60 py-1.5 transition-colors duration-300 md:py-2"
-                style={{ color: on ? "var(--foreground)" : "oklch(0.52 0.012 265)" }}
+                /* 🔴 还没读到的那几步是淡的 —— 那是对的，而 2026-09-08 `audit:platform` 量出来 **3.65:1**
+                   （12px 的字要 4.5:1，WCAG 1.4.3）。淡留着，只是抬到读得到：
+                   L 0.52 → 0.59 是 **4.72:1**。
+                   这个仓库同一天在 `workflow-strip` 上修过同一条：
+                   **一条线可以淡，一个字不可以。** */
+                style={{ color: on ? "var(--foreground)" : "oklch(0.59 0.012 265)" }}
               >
                 <span
                   className="tabular-nums"

@@ -146,7 +146,10 @@ export function SectionShell({
           className="md:sticky md:top-32 md:h-fit"
         >
           {index && (
-            <div className="font-serif text-[clamp(3rem,7vw,5.5rem)] leading-none tracking-[-0.04em] text-blueprint/25 tabular-nums">
+            /* 🔴 2026-09-08 `audit:platform` 量出来 **1.49:1** —— 88px 归大字，
+               门槛 3:1。青 25% → 60% 是 **3.61:1**，还是一个背景里的编号，
+               只是读得到了。 */
+            <div className="font-serif text-[clamp(3rem,7vw,5.5rem)] leading-none tracking-[-0.04em] text-blueprint/60 tabular-nums">
               {index}
             </div>
           )}

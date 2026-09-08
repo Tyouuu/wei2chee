@@ -184,7 +184,9 @@ function StepText({ i, step, active }: { i: number; step: Step; active: boolean 
       <div className="flex flex-col items-center pt-1">
         <span
           className="font-mono text-[2rem] leading-none tabular-nums transition-colors duration-300 md:text-[2.75rem]"
-          style={{ color: active ? "var(--foreground)" : "oklch(0.45 0.012 265)" }}
+          /* 🔴 2026-09-08 `audit:platform` 量出来 **2.7:1**。44px 归大字，门槛 3:1 ——
+             L 0.45 → 0.51 是 **3.38:1**，而「还没到」那个感觉还在。 */
+          style={{ color: active ? "var(--foreground)" : "oklch(0.51 0.012 265)" }}
         >
           {String(i + 1).padStart(2, "0")}
         </span>

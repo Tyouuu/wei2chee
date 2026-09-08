@@ -306,7 +306,10 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
                 <span className="h-[7px] w-[7px] rounded-full bg-white/25" />
                 <span className="h-[7px] w-[7px] rounded-full bg-white/25" />
               </span>
-              <span className="flex-1 text-center text-[0.6875rem] tracking-[0.02em] text-white/45">
+              {/* 🔴 这一行压的是那个窗口的标题栏（白 6% 叠在近黑上），
+                所以 45% 在这里是 **4.41:1**，比压在页面本身上低一点。
+                48% 是 4.75 —— 跟底下那个 SCROLL 同一个值。 */}
+              <span className="flex-1 text-center text-[0.6875rem] tracking-[0.02em] text-white/48">
                 {t("shotWindow")}
               </span>
               <span className="w-[42px]" aria-hidden />
@@ -373,7 +376,8 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
         style={{ opacity: contentOpacity }}
         className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3"
       >
-        <span className="annotation !text-white/45">SCROLL</span>
+        {/* 🔴 45%% 是 **4.49:1** —— 差 0.01 就过。48%% 是 4.85。 */}
+          <span className="annotation !text-white/48">SCROLL</span>
         <div className="h-12 w-px overflow-hidden bg-white/20">
           <motion.div
             className="h-1/2 w-full bg-white/80"
