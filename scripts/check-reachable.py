@@ -160,6 +160,7 @@ PAGES = [
     ("what you owe", "/en/portal/payables"),
     ("days worked", "/en/portal/attendance"),
     ("who is free", "/en/portal/rota"),
+    ("rooms", "/en/portal/rooms"),
     ("moving stock", "/en/portal/transfers"),
     ("classes", "/en/portal/classes"),
     # 餐台 · 厨房（2026-09-08）—— 同一条（任务 177）。

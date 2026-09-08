@@ -509,6 +509,10 @@ function DayColumns({
             {lanes.map((who) => (
               <span
                 key={who}
+                /* 一栏的抬头 —— 那一栏是谁（或者哪一间房）。
+                   给它一个名字，是因为「那几栏是人还是房」是这一块唯一
+                   一件从画面上量得出来的事（[任务 308] 那一根轴）。 */
+                data-day="lane"
                 className="truncate [padding:var(--pad-control-y)_var(--pad-control-x)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
                 style={{
                   borderLeftWidth: "var(--hairline)",

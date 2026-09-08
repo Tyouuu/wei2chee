@@ -1504,6 +1504,25 @@
       "sat": "Saturday",
       "rosterNote": "Leave both boxes empty for a day off. A shift has to end after it starts."
     },
+    "rooms": {
+      "title": "Rooms",
+      "lede": "Which room is still free at three, and what is already in it.",
+      "label": "Your rooms",
+      "note": "A room stays on the books once it has been used, so closing one takes it off the list without touching last year's visits.",
+      "day": "Day",
+      "from": "From",
+      "to": "To",
+      "ask": "Ask",
+      "free": "Free",
+      "taken": "Taken",
+      "add": "Open a room",
+      "adding": "Opening...",
+      "name": "Room name",
+      "off": "Close",
+      "on": "Reopen",
+      "offLabel": "Closed",
+      "none": "No rooms yet. Open the first one below and bookings can be put in it."
+    },
     "transfers": {
       "title": "Moving stock",
       "lede": "Send goods from one shop to another. One press writes both halves, so they cannot disagree.",

@@ -65,6 +65,12 @@ export type RecordPageContext = {
   stages: string[];
   /** 这一行是什么生意，给分期付款表建议惯例用。 */
   trade: string | null;
+  /* 这门生意会不会**排时段** —— 有预约那一页才算。
+     房间只有在会排时段的地方才有意思，而「哪一行」答不了这一句：
+     一间沙龙跟一间 medi spa 都是 `beauty`，而只有后者订的是房；
+     一间补习中心订的是教室，它是 `education`。
+     所以问的是**他有没有那一页**，不是他属於哪一行。 */
+  books: boolean;
   /** 他的公司名 —— 那张纸的抬头。见 new/document-preview.tsx。 */
   businessName: string | null;
   /**
@@ -559,5 +565,6 @@ export async function loadRecordPage(
     /* 这一行是什么生意 —— 分期付款表拿它去建议「订金三成 · 动工四成 ·
        完工三成」，而那是一颗他要按的按钮，不是一个预设。 */
     trade: businessContext.industry?.slug ?? null,
+    books: pageRefs.some((p) => p.key === "bookings"),
   };
 }

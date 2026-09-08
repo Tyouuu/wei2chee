@@ -176,6 +176,16 @@ export default async function NewRecordPage({
                 {copy.form.tablesLink}
               </a>
             ) : null}
+            {/* ⚠️ 房间那一条**只画给会排时段的生意**，而判准是
+              「他有没有预约那一页」不是「他属於哪一行」——
+              一间沙龙跟一间 medi spa 都是 `beauty`，而只有后者订的是房；
+              一间补习中心订的是教室，它是 `education`。
+              跟餐台那一条同一个理由：[任务 253] 登记过这条架子太宽。 */}
+            {ctx.books ? (
+              <a href={`/${locale}/portal/rooms`} className="underline">
+                {copy.form.roomsLink}
+              </a>
+            ) : null}
           </p>
         </main>
       </RecordShell>

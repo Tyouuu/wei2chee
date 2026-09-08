@@ -81,6 +81,7 @@ const PAGES = [
   ["what you owe", "/en/portal/payables", "customer"],
   ["days worked", "/en/portal/attendance", "customer"],
   ["who is free", "/en/portal/rota", "customer"],
+  ["rooms", "/en/portal/rooms", "customer"],
   ["moving stock", "/en/portal/transfers", "customer"],
   ["counter", "/en/portal/counter", "customer"],
   ["classes", "/en/portal/classes", "customer"],
