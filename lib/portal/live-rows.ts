@@ -69,6 +69,10 @@ export type LiveRow = {
    * 的 DaySchedule 判的就是这一句）：一间一个人的店、一张补习课表，
    * 本来就没有「谁做的」这件事。 */
   who?: string;
+  /* 另外那一样 —— 那一栏是房间的时候这里是师傅，反过来也一样。
+   * 🔴 两样都要看得见：一间 medi spa 排完一天，要知道「三点还有没有房」
+   * 跟「Amy 三点有没有空」两句，而少了任何一句她都会排出一个撞的。 */
+  where?: string;
   /* ── THE TENTH OF THIS BUSINESS THAT IS ONLY THIS BUSINESS ──────────────
    *
    * 「车牌号」 for a workshop, 「染发配方」 for a salon, 「货柜号」 for a
@@ -573,6 +577,9 @@ export type AppointmentRow = {
      ⚠️ 名册那张表有 RLS，读不到的时候这里回 null —— 那一根轴自己退回
      原来那几种画法，往拒绝的方向坏。 */
   staff?: { name: string | null } | null;
+  /* 排在哪一间房 —— 一间 medi spa 订的是房间（20260909020000）。
+     跟上面那一栏同一个理由嵌进来：两趟回来的东西要在这里配对。 */
+  room?: { name: string | null } | null;
 };
 
 /**
@@ -620,8 +627,24 @@ export function rowsFromAppointments(
       hour12: false,
     }).format(new Date(iso));
 
+  /* 🔴 那一栏是什么，由**资料**决定，不由设定决定。
+   *
+   * 一间会订房的店，每一笔预约都有房 —— 房间就是先用完的那一样
+   * （三个房、五个美疗师：三点排满的是房）。一间沙龙一间房都没有，
+   * 那一栏就是师傅（Fresha · Booksy 两家最大的都是这样）。
+   *
+   * ⚠️ 它只在她真的开了第一间房那一天翻一次，而那是一个她自己做的动作 ——
+   * 不是一个每天会变的启发式。
+   * ⚠️ 而**另外那一样照旧看得见**，画在那一块上（`where`）：少了它，
+   * 她排满三个房之后才发现两个客人同一个美疗师。 */
+  const byRoom = rows.some((r) => (r.room?.name ?? "").trim());
+
   return rows.map((r) => {
     const isBlock = r.kind === "block";
+    const person = (r.staff?.name ?? "").trim();
+    const place = (r.room?.name ?? "").trim();
+    const lane = byRoom ? place : person;
+    const tag = byRoom ? person : "";
     const status = isBlock
       ? word.block
       : r.status === "done"
@@ -646,7 +669,8 @@ export function rowsFromAppointments(
     return {
       ...(href && r.id ? { href: href(r.id) } : {}),
       at: { time: clock(r.starts_at), endTime: clock(r.ends_at) },
-      ...((r.staff?.name ?? "").trim() ? { who: (r.staff!.name as string).trim() } : {}),
+      ...(lane ? { who: lane } : {}),
+      ...(tag ? { where: tag } : {}),
       /* What it is, then who it is for. A block has no customer, so it leads
          with its own note -- 「Lunch」 -- rather than with an empty name. */
       primary: isBlock
@@ -1092,7 +1116,8 @@ export async function fetchLiveRows(
       const { data, error } = await supabase
         .from("appointments")
         .select(
-          "id, starts_at, ends_at, kind, party, service, status, source, note, extra, staff:staff_id(name)",
+          "id, starts_at, ends_at, kind, party, service, status, source, note, extra,"
+            + " staff:staff_id(name), room:room_id(name)",
         )
         .eq("project_id", projectId)
         .eq("module_key", moduleKey)
@@ -1277,6 +1302,7 @@ function fill(
           /* 一天摊开的时候这一栏就是分栏的依据。没有派人的照样送过去 ——
              那一块把它们放在最后一栏，不是丢掉。 */
           ...(r.who ? { who: r.who, tone: r.tone } : {}),
+          ...(r.where ? { where: r.where } : {}),
         })),
     };
   }

@@ -103,7 +103,9 @@ export type SystemWords = {
   tableFoot: (shown: number, total: number) => string;
   empty: string;
   emptyToday: string;
-  /* 一天摊开、一个人一栏的时候，还没派给任何人的那一格。
+  /* 一天摊开的时候，还没安排的那一格。
+     ⚠️ 那一栏可能是**人**也可能是**房间**（一间 medi spa 订的是房间），
+     所以这句话对两种都要成立 —— 「还没派人」在一条房间的轴上是错的。
      🔴 它非有不可：少了它那几笔会被**静静丢掉**，而一个还没派人的
      预约正好是她今天要处理的那一笔。 */
   dayUnassigned: string;
@@ -383,7 +385,7 @@ const ZH: SystemWords = {
       : `显示 ${shown} 笔，一共 ${total} 笔`,
   empty: "还没有资料",
   emptyToday: "今天没有安排",
-  dayUnassigned: "还没派人",
+  dayUnassigned: "还没安排",
   emptyPeople: "还没有加人",
   start: "开始",
   finish: "完成",

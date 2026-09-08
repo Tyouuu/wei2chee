@@ -174,6 +174,10 @@ export type ScheduleRow = {
    * 一间一个人的店、一个补习班的课表，本来就没有「分栏」这件事。
    */
   who?: string;
+  /* 另外那一样 —— 那一栏是房间的时候这里是师傅，反过来也一样。
+     🔴 一间 medi spa 三个房、五个美疗师：栏是**先用完的那一样**（房间），
+     而「谁做的」照旧要看得见，不然她排完发现两个客人同一个美疗师。 */
+  where?: string;
   /* 状态 —— 只有一天摊开的时候画得出来（那一块左边一条色带）。
      🔴 少了它，「已确认」跟「待确认」两块长得**一模一样**，
      而她扫这一页要找的正好是待确认那一笔。
@@ -225,6 +229,7 @@ export function DaySchedule({
     title: r.title,
     description: r.description || undefined,
     who: r.who?.trim() || undefined,
+    where: r.where?.trim() || undefined,
     tone: r.tone,
   }));
   const look = shape ?? (framed ? "framed" : "bare");
@@ -400,7 +405,7 @@ function DayColumns({
   heading?: string;
   items: {
     id: string; time: string; endTime?: string; title: string;
-    description?: string; who?: string; tone?: StatusTone;
+    description?: string; who?: string; where?: string; tone?: StatusTone;
   }[];
   people: string[];
   empty: string;
@@ -561,8 +566,10 @@ function DayColumns({
                       <span className="block truncate [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]">
                         {x.title}
                       </span>
-                      {x.description && (
-                        <span className="block truncate [font-size:var(--text-micro)] opacity-80">{x.description}</span>
+                      {(x.where || x.description) && (
+                        <span className="block truncate [font-size:var(--text-micro)] opacity-80">
+                          {[x.where, x.description].filter(Boolean).join(" · ")}
+                        </span>
                       )}
                     </span>
                   ))}

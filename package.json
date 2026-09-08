@@ -171,6 +171,7 @@
     "check:messages": "node scripts/check-messages.mjs",
     "check:classes": "node scripts/check-classes.mjs",
     "check:rota": "node scripts/check-rota.mjs",
+    "check:rooms": "node scripts/check-rooms.mjs",
     "check:regulars": "node scripts/check-regulars.mjs",
     "check:visit": "node scripts/check-visit.mjs",
     "check:export": "node scripts/check-export.mjs",

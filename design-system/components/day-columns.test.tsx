@@ -45,9 +45,9 @@ describe("一天摊开，一个人一栏", () => {
   });
 
   /* 🔴 这一条是这一份最要紧的。
-     第一版把没有派人的那几笔**静静丢掉** —— 而一个还没派人的预约
+     第一版把没有派人的那几笔**静静丢掉** —— 而一个还没安排的预约
      正好是她今天要处理的那一笔，少掉一笔比多一栏糟得多。 */
-  it("还没派人的那一笔不会不见，它去最后那一栏", () => {
+  it("还没安排的那一笔不会不见，它去最后那一栏", () => {
     render(
       <DaySchedule
         shape="columns"
@@ -55,14 +55,14 @@ describe("一天摊开，一个人一栏", () => {
       />,
     );
     expect(screen.getByText("美甲")).toBeTruthy();
-    expect(screen.getByText("还没派人")).toBeTruthy();
+    expect(screen.getByText("还没安排")).toBeTruthy();
   });
 
   it("全部都派好了就没有那一栏", () => {
     render(
       <DaySchedule shape="columns" rows={[at("09:30", "染发", "Amy")]} />,
     );
-    expect(screen.queryByText("还没派人")).toBeNull();
+    expect(screen.queryByText("还没安排")).toBeNull();
   });
 
   /* 一间一个人的店、一张补习课表，本来就没有「谁做的」这件事 ——
@@ -76,7 +76,7 @@ describe("一天摊开，一个人一栏", () => {
     );
     expect(screen.getByText("洗剪吹")).toBeTruthy();
     expect(screen.getByText("染发")).toBeTruthy();
-    expect(screen.queryByText("还没派人")).toBeNull();
+    expect(screen.queryByText("还没安排")).toBeNull();
   });
 
   /* 读不懂的时刻要丢掉：一块掉到早上零点的预约，在画面上看起来完全正常。 */
