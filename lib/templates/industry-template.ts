@@ -2977,7 +2977,16 @@ function boardNode(
 /** Which column of the record a detail row is showing. Read by live-rows.ts. */
 type KindField = "primary" | "secondary" | "amount" | "status";
 type KindCols = { primary: string; secondary?: string; amount?: string; status?: string };
-type KindRow = { primary: string; secondary?: string; amount?: string; status?: string };
+type KindRow = {
+  primary: string;
+  secondary?: string;
+  amount?: string;
+  status?: string;
+  /* 谁做的 —— 只有预约那一种页面用得上。见 `dayNodes`。 */
+  who?: string;
+  /* 状态那一条色带的颜色 —— 同上。 */
+  tone?: StatusTone;
+};
 
 /**
  * ⚠️ EACH PAIR CARRIES THE NAME OF THE FIELD IT CAME FROM, and that is not
@@ -3106,17 +3115,36 @@ function documentNode(
  * recognising their own week is what the first screen is for.
  */
 function dayNodes(pageKey: PageId, rows: KindRow[], c: Chrome): PuckNode[] {
+  const shown = rows.slice(0, 4);
+  /* 🔴 分栏是**资料决定的，不是风格决定的**：这几笔有派人才分得了栏。
+     所以 `shape` 只在真的有人的时候才送 —— 一行都没有给的时候这个属性
+     根本不存在，那一块一个像素都不会变（一间一个人的店、一张补习课表）。
+     ⚠️ 而 DaySchedule 不读风格的偏好（它只吃 props），所以这里送它
+     不会盖掉任何一套风格自己挑的样子 —— 那是 [任务 33] 记过的那个坑，
+     去看过才写这一行。 */
+  const byPerson = shown.some((r) => (r.who ?? "").trim());
+
   return [
     node("WeekStrip", `${pageKey}-week`, { days: 5 }),
     node("DaySchedule", `${pageKey}-day`, {
       heading: c.pageKind.dayHeading,
-      rows: rows.slice(0, 4).map((r, i) => ({
+      ...(byPerson ? { shape: "columns" } : {}),
+      rows: shown.map((r, i) => ({
         /* Spread through a working day rather than all at 09:00. Three
            appointments stacked on one hour is a diary nobody has ever used,
            and this is the block a salon owner judges the product by. */
         time: ["09:30", "11:00", "14:30", "16:00"][i] ?? "09:00",
         title: r.primary,
-        description: [r.secondary, r.status].filter(Boolean).join(" · "),
+        /* 🔴 分栏的时候不印 `secondary`。示例那一栏是「今天 2:00 PM · Amy」——
+           时间已经是这一块坐的位置，人已经是它那一栏的抬头，再印一次
+           就是同一件事在一块小卡片上讲三遍。
+           ⚠️ 真资料那一边不用管：投影的 `secondary` 是客人跟来源，
+           两样在分栏里都还是新的（见 `live-rows` 的 rowsFromAppointments）。 */
+        description: byPerson
+          ? (r.status ?? "")
+          : [r.secondary, r.status].filter(Boolean).join(" · "),
+        ...((r.who ?? "").trim() ? { who: (r.who as string).trim() } : {}),
+        ...(byPerson && r.tone ? { tone: r.tone } : {}),
       })),
     }),
   ];

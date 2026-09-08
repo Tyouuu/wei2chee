@@ -59,6 +59,16 @@ export type LiveRow = {
    * ends up sorted after 「9:30」. Optional, and every other shape leaves it
    * unset. */
   at?: { time: string; endTime?: string };
+  /* 谁做的 —— 只有预约那一个形状给得出来。
+   *
+   * 🔴 它不塞进 `secondary`：一天摊开、一个人一栏的时候，那一栏是**分栏的
+   * 依据**，而从一句「Amy · 官网」里把名字切回来，就是 `at` 那一段警告过的
+   * 同一件事 —— 把画面上的字反着解析回资料。
+   *
+   * 一行都没有给的时候，那一根轴自己退回原来那几种画法（`trade-blocks`
+   * 的 DaySchedule 判的就是这一句）：一间一个人的店、一张补习课表，
+   * 本来就没有「谁做的」这件事。 */
+  who?: string;
   /* ── THE TENTH OF THIS BUSINESS THAT IS ONLY THIS BUSINESS ──────────────
    *
    * 「车牌号」 for a workshop, 「染发配方」 for a salon, 「货柜号」 for a
@@ -557,6 +567,12 @@ export type AppointmentRow = {
   source: string | null;
   note: string | null;
   extra: unknown;
+  /* 派给谁 —— `appointments.staff_id` 指着名册上那一行（20260902030000）。
+     嵌进同一次查询，不另外打一趟：两趟回来的东西要在这里配对，而配错
+     一次就是把一笔预约挂到另一个师傅头上。
+     ⚠️ 名册那张表有 RLS，读不到的时候这里回 null —— 那一根轴自己退回
+     原来那几种画法，往拒绝的方向坏。 */
+  staff?: { name: string | null } | null;
 };
 
 /**
@@ -630,6 +646,7 @@ export function rowsFromAppointments(
     return {
       ...(href && r.id ? { href: href(r.id) } : {}),
       at: { time: clock(r.starts_at), endTime: clock(r.ends_at) },
+      ...((r.staff?.name ?? "").trim() ? { who: (r.staff!.name as string).trim() } : {}),
       /* What it is, then who it is for. A block has no customer, so it leads
          with its own note -- 「Lunch」 -- rather than with an empty name. */
       primary: isBlock
@@ -1074,14 +1091,21 @@ export async function fetchLiveRows(
          reading its day needs, and hiding it makes the gap unexplained. */
       const { data, error } = await supabase
         .from("appointments")
-        .select("id, starts_at, ends_at, kind, party, service, status, source, note, extra")
+        .select(
+          "id, starts_at, ends_at, kind, party, service, status, source, note, extra, staff:staff_id(name)",
+        )
         .eq("project_id", projectId)
         .eq("module_key", moduleKey)
         .is("archived_at", null)
         .order("starts_at", { ascending: true })
         .limit(limit);
       if (error || !data) return [];
-      return rowsFromAppointments(data as AppointmentRow[], lang, href);
+      /* 🔴 `as unknown as` 不是偷懒 —— 产生出来的型别把嵌进来的那一栏写成
+         **阵列**，而实测回来的是**一个物件或者 null**（2026-09-09，真的登入、
+         真的排两笔：`{"name":"Amy"}` · `{"name":"Jasmine"}` · `null`）。
+         照那个型别写下去，每一笔都读不到名字，而画面上是那一根轴自己
+         退回原来那几种画法 —— 不报错，只是永远不分栏。 */
+      return rowsFromAppointments(data as unknown as AppointmentRow[], lang, href);
     }
 
     if (RECONCILE_MODULES.has(moduleKey)) {
@@ -1250,6 +1274,9 @@ function fill(
           endTime: r.at?.endTime ?? "",
           title: r.primary,
           description: [r.secondary, r.status].filter(Boolean).join(" · "),
+          /* 一天摊开的时候这一栏就是分栏的依据。没有派人的照样送过去 ——
+             那一块把它们放在最后一栏，不是丢掉。 */
+          ...(r.who ? { who: r.who, tone: r.tone } : {}),
         })),
     };
   }

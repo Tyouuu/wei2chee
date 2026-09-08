@@ -31,6 +31,10 @@ export type SampleSet = {
     amount: string;
     tone: StatusTone;
     status: string;
+    /* 谁做的 —— 只有预约那一种页面用得上（一天摊开、一个人一栏）。
+       ⚠️ 选填，而且一行都没有给的时候那一页自己退回原来那几种画法：
+       一间一个人的店、一张补习课表，本来就没有这件事。 */
+    who?: string;
   }[];
   customers: {
     primary: string;

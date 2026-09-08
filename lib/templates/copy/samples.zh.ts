@@ -300,6 +300,7 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
       {
         primary: "面部护理 · 90分钟",
         secondary: "今天 2:00 PM · Amy",
+        who: "Amy",
         amount: "RM 180",
         tone: "positive",
         status: "已确认",
@@ -307,6 +308,7 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
       {
         primary: "染发 + 护理",
         secondary: "今天 4:30 PM · Jasmine",
+        who: "Jasmine",
         amount: "RM 320",
         tone: "warning",
         status: "待确认",
@@ -314,6 +316,7 @@ export const SAMPLES_ZH: Record<string, SampleSet> = {
       {
         primary: "美甲",
         secondary: "明天 11:00 AM · Amy",
+        who: "Amy",
         amount: "RM 95",
         tone: "neutral",
         status: "已预约",

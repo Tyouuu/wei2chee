@@ -1,6 +1,7 @@
 "use client";
 
 import { useSystemWords } from "@/design-system/system-lang-context";
+import type { StatusTone } from "./status-dot";
 
 import { useEffect, useState } from "react";
 
@@ -173,6 +174,11 @@ export type ScheduleRow = {
    * 一间一个人的店、一个补习班的课表，本来就没有「分栏」这件事。
    */
   who?: string;
+  /* 状态 —— 只有一天摊开的时候画得出来（那一块左边一条色带）。
+     🔴 少了它，「已确认」跟「待确认」两块长得**一模一样**，
+     而她扫这一页要找的正好是待确认那一笔。
+     ⚠️ 色不是唯一的讯号：那句状态照旧印在块里（WCAG 1.4.1）。 */
+  tone?: StatusTone;
 };
 
 /** 今天的行程 — 补习班的课表、诊所的预约、装修队今天去哪几间。 */
@@ -219,6 +225,7 @@ export function DaySchedule({
     title: r.title,
     description: r.description || undefined,
     who: r.who?.trim() || undefined,
+    tone: r.tone,
   }));
   const look = shape ?? (framed ? "framed" : "bare");
 
@@ -226,7 +233,15 @@ export function DaySchedule({
      一间一个人的店、一个补习班的课表，本来就没有这件事。 */
   const people = [...new Set(items.map((x) => x.who).filter(Boolean))] as string[];
   if (look === "columns" && people.length > 0) {
-    return <DayColumns heading={heading} items={items} people={people} empty={w.emptyToday} />;
+    return (
+      <DayColumns
+        heading={heading}
+        items={items}
+        people={people}
+        empty={w.emptyToday}
+        unassigned={w.dayUnassigned}
+      />
+    );
   }
 
   if (look === "rail" || look === "ruled") {
@@ -361,16 +376,35 @@ export function DaySchedule({
  * 而一条画好就不会再动的「现在」，十分钟后就是一句假话 ——
  * 那正是这个仓库禁的那一类（宣称了一件没有发生的事）。
  */
+/* 🔴 还没派人的那一格。用一个打不出来的字当键，不是用「还没派人」四个字 ——
+   一个真的叫「还没派人」的师傅（或者哪天那句话被改掉）就会跟它撞在一起，
+   而撞出来的样子是两个人的预约混进同一栏，画面上完全正常。 */
+const UNSET = "\u0000unassigned";
+
+/* 那一条色带的颜色 —— 跟 `StatusDot` 同一组 token，不另外挑一套。
+   两个地方两套颜色，就是同一件事在他眼里有两个意思。 */
+const TONE_EDGE: Record<StatusTone, string> = {
+  positive: "var(--color-jade-bright)",
+  warning: "var(--color-brass-bright)",
+  negative: "var(--color-clay-bright)",
+  neutral: "var(--color-slate-bright)",
+};
+
 function DayColumns({
   heading,
   items,
   people,
   empty,
+  unassigned,
 }: {
   heading?: string;
-  items: { id: string; time: string; endTime?: string; title: string; description?: string; who?: string }[];
+  items: {
+    id: string; time: string; endTime?: string; title: string;
+    description?: string; who?: string; tone?: StatusTone;
+  }[];
   people: string[];
   empty: string;
+  unassigned: string;
 }) {
   /* 「09:30」→ 570。读不懂的回 null 而不是 0 —— 一个读不懂的时刻掉到早上
      零点，会在画面上变成一块压在最上面、看起来完全正常的块。 */
@@ -385,13 +419,19 @@ function DayColumns({
   const placed = items
     .map((it) => {
       const from = mins(it.time);
-      if (from === null || !it.who) return null;
+      /* 🔴 读不懂时刻的丢掉（那一块会压在早上零点上，看起来完全正常），
+         而**没有派人的不丢** —— 它去最后那一栏。一个还没派人的预约
+         正好是她今天要处理的那一笔，静静少掉一笔比少一栏糟得多。 */
+      if (from === null) return null;
       const to = it.endTime ? mins(it.endTime) : null;
       /* 没有结束时刻的，给它一个钟头的高度 —— **不是猜它做多久**，
          是一块看得见的高度。画成零高度的块跟没有那一笔一模一样。 */
-      return { ...it, from, to: to !== null && to > from ? to : from + 60 };
+      return { ...it, col: it.who ?? UNSET, from, to: to !== null && to > from ? to : from + 60 };
     })
-    .filter(Boolean) as (typeof items[number] & { from: number; to: number })[];
+    .filter(Boolean) as (typeof items[number] & { col: string; from: number; to: number })[];
+
+  /* 有人没派到的时候才多那一栏 —— 全部都派好了就没有它。 */
+  const lanes = placed.some((x) => x.col === UNSET) ? [...people, UNSET] : people;
 
   const head = heading ? (
     <h2 className="mb-[var(--gap-stack)] [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
@@ -420,7 +460,7 @@ function DayColumns({
   const hours = Array.from({ length: to - from + 1 }, (_, i) => from + i);
   const top = (m: number) => ((m - from * 60) / 60) * ROW;
 
-  const cols = `4.5rem repeat(${people.length}, minmax(0, 1fr))`;
+  const cols = `4.5rem repeat(${lanes.length}, minmax(0, 1fr))`;
 
   return (
     <section>
@@ -429,7 +469,7 @@ function DayColumns({
         className="overflow-x-auto [border-color:var(--border-subtle)] [border-radius:var(--radius-md)] [border-width:var(--hairline)]"
         style={{ borderStyle: "solid" }}
       >
-        <div style={{ minWidth: `${people.length * 132 + 72}px` }}>
+        <div style={{ minWidth: `${lanes.length * 132 + 72}px` }}>
           {/* 谁的那一栏 —— 抬头就是那个人 */}
           <div
             className="grid [background:var(--color-canvas)]"
@@ -441,7 +481,7 @@ function DayColumns({
             }}
           >
             <span />
-            {people.map((who) => (
+            {lanes.map((who) => (
               <span
                 key={who}
                 className="truncate [padding:var(--pad-control-y)_var(--pad-control-x)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
@@ -451,12 +491,18 @@ function DayColumns({
                   borderLeftColor: "var(--border-subtle)",
                 }}
               >
-                {who}
+                {who === UNSET ? unassigned : who}
               </span>
             ))}
           </div>
 
-          <div className="relative grid" style={{ gridTemplateColumns: cols, height: `${(to - from) * ROW}px` }}>
+          {/* 🔴 高度多 10px：最后那一个时刻的标签压在最底下那条线上、往上挪一半，
+              而外面那一层 `overflow-x-auto` 连着把下面也裁掉 —— 画出来是
+              「18:00」被切一半，读起来像这一块没做完。 */}
+          <div
+            className="relative grid"
+            style={{ gridTemplateColumns: cols, height: `${(to - from) * ROW + 10}px` }}
+          >
             {/* 时刻 */}
             <div className="relative">
               {hours.map((h) => (
@@ -470,7 +516,7 @@ function DayColumns({
               ))}
             </div>
 
-            {people.map((who) => (
+            {lanes.map((who) => (
               <div
                 key={who}
                 className="relative"
@@ -493,12 +539,24 @@ function DayColumns({
                   />
                 ))}
                 {placed
-                  .filter((x) => x.who === who)
+                  .filter((x) => x.col === who)
                   .map((x) => (
                     <span
                       key={x.id}
-                      className="absolute inset-x-[3px] overflow-hidden [background:var(--color-primary)] [border-radius:var(--radius-sm)] [color:var(--color-on-primary)] [padding:4px_7px]"
-                      style={{ top: `${top(x.from)}px`, height: `${Math.max(top(x.to) - top(x.from), 22)}px` }}
+                      className="absolute inset-x-[3px] overflow-hidden [background:var(--color-primary)] [border-radius:var(--radius-sm)] [color:var(--color-on-primary)] [padding:4px_7px_4px_10px]"
+                      style={{
+                        top: `${top(x.from)}px`,
+                        height: `${Math.max(top(x.to) - top(x.from), 22)}px`,
+                        /* 🔴 状态那一条色带。眯着眼看的时候字全部糊掉，
+                           而她扫这一页找的正是「待确认」那一笔 —— 少了它
+                           每一块长得一模一样。
+                           ⚠️ 只上在**边**上，不上在字上：一句被染色的状态
+                           是整页对比度最低的字，而 `status-dot` 那一支
+                           早就写下了这个判断。 */
+                        borderLeftWidth: x.tone ? "3px" : "0",
+                        borderLeftStyle: "solid",
+                        borderLeftColor: TONE_EDGE[x.tone ?? "neutral"],
+                      }}
                     >
                       <span className="block truncate [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]">
                         {x.title}

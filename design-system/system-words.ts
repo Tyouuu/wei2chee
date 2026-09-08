@@ -103,6 +103,10 @@ export type SystemWords = {
   tableFoot: (shown: number, total: number) => string;
   empty: string;
   emptyToday: string;
+  /* 一天摊开、一个人一栏的时候，还没派给任何人的那一格。
+     🔴 它非有不可：少了它那几笔会被**静静丢掉**，而一个还没派人的
+     预约正好是她今天要处理的那一笔。 */
+  dayUnassigned: string;
   emptyPeople: string;
   start: string;
   finish: string;
@@ -242,6 +246,7 @@ const EN: SystemWords = {
     shown === total ? `Showing all ${total}` : `Showing ${shown} of ${total}`,
   empty: "Nothing here yet",
   emptyToday: "Nothing booked today",
+  dayUnassigned: "Not assigned",
   emptyPeople: "Nobody added yet",
   start: "Start",
   finish: "Finish",
@@ -378,6 +383,7 @@ const ZH: SystemWords = {
       : `显示 ${shown} 笔，一共 ${total} 笔`,
   empty: "还没有资料",
   emptyToday: "今天没有安排",
+  dayUnassigned: "还没派人",
   emptyPeople: "还没有加人",
   start: "开始",
   finish: "完成",

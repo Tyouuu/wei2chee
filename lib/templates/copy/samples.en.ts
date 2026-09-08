@@ -313,6 +313,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
       {
         primary: "Facial · 90 min",
         secondary: "Today 2:00 PM · Amy",
+        who: "Amy",
         amount: "RM 180",
         tone: "positive",
         status: "Confirmed",
@@ -320,6 +321,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
       {
         primary: "Colour + treatment",
         secondary: "Today 4:30 PM · Jasmine",
+        who: "Jasmine",
         amount: "RM 320",
         tone: "warning",
         status: "To confirm",
@@ -327,6 +329,7 @@ export const SAMPLES_EN: Record<string, SampleSet> = {
       {
         primary: "Manicure",
         secondary: "Tomorrow 11:00 AM · Amy",
+        who: "Amy",
         amount: "RM 95",
         tone: "neutral",
         status: "Booked",
