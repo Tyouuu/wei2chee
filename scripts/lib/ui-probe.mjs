@@ -104,14 +104,39 @@ export const AUDIT = () => {
     if (["hidden", "submit", "button"].includes(el.type)) continue;
     const s = getComputedStyle(el);
     const g = groundOf(el.parentElement || el);
+    /* 🔴 那个框看得见的边，常常**不画在它自己身上**。
+       2026-09-08 实测：表格上那个筛选框的边画在包着它的 `<label>` 上，
+       而这个框自己是 `bg-transparent` 没有 border —— 於是它报 0:1，
+       **十六页一起冤枉**，而画面上那个框边框好好的。
+       所以往上找三层：第一个自己带边或者带底的祖先，就是人看到的那个框。
+       ⚠️ 三层就停 —— 再往上会找到整张卡，那不是这个框的边。 */
+    const boxOf = (start) => {
+      let n = start;
+      for (let i = 0; n && i < 4; i++, n = n.parentElement) {
+        const cs = getComputedStyle(n);
+        const hasBorder = ["Top", "Right", "Bottom", "Left"].some(
+          (k) => parseFloat(cs["border" + k + "Width"]) >= 0.5,
+        );
+        const hasOutline = parseFloat(cs.outlineWidth) >= 0.5 && cs.outlineStyle !== "none";
+        const hasOwnBg = parse(cs.backgroundColor).a > 0;
+        if (hasBorder || hasOutline || hasOwnBg) return n;
+      }
+      return start;
+    };
+    const box = boxOf(el);
+    const bs = getComputedStyle(box);
+    const bg = groundOf(box.parentElement || box);
     let best = 0;
     for (const side of ["Top", "Right", "Bottom", "Left"]) {
-      if (parseFloat(s["border" + side + "Width"]) < 0.5) continue;
-      best = Math.max(best, ratio(over(parse(s["border" + side + "Color"]), g), g));
+      if (parseFloat(bs["border" + side + "Width"]) < 0.5) continue;
+      best = Math.max(best, ratio(over(parse(bs["border" + side + "Color"]), bg), bg));
+    }
+    if (parseFloat(bs.outlineWidth) >= 0.5 && bs.outlineStyle !== "none") {
+      best = Math.max(best, ratio(over(parse(bs.outlineColor), bg), bg));
     }
     /* 没有边的时候，它自己的底跟外面的地也算 —— 一个填色的框照样看得出边界。 */
-    const own = parse(s.backgroundColor);
-    if (own.a > 0) best = Math.max(best, ratio(over(own, g), g));
+    const own = parse(bs.backgroundColor);
+    if (own.a > 0) best = Math.max(best, ratio(over(own, bg), bg));
     const label =
       el.labels?.[0]?.textContent?.trim() ||
       el.getAttribute("aria-label") ||
