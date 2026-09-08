@@ -177,12 +177,19 @@ try {
   const { data: recs } = await api.from("pipeline_records").select("id,page_key").limit(1);
   const oneRec = recs?.[0];
 
+  /* 改一页的时候只走那一页 —— 三十九页乘两个宽度要四分钟，
+     而「改 → 看图 → 再改」那个回圈里，慢就是不看图。
+     ⚠️ **筛掉的照旧种进去**：一张少了别的模块的页，侧栏跟数字都不一样。 */
+  const ONLY = (process.env.ONLY ?? "").split(",").map((x) => x.trim()).filter(Boolean);
   const URLS = [
     ...opened.map((k) => ({ name: labels[k] ?? k, url: `/en/portal/${k}` })),
     ...TOOLS.map((t) => ({ name: t, url: `/en/portal/${t}` })),
     { name: "开一张单", url: `/en/portal/${oneRec?.page_key ?? "quotations"}/new` },
     ...(oneRec ? [{ name: "打开那一单", url: `/en/portal/${oneRec.page_key}/${oneRec.id}` }] : []),
   ];
+
+  const PICKED = ONLY.length ? URLS.filter((u) => ONLY.some((o) => u.url.endsWith(`/${o}`))) : URLS;
+  if (ONLY.length) console.log(`只走 ${PICKED.length} 页：${PICKED.map((u) => u.name).join(" · ")}`);
 
   browser = await chromium.launch();
   for (const width of [1400, 390]) {
@@ -196,7 +203,7 @@ try {
     await page.click('button[type="submit"]');
     await page.waitForURL(/portal/, { timeout: 180000 });
 
-    for (const { name, url } of URLS) {
+    for (const { name, url } of PICKED) {
       let res;
       try {
         res = await page.goto(`${BASE}${url}`, { waitUntil: "networkidle", timeout: 120000 });

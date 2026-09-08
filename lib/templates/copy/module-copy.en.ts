@@ -79,29 +79,38 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
         subtitle:
           "What is owed this month, worked out line by line. No more opening Excel.",
         columns: {
-          primary: "Paid to",
-          secondary: "Basis",
+        /* 🔴 第一栏是「**为了什么**」，第二栏才是「**谁**」——
+           跟收款（For / Client）跟开销（Expense / Paid to）同一个顺序。
+           2026-09-08 之前这一页反过来（Paid to / Basis），而
+           `live-rows.ts` 的 ledger 投影**三页都一样**：
+           `primary = 那笔钱是为了什么`（他自己打的备注）、`secondary = 对方`。
+           所以真的画出来是 **「Paid to: Setapak office partition — crew share」**
+           跟 **「Basis: Painting team」** —— 两栏都在骗人。
+           [任务 80](../../../docs/founder-tasks.md)：**对的数字配错的标签，比空白更糟。**
+           示例那三行也跟着换过来，不然示例跟真资料是两个形状。 */
+          primary: "For",
+          secondary: "Paid to",
           amount: "Commission",
           status: "Status",
         },
         rows: [
           {
-            primary: `${labels.customer} A`,
-            secondary: "Turnover × 2%",
+            primary: "Setapak office partition — crew share",
+            secondary: `${labels.staff} — Painting team`,
             amount: "RM 1,240",
             tone: "positive",
             status: "Settled",
           },
           {
-            primary: `${labels.customer} B`,
-            secondary: "Turnover × 2%",
+            primary: "Cheras bathroom retile — crew share",
+            secondary: `${labels.staff} — Tiling team`,
             amount: "RM 860",
             tone: "warning",
             status: "To pay",
           },
           {
-            primary: `${labels.customer} C`,
-            secondary: "Turnover × 2%",
+            primary: "Puchong shoplot rewire — crew share",
+            secondary: `${labels.staff} — Wiring team`,
             amount: "RM 415",
             tone: "neutral",
             status: "Calculating",

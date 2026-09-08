@@ -29,6 +29,7 @@
     "walk:dealer": "node scripts/walk-dealer.mjs",
     "backfill:analysis-en": "node scripts/backfill-analysis-en.mjs",
     "eval:editor": "tsx scripts/eval-editor.mjs",
+    "map:shapes": "tsx scripts/map-shapes.mjs",
     "eval:browser": "node scripts/eval-browser.mjs",
     "check:front-door": "node scripts/check-front-door.mjs",
     "check:tell": "node scripts/check-tell.mjs",

@@ -3190,6 +3190,30 @@ function buildFromShape(
     recordTable(`${pageKey}-table`, title, copy.columns, copy.rows, undefined, undefined, true),
   ];
 
+  /* 🔴 佣金那一页**故意不换形状** —— 我 2026-09-08 换过一次，看图之后收回。
+
+     老板那天讲 `不能全部的設計都是差不多的 一定要有點區別 每個頁面`，
+     而 `npm run map:shapes` 量出来，十八页里真正一模一样的只有钱那三页。
+     照[任务 199](../../docs/founder-tasks.md) 那条判准（**不是「它们像不像」，
+     是「它们在问同一句话吗」**）我判佣金是另一句 ——「**每一个人**这个月赚多少」
+     —— 把那张表换成一格一个人的卡（跟货架同一支 `look: "cards"`）。
+
+     🔴 **拍出来才知道那个判断建在示例资料上。**
+     示例的 `primary` 是「Paid to」（一个人），而**真行**是 `live-rows.ts`
+     投影出来的：ledger 那一支写着 `primary = 备注`（那笔钱是为了什么）、
+     `secondary = 对方`。所以那一格的大标题永远是
+     **「Setapak office partition — crew share」**，不是那个师傅的名字 ——
+     **一格一个人的形状，装着一笔一笔的付款。**
+
+     要让人当标题就得替这一页把两栏对调，而那是一个特例；
+     **而「每一个人赚多少」那个答案本来就有了**：`staff_earnings`
+     （[任务 128](../../docs/founder-tasks.md)），住在师傅那一页上。
+
+     ⚠️ 所以三页照旧共用 `moneyNodes` 跟同一张表，而那也是
+     [任务 193](../../docs/founder-tasks.md) 当初的决定（「两条不同的代码路径
+     画出同一张脸」）—— [重点 7h](../../docs/founder-points.md)：
+     **上一个来源给的东西，除非量出来是错的，否则留着。** */
+
   /* 名册那一种的同一张表，第一栏带一颗头像 —— 那一栏是一个人／一家店。
      供应商跟师傅照旧是「左清单右详情」（他们的 Logistics 那一页），
      换掉排法的只有客户。 */

@@ -75,29 +75,38 @@ export function moduleCopyZh(key: string, labels: IndustryLabels): ModuleCopy {
         title: "佣金结算",
         subtitle: "这个月该拿多少，系统按每一笔自动算出来，不用再开 Excel。",
         columns: {
-          primary: "结算对象",
-          secondary: "计算方式",
+        /* 🔴 第一栏是「**为了什么**」，第二栏才是「**谁**」——
+           跟收款（For / Client）跟开销（Expense / Paid to）同一个顺序。
+           2026-09-08 之前这一页反过来（Paid to / Basis），而
+           `live-rows.ts` 的 ledger 投影**三页都一样**：
+           `primary = 那笔钱是为了什么`（他自己打的备注）、`secondary = 对方`。
+           所以真的画出来是 **「Paid to: Setapak office partition — crew share」**
+           跟 **「Basis: Painting team」** —— 两栏都在骗人。
+           [任务 80](../../../docs/founder-tasks.md)：**对的数字配错的标签，比空白更糟。**
+           示例那三行也跟着换过来，不然示例跟真资料是两个形状。 */
+          primary: "算的是哪一单",
+          secondary: "结算对象",
           amount: "佣金",
           status: "状态",
         },
         rows: [
           {
-            primary: `${labels.customer} A`,
-            secondary: "成交额 × 2%",
+            primary: "实达帕南办公室隔间 — 师傅抽成",
+            secondary: `${labels.staff} — 油漆班`,
             amount: "RM 1,240",
             tone: "positive",
             status: "已结",
           },
           {
-            primary: `${labels.customer} B`,
-            secondary: "成交额 × 2%",
+            primary: "蕉赖浴室重铺 — 师傅抽成",
+            secondary: `${labels.staff} — 铺砖班`,
             amount: "RM 860",
             tone: "warning",
             status: "待结",
           },
           {
-            primary: `${labels.customer} C`,
-            secondary: "成交额 × 2%",
+            primary: "蒲种店屋重拉电 — 师傅抽成",
+            secondary: `${labels.staff} — 电工班`,
             amount: "RM 415",
             tone: "neutral",
             status: "计算中",

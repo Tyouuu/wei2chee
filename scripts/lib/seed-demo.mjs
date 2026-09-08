@@ -129,9 +129,24 @@ const SHOWROOM = {
     48500_00, 12750_00, 96240_00, 7300_00, 21980_00, 15400_00,
     33800_00, 8950_00, 27600_00, 61200_00, 4380_00, 19750_00,
   ],
+  /* 🔴 钱那三页要**三串不同的数**。
+     2026-09-08 拍出来：收款 · 开销 · 佣金三页并排，三页都写着
+     `RM 30,850` —— 因为三页种的是同一串 `paid`，五笔加起来当然一样。
+     一间收进来多少就花掉多少、而且整笔都当抽成付掉的生意，读起来是坏的，
+     而**产品一个字都没错**（[重点 22d](../../docs/founder-points.md)）。
+     三串的量级也照它们真实的样子：进来的最大 · 花掉的次之 ·
+     抽成是一小截。 */
   paid: [
     3000_00, 12750_00, 8400_00, 1200_00, 5500_00, 2400_00,
     9800_00, 8950_00, 6300_00, 15000_00, 4380_00, 3900_00,
+  ],
+  spent: [
+    1850_00, 4200_00, 960_00, 7350_00, 2480_00, 1120_00,
+    5600_00, 3300_00, 890_00, 6100_00, 2050_00, 1470_00,
+  ],
+  earned: [
+    420_00, 1180_00, 655_00, 300_00, 940_00, 512_00,
+    1360_00, 780_00, 245_00, 1050_00, 388_00, 620_00,
   ],
   /* 🔴 阶段要**明写**。它平常是从他问卷那份分析来的
      （`add_pipeline_record` → `analysis_results.after_workflow`），
@@ -203,7 +218,13 @@ export async function seedEveryShape(
   const crewName = (i) => (showroom ? SHOWROOM.crew[i % SHOWROOM.crew.length] : `${mark} Crew`);
   const job = (i, key) => (showroom ? SHOWROOM.jobs[i % SHOWROOM.jobs.length] : `${mark} ${key}`);
   const amount = (i) => (showroom ? SHOWROOM.amounts[i % SHOWROOM.amounts.length] : 4_850_00);
-  const paid = (i) => (showroom ? SHOWROOM.paid[i % SHOWROOM.paid.length] : 1_234_00);
+  /* 一页一串 —— 见 SHOWROOM.paid 上面那一段。 */
+  const SERIES = { payments: "paid", expenses: "spent", commission: "earned" };
+  const paid = (i, key) => {
+    if (!showroom) return 1_234_00;
+    const list = SHOWROOM[SERIES[key] ?? "paid"];
+    return list[i % list.length];
+  };
 
   /* ── 名册 ─────────────────────────────────────────────────────────────
      🔴 客户要**先**建，后面每一张单靠它连上人（`in_party_id`）——
@@ -273,8 +294,15 @@ export async function seedEveryShape(
       await seed(key, () => api.rpc("add_ledger_entry", {
         in_project_id: P, in_module_key: key,
         ...(against ? { in_against_id: against } : {}),
-        in_amount_cents: paid(i),
-        in_party: key === "expenses" ? supplier(i) : party(i),
+        in_amount_cents: paid(i, key),
+        /* 🔴 抽成是付给**师傅**的，不是付给客户的。
+           2026-09-08 拍出来：佣金那一页每一行的「Paid to」写着
+           `Pantai Interiors` —— 一家客户公司。而右边那条比例条
+           （「谁抽得最多」）读的是同一栏，所以整页在讲
+           **他把抽成付给了他的客人**。产品一个字都没错
+           （[重点 22d](../../docs/founder-points.md)）。 */
+        in_party:
+          key === "expenses" ? supplier(i) : key === "commission" ? crewName(i) : party(i),
         in_note: showroom
           ? (key === "expenses" ? `Materials — ${supplier(i)}` : `${job(i, key)} — ${key === "commission" ? "crew share" : "deposit"}`)
           : `${mark} note`,

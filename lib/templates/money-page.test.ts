@@ -33,8 +33,18 @@ import { walkNodes, type PuckNode } from "@/lib/portal/layout-ops";
  *  **两条路，一张脸**，所以三页都要问一次。 */
 const MONEY: PageKey[] = ["payments", "expenses", "commission"] as PageKey[];
 
-function pageNodes(slug: string, keys: string[], key: PageKey): PuckNode[] {
+/* 🔴 两种语言都要走。栏名是**一页一份、每种语言各一份**手写的，
+   而 2026-09-08 佣金那一页两份都写反了 —— 一把只走中文的尺，
+   看不到只错在英文那一半的下一次。 */
+const LANGS = ["zh", "en"] as const;
+
+function pageNodes(slug: string, keys: string[], key: PageKey, lang: "zh" | "en"): PuckNode[] {
   const ctx: BusinessContext = {
+    /* 🔴 块里的字跟**系统语言**走（`ctx.lang`），不是跟 `buildPageLayout`
+       第四个参数走 —— 那一个是 locale（Formae 的介面语言）。
+       我第一版只传了后者，於是两轮拿到的是同一份英文，
+       **中文那一份从来没有被走过**，而 2026-09-08 那个 bug 两份都有。 */
+    lang,
     industry: {
       slug,
       name_zh: slug,
@@ -47,18 +57,29 @@ function pageNodes(slug: string, keys: string[], key: PageKey): PuckNode[] {
     key,
     ctx,
     "兴发",
-    "zh",
+    lang,
     keys.map((k) => ({ key: k })),
   ) as unknown as { content: PuckNode[] };
   return [...walkNodes(layout.content)];
 }
 
 /** 每一个行业里，真的开了钱那几页的那些。 */
-const CASES: { where: string; key: PageKey; nodes: PuckNode[] }[] = [];
+const CASES: { where: string; key: PageKey; nodes: PuckNode[]; lang: "zh" | "en" }[] = [];
 for (const [slug, keys] of Object.entries(PAGES_FOR_INDUSTRY)) {
   for (const key of MONEY) {
-    if (!keys.includes(key)) continue;
-    CASES.push({ where: `${slug}/${key}`, key, nodes: pageNodes(slug, keys, key) });
+    /* 🔴 **不筛掉开局没有的那两页。**
+       这一档叫「钱那三页」，而 `expenses` 跟 `commission` **不在任何一个
+       行业的开局清单里**（八个行业开局都是 总览·客户·单据·收款·官网）——
+       所以在 2026-09-08 之前，`CASES` 里永远只有 `payments` 一页，
+       而底下那条叫「三页用的是同一支骨架」的断言，比的是一个只有一个元素的
+       阵列，**永远为真**。整档六条守的是一页。
+
+       他自己加得出那两页（AI 加、或者「加一页」那个对话框），
+       所以这里把三页都摆进他的页面清单再产生一次 —— 那正是他真的会看到的样子。 */
+    const all = keys.includes(key) ? keys : [...keys, key];
+    for (const lang of LANGS) {
+      CASES.push({ where: `${slug}/${key}·${lang}`, key, lang, nodes: pageNodes(slug, all, key, lang) });
+    }
   }
 }
 
@@ -124,5 +145,65 @@ describe("钱那三页照 finance 抄的骨架", () => {
       ).join(">"),
     );
     expect(new Set(shapes).size, `三页画出来的骨架不一样：${[...new Set(shapes)].join(" | ")}`).toBe(1);
+  });
+
+  /* ───────────────────────────────────────────────────────────────────────
+     🔴 一个栏名不可以在一页当第一栏、在另一页当第二栏。
+
+     2026-09-08 拍到的：佣金那一页的表头写着 **Paid to | Basis**，
+     而底下印的是 **「Setapak office partition — crew share」| 「Painting team」**
+     —— 两栏都在骗人，而且那一页最要紧的那一栏（谁拿了这笔钱）挂在
+     一个写着「怎么算的」的标题底下。
+
+     根因：`live-rows.ts` 的 ledger 投影**三页共用一份**（`primary` 是
+     他自己打的备注 · `secondary` 是对方），而栏名是**一页一页手写的**，
+     佣金那一页写反了。收款（For | Client）跟开销（Expense | Paid to）是对的。
+
+     [任务 80](../../docs/founder-tasks.md)：**对的数字配错的标签，比空白更糟**
+     —— 一桌示例会自己招认，一个挂错标题的数字不会。
+
+     ⚠️ **这一条不手写任何名单**（这个仓库栽在「第二份手写清单」上至少八次）：
+     它拿三页自己的栏名互相比。`Paid to` 在开销是第二栏、在佣金是第一栏 ——
+     那个撞名本身就是那个 bug。
+
+     🔴 **而它只抓得到「撞名」，抓不到「对调」本身 —— 实测过。**
+     故意只弄坏中文那一份（`结算对象 | 计算方式`）它**不红**：
+     中文的开销是 `开销项目 | 付给谁`，两边没有一个字撞上。
+     英文那一次红得了，是因为 `Paid to` 刚好同时是开销的第二栏。
+     → **它只能否决**（[重点 24](../../docs/founder-points.md)）。
+     一页栏名对不对得上底下那几行，最后还是要打开那一页用眼睛看。 */
+  it("🔴 钱那三页的栏名，不可以一页当第一栏、另一页当第二栏", () => {
+    const firsts = new Map<string, string[]>();
+    const seconds = new Map<string, string[]>();
+    /* 按语言分开比 —— 中文的「结算对象」跟英文的 `Paid to` 不是同一个字，
+       混在一起比，两边都撞不到。 */
+    for (const c of CASES) {
+      const table = c.nodes.find((n) => n.type === "RecordTable");
+      /* 🔴 栏位住在 `props.table.columns`，不是 `props.columns` ——
+         我第一版读错地方，拿到空阵列，於是**弄坏它照样全绿**
+         （这个 session 第五次踩到「一条什么都没保护的守卫」）。
+         `?? []` 会把这个错静静吞掉，所以这里读不到就直接红。 */
+      const cols = (table!.props as { table?: { columns?: { key: string; label: string }[] } })
+        .table?.columns;
+      expect(cols, `${c.where} 的表读不到栏位 —— 这一条在量空气`).toBeTruthy();
+      /* 位置是投影自己定的（live-rows.ts：primary 是备注 · secondary 是对方），
+         所以照 key 找，不照顺序。 */
+      const a = cols!.find((x) => x.key === "primary");
+      const b = cols!.find((x) => x.key === "secondary");
+      const tag = (l: string) => `${c.lang}:${l}`;
+      if (a) (firsts.get(tag(a.label)) ?? firsts.set(tag(a.label), []).get(tag(a.label))!).push(c.where);
+      if (b) (seconds.get(tag(b.label)) ?? seconds.set(tag(b.label), []).get(tag(b.label))!).push(c.where);
+    }
+    const clash = [...firsts.keys()].filter((label) => seconds.has(label));
+    expect(
+      clash,
+      clash
+        .map(
+          (l) =>
+            `「${l}」在 ${firsts.get(l)!.join("·")} 是第一栏，` +
+            `在 ${seconds.get(l)!.join("·")} 是第二栏 —— 两页里有一页的表头在骗人`,
+        )
+        .join("；"),
+    ).toEqual([]);
   });
 });
