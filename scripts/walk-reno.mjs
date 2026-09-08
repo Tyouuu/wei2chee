@@ -169,7 +169,7 @@ try {
   const { data: sig } = await C.rpc("nudges_due", { in_project_id: P });
   const told = (sig ?? []).some((r) => r.kind === "agreed_unpaid");
   node("🔴 系统告诉他「客人同意了、订金还没进来」", 0, told,
-    told ? "讯号算得出来（而画面那一边还没有人读它）" : "讯号没有出现");
+    told ? "讯号算得出来，而「今天」那一页在读它" : "讯号没有出现");
 
   /* ── ⑥ 收订金 ─────────────────────────────────────────────── */
   n = acts;

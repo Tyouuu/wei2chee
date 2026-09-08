@@ -124,7 +124,7 @@ try {
   const { data: sig } = await C.rpc("nudges_due", { in_project_id: P });
   const heard = (sig ?? []).some((r) => r.kind === "booking_unseen");
   node("🔴 系统告诉她「官网来了一个预约，你还没看」", 0, heard,
-    heard ? "讯号算得出来（而画面那一边还没有人读它）" : "讯号没有出现");
+    heard ? "讯号算得出来，而「今天」那一页在读它" : "讯号没有出现");
 
   /* ── ④ 谁有空 ─────────────────────────────────────────────── */
   n = acts;
@@ -206,7 +206,7 @@ try {
   const { data: sig2 } = await C.rpc("nudges_due", { in_project_id: P });
   const last = (sig2 ?? []).some((r) => r.kind === "package_last");
   node("🔴 系统告诉她「Mrs Tan 那张套票剩最后一次」", 0, last,
-    last ? "讯号算得出来（而画面那一边还没有人读它）" : "讯号没有出现");
+    last ? "讯号算得出来，而「今天」那一页在读它" : "讯号没有出现");
 
   /* ── 读数 ─────────────────────────────────────────────────── */
   console.log("\n一间沙龙，从客人在官网订时段到月底算抽成\n");
