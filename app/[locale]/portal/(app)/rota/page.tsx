@@ -365,6 +365,8 @@ export default async function RotaPage({
               words={{
                 rosterTitle: t("rota.rosterTitle"),
                 rosterLede: t("rota.rosterLede"),
+                from: t("rota.from"),
+                to: t("rota.to"),
                 save: t("rota.save"),
                 clear: t("rota.clearDay"),
                 saved: t("rota.saved"),

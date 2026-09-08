@@ -141,9 +141,13 @@ export function RotaDesk({
                   一行班读起来变成两行。 */}
               <span className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
                 <span className="min-w-0 flex-1 sm:w-32 sm:flex-none">
+                  {/* 🔴 本来是 `${name(d)} ${words.save}` —— 「星期一 存这一週」，
+                      一个框的名字讲的是隔壁那颗按钮在做的事；而右边那一个**根本没有名字**。
+                      2026-09-08 `audit:product` 报「没有名字的框 14」，
+                      十四个全部在这一页（七天 × 两头）。 */}
                   <input
                     type="time"
-                    aria-label={`${name(d)} ${words.save}`}
+                    aria-label={`${name(d)} ${words.from}`}
                     value={valFrom(d)}
                     onChange={(e) => set(d, "from", e.target.value)}
                     className={deskField}
@@ -153,6 +157,7 @@ export function RotaDesk({
                 <span className="min-w-0 flex-1 sm:w-32 sm:flex-none">
                   <input
                     type="time"
+                    aria-label={`${name(d)} ${words.to}`}
                     value={valTo(d)}
                     onChange={(e) => set(d, "to", e.target.value)}
                     className={deskField}

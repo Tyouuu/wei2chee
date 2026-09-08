@@ -240,6 +240,7 @@ const bad = (r) =>
   (r.cut?.length ?? 0) +
   (r.dup?.length ?? 0) +
   (r.taps?.length ?? 0) +
+  (r.unnamed?.length ?? 0) +
   (r.sideways > 1 ? 1 : 0);
 
 for (const width of [1400, 390]) {
@@ -268,6 +269,9 @@ for (const r of rows) {
   for (const d of (r.dead ?? []).slice(0, 6)) console.log(`    死链 ${d.h}  「${d.t}」`);
   for (const c of (r.cjk ?? []).slice(0, 4)) console.log(`    中文  「${c}」`);
   for (const c of (r.cut ?? []).slice(0, 4)) console.log(`    切断  「${c}」`);
+  /* 🔴 只有提示字的框：一打字那个名字就不见了（Baymard 那一条）。
+     印出来 —— 一个只报数字、指不出是哪一个的读数没有办法动手。 */
+  for (const u of (r.unnamed ?? []).slice(0, 6)) console.log(`    没名字  「${u.ph}」`);
   for (const d of (r.dup ?? []).slice(0, 4)) console.log(`    重标题「${d}」`);
   if (r.sideways > 1) console.log(`    横滚 ${r.sideways}px`);
   for (const t of (r.taps ?? []).slice(0, 6)) console.log(`    拇指 ${t.w}x${t.h}（旁边 ${t.near}）「${t.t}」`);
