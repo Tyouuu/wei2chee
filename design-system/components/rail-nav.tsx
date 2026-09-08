@@ -434,6 +434,18 @@ export function RailNav({
           // A 64px column and a 40px bar have nowhere to put an uppercase
           // section label, and on the topbar the groups run inline anyway, so
           // a heading between them would read as another nav item.
+          /* 🔴 分组标题跟着这一套风格自己的声音走，不写死 `uppercase`。
+             2026-09-08 老板讲「我的產品的sidebar 你也是幫我去復刻」，
+             把它跟参考那一套（arhamkhnz，他 9-04 自己挑的）原尺寸摆在一起看：
+             **他们是 `Dashboards` `Pages` —— 普通大小写；我们是
+             `DAY TO DAY` `THE WORK` —— 全大写加宽字距。**
+
+             而这不是审美的分歧 —— **这一套风格自己的 token 就写着
+             `--label-transform: none`**，是这一段把它盖掉了。
+             ⚠️ 做法照 `record-table.tsx` 表头那一段已经定过的：
+             **两个 token 都套上去，让每一套风格自己的值决定**。
+             （那一段的注解：「Applying both tokens unconditionally is
+             correct — each style's own value decides the outcome.」） */
           const named = group.trim().length > 0 && !isCompact && !isTop
           return (
             <div key={group} className={isTop ? "flex shrink-0 items-center gap-1" : "flex shrink-0 items-center gap-1 @3xl:block"}>
@@ -443,7 +455,7 @@ export function RailNav({
                   className={
                     isTree
                       ? "flex w-full items-center justify-between gap-2 [border-radius:var(--radius-md)] [padding-inline:var(--pad-control-x)] [padding-block:calc(var(--pad-control-y)*1.4)] [font-size:var(--text-sm)] text-[color:var(--color-nav-fg)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-nav-hover)]"
-                      : "flex w-full items-center justify-between gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)] hover:text-[color:var(--color-nav-fg)]"
+                      : "flex w-full items-center justify-between gap-2 [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] [text-transform:var(--label-transform)] [letter-spacing:var(--tracking-label)] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)] hover:text-[color:var(--color-nav-fg)]"
                   }
                   aria-expanded={openGroup}
                   aria-controls={`rail-group-${group}`}
@@ -461,7 +473,7 @@ export function RailNav({
                   className={
                     isTree
                       ? "[padding-inline:var(--pad-control-x)] [padding-block:calc(var(--pad-control-y)*1.4)] [font-size:var(--text-sm)] text-[color:var(--color-nav-fg)] [font-weight:var(--fw-medium)]"
-                      : "[padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] uppercase tracking-[0.07em] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)]"
+                      : "[padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] [font-size:var(--text-micro)] [text-transform:var(--label-transform)] [letter-spacing:var(--tracking-label)] text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-semibold)]"
                   }
                 >
                   {group}
@@ -540,16 +552,29 @@ export function RailNav({
                           is a second, non-colour channel for the same fact —
                           a bar down the left of a column, a rule under the tab
                           on a horizontal bar, which is where each of those
-                          shapes conventionally puts it. */}
-                      {active && (
+                          shapes conventionally puts it.
+
+                          🔴 而 2026-09-08 把它跟参考那一套原尺寸摆在一起看
+                          （老板：`我的產品的sidebar呢 你也是幫我去復刻喔`），
+                          **有底色的那两种上它是第四个讯号，不是第二个**：
+                          今天一个选中的行已经同时换了**墨色**（`--color-nav-fg`）·
+                          **底色**（`--color-nav-active`）· **字重**
+                          （`--fw-semibold`，那本来就是一个跟颜色无关的讯号）。
+                          而画面上它压在那颗药丸的圆角外面，1:1 看是一块
+                          黑色的碎片卡在药丸边上，读起来像画坏了；
+                          参考那一套就是一颗干净的药丸。
+
+                          ⚠️ **另外两种留着，因为那句理由在它们身上还成立**：
+                          `isTop` 是一条横的分页列，**没有药丸**，那条下划线
+                          就是它的记号；`quiet` 那一种档头自己写着
+                          「not a filled pill」—— 它只有墨色跟字重两个讯号。 */}
+                      {active && (isTop || isQuiet) && (
                         <span
                           aria-hidden="true"
                           className={
                             isTop
                               ? "absolute inset-x-2 -bottom-[9px] h-[2px] rounded-full [background-color:var(--color-nav-accent)]"
-                              : isCompact
-                                ? "absolute -left-2 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full [background-color:var(--color-nav-accent)]"
-                                : "absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full [background-color:var(--color-nav-accent)]"
+                              : "absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full [background-color:var(--color-nav-accent)]"
                           }
                         />
                       )}
