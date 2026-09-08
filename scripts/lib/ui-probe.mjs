@@ -201,7 +201,17 @@ export const AUDIT = () => {
         ⚠️ 2.5.8 的例外是**圆心距**不是缝：一颗 20×20 的按钮
         旁边只要 2px 的空地就够。`walk:eyesight` 第一版写成
         「缝 < 24 就没过」，那把门槛拉高了一倍。 */
-  const clickable = [...document.querySelectorAll("a[href], button, input, textarea, select, [role=button]")].filter(seen);
+  /* 🔴 一张**图**里的按钮不是按钮。
+     2026-09-08 它在 portal 首页上报了 37 个（1400）跟 61 个（390）拇指目标，
+     而那几个全部在**页面预览**里 —— `page-preview.tsx` 自己写着
+     「this is a picture」：`inert` ＋ `pointer-events-none`，而且整块被
+     `transform: scale()` 缩过，所以量出来是 105×22 跟 61×13。
+     **他一根手指都碰不到它们。**
+     这跟这个仓库栽过五次的那一条是同一件事：量到的东西不是画面上的东西。 */
+  const reachable = (el) =>
+    getComputedStyle(el).pointerEvents !== "none" && !el.closest("[inert]");
+  const clickable = [...document.querySelectorAll("a[href], button, input, textarea, select, [role=button]")]
+    .filter((el) => seen(el) && reachable(el));
   out.controls = clickable.length;
   const rects = clickable.map((el) => el.getBoundingClientRect());
   clickable.forEach((el, i) => {
@@ -227,7 +237,10 @@ export const AUDIT = () => {
   /* ── ⑤ 指不到的连结。一颗按下去什么都不会发生的东西，
         是这个仓库禁的第一条。 */
   for (const a of document.querySelectorAll("a[href]")) {
-    if (!seen(a)) continue;
+    /* 🔴 同一条：一张图里的 `href="#"` 不是一条按下去没反应的连结，
+       因为它根本按不到。⚠️ 而**真的页面上**那一种照旧要红 ——
+       `check:table-search` 守的就是它。 */
+    if (!seen(a) || !reachable(a)) continue;
     const h = a.getAttribute("href");
     if (h === "#" || h === "" || h === "javascript:void(0)") {
       out.dead.push({ t: a.innerText.trim().slice(0, 34), h });
