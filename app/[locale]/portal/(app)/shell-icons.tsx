@@ -356,3 +356,25 @@ export function IconChevron({ open }: { open?: boolean }) {
     </svg>
   );
 }
+
+/** 餐台：一张桌面加两张椅子。 */
+export function IconTable({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M2.6 8h14.8" />
+      <path d="M4.6 8v7.4M15.4 8v7.4" />
+      <path d="M6.6 5.2v2.8M13.4 5.2v2.8" />
+    </svg>
+  );
+}
+
+/** 厨房：一口锅。 */
+export function IconPot({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M3.4 7.6h13.2v5a3 3 0 0 1-3 3H6.4a3 3 0 0 1-3-3v-5Z" />
+      <path d="M2 7.6h16" />
+      <path d="M7.4 5.2V3.6M12.6 5.2V3.6" />
+    </svg>
+  );
+}

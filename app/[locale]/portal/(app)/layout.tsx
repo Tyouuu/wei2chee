@@ -155,6 +155,7 @@ export default async function PortalAppLayout({
     { count: rentalCount },
     { count: serialCount },
     { count: skuCount },
+    { count: tableCount },
   ] = project
     ? await Promise.all([
         supabase
@@ -198,8 +199,19 @@ export default async function PortalAppLayout({
           .eq("project_id", project.id)
           .not("sku", "is", null)
           .is("archived_at", null),
+        /* 🔴 餐台。同一条：绝大多数生意没有桌 ——
+           一间装修公司的侧栏上多两行「餐台 · 厨房」是两行要他跳过的东西。
+           而第一张桌开在「加一单」那一页底下那条架子上（餐饮才画），
+           跟分店同一个理由：一个开得了、却没有任何地方点得进去的页面，
+           就是这个仓库最常犯的那个错。 */
+        supabase
+          .from("dining_tables")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", project.id)
+          .eq("active", true),
       ])
     : [
+        { count: 0 },
         { count: 0 },
         { count: 0 },
         { count: 0 },
@@ -261,6 +273,7 @@ export default async function PortalAppLayout({
       hasContracts={(contractCount ?? 0) > 0}
       hasSerials={(serialCount ?? 0) > 0}
       hasCounter={(skuCount ?? 0) > 0}
+      hasTables={(tableCount ?? 0) > 0}
       hasBatches={(batchCount ?? 0) > 0}
       hasRentals={(rentalCount ?? 0) > 0}
       hasPurchases={pageRefs.some((r) => r.key === "purchases")}

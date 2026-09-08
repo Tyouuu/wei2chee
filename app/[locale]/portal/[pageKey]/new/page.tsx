@@ -164,6 +164,18 @@ export default async function NewRecordPage({
             <a href={`/${locale}/portal/serials`} className="underline">
               {copy.form.serialsLink}
             </a>
+            {/* 🔴 餐台同一条：侧栏上按**有没有开过桌**画，而第一张桌
+              没有任何地方开得出来。
+
+              ⚠️ 而这一条**只画给餐饮**，不像上面那三条无条件画 ——
+              [任务 253] 已经登记过那条架子太宽（一间装修公司不需要看到
+              「查一个车牌」），而餐台是那一条最明显的一个：
+              八个行业里只有一个有桌。 */}
+            {ctx.trade === "fnb" ? (
+              <a href={`/${locale}/portal/tables`} className="underline">
+                {copy.form.tablesLink}
+              </a>
+            ) : null}
           </p>
         </main>
       </RecordShell>

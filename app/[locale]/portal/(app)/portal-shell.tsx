@@ -33,6 +33,8 @@ import {
   IconChevron,
   IconHash,
   IconTag,
+  IconTable,
+  IconPot,
 } from "./shell-icons";
 
 /**
@@ -243,6 +245,7 @@ export function PortalShell({
   hasContracts,
   hasSerials,
   hasCounter,
+  hasTables,
   hasBatches,
   hasRentals,
   hasPurchases,
@@ -284,6 +287,9 @@ export function PortalShell({
   /** 货架上有没有一件货带着一个码。一个扫什么都扫不到的柜台
    *  不是一个功能，是一行要他跳过的东西（[任务 247] 那一条）。 */
   hasCounter: boolean;
+  /** 他有没有开过桌 —— 绝大多数生意没有桌，而一间装修公司的侧栏上
+   *  多两行「餐台 · 厨房」是两行要他跳过的东西（[任务 247] 那一条）。 */
+  hasTables: boolean;
   hasBatches: boolean;
   hasRentals: boolean;
   /** 他有没有在买东西 —— 没有进货单的生意，「我欠人家的」永远是空的。 */
@@ -392,6 +398,12 @@ export function PortalShell({
       show: isOwner && hasCounter,
       icon: <IconTag />,
     },
+    /* 🔴 餐台 · 厨房都住在「订单」底下 —— 一张餐台单就是一张单
+       （20260908010000：不另开一张中转单），所以它们讲的就是那一页那件事。
+       ⚠️ **厨房不挡师傅**：`kitchen_queue` 是 works_here，而且它一栏金额都不回 ——
+       炒粉那个人打得开，而他在那一页上读不到这门生意的任何一个数字。 */
+    { key: "tables", under: "orders", show: hasTables, icon: <IconTable /> },
+    { key: "kitchen", under: "orders", show: hasTables, icon: <IconPot /> },
     {
       key: "expiry",
       under: "inventory",

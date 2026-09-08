@@ -84,6 +84,9 @@ const PAGES = [
   ["moving stock", "/en/portal/transfers", "customer"],
   ["counter", "/en/portal/counter", "customer"],
   ["classes", "/en/portal/classes", "customer"],
+  /* 餐台 · 厨房（2026-09-08）—— 同一条（任务 177）。 */
+  ["tables", "/en/portal/tables", "customer"],
+  ["kitchen", "/en/portal/kitchen", "customer"],
   /* 改这一单. Its URL carries a RECORD id, so the same trap as
      console-customer one level deeper -- and it carries its own hard-coded
      copy block (地址 · 公司注册号 · 冲正 · 收起来), which is precisely the

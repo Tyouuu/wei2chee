@@ -162,6 +162,9 @@ PAGES = [
     ("who is free", "/en/portal/rota"),
     ("moving stock", "/en/portal/transfers"),
     ("classes", "/en/portal/classes"),
+    # 餐台 · 厨房（2026-09-08）—— 同一条（任务 177）。
+    ("tables", "/en/portal/tables"),
+    ("kitchen", "/en/portal/kitchen"),
     ("legal", "/en/legal/terms"),
 ]
 
