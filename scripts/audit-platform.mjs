@@ -228,6 +228,7 @@ for (const r of rows) {
     ...(r.text ?? []).slice(0, 4).map((t) => `字 ${t.rt}:1（要 ${t.need}）${t.px}px  「${t.t}」`),
     ...(r.dead ?? []).slice(0, 2).map((t) => `死链  「${String(t).slice(0, 40)}」`),
     ...(r.taps ?? []).slice(0, 6).map((t) => `拇指 ${t.w}x${t.h}（旁边 ${t.near}）「${t.t}」`),
+    ...(r.leaked ?? []).slice(0, 3).map((l) => `🔴 代码印在画面上  「${l}」`),
   ];
   if (!bits.length) continue;
   console.log(`\n  ${r.name}  ${r.width}px  ${r.url}`);

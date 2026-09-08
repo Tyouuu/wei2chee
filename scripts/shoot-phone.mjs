@@ -70,6 +70,15 @@ const check = (name, ok, detail = "") => {
 const SAMPLES = ["陈先生", "李太太", "王老板", "Mr Tan", "Mrs Lee", "Mr Wong"];
 
 const stamp = Date.now();
+/* 🔴 服务器没开就不要跑 —— 一份「每一页全坏」的报告，跟一份
+   「服务器没开」的报告，在画面上长得一模一样。别的尺都有这一道，这一支没有。 */
+const ping = await fetch(`${BASE}/en/login`).catch(() => null);
+if (!ping || ping.status >= 400) {
+  console.error(`
+🔴 ${BASE} 没有回应 —— 先开 npm run dev。这一支不猜。`);
+  process.exit(2);
+}
+
 const cred = { email: `phone-${stamp}@formae.test`, password: `Phone-${stamp}-x!` };
 let userId = null;
 let leadId = null;
@@ -138,6 +147,23 @@ try {
     });
     if (e) throw new Error(`add_pipeline_record: ${e.message}`);
   }
+  /* 🔴 也要种钱进去。[任务 142c](../docs/founder-tasks.md) 写着这一条：
+     没有一笔真的收款，收款那一页头上那个数字**正确地**还是示例
+     （RM 71,300，每一家公司共用的那一个），而第 ②b 条量的就是它 ——
+     **一把永远红的尺没有人看，而它红的是道具不是产品。** */
+  for (const [party, cents] of [
+    ["Ang Chee Keong", 1455000],
+    ["Vimala Devi", 680000],
+  ]) {
+    const { error: e } = await as.rpc("add_ledger_entry", {
+      in_project_id: proj.id,
+      in_module_key: "payments",
+      in_amount_cents: cents,
+      in_party: party,
+      in_note: "Deposit",
+    });
+    if (e) throw new Error(`add_ledger_entry: ${e.message}`);
+  }
   for (const [name, phone] of [
     ["Ang Chee Keong", "012-337 8890"],
     ["Norhaslinda Binti Rahim", "017-882 4410"],
@@ -159,11 +185,17 @@ try {
     hasTouch: true,
   });
   const page = await ctx.newPage();
-  await page.goto(`${BASE}/en/login`, { waitUntil: "domcontentloaded", timeout: 60000 });
+  /* 🔴 `domcontentloaded` 之后马上填字按下去 —— 那一刻还没接上事件，
+     按下去是一次**原生的表单送出**，页面自己重载回登入页，然后这一支
+     等满六十秒。[任务 274](../docs/founder-tasks.md) 在 `walk:stranger`
+     上记过同一个坑：那是「登不进去」的第四种，而它跟一个坏掉的登入页
+     长得一模一样。 */
+  await page.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.waitForTimeout(600);
   await page.fill('input[type="email"]', cred.email);
   await page.fill('input[type="password"]', cred.password);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/portal/, { timeout: 60000 });
+  await page.waitForURL(/portal/, { timeout: 180000 });
 
   const PAGES = [
     /* ⚠️ `/portal` 自己不在名单里：那是 Formae 的首页（「Your system is built」），

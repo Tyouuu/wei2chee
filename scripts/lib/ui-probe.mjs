@@ -254,6 +254,31 @@ export const AUDIT = () => {
     }
   }
 
+  /* ── ⑤b 一段代码被印在画面上。
+
+     🔴 2026-09-08 真的发生了一次：`board-blocks.tsx` 那一段
+     `// A STABLE id, not dnd-kit's default …` 本来坐在 `return (` 后面
+     ——那是一个**表达式**位置，`//` 在那里是真的注解。把那块板包进一个
+     `<div>` 之后它掉进了**子元素**位置，於是**整段被原样印在客户的页面上**。
+
+     `tsc` 干净 · lint 干净 · 每一条既有的检查全绿 —— **抓到它的是一张图**。
+     所以它变成一条会红的尺（[重点 24](../../docs/founder-points.md)）。
+
+     ⚠️ 认的是**只会出现在源码里**的那几个字，不是「有没有 `//`」——
+     一个网址里就有 `//`，而一句英文里可能有 `=>`。 */
+  const CODE = /className=|aria-describedby=|useId\(|dnd-kit|=&gt;|React\.|\bprops\./;
+  for (const el of document.querySelectorAll("body *")) {
+    if (!seen(el)) continue;
+    const own = [...el.childNodes]
+      .filter((n) => n.nodeType === 3)
+      .map((n) => n.textContent)
+      .join(" ")
+      .trim();
+    if (own.length < 12 || !CODE.test(own)) continue;
+    out.leaked = out.leaked ?? [];
+    out.leaked.push(own.replace(/\s+/g, " ").slice(0, 60));
+  }
+
   /* ── ⑥ 一个讲英文的系统上印中文。[重点 22d]：
         做展示用的资料要跟着那个系统自己的语言走。 */
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);

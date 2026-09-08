@@ -78,14 +78,99 @@ export function TaskBoard({
   if (!columns.length) return null;
 
   return (
-    // A STABLE id, not dnd-kit's default.
-    //
-    // DndContext hands every sortable an `aria-describedby="DndDescribedBy-N"`
-    // off a module-level counter that starts fresh in each environment, so the
-    // server said `-6` and the browser said `-0` and React threw away the whole
-    // subtree it was hydrating — once in the editor palette and again on the
-    // component library page. `useId` is the exact tool for this: React
-    // guarantees the same value on both sides of the render.
+    <>
+      {/* ─────────────────────────────────────────────────────────────────
+          手机上一行一笔，不是六栏挤在一起。
+
+          🔴 2026-09-08 拍 390 才看到：六栏塞进 390px，一栏 48px，
+          栏名切成「Enqu… Quot… Appr…」，单名断成「Set / bat」，
+          金额只剩「RM」，而六栏里五栏是空的。
+          **而尺子报「横滑 无」** —— 因为它不是滑出去，是被压扁。
+          [重点 7l](../../docs/founder-tasks.md)：读数全绿而画面是坏的。
+
+          做法照 `record-table.tsx` 已经定过的那一条（[任务 141e]）：
+          同一批资料、同一条 `href`、同一个「标题切、金额靠右、第二行小字」，
+          只是把**栏**换成**一段**。而 Apple 那一句也是同一个意思：
+          「list item titles only, letting people choose an item to reveal
+          its content in a detail view」。
+
+          ⚠️ **空的那几段不画** —— 一个装修老板手上六个阶段常常只有两个有单，
+          印四段「0」是四段要他滑过去的东西。而**栏名底下那个数字留着**，
+          跟宽的那一边同一个事实。 */}
+      <div className="flex flex-col [gap:var(--gap-stack)] @3xl:hidden">
+        {columns.map((column) => {
+          const mine = data.filter((d) => d.column === column.id);
+          if (!mine.length) return null;
+          return (
+            <section key={column.id}>
+              <h3 className="flex items-baseline [gap:var(--gap-inline)] [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+                <span>{column.name}</span>
+                <span className="tnum [font-weight:var(--fw-regular)]">{mine.length}</span>
+              </h3>
+              <ul className="mt-1 flex flex-col">
+                {mine.map((item) => {
+                  const body = (
+                    <>
+                      <span className="flex items-baseline [gap:var(--gap-inline)]">
+                        <span className="min-w-0 flex-1 truncate [color:var(--color-paper)] [font-weight:var(--fw-medium)]">
+                          {item.name}
+                        </span>
+                        {item.amount ? (
+                          <span className="shrink-0 whitespace-nowrap tabular-nums [color:var(--color-paper)] [font-family:var(--font-numeric)]">
+                            {item.amount}
+                          </span>
+                        ) : null}
+                      </span>
+                      {item.note ? (
+                        <span className="truncate [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                          {item.note}
+                        </span>
+                      ) : null}
+                    </>
+                  );
+                  /* 整行都点得到 —— 一个拇指按不准一句字里的那几个字。
+                     示例没有 `href`，所以示范的板照旧点不动（跟表格同一条）。 */
+                  return (
+                    <li
+                      key={item.id}
+                      className="[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
+                    >
+                      {item.href ? (
+                        <a
+                          href={item.href}
+                          className="flex min-h-11 flex-col justify-center [gap:2px] [padding-block:var(--pad-cell-y)]"
+                        >
+                          {body}
+                        </a>
+                      ) : (
+                        <div className="flex min-h-11 flex-col justify-center [gap:2px] [padding-block:var(--pad-cell-y)]">
+                          {body}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          );
+        })}
+      </div>
+
+      {/* A STABLE id, not dnd-kit's default.
+
+          DndContext hands every sortable an `aria-describedby="DndDescribedBy-N"`
+          off a module-level counter that starts fresh in each environment, so the
+          server said `-6` and the browser said `-0` and React threw away the whole
+          subtree it was hydrating — once in the editor palette and again on the
+          component library page. `useId` is the exact tool for this: React
+          guarantees the same value on both sides of the render.
+
+          🔴 这几行本来是 `//`，因为它当时坐在 `return (` 后面 —— 那是一个
+          **表达式**位置，`//` 在那里是真的注解。2026-09-08 把板包进一个
+          `<div>` 之后它掉进了**子元素**位置，於是**整段注解被原样印在
+          客户的页面上**，而 `tsc` 一个字都没讲。是拍图看到的
+          （[重点 7l](../../docs/founder-points.md)）。 */}
+      <div className="hidden @3xl:block">
     <KanbanProvider id={boardId} columns={columns} data={data} onDataChange={() => {}}>
       {(column) => (
         <KanbanBoard id={column.id} key={column.id}>
@@ -141,7 +226,9 @@ export function TaskBoard({
           </KanbanCards>
         </KanbanBoard>
       )}
-    </KanbanProvider>
+        </KanbanProvider>
+      </div>
+    </>
   );
 }
 
