@@ -22439,3 +22439,59 @@ tsc 干净 · `audit:product` 三页两个宽度每一栏 0 · **三张表头跟
 - **「骨架不同」不等於「看起来不一样」** —— 只能否决（[重点 24](./founder-points.md)）
 - 🔴 **`audit:product` 多了一个 `ONLY=`** —— 改一页的时候只走那一页
   （三十九页乘两个宽度要四分钟，而「改 → 看图 → 再改」那个回圈里，慢就是不看图）
+
+
+---
+
+### 302. 参考一直是「按产品」找的，从来没有「按页」找过（2026-09-08）
+> `所以你還是沒有去找每一頁的最新設計 去引用別人的`
+
+**他讲对了，而且量得出来。**
+
+| | |
+|---|---|
+| 手上的参考 | **61 张**（`.screenshots/admins/`） |
+| 🔴 而它们是什么 | **几乎全部是别人的「首页」** —— 六十个产品各一张仪表盘 |
+| 真正逐页的 | **一套**（arhamkhnz 十一页，他 2026-09-04 自己挑的那一套） |
+| 我们有几页 | **18 个模块页 ＋ 21 个工具页** |
+
+🔴 **所以「找参考」一直是按产品做的。** 而 [任务 296](#296) 那句
+「产品那一边不要再找模板了」是对的**产品**讲的，不是对**页**讲的 ——
+两件事，我混过去了。
+
+#### `npm run shoot:pagerefs`（新的）—— 一个问题一批
+七组，每一组四家不同的产品，一组一张拼图。
+**组名用「那一页在问什么」，不是用零件的名字**：
+
+| 组 | 我们哪几页 | 四家 |
+|---|---|---|
+| `money` | 收款 · 开销 · 佣金 | arham-finance · Mantine · TailAdmin · Tabler |
+| `document` | 报价单 · 进货单 | arham-invoice · tabler-invoice · Mantine · Gentelella |
+| `people` | 客户 · 供应商 · 师傅 | arham-users · tabler-users · refine ×2 |
+| `shelf` | 库存 · 序号 · 效期 | refine-products · file-manager · Gentelella · TailAdmin |
+| `board` | 工程 · 任务 | arham-kanban · arham-tasks · Mantine · Gentelella |
+| `when` | 预约 · 点名 · 排班 · 出勤 | arham-productivity · TailAdmin · Gentelella · Mantine |
+| `orders` | 订单 · 送货 | refine-orders · Mantine · arham-logistics · Gentelella |
+
+⚠️ 每一个网址**都先 `curl` 打过**（第一轮探了 30 条，一半是 404 / 429）。
+
+#### 🔴 而第一轮五张是假的，而那条自检看不见它
+gentelella 那五张**全部是它的行销首页**（读数一个字不差：`10305px · 卡片 17 · 字 1230`），
+而 `shootSheet` 那条「跟别人一模一样」的自检**回报「没拍到 0 张」**——
+因为**一组呼叫一次，五张分在五组，组内不撞**。
+→ 查重改成**跨整轮**（呼叫端传一个共用的 Map 进去）。
+
+🔴 **而正确的网址这个仓库早就写下来了**：`shoot-admins.mjs` 第 62 行白纸黑字
+「`gentelella.colorlib.com` 是**行销页不是 demo** —— 任何路径都回 200」
+（[任务 103](#103)）。**我没读就自己踩了一次。**
+
+⚠️ 顺带一个：`ONLY` 撞名 —— 我这一支拿它筛**组**，而 `shootSheet` 拿它筛**站名**，
+两边抢同一个变数，於是 `ONLY=money` 一组都没走而它回报「0 组 0 张」。
+筛组改成 `GROUP=`。
+
+#### 还欠
+- [ ] **他挑完之前不动手** —— 拼图在 `.screenshots/pagerefs/<组>/sheet.jpg`
+- [ ] 工具页那二十一页（谁欠我钱 · 排班 · 车牌 · 效期…）**一组都还没有**
+- [ ] ⚠️ 四家里有三家是同一族（shadcn / Tailwind 的后台模板）——
+      [任务 296](#296) 量过它们已经收敛成同一张脸。**真的产品**（Xero · QuickBooks ·
+      Jobber）的内页在登入后面，[任务 267](#267) 判过：公开拿得到的只有商店截图

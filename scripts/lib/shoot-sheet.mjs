@@ -20,7 +20,7 @@ import fs from "node:fs";
 /**
  * @param {[string, string, string][]} SITES  [名字, 网址, 出处]
  * @param {string} OUT  资料夹
- * @param {{ perRow?: number, width?: number, wait?: number }} [opts]
+ * @param {{ perRow?: number, width?: number, wait?: number, seen?: Map<string,string> }} [opts]
  * @returns {Promise<number>} 没拍到几张
  */
 export async function shootSheet(SITES, OUT, opts = {}) {
@@ -30,7 +30,12 @@ export async function shootSheet(SITES, OUT, opts = {}) {
   /* `ONLY=a,b` 只拍那几个 —— 拼图照旧用全部拍过的档案组，
      所以补一批的时候不用把几十个重拍一遍。 */
   const PICK = process.env.ONLY ? new Set(process.env.ONLY.split(",").map((x) => x.trim())) : null;
-  const seen = new Map();
+  /* 🔴 查重要**跨整轮**，不是一批一次。
+     2026-09-08：`shoot:pagerefs` 一组呼叫一次，而 gentelella 的五个路径
+     全部回同一张行销首页 —— 五张分在五组，**组内不撞，所以这一条看不见**，
+     整轮回报「没拍到 0 张」。呼叫端把同一个 Map 传进来，它才看得到。
+     （这个仓库为同一件事栽过一次：[任务 103](../../docs/founder-tasks.md)。） */
+  const seen = opts.seen ?? new Map();
   let bad = 0;
 
   const b = await chromium.launch();
