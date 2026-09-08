@@ -483,6 +483,17 @@ export type RecordFormCopy = {
   creditLede: string;
   creditNone: string;
   creditFrom: string;
+  /* 她上一次做了什么（20260909040000）。**只在客户那一页，而且要她真的记过一笔** ——
+     一间装修公司的客户页上，一段永远写着「还没有记录」的东西，读起来是没做完。 */
+  treatHeading: string;
+  treatLede: string;
+  treatUsed: string;
+  treatBatch: string;
+  treatBy: string;
+  treatBefore: string;
+  treatAfter: string;
+  treatMayShow: string;
+  treatMayNotShow: string;
   /* 这一单的下一步（20260905800000）。走单那几页都有。 */
   nextHeading: string;
   nextLede: string;
@@ -837,8 +848,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "{date} 关起来了。这个月这一边的钱改不了 —— 要改，先重开这个月。",
       settleReopen: "重开这个月",
       portalHeading: "他自己那条连结",
-      portalLede:
-        "发一条连结给他，他就自己讲得出「我要什么」，不用你照他的讯息重打一次。他看得到的只有你的公司名跟他自己送过的那几笔。",
+      /* 🔴 一行。参考那一页（EspoCRM 真的客户记录页）一句说明都没有，
+         而这一页原本三行 —— 他 2026-09-09 讲「太长了吧」。
+         剩下这一句只留他按下去之前非知道不可的那一件：他会看到什么。 */
+      portalLede: "他自己讲得出要什么。他看得到的只有你的公司名。",
       portalOpen: "开一条连结给他",
       portalLink: "他那条连结",
       portalCopy: "复制",
@@ -906,7 +919,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       serialsLink: "查一个序号",
       tablesLink: "餐台",
       packHeading: "套票",
-      packLede: "卖几次，用一次扣一次。剩几次是数出来的，没有人改得了。",
+      packLede: "卖几次，用一次扣一次。",
       packNone: "还没有卖过套票给他。",
       packLeft: "还剩 {n} 次",
       packUsedUp: "用完了",
@@ -927,6 +940,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "已经收到、还没有分摊给任何一张单的部分。下一张单开出来就可以扣它。",
       creditNone: "没有 —— 他付过的钱都分摊掉了。",
       creditFrom: "来自",
+      treatHeading: "她做过什么",
+      treatLede: "每一次做了什么、用了多少、哪一批。上一次的排在最上面。",
+      treatUsed: "用了",
+      treatBatch: "批号",
+      treatBy: "做的人",
+      treatBefore: "之前",
+      treatAfter: "之后",
+      treatMayShow: "她答应给别人看",
+      treatMayNotShow: "只留在记录里",
       nextHeading: "下一步",
       nextLede:
         "这一单接下来你要做的那一件。一张单只有一个 —— 做完了才写下一个。",
@@ -1265,8 +1287,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "Closed on {date}. Money on this side of the month cannot change -- reopen it first.",
       settleReopen: "Reopen this month",
       portalHeading: "Their own link",
-      portalLede:
-        "Send them a link and they say what they need themselves, instead of you retyping their message. All they see is your business name and what they have sent.",
+      portalLede: "They say what they need themselves. All they see is your business name.",
       portalOpen: "Open a link for them",
       portalLink: "Their link",
       portalCopy: "Copy",
@@ -1337,8 +1358,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       serialsLink: "Look up a serial",
       tablesLink: "Tables",
       packHeading: "Packages",
-      packLede:
-        "Sold as a number of sessions. One visit, one off the count -- and the count is worked out, not typed.",
+      packLede: "Sold as a number of sessions. One visit, one off the count.",
       packNone: "No package sold to them yet.",
       packLeft: "{n} left",
       packUsedUp: "Used up",
@@ -1359,6 +1379,15 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "Money received and not yet put against any document. The next one you raise can draw on it.",
       creditNone: "None -- everything they have paid is accounted for.",
       creditFrom: "From",
+      treatHeading: "What she has had done",
+      treatLede: "Each visit: what was done, how much was used, which batch. Newest first.",
+      treatUsed: "Used",
+      treatBatch: "Batch",
+      treatBy: "By",
+      treatBefore: "Before",
+      treatAfter: "After",
+      treatMayShow: "She agreed this may be shown",
+      treatMayNotShow: "Stays in the record",
       nextHeading: "Next step",
       nextLede:
         "The one thing you do next on this document. One at a time — write the next one when this is done.",

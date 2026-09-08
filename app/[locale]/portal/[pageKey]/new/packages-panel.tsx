@@ -116,7 +116,18 @@ export function PackagesPanel({
         <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
           {copy.packHeading}
         </h2>
-        <p className={`mt-1 ${dim}`}>{copy.packLede}</p>
+        {/* 🔴 一句说明只在**空的时候**画。
+          参考那一页（EspoCRM 真的客户记录页，`.screenshots/pagerefs/crm/`）
+          **一句说明都没有** —— 抬头加资料，就这样。而他 2026-09-09 讲
+          「太长了吧 有点看看别人的如何做这个 UI 设计的」，量出来这一页
+          手机 2698px、电脑 2485px，而说明那几句是最大的一块。
+
+          分界线是：**一句说明教的是「这一格是干什么的」** ——
+          他第一次遇到的时候需要它，而东西已经列在下面的时候，
+          那几行自己就讲完了，说明每一次都要他滑过去。 */}
+        {rows.length === 0 ? (
+          <p className={`mt-1 ${dim}`}>{copy.packLede}</p>
+        ) : null}
       </div>
 
       {rows.length ? (
@@ -211,7 +222,10 @@ export function PackagesPanel({
           ))}
         </div>
       ) : (
-        <p className={dim}>{copy.packNone}</p>
+        /* 🔴 空的时候上面那一句说明已经讲完了 —— 再写一次「还没有卖过」
+           是两句话在讲同一件事，而那正是这一页太长的一半。
+           参考那一页空的时候只有两个字（No Data），一句解释都没有。 */
+        null
       )}
 
       {open ? (

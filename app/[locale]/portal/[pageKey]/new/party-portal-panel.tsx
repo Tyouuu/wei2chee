@@ -99,7 +99,18 @@ export function PartyPortalPanel({
         <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
           {copy.portalHeading}
         </h2>
-        <p className={`mt-1 ${dim}`}>{copy.portalLede}</p>
+        {/* 🔴 一句说明只在**空的时候**画。
+          参考那一页（EspoCRM 真的客户记录页，`.screenshots/pagerefs/crm/`）
+          **一句说明都没有** —— 抬头加资料，就这样。而他 2026-09-09 讲
+          「太长了吧 有点看看别人的如何做这个 UI 设计的」，量出来这一页
+          手机 2698px、电脑 2485px，而说明那几句是最大的一块。
+
+          分界线是：**一句说明教的是「这一格是干什么的」** ——
+          他第一次遇到的时候需要它，而东西已经列在下面的时候，
+          那几行自己就讲完了，说明每一次都要他滑过去。 */}
+        {!link ? (
+          <p className={`mt-1 ${dim}`}>{copy.portalLede}</p>
+        ) : null}
       </div>
 
       {link ? (

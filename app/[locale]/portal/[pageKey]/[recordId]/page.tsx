@@ -25,6 +25,10 @@ import {
 import { RentalsOnJob, type JobRental } from "../new/rentals-on-job";
 import { PartyStatement } from "../new/party-statement";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
+import {
+  TreatmentHistory,
+  type TreatmentVisit,
+} from "./treatment-history";
 import { SettleMonth } from "../new/settle-month";
 import { PartyPortalPanel, type PartyRequest } from "../new/party-portal-panel";
 import { ShareRecordPanel } from "../new/share-record-panel";
@@ -297,6 +301,9 @@ export default async function EditRecordPage({
      ⚠️ `null` = **没有问**（这一页不是一张单，或者读的人看不到钱），
      不是「没赚」。`ledger_entries` 是 sees_money，所以一个师傅拿回来的是
      空的，而空的会算成「这一单赚了全额」-- 那时候整段不画，不是画 0。 */
+  /* 她做过什么（20260909040000）。空阵列 = 这一家没有记过 → 整段不画。 */
+  let treatments: TreatmentVisit[] = [];
+
   let earned: {
     paidCents: number;
     costCents: number;
@@ -513,44 +520,23 @@ export default async function EditRecordPage({
     );
 
     /* ── 他来过几次 ────────────────────────────────────────────────────
-       🔴 **含收起来的**：一件做完收档的工作，还是来过一次。
-       上面那份 `jobs` 是「在跑的」，故意排掉了收起来的 —— 两个问题，
-       两个查询，而不是拿同一份清单去回答两句不一样的话。
+       🔴 **读 `party_visits`，不在这里自己数一次。**
 
-       ⚠️ 沙龙的「来过」是预约，不是报价单。所以两张表都数。 */
-    const [{ count: jobCount }, { count: bookCount }] = await Promise.all([
-      supabase
-        .from("pipeline_records")
-        .select("id", { count: "exact", head: true })
-        .eq("party_id", recordId),
-      supabase
-        .from("appointments")
-        .select("id", { count: "exact", head: true })
-        .eq("party_id", recordId),
-    ]);
-    visits = (jobCount ?? 0) + (bookCount ?? 0);
+       在 2026-09-09 之前这一页有它自己的两个 count —— 而那一天疗程记录
+       接上来之后，那一份跟资料库那一支当场分家：图上同一屏写着
+       「How often they come — Nothing yet」，而正下方是她的两次疗程。
+       [任务 216 · 229 · 259](../../../../../docs/founder-tasks.md) 登记过三次
+       「同一个问题两份实作」，而这是它第一次真的说谎。
 
-    if (visits > 0) {
-      const [{ data: lastJob }, { data: lastBook }] = await Promise.all([
-        supabase
-          .from("pipeline_records")
-          .select("issued_on")
-          .eq("party_id", recordId)
-          .order("issued_on", { ascending: false })
-          .limit(1),
-        supabase
-          .from("appointments")
-          .select("starts_at")
-          .eq("party_id", recordId)
-          .order("starts_at", { ascending: false })
-          .limit(1),
-      ]);
-      const days = [
-        (lastJob ?? [])[0]?.issued_on ?? null,
-        ((lastBook ?? [])[0]?.starts_at ?? "").slice(0, 10) || null,
-      ].filter(Boolean) as string[];
-      lastOn = days.length ? (days.sort().at(-1) ?? null) : null;
-    }
+       ⚠️ 那一支自己带着这一页答不出来的东西：走进来做的那一次也算来过，
+       而挂在预约上的那一笔不数两次（20260909120000）。 */
+    const { data: seen } = await supabase.rpc("party_visits", {
+      in_project_id: ctx.projectId,
+      in_party_id: recordId,
+    });
+    const met = ((seen ?? []) as { visits: number; last_on: string | null }[])[0];
+    visits = met?.visits ?? 0;
+    lastOn = met?.last_on ?? null;
 
     /* 「一共多少」是钱。 */
     if (ctx.role === "owner") {
@@ -562,6 +548,71 @@ export default async function EditRecordPage({
         (n: number, r: { amount_cents: number | null }) =>
           n + (r.amount_cents ?? 0),
         0,
+      );
+    }
+
+    /* ── 客户那一页：她做过什么 ────────────────────────────────────────
+       🔴 `works_here` —— 做那个疗程的美疗师**必须**看得到上一次用了什么。
+       那一整张表存在的理由就是这一句（20260909040000 的档头）。
+       ⚠️ 而它一笔都没有的时候整段不画：一间装修公司的客户页上，
+       一段永远写着「还没有记录」的东西，读起来是这一页没做完。 */
+    if (pageKey === "customers") {
+      const { data: notes } = await supabase.rpc("treatment_notes_of", {
+        in_party_id: recordId,
+      });
+      const rows = (notes ?? []) as {
+        id: string;
+        done_on: string;
+        what: string;
+        area: string;
+        note: string;
+        staff_name: string;
+        archived: boolean;
+        products: TreatmentVisit["products"] | null;
+      }[];
+
+      treatments = await Promise.all(
+        rows.map(async (n) => {
+          const { data: pics } = await supabase.rpc("treatment_photos_of", {
+            in_note_id: n.id,
+          });
+          const shots = ((pics ?? []) as {
+            id: string;
+            path: string;
+            stage: string;
+            caption: string;
+            may_show: boolean;
+          }[]).slice(0, 6);
+
+          /* 🔴 网址是**签出来的**，不存 —— 存一个会过期的字串，
+             等於存一个明天变成假的东西（20260904010000 的原话）。 */
+          const signed = await Promise.all(
+            shots.map(async (x) => {
+              const { data } = await supabase.storage
+                .from("job-photos")
+                .createSignedUrl(x.path, 600);
+              return {
+                id: x.id,
+                url: data?.signedUrl ?? null,
+                stage: x.stage,
+                caption: x.caption,
+                mayShow: x.may_show,
+              };
+            }),
+          );
+
+          return {
+            id: n.id,
+            doneOn: n.done_on,
+            what: n.what,
+            area: n.area ?? "",
+            note: n.note ?? "",
+            staffName: n.staff_name ?? "",
+            archived: n.archived,
+            products: n.products ?? [],
+            shots: signed,
+          };
+        }),
       );
     }
 
@@ -1564,14 +1615,29 @@ export default async function EditRecordPage({
           only thing this system makes that somebody outside the business
           reads, and 560px cannot hold the form and the paper.
           ⚠️ 左右的内距交给外壳了 —— 两层内距会把这一页推得比别页窄。 */}
+        {/* 🔴 名册那几页也用整个宽度（2026-09-09）。
+          他讲「太长了吧 有点看看别人的如何做这个 UI 设计的」，而图上量出来
+          手机 5396px、电脑那一屏**表单只有 450px 宽，右边六成是空的** ——
+          十五段读的东西全部叠在一条窄栏里。
+          参考那一页（`.screenshots/upstream/up-patient.png`）的做法正好相反：
+          左边一列人、右边那个人的全部，**它把宽度用掉了**。 */}
         <main
           className={`w-full ${
-            ctx.shape === "pipeline" ? "max-w-[1080px]" : "max-w-[560px]"
+            ctx.shape === "pipeline" || ctx.isDirectory
+              ? "max-w-[1080px]"
+              : "max-w-[560px]"
           }`}
         >
           {/* 🔴 标题跟那一句说明交给表单画（2026-09-04）。参考页的主要动作
             在标题右边，而那颗按钮要知道「现在正在存」—— 这一页是伺服器画的，
             读不到那件事。所以标题跟按钮住在一起。 */}
+          {/* 🔴 左边填，右边读 —— 只在宽的地方。
+            窄屏一个字都不变（照旧一条到底），因为 390 上没有第二栏可以给。
+            ⚠️ 而它不是分页签：分页签会把那十五段自己的抬头各印两次
+            （[任务 273](../../../../../docs/founder-tasks.md) 量过），
+            而这一版一个抬头都没有动。 */}
+          <div className="lg:grid lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)] lg:items-start lg:gap-x-12">
+            <div className="min-w-0">
           <NewRecordForm
             heading={copy.editHeading(ctx.title)}
             lede={archivedAt ? copy.form.archived : copy.editLede}
@@ -1650,6 +1716,14 @@ export default async function EditRecordPage({
             copy={copy.form}
           />
 
+            </div>
+
+            {/* 读的那一边。⚠️ 每一段自己那条上界线留着 —— 在右边那一栏里
+              它读起来是段跟段之间的分隔，而不是一条多出来的线。
+              🔴 只有**第一段**那一条要拿掉：它上面什么都没有，画出来是
+              一条孤单的横线（看图看出来的）。窄屏不动 —— 那时候它上面
+              正好是表单，那一条是对的。 */}
+            <div className="min-w-0 lg:[&>*:first-child]:mt-0 lg:[&>*:first-child]:border-t-0 lg:[&>*:first-child]:pt-0">
           {/* 他的单子。画在表单**底下**，因为它是读的，不是填的 ——
             而一个客户页上的第二颗「保存」会让他不知道按哪一颗。
             ⚠️ 只在名册页上。 */}
@@ -1669,6 +1743,13 @@ export default async function EditRecordPage({
               <div className="mt-6">
                 <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
               </div>
+            </div>
+          ) : null}
+
+          {/* 她做过什么。一笔都没有就整段不画（组件自己判）—— 见 treatment-history.tsx。 */}
+          {ctx.isDirectory && pageKey === "customers" && treatments.length > 0 ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <TreatmentHistory visits={treatments} copy={copy.form} />
             </div>
           ) : null}
 
@@ -1889,6 +1970,8 @@ export default async function EditRecordPage({
               />
             </div>
           ) : null}
+            </div>
+          </div>
         </main>
       </RecordShell>
     </StyleScope>

@@ -269,6 +269,39 @@ try {
   const { data: rows } = await c2.from("treatment_notes").select("id");
   check("直接读那张表也一行都没有", (rows ?? []).length === 0, JSON.stringify(rows));
 
+  /* 🔴 看图看出来的：那一页正上方写着「还没有来过」，
+     而底下是她两次疗程 —— 同一屏，两句话互相打架。 */
+  console.log("\n⑧b 一次疗程也是一次来");
+  const { data: vis } = await c.rpc("party_visits", {
+    in_project_id: P, in_party_id: client,
+  });
+  check(
+    "🔴 走进来做的那一次算一次来",
+    Number(vis?.[0]?.visits) >= 1,
+    JSON.stringify(vis?.[0]),
+  );
+
+  const { data: appt } = await c.rpc("add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: new Date(Date.now() - 36e5 * 3).toISOString(),
+    in_ends_at: new Date(Date.now() - 36e5 * 2).toISOString(),
+    in_party: "Ms Lim", in_party_id: client, in_service: "Facial",
+  });
+  const seenBefore = Number(
+    ((await c.rpc("party_visits", { in_project_id: P, in_party_id: client })).data ?? [])[0]?.visits,
+  );
+  await c.rpc("add_treatment_note", {
+    in_party_id: client, in_what: "Facial", in_appointment_id: appt?.id ?? appt,
+  });
+  const seenAfter = Number(
+    ((await c.rpc("party_visits", { in_project_id: P, in_party_id: client })).data ?? [])[0]?.visits,
+  );
+  check(
+    "🔴 而挂在那一笔预约上的不再数一次 —— 那是同一次来",
+    seenAfter === seenBefore,
+    seenBefore + " -> " + seenAfter,
+  );
+
   /* ── ⑧ 一个美疗师 ─────────────────────────────────────────────────── */
   console.log("\n⑧ 一个美疗师 —— 她要看得到，而她看不到钱");
   /* 🔴 请她进来才量得到。一段跳过去而照样印 PASS 的检查，量的是空气
@@ -281,7 +314,7 @@ try {
   const { data: seen } = await c2.rpc("treatment_notes_of", { in_party_id: client });
   check(
     "🔴 她读得到上一次用了什么 —— 那正是这一整张表存在的理由",
-    (seen ?? []).length === 1,
+    (seen ?? []).length >= 1,
     JSON.stringify(seen),
   );
   check(

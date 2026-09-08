@@ -93,6 +93,7 @@
     "shoot:quiet": "node scripts/shoot-quiet.mjs",
     "shoot:said": "node scripts/shoot-said.mjs",
     "shoot:serials": "node scripts/shoot-serials.mjs",
+    "shoot:treatments": "node scripts/shoot-treatments.mjs",
     "shoot:tools": "node scripts/shoot-tools.mjs",
     "shoot:shelf": "node scripts/shoot-shelf.mjs",
     "shoot:fonts": "node scripts/shoot-fonts.mjs",

@@ -45,6 +45,26 @@ const GROUPS = {
     ["gentelella-inv", "https://preview.colorlib.com/theme/gentelella/production/invoice.html", "ColorlibHQ · MIT 21.5k"],
   ],
 
+  /* 🔴 真的 CRM 的客户记录页。上面那一组（`client`）拍回来全部是
+     「我的帐号」那种个人档案 —— 那不是他问的那一件。 */
+  crm: [
+    ["twenty", "https://demo.twenty.com", "Twenty · 开源 CRM"],
+    ["espocrm", "https://demo.espocrm.com", "EspoCRM · 开源"],
+    ["vtiger", "https://demo.vtiger.com", "Vtiger · 开源"],
+    ["odoo-crm", "https://demo.odoo.com", "Odoo · LGPL"],
+  ],
+
+  /* 🔴 打开**一个**客户 —— 「她是谁，她跟我之间发生过什么」。
+     他 2026-09-09 讲：`去參考別人的Crm 客戶錄取的頁面是怎麼去弄的啊`
+     —— 而我先前拿的是一张**病房监视**的页（up-patient），那不是这一件。
+     `people` 那一组是**清单**，这一组是**那一个人自己那一页**，两件事。 */
+  client: [
+    ["refine-customer", "https://example.admin.refine.dev/customers/show/123", "refine · MIT 35.6k"],
+    ["tabler-profile", "https://preview.tabler.io/profile.html", "tabler · MIT 41.6k"],
+    ["mantine-profile", "https://mantine-analytics-dashboard.netlify.app/apps/profile", "Mantine · MIT"],
+    ["gentelella-profile", "https://preview.colorlib.com/theme/gentelella/production/profile.html", "ColorlibHQ · MIT 21.5k"],
+  ],
+
   /* 客户 · 供应商 · 师傅 —— 「他们是谁，打开一个看」 */
   people: [
     ["arham-users", "https://next-shadcn-admin-dashboard.vercel.app/dashboard/users", "arhamkhnz · MIT"],
