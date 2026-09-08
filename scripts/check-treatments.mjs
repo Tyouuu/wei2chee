@@ -202,6 +202,53 @@ try {
   const { error: delErr } = await admin.from("directory_entries").delete().eq("id", client);
   check("🔴 有疗程记录的客人删不掉", !!delErr, delErr?.message?.slice(0, 60));
 
+  /* ── ⑥b 前后照片 ─────────────────────────────────────────────────── */
+  console.log("\n⑥b 前后对比 —— 而预设是「不可以给别人看」");
+  const shot = (stage, tail, extra = {}) =>
+    c.rpc("add_treatment_photo", {
+      in_note_id: note.id, in_path: `${P}/${note.id}/${tail}.jpg`, in_stage: stage, ...extra,
+    });
+
+  const { data: p1, error: p1e } = await shot("before", "a");
+  check("挂得上一次疗程（不是一张单）", !!p1?.id, p1e?.message);
+  check(
+    "🔴 预设**不可以**给别人看 —— 一张客人的脸出现在官网上，而她从来没答应过",
+    p1?.may_show === false,
+    p1?.may_show,
+  );
+  const { data: again } = await shot("before", "a");
+  check("按两下拿回同一张，不是第二张", again?.id === p1?.id, again?.id);
+
+  await shot("after", "b");
+  const { data: shots } = await c.rpc("treatment_photos_of", { in_note_id: note.id });
+  check("两张都在", (shots ?? []).length === 2, (shots ?? []).length);
+  check(
+    "之前的排在之后的前面 —— 她要的就是把两张摆在一起",
+    (shots ?? [])[0]?.stage === "before" && (shots ?? [])[1]?.stage === "after",
+    JSON.stringify((shots ?? []).map((x) => x.stage)),
+  );
+
+  const { error: badStage } = await shot("maybe", "c");
+  check("第三种说法挡下来（before · during · after，一份封闭的）", !!badStage, badStage?.message?.slice(0, 40));
+
+  const { error: elsewhere } = await c.rpc("add_treatment_photo", {
+    in_note_id: note.id, in_path: `00000000-0000-0000-0000-000000000000/x/y.jpg`,
+  });
+  check("🔴 档案不在这一家的资料夹里就挡下来", !!elsewhere, elsewhere?.message?.slice(0, 40));
+
+  const { data: shown } = await c.rpc("set_photo_may_show", { in_id: p1.id, in_may_show: true });
+  check("她问过客人之后翻得了那一栏", shown?.may_show === true, shown?.may_show);
+
+  /* 🔴 那张表原本那一条守卫（一张照片一定属於某一件事）没有不见 —— 它换了形状。 */
+  const { error: orphan } = await admin.from("record_photos").insert({
+    project_id: P, path: `${P}/x/orphan.jpg`,
+  });
+  check("🔴 一张不属於任何一件事的照片，写不进去", !!orphan, orphan?.message?.slice(0, 60));
+  const { error: both } = await admin.from("record_photos").insert({
+    project_id: P, record_id: note.id, note_id: note.id, path: `${P}/x/two.jpg`,
+  });
+  check("挂两边也写不进去", !!both, both?.message?.slice(0, 40));
+
   /* ── ⑦ 别人家 ─────────────────────────────────────────────────────── */
   console.log("\n⑦ 别人家");
   const mail2 = `treat2-${stamp}@formae.test`;
