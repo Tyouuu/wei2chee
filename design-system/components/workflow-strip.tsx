@@ -316,7 +316,13 @@ export function WorkflowStrip({
                   color:
                     stage.tone === "attention"
                       ? "var(--color-primary)"
-                      : "var(--border-subtle)",
+                      : /* 🔴 本来是 var(--border-subtle) —— **拿分隔线的颜色在写字**。
+                           2026-09-08 `audit:product` 量出来 **1.24:1**（24px 要 3:1），
+                           也就是六格里只有当前那一格看得见，其余五格几乎不存在。
+                           这个仓库记过同一条（[任务 24]：分隔符的 token 拿来写句子）。
+                           --color-paper-dim 才是「淡一点的字」那个 token，
+                           而两行底下那个笔数本来就在用它 —— 层次没有丢，只是读得到了。 */
+                        "var(--color-paper-dim)",
                 }}
               >
                 {String(i + 1).padStart(2, "0")}
