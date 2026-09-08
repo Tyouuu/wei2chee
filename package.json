@@ -105,6 +105,7 @@
     "shoot:admins": "node scripts/shoot-admins.mjs",
     "shoot:kinds": "node scripts/shoot-kinds.mjs",
     "check:reconcile": "node scripts/check-reconcile.mjs",
+    "check:treatments": "node scripts/check-treatments.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
     "check:anchors": "node scripts/check-anchors.mjs",
     "check:bookings": "node scripts/check-bookings.mjs",

@@ -67,6 +67,13 @@ const TRACKED = [
   ["service_packages", "created_by"],
   ["service_visits", "recorded_by"],
   ["stock_batches", "created_by"],
+  /* 🔴 疗程记录 —— 20260909040000。它非种不可而且理由是新的一种：
+     `party_id` 是 **on delete restrict**，所以关掉一整家公司的时候，
+     cascade 会同时要删掉那个客人跟那一笔记录 —— 而顺序错一次，
+     那一家就再也关不掉。而 `appointments` 那一次（2026-09-06）
+     正好是这个形状锁住一个帐号的第一次。 */
+  ["treatment_notes", "created_by"],
+  ["treatment_products", "created_by"],
   ["vehicles", "created_by"],
 ];
 
@@ -209,6 +216,27 @@ try {
   if ((visits ?? []).length) {
     await said("log_service_visit", {
       in_contract_id: ct.id, in_due_on: visits[0].due_on,
+    });
+  }
+
+  /* 🔴 一次疗程 ＋ 她用掉的那一支 —— treatment_notes · treatment_products。
+     见 TRACKED 上面那一段：这两张同时压着一条 restrict（客人）跟
+     一条 cascade（公司），而那个组合就是把帐号锁住的那个形状。 */
+  {
+    const { data: her } = await C.rpc("add_directory_entry", {
+      in_project_id: P, in_module_key: "customers", in_name: "Ms Lim",
+    });
+    const { data: note } = await C.rpc("add_treatment_note", {
+      in_party_id: her?.id ?? her, in_what: "Hydrafacial",
+    });
+    const { data: cream } = await C.rpc("add_catalog_item", {
+      in_project_id: P, in_module_key: "inventory", in_name: "Serum", in_unit: "ml",
+    });
+    await C.rpc("move_stock", {
+      in_item_id: cream.id, in_direction: "in", in_qty: 100, in_reason: "opening",
+    });
+    await said("add_treatment_product", {
+      in_note_id: note?.id, in_item_id: cream.id, in_qty: 5,
     });
   }
 
