@@ -10,8 +10,7 @@
  * 官网没有开源可拿（所以才抄模版），后台这一边可以直接拿 MIT 的代码。
  * 每一个都记它的星数跟许可，挑的时候要看得到。
  */
-import { chromium } from "playwright";
-import fs from "node:fs";
+import { shootSheet } from "./lib/shoot-sheet.mjs";
 
 const SITES = [
   /* ⚠️ 第一轮十二个只有六个拍到真的后台：kiran / pure-admin / art-design 停在登入页，
@@ -87,116 +86,20 @@ const SITES = [
   ["notus",           "https://demos.creative-tim.com/notus-nextjs/admin/dashboard",           "Creative Tim · MIT · 2020"],
   ["soft-ui",         "https://demos.creative-tim.com/soft-ui-dashboard-tailwind/pages/dashboard.html", "Creative Tim · MIT · 2021"],
   ["refine",          "https://example.refine.dev/",                                           "refine · MIT 35.6k"],
+  /* 2026-09-08 第三轮（老板：`最好是要有模板的 要研究的啦`）。
+     来源是 adminlte.io 那份 28 个的清单，**每一个网址先 curl 过一次**：
+     horizon 的 boilerplate 回 402（要钱），所以不在里面。
+     ⚠️ 回 200 不等於拍到东西 —— 底下那三条自检（像登入页 · 几乎没有字 ·
+     跟别人一模一样）就是为这件事在的。 */
+  ["halolight",        "https://halolight.h7ml.cn",                            "halolight · MIT"],
+  ["shadcn-vue-admin", "https://shadcn-vue-admin.netlify.app/",                "Whbbit1999 · MIT"],
+  ["ecommerce-admin",  "https://ecommerce-admin-board.vercel.app/",            "taiwo-adewale · MIT"],
+  ["naveenda",         "https://shadcn-nextjs-dashboard.vercel.app",           "NaveenDA · MIT"],
+  ["t3-template",      "https://t3-app-template.vercel.app",                   "gaofubin · MIT"],
+  ["shadboard",        "https://shadboard.vercel.app",                         "Qualiora · MIT"],
+  ["shadcnuikit",      "https://free.shadcnuikit.com/",                        "bundui · 商用授权 · 只看"],
+  ["tw-admin-free",    "https://next-free.tailwind-admin.com/",                "Tailwind-Admin · MIT"],
 ];
 
-const OUT = ".screenshots/admins";
-fs.mkdirSync(OUT, { recursive: true });
-/* 🔴 两张读数一模一样 = 多半根本没换页。`gentelella.colorlib.com` 就是这样骗过
-   一次：每一个路径都回 200，回的是同一张行销首页，五张截图长得完全正常。 */
-const seen = new Map();
-let bad = 0;
-const b = await chromium.launch();
-for (const [name, url, repo] of SITES) {
-  const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
-  try {
-    await p.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await p.waitForTimeout(6500);
-    /* 逐像素量一下：地是什么颜色、最大一块占多少、有颜色的面积多少。
-       那是老板讲「专业感」时真正在看的东西（见 kit.tsx 的 SplitCard 档头）。 */
-    const m = await p.evaluate(() => ({
-      h: document.body.scrollHeight,
-      cards: [...document.querySelectorAll("div,section,article")].filter((e) => {
-        const c = getComputedStyle(e); const r = e.getBoundingClientRect();
-        return r.width > 140 && r.height > 80 && parseFloat(c.borderRadius) > 2 &&
-          (c.boxShadow !== "none" || parseFloat(c.borderTopWidth) > 0);
-      }).length,
-      bg: getComputedStyle(document.body).backgroundColor,
-      title: document.title.slice(0, 40),
-      /* 停在登入页、或者整页几乎没有字，都算没拍到。 */
-      /* ⚠️ 第一版只看头 600 个字里有没有「sign in」，於是**侧栏上一个
-         「Sign In」的选单项**就把一张好好的后台判成登入页（mantine · soft-ui
-         两张都被冤枉过）。一张登入页真正的特徵是**整页只有那一件事**：
-         字少，而且画面上有一个密码框。 */
-      looksLikeLogin:
-        !!document.querySelector('input[type="password"]') ||
-        ((document.body.innerText.match(/\S+/g) || []).length < 120 &&
-          /sign in|log in|登录|登入/i.test(document.body.innerText.slice(0, 400))),
-      words: (document.body.innerText.match(/\S+/g) || []).length,
-    }));
-    await p.screenshot({ path: `${OUT}/${name}.jpg`, type: "jpeg", quality: 62 });
-    const fp = `${m.h}/${m.cards}/${m.words}`;
-    const twin = seen.get(fp);
-    seen.set(fp, twin ?? name);
-    const note = twin
-      ? `  🔴 跟 ${twin} 一模一样 —— 多半没换页`
-      : m.looksLikeLogin ? "  🔴 像登入页" : m.words < 60 ? "  🔴 几乎没有字" : "";
-    if (note) bad++;
-    console.log(`${name.padEnd(17)} ${String(m.h).padStart(6)}px  卡片 ${String(m.cards).padStart(3)}  字 ${String(m.words).padStart(4)}  ${repo}${note}`);
-  } catch (e) {
-    bad++;
-    console.log(`${name.padEnd(17)} 🔴 读不到  ${String(e).slice(0, 48)}`);
-  }
-  await p.close();
-}
-await b.close();
-/* 摊成一张，他一眼看得完。
- * [重点 7m](../docs/founder-points.md)：「他要的是**挑**，三个不叫挑」——
- * 三十张分成三十个档案也不叫挑，那叫三十次开档案。 */
-{
-  const { createRequire } = await import("node:module");
-  const sharp = createRequire(import.meta.url)("sharp");
-  const W = 420, PER_ROW = 5, LABEL = 26;
-  const tiles = [];
-  for (const [name, , repo] of SITES) {
-    const f = `${OUT}/${name}.jpg`;
-    if (!fs.existsSync(f)) continue;
-    /* 只取第一屏 —— 一张 7000px 高的页缩到 420 宽就是一条看不见的线。
-       挑风格看的是**打开的那一眼**。 */
-    const img = await sharp(f).resize({ width: W }).toBuffer();
-    const h = Math.min((await sharp(img).metadata()).height, 300);
-    const top = await sharp(img).extract({ left: 0, top: 0, width: W, height: h }).toBuffer();
-    const label = Buffer.from(
-      `<svg width="${W}" height="${LABEL}"><rect width="100%" height="100%" fill="#0b0d13"/>` +
-        `<text x="6" y="17" font-family="monospace" font-size="12" fill="#00beb7">${name}</text>` +
-        `<text x="${W - 6}" y="17" text-anchor="end" font-family="monospace" font-size="10" fill="#6c7686">` +
-        `${repo.replace(/[<>&]/g, "")}</text></svg>`,
-    );
-    tiles.push(
-      await sharp({ create: { width: W, height: h + LABEL, channels: 3, background: "#0b0d13" } })
-        .composite([{ input: top, top: 0, left: 0 }, { input: label, top: h, left: 0 }])
-        .png()
-        .toBuffer(),
-    );
-  }
-  const rows = Math.ceil(tiles.length / PER_ROW);
-  const metas = await Promise.all(tiles.map((t) => sharp(t).metadata()));
-  const rowH = [];
-  for (let r = 0; r < rows; r++)
-    rowH.push(Math.max(...metas.slice(r * PER_ROW, (r + 1) * PER_ROW).map((m) => m.height)));
-  const G = 8;
-  const sheetW = PER_ROW * W + (PER_ROW + 1) * G;
-  const sheetH = rowH.reduce((a, c) => a + c + G, G);
-  const comp = [];
-  let y = G;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < PER_ROW; c++) {
-      const i = r * PER_ROW + c;
-      if (i >= tiles.length) break;
-      comp.push({ input: tiles[i], left: G + c * (W + G), top: y });
-    }
-    y += rowH[r] + G;
-  }
-  await sharp({ create: { width: sheetW, height: sheetH, channels: 3, background: "#0b0d13" } })
-    .composite(comp)
-    .jpeg({ quality: 72 })
-    .toFile(`${OUT}/sheet.jpg`);
-  console.log(`\n${tiles.length} 张摊成一张 → ${OUT}/sheet.jpg`);
-}
-
-console.log(`\n→ ${OUT}/   ⚠️ 现在去用眼睛看拼图，读数只能否决`);
-if (bad) {
-  /* **拍坏了要红。** 一张拍到登入页的截图，跟一张正常的截图，在报告里
-     长得一模一样 —— 这个仓库被这件事骗过至少四次。 */
-  console.log(`\n🔴 ${bad} 张没拍到。`);
-  process.exit(1);
-}
+const bad = await shootSheet(SITES, ".screenshots/admins");
+if (bad) process.exit(1);

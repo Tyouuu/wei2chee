@@ -100,6 +100,7 @@
     "walk": "node scripts/walk.mjs",
     "check:address": "node scripts/check-address.mjs",
     "shoot:address": "node scripts/shoot-address.mjs",
+    "shoot:builders": "node scripts/shoot-builders.mjs",
     "shoot:admins": "node scripts/shoot-admins.mjs",
     "shoot:kinds": "node scripts/shoot-kinds.mjs",
     "check:reconcile": "node scripts/check-reconcile.mjs",
