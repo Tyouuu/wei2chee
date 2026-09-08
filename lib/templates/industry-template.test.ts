@@ -525,9 +525,37 @@ describe("per-industry page sets", () => {
     expect(Object.keys(sqlMapping()).length).toBeGreaterThanOrEqual(5);
   });
 
+  /**
+   * 🔴 那个 `else` 分支从来没有被比过。
+   *
+   * 上面那个正则只吃 `when '<slug>' then array[...]`，而 SQL 那一支的
+   * 最后一行是 `else array[...]` —— 它服务**三个行业**（装修 · 服务 · 其他），
+   * 其中装修是量出来最大的那一群。2026-09-09 实测：把 `else` 那一行改旧、
+   * TypeScript 那一份留新，**这一整档照样三十条全过**。
+   *
+   * 一条只比一半的镜子，跟一条没有的镜子，在报告里长得一模一样。
+   */
+  function sqlFallback(): string[] {
+    const m = /else\s+array\[([^\]]+)\]/.exec(sql);
+    if (!m) throw new Error("SQL 那一支没有 else 那一行 —— 正则坏了还是函式换形状了");
+    return m[1].split(",").map((v) => v.trim().replace(/'/g, ""));
+  }
+
+  it("extracts the else branch too, which three trades land on", () => {
+    expect(sqlFallback().length).toBeGreaterThanOrEqual(4);
+  });
+
   it("agrees with the SQL function the signup trigger actually uses", () => {
-    for (const [slug, keys] of Object.entries(sqlMapping())) {
+    const named = sqlMapping();
+    for (const [slug, keys] of Object.entries(named)) {
       expect(PAGES_FOR_INDUSTRY[slug], `mapping for ${slug}`).toEqual(keys);
+    }
+    /* 名字不在 SQL 那份 case 里的，触发器给的是 else 那一份 —— 而
+       TypeScript 这一边给的是它自己那一行。两个不一样，就是触发器开了
+       一页而这个模组画不出来（或者反过来），而画面上是一张空的画布。 */
+    for (const [slug, keys] of Object.entries(PAGES_FOR_INDUSTRY)) {
+      if (named[slug]) continue;
+      expect(keys, `${slug} 落在 SQL 的 else 那一份上`).toEqual(sqlFallback());
     }
   });
 

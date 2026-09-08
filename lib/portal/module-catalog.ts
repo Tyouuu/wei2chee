@@ -303,8 +303,72 @@ export function catalogForPrompt(): string {
  * more than that. What changed is that it is now the floor rather than the
  * ceiling.
  */
+/*
+  🔴 **八个行业，八个开局都记不了一笔花出去的钱。** 2026-09-09 量的。
+
+  `expenses` 跟 `commission` 在这个档案里只出现过一次 —— 在目录的定义上，
+  **没有一个行业的开局清单带过它们**。而收款那一页记不了出去的钱：
+  `new-record-form` 的 `spendsMoney = isLedger && moduleKey !== "payments"`，
+  也就是收款那一页的方向永远是「进来」，那个方向的下拉只画给对帐。
+
+  后果两件，两件都是「永远答不出来」而不是「难答」：
+
+    🔴 「这个月赚多少」= 进来的 − 花出去的（`lib/portal/profit.ts`）。
+       一笔开销都记不了，那一格**永远不画**（而那是它自己的规矩：
+       他一笔开销都没记过的时候，「赚」等於「收到」，画出来是宣称一件
+       我们不知道的事）—— 所以画面上连一句「为什么没有」都没有。
+
+    🔴 **拍一张收据自动变一笔开销**（[任务 271](../../docs/founder-tasks.md)，
+       22 条真的浏览器断言全过，而三家最大的记帐软件把它放在商店页前两屏）
+       —— 那颗相机只画在 `spendsMoney` 的表单上，**所以没有一个客户的开箱系统
+       到得了它**。
+
+  跟 20260906740000 那次教育开不了单是**同一个形状**：一个不难答的问题，
+  因为少一页而变成一个不可能答的问题，而没有任何东西会讲。
+*/
+/**
+ * 这一页记不记得了**花出去**的钱。
+ *
+ * 收款那一页的方向永远是「进来」 —— 那不是一个设定，是
+ * `new-record-form` 的 `spendsMoney = isLedger && moduleKey !== "payments"`，
+ * 而那个方向的下拉只画给对帐。所以一个开局没有帐本页（收款以外）的行业，
+ * **一笔开销都记不进去**。
+ *
+ * ⚠️ 那一行跟这一支是同一个判断的两个范围：那一行要答的是「**这一页**
+ * 记不记得了」，而这一页可能是客户自己取名的、根本不在目录里；这一支
+ * 只答目录里的。两边不一致的那天，先改的是那一行不是这一支。
+ */
+export function recordsMoneyOut(key: string): boolean {
+  const m = MODULE_CATALOG.find((x) => x.key === key);
+  return m?.shape === "ledger" && m.key !== "payments";
+}
+
 export const DEFAULT_MODULES_FOR_INDUSTRY: Record<string, string[]> = {
-  beauty: ["dashboard", "customers", "bookings", "payments", "website"],
+  /*
+    一间沙龙开箱看不到自己的两个数字。
+
+    2026-09-09 逐项对了五家沙龙软件的功能表，他问的两句正好是空的：
+
+      🔴 抽成 —— Amy 这个月做了多少、该抽多少
+      🔴 库存 —— 洗发水、面膜还剩几盒
+
+    两样我们都建好了（阶梯佣金是分段算的，不是整笔跳档；库存有补货线、
+    盘点、一箱几罐、分店、批号效期），**而美容开局那五页两样都没有** ——
+    她只能靠 AI 从那两分钟里判断，或者自己去加一页。
+
+    而这个市场比全球那一批更需要它们：Aoikumo 讲它有二十多种佣金算法、
+    还有产品库存跟批号效期，Tunai 的头条就是阶梯佣金（[任务 67](../../docs/founder-tasks.md)）。
+
+    `staff` 而不是 `commission`：她问的是「Amy 抽多少」不是「这个月一共抽了多少」——
+    前者住在师傅那一页上，而后者是第三张跟收款、开销长得一模一样的钱页
+    （[任务 301](../../docs/founder-tasks.md) 量过那三页共用同一支骨架）。
+
+    ⚠️ 她**照旧没有一页开得了单** —— 那一条是故意的，理由写在下面 BILLS_NOTHING。
+  */
+  beauty: [
+    "dashboard", "customers", "bookings", "payments", "expenses",
+    "staff", "inventory", "website",
+  ],
   /*
     A tuition centre bills. `walk:tuition` walked the default set on
     2026-09-06 and could not open a single fee bill: `party_debts` counts
@@ -321,13 +385,13 @@ export const DEFAULT_MODULES_FOR_INDUSTRY: Record<string, string[]> = {
     whole money half through packages and counter payments, and a page it
     never opens is a page it has to skip past.
   */
-  education: ["dashboard", "customers", "bookings", "orders", "payments", "website"],
-  fnb: ["dashboard", "customers", "orders", "payments", "website"],
-  retail: ["dashboard", "customers", "orders", "inventory", "payments", "website"],
-  wholesale: ["dashboard", "customers", "quotations", "orders", "inventory", "payments", "website"],
-  renovation: ["dashboard", "customers", "quotations", "projects", "payments", "website"],
-  services: ["dashboard", "customers", "quotations", "projects", "payments", "website"],
-  other: ["dashboard", "customers", "quotations", "projects", "payments", "website"],
+  education: ["dashboard", "customers", "bookings", "orders", "payments", "expenses", "website"],
+  fnb: ["dashboard", "customers", "orders", "payments", "expenses", "website"],
+  retail: ["dashboard", "customers", "orders", "inventory", "payments", "expenses", "website"],
+  wholesale: ["dashboard", "customers", "quotations", "orders", "inventory", "payments", "expenses", "website"],
+  renovation: ["dashboard", "customers", "quotations", "projects", "payments", "expenses", "website"],
+  services: ["dashboard", "customers", "quotations", "projects", "payments", "expenses", "website"],
+  other: ["dashboard", "customers", "quotations", "projects", "payments", "expenses", "website"],
 };
 
 export const DEFAULT_MODULE_SET = DEFAULT_MODULES_FOR_INDUSTRY.other;

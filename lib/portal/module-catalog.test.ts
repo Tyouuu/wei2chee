@@ -5,6 +5,7 @@ import type { Data } from "@puckeditor/core";
 import {
   ALWAYS_MODULES,
   DEFAULT_MODULES_FOR_INDUSTRY,
+  recordsMoneyOut,
   MAX_MODULES,
   MODULE_BY_KEY,
   MODULE_CATALOG,
@@ -198,6 +199,47 @@ describe("the default sets, which are the floor when nothing was analysed", () =
       }
     }
   });
+
+  /*
+    🔴 **一笔开销都记不了的行业，两个东西永远是空的。**
+
+    收款那一页的方向永远是「进来」（`recordsMoneyOut` 的档头写着为什么），
+    所以一个开局没有帐本页（收款以外）的行业：
+
+      🔴 「这个月赚多少」= 进来的 − 花出去的（`lib/portal/profit.ts`）。
+         一笔开销都没有，那一格**永远不画** —— 而那是它自己的规矩，
+         所以画面上连一句「为什么没有」都没有。
+
+      🔴 **拍一张收据自动变一笔开销**（[任务 271](../../docs/founder-tasks.md)）
+         那颗相机只画在 `spendsMoney` 的表单上 —— 到不了。
+
+    2026-09-09 量的时候**八个行业八个都是这样**，跟 20260906740000 那次
+    「教育开不了单」是同一个形状：一个不难答的问题，因为少一页而变成一个
+    不可能答的问题。真的不花钱的行业写进 SPENDS_NOTHING，连理由一起。
+  */
+  const SPENDS_NOTHING: Record<string, string> = {};
+
+  it("gives every trade a page it can record an expense on", () => {
+    for (const slug of Object.keys(DEFAULT_MODULES_FOR_INDUSTRY)) {
+      const canSpend = defaultModulesForIndustry(slug).some(recordsMoneyOut);
+      if (SPENDS_NOTHING[slug]) {
+        expect(canSpend, `${slug} 说它不花钱，而它开局就有一页记得了`).toBe(false);
+      } else {
+        expect(
+          canSpend,
+          `${slug} 开局记不了一笔花出去的钱 —— 「这个月赚多少」永远不画，`
+          + `而拍收据那颗相机到不了。真的不花钱就写进 SPENDS_NOTHING，连理由一起`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  /*
+    ⚠️ 而「开局有哪几页」是一个判断不是一条规则 —— 上面两条守的是
+    「少了它，某一句话永远答不出来」，不是「这一页比较有用」。
+    沙龙 2026-09-09 多的那两页（师傅 · 库存）就没有守卫：一间不卖东西、
+    一个人做的沙龙，两页都是她要滑过去的。**不为一个偏好造一条会红的尺。**
+  */
 });
 
 /**
