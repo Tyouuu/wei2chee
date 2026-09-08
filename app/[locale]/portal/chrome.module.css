@@ -252,6 +252,11 @@
   --color-brand-soft: #06282c;
   --color-nav-accent: var(--color-brand);
 
+  /* 🔴 勾选框跟着这一层的强调色走，不跟 `--color-primary` ——
+     那一个在这层外壳上是**近白**（见上面 PRIMARY 那一段），
+     一个近白的勾选框在白纸上是看不见的。 */
+  accent-color: var(--color-brand);
+
   /* ---- TYPE -------------------------------------------------------------
      `--font-display` stays Instrument Serif, the same face the Hero is set in
      -- it is the single strongest thing tying the signed-out and signed-in
@@ -608,6 +613,11 @@
   --color-brand: #0f6f6b;
   --color-brand-deep: #0b5754;
   --color-brand-soft: #e6f5f4;
+
+  /* ⚠️ 要**再指一次** —— `accent-color` 是在 `.chrome` 那一层解出来的，
+     那时候 `--color-brand` 还是 #00beb7（白纸上 1.87:1，读不到）。
+     一个 `var()` 在哪里宣告就在哪里解，不会跟着子层重新解一次。 */
+  accent-color: var(--color-brand);
 
   /* Ink, not the dark ground's lifted hues -- these are printed. Measured on
      white: jade 4.95:1, brass 5.37:1, clay 5.94:1, slate 5.72:1. */

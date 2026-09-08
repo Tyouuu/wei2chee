@@ -10,6 +10,7 @@ import { StyleScope } from "@/design-system/editor/style-scope";
 import chrome from "@/app/[locale]/portal/chrome.module.css";
 import { useLocale, useTranslations } from "next-intl";
 import { sampleSystem } from "@/lib/portal/sample-system";
+import { SystemLangProvider } from "@/design-system/system-lang-context";
 
 /**
  * THE SHOWROOM, and the point where the page hands over.
@@ -95,7 +96,19 @@ export function Showroom() {
       <div className={`handover-fixed ${chrome.mount} mt-12`}>
         <StyleScope register="ledger" className="[background-color:var(--color-canvas)]">
           <div className="pointer-events-none [padding:var(--pad-card-lg)]">
-            <Render config={puckConfig} data={sample as never} />
+            {/* 🔴 示范的**资料**跟着他的语言走，而示范画面上那几个字没有 ——
+            2026-09-08 `audit:platform` 在 `/en` 上量到「共 4 条」
+            「全部 4 笔都在这里」。那几个字来自 `SYSTEM_WORDS`，
+            而那个 context **预设是中文**（system-lang-context.tsx 写着
+            为什么：一个没有被包起来的组件，读它的是那个要被卖的老板）。
+
+            **同一件事两条路，只修了一条** —— showroom 那一支的注解
+            自己就写着上一半：「It used to be hardcoded Chinese, so /en
+            showed the product's central demonstration in a language the
+            visitor had explicitly declined」。这是它的下一半。 */}
+            <SystemLangProvider lang={locale === "zh" ? "zh" : "en"}>
+              <Render config={puckConfig} data={sample as never} />
+            </SystemLangProvider>
           </div>
         </StyleScope>
       </div>

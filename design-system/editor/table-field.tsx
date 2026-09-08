@@ -45,7 +45,7 @@ const TONE_OPTIONS: { value: StatusTone; label: string }[] = [
 ];
 
 const inputClass =
-  "w-full min-w-0 rounded-[6px] border px-2 py-1.5 text-[13px] outline-none [border-color:var(--color-ink-800)] [background-color:var(--color-ink-850)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]";
+  "w-full min-w-0 rounded-[6px] border px-2 py-1.5 text-[13px] outline-none [border-color:var(--input)] [background-color:var(--color-ink-850)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]";
 
 const iconBtnClass =
   "grid h-6 w-6 shrink-0 place-items-center rounded-[5px] text-[13px] leading-none [color:var(--color-paper-dim)] enabled:hover:[background-color:var(--color-ink-800)] enabled:hover:[color:var(--color-paper)] disabled:opacity-25";

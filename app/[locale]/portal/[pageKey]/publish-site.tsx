@@ -173,7 +173,12 @@ export function PublishSite({
         <label className="mt-4 block [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
           {t("publishAddressLabel")}
         </label>
-        <div className="mt-1.5 flex items-center gap-0 rounded-[var(--radius-md)] border [border-color:var(--color-ink-800)] [background-color:var(--color-ink-850)]">
+        {/* 🔴 这一条边是**那个框自己的边**，不是一条分隔线 —— 里面那个
+            `<input>` 是 `bg-transparent` 没有边，人看到的框就是这一层。
+            2026-09-08 `audit:platform` 量出来 **1.35:1**（要 3:1）。
+            ⚠️ 而那条守卫看不到它：它读的是 `<input …/>` **那一段**，
+            而这条边写在包着它的 `<div>` 上。**要靠浏览器那一把量。** */}
+        <div className="mt-1.5 flex items-center gap-0 rounded-[var(--radius-md)] border [border-color:var(--input)] [background-color:var(--color-ink-850)]">
           <span className="shrink-0 py-2 pl-3 [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
             /s/
           </span>

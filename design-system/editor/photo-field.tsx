@@ -292,7 +292,7 @@ export function PhotoField({
                 }
               }}
               placeholder={t("searchPlaceholder")}
-              className="min-w-0 flex-1 rounded-[var(--radius-sm)] px-2 py-1.5 [background-color:var(--color-ink-900)] [border:1px_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-xs)]"
+              className="min-w-0 flex-1 rounded-[var(--radius-sm)] px-2 py-1.5 [background-color:var(--color-ink-900)] [border:1px_solid_var(--input)] [color:var(--color-paper)] [font-size:var(--text-xs)]"
             />
             <button
               type="button"

@@ -216,6 +216,23 @@ for (const width of [1400, 390]) {
     );
   }
 }
+/* 🔴 逐项 —— 一个报得出数字、指不出是哪一条的读数，没有办法动手。
+   2026-09-08 补：它印了「中文 3」而我要另外写一支探针才知道那三个字是什么。
+   ⚠️ 每一种只印头几条 —— 版段库一页 450 个拇指目标，全印出来没有人读。 */
+console.log("\n-- 逐项，只印有东西的 --");
+for (const r of rows) {
+  if (r.failed) continue;
+  const bits = [
+    ...(r.cjk ?? []).slice(0, 4).map((t) => `中文  「${String(t).slice(0, 40)}」`),
+    ...(r.boxes ?? []).slice(0, 4).map((b) => `框 ${b.rt}:1（要 3）  「${b.label}」`),
+    ...(r.text ?? []).slice(0, 4).map((t) => `字 ${t.rt}:1（要 ${t.need}）${t.px}px  「${t.t}」`),
+    ...(r.dead ?? []).slice(0, 2).map((t) => `死链  「${String(t).slice(0, 40)}」`),
+  ];
+  if (!bits.length) continue;
+  console.log(`\n  ${r.name}  ${r.width}px  ${r.url}`);
+  for (const b of bits) console.log(`    ${b}`);
+}
+
 for (const n of notes) console.log(`\n${n}`);
 const failed = rows.filter((r) => r.failed).length;
 console.log(`\n判：${rows.length - failed} 页量到 · ${failed} 页没量到`);

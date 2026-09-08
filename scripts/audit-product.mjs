@@ -74,7 +74,25 @@ const SHAPE = () => {
   const gap = Math.round(main.getBoundingClientRect().bottom - bottom);
 
   /* 一句话被切在中间 —— 一个用省略号收尾的**句子**读起来是坏的
-     （一个被切断的名字不是，所以只数四个词以上的）。 */
+     （一个被切断的名字不是，所以只数四个词以上的）。
+
+     🔴 2026-09-08 它一口气报了 10 条，而 10 条全部是**手机上那一行的标题**：
+
+         Setapak office partition — deposit      RM 14,550
+         Puchong shoplot rewire — deposit        RM  9,000
+
+     而那一行是**故意切的**，理由写在 `record-table.tsx` 里，
+     而且是 Apple 自己那一句原文：
+     「you could list item **titles only**, letting people **choose an item
+     to reveal its content in a detail view**」—— 也就是说，
+     **切掉那一半找得回来**，那才是它成立的条件。
+
+     → 所以判的不是「切了没有」，是**切掉那一半他打开得了吗**：
+     包在一条连结里的，他点一下就看得到全部；
+     一句孤零零被切断的副标题没有那条路（[任务 276] 那一次就是）。
+
+     ⚠️ 它不完美：一条**去到别的地方**的连结里切断的句子，它会放过。
+     而那比反过来好：**一把把十条对的东西判红的尺，下一个人会去关掉它。** */
   const cut = [];
   for (const el of kids) {
     const s = getComputedStyle(el);
@@ -83,6 +101,7 @@ const SHAPE = () => {
     if (el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1) continue;
     const t = (el.innerText || "").trim();
     if (t.split(/\s+/).length < 4) continue;
+    if (el.closest("a[href],[role=link],button")) continue;
     cut.push(t.slice(0, 44));
   }
 
@@ -265,4 +284,8 @@ console.log(
 console.log(
   `    横滚 ${rows.filter((r) => r.sideways > 1).length} 页 · 没有名字的框 ${tot("unnamed")}`,
 );
+/* 🔴 印出来，不要静静放过 —— 浏览器画的那几个我们量不到，
+   而「量不到」跟「没有问题」是两句话。 */
+const ua = rows.reduce((a, r) => a + (r.uaDrawn ?? 0), 0);
+if (ua) console.log(`    ⚠️ 另外 ${ua} 个勾选框是浏览器自己画的 —— 这一支量不到，要用眼睛看`);
 console.log(`\n⚠️ 这一支只能否决。图在 ${OUT}/，好不好看要用眼睛看那几张。`);

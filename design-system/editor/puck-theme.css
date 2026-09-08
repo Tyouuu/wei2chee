@@ -333,6 +333,23 @@
   flex-direction: column;
 }
 
+/* 🔴 那几个框的边 —— 2026-09-08 `audit:platform` 在官网编辑器上量到
+   **1.35:1**（标准要 3:1，WCAG 1.4.11）。
+
+   根因：Puck 只有**一个** `--puck-color-border`，卡片的分隔线跟他要打字的
+   那几个框共用它，而我们把它指去 `--color-ink-800`（卡片那条边）——
+   **卡片的边本来就该淡，一个框不可以**。
+   跟 2026-09-07（`9eace1a`）替六套风格做的、跟同一天替外壳做的是同一件事。
+
+   ⚠️ 不去改 `--puck-color-border` 本身 —— 那一个同时画着面板的分隔线跟
+   外框，一起调深会让整个编辑器变吵。**只指他要打字的那几个。**
+   ⚠️ 也只在**右边那一栏的栏位表单**里 —— 画布里那几个框是**客户官网自己的**，
+   它们的边由那一套风格的 `--site-field-border` 决定，
+   在这里盖掉它，编辑器画出来的就不是他上线之后看到的那一份。 */
+[class*="_Sidebar--right_"] form[class*="_PuckFields_"] :is(input, textarea, select) {
+  border-color: var(--input);
+}
+
 /* Puck's root is 100vh. That is right for a full-screen editor and wrong for
    this one: it sits under Formae's own page tabs and draft banner, so a
    viewport-height root makes the editor exactly that much taller than the

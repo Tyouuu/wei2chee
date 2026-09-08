@@ -103,14 +103,39 @@ export const AUDIT = () => {
     if (!seen(el)) continue;
     if (["hidden", "submit", "button"].includes(el.type)) continue;
     const s = getComputedStyle(el);
+    /* 🔴 一个原生的勾选框是**浏览器自己画的** —— 它的 `border-width` 是 0、
+       `background` 是透明，所以量出来永远是 0:1，而画面上那个方框好好的。
+       2026-09-08 它就这样把 `/today` 那两个判成红的，而实拍上两个都看得见。
+       **一把冤枉人的尺没有人看。**
+       ⚠️ 只放过 `appearance: auto` 那一种 —— 一旦有人写 `appearance: none`，
+       那个框就是**我们画的**，照样要过 3:1。 */
+    if (
+      ["checkbox", "radio"].includes(el.type) &&
+      (s.appearance === "auto" || s.webkitAppearance === "auto")
+    ) {
+      out.uaDrawn = (out.uaDrawn ?? 0) + 1;
+      continue;
+    }
     const g = groundOf(el.parentElement || el);
     /* 🔴 那个框看得见的边，常常**不画在它自己身上**。
        2026-09-08 实测：表格上那个筛选框的边画在包着它的 `<label>` 上，
        而这个框自己是 `bg-transparent` 没有 border —— 於是它报 0:1，
        **十六页一起冤枉**，而画面上那个框边框好好的。
        所以往上找三层：第一个自己带边或者带底的祖先，就是人看到的那个框。
-       ⚠️ 三层就停 —— 再往上会找到整张卡，那不是这个框的边。 */
+       ⚠️ 三层就停 —— 再往上会找到整张卡，那不是这个框的边。
+
+       🔴 而「三层」不够 —— 2026-09-08 它照样找过头了：
+       `/today` 那两个勾选框（16×16）被判 **1.48:1**，而那条边是
+       **整段上面那条分隔线**（`border-t` 那一条，画在几百像素外）。
+       一个原生勾选框自己的 border-width 是 **0**，所以它一定会往上找。
+
+       → 加一条：**那个祖先不可以比这个控件高一倍以上**。
+       一个框看得见的边是**贴着它**的（表格那个搜寻框：输入框 22px，外面那层 `<label>` 44px），
+       而一条横过整段的线不是任何一个控件的边。
+       ⚠️ 代价：一个真的把边画在「标签在上、框在下」那种外层的设计，
+       它会看不到 —— 那种今天这个仓库没有，有的时候要回来改这一条。 */
     const boxOf = (start) => {
+      const h0 = start.getBoundingClientRect().height;
       let n = start;
       for (let i = 0; n && i < 4; i++, n = n.parentElement) {
         const cs = getComputedStyle(n);
@@ -119,7 +144,9 @@ export const AUDIT = () => {
         );
         const hasOutline = parseFloat(cs.outlineWidth) >= 0.5 && cs.outlineStyle !== "none";
         const hasOwnBg = parse(cs.backgroundColor).a > 0;
-        if (hasBorder || hasOutline || hasOwnBg) return n;
+        if (!hasBorder && !hasOutline && !hasOwnBg) continue;
+        if (n !== start && n.getBoundingClientRect().height > h0 * 2 + 24) break;
+        return n;
       }
       return start;
     };
