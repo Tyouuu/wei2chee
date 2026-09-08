@@ -18,6 +18,8 @@ export type RecordFormCopy = {
   /* 库存的那一批不是地址跟 email，是补货线、一箱几个、编号。 */
   moreStock: string;
   less: string;
+  /* 名册那几页默认是读，这一颗把表单叫出来（read-first.tsx）。 */
+  editOne: string;
   whatsapp: string;
   phone: string;
   contactPerson: string;
@@ -940,6 +942,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "已经收到、还没有分摊给任何一张单的部分。下一张单开出来就可以扣它。",
       creditNone: "没有 —— 他付过的钱都分摊掉了。",
       creditFrom: "来自",
+      editOne: "改这一个",
       treatHeading: "她做过什么",
       treatLede: "每一次做了什么、用了多少、哪一批。上一次的排在最上面。",
       treatUsed: "用了",
@@ -1377,8 +1380,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       creditHeading: "Paid, not yet used",
       creditLede:
         "Money received and not yet put against any document. The next one you raise can draw on it.",
-      creditNone: "None -- everything they have paid is accounted for.",
+      creditNone: "None. Everything they have paid is accounted for.",
       creditFrom: "From",
+      editOne: "Edit",
       treatHeading: "What she has had done",
       treatLede: "Each visit: what was done, how much was used, which batch. Newest first.",
       treatUsed: "Used",

@@ -29,6 +29,7 @@ import {
   TreatmentHistory,
   type TreatmentVisit,
 } from "./treatment-history";
+import { ReadFirst, type ReadField } from "./read-first";
 import { SettleMonth } from "../new/settle-month";
 import { PartyPortalPanel, type PartyRequest } from "../new/party-portal-panel";
 import { ShareRecordPanel } from "../new/share-record-panel";
@@ -1638,6 +1639,33 @@ export default async function EditRecordPage({
             而这一版一个抬头都没有动。 */}
           <div className="lg:grid lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)] lg:items-start lg:gap-x-12">
             <div className="min-w-0">
+          {/* 🔴 名册那几页默认是**读**，不是一张摊开的表单 —— 见
+            read-first.tsx 的档头（他 2026-09-09 看完上一版讲「我怎么觉得没差」，
+            而他是对的：真正让参考那一页短的是这一件）。
+            那几栏从 `ctx.columns` 来 —— 他自己加的栏自己会出现，
+            在这里手抄一份名单就是这个仓库栽过八次的那件事。 */}
+          <ReadFirst
+            enabled={ctx.isDirectory}
+            heading={values.primary || ctx.title}
+            editLabel={copy.form.editOne}
+            fields={
+              [
+                ...ctx.columns
+                  .filter((col) => col.key !== "primary")
+                  .map((col) => ({
+                    key: col.key,
+                    label: col.label,
+                    value: values[col.key] ?? "",
+                  })),
+                { key: "contact_person", label: copy.form.contactPerson, value: values.contact_person ?? "" },
+                { key: "email", label: copy.form.email, value: values.email ?? "" },
+                { key: "address", label: copy.form.address, value: values.address ?? "" },
+                { key: "reg_no", label: copy.form.regNo, value: values.reg_no ?? "" },
+                { key: "tax_id", label: copy.form.taxId, value: values.tax_id ?? "" },
+                { key: "note", label: copy.form.note, value: values.note ?? "" },
+              ] as ReadField[]
+            }
+          >
           <NewRecordForm
             heading={copy.editHeading(ctx.title)}
             lede={archivedAt ? copy.form.archived : copy.editLede}
@@ -1716,6 +1744,24 @@ export default async function EditRecordPage({
             copy={copy.form}
           />
 
+            </ReadFirst>
+
+            {/* 🔴 她做过什么，住在**主栏**，不在右边那一条。
+              他 2026-09-09 看完上一版讲「我怎么觉得没差」，而图上最刺眼的
+              是**左边空掉一千六百像素**：读的那一张卡只有三百多高，
+              而整页最高的那一段（她的疗程）挤在右边那一条窄栏里。
+
+              参考那一页（EspoCRM 真的客户记录页）分的就是这一条：
+              **主栏放身份 ＋ 那条会长的历史，右边那一条窄栏放几张矮卡。**
+              一笔都没有就整段不画（组件自己判）—— 见 treatment-history.tsx。
+
+              ⚠️ 窄屏一个字都没变，只是顺序变了：读的卡 → 她做过什么 →
+              其余。而那个顺序更对 —— 她做过什么正是他打开这一页要看的那一件。 */}
+            {ctx.isDirectory && pageKey === "customers" && treatments.length > 0 ? (
+              <div className="mt-8">
+                <TreatmentHistory visits={treatments} copy={copy.form} />
+              </div>
+            ) : null}
             </div>
 
             {/* 读的那一边。⚠️ 每一段自己那条上界线留着 —— 在右边那一栏里
@@ -1743,13 +1789,6 @@ export default async function EditRecordPage({
               <div className="mt-6">
                 <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
               </div>
-            </div>
-          ) : null}
-
-          {/* 她做过什么。一笔都没有就整段不画（组件自己判）—— 见 treatment-history.tsx。 */}
-          {ctx.isDirectory && pageKey === "customers" && treatments.length > 0 ? (
-            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-              <TreatmentHistory visits={treatments} copy={copy.form} />
             </div>
           ) : null}
 
@@ -1802,7 +1841,10 @@ export default async function EditRecordPage({
             拿回来是**零行** —— 而零行会画成一张空的对帐单，
             读起来是「这个客人什么都没欠」。 */}
           {credit && ctx.isDirectory && pageKey === "customers" ? (
-            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+            /* 🔴 这一段**不画自己那条线** —— `PartyStatement` 里面那个
+              `FormSection` 已经画了一条。两条都画，中间隔 32px，
+              画出来是一条孤单的横线浮在半空（看图看出来的）。 */
+            <div className="mt-10">
               <PartyStatement
                 projectId={ctx.projectId}
                 partyId={recordId}
