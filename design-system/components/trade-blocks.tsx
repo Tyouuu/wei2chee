@@ -166,6 +166,13 @@ export type ScheduleRow = {
   endTime?: string;
   title: string;
   description?: string;
+  /**
+   * 谁做的 —— 一个沙龙的一天是**按人分栏**的，不是一条清单。
+   *
+   * ⚠️ 选填，而且**一行都没有给的时候这一根轴自己退回原来那几种画法** ——
+   * 一间一个人的店、一个补习班的课表，本来就没有「分栏」这件事。
+   */
+  who?: string;
 };
 
 /** 今天的行程 — 补习班的课表、诊所的预约、装修队今天去哪几间。 */
@@ -186,6 +193,15 @@ export function DaySchedule({
    *   rail           左边一条轨道，一个点一个时段 ← FullCalendar timeGrid ·
    *                  AdminLTE timeline（两个都 MIT）
    *   ruled          时间在一个窄栏里，行与行只有细线 ← Gentelella v4 的清单
+   *   columns        **一天摊开，一个人一栏，块坐在它自己那个钟点上**
+   *                  ← Fresha（全球最大 · 13 万家店）· Booksy，以及
+   *                  2026-09-08 拍回来的 25 张桌面稿 **没有一张不是这样**
+   *
+   * 🔴 `columns` 为什么非有不可：另外四种全部是**一条清单**，
+   * 而一条清单答得了「接下来是谁」，答不了「**几点还排得下**」——
+   * 后者是一间沙龙一天问最多次的那一句。
+   * ⚠️ 而它跟「椅子」是**两页**（老板 2026-09-08 纠正过一次）：
+   * 椅子答「现在」，这一栏答「几点」。
    *
    * ⚠️ **为什么要加**：这一根轴本来只有两种，而六套风格里必然有三套共用同一
    * 个值 —— 那不是设计懒，是没有东西可以选（见 `design-doc.test.ts`）。
@@ -193,7 +209,7 @@ export function DaySchedule({
    * ⚠️ `framed` 留着不动：客户已经存下来的页面带着它。没有给 `shape` 的时候
    * 由 `framed` 决定，这样旧页面一个像素都不会变。
    */
-  shape?: "framed" | "bare" | "rail" | "ruled";
+  shape?: "framed" | "bare" | "rail" | "ruled" | "columns";
 }) {
   const w = useSystemWords();
   const items = (rows ?? []).map((r, i) => ({
@@ -202,8 +218,16 @@ export function DaySchedule({
     endTime: r.endTime || undefined,
     title: r.title,
     description: r.description || undefined,
+    who: r.who?.trim() || undefined,
   }));
   const look = shape ?? (framed ? "framed" : "bare");
+
+  /* 🔴 没有人可以分栏就退回去，而不是画一栏叫「（没有）」。
+     一间一个人的店、一个补习班的课表，本来就没有这件事。 */
+  const people = [...new Set(items.map((x) => x.who).filter(Boolean))] as string[];
+  if (look === "columns" && people.length > 0) {
+    return <DayColumns heading={heading} items={items} people={people} empty={w.emptyToday} />;
+  }
 
   if (look === "rail" || look === "ruled") {
     const head = heading ? (
@@ -315,6 +339,181 @@ export function DaySchedule({
       items={items}
       labels={{ emptyText: w.emptyToday, timeRangeSeparator: " – " }}
     />
+  );
+}
+
+
+/**
+ * 一天摊开，一个人一栏 —— `DaySchedule` 的第五种画法。
+ *
+ * ── 出处 ────────────────────────────────────────────────────────────────
+ * 2026-09-08 拍回来的 25 张桌面稿（Pinterest · 老板那一端），**没有一张不是
+ * 这样**；Fresha（13 万家店）跟 Booksy 的日历也是这一张。
+ * 而 [任务 296](../../docs/founder-tasks.md) 早就量过为什么：
+ * **一间沙龙稀缺的是师傅，不是椅子。**
+ *
+ * ── 它答的那一句 ────────────────────────────────────────────────────────
+ * 「**几点还排得下**」。另外四种画法全部是一条清单，而一条清单答得了
+ * 「接下来是谁」，答不了这一句 —— 客人打电话来问「明天下午有没有位」的时候，
+ * 他要看的是**空白在哪里**，而空白只有摊开一天才看得见。
+ *
+ * ⚠️ **它不画「现在几点」那一条线。** 这一块是伺服器画的，
+ * 而一条画好就不会再动的「现在」，十分钟后就是一句假话 ——
+ * 那正是这个仓库禁的那一类（宣称了一件没有发生的事）。
+ */
+function DayColumns({
+  heading,
+  items,
+  people,
+  empty,
+}: {
+  heading?: string;
+  items: { id: string; time: string; endTime?: string; title: string; description?: string; who?: string }[];
+  people: string[];
+  empty: string;
+}) {
+  /* 「09:30」→ 570。读不懂的回 null 而不是 0 —— 一个读不懂的时刻掉到早上
+     零点，会在画面上变成一块压在最上面、看起来完全正常的块。 */
+  const mins = (t: string): number | null => {
+    const m = /^(\d{1,2}):(\d{2})/.exec(t?.trim() ?? "");
+    if (!m) return null;
+    const h = Number(m[1]);
+    const n = Number(m[2]);
+    return h >= 0 && h < 24 && n >= 0 && n < 60 ? h * 60 + n : null;
+  };
+
+  const placed = items
+    .map((it) => {
+      const from = mins(it.time);
+      if (from === null || !it.who) return null;
+      const to = it.endTime ? mins(it.endTime) : null;
+      /* 没有结束时刻的，给它一个钟头的高度 —— **不是猜它做多久**，
+         是一块看得见的高度。画成零高度的块跟没有那一笔一模一样。 */
+      return { ...it, from, to: to !== null && to > from ? to : from + 60 };
+    })
+    .filter(Boolean) as (typeof items[number] & { from: number; to: number })[];
+
+  const head = heading ? (
+    <h2 className="mb-[var(--gap-stack)] [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]">
+      {heading}
+    </h2>
+  ) : null;
+
+  if (placed.length === 0) {
+    return (
+      <section>
+        {head}
+        <p role="status" className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+          {empty}
+        </p>
+      </section>
+    );
+  }
+
+  /* 从他自己那一天算，不是写死 09:00–19:00 —— 一间早上七点开的茶室
+     跟一间晚上才开的沙龙，写死的那一段会把他半天的工作切掉。 */
+  const ROW = 46;
+  const first = Math.floor(Math.min(...placed.map((x) => x.from)) / 60);
+  const last = Math.ceil(Math.max(...placed.map((x) => x.to)) / 60);
+  const from = Math.max(0, first - 1);
+  const to = Math.min(24, Math.max(last + 1, from + 4));
+  const hours = Array.from({ length: to - from + 1 }, (_, i) => from + i);
+  const top = (m: number) => ((m - from * 60) / 60) * ROW;
+
+  const cols = `4.5rem repeat(${people.length}, minmax(0, 1fr))`;
+
+  return (
+    <section>
+      {head}
+      <div
+        className="overflow-x-auto [border-color:var(--border-subtle)] [border-radius:var(--radius-md)] [border-width:var(--hairline)]"
+        style={{ borderStyle: "solid" }}
+      >
+        <div style={{ minWidth: `${people.length * 132 + 72}px` }}>
+          {/* 谁的那一栏 —— 抬头就是那个人 */}
+          <div
+            className="grid [background:var(--color-canvas)]"
+            style={{
+              gridTemplateColumns: cols,
+              borderBottomWidth: "var(--hairline)",
+              borderBottomStyle: "solid",
+              borderBottomColor: "var(--border-subtle)",
+            }}
+          >
+            <span />
+            {people.map((who) => (
+              <span
+                key={who}
+                className="truncate [padding:var(--pad-control-y)_var(--pad-control-x)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]"
+                style={{
+                  borderLeftWidth: "var(--hairline)",
+                  borderLeftStyle: "solid",
+                  borderLeftColor: "var(--border-subtle)",
+                }}
+              >
+                {who}
+              </span>
+            ))}
+          </div>
+
+          <div className="relative grid" style={{ gridTemplateColumns: cols, height: `${(to - from) * ROW}px` }}>
+            {/* 时刻 */}
+            <div className="relative">
+              {hours.map((h) => (
+                <span
+                  key={h}
+                  className="tnum absolute right-[0.5rem] -translate-y-1/2 [color:var(--color-paper-dim)] [font-family:var(--font-numeric)] [font-size:var(--text-micro)]"
+                  style={{ top: `${(h - from) * ROW}px` }}
+                >
+                  {String(h).padStart(2, "0")}:00
+                </span>
+              ))}
+            </div>
+
+            {people.map((who) => (
+              <div
+                key={who}
+                className="relative"
+                style={{
+                  borderLeftWidth: "var(--hairline)",
+                  borderLeftStyle: "solid",
+                  borderLeftColor: "var(--border-subtle)",
+                }}
+              >
+                {hours.slice(1).map((h) => (
+                  <span
+                    key={h}
+                    className="absolute inset-x-0"
+                    style={{
+                      top: `${(h - from) * ROW}px`,
+                      borderTopWidth: "var(--hairline)",
+                      borderTopStyle: "solid",
+                      borderTopColor: "var(--border-subtle)",
+                    }}
+                  />
+                ))}
+                {placed
+                  .filter((x) => x.who === who)
+                  .map((x) => (
+                    <span
+                      key={x.id}
+                      className="absolute inset-x-[3px] overflow-hidden [background:var(--color-primary)] [border-radius:var(--radius-sm)] [color:var(--color-on-primary)] [padding:4px_7px]"
+                      style={{ top: `${top(x.from)}px`, height: `${Math.max(top(x.to) - top(x.from), 22)}px` }}
+                    >
+                      <span className="block truncate [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]">
+                        {x.title}
+                      </span>
+                      {x.description && (
+                        <span className="block truncate [font-size:var(--text-micro)] opacity-80">{x.description}</span>
+                      )}
+                    </span>
+                  ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
