@@ -15,7 +15,6 @@ import {
   IconPlus,
   IconSettings,
   IconSpec,
-  IconStyles,
   IconClock,
   IconCoin,
   IconWrench,
@@ -649,17 +648,18 @@ export function PortalShell({
               >
                 {sitePage.label}
               </NavRow>
-              {/* The register is a decision about the PUBLIC site now — since
-                  2026-09-04 every workbench page wears one system register, so
-                  this row stopped being about 「my system's look」 and became
-                  「what my shopfront looks like」. It belongs to 官网. */}
-              <NavRow
-                href={`${base}/styles`}
-                active={is("/styles")}
-                icon={<IconStyles />}
-              >
-                {t("styles")}
-              </NavRow>
+              {/* 🔴 风格库从侧栏拿掉了（2026-09-08）—— 老板：「你先跳过风格库
+                  因为现在有点不明不白 你先hide起来」。
+
+                  它不明不白是有原因的，而那个原因量得出来：2026-09-04 之后
+                  projects.style 只管一个画面 —— 客户的官网，工作台收敛成一套
+                  （实测 shoot:one-register：工作台 1 种 · 官网 6 种）。
+                  所以侧栏上这一行讲的是「我店面长什么样」，而它旁边站着的是
+                  「我的系统」那一组 —— 一行在讲另一件事的东西，摆在这里就是不明不白。
+
+                  ⚠️ 跟 2026-09-05 藏掉素材／模板／版段那三页同一个做法：
+                  /portal/styles 照样打得开，只是不在侧栏上；而换官网风格
+                  还有一个活着的地方 —— 官网那一页编辑器里那个换风格的面板。 */}
               <NavRow
                 href={`${base}/enquiries`}
                 active={is("/enquiries")}

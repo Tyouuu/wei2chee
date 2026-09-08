@@ -57,7 +57,11 @@ export function AuthField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 w-full rounded-lg border border-border bg-background/70 px-3.5 [font-size:var(--text-sm)] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
+        /* 🔴 边用 --input，不是 --border（2026-09-08）。
+           --border 是**卡片那条边**，它不传达「这里可以操作」，所以它本来就淡；
+           而登入这两个框量出来 **1.35:1**，标准要 3:1（WCAG 1.4.11）。
+           这一个档案同时服务登入 · 忘记密码 · 重设密码 —— 改一个地方，三页一起。 */
+        className="h-11 w-full rounded-lg border border-input bg-background/70 px-3.5 [font-size:var(--text-sm)] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45"
       />
       {hint && <p className="[font-size:var(--text-xs)] leading-relaxed text-muted-foreground">{hint}</p>}
     </div>

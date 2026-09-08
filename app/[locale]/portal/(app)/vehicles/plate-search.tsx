@@ -278,7 +278,7 @@ export function PlateSearch({
             autoComplete="off"
             /* 车牌是大写的。**只改看到的，不改他打的** ——
                送出去的还是他那一串，而那一支自己会洗。 */
-            className="min-h-11 w-full uppercase tabular-nums [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--color-ink-800)] [color:var(--color-paper)] [font-size:var(--text-base)] [letter-spacing:0.06em] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
+            className="min-h-11 w-full uppercase tabular-nums [background-color:var(--color-ink-950)] [border-radius:var(--radius-control)] [border:var(--hairline)_solid_var(--input)] [color:var(--color-paper)] [font-size:var(--text-base)] [letter-spacing:0.06em] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] focus-visible:[border-color:var(--color-primary)] focus-visible:outline-none"
           />
         </div>
         <button

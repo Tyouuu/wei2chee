@@ -144,7 +144,7 @@ export function TemplatesClient({
               maxLength={24}
               placeholder={tAdd("namePlaceholder")}
               aria-label={tAdd("nameLabel")}
-              className="min-w-0 flex-1 rounded-[var(--radius-md)] border px-3 py-2 [font-size:var(--text-sm)] outline-none [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
+              className="min-w-0 flex-1 rounded-[var(--radius-md)] border px-3 py-2 [font-size:var(--text-sm)] outline-none [background-color:var(--color-ink-850)] [border-color:var(--input)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
             />
             <button
               type="submit"

@@ -227,21 +227,21 @@ export default async function RotaPage({
                     name="d"
                     defaultValue={day}
                     aria-label={t("rota.day")}
-                    className="min-h-11 [background-color:var(--color-ink-900)] [border:var(--hairline)_solid_var(--color-ink-800)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:var(--pad-control-x)]"
+                    className="min-h-11 [background-color:var(--color-ink-900)] [border:var(--hairline)_solid_var(--input)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:var(--pad-control-x)]"
                   />
                   <input
                     type="time"
                     name="s"
                     defaultValue={from}
                     aria-label={t("rota.from")}
-                    className="min-h-11 [background-color:var(--color-ink-900)] [border:var(--hairline)_solid_var(--color-ink-800)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:var(--pad-control-x)]"
+                    className="min-h-11 [background-color:var(--color-ink-900)] [border:var(--hairline)_solid_var(--input)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:var(--pad-control-x)]"
                   />
                   <input
                     type="time"
                     name="e"
                     defaultValue={to}
                     aria-label={t("rota.to")}
-                    className="min-h-11 [background-color:var(--color-ink-900)] [border:var(--hairline)_solid_var(--color-ink-800)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:var(--pad-control-x)]"
+                    className="min-h-11 [background-color:var(--color-ink-900)] [border:var(--hairline)_solid_var(--input)] [border-radius:var(--radius-control)] [color:var(--color-paper)] [font-size:var(--text-sm)] [padding-inline:var(--pad-control-x)]"
                   />
                   <button
                     type="submit"

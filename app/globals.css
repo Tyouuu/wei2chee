@@ -123,7 +123,13 @@
   --accent-foreground: oklch(0.96 0.004 265);
   --destructive: oklch(0.65 0.19 25);
   --border: oklch(1 0 0 / 16%);
-  --input: oklch(1 0 0 / 14%);
+  /* 🔴 他要打字的框那条边 —— 2026-09-08 从 14% 调上来。
+     国际标准对**他要动手的那几样**要求 3:1（WCAG 1.4.11），
+     而 14% 在这块深地上量出来是 **1.35:1** —— 登入那两个框、
+     落地页那个「你做哪一行？」，全部读这一个值。
+     ⚠️ 卡片那条边（--border）故意不动：它不传达「这里可以操作」，
+     而一起调深会让整个壳变吵。 */
+  --input: oklch(1 0 0 / 34%);
   --ring: var(--blueprint);
   --chart-1: var(--blueprint);
   --chart-2: var(--signal);

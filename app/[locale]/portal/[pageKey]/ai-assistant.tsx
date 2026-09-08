@@ -1073,7 +1073,7 @@ export function AiAssistant({
           disabled={busy}
           placeholder={t("aiPlaceholder")}
           aria-label={t("aiLabel")}
-          className="w-full resize-none rounded-md border px-2.5 py-2 [font-size:var(--text-xs)] leading-snug outline-none disabled:opacity-60 [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
+          className="w-full resize-none rounded-md border px-2.5 py-2 [font-size:var(--text-xs)] leading-snug outline-none disabled:opacity-60 [background-color:var(--color-ink-850)] [border-color:var(--input)] [color:var(--color-paper)] focus-visible:[border-color:var(--color-primary)]"
         />
         <div className="mt-2 flex items-center justify-between gap-2">
           {/* A phone has no Shift+Enter, so this hint was instructing a

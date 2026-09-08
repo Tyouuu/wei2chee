@@ -188,7 +188,10 @@ export function HeroSection({ onStart }: { onStart: (brief: string) => void }) {
           }}
           className="mt-10 w-full max-w-2xl text-left"
         >
-          <div className="rounded-3xl border border-white/20 bg-white/[0.07] p-3 backdrop-blur-md transition-colors focus-within:border-white/45">
+          {/* 🔴 边从 20% 调到 45%（2026-09-08）—— 量出来 **1.73:1**，
+            而国际标准对「他要动手的那几样」要求 3:1（WCAG 1.4.11）。
+            这是**整个获客路径上唯一一个要他打字的地方**，而它在第一屏。 */}
+        <div className="rounded-3xl border border-white/45 bg-white/[0.07] p-3 backdrop-blur-md transition-colors focus-within:border-white/75">
             <textarea
               value={brief}
               onChange={(e) => setBrief(e.target.value)}

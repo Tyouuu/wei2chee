@@ -1041,7 +1041,7 @@ export function PortalEditor({
                       value={handoffPhone}
                       onChange={(e) => setHandoffPhone(e.target.value)}
                       placeholder="012-345 6789"
-                      className="mt-1 w-full rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-line)]"
+                      className="mt-1 w-full rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--input)]"
                     />
 
                     <label className="mt-3 block [font-size:var(--text-xs)] [color:var(--color-paper-dim)]">
@@ -1051,7 +1051,7 @@ export function PortalEditor({
                       rows={3}
                       value={handoffNote}
                       onChange={(e) => setHandoffNote(e.target.value)}
-                      className="mt-1 w-full resize-none rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--color-line)]"
+                      className="mt-1 w-full resize-none rounded-md border px-3 py-2 [font-size:var(--text-sm)] [background-color:var(--color-ink-900)] [border-color:var(--input)]"
                     />
 
                     <div className="mt-4 flex items-center gap-3">

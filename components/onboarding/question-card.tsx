@@ -73,7 +73,7 @@ export function QuestionCard({
       {question.type === "text" && (
         <div className="mt-11">
           <Textarea
-            className="min-h-32 resize-none rounded-none border-0 border-b border-border bg-transparent px-0 py-4 text-lg leading-relaxed shadow-none focus-visible:border-blueprint focus-visible:ring-0"
+            className="min-h-32 resize-none rounded-none border-0 border-b border-input bg-transparent px-0 py-4 text-lg leading-relaxed shadow-none focus-visible:border-blueprint focus-visible:ring-0"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={t("q3.placeholder")}
