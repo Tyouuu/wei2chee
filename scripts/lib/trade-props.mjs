@@ -152,6 +152,21 @@ export const TRADES = {
         "September fee — Form 2 Science", "September fee — Form 1 English",
         "September fee — Form 5 Chemistry", "September fee — Form 4 Physics",
       ],
+      /* 🔴 **状态那几个字跟着这一行自己的流程走。**
+         资料库里 education 的 `default_workflow` 是
+         `["Customer","Enrollment","Payment"]`，经过 `translateStage` 是
+         **Enquiry · Enrolment · Paid**。而我第一版没有覆盖它，於是学费单上
+         印的是装修那三个字：**Deposit · Order · Build** ——
+         一张补习费单写着「Build」（2026-09-09 拍出来看到的）。
+         ⚠️ 上面那一段档头说 `stages` 不要覆盖，讲的是**不要自己编字**；
+         这里用的是**产品自己那一份**（`chrome.ts` 的 STAGE_EN 对 education 的
+         那三个），所以看板照样画得出格子，一格都不会空。 */
+      stages: {
+        ...SHOWROOM.stages,
+        orders: ["Paid", "Enrolment", "Enquiry", "Paid", "Enrolment",
+                 "Enquiry", "Paid", "Enrolment", "Enquiry", "Paid",
+                 "Enrolment", "Enquiry"],
+      },
       /* 🔴 补习的「预约」不是一个人来一次，是**一堂课**
          （[任务 223](../../docs/founder-tasks.md)：一个老师十个学生）。
          所以这几个字是课，不是服务。 */
