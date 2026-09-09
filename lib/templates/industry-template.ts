@@ -2560,7 +2560,14 @@ function buildBookings(
        [任务 152] 替看板拿掉过一次的那件事。日程上的块现在点得进那一笔
        （`ScheduleRow.href`），所以拿掉它不会拿掉唯一的入口。
        ⚠️ 代价：那张表带着的筛选跟搜寻跟着走了 —— 跟 `tasks` 同一个取舍。 */
-    ...dayNodes("bookings", sample.records, c),
+    /* 🔴 分栏由**她有没有师傅那一页**决定，不由示例那几行决定。
+       原本的判断是「这几行有没有派人」，而这里送进去的是**示例** ——
+       示例一个师傅都没有派，所以一间真的沙龙**排满了师傅，照样画成一条清单**，
+       而那一根轴 2026-09-08 做好之后画面上一次都没有出现过。
+       页面集是**建的时候就知道**的：一间有 Stylists 那一页的沙龙，
+       她的一天就是按师傅分的（Fresha · Booksy 两家最大的都是这样，[任务 304]）。
+       ⚠️ 还没有人被派到的时候，那一块自己会退回清单（`people.length > 0` 那道守卫）。 */
+    ...dayNodes("bookings", sample.records, c, pages.some((p) => p.key === "staff")),
   ];
 }
 
@@ -3096,7 +3103,13 @@ function documentNode(
  * of a diary instead of the shape of every other page -- and a salon owner
  * recognising their own week is what the first screen is for.
  */
-function dayNodes(pageKey: PageId, rows: KindRow[], c: Chrome): PuckNode[] {
+function dayNodes(
+  pageKey: PageId,
+  rows: KindRow[],
+  c: Chrome,
+  /** 这门生意有没有一页师傅。有 → 她的一天是按人分的。 */
+  hasPeople = false,
+): PuckNode[] {
   const shown = rows.slice(0, 4);
   /* 🔴 分栏是**资料决定的，不是风格决定的**：这几笔有派人才分得了栏。
      所以 `shape` 只在真的有人的时候才送 —— 一行都没有给的时候这个属性
@@ -3104,7 +3117,7 @@ function dayNodes(pageKey: PageId, rows: KindRow[], c: Chrome): PuckNode[] {
      ⚠️ 而 DaySchedule 不读风格的偏好（它只吃 props），所以这里送它
      不会盖掉任何一套风格自己挑的样子 —— 那是 [任务 33] 记过的那个坑，
      去看过才写这一行。 */
-  const byPerson = shown.some((r) => (r.who ?? "").trim());
+  const byPerson = hasPeople || shown.some((r) => (r.who ?? "").trim());
 
   return [
     node("WeekStrip", `${pageKey}-week`, { days: 5 }),

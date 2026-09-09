@@ -58,6 +58,22 @@ describe("一天摊开，一个人一栏", () => {
     expect(screen.getByText("还没安排")).toBeTruthy();
   });
 
+  /* 🔴 没有讲要哪一种的时候，由这几行自己决定。
+     产生页面那一层只送得出**示例**看到的答案，而真资料是投影换上去的 ——
+     所以一间真的沙龙排满了师傅，以前照样画成一条清单。
+     2026-09-09 实拍看到的就是那个样子（`.screenshots/trade/salon/`）。 */
+  it("没有讲要哪一种，而这几行有人 —— 自己分栏", () => {
+    render(<DaySchedule rows={[at("09:30", "染发", "Amy"), at("11:00", "洗剪吹", "Jasmine")]} />);
+    expect(screen.getByText("Amy")).toBeTruthy();
+    expect(screen.getByText("Jasmine")).toBeTruthy();
+  });
+
+  it("一行都没有人的时候，一个像素都不变", () => {
+    render(<DaySchedule rows={[at("09:30", "洗剪吹")]} />);
+    /* 分栏那一版永远会画出「还没安排」那一栏的抬头；这里不可以有。 */
+    expect(screen.queryByText("还没安排")).toBeNull();
+    expect(screen.getByText("洗剪吹")).toBeTruthy();
+  });
   it("全部都派好了就没有那一栏", () => {
     render(
       <DaySchedule shape="columns" rows={[at("09:30", "染发", "Amy")]} />,

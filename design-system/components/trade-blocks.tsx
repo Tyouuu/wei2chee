@@ -245,11 +245,19 @@ export function DaySchedule({
     tone: r.tone,
     href: r.href || undefined,
   }));
-  const look = shape ?? (framed ? "framed" : "bare");
-
   /* 🔴 没有人可以分栏就退回去，而不是画一栏叫「（没有）」。
      一间一个人的店、一个补习班的课表，本来就没有这件事。 */
   const people = [...new Set(items.map((x) => x.who).filter(Boolean))] as string[];
+
+  /* 🔴 没有讲要哪一种的时候，**由这几行自己决定** —— 而这一行修的是一个
+     真的洞，不是一个偏好。
+     `industry-template.ts` 只送得出**示例**那几行看到的答案（`byPerson`），
+     而示例一个师傅都没有派 —— 所以一间真的沙龙**排满了师傅，照样画成一条清单**。
+     那正是这个仓库犯过二十几次的那个形状：能力有、线没接
+     （那一根轴 2026-09-08 做好，而画面上一次都没有出现过）。
+     ⚠️ 明写的 `shape` 照旧赢（换款式那一栏是他挑的，不是我们猜的）。
+     ⚠️ 一行都没有派人 → 一个像素都不变。 */
+  const look = shape ?? (people.length > 0 ? "columns" : framed ? "framed" : "bare");
   if (look === "columns" && people.length > 0) {
     return (
       <DayColumns
