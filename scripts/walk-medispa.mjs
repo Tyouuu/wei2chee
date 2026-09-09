@@ -161,13 +161,20 @@ try {
      Aoikumo（马来西亚，我们真正的对手）把它放在**最高那一档**：
      `Electronic Forms & Documents（indemnity & consultation form）`。 */
   n = acts;
+  const { data: appts } = await C.from("appointments")
+    .select("id").eq("project_id", P).eq("source", "website").limit(1);
+  const appt = appts?.[0]?.id;
   const form = await act(C, "写一次同意书范本", "add_consent_form", {
     in_project_id: P, in_name: "Botox consent",
     in_body: "I understand bruising and asymmetry are possible. "
       + "I have disclosed any pregnancy, allergy and medication.",
   });
-  const her = await act(C, "建客户", "add_directory_entry", {
-    in_project_id: P, in_module_key: "customers", in_name: "Ms Chong",
+  /* 🔴 **不重打她的名字跟号码**（`claim_booking_party`，20260909240000）——
+     她刚刚才在官网上打过一次。这一支之前这一行是
+     `add_directory_entry(in_name: "Ms Chong")`，也就是**一次抄写**
+     （[重点 29](../docs/founder-points.md)）。 */
+  const her = await act(C, "把官网那一笔认成客人", "claim_booking_party", {
+    in_appointment_id: appt,
   });
   const asked = await act(C, "发给她签", "request_consent", {
     in_party_id: her?.id, in_form_id: form?.id,
@@ -182,16 +189,15 @@ try {
   const back = await act(C, "看她签了没有", "consents_of", { in_party_id: her?.id });
   const done = (back ?? []).find((r) => r.signed_at);
   node("🔴 针打下去之前那一张纸（她自己在手机上签）", acts - n,
-    signed === "ok" && !!done,
-    `${acts - n} 次（范本 · 建客户 · 发给她 · 看签了没有）—— `
+    signed === "ok" && !!done && her?.phone === "012-777 8899",
+    `${acts - n} 次（范本 · 认人 · 发给她 · 看签了没有）—— `
     + "🔴 **范本一辈子写一次**，往后每一个客人只有「发给她」那一次；"
-    + `签名那一下是她自己做的，${done ? `签的是「${done.signed_name}」` : "而她没签成"}`);
+    + `她的名字跟号码（${her?.phone ?? "没带过来"}）是**她自己在官网上打的**，`
+    + `老板一个字都没有重打；签名那一下也是她自己做的，`
+    + `${done ? `签的是「${done.signed_name}」` : "而她没签成"}`);
 
   /* ── ⑤ 客人来了 ───────────────────────────────────────────── */
   n = acts;
-  const { data: appts } = await C.from("appointments")
-    .select("id").eq("project_id", P).eq("source", "website").limit(1);
-  const appt = appts?.[0]?.id;
   const came = await act(C, "按「来了」", "set_appointment_status", {
     in_id: appt, in_status: "done",
   });

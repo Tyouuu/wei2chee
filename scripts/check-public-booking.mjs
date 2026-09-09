@@ -198,6 +198,101 @@ try {
   });
   check("没有预约页的生意订不了", noPage === "not_found", String(noPage));
 
+  /* ── ⑦ 🔴 认成名册上的人 ──────────────────────────────────────────────
+     20260909240000。他刚刚才打过名字跟号码，而在这一支之前
+     **她要再打一次**（[重点 29]：那不是一个输入，那是一次抄写）。
+
+     ⚠️ 这一节放在洗版那一节**前面** —— 那一节会灌八笔进来，
+     而一条数「名册上有几个人」的断言，在八笔垃圾后面读起来是别的东西。 */
+  console.log("\n⑦ 🔴 把官网那一笔认成名册上的人");
+  const { data: mine } = await salon.as
+    .from("appointments").select("id, party_id")
+    .eq("project_id", salon.projectId).limit(1);
+  const bookingId = mine?.[0]?.id;
+  check("道具：找得到那一笔", !!bookingId, "找不到");
+  check("道具：它本来没有连到任何人", !mine?.[0]?.party_id, "它本来就连着");
+
+  /* 🔴 没有客户名册的那一支。⚠️ 开箱就有那一页，所以要**先把它拿掉**才量得到 ——
+     第一版我直接打，它当然过了，而一条永远过的断言等於没有断言。 */
+  await salon.as.rpc("remove_project_page", { target_page_key: "customers" });
+  const { error: noList } = await salon.as.rpc("claim_booking_party", {
+    in_appointment_id: bookingId,
+  });
+  check("🔴 还没有客户名册的时候讲一句人话",
+    /customer list/.test(noList?.message ?? ""), noList?.message ?? "(它居然过了)");
+
+  await salon.as.rpc("add_project_page", {
+    requested_key: "customers", new_title: "Customers",
+  });
+  const { data: who, error: claimErr } = await salon.as.rpc("claim_booking_party", {
+    in_appointment_id: bookingId,
+  });
+  check("🔴 一按就变成名册上的人", !claimErr && !!who?.id, claimErr?.message);
+  check("名字是他自己打的（她一个字都没重打）", who?.name === "Ms Lim", who?.name);
+  check("🔴 号码也是他自己打的", who?.phone === "012-345 6789", who?.phone);
+  check("而且看得出是一串号码，所以 WhatsApp 那一栏也填了",
+    who?.whatsapp === "012-345 6789", who?.whatsapp);
+
+  const { data: linked } = await salon.as
+    .from("appointments").select("party_id").eq("id", bookingId).single();
+  check("🔴 那一笔预约真的连上去了", linked?.party_id === who?.id,
+    `${linked?.party_id} ⟂ ${who?.id}`);
+
+  /* 🔴 按第二下 —— 名册上不可以多一个同名的人出来。 */
+  const { data: again } = await salon.as.rpc("claim_booking_party", {
+    in_appointment_id: bookingId,
+  });
+  check("🔴 按第二下拿回同一个人", again?.id === who?.id, `${again?.id}`);
+  const { count: heads } = await salon.as
+    .from("directory_entries").select("id", { count: "exact", head: true })
+    .eq("project_id", salon.projectId).eq("module_key", "customers");
+  check("🔴 名册上就一个人（按两下没有开出第二个）", heads === 1, `${heads} 个`);
+
+  /* 🔴 联络方式是电邮的时候，WhatsApp 那一栏要留空 ——
+     一个填错的号码不是少一样东西，是把讯息发给一个陌生人。 */
+  await stranger.rpc("submit_site_booking", {
+    p_slug: salon.slug, visitor_name: "Mr Yeoh", visitor_contact: "yeoh@example.com",
+    wants_from: at(72), wants_to: at(73), wants_service: "Trim",
+  });
+  /* ⚠️ **按名字挑那一笔**，不是「随便一笔还没认的」——
+     第一版我写 `.is("party_id", null).limit(1)`，挑到的是上面某一节
+     摆的另一个人，於是断言报的是「011-111 1111」，
+     看起来像产品把电邮存成了号码。**错的是我的道具。** */
+  const { data: byMail } = await salon.as
+    .from("appointments").select("id").eq("project_id", salon.projectId)
+    .eq("party", "Mr Yeoh").is("party_id", null).limit(1);
+  const { data: mailPerson } = await salon.as.rpc("claim_booking_party", {
+    in_appointment_id: byMail?.[0]?.id,
+  });
+  check("电邮照样收进来（那是他唯一给的联络方式）",
+    mailPerson?.phone === "yeoh@example.com", mailPerson?.phone);
+  check("🔴 而 WhatsApp 那一栏是空的", mailPerson?.whatsapp === "",
+    `「${mailPerson?.whatsapp}」`);
+
+  /* 🔴 她自己指一个已经在名册上的人 —— 回头客走的是这一条。 */
+  await stranger.rpc("submit_site_booking", {
+    p_slug: salon.slug, visitor_name: "Ms Lim", visitor_contact: "012-345 6789",
+    wants_from: at(96), wants_to: at(97), wants_service: "Cut",
+  });
+  const { data: third } = await salon.as
+    .from("appointments").select("id").eq("project_id", salon.projectId)
+    .eq("party", "Ms Lim").is("party_id", null).limit(1);
+  const { data: same } = await salon.as.rpc("claim_booking_party", {
+    in_appointment_id: third?.[0]?.id, in_party_id: who?.id,
+  });
+  check("🔴 她指名册上那一个 → 认成同一个人，不开新的", same?.id === who?.id,
+    `${same?.id}`);
+  const { count: heads2 } = await salon.as
+    .from("directory_entries").select("id", { count: "exact", head: true })
+    .eq("project_id", salon.projectId).eq("module_key", "customers");
+  check("🔴 名册上还是两个（Ms Lim ＋ Mr Yeoh）", heads2 === 2, `${heads2} 个`);
+
+  /* 🔴 别人家按不动。 */
+  const { error: notYours } = await draft.as.rpc("claim_booking_party", {
+    in_appointment_id: bookingId,
+  });
+  check("🔴 别人家认不了我的预约", !!notYours, "居然让它过了");
+
   /* ── ⑥ 洗版 ───────────────────────────────────────────────────────── */
   console.log("\n⑥ 一分钟里按很多次");
   let last = "";
