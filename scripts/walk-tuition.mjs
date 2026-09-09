@@ -187,7 +187,7 @@ try {
     (sheet ?? []).length === 10 && blank === 1,
     `${acts - n} 次；🔴 **还没点的那一个是空的，不是「没来」** —— 两句话不一样`);
 
-  /* ── ⑥ 🔴 开箱就开得了一张学费单 ──────────────────────────────
+  /* ── ⑥ 🔴 开箱就开得了一张学费单 · 而一个班一次开完 ──────────
      2026-09-06 之前开不了：教育那一组的开局是
      总览 · 客户 · 预约 · 收款 · 官网 —— **一页会开单的都没有**，
      而「这个月谁还没交」是从走单那张表减掉分摊算出来的，
@@ -196,22 +196,37 @@ try {
   n = acts;
   const billPage = defaults.find((k) => ["orders", "quotations", "projects", "tasks"]
     .includes(k));
-  const bill = await act(C, "开这个月的学费", "add_pipeline_record", {
-    in_project_id: P, in_module_key: billPage ?? "bookings",
-    in_title: "Sept fees · Add Maths", in_party: "Wei Jie",
-    in_party_id: kids[0]?.id, in_amount_cents: 18_000,
+  /* 🔴 **一次开十张**（`bill_class`，20260909170000）。
+     ⚠️ 这一节 2026-09-09 之前开的是**一个学生**，读数是「3 次」——
+     而那个读数看不见另外九个学生的那九次。
+     一张一张开是 **10 次**，而十次里每一次他打的字一模一样
+     （[重点 29](../docs/founder-points.md)：那不是十个输入，那是一次抄写）。 */
+  const batch = await act(C, "一次开这个月全班的学费", "bill_class", {
+    in_group_id: cls?.id,
+    in_module_key: billPage ?? "orders",
+    in_amount_cents: 18_000,
+    in_title: "Sept fees · Add Maths",
   });
-  await act(C, "收学费", "add_ledger_entry", {
+  const made = (batch ?? [])[0];
+  const due0 = await act(C, "问这个班谁还没交", "class_fees_due", {
+    in_group_id: cls?.id,
+  });
+  const bill = (due0 ?? []).find((r) => r.party_id === kids[0]?.id);
+  await act(C, "收其中一个的学费", "add_ledger_entry", {
     in_project_id: P, in_module_key: "payments", in_direction: "in",
     in_amount_cents: 18_000, in_party: "Wei Jie", in_party_id: kids[0]?.id,
-    in_against_id: bill?.id,
+    in_against_id: bill?.record_id,
   });
   const owed = await act(C, "问谁欠学费", "party_debts", { in_project_id: P });
   const stillOwes = (owed ?? []).some((r) => r.party_id === kids[0]?.id);
-  node("🔴 开箱：开学费单 · 收钱 · 谁欠学费", acts - n,
-    !!bill?.id && !stillOwes,
-    `${acts - n} 次（开单 · 收钱 · 问）；开在「${billPage}」上，`
-    + `${bill?.doc_no ?? "开不了"} 收齐了，名单上还剩 ${(owed ?? []).length} 个`);
+  node("🔴 一次开全班的学费单 · 收一个 · 谁还没交", acts - n,
+    made?.made === 10 && (due0 ?? []).length === 10
+      && !!bill?.record_id && !stillOwes,
+    `${acts - n} 次（**开单 1 次 = 十个学生** · 问 · 收 · 再问）；`
+    + `开在「${billPage}」上，${made?.made ?? 0} 张 · `
+    + `RM ${((made?.total_cents ?? 0) / 100).toFixed(0)}，`
+    + `${bill?.doc_no ?? "开不了"} 收齐了，这个班还剩 ${(due0 ?? []).length - 1} 个没交。`
+    + "🔴 一张一张开是 **10 次**");
 
   /* ── ⑦ 🔴 系统讲得出补习自己那两句吗 ──────────────────────────
      ⚠️ 这两句都要**真的摆一次道具再问**，不是读代码推的。
