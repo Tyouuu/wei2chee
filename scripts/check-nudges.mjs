@@ -793,6 +793,82 @@ const nudges = async (client = C, until = null) => {
     crewSaid.every((r) => !/RM\s/.test(r.body)),
     JSON.stringify(crewSaid.filter((r) => /RM\s/.test(r.body)).map((r) => [r.kind, r.body])));
 
+  /* ── ⑮ 🔴 同意书还没签 ────────────────────────────────────────────────
+     第十四个讯号（20260909210000）。`walk:medispa` 走出来十节零断，
+     而少的就是这一句：她不会每天去翻谁签过，她要的是打开那一秒看到
+     「明天那一个还没签」。
+
+     🔴 **这一节的顺序不可以换。** 先在**还没有任何范本**的时候量一次 ——
+     一个装修承包商的预约上永远不该冒出「同意书没签」，
+     而一条**永远都会讲**的讯号跟一条**永远都不讲**的讯号，
+     在一份全绿的报告里长得一模一样。 */
+  console.log("\n⑮ 🔴 同意书还没签");
+  const { data: aida } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "Ms Aida",
+  });
+  const { data: aidaAppt, error: aaErr } = await C.rpc("add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: `${day(1)}T02:00:00Z`, in_ends_at: `${day(1)}T03:00:00Z`,
+    in_party: "Ms Aida", in_party_id: aida?.id, in_service: "Botox",
+  });
+  check("道具：明天那一个排得进去", !aaErr && !!aidaAppt, aaErr?.message);
+  check("🔴 这门生意一张范本都没写过 → 一条都不讲（控制组）",
+    !has(await nudges(), "consent_unsigned"),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "consent_unsigned")));
+
+  const { data: form } = await C.rpc("add_consent_form", {
+    in_project_id: P, in_name: "Botox consent",
+    in_body: "I understand bruising and asymmetry are possible.",
+  });
+  check("道具：范本写得进去", !!form?.id, "写不进去");
+  check("🔴 写了范本之后就讲了", has(await nudges(), "consent_unsigned", aidaAppt),
+    JSON.stringify((await nudges()).map((r) => r.kind)));
+  const one = (await nudges()).find((r) => r.kind === "consent_unsigned");
+  check("而且讲得出是谁 · 几时 · 做什么",
+    one?.party === "Ms Aida" && one?.due_on === day(1) && one?.title === "Botox",
+    JSON.stringify([one?.party, one?.due_on, one?.title]));
+  check("🔴 那一句是给他自己看的（不是发给客人）", one?.audience === "owner",
+    String(one?.audience));
+
+  /* 🔴 她签了就自己不讲了 —— 算出来的，不是存起来的。 */
+  const { data: ask } = await C.rpc("request_consent", {
+    in_party_id: aida?.id, in_form_id: form?.id,
+  });
+  check("🔴 发出去还没签，照样讲（发了不等於签了）",
+    has(await nudges(), "consent_unsigned", aidaAppt), "发出去就不讲了");
+  const { data: signed } = await anon.rpc("sign_consent", {
+    in_ref: ask?.share_ref, in_name: "Aida binti Rahman",
+  });
+  check("道具：她自己签得下去（没有登入过）", signed === "ok", String(signed));
+  check("🔴 签了就自己不讲了", !has(await nudges(), "consent_unsigned", aidaAppt),
+    "还在讲");
+
+  /* 🔴 名册上没有这个人的那一笔 —— 官网订进来的就是这一种。
+     ⚠️ 它不讲**不是因为没事**，是因为系统还不知道他是谁。
+     那是这个讯号今天的边界，写出来（[重点 30] 第 4 步）。 */
+  const { data: walkIn, error: wiErr } = await C.rpc("add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: `${day(1)}T06:00:00Z`, in_ends_at: `${day(1)}T07:00:00Z`,
+    in_party: "Somebody from the website", in_service: "Filler",
+  });
+  check("道具：没连到人的那一笔也排得进去", !wiErr && !!walkIn, wiErr?.message);
+  check("⚠️ 没连到名册的那一笔不讲（它答不了 —— 不是「没事」）",
+    !has(await nudges(), "consent_unsigned", walkIn), "它居然讲了");
+
+  /* 🔴 已经取消的那一个不讲 —— 那不是一件要她做的事。 */
+  const { data: nope } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "Ms Wong",
+  });
+  const { data: gone } = await C.rpc("add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: `${day(2)}T02:00:00Z`, in_ends_at: `${day(2)}T03:00:00Z`,
+    in_party: "Ms Wong", in_party_id: nope?.id, in_service: "Botox",
+  });
+  check("道具：后天那一个也讲得出来", has(await nudges(), "consent_unsigned", gone),
+    "它没讲");
+  await C.rpc("set_appointment_status", { in_id: gone, in_status: "cancelled" });
+  check("🔴 取消掉的不讲", !has(await nudges(), "consent_unsigned", gone), "还在讲");
+
   /* ── ⑨ 别人家 ─────────────────────────────────────────────────────── */
   console.log("\n⑨ 别人家");
   const other = await person("other");

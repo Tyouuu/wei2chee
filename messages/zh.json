@@ -1161,6 +1161,7 @@
       "kind_request_open": "经销商在等回覆",
       "kind_absent_twice": "连着两堂没来",
       "kind_party_lapsed": "好久没来了",
+      "kind_consent_unsigned": "同意书还没签",
       "saidLabel": "讲过什么",
       "saidNothing": "还没有替你跟任何人讲过话。",
       "saidToYou": "讲给你听",

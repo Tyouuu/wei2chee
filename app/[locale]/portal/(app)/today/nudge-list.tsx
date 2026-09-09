@@ -102,6 +102,10 @@ export const KIND_LABEL: Record<string, string> = {
      ⚠️ 它带的两个数字是**来过几次 · 平常隔几天**，不是库存那两个 ——
      见底下 `detail()`：一句借来的话正是第十一种上线时印错的那一句。 */
   party_lapsed: "kind_party_lapsed",
+  /* 🔴 第十四种（`20260909210000`）—— 接下来三天要来的这一个，
+     同意书一张都还没签过。**只有写过同意书范本的生意才会看到它**，
+     所以一个装修承包商的这一页上永远不会冒出这一句。 */
+  consent_unsigned: "kind_consent_unsigned",
 };
 
 /**

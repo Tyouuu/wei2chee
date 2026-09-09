@@ -193,6 +193,7 @@
     "walk:workshop": "node scripts/walk-workshop.mjs",
     "walk:hardware": "node scripts/walk-hardware.mjs",
     "walk:tuition": "node scripts/walk-tuition.mjs",
+    "walk:medispa": "node scripts/walk-medispa.mjs",
     "check:timetable": "node scripts/check-timetable.mjs",
     "check:counter": "node scripts/check-counter.mjs",
     "check:page-deps": "node scripts/check-page-deps.mjs",
