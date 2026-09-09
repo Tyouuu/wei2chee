@@ -128,7 +128,15 @@ describe("forPublication", () => {
       stopped meaning anything the moment a second one qualified for removal.
       Every id below is a decision worth stating out loud:
 
-        website-areas    STAYS. Place names are real; nobody seeded them.
+        website-areas    🔴 GOES, and this line used to say STAYS. It said
+                         「place names are real; nobody seeded them」, and that
+                         stopped being true when the areas rows were given
+                         `placeholder` (任务 293 · 294: 不知道就留空，不要写
+                         「吉隆坡」). A place he was never asked about is a
+                         fabricated fact on a stranger's page, which is the
+                         same call `website-contact` makes below.
+                         ⚠️ 而这一条**没有对照组的时候读起来跟「永远剪掉」
+                         一模一样** —— 底下那一条补上了：地名填了就留着。
         website-prices   GOES. Every row still reads 「RM —」, which a visitor
                          reads as 「this business will not tell you what it
                          costs」, not as 「not filled in yet」.
@@ -139,9 +147,37 @@ describe("forPublication", () => {
                          page, which is the same call FloatingContact makes.
     */
     const keptIds = nodesOf(published).map((n) => n.props.id);
-    expect(keptIds).toContain("website-areas");
+    expect(keptIds).not.toContain("website-areas");
     expect(keptIds).not.toContain("website-prices");
     expect(keptIds).not.toContain("website-contact");
+  });
+
+  /*
+    🔴 对照组：地名**填了**的时候，那一段要留着。
+
+    少了这一条，上面那一句「没填就剪掉」跟一条「不管填没填都剪掉」的规矩
+    在报告里长得一模一样 —— 而后者会让一个真的写了「怡保 · 万里望」的老板
+    在自己的官网上找不到那一段。
+
+    做法是把那几行的 `placeholder` 拿掉，而不是另外造一份内容：
+    这一条要守的就是那个旗子本身，别的都是它的来源。
+  */
+  it("keeps the areas band once he has told us where he covers", () => {
+    const tpl = LANDING_TEMPLATES.find((t) => t.key === "quote")!;
+    const built: PuckLayout = { root: {}, content: tpl.build(CONTENT) as PuckNode[] };
+
+    const areas = nodesOf(built).find((n) => n.props.id === "website-areas");
+    expect(areas, "找不到那一段 —— 下面每一条都是空过").toBeTruthy();
+    const rows = (areas!.props as { rows?: { placeholder?: boolean }[] }).rows ?? [];
+    expect(rows.length, "那一段没有行").toBeGreaterThan(0);
+    expect(
+      rows.some((r) => r.placeholder),
+      "🔴 这几行本来就没有占位旗子 —— 那上面那一条剪掉的是别的东西",
+    ).toBe(true);
+    for (const r of rows) delete r.placeholder;
+
+    const published = forPublication(built);
+    expect(nodesOf(published).map((n) => n.props.id)).toContain("website-areas");
   });
 
   it("keeps a photo frame that has a photo in it", () => {
