@@ -515,7 +515,10 @@ export function WorkAssistant({
         ) : null}
 
         {/* 药丸形的框 ＋ 右边一颗圆钮 —— 参考那六家里五家都是这个形状。 */}
-        <div className="flex items-end gap-2 rounded-[22px] [background-color:var(--color-canvas)] [border-color:var(--border-subtle)] [border-width:1px] [padding-block:7px] [padding-inline:14px]">
+        {/* 🔴 圆角走 token，不写死。Stripe 那个框量出来约 22px，而在一个
+            38 高的框上那就是一颗药丸 —— `--radius-pill` 画出来是同一个东西，
+            而这个仓库有一条会红的守卫在挡写死的圆角（我这一版当场把它弄红了）。 */}
+        <div className="flex items-end gap-2 rounded-[var(--radius-pill)] [background-color:var(--color-canvas)] [border-color:var(--input,var(--border-subtle))] [border-width:1px] [padding-block:7px] [padding-inline:14px]">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
