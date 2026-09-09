@@ -81,6 +81,9 @@ if (!ping || ping.status >= 400) {
 }
 
 let userId = null;
+/* 问卷那一行自己不会跟着帐号走 —— 帐号删掉了它还留着（[任务 165] 那条
+   「有没有留下临时帐号」的尺量的就是这一类）。所以记住它，收尾的时候一起删。 */
+let leadId = null;
 dropThrowawayOnExit(admin, () => userId);
 let browser;
 const rows = [];
@@ -112,6 +115,31 @@ try {
     throw new Error(`招牌没写进去（读回来是 ${JSON.stringify(back?.business_name)}）—— 这一支不拍`);
   }
   await api.rpc("set_project_style", { new_style: "ledger" });
+
+  /* 🔴 **行业在问卷上，不在 projects 上。**
+     少了这一段，整个帐号落在**通用**那一份示例上 —— 一间沙龙的总览会印
+     「Recent orders · Record 001 · Sample content」，而那三行在图上
+     **看起来就是产品坏了**。2026-09-09 我就是这样被自己的图骗过一轮：
+     三个行业三张总览全部是通用示例，而我差一点去改产品。
+     `audit-product.mjs` 早就把这一句写在它自己那一段上
+     （**道具的错会被读成产品的错**），我没有先去读它。
+     ⚠️ 用 admin 写 —— `leads` 跟 `accounts.lead_id` 不是客户改得动的东西。 */
+  const { data: ind } = await admin.from("industries").select("id").eq("slug", T.industry).single();
+  if (!ind?.id) throw new Error(`industries 里没有 ${T.industry}`);
+  const { data: lead, error: ldErr } = await admin
+    .from("leads")
+    .insert({ industry_id: ind.id, language: "en", answers: { note: `shoot-trade:${TRADE}` } })
+    .select("id")
+    .single();
+  if (ldErr) throw new Error(`lead: ${ldErr.message}`);
+  leadId = lead.id;
+  const { error: linkErr } = await admin.from("accounts").update({ lead_id: lead.id }).eq("id", userId);
+  if (linkErr) throw new Error(`accounts.lead_id: ${linkErr.message}`);
+  /* 读回来。一句不看结果的写入，跟一句没有写过的写入，在报告里长得一模一样。 */
+  const { data: ctxBack } = await api.rpc("get_my_business_context");
+  if (ctxBack?.industry?.slug !== T.industry) {
+    throw new Error(`行业没挂上去（读回来是 ${JSON.stringify(ctxBack?.industry?.slug)}）—— 这一支不拍`);
+  }
 
   /* ① 这个行业开箱是哪几页 —— **多的要关掉，少的要开**。
      🔴 注册本身给的是 `other` 那一份（总览 · 客户 · 报价单 · 工程 · 收款 ·
@@ -269,6 +297,7 @@ try {
 } finally {
   if (browser) await browser.close();
   await dropThrowaway(admin, userId);
+  if (leadId) await admin.from("leads").delete().eq("id", leadId);
 }
 
 console.log(`\n${OUT}/  · 一页一张 <名字>-sheet.jpg`);
