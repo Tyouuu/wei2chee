@@ -37,6 +37,12 @@ const env = Object.fromEntries(
 );
 const BASE = process.env.BASE ?? "http://localhost:3000";
 const OUT = ".screenshots/product";
+/* Three widths. 820 is iPad portrait (10.9" / Air) — landscape 1180 is
+   effectively desktop. Until today NOT ONE ruler in this repo had ever opened
+   a browser at a tablet width: 101 places measure 1440, 39 measure 390, and
+   the tablet column was empty. WIDTHS=1400,390 walks the old two only. */
+const WIDTHS = (process.env.WIDTHS ?? "1400,820,390").split(",").map(Number);
+const LABEL = { 1400: "desktop", 820: "iPad portrait", 390: "phone" };
 mkdirSync(OUT, { recursive: true });
 
 /* 平台那几页 —— 他问的是产品，而这几页是我们卖东西的工具。 */
@@ -177,7 +183,7 @@ try {
   const { data: recs } = await api.from("pipeline_records").select("id,page_key").limit(1);
   const oneRec = recs?.[0];
 
-  /* 改一页的时候只走那一页 —— 三十九页乘两个宽度要四分钟，
+  /* 改一页的时候只走那一页 —— 四十页乘三个宽度要十几分钟，
      而「改 → 看图 → 再改」那个回圈里，慢就是不看图。
      ⚠️ **筛掉的照旧种进去**：一张少了别的模块的页，侧栏跟数字都不一样。 */
   const ONLY = (process.env.ONLY ?? "").split(",").map((x) => x.trim()).filter(Boolean);
@@ -192,9 +198,9 @@ try {
   if (ONLY.length) console.log(`只走 ${PICKED.length} 页：${PICKED.map((u) => u.name).join(" · ")}`);
 
   browser = await chromium.launch();
-  for (const width of [1400, 390]) {
+  for (const width of WIDTHS) {
     const page = await browser.newPage({
-      viewport: { width, height: 900 },
+      viewport: { width, height: width === 390 ? 844 : width === 820 ? 1180 : 900 },
       deviceScaleFactor: width === 1400 ? 2 : 1,
     });
     await page.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
@@ -251,8 +257,8 @@ const bad = (r) =>
   (r.leaked?.length ?? 0) +
   (r.sideways > 1 ? 1 : 0);
 
-for (const width of [1400, 390]) {
-  console.log(`\n== ${width}px ==`);
+for (const width of WIDTHS) {
+  console.log(`\n== ${width}px ${LABEL[width] ?? ''} ==`);
   console.log("  页                     高  底空 字<4.5 框<3 死链 中文 切断 重标 横滚 拇指");
   for (const r of rows.filter((x) => x.width === width)) {
     if (r.failed) {
@@ -287,7 +293,7 @@ for (const r of rows) {
 }
 
 const tot = (k) => rows.reduce((a, r) => a + (r[k]?.length ?? 0), 0);
-console.log(`\n判：走了 ${rows.filter((r) => r.width === 1400).length} 页 × 两个宽度`);
+console.log(`\n判：走了 ${rows.filter((r) => r.width === WIDTHS[0]).length} 页 × ${WIDTHS.length} 个宽度`);
 console.log(
   `    载不出来 ${rows.filter((r) => r.failed).length} · 字读不到 ${tot("text")} · 框看不见 ${tot("boxes")} · 死链 ${tot("dead")}`,
 );
