@@ -118,3 +118,54 @@ describe("预约那一页不画两次", () => {
     ).toBeTruthy();
   });
 });
+
+/* 总览那一页开在哪里 —— 一间没有走单的店，她的第一句话是「今天谁要来」。
+ *
+ * ── 拍出来看到的（2026-09-09，怡保一间沙龙）─────────────────────────────
+ * 上面三个数字是她的（本月收到 RM 405 · 客人 5 位），底下那张表是
+ * **Ms Faridah 跟 Ms Ong** —— 示例档里的人。`beauty` 一页走单都没有，
+ * 所以 `dashboardRecordModule` 回 null，那一整支投影不跑，示例原封不动留着。
+ *
+ * 而 `[pageKey]/page.tsx` 自己那段注解早就写着这件事有多糟：
+ * 「两句话对不起来的时候，一句都不会被相信」。它修的是**有走单**的那一半。
+ *
+ * ⚠️ 控制组是这一份真正的重点：一家装修公司的总览**一个像素都不准变**。
+ */
+describe("总览开在她的一天上", () => {
+  const dashOf = (slug: string, keys: string[]) => {
+    const tree = buildPageLayout(
+      "dashboard",
+      ctxFor(slug),
+      "兴发",
+      "zh",
+      keys.map((k) => ({ key: k })),
+    ) as unknown as { content: Node[] };
+    return walkNodes(tree.content as never) as unknown as Node[];
+  };
+
+  const SALON = ["dashboard", "customers", "bookings", "payments", "expenses", "staff", "inventory", "website"];
+  const CONTRACTOR = ["dashboard", "customers", "quotations", "projects", "payments", "expenses", "website"];
+
+  it("沙龙的总览上是一天，不是一张别人的表", () => {
+    const on = dashOf("beauty", SALON);
+    expect(on.find((n) => n.type === "DaySchedule"), "总览上要有她的一天").toBeTruthy();
+    expect(
+      on.find((n) => n.type === "RecordTable"),
+      "她没有走单那一页，所以那张表永远填不上她的东西 —— 留着就是示例",
+    ).toBeUndefined();
+  });
+
+  it("而那一天是按师傅分的 —— 她有师傅那一页", () => {
+    const day = dashOf("beauty", SALON).find((n) => n.type === "DaySchedule");
+    expect(day!.props.shape).toBe("columns");
+  });
+
+  it("🔴 控制组：装修公司的总览照旧是那张表，一个像素都不变", () => {
+    const on = dashOf("renovation", CONTRACTOR);
+    expect(on.find((n) => n.type === "RecordTable"), "有走单的生意，总览就是那张表").toBeTruthy();
+    expect(
+      on.find((n) => n.type === "DaySchedule"),
+      "她的走单那一张表填得满，不要替她换掉",
+    ).toBeUndefined();
+  });
+});

@@ -46,6 +46,7 @@ import {
   systemLangOf,
   tradeLabels,
   workflowStages,
+  dashboardDiaryModule,
   dashboardRecordModule,
   type BusinessContext,
   type PageKey,
@@ -266,6 +267,19 @@ export default async function PortalEditorPage({
       rows and the heading are about the same module (see the note beside it).
     */
     const recentOf = dashboardRecordModule(pageRefs);
+    /* AND THE HALF OF THE PRODUCT THAT NEVER GOT THIS.
+
+       The note above is about a business with a pipeline. A salon has none, so
+       `recentOf` was null, the projection below never ran, and her first screen
+       showed her own takings over Ms Faridah and Ms Ong -- the sample file's
+       people. Exactly the defect the note says it fixed, on the trades it did
+       not cover.
+
+       Her overview now opens on the diary (see dashboardDiaryModule), and this
+       is where the diary is filled from. `recentOf` stays what it was: the
+       tile above counts a pipeline, and a business without one gets no tile
+       rather than a count of appointments. */
+    const rowsFrom = recentOf ?? dashboardDiaryModule(pageRefs);
     const stats = await fetchLiveStats(
       supabase,
       project.id,
@@ -281,13 +295,13 @@ export default async function PortalEditorPage({
       systemLangOf(businessContext),
     );
 
-    if (recentOf) {
+    if (rowsFrom) {
       initialData = withLiveRows(
         initialData,
         await fetchLiveRows(
           supabase,
           project.id,
-          recentOf,
+          rowsFrom,
           workflowStages(businessContext),
           systemLangOf(businessContext),
         ),

@@ -16,7 +16,7 @@ import {
   defaultModulesForIndustry,
   type ModuleShape,
 } from "@/lib/portal/module-catalog";
-import { isLiveShape, PIPELINE_MODULES } from "@/lib/portal/shape-state";
+import { isLiveShape, CALENDAR_MODULES, PIPELINE_MODULES } from "@/lib/portal/shape-state";
 import { DEFAULT_SYSTEM_LANG, type SystemLang } from "@/lib/system-lang";
 import {
   chrome,
@@ -1470,8 +1470,26 @@ function buildDashboard(
         workflowStages(ctx),
       ),
 
-    table: () =>
-      recordTable(
+    /**
+     * 「最近的那几笔」—— 而一门没有走单的生意，那一句问的是**今天**。
+     *
+     * 见 dashboardDiaryModule 的档头：一间沙龙的总览本来是
+     * 她的数字压在别人的预约上，而她第一句话是「今天谁要来」。
+     * ⚠️ 有走单的生意一个像素都不变。
+     */
+    table: () => {
+      if (dashboardDiaryModule(pages)) {
+        /* 只要那一块，不要 WeekStrip —— 总览上那一格是**今天**，
+           不是一整个星期（那一页自己有）。 */
+        const [, day] = dayNodes(
+          "dashboard",
+          sample.records,
+          c,
+          pages.some((p) => p.key === "staff"),
+        );
+        return day;
+      }
+      return recordTable(
         "dashboard-recent",
         c.dashboard.recent(labels.order),
         {
@@ -1482,7 +1500,8 @@ function buildDashboard(
         },
         sample.records,
         c.dashboard.recentFilters,
-      ),
+      );
+    },
   };
 
   /**
@@ -3637,6 +3656,32 @@ export function dashboardRecordModule(refs: PageRef[]): string | null {
   if (has("orders")) return "orders";
   if (has("projects")) return "projects";
   return refs.map((p) => p.key).find((k) => PIPELINE_MODULES.has(k)) ?? null;
+}
+
+/**
+ * 一门**没有走单**的生意，总览上那一块讲什么。
+ *
+ * ── 拍出来看到的（2026-09-09，一间怡保的沙龙）─────────────────────────────
+ * 上面三个数字是她的（本月收到 RM 405 · 客人 5 位），底下那张表是
+ * **Ms Faridah 跟 Ms Ong** —— 示例档里的人。因为 `beauty` 一页走单都没有，
+ * 上面那一支回 null，於是整支投影不跑，那张表原封不动留着示例。
+ *
+ * 而这正是 `[pageKey]/page.tsx` 自己那段注解写下来的缺陷：
+ * 「真的数字坐在别人的行上……两句话对不起来的时候，一句都不会被相信」。
+ * 那一段修的是**有走单**的生意；没有走单的那一半从来没有人接。
+ *
+ * ── 而答案不是「把预约塞进那张表」 ───────────────────────────────────────
+ * 一间沙龙的第一句话是**「今天谁要来」**，不是「最近几笔」。
+ * Fresha（这一行全世界最大的那一家）自己的产品图上，
+ * 打开就是**一天，一个师傅一栏，头上一张脸**。
+ * 所以这里换的是**那一块本身**，不只是它的资料。
+ *
+ * ⚠️ 只在**没有走单**的时候才回一个值 —— 一家批发商同时有订单跟送货排程，
+ * 她的总览还是走单那一张表。判断顺序跟上面那一支是同一条。
+ */
+export function dashboardDiaryModule(refs: PageRef[]): string | null {
+  if (dashboardRecordModule(refs)) return null;
+  return refs.map((p) => p.key).find((k) => CALENDAR_MODULES.has(k)) ?? null;
 }
 
 export function buildPageLayout(
