@@ -1487,7 +1487,9 @@ function buildDashboard(
           c,
           pages.some((p) => p.key === "staff"),
         );
-        return day;
+        /* 抬头搬到卡头上去了（CARD_HEAD），因为「看全部」那一行只有卡头有。
+           留在块里会**印两次「今天」**——[任务 2](#) 那两块早就踩过这一条。 */
+        return { ...day, props: { ...day.props, heading: "" } };
       }
       return recordTable(
         "dashboard-recent",
@@ -1586,6 +1588,20 @@ function buildDashboard(
   const CARD_HEAD: Record<string, { title: string; href: string }> = {
     todo: { title: c.dashboard.todoTitle, href: followHref },
     ranking: { title: c.dashboard.rankingTitle, href: `/${locale}/portal/customers` },
+    /* 🔴 老板 2026-09-09 看到总览上那一天，问的第一句是
+       「那个日历需要单独开一个页面是 booking 的吗」——
+       **两块长得很像，而画面上没有任何东西讲它们是同一件事。**
+       总览那一格答的是「今天谁要来」，预约那一页答的是
+       「换日子 · 改时间 · 加一笔」。这一条路把两句话接起来。
+       ⚠️ 只有在那一格真的是日程的时候才有（有走单的生意那一格是表格）。 */
+    ...(dashboardDiaryModule(pages)
+      ? {
+          table: {
+            title: c.pageKind.dayHeading,
+            href: `/${locale}/portal/${dashboardDiaryModule(pages)}`,
+          },
+        }
+      : {}),
   };
 
   let seq = 0;
