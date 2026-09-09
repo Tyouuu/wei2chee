@@ -263,6 +263,21 @@ Record tables:
     work the amount out yourself.
   * Documents only (报价单 / 订单 / 工程 / 任务 / 进货单). Not money pages, not the
     directory, not the shelf.
+- 🔴 take_payment RECORDS MONEY he has received, against the document it
+  belongs to: 「陈太太订金收了一千」, 「Kedai Aman paid RM 1,000 deposit」,
+  「they settled the balance」.
+  * record_id is that document. amount is what he ACTUALLY received.
+  * 🔴 THIS IS NOT set_record_status. Measured 2026-09-09: told that a
+    RM 1,000 deposit had come in, it marked the quotation 「Build」 and
+    recorded NO MONEY -- the owner believed RM 1,000 was in his books and it
+    was not. Money he received is take_payment. A stage is where the work has
+    got to, and it is a different sentence.
+  * It may be both: if he says the deposit came in AND the job is starting,
+    emit take_payment first and set_record_status after.
+  * If he did not say an amount, ASK. Never assume the document's total.
+  * The money lands on his payments page, is attached to that document, and
+    the customer, the allocation and what is still owing are all worked out
+    by the database. Do not compute any of them.
 - bill_class raises THE WHOLE CLASS'S fees in one go: 「帮我开这个月全班的学费」,
   「bill Form 5 Maths for September, 180 each」.
   * group_id is the \`class=\` id from the class list above. amount is what ONE
@@ -1151,6 +1166,10 @@ The business owner asked:
       pageStages,
       /* 给客人那条连结用。来源只有一个 —— 记录页那一边用的也是它。 */
       SITE_URL,
+      /* 🔴 收一笔钱要写进**他的收款页**，而他不一定有那一页。
+         两样都从这里传：他这一家的编号，跟他这套系统开了哪几页。 */
+      String(project?.id ?? ""),
+      pageRefs.map((r) => r.key),
     );
     recordsWritten += acted.written;
     recordSkips.push(...acted.skipped);
@@ -1451,6 +1470,7 @@ export const EDIT_JSON_SCHEMA = {
                 "add_record_line",
                 "reply_to_enquiry",
                 "bill_class",
+                "take_payment",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
@@ -1504,6 +1524,9 @@ export const EDIT_JSON_SCHEMA = {
             // bill_class 只用这三格。**开在哪一页不在里面** ——
             // 那是他现在站着的那一页，让模型挑就是让它替他挑一本帐簿。
             group_id: { type: ["string", "null"] },
+            // take_payment 也用 amount。**方向不在里面** —— 一笔进来的钱
+            // 由收款那一页决定，不是模型讲的（20260906060000）。
+            method: { type: ["string", "null"] },
             amount: { type: ["string", "null"] },
             period: { type: ["string", "null"] },
             message: { type: ["string", "null"] },
@@ -1545,6 +1568,7 @@ export const EDIT_JSON_SCHEMA = {
             "description",
             "enquiry_id",
             "group_id",
+            "method",
             "amount",
             "period",
             "message",

@@ -561,6 +561,7 @@
         "couldNotRemember": "That could not be kept",
         "replyDrafted": "Written, NOT sent — open it, read it, and press send yourself: {link}",
         "classBilled": "{made} bills raised for {period}, {total} in total — {again} were already done and {free} pay nothing.",
+        "paymentTaken": "{amount} recorded against that document \u2014 {left} still owing.",
         "noStepSaid": "It did not say what to do",
         "noLineSaid": "It did not say what that line is for",
         "noSuchEnquiry": "There is no enquiry with that number",
@@ -568,6 +569,8 @@
         "noWayToReach": "That enquiry has no phone number on it — only {contact}",
         "noClassSaid": "It did not say which class",
         "noFeeSaid": "It did not say how much each student pays",
+        "noAmountSaid": "It did not say how much was taken",
+        "noMoneyPage": "There is no payments page in this system for the money to land on",
         "followUpSet": "Noted: {what} — on today's list, move the day on that page."
       }
     },

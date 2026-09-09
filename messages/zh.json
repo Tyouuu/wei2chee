@@ -561,6 +561,7 @@
         "couldNotRemember": "这一句记不下来",
         "replyDrafted": "写好了，**还没送** — 打开看一遍，你自己按送出：{link}",
         "classBilled": "{period} 开了 {made} 张，共 {total} — 其中 {again} 张上次已经开过，{free} 个不用交。",
+        "paymentTaken": "记了 {amount}，挂在那一张单上 — 还欠 {left}。",
         "noStepSaid": "没有讲要做什么",
         "noLineSaid": "那一行没有写它是什么",
         "noSuchEnquiry": "没有这一封询价",
@@ -568,6 +569,8 @@
         "noWayToReach": "那一封询价上没有号码 — 只有 {contact}",
         "noClassSaid": "没有讲是哪一个班",
         "noFeeSaid": "没有讲一个学生收多少",
+        "noAmountSaid": "没有讲收了多少",
+        "noMoneyPage": "这套系统里没有收款那一页，钱没有地方落",
         "followUpSet": "记下来了：{what} —— 排在今天，日子在那一页上挪。"
       }
     },

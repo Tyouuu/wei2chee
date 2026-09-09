@@ -133,6 +133,10 @@ export type SkipCode =
   | "noClassSaid"
   /** 没有讲一个学生收多少。 */
   | "noFeeSaid"
+  /** 没有讲收了多少钱。**不要拿那张单的总额当预设。** */
+  | "noAmountSaid"
+  /** 他这套系统里没有收款那一页 —— 钱没有地方落。 */
+  | "noMoneyPage"
   /** 冲正只在钱那几页做得了。 */
   | "notMoneyPage"
   /**
@@ -232,6 +236,13 @@ export type SkipCode =
    * 四个数字非讲不可：一间十个学生的补习中心开出八张单，
    * 第九第十去了哪里要讲得出来 —— **不讲就是静静少了两笔钱**。
    */
+  /**
+   * 🔴 收了一笔，挂在那一张单上。`amount` · `left`
+   *
+   * **还欠多少非讲不可** —— 他收完订金的下一个念头就是这个数字，
+   * 而它是资料库算的，不是我们减的。
+   */
+  | "paymentTaken"
   | "classBilled"
   | "replyDrafted"
   | "entryReversed"
@@ -317,6 +328,8 @@ export const SKIP_CODES = [
   "noWayToReach",
   "noClassSaid",
   "noFeeSaid",
+  "noAmountSaid",
+  "noMoneyPage",
   "notMoneyPage",
   "dbSaid",
   "layoutSaved",
@@ -334,6 +347,7 @@ export const SKIP_CODES = [
   "followUpDone",
   "followUpDropped",
   "followUpSet",
+  "paymentTaken",
   "classBilled",
   "replyDrafted",
   "entryReversed",

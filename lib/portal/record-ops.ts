@@ -294,6 +294,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "add_record_line",
   "reply_to_enquiry",
   "bill_class",
+  "take_payment",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -746,6 +747,15 @@ export async function actOnRecords(
    * `lib/site-url.ts` 的 `SITE_URL`（记录页那一边用的也是它）。
    */
   origin: string,
+  /**
+   * 这一家自己的编号，跟他这套系统有哪几页。
+   *
+   * 🔴 两样都是 `take_payment` 要的：一笔钱要写进**他的收款页**，
+   * 而**他不一定有那一页**（每一门生意开的页不一样）。没有那一页还硬写，
+   * 就是在一个他看不到的地方留下一笔钱 —— 比不写更糟。
+   */
+  projectId: string,
+  pages: string[],
 ): Promise<ActResult> {
   const skipped: RecordResult["skipped"] = [];
   const notes: Skip[] = [];
@@ -914,6 +924,98 @@ export async function actOnRecords(
       几个不用交 · 总共多少。一间十个学生的补习中心开出八张单，
       第九第十去了哪里要讲得出来—— 不讲就是静静少了两笔钱。
     */
+    /*
+      🔴 收一笔钱，挂在那一张单上。
+
+      走 `add_ledger_entry` —— **人按那颗按钮的同一支**（[重点 23]）。
+      挂上 `in_against_id` 之后，那一支自己做三件事：
+      从那张单读出客户是谁 · 把这笔钱分摊到那一单 · 方向由收款页决定。
+      一个字都不用在这里重写。
+
+      🔴 **还欠多少要念出来。** 他收订金的下一个念头就是这个数字，
+      而它是资料库算的（`amount_cents - allocated_cents`）——
+      在这里自己减一次，就是同一个数字两个答案。
+    */
+    if (op.op === "take_payment") {
+      if (shape !== "pipeline") {
+        skipped.push({ op: op.op, reason: "notPipeline" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const raw = op as unknown as { amount?: unknown; method?: unknown };
+      const cents = senFrom(String(raw.amount ?? ""));
+      if (!cents || cents <= 0) {
+        skipped.push({ op: op.op, reason: "noAmountSaid" });
+        continue;
+      }
+      /* 🔴 他的收款页。`payments` 是目录里那一个，而**方向就是它决定的**
+         （20260906060000：`case in_module_key when 'payments' then 'in'`）。
+         他没开那一页就讲出来，不要静静写去别的地方。 */
+      if (!pages.includes("payments")) {
+        skipped.push({ op: op.op, reason: "noMoneyPage" });
+        continue;
+      }
+      const { error: payErr } = await supabase.rpc("add_ledger_entry", {
+        in_project_id: projectId,
+        in_module_key: "payments",
+        in_amount_cents: cents,
+        /* 挂在那一张单上 —— 客户跟分摊由资料库自己接。 */
+        in_against_id: recordId,
+        in_method: String(raw.method ?? "").trim(),
+        in_idempotency_key: keyFor(`${projectId}:${recordId}:${cents}`, 0),
+      });
+      if (payErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: payErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      /*
+        还欠多少 —— 这一段第一版是错的，而错法值得写下来。
+
+        🔴 我读的是 `pipeline_records.allocated_cents` —— **那一栏不在那张表上**，
+        它在钱那张表上（那边的 `amount - allocated` 算的是「这一笔钱还有多少
+        没分出去」= 订金余额，20260831020000）。两个不存在的栏位相减得 0，
+        于是它对着一张 RM 2,500 的单收了 RM 1,000 之后讲「还欠 RM 0」——
+        **一个自信而错的数字，比一句「我算不出来」贵得多**，
+        而他会照那一句停止追剩下的 RM 1,500。
+        （2026-09-09 `check:work-ai` 第 ⑭ 段抳出来的。）
+
+        真的那一份在 `ledger_allocations`（record_id ＋ amount_cents）——
+        跟 `settleDocument` 读的是同一份。
+      */
+      const { data: doc } = await supabase
+        .from("pipeline_records")
+        .select("amount_cents")
+        .eq("id", recordId)
+        .maybeSingle();
+      const { data: paidRows } = await supabase
+        .from("ledger_allocations")
+        .select("amount_cents")
+        .eq("record_id", recordId);
+      const paid = ((paidRows ?? []) as { amount_cents?: number }[]).reduce(
+        (n, a) => n + Number(a.amount_cents ?? 0),
+        0,
+      );
+      const owed =
+        Number((doc as { amount_cents?: number } | null)?.amount_cents ?? 0) - paid;
+      notes.push({
+        op: op.op,
+        reason: "paymentTaken",
+        vars: {
+          amount: ringgit(cents) ?? "RM 0",
+          left: ringgit(Math.max(0, owed)) ?? "RM 0",
+        },
+      });
+      written += 1;
+      continue;
+    }
+
     if (op.op === "bill_class") {
       const raw = op as unknown as {
         group_id?: unknown;

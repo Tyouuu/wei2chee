@@ -443,6 +443,37 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     ⚠️ **开在哪一页不由模型决定** —— 是他现在站着的那一页（`moduleKey`）。
     模型讲一个页面名字，就是让它替他挑一本帐簿。
   */
+  /*
+    🔴 收一笔钱，挂在那一张单上 —— 「陈太太订金收了一千」。
+
+    ── 这一个动词是走一遍走出来的（2026-09-09，`npm run walk:talk`）──────
+
+    十二句里十一句接住，而**掉的那一句正好是钱**：
+
+        他讲   「Took RM 1,000 deposit from Kedai Aman」
+        它答   「Marked the Kedai Aman quotation as Build」
+        帐上   **一分都没有**
+
+    它去改了那张单的**阶段**，因为它手上只有 `set_record_status`。
+    而他以为一千块进帐了。两次跑，两种讲法，同一个结果 ——
+    这是这个仓库「说了没做」那一族里最贵的一种。
+
+    ── 为什么不是「加一行到收款页」 ────────────────────────────────────
+
+    他人在报价单那一页。叫他先走去收款页再讲一次，就是把我们的目录
+    变成他的工作（[重点 29]）。而 `add_ledger_entry` 本来就收
+    `in_against_id` —— **挂上那一张单之后，客户是谁、分摊多少、
+    这一单还欠多少，全部是资料库自己算的**，一个字都不用在这里重写。
+  */
+  z.object({
+    op: z.literal("take_payment"),
+    /** 收的是哪一张单的钱 —— 页面上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** 收了多少。**没讲就是没讲** —— 不要拿那张单的总额当预设。 */
+    amount: z.string().min(1).max(20),
+    /** 现金 · 转帐 · 支票 —— 他讲了才填。 */
+    method: z.string().max(30).nullable(),
+  }),
   z.object({
     op: z.literal("bill_class"),
     /** 哪一个班 —— 从上面那份清单里 `class=` 抄下来的。 */
@@ -1529,6 +1560,7 @@ export function applyLayoutOps(
       /* 回一封询价跟这一页是哪一页无关，而它今天只到得了记录页
          （助手也只在那几页）—— 到不了的时候讲同一句话。 */
       /* 开全班的学费单要有一本帐簿可以开进去，而这一页背后没有。 */
+      case "take_payment":
       case "bill_class":
       case "reply_to_enquiry": {
         skipped.push({ op: op.op, reason: "notARecordPage" });

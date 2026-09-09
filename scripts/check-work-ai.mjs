@@ -725,6 +725,85 @@ try {
   );
   await page.screenshot({ path: `${OUT}/10-class.png` });
 
+
+  console.log("");
+  console.log("── ⑭ 🔴 「订金收了一千」要真的进帐 ──────────────");
+  /*
+    🔴 这一段是 `npm run walk:talk` 走出来的（2026-09-09）。
+    十二句里十一句接住，掉的那一句正好是钱：
+
+        他讲   「Took RM 1,000 deposit from Kedai Aman」
+        它答   「Marked the Kedai Aman quotation as Build」
+        帐上   **一分都没有**
+
+    它去改了那张单的阶段，因为它手上只有 `set_record_status`。
+    两次跑、两种讲法、同一个结果 —— 而他以为一千块进帐了。
+
+    ⚠️ 这一段量三件，而第三件是他收完订金的下一个念头：
+    钱进了没有 · 挂在那一张单上没有 · **还欠多少讲出来没有**。
+  */
+  /* 🔴 种一张**金额我自己定的**单（RM 2,500）。收一千之后还欠多少
+     是一个算得出来的数字（RM 1,500）—— 而它就是他收完订金的
+     下一个念头。拿上面那几段留下来的单，量不到这一件。 */
+  const { data: payDoc, error: payDocErr } = await api.rpc("add_pipeline_record", {
+    in_project_id: P,
+    in_module_key: "quotations",
+    in_title: "Awning for the back lane",
+    in_party: "Restoran Nasi Kandar Deen",
+    in_amount_cents: 250000,
+  });
+  if (payDocErr) throw new Error(`seed payable: ${payDocErr.message}`);
+  check("有一张 RM 2,500 的单可以收钱（尺子自己的）", !!payDoc, "开不出来");
+
+  const moneyBefore = await admin
+    .from("ledger_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", P);
+  await page.setViewportSize({ width: 1440, height: 950 });
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  const paid = await say(page, "Took RM 1,000 deposit from Restoran Nasi Kandar Deen");
+  console.log(`        它讲了：${paid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  await page.waitForTimeout(2500);
+  const moneyAfter = await admin
+    .from("ledger_entries")
+    .select("id, amount_cents, against_id, direction", { count: "exact" })
+    .eq("project_id", P);
+  check(
+    "🔴 帐上真的多了一笔钱",
+    (moneyAfter.count ?? 0) === (moneyBefore.count ?? 0) + 1,
+    `${moneyBefore.count} → ${moneyAfter.count} — ${paid.slice(0, 160)}`,
+  );
+  const entry = (moneyAfter.data ?? []).find(
+    (e) => Number(e.amount_cents) === 100000,
+  );
+  check(
+    "🔴 一千块，而且挂在那一张单上",
+    !!entry && String(entry.against_id ?? "") === String(payDoc?.id ?? ""),
+    entry ? `against=${entry.against_id}` : "找不到那一笔 RM 1,000",
+  );
+  /* 🔴 他收完订金的下一个念头就是这个数字。 */
+  check(
+    "🔴 而且它讲的「还欠」是对的（RM 1,500）",
+    /1,500/.test(paid),
+    paid.slice(0, 220),
+  );
+  const leftRow = await admin
+    .from("pipeline_records")
+    .select("amount_cents")
+    .eq("id", payDoc.id)
+    .maybeSingle();
+  const allocRows = await admin
+    .from("ledger_allocations")
+    .select("amount_cents")
+    .eq("record_id", payDoc.id);
+  const allocated = (allocRows.data ?? []).reduce((n, a) => n + Number(a.amount_cents ?? 0), 0);
+  check(
+    "🔴 而资料库那一边也是 1,500",
+    Number(leftRow.data?.amount_cents ?? 0) - allocated === 150000,
+    `总额 ${leftRow.data?.amount_cents} 分摄 ${allocated}`,
+  );
+  await page.screenshot({ path: `${OUT}/11-payment.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);
