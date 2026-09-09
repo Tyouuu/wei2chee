@@ -276,6 +276,96 @@ try {
   });
   check("而开单那一支不挡他（跟它底下那一支一致）", bossOpen === "", bossOpen);
 
+  /* ── ⑪ 🔴 第二个孩子九折 ──────────────────────────────────────
+     20260909270000。`bill_class` 一次开十张、十张同一个数字，
+     而一间怡保的补习中心**第二个孩子九折**几乎是默认的。
+
+     ⚠️ 用一个**没有开过单的月份**（2026-11），不然量到的是前面几节
+     留下来的那几张。 */
+  console.log("\n⑪ 🔴 第二个孩子九折");
+  const nov = "2026-11";
+  const before = await say(C, "class_fees_of", { in_group_id: grp.id });
+  check("一开始四个人全部在班价上", (before ?? []).length === 4
+    && (before ?? []).every((r) => r.on_class_price), JSON.stringify(before));
+
+  await say(C, "set_class_fee", {
+    in_group_id: grp.id, in_party_id: kids["Ah Hui"].id, in_amount_cents: 16200,
+  });
+  /* 🔴 0 不是 null —— 「这个月不收他的钱」是一句讲出来的话。 */
+  await say(C, "set_class_fee", {
+    in_group_id: grp.id, in_party_id: late.id, in_amount_cents: 0,
+  });
+  const mixed = await say(C, "class_fees_of", { in_group_id: grp.id });
+  check("🔴 两个人不在班价上了",
+    (mixed ?? []).filter((r) => !r.on_class_price).length === 2,
+    JSON.stringify(mixed));
+
+  const nine = (await bill({ in_period: nov }))[0];
+  check("🔴 开了三张（四个人里一个不收钱）", nine.made === 3, JSON.stringify(nine));
+  check("🔴 而且讲得出有一个免费的（不是静静少一张）",
+    nine.free === 1, String(nine.free));
+  check("一共 RM 522（180 ＋ 162 ＋ 180）",
+    Number(nine.total_cents) === 52200, String(nine.total_cents));
+
+  const novDue = await say(C, "class_fees_due", { in_group_id: grp.id, in_period: nov });
+  const hui = (novDue ?? []).find((r) => r.party_id === kids["Ah Hui"].id);
+  check("🔴 九折那一个的单上是 RM 162",
+    Number(hui?.amount_cents) === 16200, String(hui?.amount_cents));
+  check("🔴 不收钱那一个根本没有单",
+    !(novDue ?? []).some((r) => r.party_id === late.id),
+    JSON.stringify((novDue ?? []).map((r) => r.student)));
+  check("剩下两个还是 RM 180",
+    (novDue ?? []).filter((r) => Number(r.amount_cents) === 18000).length === 2,
+    JSON.stringify((novDue ?? []).map((r) => r.amount_cents)));
+
+  /* 🔴 改了价钱**不会改已经开出去的单** —— 单已经给了家长，
+     系统偷偷改掉它上面的数字比不改更糟。 */
+  await say(C, "set_class_fee", {
+    in_group_id: grp.id, in_party_id: kids["Ah Hui"].id, in_amount_cents: 9000,
+  });
+  const redo = (await bill({ in_period: nov }))[0];
+  check("🔴 再按一次，一张都不多开", redo.made === 0 && redo.again === 3,
+    JSON.stringify(redo));
+  const novDue2 = await say(C, "class_fees_due", { in_group_id: grp.id, in_period: nov });
+  const hui2 = (novDue2 ?? []).find((r) => r.party_id === kids["Ah Hui"].id);
+  check("🔴 而那一张开出去的单还是 RM 162（改价不改单）",
+    Number(hui2?.amount_cents) === 16200, String(hui2?.amount_cents));
+
+  /* 清掉 = 放回班价，跟设成 0 是两件事。 */
+  await say(C, "set_class_fee", {
+    in_group_id: grp.id, in_party_id: kids["Ah Hui"].id,
+  });
+  const cleared = await say(C, "class_fees_of", { in_group_id: grp.id });
+  check("🔴 清掉就回到班价（不是变成 0）",
+    (cleared ?? []).find((r) => r.party_id === kids["Ah Hui"].id)?.on_class_price === true,
+    JSON.stringify(cleared));
+  check("而讲过「不收钱」那一个还是 0",
+    Number((cleared ?? []).find((r) => r.party_id === late.id)?.fee_cents) === 0,
+    JSON.stringify((cleared ?? []).find((r) => r.party_id === late.id)));
+
+  /* 拒绝的每一种。 */
+  check("🔴 负数挡下来",
+    (await refused(C, "set_class_fee", {
+      in_group_id: grp.id, in_party_id: kids["Ah Hui"].id, in_amount_cents: -100,
+    })).includes("less than nothing"), "居然让它过了");
+  check("🔴 不在这个班的学生挡下来",
+    (await refused(C, "set_class_fee", {
+      in_group_id: grp.id, in_party_id: teacher.id, in_amount_cents: 100,
+    })).includes("not in this class"), "居然让它过了");
+
+  /* 🔴 老师 —— 定价是老板的事（跟 `set_commission_tiers` 同一条）。
+     ⚠️ 控制组在下面一条：老板用一模一样的呼叫做得到。 */
+  check("🔴 老师改不了学费",
+    (await refused(teach.client, "set_class_fee", {
+      in_group_id: grp.id, in_party_id: kids["Ah Hui"].id, in_amount_cents: 100,
+    })).includes("for the owner"), "它让他改了");
+  check("🔴 老师也读不到谁交多少",
+    (await refused(teach.client, "class_fees_of", { in_group_id: grp.id }))
+      .includes("for the owner"), "它让他读到了");
+  check("⚠️ 而老板用一模一样的呼叫做得到（不然上面两条量的是空气）",
+    (await say(C, "class_fees_of", { in_group_id: grp.id })).length === 4,
+    "老板自己也读不到");
+
   /* ── ⑩ 别人家 ─────────────────────────────────────────────── */
   console.log("\n⑧ 别人家");
   const other = await person("other");

@@ -228,6 +228,31 @@ try {
     + `${bill?.doc_no ?? "开不了"} 收齐了，这个班还剩 ${(due0 ?? []).length - 1} 个没交。`
     + "🔴 一张一张开是 **10 次**");
 
+  /* ── ⑥b 🔴 第二个孩子九折 ─────────────────────────────────────
+     20260909270000。上面那一按十个学生同一个数字，而一间怡保的补习中心
+     **第二个孩子九折**几乎是默认的，老师的孩子不收钱也是常有的。
+     少了这一格，她要把那两个从那一按里漏掉，然后一个一个手开 ——
+     也就是「一次开完」那件事对她**不成立**。 */
+  n = acts;
+  await act(C, "第二个孩子九折", "set_class_fee", {
+    in_group_id: cls?.id, in_party_id: kids[1]?.id, in_amount_cents: 16_200,
+  });
+  await act(C, "老师的孩子不收钱", "set_class_fee", {
+    in_group_id: cls?.id, in_party_id: kids[2]?.id, in_amount_cents: 0,
+  });
+  const dec = await act(C, "开十二月的学费", "bill_class", {
+    in_group_id: cls?.id, in_module_key: billPage ?? "orders",
+    in_amount_cents: 18_000, in_title: "Dec fees · Add Maths",
+    in_period: "2026-12",
+  });
+  const cut = (dec ?? [])[0];
+  node("🔴 一次开完，而其中两个是别的价钱", acts - n,
+    cut?.made === 9 && cut?.free === 1 && Number(cut?.total_cents) === 160_200,
+    `${acts - n} 次；而**改价那两次一辈子只做一次** —— 往后每一个月还是一按。`
+    + `开了 ${cut?.made ?? 0} 张 · 不收钱的 ${cut?.free ?? 0} 个 · `
+    + `RM ${((cut?.total_cents ?? 0) / 100).toFixed(0)}。`
+    + "🔴 「没讲过价钱」跟「讲过不收钱」是两句话，不是同一个空格");
+
   /* ── ⑦ 🔴 系统讲得出补习自己那两句吗 ──────────────────────────
      ⚠️ 这两句都要**真的摆一次道具再问**，不是读代码推的。
      我 2026-09-06 跟他讲「两句都没有人算」—— **那句话错一半**，
