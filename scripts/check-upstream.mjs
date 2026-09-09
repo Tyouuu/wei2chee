@@ -59,15 +59,39 @@ for (const s of sources) {
         const cmp = await api(
           `/repos/${s.repo}/compare/${s.takenAt}...${repo.default_branch}`,
         );
-        behind = `${cmp.ahead_by} commits`;
+        /* 🔴 **数「有没有可能带设计」的那几个，不是数总数。**
+           老板 2026-09-10 指着那个模版问「等下他更新了一些 Ui 设计呢
+           我们就可以拿来用了」。查出来 arhamkhnz 那一支自我们钉住之后
+           **17 个提交，17 个全部是升级依赖跟改 vercel 设定** ——
+           而这把尺当时印的是「17 commits」，读起来像有东西可以拿。
+           那正是[任务 25](../docs/founder-tasks.md) 记过的那一句：
+           **一把天天叫狼的尺没有人看。**
+           `chore` · `build` · `ci` · `docs` · `test` · 升级依赖那几种
+           不可能带来一块新画面；剩下的才要人去看一眼。 */
+        const NOT_DESIGN =
+          /^(chore|build|ci|docs|test|revert)\b|bump |update deps|upgrade deps|dependencies/i;
+        const carried = (cmp.commits ?? []).filter(
+          (c) => !NOT_DESIGN.test((c.commit?.message ?? "").split("\n")[0]),
+        );
+        behind =
+          cmp.ahead_by === 0
+            ? "跟得上"
+            : carried.length === 0
+              ? `${cmp.ahead_by} 个 · 都是升级`
+              : `${cmp.ahead_by} 个 · ${carried.length} 个要看`;
         // A release since we took it is a stronger signal than a commit count:
         // it is the upstream saying "this is worth your attention".
         const rel = await api(`/repos/${s.repo}/releases?per_page=1`).catch(() => []);
         const latest = Array.isArray(rel) && rel[0];
         if (latest && latest.published_at > s.takenOn) {
           flag = `新版 ${latest.tag_name} (${latest.published_at.slice(0, 10)})`;
-        } else if (cmp.ahead_by > 60) {
-          flag = "动得多，值得看一眼";
+        } else if (carried.length > 0) {
+          /* 🔴 讲**哪一条**要看，不是讲「动得多」。一个数字要人自己去翻，
+             一句话他当场判得了要不要花时间。 */
+          flag = carried
+            .slice(0, 3)
+            .map((c) => (c.commit?.message ?? "").split("\n")[0].slice(0, 52))
+            .join(" · ");
         }
       } catch {
         behind = "比不了（commit 太旧或被 force push）";
