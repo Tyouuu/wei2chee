@@ -117,6 +117,7 @@
     "check:visit-lines": "node scripts/check-visit-lines.mjs",
     "check:from-photo": "node scripts/check-from-photo.mjs",
     "check:staff-prices": "node scripts/check-staff-prices.mjs",
+    "check:backbar": "node scripts/check-backbar.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
     "check:anchors": "node scripts/check-anchors.mjs",
     "check:bookings": "node scripts/check-bookings.mjs",
