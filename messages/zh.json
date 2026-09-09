@@ -364,6 +364,7 @@
       "aiWorkPlaceholder": "比如：陈太太来了 · 记一笔 RM 500 水泥 · 这个月收了多少",
       "aiWorkDone": "做好了。",
       "aiWorkNothing": "一笔都没有记进去。",
+      "aiWorkShot": "帮我看一下这张，上面写什么。",
       "unsaved": "还没保存",
       "savedJustNow": "已保存",
       "saveShortcut": "保存设计（Ctrl/⌘+S）",

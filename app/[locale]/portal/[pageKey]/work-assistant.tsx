@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Data } from "@puckeditor/core";
 import type { Skip } from "@/lib/portal/skip-codes";
 import { sayWhyNot } from "./ai-assistant";
@@ -157,12 +158,70 @@ export function WorkAssistant({
    * 那时候伯器那一份才是权威的，所以下面那一句把这一格清掉。
    */
   const [latest, setLatest] = useState<Data | null>(null);
+  /**
+   * 🔴 他拍的那一张 —— 供应商的发票 · 手写的单 · 一张截图。
+   *
+   * ── 为什么这颗回形针 2026-09-09 才到产品这一边 ────────────────
+   *
+   * 老板自己点名的用法：`拍照給妳分析啊 上傳invoice啊`。
+   * 而量出来那颗回形针**只在「改设计」那一屏上** —— 也就是说，一个要把
+   * 供应商发票拍进去的五金店老板，得先按进一个改版面的地方。
+   * 他 9-09 又讲了一次：`我只要注重在我的产品罢了`。
+   *
+   * ── 🔴 图进的是 private 那个桶 ────────────────────────────
+   *
+   * `ask-photos`（20260909160000），跟编辑器那一块**同一个桶、同一条路**：
+   * 只送**路径**不送网址，缩图是浏览器自己的 `blob:`。
+   * 一张发票上印着他的进货价、他的供应商、他一个月的租金 ——
+   * 那不可以变成一条任何人打得开的连结。
+   */
+  const [shot, setShot] = useState<{ path: string; preview: string } | null>(
+    null,
+  );
+  const [attaching, setAttaching] = useState(false);
+  const shotRef = useRef<HTMLInputElement>(null);
+
+  async function attach(file: File) {
+    setAttaching(true);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+      const { data: ws } = await supabase.rpc("my_workspace");
+      /* 他现在站着的那一家 —— **不是「我拥有的那一家」**。一个师傅拍
+         工地照问一句，路径要落在老板那一家下面，不然那道闸
+         （`works_here`）当场挡掉。 */
+      const projectId = (ws as { project_id?: string }[] | null)?.[0]
+        ?.project_id;
+      if (!projectId) return;
+      const ext = (file.name.split(".").pop() || "jpg")
+        .toLowerCase()
+        .slice(0, 5);
+      const path = `${projectId}/ask-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("ask-photos")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (error) return;
+      setShot({ path, preview: URL.createObjectURL(file) });
+    } finally {
+      setAttaching(false);
+    }
+  }
+
+  function clearShot() {
+    setShot((prev) => {
+      if (prev) URL.revokeObjectURL(prev.preview);
+      return null;
+    });
+  }
   /* 伯器那一份刷到了 → 以它为准。 */
   useEffect(() => setLatest(null), [data]);
 
   async function send() {
     const asked = text.trim();
-    if (!asked || busy) return;
+    /* 🔴 只附一张图、一个字都不打，也要送得出去 ——
+       一个手上带着油的师傅拍完那张单，下一个动作就是按送出。 */
+    if ((!asked && !shot) || busy) return;
     setBusy(true);
     setSaid(null);
     try {
@@ -171,7 +230,10 @@ export function WorkAssistant({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           layout: latest ?? data,
-          instruction: asked,
+          /* 只有一张图的时候，替他讲那一句 —— 那一支 route 拒绝空句子。 */
+          instruction: asked || t("aiWorkShot"),
+          /* 🔴 路径，不是网址。见 `shot` 那一段。 */
+          imagePath: shot?.path ?? null,
           pageKey,
           pages,
           /* 最近三轮 —— 跟编辑器那一块同一份形状。见 `turns` 的注解。 */
@@ -215,6 +277,7 @@ export function WorkAssistant({
       const did = (out.explanation ?? "").trim();
       if (did) setTurns((prev) => [...prev, { asked, did }].slice(-3));
       setText("");
+      clearShot();
       /* 🔴 那一行在资料库里，不在这一页手上那棵树里。见档头 ③。 */
       if (out.refetch) router.refresh();
     } catch {
@@ -300,6 +363,24 @@ export function WorkAssistant({
         </div>
       ) : null}
 
+      {shot ? (
+        <div className="mx-auto flex w-full max-w-[46rem] items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={shot.preview}
+            alt=""
+            className="h-10 w-14 rounded-[var(--radius-xs)] object-cover"
+          />
+          <button
+            type="button"
+            onClick={clearShot}
+            className="[color:var(--color-on-surface-dim)] [font-size:var(--text-micro)] underline"
+          >
+            {t("aiImageRemove")}
+          </button>
+        </div>
+      ) : null}
+
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -318,13 +399,35 @@ export function WorkAssistant({
       />
 
       <div className="mx-auto flex w-full max-w-[46rem] items-center justify-between gap-2">
-        <span className="[color:var(--color-on-surface-dim)] [font-size:var(--text-micro)]">
-          {t("aiEnterHint")}
-        </span>
+        <div className="flex items-center gap-3">
+          <input
+            ref={shotRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void attach(f);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            data-work-ai-shot
+            onClick={() => shotRef.current?.click()}
+            disabled={attaching}
+            className="[color:var(--color-on-surface-dim)] [font-size:var(--text-xs)] [min-height:44px] underline disabled:opacity-60"
+          >
+            {attaching ? "\u2026" : t("aiImageAdd")}
+          </button>
+          <span className="[color:var(--color-on-surface-dim)] [font-size:var(--text-micro)]">
+            {t("aiEnterHint")}
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => void send()}
-          disabled={busy || !text.trim()}
+          disabled={busy || (!text.trim() && !shot)}
           className="[background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [min-height:44px] [padding-inline:calc(var(--pad-control-x)*1.4)] disabled:opacity-60"
         >
           {busy ? t("aiThinking") : t("aiSubmit")}

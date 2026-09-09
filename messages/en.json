@@ -364,6 +364,7 @@
       "aiWorkPlaceholder": "e.g. Mrs Tan has arrived · log RM 500 for cement · how much came in this month",
       "aiWorkDone": "Done.",
       "aiWorkNothing": "Nothing was recorded.",
+      "aiWorkShot": "Read this and tell me what it says.",
       "unsaved": "Unsaved changes",
       "savedJustNow": "Saved",
       "saveShortcut": "Save design (Ctrl/⌘+S)",

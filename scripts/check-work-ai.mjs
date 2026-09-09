@@ -32,6 +32,7 @@
 import { readFileSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 import { dropThrowaway, dropThrowawayOnExit } from "./lib/throwaway.mjs";
 import { openAllPages, seedEveryShape } from "./lib/seed-demo.mjs";
 
@@ -465,6 +466,59 @@ try {
     `status = ${(stillOpen.data ?? [])[0]?.status}`,
   );
   await page.screenshot({ path: `${OUT}/8-reply.png` });
+
+
+  console.log("");
+  console.log("── ⑩ 🔴 拍一张给它看 —— 在产品那一页上 ──────────");
+  /*
+    🔴 老板自己点名的用法：`拍照給妳分析啊 上傳invoice啊`。
+    而 2026-09-09 量出来那颗回形针**只在「改设计」那一屏上** —— 一个要把
+    供应商发票拍进去的五金店老板，得先按进一个改版面的地方。
+    他同一天讲：`我只要注重在我的产品罢了`。
+
+    ⚠️ 图上印一个**编出来的字**：模型讲得出它，就只有一种可能 ——
+    它真的看到了那张图。`attachedImage` 静静回 null 的时候，助手会
+    **照样回答**，只是当作他没有附图，画面上跟成功一模一样。
+  */
+  const WORD = "SELAYANG";
+  const paper = await sharp({
+    create: { width: 900, height: 500, channels: 3, background: "#ffffff" },
+  })
+    .composite([
+      {
+        input: Buffer.from(
+          `<svg width="900" height="500"><text x="450" y="280" font-family="monospace" font-size="96" font-weight="bold" text-anchor="middle" fill="#111111">${WORD}</text></svg>`,
+        ),
+        top: 0,
+        left: 0,
+      },
+    ])
+    .jpeg({ quality: 92 })
+    .toBuffer();
+
+  await page.setViewportSize({ width: 1440, height: 950 });
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  const openIt = page.locator('[data-work-ai="closed"]');
+  if (await openIt.count()) await openIt.first().click();
+  const clip = page.locator("[data-work-ai-shot]");
+  check(
+    "🔴 产品那一页上有那颗回形针",
+    (await clip.count()) > 0,
+    "找不到 [data-work-ai-shot]",
+  );
+  await page
+    .locator('[data-work-ai="open"] input[type="file"]')
+    .first()
+    .setInputFiles({ name: "invoice.jpg", mimeType: "image/jpeg", buffer: paper });
+  await page.waitForTimeout(2500);
+  const seen = await say(page, "What word is printed on that picture?");
+  console.log(`        它讲了：${seen.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  check(
+    `🔴 模型真的看到了那张图（${WORD}）`,
+    seen.toUpperCase().includes(WORD),
+    seen.slice(0, 200) || "（它一句话都没讲）",
+  );
+  await page.screenshot({ path: `${OUT}/9-shot.png` });
 
 } catch (e) {
   failed.push(`threw: ${e.message}`);
