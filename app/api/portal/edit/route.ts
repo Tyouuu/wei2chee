@@ -275,6 +275,13 @@ Record tables:
     invent an hour: the length is taken from her own last booking of the
     same service, and if there is none she is asked. An invented length
     takes somebody else's slot.
+  * staff is the \`staff=\` id from the list of his people above -- an ID, never
+    a name. Set it WHEN SHE NAMES SOMEBODY (「with Amy」, 「Jasmine 做」).
+  * 🔴 DO NOT ASK WHO IS DOING IT. Book it. A one-chair salon has nobody to
+    name, and being asked every time is worse than the thing it prevents. If the
+    slot turns out to be taken, she is told then that naming a person lets two
+    fit -- measured 2026-09-10: asking up front stopped the booking happening
+    at all.
   * Only on the appointments page.
 - 🔴 take_payment RECORDS MONEY he has received, against the document it
   belongs to: 「陈太太订金收了一千」, 「Kedai Aman paid RM 1,000 deposit」,
@@ -1566,6 +1573,7 @@ export const EDIT_JSON_SCHEMA = {
             from: { type: ["string", "null"] },
             to: { type: ["string", "null"] },
             service: { type: ["string", "null"] },
+            staff: { type: ["string", "null"] },
             amount: { type: ["string", "null"] },
             period: { type: ["string", "null"] },
             message: { type: ["string", "null"] },
@@ -1613,6 +1621,7 @@ export const EDIT_JSON_SCHEMA = {
             "from",
             "to",
             "service",
+            "staff",
             "amount",
             "period",
             "message",

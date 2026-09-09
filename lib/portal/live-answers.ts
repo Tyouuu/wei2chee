@@ -75,6 +75,8 @@ const WORDS = {
     enquiries: "他官网上进来、而他还没处理的询价（reply_to_enquiry 用那个编号）",
     /* 🔴 他的班。见下面 `classes`。 */
     classes: "他的班（bill_class 用那个编号；人数跟价钱是他自己设的）",
+    /* 🔴 她的师傅。见下面 `crew`。 */
+    crew: "他的师傅（book_appointment 的 staff 用那个编号）",
     /* 🔴 他讲过要记住的那几句。见下面 `memory` 那一段。 */
     memory: "他以前叫你记住的（他自己的规矩跟他纠正过你的地方 —— 照做，不要再问一次）",
   },
@@ -91,6 +93,7 @@ const WORDS = {
     prices: "His own price list (the prices on his items page -- use these when raising a document, never estimate one)",
     enquiries: "Strangers who asked through his website and have not been dealt with (reply_to_enquiry takes the id)",
     classes: "His classes (bill_class takes the id; the head count and the fee are his own)",
+    crew: "His people (book_appointment's staff takes the id)",
     memory: "What he told you to remember (his own rules, and where he corrected you -- follow them, do not ask again)",
   },
 } as const;
@@ -189,6 +192,10 @@ const ENQUIRY_CAP = 5;
 /** 他有几个班就送几个 —— 一间补习中心开二三十班，而那是他真的要点名的东西。
  *  三十行短的字比一次开错班便宜。 */
 const CLASS_CAP = 30;
+
+/** 她有几个师傅就送几个。一间沙龙四到八个，一间大一点的十几个 ——
+ *  这个数字不是省 token，是**她不可能有四十个发型师**。 */
+const CREW_CAP = 40;
 
 export type BusinessFacts = {
   /** Malaysia's date, not the server's. Every figure below is bounded by a
@@ -311,6 +318,19 @@ export type BusinessFacts = {
    * 另写一句查询就是第二份会漂的定义。
    */
   classes: { id: string; line: string }[];
+  /**
+   * 🔴 她的师傅 —— 而这一栏不是方便，是**排得对不对**。
+   *
+   * `appointments_no_double_booking` 排他的键是 `coalesce(staff_id, project_id)`
+   * （20260902030000）—— 也就是说**没有指师傅的时候，整间店同一个时段
+   * 只排得下一笔**。一间四个发型师的沙龙，第二个三点的客人会被挡掉，
+   * 而她读到的是「那个时间已经有人了」。
+   *
+   * ⚠️ 2026-09-10 量到：**人按的那张表单也没有设过 `staff_id`**
+   * （`new-record-form.tsx` 把师傅名字当自由文字写进 `extra`）——
+   * 所以今天不管走哪一条路都是这样。那一半登记在[任务 339]，不是我改的。
+   */
+  crew: { id: string; line: string }[];
   lang: "zh" | "en";
   /** True when the read itself failed, as opposed to succeeding and finding
    *  nothing. The prompt must say different things about those two, because
@@ -382,6 +402,7 @@ export async function fetchBusinessFacts(
       memory: await fetchMemory(supabase, projectId),
       enquiries: [],
       classes: [],
+      crew: [],
       lang,
       unread: true,
     };
@@ -413,6 +434,7 @@ export async function fetchBusinessFacts(
       memory: await fetchMemory(supabase, projectId),
       enquiries: await fetchEnquiries(supabase),
       classes: await fetchClasses(supabase, projectId),
+      crew: await fetchCrew(supabase, projectId),
       lang,
       unread: false,
     };
@@ -436,9 +458,41 @@ export async function fetchBusinessFacts(
     memory: await fetchMemory(supabase, projectId),
     enquiries: await fetchEnquiries(supabase),
     classes: await fetchClasses(supabase, projectId),
+    crew: await fetchCrew(supabase, projectId),
     lang,
     unread: false,
   };
+}
+
+/**
+ * 🔴 她有哪几个师傅 —— 而这一支存在的理由是排他约束，不是方便。
+ *
+ * 见 `BusinessFacts.crew` 的注解：没有 `staff_id`，整间店同一时段只排得下一笔。
+ *
+ * ⚠️ 师傅住在**名册那一页**（`directory_entries`，`module_key = 'staff'`）——
+ * 跟客户同一张表、同一套权限。这里不另外判角色：RLS 已经判过了。
+ */
+async function fetchCrew(
+  supabase: SupabaseClient,
+  projectId: string,
+): Promise<{ id: string; line: string }[]> {
+  const { data, error } = await supabase
+    .from("directory_entries")
+    .select("id, name, status")
+    .eq("project_id", projectId)
+    .eq("module_key", "staff")
+    .is("archived_at", null)
+    .order("name")
+    .limit(CREW_CAP);
+  if (error) return [];
+  return ((data ?? []) as { id?: string; name?: string; status?: string }[]).map(
+    (r) => ({
+      id: String(r.id ?? ""),
+      line: [`staff=${String(r.id ?? "")}`, String(r.name ?? "").trim()]
+        .filter(Boolean)
+        .join(" \u00b7 "),
+    }),
+  );
 }
 
 /**
@@ -908,6 +962,11 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ? ["", `${w.classes}:`, ...facts.classes.map((r) => `- ${r.line}`)]
     : [];
 
+  /* 🔴 她的师傅。一个都没有就不出这一段。 */
+  const crew = facts.crew.length
+    ? ["", `${w.crew}:`, ...facts.crew.map((r) => `- ${r.line}`)]
+    : [];
+
   /* 🔴 这一次答不了的，跟永远答不了的，放在同一段但来源不同。
      `owingUnread` 只在没有读到欠款的时候出现 —— 读到了还留着它，
      就是助手拒绝回答一件它手上已经有答案的事。 */
@@ -930,6 +989,7 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ...prices,
     ...enquiries,
     ...classes,
+    ...crew,
     ...memory,
     "",
     `${w.cannot}:`,

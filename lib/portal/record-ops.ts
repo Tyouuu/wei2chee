@@ -1027,6 +1027,7 @@ export async function actOnRecords(
         from?: unknown;
         to?: unknown;
         service?: unknown;
+        staff?: unknown;
       };
       const day = String(raw.day ?? "").trim();
       const from = String(raw.from ?? "").trim();
@@ -1056,6 +1057,29 @@ export async function actOnRecords(
         how = "before";
       }
 
+      /*
+        🔴 哪一位做 —— 而这里**只收她自己名单上的编号**。
+
+        那一支 RPC 对 `in_staff_id` **一个字都不验**（房间跟班级它验，
+        师傅它没有 —— 20260909020000）。所以一个编出来的编号会真的写进去，
+        而那一笔预约会挂在一个不存在、或者别人家的人身上。
+        收紧资料库那一边是「收紧」，要单独做（[重点 31]）—— 登记在[任务 339]。
+
+        这里挡的方法是**闭集**：上面那份清单是从她自己的名册读出来的，
+        模型只能抄一个下来。抄错一个不在清单上的，就当作她没有讲。
+      */
+      const saidStaff = String(raw.staff ?? "").trim();
+      const { data: mine } = saidStaff
+        ? await supabase
+            .from("directory_entries")
+            .select("id")
+            .eq("project_id", projectId)
+            .eq("module_key", "staff")
+            .eq("id", saidStaff)
+            .maybeSingle()
+        : { data: null };
+      const staffId = (mine as { id?: string } | null)?.id ?? null;
+
       const { error: bookErr } = await supabase.rpc("add_appointment", {
         in_project_id: projectId,
         in_module_key: moduleKey,
@@ -1063,17 +1087,30 @@ export async function actOnRecords(
         in_ends_at: endsAt,
         in_party: party,
         in_service: service,
+        in_staff_id: staffId,
         /* 没有人名就是**挡住这段时间**（午休 · 她去看牙医）——
            那一支自己认得这两种（`kind`），而它对 block 不要求人名。 */
         in_kind: party ? "booking" : "block",
         in_idempotency_key: keyFor(`${projectId}:${startsAt}:${party}`, 0),
       });
       if (bookErr) {
-        skipped.push({
-          op: op.op,
-          reason: "dbSaid",
-          vars: { detail: bookErr.message.slice(0, 80) },
-        });
+        /*
+          🔴 撞到了，而她没有讲是哪一位做 —— 那一句要讲得出**怎么办**。
+
+          排他的键是 `coalesce(staff_id, project_id)`，所以不指人的时候
+          整间店同一时段只排得下一笔。一句笼统的「那个时间已经有人了」
+          会让一间四个发型师的沙龙以为自己排满了 —— 而她只是没讲是谁做。
+        */
+        const clash = /already taken/i.test(bookErr.message ?? "");
+        skipped.push(
+          clash && !staffId
+            ? { op: op.op, reason: "whoIsDoingIt" }
+            : {
+                op: op.op,
+                reason: "dbSaid",
+                vars: { detail: bookErr.message.slice(0, 80) },
+              },
+        );
         continue;
       }
       notes.push({

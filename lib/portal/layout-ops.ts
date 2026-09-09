@@ -501,6 +501,17 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     to: z.string().max(5).nullable(),
     /** 做什么（剪 · 染 · 脸部）。她讲了才填。 */
     service: z.string().max(120).nullable(),
+    /**
+     * 🔴 哪一位做 —— 从上面那份师傅清单里 `staff=` 抄下来的编号。
+     *
+     * **这一格不是方便，是排得对不对**：那条排他约束的键是
+     * `coalesce(staff_id, project_id)`，所以不指人的时候**整间店同一个
+     * 时段只排得下一笔**。一间四个发型师的沙龙，第二个三点的客人会被挡掉。
+     *
+     * ⚠️ 是**编号**不是名字。照名字配人，正是[任务 89] 量过会把东西
+     * 记到另一个人头上的那件事 —— 而那份清单就印在上面，抄一个就好。
+     */
+    staff: z.string().max(64).nullable(),
   }),
   z.object({
     op: z.literal("take_payment"),

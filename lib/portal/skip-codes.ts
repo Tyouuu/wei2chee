@@ -148,6 +148,14 @@ export type SkipCode =
    * （20260902030000）。两种都是她要收拾的。
    */
   | "noEndSaid"
+  /**
+   * 🔴 那个时段撞到了，**而她没有讲是哪一位做**。
+   *
+   * 排他的键是 `coalesce(staff_id, project_id)` —— 不指人的时候整间店
+   * 同一时段只排得下一笔。一句笼统的「有人了」会让一间四个发型师的沙龙
+   * 以为自己排满了，而她只是没讲是谁做。
+   */
+  | "whoIsDoingIt"
   /** 冲正只在钱那几页做得了。 */
   | "notMoneyPage"
   /**
@@ -351,6 +359,7 @@ export const SKIP_CODES = [
   "notBookingPage",
   "noWhenSaid",
   "noEndSaid",
+  "whoIsDoingIt",
   "notMoneyPage",
   "dbSaid",
   "layoutSaved",

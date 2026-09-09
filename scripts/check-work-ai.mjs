@@ -876,6 +876,69 @@ try {
   );
   await page.screenshot({ path: `${OUT}/12-booking.png` });
 
+
+  console.log("");
+  console.log("── ⑯ 🔴 两位师傅，同一个三点 ──────────────────────");
+  /*
+    🔴 这一段量的不是方便，是**排得对不对**。
+
+    `appointments_no_double_booking` 排他的键是 `coalesce(staff_id, project_id)`
+    （20260902030000）—— **没有指师傅的时候，整间店同一个时段只排得下一笔**。
+    一间四个发型师的沙龙，第二个三点的客人会被挡掉，而她读到的是
+    「那个时间已经有人了」，於是以为自己排满了。
+
+    ⚠️ 2026-09-10 量到：**人按的那张表单也从来没有设过 `staff_id`** ——
+    所以今天不管走哪一条路都是这样。这一支是第一条设得了的路。
+  */
+  const stylists = [];
+  for (const name of ["Amy", "Jasmine"]) {
+    const { data: who } = await api.rpc("add_directory_entry", {
+      in_project_id: P,
+      in_module_key: "staff",
+      in_name: name,
+    });
+    if (who?.id) stylists.push([name, who.id]);
+  }
+  check("\u4e24\u4f4d\u5e08\u5085\u79cd\u8fdb\u53bb\u4e86\uff08\u5c3a\u5b50\u81ea\u5df1\u7684\uff09", stylists.length === 2, `${stylists.length} \u4f4d`);
+
+  await page.goto(`${BASE}/en/portal/${bookPage}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1200);
+
+  const one = await say(
+    page,
+    "Book Ms Wong with Amy tomorrow 4pm to 5pm for a cut",
+  );
+  console.log(`        \u7b2c\u4e00\u4f4d\uff1a${one.split(String.fromCharCode(10)).join(" / ").slice(0, 150)}`);
+  await page.waitForTimeout(2000);
+  const two = await say(
+    page,
+    "Book Ms Foo with Jasmine tomorrow 4pm to 5pm for a cut",
+  );
+  console.log(`        \u7b2c\u4e8c\u4f4d\uff1a${two.split(String.fromCharCode(10)).join(" / ").slice(0, 150)}`);
+  await page.waitForTimeout(2500);
+
+  const both = await admin
+    .from("appointments")
+    .select("party, staff_id, starts_at", { count: "exact" })
+    .eq("project_id", P)
+    .in("party", ["Ms Wong", "Ms Foo"]);
+  check(
+    "🔴 \u540c\u4e00\u4e2a\u56db\u70b9\uff0c\u4e24\u4e2a\u5ba2\u4eba\u90fd\u6392\u5f97\u8fdb\u53bb",
+    (both.count ?? 0) === 2,
+    `\u53ea\u6392\u8fdb\u53bb ${both.count} \u7b14 \u2014 ${two.slice(0, 140)}`,
+  );
+  /* 🔴 \u800c\u4e14\u4e24\u7b14\u771f\u7684\u6302\u5728**\u4e0d\u540c\u7684\u4eba**\u8eab\u4e0a \u2014\u2014 \u4e24\u7b14\u90fd\u662f null
+     \u4e5f\u4f1a\u649e\uff0c\u6240\u4ee5\u4e0a\u9762\u90a3\u4e00\u6761\u8fc7\u4e86\u5c31\u4ee3\u8868\u5b83\u4eec\u5404\u6709\u4e00\u4e2a\u3002
+     \u8fd9\u4e00\u6761\u91cf\u7684\u662f\u201c\u4e0d\u662f\u540c\u4e00\u4e2a\u4eba\u201d\u3002 */
+  const ids = new Set((both.data ?? []).map((a) => String(a.staff_id ?? "")));
+  check(
+    "🔴 \u800c\u4e14\u5404\u81ea\u6302\u5728\u81ea\u5df1\u90a3\u4e00\u4f4d\u8eab\u4e0a",
+    ids.size === 2 && !ids.has(""),
+    `staff_id: ${[...ids].join(" \u00b7 ")}`,
+  );
+  await page.screenshot({ path: `${OUT}/13-two-stylists.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);

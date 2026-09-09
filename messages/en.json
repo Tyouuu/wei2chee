@@ -575,6 +575,7 @@
         "notBookingPage": "A booking is made on the appointments page, not this one",
         "noWhenSaid": "It did not say which day and what time",
         "noEndSaid": "It did not say how long that takes, and there is no earlier one like it to go by \u2014 say the finish time",
+        "whoIsDoingIt": "That time is taken — say who is doing it and two of them can be booked at once",
         "followUpSet": "Noted: {what} — on today's list, move the day on that page."
       }
     },
