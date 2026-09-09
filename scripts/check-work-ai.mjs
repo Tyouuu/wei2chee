@@ -641,6 +641,90 @@ try {
   await page2.screenshot({ path: `${OUT}/12-remembered.png` });
   await fresh.close();
 
+
+  console.log("");
+  console.log("── ⑬ 🔴 一句话开全班的学费 ──────────────────────");
+  /*
+    🔴 `bill_class` 从 20260909270000 那一批就在跑，尺子也绿 ——
+    而助手**一个都不会用**，因为它看不到他有哪几个班（班在工具页上）。
+    [重点 23]：能力有、线没接。这一段量的就是那条线接上了没有。
+
+    ⚠️ 种**三个学生，其中一个不用交钱**（他自己的价钱是 0）——
+    一个只会数「开了几张」的尺，量不到那一支最值钱的那一条：
+    **少掉的那一张要讲得出来**。
+  */
+  const { data: grp, error: grpErr } = await api.rpc("add_class_group", {
+    in_project_id: P,
+    in_module_key: "bookings",
+    in_name: "Form 5 Maths",
+  });
+  if (grpErr) throw new Error(`seed class: ${grpErr.message}`);
+  const kids = [];
+  for (const name of ["Tan Wei Ming", "Nurul Aina", "Raj Kumar"]) {
+    const { data: who } = await api.rpc("add_directory_entry", {
+      in_project_id: P,
+      in_module_key: "customers",
+      in_name: name,
+    });
+    if (who?.id) {
+      kids.push(who.id);
+      await api.rpc("enrol_in_class", { in_group_id: grp.id, in_party_id: who.id });
+    }
+  }
+  /* 🔴 第三个不用交 —— 他自己的价钱是 0，不是「没有设」。 */
+  if (kids[2]) {
+    await api.rpc("set_class_fee", {
+      in_group_id: grp.id,
+      in_party_id: kids[2],
+      in_amount_cents: 0,
+    });
+  }
+
+  await page.setViewportSize({ width: 1440, height: 950 });
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  const billed = await say(page, "Bill the Form 5 Maths class RM 180 each for this month");
+  console.log(`        它讲了：${billed.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  await page.waitForTimeout(2500);
+  const madeRows = await admin
+    .from("pipeline_records")
+    .select("id, amount_cents, party", { count: "exact" })
+    .eq("project_id", P)
+    .eq("module_key", "quotations")
+    .in("party", ["Tan Wei Ming", "Nurul Aina", "Raj Kumar"]);
+  check(
+    "🔴 一句话开出两张（第三个不用交）",
+    (madeRows.count ?? 0) === 2,
+    `开出 ${madeRows.count} 张 — ${billed.slice(0, 160)}`,
+  );
+  check(
+    "每一张都是 RM 180",
+    (madeRows.data ?? []).every((x) => Number(x.amount_cents) === 18000),
+    JSON.stringify((madeRows.data ?? []).map((x) => x.amount_cents)),
+  );
+  /* 🔴 这一条最值钱：**少掉的那一张要讲得出来**。
+     一间十个学生的补习中心开出八张，第九第十去了哪里 ——
+     不讲就是静静少了两笔钱。 */
+  check(
+    "🔴 而它讲得出「一个不用交」",
+    /1 pay nothing|1 \u4e2a\u4e0d\u7528\u4ea4/.test(billed),
+    billed.slice(0, 220),
+  );
+  /* 按第二次不会再开一次 —— 那一支自己按月份挡着。 */
+  const again = await say(page, "Bill the Form 5 Maths class RM 180 each for this month");
+  await page.waitForTimeout(2500);
+  const after2 = await admin
+    .from("pipeline_records")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", P)
+    .eq("module_key", "quotations")
+    .in("party", ["Tan Wei Ming", "Nurul Aina", "Raj Kumar"]);
+  check(
+    "🔴 同一个月讲第二次，不会开第二批",
+    (after2.count ?? 0) === 2,
+    `变成 ${after2.count} 张 — ${again.slice(0, 160)}`,
+  );
+  await page.screenshot({ path: `${OUT}/10-class.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);

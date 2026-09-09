@@ -73,6 +73,8 @@ const WORDS = {
     prices: "他自己的价目（他货品页上打的价钱 —— 开单的时候直接用，不要自己估）",
     /* 🔴 陈生人在他官网上问的那几句。见下面 `enquiries`。 */
     enquiries: "他官网上进来、而他还没处理的询价（reply_to_enquiry 用那个编号）",
+    /* 🔴 他的班。见下面 `classes`。 */
+    classes: "他的班（bill_class 用那个编号；人数跟价钱是他自己设的）",
     /* 🔴 他讲过要记住的那几句。见下面 `memory` 那一段。 */
     memory: "他以前叫你记住的（他自己的规矩跟他纠正过你的地方 —— 照做，不要再问一次）",
   },
@@ -88,6 +90,7 @@ const WORDS = {
     nudgesNone: "Nothing the system has spotted is outstanding today.",
     prices: "His own price list (the prices on his items page -- use these when raising a document, never estimate one)",
     enquiries: "Strangers who asked through his website and have not been dealt with (reply_to_enquiry takes the id)",
+    classes: "His classes (bill_class takes the id; the head count and the fee are his own)",
     memory: "What he told you to remember (his own rules, and where he corrected you -- follow them, do not ask again)",
   },
 } as const;
@@ -182,6 +185,10 @@ const PRICE_CAP = 40;
  * 是先回最早那几封（`my_site_enquiries` 自己按时间排）。
  */
 const ENQUIRY_CAP = 5;
+
+/** 他有几个班就送几个 —— 一间补习中心开二三十班，而那是他真的要点名的东西。
+ *  三十行短的字比一次开错班便宜。 */
+const CLASS_CAP = 30;
 
 export type BusinessFacts = {
   /** Malaysia's date, not the server's. Every figure below is bounded by a
@@ -288,6 +295,22 @@ export type BusinessFacts = {
    * `p.account_id = auth.uid()` —— 也就是**只给老板**，师傅拿到的是空的。
    */
   enquiries: { id: string; line: string }[];
+  /**
+   * 🔴 他的班 —— 而这一栏是为了一句话存在的：
+   * **「帮我开这个月全班的学费」**。
+   *
+   * ── 为什么它今天才有 ──────────────────────────────────────────────
+   *
+   * `bill_class`（20260909270000 那一批）**已经在跑，尺子也绿** ——
+   * 一按开全班的学费单、认得每个学生自己的价钱、认得这个月开过没有。
+   * 而助手**一个都不会用**，因为它看不到他有哪几个班：班在 `classes`
+   * 那一页上，而那是工具页，助手不在那里。
+   * [重点 23] 讲的就是这件事：**能力有、线没接**。
+   *
+   * ⚠️ 走**同一支** `class_groups_of` —— 班级那一页读的也是它。
+   * 另写一句查询就是第二份会漂的定义。
+   */
+  classes: { id: string; line: string }[];
   lang: "zh" | "en";
   /** True when the read itself failed, as opposed to succeeding and finding
    *  nothing. The prompt must say different things about those two, because
@@ -358,6 +381,7 @@ export async function fetchBusinessFacts(
          这一轮答不了他的数字，而他的规矩照旧要守。 */
       memory: await fetchMemory(supabase, projectId),
       enquiries: [],
+      classes: [],
       lang,
       unread: true,
     };
@@ -388,6 +412,7 @@ export async function fetchBusinessFacts(
          正是他还没有任何数字的那一天讲的。 */
       memory: await fetchMemory(supabase, projectId),
       enquiries: await fetchEnquiries(supabase),
+      classes: await fetchClasses(supabase, projectId),
       lang,
       unread: false,
     };
@@ -410,9 +435,54 @@ export async function fetchBusinessFacts(
     ...(await fetchPrices(supabase, projectId)),
     memory: await fetchMemory(supabase, projectId),
     enquiries: await fetchEnquiries(supabase),
+    classes: await fetchClasses(supabase, projectId),
     lang,
     unread: false,
   };
+}
+
+/**
+ * 🔴 他有哪几个班 —— 而这一支是为了一句话存在的：
+ * **「帮我开这个月全班的学费」**。
+ *
+ * 呼叫的是 `class_groups_of` —— **班级那一页读的同一支**。
+ * 另写一句 `from("class_groups")` 就是第二份会漂的定义，而漂的那一天
+ * 助手念的班跟他打开那一页看到的不一样。
+ *
+ * ⚠️ 收起来的班不送（`archived_at`）—— 一个已经收掉的班出现在清单上，
+ * 而 `bill_class` 自己会拒绝它，那就是给他一个必定失败的选项。
+ */
+async function fetchClasses(
+  supabase: SupabaseClient,
+  projectId: string,
+): Promise<{ id: string; line: string }[]> {
+  const { data, error } = await supabase.rpc("class_groups_of", {
+    in_project_id: projectId,
+  });
+  if (error) return [];
+  const rows = (data ?? []) as {
+    id?: string | null;
+    name?: string | null;
+    staff_name?: string | null;
+    capacity?: number | null;
+    seats_taken?: number | null;
+    archived_at?: string | null;
+  }[];
+  return rows
+    .filter((r) => !r.archived_at)
+    .slice(0, CLASS_CAP)
+    .map((r) => ({
+      id: String(r.id ?? ""),
+      line: [
+        `class=${String(r.id ?? "")}`,
+        String(r.name ?? "").trim(),
+        String(r.staff_name ?? "").trim(),
+        /* 几个学生在班上 —— 他讲「全班」指的就是这个数字。 */
+        r.seats_taken == null ? "" : `${r.seats_taken}人`,
+      ]
+        .filter(Boolean)
+        .join(" \u00b7 "),
+    }));
 }
 
 /**
@@ -833,6 +903,11 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ? ["", `${w.enquiries}:`, ...facts.enquiries.map((r) => `- ${r.line}`)]
     : [];
 
+  /* 🔴 他的班。一个都没有就不出这一段 —— 大部分行业没有班。 */
+  const classes = facts.classes.length
+    ? ["", `${w.classes}:`, ...facts.classes.map((r) => `- ${r.line}`)]
+    : [];
+
   /* 🔴 这一次答不了的，跟永远答不了的，放在同一段但来源不同。
      `owingUnread` 只在没有读到欠款的时候出现 —— 读到了还留着它，
      就是助手拒绝回答一件它手上已经有答案的事。 */
@@ -854,6 +929,7 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ...nudges,
     ...prices,
     ...enquiries,
+    ...classes,
     ...memory,
     "",
     `${w.cannot}:`,

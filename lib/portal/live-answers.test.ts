@@ -31,6 +31,8 @@ const withFigures = (over: Partial<BusinessFacts> = {}): BusinessFacts => ({
     { line: "换灯 · 盏 · RM 380.00" },
   ],
   pricesCut: false,
+  /* 他的班。预设有一个 —— 空的夹具量不到下面那几条。 */
+  classes: [{ id: "g1", line: "class=g1 · 中五数学 · 李老师 · 12人" }],
   /* 他讲过要它记住的那几句。预设有两句，不是空的 —— 一个空的夹具会让
      下面那几条断言量到「这一段根本没出现」，而不是量到它印对了没有。 */
   memory: [

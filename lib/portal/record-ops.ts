@@ -3,6 +3,7 @@ import type { LayoutOp } from "./layout-ops";
 import type { Skip, SkipCode } from "./skip-codes";
 import { defaultDueOn, todayMYT, validityKindOf } from "./record-validity";
 import { waLink } from "./wa-link";
+import { ringgit } from "./live-rows";
 
 /**
  * The assistant's 「加一单」 writes a real row, through the button's own RPC.
@@ -292,6 +293,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "unshare_record",
   "add_record_line",
   "reply_to_enquiry",
+  "bill_class",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -898,6 +900,75 @@ export async function actOnRecords(
       ⚠️ 那一封的号码**不从模型那里拿** —— 模型只给编号，
       号码我们自己去读。一个背得出来的号码就是一条发给另一个人的训息。
     */
+    /*
+      🔴 一句话开全班的学费单。
+
+      走 `bill_class` —— **不拆成十次「加一单」**。那一支自己做四件
+      这里做不了的事：每个学生自己的价钱 · 同一个月按两次不会开两张 ·
+      不收钱的那几个跳过**而且数出来** · 一张单一把钥匙。
+
+      🔴 开在**他现在站着的那一页**（`moduleKey`）—— 不是模型挑的。
+      让模型讲一个页面名字，就是让它替他挑一本帐簿。
+
+      ⚠️ 那一支回的四个数字**非讲不可**：开了几张 · 几张是上次开过的 ·
+      几个不用交 · 总共多少。一间十个学生的补习中心开出八张单，
+      第九第十去了哪里要讲得出来—— 不讲就是静静少了两笔钱。
+    */
+    if (op.op === "bill_class") {
+      const raw = op as unknown as {
+        group_id?: unknown;
+        amount?: unknown;
+        period?: unknown;
+      };
+      const groupId = String(raw.group_id ?? "").trim();
+      if (!groupId) {
+        skipped.push({ op: op.op, reason: "noClassSaid" });
+        continue;
+      }
+      const cents = senFrom(String(raw.amount ?? ""));
+      if (!cents || cents <= 0) {
+        skipped.push({ op: op.op, reason: "noFeeSaid" });
+        continue;
+      }
+      const { data: billed, error: billErr } = await supabase.rpc("bill_class", {
+        in_group_id: groupId,
+        /* 他现在站着的那一页。 */
+        in_module_key: moduleKey,
+        in_amount_cents: cents,
+        in_period: String(raw.period ?? "").trim() || null,
+      });
+      if (billErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: billErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      const r = ((billed ?? []) as {
+        made?: number;
+        again?: number;
+        free?: number;
+        total_cents?: number;
+        period?: string;
+      }[])[0];
+      notes.push({
+        op: op.op,
+        reason: "classBilled",
+        vars: {
+          made: String(r?.made ?? 0),
+          again: String(r?.again ?? 0),
+          free: String(r?.free ?? 0),
+          /* `ringgit` 对空回 undefined（它不编一个 0 出来）——
+             而这一句要有一个数字，所以这里自己兵底。 */
+          total: ringgit(Number(r?.total_cents ?? 0)) ?? "RM 0",
+          period: String(r?.period ?? ""),
+        },
+      });
+      written += Number(r?.made ?? 0);
+      continue;
+    }
+
     if (op.op === "reply_to_enquiry") {
       const raw = op as unknown as { enquiry_id?: unknown; message?: unknown };
       const enquiryId = String(raw.enquiry_id ?? "").trim();

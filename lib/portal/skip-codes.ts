@@ -129,6 +129,10 @@ export type SkipCode =
    * 客人留的可能是一个邮箱，那就讲出来。`contact`
    */
   | "noWayToReach"
+  /** 没有讲是哪一个班。 */
+  | "noClassSaid"
+  /** 没有讲一个学生收多少。 */
+  | "noFeeSaid"
   /** 冲正只在钱那几页做得了。 */
   | "notMoneyPage"
   /**
@@ -222,6 +226,13 @@ export type SkipCode =
    * ⚠️ 那一句非讲不可，而且要讲清楚**还没送** —— 一句听起来像
    * 已经送了的话，会让他以为客人收到了。
    */
+  /**
+   * 🔴 全班的学费单开好了。`made` · `again` · `free` · `total` · `period`
+   *
+   * 四个数字非讲不可：一间十个学生的补习中心开出八张单，
+   * 第九第十去了哪里要讲得出来 —— **不讲就是静静少了两笔钱**。
+   */
+  | "classBilled"
   | "replyDrafted"
   | "entryReversed"
   /**
@@ -304,6 +315,8 @@ export const SKIP_CODES = [
   "noSuchEnquiry",
   "noMessageSaid",
   "noWayToReach",
+  "noClassSaid",
+  "noFeeSaid",
   "notMoneyPage",
   "dbSaid",
   "layoutSaved",
@@ -321,6 +334,7 @@ export const SKIP_CODES = [
   "followUpDone",
   "followUpDropped",
   "followUpSet",
+  "classBilled",
   "replyDrafted",
   "entryReversed",
   "remembered",

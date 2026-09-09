@@ -263,6 +263,16 @@ Record tables:
     work the amount out yourself.
   * Documents only (报价单 / 订单 / 工程 / 任务 / 进货单). Not money pages, not the
     directory, not the shelf.
+- bill_class raises THE WHOLE CLASS'S fees in one go: 「帮我开这个月全班的学费」,
+  「bill Form 5 Maths for September, 180 each」.
+  * group_id is the \`class=\` id from the class list above. amount is what ONE
+    student pays. period is like "2026-09" -- leave it null for this month.
+  * 🔴 ONE operation for the whole class, never one add_table_row per
+    student. The database knows each student's OWN price, skips the ones who
+    pay nothing AND counts them, and will not raise a second bill for a month
+    it has already billed. Splitting it up throws all of that away.
+  * The bills land on the page he is looking at. Do not name a page.
+  * If he did not say how much, ASK. There is no default fee.
 - reply_to_enquiry answers a stranger who asked through his WEBSITE:
   「回覆王先生那封」, 「reply to that waterproofing enquiry」.
   * enquiry_id is the \`enquiry=\` id from the list of website enquiries above.
@@ -1440,6 +1450,7 @@ export const EDIT_JSON_SCHEMA = {
                 "unshare_record",
                 "add_record_line",
                 "reply_to_enquiry",
+                "bill_class",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
@@ -1490,6 +1501,11 @@ export const EDIT_JSON_SCHEMA = {
             // 那条连结是我们照询价上那一串建的，而一个背出来的号码
             // 就是一条发给另一个人的训息。
             enquiry_id: { type: ["string", "null"] },
+            // bill_class 只用这三格。**开在哪一页不在里面** ——
+            // 那是他现在站着的那一页，让模型挑就是让它替他挑一本帐簿。
+            group_id: { type: ["string", "null"] },
+            amount: { type: ["string", "null"] },
+            period: { type: ["string", "null"] },
             message: { type: ["string", "null"] },
             qty: { type: ["string", "null"] },
             unit: { type: ["string", "null"] },
@@ -1528,6 +1544,9 @@ export const EDIT_JSON_SCHEMA = {
             "counted",
             "description",
             "enquiry_id",
+            "group_id",
+            "amount",
+            "period",
             "message",
             "qty",
             "unit",

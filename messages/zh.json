@@ -560,11 +560,14 @@
         "nothingToRemember": "没有讲要记住什么",
         "couldNotRemember": "这一句记不下来",
         "replyDrafted": "写好了，**还没送** — 打开看一遍，你自己按送出：{link}",
+        "classBilled": "{period} 开了 {made} 张，共 {total} — 其中 {again} 张上次已经开过，{free} 个不用交。",
         "noStepSaid": "没有讲要做什么",
         "noLineSaid": "那一行没有写它是什么",
         "noSuchEnquiry": "没有这一封询价",
         "noMessageSaid": "没有写要回什么",
         "noWayToReach": "那一封询价上没有号码 — 只有 {contact}",
+        "noClassSaid": "没有讲是哪一个班",
+        "noFeeSaid": "没有讲一个学生收多少",
         "followUpSet": "记下来了：{what} —— 排在今天，日子在那一页上挪。"
       }
     },
