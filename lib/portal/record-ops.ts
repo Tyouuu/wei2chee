@@ -272,6 +272,42 @@ export type SplitOps = {
 };
 
 /**
+ * 按在一笔已经在的记录上的那几个动作 —— **一份，不是两份**。
+ *
+ * 🔴 这里本来是 `splitRecordOps` 里一条十行的 `||` 链。2026-09-09 抽出来，
+ * 因为第二个地方要问同一个问题：他站在**他的系统**上讲话的时候，
+ * 哪几个动作还成立（route 的 `WORK_OPS`）。
+ *
+ * ⚠️ 抄一份过去是这个仓库最贵的那一类错：三份同样的 key 清单，
+ * 靠变红才找出两份不同步的（重点 27 第 6 步）。所以这一份是唯一一份，
+ * 而 `op-lists-agree.test.ts` 就是为这件事在的。
+ */
+export const ACT_OPS: ReadonlySet<string> = new Set([
+  "set_record_status",
+  "log_work_day",
+  "count_stock",
+  "receive_purchase",
+  "share_record",
+  "unshare_record",
+  "set_follow_up",
+  "finish_follow_up",
+  "drop_follow_up",
+  "reverse_ledger_entry",
+]);
+
+/**
+ * 他在**他的系统**那一页上讲得动的那几个 —— 做事的全部，改样子的一个都没有。
+ *
+ * `add_table_row` 在记录页上就是「开一单」（`splitRecordOps` 会把它送去
+ * `writeRecords`），所以它在。而它在**非**记录页上写的是版面 ——
+ * 那一种由 `SplitOps.refused` 拒绝，跟这里无关。
+ */
+export const WORK_OPS: ReadonlySet<string> = new Set([
+  "add_table_row",
+  ...ACT_OPS,
+]);
+
+/**
  * Separate the rows that are records from the operations that are layout.
  *
  * Only on a module whose rows are real -- on 客户 or 库存 a table row is still
@@ -300,19 +336,7 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
   const actOps: LayoutOp[] = [];
   for (const op of ops) {
     if (op.op === "add_table_row") recordOps.push(op);
-    else if (
-      op.op === "set_record_status" ||
-      op.op === "log_work_day" ||
-      op.op === "count_stock" ||
-      op.op === "receive_purchase" ||
-      op.op === "share_record" ||
-      op.op === "unshare_record" ||
-      op.op === "set_follow_up" ||
-      op.op === "finish_follow_up" ||
-      op.op === "drop_follow_up" ||
-      op.op === "reverse_ledger_entry"
-    )
-      actOps.push(op);
+    else if (ACT_OPS.has(op.op)) actOps.push(op);
     else layoutOps.push(op);
   }
   return { layoutOps, recordOps, actOps, refused: [] };

@@ -84,6 +84,7 @@
     "check:payment": "node scripts/check-payment.mjs",
     "check:receipt": "node scripts/check-receipt.mjs",
     "check:ask-photo": "node scripts/check-ask-photo.mjs",
+    "check:work-ai": "node scripts/check-work-ai.mjs",
     "shoot:directory": "node scripts/shoot-directory.mjs",
     "shoot:scroll": "node scripts/shoot-scroll.mjs",
     "check:sticky": "node scripts/check-sticky.mjs",

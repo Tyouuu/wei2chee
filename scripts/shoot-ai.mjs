@@ -116,8 +116,16 @@ try {
   await page.waitForTimeout(500);
   await hideDev();
   await page.screenshot({ path: `${OUT}/1-system.png` });
-  const hasPanelHere = await page.locator('[data-panel="ai"]').count();
-  say(hasPanelHere === 0, `他每天打开的那一页上，助手在不在 — ${hasPanelHere ? "在" : "不在"}`);
+  /* 🔴 这一句 2026-09-09 反过来了，而反过来才是对的。
+     写它的时候（同一天早上）他每天开的那一页上**没有**助手 ——
+     编辑器那一块只被两个外壳 import，所以那 11 个做事的动作
+     只在改设计那一屏上够得到。他当天问：
+     `如果是產品為什麼不是接在產品裡面呢`。接上了，所以这一句要跟着改：
+     一把还在替旧结论把关的尺，比没有尺更糟。 */
+  const hasEditorPanel = await page.locator('[data-panel="ai"]').count();
+  const hasWorkAi = await page.locator("[data-work-ai]").count();
+  say(hasEditorPanel === 0, `编辑器那一块没有跑到他的系统上来 — ${hasEditorPanel}`);
+  say(hasWorkAi > 0, `🔴 他每天打开的那一页上，用讲的做事在不在 — ${hasWorkAi ? "在" : "不在"}`);
 
   /* ── ② 进编辑器，什么都不选 ───────────────────────────────────────────── */
   await page.goto(`${BASE}/en/portal/quotations?design=1`, { waitUntil: "networkidle", timeout: 180000 });

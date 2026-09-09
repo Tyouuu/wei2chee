@@ -3,6 +3,7 @@ import {
   writeRecords,
   actOnRecords,
   isRecordModule,
+  WORK_OPS,
 } from "@/lib/portal/record-ops";
 import { shapeOfModule } from "@/lib/portal/shape-state";
 import { NextRequest, NextResponse } from "next/server";
@@ -17,6 +18,7 @@ import {
   parseLayoutOps,
   EDITABLE_TEXT_FIELDS,
   REGISTERED_COMPONENTS,
+  LAYOUT_OP_NAMES,
   type PageSuggestion,
   type PuckLayout,
   PHOTO_BLOCKS,
@@ -487,12 +489,38 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { layout, instruction, pages, imagePath, generated, history, pageKey, selected } = (body ?? {}) as {
+  const { layout, instruction, pages, imagePath, generated, history, pageKey, selected, surface } = (body ?? {}) as {
     /** Which module is open. Sent by the browser, trusted for nothing except
      *  deciding whether a table row on THIS page is a business record or a
      *  layout row -- and the RPC it routes to resolves the project from the
      *  session itself, so a wrong value cannot reach anybody else's data. */
     pageKey?: string | null;
+    /**
+     * 🔴 他是站在**他的系统**上讲这句话，还是站在**改设计**那一屏上。
+     *
+     * ── 为什么这一格要存在（2026-09-09 他问的）────────────────────────────
+     *
+     *     `這個ai 助手是我們產品的還是平台的 如果是產品為什麼不是接在產品裡面呢`
+     *
+     * 他分得对，而这一支从写出来那天就同时做两件事：**改设计** 10 个动作
+     * （平台，他一辈子走一次）· **做事** 11 个动作（产品，他一年开三百天）。
+     * 而那块面板只被编辑器那两个外壳 import，所以那 11 个动作**只在改设计
+     * 那一屏上够得到**。任务 268 量过这一句：投在「会做事」那一半的每一分工，
+     * 回报是另一半的三百倍。
+     *
+     * ⚠️ **不拆成两支 route。** 他讲话的时候不会先分类 —— 同一屏上他会讲
+     * 「这一栏改成负责师傅」跟「陈太太订金收了三千」。要他先想「这句话该跟
+     * 哪一个助手讲」，是把我们的架构变成他的工作（重点 29）。
+     * 一个入口，里面自己判 —— 而这一格只是告诉它**他现在站在哪一屏**。
+     *
+     * `"work"` = 他的系统那一页（`WorkView`）。那一页上**没有编辑器**，
+     * 所以一个改版面的操作在那里不但做不到，还会被回报成做到了 ——
+     * 这个仓库每一次「说了没做」的形状。所以在那一边：
+     *   · 模型被明白告知这一页改不了样子
+     *   · 万一它还是给了，那几个操作会被**当成没做成**并且讲出来
+     * 缺省是 `"design"`，也就是这一格出现之前的行为，一个字都没变。
+     */
+    surface?: "design" | "work" | null;
     layout?: PuckLayout;
     instruction?: string;
     /**
@@ -728,6 +756,9 @@ export async function POST(req: NextRequest) {
       ? (hasBlock(layout, selected) ? selected : null)
       : null;
 
+  /* 他站在**他的系统**上，不是站在改设计那一屏上。见 `surface` 的注解。 */
+  const workSurface = surface === "work";
+
   const userPrompt = `Components you may add: ${REGISTERED_COMPONENTS.join(", ")}
 ${renderBlockRules() ? `这些块自己的规矩（字段名看不出来的）:
 ${renderBlockRules()}
@@ -749,7 +780,32 @@ ${designDoc}
 ` : `明暗（从配色量出来的）: 现在没有任何一套配色是深底的，每一套的底都近白。
 「太亮了」只能用更暗的风格回答，拿配色回答等于承诺一个他看不到的变化。
 `}
-${statusLine ? `${statusLine}
+${workSurface ? `WHERE HE IS STANDING: his own system, NOT the design screen.
+
+THE OPERATIONS THAT WORK HERE -- all of them, and they all work normally:
+${[...WORK_OPS].join(", ")}
+So yes: add a record, log money, add a customer or an item, change a row's
+status, log a day, count stock, receive goods, send or pull back a customer's
+link, write or close the next step, reverse an entry. Also ANSWER his question
+from the figures above. This is the surface his work happens on.
+
+THE ONES THAT DO NOT EXIST HERE, because there is no editor around this page:
+${LAYOUT_OP_NAMES.filter((n) => !WORK_OPS.has(n)).join(", ")}
+-- and neither style, palette nor arrangement, nor adding or removing a page.
+
+🔴 If he asks for one of THOSE -- wording, headings, blocks, columns, order,
+style, colour, arrangement -- return an EMPTY operations list and say, in ONE
+sentence, that it is changed on the design screen, the button at the top of
+this page. Do NOT offer to do it, do NOT ask a follow-up question about it, and
+do NOT describe it as something that can happen here: he reads your sentence as
+a promise, and on this page you cannot keep it.
+
+⚠️ This block is written in English on purpose. The rule above ("write all text
+in the same language the owner used") decides your reply, and a block of
+Chinese words sitting here pulled an English question into a Chinese answer --
+measured 2026-09-09 by check:work-ai.
+
+` : ""}${statusLine ? `${statusLine}
 
 ` : ""}${factsBlock ? `${factsBlock}\n\n` : ""}Blocks currently on this page:
 ${describeLayout(layout, here)}
@@ -879,7 +935,28 @@ The business owner asked:
 
     On every other module a table row is still a layout row, and stays one.
   */
-  const split = splitRecordOps(parsed.operations, pageKey);
+  /*
+    🔴 他站在他的系统上的时候，改版面的那几个操作**做不到**。
+
+    做不到而不讲，就是「说了没做」—— 那几个操作会被 `applyLayoutOps` 好好地
+    套进一棵树，route 回报 applied，而那棵树在那一页上**没有人接**：
+    `WorkView` 画的是伺服器那一份，不是回来那一份。
+
+    ⚠️ 上面那段 prompt 已经明白告诉它了，所以正常情况这里一个都不会有。
+    留着这一段是因为**一个只写在 prompt 里的规矩，不是一条规矩** ——
+    这个仓库为「宣告过、没有人执行」付过至少九次学费（见 LAYOUT_OP_NAMES
+    那一段）。它到不了，而它到得了的那一天要红，不要静。
+  */
+  const wrongSurface: Skip[] = [];
+  const wanted = workSurface
+    ? parsed.operations.filter((op) => {
+        if (WORK_OPS.has(op.op)) return true;
+        wrongSurface.push({ op: op.op, reason: "designSurfaceOnly" });
+        return false;
+      })
+    : parsed.operations;
+
+  const split = splitRecordOps(wanted, pageKey);
   let recordsWritten = 0;
   let asCustomerForRows: Awaited<ReturnType<typeof createSessionSupabaseClient>> | null = null;
   const recordSkips: Skip[] = [];
@@ -1004,7 +1081,7 @@ The business owner asked:
   // Whatever the schema turned away is reported beside whatever the applier
   // turned away: to the customer they are the same thing -- something they
   // asked for that did not happen -- and both belong in the same list.
-  result.skipped = [...parsed.rejected, ...result.skipped, ...recordSkips];
+  result.skipped = [...parsed.rejected, ...result.skipped, ...recordSkips, ...wrongSurface];
   result.applied += recordsWritten;
 
   return NextResponse.json({
@@ -1027,8 +1104,17 @@ The business owner asked:
        defect founder-points 23 is about. */
     refetch: recordsWritten > 0,
     skipped: result.skipped,
-    suggestion: resolveSuggestion(parsed.suggestion, Array.isArray(pages) ? pages : [], result.layout as PuckLayout),
-    design: validDesign((parsed as { design?: unknown }).design, generated !== false, result.skipped),
+    /* 🔴 他的系统那一页上没有「加一页 / 删一页 / 去挑照片」那三颗按钮 ——
+       那三颗住在编辑器里。回一个他按不到的提议，跟画一颗按不动的按钮
+       是同一件事，而那正是这个仓库禁得最严的一条。 */
+    suggestion: workSurface
+      ? null
+      : resolveSuggestion(parsed.suggestion, Array.isArray(pages) ? pages : [], result.layout as PuckLayout),
+    /* 风格 · 配色 · 排法 同理 —— 那三样是改设计那一屏的事，而且套用它们的
+       是编辑器那一端的呼叫。 */
+    design: workSurface
+      ? null
+      : validDesign((parsed as { design?: unknown }).design, generated !== false, result.skipped),
   });
 }
 

@@ -10,6 +10,7 @@ import { deskSurface } from "@/lib/portal/system-register";
 import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import type { SystemLang } from "@/lib/system-lang";
 import { WorkView } from "./work-view";
+import { WorkAssistant } from "./work-assistant";
 
 /**
  * 他的系统，加上手机上那一层壳 —— 换页的底栏、藏起来的侧栏。
@@ -80,12 +81,29 @@ export function SystemView({
   const wrapClass =
     variant === "phone"
       ? "min-h-0 flex-1 overflow-y-auto pb-16 [&_aside[data-nav=side]]:hidden [&_[data-shell-bar]]:hidden [&_[data-page-title]>p]:hidden"
-      : "min-h-screen max-lg:[&_aside[data-nav=side]]:hidden max-lg:[&_[data-shell-bar]]:hidden max-lg:[&_[data-page-title]>p]:hidden";
+      : "min-h-screen lg:pb-14 max-lg:[&_aside[data-nav=side]]:hidden max-lg:[&_[data-shell-bar]]:hidden max-lg:[&_[data-page-title]>p]:hidden";
   /* 底栏在桌面上不画 —— 那里有侧栏。 */
   const barClass =
     variant === "phone"
       ? "shrink-0"
       : "fixed inset-x-0 bottom-0 z-30 lg:hidden";
+  /*
+    🔴 用讲的做事那一条，贴在**画面**下缘 —— 不是挂在页尾。
+
+    第一版挂在页尾（放在内容那一层里面），尺子数到它而 1440 的实拍里
+    **一个像素都看不到**：报价单那一页比一屏长。改成贴之后再看一次，
+    它压在侧栏的「Ranking」上并且被切掉一半 —— 因为内容那一层
+    **包含他自己那条侧栏**，一条在里面贴着的东西会盖到它。
+    [重点 7l] 两次：数字过关不等於眼睛过关。
+
+    所以照这个档案自己那条底栏的做法（上面 `barClass`）：整页宽、`fixed`、
+    在内容外面。窄屏留给那一条分页列（`lg:hidden`），这一条只在 `lg` 以上 ——
+    两条叠在同一条边上，吃掉的永远是内容最后那一样，同一条这里写过三次。
+
+    ⚠️ 而它要让内容躲开自己（`lg:pb-14`），理由同上：一个飘在内容上、
+    又不让内容躲开的东西，吃掉的正好是页面最后那一样。
+  */
+  const askClass = "fixed inset-x-0 bottom-0 z-30 max-lg:hidden";
 
   return (
     <>
@@ -146,6 +164,30 @@ export function SystemView({
           designLabel={designLabel}
         />
       </div>
+
+      {/*
+        🔴 用讲的做事 —— 那 11 个动作第一次在**他的系统**上够得到。
+        他 2026-09-09 问的：`如果是產品為什麼不是接在產品裡面呢`。
+        见 work-assistant.tsx 的档头，位置的理由见上面 `askClass`。
+
+        ⚠️ **只在 `responsive`**，也就是他自己打开的那一页。
+        `phone` 那一种装在 `mobile-editor.tsx` 里面，而那个外壳已经挂着
+        编辑器那一块完整的助手 —— 两块助手同一屏，是「同一件事两个入口」，
+        正好是这个仓库最贵的那一类缺陷。
+
+        ⚠️ 长相不是这里决定的（`你只是要接功能 反正Ui是另外一邊設計的`）。
+        它现在是一条能按的线，排法跟密度登记在任务档里给画面那一边。
+      */}
+      {variant === "responsive" ? (
+        <StyleScope
+          register={style}
+          palette={palette}
+          data-surface={deskSurface(pageKey)}
+          className={askClass}
+        >
+          <WorkAssistant pageKey={pageKey} data={data} pages={navPages} />
+        </StyleScope>
+      ) : null}
 
       {/* ─────────────────────────────────────────────────────────────────
             🔴 换页在**底下**，不是顶上。

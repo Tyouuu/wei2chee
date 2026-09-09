@@ -54,7 +54,9 @@ export type PageOffer = {
  * ⚠️ 认不得的代号回代号本身，不回一句空的 —— 一个空白的解释，跟
  * 「什么都没发生」在他眼前长得一模一样。
  */
-function sayWhyNot(t: ReturnType<typeof useTranslations>, s: Skip): string {
+/** ⚠️ 导出去给他的系统那一页那块面板用（`work-assistant.tsx`）——
+ *  **抄一份过去就是第五十句写死的话**。见这个档头上面那一段。 */
+export function sayWhyNot(t: ReturnType<typeof useTranslations>, s: Skip): string {
   const key = `skipped.${s.reason}`;
   try {
     return t(key, (s.vars ?? {}) as never).trim();
