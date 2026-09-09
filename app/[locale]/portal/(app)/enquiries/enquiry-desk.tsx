@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { deskField } from "../desk-kit";
 import { ConvertEnquiry } from "./convert";
 import { formatDayTime } from "@/lib/format-date";
 import chrome from "../../chrome.module.css";
@@ -214,7 +215,13 @@ export function EnquiryDesk({
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
                       rows={3}
-                      className="w-full resize-none rounded-[var(--radius-md)] border p-3 [background-color:var(--color-ink-950)] [border-color:var(--input,var(--color-ink-700))] [color:var(--color-paper)] [font-size:var(--text-sm)]"
+                      /* `deskField` and not a hand-written class: that shared
+                         one exists because 2026-09-07 measured every typed
+                         field in all six sets at 1.17–1.48:1 against its own
+                         ground, under a 3:1 threshold, and --input is the
+                         token that fixes it. A second copy of the border here
+                         is a second place to forget. */
+                      className={`${deskField} resize-none`}
                     />
                   </label>
                   <div className="mt-3 flex flex-wrap items-center gap-3">

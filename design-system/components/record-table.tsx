@@ -1023,6 +1023,23 @@ function Pill({ tone, label }: { tone: StatusTone; label: string }) {
         border: `var(--hairline) solid color-mix(in oklab, ${c} 32%, transparent)`,
       }}
     >
+      {/*
+        THE DOT IS WHERE THE HUE GOES AT FULL STRENGTH.
+
+        The comment above explains why the LABEL cannot carry the tone. It
+        left the pill with the tone only in a 14% wash and a 32% hairline --
+        true to the contrast argument, and at a glance four states looked
+        like four identical grey chips. The reference this table is copied
+        from resolves the same tension the way status-dot.tsx does three
+        files over: a small mark at full saturation, the words at reading
+        contrast. Same size and shape as that component's dot on purpose --
+        one state mark in this system, not two.
+      */}
+      <span
+        aria-hidden="true"
+        className="me-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ background: c }}
+      />
       {label}
     </span>
   );
