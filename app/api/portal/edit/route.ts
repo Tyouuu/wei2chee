@@ -49,6 +49,7 @@ import { STYLE_ORDER } from "@/app/[locale]/style-picker/style-column";
 import type { Skip } from "@/lib/portal/skip-codes";
 import { SITE_URL } from "@/lib/site-url";
 import { RECORD_COPY } from "@/app/[locale]/portal/[pageKey]/record-copy";
+import { todayMYT } from "@/lib/portal/record-validity";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -263,6 +264,18 @@ Record tables:
     work the amount out yourself.
   * Documents only (报价单 / 订单 / 工程 / 任务 / 进货单). Not money pages, not the
     directory, not the shelf.
+- 🔴 book_appointment puts somebody in the diary: 「帮陈太太排明天三点」,
+  「book Ms Lim Thursday 2pm for a colour」, 「block Wednesday afternoon」.
+  * day is \`YYYY-MM-DD\` and from/to are \`HH:MM\` on a 24-hour clock. Today's
+    date in Malaysia is given above -- work out 「tomorrow」 or 「Thursday」
+    from it. Send the WALL CLOCK, never a UTC time: the server converts.
+  * party is who it is for. Leave it null to BLOCK time (lunch, a dentist
+    appointment) -- a block needs nobody's name.
+  * 🔴 If she did not say when it FINISHES, leave \`to\` null. Do not
+    invent an hour: the length is taken from her own last booking of the
+    same service, and if there is none she is asked. An invented length
+    takes somebody else's slot.
+  * Only on the appointments page.
 - 🔴 take_payment RECORDS MONEY he has received, against the document it
   belongs to: 「陈太太订金收了一千」, 「Kedai Aman paid RM 1,000 deposit」,
   「they settled the balance」.
@@ -838,6 +851,19 @@ export async function POST(req: NextRequest) {
       ? (hasBlock(layout, selected) ? selected : null)
       : null;
 
+  /*
+    🔴 马来西亚的今天。
+
+    这一行到 2026-09-10 为止都没有送过，而那是故意的：
+    记一天工跟写下一步都不带日子（资料库自己 `today_myt()`），
+    而一个推错的日子是一笔会变成钱的出勤。
+
+    🔴 排预约不一样：那一支 RPC **非要两个时刻不可**，
+    而她讲的是「明天三点」。没有今天，那一句永远算不出来。
+    所以这一行送了，**而提示里同时讲死它只给那一个动词用**。
+  */
+  const todayMY = todayMYT();
+
   /* 他站在**他的系统**上，不是站在改设计那一屏上。见 `surface` 的注解。 */
   const workSurface = surface === "work";
 
@@ -862,6 +888,10 @@ ${designDoc}
 ` : `明暗（从配色量出来的）: 现在没有任何一套配色是深底的，每一套的底都近白。
 「太亮了」只能用更暗的风格回答，拿配色回答等于承诺一个他看不到的变化。
 `}
+Today in Malaysia is ${todayMY}. 🔴 THAT DATE IS FOR book_appointment AND
+NOTHING ELSE. log_work_day is always today and takes no date; set_follow_up
+takes no date either -- keep his words (「星期五打给他」) in the text instead.
+
 ${workSurface ? `WHERE HE IS STANDING: his own system, NOT the design screen.
 
 THE OPERATIONS THAT WORK HERE -- all of them, and they all work normally:
@@ -1471,6 +1501,7 @@ export const EDIT_JSON_SCHEMA = {
                 "reply_to_enquiry",
                 "bill_class",
                 "take_payment",
+                "book_appointment",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
@@ -1527,6 +1558,14 @@ export const EDIT_JSON_SCHEMA = {
             // take_payment 也用 amount。**方向不在里面** —— 一笔进来的钱
             // 由收款那一页决定，不是模型讲的（20260906060000）。
             method: { type: ["string", "null"] },
+            // book_appointment. **两个时刻不在里面** —— 日子加钟点由伺服器
+            // 换算成 UTC+8 的时刻，让模型算时区是把一个时区错误
+            // 放进一笔会撞位子的记录里。
+            party: { type: ["string", "null"] },
+            day: { type: ["string", "null"] },
+            from: { type: ["string", "null"] },
+            to: { type: ["string", "null"] },
+            service: { type: ["string", "null"] },
             amount: { type: ["string", "null"] },
             period: { type: ["string", "null"] },
             message: { type: ["string", "null"] },
@@ -1569,6 +1608,11 @@ export const EDIT_JSON_SCHEMA = {
             "enquiry_id",
             "group_id",
             "method",
+            "party",
+            "day",
+            "from",
+            "to",
+            "service",
             "amount",
             "period",
             "message",

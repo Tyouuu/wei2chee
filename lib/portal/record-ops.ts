@@ -295,6 +295,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "reply_to_enquiry",
   "bill_class",
   "take_payment",
+  "book_appointment",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -661,6 +662,65 @@ export function keyFor(requestKey: string, index: number): string {
  * 该收敛成这一份 —— 登记，不动手（重点 20）。
  */
 /** 资料库认得的那三种。`log_work_day` 自己 `k not in (...)` 挡着。 */
+/**
+ * 🔴 一个马来西亚的日子跟一个钟点，变成一个确定的时刻。
+ *
+ * 马来西亚**永远是 UTC+8，没有日光节约** —— 所以这一句不是估算，
+ * 是一个换算。写死 `+08:00` 而不是靠伺服器的时区：伺服器跑在 UTC，
+ * 而 `new Date("2026-09-11T15:00")` 在那里读出来是**晚上十一点**。
+ *
+ * ⚠️ 浏览器那一边（`new-record-form.tsx`）故意用**当地时区**读同一串字，
+ * 而那也是对的：那一台机器就在她店里。这里在伺服器上，所以要讲死。
+ */
+export function malaysianInstant(day: string, clock: string): string | null {
+  const [h, m] = clock.split(":");
+  const hh = String(h ?? "").padStart(2, "0");
+  const t = Date.parse(`${day}T${hh}:${m}:00+08:00`);
+  return Number.isFinite(t) ? new Date(t).toISOString() : null;
+}
+
+/** 那个时刻在她店里是几点。念回去给她听用的。 */
+export function clockOf(iso: string): string {
+  const d = new Date(Date.parse(iso) + 8 * 3600 * 1000);
+  return d.toISOString().slice(11, 16);
+}
+
+/**
+ * 🔴 她上一次做这一样，做了多久（分钟）—— 抄不到就 null。
+ *
+ * [重点 29] 第 2 种：**从她自己以前的东西挑**。这个产品里没有任何地方
+ * 记着一个服务做多久，所以唯一诚实的来源就是她自己排过的那几笔。
+ *
+ * ⚠️ 先找**同一样服务**，找不到才退回「她最近一笔」；两样都没有就回 null，
+ * 而呼叫端会去问她一句。**不准回一个 60** —— 一个预设的长度看起来
+ * 跟她自己的习惯一模一样，而它会静静占掉别人的位子。
+ */
+async function lastLength(
+  supabase: SupabaseClient,
+  moduleKey: string,
+  service: string,
+): Promise<number | null> {
+  const pick = async (withService: boolean) => {
+    let q = supabase
+      .from("appointments")
+      .select("starts_at, ends_at")
+      .eq("module_key", moduleKey)
+      .is("archived_at", null)
+      .order("starts_at", { ascending: false })
+      .limit(1);
+    if (withService) q = q.ilike("service", service);
+    const { data } = await q;
+    const row = ((data ?? []) as { starts_at?: string; ends_at?: string }[])[0];
+    if (!row?.starts_at || !row?.ends_at) return null;
+    const mins = Math.round(
+      (Date.parse(row.ends_at) - Date.parse(row.starts_at)) / 60_000,
+    );
+    /* 十分钟到八个钟头之外的，不是一个可以照抄的习惯。 */
+    return mins >= 10 && mins <= 480 ? mins : null;
+  };
+  return (service ? await pick(true) : null) ?? (await pick(false));
+}
+
 export const WORK_DAY_KINDS = ["full", "half", "absent"] as const;
 
 export const APPOINTMENT_STATES = ["booked", "done", "no_show", "cancelled"] as const;
@@ -936,6 +996,99 @@ export async function actOnRecords(
       而它是资料库算的（`amount_cents - allocated_cents`）——
       在这里自己减一次，就是同一个数字两个答案。
     */
+    /*
+      🔴 排一笔预约 —— 一间沙龙每天按最多次的那一件。
+
+      走 `add_appointment` —— 人按那颗按钮的同一支。那一支自己挡着：
+      不是这一家拒绝 · 不是预约页拒绝 · 没有时间拒绝 · 结束早过开始拒绝 ·
+      一笔预约要讲给谁 · **撞到别人的时段整笔挡掉**（两条排他约束，
+      而它讲得出是撞到人还是撞到房）。一条都不用在这里重写。
+
+      ── 🔴 那两个时刻是这里算的，不是模型算的 ────────────────────
+
+      马来西亚永远是 UTC+8，没有日光节约 —— 所以 `2026-09-11T15:00+08:00`
+      是一个**确定的时刻**，不是一个推测。让模型自己算 UTC，
+      是把一个时区错误放进一笔会撞位子的记录里。
+
+      ── 「做到几点」抄她自己以前那一笔 ──────────────────────────────────
+
+      她讲「排明天三点」，不会讲「三点到四点」。而这个产品里没有任何
+      地方记着一个服务做多久。所以照 [重点 29] 第 2 种：**从她自己
+      以前同样的服务抄那个长度**。抄不到就问一句 —— 不编。
+    */
+    if (op.op === "book_appointment") {
+      if (shape !== "calendar") {
+        skipped.push({ op: op.op, reason: "notBookingPage" });
+        continue;
+      }
+      const raw = op as unknown as {
+        party?: unknown;
+        day?: unknown;
+        from?: unknown;
+        to?: unknown;
+        service?: unknown;
+      };
+      const day = String(raw.day ?? "").trim();
+      const from = String(raw.from ?? "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !/^\d{1,2}:\d{2}$/.test(from)) {
+        skipped.push({ op: op.op, reason: "noWhenSaid" });
+        continue;
+      }
+      const party = String(raw.party ?? "").trim();
+      const service = String(raw.service ?? "").trim();
+      const startsAt = malaysianInstant(day, from);
+      if (!startsAt) {
+        skipped.push({ op: op.op, reason: "noWhenSaid" });
+        continue;
+      }
+
+      /* 她讲了几点结束就用她的；没讲就去她自己的簿子里抄一次。 */
+      const to = String(raw.to ?? "").trim();
+      let endsAt = /^\d{1,2}:\d{2}$/.test(to) ? malaysianInstant(day, to) : null;
+      let how: "said" | "before" = "said";
+      if (!endsAt) {
+        const mins = await lastLength(supabase, moduleKey, service);
+        if (!mins) {
+          skipped.push({ op: op.op, reason: "noEndSaid" });
+          continue;
+        }
+        endsAt = new Date(Date.parse(startsAt) + mins * 60_000).toISOString();
+        how = "before";
+      }
+
+      const { error: bookErr } = await supabase.rpc("add_appointment", {
+        in_project_id: projectId,
+        in_module_key: moduleKey,
+        in_starts_at: startsAt,
+        in_ends_at: endsAt,
+        in_party: party,
+        in_service: service,
+        /* 没有人名就是**挡住这段时间**（午休 · 她去看牙医）——
+           那一支自己认得这两种（`kind`），而它对 block 不要求人名。 */
+        in_kind: party ? "booking" : "block",
+        in_idempotency_key: keyFor(`${projectId}:${startsAt}:${party}`, 0),
+      });
+      if (bookErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: bookErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      notes.push({
+        op: op.op,
+        reason: "appointmentBooked",
+        vars: {
+          who: party || service || "",
+          when: `${day} ${from}\u2013${clockOf(endsAt)}`,
+          how,
+        },
+      });
+      written += 1;
+      continue;
+    }
+
     if (op.op === "take_payment") {
       if (shape !== "pipeline") {
         skipped.push({ op: op.op, reason: "notPipeline" });

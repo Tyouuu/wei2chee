@@ -137,6 +137,17 @@ export type SkipCode =
   | "noAmountSaid"
   /** 他这套系统里没有收款那一页 —— 钱没有地方落。 */
   | "noMoneyPage"
+  /** 排预约只在预约那一页做得了。 */
+  | "notBookingPage"
+  /** 没有讲哪一天、几点。 */
+  | "noWhenSaid"
+  /**
+   * 🔴 没有讲做到几点，而她以前也没有做过这一样 —— **问一句，不要编**。
+   *
+   * 一个编出来的长度会占掉别人的位子，或者整笔被那条排他约束挡掉
+   * （20260902030000）。两种都是她要收拾的。
+   */
+  | "noEndSaid"
   /** 冲正只在钱那几页做得了。 */
   | "notMoneyPage"
   /**
@@ -242,6 +253,13 @@ export type SkipCode =
    * **还欠多少非讲不可** —— 他收完订金的下一个念头就是这个数字，
    * 而它是资料库算的，不是我们减的。
    */
+  /**
+   * 🔴 排好了。`who` · `when` · `how`
+   *
+   * `how` 是那个长度**从哪里来的** —— 她讲的，还是照她上次那一笔抄的。
+   * 抄来的长度不讲出来，就是一个她看不见的假设。
+   */
+  | "appointmentBooked"
   | "paymentTaken"
   | "classBilled"
   | "replyDrafted"
@@ -330,6 +348,9 @@ export const SKIP_CODES = [
   "noFeeSaid",
   "noAmountSaid",
   "noMoneyPage",
+  "notBookingPage",
+  "noWhenSaid",
+  "noEndSaid",
   "notMoneyPage",
   "dbSaid",
   "layoutSaved",
@@ -347,6 +368,7 @@ export const SKIP_CODES = [
   "followUpDone",
   "followUpDropped",
   "followUpSet",
+  "appointmentBooked",
   "paymentTaken",
   "classBilled",
   "replyDrafted",

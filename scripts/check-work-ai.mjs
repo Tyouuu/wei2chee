@@ -804,6 +804,78 @@ try {
   );
   await page.screenshot({ path: `${OUT}/11-payment.png` });
 
+
+  console.log("");
+  console.log("── ⑮ 🔴 「帮她排明天三点」 ──────────────────────");
+  /*
+    🔴 一间沙龙每天按最多次的那一件，而助手到 2026-09-10 做不到。
+    [任务 268] 2026-09-07 就标红过：一行 `cells` 里没有一格装得下时间，
+    所以 `writeRecords` 对 预约 直接拒绝 —— **而那个拒绝是对的**，
+    答案是一个具名的动词，不是让那一行变通。
+
+    ⚠️ 这一段量四件，而第三件是这一支真正的价值：
+    排进去了 · 时刻对不对（**UTC+8，不是伺服器的 UTC**）·
+    **没讲几点结束的时候照她自己上一笔抄** · 抄不到就问一句。
+  */
+  const bookPage = "bookings";
+  /* 她自己上一笔：一个钟半的 Colour touch-up。**这就是待会要被抄的那个长度。** */
+  const seedStart = new Date(Date.now() - 7 * 86400000);
+  seedStart.setUTCHours(2, 0, 0, 0);
+  const { error: seedApptErr } = await api.rpc("add_appointment", {
+    in_project_id: P,
+    in_module_key: bookPage,
+    in_starts_at: seedStart.toISOString(),
+    in_ends_at: new Date(seedStart.getTime() + 90 * 60000).toISOString(),
+    in_party: "Ms Tan",
+    in_service: "Colour touch-up",
+  });
+  if (seedApptErr) throw new Error(`seed appt: ${seedApptErr.message}`);
+
+  await page.setViewportSize({ width: 1440, height: 950 });
+  await page.goto(`${BASE}/en/portal/${bookPage}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1200);
+
+  const apptBefore = await admin
+    .from("appointments")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", P);
+  const booked = await say(page, "Book Ms Lim tomorrow 3pm for a Colour touch-up");
+  console.log(`        它讲了：${booked.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+  const apptAfter = await admin
+    .from("appointments")
+    .select("starts_at, ends_at, party, service", { count: "exact" })
+    .eq("project_id", P)
+    .ilike("party", "%lim%");
+  const appt = (apptAfter.data ?? [])[0] ?? null;
+  check(
+    "🔴 排进去了",
+    !!appt,
+    booked.slice(0, 200) || "（它一句话都没讲）",
+  );
+  /* 🔴 三点是**她店里的三点** —— 伺服器跑在 UTC，而马来西亚永远 +8。
+     一个照伺服器时区读的实作，会把她的三点排到晚上十一点，
+     而画面上那一格看起来完全正常。 */
+  const startedHour = appt
+    ? new Date(Date.parse(appt.starts_at) + 8 * 3600 * 1000).getUTCHours()
+    : -1;
+  check(
+    "🔴 而且是她店里的三点，不是伺服器的三点",
+    startedHour === 15,
+    `马来西亚时间 ${startedHour} 点`,
+  );
+  /* 🔴 她没有讲几点结束 —— 那个长度要从她自己上一笔抄（90 分钟）。 */
+  const mins = appt
+    ? Math.round((Date.parse(appt.ends_at) - Date.parse(appt.starts_at)) / 60000)
+    : 0;
+  check(
+    "🔴 没讲做到几点，就照她上一次同样的服务（90 分钟）",
+    mins === 90,
+    `排了 ${mins} 分钟 — 60 就是它自己编的`,
+  );
+  await page.screenshot({ path: `${OUT}/12-booking.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);
