@@ -28,11 +28,26 @@ export function StatusDot({
   tone,
   label,
   pulse,
+  small,
 }: {
   tone: StatusTone
   label: string
   /** Marks a live/in-progress state with a soft pulse on the dot. */
   pulse?: boolean
+  /**
+   * Draw it at caption size, for the metadata rows inside a card.
+   *
+   * The reference this product's card grid is copied from (arhamkhnz's
+   * file-manager, read from source) sets that whole row to text-xs:
+   * 「PDF」 and 「8.4 MB」 are the same size, because they are one line of
+   * metadata and not two facts of different weight. Ours put a --text-sm
+   * state beside a --text-xs unit in that same row, which reads as a
+   * rendering mistake rather than a hierarchy.
+   *
+   * A prop rather than a second component: there is ONE state mark in this
+   * system, and a copy of it is a second place for the tones to drift.
+   */
+  small?: boolean
 }) {
   return (
     // `whitespace-nowrap`: a status is one token and must never break across
@@ -42,10 +57,16 @@ export function StatusDot({
     // rendering bug in the customer's own system. Caught in a real browser on
     // the three-column style comparison, where all three run side by side at
     // their narrowest.
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap [font-size:var(--text-sm)] text-[color:var(--color-paper)]">
+    <span
+      className={`inline-flex items-center whitespace-nowrap text-[color:var(--color-paper)] ${
+        small
+          ? "gap-1 [font-size:var(--text-xs)]"
+          : "gap-1.5 [font-size:var(--text-sm)]"
+      }`}
+    >
       <span
         aria-hidden="true"
-        className={`h-2 w-2 shrink-0 rounded-full ${pulse ? "animate-pulse" : ""}`}
+        className={`${small ? "h-1.5 w-1.5" : "h-2 w-2"} shrink-0 rounded-full ${pulse ? "animate-pulse" : ""}`}
         style={{ background: TONE_COLOR[tone] }}
       />
       {label}

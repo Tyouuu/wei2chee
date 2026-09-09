@@ -190,6 +190,10 @@ try {
 
   browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1400, height: 1000 }, deviceScaleFactor: 2 });
+  /* 图表那一块自己会播一段进场（recharts，默认 1500ms）。
+     告诉浏览器「这台机器不要动」，那一块就直接画完整的 ——
+     而那也正好是一个把系统动效关掉的人看到的那一张。 */
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
@@ -240,6 +244,27 @@ try {
         const tall = growable ? Math.min(Math.max(Math.ceil(real) + 32, 700), 2800) : h;
         await page.setViewportSize({ width: w, height: tall });
         await page.waitForTimeout(700);
+        /* 🔴 **图要等它真的画出来。** 2026-09-10 用眼睛看到总览那张走势图
+           只有格线跟刻度，中间一片空—— 而同一刻去读 DOM，那条面积
+           是在的，路径 · 颜色 · 透明度全部正常。
+           换个视窗高会让图重排并从头播一次进场，而进场的第一帧
+           是贴着底线的—— 拍到那一帧，出来就是一张空图。
+           ⚠️ 一张拍空了的图跟一张真的坏图，在照片上一模一样。 */
+        await page
+          .waitForFunction(
+            () =>
+              [...document.querySelectorAll("[data-plot]")].every((el) =>
+                el.querySelector(
+                  ".recharts-area-area, .recharts-line-curve, .recharts-rectangle, .recharts-pie",
+                ),
+              ),
+            null,
+            { timeout: 8000 },
+          )
+          .catch(() => {});
+        /* recharts 的进场默认 1500ms。等它**跑完**，不是等它出现 ——
+           出现的第一帧只揭开了左边一小段。 */
+        await page.waitForTimeout(1800);
         await page.screenshot({ path: `${OUT}/${key}-${tag}.png`, fullPage: true });
         const m = await page.evaluate(() => ({
           side: Math.max(0, document.documentElement.scrollWidth - window.innerWidth),

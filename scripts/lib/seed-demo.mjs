@@ -338,16 +338,71 @@ export async function seedEveryShape(
     }
   }
 
+  /* ── 前面几个月 ───────────────────────────────────────────────────────
+     🔴 **种的钱全部落在这个月，而那让两块画面同时说谎。**
+
+     ① 走势图五个月贴着 0、最后一格冲上去（[任务 318] 记过）
+     ② 数字卡上画的是一条灰色小波浪线，而参考那四张卡画的是一颗
+        **涨跌药丸**（「↗ +12.5%」）。药丸的零件早就在
+        （stat-row 的 DeltaPill），它只是**算不出来** —— 上个月是 0，
+        而除以 0 没有答案，所以那一支正确地回了「没有」。
+
+     所以这不是产品的毛病，是我摆错道具（[重点 22d]）。补的是历史：
+     每个月两笔，往回五个月。这个月那几笔一个字都不动 ——
+     每一页的笔数跟那几张卡都是看过图的。
+
+     ⚠️ **只有 showroom（拍照）才种。** 尺子那一边多几笔历史，
+     等於每一把量笔数的尺都要跟着改。 */
+  if (showroom) {
+    for (let back = 5; back >= 1; back--) {
+      const on = new Date();
+      on.setDate(1);
+      on.setMonth(on.getMonth() - back);
+      const day = (d) => {
+        const x = new Date(on);
+        x.setDate(d);
+        return x.toISOString().slice(0, 10);
+      };
+      for (const key of ["payments", "expenses"]) {
+        for (let i = 0; i < 2; i++) {
+          /* 每个月的钱不一样多，而且**不是一条直线** —— 一条直线画出来
+             跟一条假的线长得一模一样。用他自己那份金额表往前走。 */
+          const at = (back * 2 + i) % props.amounts.length;
+          await seed(key, () => api.rpc("add_ledger_entry", {
+            in_project_id: P, in_module_key: key,
+            in_amount_cents: Math.round(props.amounts[at] * (key === "expenses" ? 0.45 : 1)),
+            in_party: key === "expenses" ? supplier(at) : party(at),
+            in_entry_on: day(6 + i * 13),
+            in_note: key === "expenses"
+              ? `Materials — ${supplier(at)}`
+              : `${job(at, key)} — deposit`,
+          }));
+        }
+      }
+    }
+  }
+
   /* ── 货架 ─────────────────────────────────────────────────────────────
      🔴 **建一件货不等於架上有货。** 第一版只呼叫 `add_catalog_item`，
      於是拍出来每一件都写着「0 · Out of stock」—— 一张写着零的货架，
      判不了「一件东西一张卡」那个设计对不对。 */
   const itemIds = [];
   for (let i = 0; i < (showroom ? props.items.length : 1); i++) {
-    const [name, unit, price] = showroom ? props.items[i] : [`${mark} Cement`, "bags", 1850];
+    /* 第五格是**哪一柜**（洗发 · 染烫 · 护理…）。它落在 `location` 上 ——
+       那一栏一直是自由文字（「仓库 · 货车 · 店面」），而一间沙龙分的是
+       东西的种类不是地方。少了它，货架上那一排柜子只有一柜，
+       而一柜的时候那一排本来就不画。 */
+    const [name, unit, price, , where, reorder] = showroom
+      ? props.items[i]
+      : [`${mark} Cement`, "bags", 1850, 0, "", null];
     const { data } = await api.rpc("add_catalog_item", {
       in_project_id: P, in_module_key: "inventory",
       in_name: name, in_unit: unit, in_price_cents: price,
+      in_location: where ?? "",
+      /* 🔴 没有补货线就**没有状态** —— 架上那几张卡的左下角会全部是空的，
+         而那正是参考那张卡永远有东西的位子。null 是「这一件不用提醒我」，
+         那是产品自己的意思，不是漏掉。 */
+      in_reorder_at: reorder ?? null,
     });
     if (data?.id) { itemIds.push([data.id, showroom ? props.items[i][3] : 0]); seeded.add("inventory"); }
   }

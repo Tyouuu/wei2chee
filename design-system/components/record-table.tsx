@@ -11,7 +11,14 @@ import { useRegisterProp } from "@/design-system/editor/style-scope";
 import { DataGrid } from "./data-grid";
 import { useSystemWords } from "@/design-system/system-lang-context";
 import { Avatar } from "@/design-system/components/avatar";
-import { CheckCircle2, CircleDashed, CircleOff, Timer } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleDashed,
+  CircleOff,
+  Folder,
+  Package,
+  Timer,
+} from "lucide-react";
 import { StatusDot, type StatusTone } from "./status-dot";
 import {
   normalizeTable,
@@ -299,6 +306,9 @@ export function RecordTable(props: {
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
     null,
   );
+  /* 一片格子上面那一排柜子，选中的是哪一柜。null 是「全部」。
+     只有 look="cards" 画得出它 —— 见底下那一段。 */
+  const [folder, setFolder] = useState<string | null>(null);
   const numeric = (v: string) => {
     const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
     return Number.isFinite(n) ? n : null;
@@ -587,52 +597,257 @@ export function RecordTable(props: {
           状态画成一颗药丸、其余的用「·」串成底下那一行 ——
           **跟手机那一行读的是同一份 `columns`**。客户自己加一栏，
           它自己会出现，不用有人回来改这里。 */}
-      {shown === "cards" && rows.length > 0 ? (
-        <div className="hidden grid-cols-2 @3xl:grid @5xl:grid-cols-3 @7xl:grid-cols-4 [gap:var(--gap-inline)]">
-          {rows.map((row, i) => {
-            const title = String(row.cells?.[phoneTitle.key] ?? "");
-            const amount = phoneAmount
-              ? String(row.cells?.[phoneAmount.key] ?? "")
-              : "";
-            const status = statusKey
-              ? String(row.cells?.[statusKey] ?? "")
-              : "";
-            const tone = (statusKey ? row.tones?.[statusKey] : undefined) as
-              StatusTone | undefined;
-            const rest = phoneRest
-              .map((c) => String(row.cells?.[c.key] ?? "").trim())
-              .filter(Boolean)
-              .join(" · ");
+      {/* ─────────────────────────────────────────────────────────────────
+          一片格子 —— 照参考那一页的**原始码**抄，不是照着截图画。
+
+          老板 2026-09-10：`总之就是去抄而已 这个有源代码可以去拿的` ·
+          `你这样对比就可以看到我们是差很多那个设计`。
+          於是去读了 arhamkhnz/next-shadcn-admin-dashboard（MIT）那两支：
+          `file-manager/_components/folders-section.tsx` 跟 `file-grid-view.tsx`，
+          外加它们用的 `components/ui/card.tsx`。逐字抄回来的数值：
+
+            卡          rounded-xl · 1px 的圈 · size="sm" 的内距是 12px
+            柜子那一排  grid gap-3 · 两栏到四栏 · 标题 text-lg font-medium
+                        右边一句 text-sm 灰的「N folders」
+            柜子那张卡  36px 的圆角方块装一个资料夹图标（bg-muted）·
+                        名字 text-sm · 底下 text-xs 灰的「N files」·
+                        再底下一行：左边一个钟加一句、右边那个量
+            东西那一排  grid gap-4 · 两栏到四栏
+            东西那张卡  **h-36（144px）的浅色预览区**，rounded-lg，
+                        里面居中一个图标；预览区里 `inset-x-3 bottom-3`
+                        一行 text-xs 灰的：左边类型、右边多大；
+                        预览区**外面**才是名字（text-sm）跟第二句
+
+          我们那一版三样都没有（没有预览区 · 没有区里那一行 · 没有第二句），
+          只有一个很大的数字。
+
+          位子怎么对上：他们预览区中间放的是**认得出这一件是什么**的那一样
+          （档案是类型图标），货架上那一样就是**还剩几件** —— 所以那个数字
+          留在中间，不是被推进一行小字里。
+
+          🔴 **他们那两颗 ⋮ 没有抄**：一颗打开的是「开启资料夹 · 复制分享连结 ·
+          重新命名」，三件我们一件都做不到。一颗按下去没有事情发生的按钮，
+          是这个仓库禁得最严的那一条。 */}
+      {shown === "cards" && rows.length > 0
+        ? (() => {
+            /* 分的是说明那一栏的**第一段**。那一栏是拼出来的
+               （「洗发 · bottles」，见 live-rows 的 shelfLine），
+               整串拿去分会把「洗发 · 瓶」跟「洗发 · 罐」分成两柜。
+               「·」是这个仓库拼一行字唯一的分隔号，所以这条规则对每一张表
+               都成立，不是货架专用的。 */
+            const groupOf = (row: (typeof rows)[number]) =>
+              groupKey
+                ? String(row.cells?.[groupKey] ?? "").split("·")[0].trim()
+                : "";
+            const folders: { name: string; rows: typeof rows }[] = [];
+            if (groupKey) {
+              for (const row of rows) {
+                const name = groupOf(row);
+                if (!name) continue;
+                const hit = folders.find((f) => f.name === name);
+                if (hit) hit.rows.push(row);
+                else folders.push({ name, rows: [row] });
+              }
+            }
+            /* 🔴 两柜以上才画。一柜的时候那一排是一颗按下去什么都不会变的按钮。 */
+            const showFolders = folders.length > 1;
+            const shownRows =
+              showFolders && folder
+                ? rows.filter((r) => groupOf(r) === folder)
+                : rows;
+            /* 他们的柜子跟东西都是 sm:grid-cols-2 xl:grid-cols-4 —— **没有三栏那一档**。
+               我们用容器查询（这张表住在一个 container 里，不是整页宽）。 */
+            const cols = "grid grid-cols-2 @5xl:grid-cols-4";
+            const card =
+              "flex flex-col overflow-hidden [background:var(--color-table-bg)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-card)]";
+            /* 一柜一共几件东西。参考那一格是「1.8 GB」——一柜有多大。
+               ⚠️ 只在那一栏真的是数字的时候才算，金额加起来对一张货架没有意义。 */
+            const total = (rs: typeof rows) => {
+              if (!phoneAmount || phoneAmount.kind !== "amount") return "";
+              let sum = 0;
+              for (const r of rs) {
+                const n = numeric(String(r.cells?.[phoneAmount.key] ?? ""));
+                if (n === null) return "";
+                sum += n;
+              }
+              return String(Math.round(sum * 1000) / 1000);
+            };
+            /* 参考左下那一格写的是「Updated 12 min ago」——**这一柜现在怎么样**。
+               我们能讲的同一句话是：这一柜有没有东西要处理。 */
+            const worst = (rs: typeof rows) => {
+              if (!statusKey) return null;
+              for (const t of ["negative", "warning"] as const) {
+                const hit = rs.find((r) => r.tones?.[statusKey] === t);
+                if (hit)
+                  return {
+                    tone: t as StatusTone,
+                    label: String(hit.cells?.[statusKey] ?? ""),
+                    n: rs.filter((r) => r.tones?.[statusKey] === t).length,
+                  };
+              }
+              return null;
+            };
             return (
-              <div
-                key={i}
-                className="flex flex-col [gap:var(--gap-inline)] [background:var(--color-table-bg)] [border:var(--border-card-width)_solid_var(--border)] [border-radius:var(--radius-card)] [padding:var(--pad-card)]"
-              >
-                <span className="truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
-                  {title}
-                </span>
-                {amount ? (
-                  /* 那个数字是这张卡的主角，所以它比标题大 ——
-                     跟 `stat-row` 那一条同一个道理（见 stat-outranks-heading）。 */
-                  <span className="tnum [color:var(--color-paper)] [font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] [line-height:1.1]">
-                    {amount}
-                  </span>
+              <div className="hidden @3xl:block">
+                {showFolders ? (
+                  <section className="mb-6 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="[color:var(--color-paper)] [font-size:var(--text-lg)] [font-weight:var(--fw-medium)]">
+                        {w.cardGroups}
+                      </h4>
+                      <span className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                        {w.cardGroupCount.replace("%n", String(folders.length))}
+                      </span>
+                    </div>
+                    <div className={`${cols} gap-3`}>
+                      {[null, ...folders.map((f) => f.name)].map((name) => {
+                        const set = name
+                          ? (folders.find((f) => f.name === name)?.rows ?? [])
+                          : rows;
+                        const on = folder === name;
+                        const bad = worst(set);
+                        const sum = total(set);
+                        return (
+                          <button
+                            key={name ?? "*"}
+                            type="button"
+                            onClick={() => setFolder(name)}
+                            aria-pressed={on}
+                            className={`${card} gap-3 py-3 text-start transition-colors`}
+                            style={
+                              on
+                                ? {
+                                    borderColor: "var(--color-primary)",
+                                    background:
+                                      "color-mix(in oklab, var(--color-primary) 6%, transparent)",
+                                  }
+                                : undefined
+                            }
+                          >
+                            <span className="flex min-w-0 items-center gap-2 px-3">
+                              <span
+                                aria-hidden="true"
+                                className="grid h-9 w-9 shrink-0 place-items-center [border-radius:var(--radius-md)]"
+                                style={{
+                                  background:
+                                    "color-mix(in oklab, var(--color-paper) 8%, transparent)",
+                                  color: "var(--color-paper-dim)",
+                                }}
+                              >
+                                <Folder size={18} />
+                              </span>
+                              <span className="flex min-w-0 flex-col gap-1">
+                                <span className="truncate leading-none [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+                                  {name ?? w.cardAll}
+                                </span>
+                                <span className="truncate [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                                  {w.cardInGroup(set.length)}
+                                </span>
+                              </span>
+                            </span>
+                            <span className="flex items-center justify-between gap-3 px-3 [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                              <span className="min-w-0 truncate">
+                                {bad ? (
+                                  <StatusDot
+                                    small
+                                    tone={bad.tone}
+                                    label={
+                                      bad.n > 1
+                                        ? `${bad.label} · ${bad.n}`
+                                        : bad.label
+                                    }
+                                  />
+                                ) : null}
+                              </span>
+                              {sum ? <span className="tnum">{sum}</span> : null}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
                 ) : null}
-                <span className="flex flex-wrap items-center [gap:var(--gap-inline)]">
-                  {status ? (
-                    <StatusDot tone={tone ?? "neutral"} label={status} />
-                  ) : null}
-                  {rest ? (
-                    <span className="min-w-0 flex-1 truncate [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
-                      {rest}
-                    </span>
-                  ) : null}
-                </span>
+
+                <div className={`${cols} gap-4`}>
+                  {shownRows.map((row, i) => {
+                    const title = String(row.cells?.[phoneTitle.key] ?? "");
+                    const amount = phoneAmount
+                      ? String(row.cells?.[phoneAmount.key] ?? "")
+                      : "";
+                    const status = statusKey
+                      ? String(row.cells?.[statusKey] ?? "")
+                      : "";
+                    const tone = (
+                      statusKey ? row.tones?.[statusKey] : undefined
+                    ) as StatusTone | undefined;
+                    /* 那几段小字：**第一段贴在预览区右下**（参考那个位子是
+                       档案多大），**其余的当第二句**（参考是「Modified … by …」）。
+                       一段都没有的时候两处都不画，不画一个空位。 */
+                    const bits = phoneRest
+                      .flatMap((c) =>
+                        String(row.cells?.[c.key] ?? "")
+                          .split("·")
+                          .map((s) => s.trim()),
+                      )
+                      .filter(Boolean);
+                    const badge = bits.length ? bits[bits.length - 1] : "";
+                    const second = bits.slice(0, -1).join(" · ");
+                    return (
+                      <div key={i} className={`${card} gap-3 py-3`}>
+                        <div className="px-3">
+                          <div
+                            className="relative flex h-36 items-center justify-center [border-radius:var(--radius-md)]"
+                            style={{
+                              background:
+                                "color-mix(in oklab, var(--color-paper) 5%, transparent)",
+                            }}
+                          >
+                            {amount ? (
+                              <span className="tnum [color:var(--color-paper)] [font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] [line-height:1.1]">
+                                {amount}
+                              </span>
+                            ) : (
+                              <Package
+                                size={48}
+                                strokeWidth={1.5}
+                                aria-hidden="true"
+                                className="[color:var(--color-paper-dim)]"
+                              />
+                            )}
+                            <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-3 [color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+                              <span className="min-w-0 truncate">
+                                {status ? (
+                                  <StatusDot
+                                    small
+                                    tone={tone ?? "neutral"}
+                                    label={status}
+                                  />
+                                ) : null}
+                              </span>
+                              {badge ? (
+                                <span className="shrink-0">{badge}</span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid gap-1 px-3">
+                          <span className="truncate leading-snug [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+                            {title}
+                          </span>
+                          {second ? (
+                            <span className="truncate [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                              {second}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
-          })}
-        </div>
-      ) : null}
+          })()
+        : null}
 
       <div
         className={

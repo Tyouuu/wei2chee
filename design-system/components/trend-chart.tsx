@@ -254,6 +254,32 @@ function usePlotHeight(host: React.RefObject<HTMLElement | null>) {
   return h
 }
 
+/**
+ * 这台机器要不要播进场。
+ *
+ * 🔴 **这是这个仓库唯一一处没有听 `prefers-reduced-motion` 的动效。**
+ * app/globals.css 里有九处在听它，reveal.tsx 的档头把规则写得很清楚
+ * （「设了就永远不上膛」）—— 而图表这一块是外面那个库自己在动，
+ * 所以那九条 CSS 一条都管不到它。一个把系统动效关掉的人，
+ * 打开总览还是会看到一条从左边扫过来的线。
+ *
+ * ⚠️ 而它同时是一件量出来的事：2026-09-10 拍出来总览那张走势图是**空的**，
+ * 而同一刻读 DOM，路径 · 颜色 · 透明度全部正常。单独拍那一块才看到 ——
+ * 它在从左往右揭开，而整页那一张拍到的是第一帧。
+ * **一张拍空了的图，跟一张真的坏掉的图，在照片上一模一样。**
+ */
+function useStillness(): boolean {
+  const [still, setStill] = useState(false)
+  useEffect(() => {
+    const q = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const read = () => setStill(q.matches)
+    read()
+    q.addEventListener("change", read)
+    return () => q.removeEventListener("change", read)
+  }, [])
+  return still
+}
+
 export function TrendChart({
   title,
   caption,
@@ -266,6 +292,7 @@ export function TrendChart({
   summary,
 }: TrendChartProps) {
   const w = useSystemWords()
+  const still = useStillness()
   const hostRef = useRef<HTMLElement>(null)
   const barRadius = useStyleRadius(hostRef, 4)
   const plotHeight = usePlotHeight(hostRef)
@@ -469,6 +496,7 @@ export function TrendChart({
               fill="var(--color-v)"
               radius={[barRadius, barRadius, 0, 0]}
               maxBarSize={46}
+              isAnimationActive={!still}
             />
           </BarChart>
         ) : kind === "line" ? (
@@ -480,6 +508,7 @@ export function TrendChart({
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}
+              isAnimationActive={!still}
             />
           </LineChart>
         ) : (
@@ -491,6 +520,7 @@ export function TrendChart({
               strokeWidth={2}
               fill="var(--color-v)"
               fillOpacity={0.16}
+              isAnimationActive={!still}
             />
           </AreaChart>
         )}

@@ -65,13 +65,18 @@ export const TRADES = {
       services: [
         "Cut and blow", "Colour touch-up", "Rebonding", "Hair spa", "Highlights",
       ],
+      /* [名字, 单位, 分, 架上几件, **哪一柜**, 低过几件要叫货]。
+         第五格是老板 2026-09-10 讲的那一件：`就可以去分洗头发 护发油啊
+         然后一按上面就可以看到了 每个分类还有多少`。
+         它落在 catalog_items.location 上（那一栏本来就是自由文字），
+         不是一个新栏位 —— 一间沙龙自己打「Colour」进去，那一柜就出现。 */
       items: [
-        ["Shampoo 1L", "bottles", 4800, 14],
-        ["Colour tube 60ml", "tubes", 3200, 46],
-        ["Developer 1L", "bottles", 2600, 11],
-        ["Treatment mask 500ml", "tubs", 8900, 7],
-        ["Hair spray 400ml", "cans", 2900, 19],
-        ["Bleach powder 500g", "tubs", 5400, 4],
+        ["Shampoo 1L", "bottles", 4800, 14, "Wash", 6],
+        ["Colour tube 60ml", "tubes", 3200, 46, "Colour", 12],
+        ["Developer 1L", "bottles", 2600, 11, "Colour", 12],
+        ["Treatment mask 500ml", "tubs", 8900, 7, "Treatment", 4],
+        ["Hair spray 400ml", "cans", 2900, 19, "Styling", 8],
+        ["Bleach powder 500g", "tubs", 5400, 4, "Colour", 6],
       ],
       amounts: [4500, 8000, 12000, 18000, 6500, 25000, 9500, 38000, 15000, 7000, 22000, 5500],
       paid: [4500, 8000, 12000, 6500, 9500],
@@ -108,12 +113,12 @@ export const TRADES = {
         "HydraFacial", "Chemical peel", "Laser hair removal", "Microneedling", "Consultation",
       ],
       items: [
-        ["Peel solution 30ml", "vials", 18500, 9],
-        ["Serum ampoule 5ml", "boxes", 24000, 6],
-        ["Numbing cream 30g", "tubes", 6800, 12],
-        ["Microneedle cartridge", "pcs", 4200, 38],
-        ["Laser tip 12mm", "pcs", 32000, 3],
-        ["Sheet mask (clinic)", "boxes", 9800, 15],
+        ["Peel solution 30ml", "vials", 18500, 9, "Injectables", 4],
+        ["Serum ampoule 5ml", "boxes", 24000, 6, "Injectables", 8],
+        ["Numbing cream 30g", "tubes", 6800, 12, "Consumables", 6],
+        ["Microneedle cartridge", "pcs", 4200, 38, "Consumables", 20],
+        ["Laser tip 12mm", "pcs", 32000, 3, "Machine parts", 4],
+        ["Sheet mask (clinic)", "boxes", 9800, 15, "Aftercare", 10],
       ],
       amounts: [28000, 45000, 88000, 120000, 35000, 260000, 68000, 155000, 42000, 98000, 32000, 75000],
       paid: [28000, 45000, 88000, 35000, 68000],
@@ -174,12 +179,12 @@ export const TRADES = {
         "Form 4 Maths", "Form 5 Add Maths", "Form 3 Science", "Form 2 English", "Form 5 Physics",
       ],
       items: [
-        ["Form 4 Maths workbook", "copies", 2800, 24],
-        ["Form 5 Add Maths module", "copies", 3500, 11],
-        ["Past year papers (set)", "sets", 1800, 40],
-        ["Whiteboard marker", "boxes", 1500, 6],
-        ["A4 paper ream", "reams", 1400, 18],
-        ["Form 3 Science notes", "copies", 2200, 9],
+        ["Form 4 Maths workbook", "copies", 2800, 24, "Workbooks", 10],
+        ["Form 5 Add Maths module", "copies", 3500, 11, "Workbooks", 15],
+        ["Past year papers (set)", "sets", 1800, 40, "Exam papers", 20],
+        ["Whiteboard marker", "boxes", 1500, 6, "Classroom", 8],
+        ["A4 paper ream", "reams", 1400, 18, "Classroom", 10],
+        ["Form 3 Science notes", "copies", 2200, 9, "Workbooks", 6],
       ],
       amounts: [18000, 22000, 25000, 18000, 32000, 20000, 28000, 18000, 24000, 30000, 22000, 26000],
       paid: [18000, 22000, 25000, 20000, 28000],

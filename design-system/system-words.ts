@@ -108,6 +108,19 @@ export type SystemWords = {
      因为一个月有几笔，看的人心里没有底。 */
   monthCount: string;
   monthMore: string;
+  /* 一片格子上面那一排「分类」。抄的是参考那一页（file-manager）：
+     **上面一排是柜子，下面一片是东西**，按一个柜子只看那一柜。
+     老板 2026-09-10：`就可以去分洗头发 护发油啊 然后一按上面就可以看到了
+     每个分类还有多少`。
+     ⚠️ 分的是**说明那一栏**（客户自己填的「放在哪」），不是一个新栏位 ——
+     一间沙龙把「洗发」打进去，那一柜就自己出现。 */
+  cardGroups: string;
+  cardAll: string;
+  /** 一柜里有几件。一件跟很多件不是同一句话 —— 参考那一句是「24 files」，
+   *  而一柜只有一件的时候照那个模子印出来是「1 items」。 */
+  cardInGroup: (n: number) => string;
+  /** 一共几柜。%n 是柜数。 */
+  cardGroupCount: string;
   /* 一天摊开的时候，还没安排的那一格。
      ⚠️ 那一栏可能是**人**也可能是**房间**（一间 medi spa 订的是房间），
      所以这句话对两种都要成立 —— 「还没派人」在一条房间的轴上是错的。
@@ -255,6 +268,10 @@ const EN: SystemWords = {
   emptyToday: "Nothing booked today",
   monthCount: "%d days · %e booked",
   monthMore: "+%n more",
+  cardGroups: "Groups",
+  cardAll: "Everything",
+  cardInGroup: (n: number) => `${n} ${n === 1 ? "item" : "items"}`,
+  cardGroupCount: "%n groups",
   dayUnassigned: "Not assigned",
   emptyPeople: "Nobody added yet",
   start: "Start",
@@ -394,6 +411,10 @@ const ZH: SystemWords = {
   emptyToday: "今天没有安排",
   monthCount: "%d 天 · %e 笔",
   monthMore: "还有 %n 笔",
+  cardGroups: "分类",
+  cardAll: "全部",
+  cardInGroup: (n: number) => `${n} 件`,
+  cardGroupCount: "%n 类",
   dayUnassigned: "还没安排",
   emptyPeople: "还没有加人",
   start: "开始",
