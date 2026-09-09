@@ -24,6 +24,13 @@ const withFigures = (over: Partial<BusinessFacts> = {}): BusinessFacts => ({
     { kind: "quote_expiring", line: "QT-2026-0012 李太太 的报价三天后到期 · 09-02 跟过了" },
     { kind: "payment_overdue", line: "陈先生 欠 RM 3,000 · 迟了 12 天" },
   ],
+  /* 他自己打过的价钱。预设有两件，不是空的 —— 一个空的夹具会让
+     下面那几条断言量到空气。 */
+  prices: [
+    { line: "水泥 50kg · 包 · RM 18.50" },
+    { line: "换灯 · 盏 · RM 380.00" },
+  ],
+  pricesCut: false,
   figures: [
     { label: "本月收到", value: "RM 12,340", previous: "RM 9,800" },
     { label: "还没用完的订金", value: "RM 3,000" },
@@ -274,5 +281,45 @@ describe("系统自己看出来的那几件", () => {
     expect(out.indexOf("李太太 的报价三天后到期")).toBeLessThan(
       out.indexOf("答不了的"),
     );
+  });
+});
+
+
+/**
+ * 🔴 他自己打过的价钱，要到得了模型眼前。
+ *
+ * [重点 29] 那张表：① 算出来 ② **从他自己以前的东西挑**
+ * ③ 从别的地方搬 ④ 才轮到他打字。`catalog_items.price_cents`
+ * 从 20260901070000 就在，而助手看不到它 —— 他开报价单那一页的时候，
+ * 货品在另一页。
+ */
+describe("他自己的价目", () => {
+  it("印进去了", () => {
+    const out = renderBusinessFacts(withFigures());
+    expect(out).toContain("水泥 50kg · 包 · RM 18.50");
+    expect(out).toContain("换灯");
+  });
+
+  it("🔴 一件都没有的时候，不出一个空标题", () => {
+    const out = renderBusinessFacts(withFigures({ prices: [] }));
+    expect(out).not.toContain("他自己的价目");
+  });
+
+  it("🔴 没截的时候，不讲「我看不全」", () => {
+    /* 一条过期的「答不了」，跟宣称做了却没做是同一个缺陷的另一张脸。 */
+    const out = renderBusinessFacts(withFigures());
+    expect(out).not.toContain("40 件");
+  });
+
+  it("真的截了就要讲出来", () => {
+    const out = renderBusinessFacts(withFigures({ pricesCut: true }));
+    expect(out).toContain("40 件");
+  });
+
+  it("英文那一份也有它自己的两句", () => {
+    const on = renderBusinessFacts(withFigures({ lang: "en" }));
+    expect(on).toContain("His own price list");
+    const cut = renderBusinessFacts(withFigures({ lang: "en", pricesCut: true }));
+    expect(cut).toContain("most recent 40");
   });
 });

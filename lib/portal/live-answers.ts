@@ -69,6 +69,8 @@ const WORDS = {
     /* 🔴 系统自己看出来、而他还没处理的那几件。见下面 `nudges` 那一段。 */
     nudges: "系统自己看出来、今天要跟的（他还没处理）",
     nudgesNone: "系统自己看出来的那几件：今天一件都没有要跟的。",
+    /* 🔴 他自己的价目。见下面 `prices` 那一段。 */
+    prices: "他自己的价目（他货品页上打的价钱 —— 开单的时候直接用，不要自己估）",
   },
   en: {
     heading: "This business's figures today (as at <at>, all counted from their own books)",
@@ -80,6 +82,7 @@ const WORDS = {
     unread: "Their figures could not be read this time. Give no number, and never say 0.",
     nudges: "What the system itself has spotted and he has not dealt with yet",
     nudgesNone: "Nothing the system has spotted is outstanding today.",
+    prices: "His own price list (the prices on his items page -- use these when raising a document, never estimate one)",
   },
 } as const;
 
@@ -107,6 +110,9 @@ const GAPS = {
        分摊，这里还查不了。 */
     doc: "某一张单的细节（逐项 · 分期 · 分摊）—— 单张查询那一支还没做",
     stock: "库存还剩多少 —— 这几个数字里不含库存",
+    /* 🔴 只在**真的被截掉**的时候出现。没截的时候留着它，就是助手在说
+       「我看不全」而它其实看得全 —— 一条过期的「答不了」。 */
+    pricesCut: "他货品页上超过 40 件的那些 —— 这里只列了最近的 40 件，价目不在上面的要问他",
     nothingElse: "上面没有的任何数字 —— 不要自己相加减凑一个出来",
     /* 🔴 只在**没有问到**欠款的时候才出现。有问到的时候它是假的，
        而一条过期的「答不了」跟一句宣称做了却没做，是同一个缺陷的两张脸。 */
@@ -117,6 +123,7 @@ const GAPS = {
     job: "What one job made — it is written on that job's own page, but this panel cannot look up a single document",
     doc: "The detail of one document (line items, instalments, allocations) — the single-document lookup does not exist yet",
     stock: "Stock on hand — not among these figures",
+    pricesCut: "Items beyond the most recent 40 on his items page — a price not listed above must be asked for, never estimated",
     nothingElse:
       "Any figure not listed above — never add or subtract two of them to make a new one",
     owingUnread:
@@ -151,6 +158,16 @@ const ROW_CAP = 5;
  * 所以截掉的是最不急的那几条，不是随便几条。
  */
 const NUDGE_CAP = 6;
+
+/**
+ * 他自己的价目，最多送几件。
+ *
+ * 🔴 **40，而且截掉的时候要讲出来**（`pricesCut`）。一间五金店可以有五百件，
+ * 而一个把五百件念进提示里的助手，花的是他每一句话的钱。四十件盖得住
+ * 我们卖的那个市场（五个人的店），而**没盖住的那一部分要说出来** ——
+ * 一个只看得到四十件、却表现得像看得到全部的助手，会替第四十一件估一个价。
+ */
+const PRICE_CAP = 40;
 
 export type BusinessFacts = {
   /** Malaysia's date, not the server's. Every figure below is bounded by a
@@ -205,6 +222,23 @@ export type BusinessFacts = {
    * 少讲一件他本来就在画面上看得到的事（那一页天天开着）。
    */
   nudges: { kind: string; line: string }[];
+  /**
+   * 🔴 他自己打过的价钱 —— 而这一栏存在的理由是[重点 29](../../docs/founder-points.md)。
+   *
+   * 「最好的输入是不存在的输入」，而它排第二的那一种是**从他自己以前的
+   * 东西挑**。一间五金店的老板每开一张单都要重打一次「水泥 50kg · 包 ·
+   * 18.50」—— 而那三个字**本来就在他自己的货架上**（`catalog_items`
+   * 从 20260901070000 起就有 `price_cents`）。那不是一个输入，那是一次抄写。
+   *
+   * ⚠️ **这不是猜。** 他自己在货品页上打的那个数字，原样端出来，而助手
+   * 要讲它用了哪一件（`explanation` 那一句）。[任务 89] 那条界线挡的是
+   * 「靠猜省他的字」—— 拿他自己写下来的东西不在那条线里面。
+   *
+   * ⚠️ 超过 `PRICE_CAP` 就截，**而且 gaps 会多一行讲这件事**。
+   */
+  prices: { line: string }[];
+  /** 价目被截掉了没有 —— 决定 `pricesCut` 那一行出不出现。 */
+  pricesCut: boolean;
   lang: "zh" | "en";
   /** True when the read itself failed, as opposed to succeeding and finding
    *  nothing. The prompt must say different things about those two, because
@@ -269,6 +303,8 @@ export async function fetchBusinessFacts(
       trend: [],
       owing: null,
       nudges: [],
+      prices: [],
+      pricesCut: false,
       lang,
       unread: true,
     };
@@ -292,6 +328,9 @@ export async function fetchBusinessFacts(
          在他一条记录都还没被这几格数到的时候就已经在那里了。所以这一支
          照读。 */
       nudges: await fetchNudges(supabase, projectId, lang),
+      /* 🔴 一个数字都数不出来的时候**价目照读** —— 他可能昨天才把货品
+         打进去、今天要开第一张单，而那一刻这几格全部是零。 */
+      ...(await fetchPrices(supabase, projectId)),
       lang,
       unread: false,
     };
@@ -311,8 +350,70 @@ export async function fetchBusinessFacts(
     trend: stats.trend.slice(-TREND_CAP),
     owing: await fetchPartyOwing(supabase, projectId, role, lang),
     nudges: await fetchNudges(supabase, projectId, lang),
+    ...(await fetchPrices(supabase, projectId)),
     lang,
     unread: false,
+  };
+}
+
+/**
+ * 他自己打过的价钱 —— 从他的货品页读回来。
+ *
+ * ── 为什么这一支 2026-09-09 才出现 ──────────────────────────────────────
+ *
+ * `catalog_items.price_cents` 从 20260901070000 建表那天就在，货品那一页
+ * 一直在画它，而**助手看不到它** —— `describeLayout` 只印他现在开着的那一页，
+ * 而他开报价单那一页的时候，货品在另一页。所以他讲「给合发开一张换灯的」，
+ * 模型手上**一个价钱都没有**，只能问他、或者估一个。
+ *
+ * [重点 29](../../docs/founder-points.md) 那张表：
+ * ① 算出来 ② **从他自己以前的东西挑** ③ 从别的地方搬 ④ 才轮到他打字。
+ * 这一支把「打字」搬到第二格。
+ *
+ * ── 🔴 只送有价钱的那几件 ────────────────────────────────────────────────
+ *
+ * 一件没有价钱的货品（他只拿它数库存）送上去，是在教模型
+ * 「这一件我看到了，而它没有价」—— 而它下一步就会替它想一个。
+ * 送出去的每一行都带着一个真的数字，或者根本不出现。
+ *
+ * ⚠️ **不判角色。** `catalog_items` 的政策是 `works_here`，一个师傅本来
+ * 就看得到货架那一页。在这里再判一次就是同一条规矩两个地方。
+ */
+async function fetchPrices(
+  supabase: SupabaseClient,
+  projectId: string,
+): Promise<{ prices: { line: string }[]; pricesCut: boolean }> {
+  const { data, error } = await supabase
+    .from("catalog_items")
+    .select("name, unit, price_cents, sku")
+    .eq("project_id", projectId)
+    .not("price_cents", "is", null)
+    .gt("price_cents", 0)
+    .is("archived_at", null)
+    .order("created_at", { ascending: false })
+    .limit(PRICE_CAP + 1);
+  if (error) return { prices: [], pricesCut: false };
+
+  const rows = (data ?? []) as {
+    name?: string | null;
+    unit?: string | null;
+    price_cents?: number | null;
+    sku?: string | null;
+  }[];
+  const cut = rows.length > PRICE_CAP;
+  return {
+    prices: rows.slice(0, PRICE_CAP).map((r) => ({
+      line: [
+        String(r.name ?? "").trim(),
+        String(r.unit ?? "").trim(),
+        /* 一份，不是两份 —— `ringgit` 是货品那一页画那个数字用的同一支。 */
+        ringgit(Number(r.price_cents ?? 0)),
+        String(r.sku ?? "").trim(),
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    })),
+    pricesCut: cut,
   };
 }
 
@@ -561,12 +662,29 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ? [`${w.nudges}:`, ...facts.nudges.map((n) => `- ${n.line}`)]
     : [w.nudgesNone];
 
+  /*
+    🔴 他自己打过的价钱。[重点 29](../../docs/founder-points.md) 第 2 种：
+    从他自己以前的东西挑，而不是叫他再打一次。
+
+    ⚠️ **一件都没有的时候不出这一段** —— 跟 `nudges` 那一段相反，
+    而理由不一样：那一边留白模型会自己编一份「要跟的」出来；这一边
+    「他还没打过任何价钱」是一件真的事，而下面 `nothingElse` 那一条
+    已经在挡「不要自己凑一个数字出来」。多一句空标题只是噪音。
+  */
+  const prices = facts.prices.length
+    ? ["", `${w.prices}:`, ...facts.prices.map((r) => `- ${r.line}`)]
+    : [];
+
   /* 🔴 这一次答不了的，跟永远答不了的，放在同一段但来源不同。
      `owingUnread` 只在没有读到欠款的时候出现 —— 读到了还留着它，
      就是助手拒绝回答一件它手上已经有答案的事。 */
   const gaps = [
     ...ALWAYS_GAPS.map((k) => g[k]),
     ...(facts.owing == null ? [g.owingUnread] : []),
+    /* 🔴 只在**真的截掉了**的时候。没截还留着它，就是助手说
+       「我看不全你的价目」而它其实看得全 —— 一条过期的「答不了」，
+       跟宣称做了却没做是同一个缺陷的另一张脸（[任务 110]）。 */
+    ...(facts.pricesCut ? [g.pricesCut] : []),
   ];
 
   return [
@@ -576,6 +694,7 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ...receipt,
     "",
     ...nudges,
+    ...prices,
     "",
     `${w.cannot}:`,
     ...gaps.map((line) => `- ${line}`),

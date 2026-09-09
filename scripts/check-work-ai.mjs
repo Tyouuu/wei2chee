@@ -296,6 +296,52 @@ try {
   );
   await page.screenshot({ path: `${OUT}/4-chase.png` });
 
+
+  console.log("");
+  console.log("── ⑦ 🔴 开单的时候用不用他自己的价钱 ──────────");
+  /*
+    🔴 [重点 29] 那张表：① 算出来 ② **从他自己以前的东西挑**
+    ③ 从别的地方搬 ④ 才轮到他打字。
+
+    `catalog_items.price_cents` 从 20260901070000 建表那天就在，货品那一页
+    一直在画它 —— 而助手看不到（`describeLayout` 只印他现在开着那一页，
+    而他开报价单那一页的时候货品在另一页）。
+
+    ⚠️ 那个价钱是一个**不好猜的数字**（RM 387.50）—— 一个拿到 380
+    或者 400 的回答就是它自己估的，不是读他的。
+  */
+  const { error: itemErr } = await api.rpc("add_catalog_item", {
+    in_project_id: P,
+    in_module_key: "inventory",
+    in_name: "Ceiling fan install",
+    in_unit: "job",
+    in_price_cents: 38750,
+  });
+  if (itemErr) throw new Error(`seed item: ${itemErr.message}`);
+
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  const priced = await say(page, "Quote Kedai Aman for one Ceiling fan install");
+  console.log(`        它讲了：${priced.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+  const quoted = await admin
+    .from("pipeline_records")
+    .select("amount_cents, party")
+    .eq("project_id", P)
+    .eq("module_key", "quotations")
+    .ilike("party", "%kedai aman%");
+  const cents = (quoted.data ?? [])[0]?.amount_cents ?? null;
+  check(
+    "🔴 那一张开出来了",
+    (quoted.data ?? []).length >= 1,
+    priced.slice(0, 200),
+  );
+  check(
+    "🔴 而且金额是**他自己打的那个**（RM 387.50）",
+    Number(cents) === 38750,
+    `资料库里是 ${cents} 分 —— 不是 38750，就是它自己估的`,
+  );
+  await page.screenshot({ path: `${OUT}/6-his-price.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);
