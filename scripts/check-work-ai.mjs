@@ -939,6 +939,107 @@ try {
   );
   await page.screenshot({ path: `${OUT}/13-two-stylists.png` });
 
+
+  console.log("");
+  console.log("── ⑰ 🔴 「陈太太来了」要顺手扣掉一次套票 ────────");
+  /*
+    🔴 **这一段今天是红的，而那是它存在的理由。**
+
+    根因 2026-09-10 查出来了：`describeLayout` 只认得看板（TaskBoard）
+    跟表格（RecordTable），**不认得日程（DaySchedule）** ——
+    所以预约那一页上助手看得到那一块，**一笔预约都看不到**：
+    开得了新的，动不了任何一笔已经在的。
+    跟 2026-09-07 那条注解替看板抓到的**同一个形状**，第三次。
+    那一行在另一个 session 手上（layout-ops.ts），已经交代清楚。
+
+    ──────────────────────────────────────────────
+
+    🔴 这一段量的是一件**据说早就做好**的事。
+
+    [任务 225] 让「客人来了」同时扣一次套票，而 `record-ops.ts` 里那一段
+    也一直在把它念出来。但量出来：**只有一条把 rpc 假装掉的单元测试**
+    （`record-ops.test.ts:592`）—— 也就是说，**没有人用真的帐号看过
+    一次套票真的少一次**。
+
+    这个仓库的招牌毛病就是「能力有、线没接」，而它只有走真的那一条才看得见。
+
+    ⚠️ 而且这一段量**两件**，不是一件：
+    数字真的少了一次 · **它有没有讲出来**。扣了不讲，就是一次静静少掉的
+    套票，而她要到客人下次来才发现。
+  */
+  const { data: guest } = await api.rpc("add_directory_entry", {
+    in_project_id: P,
+    in_module_key: "customers",
+    in_name: "Ms Chan",
+  });
+  const { data: pack, error: packErr } = await api.rpc("add_service_package", {
+    in_party_id: guest?.id,
+    in_name: "Facial x10",
+    in_sessions_total: 10,
+  });
+  if (packErr) throw new Error(`seed package: ${packErr.message}`);
+
+  /* 她今天有一笔预约 —— 「来了」是按在那一笔上的。
+
+     ⚠️ **要是她店里的今天，不是伯器的今天**。第一版拿
+     `now + 1h`（UTC）种，而那在马来西亚已经是明天 ——
+     预约那一页画的是一天，于是助手说「那一笔不在这一页上」——
+     **而它讲得没错。红的是台面，不是产品。** */
+  const mytToday = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+  const soonStart = new Date(Date.parse(`${mytToday}T20:00:00+08:00`));
+  const { error: apptErr } = await api.rpc("add_appointment", {
+    in_project_id: P,
+    in_module_key: bookPage,
+    in_starts_at: soonStart.toISOString(),
+    in_ends_at: new Date(soonStart.getTime() + 60 * 60000).toISOString(),
+    in_party: "Ms Chan",
+    in_party_id: guest?.id,
+    in_service: "Facial",
+  });
+  if (apptErr) throw new Error(`seed appt for package: ${apptErr.message}`);
+
+  await page.goto(`${BASE}/en/portal/${bookPage}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  /* 🔴 先验那一笔真的在画面上 —— 不然红的是我的台面，
+     而一份「产品做不到」的报告跟一份「我种错了地方」的报告
+     在画面上长得一模一样。 */
+  const onScreen = await page.locator("body").innerText();
+  check(
+    "她那一笔预约在画面上（尺子自己的）",
+    /ms chan/i.test(onScreen),
+    "预约那一页上看不到 Ms Chan — 种错日子了",
+  );
+  /* 🔴 先数一下这一页背后有几笔 —— `describeLayout` 一页只印
+     **12 行**（`ROWS_SHOWN`）。超过那个数字，助手就指不到第十三笔，
+     而一间忙的沙龙一下午就不止十二个客人。这一行是为了分得出
+     「产品的上限」跟「我的台面种错了」。 */
+  const howMany = await admin
+    .from("appointments")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", P);
+  console.log(`        这一页背后有 ${howMany.count} 笔预约（助手一次只看得到 12）`);
+  const arrived = await say(page, "Ms Chan has arrived");
+  console.log(`        它讲了：${arrived.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+
+  const uses = await admin
+    .from("package_uses")
+    .select("id", { count: "exact", head: true })
+    .eq("package_id", pack.id);
+  check(
+    "🔴 套票真的少了一次",
+    (uses.count ?? 0) === 1,
+    `用掉 ${uses.count} 次 — ${arrived.slice(0, 150)}`,
+  );
+  /* 🔴 扣了不讲，就是一次静静少掉的套票。 */
+  check(
+    "🔴 而且它讲出来还剩几次（9）",
+    /\b9\b/.test(arrived),
+    arrived.slice(0, 200),
+  );
+  await page.screenshot({ path: `${OUT}/14-package.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);
