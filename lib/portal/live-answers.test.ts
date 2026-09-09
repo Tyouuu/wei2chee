@@ -31,6 +31,13 @@ const withFigures = (over: Partial<BusinessFacts> = {}): BusinessFacts => ({
     { line: "换灯 · 盏 · RM 380.00" },
   ],
   pricesCut: false,
+  /* 陈生人在他官网上问的。预设有一封 —— 空的夹具量不到下面那几条。 */
+  enquiries: [
+    {
+      id: "e1",
+      line: "enquiry=e1 · 王先生 · 想做什么: 厕所防水 · 2026-09-08",
+    },
+  ],
   figures: [
     { label: "本月收到", value: "RM 12,340", previous: "RM 9,800" },
     { label: "还没用完的订金", value: "RM 3,000" },
@@ -321,5 +328,30 @@ describe("他自己的价目", () => {
     expect(on).toContain("His own price list");
     const cut = renderBusinessFacts(withFigures({ lang: "en", pricesCut: true }));
     expect(cut).toContain("most recent 40");
+  });
+});
+
+
+/**
+ * 🔴 陌生人在他官网上问的那几句，要到得了模型眼前。
+ *
+ * 量出来的：`site_enquiries` **只进不出** —— 一个陌生人问了一句，
+ * 而他在这套系统里回不了。
+ */
+describe("官网上进来的询价", () => {
+  it("印进去了，而且带着它自己的编号", () => {
+    const out = renderBusinessFacts(withFigures());
+    expect(out).toContain("enquiry=e1");
+    expect(out).toContain("王先生");
+  });
+
+  it("🔴 一封都没有的时候，不出一个空标题", () => {
+    const out = renderBusinessFacts(withFigures({ enquiries: [] }));
+    expect(out).not.toContain("还没处理的询价");
+  });
+
+  it("英文那一份有它自己那一句", () => {
+    const out = renderBusinessFacts(withFigures({ lang: "en" }));
+    expect(out).toContain("asked through his website");
   });
 });

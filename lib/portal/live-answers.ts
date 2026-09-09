@@ -71,6 +71,8 @@ const WORDS = {
     nudgesNone: "系统自己看出来的那几件：今天一件都没有要跟的。",
     /* 🔴 他自己的价目。见下面 `prices` 那一段。 */
     prices: "他自己的价目（他货品页上打的价钱 —— 开单的时候直接用，不要自己估）",
+    /* 🔴 陈生人在他官网上问的那几句。见下面 `enquiries`。 */
+    enquiries: "他官网上进来、而他还没处理的询价（reply_to_enquiry 用那个编号）",
   },
   en: {
     heading: "This business's figures today (as at <at>, all counted from their own books)",
@@ -83,6 +85,7 @@ const WORDS = {
     nudges: "What the system itself has spotted and he has not dealt with yet",
     nudgesNone: "Nothing the system has spotted is outstanding today.",
     prices: "His own price list (the prices on his items page -- use these when raising a document, never estimate one)",
+    enquiries: "Strangers who asked through his website and have not been dealt with (reply_to_enquiry takes the id)",
   },
 } as const;
 
@@ -169,6 +172,14 @@ const NUDGE_CAP = 6;
  */
 const PRICE_CAP = 40;
 
+/**
+ * 还没处理的询价，最多送几封。
+ *
+ * 五封。一个卡着三十封没回的老板，需要的不是一份名单，
+ * 是先回最早那几封（`my_site_enquiries` 自己按时间排）。
+ */
+const ENQUIRY_CAP = 5;
+
 export type BusinessFacts = {
   /** Malaysia's date, not the server's. Every figure below is bounded by a
    *  month, and the server runs on UTC -- see nowInMalaysia. */
@@ -239,6 +250,23 @@ export type BusinessFacts = {
   prices: { line: string }[];
   /** 价目被截掉了没有 —— 决定 `pricesCut` 那一行出不出现。 */
   pricesCut: boolean;
+  /**
+   * 🔴 陌生人在他官网上问的那几句，而他还没处理。
+   *
+   * ── 为什么这一栏 2026-09-09 才出现 ────────────────────
+   *
+   * 量出来的：`site_enquiries` **只进不出** —— 一个陌生人在他官网上
+   * 问了一句，而他在这套系统里**回不了**：那一页唯一的动作是
+   * 「变成一张报价单」。而[重点 9c] 那张表里最深的两层，
+   * 就是「钱跟客人从那里进来」。
+   *
+   * 外面 2026 那一整类助手的标准形状是：读进来 · 照他自己的资料起草 ·
+   * **停在那里等人看过才送**。这一栏是那个形状的第一半。
+   *
+   * ⚠️ **角色不在这里判**：`my_site_enquiries` 自己问的是
+   * `p.account_id = auth.uid()` —— 也就是**只给老板**，师傅拿到的是空的。
+   */
+  enquiries: { id: string; line: string }[];
   lang: "zh" | "en";
   /** True when the read itself failed, as opposed to succeeding and finding
    *  nothing. The prompt must say different things about those two, because
@@ -305,6 +333,7 @@ export async function fetchBusinessFacts(
       nudges: [],
       prices: [],
       pricesCut: false,
+      enquiries: [],
       lang,
       unread: true,
     };
@@ -331,6 +360,7 @@ export async function fetchBusinessFacts(
       /* 🔴 一个数字都数不出来的时候**价目照读** —— 他可能昨天才把货品
          打进去、今天要开第一张单，而那一刻这几格全部是零。 */
       ...(await fetchPrices(supabase, projectId)),
+      enquiries: await fetchEnquiries(supabase),
       lang,
       unread: false,
     };
@@ -351,9 +381,60 @@ export async function fetchBusinessFacts(
     owing: await fetchPartyOwing(supabase, projectId, role, lang),
     nudges: await fetchNudges(supabase, projectId, lang),
     ...(await fetchPrices(supabase, projectId)),
+    enquiries: await fetchEnquiries(supabase),
     lang,
     unread: false,
   };
+}
+
+/**
+ * 🔴 陌生人在他官网上问的那几句，而他还没处理。
+ *
+ * 呼叫的是 `my_site_enquiries` —— **询价那一页读的同一支**。
+ * 另写一句 `from("site_enquiries")` 就是第二份会漂的定义，
+ * 而漂的那一天助手讲的跟他打开那一页看到的不一样。
+ *
+ * ⚠️ 只送 `done` 以外的—— 已经处理完的送上去，是在叫他再回一次。
+ *
+ * ⚠️ **号码不印完整**：模型不需要它（那条连结是我们建的），
+ * 而一个印在提示里的号码只会多一个它可以念错的东西。
+ */
+async function fetchEnquiries(
+  supabase: SupabaseClient,
+): Promise<{ id: string; line: string }[]> {
+  const { data, error } = await supabase.rpc("my_site_enquiries");
+  if (error) return [];
+  const rows = (data ?? []) as {
+    id?: string | null;
+    name?: string | null;
+    contact?: string | null;
+    answers?: Record<string, unknown> | null;
+    status?: string | null;
+    created_at?: string | null;
+  }[];
+  return rows
+    .filter((r) => (r.status ?? "new") !== "done")
+    .slice(0, ENQUIRY_CAP)
+    .map((r) => {
+      /* 他们在表单上填的那几句，原样。一封询价的内容就是这一堆字，
+         而起草一封回覆靠的就是它。 */
+      const said = Object.entries(r.answers ?? {})
+        .map(([k, v]) => `${k}: ${String(v ?? "").trim()}`)
+        .filter((x) => !x.endsWith(": "))
+        .join(" · ")
+        .slice(0, 300);
+      return {
+        id: String(r.id ?? ""),
+        line: [
+          `enquiry=${String(r.id ?? "")}`,
+          String(r.name ?? "").trim(),
+          said,
+          String(r.created_at ?? "").slice(0, 10),
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      };
+    });
 }
 
 /**
@@ -675,6 +756,12 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ? ["", `${w.prices}:`, ...facts.prices.map((r) => `- ${r.line}`)]
     : [];
 
+  /* 🔴 陌生人在他官网上问的那几句。一封都没有就不出这一段 ——
+     跟价目同一个理由：一个空标题只是噪音。 */
+  const enquiries = facts.enquiries.length
+    ? ["", `${w.enquiries}:`, ...facts.enquiries.map((r) => `- ${r.line}`)]
+    : [];
+
   /* 🔴 这一次答不了的，跟永远答不了的，放在同一段但来源不同。
      `owingUnread` 只在没有读到欠款的时候出现 —— 读到了还留着它，
      就是助手拒绝回答一件它手上已经有答案的事。 */
@@ -695,6 +782,7 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     "",
     ...nudges,
     ...prices,
+    ...enquiries,
     "",
     `${w.cannot}:`,
     ...gaps.map((line) => `- ${line}`),

@@ -263,6 +263,20 @@ Record tables:
     work the amount out yourself.
   * Documents only (报价单 / 订单 / 工程 / 任务 / 进货单). Not money pages, not the
     directory, not the shelf.
+- reply_to_enquiry answers a stranger who asked through his WEBSITE:
+  「回覆王先生那封」, 「reply to that waterproofing enquiry」.
+  * enquiry_id is the \`enquiry=\` id from the list of website enquiries above.
+  * 🔴 IT DOES NOT SEND. It writes the words and hands HIM a link with
+    them already filled in; he reads it and presses send. Say that plainly --
+    never say it was sent, and never say the customer has been told.
+  * message is the reply itself, in THE LANGUAGE THE CUSTOMER WROTE IN, short
+    enough to read on a phone. Write it as the OWNER speaking, not as an
+    assistant: no 「this is an automated」, no signature block.
+  * 🔴 ONLY WHAT HE ACTUALLY HAS. Prices come from his own price list
+    above; if what they asked for is not on it, say he will confirm the price
+    rather than naming one. NEVER promise a date, a discount, a warranty or a
+    site visit -- those are his to give, and a promise in his name that he did
+    not make is the worst thing this product can do.
 - set_follow_up writes the one next thing on a document: 「记一下，这一单要打给陈太太」.
   * record_id is that document, and what is his own words for the thing to do.
   * There is no date to send and you must not invent one. It lands on today's
@@ -1362,6 +1376,7 @@ export const EDIT_JSON_SCHEMA = {
                 "share_record",
                 "unshare_record",
                 "add_record_line",
+                "reply_to_enquiry",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
@@ -1407,6 +1422,11 @@ export const EDIT_JSON_SCHEMA = {
             // `append_record_line` 自己 `数量 × 单价`，而且插完会把那张单
             // 的总额重算一次。多一格金额就是同一个数字两个答案。
             description: { type: ["string", "null"] },
+            // reply_to_enquiry 只用这两格。**号码不在里面** ——
+            // 那条连结是我们照询价上那一串建的，而一个背出来的号码
+            // 就是一条发给另一个人的训息。
+            enquiry_id: { type: ["string", "null"] },
+            message: { type: ["string", "null"] },
             qty: { type: ["string", "null"] },
             unit: { type: ["string", "null"] },
             unit_price: { type: ["string", "null"] },
@@ -1443,6 +1463,8 @@ export const EDIT_JSON_SCHEMA = {
             "status",
             "counted",
             "description",
+            "enquiry_id",
+            "message",
             "qty",
             "unit",
             "unit_price",

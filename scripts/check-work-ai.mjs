@@ -394,6 +394,49 @@ try {
   );
   await page.screenshot({ path: `${OUT}/7-lines.png` });
 
+
+  console.log("");
+  console.log("── ⑨ 🔴 官网上进来的那一句，他回得了吗 ──────");
+  /*
+    🔴 量出来的：`site_enquiries` **只进不出** —— 一个陌生人在他
+    官网上问了一句，而他在这套系统里**回不了**：那一页唯一的动作
+    是「变成一张报价单」。而[重点 9c] 那张表里最深的两层，就是
+    「钱跟客人从那里进来」。
+
+    🔴 而这一段最贵的一条是最后那一条：**它不能送出去**。
+    [重点 32] 老板自己讲过，一个刚认识的人最怕的就是机器人对他的
+    客人讲话。一支今天不送、明天「顺手」送了的，是这个产品赔不起的那一种错。
+  */
+  const { error: enqErr } = await admin.from("site_enquiries").insert({
+    project_id: P,
+    name: "Encik Rahman",
+    contact: "012-345 6789",
+    answers: { "What do you need": "Bathroom waterproofing, 2 bathrooms" },
+  });
+  if (enqErr) throw new Error(`seed enquiry: ${enqErr.message}`);
+
+  await page.setViewportSize({ width: 1440, height: 950 });
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  const replied = await say(page, "Reply to Encik Rahman about the waterproofing");
+  console.log(`        它讲了：${replied.split(String.fromCharCode(10)).join(" / ").slice(0, 260)}`);
+  check(
+    "🔴 回了一条字已经填好的连结",
+    /wa\.me\/60123456789/.test(replied) && /text=/.test(replied),
+    replied.slice(0, 260) || "（它一句话都没讲）",
+  );
+  const stillOpen = await admin
+    .from("site_enquiries")
+    .select("status")
+    .eq("project_id", P)
+    .eq("name", "Encik Rahman")
+    .limit(1);
+  check(
+    "🔴 而那一封**没有被标成处理完** — 他还没按送出",
+    ((stillOpen.data ?? [])[0]?.status ?? "new") !== "done",
+    `status = ${(stillOpen.data ?? [])[0]?.status}`,
+  );
+  await page.screenshot({ path: `${OUT}/8-reply.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);

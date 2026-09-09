@@ -405,6 +405,33 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     /** 一件多少钱。**从他自己的价目里挑**，不要估。 */
     unit_price: z.string().max(20).nullable(),
   }),
+  /*
+    🔴 回一封官网上进来的询价 —— **写好，不送出去**。
+
+    ── 这个形状是外面 2026 的标准，而它恰好绕开他怕的那件事 ──────
+
+    那一整类助手今天都是：读进来 · 照他自己的资料起草 ·
+    **停在那里等人看过才送**。而[重点 32] 里老板自己讲过，
+    一个刚认识的人最怕的就是**机器人对他的客人讲话**。
+    所以这一支**一句话也不会送出去** —— 它只把字写好，
+    把一条字已经填好的 WhatsApp 连结放到他面前。按送出的是他。
+
+    ── 为什么不用他自己的号码 ───────────────────────────
+
+    🔴 **要的是客人的号码，而询价表本来就在收**（`site_enquiries.contact`）。
+    所以这一件**不等**[任务 11] 那支真的 WhatsApp Business 号码，
+    也不等公司、不等收款闸道。今天就用得了。
+
+    ⚠️ 号码认不出来就拒绝（`waNumber` 不猜）—— 一颗按下去开错误页
+    的按钮，跟一颗按不动的按钮是同一件事。
+  */
+  z.object({
+    op: z.literal("reply_to_enquiry"),
+    /** 那一封自己的编号，从上面那份 `enquiry=` 抄下来的。 */
+    enquiry_id: z.string().min(1),
+    /** 要回的那几句 —— **用客人问的那种话**写。 */
+    message: z.string().min(1).max(700),
+  }),
   z.object({
     op: z.literal("finish_follow_up"),
     record_id: z.string().min(1),
@@ -1456,7 +1483,10 @@ export function applyLayoutOps(
       case "drop_follow_up":
       /* 一行明细挂在一张单上，而这一页背后没有单。跟上面那几个
          同一句话，因为它们讲的本来就是同一件事。 */
-      case "add_record_line": {
+      case "add_record_line":
+      /* 回一封询价跟这一页是哪一页无关，而它今天只到得了记录页
+         （助手也只在那几页）—— 到不了的时候讲同一句话。 */
+      case "reply_to_enquiry": {
         skipped.push({ op: op.op, reason: "notARecordPage" });
         break;
       }

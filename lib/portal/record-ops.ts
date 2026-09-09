@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LayoutOp } from "./layout-ops";
 import type { Skip, SkipCode } from "./skip-codes";
 import { defaultDueOn, todayMYT, validityKindOf } from "./record-validity";
+import { waLink } from "./wa-link";
 
 /**
  * The assistant's 「加一单」 writes a real row, through the button's own RPC.
@@ -290,6 +291,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "share_record",
   "unshare_record",
   "add_record_line",
+  "reply_to_enquiry",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -870,6 +872,69 @@ export async function actOnRecords(
         continue;
       }
       written += 1;
+      continue;
+    }
+
+    /*
+      🔴 回一封官网上进来的询价 —— **写好，一句都不送出去**。
+
+      这一支是这份档案里**唯一一个什么都不写**的动作，而那是它存在的理由：
+      外面 2026 那一整类助手的形状就是「起草 · 停在那里 · 等人看过才送」，
+      而[重点 32] 里老板自己讲过他最怕机器人对他的客人讲话。
+
+      ⚠️ **不标 `done`**。他还没按送出 —— 标了就是在帐上写一件没发生的事。
+
+      ⚠️ 那一封的号码**不从模型那里拿** —— 模型只给编号，
+      号码我们自己去读。一个背得出来的号码就是一条发给另一个人的训息。
+    */
+    if (op.op === "reply_to_enquiry") {
+      const raw = op as unknown as { enquiry_id?: unknown; message?: unknown };
+      const enquiryId = String(raw.enquiry_id ?? "").trim();
+      const message = String(raw.message ?? "").trim();
+      if (!enquiryId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      if (!message) {
+        skipped.push({ op: op.op, reason: "noMessageSaid" });
+        continue;
+      }
+      /* 同一支 `my_site_enquiries` —— 询价那一页读的也是它，
+         而它自己只给老板（`account_id = auth.uid()`）。 */
+      const { data: mine, error: readErr } = await supabase.rpc("my_site_enquiries");
+      if (readErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: readErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      const hit = ((mine ?? []) as { id?: string; name?: string; contact?: string }[]).find(
+        (r) => String(r.id ?? "") === enquiryId,
+      );
+      if (!hit) {
+        skipped.push({ op: op.op, reason: "noSuchEnquiry" });
+        continue;
+      }
+      const link = waLink(hit.contact, message);
+      if (!link) {
+        /* 客人留的可能是一个邮箱，或者一支填一半的号码。
+           把他留的那一串字原样念出来，他自己就知道该怎么办。 */
+        skipped.push({
+          op: op.op,
+          reason: "noWayToReach",
+          vars: { contact: String(hit.contact ?? "").slice(0, 60) },
+        });
+        continue;
+      }
+      notes.push({
+        op: op.op,
+        reason: "replyDrafted",
+        vars: { name: String(hit.name ?? "").slice(0, 60), link },
+      });
+      /* 🔴 **不算 written**。什么都没写进去，而 `written` 会打开
+         `refetch`（重新读一遍页面）—— 一次什么都没变的重读。 */
       continue;
     }
 

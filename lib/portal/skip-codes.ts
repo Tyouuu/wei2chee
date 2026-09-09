@@ -117,6 +117,18 @@ export type SkipCode =
   | "noStepSaid"
   /** 一行明细没有写它是什么。 */
   | "noLineSaid"
+  /** 没有这一封询价（编号对不上，或者不是他家的）。 */
+  | "noSuchEnquiry"
+  /** 没有写要回什么。 */
+  | "noMessageSaid"
+  /**
+   * 🔴 那一封询价上没有一支打得通的号码。
+   *
+   * `waNumber` 认不出来就回 null（它不猜）—— 而一颗按下去开一张
+   * 错误页的按钮，跟一颗按不动的按钮是同一件事。
+   * 客人留的可能是一个邮箱，那就讲出来。`contact`
+   */
+  | "noWayToReach"
   /** 冲正只在钱那几页做得了。 */
   | "notMoneyPage"
   /**
@@ -200,6 +212,17 @@ export type SkipCode =
    * 🔴 钱不改也不删（任务 77）—— 开一张冲正，两张都留着。所以要讲的是
    * 「多开了一张」，不是「改掉了」。
    */
+  /**
+   * 🔴 写好了一封回覆，**而且没有送出去**。`name` · `link`
+   *
+   * 这一句是 2026 外面那一整类助手的标准形状（读进来 · 起草 ·
+   * **停在那里等人看过才送**），而它同时绕开了[重点 32] 里
+   * 老板自己怕的那件事：**机器人对他的客人讲话**。
+   *
+   * ⚠️ 那一句非讲不可，而且要讲清楚**还没送** —— 一句听起来像
+   * 已经送了的话，会让他以为客人收到了。
+   */
+  | "replyDrafted"
   | "entryReversed";
 
 /** 一件没做成的事，讲给老板听。`vars` 是那一句里的空格。 */
@@ -269,6 +292,9 @@ export const SKIP_CODES = [
   "noFollowUp",
   "noStepSaid",
   "noLineSaid",
+  "noSuchEnquiry",
+  "noMessageSaid",
+  "noWayToReach",
   "notMoneyPage",
   "dbSaid",
   "layoutSaved",
@@ -286,5 +312,6 @@ export const SKIP_CODES = [
   "followUpDone",
   "followUpDropped",
   "followUpSet",
+  "replyDrafted",
   "entryReversed",
 ] as const satisfies readonly SkipCode[];

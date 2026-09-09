@@ -550,8 +550,12 @@
         "followUpDone": "Marked done: {what}.",
         "followUpDropped": "Dropped: {what}.",
         "entryReversed": "Opened an opposite entry of RM {amount} — both stay, and the original was not changed.",
+        "replyDrafted": "Written, NOT sent — open it, read it, and press send yourself: {link}",
         "noStepSaid": "It did not say what to do",
         "noLineSaid": "It did not say what that line is for",
+        "noSuchEnquiry": "There is no enquiry with that number",
+        "noMessageSaid": "It did not say what to reply",
+        "noWayToReach": "That enquiry has no phone number on it — only {contact}",
         "followUpSet": "Noted: {what} — on today's list, move the day on that page."
       }
     },

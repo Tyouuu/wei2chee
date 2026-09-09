@@ -550,8 +550,12 @@
         "followUpDone": "「{what}」记成做完了。",
         "followUpDropped": "「{what}」不跟了。",
         "entryReversed": "开了一张相反的 RM {amount} —— 两张都留着，原来那一笔没有改过。",
+        "replyDrafted": "写好了，**还没送** — 打开看一遍，你自己按送出：{link}",
         "noStepSaid": "没有讲要做什么",
         "noLineSaid": "那一行没有写它是什么",
+        "noSuchEnquiry": "没有这一封询价",
+        "noMessageSaid": "没有写要回什么",
+        "noWayToReach": "那一封询价上没有号码 — 只有 {contact}",
         "followUpSet": "记下来了：{what} —— 排在今天，日子在那一页上挪。"
       }
     },
