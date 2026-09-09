@@ -114,6 +114,15 @@ export default async function ClassesPage({
   )?.page_key;
   if (!calendarKey) notFound();
 
+  /* 🔴 学费单开在**他自己那一页走单的页**上，不是我挑一个名字。
+     一间补习中心开箱是 `orders`（[任务 306]：没有人跟家长报价），
+     而一间才艺班可能只开了 `quotations`。没有走单那一页就没有这一件事 ——
+     那时候那颗按钮根本不画，而不是按下去失败。 */
+  const billModule =
+    ((pageRows ?? []) as { page_key: string }[]).find((r) =>
+      ["orders", "quotations", "projects"].includes(r.page_key),
+    )?.page_key ?? null;
+
   const from = todayMyt();
   const until = twoWeeksMyt();
 
@@ -197,6 +206,14 @@ export default async function ClassesPage({
         <ClassDesk
           projectId={workspace.projectId}
           moduleKey={calendarKey}
+          /* 🔴 **学费只给老板看。** 这一页本来就是老师也打得开的
+             （点名的是老师，而这一页上一分钱都没有）—— 那颗按钮一挂上去
+             这句话就不成立了，所以它自己挡。
+             ⚠️ 挡的是**画面**：`bill_class` 在资料库那一层是 `works_here`，
+             这里比它严，而那是[任务 324](../../../../../docs/founder-tasks.md#324)
+             收尾写下来的取舍，不是我在这里发明一条规矩。 */
+          isOwner={workspace.role === "owner"}
+          billModule={billModule}
           lessons={lessons}
           groups={groups}
           staff={staff}
@@ -242,6 +259,18 @@ export default async function ClassesPage({
             fri: t("classes.fri"),
             sat: t("classes.sat"),
             sun: t("classes.sun"),
+            bill: t("classes.bill"),
+            billNote: t("classes.billNote"),
+            perHead: t("classes.perHead"),
+            month: t("classes.month"),
+            billGo: t("classes.billGo"),
+            billing: t("classes.billing"),
+            billMade: t("classes.billMade"),
+            billAgain: t("classes.billAgain"),
+            billSkipped: t("classes.billSkipped"),
+            billTotal: t("classes.billTotal"),
+            billSeeAll: t("classes.billSeeAll"),
+            needAmount: t("classes.needAmount"),
           }}
         />
       </PageBody>

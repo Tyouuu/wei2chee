@@ -1640,7 +1640,19 @@
       "thu": "Thursday",
       "fri": "Friday",
       "sat": "Saturday",
-      "sun": "Sunday"
+      "sun": "Sunday",
+      "bill": "Bill the class",
+      "billNote": "One bill per student in this class. Press it twice and nobody is billed twice.",
+      "perHead": "Amount per student (RM)",
+      "month": "For which month",
+      "billGo": "Open the bills",
+      "billing": "Opening...",
+      "billMade": "%n bills opened.",
+      "billAgain": "%n already had one.",
+      "billSkipped": "%n skipped.",
+      "billTotal": "%s in total.",
+      "billSeeAll": "See them",
+      "needAmount": "Put an amount per student."
     },
     "tables": {
       "title": "Tables",

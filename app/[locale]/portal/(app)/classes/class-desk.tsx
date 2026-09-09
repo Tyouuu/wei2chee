@@ -54,6 +54,8 @@ type RosterRow = { party_id: string; name: string; left_on: string | null };
 export function ClassDesk({
   projectId,
   moduleKey,
+  billModule,
+  isOwner,
   lessons,
   groups,
   staff,
@@ -62,6 +64,10 @@ export function ClassDesk({
 }: {
   projectId: string;
   moduleKey: string;
+  /** 学费单开在哪一页。没有走单那一页就是 null，那颗按钮不画。 */
+  billModule: string | null;
+  /** 学费只给老板看。见 page.tsx 上那一段。 */
+  isOwner: boolean;
   lessons: Lesson[];
   groups: Group[];
   staff: Person[];
@@ -93,6 +99,67 @@ export function ClassDesk({
   const [newTeacher, setNewTeacher] = useState("");
   const [newCap, setNewCap] = useState("");
   const [addWho, setAddWho] = useState("");
+
+  /* 一按开全班的学费单。 */
+  const [billing, setBilling] = useState<string | null>(null);
+  const [perHead, setPerHead] = useState("");
+  const [month, setMonth] = useState("");
+  const [billBusy, setBillBusy] = useState(false);
+  const [billFailed, setBillFailed] = useState("");
+  const [billDone, setBillDone] = useState<{
+    made: number;
+    again: number;
+    skipped: number;
+    total: number;
+    period: string;
+  } | null>(null);
+
+  /**
+   * 开一整班的学费单。
+   *
+   * 🔴 **开完之后给他一张单据的清单，不是一句「做好了」。**
+   * 2026-09-09 拍了 Teachworks · Jackrabbit · Classe365 三家
+   * （`.screenshots/featurepages/sheet-①.jpg`）：三家都一样，
+   * 按下去之后画面上是**开出来的那几张**，带号码、状态跟金额。
+   * 一句「做好了」答不了他真正在问的那一句 ——
+   * **「十个学生，是不是十张都开了？」**
+   *
+   * ⚠️ 我们不在这里画那十张（它们在他自己那一页上），
+   * 所以这里给的是**数字加一条路**：开了几张 · 本来就有几张 · 一共多少钱 ·
+   * 点过去看。三家里 Classe365 那一张表最后一栏就是 Actions。
+   */
+  async function bill(groupId: string) {
+    const rm = Number(perHead.replace(/[^0-9.]/g, ""));
+    if (!billModule || !Number.isFinite(rm) || rm <= 0) {
+      setBillFailed(words.needAmount);
+      return;
+    }
+    setBillBusy(true);
+    setBillFailed("");
+    const { data, error } = await sb().rpc("bill_class", {
+      in_group_id: groupId,
+      in_module_key: billModule,
+      in_amount_cents: Math.round(rm * 100),
+      ...(month.trim() ? { in_period: month.trim() } : {}),
+    });
+    setBillBusy(false);
+    if (error) {
+      setBillFailed(words.saveFailed);
+      return;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    setBillDone({
+      made: Number(row?.made ?? 0),
+      again: Number(row?.again ?? 0),
+      skipped: Number(row?.skipped ?? 0),
+      total: Number(row?.total_cents ?? 0) / 100,
+      period: String(row?.period ?? ""),
+    });
+    setBilling(null);
+    setPerHead("");
+    setMonth("");
+    router.refresh();
+  }
 
   const sb = () => createBrowserSupabaseClient();
   const dayName = (d: number) =>
@@ -484,6 +551,107 @@ export function ClassDesk({
                         >
                           {words.editGroup}
                         </button>
+                        {/* 🔴 学费 —— 只有老板，而且只有他真的有一页走单的时候。
+                            一颗按下去一定失败的按钮，是这个仓库禁得最严的那一条。 */}
+                        {isOwner && billModule && (
+                          <button
+                            type="button"
+                            data-bill-class
+                            onClick={() => {
+                              setBilling(g.id);
+                              setBillDone(null);
+                              setBillFailed("");
+                            }}
+                            className={deskBtn()}
+                          >
+                            {words.bill}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {on && billing === g.id && (
+                      <div className="mt-3 flex flex-col gap-3 [border-radius:var(--radius-md)] [border:var(--hairline)_solid_var(--input)] p-3">
+                        <p className={deskDim}>{words.billNote}</p>
+                        <div className="flex flex-wrap items-end gap-3">
+                          <label className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <span className={deskDim}>{words.perHead}</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={perHead}
+                              onChange={(e) => setPerHead(e.target.value)}
+                              className={deskField}
+                            />
+                          </label>
+                          <label className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <span className={deskDim}>{words.month}</span>
+                            <input
+                              type="month"
+                              value={month}
+                              onChange={(e) => setMonth(e.target.value)}
+                              className={deskField}
+                            />
+                          </label>
+                        </div>
+                        {billFailed && (
+                          <p className="[color:var(--color-clay-bright)] [font-size:var(--text-sm)]">
+                            {billFailed}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() => void bill(g.id)}
+                            disabled={billBusy}
+                            className={deskBtn("primary")}
+                          >
+                            {billBusy ? words.billing : words.billGo}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBilling(null)}
+                            className={deskBtn()}
+                          >
+                            {words.close}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 开完了 —— 三个数字跟一条路。见 `bill` 的档头。 */}
+                    {on && billDone && billing !== g.id && (
+                      <div className="mt-3 flex flex-col gap-1 [border-radius:var(--radius-md)] [border:var(--hairline)_solid_var(--input)] p-3">
+                        <p className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+                          {words.billMade.replace("%n", String(billDone.made))}
+                        </p>
+                        {billDone.again > 0 && (
+                          <p className={deskDim}>
+                            {words.billAgain.replace("%n", String(billDone.again))}
+                          </p>
+                        )}
+                        {billDone.skipped > 0 && (
+                          <p className={deskDim}>
+                            {words.billSkipped.replace(
+                              "%n",
+                              String(billDone.skipped),
+                            )}
+                          </p>
+                        )}
+                        <p className={deskDim}>
+                          {words.billTotal.replace(
+                            "%s",
+                            `RM ${billDone.total.toLocaleString("en-MY", {
+                              minimumFractionDigits: 2,
+                            })}`,
+                          )}
+                        </p>
+                        <a
+                          href={`/en/portal/${billModule}`}
+                          className="[font-size:var(--text-sm)] underline"
+                        >
+                          {words.billSeeAll}
+                        </a>
                       </div>
                     )}
                     {on && editing === g.id && (

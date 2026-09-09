@@ -1640,7 +1640,19 @@
       "thu": "星期四",
       "fri": "星期五",
       "sat": "星期六",
-      "sun": "星期日"
+      "sun": "星期日",
+      "bill": "开这个班的学费",
+      "billNote": "这个班一个学生一张。按第二下不会重复开。",
+      "perHead": "一个学生多少（RM）",
+      "month": "哪一个月",
+      "billGo": "开出来",
+      "billing": "开着…",
+      "billMade": "开了 %n 张。",
+      "billAgain": "本来就有 %n 张。",
+      "billSkipped": "跳过 %n 个。",
+      "billTotal": "一共 %s。",
+      "billSeeAll": "去看那几张",
+      "needAmount": "写一个学生多少钱。"
     },
     "tables": {
       "title": "餐台",
