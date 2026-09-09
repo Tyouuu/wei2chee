@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAssistant } from "./assistant-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -174,11 +174,29 @@ export function AiAssistant({
     business anybody will ever hand us.
 
     Uploaded to our own bucket first, not sent as a data URL. A phone photo is
-    3-5MB and base64 is a third larger again; and the route only forwards URLs
-    on our own host, because a caller-supplied URL handed to OpenAI is a
-    request forger's tool aimed at our own bill.
+    3-5MB and base64 is a third larger again, on a JSON request body, on a
+    Malaysian mobile connection.
+
+    🔴 而那个桶从 2026-09-09 起是 **private** 的（`ask-photos`,
+    20260909160000），送给 route 的是**路径**不是网址 —— 这一段原本写着
+    「route 只转发我们自己网域上的网址」，而那句话讲的是一个已经不存在的
+    做法：他附上来的可能是他供应商开给他的发票。
   */
-  const [image, setImage] = useState<string | null>(null);
+  /* 🔴 路径，不是网址 —— 而这一行是 2026-09-09 那个漏洞的补法本身。
+     一条 `getPublicUrl()` 出来的东西是**永久、不用登入、任何人打得开**的，
+     而他附上来的可能是他供应商开给他的发票。`preview` 是浏览器自己的
+     `blob:` 网址（只在这个分页里存在，传不出去），所以画面上照样看得到
+     那张图，而**没有任何一条指向它的网址离开过这台机器**。 */
+  const [image, setImage] = useState<{ path: string; preview: string } | null>(
+    null,
+  );
+  /* 收掉那条 blob，不然一次对话里换五张图就是五张留在记忆体里。 */
+  const clearImage = useCallback(() => {
+    setImage((prev) => {
+      if (prev) URL.revokeObjectURL(prev.preview);
+      return null;
+    });
+  }, []);
   const [uploading, setUploading] = useState(false);
   const imageRef = useRef<HTMLInputElement>(null);
   /* The in-flight request, so both our own timer and the 「不等了」 button can
@@ -201,13 +219,15 @@ export function AiAssistant({
         .toLowerCase()
         .slice(0, 5);
       const path = `${project.id}/ask-${crypto.randomUUID()}.${ext}`;
+      /* 🔴 `ask-photos`，不是 `site-photos`。见 20260909160000 的档头。
+         `site-photos` 的档头白纸黑字写着 PUBLIC READ，而那对**要贴到官网上
+         的照片**是对的 —— 他附给助手的这一张不是那件事，它是一个**问题**。
+         一个问题永远不需要一条公开的网址，而它可能是一张发票。 */
       const { error } = await supabase.storage
-        .from("site-photos")
+        .from("ask-photos")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (error) return;
-      setImage(
-        supabase.storage.from("site-photos").getPublicUrl(path).data.publicUrl,
-      );
+      setImage({ path, preview: URL.createObjectURL(file) });
     } finally {
       setUploading(false);
     }
@@ -276,7 +296,7 @@ export function AiAssistant({
     setInstruction("");
     // Cleared with the question it belonged to: a picture that stayed attached
     // would silently ride along on the next, unrelated request.
-    setImage(null);
+    clearImage();
     setBusy(true);
     /*
       SENDING IS THE STRONGEST 「keep this open」 THERE IS.
@@ -323,7 +343,9 @@ export function AiAssistant({
           layout: before,
           instruction: trimmed,
           pages,
-          imageUrl: image,
+          /* 🔴 路径，不是网址。route 那一端拿他自己的登入去下载，
+             再把位元组送给模型 —— 跟 `/api/receipt` 同一条路。 */
+          imagePath: image?.path ?? null,
           generated: isGeneratedDraft,
           /* Which module is open. The route needs it to know whether 「加一单」
              on THIS page is a business record or a layout row -- see
@@ -1039,13 +1061,13 @@ export function AiAssistant({
           <div className="mb-2 flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={image}
+              src={image.preview}
               alt=""
               className="h-10 w-14 rounded-[var(--radius-xs)] object-cover"
             />
             <button
               type="button"
-              onClick={() => setImage(null)}
+              onClick={clearImage}
               className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)] hover:[color:var(--color-paper)]"
             >
               {t("aiImageRemove")}

@@ -29,6 +29,7 @@
 import { chromium } from "playwright";
 import { readFileSync, mkdirSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 import { dropThrowaway, dropThrowawayOnExit } from "./lib/throwaway.mjs";
 import { openAllPages, seedEveryShape } from "./lib/seed-demo.mjs";
 
@@ -174,6 +175,32 @@ try {
     .catch(() => "");
   const said = reply.split("\n").map((s) => s.trim()).filter(Boolean).slice(-6).join(" / ");
   say(reply.length > 0, `它回了什么 — ${said.slice(0, 160)}`);
+
+  /* ── ⑤ 他附一张图（2026-09-09 加的）──────────────────────────────────────
+     老板自己讲的用法：`拍照給妳分析啊 上傳invoice啊`。
+     🔴 而在 20260909160000 之前，那张图上传之后画面上那颗缩图指着的是一条
+     **公开的网址** —— 任何人拿到都打得开，而它可能是他供应商的发票。
+     现在缩图是浏览器自己的 `blob:`（只在这个分页里存在），图本身在
+     private 的 `ask-photos` 里。**画面上要一模一样地看得到那张图**，
+     所以这一张非拍不可：一条量得到的 src，跟一张看得到的缩图，是两件事。 */
+  const shot = await sharp({
+    create: { width: 900, height: 500, channels: 3, background: "#1f6feb" },
+  })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+  await page
+    .locator('[data-panel="ai"] input[type="file"]')
+    .first()
+    .setInputFiles({ name: "invoice.jpg", mimeType: "image/jpeg", buffer: shot });
+  const thumb = page.locator('[data-panel="ai"] img').first();
+  await thumb.waitFor({ timeout: 60000 }).catch(() => {});
+  await page.waitForTimeout(1200);
+  await hideDev();
+  await page.screenshot({ path: `${OUT}/5-photo.png` });
+  const src = await thumb.getAttribute("src").catch(() => "");
+  say(!!src && src.startsWith("blob:"), `缩图指着什么 — ${String(src).slice(0, 60)}`);
+  const box2 = await thumb.boundingBox().catch(() => null);
+  say(!!box2 && box2.width > 8 && box2.height > 8, `缩图画出来了没有 — ${box2 ? `${Math.round(box2.width)}×${Math.round(box2.height)}` : "没有"}`);
 } finally {
   if (browser) await browser.close();
   await dropThrowaway(admin, userId);

@@ -487,7 +487,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { layout, instruction, pages, imageUrl, generated, history, pageKey, selected } = (body ?? {}) as {
+  const { layout, instruction, pages, imagePath, generated, history, pageKey, selected } = (body ?? {}) as {
     /** Which module is open. Sent by the browser, trusted for nothing except
      *  deciding whether a table row on THIS page is a business record or a
      *  layout row -- and the RPC it routes to resolves the project from the
@@ -496,22 +496,33 @@ export async function POST(req: NextRequest) {
     layout?: PuckLayout;
     instruction?: string;
     /**
-     * A picture the owner attached, as a URL in OUR OWN bucket.
+     * A picture the owner attached -- 🔴 A PATH IN A PRIVATE BUCKET, NOT A URL.
      *
      * 「可能客戶要我們去抄去借鑒別人的設計」 -- a shop owner explaining what he wants
      * points at something. He screenshots a competitor, or photographs the
      * paper job sheet he has used for fifteen years, which is the single most
      * accurate description of his business anybody will ever hand us.
      *
-     * A URL and not a data URL: a phone photo is 3-5MB, and a base64 data URL
-     * is a third larger again, on a JSON request body, on a Malaysian mobile
-     * connection. The picker already uploads to site-photos with the owner's
-     * own session, so the file is on our storage before this route is called.
+     * ── 🔴 为什么 2026-09-09 从网址改成路径 ─────────────────────────────
      *
-     * ONLY OUR OWN HOST IS ACCEPTED. A caller-supplied URL that we then hand to
-     * OpenAI is a request forger's tool pointed at somebody else's bill.
+     * 老板自己讲他要拿助手做什么：「拍照給妳分析啊 上傳invoice啊」。
+     * 而在那之前，那张图传进 `site-photos`（档头写着 PUBLIC READ）之后拿的是
+     * `getPublicUrl()` —— **一条永久、不用登入、任何人打得开的网址**，
+     * 指着他供应商开给他的发票：他的进货价、他的供应商、他一个月的租金。
+     *
+     * 同一件事这个仓库已经做对过一次：`/api/receipt`（20260905010000）走的是
+     * private 的桶 ＋ **把位元组送上去**，档头一字不差写着
+     * 「全程没有任何一条指向他收据的网址存在过」。
+     * **一件事两条路，只保护了一条** —— 而这一条是没保护的那一条。
+     *
+     * 所以现在：浏览器传进 `ask-photos`（private，20260909160000），
+     * 只把**路径**送过来；这里用**他自己的登入**去下载，缩小，变成资料本身
+     * 送给模型。一条公开的网址从头到尾不存在。
+     *
+     * ⚠️ 也顺手关掉了原来那个形状的另一半：一条呼叫端给的网址交给 OpenAI，
+     * 是一把指着我们自己帐单的枪。现在这里根本不接受网址。
      */
-    imageUrl?: string;
+    imagePath?: string;
     /** The customer's own page list, so「把报价单那一页删掉」can name a real page
      *  instead of being told the page does not exist. Sent by the client rather
      *  than re-queried here because the editor already has it, and it is only
@@ -747,26 +758,51 @@ The business owner asked:
 "${trimmed}"`;
 
   /*
-    THE ONLY HOST WE FORWARD.
+    ── 他附的那张图，读成位元组 ────────────────────────────────────────────
 
-    `imageUrl` arrives from the browser and is handed to OpenAI, so an
-    unchecked value is a request forger's tool aimed at our own bill -- and at
-    anything reachable from OpenAI's fetchers. It must be a file in our own
-    Supabase storage, matched on HOSTNAME rather than prefix, because
-    「<ref>.supabase.co.evil.test」 starts with the right letters.
+    🔴 **这里不接受网址，只接受一条 `ask-photos` 里的路径。** 见上面
+    `imagePath` 的注解：一条公开的网址指着他的发票，是这一支 2026-09-09
+    修掉的那个洞；而一条呼叫端给的网址交给 OpenAI，是原来那个形状的另一半。
+
+    ⚠️ **用 `asReader`（他自己的登入），不是 service role。** service role
+    下载得了任何一家的档案，而这里要的正好是「资料库替我确认这是他的」——
+    `ask-photos` 的政策挡的是 `works_here`。跟 `/api/receipt` 同一句话。
+
+    路径前缀再挡一次，理由跟 `/api/receipt` 一样：储存层拒绝的时候回的是
+    「找不到」，而那跟「那不是你的」在画面上长得一模一样。
   */
-  const safeImage = (() => {
-    if (!imageUrl) return null;
+  const attachedImage = await (async (): Promise<string | null> => {
+    const raw = typeof imagePath === "string" ? imagePath.trim() : "";
+    if (!raw) return null;
+    const projectId = String(project?.id ?? "");
+    if (!projectId) return null;
+    if (!raw.startsWith(`${projectId}/`) || raw.includes("..")) return null;
+
+    const { data: blob, error: dlError } = await asReader.storage
+      .from("ask-photos")
+      .download(raw);
+    if (dlError || !blob) return null;
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    /* 缩小之后再送 —— 跟 `/api/receipt` 同一段、同一个理由（钱花在
+       每一次呼叫的 token 上），连宽度都一样：他附的那一张可能就是一张
+       收据，而收据上的小字比风景照更需要解析度。
+       ⚠️ **缩不动就送原图** —— sharp 是原生的，而一张送不出去的图
+       比一张大一点的图糟得多。 */
+    let jpeg: Uint8Array = bytes;
     try {
-      const u = new URL(imageUrl);
-      const base = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
-      if (u.protocol !== "https:") return null;
-      if (u.hostname.toLowerCase() !== base.hostname.toLowerCase()) return null;
-      if (!u.pathname.includes("/site-photos/")) return null;
-      return u.toString();
+      const sharp = (await import("sharp")).default;
+      jpeg = new Uint8Array(
+        await sharp(bytes)
+          .rotate()
+          .resize({ width: 1600, withoutEnlargement: true })
+          .jpeg({ quality: 80 })
+          .toBuffer(),
+      );
     } catch {
-      return null;
+      // 留原图。见上面那一段。
     }
+    return `data:image/jpeg;base64,${Buffer.from(jpeg).toString("base64")}`;
   })();
 
   let parsed;
@@ -782,14 +818,12 @@ The business owner asked:
         { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
-          // A picture only when the owner attached one AND it is ours. See the
-          // note on `imageUrl`: this URL is forwarded to OpenAI, so accepting
-          // an arbitrary host would let a caller point our account's bandwidth
-          // at anything on the internet.
-          content: safeImage
+          // 只有在他真的附了一张、而且那一张确实是他自己那一家的时候才带图。
+          // 送的是资料本身，不是网址 —— 见上面 attachedImage 那一段。
+          content: attachedImage
             ? [
                 { type: "text" as const, text: userPrompt },
-                { type: "image_url" as const, image_url: { url: safeImage } },
+                { type: "image_url" as const, image_url: { url: attachedImage } },
               ]
             : userPrompt,
         },
