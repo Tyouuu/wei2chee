@@ -74,6 +74,10 @@ const TRACKED = [
      正好是这个形状锁住一个帐号的第一次。 */
   ["treatment_notes", "created_by"],
   ["treatment_products", "created_by"],
+  /* 同意书 —— 20260909130000。同一个形状：`party_id` 是 on delete restrict
+     （一个签过同意书的人删不掉），而公司那一条是 cascade。 */
+  ["consent_forms", "created_by"],
+  ["consent_signatures", "created_by"],
   ["vehicles", "created_by"],
 ];
 
@@ -237,6 +241,14 @@ try {
     });
     await said("add_treatment_product", {
       in_note_id: note?.id, in_item_id: cream.id, in_qty: 5,
+    });
+
+    /* 同一段里再种一份同意书 —— consent_forms · consent_signatures。 */
+    const { data: sheet } = await C.rpc("add_consent_form", {
+      in_project_id: P, in_name: "同意书", in_body: "我明白这个疗程的风险。",
+    });
+    await said("request_consent", {
+      in_party_id: her?.id ?? her, in_form_id: sheet?.id,
     });
   }
 

@@ -153,10 +153,19 @@ try {
 
   // --- project_pages ------------------------------------------------------
   const { data: aSeesPages } = await a.client.from("project_pages").select("id, project_id");
+  /* 🔴 不写死几页。这一条守的是「A 看得到的每一页都是 A 的，而且不多不少」——
+     而页数是开局那份清单决定的，它会变（20260909010000 给八个行业各加了
+     一页开销，於是这一条从 6 变 7 而红）。一条会因为「开局多一页」变红的
+     隔离检查，教下一个人去改那个数字，而它真正的靶在后半句。 */
+  const { count: aRealPages } = await admin
+    .from("project_pages").select("id", { count: "exact", head: true })
+    .eq("project_id", aProject.id);
   check(
-    "A sees only its own six pages",
-    aSeesPages?.length === 6 && aSeesPages.every((p) => p.project_id === aProject.id),
-    `saw ${aSeesPages?.length ?? 0}`,
+    "A sees its own pages, all of them and nothing else",
+    aSeesPages?.length === aRealPages
+      && aRealPages > 0
+      && aSeesPages.every((p) => p.project_id === aProject.id),
+    `saw ${aSeesPages?.length ?? 0} of ${aRealPages}`,
   );
 
   const { data: aProbesBPages } = await b.client
