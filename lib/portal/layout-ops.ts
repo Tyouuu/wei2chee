@@ -983,6 +983,60 @@ function describeRows(table: TableModel): string {
  * 每一张卡自己现在在哪一栏照印 —— 那是关於那一行的事实，而且它让模型看得出
  * 一张卡已经在它该在的地方（跟 `variant=` 印出来的理由一样）。
  */
+/**
+ * 🔴 一天的日程上那几笔预约，跟每一笔自己的记录编号。
+ *
+ * ── 第三次同一个形状，而这一次挡住的是沙龙最常讲的那一句 ──────────────────
+ *
+ * `describeLayout` 只描述两种块：`RecordTable` → 行，`TaskBoard` → 卡。
+ * **`DaySchedule` 两样都不给** —— 所以在预约那一页上，模型看得见那一块，
+ * **一笔预约都看不见**。
+ *
+ * 於是「陈太太来了」「她放我飞机」「那一单取消」全部回
+ * 「她那一笔不在这一页上」—— 而模型**讲的是实话**：它手上真的没有。
+ * 开新的照样开得了（那一件不需要行），**动已经在的一笔一个都动不了**。
+ *
+ * ⚠️ 上面 `describeCards` 的注解写着 2026-09-07 的同一件事：
+ * 工程跟任务两页印不出行，因为 `describeRows` 只认得 `RecordTable`，
+ * 而 `set_record_status` 在它最该用的两页上没有东西可以指。
+ * **那一次修了看板，日程没有做。**
+ *
+ * 🔴 而它比看起来更要紧：`set_appointment_status` 按下「来了」的时候
+ * **顺手扣掉一次套票并且讲得出还剩几次**（任务 225）。所以那一整套
+ * 大家都以为在跑的套票机制，**从来没有从助手这一边够得到过**。
+ *
+ * 行的形状跟卡不一样（`live-rows.ts` 的 `DaySchedule` 那一段给的是
+ * `{time, endTime, title, description, who, tone, where, href}`，放在
+ * `props.rows`），所以这是 `describeCards` 的**兄弟，不是它的重用**。
+ *
+ * ⚠️ **编号只有真的那几笔有** —— 示例没有 `href`（那一段自己写着，
+ * 而那正是这一页敢把底下那张一模一样的表拿掉的前提）。认不出的照样印，
+ * 只是没有把手：他看得见它，而模型动不了它 —— 往拒绝的方向坏。
+ */
+function describeDay(props: Record<string, unknown>): string {
+  const rows = Array.isArray(props.rows) ? (props.rows as Record<string, unknown>[]) : [];
+  if (!rows.length) return "";
+  const word = (v: unknown) => (typeof v === "string" && v ? v : "");
+  const shown = rows.slice(0, ROWS_SHOWN).map((r) => {
+    const href = word(r.href);
+    const id = href ? (href.match(RECORD_ID)?.[1] ?? null) : null;
+    const when = [word(r.time), word(r.endTime)].filter(Boolean).join("–");
+    const words = [
+      when ? `at="${when}"` : "",
+      word(r.title) ? `who="${word(r.title)}"` : "",
+      word(r.description) ? `what="${word(r.description)}"` : "",
+      /* 🔴 哪一位做 —— 一间四个发型师的沙龙，「三点那一个」不指人就指不准。 */
+      word(r.who) ? `staff="${word(r.who)}"` : "",
+      word(r.where) ? `where="${word(r.where)}"` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    return id ? `record=${id} ${words}` : `（示例，动不了）${words}`;
+  });
+  const rest = rows.length > ROWS_SHOWN ? `，另外 ${rows.length - ROWS_SHOWN} 笔没列出来` : "";
+  return ` bookings(${rows.length}${rest})=[${shown.join(" | ")}]`;
+}
+
 function describeCards(props: Record<string, unknown>): string {
   const cards = Array.isArray(props.cards) ? (props.cards as Record<string, unknown>[]) : [];
   if (!cards.length) return "";
@@ -1099,6 +1153,11 @@ export function describeLayout(layout: PuckLayout, selected?: string | null): st
       }
       if (n.type === "TaskBoard") {
         extra = describeCards(n.props ?? {});
+      }
+      /* 🔴 见 `describeDay` 的档头：少了这一行，预约那一页上模型
+         **一笔预约都看不见**，而「客人来了」是一间沙龙一天讲最多次的那一句。 */
+      if (n.type === "DaySchedule") {
+        extra = describeDay(n.props ?? {});
       }
       if (n.type === "RecordTable") {
         const table = normalizeTable(n.props ?? {});
