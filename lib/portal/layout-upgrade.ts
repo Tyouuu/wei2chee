@@ -91,9 +91,9 @@ function isDeadFilterRow(node: Node): boolean {
   writes a prop that is ABSENT -- a customer who renamed 「Filtered by」 to
   「Showing」 keeps it, which is the rule the whole file runs on.
 */
-const CHROME: Record<SystemLang, { filteredBy: string; clearAll: string; notifications: string; account: string }> = {
-  en: { filteredBy: "Filtered by", clearAll: "Clear all", notifications: "Notifications", account: "Account" },
-  zh: { filteredBy: "筛选条件", clearAll: "清空全部", notifications: "通知", account: "账号设置" },
+const CHROME: Record<SystemLang, { filteredBy: string; clearAll: string; notifications: string; account: string; ask: string }> = {
+  en: { filteredBy: "Filtered by", clearAll: "Clear all", notifications: "Notifications", account: "Account", ask: "Ask AI" },
+  zh: { filteredBy: "筛选条件", clearAll: "清空全部", notifications: "通知", account: "账号设置", ask: "问 AI" },
 };
 
 type HeroStat = { label?: string; value?: string; tone?: string; sub?: string; href?: string };
@@ -197,6 +197,16 @@ function upgradeNode(node: Node, lang: SystemLang): Node {
   if (node.type === "FilterChips") {
     if (typeof props.filteredByLabel !== "string") props.filteredByLabel = CHROME[lang].filteredBy;
     if (typeof props.clearAllLabel !== "string") props.clearAllLabel = CHROME[lang].clearAll;
+  }
+
+  /* 🔴 「跟它讲话」那一行 —— 2026-09-09 加进侧栏的。
+     少了这一段，**只有今天之后新开的帐号看得到那个入口**：
+     已经保存过的客户，他们那棵树里没有这个属性，於是这个产品的招牌承诺
+     在他们的系统上一个字都不画。那正是这个仓库犯过十八次的
+     「能力有、线没接」，而这个档案存在的理由就是接这一类线。
+     ⚠️ 照这个档案自己的规矩：**只填不存在的**，他改过的名字留着。 */
+  if (node.type === "RailNav" && typeof props.askLabel !== "string") {
+    props.askLabel = CHROME[lang].ask;
   }
 
   if (node.type === "RailNav" && !Array.isArray(props.utilityItems)) {

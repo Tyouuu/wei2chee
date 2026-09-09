@@ -19,6 +19,8 @@ export type Chrome = {
   /** The rail, identical on every page. */
   rail: {
     notifications: string;
+    /** 侧栏里「跟它讲话」那一行。见 railNavNode 的注解。 */
+    ask: string;
     account: string;
     /** The role under the account chip. The owner is the owner. */
     ownerRole: string;
@@ -289,6 +291,9 @@ const EN: Chrome = {
   filter: { filteredBy: "Filtered by", clearAll: "Clear all" },
   rail: {
     notifications: "Notifications",
+    /* Stripe 文件跟 assistant-ui 两家写的都是这两个字（2026-09-09 拍到）。
+       [重点 7n]：照抄，不要自己另外想一句。 */
+    ask: "Ask AI",
     account: "Account settings",
     ownerRole: "Owner",
     groups: {
@@ -470,6 +475,7 @@ const ZH: Chrome = {
   filter: { filteredBy: "筛选条件", clearAll: "清空全部" },
   rail: {
     notifications: "通知",
+    ask: "问 AI",
     account: "账号设置",
     ownerRole: "老板",
     groups: {

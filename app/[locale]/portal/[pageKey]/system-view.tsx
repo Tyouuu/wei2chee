@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Data } from "@puckeditor/core";
 import { StyleScope } from "@/design-system/editor/style-scope";
@@ -78,6 +78,17 @@ export function SystemView({
      根本没有产生。看图当场看到：那条侧栏还在，而且还是横着长出画面外。
      同一家的错这个 session 撞过第二次（上一次是一个带引号的 arbitrary
      variant，一样是静静地什么都不产生）。 */
+  /* 那一条开着没有。**住在这里不住在那一块里面**，因为开着的时候
+     整页内容要往左收 345px（见底下 `askClass`）。 */
+  const [ask, setAsk] = useState(false);
+  /* 侧栏那一行按下去只发一个事件 —— 那条侧栏是伺服器画出来的一个块，
+     它接不到这里的 state，而**一个事件比一条穿过五层的 prop 便宜得多**。 */
+  useEffect(() => {
+    const open = () => setAsk(true);
+    window.addEventListener("formae:ask-open", open);
+    return () => window.removeEventListener("formae:ask-open", open);
+  }, []);
+
   const wrapClass =
     variant === "phone"
       ? "min-h-0 flex-1 overflow-y-auto pb-16 [&_aside[data-nav=side]]:hidden [&_[data-shell-bar]]:hidden [&_[data-page-title]>p]:hidden"
@@ -90,7 +101,9 @@ export function SystemView({
          自己 56px 高，上缘落在 128px —— 一个飘在内容上、又不让内容躲开的东西，
          吃掉的正好是页面最后那一样。这一条这个档案自己写过三次，
          我不打算变成第四次。 */
-      : "min-h-screen lg:pb-14 max-lg:pb-32 max-lg:[&_aside[data-nav=side]]:hidden max-lg:[&_[data-shell-bar]]:hidden max-lg:[&_[data-page-title]>p]:hidden";
+      : `min-h-screen max-lg:pb-32 max-lg:[&_aside[data-nav=side]]:hidden max-lg:[&_[data-shell-bar]]:hidden max-lg:[&_[data-page-title]>p]:hidden${
+          ask ? " lg:pe-[345px]" : ""
+        }`;
   /* 底栏在桌面上不画 —— 那里有侧栏。 */
   const barClass =
     variant === "phone"
@@ -117,7 +130,14 @@ export function SystemView({
        窄屏那一边现在是一颗**离下缘 72px** 的圆钮（见 work-assistant），
        避得开那条 64px 的分页列，谁都不贴谁。
        这个盒子本身在窄屏上是零高度的 —— 里面那颗钮自己 `fixed`。 */
-  const askClass = "fixed inset-x-0 bottom-0 z-30";
+  /* 🔴 那一条现在贴右边，不是贴下缘 —— 老板 2026-09-09 把下缘那一版退回来
+       （`整个在下面那个ai助手的Ui设计 我不要了`），叫我去看别人怎么做。
+       拍了 23 家，真的开得出面板的六家里他挑了「右边一整条」那一种
+       （Stripe 文件 · assistant-ui）。规格逐项量在[任务 318]。
+
+       ⚠️ 这个盒子本身**收起来的时候是空的** —— 入口在侧栏那一行
+       （`RailNav` 的 `askLabel`），窄屏是里面那颗自己 `fixed` 的圆钮。 */
+  const askClass = "";
 
   return (
     <>
@@ -192,6 +212,10 @@ export function SystemView({
         ⚠️ 长相不是这里决定的（`你只是要接功能 反正Ui是另外一邊設計的`）。
         它现在是一条能按的线，排法跟密度登记在任务档里给画面那一边。
       */}
+      {/* 🔴 Stripe 那一条是**把内容推开**，不是浮在字上面
+            （2026-09-09 在 1400 的实拍上量的：内容从 1400 收到 1055）。
+            一个浮在他表格上的面板会盖掉最右边那一栏，而那一栏通常是钱。
+            窄屏整屏，所以窄屏不留这一段。 */}
       {variant === "responsive" ? (
         <StyleScope
           register={style}
@@ -199,7 +223,13 @@ export function SystemView({
           data-surface={deskSurface(pageKey)}
           className={askClass}
         >
-          <WorkAssistant pageKey={pageKey} data={data} pages={navPages} />
+          <WorkAssistant
+            pageKey={pageKey}
+            data={data}
+            pages={navPages}
+            open={ask}
+            setOpen={setAsk}
+          />
         </StyleScope>
       ) : null}
 

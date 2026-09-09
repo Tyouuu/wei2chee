@@ -92,6 +92,8 @@ export function WorkAssistant({
   pageKey,
   data,
   pages,
+  open,
+  setOpen,
 }: {
   pageKey: string;
   /** 这一页现在长什么样 —— **只送出去给模型看**，不接回来。
@@ -100,10 +102,17 @@ export function WorkAssistant({
   data: Data;
   /** 他这套系统有哪几页。只用来给模型认路，什么都不授权。 */
   pages: { key: string; label: string }[];
+  /** 开着没有 —— **住在外面**（`system-view`）。
+   *
+   *  Stripe 那一条是**把内容推开**，不是浮在字上面（2026-09-09 在 1400 的
+   *  实拍上量的：内容从 1400 收到 1055）。要推开，外面那一层得知道它开着，
+   *  所以这两个不在这里。
+   *  ⚠️ 一个浮在他表格上的面板会盖掉最右边那一栏，而那一栏通常是钱。 */
+  open: boolean;
+  setOpen: (next: boolean) => void;
 }) {
   const t = useTranslations("portal.editor");
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   /** 上一句的结果。**一句话加上几条它自己讲不出来的事实** —— 顺手扣掉的
@@ -369,119 +378,174 @@ export function WorkAssistant({
     }
   }
 
-  if (!open) {
-    return (
-      <>
-        {/* 宽屏 —— 一条底栏，中间**一个看起来就是输入框的东西**。
-            改之前它是一整条贴边的灰，左边一句小字，右边一大片空白：
-            实拍上它读起来像浏览器的状态列，而这是这个产品的招牌承诺
-            （[任务 318](../../../../docs/founder-tasks.md)）。
-            ⚠️ 位置一个像素都没有动 —— 整页宽、`fixed`、在内容外面，
-            那三样是 system-view 的 `askClass` 两次看图换来的。 */}
-        <div className="max-lg:hidden [background-color:var(--color-surface)] [border-color:var(--color-line)] [border-top-width:1px] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]">
-          <button
-            type="button"
-            data-work-ai="closed"
-            onClick={() => setOpen(true)}
-            className="mx-auto flex w-full max-w-[46rem] items-center gap-2 [background-color:var(--color-canvas)] [border-color:var(--color-line)] [border-radius:var(--radius-control)] [border-width:1px] [color:var(--color-on-surface-dim)] [font-size:var(--text-sm)] [min-height:40px] [padding-inline:var(--pad-control-x)] text-start"
-          >
-            <IconSpark className="h-[16px] w-[16px] shrink-0" />
-            <span className="truncate">{t("aiWorkOpen")}</span>
-          </button>
-        </div>
+  /* 一句都还没讲的时候，给他几句现成的 —— **点一下就填进框里**。
+     借的是 assistant-ui 那一块的「START WITH」（2026-09-09 拍到）：
+     一个空框问的是「你要什么」，而他多半答不上来；
+     几句现成的问的是「是不是这个」，那一句他答得了。
+     ⚠️ 这几句**不是发明出来的**，是从他自己那一句例子拆出来的
+     （`aiWorkPlaceholder`），所以它们永远是这一支真的做得到的事。 */
+  const starters = t("aiWorkPlaceholder")
+    .replace(/^e\.g\.\s*/i, "")
+    .split(" · ")
+    .map((x) => x.trim())
+    .filter(Boolean);
 
-        {/* 窄屏 —— 一颗浮在那条分页列**上面**的圆钮。
-            改之前窄屏一个字都没画，理由写在 `askClass` 上：
-            两条贴在同一条边上，吃掉的永远是内容最后那一行。**那句话是对的**，
-            所以这里不再多贴一条 —— 一颗离下缘 72px 的圆钮避得开那条 64px 的分页列，
-            而 16 个老板端 app 里放这颗钮的位置就是这里。 */}
-        <button
-          type="button"
-          data-work-ai="closed-narrow"
-          aria-label={t("aiWorkOpen")}
-          onClick={() => setOpen(true)}
-          className="fixed bottom-[4.5rem] end-4 z-30 grid h-14 w-14 place-items-center rounded-full shadow-lg lg:hidden [background-color:var(--color-primary)] [color:var(--color-on-primary)]"
-        >
-          <IconSpark className="h-6 w-6" />
-        </button>
-      </>
+  if (!open) {
+    /* 🔴 宽屏收起来的时候**这里什么都不画** —— 入口搬到侧栏那一行去了
+       （`RailNav` 的 `askLabel`）。
+
+       2026-09-09 拍了 23 家产品，真的开得出面板的六家里，
+       **Stripe 文件跟 assistant-ui 把入口放在同一个位置**：跟搜索并排，
+       主要控件那一区 —— 不是画面下缘。老板跟着纠正得更准：
+       `不是顶栏吧 我们的是sidebar` —— 我们的主要控件那一区就是侧栏最上面。
+
+       窄屏那条侧栏本来就藏起来，所以那里留一颗浮钮。
+       六家里三家（Intercom · Chatbase · Tidio）收起来就是这一颗。 */
+    return (
+      <button
+        type="button"
+        data-work-ai="closed-narrow"
+        aria-label={t("aiWorkOpen")}
+        onClick={() => setOpen(true)}
+        className="fixed bottom-[4.5rem] end-4 z-30 grid h-14 w-14 place-items-center rounded-full shadow-lg lg:hidden [background-color:var(--color-primary)] [color:var(--color-on-primary)]"
+      >
+        <IconSpark className="h-6 w-6" />
+      </button>
     );
   }
 
+  /**
+   * 右边一整条 —— 照 Stripe 文件那一条抄（[重点 7j]：照抄，不要自己判）。
+   * 2026-09-09 在 1400 的实拍上逐项量的：
+   *
+   *   宽    **345px**，贴着右边
+   *   形状  **没有圆角 · 没有留白 · 没有阴影**，左边一条 1px 的线
+   *   高    整条到底
+   *   抬头  **56px**：左边一颗火花 ＋ 标题，右边一颗 ×
+   *   中间  对话，自己滚
+   *   底下  **药丸形**的框（圆角 22px）＋ 右边一颗圆的送出钮
+   *   内距  左右各 16px
+   *
+   * ⚠️ 借 assistant-ui 一样东西（[重点 7h]：一个来源留一点，写下落点）：
+   * **空的时候那几句现成的问题**。
+   *
+   * ⚠️ 窄屏整屏 —— 那两家在手机上也是整屏；345 挤进 390 剩下 45px
+   * 什么都放不下。
+   */
+  /* 🔴 **颜色用的是这个设计系统里真的存在的那几个名字。**
+     第一版（连同底下那一条）写的是 `--color-surface` · `--color-on-surface`
+     · `--color-line` —— **这四个名字整个仓库一个 CSS 档案都没有定义过**。
+     没有定义的变数不会报错，它只是**什么都不画**：於是那一块是透明的，
+     背后是 Formae 自己那层深色壳，拍出来整条是黑的。
+     2026-09-09 逐像素量到 `[5,7,12]` 才看到（[重点 7l]：数字过关不等於眼睛过关）。
+     真的那几个：地是 `--color-canvas` · 字是 `--color-paper` /
+     `--color-paper-dim` · 线是 `--border-subtle`（跟 `DayColumns` 同一套）。 */
   return (
     <section
       data-work-ai="open"
       aria-label={t("aiWorkTitle")}
-      /* 🔴 窄屏上它是一张从下缘长出来的纸，**停在那条分页列上面**（`bottom-16`）——
-         盖住换页那一条，等於在他讲话的时候把出路收走。
-         宽屏上它就是那条底栏自己长高，位置不变。
-         两边共用同一个中线宽度（46rem），所以摊开来跟收起来是同一个东西。 */
-      className="flex flex-col gap-2 [background-color:var(--color-surface)] [border-color:var(--color-line)] [border-top-width:1px] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] max-lg:fixed max-lg:inset-x-0 max-lg:bottom-16 max-lg:z-30 max-lg:[border-radius:var(--radius-md)_var(--radius-md)_0_0] max-lg:shadow-lg"
+      className="fixed inset-0 z-40 flex flex-col [background-color:var(--color-canvas)] [border-color:var(--border-subtle)] lg:inset-y-0 lg:left-auto lg:right-0 lg:w-[345px] lg:[border-left-width:1px]"
     >
-      <div className="mx-auto flex w-full max-w-[46rem] items-center justify-between gap-2">
-        <span className="flex items-center gap-2 [color:var(--color-on-surface)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
-          <IconSpark className="h-[16px] w-[16px] shrink-0" />
+      {/* 抬头 56px。 */}
+      <div className="flex h-14 shrink-0 items-center justify-between gap-2 [border-bottom-width:1px] [border-color:var(--border-subtle)] [padding-inline:var(--pad-control-x)]">
+        <span className="flex items-center gap-2 [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+          <IconSpark className="h-[18px] w-[18px] shrink-0" />
           {t("aiWorkTitle")}
         </span>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="[color:var(--color-on-surface-dim)] [font-size:var(--text-xs)] [min-height:44px] underline"
+          aria-label={t("aiClose")}
+          title={t("aiClose")}
+          className="grid h-11 w-11 shrink-0 place-items-center [color:var(--color-paper-dim)] [font-size:var(--text-sm)]"
         >
-          {t("aiClose")}
+          ✕
         </button>
       </div>
 
-      {said ? (
-        <div
-          data-work-ai-said
-          /* 它回的话会长 —— 一段读得完的宽度，而且**自己滚**，
-             不要把底下那个框推出画面。 */
-          className="mx-auto flex w-full max-w-[46rem] flex-col gap-1 overflow-y-auto [color:var(--color-on-surface)] [font-size:var(--text-sm)] [max-height:38vh]"
-        >
-          {said.map((line, i) => (
-            <p key={i}>{line}</p>
-          ))}
-        </div>
-      ) : null}
+      {/* 对话 —— 自己滚。空的时候是那几句现成的。 */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]">
+        {said ? (
+          <div
+            data-work-ai-said
+            className="flex flex-col gap-1 [color:var(--color-paper)] [font-size:var(--text-sm)]"
+          >
+            {said.map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {starters.map((one) => (
+              <button
+                key={one}
+                type="button"
+                onClick={() => setText(one)}
+                className="flex [border-radius:var(--radius-md)] [color:var(--color-paper-dim)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] text-start hover:[background-color:var(--color-canvas)]"
+              >
+                {one}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {shot ? (
-        <div className="mx-auto flex w-full max-w-[46rem] items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={shot.preview}
-            alt=""
-            className="h-10 w-14 rounded-[var(--radius-xs)] object-cover"
+      {/* 底下那一格。 */}
+      <div className="shrink-0 [border-color:var(--border-subtle)] [border-top-width:1px] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]">
+        {shot ? (
+          <div className="mb-2 flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={shot.preview}
+              alt=""
+              className="h-10 w-14 rounded-[var(--radius-xs)] object-cover"
+            />
+            <button
+              type="button"
+              onClick={clearShot}
+              className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)] underline"
+            >
+              {t("aiImageRemove")}
+            </button>
+          </div>
+        ) : null}
+
+        {/* 药丸形的框 ＋ 右边一颗圆钮 —— 参考那六家里五家都是这个形状。 */}
+        <div className="flex items-end gap-2 rounded-[22px] [background-color:var(--color-canvas)] [border-color:var(--border-subtle)] [border-width:1px] [padding-block:7px] [padding-inline:14px]">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              /* Enter 送出、Shift+Enter 换行 —— 跟他每天在用的每一个讯息框同一条。 */
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+            rows={1}
+            aria-label={t("aiWorkTitle")}
+            /* 🔴 **短的那一句。** 那三个例子已经在上面当按钮了（点一下就填进来），
+               而完整那一句在 345 的框里会被切在半路：拍出来是
+               `e.g. Mrs Tan has arrived · log RM 180 for` —— 断在介系词上。
+               ⚠️ 这一句跟抬头今天是同一份字，看起来重复；
+               要一句自己的（`aiWorkComposer`），而 `messages/*.json` 在别人手上。 */
+            placeholder={t("aiWorkOpen")}
+            className="max-h-32 min-h-[26px] w-full resize-none border-0 bg-transparent p-0 [color:var(--color-on-canvas)] [font-size:var(--text-sm)] focus:outline-none"
           />
           <button
             type="button"
-            onClick={clearShot}
-            className="[color:var(--color-on-surface-dim)] [font-size:var(--text-micro)] underline"
+            onClick={() => void send()}
+            disabled={busy || (!text.trim() && !shot)}
+            aria-label={busy ? t("aiThinking") : t("aiSubmit")}
+            title={busy ? t("aiThinking") : t("aiSubmit")}
+            className="mb-[1px] grid h-7 w-7 shrink-0 place-items-center rounded-full [background-color:var(--color-primary)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] disabled:opacity-40"
           >
-            {t("aiImageRemove")}
+            ↑
           </button>
         </div>
-      ) : null}
 
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          /* Enter 送出、Shift+Enter 换行 —— 跟编辑器那一块同一条，
-             也跟他每天在用的每一个讯息框同一条。 */
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            void send();
-          }
-        }}
-        rows={2}
-        aria-label={t("aiWorkTitle")}
-        placeholder={t("aiWorkPlaceholder")}
-        className="mx-auto w-full max-w-[46rem] resize-none [background-color:var(--color-canvas)] [border-color:var(--input,var(--color-line))] [border-radius:var(--radius-control)] [border-width:1px] [color:var(--color-on-canvas)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]"
-      />
-
-      <div className="mx-auto flex w-full max-w-[46rem] items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
+        {/* 拍照 · 用讲的 · 那一句提示。全部留着，只是换了位置。 */}
+        <div className="mt-2 flex items-center gap-3">
           <input
             ref={shotRef}
             type="file"
@@ -498,7 +562,7 @@ export function WorkAssistant({
             data-work-ai-mic
             onClick={() => (hearing === "rec" ? stopTalking() : void startTalking())}
             disabled={hearing === "reading" || busy}
-            className="[color:var(--color-on-surface-dim)] [font-size:var(--text-xs)] [min-height:44px] underline disabled:opacity-60"
+            className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)] [min-height:44px] underline disabled:opacity-60"
           >
             {hearing === "rec"
               ? t("aiHearStop")
@@ -511,22 +575,14 @@ export function WorkAssistant({
             data-work-ai-shot
             onClick={() => shotRef.current?.click()}
             disabled={attaching}
-            className="[color:var(--color-on-surface-dim)] [font-size:var(--text-xs)] [min-height:44px] underline disabled:opacity-60"
+            className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)] [min-height:44px] underline disabled:opacity-60"
           >
             {attaching ? "\u2026" : t("aiImageAdd")}
           </button>
-          <span className="[color:var(--color-on-surface-dim)] [font-size:var(--text-micro)]">
-            {t("aiEnterHint")}
-          </span>
         </div>
-        <button
-          type="button"
-          onClick={() => void send()}
-          disabled={busy || (!text.trim() && !shot)}
-          className="[background-color:var(--color-primary)] [border-radius:var(--radius-control)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [min-height:44px] [padding-inline:calc(var(--pad-control-x)*1.4)] disabled:opacity-60"
-        >
-          {busy ? t("aiThinking") : t("aiSubmit")}
-        </button>
+        <p className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)]">
+          {t("aiEnterHint")}
+        </p>
       </div>
     </section>
   );

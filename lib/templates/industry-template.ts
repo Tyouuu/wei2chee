@@ -615,6 +615,12 @@ export function railNavNode(
   // whose account has no `quotations` page must not be shown a nav link to one.
   return node("RailNav", `${activePage}-rail`, {
     brandLabel: brandLabel,
+    /* 🔴 「跟它讲话」那一行 —— 主要动作底下、页面清单上面。
+       2026-09-09 拍了 23 家，真的开得出面板的六家里，Stripe 文件跟
+       assistant-ui 把入口放在**主要控件那一区**（他们是顶栏，我们是侧栏最上面）。
+       老板挑了那一种，而且纠正得更准：`不是顶栏吧 我们的是sidebar`。
+       ⚠️ 它不是一个去处，所以不带 href —— 按下去是原地开右边那一条。 */
+    askLabel: c.rail.ask,
     brandHref: `/${locale}/portal/dashboard`,
     // `group` is required by RailItem and drives RailNav's collapsible
     // sections. One empty-named group keeps every item in a single uncollapsed

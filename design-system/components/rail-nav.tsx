@@ -4,7 +4,7 @@ import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore,
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { ChevronDown } from "lucide-react"
-import { IconSettings, railIcon } from "./rail-icons"
+import { IconSettings, IconSpark, railIcon } from "./rail-icons"
 import { NavAxisContext } from "./nav-axis"
 import { useSystemWords } from "@/design-system/system-lang-context"
 
@@ -138,6 +138,7 @@ export function RailNav({
   brand,
   actionLabel,
   actionHref,
+  askLabel,
   items,
   utilityItems,
   notificationsHref,
@@ -186,6 +187,25 @@ export function RailNav({
    */
   actionLabel?: string
   actionHref?: string
+  /**
+   * 「跟它讲话」那一行，画在主要动作底下、页面清单上面。
+   *
+   * ── 出处（[重点 7n](../../docs/founder-points.md)）────────────────────
+   * 老板 2026-09-09 把我自己设计的那一版退回来：`你自己设计是乱七八糟的`，
+   * 叫我去看别人。拍了 23 家，真的开得出面板的六家里，
+   * **Stripe 文件跟 assistant-ui 两家把入口放在同一个位置**：
+   * 跟搜索并排，在顶栏的主要控件那一区 —— **不是画面下缘**。
+   *
+   * 而他跟着讲了一句更准的：`不是顶栏吧 我们的是sidebar`。
+   * 我们没有顶栏，主要控件那一区就是这条侧栏的最上面。
+   * 所以那一行落在这里：主要动作底下，页面清单上面。
+   *
+   * ⚠️ 它**不是一个去处**，所以不是 `<Link>` —— 它按下去是原地开一块。
+   * 按下去只发一个 DOM 事件（`formae:ask-open`），谁要开那一块谁自己听：
+   * 这一条侧栏是伺服器画出来的一个 Puck 块，它接不到那一边的 state，
+   * 而**一个事件比一条穿过五层的 prop 便宜得多**。
+   */
+  askLabel?: string
 }) {
   const w = useSystemWords()
   const pathname = usePathname()
@@ -407,6 +427,27 @@ export function RailNav({
           </span>
           <span className="truncate">{actionLabel}</span>
         </Link>
+      ) : null}
+
+      {/* 跟它讲话 —— 见 `askLabel` 的档头。
+          样子照这条侧栏自己的行（同一个圆角 · 同一个内距 · 同一组颜色），
+          只有那颗火花是它自己的：没有一个记号的话，它读起来是第八个页面。 */}
+      {askLabel && !isTop ? (
+        <button
+          type="button"
+          data-rail-ask
+          data-work-ai="closed"
+          onClick={() => window.dispatchEvent(new CustomEvent("formae:ask-open"))}
+          title={isCompact ? askLabel : undefined}
+          className={`flex items-center transition-colors [transition-duration:var(--dur-fast)] [border-radius:var(--radius-md)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-nav-fg-dim)] hover:[background-color:var(--color-nav-hover)] hover:text-[color:var(--color-nav-fg)] ${
+            isCompact
+              ? "h-9 w-9 shrink-0 justify-center"
+              : "w-full [gap:var(--gap-inline)] [padding-inline:var(--pad-control-x)] [padding-block:var(--pad-control-y)] text-start"
+          }`}
+        >
+          <IconSpark className="h-[18px] w-[18px] shrink-0" />
+          {!isCompact && <span className="flex-1 truncate">{askLabel}</span>}
+        </button>
       ) : null}
 
       {topSlot}

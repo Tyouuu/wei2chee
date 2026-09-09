@@ -711,6 +711,8 @@ type Components = {
     variant?: RailVariant;
     actionLabel?: string;
     actionHref?: string;
+    /** 侧栏里「跟它讲话」那一行。见 rail-nav.tsx 的 `askLabel`。 */
+    askLabel?: string;
     brandLabel: string;
     brandHref: string;
     items: RailItem[];
@@ -3846,6 +3848,9 @@ export const puckConfig: Config<Components> = {
         // back again.
         actionLabel: { label: "主要按钮", type: "text" },
         actionHref: { label: "主要按钮链接", type: "text" },
+        /* 跟 `actionLabel` 同一个理由：它是**内容**不是形状。
+           一个客户想把它叫成「问助手」，那是他的生意。 */
+        askLabel: { label: "跟它讲话", type: "text" },
         brandHref: { label: "首页链接", type: "text" },
         userName: { label: "用户名", type: "text" },
         userRoleLabel: { label: "职位", type: "text" },
@@ -3900,11 +3905,12 @@ export const puckConfig: Config<Components> = {
           { label: "账号设置", iconName: "account" },
         ],
       },
-      render: ({ variant, brandLabel, brandHref, items, utilityItems, userName, userRoleLabel, actionLabel, actionHref }) => (
+      render: ({ variant, brandLabel, brandHref, items, utilityItems, userName, userRoleLabel, actionLabel, actionHref, askLabel }) => (
         <RailNav
           variant={variant}
           actionLabel={actionLabel}
           actionHref={actionHref}
+          askLabel={askLabel}
           brand={{ href: brandHref, label: brandLabel }}
           items={items}
           utilityItems={utilityItems}

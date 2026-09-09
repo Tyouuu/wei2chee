@@ -226,6 +226,25 @@ export function IconGlobe({ className = "h-[18px] w-[18px]" }: IconProps) {
   )
 }
 
+/**
+ * 一颗火花 —— 「跟它讲话」那一行的记号。
+ *
+ * 出处：2026-09-09 拍了 23 家产品，真的开得出 AI 面板的六家里，
+ * **五家的入口都是一颗火花**（Stripe 文件 · assistant-ui · Chatbase ·
+ * Intercom · Xero）。这不是我挑的形状，是数出来的（[重点 7n]）。
+ *
+ * 跟这一档其余那几个同一套画法：24×24 的框、`currentColor`、1.8 的笔画，
+ * 所以它自己没有颜色，套什么配色就跟着走。
+ */
+export function IconSpark({ className = "h-[18px] w-[18px]" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 3.5 13.8 8.2 18.5 10 13.8 11.8 12 16.5 10.2 11.8 5.5 10 10.2 8.2Z" />
+      <path d="M18.4 15.6 19.2 17.8 21.4 18.6 19.2 19.4 18.4 21.6 17.6 19.4 15.4 18.6 17.6 17.8Z" />
+    </svg>
+  )
+}
+
 export const RAIL_ICONS: Record<string, (p: IconProps) => React.JSX.Element> = {
   dashboard: IconGrid,
   customers: IconUsersRail,
