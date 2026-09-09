@@ -108,6 +108,40 @@ TIN、注册号、公司名 → 设三年 → 勾权限。**几分钟，一次�
 ⚠️ 而我们这一边要先有**公司**（中介要有自己的 TIN 跟注册号）——
 所以卡的是**签章那一格**，不是他那两格。他那两格今天就填得进来。
 
+### 🔴 签章：税局自己写的那一句，跟两个价钱
+
+**税局 SDK 的常见问答，原话**：
+> `Service providers can use their own certificate to submit document for all their customers.`
+
+**一张签章覆盖全部客户** —— 这不是我们推出来的，是他们写的。
+（同一份也写着 `For submission through API, an organisation digital certificate is required`。）
+
+**Pos Digicert 公开挂的两个价**（2026-09-09 查）：
+
+| | 谁用 | 一年 | 形式 |
+|---|---|---|---|
+| **Soft Certificate** | `Any organization` | **RM 1,500 ＋ RM 120 税** | 一个 `.p12` 档，放在自己伺服器 |
+| **Roaming Certificate** | `Appointed Tax Agents / Intermediaries` | 🔴 **RM 15,000 ＋ RM 1,200 税** | 钥匙锁在他们的硬体保险箱，用接口取 |
+
+🔴 **而这里有一句我还没查实，不要当成事实**：
+税局只讲「要一张机构的签章」，**没有讲中介一定要买那张一万五的**。
+那一万五是 Pos Digicert **针对中介卖的产品**（钥匙不落地、用接口取），
+不是法规写死的。**这一句要打电话去问 CA 才算数**（[重点 15](./founder-points.md)）。
+
+**这两个数字差十倍，而它决定什么时候接**：
+
+| 买哪一张 | 一年成本 | 要几个客户的年费（RM 1,500）才打平 |
+|---|---|---|
+| Soft | RM 1,620 | **1.1 个** |
+| Roaming | RM 16,200 | 🔴 **10.8 个** |
+
+→ 所以**先问那一句**。答案是「soft 也可以」，这一件几乎不用钱；
+答案是「中介一定要 roaming」，那就**等客户到十一家再接**，而在那之前
+照样把那两格资料收着（他填得进来，只是还送不出去）。
+
+⚠️ 另外三家有牌的 CA（MSC Trustgate · TM Applied Business · Raffcomm）
+**没有公开挂价** —— 也是要去问的。
+
 ## 五 · 他**不用**给的（讲出来，他会松一口气）
 
 - **单号格式** —— 系统自己生（SO-2026-0001 那种），他要改随时改
@@ -136,5 +170,8 @@ TIN、注册号、公司名 → 设三年 → 勾权限。**几分钟，一次�
 - [在 MyInvois 上注册系统、加中介的实际步骤](https://biztrak.com/e-invoicing-malaysia-myinvois-portal-erp-registration-guide/)
 - [Pos Digicert 的电子发票数位签章](https://www.posdigicert.com.my/digital-certificate-for-einvoice)
 
-⚠️ **签章的价钱没有查到**（那几家要留资料才报价）—— 那是一个要去问的数字，
-不要拿一个猜的填进价目表（[重点 15](./founder-points.md)）。
+- [税局 FAQ 那一句「服务商可以用自己的签章替全部客户送」](https://sdk.myinvois.hasil.gov.my/faq/)
+- [MSC Trustgate 的机构签章（另一家有牌的 CA，没挂价）](https://www.msctrustgate.com/e-invoice)
+
+⚠️ **要去问的两个问题**：① 中介可不可以用那张 RM 1,500 的 soft，还是一定要 RM 15,000 的 roaming ② 另外三家 CA 报多少。
+**两个都不要拿猜的填进价目表**（[重点 15](./founder-points.md)）。
