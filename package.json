@@ -113,6 +113,7 @@
     "check:treatments": "node scripts/check-treatments.mjs",
     "check:consent": "node scripts/check-consent.mjs",
     "check:memory": "node scripts/check-memory.mjs",
+    "check:deposits": "node scripts/check-deposits.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
     "check:anchors": "node scripts/check-anchors.mjs",
     "check:bookings": "node scripts/check-bookings.mjs",
