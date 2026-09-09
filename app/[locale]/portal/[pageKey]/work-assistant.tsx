@@ -83,6 +83,33 @@ export function WorkAssistant({
    *  那一次套票、差了几个、那条给客人的连结，全部在 `notes` 里，
    *  而它们非讲不可（见 skip-codes.ts 的档头）。 */
   const [said, setSaid] = useState<string[] | null>(null);
+  /**
+   * 🔴 他刚才讲过什么 —— **一个助手不记得上一句话，就不叫助手。**
+   *
+   * ── 为什么这一格 2026-09-09 补上 ──────────────────────────────────────
+   *
+   * 接进产品那一边的第一版**一个字都没送**，而编辑器那一块从写出来那天就
+   * 送最近三轮（`ai-assistant.tsx:381`）。於是同一支 route、同一个模型，
+   * 在他每天开的那一页上比在「改设计」那一屏上笨 —— 他讲
+   * 「加一单 陈太太 4,800」，再讲「照样再来一张给合发」，它不知道「照样」
+   * 是什么。**能力有、线没接**，第十八次。
+   *
+   * ── 只有三轮，而且只有做成的那几轮 ────────────────────────────────────
+   *
+   * 跟编辑器那一份**一模一样的三行**（`.filter(done).slice(-3)`），不是
+   * 另一份：两份会漂，而漂的那天他会发现同一句话在两个地方结果不同。
+   *
+   * ⚠️ **拒绝的那几轮也进来，而这是跟编辑器那一份对齐的**（它 filter 的是
+   * `state === "done"`，也就是这一次呼叫成功，不是「做成了一件事」）。
+   * 一句「那要在改设计那边讲」是他刚才真的读到的一句话 —— 藏起来，
+   * 他接着讲「那算了」的时候模型不知道在讲哪一件。
+   * **只有整支呼叫失败（没有 explanation）的那几轮不进来。**
+   *
+   * ⚠️ **它活在这个分页里，关掉就没了** —— 那是今天的实况，不是设计。
+   * 跨次开机的记忆要一张表，[任务 322] 记着（mem0 的做法：只加不覆盖 ·
+   * 做成了的事实优先 · 注入成一段带标题的话）。
+   */
+  const [turns, setTurns] = useState<{ asked: string; did: string }[]>([]);
 
   async function send() {
     const asked = text.trim();
@@ -98,6 +125,8 @@ export function WorkAssistant({
           instruction: asked,
           pageKey,
           pages,
+          /* 最近三轮 —— 跟编辑器那一块同一份形状。见 `turns` 的注解。 */
+          history: turns.slice(-3),
           /* 🔴 这一格就是这个档案存在的那一句。见 route 里 `surface` 的注解。 */
           surface: "work",
           /* 这一页早就保存过了 —— 他正在看的就是保存出来的那一份。
@@ -127,6 +156,11 @@ export function WorkAssistant({
         ...(out.skipped ?? []).map((n) => sayWhyNot(t, n)),
       ].filter(Boolean);
       setSaid(lines);
+      /* 🔴 只记做成了的那几轮，而且记的是**它自己那一句**，不是我们
+         替它拼的那几行 —— 拼出来的那几行带着「顺手扣了一次套票」那种
+         事实，送回去会被当成他讲过的话。 */
+      const did = (out.explanation ?? "").trim();
+      if (did) setTurns((prev) => [...prev, { asked, did }].slice(-3));
       setText("");
       /* 🔴 那一行在资料库里，不在这一页手上那棵树里。见档头 ③。 */
       if (out.refetch) router.refresh();

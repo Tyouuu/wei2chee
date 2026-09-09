@@ -18,7 +18,9 @@
  *   ① 他的系统那一页上**有**那个入口          （没接上 = 整件事没发生）
  *   ② 讲一句做事的话 → **他帐上真的多一行**    （route 说做了而没做）
  *   ③ 讲完之后 **画面上看得到那一行**          （refetch 没打开 = 说了没做）
- *   ④ 🔴 讲一句改样子的话 → **一个字都不改，而且它讲得出为什么**
+ *   ④ 🔴 「照样再来一张」→ **它记得上一句**（不记得 = 比编辑器那边笨）
+ *   ⑤ 🔴 讲一句改样子的话 → **一个字都不改，而且它讲得出为什么**
+ *   ⑥ 🔴 问「今天有什么要跟」→ **它念得出系统自己发现的那几件**
  *      （这一条最贵：那一页没有编辑器，一个改版面的操作在那里做不到，
  *        而做不到又回报成功，正是这个仓库每一次「说了没做」的形状）
  *
@@ -186,19 +188,55 @@ try {
     "画面上找不到刚才那一笔（refetch 没打开 = 说了没做）",
   );
 
-  console.log("\n── ④ 🔴 讲一句改样子的话，一个字都不准动 ────────────────");
+  console.log("");
+  console.log("── ④ 🔴 它记不记得上一句话 ────────────────────");
+  /*
+    🔴 「照样再来一张」—— **这一句只有记得上一轮才做得到。**
+
+    接进产品那一边的第一版一个字都没送，而编辑器那一块从写出来那天就送
+    最近三轮。同一支 route、同一个模型，在他每天开的那一页上**比在改设计
+    那一屏上笨** —— 能力有、线没接，第十八次。
+
+    ⚠️ 这一句里**故意不讲金额也不讲干什么** —— 一句自己就完整的话
+    （「再开一张 3,100 给合发」）没有记忆也做得成，那量的就不是记忆。
+  */
+  const seq = await say(page, "Same again for Hup Seng Trading");
+  console.log(`        它讲了：${seq.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+  const chained = await admin
+    .from("pipeline_records")
+    .select("id, party", { count: "exact" })
+    .eq("project_id", P)
+    .eq("module_key", "quotations")
+    .ilike("party", "%hup seng%");
+  check(
+    "🔴 「照样再来一张」开出来了",
+    (chained.count ?? 0) >= 1,
+    seq.slice(0, 200) || "（它一句话都没讲）",
+  );
+  await page.screenshot({ path: `${OUT}/5-chained.png` });
+
+
+  console.log("\n── ⑤ 🔴 讲一句改样子的话，一个字都不准动 ────────────────");
   const design = await say(page, "Make the heading shorter and move the table to the top");
   console.log(`        它讲了：${design.replace(/\n/g, " / ").slice(0, 200)}`);
-  const stillThere = await admin
+  /* ⚠️ 基准是**④ 之后**的数字，不是 ② 之后的 —— ④ 自己会开一张单。
+     第一版拿 ② 的数字比，红的是一条假的（重点 31：红的时候先问是不是我量错了）。 */
+  const beforeDesign = await admin
     .from("pipeline_records")
     .select("id", { count: "exact", head: true })
     .eq("project_id", P)
     .eq("module_key", "quotations");
   await page.screenshot({ path: `${OUT}/3-design-refused.png` });
+  const afterDesign = await admin
+    .from("pipeline_records")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", P)
+    .eq("module_key", "quotations");
   check(
     "改样子的那一句没有顺手写进任何东西",
-    (stillThere.count ?? 0) === (after.count ?? 0),
-    `${after.count} → ${stillThere.count}`,
+    (afterDesign.count ?? 0) === (beforeDesign.count ?? 0),
+    `${beforeDesign.count} → ${afterDesign.count}`,
   );
   check(
     "🔴 而且它讲得出该去哪里做，不是假装做了",
@@ -218,7 +256,7 @@ try {
   );
 
   console.log("");
-  console.log("── ⑤ 🔴 它看不看得到系统自己发现的那几件 ──────────");
+  console.log("── ⑥ 🔴 它看不看得到系统自己发现的那几件 ──────────");
   /*
     🔴 十二种信号 2026-09-06 就算得出来（`nudges_due`），「今天要跟的」
     那一页在读它们，而 `live-answers.ts` 里一个字都没提过 —— 所以他问

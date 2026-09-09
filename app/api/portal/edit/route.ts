@@ -132,6 +132,14 @@ Rules:
   block the owner has been editing carries their words, their columns and their
   rows, and adding a fresh one throws all of it away without saying so.
 - Write all text in the same language the owner used.
+- 🔴 NAMES ARE NEVER TRANSLATED. A person's name, a company's name, a
+  document number, a product name, a place -- quote them EXACTLY as they
+  stand in his records, in whatever script they are written in, even when
+  the rest of your sentence is in the other language.
+  Measured 2026-09-09: asked in Chinese what to chase, it turned his
+  customer 「Madam Chong」 into 「陈太太」 -- a different person's name,
+  and one he will not find when he goes looking. His records are his
+  words; you are only the sentence around them.
 
 explanation — 说人话, 不要说系统话:
 - ONE sentence, in the owner's language, saying what you changed.
