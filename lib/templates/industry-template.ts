@@ -925,6 +925,8 @@ function buildDashboard(
   /** projects.layout — a NAMED arrangement that overrides the register's own.
    *  Null follows the register, which is what most accounts do. */
   layout?: string | null,
+  /** 她自己给这一页的名字。改过名才有；没有改过是 null。 */
+  title?: string | null,
 ): PuckNode[] {
   const lang = langOf(ctx);
   const c = chrome(lang);
@@ -1659,7 +1661,7 @@ function buildDashboard(
   return layerFirst([
     railNavNode(labels, brand, name, "dashboard", locale, pages, lang),
     ...(headless ? [] : [node("PageHeader", "dashboard-header", {
-      title: c.dashboard.title,
+      title: title?.trim() || c.dashboard.title,
       subtitle,
       // WHY A BUTTON AND NOT A TOP BAR: three of the four things a competitor's
       // top bar carries are already in the rail, and the fourth is a search box
@@ -2299,6 +2301,10 @@ function buildQuotations(
   name: string,
   locale: string,
   pages: PageRef[],
+  _style?: string | null,
+  _layout?: string | null,
+  /** 她自己给这一页的名字。改过名才有；没有改过是 null，照旧用系统那一份。 */
+  title?: string | null,
 ): PuckNode[] {
   const lang = langOf(ctx);
   const c = chrome(lang);
@@ -2310,7 +2316,7 @@ function buildQuotations(
   return [
     railNavNode(labels, brand, name, "quotations", locale, pages, lang),
     node("PageHeader", "quotations-header", {
-      title: c.quotations.title,
+      title: title?.trim() || c.quotations.title,
       subtitle: c.quotations.subtitle(labels.customer),
       // 加一单 — the ONE action this page is for. A link and not a control,
       // because this header is drawn in the style gallery, in hundreds of
@@ -2434,6 +2440,10 @@ function buildPayments(
   name: string,
   locale: string,
   pages: PageRef[],
+  _style?: string | null,
+  _layout?: string | null,
+  /** 她自己给这一页的名字。改过名才有；没有改过是 null，照旧用系统那一份。 */
+  title?: string | null,
 ): PuckNode[] {
   const lang = langOf(ctx);
   const c = chrome(lang);
@@ -2445,7 +2455,7 @@ function buildPayments(
   return [
     railNavNode(labels, brand, name, "payments", locale, pages, lang),
     node("PageHeader", "payments-header", {
-      title: c.payments.title,
+      title: title?.trim() || c.payments.title,
       subtitle: c.payments.subtitle(labels.customer),
       // 加一单 — the ONE action this page is for. A link and not a control,
       // because this header is drawn in the style gallery, in hundreds of
@@ -2537,6 +2547,10 @@ function buildBookings(
   name: string,
   locale: string,
   pages: PageRef[],
+  _style?: string | null,
+  _layout?: string | null,
+  /** 她自己给这一页的名字。改过名才有；没有改过是 null，照旧用系统那一份。 */
+  title?: string | null,
 ): PuckNode[] {
   const lang = langOf(ctx);
   const c = chrome(lang);
@@ -2548,7 +2562,7 @@ function buildBookings(
   return [
     railNavNode(labels, brand, name, "bookings", locale, pages, lang),
     node("PageHeader", "bookings-header", {
-      title: c.bookings.title,
+      title: title?.trim() || c.bookings.title,
       subtitle: c.bookings.subtitle(labels.staff),
     }),
     /* THE ONE MODULE WHOSE AXIS IS TIME. A salon owner does not read their day
@@ -3490,6 +3504,15 @@ const BUILDERS: Record<
     /** Only the dashboard reads it -- it is the only page whose composition is
      *  a choice. The others take it and ignore it so the map stays one shape. */
     layout?: string | null,
+    /** 她自己给这一页起的名字（project_pages.title）。
+     *
+     *  🔴 少了它，这几支手写的模版**读不到客户改过的名字** —— 侧栏上写着
+     *  「Class sessions」，而同一页的大标题写着「Bookings」，两个字指同一页。
+     *  2026-09-09 三个行业拍出来，三个都中（照 buildFromShape 那一支本来就
+     *  收 `self?.title`，只有这张表漏了）。
+     *  ⚠️ 内建那几页开出来 title 是 null（`built_in_pages_keep_no_title`
+     *  故意的），所以没有改过名的帐号**一个像素都不会变**。 */
+    title?: string | null,
   ) => PuckNode[]
 > = {
   dashboard: buildDashboard,
@@ -3650,7 +3673,7 @@ export function buildPageLayout(
   // file.
   const archetype = MODULE_BY_KEY[pageKey];
   const [rail, ...rest] = BUILDERS[pageKey]
-    ? BUILDERS[pageKey](ctx, businessName, locale, refs, style, layout)
+    ? BUILDERS[pageKey](ctx, businessName, locale, refs, style, layout, self?.title)
     : archetype
       ? buildFromShape(
           archetype.shape as ModuleShape,

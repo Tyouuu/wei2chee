@@ -334,7 +334,10 @@ const EN: Chrome = {
     todoTitle: "To follow up today",
     todoAction: "Open",
     recentFilters: ["In progress", "Awaiting payment"],
-    primaryAction: (sellSide) => `New ${sellSide.toLowerCase()}`,
+    /* 🔴 **一张，不是一批。** 送进来的永远是侧栏上那个字（一张清单的名字），
+       而这颗按钮开的是一笔 —— 不砍的话，一间补习中心的总览上写着
+       **「+ New class sessions」**（2026-09-09 三个行业拍出来都中）。 */
+    primaryAction: (sellSide) => `New ${singularise(sellSide, "en").toLowerCase()}`,
     rankingTitle: "Who is worth the most",
     shareTitle: "Where the money is sitting",
     tabTrend: "Trend",
@@ -399,14 +402,17 @@ const EN: Chrome = {
 
   bookings: {
     title: "Bookings",
+    /* 送进来的是「Stylists」「Therapists」—— 侧栏上那一页的名字。
+       这三句讲的都是**一个人**，所以砍掉那个 s；
+       底下 allStaff（「All stylists」）照旧是复数，那一句讲的是全部。 */
     subtitle: (staff) =>
-      `Who is coming in today, which ${staff.toLowerCase()} is taking them, and for what.`,
+      `Who is coming in today, which ${singularise(staff, "en").toLowerCase()} is taking them, and for what.`,
     datePlaceholder: "Pick a date",
-    staffPlaceholder: (staff) => `Pick a ${staff.toLowerCase()}`,
+    staffPlaceholder: (staff) => `Pick a ${singularise(staff, "en").toLowerCase()}`,
     allStaff: (staff) => `All ${staff.toLowerCase()}`,
     caption: "Today",
     serviceColumn: "Service",
-    whenColumn: (staff) => `Time / ${staff.toLowerCase()}`,
+    whenColumn: (staff) => `Time / ${singularise(staff, "en").toLowerCase()}`,
     priceColumn: "Price",
   },
 
@@ -715,4 +721,29 @@ export function pluralise(noun: string, lang: SystemLang): string {
   const n = noun.trim();
   if (!n || COLLECTIVE.has(n) || n.endsWith("s")) return n;
   return `${n}s`;
+}
+
+/**
+ * 反过来那一支：**一个**。
+ *
+ * 侧栏上那几个字全部是一张清单的名字 —— 「Appointments」「Class sessions」
+ * 「Fee bills」。而画面上有几个位子要的是**一笔**：
+ * 那颗新增的按钮（开一张，不是开一批）、「哪个师傅接」、「挑一个师傅」。
+ *
+ * 🔴 少了这一支，那几个位子印的是清单的名字，於是拍出来是
+ * **「+ New appointments」「+ New class sessions」「which stylists is taking
+ * them」** —— 三句话在三个行业的每一页上，而它们是同一个洞。
+ *
+ * ⚠️ 跟 pluralise 共用同一份集合名词（Staff · Crew 两个方向都不动），
+ * 而且刻意**只砍看得懂的那几种**：ss（Business）· us（Status）·
+ * is（Analysis）一个字都不碰 —— 砍错一个字，比留着一个复数难看得多。
+ */
+export function singularise(noun: string, lang: SystemLang): string {
+  if (lang === "zh") return noun;
+  const n = noun.trim();
+  if (!n || COLLECTIVE.has(n) || !n.endsWith("s")) return n;
+  if (/(?:ss|us|is)$/.test(n)) return n;
+  if (/[^aeiou]ies$/.test(n)) return `${n.slice(0, -3)}y`;
+  if (/(?:sse|she|che|xe|ze)s$/.test(n)) return n.slice(0, -2);
+  return n.slice(0, -1);
 }
