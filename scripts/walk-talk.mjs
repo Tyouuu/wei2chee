@@ -200,7 +200,13 @@ try {
        一句很诚实的拒绝，而我那把尺把它归成「说了没做」。
        一把把诚实算成说谎的尺，会逼下一个人去拆掉那几道守卫。 */
     const refused =
-      /can.?t|cannot|not available|only on|goes on|is recorded on|go to|is done on|not this .* page|做不到|不能|要在|请到|那一页/i.test(said);
+      /* ⚠️ 这一条正则改过三次，每一次都是它把一句**诚实的拒绝**
+         归成了「说了没做」。模型每一次的讲法都不一样（「is recorded on」·
+         「goes on」·「can only be recorded on … not here」），所以改成抳
+         **那一句里有没有指路**：它念得出另一页的名字，就不是说谎。
+         一把把诚实算成说谎的尺，会逼下一个人去拆掉那几道守卫。 */
+      /can.?t|cannot|not available|only be|only on|goes on|is recorded on|go to|is done on|not (this|here)|做不到|不能|要在|请到|那一页/i.test(said) ||
+      /(Stock|Staff|Shelf|Payments|Expenses|Bookings|Design) page/i.test(said);
     let verdict;
     if (!step.want) verdict = said ? "✅ 答了" : "🔴 一句话都没讲";
     else if (moved > 0) verdict = "✅ 做到了";
