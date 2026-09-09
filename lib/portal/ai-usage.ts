@@ -59,7 +59,7 @@ export async function recordAiUsage(
      hand-maintained list here -- the constraint is the authority and a
      value missing from it is rejected by Postgres, loudly, at the only
      moment it matters. */
-  surface: "analyze" | "edit" | "spec" | "receipt",
+  surface: "analyze" | "edit" | "spec" | "receipt" | "hear",
   model: string,
   usage: UsageShape,
   /**

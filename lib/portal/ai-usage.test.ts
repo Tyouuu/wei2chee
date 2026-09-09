@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { recordAiUsage } from "./ai-usage";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -227,5 +229,54 @@ describe("recordAiUsage · the anonymous questionnaire", () => {
     await recordAiUsage(c.client, "edit", "gpt-5.6-luna", { prompt_tokens: 1, completion_tokens: 1 });
     expect(c.rpc).toHaveBeenCalled();
     expect(c.from).not.toHaveBeenCalled();
+  });
+});
+
+
+/**
+ * 🔴 两份名单要对得上 —— 而之前只有一句注解在叫人手动对。
+ *
+ * `ai_usage_surface_check` 是资料库那一份（权威），
+ * `recordAiUsage` 的 `surface` 联合型别是 **手写的第二份**。
+ * 20260905010000 自己的注解写着「kept in step by hand」——
+ * 而这个仓库栽在「手写的第二份」上至少八次。
+ *
+ * 少一个的代价很具体：TS 那边编译得过，而 Postgres 在**真的写那一笔**
+ * 的时候拒绝 —— 而那一笔是包在 `.catch(() => {})` 里面的，
+ * 所以钱花了、帐没记、**而没有任何一处会叫**。
+ */
+describe("两份 surface 名单", () => {
+  it("资料库那一份跟 TS 那一份一模一样", () => {
+    const dir = join(process.cwd(), "supabase", "migrations");
+    /* 最后一支动过那条约束的 migration 才算数 —— 前面那几支是历史。 */
+    const files = readdirSync(dir)
+      .filter((f) => f.endsWith(".sql"))
+      .sort();
+    let sql = "";
+    for (const f of files) {
+      const body = readFileSync(join(dir, f), "utf8");
+      if (body.includes("ai_usage_surface_check") && body.includes("add constraint")) {
+        sql = body;
+      }
+    }
+    expect(sql, "找不到那条约束").not.toBe("");
+    const m = /surface in \(([^)]*)\)/.exec(sql);
+    expect(m, "读不出那条约束里的值").toBeTruthy();
+    const inDb = (m?.[1] ?? "")
+      .split(",")
+      .map((x) => x.trim().replace(/^'|'$/g, ""))
+      .filter(Boolean)
+      .sort();
+
+    const ts = readFileSync(join(process.cwd(), "lib", "portal", "ai-usage.ts"), "utf8");
+    const u = /surface: ((?:"[a-z]+"(?:\s*\|\s*)?)+)/.exec(ts);
+    expect(u, "读不出 TS 那一份").toBeTruthy();
+    const inTs = (u?.[1] ?? "")
+      .split("|")
+      .map((x) => x.trim().replace(/^"|"$/g, ""))
+      .filter(Boolean)
+      .sort();
+
+    expect(inTs, `资料库：${inDb.join(" · ")}`).toEqual(inDb);
   });
 });

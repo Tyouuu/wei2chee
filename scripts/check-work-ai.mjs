@@ -520,6 +520,70 @@ try {
   );
   await page.screenshot({ path: `${OUT}/9-shot.png` });
 
+
+  console.log("");
+  console.log("── ⑪ 🔴 用讲的，不用打的 ──────────────────────────");
+  /*
+    🔴 数字：Gartner 说 2026 年 75% 的外勤公司会用语音；ServiceTitan 的
+    行业报告说 12% 已经在用、34% 在试。而这个仓库量出来是**零个语音输入**。
+    一个戴着手套、手上带油的师傅打不了字（[重点 19]：运营期那一个）。
+
+    ⚠️ 这一段**真的合成一句话出来**（TTS），再拿他自己的登入去打那一支 ——
+    不然量的是「我们的程式会不会呼叫」，不是「他讲的话变不变得成字」。
+
+    ⚠️ 那颗麦克风按钮在浏览器里按不动（headless 没有麦克风），所以这里
+    分两半量：**按钮在不在**（画面），跟**那一支听不听得懂**（真的声音）。
+  */
+  await page.setViewportSize({ width: 1440, height: 950 });
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  const openMic = page.locator('[data-work-ai="closed"]');
+  if (await openMic.count()) await openMic.first().click();
+  check(
+    "🔴 产品那一页上有那颗麦克风",
+    (await page.locator("[data-work-ai-mic]").count()) > 0,
+    "找不到 [data-work-ai-mic]",
+  );
+
+  /* 他真的会讲的那一句 —— 一个客户名、一个金额、一件工。 */
+  const SPOKEN = "Add a quotation for Kedai Selera, two thousand four hundred ringgit, kitchen exhaust cleaning";
+  const tts = await fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ model: "tts-1", voice: "alloy", input: SPOKEN }),
+  });
+  check("合成得出一段声音（这一步是尺子自己的）", tts.ok, `${tts.status}`);
+  const spoken = Buffer.from(await tts.arrayBuffer());
+
+  const heard = await page.request.post(`${BASE}/api/portal/hear`, {
+    timeout: 180000,
+    multipart: {
+      clip: { name: "note.mp3", mimeType: "audio/mpeg", buffer: spoken },
+    },
+  });
+  const heardBody = await heard.json().catch(() => ({}));
+  console.log(`        它听成：${String(heardBody.text ?? heardBody.reason ?? "").slice(0, 160)}`);
+  check("🔴 那一支认得他的登入", heard.status() === 200, `${heard.status()}`);
+  const words = String(heardBody.text ?? "").toLowerCase();
+  check(
+    "🔴 他讲的那个客户跟那件工，字里都在",
+    /selera/.test(words) && /exhaust/.test(words),
+    words.slice(0, 160) || "（一个字都没回来）",
+  );
+  /* 🔴 而这一条是这一段真正在守的：**它转成字，它不写任何东西**。
+     一句「三千」被听成「一万三」而直接进他的帐，是他月底才发现的错。 */
+  const afterHear = await admin
+    .from("pipeline_records")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", P)
+    .ilike("party", "%selera%");
+  check(
+    "🔴 而它一个字都没有写进他的帐 —— 转成字而已",
+    (afterHear.count ?? 0) === 0,
+    `帐上出现了 ${afterHear.count} 笔 Selera`,
+  );
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);

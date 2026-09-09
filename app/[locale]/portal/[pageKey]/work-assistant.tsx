@@ -179,6 +179,88 @@ export function WorkAssistant({
     null,
   );
   const [attaching, setAttaching] = useState(false);
+  /**
+   * 🔴 用讲的，不用打的。
+   *
+   * ── 数字（2026-09-09 读回来的）────────────────────────────────────
+   *
+   * Gartner：**2026 年 75%** 的外勤公司会用语音；ServiceTitan 的行业报告：
+   * **12% 已经在用、34% 在试**；Housecall Pro 问 400 多家承包商：
+   * **70% 试过、40% 在用**。而这个仓库量出来是**零个语音输入**。
+   *
+   * [重点 19] 早就分清楚了：会坐着打字的是**建造期**那个老板；
+   * 每天在工地上、手上带油、戴着手套的那一个是**运营期** —— 他打不了字。
+   *
+   * ── 🔴 转成字之后 **落在框里**，不自动送出 ─────────────────────
+   *
+   * 一句「三千」被听成「一万三」而直接写进他的帐，是他月底才发现的错。
+   * 所以这里跟 `/api/receipt` 同一条：**它读，它不写**，按送出的还是他。
+   *
+   * ⚠️ **接上去的时候不覆盖他已经打的字** —— 他可能打了一半改用讲的。
+   */
+  const [hearing, setHearing] = useState<"off" | "rec" | "reading">("off");
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function startTalking() {
+    if (hearing !== "off") return;
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      /* 他按了「不允许」，或者这台机器没有麦克风。讲一句，不要静静没反应。 */
+      setSaid([t("aiHearNoMic")]);
+      return;
+    }
+    const chunks: BlobPart[] = [];
+    const rec = new MediaRecorder(stream);
+    recorderRef.current = rec;
+    rec.ondataavailable = (e) => {
+      if (e.data.size) chunks.push(e.data);
+    };
+    rec.onstop = async () => {
+      /* 🔴 麦克风要关掉。不关，浏览器上那颗红点会一直亮着 ——
+         一个老板看到自己的手机在录音而他以为已经停了，只会关掉整个产品。 */
+      stream.getTracks().forEach((tr) => tr.stop());
+      const clip = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+      if (!clip.size) {
+        setHearing("off");
+        return;
+      }
+      setHearing("reading");
+      try {
+        const body = new FormData();
+        body.append("clip", clip, "note.webm");
+        const res = await fetch("/api/portal/hear", { method: "POST", body });
+        const out = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          text?: string;
+        };
+        if (out.ok && out.text) {
+          /* 接在他已经打的字后面，不覆盖。见上面那一段。 */
+          setText((prev) => (prev.trim() ? `${prev.trim()} ${out.text}` : out.text!));
+        } else {
+          setSaid([t("aiHearNothing")]);
+        }
+      } catch {
+        setSaid([t("aiHearNothing")]);
+      } finally {
+        setHearing("off");
+      }
+    };
+    rec.start();
+    setHearing("rec");
+    /* 🔴 六十秒自己停。一支忘了按停的录音会一直录下去，
+       而那一段最后要整个上传 —— 他的流量，他的电。 */
+    stopTimerRef.current = setTimeout(() => {
+      if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+    }, 60000);
+  }
+
+  function stopTalking() {
+    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+  }
   const shotRef = useRef<HTMLInputElement>(null);
 
   async function attach(file: File) {
@@ -411,6 +493,19 @@ export function WorkAssistant({
               e.target.value = "";
             }}
           />
+          <button
+            type="button"
+            data-work-ai-mic
+            onClick={() => (hearing === "rec" ? stopTalking() : void startTalking())}
+            disabled={hearing === "reading" || busy}
+            className="[color:var(--color-on-surface-dim)] [font-size:var(--text-xs)] [min-height:44px] underline disabled:opacity-60"
+          >
+            {hearing === "rec"
+              ? t("aiHearStop")
+              : hearing === "reading"
+                ? t("aiHearReading")
+                : t("aiHearStart")}
+          </button>
           <button
             type="button"
             data-work-ai-shot

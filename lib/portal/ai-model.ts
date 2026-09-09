@@ -29,6 +29,29 @@
 export const AI_MODEL = "gpt-5.6-luna";
 
 /**
+ * 🔴 把他讲的话变成字的那一支。跟上面那一支是两回事。
+ *
+ * ── 为什么要有它（2026-09-09）─────────────────────────
+ *
+ * Gartner：**2026 年 75%** 的外勤公司会用语音；ServiceTitan《2026 行业
+ * AI 报告》：**12% 已经在用、34% 在试**。而这个仓库量出来是
+ * **零个语音输入**。一个戴着手套、手上带油的师傅，打不了字。
+ *
+ * ── 🔴 为什么不用浏览器自己那一支（免费的）──────────────
+ *
+ * `webkitSpeechRecognition` 不用钱，而它**一次只听得懂一种话**。
+ * 我们卖的这个市场讲的是一句里混三种：「陈太太 deposit 三千」。
+ * 锁死一种语言的引擎在那一句上会吐出垃圾，而垃圾会被当成指令。
+ * （而且 Chrome 那一支会把声音送到 Google —— 那是他生意上的事。）
+ *
+ * ⚠️ **它的价钱没有进 `PRICE_PER_MTOK`** —— 那张表算的是 token，
+ * 而转录计价的单位跟它不同。我**没有查到可靠的单价**（[重点 15]：
+ * 查不到就写查不到，不要编一个）。用量照样记进 `ai_usage`，
+ * 而 `check:ai-cost` 会对它印「价格未知」—— 那是实话。
+ */
+export const AI_HEAR_MODEL = "gpt-4o-mini-transcribe";
+
+/**
  * WHY "high", AND WHAT IT COSTS.
  *
  * Reasoning tokens are billed as output and never appear in the reply --
