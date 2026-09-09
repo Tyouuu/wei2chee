@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
 import { MarkEnquiriesRead } from "./mark-read";
-import { EnquiryList } from "./enquiry-list";
+import { EnquiryDesk } from "./enquiry-desk";
 import { InboxCount } from "./inbox-count";
 import { PageBar } from "../page-bar";
 import { PageBody, Section } from "../section";
@@ -179,7 +179,7 @@ export default async function EnquiriesPage({
               {t("enquiriesEmpty")}
             </p>
           ) : (
-            <EnquiryList
+            <EnquiryDesk
               rows={shaped}
               locale={locale}
               hasPipeline={hasPipeline}
