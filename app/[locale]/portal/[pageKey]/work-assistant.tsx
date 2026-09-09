@@ -407,7 +407,11 @@ export function WorkAssistant({
         data-work-ai="closed-narrow"
         aria-label={t("aiWorkOpen")}
         onClick={() => setOpen(true)}
-        className="fixed bottom-[4.5rem] end-4 z-30 grid h-14 w-14 place-items-center rounded-full shadow-lg lg:hidden [background-color:var(--color-primary)] [color:var(--color-on-primary)]"
+        /* 🔴 `md:hidden` 不是 `lg:hidden` —— 那一刀 2026-09-09 晚上提到 md 之后
+           （平板留着他自己的侧栏），820 上**侧栏那一行跟这一颗同时画得出来**：
+           同一件事两个入口，而那正是这个仓库最贵的那一类缺陷。
+           看图当场看到的：右下角一颗火花，左边侧栏上又一行 Ask AI。 */
+        className="fixed bottom-[4.5rem] end-4 z-30 grid h-14 w-14 place-items-center rounded-full shadow-lg md:hidden [background-color:var(--color-primary)] [color:var(--color-on-primary)]"
       >
         <IconSpark className="h-6 w-6" />
       </button>

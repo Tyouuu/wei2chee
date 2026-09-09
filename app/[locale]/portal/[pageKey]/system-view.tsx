@@ -101,14 +101,32 @@ export function SystemView({
          自己 56px 高，上缘落在 128px —— 一个飘在内容上、又不让内容躲开的东西，
          吃掉的正好是页面最后那一样。这一条这个档案自己写过三次，
          我不打算变成第四次。 */
-      : `min-h-screen max-lg:pb-32 max-lg:[&_aside[data-nav=side]]:hidden max-lg:[&_[data-shell-bar]]:hidden max-lg:[&_[data-page-title]>p]:hidden${
+      : `min-h-screen max-md:pb-32 max-md:[&_aside[data-nav=side]]:hidden max-md:[&_[data-shell-bar]]:hidden max-md:[&_[data-page-title]>p]:hidden${
           ask ? " lg:pe-[345px]" : ""
         }`;
-  /* 底栏在桌面上不画 —— 那里有侧栏。 */
+  /*
+    🔴 那一刀从 `lg` 提到 `md` —— 也就是 **iPad 直立（820）留着他自己的侧栏**。
+
+    他 2026-09-09：`桌面手機跟ipad端 這三個都是要調整好的`。
+    量出来这个仓库**平板那一档一次都没有量过**（1440 量了 101 处 · 390 量了
+    39 处 · 744–1180 是 0 处，[任务 317](../../../../docs/founder-tasks.md#317)）——
+    而 820 走的是 `max-lg` 那一支，於是**它穿的是手机那一套壳**：
+    侧栏藏起来、顶栏藏起来、底下一条分页列。实拍三个行业都一样。
+
+    参考读数也在那一条里：外面 11 套后台在 820 上**只有 Ant Design Pro 做对**
+    ——它把侧栏收成一条 64 的图标条，把 192px 还给内容。
+    ⚠️ **我们今天只做第一步**：820 有 580px 给内容（一栏摆得下），
+    所以先把侧栏还回去，而**不是**发明一个我们没有的图标条模式
+    （那要 RailNav 换 variant，而那一支的样子是由风格挑的，不是由视窗宽挑的）。
+    收成图标条排在后面，落点写在任务档里。
+
+    ⚠️ `md` 是 768：一台 iPad 直立（820）在这一边，一支手机（390）在那一边。
+  */
+  /* 底栏在手机上才画 —— 平板跟桌面都有侧栏。 */
   const barClass =
     variant === "phone"
       ? "shrink-0"
-      : "fixed inset-x-0 bottom-0 z-30 lg:hidden";
+      : "fixed inset-x-0 bottom-0 z-30 md:hidden";
   /*
     🔴 用讲的做事那一条，贴在**画面**下缘 —— 不是挂在页尾。
 
