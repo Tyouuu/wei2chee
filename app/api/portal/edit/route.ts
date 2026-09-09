@@ -810,6 +810,29 @@ measured 2026-09-09 by check:work-ai.
 ` : ""}${factsBlock ? `${factsBlock}\n\n` : ""}Blocks currently on this page:
 ${describeLayout(layout, here)}
 ${recent ? `\n刚才这段对话里发生过的事（最新的在最下面）:\n${recent}\n` : ""}
+${
+  /*
+    🔴 用哪一种话回 —— 讲死，不要让它自己揣摩。
+
+    ── 2026-09-09 量出来的 ────────────────────────────────────────────────
+    同一句英文的问题，`check:work-ai` 跑三次拿到**两种语言的答覆**：
+    两次英文、一次「缩短标题和把表格移到最上面，要在这页顶部的设计按钮里改。」
+    而那套系统的语言是英文。[重点 13]：不准跨语言凑合。
+
+    根因不是模型笨，是**这一整段 prompt 大半是中文**（这一页的状态 · 明暗
+    那一段 · 答不了的那几行），而「用他讲话的那种语言回」只是上面的一句话 ——
+    一条只写在话里、没有人执行的规矩，就是这个仓库栽过九次的那种。
+
+    ⚠️ **不是靠猜他是谁**（[任务 89] 那条界线）：这里读的是他刚打的那一句
+    里有没有中日韩字，那是那一串字自己的性质，不是一个关于他的推测。
+    分不出来的时候（纯数字 · 纯符号）不讲话，让上面那条原来的规矩接手。
+  */
+  /[一-鿿぀-ヿ]/.test(trimmed)
+    ? "ANSWER IN CHINESE -- he wrote to you in Chinese."
+    : /[a-zA-Z]/.test(trimmed)
+      ? "ANSWER IN ENGLISH -- he wrote to you in English. Not one Chinese character."
+      : ""
+}
 The business owner asked:
 "${trimmed}"`;
 

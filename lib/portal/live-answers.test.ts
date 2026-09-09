@@ -18,6 +18,12 @@ const withFigures = (over: Partial<BusinessFacts> = {}): BusinessFacts => ({
   /* 预设是「问了，没有人欠」—— 不是 null。null 是「没有问」，
      而一个预设成「没有问」的夹具会让下面每一条 owing 的断言量到空气。 */
   owing: [],
+  /* 预设是「有两件要跟」—— 不是空的。空的夹具会让下面那几条断言
+     量到「一件都没有」那一句，而不是量到它们真正在守的那一段。 */
+  nudges: [
+    { kind: "quote_expiring", line: "QT-2026-0012 李太太 的报价三天后到期 · 09-02 跟过了" },
+    { kind: "payment_overdue", line: "陈先生 欠 RM 3,000 · 迟了 12 天" },
+  ],
   figures: [
     { label: "本月收到", value: "RM 12,340", previous: "RM 9,800" },
     { label: "还没用完的订金", value: "RM 3,000" },
@@ -226,5 +232,47 @@ describe("谁欠他钱", () => {
   it("「某一个客户欠多少」已经不在答不了的名单里了", () => {
     const all = Object.values(BUSINESS_FACT_GAPS.zh).join("\n");
     expect(all).not.toContain("按客户查那一支还没做");
+  });
+});
+
+
+/**
+ * 🔴 系统自己看出来的那几件，要真的到得了模型眼前。
+ *
+ * 2026-09-09 补的第十七条「能力有、线没接」：十二种信号 9-06 就算得出来、
+ * 「今天要跟的」那一页在读它们，而这个档案里一个字都没提过 —— 所以他问
+ * 「今天有什么要跟」，助手答「我看不到」，而画面上就写着。
+ */
+describe("系统自己看出来的那几件", () => {
+  it("印进去了，一条不漏", () => {
+    const out = renderBusinessFacts(withFigures());
+    expect(out).toContain("李太太 的报价三天后到期");
+    expect(out).toContain("陈先生 欠 RM 3,000");
+  });
+
+  it("🔴 一件都没有的时候也讲一句，不留白", () => {
+    /* 留白的时候模型会拿上面那些数字凑一个「你大概要跟这几个」出来。 */
+    const out = renderBusinessFacts(withFigures({ nudges: [] }));
+    expect(out).toContain("一件都没有要跟的");
+  });
+
+  it("英文那一份也有它自己的两句", () => {
+    const on = renderBusinessFacts(withFigures({ lang: "en" }));
+    expect(on).toContain("has spotted");
+    const off = renderBusinessFacts(withFigures({ lang: "en", nudges: [] }));
+    expect(off).toContain("Nothing the system has spotted");
+    /* 🔴 不准跨语言凑合（[重点 13]）—— 而要量的是**我们的字**，
+       不是他生意自己的字：夹具里的「本月收到」「经销商」是他自己的词，
+       在英文那一份里出现是对的。第一版把整段拿去比中文，红的是一条
+       假的（[重点 31]：红的时候先问是不是我量错了）。 */
+    expect(off).not.toContain("一件都没有要跟的");
+    expect(on).not.toContain("系统自己看出来");
+  });
+
+  it("🔴 它排在「答不了的」上面 —— 一件他要做的事，不该印在一串做不到后面", () => {
+    const out = renderBusinessFacts(withFigures());
+    expect(out.indexOf("李太太 的报价三天后到期")).toBeLessThan(
+      out.indexOf("答不了的"),
+    );
   });
 });

@@ -66,6 +66,9 @@ const WORDS = {
     cannot: "答不了的（要老实讲，并说出为什么）",
     none: "他还没有任何记录，所以一个数字都数不出来。",
     unread: "读不到他的数字（这一次的查询失败了）。不要给任何数字，也不要说 0。",
+    /* 🔴 系统自己看出来、而他还没处理的那几件。见下面 `nudges` 那一段。 */
+    nudges: "系统自己看出来、今天要跟的（他还没处理）",
+    nudgesNone: "系统自己看出来的那几件：今天一件都没有要跟的。",
   },
   en: {
     heading: "This business's figures today (as at <at>, all counted from their own books)",
@@ -75,6 +78,8 @@ const WORDS = {
     cannot: "Cannot be answered (say so plainly, and say why)",
     none: "They have no records yet, so nothing can be counted.",
     unread: "Their figures could not be read this time. Give no number, and never say 0.",
+    nudges: "What the system itself has spotted and he has not dealt with yet",
+    nudgesNone: "Nothing the system has spotted is outstanding today.",
   },
 } as const;
 
@@ -137,6 +142,16 @@ const TREND_CAP = 6;
  */
 const ROW_CAP = 5;
 
+/**
+ * 系统自己看出来的那几件，最多送几条给模型。
+ *
+ * 跟 `ROW_CAP` 同一个理由，而这一条更硬：一间忙的店月底可能有三十条
+ * （十二种信号 × 好几笔），而一个把三十条念完的助手，讲的是一份报告，
+ * 不是一个答案。**排序由资料库决定**（`nudges_due` 自己排），
+ * 所以截掉的是最不急的那几条，不是随便几条。
+ */
+const NUDGE_CAP = 6;
+
 export type BusinessFacts = {
   /** Malaysia's date, not the server's. Every figure below is bounded by a
    *  month, and the server runs on UTC -- see nowInMalaysia. */
@@ -165,6 +180,31 @@ export type BusinessFacts = {
    * 而他老板的帐上挂着三万。
    */
   owing: OwingRead;
+  /**
+   * 🔴 系统自己看出来、而他还没处理的那几件。
+   *
+   * ── 为什么这一栏 2026-09-09 才出现 ────────────────────────────────────
+   *
+   * 那十二种信号（报价快到期 · 收款过期 · 低过补货线 · 预约没人接 ·
+   * 套票剩最后一次 · 客人很久没来 · 合约到期 · 借出去没还回来 · 缺勤两次 ·
+   * 签了没付 · 介绍费欠着 · 要货单开着）**2026-09-06 就算得出来了**，
+   * 而「今天要跟的」那一页在读它们 —— 这个档案里**一个字都没提过它们**。
+   * 所以助手答不出「今天有什么要跟」，而画面上就写着。
+   * 第十七次「能力有、线没接」。
+   *
+   * 外面那几家把这一件当成留客的主力（2026-09-09 读的，[任务 316]）：
+   * QuickBooks 的付款代理**先开口** —— 预测哪一张会迟付、自己起草催款。
+   * 量出来的：状况变差之后**十四天内**主动联络的，留客明显好过三十天后。
+   *
+   * ⚠️ **角色不在这里判**。`nudges_due` 自己问 `works_here` 跟 `sees_money`，
+   * 而钱那几种信号在那一支里面就滤掉了 —— 一个师傅拿回的本来就少几种。
+   * 在这里再判一次，就是同一条规矩两个地方，而这个仓库栽在那上面八次。
+   *
+   * ⚠️ **空阵列跟读不到不分开**，跟 `owing` 不一样，而这是有理由的：
+   * `owing` 分不开会变成对着一个师傅讲「没有人欠你钱」；这里最坏的情况是
+   * 少讲一件他本来就在画面上看得到的事（那一页天天开着）。
+   */
+  nudges: { kind: string; line: string }[];
   lang: "zh" | "en";
   /** True when the read itself failed, as opposed to succeeding and finding
    *  nothing. The prompt must say different things about those two, because
@@ -228,6 +268,7 @@ export async function fetchBusinessFacts(
       rows: [],
       trend: [],
       owing: null,
+      nudges: [],
       lang,
       unread: true,
     };
@@ -247,6 +288,10 @@ export async function fetchBusinessFacts(
       rows: [],
       trend: [],
       owing: null,
+      /* 🔴 一个数字都数不出来，**不代表没有要跟的事**：一张快到期的报价单
+         在他一条记录都还没被这几格数到的时候就已经在那里了。所以这一支
+         照读。 */
+      nudges: await fetchNudges(supabase, projectId, lang),
       lang,
       unread: false,
     };
@@ -265,9 +310,71 @@ export async function fetchBusinessFacts(
     rows: await fetchRecentRows(supabase, projectId),
     trend: stats.trend.slice(-TREND_CAP),
     owing: await fetchPartyOwing(supabase, projectId, role, lang),
+    nudges: await fetchNudges(supabase, projectId, lang),
     lang,
     unread: false,
   };
+}
+
+/**
+ * 系统自己看出来、而他还没处理的那几件。
+ *
+ * ── 一份定义，不是两份 ────────────────────────────────────────────────────
+ *
+ * 呼叫的是 `nudges_due` —— **「今天要跟的」那一页读的同一支**。所以助手讲的
+ * 跟他打开那一页看到的是同一批东西，不会各说各话（`fetchProfit` 呼叫
+ * `buildProfit` 是同一个做法，同一个理由）。
+ *
+ * ── 🔴 那一句话是资料库写的，不是这里拼的 ────────────────────────────────
+ *
+ * `nudges_due.body` 是一句写好的、跟着系统语言走的话（那一栏 not null）。
+ * 在这里照他的语言重拼一次，就是第二份会漂的字 —— 而画面那一页印的是
+ * 资料库那一句。两边不一样，他会以为助手在讲另一件事。
+ *
+ * ⚠️ **角色不在这里判。** `nudges_due` 自己 `works_here` ＋ `sees_money`，
+ * 钱那几种信号在那一支里面就滤掉了。
+ *
+ * ⚠️ **读失败就当没有。** 跟 `owing` 不一样，那一边分不开会变成对着一个
+ * 师傅讲「没有人欠你钱」；这里最坏是少讲一件他在那一页上本来就看得到的事。
+ */
+async function fetchNudges(
+  supabase: SupabaseClient,
+  projectId: string,
+  lang: "zh" | "en",
+): Promise<{ kind: string; line: string }[]> {
+  const { data, error } = await supabase.rpc("nudges_due", {
+    in_project_id: projectId,
+    /* 不给日子 = 今天加三天，跟那一页预设的那一档一样。「快到期」本来
+       就要提前讲，而提前几天是资料库定的，不是这里定的。 */
+    in_until: null,
+  });
+  if (error) return [];
+  const rows = (data ?? []) as {
+    kind?: string | null;
+    body?: string | null;
+    party?: string | null;
+    title?: string | null;
+    days_late?: number | null;
+    last_told_on?: string | null;
+  }[];
+  return rows.slice(0, NUDGE_CAP).map((r) => {
+    const late = Number(r.days_late ?? 0);
+    const bits = [
+      String(r.body ?? "").trim(),
+      /* 🔴 迟了几天要讲出来 —— 「过期了」跟「过期二十天了」是两件事，
+         而他下一步做什么完全看这个数字。 */
+      late > 0 ? (lang === "zh" ? `迟了 ${late} 天` : `${late} days late`) : "",
+      /* 🔴 上一次讲过是几时，也要讲 —— 不然助手会叫他再催一次他
+         今天早上刚催过的那一个人。资料库明写这是一个日子，不是一条
+         把讯号压下去的规矩。 */
+      r.last_told_on
+        ? lang === "zh"
+          ? `${r.last_told_on} 跟过了`
+          : `last chased ${r.last_told_on}`
+        : "",
+    ].filter(Boolean);
+    return { kind: String(r.kind ?? ""), line: bits.join(" · ") };
+  });
 }
 
 /**
@@ -439,6 +546,21 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
   /* 谁欠他钱。**空阵列跟 null 在这里就分开了** —— 见 `debts.ts` 的档头。 */
   const owing = describeOwing(facts.owing, facts.lang);
 
+  /*
+    🔴 系统自己看出来、他还没处理的那几件。
+
+    这一段是 2026-09-09 补的第十七条「能力有、线没接」：十二种信号
+    9-06 就算得出来，「今天要跟的」那一页在读它们，而助手一个都看不到 ——
+    所以他问「今天有什么要跟」，得到的是一句「我看不到」，而画面上就写着。
+
+    ⚠️ **一件都没有的时候也要讲一句**，不可以留白。留白的时候模型会拿
+    上面那些数字去凑一个「你大概要跟这几个」出来 —— 而那正是这个档案
+    档头那条规矩在挡的东西：没有讲出来的，模型会在空隙里发明。
+  */
+  const nudges = facts.nudges.length
+    ? [`${w.nudges}:`, ...facts.nudges.map((n) => `- ${n.line}`)]
+    : [w.nudgesNone];
+
   /* 🔴 这一次答不了的，跟永远答不了的，放在同一段但来源不同。
      `owingUnread` 只在没有读到欠款的时候出现 —— 读到了还留着它，
      就是助手拒绝回答一件它手上已经有答案的事。 */
@@ -452,6 +574,8 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ...lines,
     ...(owing.length ? ["", ...owing] : []),
     ...receipt,
+    "",
+    ...nudges,
     "",
     `${w.cannot}:`,
     ...gaps.map((line) => `- ${line}`),

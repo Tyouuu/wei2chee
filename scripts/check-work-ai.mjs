@@ -216,6 +216,48 @@ try {
     !/[一-鿿]/.test(design),
     design.slice(0, 200),
   );
+
+  console.log("");
+  console.log("── ⑤ 🔴 它看不看得到系统自己发现的那几件 ──────────");
+  /*
+    🔴 十二种信号 2026-09-06 就算得出来（`nudges_due`），「今天要跟的」
+    那一页在读它们，而 `live-answers.ts` 里一个字都没提过 —— 所以他问
+    「今天有什么要跟」，助手答「我看不到」，而画面上就写着。
+    [任务 316] 读到外面那几家把这一件当留客主力：QuickBooks 的付款代理
+    **先开口**。这一段量的就是那条线接上了没有。
+
+    ⚠️ 种一张**两天后到期**的报价单 —— `quote_expiring` 的条件是
+    `due_on <= cutoff`（今天＋三天）而且一分钱都还没收。
+  */
+  const soon = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  const { error: seedErr } = await api.rpc("add_pipeline_record", {
+    in_project_id: P,
+    in_module_key: "quotations",
+    in_title: "Kedai Kopi awning",
+    in_party: "Madam Chong",
+    in_amount_cents: 690000,
+    in_due_on: soon,
+  });
+  if (seedErr) throw new Error(`seed quote: ${seedErr.message}`);
+
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  /* 🔴 这一句故意用**中文**问 —— 上面三段已经盯住英文那一半，
+     而那条规矩是两边的：他用哪一种话问，就用哪一种话回。
+     只钉一边的尺子，会在另一边静静地让它变回去。 */
+  const chase = await say(page, "今天有什么要跟？");
+  console.log(`        它讲了：${chase.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  check(
+    "🔴 助手念得出那一张快到期的报价",
+    /chong/i.test(chase),
+    chase.slice(0, 220) || "（它一句话都没讲）",
+  );
+  check(
+    "🔴 他用中文问，它就要用中文回",
+    /[一-鿿]/.test(chase),
+    chase.slice(0, 220),
+  );
+  await page.screenshot({ path: `${OUT}/4-chase.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);
