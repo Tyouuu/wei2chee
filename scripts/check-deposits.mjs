@@ -4,7 +4,7 @@
  * 🔴 这一支最要紧的四条：
  *   · **他还没讲那个次数的时候，系统一句话都不讲**（不是拿一个我发明的次数顶着）
  *   · 分母跟分子一起给 —— 来过四十次错过两次，跟来过两次错过两次，不是同一件事
- *   · 钱那两栏对看不到钱的人是 **null，不是 0**
+ *   · 柜台看得到**这一个客人**的余额，看不到**全店**的欠款（9-09 他点头放开的）
  *   · 定规矩是老板的事，照规矩收是柜台的事
  */
 import { readFileSync } from "node:fs";
@@ -205,7 +205,7 @@ try {
   check("🔴 收了订金之后，她手上那个数字看得到",
     Number(paid?.on_hand_cents) === 5000, String(paid?.on_hand_cents));
 
-  console.log("\n⑦ 🔴 美发师（看得到人，看不到钱）");
+  console.log("\n⑦ 🔴 美发师（看得到这个客人，看不到全店的钱）");
   const crew = await person("crew");
   await say(C, "add_project_member", { in_email: crew.email });
   const asCrew = (await say(crew.client, "deposit_advice", {
@@ -213,11 +213,22 @@ try {
   }))[0];
   check("🔴 她放过几次，柜台看得到（这一支就是给柜台的）",
     asCrew?.missed === 2 && asCrew?.came === 1, JSON.stringify(asCrew));
-  check("🔴 而钱那两栏是 **null**，不是 0",
-    asCrew?.suggest_cents === null && asCrew?.on_hand_cents === null,
-    JSON.stringify([asCrew?.suggest_cents, asCrew?.on_hand_cents]));
-  check("⚠️ 而老板同一个呼叫读得到钱（不然上面那一条量的是空气）",
+  /* 🔴 2026-09-09 他点头放开了（20260909350000）：柜台看得到
+     **这一个客人**自己的余额 —— 那是她每天要讲出口的一句话，
+     而客人自己就知道那个数字（她就是付钱的那一个）。
+     ⚠️ 对照组在下面：全店那张欠款总表照旧挡着。少了那一条，
+     「放开了」跟「本来就没挡」在报告里长得一模一样。 */
+  check("🔴 柜台看得到她手上还剩多少（他 9-09 点头放开的）",
+    Number(asCrew?.on_hand_cents) === 5000, String(asCrew?.on_hand_cents));
+  check("也看得到建议收多少（不然她开不了口）",
+    Number(asCrew?.suggest_cents) === 5000, String(asCrew?.suggest_cents));
+  check("⚠️ 而老板同一个呼叫读到同一个数字",
     Number(paid?.on_hand_cents) === 5000, "老板自己也读不到");
+  check(
+    "🔴 对照组：全店那张「谁欠我钱」柜台照旧读不到",
+    (await say(crew.client, "party_debts", { in_project_id: P })).length === 0,
+    "他读到了全店的欠款",
+  );
   check("🔴 柜台照旧挂得上订金（照规矩收是他的事）",
     (await refused(crew.client, "set_appointment_deposit", {
       in_id: soon, in_amount_cents: 5000,
