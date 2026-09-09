@@ -563,6 +563,8 @@
         "classBilled": "{made} bills raised for {period}, {total} in total — {again} were already done and {free} pay nothing.",
         "paymentTaken": "{amount} recorded against that document \u2014 {left} still owing.",
         "appointmentBooked": "{who} is in for {when}.",
+        "depositAsked": "That booking now asks for {amount} up front \u2014 not received yet.",
+        "depositDropped": "That booking no longer asks for a deposit.",
         "noStepSaid": "It did not say what to do",
         "noLineSaid": "It did not say what that line is for",
         "noSuchEnquiry": "There is no enquiry with that number",

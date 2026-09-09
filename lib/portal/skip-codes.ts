@@ -267,6 +267,15 @@ export type SkipCode =
    * `how` 是那个长度**从哪里来的** —— 她讲的，还是照她上次那一笔抄的。
    * 抄来的长度不讲出来，就是一个她看不见的假设。
    */
+  /**
+   * 🔴 这一单要先收多少订金。`amount`
+   *
+   * ⚠️ 这一句讲的是「**要收**」，不是「**收到了**」—— 两件事分开是故意的。
+   * 一句听起来像已经收到的话，会让她以为钱进来了。
+   */
+  | "depositAsked"
+  /** 这一单不用订金了。 */
+  | "depositDropped"
   | "appointmentBooked"
   | "paymentTaken"
   | "classBilled"
@@ -377,6 +386,8 @@ export const SKIP_CODES = [
   "followUpDone",
   "followUpDropped",
   "followUpSet",
+  "depositAsked",
+  "depositDropped",
   "appointmentBooked",
   "paymentTaken",
   "classBilled",

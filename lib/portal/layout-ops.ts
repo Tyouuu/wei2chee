@@ -489,6 +489,30 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     ⚠️ 而抄来的那个长度**要讲出来**（「照你上次染发的一个半钟」）——
     一个没讲出来的假设，就是一个他看不见的错。
   */
+  /*
+    🔴 这一单要先收订金 —— 「叫她先付一百」。
+
+    `set_appointment_deposit`（20260909320000）已经在跑。它挡的是
+    `works_here` 不是 `sees_money`，理由写在那一支里：**叫客人先付订金的
+    是柜台，而柜台在一间沙龙里就是那个美发师自己**。
+
+    ⚠️ **金额是她讲的那个数字，这里不算。** 这一支只记「要收多少」——
+    收到了没有是钱那一边的事（`take_payment`），两件事分开是故意的：
+    一个写着「订金 100」而实际没收到的画面，比没有那一栏更糟。
+  */
+  z.object({
+    op: z.literal("set_appointment_deposit"),
+    /** 哪一笔预约 —— 页面上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /**
+     * 🔴 要收多少。
+     *
+     * **「不用订金」跟「讲好了不收」是两件事**（那一支的注解自己写着）：
+     * 前者是 null，后者是一个真的 0。所以她讲「这一单不用订金」的时候
+     * 送 null，讲「这一单我讲好不收她的」的时候送 "0"。
+     */
+    amount: z.string().max(20).nullable(),
+  }),
   z.object({
     op: z.literal("book_appointment"),
     /** 排给谁。**挡住一段时间**（午休 · 看牙医）的时候是 null。 */
@@ -1667,6 +1691,7 @@ export function applyLayoutOps(
       /* 回一封询价跟这一页是哪一页无关，而它今天只到得了记录页
          （助手也只在那几页）—— 到不了的时候讲同一句话。 */
       /* 开全班的学费单要有一本帐簿可以开进去，而这一页背后没有。 */
+      case "set_appointment_deposit":
       case "book_appointment":
       case "take_payment":
       case "bill_class":

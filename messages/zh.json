@@ -563,6 +563,8 @@
         "classBilled": "{period} 开了 {made} 张，共 {total} — 其中 {again} 张上次已经开过，{free} 个不用交。",
         "paymentTaken": "记了 {amount}，挂在那一张单上 — 还欠 {left}。",
         "appointmentBooked": "{who} 排好了：{when}。",
+        "depositAsked": "那一单要先收 {amount} — 还没收到。",
+        "depositDropped": "那一单不用订金了。",
         "noStepSaid": "没有讲要做什么",
         "noLineSaid": "那一行没有写它是什么",
         "noSuchEnquiry": "没有这一封询价",

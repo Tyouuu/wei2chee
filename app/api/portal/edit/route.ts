@@ -264,6 +264,18 @@ Record tables:
     work the amount out yourself.
   * Documents only (报价单 / 订单 / 工程 / 任务 / 进货单). Not money pages, not the
     directory, not the shelf.
+- set_appointment_deposit says what a booking must pay UP FRONT:
+  「叫她先付一百」, 「ask Ms Lim for a RM 50 deposit」,
+  「这一单不用订金」.
+  * record_id is that booking. amount is what she names; leave it null when
+    she says no deposit is needed.
+  * 🔴 IT RECORDS WHAT IS ASKED FOR, NOT WHAT ARRIVED. Say it that way.
+    Money that actually came in is take_payment, and telling her the deposit
+    is 「received」 when it is only 「asked for」 makes her think she has been
+    paid.
+  * 「我讲好不收她的」 is amount "0" -- a real nought, agreed. 「不用订金」
+    is null. They are different sentences and the database keeps them apart.
+  * Only on the appointments page.
 - 🔴 book_appointment puts somebody in the diary: 「帮陈太太排明天三点」,
   「book Ms Lim Thursday 2pm for a colour」, 「block Wednesday afternoon」.
   * day is \`YYYY-MM-DD\` and from/to are \`HH:MM\` on a 24-hour clock. Today's
@@ -1509,6 +1521,7 @@ export const EDIT_JSON_SCHEMA = {
                 "bill_class",
                 "take_payment",
                 "book_appointment",
+                "set_appointment_deposit",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",

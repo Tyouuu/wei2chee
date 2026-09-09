@@ -1111,6 +1111,94 @@ try {
   );
   await page.screenshot({ path: `${OUT}/15-no-show.png` });
 
+
+  console.log("");
+  console.log("── ⑲ 🔴 「叫她先付八十」 —— 而「不用订金」不是 0 ──");
+  /*
+    🔴 一间沙龙叫客人先付订金，靠的是柜台讲一句话，不是一张表单。
+
+    走 `set_appointment_deposit`（20260909320000）—— 人按那颗按钮的同一支，
+    而它挡的是 `works_here` 不是 `sees_money`：**叫客人先付订金的是柜台**，
+    而柜台在一间沙龙里就是那个美发师自己。
+
+    ⚠️ 这一段量**三件**，而第三件才是它存在的理由：
+    数字真的写进去了 · **它讲的是「要收」不是「收到了」** ·
+    **「这一单不用订金」写回 null，不是 0**。
+    那一支自己的注解写着 null 跟 0 是两件事（0 是「讲好了不收」），
+    而助手这一条路很容易把两句话写成同一件事 —— 她要到客人
+    站在柜台前面才发现。
+  */
+  /*
+    🔴 **今天**，不是明天 —— 预约那一页画的是今天那一天，
+    而这一段要它**指得出一笔已经在的预约**。
+    第一版种在明天，它回的是「I can’t identify Ms Rajan’s booking」
+    —— **而它讲得没错**，红的是尺子不是产品。
+
+    ⚠️ 而时段要自己找一个空的：没有指师傅的时候，
+    **排他的那一把键就是整间店**（coalesce(staff_id, project_id)），
+    所以一个写死的钟头撞上第 ⑰ ⑱ 段或者种子资料的时候，
+    红的也是尺子自己。
+  */
+  let depAt = null;
+  for (const hhmm of ["18:00", "17:00", "13:30", "11:15", "09:45"]) {
+    const at = new Date(Date.parse(`${mytToday}T${hhmm}:00+08:00`));
+    const { error: e } = await api.rpc("add_appointment", {
+      in_project_id: P,
+      in_module_key: bookPage,
+      in_starts_at: at.toISOString(),
+      in_ends_at: new Date(at.getTime() + 45 * 60000).toISOString(),
+      in_party: "Ms Rajan",
+      in_service: "Rebonding",
+    });
+    if (!e) { depAt = at; break; }
+    if (!/already taken/i.test(e.message)) {
+      throw new Error(`seed deposit appt: ${e.message}`);
+    }
+  }
+  if (!depAt) throw new Error("seed deposit appt: 今天五个时段全部被占了");
+
+  await page.goto(`${BASE}/en/portal/${bookPage}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  const asked = await say(page, "Ask Ms Rajan for a RM 80 deposit");
+  console.log(`        它讲了：${asked.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+
+  const depRow = await admin
+    .from("appointments")
+    .select("id, deposit_cents")
+    .eq("project_id", P)
+    .ilike("party", "%rajan%")
+    .limit(1)
+    .maybeSingle();
+  check(
+    "🔴 那一单要收的订金真的是 RM 80",
+    Number(depRow.data?.deposit_cents ?? -1) === 8000,
+    `deposit_cents = ${depRow.data?.deposit_cents} — ${asked.slice(0, 140)}`,
+  );
+  /* 🔴 一句听起来像已经收到的话，会让她以为钱进来了。 */
+  check(
+    "🔴 而它讲的是「要收」，不是「收到了」",
+    !/(received|paid|collected)/i.test(asked) && !/收到|已付|已收/.test(asked),
+    asked.slice(0, 220),
+  );
+
+  /* 🔴 「不用订金」写回 null。写成 0 的话，那是「讲好了不收」—— 另一句话。 */
+  const dropped = await say(page, "Ms Rajan does not need to pay a deposit after all");
+  console.log(`        它讲了：${dropped.split(String.fromCharCode(10)).join(" / ").slice(0, 180)}`);
+  await page.waitForTimeout(2500);
+  const depAfter = await admin
+    .from("appointments")
+    .select("deposit_cents")
+    .eq("id", depRow.data?.id)
+    .maybeSingle();
+  check(
+    "🔴 「不用订金」写回的是 null，不是 0",
+    depAfter.data?.deposit_cents === null,
+    `deposit_cents = ${JSON.stringify(depAfter.data?.deposit_cents)} — 0 是「讲好了不收」，是另一句话`,
+  );
+  await page.screenshot({ path: `${OUT}/16-deposit.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);

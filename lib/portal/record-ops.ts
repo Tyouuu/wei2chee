@@ -296,6 +296,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "bill_class",
   "take_payment",
   "book_appointment",
+  "set_appointment_deposit",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -1016,6 +1017,56 @@ export async function actOnRecords(
       地方记着一个服务做多久。所以照 [重点 29] 第 2 种：**从她自己
       以前同样的服务抄那个长度**。抄不到就问一句 —— 不编。
     */
+    /*
+      🔴 这一单要先收订金。
+
+      走 `set_appointment_deposit` —— 人按那颗按钮的同一支，而它挡的是
+      `works_here`：叫客人先付订金的是柜台，而柜台在一间沙龙里
+      就是那个美发师自己。
+
+      🔴 **`null` 跟 `0` 在这里不是同一件事**，所以不可以拿
+      `senFrom(...) ?? null` 一句带过：`senFrom("0")` 回的是 0 而
+      `senFrom("")` 回的是 undefined，两个都会掉进 `?? null` ——
+      於是「讲好了不收她的」跟「这一单不用订金」写进去变成同一句话。
+      她要到客人站在柜台前面才发现。
+    */
+    if (op.op === "set_appointment_deposit") {
+      if (shape !== "calendar") {
+        skipped.push({ op: op.op, reason: "notBookingPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const said = String((op as unknown as { amount?: unknown }).amount ?? "").trim();
+      /* 她没有讲数字 = 这一单不用订金（null）。讲了 0 = 讲好了不收。 */
+      const cents = said ? senFrom(said) : undefined;
+      if (said && cents === undefined) {
+        skipped.push({ op: op.op, reason: "noAmountSaid" });
+        continue;
+      }
+      const { error: depErr } = await supabase.rpc("set_appointment_deposit", {
+        in_id: recordId,
+        in_amount_cents: said ? cents : null,
+      });
+      if (depErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: depErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      notes.push({
+        op: op.op,
+        reason: said ? "depositAsked" : "depositDropped",
+        vars: { amount: ringgit(cents ?? 0) ?? "RM 0" },
+      });
+      written += 1;
+      continue;
+    }
+
     if (op.op === "book_appointment") {
       if (shape !== "calendar") {
         skipped.push({ op: op.op, reason: "notBookingPage" });
