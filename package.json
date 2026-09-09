@@ -206,6 +206,7 @@
     "audit:platform": "node scripts/audit-platform.mjs",
     "audit:product": "node scripts/audit-product.mjs",
     "shoot:tables": "node scripts/shoot-tables.mjs",
+    "check:class-fees": "node scripts/check-class-fees.mjs",
     "shoot:consent": "node scripts/shoot-consent.mjs",
     "shoot:widths": "node scripts/shoot-widths.mjs"
   },
