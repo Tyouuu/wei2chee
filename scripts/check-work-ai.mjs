@@ -156,6 +156,33 @@ try {
   );
   /* 而改设计那一屏本来就有它自己那一块 —— 这一支不碰那一边。 */
 
+  /* 🔴 ①b 三个宽度上都够得到 —— 而这一条在 2026-09-09 之前会红两次。
+     那一块本来写着 `max-lg:hidden`，理由是「下缘已经有一条分页列，
+     两条叠在同一条边上吃掉的永远是最后那一行」。**那句话是对的**，
+     而它的结论下错了：不该贴第二条，不等於窄屏上不要入口。
+     於是这个产品的招牌承诺在 iPad 跟手机上一个字都没有 ——
+     而他 2026-09-09 讲的正是 `桌面手機跟ipad端 這三個都是要調整好的`。
+     现在窄屏是一颗离下缘 72px 的圆钮，避得开那条 64px 的分页列。 */
+  console.log("");
+  console.log("── ①b 🔴 平板跟手机上也够得到 ────────────────────────────");
+  for (const [w, h, name] of [[820, 1180, "iPad 820"], [390, 844, "手机 390"]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto(`${BASE}/en/portal/quotations`, { waitUntil: "networkidle", timeout: 180000 });
+    await page.waitForTimeout(1200);
+    const seen = page.locator(`[data-work-ai="closed"]:visible, [data-work-ai="closed-narrow"]:visible`);
+    const n = await seen.count();
+    const box = n ? await seen.first().boundingBox().catch(() => null) : null;
+    await page.screenshot({ path: `${OUT}/8-${w}.png` });
+    check(
+      `🔴 ${name} 上看得到那个入口，而且不用滚`,
+      !!box && box.y >= 0 && box.y + box.height <= h + 1,
+      box
+        ? `它在 ${Math.round(box.y)}–${Math.round(box.y + box.height)}px，而一屏 ${h}px`
+        : `找到 ${n} 个`,
+    );
+  }
+  await page.setViewportSize({ width: 1440, height: 950 });
+
   console.log("\n── ② 讲一句做事的话，帐上要真的多一行 ────────────────────");
   const before = await admin
     .from("pipeline_records")
@@ -393,6 +420,8 @@ try {
     `总额是 ${(withLines.data ?? [])[0]?.amount_cents} 分`,
   );
   await page.screenshot({ path: `${OUT}/7-lines.png` });
+
+
 
 
   console.log("");

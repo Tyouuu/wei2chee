@@ -81,7 +81,16 @@ export function SystemView({
   const wrapClass =
     variant === "phone"
       ? "min-h-0 flex-1 overflow-y-auto pb-16 [&_aside[data-nav=side]]:hidden [&_[data-shell-bar]]:hidden [&_[data-page-title]>p]:hidden"
-      : "min-h-screen lg:pb-14 max-lg:[&_aside[data-nav=side]]:hidden max-lg:[&_[data-shell-bar]]:hidden max-lg:[&_[data-page-title]>p]:hidden";
+      /* 🔴 `max-lg:pb-16`：**平板上那条分页列本来盖着内容最后那一段。**
+         手机那一支（上面）一直都有 `pb-16`，而 820 走的是这一支，它只有
+         `lg:pb-14` —— 也就是「宽屏躲得开、平板躲不开」。
+         2026-09-09 三个行业拍 820 才看到（[任务 318](../../../../docs/founder-tasks.md)）。
+
+         🔴 而它是 `pb-32` 不是 `pb-16`：窄屏上讲话那颗圆钮浮在下缘 72px、
+         自己 56px 高，上缘落在 128px —— 一个飘在内容上、又不让内容躲开的东西，
+         吃掉的正好是页面最后那一样。这一条这个档案自己写过三次，
+         我不打算变成第四次。 */
+      : "min-h-screen lg:pb-14 max-lg:pb-32 max-lg:[&_aside[data-nav=side]]:hidden max-lg:[&_[data-shell-bar]]:hidden max-lg:[&_[data-page-title]>p]:hidden";
   /* 底栏在桌面上不画 —— 那里有侧栏。 */
   const barClass =
     variant === "phone"
@@ -103,7 +112,12 @@ export function SystemView({
     ⚠️ 而它要让内容躲开自己（`lg:pb-14`），理由同上：一个飘在内容上、
     又不让内容躲开的东西，吃掉的正好是页面最后那一样。
   */
-  const askClass = "fixed inset-x-0 bottom-0 z-30 max-lg:hidden";
+  /* 🔴 `max-lg:hidden` 拿掉了 —— 而上面那一段的理由一个字都没有被推翻。
+       它讲的是「不要在下缘再贴一条」，不是「窄屏上不要有入口」。
+       窄屏那一边现在是一颗**离下缘 72px** 的圆钮（见 work-assistant），
+       避得开那条 64px 的分页列，谁都不贴谁。
+       这个盒子本身在窄屏上是零高度的 —— 里面那颗钮自己 `fixed`。 */
+  const askClass = "fixed inset-x-0 bottom-0 z-30";
 
   return (
     <>

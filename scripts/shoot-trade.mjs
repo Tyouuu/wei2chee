@@ -218,6 +218,16 @@ try {
         await page.goto(`${BASE}/en/portal/${key}`, { waitUntil: "networkidle", timeout: 120000 });
         await page.waitForTimeout(1100);
         await page.addStyleTag({ content: hide });
+        /* `ASK=1`：把那条讲话的线**摊开**再拍。
+           收起来是一条线，摊开来是一张纸 —— 两种样子在三个宽度上各长什么样，
+           是 [任务 318] 那半件事的验收（他要的是「好看跟 user friendly」）。 */
+        if (process.env.ASK) {
+          const shut = page.locator(`[data-work-ai="closed"]:visible, [data-work-ai="closed-narrow"]:visible`);
+          if (await shut.count()) {
+            await shut.first().click().catch(() => {});
+            await page.waitForTimeout(500);
+          }
+        }
         /* 🔴 撑高要分两步 —— 直接量是循环的：那一页是 `min-h-screen`，
            所以「内容有多高」永远等於我设的视窗高。先压矮，量到的才是真的。 */
         await page.setViewportSize({ width: w, height: 520 });

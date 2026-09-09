@@ -8,6 +8,32 @@ import type { Skip } from "@/lib/portal/skip-codes";
 import { sayWhyNot } from "./ai-assistant";
 
 /**
+ * 一颗火花 —— 这一块唯一一个自己的形状。
+ *
+ * 24×24 的画框、`stroke="currentColor"`、1.8 的笔画 —— 跟侧栏那一套
+ * （`rail-icons.tsx`）同一只手画的，所以它自己没有颜色，
+ * 套什么配色就跟着走。收起来的时候它是「这里可以讲话」唯一的记号：
+ * 改之前那一条只有一句小字，而一句小字在画面下缘读起来是一句说明，不是一个入口。
+ */
+function IconSpark({ className = "h-[18px] w-[18px]" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 3.5 13.8 8.2 18.5 10 13.8 11.8 12 16.5 10.2 11.8 5.5 10 10.2 8.2Z" />
+      <path d="M18.4 15.6 19.2 17.8 21.4 18.6 19.2 19.4 18.4 21.6 17.6 19.4 15.4 18.6 17.6 17.8Z" />
+    </svg>
+  );
+}
+
+/**
  * 用讲的做事 —— 在**他的系统**那一页上，不是在改设计那一屏上。
  *
  * ── 他 2026-09-09 问的那一句 ──────────────────────────────────────────────
@@ -200,14 +226,40 @@ export function WorkAssistant({
 
   if (!open) {
     return (
-      <button
-        type="button"
-        data-work-ai="closed"
-        onClick={() => setOpen(true)}
-        className="w-full [background-color:var(--color-surface)] [border-color:var(--color-line)] [border-top-width:1px] [color:var(--color-on-surface-dim)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] text-start"
-      >
-        {t("aiWorkOpen")}
-      </button>
+      <>
+        {/* 宽屏 —— 一条底栏，中间**一个看起来就是输入框的东西**。
+            改之前它是一整条贴边的灰，左边一句小字，右边一大片空白：
+            实拍上它读起来像浏览器的状态列，而这是这个产品的招牌承诺
+            （[任务 318](../../../../docs/founder-tasks.md)）。
+            ⚠️ 位置一个像素都没有动 —— 整页宽、`fixed`、在内容外面，
+            那三样是 system-view 的 `askClass` 两次看图换来的。 */}
+        <div className="max-lg:hidden [background-color:var(--color-surface)] [border-color:var(--color-line)] [border-top-width:1px] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]">
+          <button
+            type="button"
+            data-work-ai="closed"
+            onClick={() => setOpen(true)}
+            className="mx-auto flex w-full max-w-[46rem] items-center gap-2 [background-color:var(--color-canvas)] [border-color:var(--color-line)] [border-radius:var(--radius-control)] [border-width:1px] [color:var(--color-on-surface-dim)] [font-size:var(--text-sm)] [min-height:40px] [padding-inline:var(--pad-control-x)] text-start"
+          >
+            <IconSpark className="h-[16px] w-[16px] shrink-0" />
+            <span className="truncate">{t("aiWorkOpen")}</span>
+          </button>
+        </div>
+
+        {/* 窄屏 —— 一颗浮在那条分页列**上面**的圆钮。
+            改之前窄屏一个字都没画，理由写在 `askClass` 上：
+            两条贴在同一条边上，吃掉的永远是内容最后那一行。**那句话是对的**，
+            所以这里不再多贴一条 —— 一颗离下缘 72px 的圆钮避得开那条 64px 的分页列，
+            而 16 个老板端 app 里放这颗钮的位置就是这里。 */}
+        <button
+          type="button"
+          data-work-ai="closed-narrow"
+          aria-label={t("aiWorkOpen")}
+          onClick={() => setOpen(true)}
+          className="fixed bottom-[4.5rem] end-4 z-30 grid h-14 w-14 place-items-center rounded-full shadow-lg lg:hidden [background-color:var(--color-primary)] [color:var(--color-on-primary)]"
+        >
+          <IconSpark className="h-6 w-6" />
+        </button>
+      </>
     );
   }
 
@@ -215,10 +267,15 @@ export function WorkAssistant({
     <section
       data-work-ai="open"
       aria-label={t("aiWorkTitle")}
-      className="flex flex-col gap-2 [background-color:var(--color-surface)] [border-color:var(--color-line)] [border-top-width:1px] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]"
+      /* 🔴 窄屏上它是一张从下缘长出来的纸，**停在那条分页列上面**（`bottom-16`）——
+         盖住换页那一条，等於在他讲话的时候把出路收走。
+         宽屏上它就是那条底栏自己长高，位置不变。
+         两边共用同一个中线宽度（46rem），所以摊开来跟收起来是同一个东西。 */
+      className="flex flex-col gap-2 [background-color:var(--color-surface)] [border-color:var(--color-line)] [border-top-width:1px] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] max-lg:fixed max-lg:inset-x-0 max-lg:bottom-16 max-lg:z-30 max-lg:[border-radius:var(--radius-md)_var(--radius-md)_0_0] max-lg:shadow-lg"
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="[color:var(--color-on-surface)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+      <div className="mx-auto flex w-full max-w-[46rem] items-center justify-between gap-2">
+        <span className="flex items-center gap-2 [color:var(--color-on-surface)] [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)]">
+          <IconSpark className="h-[16px] w-[16px] shrink-0" />
           {t("aiWorkTitle")}
         </span>
         <button
@@ -233,7 +290,9 @@ export function WorkAssistant({
       {said ? (
         <div
           data-work-ai-said
-          className="flex flex-col gap-1 [color:var(--color-on-surface)] [font-size:var(--text-sm)]"
+          /* 它回的话会长 —— 一段读得完的宽度，而且**自己滚**，
+             不要把底下那个框推出画面。 */
+          className="mx-auto flex w-full max-w-[46rem] flex-col gap-1 overflow-y-auto [color:var(--color-on-surface)] [font-size:var(--text-sm)] [max-height:38vh]"
         >
           {said.map((line, i) => (
             <p key={i}>{line}</p>
@@ -255,10 +314,10 @@ export function WorkAssistant({
         rows={2}
         aria-label={t("aiWorkTitle")}
         placeholder={t("aiWorkPlaceholder")}
-        className="w-full resize-none [background-color:var(--color-canvas)] [border-color:var(--input,var(--color-line))] [border-radius:var(--radius-control)] [border-width:1px] [color:var(--color-on-canvas)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]"
+        className="mx-auto w-full max-w-[46rem] resize-none [background-color:var(--color-canvas)] [border-color:var(--input,var(--color-line))] [border-radius:var(--radius-control)] [border-width:1px] [color:var(--color-on-canvas)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]"
       />
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="mx-auto flex w-full max-w-[46rem] items-center justify-between gap-2">
         <span className="[color:var(--color-on-surface-dim)] [font-size:var(--text-micro)]">
           {t("aiEnterHint")}
         </span>
