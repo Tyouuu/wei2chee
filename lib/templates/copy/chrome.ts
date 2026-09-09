@@ -276,6 +276,8 @@ export type Chrome = {
     /** 收货的人签，不是客人签。见 buyingTerms。 */
     buyingSign: string;
     dayHeading: string;
+    /** 一个月摊开那一块的抬头。见 MonthGrid。 */
+    monthHeading: string;
   };
 
   custom: {
@@ -453,6 +455,7 @@ const EN: Chrome = {
       "Quantities and prices as listed above. Goods are checked against this order on arrival — tell us at once if anything does not match.",
     buyingSign: "Received by",
     dayHeading: "Today",
+    monthHeading: "This month",
   },
 
   custom: {
@@ -620,6 +623,7 @@ const ZH: Chrome = {
       "数量和金额以本单为准。到货时照单点收，数量或规格不对请当场告知。",
     buyingSign: "收货签名",
     dayHeading: "今天",
+    monthHeading: "这个月",
   },
 
   custom: {

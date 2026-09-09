@@ -1077,3 +1077,178 @@ export function ActivitySquares({ label }: { label?: string }) {
     </div>
   );
 }
+
+/**
+ * 一个月摊开 —— `MonthGrid`。
+ *
+ * ── 出处（[重点 7n](../../docs/founder-points.md)：先去看别人怎么做）────────
+ *
+ * 2026-09-10 老板问「他的画面你都全部拿完了吗」，数出来那个模版 24 页我们只
+ * 拍过 15 页。补拍的五页里有一页是月历（`.screenshots/admins/arham-calendar.jpg`），
+ * 逐项量出来是：
+ *
+ *   抬头    月份年份大字在左，底下一行灰的「30 days · 13 events」
+ *   星期     一列表头，**靠右**
+ *   格子     7 栏，日期数字在**右上角**，今天那一个加粗
+ *   一笔     左边名字，**时间靠右**（「Team standup   10a」）
+ *   上下月   前后补齐的那几天用灰的
+ *
+ * ⚠️ **他们那几条黑色的横条我们没有** —— 那是**整天**的事件（生日 · 工作坊），
+ * 而我们每一笔预约都有时间。抄一个我们没有的东西，画出来会是一格永远空的。
+ *
+ * ⚠️ **他们的 ‹ Today › 跟「Month ▾」我们也没有画** —— 这一块是伺服器画的，
+ * 那三颗按下去不会有事情发生，而画一颗按不动的按钮是这个仓库禁得最严的那一条。
+ * 换月份要一个真的动作，那是另一件事，记在任务档里。
+ *
+ * ⚠️ 它答的那一句跟 `DaySchedule` 不一样，所以两块都要在：
+ * 一天摊开答「几点还排得下」，一个月摊开答「**下星期二下午有没有位**」。
+ */
+export function MonthGrid({
+  heading,
+  month,
+  rows = [],
+}: {
+  heading?: string;
+  /** 哪一个月，`YYYY-MM`。空的话用这几笔里最早那一笔的月份。 */
+  month?: string;
+  rows?: {
+    id?: string;
+    date?: string;
+    time?: string;
+    title?: string;
+    who?: string;
+    href?: string;
+  }[];
+}) {
+  const w = useSystemWords();
+  const items = (rows ?? []).filter((r) => (r.date ?? "").trim());
+
+  /* 哪一个月 —— 明说的优先，其次是这几笔里最早那一笔。
+     ⚠️ 不读时钟：这一块是伺服器画的，而一个跟着时钟走的值在伺服器跟
+     浏览器上会算出两个答案（`classes/page.tsx` 那一段栽过一次）。 */
+  const ym =
+    month?.trim() ||
+    items.map((r) => (r.date ?? "").slice(0, 7)).sort()[0] ||
+    "";
+  if (!ym) {
+    return (
+      <section>
+        {heading ? <h2 className={MONTH_HEAD}>{heading}</h2> : null}
+        <p role="status" className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+          {w.emptyToday}
+        </p>
+      </section>
+    );
+  }
+
+  const [y, m] = ym.split("-").map(Number);
+  const first = new Date(Date.UTC(y, m - 1, 1));
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const lead = first.getUTCDay();
+  /* 六列七格 —— 固定 42 格，因为一个月最多跨六个星期，而格子数会变的月历
+     每翻一次就跳一次高度。 */
+  const cells = Array.from({ length: 42 }, (_, i) => {
+    const dayNo = i - lead + 1;
+    const inMonth = dayNo >= 1 && dayNo <= daysInMonth;
+    const d = new Date(Date.UTC(y, m - 1, dayNo));
+    return {
+      inMonth,
+      label: d.getUTCDate(),
+      date: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+        d.getUTCDate(),
+      ).padStart(2, "0")}`,
+    };
+  });
+
+  const byDate = new Map<string, typeof items>();
+  for (const r of items) {
+    const k = (r.date ?? "").slice(0, 10);
+    byDate.set(k, [...(byDate.get(k) ?? []), r]);
+  }
+  for (const [, list] of byDate) list.sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+
+  const title = `${w.months?.[m - 1] ?? ym} ${y}`;
+  const count = (w.monthCount ?? "%d · %e")
+    .replace("%d", String(daysInMonth))
+    .replace("%e", String(items.length));
+
+  return (
+    <section>
+      {heading ? <h2 className={MONTH_HEAD}>{heading}</h2> : null}
+      <div className="mb-[var(--gap-stack)]">
+        <div className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
+          {title}
+        </div>
+        <div className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
+          {count}
+        </div>
+      </div>
+
+      <div
+        className="overflow-hidden [border-color:var(--border-subtle)] [border-radius:var(--radius-md)] [border-width:var(--hairline)]"
+        style={{ borderStyle: "solid" }}
+      >
+        {/* 星期 —— 靠右，跟格子里的日期数字对齐。 */}
+        <div className="grid grid-cols-7 [background:var(--color-canvas)]">
+          {(w.weekdays ?? []).map((d) => (
+            <span
+              key={d}
+              className="px-2 py-1.5 text-right [color:var(--color-paper-dim)] [font-size:var(--text-micro)]"
+            >
+              {d}
+            </span>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7">
+          {cells.map((c, i) => {
+            const list = c.inMonth ? (byDate.get(c.date) ?? []) : [];
+            const shown = list.slice(0, 3);
+            const more = list.length - shown.length;
+            return (
+              <div
+                key={c.date + i}
+                className="min-h-[6.5rem] p-1.5 [border-color:var(--border-subtle)] [border-top-width:var(--hairline)]"
+                style={{
+                  borderTopStyle: "solid",
+                  borderLeftStyle: "solid",
+                  borderLeftWidth: i % 7 === 0 ? "0" : "var(--hairline)",
+                  borderLeftColor: "var(--border-subtle)",
+                }}
+              >
+                <div
+                  className={`text-right [font-size:var(--text-xs)] ${
+                    c.inMonth
+                      ? "[color:var(--color-paper)]"
+                      : "[color:var(--color-paper-dim)] opacity-50"
+                  }`}
+                >
+                  {c.label}
+                </div>
+                {shown.map((r, n) => (
+                  <div
+                    key={r.id ?? `${c.date}-${n}`}
+                    className="mt-1 flex items-baseline gap-1 [font-size:var(--text-micro)]"
+                  >
+                    <span className="min-w-0 flex-1 truncate">{r.title}</span>
+                    <span className="shrink-0 [color:var(--color-paper-dim)]">
+                      {r.time}
+                    </span>
+                  </div>
+                ))}
+                {more > 0 && (
+                  <div className="mt-1 [color:var(--color-paper-dim)] [font-size:var(--text-micro)]">
+                    {(w.monthMore ?? "+%n").replace("%n", String(more))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const MONTH_HEAD =
+  "mb-[var(--gap-stack)] [color:var(--color-paper-dim)] [font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] [letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]";

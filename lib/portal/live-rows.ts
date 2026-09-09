@@ -58,7 +58,13 @@ export type LiveRow = {
    * display string back into a time -- which is how a 「10:00 - Mrs Lee」 row
    * ends up sorted after 「9:30」. Optional, and every other shape leaves it
    * unset. */
-  at?: { time: string; endTime?: string };
+  /** 几点到几点，**还有哪一天**。
+   *
+   *  🔴 `date` 是 2026-09-10 加的，为了月历那一块（一个月摊开）。
+   *  在这之前只有时间 —— 而一个只知道「10:00」的格子放不进任何一天。
+   *  ⚠️ 它是**马来西亚那一天**，跟 `time` 同一把钟：伺服器跑 UTC，
+   *  一笔马来西亚时间早上八点的预约，照 UTC 算是前一天。 */
+  at?: { time: string; endTime?: string; date?: string };
   /* 谁做的 —— 只有预约那一个形状给得出来。
    *
    * 🔴 它不塞进 `secondary`：一天摊开、一个人一栏的时候，那一栏是**分栏的
@@ -626,6 +632,12 @@ export function rowsFromAppointments(
     },
   }[lang];
 
+  /* 哪一天 —— 同一把马来西亚的钟。`en-CA` 出来就是 YYYY-MM-DD。 */
+  const day = (iso: string): string =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(
+      new Date(iso),
+    );
+
   const clock = (iso: string): string =>
     new Intl.DateTimeFormat("en-GB", {
       timeZone: "Asia/Kuala_Lumpur",
@@ -675,7 +687,7 @@ export function rowsFromAppointments(
 
     return {
       ...(href && r.id ? { href: href(r.id) } : {}),
-      at: { time: clock(r.starts_at), endTime: clock(r.ends_at) },
+      at: { time: clock(r.starts_at), endTime: clock(r.ends_at), date: day(r.starts_at) },
       ...(lane ? { who: lane } : {}),
       ...(tag ? { where: tag } : {}),
       /* What it is, then who it is for. A block has no customer, so it leads
@@ -1227,7 +1239,7 @@ export async function withFreshRows(
    are not four blocks with four data sources -- they are four answers to one
    question, and they have to become real together or not at all.
    ────────────────────────────────────────────────────────────────────────── */
-const SAME_LIST = new Set(["ShelfList", "TaskBoard", "RankList", "ShareChart", "DaySchedule"]);
+const SAME_LIST = new Set(["ShelfList", "TaskBoard", "RankList", "ShareChart", "DaySchedule", "MonthGrid"]);
 
 function fill(
   type: string,
@@ -1293,6 +1305,25 @@ function fill(
         /* 这一单自己那一页。工程那一页的表格拿掉了，所以卡片是唯一的入口。 */
         href: r.href,
       })),
+    };
+  }
+
+  /* 一个月摊开 —— 跟一天摊开读的是**同一批**预约，只是摆法不同。
+     ⚠️ 没有时刻的那几笔照样放进去（月历上一格只要日期就画得出来），
+     而一天摊开那一支会把它们滤掉 —— 两块的判断不一样，是因为
+     两块问的问题不一样。 */
+  if (type === "MonthGrid") {
+    return {
+      rows: rows
+        .filter((r) => r.at?.date)
+        .slice(0, 200)
+        .map((r) => ({
+          date: r.at?.date ?? "",
+          time: r.at?.time ?? "",
+          title: r.primary,
+          ...(r.who ? { who: r.who } : {}),
+          ...(r.href ? { href: r.href } : {}),
+        })),
     };
   }
 
@@ -1378,7 +1409,7 @@ function fill(
  *  be shown a memory of it. */
 function emptied(type: string): Record<string, unknown> {
   if (type === "ShelfList") return { items: [] };
-  if (type === "DaySchedule") return { rows: [] };
+  if (type === "DaySchedule" || type === "MonthGrid") return { rows: [] };
   if (type === "TaskBoard") return { cards: [] };
   if (type === "RankList") return { rows: [] };
   if (type === "ShareChart") return { slices: [] };

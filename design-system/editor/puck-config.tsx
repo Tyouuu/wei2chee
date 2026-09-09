@@ -66,7 +66,7 @@ import { WorkflowStrip, type WorkflowStage } from "@/design-system/components/wo
 // taken, what was left on the shelf, and why the count was never the point.
 import {
   InfoRows,
-  DaySchedule,
+  DaySchedule, MonthGrid,
   DateProgress,
   PeopleBoard,
   FaceRow,
@@ -707,6 +707,18 @@ type Components = {
     options: { label: string }[];
     size?: "default" | "sm";
   };
+  MonthGrid: {
+    heading?: string;
+    month?: string;
+    rows: {
+      id?: string;
+      date?: string;
+      time?: string;
+      title?: string;
+      who?: string;
+      href?: string;
+    }[];
+  };
   RailNav: {
     variant?: RailVariant;
     actionLabel?: string;
@@ -891,6 +903,31 @@ export const puckConfig: Config<Components> = {
       },
       render: ({ heading, rows, variant, framed }) => (
         <InfoRows heading={heading} rows={rows} variant={variant} framed={framed} />
+      ),
+    },
+    /* 一个月摊开 —— 见 trade-blocks.tsx 的 MonthGrid 档头（照他们的月历量的）。
+       ⚠️ 它跟排班表读同一批预约，两块都要在：一天答「几点还排得下」，
+       一个月答「下星期二下午有没有位」。 */
+    MonthGrid: {
+      label: "月历",
+      fields: {
+        heading: { label: "标题", type: "text" },
+        month: { label: "哪一个月（YYYY-MM）", type: "text" },
+        rows: {
+          label: "这个月的安排",
+          type: "array",
+          arrayFields: {
+            date: { label: "哪一天", type: "text" },
+            time: { label: "几点", type: "text" },
+            title: { label: "做什么", type: "text" },
+          },
+          defaultItemProps: { date: "", time: "09:00", title: "安排" },
+          getItemSummary: (item) => `${item.date || ""} ${item.title || ""}`.trim() || "一项",
+        },
+      },
+      defaultProps: { heading: "这个月", rows: [] },
+      render: ({ heading, month, rows }) => (
+        <MonthGrid heading={heading} month={month} rows={rows} />
       ),
     },
     DaySchedule: {

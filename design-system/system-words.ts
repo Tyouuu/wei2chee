@@ -103,6 +103,11 @@ export type SystemWords = {
   tableFoot: (shown: number, total: number) => string;
   empty: string;
   emptyToday: string;
+  /* 一个月摊开那一块。`monthCount` 里 %d 是几天、%e 是几笔。
+     ⚠️ 参考那一页写的是「30 days · 13 events」—— 两个数字都要，
+     因为一个月有几笔，看的人心里没有底。 */
+  monthCount: string;
+  monthMore: string;
   /* 一天摊开的时候，还没安排的那一格。
      ⚠️ 那一栏可能是**人**也可能是**房间**（一间 medi spa 订的是房间），
      所以这句话对两种都要成立 —— 「还没派人」在一条房间的轴上是错的。
@@ -248,6 +253,8 @@ const EN: SystemWords = {
     shown === total ? `Showing all ${total}` : `Showing ${shown} of ${total}`,
   empty: "Nothing here yet",
   emptyToday: "Nothing booked today",
+  monthCount: "%d days · %e booked",
+  monthMore: "+%n more",
   dayUnassigned: "Not assigned",
   emptyPeople: "Nobody added yet",
   start: "Start",
@@ -385,6 +392,8 @@ const ZH: SystemWords = {
       : `显示 ${shown} 笔，一共 ${total} 笔`,
   empty: "还没有资料",
   emptyToday: "今天没有安排",
+  monthCount: "%d 天 · %e 笔",
+  monthMore: "还有 %n 笔",
   dayUnassigned: "还没安排",
   emptyPeople: "还没有加人",
   start: "开始",
