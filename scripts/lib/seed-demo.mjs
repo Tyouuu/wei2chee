@@ -31,6 +31,24 @@ export function moduleLabels() {
 }
 
 /**
+ * 一个行业开箱是哪几页 —— **从产品自己那一份读出来**，不是手抄。
+ *
+ * 手抄一份的下场写在这个档案的档头上：那一份会漂，而漂的那一天没有人会红。
+ * 而这一份特别会漂 —— 2026-09-09 才刚给八个行业各加一页开销、
+ * 给美容加了师傅跟库存（[任务 306](../../docs/founder-tasks.md)）。
+ */
+export function modulesForIndustry(slug) {
+  const src = readFileSync("lib/portal/module-catalog.ts", "utf8");
+  const block = src.slice(src.indexOf("DEFAULT_MODULES_FOR_INDUSTRY"));
+  /* 用 indexOf 切，不用组出来的正则 —— 这台机器的壳会吃掉一个反斜线，
+     而一个被吃掉的跳脱，在这里长得像「目录里没有这一行」。 */
+  const at = block.indexOf("  " + slug + ": [");
+  if (at < 0) throw new Error("目录里没有这一行：" + slug);
+  const list = block.slice(at, block.indexOf("]", at));
+  return [...list.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]);
+}
+
+/**
  * 十八页全部开出来。
  *
  * ⚠️ **不传 key 当标题** —— 让它用模块自己的名字，那才是一个真的客户拿到的。
@@ -71,7 +89,7 @@ export async function openAllPages(api, { quiet = false } = {}) {
  * 「示范资料不准编人名跟数字冒充他的」；这里是一个用完就删的帐号，
  * 但道具照样照那条走 —— 一张图上出现一个编出来的人名，他会拿去讲话。
  */
-const SHOWROOM = {
+export const SHOWROOM = {
   /* 🔴 十二个，不是五个（2026-09-05）。
      `align:pages` 拿这一份跟参考那十五张比，而参考那几页**一屏满满的**
      （他们的名册十一行）。我们种五行，於是十页里五页报「底下 26–41% 是空的」
@@ -105,6 +123,8 @@ const SHOWROOM = {
     "In progress", "To follow up", "New", "In progress", "To follow up", "New",
     "In progress", "New", "To follow up", "In progress", "New", "To follow up",
   ],
+  /* 预约那一页上那几个字。装修的预约是去工地看一次，不是一个服务名。 */
+  services: ["Site measurement", "Handover walkthrough", "Defect check", "Colour selection", "Final inspection"],
   jobs: [
     "Taman Desa 3-room repaint", "Bangsar kitchen fitout", "Puchong shoplot rewire",
     "Cheras bathroom retile", "Setapak office partition", "Kepong terrace roofing",
@@ -187,7 +207,15 @@ export async function seedEveryShape(
    * @param showroom `true` 时用真的生意名字，不加记号。⚠️ 尺子不可以开它：
    *   记号正是它分辨「他的」跟「示范的」唯一的方法。
    */
-  { quiet = false, rows = 1, showroom = false } = {},
+  /**
+   * @param props 这门生意的道具。**预设是装修那一份**（SHOWROOM），
+   *   所以既有的呼叫端一个字都不用改。
+   *
+   *   🔴 它存在的理由是[重点 22d]：一间沙龙的货架上摆着水泥、
+   *   预约写着「Taman Desa 三房翻新」——**产品一个字都没错，而他看到的是坏的**，
+   *   他 2026-09-06 就为这件事问过一次「這個對嗎 怎麼看起來怪怪的」。
+   */
+  { quiet = false, rows = 1, showroom = false, props = SHOWROOM } = {},
 ) {
   const P = projectId;
   const seeded = new Set();
@@ -213,16 +241,16 @@ export async function seedEveryShape(
   /* 名字：尺子那一边永远带记号（那是它分辨「他的」唯一的方法），
      拍照那一边用真的生意名字。 */
   const N = Math.max(1, rows);
-  const party = (i) => (showroom ? SHOWROOM.parties[i % SHOWROOM.parties.length] : `${mark} Customer`);
-  const supplier = (i) => (showroom ? SHOWROOM.suppliers[i % SHOWROOM.suppliers.length] : `${mark} Supplier`);
-  const crewName = (i) => (showroom ? SHOWROOM.crew[i % SHOWROOM.crew.length] : `${mark} Crew`);
-  const job = (i, key) => (showroom ? SHOWROOM.jobs[i % SHOWROOM.jobs.length] : `${mark} ${key}`);
-  const amount = (i) => (showroom ? SHOWROOM.amounts[i % SHOWROOM.amounts.length] : 4_850_00);
+  const party = (i) => (showroom ? props.parties[i % props.parties.length] : `${mark} Customer`);
+  const supplier = (i) => (showroom ? props.suppliers[i % props.suppliers.length] : `${mark} Supplier`);
+  const crewName = (i) => (showroom ? props.crew[i % props.crew.length] : `${mark} Crew`);
+  const job = (i, key) => (showroom ? props.jobs[i % props.jobs.length] : `${mark} ${key}`);
+  const amount = (i) => (showroom ? props.amounts[i % props.amounts.length] : 4_850_00);
   /* 一页一串 —— 见 SHOWROOM.paid 上面那一段。 */
   const SERIES = { payments: "paid", expenses: "spent", commission: "earned" };
   const paid = (i, key) => {
     if (!showroom) return 1_234_00;
-    const list = SHOWROOM[SERIES[key] ?? "paid"];
+    const list = props[SERIES[key] ?? "paid"];
     return list[i % list.length];
   };
 
@@ -235,9 +263,9 @@ export async function seedEveryShape(
       in_project_id: P, in_module_key: "customers", in_name: party(i),
       ...(showroom
         ? {
-            in_phone: SHOWROOM.phones[i % SHOWROOM.phones.length],
-            in_region: SHOWROOM.regions[i % SHOWROOM.regions.length],
-            in_status: SHOWROOM.states[i % SHOWROOM.states.length],
+            in_phone: props.phones[i % props.phones.length],
+            in_region: props.regions[i % props.regions.length],
+            in_status: props.states[i % props.states.length],
           }
         : {}),
     });
@@ -248,8 +276,8 @@ export async function seedEveryShape(
       in_project_id: P, in_module_key: "suppliers", in_name: supplier(i),
       ...(showroom
         ? {
-            in_phone: SHOWROOM.phones[(i + 2) % SHOWROOM.phones.length],
-            in_region: SHOWROOM.regions[(i + 1) % SHOWROOM.regions.length],
+            in_phone: props.phones[(i + 2) % props.phones.length],
+            in_region: props.regions[(i + 1) % props.regions.length],
           }
         : {}),
     }));
@@ -258,7 +286,7 @@ export async function seedEveryShape(
   for (let i = 0; i < Math.min(N, 3); i++) {
     const { data } = await api.rpc("add_directory_entry", {
       in_project_id: P, in_module_key: "staff", in_name: crewName(i),
-      ...(showroom ? { in_phone: SHOWROOM.phones[(i + 1) % SHOWROOM.phones.length] } : {}),
+      ...(showroom ? { in_phone: props.phones[(i + 1) % props.phones.length] } : {}),
     });
     if (data?.id) { crewIds.push(data.id); seeded.add("staff"); }
   }
@@ -274,7 +302,7 @@ export async function seedEveryShape(
         in_party: key === "purchases" ? supplier(i) : party(i),
         in_party_id: key === "purchases" ? null : custIds[i % Math.max(custIds.length, 1)] ?? null,
         in_amount_cents: amount(i),
-          ...(showroom ? { in_stage: SHOWROOM.stages[key][i % SHOWROOM.stages[key].length] } : {}),
+          ...(showroom ? { in_stage: props.stages[key][i % props.stages[key].length] } : {}),
         });
         if (key === "orders" && res.data?.id) orderIds.push(res.data.id);
         return res;
@@ -315,13 +343,13 @@ export async function seedEveryShape(
      於是拍出来每一件都写着「0 · Out of stock」—— 一张写着零的货架，
      判不了「一件东西一张卡」那个设计对不对。 */
   const itemIds = [];
-  for (let i = 0; i < (showroom ? SHOWROOM.items.length : 1); i++) {
-    const [name, unit, price] = showroom ? SHOWROOM.items[i] : [`${mark} Cement`, "bags", 1850];
+  for (let i = 0; i < (showroom ? props.items.length : 1); i++) {
+    const [name, unit, price] = showroom ? props.items[i] : [`${mark} Cement`, "bags", 1850];
     const { data } = await api.rpc("add_catalog_item", {
       in_project_id: P, in_module_key: "inventory",
       in_name: name, in_unit: unit, in_price_cents: price,
     });
-    if (data?.id) { itemIds.push([data.id, showroom ? SHOWROOM.items[i][3] : 0]); seeded.add("inventory"); }
+    if (data?.id) { itemIds.push([data.id, showroom ? props.items[i][3] : 0]); seeded.add("inventory"); }
   }
   for (const [id, qty] of itemIds) {
     if (!qty) continue;
@@ -376,7 +404,14 @@ export async function seedEveryShape(
       in_starts_at: at.toISOString(),
       in_ends_at: new Date(at.getTime() + 3600e3).toISOString(),
       in_party: party(i),
-      in_service: showroom ? ["Site measurement", "Handover walkthrough", "Defect check", "Colour selection", "Final inspection"][i % 5] : `${mark} service`,
+      /* 🔴 这几个字本来是**写死在这一行里的装修工序**（Site measurement ·
+         Defect check …）。一间沙龙的行事历因此写着「缺陷检查」——
+         产品一个字都没错，而他看到的是坏的（[重点 22d]）。 */
+      in_service: showroom ? props.services[i % props.services.length] : `${mark} service`,
+      /* 🔴 派人 —— 少了它那一块永远画成一串行。有人才分得了栏，
+         而「一天 × 一个师傅一栏」正是 Fresha 跟 Booksy 那两家最大的
+         沙龙软件唯一的画法（[任务 304](../../docs/founder-tasks.md)）。 */
+      ...(showroom && crewIds.length ? { in_staff_id: crewIds[i % crewIds.length] } : {}),
     }));
   }
 
