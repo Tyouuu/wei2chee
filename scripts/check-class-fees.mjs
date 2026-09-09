@@ -366,6 +366,63 @@ try {
     (await say(C, "class_fees_of", { in_group_id: grp.id })).length === 4,
     "老板自己也读不到");
 
+  /* ── ⑫ 🔴 报名费 · 教材费 —— 一次过的那几笔 ──────────────────
+     2026-09-10 的深度研究把「报名费 · 押金 · 教材费」列成补习那边第三件。
+     而量出来三件里**两件已经做得到**：
+
+       · 押金 —— `financial_position` 本来就把它分开算（现金 100 ·
+         **其中押金 100**），收入是零。一笔没有分摊的钱就是他欠家长的钱
+       · 教材费 · 报名费 —— **跟学费一模一样的那一按**，只是那一轮不叫「月份」。
+         钥匙是 `md5(班 · 那一轮 · 学生)`，而**「那一轮」是他自己的一串字** ——
+         所以 `2026-教材` 跟 `2026-09` 一样管用，按第二下照样不多开
+
+     🔴 **所以这一节不是新功能，是把一个假设变成一个读数**
+     （[重点 34](../docs/founder-points.md)：先问手写簿上有没有那一格）。 */
+  console.log("\n⑫ 🔴 教材费：同一按，不同的那一轮");
+  /* 🔴 **这一段第一次跑就掀出一件真的**：那时候没有 `in_use_own_fee`，
+     於是一个学费九折的学生，教材费被开成**他那个九折的数字** ——
+     一个没有人讲过的价钱。20260910160000 给了那个开关，预设保持旧行为。
+
+     ⚠️ 而这里的道具是前面几节留下来的：四个在班的学生里，
+     一个讲过「不收钱」（`fee_cents = 0`），一个已经走了。 */
+  const books = (await say(C, "bill_class", {
+    in_group_id: grp.id, in_module_key: "orders", in_amount_cents: 8000,
+    in_title: "教材费 · Add Maths", in_period: "2026-教材",
+    in_use_own_fee: false,
+  }))[0];
+  check("🔴 一按开给全班四个（大家一样价，不看各自的学费）",
+    books?.made === 4, JSON.stringify(books));
+  check("而那一轮叫他自己那串字", books?.period === "2026-教材", String(books?.period));
+  check("🔴 一共 RM 320 —— 四个人乘 80，一个折扣都没套上去",
+    Number(books?.total_cents) === 32000, String(books?.total_cents));
+  check("🔴 而「不收钱」那一个照样要买课本（那是她的决定，不是我们的）",
+    books?.free === 0, String(books?.free));
+
+  /* 🔴 而同一按不给那个开关的时候，学生自己的价照旧管用 —— 那是月费的样子。 */
+  const own = (await say(C, "bill_class", {
+    in_group_id: grp.id, in_module_key: "orders", in_amount_cents: 8000,
+    in_title: "补习费 · 十月", in_period: "2026-10",
+  }))[0];
+  check(
+    "🔴 不给开关 → 月费那一轮照旧跟着学生走（一个免费，所以只开三张）",
+    own?.made === 3 && own?.free === 1,
+    JSON.stringify(own),
+  );
+
+  const twice = (await say(C, "bill_class", {
+    in_group_id: grp.id, in_module_key: "orders", in_amount_cents: 8000,
+    in_title: "教材费 · Add Maths", in_period: "2026-教材",
+    in_use_own_fee: false,
+  }))[0];
+  check("🔴 按第二下一张都不多开", twice?.made === 0 && twice?.again === 4,
+    JSON.stringify(twice));
+  const sept = await say(C, "class_fees_due", { in_group_id: grp.id, in_period: period });
+  check(
+    "🔴 而那一个月的学费一分都没有被碰到（每一轮各算各的）",
+    (sept ?? []).length === 4,
+    JSON.stringify((sept ?? []).map((r) => r.amount_cents)),
+  );
+
   /* ── ⑩ 别人家 ─────────────────────────────────────────────── */
   console.log("\n⑧ 别人家");
   const other = await person("other");
