@@ -560,7 +560,7 @@
         "nothingToRemember": "It did not say what to remember",
         "couldNotRemember": "That could not be kept",
         "replyDrafted": "Written, NOT sent — open it, read it, and press send yourself: {link}",
-        "classBilled": "{made} bills raised for {period}, {total} in total \u2014 {again} were already done and {free} pay nothing.",
+        "classBilled": "{made} bills raised for {period}, {total} in total — {again} were already done and {free} pay nothing.",
         "noStepSaid": "It did not say what to do",
         "noLineSaid": "It did not say what that line is for",
         "noSuchEnquiry": "There is no enquiry with that number",
@@ -761,7 +761,8 @@
       "moreUnder": "More under this page",
       "tables": "Tables",
       "kitchen": "Kitchen",
-      "consent": "Consent forms"
+      "consent": "Consent forms",
+      "treatments": "Treatment records"
     },
     "find": {
       "title": "Find anything",
@@ -1712,6 +1713,32 @@
       "waiting": "{n} waiting",
       "needName": "Say what this form is for.",
       "needBody": "Write what she is agreeing to."
+    },
+    "treatments": {
+      "title": "Treatment records",
+      "lede": "What was done for her, and whether she has signed.",
+      "who": "Clients",
+      "find": "Find a client...",
+      "noGuests": "No clients yet.",
+      "pick": "Pick a client on the left.",
+      "consentTitle": "Consent",
+      "consentNone": "Nothing sent to her yet.",
+      "signed": "Signed",
+      "waiting": "Not signed yet",
+      "notesTitle": "What was done",
+      "noNotes": "Nothing recorded for her yet.",
+      "add": "Record a treatment",
+      "what": "What was done",
+      "area": "Area",
+      "note": "Notes",
+      "byWho": "Done by",
+      "nobody": "Not set",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "needWhat": "Say what was done.",
+      "failed": "That did not save. Try again.",
+      "used": "Used"
     }
   },
   "explainer": {

@@ -168,6 +168,7 @@ PAGES = [
     ("kitchen", "/en/portal/kitchen"),
     # 同意书那几份范本（2026-09-09）—— 同一条（任务 177）。
     ("consent forms", "/en/portal/consent"),
+    ("treatment records", "/en/portal/treatments"),
     ("legal", "/en/legal/terms"),
 ]
 

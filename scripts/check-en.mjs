@@ -92,6 +92,7 @@ const PAGES = [
      ⚠️ 她自己那一页（/c/<门牌>）加不进来：它要一个真的门牌，而这把尺
      走的是示范帐号。**它的家是 `shoot:consent`**，那一支自己种一份再打开。 */
   ["consent forms", "/en/portal/consent", "customer"],
+  ["treatment records", "/en/portal/treatments", "customer"],
   /* 改这一单. Its URL carries a RECORD id, so the same trap as
      console-customer one level deeper -- and it carries its own hard-coded
      copy block (地址 · 公司注册号 · 冲正 · 收起来), which is precisely the

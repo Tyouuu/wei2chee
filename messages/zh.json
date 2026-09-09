@@ -761,7 +761,8 @@
       "moreUnder": "这一页底下还有",
       "tables": "餐台",
       "kitchen": "厨房",
-      "consent": "同意书"
+      "consent": "同意书",
+      "treatments": "疗程记录"
     },
     "find": {
       "title": "找东西",
@@ -1712,6 +1713,32 @@
       "waiting": "{n} 份在等",
       "needName": "先写这一份是给什么用的。",
       "needBody": "先写她要同意的那一段字。"
+    },
+    "treatments": {
+      "title": "疗程记录",
+      "lede": "上一次帮她做了什么，以及她签了没有。",
+      "who": "客人",
+      "find": "找一个客人…",
+      "noGuests": "还没有客人。",
+      "pick": "在左边挑一个客人。",
+      "consentTitle": "同意书",
+      "consentNone": "还没发给她。",
+      "signed": "已签",
+      "waiting": "还没签",
+      "notesTitle": "做过什么",
+      "noNotes": "还没有记过她的。",
+      "add": "记一次疗程",
+      "what": "做了什么",
+      "area": "部位",
+      "note": "备注",
+      "byWho": "谁做的",
+      "nobody": "还没指定",
+      "save": "保存",
+      "saving": "保存中…",
+      "cancel": "取消",
+      "needWhat": "写一句做了什么。",
+      "failed": "没有保存成功，再试一次。",
+      "used": "用了"
     }
   },
   "explainer": {

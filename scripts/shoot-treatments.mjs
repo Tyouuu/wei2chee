@@ -1,240 +1,204 @@
 /**
- * 她做过什么 —— 真的登入、真的传一张照片、真的用眼睛看一次。
+ * 疗程记录那一页，用眼睛看一次 —— 种真的资料，三个宽度各拍一张。
  *
- *   npm run shoot:treatments
+ * ── 为什么（[重点 7l](../docs/founder-points.md)）──────────────────────────
  *
- * 🔴 资料库那一层 `check:treatments` 已经量过 41 条。这一支量的是**另一件**：
- * 那几支函式到不到得了她眼前（[重点 7l](../docs/founder-points.md)：
- * 数字全绿而画面是坏的，这个仓库发生过十几次）。
+ * 那一页的底下那一层十一节全绿（`walk:medispa`），而**没有人看过它长什么样**。
+ * 数字全绿而画面是坏的，这个仓库发生过十几次。
  *
- * ⚠️ 而它走的是**整条线**，不是只按那一支 RPC：
- * 上传到私有的桶 → 挂在那一次疗程上 → 页面把网址签出来 → 图真的画出来。
- * 少了最后两段，一张挂得上去而画不出来的照片跟没有一样。
+ * 它种的是一个真的 medi spa：一个客人、一份同意书发出去、两笔疗程 ——
+ * 因为一页空的画面证明不了它排得对不对（[任务 142](../docs/founder-tasks.md) 那一条）。
+ *
+ *     node scripts/shoot-treatments.mjs
  */
-import { readFileSync, mkdirSync } from "node:fs";
-import { createClient } from "@supabase/supabase-js";
 import { chromium } from "playwright";
+import { createClient } from "@supabase/supabase-js";
 import sharp from "sharp";
-import { dropThrowawayOnExit, dropThrowaway } from "./lib/throwaway.mjs";
+import { readFileSync, mkdirSync, existsSync } from "node:fs";
+import { dropThrowaway, dropThrowawayOnExit } from "./lib/throwaway.mjs";
+import { openAllPages } from "./lib/seed-demo.mjs";
 
 const env = Object.fromEntries(
-  readFileSync(new URL("../.env.local", import.meta.url), "utf8")
+  readFileSync(".env.local", "utf8")
+    .replace(/\r/g, "")
     .split("\n")
     .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
     .map((l) => {
       const i = l.indexOf("=");
-      return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^["']|["']$/g, "")];
+      return [l.slice(0, i), l.slice(i + 1).trim().replace(/^["']|["']$/g, "")];
     }),
 );
-const URL_ = env.NEXT_PUBLIC_SUPABASE_URL;
-const ANON = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const SERVICE = env.SUPABASE_SERVICE_ROLE_KEY;
-const admin = createClient(URL_, SERVICE, { auth: { persistSession: false } });
 
+const BASE = process.env.BASE ?? "http://localhost:3000";
 const OUT = ".screenshots/treatments";
 mkdirSync(OUT, { recursive: true });
+const EMAIL = `treat-${Date.now()}@formae.test`;
+const PASSWORD = `Treat-${Date.now()}-x!`;
 
-let pass = 0;
-const bad = [];
-const check = (what, ok, saw) => {
-  if (ok) { pass++; console.log(`  PASS  ${what}`); }
-  else { bad.push(what); console.log(`  FAIL  ${what}${saw === undefined ? "" : ` — ${saw}`}`); }
-};
+const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false },
+});
+const api = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+  auth: { persistSession: false },
+});
 
-/* 🔴 一张**真的**画得出来的 jpeg。
-   第一版用一串手抄的 base64 —— 浏览器解不开，两张图 naturalWidth 都是 0，
-   而画面上那两个灰方块跟一条签坏的网址长得一模一样。
-   `sharp` 本来就在依赖里，让它产生一张，不要自己抄。 */
-const JPEG = await sharp({
-  create: { width: 240, height: 240, channels: 3, background: { r: 214, g: 196, b: 186 } },
-}).jpeg().toBuffer();
-
-const stamp = Date.now();
-let ownerId = null;
-let browser = null;
-dropThrowawayOnExit(admin, () => ownerId);
-
-try {
-  /* ── 台面：一间 medi spa ─────────────────────────────────────────────── */
-  const { data: ind } = await admin
-    .from("industries").select("id").eq("slug", "beauty").single();
-  const { data: lead } = await admin
-    .from("leads").insert({ industry_id: ind.id, language: "en", answers: {} })
-    .select("id").single();
-
-  const email = `treatshot-${stamp}@formae.test`;
-  const password = `Ts-${stamp}-x!`;
-  const { data: made, error: mkErr } = await admin.auth.admin.createUser({
-    email, password, email_confirm: true, user_metadata: { lead_id: lead.id },
-  });
-  if (mkErr) throw new Error(`createUser: ${mkErr.message}`);
-  ownerId = made.user.id;
-
-  const { data: proj } = await admin
-    .from("projects").select("id").eq("account_id", ownerId).single();
-  const P = proj.id;
-  await admin.from("projects").update({ business_name: "Lumiere Medi Spa" }).eq("id", P);
-
-  const c = createClient(URL_, ANON, { auth: { persistSession: false } });
-  await c.auth.signInWithPassword({ email, password });
-
-  const say = async (fn, args) => {
-    const { data, error } = await c.rpc(fn, args);
-    if (error) throw new Error(`${fn}: ${error.message}`);
-    return data;
-  };
-
-  const client = await say("add_directory_entry", {
-    in_project_id: P, in_module_key: "customers", in_name: "Ms Lim",
-  });
-  const CLIENT = client?.id ?? client;
-  const amy = await say("add_directory_entry", {
-    in_project_id: P, in_module_key: "staff", in_name: "Amy",
-  });
-
-  const item = await say("add_catalog_item", {
-    in_project_id: P, in_module_key: "inventory",
-    in_name: "Botox 100u", in_unit: "unit",
-  });
-  const lot = await say("add_stock_batch", {
-    in_item_id: item.id, in_code: "BX-2411", in_expiry_on: "2027-03-31",
-  });
-  await say("move_stock", {
-    in_item_id: item.id, in_direction: "in", in_qty: 300,
-    in_reason: "opening", in_batch_id: lot.id,
-  });
-
-  /* 两次疗程 —— 一段一笔的历史，不是一笔。 */
-  const older = await say("add_treatment_note", {
-    in_party_id: CLIENT, in_what: "Hydrafacial", in_area: "full face",
-    in_staff_id: amy?.id ?? amy,
-    in_done_on: new Date(Date.now() - 86400e3 * 40).toISOString().slice(0, 10),
-  });
-  const note = await say("add_treatment_note", {
-    in_party_id: CLIENT, in_what: "Botox", in_area: "glabella",
-    in_staff_id: amy?.id ?? amy, in_note: "Slightly conservative on the first pass.",
-  });
-  await say("add_treatment_product", {
-    in_note_id: note.id, in_item_id: item.id, in_qty: 20,
-  });
-
-  /* 🔴 真的传两张进私有的桶。 */
-  for (const [tail, stage, may] of [["before", "before", false], ["after", "after", true]]) {
-    const path = `${P}/${note.id}/${tail}.jpg`;
-    const { error: upErr } = await c.storage
-      .from("job-photos").upload(path, JPEG, { contentType: "image/jpeg", upsert: true });
-    if (upErr) throw new Error(`upload ${tail}: ${upErr.message}`);
-    await say("add_treatment_photo", {
-      in_note_id: note.id, in_path: path, in_stage: stage, in_may_show: may,
-    });
-  }
-
-  /* ── 打开那一页 ──────────────────────────────────────────────────────── */
-  browser = await chromium.launch();
-  for (const [w, h, tag] of [[1400, 950, "1400"], [390, 844, "390"]]) {
-    const page = await browser.newPage({
-      viewport: { width: w, height: h }, deviceScaleFactor: 2,
-    });
-    await page.goto("http://localhost:3000/en/login", {
-      waitUntil: "domcontentloaded", timeout: 90000,
-    });
-    await page.waitForSelector("input[type=email]", { timeout: 60000 });
-    await page.fill("input[type=email]", email);
-    await page.fill("input[type=password]", password);
-    await page.click("button[type=submit]");
-    await page.waitForURL(/\/portal/, { timeout: 240000 });
-
-    await page.goto(`http://localhost:3000/en/portal/customers/${CLIENT}`, {
-      waitUntil: "domcontentloaded", timeout: 120000,
-    });
-    await page.waitForSelector("text=What she has had done", { timeout: 90000 });
-    await page.addStyleTag({ content: "nextjs-portal{display:none!important}" });
-
-    const body = await page.evaluate(() => document.body.innerText);
-    if (tag === "1400") {
-      check("那一段真的画出来了", body.includes("What she has had done"));
-      check("两次都在，上一次的排在最上面",
-        body.indexOf("Botox") < body.indexOf("Hydrafacial"),
-        `${body.indexOf("Botox")} / ${body.indexOf("Hydrafacial")}`);
-      check("讲得出用了多少", /Used\s+Botox 100u — 20 unit/.test(body), body.match(/Used[^\n]*/)?.[0]);
-      check("🔴 讲得出哪一批 —— 她被问的时候答得出来",
-        body.includes("BX-2411"), body.match(/Batch[^\n]*/)?.[0]);
-      check("讲得出谁做的", body.includes("By Amy"));
-      /* 🔴 看图看出来的：正上方写着「还没有来过」，而底下是她两次疗程。
-         同一屏两句话互相打架，比两者都糟（[任务 80]）。 */
-      check(
-        "🔴 而正上方那一段不再写「还没有来过」",
-        !body.includes("Nothing yet"),
-        body.split("\n").filter((l) => l.includes("Nothing")).join(" | "),
-      );
-      check("🔴 那一张不给看的，画面上讲了出来", body.includes("Stays in the record"));
-      check("而给看的那一张不一样", body.includes("She agreed this may be shown"));
-
-      /* 🔴 图真的画出来了 —— 网址是签出来的，签错了就是两个破图，
-         而画面上跟「还没传照片」长得一模一样。
-
-         ⚠️ 等的是 `src` 不是 `currentSrc`：一张还没开始载的图 `currentSrc`
-         是空字串，於是那个筛出来是**空集合**，而 `every()` 对空集合是 true
-         —— 一把在等空集合的尺，跟一把等到了的尺长得一模一样。 */
-      await page.waitForFunction(
-        () => {
-          const xs = [...document.querySelectorAll('img[src*="job-photos"]')];
-          return xs.length > 0 && xs.every((i) => i.complete && i.naturalWidth > 0);
-        },
-        undefined,
-        { timeout: 30000 },
-      ).catch(() => {});
-      const drawn = await page.evaluate(() =>
-        [...document.querySelectorAll('img[src*="job-photos"]')].map((i) => i.naturalWidth));
-      check("🔴 两张照片真的画出来了（签出来的网址是好的）",
-        drawn.length === 2 && drawn.every((n) => n > 0), JSON.stringify(drawn));
-    }
-
-    /* 🔴 他 2026-09-09 讲「太长了吧」—— 所以量它。
-       参考那一页把宽度用掉了，我们本来把十五段叠在一条 450px 的窄栏里。 */
-    const tall = await page.evaluate(() => document.body.scrollHeight);
-    console.log(`    ${tag} 整页高：${tall}px`);
-
-    const wide = await page.evaluate(() =>
-      document.documentElement.scrollWidth > window.innerWidth + 1);
-    check(`${tag} 不横滚`, !wide);
-
-    await page.screenshot({
-      path: `${OUT}/customer-${tag}.jpg`, type: "jpeg", quality: 82, fullPage: true,
-    });
-    await page.close();
-  }
-
-  /* 一间不记疗程的店，那一段一个像素都不画。 */
-  const plain = await say("add_directory_entry", {
-    in_project_id: P, in_module_key: "customers", in_name: "Mr Ong",
-  });
-  const page = await browser.newPage({ viewport: { width: 1400, height: 950 } });
-  await page.goto("http://localhost:3000/en/login", { waitUntil: "domcontentloaded", timeout: 90000 });
-  await page.waitForSelector("input[type=email]", { timeout: 60000 });
-  await page.fill("input[type=email]", email);
-  await page.fill("input[type=password]", password);
-  await page.click("button[type=submit]");
-  await page.waitForURL(/\/portal/, { timeout: 240000 });
-  await page.goto(`http://localhost:3000/en/portal/customers/${plain?.id ?? plain}`, {
-    waitUntil: "domcontentloaded", timeout: 120000,
-  });
-  await page.waitForTimeout(2500);
-  const plainBody = await page.evaluate(() => document.body.innerText);
-  check("🔴 一个还没做过任何疗程的客人，那一段整段不画",
-    !plainBody.includes("What she has had done"));
-  await page.close();
-} catch (e) {
-  bad.push(String(e?.message ?? e));
-  console.log(`\n🔴 ${e?.message ?? e}`);
-} finally {
-  if (browser) await browser.close();
-  const gone = await dropThrowaway(admin, ownerId);
-  console.log(gone ? "\n临时帐号删掉了" : "\n🔴 删不掉");
+const ping = await fetch(`${BASE}/en/login`).catch(() => null);
+if (!ping || ping.status >= 400) {
+  console.error(`\n🔴 ${BASE} 没有回应 —— 先开 npm run dev。这一支不猜。`);
+  process.exit(2);
 }
 
-console.log(`\n判：${pass} 过 · ${bad.length} 没过`);
-if (bad.length) {
-  for (const x of bad) console.log(`  · ${x}`);
-  process.exitCode = 1;
+const WIDTHS = [
+  [1400, 1000, "desktop"],
+  [820, 1180, "ipad"],
+  [390, 844, "phone"],
+];
+
+let userId = null;
+let leadId = null;
+dropThrowawayOnExit(admin, () => userId);
+let browser;
+
+try {
+  const { data: made, error: mkErr } = await admin.auth.admin.createUser({
+    email: EMAIL, password: PASSWORD, email_confirm: true,
+  });
+  if (mkErr) throw new Error(`createUser: ${mkErr.message}`);
+  userId = made.user.id;
+  const { error: inErr } = await api.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
+  if (inErr) throw new Error(`signIn: ${inErr.message}`);
+  const { data: proj } = await api.from("projects").select("id").single();
+  const P = proj?.id;
+  if (!P) throw new Error("注册没有开出一个 project");
+
+  /* 行业在问卷上，不在 projects 上 —— 少了它整个帐号落在通用示例上
+     （`shoot-trade.mjs` 那一支的注解写过这一条）。 */
+  const { data: ind } = await admin.from("industries").select("id").eq("slug", "beauty").single();
+  const { data: lead } = await admin
+    .from("leads")
+    .insert({ industry_id: ind.id, language: "en", answers: { note: "shoot-treatments" } })
+    .select("id")
+    .single();
+  leadId = lead.id;
+  await admin.from("accounts").update({ lead_id: leadId }).eq("id", userId);
+  await api.rpc("update_business_identity", {
+    new_business_name: "Radiance Medi Spa", new_owner_name: "Owner",
+  });
+  await api.rpc("set_project_style", { new_style: "ledger" });
+  await openAllPages(api, { quiet: true });
+
+  /* 一个客人、一个理疗师。走的是人按的那一支（`add_directory_entry`）。 */
+  const { data: guestRow } = await api.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "Ms Tan",
+  });
+  const { data: crewRow } = await api.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "staff", in_name: "Nurul",
+  });
+  const one = (x) => (Array.isArray(x) ? x[0] : x);
+  const her = one(guestRow)?.id ?? null;
+  const crew = one(crewRow)?.id ?? null;
+  if (!her) throw new Error("没有客人 —— 这一页拍出来会是空的，不拍");
+
+  /* 一份同意书，发出去但**还没签** —— 那正是这一页要讲的那一句。 */
+  /* 🔴 **每一支都要看回传的 error。** 第一版我漏了 `in_project_id`，
+     那一支静静失败，而画面上印的是「还没发给她」—— 一个种失败的道具
+     跟一个真的产品毛病，在图上长得一模一样（[重点 31] 最后那一段：
+     红的时候先问是不是我量错了）。 */
+  const formRes = await api.rpc("add_consent_form", {
+    in_project_id: P,
+    in_name: "Botulinum toxin consent",
+    in_body: "I understand the treatment, its effects and its risks.",
+  });
+  if (formRes.error) throw new Error(`add_consent_form: ${formRes.error.message}`);
+  const formId = one(formRes.data)?.id ?? null;
+  if (!formId) throw new Error("同意书范本没建出来 —— 这一页的上半段会是空的，不拍");
+  const askRes = await api.rpc("request_consent", { in_party_id: her, in_form_id: formId });
+  if (askRes.error) throw new Error(`request_consent: ${askRes.error.message}`);
+
+  /* 两笔疗程。 */
+  for (const [what, area, note] of [
+    ["HydraFacial", "Full face", "Mild redness after, settled in an hour."],
+    ["Chemical peel", "Cheeks", "Second session. Told her to stay out of the sun."],
+  ]) {
+    const r = await api.rpc("add_treatment_note", {
+      in_party_id: her, in_what: what, in_area: area, in_note: note,
+      ...(crew ? { in_staff_id: crew } : {}),
+    });
+    if (r.error) throw new Error(`add_treatment_note: ${r.error.message}`);
+  }
+
+  browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
+  await page.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.fill('input[type="email"]', EMAIL);
+  await page.fill('input[type="password"]', PASSWORD);
+  await page.click('button[type="submit"]');
+  await page.waitForURL(/portal/, { timeout: 180000 });
+
+  const hide = "nextjs-portal, #__next-build-watcher, [data-nextjs-toast] { display: none !important; }";
+  for (const [w, h, tag] of WIDTHS) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto(`${BASE}/en/portal/treatments`, { waitUntil: "networkidle", timeout: 120000 });
+    await page.waitForTimeout(1200);
+    await page.addStyleTag({ content: hide });
+    /* 挑一个客人 —— 一页没有挑人的画面只证明得了左半边。 */
+    const first = page.locator("button", { hasText: "Ms Tan" }).first();
+    if (await first.count()) {
+      await first.click().catch(() => {});
+      await page.waitForTimeout(1400);
+    }
+    await page.screenshot({ path: `${OUT}/${tag}.png`, fullPage: true });
+    console.log(`  ${tag.padEnd(8)} 拍到`);
+  }
+
+  /* 三格并排，一眼看得完。 */
+  const H = 940;
+  const parts = [];
+  for (const [, , tag] of WIDTHS) {
+    const f = `${OUT}/${tag}.png`;
+    if (!existsSync(f)) continue;
+    const meta = await sharp(f).metadata();
+    const crop = Math.min(meta.height, 1800);
+    const iw = Math.round(meta.width * (H / crop));
+    parts.push({
+      img: await sharp(f)
+        .extract({ left: 0, top: 0, width: meta.width, height: crop })
+        .resize({ width: iw, height: H, fit: "fill" })
+        .toBuffer(),
+      w: iw,
+      label: tag,
+    });
+  }
+  const GAP = 12;
+  const LABEL = 26;
+  const total = parts.reduce((n, p) => n + p.w + GAP, GAP);
+  const svg = Buffer.from(
+    `<svg width="${total}" height="${LABEL}" xmlns="http://www.w3.org/2000/svg">` +
+      `<rect width="100%" height="100%" fill="#0b0b0c"/>` +
+      parts
+        .map((p, i) => {
+          const x = GAP + parts.slice(0, i).reduce((n, q) => n + q.w + GAP, 0);
+          return `<text x="${x}" y="18" font-family="monospace" font-size="14" fill="#f2f2f0">${p.label}</text>`;
+        })
+        .join("") +
+      `</svg>`,
+  );
+  await sharp({
+    create: { width: total, height: H + LABEL + GAP, channels: 3, background: { r: 11, g: 11, b: 12 } },
+  })
+    .composite([
+      { input: svg, top: 0, left: 0 },
+      ...parts.map((p, i) => ({
+        input: p.img,
+        top: LABEL,
+        left: GAP + parts.slice(0, i).reduce((n, q) => n + q.w + GAP, 0),
+      })),
+    ])
+    .jpeg({ quality: 86 })
+    .toFile(`${OUT}/sheet.jpg`);
+  console.log(`\n  ${OUT}/sheet.jpg\n`);
+} finally {
+  if (browser) await browser.close();
+  await dropThrowaway(admin, userId);
+  if (leadId) await admin.from("leads").delete().eq("id", leadId);
 }

@@ -372,6 +372,19 @@ export function PortalShell({
        ⚠️ **不挡师傅**：那三支都是 works_here，而一份同意书上
        一个金额都没有 —— 写那一份字的人常常就是美疗师自己。 */
     { key: "consent", under: "customers", show: hasConsent, icon: <IconSign /> },
+    /* 🔴 疗程记录 —— 跟同意书并排，理由一样：**一笔疗程属於一个人**。
+       挡的是「这门生意会不会有这件事」，不是「她写过没有」：
+       一间新开的 medi spa 一笔都还没记，而她正是最需要看到这个入口的人
+       （同意书那一条靠「写过一份」，第一份是从别的地方进去的）。
+       **有预约那一页 ＋ 有师傅那一页** —— 美容跟 medi spa 都有，
+       补习没有师傅那一页，五金没有预约那一页。
+       ⚠️ 不挡师傅：写这一笔的常常就是美疗师自己，而这一页上一个金额都没有。 */
+    {
+      key: "treatments",
+      under: "customers",
+      show: hasBookings && hasStaff,
+      icon: <IconSign />,
+    },
     {
       key: "payables",
       under: "suppliers",
