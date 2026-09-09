@@ -119,6 +119,7 @@
     "check:staff-prices": "node scripts/check-staff-prices.mjs",
     "check:backbar": "node scripts/check-backbar.mjs",
     "check:makeup": "node scripts/check-makeup.mjs",
+    "check:family": "node scripts/check-family.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
     "check:anchors": "node scripts/check-anchors.mjs",
     "check:bookings": "node scripts/check-bookings.mjs",
