@@ -5,6 +5,7 @@
  * ── 这个档案为什么存在 ────────────────────────────────────────────────────
  *
  * `docs/founder-tasks.md` 到 2026-09-05 是 **50 万个字元 · 14,347 行**
+ * （2026-09-09 拆了：还没做完的留在原档，全文进 `founder-tasks-archive.md`）
  * （位元组是它的两倍 —— 中文一个字三个，`wc -c` 数的是位元组）。
  * 那是一本**只加不改的帐**，对「这件事当初为什么这样决定」是对的，
  * 而它**贴不进任何一个新的工具** —— 大概二十五万个词元，比多数模型
@@ -184,10 +185,11 @@ const md = `<!-- 这一份是 §npm run brief§ 产生的，不要手改 —— 
 | 档案 | 多大 | 是什么 |
 |---|---|---|
 | §docs/founder-points.md§ | ${sizeOf("docs/founder-points.md")} | **老板讲过的原则。** 永远适用，一条都不要跳 |
-| §docs/founder-tasks.md§ | ${sizeOf("docs/founder-tasks.md")} | **只加不改的帐**：每一件事当初为什么这样决定 |
+| §docs/founder-tasks.md§ | ${sizeOf("docs/founder-tasks.md")} | **还没做完的那几行** ＋ 做完的编号清单 |
+| §docs/founder-tasks-archive.md§ | ${sizeOf("docs/founder-tasks-archive.md")} | **只加不改的帐**：每一件事当初为什么这样决定。**不自动读进来** |
 
-⚠️ 任务档太大，**贴不进多数工具**。用
-§grep -n "### 156" docs/founder-tasks.md§ 去读某一条，不要整份读。
+⚠️ 封存档太大，**贴不进多数工具**。用
+§grep -n "### 156" docs/founder-tasks-archive.md§ 去读某一条，不要整份读。
 
 **最要紧的七条**（其余去读原档）：
 

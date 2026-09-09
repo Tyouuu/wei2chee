@@ -8,7 +8,8 @@
 |---|---|---|
 | 1 | `docs/handoff-brief.md` | **一张现况单，四千字，先读这一份。** 它是 `npm run brief` 从仓库自己身上量出来的 —— 今天站在哪里、别人手上有什么不要碰 |
 | 2 | `docs/founder-points.md` | **老板讲过的原则。** 永远适用 |
-| 3 | `docs/founder-tasks.md` | 只加不改的帐。**五十万字，不要整份读** —— 用 `grep -n "### 156" docs/founder-tasks.md` 去读某一条 |
+| 3 | `docs/founder-tasks.md` | **还没做完的那几行**（一百 KB，读得完）。做完的只剩编号跟标题 |
+| 4 | `docs/founder-tasks-archive.md` | 全文封存，**不自动读进来**。用 `grep -n "### 156" docs/founder-tasks-archive.md` 去读某一条 |
 
 ```bash
 npm run brief   # 重新量一次，写出 docs/handoff-brief.md
