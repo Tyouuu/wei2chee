@@ -171,6 +171,12 @@ const TABLE_CHAIN = {
   ledger_accounts: "钱到帐", tax_profile: "钱到帐",
   payslips: "人", payslip_lines: "人",
   statutory_schedules: "人", statutory_brackets: "人",
+  /* ⚠️ 2026-09-09 第二批「它自己报出来的」。同一条警告，同一个修法。
+     疗程记录挂在「人」身上不是挂在那一张单上（任务 310），所以它落在客人关系；
+     房间是订得到的位置，所以它落在预约（任务 308）。 */
+  consent_forms: "客人关系", consent_signatures: "客人关系",
+  treatment_notes: "客人关系", treatment_products: "客人关系",
+  rooms: "预约到来店",
 };
 
 const unmapped = [...tables].filter((t) => !TABLE_CHAIN[t]).sort();

@@ -743,7 +743,8 @@
       "classes": "Classes",
       "moreUnder": "More under this page",
       "tables": "Tables",
-      "kitchen": "Kitchen"
+      "kitchen": "Kitchen",
+      "consent": "Consent forms"
     },
     "find": {
       "title": "Find anything",
@@ -1670,6 +1671,29 @@
       "all": "All {n}",
       "sending": "…",
       "atTable": "Table {t}"
+    },
+    "consent": {
+      "title": "Consent forms",
+      "lede": "What she agrees to before you start, and who has signed.",
+      "label": "Your forms",
+      "note": "One form per treatment. A botox consent lists different risks from a laser one, so keep them separate.",
+      "snapshot": "Changing the wording here does not touch anything already sent or signed — each one keeps the words that were on it the day it went out.",
+      "add": "Add a form",
+      "adding": "Adding...",
+      "name": "What this form is for",
+      "body": "What she is agreeing to",
+      "save": "Save",
+      "saving": "Saving...",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "off": "Put away",
+      "on": "Take back out",
+      "offLabel": "Put away",
+      "none": "No form written yet.",
+      "signed": "{n} signed",
+      "waiting": "{n} waiting",
+      "needName": "Say what this form is for.",
+      "needBody": "Write what she is agreeing to."
     }
   },
   "explainer": {

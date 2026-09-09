@@ -166,6 +166,8 @@ PAGES = [
     # 餐台 · 厨房（2026-09-08）—— 同一条（任务 177）。
     ("tables", "/en/portal/tables"),
     ("kitchen", "/en/portal/kitchen"),
+    # 同意书那几份范本（2026-09-09）—— 同一条（任务 177）。
+    ("consent forms", "/en/portal/consent"),
     ("legal", "/en/legal/terms"),
 ]
 

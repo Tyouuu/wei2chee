@@ -56,6 +56,11 @@ import {
   type ReferredJob,
 } from "../new/referred-jobs";
 import { PackagesPanel, type PackageRow } from "../new/packages-panel";
+import {
+  ConsentPanel,
+  type ConsentSheet,
+  type ConsentForm,
+} from "../new/consent-panel";
 import type { JobPhoto } from "../new/job-photos";
 import {
   showChanges,
@@ -184,6 +189,13 @@ export default async function EditRecordPage({
      ⚠️ 而它**不看 role** —— 一个师傅要跟客人讲「你还剩三次」，
      而那张表上没有金额（20260904190000 的档头）。 */
   let packages: PackageRow[] | null = null;
+  /* 🔴 她签了没有（20260909130000）。
+     ⚠️ null = **没有问**（这一页不是客户页），不是「一份都没发过」——
+     那两句在画面上要长得不一样。
+     ⚠️ 而它**不看 role**：那三支都是 works_here，而一份同意书上
+     一个金额都没有 —— 开工之前问「她签了没有」的常常就是美疗师自己。 */
+  let consents: ConsentSheet[] | null = null;
+  let consentForms: ConsentForm[] = [];
   /* 他先付了、还没用掉的钱。
      🔴 **这个数字从 20260903030000 起就算得出来，而到今天为止全 app
      零个消费端** —— [任务 61 · 67 · 44] 三天各自要过它一次，
@@ -706,6 +718,42 @@ export default async function EditRecordPage({
         expiresOn: x.expires_on,
         expired: !!x.expired,
       }));
+    }
+
+    /* ── 客户那一页：她签了没有 ──────────────────────────────────────
+       两支一起问：**她那几份**（consents_of）跟**这门生意有哪几份范本**
+       （consent_forms_of）—— 少了后面那一支，那个下拉是空的，
+       而一颗选不了东西的按钮是这个仓库禁的第一条。 */
+    if (pageKey === "customers") {
+      const [sheetRes, formRes] = await Promise.all([
+        supabase.rpc("consents_of", { in_party_id: recordId }),
+        supabase.rpc("consent_forms_of", { in_project_id: ctx.projectId }),
+      ]);
+      consents = ((sheetRes.data ?? []) as {
+        id: string;
+        form_name: string;
+        share_ref: string | null;
+        sent_at: string;
+        signed_at: string | null;
+        signed_name: string | null;
+        signed_note: string | null;
+      }[]).map((x) => ({
+        id: x.id,
+        formName: x.form_name,
+        shareRef: x.share_ref,
+        sentAt: x.sent_at,
+        signedAt: x.signed_at,
+        signedName: x.signed_name,
+        signedNote: x.signed_note,
+      }));
+      /* 收起来的那几份发不出去（那一支会拒绝），所以下拉里不放它们。 */
+      consentForms = ((formRes.data ?? []) as {
+        id: string;
+        name: string;
+        archived: boolean;
+      }[])
+        .filter((f) => !f.archived)
+        .map((f) => ({ id: f.id, name: f.name }));
     }
 
     /* ── 师傅那一页：抽成跟这个月 ──────────────────────────────────────
@@ -1990,6 +2038,24 @@ export default async function EditRecordPage({
               <PackagesPanel
                 partyId={recordId}
                 rows={packages}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
+
+          {/* 客户那一页多一段：她签了没有。
+            ⚠️ consents === null 的意思是**没有问**（这一页不是客户页）——
+            那时候整段不画，而不是画一份空的同意书。
+            🔴 而 consents 是空阵列的时候**照样画** —— 那一段要问的正是
+            「发一份给她」，而一间 medi spa 的第一个客人本来就是空的。 */}
+          {consents ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <ConsentPanel
+                partyId={recordId}
+                origin={SITE_URL}
+                consentHref={`/${locale}/portal/consent`}
+                sheets={consents}
+                forms={consentForms}
                 copy={copy.form}
               />
             </div>

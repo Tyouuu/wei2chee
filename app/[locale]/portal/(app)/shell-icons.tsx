@@ -378,3 +378,15 @@ export function IconPot({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 同意书：一张纸，底下一条签名线。 */
+export function IconSign({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M4.6 2.6h6.6l4.2 4.2v6.2" />
+      <path d="M11.2 2.6v4.2h4.2" />
+      <path d="M7.4 9.4h4.4" />
+      <path d="M3.4 16.6c1.6 0 1.6-2.4 3.2-2.4s1.6 2.4 3.2 2.4 1.6-2.4 3.2-2.4 1.6 2.4 3.2 2.4" />
+    </svg>
+  );
+}

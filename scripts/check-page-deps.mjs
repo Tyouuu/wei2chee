@@ -115,13 +115,40 @@ try {
   check("🔴 师傅那一页跟着开出来了", (await pages()).includes("staff"),
     JSON.stringify(await pages()));
 
-  /* ── ⑤ 没有依赖的那几页，一页都不多开 ───────────────────────────── */
+  /* ── ⑤ 没有依赖的那几页，一页都不多开 ──────────────────────────── */
+  /*
+    🔴 **不要写死一个模块名字。** 2026-09-09 那一条红就是这样来的：
+    它写死了「开销」，而同一天开销进了八个行业的开局（[任务 306]）——
+    於是那一句「加一页只多一页」加的是一页**已经在的**，读数 11 → 11，
+    **而产品一个字都没错**。
+
+    改成从两份档案自己算出来：目录里有哪几个模块 ·
+    20260906340000 那个 case 里哪几个有依赖 —— 挑一个都不是的。
+    哪一天开局再换，它自己换一个，不用人回来改。
+  */
   console.log("\n⑤ 没有依赖的不多开");
-  const b4 = (await pages()).length;
-  await C.rpc("add_project_page", { requested_key: "expenses", new_title: "Expenses" });
-  const af = await pages();
-  check("🔴 开销只多一页（它不需要别的）", af.length === b4 + 1,
-    `${b4} → ${af.length} · ${JSON.stringify(af)}`);
+  const catalogue = readFileSync(
+    new URL("../lib/portal/module-catalog.ts", import.meta.url), "utf8");
+  const allKeys = [...catalogue.matchAll(/key:\s*"([a-z_]+)"/g)].map((m) => m[1]);
+  const depSql = readFileSync(
+    new URL("../supabase/migrations/20260906340000_put_the_page_dependency_back.sql",
+      import.meta.url), "utf8");
+  const needy = new Set(
+    [...depSql.matchAll(/when\s+'([a-z_]+)'\s+then\s+array\[/g)].map((m) => m[1]),
+  );
+  const opened = await pages();
+  const lone = allKeys.find((k) => !needy.has(k) && !opened.includes(k));
+  /* 找不到就是**没有量到东西**，不是过了 —— 一条对着空集合成立的断言，
+     跟一条真的在守的，在报告里长得一模一样。 */
+  check("道具：找得到一个没依赖、而且还没开的模块", Boolean(lone),
+    `目录 ${allKeys.length} 个 · 有依赖 ${[...needy].join(",")} · 已经开 ${opened.length} 页`);
+  if (lone) {
+    const b4 = opened.length;
+    await C.rpc("add_project_page", { requested_key: lone, new_title: "Solo" });
+    const af = await pages();
+    check(`🔴 「${lone}」只多一页（它不需要别的）`, af.length === b4 + 1,
+      `${b4} → ${af.length} · ${JSON.stringify(af)}`);
+  }
 
   /* ── ⑥ 🔴 满了的时候，他要的那一页照样开得出来 ──────────────────── */
   console.log("\n⑥ 🔴 满了的时候");

@@ -34,6 +34,7 @@ import {
   IconTag,
   IconTable,
   IconPot,
+  IconSign,
 } from "./shell-icons";
 
 /**
@@ -245,6 +246,7 @@ export function PortalShell({
   hasSerials,
   hasCounter,
   hasTables,
+  hasConsent,
   hasBatches,
   hasRentals,
   hasPurchases,
@@ -289,6 +291,9 @@ export function PortalShell({
   /** 他有没有开过桌 —— 绝大多数生意没有桌，而一间装修公司的侧栏上
    *  多两行「餐台 · 厨房」是两行要他跳过的东西（[任务 247] 那一条）。 */
   hasTables: boolean;
+  /** 有没有写过一份同意书 —— 一间五金店永远没有，
+   *  而一间 medi spa 每一个客人来都要签。 */
+  hasConsent: boolean;
   hasBatches: boolean;
   hasRentals: boolean;
   /** 他有没有在买东西 —— 没有进货单的生意，「我欠人家的」永远是空的。 */
@@ -362,6 +367,11 @@ export function PortalShell({
       icon: <IconCar />,
     },
     { key: "owing", under: "customers", show: isOwner, icon: <IconCoin /> },
+    /* 🔴 同意书住在**客户**底下 —— 一份同意书属於一个人，
+       而她想到那件事的时候，正在看那个人（[任务 247] 那条规矩）。
+       ⚠️ **不挡师傅**：那三支都是 works_here，而一份同意书上
+       一个金额都没有 —— 写那一份字的人常常就是美疗师自己。 */
+    { key: "consent", under: "customers", show: hasConsent, icon: <IconSign /> },
     {
       key: "payables",
       under: "suppliers",

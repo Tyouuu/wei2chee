@@ -462,6 +462,25 @@ export type RecordFormCopy = {
   tablesLink: string;
   /* 房间 —— 一间 medi spa 订的是房，不是椅子。 */
   roomsLink: string;
+  /* 同意书。侧栏上按**有没有写过一份**画，所以第一份从这里进去。 */
+  consentShareLink: string;
+  /* 同意书那一段（20260909130000）。只在客户那一页，而且**师傅也看得到** ——
+     那三支都是 works_here，而一份同意书上一个金额都没有；
+     开工之前问「她签了没有」的常常就是美疗师自己。 */
+  consentHeading: string;
+  consentLede: string;
+  consentNone: string;
+  consentSigned: string;
+  consentWaiting: string;
+  consentLink: string;
+  consentCopy: string;
+  consentCopied: string;
+  consentTakeBack: string;
+  consentTakenBack: string;
+  consentPick: string;
+  consentSend: string;
+  consentNoForms: string;
+  consentWrite: string;
   /* 套票（20260904190000）。只在客户那一页，而且**师傅也看得到** ——
      他要跟客人讲「你还剩三次」。价钱不在这张表上，所以这不是把钱交出去。 */
   packHeading: string;
@@ -923,6 +942,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       serialsLink: "查一个序号",
       tablesLink: "餐台",
       roomsLink: "房间",
+      consentLink: "同意书",
+      consentHeading: "同意书",
+      consentLede: "开工之前她要同意的那一份。发一条连结给她，她在自己手机上签。",
+      consentNone: "还没有发过同意书给她。",
+      consentSigned: "{d} 签了",
+      consentWaiting: "{d} 发出去，还在等她签",
+      consentShareLink: "发给她的那条连结",
+      consentCopy: "复制连结",
+      consentCopied: "复制好了",
+      consentTakeBack: "收回去",
+      consentTakenBack: "这条连结收回去了 —— 她打不开它了。",
+      consentPick: "发哪一份",
+      consentSend: "发给她",
+      consentNoForms: "还没有写过表单。",
+      consentWrite: "去写第一份",
       packHeading: "套票",
       packLede: "卖几次，用一次扣一次。",
       packNone: "还没有卖过套票给他。",
@@ -1364,6 +1398,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       serialsLink: "Look up a serial",
       tablesLink: "Tables",
       roomsLink: "Rooms",
+      consentLink: "Consent forms",
+      consentHeading: "Consent",
+      consentLede: "What she agrees to before you start. Send her a link — she signs on her own phone.",
+      consentNone: "No consent form sent to her yet.",
+      consentSigned: "Signed {d}",
+      consentWaiting: "Sent {d}, still waiting",
+      consentShareLink: "The link you send her",
+      consentCopy: "Copy link",
+      consentCopied: "Copied",
+      consentTakeBack: "Take it back",
+      consentTakenBack: "This link has been taken back — she can no longer open it.",
+      consentPick: "Which form",
+      consentSend: "Send to her",
+      consentNoForms: "No form written yet.",
+      consentWrite: "Write the first one",
       packHeading: "Packages",
       packLede: "Sold as a number of sessions. One visit, one off the count.",
       packNone: "No package sold to them yet.",

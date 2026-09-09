@@ -156,6 +156,7 @@ export default async function PortalAppLayout({
     { count: serialCount },
     { count: skuCount },
     { count: tableCount },
+    { count: consentCount },
   ] = project
     ? await Promise.all([
         supabase
@@ -209,8 +210,19 @@ export default async function PortalAppLayout({
           .select("id", { count: "exact", head: true })
           .eq("project_id", project.id)
           .eq("active", true),
+        /* 🔴 同意书。同一条：一间五金店永远不要客人签什么，
+           而一间 medi spa 每一个客人来都要签。所以它按**有没有写过一份**
+           决定画不画 —— 而第一份从「加一单」那一页底下那条架子进去
+           （只画给会排时段的生意，跟房间同一个判准）。
+           ⚠️ 数的是**没有收起来的**：全部收起来了就等於她不用了。 */
+        supabase
+          .from("consent_forms")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", project.id)
+          .is("archived_at", null),
       ])
     : [
+        { count: 0 },
         { count: 0 },
         { count: 0 },
         { count: 0 },
@@ -274,6 +286,7 @@ export default async function PortalAppLayout({
       hasSerials={(serialCount ?? 0) > 0}
       hasCounter={(skuCount ?? 0) > 0}
       hasTables={(tableCount ?? 0) > 0}
+      hasConsent={(consentCount ?? 0) > 0}
       hasBatches={(batchCount ?? 0) > 0}
       hasRentals={(rentalCount ?? 0) > 0}
       hasPurchases={pageRefs.some((r) => r.key === "purchases")}

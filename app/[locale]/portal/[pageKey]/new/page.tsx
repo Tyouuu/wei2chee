@@ -186,6 +186,16 @@ export default async function NewRecordPage({
                 {copy.form.roomsLink}
               </a>
             ) : null}
+            {/* 🔴 同意书同一条：侧栏上按**有没有写过一份**画，
+              而第一份没有任何地方写得出来。
+              ⚠️ 判准跟房间一样是「他有没有预约那一页」不是「他属於哪一行」——
+              一间 medi spa 要客人签、一间补习中心要家长签，
+              而一间五金店永远不要谁签什么。 */}
+            {ctx.books ? (
+              <a href={`/${locale}/portal/consent`} className="underline">
+                {copy.form.consentLink}
+              </a>
+            ) : null}
           </p>
         </main>
       </RecordShell>
