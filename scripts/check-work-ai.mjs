@@ -1040,6 +1040,77 @@ try {
   );
   await page.screenshot({ path: `${OUT}/14-package.png` });
 
+
+  console.log("");
+  console.log("── ⑱ 🔴 放飞机 · 取消 —— 而套票不可以跟着掉 ──────");
+  /*
+    🔴 这两句走的是**跟「客人来了」同一支**（`set_appointment_status`），
+    所以第 ⑰ 段一通，它们就通了 —— 而那正是要单独量一次的理由：
+    **同一支能做对一件事，不代表它对另外两件也讲实话。**
+
+    ⚠️ 而这一段真正守的是最后一条：**放飞机不可以扣套票**。
+    她今天没来，套票要留着；扣了她下次来就少一次，而她要到那一刻才发现。
+    「客人来了」扣一次是对的，「她没来」扣一次是一笔看不见的损失。
+
+    ⚠️ **这一条没有办法故意弄红给它看** —— 要弄红得去改资料库
+    那一支，而那不在这一边。它的证据是**第 ⑬ 段跟这一段合起来**：
+    同一支函式，来了扣一次、没来一次不扣 —— 两条都绿才叫分得清楚。
+    一条单独绿的「没有扣」，跟一条什么都没发生的尺长得一模一样。
+  */
+  const { data: ghost } = await api.rpc("add_directory_entry", {
+    in_project_id: P,
+    in_module_key: "customers",
+    in_name: "Ms Yeoh",
+  });
+  const { data: pack2, error: pack2Err } = await api.rpc("add_service_package", {
+    in_party_id: ghost?.id,
+    in_name: "Massage x5",
+    in_sessions_total: 5,
+  });
+  if (pack2Err) throw new Error(`seed package 2: ${pack2Err.message}`);
+  const ghostAt = new Date(Date.parse(`${mytToday}T21:00:00+08:00`));
+  const { error: ghostErr } = await api.rpc("add_appointment", {
+    in_project_id: P,
+    in_module_key: bookPage,
+    in_starts_at: ghostAt.toISOString(),
+    in_ends_at: new Date(ghostAt.getTime() + 60 * 60000).toISOString(),
+    in_party: "Ms Yeoh",
+    in_party_id: ghost?.id,
+    in_service: "Massage",
+  });
+  if (ghostErr) throw new Error(`seed no-show appt: ${ghostErr.message}`);
+
+  await page.goto(`${BASE}/en/portal/${bookPage}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  const noShow = await say(page, "Ms Yeoh did not turn up");
+  console.log(`        它讲了：${noShow.split(String.fromCharCode(10)).join(" / ").slice(0, 180)}`);
+  await page.waitForTimeout(2500);
+
+  const ghostRow = await admin
+    .from("appointments")
+    .select("status")
+    .eq("project_id", P)
+    .ilike("party", "%yeoh%")
+    .limit(1)
+    .maybeSingle();
+  check(
+    "🔴 那一笔真的标成没来了",
+    String(ghostRow.data?.status ?? "") === "no_show",
+    `status = ${ghostRow.data?.status} — ${noShow.slice(0, 140)}`,
+  );
+  /* 🔴 这一条是这一段存在的理由：她没来，套票要留着。 */
+  const ghostUses = await admin
+    .from("package_uses")
+    .select("id", { count: "exact", head: true })
+    .eq("package_id", pack2.id);
+  check(
+    "🔴 而套票一次都没有扣掉（她没来）",
+    (ghostUses.count ?? 0) === 0,
+    `扣了 ${ghostUses.count} 次 — 她没来却少一次，是她下次来才发现的损失`,
+  );
+  await page.screenshot({ path: `${OUT}/15-no-show.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);
