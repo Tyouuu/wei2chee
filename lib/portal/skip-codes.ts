@@ -223,7 +223,16 @@ export type SkipCode =
    * 已经送了的话，会让他以为客人收到了。
    */
   | "replyDrafted"
-  | "entryReversed";
+  | "entryReversed"
+  /**
+   * 🔴 记住了他讲的那一句，**而且是关掉分页也还在的那一种**。`what`
+   *
+   * 那一句要念回去给他听 —— 一个说「我记住了」而没有人看得到记了什么的
+   * 助手，跟一个根本没记的助手，在画面上长得一模一样。
+   */
+  | "remembered"
+  | "nothingToRemember"
+  | "couldNotRemember";
 
 /** 一件没做成的事，讲给老板听。`vars` 是那一句里的空格。 */
 export type Skip = {
@@ -314,4 +323,7 @@ export const SKIP_CODES = [
   "followUpSet",
   "replyDrafted",
   "entryReversed",
+  "remembered",
+  "nothingToRemember",
+  "couldNotRemember",
 ] as const satisfies readonly SkipCode[];

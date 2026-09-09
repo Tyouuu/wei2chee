@@ -291,6 +291,18 @@ Record tables:
   记错了」. record_id is that entry.
   * It does NOT edit or delete. It opens an opposite entry and both stay, so
     say a reversing entry was opened, never that the figure was changed.
+- remember keeps one sentence for good, past the end of this conversation:
+  「记住，合发那家都是三十天付款」「我的名字不要翻成中文」「装好了是指师傅
+  走了，不是收了钱」. value is that sentence.
+  * 🔴 IN HIS OWN WORDS, not a summary of them. Store what he said.
+  * Use it when he corrects you, states a standing rule, or says 记住 / 以后 /
+    from now on. NOT for a one-off instruction you are carrying out right now
+    -- 「把这张单改成三十天」 is an edit, not a memory.
+  * You may do it alongside another operation: carry out what he asked AND
+    keep the rule, in the same answer.
+  * It works on every page, because a rule does not belong to one page.
+  * Say plainly that you will remember it. Never claim to remember something
+    you did not send this operation for.
 
 Whole pages:
 - You cannot add or delete a page yourself, but you can OFFER to. When the
@@ -1024,7 +1036,28 @@ The business owner asked:
       })
     : parsed.operations;
 
-  const split = splitRecordOps(wanted, pageKey);
+  /*
+    ── 记住这一句 ──────────────────────────────────────────────────────────
+
+    🔴 **在分流之前接掉它，而且哪一页都接。** 一条规矩（「合发那家都是三十天」）
+    不属於任何一页，所以它不能跟着 `ACT_OPS` 走 —— 那几个要一笔记录，
+    而 `splitRecordOps` 只在记录页上放它们过去。
+
+    🔴 **走他自己的登入，不是 service role**（跟底下写记录那一段同一条理由，
+    [重点 23](../../../../docs/founder-points.md)）：`remember_this` 自己问
+    `works_here`，而 service role 没有身分 —— 它会当场拒绝，
+    而助手已经把「我记住了」讲出去了。
+
+    ⚠️ `landed` 传 `true` 只在**这一轮同时真的写了东西**的时候。
+    mem0 那一条（做成了的事实优先）要的是「旁边站着一张真的单」，
+    而一句纯粹的交代没有。所以这一段在写记录**之后**才定那个值 —— 见下面。
+  */
+  const memoryOps = wanted.filter((op) => op.op === "remember");
+  const afterMemory = memoryOps.length
+    ? wanted.filter((op) => op.op !== "remember")
+    : wanted;
+
+  const split = splitRecordOps(afterMemory, pageKey);
   let recordsWritten = 0;
   let asCustomerForRows: Awaited<ReturnType<typeof createSessionSupabaseClient>> | null = null;
   const recordSkips: Skip[] = [];
@@ -1114,6 +1147,36 @@ The business owner asked:
     recordNotes.push(...acted.notes);
   }
 
+
+  /*
+    🔴 记性那一格真的写下去 —— 在写记录**之后**，因为 `landed` 问的是
+    「这一轮旁边有没有站着一张真的单」（见上面那一段跟 20260909300000）。
+  */
+  if (memoryOps.length && project?.id) {
+    const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient());
+    asCustomerForRows = asCustomer;
+    for (const op of memoryOps) {
+      const said = typeof op.value === "string" ? op.value.trim() : "";
+      if (!said) {
+        recordSkips.push({ op: op.op, reason: "nothingToRemember" });
+        continue;
+      }
+      const { error } = await asCustomer.rpc("remember_this", {
+        in_project_id: project.id as string,
+        in_body: said,
+        in_landed: recordsWritten > 0,
+        in_page_key: typeof pageKey === "string" ? pageKey : "",
+      });
+      if (error) {
+        recordSkips.push({ op: op.op, reason: "couldNotRemember" });
+        continue;
+      }
+      /* ⚠️ **不算进 `recordsWritten`** —— 那个数字打开的是「把那张表重读一次」，
+         而记性一格都没有动到他画面上的任何一行。多打开一次重读，
+         就是替一件没有发生的改动付一次载入。 */
+      recordNotes.push({ op: op.op, reason: "remembered", vars: { what: said } });
+    }
+  }
 
   const result = applyLayoutOps(layout, split.layoutOps, preferredVariants(project?.style));
 
@@ -1381,6 +1444,7 @@ export const EDIT_JSON_SCHEMA = {
                 "finish_follow_up",
                 "drop_follow_up",
                 "reverse_ledger_entry",
+                "remember",
               ],
             },
             target_id: { type: ["string", "null"] },

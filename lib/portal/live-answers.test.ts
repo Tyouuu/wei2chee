@@ -31,6 +31,12 @@ const withFigures = (over: Partial<BusinessFacts> = {}): BusinessFacts => ({
     { line: "换灯 · 盏 · RM 380.00" },
   ],
   pricesCut: false,
+  /* 他讲过要它记住的那几句。预设有两句，不是空的 —— 一个空的夹具会让
+     下面那几条断言量到「这一段根本没出现」，而不是量到它印对了没有。 */
+  memory: [
+    { line: "合发那家都是三十天付款" },
+    { line: "Madam Chong 是名字，不要翻成中文" },
+  ],
   /* 陈生人在他官网上问的。预设有一封 —— 空的夹具量不到下面那几条。 */
   enquiries: [
     {
@@ -353,5 +359,50 @@ describe("官网上进来的询价", () => {
   it("英文那一份有它自己那一句", () => {
     const out = renderBusinessFacts(withFigures({ lang: "en" }));
     expect(out).toContain("asked through his website");
+  });
+});
+
+/**
+ * 🔴 他讲过、而且要它记到下一次开机的那几句。
+ *
+ * 助手一直有「刚才这段对话里发生过的事」，**而那三轮活在一个分页里** ——
+ * 他纠正它一次、讲一次他的规矩，关掉分页两句都不在了。
+ * 这一段守的是那几句话真的到得了模型眼前，而且**三条路都到得了**。
+ */
+describe("他叫你记住的那几句", () => {
+  it("印进去了，而且是他讲的原话", () => {
+    const out = renderBusinessFacts(withFigures());
+    expect(out).toContain("合发那家都是三十天付款");
+    expect(out).toContain("Madam Chong 是名字，不要翻成中文");
+  });
+
+  it("一句都没有的时候，不出一个空标题", () => {
+    const out = renderBusinessFacts(withFigures({ memory: [] }));
+    expect(out).not.toContain("以前叫你记住的");
+  });
+
+  /*
+    🔴 这两条是这一段真正的靶。
+
+    一间**第一天开机**的店，数字全是零 —— 而那正是他讲规矩的那一天
+    （「我的名字不要翻」「先不要跟客人提价钱」）。
+    那两条早退的路（读不到 · 一条记录都没有）本来会把整段记忆丢掉，
+    於是一间新店的助手**每一次都忘**，而所有既有的检查都是绿的。
+  */
+  it("🔴 一条记录都还没有的时候照样记得", () => {
+    const out = renderBusinessFacts(withFigures({ figures: [] }));
+    expect(out).toContain("还没有任何记录");
+    expect(out).toContain("合发那家都是三十天付款");
+  });
+
+  it("🔴 连数字都读不到的时候也照样记得", () => {
+    const out = renderBusinessFacts(withFigures({ unread: true }));
+    expect(out).toContain("读不到他的数字");
+    expect(out).toContain("合发那家都是三十天付款");
+  });
+
+  it("英文那一份有它自己那一句", () => {
+    const out = renderBusinessFacts(withFigures({ lang: "en" }));
+    expect(out).toContain("told you to remember");
   });
 });

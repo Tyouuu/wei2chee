@@ -307,6 +307,17 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
  */
 export const WORK_OPS: ReadonlySet<string> = new Set([
   "add_table_row",
+  /*
+    🔴 `remember` 在这里，而**故意不在 `ACT_OPS` 里**。
+
+    `ACT_OPS` 那几个都要一笔记录（`record_id`），所以 `splitRecordOps` 只在
+    记录页上放它们过去。而一条规矩（「合发那家都是三十天」）不属於任何一页 ——
+    他在总览上讲，它就该记得住。所以 route 在分流**之前**自己接掉它。
+
+    ⚠️ 少了这一行，他站在自己的系统上讲「记住…」会被当成改设计那一边的动作
+    挡下来，而画面上讲的是「那要去设计那一屏改」—— 一句对不上的话。
+  */
+  "remember",
   ...ACT_OPS,
 ]);
 

@@ -73,6 +73,8 @@ const WORDS = {
     prices: "他自己的价目（他货品页上打的价钱 —— 开单的时候直接用，不要自己估）",
     /* 🔴 陈生人在他官网上问的那几句。见下面 `enquiries`。 */
     enquiries: "他官网上进来、而他还没处理的询价（reply_to_enquiry 用那个编号）",
+    /* 🔴 他讲过要记住的那几句。见下面 `memory` 那一段。 */
+    memory: "他以前叫你记住的（他自己的规矩跟他纠正过你的地方 —— 照做，不要再问一次）",
   },
   en: {
     heading: "This business's figures today (as at <at>, all counted from their own books)",
@@ -86,6 +88,7 @@ const WORDS = {
     nudgesNone: "Nothing the system has spotted is outstanding today.",
     prices: "His own price list (the prices on his items page -- use these when raising a document, never estimate one)",
     enquiries: "Strangers who asked through his website and have not been dealt with (reply_to_enquiry takes the id)",
+    memory: "What he told you to remember (his own rules, and where he corrected you -- follow them, do not ask again)",
   },
 } as const;
 
@@ -251,6 +254,24 @@ export type BusinessFacts = {
   /** 价目被截掉了没有 —— 决定 `pricesCut` 那一行出不出现。 */
   pricesCut: boolean;
   /**
+   * 🔴 他讲过、而且要它**记到下一次开机**的那几句。
+   *
+   * ── 为什么这一栏 2026-09-09 才出现 ────────────────────────────────────
+   *
+   * 助手手上一直有「刚才这段对话里发生过的事」——**而那三轮活在一个分页里**。
+   * 他纠正它一次（「Madam Chong 是名字，不要翻」）、讲一次他的规矩
+   * （「合发那家都是三十天付款」），关掉分页两句都不在了，他明天要再讲一次。
+   *
+   * 一个每天忘记你纠正过什么的助手，是 [重点 9c](../../docs/founder-points.md)
+   * 那张表里最浅的一层：功能好、好用、稳 —— **换一家一样好用的就没了**。
+   * 记性不一样：他教了半年的那一个，换一家要从头教起。
+   *
+   * ⚠️ **没有检索**（读了 mem0 之后决定的，见 20260909300000）：
+   * 一间店的记忆是几十条，而几十条**全部送进去**比一套向量检索又便宜又准。
+   * 这里拿到什么就全部注进去。
+   */
+  memory: { line: string }[];
+  /**
    * 🔴 陌生人在他官网上问的那几句，而他还没处理。
    *
    * ── 为什么这一栏 2026-09-09 才出现 ────────────────────
@@ -333,6 +354,9 @@ export async function fetchBusinessFacts(
       nudges: [],
       prices: [],
       pricesCut: false,
+      /* 🔴 数字读不到，**不代表他讲过的话读不到** —— 那是另一张表。
+         这一轮答不了他的数字，而他的规矩照旧要守。 */
+      memory: await fetchMemory(supabase, projectId),
       enquiries: [],
       lang,
       unread: true,
@@ -360,6 +384,9 @@ export async function fetchBusinessFacts(
       /* 🔴 一个数字都数不出来的时候**价目照读** —— 他可能昨天才把货品
          打进去、今天要开第一张单，而那一刻这几格全部是零。 */
       ...(await fetchPrices(supabase, projectId)),
+      /* 🔴 一条记录都还没有的时候**最要记得** —— 第一天他讲的那几句规矩，
+         正是他还没有任何数字的那一天讲的。 */
+      memory: await fetchMemory(supabase, projectId),
       enquiries: await fetchEnquiries(supabase),
       lang,
       unread: false,
@@ -381,6 +408,7 @@ export async function fetchBusinessFacts(
     owing: await fetchPartyOwing(supabase, projectId, role, lang),
     nudges: await fetchNudges(supabase, projectId, lang),
     ...(await fetchPrices(supabase, projectId)),
+    memory: await fetchMemory(supabase, projectId),
     enquiries: await fetchEnquiries(supabase),
     lang,
     unread: false,
@@ -460,6 +488,31 @@ async function fetchEnquiries(
  * ⚠️ **不判角色。** `catalog_items` 的政策是 `works_here`，一个师傅本来
  * 就看得到货架那一页。在这里再判一次就是同一条规矩两个地方。
  */
+/**
+ * 🔴 他讲过要它记住的那几句 —— **一次读完，不搜**。
+ *
+ * 呼叫 `assistant_memory`（20260909300000），而那一支自己做两件事：
+ * 做成过的排前面、`works_here` 挡门。两件都不在这里再做一次 ——
+ * 同一条规矩两个地方，是这个仓库栽过八次的形状。
+ *
+ * ⚠️ 读失败回空阵列，**不回 null**：跟 `owing` 不一样。那一边分不开会
+ * 变成对着一个师傅讲「没有人欠你钱」；这一边最坏是这一轮少记得几句话，
+ * 而他会当场再讲一次。
+ */
+async function fetchMemory(
+  supabase: SupabaseClient,
+  projectId: string,
+): Promise<{ line: string }[]> {
+  const { data, error } = await supabase.rpc("assistant_memory", {
+    in_project_id: projectId,
+  });
+  if (error) return [];
+  return ((data ?? []) as { body?: string | null }[])
+    .map((r) => String(r.body ?? "").trim())
+    .filter(Boolean)
+    .map((line) => ({ line }));
+}
+
 async function fetchPrices(
   supabase: SupabaseClient,
   projectId: string,
@@ -698,9 +751,27 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
   const g = GAPS[facts?.lang ?? "en"];
 
   if (!facts) return "";
-  if (facts.unread) return w.unread;
 
-  if (!facts.figures.length) return w.none;
+  /*
+    🔴 他讲过要它记住的那几句 —— **一段带标题的话，而且三条路都要带上它**。
+
+    「注入成一段带标题的话」是读 mem0 拿到的第三条（20260909300000）：
+    几十句散在提示里，模型分不出哪一句是他的规矩、哪一句是我的指示。
+    一个标题就把它们变成一组「他讲过的」。
+
+    ⚠️ 而它要放在**读不到数字**跟**一条记录都没有**那两条路上，
+    不是只放在正常那一条：他第一天什么都还没有的时候讲的那几句规矩，
+    正是最该记得的。少了这两行，一间新店的助手每一次都忘。
+  */
+  const memory = facts.memory.length
+    ? ["", `${w.memory}:`, ...facts.memory.map((r) => `- ${r.line}`)]
+    : [];
+  const withMemory = (head: string) =>
+    memory.length ? [head, ...memory].join("\n") : head;
+
+  if (facts.unread) return withMemory(w.unread);
+
+  if (!facts.figures.length) return withMemory(w.none);
 
   const lines = facts.figures.map((f) => {
     const was = f.previous ? ` (${w.vsLast} ${f.previous})` : "";
@@ -783,6 +854,7 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ...nudges,
     ...prices,
     ...enquiries,
+    ...memory,
     "",
     `${w.cannot}:`,
     ...gaps.map((line) => `- ${line}`),

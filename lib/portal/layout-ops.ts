@@ -450,6 +450,21 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     op: z.literal("reverse_ledger_entry"),
     record_id: z.string().min(1),
   }),
+  /*
+    记住这一句 —— 「以后合发那家都算三十天」「我的名字不要翻成中文」。
+
+    🔴 **它写的是一段备忘，不是他的帐。** 这一格底下那张表
+    （`assistant_facts`，20260909300000）上没有金额、没有连到任何一张单 ——
+    所以它跟别的动作不一样：**哪一页都做得了**，因为一条规矩不属於某一页。
+
+    ⚠️ 那句话要**原样**收他讲的，不要摘要 —— 一句被压缩过的话，
+    下次注回去的时候已经不是他讲的那一句了。
+  */
+  z.object({
+    op: z.literal("remember"),
+    /** 他要它记住的那一句，原话。 */
+    value: z.string().min(1).max(400),
+  }),
   z.object({
     op: z.literal("share_record"),
     record_id: z.string().min(1),
@@ -1492,6 +1507,20 @@ export function applyLayoutOps(
       }
       case "reverse_ledger_entry": {
         skipped.push({ op: op.op, reason: "notMoneyPage" });
+        break;
+      }
+
+      /*
+        🔴 记住一句话**从来不该走到这里** —— route 在分流之前就接掉它了
+        （见那个档案里 `memoryOps` 那一段），因为一条规矩不属於任何一页。
+
+        留这一格的理由跟底下 `default` 那一段一模一样：**它到不了，
+        而它到得了的那一天要红，不要静**。少了它，一个没被接掉的
+        「记住…」会掉进 `default`，而 `default` 讲的是「这个动作没有接线」——
+        一句对不上的话，指向一个其实接好了的功能。
+      */
+      case "remember": {
+        skipped.push({ op: op.op, reason: "couldNotRemember" });
         break;
       }
 

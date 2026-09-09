@@ -584,6 +584,63 @@ try {
     (afterHear.count ?? 0) === 0,
     `帐上出现了 ${afterHear.count} 笔 Selera`,
   );
+
+  console.log("");
+  console.log("── ⑫ 🔴 关掉分页也还记得 ──────────────────────────");
+  /*
+    🔴 这一段守的不是「它记不记得刚才那三轮」（⑦ 已经在守了），
+    是**它记不记得昨天**。
+
+    量出来的：那三轮活在一个分页里。他纠正它一次、讲一次他的规矩，
+    关掉分页两句都不在了 —— 而一个每天忘记你纠正过什么的助手，
+    是[重点 9c] 那张表里最浅的一层：换一家一样好用的就没了。
+
+    ⚠️ **中间要真的 reload**。同一个分页里接着问，量到的是上面那三轮，
+    而那正是这一段要跟它分开的东西 —— 一条量错对象的断言，
+    跟一条什么都没守的断言长得一模一样（[任务 322] 付过这个学费）。
+  */
+  const RULE = "Hup Seng always pays on thirty days";
+  const toldIt = await say(page, `Remember this: ${RULE}`);
+  console.log(`        它讲了：${toldIt.split(String.fromCharCode(10)).join(" / ").slice(0, 160)}`);
+  await page.waitForTimeout(2000);
+
+  const { data: kept } = await admin
+    .from("assistant_facts")
+    .select("body, landed, page_key")
+    .eq("project_id", P);
+  check(
+    "🔴 那一句真的落在表上了",
+    (kept ?? []).some((r) => /thirty days/i.test(String(r.body ?? ""))),
+    JSON.stringify(kept),
+  );
+  check(
+    "而且它讲出来它记住了",
+    /remember|noted|kept/i.test(toldIt),
+    toldIt.slice(0, 160) || "（它一个字都没讲）",
+  );
+
+  /* 🔴 换一个分页 —— **另一个 context，另一次登入**，没有任何一轮历史。
+     ⚠️ 借上面那个分页的登入状态（`storageState`）而不是重新打一次密码：
+     重打一次登入量的是登入，这一条要量的是记性。 */
+  const fresh = await browser.newContext({
+    storageState: await page.context().storageState(),
+    viewport: { width: 1440, height: 950 },
+  });
+  const page2 = await fresh.newPage();
+  await page2.goto(`${BASE}/en/portal/quotations`, {
+    waitUntil: "networkidle", timeout: 180000,
+  });
+  await page2.waitForTimeout(1500);
+  const recalled = await say(page2, "What are Hup Seng's payment terms?");
+  console.log(`        新分页里它讲了：${recalled.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  check(
+    "🔴 新开的分页里，它照样答得出那一句",
+    /thirty|30/i.test(recalled),
+    recalled.slice(0, 200) || "（它一个字都没讲）",
+  );
+  await page2.screenshot({ path: `${OUT}/12-remembered.png` });
+  await fresh.close();
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);
