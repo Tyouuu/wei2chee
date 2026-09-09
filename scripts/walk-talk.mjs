@@ -205,7 +205,11 @@ try {
          「goes on」·「can only be recorded on … not here」），所以改成抳
          **那一句里有没有指路**：它念得出另一页的名字，就不是说谎。
          一把把诚实算成说谎的尺，会逼下一个人去拆掉那几道守卫。 */
-      /can.?t|cannot|not available|only be|only on|goes on|is recorded on|go to|is done on|not (this|here)|做不到|不能|要在|请到|那一页/i.test(said) ||
+      /* ⚠️ 「already」也算 —— 2026-09-10 量的：同一句讲三次，
+         第一次加了行，第二三次它讲「那一行已经在那张单上了」。
+         **那是对的行为**，而不把它算进来，这一支会把一次防重复
+         报成「说了没做」。 */
+      /can.?t|cannot|not available|only be|only on|goes on|is recorded on|go to|is done on|not (this|here)|already (on|there|done|added)|做不到|不能|要在|请到|那一页|已经在/i.test(said) ||
       /(Stock|Staff|Shelf|Payments|Expenses|Bookings|Design) page/i.test(said);
     let verdict;
     if (!step.want) verdict = said ? "✅ 答了" : "🔴 一句话都没讲";
