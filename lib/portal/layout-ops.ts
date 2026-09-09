@@ -248,6 +248,54 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     target_id: z.string().min(1),
     cells: z.array(z.string()).max(8).nullable(),
     status_tone: z.enum(STATUS_TONES).nullable(),
+    /*
+      🔴 一张纸上写的是**一张单跟它的几行，同一件事**。
+
+      2026-09-10 老板拿 Tofu 的截图来问「我们是不是可以做到这样了」——
+      一张手写的茶餐室单子被读成单号 · 日期 · 供应商 · 九行明细。
+      量出来（`check:from-photo`）：读得到，**写不进去**，
+      而模型自己讲得出根因 ——
+
+          line items need an existing order record ID first
+
+      开一张单是一个动作，往单上写明细是另一个，而第二个要一个
+      **这一批里还不存在**的编号。所以路不是「让它指得到一个还没有的编号」，
+      是**让开单那一支自己把行带上**：`add_pipeline_record` 之后接
+      `set_record_lines` —— **人按「开一张新的」那张表单打的就是这两支，
+      同样的顺序**（new-record-form.tsx）。一条写入路径，不是两条。
+
+      ⚠️ 只有单据那一种页面收得下它。名册上一行是一个人，货架上一行是一件货，
+      收款上一行是一笔钱 —— 三种都没有「明细」这回事，而那时候这几行
+      **要讲出来它们没有被留下**，不可以静静消失。
+    */
+    lines: z
+      .array(
+        z.object({
+          /** 那一行写的是什么 —— 纸上印的那几个字。 */
+          description: z.string().min(1).max(200),
+          /** 几个。纸上没写就留空，**不要填 1**：一个编出来的数量
+           *  会让「单价」那一栏跟着变成一个他没有讲过的数字。 */
+          qty: z.string().max(20).nullable(),
+          unit: z.string().max(20).nullable(),
+          unit_price: z.string().max(20).nullable(),
+          /**
+           * 🔴 这一行的钱 —— **纸上印的那个数字**。
+           *
+           * 不是这里算出来的。`append_record_line` 会 `数量 × 单价`，
+           * 而那一条在他自己打字的时候是对的（[重点 29] 第 1 种）；
+           * 在这里是错的：一张茶餐室的单上写着「Teh ais 6.60」——
+           * 没有数量、没有单价，算出来是 0，而纸上明明写着 6.60。
+           * **纸是事实来源，这里只抄。**
+           */
+          amount: z.string().max(20).nullable(),
+        }),
+      )
+      .max(40)
+      /* 只有单据那一种页面用得着它，而大部分的行没有明细 ——
+         所以它是**可以不在**的，不是「要给一个 null」。
+         送出去那份照旧把它列进 required（严格结构化输出要求全部在）。 */
+      .nullable()
+      .optional(),
   }),
   // THE THREE OPERATIONS THIS PRODUCT WAS MISSING. Until columns became an
   // array (lib/portal/table-model.ts) the assistant had to answer「表格加一列

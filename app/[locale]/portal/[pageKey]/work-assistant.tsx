@@ -368,7 +368,18 @@ export function WorkAssistant({
       const did = (out.explanation ?? "").trim();
       if (did) setTurns((prev) => [...prev, { asked, did }].slice(-3));
       setText("");
-      clearShot();
+      /*
+        🔴 **那张纸留着。**
+
+        以前这里是 `clearShot()` —— 送出去一次就不见。
+        而他真正的用法是**两句话**：先问一句「Teh ais 那一行写多少」，
+        再讲「照这张开一张单」—— 而第二句那一刻图已经没了，
+        它只好回「please attach the bill again」（check:from-photo 第 ②b 段量的）。
+        一个手上带着油的师傅不会拍第二次。
+
+        ⚠️ 而它**看得见**：上面那张缩图跟「拿掉」一直在，
+        所以不会有一张他以为已经不在、而还在跟着每一句话走的图。
+      */
       /* 🔴 那一行在资料库里，不在这一页手上那棵树里。见档头 ③。 */
       if (out.refetch) router.refresh();
     } catch {

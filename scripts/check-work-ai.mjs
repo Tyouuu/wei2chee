@@ -1156,10 +1156,32 @@ try {
     }
   }
   if (!depAt) throw new Error("seed deposit appt: 今天五个时段全部被占了");
+  /* 🔴 印出来 —— 红的时候要分得出「它指错了」跟「画面根本没印给它」。 */
+  const seeded = await admin
+    .from("appointments")
+    .select("id, starts_at")
+    .eq("project_id", P)
+    .ilike("party", "%rajan%")
+    .limit(1)
+    .maybeSingle();
+  console.log(
+    `        种下去那一笔：${seeded.data?.id} @ ${seeded.data?.starts_at}`,
+  );
 
   await page.goto(`${BASE}/en/portal/${bookPage}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
   await page.waitForTimeout(1500);
+  /* 🔴 画面上到底有没有印那一笔的编号给它 —— 靠名字认人是禁的
+     （[任务 89]），所以它只能从这一页印出来的清单里抄一个下来。
+     抄不到，红的是这一页；抄错了，红的才是模型。 */
+  const drawn = await page
+    .locator("[data-work-ai]")
+    .first()
+    .evaluate(() => document.body.innerText)
+    .catch(() => "");
+  console.log(
+    `        这一页印了 Ms Rajan 吗：${/rajan/i.test(drawn) ? "有" : "没有"}`,
+  );
   const asked = await say(page, "Ask Ms Rajan for a RM 80 deposit");
   console.log(`        它讲了：${asked.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
   await page.waitForTimeout(2500);
@@ -1198,6 +1220,93 @@ try {
     `deposit_cents = ${JSON.stringify(depAfter.data?.deposit_cents)} — 0 是「讲好了不收」，是另一句话`,
   );
   await page.screenshot({ path: `${OUT}/16-deposit.png` });
+
+
+  console.log("");
+  console.log("── ⑳ 🔴 供应商那张单拍进来 —— 纸上那个数字要落进帐 ──");
+  /*
+    🔴 老板 2026-09-10 拿一张别人的产品图来问：`我们是不是可以做到这样了`
+    —— 那一张图里面是一张**手写的小吃店单**被读成单号 · 日期 ·
+    供应商 · 九行明细。
+
+    量出来的是**一半**：第 ⑩ 段已经证了模型真的看得见那张图，
+    而那一段话里写的是「这张图是参考，**永远不是他生意的事实来源**」
+    —— 那句话是写给「改设计」那一边的，而他在**自己的系统**上
+    举起来的那张纸就是事实来源。
+
+    ⚠️ 这一段量四件，而第三件才是它存在的理由：
+    帐上真的多一笔 · 金额是**纸上那个**不是一个接近的数字 ·
+    **它把那个数字念回给他** · 那家店的名字原样拄下来。
+    一笔写进去而没有念出来的钱，他没有任何办法跟手上那张纸对一次。
+  */
+  const BILL_DAY = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+  const billSvg = [
+    `<svg width="1100" height="820" xmlns="http://www.w3.org/2000/svg">`,
+    `<rect width="1100" height="820" fill="#ffffff"/>`,
+    `<text x="60" y="92" font-family="Helvetica,Arial" font-size="40" font-weight="bold" fill="#111">SRI MURNI BEAUTY SUPPLY SDN BHD</text>`,
+    `<text x="60" y="140" font-family="Helvetica,Arial" font-size="26" fill="#333">18 Jalan Pasar, 30300 Ipoh, Perak</text>`,
+    `<text x="60" y="215" font-family="Helvetica,Arial" font-size="32" font-weight="bold" fill="#111">INVOICE  SMB-4471</text>`,
+    `<text x="60" y="260" font-family="Helvetica,Arial" font-size="26" fill="#333">Date: ${BILL_DAY}</text>`,
+    `<line x1="60" y1="300" x2="1040" y2="300" stroke="#111" stroke-width="3"/>`,
+    `<text x="60" y="360" font-family="Helvetica,Arial" font-size="28" fill="#111">3 x Shampoo 5L</text>`,
+    `<text x="860" y="360" font-family="Helvetica,Arial" font-size="28" fill="#111">285.00</text>`,
+    `<text x="60" y="420" font-family="Helvetica,Arial" font-size="28" fill="#111">12 x Colour tube</text>`,
+    `<text x="860" y="420" font-family="Helvetica,Arial" font-size="28" fill="#111">216.00</text>`,
+    `<line x1="60" y1="470" x2="1040" y2="470" stroke="#111" stroke-width="2"/>`,
+    `<text x="60" y="540" font-family="Helvetica,Arial" font-size="34" font-weight="bold" fill="#111">TOTAL</text>`,
+    `<text x="800" y="540" font-family="Helvetica,Arial" font-size="34" font-weight="bold" fill="#111">RM 501.00</text>`,
+    `<text x="60" y="640" font-family="Helvetica,Arial" font-size="24" fill="#555">Terms: 30 days</text>`,
+    `</svg>`,
+  ].join("");
+  const bill = await sharp(Buffer.from(billSvg)).jpeg({ quality: 92 }).toBuffer();
+
+  await page.goto(`${BASE}/en/portal/expenses`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  const openBill = page.locator('[data-work-ai="closed"]');
+  if (await openBill.count()) await openBill.first().click();
+  await page
+    .locator('[data-work-ai="open"] input[type="file"]')
+    .first()
+    .setInputFiles({ name: "supplier.jpg", mimeType: "image/jpeg", buffer: bill });
+  await page.waitForTimeout(2500);
+  const paperSaid = await say(page, "Put this supplier bill in");
+  console.log(`        它讲了：${paperSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  await page.waitForTimeout(2500);
+
+  const spent = await admin
+    .from("ledger_entries")
+    .select("amount_cents, party, note")
+    .eq("project_id", P)
+    .eq("module_key", "expenses")
+    .order("created_at", { ascending: false })
+    .limit(4);
+  const fromPaper = (spent.data ?? []).filter((r) =>
+    /murni/i.test(`${r.party ?? ""} ${r.note ?? ""}`),
+  );
+  check(
+    "🔴 开销那一页上真的多了一笔",
+    fromPaper.length > 0,
+    `最新四笔：${JSON.stringify(spent.data ?? [])} — ${paperSaid.slice(0, 140)}`,
+  );
+  /* 🔴 一个接近的数字不算对 —— 那是一笔从来没有花过的钱。 */
+  check(
+    "🔴 而且是纸上那个 RM 501.00",
+    fromPaper.some((r) => Number(r.amount_cents) === 50100),
+    `写进去的是 ${JSON.stringify(fromPaper.map((r) => r.amount_cents))}`,
+  );
+  /* 🔴 写进去而不念出来，他就没有办法跟手上那张纸对一次。 */
+  check(
+    "🔴 它把那个数字念回给他（501）",
+    /501/.test(paperSaid),
+    paperSaid.slice(0, 220),
+  );
+  /* 店名原样拄下来 —— 不翻译、不改拼法。 */
+  check(
+    "🔴 那家店的名字原样拄下来（Sri Murni）",
+    /sri\s*murni/i.test(paperSaid),
+    paperSaid.slice(0, 220),
+  );
+  await page.screenshot({ path: `${OUT}/17-supplier-bill.png` });
 
 } catch (e) {
   failed.push(`threw: ${e.message}`);

@@ -364,6 +364,13 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
 export type RecordResult = {
   written: number;
   skipped: Skip[];
+  /**
+   * 做成了、而且**非讲不可**的那几句 —— 「那张单上放了六行」。
+   *
+   * 🔴 一张从纸上抄下来的单，他唯一能拿去跟手上那张纸对一次的东西，
+   * 就是助手念回来的那几个数字。写进去而不念出来，等於请他自己再打开一次。
+   */
+  notes: Skip[];
 };
 
 /**
@@ -455,6 +462,7 @@ export async function writeRecords(
   columnsFor?: (targetId: string) => string[] | null,
 ): Promise<RecordResult> {
   const skipped: RecordResult["skipped"] = [];
+  const notes: Skip[] = [];
   let written = 0;
 
   for (let i = 0; i < ops.length; i += 1) {
@@ -565,7 +573,21 @@ export async function writeRecords(
       continue;
     }
 
-    const { error } = directory
+    /*
+      🔴 那几行 —— 纸上那一张单自己带下来的。
+
+      在这里读出来，因为下面三种页面里只有单据那一种放得下它，
+      而另外两种**要讲出来它们没有被留下**（见 layout-ops 那一段）。
+    */
+    const paperLines = (
+      Array.isArray((op as { lines?: unknown }).lines)
+        ? ((op as { lines?: unknown }).lines as unknown[])
+        : []
+    )
+      .map((raw) => raw as Record<string, unknown>)
+      .filter((l) => String(l?.description ?? "").trim());
+
+    const { data: opened, error } = directory
       ? await supabase.rpc("add_directory_entry", {
           in_project_id: projectId,
           in_module_key: moduleKey,
@@ -617,11 +639,68 @@ export async function writeRecords(
           in_extra: extra,
           in_idempotency_key: keyFor(requestKey, i),
         });
-    if (error) skipped.push({ op: op.op, reason: "dbSaid", vars: { detail: error.message.slice(0, 80) } });
-    else written += 1;
+    if (error) {
+      skipped.push({ op: op.op, reason: "dbSaid", vars: { detail: error.message.slice(0, 80) } });
+      continue;
+    }
+    written += 1;
+
+    if (!paperLines.length) continue;
+    /*
+      名册 · 货架 · 收款那三种页面上一行就是一行，没有明细这回事。
+      🔴 **讲出来**：一句静静掉了六行金额的成功，比一句失败更贵。
+    */
+    if (directory || ledger || catalog) {
+      notes.push({ op: op.op, reason: "linesNotKept", vars: { count: String(paperLines.length) } });
+      continue;
+    }
+    const made = (Array.isArray(opened) ? opened[0] : opened) as { id?: string } | null;
+    if (!made?.id) {
+      notes.push({ op: op.op, reason: "linesNotKept", vars: { count: String(paperLines.length) } });
+      continue;
+    }
+    /*
+      🔴 `set_record_lines` —— **人按「开一张新的」那张表单打的同一支**，
+      而且是同样的顺序：先开单，再一次把行放上去（new-record-form.tsx）。
+
+      整批换、不是一行一行加：这一支自己会先 `delete` 再插，所以同一句话
+      送两次的结果跟送一次一样。而单上的总额**不在这里算** ——
+      `record_lines_total_trg` 会自己加，所以那个数字永远只有一个答案
+      （[重点 29] 第 1 种：算出来的最好）。
+    */
+    const { error: lineErr } = await supabase.rpc("set_record_lines", {
+      in_record_id: made.id,
+      in_lines: paperLines.map((l) => {
+        const qty = Number(String(l.qty ?? "").replace(/[^0-9.]/g, ""));
+        const unitPrice = senFrom(String(l.unit_price ?? ""));
+        /* 纸上印的那个数字优先。抄不到才退回 数量 × 单价；
+           两样都没有就是 0 —— 一行没有钱的字（「送的」）也是一行。 */
+        const printed = senFrom(String(l.amount ?? ""));
+        const worked =
+          Number.isFinite(qty) && qty > 0 && unitPrice !== undefined
+            ? Math.round(qty * unitPrice)
+            : undefined;
+        return {
+          description: String(l.description ?? "").trim(),
+          qty: Number.isFinite(qty) && qty > 0 ? String(qty) : "",
+          unit: String(l.unit ?? "").trim(),
+          unit_price_cents: unitPrice ?? "",
+          amount_cents: printed ?? worked ?? 0,
+        };
+      }),
+    });
+    if (lineErr) {
+      notes.push({
+        op: op.op,
+        reason: "linesNotKept",
+        vars: { count: String(paperLines.length) },
+      });
+      continue;
+    }
+    notes.push({ op: op.op, reason: "linesFromPaper", vars: { count: String(paperLines.length) } });
   }
 
-  return { written, skipped };
+  return { written, skipped, notes };
 }
 
 /**

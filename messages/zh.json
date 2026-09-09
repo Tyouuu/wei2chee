@@ -563,6 +563,8 @@
         "classBilled": "{period} 开了 {made} 张，共 {total} — 其中 {again} 张上次已经开过，{free} 个不用交。",
         "paymentTaken": "记了 {amount}，挂在那一张单上 — 还欠 {left}。",
         "appointmentBooked": "{who} 排好了：{when}。",
+        "linesFromPaper": "纸上那几行全部放上去了（{count} 行），总额是那几行加起来的。",
+        "linesNotKept": "这一页一行就是一行，所以纸上那几行没有留下来（{count} 行）— 明细要放在单据那一种页面上。",
         "depositAsked": "那一单要先收 {amount} — 还没收到。",
         "depositDropped": "那一单不用订金了。",
         "noStepSaid": "没有讲要做什么",

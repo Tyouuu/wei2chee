@@ -273,6 +273,18 @@ export type SkipCode =
    * ⚠️ 这一句讲的是「**要收**」，不是「**收到了**」—— 两件事分开是故意的。
    * 一句听起来像已经收到的话，会让她以为钱进来了。
    */
+  /**
+   * 🔴 那张单上放了几行。`count`
+   *
+   * 一张从纸上抄下来的单，他能拿去跟手上那张纸对一次的东西，只有这一句。
+   */
+  | "linesFromPaper"
+  /**
+   * 🔴 那几行没有留下来 —— 这一页一行就是一行，没有明细。
+   *
+   * ⚠️ 静静掉几行金额，比一句失败更贵：帐上那个总额会看起来像他自己填的。
+   */
+  | "linesNotKept"
   | "depositAsked"
   /** 这一单不用订金了。 */
   | "depositDropped"
@@ -386,6 +398,8 @@ export const SKIP_CODES = [
   "followUpDone",
   "followUpDropped",
   "followUpSet",
+  "linesFromPaper",
+  "linesNotKept",
   "depositAsked",
   "depositDropped",
   "appointmentBooked",

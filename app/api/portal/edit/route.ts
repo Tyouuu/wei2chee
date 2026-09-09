@@ -241,6 +241,29 @@ Record tables:
     so taking it back really does kill it.
   * The link comes back in the reply. Not on 进货单 (that is the supplier's side),
     not on money pages and not in the book.
+- 🔴 A NEW DOCUMENT CARRIES ITS OWN LINES: add_table_row takes an optional
+  \`lines\` array, and that is how a whole bill becomes one document in one go.
+  「照这张单开一张，逐项都要」, 「open an order from this bill with every line」.
+  * 🔴 ONLY WHEN HE ACTUALLY GAVE YOU THE LINES -- a paper he photographed,
+    or several items named in one sentence. 「开一张单给 Kedai Aman，装吊扇
+    RM 387.50」 is ONE figure and NOT a line: it is a row with an amount in
+    \`cells\`, and sending it as a single line makes the next sentence
+    (「加三个吊扇」) read as a fourth fan. When in doubt, no lines.
+  * Use it when the document does NOT exist yet. add_record_line is for a
+    document he already has, and it needs that document's record_id -- an id
+    you cannot have for a row you are creating in this same answer.
+  * Each line is {description, qty, unit, unit_price, amount}. \`description\`
+    is required; the other four are null when the paper does not say them.
+  * 🔴 \`amount\` IS THE FIGURE PRINTED ON THAT LINE, copied, not worked out.
+    A line reading 「Teh ais 6.60」 has no quantity and no unit price, and a
+    computed amount would be nought while the paper plainly says 6.60. Send
+    amount:"6.60". Only when the line has a quantity and a unit price and no
+    total of its own may the amount be left null for the database to work out.
+  * DO NOT send a total line. The document's total is the sum of its lines,
+    added by the database -- a 「TOTAL」 row would be counted twice.
+  * qty null when the paper does not say a number. Do not write 1.
+  * Documents only. On the shelf, the directory or a money page a row is a row
+    and has no lines; the lines are dropped and you will be told they were.
 - add_record_line puts ONE line on a document he already has: 「三包水泥加两片板」,
   「add two ceiling fans to that quote」. record_id is that document.
   * 🔴 \`description\` IS REQUIRED AND IT IS THE WORDS OF THE LINE. For
@@ -351,6 +374,13 @@ Record tables:
 - remember keeps one sentence for good, past the end of this conversation:
   「记住，合发那家都是三十天付款」「我的名字不要翻成中文」「装好了是指师傅
   走了，不是收了钱」. value is that sentence.
+  * 🔴 \`value\` IS REQUIRED AND IT IS THE SENTENCE. For 「记住，合发那家都是
+    三十天付款」 send
+    {op:"remember", value:"合发那家都是三十天付款"}.
+    An operation with value null is thrown away and NOTHING is remembered,
+    while your reply still says you will remember it -- measured twice on
+    2026-09-10 by check:work-ai, and that pair of sentences is a lie he only
+    finds out about weeks later.
   * 🔴 IN HIS OWN WORDS, not a summary of them. Store what he said.
   * Use it when he corrects you, states a standing rule, or says 记住 / 以后 /
     from now on. NOT for a one-off instruction you are carrying out right now
@@ -376,9 +406,10 @@ Whole pages:
 - Set suggestion.action to "none" for every other request.
 
 图片 (when the owner attaches one):
-- The picture is a REFERENCE, never a source of truth about their business. It
-  is usually a screenshot of somebody else's page, a photo of the paper form
-  they use today, or a shot of their own screen with something circled.
+- ON THE DESIGN SCREEN the picture is a REFERENCE, never a source of truth
+  about their business. It is usually a screenshot of somebody else's page, a
+  photo of the paper form they use today, or a shot of their own screen with
+  something circled.
 - Read it for LAYOUT and for WORDS THAT ARE THEIRS. A photo of their own
   handwritten job sheet tells you what columns their table should have; a
   screenshot of a competitor tells you an arrangement, and nothing else.
@@ -387,6 +418,10 @@ Whole pages:
   to copy a page wholesale, do the layout and leave their own words in place.
 - If the picture does not say anything you can act on, say so in one sentence
   and change nothing. A guess dressed as an edit is worse than a question.
+- 🔴 ON HIS OWN SYSTEM THE OPPOSITE HOLDS, and the 「WHERE HE IS STANDING」
+  block below says how. The paper he photographs there is HIS OWN -- his
+  supplier's invoice, his customer's transfer slip -- and it IS the truth about
+  his business. When that block is present, it decides; this one does not.
 
 换风格 / 换配色 / 换排法 (the \`design\` field, not an operation):
 - These three are NOT blocks and NOT operations. They are settings on the whole
@@ -931,6 +966,26 @@ this page. Do NOT offer to do it, do NOT ask a follow-up question about it, and
 do NOT describe it as something that can happen here: he reads your sentence as
 a promise, and on this page you cannot keep it.
 
+🔴 A PHOTO HE HANDS YOU HERE IS HIS OWN PAPER, AND IT IS THE TRUTH.
+Not a layout reference -- that rule belongs to the design screen. On this page
+it is a supplier's invoice, a receipt, a bank-in slip, a handwritten day book:
+the paper his business actually runs on. He is holding it up to the camera
+precisely so that he does not have to type it.
+* Read off it what it is for, who it is with, the date, and the amount, and
+  write them down with the operations above -- an expense, a payment, a record,
+  an item, whichever this page holds.
+* Use the words printed on the paper, spelled the way they are printed. A shop
+  name, a person's name and a document number are copied exactly and never
+  translated, whatever language the rest of your sentence is in.
+* 🔴 NEVER INVENT A FIGURE. A number you cannot read is a number you ask
+  about. A guessed amount is money in his books that was never spent, and he
+  finds out when the supplier telephones him.
+* 🔴 SAY BACK EVERY FIGURE YOU WROTE, in the same sentence as what you did.
+  He handed you the paper instead of typing it, so your sentence is the only
+  place he can check your reading against the paper still in his hand.
+* If this page cannot hold what the paper is, change nothing and say which page
+  it belongs on. 「拍一张纸」 is not permission to write it somewhere else.
+
 ⚠️ This block is written in English on purpose. The rule above ("write all text
 in the same language the owner used") decides your reply, and a block of
 Chinese words sitting here pulled an English question into a Chinese answer --
@@ -1147,6 +1202,9 @@ The business owner asked:
     正是这个仓库犯过二十次的那件事。
   */
   recordSkips.push(...split.refused);
+  /* 🔴 讲得出来的那几句 -- 「那张单上放了六行」。声明在这里而不是下面，
+     因为开一张单那一段也有话要讲，而它跑在前面。 */
+  const recordNotes: Skip[] = [];
   if (split.recordOps.length && project?.id && isRecordModule(pageKey)) {
     /*
       THE CUSTOMER'S OWN SESSION, NOT THE SERVICE ROLE.
@@ -1193,6 +1251,7 @@ The business owner asked:
     );
     recordsWritten = wrote.written;
     recordSkips.push(...wrote.skipped);
+    recordNotes.push(...wrote.notes);
   }
 
   /*
@@ -1202,7 +1261,6 @@ The business owner asked:
     之后，那张表上的状态要当场跟着变。少了这一句，助手说改了而画面不动 ——
     那正是 founder-points 23 讲的那件事。
   */
-  const recordNotes: Skip[] = [];
   if (split.actOps.length && isRecordModule(pageKey)) {
     const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient());
     asCustomerForRows = asCustomer;
@@ -1548,6 +1606,25 @@ export const EDIT_JSON_SCHEMA = {
             column_label: { type: ["string", "null"] },
             column_kind: { type: ["string", "null"], enum: [...COLUMN_KINDS, null] },
             cells: { type: ["array", "null"], items: { type: "string" } },
+            // add_table_row only, and only on a document page. 一张纸上写的是
+            // 一张单跟它的几行，所以开单那一支自己把行带上 -- 见 layout-ops
+            // 那一段：一个还不存在的编号指不出来，而人按的那张表单也是
+            // 先开单再一次把行放上去。
+            lines: {
+              type: ["array", "null"],
+              items: {
+                type: "object",
+                properties: {
+                  description: { type: ["string", "null"] },
+                  qty: { type: ["string", "null"] },
+                  unit: { type: ["string", "null"] },
+                  unit_price: { type: ["string", "null"] },
+                  amount: { type: ["string", "null"] },
+                },
+                required: ["description", "qty", "unit", "unit_price", "amount"],
+                additionalProperties: false,
+              },
+            },
             status_tone: {
               type: ["string", "null"],
               enum: ["positive", "warning", "negative", "neutral", null],
@@ -1620,6 +1697,7 @@ export const EDIT_JSON_SCHEMA = {
             "column_label",
             "column_kind",
             "cells",
+            "lines",
             "status_tone",
             "stages",
             "record_id",
