@@ -126,6 +126,11 @@ export function AiDock({ children }: { children: ReactNode }) {
       style={{ paddingRight: `calc(1rem + ${gutter}px)` }}
     >
       <div
+        /* 一个给尺子用的把手 —— `data-panel="ai"` 量的是里面那一格，
+           而它收起来的时候高是 0；这一张卡才是画面上那一条。
+           （同一个理由 ai-assistant.tsx 加过 `data-panel`。） */
+        data-dock="ai"
+        data-dock-open={open ? "1" : "0"}
         className="pointer-events-auto flex flex-col overflow-hidden rounded-[var(--radius-lg)] border [background-color:var(--color-ink-900)] [border-color:var(--color-ink-800)]"
         style={{
           // Collapsed it is exactly as wide as its own one line, so the corner

@@ -354,7 +354,7 @@
       "aiClose": "Close",
       "aiEmptyBody": "Just say it. Names, columns, workflow stages — type what you want changed and it changes.",
       "aiSuggestTitle": "Try asking",
-      "aiApplied": "{count} change(s) made",
+      "aiApplied": "{count, plural, one {# change made} other {# changes made}}",
       "aiRevert": "Undo this change",
       "aiReverted": "Undone",
       "aiRateLimited": "That is a lot of questions today. Try again shortly.",

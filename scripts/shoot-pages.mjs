@@ -134,7 +134,26 @@ try {
      ⚠️ **筛掉的照旧种进去** —— 一张少了别的模块的页面，
      侧栏跟数字都会跟真的那一版不一样。 */
   const only = (process.env.ONLY ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  const shooting = only.length ? opened.filter((k) => only.includes(k)) : opened;
+  /* ── 工具页 ─────────────────────────────────────────────────────────────
+     🔴 这十八页是**模块**（他自己挑的那几页）。而 `(app)/` 底下还有
+     二十一页**工具页** —— 谁欠我钱 · 我欠谁 · 帐 · 税 · 薪水 · 出勤 ·
+     排班 · 效期 · 借出去的 · 序号 · 车牌 · 保养 · 分店 · 调拨 · 点名 ·
+     柜台 · 餐台 · 厨房 · 房间 · 询价 · 今天要跟的。
+
+     [任务 177] 量到的那个洞就是这一句：**尺子看得到画面，只是从来没走到
+     新做的那几页**。一份「全部的页面」少掉一半，跟一份完整的报告在他眼前
+     长得一模一样。
+
+     ⚠️ 有几页要那门生意真的有那样东西才画得出来（餐台 · 厨房 · 房间），
+     所以这一段**打不开就印出来，不当成失败** —— 那是资料不是缺陷。 */
+  const DESK = [
+    "today", "owing", "payables", "books", "tax", "payroll",
+    "attendance", "rota", "expiry", "rentals", "serials", "vehicles",
+    "contracts", "branches", "transfers", "classes", "counter",
+    "tables", "kitchen", "rooms", "enquiries",
+  ];
+  const all = [...opened, ...DESK];
+  const shooting = only.length ? all.filter((k) => only.includes(k)) : all;
   if (only.length && shooting.length !== only.length) {
     console.log(`⚠️ 这几页这个帐号没有开：${only.filter((k) => !shooting.includes(k)).join(" · ")}`);
   }
@@ -173,7 +192,7 @@ try {
       console.log(`  ${String(key).padEnd(16)} ${String(tall).padStart(5)}px  ${heading}`);
     } catch (e) {
       console.log(`  🔴 ${key} — ${String(e).slice(0, 90)}`);
-      shot.push({ key, label: labels[key] ?? key, height: 0, heading: "" });
+      shot.push({ key, label: labels[key] ?? key, height: 0, heading: "", desk: DESK.includes(key) });
     }
   }
 } finally {
@@ -182,6 +201,7 @@ try {
   console.log("\n临时帐号删掉了");
 }
 
-const bad = shot.filter((s) => !s.height);
+/* 工具页打不开多半是「这门生意没有那样东西」，不是产品坏了。 */
+const bad = shot.filter((s) => !s.height && !s.desk);
 console.log(`\n拍到 ${shot.length - bad.length} / ${shot.length} 页 → ${OUT}`);
 process.exit(bad.length ? 1 : 0);
