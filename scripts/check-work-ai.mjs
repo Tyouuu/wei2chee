@@ -342,6 +342,58 @@ try {
   );
   await page.screenshot({ path: `${OUT}/6-his-price.png` });
 
+
+  console.log("");
+  console.log("── ⑧ 🔴 一张单摆不摆得下好几行 ────────────");
+  /*
+    🔴 助手以前只开得出一个**总额**，而写明细那一支
+    （`append_record_line`，20260908040000）人按的表单早就在用。
+
+    ⚠️ 这一段量的不只是「多了一行」，是**那张单的总额有没有跟着变**：
+    3 × RM 387.50 = **RM 1,162.50**，而那个乘法是**资料库做的**。
+    它自己算一次再传进去，就是同一个数字两个答案。
+  */
+  /* 🔴 **故意不重新载入** —— 上一段刚才用讲的开出一张单，
+     这一段就接着在那一张上加明细。量的就是「建完当场接着讲」那条路：
+     `router.refresh()` 之后面板手上那棵树要真的带着新那一行，
+     不然助手会说「那张单不在这一页上」—— 而他看到它就在表里。
+     ⚠️ 第一版这里有一次重新载入，拆了之后照样绿 —— 那一次红的真正原因
+     是我在提示里举的例子用了跟这一段同一句话，把模型教去用错的动词。 */
+  const line = await say(page, "On the Kedai Aman quote add a line: 3 Ceiling fan install");
+  console.log(`        它讲了：${line.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+  const withLines = await admin
+    .from("pipeline_records")
+    .select("id, amount_cents")
+    .eq("project_id", P)
+    .eq("module_key", "quotations")
+    .ilike("party", "%kedai aman%")
+    .limit(1);
+  const recId = (withLines.data ?? [])[0]?.id ?? null;
+  const lines = recId
+    ? await admin
+        .from("record_lines")
+        .select("description, qty, unit_price_cents, amount_cents")
+        .eq("record_id", recId)
+    : { data: [] };
+  const got = (lines.data ?? [])[0] ?? null;
+  check(
+    "🔴 那一行写进去了",
+    !!got,
+    line.slice(0, 200) || "（它一句话都没讲）",
+  );
+  check(
+    "🔴 数量是 3，单价是他自己那个",
+    Number(got?.qty) === 3 && Number(got?.unit_price_cents) === 38750,
+    `qty=${got?.qty} 单价=${got?.unit_price_cents}`,
+  );
+  check(
+    "🔴 而那张单的总额是**资料库乘出来**的 RM 1,162.50",
+    Number((withLines.data ?? [])[0]?.amount_cents) === 116250,
+    `总额是 ${(withLines.data ?? [])[0]?.amount_cents} 分`,
+  );
+  await page.screenshot({ path: `${OUT}/7-lines.png` });
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);

@@ -551,6 +551,7 @@
         "followUpDropped": "「{what}」不跟了。",
         "entryReversed": "开了一张相反的 RM {amount} —— 两张都留着，原来那一笔没有改过。",
         "noStepSaid": "没有讲要做什么",
+        "noLineSaid": "那一行没有写它是什么",
         "followUpSet": "记下来了：{what} —— 排在今天，日子在那一页上挪。"
       }
     },

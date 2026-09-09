@@ -373,6 +373,38 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     record_id: z.string().min(1),
     what: z.string().min(1),
   }),
+  /*
+    一张单上多一行 —— 「三包水泥加两片板」。
+
+    🔴 **走「只加一行」那一支（`append_record_line`），不走整批换那一支。**
+
+    `set_record_lines` 是**全删再全插**，而助手**看不到一张单上现在有
+    哪几行**（`describeLayout` 印的是表里那几行，不是单据里面的明细）。
+    一个看不到就整批换的动作，会**静静抹掉它看不见的那几行** ——
+    而任务 93 已经为同一个形状付过学费。只加不删的那一支毁不了任何东西。
+
+    ⚠️ **金额不在这里算。** 那一支自己 `数量 × 单价`，而且插完
+    会把那张单的总额重算一次。在这里再算一次，就是同一个数字两个答案。
+
+    ⚠️ **没有 `item_id`，而这是故意的。** 把一行接到货架上哪一件，
+    决定的是收货、出货那一刻谁的库存会动 —— 而模型只能照名字配。
+    配错一件货，画面上完全正常，而按下出货那一刻它会去动另一件的架子
+    （[任务 89] 同一条界线：省他的字，不可以拿猜来省）。
+    接货品那一步留在人按的那张表单里，那里是他自己从下拉里挑的。
+  */
+  z.object({
+    op: z.literal("add_record_line"),
+    /** 那一张单自己的编号，从页面上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** 这一行写什么 —— 他自己的话。 */
+    description: z.string().min(1).max(200),
+    /** 几件。没讲就是 null，不要填 1。 */
+    qty: z.string().max(20).nullable(),
+    /** 包 · 片 · 趟 —— 他货品页上那个单位。 */
+    unit: z.string().max(30).nullable(),
+    /** 一件多少钱。**从他自己的价目里挑**，不要估。 */
+    unit_price: z.string().max(20).nullable(),
+  }),
   z.object({
     op: z.literal("finish_follow_up"),
     record_id: z.string().min(1),
@@ -1421,7 +1453,10 @@ export function applyLayoutOps(
       }
       case "set_follow_up":
       case "finish_follow_up":
-      case "drop_follow_up": {
+      case "drop_follow_up":
+      /* 一行明细挂在一张单上，而这一页背后没有单。跟上面那几个
+         同一句话，因为它们讲的本来就是同一件事。 */
+      case "add_record_line": {
         skipped.push({ op: op.op, reason: "notARecordPage" });
         break;
       }

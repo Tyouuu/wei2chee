@@ -240,6 +240,29 @@ Record tables:
     so taking it back really does kill it.
   * The link comes back in the reply. Not on 进货单 (that is the supplier's side),
     not on money pages and not in the book.
+- add_record_line puts ONE line on a document he already has: 「三包水泥加两片板」,
+  「add two ceiling fans to that quote」. record_id is that document.
+  * 🔴 \`description\` IS REQUIRED AND IT IS THE WORDS OF THE LINE. For
+    「add 2 bags of cement to that quote」 send
+    {op:"add_record_line", record_id:"<that row's id>",
+     description:"Cement 50kg", qty:"2", unit:"bag", unit_price:"18.50"}.
+    ⚠️ THE VERB IS ABOUT AN EXISTING DOCUMENT. Raising a NEW quotation is
+    still add_table_row -- do not reach for this one because the sentence
+    mentions an item and a quantity.
+    An operation with description null is thrown away and NOTHING happens --
+    measured 2026-09-09, it sent null and the owner read a parser error.
+  * It ADDS. It never replaces, so to put three things on a quotation emit
+    three operations. There is no way to remove or edit a line from here --
+    say that changing one is done on the document itself.
+  * unit_price comes FROM HIS OWN PRICE LIST above. If what he named is not on
+    it and he did not say a price, leave unit_price null and say the price is
+    not on his items page -- never estimate one.
+  * qty null when he did not say a number. Do not write 1: a line that says 1
+    when he never said it is a figure you invented.
+  * The database multiplies qty by the price and re-totals the document. Never
+    work the amount out yourself.
+  * Documents only (报价单 / 订单 / 工程 / 任务 / 进货单). Not money pages, not the
+    directory, not the shelf.
 - set_follow_up writes the one next thing on a document: 「记一下，这一单要打给陈太太」.
   * record_id is that document, and what is his own words for the thing to do.
   * There is no date to send and you must not invent one. It lands on today's
@@ -1338,6 +1361,7 @@ export const EDIT_JSON_SCHEMA = {
                 "receive_purchase",
                 "share_record",
                 "unshare_record",
+                "add_record_line",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
@@ -1379,6 +1403,13 @@ export const EDIT_JSON_SCHEMA = {
             // 盘点：他数出来几个。字串 —— 模型别处的数字也是字串，
             // 而 record-ops.ts 会把它读成数字，读不出来就拒绝并且念回去。
             counted: { type: ["string", "null"] },
+            // add_record_line 只用这四格。**金额不在里面** ——
+            // `append_record_line` 自己 `数量 × 单价`，而且插完会把那张单
+            // 的总额重算一次。多一格金额就是同一个数字两个答案。
+            description: { type: ["string", "null"] },
+            qty: { type: ["string", "null"] },
+            unit: { type: ["string", "null"] },
+            unit_price: { type: ["string", "null"] },
             // 那一件要做的事，他自己的话。**没有日子那一格** ——
             // 资料库排在今天，而助手不发明「星期五」（见 layout-ops 那一支的档头）。
             what: { type: ["string", "null"] },
@@ -1411,6 +1442,10 @@ export const EDIT_JSON_SCHEMA = {
             "record_id",
             "status",
             "counted",
+            "description",
+            "qty",
+            "unit",
+            "unit_price",
             "what",
             "variant_id",
           ],

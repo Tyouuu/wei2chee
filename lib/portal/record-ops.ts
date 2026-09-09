@@ -289,6 +289,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "receive_purchase",
   "share_record",
   "unshare_record",
+  "add_record_line",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -810,6 +811,68 @@ export async function actOnRecords(
       而那件事**要讲出来**：他说「下个礼拜再跟」而它落在今天那一份清单上，
       是他看得见、一下就挪得掉的；发明一个日子是他看不见的。
     */
+    /*
+      一张单上多一行 —— 「三包水泥加两片板」。
+
+      🔴 走 `append_record_line`（**只加不删**），不走整批换那一支 ——
+      助手看不到一张单上现在有哪几行，整批换会静静抹掉它看不见的。
+      见 layout-ops.ts 那一段注解。
+
+      ⚠️ 那一支自己挡着：不是这一家的单拒绝 · 没写字拒绝 · 一张单最多
+      200 行 · 指到别人家货品拒绝 · **插完把总额重算一次**。
+      一条都不用在这里重写。
+
+      ⚠️ 只在**单据那几页**（pipeline）。明细挂在 `pipeline_records`
+      上，而钱那几页 · 名册 · 货架 · 预约 都不是单据。
+    */
+    if (op.op === "add_record_line") {
+      if (shape !== "pipeline") {
+        skipped.push({ op: op.op, reason: "notPipeline" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const raw = op as unknown as {
+        description?: unknown;
+        qty?: unknown;
+        unit?: unknown;
+        unit_price?: unknown;
+      };
+      const description = String(raw.description ?? "").trim();
+      if (!description) {
+        skipped.push({ op: op.op, reason: "noLineSaid" });
+        continue;
+      }
+      /* 数量：没讲就是 null。**不要填 1** —— 一行写着「1」而他没讲过，
+         是一个看起来完整而实际上是编的数字。 */
+      const qtyText = String(raw.qty ?? "").replace(/[^0-9.]/g, "");
+      const qty = qtyText ? Number(qtyText) : null;
+      const { error: lineErr } = await supabase.rpc("append_record_line", {
+        in_record_id: recordId,
+        in_description: description,
+        in_qty: Number.isFinite(qty as number) ? qty : null,
+        in_unit: String(raw.unit ?? "").trim(),
+        in_unit_price_cents: senFrom(String(raw.unit_price ?? "")) ?? null,
+        /* 金额不传 —— 那一支自己 `数量 × 单价`。传一个进去就是
+           同一个数字两个答案，而两个答案会在他改数量的那天分家。 */
+        in_amount_cents: null,
+        in_item_id: null,
+        in_note: "",
+      });
+      if (lineErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: lineErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      written += 1;
+      continue;
+    }
+
     if (op.op === "set_follow_up") {
       if (!recordId) {
         skipped.push({ op: op.op, reason: "noRecordSaid" });

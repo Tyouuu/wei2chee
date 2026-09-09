@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Data } from "@puckeditor/core";
@@ -110,6 +110,29 @@ export function WorkAssistant({
    * 做成了的事实优先 · 注入成一段带标题的话）。
    */
   const [turns, setTurns] = useState<{ asked: string; did: string }[]>([]);
+  /**
+   * 🔴 刚才那一句话把页面改成什么样 —— 而这一格在修一个量得到的竞走。
+   *
+   * ── 2026-09-09 `check:work-ai` 抳出来的 ──────────────────
+   *
+   * 他用讲的开一张单，马上接着讲那一张（「在那张上加三个风扇」），
+   * 助手回**「这一页上找不到那张单」** —— 而那一行就在他眼前的表里。
+   * 两次跑一次绿一次红，典型的竞走：`router.refresh()` 发出去而还没落地，
+   * 面板手上那棵树还是旧的，而 `describeLayout` 就是照那棵树印行号的。
+   *
+   * ── 为什么接回来那一棵，而不是等它刷完 ────────────────
+   *
+   * 那一支 route 写完真记录之后会用**同一支投影**（`withFreshRows`）
+   * 把新那几行插回回传的那棵树里 —— 也就是说**答案本来就在手上**，
+   * 只是之前没有人接。编辑器那一块一直在接（它 dispatch 进画布），
+   * 而这一块把它丢掉了。**同一件事两条路，只修了一条。**
+   *
+   * ⚠️ 而伯器刷完的那一刻，`data` 那个 prop 会换一个新的 ——
+   * 那时候伯器那一份才是权威的，所以下面那一句把这一格清掉。
+   */
+  const [latest, setLatest] = useState<Data | null>(null);
+  /* 伯器那一份刷到了 → 以它为准。 */
+  useEffect(() => setLatest(null), [data]);
 
   async function send() {
     const asked = text.trim();
@@ -121,7 +144,7 @@ export function WorkAssistant({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          layout: data,
+          layout: latest ?? data,
           instruction: asked,
           pageKey,
           pages,
@@ -143,6 +166,8 @@ export function WorkAssistant({
         return;
       }
       const out = (await res.json()) as {
+        /* 带着刚写进去那几行的那棵树 —— 见 `latest`。 */
+        layout?: Data;
         explanation?: string;
         applied?: number;
         notes?: Skip[];
@@ -159,6 +184,8 @@ export function WorkAssistant({
       /* 🔴 只记做成了的那几轮，而且记的是**它自己那一句**，不是我们
          替它拼的那几行 —— 拼出来的那几行带着「顺手扣了一次套票」那种
          事实，送回去会被当成他讲过的话。 */
+      /* 🔴 接住它，下一句话就指得到刚才那一行。 */
+      if (out.layout) setLatest(out.layout);
       const did = (out.explanation ?? "").trim();
       if (did) setTurns((prev) => [...prev, { asked, did }].slice(-3));
       setText("");

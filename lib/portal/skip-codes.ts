@@ -115,6 +115,8 @@ export type SkipCode =
   /** 这一单上没有写着下一步。 */
   | "noFollowUp"
   | "noStepSaid"
+  /** 一行明细没有写它是什么。 */
+  | "noLineSaid"
   /** 冲正只在钱那几页做得了。 */
   | "notMoneyPage"
   /**
@@ -266,6 +268,7 @@ export const SKIP_CODES = [
   "notShareable",
   "noFollowUp",
   "noStepSaid",
+  "noLineSaid",
   "notMoneyPage",
   "dbSaid",
   "layoutSaved",
