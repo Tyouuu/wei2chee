@@ -251,6 +251,81 @@ try {
     !!(await refused(other.client, "set_appointment_deposit", {
       in_id: soon, in_amount_cents: 100,
     })), "他挂上了");
+
+  /* ── ⑨ 🔴 充 1000 送 200 ─────────────────────────────────────────────
+     20260909360000。🔴 **这一节真正在守的只有一句：
+     送的那 200 永远不进他的营业额。**
+     把它当收款记进去，他月底拿银行对帐单一比，对不上的就是那一笔。 */
+  console.log("\n⑨ 🔴 充 1000 送 200");
+  const topUp = await say(C, "add_ledger_entry", {
+    in_project_id: P, in_module_key: "payments", in_direction: "in",
+    in_amount_cents: 100_000, in_party: "Puan Aminah", in_party_id: loyal.id,
+  });
+  await say(C, "grant_credit", {
+    in_project_id: P, in_party_id: loyal.id, in_amount_cents: 20_000,
+    in_reason: "充一千送两百", in_entry_id: topUp?.id,
+    in_idempotency_key: crypto.randomUUID(),
+  });
+  const card = (await say(C, "credit_of", {
+    in_project_id: P, in_party_id: loyal.id,
+  }))[0];
+  check("她付的那 RM 1,000 在", Number(card?.paid_cents) === 100_000,
+    String(card?.paid_cents));
+  check("送的 RM 200 也在", Number(card?.gift_cents) === 20_000,
+    String(card?.gift_cents));
+  check("🔴 柜台念给她听的是 RM 1,200",
+    Number(card?.total_cents) === 120_000, String(card?.total_cents));
+
+  const { data: takings } = await C
+    .from("ledger_entries").select("amount_cents")
+    .eq("project_id", P).eq("direction", "in").eq("party_id", loyal.id);
+  check(
+    "🔴 而帐上就只有 RM 1,000 —— 送的那 200 **一分都没有进他的营业额**",
+    (takings ?? []).length === 1 && Number(takings[0]?.amount_cents) === 100_000,
+    JSON.stringify(takings),
+  );
+
+  await say(C, "use_credit", {
+    in_project_id: P, in_party_id: loyal.id, in_amount_cents: 5_000,
+    in_reason: "洗剪吹",
+  });
+  const after = (await say(C, "credit_of", {
+    in_project_id: P, in_party_id: loyal.id,
+  }))[0];
+  check("用掉送的 RM 50 之后，送的还剩 RM 150",
+    Number(after?.gift_cents) === 15_000, String(after?.gift_cents));
+  check("🔴 而她自己付的那一笔一分都没有动",
+    Number(after?.paid_cents) === 100_000, String(after?.paid_cents));
+  check(
+    "🔴 送的用完就是用完 —— 透支不了",
+    (await refused(C, "use_credit", {
+      in_project_id: P, in_party_id: loyal.id, in_amount_cents: 20_000,
+    })).includes("gift credit left"),
+    "它让她透支了",
+  );
+  check(
+    "🔴 送钱是老板的事 —— 柜台送不了",
+    (await refused(crew.client, "grant_credit", {
+      in_project_id: P, in_party_id: loyal.id, in_amount_cents: 100,
+    })).includes("for the owner"),
+    "它让柜台送了",
+  );
+  check(
+    "而用掉是柜台按的（已经答应过的东西，交出去而已）",
+    (await refused(crew.client, "use_credit", {
+      in_project_id: P, in_party_id: loyal.id, in_amount_cents: 100,
+    })) === "",
+    "它把柜台挡下来了",
+  );
+  check(
+    "🔴 别人家送不了、也用不了我的",
+    !!(await refused(other.client, "grant_credit", {
+      in_project_id: P, in_party_id: loyal.id, in_amount_cents: 100,
+    })) && !!(await refused(other.client, "use_credit", {
+      in_project_id: P, in_party_id: loyal.id, in_amount_cents: 100,
+    })),
+    "他动得了",
+  );
 } catch (e) {
   bad.push(`半路炸了：${e.message}`);
   console.log(`  FAIL  半路炸了 — ${e.message}`);
