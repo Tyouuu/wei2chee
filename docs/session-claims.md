@@ -18,3 +18,4 @@
 | session | 档案（逗号分隔） | 从几时 |
 |---|---|---|
 | 助手层（我） | app/api/portal/edit/route.ts, lib/portal/layout-ops.ts, lib/portal/record-ops.ts, lib/portal/skip-codes.ts, messages/en.json, messages/zh.json, scripts/check-work-ai.mjs | 2026-09-10 深夜 |
+| 功能层（我） | supabase/migrations/20260911*.sql, scripts/check-reviews.mjs | 2026-09-11 凌晨 |
