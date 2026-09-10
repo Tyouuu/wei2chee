@@ -38,6 +38,8 @@ const withFigures = (over: Partial<BusinessFacts> = {}): BusinessFacts => ({
     { id: "s1", line: "staff=s1 · Amy" },
     { id: "s2", line: "staff=s2 · Jasmine" },
   ],
+  /* 她要客人签的那几份表单。预设有一份 —— 空的夹具量不到下面那几条。 */
+  consentForms: [{ id: "f1", line: "form=f1 · 肉毒同意书" }],
   /* 他讲过要它记住的那几句。预设有两句，不是空的 —— 一个空的夹具会让
      下面那几条断言量到「这一段根本没出现」，而不是量到它印对了没有。 */
   memory: [

@@ -296,6 +296,21 @@ Record tables:
   * Pressing it twice does no harm: an already-claimed booking just returns
     the same person, so if you are unsure whether it ran, run it again.
   * Only on the appointments page.
+- 🔴 request_consent sends one of his consent form templates to a
+  customer, for her to sign: 「叫陈太太签一份肉毒同意书」, 「send Mrs Tan the
+  laser consent form」.
+  * record_id is that customer, from the customer list's own record= ids.
+    form_id MUST come from "他的同意书范本" / "His consent forms" above --
+    read the printed form= id off the name he named, never invent one and
+    never guess from the words in his sentence. If no list is printed, or the
+    name he said does not match one on it, leave form_id null.
+  * ⚠️ IT SENDS, IT DOES NOT SIGN. Say it went out and is waiting for
+    her signature, never that she has signed -- he only knows she is due for
+    a procedure once she has actually signed, and that is a fact this route
+    cannot see.
+  * Sending it twice is fine -- the human panel allows a resend the same way,
+    for a lost link.
+  * Only on the customer list page.
 - set_appointment_deposit says what a booking must pay UP FRONT:
   「叫她先付一百」, 「ask Ms Lim for a RM 50 deposit」,
   「这一单不用订金」.
@@ -1793,6 +1808,7 @@ export const EDIT_JSON_SCHEMA = {
                 "book_appointment",
                 "set_appointment_deposit",
                 "claim_booking_party",
+                "request_consent",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
@@ -1865,6 +1881,10 @@ export const EDIT_JSON_SCHEMA = {
             // bill_class 只用这三格。**开在哪一页不在里面** ——
             // 那是他现在站着的那一页，让模型挑就是让它替他挑一本帐簿。
             group_id: { type: ["string", "null"] },
+            // request_consent only. Which form template -- must come from the
+            // owner's own printed list (form= ids), never invented, because
+            // this route never sees what a form says.
+            form_id: { type: ["string", "null"] },
             // take_payment 也用 amount。**方向不在里面** —— 一笔进来的钱
             // 由收款那一页决定，不是模型讲的（20260906060000）。
             method: { type: ["string", "null"] },
@@ -1924,6 +1944,7 @@ export const EDIT_JSON_SCHEMA = {
             "description",
             "enquiry_id",
             "group_id",
+            "form_id",
             "method",
             "party",
             "contact",

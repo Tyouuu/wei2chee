@@ -77,6 +77,8 @@ const WORDS = {
     classes: "他的班（bill_class 用那个编号；人数跟价钱是他自己设的）",
     /* 🔴 她的师傅。见下面 `crew`。 */
     crew: "他的师傅（book_appointment 的 staff 用那个编号）",
+    /* 🔴 他的同意书范本。见下面 `consentForms`。 */
+    consentForms: "他的同意书范本（request_consent 的 form_id 用那个编号）",
     /* 🔴 他讲过要记住的那几句。见下面 `memory` 那一段。 */
     memory: "他以前叫你记住的（他自己的规矩跟他纠正过你的地方 —— 照做，不要再问一次）",
   },
@@ -94,6 +96,7 @@ const WORDS = {
     enquiries: "Strangers who asked through his website and have not been dealt with (reply_to_enquiry takes the id)",
     classes: "His classes (bill_class takes the id; the head count and the fee are his own)",
     crew: "His people (book_appointment's staff takes the id)",
+    consentForms: "His consent forms (request_consent's form_id takes the id)",
     memory: "What he told you to remember (his own rules, and where he corrected you -- follow them, do not ask again)",
   },
 } as const;
@@ -331,6 +334,15 @@ export type BusinessFacts = {
    * 所以今天不管走哪一条路都是这样。那一半登记在[任务 339]，不是我改的。
    */
   crew: { id: string; line: string }[];
+  /**
+   * 🔴 她要客人签的那几份表单 —— `consent_forms_of` 同一支，
+   * `/portal/consent` 那一页读的也是它。另写一句查询就是第二份会漂的定义。
+   *
+   * ⚠️ 内容我们一个字都不印（`consent-desk.tsx` 的档头写着为什么：
+   * 一份同意书上写的是医疗宣称，我们不是诊所）——只印**名字跟编号**，
+   * 够模型挑对那一份就好。
+   */
+  consentForms: { id: string; line: string }[];
   lang: "zh" | "en";
   /** True when the read itself failed, as opposed to succeeding and finding
    *  nothing. The prompt must say different things about those two, because
@@ -403,6 +415,7 @@ export async function fetchBusinessFacts(
       enquiries: [],
       classes: [],
       crew: [],
+      consentForms: [],
       lang,
       unread: true,
     };
@@ -435,6 +448,7 @@ export async function fetchBusinessFacts(
       enquiries: await fetchEnquiries(supabase),
       classes: await fetchClasses(supabase, projectId),
       crew: await fetchCrew(supabase, projectId),
+      consentForms: await fetchConsentForms(supabase, projectId),
       lang,
       unread: false,
     };
@@ -459,6 +473,7 @@ export async function fetchBusinessFacts(
     enquiries: await fetchEnquiries(supabase),
     classes: await fetchClasses(supabase, projectId),
     crew: await fetchCrew(supabase, projectId),
+    consentForms: await fetchConsentForms(supabase, projectId),
     lang,
     unread: false,
   };
@@ -472,6 +487,35 @@ export async function fetchBusinessFacts(
  * ⚠️ 师傅住在**名册那一页**（`directory_entries`，`module_key = 'staff'`）——
  * 跟客户同一张表、同一套权限。这里不另外判角色：RLS 已经判过了。
  */
+/**
+ * 🔴 她要客人签的那几份表单 —— 而这一支不是方便，是[任务 89]那条界线
+ * 在同意书这一格的样子：`request_consent` 要一个 `form_id`，
+ * 模型只能从这份清单里抄一个，不能凭「肉毒同意书」这几个字自己拼一个。
+ */
+async function fetchConsentForms(
+  supabase: SupabaseClient,
+  projectId: string,
+): Promise<{ id: string; line: string }[]> {
+  const { data, error } = await supabase.rpc("consent_forms_of", {
+    in_project_id: projectId,
+  });
+  if (error) return [];
+  const rows = (data ?? []) as {
+    id?: string | null;
+    name?: string | null;
+    archived?: boolean | null;
+  }[];
+  return rows
+    .filter((r) => !r.archived)
+    .slice(0, CLASS_CAP)
+    .map((r) => ({
+      id: String(r.id ?? ""),
+      line: [`form=${String(r.id ?? "")}`, String(r.name ?? "").trim()]
+        .filter(Boolean)
+        .join(" · "),
+    }));
+}
+
 async function fetchCrew(
   supabase: SupabaseClient,
   projectId: string,
@@ -967,6 +1011,12 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ? ["", `${w.crew}:`, ...facts.crew.map((r) => `- ${r.line}`)]
     : [];
 
+  /* 🔴 她要客人签的那几份表单。一份都没写过就不出这一段 ——
+     大部分行业不需要同意书，一个空标题只是噪音。 */
+  const consentForms = facts.consentForms.length
+    ? ["", `${w.consentForms}:`, ...facts.consentForms.map((r) => `- ${r.line}`)]
+    : [];
+
   /* 🔴 这一次答不了的，跟永远答不了的，放在同一段但来源不同。
      `owingUnread` 只在没有读到欠款的时候出现 —— 读到了还留着它，
      就是助手拒绝回答一件它手上已经有答案的事。 */
@@ -990,6 +1040,7 @@ export function renderBusinessFacts(facts: BusinessFacts | null): string {
     ...enquiries,
     ...classes,
     ...crew,
+    ...consentForms,
     ...memory,
     "",
     `${w.cannot}:`,

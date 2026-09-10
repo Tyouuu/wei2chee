@@ -1559,6 +1559,68 @@ try {
   await page.screenshot({ path: `${OUT}/19-claimed.png` });
 
 
+  console.log("");
+  console.log("── ㉔ 🔴 叫她签一份同意书 —— 送出去，不是签了 ──");
+  /*
+    🔴 `request_consent`（20260909130000）已经在跑，画面那一边
+    四扇门也在（[任务 322]），缺的是助手接得到它。[任务 326] 量过
+    medi spa 走完一趟之后**它才是那一件真正缺的**：同意书发得出去、
+    她自己签得了，而没有人主动讲出口。
+
+    ⚠️ 这一段量两件：范本从**闭集**里挑对了 · **送出去不等于签了**——
+    这一支回来的那一刻，客人还没看过那条连结，一句「已签」是一个
+    他还没发生的事实。
+  */
+  const { data: farah, error: farahErr } = await api.rpc("add_directory_entry", {
+    in_project_id: P,
+    in_module_key: "customers",
+    in_name: "Ms Farah",
+  });
+  if (farahErr) throw new Error(`seed Ms Farah: ${farahErr.message}`);
+  const { error: formErr } = await api.rpc("add_consent_form", {
+    in_project_id: P,
+    in_name: "Botox consent",
+    in_body: "I understand the risks of botulinum toxin treatment.",
+  });
+  if (formErr) throw new Error(`seed consent form: ${formErr.message}`);
+
+  await page.goto(`${BASE}/en/portal/customers`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  const consentSaid = await say(page, "Send Ms Farah the Botox consent form to sign");
+  console.log(`        它讲了：${consentSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  await page.waitForTimeout(2500);
+
+  const sent = await admin
+    .from("consent_signatures")
+    .select("id, party_id, form_name, signed_at")
+    .eq("project_id", P)
+    .eq("party_id", farah?.id)
+    .maybeSingle();
+  check(
+    "🔴 那份同意书真的发出去了，挂在她身上",
+    !!sent.data,
+    consentSaid.slice(0, 200) || "（它一句话都没讲）",
+  );
+  check(
+    "🔴 挑对了范本（Botox consent）",
+    /botox/i.test(String(sent.data?.form_name ?? "")),
+    `form_name = ${sent.data?.form_name}`,
+  );
+  /* 🔴 送出去那一刻她还没看过那条连结，不可以讲成已经签了。 */
+  check(
+    "🔴 资料库那一边：还没签（signed_at 是 null）",
+    sent.data?.signed_at == null,
+    `signed_at = ${sent.data?.signed_at}`,
+  );
+  check(
+    "🔴 而且它讲的是「发出去 / 等她签」，不是「她签了」",
+    !/\b(has signed|already signed|签好了|签了)\b/i.test(consentSaid),
+    consentSaid.slice(0, 220),
+  );
+  await page.screenshot({ path: `${OUT}/20-consent.png` });
+
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);

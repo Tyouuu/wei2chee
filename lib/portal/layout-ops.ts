@@ -579,6 +579,24 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     /** 哪一笔预约 —— 页面上 `record=` 抄下来的。 */
     record_id: z.string().min(1),
   }),
+  /*
+    🔴 发一份同意书给客人签 —— 「叫陈太太签一份肉毒同意书」。
+
+    `request_consent`（20260909130000）已经在跑，产品那一边（画面）
+    也做出了四扇门（[任务 322]）。缺的只是助手接得到它。
+
+    ⚠️ **`form_id` 只能从上面那份「他的同意书范本」清单里抄** ——
+    内容我们一个字都不给（`consent-desk.tsx` 的档头写着为什么：
+    一份同意书上写的是医疗上的宣称），所以模型连猜的材料都没有，
+    只能照名字挑对应的编号。抄错一个不在清单上的，就当作她没有讲。
+  */
+  z.object({
+    op: z.literal("request_consent"),
+    /** 哪一位客人 —— 客户那一页上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** 哪一份范本 —— 从「他的同意书范本」清单里 `form=` 抄下来的。 */
+    form_id: z.string().nullable(),
+  }),
   z.object({
     op: z.literal("book_appointment"),
     /** 排给谁。**挡住一段时间**（午休 · 看牙医）的时候是 null。 */
@@ -1773,6 +1791,7 @@ export function applyLayoutOps(
       /* 开全班的学费单要有一本帐簿可以开进去，而这一页背后没有。 */
       case "set_appointment_deposit":
       case "claim_booking_party":
+      case "request_consent":
       case "book_appointment":
       case "take_payment":
       case "bill_class":

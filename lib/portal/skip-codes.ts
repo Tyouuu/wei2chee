@@ -314,6 +314,17 @@ export type SkipCode =
    * 她本来只是一串字在那笔预约上，现在是名册上一个真的人 ——
    * 下一次讲「陈太太来了」，那笔预约才对得起来是同一个人。
    */
+  /**
+   * 🔴 一份同意书发出去了 —— 她自己签得了那条连结。`form`
+   *
+   * 不是签了，是**发出去等她签**。这一句要讲清楚方向，
+   * 不然他会以为客人已经签好了。
+   */
+  | "consentSent"
+  /** 她没有讲清楚要发哪一份，或者讲的那个编号不在他的范本清单上。 */
+  | "noFormSaid"
+  /** 这不是客户那一页 —— 发同意书要先站在名册上。 */
+  | "notCustomerPage"
   | "bookingClaimed"
   | "depositAsked"
   /** 这一单不用订金了。 */
@@ -435,6 +446,9 @@ export const SKIP_CODES = [
   "linesFromPaper",
   "linesNotKept",
   "bookingClaimed",
+  "consentSent",
+  "noFormSaid",
+  "notCustomerPage",
   "depositAsked",
   "depositDropped",
   "appointmentBooked",

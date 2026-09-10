@@ -298,6 +298,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "book_appointment",
   "set_appointment_deposit",
   "claim_booking_party",
+  "request_consent",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -1363,6 +1364,57 @@ export async function actOnRecords(
         op: op.op,
         reason: "bookingClaimed",
         vars: { who: String(person?.name ?? "").trim() },
+      });
+      written += 1;
+      continue;
+    }
+
+    if (op.op === "request_consent") {
+      if (shape !== "directory") {
+        skipped.push({ op: op.op, reason: "notCustomerPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const formSaid = String((op as unknown as { form_id?: unknown }).form_id ?? "").trim();
+      if (!formSaid) {
+        skipped.push({ op: op.op, reason: "noFormSaid" });
+        continue;
+      }
+      /*
+        🔴 闭集：这里再对一次她自己的范本清单，不信模型抄对了。
+        跟 book_appointment 挑师傅同一条纪律 —— 一个编出来的编号，
+        就当作她没有讲清楚是哪一份，不要送去撞资料库自己那句错误。
+      */
+      const { data: form } = await supabase
+        .from("consent_forms")
+        .select("id, name")
+        .eq("project_id", projectId)
+        .eq("id", formSaid)
+        .is("archived_at", null)
+        .maybeSingle();
+      if (!form?.id) {
+        skipped.push({ op: op.op, reason: "noFormSaid" });
+        continue;
+      }
+      const { error: sendErr } = await supabase.rpc("request_consent", {
+        in_party_id: recordId,
+        in_form_id: form.id,
+      });
+      if (sendErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: sendErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      notes.push({
+        op: op.op,
+        reason: "consentSent",
+        vars: { form: String(form.name ?? "").trim() },
       });
       written += 1;
       continue;
