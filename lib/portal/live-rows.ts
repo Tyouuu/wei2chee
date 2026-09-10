@@ -960,6 +960,20 @@ function mapNodes(nodes: unknown[], rows: LiveRow[], started = false): unknown[]
         if (field === "status") return first.status ?? "";
         return "";
       };
+      /* 🔴 一格空着的标签，比一行没有的标签更糟——2026-09-10 看图看到的：
+         沙龙那一页「Amy」的详情面板写着「This month」跟「Status」，
+         两格都是空的。根因不在这一支，是`rowsFromParties` **本来就
+         不算 amount**（那是一个已经测过的决定：一个数字在他打字那一刻
+         是对的，钱一动就是在说谎），而样板的示例行恰好有一个数字，
+         於是这个标签才进了 `shown`。一条问不出答案的标签，跟
+         [任务 110] 那条「过期的答不了」是同一个缺陷的另一张脸。
+         所以真档案接上之后，答不出来的那几行就**不画**——不是硬编码
+         成永远不画 `amount`/`status`，是照着这一笔记录自己的样子决定。
+         ⚠️ **留一个退路**：一个字都答不出来（比如一个只填了名字的党）
+         比起两个字都不显示，仍然是显示全部空白的原样更诚实——
+         一片空白的详情面板，起码看起来像「还没填」而不是「坏了」。 */
+      const filled = shown.map((r) => ({ ...r, value: of(r.field) }));
+      const withAnswer = filled.filter((r) => r.value !== "");
       return {
         ...n,
         props: {
@@ -970,7 +984,7 @@ function mapNodes(nodes: unknown[], rows: LiveRow[], started = false): unknown[]
              move. They carry this module's own noun -- 经销商 for a master
              dealer -- and re-deriving them here would be a second vocabulary
              disagreeing with the table one column away. */
-          rows: shown.map((r) => ({ ...r, value: of(r.field) })),
+          rows: withAnswer.length ? withAnswer : filled,
         },
       };
     }

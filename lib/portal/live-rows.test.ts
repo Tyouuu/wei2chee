@@ -339,6 +339,47 @@ describe("the column this business added for itself", () => {
   });
 });
 
+/*
+  THE PREVIEW PANEL BESIDE A DIRECTORY LIST.
+
+  2026-09-10, found by looking at 「Amy」 on the salon's stylists page: the
+  panel showed 「This month」 and 「Status」 with nothing beside either. Neither
+  label is a bug in this file -- `rowsFromParties` has never set `amount` (the
+  test above this block proves it, on purpose: a figure here would be right
+  the moment he typed it and lying the first time money moved) -- the label
+  only exists because the SAMPLE row that built the page happened to carry a
+  number. A label a real record can never answer is the same defect as an
+  answer nobody can ask for (任务 110's 「过期的答不了」), pointed the other way.
+*/
+describe("the detail panel beside a directory list", () => {
+  const panel = (rows: { label: string; value: string; icon: string; field: string }[]) => ({
+    content: [{ type: "InfoRows", props: { id: "staff-detail", heading: "示例", rows } }],
+  });
+  const rowsOf = (out: unknown) =>
+    (out as { content: { props: { rows: { label: string; value: string }[] } }[] }).content[0].props.rows;
+
+  const sample = [
+    { label: "Assigned", value: "012-3xx xxxx", icon: "person", field: "secondary" },
+    { label: "This month", value: "RM 4,500", icon: "money", field: "amount" },
+    { label: "Status", value: "Active", icon: "tag", field: "status" },
+  ];
+
+  it("drops a label the real record can never answer, keeps the one it can", () => {
+    const out = withLiveRows(panel(sample), [
+      { primary: "Amy", secondary: "012-3xx xxxx", tone: "neutral", status: "" },
+    ]);
+    const labels = rowsOf(out).map((r) => r.label);
+    expect(labels).toEqual(["Assigned"]);
+    expect(rowsOf(out)[0].value).toBe("012-3xx xxxx");
+  });
+
+  it("shows the full set, blank, rather than an empty panel when nothing at all can be answered", () => {
+    const out = withLiveRows(panel(sample), [{ primary: "Amy", tone: "neutral", status: "" }]);
+    expect(rowsOf(out).map((r) => r.label)).toEqual(["Assigned", "This month", "Status"]);
+    expect(rowsOf(out).every((r) => r.value === "")).toBe(true);
+  });
+});
+
 /* ────────────────────────────────────────────────────────────────────────────
    THE THIRD SHAPE.
 
