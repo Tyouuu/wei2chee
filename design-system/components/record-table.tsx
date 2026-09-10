@@ -395,8 +395,20 @@ export function RecordTable(props: {
     // declare the same values this used to hard-code, so nothing moved; 印头
     // fills it. See design-system/tokens/stamp.css.
     "[border-color:var(--color-ink-800)] [color:var(--color-table-head-fg)] " +
-    "[font-size:var(--text-micro)] [font-weight:var(--fw-semibold)] " +
-    "[letter-spacing:var(--tracking-label)] [text-transform:var(--label-transform)]";
+    /* 表头三个尺寸自己一组 token，而不是跟「小标签」共用。
+       参考那一支（components/ui/table.tsx 的 TableHead，加
+       users-table.tsx 的覆写）逐字是：继承 text-sm · font-normal ·
+       不大写 · 不撑字距 · 颜色是正文色。
+       我们是 10.5px · 600 · 0.12em 的字距 —— 并排看，他们的表头是
+       一行读得下去的字，我们的是一排小标签。
+
+       ⚙️ **带 fallback 的 var，不是新发明一个变数就算**：一个没定义的
+       自定义属性什么都不画，而不是报错（`--color-surface` 那一次就是
+       这样把一整块面板画成透明的）。没声明的 register 原样不动。 */
+    "[font-size:var(--table-head-size,var(--text-micro))] " +
+    "[font-weight:var(--table-head-weight,var(--fw-semibold))] " +
+    "[letter-spacing:var(--table-head-tracking,var(--tracking-label))] " +
+    "[text-transform:var(--table-head-transform,var(--label-transform))]";
 
   const bodyCell =
     "align-middle [padding-inline:var(--pad-cell-x)] " +
@@ -1323,7 +1335,13 @@ function SearchField({
     /* 🔴 **44 只给触控那一边**（2026-09-07）：这个框在 390 上量出来 36px 高。
        `sm:min-h-0` —— 电脑那一边照旧 36，跟我们抄的那几个参考后台的
        工具条一样密。 */
-    <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2 [background:var(--color-ink-900)] [border:var(--border-card-width)_solid_var(--input)] [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] sm:min-h-0 sm:max-w-[22rem]">
+    /* 🔴 `min-w-[10rem] sm:min-w-0`（2026-09-10 看图看到的）：这一格跟旁边的
+       分段筛选挤在同一行 `flex-wrap` 里，而 `min-w-0` 让 flex 觉得「怎么缩
+       都装得下」，於是它从来不换行，光标只是把字往里面挤 —— 拍到「Filter
+       these ro…」就是这个。给它一个下限之后，390 上分段筛选量出来比剩下
+       的空间还宽，`flex-wrap` 才有一个真的理由换行；宽屏那一边 `sm:min-w-0`
+       原样留着，不影响它照旧长到 22rem 就停。 */
+    <label className="flex min-h-11 min-w-[10rem] flex-1 items-center gap-2 [background:var(--color-ink-900)] [border:var(--border-card-width)_solid_var(--input)] [border-radius:var(--radius-control)] [padding-inline:var(--pad-control-x)] sm:min-h-0 sm:min-w-0 sm:max-w-[22rem]">
       <svg
         viewBox="0 0 20 20"
         className="h-3.5 w-3.5 shrink-0 [color:var(--color-paper-dim)]"
