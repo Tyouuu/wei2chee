@@ -249,6 +249,57 @@ try {
   const { data: stillThere } = await c.rpc("consent_forms_of", { in_project_id: P });
   check("而它还在（关掉不是删掉）", (stillThere ?? []).some((f) => f.name === "激光同意书" && f.archived));
 
+  /* ── ⑧b 🔴 未成年人 —— 她自己签的同意书没有法律效力 ───────────────────
+     20260910330000。年龄法令 1971：未满 18 岁，自己的签名不算数。
+     ⚠️ **不知道生日的人照常给她自己签** —— 那是这一节的第一条断言，
+     顺序不可以换：一条永远要监护人的讯号，跟一条永远不要的，
+     在一份全绿的报告里长得一模一样。 */
+  console.log("\n⑧b 🔴 未成年人要监护人签");
+  const teen = await person("Aisyah", "customers");
+  const { data: teenSent, error: teenSendErr } = await c.rpc("request_consent", {
+    in_party_id: teen, in_form_id: form.id,
+  });
+  check("道具：发得出去", !!teenSent?.id, teenSendErr?.message);
+
+  const beforeDob = await stranger.rpc("public_consent_form", { in_ref: teenSent.share_ref });
+  check("🔴 不知道生日的时候 → 当成大人（不编年龄，[重点 33]）",
+    beforeDob.data?.[0]?.requires_guardian === false,
+    JSON.stringify(beforeDob.data?.[0]?.requires_guardian));
+  const { data: adultSign } = await stranger.rpc("sign_consent", {
+    in_ref: teenSent.share_ref, in_name: "Aisyah binti Rahman",
+  });
+  check("不知道生日就签得下去", adultSign === "ok", adultSign);
+
+  const { data: teen2 } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "Nurul",
+  });
+  const fifteenYearsAgo = new Date();
+  fifteenYearsAgo.setUTCFullYear(fifteenYearsAgo.getUTCFullYear() - 15);
+  await c.rpc("update_directory_entry", {
+    in_id: teen2.id, in_date_of_birth: fifteenYearsAgo.toISOString().slice(0, 10),
+  });
+  const { data: teen2Sent } = await c.rpc("request_consent", {
+    in_party_id: teen2.id, in_form_id: form.id,
+  });
+  const teen2Page = await stranger.rpc("public_consent_form", { in_ref: teen2Sent.share_ref });
+  check("🔴 十五岁 → 那一页自己讲要监护人",
+    teen2Page.data?.[0]?.requires_guardian === true,
+    JSON.stringify(teen2Page.data?.[0]?.requires_guardian));
+
+  const { data: teenAlone } = await stranger.rpc("sign_consent", {
+    in_ref: teen2Sent.share_ref, in_name: "Nurul",
+  });
+  check("🔴 她自己签挡下来（回一个词，不是抛例外——她是站在表单前面那个人）",
+    teenAlone === "guardian_required", teenAlone);
+
+  const { data: guardianSigned } = await stranger.rpc("sign_consent", {
+    in_ref: teen2Sent.share_ref, in_name: "Puan Zaleha (mother)", in_as_guardian: true,
+  });
+  check("🔴 讲清楚自己是监护人就签得下去", guardianSigned === "ok", guardianSigned);
+  const { data: teen2After } = await stranger.rpc("public_consent_form", { in_ref: teen2Sent.share_ref });
+  check("签完看得到监护人自己的名字", teen2After?.[0]?.signed_name === "Puan Zaleha (mother)",
+    teen2After?.[0]?.signed_name);
+
   /* ── ⑨ 别人家 ─────────────────────────────────────────────────────── */
   console.log("\n⑨ 另一家公司");
   const otherEmail = `consent-other-${stamp}@formae.test`;
