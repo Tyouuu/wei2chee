@@ -242,7 +242,8 @@
     "check:tips": "node scripts/check-tips.mjs",
     "check:clockin": "node scripts/check-clockin.mjs",
     "check:loyalty": "node scripts/check-loyalty.mjs",
-    "check:appointment-audit": "node scripts/check-appointment-audit.mjs"
+    "check:appointment-audit": "node scripts/check-appointment-audit.mjs",
+    "check:account-deletion": "node scripts/check-account-deletion.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
