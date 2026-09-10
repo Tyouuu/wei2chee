@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabaseClient();
   const identifier = req.headers.get("x-forwarded-for") ?? "unknown";
 
-  const rateLimit = await checkRateLimit(supabase, identifier);
+  const rateLimit = await checkRateLimit(identifier);
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: "rate limit exceeded" }, { status: 429 });
   }

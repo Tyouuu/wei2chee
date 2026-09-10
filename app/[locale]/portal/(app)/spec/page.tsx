@@ -331,7 +331,7 @@ export default async function SystemSpecPage({
   // the cap costs the PROSE, not the document -- the structural specification
   // below is extracted from the customer's own layouts and always renders.
   const rateSupabase = createServerSupabaseClient();
-  const rate = await checkRateLimit(rateSupabase, `spec:${user.id}`, {
+  const rate = await checkRateLimit(`spec:${user.id}`, {
     limit: 10,
     windowMs: 60 * 60 * 1000,
   });

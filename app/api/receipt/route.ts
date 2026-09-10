@@ -102,7 +102,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "not-yours" }, { status: 403 });
   }
 
-  const limit = await checkRateLimit(supabase, `receipt:${user.id}`, {
+  const limit = await checkRateLimit(`receipt:${user.id}`, {
     limit: RECEIPTS_PER_HOUR,
   });
   if (!limit.allowed) {

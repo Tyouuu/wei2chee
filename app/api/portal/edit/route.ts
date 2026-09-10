@@ -781,7 +781,7 @@ export async function POST(req: NextRequest) {
      而那两下一分钱都不花。算进去的话，他拍二十张单就等於用掉四十次，
      而其中二十次根本没有问过模型。 */
   if (!confirmed && !undoing) {
-    const rate = await checkRateLimit(supabase, `edit:${user.id}`, {
+    const rate = await checkRateLimit(`edit:${user.id}`, {
       limit: 40,
       windowMs: 60 * 60 * 1000,
     });
