@@ -130,6 +130,7 @@
     "check:party-value": "node scripts/check-party-value.mjs",
     "check:class-clashes": "node scripts/check-class-clashes.mjs",
     "check:arrival": "node scripts/check-arrival.mjs",
+    "check:self-cancel": "node scripts/check-self-cancel.mjs",
     "check:product-performance": "node scripts/check-product-performance.mjs",
     "check:claims": "node scripts/check-claims.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
