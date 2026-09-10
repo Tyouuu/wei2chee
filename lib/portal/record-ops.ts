@@ -302,6 +302,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "add_treatment_note",
   "grant_credit",
   "set_appointment_archived",
+  "mark_appointment_arrived",
   "set_party_alert",
   "use_credit",
   "set_follow_up",
@@ -349,6 +350,10 @@ export const WORK_OPS: ReadonlySet<string> = new Set([
   /* 🔴 `forget_that` 跟 `remember` 同一条 —— 一条规矩不属於任何一页，
      所以它也不在 `ACT_OPS` 里，route 在分流之前自己接掉它。 */
   "forget_that",
+  /* 🔴 `clock_in` / `clock_out` 同一条 —— 不属於任何一张记录，
+     route 在分流之前自己接掉，不走 `ACT_OPS`。 */
+  "clock_in",
+  "clock_out",
   ...ACT_OPS,
 ]);
 
@@ -1552,6 +1557,31 @@ export async function actOnRecords(
         continue;
       }
       notes.push({ op: op.op, reason: "appointmentCancelled" });
+      written += 1;
+      continue;
+    }
+
+    if (op.op === "mark_appointment_arrived") {
+      if (shape !== "calendar") {
+        skipped.push({ op: op.op, reason: "notBookingPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const { error: arriveErr } = await supabase.rpc("mark_appointment_arrived", {
+        in_id: recordId,
+      });
+      if (arriveErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: arriveErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      notes.push({ op: op.op, reason: "appointmentArrived" });
       written += 1;
       continue;
     }

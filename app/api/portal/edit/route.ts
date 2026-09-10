@@ -352,6 +352,14 @@ Record tables:
   * record_id is that booking. Nothing else. It is kept, not deleted --
     never tell him it was removed, say it was cancelled.
   * Only on the appointments page.
+- 🔴 mark_appointment_arrived says she is here now, waiting -- NOT done yet:
+  「陈太太到了」, 「she's here」, 「Ms Tan just walked in」.
+  * record_id is that booking. Do not use this for 「做完了」 / 「she's
+    done」 -- that is set_record_status, a different moment, and it is
+    the one that cashes out a package session. Marking arrived never
+    touches status and never touches a package balance.
+  * Pressing it twice does nothing extra -- it is safe to send again.
+  * Only on the appointments page.
 - 🔴 set_party_alert pins a standing note on a customer, visible to
   whoever works on her: 「陈太太对乳胶过敏，记着」, 「flag her as VIP」.
   * record_id is that customer, from the customer list's own record= ids.
@@ -484,6 +492,19 @@ Record tables:
   * Also works on every page, same reason as remember.
   * Say plainly that it is gone. Never claim to have forgotten something you
     did not send this operation for.
+- 🔴 clock_in / clock_out puts a staff member on or off the clock:
+  「阿珍上班了」, 「Amy just clocked in」, 「she's going home now」.
+  * 🔴 staff IS REQUIRED AND IT IS AN ID, NEVER THE NAME HE SAID. Copy it off
+    the staff= list printed above, e.g. {op:"clock_in", staff:"<Nurse
+    Zara's id>"}. Sending her name back as the value ("Nurse Zara" instead
+    of the id) is the same mistake as guessing -- it will not match anyone,
+    and the clock-in silently fails while your reply still names her.
+  * If she is not on that staff= list, say so instead of guessing an id.
+  * Also works on every page, same reason as remember -- it is about her,
+    not about whatever record he happens to be looking at.
+  * clock_in twice while already in returns the same open shift, it does
+    not open a second one -- safe to send again.
+  * clock_out when she never clocked in will refuse; say so plainly.
 
 Whole pages:
 - You cannot add or delete a page yourself, but you can OFFER to. When the
@@ -1400,9 +1421,20 @@ The business owner asked:
   /* 🔴 `forget_that` 跟 `remember` 同一条 —— 哪一页都做得了，
      所以也在分流之前自己接掉，不走 `splitRecordOps`。 */
   const forgetOps = wanted.filter((op) => op.op === "forget_that");
+  /* 🔴 `clock_in` / `clock_out` 同一条 —— 不属於任何一张记录，
+     打卡上班／下班是站在她自己身上的一件事，一样在分流之前自己接掉。 */
+  const clockOps = wanted.filter(
+    (op) => op.op === "clock_in" || op.op === "clock_out",
+  );
   const afterMemory =
-    memoryOps.length || forgetOps.length
-      ? wanted.filter((op) => op.op !== "remember" && op.op !== "forget_that")
+    memoryOps.length || forgetOps.length || clockOps.length
+      ? wanted.filter(
+          (op) =>
+            op.op !== "remember" &&
+            op.op !== "forget_that" &&
+            op.op !== "clock_in" &&
+            op.op !== "clock_out",
+        )
       : wanted;
 
   const split = splitRecordOps(afterMemory, pageKey);
@@ -1623,6 +1655,47 @@ The business owner asked:
         continue;
       }
       recordNotes.push({ op: op.op, reason: "forgotten" });
+    }
+  }
+
+  /*
+    🔴 打卡上班／下班 —— 跟 `forget_that` 同一条理由，不属於任何一页。
+
+    `staff` 只能从他的师傅那份闭集里抄；抄不到或者编一个不存在的编号，
+    就当作没讲清楚（[任务 89] 那条界线），不去猜是哪一位。
+  */
+  if (clockOps.length && project?.id) {
+    const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient(ASSISTANT_ACTOR_HEADERS));
+    asCustomerForRows = asCustomer;
+    for (const op of clockOps) {
+      const staffId = typeof op.staff === "string" ? op.staff.trim() : "";
+      const { data: mineStaff } = staffId
+        ? await asCustomer
+            .from("directory_entries")
+            .select("id")
+            .eq("project_id", project.id)
+            .eq("module_key", "staff")
+            .eq("id", staffId)
+            .maybeSingle()
+        : { data: null };
+      const validStaff = (mineStaff as { id?: string } | null)?.id ?? null;
+      if (!validStaff) {
+        recordSkips.push({ op: op.op, reason: "noStaffSaid" });
+        continue;
+      }
+      const { error } = await asCustomer.rpc(op.op, { in_staff_id: validStaff });
+      if (error) {
+        recordSkips.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: error.message.slice(0, 80) },
+        });
+        continue;
+      }
+      recordNotes.push({
+        op: op.op,
+        reason: op.op === "clock_in" ? "clockedIn" : "clockedOut",
+      });
     }
   }
 
@@ -1912,7 +1985,10 @@ export const EDIT_JSON_SCHEMA = {
                 "reverse_ledger_entry",
                 "remember",
                 "forget_that",
+                "clock_in",
+                "clock_out",
                 "set_appointment_archived",
+                "mark_appointment_arrived",
                 "set_party_alert",
               ],
             },

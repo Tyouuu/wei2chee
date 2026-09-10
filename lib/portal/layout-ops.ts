@@ -655,6 +655,19 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     record_id: z.string().min(1),
   }),
   /*
+    🔴 她到了，还没轮到她 —— 「陈太太到了」，
+    跟「她做完了」是两个时刻。
+
+    `mark_appointment_arrived`（20260910570000）已经在跑，**只加一个时刻，
+    不碰 status**——按第二下不会把时钟往前推，也不会顺手扣掉套票
+    （那是「做完了」自己的事）。只在这一笔还是 booked 的时候
+    站得住，收款/取消/没来都已经过了这个时刻。
+  */
+  z.object({
+    op: z.literal("mark_appointment_arrived"),
+    record_id: z.string().min(1),
+  }),
+  /*
     🔴 在客人身上挂一句提醒 —— 「陈太太对乳胶过敏，记着」。
 
     `set_party_alert`（20260909040000）已经在跑，`works_here`——
@@ -795,6 +808,28 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     op: z.literal("forget_that"),
     /** 哪一条 —— 从记性清单里 `fact=` 抄下来的编号。 */
     record_id: z.string().min(1),
+  }),
+  /*
+    🔴 打卡上班 · 下班 —— 「阿珍现在上班了」「阿珍下班了」。
+
+    `clock_in` / `clock_out`（20260911240000）已经在跑，跟 `remember` /
+    `forget_that` 同一条：**不属於任何一张记录**，是站在她自己身上的一件事，
+    route 在分流之前自己接掉，不走 `splitRecordOps`。
+
+    ⚠️ `staff` 只能从「他的师傅」那份 `staff=` 闭集里抄，抄不到或者
+    编一个不存在的名字，就当作没讲清楚——[任务 89] 那条界线：省他的字，
+    不可以拿「猜」来省。`clock_in` 按两下自己是幂等的（还开着就原样还给
+    他），`clock_out` 没打过卡会讲清楚。
+  */
+  z.object({
+    op: z.literal("clock_in"),
+    /** 谁 —— 从师傅清单里 `staff=` 抄下来的编号。 */
+    staff: z.string().min(1),
+  }),
+  z.object({
+    op: z.literal("clock_out"),
+    /** 谁 —— 从师傅清单里 `staff=` 抄下来的编号。 */
+    staff: z.string().min(1),
   }),
   z.object({
     op: z.literal("share_record"),
@@ -1897,6 +1932,7 @@ export function applyLayoutOps(
       case "request_consent":
       case "add_treatment_note":
       case "set_appointment_archived":
+      case "mark_appointment_arrived":
       case "set_party_alert":
       case "grant_credit":
       case "use_credit":
@@ -1922,7 +1958,9 @@ export function applyLayoutOps(
         一句对不上的话，指向一个其实接好了的功能。
       */
       case "remember":
-      case "forget_that": {
+      case "forget_that":
+      case "clock_in":
+      case "clock_out": {
         skipped.push({ op: op.op, reason: "couldNotRemember" });
         break;
       }

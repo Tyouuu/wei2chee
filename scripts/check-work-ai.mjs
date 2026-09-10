@@ -1937,6 +1937,87 @@ try {
   );
   await page.screenshot({ path: `${OUT}/27-forget-cancel-alert.png` });
 
+  console.log("");
+  console.log("── ㉘ 🔴 她到了，还没轮到她 · 打卡上下班 ────────");
+  /*
+    🔴 `mark_appointment_arrived` / `clock_in` / `clock_out`
+    三支都已经在跑，今天助手第一次接得到。
+
+    前一支只加一个时刻，不碰 `status`，也不扣套票，
+    同一支量两件；后两支跟 `remember` 同一条——
+    不属于任何一页，都要从师傅闭集里 `staff=` 抄。
+  */
+  const { data: ooi, error: ooiErr } = await api.rpc("add_appointment", {
+    in_project_id: P,
+    in_module_key: bookPage,
+    in_starts_at: new Date(Date.parse(`${mytToday}T16:00:00+08:00`)).toISOString(),
+    in_ends_at: new Date(Date.parse(`${mytToday}T17:00:00+08:00`)).toISOString(),
+    in_party: "Ms Ooi",
+    in_service: "Manicure",
+  });
+  if (ooiErr) throw new Error(`seed Ms Ooi appt: ${ooiErr.message}`);
+
+  const { data: zara, error: zaraErr } = await api.rpc("add_directory_entry", {
+    in_project_id: P,
+    in_module_key: "staff",
+    in_name: "Nurse Zara",
+  });
+  if (zaraErr) throw new Error(`seed Nurse Zara: ${zaraErr.message}`);
+
+  await page.goto(`${BASE}/en/portal/${bookPage}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+
+  const arrivedSaid = await say(page, "Ms Ooi has arrived");
+  console.log(`        它讲了：${arrivedSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2000);
+  const { data: ooiAfter } = await admin
+    .from("appointments")
+    .select("id, arrived_at, status")
+    .eq("id", ooi)
+    .maybeSingle();
+  check(
+    "🔴 她到了，标上了那个时刻",
+    !!ooiAfter?.arrived_at,
+    `${JSON.stringify(ooiAfter)} — ${arrivedSaid.slice(0, 160)}`,
+  );
+  check(
+    "🔴 而 `status` 一个字都没动（还是 booked，不是 done）",
+    ooiAfter?.status === "booked",
+    `status=${ooiAfter?.status}`,
+  );
+
+  const clockInSaid = await say(page, "Nurse Zara just clocked in");
+  console.log(`        它讲了：${clockInSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2000);
+  const { data: openShift } = await admin
+    .from("staff_shifts")
+    .select("id, clock_in_at, clock_out_at")
+    .eq("project_id", P)
+    .eq("staff_id", zara?.id)
+    .is("clock_out_at", null)
+    .maybeSingle();
+  check(
+    "🔴 打卡上班了 —— 一笔还开着的班",
+    !!openShift?.id,
+    `${JSON.stringify(openShift)} — ${clockInSaid.slice(0, 160)}`,
+  );
+
+  const clockOutSaid = await say(page, "Nurse Zara is going home now, clock her out");
+  console.log(`        它讲了：${clockOutSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2000);
+  const { data: closedShift } = await admin
+    .from("staff_shifts")
+    .select("id, clock_out_at")
+    .eq("id", openShift?.id)
+    .maybeSingle();
+  check(
+    "🔴 打卡下班了 —— 同一笔班关上了",
+    !!closedShift?.clock_out_at,
+    `${JSON.stringify(closedShift)} — ${clockOutSaid.slice(0, 160)}`,
+  );
+  await page.screenshot({ path: `${OUT}/28-arrive-clock.png` });
+
 
 } catch (e) {
   failed.push(`threw: ${e.message}`);

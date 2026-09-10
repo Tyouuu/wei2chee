@@ -344,6 +344,14 @@ export type SkipCode =
   | "appointmentCancelled"
   /** 挂上那句提醒了。`what` */
   | "alertSet"
+  /** 她到了，还没轮到她。 */
+  | "appointmentArrived"
+  /** 她没有讲清楚是哪一位，或者讲的那个不在他的师傅清单上。 */
+  | "noStaffSaid"
+  /** 打卡上班了。 */
+  | "clockedIn"
+  /** 打卡下班了。 */
+  | "clockedOut"
   | "bookingClaimed"
   | "depositAsked"
   /** 这一单不用订金了。 */
@@ -475,6 +483,10 @@ export const SKIP_CODES = [
   "forgotten",
   "appointmentCancelled",
   "alertSet",
+  "appointmentArrived",
+  "noStaffSaid",
+  "clockedIn",
+  "clockedOut",
   "depositAsked",
   "depositDropped",
   "appointmentBooked",
