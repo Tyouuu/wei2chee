@@ -131,12 +131,25 @@ try {
     (rows1 ?? []).every((r) => r.title === "September fees"),
     JSON.stringify((rows1 ?? []).map((r) => r.title)),
   );
+  check(
+    "🔴 made_ids 讲得出是哪四张——跟资料库里那四个编号一模一样",
+    Array.isArray(first.made_ids) &&
+      first.made_ids.length === 4 &&
+      new Set(first.made_ids).size === 4 &&
+      first.made_ids.every((id) => (rows1 ?? []).some((r) => r.id === id)),
+    JSON.stringify(first.made_ids),
+  );
 
   /* ── ② 🔴 他在手机上按两下 ─────────────────────────────────── */
   console.log("\n② 🔴 按第二下");
   const second = (await bill())[0];
   check("🔴 一张都不多开", second.made === 0, JSON.stringify(second));
   check("而且讲得出四张是上次开的", second.again === 4, String(second.again));
+  check(
+    "🔴 而 made_ids 是空的——这一轮一张新的都没开",
+    Array.isArray(second.made_ids) && second.made_ids.length === 0,
+    JSON.stringify(second.made_ids),
+  );
   const { count: after2 } = await C
     .from("pipeline_records")
     .select("id", { count: "exact", head: true })
@@ -397,6 +410,10 @@ try {
     Number(books?.total_cents) === 32000, String(books?.total_cents));
   check("🔴 而「不收钱」那一个照样要买课本（那是她的决定，不是我们的）",
     books?.free === 0, String(books?.free));
+  check("🔴 made_ids 是四个不重复的编号——这一轮真的开的那几张",
+    Array.isArray(books?.made_ids) && books.made_ids.length === 4 &&
+      new Set(books.made_ids).size === 4,
+    JSON.stringify(books?.made_ids));
 
   /* 🔴 而同一按不给那个开关的时候，学生自己的价照旧管用 —— 那是月费的样子。 */
   const own = (await say(C, "bill_class", {
