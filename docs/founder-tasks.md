@@ -2179,3 +2179,27 @@ Read off that picture. Check it, then put it in.
       还是让助手在她需要的时候主动帮她加那一页——**这是产品判断，不是
       功能地基的洞**，见 `lib/portal/module-catalog.ts` 那一段
       `BILLS_NOTHING`／`walk:salon` 的注解。只登记，不动手（[重点 22e](./founder-points.md)）
+
+### 350. ✅ 病历签核做完了 · 而一个坑今晚撞了第四次，值得记下来（2026-09-10）
+
+[任务 341] 零之二：`treatment_notes` 写下去就自动签了（不用另外一颗按钮），
+签了的那一笔内容一律拒绝改，想改用一笔附注（`treatment_note_addenda`，
+写得进去、改不掉、删不掉）。真登入打过、故意拿掉守卫看过红、原样放回去、
+再跑一次全套（`check:treatments` 43 条 · `walk:medispa` 11 节 · tsc 干净）
+都过。过程中意外把既有一条规矩改坏又修回来：`in_what` 传空白本来就是
+「没有要改」，不是一次编辑企图——新守卫一度把两者混在一起，已经修好。
+
+🔴 **今晚同一个坑撞了第四次**：`created_by references auth.users(id)
+on delete set null` 会让那个帐号删不掉（`party_alerts` 那两栏撞过，
+20260909040000 的 `treatment_own_project` 注解、20260906300000 的
+`seen_by` 各撞过一次）。这一次两栏都改成不带外键，帐号删得掉了。
+
+- [ ] 🔴 **值得抽时间扫一遍全部 `_by` / `created_by` 栏位**——`grep -c
+      "references auth.users"` 现在还有三十几处，没有一处真的需要
+      资料库替它保证「这个 id 一定活在 auth.users 里」（全部是
+      `auth.uid()` 自己填的，从来不是使用者传进来的值）。**不是今晚要做的
+      范围**，只登记，因为改一处要重新走一次真登入 + 删帐号验证，
+      三十几处是另一件事
+- [ ] 疗程页（`treatments/treatment-desk.tsx`）今天不显示附注——
+      `treatment_notes_of` 已经把 `addenda` 带出来了，画面上要不要显示、
+      怎么显示，是画面那一边的决定（[重点 22c]），只登记不动手
