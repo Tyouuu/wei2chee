@@ -324,6 +324,39 @@ try {
   );
   await page.screenshot({ path: `${OUT}/4-chase.png` });
 
+  console.log("");
+  console.log("── ⑥b 🔴 一打开就讲今天这几件 —— 他一个字都不用打 ──");
+  /*
+    🔴 上面第 ⑥ 段量的是「**问得到**」。这一段量的是「**它自己开口**」——
+    而那两件差得很远：一个要他先想到该问什么。
+
+    [任务 321] 的收尾自己写着「它还不会自己开口 —— 现在是他问才答」，
+    [任务 338] 又记了一次。外面那几家（Xero JAX · QuickBooks 的付款代理）
+    的差别就在这里：**它们先讲话**。
+
+    ⚠️ 所以这一段**一个字都不打**：重新载入、把面板打开、看那几句在不在。
+    量的是那一张快到期的报价（第 ⑥ 段种的 Madam Chong）有没有自己冒出来。
+  */
+  await page.reload({ waitUntil: "networkidle", timeout: 180000 });
+  const openIt6b = page.locator('[data-work-ai="closed"]');
+  if (await openIt6b.count()) await openIt6b.first().click();
+  const todayBlock = page.locator("[data-work-ai-today]").first();
+  await todayBlock.waitFor({ timeout: 30000 }).catch(() => {});
+  const todaySaid = await todayBlock.innerText().catch(() => "");
+  console.log(`        它自己讲了：${todaySaid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  check(
+    "🔴 他一个字都没打，它自己就讲了今天要跟的",
+    /chong/i.test(todaySaid),
+    todaySaid.slice(0, 220) || "找不到 [data-work-ai-today]",
+  );
+  /* 🔴 那一句要跟「今天要跟的」那一页**同一份字**（资料库写的 body）——
+     在面板里重拼一句，就是同一件事两个讲法，而他会以为那是两件事。 */
+  check(
+    "🔴 而且念的是那一张单自己的名字，不是一句笼统的提醒",
+    /awning|kedai kopi/i.test(todaySaid),
+    todaySaid.slice(0, 220),
+  );
+  await page.screenshot({ path: `${OUT}/4b-today.png` });
 
   console.log("");
   console.log("── ⑦ 🔴 开单的时候用不用他自己的价钱 ──────────");

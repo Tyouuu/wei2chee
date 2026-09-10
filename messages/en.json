@@ -362,6 +362,7 @@
       "aiWorkTitle": "Tell it what to do",
       "aiWorkOpen": "Tell it what to do",
       "aiWorkPlaceholder": "e.g. Mrs Tan has arrived · log RM 180 for cement · how much came in this month",
+      "aiWorkToday": "Today needs chasing",
       "aiWorkCheck": "Read off that picture. Check it, then put it in.",
       "aiWorkConfirm": "Put it in",
       "aiWorkNotNow": "Not this",

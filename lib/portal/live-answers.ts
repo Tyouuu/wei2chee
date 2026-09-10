@@ -696,7 +696,7 @@ async function fetchPrices(
  * ⚠️ **读失败就当没有。** 跟 `owing` 不一样，那一边分不开会变成对着一个
  * 师傅讲「没有人欠你钱」；这里最坏是少讲一件他在那一页上本来就看得到的事。
  */
-async function fetchNudges(
+export async function fetchNudges(
   supabase: SupabaseClient,
   projectId: string,
   lang: "zh" | "en",

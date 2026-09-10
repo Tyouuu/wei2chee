@@ -333,6 +333,38 @@ export function WorkAssistant({
   useEffect(() => setLatest(null), [data]);
 
   /*
+    🔴 **今天这几件 —— 他一打开就讲，不用他先问。**
+
+    系统自己看得出来的讯号有十四种，而 [任务 321] 只做到「问得到」；
+    那一条的收尾自己写着 **它还不会自己开口**。一个要他先想到该问什么的
+    助手，等於把那十四个讯号锁在一句他不会讲的话后面。
+
+    ⚠️ **只在他真的打开那块面板的时候去问一次。** 挂在页面上，
+    就是十七页每一次切换都多跑一次那一支 —— 而他多半没有打开助手。
+
+    ⚠️ 而且**一件都没有的时候什么都不讲**：回空的，画面照旧给
+    那三句现成的。一句「今天没有什么要跟」要嘛是真的，要嘛是我们读不到
+    （他是师傅，钱那几条本来就看不到）—— 两种在画面上一模一样，
+    而其中一种是在骗他。
+  */
+  const [today, setToday] = useState<string[] | null>(null);
+  const askedToday = useRef(false);
+  useEffect(() => {
+    if (!open || askedToday.current) return;
+    askedToday.current = true;
+    void (async () => {
+      try {
+        const res = await fetch("/api/portal/today");
+        if (!res.ok) return;
+        const out = (await res.json()) as { lines?: string[] };
+        setToday(Array.isArray(out.lines) ? out.lines.filter(Boolean) : []);
+      } catch {
+        /* 读不到就当作没有 —— 那三句现成的照旧在。 */
+      }
+    })();
+  }, [open]);
+
+  /*
     🔴 一句话、一次确定、一次撤销 —— **同一支**。
 
     三件事送的是同一支 route、收的是同一种回覆，所以它们共用这一支：
@@ -676,6 +708,32 @@ export function WorkAssistant({
           >
             {t("aiWorkUndo")}
           </button>
+        ) : null}
+
+        {/*
+          🔴 他一打开看到的第一样东西 —— **今天要跟的那几件**。
+
+          那几句是**资料库写的**（`nudges_due.body`），跟「今天要跟的」
+          那一页画的是同一份字。在这里重拼一句，就是同一件事两个讲法。
+
+          ⚠️ 它们是**字，不是按钮**。点下去要发生什么，得先有一句
+          他真的做得到的话；替他想一句而助手做不到，就是一颗按不动的按钮
+          —— 这个仓库禁得最严的那一条。
+        */}
+        {!said && !pending && today && today.length ? (
+          <div data-work-ai-today className="flex flex-col gap-1">
+            <p className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)]">
+              {t("aiWorkToday")}
+            </p>
+            {today.map((line, i) => (
+              <p
+                key={i}
+                className="[color:var(--color-paper)] [font-size:var(--text-sm)]"
+              >
+                {line}
+              </p>
+            ))}
+          </div>
         ) : null}
 
         {!said && !pending ? (
