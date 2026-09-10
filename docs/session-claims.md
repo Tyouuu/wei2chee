@@ -17,4 +17,3 @@
 
 | session | 档案（逗号分隔） | 从几时 |
 |---|---|---|
-| 功能层（我） | scripts/check-all.mjs, scripts/check-visit.mjs, scripts/check-closable.mjs, scripts/check-nudges.mjs, scripts/check-records.mjs, scripts/check-lint*, supabase/migrations/2026091[1-2]*.sql | 2026-09-11 深夜 |
