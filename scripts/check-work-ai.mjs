@@ -1577,6 +1577,7 @@ try {
     in_name: "Ms Farah",
   });
   if (farahErr) throw new Error(`seed Ms Farah: ${farahErr.message}`);
+  console.log(`        种下去的 Ms Farah：${farah?.id}`);
   const { error: formErr } = await api.rpc("add_consent_form", {
     in_project_id: P,
     in_name: "Botox consent",
@@ -1591,12 +1592,34 @@ try {
   console.log(`        它讲了：${consentSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
   await page.waitForTimeout(2500);
 
-  const sent = await admin
-    .from("consent_signatures")
-    .select("id, party_id, form_name, signed_at")
-    .eq("project_id", P)
-    .eq("party_id", farah?.id)
-    .maybeSingle();
+  /*
+    🔴 这一条读量到过一次真的时间差，而且查清楚了不是这一支写错。
+
+    助手那句话（`consentSent` 那一句，跟资料库自己算出来的 form_name 一模
+    一样，只有 handler 真的查到范本、真的呼叫成功才拼得出那句话）每一次
+    都对；而紧接着的这一条 admin 读，在同一批七次全套里有两次读到空的，
+    第三次拿掉固定等待、改成摊开重试之后照样落过一次空 —— 最后一次连
+    「不筛 party_id、印这个项目底下全部的 consent_signatures」都印出来看，
+    那一笔**真的在**，`party_id` 也对得上，只是那一轮它比平常晚现身。
+
+    跟这个档案别的每一段（同样是「讲一句 → 等 2.5 秒 → admin 读」）比，
+    只有这一段撞得到，所以不是等得不够久这么简单，是这一条读偶尔要
+    比别的读晚见到最新那一笔。摊得够开，量的就是「写进去了没有」，
+    不是「这一次连线运气好不好」。
+  */
+  let sent = { data: null };
+  for (let i = 0; i < 14; i += 1) {
+    const rows = await admin
+      .from("consent_signatures")
+      .select("id, party_id, form_name, signed_at")
+      .eq("project_id", P)
+      .order("sent_at", { ascending: false })
+      .limit(5);
+    const found = (rows.data ?? []).find((r) => r.party_id === farah?.id);
+    if (found) { sent = { data: found }; break; }
+    await page.waitForTimeout(1000);
+  }
+  console.log(`        那一笔（找到就印，找不到印 null）：${JSON.stringify(sent.data)}`);
   check(
     "🔴 那份同意书真的发出去了，挂在她身上",
     !!sent.data,
@@ -1619,6 +1642,96 @@ try {
     consentSaid.slice(0, 220),
   );
   await page.screenshot({ path: `${OUT}/20-consent.png` });
+
+
+  console.log("");
+  console.log("── ㉕ 🔴 记一笔疗程 —— 而钱跟货这一支一个字都不碰 ──");
+  /*
+    🔴 `add_treatment_note`（20260909040000）已经在跑，画面那一边
+    的疗程记录页也在（[任务 332]），缺的是助手接得到它。
+
+    ⚠️ 这一段量两件：**她自己讲的话原样落地**（不是被压成一句
+    「疗程」）· **「谁做的」只认名册上真的人**——一个编出来的师傅名字
+    要落回 null，不能被凑巧配上名册上另一个人。
+  */
+  const { data: gita, error: gitaErr } = await api.rpc("add_directory_entry", {
+    in_project_id: P,
+    in_module_key: "customers",
+    in_name: "Ms Gita",
+  });
+  if (gitaErr) throw new Error(`seed Ms Gita: ${gitaErr.message}`);
+  const { error: nurseErr } = await api.rpc("add_directory_entry", {
+    in_project_id: P,
+    in_module_key: "staff",
+    in_name: "Nurse Lily",
+  });
+  if (nurseErr) throw new Error(`seed Nurse Lily: ${nurseErr.message}`);
+
+  await page.goto(`${BASE}/en/portal/customers`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  const treatSaid = await say(
+    page,
+    "Log that Ms Gita had 20 units of Botox on her forehead, done by Nurse Lily",
+  );
+  console.log(`        它讲了：${treatSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  await page.waitForTimeout(2500);
+
+  const noteRow = await admin
+    .from("treatment_notes")
+    .select("id, party_id, what, area, staff_id")
+    .eq("project_id", P)
+    .eq("party_id", gita?.id)
+    .maybeSingle();
+  check(
+    "🔴 那一笔真的记下来了，挂在她身上",
+    !!noteRow.data,
+    treatSaid.slice(0, 200) || "（它一句话都没讲）",
+  );
+  /* 🔴 一个猜不出来的数字 —— 20，不是随便一个「打了肉毒」。 */
+  check(
+    "🔴 她自己讲的话原样落地（20 · Botox）",
+    /20/.test(String(noteRow.data?.what ?? "")) && /botox/i.test(String(noteRow.data?.what ?? "")),
+    `what = ${JSON.stringify(noteRow.data?.what)}`,
+  );
+  check(
+    "🔴 部位记对了（forehead）",
+    /forehead/i.test(String(noteRow.data?.area ?? "")),
+    `area = ${JSON.stringify(noteRow.data?.area)}`,
+  );
+  const { data: lily } = await admin
+    .from("directory_entries")
+    .select("id")
+    .eq("project_id", P)
+    .eq("module_key", "staff")
+    .ilike("name", "%lily%")
+    .maybeSingle();
+  check(
+    "🔴 而且挂对了做的人（Nurse Lily）",
+    noteRow.data?.staff_id === lily?.id,
+    `staff_id=${noteRow.data?.staff_id} lily=${lily?.id}`,
+  );
+
+  /* ⚠️ 一个不在名册上的名字 —— staff_id 要落回 null，不能凑巧配到别人。 */
+  const bogusSaid = await say(
+    page,
+    "Log that Ms Gita had a facial, done by Dr Somebody Who Does Not Work Here",
+  );
+  console.log(`        它讲了：${bogusSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+  const bogusRow = await admin
+    .from("treatment_notes")
+    .select("id, staff_id")
+    .eq("project_id", P)
+    .eq("party_id", gita?.id)
+    .ilike("what", "%facial%")
+    .maybeSingle();
+  check(
+    "🔴 一个编出来的名字，落回的是 null 不是随便一个人",
+    !!bogusRow.data && bogusRow.data.staff_id === null,
+    `staff_id = ${JSON.stringify(bogusRow.data?.staff_id)} — ${bogusSaid.slice(0, 160)}`,
+  );
+  await page.screenshot({ path: `${OUT}/21-treatment.png` });
 
 
 } catch (e) {

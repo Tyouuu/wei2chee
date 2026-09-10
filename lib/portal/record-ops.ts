@@ -299,6 +299,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "set_appointment_deposit",
   "claim_booking_party",
   "request_consent",
+  "add_treatment_note",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -1416,6 +1417,52 @@ export async function actOnRecords(
         reason: "consentSent",
         vars: { form: String(form.name ?? "").trim() },
       });
+      written += 1;
+      continue;
+    }
+
+    if (op.op === "add_treatment_note") {
+      if (shape !== "directory") {
+        skipped.push({ op: op.op, reason: "notCustomerPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const raw = op as unknown as { what?: unknown; area?: unknown; staff?: unknown };
+      const what = String(raw.what ?? "").trim();
+      if (!what) {
+        skipped.push({ op: op.op, reason: "noNoteSaid" });
+        continue;
+      }
+      /* 🔴 哪一位做的 —— 闭集，跟 book_appointment 挑师傅同一条纪律。
+         抄错一个不在清单上的编号，就当作她没有讲。 */
+      const saidStaff = String(raw.staff ?? "").trim();
+      const { data: mineStaff } = saidStaff
+        ? await supabase
+            .from("directory_entries")
+            .select("id")
+            .eq("project_id", projectId)
+            .eq("module_key", "staff")
+            .eq("id", saidStaff)
+            .maybeSingle()
+        : { data: null };
+      const { error: noteErr } = await supabase.rpc("add_treatment_note", {
+        in_party_id: recordId,
+        in_what: what,
+        in_area: String(raw.area ?? "").trim(),
+        in_staff_id: (mineStaff as { id?: string } | null)?.id ?? null,
+      });
+      if (noteErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: noteErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      notes.push({ op: op.op, reason: "treatmentLogged", vars: { what } });
       written += 1;
       continue;
     }

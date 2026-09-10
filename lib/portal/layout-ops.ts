@@ -597,6 +597,34 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     /** 哪一份范本 —— 从「他的同意书范本」清单里 `form=` 抄下来的。 */
     form_id: z.string().nullable(),
   }),
+  /*
+    🔴 记一笔疗程 —— 「陈太太额头打了 20 单位肉毒」。
+
+    `add_treatment_note`（20260909110000）已经在跑，画面那一边的疗程记录页
+    也做出来了（[任务 332]）。**这一支不碰钱，也不碰架上的货** ——
+    那是 `add_treatment_product`（消耗品扣库存）跟收款那一支各自的事，
+    一支写太多事就是重点 23 讲的「同一件事两条路」在另一个方向上重演。
+
+    ⚠️ **今天只记，不锁**。同意书还没签的时候要不要挡，
+    [任务 326] 的档头写死了理由：那一刻客人已经躺在那里了，
+    收紧那一条是最危险的收紧（[重点 31]），交给老板决定。
+  */
+  z.object({
+    op: z.literal("add_treatment_note"),
+    /** 哪一位客人 —— 客户那一页上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** 做了什么。她讲了才有，没讲清楚就问一句，不要替她编一句「疗程」。 */
+    what: z.string().max(200).nullable(),
+    /** 哪个部位（额头 · 法令纹）。她没讲就留白。 */
+    area: z.string().max(120).nullable(),
+    /**
+     * 🔴 哪一位做的 —— 从「他的师傅」清单里 `staff=` 抄下来的编号。
+     * 没讲就是 null，资料库自己不验这一格是不是必填，
+     * 而一个编出来的编号会把这一笔挂在不存在的人身上，
+     * 所以照 book_appointment 那一条闭集规矩：抄错的当没讲。
+     */
+    staff: z.string().nullable(),
+  }),
   z.object({
     op: z.literal("book_appointment"),
     /** 排给谁。**挡住一段时间**（午休 · 看牙医）的时候是 null。 */
@@ -1792,6 +1820,7 @@ export function applyLayoutOps(
       case "set_appointment_deposit":
       case "claim_booking_party":
       case "request_consent":
+      case "add_treatment_note":
       case "book_appointment":
       case "take_payment":
       case "bill_class":

@@ -579,6 +579,8 @@
         "nothingToUndo": "There is nothing left from that one to take back.",
         "linesFromPaper": "Every line on that paper went onto the document \u2014 {count} in all, and its total is the sum of them.",
         "linesNotKept": "This page keeps one row per entry, so the lines on that paper were NOT kept \u2014 {count} in all. A document page holds those.",
+        "treatmentLogged": "Logged: {what}.",
+        "noNoteSaid": "It did not say what was done.",
         "bookingClaimed": "{who} is now on your customer list.",
         "consentSent": "{form} has been sent to her — waiting for her to sign, not signed yet.",
         "noFormSaid": "It did not say which form, or named one that is not on his list.",

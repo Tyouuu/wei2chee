@@ -320,6 +320,10 @@ export type SkipCode =
    * 不是签了，是**发出去等她签**。这一句要讲清楚方向，
    * 不然他会以为客人已经签好了。
    */
+  /** 一笔疗程记下来了。`what` */
+  | "treatmentLogged"
+  /** 她没讲清楚做了什么。 */
+  | "noNoteSaid"
   | "consentSent"
   /** 她没有讲清楚要发哪一份，或者讲的那个编号不在他的范本清单上。 */
   | "noFormSaid"
@@ -447,6 +451,8 @@ export const SKIP_CODES = [
   "linesNotKept",
   "bookingClaimed",
   "consentSent",
+  "treatmentLogged",
+  "noNoteSaid",
   "noFormSaid",
   "notCustomerPage",
   "depositAsked",

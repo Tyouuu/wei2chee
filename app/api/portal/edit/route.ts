@@ -311,6 +311,27 @@ Record tables:
   * Sending it twice is fine -- the human panel allows a resend the same way,
     for a lost link.
   * Only on the customer list page.
+- 🔴 add_treatment_note logs what was done to a customer, not what she
+  pays and not what came off the shelf: 「陈太太额头打了 20 单位肉毒」,
+  「log that Ms Tan had a laser session on her cheeks」.
+  * record_id is that customer, from the customer list's own record= ids.
+  * 🔴 \`what\` IS REQUIRED AND IT IS THE PROCEDURE, IN HER OWN WORDS. For
+    「Ms Gita had 20 units of Botox on her forehead, done by Nurse Lily」 send
+    {op:"add_treatment_note", record_id:"<her id>",
+     what:"20 units of Botox", area:"forehead", staff:"<Nurse Lily's id>"}.
+    Never write a generic 「疗程」/"treatment" to fill the field, and never
+    leave it null while your explanation describes what was done -- an
+    operation with what null is thrown away and NOTHING is logged, so a
+    reply that narrates the procedure while this field is empty tells him
+    it happened when it did not. If in doubt which words are the procedure,
+    ask, do not guess and do not drop the field.
+  * area is where on her (optional, leave null if not said). staff, if
+    named, MUST come from "他的师傅" / "His people" above -- an id that is
+    not on that list is treated as not having been said, never guessed
+    from a name that merely sounds close.
+  * ⚠️ Money and stock are separate actions, not this one. Do not use
+    this to record a payment or to note what was consumed.
+  * Only on the customer list page.
 - set_appointment_deposit says what a booking must pay UP FRONT:
   「叫她先付一百」, 「ask Ms Lim for a RM 50 deposit」,
   「这一单不用订金」.
@@ -1809,6 +1830,7 @@ export const EDIT_JSON_SCHEMA = {
                 "set_appointment_deposit",
                 "claim_booking_party",
                 "request_consent",
+                "add_treatment_note",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
@@ -1885,6 +1907,8 @@ export const EDIT_JSON_SCHEMA = {
             // owner's own printed list (form= ids), never invented, because
             // this route never sees what a form says.
             form_id: { type: ["string", "null"] },
+            // add_treatment_note only (what is shared with set_follow_up above).
+            area: { type: ["string", "null"] },
             // take_payment 也用 amount。**方向不在里面** —— 一笔进来的钱
             // 由收款那一页决定，不是模型讲的（20260906060000）。
             method: { type: ["string", "null"] },
@@ -1910,6 +1934,8 @@ export const EDIT_JSON_SCHEMA = {
             unit_price: { type: ["string", "null"] },
             // 那一件要做的事，他自己的话。**没有日子那一格** ——
             // 资料库排在今天，而助手不发明「星期五」（见 layout-ops 那一支的档头）。
+            // 同一格也是 add_treatment_note 的「做了什么」——两边都是「他自己
+            // 打的一句话」，没有理由养两个同形状的栏位。
             what: { type: ["string", "null"] },
             // Not enum-constrained: the valid ids depend on the block being
             // targeted, which the model reads off that block's own
@@ -1945,6 +1971,7 @@ export const EDIT_JSON_SCHEMA = {
             "enquiry_id",
             "group_id",
             "form_id",
+            "area",
             "method",
             "party",
             "contact",
