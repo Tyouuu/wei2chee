@@ -1505,11 +1505,19 @@ function fill(
        a schedule whose hours are the ones it was drawn with, over somebody
        else's appointments, is the 「real figures over sample names」 defect
        standing on its head. Rows with no time (every other shape) are left
-       out rather than stacked at 09:00. */
+       out rather than stacked at 09:00.
+
+       🔴 `.slice(0, 8)` silently dropped a real ninth booking, and neither
+       the screen nor the assistant reading the same rows had any way to
+       know one was missing -- a busy multi-chair salon clears eight in a
+       morning (task 339's four-chair math, task 181's numbers), so this was
+       not an edge case. Raised to match the fetch above (`limit = 50`):
+       there is no reason to throw away rows further down than the query
+       already bothered to bring in. See task 361. */
     return {
       rows: rows
         .filter((r) => r.at?.time)
-        .slice(0, 8)
+        .slice(0, 50)
         .map((r) => ({
           time: r.at?.time ?? "",
           endTime: r.at?.endTime ?? "",

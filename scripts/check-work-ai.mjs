@@ -1527,38 +1527,34 @@ try {
   );
 
   /*
-    ⚠️ 量到这里为止：A 段已经证明**助手真的找得到、认得成**（Ms Devi 那一笔）。
-    这一段现在只量一件事 —— **号码有没有原样从 book_appointment 走到
-    claim_booking_party**，不重新去考「模型找不找得到这一笔」，因为那一件
-    这一轮量出来是另一个真的洞，不是这一支写错了：
-
-    🔴 **`live-rows.ts` 的 DaySchedule 投影把真数字砍到最多 8 笔
-    （`.slice(0, 8)`），而且没有「还有 N 笔没列出来」那句话** ——
-    `describeDay` 自己那句 `rest` 提示读的是砍过的那个数组长度，
-    所以它永远量不到自己被砍过。这一轮种到第九笔预约（Madam Tay，
-    排明天九点）的时候，它真的从模型看得到的名单里消失了，而它没有
-    消失的痕迹，模型答的是「这一页上找不到」——**它讲得没错，是投影
-    先把她藏起来了**。[任务 339](../docs/founder-tasks.md#339) 量过一间
-    四张椅子的沙龙一小时只排得下一位，[任务 181](../docs/founder-tasks.md#181)
-    量过怡保四成七的店天天在用序号 —— 一间生意好的沙龙一天排超过 8 笔
-    是常态，不是这个测试凑出来的边缘情况。
-
-    这是画面／投影那一层的东西（`live-rows.ts` 同时喂真人看的那一块
-    跟助手看的那一段），不是这一支的地盘 —— 写进任务档，不动手。
-    所以这里改用 `api.rpc` 直接呼叫 `claim_booking_party`，量的是这一支
-    自己写对了没有：**contact 是不是真的原样变成了 whatsapp**。
+    🔴 这一段以前走 `api.rpc` 直接绕过助手——种到第九笔预约的时候，
+    `live-rows.ts` 的 DaySchedule 投影把真数字砍到最多 8 笔
+    （`.slice(0, 8)`），而且没有「还有 N 笔没列出来」那句话，
+    所以 Madam Tay 从模型看得到的名单里静静消失了。那一支已经改成
+    `.slice(0, 50)`（对齐上面那支 fetch 自己的 `limit`，见任务 361），
+    现在改回原来要量的那一句——**让助手自己找到她，不是替它按**。
   */
-  const { data: tayClaim, error: tayClaimErr } = await api.rpc("claim_booking_party", {
-    in_appointment_id: tayAppt.data?.id,
-  });
-  if (tayClaimErr) throw new Error(`claim Madam Tay: ${tayClaimErr.message}`);
-  const tayPerson = Array.isArray(tayClaim) ? tayClaim[0] : tayClaim;
-  console.log(`        claim_booking_party 回了：${JSON.stringify(tayPerson)}`);
+  const tayDictatedClaim = await say(page, "Add Madam Tay to the customer list from her booking");
+  console.log(`        它讲了：${tayDictatedClaim.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+  const tayRow = await admin
+    .from("directory_entries")
+    .select("id, name, phone, whatsapp")
+    .eq("project_id", P)
+    .eq("module_key", "customers")
+    .ilike("name", "%tay%")
+    .is("archived_at", null)
+    .maybeSingle();
+  check(
+    "🔴 第九笔预约，助手自己在画面上找到她、认成客人了",
+    !!tayRow.data,
+    tayDictatedClaim.slice(0, 200) || "（它一句话都没讲）",
+  );
   /* 🔴 号码原样落在客户身上 —— 不是重打一次，是那一笔预约自己带着的那个。 */
   check(
     "🔴 而且那个号码原样落在她的 WhatsApp 栏上",
-    String(tayPerson?.whatsapp ?? "").replace(/\D/g, "") === "0123456789",
-    `whatsapp = ${JSON.stringify(tayPerson?.whatsapp)}`,
+    String(tayRow.data?.whatsapp ?? "").replace(/\D/g, "") === "0123456789",
+    `whatsapp = ${JSON.stringify(tayRow.data?.whatsapp)}`,
   );
   await page.screenshot({ path: `${OUT}/19-claimed.png` });
 
