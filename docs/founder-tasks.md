@@ -2147,3 +2147,35 @@ Read off that picture. Check it, then put it in.
 - [ ] 那三条平行条件写进我们自己的做法里 —— **而它今天是靠人记得**
 - [ ] 装不装 `technology` 那一个部门，他决定（`/plugin marketplace add cbrock84/headcount`
       ＋ `/plugin install technology@headcount`）—— 那是改共用设定，三个 session 都会读到
+
+### 349. 🔴 「医美开不了单」那句话是错的 —— 拿真的登入身分测了一次（2026-09-10）
+
+另一个 session 报告：「疗程方案」跟「报价单」两页接不上去，
+因为「医美那个行业今天连一张能开单的页面都没有，先把地基那一格做出来」。
+
+**我用真的登入身分测了一次，那一句是错的**（[重点 26](./founder-points.md)：
+`db push` 证明不了任何事，代码看起来对不对不算，要真的打一次）：
+
+```
+① 今天预设的 beauty 页面：dashboard · customers · bookings · payments ·
+   expenses · staff · inventory · website（没有 quotations，这一句是对的）
+② 她自己加一页「疗程方案」（add_project_page requested_key: "quotations"）
+   → 🟢 绿，一次就成功
+③ 加了之后开一张单：add_pipeline_record + set_record_lines
+   → 🟢 QT-2026-0001，两行明细，全部成功
+```
+
+🔴 **`add_project_page` 从来不看行业，只看这个项目是不是他自己的、
+页数有没有超过 20**。所以「医美开不了单」不是一句真的，
+是「**医美预设不开这一页**」——地基一直都在，缺的是**要不要默认给她**
+这个产品判断，或者**助手知不知道可以帮她加**这一格。
+
+⚠️ `beauty` 默认不给报价单页，是[任务 341](#341) 之前另一个 session
+量出来的**故意决定**（`walk:salon` 量过：沙龙的钱全部走套票跟柜台收款，
+一页开不了单反而是要客人跳过的东西）——**而 medi spa 今天共用同一个
+行业代号 `beauty`，那条决定是照沙龙量出来的，不是照 medi spa**。
+
+- [ ] 🔴 **决定要不要给 medi spa 自己的行业代号**（跟沙龙分开），
+      还是让助手在她需要的时候主动帮她加那一页——**这是产品判断，不是
+      功能地基的洞**，见 `lib/portal/module-catalog.ts` 那一段
+      `BILLS_NOTHING`／`walk:salon` 的注解。只登记，不动手（[重点 22e](./founder-points.md)）
