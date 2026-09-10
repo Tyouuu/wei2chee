@@ -48,6 +48,7 @@ import { PIPELINE_MODULES } from "@/lib/portal/shape-state";
 import { SITE_URL } from "@/lib/site-url";
 import { PartyHistory } from "../new/party-history";
 import { FollowUpPanel } from "../new/follow-up-panel";
+import { NoShowPanel } from "../new/no-show-panel";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import {
@@ -260,6 +261,25 @@ export default async function EditRecordPage({
      ⚠️ `undefined` = 没有问（不是走单那几页）。 */
   let followUp:
     | { id: string; what: string; dueOn: string; daysLate: number }
+    | null
+    | undefined = undefined;
+  /* 她放过几次飞机 · 这一单要不要订金（20260909320000，[任务 333]）。
+     🔴 `deposit_advice` 从做出来那天起零个呼叫端——[任务 354] 记着的
+     那三格「名单 · 那颗『这一单要订金』·『她放过两次』那一行」，这里补的
+     是后两格：一张单自己讲得出这个客人放过几次、要不要开口要订金。
+     ⚠️ `undefined` = 没有问（不是预约那几页，或者这一笔没有连到客人 ——
+     一张挡起来的时段没有这句话）。 */
+  let noShowInfo:
+    | {
+        missed: number;
+        came: number;
+        lastMissedOn: string | null;
+        ruleAfter: number | null;
+        advise: boolean;
+        suggestCents: number | null;
+        onHandCents: number | null;
+        depositCents: number | null;
+      }
     | null
     | undefined = undefined;
   let runs: DeliveryRun[] | undefined = undefined;
@@ -992,7 +1012,7 @@ export default async function EditRecordPage({
     const { data } = await supabase
       .from("appointments")
       .select(
-        "id, starts_at, ends_at, kind, party, service, status, note, extra, archived_at",
+        "id, starts_at, ends_at, kind, party, party_id, service, status, note, extra, archived_at, deposit_cents",
       )
       .eq("id", recordId)
       .eq("module_key", pageKey)
@@ -1041,6 +1061,31 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+
+    /* 她放过几次飞机 · 这一单要不要订金（20260909320000）。
+       🔴 一张挡起来的时段（`kind = "block"`）没有客人，问不出这句话——
+       跟同一支自己的 `where a.kind = 'booking'` 同一条判断。 */
+    if (data.kind !== "block" && data.party_id) {
+      const { data: adv } = await supabase.rpc("deposit_advice", {
+        in_project_id: ctx.projectId,
+        in_party_id: data.party_id,
+      });
+      const row = Array.isArray(adv) ? adv[0] : adv;
+      noShowInfo = row
+        ? {
+            missed: Number(row.missed ?? 0),
+            came: Number(row.came ?? 0),
+            lastMissedOn: row.last_missed_on ?? null,
+            ruleAfter: row.rule_after == null ? null : Number(row.rule_after),
+            advise: Boolean(row.advise),
+            suggestCents:
+              row.suggest_cents == null ? null : Number(row.suggest_cents),
+            onHandCents:
+              row.on_hand_cents == null ? null : Number(row.on_hand_cents),
+            depositCents: data.deposit_cents == null ? null : Number(data.deposit_cents),
+          }
+        : null;
+    }
   } else if (ctx.shape === "reconcile") {
     /* Read from the TABLE and not from the view: what is being edited is what
        the outside said, and our own side is not editable -- it is the sum of
@@ -1686,9 +1731,18 @@ export default async function EditRecordPage({
           十五段读的东西全部叠在一条窄栏里。
           参考那一页（`.screenshots/upstream/up-patient.png`）的做法正好相反：
           左边一列人、右边那个人的全部，**它把宽度用掉了**。 */}
+        {/* 🔴 预约那几页也算进来（2026-09-10，[任务 354/357]）——
+          `NoShowPanel` 是这个形状第一个用到右边那一栏的东西，加进来才发现：
+          右边那一栏的宽度是 `minmax(0,1fr)`，算的是**外面这个容器剩下多少**，
+          而 `calendar` 形状原本落在 560px 那一支，容器本身就等于左边那一栏，
+          於是右边那一栏算出来是 0——`getBoundingClientRect` 量到的，
+          不是眼睛能一次看出来的：`innerText` 照样读得到那些字（它不管宽度），
+          Playwright 的 `visible` 断言才会一直说「找到了，但是隐藏的」。
+          一个宽度算成 0 的区块，跟一个真的不存在的区块，画面上看起来一样，
+          断言上看起来也一样——除非那把尺问的是宽度，不是文字在不在。 */}
         <main
           className={`w-full ${
-            ctx.shape === "pipeline" || ctx.isDirectory
+            ctx.shape === "pipeline" || ctx.shape === "calendar" || ctx.isDirectory
               ? "max-w-[1080px]"
               : "max-w-[560px]"
           }`}
@@ -1954,6 +2008,20 @@ export default async function EditRecordPage({
               <FollowUpPanel
                 recordId={recordId}
                 open={followUp}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
+
+          {/* 预约那几页多一段：她放过几次飞机 · 这一单要不要订金。
+            ⚠️ `undefined` = 没有问（不是预约那几页，或者这一笔没有连到客人）；
+            `null` = 问过了，读不到（`deposit_advice` 失败）。 */}
+          {noShowInfo ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <NoShowPanel
+                recordId={recordId}
+                projectId={ctx.projectId}
+                info={noShowInfo}
                 copy={copy.form}
               />
             </div>

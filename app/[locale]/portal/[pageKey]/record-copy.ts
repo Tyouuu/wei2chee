@@ -537,6 +537,22 @@ export type RecordFormCopy = {
   nextOn: string;
   nextLate: string;
   todayLink: string;
+  /* 她放过几次飞机 · 这一单要不要订金（20260909320000，[任务 333/354]）。
+   *  只在预约那几页，而且这一笔连到一个客人（不是挡起来的时段）。 */
+  noShowHeading: string;
+  noShowMissed: string;
+  noShowAdvise: string;
+  noShowSuggested: string;
+  noShowOnHand: string;
+  noShowDepositLabel: string;
+  noShowDepositSave: string;
+  noShowDepositClear: string;
+  noShowPolicyHeading: string;
+  noShowPolicyLede: string;
+  noShowPolicyAfter: string;
+  noShowPolicyAmount: string;
+  noShowPolicySave: string;
+  noShowFailed: string;
 };
 
 /* 🔴 这个物件里一个函式都不可以有。
@@ -1012,6 +1028,20 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       nextOn: "{date}",
       nextLate: "逾期 {n} 天（{date}）",
       todayLink: "要跟的事",
+      noShowHeading: "放飞机 · 订金",
+      noShowMissed: "{missed} 次没来（来过 {came} 次）",
+      noShowAdvise: "已经放过好几次了 —— 可以考虑这一单先收订金",
+      noShowSuggested: "建议 {amount}",
+      noShowOnHand: "她手上还有 {amount} 的订金",
+      noShowDepositLabel: "这一单要收多少订金",
+      noShowDepositSave: "保存",
+      noShowDepositClear: "不收了",
+      noShowPolicyHeading: "这门生意的规矩",
+      noShowPolicyLede: "放几次之后要开口收订金，收多少——填过一次，以后每一单都会照这个提醒。",
+      noShowPolicyAfter: "放几次之后要收订金",
+      noShowPolicyAmount: "收多少",
+      noShowPolicySave: "保存规矩",
+      noShowFailed: "没有保存成功，再试一次。",
     },
   },
   en: {
@@ -1471,6 +1501,20 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       nextOn: "{date}",
       nextLate: "{n} days late ({date})",
       todayLink: "To chase",
+      noShowHeading: "No-shows & deposit",
+      noShowMissed: "Missed {missed} of {came} visits",
+      noShowAdvise: "She has missed enough visits to consider asking for a deposit on this one",
+      noShowSuggested: "{amount} suggested",
+      noShowOnHand: "She already has {amount} on deposit",
+      noShowDepositLabel: "Deposit for this booking",
+      noShowDepositSave: "Save",
+      noShowDepositClear: "Remove",
+      noShowPolicyHeading: "This shop's no-show policy",
+      noShowPolicyLede: "How many no-shows before asking for a deposit, and how much -- set it once and every booking after will follow it.",
+      noShowPolicyAfter: "Ask for a deposit after this many no-shows",
+      noShowPolicyAmount: "How much",
+      noShowPolicySave: "Save policy",
+      noShowFailed: "That did not save. Try again.",
     },
   },
 };

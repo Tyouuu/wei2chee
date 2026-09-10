@@ -24,7 +24,7 @@ import type { StyleName } from "@/app/[locale]/style-picker/style-column";
 import { chrome } from "@/lib/templates/copy";
 import { MODULE_BY_KEY, type ModuleShape } from "@/lib/portal/module-catalog";
 import { isLiveShape } from "@/lib/portal/shape-state";
-import type { TableColumn } from "@/lib/portal/table-model";
+import type { TableColumn, TableModel } from "@/lib/portal/table-model";
 import {
   canOpenModule,
   loadWorkspace,
@@ -245,7 +245,29 @@ export async function loadRecordPage(
       )
     : upgradeLayout(savedLayout, lang)) as unknown as PuckLayout;
 
-  const table = firstRecordTable(layout);
+  /* 🔴 预约那一页从 `d9463f0`（2026-09-09）起底下不再画一张 `RecordTable` ——
+     那次的理由是对的（同一批预约印两次），而它漏了一步：这一支的守卫
+     还在找一张已经不存在的表，於是从那天起**每一笔预约的连结都是 404**，
+     包括那次提交自己讲的「日程上的块点得进那一笔」。`shoot:day` 只拍了
+     日程本身，没有人真的点进去过一笔。
+     ⚠️ 这不是收紧一条守卫，是接回一条被拿掉桥墩的桥——见 record-context.ts
+     [任务 354/357] 的收尾。
+     一个日程格没有自订栏位（新增一栏「车牌号」这件事只在报价单/工程那一类
+     页面发生），`new-record-form.tsx` 的 `isCalendar` 分支自己也不读这四个
+     栏位的 `label`，只读 `key`（`shown = []`）——所以这里给的是四个空白名，
+     不是照抄旧表那四句话，因为旧表那四句话从来没有人在这条路上读过。 */
+  const table =
+    shape === "calendar"
+      ? ({
+          columns: [
+            { key: "primary", label: "", kind: "text" },
+            { key: "secondary", label: "", kind: "detail" },
+            { key: "amount", label: "", kind: "amount" },
+            { key: "status", label: "", kind: "status" },
+          ],
+          rows: [],
+        } as TableModel)
+      : firstRecordTable(layout);
   /* No table on the page means nothing to write into. The owner removed it,
      which is allowed; a form writing into a table he cannot see is not. */
   if (!table || !table.columns.length) notFound();
