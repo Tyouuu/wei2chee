@@ -273,6 +273,25 @@ try {
   const { data: peek } = await other.as
     .from("service_contracts").select("id").eq("project_id", P);
   check("🔴 那张表也读不到", (peek ?? []).length === 0, `${peek?.length} 行`);
+
+  console.log("\n⑪ 🔴 那一位要真的是这家的人——log_service_visit 现在验了");
+  await other.as.rpc("add_project_page", { requested_key: "staff", new_title: "staff" });
+  const { data: foreignStaff } = await other.as.rpc("add_directory_entry", {
+    in_project_id: other.projectId, in_module_key: "staff", in_name: "Not Ours",
+  });
+  const { error: foreignStaffErr } = await c.rpc("log_service_visit", {
+    in_contract_id: con.id, in_due_on: slotC, in_staff_id: foreignStaff.id,
+  });
+  check("🔴 别人家的员工编号——挡下来", !!foreignStaffErr,
+    foreignStaffErr?.message ?? "居然让它过了");
+  const { data: ownStaff } = await c.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "staff", in_name: "Our Own",
+  });
+  const { data: ownVisit, error: ownStaffErr } = await c.rpc("log_service_visit", {
+    in_contract_id: con.id, in_due_on: slotC, in_staff_id: ownStaff.id,
+  });
+  check("而这家自己的员工照旧记得下", !ownStaffErr && ownVisit?.staff_id === ownStaff.id,
+    ownStaffErr?.message ?? JSON.stringify(ownVisit));
 } finally {
   const stuck = await dropThrowaways(admin, made);
   console.log(stuck.length ? `\n🔴 ${stuck.length} 个临时帐号删不掉` : "\n临时帐号都删掉了");
