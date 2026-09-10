@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import {
   Area,
   AreaChart,
@@ -327,6 +327,9 @@ export function TrendChart({
       : caption
 
   const data = shown.map((p) => ({ label: p.label, v: Number(p.value) || 0 }))
+  /* 同一页可能有两张面积图（总览就有过），而 svg 的 `defs` 是整份文件共用的
+     —— 两张共用一个 id，第二张会去用第一张的颜色。 */
+  const fillId = useId()
 
   /** 12,340 -> "12.3k". A money axis at full length ("RM 12,340") is four
    *  times the width of the tick it labels and pushes the plot into a third of
@@ -403,11 +406,11 @@ export function TrendChart({
       {title ? (
         <header className="flex flex-wrap items-start justify-between [gap:var(--gap-inline)]">
           <div className="flex min-w-0 flex-col [gap:var(--gap-tight,4px)]">
-            <h3 className="[color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+            <h3 className="leading-snug [color:var(--color-paper)] [font-size:var(--text-base)] [font-weight:var(--fw-medium)]">
               {title}
             </h3>
             {captionText ? (
-              <p className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">{captionText}</p>
+              <p className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">{captionText}</p>
             ) : null}
           </div>
           {canSwitch ? (
@@ -504,8 +507,9 @@ export function TrendChart({
             {axis}
             <Line
               dataKey="v"
+              type="natural"
               stroke="var(--color-v)"
-              strokeWidth={2}
+              strokeWidth={1.4}
               dot={false}
               activeDot={{ r: 4 }}
               isAnimationActive={!still}
@@ -513,13 +517,23 @@ export function TrendChart({
           </LineChart>
         ) : (
           <AreaChart data={data} margin={{ left: 0, right: 4, top: 4 }}>
+            <defs>
+              {/* id 要带上这张图自己的号，不然同一页两张面积图会共用
+                  第一张的渐层 —— svg 的 defs 是整份文件共用的。 */}
+              <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-v)" stopOpacity={0.36} />
+                <stop offset="95%" stopColor="var(--color-v)" stopOpacity={0.04} />
+              </linearGradient>
+            </defs>
             {axis}
             <Area
               dataKey="v"
+              type="natural"
               stroke="var(--color-v)"
-              strokeWidth={2}
-              fill="var(--color-v)"
-              fillOpacity={0.16}
+              strokeWidth={1.25}
+              fill={`url(#${fillId})`}
+              fillOpacity={1}
+              dot={false}
               isAnimationActive={!still}
             />
           </AreaChart>

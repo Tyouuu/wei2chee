@@ -329,6 +329,28 @@ export function RecordTable(props: {
       return x.localeCompare(y, undefined, { numeric: true }) * sign;
     });
   })();
+  /* ── 一格两行 ────────────────────────────────────────────────────────
+     参考那一页（`users/_components/users-columns.tsx`）的名字那一格逐字是：
+
+       <div className="flex items-center gap-3">
+         <AvatarCell … />
+         <div className="min-w-0">
+           <div className="truncate font-medium text-foreground text-sm">{name}</div>
+           <div className="truncate text-muted-foreground text-sm">{email}</div>
+         </div>
+       </div>
+
+     **他们没有一栏叫 email** —— 那一句住在名字底下。我们把它摊成第二栏
+     （「Contact / notes」），於是同一张表比他们多一栏、少一行。
+
+     🔴 只在这张表**说自己是一张名册**（`faces`）的时候才收。别的表那一栏
+     讲的是别的事（一张单的说明、一笔钱的用途），收进标题底下会把两件事
+     压成一件。 */
+  const foldedKey = faces && groupKey ? groupKey : null;
+  const tableColumns = foldedKey
+    ? columns.filter((c) => c.key !== foldedKey)
+    : columns;
+
   const nextSort = (key: string) =>
     setSort((s) =>
       !s || s.key !== key
@@ -858,7 +880,7 @@ export function RecordTable(props: {
               : undefined
         }
       >
-        <DataGrid id={gridId} label={caption} revealEndWhen={columns.length}>
+        <DataGrid id={gridId} label={caption} revealEndWhen={tableColumns.length}>
           <table
             className="w-full border-collapse [background-color:var(--color-table-bg)] [font-size:var(--text-sm)]"
             style={
@@ -883,7 +905,7 @@ export function RecordTable(props: {
           >
             <thead>
               <tr className="sticky top-0 [background-color:var(--color-table-head-bg)]">
-                {columns.map((col) => {
+                {tableColumns.map((col) => {
                   const on = sort?.key === col.key;
                   return (
                     <th
@@ -953,7 +975,7 @@ export function RecordTable(props: {
               {rows.length === 0 && !q && !seg ? (
                 <tr>
                   <td
-                    colSpan={columns.length}
+                    colSpan={tableColumns.length}
                     className="[padding-block:var(--pad-card)] [padding-inline:var(--pad-cell-x)] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
                   >
                     {w.tableEmpty}
@@ -968,7 +990,7 @@ export function RecordTable(props: {
               {rows.length === 0 && (q || seg) ? (
                 <tr>
                   <td
-                    colSpan={columns.length}
+                    colSpan={tableColumns.length}
                     className="[padding-block:var(--pad-card)] [padding-inline:var(--pad-cell-x)] text-center [color:var(--color-paper-dim)] [font-size:var(--text-xs)]"
                   >
                     {w.tableNoMatch(q ? query.trim() : (seg as string))}
@@ -983,7 +1005,7 @@ export function RecordTable(props: {
                     <tr>
                       <th
                         scope="colgroup"
-                        colSpan={columns.length}
+                        colSpan={tableColumns.length}
                         className="[background:var(--color-ink-850)] [padding-inline:var(--pad-cell-x)] [padding-block:calc(var(--pad-cell-y)*0.85)] text-left [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)] [color:var(--color-paper)]"
                       >
                         {g.label || "—"}
@@ -1003,7 +1025,7 @@ export function RecordTable(props: {
                           : "[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
                       }
                     >
-                      {columns.map((col) => {
+                      {tableColumns.map((col) => {
                         const value = row.cells?.[col.key] ?? "";
                         if (col.kind === "status") {
                           const tone =
@@ -1113,10 +1135,25 @@ export function RecordTable(props: {
                          名字是空的就不画 —— 一颗没有字的圆圈是一个装饰。 */
                               if (!faces || col.key !== "primary" || !value)
                                 return label;
+                              /* `gap-3`（12px）跟 `size="lg"` 的头像 —— 两个都是
+                                 源代码里的数，我们本来是 --gap-inline 配 24px。
+                                 一颗 24 的圆圈配两行字，上下都比它高。 */
+                              const second = foldedKey
+                                ? String(row.cells?.[foldedKey] ?? "").trim()
+                                : "";
                               return (
-                                <span className="flex items-center [gap:var(--gap-inline)]">
-                                  <Avatar name={String(value)} size={24} />
-                                  <span className="truncate">{label}</span>
+                                <span className="flex items-center gap-3">
+                                  <Avatar name={String(value)} size={36} />
+                                  <span className="grid min-w-0">
+                                    <span className="truncate [color:var(--color-paper)] [font-size:var(--text-sm)] [font-weight:var(--fw-medium)]">
+                                      {label}
+                                    </span>
+                                    {second ? (
+                                      <span className="truncate [color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+                                        {second}
+                                      </span>
+                                    ) : null}
+                                  </span>
                                 </span>
                               );
                             })()}
@@ -1216,7 +1253,10 @@ function Pill({ tone, label }: { tone: StatusTone; label: string }) {
   const c = PILL_TONE[tone] ?? PILL_TONE.neutral;
   return (
     <span
-      className="inline-flex max-w-full items-center truncate whitespace-nowrap [border-radius:var(--radius-control)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [padding-block:2px] [padding-inline:var(--pad-control-x)]"
+      /* `px-2 py-1`（8/4）跟 `gap-1.5`(6) 是源代码里的数
+         （`users-columns.tsx` 的 StatusBadge）。我们本来上下只有 2px，
+         而一颗 6px 的点配 2px 的上下留白，药丸会贴着字。 */
+      className="inline-flex max-w-full items-center truncate whitespace-nowrap [border-radius:var(--radius-control)] [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [padding-block:4px] [padding-inline:8px]"
       /*
         THE LABEL IS NEVER THE TONE, AND THIS FILE'S SIBLING SAYS SO.
 

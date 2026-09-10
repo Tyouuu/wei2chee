@@ -1,38 +1,53 @@
-// A deterministic, token-driven fill so the same name always gets the same
-// color without needing a lookup table anywhere. Cycles through four of this
-// design system's already-validated status hues rather than hashing to an
-// arbitrary hex — every possible fill is still a `var(--...)` reference, so
-// this file stays token-driven under all six token sets.
-//
-// TWO ENTRIES CAME OUT, AND BOTH FOR THE SAME REASON: THEY ARE NOT HUES.
-//
-// --color-slate-bright resolves to #54565f in every one of the six sets. It
-// is the NEUTRAL status, and it is grey on purpose. As a status that is
-// right; as an identity it is the one entry that says nothing, and once the
-// fill became a 16% wash (below) it stopped being visible at all.
-//
-// --color-primary-deep looked like a hue in the six token files (Ledger's
-// is #8f3d0a, Swiss's #b01f12) and is NOT one where this component actually
-// runs. app/globals.css overrides it to #09090b on [data-surface="desk"] --
-// near-black, deliberately, because the workbench has exactly one primary
-// action colour and the reference's is near-black. A 16% wash of #09090b
-// over the table measures [215,215,216]: a grey disc.
-//
-// 🔴 Both were found by SAMPLING THE SCREENSHOT, not by reading the token
-// files -- reading them says Ledger's accent is a warm orange, and on this
-// surface that is simply not what the browser resolves. Four of five guests
-// came out as identical grey circles.
-//
-// Four hues left. Each is defined in all six sets, none is overridden on the
-// desk surface, and each carries a legible tint at 16%.
-const PALETTE = [
-  "var(--color-jade-bright)",
-  "var(--color-brass-bright)",
-  "var(--color-clay-bright)",
-  "var(--color-info-bright)",
+/*
+  TEN HUES, COPIED OUT OF THE REFERENCE'S OWN SOURCE.
+
+  `users/_components/users-columns.tsx` in arhamkhnz/next-shadcn-admin-dashboard
+  (MIT) picks the avatar's colour from a fixed list of ten Tailwind pairs --
+  amber · orange · rose · pink · fuchsia · purple · violet · indigo · sky ·
+  emerald -- each of them `bg-{hue}-100` behind `text-{hue}-700`. That is the
+  whole mechanism, and it is why their roster reads as ten different people
+  and ours read as one blue repeated.
+
+  🔴 WHY THIS ONE COMPONENT LEAVES THE TOKEN NAMESPACE, WHICH THE REST OF THIS
+  DIRECTORY DOES NOT.
+
+  Every other colour here is a TOKEN because the register repaints it: a
+  status has a meaning the business's own palette should carry. An identity
+  tint has no meaning at all -- it exists so the eye can tell Mrs Chan's row
+  from Ms Lim's at a glance -- and the token sets only carry FOUR true hues
+  (jade · brass · clay · info; slate is grey by design and primary-deep is
+  overridden to near-black on the workbench). Four hues over a fifty-name
+  roster is a collision every other row, which is exactly what the salon's
+  five guests showed: three of them the same blue.
+
+  So the ten are literal, and they are literal in BOTH halves: the wash and
+  the letters are the reference's own 100/700 pair rather than a mix computed
+  off one hue. Measured across all ten, the worst pair is amber at 4.51:1 and
+  the best indigo at 6.41:1 -- every one of them clears the 4.5 threshold for
+  11px text, which the computed version only reached by darkening the letters
+  toward the body colour.
+
+  ⚠️ These are decorative, never semantic. Nothing may read meaning out of
+  which hue a name landed on.
+*/
+const PALETTE: { bg: string; fg: string }[] = [
+  { bg: "#fef3c7", fg: "#b45309" }, // amber
+  { bg: "#ffedd5", fg: "#c2410c" }, // orange
+  { bg: "#ffe4e6", fg: "#be123c" }, // rose
+  { bg: "#fce7f3", fg: "#be185d" }, // pink
+  { bg: "#fae8ff", fg: "#a21caf" }, // fuchsia
+  { bg: "#f3e8ff", fg: "#7e22ce" }, // purple
+  { bg: "#ede9fe", fg: "#6d28d9" }, // violet
+  { bg: "#e0e7ff", fg: "#4338ca" }, // indigo
+  { bg: "#e0f2fe", fg: "#0369a1" }, // sky
+  { bg: "#d1fae5", fg: "#047857" }, // emerald
 ]
 
-function fillFor(name: string): string {
+/* 他们用的是 `name.length % tones.length` —— **名字多长**。
+   同样长的两个名字（「Ms Lim」跟「Ms Tan」，六个字）会拿到同一个色，
+   而一间沙龙的客人名字长度就是那么几种。这里保留原本那个 hash：
+   同一个名字永远同一个色（那一点跟他们一样），而不同的名字散得开。 */
+function fillFor(name: string): { bg: string; fg: string } {
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
   return PALETTE[hash % PALETTE.length]
@@ -95,8 +110,8 @@ export function Avatar({ name, size = 28 }: { name: string; size?: number }) {
           its own header: the colour identifies, the contrast is what makes
           it legible.
         */
-        background: `color-mix(in oklab, ${tone} 16%, transparent)`,
-        color: `color-mix(in oklab, ${tone} 55%, var(--color-paper))`,
+        background: tone.bg,
+        color: tone.fg,
       }}
     >
       {initialsFor(name)}

@@ -205,7 +205,13 @@ function Tile({
           ? "[background:linear-gradient(to_top,color-mix(in_oklab,var(--color-on-canvas)_4%,var(--card)),var(--card))]" +
             /* 卡片是 `rounded-xl`（= --radius + 4），不是 --radius 本身 */
             " [border-radius:var(--radius-lg)] p-4" +
-            " [box-shadow:0_0_0_1px_color-mix(in_oklab,var(--color-on-canvas)_10%,transparent)]"
+            /* 🔴 环**加**一道 `shadow-xs`（2026-09-10，逐字比对源代码补的）。
+               他们那一行是 `… to-card shadow-xs ring-1 ring-foreground/10`，
+               四个类名我们只抄了三个 —— 少的那一道是 Tailwind 的
+               `shadow-xs`：`0 1px 2px 0 rgb(0 0 0 / .05)`。
+               它把卡片从「画在纸上」变成「浮在纸上一点点」，而一整排四张
+               并排的时候那一点点就是它们跟背景分不分得开。 */
+            " [box-shadow:0_1px_2px_0_rgb(0_0_0/0.05),0_0_0_1px_color-mix(in_oklab,var(--color-on-canvas)_10%,transparent)]"
         : "[background:var(--card)] [border-radius:var(--radius)] [padding:var(--pad-card)] [box-shadow:var(--shadow-card)] [border:var(--border-card-width)_solid_var(--border-subtle)]"
 
   const span = lead ? "@2xl:col-span-2 @5xl:col-span-2" : ""

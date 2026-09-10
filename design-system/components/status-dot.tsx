@@ -60,7 +60,7 @@ export function StatusDot({
     <span
       className={`inline-flex items-center whitespace-nowrap text-[color:var(--color-paper)] ${
         small
-          ? "gap-1 [font-size:var(--text-xs)]"
+          ? "gap-1.5 [font-size:var(--text-xs)]"
           : "gap-1.5 [font-size:var(--text-sm)]"
       }`}
     >
