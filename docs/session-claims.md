@@ -17,4 +17,3 @@
 
 | session | 档案（逗号分隔） | 从几时 |
 |---|---|---|
-| 功能层（我） | supabase/migrations/2026091[1-2]*.sql, scripts/check-staff.mjs | 2026-09-11 凌晨 |
