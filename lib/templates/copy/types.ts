@@ -94,6 +94,9 @@ export type ModuleCopy = {
     secondary?: string;
     amount?: string;
     status?: string;
+    /** 「怎么算」，不是「算出来多少」——今天只有 staff 那一种用它。
+     *  见 industry-template.ts 的 KindCols 跟旁边那一段注解。 */
+    commission?: string;
   };
   /** Three rows. Sample data is what makes a first screen legible -- an empty
    *  table teaches a customer nothing about what the page is for. */
@@ -103,6 +106,7 @@ export type ModuleCopy = {
     amount?: string;
     tone: StatusTone;
     status: string;
+    commission?: string;
   }[];
   /** Ledger / report / reconcile shapes only. */
   hero?: {

@@ -406,6 +406,10 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
           secondary: "Assigned",
           amount: "This month",
           status: "Status",
+          /* 🔴 「怎么算」，不是「算出来多少」——见 industry-template.ts
+             的 rowPairs 旁边那一段。真档案接上之后这一格读
+             commission_tiers，是他自己定过的办法，不是现算的活数字。 */
+          commission: "Pay",
         },
         rows: [
           {
@@ -414,6 +418,7 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
             amount: "RM 48,500",
             tone: "positive",
             status: "Working",
+            commission: "10% on everything",
           },
           {
             primary: `${labels.staff} B`,
@@ -421,6 +426,7 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
             amount: "RM 22,800",
             tone: "positive",
             status: "Working",
+            commission: "First RM 5,000 at 10% · RM 5,000 and above at 15%",
           },
           {
             primary: `${labels.staff} C`,
@@ -428,6 +434,7 @@ export function moduleCopyEn(key: string, labels: IndustryLabels): ModuleCopy {
             amount: "RM 0",
             tone: "neutral",
             status: "Leave",
+            commission: "10% on everything",
           },
         ],
         searchPlaceholder: `Search ${labels.staff.toLowerCase()}`,

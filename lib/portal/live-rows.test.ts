@@ -459,6 +459,29 @@ describe("rowsFromParties", () => {
     const [row] = rowsFromParties([party({ extra: { c1: "会员编号 88" } })]);
     expect(row.extra).toEqual({ c1: "会员编号 88" });
   });
+
+  /*
+    [任务 346]: a staff row can carry a pay phrase without inventing an
+    amount -- the two are different questions ("what was he promised" vs.
+    "how much has he actually earned") and only the first is safe to store
+    rather than compute fresh.
+  */
+  it("carries a pay phrase when one is given, by id", () => {
+    const [amy, fara] = rowsFromParties(
+      [party({ id: "amy", name: "Amy" }), party({ id: "fara", name: "Fara" })],
+      undefined,
+      new Map([["amy", "10% on everything"]]),
+    );
+    expect(amy.commission).toBe("10% on everything");
+    expect(fara.commission).toBeUndefined();
+  });
+
+  it("leaves commission alone when no lookup is given at all", () => {
+    // Customers and suppliers call rowsFromParties without a third argument --
+    // this must not throw, and must not invent a phrase for anybody.
+    const [row] = rowsFromParties([party({ id: "陈先生" })]);
+    expect(row.commission).toBeUndefined();
+  });
 });
 
 /* ────────────────────────────────────────────────────────────────────────────

@@ -290,6 +290,22 @@ export async function seedEveryShape(
     });
     if (data?.id) { crewIds.push(data.id); seeded.add("staff"); }
   }
+  /* 🔴 每个师傅一份「怎么算」——不种，师傅列表右边那张「怎么算」的卡
+     （[任务 346]）永远是空的，判不了那个设计对不对。
+     走人按的那一支（`set_commission_tiers`），不另开写入路径。 */
+  if (showroom) {
+    const schemes = [
+      [{ from_cents: 0, percent: 10 }],
+      [{ from_cents: 0, percent: 10 }, { from_cents: 500_00, percent: 15 }],
+    ];
+    for (const [i, id] of crewIds.entries()) {
+      const { error } = await api.rpc("set_commission_tiers", {
+        in_party_id: id,
+        in_tiers: schemes[i % schemes.length],
+      });
+      if (!error) seeded.add("commission");
+    }
+  }
 
   /* ── 走单 ─────────────────────────────────────────────────────────── */
   const orderIds = [];

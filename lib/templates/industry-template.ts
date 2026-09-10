@@ -3019,13 +3019,22 @@ function boardNode(
  *  screen. Reading `copy.columns` means there is one vocabulary per module and
  *  this file never has to know what it is. */
 /** Which column of the record a detail row is showing. Read by live-rows.ts. */
-type KindField = "primary" | "secondary" | "amount" | "status";
-type KindCols = { primary: string; secondary?: string; amount?: string; status?: string };
+type KindField = "primary" | "secondary" | "amount" | "status" | "commission";
+type KindCols = {
+  primary: string;
+  secondary?: string;
+  amount?: string;
+  status?: string;
+  /* 「怎么算」，不是「算出来多少」——见 rowPairs 旁边那一段注解。
+     今天只有师傅那一种画面填这一格。 */
+  commission?: string;
+};
 type KindRow = {
   primary: string;
   secondary?: string;
   amount?: string;
   status?: string;
+  commission?: string;
   /* 谁做的 —— 只有预约那一种页面用得上。见 `dayNodes`。 */
   who?: string;
   /* 状态那一条色带的颜色 —— 同上。 */
@@ -3059,6 +3068,9 @@ function rowPairs(
   add(cols.secondary, first?.secondary, "person", "secondary");
   add(cols.amount, first?.amount, "money", "amount");
   add(cols.status, first?.status, "tag", "status");
+  /* 🔴 放在最后，不是因为它不要紧，是因为它最长 —— 一句话（「头 RM 5,000
+     抽 10%，之后抽 15%」）排在一串短标签的中间，会把那几行拉得宽窄不一。 */
+  add(cols.commission, first?.commission, "money", "commission");
   return out;
 }
 

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StatusTone } from "@/lib/templates/copy/types";
 import { isPastDue } from "./record-validity";
+import { tierPhrase, type Tier } from "./commission";
 
 /**
  * The customer's own rows, put into the page that was going to show samples.
@@ -79,6 +80,15 @@ export type LiveRow = {
    * 🔴 两样都要看得见：一间 medi spa 排完一天，要知道「三点还有没有房」
    * 跟「Amy 三点有没有空」两句，而少了任何一句她都会排出一个撞的。 */
   where?: string;
+  /* 一句「怎么算」，不是「算出来多少」——只有师傅那一种目录行给得出来。
+   *
+   * 🔴 **不是现算的。** `amount` 那一格已经证明过一次：一个数字在他打字
+   * 那一刻是对的，钱一动就是在说谎，所以这一支从来不设 `amount`
+   * （见 rowsFromParties 底下那条「never claims an amount」的测试）。
+   * 这一句不是同一类问题——`commission_tiers` 是他自己写下、按下保存的
+   * 一份办法，不是月底算出来的总数，存着不会因为月份换了就过期。
+   * 一张静态的「怎么算」卡，见 [任务 346]。 */
+  commission?: string;
   /* ── THE TENTH OF THIS BUSINESS THAT IS ONLY THIS BUSINESS ──────────────
    *
    * 「车牌号」 for a workshop, 「染发配方」 for a salon, 「货柜号」 for a
@@ -388,6 +398,9 @@ export function contactLine(e: DirectoryEntry): string | undefined {
 export function rowsFromParties(
   entries: DirectoryEntry[],
   href?: (id: string) => string,
+  /** 每一个人自己那份「怎么算」，已经拼成一句读得懂的话——句子怎么拼
+   *  见 `commissionPhrasesFor`。只有师傅那一页会传这一个。 */
+  commissionOf?: Map<string, string>,
 ): LiveRow[] {
   return entries.map((e) => ({
     ...(href && e.id ? { href: href(e.id) } : {}),
@@ -396,7 +409,63 @@ export function rowsFromParties(
     tone: "neutral" as StatusTone,
     status: (e.status ?? "").trim(),
     extra: extraCells(e.extra),
+    ...(commissionOf && e.id && commissionOf.has(e.id)
+      ? { commission: commissionOf.get(e.id) }
+      : {}),
   }));
+}
+
+/**
+ * 每一个师傅自己那份「怎么算」，拼成一句读得懂的话。
+ *
+ * ── 为什么是这一张表，不是 `staff_earnings` ──────────────────────────────
+ *
+ * `staff_earnings` 算的是**这个月赚了多少**——一个现算的活数字，而这一支
+ * 早就证明过它不该住在这个预览面板：一个数字在他打字那一刻是对的，
+ * 钱一动就是在说谎（见 `rowsFromParties` 旁边「never claims an amount」
+ * 那条测试）。**这一句问的是另一件事**——「讲好的办法是什么」，
+ * 那是他自己写下、按保存那一刻定的，不会因为月份换了就过期。
+ * 参考 Mangomint 的团队管理页给的正是这一种：一张写死的「怎么算」卡，
+ * 不是一个滚动的月结数字（[任务 346]）。
+ *
+ * ── 一次查全部，不是一个人查一次 ────────────────────────────────────────
+ *
+ * 这一页最多五十个人（`fetchLiveRows` 的 `limit`），一次把这一批人的
+ * 现行办法都捞出来，比每一行各自问一次省四十九次来回。
+ */
+async function commissionPhrasesFor(
+  supabase: SupabaseClient,
+  partyIds: string[],
+  lang: "zh" | "en",
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (!partyIds.length) return out;
+  /* `commission_tiers` 的 RLS 是 `commission_tiers_owner`——一个问不到钱的
+     账号，这一句读回来天然是零行，不用在这里重复判一次角色。 */
+  const { data, error } = await supabase
+    .from("commission_tiers")
+    .select("party_id, from_cents, percent")
+    .in("party_id", partyIds)
+    .order("from_cents");
+  if (error || !data) return out;
+
+  const words = {
+    zh: { first: "头 {amount} 抽 {percent}", then: "全部抽 {percent}", from: "{amount} 以上抽 {percent}", join: " · " },
+    en: { first: "first {amount} at {percent}", then: "{percent} on everything", from: "{amount} and above at {percent}", join: " · " },
+  }[lang];
+  const rm = (c: number) => ringgit(c) ?? "RM 0";
+
+  const byParty = new Map<string, Tier[]>();
+  for (const row of data as { party_id: string; from_cents: number; percent: number }[]) {
+    const list = byParty.get(row.party_id) ?? [];
+    list.push({ fromCents: row.from_cents, percent: row.percent });
+    byParty.set(row.party_id, list);
+  }
+  for (const [partyId, tiers] of byParty) {
+    const phrase = tierPhrase(tiers, rm, words);
+    if (phrase) out.set(partyId, phrase);
+  }
+  return out;
 }
 
 /** One line of the 库存 page's second column: 「仓库 · 包」. */
@@ -958,6 +1027,7 @@ function mapNodes(nodes: unknown[], rows: LiveRow[], started = false): unknown[]
         if (field === "secondary") return first.secondary ?? "";
         if (field === "amount") return first.amount ?? "";
         if (field === "status") return first.status ?? "";
+        if (field === "commission") return first.commission ?? "";
         return "";
       };
       /* 🔴 一格空着的标签，比一行没有的标签更糟——2026-09-10 看图看到的：
@@ -1143,7 +1213,18 @@ export async function fetchLiveRows(
         .order("name", { ascending: true })
         .limit(limit);
       if (error || !data) return [];
-      return rowsFromParties(data as DirectoryEntry[], href);
+      const parties = data as DirectoryEntry[];
+      /* 🔴 只有师傅那一页问「怎么算」——客户跟供应商的名册没有抽成这件事，
+         而且这一支要另外打一次资料库，多问一次是多一次白跑。 */
+      const commissionOf =
+        moduleKey === "staff"
+          ? await commissionPhrasesFor(
+              supabase,
+              parties.map((p) => p.id).filter((id): id is string => !!id),
+              lang,
+            )
+          : undefined;
+      return rowsFromParties(parties, href, commissionOf);
     }
 
     if (CALENDAR_MODULES.has(moduleKey)) {
