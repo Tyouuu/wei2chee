@@ -218,6 +218,48 @@ try {
       in_appointment_id: one, in_service: "吹",
     })) === "", "它把她挡下来了");
 
+  console.log("\n⑦b 🔴 临时加一样，没讲价钱——去她自己的清单找一次");
+  await C.rpc("add_project_page", { requested_key: "inventory", new_title: "inventory" });
+  const scalp = await say(C, "add_catalog_item", {
+    in_project_id: P, in_module_key: "inventory", in_name: "头皮深层护理",
+    in_price_cents: 8000,
+  });
+  await say(C, "set_staff_price", {
+    in_staff_id: senior.id, in_item_id: scalp.id, in_price_cents: 6800,
+  });
+
+  const extra = await visit(1, 15, null);
+  const noStaffLine = await say(C, "add_visit_line", {
+    in_appointment_id: extra, in_service: "头皮深层护理",
+  });
+  check("🔴 还没派人 → 用原价（RM 80），不是猜一个折扣价",
+    Number(noStaffLine?.price_cents) === 8000, String(noStaffLine?.price_cents));
+
+  const sifuLine = await say(C, "add_visit_line", {
+    in_appointment_id: extra, in_service: "头皮深层护理", in_staff_id: senior.id,
+  });
+  check("🔴 师傅自己的价（RM 68）算出来了，不用柜台重打一次",
+    Number(sifuLine?.price_cents) === 6800, String(sifuLine?.price_cents));
+
+  const girlLine = await say(C, "add_visit_line", {
+    in_appointment_id: extra, in_service: "头皮深层护理", in_staff_id: junior.id,
+  });
+  check("🔴 学徒没有自己的价 → 用原价（RM 80）",
+    Number(girlLine?.price_cents) === 8000, String(girlLine?.price_cents));
+
+  const saidLine = await say(C, "add_visit_line", {
+    in_appointment_id: extra, in_service: "头皮深层护理", in_staff_id: senior.id,
+    in_price_cents: 5000,
+  });
+  check("🔴 她自己讲了价钱 → 那一句永远赢（不会被清单上的价盖掉）",
+    Number(saidLine?.price_cents) === 5000, String(saidLine?.price_cents));
+
+  const noMatchLine = await say(C, "add_visit_line", {
+    in_appointment_id: extra, in_service: "临时想到的名字，清单上没有",
+  });
+  check("🔴 名字对不上清单上任何一件 → 照旧留空（不猜、不模糊比对）",
+    noMatchLine?.price_cents === null, String(noMatchLine?.price_cents));
+
   console.log("\n⑧ 别人家");
   const other = await person("other");
   check("🔴 别人家记不进我的来访",
