@@ -134,10 +134,10 @@ try {
 
   /* ── ② 🔴 两张套票 → 不动，让他自己挑 ───────────────────────── */
   console.log("\n② 🔴 两张套票 → 不动");
-  await C.rpc("add_service_package", {
+  const { data: pack2a } = await C.rpc("add_service_package", {
     in_party_id: two.id, in_name: "洗剪吹 ×10", in_sessions_total: 10,
   });
-  await C.rpc("add_service_package", {
+  const { data: pack2b } = await C.rpc("add_service_package", {
     in_party_id: two.id, in_name: "染发 ×5", in_sessions_total: 5,
   });
   const a2 = await book(two);
@@ -145,11 +145,12 @@ try {
     in_id: a2, in_status: "done",
   });
   check("🔴 两张的时候不猜", r2?.[0]?.why === "many_packages", `${r2?.[0]?.why}`);
+  /* 🔴 只问这两张自己的套票，不要问整张表——那张表是全库共用的，
+     几个星期测试下来早就有别的帐号留下的行，问整张表永远过不了。 */
   const { data: uses2 } = await admin
-    .from("package_uses").select("id, package_id");
-  check("🔴 而且两张一次都没有少",
-    (uses2 ?? []).filter((u) => u.package_id !== pack1.id).length === 0,
-    JSON.stringify(uses2));
+    .from("package_uses").select("id, package_id")
+    .in("package_id", [pack2a.id, pack2b.id]);
+  check("🔴 而且两张一次都没有少", (uses2 ?? []).length === 0, JSON.stringify(uses2));
 
   /* ── ③ 一张都没有 ───────────────────────────────────────────── */
   console.log("\n③ 一张都没有");
