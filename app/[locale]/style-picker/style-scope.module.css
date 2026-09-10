@@ -1053,6 +1053,10 @@
   --pad-control-y: 8px;
   --pad-cell-x: 13px;
   --pad-cell-y: 14px;
+  --table-head-size: var(--text-sm);
+  --table-head-weight: 400;
+  --table-head-tracking: normal;
+  --table-head-transform: none;
   --gap-stack: 20px;
   --gap-section: 24px;
   --gap-inline: 10px;

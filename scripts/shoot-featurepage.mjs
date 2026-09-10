@@ -51,12 +51,35 @@ const HUNTS = [
   ["mangomintc", "https://www.mangomint.com/", "③", ["form", "consent"]],
   ["clinikoc", "https://www.cliniko.com/", "③", ["consent", "form"]],
   ["carepatron", "https://www.carepatron.com/", "③", ["consent"]],
+
+  /* ── 第三趟（2026-09-10）：两页 arhamkhnz 完全没有，`beauty` 那一行今天
+     一页都开不出来的东西，各要一批参考 ──────────────────────────────────
+       ④ 一份有价钱、她会签的疗程方案（[任务 341] 记的那一件：
+         beauty 没有报价单也没有订单那一页，她开不出任何一张有明细的纸）
+       ⑤ 一个人的这个月赚多少（师傅那一页右边那块面板今天填不出来的
+         「This month」「Status」两格，[任务 344] 还欠的那一件） */
+  ["pabau4", "https://pabau.com/", "④", ["treatment plan", "consultation", "quote"]],
+  ["arc4", "https://www.aestheticrecord.com/", "④", ["treatment plan", "chart", "note"]],
+  ["zenoti4", "https://www.zenoti.com/", "④", ["treatment", "package", "membership"]],
+  ["boulevard4", "https://www.joinblvd.com/", "④", ["form", "chart", "client"]],
+  ["mangomint4", "https://www.mangomint.com/", "④", ["form", "membership", "package"]],
+
+  ["fresha5", "https://www.fresha.com/for-business", "⑤", ["team", "staff", "commission", "payroll"]],
+  ["vagaro5", "https://www.vagaro.com/pro/", "⑤", ["team", "staff", "payroll", "commission"]],
+  ["boulevard5", "https://www.joinblvd.com/", "⑤", ["team", "staff", "payroll"]],
+  ["mangomint5", "https://www.mangomint.com/", "⑤", ["team", "staff", "payroll", "commission"]],
+  ["mindbody5", "https://www.mindbodyonline.com/business", "⑤", ["staff", "payroll", "team"]],
 ];
+
+/** `GROUPS=④,⑤ node scripts/shoot-featurepage.mjs`：只重跑新加的那几组，
+ *  不用把已经拍过的 ①②③ 也打一次别人的站。 */
+const wantGroups = process.env.GROUPS ? new Set(process.env.GROUPS.split(",")) : null;
+const hunts = wantGroups ? HUNTS.filter((h) => wantGroups.has(h[2])) : HUNTS;
 
 const browser = await chromium.launch();
 const rows = [];
 
-for (const [key, root, group, words] of HUNTS) {
+for (const [key, root, group, words] of hunts) {
   const page = await browser.newPage({
     viewport: { width: W, height: H },
     userAgent:
@@ -79,7 +102,7 @@ for (const [key, root, group, words] of HUNTS) {
     const links = await page.evaluate(() =>
       Array.from(document.querySelectorAll("a[href]")).map((a) => ({
         text: (a.textContent ?? "").replace(/\s+/g, " ").trim().toLowerCase(),
-        href: (a as HTMLAnchorElement).href,
+        href: a.href,
       })),
     );
     let hit = null;
@@ -119,7 +142,7 @@ for (const [key, root, group, words] of HUNTS) {
 await browser.close();
 
 /* 一组一张联络表。 */
-for (const g of ["①", "②", "③"]) {
+for (const g of ["①", "②", "③", "④", "⑤"]) {
   const mine = rows.filter((r) => r.group === g && r.shots);
   if (!mine.length) continue;
   const H2 = 520;

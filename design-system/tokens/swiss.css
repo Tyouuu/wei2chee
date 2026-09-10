@@ -574,6 +574,16 @@
   --pad-control-y: 8px;
   --pad-cell-x: 13px;
   --pad-cell-y: 14px;
+
+  /* 表头照参考那一支画。这一套就是工作台（system-register.ts），
+     而它本来就是照 arhamkhnz/next-shadcn-admin-dashboard 复刻的。
+     他们的 TableHead 继承 text-sm · font-normal · 不大写 · 不撑字距。
+     另外五套不声明，所以它们落回小标签那一套 —— 那是它们自己
+     的主张，而它们今天只出现在风格画廊里。 */
+  --table-head-size: var(--text-sm);
+  --table-head-weight: 400;
+  --table-head-tracking: normal;
+  --table-head-transform: none;
   --gap-stack: 20px;
   /* 🔴 2026-09-03 补上的。`--gap-section` 被四个组件用着
      （并排两栏 · bento · 大编号流程 · 拼装块），而**整个仓库没有一个地方定义它** ——
