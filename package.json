@@ -239,7 +239,8 @@
     "check:visit-photos": "node scripts/check-visit-photos.mjs",
     "check:reviews": "node scripts/check-reviews.mjs",
     "check:audit-actor": "node scripts/check-audit-actor.mjs",
-    "check:tips": "node scripts/check-tips.mjs"
+    "check:tips": "node scripts/check-tips.mjs",
+    "check:clockin": "node scripts/check-clockin.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
