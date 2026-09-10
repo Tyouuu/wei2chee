@@ -11,7 +11,10 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getSessionUser } from "@/lib/supabase/server-session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { createSessionSupabaseClient } from "@/lib/supabase/server-session";
+import {
+  createSessionSupabaseClient,
+  ASSISTANT_ACTOR_HEADERS,
+} from "@/lib/supabase/server-session";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   applyLayoutOps,
@@ -855,7 +858,9 @@ export async function POST(req: NextRequest) {
     正好是「拿回自己刚写的东西」—— 一个 service role 会替任何人拿回任何东西。
   */
   if (undoing) {
-    const asCustomer = await createSessionSupabaseClient();
+    /* 🔴 20260911150000：这四处才是助手真的写东西的地方，带上那份
+       `via_ai` 契约的头。`asReader` 那几处纯读，不带。 */
+    const asCustomer = await createSessionSupabaseClient(ASSISTANT_ACTOR_HEADERS);
     const undoNotes: Skip[] = [];
     let took = 0;
     /* 一轮最多十二个动作（EDIT_JSON_SCHEMA 的 maxItems），所以撤销也是十二。 */
@@ -1460,10 +1465,12 @@ The business owner asked:
       precisely what founder-points 23 says not to do. The button goes
       through the customer's session; so does this.
     */
-    const asCustomer = await createSessionSupabaseClient();
+    const asCustomer = await createSessionSupabaseClient(ASSISTANT_ACTOR_HEADERS);
     /* Kept for the projection below, which has to read the rows back as the
        customer too -- RLS is what bounds it, and the service role would
-       cheerfully return another business's. */
+       cheerfully return another business's. Reads don't care about the
+       header above; it stays attached because this same client is reused
+       by the write blocks below. */
     asCustomerForRows = asCustomer;
     const wrote = await writeRecords(
       asCustomer,
@@ -1500,7 +1507,7 @@ The business owner asked:
     那正是 founder-points 23 讲的那件事。
   */
   if (split.actOps.length && isRecordModule(pageKey)) {
-    const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient());
+    const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient(ASSISTANT_ACTOR_HEADERS));
     asCustomerForRows = asCustomer;
     const acted = await actOnRecords(
       asCustomer,
@@ -1528,7 +1535,7 @@ The business owner asked:
     「这一轮旁边有没有站着一张真的单」（见上面那一段跟 20260909300000）。
   */
   if (memoryOps.length && project?.id) {
-    const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient());
+    const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient(ASSISTANT_ACTOR_HEADERS));
     asCustomerForRows = asCustomer;
     for (const op of memoryOps) {
       const said = typeof op.value === "string" ? op.value.trim() : "";

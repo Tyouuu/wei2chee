@@ -206,7 +206,6 @@ try {
     (after.count ?? 0) === (before.count ?? 0) + 1,
     `${before.count} → ${after.count}`,
   );
-
   console.log("\n── ③ 讲完之后，画面上看不看得到那一行 ────────────────────");
   await page.screenshot({ path: `${OUT}/2-said.png` });
   const shown = await page.locator("body").innerText();
@@ -214,6 +213,42 @@ try {
     "🔴 那一行当场出现在他眼前",
     /tan sri/i.test(shown),
     "画面上找不到刚才那一笔（refetch 没打开 = 说了没做）",
+  );
+
+  /*
+    🔴 审计日志分得出「是人按的，还是助手按的」了——20260911150000 那份
+    契约（[任务 370]）的另一半，量在这里而不是上面：那份触发器**只记
+    UPDATE/DELETE**（读了它的原文才知道——「只记人真的会改」，新开一张单
+    是 INSERT，从设计上就不算「改」），所以要一句真的会动到既有栏位的话。
+    `set_record_status` 改的是 `stage`，是触发器在看的那几栏之一。
+
+    ⚠️ 走的是真的 /api/portal/edit，不是 check:audit-actor 自己拿一条
+    带头的连线去模拟——证的是我接在助手写东西那条连线上的那个头，
+    真的到得了触发器，不是理论上该到。
+  */
+  const stageSaid = await say(page, "Mark the Tan Sri Renovation quotation as done");
+  console.log(`        它讲了：${stageSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+  const { data: tanSriRow } = await admin
+    .from("pipeline_records")
+    .select("id")
+    .eq("project_id", P)
+    .eq("module_key", "quotations")
+    .ilike("party", "%tan sri%")
+    .maybeSingle();
+  const { data: changeRow } = await admin
+    .from("record_changes")
+    .select("via_ai, field")
+    .eq("entity", "pipeline")
+    .eq("entity_id", tanSriRow?.id ?? "")
+    .eq("field", "stage")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  check(
+    "🔴 审计日志上那一笔标着 via_ai=true —— 那个头真的到了触发器",
+    changeRow?.via_ai === true,
+    `${stageSaid.slice(0, 140)} — via_ai = ${JSON.stringify(changeRow?.via_ai)}`,
   );
 
   console.log("");
