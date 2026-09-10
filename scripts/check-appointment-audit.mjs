@@ -170,6 +170,24 @@ try {
     in_party: "Mrs Tan", in_party_id: her.id, in_service: "Colour", in_staff_id: jas.id,
   });
   check("而这家自己的师傅照旧排得进去", !!ok, JSON.stringify(ok));
+
+  console.log("\n⑧ 🔴 改期／换人那一支——姐妹函式一个字都没接到，现在补上了");
+  check("🔴 重新指派给别人家真的员工——挡下来", (await refused(C, "update_appointment", {
+    in_id: apptId,
+    in_starts_at: new Date(anchor + 2 * 864e5).toISOString(),
+    in_ends_at: new Date(anchor + 2 * 864e5 + 36e5).toISOString(),
+    in_party: "Mrs Tan", in_staff_id: foreignStaff.id, in_service: "Colour",
+  })).includes("does not work here"), "居然让它过了");
+  await say(C, "update_appointment", {
+    in_id: apptId,
+    in_starts_at: new Date(anchor + 2 * 864e5).toISOString(),
+    in_ends_at: new Date(anchor + 2 * 864e5 + 36e5).toISOString(),
+    in_party: "Mrs Tan", in_staff_id: amy.id, in_service: "Colour",
+  });
+  const { data: reassigned } = await admin
+    .from("appointments").select("staff_id").eq("id", apptId).single();
+  check("而重新指派给这家自己的员工照旧成功", reassigned?.staff_id === amy.id,
+    JSON.stringify(reassigned));
 } catch (e) {
   bad.push(`半路炸了：${e.message}`);
   console.log(`  FAIL  半路炸了 — ${e.message}`);
