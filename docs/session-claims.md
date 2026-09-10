@@ -17,4 +17,3 @@
 
 | session | 档案（逗号分隔） | 从几时 |
 |---|---|---|
-| 功能层（我） | supabase/migrations/20260911[1-9]*.sql, scripts/check-audit-actor.mjs | 2026-09-11 中午 |
