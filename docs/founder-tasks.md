@@ -1916,3 +1916,47 @@ line items need an existing order record ID first
 - [ ] 一张纸开出来的单，要不要先摊出来给他核对再进帐（Tofu 那颗 Verify）
       —— 我们今天没有那个中间站，**要他决定**
 - [ ] 收进来的那张纸本身留不留（今天不存，只读一次就丢）
+
+### 344. ✅ 把他们的源代码拉下来，一页一页对（2026-09-10 他交办）
+> `打开他们的源代码看看如何完善我们的设计 去吧 每一个页面都是要完善`
+> `总之就是去抄而已 这个有源代码可以去拿的 不要我说那么多次`
+
+把 `arhamkhnz/next-shadcn-admin-dashboard`（MIT）**整个 clone 下来**，
+逐支读它的原文，不再量截图。拿回来的都是**源代码里的数**：
+
+| 那一支 | 拿到的 |
+|---|---|
+| `file-manager/_components/*` | 一排柜子 ＋ 一片东西；h-36 的预览区 · 区里 `inset-x-3 bottom-3` 那一行 · 名字跟第二句在区外面 |
+| `default/_components/performance-overview.tsx` | `type="natural"` 的曲线 · 渐层 .36→.04 · 线宽 1.25/1.4 · 卡头两级字 |
+| `default/_components/metric-cards.tsx` | 少抄的那一道 `shadow-xs` |
+| `users/_components/users-columns.tsx` | 名字下面那一行（他们没有 email 那一栏）· 头像十个色 · 药丸 `px-2 py-1` ＋ 6px 的点 |
+| `components/ui/table.tsx` | 每一行 `hover:bg-muted/50` |
+| `calendar/_components/calendar.tsx` | 月历自己的抬头（在框里面 · 有底色 · p-4）· 今天圈起来 |
+
+三个提交：`42de61a` · `caf91b1` · `42d0f70`。
+对照图：`.screenshots/vs/{stock,dash}-3up.jpg` · `.screenshots/vs/salon-all.jpg`。
+
+🔴 **路上抓到一个真错**：总览那张走势图拍出来是空的，而同一刻读画面里的
+东西，那条线是在的、颜色透明度全对。单独拍那一块才看到它**从左往右揭开**，
+而整页那一张拍到的是第一帧。那是这个仓库**唯一一处没有听
+`prefers-reduced-motion`** 的动效（globals.css 里九条都听，而图表是外面那个库
+用 JS 在动，CSS 管不到）。现在听了，而拍图那一支也去要它。
+**一张拍空了的图跟一张真的坏图，在照片上一模一样。**
+
+⚠️ 而我又把这份档案用 Python 整支重写、当场截成 0 —— [任务 334](#334)
+最后一行写的就是这一句。这一次是从 HEAD 还原的，没有丢东西。
+**含 emoji 的中文段落只准用编辑工具写。**
+
+#### 还欠
+- [ ] 🔴 **他们整一页是一张卡** —— 标题 · 副标 · 工具条 · 表 · 页脚全部在同一个
+      `<Card>` 里（`users/_components/users.tsx` 开头就是
+      `<Card><CardHeader className="border-b">`）。我们是**标题浮在页面上 ＋
+      下面另一个表框**。这是剩下最大的一个差别，而它要改的是十八页共用的壳，
+      得单独做、单独拍（[重点 31](./founder-points.md)）
+- [ ] **客户那一页只剩两栏** —— 联络那一栏收进名字底下之后，右边三分之一是空的。
+      他们那一页有七栏。我们今天对一位客人只知道两件事
+- [ ] **师傅那一页右边那块面板写着三个标签，只填得出一个**（This month · Status
+      都是空的）—— 旧的，不是这一轮弄的
+- [ ] **月历换不了月** —— 他们有 ‹ Today › · 换视图 · 筛日历四颗。
+      要那四颗真的能按，得让那一页从网址上读月份
+- [ ] **手机上那个搜索框被切了**（「Filter these ro…」）—— 它跟分段筛选抢同一行
