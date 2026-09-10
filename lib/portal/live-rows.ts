@@ -1314,6 +1314,10 @@ function fill(
      两块问的问题不一样。 */
   if (type === "MonthGrid") {
     return {
+      /* 今天由这里给 —— 那一块不读时钟，见它自己的 prop 注解。 */
+      today: new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kuala_Lumpur",
+      }).format(new Date()),
       rows: rows
         .filter((r) => r.at?.date)
         .slice(0, 200)

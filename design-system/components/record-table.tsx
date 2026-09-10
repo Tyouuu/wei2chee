@@ -1016,13 +1016,21 @@ export function RecordTable(props: {
                     <tr
                       key={i}
                       className={
+                        /* 🔴 一滑过去那一行就亮一下。参考那一支
+                           （components/ui/table.tsx 的 TableRow）逐字是
+                           `border-b transition-colors hover:bg-muted/50`，
+                           而我们整张表一处 hover 都没有。一个扫四十行的老板，
+                           滑到哪一行看不出来，而那一行最右边那一栏通常是钱。
+                           ⚠️ 印出来不会有 hover，所以它碰不到列印那一层。 */
+                        "transition-colors hover:[background-color:var(--color-ink-850)] " +
+                        (
                         // Bands and rules are alternatives, not additions: a zebra
                         // table with a rule under every row is two separators doing
                         // one job, and reads as noise at the row heights these tables
                         // actually run at.
                         shown === "zebra"
                           ? "even:[background-color:var(--color-ink-850)]"
-                          : "[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]"
+                          : "[&:not(:last-child)]:border-b [&:not(:last-child)]:[border-color:var(--color-ink-800)]")
                       }
                     >
                       {tableColumns.map((col) => {

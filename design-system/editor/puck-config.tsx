@@ -710,6 +710,11 @@ type Components = {
   MonthGrid: {
     heading?: string;
     month?: string;
+    /* 投影那一支填的，客户改不到 —— 所以它不在 `fields` 里。
+       而它必须在这一份型别跟底下那句 render 里：Puck 只把
+       render 拆出来的那几个交给组件（`askLabel` 那一次就是这样
+       静静地到不了）。 */
+    today?: string;
     rows: {
       id?: string;
       date?: string;
@@ -926,8 +931,8 @@ export const puckConfig: Config<Components> = {
         },
       },
       defaultProps: { heading: "这个月", rows: [] },
-      render: ({ heading, month, rows }) => (
-        <MonthGrid heading={heading} month={month} rows={rows} />
+      render: ({ heading, month, today, rows }) => (
+        <MonthGrid heading={heading} month={month} today={today} rows={rows} />
       ),
     },
     DaySchedule: {

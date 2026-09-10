@@ -303,7 +303,7 @@ export function DaySchedule({
                   i > 0
                     ? {
                         borderTopWidth: "var(--hairline)",
-                        borderTopStyle: "solid",
+                  borderTopStyle: i < 7 ? "none" : "solid",
                         borderTopColor: "var(--border-subtle)",
                       }
                     : undefined
@@ -1106,11 +1106,25 @@ export function ActivitySquares({ label }: { label?: string }) {
 export function MonthGrid({
   heading,
   month,
+  today,
   rows = [],
 }: {
   heading?: string;
   /** 哪一个月，`YYYY-MM`。空的话用这几笔里最早那一笔的月份。 */
   month?: string;
+  /**
+   * 今天是哪一天，`YYYY-MM-DD`。
+   *
+   * 🔴 **由外面传进来，这一块不读时钟。** 档头那一段写过为什么：
+   * 这一块是伺服器画的，而 `new Date()` 在伺服器（UTC）跟浏览器
+   * （吉隆坡）上会算出两个日子，於是一整块被 React 判成对不上。
+   * 投影那一支已经有一把马来西亚的钟（live-rows 的 `day()`），
+   * 所以答案从那里来，不在这里再算一次。
+   *
+   * 参考那一页把今天圈起来（`arham-calendar.jpg` 里 10 号那个数字坐在
+   * 一个填色的圆里）—— 一个月历不告诉你今天在哪，看的人要自己去数。
+   */
+  today?: string;
   rows?: {
     id?: string;
     date?: string;
@@ -1175,21 +1189,43 @@ export function MonthGrid({
   return (
     <section>
       {heading ? <h2 className={MONTH_HEAD}>{heading}</h2> : null}
-      <div className="mb-[var(--gap-stack)]">
-        <div className="[font-size:var(--text-lg)] [font-weight:var(--fw-semibold)]">
-          {title}
-        </div>
-        <div className="[color:var(--color-paper-dim)] [font-size:var(--text-xs)]">
-          {count}
-        </div>
-      </div>
+      {/* 🔴 月份那两行**在框里面**，不在框外面。
+          参考那一支（calendar/_components/calendar.tsx）逐字：
 
+            <div className="flex flex-col overflow-hidden rounded-md border">
+              <div className="… border-b bg-sidebar p-4 …">
+                <div className="font-medium text-lg leading-none">{title}</div>
+                <p className="text-muted-foreground text-sm">{days} days - {n} events</p>
+              </div>
+
+          我们本来把那两行摆在框外面当一个小标题 —— 于是那个框读起来是
+          一张**没有抬头的表**，而月份浮在它上面像页面的副标。
+          他们那一条是**这张月历自己的抬头**：有底色 · 有一条分隔线 ·
+          16px 的内距，整块圆角裁掉。
+
+          ⚠️ 底色用 --color-canvas（这一层的地），不是发明一个新的灰 ——
+          他们的 bg-sidebar 就是同一件事：比卡片深一点点的那一层。 */}
       <div
-        className="overflow-hidden [border-color:var(--border-subtle)] [border-radius:var(--radius-md)] [border-width:var(--hairline)]"
+        className="flex flex-col overflow-hidden [border-color:var(--border-subtle)] [border-radius:var(--radius-md)] [border-width:var(--hairline)]"
         style={{ borderStyle: "solid" }}
       >
+        <div
+          className="flex flex-col gap-1 p-4 [background:var(--color-canvas)] [border-bottom-width:var(--hairline)] [border-color:var(--border-subtle)]"
+          style={{ borderBottomStyle: "solid" }}
+        >
+          <div className="leading-none [font-size:var(--text-lg)] [font-weight:var(--fw-medium)]">
+            {title}
+          </div>
+          <p className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)]">
+            {count}
+          </p>
+        </div>
+
         {/* 星期 —— 靠右，跟格子里的日期数字对齐。 */}
-        <div className="grid grid-cols-7 [background:var(--color-canvas)]">
+        <div
+          className="grid grid-cols-7 [background:var(--color-canvas)] [border-bottom-width:var(--hairline)] [border-color:var(--border-subtle)]"
+          style={{ borderBottomStyle: "solid" }}
+        >
           {(w.weekdays ?? []).map((d) => (
             <span
               key={d}
@@ -1216,14 +1252,18 @@ export function MonthGrid({
                   borderLeftColor: "var(--border-subtle)",
                 }}
               >
-                <div
-                  className={`text-right [font-size:var(--text-xs)] ${
-                    c.inMonth
-                      ? "[color:var(--color-paper)]"
-                      : "[color:var(--color-paper-dim)] opacity-50"
-                  }`}
-                >
-                  {c.label}
+                <div className="text-right [font-size:var(--text-xs)]">
+                  <span
+                    className={
+                      c.date === today
+                        ? "inline-grid h-5 min-w-5 place-items-center rounded-full px-1 [background:var(--color-primary)] [color:var(--color-on-primary)] [font-weight:var(--fw-medium)]"
+                        : c.inMonth
+                          ? "[color:var(--color-paper)]"
+                          : "[color:var(--color-paper-dim)] opacity-50"
+                    }
+                  >
+                    {c.label}
+                  </span>
                 </div>
                 {shown.map((r, n) => (
                   <div
