@@ -1850,6 +1850,93 @@ try {
   );
   await page.screenshot({ path: `${OUT}/22-credit.png` });
 
+  console.log("");
+  console.log("── ㉗ 🔴 忘掉一条规矩 · 取消一笔预约 · 挂一条提醒 ────────");
+  /*
+    🔴 `forget_that` / `set_appointment_archived` / `set_party_alert`
+    三支都已经在跑，今天助手第一次接得到。
+
+    三件共用同一段，因为它们都是同一条纪律的不同形状：
+    **只加不删**。忘掉一条规矩是收起来（`archived_at`），
+    取消一笔预约同样是收起来，挂一条提醒是先收起旧的
+    再插一条新的 （只能有一条在活）。
+  */
+  const { data: fact, error: factErr } = await api.rpc("remember_this", {
+    in_project_id: P,
+    in_body: "Kedai Aman always pays within fifteen days",
+  });
+  if (factErr) throw new Error(`seed fact: ${factErr.message}`);
+
+  const { data: kumar, error: kumarErr } = await api.rpc("add_appointment", {
+    in_project_id: P,
+    in_module_key: bookPage,
+    in_starts_at: new Date(Date.parse(`${mytToday}T14:00:00+08:00`)).toISOString(),
+    in_ends_at: new Date(Date.parse(`${mytToday}T15:00:00+08:00`)).toISOString(),
+    in_party: "Mr Kumar",
+    in_service: "Haircut",
+  });
+  if (kumarErr) throw new Error(`seed Mr Kumar appt: ${kumarErr.message}`);
+
+  const { data: amira, error: amiraErr } = await api.rpc("add_directory_entry", {
+    in_project_id: P,
+    in_module_key: "customers",
+    in_name: "Ms Amira",
+  });
+  if (amiraErr) throw new Error(`seed Ms Amira: ${amiraErr.message}`);
+
+  /* ⚠️ 三支先都种好，才开一次页，同一页三句讲完。 */
+  await page.goto(`${BASE}/en/portal/${bookPage}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+
+  const forgetSaid = await say(page, "We don't need to remember Kedai Aman's payment terms anymore");
+  console.log(`        它讲了：${forgetSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2000);
+  const { data: factAfter } = await admin
+    .from("assistant_facts")
+    .select("id, archived_at")
+    .eq("id", fact?.id)
+    .maybeSingle();
+  check(
+    "🔴 忘掉那一条了 —— 收起来，不是删掉",
+    !!factAfter?.archived_at,
+    `${JSON.stringify(factAfter)} — ${forgetSaid.slice(0, 160)}`,
+  );
+
+  const cancelSaid = await say(page, "Cancel Mr Kumar's appointment");
+  console.log(`        它讲了：${cancelSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2000);
+  const { data: kumarAfter } = await admin
+    .from("appointments")
+    .select("id, archived_at")
+    .eq("id", kumar)
+    .maybeSingle();
+  check(
+    "🔴 取消了那一笔预约 —— 收起来，不是删掉",
+    !!kumarAfter?.archived_at,
+    `${JSON.stringify(kumarAfter)} — ${cancelSaid.slice(0, 160)}`,
+  );
+
+  await page.goto(`${BASE}/en/portal/customers`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  const alertSaid = await say(page, "Flag Ms Amira as allergic to latex");
+  console.log(`        它讲了：${alertSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2000);
+  const { data: alertRow } = await admin
+    .from("party_alerts")
+    .select("id, body, cleared_on")
+    .eq("project_id", P)
+    .eq("party_id", amira?.id)
+    .is("cleared_on", null)
+    .maybeSingle();
+  check(
+    "🔴 挂上那句提醒了（latex）",
+    /latex/i.test(String(alertRow?.body ?? "")),
+    `${JSON.stringify(alertRow)} — ${alertSaid.slice(0, 160)}`,
+  );
+  await page.screenshot({ path: `${OUT}/27-forget-cancel-alert.png` });
+
 
 } catch (e) {
   failed.push(`threw: ${e.message}`);

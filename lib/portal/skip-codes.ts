@@ -338,6 +338,12 @@ export type SkipCode =
   | "noFormSaid"
   /** 这不是客户那一页 —— 发同意书要先站在名册上。 */
   | "notCustomerPage"
+  /** 忘掉一条规矩了。 */
+  | "forgotten"
+  /** 取消了那一笔预约 -- 收起来，不是删掉。 */
+  | "appointmentCancelled"
+  /** 挂上那句提醒了。`what` */
+  | "alertSet"
   | "bookingClaimed"
   | "depositAsked"
   /** 这一单不用订金了。 */
@@ -466,6 +472,9 @@ export const SKIP_CODES = [
   "noNoteSaid",
   "noFormSaid",
   "notCustomerPage",
+  "forgotten",
+  "appointmentCancelled",
+  "alertSet",
   "depositAsked",
   "depositDropped",
   "appointmentBooked",

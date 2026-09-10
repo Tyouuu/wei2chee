@@ -347,6 +347,21 @@ Record tables:
     how much is left in its own words -- quote that sentence back, never
     compute or guess a balance yourself.
   * Only on the customer list page.
+- 🔴 set_appointment_archived cancels a booking: 「陈太太三点那个不来了，
+  取消」, 「cancel Ms Tan's 3pm」.
+  * record_id is that booking. Nothing else. It is kept, not deleted --
+    never tell him it was removed, say it was cancelled.
+  * Only on the appointments page.
+- 🔴 set_party_alert pins a standing note on a customer, visible to
+  whoever works on her: 「陈太太对乳胶过敏，记着」, 「flag her as VIP」.
+  * record_id is that customer, from the customer list's own record= ids.
+    what is the alert itself, in his own words -- ask if unclear, never
+    invent one.
+  * This is not the same as remember: remember is a rule for you, this is a
+    note that shows up on her own record for a human to see. Use whichever
+    one he actually means -- a rule about how you should behave is
+    remember, a fact he wants stuck to her name is this.
+  * Only on the customer list page.
 - set_appointment_deposit says what a booking must pay UP FRONT:
   「叫她先付一百」, 「ask Ms Lim for a RM 50 deposit」,
   「这一单不用订金」.
@@ -460,6 +475,15 @@ Record tables:
   * It works on every page, because a rule does not belong to one page.
   * Say plainly that you will remember it. Never claim to remember something
     you did not send this operation for.
+- 🔴 forget_that removes one standing rule: 「不用再照三十天算了」,
+  「forget what I said about Hup Seng」.
+  * record_id MUST come from the fact= id printed under "他以前叫你记住的" /
+    "What he told you to remember" above -- never guess which one from the
+    words he used, even when only one looks like a match. If none is
+    printed, or none fits what he described, say so and do nothing.
+  * Also works on every page, same reason as remember.
+  * Say plainly that it is gone. Never claim to have forgotten something you
+    did not send this operation for.
 
 Whole pages:
 - You cannot add or delete a page yourself, but you can OFFER to. When the
@@ -1373,9 +1397,13 @@ The business owner asked:
     而一句纯粹的交代没有。所以这一段在写记录**之后**才定那个值 —— 见下面。
   */
   const memoryOps = wanted.filter((op) => op.op === "remember");
-  const afterMemory = memoryOps.length
-    ? wanted.filter((op) => op.op !== "remember")
-    : wanted;
+  /* 🔴 `forget_that` 跟 `remember` 同一条 —— 哪一页都做得了，
+     所以也在分流之前自己接掉，不走 `splitRecordOps`。 */
+  const forgetOps = wanted.filter((op) => op.op === "forget_that");
+  const afterMemory =
+    memoryOps.length || forgetOps.length
+      ? wanted.filter((op) => op.op !== "remember" && op.op !== "forget_that")
+      : wanted;
 
   const split = splitRecordOps(afterMemory, pageKey);
   /* 🔴 摊给他看那一趟跟真的写那一趟，读的必须是**同一份**栏位对照
@@ -1569,6 +1597,32 @@ The business owner asked:
          而记性一格都没有动到他画面上的任何一行。多打开一次重读，
          就是替一件没有发生的改动付一次载入。 */
       recordNotes.push({ op: op.op, reason: "remembered", vars: { what: said } });
+    }
+  }
+
+  /*
+    🔴 忘掉一句 —— `remember` 的另一半，同一条理由：一条规矩不属於
+    任何一页，所以撤销也不该被拦在某一页上。
+  */
+  if (forgetOps.length && project?.id) {
+    const asCustomer = asCustomerForRows ?? (await createSessionSupabaseClient(ASSISTANT_ACTOR_HEADERS));
+    asCustomerForRows = asCustomer;
+    for (const op of forgetOps) {
+      const id = typeof op.record_id === "string" ? op.record_id.trim() : "";
+      if (!id) {
+        recordSkips.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const { error } = await asCustomer.rpc("forget_that", { in_id: id });
+      if (error) {
+        recordSkips.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: error.message.slice(0, 80) },
+        });
+        continue;
+      }
+      recordNotes.push({ op: op.op, reason: "forgotten" });
     }
   }
 
@@ -1857,6 +1911,9 @@ export const EDIT_JSON_SCHEMA = {
                 "drop_follow_up",
                 "reverse_ledger_entry",
                 "remember",
+                "forget_that",
+                "set_appointment_archived",
+                "set_party_alert",
               ],
             },
             target_id: { type: ["string", "null"] },

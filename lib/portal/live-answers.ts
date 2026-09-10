@@ -80,7 +80,7 @@ const WORDS = {
     /* 🔴 他的同意书范本。见下面 `consentForms`。 */
     consentForms: "他的同意书范本（request_consent 的 form_id 用那个编号）",
     /* 🔴 他讲过要记住的那几句。见下面 `memory` 那一段。 */
-    memory: "他以前叫你记住的（他自己的规矩跟他纠正过你的地方 —— 照做，不要再问一次）",
+    memory: "他以前叫你记住的（他自己的规矩跟他纠正过你的地方 —— 照做，不要再问一次；forget_that 用那个 fact= 编号）",
   },
   en: {
     heading: "This business's figures today (as at <at>, all counted from their own books)",
@@ -97,7 +97,7 @@ const WORDS = {
     classes: "His classes (bill_class takes the id; the head count and the fee are his own)",
     crew: "His people (book_appointment's staff takes the id)",
     consentForms: "His consent forms (request_consent's form_id takes the id)",
-    memory: "What he told you to remember (his own rules, and where he corrected you -- follow them, do not ask again)",
+    memory: "What he told you to remember (his own rules, and where he corrected you -- follow them, do not ask again; forget_that takes the fact= id)",
   },
 } as const;
 
@@ -675,10 +675,15 @@ async function fetchMemory(
     in_project_id: projectId,
   });
   if (error) return [];
-  return ((data ?? []) as { body?: string | null }[])
-    .map((r) => String(r.body ?? "").trim())
-    .filter(Boolean)
-    .map((line) => ({ line }));
+  /*
+    🔴 每一句前面印 `fact=<id>` —— 跟 `class=` `staff=` `form=` 同一条：
+    `forget_that` 要一个真的编号，不是让模型从一句话里去猜是哪一条。
+    抄错一个不在这份清单上的，就当作她没有讲清楚。
+  */
+  return ((data ?? []) as { id?: string | null; body?: string | null }[])
+    .map((r) => ({ id: String(r.id ?? ""), body: String(r.body ?? "").trim() }))
+    .filter((r) => r.body)
+    .map((r) => ({ line: `fact=${r.id} ${r.body}` }));
 }
 
 async function fetchPrices(

@@ -301,6 +301,8 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "request_consent",
   "add_treatment_note",
   "grant_credit",
+  "set_appointment_archived",
+  "set_party_alert",
   "use_credit",
   "set_follow_up",
   "finish_follow_up",
@@ -344,6 +346,9 @@ export const WORK_OPS: ReadonlySet<string> = new Set([
     挡下来，而画面上讲的是「那要去设计那一屏改」—— 一句对不上的话。
   */
   "remember",
+  /* 🔴 `forget_that` 跟 `remember` 同一条 —— 一条规矩不属於任何一页，
+     所以它也不在 `ACT_OPS` 里，route 在分流之前自己接掉它。 */
+  "forget_that",
   ...ACT_OPS,
 ]);
 
@@ -1521,6 +1526,63 @@ export async function actOnRecords(
           left: ringgit(totalCents?.total_cents ?? 0) ?? "RM 0",
         },
       });
+      written += 1;
+      continue;
+    }
+
+    if (op.op === "set_appointment_archived") {
+      if (shape !== "calendar") {
+        skipped.push({ op: op.op, reason: "notBookingPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const { error: cancelErr } = await supabase.rpc("set_appointment_archived", {
+        in_id: recordId,
+        in_archived: true,
+      });
+      if (cancelErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: cancelErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      notes.push({ op: op.op, reason: "appointmentCancelled" });
+      written += 1;
+      continue;
+    }
+
+    if (op.op === "set_party_alert") {
+      if (shape !== "directory") {
+        skipped.push({ op: op.op, reason: "notCustomerPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const said = String((op as unknown as { what?: unknown }).what ?? "").trim();
+      if (!said) {
+        skipped.push({ op: op.op, reason: "noNoteSaid" });
+        continue;
+      }
+      const { error: alertErr } = await supabase.rpc("set_party_alert", {
+        in_party_id: recordId,
+        in_body: said,
+      });
+      if (alertErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: alertErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      notes.push({ op: op.op, reason: "alertSet", vars: { what: said } });
       written += 1;
       continue;
     }

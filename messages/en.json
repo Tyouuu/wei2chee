@@ -571,7 +571,7 @@
         "couldNotRemember": "That could not be kept",
         "replyDrafted": "Written, NOT sent — open it, read it, and press send yourself: {link}",
         "classBilled": "{made} bills raised for {period}, {total} in total — {again} were already done and {free} pay nothing.",
-        "paymentTaken": "{amount} recorded against that document \u2014 {left} still owing.",
+        "paymentTaken": "{amount} recorded against that document — {left} still owing.",
         "appointmentBooked": "{who} is in for {when}.",
         "notFromPaper": "That one cannot be shown on this check \u2014 it is still in the batch and runs when you press.",
         "undoneKept": "{what} is off the list now \u2014 kept, not deleted, because last year's price is next year's answer.",
@@ -579,14 +579,17 @@
         "nothingToUndo": "There is nothing left from that one to take back.",
         "linesFromPaper": "Every line on that paper went onto the document \u2014 {count} in all, and its total is the sum of them.",
         "linesNotKept": "This page keeps one row per entry, so the lines on that paper were NOT kept \u2014 {count} in all. A document page holds those.",
+        "consentSent": "{form} has been sent to her — waiting for her to sign, not signed yet.",
         "treatmentLogged": "Logged: {what}.",
         "creditGranted": "{amount} gift credit given — she now has {left} total.",
         "creditUsed": "{amount} of credit used — {left} left.",
         "noNoteSaid": "It did not say what was done.",
-        "bookingClaimed": "{who} is now on your customer list.",
-        "consentSent": "{form} has been sent to her — waiting for her to sign, not signed yet.",
         "noFormSaid": "It did not say which form, or named one that is not on his list.",
         "notCustomerPage": "A consent form is sent from the customer list, not this page.",
+        "forgotten": "That rule is gone now.",
+        "appointmentCancelled": "That booking is cancelled — kept, not removed.",
+        "alertSet": "Noted on her record: {what}",
+        "bookingClaimed": "{who} is now on your customer list.",
         "depositAsked": "That booking now asks for {amount} up front \u2014 not received yet.",
         "depositDropped": "That booking no longer asks for a deposit.",
         "noStepSaid": "It did not say what to do",
@@ -600,8 +603,8 @@
         "noMoneyPage": "There is no payments page in this system for the money to land on",
         "notBookingPage": "A booking is made on the appointments page, not this one",
         "noWhenSaid": "It did not say which day and what time",
-        "noEndSaid": "It did not say how long that takes, and there is no earlier one like it to go by \u2014 say the finish time",
-        "whoIsDoingIt": "That time is taken — say who is doing it and two of them can be booked at once",
+        "noEndSaid": "It did not say how long that takes, and there is no earlier one like it to go by — say the finish time",
+        "whoIsDoingIt": "That time is taken \u2014 say who is doing it and two of them can be booked at once",
         "followUpSet": "Noted: {what} — on today's list, move the day on that page."
       }
     },
@@ -1111,10 +1114,6 @@
     "enquiryConvertedPlain": "Already opened — open it",
     "enquiryConvertFailed": "Could not open it. Try again.",
     "enquiryNoPipeline": "This system has no page for jobs yet, so there is nothing to open a quotation on.",
-    "enquiryPick": "Pick an enquiry on the left.",
-    "enquiryReply": "Write a reply",
-    "enquiryReplyNote": "It fills in the words. You read them and press send.",
-    "enquiryNoWay": "No phone number on this one — only {contact}",
     "enquiriesInbox": "INBOX",
     "enquiriesCount": "{total} in total",
     "enquiriesCountNew": "{unread} new · {total} in total",
@@ -1814,7 +1813,11 @@
       "empty": "Nobody is in the rotation right now.",
       "noStaff": "No staff yet.",
       "failed": "That did not save. Try again."
-    }
+    },
+    "enquiryPick": "Pick an enquiry on the left.",
+    "enquiryReply": "Write a reply",
+    "enquiryReplyNote": "It fills in the words. You read them and press send.",
+    "enquiryNoWay": "No phone number on this one — only {contact}"
   },
   "explainer": {
     "process": {

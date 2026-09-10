@@ -643,6 +643,31 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     amount: z.string().max(20).nullable(),
     reason: z.string().max(120).nullable(),
   }),
+  /*
+    🔴 取消一笔预约 —— 「陈太太三点那个不来了，取消」。
+
+    `set_appointment_archived`（20260902030000）已经在跑。跟单据那几支
+    「收起来，不删掉」同一条：一笔取消的预约是历史，不是从来没发生过。
+  */
+  z.object({
+    op: z.literal("set_appointment_archived"),
+    /** 哪一笔预约 —— 页面上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+  }),
+  /*
+    🔴 在客人身上挂一句提醒 —— 「陈太太对乳胶过敏，记着」。
+
+    `set_party_alert`（20260909040000）已经在跑，`works_here`——
+    **任何一位治疗师都要看得到、也要挂得上**，这一张表没有一分钱
+    （那一支自己的注解）。
+  */
+  z.object({
+    op: z.literal("set_party_alert"),
+    /** 哪一位客人 —— 客户那一页上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** 那句提醒，她自己的话。 */
+    what: z.string().max(200).nullable(),
+  }),
   z.object({
     op: z.literal("add_treatment_note"),
     /** 哪一位客人 —— 客户那一页上 `record=` 抄下来的。 */
@@ -754,6 +779,22 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     op: z.literal("remember"),
     /** 他要它记住的那一句，原话。 */
     value: z.string().min(1).max(400),
+  }),
+  /*
+    🔴 忘掉一句 —— 「陈太太那家不用再照三十天算了」。`remember` 的另一半。
+
+    `forget_that`（20260909300000）已经在跑。跟 `remember` 同一条：
+    **哪一页都做得了**，因为一条规矩不属於任何一页——route 在分流之前
+    自己接掉它，不走 `splitRecordOps`。
+
+    ⚠️ `record_id` **只能从「他以前叫你记住的」那份清单里** `fact=` 抄，
+    不能凭他讲的那句话去猜是哪一条——两句听起来像但不是同一条的规矩，
+    删错一条比留着不删更糟。
+  */
+  z.object({
+    op: z.literal("forget_that"),
+    /** 哪一条 —— 从记性清单里 `fact=` 抄下来的编号。 */
+    record_id: z.string().min(1),
   }),
   z.object({
     op: z.literal("share_record"),
@@ -1855,6 +1896,8 @@ export function applyLayoutOps(
       case "claim_booking_party":
       case "request_consent":
       case "add_treatment_note":
+      case "set_appointment_archived":
+      case "set_party_alert":
       case "grant_credit":
       case "use_credit":
       case "book_appointment":
@@ -1878,7 +1921,8 @@ export function applyLayoutOps(
         「记住…」会掉进 `default`，而 `default` 讲的是「这个动作没有接线」——
         一句对不上的话，指向一个其实接好了的功能。
       */
-      case "remember": {
+      case "remember":
+      case "forget_that": {
         skipped.push({ op: op.op, reason: "couldNotRemember" });
         break;
       }
