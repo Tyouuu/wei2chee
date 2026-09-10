@@ -114,11 +114,61 @@ try {
      而这一条守卫不知道有例外，把它报成红，
      20260906210000 就照那个红把外键补了回去，把前一天的修复推翻了。
      🔴 一条不允许例外的守卫，会逼下一个人去撤销一个写下来的决定。 */
+  /* 🔴 2026-09-11：这一段自己第一次真的被跑到（`check:closable` 以前
+     不在任何一次跑完全部的清单里，见 `check-all.mjs` 那次 95 把闲置的
+     尺子）。跑起来立刻红——不是新洞，是[任务 381] 那一晚拿掉的 44 个
+     外键（连同[任务 350] 更早拿掉的 party_alerts / treatment_notes 那
+     几栏）从来没有写进这份清单。补齐，理由跟 follow_ups 那两栏一模一样：
+     这些栏位只填 auth.uid()，从来不是使用者传进来的值，`on delete
+     set null` 只会在层叠删除时跟资料库自己的清理动作抢顺序——
+     [任务 381] 真登入测过：删一个有五张表资料的帐号，从「必炸」变
+     「必成」。 */
+  const REASON_381 =
+    "20260911390000（任务 381）：只填 auth.uid()，从来不是使用者传进来的值；" +
+    "on delete set null 会在层叠删除时跟帐号自己的清理动作抢顺序，" +
+    "拿掉之后删帐号才真的成功（真登入验证过）";
+  const REASON_350 =
+    "任务 350：同一条理由，比 381 早一晚撞到、早一晚修好";
   const ON_PURPOSE = {
     "follow_ups.created_by":
       "20260905830000：唯一一张有两条 cascade 父路的表，有外键整个帐号就删不掉；" +
       "而那两栏写得进去、没有任何地方读它（20260906910000）",
     "follow_ups.done_by": "同上",
+    "party_alerts.created_by": REASON_350,
+    "treatment_notes.created_by": REASON_350,
+    "treatment_notes.signed_by": REASON_350,
+    "treatment_note_addenda.created_by": REASON_350,
+    "appointment_lines.created_by": REASON_381,
+    "appointments.recorded_by": REASON_381,
+    "catalog_items.created_by": REASON_381,
+    "class_confirmations.created_by": REASON_381,
+    "class_groups.created_by": REASON_381,
+    "class_slots.created_by": REASON_381,
+    "consent_forms.created_by": REASON_381,
+    "consent_signatures.created_by": REASON_381,
+    "deliveries.created_by": REASON_381,
+    "directory_entries.created_by": REASON_381,
+    "ledger_entries.recorded_by": REASON_381,
+    "lesson_credits.created_by": REASON_381,
+    "messages.sent_by": REASON_381,
+    "nudge_snoozes.by_who": REASON_381,
+    "opening_balances.created_by": REASON_381,
+    "package_uses.recorded_by": REASON_381,
+    "payment_requests.created_by": REASON_381,
+    "reconciliations.recorded_by": REASON_381,
+    "record_photos.taken_by": REASON_381,
+    "rentals.created_by": REASON_381,
+    "returns.recorded_by": REASON_381,
+    "service_contracts.created_by": REASON_381,
+    "service_packages.created_by": REASON_381,
+    "service_visits.recorded_by": REASON_381,
+    "staff_hours.created_by": REASON_381,
+    "stock_batches.created_by": REASON_381,
+    "stock_moves.recorded_by": REASON_381,
+    "stored_value_moves.created_by": REASON_381,
+    "treatment_products.created_by": REASON_381,
+    "vehicles.created_by": REASON_381,
+    "work_days.recorded_by": REASON_381,
   };
   const loose = (cols ?? []).filter(
     (c) => !ON_PURPOSE[`${c.tbl}.${c.col}`]
