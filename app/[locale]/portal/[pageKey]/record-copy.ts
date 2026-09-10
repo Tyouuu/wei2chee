@@ -506,6 +506,13 @@ export type RecordFormCopy = {
   creditLede: string;
   creditNone: string;
   creditFrom: string;
+  /* 储值卡——送的那一部分，不是她自己付的（20260909360000，[任务 346]
+     才接画面）。跟上面 `credit*` 是两件不同的事：那一段是**她自己的钱**
+     （多付了、还没分摊），这一段是**送她的**（充值送的那 200），两个数字
+     不该相加显示成一个「余额」，一间店要看得出哪一笔是白送的。 */
+  storedCreditHeading: string;
+  storedCreditLede: string;
+  storedCreditNone: string;
   /* 她上一次做了什么（20260909040000）。**只在客户那一页，而且要她真的记过一笔** ——
      一间装修公司的客户页上，一段永远写着「还没有记录」的东西，读起来是没做完。 */
   treatHeading: string;
@@ -979,6 +986,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "已经收到、还没有分摊给任何一张单的部分。下一张单开出来就可以扣它。",
       creditNone: "没有 —— 他付过的钱都分摊掉了。",
       creditFrom: "来自",
+      storedCreditHeading: "储值卡里送的部分",
+      storedCreditLede: "充值的时候多送的，不是她自己付的钱，用完就是用完。",
+      storedCreditNone: "没有 —— 没送过，或者已经用完了。",
       editOne: "改这一个",
       treatHeading: "她做过什么",
       treatLede: "每一次做了什么、用了多少、哪一批。上一次的排在最上面。",
@@ -1435,6 +1445,9 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "Money received and not yet put against any document. The next one you raise can draw on it.",
       creditNone: "None. Everything they have paid is accounted for.",
       creditFrom: "From",
+      storedCreditHeading: "Gift credit remaining",
+      storedCreditLede: "Given free at top-up, not money she paid herself. Once used, it is gone.",
+      storedCreditNone: "None -- never given, or already used up.",
       editOne: "Edit",
       treatHeading: "What she has had done",
       treatLede: "Each visit: what was done, how much was used, which batch. Newest first.",

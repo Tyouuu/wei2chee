@@ -211,6 +211,11 @@ export default async function EditRecordPage({
     cents: number;
     from: { id: string; label: string; cents: number }[];
   } | null = null;
+  /* 储值卡送的那一部分（`credit_of`，[任务 346]）——跟上面 `credit`
+   *  分开存，因为它们是两件不同的事：那一个是她自己的钱，这一个是白送的。
+   *  `null` = 没有问（看不到钱的人，或者这一页不是客户）；
+   *  `0` = 问过了，答案是零，两句话在画面上要长得不一样。 */
+  let storedCredit: { giftCents: number } | null = null;
   let tiers: CommissionTier[] | null = null;
   /* 🔴 这个月那个数字是照**哪一份**办法算的（20260905640000）。
      没有它，他把 2% 改成 3%、按了保存，而画面上那个数字一分都不动 ——
@@ -685,6 +690,17 @@ export default async function EditRecordPage({
             : Number(dep),
         from: holding,
       };
+
+      /* 🔴 一支自己回三个数字（她自己付的 · 送的 · 加起来），
+         这里只要送的那一个 —— 她自己付的那一份上面那一段已经在讲，
+         两段都印会变成同一件事说两次。[任务 346] 接的就是这一格：
+         `stored_value_moves` 从写出来那天起，这一页零个呼叫。 */
+      const { data: sv } = await supabase.rpc("credit_of", {
+        in_project_id: ctx.projectId,
+        in_party_id: recordId,
+      });
+      const svRow = Array.isArray(sv) ? sv[0] : sv;
+      if (svRow) storedCredit = { giftCents: Number(svRow.gift_cents ?? 0) };
     }
 
     /* ── 客户那一页：他还剩几次 ────────────────────────────────────────
@@ -1873,6 +1889,34 @@ export default async function EditRecordPage({
               ) : (
                 <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
                   {copy.form.creditNone}
+                </p>
+              )}
+            </div>
+          ) : null}
+
+          {/* 储值卡送的那一部分——跟上面那一段分开画，不是同一件事。
+            [任务 334] 建好了写入那三支（`grant_credit` · `use_credit` ·
+            `credit_of`），到今天这一页零个呼叫。这一段只接了读的那一半：
+            她卡里还剩多少送的钱。「充值」跟「用掉」两颗按钮要一个新的
+            写入界面，不是照抄这一段就有，[任务 346] 留着没做，只登记。
+            ⚠️ 同一个闸（`storedCredit`）：看不到钱的人这里是 null。 */}
+          {storedCredit && ctx.isDirectory && pageKey === "customers" ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+                {copy.form.storedCreditHeading}
+              </h2>
+              {storedCredit.giftCents > 0 ? (
+                <>
+                  <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
+                    {ringgit(storedCredit.giftCents)}
+                  </div>
+                  <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                    {copy.form.storedCreditLede}
+                  </p>
+                </>
+              ) : (
+                <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                  {copy.form.storedCreditNone}
                 </p>
               )}
             </div>
