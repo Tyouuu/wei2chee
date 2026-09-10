@@ -278,6 +278,29 @@ export type SkipCode =
    *
    * 一张从纸上抄下来的单，他能拿去跟手上那张纸对一次的东西，只有这一句。
    */
+  /**
+   * 🔴 这一件不是一张纸讲得出来的，所以「核对」那一趟没有带上它。
+   *
+   * 今天挡不到任何东西（route 只送纸上那三件进去）—— 它在，是因为
+   * 以后一定会多一个动词，而那一天它会静静从那一趟里掉出去。
+   */
+  | "notFromPaper"
+  /**
+   * 🔴 撤销了：那一张单／那一个人／那一件货**收起来了，没有删掉**。`what`
+   *
+   * 一张丢掉的单是明年「上次我们报多少」的答案，而删掉一个号码
+   * 会让整串单号看起来是坏的（20260831040000 已经学过一次）。
+   */
+  | "undoneKept"
+  /**
+   * 🔴 撤销了一笔钱：**开了一笔相反的，两笔都留着**。`what`
+   *
+   * ⚠️ 这一句不可以写成「删掉了」—— 一个改过而看不出改过的数字，
+   * 跟一句谎话分不出来。他月底对帐看得到的是两笔，不是零笔。
+   */
+  | "undoneMoney"
+  /** 那一次没有留下任何写进去的东西，所以没有东西可以撤销。 */
+  | "nothingToUndo"
   | "linesFromPaper"
   /**
    * 🔴 那几行没有留下来 —— 这一页一行就是一行，没有明细。
@@ -398,6 +421,10 @@ export const SKIP_CODES = [
   "followUpDone",
   "followUpDropped",
   "followUpSet",
+  "notFromPaper",
+  "undoneKept",
+  "undoneMoney",
+  "nothingToUndo",
   "linesFromPaper",
   "linesNotKept",
   "depositAsked",

@@ -4,6 +4,7 @@ import {
   actOnRecords,
   isRecordModule,
   WORK_OPS,
+  type Made,
 } from "@/lib/portal/record-ops";
 import { shapeOfModule } from "@/lib/portal/shape-state";
 import { NextRequest, NextResponse } from "next/server";
@@ -619,6 +620,28 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  const supabase = createServerSupabaseClient();
+  const body = await req.json().catch(() => null);
+
+  /*
+    🔴 「确定」跟「撤销」那两下 —— 他按的是**他刚才看到的那一张**，
+    模型一个字都不会再被问。
+
+    `confirm` 带回来的是**摊给他看的时候那一批操作，原样**。原样很要紧：
+    再问一次模型是另一次读图，而两次读出来可以不一样 ——
+    **他核对的是 501，进去的会是 510。**
+
+    ⚠️ 那一批是浏览器送回来的，所以它一样要过 zod、一样走他自己的登入、
+    一样被资料库那几条守卫挡 —— 跟模型送来的走的是同一条路（重点 23）。
+    他按得到的东西，本来就是他自己按得出来的东西。
+  */
+  const confirmed = Array.isArray((body as { confirm?: unknown } | null)?.confirm)
+    ? ((body as { confirm: unknown[] }).confirm as unknown[])
+    : null;
+  const undoing = Array.isArray((body as { undo?: unknown } | null)?.undo)
+    ? ((body as { undo: unknown[] }).undo as unknown[])
+    : null;
+
   // Every call here spends OpenAI credit, and the button that triggers it sits
   // in front of an UNPAID customer by design (exploring the design is free,
   // saving it is not). Without a cap, one bored visitor holding down Enter is a
@@ -628,16 +651,20 @@ export async function POST(req: NextRequest) {
   //
   // 40/hour is deliberately generous: a customer genuinely shaping their system
   // in one sitting should never meet this, and someone who does is not editing.
-  const supabase = createServerSupabaseClient();
-  const rate = await checkRateLimit(supabase, `edit:${user.id}`, {
-    limit: 40,
-    windowMs: 60 * 60 * 1000,
-  });
-  if (!rate.allowed) {
-    return NextResponse.json({ error: "rate limit exceeded" }, { status: 429 });
+  //
+  /* 🔴 「确定」跟「撤销」不算 —— 那个上限守的是 OpenAI 那张帐单，
+     而那两下一分钱都不花。算进去的话，他拍二十张单就等於用掉四十次，
+     而其中二十次根本没有问过模型。 */
+  if (!confirmed && !undoing) {
+    const rate = await checkRateLimit(supabase, `edit:${user.id}`, {
+      limit: 40,
+      windowMs: 60 * 60 * 1000,
+    });
+    if (!rate.allowed) {
+      return NextResponse.json({ error: "rate limit exceeded" }, { status: 429 });
+    }
   }
 
-  const body = await req.json().catch(() => null);
   const { layout, instruction, pages, imagePath, generated, history, pageKey, selected, surface } = (body ?? {}) as {
     /** Which module is open. Sent by the browser, trusted for nothing except
      *  deciding whether a table row on THIS page is a business record or a
@@ -751,6 +778,83 @@ export async function POST(req: NextRequest) {
      */
     selected?: string | null;
   };
+
+  /*
+    🔴 撤销 —— **而它一件都不删。**
+
+    「可以撤销的那种」是他 2026-09-10 讲的，而这个产品对「拿回来」早就
+    有答案，写在 20260831100000 那份档头上，三种东西三种做法：
+
+      一张单 · 名册一个人 · 一件货   **收起来**（`archived_at`）
+      🔴 一笔钱                  **开一笔相反的**（`adjusts_id`）
+
+    两条理由，都不是风格问题：
+    · 一张丢掉的单是明年「上次我们报多少」的答案；而删掉一个单号，
+      会让整串号码看起来是坏的（20260831040000 学过一次：花掉的号码就是花掉了）
+    · 🔴 **钱不改也不删**。一个改过而看不出改过的数字，跟一句谎话
+      分不出来 —— 那是他自己那门生意（vibe-dealer）里我们照抄没有争论过的一条
+
+    所以画面上那一句也要跟着分成两种：「收起来了」跟「开了一笔相反的，
+    两笔都留着」。写成同一句「撤销了」，就是替他记住了一件没有发生的事。
+
+    ⚠️ 走**他自己的登入**：那四支都挡 `works_here`，而这个动作
+    正好是「拿回自己刚写的东西」—— 一个 service role 会替任何人拿回任何东西。
+  */
+  if (undoing) {
+    const asCustomer = await createSessionSupabaseClient();
+    const undoNotes: Skip[] = [];
+    let took = 0;
+    /* 一轮最多十二个动作（EDIT_JSON_SCHEMA 的 maxItems），所以撤销也是十二。 */
+    for (const raw of undoing.slice(0, 12)) {
+      const one = (raw ?? {}) as { kind?: unknown; id?: unknown; what?: unknown };
+      const id = String(one.id ?? "").trim();
+      const kind = String(one.kind ?? "").trim();
+      const what = String(one.what ?? "").trim().slice(0, 80);
+      if (!id) continue;
+      const undone =
+        kind === "ledger"
+          ? /* 冲正。`in_note` 留空 —— 那一支自己写得出「冲正 XXX」。 */
+            await asCustomer.rpc("reverse_ledger_entry", { in_entry_id: id })
+          : kind === "directory"
+            ? await asCustomer.rpc("set_directory_archived", { in_id: id, in_archived: true })
+            : kind === "catalog"
+              ? await asCustomer.rpc("set_catalog_archived", { in_id: id, in_archived: true })
+              : kind === "pipeline"
+                ? await asCustomer.rpc("set_pipeline_archived", { in_id: id, in_archived: true })
+                : null;
+      if (!undone) continue;
+      if (undone.error) {
+        undoNotes.push({
+          op: "undo",
+          reason: "dbSaid",
+          vars: { detail: undone.error.message.slice(0, 80) },
+        });
+        continue;
+      }
+      undoNotes.push({
+        op: "undo",
+        reason: kind === "ledger" ? "undoneMoney" : "undoneKept",
+        vars: { what },
+      });
+      took += 1;
+    }
+    if (!took && !undoNotes.length) {
+      undoNotes.push({ op: "undo", reason: "nothingToUndo" });
+    }
+    return NextResponse.json({
+      layout,
+      explanation: "",
+      notes: undoNotes,
+      applied: took,
+      /* 🔴 收起来的那一行要**当场从他眼前的表上消失**，冲正那一笔要
+         当场多出来。少了这一句，助手说撤销了而画面不动 —— 这个仓库
+         数到第二十次的那个形状。 */
+      refetch: took > 0,
+      skipped: [],
+      suggestion: null,
+      design: null,
+    });
+  }
 
   if (!layout || !Array.isArray(layout.content) || typeof instruction !== "string") {
     return NextResponse.json({ error: "missing fields" }, { status: 400 });
@@ -1076,7 +1180,16 @@ The business owner asked:
      recording most, and it is also the one most likely to be slow. */
   const startedAt = Date.now();
   try {
-    const completion = await openai.chat.completions.create({
+    /*
+      🔴 他按下「确定」那一次 —— **模型一个字都不会再被问**。
+
+      再问一次是**再读一次那张图**，而同一张纸读两次可以读出两个数字：
+      他核对的是 501，进去的会是 510。所以确定那一下跑的不是「同一句话」，
+      是**他刚才看到的那一批操作，原样**。
+    */
+    const completion = confirmed
+      ? null
+      : await openai.chat.completions.create({
       model: AI_MODEL,
       reasoning_effort: AI_REASONING_EFFORT,
       messages: [
@@ -1094,7 +1207,7 @@ The business owner asked:
         },
       ],
       response_format: { type: "json_schema", json_schema: EDIT_JSON_SCHEMA },
-    });
+        });
     // parseLayoutOps, not layoutOpsSchema.parse: one malformed operation used
     // to reject the whole answer, so a batch of five good edits and one bad one
     // came back as a 502 with nothing changed. See its note in layout-ops.ts.
@@ -1103,10 +1216,17 @@ The business owner asked:
       the money. Awaited and error-swallowing -- see recordAiUsage: accounting
       must never be the reason an edit fails in front of a customer.
     */
-    await recordAiUsage(supabase, "edit", AI_MODEL, completion.usage, {
-      tookMs: Date.now() - startedAt,
-    });
-    parsed = parseLayoutOps(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
+    if (completion) {
+      await recordAiUsage(supabase, "edit", AI_MODEL, completion.usage, {
+        tookMs: Date.now() - startedAt,
+      });
+      parsed = parseLayoutOps(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
+    } else {
+      /* ⚠️ 照样过 `parseLayoutOps` —— 那一批是浏览器送回来的，
+         所以它要走跟模型送来的**同一道门**。少了这一句，「确定」就变成
+         第二条写入路径，而那正是重点 23 禁的那一件。 */
+      parsed = parseLayoutOps({ operations: confirmed ?? [], explanation: "" });
+    }
   } catch (err) {
     console.error("layout edit failed", err);
     /*
@@ -1187,9 +1307,21 @@ The business owner asked:
     : wanted;
 
   const split = splitRecordOps(afterMemory, pageKey);
+  /* 🔴 摊给他看那一趟跟真的写那一趟，读的必须是**同一份**栏位对照
+     跟**同一个**开帐用词 —— 两份会漂，而漂掉的那一天他核对的是一张单、
+     进去的是另一张。 */
+  const openingWord = RECORD_COPY[ctx ? systemLangOf(ctx) : "en"].form.stockOpening;
+  const columnsForTarget = (targetId: string) =>
+    tableColumnKeys(layout, targetId) ??
+    firstRecordTable(layout)?.columns.map((c) => c.key) ??
+    null;
   let recordsWritten = 0;
   let asCustomerForRows: Awaited<ReturnType<typeof createSessionSupabaseClient>> | null = null;
   const recordSkips: Skip[] = [];
+  /* 🔴 这一轮真的写进去的那几笔 —— 「撤销」那一颗读的就是它。
+     空的时候面板不画那颗按钮：一颗按下去没有东西会发生的按钮，
+     是这个仓库禁得最严的一条。 */
+  const madeThisTurn: Made[] = [];
   /*
     🔴 在总览 · 报表 · 排行上「加一行」，2026-09-07 之前是写进版面的，
     而且回报成功（量出来 applied:1 · skipped:[]）。那一笔不在他的帐本里，
@@ -1201,6 +1333,60 @@ The business owner asked:
     那几页不是记录页。少了它，那几句拒绝写好了没有人读，
     正是这个仓库犯过二十次的那件事。
   */
+  /*
+    🔴 「核对」那一站 —— 他 2026-09-10 讲的那一句。
+
+    **只在他附了一张图的时候拦。** 他自己讲出口的数字（「开一张单 RM 4,800」）
+    不拦：那是他刚打的字，再请他确认一次自己的话，是白白多一下
+    （重点 29 数的就是那一下）。真正会读错的是**没有人讲出口过的那几个
+    数字** —— 一张纸上的 6.60，是读出来的，而读是会错的那一段。
+
+    这一趟**一个字都不写**：守卫照跑、格子照拆、金额照读，
+    少的只有最后那一次呼叫（见 writeRecords 的 `dry`）。
+    他按下确定之后跑的是同一段代码、同一批值。
+
+    ⚠️ 摊不出来的那几件（不是纸上讲得出来的动作）**照样在那一批里**，
+    按下确定的时候跟着一起做 —— 那一句 `notFromPaper` 讲的就是这件事，
+    不是「它被丢掉了」。
+  */
+  const holdOps = [...split.recordOps, ...split.actOps];
+  if (attachedImage && !confirmed && holdOps.length && project?.id && isRecordModule(pageKey)) {
+    const asCustomer = await createSessionSupabaseClient();
+    const dryWrote = await writeRecords(
+      asCustomer,
+      project.id as string,
+      pageKey as string,
+      split.recordOps,
+      `${user.id}:${trimmed}`,
+      openingWord,
+      columnsForTarget,
+      { dry: true },
+    );
+    const dryActed = await actOnRecords(
+      asCustomer,
+      pageKey as string,
+      split.actOps,
+      pageStages,
+      SITE_URL,
+      String(project?.id ?? ""),
+      pageRefs.map((r) => r.key),
+      { dry: true },
+    );
+    return NextResponse.json({
+      layout,
+      explanation: parsed.explanation,
+      /* 🔴 `ops` 原样送回来，他按确定的时候再送回去 —— 见上面那一段。 */
+      pending: { ops: holdOps, preview: [...dryWrote.preview, ...dryActed.preview] },
+      notes: [],
+      applied: 0,
+      /* 一行都没有写，所以没有东西要重读。 */
+      refetch: false,
+      skipped: [...parsed.rejected, ...dryWrote.skipped, ...dryActed.skipped, ...split.refused],
+      suggestion: null,
+      design: null,
+    });
+  }
+
   recordSkips.push(...split.refused);
   /* 🔴 讲得出来的那几句 -- 「那张单上放了六行」。声明在这里而不是下面，
      因为开一张单那一段也有话要讲，而它跑在前面。 */
@@ -1232,7 +1418,7 @@ The business owner asked:
       split.recordOps,
       `${user.id}:${trimmed}`,
       /* 🔴 跟人按那颗按钮同一个词 —— 见 writeRecords 的 openingWord。 */
-      RECORD_COPY[ctx ? systemLangOf(ctx) : "en"].form.stockOpening,
+      openingWord,
       /* Which column each cell belongs to, read from the page the customer is
          looking at. A key that is not one of the built-in four is a column
          this business added for itself, and its value goes to `extra` instead
@@ -1244,14 +1430,12 @@ The business owner asked:
          as an amount and drops it -- see the last-resort note in sortCells.
          Every generated page has exactly one record table, so this is the
          same table the 加一单 form writes into. */
-      (targetId) =>
-        tableColumnKeys(layout, targetId) ??
-        firstRecordTable(layout)?.columns.map((c) => c.key) ??
-        null,
+      columnsForTarget,
     );
     recordsWritten = wrote.written;
     recordSkips.push(...wrote.skipped);
     recordNotes.push(...wrote.notes);
+    madeThisTurn.push(...wrote.made);
   }
 
   /*
@@ -1281,6 +1465,7 @@ The business owner asked:
     recordsWritten += acted.written;
     recordSkips.push(...acted.skipped);
     recordNotes.push(...acted.notes);
+    madeThisTurn.push(...acted.made);
   }
 
 
@@ -1370,6 +1555,15 @@ The business owner asked:
        says it added a quotation and the table does not move -- the exact
        defect founder-points 23 is about. */
     refetch: recordsWritten > 0,
+    /*
+      🔴 「撤销」那一颗要指得出**哪一笔** —— 而它不是「删掉」。
+      三种东西三种做法，见 record-ops.ts 的 `Made`：单收起来 · 钱开一笔相反的。
+
+      ⚠️ 只带**这一轮开出来的东西**。改状态那几件不在里面
+      （「客人来了」「她放飞机了」）—— 要拿回来得先记住原来那一格是什么，
+      而那是另一件事。**讲出来，不要假装它也撤销得了。**
+    */
+    undo: madeThisTurn,
     skipped: result.skipped,
     /* 🔴 他的系统那一页上没有「加一页 / 删一页 / 去挑照片」那三颗按钮 ——
        那三颗住在编辑器里。回一个他按不到的提议，跟画一颗按不动的按钮

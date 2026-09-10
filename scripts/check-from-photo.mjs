@@ -228,6 +228,39 @@ try {
   await page.screenshot({ path: `${OUT}/2-said.png` });
 
   /*
+    🔴 ③b 从图上读来的东西**先停在核对那一站** —— 2026-09-10 加的，
+    他自己讲的：`需要 然后要可以撤销的那种`。
+
+    所以这一支要多按一下。而那一下不是走过场：**停下来的那一刻，
+    帐上要是空的** —— 一个既摄了一张「要不要写」的纸、而早就写进去了的
+    核对，比没有那一站更糟。这里量的就是那一件。
+  */
+  const held = await admin
+    .from("pipeline_records").select("id", { count: "exact", head: true })
+    .eq("project_id", P).eq("module_key", "orders");
+  check(
+    "🔴 停下来的那一刻，帐上一张单都还没有开",
+    (held.count ?? 0) === (before.count ?? 0),
+    `${before.count} → ${held.count} — 核对那一站没有拦住`,
+  );
+  const card = page.locator("[data-work-ai-check]").first();
+  const cardText = await card.innerText().catch(() => "");
+  console.log(`        纸上摄出来的：${cardText.split(String.fromCharCode(10)).join(" / ").slice(0, 300)}`);
+  check(
+    "🔴 六行摄在他眼前，而且 6.60 在上面",
+    /6\.60/.test(cardText),
+    cardText.slice(0, 300) || "找不到 [data-work-ai-check]",
+  );
+  await page.screenshot({ path: `${OUT}/2b-check.png` });
+  await page.locator("[data-work-ai-confirm]").first().click({ timeout: 30000 });
+  await page
+    .locator("[data-work-ai-check]")
+    .first()
+    .waitFor({ state: "detached", timeout: 120000 })
+    .catch(() => {});
+  await page.waitForTimeout(3500);
+
+  /*
     🔴 **先分开两件事，不然这一段读起来会像「它看不懂手写」——而那是错的。**
 
     第一次跑（2026-09-10）它回的是：

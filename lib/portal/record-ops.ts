@@ -310,6 +310,22 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
  * `writeRecords`），所以它在。而它在**非**记录页上写的是版面 ——
  * 那一种由 `SplitOps.refused` 拒绝，跟这里无关。
  */
+/**
+ * 🔴 一张纸讲得出来的那几件 —— 「核对」那一站拦下来的就是它们。
+ *
+ * 一张供应商发票 · 一张手写的单 · 一张转帐单 —— 纸上有的东西只有三种：
+ * **开一张单**（连它的明细）· **一笔钱** · **往一张单上再加一行**。
+ *
+ * ⚠️ 「客人来了」「排明天三点」不在里面，而那不是漏掉：
+ * 那两件不是从纸上读来的数字，而**要他多按一次的每一下都是成本**
+ * （重点 29）。真正会读错的是**没有人讲出口过的那几个数字**。
+ */
+export const PAPER_ACT_OPS: ReadonlySet<string> = new Set([
+  "add_record_line",
+  "take_payment",
+  "bill_class",
+]);
+
 export const WORK_OPS: ReadonlySet<string> = new Set([
   "add_table_row",
   /*
@@ -361,8 +377,60 @@ export function splitRecordOps(ops: LayoutOp[], pageKey: string | null | undefin
   return { layoutOps, recordOps, actOps, refused: [] };
 }
 
+/**
+ * 🔴 这一轮真的写进去的那几样 —— **撤销要用**。
+ *
+ * `kind` 决定撤销走哪一支，而**三种东西撤销的方式本来就不一样**
+ * （20260831100000 那份档头自己写着理由）：
+ *
+ *   一张单    收起来（`set_pipeline_archived`）—— 一张丢掉的单是明年
+ *             「上次我们报多少」的答案，而删掉一个号码会让整串号看起来坏了
+ *   🔴 一笔钱  **开一笔相反的**（`reverse_ledger_entry`）—— 钱不改也不删。
+ *             一个改过而看不出改过的数字，跟一句谎话分不出来
+ *   名册一行  收起来（`set_directory_archived`）
+ *   一件货    收起来（`set_catalog_archived`）
+ *
+ * ⚠️ **一个统一的「删掉」在这里是错的，而它错得看不出来。**
+ */
+export type Made = {
+  kind: "pipeline" | "ledger" | "directory" | "catalog";
+  id: string;
+  /** 他看得懂的那几个字（「Kedai Aman」），印在撤销那一句里。 */
+  what: string;
+};
+
+/**
+ * 🔴 写进去**之前**摊给他看的那一张 —— 「核对」那一站。
+ *
+ * 它是 `writeRecords` / `actOnRecords` 自己在 `dry` 那一趟产出来的，
+ * **不是另外拼一份字**：他按下确定之后跑的是同一段代码、同一批值，
+ * 而且那一趟连守卫都照跑（挡下来的东西不会出现在这张纸上）。
+ *
+ * ⚠️ 两份会漂，而漂掉的那一天他核对的是 501、进去的是 510。
+ *
+ * 🔴 `kind` 是**代号**不是句子 —— 框那一句话住在 messages/{en,zh}.json。
+ * `head` / `sub` / 那几行是**他自己的字跟他自己的数字**，一个字都不翻。
+ */
+export type Preview = {
+  kind: "record" | "payment" | "classBill" | "line";
+  /** 这一笔是什么 —— 纸上那几个字。 */
+  head: string;
+  /** 跟谁 —— 空的就是纸上没写。 */
+  sub: string;
+  lines: { text: string; amount: string }[];
+  /** 那几行加起来，或者这一笔自己的金额。空的表示这一张纸上没有钱。 */
+  total: string;
+};
+
 export type RecordResult = {
   written: number;
+  /** 🔴 真的写进去的那几笔 —— 撤销那一颗按钮读的就是它。 */
+  made: Made[];
+  /**
+   * 🔴 `dry` 那一趟摊出来的东西。**只有 `dry` 的时候才有** ——
+   * 一个既写了又回一张「要不要写」的回覆，是这个仓库最贵的那一类谎。
+   */
+  preview: Preview[];
   skipped: Skip[];
   /**
    * 做成了、而且**非讲不可**的那几句 —— 「那张单上放了六行」。
@@ -460,9 +528,23 @@ export async function writeRecords(
   /** The column keys of the table an op targets, in display order. Null when
    *  the caller cannot resolve it; see sortCells. */
   columnsFor?: (targetId: string) => string[] | null,
+  /**
+   * 🔴 `dry` = **摊出来给他看，一个字都不写**。
+   *
+   * 「核对」那一站要的东西，就是这一趟产的：守卫照跑（挡下来的不会出现
+   * 在那张纸上）、格子照拆、金额照读 —— 少的只有最后那一次呼叫。
+   *
+   * ⚠️ 故意长在**同一段代码**里，不另外写一支「预览」：
+   * 另写一支就是两份会漂的东西，而漂掉的那一天他核对的是一个数字、
+   * 进去的是另一个。
+   */
+  opts?: { dry?: boolean },
 ): Promise<RecordResult> {
   const skipped: RecordResult["skipped"] = [];
   const notes: Skip[] = [];
+  const made: Made[] = [];
+  const preview: Preview[] = [];
+  const dry = opts?.dry === true;
   let written = 0;
 
   for (let i = 0; i < ops.length; i += 1) {
@@ -538,6 +620,17 @@ export async function writeRecords(
        than a lost fact. */
     if (catalog) {
       const [locPart, unitPart] = (party || "").split("·").map((x) => x.trim());
+      if (dry) {
+        preview.push({
+          kind: "record",
+          head: title,
+          sub: party,
+          lines: [],
+          total: ringgit(senFrom(amount) ?? 0) ?? "",
+        });
+        written += 1;
+        continue;
+      }
       const { data: item, error: itemErr } = await supabase.rpc("add_catalog_item", {
         in_project_id: projectId,
         in_module_key: moduleKey,
@@ -551,6 +644,9 @@ export async function writeRecords(
       if (itemErr) {
         skipped.push({ op: op.op, reason: "dbSaid", vars: { detail: itemErr.message.slice(0, 80) } });
         continue;
+      }
+      if (item?.id) {
+        made.push({ kind: "catalog", id: item.id, what: [title, party].filter(Boolean).join(" · ") });
       }
       const opening = Number(String(amount ?? "").replace(/[^0-9.]/g, ""));
       if (item?.id && Number.isFinite(opening) && opening > 0) {
@@ -586,6 +682,38 @@ export async function writeRecords(
     )
       .map((raw) => raw as Record<string, unknown>)
       .filter((l) => String(l?.description ?? "").trim());
+
+    /*
+      🔴 摊出来那一趟就停在这里。
+
+      上面每一条守卫都已经跑过（不是记录页 · 没有写这一单是什么 · 这一种
+      形状写不了），所以这张纸上只会出现**真的写得进去**的东西。
+      一张纸上印着一件其实会被拒绝的事，比没有那张纸更糟。
+    */
+    if (dry) {
+      preview.push({
+        kind: "record",
+        head: title,
+        sub: party,
+        lines: paperLines.map((l) => ({
+          text: [
+            String(l.qty ?? "").trim() && `${String(l.qty).trim()} ×`,
+            String(l.description ?? "").trim(),
+            String(l.unit ?? "").trim(),
+          ]
+            .filter(Boolean)
+            .join(" "),
+          amount: ringgit(amountOfLine(l)) ?? "",
+        })),
+        /* 有明细就是那几行加起来（资料库也是这样加的）；
+           没有明细就是这一行自己那个金额。 */
+        total: paperLines.length
+          ? ringgit(paperLines.reduce((n, l) => n + amountOfLine(l), 0)) ?? ""
+          : ringgit(senFrom(amount) ?? 0) ?? "",
+      });
+      written += 1;
+      continue;
+    }
 
     const { data: opened, error } = directory
       ? await supabase.rpc("add_directory_entry", {
@@ -645,6 +773,16 @@ export async function writeRecords(
     }
     written += 1;
 
+    /* 🔴 撤销要指得出**哪一笔**。三种东西撤销的方式不一样（见 Made）。 */
+    const row = (Array.isArray(opened) ? opened[0] : opened) as { id?: string } | null;
+    if (row?.id) {
+      made.push({
+        kind: directory ? "directory" : ledger ? "ledger" : "pipeline",
+        id: row.id,
+        what: [title, party].filter(Boolean).join(" · "),
+      });
+    }
+
     if (!paperLines.length) continue;
     /*
       名册 · 货架 · 收款那三种页面上一行就是一行，没有明细这回事。
@@ -654,8 +792,7 @@ export async function writeRecords(
       notes.push({ op: op.op, reason: "linesNotKept", vars: { count: String(paperLines.length) } });
       continue;
     }
-    const made = (Array.isArray(opened) ? opened[0] : opened) as { id?: string } | null;
-    if (!made?.id) {
+    if (!row?.id) {
       notes.push({ op: op.op, reason: "linesNotKept", vars: { count: String(paperLines.length) } });
       continue;
     }
@@ -669,23 +806,16 @@ export async function writeRecords(
       （[重点 29] 第 1 种：算出来的最好）。
     */
     const { error: lineErr } = await supabase.rpc("set_record_lines", {
-      in_record_id: made.id,
+      in_record_id: row.id,
       in_lines: paperLines.map((l) => {
         const qty = Number(String(l.qty ?? "").replace(/[^0-9.]/g, ""));
-        const unitPrice = senFrom(String(l.unit_price ?? ""));
-        /* 纸上印的那个数字优先。抄不到才退回 数量 × 单价；
-           两样都没有就是 0 —— 一行没有钱的字（「送的」）也是一行。 */
-        const printed = senFrom(String(l.amount ?? ""));
-        const worked =
-          Number.isFinite(qty) && qty > 0 && unitPrice !== undefined
-            ? Math.round(qty * unitPrice)
-            : undefined;
         return {
           description: String(l.description ?? "").trim(),
           qty: Number.isFinite(qty) && qty > 0 ? String(qty) : "",
           unit: String(l.unit ?? "").trim(),
-          unit_price_cents: unitPrice ?? "",
-          amount_cents: printed ?? worked ?? 0,
+          unit_price_cents: senFrom(String(l.unit_price ?? "")) ?? "",
+          /* 🔴 跟摊给他看那一张读的是**同一支** —— 见 amountOfLine 的档头。 */
+          amount_cents: amountOfLine(l),
         };
       }),
     });
@@ -700,7 +830,7 @@ export async function writeRecords(
     notes.push({ op: op.op, reason: "linesFromPaper", vars: { count: String(paperLines.length) } });
   }
 
-  return { written, skipped, notes };
+  return { written, skipped, notes, made, preview };
 }
 
 /**
@@ -709,6 +839,23 @@ export async function writeRecords(
  * position, which is all the uniqueness a retry needs -- the same request
  * retried produces the same keys, a different request cannot collide.
  */
+/**
+ * 一行明细上的钱 —— **纸上印的那个数字优先**，抄不到才 数量 × 单价。
+ *
+ * 🔴 摊出来那一张跟真的写进去那一段，读的必须是**同一条规矩**：
+ * 两边各算一次，就是他核对的是一个数字、进去的是另一个。
+ */
+export function amountOfLine(l: Record<string, unknown>): number {
+  const qty = Number(String(l.qty ?? "").replace(/[^0-9.]/g, ""));
+  const unitPrice = senFrom(String(l.unit_price ?? ""));
+  const printed = senFrom(String(l.amount ?? ""));
+  const worked =
+    Number.isFinite(qty) && qty > 0 && unitPrice !== undefined
+      ? Math.round(qty * unitPrice)
+      : undefined;
+  return printed ?? worked ?? 0;
+}
+
 export function keyFor(requestKey: string, index: number): string {
   let h = 0x811c9dc5;
   const seed = `${requestKey}:${index}`;
@@ -896,9 +1043,14 @@ export async function actOnRecords(
    */
   projectId: string,
   pages: string[],
+  /** 🔴 摊出来给他看，一个字都不写。见 writeRecords 上同一格的档头。 */
+  opts?: { dry?: boolean },
 ): Promise<ActResult> {
   const skipped: RecordResult["skipped"] = [];
   const notes: Skip[] = [];
+  const made: Made[] = [];
+  const preview: Preview[] = [];
+  const dry = opts?.dry === true;
   let written = 0;
 
   const shape = shapeOfModule(moduleKey);
@@ -912,6 +1064,19 @@ export async function actOnRecords(
     };
     const recordId = String(op.record_id ?? "").trim();
     const status = String(op.status ?? "").trim();
+
+    /*
+      🔴 摊出来那一趟只走得了纸上讲得出来的那几件（`PAPER_ACT_OPS`）。
+
+      route 只会把那几件送进来，所以这一句今天挡不到任何东西 ——
+      而它在这里，是因为**以后一定会多一个动词**，而那一天它会静静
+      从这一趟里掉出去：既没有摊给他看，也没有写进去，而画面上跟成功
+      一模一样。这个仓库栽过的正是这一种。
+    */
+    if (dry && !PAPER_ACT_OPS.has(op.op)) {
+      skipped.push({ op: op.op, reason: "notFromPaper" });
+      continue;
+    }
 
     /*
       ── 记一天工，而它不是「改那一行的一栏」 ──────────────────────────────
@@ -1014,6 +1179,20 @@ export async function actOnRecords(
          是一个看起来完整而实际上是编的数字。 */
       const qtyText = String(raw.qty ?? "").replace(/[^0-9.]/g, "");
       const qty = qtyText ? Number(qtyText) : null;
+      if (dry) {
+        /* 这一支的金额是**资料库乘出来**的（数量 × 单价），所以摊出来那一张
+           上面也只讲得出那两个数字 —— 在这里自己乘一次，就是同一个数字
+           两个答案，而两个答案会在他改数量的那天分家。 */
+        preview.push({
+          kind: "line",
+          head: description,
+          sub: [qtyText && `${qtyText} ×`, String(raw.unit ?? "").trim()].filter(Boolean).join(" "),
+          lines: [],
+          total: ringgit(senFrom(String(raw.unit_price ?? "")) ?? 0) ?? "",
+        });
+        written += 1;
+        continue;
+      }
       const { error: lineErr } = await supabase.rpc("append_record_line", {
         in_record_id: recordId,
         in_description: description,
@@ -1278,7 +1457,18 @@ export async function actOnRecords(
         skipped.push({ op: op.op, reason: "noMoneyPage" });
         continue;
       }
-      const { error: payErr } = await supabase.rpc("add_ledger_entry", {
+      if (dry) {
+        preview.push({
+          kind: "payment",
+          head: ringgit(cents) ?? "",
+          sub: String(raw.method ?? "").trim(),
+          lines: [],
+          total: ringgit(cents) ?? "",
+        });
+        written += 1;
+        continue;
+      }
+      const { data: entry, error: payErr } = await supabase.rpc("add_ledger_entry", {
         in_project_id: projectId,
         in_module_key: "payments",
         in_amount_cents: cents,
@@ -1294,6 +1484,11 @@ export async function actOnRecords(
           vars: { detail: payErr.message.slice(0, 80) },
         });
         continue;
+      }
+      /* 🔴 撤销一笔钱**不是删掉它**，是开一笔相反的 —— 见 Made 的档头。 */
+      const takenRow = (Array.isArray(entry) ? entry[0] : entry) as { id?: string } | null;
+      if (takenRow?.id) {
+        made.push({ kind: "ledger", id: takenRow.id, what: ringgit(cents) ?? "" });
       }
       /*
         还欠多少 —— 这一段第一版是错的，而错法值得写下来。
@@ -1350,6 +1545,20 @@ export async function actOnRecords(
       const cents = senFrom(String(raw.amount ?? ""));
       if (!cents || cents <= 0) {
         skipped.push({ op: op.op, reason: "noFeeSaid" });
+        continue;
+      }
+      if (dry) {
+        /* ⚠️ 开得出几张要那一支自己数（谁不用交 · 谁上个月开过了），
+           所以这一张纸上讲得出来的只有**每一个人多少钱**。
+           在这里替他数一个出来，就是一个他核对不了的数字。 */
+        preview.push({
+          kind: "classBill",
+          head: ringgit(cents) ?? "",
+          sub: String(raw.period ?? "").trim(),
+          lines: [],
+          total: "",
+        });
+        written += 1;
         continue;
       }
       const { data: billed, error: billErr } = await supabase.rpc("bill_class", {
@@ -1776,7 +1985,7 @@ export async function actOnRecords(
     written += 1;
   }
 
-  return { written, skipped, notes };
+  return { written, skipped, notes, made, preview };
 }
 
 /** 资料库讲的那一句，换成他读得懂的。认不出来的原样带出去 —— 编一句

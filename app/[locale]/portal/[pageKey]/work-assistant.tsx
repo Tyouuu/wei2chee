@@ -299,6 +299,30 @@ export function WorkAssistant({
     }
   }
 
+  /*
+    🔴 「核对」那一张 —— 读出来的东西，写进去之前先停在这里。
+
+    他 2026-09-10 讲的：`需要 然后要可以撤销的那种`。
+    停的只有**图上读来的**那几个数字；他自己打的字不停
+    （再请他确认一次自己刚讲的话，是白白多一下）。
+
+    ⚠️ `ops` 原样收着、原样送回去 —— **不重新问一次模型**。
+    再问一次是再读一次那张图，而同一张纸读两次可以读出两个数字。
+  */
+  const [pending, setPending] = useState<{
+    ops: unknown[];
+    preview: {
+      kind: string;
+      head: string;
+      sub: string;
+      lines: { text: string; amount: string }[];
+      total: string;
+    }[];
+  } | null>(null);
+  /* 🔴 这一轮真的写进去的那几笔 —— 空的时候那颗撤销**不画**。
+     一颗按下去没有东西会发生的按钮，是这个仓库禁得最严的一条。 */
+  const [undoable, setUndoable] = useState<{ kind: string; id: string; what: string }[]>([]);
+
   function clearShot() {
     setShot((prev) => {
       if (prev) URL.revokeObjectURL(prev.preview);
@@ -308,11 +332,14 @@ export function WorkAssistant({
   /* 伯器那一份刷到了 → 以它为准。 */
   useEffect(() => setLatest(null), [data]);
 
-  async function send() {
-    const asked = text.trim();
-    /* 🔴 只附一张图、一个字都不打，也要送得出去 ——
-       一个手上带着油的师傅拍完那张单，下一个动作就是按送出。 */
-    if ((!asked && !shot) || busy) return;
+  /*
+    🔴 一句话、一次确定、一次撤销 —— **同一支**。
+
+    三件事送的是同一支 route、收的是同一种回覆，所以它们共用这一支：
+    抄成三份，就是三份会漂的东西，而漂掉的那一份多半是撤销那一份
+    （最少人走的那一条）。
+  */
+  async function talk(extra: Record<string, unknown>, asked: string) {
     setBusy(true);
     setSaid(null);
     try {
@@ -321,19 +348,14 @@ export function WorkAssistant({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           layout: latest ?? data,
-          /* 只有一张图的时候，替他讲那一句 —— 那一支 route 拒绝空句子。 */
-          instruction: asked || t("aiWorkShot"),
-          /* 🔴 路径，不是网址。见 `shot` 那一段。 */
-          imagePath: shot?.path ?? null,
           pageKey,
           pages,
-          /* 最近三轮 —— 跟编辑器那一块同一份形状。见 `turns` 的注解。 */
-          history: turns.slice(-3),
           /* 🔴 这一格就是这个档案存在的那一句。见 route 里 `surface` 的注解。 */
           surface: "work",
           /* 这一页早就保存过了 —— 他正在看的就是保存出来的那一份。
              讲实话要紧：`generated: true` 会让模型以为「排法」还改得动。 */
           generated: false,
+          ...extra,
         }),
       });
       if (res.status === 429) {
@@ -352,7 +374,37 @@ export function WorkAssistant({
         notes?: Skip[];
         skipped?: Skip[];
         refetch?: boolean;
+        pending?: {
+          ops: unknown[];
+          preview: {
+            kind: string;
+            head: string;
+            sub: string;
+            lines: { text: string; amount: string }[];
+            total: string;
+          }[];
+        } | null;
+        undo?: { kind: string; id: string; what: string }[];
       };
+      /*
+        🔴 停在核对那一站 —— **一行都还没有写进去**。
+
+        所以这里什么都不接：不动那棵树、不重读那一页、不记进对话
+        （那一轮还没有发生）。他按确定才算发生过。
+      */
+      if (out.pending && out.pending.ops.length) {
+        setPending(out.pending);
+        setSaid(
+          [
+            (out.explanation ?? "").trim(),
+            ...(out.skipped ?? []).map((n) => sayWhyNot(t, n)),
+          ].filter(Boolean),
+        );
+        return;
+      }
+      setPending(null);
+      /* 🔴 撤销那一颗读的是它 —— 见 route 里 `undo` 那一段。 */
+      setUndoable(Array.isArray(out.undo) ? out.undo : []);
       const lines = [
         (out.explanation ?? "").trim() ||
           (out.applied ? t("aiWorkDone") : t("aiWorkNothing")),
@@ -387,6 +439,51 @@ export function WorkAssistant({
     } finally {
       setBusy(false);
     }
+  }
+
+  function send() {
+    const asked = text.trim();
+    /* 🔴 只附一张图、一个字都不打，也要送得出去 ——
+       一个手上带着油的师傅拍完那张单，下一个动作就是按送出。 */
+    if ((!asked && !shot) || busy) return;
+    void talk(
+      {
+        /* 只有一张图的时候，替他讲那一句 —— 那一支 route 拒绝空句子。 */
+        instruction: asked || t("aiWorkShot"),
+        /* 🔴 路径，不是网址。见 `shot` 那一段。 */
+        imagePath: shot?.path ?? null,
+        /* 最近三轮 —— 跟编辑器那一块同一份形状。见 `turns` 的注解。 */
+        history: turns.slice(-3),
+      },
+      asked,
+    );
+  }
+
+  /*
+    🔴 他按下确定 —— 送回去的是**他刚才看到的那一批，原样**。
+
+    ⚠️ **不带那张图**：带了就会再停一次核对，而他已经核对过了。
+  */
+  function confirmPending() {
+    if (!pending || busy) return;
+    void talk({ confirm: pending.ops, instruction: t("aiWorkShot") }, "");
+  }
+
+  /* 他说不要 —— 一行都没有写过，所以这里没有东西要收回，只是把纸放下。 */
+  function dropPending() {
+    setPending(null);
+    setSaid([t("aiWorkDropped")]);
+  }
+
+  /*
+    🔴 撤销 —— 而它一件都不删（route 那一段写着三种做法）。
+    按完就把那颗收起来：同一批东西撤销第二次，第二次是没有东西可撤的。
+  */
+  function undoLast() {
+    if (!undoable.length || busy) return;
+    const taking = undoable;
+    setUndoable([]);
+    void talk({ undo: taking }, "");
   }
 
   /* 一句都还没讲的时候，给他几句现成的 —— **点一下就填进框里**。
@@ -489,7 +586,99 @@ export function WorkAssistant({
               <p key={i}>{line}</p>
             ))}
           </div>
-        ) : (
+        ) : null}
+
+        {/*
+          🔴 核对那一张 —— 读出来的东西，**一行都还没有写进去**。
+
+          印的是他自己的字跟他自己的数字（纸上那几个），框那几句才是我们的
+          （见 messages 里的 aiWorkCheck）。每一行右边那个金额是**资料库
+          会写进去的那一个**，不是另外算的一份 —— 见 record-ops 的 Preview。
+
+          ⚠️ 长相是画面那一边的地盘（重点 22c）。这里只保证它**在**、
+          读得到、按得动 —— 一格摊不出来给他看的核对，等於没有这一站。
+        */}
+        {pending ? (
+          <div
+            data-work-ai-check
+            className="flex flex-col gap-2 [border-color:var(--border-subtle)] [border-width:1px] [border-radius:var(--radius-md)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)]"
+          >
+            <p className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)]">
+              {t("aiWorkCheck")}
+            </p>
+            {pending.preview.map((one, i) => (
+              <div key={i} className="flex flex-col gap-1">
+                <p className="[color:var(--color-paper-dim)] [font-size:var(--text-micro)]">
+                  {one.kind === "payment"
+                    ? t("aiWorkKindPayment")
+                    : one.kind === "classBill"
+                      ? t("aiWorkKindClassBill")
+                      : one.kind === "line"
+                        ? t("aiWorkKindLine")
+                        : t("aiWorkKindRecord")}
+                </p>
+                <p className="[color:var(--color-paper)] [font-size:var(--text-sm)]">
+                  {/* 🔴 跟谁 —— **跟抬头一样的时候不印第二次**。
+                      一张供应商发票上那个名字同时是「这一笔是什么」跟「跟谁」，
+                      而同一个名字印两次读起来像一个毛病 —— 他会花一秒
+                      去想那是不是读错了。（2026-09-10 看那张核对的纸看到的。）*/}
+                  {[one.head, one.sub === one.head ? "" : one.sub].filter(Boolean).join(" · ")}
+                </p>
+                {one.lines.map((line, j) => (
+                  <p
+                    key={j}
+                    className="flex justify-between gap-3 [color:var(--color-paper-dim)] [font-size:var(--text-micro)]"
+                  >
+                    <span>{line.text}</span>
+                    <span data-work-ai-check-amount>{line.amount}</span>
+                  </p>
+                ))}
+                {one.total ? (
+                  <p className="flex justify-between gap-3 [color:var(--color-paper)] [font-size:var(--text-sm)]">
+                    <span aria-hidden>&nbsp;</span>
+                    <span data-work-ai-check-total>{one.total}</span>
+                  </p>
+                ) : null}
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                data-work-ai-confirm
+                onClick={confirmPending}
+                disabled={busy}
+                className="[background-color:var(--color-primary)] [border-radius:var(--radius-pill)] [color:var(--color-on-primary)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] disabled:opacity-60"
+              >
+                {t("aiWorkConfirm")}
+              </button>
+              <button
+                type="button"
+                data-work-ai-drop
+                onClick={dropPending}
+                disabled={busy}
+                className="[color:var(--color-paper-dim)] [font-size:var(--text-sm)] [padding-block:var(--pad-control-y)] [padding-inline:var(--pad-control-x)] underline disabled:opacity-60"
+              >
+                {t("aiWorkNotNow")}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {/* 🔴 撤销 —— **只有真的写进去东西的时候才画得出来**。
+            一颗按下去没有东西会发生的按钮，是这个仓库禁得最严的一条。 */}
+        {!pending && undoable.length ? (
+          <button
+            type="button"
+            data-work-ai-undo
+            onClick={undoLast}
+            disabled={busy}
+            className="self-start [color:var(--color-paper-dim)] [font-size:var(--text-micro)] underline disabled:opacity-60"
+          >
+            {t("aiWorkUndo")}
+          </button>
+        ) : null}
+
+        {!said && !pending ? (
           <div className="flex flex-col gap-1">
             {starters.map((one) => (
               <button
@@ -502,7 +691,7 @@ export function WorkAssistant({
               </button>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* 底下那一格。 */}

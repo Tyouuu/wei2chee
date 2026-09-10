@@ -1273,20 +1273,59 @@ try {
   console.log(`        它讲了：${paperSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
   await page.waitForTimeout(2500);
 
+  /*
+    🔴 他 2026-09-10 讲的：`需要 然后要可以撤销的那种`。
+
+    所以这一段不再是「讲一句就进帐」，它要走完四步：
+    读 -> **停下来** -> 他按进去 -> 他拿得回来。
+    而第二步是这一段真正存在的理由：**那一刻帐上要是空的**。
+    一个既摄了一张「要不要写」的纸、而早就写进去了的核对，
+    比没有那一站更糟 —— 他会以为自己拦得住。
+  */
+  const stillEmpty = await admin
+    .from("ledger_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", P)
+    .ilike("party", "%murni%");
+  check(
+    "🔴 那一刻帐上一笔都没有 —— 它停下来等他看",
+    (stillEmpty.count ?? 0) === 0,
+    `已经写进去 ${stillEmpty.count} 笔 — 核对那一站没有拦住`,
+  );
+  const checkCard = page.locator("[data-work-ai-check]").first();
+  const cardText = await checkCard.innerText().catch(() => "");
+  console.log(`        纸上摄出来的：${cardText.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  check(
+    "🔴 而那张核对的纸真的在他眼前，而且写着 501",
+    /501/.test(cardText),
+    cardText.slice(0, 220) || "找不到 [data-work-ai-check]",
+  );
+  await page.screenshot({ path: `${OUT}/17-check.png` });
+
+  console.log("");
+  console.log("── ㉑ 🔴 他按下「记进去」 ──────────────────");
+  await page.locator("[data-work-ai-confirm]").first().click({ timeout: 30000 });
+  await page
+    .locator("[data-work-ai-check]")
+    .first()
+    .waitFor({ state: "detached", timeout: 120000 })
+    .catch(() => {});
+  await page.waitForTimeout(3000);
+
   const spent = await admin
     .from("ledger_entries")
-    .select("amount_cents, party, note")
+    .select("id, amount_cents, party, note, direction, adjusts_id")
     .eq("project_id", P)
     .eq("module_key", "expenses")
     .order("created_at", { ascending: false })
-    .limit(4);
+    .limit(6);
   const fromPaper = (spent.data ?? []).filter((r) =>
     /murni/i.test(`${r.party ?? ""} ${r.note ?? ""}`),
   );
   check(
-    "🔴 开销那一页上真的多了一笔",
+    "🔴 按完之后，开销那一页上真的多了一笔",
     fromPaper.length > 0,
-    `最新四笔：${JSON.stringify(spent.data ?? [])} — ${paperSaid.slice(0, 140)}`,
+    `最新几笔：${JSON.stringify(spent.data ?? [])}`,
   );
   /* 🔴 一个接近的数字不算对 —— 那是一笔从来没有花过的钱。 */
   check(
@@ -1297,16 +1336,64 @@ try {
   /* 🔴 写进去而不念出来，他就没有办法跟手上那张纸对一次。 */
   check(
     "🔴 它把那个数字念回给他（501）",
-    /501/.test(paperSaid),
+    /501/.test(`${paperSaid} ${cardText}`),
     paperSaid.slice(0, 220),
   );
   /* 店名原样拄下来 —— 不翻译、不改拼法。 */
   check(
     "🔴 那家店的名字原样拄下来（Sri Murni）",
-    /sri\s*murni/i.test(paperSaid),
+    /sri\s*murni/i.test(`${paperSaid} ${cardText}`),
     paperSaid.slice(0, 220),
   );
   await page.screenshot({ path: `${OUT}/17-supplier-bill.png` });
+
+  console.log("");
+  console.log("── ㉒ 🔴 撤销 —— 而钱不是删掉的 ────────────");
+  /*
+    🔴 这一段量的不是「那一笔不见了」—— **刚好相反**。
+
+    钱不改也不删（vibe-dealer 那一条我们照抄没有争论过）：
+    撤销一笔钱是**开一笔相反的**，两笔都留着。
+    一个改过而看不出改过的数字，跟一句谎话分不出来。
+
+    ⚠️ 所以尺子要量三件：原来那一笔**还在** · 多了一笔挂在它身上 ·
+    两笔加起来是 0。只量「没有了」的尺子，会在有一天真的变成删掉的时候全绿。
+  */
+  const undoBtn = page.locator("[data-work-ai-undo]").first();
+  check(
+    "🔴 写进去之后，那颗撤销真的在",
+    (await undoBtn.count()) > 0,
+    "找不到 [data-work-ai-undo]",
+  );
+  if (await undoBtn.count()) {
+    await undoBtn.click({ timeout: 30000 });
+    await page.waitForTimeout(4000);
+  }
+  const undoneRows = await admin
+    .from("ledger_entries")
+    .select("id, amount_cents, direction, adjusts_id, party, note")
+    .eq("project_id", P)
+    .eq("module_key", "expenses");
+  const pairRows = (undoneRows.data ?? []).filter((r) =>
+    /murni/i.test(`${r.party ?? ""} ${r.note ?? ""}`),
+  );
+  const firstPaid = fromPaper[0];
+  check(
+    "🔴 原来那一笔还在 —— 钱不是删掉的",
+    pairRows.some((r) => r.id === firstPaid?.id),
+    `帐上剩 ${JSON.stringify(pairRows.map((r) => r.id))}`,
+  );
+  check(
+    "🔴 而是多了一笔相反的，挂在它身上",
+    pairRows.some((r) => r.adjusts_id === firstPaid?.id),
+    JSON.stringify(pairRows.map((r) => ({ a: r.amount_cents, d: r.direction, adj: r.adjusts_id }))),
+  );
+  check(
+    "🔴 两笔加起来是 0",
+    pairRows.reduce((n, r) => n + (r.direction === "out" ? -1 : 1) * Number(r.amount_cents ?? 0), 0) === 0,
+    JSON.stringify(pairRows.map((r) => ({ a: r.amount_cents, d: r.direction }))),
+  );
+  await page.screenshot({ path: `${OUT}/18-undone.png` });
 
 } catch (e) {
   failed.push(`threw: ${e.message}`);
