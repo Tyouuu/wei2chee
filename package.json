@@ -122,6 +122,7 @@
     "check:family": "node scripts/check-family.mjs",
     "check:term": "node scripts/check-term.mjs",
     "check:recall": "node scripts/check-recall.mjs",
+    "check:alerts": "node scripts/check-alerts.mjs",
     "check:claims": "node scripts/check-claims.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
     "check:anchors": "node scripts/check-anchors.mjs",
