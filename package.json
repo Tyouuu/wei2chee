@@ -121,6 +121,7 @@
     "check:makeup": "node scripts/check-makeup.mjs",
     "check:family": "node scripts/check-family.mjs",
     "check:term": "node scripts/check-term.mjs",
+    "check:recall": "node scripts/check-recall.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
     "check:anchors": "node scripts/check-anchors.mjs",
     "check:bookings": "node scripts/check-bookings.mjs",
