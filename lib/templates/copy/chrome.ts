@@ -360,9 +360,14 @@ const EN: Chrome = {
 
   customers: {
     title: (customer) => `${plural(customer)} list`,
+    /* 🔴 「Every guests, how to reach them…」——跟 `orders`/`projects` 那两支
+       同一个洞：这里的 `customer` 收到的是 `labels.customer`，
+       而那一栏存的是**清单的名字**（沙龙是 "Guests"），不是单数。
+       "Every" 后面永远接单数，2026-09-10 看图看到的，一起补
+       （[重点 24]）。 */
     subtitle: (customer) =>
-      `Every ${customer.toLowerCase()}, how to reach them, and what you have done together.`,
-    search: (customer) => `Search ${customer.toLowerCase()} name or phone`,
+      `Every ${singularise(customer, "en").toLowerCase()}, how to reach them, and what you have done together.`,
+    search: (customer) => `Search ${singularise(customer, "en").toLowerCase()} name or phone`,
     caption: (customer) => plural(customer),
   },
 
