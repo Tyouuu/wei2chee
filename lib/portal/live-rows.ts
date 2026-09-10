@@ -1280,6 +1280,80 @@ export async function fetchLiveRows(
   }
 }
 
+const OWING_WORDS = {
+  zh: { overdue: "逾期", owing: "有欠款" },
+  en: { overdue: "Overdue", owing: "Owing" },
+} as const;
+
+/**
+ * 谁还没交这个月的学费 —— 补习中心的总览换掉「最近的学费单」之后要读的东西
+ * （见 `dashboardOwingIndustry` in industry-template.ts）。
+ *
+ * 🔴 走**同一支** `party_aging`（20260905140000）—— `(app)/owing` 那一页
+ * 已经在用，[任务 147] 验过它跟月结那张纸的期末余额一分钱都不差。
+ * 这里不重算一次：同一个问题只能有一个答案。
+ *
+ * 只有老板看得到：`party_aging` 自己 `sees_money`，一个老师打回来是空的 ——
+ * 呼叫端要自己判断要不要打这一支（page.tsx 只在 `workspace.isOwner` 才叫它），
+ * 不靠这里的空阵列去分辨「没人欠」跟「你看不到」。
+ *
+ * 🔴 只有**两个颜色**，跟 `(app)/owing` 那一页同一条判断：还没到期的一个灰
+ * （"Owing"），过期的一个红（"Overdue"，只要 30/60/90/更久 任何一格 > 0）。
+ * 没有再切三档 —— 那一页自己就是从七栏表改成两色带子换来的，这里不重来一次。
+ */
+export async function fetchOwingRows(
+  supabase: SupabaseClient,
+  projectId: string,
+  lang: "zh" | "en" = "zh",
+): Promise<LiveRow[]> {
+  const w = OWING_WORDS[lang] ?? OWING_WORDS.zh;
+  type Aging = {
+    party_id: string;
+    d30_cents: number;
+    d60_cents: number;
+    d90_cents: number;
+    older_cents: number;
+    total_cents: number;
+  };
+  try {
+    const [{ data: rows }, { data: parties }] = await Promise.all([
+      supabase.rpc("party_aging", { p_project_id: projectId }),
+      supabase
+        .from("directory_entries")
+        .select("id, name")
+        .eq("project_id", projectId)
+        .eq("module_key", "customers")
+        .is("archived_at", null),
+    ]);
+    const nameOf = new Map(
+      ((parties ?? []) as { id: string; name: string | null }[]).map((p) => [
+        p.id,
+        p.name ?? "",
+      ]),
+    );
+    return ((rows ?? []) as Aging[])
+      .filter((r) => Number(r.total_cents) > 0 && nameOf.has(r.party_id))
+      .sort((a, b) => Number(b.total_cents) - Number(a.total_cents))
+      .slice(0, 8)
+      .map((r) => {
+        const overdue =
+          Number(r.d30_cents) +
+            Number(r.d60_cents) +
+            Number(r.d90_cents) +
+            Number(r.older_cents) >
+          0;
+        return {
+          primary: nameOf.get(r.party_id) ?? "",
+          amount: ringgit(Number(r.total_cents)),
+          status: overdue ? w.overdue : w.owing,
+          tone: overdue ? ("negative" as const) : ("neutral" as const),
+        };
+      });
+  } catch {
+    return [];
+  }
+}
+
 /**
  * The tree this business's own rows belong in, ready to render.
  *

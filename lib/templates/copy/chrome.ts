@@ -103,6 +103,13 @@ export type Chrome = {
     /** The heading over the ranked list some registers open with instead of a
      *  chart. Ranked by value this year, from the same records. */
     rankingTitle: string;
+    /** The recent-records table's caption on a business whose overview asks
+     *  「who still owes」 instead of 「what happened recently」 -- see
+     *  `dashboardOwingIndustry` in industry-template.ts. A tuition centre's
+     *  own first question, not a generic one every trade shares. */
+    owingCaption: string;
+    /** The amount column's header on that same table. */
+    owingAmountColumn: string;
     /** 占比块的标题 —— 问的是「钱卡在哪一段」,不是「这个月多少」。 */
     shareTitle: string;
     /**
@@ -346,6 +353,8 @@ const EN: Chrome = {
        **「+ New class sessions」**（2026-09-09 三个行业拍出来都中）。 */
     primaryAction: (sellSide) => `New ${singularise(sellSide, "en").toLowerCase()}`,
     rankingTitle: "Who is worth the most",
+    owingCaption: "Who still owes",
+    owingAmountColumn: "Owes",
     shareTitle: "Where the money is sitting",
     tabTrend: "Trend",
     tabShare: "Share",
@@ -541,6 +550,8 @@ const ZH: Chrome = {
     recentFilters: ["进行中", "待收款"],
     primaryAction: (sellSide) => `新增${sellSide}`,
     rankingTitle: "最大的几个客户",
+    owingCaption: "谁还没交",
+    owingAmountColumn: "欠",
     shareTitle: "钱卡在哪一段",
     tabTrend: "走势",
     tabShare: "占比",

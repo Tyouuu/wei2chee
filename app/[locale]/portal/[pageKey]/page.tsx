@@ -1,5 +1,6 @@
 import {
   fetchLiveRows,
+  fetchOwingRows,
   withLiveRows,
   moduleHasEverHadRows,
 } from "@/lib/portal/live-rows";
@@ -48,6 +49,7 @@ import {
   workflowStages,
   dashboardDiaryModule,
   dashboardRecordModule,
+  dashboardOwingIndustry,
   type BusinessContext,
   type PageKey,
 } from "@/lib/templates/industry-template";
@@ -296,15 +298,33 @@ export default async function PortalEditorPage({
     );
 
     if (rowsFrom) {
+      /* 补习中心：见 dashboardOwingIndustry 的档头。表的标题跟栏名已经在
+         `buildDashboard` 那一段换过了（跟角色无关，那一层不知道是谁在看），
+         这里换的是填进去的行——一样走 `party_aging`
+         （`(app)/owing` 那一页在用的同一支），不是重新算一次。
+         🔴 老师打开同一页，标题还是「谁还没交」（那是帐号级的，不是他这个人
+         看得看不得），而 `party_aging` 对他是空的——**不能拿「最近的学费单」
+         去补那个空**，两句话对不起来的时候一句都不会被相信。所以他看到的是
+         一张空表，跟 `(app)/owing` 那一页拒绝他进去是同一条判断，只是这里
+         用「空」代替 404，因为总览本来就是每个角色都会打开的页。 */
+      const rows = dashboardOwingIndustry(businessContext)
+        ? workspace.isOwner
+          ? await fetchOwingRows(
+              supabase,
+              project.id,
+              systemLangOf(businessContext),
+            )
+          : []
+        : await fetchLiveRows(
+            supabase,
+            project.id,
+            rowsFrom,
+            workflowStages(businessContext),
+            systemLangOf(businessContext),
+          );
       initialData = withLiveRows(
         initialData,
-        await fetchLiveRows(
-          supabase,
-          project.id,
-          rowsFrom,
-          workflowStages(businessContext),
-          systemLangOf(businessContext),
-        ),
+        rows,
         /* Once he has started, every block owes him the truth -- including
            「nothing here yet」. Samples are for somebody who has not. */
         { businessIsLive: !!stats },

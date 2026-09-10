@@ -1497,6 +1497,17 @@ function buildDashboard(
            留在块里会**印两次「今天」**——[任务 2](#) 那两块早就踩过这一条。 */
         return { ...day, props: { ...day.props, heading: "" } };
       }
+      /* 补习中心：见 dashboardOwingIndustry 的档头。样本资料照旧沿用
+         sample.records（风格画廊 · 规格书那几个非真人帐号的场合看到的
+         还是一般的示例状态字，只有真的帐号才会换成真的欠款名单 ——
+         见 page.tsx 那一段 fetchOwingRows 的呼叫），只换这里的标题跟栏名。 */
+      if (dashboardOwingIndustry(ctx)) {
+        return recordTable("dashboard-owing", c.dashboard.owingCaption, {
+          primary: labels.customer,
+          amount: c.dashboard.owingAmountColumn,
+          status: c.col.status,
+        }, sample.records);
+      }
       return recordTable(
         "dashboard-recent",
         c.dashboard.recent(labels.order),
@@ -3723,6 +3734,23 @@ export function dashboardRecordModule(refs: PageRef[]): string | null {
 export function dashboardDiaryModule(refs: PageRef[]): string | null {
   if (dashboardRecordModule(refs)) return null;
   return refs.map((p) => p.key).find((k) => CALENDAR_MODULES.has(k)) ?? null;
+}
+
+/**
+ * 补习中心的总览该问「这个月谁还没交」，不是「最近开了哪几张单」。
+ *
+ * ── 为什么这一支存在（2026-09-10）─────────────────────────────────────────
+ * `dashboardRecordModule` 对 education 回 `"orders"`，於是总览一直画着
+ * 「Recent fee bills」——**任何状态都列**的一张表。[任务 337](../../docs/founder-tasks.md#337)
+ * 量出来这不是「一句都没有」，是**问法不对**：他真正要的第一句话是
+ * 「这个月谁还没交」，不是「最近开了哪几张单」。
+ *
+ * ⚠️ 只对 education 生效 —— 五金 · 零售也用 `orders`，
+ * 但他们的第一句话是「今天卖了多少」（同一条任务点过名，排在后面），
+ * 不是这一件。这里按**行业**分岔，不是按「有没有 orders」分岔。
+ */
+export function dashboardOwingIndustry(ctx: BusinessContext): boolean {
+  return (ctx.industry?.slug ?? null) === "education";
 }
 
 export function buildPageLayout(
