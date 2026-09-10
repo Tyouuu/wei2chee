@@ -381,7 +381,13 @@ const EN: Chrome = {
   projects: {
     title: (order) => `${order} progress`,
     focus: (bottleneck) => `Watch this: ${bottleneck}`,
-    subtitle: (order) => `Where every ${order.toLowerCase()} has got to, on one screen.`,
+    /* 🔴 「Where every projects has got to」——`order` 传进来的是清单的名字
+       （复数），而这一句讲的是**一张单**走到哪，跟 `bookings.subtitle`
+       「which stylist is taking them」是同一类字，要singularise。
+       2026-09-10 在补习那一页的 fee bills 看图看到的，projects 是同一支
+       写坏的另一半，一起补（[重点 24]：眼睛看到的错要当场变成守卫）。 */
+    subtitle: (order) =>
+      `Where every ${singularise(order, "en").toLowerCase()} has got to, on one screen.`,
     workflow: (order) => `${order} workflow`,
     staffPlaceholder: (staff) => `Assigned ${staff.toLowerCase()}`,
     allStaff: (staff) => `All ${staff.toLowerCase()}`,
@@ -426,8 +432,12 @@ const EN: Chrome = {
   orders: {
     title: (order) => plural(order),
     focus: (bottleneck) => `Watch this: ${bottleneck}`,
+    /* 🔴 补习那一页拍出来是「Where every fee bills has got to」——
+       `order` 是清单的名字（复数），这一句讲的是一张单走到哪，
+       要跟 `projects.subtitle`（同一支写坏的另一半）一起改，
+       singularise 一下。 */
     subtitle: (order) =>
-      `Where every ${order.toLowerCase()} has got to, without asking anyone.`,
+      `Where every ${singularise(order, "en").toLowerCase()} has got to, without asking anyone.`,
     workflow: (order) => `${order} workflow`,
     filterKind: "Status",
     filterValue: "In progress",
