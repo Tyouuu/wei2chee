@@ -69,6 +69,15 @@ const HUNTS = [
   ["boulevard5", "https://www.joinblvd.com/", "⑤", ["team", "staff", "payroll"]],
   ["mangomint5", "https://www.mangomint.com/", "⑤", ["team", "staff", "payroll", "commission"]],
   ["mindbody5", "https://www.mindbodyonline.com/business", "⑤", ["staff", "payroll", "team"]],
+
+  /* ── 第四趟（2026-09-10）：走单轮位——[任务 353] 地基建好了，
+     画面还没有，去外网找沙龙软件怎么画「柜台排班」这一块。
+     WebSearch 那一刻不通，走这一支照旧不猜网址。 */
+  ["fresha6", "https://www.fresha.com/for-business", "⑥", ["schedul", "team", "staff", "roster", "calendar"]],
+  ["vagaro6", "https://www.vagaro.com/pro/", "⑥", ["schedul", "calendar", "team", "staff"]],
+  ["booksy6", "https://booksy.com/biz/en-us/", "⑥", ["schedul", "team", "staff", "calendar"]],
+  ["squareappt6", "https://squareup.com/us/en/appointments", "⑥", ["schedul", "team", "staff", "calendar"]],
+  ["mangomint6", "https://www.mangomint.com/", "⑥", ["schedul", "calendar", "team", "staff"]],
 ];
 
 /** `GROUPS=④,⑤ node scripts/shoot-featurepage.mjs`：只重跑新加的那几组，
@@ -142,7 +151,7 @@ for (const [key, root, group, words] of hunts) {
 await browser.close();
 
 /* 一组一张联络表。 */
-for (const g of ["①", "②", "③", "④", "⑤"]) {
+for (const g of ["①", "②", "③", "④", "⑤", "⑥"]) {
   const mine = rows.filter((r) => r.group === g && r.shots);
   if (!mine.length) continue;
   const H2 = 520;
