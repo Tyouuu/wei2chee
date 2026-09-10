@@ -235,7 +235,8 @@
     "shoot:noshow": "node scripts/shoot-noshow.mjs",
     "shoot:no-shows-page": "node scripts/shoot-noshows-page.mjs",
     "shoot:tuition-owing": "node scripts/shoot-tuition-owing.mjs",
-    "shoot:widths": "node scripts/shoot-widths.mjs"
+    "shoot:widths": "node scripts/shoot-widths.mjs",
+    "check:visit-photos": "node scripts/check-visit-photos.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
