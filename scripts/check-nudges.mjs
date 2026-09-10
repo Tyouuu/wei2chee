@@ -224,9 +224,14 @@ const nudges = async (client = C, until = null) => {
   /* ⚙ 这一笔是用老板身分建的，只是把来源标成官网 ——
      陆上那一整条（陌生人那把钥匙 → `submit_site_booking`）
      `check:public-booking` 已经走完了；这一段验的是
-     「来源是官网 ⬛ 而他没看过」那一条规则。 */
-  const soon = new Date(Date.now() + 36e5 * 26).toISOString();
-  const later = new Date(Date.now() + 36e5 * 27).toISOString();
+     「来源是官网 ⬛ 而他没看过」那一条规则。
+     🔴 `booking_unseen` 本来就不看这一笔是不是「未来」（看它自己那句注解 ——
+     一个白跑一趟的客人比明天的预约更要紧），所以钉在 `day(-5)` 上，
+     不用 `Date.now() + Nh`：后者的 26–41 小时窗口会随「现在几点」
+     飘到隔天，撞上 ⑮ 那两笔钉死在 `day(1)` 02:00–07:00Z 的预约——
+     `coalesce(staff_id, project_id)` 不分师傅，同一间店同一时段只准一笔。 */
+  const soon = `${day(-5)}T09:00:00Z`;
+  const later = `${day(-5)}T10:00:00Z`;
   /* ⚠️ `add_appointment` 回的是**一个 uuid**，不是一整行。
      第一版写 `bk.id` —— 那是 undefined，而 `has()` 拿 undefined 去比
      会**配上任何一行**：两条断言因此是**假的绿**。 */
@@ -244,11 +249,12 @@ const nudges = async (client = C, until = null) => {
       && r.party === "Mr Ong" && r.title === "Colour and cut"),
     JSON.stringify((await nudges()).filter((r) => r.kind === "booking_unseen")));
 
-  /* 他自己在柜台打的那一笔，他本来就知道 —— 不讲。 */
+  /* 他自己在柜台打的那一笔，他本来就知道 —— 不讲。
+     同样钉在 day(-5)，跟上面那一笔错开一小时，不用 Date.now()。 */
   const { data: own, error: ownErr } = await C.rpc("add_appointment", {
     in_project_id: P, in_module_key: "bookings",
-    in_starts_at: new Date(Date.now() + 36e5 * 30).toISOString(),
-    in_ends_at: new Date(Date.now() + 36e5 * 31).toISOString(),
+    in_starts_at: `${day(-5)}T11:00:00Z`,
+    in_ends_at: `${day(-5)}T12:00:00Z`,
     in_party: "Walk in", in_service: "Trim",
   });
   check("道具：柜台那一笔也建得起来", !ownErr && !!own, ownErr?.message ?? "没回 id");
@@ -571,11 +577,12 @@ const nudges = async (client = C, until = null) => {
     JSON.stringify(crewSees.map((r) => r.kind)));
   /* 🔴 而官网来的预约他**看得到** —— 前台要知道今天谁要来。
      看得到跟按得掉是两件事：一个师傅按掉那个徽章，
-     老板就再也不知道有人订过。 */
+     老板就再也不知道有人订过。
+     同上，钉在 day(-5)，跟前面两笔再错开一小时。 */
   const { data: bk2, error: bk2Err } = await C.rpc("add_appointment", {
     in_project_id: P, in_module_key: "bookings",
-    in_starts_at: new Date(Date.now() + 36e5 * 40).toISOString(),
-    in_ends_at: new Date(Date.now() + 36e5 * 41).toISOString(),
+    in_starts_at: `${day(-5)}T13:00:00Z`,
+    in_ends_at: `${day(-5)}T14:00:00Z`,
     in_party: "Mrs Chan", in_service: "Perm", in_source: "website",
   });
   check("道具：第二笔官网预约建得起来", !bk2Err && !!bk2,
