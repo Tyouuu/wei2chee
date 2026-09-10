@@ -788,7 +788,8 @@
       "tables": "餐台",
       "kitchen": "厨房",
       "consent": "同意书",
-      "treatments": "疗程记录"
+      "treatments": "疗程记录",
+      "walkin": "走单轮位"
     },
     "find": {
       "title": "找东西",
@@ -1781,6 +1782,22 @@
       "needWhat": "写一句做了什么。",
       "failed": "没有保存成功，再试一次。",
       "used": "用了"
+    },
+    "walkin": {
+      "title": "走单轮位",
+      "lede": "谁等最久，就轮到谁。",
+      "queueLabel": "轮子里",
+      "outLabel": "暂时不算",
+      "upNext": "轮到她",
+      "never": "还没接过",
+      "lastTurn": "上一次",
+      "take": "接这一位",
+      "taking": "记录中…",
+      "stepOut": "先下去",
+      "backIn": "回来",
+      "empty": "现在没有人在轮子里。",
+      "noStaff": "还没有师傅。",
+      "failed": "没有保存成功，再试一次。"
     }
   },
   "explainer": {

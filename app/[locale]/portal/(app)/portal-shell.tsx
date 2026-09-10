@@ -35,6 +35,7 @@ import {
   IconTable,
   IconPot,
   IconSign,
+  IconQueue,
 } from "./shell-icons";
 
 /**
@@ -384,6 +385,17 @@ export function PortalShell({
       under: "customers",
       show: hasBookings && hasStaff,
       icon: <IconSign />,
+    },
+    /* 🔴 走单轮位 —— 住在**预约**底下，不是客户底下：它答的是「柜台现在该叫
+       谁」，不是关於哪一个客人的事。跟同意书 · 疗程记录同一条判断：
+       **有预约那一页 ＋ 有师傅那一页**才画（[任务 353/354]，
+       Vagaro 没有这一件——不是每一行都有，[重点 34]）。
+       不挡师傅：叫下一位的常常就是柜台自己，这一页上没有金额。 */
+    {
+      key: "walkin",
+      under: "bookings",
+      show: hasBookings && hasStaff,
+      icon: <IconQueue />,
     },
     {
       key: "payables",

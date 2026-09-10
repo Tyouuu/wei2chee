@@ -390,3 +390,15 @@ export function IconSign({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 走单轮位：三个人排成一队，最前面那个头上一个 ^ —— 轮到她了。 */
+export function IconQueue({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M3.6 8.4 6 5.6l2.4 2.8" />
+      <circle cx="6" cy="12" r="2.3" />
+      <circle cx="11.6" cy="12.6" r="1.8" />
+      <circle cx="16" cy="13" r="1.4" />
+    </svg>
+  );
+}

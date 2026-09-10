@@ -169,6 +169,8 @@ PAGES = [
     # 同意书那几份范本（2026-09-09）—— 同一条（任务 177）。
     ("consent forms", "/en/portal/consent"),
     ("treatment records", "/en/portal/treatments"),
+    # 走单轮位（2026-09-10）—— 同一条（任务 177）。
+    ("walk-in queue", "/en/portal/walkin"),
     ("legal", "/en/legal/terms"),
 ]
 

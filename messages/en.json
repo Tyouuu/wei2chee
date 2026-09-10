@@ -788,7 +788,8 @@
       "tables": "Tables",
       "kitchen": "Kitchen",
       "consent": "Consent forms",
-      "treatments": "Treatment records"
+      "treatments": "Treatment records",
+      "walkin": "Walk-in queue"
     },
     "find": {
       "title": "Find anything",
@@ -1781,6 +1782,22 @@
       "needWhat": "Say what was done.",
       "failed": "That did not save. Try again.",
       "used": "Used"
+    },
+    "walkin": {
+      "title": "Walk-in queue",
+      "lede": "Whoever has waited longest goes next.",
+      "queueLabel": "In the rotation",
+      "outLabel": "Stepped out",
+      "upNext": "Up next",
+      "never": "Never yet",
+      "lastTurn": "Last turn",
+      "take": "Take this turn",
+      "taking": "Taking...",
+      "stepOut": "Step out",
+      "backIn": "Back in",
+      "empty": "Nobody is in the rotation right now.",
+      "noStaff": "No staff yet.",
+      "failed": "That did not save. Try again."
     }
   },
   "explainer": {
