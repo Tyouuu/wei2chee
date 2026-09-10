@@ -127,6 +127,7 @@
     "check:signoff": "node scripts/check-signoff.mjs",
     "check:walkin": "node scripts/check-walkin.mjs",
     "check:service-performance": "node scripts/check-service-performance.mjs",
+    "check:party-value": "node scripts/check-party-value.mjs",
     "check:product-performance": "node scripts/check-product-performance.mjs",
     "check:claims": "node scripts/check-claims.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
