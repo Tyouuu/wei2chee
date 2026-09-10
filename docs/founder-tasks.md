@@ -2878,3 +2878,29 @@ session；② 是助手发请求的那一段，属於我。**我这一边今天�
       那一支）带上那个记号——**卡在上面那一栏先落地**
 - [ ] 画面上「谁改的」那一句要分两种讲法（「他自己改的」／「他叫助手改的」）
       ——[画面那一边](./founder-points.md)
+
+### 371. ✅ 完工请她给一句评价——那个门牌的第二扇门（2026-09-11）
+
+[重点 30] 那张「更方便人们」的表 2026-09-05 就写着「完工请他给评价 · 老带新
+——这四件本地一家都没有」。`appointments.public_ref` 九天前才接上第一件事
+（取消，[任务 368]），这一支接第二件。只做评价本身，不做老带新——推荐奖励
+要先问清楚怎么算，是另一件不该跟这件绑在一起的事（[重点 34]）。
+
+四栏都从 null／false 开始，不碰 `status`（跟 `arrived_at` 那次一样的做法）。
+`public_appointment` 的返回栏位变了（多三栏：can_review · review_rating ·
+review_text），照[重点 31] 第二条先 drop 再重建，六行的函式体本身一个字
+没动。`submit_appointment_review` 照 `cancel_shared_appointment` 的契约：
+回一个词不抛例外，没做完是 `not_yet`，留过第二次是 `already_submitted`。
+`reviews_of` / `set_review_may_show` 照 `set_photo_may_show` 的做法：
+works_here 读写，预设不给公开。
+
+`check:reviews` 20 条全绿，真登入打了每一支。故意拿掉「没做完不给留评价」
+那一段、单独推、看过刚好红一条，原样放回去。回归：`check-self-cancel`
+11 条不受影响（证明 `public_appointment` 加栏没有动到原来的取消流程）、
+tsc 干净。
+
+- [ ] 🔴 **画面上没有留评价那一段** —— 她那一页要多一格（星级 ＋ 一句话），
+      是[画面那一边](./founder-points.md) 的决定，只登记
+- [ ] **老板看得到清单，画面上还没有那一页** —— `reviews_of` 零个呼叫端
+- [ ] 老带新——要先问清楚怎么算（固定 · 百分比 · 分档，跟储值卡那次
+      同一条纪律），问回来才动手
