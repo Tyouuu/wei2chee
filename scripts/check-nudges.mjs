@@ -88,6 +88,10 @@ const nudges = async (client = C, until = null) => {
   };
   const has = (rows, kind, id) =>
     rows.some((r) => r.kind === kind && (!id || r.subject_id === id));
+  const refused = async (client, fn, args) => {
+    const { error } = await client.rpc(fn, args);
+    return error?.message ?? "";
+  };
 
   const { data: cust } = await C.rpc("add_directory_entry", {
     in_project_id: P, in_module_key: "customers", in_name: "Mrs Lim",
@@ -868,6 +872,64 @@ const nudges = async (client = C, until = null) => {
     "它没讲");
   await C.rpc("set_appointment_status", { in_id: gone, in_status: "cancelled" });
   check("🔴 取消掉的不讲", !has(await nudges(), "consent_unsigned", gone), "还在讲");
+
+  /* ── ⑯ 🔴 师傅的执照快到期了 ───────────────────────────────────────────
+     第十五个讯号（20260910300000）。[任务 341] 零之三：毒药法令 1952
+     第 19 条只有注册医生可以施用 B 类毒药（肉毒），两张执照都会过期，
+     而这一支之前仓库里一个字都没有。
+
+     🔴 **这一节先在没有到期日的时候量一次**，同一个理由：一条永远都会讲
+     的讯号跟一条永远都不讲的讯号，在一份全绿的报告里长得一模一样。 */
+  console.log("\n⑯ 🔴 师傅的执照快到期了");
+  const { data: sisterLim } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "staff", in_name: "Sister Lim",
+  });
+  check("道具：她排得进职员名册", !!sisterLim?.id, "排不进去");
+  check("🔴 还没有到期日的时候 → 一条都不讲（控制组）",
+    !has(await nudges(), "credential_expiring"),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "credential_expiring")));
+
+  const credSoon = day(2);
+  const { data: withCred, error: credErr } = await C.rpc("set_staff_credential", {
+    in_staff_id: sisterLim.id, in_credential: "APC", in_expires_on: credSoon,
+  });
+  check("道具：执照跟到期日写得进去",
+    !credErr && withCred?.credential === "APC", credErr?.message);
+  check("🔴 快到期了就讲", has(await nudges(), "credential_expiring"),
+    JSON.stringify((await nudges()).map((r) => r.kind)));
+  const cred = (await nudges()).find((r) => r.kind === "credential_expiring");
+  check("而且讲得出是谁 · 哪一张 · 几时",
+    cred?.party === "Sister Lim" && cred?.title === "APC" && cred?.due_on === credSoon,
+    JSON.stringify([cred?.party, cred?.title, cred?.due_on]));
+  check("🔴 这一句是给他自己看的（不是发给客人）", cred?.audience === "owner",
+    String(cred?.audience));
+  check("🔴 已经过期的一样讲，而且天数是真的晚了几天",
+    typeof cred?.days_late === "number" && cred.days_late >= 0,
+    String(cred?.days_late));
+
+  /* 🔴 已经过期的（不只是快到期）一样要讲 —— 逾期排最前面那条规矩靠它。 */
+  const credPast = day(-10);
+  await C.rpc("set_staff_credential", {
+    in_staff_id: sisterLim.id, in_credential: "APC", in_expires_on: credPast,
+  });
+  const expired = (await nudges()).find((r) => r.kind === "credential_expiring");
+  check("🔴 已经过期的也讲，而且晚了正确的天数",
+    expired?.due_on === credPast && expired.days_late === 10,
+    JSON.stringify([expired?.due_on, expired?.days_late]));
+
+  check("🔴 换掉执照会被拒绝（不是员工列表上的人）",
+    !!(await refused(C, "set_staff_credential", {
+      in_staff_id: aida?.id, in_credential: "APC", in_expires_on: credSoon,
+    })), "居然让它过了");
+
+  /* 收起来了，这一条自己就不该再讲——跟其余十四条同一个「算出来，不存起来」。
+     用 service role 直接收起来，不猜哪一支写入函式的参数名——
+     这一句只是要证明 `archived_at is null` 那个条件式是真的接在这个信号上。 */
+  await admin.from("directory_entries")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", sisterLim.id);
+  check("🔴 她离职了（收起来）就不再讲",
+    !has(await nudges(), "credential_expiring"), "还在讲");
 
   /* ── ⑨ 别人家 ─────────────────────────────────────────────────────── */
   console.log("\n⑨ 别人家");
