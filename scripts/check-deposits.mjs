@@ -326,6 +326,34 @@ try {
     })),
     "他动得了",
   );
+
+  /* 🔴 两个柜台同时替她用掉整份余额——两边都读到「还有」，
+     两边都通过检查，就会花出去她实际没有的钱。20260911830000 锁的
+     就是这一刻：`directory_entries` 那一行，先到的排上号才放手。
+     道具用一个全新的客人——`loyal` 身上还留着前面几段的余额，
+     这里再送一笔算不出「刚好只够一次」。 */
+  const { data: racer } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "race customer",
+  });
+  await C.rpc("grant_credit", {
+    in_project_id: P, in_party_id: racer.id, in_amount_cents: 10_000,
+  });
+  const raceKey = () => crypto.randomUUID();
+  const [ra, rb] = await Promise.all([
+    C.rpc("use_credit", {
+      in_project_id: P, in_party_id: racer.id, in_amount_cents: 10_000,
+      in_idempotency_key: raceKey(),
+    }),
+    C.rpc("use_credit", {
+      in_project_id: P, in_party_id: racer.id, in_amount_cents: 10_000,
+      in_idempotency_key: raceKey(),
+    }),
+  ]);
+  check(
+    "🔴 两边同时花光整份余额，只有一边花得掉",
+    (!ra.error) !== (!rb.error),
+    JSON.stringify([ra.error?.message, rb.error?.message]),
+  );
 } catch (e) {
   bad.push(`半路炸了：${e.message}`);
   console.log(`  FAIL  半路炸了 — ${e.message}`);
