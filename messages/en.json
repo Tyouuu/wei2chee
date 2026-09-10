@@ -772,6 +772,7 @@
       "contracts": "Service contracts",
       "vehicles": "Plates",
       "owing": "Who owes you",
+      "no-shows": "Who has missed",
       "payroll": "Pay",
       "books": "Books",
       "tax": "Tax",
@@ -1138,6 +1139,13 @@
       "rowTotal": "Total",
       "unknown": "Not on a customer",
       "note": "Sorted by the largest. The one to ring is usually not the largest — look for the reddest bar."
+    },
+    "noShows": {
+      "title": "Who has missed",
+      "lede": "Every customer who has missed a booking at least once, worked out from her own appointment history -- nothing here is typed.",
+      "none": "Nobody has missed an appointment yet.",
+      "missedOf": "Missed {missed} of {total} visits",
+      "lastMissed": "Last missed on {date}"
     },
     "books": {
       "title": "Books",

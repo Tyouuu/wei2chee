@@ -36,6 +36,7 @@ import {
   IconPot,
   IconSign,
   IconQueue,
+  IconNoShow,
 } from "./shell-icons";
 
 /**
@@ -368,6 +369,15 @@ export function PortalShell({
       icon: <IconCar />,
     },
     { key: "owing", under: "customers", show: isOwner, icon: <IconCoin /> },
+    /* 🔴 谁放过飞机 —— 跟「谁欠我钱」并排，但**不挡师傅**：
+       `no_shows_of` 自己是 `works_here`，答的是「她可不可靠」不是「她欠多少」，
+       站柜台的美发师自己就要知道明天来的那一个信不信得过（[任务 333/358]）。 */
+    {
+      key: "no-shows",
+      under: "customers",
+      show: hasBookings,
+      icon: <IconNoShow />,
+    },
     /* 🔴 同意书住在**客户**底下 —— 一份同意书属於一个人，
        而她想到那件事的时候，正在看那个人（[任务 247] 那条规矩）。
        ⚠️ **不挡师傅**：那三支都是 works_here，而一份同意书上

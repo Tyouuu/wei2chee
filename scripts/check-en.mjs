@@ -77,6 +77,7 @@ const PAGES = [
      那一页要走得进这份清单** —— 而这三页在今天之前一直没有走进来，
      所以这把尺看得到画面，只是从来没打开过它们。 */
   ["who owes you", "/en/portal/owing", "customer"],
+  ["who has missed", "/en/portal/no-shows", "customer"],
   ["branches", "/en/portal/branches", "customer"],
   ["what you owe", "/en/portal/payables", "customer"],
   ["days worked", "/en/portal/attendance", "customer"],

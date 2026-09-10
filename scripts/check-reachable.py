@@ -156,6 +156,7 @@ PAGES = [
     ("counter", "/en/portal/counter"),
     # 谁欠我钱 · 分店 · 我欠人家的（2026-09-06）—— 同一条（任务 177）。
     ("who owes you", "/en/portal/owing"),
+    ("who has missed", "/en/portal/no-shows"),
     ("branches", "/en/portal/branches"),
     ("what you owe", "/en/portal/payables"),
     ("days worked", "/en/portal/attendance"),

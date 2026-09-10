@@ -126,7 +126,6 @@
     "check:alerts": "node scripts/check-alerts.mjs",
     "check:signoff": "node scripts/check-signoff.mjs",
     "check:walkin": "node scripts/check-walkin.mjs",
-    "check:product-performance": "node scripts/check-product-performance.mjs",
     "check:claims": "node scripts/check-claims.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
     "check:anchors": "node scripts/check-anchors.mjs",
@@ -228,6 +227,7 @@
     "shoot:consent": "node scripts/shoot-consent.mjs",
     "shoot:walkin": "node scripts/shoot-walkin.mjs",
     "shoot:noshow": "node scripts/shoot-noshow.mjs",
+    "shoot:no-shows-page": "node scripts/shoot-noshows-page.mjs",
     "shoot:tuition-owing": "node scripts/shoot-tuition-owing.mjs",
     "shoot:widths": "node scripts/shoot-widths.mjs"
   },

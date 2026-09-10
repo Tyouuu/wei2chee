@@ -402,3 +402,14 @@ export function IconQueue({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 放飞机：一个人，胸口一个叉。 */
+export function IconNoShow({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <circle cx="10" cy="5.8" r="2.6" />
+      <path d="M4.2 16.6c0-3.2 2.6-5.8 5.8-5.8s5.8 2.6 5.8 5.8" />
+      <path d="M8 12.8l4 4M12 12.8l-4 4" />
+    </svg>
+  );
+}
