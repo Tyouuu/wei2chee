@@ -931,6 +931,38 @@ const nudges = async (client = C, until = null) => {
   check("🔴 她离职了（收起来）就不再讲",
     !has(await nudges(), "credential_expiring"), "还在讲");
 
+  /* ── ⑰ 🔴 皮肤测试超过六个月，而她接下来要来了 ─────────────────────────
+     第十六个讯号（20260910600000）。[任务 341] 沙龙其余那一组：
+     Fresha 六个月有效，只警告不挡。不猜哪一张预约需要它——
+     只答「她自己的皮肤测试过期了，而且接下来真的有一笔预约」这一句。
+     Aida 那一笔（consent 那一段种的，明天）本来就是还没发生、还没取消
+     的一笔，正好拿来借用。 */
+  console.log("\n⑰ 🔴 皮肤测试超过六个月");
+  check("🔴 还没设过日期的时候 → 不讲（控制组）",
+    !has(await nudges(), "patch_test_stale"),
+    JSON.stringify((await nudges()).filter((r) => r.kind === "patch_test_stale")));
+
+  const sevenMonthsAgo = day(-210);
+  const { error: patchErr1 } = await C.rpc("set_patch_test", {
+    in_party_id: aida.id, in_done_on: sevenMonthsAgo,
+  });
+  if (patchErr1) throw new Error(`set_patch_test: ${patchErr1.message}`);
+  check("🔴 超过六个月，而且她明天有一笔预约 → 讲了",
+    has(await nudges(), "patch_test_stale"),
+    JSON.stringify((await nudges()).map((r) => r.kind)));
+  const patchRow = (await nudges()).find((r) => r.kind === "patch_test_stale");
+  check("🔴 那一句是给他自己看的（不是发给客人）", patchRow?.audience === "owner",
+    String(patchRow?.audience));
+  check("而且讲得出是哪一天的预约", patchRow?.due_on === day(1), String(patchRow?.due_on));
+
+  const oneMonthAgo = day(-30);
+  const { error: patchErr2 } = await C.rpc("set_patch_test", {
+    in_party_id: aida.id, in_done_on: oneMonthAgo,
+  });
+  if (patchErr2) throw new Error(`set_patch_test: ${patchErr2.message}`);
+  check("🔴 才一个月前测的 → 不讲了", !has(await nudges(), "patch_test_stale"),
+    "还在讲");
+
   /* ── ⑨ 别人家 ─────────────────────────────────────────────────────── */
   console.log("\n⑨ 别人家");
   const other = await person("other");
