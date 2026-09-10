@@ -125,6 +125,7 @@
     "check:recall": "node scripts/check-recall.mjs",
     "check:alerts": "node scripts/check-alerts.mjs",
     "check:signoff": "node scripts/check-signoff.mjs",
+    "check:walkin": "node scripts/check-walkin.mjs",
     "check:claims": "node scripts/check-claims.mjs",
     "check:table-search": "node scripts/check-table-search.mjs",
     "check:anchors": "node scripts/check-anchors.mjs",
