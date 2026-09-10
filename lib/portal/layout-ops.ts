@@ -561,6 +561,24 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
      */
     amount: z.string().max(20).nullable(),
   }),
+  /*
+    🔴 官网上陌生人自己订的那一笔，一按就变成名册上的一个客人。
+
+    `claim_booking_party`（20260909240000）已经在跑，而且是
+    产品里第一条走到这一步的路：`submit_site_booking` 让陌生人
+    自己订时段，`update_appointment` 让人按一下把那一笔认成客人 ——
+    两头都有了，中间那一步没有人接。
+
+    ⚠️ **不靠名字猜是哪一个人**（[任务 89]）。这一支只做一件事：
+    把那一笔预约自己带着的名字跟号码，变成名册上一个新的客人 ——
+    不是从一份清单里挑一个已经在的人。挑人要一份带编号的名单，
+    而预约那一页今天不印客户名单。
+  */
+  z.object({
+    op: z.literal("claim_booking_party"),
+    /** 哪一笔预约 —— 页面上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+  }),
   z.object({
     op: z.literal("book_appointment"),
     /** 排给谁。**挡住一段时间**（午休 · 看牙医）的时候是 null。 */
@@ -573,6 +591,20 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     to: z.string().max(5).nullable(),
     /** 做什么（剪 · 染 · 脸部）。她讲了才填。 */
     service: z.string().max(120).nullable(),
+    /*
+      🔴 客人的号码 —— **只在柜台自己打进去的时候有**。
+
+      官网上陌生人自己订的时段，号码是她自己填的表单收的
+      （`submit_site_booking`），这一格用不上。而她是从 WhatsApp 或
+      Instagram 上问来的时候，号码在柜台手上，只有柜台把它打给助手，
+      这一笔预约才带得走它。
+
+      ⚠️ 存的位置**不是新造的**：跟官网那条路一样落在
+      `appointments.extra.contact` —— `claim_booking_party` 已经在读
+      那一格（20260909240000）。两条路走同一个格子，一按认成客人，
+      两边都用得到同一支，不用为柜台打进来的那种再写一支。
+    */
+    contact: z.string().max(40).nullable(),
     /**
      * 🔴 哪一位做 —— 从上面那份师傅清单里 `staff=` 抄下来的编号。
      *
@@ -1740,6 +1772,7 @@ export function applyLayoutOps(
          （助手也只在那几页）—— 到不了的时候讲同一句话。 */
       /* 开全班的学费单要有一本帐簿可以开进去，而这一页背后没有。 */
       case "set_appointment_deposit":
+      case "claim_booking_party":
       case "book_appointment":
       case "take_payment":
       case "bill_class":

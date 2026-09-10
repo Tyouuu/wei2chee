@@ -288,6 +288,14 @@ Record tables:
     work the amount out yourself.
   * Documents only (报价单 / 订单 / 工程 / 任务 / 进货单). Not money pages, not the
     directory, not the shelf.
+- 🔴 claim_booking_party turns a stranger's own online booking into a real
+  customer: 「把林太太那一笔认成客人」, 「add her to the customer list」.
+  * record_id is that booking. No other field -- it reads the name and
+    contact the booking already carries and creates the customer from THAT,
+    never from a name you pick off a list. There is no list to pick from here.
+  * Pressing it twice does no harm: an already-claimed booking just returns
+    the same person, so if you are unsure whether it ran, run it again.
+  * Only on the appointments page.
 - set_appointment_deposit says what a booking must pay UP FRONT:
   「叫她先付一百」, 「ask Ms Lim for a RM 50 deposit」,
   「这一单不用订金」.
@@ -300,6 +308,16 @@ Record tables:
   * 「我讲好不收她的」 is amount "0" -- a real nought, agreed. 「不用订金」
     is null. They are different sentences and the database keeps them apart.
   * Only on the appointments page.
+- 🔴 book_appointment TAKES contact WHEN A HUMAN GAVE YOU A NUMBER, not a
+  guessed one. 「陈小姐明天三点，她的号码是 012-3456789」 sets contact;
+  「帮她排明天三点」 with no number leaves it null.
+  * This only matters for a booking that did NOT come through the customer's
+    own site form -- one dictated from a WhatsApp or Instagram message. A
+    number typed here is what makes claim_booking_party able to turn that
+    booking into a real customer afterwards, the same as a site booking does.
+  * ⚠️ NEVER INVENT A NUMBER, and never copy one from a different
+    customer's row because the names are similar. No number said, leave it
+    null -- a wrong number reaches the wrong person's phone.
 - 🔴 book_appointment puts somebody in the diary: 「帮陈太太排明天三点」,
   「book Ms Lim Thursday 2pm for a colour」, 「block Wednesday afternoon」.
   * day is \`YYYY-MM-DD\` and from/to are \`HH:MM\` on a 24-hour clock. Today's
@@ -1774,6 +1792,7 @@ export const EDIT_JSON_SCHEMA = {
                 "take_payment",
                 "book_appointment",
                 "set_appointment_deposit",
+                "claim_booking_party",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
@@ -1853,6 +1872,11 @@ export const EDIT_JSON_SCHEMA = {
             // 换算成 UTC+8 的时刻，让模型算时区是把一个时区错误
             // 放进一笔会撞位子的记录里。
             party: { type: ["string", "null"] },
+            // book_appointment only. A number the FRONT DESK typed -- the
+            // customer's own site booking already carries its own contact,
+            // this is for the WhatsApp/Instagram case where a human read the
+            // number off a chat and is dictating it in. See layout-ops.ts.
+            contact: { type: ["string", "null"] },
             day: { type: ["string", "null"] },
             from: { type: ["string", "null"] },
             to: { type: ["string", "null"] },
@@ -1902,6 +1926,7 @@ export const EDIT_JSON_SCHEMA = {
             "group_id",
             "method",
             "party",
+            "contact",
             "day",
             "from",
             "to",

@@ -308,6 +308,13 @@ export type SkipCode =
    * ⚠️ 静静掉几行金额，比一句失败更贵：帐上那个总额会看起来像他自己填的。
    */
   | "linesNotKept"
+  /**
+   * 🔴 官网上订进来的那一笔，认成客人了。`who`
+   *
+   * 她本来只是一串字在那笔预约上，现在是名册上一个真的人 ——
+   * 下一次讲「陈太太来了」，那笔预约才对得起来是同一个人。
+   */
+  | "bookingClaimed"
   | "depositAsked"
   /** 这一单不用订金了。 */
   | "depositDropped"
@@ -427,6 +434,7 @@ export const SKIP_CODES = [
   "nothingToUndo",
   "linesFromPaper",
   "linesNotKept",
+  "bookingClaimed",
   "depositAsked",
   "depositDropped",
   "appointmentBooked",

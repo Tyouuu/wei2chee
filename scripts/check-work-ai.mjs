@@ -1428,6 +1428,141 @@ try {
   );
   await page.screenshot({ path: `${OUT}/18-undone.png` });
 
+  console.log("");
+  console.log("── ㉓ 🔴 官网订的、柜台从 WhatsApp 打进来的 —— 一按都变客人 ──");
+  /*
+    🔴 他问的那一句：`如果没有官网呢 从 WhatsApp/Instagram 进来的客户呢`。
+
+    `claim_booking_party` 不管那一笔预约是怎么来的 —— 它只读那一笔
+    自己带着的名字跟号码。所以官网自己订的、跟柜台从 WhatsApp 聊天里
+    抄进来的，**是同一颗按钮**。这一段量两条路都通：
+
+    ⚠️ A · 只有名字，没有号码（走进来的客人、柜台只记了名字）——
+        认得成客人，而电话栏位留白，不是编一个
+    ⚠️ B · 柜台把 WhatsApp 上问来的号码**讲给助手**（`book_appointment`
+        新的 `contact` 格）—— 那一笔带着号码进去，认成客人的时候
+        那个号码原样落在客户的 WhatsApp 栏上
+  */
+  const claimDay = mytToday;
+  const { error: deviErr } = await api.rpc("add_appointment", {
+    in_project_id: P,
+    in_module_key: bookPage,
+    in_starts_at: new Date(Date.parse(`${claimDay}T07:00:00+08:00`)).toISOString(),
+    in_ends_at: new Date(Date.parse(`${claimDay}T08:00:00+08:00`)).toISOString(),
+    in_party: "Ms Devi",
+    in_service: "Facial",
+  });
+  if (deviErr) throw new Error(`seed Ms Devi appt: ${deviErr.message}`);
+
+  await page.goto(`${BASE}/en/portal/${bookPage}`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  const claimedA = await say(page, "Add Ms Devi to the customer list from her booking");
+  console.log(`        它讲了：${claimedA.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+
+  const deviRow = await admin
+    .from("directory_entries")
+    .select("id, name, phone, whatsapp")
+    .eq("project_id", P)
+    .eq("module_key", "customers")
+    .ilike("name", "%devi%")
+    .is("archived_at", null)
+    .maybeSingle();
+  check(
+    "🔴 A · 只有名字的那一笔，认成客人了",
+    !!deviRow.data,
+    claimedA.slice(0, 200) || "（它一句话都没讲）",
+  );
+  /* ⚠️ 没有号码就留白，不编一个 —— 一个编出来的号码是一条发给别人的讯息。 */
+  check(
+    "🔴 而电话栏位留白，不是编一个",
+    !deviRow.data?.whatsapp,
+    `whatsapp = ${JSON.stringify(deviRow.data?.whatsapp)}`,
+  );
+  const { data: deviAppt } = await admin
+    .from("appointments")
+    .select("party_id")
+    .eq("project_id", P)
+    .ilike("party", "%devi%")
+    .maybeSingle();
+  check(
+    "🔴 那一笔预约挂回了刚认出来的那个人",
+    deviAppt?.party_id === deviRow.data?.id,
+    `party_id=${deviAppt?.party_id} customer=${deviRow.data?.id}`,
+  );
+
+  /* 🔴 按第二下 —— 不开出第二个「Ms Devi」。 */
+  await say(page, "Add Ms Devi to the customer list from her booking");
+  await page.waitForTimeout(2000);
+  const deviCount = await admin
+    .from("directory_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", P)
+    .eq("module_key", "customers")
+    .ilike("name", "%devi%");
+  check(
+    "🔴 按第二下不会开出第二个客人",
+    (deviCount.count ?? 0) === 1,
+    `名册上有 ${deviCount.count} 个 Devi`,
+  );
+
+  /* ⚠️ B · 从 WhatsApp 上问来的，柜台把号码讲给助手 —— 走 book_appointment 新的 contact 格。 */
+  const tayDictated = await say(
+    page,
+    "Book Madam Tay tomorrow 9am to 9:45am for a manicure, her number is 0123456789",
+  );
+  console.log(`        它讲了：${tayDictated.split(String.fromCharCode(10)).join(" / ").slice(0, 200)}`);
+  await page.waitForTimeout(2500);
+  const tayAppt = await admin
+    .from("appointments")
+    .select("id, extra")
+    .eq("project_id", P)
+    .ilike("party", "%tay%")
+    .maybeSingle();
+  check(
+    "🔴 B · 那一笔带着柜台讲的号码进去了",
+    /0123456789|012.?345.?6789/.test(String(tayAppt.data?.extra?.contact ?? "")),
+    `extra=${JSON.stringify(tayAppt.data?.extra)} — ${tayDictated.slice(0, 160)}`,
+  );
+
+  /*
+    ⚠️ 量到这里为止：A 段已经证明**助手真的找得到、认得成**（Ms Devi 那一笔）。
+    这一段现在只量一件事 —— **号码有没有原样从 book_appointment 走到
+    claim_booking_party**，不重新去考「模型找不找得到这一笔」，因为那一件
+    这一轮量出来是另一个真的洞，不是这一支写错了：
+
+    🔴 **`live-rows.ts` 的 DaySchedule 投影把真数字砍到最多 8 笔
+    （`.slice(0, 8)`），而且没有「还有 N 笔没列出来」那句话** ——
+    `describeDay` 自己那句 `rest` 提示读的是砍过的那个数组长度，
+    所以它永远量不到自己被砍过。这一轮种到第九笔预约（Madam Tay，
+    排明天九点）的时候，它真的从模型看得到的名单里消失了，而它没有
+    消失的痕迹，模型答的是「这一页上找不到」——**它讲得没错，是投影
+    先把她藏起来了**。[任务 339](../docs/founder-tasks.md#339) 量过一间
+    四张椅子的沙龙一小时只排得下一位，[任务 181](../docs/founder-tasks.md#181)
+    量过怡保四成七的店天天在用序号 —— 一间生意好的沙龙一天排超过 8 笔
+    是常态，不是这个测试凑出来的边缘情况。
+
+    这是画面／投影那一层的东西（`live-rows.ts` 同时喂真人看的那一块
+    跟助手看的那一段），不是这一支的地盘 —— 写进任务档，不动手。
+    所以这里改用 `api.rpc` 直接呼叫 `claim_booking_party`，量的是这一支
+    自己写对了没有：**contact 是不是真的原样变成了 whatsapp**。
+  */
+  const { data: tayClaim, error: tayClaimErr } = await api.rpc("claim_booking_party", {
+    in_appointment_id: tayAppt.data?.id,
+  });
+  if (tayClaimErr) throw new Error(`claim Madam Tay: ${tayClaimErr.message}`);
+  const tayPerson = Array.isArray(tayClaim) ? tayClaim[0] : tayClaim;
+  console.log(`        claim_booking_party 回了：${JSON.stringify(tayPerson)}`);
+  /* 🔴 号码原样落在客户身上 —— 不是重打一次，是那一笔预约自己带着的那个。 */
+  check(
+    "🔴 而且那个号码原样落在她的 WhatsApp 栏上",
+    String(tayPerson?.whatsapp ?? "").replace(/\D/g, "") === "0123456789",
+    `whatsapp = ${JSON.stringify(tayPerson?.whatsapp)}`,
+  );
+  await page.screenshot({ path: `${OUT}/19-claimed.png` });
+
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);

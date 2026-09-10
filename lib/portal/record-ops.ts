@@ -297,6 +297,7 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "take_payment",
   "book_appointment",
   "set_appointment_deposit",
+  "claim_booking_party",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -1325,6 +1326,48 @@ export async function actOnRecords(
       continue;
     }
 
+    if (op.op === "claim_booking_party") {
+      if (shape !== "calendar") {
+        skipped.push({ op: op.op, reason: "notBookingPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      /* 🔴 按第二下 —— `claim_booking_party` 自己是幂等的：已经认过的
+         那一笔，它静静把同一个人还回来，不开第二个。所以这里不用先查。 */
+      const { data: claimed, error: claimErr } = await supabase.rpc(
+        "claim_booking_party",
+        { in_appointment_id: recordId },
+      );
+      if (claimErr) {
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: claimErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      const person = (Array.isArray(claimed) ? claimed[0] : claimed) as
+        | { id?: string; name?: string }
+        | null;
+      if (person?.id) {
+        made.push({
+          kind: "directory",
+          id: person.id,
+          what: String(person.name ?? "").trim(),
+        });
+      }
+      notes.push({
+        op: op.op,
+        reason: "bookingClaimed",
+        vars: { who: String(person?.name ?? "").trim() },
+      });
+      written += 1;
+      continue;
+    }
+
     if (op.op === "book_appointment") {
       if (shape !== "calendar") {
         skipped.push({ op: op.op, reason: "notBookingPage" });
@@ -1337,6 +1380,7 @@ export async function actOnRecords(
         to?: unknown;
         service?: unknown;
         staff?: unknown;
+        contact?: unknown;
       };
       const day = String(raw.day ?? "").trim();
       const from = String(raw.from ?? "").trim();
@@ -1389,6 +1433,9 @@ export async function actOnRecords(
         : { data: null };
       const staffId = (mine as { id?: string } | null)?.id ?? null;
 
+      /* 🔴 柜台自己打进来的号码，落在跟官网订位那条路
+         一样的格子上 —— 见 layout-ops.ts 里 `contact` 的档头。 */
+      const contact = String(raw.contact ?? "").trim().slice(0, 40);
       const { error: bookErr } = await supabase.rpc("add_appointment", {
         in_project_id: projectId,
         in_module_key: moduleKey,
@@ -1400,6 +1447,7 @@ export async function actOnRecords(
         /* 没有人名就是**挡住这段时间**（午休 · 她去看牙医）——
            那一支自己认得这两种（`kind`），而它对 block 不要求人名。 */
         in_kind: party ? "booking" : "block",
+        in_extra: contact ? { contact } : {},
         in_idempotency_key: keyFor(`${projectId}:${startsAt}:${party}`, 0),
       });
       if (bookErr) {

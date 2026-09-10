@@ -579,6 +579,7 @@
         "nothingToUndo": "There is nothing left from that one to take back.",
         "linesFromPaper": "Every line on that paper went onto the document \u2014 {count} in all, and its total is the sum of them.",
         "linesNotKept": "This page keeps one row per entry, so the lines on that paper were NOT kept \u2014 {count} in all. A document page holds those.",
+        "bookingClaimed": "{who} is now on your customer list.",
         "depositAsked": "That booking now asks for {amount} up front \u2014 not received yet.",
         "depositDropped": "That booking no longer asks for a deposit.",
         "noStepSaid": "It did not say what to do",
