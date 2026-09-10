@@ -53,6 +53,10 @@ const say = async (client, fn, args) => {
   if (error) throw new Error(`${fn}: ${error.message}`);
   return data;
 };
+const refused = async (client, fn, args) => {
+  const { error } = await client.rpc(fn, args);
+  return error?.message ?? "";
+};
 
 try {
   const boss = await person("boss");
@@ -137,6 +141,35 @@ try {
   const { data: asOther } = await other.client
     .from("record_changes").select("id").eq("entity_id", apptId);
   check("🔴 别人家读不到这一笔预约的历史", (asOther ?? []).length === 0, JSON.stringify(asOther));
+
+  console.log("\n⑦ 🔴 那一位要真的是这家的人——add_appointment 现在验了");
+  await other.client.rpc("add_project_page", { requested_key: "staff", new_title: "staff" });
+  const { data: otherProj } = await admin
+    .from("projects").select("id").eq("account_id", other.id).single();
+  const foreignStaff = await say(other.client, "add_directory_entry", {
+    in_project_id: otherProj.id, in_module_key: "staff", in_name: "Not Amy",
+  });
+  check("🔴 别人家的师傅编号——挡下来", (await refused(C, "add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: new Date(anchor + 3 * 864e5).toISOString(),
+    in_ends_at: new Date(anchor + 3 * 864e5 + 36e5).toISOString(),
+    in_party: "Mrs Tan", in_party_id: her.id, in_service: "Colour",
+    in_staff_id: foreignStaff.id,
+  })).includes("does not work here"), "居然让它过了");
+  check("🔴 编出来的 uuid——一样挡下来", (await refused(C, "add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: new Date(anchor + 4 * 864e5).toISOString(),
+    in_ends_at: new Date(anchor + 4 * 864e5 + 36e5).toISOString(),
+    in_party: "Mrs Tan", in_party_id: her.id, in_service: "Colour",
+    in_staff_id: "00000000-0000-0000-0000-000000000000",
+  })).includes("does not work here"), "居然让它过了");
+  const ok = await say(C, "add_appointment", {
+    in_project_id: P, in_module_key: "bookings",
+    in_starts_at: new Date(anchor + 5 * 864e5).toISOString(),
+    in_ends_at: new Date(anchor + 5 * 864e5 + 36e5).toISOString(),
+    in_party: "Mrs Tan", in_party_id: her.id, in_service: "Colour", in_staff_id: jas.id,
+  });
+  check("而这家自己的师傅照旧排得进去", !!ok, JSON.stringify(ok));
 } catch (e) {
   bad.push(`半路炸了：${e.message}`);
   console.log(`  FAIL  半路炸了 — ${e.message}`);
