@@ -321,6 +321,15 @@ export type SkipCode =
    * 不然他会以为客人已经签好了。
    */
   /** 一笔疗程记下来了。`what` */
+  /**
+   * 🔴 送了一笔储值给她。`amount` `left`
+   *
+   * `left` 是柜台念给她听的那一个数字（自己付的 + 送的，还没用掉的）——
+   * 呼叫 `credit_of` 读回来的，不是这里自己加的。
+   */
+  | "creditGranted"
+  /** 用掉一笔储值。`amount` `left` —— 同上，`left` 是用完之后剩多少。 */
+  | "creditUsed"
   | "treatmentLogged"
   /** 她没讲清楚做了什么。 */
   | "noNoteSaid"
@@ -451,6 +460,8 @@ export const SKIP_CODES = [
   "linesNotKept",
   "bookingClaimed",
   "consentSent",
+  "creditGranted",
+  "creditUsed",
   "treatmentLogged",
   "noNoteSaid",
   "noFormSaid",

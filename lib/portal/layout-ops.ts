@@ -609,6 +609,40 @@ export const layoutOpSchema = z.discriminatedUnion("op", [
     [任务 326] 的档头写死了理由：那一刻客人已经躺在那里了，
     收紧那一条是最危险的收紧（[重点 31]），交给老板决定。
   */
+  /*
+    🔴 送一笔储值给客人 —— 「送陈太太 RM 200，生日礼」。
+
+    `grant_credit`（20260909360000）已经在跑。跟 `set_class_fee` ·
+    `set_booking_rules` 同一条：**送钱是老板的事**（`sees_money`），
+    不是柜台能自己决定的。柜台只做「用掉」那一半（下面 `use_credit`）。
+  */
+  z.object({
+    op: z.literal("grant_credit"),
+    /** 哪一位客人 —— 客户那一页上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** 送多少。 */
+    amount: z.string().max(20).nullable(),
+    /** 为什么送（生日 · 补偿）。她讲了才填，不编。 */
+    reason: z.string().max(120).nullable(),
+  }),
+  /*
+    🔴 用掉一笔储值 —— 「陈太太这次用了 RM 50 的礼券」。
+
+    `use_credit`（20260909360000）已经在跑。跟 `set_appointment_deposit`
+    同一条：**用掉是柜台按的** —— 送出去是老板的决定，用掉只是把已经
+    答应过的东西交出去。
+
+    ⚠️ **送的那一份用完就是用完**，这一支自己挡着不准透支，
+    错了会讲清楚「她只剩多少」—— 那一句原样念给他听，不要在这里另外编。
+  */
+  z.object({
+    op: z.literal("use_credit"),
+    /** 哪一位客人 —— 客户那一页上 `record=` 抄下来的。 */
+    record_id: z.string().min(1),
+    /** 用掉多少。 */
+    amount: z.string().max(20).nullable(),
+    reason: z.string().max(120).nullable(),
+  }),
   z.object({
     op: z.literal("add_treatment_note"),
     /** 哪一位客人 —— 客户那一页上 `record=` 抄下来的。 */
@@ -1821,6 +1855,8 @@ export function applyLayoutOps(
       case "claim_booking_party":
       case "request_consent":
       case "add_treatment_note":
+      case "grant_credit":
+      case "use_credit":
       case "book_appointment":
       case "take_payment":
       case "bill_class":

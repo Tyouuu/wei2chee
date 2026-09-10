@@ -580,6 +580,8 @@
         "linesFromPaper": "纸上那几行全部放上去了（{count} 行），总额是那几行加起来的。",
         "linesNotKept": "这一页一行就是一行，所以纸上那几行没有留下来（{count} 行）— 明细要放在单据那一种页面上。",
         "treatmentLogged": "记下来了：{what}。",
+        "creditGranted": "送了 {amount} 的储值 — 她现在一共有 {left}。",
+        "creditUsed": "用掉了 {amount} — 还剩 {left}。",
         "noNoteSaid": "它没讲清楚做了什么。",
         "bookingClaimed": "{who} 现在是你的客户了。",
         "consentSent": "{form} 发给她了 — 等她签，还没签。",

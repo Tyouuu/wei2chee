@@ -1769,6 +1769,88 @@ try {
   await page.screenshot({ path: `${OUT}/21-treatment.png` });
 
 
+  console.log("");
+  console.log("── ㉖ 🔴 送一笔储值、用掉一笔 —— 不准透支 ──────────");
+  /*
+    🔴 `grant_credit` / `use_credit`（20260909360000）已经在跑，
+    [任务 332](#332) 那三支的最后一支，助手今天还按不到。
+
+    ⚠️ 送钱是老板的事（`sees_money`），用掉是柜台的事（`works_here`）——
+    跟订金那一支同一条纪律（[任务 333](#333)）。这一段量三件：
+    送得出去 · 用得掉 · **用超过剩下的要被挡住，而且那句「只剩多少」
+    是资料库自己讲的，不是助手编的**。
+  */
+  const { data: priya, error: priyaErr } = await api.rpc("add_directory_entry", {
+    in_project_id: P,
+    in_module_key: "customers",
+    in_name: "Ms Priya",
+  });
+  if (priyaErr) throw new Error(`seed Ms Priya: ${priyaErr.message}`);
+
+  await page.goto(`${BASE}/en/portal/customers`, { waitUntil: "networkidle", timeout: 180000 });
+  await page.locator("[data-work-ai]").first().waitFor({ timeout: 120000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  const grantSaid = await say(page, "Give Ms Priya RM 200 gift credit for her birthday");
+  console.log(`        它讲了：${grantSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  await page.waitForTimeout(2500);
+
+  const grantRow = await admin
+    .from("stored_value_moves")
+    .select("id, direction, amount_cents, reason")
+    .eq("project_id", P)
+    .eq("party_id", priya?.id)
+    .eq("direction", "in")
+    .maybeSingle();
+  check(
+    "🔴 送出去的那一笔真的记下来了（RM 200）",
+    Number(grantRow.data?.amount_cents) === 20000,
+    `amount_cents = ${grantRow.data?.amount_cents} — ${grantSaid.slice(0, 160)}`,
+  );
+  check(
+    "🔴 而且理由原样记下（birthday）",
+    /birthday/i.test(String(grantRow.data?.reason ?? "")),
+    `reason = ${JSON.stringify(grantRow.data?.reason)}`,
+  );
+
+  const useSaid = await say(page, "Ms Priya used RM 50 of her gift credit");
+  console.log(`        它讲了：${useSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  await page.waitForTimeout(2500);
+  const usedRows = await admin
+    .from("stored_value_moves")
+    .select("id, amount_cents")
+    .eq("project_id", P)
+    .eq("party_id", priya?.id)
+    .eq("direction", "out");
+  check(
+    "🔴 用掉的那一笔也记下来了（RM 50）",
+    (usedRows.data ?? []).some((r) => Number(r.amount_cents) === 5000),
+    `${JSON.stringify(usedRows.data)} — ${useSaid.slice(0, 160)}`,
+  );
+  /* 🔴 还剩 RM 150（200 - 50）—— 资料库自己加的，不是助手编的。 */
+  check(
+    "🔴 而且它讲得出还剩多少（RM 150）",
+    /150/.test(useSaid),
+    useSaid.slice(0, 220),
+  );
+
+  /* ⚠️ 用超过剩下的（RM 500 > 剩下的 RM 150）—— 不准透支。 */
+  const overSaid = await say(page, "Ms Priya used another RM 500 of her gift credit");
+  console.log(`        它讲了：${overSaid.split(String.fromCharCode(10)).join(" / ").slice(0, 220)}`);
+  await page.waitForTimeout(2500);
+  const afterOver = await admin
+    .from("stored_value_moves")
+    .select("id, amount_cents")
+    .eq("project_id", P)
+    .eq("party_id", priya?.id)
+    .eq("direction", "out");
+  check(
+    "🔴 挡住了 —— 没有多出一笔 RM 500",
+    (afterOver.data ?? []).length === (usedRows.data ?? []).length,
+    `用掉那几笔：${JSON.stringify(afterOver.data)} — ${overSaid.slice(0, 160)}`,
+  );
+  await page.screenshot({ path: `${OUT}/22-credit.png` });
+
+
 } catch (e) {
   failed.push(`threw: ${e.message}`);
   console.error(e);

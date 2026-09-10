@@ -300,6 +300,8 @@ export const ACT_OPS: ReadonlySet<string> = new Set([
   "claim_booking_party",
   "request_consent",
   "add_treatment_note",
+  "grant_credit",
+  "use_credit",
   "set_follow_up",
   "finish_follow_up",
   "drop_follow_up",
@@ -1463,6 +1465,62 @@ export async function actOnRecords(
         continue;
       }
       notes.push({ op: op.op, reason: "treatmentLogged", vars: { what } });
+      written += 1;
+      continue;
+    }
+
+    if (op.op === "grant_credit" || op.op === "use_credit") {
+      if (shape !== "directory") {
+        skipped.push({ op: op.op, reason: "notCustomerPage" });
+        continue;
+      }
+      if (!recordId) {
+        skipped.push({ op: op.op, reason: "noRecordSaid" });
+        continue;
+      }
+      const raw = op as unknown as { amount?: unknown; reason?: unknown };
+      const cents = senFrom(String(raw.amount ?? ""));
+      if (!cents || cents <= 0) {
+        skipped.push({ op: op.op, reason: "noAmountSaid" });
+        continue;
+      }
+      const reason = String(raw.reason ?? "").trim();
+      const { error: creditErr } = await supabase.rpc(
+        op.op === "grant_credit" ? "grant_credit" : "use_credit",
+        {
+          in_project_id: projectId,
+          in_party_id: recordId,
+          in_amount_cents: cents,
+          in_reason: reason,
+        },
+      );
+      if (creditErr) {
+        /* 🔴 `use_credit` 自己挡透支、讲得出「她只剩多少」——
+           那一句原样念出来，不要在这里另外编一句。 */
+        skipped.push({
+          op: op.op,
+          reason: "dbSaid",
+          vars: { detail: creditErr.message.slice(0, 80) },
+        });
+        continue;
+      }
+      /* ⚠️ 柜台念给他听的那一个数字 —— 呼叫既有那一支，不在这里
+         再算一次，两个地方各算一次是漂的开始（20260909360000 的注解）。 */
+      const { data: bal } = await supabase.rpc("credit_of", {
+        in_project_id: projectId,
+        in_party_id: recordId,
+      });
+      const totalCents = (Array.isArray(bal) ? bal[0] : bal) as
+        | { total_cents?: number }
+        | null;
+      notes.push({
+        op: op.op,
+        reason: op.op === "grant_credit" ? "creditGranted" : "creditUsed",
+        vars: {
+          amount: ringgit(cents) ?? "RM 0",
+          left: ringgit(totalCents?.total_cents ?? 0) ?? "RM 0",
+        },
+      });
       written += 1;
       continue;
     }

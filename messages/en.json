@@ -580,6 +580,8 @@
         "linesFromPaper": "Every line on that paper went onto the document \u2014 {count} in all, and its total is the sum of them.",
         "linesNotKept": "This page keeps one row per entry, so the lines on that paper were NOT kept \u2014 {count} in all. A document page holds those.",
         "treatmentLogged": "Logged: {what}.",
+        "creditGranted": "{amount} gift credit given — she now has {left} total.",
+        "creditUsed": "{amount} of credit used — {left} left.",
         "noNoteSaid": "It did not say what was done.",
         "bookingClaimed": "{who} is now on your customer list.",
         "consentSent": "{form} has been sent to her — waiting for her to sign, not signed yet.",

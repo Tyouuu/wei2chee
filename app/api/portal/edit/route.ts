@@ -335,6 +335,18 @@ Record tables:
   * ⚠️ Money and stock are separate actions, not this one. Do not use
     this to record a payment or to note what was consumed.
   * Only on the customer list page.
+- 🔴 grant_credit gives a customer gift credit, use_credit spends it:
+  「送陈太太 RM 200，生日礼」 grants; 「陈太太这次用了 RM 50 的礼券」 spends.
+  * record_id is that customer, from the customer list's own record= ids.
+    amount is what he named. reason is why, in his own words, when he gave
+    one -- leave it null rather than inventing "gift" or "compensation".
+  * ⚠️ GIVING IS THE OWNER'S DECISION, SPENDING IS THE COUNTER'S -- same
+    split as set_appointment_deposit. grant_credit will be refused for
+    anyone who cannot see money; that refusal is correct, say what it said.
+  * use_credit refuses an amount larger than what is left, and says exactly
+    how much is left in its own words -- quote that sentence back, never
+    compute or guess a balance yourself.
+  * Only on the customer list page.
 - set_appointment_deposit says what a booking must pay UP FRONT:
   「叫她先付一百」, 「ask Ms Lim for a RM 50 deposit」,
   「这一单不用订金」.
@@ -1838,6 +1850,8 @@ export const EDIT_JSON_SCHEMA = {
                 "claim_booking_party",
                 "request_consent",
                 "add_treatment_note",
+                "grant_credit",
+                "use_credit",
                 "set_follow_up",
                 "finish_follow_up",
                 "drop_follow_up",
@@ -1916,6 +1930,8 @@ export const EDIT_JSON_SCHEMA = {
             form_id: { type: ["string", "null"] },
             // add_treatment_note only (what is shared with set_follow_up above).
             area: { type: ["string", "null"] },
+            // grant_credit / use_credit only.
+            reason: { type: ["string", "null"] },
             // take_payment 也用 amount。**方向不在里面** —— 一笔进来的钱
             // 由收款那一页决定，不是模型讲的（20260906060000）。
             method: { type: ["string", "null"] },
@@ -1979,6 +1995,7 @@ export const EDIT_JSON_SCHEMA = {
             "group_id",
             "form_id",
             "area",
+            "reason",
             "method",
             "party",
             "contact",
