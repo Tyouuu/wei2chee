@@ -238,7 +238,8 @@
     "shoot:widths": "node scripts/shoot-widths.mjs",
     "check:visit-photos": "node scripts/check-visit-photos.mjs",
     "check:reviews": "node scripts/check-reviews.mjs",
-    "check:audit-actor": "node scripts/check-audit-actor.mjs"
+    "check:audit-actor": "node scripts/check-audit-actor.mjs",
+    "check:tips": "node scripts/check-tips.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
