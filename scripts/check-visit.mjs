@@ -231,6 +231,34 @@ try {
   });
   check("🔴 动不了别人家那一单", !!crossErr, "居然让它过了");
 
+  /* ── ⑨ 🔴 套票跨店共用——[任务 396] 查过：地基本来就有，是记错了 ──
+     `service_packages` / `package_uses` / `use_package_session` 从
+     建表那天起就没有 branch_id 这一栏，多分店架构（branches）今晚
+     count_stock/count_till 都验过是真的在跑——两件事合起来，套票
+     天生就是全 project 共用，不是绑死一间店。这里真登入验证一次，
+     不是猜。 */
+  console.log("\n⑨ 🔴 套票跨店共用");
+  const { data: kl } = await C.rpc("add_branch", { in_project_id: P, in_name: "KL" });
+  const { data: pj } = await C.rpc("add_branch", { in_project_id: P, in_name: "PJ" });
+  const { data: roamer } = await C.rpc("add_directory_entry", {
+    in_project_id: P, in_module_key: "customers", in_name: "Mrs Roamer",
+  });
+  const { data: crossPack } = await C.rpc("add_service_package", {
+    in_party_id: roamer.id, in_name: "洗剪吹 ×10", in_sessions_total: 10,
+  });
+  const { error: klErr } = await C.rpc("use_package_session", {
+    in_package_id: crossPack.id, in_note: "used at KL",
+  });
+  check("🔴 KL 分店用得掉", !klErr, klErr?.message);
+  const { error: pjErr } = await C.rpc("use_package_session", {
+    in_package_id: crossPack.id, in_note: "used at PJ",
+  });
+  check("🔴 同一张套票，PJ 分店也用得掉", !pjErr, pjErr?.message);
+  const { data: crossUses } = await admin
+    .from("package_uses").select("id").eq("package_id", crossPack.id);
+  check("🔴 两间店各用一次，一共少两次", (crossUses ?? []).length === 2,
+    `${crossUses?.length}`);
+
   console.log(
     bad.length ? `\n判：${bad.length} 条没过\n  ${bad.join("\n  ")}`
       : `\n判：全部过（${people.length} 个用完就删的帐号）`,
