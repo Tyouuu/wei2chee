@@ -38,6 +38,24 @@
 //
 // After that, `npm run db:push` works regardless of who the CLI last logged in
 // as, and no interactive login is needed again.
+//
+// 🔴 SECOND GOTCHA, hit twice in one night (2026-09-11): `db push` tracks
+// which migrations it has applied BY FILENAME, in a table on the remote
+// database -- not by content hash. Edit an already-applied migration file
+// and push again, and you get `{"upToDate":true,...}` -- the edit never
+// reaches the database. It looks like success. It is a no-op.
+//
+// This bit two different fixes tonight: a real bug in a function's body got
+// fixed by editing the migration file in place, `db push` reported
+// "up to date", and the OLD (buggy) function kept running live while the
+// file on disk already looked correct. Both times the fix only actually
+// landed once it was re-saved under a brand-new filename.
+//
+// So: never edit a migration file's SQL after it has been successfully
+// pushed once. If a migration needs correcting, write a new one (even a
+// near-duplicate one) with `create or replace function ...` -- and after
+// pushing, verify the live behavior changed (call the function for real),
+// don't trust the push command's own "up to date" / "applied" message.
 
 import { readFileSync, existsSync } from "node:fs";
 import { spawn } from "node:child_process";
