@@ -70,6 +70,7 @@
     "check:security-grants": "node scripts/check-security-grants.mjs",
     "check:complete-visit": "node scripts/check-complete-visit.mjs",
     "check:till": "node scripts/check-till.mjs",
+    "check:recurring": "node scripts/check-recurring.mjs",
     "check:follow-ups": "node scripts/check-follow-ups.mjs",
     "shoot:payment": "node scripts/shoot-payment.mjs",
     "audit:demo": "node scripts/audit-demo.mjs",
