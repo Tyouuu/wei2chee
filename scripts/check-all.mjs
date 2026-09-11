@@ -103,6 +103,7 @@ const GATES = [
   { name: "records", cmd: "npm", args: ["run", "check:records"], slow: false },
   { name: "security-grants", cmd: "npm", args: ["run", "check:security-grants"], slow: false },
   { name: "complete-visit", cmd: "npm", args: ["run", "check:complete-visit"], slow: false },
+  { name: "till", cmd: "npm", args: ["run", "check:till"], slow: false },
   { name: "referrals", cmd: "npm", args: ["run", "check:referrals"], slow: false },
   { name: "regulars", cmd: "npm", args: ["run", "check:regulars"], slow: false },
   { name: "rentals", cmd: "npm", args: ["run", "check:rentals"], slow: false },
