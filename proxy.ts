@@ -111,5 +111,7 @@ export const config = {
   // `c/` 跟它们同一条：/c/<号码> 是那门生意发给一个客人的一份同意书，
   // 而它穿的是那家公司自己的漆。被 307 成 /zh/c/<号码> 就是那条连结
   // 在她手上死掉的方式。
-  matcher: ["/((?!api|_next|auth|s/|p/|r/|c/|icon|apple-icon|manifest|.*\\..*).*)"],
+  // `b/`（2026-09-12）同一条：/b/<门牌> 是她自己那张预约——取消、留评价，
+  // 穿的也是那家公司自己的漆，不是 Formae 的。
+  matcher: ["/((?!api|_next|auth|s/|p/|r/|c/|b/|icon|apple-icon|manifest|.*\\..*).*)"],
 };
