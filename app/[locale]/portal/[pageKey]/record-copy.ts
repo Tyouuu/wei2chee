@@ -524,6 +524,14 @@ export type RecordFormCopy = {
   treatAfter: string;
   treatMayShow: string;
   treatMayNotShow: string;
+  /* 这一件货自己的批号（20260905320000，`batches_of`）。**只在库存那一页，
+     而且这一件真的有批号才画** —— 一间五金店的螺丝没有批号，
+     这一段对它整个不存在（同一条纪律，见上面 treat* 那一批的档头）。 */
+  batchHeading: string;
+  batchLede: string;
+  batchExpired: string;
+  batchReceived: string;
+  batchCost: string;
   /* 这一单的下一步（20260905800000）。走单那几页都有。 */
   nextHeading: string;
   nextLede: string;
@@ -1015,6 +1023,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       treatAfter: "之后",
       treatMayShow: "她答应给别人看",
       treatMayNotShow: "只留在记录里",
+      batchHeading: "这一件货的批号",
+      batchLede: "架上还有几批、快过期的排最前面。",
+      batchExpired: "已过期",
+      batchReceived: "进货",
+      batchCost: "进价",
       nextHeading: "下一步",
       nextLede:
         "这一单接下来你要做的那一件。一张单只有一个 —— 做完了才写下一个。",
@@ -1488,6 +1501,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       treatAfter: "After",
       treatMayShow: "She agreed this may be shown",
       treatMayNotShow: "Stays in the record",
+      batchHeading: "Batches of this item",
+      batchLede: "What's still on the shelf, batch by batch. Soonest to expire first.",
+      batchExpired: "Expired",
+      batchReceived: "Received",
+      batchCost: "Cost",
       nextHeading: "Next step",
       nextLede:
         "The one thing you do next on this document. One at a time — write the next one when this is done.",

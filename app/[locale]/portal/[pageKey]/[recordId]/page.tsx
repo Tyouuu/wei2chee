@@ -25,6 +25,7 @@ import {
 import { RentalsOnJob, type JobRental } from "../new/rentals-on-job";
 import { PartyStatement } from "../new/party-statement";
 import { PartyJobs, type PartyJob } from "../new/party-jobs";
+import { ItemBatches, type ItemBatch } from "./item-batches";
 import {
   TreatmentHistory,
   type TreatmentVisit,
@@ -341,6 +342,10 @@ export default async function EditRecordPage({
      空的，而空的会算成「这一单赚了全额」-- 那时候整段不画，不是画 0。 */
   /* 她做过什么（20260909040000）。空阵列 = 这一家没有记过 → 整段不画。 */
   let treatments: TreatmentVisit[] = [];
+
+  /* 这一件货自己的批号（20260905320000，`batches_of`）。
+     空阵列 = 这一件没有批号 → 整段不画，见 item-batches.tsx 档头。 */
+  let itemBatches: ItemBatch[] = [];
 
   let earned: {
     paidCents: number;
@@ -1008,6 +1013,35 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+
+    /* 这一件货自己的批号 —— 同一支 `expiry` 那一页在用的 RPC，
+       这里只问这一件。`sees_money` 判断在资料库那一层，unit_cost_cents
+       对看不到钱的人已经是 null，这里原样接住就好。 */
+    const { data: batches } = (await supabase.rpc("batches_of", {
+      in_item_id: recordId,
+    })) as {
+      data: {
+        batch_id: string;
+        code: string;
+        expiry_on: string | null;
+        received_on: string | null;
+        on_hand: number;
+        days_left: number | null;
+        is_expired: boolean;
+        unit_cost_cents: number | null;
+      }[] | null;
+    };
+    itemBatches = (batches ?? []).map((b) => ({
+      batchId: b.batch_id,
+      code: b.code,
+      onHand: Number(b.on_hand ?? 0),
+      unit: data.unit ?? "",
+      receivedOn: b.received_on,
+      expiryOn: b.expiry_on,
+      daysLeft: b.days_left,
+      isExpired: !!b.is_expired,
+      unitCostCents: b.unit_cost_cents ?? null,
+    }));
   } else if (ctx.shape === "calendar") {
     const { data } = await supabase
       .from("appointments")
@@ -1742,7 +1776,10 @@ export default async function EditRecordPage({
           断言上看起来也一样——除非那把尺问的是宽度，不是文字在不在。 */}
         <main
           className={`w-full ${
-            ctx.shape === "pipeline" || ctx.shape === "calendar" || ctx.isDirectory
+            ctx.shape === "pipeline" ||
+            ctx.shape === "calendar" ||
+            ctx.shape === "catalog" ||
+            ctx.isDirectory
               ? "max-w-[1080px]"
               : "max-w-[560px]"
           }`}
@@ -1997,6 +2034,14 @@ export default async function EditRecordPage({
                 depositCents={credit.cents}
                 copy={copy.form}
               />
+            </div>
+          ) : null}
+
+          {/* 库存那一页多一段：这一件货自己有几批、哪一批先过期。
+            ⚠️ 一批都没有就整段不画（组件自己判，跟「她做过什么」同一条纪律）。 */}
+          {itemBatches.length ? (
+            <div className="mt-10">
+              <ItemBatches batches={itemBatches} copy={copy.form} />
             </div>
           ) : null}
 
