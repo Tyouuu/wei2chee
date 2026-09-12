@@ -65,6 +65,47 @@ function walk(dir: string): string[] {
   );
 }
 
+/**
+ * 拿掉 `/* … *​/` 注解，而且认得字串里面的引号 —— 2026-09-12 撞到的坑：
+ * `accept="image/*"` 那个属性值自己就带着 `/*`，naive 的
+ * `/\/\*[\s\S]*?\*\//` 会把它当成注解开头，一路吃到**下一个真的注解**的
+ * `*​/` 才停，把中间那一整段（含 `capture="environment"` 的收尾引号）
+ * 吃掉，害后面的引号读数全部错位。逐字符扫、认得 `"` `'` \` 三种引号，
+ * 字串里面的 `/*` 不会被当成注解。
+ */
+function stripBlockComments(src: string): string {
+  let out = "";
+  let quote: '"' | "'" | "`" | null = null;
+  for (let i = 0; i < src.length; ) {
+    const ch = src[i];
+    if (quote) {
+      out += ch;
+      if (ch === "\\" && i + 1 < src.length) {
+        out += src[i + 1];
+        i += 2;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      i++;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") {
+      quote = ch;
+      out += ch;
+      i++;
+      continue;
+    }
+    if (ch === "/" && src[i + 1] === "*") {
+      const end = src.indexOf("*/", i + 2);
+      i = end < 0 ? src.length : end + 2;
+      continue;
+    }
+    out += ch;
+    i++;
+  }
+  return out;
+}
+
 /** 一段 `<input …/>` 里，边的颜色写的是什么。 */
 function borderColours(tag: string): string[] {
   const found: string[] = [];
@@ -97,14 +138,37 @@ describe("他要打字的框", () => {
          **这个仓库栽过同一条**（[任务 141f]：一条守卫把记录那个 bug 的注解
          当成 bug 本身）—— 一条不允许人把理由写下来的守卫，
          会逗下一个人去删掉那句理由。 */
-      const src = readFileSync(f, "utf8")
-        .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
-        .replace(/\/\*[\s\S]*?\*\//g, "")
-        .replace(/^[ \t]*\/\/.*$/gm, "");
+      const src = stripBlockComments(
+        readFileSync(f, "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, ""),
+      ).replace(/^[ \t]*\/\/.*$/gm, "");
       for (const m of src.matchAll(/<(input|select|textarea)\b/g)) {
         const start = m.index!;
-        const end = src.indexOf("/>", start);
-        const tag = src.slice(start, end < 0 ? start + 1200 : end);
+        /* 🔴 `<input>` 永远自我闭合，找下一个 `/>` 就对；`<select>` /
+           `<textarea>` 不是（它们有子节点、有自己的关闭标签），
+           找下一个 `/>` 会一路扫过它们自己的开头标签，扫进底下完全
+           不相干的元素——2026-09-12 在这一支自己的 `<select>` 上撞到：
+           扫到了几行后一张列表卡片的 `--color-ink-800`。
+           真正要找的是**这个开头标签自己在哪里结束**：逐字符数
+           `{…}` 的深度跟引号，深度归零、不在字串里的时候第一个
+           `>` 才是它，不管前面有没有 `/`。 */
+        let depth = 0;
+        let quote: '"' | "'" | null = null;
+        let end = -1;
+        for (let i = start; i < src.length; i++) {
+          const ch = src[i];
+          if (quote) {
+            if (ch === quote) quote = null;
+            continue;
+          }
+          if (ch === '"' || ch === "'") quote = ch;
+          else if (ch === "{") depth++;
+          else if (ch === "}") depth--;
+          else if (ch === ">" && depth === 0) {
+            end = i;
+            break;
+          }
+        }
+        const tag = src.slice(start, end < 0 ? start + 1200 : end + 1);
         /* 勾选框跟单选钮的边是浏览器画的，改不到。 */
         if (/type=["'](checkbox|radio|hidden|submit|button)["']/.test(tag)) continue;
         for (const colour of borderColours(tag)) {

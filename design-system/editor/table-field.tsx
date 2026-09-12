@@ -165,7 +165,7 @@ export function TableFieldEditor({
                 value={col.kind}
                 onChange={(e) => patchColumn(i, { kind: e.target.value as ColumnKind })}
                 aria-label={`第 ${i + 1} 列的类型`}
-                className="min-w-0 flex-1 rounded-[6px] border px-1.5 py-1 text-[12px] [border-color:var(--color-ink-800)] [background-color:var(--color-ink-850)] [color:var(--color-paper-dim)]"
+                className="min-w-0 flex-1 rounded-[6px] border px-1.5 py-1 text-[12px] [border-color:var(--input)] [background-color:var(--color-ink-850)] [color:var(--color-paper-dim)]"
               >
                 {COLUMN_KINDS.map((k) => (
                   <option key={k} value={k}>
@@ -284,7 +284,7 @@ export function TableFieldEditor({
                           value={row.tones?.[col.key] ?? "neutral"}
                           onChange={(e) => setTone(i, col.key, e.target.value as StatusTone)}
                           aria-label={`${col.label} 的颜色`}
-                          className="mt-0.5 rounded-[6px] border px-1.5 py-1 text-[12px] [border-color:var(--color-ink-800)] [background-color:var(--color-ink-850)] [color:var(--color-paper-dim)]"
+                          className="mt-0.5 rounded-[6px] border px-1.5 py-1 text-[12px] [border-color:var(--input)] [background-color:var(--color-ink-850)] [color:var(--color-paper-dim)]"
                         >
                           {TONE_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>
