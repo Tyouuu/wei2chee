@@ -416,6 +416,13 @@ export type RecordFormCopy = {
   shareAccepted: string;
   shareChanges: string;
   shareStageHint: string;
+  /* 她自己那张预约的连结——取消 · 留评价（20260910630000 · 011000）。
+     跟 `share*` 不同：`public_ref` 每一笔从建立那天就有，不用开／收回。 */
+  bookingLinkHeading: string;
+  bookingLinkLede: string;
+  bookingLinkLink: string;
+  bookingLinkCopy: string;
+  bookingLinkCopied: string;
   /* 送出去了几趟（20260905500000）。 */
   runHeading: string;
   runLede: string;
@@ -930,6 +937,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       shareAccepted: "{name} 在 {date} 按了同意。",
       shareChanges: "{name} 在 {date} 讲了想改的地方。",
       shareStageHint: "这一单走到哪还是你自己决定 —— 他按同意不会把它搬走。",
+      bookingLinkHeading: "她自己那条连结",
+      bookingLinkLede: "她自己在手机上打得开：看得到这一笔、取消得了、做完了留一句话。",
+      bookingLinkLink: "她那条连结",
+      bookingLinkCopy: "复制",
+      bookingLinkCopied: "复制好了 —— 贴进 WhatsApp 发给她",
       runHeading: "送出去了几趟",
       runLede:
         "一张单可以分几车出。送出去的时候架上自己会少，而客人在他自己那条连结上签收。",
@@ -1407,6 +1419,12 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       shareChanges: "{name} asked for a change on {date}.",
       shareStageHint:
         "Where this job sits is still your call -- his accepting does not move it.",
+      bookingLinkHeading: "Her own link",
+      bookingLinkLede:
+        "She opens this on her own phone: sees this booking, can cancel it, and can leave a review once it is done.",
+      bookingLinkLink: "Her link",
+      bookingLinkCopy: "Copy",
+      bookingLinkCopied: "Copied -- paste it to her on WhatsApp",
       runHeading: "Deliveries",
       runLede:
         "One job can go out on several lorries. What goes out comes off the shelf, and the customer signs on his own link.",

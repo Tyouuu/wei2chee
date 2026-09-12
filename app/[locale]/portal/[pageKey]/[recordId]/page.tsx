@@ -50,6 +50,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { PartyHistory } from "../new/party-history";
 import { FollowUpPanel } from "../new/follow-up-panel";
 import { NoShowPanel } from "../new/no-show-panel";
+import { BookingLinkPanel } from "../new/booking-link-panel";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import {
@@ -355,6 +356,9 @@ export default async function EditRecordPage({
   let returns: PastReturn[] | undefined = undefined;
   let returnable: Returnable[] = [];
   let shareRef: string | null | undefined = undefined;
+  /* 她自己那张预约的连结（[任务 399] 收尾那一件）——`undefined` = 没有问
+     （不是预约那几页，或者这一笔是挡起来的时段，没有客人可以发）。 */
+  let bookingPublicRef: string | undefined = undefined;
   /* 这一单是谁介绍的（[任务 156] · 20260905260000）。
      ⚠️ `undefined` = **没有问** —— 不是走单那几页，或者读的人看不到钱。
      `null` 是问了、没有人介绍。**两个在画面上是不一样的事。** */
@@ -1076,7 +1080,7 @@ export default async function EditRecordPage({
     const { data } = await supabase
       .from("appointments")
       .select(
-        "id, starts_at, ends_at, kind, party, party_id, service, status, note, extra, archived_at, deposit_cents",
+        "id, starts_at, ends_at, kind, party, party_id, service, status, note, extra, archived_at, deposit_cents, public_ref",
       )
       .eq("id", recordId)
       .eq("module_key", pageKey)
@@ -1125,6 +1129,11 @@ export default async function EditRecordPage({
     });
     Object.assign(values, ownColumns(data.extra));
     archivedAt = data.archived_at;
+
+    /* 她自己那张预约的连结——一张挡起来的时段没有客人，没有人可以发。 */
+    if (data.kind !== "block") {
+      bookingPublicRef = data.public_ref;
+    }
 
     /* 她放过几次飞机 · 这一单要不要订金（20260909320000）。
        🔴 一张挡起来的时段（`kind = "block"`）没有客人，问不出这句话——
@@ -2197,6 +2206,18 @@ export default async function EditRecordPage({
                 recordId={recordId}
                 projectId={ctx.projectId}
                 info={noShowInfo}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
+
+          {/* 预约那几页多一段：她自己那条连结——取消 · 留评价（[任务 399]）。
+            ⚠️ `undefined` = 没有问（不是预约那几页，或者这一笔是挡起来的时段）。 */}
+          {bookingPublicRef !== undefined ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <BookingLinkPanel
+                origin={SITE_URL}
+                publicRef={bookingPublicRef}
                 copy={copy.form}
               />
             </div>

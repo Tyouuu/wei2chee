@@ -91,6 +91,32 @@ try {
     .from("appointments").select("public_ref").eq("id", booked.data).single();
 
   browser = await chromium.launch();
+
+  // ── 老板那一边 —— 单据详情页上有没有这条连结、复不复制得出来 ────────────
+  const adminCtx = await browser.newContext({ viewport: { width: 1400, height: 1000 } });
+  await adminCtx.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const adminPage = await adminCtx.newPage();
+  await adminPage.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
+  await adminPage.fill('input[type="email"]', email);
+  await adminPage.fill('input[type="password"]', password);
+  await adminPage.click('button[type="submit"]');
+  await adminPage.waitForURL(/portal/, { timeout: 180000 });
+  await adminPage.goto(`${BASE}/en/portal/bookings/${booked.data}`, {
+    waitUntil: "networkidle", timeout: 180000,
+  });
+  const linkInput = adminPage.getByLabel("Her link");
+  const expectedLink = `${BASE}/b/${bookedRow.public_ref}`;
+  if ((await linkInput.count()) > 0 && (await linkInput.inputValue()) === expectedLink)
+    ok("老板那一边：单据上印着她自己那条连结，网址是对的");
+  else no("老板那一边：连结不见了或者网址不对", await linkInput.inputValue().catch(() => "(找不到)"));
+  await adminPage.getByRole("button", { name: "Copy" }).click();
+  await adminPage.waitForTimeout(400);
+  const clip = await adminPage.evaluate(() => navigator.clipboard.readText()).catch(() => "");
+  if (clip === expectedLink) ok("🔴 按了「复制」，剪贴簿里真的是那条连结");
+  else no("剪贴簿里不对", clip);
+  await adminPage.screenshot({ path: `${OUT}/0-admin-record.png`, fullPage: true });
+  await adminCtx.close();
+
   const page = await browser.newPage({ viewport: { width: 420, height: 900 } });
 
   await page.goto(`${BASE}/b/${bookedRow.public_ref}`, { waitUntil: "networkidle", timeout: 180000 });
