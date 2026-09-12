@@ -3874,13 +3874,24 @@ Sources:
 - [Use Progressive Disclosure and Conditional Rendering — Salesforce Trailhead](https://trailhead.salesforce.com/content/learn/modules/best-practices-in-lightning-web-components/use-progressive-disclosure-and-conditional-rendering)
 - [Resource details layout — Shopify Polaris React](https://polaris-react.shopify.com/patterns/resource-details-layout)
 
-- [x] ✅ 检查完了——**查到一个真的洞，还没修**。`treatment_notes.appointment_id`
-      （20260909040000 建表那天就有）是「这一笔预约当场做了什么」的那条线，
-      **从来没有人送过值**：`treatment-desk.tsx` 的表单跟助手那一支
-      （`route.ts:1990`）呼叫 `add_treatment_note` 的时候都只送
-      `party_id`，没有一个地方问过「是不是站在今天这一笔预约上做的」。
-      结果这一栏建好三天，一直是空的，预约页上永远看不到「今天做了什么」。
-      落点：新任务，跟疗程记录同一批（[画面那一边](./founder-points.md)，
-      要改的是 treatment-desk.tsx 加一格挑今天／最近的预约，助手那一支
-      在客户页上开着某一笔预约的当下顺手带上 `appointment_id`）——
-      规格写清楚，没有半做，留给下一轮
+- [x] ✅ **做完了**（`c720b95`）。表单（`treatment-desk.tsx`）加了一格
+      「哪一次预约」，可以不选——直接读 `appointments` 表（`works_here`
+      本来就全权限，不用新的 RPC），近的排前面。预约自己那一页现在读
+      `treatment_notes.appointment_id` 把连过去的那一笔笔记显示出来，
+      跟客户页共用同一个 `TreatmentHistory` 组件（签照片网址那段抽成
+      `withTreatmentPhotos()`，不重写第二次）。
+      ⚠️ 助手那一支还没接——那边要先想清楚「怎么知道现在讲的是哪一笔
+      预约」，不是随手加一个参数就好，留给下一轮
+- [x] ✅ **他看了这一页的截图，当场指出更根本的问题**（`c720b95`）：
+      `你还记得我总结什么办法吗` 那一条讲的「一页收全部」被他自己的
+      观察推翻了一半——`就是要展示的页面跟要填写资料的页面`。查代码
+      发现答案早就在这个仓库里：`read-first.tsx`（2026-09-09 做的，
+      名册那几页默认读不默认填）**从来没有接给预约那一页**，
+      所以预约页从来是一整张摊开的表单。补的是把 `ReadFirst` 的
+      `enabled` 加上 `ctx.shape === "calendar"`，配一组预约自己的
+      栏位（哪天 · 几点到几点 · 做什么 · 谁做 · 备注）；`AppointmentStatus`
+      （「她来了没有」那颗天天要按的分段钮）抽成 `afterHeading` 插槽，
+      读的时候跟改的时候共用同一个节点，不会因为默认变成读而被
+      藏进 Edit 后面——那颗钮是每天的动作，不是填资料。
+      真登入验证：字段全部通过（`shoot-visit-treatment-link.mjs` 7/7），
+      既有的 no-show 面板互动不受影响（`shoot-noshow.mjs` 11/11）。
