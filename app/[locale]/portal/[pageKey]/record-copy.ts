@@ -373,6 +373,18 @@ export type RecordFormCopy = {
   staffShiftClockOut: string;
   staffShiftHours: string;
   staffShiftHoursNone: string;
+  /* 沙龙那一本日记簿——做什么 · 谁做 · 多少钱 · 小费
+     （20260910010000 · 20260911190000）。 */
+  visitLinesHeading: string;
+  visitLinesNone: string;
+  visitLinesStaffNone: string;
+  visitLinesPriceNone: string;
+  visitLinesTip: string;
+  visitLinesTipSave: string;
+  visitLinesAddService: string;
+  visitLinesAddStaff: string;
+  visitLinesAddPrice: string;
+  visitLinesAddSave: string;
   /* 佣金率的世代（20260905640000）。**这三句一定要画出来**，
      不然他把 2% 改成 3%、按了保存，而这个月那个数字一分都不动 ——
      读起来像功能坏了，而它正是这一整件事在保护的东西。 */
@@ -917,6 +929,16 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       staffShiftClockOut: "打卡下班",
       staffShiftHours: "最近 30 天：{hours} 小时 · {shifts} 节班",
       staffShiftHoursNone: "最近 30 天还没有一节做完的班。",
+      visitLinesHeading: "这一次做了什么",
+      visitLinesNone: "还没有记下来。",
+      visitLinesStaffNone: "还没派人",
+      visitLinesPriceNone: "还没讲价",
+      visitLinesTip: "小费",
+      visitLinesTipSave: "存",
+      visitLinesAddService: "做了什么",
+      visitLinesAddStaff: "谁做的",
+      visitLinesAddPrice: "多少钱",
+      visitLinesAddSave: "加一行",
       rateInForce: "这个月照 {date} 那一份算。",
       rateYoursNow: "你现在打的这一份算出来是 {amount}。",
       rateFromLabel: "从哪天起",
@@ -1414,6 +1436,16 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       staffShiftClockOut: "Clock out",
       staffShiftHours: "Last 30 days: {hours} hrs across {shifts} shifts",
       staffShiftHoursNone: "No finished shifts in the last 30 days yet.",
+      visitLinesHeading: "What was done this visit",
+      visitLinesNone: "Nothing recorded yet.",
+      visitLinesStaffNone: "Not assigned yet",
+      visitLinesPriceNone: "No price yet",
+      visitLinesTip: "Tip",
+      visitLinesTipSave: "Save",
+      visitLinesAddService: "What was done",
+      visitLinesAddStaff: "Who did it",
+      visitLinesAddPrice: "How much",
+      visitLinesAddSave: "Add a line",
       rateInForce: "This month is worked out on the rates set from {date}.",
       rateYoursNow: "The bands you have typed would come to {amount}.",
       rateFromLabel: "In force from",

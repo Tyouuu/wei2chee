@@ -53,6 +53,7 @@ import { NoShowPanel } from "../new/no-show-panel";
 import { BookingLinkPanel } from "../new/booking-link-panel";
 import { StoredCreditPanel } from "../new/stored-credit-panel";
 import { StaffShiftPanel } from "../new/staff-shift-panel";
+import { VisitLinesPanel } from "../new/visit-lines-panel";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import {
@@ -429,6 +430,15 @@ export default async function EditRecordPage({
      真的开始送这个连结，这一段立刻看得到，不用再改这一页一个字。
      空阵列 = 这一笔还没连过任何一条笔记 → 整段不画，同一条纪律。 */
   let appointmentTreatments: TreatmentVisit[] = [];
+
+  /* 沙龙那一本日记簿——做什么 · 谁做 · 多少钱 · 小费（20260910010000 ·
+     20260911190000，[任务 402]）。`undefined` = 没有问（不是预约那几页）。
+     跟上面 `appointmentTreatments`（medi spa 的病历）是两件不同的事，
+     两段都在，不冲突——一笔预约可以同时有沙龙的几行跟医美的一条笔记。 */
+  let visitLines:
+    | { id: string; service: string; staffName: string; priceCents: number | null; tipCents: number | null }[]
+    | undefined = undefined;
+  let visitStaffOptions: { id: string; name: string }[] = [];
 
   let earned: {
     paidCents: number;
@@ -1242,6 +1252,43 @@ export default async function EditRecordPage({
       };
     });
     appointmentTreatments = await withTreatmentPhotos(supabase, apptRows);
+
+    /* 沙龙那一本日记簿——做什么 · 谁做 · 多少钱 · 小费。一张挡起来的
+       时段没有客人，没有这一段。 */
+    if (data.kind !== "block") {
+      const [{ data: lineRows }, { data: staffRows }] = await Promise.all([
+        supabase
+          .from("appointment_lines")
+          .select("id, service, price_cents, tip_cents, staff:staff_id(name)")
+          .eq("appointment_id", recordId)
+          .order("sort_order"),
+        supabase
+          .from("directory_entries")
+          .select("id, name")
+          .eq("project_id", ctx.projectId)
+          .eq("module_key", "staff")
+          .is("archived_at", null)
+          .order("name"),
+      ]);
+      const one = <T,>(v: T[] | T | null): T | null =>
+        Array.isArray(v) ? (v[0] ?? null) : v;
+      visitLines = (
+        (lineRows ?? []) as {
+          id: string;
+          service: string;
+          price_cents: number | null;
+          tip_cents: number | null;
+          staff: { name: string }[] | { name: string } | null;
+        }[]
+      ).map((l) => ({
+        id: l.id,
+        service: l.service,
+        staffName: one(l.staff)?.name ?? "",
+        priceCents: l.price_cents,
+        tipCents: l.tip_cents,
+      }));
+      visitStaffOptions = (staffRows ?? []) as { id: string; name: string }[];
+    }
   } else if (ctx.shape === "reconcile") {
     /* Read from the TABLE and not from the view: what is being edited is what
        the outside said, and our own side is not editable -- it is the sum of
@@ -2209,6 +2256,21 @@ export default async function EditRecordPage({
           {appointmentTreatments.length ? (
             <div className="mt-10">
               <TreatmentHistory visits={appointmentTreatments} copy={copy.form} />
+            </div>
+          ) : null}
+
+          {/* 预约那一页多一段：沙龙那一本日记簿（[任务 402]）。
+            ⚠️ `undefined` = 没有问（不是预约那几页，或者这一笔是挡起来的时段）——
+            跟 `appointmentTreatments` 不同，这一段有「加一行」表单，
+            所以即使一行都还没有也照样画（不是画一份空的等着填）。 */}
+          {visitLines !== undefined ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <VisitLinesPanel
+                appointmentId={recordId}
+                lines={visitLines}
+                staffOptions={visitStaffOptions}
+                copy={copy.form}
+              />
             </div>
           ) : null}
 
