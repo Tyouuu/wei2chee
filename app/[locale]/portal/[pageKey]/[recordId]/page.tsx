@@ -1826,6 +1826,51 @@ export default async function EditRecordPage({
     );
   }
 
+  /* 🔴 「展示的页面跟要填写资料的页面」（2026-09-12 他讲的两次，
+     一次讲预约页，一次讲成一句通用的规矩）——`ReadFirst` 从名册那几页
+     ＋ 预约页再往下一页：**库存这一件货自己的页**。理由跟预约同一条：
+     `on hand`（架上还有几件）今天已经是**锁住不给直接改**的（改法是记一次
+     盘点），所以这一页本来就更像「查一件货现在的样子」，不是「填一张单」——
+     跟一张报价单（[重点 29] 讲的「他打开就是要改它」）不是同一种页。 */
+  const readFields: ReadField[] =
+    ctx.shape === "calendar"
+      ? [
+          { key: "day", label: copy.form.bookDay, value: values.day ?? "" },
+          { key: "from", label: copy.form.bookFrom, value: values.from ?? "" },
+          { key: "to", label: copy.form.bookTo, value: values.to ?? "" },
+          { key: "service", label: copy.form.bookService, value: values.service ?? "" },
+          { key: "staffName", label: copy.form.bookStaff, value: values.staffName ?? "" },
+          { key: "note", label: copy.form.note, value: values.note ?? "" },
+        ]
+      : ctx.shape === "catalog"
+        ? [
+            { key: "location", label: copy.form.stockWhere, value: values.location ?? "" },
+            { key: "unit", label: copy.form.stockUnit, value: values.unit ?? "" },
+            { key: "amount", label: copy.form.stockOnHand, value: values.amount ?? "" },
+            { key: "reorder_at", label: copy.form.stockReorder, value: values.reorder_at ?? "" },
+            { key: "pack_size", label: copy.form.stockPackSize, value: values.pack_size ?? "" },
+            { key: "pack_unit", label: copy.form.stockPackUnit, value: values.pack_unit ?? "" },
+            { key: "sku", label: "SKU", value: values.sku ?? "" },
+            { key: "note", label: copy.form.note, value: values.note ?? "" },
+          ]
+        : ctx.isDirectory
+          ? [
+              ...ctx.columns
+                .filter((col) => col.key !== "primary")
+                .map((col) => ({
+                  key: col.key,
+                  label: col.label,
+                  value: values[col.key] ?? "",
+                })),
+              { key: "contact_person", label: copy.form.contactPerson, value: values.contact_person ?? "" },
+              { key: "email", label: copy.form.email, value: values.email ?? "" },
+              { key: "address", label: copy.form.address, value: values.address ?? "" },
+              { key: "reg_no", label: copy.form.regNo, value: values.reg_no ?? "" },
+              { key: "tax_id", label: copy.form.taxId, value: values.tax_id ?? "" },
+              { key: "note", label: copy.form.note, value: values.note ?? "" },
+            ]
+          : [];
+
   /* 🔴 天天要按的那个动作，不是「填写资料」——见 read-first.tsx 那一条新档头。
      同一个节点，读的时候（ReadFirst）跟改的时候（NewRecordForm）都用它，
      不是两份：一份会漂，[重点 22e] 那一条老毛病。 */
@@ -1893,43 +1938,26 @@ export default async function EditRecordPage({
             而这一版一个抬头都没有动。 */}
           <div className="lg:grid lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)] lg:items-start lg:gap-x-12">
             <div className="min-w-0">
-          {/* 🔴 名册那几页 ＋ 预约那一页默认是**读**，不是一张摊开的表单 —— 见
-            read-first.tsx 的档头（他 2026-09-09 看完上一版讲「我怎么觉得没差」，
-            2026-09-12 又讲一次「展示的页面跟要填写资料的页面」——两次同一句话，
-            这次把预约那一页也接进来，不是只有名册那几页）。
-            那几栏从 `ctx.columns` 来 —— 他自己加的栏自己会出现，
-            在这里手抄一份名单就是这个仓库栽过八次的那件事。 */}
+          {/* 🔴 名册那几页 ＋ 预约那一页 ＋ 库存那一页默认是**读**，不是一张
+            摊开的表单 —— 见 read-first.tsx 的档头（他 2026-09-09 看完上一版
+            讲「我怎么觉得没差」，2026-09-12 又讲两次「展示的页面跟要填写
+            资料的页面」——一次讲预约，一次讲成一句通用的规矩：
+            「你弄到全部都是填写数据的页面」）。那几栏从 `ctx.columns` 来
+            （名册那几页）或者是这个形状自己的几栏（预约 · 库存）——
+            在这里手抄一份名单就是这个仓库栽过八次的那件事。
+            ⚠️ **走单那几页（报价单 · 订单 · 工程 · 进货单）故意不接**——
+            [重点 29] 记着的那条判准还成立：他打开一张报价单，多半就是
+            要往上面加一行，多一颗 Edit 是多一次点击，不是省一次。 */}
           <ReadFirst
-            enabled={ctx.isDirectory || ctx.shape === "calendar"}
+            enabled={
+              ctx.isDirectory ||
+              ctx.shape === "calendar" ||
+              ctx.shape === "catalog"
+            }
             heading={values.primary || ctx.title}
             editLabel={copy.form.editOne}
             afterHeading={afterHeadingNode}
-            fields={
-              ctx.shape === "calendar"
-                ? ([
-                    { key: "day", label: copy.form.bookDay, value: values.day ?? "" },
-                    { key: "from", label: copy.form.bookFrom, value: values.from ?? "" },
-                    { key: "to", label: copy.form.bookTo, value: values.to ?? "" },
-                    { key: "service", label: copy.form.bookService, value: values.service ?? "" },
-                    { key: "staffName", label: copy.form.bookStaff, value: values.staffName ?? "" },
-                    { key: "note", label: copy.form.note, value: values.note ?? "" },
-                  ] as ReadField[])
-                : ([
-                    ...ctx.columns
-                      .filter((col) => col.key !== "primary")
-                      .map((col) => ({
-                        key: col.key,
-                        label: col.label,
-                        value: values[col.key] ?? "",
-                      })),
-                    { key: "contact_person", label: copy.form.contactPerson, value: values.contact_person ?? "" },
-                    { key: "email", label: copy.form.email, value: values.email ?? "" },
-                    { key: "address", label: copy.form.address, value: values.address ?? "" },
-                    { key: "reg_no", label: copy.form.regNo, value: values.reg_no ?? "" },
-                    { key: "tax_id", label: copy.form.taxId, value: values.tax_id ?? "" },
-                    { key: "note", label: copy.form.note, value: values.note ?? "" },
-                  ] as ReadField[])
-            }
+            fields={readFields}
           >
           <NewRecordForm
             heading={copy.editHeading(ctx.title)}
