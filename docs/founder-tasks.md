@@ -3820,7 +3820,7 @@ Duo · Fin），他没有直接挑，改问「我们的system是黑白的，你�
       扣款」那一半**——要串收款闸道，闸道本身还没有，不影响这个格子
       今天就能用
 
-### 397. 🔴 「太杂乱」不是侧栏长度，是同一个东西的资料分散在好几页——设计原则重申（2026-09-12 他问的）
+### 397. ✅ 「太杂乱」不是侧栏长度，是同一个东西的资料分散在好几页——设计原则重申（2026-09-12 他问的）
 > `我不想要这个system看起来很杂乱 因为有很多东西和很多功能
 > 明明有些东西就是可以放在一起的 CRM ERP 仓库管理 Booking system这些
 > 你要帮我想好如何设计UI的问题`
@@ -3842,8 +3842,37 @@ Duo · Fin），他没有直接挑，改问「我们的system是黑白的，你�
 一个客人 · 一笔预约 · 一件货 · 一个员工，每一样一辈子只有一页，
 那一页收全部跟它有关的事，不管技术上算 CRM 还是 ERP。
 
-- [ ] 🔴 **一件货自己的详情页还没有**——今天库存是一张列表，没有「点进这一件货，
-      看到它的进货记录 · 批号效期 · 谁买过」全部收在一起。客户那一页已经证明
-      这个模式做得到，下一个该补的是货品那一边
+- [x] ✅ **一件货自己的详情页做完了**（`0699b3d`）——批号 · 效期 · 进价，
+      原样接既有的 `batches_of(item_id)`，一批都没有就整段不画（跟疗程记录
+      同一条纪律）。真登入验证：没有批号的货整段不画 · 有批号的两批都出现 ·
+      过期的那一批讲得出「已过期」· 老板身分看得到进价 · 宽屏是两栏版面。
+      `scripts/shoot-item-batches.mjs`，tsc 干净，全套单元测试无新增红。
+
+#### 🔴 他追问：「那不是更乱？你去找找外面的设计系统怎么做」
+
+问得对——「一页收全部」如果做法不对，确实会变成一坨。查了两个真的、
+全世界最大的两套商用设计系统怎么处理同一个问题：
+
+| 系统 | 做法 | 来源 |
+|---|---|---|
+| **Salesforce Lightning**（CRM 龙头，「一个客户的一切」这件事他们做了快三十年） | 一个客户/一张单的所有相关资料**都在同一张记录页上**，但用**分页签延迟载入** ＋ **窄栏放小卡、主栏放大块**，不是一次全部摊开 | [Salesforce 官方说明](https://help.salesforce.com/s/articleView?id=xcloud.basics_understanding_related_lists_lex.htm) · [Trailhead：Progressive Disclosure](https://trailhead.salesforce.com/content/learn/modules/best-practices-in-lightning-web-components/use-progressive-disclosure-and-conditional-rendering) |
+| **Shopify Polaris**（卖给中小商家，跟我们同一批客群） | 官方就叫这个骨架「Resource details layout」：**主栏（身份 ＋ 表单）占三分之二，副栏占三分之一**放相关资讯；**同类的东西收进同一张卡**，不是每样都摊在最外层 | [Polaris 官方文件](https://polaris-react.shopify.com/patterns/resource-details-layout) |
+
+**两家的答案是同一个**：会不会乱，不是看「收不收在一起」，是看收在一起之后
+**有没有做密度控制**——① 没有资料的那一段整个不画（我们从疗程记录那次就在用）
+② 主栏放这一刻最要紧的，副栏放小张的相关卡，不是一次全部摊平
+③ 同类的收进同一张卡，不是每一件事都单独一段。
+
+**这三条我们今天全部在用**——客户那一页、这一次的库存那一页，都是这个骨架
+（`grid-cols-[minmax(0,560px)_minmax(0,1fr)]` 就是 Polaris 那个三分之二／
+三分之一比例）。所以「一页收全部」不是会更乱的做法，是**两家最大的同行
+验证过三十年的做法**，前提是密度控制那三条一直守住——**这也是为什么
+一件货没有批号，那一段要整个不画，不能写「还没有批号」空着占地方**。
+
+Sources:
+- [Work with Related Lists on Records in Lightning Experience](https://help.salesforce.com/s/articleView?id=xcloud.basics_understanding_related_lists_lex.htm&language=en_US&type=5)
+- [Use Progressive Disclosure and Conditional Rendering — Salesforce Trailhead](https://trailhead.salesforce.com/content/learn/modules/best-practices-in-lightning-web-components/use-progressive-disclosure-and-conditional-rendering)
+- [Resource details layout — Shopify Polaris React](https://polaris-react.shopify.com/patterns/resource-details-layout)
+
 - [ ] 预约那一页要不要也照同一条原则再检查一次（今天已经有 no-show 面板，
       有没有其他分散的资料该收进来）
