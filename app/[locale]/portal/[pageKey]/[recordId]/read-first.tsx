@@ -37,6 +37,15 @@
  * 好几次的动作。放进 Edit 后面的表单里，等於逼他先点一次 Edit 才按得到
  * 当天最常按的那一颗。所以它是一个独立的插槽，读的时候就在、
  * 改的时候也在（同一个节点，两边共用，不是两份）。
+ *
+ * ⚠️ 而它一开始**浮在那个边框外面**——他看了截图讲「还能更好」，量出来是
+ * 这一件：`afterHeading`（`FormSection`，自己带一条 `border-t`）跟底下
+ * 那个字段格子是两个各自有自己边界的东西，读起来是两种做法拼起来的。
+ * 2026-09-04 那条「一定要统一设计」讲的就是这个——**一张卡，段跟段之间
+ * 用内部的分隔线，不是两张卡叠起来**。现在两个都收进同一个框，
+ * 而框内**第一段**的那条 `border-t` 拿掉（`[&>*:first-child]`同一招，
+ * 这个档案自己在别处已经用过一次，见 `[recordId]/page.tsx`）——
+ * 上面什么都没有的地方不需要再画一条线。
  */
 import { useState, type ReactNode } from "react";
 
@@ -83,9 +92,9 @@ export function ReadFirst({
         </button>
       </div>
 
-      {afterHeading}
+      <div className="mt-5 flex flex-col gap-5 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:mt-0 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+        {afterHeading}
 
-      <div className="mt-5 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)]">
         <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
           {fields.map((f) => (
             <div key={f.key} className="min-w-0">

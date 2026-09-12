@@ -1110,10 +1110,10 @@ export default async function EditRecordPage({
     const from = parts(data.starts_at);
     const to = parts(data.ends_at);
     apptStatus = String((data as { status?: string }).status ?? "booked");
-    apptWho =
-      [data.party, data.service]
-        .filter((x) => String(x ?? "").trim())
-        .join(" · ") || null;
+    /* 🔴 只留服务名，不再重复客人的名字——读的时候大标题已经是她的名字了
+       （ReadFirst，2026-09-12），改的时候「Which customer」那一格几行
+       之外也看得到。两边都不缺这句话，原样重复反而多讲一次。 */
+    apptWho = data.service?.trim() || null;
     Object.assign(values, {
       day: from.day,
       from: from.time,
