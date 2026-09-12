@@ -85,9 +85,13 @@ try {
   await page.waitForURL(/portal/, { timeout: 180000 });
   const hide = () => page.addStyleTag({ content: "nextjs-portal{display:none!important}" }).catch(() => {});
 
-  /* ① 那颗按钮在，而且师傅那一页没有。 */
+  /* ① 那颗按钮在，而且师傅那一页没有。
+     🔴 `PartyPortalPanel` 躲在「Account & activity」那个分页签底下
+     （[任务 273] 之后的设计：客户页收成两个分页签）——先点开它。 */
   await page.goto(`${BASE}/en/portal/customers/${dealer.id}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1500);
+  await page.getByRole("tab", { name: "Account & activity" }).click();
+  await page.waitForTimeout(300);
   await hide();
   await page.screenshot({ path: `${OUT}/1-before.png`, fullPage: true });
   console.log("拍到  1-before");
@@ -107,6 +111,8 @@ try {
   /* ② 按下去，连结出来了。 */
   await page.goto(`${BASE}/en/portal/customers/${dealer.id}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1200);
+  await page.getByRole("tab", { name: "Account & activity" }).click();
+  await page.waitForTimeout(300);
   await page.getByRole("button", { name: /^Open a link for them$/i }).click();
   await page.waitForTimeout(3500);
   await hide();
@@ -169,9 +175,13 @@ try {
     throw new Error(`add_project_page(orders): ${ordErr.message}`);
   }
 
-  /* ⑤ 老板的收件匣看得到，一按变单。 */
+  /* ⑤ 老板的收件匣看得到，一按变单。
+     🔴 整页 reload 会重新挂载 `RecordTabs`，分页签会退回默认的
+     「Overview」——要重新点开。 */
   await page.reload({ waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1500);
+  await page.getByRole("tab", { name: "Account & activity" }).click();
+  await page.waitForTimeout(300);
   await hide();
   await page.screenshot({ path: `${OUT}/5-inbox.png`, fullPage: true });
   console.log("拍到  5-inbox");
@@ -192,9 +202,12 @@ try {
   say("🔴 一按真的开出一张单", one?.status === "done" && !!one?.record_id, JSON.stringify(one));
   say("而且有单号 —— 走的是人按的那一支", !!one?.doc_no, `${one?.doc_no}`);
   /* ⚠️ 重新载入再读 —— `router.refresh()` 回来之前就读，
-     读到的是按下去之前那一版，而那一条红看起来像画面没有更新。 */
+     读到的是按下去之前那一版，而那一条红看起来像画面没有更新。
+     🔴 reload 会把分页签退回默认的「Overview」——重新点开。 */
   await page.reload({ waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1500);
+  await page.getByRole("tab", { name: "Account & activity" }).click();
+  await page.waitForTimeout(300);
   const turnedText = (await page.locator("body").innerText()).replace(/\s+/g, " ");
   say("画面上讲得出开成了哪一张",
     /Already opened as [A-Z]{2}-\d{4}-\d{4}/.test(turnedText), turnedText.slice(0, 500));

@@ -122,6 +122,9 @@ try {
   await page.goto(`${BASE}/en/portal/customers/${partyId}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1000);
   await page.screenshot({ path: `${OUT}/customer-full.png`, fullPage: true });
+  await page.getByRole("tab", { name: "Account & activity" }).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${OUT}/customer-account-tab.png`, fullPage: true });
 
   await page.goto(`${BASE}/en/portal/bookings/${today.data}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1000);

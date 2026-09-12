@@ -202,6 +202,12 @@ try {
       continue;
     }
 
+    /* 🔴 `PartyStatement` 躲在「Account & activity」那个分页签底下
+       （[任务 273] 之后的设计：客户页收成两个分页签）——先点开它，
+       两个宽度都要点。 */
+    await page.getByRole("tab", { name: "Account & activity" }).click();
+    await page.waitForTimeout(300);
+
     if (tag === "1-wide") {
       const body = (await page.locator("main").innerText()).replace(/\s+/g, " ");
       say("那张纸在客户那一页上", /Monthly statement/i.test(body), body.slice(0, 200));

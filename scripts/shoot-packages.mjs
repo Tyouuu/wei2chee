@@ -67,15 +67,27 @@ try {
   await page.waitForURL(/portal/, { timeout: 180000 });
   const hide = () => page.addStyleTag({ content: "nextjs-portal{display:none!important}" }).catch(() => {});
 
-  /* ① 还没卖过：讲得出来，不是一片空白。 */
+  /* ① 还没卖过：讲得出来，不是一片空白。
+     🔴 「Packages」躲在「Account & activity」那个分页签底下（老板要求的
+     设计总检：客户页收成两个分页签）——先点开它，才看得到那一段。 */
   await page.goto(`${BASE}/en/portal/customers/${her.id}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1400);
+  await page.getByRole("tab", { name: "Account & activity" }).click();
+  await page.waitForTimeout(300);
   await hide();
   await page.screenshot({ path: `${OUT}/1-none.png`, fullPage: true });
   const blank = (await page.locator("body").innerText()).replace(/\s+/g, " ");
   console.log("拍到  1-none");
   say("客户页上有「套票」这一段", /Packages/i.test(blank), blank.slice(0, 200));
-  say("还没卖过的时候讲得出来", /No package sold to them yet/i.test(blank), blank.slice(0, 240));
+  /* 🔴 任务 403 的设计总检把「还没有卖过套票给他」那句拿掉了 ——
+     空的时候只留 packLede 那一句说明（「卖几次，用一次扣一次」），
+     不再多讲一句意思重复的话（packages-panel.tsx 的档头写着为什么）。
+     这一条原本等的是那句已经拿掉的字，改成等还在的那一句。 */
+  say(
+    "还没卖过的时候讲得出来",
+    /Sold as a number of sessions/i.test(blank),
+    blank.slice(0, 240),
+  );
 
   /* 🔴 师傅那一页上不可以有这一段 —— 套票是卖给客人的。 */
   const { data: aStylist } = await api.rpc("add_directory_entry", {
@@ -129,9 +141,12 @@ try {
   say("分摊给那张单之后，余额自己归零",
     /everything they have paid is accounted for/i.test(after), after.slice(0, 400));
 
-  /* ② 真的卖一张十次的。 */
+  /* ② 真的卖一张十次的。这是一次新的 goto，页签会重设回默认的
+     「Overview」——「Sell one」在「Account & activity」底下，要重新点开。 */
   await page.goto(`${BASE}/en/portal/customers/${her.id}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(1400);
+  await page.getByRole("tab", { name: "Account & activity" }).click();
+  await page.waitForTimeout(300);
   await page.getByRole("button", { name: /^Sell one$/i }).click();
   await page.getByLabel("What it is (10 wash and blow)").fill("10 wash and blow");
   await page.getByLabel("Sessions").fill("10");

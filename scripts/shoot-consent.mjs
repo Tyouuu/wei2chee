@@ -280,6 +280,11 @@ try {
     waitUntil: "domcontentloaded",
     timeout: 120000,
   });
+  /* 🔴 「Consent」躲在「Account & activity」那个分页签底下（老板要求的
+     设计总检，2026-09-12：客户页收成两个分页签，同意书不是默认那一个）——
+     先等页签本身画出来，点开它，「Consent」才会真的可见。 */
+  await boss.waitForSelector('[role="tab"]:has-text("Account & activity")', { timeout: 90000 });
+  await boss.click('[role="tab"]:has-text("Account & activity")');
   await boss.waitForSelector("text=Consent", { timeout: 90000 });
   await boss.addStyleTag({ content: "nextjs-portal{display:none!important}" });
 
@@ -402,6 +407,8 @@ try {
     waitUntil: "domcontentloaded",
     timeout: 120000,
   });
+  await boss.waitForSelector('[role="tab"]:has-text("Account & activity")', { timeout: 90000 });
+  await boss.click('[role="tab"]:has-text("Account & activity")');
   await boss.waitForSelector("text=Signed", { timeout: 90000 });
   await boss.addStyleTag({ content: "nextjs-portal{display:none!important}" });
   const bossBody = await boss.evaluate(() => document.body.innerText);
@@ -448,6 +455,8 @@ try {
     waitUntil: "domcontentloaded",
     timeout: 120000,
   });
+  await plainPage.waitForSelector('[role="tab"]:has-text("Account & activity")', { timeout: 90000 });
+  await plainPage.click('[role="tab"]:has-text("Account & activity")');
   await plainPage.waitForSelector("text=Consent", { timeout: 90000 });
   const plainBody = await plainPage.evaluate(() => document.body.innerText);
   check(
