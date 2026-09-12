@@ -97,6 +97,9 @@ const PAGES = [
   /* 走单轮位（2026-09-10）—— 同一条（任务 177）：一格做完，那一页要走得进
      这份清单，不然这把尺看得到画面，只是从来没打开过它。 */
   ["walk-in queue", "/en/portal/walkin", "customer"],
+  /* 完工请她给一句评价（[任务 371/397]）—— 同一条规矩：一格做完，
+     那一页要走得进这份清单。 */
+  ["reviews", "/en/portal/reviews", "customer"],
   /* 改这一单. Its URL carries a RECORD id, so the same trap as
      console-customer one level deeper -- and it carries its own hard-coded
      copy block (地址 · 公司注册号 · 冲正 · 收起来), which is precisely the

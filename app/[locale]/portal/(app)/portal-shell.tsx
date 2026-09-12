@@ -37,6 +37,7 @@ import {
   IconSign,
   IconQueue,
   IconNoShow,
+  IconStar,
 } from "./shell-icons";
 
 /**
@@ -377,6 +378,17 @@ export function PortalShell({
       under: "customers",
       show: hasBookings,
       icon: <IconNoShow />,
+    },
+    /* 🔴 完工请她给一句评价——[任务 371] 那个门牌的第二扇门,
+       `reviews_of`（20260911010000）零个呼叫端。跟同意书/疗程记录
+       同一条判断：一句评价属於一个人，柜台想到的时候正在看那个客人。
+       跟「谁欠我钱」（钱）刻意不同：`reviews_of` 本身是 works_here，
+       不挡师傅——她收到一句好评，做那件事的人自己该看得到。 */
+    {
+      key: "reviews",
+      under: "customers",
+      show: hasBookings,
+      icon: <IconStar />,
     },
     /* 🔴 同意书住在**客户**底下 —— 一份同意书属於一个人，
        而她想到那件事的时候，正在看那个人（[任务 247] 那条规矩）。

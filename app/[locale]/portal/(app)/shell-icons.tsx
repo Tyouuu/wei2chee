@@ -413,3 +413,12 @@ export function IconNoShow({ className = "h-[17px] w-[17px]" }: IconProps) {
     </svg>
   );
 }
+
+/** 她给的评价：一颗星。 */
+export function IconStar({ className = "h-[17px] w-[17px]" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M10 3.2 12.1 7.5 16.8 8.2 13.4 11.5 14.2 16.2 10 14 5.8 16.2 6.6 11.5 3.2 8.2 7.9 7.5Z" />
+    </svg>
+  );
+}

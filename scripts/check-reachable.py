@@ -172,6 +172,8 @@ PAGES = [
     ("treatment records", "/en/portal/treatments"),
     # 走单轮位（2026-09-10）—— 同一条（任务 177）。
     ("walk-in queue", "/en/portal/walkin"),
+    # 完工请她给一句评价（任务 371/397）—— 同一条。
+    ("reviews", "/en/portal/reviews"),
     ("legal", "/en/legal/terms"),
 ]
 

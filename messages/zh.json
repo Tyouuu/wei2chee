@@ -788,6 +788,7 @@
       "vehicles": "车牌",
       "owing": "谁欠你钱",
       "no-shows": "谁放过飞机",
+      "reviews": "她说了什么",
       "payroll": "薪水",
       "books": "帐",
       "tax": "税",
@@ -1157,6 +1158,21 @@
       "none": "现在没有人放过飞机。",
       "missedOf": "放过 {missed} 次（来过 {total} 次）",
       "lastMissed": "上一次放飞机：{date}"
+    },
+    "reviews": {
+      "title": "她说了什么",
+      "lede": "每一句客人自己在她那次预约之后留的评价，最新的排最前面。",
+      "none": "现在还没有人留过评价。",
+      "noneFound": "换一个条件再找找看。",
+      "find": "找一个客人或服务项目…",
+      "allRatings": "不限星等",
+      "starsOnly": "{n} 星以上",
+      "submittedOn": "留于 {date}",
+      "mayShow": "她答应给别人看",
+      "mayNotShow": "只留在记录里",
+      "makePublic": "允许给别人看",
+      "makePrivate": "不再给别人看",
+      "saving": "保存中…"
     },
     "books": {
       "title": "帐",

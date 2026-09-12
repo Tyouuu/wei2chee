@@ -788,6 +788,7 @@
       "vehicles": "Plates",
       "owing": "Who owes you",
       "no-shows": "Who has missed",
+      "reviews": "What she said",
       "payroll": "Pay",
       "books": "Books",
       "tax": "Tax",
@@ -1157,6 +1158,21 @@
       "none": "Nobody has missed an appointment yet.",
       "missedOf": "Missed {missed} of {total} visits",
       "lastMissed": "Last missed on {date}"
+    },
+    "reviews": {
+      "title": "What she said",
+      "lede": "Every review a customer left after her own visit, newest first.",
+      "none": "Nobody has left a review yet.",
+      "noneFound": "Nothing matches that.",
+      "find": "Find a customer or service...",
+      "allRatings": "Any rating",
+      "starsOnly": "{n} stars and up",
+      "submittedOn": "Left on {date}",
+      "mayShow": "She agreed this may be shown",
+      "mayNotShow": "Stays in the record",
+      "makePublic": "Allow showing this",
+      "makePrivate": "Stop showing this",
+      "saving": "Saving..."
     },
     "books": {
       "title": "Books",
