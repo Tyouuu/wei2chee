@@ -87,10 +87,10 @@ export function StoredCreditPanel({
     <div className="mt-3 flex flex-col gap-3">
       {open === null ? (
         <div className="flex flex-wrap items-center gap-4">
-          <button type="button" onClick={() => setOpen("grant")} className={link}>
+          <button type="button" onClick={() => setOpen("grant")} className={`min-h-10 ${link}`}>
             {copy.storedCreditGrantHeading}
           </button>
-          <button type="button" onClick={() => setOpen("use")} className={link}>
+          <button type="button" onClick={() => setOpen("use")} className={`min-h-10 ${link}`}>
             {copy.storedCreditUseHeading}
           </button>
         </div>
@@ -202,7 +202,7 @@ export function StoredCreditPanel({
               onClick={() => setOpen(null)}
               className={`min-h-10 ${link}`}
             >
-              {copy.shareStop}
+              {copy.cancel}
             </button>
           </div>
         </div>
