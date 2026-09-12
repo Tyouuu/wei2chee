@@ -520,6 +520,15 @@ export type RecordFormCopy = {
   storedCreditHeading: string;
   storedCreditLede: string;
   storedCreditNone: string;
+  /* 「充值」「用掉」两颗按钮——[任务 346] 留着没做的那一半，接进[任务 399] 之后的下一件。
+     充值是 `grant_credit`（老板的决定），用掉是 `use_credit`（柜台交出已经答应的东西）。 */
+  storedCreditGrantHeading: string;
+  storedCreditGrantAmount: string;
+  storedCreditGrantReason: string;
+  storedCreditGrantSave: string;
+  storedCreditUseHeading: string;
+  storedCreditUseAmount: string;
+  storedCreditUseSave: string;
   /* 她上一次做了什么（20260909040000）。**只在客户那一页，而且要她真的记过一笔** ——
      一间装修公司的客户页上，一段永远写着「还没有记录」的东西，读起来是没做完。 */
   treatHeading: string;
@@ -1025,6 +1034,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       storedCreditHeading: "储值卡里送的部分",
       storedCreditLede: "充值的时候多送的，不是她自己付的钱，用完就是用完。",
       storedCreditNone: "没有 —— 没送过，或者已经用完了。",
+      storedCreditGrantHeading: "送她一笔",
+      storedCreditGrantAmount: "送多少",
+      storedCreditGrantReason: "为什么（生日 · 赔偿……可以不填）",
+      storedCreditGrantSave: "送出去",
+      storedCreditUseHeading: "用掉一笔",
+      storedCreditUseAmount: "用掉多少",
+      storedCreditUseSave: "记下来",
       editOne: "改这一个",
       treatHeading: "她做过什么",
       treatLede: "每一次做了什么、用了多少、哪一批。上一次的排在最上面。",
@@ -1509,6 +1525,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       storedCreditHeading: "Gift credit remaining",
       storedCreditLede: "Given free at top-up, not money she paid herself. Once used, it is gone.",
       storedCreditNone: "None -- never given, or already used up.",
+      storedCreditGrantHeading: "Give her some",
+      storedCreditGrantAmount: "How much",
+      storedCreditGrantReason: "Why (birthday, goodwill... optional)",
+      storedCreditGrantSave: "Give it",
+      storedCreditUseHeading: "Use some",
+      storedCreditUseAmount: "How much used",
+      storedCreditUseSave: "Record it",
       editOne: "Edit",
       treatHeading: "What she has had done",
       treatLede: "Each visit: what was done, how much was used, which batch. Newest first.",

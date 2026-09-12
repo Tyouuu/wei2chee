@@ -51,6 +51,7 @@ import { PartyHistory } from "../new/party-history";
 import { FollowUpPanel } from "../new/follow-up-panel";
 import { NoShowPanel } from "../new/no-show-panel";
 import { BookingLinkPanel } from "../new/booking-link-panel";
+import { StoredCreditPanel } from "../new/stored-credit-panel";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import {
@@ -2117,11 +2118,10 @@ export default async function EditRecordPage({
           ) : null}
 
           {/* 储值卡送的那一部分——跟上面那一段分开画，不是同一件事。
-            [任务 334] 建好了写入那三支（`grant_credit` · `use_credit` ·
-            `credit_of`），到今天这一页零个呼叫。这一段只接了读的那一半：
-            她卡里还剩多少送的钱。「充值」跟「用掉」两颗按钮要一个新的
-            写入界面，不是照抄这一段就有，[任务 346] 留着没做，只登记。
-            ⚠️ 同一个闸（`storedCredit`）：看不到钱的人这里是 null。 */}
+            [任务 346] 只做了读的那一半，[任务 399] 收尾把「充值」「用掉」
+            两颗按钮接上（`StoredCreditPanel`，走 `grant_credit` · `use_credit`）。
+            ⚠️ 同一个闸（`storedCredit`）：看不到钱的人这里是 null——
+            这段目前只对老板画出来，柜台今天还看不到，是另一件登记着的事。 */}
           {storedCredit && ctx.isDirectory && pageKey === "customers" ? (
             <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
               <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
@@ -2141,6 +2141,11 @@ export default async function EditRecordPage({
                   {copy.form.storedCreditNone}
                 </p>
               )}
+              <StoredCreditPanel
+                projectId={ctx.projectId}
+                partyId={recordId}
+                copy={copy.form}
+              />
             </div>
           ) : null}
 
