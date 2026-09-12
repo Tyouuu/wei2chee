@@ -97,6 +97,72 @@ import { priceSchedule } from "@/lib/portal/payment-terms";
  * own function. Two forms would agree today and differ in a month.
  */
 
+/* 一批「做过什么」的笔记，配上它们自己的照片签出网址。
+ *
+ * 客户那一页（问全部）跟预约那一页（只问这一笔，[任务 397] 补的）现在
+ * 共用这一段——两边拿到笔记的方式不一样（一支 RPC vs 直接照 `appointment_id`
+ * 查表），但「签出照片网址」那半段逐字一样，抽出来一次，不重写第二次。
+ */
+async function withTreatmentPhotos(
+  supabase: Awaited<ReturnType<typeof createSessionSupabaseClient>>,
+  rows: {
+    id: string;
+    done_on: string;
+    what: string;
+    area: string;
+    note: string;
+    staff_name: string;
+    archived: boolean;
+    products: TreatmentVisit["products"] | null;
+  }[],
+): Promise<TreatmentVisit[]> {
+  return Promise.all(
+    rows.map(async (n) => {
+      const { data: pics } = await supabase.rpc("treatment_photos_of", {
+        in_note_id: n.id,
+      });
+      const shots = (
+        (pics ?? []) as {
+          id: string;
+          path: string;
+          stage: string;
+          caption: string;
+          may_show: boolean;
+        }[]
+      ).slice(0, 6);
+
+      /* 🔴 网址是**签出来的**，不存 —— 存一个会过期的字串，
+         等於存一个明天变成假的东西（20260904010000 的原话）。 */
+      const signed = await Promise.all(
+        shots.map(async (x) => {
+          const { data } = await supabase.storage
+            .from("job-photos")
+            .createSignedUrl(x.path, 600);
+          return {
+            id: x.id,
+            url: data?.signedUrl ?? null,
+            stage: x.stage,
+            caption: x.caption,
+            mayShow: x.may_show,
+          };
+        }),
+      );
+
+      return {
+        id: n.id,
+        doneOn: n.done_on,
+        what: n.what,
+        area: n.area ?? "",
+        note: n.note ?? "",
+        staffName: n.staff_name ?? "",
+        archived: n.archived,
+        products: n.products ?? [],
+        shots: signed,
+      };
+    }),
+  );
+}
+
 export default async function EditRecordPage({
   params,
 }: {
@@ -346,6 +412,12 @@ export default async function EditRecordPage({
   /* 这一件货自己的批号（20260905320000，`batches_of`）。
      空阵列 = 这一件没有批号 → 整段不画，见 item-batches.tsx 档头。 */
   let itemBatches: ItemBatch[] = [];
+
+  /* 这一笔预约做了什么（[任务 397] 查到的洞）。`treatment_notes.appointment_id`
+     建表那天就有，从来没有人送过值——治好的是「读」这一半：一旦表单或助手
+     真的开始送这个连结，这一段立刻看得到，不用再改这一页一个字。
+     空阵列 = 这一笔还没连过任何一条笔记 → 整段不画，同一条纪律。 */
+  let appointmentTreatments: TreatmentVisit[] = [];
 
   let earned: {
     paidCents: number;
@@ -614,49 +686,7 @@ export default async function EditRecordPage({
         products: TreatmentVisit["products"] | null;
       }[];
 
-      treatments = await Promise.all(
-        rows.map(async (n) => {
-          const { data: pics } = await supabase.rpc("treatment_photos_of", {
-            in_note_id: n.id,
-          });
-          const shots = ((pics ?? []) as {
-            id: string;
-            path: string;
-            stage: string;
-            caption: string;
-            may_show: boolean;
-          }[]).slice(0, 6);
-
-          /* 🔴 网址是**签出来的**，不存 —— 存一个会过期的字串，
-             等於存一个明天变成假的东西（20260904010000 的原话）。 */
-          const signed = await Promise.all(
-            shots.map(async (x) => {
-              const { data } = await supabase.storage
-                .from("job-photos")
-                .createSignedUrl(x.path, 600);
-              return {
-                id: x.id,
-                url: data?.signedUrl ?? null,
-                stage: x.stage,
-                caption: x.caption,
-                mayShow: x.may_show,
-              };
-            }),
-          );
-
-          return {
-            id: n.id,
-            doneOn: n.done_on,
-            what: n.what,
-            area: n.area ?? "",
-            note: n.note ?? "",
-            staffName: n.staff_name ?? "",
-            archived: n.archived,
-            products: n.products ?? [],
-            shots: signed,
-          };
-        }),
-      );
+      treatments = await withTreatmentPhotos(supabase, rows);
     }
 
     /* ── 客户那一页：他先付了、还没用掉的钱 ────────────────────────────
@@ -1120,6 +1150,57 @@ export default async function EditRecordPage({
           }
         : null;
     }
+
+    /* 这一笔预约做了什么（[任务 397]）——直接照 `appointment_id` 查，
+       不走 `treatment_notes_of`：那一支只收 `party_id`，答不出「哪一笔」，
+       改它的回传形状是功能地基那一层的事，这里只加一段读。 */
+    const { data: apptNotesRaw } = await supabase
+      .from("treatment_notes")
+      .select(
+        "id, done_on, what, area, note, archived_at, staff:staff_id(name), treatment_products(id, qty, unit, item:item_id(name), batch:batch_id(code))",
+      )
+      .eq("appointment_id", recordId)
+      .order("done_on", { ascending: false });
+    /* ⚠️ 没有生成过资料库型别，PostgREST 的内嵌单笔关联（`staff:staff_id(name)`）
+       在这里的推断型别是阵列，不是单一物件——取第一个就是那一笔。 */
+    const apptRows = (
+      (apptNotesRaw ?? []) as {
+        id: string;
+        done_on: string;
+        what: string;
+        area: string | null;
+        note: string | null;
+        archived_at: string | null;
+        staff: { name: string }[] | { name: string } | null;
+        treatment_products: {
+          id: string;
+          qty: number;
+          unit: string;
+          item: { name: string }[] | { name: string } | null;
+          batch: { code: string }[] | { code: string } | null;
+        }[];
+      }[]
+    ).map((n) => {
+      const one = <T,>(v: T[] | T | null): T | null =>
+        Array.isArray(v) ? (v[0] ?? null) : v;
+      return {
+        id: n.id,
+        done_on: n.done_on,
+        what: n.what,
+        area: n.area ?? "",
+        note: n.note ?? "",
+        staff_name: one(n.staff)?.name ?? "",
+        archived: n.archived_at != null,
+        products: (n.treatment_products ?? []).map((p) => ({
+          id: p.id,
+          item: one(p.item)?.name ?? "",
+          qty: Number(p.qty),
+          unit: p.unit ?? "",
+          batch: one(p.batch)?.code ?? "",
+        })),
+      };
+    });
+    appointmentTreatments = await withTreatmentPhotos(supabase, apptRows);
   } else if (ctx.shape === "reconcile") {
     /* Read from the TABLE and not from the view: what is being edited is what
        the outside said, and our own side is not editable -- it is the sum of
@@ -1745,6 +1826,24 @@ export default async function EditRecordPage({
     );
   }
 
+  /* 🔴 天天要按的那个动作，不是「填写资料」——见 read-first.tsx 那一条新档头。
+     同一个节点，读的时候（ReadFirst）跟改的时候（NewRecordForm）都用它，
+     不是两份：一份会漂，[重点 22e] 那一条老毛病。 */
+  const afterHeadingNode = apptStatus ? (
+    <AppointmentStatus
+      id={recordId}
+      status={apptStatus}
+      who={apptWho}
+      copy={copy.form}
+    />
+  ) : match ? (
+    <PurchaseMatch
+      facts={match}
+      money={(c) => ringgit(c) ?? "—"}
+      copy={copy.form}
+    />
+  ) : null;
+
   return (
     <StyleScope
       register={SYSTEM_REGISTER}
@@ -1794,31 +1893,42 @@ export default async function EditRecordPage({
             而这一版一个抬头都没有动。 */}
           <div className="lg:grid lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)] lg:items-start lg:gap-x-12">
             <div className="min-w-0">
-          {/* 🔴 名册那几页默认是**读**，不是一张摊开的表单 —— 见
+          {/* 🔴 名册那几页 ＋ 预约那一页默认是**读**，不是一张摊开的表单 —— 见
             read-first.tsx 的档头（他 2026-09-09 看完上一版讲「我怎么觉得没差」，
-            而他是对的：真正让参考那一页短的是这一件）。
+            2026-09-12 又讲一次「展示的页面跟要填写资料的页面」——两次同一句话，
+            这次把预约那一页也接进来，不是只有名册那几页）。
             那几栏从 `ctx.columns` 来 —— 他自己加的栏自己会出现，
             在这里手抄一份名单就是这个仓库栽过八次的那件事。 */}
           <ReadFirst
-            enabled={ctx.isDirectory}
+            enabled={ctx.isDirectory || ctx.shape === "calendar"}
             heading={values.primary || ctx.title}
             editLabel={copy.form.editOne}
+            afterHeading={afterHeadingNode}
             fields={
-              [
-                ...ctx.columns
-                  .filter((col) => col.key !== "primary")
-                  .map((col) => ({
-                    key: col.key,
-                    label: col.label,
-                    value: values[col.key] ?? "",
-                  })),
-                { key: "contact_person", label: copy.form.contactPerson, value: values.contact_person ?? "" },
-                { key: "email", label: copy.form.email, value: values.email ?? "" },
-                { key: "address", label: copy.form.address, value: values.address ?? "" },
-                { key: "reg_no", label: copy.form.regNo, value: values.reg_no ?? "" },
-                { key: "tax_id", label: copy.form.taxId, value: values.tax_id ?? "" },
-                { key: "note", label: copy.form.note, value: values.note ?? "" },
-              ] as ReadField[]
+              ctx.shape === "calendar"
+                ? ([
+                    { key: "day", label: copy.form.bookDay, value: values.day ?? "" },
+                    { key: "from", label: copy.form.bookFrom, value: values.from ?? "" },
+                    { key: "to", label: copy.form.bookTo, value: values.to ?? "" },
+                    { key: "service", label: copy.form.bookService, value: values.service ?? "" },
+                    { key: "staffName", label: copy.form.bookStaff, value: values.staffName ?? "" },
+                    { key: "note", label: copy.form.note, value: values.note ?? "" },
+                  ] as ReadField[])
+                : ([
+                    ...ctx.columns
+                      .filter((col) => col.key !== "primary")
+                      .map((col) => ({
+                        key: col.key,
+                        label: col.label,
+                        value: values[col.key] ?? "",
+                      })),
+                    { key: "contact_person", label: copy.form.contactPerson, value: values.contact_person ?? "" },
+                    { key: "email", label: copy.form.email, value: values.email ?? "" },
+                    { key: "address", label: copy.form.address, value: values.address ?? "" },
+                    { key: "reg_no", label: copy.form.regNo, value: values.reg_no ?? "" },
+                    { key: "tax_id", label: copy.form.taxId, value: values.tax_id ?? "" },
+                    { key: "note", label: copy.form.note, value: values.note ?? "" },
+                  ] as ReadField[])
             }
           >
           <NewRecordForm
@@ -1827,26 +1937,10 @@ export default async function EditRecordPage({
             /* 🔴 他来了没有 —— **标题底下、表单卡上面**。
              在表单底下：客人站在面前，而他要滑过八个不用碰的格子。
              在标题上面（我第一版）：他还没看到这是哪一张预约就先按了。
-             两个看图看出来的，而第二个更严重。 */
-            afterHeading={
-              apptStatus ? (
-                <AppointmentStatus
-                  id={recordId}
-                  status={apptStatus}
-                  who={apptWho}
-                  copy={copy.form}
-                />
-              ) : match ? (
-                /* 🔴 三个数字在这里，不是第十段 —— 它们是底下那几段
-                 （收货 · 退货 · 分摊）的摘要，而一个摘要放在它摘要的
-                 东西后面，等於没有摘要。见 purchase-match.tsx。 */
-                <PurchaseMatch
-                  facts={match}
-                  money={(c) => ringgit(c) ?? "—"}
-                  copy={copy.form}
-                />
-              ) : null
-            }
+             两个看图看出来的，而第二个更严重。
+             ⚠️ 同一个节点也传给 `ReadFirst`（读的那一半，不是改的那一半），
+             两边共用，见上面 `afterHeadingNode` 那一段。 */
+            afterHeading={afterHeadingNode}
             projectId={ctx.projectId}
             moduleKey={ctx.pageKey}
             received={received}
@@ -2034,6 +2128,14 @@ export default async function EditRecordPage({
                 depositCents={credit.cents}
                 copy={copy.form}
               />
+            </div>
+          ) : null}
+
+          {/* 预约那一页多一段：这一笔当场做了什么（[任务 397]）。
+            ⚠️ 一笔都没连过就整段不画——同一条纪律，见 treatment-history.tsx 档头。 */}
+          {appointmentTreatments.length ? (
+            <div className="mt-10">
+              <TreatmentHistory visits={appointmentTreatments} copy={copy.form} />
             </div>
           ) : null}
 

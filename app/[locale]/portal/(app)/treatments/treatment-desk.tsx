@@ -30,6 +30,13 @@ type Consent = {
   signed_name: string | null;
 };
 
+/* 她这一位客人最近的几笔预约——[任务 397] 查到的洞：`treatment_notes`
+   建表那天就有 `appointment_id`，从来没有一条路送过值，於是预约自己那一页
+   永远看不到「这一笔当场做了什么」。这里补的是写的那一半（读的那一半已经
+   在 `[recordId]/page.tsx` 里等着）：让她记一笔的时候，可以顺手指是哪一次。
+   不强求——大多数店不需要这么细，留空跟以前一样能用。 */
+type Visit = { id: string; starts_at: string; service: string | null };
+
 type Words = Record<string, string>;
 
 /**
@@ -64,6 +71,8 @@ export function TreatmentDesk({
   const [area, setArea] = useState("");
   const [note, setNote] = useState("");
   const [byWho, setByWho] = useState("");
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [visitId, setVisitId] = useState("");
 
   const sb = () => createBrowserSupabaseClient();
 
@@ -75,14 +84,26 @@ export function TreatmentDesk({
     setWho(g);
     setAdding(false);
     setFailed("");
+    setVisitId("");
     setLoading(true);
     const s = sb();
-    const [n, c] = await Promise.all([
+    /* 🔴 直接读 `appointments`，不是新的 RPC——那张表本来就是
+       `works_here` 全权限（20260902030000），这里只加一段读。
+       近的在前面：她想到「哪一次」多半是最近那几次，不是她开卡那一天。 */
+    const [n, c, v] = await Promise.all([
       s.rpc("treatment_notes_of", { in_party_id: g.id }),
       s.rpc("consents_of", { in_party_id: g.id }),
+      s
+        .from("appointments")
+        .select("id, starts_at, service")
+        .eq("party_id", g.id)
+        .is("archived_at", null)
+        .order("starts_at", { ascending: false })
+        .limit(8),
     ]);
     setNotes((n.data ?? []) as Note[]);
     setConsents((c.data ?? []) as Consent[]);
+    setVisits((v.data ?? []) as Visit[]);
     setLoading(false);
   }
 
@@ -99,6 +120,7 @@ export function TreatmentDesk({
       in_area: area.trim(),
       in_note: note.trim(),
       ...(byWho ? { in_staff_id: byWho } : {}),
+      ...(visitId ? { in_appointment_id: visitId } : {}),
     });
     setBusy(false);
     if (error) {
@@ -109,6 +131,7 @@ export function TreatmentDesk({
     setArea("");
     setNote("");
     setByWho("");
+    setVisitId("");
     setAdding(false);
     await open(who);
   }
@@ -235,6 +258,27 @@ export function TreatmentDesk({
                       </select>
                     </label>
                   </div>
+                  {/* 🔴 可以不选——大多数店不需要这么细，留空跟以前完全一样。
+                    只在她真的有预约可以指的时候才画：没有一场撞到，
+                    这一格永远只有一个选项，读起来像没做完。 */}
+                  {visits.length > 0 ? (
+                    <label className="flex flex-col gap-1.5">
+                      <span className={deskDim}>{words.visit}</span>
+                      <select
+                        value={visitId}
+                        onChange={(e) => setVisitId(e.target.value)}
+                        className={deskField}
+                      >
+                        <option value="">{words.noVisit}</option>
+                        {visits.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {new Date(v.starts_at).toLocaleDateString()}
+                            {v.service ? ` · ${v.service}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                   <label className="flex flex-col gap-1.5">
                     <span className={deskDim}>{words.note}</span>
                     <textarea

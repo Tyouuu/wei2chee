@@ -1795,6 +1795,8 @@
       "note": "Notes",
       "byWho": "Done by",
       "nobody": "Not set",
+      "visit": "Which visit",
+      "noVisit": "Not linked to a booking",
       "save": "Save",
       "saving": "Saving...",
       "cancel": "Cancel",

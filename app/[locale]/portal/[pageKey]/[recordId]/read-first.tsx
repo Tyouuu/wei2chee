@@ -29,6 +29,14 @@
  * ⚠️ **按 Edit 之后，底下那一整套一个字都没变** —— 地址编辑器、
  * 「其余栏位」、改动那一本帐、收起来那一颗，全部原样在表单里。
  * 这一层只决定「先看到哪一个」，不拿走任何东西。
+ *
+ * ── 🔴 `afterHeading`：不是每天都在改的，跟每天都要按的，是两件事（2026-09-12）──
+ *
+ * 预约那一页老板一句话点破的：**「展示的页面跟要填写资料的页面」**要分开——
+ * 而「她来了没有」那一颗分段按钮，不是「填写资料」，是他站柜台一天要按
+ * 好几次的动作。放进 Edit 后面的表单里，等於逼他先点一次 Edit 才按得到
+ * 当天最常按的那一颗。所以它是一个独立的插槽，读的时候就在、
+ * 改的时候也在（同一个节点，两边共用，不是两份）。
  */
 import { useState, type ReactNode } from "react";
 
@@ -39,10 +47,11 @@ export function ReadFirst({
   heading,
   fields,
   editLabel,
+  afterHeading,
   children,
 }: {
-  /* 只有名册那几页。一张报价单他打开就是要改它 —— 在那里多一颗 Edit
-     是多一次点击（[重点 29]）。 */
+  /* 名册那几页 ＋ 预约那一页。一张报价单他打开就是要改它 —— 在那里多一颗
+     Edit 是多一次点击（[重点 29]）。 */
   enabled: boolean;
   /* 🔴 **那个人的名字**，不是「改这一个 · 客户」。
      参考那一页顶上是 `Contacts › Frederick Devine` —— 他点进来是要看**她**，
@@ -51,6 +60,8 @@ export function ReadFirst({
   heading: string;
   fields: ReadField[];
   editLabel: string;
+  /* 天天要按的那个动作——不属於「填写资料」，读的时候也要看得到。 */
+  afterHeading?: ReactNode;
   children: ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
@@ -71,6 +82,8 @@ export function ReadFirst({
           {editLabel}
         </button>
       </div>
+
+      {afterHeading}
 
       <div className="mt-5 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)]">
         <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">

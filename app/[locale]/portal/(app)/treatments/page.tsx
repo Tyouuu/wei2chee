@@ -125,6 +125,8 @@ export default async function TreatmentsPage({
             note: t("treatments.note"),
             byWho: t("treatments.byWho"),
             nobody: t("treatments.nobody"),
+            visit: t("treatments.visit"),
+            noVisit: t("treatments.noVisit"),
             save: t("treatments.save"),
             saving: t("treatments.saving"),
             cancel: t("treatments.cancel"),

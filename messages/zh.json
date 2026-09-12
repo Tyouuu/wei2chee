@@ -1795,6 +1795,8 @@
       "note": "备注",
       "byWho": "谁做的",
       "nobody": "还没指定",
+      "visit": "哪一次预约",
+      "noVisit": "不连结任何一笔预约",
       "save": "保存",
       "saving": "保存中…",
       "cancel": "取消",
