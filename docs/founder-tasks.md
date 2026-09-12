@@ -3874,5 +3874,13 @@ Sources:
 - [Use Progressive Disclosure and Conditional Rendering — Salesforce Trailhead](https://trailhead.salesforce.com/content/learn/modules/best-practices-in-lightning-web-components/use-progressive-disclosure-and-conditional-rendering)
 - [Resource details layout — Shopify Polaris React](https://polaris-react.shopify.com/patterns/resource-details-layout)
 
-- [ ] 预约那一页要不要也照同一条原则再检查一次（今天已经有 no-show 面板，
-      有没有其他分散的资料该收进来）
+- [x] ✅ 检查完了——**查到一个真的洞，还没修**。`treatment_notes.appointment_id`
+      （20260909040000 建表那天就有）是「这一笔预约当场做了什么」的那条线，
+      **从来没有人送过值**：`treatment-desk.tsx` 的表单跟助手那一支
+      （`route.ts:1990`）呼叫 `add_treatment_note` 的时候都只送
+      `party_id`，没有一个地方问过「是不是站在今天这一笔预约上做的」。
+      结果这一栏建好三天，一直是空的，预约页上永远看不到「今天做了什么」。
+      落点：新任务，跟疗程记录同一批（[画面那一边](./founder-points.md)，
+      要改的是 treatment-desk.tsx 加一格挑今天／最近的预约，助手那一支
+      在客户页上开着某一笔预约的当下顺手带上 `appointment_id`）——
+      规格写清楚，没有半做，留给下一轮
