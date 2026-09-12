@@ -365,6 +365,14 @@ export type RecordFormCopy = {
   earnedNone: string;
   earnedNotPaid: string;
   earnedDerived: string;
+  /* 上下班打卡（20260911240000）——师傅那一页多一段。 */
+  staffShiftHeading: string;
+  staffShiftIn: string;
+  staffShiftOut: string;
+  staffShiftClockIn: string;
+  staffShiftClockOut: string;
+  staffShiftHours: string;
+  staffShiftHoursNone: string;
   /* 佣金率的世代（20260905640000）。**这三句一定要画出来**，
      不然他把 2% 改成 3%、按了保存，而这个月那个数字一分都不动 ——
      读起来像功能坏了，而它正是这一整件事在保护的东西。 */
@@ -902,6 +910,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       earnedNone: "这个月还没有算在他名下的收款，所以是零。",
       earnedNotPaid: "这只是算给你看的。要付出去，去开销那一页记一笔。",
       earnedDerived: "这一格是收款那边算出来的，改不了。",
+      staffShiftHeading: "上下班",
+      staffShiftIn: "现在在店里，{time} 打的卡",
+      staffShiftOut: "现在没有打卡在店里",
+      staffShiftClockIn: "打卡上班",
+      staffShiftClockOut: "打卡下班",
+      staffShiftHours: "最近 30 天：{hours} 小时 · {shifts} 节班",
+      staffShiftHoursNone: "最近 30 天还没有一节做完的班。",
       rateInForce: "这个月照 {date} 那一份算。",
       rateYoursNow: "你现在打的这一份算出来是 {amount}。",
       rateFromLabel: "从哪天起",
@@ -1392,6 +1407,13 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
         "This is worked out for you, not paid. Record it on the expenses page when you pay it.",
       earnedDerived:
         "Worked out from the payments credited to them. Not typed.",
+      staffShiftHeading: "Shift",
+      staffShiftIn: "Clocked in since {time}",
+      staffShiftOut: "Not clocked in right now",
+      staffShiftClockIn: "Clock in",
+      staffShiftClockOut: "Clock out",
+      staffShiftHours: "Last 30 days: {hours} hrs across {shifts} shifts",
+      staffShiftHoursNone: "No finished shifts in the last 30 days yet.",
       rateInForce: "This month is worked out on the rates set from {date}.",
       rateYoursNow: "The bands you have typed would come to {amount}.",
       rateFromLabel: "In force from",

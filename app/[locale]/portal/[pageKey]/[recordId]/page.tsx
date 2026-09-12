@@ -52,6 +52,7 @@ import { FollowUpPanel } from "../new/follow-up-panel";
 import { NoShowPanel } from "../new/no-show-panel";
 import { BookingLinkPanel } from "../new/booking-link-panel";
 import { StoredCreditPanel } from "../new/stored-credit-panel";
+import { StaffShiftPanel } from "../new/staff-shift-panel";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import {
@@ -286,6 +287,11 @@ export default async function EditRecordPage({
    *  `null` = 没有问（看不到钱的人，或者这一页不是客户）；
    *  `0` = 问过了，答案是零，两句话在画面上要长得不一样。 */
   let storedCredit: { giftCents: number } | null = null;
+  /* 上下班打卡（20260911240000，[任务 375/401]）——`undefined` = 没有问
+     （不是师傅那一页）。 */
+  let shiftInfo:
+    | { clockedInSince: string | null; hours: number; shifts: number }
+    | undefined = undefined;
   let tiers: CommissionTier[] | null = null;
   /* 🔴 这个月那个数字是照**哪一份**办法算的（20260905640000）。
      没有它，他把 2% 改成 3%、按了保存，而画面上那个数字一分都不动 ——
@@ -951,6 +957,31 @@ export default async function EditRecordPage({
         commissionCents = null;
         rateHistory = [];
       }
+    }
+
+    /* 上下班打卡——师傅自己打得到，不用先看得到钱（`works_here` 就够）。
+       跟抽成那一段不同一道闸，因为「在不在店里」不是薪水。 */
+    if (pageKey === "staff") {
+      const [{ data: openShift }, { data: hoursRows }] = await Promise.all([
+        supabase
+          .from("staff_shifts")
+          .select("clock_in_at")
+          .eq("staff_id", recordId)
+          .is("clock_out_at", null)
+          .maybeSingle(),
+        supabase.rpc("hours_worked_of", {
+          in_project_id: ctx.projectId,
+          in_days: 30,
+        }),
+      ]);
+      const mine = ((hoursRows ?? []) as { staff_id: string; hours: number; shifts_worked: number }[]).find(
+        (r) => r.staff_id === recordId,
+      );
+      shiftInfo = {
+        clockedInSince: openShift?.clock_in_at ?? null,
+        hours: mine ? Number(mine.hours) : 0,
+        shifts: mine ? Number(mine.shifts_worked) : 0,
+      };
     }
 
     if (ctx.role === "owner" && jobIds.length) {
@@ -2387,6 +2418,20 @@ export default async function EditRecordPage({
                 rateFrom={rateFrom}
                 kind={rateKind}
                 history={rateHistory}
+                copy={copy.form}
+              />
+            </div>
+          ) : null}
+
+          {/* 师傅那一页多一段：上下班打卡（[任务 401]）。
+            ⚠️ `undefined` = 没有问（不是师傅那一页）。 */}
+          {shiftInfo !== undefined ? (
+            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+              <StaffShiftPanel
+                staffId={recordId}
+                clockedInSince={shiftInfo.clockedInSince}
+                hours={shiftInfo.hours}
+                shifts={shiftInfo.shifts}
                 copy={copy.form}
               />
             </div>
