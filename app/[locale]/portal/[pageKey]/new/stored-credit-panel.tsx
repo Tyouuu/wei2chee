@@ -27,6 +27,13 @@ import type { RecordFormCopy } from "../record-copy";
  *
  * `use_credit` 自己挡透支、自己讲得出「她只剩多少」——这里不猜、
  * 不自己算余额，錯误讯息原样显示（跟 `NoShowPanel` 同一个做法）。
+ *
+ * ── 🔴 两个表单默认收起来，不是一直摊开（老板要求的设计总检）─────────────
+ *
+ * 一间沙龙一天送／用一次储值的次数，比翻这张客户卡的次数少得多——这两个
+ * 表单摊开着，是这一页看起来「杂乱」的原因之一（他自己截图指出来的）。
+ * 平常只留一句余额 ＋ 两颗字，按了才长出对应的表单，跟 Stripe／Linear
+ * 那种「常驻的是状态，表单是按出来的」做法一样，不是发明新的交互。
  */
 export function StoredCreditPanel({
   projectId,
@@ -38,6 +45,7 @@ export function StoredCreditPanel({
   copy: RecordFormCopy;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState<"grant" | "use" | null>(null);
   const [grantAmount, setGrantAmount] = useState("");
   const [grantReason, setGrantReason] = useState("");
   const [useAmount, setUseAmount] = useState("");
@@ -59,6 +67,7 @@ export function StoredCreditPanel({
       } else {
         setUseAmount("");
       }
+      setOpen(null);
       router.refresh();
     } finally {
       setBusy(null);
@@ -72,98 +81,132 @@ export function StoredCreditPanel({
     "ds-control h-10 w-full min-w-0 [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-paper)] outline-none";
   const ghost =
     "inline-flex h-10 items-center [border-radius:var(--radius-md)] border [border-color:var(--color-ink-800)] [padding-inline:var(--pad-control-x)] [font-size:var(--text-sm)] text-[color:var(--color-on-canvas)] disabled:opacity-60";
+  const link = `${dim} underline underline-offset-2 hover:text-[color:var(--color-on-canvas)]`;
 
   return (
-    <div className="mt-4 flex flex-col gap-5 border-t pt-4 [border-color:var(--color-ink-800)]">
-      <div className="flex flex-col gap-2">
-        <h3 className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-          {copy.storedCreditGrantHeading}
-        </h3>
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1">
-            <span className={dim}>{copy.storedCreditGrantAmount}</span>
-            <div className="flex items-center gap-2">
-              <span className={dim}>RM</span>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={grantAmount}
-                onChange={(e) => setGrantAmount(e.target.value)}
-                className={control}
-              />
-            </div>
-          </label>
-          <label className="flex min-w-[10rem] flex-1 flex-col gap-1">
-            <span className={dim}>{copy.storedCreditGrantReason}</span>
-            <input
-              type="text"
-              value={grantReason}
-              onChange={(e) => setGrantReason(e.target.value)}
-              className={controlWide}
-            />
-          </label>
-          <button
-            type="button"
-            disabled={busy !== null || grantAmount.trim() === ""}
-            onClick={() =>
-              void call(
-                "grant_credit",
-                {
-                  in_project_id: projectId,
-                  in_party_id: partyId,
-                  in_amount_cents: Math.round(Number(grantAmount) * 100),
-                  in_reason: grantReason,
-                },
-                "grant",
-              )
-            }
-            className={ghost}
-          >
-            {busy === "grant" ? copy.saving : copy.storedCreditGrantSave}
+    <div className="mt-3 flex flex-col gap-3">
+      {open === null ? (
+        <div className="flex flex-wrap items-center gap-4">
+          <button type="button" onClick={() => setOpen("grant")} className={link}>
+            {copy.storedCreditGrantHeading}
+          </button>
+          <button type="button" onClick={() => setOpen("use")} className={link}>
+            {copy.storedCreditUseHeading}
           </button>
         </div>
-      </div>
+      ) : null}
 
-      <div className="flex flex-col gap-2">
-        <h3 className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-          {copy.storedCreditUseHeading}
-        </h3>
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1">
-            <span className={dim}>{copy.storedCreditUseAmount}</span>
-            <div className="flex items-center gap-2">
-              <span className={dim}>RM</span>
+      {open === "grant" ? (
+        <div className="flex flex-col gap-2 border-t pt-3 [border-color:var(--color-ink-800)]">
+          <h3 className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            {copy.storedCreditGrantHeading}
+          </h3>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1">
+              <span className={dim}>{copy.storedCreditGrantAmount}</span>
+              <div className="flex items-center gap-2">
+                <span className={dim}>RM</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={grantAmount}
+                  onChange={(e) => setGrantAmount(e.target.value)}
+                  className={control}
+                  autoFocus
+                />
+              </div>
+            </label>
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1">
+              <span className={dim}>{copy.storedCreditGrantReason}</span>
               <input
-                type="number"
-                min="0"
-                step="1"
-                value={useAmount}
-                onChange={(e) => setUseAmount(e.target.value)}
-                className={control}
+                type="text"
+                value={grantReason}
+                onChange={(e) => setGrantReason(e.target.value)}
+                className={controlWide}
               />
-            </div>
-          </label>
-          <button
-            type="button"
-            disabled={busy !== null || useAmount.trim() === ""}
-            onClick={() =>
-              void call(
-                "use_credit",
-                {
-                  in_project_id: projectId,
-                  in_party_id: partyId,
-                  in_amount_cents: Math.round(Number(useAmount) * 100),
-                },
-                "use",
-              )
-            }
-            className={ghost}
-          >
-            {busy === "use" ? copy.saving : copy.storedCreditUseSave}
-          </button>
+            </label>
+            <button
+              type="button"
+              disabled={busy !== null || grantAmount.trim() === ""}
+              onClick={() =>
+                void call(
+                  "grant_credit",
+                  {
+                    in_project_id: projectId,
+                    in_party_id: partyId,
+                    in_amount_cents: Math.round(Number(grantAmount) * 100),
+                    in_reason: grantReason,
+                  },
+                  "grant",
+                )
+              }
+              className={ghost}
+            >
+              {busy === "grant" ? copy.saving : copy.storedCreditGrantSave}
+            </button>
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => setOpen(null)}
+              className={`min-h-10 ${link}`}
+            >
+              {copy.cancel}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
+
+      {open === "use" ? (
+        <div className="flex flex-col gap-2 border-t pt-3 [border-color:var(--color-ink-800)]">
+          <h3 className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            {copy.storedCreditUseHeading}
+          </h3>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1">
+              <span className={dim}>{copy.storedCreditUseAmount}</span>
+              <div className="flex items-center gap-2">
+                <span className={dim}>RM</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={useAmount}
+                  onChange={(e) => setUseAmount(e.target.value)}
+                  className={control}
+                  autoFocus
+                />
+              </div>
+            </label>
+            <button
+              type="button"
+              disabled={busy !== null || useAmount.trim() === ""}
+              onClick={() =>
+                void call(
+                  "use_credit",
+                  {
+                    in_project_id: projectId,
+                    in_party_id: partyId,
+                    in_amount_cents: Math.round(Number(useAmount) * 100),
+                  },
+                  "use",
+                )
+              }
+              className={ghost}
+            >
+              {busy === "use" ? copy.saving : copy.storedCreditUseSave}
+            </button>
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => setOpen(null)}
+              className={`min-h-10 ${link}`}
+            >
+              {copy.shareStop}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {error ? (
         <p

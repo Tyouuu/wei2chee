@@ -90,9 +90,9 @@ try {
   else no("一开始的字不对", body.slice(0, 300));
   await page.screenshot({ path: `${OUT}/1-before.png`, fullPage: true });
 
-  // ── 送一笔 RM 200 ──────────────────────────────────────────────────────
-  const grantAmountBox = page.locator('input[type="number"]').first();
-  await grantAmountBox.fill("200");
+  // ── 送一笔 RM 200 —— 两个表单现在默认收起来，先点开再填 ──────────────────
+  await page.getByRole("button", { name: "Give her some" }).click();
+  await page.locator('input[type="number"]').first().fill("200");
   await page.locator('input[type="text"]').first().fill("Birthday");
   await page.getByRole("button", { name: "Give it" }).click();
   await page.waitForTimeout(6000);
@@ -109,8 +109,9 @@ try {
   else no("画面上的数字没有跟着变", body.slice(0, 300));
   await page.screenshot({ path: `${OUT}/2-after-grant.png`, fullPage: true });
 
-  // ── 用掉 RM 50 ─────────────────────────────────────────────────────────
-  const useAmountBox = page.locator('input[type="number"]').nth(1);
+  // ── 用掉 RM 50 —— 送出去那个表单已经收回去了，点「Use some」再填 ────────
+  await page.getByRole("button", { name: "Use some" }).click();
+  const useAmountBox = page.locator('input[type="number"]').first();
   await useAmountBox.fill("50");
   await page.getByRole("button", { name: "Record it" }).click();
   await page.waitForTimeout(6000);
@@ -126,7 +127,8 @@ try {
   else no("画面上的余额不对", body.slice(0, 300));
   await page.screenshot({ path: `${OUT}/3-after-use.png`, fullPage: true });
 
-  // ── 用超过她剩下的，应该被挡下来 ──────────────────────────────────────
+  // ── 用超过她剩下的，应该被挡下来 —— 表单又收起来了，重新点开 ────────────
+  await page.getByRole("button", { name: "Use some" }).click();
   await useAmountBox.fill("500");
   await page.getByRole("button", { name: "Record it" }).click();
   await page.waitForTimeout(2000);

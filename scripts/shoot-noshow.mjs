@@ -190,7 +190,7 @@ try {
     .locator("label", { hasText: "Ask for a deposit after this many no-shows" })
     .locator("input")
     .fill("2");
-  await page.locator("label", { hasText: "How much" }).locator("input").fill("50");
+  await page.locator("label", { hasText: "Deposit amount" }).locator("input").fill("50");
   await page.getByRole("button", { name: "Save policy", exact: true }).click();
   await page
     .waitForFunction(

@@ -596,6 +596,9 @@ export type RecordFormCopy = {
   noShowPolicyAfter: string;
   noShowPolicyAmount: string;
   noShowPolicySave: string;
+  /* 规矩已经填过，收起来只留一句摘要（老板要求的设计总检）。 */
+  noShowPolicySummary: string;
+  noShowPolicyEdit: string;
   noShowFailed: string;
 };
 
@@ -1119,6 +1122,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       noShowPolicyAfter: "放几次之后要收订金",
       noShowPolicyAmount: "收多少",
       noShowPolicySave: "保存规矩",
+      noShowPolicySummary: "放 {after} 次之后收 {amount}",
+      noShowPolicyEdit: "改规矩",
       noShowFailed: "没有保存成功，再试一次。",
     },
   },
@@ -1444,7 +1449,7 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       visitLinesTipSave: "Save",
       visitLinesAddService: "What was done",
       visitLinesAddStaff: "Who did it",
-      visitLinesAddPrice: "How much",
+      visitLinesAddPrice: "Price",
       visitLinesAddSave: "Add a line",
       rateInForce: "This month is worked out on the rates set from {date}.",
       rateYoursNow: "The bands you have typed would come to {amount}.",
@@ -1580,11 +1585,11 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       storedCreditLede: "Given free at top-up, not money she paid herself. Once used, it is gone.",
       storedCreditNone: "None -- never given, or already used up.",
       storedCreditGrantHeading: "Give her some",
-      storedCreditGrantAmount: "How much",
+      storedCreditGrantAmount: "Amount to give",
       storedCreditGrantReason: "Why (birthday, goodwill... optional)",
       storedCreditGrantSave: "Give it",
       storedCreditUseHeading: "Use some",
-      storedCreditUseAmount: "How much used",
+      storedCreditUseAmount: "Amount to use",
       storedCreditUseSave: "Record it",
       editOne: "Edit",
       treatHeading: "What she has had done",
@@ -1625,8 +1630,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       noShowPolicyHeading: "This shop's no-show policy",
       noShowPolicyLede: "How many no-shows before asking for a deposit, and how much -- set it once and every booking after will follow it.",
       noShowPolicyAfter: "Ask for a deposit after this many no-shows",
-      noShowPolicyAmount: "How much",
+      noShowPolicyAmount: "Deposit amount",
       noShowPolicySave: "Save policy",
+      noShowPolicySummary: "Deposit after {after} no-shows: {amount}",
+      noShowPolicyEdit: "Edit policy",
       noShowFailed: "That did not save. Try again.",
     },
   },

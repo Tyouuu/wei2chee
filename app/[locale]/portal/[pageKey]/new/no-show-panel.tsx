@@ -70,6 +70,11 @@ export function NoShowPanel({
   );
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /* 规矩没填的时候直接摊开（她正站在这一张单前面，是填这两个数字最自然
+     的时刻）；已经填过的收起来只留一句摘要——老板要求的设计总检：
+     一条老板一年才改一两次的规矩，摊开着占的分量跟每天都要看的信息
+     一样重，读起来就是「杂乱」的一部分。 */
+  const [policyOpen, setPolicyOpen] = useState(info.ruleAfter == null);
 
   async function call(
     name: string,
@@ -87,6 +92,7 @@ export function NoShowPanel({
         setError(err.message || copy.noShowFailed);
         return;
       }
+      if (tag === "policy") setPolicyOpen(false);
       router.refresh();
     } finally {
       setBusy(null);
@@ -194,8 +200,24 @@ export function NoShowPanel({
         )}
       </div>
 
-      {/* 这门生意的规矩 —— 只有老板。 */}
-      {seesMoney && (
+      {/* 这门生意的规矩 —— 只有老板。规矩已经填过就收起来只留一句摘要。 */}
+      {seesMoney && !policyOpen && (
+        <div className="flex flex-wrap items-center gap-3 border-t pt-4 [border-color:var(--color-ink-800)]">
+          <p className={dim}>
+            {copy.noShowPolicySummary
+              .replace("{after}", String(info.ruleAfter))
+              .replace("{amount}", ringgitOf(info.suggestCents ?? 0))}
+          </p>
+          <button
+            type="button"
+            onClick={() => setPolicyOpen(true)}
+            className={`min-h-10 underline ${dim}`}
+          >
+            {copy.noShowPolicyEdit}
+          </button>
+        </div>
+      )}
+      {seesMoney && policyOpen && (
         <div className="flex flex-col gap-3 border-t pt-4 [border-color:var(--color-ink-800)]">
           <div>
             <h3 className="[font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
@@ -254,6 +276,16 @@ export function NoShowPanel({
             >
               {busy === "policy" ? copy.saving : copy.noShowPolicySave}
             </button>
+            {info.ruleAfter != null && (
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={() => setPolicyOpen(false)}
+                className={`min-h-10 underline ${dim}`}
+              >
+                {copy.cancel}
+              </button>
+            )}
           </div>
         </div>
       )}

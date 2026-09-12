@@ -110,7 +110,7 @@ try {
   const panel = page.locator("h2", { hasText: "What was done this visit" }).locator("..");
   await panel.getByLabel("What was done").fill("Botox 20 units");
   await panel.locator("select").selectOption({ label: "Nurse Lily" });
-  await panel.getByLabel("How much").fill("800");
+  await panel.getByLabel("Price").fill("800");
   await panel.getByRole("button", { name: "Add a line" }).click();
   await page.waitForTimeout(3000);
 
