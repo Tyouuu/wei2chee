@@ -13,6 +13,10 @@ export type RecordFormCopy = {
   required: string;
   requiredName: string;
   failed: string;
+  /* 客户 / 供应商那一页两个分页签的名字（老板要求的设计总检，2026-09-12：
+     参考真的后台系统，不是官网——`.screenshots/admins/arham-profile.jpg`）。 */
+  recordTabOverview: string;
+  recordTabAccount: string;
   choose: string;
   more: string;
   /* 库存的那一批不是地址跟 email，是补货线、一箱几个、编号。 */
@@ -512,7 +516,6 @@ export type RecordFormCopy = {
      他要跟客人讲「你还剩三次」。价钱不在这张表上，所以这不是把钱交出去。 */
   packHeading: string;
   packLede: string;
-  packNone: string;
   packLeft: string;
   packUsedUp: string;
   packExpired: string;
@@ -641,6 +644,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       required: "要填 —— 这一格就是这一单在讲什么。",
       requiredName: "要填 —— 没有名字，这一行以后找不回来。",
       failed: "没有存进去",
+      recordTabOverview: "总览",
+      recordTabAccount: "帐户与往来",
       choose: "选一个",
       more: "还要填地址、email 这些",
       moreStock: "补货线、一箱几个、编号",
@@ -1051,7 +1056,6 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       consentWrite: "去写第一份",
       packHeading: "套票",
       packLede: "卖几次，用一次扣一次。",
-      packNone: "还没有卖过套票给他。",
       packLeft: "还剩 {n} 次",
       packUsedUp: "用完了",
       packExpired: "过期了",
@@ -1139,6 +1143,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       required: "Needed — this is what the row is about.",
       requiredName: "Needed — a name is how you find this again.",
       failed: "Not saved",
+      recordTabOverview: "Overview",
+      recordTabAccount: "Account & activity",
       choose: "Choose one",
       more: "Address, email and the rest",
       moreStock: "Reorder level, pack size, code",
@@ -1561,7 +1567,6 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       consentWrite: "Write the first one",
       packHeading: "Packages",
       packLede: "Sold as a number of sessions. One visit, one off the count.",
-      packNone: "No package sold to them yet.",
       packLeft: "{n} left",
       packUsedUp: "Used up",
       packExpired: "Expired",

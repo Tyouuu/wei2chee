@@ -46,14 +46,29 @@
  * 而框内**第一段**的那条 `border-t` 拿掉（`[&>*:first-child]`同一招，
  * 这个档案自己在别处已经用过一次，见 `[recordId]/page.tsx`）——
  * 上面什么都没有的地方不需要再画一条线。
+ *
+ * ── 🔴 头像（老板要求的设计总检，2026-09-12）─────────────────────────────
+ *
+ * 他截图指出「每一页都是一个样式」，而真的去看 Boulevard／Mangomint 那几家
+ * 的客户档案页（`.screenshots/featurepages/boulevard-1.png` ·
+ * `mangomint5-1.png`）才发现：这两家的做法一模一样——名字旁边永远是一颗
+ * 头像。**我们自己的名册清单那一行早就在用**（`design-system/components/
+ * avatar.tsx`，[任务 342]：圆形、淡色底、深色字，十个色轮流分给不同名字）。
+ * 清单那一行有头像，点进去那一页却没有——同一个人换了一个样子，
+ * 这正是「看起来不像同一套」的一个真的原因，不是感觉。
+ * ⚠️ 只在这一颗代表**一个人**的时候画（客户 · 师傅 · 供应商 · 预约，
+ * 因为预约的抬头是客人的名字）——一件货的名字放一个头像没有意义，
+ * 那是 `showAvatar` 交给呼叫端判断的原因。
  */
 import { useState, type ReactNode } from "react";
+import { Avatar } from "@/design-system/components/avatar";
 
 export type ReadField = { key: string; label: string; value: string };
 
 export function ReadFirst({
   enabled,
   heading,
+  showAvatar,
   fields,
   editLabel,
   afterHeading,
@@ -67,6 +82,9 @@ export function ReadFirst({
      而页面自己叫什么，面包屑上已经写着了。
      ⚠️ 按 Edit 之后标题换回表单自己那一句（那时候它讲的是「怎么存」）。 */
   heading: string;
+  /* 这一颗抬头讲的是**一个人**（客户 · 师傅 · 供应商 · 预约上的客人）——
+     只有这几种给头像，一件货的名字放一个头像没有意义。 */
+  showAvatar?: boolean;
   fields: ReadField[];
   editLabel: string;
   /* 天天要按的那个动作——不属於「填写资料」，读的时候也要看得到。 */
@@ -80,9 +98,12 @@ export function ReadFirst({
   return (
     <section>
       <div className="flex items-start justify-between gap-4">
-        <h1 className="[font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-          {heading}
-        </h1>
+        <div className="flex items-center gap-3">
+          {showAvatar && heading.trim() ? <Avatar name={heading} size={40} /> : null}
+          <h1 className="[font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            {heading}
+          </h1>
+        </div>
         <button
           type="button"
           onClick={() => setEditing(true)}

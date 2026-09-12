@@ -54,6 +54,7 @@ import { BookingLinkPanel } from "../new/booking-link-panel";
 import { StoredCreditPanel } from "../new/stored-credit-panel";
 import { StaffShiftPanel } from "../new/staff-shift-panel";
 import { VisitLinesPanel } from "../new/visit-lines-panel";
+import { RecordTabs } from "../new/record-tabs";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import {
@@ -1977,6 +1978,143 @@ export default async function EditRecordPage({
     />
   ) : null;
 
+  /* 🔴 客户 / 供应商那一页分两个分页签，不是一条到底——老板截图指出「每一
+     页都是一个样式、还很多资料的样子」，真的去看后台系统的参考才动手的
+     （`.screenshots/admins/arham-profile.jpg`：抬头之后就是页签，不是
+     一条到底）。见 `record-tabs.tsx` 档头：这不是[任务 273] 记过的那个
+     坑（页签的字跟段落自己的标题不是同一句），是不同的组法。
+     ⚠️ 这两个变数只是把原本写在 JSX 里的几段挪到这里——内容、条件、
+     每一段自己的注解一个字都没变，其余形状（预约 · 库存 · 走单……）
+     一段都没进这两个变数，照旧在下面一条到底地画。 */
+  const overviewTabContent = (
+    <>
+      {ctx.isDirectory && pageKey !== "staff" ? (
+        <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+          <PartyHistory
+            visits={visits}
+            lastOn={lastOn}
+            spentCents={spentCents}
+            copy={copy.form}
+          />
+          <div className="mt-6">
+            <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
+          </div>
+        </div>
+      ) : null}
+
+      {credit && ctx.isDirectory && pageKey === "customers" ? (
+        <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+          <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            {copy.form.creditHeading}
+          </h2>
+          {credit.cents > 0 ? (
+            <>
+              <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
+                {ringgit(credit.cents)}
+              </div>
+              <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                {copy.form.creditLede}
+              </p>
+              <ul className="mt-3 flex flex-col gap-1">
+                {credit.from.map((e) => (
+                  <li
+                    key={e.id}
+                    className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]"
+                  >
+                    {copy.form.creditFrom} {e.label} — {ringgit(e.cents)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+              {copy.form.creditNone}
+            </p>
+          )}
+        </div>
+      ) : null}
+
+      {storedCredit && ctx.isDirectory && pageKey === "customers" ? (
+        <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+          <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            {copy.form.storedCreditHeading}
+          </h2>
+          {storedCredit.giftCents > 0 ? (
+            <>
+              <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
+                {ringgit(storedCredit.giftCents)}
+              </div>
+              <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                {copy.form.storedCreditLede}
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+              {copy.form.storedCreditNone}
+            </p>
+          )}
+          <StoredCreditPanel
+            projectId={ctx.projectId}
+            partyId={recordId}
+            copy={copy.form}
+          />
+        </div>
+      ) : null}
+    </>
+  );
+
+  const accountTabContent = (
+    <>
+      {credit && ctx.isDirectory && pageKey === "customers" ? (
+        <div className="mt-10">
+          <PartyStatement
+            projectId={ctx.projectId}
+            partyId={recordId}
+            depositCents={credit.cents}
+            copy={copy.form}
+          />
+        </div>
+      ) : null}
+
+      {portalRef !== undefined ? (
+        <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+          <PartyPortalPanel
+            partyId={recordId}
+            portalRef={portalRef}
+            origin={SITE_URL}
+            requests={partyRequests}
+            landsIn={landsIn}
+            landsInLabel={landsInLabel}
+            copy={copy.form}
+          />
+        </div>
+      ) : null}
+
+      {packages ? (
+        <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+          <PackagesPanel
+            partyId={recordId}
+            rows={packages}
+            copy={copy.form}
+          />
+        </div>
+      ) : null}
+
+      {consents ? (
+        <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
+          <ConsentPanel
+            partyId={recordId}
+            origin={SITE_URL}
+            consentHref={`/${locale}/portal/consent`}
+            sheets={consents}
+            forms={consentForms}
+            copy={copy.form}
+          />
+        </div>
+      ) : null}
+    </>
+  );
+
   return (
     <StyleScope
       register={SYSTEM_REGISTER}
@@ -2043,6 +2181,7 @@ export default async function EditRecordPage({
               ctx.shape === "catalog"
             }
             heading={values.primary || ctx.title}
+            showAvatar={ctx.isDirectory || ctx.shape === "calendar"}
             editLabel={copy.form.editOne}
             afterHeading={afterHeadingNode}
             fields={readFields}
@@ -2143,113 +2282,36 @@ export default async function EditRecordPage({
             一个师傅永远不会是一张单的对方。所以在他那一页上，
             这两段**永远**写着「还没有来过」跟「还没有单」，
             而一段永远说同一句话的段落，读起来是这一页没做完。 */}
-          {ctx.isDirectory && pageKey !== "staff" ? (
-            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-              <PartyHistory
-                visits={visits}
-                lastOn={lastOn}
-                spentCents={spentCents}
-                copy={copy.form}
-              />
-              <div className="mt-6">
-                <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
-              </div>
-            </div>
-          ) : null}
-
-          {/* 客户那一页多一段：他先付了、还没用掉的钱。
-            ⚠️ `credit === null` = 没有问（读的人看不到钱），整段不画；
-            而 `cents === 0` 是**问过了，答案是零** —— 那一句要讲出来，
-            因为「没有余额」跟「我不知道」在画面上必须长得不一样。 */}
-          {credit && ctx.isDirectory && pageKey === "customers" ? (
-            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-              <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-                {copy.form.creditHeading}
-              </h2>
-              {credit.cents > 0 ? (
-                <>
-                  <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
-                    {ringgit(credit.cents)}
-                  </div>
-                  <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                    {copy.form.creditLede}
-                  </p>
-                  {/* 来自哪几笔 —— 一个总数答不了「那是哪一次付的」，
-                    而那正是他下一句会问的。 */}
-                  <ul className="mt-3 flex flex-col gap-1">
-                    {credit.from.map((e) => (
-                      <li
-                        key={e.id}
-                        className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]"
-                      >
-                        {copy.form.creditFrom} {e.label} — {ringgit(e.cents)}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : (
-                <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                  {copy.form.creditNone}
-                </p>
-              )}
-            </div>
-          ) : null}
-
-          {/* 储值卡送的那一部分——跟上面那一段分开画，不是同一件事。
-            [任务 346] 只做了读的那一半，[任务 399] 收尾把「充值」「用掉」
-            两颗按钮接上（`StoredCreditPanel`，走 `grant_credit` · `use_credit`）。
-            ⚠️ 同一个闸（`storedCredit`）：看不到钱的人这里是 null——
-            这段目前只对老板画出来，柜台今天还看不到，是另一件登记着的事。 */}
-          {storedCredit && ctx.isDirectory && pageKey === "customers" ? (
-            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-              <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-                {copy.form.storedCreditHeading}
-              </h2>
-              {storedCredit.giftCents > 0 ? (
-                <>
-                  <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
-                    {ringgit(storedCredit.giftCents)}
-                  </div>
-                  <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                    {copy.form.storedCreditLede}
-                  </p>
-                </>
-              ) : (
-                <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                  {copy.form.storedCreditNone}
-                </p>
-              )}
-              <StoredCreditPanel
-                projectId={ctx.projectId}
-                partyId={recordId}
-                copy={copy.form}
-              />
-            </div>
-          ) : null}
-
-          {/* 客户那一页再多一段：月结对帐单。
-            八个行业每个月都要跟某一个人对一次帐，而今天他是把
-            WhatsApp 往上滑、一张一张单自己加。[任务 147] 把算术做完了，
-            而它自己的收尾写着「**那张纸不存在**」。
-
-            🔴 用跟旁边那一段同一个闸（credit）——
-            它在看不到钱的人那一边是 null。
-            party_statement 自己也是 sees_money 的，一个师傅打它
-            拿回来是**零行** —— 而零行会画成一张空的对帐单，
-            读起来是「这个客人什么都没欠」。 */}
-          {credit && ctx.isDirectory && pageKey === "customers" ? (
-            /* 🔴 这一段**不画自己那条线** —— `PartyStatement` 里面那个
-              `FormSection` 已经画了一条。两条都画，中间隔 32px，
-              画出来是一条孤单的横线浮在半空（看图看出来的）。 */
-            <div className="mt-10">
-              <PartyStatement
-                projectId={ctx.projectId}
-                partyId={recordId}
-                depositCents={credit.cents}
-                copy={copy.form}
-              />
-            </div>
-          ) : null}
+          <RecordTabs
+            tabs={[
+              {
+                key: "overview",
+                label: copy.form.recordTabOverview,
+                /* 🔴 `overviewTabContent` 是一个 Fragment——就算它三个孩子
+                   全是 null，Fragment 本身也不是 null，`!= null` 照样过。
+                   真的判有没有内容要看**底下那几个布林值**，不是看 JSX
+                   包出来的那个对象是什么。这一支撞过：预约那一页三个
+                   条件全部不成立，却照样多画出一个空的「Overview」页签。 */
+                content:
+                  (ctx.isDirectory && pageKey !== "staff") ||
+                  (!!credit && ctx.isDirectory && pageKey === "customers") ||
+                  (!!storedCredit && ctx.isDirectory && pageKey === "customers")
+                    ? overviewTabContent
+                    : null,
+              },
+              {
+                key: "account",
+                label: copy.form.recordTabAccount,
+                content:
+                  (!!credit && ctx.isDirectory && pageKey === "customers") ||
+                  portalRef !== undefined ||
+                  !!packages ||
+                  !!consents
+                    ? accountTabContent
+                    : null,
+              },
+            ]}
+          />
 
           {/* 预约那一页多一段：这一笔当场做了什么（[任务 397]）。
             ⚠️ 一笔都没连过就整段不画——同一条纪律，见 treatment-history.tsx 档头。 */}
@@ -2377,21 +2439,9 @@ export default async function EditRecordPage({
             </div>
           ) : null}
 
-          {/* 客户 / 供应商那一页多一段：他自己那条连结，跟他送进来的那几笔。
-            ⚠️ `undefined` = 没有问（不是那两页，或者他已经收起来了）。 */}
-          {portalRef !== undefined ? (
-            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-              <PartyPortalPanel
-                partyId={recordId}
-                portalRef={portalRef}
-                origin={SITE_URL}
-                requests={partyRequests}
-                landsIn={landsIn}
-                landsInLabel={landsInLabel}
-                copy={copy.form}
-              />
-            </div>
-          ) : null}
+          {/* 客户 / 供应商那一页的「他自己那条连结」搬进分页签了
+            （`accountTabContent`，上面那一段 `<RecordTabs>`）——这里不再
+            重复画一次。 */}
 
           {/* 走单那几页多一段：这一单是谁介绍的。
             ⚠️ `undefined` = 没有问（不是走单那几页 · 收起来了 ·
@@ -2436,36 +2486,8 @@ export default async function EditRecordPage({
             </div>
           ) : null}
 
-          {/* 客户那一页多一段：他还剩几次。
-            ⚠️ `packages === null` 的意思是**没有问**（这一页不是客户页）——
-            那时候整段不画，而不是画一份空的套票。 */}
-          {packages ? (
-            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-              <PackagesPanel
-                partyId={recordId}
-                rows={packages}
-                copy={copy.form}
-              />
-            </div>
-          ) : null}
-
-          {/* 客户那一页多一段：她签了没有。
-            ⚠️ consents === null 的意思是**没有问**（这一页不是客户页）——
-            那时候整段不画，而不是画一份空的同意书。
-            🔴 而 consents 是空阵列的时候**照样画** —— 那一段要问的正是
-            「发一份给她」，而一间 medi spa 的第一个客人本来就是空的。 */}
-          {consents ? (
-            <div className="mt-10 border-t pt-8 [border-color:var(--color-ink-800)]">
-              <ConsentPanel
-                partyId={recordId}
-                origin={SITE_URL}
-                consentHref={`/${locale}/portal/consent`}
-                sheets={consents}
-                forms={consentForms}
-                copy={copy.form}
-              />
-            </div>
-          ) : null}
+          {/* 客户那一页的套票、同意书都搬进分页签了（`accountTabContent`）——
+            这里不再重复画一次。 */}
 
           {/* 师傅那一页多一段：他的抽成，跟这个月他做了多少。
             ⚠️ `tiers === null` 的意思是**没有问**（不是师傅页，或者
