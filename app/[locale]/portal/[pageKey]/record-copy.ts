@@ -40,6 +40,14 @@ export type RecordFormCopy = {
      内容才是各自不同的那一半。 */
   notesCardHeading: string;
   notesCardNone: string;
+  /* 抬头那颗「Book Appointment」——只在这门生意有预约那一页的时候画
+     （`ctx.books`，2026-09-14 参考稿要求）。 */
+  bookApptCta: string;
+  /* 她下一次要来那张卡——同一个「Upcoming Booking」，落点是左边那一栏，
+     跟 Hair Profile 那张卡同一批（2026-09-14）。 */
+  upcomingHeading: string;
+  upcomingConfirmed: string;
+  upcomingWith: string;
   archive: string;
   archiving: string;
   unarchive: string;
@@ -673,6 +681,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       note: "备注",
       notesCardHeading: "关于她的备注",
       notesCardNone: "还没有写过备注。",
+      bookApptCta: "预约",
+      upcomingHeading: "下一次预约",
+      upcomingConfirmed: "已确认",
+      upcomingWith: "谁做",
       /* ── 三颗只在「改」那一页出现的 ────────────────────────────────
          「收起来」不是删掉：丢掉的那一单，是明年客人回头时「上次我们报多少」
          的答案。「冲正」是钱唯一的改法 —— 开一张相反的，不是把原来那张改掉，
@@ -1176,6 +1188,10 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       note: "Notes",
       notesCardHeading: "Notes about her",
       notesCardNone: "No notes written yet.",
+      bookApptCta: "Book Appointment",
+      upcomingHeading: "Upcoming Booking",
+      upcomingConfirmed: "Confirmed",
+      upcomingWith: "Stylist",
       archive: "Put away",
       archiving: "Putting away…",
       unarchive: "Back on the shelf",

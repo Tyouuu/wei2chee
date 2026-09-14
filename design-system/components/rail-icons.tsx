@@ -293,6 +293,16 @@ export function IconScissors({ className = "h-[18px] w-[18px]" }: IconProps) {
   )
 }
 
+export function IconCalendar({ className = "h-[18px] w-[18px]" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M8 3v4M16 3v4" />
+    </svg>
+  )
+}
+
 export const RAIL_ICONS: Record<string, (p: IconProps) => React.JSX.Element> = {
   dashboard: IconGrid,
   customers: IconUsersRail,

@@ -7,7 +7,7 @@ import { SYSTEM_REGISTER } from "@/lib/portal/system-register";
 import { RecordShell } from "../record-shell";
 import { loadRecordPage } from "../record-context";
 import { RECORD_COPY } from "../record-copy";
-import { todayInMalaysia } from "@/lib/portal/live-months";
+import { todayInMalaysia, dayAndTimeInMalaysia } from "@/lib/portal/live-months";
 import { NewRecordForm } from "../new/new-record-form";
 import { ringgit } from "@/lib/portal/live-rows";
 import {
@@ -55,7 +55,8 @@ import { StoredCreditPanel } from "../new/stored-credit-panel";
 import { StaffShiftPanel } from "../new/staff-shift-panel";
 import { VisitLinesPanel } from "../new/visit-lines-panel";
 import { RecordTabs } from "../new/record-tabs";
-import { IconNote, IconReceipt } from "@/design-system/components/rail-icons";
+import { IconNote, IconReceipt, IconCalendar } from "@/design-system/components/rail-icons";
+import { waLink } from "@/lib/portal/wa-link";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import {
@@ -300,6 +301,19 @@ export default async function EditRecordPage({
    *  `null` = 没有问（看不到钱的人，或者这一页不是客户）；
    *  `0` = 问过了，答案是零，两句话在画面上要长得不一样。 */
   let storedCredit: { giftCents: number } | null = null;
+  /* 她下一次要来——老板拿参考稿指出来的那一段（「Upcoming Booking」，
+     2026-09-14）。`null` = 没有一笔排在未来，不是「没有问」——这一格
+     不像 `credit`/`packages` 分角色，柜台跟老板看到的是同一句话
+     （谁要来是排班的事，不是钱的事）。只取最近的一笔：她可能同时有
+     好几笔排着，而这一格答的是「下一次」那一句，不是一份清单。 */
+  let upcomingBooking: {
+    id: string;
+    service: string;
+    startsAt: string;
+    endsAt: string;
+    staffName: string | null;
+    priceCents: number | null;
+  } | null = null;
   /* 上下班打卡（20260911240000，[任务 375/401]）——`undefined` = 没有问
      （不是师傅那一页）。 */
   let shiftInfo:
@@ -746,6 +760,53 @@ export default async function EditRecordPage({
         priceCents: l.price_cents,
         onDate: l.on_date,
       }));
+
+      /* ── 客户那一页：她下一次要来 ──────────────────────────────────
+         直接问 `appointments`，不是一支新 RPC——跟上面 `calendar` 形状
+         自己那笔记录读的是同一张表、同一条 `appointments_members`
+         （`works_here`）RLS，加一笔查询没有多开一扇门。只要
+         「还没发生、没取消、没标没来」的那一笔里最近的一个。 */
+      const { data: nextAppt } = await supabase
+        .from("appointments")
+        .select("id, starts_at, ends_at, service, staff_id")
+        .eq("party_id", recordId)
+        .eq("status", "booked")
+        .is("archived_at", null)
+        .gte("starts_at", new Date().toISOString())
+        .order("starts_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (nextAppt) {
+        let staffName: string | null = null;
+        if (nextAppt.staff_id) {
+          const { data: staffRow } = await supabase
+            .from("directory_entries")
+            .select("name")
+            .eq("id", nextAppt.staff_id)
+            .maybeSingle();
+          staffName = staffRow?.name ?? null;
+        }
+        /* 这一笔自己的明细加起来——跟走单那一本日记簿同一张表
+           （`appointment_lines`），不是发明第二个价钱来源。一行都没有
+           就是还没写明细，讲「—」不是猜一个数字。 */
+        const { data: lineRows } = await supabase
+          .from("appointment_lines")
+          .select("price_cents")
+          .eq("appointment_id", nextAppt.id);
+        const total = (lineRows ?? []).reduce(
+          (n: number, r: { price_cents: number | null }) =>
+            n + (r.price_cents ?? 0),
+          0,
+        );
+        upcomingBooking = {
+          id: nextAppt.id,
+          service: nextAppt.service,
+          startsAt: nextAppt.starts_at,
+          endsAt: nextAppt.ends_at,
+          staffName,
+          priceCents: (lineRows ?? []).length > 0 ? total : null,
+        };
+      }
     }
 
     /* ── 客户那一页：他先付了、还没用掉的钱 ────────────────────────────
@@ -1169,30 +1230,11 @@ export default async function EditRecordPage({
     /* The instant back into the day and two clock times the form asks for, IN
        MALAYSIA. `toISOString().slice(11,16)` would give UTC and a 10am
        appointment would open at 02:00 -- the same eight hours, and here it is
-       not a rounding question, it is who turns up when. */
-    const parts = (iso: string) => {
-      const got = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Kuala_Lumpur",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }).formatToParts(new Date(iso));
-      const at = (type: string) =>
-        got.find((x) => x.type === type)?.value ?? "";
-      /* 24-hour, and Intl says 「24」 for midnight in some locales where a time
-         input wants 「00」. en-CA with hour12:false gives 24 for the hour that
-         starts a day, which a <input type="time"> refuses outright. */
-      const hour = at("hour") === "24" ? "00" : at("hour");
-      return {
-        day: `${at("year")}-${at("month")}-${at("day")}`,
-        time: `${hour}:${at("minute")}`,
-      };
-    };
-    const from = parts(data.starts_at);
-    const to = parts(data.ends_at);
+       not a rounding question, it is who turns up when.
+       （`dayAndTimeInMalaysia` — lib/portal/live-months.ts — 是这一段原本的
+       样子搬出去的，客户页的 Upcoming Booking 卡也读同一支。） */
+    const from = dayAndTimeInMalaysia(data.starts_at);
+    const to = dayAndTimeInMalaysia(data.ends_at);
     apptStatus = String((data as { status?: string }).status ?? "booked");
     /* 🔴 只留服务名，不再重复客人的名字——读的时候大标题已经是她的名字了
        （ReadFirst，2026-09-12），改的时候「Which customer」那一格几行
@@ -2025,43 +2067,12 @@ export default async function EditRecordPage({
      一段都没进这两个变数，照旧在下面一条到底地画。 */
   const overviewTabContent = (
     <>
-      {/* 🔴 老板拿参考稿比对，要求把「客户的备注」从名册表格那一格小字，
-        搬成自己一张卡（2026-09-14）——同一个 `note` 栏位，只是给它
-        参考稿那种「一进来就看得到」的分量。字段名不写成沙龙专属的
-        「Hair Profile」：沙龙老板会填发色配方，补习中心老板会填家长
-        联络习惯，同一个自由文字栏位服务三个行业，不是发明新栏位。
-        ⚠️ 空的时候讲一句话，不是留一片空白——跟这一页其余每一段同一条纪律。 */}
-      {ctx.isDirectory && pageKey === "customers" ? (
-        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
-          <div className="flex items-center gap-2 [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-            <IconNote className="h-[16px] w-[16px] text-[color:var(--color-on-canvas-dim)]" />
-            {copy.form.notesCardHeading}
-          </div>
-          <p className="mt-3 whitespace-pre-wrap [font-size:var(--text-sm)] leading-[var(--leading-body)] text-[color:var(--color-on-canvas)]">
-            {(values.note ?? "").trim() || (
-              <span className="text-[color:var(--color-on-canvas-dim)]">
-                {copy.form.notesCardNone}
-              </span>
-            )}
-          </p>
-        </div>
-      ) : null}
+      {/* 🔴 参考稿右边一栏顶上是「Past Visits」——我们最接近的真数据
+        （`visit_lines_for_party`）现在也摆在这一栏最上面。「Notes about
+        her」跟「Upcoming Booking」搬到左边主栏了（2026-09-14 那一轮），
+        理由跟位置见 `[recordId]/page.tsx` 主栏那一段自己的注解。
 
-      {ctx.isDirectory && pageKey !== "staff" ? (
-        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
-          <PartyHistory
-            visits={visits}
-            lastOn={lastOn}
-            spentCents={spentCents}
-            copy={copy.form}
-          />
-          <div className="mt-6">
-            <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
-          </div>
-        </div>
-      ) : null}
-
-      {/* 🔴 参考稿的「Past Visits」＋「Retail Products」两张卡，我们的资料
+        参考稿的「Past Visits」＋「Retail Products」两张卡，我们的资料
         没有分开过——`appointment_lines` 一行可以是一次洗剪吹，也可以是
         一瓶带回家的洗发精，同一张表（20260910010000 档头原话）。
         这里给的是那张表真的加总起来，一张卡，不是硬凑两张假的。
@@ -2097,35 +2108,17 @@ export default async function EditRecordPage({
         </div>
       ) : null}
 
-      {credit && ctx.isDirectory && pageKey === "customers" ? (
+      {ctx.isDirectory && pageKey !== "staff" ? (
         <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
-          <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-            {copy.form.creditHeading}
-          </h2>
-          {credit.cents > 0 ? (
-            <>
-              <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
-                {ringgit(credit.cents)}
-              </div>
-              <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                {copy.form.creditLede}
-              </p>
-              <ul className="mt-3 flex flex-col gap-1">
-                {credit.from.map((e) => (
-                  <li
-                    key={e.id}
-                    className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]"
-                  >
-                    {copy.form.creditFrom} {e.label} — {ringgit(e.cents)}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-              {copy.form.creditNone}
-            </p>
-          )}
+          <PartyHistory
+            visits={visits}
+            lastOn={lastOn}
+            spentCents={spentCents}
+            copy={copy.form}
+          />
+          <div className="mt-6">
+            <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
+          </div>
         </div>
       ) : null}
 
@@ -2297,6 +2290,45 @@ export default async function EditRecordPage({
                 </span>
               ) : null
             }
+            /* 抬头右边——参考稿的三颗按钮，固定顺序 WhatsApp · Edit ·
+               Book Appointment（Edit 是 ReadFirst 自己画的那一颗，正好
+               卡在中间）。两颗都是**真的能按**的动作,不是照抄版面摆一颗
+               死的:
+               · WhatsApp——号码认不出来就不给按钮（`waLink` 自己的
+                 契约,[任务 41] 那支：猜错的代价是那句话发给另一个人）。
+                 这家没填过号码的客户,这一颗从今天起就是不画,不是灰的。
+               · Book Appointment——只在这门生意真的有预约那一页
+                 （`ctx.books`）才画,链去 `/portal/bookings/new`：
+                 一个装修客户的详情页上不该有一颗订美发时段的按钮。
+                 ⚠️ 还没有把这一位客人带过去（`new` 页今天不吃预填参数）——
+                 好过一颗按下去什么都不会发生的按钮,但还不是完整的那一步。 */
+            extraActions={
+              ctx.isDirectory && pageKey === "customers"
+                ? (() => {
+                    const wa = waLink(values.whatsapp || values.phone);
+                    return wa ? (
+                      <a
+                        href={wa}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-11 items-center [border-radius:var(--radius-md)] border px-4 [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas)]"
+                      >
+                        {copy.form.whatsapp}
+                      </a>
+                    ) : null;
+                  })()
+                : null
+            }
+            primaryAction={
+              ctx.isDirectory && pageKey === "customers" && ctx.books ? (
+                <a
+                  href={`/${locale}/portal/bookings/new`}
+                  className="inline-flex min-h-11 items-center [border-radius:var(--radius-md)] px-4 [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [background-color:var(--color-primary)] text-[color:var(--color-on-primary)]"
+                >
+                  {copy.form.bookApptCta}
+                </a>
+              ) : null
+            }
             editLabel={copy.form.editOne}
             afterHeading={afterHeadingNode}
             fields={readFields}
@@ -2365,7 +2397,32 @@ export default async function EditRecordPage({
 
             </ReadFirst>
 
-            {/* 🔴 她做过什么，住在**主栏**，不在右边那一条。
+            {/* 🔴 老板拿参考稿比对，要求把「客户的备注」从名册表格那一格
+              小字搬成自己一张卡（2026-09-14）——同一个 `note` 栏位，只是
+              给它参考稿那种「一进来就看得到」的分量。字段名不写成沙龙
+              专属的「Hair Profile」：沙龙老板会填发色配方，补习中心老板
+              会填家长联络习惯，同一个自由文字栏位服务三个行业，不是
+              发明新栏位。
+              ⚠️ 空的时候讲一句话，不是留一片空白。
+              🔴 **搬进主栏了**——参考稿这一张卡在左边、跟身份贴在一起，
+              上一轮误放进右边那条窄栏（记录在这一段的提交历史里）。 */}
+            {ctx.isDirectory && pageKey === "customers" ? (
+              <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+                <div className="flex items-center gap-2 [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+                  <IconNote className="h-[16px] w-[16px] text-[color:var(--color-on-canvas-dim)]" />
+                  {copy.form.notesCardHeading}
+                </div>
+                <p className="mt-3 whitespace-pre-wrap [font-size:var(--text-sm)] leading-[var(--leading-body)] text-[color:var(--color-on-canvas)]">
+                  {(values.note ?? "").trim() || (
+                    <span className="text-[color:var(--color-on-canvas-dim)]">
+                      {copy.form.notesCardNone}
+                    </span>
+                  )}
+                </p>
+              </div>
+            ) : null}
+
+            {/* 她做过什么，住在**主栏**，不在右边那一条。
               他 2026-09-09 看完上一版讲「我怎么觉得没差」，而图上最刺眼的
               是**左边空掉一千六百像素**：读的那一张卡只有三百多高，
               而整页最高的那一段（她的疗程）挤在右边那一条窄栏里。
@@ -2379,6 +2436,87 @@ export default async function EditRecordPage({
             {ctx.isDirectory && pageKey === "customers" && treatments.length > 0 ? (
               <div className="mt-8">
                 <TreatmentHistory visits={treatments} copy={copy.form} />
+              </div>
+            ) : null}
+
+            {/* 🔴 参考稿左边那一栏第二张卡——「Upcoming Booking」。真的问
+              `appointments`（上面那段新加的 fetch），不是一支新 RPC；
+              一笔都没有排在未来就整段不画，跟这一页其余每一段同一条
+              纪律（一段永远讲同一句话读起来像没做完）。点得进那一笔——
+              链去她那张预约自己的详情页，那里已经有改期／取消／标到了
+              的完整控制台，这里不重造第二套。 */}
+            {ctx.isDirectory && pageKey === "customers" && upcomingBooking ? (
+              <a
+                href={`/${locale}/portal/bookings/${upcomingBooking.id}`}
+                className="ds-card mt-6 block p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+                    <IconCalendar className="h-[16px] w-[16px] text-[color:var(--color-on-canvas-dim)]" />
+                    {copy.form.upcomingHeading}
+                  </div>
+                  <span className="inline-flex min-h-6 items-center rounded-full border px-2.5 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)]">
+                    {copy.form.upcomingConfirmed}
+                  </span>
+                </div>
+                <div className="mt-3 flex items-baseline justify-between gap-3">
+                  <div className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+                    {upcomingBooking.service}
+                  </div>
+                  {upcomingBooking.priceCents != null ? (
+                    <div className="shrink-0 tabular-nums [font-size:var(--text-sm)] text-[color:var(--color-on-canvas)]">
+                      {ringgit(upcomingBooking.priceCents)}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="mt-1 [font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
+                  {dayAndTimeInMalaysia(upcomingBooking.startsAt).day}
+                  {" · "}
+                  {dayAndTimeInMalaysia(upcomingBooking.startsAt).time}
+                  {"–"}
+                  {dayAndTimeInMalaysia(upcomingBooking.endsAt).time}
+                  {upcomingBooking.staffName
+                    ? ` · ${copy.form.upcomingWith}: ${upcomingBooking.staffName}`
+                    : ""}
+                </div>
+              </a>
+            ) : null}
+
+            {/* 🔴 参考稿左边那一栏第三张卡——「Package & Prepaid Balance」。
+              我们没有一张单同时装着「几次套票」跟「一笔钱」——套票
+              （`packages`）跟这笔钱（`credit`，她先付了、还没用掉的）
+              是两张不同的表，硬合成一张是在编一个我们答不出来的数字。
+              这里搬的是位置：跟参考稿一样落在左边主栏，紧接在
+              Upcoming Booking 底下，不是编内容去凑那张卡的名字。 */}
+            {credit && ctx.isDirectory && pageKey === "customers" ? (
+              <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+                <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+                  {copy.form.creditHeading}
+                </h2>
+                {credit.cents > 0 ? (
+                  <>
+                    <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
+                      {ringgit(credit.cents)}
+                    </div>
+                    <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                      {copy.form.creditLede}
+                    </p>
+                    <ul className="mt-3 flex flex-col gap-1">
+                      {credit.from.map((e) => (
+                        <li
+                          key={e.id}
+                          className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]"
+                        >
+                          {copy.form.creditFrom} {e.label} — {ringgit(e.cents)}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p className="mt-2 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
+                    {copy.form.creditNone}
+                  </p>
+                )}
               </div>
             ) : null}
             </div>

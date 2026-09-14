@@ -71,9 +71,12 @@ try {
   const partyId = her.data.id;
 
   // 她的备注——沙龙老板真的会写的那种自由文字（发色配方、偏好）
+  // ＋ 一个真的号码：抬头那颗 WhatsApp 按钮认不出号码就不画（waLink 的
+  // 契约），这里给一个能认得出来的马来西亚号码，好让那颗按钮真的出现。
   await api.rpc("update_directory_entry", {
     in_id: partyId,
     in_note: "Ash brown 6.1 root touch-up every 6-8 weeks, no bleach on crown. Prefers quiet service, working on iPad during blowdry.",
+    in_whatsapp: "012-345 6789",
   });
 
   // 这门生意的规矩早就设过了——看已经settle 下来长什么样，不是第一次设定的样子

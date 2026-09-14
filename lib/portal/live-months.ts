@@ -437,6 +437,33 @@ export function todayInMalaysia(at: Date = new Date()): string {
   }).format(at);
 }
 
+/** 「2026-09-01」＋「18:27」，一次算完——预约那一页跟客户页的
+ *  「Upcoming Booking」原本各自 `new Intl.DateTimeFormat(...)` 一次，
+ *  这里抽成一支，两边读同一个答案（[重点 31]：加，不是重打第二份）。
+ *  见 `[recordId]/page.tsx` 的 `parts()`，同一段逻辑搬过来的。 */
+export function dayAndTimeInMalaysia(iso: string): {
+  day: string;
+  time: string;
+} {
+  const got = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kuala_Lumpur",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(iso));
+  const at = (type: string) => got.find((x) => x.type === type)?.value ?? "";
+  /* 24-hour, and Intl says 「24」 for midnight in some locales where a time
+     input wants 「00」. */
+  const hour = at("hour") === "24" ? "00" : at("hour");
+  return {
+    day: `${at("year")}-${at("month")}-${at("day")}`,
+    time: `${hour}:${at("minute")}`,
+  };
+}
+
 /**
  * Read one of the two month-end pages for this project.
  *

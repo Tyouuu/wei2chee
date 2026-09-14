@@ -59,6 +59,13 @@
  * ⚠️ 只在这一颗代表**一个人**的时候画（客户 · 师傅 · 供应商 · 预约，
  * 因为预约的抬头是客人的名字）——一件货的名字放一个头像没有意义，
  * 那是 `showAvatar` 交给呼叫端判断的原因。
+ *
+ * ── `extraActions`：Edit 不该是唯一一颗按钮（老板拿参考稿指出来，2026-09-14）──
+ *
+ * 参考稿的抬头右边是三颗按钮（WhatsApp · Edit · Book Appointment），
+ * 我们只有一颗。跟 `headingBadges` 同一条分工：内容跟要不要显示是呼叫端的事
+ * （WhatsApp 号码认不认得出来、这门生意有没有预约那一页），这里只给一个插槽，
+ * 画在 Edit 左边——跟参考稿同一个顺序，Edit 一直贴着最右边。
  */
 import { useState, type ReactNode } from "react";
 import { Avatar } from "@/design-system/components/avatar";
@@ -70,6 +77,8 @@ export function ReadFirst({
   heading,
   showAvatar,
   headingBadges,
+  extraActions,
+  primaryAction,
   fields,
   editLabel,
   afterHeading,
@@ -90,6 +99,14 @@ export function ReadFirst({
      不是 ReadFirst 自己发明的：内容跟要不要显示是呼叫端的事
      （每种记录形状的「身份」不一样），这里只给一个插槽。 */
   headingBadges?: ReactNode;
+  /* 抬头右边、Edit 左边的额外按钮——WhatsApp 那一类**次要**的真动作。
+     内容跟要不要画是呼叫端的事，见上面档头。 */
+  extraActions?: ReactNode;
+  /* Edit **右边**——参考稿那颗实心的「Book Appointment」，这一页最想要
+     他按的那一颗，所以排在最后（视觉终点）。跟 `extraActions` 分两个
+     插槽，不是同一个数组，是为了让顺序固定成参考稿那一排
+     （WhatsApp · Edit · Book Appointment），不用呼叫端自己排。 */
+  primaryAction?: ReactNode;
   fields: ReadField[];
   editLabel: string;
   /* 天天要按的那个动作——不属於「填写资料」，读的时候也要看得到。 */
@@ -102,25 +119,34 @@ export function ReadFirst({
 
   return (
     <section>
-      <div className="flex items-start justify-between gap-4">
+      {/* 🔴 `flex-wrap` 在**外层**——两颗新按钮加进来才撞到的：`extraActions`
+        那一排原本 `shrink-0`，一个左边窄栏（560px）塞不下「头像 + 名字 +
+        药丸」跟三颗按钮的时候，浏览器把压缩全部让给了名字那一侧，
+        「Mrs Chan」被挤断成两行。外层允许换行之后，装不下就让整排按钮
+        掉到名字下面一行，名字自己永远保持它本来的宽度——不去挤它。 */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {showAvatar && heading.trim() ? (
             <Avatar name={heading} size={64} fontSize="var(--text-title)" />
           ) : null}
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="[font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            <h1 className="[font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] whitespace-nowrap text-[color:var(--color-on-canvas)]">
               {heading}
             </h1>
             {headingBadges}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="min-h-11 shrink-0 [border-radius:var(--radius-md)] border px-4 [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas)]"
-        >
-          {editLabel}
-        </button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {extraActions}
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="min-h-11 shrink-0 [border-radius:var(--radius-md)] border px-4 [font-size:var(--text-sm)] [font-weight:var(--fw-semibold)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas)]"
+          >
+            {editLabel}
+          </button>
+          {primaryAction}
+        </div>
       </div>
 
       <div className="ds-card mt-5 flex flex-col gap-5 p-6 [&>*:first-child]:mt-0 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
