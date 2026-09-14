@@ -55,8 +55,9 @@ import { StoredCreditPanel } from "../new/stored-credit-panel";
 import { StaffShiftPanel } from "../new/staff-shift-panel";
 import { VisitLinesPanel } from "../new/visit-lines-panel";
 import { RecordTabs } from "../new/record-tabs";
-import { IconNote, IconReceipt, IconCalendar } from "@/design-system/components/rail-icons";
+import { IconNote, IconReceipt } from "@/design-system/components/rail-icons";
 import { waLink } from "@/lib/portal/wa-link";
+import { UpcomingBookingCard } from "../new/upcoming-booking-card";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import {
@@ -2084,11 +2085,15 @@ export default async function EditRecordPage({
             <IconReceipt className="h-[16px] w-[16px] text-[color:var(--color-on-canvas-dim)]" />
             {copy.form.lineHistoryHeading}
           </div>
+          {/* 🔴 每一行自己一个带边框的格子（参考稿：`border rounded-xl p-4`
+            一行一格），不是同一张表用分隔线连着——2026-09-14 逐行比对
+            抓到的差别：我们原本一条边框到底、行跟行靠一条线分开，
+            参考稿是每一次来访自己一个独立的框。 */}
           <ul className="mt-3 flex flex-col gap-3">
             {visitLineHistory.map((l) => (
               <li
                 key={l.id}
-                className="flex items-baseline justify-between gap-3 border-t pt-3 first:border-t-0 first:pt-0 [border-color:var(--color-ink-800)]"
+                className="flex items-baseline justify-between gap-3 [border-radius:var(--radius-md)] border p-3.5 [border-color:var(--color-ink-800)]"
               >
                 <div className="min-w-0">
                   <div className="truncate [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
@@ -2412,13 +2417,20 @@ export default async function EditRecordPage({
                   <IconNote className="h-[16px] w-[16px] text-[color:var(--color-on-canvas-dim)]" />
                   {copy.form.notesCardHeading}
                 </div>
-                <p className="mt-3 whitespace-pre-wrap [font-size:var(--text-sm)] leading-[var(--leading-body)] text-[color:var(--color-on-canvas)]">
-                  {(values.note ?? "").trim() || (
-                    <span className="text-[color:var(--color-on-canvas-dim)]">
-                      {copy.form.notesCardNone}
-                    </span>
-                  )}
-                </p>
+                {/* 🔴 参考稿把这一类字都装进一个浅色的内嵌小格
+                  （`bg-zinc-50 rounded-xl border border-zinc-100`），不是
+                  卡里一段裸字——四个字段合并成我们唯一那个 `note` 之后，
+                  这一句话本来会读起来比参考稿单薄，内嵌格子把视觉分量
+                  补回来，不用编四个我们没有的字段。 */}
+                <div className="mt-3 [border-radius:var(--radius-md)] border p-3.5 [background-color:var(--color-ink-850)] [border-color:var(--color-ink-800)]">
+                  <p className="whitespace-pre-wrap [font-size:var(--text-sm)] leading-[var(--leading-body)] text-[color:var(--color-on-canvas)]">
+                    {(values.note ?? "").trim() || (
+                      <span className="text-[color:var(--color-on-canvas-dim)]">
+                        {copy.form.notesCardNone}
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
             ) : null}
 
@@ -2442,52 +2454,36 @@ export default async function EditRecordPage({
             {/* 🔴 参考稿左边那一栏第二张卡——「Upcoming Booking」。真的问
               `appointments`（上面那段新加的 fetch），不是一支新 RPC；
               一笔都没有排在未来就整段不画，跟这一页其余每一段同一条
-              纪律（一段永远讲同一句话读起来像没做完）。点得进那一笔——
-              链去她那张预约自己的详情页，那里已经有改期／取消／标到了
-              的完整控制台，这里不重造第二套。 */}
+              纪律（一段永远讲同一句话读起来像没做完）。
+              🔴 内嵌小格 ＋ 真的「取消」按钮——见 `upcoming-booking-card.tsx`
+              自己的档头：取消要呼叫资料库，这一段挪成客户端组件才装得下
+              那颗按钮，服务器组件的这一页本身按不动任何东西。 */}
             {ctx.isDirectory && pageKey === "customers" && upcomingBooking ? (
-              <a
-                href={`/${locale}/portal/bookings/${upcomingBooking.id}`}
-                className="ds-card mt-6 block p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-                    <IconCalendar className="h-[16px] w-[16px] text-[color:var(--color-on-canvas-dim)]" />
-                    {copy.form.upcomingHeading}
-                  </div>
-                  <span className="inline-flex min-h-6 items-center rounded-full border px-2.5 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)]">
-                    {copy.form.upcomingConfirmed}
-                  </span>
-                </div>
-                <div className="mt-3 flex items-baseline justify-between gap-3">
-                  <div className="[font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
-                    {upcomingBooking.service}
-                  </div>
-                  {upcomingBooking.priceCents != null ? (
-                    <div className="shrink-0 tabular-nums [font-size:var(--text-sm)] text-[color:var(--color-on-canvas)]">
-                      {ringgit(upcomingBooking.priceCents)}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="mt-1 [font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
-                  {dayAndTimeInMalaysia(upcomingBooking.startsAt).day}
-                  {" · "}
-                  {dayAndTimeInMalaysia(upcomingBooking.startsAt).time}
-                  {"–"}
-                  {dayAndTimeInMalaysia(upcomingBooking.endsAt).time}
-                  {upcomingBooking.staffName
-                    ? ` · ${copy.form.upcomingWith}: ${upcomingBooking.staffName}`
-                    : ""}
-                </div>
-              </a>
+              <UpcomingBookingCard
+                id={upcomingBooking.id}
+                locale={locale}
+                service={upcomingBooking.service}
+                day={dayAndTimeInMalaysia(upcomingBooking.startsAt).day}
+                startTime={dayAndTimeInMalaysia(upcomingBooking.startsAt).time}
+                endTime={dayAndTimeInMalaysia(upcomingBooking.endsAt).time}
+                staffName={upcomingBooking.staffName}
+                priceCents={upcomingBooking.priceCents}
+                copy={copy.form}
+              />
             ) : null}
 
             {/* 🔴 参考稿左边那一栏第三张卡——「Package & Prepaid Balance」。
               我们没有一张单同时装着「几次套票」跟「一笔钱」——套票
               （`packages`）跟这笔钱（`credit`，她先付了、还没用掉的）
               是两张不同的表，硬合成一张是在编一个我们答不出来的数字。
-              这里搬的是位置：跟参考稿一样落在左边主栏，紧接在
-              Upcoming Booking 底下，不是编内容去凑那张卡的名字。 */}
+              这里搬的是位置跟**画法**：跟参考稿一样落在左边主栏，紧接在
+              Upcoming Booking 底下；有余额的时候用参考稿那张深色钱包卡
+              的画法（`--color-primary` 在这一页的 desk 覆盖值本来就是
+              近黑 `#18181b`，`--color-on-primary` 是 `#fafafa`——不是
+              发明一个新颜色，是这一页 2026-09-04 就定案的同一个「主要
+              动作」深色，「Book Appointment」那颗按钮也是它）。
+              不编内容去凑那张卡的名字——没有余额的时候不画深色卡，
+              一句话带过（深色是用来衬钱的，没有钱不需要衬）。 */}
             {credit && ctx.isDirectory && pageKey === "customers" ? (
               <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
                 <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
@@ -2495,12 +2491,14 @@ export default async function EditRecordPage({
                 </h2>
                 {credit.cents > 0 ? (
                   <>
-                    <div className="mt-2 [font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-primary)]">
-                      {ringgit(credit.cents)}
+                    <div className="mt-3 [border-radius:var(--radius-md)] p-4 [background-color:var(--color-primary)]">
+                      <div className="[font-size:var(--text-stat)] [font-weight:var(--fw-semibold)] tabular-nums text-[color:var(--color-on-primary)]">
+                        {ringgit(credit.cents)}
+                      </div>
+                      <p className="mt-1 [font-size:var(--text-xs)] opacity-70 text-[color:var(--color-on-primary)]">
+                        {copy.form.creditLede}
+                      </p>
                     </div>
-                    <p className="mt-1 [font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
-                      {copy.form.creditLede}
-                    </p>
                     <ul className="mt-3 flex flex-col gap-1">
                       {credit.from.map((e) => (
                         <li

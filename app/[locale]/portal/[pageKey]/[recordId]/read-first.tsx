@@ -119,12 +119,19 @@ export function ReadFirst({
 
   return (
     <section>
-      {/* 🔴 `flex-wrap` 在**外层**——两颗新按钮加进来才撞到的：`extraActions`
+      {/* 🔴 抬头本身是一张卡（老板逐行比对参考稿指出来的，2026-09-14）——
+        参考稿的头像、名字、药丸、按钮全部装在一张 `bg-white border
+        rounded-2xl shadow-sm` 的卡里，我们原本是浮在页面底色上的裸字。
+        `.ds-card` 是这个仓库自己的同一种卡（`--radius-lg` · `--shadow-card`），
+        跟底下字段那张卡、跟这一页其余每一张卡，用的是同一个类——不是另外
+        发明一种「头卡」的样子。
+
+        `flex-wrap` 在外层——两颗新按钮加进来才撞到的：`extraActions`
         那一排原本 `shrink-0`，一个左边窄栏（560px）塞不下「头像 + 名字 +
         药丸」跟三颗按钮的时候，浏览器把压缩全部让给了名字那一侧，
         「Mrs Chan」被挤断成两行。外层允许换行之后，装不下就让整排按钮
         掉到名字下面一行，名字自己永远保持它本来的宽度——不去挤它。 */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="ds-card flex flex-wrap items-start justify-between gap-4 p-6">
         <div className="flex items-center gap-4">
           {showAvatar && heading.trim() ? (
             <Avatar name={heading} size={64} fontSize="var(--text-title)" />

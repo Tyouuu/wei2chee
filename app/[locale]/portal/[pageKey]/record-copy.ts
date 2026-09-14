@@ -48,6 +48,10 @@ export type RecordFormCopy = {
   upcomingHeading: string;
   upcomingConfirmed: string;
   upcomingWith: string;
+  /** 参考稿是「Reschedule」，我们没有内嵌换时段（[任务 368] 记着的
+   *  下一步），换成点得进那一笔自己详情页的「View」。 */
+  upcomingView: string;
+  upcomingCancel: string;
   archive: string;
   archiving: string;
   unarchive: string;
@@ -685,6 +689,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       upcomingHeading: "下一次预约",
       upcomingConfirmed: "已确认",
       upcomingWith: "谁做",
+      upcomingView: "查看",
+      upcomingCancel: "取消",
       /* ── 三颗只在「改」那一页出现的 ────────────────────────────────
          「收起来」不是删掉：丢掉的那一单，是明年客人回头时「上次我们报多少」
          的答案。「冲正」是钱唯一的改法 —— 开一张相反的，不是把原来那张改掉，
@@ -1192,6 +1198,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       upcomingHeading: "Upcoming Booking",
       upcomingConfirmed: "Confirmed",
       upcomingWith: "Stylist",
+      upcomingView: "View",
+      upcomingCancel: "Cancel",
       archive: "Put away",
       archiving: "Putting away…",
       unarchive: "Back on the shelf",
