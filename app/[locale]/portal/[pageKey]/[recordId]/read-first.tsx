@@ -113,7 +113,7 @@ export function ReadFirst({
         </button>
       </div>
 
-      <div className="mt-5 flex flex-col gap-5 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:mt-0 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+      <div className="ds-card mt-5 flex flex-col gap-5 p-6 [&>*:first-child]:mt-0 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
         {afterHeading}
 
         <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">

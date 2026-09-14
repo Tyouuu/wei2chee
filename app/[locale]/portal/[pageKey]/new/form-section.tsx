@@ -27,10 +27,14 @@
 
 export function FormSection({
   title,
+  icon,
   action,
   children,
 }: {
   title: string;
+  /** 卡头的记号——一眼认得出这是哪一段（老板 2026-09-14 讲的）。
+      没有就不画，不强求每一段都有。 */
+  icon?: React.ReactNode;
   /** 这一段自己的动作，画在标题右边。没有就不画。 */
   action?: React.ReactNode;
   children: React.ReactNode;
@@ -46,7 +50,12 @@ export function FormSection({
             （「照这一行的惯例填」），把标题挤成两行「Payment / schedule」。
             一个被自己那一段的按钮挤断的标题，读起来是坏的。
             现在挤不下的时候**按钮掉到下一行**，标题永远是一行。 */}
-        <span className="shrink-0 [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+        <span className="flex min-w-0 shrink-0 items-center gap-2 [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+          {icon ? (
+            <span aria-hidden className="shrink-0 text-[color:var(--color-on-canvas-dim)]">
+              {icon}
+            </span>
+          ) : null}
           {title}
         </span>
         {action ? (

@@ -3,6 +3,7 @@
 import type { RecordFormCopy } from "../record-copy";
 import { FormSection } from "./form-section";
 import { ringgitOf } from "./line-editor";
+import { IconClock } from "@/design-system/components/rail-icons";
 
 /**
  * 这个客人来过几次，一共多少，上一次什么时候。
@@ -45,7 +46,7 @@ export function PartyHistory({
   copy: RecordFormCopy;
 }) {
   return (
-    <FormSection title={copy.historyHeading}>
+    <FormSection title={copy.historyHeading} icon={<IconClock className="h-[16px] w-[16px]" />}>
       {visits === 0 ? (
         <span className="[font-size:var(--text-sm)] text-[color:var(--color-on-canvas-dim)]">
           {copy.historyNone}

@@ -245,6 +245,44 @@ export function IconSpark({ className = "h-[18px] w-[18px]" }: IconProps) {
   )
 }
 
+/**
+ * 三个记录详情页「卡头」用的图标——每一段一个记号，不用靠文字标题
+ * 分辨这是哪一段（老板 2026-09-14：卡片要「一眼认得出」）。
+ * 同一套画法：24×24、`currentColor`、1.8 的笔画。
+ */
+export function IconClock({ className = "h-[18px] w-[18px]" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  )
+}
+
+export function IconGift({ className = "h-[18px] w-[18px]" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <path d="M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8" />
+      <path d="M12 8v13" />
+      <path d="M12 8H8.5a2 2 0 1 1 0-4C11 4 12 8 12 8Z" />
+      <path d="M12 8h3.5a2 2 0 1 0 0-4C13 4 12 8 12 8Z" />
+    </svg>
+  )
+}
+
+export function IconScissors({ className = "h-[18px] w-[18px]" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="M20 4 8.5 15.5" />
+      <path d="M14.5 14.5 20 20" />
+      <path d="M8.5 8.5 12 12" />
+    </svg>
+  )
+}
+
 export const RAIL_ICONS: Record<string, (p: IconProps) => React.JSX.Element> = {
   dashboard: IconGrid,
   customers: IconUsersRail,

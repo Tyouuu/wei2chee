@@ -3,6 +3,7 @@
 import type { RecordFormCopy } from "../record-copy";
 import { FormSection } from "./form-section";
 import { ringgitOf } from "./line-editor";
+import { IconList } from "@/design-system/components/rail-icons";
 
 /**
  * 这个客户的单子，跟他还欠多少。
@@ -51,6 +52,7 @@ export function PartyJobs({
   return (
     <FormSection
       title={copy.theirJobs}
+      icon={<IconList className="h-[16px] w-[16px]" />}
       /* 「他还欠多少」画在标题右边 —— 那一段自己的一句话，跟明细那一段的
          「＋ 加一行」站同一个位子。⚠️ `owing` 是 null 的意思是**没有问**
          （师傅看不到钱），不是零，所以整句不画。 */

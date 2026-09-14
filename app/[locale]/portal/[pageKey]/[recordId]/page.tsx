@@ -1989,7 +1989,7 @@ export default async function EditRecordPage({
   const overviewTabContent = (
     <>
       {ctx.isDirectory && pageKey !== "staff" ? (
-        <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
           <PartyHistory
             visits={visits}
             lastOn={lastOn}
@@ -2003,7 +2003,7 @@ export default async function EditRecordPage({
       ) : null}
 
       {credit && ctx.isDirectory && pageKey === "customers" ? (
-        <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
           <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
             {copy.form.creditHeading}
           </h2>
@@ -2035,7 +2035,7 @@ export default async function EditRecordPage({
       ) : null}
 
       {storedCredit && ctx.isDirectory && pageKey === "customers" ? (
-        <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
           <h2 className="[font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
             {copy.form.storedCreditHeading}
           </h2>
@@ -2066,7 +2066,7 @@ export default async function EditRecordPage({
   const accountTabContent = (
     <>
       {credit && ctx.isDirectory && pageKey === "customers" ? (
-        <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
           <PartyStatement
             projectId={ctx.projectId}
             partyId={recordId}
@@ -2077,7 +2077,7 @@ export default async function EditRecordPage({
       ) : null}
 
       {portalRef !== undefined ? (
-        <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
           <PartyPortalPanel
             partyId={recordId}
             portalRef={portalRef}
@@ -2091,7 +2091,7 @@ export default async function EditRecordPage({
       ) : null}
 
       {packages ? (
-        <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
           <PackagesPanel
             partyId={recordId}
             rows={packages}
@@ -2101,7 +2101,7 @@ export default async function EditRecordPage({
       ) : null}
 
       {consents ? (
-        <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
           <ConsentPanel
             partyId={recordId}
             origin={SITE_URL}
@@ -2144,8 +2144,15 @@ export default async function EditRecordPage({
           Playwright 的 `visible` 断言才会一直说「找到了，但是隐藏的」。
           一个宽度算成 0 的区块，跟一个真的不存在的区块，画面上看起来一样，
           断言上看起来也一样——除非那把尺问的是宽度，不是文字在不在。 */}
+        {/* 🔴 地跟卡以前是同一个白——老板拿外面一份参考稿比对，判「不好看」：
+          参考稿的地是浅灰、卡是白，卡因此「浮」得起来；我们纯靠一条 1px 的线
+          分地跟卡，配上刚加的那层浅阴影几乎看不出来（2026-09-14）。
+          这里只垫**这一种页面**的地色，不动 `--color-canvas` 本身——那个
+          token 别处也在用，改了牵动太广。`--color-ink-850` 在瑞士这一套里
+          本来就是 `#fafafa`（原本只给 hover 状态用），直接借来当地色，
+          不是发明新数值。 */}
         <main
-          className={`w-full ${
+          className={`w-full [background-color:var(--color-ink-850)] ${
             ctx.shape === "pipeline" ||
             ctx.shape === "calendar" ||
             ctx.shape === "catalog" ||
@@ -2316,7 +2323,7 @@ export default async function EditRecordPage({
           {/* 预约那一页多一段：这一笔当场做了什么（[任务 397]）。
             ⚠️ 一笔都没连过就整段不画——同一条纪律，见 treatment-history.tsx 档头。 */}
           {appointmentTreatments.length ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <TreatmentHistory visits={appointmentTreatments} copy={copy.form} />
             </div>
           ) : null}
@@ -2326,7 +2333,7 @@ export default async function EditRecordPage({
             跟 `appointmentTreatments` 不同，这一段有「加一行」表单，
             所以即使一行都还没有也照样画（不是画一份空的等着填）。 */}
           {visitLines !== undefined ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <VisitLinesPanel
                 appointmentId={recordId}
                 lines={visitLines}
@@ -2339,7 +2346,7 @@ export default async function EditRecordPage({
           {/* 库存那一页多一段：这一件货自己有几批、哪一批先过期。
             ⚠️ 一批都没有就整段不画（组件自己判，跟「她做过什么」同一条纪律）。 */}
           {itemBatches.length ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <ItemBatches batches={itemBatches} copy={copy.form} />
             </div>
           ) : null}
@@ -2348,7 +2355,7 @@ export default async function EditRecordPage({
             排在这几段的最前面 —— 那是他读完这张单**接着要做**的那件事。
             ⚠️ `undefined` = 没有问（不是走单那几页，或者已经收起来了）。 */}
           {followUp !== undefined ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <FollowUpPanel
                 recordId={recordId}
                 open={followUp}
@@ -2361,7 +2368,7 @@ export default async function EditRecordPage({
             ⚠️ `undefined` = 没有问（不是预约那几页，或者这一笔没有连到客人）；
             `null` = 问过了，读不到（`deposit_advice` 失败）。 */}
           {noShowInfo ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <NoShowPanel
                 recordId={recordId}
                 projectId={ctx.projectId}
@@ -2374,7 +2381,7 @@ export default async function EditRecordPage({
           {/* 预约那几页多一段：她自己那条连结——取消 · 留评价（[任务 399]）。
             ⚠️ `undefined` = 没有问（不是预约那几页，或者这一笔是挡起来的时段）。 */}
           {bookingPublicRef !== undefined ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <BookingLinkPanel
                 origin={SITE_URL}
                 publicRef={bookingPublicRef}
@@ -2386,7 +2393,7 @@ export default async function EditRecordPage({
           {/* 订单 / 工程那一页多一段：送出去了几趟。
             ⚠️ `undefined` = 没有问（不是那两页，或者已经收起来了）。 */}
           {runs !== undefined ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <DeliveryPanel
                 recordId={recordId}
                 runs={runs}
@@ -2399,7 +2406,7 @@ export default async function EditRecordPage({
           {/* 订单 · 工程 · 进货单多一段：退回来的。
             ⚠️ `undefined` = 没有问（不是那三页，或者已经收起来了）。 */}
           {returns !== undefined ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <ReturnsPanel
                 recordId={recordId}
                 lines={returnable}
@@ -2413,7 +2420,7 @@ export default async function EditRecordPage({
           {/* 这一单借出去的东西。⚠️ 一件都没借过就整段不画 ——
             那一页已经九段，一段永远说「没有」的区块读起来是没做完。 */}
           {lent.length ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <RentalsOnJob
                 rentals={lent}
                 rentalsHref={`/${locale}/portal/rentals`}
@@ -2425,7 +2432,7 @@ export default async function EditRecordPage({
           {/* 单据那一页多一段：发给客人的那条连结，跟他答了什么。
             ⚠️ `undefined` = 没有问（不是那几种单，或者已经收起来了）。 */}
           {shareRef !== undefined ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <ShareRecordPanel
                 recordId={recordId}
                 shareRef={shareRef}
@@ -2447,7 +2454,7 @@ export default async function EditRecordPage({
             ⚠️ `undefined` = 没有问（不是走单那几页 · 收起来了 ·
             或者读的人看不到钱）—— 那时候整段不画。 */}
           {referral ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <ReferralPanel
                 recordId={recordId}
                 referrerId={referral.id}
@@ -2465,7 +2472,7 @@ export default async function EditRecordPage({
             ⚠️ `undefined` 的意思是**没有问**（不是对帐那一页）——
             `null` 是问了、还没关。两个在画面上是不一样的事。 */}
           {settledAt !== undefined ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <SettleMonth
                 id={recordId}
                 settledAt={settledAt}
@@ -2477,7 +2484,7 @@ export default async function EditRecordPage({
           {/* 客户 / 供应商 / 师傅那一页多一段：他替我带过几单。
             ⚠️ `null` = 没有带过（或者读的人看不到钱）—— 整段不画。 */}
           {sent ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <ReferredJobs
                 tally={sent.tally}
                 jobs={sent.jobs}
@@ -2493,7 +2500,7 @@ export default async function EditRecordPage({
             ⚠️ `tiers === null` 的意思是**没有问**（不是师傅页，或者
             读的人看不到钱）—— 那时候整段不画，而不是画一份空的抽成。 */}
           {tiers ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <CommissionPanel
                 partyId={recordId}
                 tiers={tiers}
@@ -2510,7 +2517,7 @@ export default async function EditRecordPage({
           {/* 师傅那一页多一段：上下班打卡（[任务 401]）。
             ⚠️ `undefined` = 没有问（不是师傅那一页）。 */}
           {shiftInfo !== undefined ? (
-            <div className="mt-6 [border-radius:var(--radius-lg)] border p-6 [border-color:var(--color-ink-800)] [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+            <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
               <StaffShiftPanel
                 staffId={recordId}
                 clockedInSince={shiftInfo.clockedInSince}

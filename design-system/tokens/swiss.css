@@ -594,10 +594,18 @@
   --row-h: 65px;
   --control-h: 36px;
 
-  /* ---- ELEVATION AXIS: outlined card + subtle lift ------------------------ */
+  /* ---- ELEVATION AXIS: outlined card + a soft lift ------------------------
+     🔴 曾经是 `none`（"flat surfaces with no heavy shadows"，Swiss Design
+     那份原始设计说明的原话）——老板 2026-09-14 直接推翻：他拿一份外面做的
+     设计稿（阴影 + 卡跟地有深浅差）比对我们这一版纯线框的卡，判「不好看」，
+     而且明讲不要再拿「瑞士当初的理由」当没有阴影的挡箭牌。
+     这不是重新量出瑞士的身份该是什么——是他直接拍板要换。
+     数值抄的是那份参考稿的 `shadow-sm`（Tailwind 默认那一级：
+     0 1px 2px 0 rgb(0 0 0 / 0.05)），比 --shadow-overlay 那种浮层用的
+     深阴影浅得多，卡片只是「稍微浮起来」，不是「盖住底下东西」的那种浮层。 */
   --border-card-width: 1px;
-  --shadow-card: none;
-  --shadow-raised: none;
+  --shadow-card: 0 1px 2px 0 rgba(24, 24, 27, 0.05);
+  --shadow-raised: 0 1px 3px 0 rgba(24, 24, 27, 0.08), 0 1px 2px -1px rgba(24, 24, 27, 0.08);
   --shadow-overlay: 0 8px 28px -8px rgba(24, 24, 27, 0.24);
 
   /* ── SURFACE ────────────────────────────────────────────────────────

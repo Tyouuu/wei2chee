@@ -5,6 +5,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { RecordFormCopy } from "../record-copy";
 import { FormSection } from "./form-section";
 import { ringgitOf } from "./line-editor";
+import { IconChart } from "@/design-system/components/rail-icons";
 
 /**
  * 月结对帐单 —— 他每个月要发给这个客人的那一张纸。
@@ -146,6 +147,7 @@ export function PartyStatement({
   return (
     <FormSection
       title={copy.statementHeading}
+      icon={<IconChart className="h-[16px] w-[16px]" />}
       action={
         <input
           type="month"
