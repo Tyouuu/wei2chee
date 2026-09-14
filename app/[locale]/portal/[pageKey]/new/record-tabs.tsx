@@ -70,7 +70,7 @@ export function RecordTabs({
         <div
           key={t.key}
           hidden={active !== t.key}
-          className="pt-8 [&>*:first-child]:mt-0 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0"
+          className="pt-8 [&>*:first-child]:mt-0"
         >
           {t.content}
         </div>
