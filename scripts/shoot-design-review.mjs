@@ -70,6 +70,12 @@ try {
   });
   const partyId = her.data.id;
 
+  // 她的备注——沙龙老板真的会写的那种自由文字（发色配方、偏好）
+  await api.rpc("update_directory_entry", {
+    in_id: partyId,
+    in_note: "Ash brown 6.1 root touch-up every 6-8 weeks, no bleach on crown. Prefers quiet service, working on iPad during blowdry.",
+  });
+
   // 这门生意的规矩早就设过了——看已经settle 下来长什么样，不是第一次设定的样子
   await api.rpc("set_booking_rules", {
     in_project_id: pid, in_no_show_deposit_after: 2, in_default_deposit_cents: 5000,
@@ -106,6 +112,10 @@ try {
     in_party: "Mrs Chan", in_party_id: partyId, in_service: "Rebonding",
   });
   await api.rpc("set_appointment_status", { in_id: done.data, in_status: "done" });
+  await admin.from("appointment_lines").insert([
+    { project_id: pid, appointment_id: done.data, service: "Rebonding", staff_id: lily.data.id, price_cents: 32000, sort_order: 0 },
+    { project_id: pid, appointment_id: done.data, service: "Chronologiste Hair Oil (take-home)", staff_id: null, price_cents: 4500, sort_order: 1 },
+  ]);
   await admin.from("appointments").update({
     review_rating: 5, review_text: "Loved it, will come back!",
     review_submitted_at: new Date().toISOString(),

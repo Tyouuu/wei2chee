@@ -271,6 +271,16 @@ export function IconGift({ className = "h-[18px] w-[18px]" }: IconProps) {
   )
 }
 
+export function IconNote({ className = "h-[18px] w-[18px]" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M8 3h6l4 4v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+      <path d="M14 3v4h4" />
+      <path d="M9 12h6M9 16h4" />
+    </svg>
+  )
+}
+
 export function IconScissors({ className = "h-[18px] w-[18px]" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>

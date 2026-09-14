@@ -33,6 +33,13 @@ export type RecordFormCopy = {
   regNo: string;
   taxId: string;
   note: string;
+  /* 客户/预约页那一段独立的「他的备注」卡——同一个 `note` 栏位，
+     从名册那张表的一格小字，搬成一张自己的卡（老板要求照参考稿抄，
+     2026-09-14）。字不写死成「Hair Profile」——沙龙填的是发色配方，
+     补习中心填的是家长的联络习惯，字段本身要跨三个行业通用，
+     内容才是各自不同的那一半。 */
+  notesCardHeading: string;
+  notesCardNone: string;
   archive: string;
   archiving: string;
   unarchive: string;
@@ -331,6 +338,11 @@ export type RecordFormCopy = {
   historySpent: string;
   historyLast: string;
   historyNone: string;
+  /* 每一次来访做过／买过什么，加总起来的那一张卡（20260914010000）。
+     不叫「Retail Products」——一瓶洗发精跟一次洗剪吹在我们资料里是
+     同一种行，字段名不该假装我们分得清楚。 */
+  lineHistoryHeading: string;
+  lineHistoryNone: string;
   /* 哪一间店（20260904100000）。两间以上才出现。 */
   branch: string;
   branchAny: string;
@@ -659,6 +671,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       regNo: "公司注册号 (SSM)",
       taxId: "税号 (TIN)",
       note: "备注",
+      notesCardHeading: "关于她的备注",
+      notesCardNone: "还没有写过备注。",
       /* ── 三颗只在「改」那一页出现的 ────────────────────────────────
          「收起来」不是删掉：丢掉的那一单，是明年客人回头时「上次我们报多少」
          的答案。「冲正」是钱唯一的改法 —— 开一张相反的，不是把原来那张改掉，
@@ -888,6 +902,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       historySpent: "一共",
       historyLast: "上一次",
       historyNone: "还没有来过。",
+      lineHistoryHeading: "每一次做过／买过什么",
+      lineHistoryNone: "还没有记录过任何一行。",
       branch: "哪一间店",
       branchAny: "不分店",
       doneBy: "谁做的",
@@ -1158,6 +1174,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       regNo: "Company no. (SSM)",
       taxId: "Tax ID (TIN)",
       note: "Notes",
+      notesCardHeading: "Notes about her",
+      notesCardNone: "No notes written yet.",
       archive: "Put away",
       archiving: "Putting away…",
       unarchive: "Back on the shelf",
@@ -1402,6 +1420,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       historySpent: "worth",
       historyLast: "last one",
       historyNone: "Nothing yet.",
+      lineHistoryHeading: "What she's had done or bought",
+      lineHistoryNone: "No visits recorded yet.",
       branch: "Which branch",
       branchAny: "No particular branch",
       doneBy: "Who did it",

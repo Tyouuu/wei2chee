@@ -55,6 +55,7 @@ import { StoredCreditPanel } from "../new/stored-credit-panel";
 import { StaffShiftPanel } from "../new/staff-shift-panel";
 import { VisitLinesPanel } from "../new/visit-lines-panel";
 import { RecordTabs } from "../new/record-tabs";
+import { IconNote, IconReceipt } from "@/design-system/components/rail-icons";
 import { CommissionPanel, type CommissionTier } from "../new/commission-panel";
 import { ReferralPanel, type ReferralOption } from "../new/referral-panel";
 import {
@@ -255,6 +256,16 @@ export default async function EditRecordPage({
   let visits = 0;
   let lastOn: string | null = null;
   let spentCents: number | null = null;
+  /* 她每一次来访做过／买过什么，全部行加起来，最近的排最前面
+     （20260914010000）。空阵列＝一行都没有——跟这一页其余每一段
+     同一条纪律，讲一句话，不留空白。 */
+  let visitLineHistory: {
+    id: string;
+    service: string;
+    staffName: string;
+    priceCents: number | null;
+    onDate: string | null;
+  }[] = [];
   /* 师傅那一页：他的抽成，跟这个月他做了多少（20260904120000）。
      ⚠️ `null` = **没有问**（这一页不是师傅、或者读的人看不到钱），
      不是「没有抽成」—— 那两句在画面上要长得不一样。 */
@@ -709,6 +720,32 @@ export default async function EditRecordPage({
       }[];
 
       treatments = await withTreatmentPhotos(supabase, rows);
+
+      /* ── 客户那一页：她每一次来访做过／买过什么，加总起来 ──────────────
+         老板拿一份参考稿要求这一页要有这一段（2026-09-14）——参考稿
+         分「Past Visits」跟「Retail Products」两张卡，而我们的资料
+         从来没有分开过服务跟零售商品：`appointment_lines` 就是一次
+         来访底下的几行，一瓶带回家的洗发精跟一次洗剪吹是同一种行。
+         所以这里给的是一张卡、真的资料，不是照抄版面硬凑两张假的。 */
+      const { data: allLines } = await supabase.rpc("visit_lines_for_party", {
+        in_project_id: ctx.projectId,
+        in_party_id: recordId,
+      });
+      visitLineHistory = (
+        (allLines ?? []) as {
+          id: string;
+          service: string;
+          staff_name: string;
+          price_cents: number | null;
+          on_date: string | null;
+        }[]
+      ).map((l) => ({
+        id: l.id,
+        service: l.service,
+        staffName: l.staff_name,
+        priceCents: l.price_cents,
+        onDate: l.on_date,
+      }));
     }
 
     /* ── 客户那一页：他先付了、还没用掉的钱 ────────────────────────────
@@ -1988,6 +2025,28 @@ export default async function EditRecordPage({
      一段都没进这两个变数，照旧在下面一条到底地画。 */
   const overviewTabContent = (
     <>
+      {/* 🔴 老板拿参考稿比对，要求把「客户的备注」从名册表格那一格小字，
+        搬成自己一张卡（2026-09-14）——同一个 `note` 栏位，只是给它
+        参考稿那种「一进来就看得到」的分量。字段名不写成沙龙专属的
+        「Hair Profile」：沙龙老板会填发色配方，补习中心老板会填家长
+        联络习惯，同一个自由文字栏位服务三个行业，不是发明新栏位。
+        ⚠️ 空的时候讲一句话，不是留一片空白——跟这一页其余每一段同一条纪律。 */}
+      {ctx.isDirectory && pageKey === "customers" ? (
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+          <div className="flex items-center gap-2 [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            <IconNote className="h-[16px] w-[16px] text-[color:var(--color-on-canvas-dim)]" />
+            {copy.form.notesCardHeading}
+          </div>
+          <p className="mt-3 whitespace-pre-wrap [font-size:var(--text-sm)] leading-[var(--leading-body)] text-[color:var(--color-on-canvas)]">
+            {(values.note ?? "").trim() || (
+              <span className="text-[color:var(--color-on-canvas-dim)]">
+                {copy.form.notesCardNone}
+              </span>
+            )}
+          </p>
+        </div>
+      ) : null}
+
       {ctx.isDirectory && pageKey !== "staff" ? (
         <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
           <PartyHistory
@@ -1999,6 +2058,42 @@ export default async function EditRecordPage({
           <div className="mt-6">
             <PartyJobs jobs={jobs} owing={owing} copy={copy.form} />
           </div>
+        </div>
+      ) : null}
+
+      {/* 🔴 参考稿的「Past Visits」＋「Retail Products」两张卡，我们的资料
+        没有分开过——`appointment_lines` 一行可以是一次洗剪吹，也可以是
+        一瓶带回家的洗发精，同一张表（20260910010000 档头原话）。
+        这里给的是那张表真的加总起来，一张卡，不是硬凑两张假的。
+        ⚠️ 一行都没有就整段不画，跟疗程记录同一条纪律——一段永远说
+        「还没有记录」的区块读起来是这一页没做完。 */}
+      {visitLineHistory.length > 0 ? (
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+          <div className="flex items-center gap-2 [font-size:var(--text-sm)] tracking-[var(--tracking-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+            <IconReceipt className="h-[16px] w-[16px] text-[color:var(--color-on-canvas-dim)]" />
+            {copy.form.lineHistoryHeading}
+          </div>
+          <ul className="mt-3 flex flex-col gap-3">
+            {visitLineHistory.map((l) => (
+              <li
+                key={l.id}
+                className="flex items-baseline justify-between gap-3 border-t pt-3 first:border-t-0 first:pt-0 [border-color:var(--color-ink-800)]"
+              >
+                <div className="min-w-0">
+                  <div className="truncate [font-size:var(--text-sm)] [font-weight:var(--fw-medium)] text-[color:var(--color-on-canvas)]">
+                    {l.service}
+                  </div>
+                  <div className="[font-size:var(--text-xs)] text-[color:var(--color-on-canvas-dim)]">
+                    {l.onDate ?? "—"}
+                    {l.staffName ? ` · ${l.staffName}` : ""}
+                  </div>
+                </div>
+                <div className="shrink-0 tabular-nums [font-size:var(--text-sm)] text-[color:var(--color-on-canvas)]">
+                  {l.priceCents != null ? ringgit(l.priceCents) : "—"}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
