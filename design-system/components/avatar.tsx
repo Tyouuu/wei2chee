@@ -75,17 +75,32 @@ function initialsFor(name: string): string {
  * has no dependency beyond its own file and still produces a different
  * color under Hearth/Blueprint without any code change.
  */
-export function Avatar({ name, size = 28 }: { name: string; size?: number }) {
+export function Avatar({
+  name,
+  size = 28,
+  /* Record-detail headers (2026-09-14, matched to a reference the founder
+     handed over) use this at 64px, where --text-xs (11.5px) reads as a
+     speck in a circle four times its old size — the reference sets its
+     initials at roughly a third of the circle's diameter. Optional so
+     every existing 28/40px call site (record-table rows, the old header
+     size) keeps the exact token-driven size it already had. */
+  fontSize,
+}: {
+  name: string
+  size?: number
+  fontSize?: string
+}) {
   const tone = fillFor(name)
   return (
     <span
       // [font-weight:var(--fw-semibold)], not heavier: the token block sets a hard ceiling of
       // --fw-semibold because every reference product this design follows
       // stops at or below 600.
-      className="grid shrink-0 place-items-center rounded-full [font-size:var(--text-xs)] [font-weight:var(--fw-semibold)]"
+      className="grid shrink-0 place-items-center rounded-full [font-weight:var(--fw-semibold)]"
       style={{
         width: size,
         height: size,
+        fontSize: fontSize ?? "var(--text-xs)",
         /*
           A CIRCLE, AND A TINT -- BECAUSE THAT IS WHAT THE REFERENCE DOES.
 

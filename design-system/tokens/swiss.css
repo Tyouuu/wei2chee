@@ -150,7 +150,16 @@
      the row you are on is a step off it in the direction of the words.
   */
   --color-nav-hover: #f4f4f5;
-  --color-nav-active: #ebebec;
+  /* 🔴 曾经是浅灰 `#ebebec`（同一份「深浅从侧栏自己的地跟字混出来」的推导）
+     ——老板拿参考稿比对，直接要求选中那一行整块变黑配白字，不要只是
+     比周围深一点点的灰（2026-09-14）。跟 --shadow-card 那次同一句话：
+     不要拿这个仓库自己以前的理由当不改的挡箭牌。
+     `--color-nav-active-fg` 是新加的——只有这一份档案定义它，其余
+     十几套风格没有定义就照旧读 `--color-nav-fg`（见 rail-nav.tsx 那句
+     `var(--color-nav-active-fg,var(--color-nav-fg))`），所以这一改
+     不会动到任何其他风格今天的样子。 */
+  --color-nav-active: #18181b;
+  --color-nav-active-fg: #fafafa;
   --color-nav-border: #e4e4e7;
   --color-nav-accent: #18181b;
 

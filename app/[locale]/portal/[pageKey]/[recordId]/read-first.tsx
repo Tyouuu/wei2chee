@@ -69,6 +69,7 @@ export function ReadFirst({
   enabled,
   heading,
   showAvatar,
+  headingBadges,
   fields,
   editLabel,
   afterHeading,
@@ -85,6 +86,10 @@ export function ReadFirst({
   /* 这一颗抬头讲的是**一个人**（客户 · 师傅 · 供应商 · 预约上的客人）——
      只有这几种给头像，一件货的名字放一个头像没有意义。 */
   showAvatar?: boolean;
+  /* 名字旁边那排药丸——「19 visits」「Regular Client」那种。
+     不是 ReadFirst 自己发明的：内容跟要不要显示是呼叫端的事
+     （每种记录形状的「身份」不一样），这里只给一个插槽。 */
+  headingBadges?: ReactNode;
   fields: ReadField[];
   editLabel: string;
   /* 天天要按的那个动作——不属於「填写资料」，读的时候也要看得到。 */
@@ -98,11 +103,16 @@ export function ReadFirst({
   return (
     <section>
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          {showAvatar && heading.trim() ? <Avatar name={heading} size={40} /> : null}
-          <h1 className="[font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
-            {heading}
-          </h1>
+        <div className="flex items-center gap-4">
+          {showAvatar && heading.trim() ? (
+            <Avatar name={heading} size={64} fontSize="var(--text-title)" />
+          ) : null}
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="[font-size:var(--text-hero)] [font-weight:var(--fw-semibold)] text-[color:var(--color-on-canvas)]">
+              {heading}
+            </h1>
+            {headingBadges}
+          </div>
         </div>
         <button
           type="button"

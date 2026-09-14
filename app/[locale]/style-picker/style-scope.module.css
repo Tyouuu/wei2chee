@@ -967,7 +967,8 @@
   --color-nav-fg: #18181b;
   --color-nav-fg-dim: #71717a;
   --color-nav-hover: #f4f4f5;
-  --color-nav-active: #ebebec;
+  --color-nav-active: #18181b;
+  --color-nav-active-fg: #fafafa;
   --color-nav-border: #e4e4e7;
   --color-nav-accent: #18181b;
   --color-paper: #18181b;
@@ -1063,8 +1064,8 @@
   --row-h: 65px;
   --control-h: 36px;
   --border-card-width: 1px;
-  --shadow-card: none;
-  --shadow-raised: none;
+  --shadow-card: 0 1px 2px 0 rgba(24, 24, 27, 0.05);
+  --shadow-raised: 0 1px 3px 0 rgba(24, 24, 27, 0.08), 0 1px 2px -1px rgba(24, 24, 27, 0.08);
   --shadow-overlay: 0 8px 28px -8px rgba(24, 24, 27, 0.24);
   --surface-image: none;
   --surface-blur: none;

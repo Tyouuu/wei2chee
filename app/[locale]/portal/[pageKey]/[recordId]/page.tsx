@@ -2284,6 +2284,19 @@ export default async function EditRecordPage({
             }
             heading={values.primary || ctx.title}
             showAvatar={ctx.isDirectory || ctx.shape === "calendar"}
+            /* 名字旁边那颗「19 visits」药丸——参考稿摆在标题右边的那排状态，
+               我们唯一有真数字撑得住的就是这一个（`party_visits`，
+               [任务 351] 那支早就在读）。不编「Regular Client」那种
+               等级——那是一套我们从来没有过的忠诚方案（[任务 376] 的
+               `loyalty_rules` 答的才是这个问题，他没设过规矩就不该有
+               药丸讲一句他没讲过的话）。 */
+            headingBadges={
+              ctx.isDirectory && pageKey === "customers" && visits > 0 ? (
+                <span className="inline-flex min-h-7 items-center rounded-full border px-3 [font-size:var(--text-xs)] [font-weight:var(--fw-medium)] [border-color:var(--color-ink-800)] text-[color:var(--color-on-canvas-dim)]">
+                  {copy.form.historyVisits.replace("{n}", String(visits))}
+                </span>
+              ) : null
+            }
             editLabel={copy.form.editOne}
             afterHeading={afterHeadingNode}
             fields={readFields}

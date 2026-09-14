@@ -584,7 +584,7 @@ export function RailNav({
                             // is that nothing on it is loud.
                             isQuiet
                             ? "text-[color:var(--color-nav-fg)] [font-weight:var(--fw-semibold)]"
-                            : "text-[color:var(--color-nav-fg)] [background-color:var(--color-nav-active)] [font-weight:var(--fw-semibold)]"
+                            : "[color:var(--color-nav-active-fg,var(--color-nav-fg))] [background-color:var(--color-nav-active)] [font-weight:var(--fw-semibold)]"
                           : "text-[color:var(--color-nav-fg-dim)] [font-weight:var(--fw-medium)] hover:[background-color:var(--color-nav-hover)] hover:text-[color:var(--color-nav-fg)]"
                       }`}
                     >
