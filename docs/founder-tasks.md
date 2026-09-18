@@ -4249,3 +4249,55 @@ Playwright 的 `innerText()` 会跟着 CSS 可见度走（排除带 `hidden` 属
       再收合——分页签只是换了它们的容器，内容形状没有动
 - [ ] 「常用 vs 偶尔」那个收合判准、分页签这个骨架，还没有系统性套用到
       师傅页、库存页——同[任务 403] 留着的那一条
+
+### 405. 🔴 老板亲自设计的五张后台 UI，直接替换现在这一套（2026-09-18 他拍板）
+> `这些Ui是直接替换我们之前的设计的 就是要沿用这一套的`
+
+他给了五张沙龙后台的完整 Stitch 代码（Overview · Floor Timeline & Walk-in
+Schedule · Register & Checkout · Clients Directory & Formulas · Client
+Formula Dossier），逐张核对过是真的代码不是截图。五张共用同一套 Material 3
+风格的 token（Geist 字体、`surface-container-*` 五级中性阶梯、主色纯黑
+`#000000`、彩色只用在真的状态含义上）。
+
+🔴 **一个关键发现，改变了这件事的做法**：`SYSTEM_REGISTER = "swiss"`
+（`lib/portal/system-register.ts`）本来就是**逐字复刻 arhamkhnz/
+next-shadcn-admin-dashboard** 的那一套（[任务 138]），而这五张新图的
+设计语言（白底黑主色、五级中性面、卡片浅阴影）跟 arhamkhnz 是同一个
+血缘——**不是要把暗色系统翻成亮色，是把已经很接近的那一套用这五张更
+详细的规格补完**。`RecordTable`（1435 行）· `RailNav`（796 行）两个
+共用组件本来就已经做出了 avatar 折叠第二行、状态药丸、真会筛的分段/
+搜索、侧栏分组折叠、圆头像footer——结构跟这五张图高度重合，缺的主要是
+token 数值细节，不是重写组件。
+
+#### ✅ 第一件收尾：客户名册页表头 + 筛选（swiss.css · industry-template.ts）
+表头从 `arhamkhnz` 原版的小写正常字距，改成这五张新图逐字量出来的
+`section-header`（11.5px · 600 · tracking 0.06em · uppercase）——新参考
+赢过旧参考。客户名册（`dirTable`）打开 `segments: true`，让真的状态值
+（多于一种、有重复）自动长出可筛的分段药丸——用的是 `RecordTable` 本来
+就有的 `autoSegments`，不是新造。真登入截图确认（`shoot:directory`）：
+表头变成 `CLIENT ⌄` / `STATUS ⌄`，avatar+名字+联络方式折叠成一格，
+筛选框跟"Showing all 4"页脚都还在。`npx tsc --noEmit` 干净，
+`design-system/editor` · `record-table` · `style-picker` · `lib/templates`
+四组测试共 209 条全过，无回归。
+
+⚠️ **故意没有做的**：mockup 的分页按钮（1 2 3 … 36）——`record-table.tsx`
+自己的注解写死「我们不画分页：一次显示全部，一颗翻不了页的按钮是这个
+仓库禁得最严的那条」。这条不抄，因为抄了就是做一颗按下去没有事情发生
+的按钮。
+
+#### 还欠，按风险分类，继续在这个 session 做
+- [ ] **Overview 总览页** —— 身份卡/趋势图这类走 Puck 共用 block，token
+      对齐后大部分会自动跟上；「椅位实时状态 · 水槽占用」这类需要新的
+      即时状态资料表，卡在功能地基
+- [ ] **Client Formula Dossier（客户详情页）** —— 身份卡/历史记录/消费
+      记录这几块对应真数据，可以照新图重排；🔴 「化学配方称重批次表」
+      不新建结构化栏位——[任务 377] 已经查过，客户的自由文字 `note`
+      栏位够用，这张图如果照抄就是推翻一个刚验证过的决定
+- [ ] 🔴 **Register & Checkout（收银台）**——全新概念，购物车/小票状态、
+      多种付款方式一次结清，资料库里没有对应的表。需要功能地基先设计
+      schema，这个 session 不越界去建
+- [ ] 🔴 **Floor Timeline & Walk-in Schedule（跨椅位甘特图）**——全新概念，
+      椅位/水槽实时占用状态、化学处理倒数计时，同上卡在功能地基
+- [ ] `RailNav` / `.ds-card` 逐项核对下来跟新图已经很接近（圆头像·分组
+      折叠·浅阴影卡片都已经有），暂时不用大改——如果后续逐页对比看出
+      细节差距再回来调

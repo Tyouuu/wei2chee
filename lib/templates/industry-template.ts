@@ -3372,7 +3372,7 @@ function buildFromShape(
   ];
 
   const dirTable = [
-    recordTable(`${pageKey}-table`, title, copy.columns, copy.rows, undefined, true),
+    recordTable(`${pageKey}-table`, title, copy.columns, copy.rows, undefined, true, true),
   ];
 
 
