@@ -8,12 +8,20 @@ import Link from "next/link";
  * its job is to be shown cold to a prospect standing in his salon, not to be
  * a real account's actual system.
  *
- * His four sources so far don't agree on this sidebar's exact styling (icon
- * set, header layout, footer treatment) -- each page export drifted a little
- * on its own. A real product needs ONE sidebar, not four near-duplicates, so
- * this follows the most recent/most detailed source (Clients & Profiles,
- * 2026-09-23) and the earlier three pages inherit the update rather than
- * keeping their own slightly different look.
+ * His sources so far don't agree on this sidebar's exact styling (icon set,
+ * header layout, footer treatment) -- each page export drifted a little on
+ * its own. A real product needs ONE sidebar, not N near-duplicates, so this
+ * follows the most recent/most detailed source as of the LAST time this file
+ * changed (Clients & Profiles, 2026-09-23) rather than every page's own look.
+ *
+ * The Lookbook & Formulas source (also 2026-09-23, pasted later the same
+ * day) drifted again on its own -- a logo icon next to the studio name, a
+ * few different Material Symbol choices ("grid_view" vs "dashboard", "group"
+ * vs "person", "badge" vs "content_cut" for Stylists). Not re-chased here:
+ * re-litigating pixel-level icon choices every time a new page arrives is a
+ * "精修" (refine) task, not a "抄源代码" (copy the source) task -- this repo
+ * is still explicitly in the first phase. Only the one real, structural
+ * difference (a new nav item) was added.
  *
  * Four of the five rows under Management have no page behind them yet.
  * Rather than link them to nothing (this repo's own record-table.tsx bans
@@ -26,6 +34,7 @@ export type SalonNavKey =
   | "appointments-and-flow"
   | "register-and-checkout"
   | "clients-and-profiles"
+  | "lookbook-and-formulas"
   | "salon-stock-and-orders";
 
 const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
@@ -47,6 +56,12 @@ const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }
     href: "/en/salon-preview/clients",
     icon: "person",
     label: "Clients & Profiles",
+  },
+  {
+    key: "lookbook-and-formulas",
+    href: "/en/salon-preview/lookbook",
+    icon: "palette",
+    label: "Lookbook & Formulas",
   },
 ];
 
