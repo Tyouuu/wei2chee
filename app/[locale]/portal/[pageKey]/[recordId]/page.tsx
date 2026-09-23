@@ -66,6 +66,7 @@ import {
   type ReferredJob,
 } from "../new/referred-jobs";
 import { PackagesPanel, type PackageRow } from "../new/packages-panel";
+import { MembershipPanel, type MembershipInfo } from "../new/membership-panel";
 import {
   ConsentPanel,
   type ConsentSheet,
@@ -302,6 +303,10 @@ export default async function EditRecordPage({
    *  `null` = 没有问（看不到钱的人，或者这一页不是客户）；
    *  `0` = 问过了，答案是零，两句话在画面上要长得不一样。 */
   let storedCredit: { giftCents: number } | null = null;
+  /* 会员月费（`memberships_of`，20260912060000）——`undefined` = 没有问
+   *  （不是客户页，或者看不到钱的人）；`null` = 问过了，这位客人
+   *  从来没有开过。 */
+  let membership: MembershipInfo | null | undefined = undefined;
   /* 她下一次要来——老板拿参考稿指出来的那一段（「Upcoming Booking」，
      2026-09-14）。`null` = 没有一笔排在未来，不是「没有问」——这一格
      不像 `credit`/`packages` 分角色，柜台跟老板看到的是同一句话
@@ -916,6 +921,38 @@ export default async function EditRecordPage({
         expiresOn: x.expires_on,
         expired: !!x.expired,
       }));
+    }
+
+    /* ── 客户那一页：她有没有开会员费 ──────────────────────────────────
+       `memberships_of`（20260912060000）零个呼叫端——只有老板看得到
+       （钱，跟套票的次数不一样）。回的是**全公司**的名单，这里跟
+       `tips_of`/`hours_worked_of` 同一个做法：问完了在这一行找自己。 */
+    if (ctx.role === "owner" && pageKey === "customers") {
+      const { data: memberRows } = await supabase.rpc("memberships_of", {
+        in_project_id: ctx.projectId,
+      });
+      const mine = (
+        (memberRows ?? []) as {
+          id: string;
+          party_id: string;
+          name: string;
+          plan_name: string;
+          monthly_fee_cents: number;
+          next_due_on: string;
+          overdue: boolean;
+          archived_at: string | null;
+        }[]
+      ).find((r) => r.party_id === recordId);
+      membership = mine
+        ? {
+            id: mine.id,
+            planName: mine.plan_name,
+            monthlyFeeCents: Number(mine.monthly_fee_cents),
+            nextDueOn: mine.next_due_on,
+            overdue: !!mine.overdue,
+            archived: mine.archived_at !== null,
+          }
+        : null;
     }
 
     /* ── 客户那一页：她签了没有 ──────────────────────────────────────
@@ -2210,6 +2247,17 @@ export default async function EditRecordPage({
         </div>
       ) : null}
 
+      {membership !== undefined ? (
+        <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
+          <MembershipPanel
+            projectId={ctx.projectId}
+            partyId={recordId}
+            membership={membership}
+            copy={copy.form}
+          />
+        </div>
+      ) : null}
+
       {consents ? (
         <div className="ds-card mt-6 p-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
           <ConsentPanel
@@ -2574,6 +2622,7 @@ export default async function EditRecordPage({
                   (!!credit && ctx.isDirectory && pageKey === "customers") ||
                   portalRef !== undefined ||
                   !!packages ||
+                  membership !== undefined ||
                   !!consents
                     ? accountTabContent
                     : null,

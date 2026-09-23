@@ -559,6 +559,23 @@ export type RecordFormCopy = {
   packExpiry: string;
   packSell: string;
   packSelling: string;
+  /* 会员月费（20260912060000）——只有老板，因为是钱（`sees_money`，
+     跟套票的次数不一样）。自动扣款那一半还没有，柜台每个月手动收一次。 */
+  memberHeading: string;
+  memberLede: string;
+  memberPlan: string;
+  memberFee: string;
+  memberStart: string;
+  memberStarting: string;
+  memberNextDue: string;
+  memberOverdue: string;
+  memberCollect: string;
+  memberCollecting: string;
+  memberCancel: string;
+  memberCancelling: string;
+  memberCancelled: string;
+  memberRestart: string;
+  memberRestarting: string;
   /* 预付余额（20260903030000 算得出来，到 2026-09-04 才有落点）。
      ⚠️ 这是**钱**，只有老板；套票是**次数**，师傅也看得到。两个不同的东西。 */
   creditHeading: string;
@@ -1111,6 +1128,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       packExpiry: "到期（可以不填）",
       packSell: "卖一张",
       packSelling: "开着…",
+      memberHeading: "会员月费",
+      memberLede: "每个月一笔固定的费用，柜台每月手动收一次。",
+      memberPlan: "叫什么（VIP 月卡）",
+      memberFee: "每月多少",
+      memberStart: "开始收会员费",
+      memberStarting: "开着…",
+      memberNextDue: "下一次该缴：{date}",
+      memberOverdue: "· 已经过期",
+      memberCollect: "这个月收了",
+      memberCollecting: "记着…",
+      memberCancel: "取消会员",
+      memberCancelling: "取消着…",
+      memberCancelled: "已经取消",
+      memberRestart: "重新开始",
+      memberRestarting: "开着…",
       creditHeading: "他先付了、还没用掉的钱",
       creditLede:
         "已经收到、还没有分摊给任何一张单的部分。下一张单开出来就可以扣它。",
@@ -1634,6 +1666,21 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       packExpiry: "Expires (optional)",
       packSell: "Sell one",
       packSelling: "Opening...",
+      memberHeading: "Membership",
+      memberLede: "A fixed fee every month, collected by hand each time.",
+      memberPlan: "What it's called (VIP monthly)",
+      memberFee: "Fee per month",
+      memberStart: "Start membership",
+      memberStarting: "Starting...",
+      memberNextDue: "Next due {date}",
+      memberOverdue: "· overdue",
+      memberCollect: "Mark this month collected",
+      memberCollecting: "Recording...",
+      memberCancel: "Cancel membership",
+      memberCancelling: "Cancelling...",
+      memberCancelled: "Cancelled",
+      memberRestart: "Restart",
+      memberRestarting: "Restarting...",
       creditHeading: "Paid, not yet used",
       creditLede:
         "Money received and not yet put against any document. The next one you raise can draw on it.",
