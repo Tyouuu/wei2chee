@@ -34,6 +34,8 @@ import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
  * either).
  */
 
+type InvoiceStatus = "settled" | "pending" | "refunded";
+
 type Invoice = {
   id: string;
   time: string;
@@ -45,6 +47,7 @@ type Invoice = {
   servicesFull: string;
   amount: string;
   method: string;
+  status: InvoiceStatus;
 };
 
 const INVOICES: Invoice[] = [
@@ -59,6 +62,7 @@ const INVOICES: Invoice[] = [
     servicesFull: "Balayage Full Lift + K18 Molecular Treatment + Olaplex No. 3 Retail",
     amount: "RM 780.00",
     method: "Maybank EDC",
+    status: "settled",
   },
   {
     id: "INV-2024-1087",
@@ -71,6 +75,7 @@ const INVOICES: Invoice[] = [
     servicesFull: "Japanese Hair Spa + Precision Scissor Cut + Kerastase Serum",
     amount: "RM 590.00",
     method: "DuitNow QR",
+    status: "settled",
   },
   {
     id: "INV-2024-1086",
@@ -83,6 +88,7 @@ const INVOICES: Invoice[] = [
     servicesFull: "Men's Scissor Restyle & Scalp Detox",
     amount: "RM 160.00",
     method: "Cash Drawer",
+    status: "settled",
   },
   {
     id: "INV-2024-1085",
@@ -95,6 +101,7 @@ const INVOICES: Invoice[] = [
     servicesFull: "Korean Digital Perm & Milbon Bond Mask",
     amount: "RM 520.00",
     method: "Maybank EDC",
+    status: "pending",
   },
   {
     id: "INV-2024-1084",
@@ -107,6 +114,7 @@ const INVOICES: Invoice[] = [
     servicesFull: "Root Color Touchup & Blowdry",
     amount: "RM 220.00",
     method: "DuitNow QR",
+    status: "settled",
   },
   {
     id: "INV-2024-1083",
@@ -119,15 +127,22 @@ const INVOICES: Invoice[] = [
     servicesFull: "Classic Beard Trim & Scissor Cut",
     amount: "RM 140.00",
     method: "Cash Drawer",
+    status: "refunded",
   },
 ];
 
-const FILTERS = [
-  { label: "All Status (142)", active: true },
-  { label: "Settled (134)" },
-  { label: "Pending Deposit (5)" },
-  { label: "Refunded / Void (3)" },
+const FILTERS: { label: string; status: InvoiceStatus | "all"; total: number }[] = [
+  { label: "All Status (142)", status: "all", total: 142 },
+  { label: "Settled (134)", status: "settled", total: 134 },
+  { label: "Pending Deposit (5)", status: "pending", total: 5 },
+  { label: "Refunded / Void (3)", status: "refunded", total: 3 },
 ];
+
+const STATUS_BADGE: Record<InvoiceStatus, { label: string; className: string }> = {
+  settled: { label: "Settled", className: "text-[#1a9a4d] bg-[#1a9a4d]/[0.08] border-[#1a9a4d]/20" },
+  pending: { label: "Pending Deposit", className: "text-[#a15c00] bg-[#a15c00]/[0.08] border-[#a15c00]/20" },
+  refunded: { label: "Refunded / Void", className: "text-[#ba1a1a] bg-[#ba1a1a]/[0.08] border-[#ba1a1a]/20" },
+};
 
 const PRINTERS = [
   { name: "Epson TM-T88VI", detail: "192.168.1.180:9100" },
@@ -141,6 +156,19 @@ export default function SalonInvoicesPreview() {
   const [printState, setPrintState] = useState<PrintState>("idle");
   const [testPrintState, setTestPrintState] = useState<PrintState>("idle");
   const [formatTab, setFormatTab] = useState<"thermal" | "a4">("thermal");
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
+  const [search, setSearch] = useState("");
+
+  const visibleInvoices = INVOICES.filter((inv) => {
+    if (statusFilter !== "all" && inv.status !== statusFilter) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      inv.id.toLowerCase().includes(q) ||
+      inv.guest.toLowerCase().includes(q) ||
+      inv.phone.toLowerCase().includes(q)
+    );
+  });
 
   const runPrintSequence = (setState: (s: PrintState) => void) => {
     setState("spooling");
@@ -248,6 +276,8 @@ export default function SalonInvoicesPreview() {
                           className="w-full h-9 pl-9 pr-3 bg-[#ffffff] border border-[#e2e2e6] rounded text-[13.5px] leading-5 text-[#1a1c1f] placeholder:text-[#77767b] focus:outline-none focus:border-[#1a1c1f] transition-colors"
                           placeholder="Search invoice #, guest name, phone, or payment ref..."
                           type="text"
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
                         />
                       </div>
                       <div className="flex items-center justify-between bg-[#ffffff] border border-[#e2e2e6] rounded h-9 px-1">
@@ -275,9 +305,10 @@ export default function SalonInvoicesPreview() {
                       {FILTERS.map((f) => (
                         <button
                           key={f.label}
+                          onClick={() => setStatusFilter(f.status)}
                           className={
                             "h-7 px-2.5 rounded text-[11.5px] leading-4 tracking-[0.06em] font-semibold tracking-wider uppercase transition-colors active:scale-[0.97] " +
-                            (f.active
+                            (statusFilter === f.status
                               ? "bg-[#000000] text-[#ffffff]"
                               : "bg-[#f3f3f7] text-[#5e5e67] hover:text-[#1a1c1f] border border-[#e2e2e6]")
                           }
@@ -321,7 +352,14 @@ export default function SalonInvoicesPreview() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#e2e2e6]">
-                          {INVOICES.map((inv) => {
+                          {visibleInvoices.length === 0 && (
+                            <tr>
+                              <td colSpan={8} className="py-10 text-center text-[13.5px] text-[#5e5e67]">
+                                No invoices match {search.trim() ? `"${search.trim()}"` : "this filter"} in today&apos;s list.
+                              </td>
+                            </tr>
+                          )}
+                          {visibleInvoices.map((inv) => {
                             const isSelected = inv.id === selectedInv;
                             return (
                               <tr
@@ -379,8 +417,13 @@ export default function SalonInvoicesPreview() {
                                   </span>
                                 </td>
                                 <td className="py-3 px-2 whitespace-nowrap">
-                                  <span className="inline-flex items-center h-[22px] px-2 rounded-[6px] text-[11.5px] font-medium tracking-[0.04em] uppercase text-[#1a9a4d] bg-[#1a9a4d]/[0.08] border border-[#1a9a4d]/20">
-                                    Settled
+                                  <span
+                                    className={
+                                      "inline-flex items-center h-[22px] px-2 rounded-[6px] text-[11.5px] font-medium tracking-[0.04em] uppercase border " +
+                                      STATUS_BADGE[inv.status].className
+                                    }
+                                  >
+                                    {STATUS_BADGE[inv.status].label}
                                   </span>
                                 </td>
                                 <td className="py-3 px-3 text-right whitespace-nowrap">
@@ -404,9 +447,18 @@ export default function SalonInvoicesPreview() {
                     </div>
                     <div className="px-3 py-2 bg-[#ffffff] border-t border-[#e2e2e6] flex flex-col sm:flex-row items-center justify-between gap-2">
                       <span className="text-[13.5px] leading-5 text-[#5e5e67]">
-                        Showing <span className="font-medium text-[#1a1c1f]">1</span> to{" "}
-                        <span className="font-medium text-[#1a1c1f]">6</span> of{" "}
-                        <span className="font-medium text-[#1a1c1f]">142</span> Invoices
+                        {visibleInvoices.length > 0 ? (
+                          <>
+                            Showing <span className="font-medium text-[#1a1c1f]">1</span> to{" "}
+                            <span className="font-medium text-[#1a1c1f]">{visibleInvoices.length}</span> of{" "}
+                          </>
+                        ) : (
+                          "Showing 0 of "
+                        )}
+                        <span className="font-medium text-[#1a1c1f]">
+                          {(FILTERS.find((f) => f.status === statusFilter) ?? FILTERS[0]).total}
+                        </span>{" "}
+                        Invoices
                       </span>
                       <div className="flex items-center gap-1.5">
                         <button
