@@ -132,16 +132,27 @@ export function MaterialSymbolsLink() {
   );
 }
 
-export function SalonSidebar({ active }: { active: SalonNavKey }) {
+export function SalonSidebar({
+  active,
+  businessName,
+  subtitle,
+}: {
+  active: SalonNavKey;
+  /** The real signed-in business's name, for a page that's been converted
+   *  off sample data. Defaults to the founder's own demo name so the pages
+   *  not converted yet (still pure Stitch samples) render unchanged. */
+  businessName?: string;
+  subtitle?: string;
+}) {
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-[#ffffff] z-40 flex flex-col justify-between border-r border-[#c8c5cb]/30">
       <div className="flex flex-col">
         <div className="p-5 flex flex-col gap-1">
           <span className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f] tracking-tight uppercase">
-            Wei Hair Studio
+            {businessName ?? "Wei Hair Studio"}
           </span>
           <span className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#77767b] uppercase tracking-wider font-mono">
-            Operations OS · Bangsar
+            {subtitle ?? "Operations OS · Bangsar"}
           </span>
         </div>
         <div className="py-4 px-3 space-y-6 overflow-y-auto">
