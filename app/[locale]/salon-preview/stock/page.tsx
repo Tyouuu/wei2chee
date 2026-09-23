@@ -220,15 +220,15 @@ export default function SalonStockPreview() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <button className="h-9 px-3.5 bg-[#ffffff] text-[#1a1c1f] border border-[#e8e8ec] rounded-lg text-[13.5px] leading-5 font-medium shadow-sm hover:bg-[#f3f3f7] transition-all flex items-center gap-2">
+                    <button className="h-9 px-3.5 bg-[#ffffff] text-[#1a1c1f] border border-[#e8e8ec] rounded-lg text-[13.5px] leading-5 font-medium shadow-sm hover:bg-[#f3f3f7] active:scale-[0.97] transition-all flex items-center gap-2">
                       <span className="material-symbols-outlined text-[17px] text-[#77767b]">barcode_scanner</span>
                       <span>Quick Scan</span>
                     </button>
-                    <button className="h-9 px-3.5 bg-[#ffffff] text-[#1a1c1f] border border-[#e8e8ec] rounded-lg text-[13.5px] leading-5 font-medium shadow-sm hover:bg-[#f3f3f7] transition-all flex items-center gap-2">
+                    <button className="h-9 px-3.5 bg-[#ffffff] text-[#1a1c1f] border border-[#e8e8ec] rounded-lg text-[13.5px] leading-5 font-medium shadow-sm hover:bg-[#f3f3f7] active:scale-[0.97] transition-all flex items-center gap-2">
                       <span className="material-symbols-outlined text-[17px] text-[#77767b]">picture_as_pdf</span>
                       <span>PO Export (PDF)</span>
                     </button>
-                    <button className="h-9 px-4 bg-[#000000] text-[#ffffff] rounded-lg text-[13.5px] leading-5 font-medium shadow-sm hover:bg-neutral-800 transition-all flex items-center gap-2">
+                    <button className="h-9 px-4 bg-[#000000] text-[#ffffff] rounded-lg text-[13.5px] leading-5 font-medium shadow-sm hover:bg-neutral-800 active:scale-[0.97] transition-all flex items-center gap-2">
                       <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
                       <span>New Reorder</span>
                     </button>
@@ -244,7 +244,7 @@ export default function SalonStockPreview() {
                           <button
                             key={c.label}
                             className={
-                              "h-8 px-3 rounded-lg text-[13px] font-medium transition-colors " +
+                              "h-8 px-3 rounded-lg text-[13px] font-medium transition-colors active:scale-[0.97] " +
                               (c.active
                                 ? "bg-[#000000] text-[#ffffff]"
                                 : "bg-[#ffffff] text-[#1a1c1f] border border-[#e8e8ec] hover:bg-[#eeedf1]")
@@ -380,19 +380,19 @@ export default function SalonStockPreview() {
                                 <td className="py-3 px-4 text-right">
                                   {r.action === "restock" ? (
                                     <div className="flex items-center justify-end gap-1.5">
-                                      <button className="h-7 px-2.5 bg-[#f3f3f7] hover:bg-[#e8e8ec] text-[#1a1c1f] border border-[#e8e8ec] rounded text-[11.5px] font-medium transition-colors">
+                                      <button className="h-7 px-2.5 bg-[#f3f3f7] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#1a1c1f] border border-[#e8e8ec] rounded text-[11.5px] font-medium transition-colors">
                                         Adjust
                                       </button>
-                                      <button className="h-7 px-2.5 bg-[#e8e8ec] hover:bg-[#e2e2e6] text-[#1a1c1f] rounded text-[11.5px] font-medium transition-colors">
+                                      <button className="h-7 px-2.5 bg-[#e8e8ec] hover:bg-[#e2e2e6] active:scale-[0.97] text-[#1a1c1f] rounded text-[11.5px] font-medium transition-colors">
                                         + Restock
                                       </button>
                                     </div>
                                   ) : r.deficitRow ? (
-                                    <button className="h-7 px-3 bg-[#000000] text-[#ffffff] rounded text-[11.5px] font-medium hover:bg-neutral-800 transition-colors shadow-sm">
+                                    <button className="h-7 px-3 bg-[#000000] text-[#ffffff] rounded text-[11.5px] font-medium hover:bg-neutral-800 active:scale-[0.97] transition-colors shadow-sm">
                                       Add to PO
                                     </button>
                                   ) : (
-                                    <button className="h-7 px-3 bg-[#e8e8ec] hover:bg-[#e2e2e6] text-[#1a1c1f] rounded text-[11.5px] font-medium transition-colors">
+                                    <button className="h-7 px-3 bg-[#e8e8ec] hover:bg-[#e2e2e6] active:scale-[0.97] text-[#1a1c1f] rounded text-[11.5px] font-medium transition-colors">
                                       Add to PO
                                     </button>
                                   )}
@@ -415,20 +415,20 @@ export default function SalonStockPreview() {
                           >
                             <span className="material-symbols-outlined text-[15px]">chevron_left</span>
                           </button>
-                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#000000] text-[#ffffff] font-mono text-[12px] font-semibold">
+                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#000000] text-[#ffffff] font-mono text-[12px] font-semibold active:scale-[0.97] transition-transform">
                             1
                           </button>
-                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] font-mono text-[12px] border border-[#e8e8ec]">
+                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] font-mono text-[12px] border border-[#e8e8ec]">
                             2
                           </button>
-                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] font-mono text-[12px] border border-[#e8e8ec]">
+                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] font-mono text-[12px] border border-[#e8e8ec]">
                             3
                           </button>
                           <span className="px-1 text-[#77767b]">...</span>
-                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] font-mono text-[12px] border border-[#e8e8ec]">
+                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] font-mono text-[12px] border border-[#e8e8ec]">
                             24
                           </button>
-                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] border border-[#e8e8ec]">
+                          <button className="h-7 w-7 rounded flex items-center justify-center bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors border border-[#e8e8ec]">
                             <span className="material-symbols-outlined text-[15px]">chevron_right</span>
                           </button>
                         </div>
@@ -463,14 +463,14 @@ export default function SalonStockPreview() {
                               <div className="flex items-center gap-1.5 bg-[#f3f3f7] px-2 py-0.5 rounded border border-[#e8e8ec]">
                                 <button
                                   onClick={() => adjust(l.name, -1)}
-                                  className="text-[#77767b] hover:text-[#1a1c1f] text-[13px] w-4"
+                                  className="text-[#77767b] hover:text-[#1a1c1f] active:scale-[0.97] transition-transform text-[13px] w-4"
                                 >
                                   −
                                 </button>
                                 <span className="font-mono text-[12px] font-semibold text-[#1a1c1f] px-1 tabular-nums">{l.qty}</span>
                                 <button
                                   onClick={() => adjust(l.name, 1)}
-                                  className="text-[#77767b] hover:text-[#1a1c1f] text-[13px] w-4"
+                                  className="text-[#77767b] hover:text-[#1a1c1f] active:scale-[0.97] transition-transform text-[13px] w-4"
                                 >
                                   +
                                 </button>
@@ -487,11 +487,11 @@ export default function SalonStockPreview() {
                         <span className="font-mono font-bold text-[#1a1c1f] text-[17px] tabular-nums">{ringgit(total)}</span>
                       </div>
                       <div className="flex flex-col gap-2 pt-1">
-                        <button className="w-full h-10 bg-[#000000] text-[#ffffff] rounded-lg text-[13px] font-semibold shadow-sm hover:bg-neutral-800 transition-all flex items-center justify-center gap-2">
+                        <button className="w-full h-10 bg-[#000000] text-[#ffffff] rounded-lg text-[13px] font-semibold shadow-sm hover:bg-neutral-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                           <span className="material-symbols-outlined text-[17px]">send</span>
                           <span>Send WhatsApp PO to Supplier</span>
                         </button>
-                        <button className="w-full h-8 bg-[#f3f3f7] text-[#47464b] rounded-lg text-[11.5px] font-medium hover:bg-[#eeedf1] transition-colors flex items-center justify-center gap-1.5 border border-[#e8e8ec]">
+                        <button className="w-full h-8 bg-[#f3f3f7] text-[#47464b] rounded-lg text-[11.5px] font-medium hover:bg-[#eeedf1] active:scale-[0.98] transition-colors flex items-center justify-center gap-1.5 border border-[#e8e8ec]">
                           <span className="material-symbols-outlined text-[14px]">save</span>
                           <span>Save PO Draft</span>
                         </button>

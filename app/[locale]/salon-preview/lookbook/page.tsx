@@ -181,11 +181,11 @@ export default function SalonLookbookPreview() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <button className="h-9 px-3.5 rounded-lg bg-[#ffffff] text-[#1a1c1f] shadow-sm hover:bg-[#eeedf1] transition-colors flex items-center gap-1.5 text-[13.5px] leading-5 font-medium">
+                  <button className="h-9 px-3.5 rounded-lg bg-[#ffffff] text-[#1a1c1f] shadow-sm hover:bg-[#eeedf1] active:scale-[0.97] transition-colors flex items-center gap-1.5 text-[13.5px] leading-5 font-medium">
                     <span className="material-symbols-outlined text-[17px]">fullscreen</span>
                     <span>Present to Client (Full Screen)</span>
                   </button>
-                  <button className="h-9 px-3.5 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] transition-colors flex items-center gap-1.5 text-[13.5px] leading-5 font-medium shadow-sm">
+                  <button className="h-9 px-3.5 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] transition-colors flex items-center gap-1.5 text-[13.5px] leading-5 font-medium shadow-sm">
                     <span className="material-symbols-outlined text-[17px]">add</span>
                     <span>Add Hairstyle Case</span>
                   </button>
@@ -208,15 +208,15 @@ export default function SalonLookbookPreview() {
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#f3f3f7] rounded-lg">
-                    <button className="h-8 rounded bg-[#000000] text-[#ffffff] text-[13.5px] leading-5 font-medium flex flex-col items-center justify-center leading-none">
+                    <button className="h-8 rounded bg-[#000000] text-[#ffffff] text-[13.5px] leading-5 font-medium flex flex-col items-center justify-center leading-none active:scale-[0.97] transition-transform">
                       <span>Cool</span>
                       <span className="text-[9.5px] opacity-75 mt-0.5">Ash / Pearl</span>
                     </button>
-                    <button className="h-8 rounded text-[#1a1c1f] hover:bg-[#e8e8ec] transition-colors text-[13.5px] leading-5 flex flex-col items-center justify-center leading-none">
+                    <button className="h-8 rounded text-[#1a1c1f] hover:bg-[#e8e8ec] active:scale-[0.97] transition-colors text-[13.5px] leading-5 flex flex-col items-center justify-center leading-none">
                       <span>Neutral</span>
                       <span className="text-[9.5px] text-[#5e5e67] mt-0.5">Mocha</span>
                     </button>
-                    <button className="h-8 rounded text-[#1a1c1f] hover:bg-[#e8e8ec] transition-colors text-[13.5px] leading-5 flex flex-col items-center justify-center leading-none">
+                    <button className="h-8 rounded text-[#1a1c1f] hover:bg-[#e8e8ec] active:scale-[0.97] transition-colors text-[13.5px] leading-5 flex flex-col items-center justify-center leading-none">
                       <span>Warm</span>
                       <span className="text-[9.5px] text-[#5e5e67] mt-0.5">Caramel</span>
                     </button>
@@ -295,7 +295,7 @@ export default function SalonLookbookPreview() {
                     <button
                       key={c.label}
                       className={
-                        "h-8 px-3 rounded-lg text-[13.5px] leading-5 flex items-center gap-1 whitespace-nowrap shadow-sm " +
+                        "h-8 px-3 rounded-lg text-[13.5px] leading-5 flex items-center gap-1 whitespace-nowrap shadow-sm active:scale-[0.97] " +
                         (c.active
                           ? "bg-[#000000] text-[#ffffff] font-medium"
                           : "bg-[#ffffff] text-[#1a1c1f] hover:bg-[#e8e8ec] transition-colors")
@@ -380,7 +380,7 @@ export default function SalonLookbookPreview() {
                             <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase tracking-wider text-[#5e5e67] flex items-center gap-1">
                               <span className="material-symbols-outlined text-[13px]">science</span> Lab Formula
                             </span>
-                            <button className="text-[#5e5e67] hover:text-[#1a1c1f] text-[11px] flex items-center gap-0.5" title="Copy to clipboard">
+                            <button className="text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] text-[11px] flex items-center gap-0.5" title="Copy to clipboard">
                               <span className="material-symbols-outlined text-[13px]">content_copy</span> Copy
                             </button>
                           </div>
@@ -391,10 +391,10 @@ export default function SalonLookbookPreview() {
                       </div>
                       {/* Action Row */}
                       <div className="grid grid-cols-2 gap-2 pt-2 bg-[#ffffff]">
-                        <button className="h-8 rounded bg-[#eeedf1] text-[#1a1c1f] hover:bg-[#e8e8ec] transition-colors text-[13.5px] leading-5 font-medium flex items-center justify-center gap-1">
+                        <button className="h-8 rounded bg-[#eeedf1] text-[#1a1c1f] hover:bg-[#e8e8ec] active:scale-[0.97] transition-colors text-[13.5px] leading-5 font-medium flex items-center justify-center gap-1">
                           <span className="material-symbols-outlined text-[15px]">visibility</span> Present Look
                         </button>
-                        <button className="h-8 rounded bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] transition-colors text-[13.5px] leading-5 font-medium flex items-center justify-center gap-1">
+                        <button className="h-8 rounded bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] transition-colors text-[13.5px] leading-5 font-medium flex items-center justify-center gap-1">
                           <span className="material-symbols-outlined text-[15px]">add_task</span> Apply to Ticket
                         </button>
                       </div>
@@ -413,15 +413,15 @@ export default function SalonLookbookPreview() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button className="h-8 px-2 rounded bg-[#f3f3f7] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors disabled:opacity-40" disabled>
+                  <button className="h-8 px-2 rounded bg-[#f3f3f7] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors disabled:opacity-40" disabled>
                     <span className="material-symbols-outlined text-[18px]">chevron_left</span>
                   </button>
-                  <button className="h-8 w-8 rounded bg-[#000000] text-[#ffffff] font-mono text-[12px] font-medium">1</button>
-                  <button className="h-8 w-8 rounded text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors font-mono text-[12px]">2</button>
-                  <button className="h-8 w-8 rounded text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors font-mono text-[12px]">3</button>
+                  <button className="h-8 w-8 rounded bg-[#000000] text-[#ffffff] font-mono text-[12px] font-medium active:scale-[0.97] transition-transform">1</button>
+                  <button className="h-8 w-8 rounded text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors font-mono text-[12px]">2</button>
+                  <button className="h-8 w-8 rounded text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors font-mono text-[12px]">3</button>
                   <span className="px-1 text-[#5e5e67] font-mono text-[12px]">...</span>
-                  <button className="h-8 w-8 rounded text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors font-mono text-[12px]">24</button>
-                  <button className="h-8 px-2 rounded bg-[#f3f3f7] text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors">
+                  <button className="h-8 w-8 rounded text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors font-mono text-[12px]">24</button>
+                  <button className="h-8 px-2 rounded bg-[#f3f3f7] text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors">
                     <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                   </button>
                 </div>

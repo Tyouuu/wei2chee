@@ -132,10 +132,10 @@ export default function SalonStylistProfilePreview() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <button className="px-5 py-1.5 rounded-lg bg-[#eeedf1] hover:bg-[#e8e8ec] text-[#1a1c1f] text-[13.5px] leading-5 transition-colors">
+                  <button className="px-5 py-1.5 rounded-lg bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 transition-colors">
                     Discard Changes
                   </button>
-                  <button className="px-5 py-1.5 rounded-lg bg-[#eeedf1] hover:bg-[#e8e8ec] text-[#1a1c1f] text-[13.5px] leading-5 inline-flex items-center gap-1.5 transition-colors">
+                  <button className="px-5 py-1.5 rounded-lg bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 inline-flex items-center gap-1.5 transition-colors">
                     <span className="material-symbols-outlined text-[16px]">visibility</span>
                     Preview Public Bio
                   </button>
@@ -193,10 +193,10 @@ export default function SalonStylistProfilePreview() {
                           Square photo recommended. 800×800px JPG or PNG for client booking app showcase.
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <button className="px-2 py-1 rounded bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors shadow-sm">
+                          <button className="px-2 py-1 rounded bg-[#ffffff] text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors shadow-sm">
                             Change Photo
                           </button>
-                          <button className="px-2 py-1 rounded text-[#ba1a1a] hover:bg-[#ffdad6]/20 text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors">
+                          <button className="px-2 py-1 rounded text-[#ba1a1a] hover:bg-[#ffdad6]/20 active:scale-[0.97] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors">
                             Remove
                           </button>
                         </div>
@@ -283,14 +283,14 @@ export default function SalonStylistProfilePreview() {
                         Employment Type &amp; Roster Status
                       </label>
                       <div className="flex flex-wrap gap-2">
-                        <button className="px-5 py-1.5 rounded-lg bg-[#000000] text-[#ffffff] text-[13.5px] leading-5 font-medium inline-flex items-center gap-2 shadow-sm">
+                        <button className="px-5 py-1.5 rounded-lg bg-[#000000] text-[#ffffff] text-[13.5px] leading-5 font-medium inline-flex items-center gap-2 shadow-sm active:scale-[0.97] transition-transform">
                           <span className="w-2 h-2 rounded-full bg-[#1a9a4d]" />
                           Full-time Active
                         </button>
-                        <button className="px-5 py-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#5e5e67] text-[13.5px] leading-5 transition-colors">
+                        <button className="px-5 py-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] text-[13.5px] leading-5 transition-colors">
                           Part-time / Contract
                         </button>
-                        <button className="px-5 py-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#5e5e67] text-[13.5px] leading-5 transition-colors">
+                        <button className="px-5 py-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] text-[13.5px] leading-5 transition-colors">
                           On Leave / Sabbatical
                         </button>
                       </div>
@@ -313,12 +313,12 @@ export default function SalonStylistProfilePreview() {
                             className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#eeedf1] text-[#1a1c1f] text-[13.5px] leading-5"
                           >
                             {tag}
-                            <button className="hover:text-[#ba1a1a] transition-colors">
+                            <button className="hover:text-[#ba1a1a] active:scale-[0.9] transition-transform">
                               <span className="material-symbols-outlined text-[14px]">close</span>
                             </button>
                           </span>
                         ))}
-                        <button className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors">
+                        <button className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors">
                           <span className="material-symbols-outlined text-[14px]">add</span>
                           Add Tag
                         </button>
@@ -342,7 +342,7 @@ export default function SalonStylistProfilePreview() {
                           </p>
                         </div>
                       </div>
-                      <button className="px-2 py-1 rounded bg-[#eeedf1] hover:bg-[#e8e8ec] text-[#1a1c1f] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors">
+                      <button className="px-2 py-1 rounded bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#1a1c1f] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors">
                         Copy Mon-Fri
                       </button>
                     </div>
@@ -734,11 +734,11 @@ export default function SalonStylistProfilePreview() {
                         <span className="font-medium text-[#1a1c1f]">31 Dec 2025</span>
                       </div>
                       <div className="flex items-center justify-between pt-2 mt-1 border-t border-[#eeedf1]">
-                        <button className="inline-flex items-center gap-1 text-[#1a1c1f] hover:text-[#000000] uppercase tracking-wider transition-colors">
+                        <button className="inline-flex items-center gap-1 text-[#1a1c1f] hover:text-[#000000] active:scale-[0.97] uppercase tracking-wider transition-colors">
                           <span className="material-symbols-outlined text-[14px]">description</span>
                           View Contract PDF
                         </button>
-                        <button className="text-[#ba1a1a] hover:underline uppercase tracking-wider transition-colors">
+                        <button className="text-[#ba1a1a] hover:underline active:scale-[0.97] uppercase tracking-wider transition-colors">
                           Archive Stylist
                         </button>
                       </div>

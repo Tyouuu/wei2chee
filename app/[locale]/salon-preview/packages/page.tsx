@@ -284,8 +284,8 @@ export default function SalonPackagesPreview() {
                           <button
                             key={t.label}
                             className={
-                              "px-3.5 py-1.5 rounded-lg text-[13.5px] leading-5 whitespace-nowrap " +
-                              (t.active ? "font-medium bg-[#000000] text-[#ffffff]" : "text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors")
+                              "px-3.5 py-1.5 rounded-lg text-[13.5px] leading-5 whitespace-nowrap active:scale-[0.97] " +
+                              (t.active ? "font-medium bg-[#000000] text-[#ffffff] transition-transform" : "text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors")
                             }
                           >
                             {t.label} <span className={"ml-1 tabular-nums text-[12px] " + (t.active ? "opacity-70" : "text-[#5e5e67]/70")}>{t.count}</span>
@@ -294,7 +294,7 @@ export default function SalonPackagesPreview() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-semibold uppercase text-[#5e5e67]">Sort:</span>
-                        <button className="text-[13.5px] leading-[18px] text-[#1a1c1f] font-medium flex items-center gap-1 hover:text-[#000000]">
+                        <button className="text-[13.5px] leading-[18px] text-[#1a1c1f] font-medium flex items-center gap-1 hover:text-[#000000] active:scale-[0.97] transition-transform">
                           Expiry Date <span className="material-symbols-outlined text-[16px]">arrow_drop_down</span>
                         </button>
                       </div>
@@ -311,17 +311,17 @@ export default function SalonPackagesPreview() {
                       </div>
                       <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                         <div className="inline-flex rounded-lg border border-[#c8c5cb]/30 p-1 bg-[#f3f3f7]/70">
-                          <button className="px-3 py-1 text-[11.5px] font-medium rounded-md bg-[#ffffff] text-[#1a1c1f] shadow-xs">
+                          <button className="px-3 py-1 text-[11.5px] font-medium rounded-md bg-[#ffffff] text-[#1a1c1f] shadow-xs active:scale-[0.97] transition-transform">
                             Status: Active
                           </button>
-                          <button className="px-3 py-1 text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors">
+                          <button className="px-3 py-1 text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">
                             Expiring Soon (3)
                           </button>
-                          <button className="px-3 py-1 text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors">Depleted</button>
+                          <button className="px-3 py-1 text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">Depleted</button>
                         </div>
                         <button
                           title="Export Ledger"
-                          className="p-2 border border-[#c8c5cb]/30 rounded-lg hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors"
+                          className="p-2 border border-[#c8c5cb]/30 rounded-lg hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors"
                         >
                           <span className="material-symbols-outlined text-[18px]">file_download</span>
                         </button>
@@ -450,10 +450,10 @@ export default function SalonPackagesPreview() {
                         <button disabled className="px-3 py-1 border border-[#c8c5cb]/50 rounded-md text-[#1a1c1f] disabled:opacity-40">
                           Previous
                         </button>
-                        <button className="px-3 py-1 bg-[#e2e2e6] text-[#1a1c1f] rounded-md font-medium">1</button>
-                        <button className="px-3 py-1 border border-[#c8c5cb]/30 rounded-md hover:bg-[#eeedf1] transition-colors">2</button>
-                        <button className="px-3 py-1 border border-[#c8c5cb]/30 rounded-md hover:bg-[#eeedf1] transition-colors">3</button>
-                        <button className="px-3 py-1 border border-[#c8c5cb]/50 rounded-md text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors">
+                        <button className="px-3 py-1 bg-[#e2e2e6] text-[#1a1c1f] rounded-md font-medium active:scale-[0.97] transition-transform">1</button>
+                        <button className="px-3 py-1 border border-[#c8c5cb]/30 rounded-md hover:bg-[#eeedf1] active:scale-[0.97] transition-colors">2</button>
+                        <button className="px-3 py-1 border border-[#c8c5cb]/30 rounded-md hover:bg-[#eeedf1] active:scale-[0.97] transition-colors">3</button>
+                        <button className="px-3 py-1 border border-[#c8c5cb]/50 rounded-md text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors">
                           Next
                         </button>
                       </div>
@@ -634,7 +634,7 @@ export default function SalonPackagesPreview() {
                           </button>
                           <button
                             onClick={handleWhatsapp}
-                            className="w-full h-9 border border-[#c8c5cb]/50 text-[#5e5e67] hover:text-[#1a1c1f] bg-[#ffffff] rounded-lg font-medium text-[11.5px] flex items-center justify-center gap-2 hover:bg-[#eeedf1] transition-colors"
+                            className="w-full h-9 border border-[#c8c5cb]/50 text-[#5e5e67] hover:text-[#1a1c1f] bg-[#ffffff] rounded-lg font-medium text-[11.5px] flex items-center justify-center gap-2 hover:bg-[#eeedf1] active:scale-[0.98] transition-all"
                           >
                             <span className="material-symbols-outlined text-[16px] text-emerald-600">chat</span>
                             <span>Send WhatsApp Balance Slip</span>

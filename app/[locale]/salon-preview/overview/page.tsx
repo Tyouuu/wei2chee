@@ -59,10 +59,10 @@ export default function SalonOverviewPreview() {
                     <div className="px-3.5 py-2 rounded bg-[#f3f3f7] text-[13.5px] leading-5 font-normal text-[#5e5e67]">
                       Thursday, Oct 24
                     </div>
-                    <button className="px-3.5 py-2 rounded bg-[#eeedf1] hover:bg-[#e8e8ec] text-[#000000] text-[13.5px] leading-5 font-normal transition-colors">
+                    <button className="px-3.5 py-2 rounded bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#000000] text-[13.5px] leading-5 font-normal transition-colors">
                       Floor Notes
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 rounded bg-[#000000] text-[#ffffff] hover:bg-[#5f5e61] text-[13.5px] leading-5 font-normal transition-colors">
+                    <button className="flex items-center gap-2 px-4 py-2 rounded bg-[#000000] text-[#ffffff] hover:bg-[#5f5e61] active:scale-[0.97] text-[13.5px] leading-5 font-normal transition-colors">
                       <span className="material-symbols-outlined text-[18px]">person_add</span>
                       <span>+ New Walk-in Guest</span>
                     </button>
@@ -150,7 +150,7 @@ export default function SalonOverviewPreview() {
                           1 tub remaining (L&apos;Oréal)
                         </div>
                       </div>
-                      <button className="px-2.5 py-1 bg-[#eeedf1] hover:bg-[#e8e8ec] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#000000] uppercase tracking-wider transition-colors shrink-0">
+                      <button className="px-2.5 py-1 bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#000000] uppercase tracking-wider transition-colors shrink-0">
                         Reorder
                       </button>
                     </div>
@@ -302,7 +302,7 @@ export default function SalonOverviewPreview() {
                                 <span className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67]">
                                   {row.status}
                                 </span>
-                                <button className="px-3 py-1 bg-[#eeedf1] hover:bg-[#e8e8ec] text-[#000000] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-colors">
+                                <button className="px-3 py-1 bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#000000] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-colors">
                                   {row.action}
                                 </button>
                               </div>
@@ -395,7 +395,7 @@ export default function SalonOverviewPreview() {
                                   {r.amt}
                                 </span>
                                 <button
-                                  className="p-1.5 rounded hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#000000] transition-colors"
+                                  className="p-1.5 rounded hover:bg-[#eeedf1] active:scale-[0.9] text-[#5e5e67] hover:text-[#000000] transition-all"
                                   title="Print or send receipt via WhatsApp"
                                 >
                                   <span className="material-symbols-outlined text-[16px]">receipt</span>
@@ -406,7 +406,7 @@ export default function SalonOverviewPreview() {
                         </div>
                       </div>
 
-                      <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded bg-[#000000] text-[#ffffff] hover:bg-[#5f5e61] text-[13.5px] leading-5 font-normal transition-colors">
+                      <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded bg-[#000000] text-[#ffffff] hover:bg-[#5f5e61] active:scale-[0.98] text-[13.5px] leading-5 font-normal transition-all">
                         <span className="material-symbols-outlined text-[18px]">point_of_sale</span>
                         <span>Open Fast POS Checkout</span>
                       </button>
@@ -449,7 +449,7 @@ export default function SalonOverviewPreview() {
                                 {item.note}
                               </div>
                             </div>
-                            <button className="px-3 py-1.5 bg-[#eeedf1] hover:bg-[#e8e8ec] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#000000] uppercase tracking-wider transition-colors shrink-0">
+                            <button className="px-3 py-1.5 bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#000000] uppercase tracking-wider transition-colors shrink-0">
                               1-Click PO
                             </button>
                           </div>

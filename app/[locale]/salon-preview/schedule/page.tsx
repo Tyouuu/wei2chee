@@ -53,17 +53,17 @@ export default function SalonSchedulePreview() {
                       <span className="font-medium tracking-tight text-[12px]">Live Roster · 4 Stylists on Shift</span>
                     </div>
                     <div className="inline-flex items-center p-1 rounded-xl bg-[#f3f3f7] border border-[#c8c5cb]/30 select-none">
-                      <button className="px-4 py-1.5 rounded-lg bg-[#ffffff] text-[#1a1c1f] text-[13.5px] leading-5 font-normal shadow-sm leading-tight text-center transition-all">
+                      <button className="px-4 py-1.5 rounded-lg bg-[#ffffff] text-[#1a1c1f] text-[13.5px] leading-5 font-normal shadow-sm leading-tight text-center transition-all active:scale-[0.97]">
                         Day
                         <br />
                         <span className="font-medium text-[11px] text-[#5e5e67]">Schedule</span>
                       </button>
-                      <button className="px-4 py-1.5 rounded-lg text-[#5e5e67] hover:text-[#1a1c1f] text-[13.5px] leading-5 font-normal leading-tight text-center transition-colors">
+                      <button className="px-4 py-1.5 rounded-lg text-[#5e5e67] hover:text-[#1a1c1f] text-[13.5px] leading-5 font-normal leading-tight text-center transition-colors active:scale-[0.97]">
                         Gap &amp; Open
                         <br />
                         <span className="text-[11px]">Slots</span>
                       </button>
-                      <button className="px-4 py-1.5 rounded-lg text-[#5e5e67] hover:text-[#1a1c1f] text-[13.5px] leading-5 font-normal leading-tight text-center transition-colors">
+                      <button className="px-4 py-1.5 rounded-lg text-[#5e5e67] hover:text-[#1a1c1f] text-[13.5px] leading-5 font-normal leading-tight text-center transition-colors active:scale-[0.97]">
                         Week
                         <br />
                         <span className="text-[11px]">View</span>
@@ -84,22 +84,22 @@ export default function SalonSchedulePreview() {
                 <div className="flex items-center justify-between pt-1 gap-4 flex-wrap">
                   <div className="flex items-center gap-2.5">
                     <div className="flex items-center rounded-lg bg-[#ffffff] border border-[#c8c5cb]/50 shadow-2xs overflow-hidden">
-                      <button className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors" title="Previous Day">
+                      <button className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]" title="Previous Day">
                         <span className="material-symbols-outlined text-[16px]">chevron_left</span>
                       </button>
                       <div className="px-3 py-1.5 text-[13.5px] leading-5 font-normal text-[#1a1c1f] border-x border-[#c8c5cb]/30 flex items-center gap-2">
                         <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">calendar_today</span>
                         <span>Thursday, Oct 24, 2024</span>
                       </div>
-                      <button className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors" title="Next Day">
+                      <button className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]" title="Next Day">
                         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
                       </button>
                     </div>
-                    <button className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors bg-[#ffffff] shadow-2xs">
+                    <button className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors bg-[#ffffff] shadow-2xs">
                       Today
                     </button>
                     <div className="relative">
-                      <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors bg-[#ffffff] shadow-2xs">
+                      <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors bg-[#ffffff] shadow-2xs">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
                         <span>All Roster Stylists (4 on duty)</span>
                         <span className="material-symbols-outlined text-[16px] text-[#5e5e67]">arrow_drop_down</span>
@@ -118,16 +118,16 @@ export default function SalonSchedulePreview() {
                       />
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase bg-[#000000] text-[#ffffff]">
+                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase bg-[#000000] text-[#ffffff] active:scale-[0.97] transition-transform">
                         All (18)
                       </button>
-                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] transition-colors border border-[#c8c5cb]/30">
+                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors border border-[#c8c5cb]/30">
                         In Service (4)
                       </button>
-                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] transition-colors border border-[#c8c5cb]/30">
+                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors border border-[#c8c5cb]/30">
                         Upcoming (10)
                       </button>
-                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] transition-colors border border-[#c8c5cb]/30">
+                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors border border-[#c8c5cb]/30">
                         Completed (4)
                       </button>
                     </div>
@@ -153,14 +153,14 @@ export default function SalonSchedulePreview() {
                       <div className="inline-flex p-0.5 rounded-lg bg-[#eeedf1] text-[#5e5e67] text-[11.5px]">
                         <button
                           onClick={() => scrollTimeline(0)}
-                          className="px-2.5 py-1 rounded bg-[#ffffff] text-[#1a1c1f] font-medium shadow-2xs transition-all"
+                          className="px-2.5 py-1 rounded bg-[#ffffff] text-[#1a1c1f] font-medium shadow-2xs transition-all active:scale-[0.97]"
                         >
                           All Day
                         </button>
-                        <button onClick={() => scrollTimeline(0)} className="px-2.5 py-1 rounded hover:text-[#1a1c1f] transition-colors">
+                        <button onClick={() => scrollTimeline(0)} className="px-2.5 py-1 rounded hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">
                           Morning (09-13)
                         </button>
-                        <button onClick={() => scrollTimeline(640)} className="px-2.5 py-1 rounded hover:text-[#1a1c1f] transition-colors">
+                        <button onClick={() => scrollTimeline(640)} className="px-2.5 py-1 rounded hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">
                           Afternoon (13-18)
                         </button>
                       </div>
@@ -705,7 +705,7 @@ export default function SalonSchedulePreview() {
                         </div>
                       ))}
                     </div>
-                    <button className="w-full mt-0.5 py-2 rounded-lg border border-dashed border-[#c8c5cb]/50 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] text-[13.5px] leading-5 font-normal transition-colors flex items-center justify-center gap-1.5">
+                    <button className="w-full mt-0.5 py-2 rounded-lg border border-dashed border-[#c8c5cb]/50 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.99] text-[13.5px] leading-5 font-normal transition-all flex items-center justify-center gap-1.5">
                       <span className="material-symbols-outlined text-[16px]">calendar_add_on</span>
                       <span>Add Custom Time Slot</span>
                     </button>

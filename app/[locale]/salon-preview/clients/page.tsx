@@ -225,11 +225,11 @@ export default function SalonClientsPreview() {
                       <span className="text-[11.5px] font-mono text-[#77767b] hidden md:inline-block">· Bangsar Flagship</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <button className="h-9 px-3 rounded-lg bg-[#ffffff] text-[#1a1c1f] text-[13.5px] leading-5 font-normal hover:bg-[#eeedf1] transition-colors flex items-center gap-2 shadow-sm border border-[#eeedf1]">
+                      <button className="h-9 px-3 rounded-lg bg-[#ffffff] text-[#1a1c1f] text-[13.5px] leading-5 font-normal hover:bg-[#eeedf1] active:scale-[0.97] transition-colors flex items-center gap-2 shadow-sm border border-[#eeedf1]">
                         <span className="material-symbols-outlined text-[16px] text-[#5e5e67]">file_download</span>
                         <span>Export CSV</span>
                       </button>
-                      <button className="h-9 px-3.5 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] text-[13.5px] leading-5 font-medium transition-colors flex items-center gap-1.5 shadow-sm">
+                      <button className="h-9 px-3.5 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] text-[13.5px] leading-5 font-medium transition-colors flex items-center gap-1.5 shadow-sm">
                         <span className="material-symbols-outlined text-[16px]">add</span>
                         <span>+ New Client Folio</span>
                       </button>
@@ -261,7 +261,7 @@ export default function SalonClientsPreview() {
                           <button
                             key={s.label}
                             className={
-                              "px-2.5 py-1 rounded-full shrink-0 transition-colors " +
+                              "px-2.5 py-1 rounded-full shrink-0 transition-colors active:scale-[0.97] " +
                               (s.active
                                 ? "bg-[#000000] text-[#ffffff] font-medium shadow-sm"
                                 : "bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#47464b] border border-[#eeedf1]")
@@ -283,11 +283,11 @@ export default function SalonClientsPreview() {
                           </select>
                         </div>
                         <div className="flex items-center gap-1 bg-[#f3f3f7] p-0.5 rounded border border-[#eeedf1] text-[11px]">
-                          <button className="px-1.5 py-0.5 rounded bg-[#ffffff] text-[#1a1c1f] font-medium shadow-sm flex items-center gap-0.5">
+                          <button className="px-1.5 py-0.5 rounded bg-[#ffffff] text-[#1a1c1f] font-medium shadow-sm active:scale-[0.97] transition-transform flex items-center gap-0.5">
                             <span className="material-symbols-outlined text-[13px]">view_list</span>
                             <span>25 / p</span>
                           </button>
-                          <button className="px-1.5 py-0.5 rounded text-[#77767b] hover:text-[#1a1c1f] flex items-center gap-0.5 transition-colors">
+                          <button className="px-1.5 py-0.5 rounded text-[#77767b] hover:text-[#1a1c1f] active:scale-[0.97] flex items-center gap-0.5 transition-colors">
                             <span className="material-symbols-outlined text-[13px]">unfold_more</span>
                             <span>Scroll</span>
                           </button>
@@ -411,20 +411,20 @@ export default function SalonClientsPreview() {
                           >
                             <span className="material-symbols-outlined text-[14px]">chevron_left</span>
                           </button>
-                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#000000] text-[#ffffff] font-semibold text-[11.5px] shadow-sm">
+                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#000000] text-[#ffffff] font-semibold text-[11.5px] shadow-sm active:scale-[0.97] transition-transform">
                             1
                           </button>
-                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] font-medium text-[11.5px] transition-colors border border-[#eeedf1]">
+                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] font-medium text-[11.5px] transition-colors border border-[#eeedf1]">
                             2
                           </button>
-                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] font-medium text-[11.5px] transition-colors border border-[#eeedf1]">
+                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] font-medium text-[11.5px] transition-colors border border-[#eeedf1]">
                             3
                           </button>
                           <span className="px-0.5 text-[#77767b] text-[11px]">…</span>
-                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] font-medium text-[11.5px] transition-colors border border-[#eeedf1]">
+                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] font-medium text-[11.5px] transition-colors border border-[#eeedf1]">
                             10
                           </button>
-                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#ffffff] hover:bg-[#eeedf1] text-[#1a1c1f] transition-colors shadow-sm border border-[#eeedf1]">
+                          <button className="w-7 h-7 flex items-center justify-center rounded bg-[#ffffff] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] transition-colors shadow-sm border border-[#eeedf1]">
                             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
                           </button>
                         </div>
@@ -486,11 +486,11 @@ export default function SalonClientsPreview() {
                             <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">chat</span>
                             <span>WhatsApp</span>
                           </a>
-                          <button className="h-8 px-3 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm border border-[#eeedf1]">
+                          <button className="h-8 px-3 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm border border-[#eeedf1]">
                             <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">calendar_today</span>
                             <span>Book Next</span>
                           </button>
-                          <button className="h-8 px-3 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] text-[#1a1c1f] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm border border-[#eeedf1]">
+                          <button className="h-8 px-3 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm border border-[#eeedf1]">
                             <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">edit</span>
                             <span>Edit Profile</span>
                           </button>
@@ -563,7 +563,7 @@ export default function SalonClientsPreview() {
                             </span>
                           </div>
                         </div>
-                        <button className="h-8 px-3 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] text-[12px] font-medium flex items-center gap-1 shrink-0 transition-colors shadow-sm">
+                        <button className="text-[11.5px] font-mono text-[#000000] hover:underline active:scale-[0.97] flex items-center gap-1 font-medium shrink-0">
                           <span>View Full Technical Dossier</span>
                           <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                         </button>
@@ -579,7 +579,7 @@ export default function SalonClientsPreview() {
                             1 Active Plan
                           </span>
                         </div>
-                        <button className="h-8 px-3 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] text-[12.5px] font-medium flex items-center gap-1.5 transition-colors shadow-sm">
+                        <button className="h-8 px-3 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] text-[12.5px] font-medium flex items-center gap-1.5 transition-colors shadow-sm">
                           <span className="material-symbols-outlined text-[15px]">add</span>
                           <span>+ Redeem Session</span>
                         </button>
@@ -621,7 +621,7 @@ export default function SalonClientsPreview() {
                           <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Visit &amp; Bill History</h3>
                           <span className="text-[11.5px] font-mono text-[#77767b]">(Last 4 Visits Recorded)</span>
                         </div>
-                        <button className="text-[11.5px] font-mono text-[#000000] hover:underline flex items-center gap-1 font-medium">
+                        <button className="text-[11.5px] font-mono text-[#000000] hover:underline active:scale-[0.97] flex items-center gap-1 font-medium">
                           <span>View All Invoices in Terminal</span>
                           <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                         </button>
@@ -685,7 +685,7 @@ export default function SalonClientsPreview() {
                           </h3>
                           <span className="text-[11.5px] font-mono text-[#77767b]">(Reorder Intelligence &amp; Regimen)</span>
                         </div>
-                        <button className="h-8 px-3 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] text-[12.5px] font-medium flex items-center gap-1.5 transition-colors shadow-sm border border-[#eeedf1]">
+                        <button className="h-8 px-3 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[12.5px] font-medium flex items-center gap-1.5 transition-colors shadow-sm border border-[#eeedf1]">
                           <span className="material-symbols-outlined text-[15px]">add</span>
                           <span>+ Bill Product</span>
                         </button>

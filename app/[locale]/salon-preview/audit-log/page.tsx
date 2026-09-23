@@ -99,11 +99,11 @@ export default function SalonAuditLogPreview() {
                     <span className="w-2 h-2 rounded-full bg-[#1a9a4d]" />
                     <span className="text-[#1a1c1f]">Bangsar Salon Active</span>
                   </div>
-                  <button className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-[#ffffff] text-[#000000] border border-[#c8c5cb] hover:bg-[#f3f3f7] transition-colors font-medium text-[13.5px] leading-5">
+                  <button className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-[#ffffff] text-[#000000] border border-[#c8c5cb] hover:bg-[#f3f3f7] active:scale-[0.97] transition-colors font-medium text-[13.5px] leading-5">
                     <span className="material-symbols-outlined text-[17px] text-[#5e5e67]">calendar_today</span>
                     <span>Today, 24 Oct</span>
                   </button>
-                  <button className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-[#000000] text-[#ffffff] hover:bg-[#e2e2e6] hover:text-[#000000] transition-colors font-medium text-[13.5px] leading-5">
+                  <button className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-[#000000] text-[#ffffff] hover:bg-[#e2e2e6] hover:text-[#000000] active:scale-[0.97] transition-colors font-medium text-[13.5px] leading-5">
                     <span className="material-symbols-outlined text-[17px]">download</span>
                     <span>Export Summary</span>
                   </button>
@@ -151,7 +151,7 @@ export default function SalonAuditLogPreview() {
                       <button
                         key={f.label}
                         className={
-                          "h-8 px-3 rounded-full text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-all inline-flex items-center gap-1 " +
+                          "h-8 px-3 rounded-full text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-all active:scale-[0.97] inline-flex items-center gap-1 " +
                           (f.active
                             ? "bg-[#000000] text-[#ffffff]"
                             : "bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:border-[#000000]")
@@ -443,7 +443,7 @@ export default function SalonAuditLogPreview() {
                         Previous
                       </button>
                       <span className="font-medium text-[#000000]">Page 1 of 24</span>
-                      <button className="h-7 px-3 rounded border border-[#c8c5cb] bg-[#ffffff] text-[#000000] hover:bg-[#f3f3f7] transition-colors">
+                      <button className="h-7 px-3 rounded border border-[#c8c5cb] bg-[#ffffff] text-[#000000] hover:bg-[#f3f3f7] active:scale-[0.97] transition-colors">
                         Next
                       </button>
                     </div>
@@ -549,11 +549,11 @@ export default function SalonAuditLogPreview() {
                   </div>
 
                   <div className="p-3 border-t border-[#e8e8ec] bg-[#f3f3f7]/30 flex items-center justify-between gap-2">
-                    <button className="flex-1 h-8 rounded border border-[#c8c5cb] bg-[#ffffff] text-[#000000] hover:bg-[#f3f3f7] transition-colors font-medium text-[12px] flex items-center justify-center gap-1.5">
+                    <button className="flex-1 h-8 rounded border border-[#c8c5cb] bg-[#ffffff] text-[#000000] hover:bg-[#f3f3f7] active:scale-[0.97] transition-colors font-medium text-[12px] flex items-center justify-center gap-1.5">
                       <span className="material-symbols-outlined text-[15px]">print</span>
                       <span>Print Receipt</span>
                     </button>
-                    <button className="flex-1 h-8 rounded bg-[#000000] text-[#ffffff] hover:bg-[#e2e2e6] hover:text-[#000000] transition-colors font-medium text-[12px] flex items-center justify-center gap-1.5">
+                    <button className="flex-1 h-8 rounded bg-[#000000] text-[#ffffff] hover:bg-[#e2e2e6] hover:text-[#000000] active:scale-[0.97] transition-colors font-medium text-[12px] flex items-center justify-center gap-1.5">
                       <span className="material-symbols-outlined text-[15px]">receipt</span>
                       <span>View Invoice</span>
                     </button>

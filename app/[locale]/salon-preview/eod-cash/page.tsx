@@ -164,11 +164,11 @@ export default function SalonEodCashPreview() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb] hover:bg-[#f3f3f7] text-[#1a1c1f] text-[13.5px] leading-5 font-medium transition-colors">
+                  <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb] hover:bg-[#f3f3f7] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-medium transition-colors">
                     <span className="material-symbols-outlined text-[17px] text-[#47464b]">print</span>
                     <span>Print Summary</span>
                   </button>
-                  <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb] hover:bg-[#f3f3f7] text-[#1a1c1f] text-[13.5px] leading-5 font-medium transition-colors">
+                  <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb] hover:bg-[#f3f3f7] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-medium transition-colors">
                     <span className="material-symbols-outlined text-[17px] text-[#47464b]">file_download</span>
                     <span>Export Shift PDF</span>
                   </button>
@@ -317,7 +317,7 @@ export default function SalonEodCashPreview() {
                                 <div className="inline-flex items-center rounded-lg border border-[#e2e2e6] bg-[#ffffff]">
                                   <button
                                     onClick={() => adjust(d.key, -1)}
-                                    className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] transition-colors"
+                                    className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded"
                                   >
                                     <span className="material-symbols-outlined text-[16px]">remove</span>
                                   </button>
@@ -330,7 +330,7 @@ export default function SalonEodCashPreview() {
                                   />
                                   <button
                                     onClick={() => adjust(d.key, 1)}
-                                    className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] transition-colors"
+                                    className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded"
                                   >
                                     <span className="material-symbols-outlined text-[16px]">add</span>
                                   </button>

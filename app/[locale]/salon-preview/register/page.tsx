@@ -157,11 +157,11 @@ export default function SalonRegisterPreview() {
                           </kbd>
                         </div>
                       </div>
-                      <button className="h-10 px-3.5 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] text-[#1a1c1f] text-[13.5px] leading-5 font-normal flex items-center gap-2 shadow-sm border border-[#c8c5cb]/30 transition-colors">
+                      <button className="h-10 px-3.5 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-normal flex items-center gap-2 shadow-sm border border-[#c8c5cb]/30 transition-colors">
                         <span className="material-symbols-outlined text-[18px]">barcode_scanner</span>
                         <span>Scan SKU</span>
                       </button>
-                      <button className="h-10 px-3.5 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] text-[#1a1c1f] text-[13.5px] leading-5 font-normal flex items-center gap-2 shadow-sm border border-[#c8c5cb]/30 transition-colors">
+                      <button className="h-10 px-3.5 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-normal flex items-center gap-2 shadow-sm border border-[#c8c5cb]/30 transition-colors">
                         <span className="material-symbols-outlined text-[18px]">tune</span>
                         <span>Filter</span>
                       </button>
@@ -173,7 +173,7 @@ export default function SalonRegisterPreview() {
                         <button
                           key={tab}
                           className={
-                            "h-8 px-3.5 rounded-full text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase transition-colors flex items-center whitespace-nowrap " +
+                            "h-8 px-3.5 rounded-full text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase transition-colors active:scale-[0.97] flex items-center whitespace-nowrap " +
                             (i === 0
                               ? "bg-[#000000] text-[#ffffff] shadow-sm"
                               : "bg-[#ffffff] hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] border border-[#c8c5cb]/30")
@@ -225,7 +225,7 @@ export default function SalonRegisterPreview() {
                             <span className="text-[16px] text-[#1a1c1f] font-semibold tabular-nums">{item.price}</span>
                             <button
                               className={
-                                "w-7 h-7 rounded-lg flex items-center justify-center transition-colors " +
+                                "w-7 h-7 rounded-lg flex items-center justify-center transition-colors active:scale-[0.97] " +
                                 (item.active
                                   ? "bg-[#000000] text-[#ffffff]"
                                   : "bg-[#eeedf1] hover:bg-[#000000] text-[#1a1c1f] hover:text-[#ffffff]")
@@ -273,13 +273,13 @@ export default function SalonRegisterPreview() {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <button
-                            className="h-7 w-7 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-center transition-colors"
+                            className="h-7 w-7 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-center transition-colors"
                             title="Hold Folio"
                           >
                             <span className="material-symbols-outlined text-[16px]">pause_circle</span>
                           </button>
                           <button
-                            className="h-7 w-7 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#ba1a1a] flex items-center justify-center transition-colors"
+                            className="h-7 w-7 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#ba1a1a] flex items-center justify-center transition-colors"
                             title="Clear Folio"
                           >
                             <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
@@ -307,7 +307,7 @@ export default function SalonRegisterPreview() {
                             </div>
                           </div>
                           <button
-                            className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-[#e8e8ec] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors shrink-0"
+                            className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-[#e8e8ec] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors shrink-0"
                             title="Change Client"
                           >
                             <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
@@ -363,11 +363,11 @@ export default function SalonRegisterPreview() {
                           ))}
                         </div>
                         <div className="flex items-center justify-between pt-0.5">
-                          <button className="text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center gap-1 font-medium transition-colors">
+                          <button className="text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] flex items-center gap-1 font-medium transition-colors">
                             <span className="material-symbols-outlined text-[15px]">add_circle</span>
                             <span>Custom Discount / Tip</span>
                           </button>
-                          <button className="text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center gap-1 font-medium transition-colors">
+                          <button className="text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] flex items-center gap-1 font-medium transition-colors">
                             <span className="material-symbols-outlined text-[15px]">redeem</span>
                             <span>Voucher</span>
                           </button>
@@ -417,7 +417,7 @@ export default function SalonRegisterPreview() {
                                 key={m.key}
                                 onClick={() => setMethod(m.key)}
                                 className={
-                                  "p-2.5 rounded-xl flex items-center justify-between text-left transition-all border " +
+                                  "p-2.5 rounded-xl flex items-center justify-between text-left transition-all active:scale-[0.97] border " +
                                   (selected
                                     ? "bg-[#000000] text-[#ffffff] shadow-sm border-[#000000]"
                                     : "bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] border-[#c8c5cb]/20")
@@ -446,15 +446,15 @@ export default function SalonRegisterPreview() {
                           <span>Charge RM 706.80 &amp; Print Receipt</span>
                         </button>
                         <div className="grid grid-cols-3 gap-2">
-                          <button className="h-8 px-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] border border-[#c8c5cb]/20 text-[#1a1c1f] text-[11px] font-medium flex items-center justify-center gap-1 transition-colors">
+                          <button className="h-8 px-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] border border-[#c8c5cb]/20 text-[#1a1c1f] text-[11px] font-medium flex items-center justify-center gap-1 transition-colors">
                             <span className="material-symbols-outlined text-[13px]">send_to_mobile</span>
                             <span>WhatsApp</span>
                           </button>
-                          <button className="h-8 px-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] border border-[#c8c5cb]/20 text-[#1a1c1f] text-[11px] font-medium flex items-center justify-center gap-1 transition-colors">
+                          <button className="h-8 px-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] border border-[#c8c5cb]/20 text-[#1a1c1f] text-[11px] font-medium flex items-center justify-center gap-1 transition-colors">
                             <span className="material-symbols-outlined text-[13px]">call_split</span>
                             <span>Split Bill</span>
                           </button>
-                          <button className="h-8 px-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] border border-[#c8c5cb]/20 text-[#1a1c1f] text-[11px] font-medium flex items-center justify-center gap-1 transition-colors">
+                          <button className="h-8 px-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] border border-[#c8c5cb]/20 text-[#1a1c1f] text-[11px] font-medium flex items-center justify-center gap-1 transition-colors">
                             <span className="material-symbols-outlined text-[13px]">pause</span>
                             <span>Park Folio</span>
                           </button>
