@@ -206,21 +206,27 @@ export default function SalonInvoicesPreview() {
                       #POS-01-BANGSAR
                     </span>
                   </div>
-                  <button className="h-9 px-3 inline-flex items-center gap-1.5 rounded bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:bg-[#eeedf1] hover:border-[#1a1c1f] transition-colors text-[13.5px] leading-5">
+                  <button className="h-9 px-3 inline-flex items-center gap-1.5 rounded bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:bg-[#eeedf1] hover:border-[#1a1c1f] active:scale-[0.97] transition-all text-[13.5px] leading-5">
                     <span className="material-symbols-outlined text-[17px]">receipt</span>
                     <span>Manual New Invoice</span>
                   </button>
                   <button
                     onClick={() => runPrintSequence(setTestPrintState)}
                     disabled={testPrintState !== "idle"}
-                    className="h-9 px-3 inline-flex items-center gap-1.5 rounded bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:bg-[#eeedf1] hover:border-[#1a1c1f] transition-colors text-[13.5px] leading-5"
+                    title={testPrintState === "idle" ? "Thermal Test Print" : testPrintState === "spooling" ? "Spooling to ESC/POS..." : "Slip Dispatched"}
+                    aria-label="Thermal Test Print"
+                    className={
+                      "h-9 w-9 inline-flex items-center justify-center rounded bg-[#ffffff] border active:scale-[0.97] transition-colors " +
+                      (testPrintState === "dispatched"
+                        ? "border-emerald-200 text-emerald-600"
+                        : "border-[#e2e2e6] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1]")
+                    }
                   >
-                    <span className={"material-symbols-outlined text-[17px]" + (testPrintState === "spooling" ? " animate-spin" : "")}>
+                    <span className={"material-symbols-outlined text-[18px] transition-colors" + (testPrintState === "spooling" ? " animate-spin" : "")}>
                       {testPrintState === "idle" ? "print" : testPrintState === "spooling" ? "refresh" : "done"}
                     </span>
-                    <span>{testPrintState === "idle" ? "Thermal Test Print" : testPrintState === "spooling" ? "Spooling to ESC/POS..." : "Slip Dispatched"}</span>
                   </button>
-                  <button className="h-9 px-3 inline-flex items-center gap-1.5 rounded bg-[#000000] text-[#ffffff] hover:bg-zinc-800 transition-colors text-[13.5px] leading-5">
+                  <button className="h-9 px-3 inline-flex items-center gap-1.5 rounded bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:bg-[#eeedf1] hover:border-[#1a1c1f] active:scale-[0.97] transition-all text-[13.5px] leading-5">
                     <span className="material-symbols-outlined text-[17px]">download</span>
                     <span>Export Tax Ledger (SST)</span>
                   </button>
@@ -270,7 +276,7 @@ export default function SalonInvoicesPreview() {
                         <button
                           key={f.label}
                           className={
-                            "h-7 px-2.5 rounded text-[11.5px] leading-4 tracking-[0.06em] font-semibold tracking-wider uppercase transition-colors " +
+                            "h-7 px-2.5 rounded text-[11.5px] leading-4 tracking-[0.06em] font-semibold tracking-wider uppercase transition-colors active:scale-[0.97] " +
                             (f.active
                               ? "bg-[#000000] text-[#ffffff]"
                               : "bg-[#f3f3f7] text-[#5e5e67] hover:text-[#1a1c1f] border border-[#e2e2e6]")
@@ -323,7 +329,9 @@ export default function SalonInvoicesPreview() {
                                 onClick={() => setSelectedInv(inv.id)}
                                 className={
                                   "transition-colors cursor-pointer " +
-                                  (isSelected ? "bg-[#f3f3f7]/70 border-l-2 border-l-[#000000]" : "hover:bg-[#f3f3f7]")
+                                  (isSelected
+                                    ? "bg-[#f3f3f7]/70 border-l-2 border-l-[#000000]"
+                                    : "hover:bg-[#f3f3f7] active:bg-[#eeedf1]")
                                 }
                               >
                                 <td className="py-3 px-3 whitespace-nowrap">
@@ -378,7 +386,7 @@ export default function SalonInvoicesPreview() {
                                 <td className="py-3 px-3 text-right whitespace-nowrap">
                                   <button
                                     className={
-                                      "h-7 px-2.5 rounded transition-colors text-[12px] inline-flex items-center gap-1 " +
+                                      "h-7 px-2.5 rounded transition-colors active:scale-[0.97] text-[12px] inline-flex items-center gap-1 " +
                                       (isSelected
                                         ? "bg-[#000000] text-[#ffffff] hover:bg-zinc-800"
                                         : "bg-[#f3f3f7] border border-[#e2e2e6] text-[#1a1c1f] hover:bg-[#eeedf1]")
@@ -411,7 +419,7 @@ export default function SalonInvoicesPreview() {
                         <span className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#1a1c1f] font-semibold px-2">
                           Page 1 of 24
                         </span>
-                        <button className="h-8 px-2.5 rounded bg-[#f3f3f7] border border-[#e2e2e6] text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors text-[13.5px] leading-5 inline-flex items-center gap-1">
+                        <button className="h-8 px-2.5 rounded bg-[#f3f3f7] border border-[#e2e2e6] text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors text-[13.5px] leading-5 inline-flex items-center gap-1">
                           <span>Next</span>
                           <span className="material-symbols-outlined text-[16px]">chevron_right</span>
                         </button>
@@ -439,7 +447,7 @@ export default function SalonInvoicesPreview() {
                         <button
                           onClick={() => setFormatTab("thermal")}
                           className={
-                            "py-1 px-2 rounded text-center text-[11.5px] leading-4 tracking-[0.04em] uppercase tracking-wider transition-all " +
+                            "py-1 px-2 rounded text-center text-[11.5px] leading-4 tracking-[0.04em] uppercase tracking-wider transition-all active:scale-[0.97] " +
                             (formatTab === "thermal" ? "font-semibold bg-[#ffffff] text-[#1a1c1f]" : "font-medium text-[#5e5e67] hover:text-[#1a1c1f]")
                           }
                         >
@@ -448,7 +456,7 @@ export default function SalonInvoicesPreview() {
                         <button
                           onClick={() => setFormatTab("a4")}
                           className={
-                            "py-1 px-2 rounded text-center text-[11.5px] leading-4 tracking-[0.04em] uppercase tracking-wider transition-all " +
+                            "py-1 px-2 rounded text-center text-[11.5px] leading-4 tracking-[0.04em] uppercase tracking-wider transition-all active:scale-[0.97] " +
                             (formatTab === "a4" ? "font-semibold bg-[#ffffff] text-[#1a1c1f]" : "font-medium text-[#5e5e67] hover:text-[#1a1c1f]")
                           }
                         >
@@ -461,9 +469,15 @@ export default function SalonInvoicesPreview() {
                       <button
                         onClick={handleDirectPrint}
                         disabled={printState !== "idle"}
-                        className="flex-1 h-9 px-3 bg-[#000000] text-[#ffffff] rounded hover:bg-zinc-800 transition-colors text-[13.5px] leading-5 font-semibold inline-flex items-center justify-center gap-2"
+                        className="flex-1 h-9 px-3 bg-[#000000] text-[#ffffff] rounded hover:bg-zinc-800 active:scale-[0.98] transition-all text-[13.5px] leading-5 font-semibold inline-flex items-center justify-center gap-2"
                       >
-                        <span className={"material-symbols-outlined text-[18px]" + (printState === "spooling" ? " animate-spin" : "")}>
+                        <span
+                          className={
+                            "material-symbols-outlined text-[18px] transition-colors" +
+                            (printState === "spooling" ? " animate-spin" : "") +
+                            (printState === "dispatched" ? " text-emerald-400" : "")
+                          }
+                        >
                           {printState === "idle" ? "print" : printState === "spooling" ? "refresh" : "done"}
                         </span>
                         <span>
@@ -477,14 +491,14 @@ export default function SalonInvoicesPreview() {
                       <button
                         aria-label="Send via WhatsApp"
                         title="Send WhatsApp PDF"
-                        className="h-9 w-9 bg-[#ffffff] border border-[#e2e2e6] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] rounded transition-colors inline-flex items-center justify-center"
+                        className="h-9 w-9 bg-[#ffffff] border border-[#e2e2e6] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] rounded transition-colors inline-flex items-center justify-center"
                       >
                         <span className="material-symbols-outlined text-[18px]">chat</span>
                       </button>
                       <button
                         aria-label="Email Invoice PDF"
                         title="Email Invoice"
-                        className="h-9 w-9 bg-[#ffffff] border border-[#e2e2e6] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] rounded transition-colors inline-flex items-center justify-center"
+                        className="h-9 w-9 bg-[#ffffff] border border-[#e2e2e6] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] rounded transition-colors inline-flex items-center justify-center"
                       >
                         <span className="material-symbols-outlined text-[18px]">mail</span>
                       </button>
