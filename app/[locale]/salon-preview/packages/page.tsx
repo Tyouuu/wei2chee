@@ -168,6 +168,22 @@ const PACKAGES: PackageRow[] = [
     actionLabel: "View",
     actionStyle: "outline",
   },
+  {
+    guest: "Chloe Sim",
+    cardId: "#PK-8055",
+    vipBadge: "VIP Gold",
+    program: "6-Session Balayage & Gloss Maintenance",
+    category: "Color Tech Series",
+    balanceLabel: "4 of 6",
+    balancePercent: 67,
+    balanceColor: "primary",
+    value: "RM 560.00",
+    valueSub: "Orig. RM 1,680.00",
+    expiry: "18 Feb 2025",
+    host: "Wei Lin",
+    actionLabel: "View",
+    actionStyle: "outline",
+  },
 ];
 
 type PunchCell = { num: string; status: "done" | "today" | "future"; sublabel: string };
@@ -443,7 +459,7 @@ export default function SalonPackagesPreview() {
                     <div className="p-4 px-5 border-t border-[#c8c5cb]/30 flex items-center justify-between text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] bg-[#eeedf1]/20">
                       <div>
                         Showing <span className="font-medium text-[#1a1c1f] tabular-nums">1</span> to{" "}
-                        <span className="font-medium text-[#1a1c1f] tabular-nums">5</span> of{" "}
+                        <span className="font-medium text-[#1a1c1f] tabular-nums">6</span> of{" "}
                         <span className="font-medium text-[#1a1c1f] tabular-nums">68</span> active packages
                       </div>
                       <div className="flex items-center gap-1.5">

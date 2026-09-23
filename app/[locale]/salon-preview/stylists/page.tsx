@@ -161,9 +161,6 @@ export default function SalonStylistProfilePreview() {
                           <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">
                             Basic Identity &amp; Salon Role
                           </h2>
-                          <p className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] uppercase tracking-wider">
-                            Master stylist profile credentials and floor positioning
-                          </p>
                         </div>
                       </div>
                       <span className="text-[13.5px] leading-[18px] tracking-[0.01em] font-medium text-[#5e5e67] uppercase">
@@ -337,9 +334,6 @@ export default function SalonStylistProfilePreview() {
                           <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">
                             Weekly Shift &amp; Chair Roster
                           </h2>
-                          <p className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] uppercase tracking-wider">
-                            Set baseline recurring working hours, chair capacity, and rest days
-                          </p>
                         </div>
                       </div>
                       <button className="px-2 py-1 rounded bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#1a1c1f] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors">
@@ -443,9 +437,6 @@ export default function SalonStylistProfilePreview() {
                           <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">
                             Commission Tier &amp; Revenue Split Matrix
                           </h2>
-                          <p className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] uppercase tracking-wider">
-                            Dynamic progressive compensation based on monthly service and retail turnover
-                          </p>
                         </div>
                       </div>
                       <span className="px-2 py-0.5 rounded bg-[#eeedf1] text-[#5e5e67] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase">

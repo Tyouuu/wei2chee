@@ -141,22 +141,6 @@ const ROWS: Row[] = [
     velocityNote: "Standard",
     action: "restock",
   },
-  {
-    sku: "K18-PRO-150",
-    name: "K18 Molecular Repair Mist",
-    tag: "Peptide",
-    tagTone: "neutral",
-    brandLine: "K18 Direct · 150ml · Par: 3",
-    location: "Safe Vault B",
-    bay: "Restricted",
-    level: "4 bottles",
-    levelNote: "(Healthy)",
-    levelTone: "healthy",
-    cost: "RM 320.00",
-    velocity: "2.5 bottles / mo",
-    velocityNote: "Foil Addon",
-    action: "restock",
-  },
 ];
 
 const DOT_TONE: Record<Row["levelTone"], string> = {
@@ -344,14 +328,15 @@ export default function SalonStockPreview() {
                                   </div>
                                 </td>
                                 <td className="py-3 px-4">
-                                  <div className="flex flex-col">
-                                    <span className="font-medium text-[#1a1c1f] text-[12.5px]">{r.location}</span>
-                                    <span className="text-[11px] text-[#77767b]">{r.bay}</span>
-                                  </div>
+                                  <span className="text-[12.5px] whitespace-nowrap">
+                                    <span className="font-medium text-[#1a1c1f]">{r.location}</span>
+                                    <span className="text-[#c8c5cb]"> · </span>
+                                    <span className="text-[#77767b]">{r.bay}</span>
+                                  </span>
                                 </td>
                                 <td className="py-3 px-4">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className={"w-2 h-2 rounded-full " + DOT_TONE[r.levelTone]} />
+                                  <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                    <span className={"w-2 h-2 rounded-full shrink-0 " + DOT_TONE[r.levelTone]} />
                                     <span
                                       className={
                                         "font-mono font-semibold " +
@@ -372,10 +357,11 @@ export default function SalonStockPreview() {
                                 </td>
                                 <td className="py-3 px-4 text-right font-mono text-[13px] text-[#1a1c1f] font-medium">{r.cost}</td>
                                 <td className="py-3 px-4">
-                                  <div className="flex flex-col">
-                                    <span className="font-mono text-[#1a1c1f] text-[12px]">{r.velocity}</span>
-                                    <span className="text-[11px] text-[#77767b]">{r.velocityNote}</span>
-                                  </div>
+                                  <span className="text-[12px] whitespace-nowrap">
+                                    <span className="font-mono text-[#1a1c1f]">{r.velocity}</span>
+                                    <span className="text-[#c8c5cb]"> · </span>
+                                    <span className="text-[#77767b]">{r.velocityNote}</span>
+                                  </span>
                                 </td>
                                 <td className="py-3 px-4 text-right">
                                   {r.action === "restock" ? (
@@ -404,7 +390,7 @@ export default function SalonStockPreview() {
                       </div>
                       <div className="px-4 py-3 bg-[#f3f3f7] flex flex-col sm:flex-row items-center justify-between gap-3 text-[#77767b] text-[11.5px] border-t border-[#e8e8ec]">
                         <div className="flex items-center gap-2">
-                          <span className="text-[#1a1c1f] font-medium">Showing 1 to 7 of 186 SKUs</span>
+                          <span className="text-[#1a1c1f] font-medium">Showing 1 to 6 of 186 SKUs</span>
                           <span className="text-[#c8c5cb]">·</span>
                           <span>Updated 8 mins ago by Wei Lin</span>
                         </div>
