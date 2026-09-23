@@ -198,7 +198,7 @@ export default function SalonEodCashPreview() {
 
               {/* Summary Strip */}
               <div className="py-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                <div className="p-4 rounded-xl bg-[#ffffff] border border-[#e2e2e6] flex flex-col justify-between">
+                <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#77767b]">
                       Expected Cash in Drawer
@@ -214,7 +214,7 @@ export default function SalonEodCashPreview() {
                     </p>
                   </div>
                 </div>
-                <div className="p-4 rounded-xl bg-[#ffffff] border border-[#e2e2e6] flex flex-col justify-between">
+                <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#77767b]">
                       Cash Counted by Staff
@@ -230,7 +230,7 @@ export default function SalonEodCashPreview() {
                     </p>
                   </div>
                 </div>
-                <div className="p-4 rounded-xl bg-[#ffffff] border border-[#e2e2e6] flex flex-col justify-between">
+                <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#77767b]">
                       Cash Variance
@@ -249,7 +249,7 @@ export default function SalonEodCashPreview() {
                     </p>
                   </div>
                 </div>
-                <div className="p-4 rounded-xl bg-[#ffffff] border border-[#e2e2e6] flex flex-col justify-between">
+                <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#77767b]">
                       Total Shift Gross

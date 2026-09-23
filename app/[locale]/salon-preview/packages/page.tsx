@@ -235,12 +235,17 @@ export default function SalonPackagesPreview() {
             <div className="flex flex-col w-full">
               {/* Breadcrumb & Top Cluster */}
               <div className="flex flex-col md:flex-row md:items-center justify-between pb-5 gap-3">
-                <div className="flex items-center gap-1 text-[11.5px] leading-4 tracking-[0.04em] font-medium tracking-wider uppercase text-[#5e5e67]">
-                  <span>Operations</span>
-                  <span className="text-[#c8c5cb]">/</span>
-                  <span>Management</span>
-                  <span className="text-[#c8c5cb]">/</span>
-                  <span className="font-medium text-[#1a1c1f]">Packages &amp; Prepaid Balance Ledger</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1 text-[11.5px] leading-4 tracking-[0.04em] font-medium tracking-wider uppercase text-[#5e5e67]">
+                    <span>Operations</span>
+                    <span className="text-[#c8c5cb]">/</span>
+                    <span>Management</span>
+                    <span className="text-[#c8c5cb]">/</span>
+                    <span className="font-medium text-[#1a1c1f]">Packages &amp; Prepaid Balance Ledger</span>
+                  </div>
+                  <h1 className="text-[20px] leading-7 tracking-[-0.015em] font-semibold text-[#1a1c1f] tracking-tight">
+                    Packages &amp; Prepaid Balance Ledger
+                  </h1>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="inline-flex items-center gap-1 px-3 py-1 rounded bg-[#eeedf1] border border-[#c8c5cb]/40">
@@ -273,7 +278,7 @@ export default function SalonPackagesPreview() {
                     {METRICS.map((m) => (
                       <div
                         key={m.label}
-                        className="bg-[#ffffff] p-4 rounded-xl border border-[#c8c5cb]/30 flex flex-col justify-between shadow-sm"
+                        className="bg-[#ffffff] p-5 rounded-xl border border-[#c8c5cb]/30 flex flex-col justify-between shadow-sm"
                       >
                         <div className="flex items-center justify-between text-[#5e5e67] mb-2.5">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5e5e67]">{m.label}</span>
