@@ -401,6 +401,11 @@ export type RecordFormCopy = {
   staffShiftClockOut: string;
   staffShiftHours: string;
   staffShiftHoursNone: string;
+  /* 这个月客人给的小费（`tips_of`，20260911190000）——跟打卡同一道闸
+     （`works_here`，不是 `sees_money`）：他自己拿了多少，自己看得到，
+     不用先看得到店里的钱。 */
+  staffShiftTips: string;
+  staffShiftTipsNone: string;
   /* 沙龙那一本日记簿——做什么 · 谁做 · 多少钱 · 小费
      （20260910010000 · 20260911190000）。 */
   visitLinesHeading: string;
@@ -971,6 +976,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       staffShiftClockOut: "打卡下班",
       staffShiftHours: "最近 30 天：{hours} 小时 · {shifts} 节班",
       staffShiftHoursNone: "最近 30 天还没有一节做完的班。",
+      staffShiftTips: "最近 30 天：客人给的小费 {amount} · {visits} 次来访",
+      staffShiftTipsNone: "最近 30 天还没有客人给过小费。",
       visitLinesHeading: "这一次做了什么",
       visitLinesNone: "还没有记下来。",
       visitLinesStaffNone: "还没派人",
@@ -1491,6 +1498,8 @@ export const RECORD_COPY: { zh: RecordCopy; en: RecordCopy } = {
       staffShiftClockOut: "Clock out",
       staffShiftHours: "Last 30 days: {hours} hrs across {shifts} shifts",
       staffShiftHoursNone: "No finished shifts in the last 30 days yet.",
+      staffShiftTips: "Last 30 days: {amount} in tips across {visits} visits",
+      staffShiftTipsNone: "No tips from guests in the last 30 days yet.",
       visitLinesHeading: "What was done this visit",
       visitLinesNone: "Nothing recorded yet.",
       visitLinesStaffNone: "Not assigned yet",

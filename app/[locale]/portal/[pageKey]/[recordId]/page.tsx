@@ -318,7 +318,13 @@ export default async function EditRecordPage({
   /* 上下班打卡（20260911240000，[任务 375/401]）——`undefined` = 没有问
      （不是师傅那一页）。 */
   let shiftInfo:
-    | { clockedInSince: string | null; hours: number; shifts: number }
+    | {
+        clockedInSince: string | null;
+        hours: number;
+        shifts: number;
+        tipCents: number;
+        tippedVisits: number;
+      }
     | undefined = undefined;
   let tiers: CommissionTier[] | null = null;
   /* 🔴 这个月那个数字是照**哪一份**办法算的（20260905640000）。
@@ -1072,7 +1078,7 @@ export default async function EditRecordPage({
     /* 上下班打卡——师傅自己打得到，不用先看得到钱（`works_here` 就够）。
        跟抽成那一段不同一道闸，因为「在不在店里」不是薪水。 */
     if (pageKey === "staff") {
-      const [{ data: openShift }, { data: hoursRows }] = await Promise.all([
+      const [{ data: openShift }, { data: hoursRows }, { data: tipRows }] = await Promise.all([
         supabase
           .from("staff_shifts")
           .select("clock_in_at")
@@ -1083,14 +1089,25 @@ export default async function EditRecordPage({
           in_project_id: ctx.projectId,
           in_days: 30,
         }),
+        /* `tips_of`（20260911190000）——同一道闸（`works_here`），
+           同一个「问完了在这一行找自己」的做法，跟上面 hoursRows 一样。 */
+        supabase.rpc("tips_of", {
+          in_project_id: ctx.projectId,
+          in_days: 30,
+        }),
       ]);
       const mine = ((hoursRows ?? []) as { staff_id: string; hours: number; shifts_worked: number }[]).find(
+        (r) => r.staff_id === recordId,
+      );
+      const myTips = ((tipRows ?? []) as { staff_id: string; tip_cents: number; tipped_visits: number }[]).find(
         (r) => r.staff_id === recordId,
       );
       shiftInfo = {
         clockedInSince: openShift?.clock_in_at ?? null,
         hours: mine ? Number(mine.hours) : 0,
         shifts: mine ? Number(mine.shifts_worked) : 0,
+        tipCents: myTips ? Number(myTips.tip_cents) : 0,
+        tippedVisits: myTips ? Number(myTips.tipped_visits) : 0,
       };
     }
 
@@ -2767,6 +2784,8 @@ export default async function EditRecordPage({
                 clockedInSince={shiftInfo.clockedInSince}
                 hours={shiftInfo.hours}
                 shifts={shiftInfo.shifts}
+                tipCents={shiftInfo.tipCents}
+                tippedVisits={shiftInfo.tippedVisits}
                 copy={copy.form}
               />
             </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { ringgit } from "@/lib/portal/live-rows";
 import type { RecordFormCopy } from "../record-copy";
 
 /**
@@ -20,18 +21,32 @@ import type { RecordFormCopy } from "../record-copy";
  * `clock_out_at` 是 null 就是还在上班，不是另一个要挑的选项——所以
  * 这里只有一颗按钮：还没打卡就给「打卡上班」，打了卡就换成「打卡下班」，
  * 不是两颗按钮并排给他选。
+ *
+ * ── 小费也在这里，不在一张全公司的排行上（`tips_of`，20260911190000）──────
+ *
+ * 跟 `commission-panel.tsx` 那句「一张全公司的佣金表读起来像薪资系统」
+ * 同一个理由，换成小费更明显：把全店小费排成一张榜，读起来是在比
+ * 「谁的客人比较大方」，没有人想看到自己排在最后一个。`tips_of` 本来就
+ * 只挡 `works_here`（不是 `sees_money`）——他自己拿了多少，自己看得到，
+ * 这一段跟打卡放在一起正合适：都是「关于我自己」的一件事，不是店里的钱。
  */
 export function StaffShiftPanel({
   staffId,
   clockedInSince,
   hours,
   shifts,
+  tipCents,
+  tippedVisits,
   copy,
 }: {
   staffId: string;
   clockedInSince: string | null;
   hours: number;
   shifts: number;
+  /** 最近 30 天客人给的小费，`tips_of` 算的——不是营业额，是直接给做事
+   *  那个人的钱，从来不经过老板的户口（20260911190000）。 */
+  tipCents: number;
+  tippedVisits: number;
   copy: RecordFormCopy;
 }) {
   const router = useRouter();
@@ -106,6 +121,14 @@ export function StaffShiftPanel({
               .replace("{hours}", String(hours))
               .replace("{shifts}", String(shifts))
           : copy.staffShiftHoursNone}
+      </p>
+
+      <p className={dim}>
+        {tippedVisits > 0
+          ? copy.staffShiftTips
+              .replace("{amount}", ringgit(tipCents) ?? "RM 0")
+              .replace("{visits}", String(tippedVisits))
+          : copy.staffShiftTipsNone}
       </p>
 
       {error ? (
