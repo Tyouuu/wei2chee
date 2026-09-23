@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
 
 /**
@@ -16,13 +19,21 @@ import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
  *
  * No page behind it yet: no cart, no folio-checkout backend, no client
  * database. This is still sample content only.
+ *
+ * Client Component (upgraded from the original literal-port Server
+ * Component): the founder asked for every control to actually do
+ * something in this demo. The segment pills and search box now really
+ * filter the 8 sample clients -- matched against each client's existing
+ * `tier` field (VIP Gold / Color Regular) or a `hasPackage` flag added
+ * only where his own sample copy already says so (Datin Nora's "Active
+ * Fusio Pass" line) -- no fabricated data, just reading what's there.
  */
 const SEGMENTS = [
-  { label: "All (248)", active: true },
-  { label: "VIP Gold (64)" },
-  { label: "Color Regulars (142)" },
-  { label: "Packages (38)" },
-];
+  { label: "All (248)", tier: null },
+  { label: "VIP Gold (64)", tier: "VIP GOLD" },
+  { label: "Color Regulars (142)", tier: "COLOR REGULAR" },
+  { label: "Packages (38)", tier: "PACKAGE" },
+] as const;
 
 const CLIENTS = [
   {
@@ -33,6 +44,7 @@ const CLIENTS = [
     stylist: "JT",
     stylistName: "Jasmine",
     active: true,
+    hasPackage: true,
     right: "Today",
     detail: "19 visits · Active Fusio Pass (6/10)",
     note: "Next: Nov 28 · 11am",
@@ -192,6 +204,18 @@ const VISITS = [
 ];
 
 export default function SalonClientsPreview() {
+  const [activeSegment, setActiveSegment] = useState<(typeof SEGMENTS)[number]["label"]>("All (248)");
+  const [search, setSearch] = useState("");
+
+  const visibleClients = CLIENTS.filter((c) => {
+    const seg = SEGMENTS.find((s) => s.label === activeSegment);
+    if (seg?.tier === "PACKAGE" && !("hasPackage" in c && c.hasPackage)) return false;
+    if (seg?.tier && seg.tier !== "PACKAGE" && c.tier !== seg.tier) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q);
+  });
+
   return (
     <>
       <MaterialSymbolsLink />
@@ -250,6 +274,8 @@ export default function SalonClientsPreview() {
                           className="w-full h-9 pl-9 pr-12 rounded-lg bg-[#f3f3f7] text-[13.5px] text-[#1a1c1f] placeholder:text-[#77767b] focus:outline-none focus:bg-[#ffffff] focus:ring-1 focus:ring-[#000000] transition-all border border-transparent focus:border-[#eeedf1]"
                           placeholder="Search name, phone, formula ID..."
                           type="text"
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
                         />
                         <kbd className="absolute right-2.5 px-1.5 py-0.5 text-[10px] font-mono bg-[#eeedf1] text-[#47464b] rounded border border-[#eeedf1]">
                           ⌘K
@@ -260,9 +286,10 @@ export default function SalonClientsPreview() {
                         {SEGMENTS.map((s) => (
                           <button
                             key={s.label}
+                            onClick={() => setActiveSegment(s.label)}
                             className={
                               "px-2.5 py-1 rounded-full shrink-0 transition-colors active:scale-[0.97] " +
-                              (s.active
+                              (activeSegment === s.label
                                 ? "bg-[#000000] text-[#ffffff] font-medium shadow-sm"
                                 : "bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#47464b] border border-[#eeedf1]")
                             }
@@ -314,7 +341,12 @@ export default function SalonClientsPreview() {
 
                     {/* Client stream */}
                     <div className="flex flex-col gap-2 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
-                      {CLIENTS.map((c) => (
+                      {visibleClients.length === 0 && (
+                        <div className="bg-[#ffffff] rounded-xl p-4 border border-[#eeedf1] shadow-sm text-center text-[13px] text-[#77767b]">
+                          No clients match {search.trim() ? `"${search.trim()}"` : "this segment"} in today&apos;s roster.
+                        </div>
+                      )}
+                      {visibleClients.map((c) => (
                         <div
                           key={c.name}
                           className={
@@ -392,7 +424,14 @@ export default function SalonClientsPreview() {
                     <div className="flex flex-col gap-2 p-2 bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm text-[11.5px] font-mono">
                       <div className="flex items-center justify-between">
                         <span className="text-[11.5px] text-[#47464b]">
-                          Showing <strong className="text-[#1a1c1f] font-semibold">1–25</strong> of 248
+                          {visibleClients.length > 0 ? (
+                            <>
+                              Showing <strong className="text-[#1a1c1f] font-semibold">1–{visibleClients.length}</strong> of{" "}
+                            </>
+                          ) : (
+                            "Showing 0 of "
+                          )}
+                          {activeSegment.match(/\(([\d,]+)\)/)?.[1] ?? "248"}
                         </span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[11px] text-[#77767b]">Per page:</span>
