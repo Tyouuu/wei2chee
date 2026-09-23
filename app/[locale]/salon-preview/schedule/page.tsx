@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
 
 /**
@@ -17,11 +18,113 @@ import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
  * exactly the dead-button defect this repo's own record-table.tsx refuses to
  * ship. They stay literal to the source (scrollTo / alert), matching what a
  * pre-backend demo can honestly promise.
+ *
+ * Extended in the same spirit to every other dead control on this page:
+ *  - the 4 timeline rows are each their own uniquely-shaped hand-written
+ *    block (like Audit Log's 6 rows) rather than a data array, so the
+ *    "All Roster Stylists" filter, the search box and the 4 status pills
+ *    all work at ROW granularity (hide/show a whole stylist's row), not by
+ *    hiding individual appointment cards inside a row -- the cards within a
+ *    row mix statuses (an in-service card and an upcoming card can sit in
+ *    the same row) and aren't a uniform shape either, so per-card filtering
+ *    would mean rewriting ~10 bespoke absolutely-positioned blocks; per-row
+ *    filtering reuses the same technique already shipped on Audit Log.
+ *  - Previous/Next/Today and "+ New Appointment" would need a different
+ *    day's worth of sample data to have any real effect, which doesn't
+ *    exist (same category as Stock's purchase-order builder) -- they get an
+ *    honest `alert()` in the same voice the source's own Book Slot / Assign
+ *    Walk-in handlers already use, rather than silently doing nothing.
+ *  - the Day / Gap & Open Slots / Week View tabs get a real active-state
+ *    toggle (the click is genuinely tracked), but Gap/Week don't switch to
+ *    different content -- there's no alternate layout for them in the
+ *    source, and inventing one would be a new screen, not a wiring fix.
  */
+
+type Status = "inService" | "upcoming" | "completed";
+
+const STYLISTS: {
+  name: string;
+  role: string;
+  bookings: string;
+  load: string;
+  loadTone: "primary" | "secondary";
+  statuses: Status[];
+  searchText: string;
+}[] = [
+  {
+    name: "Amy Chen",
+    role: "Station 01 · Senior Master",
+    bookings: "4 Bookings",
+    load: "80% Load",
+    loadTone: "primary",
+    statuses: ["inService", "upcoming"],
+    searchText: "Amy Chen Amanda Choong Balayage Highlights Scalp Spa Marcus Tan Fade Cut Beard Shaping",
+  },
+  {
+    name: "Jasmine Teo",
+    role: "Station 02 · Director Colorist",
+    bookings: "5 Bookings",
+    load: "100% Full",
+    loadTone: "primary",
+    statuses: ["inService", "upcoming"],
+    searchText:
+      "Jasmine Teo Datin Nora Root Touchup Gloss Toner Cool Ash Rachel Soo Digital Perm Keratin Treatment Therapy",
+  },
+  {
+    name: "Chloe Tan",
+    role: "Station 03 · Creative Stylist",
+    bookings: "3 Bookings",
+    load: "65% Load",
+    loadTone: "secondary",
+    statuses: ["completed", "inService", "upcoming"],
+    searchText:
+      "Chloe Tan Lim Wei Seng Finishing Cut Scalp Treatment Elena Rostova Root Color Signature Blowout Wash Style",
+  },
+  {
+    name: "Kelvin Ng",
+    role: "Station 04 · Senior Barber",
+    bookings: "2 Bookings",
+    load: "45% Load",
+    loadTone: "secondary",
+    statuses: ["upcoming"],
+    searchText: "Kelvin Ng Darren Lee Precision Cut Lucas Wong Fade Beard",
+  },
+];
+
+const STATUS_PILLS: { key: Status | "all"; label: string }[] = [
+  { key: "all", label: "All (18)" },
+  { key: "inService", label: "In Service (4)" },
+  { key: "upcoming", label: "Upcoming (10)" },
+  { key: "completed", label: "Completed (4)" },
+];
+
 export default function SalonSchedulePreview() {
+  const [viewTab, setViewTab] = useState<"day" | "gap" | "week">("day");
+  const [activeStylist, setActiveStylist] = useState<string>("all");
+  const [stylistMenuOpen, setStylistMenuOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+
   const scrollTimeline = (left: number) => {
     document.getElementById("timeline-scroll-area")?.scrollTo({ left, behavior: "smooth" });
   };
+
+  const rowVisible = (s: (typeof STYLISTS)[number]) => {
+    if (activeStylist !== "all" && activeStylist !== s.name) return false;
+    if (statusFilter !== "all" && !s.statuses.includes(statusFilter)) return false;
+    const q = search.trim().toLowerCase();
+    if (q && !s.searchText.toLowerCase().includes(q)) return false;
+    return true;
+  };
+
+  const showAmy = rowVisible(STYLISTS[0]);
+  const showJasmine = rowVisible(STYLISTS[1]);
+  const showChloe = rowVisible(STYLISTS[2]);
+  const showKelvin = rowVisible(STYLISTS[3]);
+  const visibleStylistCount = [showAmy, showJasmine, showChloe, showKelvin].filter(Boolean).length;
+
+  const noSampleDataForOtherDays = () =>
+    alert("This demo only has sample bookings for Thursday, Oct 24 -- date navigation isn't wired yet.");
 
   return (
     <>
@@ -53,23 +156,44 @@ export default function SalonSchedulePreview() {
                       <span className="font-medium tracking-tight text-[12px]">Live Roster · 4 Stylists on Shift</span>
                     </div>
                     <div className="inline-flex items-center p-1 rounded-xl bg-[#f3f3f7] border border-[#c8c5cb]/30 select-none">
-                      <button className="px-4 py-1.5 rounded-lg bg-[#ffffff] text-[#1a1c1f] text-[13.5px] leading-5 font-normal shadow-sm leading-tight text-center transition-all active:scale-[0.97]">
+                      <button
+                        onClick={() => setViewTab("day")}
+                        className={
+                          "px-4 py-1.5 rounded-lg text-[13.5px] leading-5 font-normal leading-tight text-center transition-all active:scale-[0.97] " +
+                          (viewTab === "day" ? "bg-[#ffffff] text-[#1a1c1f] shadow-sm" : "text-[#5e5e67] hover:text-[#1a1c1f]")
+                        }
+                      >
                         Day
                         <br />
                         <span className="font-medium text-[11px] text-[#5e5e67]">Schedule</span>
                       </button>
-                      <button className="px-4 py-1.5 rounded-lg text-[#5e5e67] hover:text-[#1a1c1f] text-[13.5px] leading-5 font-normal leading-tight text-center transition-colors active:scale-[0.97]">
+                      <button
+                        onClick={() => setViewTab("gap")}
+                        className={
+                          "px-4 py-1.5 rounded-lg text-[13.5px] leading-5 font-normal leading-tight text-center transition-all active:scale-[0.97] " +
+                          (viewTab === "gap" ? "bg-[#ffffff] text-[#1a1c1f] shadow-sm" : "text-[#5e5e67] hover:text-[#1a1c1f]")
+                        }
+                      >
                         Gap &amp; Open
                         <br />
                         <span className="text-[11px]">Slots</span>
                       </button>
-                      <button className="px-4 py-1.5 rounded-lg text-[#5e5e67] hover:text-[#1a1c1f] text-[13.5px] leading-5 font-normal leading-tight text-center transition-colors active:scale-[0.97]">
+                      <button
+                        onClick={() => setViewTab("week")}
+                        className={
+                          "px-4 py-1.5 rounded-lg text-[13.5px] leading-5 font-normal leading-tight text-center transition-all active:scale-[0.97] " +
+                          (viewTab === "week" ? "bg-[#ffffff] text-[#1a1c1f] shadow-sm" : "text-[#5e5e67] hover:text-[#1a1c1f]")
+                        }
+                      >
                         Week
                         <br />
                         <span className="text-[11px]">View</span>
                       </button>
                     </div>
-                    <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#000000] text-[#ffffff] hover:bg-neutral-800 transition-colors text-[13.5px] leading-5 font-normal shadow-sm cursor-pointer shrink-0 active:scale-[0.99]">
+                    <button
+                      onClick={() => alert("New Appointment booking form isn't wired up in this demo yet.")}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#000000] text-[#ffffff] hover:bg-neutral-800 transition-colors text-[13.5px] leading-5 font-normal shadow-sm cursor-pointer shrink-0 active:scale-[0.99]"
+                    >
                       <span className="material-symbols-outlined text-[18px]">add</span>
                       <span className="leading-tight text-left text-[12.5px]">
                         New
@@ -80,30 +204,85 @@ export default function SalonSchedulePreview() {
                   </div>
                 </div>
 
+                {viewTab !== "day" && (
+                  <div className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] bg-[#f3f3f7] border border-[#c8c5cb]/30 rounded-lg px-3 py-2">
+                    {viewTab === "gap" ? "Gap & Open Slots" : "Week View"} isn&apos;t built in this demo yet -- showing
+                    today&apos;s Day Schedule below.
+                  </div>
+                )}
+
                 {/* Filters, Date Controls & Status Summary */}
                 <div className="flex items-center justify-between pt-1 gap-4 flex-wrap">
                   <div className="flex items-center gap-2.5">
                     <div className="flex items-center rounded-lg bg-[#ffffff] border border-[#c8c5cb]/50 shadow-2xs overflow-hidden">
-                      <button className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]" title="Previous Day">
+                      <button
+                        onClick={noSampleDataForOtherDays}
+                        className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]"
+                        title="Previous Day"
+                      >
                         <span className="material-symbols-outlined text-[16px]">chevron_left</span>
                       </button>
                       <div className="px-3 py-1.5 text-[13.5px] leading-5 font-normal text-[#1a1c1f] border-x border-[#c8c5cb]/30 flex items-center gap-2">
                         <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">calendar_today</span>
                         <span>Thursday, Oct 24, 2024</span>
                       </div>
-                      <button className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]" title="Next Day">
+                      <button
+                        onClick={noSampleDataForOtherDays}
+                        className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]"
+                        title="Next Day"
+                      >
                         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
                       </button>
                     </div>
-                    <button className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors bg-[#ffffff] shadow-2xs">
+                    <button
+                      onClick={noSampleDataForOtherDays}
+                      className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors bg-[#ffffff] shadow-2xs"
+                    >
                       Today
                     </button>
                     <div className="relative">
-                      <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors bg-[#ffffff] shadow-2xs">
+                      <button
+                        onClick={() => setStylistMenuOpen((v) => !v)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors bg-[#ffffff] shadow-2xs"
+                      >
                         <span className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
-                        <span>All Roster Stylists (4 on duty)</span>
-                        <span className="material-symbols-outlined text-[16px] text-[#5e5e67]">arrow_drop_down</span>
+                        <span>{activeStylist === "all" ? "All Roster Stylists (4 on duty)" : activeStylist}</span>
+                        <span className="material-symbols-outlined text-[16px] text-[#5e5e67]">
+                          {stylistMenuOpen ? "arrow_drop_up" : "arrow_drop_down"}
+                        </span>
                       </button>
+                      {stylistMenuOpen && (
+                        <div className="absolute left-0 top-full mt-1 w-56 rounded-lg border border-[#c8c5cb]/50 bg-[#ffffff] shadow-md z-30 overflow-hidden">
+                          <button
+                            onClick={() => {
+                              setActiveStylist("all");
+                              setStylistMenuOpen(false);
+                            }}
+                            className={
+                              "w-full text-left px-3 py-2 text-[13px] hover:bg-[#f3f3f7] transition-colors " +
+                              (activeStylist === "all" ? "font-semibold text-[#000000]" : "text-[#1a1c1f]")
+                            }
+                          >
+                            All Roster Stylists (4 on duty)
+                          </button>
+                          {STYLISTS.map((s) => (
+                            <button
+                              key={s.name}
+                              onClick={() => {
+                                setActiveStylist(s.name);
+                                setStylistMenuOpen(false);
+                              }}
+                              className={
+                                "w-full text-left px-3 py-2 text-[13px] hover:bg-[#f3f3f7] transition-colors border-t border-[#e8e8ec] " +
+                                (activeStylist === s.name ? "font-semibold text-[#000000]" : "text-[#1a1c1f]")
+                              }
+                            >
+                              {s.name}
+                              <span className="block text-[11px] text-[#5e5e67] font-normal">{s.role}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -115,21 +294,25 @@ export default function SalonSchedulePreview() {
                         className="w-full pl-8 pr-3 py-1.5 text-[13.5px] leading-5 font-normal rounded-lg border border-[#c8c5cb]/50 bg-[#ffffff] text-[#1a1c1f] placeholder:text-[#5e5e67]/70 focus:outline-none focus:border-[#000000] transition-all shadow-2xs"
                         placeholder="Search guest, stylist, service..."
                         type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
                       />
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase bg-[#000000] text-[#ffffff] active:scale-[0.97] transition-transform">
-                        All (18)
-                      </button>
-                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors border border-[#c8c5cb]/30">
-                        In Service (4)
-                      </button>
-                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors border border-[#c8c5cb]/30">
-                        Upcoming (10)
-                      </button>
-                      <button className="px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] transition-colors border border-[#c8c5cb]/30">
-                        Completed (4)
-                      </button>
+                      {STATUS_PILLS.map((p) => (
+                        <button
+                          key={p.key}
+                          onClick={() => setStatusFilter(p.key)}
+                          className={
+                            "px-3 py-1 rounded-md text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase transition-all active:scale-[0.97] " +
+                            (statusFilter === p.key
+                              ? "bg-[#000000] text-[#ffffff]"
+                              : "text-[#5e5e67] hover:text-[#1a1c1f] bg-[#f3f3f7] hover:bg-[#eeedf1] border border-[#c8c5cb]/30")
+                          }
+                        >
+                          {p.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -225,12 +408,7 @@ export default function SalonSchedulePreview() {
                         <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">swap_vert</span>
                       </div>
                       <div className="divide-y divide-[#c8c5cb]/20 flex flex-col">
-                        {[
-                          { name: "Amy Chen", role: "Station 01 · Senior Master", bookings: "4 Bookings", load: "80% Load", loadTone: "primary" },
-                          { name: "Jasmine Teo", role: "Station 02 · Director Colorist", bookings: "5 Bookings", load: "100% Full", loadTone: "primary" },
-                          { name: "Chloe Tan", role: "Station 03 · Creative Stylist", bookings: "3 Bookings", load: "65% Load", loadTone: "secondary" },
-                          { name: "Kelvin Ng", role: "Station 04 · Senior Barber", bookings: "2 Bookings", load: "45% Load", loadTone: "secondary" },
-                        ].map((s) => (
+                        {STYLISTS.filter(rowVisible).map((s) => (
                           <div key={s.name} className="h-[148px] p-3.5 flex flex-col justify-between bg-[#ffffff]">
                             <div>
                               <div className="flex items-center gap-2">
@@ -297,6 +475,7 @@ export default function SalonSchedulePreview() {
                           </div>
 
                           {/* Row 1: Amy Chen */}
+                          {showAmy && (
                           <div className="h-[148px] relative py-2.5 px-2">
                             <div className="absolute left-[8px] w-[144px] top-2.5 bottom-2.5">
                               <div className="h-full w-full rounded-lg border border-dashed border-[#c8c5cb]/50 bg-[#f3f3f7]/30 hover:bg-[#f3f3f7]/60 flex flex-col items-center justify-center p-2 text-[#5e5e67] transition-all">
@@ -306,7 +485,10 @@ export default function SalonSchedulePreview() {
                               </div>
                             </div>
                             <div className="absolute left-[168px] w-[240px] top-2.5 bottom-2.5 z-10">
-                              <div className="h-full bg-[#ffffff] border-2 border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-sm hover:shadow transition-all cursor-pointer">
+                              <div
+                                onClick={() => alert("Amanda Choong — Balayage Highlights & Scalp Spa (10:00 - 11:30, in service)")}
+                                className="h-full bg-[#ffffff] border-2 border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-sm hover:shadow transition-all cursor-pointer"
+                              >
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-[13px] text-[#1a1c1f] truncate">Amanda Choong</span>
@@ -336,7 +518,10 @@ export default function SalonSchedulePreview() {
                               </button>
                             </div>
                             <div className="absolute left-[576px] w-[232px] top-2.5 bottom-2.5 z-10">
-                              <div className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer">
+                              <div
+                                onClick={() => alert("Marcus Tan — Fade Cut & Beard Shaping (12:30 - 14:00, confirmed)")}
+                                className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer"
+                              >
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-[13px] text-[#1a1c1f] truncate">Marcus Tan</span>
@@ -375,15 +560,23 @@ export default function SalonSchedulePreview() {
                                   >
                                     + Add Walk-in
                                   </span>
-                                  <span className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[11px] font-medium hover:bg-[#eeedf1]">
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      alert("Opens the appointment scheduler for Amy Chen, 14:00 - 17:00 (not wired in this demo)");
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[11px] font-medium hover:bg-[#eeedf1]"
+                                  >
                                     Schedule Appointment
                                   </span>
                                 </div>
                               </button>
                             </div>
                           </div>
+                          )}
 
                           {/* Row 2: Jasmine Teo */}
+                          {showJasmine && (
                           <div className="h-[148px] relative py-2.5 px-2">
                             <div className="absolute left-[8px] w-[144px] top-2.5 bottom-2.5">
                               <div className="h-full w-full rounded-lg border border-[#c8c5cb]/30 bg-[#f3f3f7]/30 flex flex-col items-center justify-center p-2 text-[#5e5e67] text-center">
@@ -392,7 +585,12 @@ export default function SalonSchedulePreview() {
                               </div>
                             </div>
                             <div className="absolute left-[168px] w-[400px] top-2.5 bottom-2.5 z-10">
-                              <div className="h-full bg-[#ffffff] border-2 border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-sm hover:shadow transition-all cursor-pointer">
+                              <div
+                                onClick={() =>
+                                  alert("Datin Nora — Full Root Touchup & Gloss Toner (10:00 - 12:30, processing, 15m left)")
+                                }
+                                className="h-full bg-[#ffffff] border-2 border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-sm hover:shadow transition-all cursor-pointer"
+                              >
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -420,7 +618,10 @@ export default function SalonSchedulePreview() {
                               </div>
                             </div>
                             <div className="absolute left-[656px] w-[392px] top-2.5 bottom-2.5 z-10">
-                              <div className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer">
+                              <div
+                                onClick={() => alert("Rachel Soo — Digital Perm & Keratin Treatment Therapy (13:00 - 15:30, deposit paid $80)")}
+                                className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer"
+                              >
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-[13px] text-[#1a1c1f] truncate">Rachel Soo</span>
@@ -437,7 +638,10 @@ export default function SalonSchedulePreview() {
                               </div>
                             </div>
                             <div className="absolute left-[1056px] w-[372px] top-2.5 bottom-2.5">
-                              <button className="h-full w-full rounded-lg border-2 border-dashed border-[#c8c5cb]/40 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-between px-4 hover:bg-[#f3f3f7]/40 transition-all">
+                              <button
+                                onClick={() => alert("Slot booked with Jasmine Teo at 15:30 PM")}
+                                className="h-full w-full rounded-lg border-2 border-dashed border-[#c8c5cb]/40 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-between px-4 hover:bg-[#f3f3f7]/40 transition-all"
+                              >
                                 <div className="flex items-center gap-2.5 text-left">
                                   <span className="material-symbols-outlined text-[18px] text-[#000000]">add_circle</span>
                                   <div>
@@ -451,8 +655,10 @@ export default function SalonSchedulePreview() {
                               </button>
                             </div>
                           </div>
+                          )}
 
                           {/* Row 3: Chloe Tan */}
+                          {showChloe && (
                           <div className="h-[148px] relative py-2.5 px-2">
                             <div className="absolute left-[8px] w-[232px] top-2.5 bottom-2.5">
                               <div className="h-full w-full rounded-lg border border-dashed border-[#c8c5cb]/40 bg-[#f3f3f7]/20 flex flex-col items-center justify-center p-2 text-[#5e5e67] text-center">
@@ -464,7 +670,10 @@ export default function SalonSchedulePreview() {
                               </div>
                             </div>
                             <div className="absolute left-[248px] w-[232px] top-2.5 bottom-2.5 z-10">
-                              <div className="h-full bg-[#ffffff] border-2 border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-sm hover:shadow transition-all cursor-pointer">
+                              <div
+                                onClick={() => alert("Lim Wei Seng — Finishing Cut & Scalp Treatment (10:30 - 12:00, in service)")}
+                                className="h-full bg-[#ffffff] border-2 border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-sm hover:shadow transition-all cursor-pointer"
+                              >
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-[13px] text-[#1a1c1f] truncate">Lim Wei Seng</span>
@@ -481,7 +690,10 @@ export default function SalonSchedulePreview() {
                               </div>
                             </div>
                             <div className="absolute left-[488px] w-[312px] top-2.5 bottom-2.5 z-10">
-                              <div className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer">
+                              <div
+                                onClick={() => alert("Elena Rostova — Root Color & Signature Blowout (12:00 - 14:00, patch test cleared)")}
+                                className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer"
+                              >
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-[13px] text-[#1a1c1f] truncate">Elena Rostova</span>
@@ -498,7 +710,10 @@ export default function SalonSchedulePreview() {
                               </div>
                             </div>
                             <div className="absolute left-[808px] w-[620px] top-2.5 bottom-2.5">
-                              <button className="h-full w-full rounded-lg border-2 border-dashed border-[#c8c5cb]/40 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-between px-5 hover:bg-[#f3f3f7]/40 transition-all">
+                              <button
+                                onClick={() => alert("Slot booked with Chloe Tan at 02:00 PM")}
+                                className="h-full w-full rounded-lg border-2 border-dashed border-[#c8c5cb]/40 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-between px-5 hover:bg-[#f3f3f7]/40 transition-all"
+                              >
                                 <div className="flex items-center gap-3 text-left">
                                   <span className="material-symbols-outlined text-[20px] text-[#000000]">calendar_add_on</span>
                                   <div>
@@ -516,8 +731,10 @@ export default function SalonSchedulePreview() {
                               </button>
                             </div>
                           </div>
+                          )}
 
                           {/* Row 4: Kelvin Ng */}
+                          {showKelvin && (
                           <div className="h-[148px] relative py-2.5 px-2">
                             <div className="absolute left-[8px] w-[392px] top-2.5 bottom-2.5 z-10">
                               <button
@@ -535,7 +752,10 @@ export default function SalonSchedulePreview() {
                               </button>
                             </div>
                             <div className="absolute left-[408px] w-[152px] top-2.5 bottom-2.5 z-10">
-                              <div className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer">
+                              <div
+                                onClick={() => alert("Darren Lee — Precision Cut (11:30 - 12:30, waiting in lounge)")}
+                                className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer"
+                              >
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-[13px] text-[#1a1c1f] truncate">Darren Lee</span>
@@ -558,7 +778,10 @@ export default function SalonSchedulePreview() {
                               </div>
                             </div>
                             <div className="absolute left-[648px] w-[152px] top-2.5 bottom-2.5 z-10">
-                              <div className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer">
+                              <div
+                                onClick={() => alert("Lucas Wong — Fade & Beard (11:30 - 12:30, queued)")}
+                                className="h-full bg-[#ffffff] border border-[#c8c5cb]/60 hover:border-[#000000] rounded-lg p-3 flex flex-col justify-between shadow-2xs transition-all cursor-pointer"
+                              >
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-[13px] text-[#1a1c1f] truncate">Lucas Wong</span>
@@ -572,7 +795,10 @@ export default function SalonSchedulePreview() {
                               </div>
                             </div>
                             <div className="absolute left-[808px] w-[620px] top-2.5 bottom-2.5">
-                              <button className="h-full w-full rounded-lg border-2 border-dashed border-[#c8c5cb]/40 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-between px-5 hover:bg-[#f3f3f7]/40 transition-all">
+                              <button
+                                onClick={() => alert("Slot booked with Kelvin Ng at 02:00 PM")}
+                                className="h-full w-full rounded-lg border-2 border-dashed border-[#c8c5cb]/40 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-between px-5 hover:bg-[#f3f3f7]/40 transition-all"
+                              >
                                 <div className="flex items-center gap-3 text-left">
                                   <span className="material-symbols-outlined text-[20px] text-[#000000]">calendar_add_on</span>
                                   <div>
@@ -590,6 +816,18 @@ export default function SalonSchedulePreview() {
                               </button>
                             </div>
                           </div>
+                          )}
+
+                          {visibleStylistCount === 0 && (
+                            <div className="p-10 flex flex-col items-center justify-center gap-2 text-center">
+                              <span className="material-symbols-outlined text-[28px] text-[#c8c5cb]">search_off</span>
+                              <p className="text-[13.5px] font-medium text-[#5e5e67]">
+                                No stylist matches &quot;{search}&quot;
+                                {activeStylist !== "all" ? ` for ${activeStylist}` : ""}
+                                {statusFilter !== "all" ? ` in ${STATUS_PILLS.find((p) => p.key === statusFilter)?.label}` : ""}.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -705,7 +943,10 @@ export default function SalonSchedulePreview() {
                         </div>
                       ))}
                     </div>
-                    <button className="w-full mt-0.5 py-2 rounded-lg border border-dashed border-[#c8c5cb]/50 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.99] text-[13.5px] leading-5 font-normal transition-all flex items-center justify-center gap-1.5">
+                    <button
+                      onClick={() => alert("Custom time slot picker isn't wired up in this demo yet.")}
+                      className="w-full mt-0.5 py-2 rounded-lg border border-dashed border-[#c8c5cb]/50 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.99] text-[13.5px] leading-5 font-normal transition-all flex items-center justify-center gap-1.5"
+                    >
                       <span className="material-symbols-outlined text-[16px]">calendar_add_on</span>
                       <span>Add Custom Time Slot</span>
                     </button>
