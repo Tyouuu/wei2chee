@@ -171,7 +171,7 @@ export default function SalonInvoicesPreview() {
     <>
       <MaterialSymbolsLink />
       <div
-        className="bg-[#f9f9fd] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] antialiased"
+        className="bg-[#f9f9fd] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] antialiased min-h-screen"
         style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
       >
         <SalonSidebar active="invoices-and-terminal" />
@@ -232,7 +232,7 @@ export default function SalonInvoicesPreview() {
                 {/* LEFT COLUMN */}
                 <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-3">
                   {/* Filter & Search Toolbar */}
-                  <div className="p-3 bg-[#ffffff] rounded border border-[#e2e2e6] flex flex-col gap-2">
+                  <div className="p-3 bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm flex flex-col gap-2">
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
                       <div className="relative flex-1">
                         <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[#77767b] text-[18px]">
@@ -283,7 +283,7 @@ export default function SalonInvoicesPreview() {
                   </div>
 
                   {/* Invoices Table */}
-                  <div className="bg-[#ffffff] rounded border border-[#e2e2e6] overflow-hidden">
+                  <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse text-left">
                         <thead>
@@ -422,7 +422,7 @@ export default function SalonInvoicesPreview() {
 
                 {/* RIGHT COLUMN: Live Print Terminal */}
                 <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-3 sticky top-6">
-                  <div className="bg-[#ffffff] rounded border border-[#e2e2e6] p-3 flex flex-col gap-3">
+                  <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm p-3 flex flex-col gap-3">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">

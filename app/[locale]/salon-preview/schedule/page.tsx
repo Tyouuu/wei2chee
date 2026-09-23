@@ -27,12 +27,12 @@ export default function SalonSchedulePreview() {
     <>
       <MaterialSymbolsLink />
       <div
-        className="bg-[#ffffff] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] min-h-screen"
+        className="bg-[#f9f9fd] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] antialiased min-h-screen"
         style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
       >
         <SalonSidebar active="appointments-and-flow" />
-        <div className="pl-64 min-h-screen bg-[#ffffff]">
-          <main className="w-full pt-0 bg-[#ffffff] min-h-screen">
+        <div className="pl-64 min-h-screen bg-[#f9f9fd]">
+          <main className="w-full pt-0 bg-[#f9f9fd] min-h-screen">
             <div className="flex flex-col w-full">
               {/* Top Command & Action Bar */}
               <div className="px-8 pt-7 pb-6 bg-[#ffffff] border-b border-[#c8c5cb]/30 flex flex-col gap-5">
@@ -43,7 +43,7 @@ export default function SalonSchedulePreview() {
                       <span className="text-[#c8c5cb]">/</span>
                       <span className="text-[#1a1c1f]">Stylist Schedule &amp; Slots</span>
                     </div>
-                    <h1 className="text-[28px] leading-tight font-semibold tracking-tight text-[#1a1c1f]">
+                    <h1 className="text-[20px] leading-7 tracking-[-0.015em] font-semibold tracking-tight text-[#1a1c1f]">
                       Appointments &amp; Schedule
                     </h1>
                   </div>

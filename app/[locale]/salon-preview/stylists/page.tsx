@@ -114,7 +114,7 @@ export default function SalonStylistProfilePreview() {
               </div>
 
               {/* Header Action Banner */}
-              <div className="bg-[#ffffff] rounded-xl p-5 mb-5 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+              <div className="bg-[#ffffff] rounded-xl p-5 mb-5 border border-[#c8c5cb]/30 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
                 <div className="flex flex-col gap-1">
                   <a
                     href="#"
@@ -151,7 +151,7 @@ export default function SalonStylistProfilePreview() {
                 {/* LEFT 8 COLUMNS */}
                 <div className="lg:col-span-8 flex flex-col gap-5">
                   {/* Section 1: Basic Identity & Salon Role */}
-                  <section className="bg-[#ffffff] rounded-xl p-5 shadow-sm">
+                  <section className="bg-[#ffffff] rounded-xl p-5 border border-[#c8c5cb]/30 shadow-sm">
                     <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#eeedf1]">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-[#eeedf1] flex items-center justify-center text-[#1a1c1f]">
@@ -327,7 +327,7 @@ export default function SalonStylistProfilePreview() {
                   </section>
 
                   {/* Section 2: Weekly Shift & Chair Roster */}
-                  <section className="bg-[#ffffff] rounded-xl p-5 shadow-sm">
+                  <section className="bg-[#ffffff] rounded-xl p-5 border border-[#c8c5cb]/30 shadow-sm">
                     <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#eeedf1]">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-[#eeedf1] flex items-center justify-center text-[#1a1c1f]">
@@ -433,7 +433,7 @@ export default function SalonStylistProfilePreview() {
                   </section>
 
                   {/* Section 3: Commission Tier & Revenue Split Matrix */}
-                  <section className="bg-[#ffffff] rounded-xl p-5 shadow-sm">
+                  <section className="bg-[#ffffff] rounded-xl p-5 border border-[#c8c5cb]/30 shadow-sm">
                     <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#eeedf1]">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-[#eeedf1] flex items-center justify-center text-[#1a1c1f]">
@@ -594,7 +594,7 @@ export default function SalonStylistProfilePreview() {
                 {/* RIGHT 4 COLUMNS */}
                 <div className="lg:col-span-4 flex flex-col gap-5">
                   {/* Card 1: Performance Snapshot */}
-                  <div className="bg-[#ffffff] rounded-xl p-5 shadow-sm">
+                  <div className="bg-[#ffffff] rounded-xl p-5 border border-[#c8c5cb]/30 shadow-sm">
                     <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#eeedf1]">
                       <div className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-[18px] text-[#1a1c1f]">monitoring</span>
@@ -649,7 +649,7 @@ export default function SalonStylistProfilePreview() {
                   </div>
 
                   {/* Card 2: Security & Permissions */}
-                  <div className="bg-[#ffffff] rounded-xl p-5 shadow-sm">
+                  <div className="bg-[#ffffff] rounded-xl p-5 border border-[#c8c5cb]/30 shadow-sm">
                     <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#eeedf1]">
                       <div className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-[18px] text-[#1a1c1f]">shield</span>
@@ -711,7 +711,7 @@ export default function SalonStylistProfilePreview() {
                   </div>
 
                   {/* Card 3: Audit Trail & Contract Life */}
-                  <div className="bg-[#ffffff] rounded-xl p-5 shadow-sm">
+                  <div className="bg-[#ffffff] rounded-xl p-5 border border-[#c8c5cb]/30 shadow-sm">
                     <div className="flex items-center gap-1 pb-3 mb-3 border-b border-[#eeedf1]">
                       <span className="material-symbols-outlined text-[18px] text-[#5e5e67]">history</span>
                       <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Audit &amp; Lifecycle</h3>

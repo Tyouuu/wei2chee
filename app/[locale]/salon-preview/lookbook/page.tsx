@@ -195,7 +195,7 @@ export default function SalonLookbookPreview() {
               {/* 3-Item Quick Consultation Strip */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
                 {/* Panel 1: Skin Undertone */}
-                <div className="bg-[#ffffff] p-3 rounded-xl shadow-sm flex flex-col justify-between">
+                <div className="bg-[#ffffff] p-3 rounded-xl border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[#5e5e67] text-[16px]">palette</span>
@@ -224,7 +224,7 @@ export default function SalonLookbookPreview() {
                 </div>
 
                 {/* Panel 2: Lift Level Chart */}
-                <div className="bg-[#ffffff] p-3 rounded-xl shadow-sm flex flex-col justify-between">
+                <div className="bg-[#ffffff] p-3 rounded-xl border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[#5e5e67] text-[16px]">tune</span>
@@ -259,7 +259,7 @@ export default function SalonLookbookPreview() {
                 </div>
 
                 {/* Panel 3: Regrowth & Refresh Cadence */}
-                <div className="bg-[#ffffff] p-3 rounded-xl shadow-sm flex flex-col justify-between">
+                <div className="bg-[#ffffff] p-3 rounded-xl border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[#5e5e67] text-[16px]">timelapse</span>
@@ -327,7 +327,7 @@ export default function SalonLookbookPreview() {
               {/* Lookbook Cards 3-Column Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-7">
                 {LOOKS.map((look) => (
-                  <div key={look.ref} className="bg-[#ffffff] rounded-xl shadow-sm overflow-hidden flex flex-col group">
+                  <div key={look.ref} className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm overflow-hidden flex flex-col group">
                     {/* Media Header */}
                     <div className="relative h-64 bg-[#e8e8ec] overflow-hidden">
                       <img
@@ -404,7 +404,7 @@ export default function SalonLookbookPreview() {
               </div>
 
               {/* Technical Pagination Footer Strip */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-3 bg-[#ffffff] rounded-xl shadow-sm">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-3 bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm">
                 <div className="flex items-center gap-2 text-[#5e5e67] text-[11.5px] leading-4 tracking-[0.04em]">
                   <span className="uppercase tracking-widest text-[#1a1c1f] font-semibold">Showing 1 - 6 of 142 Technical Formulas</span>
                   <span className="hidden sm:inline">•</span>

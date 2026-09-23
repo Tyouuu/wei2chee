@@ -69,7 +69,7 @@ export default function SalonAuditLogPreview() {
     <>
       <MaterialSymbolsLink />
       <div
-        className="bg-[#f9f9fd] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] antialiased"
+        className="bg-[#f9f9fd] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] antialiased min-h-screen"
         style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
       >
         <SalonSidebar active="system-audit-log" />
@@ -115,7 +115,7 @@ export default function SalonAuditLogPreview() {
                 {METRICS.map((m) => (
                   <div
                     key={m.label}
-                    className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/80 flex flex-col justify-between"
+                    className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase tracking-wider text-[#5e5e67]">
@@ -168,7 +168,7 @@ export default function SalonAuditLogPreview() {
               {/* Main Split */}
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start pt-1">
                 {/* Activity Exhibition List */}
-                <div className="xl:col-span-8 flex flex-col rounded-xl border border-[#c8c5cb] bg-[#ffffff] overflow-hidden shadow-sm">
+                <div className="xl:col-span-8 flex flex-col rounded-xl border border-[#c8c5cb]/30 bg-[#ffffff] overflow-hidden shadow-sm">
                   <div className="flex items-center justify-between px-3 py-3 border-b border-[#e8e8ec] bg-[#f3f3f7]/40">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[17px] text-[#000000]">list_alt</span>
@@ -451,7 +451,7 @@ export default function SalonAuditLogPreview() {
                 </div>
 
                 {/* Activity Details Panel */}
-                <aside className="xl:col-span-4 flex flex-col rounded-xl border border-[#c8c5cb] bg-[#ffffff] overflow-hidden shadow-sm">
+                <aside className="xl:col-span-4 flex flex-col rounded-xl border border-[#c8c5cb]/30 bg-[#ffffff] overflow-hidden shadow-sm">
                   <div className="px-3 py-3 border-b border-[#e8e8ec] bg-[#f3f3f7]/40 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[18px] text-[#000000]">receipt_long</span>

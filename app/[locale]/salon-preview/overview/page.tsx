@@ -26,10 +26,13 @@ export default function SalonOverviewPreview() {
   return (
     <>
       <MaterialSymbolsLink />
-      <div className="bg-[#ffffff] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] min-h-screen" style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}>
+      <div
+        className="bg-[#f9f9fd] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] antialiased min-h-screen"
+        style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
+      >
         <SalonSidebar active="overview" />
-        <div className="pl-64 min-h-screen bg-[#ffffff]">
-          <main className="w-full pt-0 bg-[#ffffff] min-h-screen">
+        <div className="pl-64 min-h-screen bg-[#f9f9fd]">
+          <main className="w-full pt-0 bg-[#f9f9fd] min-h-screen">
             <div className="flex flex-col w-full">
               <div className="p-8 max-w-[1560px] mx-auto w-full space-y-8">
                 {/* Top Header Area */}
@@ -41,7 +44,7 @@ export default function SalonOverviewPreview() {
                       <span className="text-[#000000] font-medium">Bangsar Flagship</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <h1 className="text-[38px] leading-[44px] tracking-[-0.03em] font-semibold text-[#000000]">
+                      <h1 className="text-[20px] leading-7 tracking-[-0.015em] font-semibold text-[#000000]">
                         Salon Overview
                       </h1>
                       <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-[#e8e8ec]/60">
@@ -69,7 +72,7 @@ export default function SalonOverviewPreview() {
                 {/* Top KPI Metric Cards */}
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Metric 1: Today's Guest Flow */}
-                  <div className="p-5 rounded-xl bg-[#f3f3f7] flex flex-col justify-between h-36">
+                  <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between h-36">
                     <div className="flex items-center justify-between text-[#5e5e67]">
                       <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase">
                         Today&apos;s Flow (今日客流)
@@ -87,7 +90,7 @@ export default function SalonOverviewPreview() {
                   </div>
 
                   {/* Metric 2: Chair Occupancy */}
-                  <div className="p-5 rounded-xl bg-[#f3f3f7] flex flex-col justify-between h-36">
+                  <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between h-36">
                     <div className="flex items-center justify-between text-[#5e5e67]">
                       <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase">
                         Stylist Workload (技师负荷)
@@ -110,7 +113,7 @@ export default function SalonOverviewPreview() {
                   </div>
 
                   {/* Metric 3: Today's Takings */}
-                  <div className="p-5 rounded-xl bg-[#f3f3f7] flex flex-col justify-between h-36">
+                  <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between h-36">
                     <div className="flex items-center justify-between text-[#5e5e67]">
                       <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase">
                         Today&apos;s Takings (实收开单)
@@ -128,7 +131,7 @@ export default function SalonOverviewPreview() {
                   </div>
 
                   {/* Metric 4: Dispensary Low Stock */}
-                  <div className="p-5 rounded-xl bg-[#f3f3f7] flex flex-col justify-between h-36">
+                  <div className="p-5 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between h-36">
                     <div className="flex items-center justify-between text-[#5e5e67]">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-[#ba1a1a]" />
@@ -159,7 +162,7 @@ export default function SalonOverviewPreview() {
                   {/* Left 8 Columns */}
                   <div className="lg:col-span-8 space-y-6">
                     {/* Stylist Roster & Day Target Breakdown */}
-                    <div className="p-6 rounded-xl bg-[#f3f3f7] space-y-5">
+                    <div className="p-6 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm space-y-5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]">
@@ -186,7 +189,7 @@ export default function SalonOverviewPreview() {
                         ].map((s) => (
                           <div
                             key={s.name}
-                            className="p-4 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/20 flex flex-col justify-between"
+                            className="p-4 rounded-xl bg-[#f3f3f7] flex flex-col justify-between"
                           >
                             <div>
                               <div className="flex items-center justify-between mb-1">
@@ -215,7 +218,7 @@ export default function SalonOverviewPreview() {
                     </div>
 
                     {/* Upcoming Appointments & Run Sheet Flow */}
-                    <div className="p-6 rounded-xl bg-[#f3f3f7] space-y-4">
+                    <div className="p-6 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#000000]">
@@ -313,7 +316,7 @@ export default function SalonOverviewPreview() {
                   {/* Right 4 Columns */}
                   <div className="lg:col-span-4 space-y-6">
                     {/* Front Desk Settlement & Quick POS */}
-                    <div className="p-6 rounded-xl bg-[#f3f3f7] space-y-5">
+                    <div className="p-6 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm space-y-5">
                       <div className="flex items-center justify-between">
                         <div>
                           <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#000000]">
@@ -372,7 +375,7 @@ export default function SalonOverviewPreview() {
                           ].map((r) => (
                             <div
                               key={r.inv}
-                              className="p-3 rounded bg-[#ffffff] border border-[#c8c5cb]/20 flex items-center justify-between"
+                              className="p-3 rounded bg-[#f3f3f7] flex items-center justify-between"
                             >
                               <div>
                                 <div className="flex items-center gap-2">
@@ -410,7 +413,7 @@ export default function SalonOverviewPreview() {
                     </div>
 
                     {/* Practical Inventory Reorder Action Alert */}
-                    <div className="p-6 rounded-xl bg-[#f3f3f7] space-y-4">
+                    <div className="p-6 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#ba1a1a] animate-pulse" />
@@ -436,7 +439,7 @@ export default function SalonOverviewPreview() {
                         ].map((item) => (
                           <div
                             key={item.name}
-                            className="p-3.5 rounded bg-[#ffffff] border border-[#c8c5cb]/20 flex items-center justify-between gap-3"
+                            className="p-3.5 rounded bg-[#f3f3f7] flex items-center justify-between gap-3"
                           >
                             <div>
                               <div className="text-[14.5px] leading-[22px] tracking-[-0.005em] font-medium font-semibold text-[#000000]">

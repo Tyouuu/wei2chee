@@ -118,12 +118,12 @@ export default function SalonEodCashPreview() {
     <>
       <MaterialSymbolsLink />
       <div
-        className="bg-[#ffffff] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] antialiased"
+        className="bg-[#f9f9fd] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] antialiased min-h-screen"
         style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
       >
         <SalonSidebar active="end-of-day-cash" />
-        <div className="pl-64 min-h-screen bg-[#ffffff]">
-          <main className="w-full px-4 pt-0 bg-[#ffffff] min-h-screen">
+        <div className="pl-64 min-h-screen bg-[#f9f9fd]">
+          <main className="w-full px-8 pt-0 bg-[#f9f9fd] min-h-screen">
             <div className="flex flex-col w-full pb-16">
               {/* Breadcrumb & Context Strip */}
               <div className="pt-6 pb-4 flex items-center justify-between border-b border-[#e2e2e6]">
@@ -276,7 +276,7 @@ export default function SalonEodCashPreview() {
                 {/* LEFT COLUMN */}
                 <div className="lg:col-span-8 flex flex-col gap-6">
                   {/* Physical Cash Denomination Count */}
-                  <div className="rounded-xl border border-[#e2e2e6] bg-[#ffffff] overflow-hidden">
+                  <div className="rounded-xl border border-[#c8c5cb]/30 shadow-sm bg-[#ffffff] overflow-hidden">
                     <div className="px-5 py-4 border-b border-[#e2e2e6] flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px] text-[#47464b]">calculate</span>
@@ -368,7 +368,7 @@ export default function SalonEodCashPreview() {
                   </div>
 
                   {/* Payment Channel & EDC Settlements */}
-                  <div className="rounded-xl border border-[#e2e2e6] bg-[#ffffff] overflow-hidden">
+                  <div className="rounded-xl border border-[#c8c5cb]/30 shadow-sm bg-[#ffffff] overflow-hidden">
                     <div className="px-5 py-4 border-b border-[#e2e2e6] flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px] text-[#47464b]">receipt_long</span>
@@ -427,7 +427,7 @@ export default function SalonEodCashPreview() {
                 {/* RIGHT COLUMN */}
                 <div className="lg:col-span-4 flex flex-col gap-6">
                   {/* Closing Checklist */}
-                  <div className="rounded-xl border border-[#e2e2e6] bg-[#ffffff] p-5">
+                  <div className="rounded-xl border border-[#c8c5cb]/30 shadow-sm bg-[#ffffff] p-5">
                     <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#e2e2e6]">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px] text-[#47464b]">checklist</span>
@@ -461,7 +461,7 @@ export default function SalonEodCashPreview() {
                   </div>
 
                   {/* Petty Cash Payouts */}
-                  <div className="rounded-xl border border-[#e2e2e6] bg-[#ffffff] p-5">
+                  <div className="rounded-xl border border-[#c8c5cb]/30 shadow-sm bg-[#ffffff] p-5">
                     <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#e2e2e6]">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px] text-[#47464b]">local_atm</span>
@@ -498,7 +498,7 @@ export default function SalonEodCashPreview() {
                   </div>
 
                   {/* Handover Note to Morning Lead */}
-                  <div className="rounded-xl border border-[#e2e2e6] bg-[#ffffff] p-5">
+                  <div className="rounded-xl border border-[#c8c5cb]/30 shadow-sm bg-[#ffffff] p-5">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px] text-[#47464b]">chat_bubble_outline</span>
@@ -521,7 +521,7 @@ export default function SalonEodCashPreview() {
                   </div>
 
                   {/* Staff Witness Sign-Off */}
-                  <div className="rounded-xl border border-[#e2e2e6] bg-[#ffffff] p-5">
+                  <div className="rounded-xl border border-[#c8c5cb]/30 shadow-sm bg-[#ffffff] p-5">
                     <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[#e2e2e6]">
                       <span className="material-symbols-outlined text-[18px] text-[#47464b]">verified_user</span>
                       <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Staff Witness Sign-Off</h3>

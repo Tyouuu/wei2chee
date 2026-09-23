@@ -77,12 +77,12 @@ export default function SalonRegisterPreview() {
     <>
       <MaterialSymbolsLink />
       <div
-        className="bg-[#ffffff] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] min-h-screen"
+        className="bg-[#f9f9fd] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] antialiased min-h-screen"
         style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
       >
         <SalonSidebar active="register-and-checkout" />
-        <div className="pl-64 min-h-screen bg-[#ffffff]">
-          <main className="w-full pt-0 bg-[#ffffff] min-h-screen">
+        <div className="pl-64 min-h-screen bg-[#f9f9fd]">
+          <main className="w-full pt-0 bg-[#f9f9fd] min-h-screen">
             <div className="flex flex-col w-full">
               <div className="p-8 w-full max-w-[1720px] mx-auto space-y-6">
                 {/* Top Utility Bar */}

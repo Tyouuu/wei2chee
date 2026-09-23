@@ -189,12 +189,12 @@ export default function SalonStockPreview() {
     <>
       <MaterialSymbolsLink />
       <div
-        className="bg-[#f9f9fd] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] min-h-screen"
+        className="bg-[#f9f9fd] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] antialiased min-h-screen"
         style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
       >
         <SalonSidebar active="salon-stock-and-orders" />
         <div className="pl-64 min-h-screen bg-[#f9f9fd]">
-          <main className="w-full min-h-screen">
+          <main className="w-full min-h-screen bg-[#f9f9fd]">
             <div className="flex flex-col w-full">
               <div className="px-8 py-7 flex flex-col gap-6 max-w-[1560px] mx-auto w-full">
                 {/* Header */}
@@ -208,7 +208,7 @@ export default function SalonStockPreview() {
                       <span className="text-[#1a1c1f] font-semibold">STOCK AUDIT</span>
                     </div>
                     <div className="flex items-baseline gap-3">
-                      <h1 className="text-xl leading-7 tracking-[-0.015em] font-semibold text-[#1a1c1f] tracking-tight">
+                      <h1 className="text-[20px] leading-7 tracking-[-0.015em] font-semibold text-[#1a1c1f] tracking-tight">
                         Salon Stock &amp; Inventory
                       </h1>
                       <span className="text-[11.5px] font-mono px-2 py-0.5 rounded bg-[#e8e8ec] text-[#47464b] font-medium">
@@ -261,7 +261,7 @@ export default function SalonStockPreview() {
                           </button>
                         ))}
                       </div>
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#ffffff] p-2.5 rounded-xl border border-[#e8e8ec] shadow-sm">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#ffffff] p-2.5 rounded-xl border border-[#c8c5cb]/30 shadow-sm">
                         <div className="relative flex-1">
                           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-[#77767b]">
                             search
@@ -297,7 +297,7 @@ export default function SalonStockPreview() {
                       </div>
                     </div>
 
-                    <div className="bg-[#ffffff] rounded-xl shadow-sm border border-[#e8e8ec] overflow-hidden flex flex-col">
+                    <div className="bg-[#ffffff] rounded-xl shadow-sm border border-[#c8c5cb]/30 overflow-hidden flex flex-col">
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                           <thead className="bg-[#f3f3f7] border-b border-[#e8e8ec] text-[#47464b]">
@@ -438,7 +438,7 @@ export default function SalonStockPreview() {
 
                   {/* RIGHT: Draft PO + Delivery */}
                   <aside className="xl:col-span-4 flex flex-col gap-5">
-                    <div className="bg-[#ffffff] rounded-xl shadow-sm p-5 border border-[#e8e8ec] flex flex-col gap-4">
+                    <div className="bg-[#ffffff] rounded-xl shadow-sm p-5 border border-[#c8c5cb]/30 flex flex-col gap-4">
                       <div className="flex items-center justify-between pb-3 border-b border-[#e8e8ec]">
                         <div className="flex flex-col">
                           <span className="text-[11px] uppercase tracking-wider text-[#77767b] font-medium font-mono">
@@ -498,7 +498,7 @@ export default function SalonStockPreview() {
                       </div>
                     </div>
 
-                    <div className="bg-[#ffffff] rounded-xl shadow-sm p-5 border border-[#e8e8ec] flex flex-col gap-3.5">
+                    <div className="bg-[#ffffff] rounded-xl shadow-sm p-5 border border-[#c8c5cb]/30 flex flex-col gap-3.5">
                       <div className="flex items-center justify-between pb-2 border-b border-[#e8e8ec]">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />

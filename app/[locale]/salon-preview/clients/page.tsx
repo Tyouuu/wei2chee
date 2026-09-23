@@ -196,12 +196,12 @@ export default function SalonClientsPreview() {
     <>
       <MaterialSymbolsLink />
       <div
-        className="bg-[#f9f9fd] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] min-h-screen"
+        className="bg-[#f9f9fd] text-[#1a1c1f] text-[14.5px] leading-[22px] tracking-[-0.005em] antialiased min-h-screen"
         style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
       >
         <SalonSidebar active="clients-and-profiles" />
         <div className="pl-64 min-h-screen bg-[#f9f9fd]">
-          <main className="w-full min-h-screen">
+          <main className="w-full min-h-screen bg-[#f9f9fd]">
             <div className="flex flex-col w-full">
               <div className="p-5 flex flex-col gap-5 max-w-[1720px] mx-auto w-full">
                 {/* Header */}
@@ -218,7 +218,7 @@ export default function SalonClientsPreview() {
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h1 className="text-[24px] text-[#000000] font-semibold tracking-tight">Clients &amp; Folios</h1>
+                      <h1 className="text-[20px] leading-7 tracking-[-0.015em] text-[#000000] font-semibold tracking-tight">Clients &amp; Folios</h1>
                       <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#eeedf1] text-[#5e5e67] font-medium tracking-wide">
                         客户档案与技术手册
                       </span>
@@ -241,7 +241,7 @@ export default function SalonClientsPreview() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
                   {/* LEFT: Directory */}
                   <section aria-label="Client Directory" className="lg:col-span-5 xl:col-span-4 flex flex-col gap-2">
-                    <div className="bg-[#ffffff] rounded-xl p-2 flex flex-col gap-2 shadow-sm border border-[#eeedf1]">
+                    <div className="bg-[#ffffff] rounded-xl p-2 flex flex-col gap-2 shadow-sm border border-[#c8c5cb]/30">
                       <div className="relative flex items-center">
                         <span className="material-symbols-outlined absolute left-3 text-[18px] text-[#77767b] pointer-events-none">
                           search
@@ -389,7 +389,7 @@ export default function SalonClientsPreview() {
                     </div>
 
                     {/* Pagination */}
-                    <div className="flex flex-col gap-2 p-2 bg-[#ffffff] rounded-xl border border-[#eeedf1] shadow-sm text-[11.5px] font-mono">
+                    <div className="flex flex-col gap-2 p-2 bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm text-[11.5px] font-mono">
                       <div className="flex items-center justify-between">
                         <span className="text-[11.5px] text-[#47464b]">
                           Showing <strong className="text-[#1a1c1f] font-semibold">1–25</strong> of 248
@@ -442,7 +442,7 @@ export default function SalonClientsPreview() {
                   {/* RIGHT: Dossier */}
                   <section aria-label="Dedicated Client Dossier" className="lg:col-span-7 xl:col-span-8 flex flex-col gap-5">
                     {/* Hero */}
-                    <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#eeedf1]">
+                    <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#c8c5cb]/30">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#eeedf1]">
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
@@ -571,7 +571,7 @@ export default function SalonClientsPreview() {
                     </div>
 
                     {/* Active Prepaid Packages */}
-                    <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#eeedf1]">
+                    <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#c8c5cb]/30">
                       <div className="flex items-center justify-between pb-1 border-b border-[#eeedf1]">
                         <div className="flex items-center gap-2">
                           <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Active Prepaid Packages</h3>
@@ -615,7 +615,7 @@ export default function SalonClientsPreview() {
                     </div>
 
                     {/* Visit & Bill History */}
-                    <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#eeedf1]">
+                    <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#c8c5cb]/30">
                       <div className="flex items-center justify-between pb-1 border-b border-[#eeedf1]">
                         <div className="flex items-center gap-2">
                           <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Visit &amp; Bill History</h3>
@@ -677,7 +677,7 @@ export default function SalonClientsPreview() {
                     </div>
 
                     {/* Prescribed Homecare Regulars */}
-                    <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#eeedf1]">
+                    <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#c8c5cb]/30">
                       <div className="flex items-center justify-between pb-1 border-b border-[#eeedf1]">
                         <div className="flex items-center gap-2">
                           <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">

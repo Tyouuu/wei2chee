@@ -210,7 +210,7 @@ export default function SalonPackagesPreview() {
     <>
       <MaterialSymbolsLink />
       <div
-        className="bg-[#f9f9fd] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] min-h-screen"
+        className="bg-[#f9f9fd] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] antialiased min-h-screen"
         style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
       >
         <SalonSidebar active="packages-and-prepaid" />
@@ -257,7 +257,7 @@ export default function SalonPackagesPreview() {
                     {METRICS.map((m) => (
                       <div
                         key={m.label}
-                        className="bg-[#ffffff] p-4 rounded-xl border border-[#c8c5cb]/30 flex flex-col justify-between shadow-xs"
+                        className="bg-[#ffffff] p-4 rounded-xl border border-[#c8c5cb]/30 flex flex-col justify-between shadow-sm"
                       >
                         <div className="flex items-center justify-between text-[#5e5e67] mb-2.5">
                           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5e5e67]">{m.label}</span>
@@ -277,7 +277,7 @@ export default function SalonPackagesPreview() {
                   </div>
 
                   {/* Filter Toolbar */}
-                  <div className="bg-[#ffffff] p-4 rounded-xl border border-[#c8c5cb]/30 space-y-3 shadow-xs">
+                  <div className="bg-[#ffffff] p-4 rounded-xl border border-[#c8c5cb]/30 space-y-3 shadow-sm">
                     <div className="flex items-center justify-between gap-3 border-b border-[#c8c5cb]/20 pb-3 flex-wrap">
                       <div className="flex items-center gap-1.5 overflow-x-auto">
                         {CATEGORY_TABS.map((t) => (
@@ -330,7 +330,7 @@ export default function SalonPackagesPreview() {
                   </div>
 
                   {/* Table */}
-                  <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 overflow-hidden shadow-xs">
+                  <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
@@ -463,7 +463,7 @@ export default function SalonPackagesPreview() {
 
                 {/* RIGHT 4 COLUMNS: Inspection & Quick Redeem */}
                 <div className="lg:col-span-4 flex flex-col gap-6">
-                  <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 overflow-hidden shadow-xs">
+                  <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 overflow-hidden shadow-sm">
                     <div className="p-5 border-b border-[#c8c5cb]/20 flex items-center justify-between bg-[#eeedf1]/20">
                       <div className="flex flex-col min-w-0 pr-2">
                         <span className="text-base leading-6 tracking-[-0.01em] text-[#1a1c1f] font-semibold tracking-tight">
