@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
 
 /**
@@ -5,20 +8,32 @@ import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
  * Trail" (Task 405, pasted 2026-09-23) -- the last of the five Management
  * rows, so all ten sidebar destinations now have a real page behind them.
  *
- * Server Component: unlike End of Day Cash and Invoices & Terminal, this
- * source has NO <script> block at all -- the search box, the five filter
- * pills, the six activity rows, and the pagination footer are all as inert
- * in his own markup as they are here. The right-hand "Activity Details"
- * panel is not wired to the list either (no onclick anywhere in his
- * source) -- it's a static illustration of what clicking the first
- * (already-highlighted) row would show, matching his own screenshot
- * exactly rather than inventing a click handler he didn't build.
+ * Client Component (upgraded from the original literal-port Server
+ * Component): unlike End of Day Cash and Invoices & Terminal, this source
+ * has NO <script> block at all -- the search box, the five filter pills,
+ * the six activity rows, and the pagination footer were all as inert in
+ * his own markup as they originally were here.
+ *
+ * The six activity rows are each their own uniquely-shaped block (different
+ * icon, different chip colours, different detail-row layout per item) --
+ * NOT a uniform data array, unlike every other page's list. Rather than
+ * force them into one generic template (risking exactly the kind of visual
+ * flattening the founder has repeatedly flagged elsewhere), each block kept
+ * its own literal JSX and gained only a `category`/`search` tag (assigned
+ * by reading what the row is actually about, e.g. the AI Concierge row is
+ * tagged "AI Concierge", the two cashier-desk rows are tagged "Front Desk &
+ * Cashier") used purely to decide whether that block renders at all.
+ *
+ * The right-hand "Activity Details" panel is still not wired to the list
+ * (no onclick anywhere in his source for that) -- it's a static
+ * illustration of what clicking the first (already-highlighted) row would
+ * show, matching his own screenshot exactly rather than inventing a click
+ * handler he didn't build.
  *
  * WHAT IS REAL AND WHAT IS NOT: every stylist name, timestamp, discount,
  * stock figure and manager note below is his own sample content. None of
- * it reads from a database -- "Export Summary", the date button, the
- * search box, the filter pills, "Print Receipt" and "View Invoice" all do
- * nothing yet.
+ * it reads from a database -- "Export Summary", the date button, "Print
+ * Receipt" and "View Invoice" still do nothing.
  */
 
 const METRICS = [
@@ -56,8 +71,8 @@ const METRICS = [
   },
 ];
 
-const FILTER_TABS: { label: string; active?: boolean; icon?: string; iconColor?: string }[] = [
-  { label: "All Activities", active: true },
+const FILTER_TABS: { label: string; icon?: string; iconColor?: string }[] = [
+  { label: "All Activities" },
   { label: "Front Desk & Cashier" },
   { label: "Stylists & Overrides" },
   { label: "Dispensary & Stock" },
@@ -65,6 +80,47 @@ const FILTER_TABS: { label: string; active?: boolean; icon?: string; iconColor?:
 ];
 
 export default function SalonAuditLogPreview() {
+  const [activeFilter, setActiveFilter] = useState("All Activities");
+  const [search, setSearch] = useState("");
+
+  const matches = (category: string, searchText: string) => {
+    if (activeFilter !== "All Activities" && activeFilter !== category) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return searchText.toLowerCase().includes(q);
+  };
+
+  // One boolean per hand-written row (see file header for why these stay six
+  // literal blocks instead of a data array) -- computed once so the visible
+  // count in the footer never drifts from what each block actually renders.
+  const showItem1 = matches(
+    "Stylists & Overrides",
+    "Jasmine Teo Amanda Choong VIP Discount Override Balayage Olaplex Wei Lin",
+  );
+  const showItem2 = matches(
+    "Front Desk & Cashier",
+    "Wei Lin Checkout Settled Amanda Choong Invoice INV-2024-1088 Visa Card RM 780",
+  );
+  const showItem3 = matches(
+    "AI Concierge",
+    "AI Concierge Lingbao DuitNow Datin Nora MBB-99824 deposit WhatsApp Bot",
+  );
+  const showItem4 = matches(
+    "Dispensary & Stock",
+    "Dispensary Lab Scale Stock Deducted Loreal Blond Studio SVC-902 lightener powder",
+  );
+  const showItem5 = matches(
+    "Front Desk & Cashier",
+    "Kenneth Lau Cash Outflow Petty Cash PC-1024 Fresh Towels Laundry Dispatch",
+  );
+  const showItem6 = matches(
+    "Stylists & Overrides",
+    "Wei Lin Client Profile Formula Saved Datin Nora DN-04 Olaplex",
+  );
+  const visibleCount = [showItem1, showItem2, showItem3, showItem4, showItem5, showItem6].filter(
+    Boolean,
+  ).length;
+
   return (
     <>
       <MaterialSymbolsLink />
@@ -144,15 +200,18 @@ export default function SalonAuditLogPreview() {
                       className="w-full h-9 pl-9 pr-4 rounded-lg bg-[#ffffff] border border-[#c8c5cb] text-[13.5px] leading-5 text-[#000000] placeholder:text-[#5e5e67] focus:outline-none focus:border-[#000000] transition-colors"
                       placeholder="Search staff name, client name, service, or bill #..."
                       type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
                     />
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {FILTER_TABS.map((f) => (
                       <button
                         key={f.label}
+                        onClick={() => setActiveFilter(f.label)}
                         className={
                           "h-8 px-3 rounded-full text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-all active:scale-[0.97] inline-flex items-center gap-1 " +
-                          (f.active
+                          (activeFilter === f.label
                             ? "bg-[#000000] text-[#ffffff]"
                             : "bg-[#ffffff] border border-[#c8c5cb] text-[#1a1c1f] hover:border-[#000000]")
                         }
@@ -177,12 +236,15 @@ export default function SalonAuditLogPreview() {
                       </span>
                     </div>
                     <span className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67]">
-                      Showing 6 latest verified actions
+                      {visibleCount === 6
+                        ? "Showing 6 latest verified actions"
+                        : `Showing ${visibleCount} matching action${visibleCount === 1 ? "" : "s"}`}
                     </span>
                   </div>
 
                   <div className="divide-y divide-[#e8e8ec]">
                     {/* Item 1: Selected / Featured Event */}
+                    {showItem1 && (
                     <div className="p-3 bg-[#f3f3f7]/50 border-l-2 border-l-[#000000] flex flex-col sm:flex-row items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
                         <div className="w-9 h-9 rounded-full bg-[#000000] text-[#ffffff] flex items-center justify-center font-bold text-[12px] shrink-0 mt-0.5">
@@ -224,8 +286,10 @@ export default function SalonAuditLogPreview() {
                         </span>
                       </div>
                     </div>
+                    )}
 
                     {/* Item 2: Checkout Settlement */}
+                    {showItem2 && (
                     <div className="p-3 hover:bg-[#f3f3f7]/40 flex flex-col sm:flex-row items-start justify-between gap-3 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="w-9 h-9 rounded-full bg-[#000000] text-[#ffffff] flex items-center justify-center font-bold text-[12px] shrink-0 mt-0.5">
@@ -266,8 +330,10 @@ export default function SalonAuditLogPreview() {
                         </span>
                       </div>
                     </div>
+                    )}
 
                     {/* Item 3: AI Concierge */}
+                    {showItem3 && (
                     <div className="p-3 hover:bg-[#f3f3f7]/40 flex flex-col sm:flex-row items-start justify-between gap-3 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="w-9 h-9 rounded-md bg-[#3b62d9]/10 text-[#3b62d9] border border-[#3b62d9]/30 flex items-center justify-center shrink-0 mt-0.5">
@@ -306,8 +372,10 @@ export default function SalonAuditLogPreview() {
                         </span>
                       </div>
                     </div>
+                    )}
 
                     {/* Item 4: Stock Adjustment */}
+                    {showItem4 && (
                     <div className="p-3 hover:bg-[#f3f3f7]/40 flex flex-col sm:flex-row items-start justify-between gap-3 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="w-9 h-9 rounded-md bg-[#e8e8ec] text-[#000000] flex items-center justify-center shrink-0 border border-[#c8c5cb] mt-0.5">
@@ -349,8 +417,10 @@ export default function SalonAuditLogPreview() {
                         </span>
                       </div>
                     </div>
+                    )}
 
                     {/* Item 5: Petty Cash Drawer */}
+                    {showItem5 && (
                     <div className="p-3 hover:bg-[#f3f3f7]/40 flex flex-col sm:flex-row items-start justify-between gap-3 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="w-9 h-9 rounded-full bg-[#e0dee9] text-[#1a1b23] flex items-center justify-center font-bold text-[12px] shrink-0 mt-0.5">
@@ -392,8 +462,10 @@ export default function SalonAuditLogPreview() {
                         </span>
                       </div>
                     </div>
+                    )}
 
                     {/* Item 6: Formula Update */}
+                    {showItem6 && (
                     <div className="p-3 hover:bg-[#f3f3f7]/40 flex flex-col sm:flex-row items-start justify-between gap-3 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="w-9 h-9 rounded-full bg-[#000000] text-[#ffffff] flex items-center justify-center font-bold text-[12px] shrink-0 mt-0.5">
@@ -431,10 +503,25 @@ export default function SalonAuditLogPreview() {
                         </span>
                       </div>
                     </div>
+                    )}
+
+                    {visibleCount === 0 && (
+                      <div className="p-10 flex flex-col items-center justify-center gap-2 text-center">
+                        <span className="material-symbols-outlined text-[28px] text-[#c8c5cb]">search_off</span>
+                        <p className="text-[13.5px] font-medium text-[#5e5e67]">
+                          No activity matches &quot;{search}&quot;
+                          {activeFilter !== "All Activities" ? ` in ${activeFilter}` : ""}.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between px-3 py-3 border-t border-[#e8e8ec] bg-[#f3f3f7]/30 text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67]">
-                    <span>Showing 6 of 142 logged actions today</span>
+                    <span>
+                      {visibleCount === 6
+                        ? "Showing 6 of 142 logged actions today"
+                        : `Showing ${visibleCount} of 142 logged actions today (filtered)`}
+                    </span>
                     <div className="flex items-center gap-2">
                       <button
                         disabled
