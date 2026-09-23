@@ -26,12 +26,24 @@ import Link from "next/link";
  * The Stylist Profile source (also 2026-09-23) came with the SAME sidebar
  * as Lookbook -- "badge" for Stylists, "account_balance_wallet" for End of
  * Day Cash, "Stylists & Staff" not "Stylists & Commission". Two independent
- * sources agreeing now (not just one drifting) is enough signal to adopt
- * those two icon/label choices for real, since this update is wiring that
- * exact item anyway. The rest of Management (End of Day Cash, Invoices &
- * Terminal, System Audit Log) still has no page behind it, so still inert.
+ * sources agreeing looked like convergence, so those two icon choices were
+ * adopted here at the time.
  *
- * Three of the five rows under Management have no page behind them yet.
+ * Then the End of Day Cash source (also 2026-09-23, later the same day)
+ * came with ITS OWN copy of the sidebar, and it disagreed with both of the
+ * above: "groups" for Stylists (not "badge"), "calendar_today" for
+ * Appointments (not "schedule"), "person_outline" for Clients (not
+ * "group"), and "payments" for its own End of Day Cash row (not
+ * "account_balance_wallet"). Three sources, three different answers -- this
+ * confirms it was never convergence, just noise. Landed on a firmer rule
+ * instead of re-guessing each time: A PAGE'S OWN SOURCE IS AUTHORITATIVE FOR
+ * ITS OWN ROW ONLY. The Stylists row keeps "badge" (from the Stylist page's
+ * own source). The End of Day Cash row below uses "payments" (from the End
+ * of Day Cash page's own source, not the incidental copy embedded in
+ * someone else's paste). Nobody chases the rest -- Invoices & Terminal and
+ * System Audit Log stay whatever they were until each gets its own source.
+ *
+ * Two of the five rows under Management have no page behind them yet.
  * Rather than link them to nothing (this repo's own record-table.tsx bans
  * exactly that: a button that does nothing when pressed), they render as
  * plain inert rows so the sidebar still reads complete without a single
@@ -44,7 +56,8 @@ export type SalonNavKey =
   | "clients-and-profiles"
   | "lookbook-and-formulas"
   | "salon-stock-and-orders"
-  | "stylists-and-staff";
+  | "stylists-and-staff"
+  | "end-of-day-cash";
 
 const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
   { key: "overview", href: "/en/salon-preview/overview", icon: "dashboard", label: "Overview" },
@@ -77,7 +90,7 @@ const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }
 const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: string }[] = [
   { key: "salon-stock-and-orders", href: "/en/salon-preview/stock", icon: "inventory_2", label: "Salon Stock & Orders" },
   { key: "stylists-and-staff", href: "/en/salon-preview/stylists", icon: "badge", label: "Stylists & Staff" },
-  { key: null, href: "", icon: "account_balance_wallet", label: "End of Day Cash" },
+  { key: "end-of-day-cash", href: "/en/salon-preview/eod-cash", icon: "payments", label: "End of Day Cash" },
   { key: null, href: "", icon: "receipt_long", label: "Invoices & Terminal" },
   { key: null, href: "", icon: "verified_user", label: "System Audit Log" },
 ];
