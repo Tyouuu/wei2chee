@@ -21,7 +21,7 @@
 
 export type ChangeRow = {
   id: string;
-  entity: "pipeline" | "directory" | "ledger";
+  entity: "pipeline" | "directory" | "ledger" | "appointment";
   entityId: string;
   label: string;
   field: string;
@@ -48,6 +48,8 @@ const FIELD_WORDS: Record<"zh" | "en", Record<string, string>> = {
     entry_on: "日期",
     note: "备注",
     deleted: "删掉了",
+    starts_at: "预约时间",
+    staff_id: "谁做",
   },
   en: {
     title: "Name",
@@ -64,6 +66,8 @@ const FIELD_WORDS: Record<"zh" | "en", Record<string, string>> = {
     entry_on: "Date",
     note: "Note",
     deleted: "Deleted",
+    starts_at: "Appointment time",
+    staff_id: "Who's doing it",
   },
 };
 
@@ -89,9 +93,13 @@ function ringgitFromSen(text: string): string {
 export function showValue(field: string, raw: string | null, blank: string): string {
   if (raw == null || raw === "") return blank;
   if (MONEY_FIELDS.has(field)) return ringgitFromSen(raw);
-  /* 工地存的是那一行地址自己的 id。翻不成人话 —— 而印一串 uuid 给他看
-     比印「换了一个工地」糟得多。 */
-  if (field === "site_address_id") return "—";
+  /* 工地跟师傅存的是别的表的 id。翻不成人话 —— 而印一串 uuid 给他看
+     比印「换了一个工地／师傅」糟得多。谁改成谁,要那一页自己查得到
+     名字才印(见 showChanges 的 names 参数),这里没有 DB 可查。 */
+  if (field === "site_address_id" || field === "staff_id") return "—";
+  /* 预约时间存的是完整的 ISO 时间戳,这里能直接解出人看得懂的样子,
+     不用像 staff_id 那样退回「—」。 */
+  if (field === "starts_at") return whenInMalaysia(raw);
   return raw;
 }
 
