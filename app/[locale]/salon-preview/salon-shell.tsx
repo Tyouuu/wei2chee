@@ -51,11 +51,13 @@ import Link from "next/link";
  * changing there. Not chased further -- see the paragraph above; this is
  * the fourth independent data point for the same conclusion.
  *
- * One of the five rows under Management has no page behind it yet. Rather
- * than link it to nothing (this repo's own record-table.tsx bans exactly
- * that: a button that does nothing when pressed), it renders as a plain
- * inert row so the sidebar still reads complete without a single fake link
- * in it.
+ * The System Audit Log source (also 2026-09-23) came with its own icon for
+ * its own row -- "manage_history" (was "verified_user") -- adopted per the
+ * same rule. Its embedded sidebar copy also renamed Overview's icon to
+ * "space_dashboard" and Clients & Profiles to "badge" (both yet more new
+ * answers); left untouched, same reasoning as above.
+ *
+ * All five rows under Management now have real pages behind them.
  */
 export type SalonNavKey =
   | "overview"
@@ -66,7 +68,8 @@ export type SalonNavKey =
   | "salon-stock-and-orders"
   | "stylists-and-staff"
   | "end-of-day-cash"
-  | "invoices-and-terminal";
+  | "invoices-and-terminal"
+  | "system-audit-log";
 
 const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
   { key: "overview", href: "/en/salon-preview/overview", icon: "dashboard", label: "Overview" },
@@ -101,7 +104,7 @@ const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: 
   { key: "stylists-and-staff", href: "/en/salon-preview/stylists", icon: "badge", label: "Stylists & Staff" },
   { key: "end-of-day-cash", href: "/en/salon-preview/eod-cash", icon: "payments", label: "End of Day Cash" },
   { key: "invoices-and-terminal", href: "/en/salon-preview/invoices", icon: "receipt_long", label: "Invoices & Terminal" },
-  { key: null, href: "", icon: "verified_user", label: "System Audit Log" },
+  { key: "system-audit-log", href: "/en/salon-preview/audit-log", icon: "manage_history", label: "System Audit Log" },
 ];
 
 export function MaterialSymbolsLink() {
