@@ -43,11 +43,19 @@ import Link from "next/link";
  * someone else's paste). Nobody chases the rest -- Invoices & Terminal and
  * System Audit Log stay whatever they were until each gets its own source.
  *
- * Two of the five rows under Management have no page behind them yet.
- * Rather than link them to nothing (this repo's own record-table.tsx bans
- * exactly that: a button that does nothing when pressed), they render as
- * plain inert rows so the sidebar still reads complete without a single
- * fake link in it.
+ * The Invoices & Terminal source (also 2026-09-23) reshuffled the icons yet
+ * a FOURTH way -- "content_cut" for Stylists (back to the very first
+ * choice), "calculate" for End of Day Cash (a third answer for that row),
+ * "credit_card" for Register. Its own row ("receipt_long" for Invoices &
+ * Terminal) happened to already match what was here, so nothing needed
+ * changing there. Not chased further -- see the paragraph above; this is
+ * the fourth independent data point for the same conclusion.
+ *
+ * One of the five rows under Management has no page behind it yet. Rather
+ * than link it to nothing (this repo's own record-table.tsx bans exactly
+ * that: a button that does nothing when pressed), it renders as a plain
+ * inert row so the sidebar still reads complete without a single fake link
+ * in it.
  */
 export type SalonNavKey =
   | "overview"
@@ -57,7 +65,8 @@ export type SalonNavKey =
   | "lookbook-and-formulas"
   | "salon-stock-and-orders"
   | "stylists-and-staff"
-  | "end-of-day-cash";
+  | "end-of-day-cash"
+  | "invoices-and-terminal";
 
 const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
   { key: "overview", href: "/en/salon-preview/overview", icon: "dashboard", label: "Overview" },
@@ -91,7 +100,7 @@ const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: 
   { key: "salon-stock-and-orders", href: "/en/salon-preview/stock", icon: "inventory_2", label: "Salon Stock & Orders" },
   { key: "stylists-and-staff", href: "/en/salon-preview/stylists", icon: "badge", label: "Stylists & Staff" },
   { key: "end-of-day-cash", href: "/en/salon-preview/eod-cash", icon: "payments", label: "End of Day Cash" },
-  { key: null, href: "", icon: "receipt_long", label: "Invoices & Terminal" },
+  { key: "invoices-and-terminal", href: "/en/salon-preview/invoices", icon: "receipt_long", label: "Invoices & Terminal" },
   { key: null, href: "", icon: "verified_user", label: "System Audit Log" },
 ];
 
