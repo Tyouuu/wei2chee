@@ -150,9 +150,12 @@ export default function SalonOverviewPreview() {
                           1 tub remaining (L&apos;Oréal)
                         </div>
                       </div>
-                      <button className="px-2.5 py-1 bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#000000] uppercase tracking-wider transition-colors shrink-0">
+                      <Link
+                        href="/en/salon-preview/stock"
+                        className="px-2.5 py-1 bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#000000] uppercase tracking-wider transition-colors shrink-0"
+                      >
                         Reorder
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </section>
@@ -172,12 +175,12 @@ export default function SalonOverviewPreview() {
                             5 Active Staff
                           </span>
                         </div>
-                        <a
-                          href="#"
-                          className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] hover:text-[#000000] transition-colors uppercase tracking-wider font-semibold flex items-center gap-1"
+                        <Link
+                          href="/en/salon-preview/stylists"
+                          className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] hover:text-[#000000] active:scale-[0.97] transition-all uppercase tracking-wider font-semibold flex items-center gap-1"
                         >
                           View Full Roster <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                        </a>
+                        </Link>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -406,10 +409,13 @@ export default function SalonOverviewPreview() {
                         </div>
                       </div>
 
-                      <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded bg-[#000000] text-[#ffffff] hover:bg-[#5f5e61] active:scale-[0.98] text-[13.5px] leading-5 font-normal transition-all">
+                      <Link
+                        href="/en/salon-preview/register"
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded bg-[#000000] text-[#ffffff] hover:bg-[#5f5e61] active:scale-[0.98] text-[13.5px] leading-5 font-normal transition-all"
+                      >
                         <span className="material-symbols-outlined text-[18px]">point_of_sale</span>
                         <span>Open Fast POS Checkout</span>
-                      </button>
+                      </Link>
                     </div>
 
                     {/* Practical Inventory Reorder Action Alert */}
@@ -421,12 +427,12 @@ export default function SalonOverviewPreview() {
                             Dispensary &amp; Stock Alert
                           </h3>
                         </div>
-                        <a
-                          href="#"
-                          className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] hover:text-[#000000] uppercase tracking-wider font-semibold transition-colors"
+                        <Link
+                          href="/en/salon-preview/stock"
+                          className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] hover:text-[#000000] active:scale-[0.97] uppercase tracking-wider font-semibold transition-all"
                         >
                           Manage Stock
-                        </a>
+                        </Link>
                       </div>
                       <p className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67]">
                         2 critical chemical formulations below minimum reorder threshold.
@@ -449,9 +455,12 @@ export default function SalonOverviewPreview() {
                                 {item.note}
                               </div>
                             </div>
-                            <button className="px-3 py-1.5 bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#000000] uppercase tracking-wider transition-colors shrink-0">
+                            <Link
+                              href="/en/salon-preview/stock"
+                              className="px-3 py-1.5 bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#000000] uppercase tracking-wider transition-colors shrink-0"
+                            >
                               1-Click PO
-                            </button>
+                            </Link>
                           </div>
                         ))}
                       </div>
