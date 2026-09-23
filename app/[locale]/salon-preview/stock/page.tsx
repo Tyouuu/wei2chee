@@ -17,13 +17,13 @@ import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
  * Still sample content only.
  */
 const CATEGORIES = [
-  { label: "All Items", count: 186, active: true },
-  { label: "Bleach & Lighteners", count: 12 },
-  { label: "Demi & Permanent Color", count: 94 },
-  { label: "Developers & Peroxides", count: 24 },
-  { label: "Bond Builders", count: 32 },
-  { label: "Backbar Care", count: 24 },
-];
+  { label: "All Items", count: 186, skus: null },
+  { label: "Bleach & Lighteners", count: 12, skus: ["LOR-BS9-500"] },
+  { label: "Demi & Permanent Color", count: 94, skus: ["WH-COL-061", "WH-TON-912", "WEL-KOL-1001"] },
+  { label: "Developers & Peroxides", count: 24, skus: [] },
+  { label: "Bond Builders", count: 32, skus: ["OLX-BND-001"] },
+  { label: "Backbar Care", count: 24, skus: ["MLB-GL-001X"] },
+] as const;
 
 type Row = {
   sku: string;
@@ -163,7 +163,17 @@ function ringgit(n: number): string {
 
 export default function SalonStockPreview() {
   const [lines, setLines] = useState(INITIAL_LINES);
+  const [activeCategory, setActiveCategory] = useState<(typeof CATEGORIES)[number]["label"]>("All Items");
+  const [search, setSearch] = useState("");
   const total = lines.reduce((sum, l) => sum + l.unitPrice * l.qty, 0);
+
+  const visibleRows = ROWS.filter((r) => {
+    const cat = CATEGORIES.find((c) => c.label === activeCategory);
+    if (cat?.skus && !(cat.skus as readonly string[]).includes(r.sku)) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return r.sku.toLowerCase().includes(q) || r.name.toLowerCase().includes(q) || r.tag.toLowerCase().includes(q);
+  });
 
   const adjust = (name: string, delta: number) => {
     setLines((prev) => prev.map((l) => (l.name === name ? { ...l, qty: Math.max(0, l.qty + delta) } : l)));
@@ -227,9 +237,10 @@ export default function SalonStockPreview() {
                         {CATEGORIES.map((c) => (
                           <button
                             key={c.label}
+                            onClick={() => setActiveCategory(c.label)}
                             className={
                               "h-8 px-3 rounded-lg text-[13px] font-medium transition-colors active:scale-[0.97] " +
-                              (c.active
+                              (activeCategory === c.label
                                 ? "bg-[#000000] text-[#ffffff]"
                                 : "bg-[#ffffff] text-[#1a1c1f] border border-[#e8e8ec] hover:bg-[#eeedf1]")
                             }
@@ -237,7 +248,7 @@ export default function SalonStockPreview() {
                             {c.label}{" "}
                             <span
                               className={
-                                "ml-1 font-mono text-[11px] " + (c.active ? "opacity-70" : "text-[#77767b]")
+                                "ml-1 font-mono text-[11px] " + (activeCategory === c.label ? "opacity-70" : "text-[#77767b]")
                               }
                             >
                               {c.count}
@@ -254,6 +265,8 @@ export default function SalonStockPreview() {
                             className="w-full h-9 pl-9 pr-14 bg-[#f3f3f7] rounded-lg text-[13px] text-[#1a1c1f] placeholder:text-[#77767b] focus:outline-none focus:bg-[#ffffff] transition-colors"
                             placeholder="Search SKU, shade (6.1, 9.12), or brand..."
                             type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
                           />
                           <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[#77767b] bg-[#e2e2e6] rounded">
                             ⌘K
@@ -298,7 +311,14 @@ export default function SalonStockPreview() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[#e8e8ec] text-[13px]">
-                            {ROWS.map((r) => (
+                            {visibleRows.length === 0 && (
+                              <tr>
+                                <td colSpan={7} className="py-10 text-center text-[13px] text-[#77767b]">
+                                  No SKUs match {search.trim() ? `"${search.trim()}"` : "this category"} in today&apos;s sample.
+                                </td>
+                              </tr>
+                            )}
+                            {visibleRows.map((r) => (
                               <tr
                                 key={r.sku}
                                 className={
@@ -390,7 +410,10 @@ export default function SalonStockPreview() {
                       </div>
                       <div className="px-4 py-3 bg-[#f3f3f7] flex flex-col sm:flex-row items-center justify-between gap-3 text-[#77767b] text-[11.5px] border-t border-[#e8e8ec]">
                         <div className="flex items-center gap-2">
-                          <span className="text-[#1a1c1f] font-medium">Showing 1 to 6 of 186 SKUs</span>
+                          <span className="text-[#1a1c1f] font-medium">
+                            {visibleRows.length > 0 ? `Showing 1 to ${visibleRows.length} of ` : "Showing 0 of "}
+                            {(CATEGORIES.find((c) => c.label === activeCategory) ?? CATEGORIES[0]).count} SKUs
+                          </span>
                           <span className="text-[#c8c5cb]">·</span>
                           <span>Updated 8 mins ago by Wei Lin</span>
                         </div>
