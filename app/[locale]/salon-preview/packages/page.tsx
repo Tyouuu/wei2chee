@@ -83,11 +83,25 @@ const METRICS = [
 ];
 
 const CATEGORY_TABS = [
-  { label: "All Packages", count: 68, active: true },
-  { label: "Scalp & Spa Series", count: 32 },
-  { label: "Color Refresh Pass", count: 21 },
-  { label: "Cash Wallet Store-Value", count: 15 },
+  { label: "All Packages", count: 68, matches: null },
+  { label: "Scalp & Spa Series", count: 32, matches: "Scalp Care Series" },
+  { label: "Color Refresh Pass", count: 21, matches: "Color Tech Series" },
+  { label: "Cash Wallet Store-Value", count: 15, matches: "Prepaid Store-Value" },
+] as const;
+
+type PackageStatus = "active" | "expiring" | "depleted";
+
+const STATUS_TABS: { label: string; status: PackageStatus | "all"; countNote?: string }[] = [
+  { label: "Active", status: "active" },
+  { label: "Expiring Soon", status: "expiring", countNote: "(3)" },
+  { label: "Depleted", status: "depleted" },
 ];
+
+function packageStatus(p: PackageRow): PackageStatus {
+  if (p.balancePercent <= 0) return "depleted";
+  if (p.expiryWarning) return "expiring";
+  return "active";
+}
 
 const PACKAGES: PackageRow[] = [
   {
@@ -209,6 +223,18 @@ const PUNCH_HISTORY = [
 
 export default function SalonPackagesPreview() {
   const [redeemState, setRedeemState] = useState<"idle" | "redeeming" | "confirmed">("idle");
+  const [activeTab, setActiveTab] = useState<(typeof CATEGORY_TABS)[number]["label"]>("All Packages");
+  const [activeStatus, setActiveStatus] = useState<PackageStatus | "all">("all");
+  const [search, setSearch] = useState("");
+
+  const visiblePackages = PACKAGES.filter((p) => {
+    const tab = CATEGORY_TABS.find((t) => t.label === activeTab);
+    if (tab?.matches && p.category !== tab.matches) return false;
+    if (activeStatus !== "all" && packageStatus(p) !== activeStatus) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return p.guest.toLowerCase().includes(q) || p.cardId.toLowerCase().includes(q) || p.program.toLowerCase().includes(q);
+  });
 
   const handleRedeem = () => {
     if (redeemState !== "idle") return;
@@ -304,12 +330,18 @@ export default function SalonPackagesPreview() {
                         {CATEGORY_TABS.map((t) => (
                           <button
                             key={t.label}
+                            onClick={() => setActiveTab(t.label)}
                             className={
                               "px-3.5 py-1.5 rounded-lg text-[13.5px] leading-5 whitespace-nowrap active:scale-[0.97] " +
-                              (t.active ? "font-medium bg-[#000000] text-[#ffffff] transition-transform" : "text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors")
+                              (activeTab === t.label
+                                ? "font-medium bg-[#000000] text-[#ffffff] transition-transform"
+                                : "text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] transition-colors")
                             }
                           >
-                            {t.label} <span className={"ml-1 tabular-nums text-[12px] " + (t.active ? "opacity-70" : "text-[#5e5e67]/70")}>{t.count}</span>
+                            {t.label}{" "}
+                            <span className={"ml-1 tabular-nums text-[12px] " + (activeTab === t.label ? "opacity-70" : "text-[#5e5e67]/70")}>
+                              {t.count}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -327,18 +359,26 @@ export default function SalonPackagesPreview() {
                           className="w-full pl-9 pr-3 py-2 bg-[#f9f9fd] border border-[#c8c5cb]/40 rounded-lg text-[13.5px] leading-[18px] text-[#1a1c1f] placeholder:text-[#5e5e67] focus:outline-none focus:border-[#000000] transition-all"
                           placeholder="Search guest name, phone, card #PK-..."
                           type="text"
-                          defaultValue="Amanda Choong"
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
                         />
                       </div>
                       <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                         <div className="inline-flex rounded-lg border border-[#c8c5cb]/30 p-1 bg-[#f3f3f7]/70">
-                          <button className="px-3 py-1 text-[11.5px] font-medium rounded-md bg-[#ffffff] text-[#1a1c1f] shadow-xs active:scale-[0.97] transition-transform">
-                            Status: Active
-                          </button>
-                          <button className="px-3 py-1 text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">
-                            Expiring Soon (3)
-                          </button>
-                          <button className="px-3 py-1 text-[11.5px] text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] transition-colors">Depleted</button>
+                          {STATUS_TABS.map((s) => (
+                            <button
+                              key={s.status}
+                              onClick={() => setActiveStatus(s.status)}
+                              className={
+                                "px-3 py-1 text-[11.5px] rounded-md active:scale-[0.97] transition-all " +
+                                (activeStatus === s.status
+                                  ? "font-medium bg-[#ffffff] text-[#1a1c1f] shadow-xs"
+                                  : "text-[#5e5e67] hover:text-[#1a1c1f]")
+                              }
+                            >
+                              {s.status === "active" ? "Status: Active" : s.label} {s.countNote}
+                            </button>
+                          ))}
                         </div>
                         <button
                           title="Export Ledger"
@@ -377,7 +417,14 @@ export default function SalonPackagesPreview() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#c8c5cb]/20 text-[13.5px] leading-[18px]">
-                          {PACKAGES.map((p) => (
+                          {visiblePackages.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="py-10 text-center text-[13.5px] text-[#5e5e67]">
+                                No packages match {search.trim() ? `"${search.trim()}"` : "this filter"} in today&apos;s sample.
+                              </td>
+                            </tr>
+                          )}
+                          {visiblePackages.map((p) => (
                             <tr
                               key={p.cardId}
                               className={
@@ -463,9 +510,18 @@ export default function SalonPackagesPreview() {
                     </div>
                     <div className="p-4 px-5 border-t border-[#c8c5cb]/30 flex items-center justify-between text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] bg-[#eeedf1]/20">
                       <div>
-                        Showing <span className="font-medium text-[#1a1c1f] tabular-nums">1</span> to{" "}
-                        <span className="font-medium text-[#1a1c1f] tabular-nums">6</span> of{" "}
-                        <span className="font-medium text-[#1a1c1f] tabular-nums">68</span> active packages
+                        {visiblePackages.length > 0 ? (
+                          <>
+                            Showing <span className="font-medium text-[#1a1c1f] tabular-nums">1</span> to{" "}
+                            <span className="font-medium text-[#1a1c1f] tabular-nums">{visiblePackages.length}</span> of{" "}
+                          </>
+                        ) : (
+                          "Showing 0 of "
+                        )}
+                        <span className="font-medium text-[#1a1c1f] tabular-nums">
+                          {(CATEGORY_TABS.find((t) => t.label === activeTab) ?? CATEGORY_TABS[0]).count}
+                        </span>{" "}
+                        active packages
                       </div>
                       <div className="flex items-center gap-1.5">
                         <button disabled className="px-3 py-1 border border-[#c8c5cb]/50 rounded-md text-[#1a1c1f] disabled:opacity-40">
