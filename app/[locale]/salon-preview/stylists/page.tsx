@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
 
 /**
@@ -10,9 +13,14 @@ import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
  * href="#") that link stays inert rather than inventing a page he hasn't
  * designed yet.
  *
- * Server Component: nothing in the source has real onclick/JS behaviour --
- * the toggles, the commission-model tabs, the tag "x" buttons are all inert
- * in his own markup too.
+ * Client Component (upgraded from the original literal-port Server
+ * Component): his source had no real onclick/JS behaviour anywhere --
+ * the toggles, the commission-model tabs, the tag "x" buttons were all
+ * inert. The founder later asked for every control to actually do
+ * something in this demo, so employment-status, commission-model, the
+ * permission toggles (the two marked "locked" stay locked -- a director
+ * override isn't something a local checkbox can honestly fake) and the
+ * tag remove buttons now hold real local state.
  *
  * RECONSTRUCTION NOTE: his paste was cut off by the message's own ~50,000
  * character limit partway through the "Audit & Lifecycle" card, right after
@@ -84,6 +92,20 @@ const PERMISSIONS: Permission[] = [
 ];
 
 export default function SalonStylistProfilePreview() {
+  const [employment, setEmployment] = useState<"Full-time Active" | "Part-time / Contract" | "On Leave / Sabbatical">(
+    "Full-time Active",
+  );
+  const [commissionModel, setCommissionModel] = useState<"Tiered Progressive" | "Flat Percentage" | "Base + Fixed Bonus">(
+    "Tiered Progressive",
+  );
+  const [permissionState, setPermissionState] = useState(() => Object.fromEntries(PERMISSIONS.map((p) => [p.label, p.on])));
+  const [tags, setTags] = useState(TAGS);
+
+  const togglePermission = (label: string, locked?: boolean) => {
+    if (locked) return;
+    setPermissionState((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
   return (
     <>
       <MaterialSymbolsLink />
@@ -280,14 +302,40 @@ export default function SalonStylistProfilePreview() {
                         Employment Type &amp; Roster Status
                       </label>
                       <div className="flex flex-wrap gap-2">
-                        <button className="px-5 py-1.5 rounded-lg bg-[#000000] text-[#ffffff] text-[13.5px] leading-5 font-medium inline-flex items-center gap-2 shadow-sm active:scale-[0.97] transition-transform">
-                          <span className="w-2 h-2 rounded-full bg-[#1a9a4d]" />
+                        <button
+                          onClick={() => setEmployment("Full-time Active")}
+                          className={
+                            "px-5 py-1.5 rounded-lg text-[13.5px] leading-5 inline-flex items-center gap-2 active:scale-[0.97] transition-all " +
+                            (employment === "Full-time Active"
+                              ? "bg-[#000000] text-[#ffffff] font-medium shadow-sm"
+                              : "bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#5e5e67]")
+                          }
+                        >
+                          {employment === "Full-time Active" && <span className="w-2 h-2 rounded-full bg-[#1a9a4d]" />}
                           Full-time Active
                         </button>
-                        <button className="px-5 py-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] text-[13.5px] leading-5 transition-colors">
+                        <button
+                          onClick={() => setEmployment("Part-time / Contract")}
+                          className={
+                            "px-5 py-1.5 rounded-lg text-[13.5px] leading-5 inline-flex items-center gap-2 active:scale-[0.97] transition-all " +
+                            (employment === "Part-time / Contract"
+                              ? "bg-[#000000] text-[#ffffff] font-medium shadow-sm"
+                              : "bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#5e5e67]")
+                          }
+                        >
+                          {employment === "Part-time / Contract" && <span className="w-2 h-2 rounded-full bg-[#1a9a4d]" />}
                           Part-time / Contract
                         </button>
-                        <button className="px-5 py-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] text-[13.5px] leading-5 transition-colors">
+                        <button
+                          onClick={() => setEmployment("On Leave / Sabbatical")}
+                          className={
+                            "px-5 py-1.5 rounded-lg text-[13.5px] leading-5 inline-flex items-center gap-2 active:scale-[0.97] transition-all " +
+                            (employment === "On Leave / Sabbatical"
+                              ? "bg-[#000000] text-[#ffffff] font-medium shadow-sm"
+                              : "bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#5e5e67]")
+                          }
+                        >
+                          {employment === "On Leave / Sabbatical" && <span className="w-2 h-2 rounded-full bg-amber-500" />}
                           On Leave / Sabbatical
                         </button>
                       </div>
@@ -304,18 +352,29 @@ export default function SalonStylistProfilePreview() {
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-1 pt-1">
-                        {TAGS.map((tag) => (
+                        {tags.map((tag) => (
                           <span
                             key={tag}
                             className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#eeedf1] text-[#1a1c1f] text-[13.5px] leading-5"
                           >
                             {tag}
-                            <button className="hover:text-[#ba1a1a] active:scale-[0.9] transition-transform">
+                            <button
+                              onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                              className="hover:text-[#ba1a1a] active:scale-[0.9] transition-transform"
+                            >
                               <span className="material-symbols-outlined text-[14px]">close</span>
                             </button>
                           </span>
                         ))}
-                        <button className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors">
+                        <button
+                          onClick={() => {
+                            const next = window.prompt("Add a styling specialty or portfolio tag:");
+                            if (next && next.trim() && !tags.includes(next.trim())) {
+                              setTags((prev) => [...prev, next.trim()]);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#5e5e67] hover:text-[#1a1c1f] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors"
+                        >
                           <span className="material-symbols-outlined text-[14px]">add</span>
                           Add Tag
                         </button>
@@ -450,31 +509,78 @@ export default function SalonStylistProfilePreview() {
                         Commission Structure Model
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div className="p-2 rounded-lg bg-[#000000] text-[#ffffff] shadow-sm cursor-pointer">
+                        <button
+                          onClick={() => setCommissionModel("Tiered Progressive")}
+                          className={
+                            "p-2 rounded-lg text-left transition-colors active:scale-[0.98] " +
+                            (commissionModel === "Tiered Progressive"
+                              ? "bg-[#000000] text-[#ffffff] shadow-sm"
+                              : "bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f]")
+                          }
+                        >
                           <div className="flex items-center justify-between">
                             <span className="text-[14.5px] leading-[22px] tracking-[-0.005em] font-medium">Tiered Progressive</span>
-                            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                            {commissionModel === "Tiered Progressive" && (
+                              <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                            )}
                           </div>
-                          <p className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#858387] mt-1">
+                          <p
+                            className={
+                              "text-[11.5px] leading-4 tracking-[0.04em] font-medium mt-1 " +
+                              (commissionModel === "Tiered Progressive" ? "text-[#858387]" : "text-[#5e5e67]")
+                            }
+                          >
                             Split increases as revenue bands cross higher thresholds
                           </p>
-                        </div>
-                        <div className="p-2 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] cursor-pointer transition-colors">
+                        </button>
+                        <button
+                          onClick={() => setCommissionModel("Flat Percentage")}
+                          className={
+                            "p-2 rounded-lg text-left transition-colors active:scale-[0.98] " +
+                            (commissionModel === "Flat Percentage"
+                              ? "bg-[#000000] text-[#ffffff] shadow-sm"
+                              : "bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f]")
+                          }
+                        >
                           <div className="flex items-center justify-between">
                             <span className="text-[14.5px] leading-[22px] tracking-[-0.005em] font-medium">Flat Percentage</span>
+                            {commissionModel === "Flat Percentage" && (
+                              <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                            )}
                           </div>
-                          <p className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] mt-1">
+                          <p
+                            className={
+                              "text-[11.5px] leading-4 tracking-[0.04em] font-medium mt-1 " +
+                              (commissionModel === "Flat Percentage" ? "text-[#858387]" : "text-[#5e5e67]")
+                            }
+                          >
                             Single uniform percentage applied across all services
                           </p>
-                        </div>
-                        <div className="p-2 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f] cursor-pointer transition-colors">
+                        </button>
+                        <button
+                          onClick={() => setCommissionModel("Base + Fixed Bonus")}
+                          className={
+                            "p-2 rounded-lg text-left transition-colors active:scale-[0.98] " +
+                            (commissionModel === "Base + Fixed Bonus"
+                              ? "bg-[#000000] text-[#ffffff] shadow-sm"
+                              : "bg-[#f3f3f7] hover:bg-[#eeedf1] text-[#1a1c1f]")
+                          }
+                        >
                           <div className="flex items-center justify-between">
                             <span className="text-[14.5px] leading-[22px] tracking-[-0.005em] font-medium">Base + Fixed Bonus</span>
+                            {commissionModel === "Base + Fixed Bonus" && (
+                              <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                            )}
                           </div>
-                          <p className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] mt-1">
+                          <p
+                            className={
+                              "text-[11.5px] leading-4 tracking-[0.04em] font-medium mt-1 " +
+                              (commissionModel === "Base + Fixed Bonus" ? "text-[#858387]" : "text-[#5e5e67]")
+                            }
+                          >
                             Guaranteed monthly retainer with per-head incentive
                           </p>
-                        </div>
+                        </button>
                       </div>
                     </div>
 
@@ -684,6 +790,7 @@ export default function SalonStylistProfilePreview() {
                           {p.locked ? (
                             <span
                               aria-label="Toggle disabled"
+                              title="Requires Director PIN override"
                               className="w-10 h-5 rounded-full bg-[#eeedf1] relative p-0.5 shrink-0 cursor-not-allowed"
                             >
                               <span className="block w-4 h-4 rounded-full bg-[#c8c5cb] mr-auto shadow-sm" />
@@ -691,9 +798,18 @@ export default function SalonStylistProfilePreview() {
                           ) : (
                             <button
                               aria-label="Toggle"
-                              className="w-10 h-5 rounded-full bg-[#000000] relative p-0.5 shrink-0 transition-colors cursor-pointer"
+                              onClick={() => togglePermission(p.label, p.locked)}
+                              className={
+                                "w-10 h-5 rounded-full relative p-0.5 shrink-0 transition-colors cursor-pointer " +
+                                (permissionState[p.label] ? "bg-[#000000]" : "bg-[#e8e8ec]")
+                              }
                             >
-                              <span className="block w-4 h-4 rounded-full bg-[#ffffff] ml-auto shadow-sm" />
+                              <span
+                                className={
+                                  "block w-4 h-4 rounded-full bg-[#ffffff] shadow-sm transition-transform " +
+                                  (permissionState[p.label] ? "ml-auto" : "mr-auto")
+                                }
+                              />
                             </button>
                           )}
                         </div>
