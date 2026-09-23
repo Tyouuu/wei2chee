@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
 
 /**
@@ -8,11 +11,16 @@ import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
  * generator produces them without touching swiss.css's `--color-primary` /
  * `--color-on-primary`.
  *
- * Server Component: the source has no real onclick/JS behaviour for this
- * page (category chips, search box, sort dropdown, "Copy" and "Present
- * Look"/"Apply to Ticket" buttons are all inert in his own markup too --
- * this is a sales-demo screenshot of the concept, not a wired feature), so
- * nothing here fakes interactivity the source doesn't have.
+ * Client Component (upgraded from the original literal-port Server
+ * Component): his own source left category chips, the search box, sort
+ * dropdown, "Copy" and "Present Look"/"Apply to Ticket" all inert. The
+ * founder later asked for every control to actually do something in this
+ * demo, so the category chips and search box now really filter the 6
+ * sample LOOKS -- each look's `category` field is an addition on top of his
+ * literal content (not present in his source), assigned by reading what
+ * technique/tone each look's own title describes, same as the mapping
+ * already used on Stock/Packages. Sort dropdown and Copy/Present/Apply
+ * still do nothing -- there's no second demo state for them to produce.
  *
  * `data-alt` in his source (a Stitch-internal field) is rendered here as a
  * real `alt` attribute -- the only non-literal change, needed so the images
@@ -28,6 +36,7 @@ import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
 
 type Look = {
   tag: string;
+  category: string;
   level: string;
   stylistColor: string;
   stylist: string;
@@ -44,6 +53,7 @@ type Look = {
 const LOOKS: Look[] = [
   {
     tag: "#MochaVelvet",
+    category: "Balayage & Foil Melts",
     level: "L6.1",
     stylistColor: "#1a9a4d",
     stylist: "Jasmine Teo",
@@ -58,6 +68,7 @@ const LOOKS: Look[] = [
   },
   {
     tag: "#AirCurtain",
+    category: "Korean C-Curl & Perms",
     level: "L5.0 Gloss",
     stylistColor: "#3b62d9",
     stylist: "Marcus Wong",
@@ -72,6 +83,7 @@ const LOOKS: Look[] = [
   },
   {
     tag: "#ChampagnePearl",
+    category: "Platinum Ice & Vivid",
     level: "L10.2",
     stylistColor: "#000000",
     stylist: "Wei Lin (Lead)",
@@ -86,6 +98,7 @@ const LOOKS: Look[] = [
   },
   {
     tag: "#CopperSunset",
+    category: "Warm Caramels & Coppers",
     level: "L7.43",
     stylistColor: "#a8710a",
     stylist: "Chloe Tan",
@@ -100,6 +113,7 @@ const LOOKS: Look[] = [
   },
   {
     tag: "#HoneyToffee",
+    category: "Balayage & Foil Melts",
     level: "L8.3",
     stylistColor: "#1a9a4d",
     stylist: "Jasmine Teo",
@@ -114,6 +128,7 @@ const LOOKS: Look[] = [
   },
   {
     tag: "#LiquidGlass",
+    category: "Scalp & Texture Spa",
     level: "L4.0",
     stylistColor: "#000000",
     stylist: "Wei Lin (Lead)",
@@ -151,6 +166,21 @@ const LIFT_LEVELS: { level: string; label: string; color: string; active?: boole
 ];
 
 export default function SalonLookbookPreview() {
+  const [activeCategory, setActiveCategory] = useState("All Swatches");
+  const [search, setSearch] = useState("");
+
+  const visibleLooks = LOOKS.filter((look) => {
+    if (activeCategory !== "All Swatches" && look.category !== activeCategory) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      look.title.toLowerCase().includes(q) ||
+      look.tag.toLowerCase().includes(q) ||
+      look.level.toLowerCase().includes(q) ||
+      look.tags.some((t) => t.toLowerCase().includes(q))
+    );
+  });
+
   return (
     <>
       <MaterialSymbolsLink />
@@ -294,15 +324,18 @@ export default function SalonLookbookPreview() {
                   {CATEGORIES.map((c) => (
                     <button
                       key={c.label}
+                      onClick={() => setActiveCategory(c.label)}
                       className={
                         "h-8 px-3 rounded-lg text-[13.5px] leading-5 flex items-center gap-1 whitespace-nowrap shadow-sm active:scale-[0.97] " +
-                        (c.active
+                        (activeCategory === c.label
                           ? "bg-[#000000] text-[#ffffff] font-medium"
                           : "bg-[#ffffff] text-[#1a1c1f] hover:bg-[#e8e8ec] transition-colors")
                       }
                     >
                       <span>{c.label}</span>
-                      <span className={"text-[11px] font-mono " + (c.active ? "opacity-75" : "text-[#5e5e67]")}>{c.count}</span>
+                      <span className={"text-[11px] font-mono " + (activeCategory === c.label ? "opacity-75" : "text-[#5e5e67]")}>
+                        {c.count}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -314,6 +347,8 @@ export default function SalonLookbookPreview() {
                       className="h-8 pl-8 pr-12 w-64 bg-[#ffffff] rounded-lg text-[13.5px] leading-5 text-[#1a1c1f] placeholder:text-[#5e5e67] focus:outline-none shadow-sm"
                       placeholder="Search tone, technique, base..."
                       type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
                     />
                     <span className="absolute right-2 px-1 rounded bg-[#eeedf1] font-mono text-[10px] text-[#5e5e67]">⌘K</span>
                   </div>
@@ -325,8 +360,13 @@ export default function SalonLookbookPreview() {
               </div>
 
               {/* Lookbook Cards 3-Column Grid */}
+              {visibleLooks.length === 0 && (
+                <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm py-10 text-center text-[13.5px] text-[#5e5e67] mb-7">
+                  No looks match {search.trim() ? `"${search.trim()}"` : "this category"} in today&apos;s lookbook.
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-7">
-                {LOOKS.map((look) => (
+                {visibleLooks.map((look) => (
                   <div key={look.ref} className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm overflow-hidden flex flex-col group">
                     {/* Media Header */}
                     <div className="relative h-64 bg-[#e8e8ec] overflow-hidden">
@@ -406,7 +446,10 @@ export default function SalonLookbookPreview() {
               {/* Technical Pagination Footer Strip */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-3 bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm">
                 <div className="flex items-center gap-2 text-[#5e5e67] text-[11.5px] leading-4 tracking-[0.04em]">
-                  <span className="uppercase tracking-widest text-[#1a1c1f] font-semibold">Showing 1 - 6 of 142 Technical Formulas</span>
+                  <span className="uppercase tracking-widest text-[#1a1c1f] font-semibold">
+                    {visibleLooks.length > 0 ? `Showing 1 - ${visibleLooks.length} of ` : "Showing 0 of "}
+                    {(CATEGORIES.find((c) => c.label === activeCategory) ?? CATEGORIES[0]).count} Technical Formulas
+                  </span>
                   <span className="hidden sm:inline">•</span>
                   <span className="hidden sm:inline">
                     Sorted by: <span className="text-[#1a1c1f] font-medium">Recently Mixed &amp; Audited</span>
