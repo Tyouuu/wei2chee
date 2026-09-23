@@ -32,7 +32,7 @@ const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }
   },
   {
     key: "register-and-checkout",
-    href: "",
+    href: "/en/salon-preview/register",
     icon: "point_of_sale",
     label: "Register & Checkout",
   },

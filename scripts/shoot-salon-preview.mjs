@@ -17,6 +17,7 @@ const b = await chromium.launch();
 for (const [name, path, width, height] of [
   ["overview-1440", "overview", 1440, 1000],
   ["schedule-1440", "schedule", 1440, 1000],
+  ["register-1440", "register", 1440, 1000],
 ]) {
   const page = await b.newPage({ viewport: { width, height } });
   const errors = [];
