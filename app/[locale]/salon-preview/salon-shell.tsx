@@ -57,7 +57,16 @@ import Link from "next/link";
  * "space_dashboard" and Clients & Profiles to "badge" (both yet more new
  * answers); left untouched, same reasoning as above.
  *
- * All five rows under Management now have real pages behind them.
+ * The Packages & Prepaid source (also 2026-09-23) added TWO new rows that
+ * didn't exist before -- "Packages & Prepaid" (first in Management, its own
+ * icon "confirmation_number" adopted for its own row) and "Tenant Settings"
+ * (last in Management, no page yet -- inert, same as the others were before
+ * their sources arrived). Its embedded sidebar copy once again disagreed
+ * with the icons End of Day Cash / Invoices & Terminal / System Audit Log
+ * picked for themselves in THEIR OWN sources; left untouched, same rule.
+ *
+ * All six rows under Management now have real pages behind them except
+ * Tenant Settings.
  */
 export type SalonNavKey =
   | "overview"
@@ -65,6 +74,7 @@ export type SalonNavKey =
   | "register-and-checkout"
   | "clients-and-profiles"
   | "lookbook-and-formulas"
+  | "packages-and-prepaid"
   | "salon-stock-and-orders"
   | "stylists-and-staff"
   | "end-of-day-cash"
@@ -100,11 +110,13 @@ const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }
 ];
 
 const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: string }[] = [
+  { key: "packages-and-prepaid", href: "/en/salon-preview/packages", icon: "confirmation_number", label: "Packages & Prepaid" },
   { key: "salon-stock-and-orders", href: "/en/salon-preview/stock", icon: "inventory_2", label: "Salon Stock & Orders" },
   { key: "stylists-and-staff", href: "/en/salon-preview/stylists", icon: "badge", label: "Stylists & Staff" },
   { key: "end-of-day-cash", href: "/en/salon-preview/eod-cash", icon: "payments", label: "End of Day Cash" },
   { key: "invoices-and-terminal", href: "/en/salon-preview/invoices", icon: "receipt_long", label: "Invoices & Terminal" },
   { key: "system-audit-log", href: "/en/salon-preview/audit-log", icon: "manage_history", label: "System Audit Log" },
+  { key: null, href: "", icon: "tune", label: "Tenant Settings" },
 ];
 
 export function MaterialSymbolsLink() {
