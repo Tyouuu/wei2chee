@@ -100,21 +100,65 @@ const granted = [
   ),
 ].sort();
 
-/* 一次抓完前端每一个出现过的名字，再取交集 —— 一支一支 grep 会跑很久 */
-/* 🔴 认的是 .rpc("名字") —— 那才是真的呼叫。
-   宽松地 grep 每一个小写字串，会把**注解里提到的**也算成接上了：
-   实测差 15 支（97 对 82）。一个把「提过」读成「接上了」的数字，
-   会让这张单最重要的那一栏变成安慰剂。 */
-const RPC = /\.rpc\(\s*"([a-z_]+)"/g;
-/* ⚠️ 用中括号类别 [.]rpc[(]，不要用反斜线转义 ——
-   反斜线经过「JS 字串 → 壳」两层之后会被吃掉，那一支 grep 会**静静回空**，
-   而空的读数长得跟「一支都没接」一模一样。实测过两种写法才定的。 */
-const namesIn = (dirs, inc) => {
-  const raw = sh('grep -rhoE "[.]rpc[(][^)]*" ' + dirs + " " + inc + " 2>/dev/null");
-  return new Set([...raw.matchAll(RPC)].map((m) => m[1]));
+/* 一次抓完前端每一个出现过的名字。
+   🔴 认的是 .rpc(...) 那一整包参数里的名字 —— 那才是真的呼叫，
+   不是随便一个小写字串（宽松地认整份档案，会把**注解里提到的**也算成
+   接上了：实测差 15 支，97 对 82。一个把「提过」读成「接上了」的数字，
+   会让这张单最重要的那一栏变成安慰剂）。
+
+   ⚠️ 2026-09-24 量到这一版本身在骗人：`grep -rhoE "[.]rpc[(][^)]*"` 是
+   **单行**匹配（grep 没有 -P/-z 就没有跨行模式），
+     .rpc(
+       "cancel_shared_appointment",
+       ...
+     )
+   这种写法整支抓不到 —— 而 `app/b/[ref]/cancel-form.tsx` 真的是这样写的，
+   把「76 支只有尺子打过」印成了假数字（真的是 46）。
+   还有一种更难认的：`op.op === "grant_credit" ? "grant_credit" : "use_credit"`
+   （`lib/portal/record-ops.ts`），名字是**算出来的**，不是紧跟在 `.rpc(` 后面
+   的一个字串。两种都实测抓不到过，用真的呼叫端验证过（`grant_credit`／
+   `use_credit`／`cancel_shared_appointment`／`submit_appointment_review`
+   全部有真的画面在用）。
+
+   做法：先抓出每一次 `.rpc(` 到**下一个右括号**之间的那一段（惰性配对，
+   在这个仓库的写法里，参数不是字串就是 `{...}`，没有裸的 `(`，
+   所以第一个右括号就是那次呼叫自己的），再把那一段里**所有**引号包住的
+   字串都算进去 —— 三元表达式两个分支各自的名字都在同一段参数文字里，
+   一次就抓完，不用另外认三元表达式的语法。跨行的问题也一起解掉了，
+   因为这里直接读整份档案的内容，不是逐行读。 */
+const RPC_CALL = /\.rpc\(([\s\S]*?)\)/g;
+const QUOTED_NAME = /["']([a-z_]+)["']/g;
+
+function listFiles(dir, exts, out = []) {
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const e of entries) {
+    if (e.name === "node_modules" || e.name === ".next" || e.name.startsWith(".")) continue;
+    const p = join(dir, e.name);
+    if (e.isDirectory()) listFiles(p, exts, out);
+    else if (exts.some((ext) => e.name.endsWith(ext))) out.push(p);
+  }
+  return out;
+}
+
+const namesIn = (dirs, exts) => {
+  const set = new Set();
+  for (const dir of dirs) {
+    for (const f of listFiles(join(ROOT, dir), exts)) {
+      const s = read(f.slice(ROOT.length + 1));
+      for (const call of s.matchAll(RPC_CALL)) {
+        for (const q of call[1].matchAll(QUOTED_NAME)) set.add(q[1]);
+      }
+    }
+  }
+  return set;
 };
-const feNames = namesIn("app lib components design-system", "--include=*.ts --include=*.tsx");
-const scNames = namesIn("scripts", "--include=*.mjs --include=*.ts");
+const feNames = namesIn(["app", "lib", "components", "design-system"], [".ts", ".tsx"]);
+const scNames = namesIn(["scripts"], [".mjs", ".ts"]);
 
 const wired = granted.filter((g) => feNames.has(g));
 const rulerOnly = granted.filter((g) => !feNames.has(g) && scNames.has(g));

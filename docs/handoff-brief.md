@@ -1,7 +1,7 @@
 <!-- 这一份是 `npm run brief` 产生的，不要手改 —— 改了下一次跑就没了。
      每一个数字都是从仓库自己身上量出来的；量不到的印「量不到」。 -->
 
-# 交接单 · 2026-09-05
+# 交接单 · 2026-09-23
 
 一张**指路的单子**，不是那本帐。规矩跟历史在另外两份档案里 ——
 读完这一页再去读它们。
@@ -24,11 +24,12 @@
 
 | 档案 | 多大 | 是什么 |
 |---|---|---|
-| `docs/founder-points.md` | 1,049 行 · 31,295 字元 | **老板讲过的原则。** 永远适用，一条都不要跳 |
-| `docs/founder-tasks.md` | 14,733 行 · 499,613 字元 | **只加不改的帐**：每一件事当初为什么这样决定 |
+| `docs/founder-points.md` | 1,289 行 · 37,118 字元 | **老板讲过的原则。** 永远适用，一条都不要跳 |
+| `docs/founder-tasks.md` | 4,584 行 · 173,502 字元 | **还没做完的那几行** ＋ 做完的编号清单 |
+| `docs/founder-tasks-archive.md` | 23,497 行 · 789,519 字元 | **只加不改的帐**：每一件事当初为什么这样决定。**不自动读进来** |
 
-⚠️ 任务档太大，**贴不进多数工具**。用
-`grep -n "### 156" docs/founder-tasks.md` 去读某一条，不要整份读。
+⚠️ 封存档太大，**贴不进多数工具**。用
+`grep -n "### 156" docs/founder-tasks-archive.md` 去读某一条，不要整份读。
 
 **最要紧的七条**（其余去读原档）：
 
@@ -59,30 +60,10 @@
 2. **动之前先看 `git status`。** 那个档案已经被改过而不是自己改的 → **只登记不动手**
 3. **任务档写编号之前先拿最大的加一**，撞到了**改自己的号，不要改别人的**
 
-### 现在别人手上有（22 个档案，**一个都不要碰**）
+### 现在别人手上有（2 个档案，**一个都不要碰**）
 
-- `M app/[locale]/portal/[pageKey]/[recordId]/page.tsx`
-- `M app/[locale]/portal/[pageKey]/new/page.tsx`
-- `M app/[locale]/portal/[pageKey]/record-copy.ts`
-- `M design-system/editor/labels-en.ts`
-- `M design-system/editor/puck-config.tsx`
-- `M design-system/system-words.ts`
-- `M lib/portal/anchor-prune.ts`
-- `M lib/templates/copy/landing.ts`
-- `M lib/templates/industry-template.ts`
-- `M lib/templates/landing-templates.ts`
-- `M messages/en.json`
-- `M messages/zh.json`
-- `M package.json`
-- `M scripts/check-en.mjs`
-- `M scripts/check-reachable.py`
-- `?? app/[locale]/portal/(app)/today/`
-- `?? app/[locale]/portal/[pageKey]/new/follow-up-panel.tsx`
-- `?? app/api/site/booking/`
-- `?? design-system/components/site-booking.tsx`
-- `?? lib/templates/site-booking-block.test.ts`
-- `?? scripts/shoot-booking.mjs`
-- `?? scripts/shoot-follow-ups.mjs`
+- `M docs/founder-tasks.md`
+- `?? scripts/shoot-work-ai-face.mjs`
 
 ---
 
@@ -105,23 +86,28 @@
 
 | | 几支 |
 |---|---|
-| 资料库开出去的 | **168** |
-| 画面在呼叫的 | **95** |
-| 🔴 **只有尺子打过的** | **61** |
-| 一个地方都没碰过的 | 12 |
+| 资料库开出去的 | **340** |
+| 画面在呼叫的 | **224** |
+| 🔴 **只有尺子打过的** | **44** |
+| 一个地方都没碰过的 | 72 |
 
-**那 61 支每一支都用真的客户身分验过、每一支都有红过的守卫，
+**那 44 支每一支都用真的客户身分验过、每一支都有红过的守卫，
 而一个老板从头到尾找不到那颗按钮。**
 这是这个仓库的招牌毛病（「能力有、线没接」），而今天它长在最贵的地方。
 
-### 陌生人做得了几件事（9 支）
+### 陌生人做得了几件事（14 支）
 
 - `answer_shared_record`
+- `cancel_shared_appointment`
 - `get_public_site`
 - `party_portal`
+- `public_appointment`
 - `public_booking_slots`
+- `public_consent_form`
 - `public_shared_record`
+- `sign_consent`
 - `sign_delivery`
+- `submit_appointment_review`
 - `submit_party_request`
 - `submit_site_booking`
 - `submit_site_enquiry`
@@ -131,25 +117,25 @@
 
 ### 尺
 
-守卫 **44** 把（`npm run check:*`）· 探针 **78** 把。
+守卫 **108** 把（`npm run check:*`）· 探针 **123** 把。
 ⚠️ **数字只能否决，不能通过** —— 通过要用眼睛看那张图。
 
 ---
 
 ## 五 · 最近做完什么
 
-- `333ef28  Task 204 recorded`
-- `bb39057  Task 203, second half`
-- `ddc5e50  Ah Ming's own page, where the call actually gets made`
-- `72973e7  Task 203`
-- `c79a3d6  Who sent this job in, and what was promised`
-- `14c92b3  Task 202, and my 200 steps off the collision`
-- `1d9bd7b  Whether she turned up was printable, and unchangeable`
-- `26c721b  One next thing per document`
-- `24424a1  The page ruler stops measuring how few records the demo account has`
-- `4ecdc1a  Why the statement page cannot join the reachability list`
-- `ff27ce0  Commit each piece as it finishes`
-- `9d4d28d  Twenty-one doors that were already open`
+- `09b9223  Give staff their own tips figure on their record page`
+- `5933cba  Make Schedule's every remaining dead control actually respond`
+- `891694c  Make Audit Log's search and category filters actually work`
+- `cb512d4  Make Overview's navigation shortcuts actually navigate`
+- `7e5df36  Make Stylists' selectors, toggles and tags actually work`
+- `587fe94  Make Register's category tabs and search actually work`
+- `504a61a  Make Clients' segment pills and search actually work`
+- `f0adb4f  Make Lookbook's category chips and search actually work`
+- `f7aacc1  Make Stock's category tabs and search actually work`
+- `bc1dd00  Make Packages' category tabs, status pills and search actually work`
+- `3faab3e  Make Invoices' status filters and search box actually work`
+- `0e90f7f  Fix two real cross-page inconsistencies found on a fresh audit pass`
 
 ---
 
@@ -163,4 +149,4 @@
 
 ---
 
-<!-- 产生：npm run brief · 2026-09-05 -->
+<!-- 产生：npm run brief · 2026-09-23 -->
