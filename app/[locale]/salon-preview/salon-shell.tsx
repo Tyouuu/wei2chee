@@ -15,16 +15,18 @@ import Link from "next/link";
  * 2026-09-23) and the earlier three pages inherit the update rather than
  * keeping their own slightly different look.
  *
- * All five rows under Management have no page behind them yet. Rather than
- * link them to nothing (this repo's own record-table.tsx bans exactly that: a
- * button that does nothing when pressed), they render as plain inert rows so
- * the sidebar still reads complete without a single fake link in it.
+ * Four of the five rows under Management have no page behind them yet.
+ * Rather than link them to nothing (this repo's own record-table.tsx bans
+ * exactly that: a button that does nothing when pressed), they render as
+ * plain inert rows so the sidebar still reads complete without a single
+ * fake link in it.
  */
 export type SalonNavKey =
   | "overview"
   | "appointments-and-flow"
   | "register-and-checkout"
-  | "clients-and-profiles";
+  | "clients-and-profiles"
+  | "salon-stock-and-orders";
 
 const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
   { key: "overview", href: "/en/salon-preview/overview", icon: "dashboard", label: "Overview" },
@@ -48,12 +50,12 @@ const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }
   },
 ];
 
-const MANAGEMENT: { icon: string; label: string }[] = [
-  { icon: "inventory_2", label: "Salon Stock & Orders" },
-  { icon: "content_cut", label: "Stylists & Commission" },
-  { icon: "payments", label: "End of Day Cash" },
-  { icon: "receipt_long", label: "Invoices & Terminal" },
-  { icon: "verified_user", label: "System Audit Log" },
+const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: string }[] = [
+  { key: "salon-stock-and-orders", href: "/en/salon-preview/stock", icon: "inventory_2", label: "Salon Stock & Orders" },
+  { key: null, href: "", icon: "content_cut", label: "Stylists & Commission" },
+  { key: null, href: "", icon: "payments", label: "End of Day Cash" },
+  { key: null, href: "", icon: "receipt_long", label: "Invoices & Terminal" },
+  { key: null, href: "", icon: "verified_user", label: "System Audit Log" },
 ];
 
 export function MaterialSymbolsLink() {
@@ -123,16 +125,35 @@ export function SalonSidebar({ active }: { active: SalonNavKey }) {
               Management
             </div>
             <nav className="space-y-0.5">
-              {MANAGEMENT.map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] leading-5 font-normal text-[#5e5e67]/50 cursor-default select-none"
-                  title="Not built yet"
-                >
-                  <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                  <span>{item.label}</span>
-                </div>
-              ))}
+              {MANAGEMENT.map((item) =>
+                item.href ? (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className={
+                      "flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-[13.5px] leading-5 font-normal transition-colors " +
+                      (item.key === active
+                        ? "bg-[#000000] text-[#ffffff] font-medium shadow-sm"
+                        : "text-[#47464b] hover:bg-[#eeedf1] hover:text-[#1a1c1f]")
+                    }
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                    {item.key === active && <span className="material-symbols-outlined text-[14px]">chevron_right</span>}
+                  </Link>
+                ) : (
+                  <div
+                    key={item.label}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] leading-5 font-normal text-[#5e5e67]/50 cursor-default select-none"
+                    title="Not built yet"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </div>
+                ),
+              )}
             </nav>
           </div>
         </div>
