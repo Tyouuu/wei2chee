@@ -16,6 +16,13 @@ import { MaterialSymbolsLink, SalonSidebar } from "../salon-shell";
  * -- the item "+" buttons had no handler in the source either, so they stay
  * inert here too, matching what he actually designed rather than inventing
  * cart logic that doesn't exist yet.
+ *
+ * Category tabs and the search box (added on top of the literal source, part
+ * of the "make every button do something" pass) now really filter the 9
+ * catalog cards -- each service/product mapped to its tab by name, e.g.
+ * "Root Retouch Majirel 6.1" -> Color & Balayage. Still local-only, still no
+ * cart: filtering which cards are visible needed no new state shape beyond
+ * what was already here.
  */
 const PAYMENT_METHODS = [
   { key: "qr", icon: "qr_code_scanner", label: "DuitNow QR", note: "Instant Settlement" },
@@ -24,12 +31,15 @@ const PAYMENT_METHODS = [
   { key: "pass", icon: "loyalty", label: "Prepaid Pass", note: "Bal: RM 1,200" },
 ] as const;
 
-const CATEGORY_TABS = [
-  "All Catalog (10)",
-  "Cuts & Blowdry",
-  "Color & Balayage",
-  "Scalp & Spa Treatments",
-  "Retail Products (Take-home)",
+const CATEGORY_TABS: { label: string; names: string[] | null }[] = [
+  { label: "All Catalog (10)", names: null },
+  { label: "Cuts & Blowdry", names: ["Haircut & Signature Blowdry", "Men's Precision Fade & Wash"] },
+  { label: "Color & Balayage", names: ["Full Balayage & Gloss Lift", "Root Retouch Majirel 6.1"] },
+  {
+    label: "Scalp & Spa Treatments",
+    names: ["Kérastase Fusio-Dose Ritual", "Tokio Inkarami Bond Repair", "Brazilian Keratin Express Seal"],
+  },
+  { label: "Retail Products (Take-home)", names: ["Kérastase Chronologiste Oil", "Olaplex No. 3 Hair Perfector"] },
 ];
 
 const CATALOG: {
@@ -60,7 +70,17 @@ const PARKED_FOLIOS = [
 
 export default function SalonRegisterPreview() {
   const [method, setMethod] = useState<(typeof PAYMENT_METHODS)[number]["key"]>("qr");
+  const [activeTab, setActiveTab] = useState<(typeof CATEGORY_TABS)[number]["label"]>("All Catalog (10)");
+  const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const visibleCatalog = CATALOG.filter((item) => {
+    const tab = CATEGORY_TABS.find((t) => t.label === activeTab);
+    if (tab?.names && !tab.names.includes(item.name)) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return item.name.toLowerCase().includes(q) || item.tag.toLowerCase().includes(q);
+  });
 
   useEffect(() => {
     const onKeydown = (e: KeyboardEvent) => {
@@ -150,6 +170,8 @@ export default function SalonRegisterPreview() {
                           className="w-full h-10 pl-10 pr-20 rounded-lg bg-[#ffffff] text-[#1a1c1f] placeholder:text-[#5e5e67]/70 focus:outline-none focus:ring-1 focus:ring-[#000000] shadow-sm border border-[#c8c5cb]/30 text-[13.5px] leading-5 font-normal"
                           placeholder="Search service, shade code, or retail SKU... (⌘K)"
                           type="text"
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
                         />
                         <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
                           <kbd className="px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#5e5e67] bg-[#eeedf1] rounded border border-[#c8c5cb]/20">
@@ -169,24 +191,30 @@ export default function SalonRegisterPreview() {
 
                     {/* Category Tabs */}
                     <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-                      {CATEGORY_TABS.map((tab, i) => (
+                      {CATEGORY_TABS.map((tab) => (
                         <button
-                          key={tab}
+                          key={tab.label}
+                          onClick={() => setActiveTab(tab.label)}
                           className={
                             "h-8 px-3.5 rounded-full text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase transition-colors active:scale-[0.97] flex items-center whitespace-nowrap " +
-                            (i === 0
+                            (activeTab === tab.label
                               ? "bg-[#000000] text-[#ffffff] shadow-sm"
                               : "bg-[#ffffff] hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] border border-[#c8c5cb]/30")
                           }
                         >
-                          {tab}
+                          {tab.label}
                         </button>
                       ))}
                     </div>
 
                     {/* Item Cards Grid */}
+                    {visibleCatalog.length === 0 && (
+                      <div className="p-8 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm text-center text-[13.5px] text-[#5e5e67]">
+                        No services or products match {search.trim() ? `"${search.trim()}"` : "this category"}.
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {CATALOG.map((item) => (
+                      {visibleCatalog.map((item) => (
                         <div
                           key={item.name}
                           className={
