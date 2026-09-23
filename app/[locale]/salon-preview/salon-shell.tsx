@@ -23,7 +23,15 @@ import Link from "next/link";
  * is still explicitly in the first phase. Only the one real, structural
  * difference (a new nav item) was added.
  *
- * Four of the five rows under Management have no page behind them yet.
+ * The Stylist Profile source (also 2026-09-23) came with the SAME sidebar
+ * as Lookbook -- "badge" for Stylists, "account_balance_wallet" for End of
+ * Day Cash, "Stylists & Staff" not "Stylists & Commission". Two independent
+ * sources agreeing now (not just one drifting) is enough signal to adopt
+ * those two icon/label choices for real, since this update is wiring that
+ * exact item anyway. The rest of Management (End of Day Cash, Invoices &
+ * Terminal, System Audit Log) still has no page behind it, so still inert.
+ *
+ * Three of the five rows under Management have no page behind them yet.
  * Rather than link them to nothing (this repo's own record-table.tsx bans
  * exactly that: a button that does nothing when pressed), they render as
  * plain inert rows so the sidebar still reads complete without a single
@@ -35,7 +43,8 @@ export type SalonNavKey =
   | "register-and-checkout"
   | "clients-and-profiles"
   | "lookbook-and-formulas"
-  | "salon-stock-and-orders";
+  | "salon-stock-and-orders"
+  | "stylists-and-staff";
 
 const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
   { key: "overview", href: "/en/salon-preview/overview", icon: "dashboard", label: "Overview" },
@@ -67,8 +76,8 @@ const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }
 
 const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: string }[] = [
   { key: "salon-stock-and-orders", href: "/en/salon-preview/stock", icon: "inventory_2", label: "Salon Stock & Orders" },
-  { key: null, href: "", icon: "content_cut", label: "Stylists & Commission" },
-  { key: null, href: "", icon: "payments", label: "End of Day Cash" },
+  { key: "stylists-and-staff", href: "/en/salon-preview/stylists", icon: "badge", label: "Stylists & Staff" },
+  { key: null, href: "", icon: "account_balance_wallet", label: "End of Day Cash" },
   { key: null, href: "", icon: "receipt_long", label: "Invoices & Terminal" },
   { key: null, href: "", icon: "verified_user", label: "System Audit Log" },
 ];

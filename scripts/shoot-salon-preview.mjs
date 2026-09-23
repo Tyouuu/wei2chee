@@ -21,6 +21,7 @@ for (const [name, path, width, height] of [
   ["clients-1440", "clients", 1440, 1300],
   ["stock-1440", "stock", 1440, 1100],
   ["lookbook-1440", "lookbook", 1440, 1500],
+  ["stylists-1440", "stylists", 1440, 1500],
 ]) {
   const page = await b.newPage({ viewport: { width, height } });
   const errors = [];
