@@ -54,13 +54,34 @@ function nowMs(): number {
  * 401's real clock-in/out) -- if nobody has clocked in today (most accounts
  * won't have adopted that feature yet), it honestly falls back to "Full
  * Roster · N Stylists" rather than claiming zero people are working.
+ *
+ * ── Task 415: every control here is now backed by a table ─────────────────
+ *
+ * This page used to answer half its buttons with an alert saying "isn't
+ * wired up yet". Now, with nothing new in the database:
+ *
+ *   - ‹ › Today            `?date=YYYY-MM-DD` (anything that is not a real
+ *                          date falls back to today); the query, the "now"
+ *                          line and "next arrivals" follow the chosen day.
+ *   - Gap & Open Slots     every open stretch of the day, each one bookable.
+ *   - Week                 bookings per stylist per day (cancelled ones not
+ *                          counted), a day links to that day.
+ *   - New Appointment, a   add_appointment, through a dialog that can
+ *     gap, Book Slot,      prefill stylist and time from a gap. The database
+ *     Custom Time Slot     answers a clash in its own words, shown as they are.
+ *   - Click an appointment mark_appointment_arrived / set_appointment_status
+ *                          (done, no show, cancelled) + a link to its record.
+ *                          Marking done says which package session was used.
  */
 export default async function SalonSchedulePreview({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ date?: string }>;
 }) {
   const { locale } = await params;
+  const { date: dateParam } = await searchParams;
   const user = await getSessionUser();
   if (!user) redirect(`/${locale}/login`);
 
@@ -78,17 +99,34 @@ export default async function SalonSchedulePreview({
   const todayStr = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kuala_Lumpur",
   }).format(new Date());
-  const dayStartUtc = `${todayStr}T00:00:00+08:00`;
-  const dayEndUtc = `${todayStr}T23:59:59.999+08:00`;
+
+  // ── Which day: `?date=YYYY-MM-DD`, anything that is not a real date falls
+  // back to today. Plain string arithmetic on the calendar date (Malaysia has
+  // no daylight saving, so a day is always 24h and this cannot drift).
+  const isRealDate = (s: string | undefined): s is string =>
+    !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
+  const shiftDate = (s: string, days: number) =>
+    new Date(new Date(`${s}T00:00:00Z`).getTime() + days * 86_400_000).toISOString().slice(0, 10);
+  const dateStr = isRealDate(dateParam) ? dateParam : todayStr;
+  const isToday = dateStr === todayStr;
+  const prevDate = shiftDate(dateStr, -1);
+  const nextDate = shiftDate(dateStr, 1);
+  const dayStartUtc = `${dateStr}T00:00:00+08:00`;
+  const dayEndUtc = `${dateStr}T23:59:59.999+08:00`;
   const dayLabel = new Intl.DateTimeFormat("en-MY", {
     timeZone: "Asia/Kuala_Lumpur",
     weekday: "long",
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(`${todayStr}T12:00:00+08:00`));
+  }).format(new Date(`${dateStr}T12:00:00+08:00`));
 
-  const [staffRes, apptRes, clockedInRes] = await Promise.all([
+  // The week (Monday first) the chosen day sits in, for the Week view.
+  const mondayOffset = (new Date(`${dateStr}T00:00:00Z`).getUTCDay() + 6) % 7;
+  const weekStart = shiftDate(dateStr, -mondayOffset);
+  const weekEnd = shiftDate(weekStart, 6);
+
+  const [staffRes, apptRes, clockedInRes, weekRes, customerRes] = await Promise.all([
     supabase
       .from("directory_entries")
       .select("id, name, status")
@@ -106,6 +144,24 @@ export default async function SalonSchedulePreview({
       .lte("starts_at", dayEndUtc)
       .order("starts_at"),
     supabase.rpc("who_is_clocked_in", { in_project_id: projectId }),
+    supabase
+      .from("appointments")
+      .select("staff_id, starts_at")
+      .eq("project_id", projectId)
+      .eq("module_key", "bookings")
+      .eq("kind", "booking")
+      .is("archived_at", null)
+      .neq("status", "cancelled")
+      .gte("starts_at", `${weekStart}T00:00:00+08:00`)
+      .lte("starts_at", `${weekEnd}T23:59:59.999+08:00`),
+    supabase
+      .from("directory_entries")
+      .select("id, name")
+      .eq("project_id", projectId)
+      .eq("module_key", "customers")
+      .is("archived_at", null)
+      .order("name")
+      .limit(1000),
   ]);
 
   type StaffRow = { id: string; name: string; status: string | null };
@@ -171,7 +227,8 @@ export default async function SalonSchedulePreview({
     const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
     hourLabels.push({ time: `${String(displayHour).padStart(2, "0")}:00`, meridiem, current: h === currentHour });
   }
-  const nowInWindow = nowMinutes >= windowStartMin && nowMinutes < windowEndMin;
+  // The "now" line only means something on today's grid.
+  const nowInWindow = isToday && nowMinutes >= windowStartMin && nowMinutes < windowEndMin;
   const nowLeft = nowInWindow ? (nowMinutes - windowStartMin) * PX_PER_MIN : null;
   const nowLabel = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kuala_Lumpur",
@@ -254,6 +311,10 @@ export default async function SalonSchedulePreview({
           timeLabel: timeRangeLabel(a.starts_at, a.ends_at),
           statusLabel: st.label,
           statusStyle: st.style,
+          status: a.status,
+          arrived: !!a.arrived_at,
+          href: `/${locale}/portal/bookings/${a.id}`,
+          staffName: staff.name,
         });
       }
       busyMinutes += Math.min(endMin, windowEndMin) - Math.max(startMin, windowStartMin);
@@ -297,7 +358,14 @@ export default async function SalonSchedulePreview({
       : null;
 
   const nextArrivals = apptRows
-    .filter((a) => a.kind === "booking" && a.status === "booked" && !a.arrived_at && new Date(a.starts_at).getTime() > nowMs())
+    .filter(
+      (a) =>
+        a.kind === "booking" &&
+        a.status === "booked" &&
+        !a.arrived_at &&
+        // Today: only the ones still to come. Another day: everyone still booked.
+        (!isToday || new Date(a.starts_at).getTime() > nowMs()),
+    )
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
     .slice(0, 2)
     .map((a) => ({
@@ -327,10 +395,50 @@ export default async function SalonSchedulePreview({
     .sort((a, b) => a.startMinutesOfDay - b.startMinutesOfDay)
     .slice(0, 3);
 
+  // ── Week view: bookings per stylist per day, from the week's own query.
+  const dayKey = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(iso));
+  const weekDates = Array.from({ length: 7 }, (_, i) => shiftDate(weekStart, i));
+  const weekCounts = new Map<string, number[]>(); // staff id (or "" for unassigned) -> 7 counts
+  for (const a of ((weekRes.data ?? []) as { staff_id: string | null; starts_at: string }[])) {
+    const idx = weekDates.indexOf(dayKey(a.starts_at));
+    if (idx < 0) continue;
+    const k = a.staff_id ?? "";
+    const row = weekCounts.get(k) ?? [0, 0, 0, 0, 0, 0, 0];
+    row[idx] += 1;
+    weekCounts.set(k, row);
+  }
+  const weekRows = [
+    ...staffRows.map((s) => ({ id: s.id, name: s.name, counts: weekCounts.get(s.id) ?? [0, 0, 0, 0, 0, 0, 0] })),
+    ...(weekCounts.has("") ? [{ id: "", name: "Anyone", counts: weekCounts.get("") as number[] }] : []),
+  ];
+  const shortDate = (d: string, year: boolean) =>
+    new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", day: "numeric", month: "short", ...(year ? { year: "numeric" as const } : {}) }).format(
+      new Date(`${d}T00:00:00Z`),
+    );
+  const week = {
+    label: `${shortDate(weekStart, false)} – ${shortDate(weekEnd, true)}`,
+    days: weekDates.map((d, i) => ({
+      date: d,
+      weekday: new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short" }).format(new Date(`${d}T00:00:00Z`)),
+      dayNum: Number(d.slice(8, 10)),
+      isSelected: d === dateStr,
+      isToday: d === todayStr,
+      total: weekRows.reduce((s, r) => s + r.counts[i], 0),
+    })),
+    rows: weekRows,
+  };
+
   return (
     <>
       <MaterialSymbolsLink />
       <ScheduleClient
+        projectId={projectId}
+        dateStr={dateStr}
+        isToday={isToday}
+        prevDate={prevDate}
+        nextDate={nextDate}
+        week={week}
+        customers={((customerRes.data ?? []) as { id: string; name: string }[]).map((c) => ({ id: c.id, name: c.name }))}
         businessName={businessName}
         dayLabel={dayLabel}
         lanes={lanes}

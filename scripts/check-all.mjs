@@ -58,6 +58,7 @@ const GATES = [
   { name: "appointment-audit", cmd: "npm", args: ["run", "check:appointment-audit"], slow: false },
   { name: "arrival", cmd: "npm", args: ["run", "check:arrival"], slow: false },
   { name: "audit-actor", cmd: "npm", args: ["run", "check:audit-actor"], slow: false },
+  { name: "salon-pages", cmd: "npm", args: ["run", "check:salon-pages"], slow: false },
   { name: "backbar", cmd: "npm", args: ["run", "check:backbar"], slow: false },
   { name: "batches", cmd: "npm", args: ["run", "check:batches"], slow: false },
   { name: "bookings", cmd: "npm", args: ["run", "check:bookings"], slow: false },

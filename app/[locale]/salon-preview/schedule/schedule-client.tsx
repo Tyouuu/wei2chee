@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { SalonSidebar } from "../salon-shell";
+import { AppointmentDialog, BookingDialog, type BookingPrefill, type OpenAppointment } from "./schedule-dialogs";
 
 export type LaneItem =
   | {
@@ -14,6 +16,10 @@ export type LaneItem =
       timeLabel: string;
       statusLabel: string;
       statusStyle: "solid" | "outline" | "muted";
+      status: "booked" | "done" | "no_show" | "cancelled";
+      arrived: boolean;
+      href: string;
+      staffName: string;
     }
   | { type: "block"; left: number; width: number; label: string; timeLabel: string }
   | {
@@ -39,8 +45,17 @@ export type StaffLane = {
   items: LaneItem[];
 };
 
+export type WeekData = {
+  label: string;
+  days: { date: string; weekday: string; dayNum: number; isSelected: boolean; isToday: boolean; total: number }[];
+  rows: { id: string; name: string; counts: number[] }[];
+};
+
 type Status = "inService" | "upcoming" | "completed";
 type StatusStyle = "solid" | "outline" | "muted";
+
+const hhmm = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+const SCHEDULE = "/en/salon-preview/schedule";
 
 const STATUS_STYLE: Record<StatusStyle, string> = {
   solid: "border-2 border-[#000000] shadow-sm hover:shadow",
@@ -54,6 +69,13 @@ const STATUS_BADGE: Record<StatusStyle, string> = {
 };
 
 export function ScheduleClient({
+  projectId,
+  dateStr,
+  isToday,
+  prevDate,
+  nextDate,
+  week,
+  customers,
   businessName,
   dayLabel,
   lanes,
@@ -69,6 +91,13 @@ export function ScheduleClient({
   nextArrivals,
   quickSlots,
 }: {
+  projectId: string;
+  dateStr: string;
+  isToday: boolean;
+  prevDate: string;
+  nextDate: string;
+  week: WeekData;
+  customers: { id: string; name: string }[];
   businessName: string;
   dayLabel: string;
   lanes: StaffLane[];
@@ -89,6 +118,20 @@ export function ScheduleClient({
   const [stylistMenuOpen, setStylistMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  // The two dialogs: booking form (blank, or prefilled from an open slot) and
+  // the appointment that was clicked.
+  const [booking, setBooking] = useState<{ prefill: BookingPrefill | null } | null>(null);
+  const [openAppt, setOpenAppt] = useState<OpenAppointment | null>(null);
+
+  const bookSlot = (gap: Extract<LaneItem, { type: "gap" }>) =>
+    setBooking({
+      // An open stretch can be hours long; offer the first hour, she can widen it.
+      prefill: {
+        staffId: gap.staffId,
+        start: hhmm(gap.startMinutesOfDay),
+        end: hhmm(gap.startMinutesOfDay + Math.min(gap.minutes, 60)),
+      },
+    });
 
   const scrollTimeline = (left: number) => {
     document.getElementById("timeline-scroll-area")?.scrollTo({ left, behavior: "smooth" });
@@ -111,8 +154,14 @@ export function ScheduleClient({
     { key: "completed", label: `Completed (${totals.completedCount})` },
   ];
 
-  const noOtherDay = () =>
-    alert("This view only shows today's real bookings -- date navigation isn't wired up yet.");
+  // Every open stretch of the day, for the "Gap & Open Slots" view.
+  const allGaps = lanes
+    .flatMap((lane) =>
+      lane.items
+        .filter((it): it is Extract<LaneItem, { type: "gap" }> => it.type === "gap")
+        .map((it) => ({ ...it, laneName: lane.name })),
+    )
+    .sort((a, b) => a.startMinutesOfDay - b.startMinutesOfDay || a.laneName.localeCompare(b.laneName));
 
   return (
     <div
@@ -181,7 +230,7 @@ export function ScheduleClient({
                     </button>
                   </div>
                   <button
-                    onClick={() => alert("New Appointment booking form isn't wired up on this page yet -- use the portal's Bookings page to add one.")}
+                    onClick={() => setBooking({ prefill: null })}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#000000] text-[#ffffff] hover:bg-neutral-800 transition-colors text-[13.5px] leading-5 font-normal shadow-sm cursor-pointer shrink-0 active:scale-[0.99]"
                   >
                     <span className="material-symbols-outlined text-[18px]">add</span>
@@ -194,42 +243,46 @@ export function ScheduleClient({
                 </div>
               </div>
 
-              {viewTab !== "day" && (
-                <div className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#5e5e67] bg-[#f3f3f7] border border-[#c8c5cb]/30 rounded-lg px-3 py-2">
-                  {viewTab === "gap" ? "Gap & Open Slots" : "Week View"} isn&apos;t built as a separate layout yet --
-                  showing today&apos;s Day Schedule below.
-                </div>
-              )}
-
               {/* Filters, Date Controls & Status Summary */}
               <div className="flex items-center justify-between pt-1 gap-4 flex-wrap">
                 <div className="flex items-center gap-2.5">
                   <div className="flex items-center rounded-lg bg-[#ffffff] border border-[#c8c5cb]/50 shadow-2xs overflow-hidden">
-                    <button
-                      onClick={noOtherDay}
+                    <Link
+                      href={`${SCHEDULE}?date=${prevDate}`}
                       className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]"
                       title="Previous Day"
+                      aria-label="Previous day"
                     >
                       <span className="material-symbols-outlined text-[16px]">chevron_left</span>
-                    </button>
+                    </Link>
                     <div className="px-3 py-1.5 text-[13.5px] leading-5 font-normal text-[#1a1c1f] border-x border-[#c8c5cb]/30 flex items-center gap-2">
                       <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">calendar_today</span>
-                      <span>{dayLabel}</span>
+                      <span data-testid="day-label">{dayLabel}</span>
                     </div>
-                    <button
-                      onClick={noOtherDay}
+                    <Link
+                      href={`${SCHEDULE}?date=${nextDate}`}
                       className="px-2.5 py-1.5 hover:bg-[#eeedf1] text-[#5e5e67] hover:text-[#1a1c1f] transition-colors active:scale-[0.97]"
                       title="Next Day"
+                      aria-label="Next day"
                     >
                       <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-                    </button>
+                    </Link>
                   </div>
-                  <button
-                    className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] bg-[#eeedf1] shadow-2xs cursor-default"
-                    title="You're already viewing today"
-                  >
-                    Today
-                  </button>
+                  {isToday ? (
+                    <span
+                      className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] bg-[#eeedf1] shadow-2xs"
+                      title="You're already viewing today"
+                    >
+                      Today
+                    </span>
+                  ) : (
+                    <Link
+                      href={SCHEDULE}
+                      className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/50 text-[13.5px] leading-5 font-normal text-[#1a1c1f] bg-[#ffffff] hover:bg-[#eeedf1] shadow-2xs transition-colors"
+                    >
+                      Back to Today
+                    </Link>
+                  )}
                   <div className="relative">
                     <button
                       onClick={() => setStylistMenuOpen((v) => !v)}
@@ -310,7 +363,117 @@ export function ScheduleClient({
 
             {/* Main Canvas: Gantt Flow & Dispatch Drawer */}
             <div className="p-8 flex gap-6 items-start">
+              {/* Gap & Open Slots: every open stretch of the day, biggest picture of where a walk-in fits */}
+              {viewTab === "gap" && (
+                <div className="flex-1 min-w-0 bg-[#ffffff] border border-[#c8c5cb]/40 rounded-xl shadow-sm flex flex-col overflow-hidden">
+                  <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex items-center justify-between">
+                    <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#000000]">
+                      Open Slots · {dayLabel}
+                    </span>
+                    <span className="text-[11.5px] font-mono px-2 py-0.5 rounded bg-[#eeedf1] text-[#5e5e67] border border-[#c8c5cb]/30">
+                      {allGaps.length} open
+                    </span>
+                  </div>
+                  {allGaps.length === 0 ? (
+                    <p data-testid="gap-empty" className="p-10 text-center text-[13.5px] text-[#5e5e67]">
+                      Nothing open on this day — every stylist is booked through the shown hours.
+                    </p>
+                  ) : (
+                    <div className="divide-y divide-[#c8c5cb]/20">
+                      {allGaps.map((g, i) => (
+                        <div key={i} data-testid="gap-row" className="px-5 py-3 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#000000] shrink-0" />
+                            <div className="min-w-0">
+                              <div className="text-[13.5px] font-semibold text-[#1a1c1f] truncate">{g.laneName}</div>
+                              <div className="text-[11.5px] font-mono text-[#5e5e67]">
+                                {g.timeLabel} · {g.minutes} min open
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => bookSlot(g)}
+                            className="px-3 py-1.5 rounded-lg border border-[#c8c5cb]/60 hover:border-[#000000] hover:bg-[#eeedf1] text-[12.5px] font-medium text-[#1a1c1f] transition-colors"
+                          >
+                            Book this slot
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Week View: bookings per stylist per day; a day opens that day's schedule */}
+              {viewTab === "week" && (
+                <div className="flex-1 min-w-0 bg-[#ffffff] border border-[#c8c5cb]/40 rounded-xl shadow-sm overflow-hidden">
+                  <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex items-center justify-between">
+                    <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#000000]">
+                      Week · {week.label}
+                    </span>
+                    <span className="text-[11.5px] text-[#5e5e67]">Bookings per stylist · click a day to open it</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table data-testid="week-table" className="w-full text-left text-[13px]">
+                      <thead>
+                        <tr className="bg-[#f3f3f7] border-b border-[#c8c5cb]/30">
+                          <th className="py-3 px-4 text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]">Stylist</th>
+                          {week.days.map((d) => (
+                            <th key={d.date} className="py-2 px-2 text-center">
+                              <Link
+                                href={`${SCHEDULE}?date=${d.date}`}
+                                data-testid="week-day"
+                                className={
+                                  "inline-flex flex-col items-center px-3 py-1 rounded-lg transition-colors " +
+                                  (d.isSelected ? "bg-[#000000] text-[#ffffff]" : "hover:bg-[#eeedf1] text-[#1a1c1f]")
+                                }
+                              >
+                                <span className="text-[11px] font-medium uppercase">{d.weekday}</span>
+                                <span className="text-[15px] font-semibold leading-tight">{d.dayNum}</span>
+                                {d.isToday && <span className="text-[9px] uppercase tracking-wider">today</span>}
+                              </Link>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#c8c5cb]/20">
+                        {week.rows.length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="p-10 text-center text-[13.5px] text-[#5e5e67]">
+                              No staff members are set up yet.
+                            </td>
+                          </tr>
+                        )}
+                        {week.rows.map((r) => (
+                          <tr key={r.id || "anyone"}>
+                            <td className="py-3 px-4 font-medium text-[#1a1c1f]">{r.name}</td>
+                            {r.counts.map((n, i) => (
+                              <td key={i} className="py-3 px-2 text-center tabular-nums">
+                                {n > 0 ? (
+                                  <span className="inline-flex min-w-7 justify-center px-2 py-0.5 rounded bg-[#eeedf1] text-[#1a1c1f] font-semibold">{n}</span>
+                                ) : (
+                                  <span className="text-[#c8c5cb]">–</span>
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                        <tr className="bg-[#f3f3f7]/50">
+                          <td className="py-3 px-4 text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]">All stylists</td>
+                          {week.days.map((d) => (
+                            <td key={d.date} data-testid="week-total" className="py-3 px-2 text-center tabular-nums font-semibold text-[#1a1c1f]">
+                              {d.total}
+                            </td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {/* Timeline Board */}
+              {viewTab === "day" && (
               <div className="flex-1 min-w-0 bg-[#ffffff] border border-[#c8c5cb]/40 rounded-xl shadow-sm flex flex-col overflow-hidden">
                 <div className="px-5 py-3 border-b border-[#c8c5cb]/30 flex flex-wrap items-center justify-between gap-3 bg-[#ffffff]">
                   <div className="flex items-center gap-3.5">
@@ -355,11 +518,11 @@ export function ScheduleClient({
                         <span className="inline-block w-2 h-2 rounded-full bg-[#000000] animate-pulse" />
                         <span className="font-semibold">{nowLabel} NOW</span>
                       </div>
-                    ) : (
+                    ) : isToday ? (
                       <div className="flex items-center gap-1.5 text-[11.5px] text-[#5e5e67] font-mono bg-[#f3f3f7] px-2 py-1 rounded border border-[#c8c5cb]/30">
                         <span>Outside shown hours ({nowLabel})</span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
@@ -444,7 +607,7 @@ export function ScheduleClient({
                                     style={{ left: item.left + 8, width: Math.max(item.width - 16, 40) }}
                                   >
                                     <button
-                                      onClick={() => alert(`Slot booking with ${lane.name} at ${item.timeLabel} isn't wired up yet.`)}
+                                      onClick={() => bookSlot(item)}
                                       className="h-full w-full rounded-lg border-2 border-dashed border-[#c8c5cb]/50 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] flex flex-col items-center justify-center p-2 hover:bg-[#f3f3f7]/60 transition-all text-center"
                                     >
                                       <span className="material-symbols-outlined text-[16px] text-[#000000]">add_circle</span>
@@ -475,7 +638,20 @@ export function ScheduleClient({
                                   style={{ left: item.left + 8, width: Math.max(item.width - 16, 60) }}
                                 >
                                   <div
-                                    onClick={() => alert(`${item.guestName} — ${item.service} (${item.timeLabel}, ${item.statusLabel.toLowerCase()})`)}
+                                    onClick={() =>
+                                      setOpenAppt({
+                                        id: item.id,
+                                        guestName: item.guestName,
+                                        service: item.service,
+                                        timeLabel: item.timeLabel,
+                                        statusLabel: item.statusLabel,
+                                        status: item.status,
+                                        arrived: item.arrived,
+                                        href: item.href,
+                                        staffName: item.staffName,
+                                      })
+                                    }
+                                    data-testid="appt-card"
                                     className={
                                       "h-full bg-[#ffffff] rounded-lg p-3 flex flex-col justify-between transition-all cursor-pointer " +
                                       STATUS_STYLE[item.statusStyle as keyof typeof STATUS_STYLE]
@@ -520,6 +696,7 @@ export function ScheduleClient({
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Right Side: Daily Capacity & Booking Triage */}
               <div className="w-[310px] shrink-0 flex flex-col gap-4">
@@ -580,7 +757,7 @@ export function ScheduleClient({
                         </div>
                         <div className="flex items-center justify-end pt-1 border-t border-[#c8c5cb]/20">
                           <button
-                            onClick={() => alert(`Slot booking with ${slot.staffName} at ${slot.timeLabel} isn't wired up yet.`)}
+                            onClick={() => bookSlot(slot)}
                             className="px-2.5 py-1 rounded text-[11.5px] leading-4 tracking-[0.04em] font-medium transition-colors border border-[#c8c5cb]/60 hover:border-[#000000] text-[#1a1c1f] hover:bg-[#eeedf1]"
                           >
                             Book Slot
@@ -590,7 +767,7 @@ export function ScheduleClient({
                     ))}
                   </div>
                   <button
-                    onClick={() => alert("Custom time slot picker isn't wired up on this page yet.")}
+                    onClick={() => setBooking({ prefill: null })}
                     className="w-full mt-0.5 py-2 rounded-lg border border-dashed border-[#c8c5cb]/50 hover:border-[#000000] text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1] active:scale-[0.99] text-[13.5px] leading-5 font-normal transition-all flex items-center justify-center gap-1.5"
                   >
                     <span className="material-symbols-outlined text-[16px]">calendar_add_on</span>
@@ -640,6 +817,19 @@ export function ScheduleClient({
           </div>
         </main>
       </div>
+
+      {booking && (
+        <BookingDialog
+          projectId={projectId}
+          dateStr={dateStr}
+          dayLabel={dayLabel}
+          customers={customers}
+          staff={lanes.map((l) => ({ id: l.id, name: l.name }))}
+          prefill={booking.prefill}
+          onClose={() => setBooking(null)}
+        />
+      )}
+      {openAppt && <AppointmentDialog appt={openAppt} onClose={() => setOpenAppt(null)} />}
     </div>
   );
 }
