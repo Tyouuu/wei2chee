@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { SalonSidebar } from "../salon-shell";
+import { BookNextSheet, EditClientSheet, NewClientSheet, RedeemSheet } from "./client-panels";
 
 export type ClientRow = {
   id: string;
@@ -36,6 +38,12 @@ export type ClientRow = {
     amountCents: number | null;
   }[];
   primaryStylist: string | null;
+  primaryStylistId: string | null;
+  /** Her most recent completed visit: what "Book Next" starts from. */
+  lastVisit: { service: string; startTime: string; minutes: number } | null;
+  nextBooking: { dateLabel: string; timeLabel: string; service: string; staffName: string | null } | null;
+  /** Her last five real payments. Empty for anyone but the owner. */
+  recentPayments: { id: string; docNo: string; dateLabel: string; method: string; amountCents: number }[];
   searchText: string;
 };
 
@@ -48,23 +56,33 @@ function ringgit(cents: number): string {
 function shortDate(iso: string): string {
   return new Intl.DateTimeFormat("en-MY", { timeZone: "Asia/Kuala_Lumpur", month: "short", day: "2-digit" }).format(new Date(`${iso}T12:00:00+08:00`));
 }
-function notWired(what: string) {
-  alert(`${what} isn't wired up on this page yet.`);
-}
+const METHOD_LABEL: Record<string, string> = { cash: "Cash", card: "Card", qr: "QR", transfer: "Transfer", ewallet: "E-wallet", credit: "Credit" };
 
 const PAGE_SIZE = 25;
+
+type Panel = "new" | "edit" | "book" | "redeem" | null;
 
 export function ClientsClient({
   businessName,
   clients,
   canSeeMoney,
+  locale,
+  projectId,
+  staff,
   initialSelectedId = null,
 }: {
   businessName: string;
   clients: ClientRow[];
   canSeeMoney: boolean;
+  locale: string;
+  projectId: string;
+  staff: { id: string; name: string }[];
   initialSelectedId?: string | null;
 }) {
+  const [panel, setPanel] = useState<Panel>(null);
+  // Set the moment a client is saved, until the refreshed list has her in it:
+  // otherwise the folio would flash the first client in the list meanwhile.
+  const [justCreated, setJustCreated] = useState<string | null>(null);
   const [activeSegment, setActiveSegment] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
@@ -106,7 +124,11 @@ export function ClientsClient({
   const pageClamped = Math.min(page, totalPages);
   const pageClients = filtered.slice((pageClamped - 1) * PAGE_SIZE, pageClamped * PAGE_SIZE);
 
-  const selected = clients.find((c) => c.id === selectedId) ?? filtered[0] ?? null;
+  const found = clients.find((c) => c.id === selectedId);
+  const opening = !found && justCreated !== null && justCreated === selectedId;
+  const selected = found ?? (opening ? null : filtered[0] ?? null);
+  const tags = useMemo(() => [...new Set(clients.map((c) => c.status).filter(Boolean))], [clients]);
+  const canUsePass = (selected?.activePackages ?? []).some((p) => p.sessionsLeft > 0);
 
   // Scoped to the current page, not the whole filtered list -- a letter
   // button has to have a real row to jump to on the page it's shown on.
@@ -193,7 +215,7 @@ export function ClientsClient({
                       <span>Export CSV</span>
                     </button>
                     <button
-                      onClick={() => notWired("Adding a new client folio from this page")}
+                      onClick={() => setPanel("new")}
                       className="h-9 px-3.5 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] text-[13.5px] leading-5 font-medium transition-colors flex items-center gap-1.5 shadow-sm"
                     >
                       <span className="material-symbols-outlined text-[16px]">add</span>
@@ -389,14 +411,14 @@ export function ClientsClient({
                 <section aria-label="Dedicated Client Dossier" className="lg:col-span-7 xl:col-span-8 flex flex-col gap-5">
                   {!selected ? (
                     <div className="bg-[#ffffff] rounded-xl p-10 shadow-sm border border-[#c8c5cb]/30 text-center text-[13.5px] text-[#77767b]">
-                      Select a client from the directory to see their folio.
+                      {opening ? "Opening her folio…" : "Select a client from the directory to see their folio."}
                     </div>
                   ) : (
                     <>
                       {/* Hero */}
                       <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#c8c5cb]/30">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#eeedf1]">
-                          <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-4 pb-3 border-b border-[#eeedf1]">
+                          <div className="flex items-start gap-4">
                             <div className="w-16 h-16 rounded-full bg-[#000000] text-[#ffffff] flex items-center justify-center text-xl leading-7 tracking-[-0.015em] font-semibold shrink-0 ring-4 ring-[#f3f3f7] shadow-sm">
                               {selected.initials}
                             </div>
@@ -430,9 +452,19 @@ export function ClientsClient({
                                   </>
                                 )}
                               </div>
+                              {selected.nextBooking && (
+                                <div data-testid="next-booking" className="flex items-center gap-1.5 font-mono text-[12px] text-[#000000] font-semibold mt-1.5">
+                                  <span className="material-symbols-outlined text-[13px]">event_upcoming</span>
+                                  <span>
+                                    Next: {selected.nextBooking.dateLabel} · {selected.nextBooking.timeLabel}
+                                    {selected.nextBooking.service ? ` · ${selected.nextBooking.service}` : ""}
+                                    {selected.nextBooking.staffName ? ` · ${selected.nextBooking.staffName}` : ""}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-wrap sm:justify-end shrink-0">
+                          <div className="flex items-center gap-2 flex-wrap">
                             {selected.whatsapp ? (
                               <a
                                 href={`https://wa.me/${selected.whatsapp.replace(/\D/g, "")}`}
@@ -445,14 +477,21 @@ export function ClientsClient({
                               </a>
                             ) : null}
                             <button
-                              onClick={() => notWired("Booking her next appointment from this page")}
-                              className="h-8 px-3 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm border border-[#eeedf1]"
+                              onClick={() => setPanel("book")}
+                              className="h-8 px-3 rounded-lg bg-[#000000] hover:bg-[#1b1b1e] active:scale-[0.97] text-[#ffffff] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm"
                             >
-                              <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">calendar_today</span>
+                              <span className="material-symbols-outlined text-[15px]">calendar_today</span>
                               <span>Book Next</span>
                             </button>
+                            <Link
+                              href={`/${locale}/salon-preview/register?client=${selected.id}`}
+                              className="h-8 px-3 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm border border-[#eeedf1]"
+                            >
+                              <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">point_of_sale</span>
+                              <span>Charge in Register</span>
+                            </Link>
                             <button
-                              onClick={() => notWired("Editing her profile from this page")}
+                              onClick={() => setPanel("edit")}
                               className="h-8 px-3 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[13px] font-medium transition-colors flex items-center gap-1.5 shadow-sm border border-[#eeedf1]"
                             >
                               <span className="material-symbols-outlined text-[15px] text-[#5e5e67]">edit</span>
@@ -512,13 +551,15 @@ export function ClientsClient({
                               {selected.activePackages.length} Active Plan{selected.activePackages.length === 1 ? "" : "s"}
                             </span>
                           </div>
-                          <button
-                            onClick={() => notWired("Redeeming a session from this page")}
-                            className="h-8 px-3 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] text-[12.5px] font-medium flex items-center gap-1.5 transition-colors shadow-sm"
-                          >
-                            <span className="material-symbols-outlined text-[15px]">add</span>
-                            <span>+ Redeem Session</span>
-                          </button>
+                          {canUsePass && (
+                            <button
+                              onClick={() => setPanel("redeem")}
+                              className="h-8 px-3 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] text-[12.5px] font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+                            >
+                              <span className="material-symbols-outlined text-[15px]">add</span>
+                              <span>+ Redeem Session</span>
+                            </button>
+                          )}
                         </div>
                         {selected.activePackages.length === 0 ? (
                           <p className="text-[13.5px] text-[#77767b] py-4 text-center">No active prepaid packages for {selected.name}.</p>
@@ -562,13 +603,6 @@ export function ClientsClient({
                               ({selected.visitHistory.length} Completed Visit{selected.visitHistory.length === 1 ? "" : "s"} Recorded)
                             </span>
                           </div>
-                          <button
-                            onClick={() => notWired("Jumping to Invoices & Terminal from this page")}
-                            className="text-[11.5px] font-mono text-[#000000] hover:underline active:scale-[0.97] flex items-center gap-1 font-medium"
-                          >
-                            <span>View All Invoices in Terminal</span>
-                            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                          </button>
                         </div>
                         {selected.visitHistory.length === 0 ? (
                           <p className="text-[13.5px] text-[#77767b] py-4 text-center">No completed visits recorded for {selected.name} yet.</p>
@@ -605,22 +639,47 @@ export function ClientsClient({
                         )}
                       </div>
 
-                      {/* Prescribed Homecare Regulars */}
-                      <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#c8c5cb]/30">
-                        <div className="flex items-center justify-between pb-1 border-b border-[#eeedf1]">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Prescribed Homecare Regulars</h3>
+                      {/* Recent Payments -- her real last five, owner only (it is her money) */}
+                      {canSeeMoney && (
+                        <div className="bg-[#ffffff] rounded-xl p-5 flex flex-col gap-3 shadow-sm border border-[#c8c5cb]/30">
+                          <div className="flex items-center justify-between pb-1 border-b border-[#eeedf1]">
+                            <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Recent Payments</h3>
+                            <Link
+                              href={`/${locale}/salon-preview/invoices?client=${selected.id}`}
+                              className="text-[11.5px] font-mono text-[#000000] hover:underline flex items-center gap-1 font-medium"
+                            >
+                              <span>View all invoices</span>
+                              <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                            </Link>
                           </div>
-                          <button
-                            onClick={() => notWired("Billing a homecare product from this page")}
-                            className="h-8 px-3 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[12.5px] font-medium flex items-center gap-1.5 transition-colors shadow-sm border border-[#eeedf1]"
-                          >
-                            <span className="material-symbols-outlined text-[15px]">add</span>
-                            <span>+ Bill Product</span>
-                          </button>
+                          {selected.recentPayments.length === 0 ? (
+                            <p className="text-[13.5px] text-[#77767b] py-4 text-center">No payments recorded for {selected.name} yet.</p>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-[13.5px] leading-5">
+                                <thead className="text-[11px] font-mono uppercase text-[#77767b] border-b border-[#eeedf1]">
+                                  <tr>
+                                    <th className="py-2 px-3">Date</th>
+                                    <th className="py-2 px-3">Invoice</th>
+                                    <th className="py-2 px-3">Method</th>
+                                    <th className="py-2 px-3 text-right font-mono">Amount (RM)</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#eeedf1]">
+                                  {selected.recentPayments.map((p) => (
+                                    <tr key={p.id} data-testid="payment-row" className="hover:bg-[#f3f3f7]/40 transition-colors">
+                                      <td className="py-3 px-3 font-mono text-[12px] text-[#1a1c1f]">{p.dateLabel}</td>
+                                      <td className="py-3 px-3 font-mono text-[12px] text-[#47464b]">{p.docNo || "—"}</td>
+                                      <td className="py-3 px-3 text-[12.5px] text-[#47464b]">{METHOD_LABEL[p.method] ?? (p.method || "—")}</td>
+                                      <td className="py-3 px-3 text-right font-mono font-semibold text-[#1a1c1f] text-[14px]">{ringgit(p.amountCents)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
-                        <p className="text-[13.5px] text-[#77767b] py-4 text-center">No homecare products billed to {selected.name} yet.</p>
-                      </div>
+                      )}
                     </>
                   )}
                 </section>
@@ -629,6 +688,29 @@ export function ClientsClient({
           </div>
         </main>
       </div>
+
+      {panel === "new" && (
+        <NewClientSheet
+          projectId={projectId}
+          clients={clients}
+          onClose={() => setPanel(null)}
+          onOpen={(id) => {
+            setPanel(null);
+            setSelectedId(id);
+          }}
+          onCreated={(id) => {
+            // Clear whatever filter would hide her, then land on her folio.
+            setSearch("");
+            setActiveSegment("all");
+            setPage(1);
+            setJustCreated(id);
+            setSelectedId(id);
+          }}
+        />
+      )}
+      {panel === "edit" && selected && <EditClientSheet client={selected} tags={tags} onClose={() => setPanel(null)} />}
+      {panel === "book" && selected && <BookNextSheet projectId={projectId} client={selected} staff={staff} onClose={() => setPanel(null)} />}
+      {panel === "redeem" && selected && <RedeemSheet client={selected} staff={staff} onClose={() => setPanel(null)} />}
     </div>
   );
 }

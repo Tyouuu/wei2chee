@@ -84,6 +84,7 @@ export function RegisterClient({
   shiftTakingsCents,
   settledCount,
   totalCount,
+  initialClientId = null,
 }: {
   businessName: string;
   leadName: string;
@@ -94,6 +95,8 @@ export function RegisterClient({
   shiftTakingsCents: number | null;
   settledCount: number;
   totalCount: number;
+  /** ?client=<id> from a client's folio: the sale starts with her attached. */
+  initialClientId?: string | null;
 }) {
   const router = useRouter();
   const [method, setMethod] = useState<MethodKey>("qr");
@@ -101,8 +104,9 @@ export function RegisterClient({
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [partyId, setPartyId] = useState<string | null>(null);
-  const [partyName, setPartyName] = useState("");
+  const initialClient = customers.find((c) => c.id === initialClientId) ?? null;
+  const [partyId, setPartyId] = useState<string | null>(initialClient?.id ?? null);
+  const [partyName, setPartyName] = useState(initialClient?.name ?? "");
   const [pickingClient, setPickingClient] = useState(false);
 
   const [discountOpen, setDiscountOpen] = useState(false);

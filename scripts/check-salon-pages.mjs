@@ -33,7 +33,6 @@ const ROOT = "app/[locale]/salon-preview";
 
 /** file (relative to ROOT) -> { stubs, dead, sample, why } */
 const KNOWN = {
-  "clients/clients-client.tsx": { stubs: 6, dead: 0, sample: 0, why: "任务 415：New Client Folio · Edit Profile · Book Next · Redeem Session · 去看发票 · Bill Product" },
   "eod-cash/eod-client.tsx": { stubs: 1, dead: 0, sample: 0, why: "任务 415：Export Shift PDF（收工记录表要新表，已登记）" },
   "lookbook/lookbook-client.tsx": { stubs: 5, dead: 0, sample: 5, why: "任务 415 B：作品表要新表（他已决定留着当卖点，六张示例卡）" },
   "register/register-client.tsx": { stubs: 3, dead: 0, sample: 0, why: "任务 415：Scan SKU · WhatsApp 收据 · 没价钱的货" },

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { FIELD, LABEL, Sheet, sentence } from "../side-panel";
 
 /**
  * The two side panels behind the schedule page (Task 415 / 416).
@@ -35,15 +36,6 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export type BookingPrefill = { staffId: string; start: string; end: string; date?: string };
 
-const LABEL = "text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]";
-const FIELD =
-  "h-9 w-full rounded-lg border border-[#c8c5cb]/60 bg-[#ffffff] px-3 text-[13.5px] text-[#1a1c1f] outline-none focus:border-[#000000] transition-colors placeholder:text-[#5e5e67]/70";
-
-function sentence(msg: string) {
-  const s = msg.trim();
-  return s.charAt(0).toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? "" : ".");
-}
-
 function duration(start: string, end: string): string | null {
   if (!start || !end || end <= start) return null;
   const [sh, sm] = start.split(":").map(Number);
@@ -52,62 +44,6 @@ function duration(start: string, end: string): string | null {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return [h ? `${h} h` : "", m ? `${m} min` : ""].filter(Boolean).join(" ");
-}
-
-function Sheet({
-  label,
-  title,
-  subtitle,
-  onClose,
-  busy,
-  footer,
-  children,
-}: {
-  label: string;
-  title: ReactNode;
-  subtitle?: ReactNode;
-  onClose: () => void;
-  busy: boolean;
-  footer: ReactNode;
-  children: ReactNode;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !busy) onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [busy, onClose]);
-
-  return (
-    // A very light scrim: clicking outside closes, but the calendar stays readable.
-    <div className="fixed inset-0 z-[60] bg-black/10" onClick={() => !busy && onClose()}>
-      <aside
-        role="dialog"
-        aria-label={label}
-        onClick={(e) => e.stopPropagation()}
-        className="absolute right-0 top-0 bottom-0 w-full max-w-[420px] bg-[#ffffff] border-l border-[#c8c5cb]/40 shadow-2xl flex flex-col"
-      >
-        <div className="px-5 py-4 border-b border-[#c8c5cb]/30 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-[16px] leading-6 font-semibold tracking-[-0.01em] text-[#1a1c1f] truncate">{title}</h2>
-            {subtitle && <div className="text-[12px] text-[#5e5e67] mt-0.5">{subtitle}</div>}
-          </div>
-          <button
-            type="button"
-            aria-label="Close panel"
-            disabled={busy}
-            onClick={onClose}
-            className="h-8 w-8 shrink-0 rounded-lg hover:bg-[#f3f3f7] text-[#5e5e67] hover:text-[#1a1c1f] flex items-center justify-center transition-colors"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">{children}</div>
-        <div className="px-5 py-4 border-t border-[#c8c5cb]/30 bg-[#ffffff]">{footer}</div>
-      </aside>
-    </div>
-  );
 }
 
 export function BookingSheet({

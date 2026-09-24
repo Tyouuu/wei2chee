@@ -89,10 +89,13 @@ import { RegisterClient, type CatalogRow } from "./register-client";
  */
 export default async function SalonRegisterPreview({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ client?: string }>;
 }) {
   const { locale } = await params;
+  const { client: clientParam } = await searchParams;
   const user = await getSessionUser();
   if (!user) redirect(`/${locale}/login`);
 
@@ -181,6 +184,7 @@ export default async function SalonRegisterPreview({
         shiftTakingsCents={shiftTakingsCents}
         settledCount={settledCount}
         totalCount={totalCount}
+        initialClientId={clientParam ?? null}
       />
     </>
   );

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   createSessionSupabaseClient,
@@ -36,10 +37,13 @@ import { InvoicesClient, type Invoice } from "./invoices-client";
  */
 export default async function SalonInvoicesPreview({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ client?: string }>;
 }) {
   const { locale } = await params;
+  const { client: clientParam } = await searchParams;
   const user = await getSessionUser();
   if (!user) redirect(`/${locale}/login`);
 
@@ -54,13 +58,21 @@ export default async function SalonInvoicesPreview({
     (context as BusinessContext | null) ?? {},
   );
 
-  const { data: ledgerRows } = await supabase
+  // ?client=<id> comes from a client's folio ("View all invoices"): only her
+  // payments. An id that is not a uuid is ignored rather than sent to the
+  // database, which would reject it and blank the whole page.
+  const clientId = clientParam && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clientParam) ? clientParam : null;
+  let ledgerQuery = supabase
     .from("ledger_entries")
     .select("id, doc_no, party, party_id, amount_cents, method, entry_on, created_at, done_by, adjusts_id")
     .eq("project_id", projectId)
-    .eq("direction", "in")
-    .order("created_at", { ascending: false })
-    .limit(50);
+    .eq("direction", "in");
+  if (clientId) ledgerQuery = ledgerQuery.eq("party_id", clientId);
+  const { data: ledgerRows } = await ledgerQuery.order("created_at", { ascending: false }).limit(50);
+  const { data: clientRow } = clientId
+    ? await supabase.from("directory_entries").select("id, name").eq("id", clientId).eq("project_id", projectId).maybeSingle()
+    : { data: null };
+  const filteredName = (clientRow as { name: string } | null)?.name ?? null;
 
   const rows = (ledgerRows ?? []) as {
     id: string;
@@ -148,11 +160,21 @@ export default async function SalonInvoicesPreview({
                 </div>
               </div>
 
+              {clientId && (
+                <div data-testid="client-filter" className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#c8c5cb]/30 bg-[#ffffff] px-4 py-2.5 text-[13px] text-[#1a1c1f] shadow-sm">
+                  <span>
+                    Showing payments from <strong className="font-semibold">{filteredName ?? "this client"}</strong> only.
+                  </span>
+                  <Link href={`/${locale}/salon-preview/invoices`} className="text-[12px] font-mono font-medium text-[#000000] hover:underline">
+                    Show all
+                  </Link>
+                </div>
+              )}
               {invoices.length ? (
                 <InvoicesClient invoices={invoices} businessName={businessName} />
               ) : (
                 <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm p-10 text-center text-[13.5px] text-[#77767b]">
-                  No payments recorded for this business yet.
+                  {clientId ? "No payments recorded for this client yet." : "No payments recorded for this business yet."}
                 </div>
               )}
             </div>

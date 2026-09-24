@@ -40,12 +40,16 @@ import { ClientsClient, type ClientRow } from "./clients-client";
  * when present, replacing the invented "Latest Technical Formula" card
  * rather than trying to parse a formula out of it.
  *
- * Every remaining button that has no real backend yet (Book Next, Edit
- * Profile, Redeem Session, +Bill Product, the dossier's two "View Full ..."
- * links) gets the same honest not-wired alert this whole cutover has used
- * throughout, rather than staying a dead click. Export CSV is real: it
- * downloads the currently-filtered list client-side, since nothing more
- * than what's already fetched is needed to make that genuinely work.
+ * Every button is wired (Task 415): New Client Folio -> add_directory_entry,
+ * Edit Profile -> update_directory_entry, Book Next -> add_appointment
+ * (starting from her last service, usual stylist and time of day),
+ * Redeem Session -> use_package_session, "Charge in Register" and "All
+ * invoices" open those pages with her already selected. The "Prescribed
+ * Homecare Regulars" card is gone: nothing records which product a payment
+ * was for (a register sale is one amount), so it could only ever say "none",
+ * which is a claim the data cannot back. In its place, "Recent Payments" --
+ * her real last five payments, owner only. Export CSV downloads the
+ * currently-filtered list client-side.
  */
 export default async function SalonClientsPreview({
   params,
@@ -98,7 +102,7 @@ export default async function SalonClientsPreview({
     workspace.isOwner && ids.length
       ? supabase
           .from("ledger_entries")
-          .select("id, party_id, direction, amount_cents, adjusts_id")
+          .select("id, party_id, direction, amount_cents, adjusts_id, doc_no, method, entry_on, created_at")
           .eq("project_id", projectId)
           .eq("direction", "in")
           .in("party_id", ids)
@@ -136,15 +140,22 @@ export default async function SalonClientsPreview({
   // Reversal-aware lifetime spend: a reversed "in" entry is excluded, same
   // technique as the Invoices conversion -- a corrected payment shouldn't
   // count twice, or once for money that was given back.
-  type LedgerRow = { id: string; party_id: string; direction: "in" | "out"; amount_cents: number; adjusts_id: string | null };
+  type LedgerRow = { id: string; party_id: string; direction: "in" | "out"; amount_cents: number; adjusts_id: string | null; doc_no: string; method: string; entry_on: string; created_at: string };
   const ledgerRows = (ledgerRes.data ?? []) as LedgerRow[];
   const reversedIds = new Set(
     ledgerRows.map((r) => r.adjusts_id).filter((id): id is string => !!id),
   );
   const spendByParty = new Map<string, number>();
+  const paymentsByParty = new Map<string, LedgerRow[]>();
   for (const r of ledgerRows) {
     if (reversedIds.has(r.id)) continue;
     spendByParty.set(r.party_id, (spendByParty.get(r.party_id) ?? 0) + Number(r.amount_cents));
+    // A reversal line is not a payment she made; only the real ones are listed.
+    if (!r.adjusts_id) {
+      const list = paymentsByParty.get(r.party_id) ?? [];
+      list.push(r);
+      paymentsByParty.set(r.party_id, list);
+    }
   }
 
   type PackageRow = {
@@ -169,7 +180,7 @@ export default async function SalonClientsPreview({
   const apptRows = (apptRes.data ?? []) as ApptRow[];
   const apptIds = apptRows.map((a) => a.id);
 
-  const [linesRes, staffRes] = await Promise.all([
+  const [linesRes, staffRes, upcomingRes] = await Promise.all([
     apptIds.length
       ? supabase
           .from("appointment_lines")
@@ -178,9 +189,21 @@ export default async function SalonClientsPreview({
       : Promise.resolve({ data: [] }),
     supabase
       .from("directory_entries")
-      .select("id, name")
+      .select("id, name, archived_at")
       .eq("project_id", projectId)
       .eq("module_key", "staff"),
+    ids.length
+      ? supabase
+          .from("appointments")
+          .select("id, starts_at, ends_at, party_id, service, staff_id")
+          .eq("project_id", projectId)
+          .eq("module_key", "bookings")
+          .eq("status", "booked")
+          .is("archived_at", null)
+          .gte("starts_at", new Date().toISOString())
+          .in("party_id", ids)
+          .order("starts_at", { ascending: true })
+      : Promise.resolve({ data: [] }),
   ]);
 
   const amountByAppt = new Map<string, number>();
@@ -188,12 +211,19 @@ export default async function SalonClientsPreview({
     if (l.price_cents == null) continue;
     amountByAppt.set(l.appointment_id, (amountByAppt.get(l.appointment_id) ?? 0) + Number(l.price_cents));
   }
-  const staffNameById = new Map(
-    ((staffRes.data ?? []) as { id: string; name: string }[]).map((s) => [s.id, s.name]),
-  );
+  const staffRows = (staffRes.data ?? []) as { id: string; name: string; archived_at: string | null }[];
+  const staffNameById = new Map(staffRows.map((s) => [s.id, s.name]));
+  // Only people still working here can be picked for a new booking; the name
+  // map above keeps the retired ones so an old visit still says who did it.
+  const staffList = staffRows.filter((s) => !s.archived_at).map((s) => ({ id: s.id, name: s.name }));
 
   const visitsByParty = new Map<string, ClientRow["visitHistory"]>();
   const primaryStylistByParty = new Map<string, string>();
+  const primaryStylistIdByParty = new Map<string, string>();
+  const lastVisitByParty = new Map<string, NonNullable<ClientRow["lastVisit"]>>();
+  const nextBookingByParty = new Map<string, NonNullable<ClientRow["nextBooking"]>>();
+  const weekdayFmt = (iso: string) =>
+    new Intl.DateTimeFormat("en-MY", { timeZone: "Asia/Kuala_Lumpur", weekday: "short", day: "numeric", month: "short" }).format(new Date(iso));
   const timeFmt = (iso: string) =>
     new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
   const dateFmt = (iso: string) =>
@@ -215,7 +245,29 @@ export default async function SalonClientsPreview({
     // so the first one seen per party is the most recent.
     if (staffName && !primaryStylistByParty.has(a.party_id)) {
       primaryStylistByParty.set(a.party_id, staffName);
+      if (a.staff_id) primaryStylistIdByParty.set(a.party_id, a.staff_id);
     }
+    // The first row per party is her most recent completed visit: what a
+    // rebooking starts from (same service, same time of day, same length).
+    if (!lastVisitByParty.has(a.party_id)) {
+      const minutes = Math.round((new Date(a.ends_at).getTime() - new Date(a.starts_at).getTime()) / 60000);
+      lastVisitByParty.set(a.party_id, {
+        service: a.service,
+        startTime: timeFmt(a.starts_at),
+        minutes: minutes >= 15 && minutes <= 480 ? minutes : 60,
+      });
+    }
+  }
+  type UpcomingRow = { id: string; starts_at: string; ends_at: string; party_id: string; service: string; staff_id: string | null };
+  for (const u of (upcomingRes.data ?? []) as UpcomingRow[]) {
+    // Ordered soonest first, so the first one seen per party is her next.
+    if (nextBookingByParty.has(u.party_id)) continue;
+    nextBookingByParty.set(u.party_id, {
+      dateLabel: weekdayFmt(u.starts_at),
+      timeLabel: `${timeFmt(u.starts_at)} - ${timeFmt(u.ends_at)}`,
+      service: u.service,
+      staffName: u.staff_id ? staffNameById.get(u.staff_id) ?? null : null,
+    });
   }
 
   const initialsOf = (name: string) =>
@@ -250,6 +302,16 @@ export default async function SalonClientsPreview({
       })),
       visitHistory: visitsByParty.get(c.id) ?? [],
       primaryStylist: primaryStylistByParty.get(c.id) ?? null,
+      primaryStylistId: primaryStylistIdByParty.get(c.id) ?? null,
+      lastVisit: lastVisitByParty.get(c.id) ?? null,
+      nextBooking: nextBookingByParty.get(c.id) ?? null,
+      // Owner only, like the lifetime spend above: it is her money.
+      recentPayments: workspace.isOwner
+        ? [...(paymentsByParty.get(c.id) ?? [])]
+            .sort((x, y) => y.created_at.localeCompare(x.created_at))
+            .slice(0, 5)
+            .map((p) => ({ id: p.id, docNo: p.doc_no, dateLabel: dateFmt(p.created_at), method: p.method, amountCents: Number(p.amount_cents) }))
+        : [],
       searchText: `${c.name} ${c.phone} ${c.whatsapp}`.toLowerCase(),
     };
   });
@@ -264,6 +326,9 @@ export default async function SalonClientsPreview({
         businessName={businessName}
         clients={clients}
         canSeeMoney={workspace.isOwner}
+        locale={locale}
+        projectId={projectId}
+        staff={staffList}
         initialSelectedId={clients.find((c) => c.id === clientParam)?.id ?? null}
       />
     </>

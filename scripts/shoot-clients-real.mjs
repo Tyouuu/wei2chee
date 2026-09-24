@@ -54,6 +54,20 @@ const pass = [];
 const fail = [];
 const ok = (m) => { pass.push(m); console.log(`  PASS  ${m}`); };
 const no = (m, got) => { fail.push(m); console.log(`  FAIL  ${m}${got === undefined ? "" : ` — ${got}`}`); };
+const check = (m, cond, got) => (cond ? ok(m) : no(m, got));
+async function must(label, p) {
+  const r = await p;
+  if (r.error) throw new Error(`${label}: ${r.error.message}`);
+  return r.data;
+}
+async function until(fn, ms = 20000) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if (await fn().catch(() => false)) return true;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return false;
+}
 
 let browser;
 try {
@@ -107,6 +121,25 @@ try {
   });
   if (line.error) throw new Error(`add_visit_line: ${line.error.message}`);
 
+  // 她更早的两次来访(29 天前、57 天前)——「她平常几天来一次」要三个不同的
+  // 来访日才算得出来（两次只有一个间隔，一个间隔不是习惯，见 party_visits），
+  // 这样中位数间隔是 28 天，Book Next 的「Her usual」才有东西可建议。
+  // ⚠️ 要在她买套票之前做完，不然「做完」会顺手扣掉一次套票，
+  // 套票那几条断言(剩 6 次)就不是原来的意思了。
+  for (const [daysAgo, service] of [[29, "Root Touch-up"], [57, "Gloss Treatment"]]) {
+    const st = new Date(Date.now() - daysAgo * 24 * 3600 * 1000); st.setUTCHours(2, 30, 0, 0);
+    const en = new Date(st); en.setUTCHours(4, 0, 0, 0);
+    const older = await api.rpc("add_appointment", {
+      in_project_id: pid, in_module_key: "bookings",
+      in_starts_at: st.toISOString(), in_ends_at: en.toISOString(),
+      in_party: "Clients-Test Nora", in_party_id: vip.data.id, in_staff_id: jasmine.data.id,
+      in_service: service,
+    });
+    if (older.error) throw new Error(`older visit: ${older.error.message}`);
+    const olderDone = await api.rpc("set_appointment_status", { in_id: older.data, in_status: "done" });
+    if (olderDone.error) throw new Error(`older done: ${olderDone.error.message}`);
+  }
+
   const pay = await api.rpc("add_ledger_entry", {
     in_project_id: pid, in_module_key: "payments", in_direction: "in",
     in_amount_cents: 74000, in_party: "Clients-Test Nora", in_party_id: vip.data.id,
@@ -141,6 +174,13 @@ try {
   });
   if (regular.error) throw new Error(`regular: ${regular.error.message}`);
   await admin.from("directory_entries").update({ status: "Color Regular" }).eq("id", regular.data.id);
+  // 她一笔 RM 55 的收款——发票页按客人筛的时候，这一笔一定要被筛掉。
+  const chongPay = await api.rpc("add_ledger_entry", {
+    in_project_id: pid, in_module_key: "payments", in_direction: "in",
+    in_amount_cents: 5500, in_party: "Clients-Test Regular Chong", in_party_id: regular.data.id,
+    in_category: "service", in_note: "Toner",
+  });
+  if (chongPay.error) throw new Error(`chong pay: ${chongPay.error.message}`);
 
   browser = await chromium.launch();
   const ownerPage = await (await browser.newContext({ viewport: { width: 1700, height: 1300 } })).newPage();
@@ -149,6 +189,10 @@ try {
   await ownerPage.fill('input[type="password"]', password);
   await ownerPage.click('button[type="submit"]');
   await ownerPage.waitForURL(/portal/, { timeout: 180000 });
+
+  // 整个过程一个 alert() 都不能弹出来——以前六处按钮都是弹一句「还没接」。
+  const alerts = [];
+  ownerPage.on("dialog", (d) => { alerts.push(d.message()); d.dismiss().catch(() => {}); });
 
   await ownerPage.goto(`${BASE}/en/salon-preview/clients`, { waitUntil: "networkidle", timeout: 180000 });
 
@@ -224,6 +268,160 @@ try {
   if (/clients-\d{4}-\d{2}-\d{2}\.csv/.test(suggestedName)) ok("🔴 Export CSV 真的触发了一次下载,不是装饰按钮");
   else no("CSV 下载没有真的发生", suggestedName);
 
+  // ═══ 任务 415：六处按钮全部接上（以前每一处都只弹一句「还没接」）═══════════
+  const todayMY = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
+  const plusDays = (d, n) => { const x = new Date(`${d}T00:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+  const customers = async () => must("customers", Promise.resolve(admin.from("directory_entries").select("id, name, phone, whatsapp, status, note").eq("project_id", pid).eq("module_key", "customers")));
+  const dlgOf = (name) => ownerPage.getByRole("dialog", { name });
+  const closeX = async () => { await ownerPage.getByRole("button", { name: "Close panel" }).click(); await ownerPage.getByRole("dialog").waitFor({ state: "detached" }); };
+  const pickClient = async (name) => { await ownerPage.locator('section[aria-label="Client Directory"]').getByText(name).first().click(); await ownerPage.waitForTimeout(250); };
+
+  // ① New Client Folio → add_directory_entry
+  console.log("\n① New Client Folio");
+  await ownerPage.getByRole("button", { name: /New Client Folio/ }).click();
+  let dlg = dlgOf("New client");
+  await dlg.waitFor();
+  await dlg.getByRole("button", { name: "Add Client" }).click();
+  check("🔴 没写名字就按 Add Client：讲一句人话，一位客人都没多", /Give her a name/.test(await dlg.innerText()) && (await customers()).length === 3, `${(await customers()).length}`);
+  await dlg.getByLabel("Name").fill("Somebody New");
+  await dlg.getByLabel("Phone").fill("012 553 0921");
+  check("🔴 打的电话跟 Nora 是同一个号码：面板指出她是谁（不拦，一家人常常共用）", /already saved for\s*Clients-Test Nora/.test(await dlg.innerText()), (await dlg.innerText()).slice(0, 200));
+  await dlg.getByLabel("Phone").fill("");
+  await dlg.getByLabel("Name").fill("clients-test nora");
+  check("🔴 同名（大小写不同）也指出来", /name already exists:\s*Clients-Test Nora/i.test(await dlg.innerText()));
+  await dlg.getByLabel("Name").fill("Clients-Test Fresh Wan");
+  await dlg.getByLabel("Phone").fill("017-888 9999");
+  await dlg.getByLabel("Tag").fill("Brow Regular");
+  await dlg.getByLabel("Notes").fill("Allergic to henna");
+  check("电话一填，「她也在用这个号码的 WhatsApp」的勾出现，而且默认勾上", await dlg.getByRole("checkbox").isChecked());
+  await ownerPage.screenshot({ path: `${OUT}/4-new-client-panel.png`, fullPage: true });
+  await dlg.getByRole("button", { name: "Add Client" }).dblclick();
+  await until(async () => (await customers()).length >= 4);
+  await ownerPage.waitForTimeout(1500);
+  const afterAdd = await customers();
+  const fresh = afterAdd.find((c) => c.name === "Clients-Test Fresh Wan");
+  check("🔴 连按两下 Add Client 只多一位客人（防重复）", afterAdd.length === 4, String(afterAdd.length));
+  check("🔴 真的存进 directory_entries：名字 · 电话 · WhatsApp（勾了就是同一个号码）· 标签 · 备注",
+    !!fresh && fresh.phone === "017-888 9999" && fresh.whatsapp === "017-888 9999" && fresh.status === "Brow Regular" && fresh.note === "Allergic to henna", JSON.stringify(fresh));
+  await until(async () => (await ownerPage.locator("h2", { hasText: "Clients-Test Fresh Wan" }).count()) === 1);
+  check("🔴 存完直接落在她的档案上（不是停在别人身上）", (await ownerPage.locator("h2", { hasText: "Clients-Test Fresh Wan" }).count()) === 1);
+  check("面板关了", (await ownerPage.getByRole("dialog").count()) === 0);
+
+  // ② Edit Profile → update_directory_entry
+  console.log("\n② Edit Profile");
+  await pickClient("Clients-Test Nora");
+  await ownerPage.getByRole("button", { name: /Edit Profile/ }).click();
+  dlg = dlgOf("Edit profile");
+  await dlg.waitFor();
+  check("🔴 面板打开时带着她现在的资料（不是空的）", (await dlg.getByLabel("Phone").inputValue()) === "012-553 0921" && (await dlg.getByLabel("Notes").inputValue()) === "Prefers quiet service, warm green tea");
+  await dlg.getByLabel("Name").fill("");
+  await dlg.getByRole("button", { name: "Save Changes" }).click();
+  check("🔴 把名字清空按保存：讲一句人话，名字没被改成空的", /She needs a name/.test(await dlg.innerText()) && (await customers()).some((c) => c.name === "Clients-Test Nora"));
+  await dlg.getByLabel("Name").fill("Clients-Test Nora");
+  await dlg.getByLabel("Phone").fill("012-999 0000");
+  await dlg.getByLabel("Tag").fill("VIP Gold");
+  await dlg.getByLabel("Notes").fill("");
+  await ownerPage.screenshot({ path: `${OUT}/5-edit-panel.png`, fullPage: true });
+  await dlg.getByRole("button", { name: "Save Changes" }).click();
+  await until(async () => (await customers()).find((c) => c.name === "Clients-Test Nora")?.phone === "012-999 0000");
+  const nora = (await customers()).find((c) => c.name === "Clients-Test Nora");
+  check("🔴 真的改了：电话、标签；备注清空就是清空", nora.phone === "012-999 0000" && nora.status === "VIP Gold" && nora.note === "", JSON.stringify(nora));
+  await until(async () => /VIP Gold/i.test(await ownerPage.locator("body").innerText()));
+  body = await ownerPage.locator("body").innerText();
+  check("🔴 画面跟着变：新标签出现，「Notes on File」那一块因为备注空了而消失", /VIP Gold/i.test(body) && !/Notes on File/.test(body));
+
+  // ③ Book Next → add_appointment，从她自己上一次来访开始
+  console.log("\n③ Book Next");
+  await ownerPage.getByRole("button", { name: /Book Next/ }).click();
+  dlg = dlgOf("Book next appointment");
+  await dlg.waitFor();
+  check("🔴 服务预填她上次做的（Full Balayage & Gloss Toner）", (await dlg.getByLabel("Service").inputValue()) === "Full Balayage & Gloss Toner");
+  check("🔴 师傅预填她平常那位（Jasmine）", (await dlg.getByLabel("Stylist").inputValue()) === jasmine.data.id);
+  check("🔴 开始时间预填她平常的钟点（10:30），结束 = 开始 + 她上次那么久（90 分钟 → 12:00）",
+    (await dlg.getByLabel("Start time").inputValue()) === "10:30" && (await dlg.getByLabel("End time").inputValue()) === "12:00",
+    `${await dlg.getByLabel("Start time").inputValue()}–${await dlg.getByLabel("End time").inputValue()}`);
+  check("🔴 「Her usual」日期预填了（两次来访相隔 28 天 → 上次来访再加 28 天）", (await dlg.getByLabel("Day").inputValue()) === plusDays(apptStart.toISOString().slice(0, 10), 28) && (await dlg.getByTestId("usual-date").count()) === 1, await dlg.getByLabel("Day").inputValue());
+  await dlg.getByRole("button", { name: "In 4 weeks" }).click();
+  check("点「In 4 weeks」：日期变成四个星期后", (await dlg.getByLabel("Day").inputValue()) === plusDays(todayMY, 28));
+  await dlg.getByTestId("usual-date").click();
+  await dlg.getByLabel("Day").fill(plusDays(todayMY, -3));
+  await dlg.getByRole("button", { name: "Book Appointment" }).click();
+  check("🔴 订一个已经过去的日子：讲一句人话，没有订", /already passed/.test(await dlg.innerText()));
+  await dlg.getByTestId("usual-date").click();
+  await dlg.getByLabel("Start time").fill("14:00");
+  check("改开始时间，结束跟着走（14:00 → 15:30）", (await dlg.getByLabel("End time").inputValue()) === "15:30");
+  await ownerPage.screenshot({ path: `${OUT}/6-book-next-panel.png`, fullPage: true });
+  const nextDay = plusDays(apptStart.toISOString().slice(0, 10), 28);
+  await dlg.getByRole("button", { name: "Book Appointment" }).click();
+  await dlg.getByTestId("booked-note").waitFor({ timeout: 30000 });
+  const booked = await must("booked", Promise.resolve(admin.from("appointments").select("starts_at, ends_at, party_id, staff_id, service, status").eq("project_id", pid).eq("status", "booked")));
+  check("🔴 真的订下去了：她的名册身分 · Jasmine · 14:00–15:30（马来西亚时间）· 同一个服务",
+    booked.length === 1 && booked[0].party_id === vip.data.id && booked[0].staff_id === jasmine.data.id &&
+      new Date(booked[0].starts_at).getTime() === new Date(`${nextDay}T14:00:00+08:00`).getTime() &&
+      new Date(booked[0].ends_at).getTime() === new Date(`${nextDay}T15:30:00+08:00`).getTime() && booked[0].service === "Full Balayage & Gloss Toner",
+    JSON.stringify(booked));
+  check("面板讲了订在哪天哪个钟点", /Booked for/.test(await dlg.getByTestId("booked-note").innerText()) && /14:00–15:30/.test(await dlg.getByTestId("booked-note").innerText()));
+  await ownerPage.getByRole("button", { name: "Close", exact: true }).click();
+  await until(async () => (await ownerPage.getByTestId("next-booking").count()) === 1);
+  check("🔴 她的档案上多了一行「Next: …」写着刚订的那一次", /14:00 - 15:30/.test(await ownerPage.getByTestId("next-booking").innerText()) && /Full Balayage/.test(await ownerPage.getByTestId("next-booking").innerText()), await ownerPage.getByTestId("next-booking").innerText().catch(() => ""));
+  // 同一位师傅同一个钟点再订一次 → 资料库自己的「撞时段」
+  await ownerPage.getByRole("button", { name: /Book Next/ }).click();
+  dlg = dlgOf("Book next appointment");
+  await dlg.getByTestId("usual-date").click();
+  await dlg.getByLabel("Start time").fill("14:00");
+  await dlg.getByRole("button", { name: "Book Appointment" }).click();
+  await until(async () => /already taken/i.test(await dlg.innerText()));
+  check("🔴 同一位师傅同一个钟点再订：印资料库自己那句「已经有人了」", /already taken/i.test(await dlg.innerText()), (await dlg.innerText()).slice(0, 200));
+  check("撞了的那笔没有存", (await must("booked2", Promise.resolve(admin.from("appointments").select("id").eq("project_id", pid).eq("status", "booked")))).length === 1);
+  await closeX();
+
+  // ④ Redeem Session → use_package_session
+  console.log("\n④ Redeem Session");
+  await ownerPage.getByRole("button", { name: /Redeem Session/ }).click();
+  dlg = dlgOf("Use a package session");
+  await dlg.waitFor();
+  check("🔴 面板列出她的套票跟真的剩余（6 of 10 left）", (await dlg.getByRole("radio").count()) === 1 && /6 of 10 left/.test(await dlg.getByRole("radio").innerText()), await dlg.innerText());
+  await dlg.getByLabel("Done by").selectOption({ label: "Clients-Test Jasmine" });
+  await ownerPage.screenshot({ path: `${OUT}/7-redeem-panel.png`, fullPage: true });
+  await dlg.getByRole("button", { name: "Use 1 Session" }).click();
+  await dlg.getByTestId("redeem-note").waitFor({ timeout: 30000 });
+  check("🔴 面板讲「用掉一次 · 还剩 5 次」", /One session of Fusio-Dose Caviar 10-Session Pass used — 5 left/.test(await dlg.getByTestId("redeem-note").innerText()), await dlg.getByTestId("redeem-note").innerText());
+  const packs = await must("packs", Promise.resolve(admin.from("service_packages").select("id").eq("project_id", pid)));
+  const uses = await must("uses", Promise.resolve(admin.from("package_uses").select("id, staff_id").eq("package_id", packs[0].id)));
+  check("🔴 资料库里真的多了一次（4 → 5），记在 Jasmine 名下", uses.length === 5 && uses.filter((u) => u.staff_id === jasmine.data.id).length === 1, `${uses.length}`);
+  await ownerPage.getByRole("button", { name: "Close", exact: true }).click();
+  await until(async () => /5 Sessions Redeemed/.test(await ownerPage.locator("body").innerText()));
+  check("🔴 套票卡跟着变：5 次用掉", /5 Sessions Redeemed/.test(await ownerPage.locator("body").innerText()));
+  await pickClient("Clients-Test Plain Bakri");
+  check("🔴 没有套票的客人：根本没有 Redeem Session 这颗按钮（不画一颗按下去一定失败的）", (await ownerPage.getByRole("button", { name: /Redeem Session/ }).count()) === 0);
+
+  // ⑤ 发票 · 收银台：带着她过去
+  console.log("\n⑤ Recent Payments · 发票 · 收银台");
+  await pickClient("Clients-Test Nora");
+  check("🔴 「Prescribed Homecare Regulars」那块假的不见了", !/Homecare/.test(await ownerPage.locator("body").innerText()));
+  check("🔴 「Recent Payments」列出她真的收款（RM 740）", (await ownerPage.getByTestId("payment-row").count()) === 1 && /RM\s*740/.test(await ownerPage.getByTestId("payment-row").innerText()));
+  await ownerPage.screenshot({ path: `${OUT}/8-recent-payments.png`, fullPage: true });
+  await ownerPage.getByRole("link", { name: /View all invoices/ }).click();
+  await ownerPage.waitForURL(/salon-preview\/invoices\?client=/, { timeout: 60000 });
+  await ownerPage.getByTestId("client-filter").waitFor({ timeout: 60000 });
+  body = await ownerPage.locator("body").innerText();
+  check("🔴 发票页只剩她的：写着「只看 Clients-Test Nora」，Chong 那笔 RM 55 被筛掉", /Clients-Test Nora/.test(await ownerPage.getByTestId("client-filter").innerText()) && !/Regular Chong/.test(body), body.slice(0, 200));
+  await ownerPage.screenshot({ path: `${OUT}/9-invoices-filtered.png`, fullPage: true });
+  await ownerPage.getByRole("link", { name: "Show all" }).click();
+  await until(async () => /Regular Chong/.test(await ownerPage.locator("body").innerText()));
+  check("🔴 点「Show all」：两位的收款都回来了，筛选条不见", /Regular Chong/.test(await ownerPage.locator("body").innerText()) && (await ownerPage.getByTestId("client-filter").count()) === 0);
+  await ownerPage.goto(`${BASE}/en/salon-preview/invoices?client=not-a-uuid`, { waitUntil: "networkidle", timeout: 180000 });
+  check("🔴 网址里乱写的 client 不会搞坏整页：忽略它，显示全部", (await ownerPage.getByTestId("client-filter").count()) === 0 && /Regular Chong/.test(await ownerPage.locator("body").innerText()));
+  await ownerPage.goto(`${BASE}/en/salon-preview/clients`, { waitUntil: "networkidle", timeout: 180000 });
+  await pickClient("Clients-Test Nora");
+  await ownerPage.getByRole("link", { name: /Charge in Register/ }).click();
+  await ownerPage.waitForURL(/salon-preview\/register\?client=/, { timeout: 60000 });
+  await until(async () => /Clients-Test Nora/.test(await ownerPage.locator("body").innerText()));
+  body = await ownerPage.locator("body").innerText();
+  check("🔴 收银台打开时她已经挂在这一单上（不用再挑一次客人）", /Clients-Test Nora/.test(body) && !/Select a client/.test(body));
+  await ownerPage.screenshot({ path: `${OUT}/10-register-with-client.png`, fullPage: true });
+  check("🔴 整个过程一个「还没接」的 alert() 都没弹", alerts.length === 0, alerts.join(" | "));
+
   // 员工身分——看得到清单跟档案,看不到钱(sees_money)。
   const staffEmail = `cli-staff-${stamp}@formae.test`;
   const staffPassword = `Cs-${stamp}-x!`;
@@ -245,6 +443,8 @@ try {
   if (/Clients-Test Nora/.test(staffBody) && !/Lifetime Spend/.test(staffBody))
     ok("🔴 员工身分看得到客人,但看不到「Lifetime Spend」这个金额格子(sees_money)");
   else no("员工身分的金钱隔离不对", staffBody.match(/Lifetime Spend[\s\S]{0,40}/)?.[0]);
+  check("🔴 员工身分看不到「Recent Payments」（那是她的钱），但订位 · 改资料的按钮都在",
+    !/Recent Payments/.test(staffBody) && /Book Next/.test(staffBody) && /Edit Profile/.test(staffBody));
   await staffPage.screenshot({ path: `${OUT}/3-staff-view.png`, fullPage: true });
   admin.auth.admin.deleteUser(staffUser.user.id).catch(() => {});
 

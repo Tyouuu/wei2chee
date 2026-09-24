@@ -4579,7 +4579,27 @@ Blowout 2 位）、帐本排序（最逾期在上、取消的在下）；再用�
       ③ 「谁都行」的预约（没指师傅）在日视图里根本看不到 → 加一条「Anyone」车道（不画空档按钮，因为它占的是全店的位子）。
       **还欠的**：预约面板里没有「改时间」（Fresha 有）—— `update_appointment` 今天就能接，下一轮排；
       没有「还有 X 笔」的折叠（一格里挤两笔以上的情况今天靠横向滚动）。
-- [ ] Clients
+- [x] ✅ **Clients 做完了**（2026-09-24）：`shoot-clients-real.mjs` 47 条真登入断言全过，六处「还没接」一个不剩
+      （`check:salon-pages` 的清单也跟着缩掉这一项，先看过它红才改的）。
+      先读了 Fresha · Mangomint 的说明（⚠️ 读文字，不是实拍）：新增客人是页面旁边滑出的一块面板，不是居中弹窗；档案上有订位 · 改资料。
+      所以四个操作都是右边滑出的面板，跟 Schedule 共用同一个壳（抽成 `salon-preview/side-panel.tsx`，两边现在是同一份，不是各画各的；
+      抽完把 Schedule 那 66 条又跑了一遍，全过）。全部走现有的函式，没有新增任何资料库函式：
+      - New Client Folio → `add_directory_entry`：只问名字（必填）· 电话（勾「她也在用这个号码的 WhatsApp」就同一个号码填进 WhatsApp，只打一次）· 标签 · 备注；
+        打的电话或名字已经有人用了，面板指出她是谁（**只提醒不拦**——一家人常常共用一个号码）；连按两下只多一位；存完直接落在她的档案上
+      - Edit Profile → `update_directory_entry`：带着她现在的资料；清空名字被挡；备注清空就是清空
+      - Book Next → `add_appointment`：**从她自己的上一次来访开始**（[重点 29](./founder-points.md) 第 2 种）——服务预填她上次做的、师傅预填她平常那位、
+        开始时间预填她平常的钟点、结束 = 开始 + 她上次那么久；「Her usual」日期 = 上次来访 + 她平常的间隔
+        （要三个不同的来访日才算得出来，`party_visits` 自己的规矩）；撞时段印资料库自己那句；订完她的档案上多一行「Next: …」
+      - Redeem Session → `use_package_session`：列她的套票跟真的剩余、可以记是谁做的；没有可用套票的客人**整颗按钮不画**（不画一颗按下去一定失败的）
+      - 「View All Invoices」→ 发票页 `?client=<id>` 只剩她的收款（顶上一条「Showing payments from … only · Show all」；网址里乱写的 id 被忽略，不会搞坏整页）
+      - 「Bill Product」→ 改成「Charge in Register」：收银台 `?client=<id>` 打开时她已经挂在这一单上
+      🔴 **「Prescribed Homecare Regulars」那块拿掉了，换成「Recent Payments」**：一次收银只记一笔金额，不记是哪个产品，
+      所以那块永远只能写「没有」——一个资料撑不住的说法。换成她真的最近五笔收款（只有老板看得到，跟 Lifetime Spend 同一条）。
+      🔴 **用眼睛看图抓到两个真错，数字全绿的时候都没抓到**：① 头部我加了第四颗按钮之后，名字那一块被挤成一窄条，
+      「Next: …」折成四行、头像掉在中间——改成上面一行是她（头像 · 名字 · 联络 · 下次预约），下面一行是四颗按钮；
+      ② 收款方式那一栏是空的（那一笔没记方式）→ 空的写「—」。
+      **还欠**：Book Next 没有先看「那天那位师傅几点有空」，撞了才知道（Schedule 的空档列表已经有这份资料，下一轮可以接进来）；
+      Add Client 没有生日栏（同意书要看年龄，`add_directory_entry` 没有这个参数，要加就是动功能地基，只登记）；Edit Profile 没有改「区」（region）。
 - [ ] Stock（进货单那一整块）
 - [ ] Register 三处
 - [ ] Stylists 抽成阶梯
