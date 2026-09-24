@@ -256,9 +256,9 @@ try {
   check("🔴 前 20% 占 76.2%（1,600 ÷ 2,100）", /76\.2% Revenue Share/.test(await page.getByTestId("vip-share").innerText()), await page.getByTestId("vip-share").innerText());
   check("切线是第 2 名的 RM 600.00", /threshold cut-off: RM 600\.00/.test(body));
   check("导出按钮写对总人数（6）", /Export Full 6 Client Census/.test(body));
-  check("侧栏：Reports & Rankings 亮着，Memberships 也是真连结（任务 413 之后）",
+  check("侧栏：Reports & Rankings 亮着，套票会员那一行是真连结（任务 413 · 419 之后）",
     (await page.locator("aside a", { hasText: "Reports & Rankings" }).count()) === 1
-      && (await page.locator("aside a", { hasText: "Memberships" }).count()) === 1);
+      && (await page.locator("aside a", { hasText: "Packages & Plans" }).count()) === 1);
 
   await page.screenshot({ path: `${OUT}/1-full.png`, fullPage: true });
 

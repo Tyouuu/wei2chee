@@ -83,6 +83,13 @@ import { salonRowVisible, type SalonNavContext } from "@/lib/portal/salon-nav";
  * different one again (a "Wei OS" header, a command-jump box, renamed rows)
  * and is not followed.
  *
+ * 2026-09-25 (task 419): the sidebar went from fourteen rows to twelve after
+ * reading how Fresha, Vagaro, Booksy, Timely, Mangomint, Boulevard and the
+ * Malaysian systems (Tunai, Ebteq, Aoikumo) lay theirs out: the "Memberships"
+ * row folded into "Packages & Plans" (one place for money paid ahead,
+ * two pages joined by <PrepaidTabs/>), and "System Audit Log" left the menu
+ * for Tenant Settings -> Team & Access. Both pages keep their own routes.
+ *
  * Every row has a real page behind it.
  */
 export type SalonNavKey =
@@ -92,13 +99,11 @@ export type SalonNavKey =
   | "clients-and-profiles"
   | "lookbook-and-formulas"
   | "packages-and-prepaid"
-  | "memberships-and-loyalty"
   | "salon-stock-and-orders"
   | "stylists-and-staff"
   | "reports-and-rankings"
   | "end-of-day-cash"
   | "invoices-and-terminal"
-  | "system-audit-log"
   | "tenant-settings";
 
 export const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
@@ -130,14 +135,12 @@ export const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: s
 ];
 
 export const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: string }[] = [
-  { key: "packages-and-prepaid", href: "/en/salon-preview/packages", icon: "confirmation_number", label: "Packages & Prepaid" },
-  { key: "memberships-and-loyalty", href: "/en/salon-preview/memberships", icon: "loyalty", label: "Memberships" },
+  { key: "packages-and-prepaid", href: "/en/salon-preview/packages", icon: "confirmation_number", label: "Packages & Plans" },
   { key: "salon-stock-and-orders", href: "/en/salon-preview/stock", icon: "inventory_2", label: "Salon Stock & Orders" },
   { key: "stylists-and-staff", href: "/en/salon-preview/stylists", icon: "badge", label: "Stylists & Staff" },
   { key: "reports-and-rankings", href: "/en/salon-preview/reports", icon: "leaderboard", label: "Reports & Rankings" },
   { key: "end-of-day-cash", href: "/en/salon-preview/eod-cash", icon: "payments", label: "End of Day Cash" },
   { key: "invoices-and-terminal", href: "/en/salon-preview/invoices", icon: "receipt_long", label: "Invoices & Terminal" },
-  { key: "system-audit-log", href: "/en/salon-preview/audit-log", icon: "manage_history", label: "System Audit Log" },
   { key: "tenant-settings", href: "/en/salon-preview/settings", icon: "tune", label: "Tenant Settings" },
 ];
 
@@ -151,6 +154,39 @@ export type SalonViewer = SalonNavContext & { viewerName: string };
 const SalonViewerContext = createContext<SalonViewer | null>(null);
 export function SalonViewerProvider({ value, children }: { value: SalonViewer | null; children: React.ReactNode }) {
   return <SalonViewerContext.Provider value={value}>{children}</SalonViewerContext.Provider>;
+}
+
+/**
+ * The two halves of the "Packages & Plans" sidebar row: a pass or prepaid
+ * balance, and a monthly membership. Two pages, one place. The Memberships tab
+ * collects money, so a cashier is not shown it (and a lone tab is not a strip).
+ */
+export function PrepaidTabs({ active }: { active: "packages" | "memberships" }) {
+  const viewer = useContext(SalonViewerContext);
+  const tabs = [
+    { key: "packages", href: "/en/salon-preview/packages", label: "Packages & Prepaid" },
+    ...(!viewer || viewer.isOwner || active === "memberships"
+      ? [{ key: "memberships", href: "/en/salon-preview/memberships", label: "Memberships" }]
+      : []),
+  ];
+  if (tabs.length < 2) return null;
+  return (
+    <nav aria-label="Packages and memberships" className="flex flex-wrap items-center gap-2 pb-5 print:hidden">
+      {tabs.map((t) => (
+        <Link
+          key={t.key}
+          href={t.href}
+          aria-current={t.key === active ? "page" : undefined}
+          className={
+            "px-3.5 py-1.5 rounded-lg text-[13.5px] leading-5 font-medium transition-colors " +
+            (t.key === active ? "bg-[#000000] text-[#ffffff] shadow-sm" : "text-[#5e5e67] hover:text-[#1a1c1f] hover:bg-[#eeedf1]")
+          }
+        >
+          {t.label}
+        </Link>
+      ))}
+    </nav>
+  );
 }
 
 export function MaterialSymbolsLink() {

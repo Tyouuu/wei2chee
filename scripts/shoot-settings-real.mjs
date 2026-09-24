@@ -179,7 +179,7 @@ try {
 
   // ═══ D 页 ═══
   console.log("\nD 页（侧栏读的就是这一份）");
-  check("前提：侧栏现在有师傅、预约、套票、库存那几行", (await hasRow("Stylists & Staff")) && (await hasRow("Appointments & Flow")) && (await hasRow("Packages & Prepaid")) && (await hasRow("Salon Stock & Orders")), (await sidebarLabels()).join("|"));
+  check("前提：侧栏现在有师傅、预约、套票、库存那几行", (await hasRow("Stylists & Staff")) && (await hasRow("Appointments & Flow")) && (await hasRow("Packages & Plans")) && (await hasRow("Salon Stock & Orders")), (await sidebarLabels()).join("|"));
   await page.getByRole("switch", { name: "Stylists & staff" }).click();
   check("开关一动就是 Unsaved，还没写库", /Unsaved/.test(await state()) && (await pageKeys()).includes("staff"));
   await clickSave();
@@ -187,11 +187,11 @@ try {
   check("🔴 侧栏那一行真的消失了（别的行原样）", await until(async () => !(await hasRow("Stylists & Staff")) && (await hasRow("Salon Stock & Orders"))), (await sidebarLabels()).join("|"));
   await page.getByRole("switch", { name: "Appointments & schedule" }).click();
   await clickSave();
-  check("🔴 关预约：预约跟套票两行一起消失（套票要客户 ＋ 预约两样都有）", await until(async () => !(await hasRow("Appointments & Flow")) && !(await hasRow("Packages & Prepaid"))), (await sidebarLabels()).join("|"));
+  check("🔴 关预约：预约那一行消失，套票会员那一行还在（会员费靠收款页，不靠预约）", await until(async () => !(await hasRow("Appointments & Flow")) && (await hasRow("Packages & Plans"))), (await sidebarLabels()).join("|"));
   await page.getByRole("switch", { name: "Appointments & schedule" }).click();
   await page.getByRole("switch", { name: "Stylists & staff" }).click();
   await clickSave();
-  check("🔴 开回来：三行都回来了", await until(async () => (await hasRow("Appointments & Flow")) && (await hasRow("Packages & Prepaid")) && (await hasRow("Stylists & Staff"))), (await sidebarLabels()).join("|"));
+  check("🔴 开回来：预约跟师傅两行回来了，套票会员一直都在", await until(async () => (await hasRow("Appointments & Flow")) && (await hasRow("Packages & Plans")) && (await hasRow("Stylists & Staff"))), (await sidebarLabels()).join("|"));
   check("库里三页都在", ["bookings", "inventory", "staff"].every(async (k) => (await pageKeys()).includes(k)) && (await pageKeys()).includes("staff") && (await pageKeys()).includes("bookings"));
   // 这一页在别处已经被拿掉了，这里的开关还以为它开着
   await api.rpc("remove_project_page", { target_page_key: "inventory" });
@@ -309,6 +309,17 @@ try {
   check("🔴 谁能开什么是从侧栏那份规矩读的：老板那一栏有「Reports & Rankings · End of Day Cash · Tenant Settings」，员工那一栏没有",
     /Reports & Rankings/.test(ownerText) && /End of Day Cash/.test(ownerText) && /Tenant Settings/.test(ownerText) && !/Reports & Rankings|End of Day Cash|Tenant Settings/.test(staffText) && /Register & Checkout/.test(staffText), `${ownerText} || ${staffText}`);
   await page.screenshot({ path: `${OUT}/6-team.png`, fullPage: true });
+  check("🔴 改动历史不在侧栏了，而是这一页里一张卡：老板点得到", (await hasRow("System Audit Log")) === false && (await page.getByTestId("settings-audit-link").count()) === 1);
+  await page.getByTestId("settings-audit-link").click();
+  await page.waitForURL(/salon-preview\/audit-log/, { timeout: 60000 });
+  await page.getByRole("heading", { name: /Activity & Change History/ }).waitFor({ timeout: 60000 });
+  check("🔴 点进去是改动历史那一页，侧栏亮的是「Tenant Settings」，面包屑第一格是可以点回来的「SETTINGS」",
+    (await page.locator("aside a", { hasText: "Tenant Settings" }).count()) === 1
+      && (await page.locator("main a", { hasText: "SETTINGS" }).count()) === 1);
+  await page.screenshot({ path: `${OUT}/6b-audit-from-settings.png` });
+  await page.locator("main a", { hasText: "SETTINGS" }).click();
+  await page.waitForURL(/salon-preview\/settings/, { timeout: 60000 });
+  check("面包屑点回来落在设置页", /Store Settings/.test(await page.locator("h1").innerText()));
 
   // ═══ I 员工 ═══
   console.log("\nI 员工登入");

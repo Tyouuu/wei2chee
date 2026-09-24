@@ -22,21 +22,31 @@ describe("the salon sidebar reads the business's own pages", () => {
     expect(noStock).toHaveLength(Object.keys(SALON_NAV).length - 1);
   });
 
-  it("no bookings page: the schedule goes, and so do packages (nothing to use a pass on)", () => {
+  it("no bookings page: the schedule goes, but Packages & Plans stays (a monthly fee is still collected)", () => {
     const rows = shown(owner(BEAUTY.filter((k) => k !== "bookings")));
     expect(rows).not.toContain("appointments-and-flow");
-    expect(rows).not.toContain("packages-and-prepaid");
-    expect(rows).toContain("memberships-and-loyalty");
+    expect(rows).toContain("packages-and-prepaid");
   });
 
-  it("packages need BOTH customers and bookings, memberships both customers and payments", () => {
-    expect(SALON_NAV["packages-and-prepaid"].needs).toEqual(["customers", "bookings"]);
-    expect(SALON_NAV["memberships-and-loyalty"].needs).toEqual(["customers", "payments"]);
+  it("Packages & Plans is one row: it needs customers, and bookings OR payments", () => {
+    const rule = SALON_NAV["packages-and-prepaid"];
+    expect(rule.needs).toEqual(["customers"]);
+    expect(rule.needsAny).toEqual(["bookings", "payments"]);
+    // neither a place to use a pass nor a place to collect a fee: nothing to show
+    const rows = shown(owner(BEAUTY.filter((k) => k !== "bookings" && k !== "payments")));
+    expect(rows).not.toContain("packages-and-prepaid");
+    // no clients: no passes to sell
+    expect(shown(owner(BEAUTY.filter((k) => k !== "customers")))).not.toContain("packages-and-prepaid");
+  });
+
+  it("memberships and the audit log are not sidebar rows any more (they live inside other places)", () => {
+    expect(SALON_NAV).not.toHaveProperty("memberships-and-loyalty");
+    expect(SALON_NAV).not.toHaveProperty("system-audit-log");
   });
 
   it("a cashier does not get the rows that lead to money or history", () => {
     const rows = shown(staff(BEAUTY));
-    for (const k of ["reports-and-rankings", "end-of-day-cash", "invoices-and-terminal", "memberships-and-loyalty", "system-audit-log"]) {
+    for (const k of ["reports-and-rankings", "end-of-day-cash", "invoices-and-terminal", "tenant-settings"]) {
       expect(rows).not.toContain(k);
     }
     // but the day's work is all still there

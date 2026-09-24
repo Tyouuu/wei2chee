@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   createSessionSupabaseClient,
@@ -75,7 +76,7 @@ export default async function SalonAuditLogPreview({
           className="bg-[#f9f9fd] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] antialiased min-h-screen"
           style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
         >
-          <SalonSidebar active="system-audit-log" businessName={businessName} subtitle="Operations" />
+          <SalonSidebar active="tenant-settings" businessName={businessName} subtitle="Operations" />
           <div className="pl-64 min-h-screen flex flex-col bg-[#f9f9fd]">
             <main className="flex-1 w-full p-8">
               <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm p-10 text-center text-[13.5px] text-[#77767b]">
@@ -171,16 +172,14 @@ export default async function SalonAuditLogPreview({
         className="bg-[#f9f9fd] text-[14.5px] leading-[22px] tracking-[-0.005em] text-[#1a1c1f] antialiased min-h-screen"
         style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
       >
-        <SalonSidebar active="system-audit-log" businessName={businessName} subtitle="Operations" />
+        <SalonSidebar active="tenant-settings" businessName={businessName} subtitle="Operations" />
         <div className="pl-64 min-h-screen flex flex-col bg-[#f9f9fd]">
           <main className="flex-1 w-full p-8">
             <div className="flex flex-col w-full">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-5">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2 text-[11.5px] leading-4 tracking-[0.06em] font-semibold text-[#5e5e67] tracking-widest uppercase">
-                    <span>OPERATIONS</span>
-                    <span className="text-[#c8c5cb]">/</span>
-                    <span>MANAGEMENT</span>
+                    <Link href="/en/salon-preview/settings" className="hover:text-[#1a1c1f] transition-colors">SETTINGS</Link>
                     <span className="text-[#c8c5cb]">/</span>
                     <span className="text-[#1a1c1f] font-semibold">AUDIT LOG</span>
                   </div>

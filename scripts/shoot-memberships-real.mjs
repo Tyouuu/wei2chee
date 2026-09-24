@@ -190,8 +190,12 @@ try {
     /Priya/.test(await rows.nth(0).innerText()) && /Fay/.test(await rows.nth(1).innerText()) && /Dina/.test(await rows.nth(5).innerText()));
   check("分页签的数字是真的：All 6 · Active 5 · Overdue 2 · Cancelled 1", /All \(6\)/.test(body) && /Active \(5\)/.test(body) && /Overdue \(2\)/.test(body) && /Cancelled \(1\)/.test(body));
   check("页脚老实讲「手动收，自动扣款要先有收款闸道」", /collected by hand\. Automatic debit needs a payment gateway/.test(body));
-  check("侧栏：Memberships 现在是一个真的连结，而且亮着",
-    (await page.locator("aside a", { hasText: "Memberships" }).count()) === 1);
+  check("🔴 侧栏：「Packages & Plans」那一行亮着（会员并进套票那一行，不是单独一行）",
+    (await page.locator("aside nav a", { hasText: "Packages & Plans" }).count()) === 1
+      && (await page.locator("aside nav a[href='/en/salon-preview/memberships']").count()) === 0);
+  check("🔴 页面顶上有两个分页：Packages & Prepaid ｜ Memberships，后者是当前页",
+    (await page.locator("nav[aria-label='Packages and memberships'] a").count()) === 2
+      && (await page.locator("nav[aria-label='Packages and memberships'] a[aria-current='page']").innerText()) === "Memberships");
   await page.screenshot({ path: `${OUT}/1-full.png`, fullPage: true });
 
   console.log("\n⑤ 真的收一期");

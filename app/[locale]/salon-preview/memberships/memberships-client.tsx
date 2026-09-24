@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { SalonSidebar } from "../salon-shell";
+import { PrepaidTabs, SalonSidebar } from "../salon-shell";
 
 export type MemberRow = {
   id: string;
@@ -222,10 +222,13 @@ export function MembershipsClient({ canSeeMoney, data }: { canSeeMoney: boolean;
       className="bg-[#fafafa] text-[#09090b] antialiased min-h-screen"
       style={{ fontFamily: "var(--font-sans-latin), sans-serif" }}
     >
-      <SalonSidebar active="memberships-and-loyalty" businessName={data.businessName} subtitle="Operations" />
+      <SalonSidebar active="packages-and-prepaid" businessName={data.businessName} subtitle="Operations" />
       <div className="pl-64">
         <main data-print-sheet className="w-full min-h-screen bg-[#fafafa]">
           <div className="max-w-7xl mx-auto px-8 py-8 flex flex-col gap-7">
+            <div className="-mb-2">
+              <PrepaidTabs active="memberships" />
+            </div>
             <div className="flex items-center gap-2 text-xs text-[#71717a]">
               <span className="font-medium text-[#09090b]">{data.businessName}</span>
               <span>/</span>

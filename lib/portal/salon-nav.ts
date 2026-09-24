@@ -15,15 +15,23 @@
  * add it back and it returns.
  *
  * Rows that have no page of their own hang on the page they belong to:
- *   - Packages needs customers AND bookings (a pass is sold to a client and
- *     used up at a booking; a business with no bookings has nothing to use one
- *     on)
- *   - Memberships needs customers AND payments (a monthly fee is collected)
+ *   - Packages & Plans is ONE row (2026-09-25): a pass, a prepaid balance
+ *     and a monthly membership are all "money the client paid ahead". Fresha,
+ *     Booksy, Timely and GlossGenius group them in one place too, and none of
+ *     them gives a monthly plan its own top-level entry. It needs customers,
+ *     and either bookings (a pass is used up at a booking) or payments (a
+ *     monthly fee is collected). The two pages stay two pages, joined by a tab
+ *     strip at the top; the Memberships tab is drawn for the owner only.
  *   - the Lookbook needs the website (a portfolio is something you show)
  *
- * `ownerOnly` rows are the ones that read money or the change history. Their
- * pages already refuse a cashier, but a row that leads to "only the owner can
- * see this" is a dead end, so it is not drawn for one.
+ * `ownerOnly` rows are the ones that read money. Their pages already refuse a
+ * cashier, but a row that leads to "only the owner can see this" is a dead end,
+ * so it is not drawn for one.
+ *
+ * The change history (audit log) has no row any more: no salon product puts a
+ * whole-shop history in the main menu (Timely and Boulevard keep it owner /
+ * admin only inside settings), so it is opened from Tenant Settings -> Team &
+ * Access. Its page is still owner-only.
  *
  * The row that is open right now is always kept, so the sidebar never claims
  * you are somewhere it does not list.
@@ -32,6 +40,8 @@
 export type SalonNavRule = {
   /** Page keys the business must have (all of them). Empty = no page needed. */
   needs: readonly string[];
+  /** Page keys of which the business must have at least one (when set). */
+  needsAny?: readonly string[];
   /** Hidden from a cashier / staff login. */
   ownerOnly?: boolean;
 };
@@ -43,14 +53,12 @@ export const SALON_NAV: Record<string, SalonNavRule> = {
   "register-and-checkout": { needs: ["payments"] },
   "clients-and-profiles": { needs: ["customers"] },
   "lookbook-and-formulas": { needs: ["website"] },
-  "packages-and-prepaid": { needs: ["customers", "bookings"] },
-  "memberships-and-loyalty": { needs: ["customers", "payments"], ownerOnly: true },
+  "packages-and-prepaid": { needs: ["customers"], needsAny: ["bookings", "payments"] },
   "salon-stock-and-orders": { needs: ["inventory"] },
   "stylists-and-staff": { needs: ["staff"] },
   "reports-and-rankings": { needs: ["payments"], ownerOnly: true },
   "end-of-day-cash": { needs: ["payments"], ownerOnly: true },
   "invoices-and-terminal": { needs: ["payments"], ownerOnly: true },
-  "system-audit-log": { needs: [], ownerOnly: true },
   // The owner's own settings: who works here, the rules, the pages kept. No
   // page of the business is needed for it, and a cashier has no business there.
   "tenant-settings": { needs: [], ownerOnly: true },
@@ -77,5 +85,6 @@ export function salonRowVisible(
   // A row this file has never heard of stays visible rather than vanishing.
   if (!rule) return true;
   if (rule.ownerOnly && !ctx.isOwner) return false;
-  return rule.needs.every((k) => ctx.pageKeys.includes(k));
+  if (!rule.needs.every((k) => ctx.pageKeys.includes(k))) return false;
+  return !rule.needsAny || rule.needsAny.some((k) => ctx.pageKeys.includes(k));
 }

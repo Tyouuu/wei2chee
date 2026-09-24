@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { SALON_NAV } from "@/lib/portal/salon-nav";
@@ -329,6 +330,21 @@ export function TeamTab({ ownerEmail, members }: { ownerEmail: string; members: 
             <p className="text-[13px] leading-5 text-[#47464b]">{staffSees.join(", ")}. They can take a customer&apos;s payment at the Register. Refunds, paying money out and the owner-only pages stay with you.</p>
           </div>
         </div>
+      </div>
+
+      <div className={CARD + " p-6 flex flex-wrap items-center justify-between gap-4"}>
+        <div className="min-w-0">
+          <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Change history</h2>
+          <p className="text-[13.5px] leading-5 text-[#5e5e67] mt-0.5">Who changed what, and when, and whether a person or the assistant did it. Only you can open it.</p>
+        </div>
+        <Link
+          href="/en/salon-preview/audit-log"
+          data-testid="settings-audit-link"
+          className="h-9 px-4 rounded-lg border border-[#c8c5cb]/60 bg-[#ffffff] hover:bg-[#eeedf1] text-[13.5px] font-medium text-[#1a1c1f] transition-colors inline-flex items-center gap-1.5"
+        >
+          <span>Open change history</span>
+          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </Link>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { SalonSidebar } from "../salon-shell";
+import { PrepaidTabs, SalonSidebar } from "../salon-shell";
 
 export type PackageStatus = "active" | "expiring" | "depleted";
 
@@ -146,6 +146,7 @@ export function PackagesClient({
       <div className="pl-64 min-h-screen bg-[#f9f9fd]">
         <main className="w-full px-7 py-7 bg-[#f9f9fd]">
           <div className="flex flex-col w-full">
+            <PrepaidTabs active="packages" />
             <div className="flex flex-col md:flex-row md:items-center justify-between pb-5 gap-3">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1 text-[11.5px] leading-4 tracking-[0.04em] font-medium tracking-wider uppercase text-[#5e5e67]">
