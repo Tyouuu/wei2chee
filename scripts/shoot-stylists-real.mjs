@@ -53,6 +53,15 @@ const pass = [];
 const fail = [];
 const ok = (m) => { pass.push(m); console.log(`  PASS  ${m}`); };
 const no = (m, got) => { fail.push(m); console.log(`  FAIL  ${m}${got === undefined ? "" : ` — ${got}`}`); };
+const check = (m, cond, got) => (cond ? ok(m) : no(m, got));
+async function until(fn, ms = 20000) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if (await fn().catch(() => false)) return true;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return false;
+}
 
 let browser;
 try {
@@ -87,9 +96,16 @@ try {
   if (plain.error) throw new Error(`plain: ${plain.error.message}`);
 
   // 真的抽成阶梯:0-500 是 15%,500 以上是 25%。
+  // ⚠️ 这一份是「上个月一号」起算的：资料库的规矩是「同一天存两次，最后一次赢」
+  // 而「那个月之前一份都没有」就退回最早那一份——如果种子也是今天存的，
+  // 之后当天存的新比例就会当成「最早一份」的同一天，这个月当场生效，
+  // 「下个月才开始」那条就测不到了。要有一份更早的，才分得出「下个月」。
+  const now0 = new Date();
+  const lastMonthFirst = new Date(Date.UTC(now0.getUTCFullYear(), now0.getUTCMonth() - 1, 1)).toISOString().slice(0, 10);
   const tiers = await api.rpc("set_commission_tiers", {
     in_party_id: jasmine.data.id,
     in_tiers: [{ from_cents: 0, percent: 15 }, { from_cents: 50000, percent: 25 }],
+    in_effective_from: lastMonthFirst,
   });
   if (tiers.error) throw new Error(`set_commission_tiers: ${tiers.error.message}`);
 
@@ -180,6 +196,65 @@ try {
 
   await ownerPage.screenshot({ path: `${OUT}/1-jasmine.png`, fullPage: true });
 
+  // ═══ 任务 415：Edit Brackets（抽成阶梯）——原来只弹一句「还没接」═════════
+  console.log("\n抽成阶梯：Edit Brackets");
+  const tiersOf = async (id) => (await admin.from("commission_tiers").select("from_cents, percent").eq("party_id", id).order("from_cents")).data ?? [];
+  const schemesOf = async (id) => (await admin.from("commission_schemes").select("effective_from, tiers").eq("party_id", id).order("created_at")).data ?? [];
+  const todayMY = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date());
+  const firstOfMonth = todayMY.slice(0, 7) + "-01";
+  let alerts = 0;
+  ownerPage.on("dialog", () => { alerts += 1; });
+
+  await ownerPage.getByRole("button", { name: "Edit Brackets" }).click();
+  const editor = ownerPage.getByTestId("tier-editor");
+  await editor.waitFor();
+  check("🔴 点 Edit Brackets：原地展开一个编辑器（不弹浏览器的框），预填现在这两档（0 → 15%、500 → 25%）",
+    (await editor.getByLabel("From 1").inputValue()) === "0" && (await editor.getByLabel("Rate 1").inputValue()) === "15" && (await editor.getByLabel("From 2").inputValue()) === "500" && (await editor.getByLabel("Rate 2").inputValue()) === "25");
+  check("🔴 一句他读得懂的话：first RM 500 at 15% · RM 500 and above at 25%", /first RM 500 at 15% · RM 500 and above at 25%/.test(await editor.getByTestId("tier-phrase").innerText()), await editor.innerText());
+  check("🔴 这个月的预览是分段算的：800 = 500×15% + 300×25% = RM 150（不是整笔 800×25% = 200）", /RM 150\b/.test(await editor.getByTestId("tier-preview").innerText()), await editor.getByTestId("tier-preview").innerText());
+  check("🔴「In force from」故意是空的（预填日期看起来像我们替他决定了），并写明「下个月才开始，这个月照旧」", (await editor.getByLabel("In force from").inputValue()) === "" && /Starts next month/.test(await editor.getByTestId("tier-start-note").innerText()));
+  await editor.getByLabel("Rate 2").fill("30");
+  check("🔴 改第二档成 30%：预览当场变（75 + 90 = RM 165），不用存", /RM 165\b/.test(await editor.getByTestId("tier-preview").innerText()), await editor.getByTestId("tier-preview").innerText());
+  await editor.getByLabel("From 2").fill("0");
+  check("🔴 两档从同一个数字开始：讲一句人话，「Save Brackets」灰掉", /cannot start at the same figure/.test(await editor.getByTestId("tier-problem").innerText()) && (await editor.getByRole("button", { name: "Save Brackets" }).isDisabled()));
+  await editor.getByLabel("From 2").fill("500");
+  await editor.getByLabel("Rate 2").fill("150");
+  check("🔴 比例 150：讲一句「要在 0 到 100 之间」，存不了", /between 0 and 100/.test(await editor.getByTestId("tier-problem").innerText()) && (await editor.getByRole("button", { name: "Save Brackets" }).isDisabled()));
+  for (let i = 0; i < 4; i += 1) await editor.getByRole("button", { name: "+ Add a band" }).click();
+  check("🔴 加到六档：「+ Add a band」灰掉（最多六档，再多没有人算得清）", (await editor.getByLabel(/^From \d$/).count()) === 6 && (await editor.getByRole("button", { name: "+ Add a band" }).isDisabled()));
+  await ownerPage.screenshot({ path: `${OUT}/1b-tier-editor.png`, fullPage: true });
+  await editor.getByRole("button", { name: "Cancel" }).click();
+  check("🔴 Cancel：编辑器收起，资料库一点没动（还是 0 → 15%、500 → 25%）", (await ownerPage.getByTestId("tier-editor").count()) === 0 && JSON.stringify((await tiersOf(jasmine.data.id)).map((t) => [Number(t.from_cents), Number(t.percent)])) === JSON.stringify([[0, 15], [50000, 25]]));
+
+  // 存：默认「下个月才开始」——这个月已经算的钱不会在他脚下动
+  const schemesBefore = (await schemesOf(jasmine.data.id)).length;
+  await ownerPage.getByRole("button", { name: "Edit Brackets" }).click();
+  await ownerPage.getByTestId("tier-editor").waitFor();
+  await ownerPage.getByLabel("Rate 2").fill("30");
+  await ownerPage.getByRole("button", { name: "Save Brackets" }).click();
+  await until(async () => (await tiersOf(jasmine.data.id)).some((t) => Number(t.percent) === 30));
+  const t2 = await tiersOf(jasmine.data.id);
+  check("🔴 存下去：资料库里第二档真的变成 30%（走 set_commission_tiers）", t2.length === 2 && Number(t2[1].percent) === 30 && Number(t2[1].from_cents) === 50000, JSON.stringify(t2));
+  const sch = await schemesOf(jasmine.data.id);
+  check("🔴 同时记下一份「从哪天起」：日子是今天（= 下个月才生效），不是偷偷改成这个月一号", sch.length === schemesBefore + 1 && sch.at(-1).effective_from === todayMY, JSON.stringify(sch.at(-1)));
+  await until(async () => (await ownerPage.getByTestId("tier-editor").count()) === 0);
+  await until(async () => /30%/.test(await ownerPage.locator("body").innerText()));
+  body = await ownerPage.locator("body").innerText();
+  check("🔴 编辑器收起，卡片上第二档写着 30%", /30%/.test(body) && (await ownerPage.getByTestId("tier-editor").count()) === 0);
+  check("🔴 而这个月的「Commission This Month」还是 RM 150：新比例下个月才算，上个月讲好的率不会在他脚下动", /Commission This Month[\s\S]{0,12}RM\s*150\b/i.test(body), body.match(/Commission This Month[\s\S]{0,30}/i)?.[0]);
+
+  // 「从这个月一号」：这个月也照新的算
+  await ownerPage.getByRole("button", { name: "Edit Brackets" }).click();
+  await ownerPage.getByTestId("tier-editor").waitFor();
+  await ownerPage.getByRole("button", { name: "Start from the 1st of this month" }).click();
+  check("点「Start from the 1st of this month」：日子填成这个月一号，并讲明「这个月也照新的算」", (await ownerPage.getByLabel("In force from").inputValue()) === firstOfMonth && /this month's commission will be worked out on these bands too/i.test(await ownerPage.getByTestId("tier-start-note").innerText()));
+  await ownerPage.getByRole("button", { name: "Save Brackets" }).click();
+  await until(async () => (await schemesOf(jasmine.data.id)).length === schemesBefore + 2);
+  check("🔴 这一次记下的日子是这个月一号", (await schemesOf(jasmine.data.id)).at(-1)?.effective_from === firstOfMonth);
+  await until(async () => /Commission This Month[\s\S]{0,12}RM\s*165\b/i.test(await ownerPage.locator("body").innerText()));
+  check("🔴 这个月的抽成跟着变成 RM 165（500×15% + 300×30%）", /Commission This Month[\s\S]{0,12}RM\s*165\b/i.test(await ownerPage.locator("body").innerText()));
+  await ownerPage.screenshot({ path: `${OUT}/1c-after-tier-save.png`, fullPage: true });
+
   // 换到第二位师傅(什么活动都没有)——验证选择器真的能换人。
   // ⚠️ 开始那一刻网址本来就带着 "staff="(Jasmine 的 id),用同一个宽松的
   // regex 等,Playwright 当场就判定「已经满足」,不会真的等到换成 Amy 的
@@ -212,6 +287,19 @@ try {
   if (checkAmy?.phone === "012-000 9999") ok("🔴 Save 真的把改动写进资料库(update_directory_entry)");
   else no("Save 没有真的写进资料库", checkAmy?.phone);
 
+  // 还没有任何阶梯的师傅：从一档「0 起」开始，自己填比例（不替他猜一个）
+  await ownerPage.getByRole("button", { name: "Edit Brackets" }).click();
+  const amyEditor = ownerPage.getByTestId("tier-editor");
+  await amyEditor.waitFor();
+  check("🔴 没有阶梯的师傅：编辑器只有一档，「From」是 0，比例是空的（不预填一个建议）", (await amyEditor.getByLabel(/^From \d$/).count()) === 1 && (await amyEditor.getByLabel("From 1").inputValue()) === "0" && (await amyEditor.getByLabel("Rate 1").inputValue()) === "");
+  check("🔴 一份比例都还没有的师傅：讲明「这些比例从现在起算」（没有旧的可以「照旧」，不讲「下个月才开始」）", /apply from now/i.test(await amyEditor.getByTestId("tier-start-note").innerText()), await amyEditor.getByTestId("tier-start-note").innerText());
+  await amyEditor.getByLabel("Rate 1").fill("10");
+  await amyEditor.getByRole("button", { name: "Save Brackets" }).click();
+  await until(async () => (await tiersOf(plain.data.id)).length === 1);
+  const amyTiers = await tiersOf(plain.data.id);
+  check("🔴 存好：Amy 有了一档 0 起 10%", amyTiers.length === 1 && Number(amyTiers[0].percent) === 10 && Number(amyTiers[0].from_cents) === 0, JSON.stringify(amyTiers));
+  check("🔴 整个过程一个 alert() 都没弹", alerts === 0, String(alerts));
+
   // 员工身分——看得到师傅资料,看不到抽成金额(sees_money)。
   const staffEmail = `sty-staff-${stamp}@formae.test`;
   const staffPassword = `Ss-${stamp}-x!`;
@@ -233,6 +321,7 @@ try {
   if (/Stylist-Test Jasmine/.test(staffBody) && !/Commission This Month/.test(staffBody))
     ok("🔴 员工身分看得到师傅资料,但看不到「Commission This Month」这个金额格子(sees_money)");
   else no("员工身分的金钱隔离不对");
+  check("🔴 员工看不到「Edit Brackets」（定抽成是老板的事，资料库那一支也只认老板）", !/Edit Brackets/i.test(staffBody));
   admin.auth.admin.deleteUser(staffUser.user.id).catch(() => {});
 
   // 真的收档——Amy 存档之后应该从选择器消失(或者整页跳到剩下那一位)。

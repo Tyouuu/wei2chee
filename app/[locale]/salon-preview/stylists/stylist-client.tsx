@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { SalonSidebar } from "../salon-shell";
+import { TierEditor } from "./tier-editor";
 
 export type CommissionTier = {
   id: string;
@@ -45,9 +46,6 @@ function fmtDateTime(iso: string): string {
 function initialsOf(name: string): string {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
 }
-function notWired(what: string) {
-  alert(`${what} isn't wired up on this page yet.`);
-}
 
 export function StylistClient({
   businessName,
@@ -73,6 +71,7 @@ export function StylistClient({
     note: profile?.note ?? "",
   }));
   const [dirty, setDirty] = useState(false);
+  const [editingTiers, setEditingTiers] = useState(false);
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -338,15 +337,26 @@ export function StylistClient({
                           </div>
                           <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Commission Tiers</h2>
                         </div>
-                        <button
-                          onClick={() => notWired("Editing commission tiers from this page")}
-                          className="px-2 py-1 rounded bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#1a1c1f] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors"
-                        >
-                          Edit Brackets
-                        </button>
+                        {/* Setting a rate is money, so it is the owner's (set_commission_tiers asks sees_money). */}
+                        {canSeeMoney && !editingTiers && (
+                          <button
+                            onClick={() => setEditingTiers(true)}
+                            className="px-2 py-1 rounded bg-[#eeedf1] hover:bg-[#e8e8ec] active:scale-[0.97] text-[#1a1c1f] text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-wider transition-colors"
+                          >
+                            Edit Brackets
+                          </button>
+                        )}
                       </div>
 
-                      {profile.commissionTiers.length === 0 ? (
+                      {editingTiers ? (
+                        <TierEditor
+                          key={profile.id}
+                          partyId={profile.id}
+                          saved={profile.commissionTiers}
+                          earnedCents={profile.earnedCentsThisMonth}
+                          onClose={() => setEditingTiers(false)}
+                        />
+                      ) : profile.commissionTiers.length === 0 ? (
                         <p className="text-[13.5px] text-[#77767b] py-6 text-center">No commission brackets set for {profile.name} yet.</p>
                       ) : (
                         <div className="flex flex-col gap-2">
