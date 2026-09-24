@@ -83,8 +83,7 @@ import { salonRowVisible, type SalonNavContext } from "@/lib/portal/salon-nav";
  * different one again (a "Wei OS" header, a command-jump box, renamed rows)
  * and is not followed.
  *
- * Every row under Management has a real page behind it except Tenant
- * Settings.
+ * Every row has a real page behind it.
  */
 export type SalonNavKey =
   | "overview"
@@ -99,9 +98,10 @@ export type SalonNavKey =
   | "reports-and-rankings"
   | "end-of-day-cash"
   | "invoices-and-terminal"
-  | "system-audit-log";
+  | "system-audit-log"
+  | "tenant-settings";
 
-const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
+export const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }[] = [
   { key: "overview", href: "/en/salon-preview/overview", icon: "dashboard", label: "Overview" },
   {
     key: "appointments-and-flow",
@@ -129,7 +129,7 @@ const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }
   },
 ];
 
-const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: string }[] = [
+export const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: string }[] = [
   { key: "packages-and-prepaid", href: "/en/salon-preview/packages", icon: "confirmation_number", label: "Packages & Prepaid" },
   { key: "memberships-and-loyalty", href: "/en/salon-preview/memberships", icon: "loyalty", label: "Memberships" },
   { key: "salon-stock-and-orders", href: "/en/salon-preview/stock", icon: "inventory_2", label: "Salon Stock & Orders" },
@@ -138,7 +138,7 @@ const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: 
   { key: "end-of-day-cash", href: "/en/salon-preview/eod-cash", icon: "payments", label: "End of Day Cash" },
   { key: "invoices-and-terminal", href: "/en/salon-preview/invoices", icon: "receipt_long", label: "Invoices & Terminal" },
   { key: "system-audit-log", href: "/en/salon-preview/audit-log", icon: "manage_history", label: "System Audit Log" },
-  { key: null, href: "", icon: "tune", label: "Tenant Settings" },
+  { key: "tenant-settings", href: "/en/salon-preview/settings", icon: "tune", label: "Tenant Settings" },
 ];
 
 /**
@@ -206,7 +206,7 @@ export function SalonSidebar({
 }) {
   const viewer = useContext(SalonViewerContext);
   const dailyRows = DAILY_OPS.filter((r) => salonRowVisible(r.key, viewer, active));
-  // "Tenant Settings" has no key and no page yet; it stays, greyed.
+  // Every row carries a key now (Tenant Settings has its page); null stays allowed for a row with none.
   const managementRows = MANAGEMENT.filter((r) => r.key === null || salonRowVisible(r.key, viewer, active));
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-[#ffffff] z-40 flex flex-col justify-between border-r border-[#c8c5cb]/30">

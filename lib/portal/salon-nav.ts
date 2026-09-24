@@ -51,6 +51,9 @@ export const SALON_NAV: Record<string, SalonNavRule> = {
   "end-of-day-cash": { needs: ["payments"], ownerOnly: true },
   "invoices-and-terminal": { needs: ["payments"], ownerOnly: true },
   "system-audit-log": { needs: [], ownerOnly: true },
+  // The owner's own settings: who works here, the rules, the pages kept. No
+  // page of the business is needed for it, and a cashier has no business there.
+  "tenant-settings": { needs: [], ownerOnly: true },
 };
 
 export type SalonNavContext = {

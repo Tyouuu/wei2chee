@@ -153,7 +153,9 @@ try {
 
   // 真的核销——按第三次,剩余应该变成 7。
   await ownerPage.getByText(/Redeem 1 Session/).click();
-  await ownerPage.waitForTimeout(1200);
+  // 等的是结果，不是一个固定的钟点：核销走完资料库、页面重新拿到数字要多久不一定，
+  // 固定睡 1.2 秒有时读到的还是旧的 2 Consumed（间歇地红，跟产品没有关系）。
+  await ownerPage.waitForFunction(() => /3 Consumed · 7 Remaining/.test(document.body.innerText), null, { timeout: 15000 }).catch(() => {});
   body = await ownerPage.locator("body").innerText();
   if (/3 Consumed · 7 Remaining/.test(body)) ok("🔴 真的按了 Redeem,剩余次数真的从 8 变成 7(use_package_session)");
   else no("Redeem 没有真的生效", body.match(/\d+ Consumed[^\n]*/)?.[0]);
@@ -161,7 +163,12 @@ try {
   // 真的撤销——撤掉一次用掉的记录,剩余应该多回一次。
   ownerPage.once("dialog", (d) => d.accept());
   await ownerPage.getByText("Undo").first().click();
-  await ownerPage.waitForTimeout(1200);
+  // 同上：等资料库真的变回 8，而不是睡一个固定的钟点再读。
+  for (let i = 0; i < 40; i++) {
+    const { data: probe } = await admin.from("package_balance").select("sessions_left").eq("package_id", pkg1Id).single();
+    if (probe?.sessions_left === 8) break;
+    await new Promise((r) => setTimeout(r, 250));
+  }
   const { data: checkPkg1 } = await admin.from("package_balance").select("sessions_left").eq("package_id", pkg1Id).single();
   if (checkPkg1?.sessions_left === 7 || checkPkg1?.sessions_left === 8)
     ok(`🔴 Undo 真的把一次用掉的加回去了(资料库真的剩 ${checkPkg1?.sessions_left} 次)`);
