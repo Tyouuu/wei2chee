@@ -119,6 +119,7 @@
     "check:treatments": "node scripts/check-treatments.mjs",
     "check:consent": "node scripts/check-consent.mjs",
     "check:memory": "node scripts/check-memory.mjs",
+    "check:day-closings": "node scripts/check-day-closings.mjs",
     "check:deposits": "node scripts/check-deposits.mjs",
     "shoot:stored-credit": "node scripts/shoot-stored-credit.mjs",
     "check:visit-lines": "node scripts/check-visit-lines.mjs",

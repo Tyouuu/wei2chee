@@ -129,6 +129,13 @@ try {
     "拿掉之后删帐号才真的成功（真登入验证过）";
   const REASON_350 =
     "任务 350：同一条理由，比 381 早一晚撞到、早一晚修好";
+  /* 2026-09-25：会员月费（memberships · membership_payments）跟每日结帐对数
+     （till_counts）都是 381 那一批之后才建的表，一样只填 auth.uid()、
+     一样故意不带外键——清单没跟上，这一条守卫就把它们报成红。
+     真的删帐号那一步 check:account-deletion 一直是绿的。 */
+  const REASON_AFTER_381 =
+    "同 20260911390000（任务 381）的理由，只是这几张是它之后才建的表：" +
+    "只填 auth.uid()，从来不是使用者传进来的值，故意不带外键，删帐号那一步不会被它拦";
   const ON_PURPOSE = {
     "follow_ups.created_by":
       "20260905830000：唯一一张有两条 cascade 父路的表，有外键整个帐号就删不掉；" +
@@ -169,6 +176,9 @@ try {
     "treatment_products.created_by": REASON_381,
     "vehicles.created_by": REASON_381,
     "work_days.recorded_by": REASON_381,
+    "membership_payments.created_by": REASON_AFTER_381,
+    "memberships.created_by": REASON_AFTER_381,
+    "till_counts.created_by": REASON_AFTER_381,
   };
   const loose = (cols ?? []).filter(
     (c) => !ON_PURPOSE[`${c.tbl}.${c.col}`]

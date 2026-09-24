@@ -1,12 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { SalonSidebar } from "../salon-shell";
 
 export type SettlementRow = { method: string; count: number; totalCents: number; isCash: boolean };
 export type PettyCashRow = { id: string; name: string; note: string; amountCents: number };
 
 type DenomKey = "c100" | "c50" | "c20" | "c10" | "c5" | "c1";
+
+/**
+ * One saved closing (a day_closings row), already formatted for the screen by
+ * the server page. expected / gross / outflows / settlements are the figures
+ * that were on screen when it was locked; counted, variance and the deposit
+ * are worked out by the database from the notes he counted.
+ */
+export type ClosingRecord = {
+  id: string;
+  dateLabel: string;
+  lockedAtLabel: string;
+  lockedByName: string;
+  counts: Partial<Record<DenomKey, number>>;
+  countedCents: number;
+  floatCents: number;
+  expectedCashCents: number;
+  grossCents: number;
+  outflowsCents: number;
+  settlements: SettlementRow[];
+  checklist: { label: string; done: boolean }[];
+  note: string;
+  varianceCents: number;
+  netDepositCents: number;
+};
 
 const DENOMINATIONS: { key: DenomKey; label: string; value: number; badgeClasses: string }[] = [
   { key: "c100", label: "Banknote RM 100", value: 100, badgeClasses: "bg-purple-50 text-purple-800 border-purple-200" },
@@ -33,15 +59,28 @@ const csvCell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
 const money = (cents: number) => (cents / 100).toFixed(2);
 
 export function EodCashClient({
+  projectId,
+  todayStr,
+  closing,
+  prefill,
+  history,
   businessName,
   dayLabel,
   canSeeMoney,
   leadName,
-  settlements,
+  settlements: liveSettlements,
   pettyCash,
-  totalGrossCents,
-  expectedCashCents,
+  totalGrossCents: liveGrossCents,
+  expectedCashCents: liveExpectedCents,
 }: {
+  projectId: string;
+  todayStr: string;
+  /** Today's saved closing, when the day has been locked. */
+  closing: ClosingRecord | null;
+  /** A closing that was reopened today: the count starts from it, not from zero. */
+  prefill: ClosingRecord | null;
+  /** Earlier days, newest first. */
+  history: ClosingRecord[];
   businessName: string;
   dayLabel: string;
   canSeeMoney: boolean;
@@ -51,18 +90,42 @@ export function EodCashClient({
   totalGrossCents: number;
   expectedCashCents: number;
 }) {
-  const [counts, setCounts] = useState<Record<DenomKey, number>>(ZERO_COUNTS);
-  const [floatCents, setFloatCents] = useState(0);
-  const [checklist, setChecklist] = useState(CHECKLIST_INITIAL.map((label) => ({ label, done: false })));
-  const [lockState, setLockState] = useState<"idle" | "locking" | "locked">("idle");
-  const [note, setNote] = useState("");
+  const router = useRouter();
+  const locked = closing !== null;
+  const seed = closing ?? prefill;
+  const [counts, setCounts] = useState<Record<DenomKey, number>>(() => ({ ...ZERO_COUNTS, ...(seed?.counts ?? {}) }));
+  const [floatCents, setFloatCents] = useState(seed?.floatCents ?? 0);
+  const [checklist, setChecklist] = useState(() =>
+    seed && seed.checklist.length > 0 ? seed.checklist : CHECKLIST_INITIAL.map((label) => ({ label, done: false })),
+  );
+  const [lockState, setLockState] = useState<"idle" | "locking">("idle");
+  const [note, setNote] = useState(seed?.note ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [reopening, setReopening] = useState<{ reason: string; busy: boolean } | null>(null);
+  // One key per attempt, so a second press (or a retry after a dropped
+  // connection) gets the first record back instead of trying to close twice.
+  const attemptKey = useRef<string | null>(null);
 
-  const adjust = (key: DenomKey, delta: number) => setCounts((prev) => ({ ...prev, [key]: Math.max(0, prev[key] + delta) }));
+  // Once the day is locked the screen shows what was frozen, not today's
+  // ledger as it is now; the live figures are only used to tell him if they
+  // have moved since.
+  const settlements = closing ? closing.settlements : liveSettlements;
+  const totalGrossCents = closing ? closing.grossCents : liveGrossCents;
+  const expectedCashCents = closing ? closing.expectedCashCents : liveExpectedCents;
+
+  const adjust = (key: DenomKey, delta: number) => {
+    if (locked) return;
+    setCounts((prev) => ({ ...prev, [key]: Math.max(0, prev[key] + delta) }));
+  };
   const setCount = (key: DenomKey, raw: string) => {
+    if (locked) return;
     const n = parseInt(raw, 10);
     setCounts((prev) => ({ ...prev, [key]: Number.isNaN(n) || n < 0 ? 0 : n }));
   };
-  const toggleCheck = (i: number) => setChecklist((prev) => prev.map((item, idx) => (idx === i ? { ...item, done: !item.done } : item)));
+  const toggleCheck = (i: number) => {
+    if (locked) return;
+    setChecklist((prev) => prev.map((item, idx) => (idx === i ? { ...item, done: !item.done } : item)));
+  };
 
   const totalCountedCents = DENOMINATIONS.reduce((sum, d) => sum + counts[d.key] * d.value * 100, 0);
   const varianceCents = totalCountedCents - expectedCashCents;
@@ -72,14 +135,59 @@ export function EodCashClient({
   const varianceColor = varianceCents === 0 ? "text-[#047857]" : varianceCents > 0 ? "text-[#1d4ed8]" : "text-[#be123c]";
   const varianceText = varianceCents === 0 ? ringgit(0) : varianceCents > 0 ? `+${ringgit(varianceCents)}` : `-${ringgit(Math.abs(varianceCents))}`;
 
-  const handleLock = () => {
+  const nonCashTotal = settlements.filter((s) => !s.isCash).reduce((s, r) => s + r.totalCents, 0);
+  const liveOutflowsCents = pettyCash.reduce((s, p) => s + p.amountCents, 0);
+  const outflowsCents = closing ? closing.outflowsCents : liveOutflowsCents;
+  const counted = totalCountedCents > 0;
+
+  // Did the day's money move after he locked it? A late payment or an expense
+  // entered afterwards is the whole reason to close a day, so say so.
+  const changedSinceLock =
+    closing !== null &&
+    (liveExpectedCents !== closing.expectedCashCents || liveGrossCents !== closing.grossCents || liveOutflowsCents !== closing.outflowsCents);
+
+  const handleLock = async () => {
+    if (locked || lockState === "locking") return;
     setLockState("locking");
-    setTimeout(() => setLockState("locked"), 1200);
+    setError(null);
+    attemptKey.current ??= crypto.randomUUID();
+    const supabase = createBrowserSupabaseClient();
+    const { error: err } = await supabase.rpc("lock_day_closing", {
+      in_project_id: projectId,
+      in_closing_date: todayStr,
+      in_counts: Object.fromEntries(DENOMINATIONS.filter((d) => counts[d.key] > 0).map((d) => [String(d.value), counts[d.key]])),
+      in_float_cents: floatCents,
+      in_expected_cash_cents: expectedCashCents,
+      in_gross_cents: totalGrossCents,
+      in_outflows_cents: outflowsCents,
+      in_settlements: settlements,
+      in_checklist: checklist,
+      in_note: note,
+      in_idempotency_key: attemptKey.current,
+    });
+    if (err) {
+      setError(err.message);
+      setLockState("idle");
+      // Closed in another tab a moment ago: catch this one up.
+      if (/already closed/.test(err.message)) router.refresh();
+      return;
+    }
+    router.refresh();
   };
 
-  const nonCashTotal = settlements.filter((s) => !s.isCash).reduce((s, r) => s + r.totalCents, 0);
-  const outflowsCents = pettyCash.reduce((s, p) => s + p.amountCents, 0);
-  const counted = totalCountedCents > 0;
+  const handleReopen = async () => {
+    if (!closing || !reopening || reopening.busy) return;
+    setReopening({ ...reopening, busy: true });
+    setError(null);
+    const supabase = createBrowserSupabaseClient();
+    const { error: err } = await supabase.rpc("reopen_day_closing", { in_id: closing.id, in_reason: reopening.reason });
+    if (err) {
+      setError(err.message);
+      setReopening({ ...reopening, busy: false });
+      return;
+    }
+    router.refresh();
+  };
 
   // The day's closing figures as a spreadsheet: one table (Section, Item,
   // Payments, Amount), readable in Excel. The same numbers the screen and the
@@ -89,6 +197,7 @@ export function EodCashClient({
     const rows: (string | number)[][] = [
       ["End of Day", businessName, dayLabel],
       ["Prepared by", leadName],
+      ...(closing ? [["Locked", `${closing.lockedByName} at ${closing.lockedAtLabel}`]] : []),
       [],
       ["Section", "Item", "Payments", "Amount (RM)"],
       ...settlements.map((s) => ["Settlement", s.method, s.count, money(s.totalCents)]),
@@ -166,22 +275,81 @@ export function EodCashClient({
                     </button>
                   </>
                 )}
-                <button
-                  onClick={handleLock}
-                  disabled={lockState !== "idle"}
-                  className={
-                    "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13.5px] leading-5 font-medium transition-colors active:scale-[0.99] " +
-                    (lockState === "locked" ? "bg-[#e8e8ec] text-[#1a1c1f]" : "bg-[#000000] hover:bg-[#1b1b1e] text-[#ffffff]")
-                  }
-                  title={lockState === "locked" ? "This is a same-session marker only -- nothing is saved" : undefined}
-                >
-                  <span className={"material-symbols-outlined text-[17px]" + (lockState === "locking" ? " animate-spin" : "")}>
-                    {lockState === "idle" ? "lock" : lockState === "locking" ? "refresh" : "lock_clock"}
-                  </span>
-                  <span>{lockState === "idle" ? "Lock Drawer (This Device)" : lockState === "locking" ? "Locking…" : "Locked (Not Saved)"}</span>
-                </button>
+                {canSeeMoney && !locked && (
+                  <button
+                    onClick={handleLock}
+                    disabled={lockState === "locking"}
+                    title="Saves today's count, checklist and note, and freezes the day's figures. If the count was wrong you can reopen it."
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#000000] hover:bg-[#1b1b1e] disabled:opacity-60 text-[#ffffff] text-[13.5px] leading-5 font-medium transition-colors active:scale-[0.99]"
+                  >
+                    <span className={"material-symbols-outlined text-[17px]" + (lockState === "locking" ? " animate-spin" : "")}>
+                      {lockState === "locking" ? "refresh" : "lock"}
+                    </span>
+                    <span>{lockState === "locking" ? "Locking…" : "Lock the Day"}</span>
+                  </button>
+                )}
+                {canSeeMoney && locked && !reopening && (
+                  <button
+                    onClick={() => setReopening({ reason: "", busy: false })}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb] hover:bg-[#f3f3f7] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-medium transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[17px] text-[#47464b]">lock_open</span>
+                    <span>Reopen the Day</span>
+                  </button>
+                )}
               </div>
             </div>
+
+            {canSeeMoney && error && (
+              <p role="alert" data-testid="eod-error" className="mt-4 text-[13px] font-medium text-[#ba1a1a]">{error}</p>
+            )}
+
+            {canSeeMoney && closing && (
+              <div data-testid="eod-locked" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] leading-5 text-emerald-900">
+                  <span className="material-symbols-outlined text-[18px] text-emerald-700">lock_clock</span>
+                  <span>
+                    <strong className="font-semibold">Locked</strong> by {closing.lockedByName} at {closing.lockedAtLabel}
+                  </span>
+                  <span className="text-emerald-700">·</span>
+                  <span className="tabular-nums">
+                    Counted {ringgit(closing.countedCents)} · {closing.varianceCents === 0 ? "balanced" : closing.varianceCents < 0 ? `short ${ringgit(-closing.varianceCents)}` : `over ${ringgit(closing.varianceCents)}`}
+                  </span>
+                </div>
+                {reopening && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      value={reopening.reason}
+                      onChange={(e) => setReopening({ ...reopening, reason: e.target.value })}
+                      placeholder="Why reopen? (optional)"
+                      aria-label="Why reopen the day"
+                      maxLength={500}
+                      className="flex-1 min-w-[14rem] px-3 py-1.5 rounded-lg border border-emerald-300 bg-white text-[13.5px] focus:outline-none focus:border-[#000000]"
+                    />
+                    <button
+                      onClick={handleReopen}
+                      disabled={reopening.busy}
+                      className="px-3 py-1.5 rounded-lg bg-[#000000] disabled:opacity-60 text-white text-[13.5px] font-medium"
+                    >
+                      {reopening.busy ? "Reopening…" : "Reopen"}
+                    </button>
+                    <button
+                      onClick={() => setReopening(null)}
+                      disabled={reopening.busy}
+                      className="px-3 py-1.5 rounded-lg border border-emerald-300 bg-white text-[13.5px] font-medium text-[#1a1c1f]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {canSeeMoney && changedSinceLock && closing && (
+              <div data-testid="eod-changed" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13.5px] leading-5 text-amber-900">
+                Payments or expenses changed after this day was locked. Cash expected was {ringgit(closing.expectedCashCents)}, and today&apos;s ledger now says {ringgit(liveExpectedCents)}. Reopen the day to count against the new figure.
+              </div>
+            )}
 
             {!canSeeMoney ? (
               <div className="mt-6 bg-[#ffffff] rounded-xl p-10 border border-[#c8c5cb]/30 shadow-sm text-center text-[13.5px] text-[#77767b]">
@@ -273,14 +441,14 @@ export function EodCashClient({
                                 <td className="py-3 px-4 tabular-nums text-[#47464b]">{ringgit(d.value * 100)}</td>
                                 <td className="py-3 px-4">
                                   <div className="inline-flex items-center rounded-lg border border-[#e2e2e6] bg-[#ffffff]">
-                                    <button onClick={() => adjust(d.key, -1)} className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded">
+                                    <button onClick={() => adjust(d.key, -1)} disabled={locked} aria-label={`One fewer ${d.label}`} className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded disabled:opacity-40 disabled:hover:bg-transparent">
                                       <span className="material-symbols-outlined text-[16px]">remove</span>
                                     </button>
                                     <input
                                       className="w-14 text-center text-[13.5px] leading-[18px] tracking-[0.01em] font-medium tabular-nums text-[#1a1c1f] border-x border-[#e2e2e6] focus:outline-none py-1 bg-transparent"
-                                      type="number" min={0} value={counts[d.key]} onChange={(e) => setCount(d.key, e.target.value)}
+                                      type="number" min={0} value={counts[d.key]} onChange={(e) => setCount(d.key, e.target.value)} readOnly={locked}
                                     />
-                                    <button onClick={() => adjust(d.key, 1)} className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded">
+                                    <button onClick={() => adjust(d.key, 1)} disabled={locked} aria-label={`One more ${d.label}`} className="w-8 h-8 flex items-center justify-center text-[#47464b] hover:text-[#1a1c1f] hover:bg-[#f3f3f7] active:scale-[0.9] transition-all rounded disabled:opacity-40 disabled:hover:bg-transparent">
                                       <span className="material-symbols-outlined text-[16px]">add</span>
                                     </button>
                                   </div>
@@ -300,7 +468,8 @@ export function EodCashClient({
                               <input
                                 type="number" min={0}
                                 value={floatCents / 100}
-                                onChange={(e) => setFloatCents(Math.max(0, Math.round(Number(e.target.value) * 100)) || 0)}
+                                readOnly={locked}
+                                onChange={(e) => { if (!locked) setFloatCents(Math.max(0, Math.round(Number(e.target.value) * 100)) || 0); }}
                                 className="w-24 pl-8 pr-2 py-1 rounded border border-[#c8c5cb]/50 text-[13px] tabular-nums focus:outline-none focus:border-[#000000]"
                               />
                             </span>
@@ -355,6 +524,18 @@ export function EodCashClient({
 
                   {/* RIGHT COLUMN */}
                   <div className="lg:col-span-4 flex flex-col gap-6">
+                    {history[0]?.note.trim() && (
+                      <div data-testid="eod-left-for-you" className="rounded-xl border border-[#c8c5cb]/30 shadow-sm bg-[#ffffff] p-5">
+                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#e2e2e6]">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[18px] text-[#47464b]">mark_chat_unread</span>
+                            <h3 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Left for the Morning</h3>
+                          </div>
+                          <span className="text-[11.5px] leading-4 tracking-[0.04em] font-medium text-[#47464b]">{history[0].dateLabel} · {history[0].lockedByName}</span>
+                        </div>
+                        <p className="text-[13.5px] leading-5 text-[#1a1c1f] whitespace-pre-wrap">{history[0].note}</p>
+                      </div>
+                    )}
                     <div className="rounded-xl border border-[#c8c5cb]/30 shadow-sm bg-[#ffffff] p-5">
                       <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#e2e2e6]">
                         <div className="flex items-center gap-2">
@@ -366,7 +547,7 @@ export function EodCashClient({
                       <div className="flex flex-col gap-3 text-[13.5px] leading-5">
                         {checklist.map((item, i) => (
                           <label key={item.label} className={"flex items-start gap-3 p-2 rounded-lg transition-colors cursor-pointer select-none " + (item.done ? "hover:bg-[#f3f3f7]" : "bg-[#f3f3f7] hover:bg-[#eeedf1]")}>
-                            <input checked={item.done} onChange={() => toggleCheck(i)} className="mt-0.5 w-4 h-4 rounded border-[#c8c5cb] text-[#000000] focus:ring-0 cursor-pointer accent-[#000000]" type="checkbox" />
+                            <input checked={item.done} disabled={locked} onChange={() => toggleCheck(i)} className="mt-0.5 w-4 h-4 rounded border-[#c8c5cb] text-[#000000] focus:ring-0 cursor-pointer accent-[#000000]" type="checkbox" />
                             <span className="leading-tight text-[#1a1c1f]">{item.label}</span>
                           </label>
                         ))}
@@ -412,12 +593,50 @@ export function EodCashClient({
                       <textarea
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
-                        placeholder="Anything the morning team should know? (Not saved -- this device only, this session)"
+                        readOnly={locked}
+                        maxLength={2000}
+                        placeholder="Anything the morning team should know? Saved with the day when you lock it."
                         className="w-full min-h-[80px] p-3 rounded-lg bg-[#f3f3f7] border border-[#e2e2e6] text-[13.5px] leading-5 text-[#1a1c1f] placeholder:text-[#77767b] focus:outline-none focus:bg-[#ffffff] focus:border-[#000000] resize-y"
                       />
                     </div>
                   </div>
                 </div>
+
+                {history.length > 0 && (
+                  <div data-testid="eod-history" className="mt-6 rounded-xl border border-[#c8c5cb]/30 shadow-sm bg-[#ffffff] overflow-hidden">
+                    <div className="px-5 py-4 border-b border-[#e2e2e6] flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-[#47464b]">history</span>
+                      <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">Recent Closings</h2>
+                    </div>
+                    <div className="divide-y divide-[#e2e2e6]">
+                      {history.map((h, i) => (
+                        <div key={h.id} data-testid="eod-history-row" className="px-5 py-3 flex flex-col gap-1">
+                          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 text-[13.5px] leading-5">
+                            <div className="flex items-center gap-3">
+                              <span className="font-semibold text-[#1a1c1f] w-20">{h.dateLabel}</span>
+                              <span className="text-[#47464b] tabular-nums">Counted {ringgit(h.countedCents)}</span>
+                              {h.countedCents === 0 && h.expectedCashCents > 0 ? (
+                                <span className="px-2 py-0.5 rounded text-[11px] font-medium border bg-[#f3f3f7] text-[#47464b] border-[#c8c5cb]">Not counted</span>
+                              ) : h.varianceCents === 0 ? (
+                                <span className="px-2 py-0.5 rounded text-[11px] font-medium border bg-emerald-50 text-emerald-700 border-emerald-200">Balanced</span>
+                              ) : h.varianceCents < 0 ? (
+                                <span className="px-2 py-0.5 rounded text-[11px] font-medium border bg-rose-50 text-rose-700 border-rose-200">Short {ringgit(-h.varianceCents)}</span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded text-[11px] font-medium border bg-blue-50 text-blue-700 border-blue-200">Over {ringgit(h.varianceCents)}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-[12.5px] text-[#77767b] tabular-nums">
+                              <span>Banked {ringgit(h.netDepositCents)}</span>
+                              <span>{h.lockedByName} · {h.lockedAtLabel}</span>
+                            </div>
+                          </div>
+                          {/* The latest one's note is already shown in full above, in "Left for the Morning". */}
+                          {h.note.trim() && !(i === 0 && history[0].note.trim()) && <p className="text-[13px] leading-5 text-[#47464b] line-clamp-2 whitespace-pre-wrap">{h.note}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -428,7 +647,10 @@ export function EodCashClient({
             {canSeeMoney && (
               <div data-print-sheet className="hidden print:block p-8 text-[12px] leading-5 text-black">
                 <h1 className="text-[18px] font-semibold">{businessName} — End of Day</h1>
-                <p className="mb-4">{dayLabel} · Prepared by {leadName}</p>
+                <p className="mb-4">
+                  {dayLabel} · Prepared by {leadName}
+                  {closing ? ` · Locked by ${closing.lockedByName} at ${closing.lockedAtLabel}` : ""}
+                </p>
 
                 <h2 className="text-[13px] font-semibold mt-3 mb-1">Settlements by method</h2>
                 <table className="w-full border-collapse mb-3">

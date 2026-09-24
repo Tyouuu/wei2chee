@@ -9,7 +9,7 @@ import {
   type BusinessContext,
 } from "@/lib/templates/industry-template";
 import { MaterialSymbolsLink } from "../salon-shell";
-import { EodCashClient, type SettlementRow, type PettyCashRow } from "./eod-client";
+import { EodCashClient, type ClosingRecord, type SettlementRow, type PettyCashRow } from "./eod-client";
 
 /**
  * Founder's own Stitch source for "End of Day Cash & Register
@@ -40,16 +40,66 @@ import { EodCashClient, type SettlementRow, type PettyCashRow } from "./eod-clie
  * defaulting to 0, not a fixed invented RM350 -- nothing here knows this
  * business's actual float practice.
  *
- * Closing Checklist, Handover Note, and Lock Drawer stay exactly what the
- * source's own header already admitted they were: local-only, nothing
- * persisted (no shift-closing table exists, and that's genuinely new
- * functional-foundation work, out of this pass's lane) -- kept as honest
- * same-session tools rather than removed, since a real till count doesn't
- * need a database to be useful in the moment. Print Summary now really
- * calls window.print(); Export Shift PDF and Lock Drawer's "transmitted"
- * wording are softened/alerted rather than implying a save that doesn't
- * happen.
+ * Lock the Day is real now (Task 415 item 2, 20260925010000): it freezes
+ * what was on screen (the expected cash he compared against, the count, the
+ * float, the checklist, the handover note) into day_closings, one live row
+ * per day. A wrong count is reopened, never overwritten. Load the day and
+ * the saved record is what you see; the note he leaves is what the morning
+ * lead reads. Print Summary calls window.print(); Export CSV downloads.
  */
+type ClosingRow = {
+  id: string;
+  closing_date: string;
+  counts: Record<string, number>;
+  counted_cents: number;
+  float_cents: number;
+  expected_cash_cents: number;
+  gross_cents: number;
+  outflows_cents: number;
+  settlements: SettlementRow[];
+  checklist: { label: string; done: boolean }[];
+  note: string;
+  variance_cents: number;
+  net_deposit_cents: number;
+  locked_at: string;
+  locked_by_name: string;
+  voided_at: string | null;
+  void_reason: string;
+};
+
+const CLOSING_COLUMNS =
+  "id, closing_date, counts, counted_cents, float_cents, expected_cash_cents, gross_cents, outflows_cents, settlements, checklist, note, variance_cents, net_deposit_cents, locked_at, locked_by_name, voided_at, void_reason";
+
+// Formatted here, on the server, in Kuala Lumpur time: a client component
+// formatting a timestamp would print the browser's zone and can differ from
+// the server's render (hydration warning).
+const dayFmt = new Intl.DateTimeFormat("en-MY", { timeZone: "Asia/Kuala_Lumpur", weekday: "short", day: "2-digit", month: "short" });
+const timeFmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kuala_Lumpur", hour: "2-digit", minute: "2-digit", hour12: false });
+
+function toClosing(r: ClosingRow): ClosingRecord {
+  const counts: ClosingRecord["counts"] = {};
+  for (const [note, qty] of Object.entries(r.counts ?? {})) {
+    if (["100", "50", "20", "10", "5", "1"].includes(note)) counts[`c${note}` as keyof ClosingRecord["counts"]] = Number(qty);
+  }
+  return {
+    id: r.id,
+    dateLabel: dayFmt.format(new Date(`${r.closing_date}T12:00:00+08:00`)),
+    lockedAtLabel: timeFmt.format(new Date(r.locked_at)),
+    lockedByName: r.locked_by_name || "someone",
+    counts,
+    countedCents: Number(r.counted_cents),
+    floatCents: Number(r.float_cents),
+    expectedCashCents: Number(r.expected_cash_cents),
+    grossCents: Number(r.gross_cents),
+    outflowsCents: Number(r.outflows_cents),
+    settlements: Array.isArray(r.settlements) ? r.settlements : [],
+    checklist: Array.isArray(r.checklist) ? r.checklist : [],
+    note: r.note ?? "",
+    varianceCents: Number(r.variance_cents),
+    netDepositCents: Number(r.net_deposit_cents),
+  };
+}
+
 export default async function SalonEodCashPreview({
   params,
 }: {
@@ -79,6 +129,9 @@ export default async function SalonEodCashPreview({
   let pettyCash: PettyCashRow[] = [];
   let totalGrossCents = 0;
   let expectedCashCents = 0;
+  let closing: ClosingRecord | null = null;
+  let prefill: ClosingRecord | null = null;
+  let history: ClosingRecord[] = [];
 
   if (workspace.isOwner) {
     const { data: rows } = await supabase
@@ -117,12 +170,40 @@ export default async function SalonEodCashPreview({
 
     totalGrossCents = inRows.reduce((s, r) => s + Number(r.amount_cents), 0);
     expectedCashCents = settlements.filter((s) => s.isCash).reduce((s, r) => s + r.totalCents, 0);
+
+    // The saved closings (RLS: money-seers only, and this branch is the owner's).
+    // Newest day first; a reopened one stays in the table, marked, and is used
+    // only to pre-fill the count so a correction starts from what he entered.
+    const { data: closingRows } = await supabase
+      .from("day_closings")
+      .select(CLOSING_COLUMNS)
+      .eq("project_id", projectId)
+      .order("closing_date", { ascending: false })
+      .order("locked_at", { ascending: false })
+      .limit(60);
+    const saved = (closingRows ?? []) as ClosingRow[];
+    const live = saved.filter((r) => !r.voided_at);
+    const todayLive = live.find((r) => r.closing_date === todayStr);
+    closing = todayLive ? toClosing(todayLive) : null;
+    const reopened = saved
+      .filter((r) => r.closing_date === todayStr && r.voided_at)
+      .sort((a, b) => (b.voided_at ?? "").localeCompare(a.voided_at ?? ""))[0];
+    prefill = !closing && reopened ? toClosing(reopened) : null;
+    history = live.filter((r) => r.closing_date !== todayStr).slice(0, 8).map(toClosing);
   }
 
   return (
     <>
       <MaterialSymbolsLink />
+      {/* Keyed by which saved record is showing: locking or reopening remounts
+          the client, so its inputs start from the record, not from what was typed. */}
       <EodCashClient
+        key={closing?.id ?? (prefill ? `re-${prefill.id}` : "open")}
+        projectId={projectId}
+        todayStr={todayStr}
+        closing={closing}
+        prefill={prefill}
+        history={history}
         businessName={businessName}
         dayLabel={dayLabel}
         canSeeMoney={workspace.isOwner}

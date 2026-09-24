@@ -76,6 +76,7 @@ const GATES = [
   { name: "counter", cmd: "npm", args: ["run", "check:counter"], slow: false },
   { name: "delivery", cmd: "npm", args: ["run", "check:delivery"], slow: false },
   { name: "delivery-note", cmd: "npm", args: ["run", "check:delivery-note"], slow: false },
+  { name: "day-closings", cmd: "npm", args: ["run", "check:day-closings"], slow: false },
   { name: "deposits", cmd: "npm", args: ["run", "check:deposits"], slow: false },
   { name: "export", cmd: "npm", args: ["run", "check:export"], slow: false },
   { name: "family", cmd: "npm", args: ["run", "check:family"], slow: false },
