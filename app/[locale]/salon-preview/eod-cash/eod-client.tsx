@@ -29,9 +29,8 @@ const CHECKLIST_INITIAL = [
 function ringgit(cents: number) {
   return `RM ${(cents / 100).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
-function notWired(what: string) {
-  alert(`${what} isn't wired up yet.`);
-}
+const csvCell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+const money = (cents: number) => (cents / 100).toFixed(2);
 
 export function EodCashClient({
   businessName,
@@ -79,6 +78,41 @@ export function EodCashClient({
   };
 
   const nonCashTotal = settlements.filter((s) => !s.isCash).reduce((s, r) => s + r.totalCents, 0);
+  const outflowsCents = pettyCash.reduce((s, p) => s + p.amountCents, 0);
+  const counted = totalCountedCents > 0;
+
+  // The day's closing figures as a spreadsheet: one table (Section, Item,
+  // Payments, Amount), readable in Excel. The same numbers the screen and the
+  // printed sheet show -- what he typed here (the count, the float, the
+  // checklist, the note) is included as it stands right now.
+  const exportCsv = () => {
+    const rows: (string | number)[][] = [
+      ["End of Day", businessName, dayLabel],
+      ["Prepared by", leadName],
+      [],
+      ["Section", "Item", "Payments", "Amount (RM)"],
+      ...settlements.map((s) => ["Settlement", s.method, s.count, money(s.totalCents)]),
+      ["Settlement", "Total gross settled", "", money(totalGrossCents)],
+      ...pettyCash.map((p) => ["Petty cash", p.note && p.note !== p.name ? `${p.name} (${p.note})` : p.name, 1, money(p.amountCents)]),
+      ["Petty cash", "Total drawer outflows", "", money(outflowsCents)],
+      ["Cash", "Expected cash (by method)", "", money(expectedCashCents)],
+      ["Cash", "Counted cash (physical)", "", counted ? money(totalCountedCents) : "not counted"],
+      ["Cash", "Variance (counted minus expected)", "", counted ? money(varianceCents) : ""],
+      ["Cash", "Float retention", "", money(floatCents)],
+      ["Cash", "Net bank deposit", "", counted ? money(netDepositCents) : ""],
+      ...DENOMINATIONS.filter((d) => counts[d.key] > 0).map((d) => ["Count", d.label, counts[d.key], money(counts[d.key] * d.value * 100)]),
+      ...checklist.map((c) => ["Checklist", c.label, "", c.done ? "done" : "not done"]),
+      ["Handover note", note.trim() || "(none)"],
+    ];
+    const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `end-of-day-${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date())}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div
@@ -112,20 +146,26 @@ export function EodCashClient({
                 </p>
               </div>
               <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => window.print()}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb] hover:bg-[#f3f3f7] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-medium transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[17px] text-[#47464b]">print</span>
-                  <span>Print Summary</span>
-                </button>
-                <button
-                  onClick={() => notWired("Exporting a shift PDF")}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb] hover:bg-[#f3f3f7] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-medium transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[17px] text-[#47464b]">file_download</span>
-                  <span>Export Shift PDF</span>
-                </button>
+                {/* Money on paper or in a file is the owner's, like the page itself. */}
+                {canSeeMoney && (
+                  <>
+                    <button
+                      onClick={() => window.print()}
+                      title="Prints just the summary of the day. In the print window, choose Save as PDF to get a PDF."
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb] hover:bg-[#f3f3f7] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-medium transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[17px] text-[#47464b]">print</span>
+                      <span>Print Summary</span>
+                    </button>
+                    <button
+                      onClick={exportCsv}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb] hover:bg-[#f3f3f7] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-medium transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[17px] text-[#47464b]">file_download</span>
+                      <span>Export CSV</span>
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={handleLock}
                   disabled={lockState !== "idle"}
@@ -379,6 +419,90 @@ export function EodCashClient({
                   </div>
                 </div>
               </>
+            )}
+
+            {/* The day's summary on paper. Hidden on screen; when printing, the
+                print rule in globals.css keeps only this block and drops the
+                sidebar, the count table and the buttons (the same convention the
+                quotation and the receipt use). */}
+            {canSeeMoney && (
+              <div data-print-sheet className="hidden print:block p-8 text-[12px] leading-5 text-black">
+                <h1 className="text-[18px] font-semibold">{businessName} — End of Day</h1>
+                <p className="mb-4">{dayLabel} · Prepared by {leadName}</p>
+
+                <h2 className="text-[13px] font-semibold mt-3 mb-1">Settlements by method</h2>
+                <table className="w-full border-collapse mb-3">
+                  <tbody>
+                    {settlements.map((s) => (
+                      <tr key={s.method} className="border-b border-neutral-300">
+                        <td className="py-1">{s.method}</td>
+                        <td className="py-1 text-right">{s.count} payment{s.count === 1 ? "" : "s"}</td>
+                        <td className="py-1 text-right tabular-nums">{ringgit(s.totalCents)}</td>
+                      </tr>
+                    ))}
+                    <tr className="font-semibold">
+                      <td className="py-1" colSpan={2}>Total gross settled</td>
+                      <td className="py-1 text-right tabular-nums">{ringgit(totalGrossCents)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h2 className="text-[13px] font-semibold mt-3 mb-1">Petty cash payouts</h2>
+                {pettyCash.length === 0 ? (
+                  <p className="mb-3">None today.</p>
+                ) : (
+                  <table className="w-full border-collapse mb-3">
+                    <tbody>
+                      {pettyCash.map((p) => (
+                        <tr key={p.id} className="border-b border-neutral-300">
+                          <td className="py-1">{p.name}{p.note && p.note !== p.name ? ` (${p.note})` : ""}</td>
+                          <td className="py-1 text-right tabular-nums">{ringgit(p.amountCents)}</td>
+                        </tr>
+                      ))}
+                      <tr className="font-semibold">
+                        <td className="py-1">Total drawer outflows</td>
+                        <td className="py-1 text-right tabular-nums">{ringgit(outflowsCents)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                )}
+
+                <h2 className="text-[13px] font-semibold mt-3 mb-1">Cash</h2>
+                <table className="w-full border-collapse mb-3">
+                  <tbody>
+                    <tr className="border-b border-neutral-300"><td className="py-1">Expected cash (by method)</td><td className="py-1 text-right tabular-nums">{ringgit(expectedCashCents)}</td></tr>
+                    {DENOMINATIONS.filter((d) => counts[d.key] > 0).map((d) => (
+                      <tr key={d.key} className="border-b border-neutral-300">
+                        <td className="py-1 pl-4">{counts[d.key]} × {d.label}</td>
+                        <td className="py-1 text-right tabular-nums">{ringgit(counts[d.key] * d.value * 100)}</td>
+                      </tr>
+                    ))}
+                    <tr className="border-b border-neutral-300"><td className="py-1">Counted cash (physical)</td><td className="py-1 text-right tabular-nums">{counted ? ringgit(totalCountedCents) : "not counted"}</td></tr>
+                    <tr className="border-b border-neutral-300 font-semibold"><td className="py-1">Variance (counted minus expected)</td><td className="py-1 text-right tabular-nums">{counted ? varianceText : "—"}</td></tr>
+                    <tr className="border-b border-neutral-300"><td className="py-1">Float retention (safe bag)</td><td className="py-1 text-right tabular-nums">{ringgit(floatCents)}</td></tr>
+                    <tr><td className="py-1 font-semibold">Net bank deposit</td><td className="py-1 text-right tabular-nums font-semibold">{counted ? ringgit(netDepositCents) : "—"}</td></tr>
+                  </tbody>
+                </table>
+
+                <h2 className="text-[13px] font-semibold mt-3 mb-1">Closing checklist ({doneCount} of {checklist.length})</h2>
+                <ul className="mb-3">
+                  {checklist.map((c) => (
+                    <li key={c.label}>{c.done ? "☑" : "☐"} {c.label}</li>
+                  ))}
+                </ul>
+
+                {note.trim() && (
+                  <>
+                    <h2 className="text-[13px] font-semibold mt-3 mb-1">Handover note</h2>
+                    <p className="mb-3 whitespace-pre-wrap">{note}</p>
+                  </>
+                )}
+
+                <div className="mt-10 grid grid-cols-2 gap-10">
+                  <div className="border-t border-black pt-1">Counted by</div>
+                  <div className="border-t border-black pt-1">Checked by</div>
+                </div>
+              </div>
             )}
           </div>
         </main>
