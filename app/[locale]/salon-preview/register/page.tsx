@@ -74,14 +74,18 @@ import { RegisterClient, type CatalogRow } from "./register-client";
  * cart line maps to which package, a real but separate piece of work,
  * flagged rather than faked.
  *
- * ── One real finding worth a second pass by someone else ─────────────────
+ * ── Who can press Charge (Task 411, settled 2026-09-24) ──────────────────
  *
- * add_ledger_entry() gates on `projects.account_id = auth.uid()` --
- * literally only the account owner's login can record a payment. A
- * cashier logged in as staff (project_members) will get a real, honest
- * "not your project" error from the database if they try to Charge here.
- * That's not something this pass can or should fix (it's a permission-model
- * change, someone else's lane) -- registered as Task 411.
+ * add_ledger_entry() used to gate on `projects.account_id = auth.uid()`, so
+ * only the account owner's own login could record a payment and a cashier
+ * logged in as staff got a raw "not your project" from the database. The
+ * founder decided staff must be able to charge, and migration 20260924020000
+ * widened the one gate to works_here() -- for customer payments only.
+ * Money going out (expenses, suppliers, commission) and reversing a payment
+ * stay the owner's. Guard: `npm run check:ledger-staff`; the staff-at-the-till
+ * path is the last section of scripts/shoot-register-cart-real.mjs. The
+ * "Shift Takings" figure in the top bar stays owner-only on purpose -- letting
+ * the cashier ring up a sale is not letting them read the day's money.
  */
 export default async function SalonRegisterPreview({
   params,

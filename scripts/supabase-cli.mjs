@@ -33,11 +33,31 @@
 // SETUP (once):
 //   1. https://supabase.com/dashboard/account/tokens -> Generate new token,
 //      signed in as the account that owns Wei2Chee.
+//      The form (2026) asks for four things: Name (anything) · Expires in (pick
+//      the LONGEST, see below) · Resource access = "Project", then the
+//      organisation that holds Wei2Chee and the project "Wei2Chee" (not
+//      Nadayu28) · Permissions preset = the widest one -- the token is already
+//      confined to this one project. If db push still says no, "Create legacy
+//      token" on that page gives a full-account token that always works.
 //   2. Add it to .env.local (already gitignored, alongside the service-role key):
 //        SUPABASE_ACCESS_TOKEN="sbp_..."
 //
 // After that, `npm run db:push` works regardless of who the CLI last logged in
 // as, and no interactive login is needed again.
+//
+// 🔴 THIRD GOTCHA (2026-09-24): the pinned token itself stops working. `db push`
+// answered `LegacyDbConfigLoginRoleStatusError ... 401 Unauthorized` twice in a
+// row, straight after "Using SUPABASE_ACCESS_TOKEN from .env.local" -- i.e. the
+// CLI DID read the token and Supabase rejected it (expired or revoked; the
+// cause is not knowable from here). It is NOT the shared-login problem above
+// (that one is a 403). Fix = generate a new token as described in SETUP and
+// swap the line in .env.local. Never paste the token into a chat.
+//
+// Also: `migration list` / `db push` against the remote can take well over a
+// minute and once printed "Connection timed out" to the pooler -- retry before
+// concluding anything. The "failed to run docker" warning after a push is a
+// catalog-cache export and does not mean the push failed; the JSON line with
+// "message":"Finished supabase db push." does.
 //
 // 🔴 SECOND GOTCHA, hit twice in one night (2026-09-11): `db push` tracks
 // which migrations it has applied BY FILENAME, in a table on the remote

@@ -6,11 +6,12 @@
  * 拆两种付款方式(两笔 add_ledger_entry)、真的收据(用列印规则量,不是
  * 只看画面上有没有字)、真的暂放(sessionStorage,同一台电脑)。
  *
- * 顺手验一件量出来的真事实:`add_ledger_entry` 今天只认帐号老板的登入
- * (`account_id = auth.uid()`),员工登入按「结帐」会拿到一句真的、诚实的
- * 资料库错误 —— 这不是这一支该修的洞,是登记给功能地基那边的一条真发现
- * (见 docs/founder-tasks.md 任务 411)。这里量一次是为了确定那句话
- * 是真的,不是我猜的。
+ * 🔴 最后一段是员工(柜台)的登入真的在浏览器里按一次「结帐」——
+ * 任务 411:`add_ledger_entry` 原本只认帐号老板本人(`account_id = auth.uid()`),
+ * 这一支第一版量到的就是员工按结帐会拿到一句 `not your project`。他拍板
+ * 「肯定要放宽给员工」之后,20260924020000 把闸门换成 `works_here`,而且只放宽
+ * 「客人付给我们的钱」。守卫在 check:ledger-staff,这里补的是它够不到的那一半:
+ * 员工真的坐在收银台前,一路点到收据。
  *
  * 种两件真货品(带真价钱)、一位真客人(带一笔真的送出去的礼券)。
  * 用完就删。
@@ -18,7 +19,7 @@
 import { chromium } from "playwright";
 import { readFileSync, mkdirSync, rmSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { dropThrowaway, dropThrowawayOnExit } from "./lib/throwaway.mjs";
+import { dropThrowaways, dropThrowawayOnExit } from "./lib/throwaway.mjs";
 
 const env = Object.fromEntries(
   readFileSync(new URL("../.env.local", import.meta.url), "utf8")
@@ -50,7 +51,8 @@ const api = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_
 });
 
 let userId = null;
-dropThrowawayOnExit(admin, () => userId);
+let staffId = null;
+dropThrowawayOnExit(admin, () => [userId, staffId]);
 
 const pass = [];
 const fail = [];
@@ -229,34 +231,71 @@ try {
   if (sawDialog) ok("Scan SKU 老实讲一句还没接,不是完全没反应");
   else no("Scan SKU 按下去什么都没发生");
 
-  // ── 11. 🔴 真发现:员工登入按结帐,拿到的是不是一句真的、诚实的资料库错误 ──
+  // ── 11. 🔴 员工(柜台)真的按得了结帐 —— 任务 411,他拍板放宽 ─────────────
   const staffEmail = `regcart-staff-${stamp}@formae.test`;
   const staffPassword = `Rs-${stamp}-x!`;
   const { data: staffUser, error: staffMkErr } = await admin.auth.admin.createUser({
     email: staffEmail, password: staffPassword, email_confirm: true,
   });
   if (staffMkErr) throw new Error(`createUser staff: ${staffMkErr.message}`);
+  staffId = staffUser.user.id;
   const memberAdd = await api.rpc("add_project_member", { in_email: staffEmail });
   if (memberAdd.error) throw new Error(`add_project_member: ${memberAdd.error.message}`);
 
+  // 11a. 资料库这一层(守卫 check:ledger-staff 量得更细,这里只留最要紧的两条)
   const staffApi = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
   await staffApi.auth.signInWithPassword({ email: staffEmail, password: staffPassword });
   const staffCharge = await staffApi.rpc("add_ledger_entry", {
     in_project_id: pid, in_module_key: "payments", in_direction: "in",
     in_amount_cents: 5000, in_party: "Staff Test", in_category: "service", in_note: "test",
   });
-  if (staffCharge.error && /not your project/i.test(staffCharge.error.message)) {
-    ok("🔴 量到了:员工登入呼叫结帐会拿到真的、诚实的『not your project』错误 -- 这是给功能地基的一条真发现(任务 411),这一支不动手去改权限");
-  } else if (!staffCharge.error) {
-    no("🔴 跟预期不一样:员工登入居然结帐成功了 -- 权限模型可能已经改了,任务 411 那条登记要重新核对");
-  } else {
-    no("员工登入结帐的错误讯息跟预期不一样", staffCharge.error.message);
-  }
-  admin.auth.admin.deleteUser(staffUser.user.id).catch(() => {});
+  if (!staffCharge.error) ok("🔴 员工登入呼叫收款成功了(任务 411 放宽之后)");
+  else no("员工登入收款还是被挡", staffCharge.error.message);
+  const staffOut = await staffApi.rpc("add_ledger_entry", {
+    in_project_id: pid, in_module_key: "expenses", in_direction: "out",
+    in_amount_cents: 5000, in_party: "Supplier", in_note: "staff tries expense",
+  });
+  if (staffOut.error) ok("🔴 付出去的钱仍然只有老板(放宽只放了「客人付的钱」)");
+  else no("员工居然记得下一笔开销 —— 放宽放过头了");
+
+  // 11b. 真的浏览器:员工坐在收银台前,一路点到收据
+  const staffCtx = await browser.newContext({ viewport: { width: 1700, height: 1300 } });
+  const staffPage = await staffCtx.newPage();
+  await staffPage.goto(`${BASE}/en/login`, { waitUntil: "networkidle", timeout: 180000 });
+  await staffPage.fill('input[type="email"]', staffEmail);
+  await staffPage.fill('input[type="password"]', staffPassword);
+  await staffPage.click('button[type="submit"]');
+  await staffPage.waitForURL(/portal/, { timeout: 180000 });
+  await staffPage.goto(`${BASE}/en/salon-preview/register`, { waitUntil: "networkidle", timeout: 180000 });
+
+  let staffBody = await staffPage.locator("body").innerText();
+  if (!/Shift Takings/i.test(staffBody)) ok("员工看不到「今天收了多少」(那是老板的数字,这次放宽没有把它一起放出来)");
+  else no("员工居然看得到 Shift Takings");
+  if (/Cart-Test Keratin Wash/.test(staffBody)) ok("员工看得到货架上的货(能开始结帐)");
+  else no("员工的收银台看不到货品", staffBody.slice(0, 200));
+
+  const staffAdd = staffPage.locator('h3:has-text("Cart-Test Keratin Wash")').locator("..").locator("..").getByRole("button").last();
+  await staffAdd.click();
+  await staffPage.getByRole("button", { name: /Charge RM/ }).click();
+  await staffPage.waitForTimeout(3000);
+  staffBody = await staffPage.locator("body").innerText();
+  await staffPage.screenshot({ path: `${OUT}/3-staff-charged.png`, fullPage: true });
+  if (/Charged & Printed/.test(staffBody)) ok("🔴 员工登入真的按完「结帐」,拿到收据(不是一句资料库的英文错误)");
+  else no("员工按结帐没有拿到收据", staffBody.match(/Charge[\s\S]{0,200}/)?.[0]);
+
+  const { data: staffRows } = await admin
+    .from("ledger_entries")
+    .select("amount_cents, direction, recorded_by")
+    .eq("project_id", pid)
+    .eq("recorded_by", staffId)
+    .ilike("note", "%Cart-Test Keratin Wash%");
+  if (staffRows?.length === 1 && Number(staffRows[0].amount_cents) === 10000 && staffRows[0].direction === "in")
+    ok("🔴 帐上多了那一笔 RM 100,而且记的是**员工自己**(谁收的钱查得到)");
+  else no("员工那一笔在帐上不对", JSON.stringify(staffRows));
 
 } finally {
   if (browser) await browser.close();
-  await dropThrowaway(admin, userId);
+  await dropThrowaways(admin, [userId, staffId]);
 }
 
 console.log(`\n判：${pass.length} 过 · ${fail.length} 没过`);
