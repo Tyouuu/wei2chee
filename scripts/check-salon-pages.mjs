@@ -35,7 +35,6 @@ const ROOT = "app/[locale]/salon-preview";
 const KNOWN = {
   "eod-cash/eod-client.tsx": { stubs: 1, dead: 0, sample: 0, why: "任务 415：Export Shift PDF（收工记录表要新表，已登记）" },
   "lookbook/lookbook-client.tsx": { stubs: 5, dead: 0, sample: 5, why: "任务 415 B：作品表要新表（他已决定留着当卖点，六张示例卡）" },
-  "register/register-client.tsx": { stubs: 3, dead: 0, sample: 0, why: "任务 415：Scan SKU · WhatsApp 收据 · 没价钱的货" },
   "stylists/stylist-client.tsx": { stubs: 1, dead: 0, sample: 0, why: "任务 415：Edit commission tiers" },
   "salon-shell.tsx": { stubs: 0, dead: 0, sample: 1, why: "任务 414：侧栏左下角写死的 Wei Lin" },
 };

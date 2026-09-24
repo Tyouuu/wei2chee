@@ -160,15 +160,16 @@ export default async function SalonRegisterPreview({
 
   const { data: customerRows } = await supabase
     .from("directory_entries")
-    .select("id, name")
+    .select("id, name, whatsapp")
     .eq("project_id", projectId)
     .eq("module_key", "customers")
     .is("archived_at", null)
     .order("name")
     .limit(300);
-  const customers = ((customerRows ?? []) as { id: string; name: string }[]).map((c) => ({
+  const customers = ((customerRows ?? []) as { id: string; name: string; whatsapp: string | null }[]).map((c) => ({
     id: c.id,
     name: c.name,
+    whatsapp: c.whatsapp ?? "",
   }));
 
   return (

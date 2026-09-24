@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { waLink } from "@/lib/portal/wa-link";
 import { SalonSidebar } from "../salon-shell";
 
 export type CatalogRow = { id: string; name: string; unit: string; sku: string; priceCents: number | null };
-export type CustomerRow = { id: string; name: string };
+export type CustomerRow = { id: string; name: string; whatsapp: string };
 
 const PAYMENT_METHODS = [
   { key: "qr", icon: "qr_code_scanner", label: "DuitNow QR", note: "Instant Settlement" },
@@ -38,6 +39,8 @@ type Receipt = {
   voucherCents: number;
   totalCents: number;
   tenders: { label: string; amountCents: number }[];
+  /** The attached client's WhatsApp number, if she has one on file. */
+  whatsapp: string;
 };
 
 const PARK_KEY = "formae-register-parked-v1";
@@ -46,8 +49,11 @@ function ringgit(cents: number): string {
   const whole = cents / 100;
   return `RM ${whole.toLocaleString("en-MY", { minimumFractionDigits: whole % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
 }
-function notWired(what: string) {
-  alert(`${what} isn't wired up yet -- nothing in this system backs it.`);
+/** "45", "45.5", "RM 1,045.00" -> cents; anything else -> null. */
+function parseMoney(text: string): number | null {
+  const t = text.replace(/RM|,|\s/gi, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return null;
+  return Math.round(parseFloat(t) * 100);
 }
 function initialsOf(name: string): string {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
@@ -72,6 +78,20 @@ function printWhenPainted() {
   // Two rAFs, not one -- a single frame can still land before React has
   // committed the receipt DOM the print rule reads from data-print-sheet.
   requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+}
+
+/** The receipt as a WhatsApp message: what was bought, what was paid, how. */
+function receiptMessage(r: Receipt, businessName: string): string {
+  const when = new Date(r.at).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur", dateStyle: "medium", timeStyle: "short" });
+  return [
+    `${businessName} — receipt (${when})`,
+    ...r.lines.map((l) => `${l.qty} x ${l.name}  ${ringgit(l.priceCents * l.qty)}`),
+    ...(r.discountCents > 0 ? [`Discount  -${ringgit(r.discountCents)}`] : []),
+    ...(r.voucherCents > 0 ? [`Gift credit  -${ringgit(r.voucherCents)}`] : []),
+    `Total paid  ${ringgit(r.totalCents)}`,
+    r.tenders.map((t) => `${t.label} ${ringgit(t.amountCents)}`).join(" + "),
+    "Thank you!",
+  ].join("\n");
 }
 
 export function RegisterClient({
@@ -124,6 +144,26 @@ export function RegisterClient({
   const [charging, setCharging] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
+  // The number the receipt goes to: her saved WhatsApp, editable, because a
+  // walk-in has none on file and a family often shares one phone.
+  const [receiptWa, setReceiptWa] = useState("");
+
+  // Scanning: a barcode scanner is a keyboard that types the code and presses
+  // Enter, so the search box IS the scan input. Enter on an exact SKU adds it.
+  const [scanNote, setScanNote] = useState<{ tone: "ready" | "ok" | "miss"; text: string } | null>(null);
+  // An item with no price on file asks for one, once, and can remember it.
+  const [priceFor, setPriceFor] = useState<CatalogRow | null>(null);
+  const [priceInput, setPriceInput] = useState("");
+  const [rememberPrice, setRememberPrice] = useState(true);
+  const [priceError, setPriceError] = useState<string | null>(null);
+  const [pricing, setPricing] = useState(false);
+  // A price he just told us to remember shows on the card at once; the refresh
+  // that brings it back from the database lands a moment later.
+  const [savedPrices, setSavedPrices] = useState<Record<string, number>>({});
+  const catalogView = useMemo(
+    () => catalog.map((i) => (i.priceCents == null && i.id in savedPrices ? { ...i, priceCents: savedPrices[i.id] } : i)),
+    [catalog, savedPrices],
+  );
 
   useEffect(() => {
     // `react-hooks/set-state-in-effect` (task 47) rejects a setState call
@@ -155,7 +195,7 @@ export function RegisterClient({
     return () => { cancelled = true; };
   }, [partyId, projectId]);
 
-  const visibleCatalog = catalog.filter((item) => {
+  const visibleCatalog = catalogView.filter((item) => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
     return item.name.toLowerCase().includes(q) || item.sku.toLowerCase().includes(q);
@@ -186,6 +226,59 @@ export function RegisterClient({
       if (existing) return prev.map((l) => (l.itemId === item.id ? { ...l, qty: l.qty + 1 } : l));
       return [...prev, { itemId: item.id, name: item.name, unit: item.unit, priceCents: item.priceCents!, qty: 1 }];
     });
+  }
+  function tryAdd(item: CatalogRow) {
+    if (item.priceCents == null) {
+      setPriceFor(item);
+      setPriceInput("");
+      setPriceError(null);
+      return;
+    }
+    addToCart(item);
+  }
+  function onSearchKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    const code = search.trim();
+    if (!code) return;
+    const hits = catalogView.filter((i) => i.sku && i.sku.trim().toLowerCase() === code.toLowerCase());
+    if (hits.length === 1) {
+      tryAdd(hits[0]);
+      setSearch("");
+      // An unpriced item opens the price prompt, which says so itself.
+      setScanNote(hits[0].priceCents == null ? null : { tone: "ok", text: `Added ${hits[0].name}` });
+    } else if (hits.length > 1) {
+      setScanNote({ tone: "miss", text: `${hits.length} items share the SKU "${code}" — pick the right one below.` });
+    } else {
+      setScanNote({ tone: "miss", text: `No item has the SKU "${code}".` });
+    }
+  }
+  function startScan() {
+    searchRef.current?.focus();
+    searchRef.current?.select();
+    setScanNote({ tone: "ready", text: "Ready — point the scanner at the barcode, or type the SKU and press Enter." });
+  }
+  async function confirmPrice() {
+    if (!priceFor || pricing) return;
+    const cents = parseMoney(priceInput);
+    if (cents == null) return setPriceError("Enter the price, like 45 or 45.50.");
+    const item = priceFor;
+    setPricing(true);
+    setPriceError(null);
+    addToCart({ ...item, priceCents: cents });
+    let note: { tone: "ready" | "ok" | "miss"; text: string } = { tone: "ok", text: `Added ${item.name}` };
+    if (rememberPrice) {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase.rpc("update_catalog_item", { in_id: item.id, in_price_cents: cents });
+      if (error) note = { tone: "miss", text: `Added ${item.name}, but the price was not saved: ${error.message}` };
+      else {
+        note = { tone: "ok", text: `Added ${item.name} — price saved for next time` };
+        setSavedPrices((p) => ({ ...p, [item.id]: cents }));
+        router.refresh();
+      }
+    }
+    setScanNote(note);
+    setPriceFor(null);
+    setPricing(false);
   }
   function removeLine(itemId: string) {
     setCart((prev) => prev.filter((l) => l.itemId !== itemId));
@@ -311,7 +404,9 @@ export function RegisterClient({
         voucherCents: voucherAppliedCents,
         totalCents: netTotalCents,
         tenders,
+        whatsapp: customers.find((c) => c.id === partyId)?.whatsapp ?? "",
       });
+      setReceiptWa(customers.find((c) => c.id === partyId)?.whatsapp ?? "");
       resetTicket();
       router.refresh();
       printWhenPainted();
@@ -367,20 +462,81 @@ export function RegisterClient({
                         placeholder="Search service or retail SKU... (⌘K)"
                         type="text"
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => {
+                          setSearch(e.target.value);
+                          setScanNote(null);
+                        }}
+                        onKeyDown={onSearchKey}
                       />
                       <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
                         <kbd className="px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#5e5e67] bg-[#eeedf1] rounded border border-[#c8c5cb]/20">⌘K</kbd>
                       </div>
                     </div>
                     <button
-                      onClick={() => notWired("Scanning a barcode")}
+                      onClick={startScan}
                       className="h-10 px-3.5 rounded-lg bg-[#ffffff] hover:bg-[#eeedf1] active:scale-[0.97] text-[#1a1c1f] text-[13.5px] leading-5 font-normal flex items-center gap-2 shadow-sm border border-[#c8c5cb]/30 transition-colors"
                     >
                       <span className="material-symbols-outlined text-[18px]">barcode_scanner</span>
                       <span>Scan SKU</span>
                     </button>
                   </div>
+
+                  {scanNote && (
+                    <p
+                      data-testid="scan-note"
+                      className={"text-[12.5px] px-1 -mt-3 " + (scanNote.tone === "miss" ? "text-[#ba1a1a]" : "text-[#47464b]")}
+                    >
+                      {scanNote.text}
+                    </p>
+                  )}
+
+                  {priceFor && (
+                    <div data-testid="price-prompt" className="p-4 rounded-xl bg-[#ffffff] border-2 border-[#000000] shadow-sm flex flex-col gap-3">
+                      <span className="text-[13.5px] text-[#1a1c1f]">
+                        <strong className="font-semibold">{priceFor.name}</strong> has no price yet. What does it cost?
+                      </span>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-[#5e5e67]">RM</span>
+                          <input
+                            autoFocus
+                            aria-label="Price"
+                            inputMode="decimal"
+                            value={priceInput}
+                            onChange={(e) => {
+                              setPriceInput(e.target.value);
+                              setPriceError(null);
+                            }}
+                            onKeyDown={(e) => e.key === "Enter" && confirmPrice()}
+                            placeholder="0.00"
+                            className="h-9 w-28 pl-9 pr-2 rounded-lg border border-[#c8c5cb]/60 text-[13.5px] tabular-nums focus:outline-none focus:border-[#000000]"
+                          />
+                        </div>
+                        <label className="flex items-center gap-2 text-[12.5px] text-[#47464b] cursor-pointer">
+                          <input type="checkbox" checked={rememberPrice} onChange={(e) => setRememberPrice(e.target.checked)} className="h-4 w-4 accent-[#000000]" />
+                          <span>Remember this price</span>
+                        </label>
+                        <div className="flex items-center gap-2 ml-auto">
+                          <button type="button" onClick={() => setPriceFor(null)} className="h-9 px-3 rounded-lg border border-[#c8c5cb]/60 text-[13px] font-medium hover:bg-[#f3f3f7]">
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={pricing}
+                            onClick={confirmPrice}
+                            className="h-9 px-4 rounded-lg bg-[#000000] text-[#ffffff] text-[13px] font-semibold hover:bg-neutral-800 disabled:opacity-50"
+                          >
+                            Add to Ticket
+                          </button>
+                        </div>
+                      </div>
+                      {priceError && (
+                        <p role="alert" data-testid="price-error" className="text-[12.5px] text-[#ba1a1a]">
+                          {priceError}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {visibleCatalog.length === 0 && (
                     <div className="p-8 rounded-xl bg-[#ffffff] border border-[#c8c5cb]/30 shadow-sm text-center text-[13.5px] text-[#5e5e67]">
@@ -403,7 +559,7 @@ export function RegisterClient({
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#c8c5cb]/20">
                           <span className="text-[16px] text-[#1a1c1f] font-semibold tabular-nums">{item.priceCents != null ? ringgit(item.priceCents) : "—"}</span>
                           <button
-                            onClick={() => (item.priceCents != null ? addToCart(item) : notWired("Adding an item with no price"))}
+                            onClick={() => tryAdd(item)}
                             className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors active:scale-[0.97] bg-[#eeedf1] hover:bg-[#000000] text-[#1a1c1f] hover:text-[#ffffff]"
                           >
                             <span className="material-symbols-outlined text-[16px]">add</span>
@@ -463,7 +619,37 @@ export function RegisterClient({
                         </div>
                         <div className="text-center text-[11px] text-[#5e5e67] pt-2">Thank you</div>
                       </div>
-                      <div className="p-4 border-t border-[#c8c5cb]/20">
+                      <div className="p-4 border-t border-[#c8c5cb]/20 space-y-3">
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase text-[#5e5e67]">Send receipt on WhatsApp</span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              aria-label="Customer WhatsApp"
+                              type="tel"
+                              value={receiptWa}
+                              onChange={(e) => setReceiptWa(e.target.value)}
+                              placeholder="012-345 6789"
+                              className="h-9 flex-1 min-w-0 px-3 rounded-lg border border-[#c8c5cb]/60 text-[13px] focus:outline-none focus:border-[#000000]"
+                            />
+                            {waLink(receiptWa) ? (
+                              <a
+                                data-testid="wa-receipt"
+                                href={waLink(receiptWa, receiptMessage(receipt, businessName)) ?? "#"}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="h-9 px-3.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] border border-[#c8c5cb]/40 text-[13px] font-medium text-[#1a1c1f] flex items-center gap-1.5 shrink-0"
+                              >
+                                <span className="material-symbols-outlined text-[15px]">send_to_mobile</span>
+                                Send
+                              </a>
+                            ) : (
+                              <span data-testid="wa-receipt-off" className="h-9 px-3.5 rounded-lg bg-[#f3f3f7] border border-[#c8c5cb]/30 text-[13px] text-[#77767b] flex items-center shrink-0 opacity-60">
+                                Send
+                              </span>
+                            )}
+                          </div>
+                          {!waLink(receiptWa) && receiptWa.trim() !== "" && <span className="text-[11.5px] text-[#77767b]">That number is not complete — check it.</span>}
+                        </div>
                         <button onClick={() => setReceipt(null)} className="w-full h-10 rounded-xl bg-[#000000] hover:bg-neutral-900 text-[#ffffff] text-[13.5px] font-semibold">
                           New Sale
                         </button>
@@ -665,11 +851,7 @@ export function RegisterClient({
                         <span className="material-symbols-outlined text-[17px]">check</span>
                         <span>{charging ? "Charging…" : `Charge ${ringgit(netTotalCents)} & Print Receipt`}</span>
                       </button>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button onClick={() => notWired("Sending a WhatsApp receipt")} className="h-8 px-1.5 rounded-lg bg-[#f3f3f7] hover:bg-[#eeedf1] active:scale-[0.97] border border-[#c8c5cb]/20 text-[#1a1c1f] text-[11px] font-medium flex items-center justify-center gap-1 transition-colors">
-                          <span className="material-symbols-outlined text-[13px]">send_to_mobile</span>
-                          <span>WhatsApp</span>
-                        </button>
+                      <div className="grid grid-cols-2 gap-2">
                         <button onClick={() => setSplitOpen((v) => !v)} className={"h-8 px-1.5 rounded-lg active:scale-[0.97] border text-[11px] font-medium flex items-center justify-center gap-1 transition-colors " + (splitOpen ? "bg-[#000000] text-[#ffffff] border-[#000000]" : "bg-[#f3f3f7] hover:bg-[#eeedf1] border-[#c8c5cb]/20 text-[#1a1c1f]")}>
                           <span className="material-symbols-outlined text-[13px]">call_split</span>
                           <span>Split Bill</span>

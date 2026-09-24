@@ -58,6 +58,7 @@ const pass = [];
 const fail = [];
 const ok = (m) => { pass.push(m); console.log(`  PASS  ${m}`); };
 const no = (m, got) => { fail.push(m); console.log(`  FAIL  ${m}${got === undefined ? "" : ` — ${got}`}`); };
+const check = (m, cond, got) => (cond ? ok(m) : no(m, got));
 
 let browser;
 try {
@@ -86,8 +87,21 @@ try {
   if (itemA.error) throw new Error(`itemA: ${itemA.error.message}`);
   await admin.from("catalog_items").update({ price_cents: 10000 }).eq("id", itemA.data.id);
 
+  // 两件没有价钱的货：一件要「记住这个价」，一件不要。
+  const itemNp = await api.rpc("add_catalog_item", {
+    in_project_id: pid, in_module_key: "inventory",
+    in_name: "Cart-Test No-Price Towel", in_unit: "pc", in_sku: "CART-NP",
+  });
+  if (itemNp.error) throw new Error(`itemNp: ${itemNp.error.message}`);
+  const itemNp2 = await api.rpc("add_catalog_item", {
+    in_project_id: pid, in_module_key: "inventory",
+    in_name: "Cart-Test Loose Item", in_unit: "pc", in_sku: "CART-NP2",
+  });
+  if (itemNp2.error) throw new Error(`itemNp2: ${itemNp2.error.message}`);
+
   const guest = await api.rpc("add_directory_entry", {
     in_project_id: pid, in_module_key: "customers", in_name: "Cart-Test Guest",
+    in_whatsapp: "012-345 6789",
   });
   if (guest.error) throw new Error(`guest: ${guest.error.message}`);
 
@@ -174,6 +188,19 @@ try {
   if (sheetVisibleUnderPrint && !sidebarVisibleUnderPrint) ok("🔴 列印规则真的接上了:@media print 底下只剩收据那一张纸,侧栏不见了");
   else no("列印规则没有正确接上", `sheet visible=${sheetVisibleUnderPrint} sidebar visible=${sidebarVisibleUnderPrint}`);
 
+  // ── 7b. WhatsApp 收据：收据出来之后才有东西可以寄 ──────────────────────
+  check("🔴 收据底下有「WhatsApp」一格，预填她登记的号码（012-345 6789）", (await page.getByLabel("Customer WhatsApp").inputValue()) === "012-345 6789");
+  const waHref = await page.getByTestId("wa-receipt").getAttribute("href");
+  const waMsg = decodeURIComponent((waHref ?? "").split("?text=")[1] ?? "");
+  check("🔴 「Send」是一条真的 wa.me 连结，号码补了国码（60123456789）", /^https:\/\/wa\.me\/60123456789\?text=/.test(waHref ?? ""), waHref ?? "");
+  check("🔴 讯息已经写好：品项 · 净额 RM 150 · 两种付款方式各多少 · 谢谢",
+    /2 x Cart-Test Keratin Wash/.test(waMsg) && /Total paid\s+RM 150/.test(waMsg) && /DuitNow QR RM 100 \+ Cash Drawer RM 50/.test(waMsg) && /Thank you/.test(waMsg), waMsg);
+  await page.getByLabel("Customer WhatsApp").fill("0123");
+  check("🔴 号码打了一半：「Send」变灰（不画一颗会失败的连结），并且讲一句", (await page.getByTestId("wa-receipt").count()) === 0 && (await page.getByTestId("wa-receipt-off").count()) === 1 && /not complete/.test(await page.locator("body").innerText()));
+  await page.getByLabel("Customer WhatsApp").fill("016-777 8899");
+  check("🔴 散客没有登记号码，也可以当场打一个：换成别的号码，连结跟着变（60167778899）", /^https:\/\/wa\.me\/60167778899\?text=/.test((await page.getByTestId("wa-receipt").getAttribute("href")) ?? ""));
+  await page.screenshot({ path: `${OUT}/1b-receipt-whatsapp.png`, fullPage: true });
+
   // ── 8. 真的换算过的钱 -- 拿真的资料库数字核对,不是只信画面 ───────────
   const { data: ledgerRows } = await admin
     .from("ledger_entries")
@@ -223,13 +250,65 @@ try {
 
   await page.screenshot({ path: `${OUT}/2-hold-and-resume.png`, fullPage: true });
 
-  // ── 10. 诚实没接的两件 ────────────────────────────────────────────────
+  // ── 10. Scan SKU + 没价钱的货 ────────────────────────────────────────────
+  //    扫码枪就是键盘：把码打进去、按 Enter。整个过程不准弹任何 alert()。
   let sawDialog = false;
-  page.once("dialog", (d) => { sawDialog = true; d.accept(); });
+  page.on("dialog", (d) => { sawDialog = true; d.dismiss().catch(() => {}); });
+  const cartText = async () => (await page.locator("body").innerText());
+  const searchBox = page.getByPlaceholder(/Search service or retail SKU/);
   await page.getByRole("button", { name: "Scan SKU" }).click();
-  await page.waitForTimeout(300);
-  if (sawDialog) ok("Scan SKU 老实讲一句还没接,不是完全没反应");
-  else no("Scan SKU 按下去什么都没发生");
+  check("🔴 点「Scan SKU」：光标落在搜索框上，旁边写一句「Ready — point the scanner…」", (await page.evaluate(() => document.activeElement?.getAttribute("placeholder") ?? "")).startsWith("Search service") && /Ready/.test(await page.getByTestId("scan-note").innerText()));
+  await page.keyboard.type("CART-01");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(200);
+  check("🔴 扫到 CART-01：这一件进了票（同一件再来就是数量 +1，现在 2×）；搜索框清空，准备扫下一个", /2×\s*Cart-Test Keratin Wash/.test(await cartText()) && (await searchBox.inputValue()) === "" && /Added Cart-Test Keratin Wash/.test(await page.getByTestId("scan-note").innerText()));
+  await page.keyboard.type("cart-01");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(200);
+  check("小写的码一样认得（3×）", /3×\s*Cart-Test Keratin Wash/.test(await cartText()));
+  await page.keyboard.type("NOPE-999");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(200);
+  check("🔴 没有这个码：红字讲「No item has the SKU」，票一点没变（还是 3×），打的字留着让他改", /No item has the SKU "NOPE-999"/.test(await page.getByTestId("scan-note").innerText()) && /3×\s*Cart-Test Keratin Wash/.test(await cartText()) && (await searchBox.inputValue()) === "NOPE-999");
+  await searchBox.fill("");
+
+  // 没有价钱的货：问一次，可以记住
+  await searchBox.fill("CART-NP");
+  await page.keyboard.press("Enter");
+  await page.getByTestId("price-prompt").waitFor({ timeout: 10000 });
+  check("🔴 扫到没有价钱的货：不弹浏览器的框，页面里问「它多少钱」，票里还没有它", /No-Price Towel[\s\S]*has no price yet/.test(await page.getByTestId("price-prompt").innerText()) && !/\d×\s*Cart-Test No-Price Towel/.test(await cartText()));
+  await page.getByLabel("Price", { exact: true }).fill("abc");
+  await page.getByRole("button", { name: "Add to Ticket" }).click();
+  check("🔴 价钱乱打（abc）：讲一句人话，没有加进去", (await page.getByTestId("price-error").count()) === 1 && (await page.getByTestId("price-prompt").count()) === 1);
+  await page.getByLabel("Price", { exact: true }).fill("12.50");
+  check("「Remember this price」默认勾上", await page.getByLabel("Remember this price").isChecked());
+  await page.screenshot({ path: `${OUT}/2b-price-prompt.png`, fullPage: true });
+  await page.getByRole("button", { name: "Add to Ticket" }).click();
+  await page.waitForTimeout(1500);
+  check("🔴 加进票里了：1× No-Price Towel，RM 12.50", /1×\s*Cart-Test No-Price Towel/.test(await cartText()) && /RM\s*12\.50/.test(await cartText()));
+  const npAfter = await admin.from("catalog_items").select("price_cents").eq("id", itemNp.data.id).single();
+  check("🔴 记住了：货架上那一件的价钱真的变成 RM 12.50（下一次不用再问）", Number(npAfter.data?.price_cents) === 1250, JSON.stringify(npAfter.data));
+  check("🔴 面板讲「price saved for next time」", /price saved for next time/.test(await page.getByTestId("scan-note").innerText()));
+  check("🔴 提示框关了", (await page.getByTestId("price-prompt").count()) === 0);
+
+  // 下一次：直接加，不再问
+  const npAdd = page.locator('h3:has-text("Cart-Test No-Price Towel")').locator("..").locator("..").getByRole("button").last();
+  await npAdd.click();
+  await page.waitForTimeout(200);
+  check("🔴 记住之后再加这一件：直接加（2×），不再问价钱", /2×\s*Cart-Test No-Price Towel/.test(await cartText()) && (await page.getByTestId("price-prompt").count()) === 0);
+
+  // 另一件：这一次不要记住
+  const np2Add = page.locator('h3:has-text("Cart-Test Loose Item")').locator("..").locator("..").getByRole("button").last();
+  await np2Add.click();
+  await page.getByTestId("price-prompt").waitFor({ timeout: 10000 });
+  await page.getByLabel("Remember this price").uncheck();
+  await page.getByLabel("Price", { exact: true }).fill("7");
+  await page.getByRole("button", { name: "Add to Ticket" }).click();
+  await page.waitForTimeout(800);
+  const np2After = await admin.from("catalog_items").select("price_cents").eq("id", itemNp2.data.id).single();
+  check("🔴 点「+」也一样问；取消「记住」：这一次卖 RM 7，货架上那一件的价钱还是空的", /1×\s*Cart-Test Loose Item/.test(await cartText()) && np2After.data?.price_cents == null, JSON.stringify(np2After.data));
+  check("🔴 整个过程一个 alert() 都没弹（以前每一处都是弹一句「还没接」）", !sawDialog);
+  await page.screenshot({ path: `${OUT}/2c-after-scan.png`, fullPage: true });
 
   // ── 11. 🔴 员工(柜台)真的按得了结帐 —— 任务 411,他拍板放宽 ─────────────
   const staffEmail = `regcart-staff-${stamp}@formae.test`;
