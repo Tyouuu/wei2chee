@@ -49,10 +49,13 @@ import { ClientsClient, type ClientRow } from "./clients-client";
  */
 export default async function SalonClientsPreview({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ client?: string }>;
 }) {
   const { locale } = await params;
+  const { client: clientParam } = await searchParams;
   const user = await getSessionUser();
   if (!user) redirect(`/${locale}/login`);
 
@@ -254,7 +257,15 @@ export default async function SalonClientsPreview({
   return (
     <>
       <MaterialSymbolsLink />
-      <ClientsClient businessName={businessName} clients={clients} canSeeMoney={workspace.isOwner} />
+      {/* ?client=<id> is how Reports & Rankings' "View profile" arrow lands on
+          one person. An id that isn't in this list falls back to the first
+          client, same as no param. */}
+      <ClientsClient
+        businessName={businessName}
+        clients={clients}
+        canSeeMoney={workspace.isOwner}
+        initialSelectedId={clients.find((c) => c.id === clientParam)?.id ?? null}
+      />
     </>
   );
 }

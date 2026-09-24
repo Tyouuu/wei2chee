@@ -58,16 +58,18 @@ export function ClientsClient({
   businessName,
   clients,
   canSeeMoney,
+  initialSelectedId = null,
 }: {
   businessName: string;
   clients: ClientRow[];
   canSeeMoney: boolean;
+  initialSelectedId?: string | null;
 }) {
   const [activeSegment, setActiveSegment] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
   const [page, setPage] = useState(1);
-  const [selectedId, setSelectedId] = useState<string | null>(clients[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? clients[0]?.id ?? null);
 
   const segments = useMemo(() => {
     const counts = new Map<string, number>();

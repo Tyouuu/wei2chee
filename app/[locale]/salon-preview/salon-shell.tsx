@@ -65,8 +65,14 @@ import Link from "next/link";
  * with the icons End of Day Cash / Invoices & Terminal / System Audit Log
  * picked for themselves in THEIR OWN sources; left untouched, same rule.
  *
- * All six rows under Management now have real pages behind them except
- * Tenant Settings.
+ * The Reports & Rankings source (2026-09-24) added two more rows: "Memberships
+ * & Loyalty" (no page yet -- inert like Tenant Settings until its own source
+ * arrives) and "Reports & Rankings" itself (between Stylists and End of Day
+ * Cash, as that source ordered them). Its embedded sidebar had no icons at
+ * all, so the two icons here are this file's own picks.
+ *
+ * Every row under Management has a real page behind it except Memberships &
+ * Loyalty and Tenant Settings.
  */
 export type SalonNavKey =
   | "overview"
@@ -77,6 +83,7 @@ export type SalonNavKey =
   | "packages-and-prepaid"
   | "salon-stock-and-orders"
   | "stylists-and-staff"
+  | "reports-and-rankings"
   | "end-of-day-cash"
   | "invoices-and-terminal"
   | "system-audit-log";
@@ -111,8 +118,10 @@ const DAILY_OPS: { key: SalonNavKey; href: string; icon: string; label: string }
 
 const MANAGEMENT: { key: SalonNavKey | null; href: string; icon: string; label: string }[] = [
   { key: "packages-and-prepaid", href: "/en/salon-preview/packages", icon: "confirmation_number", label: "Packages & Prepaid" },
+  { key: null, href: "", icon: "card_membership", label: "Memberships & Loyalty" },
   { key: "salon-stock-and-orders", href: "/en/salon-preview/stock", icon: "inventory_2", label: "Salon Stock & Orders" },
   { key: "stylists-and-staff", href: "/en/salon-preview/stylists", icon: "badge", label: "Stylists & Staff" },
+  { key: "reports-and-rankings", href: "/en/salon-preview/reports", icon: "leaderboard", label: "Reports & Rankings" },
   { key: "end-of-day-cash", href: "/en/salon-preview/eod-cash", icon: "payments", label: "End of Day Cash" },
   { key: "invoices-and-terminal", href: "/en/salon-preview/invoices", icon: "receipt_long", label: "Invoices & Terminal" },
   { key: "system-audit-log", href: "/en/salon-preview/audit-log", icon: "manage_history", label: "System Audit Log" },
