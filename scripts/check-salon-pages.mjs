@@ -32,9 +32,7 @@ import { join, relative } from "node:path";
 const ROOT = "app/[locale]/salon-preview";
 
 /** file (relative to ROOT) -> { stubs, dead, sample, why } */
-const KNOWN = {
-  "lookbook/lookbook-client.tsx": { stubs: 5, dead: 0, sample: 5, why: "任务 415 B：作品表要新表（他已决定留着当卖点，六张示例卡）" },
-};
+const KNOWN = {};
 
 // 设计自带的示例（不是任何一间真店的）。只在「代码」里找，注解里讲它们不算。
 const SAMPLE = [

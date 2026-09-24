@@ -1,212 +1,221 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { SalonSidebar } from "../salon-shell";
+import { AddWorkPanel, type Stylist } from "./add-work-panel";
+import { PresentLook } from "./present-look";
+import { liftOf, type LookCard } from "./types";
 
-/* eslint-disable @next/next/no-img-element -- literal port of the founder's
-   Stitch source; these are AI-generated reference photos from an external
-   CDN, not user-uploaded content that needs next/image's optimisation
-   pipeline. */
+/* eslint-disable @next/next/no-img-element -- the photos are signed, expiring
+   URLs from a private bucket (and, in the empty-lookbook examples, an external
+   CDN); next/image's optimiser cannot fetch either. */
 
-type Look = {
-  tag: string;
-  category: string;
-  level: string;
-  stylistColor: string;
-  stylist: string;
-  location: string;
-  ref: string;
-  img: string;
-  alt: string;
-  title: string;
-  subtitle: string;
-  tags: string[];
-  formula: string;
-};
+const ALL = "All Swatches";
 
-const LOOKS: Look[] = [
+/**
+ * Shown only while the lookbook is empty, so a new salon still sees what a look
+ * card holds. They are drawn but never actionable: Apply to Ticket would write
+ * an invented formula into a real client's note. The photos are the Stitch
+ * design's own reference images (an external CDN, kept as it was).
+ */
+const EXAMPLES: LookCard[] = [
   {
-    tag: "#MochaVelvet",
+    id: "example-1",
+    title: "Smoky Mocha Velvet Melt",
     category: "Balayage & Foil Melts",
-    level: "L6.1",
+    level: "6.1",
+    formula: "Majirel 6.1 (35g) + Inoa 5.0 (15g) · 20 vol · gloss 7.12",
+    note: "Cool ash diffusion, low regrowth",
+    tags: ["Cool undertone", "Coarse to medium hair", "12-week regrowth"],
+    stylistName: "Example stylist",
     stylistColor: "#1a9a4d",
-    stylist: "Jasmine Teo",
-    location: "Bangsar Studio Tier 1",
-    ref: "WT-601",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA0_N4yozMgrXF88RCZV4KFJOsFaJNFoGqkOOnoeAaeDSUSL7akfvlx-18cFzs5bKqz5W5mOKi3J_qR2Zx9yB5bYiiWPYGinHZHQWg_cj_ZUBz1YJU8na4PD_7IQNf1YXLtefZkcR-sC2ru9LILGQiQLUIyQuo0yiXVxrG7LNPnAUy4KtJTDsVQBXJF6bSqZ8jUwWEfMUDVTI06SUFGMUvnzEt-fpRAKaJFWZSBcjhasOUN8hyPwUpf",
-    alt: "High-fashion studio editorial portrait of an Asian woman with long glossy hair styled in a smoky mocha velvet seamless balayage melt, soft natural waves, neutral cool undertones, cinematic chiaroscuro studio lighting, minimalist black wardrobe.",
-    title: "Smoky Mocha Velvet Seamless Melt",
-    subtitle: "Color Lead Formula · Cool Ash Diffusion",
-    tags: ["Asian Coarse to Medium", "Cool & Olive Undertones", "12-Wk Low Regrowth"],
-    formula: "Majirel 6.1 (35g) + Inoa 5.0 (15g) · 20Vol · Dia Light 7.12 Finish Gloss",
+    photoUrl:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuA0_N4yozMgrXF88RCZV4KFJOsFaJNFoGqkOOnoeAaeDSUSL7akfvlx-18cFzs5bKqz5W5mOKi3J_qR2Zx9yB5bYiiWPYGinHZHQWg_cj_ZUBz1YJU8na4PD_7IQNf1YXLtefZkcR-sC2ru9LILGQiQLUIyQuo0yiXVxrG7LNPnAUy4KtJTDsVQBXJF6bSqZ8jUwWEfMUDVTI06SUFGMUvnzEt-fpRAKaJFWZSBcjhasOUN8hyPwUpf",
+    addedLabel: "Example",
+    addedAt: "2000-01-03T00:00:00Z",
+    example: true,
   },
   {
-    tag: "#AirCurtain",
-    category: "Korean C-Curl & Perms",
-    level: "L5.0 Gloss",
+    id: "example-2",
+    title: "Airy C-Curl & Curtain Bangs",
+    category: "Perms & Curls",
+    level: "5",
+    formula: "Digital perm · 24mm rods at 100°C · acidic glaze",
+    note: "Soft bounce for fine, flat hair",
+    tags: ["Neutral undertone", "Fine hair", "16-week longevity"],
+    stylistName: "Example stylist",
     stylistColor: "#3b62d9",
-    stylist: "Marcus Wong",
-    location: "Perm Chamber B",
-    ref: "WT-204",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBPwJJcgh-F0sj051mSPQ9BCBD9sp9D-2pXGbtwBxbqcL-cEJhJ64lO84PmMLs2prHqpIx7QsZsogIlMdDLgi57D8Ix9IdsGNGSsNpVtaU-hsfpNoJFumc-nWJKVuqTOyz9CzGLSQ3_c_cFC3FI80pT2o4QkQI_li5-hKdulDzxp5juEHJ4Toxz7g8e1H6g_1t5WA9GTD_rKiMSQDtCrbHfdqLFFeIp6jTZbz8LkK5cnDOuqNVyhHE-",
-    alt: "Salon portrait of a woman showing textured Korean airy C-curl perm with face-framing curtain bangs, glossy espresso dark hair, soft bounce, shot in bright minimal modern salon with natural sunlight and neutral interior.",
-    title: "Seoul Airy Digital C-Curl & Curtain Bangs",
-    subtitle: "Senior Stylist · Structural Elasticity",
-    tags: ["Fine & Flat Hair Friendly", "Oval & Square Shapes", "16-Wk Perm Longevity"],
-    formula: "Shiseido Qurl M (18m) · 24mm Rods @ 100°C · Bond Acidic Glaze",
+    photoUrl:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBPwJJcgh-F0sj051mSPQ9BCBD9sp9D-2pXGbtwBxbqcL-cEJhJ64lO84PmMLs2prHqpIx7QsZsogIlMdDLgi57D8Ix9IdsGNGSsNpVtaU-hsfpNoJFumc-nWJKVuqTOyz9CzGLSQ3_c_cFC3FI80pT2o4QkQI_li5-hKdulDzxp5juEHJ4Toxz7g8e1H6g_1t5WA9GTD_rKiMSQDtCrbHfdqLFFeIp6jTZbz8LkK5cnDOuqNVyhHE-",
+    addedLabel: "Example",
+    addedAt: "2000-01-02T00:00:00Z",
+    example: true,
   },
   {
-    tag: "#ChampagnePearl",
-    category: "Platinum Ice & Vivid",
-    level: "L10.2",
-    stylistColor: "#000000",
-    stylist: "Wei Lin (Lead)",
-    location: "Director Formula",
-    ref: "WT-910",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAAvJSg1--nh5cjDJgG_tDAtQiX2AHd4PKPSIG1GpXDOzUcqt7KOVUJgluG8JXy3WcyZLnB2r7V1p2QY9sT-zYvs8HaFR6wQlDQYn0aROofuMmRdDIKR0CUlZEhC1B_qrmbw2lojcdjcpH1vwJSPNIxTTdqPAkJIynsSwuJc1hbaBx3yZcxqvjLb5h3HWv4sbcN8bDcivx8bYTBdVEU3S6IRvxevKrS5cee-2Nvo5W6Uz2rX0F8-QQl",
-    alt: "High key beauty editorial photograph of a model with sleek ultra-blonde hair in iridescent Nordic champagne tones, zero yellow brassiness, high gloss finish, pale clean background, crisp directional light.",
-    title: "Nordic Champagne & Iridescent Pearl",
-    subtitle: "Creative Director Special · Double Process Lift",
-    tags: ["Pre-lightened / Virgin Hair", "Fair & Neutral Undertones", "5-Wk Scalp Retouch"],
-    formula: "Blond Studio 9 · Dialight 10.21 (40g) + 9.02 (10g) 6Vol (18m)",
-  },
-  {
-    tag: "#CopperSunset",
+    id: "example-3",
+    title: "Copper Sunset Gloss",
     category: "Warm Caramels & Coppers",
-    level: "L7.43",
+    level: "7.43",
+    formula: "Igora Royal 7-77 (30g) + 8-4 (20g) · glaze 8-77",
+    note: "High-refraction warmth",
+    tags: ["Warm undertone", "All densities", "8-week gloss refresh"],
+    stylistName: "Example stylist",
     stylistColor: "#a8710a",
-    stylist: "Chloe Tan",
-    location: "Bangsar Studio Tier 2",
-    ref: "WT-743",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAawvM06JWo4qT28R4fMDptCl1Zp-RVEi5pka0dVgz-XbOCPG2GiLSGDOxiYwqvZ-K6hK9liZnl79ACTnvsgz8JqoaoY9OYH88E9ks1PqSrjx5pXxtG--phkyTPu_VMQshNwQqk_z4AgEW_70oUbOvB_EDDHayyAOXxsNLfBBirs-OTnnF4A3LWWx8sBxjit6tB2bWQ47J3lX_QghpLgdtTClLsac9ZHYhrMyC3DHzf3PKnPSClHoWB",
-    alt: "Studio portrait of a client with warm Italian copper amber hair, vibrant golden terracotta tones, glossy silky finish, backlit to show warm translucent reflections, minimalist architectural setting.",
-    title: "Italian Amber Copper & Golden Glaze",
-    subtitle: "Colorist Formula · High Refraction Warmth",
-    tags: ["All Hair Densities", "Warm Golden Undertones", "8-Wk Gloss Refresh"],
-    formula: "Igora Royal 7-77 (30g) + 8-4 (20g) · Vibrance 8-77 Glaze",
-  },
-  {
-    tag: "#HoneyToffee",
-    category: "Balayage & Foil Melts",
-    level: "L8.3",
-    stylistColor: "#1a9a4d",
-    stylist: "Jasmine Teo",
-    location: "Bangsar Studio Tier 1",
-    ref: "WT-830",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDEL3s7mtmwFmN6l2vpoKhginzipZIqJtdbU6U0WM9R0g2uN6oRCdoTzHR_PF2gDSNvpz0qHtBsoOXB8kqYR1S1sKqEVEcXjPxw4oSnqpsy_us0YlEEXbnTqTYdMt2vfxpKF5OezqIcm0jiI89yz1UIv-oCIKig2DIKFLx6aEPRwsICiOXnLZGrugavVEvsF8KiVX-ygt2GxIPHO2Idzefuf5SkT4TIrMoN2ZfXCpmk2WYI3g0cawRd",
-    alt: "High resolution studio photo of a female model from behind and profile showing sun-kissed honey toffee foilyage ribbons woven through brunette hair, textured layered styling, warm ambient room light, elegant clean salon aesthetic.",
-    title: "Golden Honey Toffee Foilyage Ribbon",
-    subtitle: "Color Lead · Hand-Painted Transition",
-    tags: ["Brunette Transitions", "Neutral to Warm Skin", "14-Wk Low Maintenance"],
-    formula: "Blonde Glam 20Vol · Shadow 6.01 · Gloss: 8.34 + 9.03 (1:1)",
-  },
-  {
-    tag: "#LiquidGlass",
-    category: "Scalp & Texture Spa",
-    level: "L4.0",
-    stylistColor: "#000000",
-    stylist: "Wei Lin (Lead)",
-    location: "Inkarami Lab",
-    ref: "WT-400",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDT_jInvQNnehCxTaHpxeCWdwe_i7oSpzDNrUJToK88hsEoJNpCKMbN7mrhEFnku1D-GrhpyrovVwtVlRTZPpvDKfPL8lt_mrNfU4oTlkcpwbO4vr0hzQpgrOYHh2IyO_Xx4VQg8t_-wc0BjiWcERMQcN695jhmh4PD7zmfDjXppVE-outL-v00cj4NZIYCkwgrzMArEToFDf08wFeeFVBnDNPbfLd4zAOG-mqnlKaJBBlffmkLySbH",
-    alt: "Close up detailed hair editorial showing super straight obsidian black liquid glass hair with mirror-like shine, crisp blunt cut ends, sleek reflective treatment, high-contrast studio ring light, opulent salon quality.",
-    title: "Deep Obsidian Liquid Glass Lamination",
-    subtitle: "Creative Director Special · Keratin & Protein Infusion",
-    tags: ["Damaged or Frizzy Hair", "All Complexions", "10-Wk Anti-Humidity"],
-    formula: "Tokio Inkarami 0-4 System + Dia Light Clear Lamination (6Vol)",
+    photoUrl:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAawvM06JWo4qT28R4fMDptCl1Zp-RVEi5pka0dVgz-XbOCPG2GiLSGDOxiYwqvZ-K6hK9liZnl79ACTnvsgz8JqoaoY9OYH88E9ks1PqSrjx5pXxtG--phkyTPu_VMQshNwQqk_z4AgEW_70oUbOvB_EDDHayyAOXxsNLfBBirs-OTnnF4A3LWWx8sBxjit6tB2bWQ47J3lX_QghpLgdtTClLsac9ZHYhrMyC3DHzf3PKnPSClHoWB",
+    addedLabel: "Example",
+    addedAt: "2000-01-01T00:00:00Z",
+    example: true,
   },
 ];
 
-const LIFT_LEVELS: { level: string; label: string; color: string; active?: boolean }[] = [
-  { level: "1", label: "L1 - Jet Black", color: "#101012" },
-  { level: "2", label: "L2 - Darkest Brown", color: "#241c19" },
-  { level: "3", label: "L3 - Dark Brown", color: "#35251d" },
-  { level: "4", label: "L4 - Medium Brown", color: "#4a3225" },
-  { level: "5", label: "L5 - Light Brown", color: "#674b35" },
-  { level: "6", label: "L6 - Dark Blonde", color: "#876644" },
-  { level: "7", label: "L7 - Medium Blonde", color: "#ad8859" },
-  { level: "8.3", label: "L8 - Light Blonde (Active Target)", color: "#cfad75", active: true },
-  { level: "9", label: "L9 - Very Light Blonde", color: "#ebd19a" },
-  { level: "10", label: "L10 - Lightest Platinum", color: "#f7e8c3" },
+const LIFT_LEVELS: { level: number; label: string; color: string }[] = [
+  { level: 1, label: "Level 1 · Jet Black", color: "#101012" },
+  { level: 2, label: "Level 2 · Darkest Brown", color: "#241c19" },
+  { level: 3, label: "Level 3 · Dark Brown", color: "#35251d" },
+  { level: 4, label: "Level 4 · Medium Brown", color: "#4a3225" },
+  { level: 5, label: "Level 5 · Light Brown", color: "#674b35" },
+  { level: 6, label: "Level 6 · Dark Blonde", color: "#876644" },
+  { level: 7, label: "Level 7 · Medium Blonde", color: "#ad8859" },
+  { level: 8, label: "Level 8 · Light Blonde", color: "#cfad75" },
+  { level: 9, label: "Level 9 · Very Light Blonde", color: "#ebd19a" },
+  { level: 10, label: "Level 10 · Lightest Platinum", color: "#f7e8c3" },
 ];
 
-function notWired(what: string) {
-  alert(`${what} isn't wired up yet -- there's no lookbook database table behind this gallery.`);
-}
+const UNDERTONES = ["cool", "neutral", "warm"] as const;
+type Undertone = (typeof UNDERTONES)[number];
+type Sort = "newest" | "oldest" | "az";
 
 export function LookbookClient({
+  projectId,
   businessName,
   customers,
+  stylists,
+  works,
 }: {
+  projectId: string;
   businessName: string;
   customers: { id: string; name: string; note: string }[];
+  stylists: Stylist[];
+  works: LookCard[];
 }) {
-  const [activeCategory, setActiveCategory] = useState("All Swatches");
+  const router = useRouter();
+  const isEmpty = works.length === 0;
+  const pool = isEmpty ? EXAMPLES : works;
+
+  const [activeCategory, setActiveCategory] = useState(ALL);
   const [search, setSearch] = useState("");
-  const [copiedRef, setCopiedRef] = useState<string | null>(null);
+  const [undertone, setUndertone] = useState<Undertone | null>(null);
+  const [lift, setLift] = useState<number | null>(null);
+  const [sort, setSort] = useState<Sort>("newest");
+  const [adding, setAdding] = useState(false);
+  const [presenting, setPresenting] = useState<number | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [appliedId, setAppliedId] = useState<string | null>(null);
+  const [applyingId, setApplyingId] = useState<string | null>(null);
   const [applyTargetId, setApplyTargetId] = useState(customers[0]?.id ?? "");
-  const [applyingRef, setApplyingRef] = useState<string | null>(null);
-  const [appliedRef, setAppliedRef] = useState<string | null>(null);
+  // A customer's note as this page has already extended it, so a second Apply to
+  // the same client appends to the first instead of to the stale original.
+  const [notes, setNotes] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!flash) return;
+    const t = setTimeout(() => setFlash(null), 5000);
+    return () => clearTimeout(t);
+  }, [flash]);
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const l of LOOKS) counts.set(l.category, (counts.get(l.category) ?? 0) + 1);
-    return [
-      { label: "All Swatches", count: LOOKS.length },
-      ...[...counts].map(([label, count]) => ({ label, count })),
-    ];
-  }, []);
+    for (const l of pool) if (l.category) counts.set(l.category, (counts.get(l.category) ?? 0) + 1);
+    return [{ label: ALL, count: pool.length }, ...[...counts].map(([label, count]) => ({ label, count }))];
+  }, [pool]);
+  // A category whose last look was just removed no longer exists: fall back to all.
+  const category = categories.some((c) => c.label === activeCategory) ? activeCategory : ALL;
 
-  const visibleLooks = LOOKS.filter((look) => {
-    if (activeCategory !== "All Swatches" && look.category !== activeCategory) return false;
+  const filtersOn = category !== ALL || search.trim() !== "" || undertone !== null || lift !== null;
+
+  const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      look.title.toLowerCase().includes(q) ||
-      look.tag.toLowerCase().includes(q) ||
-      look.level.toLowerCase().includes(q) ||
-      look.tags.some((t) => t.toLowerCase().includes(q))
-    );
-  });
+    const list = pool.filter((l) => {
+      if (category !== ALL && l.category !== category) return false;
+      if (undertone && ![...l.tags, l.note].some((t) => t.toLowerCase().includes(undertone))) return false;
+      if (lift !== null && liftOf(l.level) !== lift) return false;
+      if (!q) return true;
+      return [l.title, l.category, l.level, l.formula, l.note, l.stylistName ?? "", ...l.tags].some((t) => t.toLowerCase().includes(q));
+    });
+    return list.sort((a, b) =>
+      sort === "az" ? a.title.localeCompare(b.title)
+      : sort === "oldest" ? a.addedAt.localeCompare(b.addedAt)
+      : b.addedAt.localeCompare(a.addedAt));
+  }, [pool, category, search, undertone, lift, sort]);
 
-  const copyFormula = async (look: Look) => {
+  function clearFilters() {
+    setActiveCategory(ALL);
+    setSearch("");
+    setUndertone(null);
+    setLift(null);
+  }
+
+  const copyFormula = async (look: LookCard) => {
     try {
       await navigator.clipboard.writeText(look.formula);
-      setCopiedRef(look.ref);
-      setTimeout(() => setCopiedRef((r) => (r === look.ref ? null : r)), 1500);
+      setCopiedId(look.id);
+      setTimeout(() => setCopiedId((r) => (r === look.id ? null : r)), 1500);
     } catch {
-      alert("Couldn't copy -- your browser blocked clipboard access.");
+      setFlash({ ok: false, text: "Couldn't copy: your browser blocked clipboard access." });
     }
   };
 
   const presentFullscreen = () => {
     document.documentElement.requestFullscreen?.().catch(() => {
-      alert("Your browser blocked fullscreen mode.");
+      setFlash({ ok: false, text: "Your browser blocked full screen." });
     });
   };
 
-  const applyToTicket = async (look: Look) => {
+  const applyToTicket = async (look: LookCard) => {
     const target = customers.find((c) => c.id === applyTargetId);
     if (!target) {
-      alert("Pick a customer first (top right) -- there's no one to apply this formula to.");
+      setFlash({ ok: false, text: "Pick a client first (top right): there's no one to apply this formula to." });
       return;
     }
-    setApplyingRef(look.ref);
+    setApplyingId(look.id);
     try {
       const supabase = createBrowserSupabaseClient();
       const line = `[${look.title}] ${look.formula}`;
-      const nextNote = target.note ? `${target.note}\n${line}` : line;
+      const current = notes[target.id] ?? target.note;
+      const nextNote = current ? `${current}\n${line}` : line;
       const { error } = await supabase.rpc("update_directory_entry", { in_id: target.id, in_note: nextNote });
       if (error) {
-        alert(`Couldn't apply: ${error.message}`);
+        setFlash({ ok: false, text: `Couldn't apply: ${error.message}` });
         return;
       }
-      target.note = nextNote;
-      setAppliedRef(look.ref);
-      setTimeout(() => setAppliedRef((r) => (r === look.ref ? null : r)), 1500);
+      setNotes((n) => ({ ...n, [target.id]: nextNote }));
+      setAppliedId(look.id);
+      setTimeout(() => setAppliedId((r) => (r === look.id ? null : r)), 1500);
     } finally {
-      setApplyingRef(null);
+      setApplyingId(null);
+    }
+  };
+
+  const removeLook = async (look: LookCard) => {
+    setBusyId(look.id);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const { error } = await supabase.rpc("set_lookbook_work_archived", { in_id: look.id, in_archived: true });
+      if (error) {
+        setFlash({ ok: false, text: `Couldn't remove it: ${error.message}` });
+        return;
+      }
+      setConfirmRemove(null);
+      setFlash({ ok: true, text: `Removed "${look.title}" from the lookbook.` });
+      router.refresh();
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -223,7 +232,7 @@ export function LookbookClient({
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-5">
               <div className="flex flex-col">
                 <div className="flex items-center gap-1 text-[11.5px] leading-4 tracking-[0.04em] font-medium uppercase tracking-widest text-[#5e5e67] mb-1">
-                  <span>Sample Reference Gallery</span>
+                  <span>{isEmpty ? "Examples" : "Your Lookbook"}</span>
                 </div>
                 <h1 className="text-[20px] leading-7 tracking-[-0.015em] font-semibold text-[#1a1c1f] tracking-tight">
                   Hair Lookbook &amp; Consultation Gallery
@@ -233,12 +242,13 @@ export function LookbookClient({
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                {customers.length > 0 && (
+                {!isEmpty && customers.length > 0 && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-[11.5px] text-[#5e5e67] whitespace-nowrap">Applying formulas to:</span>
                     <select
                       value={applyTargetId}
                       onChange={(e) => setApplyTargetId(e.target.value)}
+                      aria-label="Client to apply formulas to"
                       className="h-9 px-2 rounded-lg bg-[#ffffff] border border-[#c8c5cb]/40 text-[13px] focus:outline-none cursor-pointer"
                     >
                       {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -253,7 +263,7 @@ export function LookbookClient({
                   <span>Present to Client (Full Screen)</span>
                 </button>
                 <button
-                  onClick={() => notWired("Adding a new hairstyle case")}
+                  onClick={() => setAdding(true)}
                   className="h-9 px-3.5 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] transition-colors flex items-center gap-1.5 text-[13.5px] leading-5 font-medium shadow-sm"
                 >
                   <span className="material-symbols-outlined text-[17px]">add</span>
@@ -262,7 +272,38 @@ export function LookbookClient({
               </div>
             </div>
 
-            {/* 3-Item Quick Consultation Strip -- reference tools, no per-customer state to save */}
+            {flash && (
+              <p
+                role={flash.ok ? "status" : "alert"}
+                data-testid="lookbook-flash"
+                className={"mb-4 text-[13px] font-medium " + (flash.ok ? "text-[#047857]" : "text-[#ba1a1a]")}
+              >
+                {flash.text}
+              </p>
+            )}
+
+            {isEmpty && (
+              <div data-testid="lookbook-empty" className="mb-5 flex flex-col items-start gap-3 rounded-xl border border-dashed border-[#c8c5cb] bg-[#ffffff] p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-[26px] text-[#5e5e67]">photo_library</span>
+                  <div>
+                    <h2 className="text-base leading-6 font-semibold text-[#1a1c1f]">Your lookbook is empty</h2>
+                    <p className="text-[13.5px] leading-5 text-[#5e5e67] max-w-xl">
+                      The cards below are examples of what a look holds: a photo, the formula, who did it, and tags. Add your first look and they disappear.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAdding(true)}
+                  className="h-9 shrink-0 px-3.5 rounded-lg bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] transition-colors flex items-center gap-1.5 text-[13.5px] font-medium"
+                >
+                  <span className="material-symbols-outlined text-[17px]">add</span>
+                  <span>Add your first look</span>
+                </button>
+              </div>
+            )}
+
+            {/* 3-Item Quick Consultation Strip */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
               <div className="bg-[#ffffff] p-3 rounded-xl border border-[#c8c5cb]/30 shadow-sm flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-2">
@@ -272,11 +313,16 @@ export function LookbookClient({
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#f3f3f7] rounded-lg">
-                  {["Cool", "Neutral", "Warm"].map((t) => (
+                  {UNDERTONES.map((t) => (
                     <button
                       key={t}
-                      onClick={() => notWired("Filtering by undertone")}
-                      className="h-8 rounded text-[#1a1c1f] hover:bg-[#e8e8ec] active:scale-[0.97] transition-colors text-[13.5px] leading-5 flex items-center justify-center"
+                      onClick={() => setUndertone((cur) => (cur === t ? null : t))}
+                      aria-pressed={undertone === t}
+                      title={`Looks tagged "${t}"`}
+                      className={
+                        "h-8 rounded text-[13.5px] leading-5 flex items-center justify-center capitalize active:scale-[0.97] transition-colors " +
+                        (undertone === t ? "bg-[#000000] text-[#ffffff] font-medium" : "text-[#1a1c1f] hover:bg-[#e8e8ec]")
+                      }
                     >
                       {t}
                     </button>
@@ -293,9 +339,16 @@ export function LookbookClient({
                 </div>
                 <div className="flex items-center justify-between gap-1 mt-1">
                   {LIFT_LEVELS.map((lv) => (
-                    <button key={lv.level} onClick={() => notWired("Filtering by lift level")} className="flex-1 flex flex-col items-center gap-1 group cursor-pointer" title={lv.label}>
-                      <div className={"w-full rounded transition-transform " + (lv.active ? "h-6 scale-105 shadow-sm" : "h-5 group-hover:scale-105")} style={{ backgroundColor: lv.color }} />
-                      <span className={"text-[10px] font-mono " + (lv.active ? "text-[#1a1c1f] font-bold" : "text-[#5e5e67]")}>{lv.level}</span>
+                    <button
+                      key={lv.level}
+                      onClick={() => setLift((cur) => (cur === lv.level ? null : lv.level))}
+                      aria-pressed={lift === lv.level}
+                      aria-label={lv.label}
+                      className="flex-1 flex flex-col items-center gap-1 group cursor-pointer"
+                      title={lv.label}
+                    >
+                      <div className={"w-full rounded transition-transform " + (lift === lv.level ? "h-6 scale-105 shadow-sm ring-2 ring-[#000000]" : "h-5 group-hover:scale-105")} style={{ backgroundColor: lv.color }} />
+                      <span className={"text-[10px] font-mono " + (lift === lv.level ? "text-[#1a1c1f] font-bold" : "text-[#5e5e67]")}>{lv.level}</span>
                     </button>
                   ))}
                 </div>
@@ -321,11 +374,11 @@ export function LookbookClient({
                     onClick={() => setActiveCategory(c.label)}
                     className={
                       "h-8 px-3 rounded-lg text-[13.5px] leading-5 flex items-center gap-1 whitespace-nowrap shadow-sm active:scale-[0.97] " +
-                      (activeCategory === c.label ? "bg-[#000000] text-[#ffffff] font-medium" : "bg-[#ffffff] text-[#1a1c1f] hover:bg-[#e8e8ec] transition-colors")
+                      (category === c.label ? "bg-[#000000] text-[#ffffff] font-medium" : "bg-[#ffffff] text-[#1a1c1f] hover:bg-[#e8e8ec] transition-colors")
                     }
                   >
                     <span>{c.label}</span>
-                    <span className={"text-[11px] font-mono " + (activeCategory === c.label ? "opacity-75" : "text-[#5e5e67]")}>{c.count}</span>
+                    <span className={"text-[11px] font-mono " + (category === c.label ? "opacity-75" : "text-[#5e5e67]")}>{c.count}</span>
                   </button>
                 ))}
               </div>
@@ -335,91 +388,151 @@ export function LookbookClient({
                   <input
                     className="h-8 pl-8 pr-3 w-64 bg-[#ffffff] rounded-lg text-[13.5px] leading-5 text-[#1a1c1f] placeholder:text-[#5e5e67] focus:outline-none shadow-sm"
                     placeholder="Search tone, technique, base..."
+                    aria-label="Search the lookbook"
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
-                <button
-                  onClick={() => notWired("Changing the sort order")}
-                  className="flex items-center bg-[#ffffff] px-2.5 h-8 rounded-lg shadow-sm cursor-pointer hover:bg-[#eeedf1] transition-colors"
-                >
-                  <span className="text-[13.5px] leading-5 text-[#1a1c1f] mr-1">Recently Mixed &amp; Audited</span>
-                  <span className="material-symbols-outlined text-[16px] text-[#5e5e67]">expand_more</span>
-                </button>
+                <label className="relative flex items-center bg-[#ffffff] h-8 rounded-lg shadow-sm cursor-pointer hover:bg-[#eeedf1] transition-colors">
+                  <span className="sr-only">Sort looks</span>
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value as Sort)}
+                    className="appearance-none bg-transparent h-8 pl-2.5 pr-7 text-[13.5px] leading-5 text-[#1a1c1f] focus:outline-none cursor-pointer"
+                  >
+                    <option value="newest">Recently Added</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="az">Name A to Z</option>
+                  </select>
+                  <span className="material-symbols-outlined text-[16px] text-[#5e5e67] absolute right-2 pointer-events-none">expand_more</span>
+                </label>
               </div>
             </div>
 
             {/* Lookbook Cards 3-Column Grid */}
-            {visibleLooks.length === 0 && (
-              <div className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm py-10 text-center text-[13.5px] text-[#5e5e67] mb-7">
-                No looks match {search.trim() ? `"${search.trim()}"` : "this category"} in the sample gallery.
+            {visible.length === 0 && (
+              <div data-testid="lookbook-no-match" className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm py-10 text-center text-[13.5px] text-[#5e5e67] mb-7 flex flex-col items-center gap-3">
+                <span>No looks match {filtersOn ? "these filters" : "yet"}.</span>
+                {filtersOn && (
+                  <button onClick={clearFilters} className="h-8 px-3 rounded-lg bg-[#eeedf1] hover:bg-[#e8e8ec] text-[13.5px] font-medium text-[#1a1c1f] transition-colors">
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-7">
-              {visibleLooks.map((look) => (
-                <div key={look.ref} className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm overflow-hidden flex flex-col group">
+              {visible.map((look, i) => (
+                <div key={look.id} data-testid="lookbook-card" data-example={look.example ? "true" : undefined} className="bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm overflow-hidden flex flex-col group">
                   <div className="relative h-64 bg-[#e8e8ec] overflow-hidden">
-                    <img className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" alt={look.alt} src={look.img} />
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 rounded bg-[#000000]/80 backdrop-blur-md text-[#ffffff] text-[11.5px] leading-4 tracking-[0.04em]">{look.tag}</span>
-                      <span className="px-1.5 py-0.5 rounded bg-[#ffffff]/90 backdrop-blur-md text-[#1a1c1f] font-mono text-[11px] font-semibold">{look.level}</span>
+                    {look.photoUrl ? (
+                      <img className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" alt={look.title} src={look.photoUrl} loading="lazy" />
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-1 text-[#77767b]">
+                        <span className="material-symbols-outlined text-[36px]">photo_camera</span>
+                        <span className="text-[12px]">No photo yet</span>
+                      </div>
+                    )}
+                    <div className="absolute top-3 left-3 right-24 flex flex-wrap items-center gap-1.5">
+                      {look.example && <span className="px-2 py-0.5 rounded bg-[#f59e0b] text-[#1a1c1f] text-[11.5px] leading-4 font-semibold">Example</span>}
+                      {look.category && <span className="px-2 py-0.5 rounded bg-[#000000]/80 backdrop-blur-md text-[#ffffff] text-[11.5px] leading-4 tracking-[0.04em]">{look.category}</span>}
+                      {look.level && <span className="px-1.5 py-0.5 rounded bg-[#ffffff]/90 backdrop-blur-md text-[#1a1c1f] font-mono text-[11px] font-semibold">L{look.level.replace(/^L/i, "")}</span>}
                     </div>
-                    <div className="absolute top-3 right-3">
-                      <span className="px-2 py-0.5 rounded bg-[#ffffff]/90 backdrop-blur-md text-[#1a1c1f] text-[11.5px] font-medium flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: look.stylistColor }} />
-                        {look.stylist}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-2 left-3 right-3 flex justify-between items-center text-[#ffffff] text-[11px] opacity-90 drop-shadow-sm font-mono">
-                      <span>{look.location}</span>
-                      <span>Ref: {look.ref}</span>
-                    </div>
+                    {look.stylistName && (
+                      <div className="absolute top-3 right-3">
+                        <span className="px-2 py-0.5 rounded bg-[#ffffff]/90 backdrop-blur-md text-[#1a1c1f] text-[11.5px] font-medium flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: look.stylistColor }} />
+                          {look.stylistName}
+                        </span>
+                      </div>
+                    )}
+                    {!look.example && (
+                      <div className={"absolute bottom-2 left-3 text-[11px] font-mono " + (look.photoUrl ? "text-[#ffffff] opacity-90 drop-shadow-sm" : "text-[#77767b]")}>
+                        Added {look.addedLabel}
+                      </div>
+                    )}
                   </div>
                   <div className="p-3 flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-baseline justify-between mb-1">
+                      <div className="flex items-start justify-between gap-2 mb-1">
                         <h2 className="text-base leading-6 tracking-[-0.01em] font-semibold text-[#1a1c1f]">{look.title}</h2>
-                      </div>
-                      <p className="text-[11.5px] leading-4 tracking-[0.04em] text-[#5e5e67] uppercase tracking-wide mb-3">{look.subtitle}</p>
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {look.tags.map((t) => (
-                          <span key={t} className="px-2 py-0.5 rounded bg-[#eeedf1] text-[11.5px] leading-4 tracking-[0.04em] text-[#47464b]">{t}</span>
-                        ))}
-                      </div>
-                      <div className="bg-[#f3f3f7] p-2.5 rounded-lg mb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase tracking-wider text-[#5e5e67] flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[13px]">science</span> Lab Formula
-                          </span>
+                        {!look.example && (
                           <button
-                            onClick={() => copyFormula(look)}
-                            className="text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] text-[11px] flex items-center gap-0.5"
-                            title="Copy to clipboard"
+                            onClick={() => setConfirmRemove(look.id)}
+                            aria-label={`Remove ${look.title}`}
+                            title="Remove from the lookbook"
+                            className="h-7 w-7 shrink-0 rounded-lg text-[#77767b] hover:bg-[#f3f3f7] hover:text-[#ba1a1a] flex items-center justify-center transition-colors"
                           >
-                            <span className="material-symbols-outlined text-[13px]">{copiedRef === look.ref ? "check" : "content_copy"}</span>
-                            {copiedRef === look.ref ? "Copied" : "Copy"}
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
-                        </div>
-                        <p className="text-[13.5px] leading-[18px] text-[#1a1c1f] font-mono text-[12px] leading-relaxed">{look.formula}</p>
+                        )}
                       </div>
+                      {look.note && <p className="text-[11.5px] leading-4 tracking-[0.04em] text-[#5e5e67] uppercase tracking-wide mb-3">{look.note}</p>}
+                      {look.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {look.tags.map((t) => (
+                            <span key={t} className="px-2 py-0.5 rounded bg-[#eeedf1] text-[11.5px] leading-4 tracking-[0.04em] text-[#47464b]">{t}</span>
+                          ))}
+                        </div>
+                      )}
+                      {look.formula && (
+                        <div className="bg-[#f3f3f7] p-2.5 rounded-lg mb-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11.5px] leading-4 tracking-[0.06em] font-semibold uppercase tracking-wider text-[#5e5e67] flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[13px]">science</span> Lab Formula
+                            </span>
+                            {!look.example && (
+                              <button
+                                onClick={() => copyFormula(look)}
+                                className="text-[#5e5e67] hover:text-[#1a1c1f] active:scale-[0.97] text-[11px] flex items-center gap-0.5"
+                                title="Copy to clipboard"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">{copiedId === look.id ? "check" : "content_copy"}</span>
+                                {copiedId === look.id ? "Copied" : "Copy"}
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-[12px] text-[#1a1c1f] font-mono leading-relaxed whitespace-pre-wrap">{look.formula}</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="grid grid-cols-2 gap-2 pt-2 bg-[#ffffff]">
-                      <button
-                        onClick={() => notWired("A full presentation view for this look")}
-                        className="h-8 rounded bg-[#eeedf1] text-[#1a1c1f] hover:bg-[#e8e8ec] active:scale-[0.97] transition-colors text-[13.5px] leading-5 font-medium flex items-center justify-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">visibility</span> Present Look
-                      </button>
-                      <button
-                        onClick={() => applyToTicket(look)}
-                        disabled={applyingRef === look.ref}
-                        className="h-8 rounded bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] transition-colors text-[13.5px] leading-5 font-medium flex items-center justify-center gap-1 disabled:opacity-60"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">{appliedRef === look.ref ? "check" : "add_task"}</span>
-                        {appliedRef === look.ref ? "Applied" : applyingRef === look.ref ? "Applying…" : "Apply to Ticket"}
-                      </button>
-                    </div>
+                    {!look.example && confirmRemove === look.id ? (
+                      <div data-testid="lookbook-confirm-remove" className="flex items-center gap-2 pt-2">
+                        <span className="flex-1 text-[13px] text-[#1a1c1f]">Remove this look?</span>
+                        <button
+                          onClick={() => setConfirmRemove(null)}
+                          disabled={busyId === look.id}
+                          className="h-8 px-3 rounded bg-[#eeedf1] hover:bg-[#e8e8ec] text-[13.5px] font-medium transition-colors"
+                        >
+                          Keep
+                        </button>
+                        <button
+                          onClick={() => removeLook(look)}
+                          disabled={busyId === look.id}
+                          className="h-8 px-3 rounded bg-[#ba1a1a] hover:bg-[#93000a] text-[#ffffff] text-[13.5px] font-medium transition-colors disabled:opacity-60"
+                        >
+                          {busyId === look.id ? "Removing…" : "Remove"}
+                        </button>
+                      </div>
+                    ) : !look.example ? (
+                      <div className="grid grid-cols-2 gap-2 pt-2 bg-[#ffffff]">
+                        <button
+                          onClick={() => setPresenting(i)}
+                          className="h-8 rounded bg-[#eeedf1] text-[#1a1c1f] hover:bg-[#e8e8ec] active:scale-[0.97] transition-colors text-[13.5px] leading-5 font-medium flex items-center justify-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">visibility</span> Present Look
+                        </button>
+                        <button
+                          onClick={() => applyToTicket(look)}
+                          disabled={applyingId === look.id || !look.formula}
+                          title={look.formula ? undefined : "This look has no formula to apply"}
+                          className="h-8 rounded bg-[#000000] text-[#ffffff] hover:bg-[#1b1b1e] active:scale-[0.97] transition-colors text-[13.5px] leading-5 font-medium flex items-center justify-center gap-1 disabled:opacity-50"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">{appliedId === look.id ? "check" : "add_task"}</span>
+                          {appliedId === look.id ? "Applied" : applyingId === look.id ? "Applying…" : "Apply to Ticket"}
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -427,15 +540,34 @@ export function LookbookClient({
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-3 bg-[#ffffff] rounded-xl border border-[#c8c5cb]/30 shadow-sm">
               <div className="flex items-center gap-2 text-[#5e5e67] text-[11.5px] leading-4 tracking-[0.04em]">
-                <span className="uppercase tracking-widest text-[#1a1c1f] font-semibold">
-                  {visibleLooks.length > 0 ? `Showing 1 - ${visibleLooks.length} of ` : "Showing 0 of "}
-                  {(categories.find((c) => c.label === activeCategory) ?? categories[0]).count} Reference Looks
+                <span data-testid="lookbook-count" className="uppercase tracking-widest text-[#1a1c1f] font-semibold">
+                  {visible.length > 0 ? `Showing 1 - ${visible.length} of ` : "Showing 0 of "}
+                  {pool.length} {isEmpty ? "Example" : "Saved"} {pool.length === 1 ? "Look" : "Looks"}
                 </span>
               </div>
             </div>
           </div>
         </main>
       </div>
+
+      {adding && (
+        <AddWorkPanel
+          projectId={projectId}
+          stylists={stylists}
+          categories={categories.filter((c) => c.label !== ALL).map((c) => c.label)}
+          onClose={() => setAdding(false)}
+          onAdded={(title) => setFlash({ ok: true, text: `Added "${title}" to the lookbook.` })}
+        />
+      )}
+
+      {presenting !== null && !isEmpty && (
+        <PresentLook
+          looks={visible}
+          index={Math.min(presenting, visible.length - 1)}
+          onIndex={setPresenting}
+          onClose={() => setPresenting(null)}
+        />
+      )}
     </div>
   );
 }

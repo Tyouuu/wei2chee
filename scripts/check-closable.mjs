@@ -179,6 +179,7 @@ try {
     "membership_payments.created_by": REASON_AFTER_381,
     "memberships.created_by": REASON_AFTER_381,
     "till_counts.created_by": REASON_AFTER_381,
+    "lookbook_works.created_by": REASON_AFTER_381,
   };
   const loose = (cols ?? []).filter(
     (c) => !ON_PURPOSE[`${c.tbl}.${c.col}`]

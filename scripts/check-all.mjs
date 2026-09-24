@@ -107,6 +107,7 @@ const GATES = [
   { name: "complete-visit", cmd: "npm", args: ["run", "check:complete-visit"], slow: false },
   { name: "till", cmd: "npm", args: ["run", "check:till"], slow: false },
   { name: "recurring", cmd: "npm", args: ["run", "check:recurring"], slow: false },
+  { name: "lookbook", cmd: "npm", args: ["run", "check:lookbook"], slow: false },
   { name: "memberships", cmd: "npm", args: ["run", "check:memberships"], slow: false },
   { name: "ledger-staff", cmd: "npm", args: ["run", "check:ledger-staff"], slow: false },
   { name: "referrals", cmd: "npm", args: ["run", "check:referrals"], slow: false },
